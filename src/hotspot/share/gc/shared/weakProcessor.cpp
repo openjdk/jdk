@@ -35,19 +35,23 @@
 #include "utilities/macros.hpp"
 
 void WeakProcessor::weak_oops_do(BoolObjectClosure* is_alive, OopClosure* keep_alive) {
-  StringTable::reset_dead_counter();
-  CountingIsAliveClosure<BoolObjectClosure> cl(is_alive);
   FOR_EACH_WEAK_PROCESSOR_PHASE(phase) {
     if (WeakProcessorPhases::is_serial(phase)) {
-      WeakProcessorPhases::processor(phase)(&cl, keep_alive);
+      WeakProcessorPhases::processor(phase)(is_alive, keep_alive);
     } else {
-      WeakProcessorPhases::oop_storage(phase)->weak_oops_do(&cl, keep_alive);
-    }
-    if (WeakProcessorPhases::is_stringtable(phase)) {
-      StringTable::inc_dead_counter(cl.num_dead());
+      if (WeakProcessorPhases::is_stringtable(phase)) {
+        StringTable::reset_dead_counter();
+
+        CountingSkippedIsAliveClosure<BoolObjectClosure, OopClosure> cl(is_alive, keep_alive);
+        WeakProcessorPhases::oop_storage(phase)->oops_do(&cl);
+
+        StringTable::inc_dead_counter(cl.num_dead() + cl.num_skipped());
+        StringTable::finish_dead_counter();
+      } else {
+        WeakProcessorPhases::oop_storage(phase)->weak_oops_do(is_alive, keep_alive);
+      }
     }
   }
-  StringTable::finish_dead_counter();
 }
 
 void WeakProcessor::oops_do(OopClosure* closure) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -209,8 +209,7 @@ const char* const RepositoryIterator::filter(const char* entry) const {
   if (entry_name == NULL) {
     return NULL;
   }
-  strncpy(entry_name, entry, entry_len);
-  entry_name[entry_len] = '\0';
+  strncpy(entry_name, entry, entry_len + 1);
   const char* const fully_qualified_path_entry = fully_qualified(entry_name);
   if (NULL == fully_qualified_path_entry) {
     return NULL;
@@ -332,8 +331,7 @@ static const char* create_emergency_dump_path() {
     if (NULL == emergency_dump_path) {
       return NULL;
     }
-    strncpy(emergency_dump_path, buffer, emergency_filename_length);
-    emergency_dump_path[emergency_filename_length] = '\0';
+    strncpy(emergency_dump_path, buffer, emergency_filename_length + 1);
   }
   return emergency_dump_path;
 }
@@ -407,8 +405,7 @@ bool JfrRepository::set_path(const char* path) {
   if (_path == NULL) {
     return false;
   }
-  strncpy(_path, path, path_len);
-  _path[path_len] = '\0';
+  strncpy(_path, path, path_len + 1);
   return true;
 }
 

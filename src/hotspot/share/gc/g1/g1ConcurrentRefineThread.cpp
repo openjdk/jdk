@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1ConcurrentRefineThread.hpp"
+#include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
@@ -65,7 +66,7 @@ void G1ConcurrentRefineThread::wait_for_completed_buffers() {
 }
 
 bool G1ConcurrentRefineThread::is_active() {
-  DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
+  G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
   return is_primary() ? dcqs.process_completed_buffers() : _active;
 }
 
@@ -74,7 +75,7 @@ void G1ConcurrentRefineThread::activate() {
   if (!is_primary()) {
     set_active(true);
   } else {
-    DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
+    G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
     dcqs.set_process_completed_buffers(true);
   }
   _monitor->notify();
@@ -85,7 +86,7 @@ void G1ConcurrentRefineThread::deactivate() {
   if (!is_primary()) {
     set_active(false);
   } else {
-    DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
+    G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
     dcqs.set_process_completed_buffers(false);
   }
 }

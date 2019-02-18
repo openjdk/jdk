@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -306,7 +306,7 @@ final class RSAServerKeyExchange {
             // check constraints of RSA PublicKey
             RSAPublicKey publicKey;
             try {
-                KeyFactory kf = JsseJce.getKeyFactory("RSA");
+                KeyFactory kf = KeyFactory.getInstance("RSA");
                 RSAPublicKeySpec spec = new RSAPublicKeySpec(
                     new BigInteger(1, skem.modulus),
                     new BigInteger(1, skem.exponent));

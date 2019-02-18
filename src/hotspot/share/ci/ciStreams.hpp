@@ -245,8 +245,7 @@ public:
   ciMethod*     get_method(bool& will_link, ciSignature* *declared_signature_result);
   bool          has_appendix();
   ciObject*     get_appendix();
-  bool          has_method_type();
-  ciMethodType* get_method_type();
+  bool          has_local_signature();
   ciKlass*      get_declared_method_holder();
   int           get_method_holder_index();
   int           get_method_signature_index(const constantPoolHandle& cpool);

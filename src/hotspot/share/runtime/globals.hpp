@@ -749,22 +749,6 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
   product(bool, OmitStackTraceInFastThrow, true,                            \
           "Omit backtraces for some 'hot' exceptions in optimized code")    \
                                                                             \
-  product(bool, ProfilerPrintByteCodeStatistics, false,                     \
-          "Print bytecode statistics when dumping profiler output")         \
-                                                                            \
-  product(bool, ProfilerRecordPC, false,                                    \
-          "Collect ticks for each 16 byte interval of compiled code")       \
-                                                                            \
-  product(bool, ProfileVM, false,                                           \
-          "Profile ticks that fall within VM (either in the VM Thread "     \
-          "or VM code called through stubs)")                               \
-                                                                            \
-  product(bool, ProfileIntervals, false,                                    \
-          "Print profiles for each interval (see ProfileIntervalsTicks)")   \
-                                                                            \
-  notproduct(bool, ProfilerCheckIntervals, false,                           \
-          "Collect and print information on spacing of profiler ticks")     \
-                                                                            \
   product(bool, PrintWarnings, true,                                        \
           "Print JVM warnings to output stream")                            \
                                                                             \
@@ -1649,23 +1633,6 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
                                                                             \
   develop(intx, MethodHistogramCutoff, 100,                                 \
           "The cutoff value for method invocation histogram (+CountCalls)") \
-                                                                            \
-  diagnostic(intx, ProfilerNumberOfInterpretedMethods, 25,                  \
-          "Number of interpreted methods to show in profile")               \
-                                                                            \
-  diagnostic(intx, ProfilerNumberOfCompiledMethods, 25,                     \
-          "Number of compiled methods to show in profile")                  \
-                                                                            \
-  diagnostic(intx, ProfilerNumberOfStubMethods, 25,                         \
-          "Number of stub methods to show in profile")                      \
-                                                                            \
-  diagnostic(intx, ProfilerNumberOfRuntimeStubNodes, 25,                    \
-          "Number of runtime stub nodes to show in profile")                \
-                                                                            \
-  product(intx, ProfileIntervalsTicks, 100,                                 \
-          "Number of ticks between printing of interval profile "           \
-          "(+ProfileIntervals)")                                            \
-          range(0, max_intx)                                                \
                                                                             \
   develop(intx, DontYieldALotInterval,    10,                               \
           "Interval between which yields will be dropped (milliseconds)")   \

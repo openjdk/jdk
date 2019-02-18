@@ -883,7 +883,7 @@ void PSParallelCompact::post_initialize() {
     new PCReferenceProcessor(&_span_based_discoverer,
                              &_is_alive_closure); // non-header is alive closure
 
-  _counters = new CollectorCounters("PSParallelCompact", 1);
+  _counters = new CollectorCounters("Parallel full collection pauses", 1);
 
   // Initialize static fields in ParCompactionManager.
   ParCompactionManager::initialize(mark_bitmap());

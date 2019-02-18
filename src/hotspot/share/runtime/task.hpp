@@ -58,13 +58,6 @@ class PeriodicTask: public CHeapObj<mtInternal> {
   // Can only be called by the WatcherThread
   static void real_time_tick(int delay_time);
 
-#ifndef PRODUCT
-  static elapsedTimer _timer;                      // measures time between ticks
-  static int _ticks;                               // total number of ticks
-  static int _intervalHistogram[max_interval];     // to check spacing of timer interrupts
- public:
-  static void print_intervals();
-#endif
   // Only the WatcherThread can cause us to execute PeriodicTasks
   friend class WatcherThread;
  public:

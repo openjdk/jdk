@@ -116,6 +116,28 @@ ifneq ($(call equals, $(EQUALS_VALUE2), $(EQUALS_EMPTY)), )
 endif
 
 ################################################################################
+# Test boolean operators
+
+$(eval $(call assert-equals, $(call And,  true  true  true ), true))
+$(eval $(call assert-equals, $(call And,  true  false true ), false))
+$(eval $(call assert-equals, $(call And,  false false false ), false))
+$(eval $(call assert-equals, $(call And, true), true))
+$(eval $(call assert-equals, $(call And, false), false))
+$(eval $(call assert-equals, $(call And,    ), true))
+
+$(eval $(call assert-equals, $(call Or,  true  true  true ), true))
+$(eval $(call assert-equals, $(call Or,  true  false true ), true))
+$(eval $(call assert-equals, $(call Or,  false false false ), false))
+$(eval $(call assert-equals, $(call Or, true), true))
+$(eval $(call assert-equals, $(call Or, false), false))
+$(eval $(call assert-equals, $(call Or,    ), false))
+
+# We cannot catch $(error) while testing, but you can enable this manually
+# by uncommenting and watch make fails.
+#$(eval $(call assert-equals, $(call And,  non-boolean  ), $(error ...)))
+#$(eval $(call assert-equals, $(call Or,  non-boolean  ), $(error ...)))
+
+################################################################################
 # Test remove-prefixes
 
 $(eval $(call assert-equals, \

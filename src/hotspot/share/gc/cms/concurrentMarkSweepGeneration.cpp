@@ -636,8 +636,8 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
   }
 
   NOT_PRODUCT(_overflow_counter = CMSMarkStackOverflowInterval;)
-  _gc_counters = new CollectorCounters("CMS", 1);
-  _cgc_counters = new CollectorCounters("CMS stop-the-world phases", 2);
+  _gc_counters = new CollectorCounters("CMS full collection pauses", 1);
+  _cgc_counters = new CollectorCounters("CMS concurrent cycle pauses", 2);
   _completed_initialization = true;
   _inter_sweep_timer.start();  // start of time
 }

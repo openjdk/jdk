@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -383,8 +383,7 @@ void JfrStackTrace::resolve_linenos() {
 }
 
 bool JfrStackTrace::record_safe(JavaThread* thread, int skip, bool leakp /* false */) {
-  assert(SafepointSynchronize::safepoint_safe(thread, thread->thread_state())
-         || thread == Thread::current(), "Thread stack needs to be walkable");
+  assert(thread == Thread::current(), "Thread stack needs to be walkable");
   vframeStream vfs(thread);
   u4 count = 0;
   _reached_root = true;

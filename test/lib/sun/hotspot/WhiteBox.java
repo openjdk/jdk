@@ -216,6 +216,7 @@ public class WhiteBox {
   public native void NMTUncommitMemory(long addr, long size);
   public native void NMTReleaseMemory(long addr, long size);
   public native long NMTMallocWithPseudoStack(long size, int index);
+  public native long NMTMallocWithPseudoStackAndType(long size, int index, int type);
   public native boolean NMTChangeTrackingLevel();
   public native int NMTGetHashSize();
 

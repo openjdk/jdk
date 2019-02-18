@@ -31,7 +31,7 @@ include MakeBase.gmk
 include JavaCompilation.gmk
 include SetupJavaCompilers.gmk
 
-ifeq ($(OPENJDK_TARGET_OS), windows)
+ifeq ($(call isTargetOs, windows), true)
   # The next part is a bit hacky. We include the CompileJvm.gmk to be
   # able to extact flags, but we do not wish to execute the rules.
 
@@ -46,12 +46,12 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
 
   # Helper macro to convert a unix path to a Windows path, suitable for
   # inclusion in a command line.
-  ifeq ($(OPENJDK_BUILD_OS_ENV), windows.cygwin)
+  ifeq ($(call isBuildOsEnv, windows.cygwin), true)
     FixPath = \
         $(strip $(subst \,\\,$(shell $(CYGPATH) -w $1)))
     FixLinuxExecutable = \
         $(call FixPath, $1)
-  else ifeq ($(OPENJDK_BUILD_OS_ENV), windows.wsl)
+  else ifeq ($(call isBuildOsEnv, windows.wsl), true)
     FixPath = \
         $(strip $(subst \,\\,$(shell $(WSLPATH) -w $1)))
     FixLinuxExecutable = \

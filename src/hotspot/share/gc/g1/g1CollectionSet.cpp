@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
+#include "gc/g1/g1CollectionSetCandidates.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ParScanThreadState.hpp"
 #include "gc/g1/g1Policy.hpp"
@@ -44,10 +45,6 @@ G1GCPhaseTimes* G1CollectionSet::phase_times() {
   return _policy->phase_times();
 }
 
-CollectionSetChooser* G1CollectionSet::cset_chooser() {
-  return _cset_chooser;
-}
-
 double G1CollectionSet::predict_region_elapsed_time_ms(HeapRegion* hr) {
   return _policy->predict_region_elapsed_time_ms(hr, collector_state()->in_young_only_phase());
 }
@@ -55,7 +52,7 @@ double G1CollectionSet::predict_region_elapsed_time_ms(HeapRegion* hr) {
 G1CollectionSet::G1CollectionSet(G1CollectedHeap* g1h, G1Policy* policy) :
   _g1h(g1h),
   _policy(policy),
-  _cset_chooser(new CollectionSetChooser()),
+  _candidates(NULL),
   _eden_region_length(0),
   _survivor_region_length(0),
   _old_region_length(0),
@@ -80,7 +77,7 @@ G1CollectionSet::~G1CollectionSet() {
     FREE_C_HEAP_ARRAY(uint, _collection_set_regions);
   }
   free_optional_regions();
-  delete _cset_chooser;
+  clear_candidates();
 }
 
 void G1CollectionSet::init_region_lengths(uint eden_cset_region_length,
@@ -118,6 +115,11 @@ void G1CollectionSet::free_optional_regions() {
     FREE_C_HEAP_ARRAY(HeapRegion*, _optional_regions);
     _optional_regions = NULL;
   }
+}
+
+void G1CollectionSet::clear_candidates() {
+  delete _candidates;
+  _candidates = NULL;
 }
 
 void G1CollectionSet::set_recorded_rs_lengths(size_t rs_lengths) {
@@ -439,14 +441,14 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
 }
 
 void G1CollectionSet::add_as_old(HeapRegion* hr) {
-  cset_chooser()->pop(); // already have region via peek()
+  candidates()->pop_front(); // already have region via peek()
   _g1h->old_set_remove(hr);
   add_old_region(hr);
 }
 
 void G1CollectionSet::add_as_optional(HeapRegion* hr) {
   assert(_optional_regions != NULL, "Must not be called before array is allocated");
-  cset_chooser()->pop(); // already have region via peek()
+  candidates()->pop_front(); // already have region via peek()
   _g1h->old_set_remove(hr);
   add_optional_region(hr);
 }
@@ -480,7 +482,7 @@ void G1CollectionSet::finalize_old_part(double time_remaining_ms) {
   uint expensive_region_num = 0;
 
   if (collector_state()->in_mixed_phase()) {
-    cset_chooser()->verify();
+    candidates()->verify();
     const uint min_old_cset_length = _policy->calc_min_old_cset_length();
     const uint max_old_cset_length = MAX2(min_old_cset_length, _policy->calc_max_old_cset_length());
     bool check_time_remaining = _policy->adaptive_young_list_length();
@@ -490,7 +492,7 @@ void G1CollectionSet::finalize_old_part(double time_remaining_ms) {
                               "time remaining %1.2fms, optional threshold %1.2fms",
                               min_old_cset_length, max_old_cset_length, time_remaining_ms, optional_threshold_ms);
 
-    HeapRegion* hr = cset_chooser()->peek();
+    HeapRegion* hr = candidates()->peek_front();
     while (hr != NULL) {
       if (old_region_length() + optional_region_length() >= max_old_cset_length) {
         // Added maximum number of old regions to the CSet.
@@ -502,7 +504,7 @@ void G1CollectionSet::finalize_old_part(double time_remaining_ms) {
 
       // Stop adding regions if the remaining reclaimable space is
       // not above G1HeapWastePercent.
-      size_t reclaimable_bytes = cset_chooser()->remaining_reclaimable_bytes();
+      size_t reclaimable_bytes = candidates()->remaining_reclaimable_bytes();
       double reclaimable_percent = _policy->reclaimable_bytes_percent(reclaimable_bytes);
       double threshold = (double) G1HeapWastePercent;
       if (reclaimable_percent <= threshold) {
@@ -551,13 +553,13 @@ void G1CollectionSet::finalize_old_part(double time_remaining_ms) {
           break;
         }
       }
-      hr = cset_chooser()->peek();
+      hr = candidates()->peek_front();
     }
     if (hr == NULL) {
       log_debug(gc, ergo, cset)("Finish adding old regions to CSet (candidate old regions not available)");
     }
 
-    cset_chooser()->verify();
+    candidates()->verify();
   }
 
   stop_incremental_building();
@@ -630,15 +632,15 @@ bool G1OptionalCSet::evacuation_failed() {
 G1OptionalCSet::~G1OptionalCSet() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   while (!is_empty()) {
-    // We want to return regions not evacuated to the
-    // chooser in reverse order to maintain the old order.
+    // We want to return regions not evacuated to the collection set candidates
+    // in reverse order to maintain the old order.
     HeapRegion* hr = _cset->remove_last_optional_region();
     assert(hr != NULL, "Should be valid region left");
     _pset->record_unused_optional_region(hr);
     g1h->old_set_add(hr);
     g1h->clear_in_cset(hr);
     hr->set_index_in_opt_cset(InvalidCSetIndex);
-    _cset->cset_chooser()->push(hr);
+    _cset->candidates()->push_front(hr);
   }
   _cset->free_optional_regions();
 }

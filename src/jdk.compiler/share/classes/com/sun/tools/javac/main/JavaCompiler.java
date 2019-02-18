@@ -1014,7 +1014,11 @@ public class JavaCompiler {
      * Parses a list of files.
      */
    public List<JCCompilationUnit> parseFiles(Iterable<JavaFileObject> fileObjects) {
-       if (shouldStop(CompileState.PARSE))
+       return parseFiles(fileObjects, false);
+   }
+
+   public List<JCCompilationUnit> parseFiles(Iterable<JavaFileObject> fileObjects, boolean force) {
+       if (!force && shouldStop(CompileState.PARSE))
            return List.nil();
 
         //parse all files

@@ -25,9 +25,9 @@
 #ifndef SHARE_GC_G1_G1PARSCANTHREADSTATE_HPP
 #define SHARE_GC_G1_G1PARSCANTHREADSTATE_HPP
 
-#include "gc/g1/dirtyCardQueue.hpp"
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
+#include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/g1/g1OopClosures.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RemSet.hpp"
@@ -46,7 +46,7 @@ class outputStream;
 class G1ParScanThreadState : public CHeapObj<mtGC> {
   G1CollectedHeap* _g1h;
   RefToScanQueue*  _refs;
-  DirtyCardQueue   _dcq;
+  G1DirtyCardQueue _dcq;
   G1CardTable*     _ct;
   G1EvacuationRootClosures* _closures;
 
@@ -77,7 +77,7 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
 
 #define PADDING_ELEM_NUM (DEFAULT_CACHE_LINE_SIZE / sizeof(size_t))
 
-  DirtyCardQueue& dirty_card_queue()             { return _dcq;  }
+  G1DirtyCardQueue& dirty_card_queue()           { return _dcq; }
   G1CardTable* ct()                              { return _ct; }
 
   InCSetState dest(InCSetState original) const {

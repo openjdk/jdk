@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -91,6 +91,8 @@ com/sun/jdi/PopAsynchronousTest.java                                    8195635 
 com/sun/jdi/PopAndStepTest.java                                         8195635   generic-all
 com/sun/jdi/EarlyReturnTest.java                                        8195635   generic-all
 com/sun/jdi/EarlyReturnTest.java                                        8195635   generic-all
+
+com/sun/jdi/RedefineCrossEvent.java                                     8218396   generic-all
 
 # Next JFR tests fail with Graal. Assuming 8193210.
 jdk/jfr/event/compiler/TestCodeSweeper.java              8193210   generic-all

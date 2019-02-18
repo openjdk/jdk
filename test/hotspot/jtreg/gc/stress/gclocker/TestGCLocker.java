@@ -30,7 +30,6 @@ package gc.stress.gclocker;
 import java.lang.management.MemoryPoolMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryUsage;
-import java.nio.ByteBuffer;
 import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.List;

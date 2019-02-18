@@ -108,7 +108,7 @@ GENSRC_JAVA_DESKTOP += $(GENSRC_AWT_ICONS)
 
 ################################################################################
 
-ifeq ($(OPENJDK_TARGET_OS), macosx)
+ifeq ($(call isTargetOs, macosx), true)
 
   GENSRC_OSX_ICONS_DST := $(SUPPORT_OUTPUTDIR)/headers/java.desktop
   GENSRC_OSX_ICONS := $(GENSRC_OSX_ICONS_DST)/AWTIconData.h

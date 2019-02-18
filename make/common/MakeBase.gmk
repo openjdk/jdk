@@ -258,7 +258,7 @@ MakeTargetDir = \
 ################################################################################
 # All install-file and related macros automatically call DecodeSpace when needed.
 
-ifeq ($(OPENJDK_TARGET_OS),solaris)
+ifeq ($(call isTargetOs, solaris), true)
   # On Solaris, if the target is a symlink and exists, cp won't overwrite.
   # Cp has to operate in recursive mode to allow for -P flag, to preserve soft links. If the
   # name of the target file differs from the source file, rename after copy.
@@ -284,7 +284,7 @@ ifeq ($(OPENJDK_TARGET_OS),solaris)
 	  $(CP) -f '$(call DecodeSpace, $<)' '$(call DecodeSpace, $@)'; \
 	fi
   endef
-else ifeq ($(OPENJDK_TARGET_OS),macosx)
+else ifeq ($(call isTargetOs, macosx), true)
   # On mac, extended attributes sometimes creep into the source files, which may later
   # cause the creation of ._* files which confuses testing. Clear these with xattr if
   # set. Some files get their write permissions removed after being copied to the
@@ -418,7 +418,7 @@ endif
 # unchanged.
 # This is normally not needed since we use the FIXPATH prefix for command lines,
 # but might be needed in certain circumstances.
-ifeq ($(OPENJDK_TARGET_OS), windows)
+ifeq ($(call isTargetOs, windows), true)
   FixPath = \
       $(shell $(CYGPATH) -m $1)
 else

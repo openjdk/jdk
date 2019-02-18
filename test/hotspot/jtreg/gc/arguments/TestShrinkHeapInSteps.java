@@ -37,7 +37,6 @@ package gc.arguments;
 
 import java.util.LinkedList;
 import java.util.Arrays;
-import java.util.Collections;
 import jdk.test.lib.Utils;
 
 public class TestShrinkHeapInSteps {

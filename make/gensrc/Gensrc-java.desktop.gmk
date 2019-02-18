@@ -28,11 +28,11 @@ include GensrcCommonJdk.gmk
 # Hook to include the corresponding custom file, if present.
 $(eval $(call IncludeCustomExtension, gensrc/Gensrc-java.desktop.gmk))
 
-ifneq ($(OPENJDK_TARGET_OS), windows)
+ifeq ($(call isTargetOs, windows), false)
   include GensrcIcons.gmk
 endif
 
-ifneq ($(filter $(OPENJDK_TARGET_OS), linux solaris aix), )
+ifeq ($(call isTargetOs, linux solaris aix), true)
   include GensrcX11Wrappers.gmk
 endif
 
@@ -52,21 +52,21 @@ PROP_SRC_DIRS := \
     $(TOPDIR)/src/java.desktop/share/classes/sun/print/resources \
     #
 
-ifeq ($(OPENJDK_TARGET_OS), macosx)
+ifeq ($(call isTargetOs, macosx), true)
   PROP_SRC_DIRS += \
       $(TOPDIR)/src/java.desktop/macosx/classes/com/apple/laf/resources \
       $(TOPDIR)/src/java.desktop/macosx/classes/sun/awt/resources \
       #
 endif
 
-ifeq ($(OPENJDK_TARGET_OS), windows)
+ifeq ($(call isTargetOs, windows), true)
   PROP_SRC_DIRS += \
       $(TOPDIR)/src/java.desktop/windows/classes/com/sun/java/swing/plaf/windows/resources \
       $(TOPDIR)/src/java.desktop/windows/classes/sun/awt/windows \
       #
 endif
 
-ifeq ($(filter $(OPENJDK_TARGET_OS), windows macosx), )
+ifeq ($(call isTargetOs, windows macosx), false)
   PROP_SRC_DIRS += $(TOPDIR)/src/java.desktop/share/classes/com/sun/java/swing/plaf/gtk/resources
 endif
 

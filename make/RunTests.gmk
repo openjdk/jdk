@@ -61,7 +61,7 @@ define SetTestOpt
 endef
 
 # Setup _NT_SYMBOL_PATH on Windows
-ifeq ($(OPENJDK_TARGET_OS), windows)
+ifeq ($(call isTargetOs, windows), true)
   ifndef _NT_SYMBOL_PATH
     # Can't use PathList here as it adds quotes around the value.
     _NT_SYMBOL_PATH := \
@@ -224,7 +224,7 @@ TEST_JOBS_FACTOR_MACHINE ?= 1
 
 ifeq ($(TEST_JOBS), 0)
   CORES_DIVIDER := 2
-  ifeq ($(OPENJDK_TARGET_CPU_ARCH), sparc)
+  ifeq ($(call isTargetCpuArch, sparc), true)
     # For smaller SPARC machines we see reasonable scaling of throughput up to
     # cpus/4 without affecting test reliability. On the bigger machines, cpus/4
     # causes intermittent timeouts.
@@ -808,7 +808,7 @@ define SetupRunJtregTestBody
   $1_JTREG_MAX_RAM_PERCENTAGE := $$(shell $$(EXPR) 25 / $$($1_JTREG_JOBS))
 
   # SPARC is in general slower per core so need to scale up timeouts a bit.
-  ifeq ($(OPENJDK_TARGET_CPU_ARCH), sparc)
+  ifeq ($(call isTargetCpuArch, sparc), true)
     JTREG_TIMEOUT_FACTOR ?= 8
   else
     JTREG_TIMEOUT_FACTOR ?= 4
@@ -835,7 +835,7 @@ define SetupRunJtregTestBody
   $1_JTREG_BASIC_OPTIONS += -e:JDK8_HOME=$$(BOOT_JDK)
   # If running on Windows, propagate the _NT_SYMBOL_PATH to enable
   # symbol lookup in hserr files
-  ifeq ($$(OPENJDK_TARGET_OS), windows)
+  ifeq ($$(call isTargetOs, windows), true)
     $1_JTREG_BASIC_OPTIONS += -e:_NT_SYMBOL_PATH
   endif
 

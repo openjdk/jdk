@@ -55,12 +55,12 @@ public class TestReclaimStringsLeaksMemory {
     public static final int ReservedThreshold = 70000;
 
     public static void main(String[] args) throws Exception {
-        ArrayList<String> baseargs = new ArrayList(Arrays.asList( "-Xms256M",
-                                                                  "-Xmx256M",
-                                                                  "-Xlog:gc*",
-                                                                  "-XX:NativeMemoryTracking=summary",
-                                                                  "-XX:+UnlockDiagnosticVMOptions",
-                                                                  "-XX:+PrintNMTStatistics" ));
+        ArrayList<String> baseargs = new ArrayList<>(Arrays.asList("-Xms256M",
+                                                                   "-Xmx256M",
+                                                                   "-Xlog:gc*",
+                                                                   "-XX:NativeMemoryTracking=summary",
+                                                                   "-XX:+UnlockDiagnosticVMOptions",
+                                                                   "-XX:+PrintNMTStatistics" ));
         baseargs.addAll(Arrays.asList(args));
         baseargs.add(GCTest.class.getName());
         ProcessBuilder pb_default =

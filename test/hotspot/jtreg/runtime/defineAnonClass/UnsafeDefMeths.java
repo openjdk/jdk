@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  * @library /testlibrary
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.management
+ *          java.base/jdk.internal.misc
  * @compile -XDignore.symbol.file=true UnsafeDefMeths.java
  * @run main UnsafeDefMeths
  */
@@ -35,7 +36,7 @@
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.org.objectweb.asm.Type;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
@@ -57,18 +58,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.V1_8;
 
 public class UnsafeDefMeths {
 
-    static final Unsafe UNSAFE;
-
-    static {
-        try {
-            Field unsafeField = Unsafe.class.getDeclaredField("theUnsafe");
-            unsafeField.setAccessible(true);
-            UNSAFE = (Unsafe) unsafeField.get(null);
-        }
-        catch (Exception e) {
-            throw new InternalError(e);
-        }
-    }
+    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     interface Resource {
         Pointer ptr();

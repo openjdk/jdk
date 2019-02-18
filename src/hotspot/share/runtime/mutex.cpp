@@ -401,15 +401,10 @@ void Monitor::set_owner_implementation(Thread *new_owner) {
     // of m2 be less than the rank of m1.
     // The rank Mutex::native  is an exception in that it is not subject
     // to the verification rules.
-    // Here are some further notes relating to mutex acquisition anomalies:
-    // . it is also ok to acquire Safepoint_lock at the very end while we
-    //   already hold Terminator_lock - may happen because of periodic safepoints
     if (this->rank() != Mutex::native &&
         this->rank() != Mutex::suspend_resume &&
         locks != NULL && locks->rank() <= this->rank() &&
-        !SafepointSynchronize::is_at_safepoint() &&
-        !(this == Safepoint_lock && contains(locks, Terminator_lock) &&
-        SafepointSynchronize::is_synchronizing())) {
+        !SafepointSynchronize::is_at_safepoint()) {
       new_owner->print_owned_locks();
       fatal("acquiring lock %s/%d out of order with lock %s/%d -- "
             "possible deadlock", this->name(), this->rank(),

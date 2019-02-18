@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "gc/g1/g1BarrierSetAssembler.hpp"
 #include "gc/g1/g1BarrierSetRuntime.hpp"
 #include "gc/g1/g1CardTable.hpp"
+#include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/g1/g1SATBMarkQueueSet.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/heapRegion.hpp"
@@ -315,7 +316,7 @@ static void generate_dirty_card_log_enqueue(jbyte* byte_map_base) {
   int dirty_card_q_buf_byte_offset = in_bytes(G1ThreadLocalData::dirty_card_queue_buffer_offset());
   __ bind(restart);
 
-  // Load the index into the update buffer. DirtyCardQueue::_index is
+  // Load the index into the update buffer. G1DirtyCardQueue::_index is
   // a size_t so ld_ptr is appropriate here.
   __ ld_ptr(G2_thread, dirty_card_q_index_byte_offset, L0);
 
@@ -333,7 +334,7 @@ static void generate_dirty_card_log_enqueue(jbyte* byte_map_base) {
   __ bind(refill);
   address handle_zero =
     CAST_FROM_FN_PTR(address,
-                     &DirtyCardQueueSet::handle_zero_index_for_thread);
+                     &G1DirtyCardQueueSet::handle_zero_index_for_thread);
   // This should be rare enough that we can afford to save all the
   // scratch registers that the calling context might be using.
   __ mov(G1_scratch, L3);
@@ -673,7 +674,7 @@ void G1BarrierSetAssembler::generate_c1_post_barrier_runtime_stub(StubAssembler*
 
   __ bind(restart);
 
-  // Get the index into the update buffer. DirtyCardQueue::_index is
+  // Get the index into the update buffer. G1DirtyCardQueue::_index is
   // a size_t so ld_ptr is appropriate here.
   __ ld_ptr(G2_thread, dirty_card_q_index_byte_offset, tmp3);
 
@@ -694,7 +695,7 @@ void G1BarrierSetAssembler::generate_c1_post_barrier_runtime_stub(StubAssembler*
 
   __ call_VM_leaf(L7_thread_cache,
                   CAST_FROM_FN_PTR(address,
-                                   DirtyCardQueueSet::handle_zero_index_for_thread),
+                                   G1DirtyCardQueueSet::handle_zero_index_for_thread),
                   G2_thread);
 
   __ restore_live_registers(true);

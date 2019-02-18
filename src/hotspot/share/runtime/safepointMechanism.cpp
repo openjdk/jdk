@@ -86,6 +86,9 @@ void SafepointMechanism::default_initialize() {
 void SafepointMechanism::block_if_requested_slow(JavaThread *thread) {
   // local poll already checked, if used.
   if (global_poll()) {
+    // Any load in ::block must not pass the global poll load.
+    // Otherwise we might load an old safepoint counter (for example).
+    OrderAccess::loadload();
     SafepointSynchronize::block(thread);
   }
   if (uses_thread_local_poll() && thread->has_handshake()) {

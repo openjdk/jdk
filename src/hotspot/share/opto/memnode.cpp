@@ -99,6 +99,9 @@ void MemNode::dump_spec(outputStream *st) const {
   if (_mismatched_access) {
     st->print(" mismatched");
   }
+  if (_unsafe_access) {
+    st->print(" unsafe");
+  }
 }
 
 void MemNode::dump_adr_type(const Node* mem, const TypePtr* adr_type, outputStream *st) {
@@ -789,7 +792,7 @@ bool LoadNode::is_immutable_value(Node* adr) {
 //----------------------------LoadNode::make-----------------------------------
 // Polymorphic factory method:
 Node *LoadNode::make(PhaseGVN& gvn, Node *ctl, Node *mem, Node *adr, const TypePtr* adr_type, const Type *rt, BasicType bt, MemOrd mo,
-                     ControlDependency control_dependency, bool unaligned, bool mismatched) {
+                     ControlDependency control_dependency, bool unaligned, bool mismatched, bool unsafe) {
   Compile* C = gvn.C;
 
   // sanity check the alias category against the created node type
@@ -837,6 +840,9 @@ Node *LoadNode::make(PhaseGVN& gvn, Node *ctl, Node *mem, Node *adr, const TypeP
   if (mismatched) {
     load->set_mismatched_access();
   }
+  if (unsafe) {
+    load->set_unsafe_access();
+  }
   if (load->Opcode() == Op_LoadN) {
     Node* ld = gvn.transform(load);
     return new DecodeNNode(ld, ld->bottom_type()->make_ptr());
@@ -846,7 +852,7 @@ Node *LoadNode::make(PhaseGVN& gvn, Node *ctl, Node *mem, Node *adr, const TypeP
 }
 
 LoadLNode* LoadLNode::make_atomic(Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, const Type* rt, MemOrd mo,
-                                  ControlDependency control_dependency, bool unaligned, bool mismatched) {
+                                  ControlDependency control_dependency, bool unaligned, bool mismatched, bool unsafe) {
   bool require_atomic = true;
   LoadLNode* load = new LoadLNode(ctl, mem, adr, adr_type, rt->is_long(), mo, control_dependency, require_atomic);
   if (unaligned) {
@@ -855,11 +861,14 @@ LoadLNode* LoadLNode::make_atomic(Node* ctl, Node* mem, Node* adr, const TypePtr
   if (mismatched) {
     load->set_mismatched_access();
   }
+  if (unsafe) {
+    load->set_unsafe_access();
+  }
   return load;
 }
 
 LoadDNode* LoadDNode::make_atomic(Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, const Type* rt, MemOrd mo,
-                                  ControlDependency control_dependency, bool unaligned, bool mismatched) {
+                                  ControlDependency control_dependency, bool unaligned, bool mismatched, bool unsafe) {
   bool require_atomic = true;
   LoadDNode* load = new LoadDNode(ctl, mem, adr, adr_type, rt, mo, control_dependency, require_atomic);
   if (unaligned) {
@@ -867,6 +876,9 @@ LoadDNode* LoadDNode::make_atomic(Node* ctl, Node* mem, Node* adr, const TypePtr
   }
   if (mismatched) {
     load->set_mismatched_access();
+  }
+  if (unsafe) {
+    load->set_unsafe_access();
   }
   return load;
 }
@@ -978,7 +990,8 @@ Node* LoadNode::can_see_arraycopy_value(Node* st, PhaseGVN* phase) const {
 Node* MemNode::can_see_stored_value(Node* st, PhaseTransform* phase) const {
   Node* ld_adr = in(MemNode::Address);
   intptr_t ld_off = 0;
-  AllocateNode* ld_alloc = AllocateNode::Ideal_allocation(ld_adr, phase, ld_off);
+  Node* ld_base = AddPNode::Ideal_base_and_offset(ld_adr, phase, ld_off);
+  Node* ld_alloc = AllocateNode::Ideal_allocation(ld_base, phase);
   const TypeInstPtr* tp = phase->type(ld_adr)->isa_instptr();
   Compile::AliasType* atp = (tp != NULL) ? phase->C->alias_type(tp) : NULL;
   // This is more general than load from boxing objects.
@@ -1031,16 +1044,21 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseTransform* phase) const {
     if (st->is_Store()) {
       Node* st_adr = st->in(MemNode::Address);
       if (!phase->eqv(st_adr, ld_adr)) {
-        // Try harder before giving up...  Match raw and non-raw pointers.
+        // Try harder before giving up. Unify base pointers with casts (e.g., raw/non-raw pointers).
         intptr_t st_off = 0;
-        AllocateNode* alloc = AllocateNode::Ideal_allocation(st_adr, phase, st_off);
-        if (alloc == NULL)       return NULL;
-        if (alloc != ld_alloc)   return NULL;
-        if (ld_off != st_off)    return NULL;
+        Node* st_base = AddPNode::Ideal_base_and_offset(st_adr, phase, st_off);
+        if (ld_base == NULL)                        return NULL;
+        if (st_base == NULL)                        return NULL;
+        if (ld_base->uncast() != st_base->uncast()) return NULL;
+        if (ld_off != st_off)                       return NULL;
+        if (ld_off == Type::OffsetBot)              return NULL;
+        // Same base, same offset.
+        // Possible improvement for arrays: check index value instead of absolute offset.
+
         // At this point we have proven something like this setup:
-        //  A = Allocate(...)
-        //  L = LoadQ(,  AddP(CastPP(, A.Parm),, #Off))
-        //  S = StoreQ(, AddP(,        A.Parm  , #Off), V)
+        //   B = << base >>
+        //   L =  LoadQ(AddP(Check/CastPP(B), #Off))
+        //   S = StoreQ(AddP(             B , #Off), V)
         // (Actually, we haven't yet proven the Q's are the same.)
         // In other words, we are loading from a casted version of
         // the same pointer-and-offset that we stored to.

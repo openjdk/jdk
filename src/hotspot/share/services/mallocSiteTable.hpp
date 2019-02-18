@@ -37,15 +37,12 @@
 // MallocSite represents a code path that eventually calls
 // os::malloc() to allocate memory
 class MallocSite : public AllocationSite<MemoryCounter> {
- private:
-  MEMFLAGS _flags;
-
  public:
   MallocSite() :
-    AllocationSite<MemoryCounter>(NativeCallStack::empty_stack()), _flags(mtNone) {}
+    AllocationSite<MemoryCounter>(NativeCallStack::empty_stack(), mtNone) {}
 
   MallocSite(const NativeCallStack& stack, MEMFLAGS flags) :
-    AllocationSite<MemoryCounter>(stack), _flags(flags) {}
+    AllocationSite<MemoryCounter>(stack, flags) {}
 
 
   void allocate(size_t size)      { data()->allocate(size);   }
@@ -55,7 +52,6 @@ class MallocSite : public AllocationSite<MemoryCounter> {
   size_t size()  const { return peek()->size(); }
   // The number of calls were made
   size_t count() const { return peek()->count(); }
-  MEMFLAGS flags() const  { return (MEMFLAGS)_flags; }
 };
 
 // Malloc site hashtable entry

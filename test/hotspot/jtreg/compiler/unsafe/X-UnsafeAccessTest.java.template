@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,15 +156,15 @@ public class $Qualifier$UnsafeAccessTest$Type$ {
     static void testAccess(Object base, long offset) {
         // Plain
         {
-            UNSAFE.put$Type$(base, offset, $value1$);
-            $type$ x = UNSAFE.get$Type$(base, offset);
+            UNSAFE.put$MethodAffix$(base, offset, $value1$);
+            $type$ x = UNSAFE.get$MethodAffix$(base, offset);
             assertEquals(x, $value1$, "set $type$ value");
         }
 
         // Volatile
         {
-            UNSAFE.put$Type$Volatile(base, offset, $value2$);
-            $type$ x = UNSAFE.get$Type$Volatile(base, offset);
+            UNSAFE.put$MethodAffix$Volatile(base, offset, $value2$);
+            $type$ x = UNSAFE.get$MethodAffix$Volatile(base, offset);
             assertEquals(x, $value2$, "putVolatile $type$ value");
         }
 
@@ -172,8 +172,8 @@ public class $Qualifier$UnsafeAccessTest$Type$ {
 #if[Ordered]
         // Lazy
         {
-            UNSAFE.putOrdered$Type$(base, offset, $value1$);
-            $type$ x = UNSAFE.get$Type$Volatile(base, offset);
+            UNSAFE.putOrdered$MethodAffix$(base, offset, $value1$);
+            $type$ x = UNSAFE.get$MethodAffix$Volatile(base, offset);
             assertEquals(x, $value1$, "putRelease $type$ value");
         }
 #end[Ordered]
@@ -182,15 +182,15 @@ public class $Qualifier$UnsafeAccessTest$Type$ {
 #if[JdkInternalMisc]
         // Lazy
         {
-            UNSAFE.put$Type$Release(base, offset, $value1$);
-            $type$ x = UNSAFE.get$Type$Acquire(base, offset);
+            UNSAFE.put$MethodAffix$Release(base, offset, $value1$);
+            $type$ x = UNSAFE.get$MethodAffix$Acquire(base, offset);
             assertEquals(x, $value1$, "putRelease $type$ value");
         }
 
         // Opaque
         {
-            UNSAFE.put$Type$Opaque(base, offset, $value2$);
-            $type$ x = UNSAFE.get$Type$Opaque(base, offset);
+            UNSAFE.put$MethodAffix$Opaque(base, offset, $value2$);
+            $type$ x = UNSAFE.get$MethodAffix$Opaque(base, offset);
             assertEquals(x, $value2$, "putOpaque $type$ value");
         }
 #end[JdkInternalMisc]
@@ -199,38 +199,38 @@ public class $Qualifier$UnsafeAccessTest$Type$ {
 #if[Unaligned]
         // Unaligned
         {
-            UNSAFE.put$Type$Unaligned(base, offset, $value2$);
-            $type$ x = UNSAFE.get$Type$Unaligned(base, offset);
+            UNSAFE.put$MethodAffix$Unaligned(base, offset, $value2$);
+            $type$ x = UNSAFE.get$MethodAffix$Unaligned(base, offset);
             assertEquals(x, $value2$, "putUnaligned $type$ value");
         }
 
         {
-            UNSAFE.put$Type$Unaligned(base, offset, $value1$, true);
-            $type$ x = UNSAFE.get$Type$Unaligned(base, offset, true);
+            UNSAFE.put$MethodAffix$Unaligned(base, offset, $value1$, true);
+            $type$ x = UNSAFE.get$MethodAffix$Unaligned(base, offset, true);
             assertEquals(x, $value1$, "putUnaligned big endian $type$ value");
         }
 
         {
-            UNSAFE.put$Type$Unaligned(base, offset, $value2$, false);
-            $type$ x = UNSAFE.get$Type$Unaligned(base, offset, false);
+            UNSAFE.put$MethodAffix$Unaligned(base, offset, $value2$, false);
+            $type$ x = UNSAFE.get$MethodAffix$Unaligned(base, offset, false);
             assertEquals(x, $value2$, "putUnaligned little endian $type$ value");
         }
 #end[Unaligned]
 #end[JdkInternalMisc]
 
 #if[CAS]
-        UNSAFE.put$Type$(base, offset, $value1$);
+        UNSAFE.put$MethodAffix$(base, offset, $value1$);
 
         // Compare
         {
 #if[JdkInternalMisc]
-            boolean r = UNSAFE.compareAndSet$Type$(base, offset, $value1$, $value2$);
+            boolean r = UNSAFE.compareAndSet$MethodAffix$(base, offset, $value1$, $value2$);
             assertEquals(r, true, "success compareAndSet $type$");
 #else[JdkInternalMisc]
-            boolean r = UNSAFE.compareAndSwap$Type$(base, offset, $value1$, $value2$);
+            boolean r = UNSAFE.compareAndSwap$MethodAffix$(base, offset, $value1$, $value2$);
             assertEquals(r, true, "success compareAndSwap $type$");
 #end[JdkInternalMisc]
-            $type$ x = UNSAFE.get$Type$(base, offset);
+            $type$ x = UNSAFE.get$MethodAffix$(base, offset);
 #if[JdkInternalMisc]
             assertEquals(x, $value2$, "success compareAndSet $type$ value");
 #else[JdkInternalMisc]
@@ -240,13 +240,13 @@ public class $Qualifier$UnsafeAccessTest$Type$ {
 
         {
 #if[JdkInternalMisc]
-            boolean r = UNSAFE.compareAndSet$Type$(base, offset, $value1$, $value3$);
+            boolean r = UNSAFE.compareAndSet$MethodAffix$(base, offset, $value1$, $value3$);
             assertEquals(r, false, "failing compareAndSet $type$");
 #else[JdkInternalMisc]
-            boolean r = UNSAFE.compareAndSwap$Type$(base, offset, $value1$, $value3$);
+            boolean r = UNSAFE.compareAndSwap$MethodAffix$(base, offset, $value1$, $value3$);
             assertEquals(r, false, "failing compareAndSwap $type$");
 #end[JdkInternalMisc]
-            $type$ x = UNSAFE.get$Type$(base, offset);
+            $type$ x = UNSAFE.get$MethodAffix$(base, offset);
 #if[JdkInternalMisc]
             assertEquals(x, $value2$, "failing compareAndSet $type$ value");
 #else[JdkInternalMisc]
@@ -257,107 +257,107 @@ public class $Qualifier$UnsafeAccessTest$Type$ {
 #if[JdkInternalMisc]
         // Advanced compare
         {
-            $type$ r = UNSAFE.compareAndExchange$Type$(base, offset, $value2$, $value1$);
+            $type$ r = UNSAFE.compareAndExchange$MethodAffix$(base, offset, $value2$, $value1$);
             assertEquals(r, $value2$, "success compareAndExchange $type$");
-            $type$ x = UNSAFE.get$Type$(base, offset);
+            $type$ x = UNSAFE.get$MethodAffix$(base, offset);
             assertEquals(x, $value1$, "success compareAndExchange $type$ value");
         }
 
         {
-            $type$ r = UNSAFE.compareAndExchange$Type$(base, offset, $value2$, $value3$);
+            $type$ r = UNSAFE.compareAndExchange$MethodAffix$(base, offset, $value2$, $value3$);
             assertEquals(r, $value1$, "failing compareAndExchange $type$");
-            $type$ x = UNSAFE.get$Type$(base, offset);
+            $type$ x = UNSAFE.get$MethodAffix$(base, offset);
             assertEquals(x, $value1$, "failing compareAndExchange $type$ value");
         }
 
         {
-            $type$ r = UNSAFE.compareAndExchange$Type$Acquire(base, offset, $value1$, $value2$);
+            $type$ r = UNSAFE.compareAndExchange$MethodAffix$Acquire(base, offset, $value1$, $value2$);
             assertEquals(r, $value1$, "success compareAndExchangeAcquire $type$");
-            $type$ x = UNSAFE.get$Type$(base, offset);
+            $type$ x = UNSAFE.get$MethodAffix$(base, offset);
             assertEquals(x, $value2$, "success compareAndExchangeAcquire $type$ value");
         }
 
         {
-            $type$ r = UNSAFE.compareAndExchange$Type$Acquire(base, offset, $value1$, $value3$);
+            $type$ r = UNSAFE.compareAndExchange$MethodAffix$Acquire(base, offset, $value1$, $value3$);
             assertEquals(r, $value2$, "failing compareAndExchangeAcquire $type$");
-            $type$ x = UNSAFE.get$Type$(base, offset);
+            $type$ x = UNSAFE.get$MethodAffix$(base, offset);
             assertEquals(x, $value2$, "failing compareAndExchangeAcquire $type$ value");
         }
 
         {
-            $type$ r = UNSAFE.compareAndExchange$Type$Release(base, offset, $value2$, $value1$);
+            $type$ r = UNSAFE.compareAndExchange$MethodAffix$Release(base, offset, $value2$, $value1$);
             assertEquals(r, $value2$, "success compareAndExchangeRelease $type$");
-            $type$ x = UNSAFE.get$Type$(base, offset);
+            $type$ x = UNSAFE.get$MethodAffix$(base, offset);
             assertEquals(x, $value1$, "success compareAndExchangeRelease $type$ value");
         }
 
         {
-            $type$ r = UNSAFE.compareAndExchange$Type$Release(base, offset, $value2$, $value3$);
+            $type$ r = UNSAFE.compareAndExchange$MethodAffix$Release(base, offset, $value2$, $value3$);
             assertEquals(r, $value1$, "failing compareAndExchangeRelease $type$");
-            $type$ x = UNSAFE.get$Type$(base, offset);
+            $type$ x = UNSAFE.get$MethodAffix$(base, offset);
             assertEquals(x, $value1$, "failing compareAndExchangeRelease $type$ value");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSet$Type$Plain(base, offset, $value1$, $value2$);
+                success = UNSAFE.weakCompareAndSet$MethodAffix$Plain(base, offset, $value1$, $value2$);
             }
             assertEquals(success, true, "weakCompareAndSetPlain $type$");
-            $type$ x = UNSAFE.get$Type$(base, offset);
+            $type$ x = UNSAFE.get$MethodAffix$(base, offset);
             assertEquals(x, $value2$, "weakCompareAndSetPlain $type$ value");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSet$Type$Acquire(base, offset, $value2$, $value1$);
+                success = UNSAFE.weakCompareAndSet$MethodAffix$Acquire(base, offset, $value2$, $value1$);
             }
             assertEquals(success, true, "weakCompareAndSetAcquire $type$");
-            $type$ x = UNSAFE.get$Type$(base, offset);
+            $type$ x = UNSAFE.get$MethodAffix$(base, offset);
             assertEquals(x, $value1$, "weakCompareAndSetAcquire $type$");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSet$Type$Release(base, offset, $value1$, $value2$);
+                success = UNSAFE.weakCompareAndSet$MethodAffix$Release(base, offset, $value1$, $value2$);
             }
             assertEquals(success, true, "weakCompareAndSetRelease $type$");
-            $type$ x = UNSAFE.get$Type$(base, offset);
+            $type$ x = UNSAFE.get$MethodAffix$(base, offset);
             assertEquals(x, $value2$, "weakCompareAndSetRelease $type$");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSet$Type$(base, offset, $value2$, $value1$);
+                success = UNSAFE.weakCompareAndSet$MethodAffix$(base, offset, $value2$, $value1$);
             }
             assertEquals(success, true, "weakCompareAndSet $type$");
-            $type$ x = UNSAFE.get$Type$(base, offset);
+            $type$ x = UNSAFE.get$MethodAffix$(base, offset);
             assertEquals(x, $value1$, "weakCompareAndSet $type$");
         }
 
 #end[JdkInternalMisc]
-        UNSAFE.put$Type$(base, offset, $value2$);
+        UNSAFE.put$MethodAffix$(base, offset, $value2$);
 
         // Compare set and get
         {
-            $type$ o = UNSAFE.getAndSet$Type$(base, offset, $value1$);
+            $type$ o = UNSAFE.getAndSet$MethodAffix$(base, offset, $value1$);
             assertEquals(o, $value2$, "getAndSet $type$");
-            $type$ x = UNSAFE.get$Type$(base, offset);
+            $type$ x = UNSAFE.get$MethodAffix$(base, offset);
             assertEquals(x, $value1$, "getAndSet $type$ value");
         }
 #end[CAS]
 
 #if[AtomicAdd]
-        UNSAFE.put$Type$(base, offset, $value1$);
+        UNSAFE.put$MethodAffix$(base, offset, $value1$);
 
         // get and add, add and get
         {
-            $type$ o = UNSAFE.getAndAdd$Type$(base, offset, $value2$);
+            $type$ o = UNSAFE.getAndAdd$MethodAffix$(base, offset, $value2$);
             assertEquals(o, $value1$, "getAndAdd $type$");
-            $type$ x = UNSAFE.get$Type$(base, offset);
+            $type$ x = UNSAFE.get$MethodAffix$(base, offset);
             assertEquals(x, ($type$)($value1$ + $value2$), "getAndAdd $type$");
         }
 #end[AtomicAdd]
@@ -368,8 +368,8 @@ public class $Qualifier$UnsafeAccessTest$Type$ {
     static void testAccess(long address) {
         // Plain
         {
-            UNSAFE.put$Type$(address, $value1$);
-            $type$ x = UNSAFE.get$Type$(address);
+            UNSAFE.put$MethodAffix$(address, $value1$);
+            $type$ x = UNSAFE.get$MethodAffix$(address);
             assertEquals(x, $value1$, "set $type$ value");
         }
     }

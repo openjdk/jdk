@@ -26,8 +26,6 @@ package gc.metaspace;
 import java.util.List;
 import java.lang.management.*;
 import jdk.test.lib.Platform;
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.process.OutputAnalyzer;
 import static jdk.test.lib.Asserts.*;
 
 /* @test TestMetaspaceMemoryPool

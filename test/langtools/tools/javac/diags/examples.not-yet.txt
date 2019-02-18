@@ -125,6 +125,7 @@ compiler.misc.bad.class.file                            # class file is malforme
 compiler.misc.bad.const.pool.entry                      # constant pool entry has wrong type
 compiler.warn.access.to.member.from.serializable.lambda # in order to generate it we need to modify a restricted package
 compiler.warn.invalid.path                              # this warning is generated only in Windows systems
+compiler.err.invalid.path                               # this error is generated only in Windows systems
 compiler.note.multiple.elements                         # needs user code
 compiler.err.preview.feature.disabled.classfile         # preview feature support: needs compilation against classfile
 compiler.warn.preview.feature.use.classfile             # preview feature support: needs compilation against classfile

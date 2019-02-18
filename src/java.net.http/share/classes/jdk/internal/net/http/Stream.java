@@ -597,10 +597,6 @@ class Stream<T> extends ExchangeImpl<T> {
         if (contentLength > 0) {
             h.setHeader("content-length", Long.toString(contentLength));
         }
-        URI uri = request.uri();
-        if (uri != null) {
-            h.setHeader("host", Utils.hostString(request));
-        }
         HttpHeaders sysh = filterHeaders(h.build());
         HttpHeaders userh = filterHeaders(request.getUserHeaders());
         // Filter context restricted from userHeaders

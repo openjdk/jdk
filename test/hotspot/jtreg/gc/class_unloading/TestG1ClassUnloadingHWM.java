@@ -39,8 +39,6 @@ package gc.class_unloading;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import java.util.ArrayList;
-import java.util.Arrays;
 import sun.hotspot.WhiteBox;
 
 public class TestG1ClassUnloadingHWM {

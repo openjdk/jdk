@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -218,7 +218,7 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
                 responseList =
                         ((ExtendedSSLSession)session).getStatusResponses();
             }
-            trustedChain = validate(v, chain, responseList,
+            trustedChain = v.validate(chain, null, responseList,
                     constraints, isClient ? null : authType);
 
             // check if EE certificate chains to a public root CA (as
@@ -234,7 +234,7 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
                         getRequestedServerNames(socket), chainsToPublicCA);
             }
         } else {
-            trustedChain = validate(v, chain, Collections.emptyList(),
+            trustedChain = v.validate(chain, null, Collections.emptyList(),
                     null, isClient ? null : authType);
         }
 
@@ -276,7 +276,7 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
                 responseList =
                         ((ExtendedSSLSession)session).getStatusResponses();
             }
-            trustedChain = validate(v, chain, responseList,
+            trustedChain = v.validate(chain, null, responseList,
                     constraints, isClient ? null : authType);
 
             // check if EE certificate chains to a public root CA (as
@@ -292,7 +292,7 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
                         getRequestedServerNames(engine), chainsToPublicCA);
             }
         } else {
-            trustedChain = validate(v, chain, Collections.emptyList(),
+            trustedChain = v.validate(chain, null, Collections.emptyList(),
                     null, isClient ? null : authType);
         }
 
@@ -310,18 +310,6 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
             v = Validator.getInstance(validatorType, variant, pkixParams);
         }
         return v;
-    }
-
-    private static X509Certificate[] validate(Validator v,
-            X509Certificate[] chain, List<byte[]> responseList,
-            AlgorithmConstraints constraints, String authType)
-            throws CertificateException {
-        Object o = JsseJce.beginFipsProvider();
-        try {
-            return v.validate(chain, null, responseList, constraints, authType);
-        } finally {
-            JsseJce.endFipsProvider(o);
-        }
     }
 
     // Get string representation of HostName from a list of server names.

@@ -53,6 +53,7 @@ import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.vm.annotation.DontInline;
 import sun.hotspot.WhiteBox;
+import sun.hotspot.code.NMethod;
 
 import java.io.IOException;
 import java.lang.annotation.Retention;
@@ -695,10 +696,6 @@ public class StrengthReduceInterfaceCall {
     public static final Unsafe U = Unsafe.getUnsafe();
 
     interface Test<T> {
-        boolean isCompiled();
-        void assertNotCompiled();
-        void assertCompiled();
-
         void call(T o);
         T receiver(int id);
 
@@ -731,14 +728,6 @@ public class StrengthReduceInterfaceCall {
                 call(receiver(1)); // 33%
                 call(receiver(2)); // 33%
             };
-        }
-
-        default void compile(Runnable r) {
-            assertNotCompiled();
-            while(!isCompiled()) {
-                r.run();
-            }
-            assertCompiled();
         }
 
         default void initialize(Class<?>... cs) {
@@ -789,14 +778,31 @@ public class StrengthReduceInterfaceCall {
             }));
         }
 
-        @Override
-        public boolean isCompiled()     { return WB.isMethodCompiled(TEST); }
 
-        @Override
-        public void assertNotCompiled() { assertFalse(isCompiled()); }
+        public void compile(Runnable r) {
+            while (!WB.isMethodCompiled(TEST)) {
+                for (int i = 0; i < 100; i++) {
+                    r.run();
+                }
+            }
+            assertCompiled(); // record nmethod info
+        }
 
-        @Override
-        public void assertCompiled()    { assertTrue(isCompiled()); }
+        private NMethod prevNM = null;
+
+        public void assertNotCompiled() {
+            NMethod curNM = NMethod.get(TEST, false);
+            assertTrue(prevNM != null); // was previously compiled
+            assertTrue(curNM == null || prevNM.compile_id != curNM.compile_id); // either no nmethod present or recompiled
+            prevNM = curNM; // update nmethod info
+        }
+
+        public void assertCompiled() {
+            NMethod curNM = NMethod.get(TEST, false);
+            assertTrue(curNM != null); // nmethod is present
+            assertTrue(prevNM == null || prevNM.compile_id == curNM.compile_id); // no recompilations if nmethod present
+            prevNM = curNM; // update nmethod info
+        }
 
         @Override
         public void call(T i) {

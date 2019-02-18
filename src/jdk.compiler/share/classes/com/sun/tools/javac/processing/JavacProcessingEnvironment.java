@@ -35,6 +35,7 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.function.Predicate;
 import java.util.regex.*;
 import java.util.stream.Collectors;
 
@@ -83,6 +84,7 @@ import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.Iterators;
 import com.sun.tools.javac.util.JCDiagnostic;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
 import com.sun.tools.javac.util.JavacMessages;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Log;
@@ -1066,7 +1068,9 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             prev.newRound();
             this.genClassFiles = prev.genClassFiles;
 
-            List<JCCompilationUnit> parsedFiles = compiler.parseFiles(newSourceFiles);
+            //parse the generated files even despite errors reported so far, to eliminate
+            //recoverable errors related to the type declared in the generated files:
+            List<JCCompilationUnit> parsedFiles = compiler.parseFiles(newSourceFiles, true);
             roots = prev.roots.appendList(parsedFiles);
 
             // Check for errors after parsing
@@ -1233,15 +1237,17 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         }
 
         void showDiagnostics(boolean showAll) {
-            Set<JCDiagnostic.Kind> kinds = EnumSet.allOf(JCDiagnostic.Kind.class);
-            if (!showAll) {
-                // suppress errors, which are all presumed to be transient resolve errors
-                kinds.remove(JCDiagnostic.Kind.ERROR);
-            }
-            deferredDiagnosticHandler.reportDeferredDiagnostics(kinds);
+            deferredDiagnosticHandler.reportDeferredDiagnostics(showAll ? ACCEPT_ALL
+                                                                        : ACCEPT_NON_RECOVERABLE);
             log.popDiagnosticHandler(deferredDiagnosticHandler);
             compiler.setDeferredDiagnosticHandler(null);
         }
+        //where:
+            private final Predicate<JCDiagnostic> ACCEPT_NON_RECOVERABLE =
+                    d -> d.getKind() != JCDiagnostic.Kind.ERROR ||
+                         !d.isFlagSet(DiagnosticFlag.RECOVERABLE) ||
+                         d.isFlagSet(DiagnosticFlag.API);
+            private final Predicate<JCDiagnostic> ACCEPT_ALL = d -> true;
 
         /** Print info about this round. */
         private void printRoundInfo(boolean lastRound) {
@@ -1335,7 +1341,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             errorStatus = round.unrecoverableError();
             moreToDo = moreToDo();
 
-            round.showDiagnostics(errorStatus || showResolveErrors);
+            round.showDiagnostics(showResolveErrors);
 
             // Set up next round.
             // Copy mutable collections returned from filer.

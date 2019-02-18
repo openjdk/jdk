@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -171,6 +171,13 @@ public abstract class HttpExchange {
      * this is set to the appropriate value depending on the response length parameter.
      * <p>
      * This method must be called prior to calling {@link #getResponseBody()}.
+     *
+     * @implNote This implementation allows the caller to instruct the
+     * server to force a connection close after the exchange terminates, by
+     * supplying a {@code Connection: close} header to the {@linkplain
+     * #getResponseHeaders() response headers} before {@code sendResponseHeaders}
+     * is called.
+     *
      * @param rCode the response code to send
      * @param responseLength if {@literal > 0}, specifies a fixed response
      *        body length and that exact number of bytes must be written

@@ -707,7 +707,9 @@ void AOTCodeHeap::mark_evol_dependent_methods(InstanceKlass* dependee) {
     for (int i = 0; i < methods_cnt; ++i) {
       int code_id = indexes[i];
       AOTCompiledMethod* aot = _code_to_aot[code_id]._aot;
-      aot->mark_for_deoptimization(false);
+      if (aot != NULL) {
+        aot->mark_for_deoptimization(false);
+      }
     }
   }
 }

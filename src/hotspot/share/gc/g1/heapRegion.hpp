@@ -547,7 +547,7 @@ class HeapRegion: public G1ContiguousSpace {
   }
 
   void calc_gc_efficiency(void);
-  double gc_efficiency() { return _gc_efficiency;}
+  double gc_efficiency() const { return _gc_efficiency;}
 
   uint index_in_opt_cset() const { return _index_in_opt_cset; }
   void set_index_in_opt_cset(uint index) { _index_in_opt_cset = index; }
@@ -705,7 +705,7 @@ class HeapRegion: public G1ContiguousSpace {
 class HeapRegionClosure : public StackObj {
   friend class HeapRegionManager;
   friend class G1CollectionSet;
-  friend class CollectionSetChooser;
+  friend class G1CollectionSetCandidates;
 
   bool _is_complete;
   void set_incomplete() { _is_complete = false; }

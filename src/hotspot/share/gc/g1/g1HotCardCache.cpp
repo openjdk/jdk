@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/g1/dirtyCardQueue.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/g1/g1HotCardCache.hpp"
 #include "runtime/atomic.hpp"
 
@@ -83,7 +83,7 @@ jbyte* G1HotCardCache::insert(jbyte* card_ptr) {
   return (previous_ptr == current_ptr) ? previous_ptr : card_ptr;
 }
 
-void G1HotCardCache::drain(CardTableEntryClosure* cl, uint worker_i) {
+void G1HotCardCache::drain(G1CardTableEntryClosure* cl, uint worker_i) {
   assert(default_use_cache(), "Drain only necessary if we use the hot card cache.");
 
   assert(_hot_cache != NULL, "Logic");

@@ -1152,7 +1152,7 @@ public class JavacTrees extends DocTrees {
         try {
             switch (kind) {
             case ERROR:
-                log.error(DiagnosticFlag.MULTIPLE, pos, Errors.ProcMessager(msg.toString()));
+                log.error(DiagnosticFlag.API, pos, Errors.ProcMessager(msg.toString()));
                 break;
 
             case WARNING:

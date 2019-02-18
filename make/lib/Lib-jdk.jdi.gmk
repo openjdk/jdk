@@ -27,7 +27,7 @@ include LibCommon.gmk
 
 ################################################################################
 
-ifeq ($(OPENJDK_TARGET_OS), windows)
+ifeq ($(call isTargetOs, windows), true)
 
   $(eval $(call SetupJdkLibrary, BUILD_LIBDT_SHMEM, \
       NAME := dt_shmem, \
@@ -42,6 +42,6 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
 
   TARGETS += $(BUILD_LIBDT_SHMEM)
 
-endif # OPENJDK_TARGET_OS
+endif
 
 ################################################################################

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import org.testng.annotations.Test;
  * @test
  * @summary Test of diagnostic command help (tests all DCMD executors)
  * @library /test/lib
+ *          /vmTestbase
  * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.management
@@ -55,7 +56,13 @@ public class HelpTest {
 
     @Test
     public void mainClass() {
-        run(new MainClassJcmdExecutor());
+        TestProcessLauncher t = new TestProcessLauncher(Process.class.getName());
+        try {
+            t.launch();
+            run(new MainClassJcmdExecutor(Process.class.getName()));
+        } finally {
+            t.quit();
+        }
     }
 
     @Test
@@ -68,4 +75,6 @@ public class HelpTest {
         run(new JMXExecutor());
     }
 
+    private static class Process extends TestJavaProcess {
+    }
 }

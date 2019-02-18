@@ -880,6 +880,42 @@ private:
   uint *_dom_depth;              // Used for fast LCA test
   GrowableArray<uint>* _dom_stk; // For recomputation of dom depth
 
+  // Perform verification that the graph is valid.
+  PhaseIdealLoop( PhaseIterGVN &igvn) :
+    PhaseTransform(Ideal_Loop),
+    _igvn(igvn),
+    _verify_me(NULL),
+    _verify_only(true),
+    _dom_lca_tags(arena()) { // Thread::resource_area
+    build_and_optimize(LoopOptsVerify);
+  }
+
+  // build the loop tree and perform any requested optimizations
+  void build_and_optimize(LoopOptsMode mode);
+
+  // Dominators for the sea of nodes
+  void Dominators();
+
+  // Compute the Ideal Node to Loop mapping
+  PhaseIdealLoop(PhaseIterGVN &igvn, LoopOptsMode mode) :
+    PhaseTransform(Ideal_Loop),
+    _igvn(igvn),
+    _verify_me(NULL),
+    _verify_only(false),
+    _dom_lca_tags(arena()) { // Thread::resource_area
+    build_and_optimize(mode);
+  }
+
+  // Verify that verify_me made the same decisions as a fresh run.
+  PhaseIdealLoop(PhaseIterGVN &igvn, const PhaseIdealLoop *verify_me) :
+    PhaseTransform(Ideal_Loop),
+    _igvn(igvn),
+    _verify_me(verify_me),
+    _verify_only(false),
+    _dom_lca_tags(arena()) { // Thread::resource_area
+    build_and_optimize(LoopOptsVerify);
+  }
+
 public:
   Node* idom_no_update(Node* d) const {
     return idom_no_update(d->_idx);
@@ -923,52 +959,25 @@ public:
   // Replace parallel induction variable (parallel to trip counter)
   void replace_parallel_iv(IdealLoopTree *loop);
 
-  // Perform verification that the graph is valid.
-  PhaseIdealLoop( PhaseIterGVN &igvn) :
-    PhaseTransform(Ideal_Loop),
-    _igvn(igvn),
-    _verify_me(NULL),
-    _verify_only(true),
-    _dom_lca_tags(arena()) { // Thread::resource_area
-    build_and_optimize(LoopOptsVerify);
-  }
-
-  // build the loop tree and perform any requested optimizations
-  void build_and_optimize(LoopOptsMode mode);
-
-  // Dominators for the sea of nodes
-  void Dominators();
   Node *dom_lca( Node *n1, Node *n2 ) const {
     return find_non_split_ctrl(dom_lca_internal(n1, n2));
   }
   Node *dom_lca_internal( Node *n1, Node *n2 ) const;
 
-  // Compute the Ideal Node to Loop mapping
-  PhaseIdealLoop(PhaseIterGVN &igvn, LoopOptsMode mode) :
-    PhaseTransform(Ideal_Loop),
-    _igvn(igvn),
-    _verify_me(NULL),
-    _verify_only(false),
-    _dom_lca_tags(arena()) { // Thread::resource_area
-    build_and_optimize(mode);
-  }
-
-  // Verify that verify_me made the same decisions as a fresh run.
-  PhaseIdealLoop(PhaseIterGVN &igvn, const PhaseIdealLoop *verify_me) :
-    PhaseTransform(Ideal_Loop),
-    _igvn(igvn),
-    _verify_me(verify_me),
-    _verify_only(false),
-    _dom_lca_tags(arena()) { // Thread::resource_area
-    build_and_optimize(LoopOptsVerify);
-  }
-
   // Build and verify the loop tree without modifying the graph.  This
   // is useful to verify that all inputs properly dominate their uses.
   static void verify(PhaseIterGVN& igvn) {
 #ifdef ASSERT
+    ResourceMark rm;
     PhaseIdealLoop v(igvn);
 #endif
+  }
+
+  // Recommended way to use PhaseIdealLoop.
+  // Run PhaseIdealLoop in some mode and allocates a local scope for memory allocations.
+  static void optimize(PhaseIterGVN &igvn, LoopOptsMode mode) {
+    ResourceMark rm;
+    PhaseIdealLoop v(igvn, mode);
   }
 
   // True if the method has at least 1 irreducible loop

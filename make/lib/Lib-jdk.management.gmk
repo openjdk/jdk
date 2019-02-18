@@ -30,7 +30,7 @@ $(eval $(call IncludeCustomExtension, lib/Lib-jdk.management.gmk))
 
 ################################################################################
 
-ifeq ($(OPENJDK_TARGET_OS), windows)
+ifeq ($(call isTargetOs, windows), true)
   # In (at least) VS2013 and later, -DPSAPI_VERSION=1 is needed to generate
   # a binary that is compatible with windows versions older than 7/2008R2.
   # See MSDN documentation for GetProcessMemoryInfo for more information.
@@ -38,7 +38,7 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
 endif
 
 LIBMANAGEMENT_EXT_OPTIMIZATION := HIGH
-ifneq ($(findstring $(OPENJDK_TARGET_OS), solaris linux), )
+ifeq ($(call isTargetOs, solaris linux), true)
   ifeq ($(COMPILE_WITH_DEBUG_SYMBOLS), true)
     LIBMANAGEMENT_EXT_OPTIMIZATION := LOW
   endif
@@ -65,4 +65,3 @@ TARGETS += $(BUILD_LIBMANAGEMENT_EXT)
 
 # Include custom extension post hook
 $(eval $(call IncludeCustomExtension, lib/Lib-jdk.management-post.gmk))
-

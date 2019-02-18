@@ -78,9 +78,6 @@ public:
   // Blocks a thread until safepoint/handshake is completed.
   static inline void block_if_requested(JavaThread* thread);
 
-  // Calls back if there is a pending safepoint but does not block for it.
-  static inline void callback_if_safepoint(JavaThread* thread);
-
   // Caller is responsible for using a memory barrier if needed.
   static inline void arm_local_poll(JavaThread* thread);
   static inline void disarm_local_poll(JavaThread* thread);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,6 +29,7 @@
 #include "gc/g1/g1BarrierSetAssembler.hpp"
 #include "gc/g1/g1BarrierSetRuntime.hpp"
 #include "gc/g1/g1CardTable.hpp"
+#include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/g1/g1SATBMarkQueueSet.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/heapRegion.hpp"
@@ -512,7 +513,7 @@ void G1BarrierSetAssembler::generate_c1_post_barrier_runtime_stub(StubAssembler*
 
   __ bind(restart);
 
-  // Get the index into the update buffer. DirtyCardQueue::_index is
+  // Get the index into the update buffer. G1DirtyCardQueue::_index is
   // a size_t so ld_ptr is appropriate here.
   __ ld(tmp2, dirty_card_q_index_byte_offset, R16_thread);
 
@@ -539,7 +540,7 @@ void G1BarrierSetAssembler::generate_c1_post_barrier_runtime_stub(StubAssembler*
   __ mflr(R0);
   __ std(R0, _abi(lr), R1_SP);
   __ push_frame_reg_args(nbytes_save, R0); // dummy frame for C call
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, DirtyCardQueueSet::handle_zero_index_for_thread), R16_thread);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1DirtyCardQueueSet::handle_zero_index_for_thread), R16_thread);
   __ pop_frame();
   __ ld(R0, _abi(lr), R1_SP);
   __ mtlr(R0);

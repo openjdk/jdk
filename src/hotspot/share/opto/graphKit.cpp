@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1489,18 +1489,19 @@ Node* GraphKit::make_load(Node* ctl, Node* adr, const Type* t, BasicType bt,
                           LoadNode::ControlDependency control_dependency,
                           bool require_atomic_access,
                           bool unaligned,
-                          bool mismatched) {
+                          bool mismatched,
+                          bool unsafe) {
   assert(adr_idx != Compile::AliasIdxTop, "use other make_load factory" );
   const TypePtr* adr_type = NULL; // debug-mode-only argument
   debug_only(adr_type = C->get_adr_type(adr_idx));
   Node* mem = memory(adr_idx);
   Node* ld;
   if (require_atomic_access && bt == T_LONG) {
-    ld = LoadLNode::make_atomic(ctl, mem, adr, adr_type, t, mo, control_dependency, unaligned, mismatched);
+    ld = LoadLNode::make_atomic(ctl, mem, adr, adr_type, t, mo, control_dependency, unaligned, mismatched, unsafe);
   } else if (require_atomic_access && bt == T_DOUBLE) {
-    ld = LoadDNode::make_atomic(ctl, mem, adr, adr_type, t, mo, control_dependency, unaligned, mismatched);
+    ld = LoadDNode::make_atomic(ctl, mem, adr, adr_type, t, mo, control_dependency, unaligned, mismatched, unsafe);
   } else {
-    ld = LoadNode::make(_gvn, ctl, mem, adr, adr_type, t, bt, mo, control_dependency, unaligned, mismatched);
+    ld = LoadNode::make(_gvn, ctl, mem, adr, adr_type, t, bt, mo, control_dependency, unaligned, mismatched, unsafe);
   }
   ld = _gvn.transform(ld);
   if (((bt == T_OBJECT) && C->do_escape_analysis()) || C->eliminate_boxing()) {
@@ -1515,7 +1516,8 @@ Node* GraphKit::store_to_memory(Node* ctl, Node* adr, Node *val, BasicType bt,
                                 MemNode::MemOrd mo,
                                 bool require_atomic_access,
                                 bool unaligned,
-                                bool mismatched) {
+                                bool mismatched,
+                                bool unsafe) {
   assert(adr_idx != Compile::AliasIdxTop, "use other store_to_memory factory" );
   const TypePtr* adr_type = NULL;
   debug_only(adr_type = C->get_adr_type(adr_idx));
@@ -1533,6 +1535,9 @@ Node* GraphKit::store_to_memory(Node* ctl, Node* adr, Node *val, BasicType bt,
   }
   if (mismatched) {
     st->as_Store()->set_mismatched_access();
+  }
+  if (unsafe) {
+    st->as_Store()->set_unsafe_access();
   }
   st = _gvn.transform(st);
   set_memory(st, adr_idx);
@@ -3426,6 +3431,10 @@ Node* GraphKit::set_output_for_allocation(AllocateNode* alloc,
     record_for_igvn(minit_in); // fold it up later, if possible
     Node* minit_out = memory(rawidx);
     assert(minit_out->is_Proj() && minit_out->in(0) == init, "");
+    // Add an edge in the MergeMem for the header fields so an access
+    // to one of those has correct memory state
+    set_memory(minit_out, C->get_alias_index(oop_type->add_offset(oopDesc::mark_offset_in_bytes())));
+    set_memory(minit_out, C->get_alias_index(oop_type->add_offset(oopDesc::klass_offset_in_bytes())));
     if (oop_type->isa_aryptr()) {
       const TypePtr* telemref = oop_type->add_offset(Type::OffsetBot);
       int            elemidx  = C->get_alias_index(telemref);
@@ -3882,10 +3891,6 @@ Node* GraphKit::load_String_value(Node* str, bool set_ctrl) {
   Node* p = basic_plus_adr(str, str, value_offset);
   Node* load = access_load_at(str, p, value_field_type, value_type, T_OBJECT,
                               IN_HEAP | (set_ctrl ? C2_CONTROL_DEPENDENT_LOAD : 0) | MO_UNORDERED);
-  // String.value field is known to be @Stable.
-  if (UseImplicitStableValues) {
-    load = cast_array_to_stable(load, value_type);
-  }
   return load;
 }
 
@@ -3897,7 +3902,6 @@ Node* GraphKit::load_String_coder(Node* str, bool set_ctrl) {
   const TypeInstPtr* string_type = TypeInstPtr::make(TypePtr::NotNull, C->env()->String_klass(),
                                                      false, NULL, 0);
   const TypePtr* coder_field_type = string_type->add_offset(coder_offset);
-  int coder_field_idx = C->get_alias_index(coder_field_type);
 
   Node* p = basic_plus_adr(str, str, coder_offset);
   Node* load = access_load_at(str, p, coder_field_type, TypeInt::BYTE, T_BYTE,
@@ -4034,10 +4038,4 @@ Node* GraphKit::make_constant_from_field(ciField* field, Node* obj) {
     return makecon(con_type);
   }
   return NULL;
-}
-
-Node* GraphKit::cast_array_to_stable(Node* ary, const TypeAryPtr* ary_type) {
-  // Reify the property as a CastPP node in Ideal graph to comply with monotonicity
-  // assumption of CCP analysis.
-  return _gvn.transform(new CastPPNode(ary, ary_type->cast_to_stable(true)));
 }

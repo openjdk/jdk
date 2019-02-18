@@ -36,8 +36,6 @@ package gc.logging;
 
 import java.lang.ref.SoftReference;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import java.util.regex.Pattern;

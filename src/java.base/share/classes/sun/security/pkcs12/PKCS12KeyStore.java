@@ -2231,18 +2231,9 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         }
 
         if (debug != null) {
-            if (privateKeyCount > 0) {
-                debug.println("Loaded " + privateKeyCount +
-                    " protected private key(s)");
-            }
-            if (secretKeyCount > 0) {
-                debug.println("Loaded " + secretKeyCount +
-                    " protected secret key(s)");
-            }
-            if (certificateCount > 0) {
-                debug.println("Loaded " + certificateCount +
-                    " certificate(s)");
-            }
+            debug.println("PKCS12KeyStore load: private key count: " +
+                    privateKeyCount + ". secret key count: " + secretKeyCount +
+                    ". certificate count: " + certificateCount);
         }
 
         certEntries.clear();

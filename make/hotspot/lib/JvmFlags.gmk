@@ -74,7 +74,7 @@ ifeq ($(DEBUG_LEVEL), release)
   endif
 else ifeq ($(DEBUG_LEVEL), fastdebug)
   JVM_CFLAGS_DEBUGLEVEL := -DASSERT
-  ifeq ($(filter $(OPENJDK_TARGET_OS), windows aix), )
+  ifeq ($(call isTargetOs, windows aix), false)
     # NOTE: Old build did not define CHECK_UNHANDLED_OOPS on Windows and AIX.
     JVM_CFLAGS_DEBUGLEVEL += -DCHECK_UNHANDLED_OOPS
   endif

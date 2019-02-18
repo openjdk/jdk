@@ -51,7 +51,7 @@ ifneq ($(FDLIBM_CFLAGS), )
   LIBJVM_FDLIBM_COPY_OPT_FLAG := $(CXX_O_FLAG_NORM)
 endif
 
-ifeq ($(OPENJDK_TARGET_OS), linux)
+ifeq ($(call isTargetOs, linux), true)
   BUILD_LIBJVM_ostream.cpp_CXXFLAGS := -D_FILE_OFFSET_BITS=64
   BUILD_LIBJVM_logFileOutput.cpp_CXXFLAGS := -D_FILE_OFFSET_BITS=64
 
@@ -65,7 +65,7 @@ ifeq ($(OPENJDK_TARGET_OS), linux)
 	#
   endif
 
-  ifeq ($(OPENJDK_TARGET_CPU), x86)
+  ifeq ($(call isTargetCpu, x86), true)
     # Performance measurements show that by compiling GC related code, we could
     # significantly reduce the GC pause time on 32 bit Linux/Unix platforms by
     # compiling without the PIC flag (-fPIC on linux).
@@ -83,7 +83,7 @@ ifeq ($(OPENJDK_TARGET_OS), linux)
     $(foreach s, $(NONPIC_SRC), $(eval BUILD_LIBJVM_$(notdir $s)_CXXFLAGS := -fno-PIC))
   endif
 
-else ifeq ($(OPENJDK_TARGET_OS), solaris)
+else ifeq ($(call isTargetOs, solaris), true)
   ifneq ($(DEBUG_LEVEL), slowdebug)
     # dev studio 12.6 workaround
     BUILD_LIBJVM_arguments.cpp_OPTIMIZATION := LOW
@@ -97,7 +97,7 @@ else ifeq ($(OPENJDK_TARGET_OS), solaris)
     BUILD_LIBJVM_jni.cpp_CXXFLAGS := -Qoption ube -O~yz
     BUILD_LIBJVM_stubGenerator_$(HOTSPOT_TARGET_CPU).cpp_CXXFLAGS := -xspace
 
-    ifeq ($(OPENJDK_TARGET_CPU), x86_64)
+    ifeq ($(call isTargetCpu, x86_64), true)
       # Temporary until SS10 C++ compiler is fixed
       BUILD_LIBJVM_generateOptoStub.cpp_CXXFLAGS := -xO2
       # Temporary util SS12u1 C++ compiler is fixed
@@ -118,7 +118,7 @@ else ifeq ($(OPENJDK_TARGET_OS), solaris)
     BUILD_LIBJVM_bytecodeInterpreter.cpp_CXXFLAGS := +d
     BUILD_LIBJVM_bytecodeInterpreterWithChecks.cpp_CXXFLAGS := +d
 
-    ifeq ($(OPENJDK_TARGET_CPU_ARCH), x86)
+    ifeq ($(call isTargetCpuArch, x86), true)
       # ube explodes on x86
       BUILD_LIBJVM_bytecodeInterpreter.cpp_CXXFLAGS += -xO1
       BUILD_LIBJVM_bytecodeInterpreterWithChecks.cpp_CXXFLAGS += -xO1
@@ -129,7 +129,7 @@ else ifeq ($(OPENJDK_TARGET_OS), solaris)
   # Workaround for jvmciCompilerToVM.cpp long compilation time
   BUILD_LIBJVM_jvmciCompilerToVMInit.cpp_OPTIMIZATION := NONE
 
-else ifeq ($(OPENJDK_TARGET_OS), macosx)
+else ifeq ($(call isTargetOs, macosx), true)
   # The copied fdlibm routines in these files must not be optimized
   BUILD_LIBJVM_sharedRuntimeTrig.cpp_CXXFLAGS := $(FDLIBM_CFLAGS) $(LIBJVM_FDLIBM_COPY_OPT_FLAG)
   BUILD_LIBJVM_sharedRuntimeTrans.cpp_CXXFLAGS := $(FDLIBM_CFLAGS) $(LIBJVM_FDLIBM_COPY_OPT_FLAG)
@@ -160,7 +160,7 @@ else ifeq ($(OPENJDK_TARGET_OS), macosx)
         #
   endif
 
-else ifeq ($(OPENJDK_TARGET_OS), aix)
+else ifeq ($(call isTargetOs, aix), true)
   BUILD_LIBJVM_synchronizer.cpp_CXXFLAGS := -qnoinline
   BUILD_LIBJVM_sharedRuntimeTrans.cpp_CXXFLAGS := $(CXX_O_FLAG_NONE)
   # Disable aggressive optimizations for functions in sharedRuntimeTrig.cpp
@@ -185,7 +185,7 @@ else ifeq ($(OPENJDK_TARGET_OS), aix)
   # Disable ELF decoder on AIX (AIX uses XCOFF).
   JVM_EXCLUDE_PATTERNS += elf
 
-else ifeq ($(OPENJDK_TARGET_OS), windows)
+else ifeq ($(call isTargetOs, windows), true)
   JVM_PRECOMPILED_HEADER_EXCLUDE := \
       bytecodeInterpreter.cpp \
       bytecodeInterpreterWithChecks.cpp \

@@ -130,7 +130,7 @@ void ZBarrierSetC2::find_dominating_barriers(PhaseIterGVN& igvn) {
   ZBarrierSetC2State* s = bs->state();
   if (s->load_barrier_count() >= 2) {
     Compile::TracePhase tp("idealLoop", &C->timers[Phase::_t_idealLoop]);
-    PhaseIdealLoop ideal_loop(igvn, LoopOptsLastRound);
+    PhaseIdealLoop::optimize(igvn, LoopOptsLastRound);
     if (C->major_progress()) C->print_method(PHASE_PHASEIDEALLOOP_ITERATIONS, 2);
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,6 +107,7 @@ public class TTYResources extends java.util.ListResourceBundle {
         {"Current thread isnt suspended.", "Current thread isn't suspended."},
         {"Current thread not set.", "Current thread not set."},
         {"dbgtrace flag value must be an integer:", "dbgtrace flag value must be an integer: {0}"},
+        {"dbgtrace command value must be an integer:", "dbgtrace command value must be an integer: {0}"},
         {"Deferring.", "Deferring {0}.\nIt will be set after the class is loaded."},
         {"End of stack.", "End of stack."},
         {"Error popping frame", "Error popping frame - {0}"},
@@ -411,6 +412,7 @@ public class TTYResources extends java.util.ListResourceBundle {
              "<n> <command>             -- repeat command n times\n" +
              "# <command>               -- discard (no-op)\n" +
              "help (or ?)               -- list commands\n" +
+             "dbgtrace [flag]           -- same as dbgtrace command line option" +
              "version                   -- print version information\n" +
              "exit (or quit)            -- exit debugger\n" +
              "\n" +

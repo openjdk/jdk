@@ -54,7 +54,7 @@ BUILD_JDK_JTREG_EXECUTABLES_CFLAGS_exeJliLaunchTest := \
     -I$(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS)/native/libjli
 
 # Platform specific setup
-ifeq ($(OPENJDK_TARGET_OS), windows)
+ifeq ($(call isTargetOs, windows), true)
   BUILD_JDK_JTREG_EXCLUDE += libDirectIO.c libInheritedChannel.c
 
   WIN_LIB_JAVA := $(SUPPORT_OUTPUTDIR)/native/java.base/libjava/java.lib
@@ -64,15 +64,15 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
 else
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libstringPlatformChars := -ljava
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libDirectIO := -ljava
-  ifeq ($(OPENJDK_TARGET_OS), linux)
+  ifeq ($(call isTargetOs, linux), true)
     BUILD_JDK_JTREG_LIBRARIES_LIBS_libInheritedChannel := -ljava
-  else ifeq ($(OPENJDK_TARGET_OS), solaris)
+  else ifeq ($(call isTargetOs, solaris), true)
     BUILD_JDK_JTREG_LIBRARIES_LIBS_libInheritedChannel := -ljava -lsocket -lnsl
   endif
   BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeJliLaunchTest := -ljli
 endif
 
-ifeq ($(OPENJDK_TARGET_OS), macosx)
+ifeq ($(call isTargetOs, macosx), true)
   BUILD_JDK_JTREG_LIBRARIES_CFLAGS_libTestMainKeyWindow := -ObjC
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libTestMainKeyWindow := -framework JavaVM \
       -framework Cocoa -framework JavaNativeFoundation

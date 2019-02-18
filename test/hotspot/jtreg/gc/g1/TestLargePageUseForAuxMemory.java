@@ -38,9 +38,6 @@ package gc.g1;
  */
 
 import java.lang.Math;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.Asserts;

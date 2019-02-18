@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 6986895
+ * @bug 8201544
  * @summary compiler gives misleading message for no input files
  * @modules jdk.compiler
  */
@@ -38,6 +39,8 @@ public class T6986895 {
 
     String noSourceFiles = "no source files";
     String noSourceFilesOrClasses = "no source files or class names";
+    String invalidFileName = "Invalid filename";
+    boolean isWindows = System.getProperty("os.name").startsWith("Windows");
 
     void run() throws Exception {
         Locale prev = Locale.getDefault();
@@ -45,6 +48,8 @@ public class T6986895 {
             Locale.setDefault(Locale.ENGLISH);
             test(noSourceFiles,           "-Werror");
             test(noSourceFilesOrClasses,  "-Werror", "-Xprint");
+            if (isWindows)
+                test(invalidFileName, "-Werror", "someNonExistingFile*.java");
         } finally {
             Locale.setDefault(prev);
         }

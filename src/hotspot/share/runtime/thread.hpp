@@ -421,11 +421,21 @@ class Thread: public ThreadShadow {
 
 #ifdef ASSERT
  private:
-  bool _visited_for_critical_count;
+  volatile uint64_t _visited_for_critical_count;
 
  public:
-  void set_visited_for_critical_count(bool z) { _visited_for_critical_count = z; }
-  bool was_visited_for_critical_count() const   { return _visited_for_critical_count; }
+  void set_visited_for_critical_count(uint64_t safepoint_id) {
+    assert(_visited_for_critical_count == 0, "Must be reset before set");
+    assert((safepoint_id & 0x1) == 1, "Must be odd");
+    _visited_for_critical_count = safepoint_id;
+  }
+  void reset_visited_for_critical_count(uint64_t safepoint_id) {
+    assert(_visited_for_critical_count == safepoint_id, "Was not visited");
+    _visited_for_critical_count = 0;
+  }
+  bool was_visited_for_critical_count(uint64_t safepoint_id) const {
+    return _visited_for_critical_count == safepoint_id;
+  }
 #endif
 
  public:

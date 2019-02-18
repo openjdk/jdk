@@ -89,7 +89,7 @@ GENSRC_JAVA_BASE += $(GENSRC_SOR_FILE)
 
 ################################################################################
 
-ifneq ($(OPENJDK_TARGET_OS), windows)
+ifeq ($(call isTargetOs, windows), false)
 
   GENSRC_UC_FILE := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/nio/fs/UnixConstants.java
 
@@ -103,7 +103,7 @@ endif
 
 ################################################################################
 
-ifeq ($(OPENJDK_TARGET_OS), solaris)
+ifeq ($(call isTargetOs, solaris), true)
 
   GENSRC_SC_FILE := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/nio/fs/SolarisConstants.java
 

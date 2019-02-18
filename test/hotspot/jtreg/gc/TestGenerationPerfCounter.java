@@ -24,7 +24,6 @@
 package gc;
 
 import static jdk.test.lib.Asserts.*;
-import gc.testlibrary.PerfCounter;
 import gc.testlibrary.PerfCounters;
 
 

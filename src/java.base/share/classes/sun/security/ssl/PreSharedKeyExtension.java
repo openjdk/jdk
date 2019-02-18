@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -458,7 +458,7 @@ final class PreSharedKeyExtension {
         String identityAlg = shc.sslConfig.identificationProtocol;
         if (result && identityAlg != null) {
             String sessionIdentityAlg = s.getIdentificationProtocol();
-            if (!Objects.equals(identityAlg, sessionIdentityAlg)) {
+            if (!identityAlg.equalsIgnoreCase(sessionIdentityAlg)) {
                 if (SSLLogger.isOn &&
                     SSLLogger.isOn("ssl,handshake,verbose")) {
 
@@ -765,7 +765,7 @@ final class PreSharedKeyExtension {
             String hmacAlg =
                 "Hmac" + hashAlg.name.replace("-", "");
             try {
-                Mac hmac = JsseJce.getMac(hmacAlg);
+                Mac hmac = Mac.getInstance(hmacAlg);
                 hmac.init(finishedKey);
                 return hmac.doFinal(digest);
             } catch (NoSuchAlgorithmException | InvalidKeyException ex) {

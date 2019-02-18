@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,15 @@
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 
+// distinguish old xlc and xlclang++, where
+// <ibmdemangle.h> is suggested but not found in GA release (might come with a fix)
+#if defined(__clang__)
+#define DISABLE_DEMANGLE
+// #include <ibmdemangle.h>
+#else
 #include <demangle.h>
+#endif
+
 #include <sys/debug.h>
 #include <pthread.h>
 #include <ucontext.h>
@@ -237,6 +245,7 @@ bool AixSymbols::get_function_name (
       p_name[i] = '\0';
 
       // If it is a C++ name, try and demangle it using the Demangle interface (see demangle.h).
+#ifndef DISABLE_DEMANGLE
       if (demangle) {
         char* rest;
         Name* const name = Demangle(p_name, rest);
@@ -249,6 +258,7 @@ bool AixSymbols::get_function_name (
           delete name;
         }
       }
+#endif
     } else {
       strncpy(p_name, "<nameless function>", namelen-1);
       p_name[namelen-1] = '\0';

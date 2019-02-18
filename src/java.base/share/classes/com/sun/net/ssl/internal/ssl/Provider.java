@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,21 +40,6 @@ public final class Provider extends SunJSSE {
     // standard constructor
     public Provider() {
         super();
-    }
-
-    // preferred constructor to enable FIPS mode at runtime
-    public Provider(java.security.Provider cryptoProvider) {
-        super(cryptoProvider);
-    }
-
-    // constructor to enable FIPS mode from java.security file
-    public Provider(String cryptoProvider) {
-        super(cryptoProvider);
-    }
-
-    // public for now, but we may want to change it or not document it.
-    public static synchronized boolean isFIPS() {
-        return SunJSSE.isFIPS();
     }
 
     /**

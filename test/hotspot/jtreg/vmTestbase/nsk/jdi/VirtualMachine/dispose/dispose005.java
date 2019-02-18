@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ import com.sun.jdi.request.*;
  * The debugger :
  *   clears interruption status,                                <BR>
  *   invokes vm.dispose() that results in                       <BR>
- *      VMDisconnectException in the thread2                    <BR>
+ *      VMDisconnectedException in the thread2                  <BR>
  *      which has been suspended after invoking "runt2"         <BR>
  *      but after exception it is resumed and sends interruption<BR>
  *      to the main thread;                                     <BR>

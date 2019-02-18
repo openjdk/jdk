@@ -135,39 +135,53 @@ template <class T> class EventLogBase : public EventLog {
 };
 
 // A simple wrapper class for fixed size text messages.
-class StringLogMessage : public FormatBuffer<256> {
+template <size_t bufsz>
+class FormatStringLogMessage : public FormatBuffer<bufsz> {
  public:
   // Wrap this buffer in a stringStream.
   stringStream stream() {
-    return stringStream(_buf, size());
+    return stringStream(this->_buf, this->size());
   }
 };
+typedef FormatStringLogMessage<256> StringLogMessage;
+typedef FormatStringLogMessage<512> ExtendedStringLogMessage;
 
 // A simple ring buffer of fixed size text messages.
-class StringEventLog : public EventLogBase<StringLogMessage> {
+template <size_t bufsz>
+class FormatStringEventLog : public EventLogBase< FormatStringLogMessage<bufsz> > {
  public:
-  StringEventLog(const char* name, int count = LogEventsBufferEntries) : EventLogBase<StringLogMessage>(name, count) {}
+  FormatStringEventLog(const char* name, int count = LogEventsBufferEntries) : EventLogBase< FormatStringLogMessage<bufsz> >(name, count) {}
 
   void logv(Thread* thread, const char* format, va_list ap) ATTRIBUTE_PRINTF(3, 0) {
-    if (!should_log()) return;
+    if (!this->should_log()) return;
 
-    double timestamp = fetch_timestamp();
-    MutexLockerEx ml(&_mutex, Mutex::_no_safepoint_check_flag);
-    int index = compute_log_index();
-    _records[index].thread = thread;
-    _records[index].timestamp = timestamp;
-    _records[index].data.printv(format, ap);
+    double timestamp = this->fetch_timestamp();
+    MutexLockerEx ml(&this->_mutex, Mutex::_no_safepoint_check_flag);
+    int index = this->compute_log_index();
+    this->_records[index].thread = thread;
+    this->_records[index].timestamp = timestamp;
+    this->_records[index].data.printv(format, ap);
   }
 
   void log(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(3, 4) {
     va_list ap;
     va_start(ap, format);
-    logv(thread, format, ap);
+    this->logv(thread, format, ap);
     va_end(ap);
   }
-
 };
+typedef FormatStringEventLog<256> StringEventLog;
+typedef FormatStringEventLog<512> ExtendedStringEventLog;
 
+class InstanceKlass;
+
+// Event log for class unloading events to materialize the class name in place in the log stream.
+class UnloadingEventLog : public EventLogBase<StringLogMessage> {
+ public:
+  UnloadingEventLog(const char* name, int count = LogEventsBufferEntries) : EventLogBase<StringLogMessage>(name, count) {}
+
+  void log(Thread* thread, InstanceKlass* ik);
+};
 
 
 class Events : AllStatic {
@@ -181,7 +195,7 @@ class Events : AllStatic {
 
   // A log for internal exception related messages, like internal
   // throws and implicit exceptions.
-  static StringEventLog* _exceptions;
+  static ExtendedStringEventLog* _exceptions;
 
   // Deoptization related messages
   static StringEventLog* _deopt_messages;
@@ -189,6 +203,8 @@ class Events : AllStatic {
   // Redefinition related messages
   static StringEventLog* _redefinitions;
 
+  // Class unloading events
+  static UnloadingEventLog* _class_unloading;
  public:
   static void print_all(outputStream* out);
 
@@ -202,6 +218,8 @@ class Events : AllStatic {
   static void log_exception(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
 
   static void log_redefinition(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
+
+  static void log_class_unloading(Thread* thread, InstanceKlass* ik);
 
   static void log_deopt_message(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
 
@@ -233,6 +251,12 @@ inline void Events::log_redefinition(Thread* thread, const char* format, ...) {
     va_start(ap, format);
     _redefinitions->logv(thread, format, ap);
     va_end(ap);
+  }
+}
+
+inline void Events::log_class_unloading(Thread* thread, InstanceKlass* ik) {
+  if (LogEvents) {
+    _class_unloading->log(thread, ik);
   }
 }
 
@@ -285,6 +309,13 @@ inline void EventLogBase<T>::print_log_impl(outputStream* out) {
 // Implement a printing routine for the StringLogMessage
 template <>
 inline void EventLogBase<StringLogMessage>::print(outputStream* out, StringLogMessage& lm) {
+  out->print_raw(lm);
+  out->cr();
+}
+
+// Implement a printing routine for the ExtendedStringLogMessage
+template <>
+inline void EventLogBase<ExtendedStringLogMessage>::print(outputStream* out, ExtendedStringLogMessage& lm) {
   out->print_raw(lm);
   out->cr();
 }

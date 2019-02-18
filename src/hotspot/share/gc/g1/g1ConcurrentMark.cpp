@@ -30,6 +30,7 @@
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
+#include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1Policy.hpp"
@@ -372,7 +373,7 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
 
   // _finger set in set_non_marking_state
 
-  _worker_id_offset(DirtyCardQueueSet::num_par_ids() + G1ConcRefinementThreads),
+  _worker_id_offset(G1DirtyCardQueueSet::num_par_ids() + G1ConcRefinementThreads),
   _max_num_tasks(ParallelGCThreads),
   // _num_active_tasks set in set_non_marking_state()
   // _tasks set inside the constructor

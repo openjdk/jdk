@@ -1427,7 +1427,7 @@ JVM_ENTRY(void, MHN_copyOutBootstrapArguments(JNIEnv* env, jobject igcls,
   if (bss_index_in_pool <= 0 ||
       bss_index_in_pool >= caller->constants()->length() ||
       index_info->int_at(0)
-      != caller->constants()->invoke_dynamic_argument_count_at(bss_index_in_pool)) {
+      != caller->constants()->bootstrap_argument_count_at(bss_index_in_pool)) {
       THROW_MSG(vmSymbols::java_lang_InternalError(), "bad index info (1)");
   }
   objArrayHandle buf(THREAD, (objArrayOop) JNIHandles::resolve(buf_jh));
@@ -1439,7 +1439,7 @@ JVM_ENTRY(void, MHN_copyOutBootstrapArguments(JNIEnv* env, jobject igcls,
         switch (pseudo_index) {
         case -4:  // bootstrap method
           {
-            int bsm_index = caller->constants()->invoke_dynamic_bootstrap_method_ref_index_at(bss_index_in_pool);
+            int bsm_index = caller->constants()->bootstrap_method_ref_index_at(bss_index_in_pool);
             pseudo_arg = caller->constants()->resolve_possibly_cached_constant_at(bsm_index, CHECK);
             break;
           }
@@ -1464,7 +1464,7 @@ JVM_ENTRY(void, MHN_copyOutBootstrapArguments(JNIEnv* env, jobject igcls,
           }
         case -1:  // argument count
           {
-            int argc = caller->constants()->invoke_dynamic_argument_count_at(bss_index_in_pool);
+            int argc = caller->constants()->bootstrap_argument_count_at(bss_index_in_pool);
             jvalue argc_value; argc_value.i = (jint)argc;
             pseudo_arg = java_lang_boxing_object::create(T_INT, &argc_value, CHECK);
             break;

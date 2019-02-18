@@ -29,19 +29,19 @@ $(eval $(call IncludeCustomExtension, hotspot/lib/Lib-jdk.hotspot.agent.gmk))
 
 ################################################################################
 
-ifeq ($(OPENJDK_TARGET_OS), linux)
+ifeq ($(call isTargetOs, linux), true)
   SA_CFLAGS := -D_FILE_OFFSET_BITS=64
 
-else ifeq ($(OPENJDK_TARGET_OS), solaris)
+else ifeq ($(call isTargetOs, solaris), true)
   SA_LDFLAGS := -mt
 
-else ifeq ($(OPENJDK_TARGET_OS), macosx)
+else ifeq ($(call isTargetOs, macosx), true)
   SA_CFLAGS := -Damd64 -D_GNU_SOURCE -mno-omit-leaf-frame-pointer \
       -mstack-alignment=16 -fPIC
   LIBSA_EXTRA_SRC := $(SUPPORT_OUTPUTDIR)/gensrc/jdk.hotspot.agent
-else ifeq ($(OPENJDK_TARGET_OS), windows)
+else ifeq ($(call isTargetOs, windows), true)
   SA_CFLAGS := -D_WINDOWS -D_DEBUG -D_CONSOLE -D_MBCS -EHsc
-  ifeq ($(OPENJDK_TARGET_CPU), x86_64)
+  ifeq ($(call isTargetCpu, x86_64), true)
     SA_CXXFLAGS := -DWIN64
   else
     # Only add /RTC1 flag for debug builds as it's

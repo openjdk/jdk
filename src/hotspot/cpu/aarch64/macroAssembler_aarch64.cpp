@@ -2167,6 +2167,14 @@ void MacroAssembler::stop(const char* msg) {
   hlt(0);
 }
 
+void MacroAssembler::warn(const char* msg) {
+  pusha();
+  mov(c_rarg0, (address)msg);
+  mov(lr, CAST_FROM_FN_PTR(address, warning));
+  blrt(lr, 1, 0, MacroAssembler::ret_type_void);
+  popa();
+}
+
 void MacroAssembler::unimplemented(const char* what) {
   const char* buf = NULL;
   {

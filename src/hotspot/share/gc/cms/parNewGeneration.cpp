@@ -624,7 +624,7 @@ void ParNewGenTask::work(uint worker_id) {
 }
 
 ParNewGeneration::ParNewGeneration(ReservedSpace rs, size_t initial_byte_size)
-  : DefNewGeneration(rs, initial_byte_size, "PCopy"),
+  : DefNewGeneration(rs, initial_byte_size, "CMS young collection pauses"),
   _plab_stats("Young", YoungPLABSize, PLABWeight),
   _overflow_list(NULL),
   _is_alive_closure(this)

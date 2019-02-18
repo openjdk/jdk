@@ -528,6 +528,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "MinRAMFraction",               JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "InitialRAMFraction",           JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "UseMembar",                    JDK_Version::jdk(10), JDK_Version::jdk(12), JDK_Version::undefined() },
+  { "CompilationPolicyChoice",      JDK_Version::jdk(13), JDK_Version::jdk(14), JDK_Version::undefined() },
 
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::undefined(), JDK_Version::undefined() },
@@ -541,6 +542,17 @@ static SpecialFlag const special_jvm_flags[] = {
   { "SharedReadOnlySize",            JDK_Version::undefined(), JDK_Version::jdk(10), JDK_Version::undefined() },
   { "SharedMiscDataSize",            JDK_Version::undefined(), JDK_Version::jdk(10), JDK_Version::undefined() },
   { "SharedMiscCodeSize",            JDK_Version::undefined(), JDK_Version::jdk(10), JDK_Version::undefined() },
+  { "ProfilerPrintByteCodeStatistics", JDK_Version::undefined(), JDK_Version::jdk(13), JDK_Version::jdk(14) },
+  { "ProfilerRecordPC",              JDK_Version::undefined(), JDK_Version::jdk(13), JDK_Version::jdk(14) },
+  { "ProfileVM",                     JDK_Version::undefined(), JDK_Version::jdk(13), JDK_Version::jdk(14) },
+  { "ProfileIntervals",              JDK_Version::undefined(), JDK_Version::jdk(13), JDK_Version::jdk(14) },
+  { "ProfileIntervalsTicks",         JDK_Version::undefined(), JDK_Version::jdk(13), JDK_Version::jdk(14) },
+  { "ProfilerCheckIntervals",        JDK_Version::undefined(), JDK_Version::jdk(13), JDK_Version::jdk(14) },
+  { "ProfilerNumberOfInterpretedMethods", JDK_Version::undefined(), JDK_Version::jdk(13), JDK_Version::jdk(14) },
+  { "ProfilerNumberOfCompiledMethods", JDK_Version::undefined(), JDK_Version::jdk(13), JDK_Version::jdk(14) },
+  { "ProfilerNumberOfStubMethods",   JDK_Version::undefined(), JDK_Version::jdk(13), JDK_Version::jdk(14) },
+  { "ProfilerNumberOfRuntimeStubNodes", JDK_Version::undefined(), JDK_Version::jdk(13), JDK_Version::jdk(14) },
+  { "UseImplicitStableValues",       JDK_Version::undefined(), JDK_Version::jdk(13), JDK_Version::jdk(14) },
 
 #ifdef TEST_VERIFY_SPECIAL_JVM_FLAGS
   { "dep > obs",                    JDK_Version::jdk(9), JDK_Version::jdk(8), JDK_Version::undefined() },
@@ -3784,8 +3796,8 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
 #endif
 
 #if defined(AIX)
-  UNSUPPORTED_OPTION(AllocateHeapAt);
-  UNSUPPORTED_OPTION(AllocateOldGenAt);
+  UNSUPPORTED_OPTION_NULL(AllocateHeapAt);
+  UNSUPPORTED_OPTION_NULL(AllocateOldGenAt);
 #endif
 
 #ifndef PRODUCT

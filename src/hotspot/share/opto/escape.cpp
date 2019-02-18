@@ -3010,6 +3010,11 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
       n->raise_bottom_type(tinst);
       igvn->hash_insert(n);
       record_for_optimizer(n);
+      // Allocate an alias index for the header fields. Accesses to
+      // the header emitted during macro expansion wouldn't have
+      // correct memory state otherwise.
+      _compile->get_alias_index(tinst->add_offset(oopDesc::mark_offset_in_bytes()));
+      _compile->get_alias_index(tinst->add_offset(oopDesc::klass_offset_in_bytes()));
       if (alloc->is_Allocate() && (t->isa_instptr() || t->isa_aryptr())) {
 
         // First, put on the worklist all Field edges from Connection Graph

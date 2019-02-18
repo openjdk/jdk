@@ -38,7 +38,7 @@ CONF_DIR := $(wildcard $(addsuffix /$(MODULE), $(IMPORT_MODULES_CONF)))
 $(eval $(call FillCacheFind, $(LIBS_DIR) $(CMDS_DIR) $(CONF_DIR)))
 
 ifneq ($(LIBS_DIR), )
-  ifeq ($(OPENJDK_TARGET_OS), windows)
+  ifeq ($(call isTargetOs, windows), true)
     TO_BIN_FILTER := %$(SHARED_LIBRARY_SUFFIX) %.diz %.pdb %.map
 
     $(eval $(call SetupCopyFiles, COPY_LIBS_TO_BIN, \

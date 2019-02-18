@@ -30,7 +30,7 @@ $(eval $(call IncludeCustomExtension, lib/Lib-java.instrument.gmk))
 
 ################################################################################
 
-ifeq ($(OPENJDK_TARGET_OS), windows)
+ifeq ($(call isTargetOs, windows), true)
   # equivalent of strcasecmp is stricmp on Windows
   LIBINSTRUMENT_CFLAGS := -Dstrcasecmp=stricmp
   WINDOWS_JLI_LIB := $(SUPPORT_OUTPUTDIR)/native/java.base/libjli/jli.lib
@@ -62,7 +62,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBINSTRUMENT, \
         $(WINDOWS_JLI_LIB), \
 ))
 
-ifeq ($(OPENJDK_TARGET_OS), aix)
+ifeq ($(call isTargetOs, aix), true)
   $(BUILD_LIBINSTRUMENT): $(call FindStaticLib, java.base, jli_static)
 else
   $(BUILD_LIBINSTRUMENT): $(call FindLib, java.base, jli)

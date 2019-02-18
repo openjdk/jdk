@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1126,6 +1126,22 @@ class Commands {
         if (success && !spec.isResolved()) {
             MessageOutput.println("Deferring.", spec.toString());
         }
+    }
+
+    void commandDbgTrace(StringTokenizer t) {
+        int traceFlags;
+        if (t.hasMoreTokens()) {
+            String flagStr = t.nextToken();
+            try {
+                traceFlags = Integer.decode(flagStr).intValue();
+            } catch (NumberFormatException nfe) {
+                MessageOutput.println("dbgtrace command value must be an integer:", flagStr);
+                return;
+            }
+        } else {
+            traceFlags = VirtualMachine.TRACE_ALL;
+        }
+        Env.setTraceFlags(traceFlags);
     }
 
     void commandStop(StringTokenizer t) {

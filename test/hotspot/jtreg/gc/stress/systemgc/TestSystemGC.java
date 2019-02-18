@@ -26,7 +26,6 @@ package gc.stress.systemgc;
 // A test that stresses a full GC by allocating objects of different lifetimes
 // and concurrently calling System.gc().
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;

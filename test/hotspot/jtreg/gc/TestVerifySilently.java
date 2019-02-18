@@ -49,7 +49,7 @@ class TestVerifySilentlyRunSystemGC {
 public class TestVerifySilently {
 
   private static OutputAnalyzer runTest(boolean verifySilently) throws Exception {
-    ArrayList<String> vmOpts = new ArrayList();
+    ArrayList<String> vmOpts = new ArrayList<>();
 
     Collections.addAll(vmOpts, Utils.getFilteredTestJavaOpts("-Xlog.*"));
     Collections.addAll(vmOpts, new String[] {"-XX:+UnlockDiagnosticVMOptions",

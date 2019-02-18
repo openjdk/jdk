@@ -663,4 +663,16 @@ do {                                                     \
   }                                                      \
 } while(0)
 
+// similar to UNSUPPORTED_OPTION but sets flag to NULL
+#define UNSUPPORTED_OPTION_NULL(opt)                     \
+do {                                                     \
+  if (opt) {                                             \
+    if (FLAG_IS_CMDLINE(opt)) {                          \
+      warning("-XX flag " #opt " not supported in this VM"); \
+    }                                                    \
+    FLAG_SET_DEFAULT(opt, NULL);                         \
+  }                                                      \
+} while(0)
+
+
 #endif // SHARE_RUNTIME_ARGUMENTS_HPP

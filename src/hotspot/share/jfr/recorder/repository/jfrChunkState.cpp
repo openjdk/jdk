@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,8 +100,7 @@ static char* copy_path(const char* path) {
   assert(path != NULL, "invariant");
   const size_t path_len = strlen(path);
   char* new_path = JfrCHeapObj::new_array<char>(path_len + 1);
-  strncpy(new_path, path, path_len);
-  new_path[path_len] = '\0';
+  strncpy(new_path, path, path_len + 1);
   return new_path;
 }
 

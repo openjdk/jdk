@@ -345,7 +345,6 @@ class relocInfo {
   static int offset_limit()     { return (1 << offset_width) * offset_unit; }
 
   void set_type(relocType type);
-  void set_format(int format);
 
   void remove() { set_type(none); }
 
@@ -422,7 +421,6 @@ class relocInfo {
   // (since code is dynamically patched, we also need to dynamically update the relocation info)
   // Both methods takes old_type, so it is able to performe sanity checks on the information removed.
   static void change_reloc_info_for_address(RelocIterator *itr, address pc, relocType old_type, relocType new_type);
-  static void remove_reloc_info_for_address(RelocIterator *itr, address pc, relocType old_type);
 
   // Machine dependent stuff
 #include CPU_HEADER(relocInfo)
@@ -531,7 +529,6 @@ class RelocIterator : public StackObj {
   short           _databuf; // spare buffer for compressed data
   short*          _data;    // pointer to the relocation's data
   short           _datalen; // number of halfwords in _data
-  char            _format;  // position within the instruction
 
   // Base addresses needed to compute targets of section_word_type relocs.
   address _section_start[SECT_LIMIT];
@@ -588,23 +585,18 @@ class RelocIterator : public StackObj {
       return false;
     }
 
-    if (relocInfo::have_format)  _format = current()->format();
     return true;
   }
 
   // accessors
   address      limit()        const { return _limit; }
-  void     set_limit(address x);
   relocType    type()         const { return current()->type(); }
   int          format()       const { return (relocInfo::have_format) ? current()->format() : 0; }
   address      addr()         const { return _addr; }
   CompiledMethod*     code()  const { return _code; }
-  nmethod*     code_as_nmethod() const;
   short*       data()         const { return _data; }
   int          datalen()      const { return _datalen; }
   bool     has_current()      const { return _datalen >= 0; }
-
-  void       set_addr(address addr) { _addr = addr; }
   bool   addr_in_const()      const;
 
   address section_start(int n) const {
@@ -793,7 +785,6 @@ class Relocation {
   // accessors which only make sense for a bound Relocation
   address         addr()            const { return binding()->addr(); }
   CompiledMethod* code()            const { return binding()->code(); }
-  nmethod*        code_as_nmethod() const { return binding()->code_as_nmethod(); }
   bool            addr_in_const()   const { return binding()->addr_in_const(); }
  protected:
   short*   data()         const { return binding()->data(); }
@@ -1001,8 +992,6 @@ class metadata_Relocation : public DataRelocation {
   void unpack_data();
 
   void fix_metadata_relocation();        // reasserts metadata value
-
-  void verify_metadata_relocation();
 
   address value()  { return (address) *metadata_addr(); }
 

@@ -72,7 +72,7 @@ SpanSubjectToDiscoveryClosure PSMarkSweep::_span_based_discoverer;
 void PSMarkSweep::initialize() {
   _span_based_discoverer.set_span(ParallelScavengeHeap::heap()->reserved_region());
   set_ref_processor(new ReferenceProcessor(&_span_based_discoverer));     // a vanilla ref proc
-  _counters = new CollectorCounters("PSMarkSweep", 1);
+  _counters = new CollectorCounters("Serial full collection pauses", 1);
   MarkSweep::initialize();
 }
 

@@ -41,7 +41,6 @@ import jdk.test.lib.Asserts;
 import sun.hotspot.WhiteBox;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Collections;
 import gc.testlibrary.Helpers;
 
@@ -54,7 +53,7 @@ public class TestHumongousObjectsOnNvdimm {
     private static ArrayList<String> testOpts;
 
     public static void main(String args[]) throws Exception {
-        testOpts = new ArrayList();
+        testOpts = new ArrayList<>();
 
         String[] common_options = new String[] {
             "-Xbootclasspath/a:.",

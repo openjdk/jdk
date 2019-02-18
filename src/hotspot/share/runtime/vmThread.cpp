@@ -458,6 +458,8 @@ bool VMThread::no_op_safepoint_needed(bool check_time) {
 void VMThread::loop() {
   assert(_cur_vm_operation == NULL, "no current one should be executing");
 
+  SafepointSynchronize::init(_vm_thread);
+
   while(true) {
     VM_Operation* safepoint_ops = NULL;
     //

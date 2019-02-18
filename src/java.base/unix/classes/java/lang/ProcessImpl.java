@@ -89,7 +89,7 @@ final class ProcessImpl extends Process {
 
     private static enum Platform {
 
-        LINUX(LaunchMechanism.VFORK, LaunchMechanism.POSIX_SPAWN, LaunchMechanism.FORK),
+        LINUX(LaunchMechanism.POSIX_SPAWN, LaunchMechanism.VFORK, LaunchMechanism.FORK),
 
         BSD(LaunchMechanism.POSIX_SPAWN, LaunchMechanism.FORK),
 
@@ -104,27 +104,6 @@ final class ProcessImpl extends Process {
             this.defaultLaunchMechanism = launchMechanisms[0];
             this.validLaunchMechanisms =
                 EnumSet.copyOf(Arrays.asList(launchMechanisms));
-        }
-
-        @SuppressWarnings("fallthrough")
-        private String helperPath(String javahome, String osArch) {
-            switch (this) {
-                case SOLARIS:
-                    // fall through...
-                case LINUX:
-                case AIX:
-                case BSD:
-                    return javahome + "/lib/jspawnhelper";
-
-                default:
-                    throw new AssertionError("Unsupported platform: " + this);
-            }
-        }
-
-        String helperPath() {
-            Properties props = GetPropertyAction.privilegedGetProperties();
-            return helperPath(StaticProperty.javaHome(),
-                              props.getProperty("os.arch"));
         }
 
         LaunchMechanism launchMechanism() {
@@ -169,7 +148,7 @@ final class ProcessImpl extends Process {
 
     private static final Platform platform = Platform.get();
     private static final LaunchMechanism launchMechanism = platform.launchMechanism();
-    private static final byte[] helperpath = toCString(platform.helperPath());
+    private static final byte[] helperpath = toCString(StaticProperty.javaHome() + "/lib/jspawnhelper");
 
     private static byte[] toCString(String s) {
         if (s == null)

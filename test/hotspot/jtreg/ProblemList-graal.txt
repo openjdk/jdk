@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -195,6 +195,26 @@ compiler/stable/TestStableShort.java                             8204347   gener
 compiler/stable/TestStableUByte.java                             8204347   generic-all
 compiler/stable/TestStableUShort.java                            8204347   generic-all
 
+gc/g1/mixedgc/TestOldGenCollectionUsage.java                                  8196611 generic-all
+gc/g1/TestPeriodicCollection.java                                             8196611 generic-all
+gc/parallel/TestPrintGCDetailsVerbose.java                                    8196611 generic-all
+vm/gc/InfiniteList.java                                                       8196611 generic-all
+vmTestbase/nsk/stress/except/except007.java                                   8196611 generic-all
+vmTestbase/nsk/stress/except/except008.java                                   8196611 generic-all
+serviceability/tmtools/jstat/GcTest02.java                                    8196611 generic-all
+serviceability/tmtools/jstat/GcCapacityTest.java                              8196611 generic-all
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorMultiArrayTest.java     8196611 generic-all
+
+runtime/RedefineObject/TestRedefineObject.java                                8218399 generic-all
+
+vmTestbase/nsk/jvmti/scenarios/sampling/SP06/sp06t003/TestDescription.java    8218167 generic-all
+
+vmTestbase/gc/lock/jvmti/alloc/jvmtialloclock02/TestDescription.java          8218700 generic-all
+
+vmTestbase/nsk/jdb/unmonitor/unmonitor001/unmonitor001.java                   8218701 generic-all
+
+vmTestbase/nsk/jdb/clear/clear003/clear003.java                               8218701 generic-all
+
 # Graal unit tests
 org.graalvm.compiler.core.test.CheckGraalInvariants                              8205081
 org.graalvm.compiler.core.test.OptionsVerifierTest                               8205081
@@ -206,4 +226,4 @@ org.graalvm.compiler.core.test.deopt.CompiledMethodTest          8202955
 
 org.graalvm.compiler.hotspot.test.ReservedStackAccessTest        8213567   windows-all
 
-org.graalvm.compiler.replacements.test.StringCompressInflateTest 8214947
+org.graalvm.compiler.hotspot.test.CheckGraalIntrinsics           8218698

@@ -24,7 +24,6 @@
 package gc;
 
 import java.util.List;
-import java.util.ArrayList;
 import java.lang.management.*;
 import static jdk.test.lib.Asserts.*;
 import java.util.stream.*;

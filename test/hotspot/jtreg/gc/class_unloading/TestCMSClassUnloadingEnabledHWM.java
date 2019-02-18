@@ -42,8 +42,6 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
-import java.util.ArrayList;
-import java.util.Arrays;
 import sun.hotspot.WhiteBox;
 
 public class TestCMSClassUnloadingEnabledHWM {

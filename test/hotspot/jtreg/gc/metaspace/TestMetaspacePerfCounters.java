@@ -70,7 +70,7 @@ import gc.testlibrary.PerfCounters;
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UseCompressedOops -XX:+UseCompressedClassPointers -XX:+UsePerfData -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC gc.metaspace.TestMetaspacePerfCounters
  */
 public class TestMetaspacePerfCounters {
-    public static Class fooClass = null;
+    public static Class<?> fooClass = null;
     private static final String[] counterNames = {"minCapacity", "maxCapacity", "capacity", "used"};
     private static final List<GarbageCollectorMXBean> gcBeans = ManagementFactoryHelper.getGarbageCollectorMXBeans();
 

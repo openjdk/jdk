@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,23 @@ void copyFromJString(JNIEnv * pEnv, jstring src, char ** dst) {
     pEnv->ReleaseStringUTFChars(src, pStr);
 }
 
+
+/**
+ * Helper class to track JVMTI resources, deallocating the resource in the destructor.
+ */
+class JvmtiResource {
+private:
+  jvmtiEnv* const _jvmtiEnv;
+  void* const _ptr;
+
+public:
+  JvmtiResource(jvmtiEnv* jvmtiEnv, void* ptr) : _jvmtiEnv(jvmtiEnv), _ptr(ptr) { }
+
+  ~JvmtiResource() {
+    NSK_JVMTI_VERIFY(_jvmtiEnv->Deallocate((unsigned char*)_ptr));
+  }
+};
+
 struct MethodName * getMethodName(jvmtiEnv * pJvmtiEnv, jmethodID method) {
     char * szName;
     char * szSignature;
@@ -57,22 +74,31 @@ struct MethodName * getMethodName(jvmtiEnv * pJvmtiEnv, jmethodID method) {
         return NULL;
     }
 
+    JvmtiResource szNameResource(pJvmtiEnv, szName);
+
     if (!NSK_JVMTI_VERIFY(pJvmtiEnv->GetMethodDeclaringClass(method, &clazz))) {
-        NSK_JVMTI_VERIFY(pJvmtiEnv->Deallocate((unsigned char*) szName));
         return NULL;
     }
 
     if (!NSK_JVMTI_VERIFY(pJvmtiEnv->GetClassSignature(clazz, &szSignature, NULL))) {
-        NSK_JVMTI_VERIFY(pJvmtiEnv->Deallocate((unsigned char*) szName));
         return NULL;
     }
 
+    JvmtiResource szSignatureResource(pJvmtiEnv, szSignature);
+
+    if (strlen(szName) + 1 > sizeof(mn->methodName) ||
+        strlen(szSignature) + 1 > sizeof(mn->classSig)) {
+      return NULL;
+    }
+
     mn = (MethodName*) malloc(sizeof(MethodNameStruct));
+    if (mn == NULL) {
+      return NULL;
+    }
+
     strncpy(mn->methodName, szName, sizeof(mn->methodName));
     strncpy(mn->classSig, szSignature, sizeof(mn->classSig));
 
-    NSK_JVMTI_VERIFY(pJvmtiEnv->Deallocate((unsigned char*) szName));
-    NSK_JVMTI_VERIFY(pJvmtiEnv->Deallocate((unsigned char*) szSignature));
     return mn;
 }
 

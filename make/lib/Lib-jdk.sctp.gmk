@@ -27,9 +27,9 @@ include LibCommon.gmk
 
 ################################################################################
 
-ifeq ($(OPENJDK_TARGET_OS_TYPE), unix)
+ifeq ($(call isTargetOsType, unix), true)
 
-  ifeq ($(filter $(OPENJDK_TARGET_OS), macosx aix), )
+  ifeq ($(call isTargetOs, macosx aix), false)
     $(eval $(call SetupJdkLibrary, BUILD_LIBSCTP, \
         NAME := sctp, \
         OPTIMIZATION := LOW, \

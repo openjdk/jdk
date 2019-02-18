@@ -33,9 +33,11 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
 
+import jdk.test.lib.Utils;
 import jdk.test.lib.apps.LingeredApp;
 
 import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -72,13 +74,27 @@ public class BasicJDWPConnectionTest {
     }
 
     private static Pattern listenRegexp = Pattern.compile("Listening for transport \\b(.+)\\b at address: \\b(\\d+)\\b");
-    private static int detectPort(String s) {
-        Matcher m = listenRegexp.matcher(s);
-        if (!m.find()) {
-            throw new RuntimeException("Could not detect port from '" + s + "'");
+    private static int detectPort(LingeredApp app) {
+        long maxWaitTime = System.currentTimeMillis()
+                + Utils.adjustTimeout(10000);  // 10 seconds adjusted for TIMEOUT_FACTOR
+        while (true) {
+            String s = app.getProcessStdout();
+            Matcher m = listenRegexp.matcher(s);
+            if (m.find()) {
+                // m.group(1) is transport, m.group(2) is port
+                return Integer.parseInt(m.group(2));
+            }
+            if (System.currentTimeMillis() > maxWaitTime) {
+                throw new RuntimeException("Could not detect port from '" + s + "' (timeout)");
+            }
+            try {
+                if (app.getProcess().waitFor(500, TimeUnit.MILLISECONDS)) {
+                    throw new RuntimeException("Could not detect port from '" + s + "' (debuggee is terminated)");
+                }
+            } catch (InterruptedException e) {
+                // ignore
+            }
         }
-        // m.group(1) is transport, m.group(2) is port
-        return Integer.parseInt(m.group(2));
     }
 
     public static void positiveTest(String testName, String allowOpt)
@@ -89,7 +105,7 @@ public class BasicJDWPConnectionTest {
         LingeredApp a = LingeredApp.startApp(cmd);
         int res;
         try {
-            res = handshake(detectPort(a.getProcessStdout()));
+            res = handshake(detectPort(a));
         } finally {
             a.stopApp();
         }
@@ -107,7 +123,7 @@ public class BasicJDWPConnectionTest {
         LingeredApp a = LingeredApp.startApp(cmd);
         int res;
         try {
-            res = handshake(detectPort(a.getProcessStdout()));
+            res = handshake(detectPort(a));
         } finally {
             a.stopApp();
         }

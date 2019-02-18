@@ -27,7 +27,7 @@ include LibCommon.gmk
 
 ################################################################################
 
-ifeq ($(OPENJDK_TARGET_OS), windows)
+ifeq ($(call isTargetOs, windows), true)
 
   $(eval $(call SetupJdkLibrary, BUILD_LIBLE, \
       NAME := le, \
@@ -39,6 +39,6 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
 
   TARGETS += $(BUILD_LIBLE)
 
-endif # OPENJDK_TARGET_OS
+endif
 
 ################################################################################

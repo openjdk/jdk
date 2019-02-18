@@ -137,7 +137,7 @@ public class TestMBeanCMS {
     public void allocationWork(long target) {
 
         long sizeAllocated = 0;
-        List list = new LinkedList();
+        List<byte[]> list = new LinkedList<>();
         long delay = 50;
         long count = 0;
 

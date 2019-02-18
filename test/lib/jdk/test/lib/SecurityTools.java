@@ -195,5 +195,33 @@ public class SecurityTools {
     public static OutputAnalyzer jarsigner(String... args) throws Exception {
         return jarsigner(List.of(args));
     }
+
+    /**
+     * Runs ktab.
+     *
+     * @param args arguments to ktab in a single string. Only call this if
+     *             there is no white space inside an argument. This string will
+     *             be split with {@code \s+}.
+     * @return an {@link OutputAnalyzer} object
+     * @throws Exception if there is an error
+     */
+    public static OutputAnalyzer ktab(String args) throws Exception {
+        return execute(getProcessBuilder(
+                "ktab", List.of(args.trim().split("\\s+"))));
+    }
+
+    /**
+     * Runs klist.
+     *
+     * @param args arguments to klist in a single string. Only call this if
+     *             there is no white space inside an argument. This string will
+     *             be split with {@code \s+}.
+     * @return an {@link OutputAnalyzer} object
+     * @throws Exception if there is an error
+     */
+    public static OutputAnalyzer klist(String args) throws Exception {
+        return execute(getProcessBuilder(
+                "klist", List.of(args.trim().split("\\s+"))));
+    }
 }
 
