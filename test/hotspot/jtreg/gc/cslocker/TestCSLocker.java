@@ -23,6 +23,8 @@
 
 package gc.cslocker;
 
+import static java.lang.ref.Reference.reachabilityFence;
+
 /*
  * @test TestCSLocker
  * @key gc
@@ -73,8 +75,7 @@ class GarbageProducer extends Thread
 
         while (isRunning) {
             try {
-                int[] arr = null;
-                arr = new int[size];
+                reachabilityFence(new int[size]);
                 sleep(sleepTime);
             } catch (InterruptedException e) {
                 isRunning = false;

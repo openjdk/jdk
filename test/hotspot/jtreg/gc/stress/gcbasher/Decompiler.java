@@ -132,7 +132,7 @@ class Decompiler {
                             byteCodeIndex++;
                         }
 
-                        int def = cursor.readIntAt(byteCodeIndex);
+                        cursor.readIntAt(byteCodeIndex); // def
                         byteCodeIndex +=4;
 
                         int npairs = cursor.readIntAt(byteCodeIndex);
@@ -149,7 +149,7 @@ class Decompiler {
                             byteCodeIndex++;
                         }
 
-                        int def = cursor.readIntAt(byteCodeIndex);
+                        cursor.readIntAt(byteCodeIndex); // def
                         byteCodeIndex +=4;
 
                         int low = cursor.readIntAt(byteCodeIndex);
@@ -245,7 +245,7 @@ class Decompiler {
 
     private ConstantPoolEntry[] decodeConstantPool() {
         final int CONSTANT_Utf8 = 1;
-        final int CONSTANT_Unicode = 2;
+        // final int CONSTANT_Unicode = 2;
         final int CONSTANT_Integer = 3;
         final int CONSTANT_Float = 4;
         final int CONSTANT_Long = 5;

@@ -27,7 +27,6 @@ package gc.logging;
 import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
@@ -67,8 +66,6 @@ public class TestMetaSpaceLog {
   }
 
   private static void verifyContainsMetaSpaceUpdate(OutputAnalyzer output) {
-    Predicate<String> collectedMetaSpace = line -> check(line);
-
     // At least one metaspace line from GC should show GC being collected.
     boolean foundCollectedMetaSpace = output.asLines().stream()
         .filter(s -> s.contains("[gc,metaspace"))
