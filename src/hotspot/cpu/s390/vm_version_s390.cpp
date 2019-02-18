@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2018 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -165,8 +165,10 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
   }
 
-  // TODO: implement GHASH intrinsics
-  if (UseGHASHIntrinsics) {
+  if (FLAG_IS_DEFAULT(UseGHASHIntrinsics) && has_Crypto_GHASH()) {
+    FLAG_SET_DEFAULT(UseGHASHIntrinsics, true);
+  }
+  if (UseGHASHIntrinsics && !has_Crypto_GHASH()) {
     warning("GHASH intrinsics are not available on this CPU");
     FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
   }
