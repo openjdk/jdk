@@ -25,6 +25,7 @@
 package sun.jvm.hotspot.gc.z;
 
 import java.io.PrintStream;
+import java.util.Iterator;
 
 import sun.jvm.hotspot.debugger.Address;
 import sun.jvm.hotspot.debugger.OopHandle;
@@ -121,9 +122,11 @@ public class ZCollectedHeap extends CollectedHeap {
 
     @Override
     public void liveRegionsIterate(LiveRegionsClosure closure) {
-        // Operation (currently) not supported with ZGC. Print
-        // a warning and leave the list of live regions empty.
-        System.err.println("Warning: Operation not supported with ZGC");
+        Iterator<ZPage> iter = heap().pageTable().activePagesIterator();
+        while (iter.hasNext()) {
+            ZPage page = iter.next();
+            closure.doLiveRegions(page);
+        }
     }
 
     @Override

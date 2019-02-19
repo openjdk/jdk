@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,8 +74,6 @@ public:
   virtual bool is_scavengable(oop obj);
   virtual bool is_in(const void* p) const;
   virtual bool is_in_closed_subset(const void* p) const;
-
-  virtual void fill_with_dummy_object(HeapWord* start, HeapWord* end, bool zap);
 
   virtual HeapWord* mem_allocate(size_t size, bool* gc_overhead_limit_was_exceeded);
   virtual MetaWord* satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,

@@ -47,7 +47,7 @@ public class ZExternalBitMap implements BitMapInterface {
             throw new RuntimeException("Not a Z offset: " + zOffset);
         }
 
-        ZPage page = pageTable.get(ZOop.to_address(zOffset));
+        ZPage page = pageTable.get(ZUtils.longToAddress(zOffset));
         if (page == null) {
             throw new RuntimeException("Address not in pageTable: " + zOffset);
         }

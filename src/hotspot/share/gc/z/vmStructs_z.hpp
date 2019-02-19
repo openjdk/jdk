@@ -42,6 +42,8 @@ public:
 
   uint32_t* _ZGlobalPhase;
 
+  uint32_t* _ZGlobalSeqNum;
+
   uintptr_t* _ZAddressGoodMask;
   uintptr_t* _ZAddressBadMask;
   uintptr_t* _ZAddressWeakBadMask;
@@ -55,6 +57,7 @@ typedef ZAddressRangeMap<ZPageTableEntry, ZPageSizeMinShift> ZAddressRangeMapFor
 #define VM_STRUCTS_ZGC(nonstatic_field, volatile_nonstatic_field, static_field)                      \
   static_field(ZGlobalsForVMStructs,            _instance_p,          ZGlobalsForVMStructs*)         \
   nonstatic_field(ZGlobalsForVMStructs,         _ZGlobalPhase,        uint32_t*)                     \
+  nonstatic_field(ZGlobalsForVMStructs,         _ZGlobalSeqNum,       uint32_t*)                     \
   nonstatic_field(ZGlobalsForVMStructs,         _ZAddressGoodMask,    uintptr_t*)                    \
   nonstatic_field(ZGlobalsForVMStructs,         _ZAddressBadMask,     uintptr_t*)                    \
   nonstatic_field(ZGlobalsForVMStructs,         _ZAddressWeakBadMask, uintptr_t*)                    \
@@ -67,7 +70,10 @@ typedef ZAddressRangeMap<ZPageTableEntry, ZPageSizeMinShift> ZAddressRangeMapFor
   nonstatic_field(ZHeap,                        _pagetable,           ZPageTable)                    \
                                                                                                      \
   nonstatic_field(ZPage,                        _type,                const uint8_t)                 \
+  nonstatic_field(ZPage,                        _seqnum,              uint32_t)                      \
   nonstatic_field(ZPage,                        _virtual,             const ZVirtualMemory)          \
+  volatile_nonstatic_field(ZPage,               _top,                 uintptr_t)                     \
+  volatile_nonstatic_field(ZPage,               _refcount,            uint32_t)                      \
   nonstatic_field(ZPage,                        _forwarding,          ZForwardingTable)              \
                                                                                                      \
   nonstatic_field(ZPageAllocator,               _physical,            ZPhysicalMemoryManager)        \
@@ -101,6 +107,7 @@ typedef ZAddressRangeMap<ZPageTableEntry, ZPageSizeMinShift> ZAddressRangeMapFor
   declare_constant(ZAddressOffsetShift)                                                              \
   declare_constant(ZAddressOffsetBits)                                                               \
   declare_constant(ZAddressOffsetMask)                                                               \
+  declare_constant(ZAddressOffsetMax)                                                                \
   declare_constant(ZAddressSpaceStart)
 
 #define VM_TYPES_ZGC(declare_type, declare_toplevel_type, declare_integer_type)                      \

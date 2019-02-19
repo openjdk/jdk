@@ -119,6 +119,11 @@ void ZMark::prepare_mark() {
 }
 
 class ZMarkRootsIteratorClosure : public ZRootsIteratorClosure {
+private:
+  static void fixup_address(HeapWord** p) {
+    *p = (HeapWord*)ZAddress::good_or_null((uintptr_t)*p);
+  }
+
 public:
   ZMarkRootsIteratorClosure() {
     ZStatTLAB::reset();
@@ -136,6 +141,7 @@ public:
 
     // Retire TLAB
     if (UseTLAB && thread->is_Java_thread()) {
+      thread->tlab().addresses_do(fixup_address);
       thread->tlab().retire(ZStatTLAB::get());
       thread->tlab().resize();
     }

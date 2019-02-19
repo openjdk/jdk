@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,20 +19,25 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-#include "precompiled.hpp"
-#include "gc/z/vmStructs_z.hpp"
+package sun.jvm.hotspot.gc.z;
 
-ZGlobalsForVMStructs::ZGlobalsForVMStructs() :
-    _ZGlobalPhase(&ZGlobalPhase),
-    _ZGlobalSeqNum(&ZGlobalSeqNum),
-    _ZAddressGoodMask(&ZAddressGoodMask),
-    _ZAddressBadMask(&ZAddressBadMask),
-    _ZAddressWeakBadMask(&ZAddressWeakBadMask),
-    _ZObjectAlignmentSmallShift(&ZObjectAlignmentSmallShift),
-    _ZObjectAlignmentSmall(&ZObjectAlignmentSmall) {
+import sun.jvm.hotspot.debugger.Address;
+import sun.jvm.hotspot.runtime.VM;
+
+class ZUtils {
+    private static final long MSB = ~0L ^ (~0L >>> 1);
+
+    private static Address msbAddress() {
+        return VM.getVM().getUniverse().heap().start().orWithMask(MSB).andWithMask(MSB);
+    }
+
+    static Address longToAddress(long value) {
+        // If the value of an Address becomes 0, null is returned instead of an Address.
+        // Start with a one-bit address and as a last step, remove that bit.
+        Address oneAddress = msbAddress();
+        return oneAddress.orWithMask(value).xorWithMask(ZAddress.as_long(oneAddress));
+    }
 }
-
-ZGlobalsForVMStructs ZGlobalsForVMStructs::_instance;
-ZGlobalsForVMStructs* ZGlobalsForVMStructs::_instance_p = &ZGlobalsForVMStructs::_instance;

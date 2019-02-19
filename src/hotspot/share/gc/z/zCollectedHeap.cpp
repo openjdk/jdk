@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,10 +116,6 @@ bool ZCollectedHeap::is_in(const void* p) const {
 
 bool ZCollectedHeap::is_in_closed_subset(const void* p) const {
   return is_in(p);
-}
-
-void ZCollectedHeap::fill_with_dummy_object(HeapWord* start, HeapWord* end, bool zap) {
-  // Does nothing, not a parsable heap
 }
 
 HeapWord* ZCollectedHeap::allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size) {
