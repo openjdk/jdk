@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -372,23 +372,26 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_CODE_COVERAGE],
       [enable native compilation with code coverage data@<:@disabled@:>@])])
   GCOV_ENABLED="false"
   if test "x$enable_native_coverage" = "xyes"; then
-    if test "x$TOOLCHAIN_TYPE" = "xgcc"; then
-      AC_MSG_CHECKING([if native coverage is enabled])
-      AC_MSG_RESULT([yes])
-      GCOV_CFLAGS="-fprofile-arcs -ftest-coverage -fno-inline"
-      GCOV_LDFLAGS="-fprofile-arcs"
-      JVM_CFLAGS="$JVM_CFLAGS $GCOV_CFLAGS"
-      JVM_LDFLAGS="$JVM_LDFLAGS $GCOV_LDFLAGS"
-      CFLAGS_JDKLIB="$CFLAGS_JDKLIB $GCOV_CFLAGS"
-      CFLAGS_JDKEXE="$CFLAGS_JDKEXE $GCOV_CFLAGS"
-      CXXFLAGS_JDKLIB="$CXXFLAGS_JDKLIB $GCOV_CFLAGS"
-      CXXFLAGS_JDKEXE="$CXXFLAGS_JDKEXE $GCOV_CFLAGS"
-      LDFLAGS_JDKLIB="$LDFLAGS_JDKLIB $GCOV_LDFLAGS"
-      LDFLAGS_JDKEXE="$LDFLAGS_JDKEXE $GCOV_LDFLAGS"
-      GCOV_ENABLED="true"
-    else
-      AC_MSG_ERROR([--enable-native-coverage only works with toolchain type gcc])
-    fi
+    case $TOOLCHAIN_TYPE in
+      gcc | clang)
+        AC_MSG_CHECKING([if native coverage is enabled])
+        AC_MSG_RESULT([yes])
+        GCOV_CFLAGS="-fprofile-arcs -ftest-coverage -fno-inline"
+        GCOV_LDFLAGS="-fprofile-arcs"
+        JVM_CFLAGS="$JVM_CFLAGS $GCOV_CFLAGS"
+        JVM_LDFLAGS="$JVM_LDFLAGS $GCOV_LDFLAGS"
+        CFLAGS_JDKLIB="$CFLAGS_JDKLIB $GCOV_CFLAGS"
+        CFLAGS_JDKEXE="$CFLAGS_JDKEXE $GCOV_CFLAGS"
+        CXXFLAGS_JDKLIB="$CXXFLAGS_JDKLIB $GCOV_CFLAGS"
+        CXXFLAGS_JDKEXE="$CXXFLAGS_JDKEXE $GCOV_CFLAGS"
+        LDFLAGS_JDKLIB="$LDFLAGS_JDKLIB $GCOV_LDFLAGS"
+        LDFLAGS_JDKEXE="$LDFLAGS_JDKEXE $GCOV_LDFLAGS"
+        GCOV_ENABLED="true"
+        ;;
+      *)
+        AC_MSG_ERROR([--enable-native-coverage only works with toolchain type gcc or clang])
+        ;;
+    esac
   elif test "x$enable_native_coverage" = "xno"; then
     AC_MSG_CHECKING([if native coverage is enabled])
     AC_MSG_RESULT([no])
