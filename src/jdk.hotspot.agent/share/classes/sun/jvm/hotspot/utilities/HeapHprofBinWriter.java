@@ -390,9 +390,6 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
 
     public synchronized void write(String fileName) throws IOException {
         VM vm = VM.getVM();
-        if (vm.getUniverse().heap() instanceof ZCollectedHeap) {
-            throw new RuntimeException("This operation is not supported with ZGC.");
-        }
 
         // open file stream and create buffered data output stream
         fos = new FileOutputStream(fileName);
