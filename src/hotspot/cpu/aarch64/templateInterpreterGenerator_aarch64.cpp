@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, 2018, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1351,9 +1351,11 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // pass JNIEnv
   __ add(c_rarg0, rthread, in_bytes(JavaThread::jni_environment_offset()));
 
-  // It is enough that the pc() points into the right code
-  // segment. It does not have to be the correct return pc.
-  __ set_last_Java_frame(esp, rfp, (address)NULL, rscratch1);
+  // Set the last Java PC in the frame anchor to be the return address from
+  // the call to the native method: this will allow the debugger to
+  // generate an accurate stack trace.
+  Label native_return;
+  __ set_last_Java_frame(esp, rfp, native_return, rscratch1);
 
   // change thread state
 #ifdef ASSERT
@@ -1374,6 +1376,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // Call the native method.
   __ blrt(r10, rscratch1);
+  __ bind(native_return);
   __ maybe_isb();
   __ get_method(rmethod);
   // result potentially in r0 or v0
