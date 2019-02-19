@@ -209,6 +209,8 @@ import jdk.internal.util.ArraysSupport;
  * <p> This class implements the {@link CharSequence} interface so that
  * character buffers may be used wherever character sequences are accepted, for
  * example in the regular-expression package {@link java.util.regex}.
+ * The methods defined by {@code CharSequence} operate relative to the current
+ * position of the buffer when they are invoked.
  * </p>
  *
 #end[char]
