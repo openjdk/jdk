@@ -60,6 +60,9 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[SystemDictionaryRoots] = new WorkerDataArray<double>(max_gc_threads, "SystemDictionary Roots (ms):");
   _gc_par_phases[CLDGRoots] = new WorkerDataArray<double>(max_gc_threads, "CLDG Roots (ms):");
   _gc_par_phases[JVMTIRoots] = new WorkerDataArray<double>(max_gc_threads, "JVMTI Roots (ms):");
+#if INCLUDE_AOT
+  _gc_par_phases[AOTCodeRoots] = new WorkerDataArray<double>(max_gc_threads, "AOT Root Scan (ms):");
+#endif
   _gc_par_phases[CMRefRoots] = new WorkerDataArray<double>(max_gc_threads, "CM RefProcessor Roots (ms):");
   _gc_par_phases[WaitForStrongCLD] = new WorkerDataArray<double>(max_gc_threads, "Wait For Strong CLD (ms):");
   _gc_par_phases[WeakCLDRoots] = new WorkerDataArray<double>(max_gc_threads, "Weak CLD Roots (ms):");
@@ -74,9 +77,6 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[ScanRS] = new WorkerDataArray<double>(max_gc_threads, "Scan RS (ms):");
   _gc_par_phases[OptScanRS] = new WorkerDataArray<double>(max_gc_threads, "Optional Scan RS (ms):");
   _gc_par_phases[CodeRoots] = new WorkerDataArray<double>(max_gc_threads, "Code Root Scanning (ms):");
-#if INCLUDE_AOT
-  _gc_par_phases[AOTCodeRoots] = new WorkerDataArray<double>(max_gc_threads, "AOT Root Scanning (ms):");
-#endif
   _gc_par_phases[ObjCopy] = new WorkerDataArray<double>(max_gc_threads, "Object Copy (ms):");
   _gc_par_phases[OptObjCopy] = new WorkerDataArray<double>(max_gc_threads, "Optional Object Copy (ms):");
   _gc_par_phases[Termination] = new WorkerDataArray<double>(max_gc_threads, "Termination (ms):");
@@ -389,9 +389,6 @@ double G1GCPhaseTimes::print_evacuate_collection_set() const {
   }
   debug_phase(_gc_par_phases[ScanRS]);
   debug_phase(_gc_par_phases[CodeRoots]);
-#if INCLUDE_AOT
-  debug_phase(_gc_par_phases[AOTCodeRoots]);
-#endif
   debug_phase(_gc_par_phases[ObjCopy]);
   debug_phase(_gc_par_phases[Termination]);
   debug_phase(_gc_par_phases[Other]);
@@ -503,6 +500,9 @@ const char* G1GCPhaseTimes::phase_name(GCParPhases phase) {
       "SystemDictionaryRoots",
       "CLDGRoots",
       "JVMTIRoots",
+#if INCLUDE_AOT
+      "AOTCodeRoots",
+#endif
       "CMRefRoots",
       "WaitForStrongCLD",
       "WeakCLDRoots",
@@ -512,9 +512,6 @@ const char* G1GCPhaseTimes::phase_name(GCParPhases phase) {
       "ScanRS",
       "OptScanRS",
       "CodeRoots",
-#if INCLUDE_AOT
-      "AOTCodeRoots",
-#endif
       "ObjCopy",
       "OptObjCopy",
       "Termination",

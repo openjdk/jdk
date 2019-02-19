@@ -55,6 +55,9 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     SystemDictionaryRoots,
     CLDGRoots,
     JVMTIRoots,
+#if INCLUDE_AOT
+    AOTCodeRoots,
+#endif
     CMRefRoots,
     WaitForStrongCLD,
     WeakCLDRoots,
@@ -64,9 +67,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     ScanRS,
     OptScanRS,
     CodeRoots,
-#if INCLUDE_AOT
-    AOTCodeRoots,
-#endif
     ObjCopy,
     OptObjCopy,
     Termination,
