@@ -40,7 +40,6 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/orderAccess.hpp"
-#include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 
 class ZNMethodDataImmediateOops {
@@ -440,24 +439,24 @@ void ZNMethodTable::register_nmethod(nmethod* nm) {
   disarm_nmethod(nm);
 }
 
-void ZNMethodTable::sweeper_wait_for_iteration() {
-  // The sweeper must wait for any ongoing iteration to complete
-  // before it can unregister an nmethod.
-  if (!Thread::current()->is_Code_cache_sweeper_thread()) {
-    return;
-  }
+void ZNMethodTable::wait_until_iteration_done() {
+  assert(CodeCache_lock->owned_by_self(), "Lock must be held");
 
   while (_iter_table != NULL) {
-    MutexUnlockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    os::naked_short_sleep(1);
+    CodeCache_lock->wait(Monitor::_no_safepoint_check_flag);
   }
 }
 
 void ZNMethodTable::unregister_nmethod(nmethod* nm) {
   assert(CodeCache_lock->owned_by_self(), "Lock must be held");
-  ResourceMark rm;
 
-  sweeper_wait_for_iteration();
+  if (Thread::current()->is_Code_cache_sweeper_thread()) {
+    // The sweeper must wait for any ongoing iteration to complete
+    // before it can unregister an nmethod.
+    ZNMethodTable::wait_until_iteration_done();
+  }
+
+  ResourceMark rm;
 
   log_unregister(nm);
 
@@ -494,6 +493,7 @@ void ZNMethodTable::nmethod_entries_do_end() {
     delete [] _iter_table;
   }
   _iter_table = NULL;
+
   assert(_claimed >= _iter_table_size, "Failed to claim all table entries");
 
   // Process deferred deletes
@@ -502,6 +502,9 @@ void ZNMethodTable::nmethod_entries_do_end() {
     FREE_C_HEAP_ARRAY(uint8_t, data);
   }
   _iter_deferred_deletes.clear();
+
+  // Notify iteration done
+  CodeCache_lock->notify_all();
 }
 
 void ZNMethodTable::entry_oops_do(ZNMethodTableEntry entry, OopClosure* cl) {

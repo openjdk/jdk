@@ -54,7 +54,7 @@ private:
   static size_t first_index(const nmethod* nm, size_t size);
   static size_t next_index(size_t prev_index, size_t size);
 
-  static void sweeper_wait_for_iteration();
+  static void wait_until_iteration_done();
 
   static bool register_entry(ZNMethodTableEntry* table, size_t size, ZNMethodTableEntry entry);
   static void unregister_entry(ZNMethodTableEntry* table, size_t size, nmethod* nm);
