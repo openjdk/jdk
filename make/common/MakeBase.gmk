@@ -392,9 +392,10 @@ ifneq ($(DISABLE_CACHE_FIND), true)
   #
   # Param 1 - Dirs to find in
   # Param 2 - (optional) specialization. Normally "-a \( ... \)" expression.
+  # Param 3 - (optional) options to find.
   define CacheFind
     $(if $(filter-out $(addsuffix /%,- $(FIND_CACHE_DIRS)) $(FIND_CACHE_DIRS),$1), \
-      $(if $(wildcard $1), $(shell $(FIND) $(wildcard $1) \( -type f -o -type l \) $2 \
+      $(if $(wildcard $1), $(shell $(FIND) $3 $(wildcard $1) \( -type f -o -type l \) $2 \
           | $(TR) ' ' '?')), \
       $(filter $(addsuffix /%,$(patsubst %/,%,$1)) $1,$(FIND_CACHE)))
   endef
