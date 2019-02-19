@@ -31,6 +31,8 @@ import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
+import sun.jvm.hotspot.utilities.BitMapInterface;
+import sun.jvm.hotspot.utilities.BitMapSegmented;
 
 public abstract class CollectedHeap extends VMObject {
   private static long         reservedFieldOffset;
@@ -92,5 +94,9 @@ public abstract class CollectedHeap extends VMObject {
     MemRegion mr = reservedRegion();
     tty.println("unknown subtype of CollectedHeap @ " + getAddress() + " (" +
                 mr.start() + "," + mr.end() + ")");
+  }
+
+  public BitMapInterface createBitMap(long bits) {
+    return new BitMapSegmented(bits);
   }
 }
