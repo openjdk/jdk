@@ -409,6 +409,10 @@ void G1ScanRSForRegionClosure::scan_rem_set_roots(HeapRegion* r) {
 
 void G1ScanRSForRegionClosure::scan_strong_code_roots(HeapRegion* r) {
   EventGCPhaseParallel event;
+  // We pass a weak code blobs closure to the remembered set scanning because we want to avoid
+  // treating the nmethods visited to act as roots for concurrent marking.
+  // We only want to make sure that the oops in the nmethods are adjusted with regard to the
+  // objects copied by the current evacuation.
   r->strong_code_roots_do(_pss->closures()->weak_codeblobs());
   event.commit(GCId::current(), _worker_i, G1GCPhaseTimes::phase_name(G1GCPhaseTimes::CodeRoots));
 }

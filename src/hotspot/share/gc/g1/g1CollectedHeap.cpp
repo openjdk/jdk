@@ -3282,10 +3282,6 @@ public:
 
       _root_processor->evacuate_roots(pss, worker_id);
 
-      // We pass a weak code blobs closure to the remembered set scanning because we want to avoid
-      // treating the nmethods visited to act as roots for concurrent marking.
-      // We only want to make sure that the oops in the nmethods are adjusted with regard to the
-      // objects copied by the current evacuation.
       _g1h->g1_rem_set()->oops_into_collection_set_do(pss, worker_id);
 
       double strong_roots_sec = os::elapsedTime() - start_strong_roots_sec;
