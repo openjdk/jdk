@@ -64,6 +64,11 @@ public class ShenandoahHeap extends CollectedHeap {
     }
 
     @Override
+    public long capacity() {
+        return numOfRegions() * ShenandoahHeapRegion.regionSizeBytes();
+    }
+
+    @Override
     public long used() {
         return used.getValue(addr);
     }

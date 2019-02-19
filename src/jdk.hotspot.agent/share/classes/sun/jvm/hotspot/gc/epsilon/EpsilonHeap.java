@@ -66,6 +66,16 @@ public class EpsilonHeap extends CollectedHeap {
     return CollectedHeapName.EPSILON;
   }
 
+  @Override
+  public long capacity() {
+    return space.capacity();
+  }
+
+  @Override
+  public long used() {
+    return space.used();
+  }
+
   public ContiguousSpace space() {
     return space;
   }
