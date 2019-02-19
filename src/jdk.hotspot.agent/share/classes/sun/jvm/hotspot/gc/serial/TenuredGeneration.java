@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,10 @@ public class TenuredGeneration extends CardGeneration {
 
   public void spaceIterate(SpaceClosure blk, boolean usedOnly) {
     blk.doSpace(theSpace());
+  }
+
+  public void liveRegionsIterate(LiveRegionsClosure closure) {
+    closure.doLiveRegions(theSpace());
   }
 
   public void printOn(PrintStream tty) {

@@ -30,6 +30,7 @@ import sun.jvm.hotspot.debugger.Address;
 import sun.jvm.hotspot.debugger.OopHandle;
 import sun.jvm.hotspot.gc.shared.CollectedHeap;
 import sun.jvm.hotspot.gc.shared.CollectedHeapName;
+import sun.jvm.hotspot.gc.shared.LiveRegionsClosure;
 import sun.jvm.hotspot.runtime.VM;
 import sun.jvm.hotspot.runtime.VMObjectFactory;
 import sun.jvm.hotspot.types.Type;
@@ -39,7 +40,6 @@ import sun.jvm.hotspot.utilities.BitMapInterface;
 // Mirror class for ZCollectedHeap.
 
 public class ZCollectedHeap extends CollectedHeap {
-
     private static long zHeapFieldOffset;
 
     static {
@@ -117,6 +117,13 @@ public class ZCollectedHeap extends CollectedHeap {
         } else {
             return handle.toString();
         }
+    }
+
+    @Override
+    public void liveRegionsIterate(LiveRegionsClosure closure) {
+        // Operation (currently) not supported with ZGC. Print
+        // a warning and leave the list of live regions empty.
+        System.err.println("Warning: Operation not supported with ZGC");
     }
 
     @Override

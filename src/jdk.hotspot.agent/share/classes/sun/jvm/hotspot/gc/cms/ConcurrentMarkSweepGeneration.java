@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,6 +65,9 @@ public class ConcurrentMarkSweepGeneration extends CardGeneration {
   public boolean contains(Address p)    { return cmsSpace().contains(p); }
   public void spaceIterate(SpaceClosure blk, boolean usedOnly) {
      blk.doSpace(cmsSpace());
+  }
+  public void liveRegionsIterate(LiveRegionsClosure closure) {
+      closure.doLiveRegions(cmsSpace());
   }
 
   public Generation.Name kind() {

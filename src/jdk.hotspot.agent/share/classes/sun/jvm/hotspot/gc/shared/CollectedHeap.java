@@ -28,6 +28,7 @@ import java.io.*;
 import java.util.*;
 
 import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.gc.shared.*;
 import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
@@ -76,6 +77,8 @@ public abstract class CollectedHeap extends VMObject {
   }
 
   public abstract CollectedHeapName kind();
+
+  public abstract void liveRegionsIterate(LiveRegionsClosure closure);
 
   public String oopAddressDescription(OopHandle handle) {
       return handle.toString();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -304,87 +304,48 @@ public class ObjectHeap {
     visitor.epilogue();
   }
 
-  private void addLiveRegions(String name, List input, List output) {
-     for (Iterator itr = input.iterator(); itr.hasNext();) {
-        MemRegion reg = (MemRegion) itr.next();
+  private static class LiveRegionsCollector implements LiveRegionsClosure {
+    LiveRegionsCollector(List<Address> l) {
+      liveRegions = l;
+    }
+
+    @Override
+    public void doLiveRegions(LiveRegionsProvider lrp) {
+      for (MemRegion reg : lrp.getLiveRegions()) {
         Address top = reg.end();
         Address bottom = reg.start();
         if (Assert.ASSERTS_ENABLED) {
-           Assert.that(top != null, "top address in a live region should not be null");
+          Assert.that(top != null, "top address in a live region should not be null");
         }
         if (Assert.ASSERTS_ENABLED) {
-           Assert.that(bottom != null, "bottom address in a live region should not be null");
+          Assert.that(bottom != null, "bottom address in a live region should not be null");
         }
-        output.add(top);
-        output.add(bottom);
+        liveRegions.add(top);
+        liveRegions.add(bottom);
         if (DEBUG) {
-          System.err.println("Live region: " + name + ": " + bottom + ", " + top);
-        }
-     }
+          System.err.println("Live region: " + lrp + ": " + bottom + ", " + top);
+      }
+    }
   }
 
-  private class LiveRegionsCollector implements SpaceClosure {
-     LiveRegionsCollector(List l) {
-        liveRegions = l;
-     }
-
-     public void doSpace(Space s) {
-        addLiveRegions(s.toString(), s.getLiveRegions(), liveRegions);
-     }
-     private List liveRegions;
+     private List<Address> liveRegions;
   }
 
   // Returns a List<Address> where the addresses come in pairs. These
   // designate the live regions of the heap.
-  private List collectLiveRegions() {
+  private List<Address> collectLiveRegions() {
     // We want to iterate through all live portions of the heap, but
     // do not want to abort the heap traversal prematurely if we find
     // a problem (like an allocated but uninitialized object at the
     // top of a generation). To do this we enumerate all generations'
     // bottom and top regions, and factor in TLABs if necessary.
 
-    // List<Address>. Addresses come in pairs.
-    List liveRegions = new ArrayList();
+    // Addresses come in pairs.
+    List<Address> liveRegions = new ArrayList<>();
     LiveRegionsCollector lrc = new LiveRegionsCollector(liveRegions);
 
     CollectedHeap heap = VM.getVM().getUniverse().heap();
-
-    if (heap instanceof GenCollectedHeap) {
-       GenCollectedHeap genHeap = (GenCollectedHeap) heap;
-       // Run through all generations, obtaining bottom-top pairs.
-       for (int i = 0; i < genHeap.nGens(); i++) {
-         Generation gen = genHeap.getGen(i);
-         gen.spaceIterate(lrc, true);
-       }
-    } else if (heap instanceof ParallelScavengeHeap) {
-       ParallelScavengeHeap psh = (ParallelScavengeHeap) heap;
-       PSYoungGen youngGen = psh.youngGen();
-       // Add eden space
-       addLiveRegions("eden", youngGen.edenSpace().getLiveRegions(), liveRegions);
-       // Add from-space but not to-space
-       addLiveRegions("from", youngGen.fromSpace().getLiveRegions(), liveRegions);
-       PSOldGen oldGen = psh.oldGen();
-       addLiveRegions("old ", oldGen.objectSpace().getLiveRegions(), liveRegions);
-    } else if (heap instanceof G1CollectedHeap) {
-        G1CollectedHeap g1h = (G1CollectedHeap) heap;
-        g1h.heapRegionIterate(lrc);
-    } else if (heap instanceof ShenandoahHeap) {
-       // Operation (currently) not supported with Shenandoah GC. Print
-       // a warning and leave the list of live regions empty.
-       System.err.println("Warning: Operation not supported with Shenandoah GC");
-    } else if (heap instanceof ZCollectedHeap) {
-       // Operation (currently) not supported with ZGC. Print
-       // a warning and leave the list of live regions empty.
-       System.err.println("Warning: Operation not supported with ZGC");
-    } else if (heap instanceof EpsilonHeap) {
-       EpsilonHeap eh = (EpsilonHeap) heap;
-       liveRegions.add(eh.space().top());
-       liveRegions.add(eh.space().bottom());
-    } else {
-       if (Assert.ASSERTS_ENABLED) {
-          Assert.that(false, "Unexpected CollectedHeap type: " + heap.getClass().getName());
-       }
-    }
+    heap.liveRegionsIterate(lrc);
 
     // If UseTLAB is enabled, snip out regions associated with TLABs'
     // dead regions. Note that TLABs can be present in any generation.
@@ -440,11 +401,9 @@ public class ObjectHeap {
     return liveRegions;
   }
 
-  private void sortLiveRegions(List liveRegions) {
-    Collections.sort(liveRegions, new Comparator() {
-        public int compare(Object o1, Object o2) {
-          Address a1 = (Address) o1;
-          Address a2 = (Address) o2;
+  private void sortLiveRegions(List<Address> liveRegions) {
+    Collections.sort(liveRegions, new Comparator<Address>() {
+        public int compare(Address a1, Address a2) {
           if (AddressOps.lt(a1, a2)) {
             return -1;
           } else if (AddressOps.gt(a1, a2)) {

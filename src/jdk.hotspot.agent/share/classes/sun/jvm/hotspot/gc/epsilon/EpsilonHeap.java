@@ -81,6 +81,11 @@ public class EpsilonHeap extends CollectedHeap {
   }
 
   @Override
+  public void liveRegionsIterate(LiveRegionsClosure closure) {
+    closure.doLiveRegions(space());
+  }
+
+  @Override
   public void printOn(PrintStream tty) {
      MemRegion mr = reservedRegion();
      tty.println("Epsilon heap");

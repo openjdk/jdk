@@ -25,6 +25,7 @@ package sun.jvm.hotspot.gc.shenandoah;
 
 import sun.jvm.hotspot.gc.shared.CollectedHeap;
 import sun.jvm.hotspot.gc.shared.CollectedHeapName;
+import sun.jvm.hotspot.gc.shared.LiveRegionsClosure;
 import sun.jvm.hotspot.debugger.Address;
 import sun.jvm.hotspot.runtime.VM;
 import sun.jvm.hotspot.types.Type;
@@ -75,6 +76,12 @@ public class ShenandoahHeap extends CollectedHeap {
 
     public long committed() {
         return committed.getValue(addr);
+    }
+
+    @Override
+    public void liveRegionsIterate(LiveRegionsClosure closure) {
+        // Operation (currently) not supported with Shenandoah GC.
+        System.err.println("Warning: Operation not supported with Shenandoah GC");
     }
 
     @Override

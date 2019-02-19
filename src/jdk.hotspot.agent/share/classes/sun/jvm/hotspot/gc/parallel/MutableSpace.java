@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,8 +62,8 @@ public class MutableSpace extends ImmutableSpace {
    }
 
    /** returns all MemRegions where live objects are */
-   public List/*<MemRegion>*/ getLiveRegions() {
-      List res = new ArrayList();
+   public List<MemRegion> getLiveRegions() {
+      List<MemRegion> res = new ArrayList<>();
       res.add(new MemRegion(bottom(), top()));
       return res;
    }

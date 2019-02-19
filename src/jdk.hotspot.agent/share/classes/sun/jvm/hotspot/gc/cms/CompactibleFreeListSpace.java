@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.utilities.*;
 
-public class CompactibleFreeListSpace extends CompactibleSpace {
+public class CompactibleFreeListSpace extends CompactibleSpace implements LiveRegionsProvider {
    private static AddressField collectorField;
    private static AddressField indexedFreeListField;
    private static AddressField dictionaryField;
@@ -93,10 +93,10 @@ public class CompactibleFreeListSpace extends CompactibleSpace {
    }
 
    public long used0() {
-      List regions = getLiveRegions();
+      List<MemRegion> regions = getLiveRegions();
       long usedSize = 0L;
-      for (Iterator itr = regions.iterator(); itr.hasNext();) {
-         MemRegion mr = (MemRegion) itr.next();
+      for (Iterator<MemRegion> itr = regions.iterator(); itr.hasNext();) {
+         MemRegion mr = itr.next();
          usedSize += mr.byteSize();
       }
       return usedSize;
@@ -154,8 +154,9 @@ public class CompactibleFreeListSpace extends CompactibleSpace {
        return addr;
    }
 
-   public List/*<MemRegion>*/ getLiveRegions() {
-      List res = new ArrayList(); // List<MemRegion>
+  @Override
+   public List<MemRegion> getLiveRegions() {
+      List<MemRegion> res = new ArrayList<>();
       VM vm = VM.getVM();
       Debugger dbg = vm.getDebugger();
       ObjectHeap heap = vm.getObjectHeap();
