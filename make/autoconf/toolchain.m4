@@ -276,6 +276,20 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETERMINE_TOOLCHAIN_TYPE],
   fi
   AC_SUBST(TOOLCHAIN_TYPE)
 
+  # on AIX, check for xlclang++ on the PATH and TOOLCHAIN_PATH and use it if it is available
+  if test "x$OPENJDK_TARGET_OS" = xaix; then
+    if test "x$TOOLCHAIN_PATH" != x; then
+      XLC_TEST_PATH=${TOOLCHAIN_PATH}/
+    fi
+
+    XLCLANG_VERSION_OUTPUT=`${XLC_TEST_PATH}xlclang++ -qversion 2>&1 | $HEAD -n 1`
+    $ECHO "$XLCLANG_VERSION_OUTPUT" | $GREP "IBM XL C/C++ for AIX" > /dev/null
+    if test $? -eq 0; then
+      AC_MSG_NOTICE([xlclang++ output: $XLCLANG_VERSION_OUTPUT])
+      XLC_USES_CLANG=true
+    fi
+  fi
+
   TOOLCHAIN_CC_BINARY_clang="clang"
   TOOLCHAIN_CC_BINARY_gcc="gcc"
   TOOLCHAIN_CC_BINARY_microsoft="cl$EXE_SUFFIX"
@@ -287,6 +301,14 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETERMINE_TOOLCHAIN_TYPE],
   TOOLCHAIN_CXX_BINARY_microsoft="cl$EXE_SUFFIX"
   TOOLCHAIN_CXX_BINARY_solstudio="CC"
   TOOLCHAIN_CXX_BINARY_xlc="xlC_r"
+
+  if test "x$OPENJDK_TARGET_OS" = xaix; then
+    if test "x$XLC_USES_CLANG" = xtrue; then
+      AC_MSG_NOTICE([xlclang++ detected, using it])
+      TOOLCHAIN_CC_BINARY_xlc="xlclang"
+      TOOLCHAIN_CXX_BINARY_xlc="xlclang++"
+    fi
+  fi
 
   # Use indirect variable referencing
   toolchain_var_name=TOOLCHAIN_DESCRIPTION_$TOOLCHAIN_TYPE
