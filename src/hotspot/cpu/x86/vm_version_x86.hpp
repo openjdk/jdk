@@ -336,7 +336,7 @@ protected:
 #define CPU_AVX512_VPOPCNTDQ ((uint64_t)UCONST64(0x2000000000)) // Vector popcount
 #define CPU_VPCLMULQDQ ((uint64_t)UCONST64(0x4000000000)) //Vector carryless multiplication
 #define CPU_VAES ((uint64_t)UCONST64(0x8000000000))    // Vector AES instructions
-#define CPU_VNNI ((uint64_t)UCONST64(0x16000000000))   // Vector Neural Network Instructions
+#define CPU_VNNI ((uint64_t)UCONST64(0x10000000000))   // Vector Neural Network Instructions
 
   enum Extended_Family {
     // AMD
