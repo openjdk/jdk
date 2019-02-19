@@ -83,6 +83,10 @@ public abstract class CollectedHeap extends VMObject {
       return handle.getOopHandleAt(offset);
   }
 
+  public OopHandle oop_load_in_native(Address addr) {
+      return addr.getOopHandleAt(0);
+  }
+
   public void print() { printOn(System.out); }
   public void printOn(PrintStream tty) {
     MemRegion mr = reservedRegion();

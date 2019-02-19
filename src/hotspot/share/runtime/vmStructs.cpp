@@ -332,6 +332,7 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   unchecked_nonstatic_field(Symbol,            _body,                                         sizeof(u1)) /* NOTE: no type */        \
   nonstatic_field(Symbol,                      _body[0],                                      u1)                                    \
   nonstatic_field(TypeArrayKlass,              _max_length,                                   jint)                                  \
+  nonstatic_field(OopHandle,                   _obj,                                          oop*)                                  \
                                                                                                                                      \
   /***********************/                                                                                                          \
   /* Constant Pool Cache */                                                                                                          \
@@ -1299,7 +1300,8 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   declare_oop_type(oop)                                                   \
   declare_oop_type(narrowOop)                                             \
   declare_oop_type(typeArrayOop)                                          \
-  declare_oop_type(OopHandle)                                             \
+                                                                          \
+  declare_toplevel_type(OopHandle)                                        \
                                                                           \
   /*************************************/                                 \
   /* MethodOop-related data structures */                                 \

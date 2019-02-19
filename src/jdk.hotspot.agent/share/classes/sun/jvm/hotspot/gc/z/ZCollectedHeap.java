@@ -80,17 +80,32 @@ public class ZCollectedHeap extends CollectedHeap {
         return heap().used();
     }
 
-    public OopHandle oop_load_at(OopHandle handle, long offset) {
-        assert(!VM.getVM().isCompressedOopsEnabled());
 
-        Address oopAddress = handle.getAddressAt(offset);
 
+    private OopHandle oop_load_barrier(Address oopAddress) {
         oopAddress = ZBarrier.weak_barrier(oopAddress);
         if (oopAddress == null) {
             return null;
         }
 
         return oopAddress.addOffsetToAsOopHandle(0);
+    }
+
+    @Override
+    public OopHandle oop_load_at(OopHandle handle, long offset) {
+        assert(!VM.getVM().isCompressedOopsEnabled());
+
+        Address oopAddress = handle.getAddressAt(offset);
+
+        return oop_load_barrier(oopAddress);
+    }
+
+    // addr can be either in heap or in native
+    @Override
+    public OopHandle oop_load_in_native(Address addr) {
+        Address oopAddress = addr.getAddressAt(0);
+
+        return oop_load_barrier(oopAddress);
     }
 
     public String oopAddressDescription(OopHandle handle) {
