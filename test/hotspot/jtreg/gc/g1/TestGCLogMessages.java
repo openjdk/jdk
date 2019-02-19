@@ -100,7 +100,7 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Processed Buffers", Level.DEBUG),
         new LogMessageWithLevel("Scanned Cards", Level.DEBUG),
         new LogMessageWithLevel("Skipped Cards", Level.DEBUG),
-        new LogMessageWithLevel("Scan HCC", Level.TRACE),
+        new LogMessageWithLevel("Scan HCC", Level.DEBUG),
         // Scan RS
         new LogMessageWithLevel("Scan RS", Level.DEBUG),
         new LogMessageWithLevel("Scanned Cards", Level.DEBUG),

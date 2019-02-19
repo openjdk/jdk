@@ -383,10 +383,10 @@ double G1GCPhaseTimes::print_evacuate_collection_set() const {
   for (int i = ThreadRoots; i <= SATBFiltering; i++) {
     trace_phase(_gc_par_phases[i]);
   }
-  debug_phase(_gc_par_phases[UpdateRS]);
   if (G1HotCardCache::default_use_cache()) {
-    trace_phase(_gc_par_phases[ScanHCC]);
+    debug_phase(_gc_par_phases[ScanHCC]);
   }
+  debug_phase(_gc_par_phases[UpdateRS]);
   debug_phase(_gc_par_phases[ScanRS]);
   debug_phase(_gc_par_phases[CodeRoots]);
   debug_phase(_gc_par_phases[ObjCopy]);
