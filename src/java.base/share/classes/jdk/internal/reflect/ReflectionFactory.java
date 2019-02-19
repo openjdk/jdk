@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,7 +175,7 @@ public class ReflectionFactory {
     public FieldAccessor newFieldAccessor(Field field, boolean override) {
         checkInitted();
 
-        Field root = langReflectAccess.getRoot(field);
+        Field root = langReflectAccess().getRoot(field);
         if (root != null) {
             // FieldAccessor will use the root unless the modifiers have
             // been overrridden
@@ -197,7 +197,7 @@ public class ReflectionFactory {
         }
 
         // use the root Method that will not cache caller class
-        Method root = langReflectAccess.getRoot(method);
+        Method root = langReflectAccess().getRoot(method);
         if (root != null) {
             method = root;
         }
@@ -233,7 +233,7 @@ public class ReflectionFactory {
         }
 
         // use the root Constructor that will not cache caller class
-        Constructor<?> root = langReflectAccess.getRoot(c);
+        Constructor<?> root = langReflectAccess().getRoot(c);
         if (root != null) {
             c = root;
         }
