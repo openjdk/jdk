@@ -34,6 +34,7 @@ import sun.jvm.hotspot.runtime.VM;
 import sun.jvm.hotspot.runtime.VMObjectFactory;
 import sun.jvm.hotspot.types.Type;
 import sun.jvm.hotspot.types.TypeDataBase;
+import sun.jvm.hotspot.utilities.BitMapInterface;
 
 // Mirror class for ZCollectedHeap.
 
@@ -116,5 +117,11 @@ public class ZCollectedHeap extends CollectedHeap {
         } else {
             return handle.toString();
         }
+    }
+
+    @Override
+    public BitMapInterface createBitMap(long size) {
+        // Ignores the size
+        return new ZExternalBitMap(this);
     }
 }

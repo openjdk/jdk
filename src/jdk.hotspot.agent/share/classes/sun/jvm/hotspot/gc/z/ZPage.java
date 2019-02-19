@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,8 +65,12 @@ public class ZPage extends VMObject {
         return (ZForwardingTable)VMObjectFactory.newObject(ZForwardingTable.class, addr.addOffsetTo(forwardingFieldOffset));
     }
 
-    private long start() {
+    long start() {
         return virtual().start();
+    }
+
+    long size() {
+        return virtual().end() - virtual().start();
     }
 
     Address forward_object(Address from) {
