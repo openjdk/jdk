@@ -235,7 +235,7 @@ public class TTYResources extends java.util.ListResourceBundle {
         {"Not owned", "  Not owned"},
         {"Not waiting for a monitor", "  Not waiting for a monitor"},
         {"Nothing suspended.", "Nothing suspended."},
-        {"object description and hex id", "({0}){1}"},
+        {"object description and id", "({0}){1}"},
         {"Operation is not supported on the target VM", "Operation is not supported on the target VM"},
         {"operation not yet supported", "operation not yet supported"},
         {"Owned by:", "  Owned by: {0}, entry count: {1,number,integer}"},
