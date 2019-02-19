@@ -156,6 +156,7 @@ public class TestHumongousClassLoader {
         URLClassLoader urlLoader = new URLClassLoader(url);
 
         Class<?> simpleClassLoaderClass = urlLoader.loadClass(SIMPLE_CLASSLOADER_NAME);
+        urlLoader.close();
 
         ClassLoader simpleClassLoader = (ClassLoader) simpleClassLoaderClass
                 .getConstructor(java.lang.ClassLoader.class)

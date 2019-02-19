@@ -33,6 +33,7 @@ import java.util.ArrayList;
  */
 public class TestMetaspaceInitialization {
     private class Internal {
+        @SuppressWarnings("unused")
         public int x;
         public Internal(int x) {
             this.x = x;

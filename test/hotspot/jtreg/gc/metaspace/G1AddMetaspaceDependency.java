@@ -111,13 +111,12 @@ public class G1AddMetaspaceDependency {
     Loader f_loader = new Loader(b_name, b_bytes, a_name, a_loader);
     Loader g_loader = new Loader(b_name, b_bytes, a_name, a_loader);
 
-    Class<?> c;
-    c = b_loader.loadClass(b_name);
-    c = c_loader.loadClass(b_name);
-    c = d_loader.loadClass(b_name);
-    c = e_loader.loadClass(b_name);
-    c = f_loader.loadClass(b_name);
-    c = g_loader.loadClass(b_name);
+    b_loader.loadClass(b_name);
+    c_loader.loadClass(b_name);
+    d_loader.loadClass(b_name);
+    e_loader.loadClass(b_name);
+    f_loader.loadClass(b_name);
+    g_loader.loadClass(b_name);
   }
   public class A {
   }

@@ -131,7 +131,6 @@ public class TestPrintReferences {
 
     // Find the first Reference Processing log and check its format.
     private static void checkLogFormat(OutputAnalyzer output, boolean parallelRefProcEnabled) {
-        String countRegex = "[0-9]+";
         String timeRegex = doubleRegex + "ms";
 
         /* Total Reference processing time */

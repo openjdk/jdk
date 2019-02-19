@@ -26,6 +26,8 @@ package gc.g1.humongousObjects;
 import jdk.test.lib.Utils;
 import sun.hotspot.WhiteBox;
 
+import static java.lang.ref.Reference.reachabilityFence;
+
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
@@ -139,7 +141,7 @@ public class TestNoAllocationsInHRegions {
                     // Dead object allocation
                     () -> {
                         int size = RND.nextInt(DEAD_OBJECT_MAX_SIZE);
-                        byte[] deadObject = new byte[size];
+                        reachabilityFence(new byte[size]);
                     },
 
                     // Check

@@ -23,6 +23,8 @@
 
 package gc.cms;
 
+import static java.lang.ref.Reference.reachabilityFence;
+
 /*
  * @test DisableResizePLAB
  * @key gc
@@ -41,7 +43,7 @@ public class DisableResizePLAB {
         }
         long startTime = System.currentTimeMillis();
         while (System.currentTimeMillis() - startTime < 10_000) {
-            Object o = new byte[1024];
+            reachabilityFence(new byte[1024]);
         }
     }
 }

@@ -57,8 +57,8 @@ public class TestMemoryMXBeans {
         MemoryMXBean memoryMXBean = ManagementFactory.getMemoryMXBean();
         long heapInit = memoryMXBean.getHeapMemoryUsage().getInit();
         long heapMax = memoryMXBean.getHeapMemoryUsage().getMax();
-        long nonHeapInit = memoryMXBean.getNonHeapMemoryUsage().getInit();
-        long nonHeapMax = memoryMXBean.getNonHeapMemoryUsage().getMax();
+        memoryMXBean.getNonHeapMemoryUsage().getInit(); // value not used
+        memoryMXBean.getNonHeapMemoryUsage().getMax();  // value not used
 
         if (initSize > 0 && heapInit != initSize) {
             throw new IllegalStateException("Init heap size is wrong: " + heapInit + " vs " + initSize);

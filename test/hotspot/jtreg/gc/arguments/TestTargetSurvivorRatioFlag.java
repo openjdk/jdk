@@ -23,6 +23,8 @@
 
 package gc.arguments;
 
+import static java.lang.ref.Reference.reachabilityFence;
+
 /*
  * @test TestTargetSurvivorRatioFlag
  * @key gc
@@ -297,7 +299,7 @@ public class TestTargetSurvivorRatioFlag {
 
             // force minor GC
             while (youngGCBean.getCollectionCount() <= initialGcId + MAX_TENURING_THRESHOLD * 2) {
-                byte b[] = new byte[ARRAY_LENGTH];
+                reachabilityFence(new byte[ARRAY_LENGTH]);
             }
 
             allocator.release();

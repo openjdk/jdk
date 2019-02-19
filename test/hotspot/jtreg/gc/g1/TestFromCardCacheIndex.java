@@ -130,7 +130,7 @@ public class TestFromCardCacheIndex {
             if (target == null) {
                 continue;
             }
-            final long startAddress = WB.getObjectAddress(target);
+            WB.getObjectAddress(target); // startAddress not used
             final long lastAddress = getObjectLastAddress(target);
             final int card = getCardIndex32bit(lastAddress);
             if (card == -1) {

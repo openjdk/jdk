@@ -54,10 +54,6 @@ public class TestRemsetLoggingThreads {
 
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
-    // a zero in refinement thread numbers indicates that the value in ParallelGCThreads should be used.
-    // Additionally use at least one thread.
-    int expectedNumRefinementThreads = refinementThreads;
-
     String pattern = "Concurrent RS threads times \\(s\\)$";
     Matcher m = Pattern.compile(pattern, Pattern.MULTILINE).matcher(output.getStdout());
 

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2017, SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1842,6 +1842,51 @@ class StubGenerator: public StubCodeGenerator {
   }
 
 
+  // Compute GHASH function.
+  address generate_ghash_processBlocks() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "ghash_processBlocks");
+    unsigned int start_off = __ offset();   // Remember stub start address (is rtn value).
+
+    const Register state   = Z_ARG1;
+    const Register subkeyH = Z_ARG2;
+    const Register data    = Z_ARG3; // 1st of even-odd register pair.
+    const Register blocks  = Z_ARG4;
+    const Register len     = blocks; // 2nd of even-odd register pair.
+
+    const int param_block_size = 4 * 8;
+    const int frame_resize = param_block_size + 8; // Extra space for copy of fp.
+
+    // Reserve stack space for parameter block (R1).
+    __ z_lgr(Z_R1, Z_SP);
+    __ resize_frame(-frame_resize, Z_R0, true);
+    __ z_aghi(Z_R1, -param_block_size);
+
+    // Fill parameter block.
+    __ z_mvc(Address(Z_R1)    , Address(state)  , 16);
+    __ z_mvc(Address(Z_R1, 16), Address(subkeyH), 16);
+
+    // R4+5: data pointer + length
+    __ z_llgfr(len, blocks);  // Cast to 64-bit.
+
+    // R0: function code
+    __ load_const_optimized(Z_R0, (int)VM_Version::MsgDigest::_GHASH);
+
+    // Compute.
+    __ z_sllg(len, len, 4);  // In bytes.
+    __ kimd(data);
+
+    // Copy back result and free parameter block.
+    __ z_mvc(Address(state), Address(Z_R1), 16);
+    __ z_xc(Address(Z_R1), param_block_size, Address(Z_R1));
+    __ z_aghi(Z_SP, frame_resize);
+
+    __ z_br(Z_R14);
+
+    return __ addr_at(start_off);
+  }
+
+
   // Call interface for all SHA* stubs.
   //
   //   Z_ARG1 - source data block. Ptr to leftmost byte to be processed.
@@ -2303,6 +2348,11 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_aescrypt_decryptBlock = generate_AES_decryptBlock("AES_decryptBlock");
       StubRoutines::_cipherBlockChaining_encryptAESCrypt = generate_cipherBlockChaining_AES_encrypt("AES_encryptBlock_chaining");
       StubRoutines::_cipherBlockChaining_decryptAESCrypt = generate_cipherBlockChaining_AES_decrypt("AES_decryptBlock_chaining");
+    }
+
+    // Generate GHASH intrinsics code
+    if (UseGHASHIntrinsics) {
+      StubRoutines::_ghash_processBlocks = generate_ghash_processBlocks();
     }
 
     // Generate SHA1/SHA256/SHA512 intrinsics code.
