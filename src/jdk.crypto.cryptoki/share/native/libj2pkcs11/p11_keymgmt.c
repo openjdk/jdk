@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -151,14 +151,14 @@ Java_sun_security_pkcs11_wrapper_PKCS11_getNativeKeyInfo
     unsigned int i = 0U;
     unsigned long totalDataSize = 0UL, attributesCount = 0UL;
     unsigned long totalCkAttributesSize = 0UL, totalNativeKeyInfoArraySize = 0UL;
-    unsigned long* wrappedKeySizePtr = NULL;
+    jbyte* wrappedKeySizePtr = NULL;
     jbyte* nativeKeyInfoArrayRawCkAttributes = NULL;
     jbyte* nativeKeyInfoArrayRawCkAttributesPtr = NULL;
     jbyte* nativeKeyInfoArrayRawDataPtr = NULL;
     CK_MECHANISM ckMechanism;
     char iv[16] = {0x0};
     CK_ULONG ckWrappedKeyLength = 0U;
-    unsigned long* wrappedKeySizeWrappedKeyArrayPtr = NULL;
+    jbyte* wrappedKeySizeWrappedKeyArrayPtr = NULL;
     CK_BYTE_PTR wrappedKeyBufferPtr = NULL;
     CK_FUNCTION_LIST_PTR ckpFunctions = getFunctionList(env, obj);
     CK_OBJECT_CLASS class;
@@ -234,7 +234,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_getNativeKeyInfo
     //     * sizes are expressed in bytes and data type is unsigned long
     totalCkAttributesSize = attributesCount * sizeof(CK_ATTRIBUTE);
     TRACE1("DEBUG: GetNativeKeyInfo attributesCount = %lu\n", attributesCount);
-    TRACE1("DEBUG: GetNativeKeyInfo sizeof CK_ATTRIBUTE = %lu\n", sizeof(CK_ATTRIBUTE));
+    TRACE1("DEBUG: GetNativeKeyInfo sizeof CK_ATTRIBUTE = %zu\n", sizeof(CK_ATTRIBUTE));
     TRACE1("DEBUG: GetNativeKeyInfo totalCkAttributesSize = %lu\n", totalCkAttributesSize);
     TRACE1("DEBUG: GetNativeKeyInfo totalDataSize = %lu\n", totalDataSize);
 
@@ -254,8 +254,8 @@ Java_sun_security_pkcs11_wrapper_PKCS11_getNativeKeyInfo
         goto cleanup;
     }
 
-    wrappedKeySizePtr = (unsigned long*)(nativeKeyInfoArrayRaw +
-            sizeof(unsigned long)*2 + totalCkAttributesSize + totalDataSize);
+    wrappedKeySizePtr = nativeKeyInfoArrayRaw +
+            sizeof(unsigned long)*2 + totalCkAttributesSize + totalDataSize;
     memcpy(nativeKeyInfoArrayRaw, &totalCkAttributesSize, sizeof(unsigned long));
 
     memcpy(nativeKeyInfoArrayRaw + sizeof(unsigned long) + totalCkAttributesSize,
@@ -330,15 +330,15 @@ Java_sun_security_pkcs11_wrapper_PKCS11_getNativeKeyInfo
                 memcpy(nativeKeyInfoWrappedKeyArrayRaw, nativeKeyInfoArrayRaw,
                         totalNativeKeyInfoArraySize);
                 wrappedKeySizeWrappedKeyArrayPtr =
-                        (unsigned long*)(nativeKeyInfoWrappedKeyArrayRaw +
+                        nativeKeyInfoWrappedKeyArrayRaw +
                         sizeof(unsigned long)*2 + totalCkAttributesSize +
-                        totalDataSize);
+                        totalDataSize;
                 memcpy(wrappedKeySizeWrappedKeyArrayPtr, &ckWrappedKeyLength, sizeof(unsigned long));
                 TRACE1("DEBUG: GetNativeKeyInfo 1st C_WrapKey wrappedKeyLength = %lu\n", ckWrappedKeyLength);
 
                 wrappedKeyBufferPtr =
-                        (unsigned char*)wrappedKeySizeWrappedKeyArrayPtr +
-                        sizeof(unsigned long);
+                        (CK_BYTE_PTR) (wrappedKeySizeWrappedKeyArrayPtr +
+                        sizeof(unsigned long));
                 rv = (*ckpFunctions->C_WrapKey)(ckSessionHandle, &ckMechanism,
                         jLongToCKULong(jWrappingKeyHandle),ckObjectHandle,
                         wrappedKeyBufferPtr, &ckWrappedKeyLength);
@@ -414,7 +414,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_createNativeKey
     jbyte* nativeKeyInfoArrayRawCkAttributesPtr = NULL;
     jbyte* nativeKeyInfoArrayRawDataPtr = NULL;
     unsigned long totalDataSize = 0UL;
-    unsigned long* wrappedKeySizePtr = NULL;
+    jbyte* wrappedKeySizePtr = NULL;
     unsigned int i = 0U;
     CK_MECHANISM ckMechanism;
     char iv[16] = {0x0};
@@ -443,8 +443,8 @@ Java_sun_security_pkcs11_wrapper_PKCS11_createNativeKey
             sizeof(unsigned long));
     TRACE1("DEBUG: createNativeKey totalDataSize = %lu\n", totalDataSize);
 
-    wrappedKeySizePtr = (unsigned long*)(nativeKeyInfoArrayRaw +
-            sizeof(unsigned long)*2 + totalCkAttributesSize + totalDataSize);
+    wrappedKeySizePtr = nativeKeyInfoArrayRaw +
+            sizeof(unsigned long)*2 + totalCkAttributesSize + totalDataSize;
 
     memcpy(&ckWrappedKeyLength, wrappedKeySizePtr, sizeof(unsigned long));
     TRACE1("DEBUG: createNativeKey wrappedKeyLength = %lu\n", ckWrappedKeyLength);
@@ -470,7 +470,8 @@ Java_sun_security_pkcs11_wrapper_PKCS11_createNativeKey
         jMechanismToCKMechanism(env, jWrappingMech, &ckMechanism);
         rv = (*ckpFunctions->C_UnwrapKey)(ckSessionHandle, &ckMechanism,
                 jLongToCKULong(jWrappingKeyHandle),
-                (CK_BYTE_PTR)(wrappedKeySizePtr + 1), ckWrappedKeyLength,
+                (CK_BYTE_PTR)(wrappedKeySizePtr + sizeof(unsigned long)),
+                ckWrappedKeyLength,
                 (CK_ATTRIBUTE_PTR)nativeKeyInfoArrayRawCkAttributes,
                 jLongToCKULong(nativeKeyInfoCkAttributesCount),
                 &ckObjectHandle);
