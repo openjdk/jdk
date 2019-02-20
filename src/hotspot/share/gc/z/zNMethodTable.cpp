@@ -153,7 +153,6 @@ static void set_gc_data(nmethod* nm, ZNMethodData* data) {
 
 ZNMethodTableEntry* ZNMethodTable::_table = NULL;
 size_t ZNMethodTable::_size = 0;
-ZLock ZNMethodTable::_iter_lock;
 ZNMethodTableEntry* ZNMethodTable::_iter_table = NULL;
 size_t ZNMethodTable::_iter_table_size = 0;
 ZArray<void*> ZNMethodTable::_iter_deferred_deletes;
@@ -162,11 +161,12 @@ size_t ZNMethodTable::_nunregistered = 0;
 volatile size_t ZNMethodTable::_claimed = 0;
 
 void ZNMethodTable::safe_delete(void* data) {
+  assert(CodeCache_lock->owned_by_self(), "Lock must be held");
+
   if (data == NULL) {
     return;
   }
 
-  ZLocker<ZLock> locker(&_iter_lock);
   if (_iter_table != NULL) {
     // Iteration in progress, defer delete
     _iter_deferred_deletes.add(data);
@@ -290,7 +290,8 @@ void ZNMethodTable::unregister_entry(ZNMethodTableEntry* table, size_t size, nme
 }
 
 void ZNMethodTable::rebuild(size_t new_size) {
-  ZLocker<ZLock> locker(&_iter_lock);
+  assert(CodeCache_lock->owned_by_self(), "Lock must be held");
+
   assert(is_power_of_2(new_size), "Invalid size");
 
   log_debug(gc, nmethod)("Rebuilding NMethod Table: "
@@ -475,7 +476,6 @@ void ZNMethodTable::disarm_nmethod(nmethod* nm) {
 
 void ZNMethodTable::nmethod_entries_do_begin() {
   MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-  ZLocker<ZLock> locker(&_iter_lock);
 
   // Prepare iteration
   _iter_table = _table;
@@ -486,7 +486,6 @@ void ZNMethodTable::nmethod_entries_do_begin() {
 
 void ZNMethodTable::nmethod_entries_do_end() {
   MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-  ZLocker<ZLock> locker(&_iter_lock);
 
   // Finish iteration
   if (_iter_table != _table) {

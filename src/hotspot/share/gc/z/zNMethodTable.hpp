@@ -41,7 +41,6 @@ class ZNMethodTable : public AllStatic {
 private:
   static ZNMethodTableEntry* _table;
   static size_t              _size;
-  static ZLock               _iter_lock;
   static ZNMethodTableEntry* _iter_table;
   static size_t              _iter_table_size;
   static ZArray<void*>       _iter_deferred_deletes;
