@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,20 +50,71 @@ public class BasicJMapTest {
     public static void main(String[] args) throws Exception {
         testHisto();
         testHistoLive();
+        testHistoAll();
+        testHistoToFile();
+        testHistoLiveToFile();
+        testHistoAllToFile();
         testFinalizerInfo();
         testClstats();
         testDump();
         testDumpLive();
+        testDumpAll();
     }
 
     private static void testHisto() throws Exception {
-        OutputAnalyzer output = jmap("-histo");
+        OutputAnalyzer output = jmap("-histo:");
         output.shouldHaveExitValue(0);
+        OutputAnalyzer output1 = jmap("-histo");
+        output1.shouldHaveExitValue(0);
     }
 
     private static void testHistoLive() throws Exception {
         OutputAnalyzer output = jmap("-histo:live");
         output.shouldHaveExitValue(0);
+    }
+
+    private static void testHistoAll() throws Exception {
+        OutputAnalyzer output = jmap("-histo:all");
+        output.shouldHaveExitValue(0);
+    }
+
+    private static void testHistoToFile() throws Exception {
+        histoToFile(false);
+    }
+
+    private static void testHistoLiveToFile() throws Exception {
+        histoToFile(true);
+    }
+
+    private static void testHistoAllToFile() throws Exception {
+        boolean explicitAll = true;
+        histoToFile(false, explicitAll);
+    }
+
+    private static void histoToFile(boolean live) throws Exception {
+        boolean explicitAll = false;
+        histoToFile(live, explicitAll);
+    }
+
+    private static void histoToFile(boolean live, boolean explicitAll) throws Exception {
+        if (live == true && explicitAll == true) {
+            fail("Illegal argument setting for jmap -histo");
+        }
+        File file = new File("jmap.histo.file" + System.currentTimeMillis() + ".histo");
+        if (file.exists()) {
+            file.delete();
+        }
+        OutputAnalyzer output;
+        if (live) {
+            output = jmap("-histo:live,file=" + file.getName());
+        } else if (explicitAll == true) {
+            output = jmap("-histo:all,file=" + file.getName());
+        } else {
+            output = jmap("-histo:file=" + file.getName());
+        }
+        output.shouldHaveExitValue(0);
+        output.shouldContain("Heap inspection file created");
+        file.delete();
     }
 
     private static void testFinalizerInfo() throws Exception {
@@ -84,7 +135,20 @@ public class BasicJMapTest {
         dump(true);
     }
 
+    private static void testDumpAll() throws Exception {
+        boolean explicitAll = true;
+        dump(false, explicitAll);
+    }
+
     private static void dump(boolean live) throws Exception {
+        boolean explicitAll = false;
+        dump(live, explicitAll);
+    }
+
+    private static void dump(boolean live, boolean explicitAll) throws Exception {
+        if (live == true && explicitAll == true) {
+          fail("Illegal argument setting for jmap -dump");
+        }
         File dump = new File("jmap.dump." + System.currentTimeMillis() + ".hprof");
         if (dump.exists()) {
             dump.delete();
@@ -92,6 +156,8 @@ public class BasicJMapTest {
         OutputAnalyzer output;
         if (live) {
             output = jmap("-dump:live,format=b,file=" + dump.getName());
+        } else if (explicitAll == true) {
+            output = jmap("-dump:all,format=b,file=" + dump.getName());
         } else {
             output = jmap("-dump:format=b,file=" + dump.getName());
         }
@@ -121,7 +187,7 @@ public class BasicJMapTest {
         launcher.addToolArg(Long.toString(ProcessTools.getProcessId()));
 
         processBuilder.command(launcher.getCommand());
-        System.out.println(Arrays.toString(processBuilder.command().toArray()).replace(",", ""));
+        System.out.println(Arrays.toString(processBuilder.command().toArray()));
         OutputAnalyzer output = ProcessTools.executeProcess(processBuilder);
         System.out.println(output.getOutput());
 

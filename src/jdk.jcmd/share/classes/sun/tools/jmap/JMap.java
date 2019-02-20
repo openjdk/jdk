@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,22 +145,52 @@ public class JMap {
         vm.detach();
     }
 
+    private static String parseFileName(String opt) {
+        // opt starts with "file="
+        if (opt.length() > 5) {
+            //  pass whole "file=" string
+            String filename = opt.substring(5);
+            try {
+                // Get the canonical path - important to avoid just
+                // passing a "heap.bin" and having the dump created
+                // in the target VM working directory rather than the
+                // directory where jmap is executed.
+                return new File(filename).getCanonicalPath();
+            } catch (IOException ioe) {
+              return null;
+            }
+        }
+        // no filename
+        return null;
+    }
+
     private static void histo(String pid, String options)
         throws AttachNotSupportedException, IOException,
                UnsupportedEncodingException {
         String liveopt = "-all";
-        if (options.isEmpty() || options.equals("all")) {
-            //  pass
-        }
-        else if (options.equals("live")) {
-            liveopt = "-live";
-        }
-        else {
-            usage(1);
+        String filename = null;
+        String subopts[] = options.split(",");
+
+        for (int i = 0; i < subopts.length; i++) {
+            String subopt = subopts[i];
+            if (subopt.equals("") || subopt.equals("all")) {
+                // pass
+            } else if (subopt.equals("live")) {
+                liveopt = "-live";
+            } else if (subopt.startsWith("file=")) {
+                filename = parseFileName(subopt);
+                if (filename == null) {
+                    usage(1); // invalid options or no filename
+                }
+            } else {
+                usage(1);
+            }
         }
 
+        System.out.flush();
+
         // inspectHeap is not the same as jcmd GC.class_histogram
-        executeCommandForPid(pid, "inspectheap", liveopt);
+        executeCommandForPid(pid, "inspectheap", filename, liveopt);
     }
 
     private static void dump(String pid, String options)
@@ -176,10 +206,7 @@ public class JMap {
             if (subopt.equals("live")) {
                 liveopt = "-live";
             } else if (subopt.startsWith("file=")) {
-                // file=<file> - check that <file> is specified
-                if (subopt.length() > 5) {
-                    filename = subopt.substring(5);
-                }
+                filename = parseFileName(subopt);
             }
         }
 
@@ -187,11 +214,6 @@ public class JMap {
             usage(1);  // invalid options or no filename
         }
 
-        // get the canonical path - important to avoid just passing
-        // a "heap.bin" and having the dump created in the target VM
-        // working directory rather than the directory where jmap
-        // is executed.
-        filename = new File(filename).getCanonicalPath();
         // dumpHeap is not the same as jcmd GC.heap_dump
         executeCommandForPid(pid, "dumpheap", filename, liveopt);
     }
@@ -246,21 +268,27 @@ public class JMap {
         System.err.println("        to connect to running process and print class loader statistics");
         System.err.println("    jmap -finalizerinfo <pid>");
         System.err.println("        to connect to running process and print information on objects awaiting finalization");
-        System.err.println("    jmap -histo[:live] <pid>");
+        System.err.println("    jmap -histo[:[<histo-options>]] <pid>");
         System.err.println("        to connect to running process and print histogram of java object heap");
-        System.err.println("        if the \"live\" suboption is specified, only count live objects");
         System.err.println("    jmap -dump:<dump-options> <pid>");
         System.err.println("        to connect to running process and dump java heap");
         System.err.println("    jmap -? -h --help");
         System.err.println("        to print this help message");
         System.err.println("");
         System.err.println("    dump-options:");
-        System.err.println("      live         dump only live objects; if not specified,");
-        System.err.println("                   all objects in the heap are dumped.");
+        System.err.println("      live         dump only live objects");
+        System.err.println("      all          dump all objects in the heap (default if one of \"live\" or \"all\" is not specified");
         System.err.println("      format=b     binary format");
         System.err.println("      file=<file>  dump heap to <file>");
         System.err.println("");
         System.err.println("    Example: jmap -dump:live,format=b,file=heap.bin <pid>");
+        System.err.println("");
+        System.err.println("    histo-options:");
+        System.err.println("      live         count only live objects");
+        System.err.println("      all          count all objects in the heap (default if one of \"live\" or \"all\" is not specified)");
+        System.err.println("      file=<file>  dump data to <file>");
+        System.err.println("");
+        System.err.println("    Example: jmap -histo:live,file=/tmp/histo.data <pid>");
         System.exit(exit);
     }
 }
