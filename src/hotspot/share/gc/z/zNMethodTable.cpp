@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,16 +27,16 @@
 #include "code/icBuffer.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
-#include "gc/z/zArray.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHash.inline.hpp"
 #include "gc/z/zLock.inline.hpp"
+#include "gc/z/zNMethodAllocator.hpp"
 #include "gc/z/zNMethodTable.hpp"
 #include "gc/z/zOopClosures.inline.hpp"
 #include "gc/z/zTask.hpp"
 #include "gc/z/zWorkers.hpp"
 #include "logging/log.hpp"
-#include "memory/allocation.inline.hpp"
+#include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/atomic.hpp"
@@ -73,12 +73,12 @@ ZNMethodDataOops* ZNMethodDataOops::create(const GrowableArray<oop*>& immediates
   // Allocate memory for the ZNMethodDataOops object
   // plus the immediate oop* array that follows right after.
   const size_t size = ZNMethodDataOops::header_size() + (sizeof(oop*) * immediates.length());
-  void* const data = NEW_C_HEAP_ARRAY(uint8_t, size, mtGC);
-  return ::new (data) ZNMethodDataOops(immediates, has_non_immediates);
+  void* const mem = ZNMethodAllocator::allocate(size);
+  return ::new (mem) ZNMethodDataOops(immediates, has_non_immediates);
 }
 
 void ZNMethodDataOops::destroy(ZNMethodDataOops* oops) {
-  ZNMethodTable::safe_delete(oops);
+  ZNMethodAllocator::free(oops);
 }
 
 ZNMethodDataOops::ZNMethodDataOops(const GrowableArray<oop*>& immediates, bool has_non_immediates) :
@@ -125,13 +125,13 @@ public:
 };
 
 ZNMethodData* ZNMethodData::create(nmethod* nm) {
-  void* const method = NEW_C_HEAP_ARRAY(uint8_t, sizeof(ZNMethodData), mtGC);
-  return ::new (method) ZNMethodData(nm);
+  void* const mem = ZNMethodAllocator::allocate(sizeof(ZNMethodData));
+  return ::new (mem) ZNMethodData(nm);
 }
 
 void ZNMethodData::destroy(ZNMethodData* data) {
-  ZNMethodDataOops::destroy(data->oops());
-  ZNMethodTable::safe_delete(data);
+  ZNMethodAllocator::free(data->oops());
+  ZNMethodAllocator::free(data);
 }
 
 ZNMethodData::ZNMethodData(nmethod* nm) :
@@ -162,26 +162,9 @@ ZNMethodTableEntry* ZNMethodTable::_table = NULL;
 size_t ZNMethodTable::_size = 0;
 ZNMethodTableEntry* ZNMethodTable::_iter_table = NULL;
 size_t ZNMethodTable::_iter_table_size = 0;
-ZArray<void*> ZNMethodTable::_iter_deferred_deletes;
 size_t ZNMethodTable::_nregistered = 0;
 size_t ZNMethodTable::_nunregistered = 0;
 volatile size_t ZNMethodTable::_claimed = 0;
-
-void ZNMethodTable::safe_delete(void* data) {
-  assert(CodeCache_lock->owned_by_self(), "Lock must be held");
-
-  if (data == NULL) {
-    return;
-  }
-
-  if (_iter_table != NULL) {
-    // Iteration in progress, defer delete
-    _iter_deferred_deletes.add(data);
-  } else {
-    // Iteration not in progress, delete now
-    FREE_C_HEAP_ARRAY(uint8_t, data);
-  }
-}
 
 void ZNMethodTable::attach_gc_data(nmethod* nm) {
   GrowableArray<oop*> immediate_oops;
@@ -482,11 +465,13 @@ void ZNMethodTable::disarm_nmethod(nmethod* nm) {
 void ZNMethodTable::nmethods_do_begin() {
   MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
+  // Make sure we don't free data while iterating
+  ZNMethodAllocator::activate_deferred_frees();
+
   // Prepare iteration
   _iter_table = _table;
   _iter_table_size = _size;
   _claimed = 0;
-  assert(_iter_deferred_deletes.is_empty(), "Should be emtpy");
 }
 
 void ZNMethodTable::nmethods_do_end() {
@@ -500,12 +485,8 @@ void ZNMethodTable::nmethods_do_end() {
 
   assert(_claimed >= _iter_table_size, "Failed to claim all table entries");
 
-  // Process deferred deletes
-  ZArrayIterator<void*> iter(&_iter_deferred_deletes);
-  for (void* data; iter.next(&data);) {
-    FREE_C_HEAP_ARRAY(uint8_t, data);
-  }
-  _iter_deferred_deletes.clear();
+  // Process deferred frees
+  ZNMethodAllocator::deactivate_and_process_deferred_frees();
 
   // Notify iteration done
   CodeCache_lock->notify_all();

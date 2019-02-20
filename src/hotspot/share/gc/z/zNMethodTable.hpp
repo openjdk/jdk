@@ -31,6 +31,8 @@
 #include "memory/allocation.hpp"
 
 class NMethodClosure;
+class ZNMethodData;
+class ZNMethodDataOops;
 class ZWorkers;
 
 class ZNMethodTable : public AllStatic {
@@ -39,7 +41,6 @@ private:
   static size_t              _size;
   static ZNMethodTableEntry* _iter_table;
   static size_t              _iter_table_size;
-  static ZArray<void*>       _iter_deferred_deletes;
   static size_t              _nregistered;
   static size_t              _nunregistered;
   static volatile size_t     _claimed ATTRIBUTE_ALIGNED(ZCacheLineSize);
@@ -62,8 +63,6 @@ private:
   static void log_unregister(const nmethod* nm);
 
 public:
-  static void safe_delete(void* data);
-
   static size_t registered_nmethods();
   static size_t unregistered_nmethods();
 
