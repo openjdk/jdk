@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -362,8 +362,8 @@ void NativeJump::verify() {
 
 void NativeGeneralJump::insert_unconditional(address code_pos, address entry) {
   CodeBuffer cb(code_pos, BytesPerInstWord + 1);
-  MacroAssembler* a = new MacroAssembler(&cb);
-  a->b(entry);
+  MacroAssembler a(&cb);
+  a.b(entry);
   ICache::ppc64_flush_icache_bytes(code_pos, NativeGeneralJump::instruction_size);
 }
 
