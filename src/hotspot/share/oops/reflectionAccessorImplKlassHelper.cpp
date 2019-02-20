@@ -26,6 +26,7 @@
 #include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/constantPool.hpp"
 #include "oops/reflectionAccessorImplKlassHelper.hpp"
 #include "utilities/constantTag.hpp"
 #include "utilities/debug.hpp"
