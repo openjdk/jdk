@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 
-static const char* name = "file=testlog.pid%p.%t.log";
+static const char* name = prepend_prefix_temp_dir("file=", "testlog.pid%p.%t.log");
 
 // Test parsing a bunch of valid file output options
 TEST_VM(LogFileOutput, parse_valid) {
@@ -46,11 +46,6 @@ TEST_VM(LogFileOutput, parse_valid) {
 
   // Override LogOutput's vm_start time to get predictable file name
   LogFileOutput::set_file_name_parameters(0);
-  char expected_filename[1 * K];
-  int ret = jio_snprintf(expected_filename, sizeof(expected_filename),
-                         "testlog.pid%d.1970-01-01_01-00-00.log",
-                         os::current_process_id());
-  ASSERT_GT(ret, 0) << "Buffer too small";
 
   for (size_t i = 0; i < ARRAY_SIZE(valid_options); i++) {
     ResourceMark rm;
@@ -60,8 +55,8 @@ TEST_VM(LogFileOutput, parse_valid) {
       EXPECT_STREQ(name, fo.name());
       EXPECT_TRUE(fo.initialize(valid_options[i], &ss))
         << "Did not accept valid option(s) '" << valid_options[i] << "': " << ss.as_string();
+      remove(fo.cur_log_file_name());
     }
-    remove(expected_filename);
   }
 }
 
@@ -105,11 +100,11 @@ TEST_VM(LogFileOutput, filesize_overflow) {
 }
 
 TEST_VM(LogFileOutput, startup_rotation) {
+  ResourceMark rm;
   const size_t rotations = 5;
-  const char* filename = "start-rotate-test";
+  const char* filename = prepend_temp_dir("start-rotate-test");
   char* rotated_file[rotations];
 
-  ResourceMark rm;
   for (size_t i = 0; i < rotations; i++) {
     size_t len = strlen(filename) + 3;
     rotated_file[i] = NEW_RESOURCE_ARRAY(char, len);
@@ -142,8 +137,9 @@ TEST_VM(LogFileOutput, startup_rotation) {
 }
 
 TEST_VM(LogFileOutput, startup_truncation) {
-  const char* filename = "start-truncate-test";
-  const char* archived_filename = "start-truncate-test.0";
+  ResourceMark rm;
+  const char* filename = prepend_temp_dir("start-truncate-test");
+  const char* archived_filename = prepend_temp_dir("start-truncate-test.0");
 
   delete_file(filename);
   delete_file(archived_filename);

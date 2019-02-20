@@ -51,6 +51,14 @@ LogFileOutput::LogFileOutput(const char* name)
   _file_name = make_file_name(name + strlen(Prefix), _pid_str, _vm_start_time_str);
 }
 
+const char* LogFileOutput::cur_log_file_name() {
+  if (strlen(_archive_name) == 0) {
+    return _file_name;
+  } else {
+    return _archive_name;
+  }
+}
+
 void LogFileOutput::set_file_name_parameters(jlong vm_start_time) {
   int res = jio_snprintf(_pid_str, sizeof(_pid_str), "%d", os::current_process_id());
   assert(res > 0, "PID buffer too small");
@@ -234,6 +242,7 @@ bool LogFileOutput::initialize(const char* options, outputStream* errstream) {
     _file_count_max_digits = number_of_digits(_file_count - 1);
     _archive_name_len = 2 + strlen(_file_name) + _file_count_max_digits;
     _archive_name = NEW_C_HEAP_ARRAY(char, _archive_name_len, mtLogging);
+    _archive_name[0] = 0;
   }
 
   log_trace(logging)("Initializing logging to file '%s' (filecount: %u"

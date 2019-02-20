@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -403,16 +403,15 @@ TEST_VM_F(LogConfigurationTest, output_name_normalization) {
 
   // Make sure prefixes are ignored when used within quotes
   // (this should create a log with "file=" in its filename)
-  int ret = jio_snprintf(buf, sizeof(buf), "\"file=%s\"", TestLogFileName);
-  ASSERT_NE(-1, ret);
-  set_log_config(buf, "logging=trace");
+  // Note that the filename cannot contain directories because
+  // it is being prefixed with "file=".
+  const char* leafFileName = "\"file=leaf_file_name\"";
+  set_log_config(leafFileName, "logging=trace");
   EXPECT_TRUE(is_described("#3: ")) << "prefix within quotes not ignored as it should be";
-  set_log_config(buf, "all=off");
+  set_log_config(leafFileName, "all=off");
 
   // Remove the extra log file created
-  ret = jio_snprintf(buf, sizeof(buf), "file=%s", TestLogFileName);
-  ASSERT_NE(-1, ret);
-  delete_file(buf);
+  delete_file("file=leaf_file_name");
 }
 
 static size_t count_occurrences(const char* haystack, const char* needle) {
