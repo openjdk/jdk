@@ -123,9 +123,9 @@ public class NonBlocking {
             }
             if (bytes.hasRemaining()) {
                 if (isPeek) {
-                    return bytes.get(bytes.position());
+                    return Byte.toUnsignedInt(bytes.get(bytes.position()));
                 } else {
-                    return bytes.get();
+                    return Byte.toUnsignedInt(bytes.get());
                 }
             } else {
                 return READ_EXPIRED;
