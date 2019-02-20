@@ -354,7 +354,7 @@ RegMask _STACK_OR_LONG_REG_mask;
 RegMask _STACK_OR_INT_REG_mask;
 
 static bool need_r12_heapbase() {
-  return UseCompressedOops || UseCompressedClassPointers || UseZGC;
+  return UseCompressedOops || UseCompressedClassPointers;
 }
 
 void reg_mask_init() {
