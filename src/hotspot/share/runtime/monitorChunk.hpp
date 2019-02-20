@@ -30,7 +30,7 @@
 // Data structure for holding monitors for one activation during
 // deoptimization.
 
-class MonitorChunk: public CHeapObj<mtInternal> {
+class MonitorChunk: public CHeapObj<mtSynchronizer> {
  private:
   int              _number_of_monitors;
   BasicObjectLock* _monitors;

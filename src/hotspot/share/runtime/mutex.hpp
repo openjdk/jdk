@@ -39,7 +39,7 @@
 // TODO: Check if _name[MONITOR_NAME_LEN] should better get replaced by const char*.
 static const int MONITOR_NAME_LEN = 64;
 
-class Monitor : public CHeapObj<mtInternal> {
+class Monitor : public CHeapObj<mtSynchronizer> {
 
  public:
   // A special lock: Is a lock where you are guaranteed not to block while you are
