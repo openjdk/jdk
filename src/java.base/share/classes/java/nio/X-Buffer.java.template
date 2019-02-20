@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.util.stream.StreamSupport;
 import java.util.stream.$Streamtype$Stream;
 #end[streamableType]
 
+import java.util.Objects;
 import jdk.internal.util.ArraysSupport;
 
 /**
@@ -50,11 +51,11 @@ import jdk.internal.util.ArraysSupport;
  *   {@link #put($type$) <i>put</i>} methods that read and write
  *   single $type$s; </p></li>
  *
- *   <li><p> Relative {@link #get($type$[]) <i>bulk get</i>}
+ *   <li><p> Absolute and relative {@link #get($type$[]) <i>bulk get</i>}
  *   methods that transfer contiguous sequences of $type$s from this buffer
  *   into an array; {#if[!byte]?and}</p></li>
  *
- *   <li><p> Relative {@link #put($type$[]) <i>bulk put</i>}
+ *   <li><p> Absolute and relative {@link #put($type$[]) <i>bulk put</i>}
  *   methods that transfer contiguous sequences of $type$s from $a$
  *   $type$ array{#if[char]?,&#32;a&#32;string,} or some other $type$
  *   buffer into this buffer;{#if[!byte]?&#32;and} </p></li>
@@ -436,7 +437,6 @@ public abstract class $Type$Buffer
      * @return The number of characters added to the buffer, or
      *         -1 if this source of characters is at its end
      * @throws IOException if an I/O error occurs
-     * @throws NullPointerException if target is null
      * @throws ReadOnlyBufferException if target is a read only buffer
      * @since 1.5
      */
@@ -764,6 +764,89 @@ public abstract class $Type$Buffer
         return get(dst, 0, dst.length);
     }
 
+    /**
+     * Absolute bulk <i>get</i> method.
+     *
+     * <p> This method transfers {@code length} $type$s from this
+     * buffer into the given array, starting at the given index in this
+     * buffer and at the given offset in the array.  The position of this
+     * buffer is unchanged.
+     *
+     * <p> An invocation of this method of the form
+     * <code>src.get(index,&nbsp;dst,&nbsp;offset,&nbsp;length)</code>
+     * has exactly the same effect as the following loop except that it first
+     * checks the consistency of the supplied parameters and it is potentially
+     * much more efficient:
+     *
+     * <pre>{@code
+     *     for (int i = offset, j = index; i < offset + length; i++, j++)
+     *         dst[i] = src.get(j);
+     * }</pre>
+     *
+     * @param  index
+     *         The index in this buffer from which the first $type$ will be
+     *         read; must be non-negative and less than {@code limit()}
+     *
+     * @param  dst
+     *         The destination array
+     *
+     * @param  offset
+     *         The offset within the array of the first $type$ to be
+     *         written; must be non-negative and less than
+     *         {@code dst.length}
+     *
+     * @param  length
+     *         The number of $type$s to be written to the given array;
+     *         must be non-negative and no larger than the smaller of
+     *         {@code limit() - index} and {@code dst.length - offset}
+     *
+     * @return  This buffer
+     *
+     * @throws  IndexOutOfBoundsException
+     *          If the preconditions on the {@code index}, {@code offset}, and
+     *          {@code length} parameters do not hold
+     *
+     * @since 13
+     */
+    public $Type$Buffer get(int index, $type$[] dst, int offset, int length) {
+        Objects.checkFromIndexSize(index, length, limit());
+        Objects.checkFromIndexSize(offset, length, dst.length);
+        int end = offset + length;
+        for (int i = offset, j = index; i < end; i++, j++)
+            dst[i] = get(j);
+        return this;
+    }
+
+    /**
+     * Absolute bulk <i>get</i> method.
+     *
+     * <p> This method transfers $type$s from this buffer into the given
+     * destination array.  The position of this buffer is unchanged.  An
+     * invocation of this method of the form
+     * <code>src.get(index,&nbsp;dst)</code> behaves in exactly the same
+     * way as the invocation:
+     *
+     * <pre>
+     *     src.get(index, dst, 0, dst.length) </pre>
+     *
+     * @param  index
+     *         The index in this buffer from which the first $type$ will be
+     *         read; must be non-negative and less than {@code limit()}
+     *
+     * @param  dst
+     *         The destination array
+     *
+     * @return  This buffer
+     *
+     * @throws  IndexOutOfBoundsException
+     *          If {@code index} is negative, not smaller than {@code limit()},
+     *          or {@code limit() - index < dst.length}
+     *
+     * @since 13
+     */
+    public $Type$Buffer get(int index, $type$[] dst) {
+        return get(index, dst, 0, dst.length);
+    }
 
     // -- Bulk put operations --
 
@@ -842,7 +925,7 @@ public abstract class $Type$Buffer
      *
      * <pre>{@code
      *     for (int i = off; i < off + len; i++)
-     *         dst.put(a[i]);
+     *         dst.put(src[i]);
      * }</pre>
      *
      * except that it first checks that there is sufficient space in this
@@ -853,12 +936,12 @@ public abstract class $Type$Buffer
      *
      * @param  offset
      *         The offset within the array of the first $type$ to be read;
-     *         must be non-negative and no larger than {@code array.length}
+     *         must be non-negative and no larger than {@code src.length}
      *
      * @param  length
      *         The number of $type$s to be read from the given array;
      *         must be non-negative and no larger than
-     *         {@code array.length - offset}
+     *         {@code src.length - offset}
      *
      * @return  This buffer
      *
@@ -906,6 +989,95 @@ public abstract class $Type$Buffer
      */
     public final $Type$Buffer put($type$[] src) {
         return put(src, 0, src.length);
+    }
+
+    /**
+     * Absolute bulk <i>put</i> method&nbsp;&nbsp;<i>(optional operation)</i>.
+     *
+     * <p> This method transfers {@code length} $type$s from the given
+     * array, starting at the given offset in the array and at the given index
+     * in this buffer.  The position of this buffer is unchanged.
+     *
+     * <p> An invocation of this method of the form
+     * <code>dst.put(index,&nbsp;src,&nbsp;offset,&nbsp;length)</code>
+     * has exactly the same effect as the following loop except that it first
+     * checks the consistency of the supplied parameters and it is potentially
+     * much more efficient:
+     *
+     * <pre>{@code
+     *     for (int i = offset, j = index; i < offset + length; i++, j++)
+     *         dst.put(j, src[i]);
+     * }</pre>
+     *
+     * @param  index
+     *         The index in this buffer at which the first $type$ will be
+     *         written; must be non-negative and less than {@code limit()}
+     *
+     * @param  src
+     *         The array from which $type$s are to be read
+     *
+     * @param  offset
+     *         The offset within the array of the first $type$ to be read;
+     *         must be non-negative and less than {@code src.length}
+     *
+     * @param  length
+     *         The number of $type$s to be read from the given array;
+     *         must be non-negative and no larger than the smaller of
+     *         {@code limit() - index} and {@code src.length - offset}
+     *
+     * @return  This buffer
+     *
+     * @throws  IndexOutOfBoundsException
+     *          If the preconditions on the {@code index}, {@code offset}, and
+     *          {@code length} parameters do not hold
+     *
+     * @throws  ReadOnlyBufferException
+     *          If this buffer is read-only
+     *
+     * @since 13
+     */
+    public $Type$Buffer put(int index, $type$[] src, int offset, int length) {
+        if (isReadOnly())
+            throw new ReadOnlyBufferException();
+        Objects.checkFromIndexSize(index, length, limit());
+        Objects.checkFromIndexSize(offset, length, src.length);
+        int end = offset + length;
+        for (int i = offset, j = index; i < end; i++, j++)
+            this.put(j, src[i]);
+        return this;
+    }
+
+    /**
+     * Absolute bulk <i>put</i> method&nbsp;&nbsp;<i>(optional operation)</i>.
+     *
+     * <p> This method copies $type$s into this buffer from the given source
+     * array.  The position of this buffer is unchanged.  An invocation of this
+     * method of the form <code>dst.put(index,&nbsp;src)</code>
+     * behaves in exactly the same way as the invocation:
+     *
+     * <pre>
+     *     dst.put(index, src, 0, src.length); </pre>
+     *
+     * @param  index
+     *         The index in this buffer at which the first $type$ will be
+     *         written; must be non-negative and less than {@code limit()}
+     *
+     * @param  src
+     *         The array from which $type$s are to be read
+     *
+     * @return  This buffer
+     *
+     * @throws  IndexOutOfBoundsException
+     *          If {@code index} is negative, not smaller than {@code limit()},
+     *          or {@code limit() - index < src.length}
+     *
+     * @throws  ReadOnlyBufferException
+     *          If this buffer is read-only
+     *
+     * @since 13
+     */
+    public $Type$Buffer put(int index, $type$[] src) {
+        return put(index, src, 0, src.length);
     }
 
 #if[char]

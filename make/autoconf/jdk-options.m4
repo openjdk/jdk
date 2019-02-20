@@ -364,7 +364,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_SYMBOLS],
 
 ################################################################################
 #
-# Gcov coverage data for hotspot
+# Native and Java code coverage
 #
 AC_DEFUN_ONCE([JDKOPT_SETUP_CODE_COVERAGE],
 [

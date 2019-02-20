@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8009299
  * @summary Javac crashes when compiling method reference to static interface method
- * @run main/othervm -Xverify:none MethodReference66
+ * @run main/othervm MethodReference66
  */
 public class MethodReference66 {
 

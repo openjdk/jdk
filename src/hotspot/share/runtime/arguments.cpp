@@ -555,13 +555,13 @@ static SpecialFlag const special_jvm_flags[] = {
   { "UseImplicitStableValues",       JDK_Version::undefined(), JDK_Version::jdk(13), JDK_Version::jdk(14) },
 
 #ifdef TEST_VERIFY_SPECIAL_JVM_FLAGS
+  // These entries will generate build errors.  Their purpose is to test the macros.
   { "dep > obs",                    JDK_Version::jdk(9), JDK_Version::jdk(8), JDK_Version::undefined() },
   { "dep > exp ",                   JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::jdk(8) },
   { "obs > exp ",                   JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(8) },
   { "not deprecated or obsolete",   JDK_Version::undefined(), JDK_Version::undefined(), JDK_Version::jdk(9) },
   { "dup option",                   JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::undefined() },
   { "dup option",                   JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::undefined() },
-  { "BytecodeVerificationRemote",   JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::undefined() },
 #endif
 
   { NULL, JDK_Version(0), JDK_Version(0) }
@@ -2749,6 +2749,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         if (FLAG_SET_CMDLINE(bool, BytecodeVerificationRemote, false) != JVMFlag::SUCCESS) {
           return JNI_EINVAL;
         }
+        warning("Options -Xverify:none and -noverify were deprecated in JDK 13 and will likely be removed in a future release.");
       } else if (is_bad_option(option, args->ignoreUnrecognized, "verification")) {
         return JNI_EINVAL;
       }

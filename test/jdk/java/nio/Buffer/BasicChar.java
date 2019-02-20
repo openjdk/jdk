@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,6 +87,18 @@ public class BasicChar
         }
     }
 
+    private static void absBulkGet(CharBuffer b) {
+        int n = b.capacity();
+        int len = n - 7*2;
+        char[] a = new char[n + 7];
+        b.position(42);
+        b.get(7, a, 7, len);
+        ck(b, b.position() == 42);
+        for (int i = 0; i < len; i++) {
+            ck(b, (long)a[i + 7], (long)((char)ic(i)));
+        }
+    }
+
     private static void relPut(CharBuffer b) {
         int n = b.capacity();
         b.clear();
@@ -134,6 +146,20 @@ public class BasicChar
                      + " put into same buffer");
             }
         }
+    }
+
+    private static void absBulkPutArray(CharBuffer b) {
+        int n = b.capacity();
+        b.clear();
+        int lim = n - 7;
+        int len = lim - 7;
+        b.limit(lim);
+        char[] a = new char[len + 7];
+        for (int i = 0; i < len; i++)
+            a[i + 7] = (char)ic(i);
+        b.position(42);
+        b.put(7, a, 7, len);
+        ck(b, b.position() == 42);
     }
 
     //6231529
@@ -452,6 +478,10 @@ public class BasicChar
         fail(problem + String.format(": x=%s y=%s", x, y), xb, yb);
     }
 
+    private static void catchNullArgument(Buffer b, Runnable thunk) {
+        tryCatch(b, NullPointerException.class, thunk);
+    }
+
     private static void catchIllegalArgument(Buffer b, Runnable thunk) {
         tryCatch(b, IllegalArgumentException.class, thunk);
     }
@@ -476,7 +506,10 @@ public class BasicChar
             if (ex.isAssignableFrom(x.getClass())) {
                 caught = true;
             } else {
-                fail(x.getMessage() + " not expected");
+                String s = x.getMessage();
+                if (s == null)
+                    s = x.getClass().getName();
+                fail(s + " not expected");
             }
         }
         if (!caught) {
@@ -512,6 +545,9 @@ public class BasicChar
 
         bulkPutBuffer(b);
         relGet(b);
+
+        absBulkPutArray(b);
+        absBulkGet(b);
 
 
 
@@ -611,6 +647,26 @@ public class BasicChar
                      + " negative limit");
             }
         }
+
+        // Exceptions in absolute bulk operations
+
+        catchNullArgument(b, () -> b.get(7, null, 0, 42));
+        catchNullArgument(b, () -> b.put(7, (char[])null, 0, 42));
+
+        char[] tmpa = new char[42];
+        catchIndexOutOfBounds(b, () -> b.get(7, tmpa, -1, 42));
+        catchIndexOutOfBounds(b, () -> b.get(7, tmpa, 42, 1));
+        catchIndexOutOfBounds(b, () -> b.get(7, tmpa, 41, -1));
+        catchIndexOutOfBounds(b, () -> b.get(-1, tmpa, 0, 1));
+        catchIndexOutOfBounds(b, () -> b.get(b.limit(), tmpa, 0, 1));
+        catchIndexOutOfBounds(b, () -> b.get(b.limit() - 41, tmpa, 0, 42));
+
+        catchIndexOutOfBounds(b, () -> b.put(7, tmpa, -1, 42));
+        catchIndexOutOfBounds(b, () -> b.put(7, tmpa, 42, 1));
+        catchIndexOutOfBounds(b, () -> b.put(7, tmpa, 41, -1));
+        catchIndexOutOfBounds(b, () -> b.put(-1, tmpa, 0, 1));
+        catchIndexOutOfBounds(b, () -> b.put(b.limit(), tmpa, 0, 1));
+        catchIndexOutOfBounds(b, () -> b.put(b.limit() - 41, tmpa, 0, 42));
 
         // Values
 
@@ -819,6 +875,7 @@ public class BasicChar
         catchReadOnlyBuffer(b, () -> absPut(rb));
         catchReadOnlyBuffer(b, () -> bulkPutArray(rb));
         catchReadOnlyBuffer(b, () -> bulkPutBuffer(rb));
+        catchReadOnlyBuffer(b, () -> absBulkPutArray(rb));
 
         // put(CharBuffer) should not change source position
         final CharBuffer src = CharBuffer.allocate(1);
@@ -902,6 +959,13 @@ public class BasicChar
         ck(b, s.length(), b.capacity());
         b.position(6);
         ck(b, b.subSequence(0,3).toString().equals("ghi"));
+
+        // absolute bulk get
+        char[] c = new char[end + 1 - (start - 1) + 1]; // [start - 1, end + 1]
+        b.limit(end + 2);
+        b.get(start - 1, c, 0, c.length);
+        for (int i = 0; i < c.length; i++)
+            ck(b, c[i], s.charAt(start - 1 + i));
 
         // The index, relative to the position, must be non-negative and
         // smaller than remaining().
