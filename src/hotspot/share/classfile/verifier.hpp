@@ -49,7 +49,7 @@ class Verifier : AllStatic {
 
   // Return false if the class is loaded by the bootstrap loader,
   // or if defineClass was called requesting skipping verification
-  // -Xverify:all/none override this value
+  // -Xverify:all overrides this value
   static bool should_verify_for(oop class_loader, bool should_verify_class);
 
   // Relax certain access checks to enable some broken 1.1 apps to run on 1.2.

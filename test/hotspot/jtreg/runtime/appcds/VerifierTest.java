@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ public class VerifierTest implements Opcodes {
     // Test verification settings for dumping & runtime
     static final String VFY_ALL = "-Xverify:all";
     static final String VFY_REMOTE = "-Xverify:remote"; // default
-    static final String VFY_NONE = "-Xverify:none";
+    static final String VFY_NONE = "-XX:-BytecodeVerificationRemote, -XX:-BytecodeVerificationLocal";
 
     static final String ERR =
         "ERROR: class VerifierTestC was loaded unexpectedly";
@@ -140,7 +140,7 @@ public class VerifierTest implements Opcodes {
             {"app",   VFY_ALL,    VFY_REMOTE, VFY_ERR },
             {"app",   VFY_ALL,    VFY_ALL,    VFY_ERR },
             {"app",   VFY_ALL,    VFY_NONE,   ERR },
-            // Dump app/ext with -Xverify:none
+            // Dump app/ext with verifier turned off
             {"app",   VFY_NONE,   VFY_REMOTE, VFY_ERR},
             {"app",   VFY_NONE,   VFY_ALL,    MAP_FAIL},
             {"app",   VFY_NONE,   VFY_NONE,   ERR },
@@ -152,7 +152,7 @@ public class VerifierTest implements Opcodes {
             {"noApp", VFY_ALL, VFY_REMOTE,    VFY_ERR},
             {"noApp", VFY_ALL, VFY_ALL,       VFY_ERR},
             {"noApp", VFY_ALL, VFY_NONE,      ERR},
-            // Dump sys only with -Xverify:none
+            // Dump sys only with verifier turned off
             {"noApp", VFY_NONE, VFY_REMOTE,   VFY_ERR},
             {"noApp", VFY_NONE, VFY_ALL,      VFY_ERR},
             {"noApp", VFY_NONE, VFY_NONE,     ERR},
@@ -186,8 +186,19 @@ public class VerifierTest implements Opcodes {
                                " with " + dump_setting +
                                ", run with " + runtime_setting);
             if (!dump_setting.equals(prev_dump_setting)) {
+                String dump_arg1;
+                String dump_arg2;
+                // Need to break this into two separate arguments.
+                if (dump_setting.equals(VFY_NONE)) {
+                    dump_arg1 = "-XX:-BytecodeVerificationRemote";
+                    dump_arg2 = "-XX:-BytecodeVerificationLocal";
+                } else {
+                    // Redundant args should be harmless.
+                    dump_arg1 = dump_arg2 = dump_setting;
+                }
+
                 OutputAnalyzer dumpOutput = TestCommon.dump(
-                                                            jar, dump_list, dump_setting,
+                                                            jar, dump_list, dump_arg1, dump_arg2,
                                                             CDS_LOGGING,
                                                             // FIXME: the following options are for working around a GC
                                                             // issue - assert failure when dumping archive with the -Xverify:all
@@ -198,8 +209,17 @@ public class VerifierTest implements Opcodes {
                     dumpOutput.shouldContain(VFY_INFO_MESSAGE);
                 }
             }
+            String runtime_arg1;
+            String runtime_arg2;
+            if (runtime_setting.equals(VFY_NONE)) {
+                runtime_arg1 = "-XX:-BytecodeVerificationRemote";
+                runtime_arg2 = "-XX:-BytecodeVerificationLocal";
+            } else {
+                // Redundant args should be harmless.
+                runtime_arg1 = runtime_arg2 = runtime_setting;
+            }
             TestCommon.run("-cp", jar,
-                           runtime_setting,
+                           runtime_arg1, runtime_arg2,
                            "VerifierTest0")
                 .ifNoMappingFailure(output -> checkRuntimeOutput(output, expected_output_str));
             prev_dump_setting = dump_setting;
@@ -229,7 +249,7 @@ public class VerifierTest implements Opcodes {
             {"app",   VFY_ALL,    VFY_REMOTE, PASS_RESULT },
             {"app",   VFY_ALL,    VFY_ALL,    PASS_RESULT },
             {"app",   VFY_ALL,    VFY_NONE,   PASS_RESULT },
-            // Dump app/ext with -Xverify:none
+            // Dump app/ext with verifier turned off
             {"app",   VFY_NONE,   VFY_REMOTE, PASS_RESULT},
             {"app",   VFY_NONE,   VFY_ALL,    MAP_FAIL},
             {"app",   VFY_NONE,   VFY_NONE,   PASS_RESULT },
@@ -244,8 +264,17 @@ public class VerifierTest implements Opcodes {
                                " with " + dump_setting +
                                ", run with " + runtime_setting);
             if (!dump_setting.equals(prev_dump_setting)) {
+                String dump_arg1;
+                String dump_arg2;
+                if (dump_setting.equals(VFY_NONE)) {
+                    dump_arg1 = "-XX:-BytecodeVerificationRemote";
+                    dump_arg2 = "-XX:-BytecodeVerificationLocal";
+                } else {
+                    // Redundant args should be harmless.
+                    dump_arg1 = dump_arg2 = dump_setting;
+                }
                 OutputAnalyzer dumpOutput = TestCommon.dump(
-                                                            jar, appClasses, dump_setting,
+                                                            jar, appClasses, dump_arg1, dump_arg2,
                                                             CDS_LOGGING,
                                                             // FIXME: the following options are for working around a GC
                                                             // issue - assert failure when dumping archive with the -Xverify:all
@@ -256,8 +285,17 @@ public class VerifierTest implements Opcodes {
                     dumpOutput.shouldContain(VFY_INFO_MESSAGE);
                 }
             }
+            String runtime_arg1;
+            String runtime_arg2;
+            if (runtime_setting.equals(VFY_NONE)) {
+                runtime_arg1 = "-XX:-BytecodeVerificationRemote";
+                runtime_arg2 = "-XX:-BytecodeVerificationLocal";
+            } else {
+                // Redundant args should be harmless.
+                runtime_arg1 = runtime_arg2 = runtime_setting;
+            }
             TestCommon.run("-cp", jar,
-                           runtime_setting,
+                           runtime_arg1, runtime_arg2,
                            "Hi")
                 .ifNoMappingFailure(output -> checkRuntimeOutput(output, expected_output_str));
            prev_dump_setting = dump_setting;
