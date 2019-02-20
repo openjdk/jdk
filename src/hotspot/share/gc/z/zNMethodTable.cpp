@@ -33,6 +33,7 @@
 #include "gc/z/zNMethodAllocator.hpp"
 #include "gc/z/zNMethodData.hpp"
 #include "gc/z/zNMethodTable.hpp"
+#include "gc/z/zNMethodTableIteration.hpp"
 #include "gc/z/zOopClosures.inline.hpp"
 #include "gc/z/zTask.hpp"
 #include "gc/z/zWorkers.hpp"
@@ -46,11 +47,9 @@
 
 ZNMethodTableEntry* ZNMethodTable::_table = NULL;
 size_t ZNMethodTable::_size = 0;
-ZNMethodTableEntry* ZNMethodTable::_iter_table = NULL;
-size_t ZNMethodTable::_iter_table_size = 0;
 size_t ZNMethodTable::_nregistered = 0;
 size_t ZNMethodTable::_nunregistered = 0;
-volatile size_t ZNMethodTable::_claimed = 0;
+ZNMethodTableIteration ZNMethodTable::_iteration;
 
 static ZNMethodData* gc_data(const nmethod* nm) {
   return nm->gc_data<ZNMethodData>();
@@ -58,6 +57,15 @@ static ZNMethodData* gc_data(const nmethod* nm) {
 
 static void set_gc_data(nmethod* nm, ZNMethodData* data) {
   return nm->set_gc_data<ZNMethodData>(data);
+}
+
+ZNMethodTableEntry* ZNMethodTable::create(size_t size) {
+  void* const mem = ZNMethodAllocator::allocate(size * sizeof(ZNMethodTableEntry));
+  return ::new (mem) ZNMethodTableEntry[size];
+}
+
+void ZNMethodTable::destroy(ZNMethodTableEntry* table) {
+  ZNMethodAllocator::free(table);
 }
 
 void ZNMethodTable::attach_gc_data(nmethod* nm) {
@@ -182,7 +190,7 @@ void ZNMethodTable::rebuild(size_t new_size) {
                          _nunregistered, percent_of(_nunregistered, _size), 0.0);
 
   // Allocate new table
-  ZNMethodTableEntry* const new_table = new ZNMethodTableEntry[new_size];
+  ZNMethodTableEntry* const new_table = ZNMethodTable::create(new_size);
 
   // Transfer all registered entries
   for (size_t i = 0; i < _size; i++) {
@@ -192,10 +200,8 @@ void ZNMethodTable::rebuild(size_t new_size) {
     }
   }
 
-  if (_iter_table != _table) {
-    // Delete old table
-    delete [] _table;
-  }
+  // Free old table
+  ZNMethodTable::destroy(_table);
 
   // Install new table
   _table = new_table;
@@ -323,7 +329,7 @@ void ZNMethodTable::register_nmethod(nmethod* nm) {
 void ZNMethodTable::wait_until_iteration_done() {
   assert(CodeCache_lock->owned_by_self(), "Lock must be held");
 
-  while (_iter_table != NULL) {
+  while (_iteration.in_progress()) {
     CodeCache_lock->wait(Monitor::_no_safepoint_check_flag);
   }
 }
@@ -363,21 +369,14 @@ void ZNMethodTable::nmethods_do_begin() {
   ZNMethodAllocator::activate_deferred_frees();
 
   // Prepare iteration
-  _iter_table = _table;
-  _iter_table_size = _size;
-  _claimed = 0;
+  _iteration.nmethods_do_begin(_table, _size);
 }
 
 void ZNMethodTable::nmethods_do_end() {
   MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
   // Finish iteration
-  if (_iter_table != _table) {
-    delete [] _iter_table;
-  }
-  _iter_table = NULL;
-
-  assert(_claimed >= _iter_table_size, "Failed to claim all table entries");
+  _iteration.nmethods_do_end();
 
   // Process deferred frees
   ZNMethodAllocator::deactivate_and_process_deferred_frees();
@@ -436,25 +435,7 @@ void ZNMethodTable::oops_do(OopClosure* cl) {
 }
 
 void ZNMethodTable::nmethods_do(NMethodClosure* cl) {
-  for (;;) {
-    // Claim table partition. Each partition is currently sized to span
-    // two cache lines. This number is just a guess, but seems to work well.
-    const size_t partition_size = (ZCacheLineSize * 2) / sizeof(ZNMethodTableEntry);
-    const size_t partition_start = MIN2(Atomic::add(partition_size, &_claimed) - partition_size, _iter_table_size);
-    const size_t partition_end = MIN2(partition_start + partition_size, _iter_table_size);
-    if (partition_start == partition_end) {
-      // End of table
-      break;
-    }
-
-    // Process table partition
-    for (size_t i = partition_start; i < partition_end; i++) {
-      const ZNMethodTableEntry entry = _iter_table[i];
-      if (entry.registered()) {
-        cl->do_nmethod(entry.method());
-      }
-    }
-  }
+  _iteration.nmethods_do(cl);
 }
 
 class ZNMethodTableUnlinkClosure : public NMethodClosure {

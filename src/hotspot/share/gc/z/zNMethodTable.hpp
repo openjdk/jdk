@@ -28,8 +28,10 @@
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zLock.hpp"
 #include "gc/z/zNMethodTableEntry.hpp"
+#include "gc/z/zNMethodTableIteration.hpp"
 #include "memory/allocation.hpp"
 
+class nmethod;
 class NMethodClosure;
 class ZNMethodData;
 class ZNMethodDataOops;
@@ -37,13 +39,14 @@ class ZWorkers;
 
 class ZNMethodTable : public AllStatic {
 private:
-  static ZNMethodTableEntry* _table;
-  static size_t              _size;
-  static ZNMethodTableEntry* _iter_table;
-  static size_t              _iter_table_size;
-  static size_t              _nregistered;
-  static size_t              _nunregistered;
-  static volatile size_t     _claimed ATTRIBUTE_ALIGNED(ZCacheLineSize);
+  static ZNMethodTableEntry*    _table;
+  static size_t                 _size;
+  static size_t                 _nregistered;
+  static size_t                 _nunregistered;
+  static ZNMethodTableIteration _iteration;
+
+  static ZNMethodTableEntry* create(size_t size);
+  static void destroy(ZNMethodTableEntry* table);
 
   static void attach_gc_data(nmethod* nm);
   static void detach_gc_data(nmethod* nm);
