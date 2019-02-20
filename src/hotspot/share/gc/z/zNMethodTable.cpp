@@ -31,6 +31,7 @@
 #include "gc/z/zHash.inline.hpp"
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zNMethodAllocator.hpp"
+#include "gc/z/zNMethodData.hpp"
 #include "gc/z/zNMethodTable.hpp"
 #include "gc/z/zOopClosures.inline.hpp"
 #include "gc/z/zTask.hpp"
@@ -43,112 +44,13 @@
 #include "runtime/orderAccess.hpp"
 #include "utilities/debug.hpp"
 
-class ZNMethodDataOops {
-private:
-  const size_t _nimmediates;
-  bool         _has_non_immediates;
-
-  static size_t header_size();
-
-  ZNMethodDataOops(const GrowableArray<oop*>& immediates, bool has_non_immediates);
-
-public:
-  static ZNMethodDataOops* create(const GrowableArray<oop*>& immediates, bool has_non_immediates);
-  static void destroy(ZNMethodDataOops* oops);
-
-  size_t immediates_count() const;
-  oop** immediates_begin() const;
-  oop** immediates_end() const;
-
-  bool has_non_immediates() const;
-};
-
-size_t ZNMethodDataOops::header_size() {
-  const size_t size = sizeof(ZNMethodDataOops);
-  assert(is_aligned(size, sizeof(oop*)), "Header misaligned");
-  return size;
-}
-
-ZNMethodDataOops* ZNMethodDataOops::create(const GrowableArray<oop*>& immediates, bool has_non_immediates) {
-  // Allocate memory for the ZNMethodDataOops object
-  // plus the immediate oop* array that follows right after.
-  const size_t size = ZNMethodDataOops::header_size() + (sizeof(oop*) * immediates.length());
-  void* const mem = ZNMethodAllocator::allocate(size);
-  return ::new (mem) ZNMethodDataOops(immediates, has_non_immediates);
-}
-
-void ZNMethodDataOops::destroy(ZNMethodDataOops* oops) {
-  ZNMethodAllocator::free(oops);
-}
-
-ZNMethodDataOops::ZNMethodDataOops(const GrowableArray<oop*>& immediates, bool has_non_immediates) :
-    _nimmediates(immediates.length()),
-    _has_non_immediates(has_non_immediates) {
-  // Save all immediate oops
-  for (size_t i = 0; i < _nimmediates; i++) {
-    immediates_begin()[i] = immediates.at(i);
-  }
-}
-
-size_t ZNMethodDataOops::immediates_count() const {
-  return _nimmediates;
-}
-
-oop** ZNMethodDataOops::immediates_begin() const {
-  // The immediate oop* array starts immediately after this object
-  return (oop**)((uintptr_t)this + header_size());
-}
-
-oop** ZNMethodDataOops::immediates_end() const {
-  return immediates_begin() + immediates_count();
-}
-
-bool ZNMethodDataOops::has_non_immediates() const {
-  return _has_non_immediates;
-}
-
-class ZNMethodData {
-private:
-  ZReentrantLock             _lock;
-  ZNMethodDataOops* volatile _oops;
-
-  ZNMethodData(nmethod* nm);
-
-public:
-  static ZNMethodData* create(nmethod* nm);
-  static void destroy(ZNMethodData* data);
-
-  ZReentrantLock* lock();
-
-  ZNMethodDataOops* oops() const;
-  ZNMethodDataOops* swap_oops(ZNMethodDataOops* oops);
-};
-
-ZNMethodData* ZNMethodData::create(nmethod* nm) {
-  void* const mem = ZNMethodAllocator::allocate(sizeof(ZNMethodData));
-  return ::new (mem) ZNMethodData(nm);
-}
-
-void ZNMethodData::destroy(ZNMethodData* data) {
-  ZNMethodAllocator::free(data->oops());
-  ZNMethodAllocator::free(data);
-}
-
-ZNMethodData::ZNMethodData(nmethod* nm) :
-    _lock(),
-    _oops(NULL) {}
-
-ZReentrantLock* ZNMethodData::lock() {
-  return &_lock;
-}
-
-ZNMethodDataOops* ZNMethodData::oops() const {
-  return OrderAccess::load_acquire(&_oops);
-}
-
-ZNMethodDataOops* ZNMethodData::swap_oops(ZNMethodDataOops* new_oops) {
-  return Atomic::xchg(new_oops, &_oops);
-}
+ZNMethodTableEntry* ZNMethodTable::_table = NULL;
+size_t ZNMethodTable::_size = 0;
+ZNMethodTableEntry* ZNMethodTable::_iter_table = NULL;
+size_t ZNMethodTable::_iter_table_size = 0;
+size_t ZNMethodTable::_nregistered = 0;
+size_t ZNMethodTable::_nunregistered = 0;
+volatile size_t ZNMethodTable::_claimed = 0;
 
 static ZNMethodData* gc_data(const nmethod* nm) {
   return nm->gc_data<ZNMethodData>();
@@ -157,14 +59,6 @@ static ZNMethodData* gc_data(const nmethod* nm) {
 static void set_gc_data(nmethod* nm, ZNMethodData* data) {
   return nm->set_gc_data<ZNMethodData>(data);
 }
-
-ZNMethodTableEntry* ZNMethodTable::_table = NULL;
-size_t ZNMethodTable::_size = 0;
-ZNMethodTableEntry* ZNMethodTable::_iter_table = NULL;
-size_t ZNMethodTable::_iter_table_size = 0;
-size_t ZNMethodTable::_nregistered = 0;
-size_t ZNMethodTable::_nunregistered = 0;
-volatile size_t ZNMethodTable::_claimed = 0;
 
 void ZNMethodTable::attach_gc_data(nmethod* nm) {
   GrowableArray<oop*> immediate_oops;
