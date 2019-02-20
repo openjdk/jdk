@@ -106,6 +106,10 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Scanned Cards", Level.DEBUG),
         new LogMessageWithLevel("Claimed Cards", Level.DEBUG),
         new LogMessageWithLevel("Skipped Cards", Level.DEBUG),
+        // Object Copy
+        new LogMessageWithLevel("Object Copy", Level.DEBUG),
+        new LogMessageWithLevel("Scanned Cards", Level.DEBUG),
+        new LogMessageWithLevel("Claimed Cards", Level.DEBUG),
         // Ext Root Scan
         new LogMessageWithLevel("Thread Roots", Level.TRACE),
         new LogMessageWithLevel("Universe Roots", Level.TRACE),

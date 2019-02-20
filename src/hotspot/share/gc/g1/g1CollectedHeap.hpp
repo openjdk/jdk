@@ -738,16 +738,6 @@ private:
   void pre_evacuate_collection_set();
   void post_evacuate_collection_set(G1EvacuationInfo& evacuation_info, G1ParScanThreadStateSet* pss);
 
-  // Print the header for the per-thread termination statistics.
-  static void print_termination_stats_hdr();
-  // Print actual per-thread termination statistics.
-  void print_termination_stats(uint worker_id,
-                               double elapsed_ms,
-                               double strong_roots_ms,
-                               double term_ms,
-                               size_t term_attempts,
-                               size_t alloc_buffer_waste,
-                               size_t undo_waste) const;
   // Update object copying statistics.
   void record_obj_copy_mem_stats();
 
