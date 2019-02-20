@@ -521,6 +521,15 @@ var getJibProfilesProfiles = function (input, common, data) {
             profiles[maketestName].default_make_targets = [ "test-make" ];
         });
 
+    // Generate -gcov profiles
+    [ "linux-x64", "macosx-x64" ].forEach(function (name) {
+        var gcovName = name + "-gcov";
+        profiles[gcovName] = clone(profiles[name]);
+        profiles[gcovName].default_make_targets = ["product-bundles", "test-bundles"];
+        profiles[gcovName].configure_args = concat(profiles[gcovName].configure_args,
+            ["--enable-native-coverage", "--disable-warnings-as-errors"]);
+    });
+
     // Profiles for building the zero jvm variant. These are used for verification.
     var zeroProfiles = {
         "linux-x64-zero": {
@@ -772,6 +781,40 @@ var getJibProfilesProfiles = function (input, common, data) {
             };
         });
 
+    // Artifacts of gcov (native-code-coverage) profiles
+    [ "linux-x64", "macosx-x64" ].forEach(function (name) {
+        var o = artifactData[name]
+        var pf = o.platform
+        var jdk_subdir = (o.jdk_subdir != null ? o.jdk_subdir : "jdk-" + data.version);
+        var jdk_suffix = (o.jdk_suffix != null ? o.jdk_suffix : "tar.gz");
+        var gcovName = name + "-gcov";
+        profiles[gcovName].artifacts = {
+            jdk: {
+                local: "bundles/\\(jdk.*bin." + jdk_suffix + "\\)",
+                remote: [
+                    "bundles/" + pf + "/jdk-" + data.version + "_" + pf + "_bin-gcov." + jdk_suffix,
+                ],
+                subdir: jdk_subdir,
+                exploded: "images/jdk",
+            },
+            test: {
+                    local: "bundles/\\(jdk.*bin-tests.tar.gz\\)",
+                    remote: [
+                        "bundles/" + pf + "/jdk-" + data.version + "_" + pf + "_bin-gcov-tests.tar.gz",
+                    ],
+                    exploded: "images/test"
+            },
+            jdk_symbols: {
+                    local: "bundles/\\(jdk.*bin-symbols.tar.gz\\)",
+                    remote: [
+                        "bundles/" + pf + "/jdk-" + data.version + "_" + pf + "_bin-gcov-symbols.tar.gz",
+                    ],
+                    subdir: jdk_subdir,
+                    exploded: "images/jdk"
+                },
+            };
+    });
+
     // Profiles used to run tests.
     var testOnlyProfiles = {
         "run-test": {
@@ -798,6 +841,10 @@ var getJibProfilesProfiles = function (input, common, data) {
     } else {
         testedProfileTest = testedProfile + ".test";
     }
+    var testOnlyMake = [ "run-test-prebuilt", "LOG_CMDLINES=true", "JTREG_VERBOSE=fail,error,time" ];
+    if (testedProfile.endsWith("-gcov")) {
+        testOnlyMake = concat(testOnlyMake, "GCOV_ENABLED=true")
+    }
     var testOnlyProfilesPrebuilt = {
         "run-test-prebuilt": {
             target_os: input.build_os,
@@ -807,7 +854,7 @@ var getJibProfilesProfiles = function (input, common, data) {
                 testedProfileTest
             ],
             src: "src.conf",
-            make_args: [ "run-test-prebuilt", "LOG_CMDLINES=true", "JTREG_VERBOSE=fail,error,time" ],
+            make_args: testOnlyMake,
             environment: {
                 "BOOT_JDK": common.boot_jdk_home,
                 "JDK_IMAGE_DIR": input.get(testedProfileJDK, "home_path"),
