@@ -28,7 +28,7 @@
 
 /*
  * @test
- * @bug 8215790
+ * @bug 8215790 8219389
  * @summary Verify exception
  * @modules java.base/sun.security.util
  * @run main/othervm ClientHelloBufferUnderflowException
@@ -45,12 +45,15 @@ public class ClientHelloBufferUnderflowException extends ClientHelloInterOp {
         try {
             (new ClientHelloBufferUnderflowException()).run();
         } catch (SSLHandshakeException e) {
-            System.out.println("Correct exception thrown");
+            System.out.println("Correct exception thrown: " + e);
+            return;
         } catch (Exception e) {
             System.out.println("Failed: Exception not SSLHandShakeException");
             System.out.println(e.getMessage());
             throw e;
         }
+
+        throw new Exception("No expected exception");
     }
 
     @Override
@@ -76,6 +79,7 @@ public class ClientHelloBufferUnderflowException extends ClientHelloInterOp {
         } catch (Exception e) {
             // ignore
         }
+
         return bytes;
     }
 }

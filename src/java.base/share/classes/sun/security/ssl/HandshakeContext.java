@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package sun.security.ssl;
 
 import java.io.IOException;
+import java.nio.BufferOverflowException;
+import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.security.AlgorithmConstraints;
 import java.security.CryptoPrimitive;
@@ -443,6 +445,10 @@ abstract class HandshakeContext implements ConnectionContext {
             throw conContext.fatal(Alert.UNEXPECTED_MESSAGE,
                     "Unsupported handshake message: " +
                     SSLHandshake.nameOf(handshakeType), unsoe);
+        } catch (BufferUnderflowException | BufferOverflowException be) {
+            throw conContext.fatal(Alert.DECODE_ERROR,
+                    "Illegal handshake message: " +
+                    SSLHandshake.nameOf(handshakeType), be);
         }
 
         // update handshake hash after handshake message consumption.
