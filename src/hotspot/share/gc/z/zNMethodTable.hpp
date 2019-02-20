@@ -30,12 +30,8 @@
 #include "gc/z/zNMethodTableEntry.hpp"
 #include "memory/allocation.hpp"
 
+class NMethodClosure;
 class ZWorkers;
-
-class ZNMethodTableEntryClosure {
-public:
-  virtual void do_nmethod_entry(ZNMethodTableEntry entry) = 0;
-};
 
 class ZNMethodTable : public AllStatic {
 private:
@@ -48,20 +44,21 @@ private:
   static size_t              _nunregistered;
   static volatile size_t     _claimed ATTRIBUTE_ALIGNED(ZCacheLineSize);
 
-  static ZNMethodTableEntry create_entry(nmethod* nm);
+  static void attach_gc_data(nmethod* nm);
+  static void detach_gc_data(nmethod* nm);
 
   static size_t first_index(const nmethod* nm, size_t size);
   static size_t next_index(size_t prev_index, size_t size);
 
   static void wait_until_iteration_done();
 
-  static bool register_entry(ZNMethodTableEntry* table, size_t size, ZNMethodTableEntry entry);
+  static bool register_entry(ZNMethodTableEntry* table, size_t size, nmethod* nm);
   static void unregister_entry(ZNMethodTableEntry* table, size_t size, nmethod* nm);
 
   static void rebuild(size_t new_size);
   static void rebuild_if_needed();
 
-  static void log_register(const nmethod* nm, ZNMethodTableEntry entry);
+  static void log_register(const nmethod* nm);
   static void log_unregister(const nmethod* nm);
 
 public:
@@ -78,11 +75,11 @@ public:
 
   static void oops_do(OopClosure* cl);
 
-  static void entry_oops_do(ZNMethodTableEntry entry, OopClosure* cl);
+  static void oops_do(nmethod* nm, OopClosure* cl);
 
-  static void nmethod_entries_do_begin();
-  static void nmethod_entries_do_end();
-  static void nmethod_entries_do(ZNMethodTableEntryClosure* cl);
+  static void nmethods_do_begin();
+  static void nmethods_do_end();
+  static void nmethods_do(NMethodClosure* cl);
 
   static void unlink(ZWorkers* workers, bool unloading_occurred);
   static void purge(ZWorkers* workers);

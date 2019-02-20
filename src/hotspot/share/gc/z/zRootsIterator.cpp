@@ -184,7 +184,7 @@ ZRootsIterator::ZRootsIterator() :
   if (ClassUnloading) {
     nmethod::oops_do_marking_prologue();
   } else {
-    ZNMethodTable::nmethod_entries_do_begin();
+    ZNMethodTable::nmethods_do_begin();
   }
 }
 
@@ -194,7 +194,7 @@ ZRootsIterator::~ZRootsIterator() {
   if (ClassUnloading) {
     nmethod::oops_do_marking_epilogue();
   } else {
-    ZNMethodTable::nmethod_entries_do_end();
+    ZNMethodTable::nmethods_do_end();
   }
   JvmtiExport::gc_epilogue();
 
