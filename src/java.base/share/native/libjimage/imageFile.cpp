@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -479,65 +479,6 @@ u4 ImageFileReader::find_location_index(const char* path, u8 *size) const {
         }
     }
     return 0;            // not found
-}
-
-// Assemble the location path from the string fragments indicated in the location attributes.
-void ImageFileReader::location_path(ImageLocation& location, char* path, size_t max) const {
-    // Manage the image string table.
-    ImageStrings strings(_string_bytes, _header.strings_size(_endian));
-    // Position to first character of the path buffer.
-    char* next = path;
-    // Temp for string length.
-    size_t length;
-    // Get module string.
-    const char* module = location.get_attribute(ImageLocation::ATTRIBUTE_MODULE, strings);
-    // If module string is not empty string.
-    if (*module != '\0') {
-        // Get length of module name.
-        length = strlen(module);
-        // Make sure there is no buffer overflow.
-        assert(next - path + length + 2 < max && "buffer overflow");
-        // Append '/module/'.
-        *next++ = '/';
-        strncpy(next, module, length); next += length;
-        *next++ = '/';
-    }
-    // Get parent (package) string.
-    const char* parent = location.get_attribute(ImageLocation::ATTRIBUTE_PARENT, strings);
-    // If parent string is not empty string.
-    if (*parent != '\0') {
-        // Get length of module string.
-        length = strlen(parent);
-        // Make sure there is no buffer overflow.
-        assert(next - path + length + 1 < max && "buffer overflow");
-        // Append 'patent/' .
-        strncpy(next, parent, length); next += length;
-        *next++ = '/';
-    }
-    // Get base name string.
-    const char* base = location.get_attribute(ImageLocation::ATTRIBUTE_BASE, strings);
-    // Get length of base name.
-    length = strlen(base);
-    // Make sure there is no buffer overflow.
-    assert(next - path + length < max && "buffer overflow");
-    // Append base name.
-    strncpy(next, base, length); next += length;
-    // Get extension string.
-    const char* extension = location.get_attribute(ImageLocation::ATTRIBUTE_EXTENSION, strings);
-    // If extension string is not empty string.
-    if (*extension != '\0') {
-        // Get length of extension string.
-        length = strlen(extension);
-        // Make sure there is no buffer overflow.
-        assert(next - path + length + 1 < max && "buffer overflow");
-        // Append '.extension' .
-        *next++ = '.';
-        strncpy(next, extension, length); next += length;
-    }
-    // Make sure there is no buffer overflow.
-    assert((size_t)(next - path) < max && "buffer overflow");
-    // Terminate string.
-    *next = '\0';
 }
 
 // Verify that a found location matches the supplied path (without copying.)
