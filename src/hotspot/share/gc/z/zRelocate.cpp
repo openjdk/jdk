@@ -40,8 +40,6 @@ ZRelocate::ZRelocate(ZWorkers* workers) :
 class ZRelocateRootsIteratorClosure : public ZRootsIteratorClosure {
 public:
   virtual void do_thread(Thread* thread) {
-    ZRootsIteratorClosure::do_thread(thread);
-
     // Update thread local address bad mask
     ZThreadLocalData::set_address_bad_mask(thread, ZAddressBadMask);
 
