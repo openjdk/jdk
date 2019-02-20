@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,9 @@
 #include "gc/z/zPageTable.inline.hpp"
 #include "gc/z/zRootsIterator.hpp"
 #include "gc/z/zStat.hpp"
-#include "gc/z/zStatTLAB.hpp"
 #include "gc/z/zTask.hpp"
 #include "gc/z/zThread.hpp"
+#include "gc/z/zThreadLocalAllocBuffer.hpp"
 #include "gc/z/zUtils.inline.hpp"
 #include "gc/z/zWorkers.inline.hpp"
 #include "logging/log.hpp"
@@ -119,18 +119,13 @@ void ZMark::prepare_mark() {
 }
 
 class ZMarkRootsIteratorClosure : public ZRootsIteratorClosure {
-private:
-  static void fixup_address(HeapWord** p) {
-    *p = (HeapWord*)ZAddress::good_or_null((uintptr_t)*p);
-  }
-
 public:
   ZMarkRootsIteratorClosure() {
-    ZStatTLAB::reset();
+    ZThreadLocalAllocBuffer::reset_statistics();
   }
 
   ~ZMarkRootsIteratorClosure() {
-    ZStatTLAB::publish();
+    ZThreadLocalAllocBuffer::publish_statistics();
   }
 
   virtual void do_thread(Thread* thread) {
@@ -140,11 +135,7 @@ public:
     ZThreadLocalData::set_address_bad_mask(thread, ZAddressBadMask);
 
     // Retire TLAB
-    if (UseTLAB && thread->is_Java_thread()) {
-      thread->tlab().addresses_do(fixup_address);
-      thread->tlab().retire(ZStatTLAB::get());
-      thread->tlab().resize();
-    }
+    ZThreadLocalAllocBuffer::retire(thread);
   }
 
   virtual void do_oop(oop* p) {

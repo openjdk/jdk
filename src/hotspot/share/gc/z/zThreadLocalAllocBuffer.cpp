@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,19 +21,23 @@
  * questions.
  */
 
-#include "gc/z/zStatTLAB.hpp"
+#include "precompiled.hpp"
+#include "gc/z/zAddress.inline.hpp"
+#include "gc/z/zThreadLocalAllocBuffer.hpp"
+#include "runtime/globals.hpp"
+#include "runtime/thread.hpp"
 
-ZPerWorker<ThreadLocalAllocStats>* ZStatTLAB::_stats = NULL;
+ZPerWorker<ThreadLocalAllocStats>* ZThreadLocalAllocBuffer::_stats = NULL;
 
-void ZStatTLAB::initialize() {
+void ZThreadLocalAllocBuffer::initialize() {
   if (UseTLAB) {
     assert(_stats == NULL, "Already initialized");
     _stats = new ZPerWorker<ThreadLocalAllocStats>();
-    reset();
+    reset_statistics();
   }
 }
 
-void ZStatTLAB::reset() {
+void ZThreadLocalAllocBuffer::reset_statistics() {
   if (UseTLAB) {
     ZPerWorkerIterator<ThreadLocalAllocStats> iter(_stats);
     for (ThreadLocalAllocStats* stats; iter.next(&stats);) {
@@ -42,15 +46,7 @@ void ZStatTLAB::reset() {
   }
 }
 
-ThreadLocalAllocStats* ZStatTLAB::get() {
-  if (UseTLAB) {
-    return _stats->addr();
-  }
-
-  return NULL;
-}
-
-void ZStatTLAB::publish() {
+void ZThreadLocalAllocBuffer::publish_statistics() {
   if (UseTLAB) {
     ThreadLocalAllocStats total;
 
@@ -60,5 +56,24 @@ void ZStatTLAB::publish() {
     }
 
     total.publish();
+  }
+}
+
+static void fixup_address(HeapWord** p) {
+  *p = (HeapWord*)ZAddress::good_or_null((uintptr_t)*p);
+}
+
+void ZThreadLocalAllocBuffer::retire(Thread* thread) {
+  if (UseTLAB && thread->is_Java_thread()) {
+    ThreadLocalAllocStats* const stats = _stats->addr();
+    thread->tlab().addresses_do(fixup_address);
+    thread->tlab().retire(stats);
+    thread->tlab().resize();
+  }
+}
+
+void ZThreadLocalAllocBuffer::remap(Thread* thread) {
+  if (UseTLAB && thread->is_Java_thread()) {
+    thread->tlab().addresses_do(fixup_address);
   }
 }

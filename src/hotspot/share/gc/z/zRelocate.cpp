@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,17 +31,13 @@
 #include "gc/z/zRelocationSet.inline.hpp"
 #include "gc/z/zRootsIterator.hpp"
 #include "gc/z/zTask.hpp"
+#include "gc/z/zThreadLocalAllocBuffer.hpp"
 #include "gc/z/zWorkers.hpp"
 
 ZRelocate::ZRelocate(ZWorkers* workers) :
     _workers(workers) {}
 
 class ZRelocateRootsIteratorClosure : public ZRootsIteratorClosure {
-private:
-  static void remap_address(HeapWord** p) {
-    *p = (HeapWord*)ZAddress::good_or_null((uintptr_t)*p);
-  }
-
 public:
   virtual void do_thread(Thread* thread) {
     ZRootsIteratorClosure::do_thread(thread);
@@ -50,9 +46,7 @@ public:
     ZThreadLocalData::set_address_bad_mask(thread, ZAddressBadMask);
 
     // Remap TLAB
-    if (UseTLAB && thread->is_Java_thread()) {
-      thread->tlab().addresses_do(remap_address);
-    }
+    ZThreadLocalAllocBuffer::remap(thread);
   }
 
   virtual void do_oop(oop* p) {

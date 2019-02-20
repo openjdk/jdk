@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,22 +21,25 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZSTATTLAB_HPP
-#define SHARE_GC_Z_ZSTATTLAB_HPP
+#ifndef SHARE_GC_Z_ZTHREADLOCALALLOCBUFFER_HPP
+#define SHARE_GC_Z_ZTHREADLOCALALLOCBUFFER_HPP
 
 #include "gc/shared/threadLocalAllocBuffer.hpp"
 #include "gc/z/zValue.hpp"
 #include "memory/allocation.hpp"
 
-class ZStatTLAB : public AllStatic {
+class ZThreadLocalAllocBuffer : public AllStatic {
 private:
   static ZPerWorker<ThreadLocalAllocStats>* _stats;
 
 public:
   static void initialize();
-  static void reset();
-  static ThreadLocalAllocStats* get();
-  static void publish();
+
+  static void reset_statistics();
+  static void publish_statistics();
+
+  static void retire(Thread* thread);
+  static void remap(Thread* thread);
 };
 
-#endif // SHARE_GC_Z_ZSTATTLAB_HPP
+#endif // SHARE_GC_Z_ZTHREADLOCALALLOCBUFFER_HPP
