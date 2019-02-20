@@ -169,135 +169,94 @@ alloc_class chunk0(R10,         R10_H,
 // Empty register class.
 reg_class no_reg();
 
-// Class for all pointer registers (including RSP and RBP)
-reg_class any_reg_with_rbp(RAX, RAX_H,
-                           RDX, RDX_H,
-                           RBP, RBP_H,
-                           RDI, RDI_H,
-                           RSI, RSI_H,
-                           RCX, RCX_H,
-                           RBX, RBX_H,
-                           RSP, RSP_H,
-                           R8,  R8_H,
-                           R9,  R9_H,
-                           R10, R10_H,
-                           R11, R11_H,
-                           R12, R12_H,
-                           R13, R13_H,
-                           R14, R14_H,
-                           R15, R15_H);
+// Class for all pointer/long registers
+reg_class all_reg(RAX, RAX_H,
+                  RDX, RDX_H,
+                  RBP, RBP_H,
+                  RDI, RDI_H,
+                  RSI, RSI_H,
+                  RCX, RCX_H,
+                  RBX, RBX_H,
+                  RSP, RSP_H,
+                  R8,  R8_H,
+                  R9,  R9_H,
+                  R10, R10_H,
+                  R11, R11_H,
+                  R12, R12_H,
+                  R13, R13_H,
+                  R14, R14_H,
+                  R15, R15_H);
 
-// Class for all pointer registers (including RSP, but excluding RBP)
-reg_class any_reg_no_rbp(RAX, RAX_H,
-                         RDX, RDX_H,
-                         RDI, RDI_H,
-                         RSI, RSI_H,
-                         RCX, RCX_H,
-                         RBX, RBX_H,
-                         RSP, RSP_H,
-                         R8,  R8_H,
-                         R9,  R9_H,
-                         R10, R10_H,
-                         R11, R11_H,
-                         R12, R12_H,
-                         R13, R13_H,
-                         R14, R14_H,
-                         R15, R15_H);
+// Class for all int registers
+reg_class all_int_reg(RAX
+                      RDX,
+                      RBP,
+                      RDI,
+                      RSI,
+                      RCX,
+                      RBX,
+                      R8,
+                      R9,
+                      R10,
+                      R11,
+                      R12,
+                      R13,
+                      R14);
 
-// Dynamic register class that selects at runtime between register classes
-// any_reg_no_rbp and any_reg_with_rbp (depending on the value of the flag PreserveFramePointer).
-// Equivalent to: return PreserveFramePointer ? any_reg_no_rbp : any_reg_with_rbp;
-reg_class_dynamic any_reg(any_reg_no_rbp, any_reg_with_rbp, %{ PreserveFramePointer %});
+// Class for all pointer registers
+reg_class any_reg %{
+  return _ANY_REG_mask;
+%}
 
 // Class for all pointer registers (excluding RSP)
-reg_class ptr_reg_with_rbp(RAX, RAX_H,
-                           RDX, RDX_H,
-                           RBP, RBP_H,
-                           RDI, RDI_H,
-                           RSI, RSI_H,
-                           RCX, RCX_H,
-                           RBX, RBX_H,
-                           R8,  R8_H,
-                           R9,  R9_H,
-                           R10, R10_H,
-                           R11, R11_H,
-                           R13, R13_H,
-                           R14, R14_H);
+reg_class ptr_reg %{
+  return _PTR_REG_mask;
+%}
 
 // Class for all pointer registers (excluding RSP and RBP)
-reg_class ptr_reg_no_rbp(RAX, RAX_H,
-                         RDX, RDX_H,
-                         RDI, RDI_H,
-                         RSI, RSI_H,
-                         RCX, RCX_H,
-                         RBX, RBX_H,
-                         R8,  R8_H,
-                         R9,  R9_H,
-                         R10, R10_H,
-                         R11, R11_H,
-                         R13, R13_H,
-                         R14, R14_H);
-
-// Dynamic register class that selects between ptr_reg_no_rbp and ptr_reg_with_rbp.
-reg_class_dynamic ptr_reg(ptr_reg_no_rbp, ptr_reg_with_rbp, %{ PreserveFramePointer %});
+reg_class ptr_reg_no_rbp %{
+  return _PTR_REG_NO_RBP_mask;
+%}
 
 // Class for all pointer registers (excluding RAX and RSP)
-reg_class ptr_no_rax_reg_with_rbp(RDX, RDX_H,
-                                  RBP, RBP_H,
-                                  RDI, RDI_H,
-                                  RSI, RSI_H,
-                                  RCX, RCX_H,
-                                  RBX, RBX_H,
-                                  R8,  R8_H,
-                                  R9,  R9_H,
-                                  R10, R10_H,
-                                  R11, R11_H,
-                                  R13, R13_H,
-                                  R14, R14_H);
-
-// Class for all pointer registers (excluding RAX, RSP, and RBP)
-reg_class ptr_no_rax_reg_no_rbp(RDX, RDX_H,
-                                RDI, RDI_H,
-                                RSI, RSI_H,
-                                RCX, RCX_H,
-                                RBX, RBX_H,
-                                R8,  R8_H,
-                                R9,  R9_H,
-                                R10, R10_H,
-                                R11, R11_H,
-                                R13, R13_H,
-                                R14, R14_H);
-
-// Dynamic register class that selects between ptr_no_rax_reg_no_rbp and ptr_no_rax_reg_with_rbp.
-reg_class_dynamic ptr_no_rax_reg(ptr_no_rax_reg_no_rbp, ptr_no_rax_reg_with_rbp, %{ PreserveFramePointer %});
+reg_class ptr_no_rax_reg %{
+  return _PTR_NO_RAX_REG_mask;
+%}
 
 // Class for all pointer registers (excluding RAX, RBX, and RSP)
-reg_class ptr_no_rax_rbx_reg_with_rbp(RDX, RDX_H,
-                                      RBP, RBP_H,
-                                      RDI, RDI_H,
-                                      RSI, RSI_H,
-                                      RCX, RCX_H,
-                                      R8,  R8_H,
-                                      R9,  R9_H,
-                                      R10, R10_H,
-                                      R11, R11_H,
-                                      R13, R13_H,
-                                      R14, R14_H);
+reg_class ptr_no_rax_rbx_reg %{
+  return _PTR_NO_RAX_RBX_REG_mask;
+%}
 
-// Class for all pointer registers (excluding RAX, RBX, RSP, and RBP)
-reg_class ptr_no_rax_rbx_reg_no_rbp(RDX, RDX_H,
-                                    RDI, RDI_H,
-                                    RSI, RSI_H,
-                                    RCX, RCX_H,
-                                    R8,  R8_H,
-                                    R9,  R9_H,
-                                    R10, R10_H,
-                                    R11, R11_H,
-                                    R13, R13_H,
-                                    R14, R14_H);
+// Class for all long registers (excluding RSP)
+reg_class long_reg %{
+  return _LONG_REG_mask;
+%}
 
-// Dynamic register class that selects between ptr_no_rax_rbx_reg_no_rbp and ptr_no_rax_rbx_reg_with_rbp.
-reg_class_dynamic ptr_no_rax_rbx_reg(ptr_no_rax_rbx_reg_no_rbp, ptr_no_rax_rbx_reg_with_rbp, %{ PreserveFramePointer %});
+// Class for all long registers (excluding RAX, RDX and RSP)
+reg_class long_no_rax_rdx_reg %{
+  return _LONG_NO_RAX_RDX_REG_mask;
+%}
+
+// Class for all long registers (excluding RCX and RSP)
+reg_class long_no_rcx_reg %{
+  return _LONG_NO_RCX_REG_mask;
+%}
+
+// Class for all int registers (excluding RSP)
+reg_class int_reg %{
+  return _INT_REG_mask;
+%}
+
+// Class for all int registers (excluding RAX, RDX, and RSP)
+reg_class int_no_rax_rdx_reg %{
+  return _INT_NO_RAX_RDX_REG_mask;
+%}
+
+// Class for all int registers (excluding RCX and RSP)
+reg_class int_no_rcx_reg %{
+  return _INT_NO_RCX_REG_mask;
+%}
 
 // Singleton class for RAX pointer register
 reg_class ptr_rax_reg(RAX, RAX_H);
@@ -317,96 +276,6 @@ reg_class ptr_rsp_reg(RSP, RSP_H);
 // Singleton class for TLS pointer
 reg_class ptr_r15_reg(R15, R15_H);
 
-// Class for all long registers (excluding RSP)
-reg_class long_reg_with_rbp(RAX, RAX_H,
-                            RDX, RDX_H,
-                            RBP, RBP_H,
-                            RDI, RDI_H,
-                            RSI, RSI_H,
-                            RCX, RCX_H,
-                            RBX, RBX_H,
-                            R8,  R8_H,
-                            R9,  R9_H,
-                            R10, R10_H,
-                            R11, R11_H,
-                            R13, R13_H,
-                            R14, R14_H);
-
-// Class for all long registers (excluding RSP and RBP)
-reg_class long_reg_no_rbp(RAX, RAX_H,
-                          RDX, RDX_H,
-                          RDI, RDI_H,
-                          RSI, RSI_H,
-                          RCX, RCX_H,
-                          RBX, RBX_H,
-                          R8,  R8_H,
-                          R9,  R9_H,
-                          R10, R10_H,
-                          R11, R11_H,
-                          R13, R13_H,
-                          R14, R14_H);
-
-// Dynamic register class that selects between long_reg_no_rbp and long_reg_with_rbp.
-reg_class_dynamic long_reg(long_reg_no_rbp, long_reg_with_rbp, %{ PreserveFramePointer %});
-
-// Class for all long registers (excluding RAX, RDX and RSP)
-reg_class long_no_rax_rdx_reg_with_rbp(RBP, RBP_H,
-                                       RDI, RDI_H,
-                                       RSI, RSI_H,
-                                       RCX, RCX_H,
-                                       RBX, RBX_H,
-                                       R8,  R8_H,
-                                       R9,  R9_H,
-                                       R10, R10_H,
-                                       R11, R11_H,
-                                       R13, R13_H,
-                                       R14, R14_H);
-
-// Class for all long registers (excluding RAX, RDX, RSP, and RBP)
-reg_class long_no_rax_rdx_reg_no_rbp(RDI, RDI_H,
-                                     RSI, RSI_H,
-                                     RCX, RCX_H,
-                                     RBX, RBX_H,
-                                     R8,  R8_H,
-                                     R9,  R9_H,
-                                     R10, R10_H,
-                                     R11, R11_H,
-                                     R13, R13_H,
-                                     R14, R14_H);
-
-// Dynamic register class that selects between long_no_rax_rdx_reg_no_rbp and long_no_rax_rdx_reg_with_rbp.
-reg_class_dynamic long_no_rax_rdx_reg(long_no_rax_rdx_reg_no_rbp, long_no_rax_rdx_reg_with_rbp, %{ PreserveFramePointer %});
-
-// Class for all long registers (excluding RCX and RSP)
-reg_class long_no_rcx_reg_with_rbp(RBP, RBP_H,
-                                   RDI, RDI_H,
-                                   RSI, RSI_H,
-                                   RAX, RAX_H,
-                                   RDX, RDX_H,
-                                   RBX, RBX_H,
-                                   R8,  R8_H,
-                                   R9,  R9_H,
-                                   R10, R10_H,
-                                   R11, R11_H,
-                                   R13, R13_H,
-                                   R14, R14_H);
-
-// Class for all long registers (excluding RCX, RSP, and RBP)
-reg_class long_no_rcx_reg_no_rbp(RDI, RDI_H,
-                                 RSI, RSI_H,
-                                 RAX, RAX_H,
-                                 RDX, RDX_H,
-                                 RBX, RBX_H,
-                                 R8,  R8_H,
-                                 R9,  R9_H,
-                                 R10, R10_H,
-                                 R11, R11_H,
-                                 R13, R13_H,
-                                 R14, R14_H);
-
-// Dynamic register class that selects between long_no_rcx_reg_no_rbp and long_no_rcx_reg_with_rbp.
-reg_class_dynamic long_no_rcx_reg(long_no_rcx_reg_no_rbp, long_no_rcx_reg_with_rbp, %{ PreserveFramePointer %});
-
 // Singleton class for RAX long register
 reg_class long_rax_reg(RAX, RAX_H);
 
@@ -415,96 +284,6 @@ reg_class long_rcx_reg(RCX, RCX_H);
 
 // Singleton class for RDX long register
 reg_class long_rdx_reg(RDX, RDX_H);
-
-// Class for all int registers (excluding RSP)
-reg_class int_reg_with_rbp(RAX,
-                           RDX,
-                           RBP,
-                           RDI,
-                           RSI,
-                           RCX,
-                           RBX,
-                           R8,
-                           R9,
-                           R10,
-                           R11,
-                           R13,
-                           R14);
-
-// Class for all int registers (excluding RSP and RBP)
-reg_class int_reg_no_rbp(RAX,
-                         RDX,
-                         RDI,
-                         RSI,
-                         RCX,
-                         RBX,
-                         R8,
-                         R9,
-                         R10,
-                         R11,
-                         R13,
-                         R14);
-
-// Dynamic register class that selects between int_reg_no_rbp and int_reg_with_rbp.
-reg_class_dynamic int_reg(int_reg_no_rbp, int_reg_with_rbp, %{ PreserveFramePointer %});
-
-// Class for all int registers (excluding RCX and RSP)
-reg_class int_no_rcx_reg_with_rbp(RAX,
-                                  RDX,
-                                  RBP,
-                                  RDI,
-                                  RSI,
-                                  RBX,
-                                  R8,
-                                  R9,
-                                  R10,
-                                  R11,
-                                  R13,
-                                  R14);
-
-// Class for all int registers (excluding RCX, RSP, and RBP)
-reg_class int_no_rcx_reg_no_rbp(RAX,
-                                RDX,
-                                RDI,
-                                RSI,
-                                RBX,
-                                R8,
-                                R9,
-                                R10,
-                                R11,
-                                R13,
-                                R14);
-
-// Dynamic register class that selects between int_no_rcx_reg_no_rbp and int_no_rcx_reg_with_rbp.
-reg_class_dynamic int_no_rcx_reg(int_no_rcx_reg_no_rbp, int_no_rcx_reg_with_rbp, %{ PreserveFramePointer %});
-
-// Class for all int registers (excluding RAX, RDX, and RSP)
-reg_class int_no_rax_rdx_reg_with_rbp(RBP,
-                                      RDI,
-                                      RSI,
-                                      RCX,
-                                      RBX,
-                                      R8,
-                                      R9,
-                                      R10,
-                                      R11,
-                                      R13,
-                                      R14);
-
-// Class for all int registers (excluding RAX, RDX, RSP, and RBP)
-reg_class int_no_rax_rdx_reg_no_rbp(RDI,
-                                    RSI,
-                                    RCX,
-                                    RBX,
-                                    R8,
-                                    R9,
-                                    R10,
-                                    R11,
-                                    R13,
-                                    R14);
-
-// Dynamic register class that selects between int_no_rax_rdx_reg_no_rbp and int_no_rax_rdx_reg_with_rbp.
-reg_class_dynamic int_no_rax_rdx_reg(int_no_rax_rdx_reg_no_rbp, int_no_rax_rdx_reg_with_rbp, %{ PreserveFramePointer %});
 
 // Singleton class for RAX int register
 reg_class int_rax_reg(RAX);
@@ -529,11 +308,122 @@ reg_class int_rdi_reg(RDI);
 //----------SOURCE BLOCK-------------------------------------------------------
 // This is a block of C++ code which provides values, functions, and
 // definitions necessary in the rest of the architecture description
+source_hpp %{
+
+extern RegMask _ANY_REG_mask;
+extern RegMask _PTR_REG_mask;
+extern RegMask _PTR_REG_NO_RBP_mask;
+extern RegMask _PTR_NO_RAX_REG_mask;
+extern RegMask _PTR_NO_RAX_RBX_REG_mask;
+extern RegMask _LONG_REG_mask;
+extern RegMask _LONG_NO_RAX_RDX_REG_mask;
+extern RegMask _LONG_NO_RCX_REG_mask;
+extern RegMask _INT_REG_mask;
+extern RegMask _INT_NO_RAX_RDX_REG_mask;
+extern RegMask _INT_NO_RCX_REG_mask;
+
+extern RegMask _STACK_OR_PTR_REG_mask;
+extern RegMask _STACK_OR_LONG_REG_mask;
+extern RegMask _STACK_OR_INT_REG_mask;
+
+inline const RegMask& STACK_OR_PTR_REG_mask()  { return _STACK_OR_PTR_REG_mask;  }
+inline const RegMask& STACK_OR_LONG_REG_mask() { return _STACK_OR_LONG_REG_mask; }
+inline const RegMask& STACK_OR_INT_REG_mask()  { return _STACK_OR_INT_REG_mask;  }
+
+%}
+
 source %{
 #define   RELOC_IMM64    Assembler::imm_operand
 #define   RELOC_DISP32   Assembler::disp32_operand
 
 #define __ _masm.
+
+RegMask _ANY_REG_mask;
+RegMask _PTR_REG_mask;
+RegMask _PTR_REG_NO_RBP_mask;
+RegMask _PTR_NO_RAX_REG_mask;
+RegMask _PTR_NO_RAX_RBX_REG_mask;
+RegMask _LONG_REG_mask;
+RegMask _LONG_NO_RAX_RDX_REG_mask;
+RegMask _LONG_NO_RCX_REG_mask;
+RegMask _INT_REG_mask;
+RegMask _INT_NO_RAX_RDX_REG_mask;
+RegMask _INT_NO_RCX_REG_mask;
+RegMask _STACK_OR_PTR_REG_mask;
+RegMask _STACK_OR_LONG_REG_mask;
+RegMask _STACK_OR_INT_REG_mask;
+
+static bool need_r12_heapbase() {
+  return UseCompressedOops || UseCompressedClassPointers || UseZGC;
+}
+
+void reg_mask_init() {
+  // _ALL_REG_mask is generated by adlc from the all_reg register class below.
+  // We derive a number of subsets from it.
+  _ANY_REG_mask = _ALL_REG_mask;
+
+  if (PreserveFramePointer) {
+    _ANY_REG_mask.Remove(OptoReg::as_OptoReg(rbp->as_VMReg()));
+    _ANY_REG_mask.Remove(OptoReg::as_OptoReg(rbp->as_VMReg()->next()));
+  }
+  if (need_r12_heapbase()) {
+    _ANY_REG_mask.Remove(OptoReg::as_OptoReg(r12->as_VMReg()));
+    _ANY_REG_mask.Remove(OptoReg::as_OptoReg(r12->as_VMReg()->next()));
+  }
+
+  _PTR_REG_mask = _ANY_REG_mask;
+  _PTR_REG_mask.Remove(OptoReg::as_OptoReg(rsp->as_VMReg()));
+  _PTR_REG_mask.Remove(OptoReg::as_OptoReg(rsp->as_VMReg()->next()));
+  _PTR_REG_mask.Remove(OptoReg::as_OptoReg(r15->as_VMReg()));
+  _PTR_REG_mask.Remove(OptoReg::as_OptoReg(r15->as_VMReg()->next()));
+
+  _STACK_OR_PTR_REG_mask = _PTR_REG_mask;
+  _STACK_OR_PTR_REG_mask.OR(STACK_OR_STACK_SLOTS_mask());
+
+  _PTR_REG_NO_RBP_mask = _PTR_REG_mask;
+  _PTR_REG_NO_RBP_mask.Remove(OptoReg::as_OptoReg(rbp->as_VMReg()));
+  _PTR_REG_NO_RBP_mask.Remove(OptoReg::as_OptoReg(rbp->as_VMReg()->next()));
+
+  _PTR_NO_RAX_REG_mask = _PTR_REG_mask;
+  _PTR_NO_RAX_REG_mask.Remove(OptoReg::as_OptoReg(rax->as_VMReg()));
+  _PTR_NO_RAX_REG_mask.Remove(OptoReg::as_OptoReg(rax->as_VMReg()->next()));
+
+  _PTR_NO_RAX_RBX_REG_mask = _PTR_NO_RAX_REG_mask;
+  _PTR_NO_RAX_RBX_REG_mask.Remove(OptoReg::as_OptoReg(rbx->as_VMReg()));
+  _PTR_NO_RAX_RBX_REG_mask.Remove(OptoReg::as_OptoReg(rbx->as_VMReg()->next()));
+
+  _LONG_REG_mask = _PTR_REG_mask;
+  _STACK_OR_LONG_REG_mask = _LONG_REG_mask;
+  _STACK_OR_LONG_REG_mask.OR(STACK_OR_STACK_SLOTS_mask());
+
+  _LONG_NO_RAX_RDX_REG_mask = _LONG_REG_mask;
+  _LONG_NO_RAX_RDX_REG_mask.Remove(OptoReg::as_OptoReg(rax->as_VMReg()));
+  _LONG_NO_RAX_RDX_REG_mask.Remove(OptoReg::as_OptoReg(rax->as_VMReg()->next()));
+  _LONG_NO_RAX_RDX_REG_mask.Remove(OptoReg::as_OptoReg(rdx->as_VMReg()));
+  _LONG_NO_RAX_RDX_REG_mask.Remove(OptoReg::as_OptoReg(rdx->as_VMReg()->next()));
+
+  _LONG_NO_RCX_REG_mask = _LONG_REG_mask;
+  _LONG_NO_RCX_REG_mask.Remove(OptoReg::as_OptoReg(rcx->as_VMReg()));
+  _LONG_NO_RCX_REG_mask.Remove(OptoReg::as_OptoReg(rcx->as_VMReg()->next()));
+
+  _INT_REG_mask = _ALL_INT_REG_mask;
+  if (PreserveFramePointer) {
+    _INT_REG_mask.Remove(OptoReg::as_OptoReg(rbp->as_VMReg()));
+  }
+  if (need_r12_heapbase()) {
+    _INT_REG_mask.Remove(OptoReg::as_OptoReg(r12->as_VMReg()));
+  }
+
+  _STACK_OR_INT_REG_mask = _INT_REG_mask;
+  _STACK_OR_INT_REG_mask.OR(STACK_OR_STACK_SLOTS_mask());
+
+  _INT_NO_RAX_RDX_REG_mask = _INT_REG_mask;
+  _INT_NO_RAX_RDX_REG_mask.Remove(OptoReg::as_OptoReg(rax->as_VMReg()));
+  _INT_NO_RAX_RDX_REG_mask.Remove(OptoReg::as_OptoReg(rdx->as_VMReg()));
+
+  _INT_NO_RCX_REG_mask = _INT_REG_mask;
+  _INT_NO_RCX_REG_mask.Remove(OptoReg::as_OptoReg(rcx->as_VMReg()));
+}
 
 static bool generate_vzeroupper(Compile* C) {
   return (VM_Version::supports_vzeroupper() && (C->max_vector_size() > 16 || C->clear_upper_avx() == true)) ? true: false;  // Generate vzeroupper
