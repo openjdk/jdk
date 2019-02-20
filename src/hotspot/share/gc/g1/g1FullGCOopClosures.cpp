@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,26 +71,19 @@ template <class T> void G1VerifyOopClosure::do_oop_work(T* p) {
       }
       if (!_g1h->is_in_closed_subset(obj)) {
         HeapRegion* from = _g1h->heap_region_containing((HeapWord*)p);
-        yy.print_cr("Field " PTR_FORMAT
-            " of live obj " PTR_FORMAT " in region "
-            "[" PTR_FORMAT ", " PTR_FORMAT ")",
-            p2i(p), p2i(_containing_obj),
-            p2i(from->bottom()), p2i(from->end()));
+        yy.print_cr("Field " PTR_FORMAT " of live obj " PTR_FORMAT " in region " HR_FORMAT,
+                    p2i(p), p2i(_containing_obj), HR_FORMAT_PARAMS(from));
         print_object(&yy, _containing_obj);
         yy.print_cr("points to obj " PTR_FORMAT " not in the heap",
-            p2i(obj));
+                    p2i(obj));
       } else {
         HeapRegion* from = _g1h->heap_region_containing((HeapWord*)p);
         HeapRegion* to   = _g1h->heap_region_containing((HeapWord*)obj);
-        yy.print_cr("Field " PTR_FORMAT
-            " of live obj " PTR_FORMAT " in region "
-            "[" PTR_FORMAT ", " PTR_FORMAT ")",
-            p2i(p), p2i(_containing_obj),
-            p2i(from->bottom()), p2i(from->end()));
+        yy.print_cr("Field " PTR_FORMAT " of live obj " PTR_FORMAT " in region " HR_FORMAT,
+                    p2i(p), p2i(_containing_obj), HR_FORMAT_PARAMS(from));
         print_object(&yy, _containing_obj);
-        yy.print_cr("points to dead obj " PTR_FORMAT " in region "
-            "[" PTR_FORMAT ", " PTR_FORMAT ")",
-            p2i(obj), p2i(to->bottom()), p2i(to->end()));
+        yy.print_cr("points to dead obj " PTR_FORMAT " in region " HR_FORMAT,
+                    p2i(obj), HR_FORMAT_PARAMS(to));
         print_object(&yy, obj);
       }
       yy.print_cr("----------");
