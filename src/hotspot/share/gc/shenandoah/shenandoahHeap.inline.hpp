@@ -316,8 +316,13 @@ inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
   }
 }
 
+template<bool RESOLVE>
 inline bool ShenandoahHeap::requires_marking(const void* entry) const {
-  return !_marking_context->is_marked(oop(entry));
+  oop obj = oop(entry);
+  if (RESOLVE) {
+    obj = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+  }
+  return !_marking_context->is_marked(obj);
 }
 
 template <class T>

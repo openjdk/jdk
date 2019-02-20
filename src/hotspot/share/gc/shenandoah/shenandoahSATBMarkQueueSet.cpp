@@ -49,12 +49,9 @@ SATBMarkQueue& ShenandoahSATBMarkQueueSet::satb_queue_for_thread(JavaThread* con
   return ShenandoahThreadLocalData::satb_mark_queue(t);
 }
 
-static inline bool discard_entry(const void* entry, ShenandoahHeap* heap) {
-  return !heap->requires_marking(entry);
-}
-
+template <bool RESOLVE>
 class ShenandoahSATBMarkQueueFilterFn {
-  ShenandoahHeap* _heap;
+  ShenandoahHeap* const _heap;
 
 public:
   ShenandoahSATBMarkQueueFilterFn(ShenandoahHeap* heap) : _heap(heap) {}
@@ -62,13 +59,17 @@ public:
   // Return true if entry should be filtered out (removed), false if
   // it should be retained.
   bool operator()(const void* entry) const {
-    return discard_entry(entry, _heap);
+    return !_heap->requires_marking<RESOLVE>(entry);
   }
 };
 
 void ShenandoahSATBMarkQueueSet::filter(SATBMarkQueue* queue) {
   assert(_heap != NULL, "SATB queue set not initialized");
-  apply_filter(ShenandoahSATBMarkQueueFilterFn(_heap), queue);
+  if (_heap->has_forwarded_objects()) {
+    apply_filter(ShenandoahSATBMarkQueueFilterFn<true>(_heap), queue);
+  } else {
+    apply_filter(ShenandoahSATBMarkQueueFilterFn<false>(_heap), queue);
+  }
 }
 
 bool ShenandoahSATBMarkQueue::should_enqueue_buffer() {
