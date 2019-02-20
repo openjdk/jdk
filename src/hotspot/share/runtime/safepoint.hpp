@@ -197,7 +197,7 @@ public:
   assert(!SafepointSynchronize::is_at_safepoint(), __VA_ARGS__)
 
 // State class for a thread suspended at a safepoint
-class ThreadSafepointState: public CHeapObj<mtInternal> {
+class ThreadSafepointState: public CHeapObj<mtThread> {
  private:
   // At polling page safepoint (NOT a poll return safepoint):
   volatile bool                   _at_poll_safepoint;
