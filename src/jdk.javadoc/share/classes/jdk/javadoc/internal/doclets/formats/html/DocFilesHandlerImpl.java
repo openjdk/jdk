@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -197,7 +197,7 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
         footer.addContent(navBar.getContent(false));
         docletWriter.addBottom(footer);
         htmlContent.addContent(footer);
-        docletWriter.printHtmlDocument(Collections.emptyList(), false, localTagsContent, htmlContent);
+        docletWriter.printHtmlDocument(Collections.emptyList(), null, false, localTagsContent, htmlContent);
     }
 
 

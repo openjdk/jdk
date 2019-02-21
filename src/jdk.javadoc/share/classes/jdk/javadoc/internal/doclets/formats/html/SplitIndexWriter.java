@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,7 +144,8 @@ public class SplitIndexWriter extends AbstractIndexWriter {
         footer.addContent(navBar.getContent(false));
         addBottom(footer);
         body.addContent(footer);
-        printHtmlDocument(null, true, body);
+        String description = "index: " + unicode;
+        printHtmlDocument(null, description, true, body);
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,6 +128,8 @@ public class FrameOutputWriter extends HtmlDocletWriter {
         Head head = new Head(path, configuration.docletVersion)
                 .setTimestamp(!configuration.notimestamp)
                 .setTitle(title)
+                .setDescription("frames")
+                .setGenerator(getGenerator(getClass()))
                 .setCharset(configuration.charset)
                 .setStylesheets(configuration.getMainStylesheet(), configuration.getAdditionalStylesheets())
                 .addDefaultScript(false)

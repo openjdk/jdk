@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,8 @@ public class Head {
     private String title;
     private String charset;
     private final List<String> keywords;
+    private String description;
+    private String generator;
     private boolean showTimestamp;
     private boolean useModuleDirectories;
     private DocFile mainStylesheetFile;
@@ -107,6 +109,22 @@ public class Head {
     // Eventually, this should be a required call.
     public Head setCharset(String charset) {
         this.charset = charset;
+        return this;
+    }
+
+    /**
+     * Sets the content for the description META element.
+     */
+    public Head setDescription(String description) {
+        this.description = description;
+        return this;
+    }
+
+    /**
+     * Sets the content for the generator META element.
+     */
+    public Head setGenerator(String generator) {
+        this.generator = generator;
         return this;
     }
 
@@ -243,6 +261,14 @@ public class Head {
         if (showTimestamp) {
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
             tree.addContent(HtmlTree.META("dc.created", dateFormat.format(now)));
+        }
+
+        if (description != null) {
+            tree.addContent(HtmlTree.META("description", description));
+        }
+
+        if (generator != null) {
+            tree.addContent(HtmlTree.META("generator", generator));
         }
 
         for (String k : keywords) {
