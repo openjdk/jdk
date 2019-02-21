@@ -33,7 +33,7 @@
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/z/zBarrierSetNMethod.hpp"
 #include "gc/z/zGlobals.hpp"
-#include "gc/z/zNMethodTable.hpp"
+#include "gc/z/zNMethod.hpp"
 #include "gc/z/zOopClosures.inline.hpp"
 #include "gc/z/zRootsIterator.hpp"
 #include "gc/z/zStat.hpp"
@@ -184,7 +184,7 @@ ZRootsIterator::ZRootsIterator() :
   if (ClassUnloading) {
     nmethod::oops_do_marking_prologue();
   } else {
-    ZNMethodTable::nmethods_do_begin();
+    ZNMethod::oops_do_begin();
   }
 }
 
@@ -194,7 +194,7 @@ ZRootsIterator::~ZRootsIterator() {
   if (ClassUnloading) {
     nmethod::oops_do_marking_epilogue();
   } else {
-    ZNMethodTable::nmethods_do_end();
+    ZNMethod::oops_do_end();
   }
   JvmtiExport::gc_epilogue();
 
@@ -242,7 +242,7 @@ void ZRootsIterator::do_threads(ZRootsIteratorClosure* cl) {
 
 void ZRootsIterator::do_code_cache(ZRootsIteratorClosure* cl) {
   ZStatTimer timer(ZSubPhasePauseRootsCodeCache);
-  ZNMethodTable::oops_do(cl);
+  ZNMethod::oops_do(cl);
 }
 
 void ZRootsIterator::oops_do(ZRootsIteratorClosure* cl, bool visit_jvmti_weak_export) {

@@ -21,52 +21,40 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZNMETHODTABLE_HPP
-#define SHARE_GC_Z_ZNMETHODTABLE_HPP
+#ifndef SHARE_GC_Z_ZNMETHOD_HPP
+#define SHARE_GC_Z_ZNMETHOD_HPP
 
-#include "gc/z/zNMethodTableIteration.hpp"
 #include "memory/allocation.hpp"
 
 class nmethod;
-class NMethodClosure;
-class ZNMethodTableEntry;
+class OopClosure;
+class ZReentrantLock;
 class ZWorkers;
 
-class ZNMethodTable : public AllStatic {
+class ZNMethod : public AllStatic {
 private:
-  static ZNMethodTableEntry*    _table;
-  static size_t                 _size;
-  static size_t                 _nregistered;
-  static size_t                 _nunregistered;
-  static ZNMethodTableIteration _iteration;
+  static void attach_gc_data(nmethod* nm);
+  static void detach_gc_data(nmethod* nm);
 
-  static ZNMethodTableEntry* create(size_t size);
-  static void destroy(ZNMethodTableEntry* table);
-
-  static size_t first_index(const nmethod* nm, size_t size);
-  static size_t next_index(size_t prev_index, size_t size);
-
-  static bool register_entry(ZNMethodTableEntry* table, size_t size, nmethod* nm);
-  static void unregister_entry(ZNMethodTableEntry* table, size_t size, nmethod* nm);
-
-  static void rebuild(size_t new_size);
-  static void rebuild_if_needed();
+  static void log_register(const nmethod* nm);
+  static void log_unregister(const nmethod* nm);
 
 public:
-  static size_t registered_nmethods();
-  static size_t unregistered_nmethods();
-
   static void register_nmethod(nmethod* nm);
   static void unregister_nmethod(nmethod* nm);
 
-  static void wait_until_iteration_done();
+  static void disarm_nmethod(nmethod* nm);
 
-  static void nmethods_do_begin();
-  static void nmethods_do_end();
-  static void nmethods_do(NMethodClosure* cl);
+  static void nmethod_oops_do(nmethod* nm, OopClosure* cl);
+
+  static void oops_do_begin();
+  static void oops_do_end();
+  static void oops_do(OopClosure* cl);
+
+  static ZReentrantLock* lock_for_nmethod(nmethod* nm);
 
   static void unlink(ZWorkers* workers, bool unloading_occurred);
   static void purge(ZWorkers* workers);
 };
 
-#endif // SHARE_GC_Z_ZNMETHODTABLE_HPP
+#endif // SHARE_GC_Z_ZNMETHOD_HPP

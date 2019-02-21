@@ -27,7 +27,7 @@
 #include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeap.inline.hpp"
-#include "gc/z/zNMethodTable.hpp"
+#include "gc/z/zNMethod.hpp"
 #include "gc/z/zServiceability.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zUtils.inline.hpp"
@@ -255,11 +255,11 @@ bool ZCollectedHeap::block_is_obj(const HeapWord* addr) const {
 }
 
 void ZCollectedHeap::register_nmethod(nmethod* nm) {
-  ZNMethodTable::register_nmethod(nm);
+  ZNMethod::register_nmethod(nm);
 }
 
 void ZCollectedHeap::unregister_nmethod(nmethod* nm) {
-  ZNMethodTable::unregister_nmethod(nm);
+  ZNMethod::unregister_nmethod(nm);
 }
 
 void ZCollectedHeap::verify_nmethod(nmethod* nm) {
