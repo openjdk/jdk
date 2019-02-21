@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 
 /*
  * @test
- * @bug 4919147
+ * @bug 4919147 8168069
  * @summary Support for token-based KeyStores
  * @run main/othervm BadTSProvider
  */
@@ -175,12 +175,10 @@ public class BadTSProvider {
             new BadTSProvider();
             throw new SecurityException("expected no-such-provider exception");
         } catch (SocketException se) {
-
             // catching the exception is ok,
             // but let's try to confirm it is the right exception.
             //
-            // XXX this test must be updated if the exception message changes
-
+            // Note: this test must be updated if the exception message changes
             Throwable cause = se.getCause();
             if (!(cause instanceof NoSuchAlgorithmException)) {
                 se.printStackTrace();
@@ -188,13 +186,7 @@ public class BadTSProvider {
             }
 
             cause = cause.getCause();
-            if (!(cause instanceof KeyStoreException)) {
-                se.printStackTrace();
-                throw new Exception("Unexpected exception" + se);
-            }
-
-            cause = cause.getCause();
-            if (!(cause instanceof NoSuchProviderException)) {
+            if (!(cause instanceof KeyManagementException)) {
                 se.printStackTrace();
                 throw new Exception("Unexpected exception" + se);
             }
