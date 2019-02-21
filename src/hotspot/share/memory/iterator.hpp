@@ -263,6 +263,11 @@ class MarkingCodeBlobClosure : public CodeBlobToOopClosure {
   virtual void do_code_blob(CodeBlob* cb);
 };
 
+class NMethodClosure : public Closure {
+ public:
+  virtual void do_nmethod(nmethod* n) = 0;
+};
+
 // MonitorClosure is used for iterating over monitors in the monitors cache
 
 class ObjectMonitor;
