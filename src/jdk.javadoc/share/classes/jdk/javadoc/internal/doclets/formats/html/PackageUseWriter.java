@@ -142,7 +142,6 @@ public class PackageUseWriter extends SubWriterHolderWriter {
         body.addContent(footer);
         printHtmlDocument(null,
                 getDescription("use", packageElement),
-                true,
                 body);
     }
 

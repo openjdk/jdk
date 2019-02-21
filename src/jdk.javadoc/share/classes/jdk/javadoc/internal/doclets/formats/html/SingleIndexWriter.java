@@ -121,7 +121,7 @@ public class SingleIndexWriter extends AbstractIndexWriter {
         addBottom(htmlTree);
         body.addContent(htmlTree);
         createSearchIndexFiles();
-        printHtmlDocument(null, "index", true, body);
+        printHtmlDocument(null, "index", body);
     }
 
     /**

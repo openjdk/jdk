@@ -111,7 +111,6 @@ public class ModuleFrameWriter extends HtmlDocletWriter {
         mdlgen.printHtmlDocument(
                 configuration.metakeywords.getMetaKeywordsForModule(moduleElement),
                 "module summary (frame)",
-                false,
                 body);
     }
 

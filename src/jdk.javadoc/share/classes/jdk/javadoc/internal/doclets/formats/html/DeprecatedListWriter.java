@@ -308,7 +308,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
         addBottom(htmlTree);
         body.addContent(htmlTree);
         String description = "deprecated elements";
-        printHtmlDocument(null, description, true, body);
+        printHtmlDocument(null, description, body);
     }
 
     /**

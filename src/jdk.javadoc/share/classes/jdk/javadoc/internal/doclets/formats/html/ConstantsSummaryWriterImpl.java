@@ -327,6 +327,6 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
      */
     @Override
     public void printDocument(Content contentTree) throws DocFileIOException {
-        printHtmlDocument(null, "summary of constants", true, contentTree);
+        printHtmlDocument(null, "summary of constants", contentTree);
     }
 }

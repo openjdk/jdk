@@ -180,7 +180,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         PackageElement pkg = utils.containingPackage(typeElement);
         Content stylesheetContent = getLocalStylesheetContent(pkg);
         printHtmlDocument(configuration.metakeywords.getMetaKeywords(typeElement),
-                description, true, stylesheetContent, contentTree);
+                description, stylesheetContent, contentTree);
     }
 
     /**

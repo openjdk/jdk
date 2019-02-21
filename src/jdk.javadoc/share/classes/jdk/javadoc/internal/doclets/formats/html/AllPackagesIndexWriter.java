@@ -104,7 +104,7 @@ public class AllPackagesIndexWriter extends HtmlDocletWriter {
         footer.addContent(navBar.getContent(false));
         addBottom(footer);
         bodyTree.addContent(footer);
-        printHtmlDocument(null, "package index", true, bodyTree);
+        printHtmlDocument(null, "package index", bodyTree);
     }
 
     /**

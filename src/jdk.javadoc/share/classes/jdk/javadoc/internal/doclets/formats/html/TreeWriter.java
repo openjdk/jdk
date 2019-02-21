@@ -126,7 +126,7 @@ public class TreeWriter extends AbstractTreeWriter {
         htmlTree.addContent(navBar.getContent(false));
         addBottom(htmlTree);
         body.addContent(htmlTree);
-        printHtmlDocument(null, "class tree", true, body);
+        printHtmlDocument(null, "class tree", body);
     }
 
     /**

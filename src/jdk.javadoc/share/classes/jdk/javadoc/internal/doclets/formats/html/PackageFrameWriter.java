@@ -112,7 +112,6 @@ public class PackageFrameWriter extends HtmlDocletWriter {
         packgen.printHtmlDocument(
                 configuration.metakeywords.getMetaKeywords(packageElement),
                 getDescription("package summary (frame)", packageElement),
-                false,
                 body);
     }
 

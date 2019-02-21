@@ -120,7 +120,7 @@ public class PackageTreeWriter extends AbstractTreeWriter {
         footer.addContent(navBar.getContent(false));
         addBottom(footer);
         body.addContent(footer);
-        printHtmlDocument(null, getDescription("tree", packageElement), true, body);
+        printHtmlDocument(null, getDescription("tree", packageElement), body);
     }
 
     /**

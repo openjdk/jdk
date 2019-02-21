@@ -145,7 +145,7 @@ public class SplitIndexWriter extends AbstractIndexWriter {
         addBottom(footer);
         body.addContent(footer);
         String description = "index: " + unicode;
-        printHtmlDocument(null, description, true, body);
+        printHtmlDocument(null, description, body);
     }
 
     /**

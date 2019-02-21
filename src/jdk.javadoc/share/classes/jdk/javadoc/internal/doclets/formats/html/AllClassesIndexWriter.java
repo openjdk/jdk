@@ -116,7 +116,7 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
         footer.addContent(navBar.getContent(false));
         addBottom(footer);
         bodyTree.addContent(footer);
-        printHtmlDocument(null, "class index", true, bodyTree);
+        printHtmlDocument(null, "class index", bodyTree);
     }
 
     /**

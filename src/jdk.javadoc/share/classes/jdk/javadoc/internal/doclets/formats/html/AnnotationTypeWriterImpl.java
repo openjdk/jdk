@@ -155,7 +155,7 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
         PackageElement pkg = utils.containingPackage(this.annotationType);
         Content stylesheetContent = getLocalStylesheetContent(pkg);
         printHtmlDocument(configuration.metakeywords.getMetaKeywords(annotationType),
-                description, true, stylesheetContent, contentTree);
+                description, stylesheetContent, contentTree);
     }
 
     /**

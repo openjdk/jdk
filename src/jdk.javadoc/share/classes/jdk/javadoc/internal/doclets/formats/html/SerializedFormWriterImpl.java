@@ -253,7 +253,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
      */
     @Override
     public void printDocument(Content serializedTree) throws DocFileIOException {
-        printHtmlDocument(null, "serialized forms", true, serializedTree);
+        printHtmlDocument(null, "serialized forms", serializedTree);
     }
 
     /**

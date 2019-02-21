@@ -120,7 +120,7 @@ public class AllClassesFrameWriter extends HtmlDocletWriter {
         HtmlTree div = HtmlTree.DIV(HtmlStyle.indexContainer, ul);
         htmlTree.addContent(div);
         body.addContent(htmlTree);
-        printHtmlDocument(null, "all classes (frame)", false, body);
+        printHtmlDocument(null, "all classes (frame)", body);
     }
 
     /**
