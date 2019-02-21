@@ -183,8 +183,14 @@ bool InstanceKlass::has_nest_member(InstanceKlass* k, TRAPS) const {
       if (name == k->name()) {
         log_trace(class, nestmates)("- Found it at nest_members[%d] => cp[%d]", i, cp_index);
 
-        // names match so check actual klass - this may trigger class loading if
-        // it doesn't match (but that should be impossible)
+        // Names match so check actual klass - this may trigger class loading if
+        // it doesn't match (though that should be impossible). But to be safe we
+        // have to check for a compiler thread executing here.
+        if (!THREAD->can_call_java() && !_constants->tag_at(cp_index).is_klass()) {
+          log_trace(class, nestmates)("- validation required resolution in an unsuitable thread");
+          return false;
+        }
+
         Klass* k2 = _constants->klass_at(cp_index, CHECK_false);
         if (k2 == k) {
           log_trace(class, nestmates)("- class is listed as a nest member");
@@ -296,7 +302,7 @@ InstanceKlass* InstanceKlass::nest_host(Symbol* validationException, TRAPS) {
            error);
       }
 
-      if (validationException != NULL) {
+      if (validationException != NULL && THREAD->can_call_java()) {
         ResourceMark rm(THREAD);
         Exceptions::fthrow(THREAD_AND_LOCATION,
                            validationException,
