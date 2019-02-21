@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8214113
  * @summary Verify the switch expression's type does not have a constant attached,
  *          and so the switch expression is not elided.
- * @compile --enable-preview --source 13 SwitchExpressionIsNotAConstant.java
+ * @compile --enable-preview --source ${jdk.version} SwitchExpressionIsNotAConstant.java
  * @run main/othervm --enable-preview SwitchExpressionIsNotAConstant
  */
 public class SwitchExpressionIsNotAConstant {

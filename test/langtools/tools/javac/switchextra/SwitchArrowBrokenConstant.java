@@ -3,7 +3,7 @@
  * @bug 8206986
  * @summary Verify reasonable errors are produced when neither ':' nor '->'
  *          is found are the expression of a case
- * @compile/fail/ref=SwitchArrowBrokenConstant.out -source 13 --enable-preview -Xlint:-preview -XDrawDiagnostics SwitchArrowBrokenConstant.java
+ * @compile/fail/ref=SwitchArrowBrokenConstant.out -source ${jdk.version} --enable-preview -Xlint:-preview -XDrawDiagnostics SwitchArrowBrokenConstant.java
  */
 
 public class SwitchArrowBrokenConstant {

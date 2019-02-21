@@ -2,7 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 8206986
  * @summary Verify the parser handles broken input gracefully.
- * @compile/fail/ref=ParserRecovery.out -XDrawDiagnostics --enable-preview -source 13 ParserRecovery.java
+ * @compile/fail/ref=ParserRecovery.out -XDrawDiagnostics --enable-preview -source ${jdk.version} ParserRecovery.java
  */
 
 public class ParserRecovery {

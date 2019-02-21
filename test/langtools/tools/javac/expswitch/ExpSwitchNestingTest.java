@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,8 @@ public class ExpSwitchNestingTest extends JavacTemplateTestBase {
         }
     }
 
-    private static String[] PREVIEW_OPTIONS = {"--enable-preview", "-source", "13"};
+    private static String[] PREVIEW_OPTIONS = {"--enable-preview", "-source",
+                                               Integer.toString(Runtime.version().feature())};
 
     private void program(String... constructs) {
         String s = "class C { static boolean cond = false; static int x = 0; void m() { # } }";

@@ -2,7 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 8206986
  * @summary Verify that not allowed types of statements cannot be used in rule case.
- * @compile/fail/ref=SwitchStatementBroken2.out -XDrawDiagnostics --enable-preview -source 13 SwitchStatementBroken2.java
+ * @compile/fail/ref=SwitchStatementBroken2.out -XDrawDiagnostics --enable-preview -source ${jdk.version} SwitchStatementBroken2.java
  */
 
 public class SwitchStatementBroken2 {

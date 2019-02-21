@@ -4,7 +4,7 @@
  * @summary The compiler was allowing void types in its parsing of conditional expressions.
  * @author tball
  *
- * @compile/fail/ref=ConditionalWithVoid.out --enable-preview -source 13 -XDrawDiagnostics ConditionalWithVoid.java
+ * @compile/fail/ref=ConditionalWithVoid.out --enable-preview -source ${jdk.version} -XDrawDiagnostics ConditionalWithVoid.java
  */
 public class ConditionalWithVoid {
     public void test(Object o, String s) {
