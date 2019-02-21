@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,8 @@ public class CLDRCalendarDataProviderImpl extends CalendarDataProviderImpl {
         String region = locale.getCountry();
 
         if (region.isEmpty()) {
-            return 0;
+            // Use "US" as default
+            region = "US";
         }
 
         Integer val = map.get(region);
