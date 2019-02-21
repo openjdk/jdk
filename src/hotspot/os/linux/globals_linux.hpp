@@ -70,7 +70,12 @@
   diagnostic(bool, DumpPrivateMappingsInCore, true,                     \
           "If true, sets bit 2 of /proc/PID/coredump_filter, thus "     \
           "resulting in file-backed private mappings of the process to "\
-          "be dumped into the corefile, if UseSharedSpaces is true.")   \
+          "be dumped into the corefile.")                               \
+                                                                        \
+  diagnostic(bool, DumpSharedMappingsInCore, true,                      \
+          "If true, sets bit 3 of /proc/PID/coredump_filter, thus "     \
+          "resulting in file-backed shared mappings of the process to " \
+          "be dumped into the corefile.")                               \
                                                                         \
   diagnostic(bool, UseCpuAllocPath, false,                              \
              "Use CPU_ALLOC code path in os::active_processor_count ")
