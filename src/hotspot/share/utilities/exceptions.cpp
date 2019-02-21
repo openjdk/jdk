@@ -131,15 +131,17 @@ void Exceptions::_throw_oop(Thread* thread, const char* file, int line, oop exce
 }
 
 void Exceptions::_throw(Thread* thread, const char* file, int line, Handle h_exception, const char* message) {
-  ResourceMark rm;
+  ResourceMark rm(thread);
   assert(h_exception() != NULL, "exception should not be NULL");
 
   // tracing (do this up front - so it works during boot strapping)
+  // Note, the print_value_string() argument is not called unless logging is enabled!
   log_info(exceptions)("Exception <%s%s%s> (" INTPTR_FORMAT ") \n"
                        "thrown [%s, line %d]\nfor thread " INTPTR_FORMAT,
                        h_exception->print_value_string(),
                        message ? ": " : "", message ? message : "",
                        p2i(h_exception()), file, line, p2i(thread));
+
   // for AbortVMOnException flag
   Exceptions::debug_check_abort(h_exception, message);
 
@@ -162,11 +164,7 @@ void Exceptions::_throw(Thread* thread, const char* file, int line, Handle h_exc
   thread->set_pending_exception(h_exception(), file, line);
 
   // vm log
-  if (LogEvents){
-    Events::log_exception(thread, "Exception <%s%s%s> (" INTPTR_FORMAT ") thrown at [%s, line %d]",
-                          h_exception->print_value_string(), message ? ": " : "", message ? message : "",
-                          p2i(h_exception()), file, line);
-  }
+  Events::log_exception(thread, h_exception, message, file, line);
 }
 
 
