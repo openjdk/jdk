@@ -192,7 +192,7 @@ public class dispose005 {
         IOPipe pipe     = new IOPipe(debuggee);
 
         debuggee.redirectStderr(out);
-        log2("issuspended002a debuggee launched");
+        log2(debuggeeName + " debuggee launched");
         debuggee.resume();
 
         String line = pipe.readln();
