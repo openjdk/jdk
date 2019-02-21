@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -95,8 +94,7 @@ public class HtmlSerialMethodWriter extends MethodWriterImpl implements
      */
     public Content getSerializableMethods(String heading, Content serializableMethodContent) {
         Content headingContent = new StringContent(heading);
-        Content serialHeading = HtmlTree.HEADING(HtmlConstants.SERIALIZED_MEMBER_HEADING,
-                headingContent);
+        Content serialHeading = HtmlTree.HEADING(Headings.SerializedForm.CLASS_SUBHEADING, headingContent);
         Content li = HtmlTree.LI(HtmlStyle.blockList, serialHeading);
         li.addContent(serializableMethodContent);
         return li;
@@ -120,7 +118,9 @@ public class HtmlSerialMethodWriter extends MethodWriterImpl implements
      * @param methodsContentTree the content tree to which the member header will be added
      */
     public void addMemberHeader(ExecutableElement member, Content methodsContentTree) {
-        methodsContentTree.addContent(getHead(member));
+        Content memberContent = new StringContent(name(member));
+        Content heading = HtmlTree.HEADING(Headings.SerializedForm.MEMBER_HEADING, memberContent);
+        methodsContentTree.addContent(heading);
         methodsContentTree.addContent(getSignature(member));
     }
 

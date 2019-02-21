@@ -36,7 +36,6 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.SimpleElementVisitor8;
 
 import com.sun.source.doctree.DocTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -116,7 +115,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         navBar.setUserHeader(getUserHeaderFooter(true));
         htmlTree.addContent(navBar.getContent(true));
         bodyTree.addContent(htmlTree);
-        bodyTree.addContent(HtmlConstants.START_OF_CLASS_DATA);
+        bodyTree.addContent(MarkerComments.START_OF_CLASS_DATA);
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
         div.setStyle(HtmlStyle.header);
         if (configuration.showModules) {
@@ -143,7 +142,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         //Let's not link to ourselves in the header.
         linkInfo.linkToSelf = false;
         Content headerContent = new StringContent(header);
-        Content heading = HtmlTree.HEADING(HtmlConstants.CLASS_PAGE_HEADING, true,
+        Content heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, true,
                 HtmlStyle.title, headerContent);
         heading.addContent(getTypeParameterLinks(linkInfo));
         div.addContent(heading);
@@ -164,7 +163,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
      */
     @Override
     public void addFooter(Content contentTree) {
-        contentTree.addContent(HtmlConstants.END_OF_CLASS_DATA);
+        contentTree.addContent(MarkerComments.END_OF_CLASS_DATA);
         Content htmlTree = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
         htmlTree.addContent(navBar.getContent(false));

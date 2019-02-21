@@ -36,7 +36,6 @@ import javax.lang.model.element.TypeElement;
 
 import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -129,7 +128,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
         Content annotationContent = new HtmlTree(HtmlTag.P);
         addAnnotationInfo(packageElement, annotationContent);
         div.addContent(annotationContent);
-        Content tHeading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, true,
+        Content tHeading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, true,
                 HtmlStyle.title, contents.packageLabel);
         tHeading.addContent(Contents.SPACE);
         Content packageHead = new StringContent(heading);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -98,7 +97,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
     @Override
     public Content getMemberSummaryHeader(TypeElement typeElement,
             Content memberSummaryTree) {
-        memberSummaryTree.addContent(HtmlConstants.START_OF_CONSTRUCTOR_SUMMARY);
+        memberSummaryTree.addContent(MarkerComments.START_OF_CONSTRUCTOR_SUMMARY);
         Content memberTree = writer.getMemberTreeHeader();
         writer.addSummaryHeader(this, typeElement, memberTree);
         return memberTree;
@@ -118,11 +117,11 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
     @Override
     public Content getConstructorDetailsTreeHeader(TypeElement typeElement,
             Content memberDetailsTree) {
-        memberDetailsTree.addContent(HtmlConstants.START_OF_CONSTRUCTOR_DETAILS);
+        memberDetailsTree.addContent(MarkerComments.START_OF_CONSTRUCTOR_DETAILS);
         Content constructorDetailsTree = writer.getMemberTreeHeader();
         constructorDetailsTree.addContent(links.createAnchor(
                 SectionName.CONSTRUCTOR_DETAIL));
-        Content heading = HtmlTree.HEADING(HtmlConstants.DETAILS_HEADING,
+        Content heading = HtmlTree.HEADING(Headings.TypeDeclaration.DETAILS_HEADING,
                 contents.constructorDetailsLabel);
         constructorDetailsTree.addContent(heading);
         return constructorDetailsTree;
@@ -140,7 +139,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
         }
         constructorDetailsTree.addContent(links.createAnchor(writer.getAnchor(constructor)));
         Content constructorDocTree = writer.getMemberTreeHeader();
-        Content heading = new HtmlTree(HtmlConstants.MEMBER_HEADING);
+        Content heading = new HtmlTree(Headings.TypeDeclaration.MEMBER_HEADING);
         heading.addContent(name(constructor));
         constructorDocTree.addContent(heading);
         return constructorDocTree;
@@ -223,7 +222,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
      */
     @Override
     public void addSummaryLabel(Content memberTree) {
-        Content label = HtmlTree.HEADING(HtmlConstants.SUMMARY_HEADING,
+        Content label = HtmlTree.HEADING(Headings.TypeDeclaration.SUMMARY_HEADING,
                 contents.constructorSummaryLabel);
         memberTree.addContent(label);
     }

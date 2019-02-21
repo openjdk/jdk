@@ -33,7 +33,6 @@ import java.util.SortedMap;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -224,7 +223,7 @@ public abstract class AbstractModuleIndexWriter extends HtmlDocletWriter {
      * @param modules the modules to be documented
      * @param text string which will be used as the heading
      * @param tableSummary summary for the table
-     * @param header the document tree to which the navgational links will be added
+     * @param header the document tree to which the navigational links will be added
      * @param main the document tree to which the modules list will be added
      */
     protected void addIndexContents(Collection<ModuleElement> modules, String text,
@@ -270,7 +269,7 @@ public abstract class AbstractModuleIndexWriter extends HtmlDocletWriter {
     protected void addConfigurationTitle(Content body) {
         if (configuration.doctitle.length() > 0) {
             Content title = new RawHtml(configuration.doctitle);
-            Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING,
+            Content heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
                     HtmlStyle.title, title);
             Content div = HtmlTree.DIV(HtmlStyle.header, heading);
             body.addContent(div);

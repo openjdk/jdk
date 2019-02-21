@@ -29,7 +29,6 @@ import java.util.*;
 
 import javax.lang.model.element.TypeElement;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -42,7 +41,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 
 /**
- * Generate the Serialized Form Information Page.
+ *  Generates the Serialized Form Information Page, <i>serialized-form.html</i>.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
@@ -86,7 +85,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
         htmlTree.addContent(navBar.getContent(true));
         bodyTree.addContent(htmlTree);
         Content h1Content = new StringContent(header);
-        Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, true,
+        Content heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, true,
                 HtmlStyle.title, h1Content);
         Content div = HtmlTree.DIV(HtmlStyle.header, heading);
         mainTree.addContent(div);
@@ -120,7 +119,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
      * @return a content tree for the package header
      */
     public Content getPackageHeader(String packageName) {
-        Content heading = HtmlTree.HEADING(HtmlConstants.PACKAGE_HEADING, true,
+        Content heading = HtmlTree.HEADING(Headings.SerializedForm.PACKAGE_HEADING, true,
                 contents.packageLabel);
         heading.addContent(Contents.SPACE);
         heading.addContent(packageName);
@@ -173,8 +172,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
             contents.getContent(
             "doclet.Class_0_extends_implements_serializable", classLink,
             superClassLink);
-        li.addContent(HtmlTree.HEADING(HtmlConstants.SERIALIZED_MEMBER_HEADING,
-                className));
+        li.addContent(HtmlTree.HEADING(Headings.SerializedForm.CLASS_HEADING, className));
         return li;
     }
 

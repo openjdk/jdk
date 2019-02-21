@@ -46,7 +46,6 @@ import javax.lang.model.util.ElementFilter;
 import com.sun.source.doctree.DocTree;
 import jdk.javadoc.doclet.DocletEnvironment.ModuleMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -213,7 +212,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         div.addContent(annotationContent);
         Content label = mdle.isOpen() && (configuration.docEnv.getModuleMode() == ModuleMode.ALL)
                 ? contents.openModuleLabel : contents.moduleLabel;
-        Content tHeading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, true,
+        Content tHeading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, true,
                 HtmlStyle.title, label);
         tHeading.addContent(Contents.SPACE);
         Content moduleHead = new RawHtml(heading);
@@ -461,7 +460,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
             Content htmltree) {
         htmltree.addContent(startMarker);
         htmltree.addContent(links.createAnchor(markerAnchor));
-        htmltree.addContent(HtmlTree.HEADING(HtmlTag.H3, heading));
+        htmltree.addContent(HtmlTree.HEADING(Headings.ModuleDeclaration.SUMMARY_HEADING, heading));
     }
 
     /**
@@ -509,7 +508,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                             contents.descriptionLabel);
             HtmlTree li = new HtmlTree(HtmlTag.LI);
             li.setStyle(HtmlStyle.blockList);
-            addSummaryHeader(HtmlConstants.START_OF_MODULES_SUMMARY, SectionName.MODULES,
+            addSummaryHeader(MarkerComments.START_OF_MODULES_SUMMARY, SectionName.MODULES,
                     contents.navModules, li);
             if (display(requires)) {
                 String text = resources.getText("doclet.Requires_Summary");
@@ -561,7 +560,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                 || display(indirectPackages) || display(indirectOpenPackages)) {
             HtmlTree li = new HtmlTree(HtmlTag.LI);
             li.setStyle(HtmlStyle.blockList);
-            addSummaryHeader(HtmlConstants.START_OF_PACKAGES_SUMMARY, SectionName.PACKAGES,
+            addSummaryHeader(MarkerComments.START_OF_PACKAGES_SUMMARY, SectionName.PACKAGES,
                     contents.navPackages, li);
             if (display(packages)) {
                 addPackageSummary(li);
@@ -740,7 +739,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         if (haveProvides || haveUses) {
             HtmlTree li = new HtmlTree(HtmlTag.LI);
             li.setStyle(HtmlStyle.blockList);
-            addSummaryHeader(HtmlConstants.START_OF_SERVICES_SUMMARY, SectionName.SERVICES,
+            addSummaryHeader(MarkerComments.START_OF_SERVICES_SUMMARY, SectionName.SERVICES,
                     contents.navServices, li);
             TableHeader usesProvidesTableHeader =
                     new TableHeader(contents.typeLabel, contents.descriptionLabel);
@@ -869,7 +868,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         if (!utils.getFullBody(mdle).isEmpty()) {
             Content tree = HtmlTree.SECTION();
             addDeprecationInfo(tree);
-            tree.addContent(HtmlConstants.START_OF_MODULE_DESCRIPTION);
+            tree.addContent(MarkerComments.START_OF_MODULE_DESCRIPTION);
             tree.addContent(links.createAnchor(SectionName.MODULE_DESCRIPTION));
             addInlineComment(mdle, tree);
             moduleContentTree.addContent(tree);

@@ -1261,7 +1261,7 @@ public class TestModules extends JavadocTester {
                 + "<div class=\"block\">This is a test description for the test.moduleFullName.</div>\n"
                 + "</dd>");
         checkOutput("module-overview-frame.html", found,
-                "<h2 title=\"Modules\">Modules</h2>\n"
+                "<h1 title=\"Modules\">Modules</h1>\n"
                 + "<ul title=\"Modules\">\n"
                 + "<li><a href=\"moduleB/module-frame.html\" target=\"packageListFrame\" onclick=\"updateModuleFrame('moduleB/module-type-frame.html','moduleB/module-summary.html');\">moduleB</a></li>\n"
                 + "<li><a href=\"test.moduleFullName/module-frame.html\" target=\"packageListFrame\" onclick=\"updateModuleFrame('test.moduleFullName/module-type-frame.html','test.moduleFullName/module-summary.html');\">test.moduleFullName</a></li>\n"
