@@ -1185,6 +1185,10 @@ abstract class AttributeTrackingDestination implements Destination
             parserState.put(keyword, Integer.valueOf(parameter));
             return true;
         }
+        if (keyword.equals("cb")) {
+            parserState.put(keyword, Integer.valueOf(parameter));
+            return true;
+        }
 
         {
             RTFAttribute attr = straightforwardAttributes.get(keyword);
