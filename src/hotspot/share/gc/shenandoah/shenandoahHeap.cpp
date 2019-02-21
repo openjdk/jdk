@@ -2639,6 +2639,10 @@ GrowableArray<MemoryPool*> ShenandoahHeap::memory_pools() {
   return memory_pools;
 }
 
+MemoryUsage ShenandoahHeap::memory_usage() {
+  return _memory_pool->get_memory_usage();
+}
+
 void ShenandoahHeap::enter_evacuation() {
   _oom_evac_handler.enter_evacuation();
 }

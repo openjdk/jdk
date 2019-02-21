@@ -52,8 +52,10 @@ public class TestMemoryMXBeans {
     public static void testMemoryBean(long initSize, long maxSize) {
         MemoryMXBean memoryMXBean = ManagementFactory.getMemoryMXBean();
         long heapInit = memoryMXBean.getHeapMemoryUsage().getInit();
+        long heapCommitted = memoryMXBean.getHeapMemoryUsage().getCommitted();
         long heapMax = memoryMXBean.getHeapMemoryUsage().getMax();
         long nonHeapInit = memoryMXBean.getNonHeapMemoryUsage().getInit();
+        long nonHeapCommitted = memoryMXBean.getNonHeapMemoryUsage().getCommitted();
         long nonHeapMax = memoryMXBean.getNonHeapMemoryUsage().getMax();
 
         if (initSize > 0 && heapInit != initSize) {
@@ -61,6 +63,10 @@ public class TestMemoryMXBeans {
         }
         if (maxSize > 0 && heapMax != maxSize) {
             throw new IllegalStateException("Max heap size is wrong: " + heapMax + " vs " + maxSize);
+        }
+        if (initSize > 0 && maxSize > 0 && initSize != maxSize && heapCommitted == heapMax) {
+            throw new IllegalStateException("Init committed heap size is wrong: " + heapCommitted +
+                                            " (init: " + initSize + ", max: " + maxSize + ")");
         }
     }
 }
