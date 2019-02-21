@@ -2219,4 +2219,21 @@ public class HtmlDocletWriter {
     Script getMainBodyScript() {
         return mainBodyScript;
     }
+
+    Content getLocalStylesheetContent(Element element) throws DocFileIOException {
+        Content stylesheetContent = new ContentBuilder();
+        List<DocPath> localStylesheets = configuration.localStylesheetMap.get(element);
+        if (localStylesheets == null) {
+            DocFilesHandlerImpl docFilesHandler = (DocFilesHandlerImpl)configuration
+                    .getWriterFactory().getDocFilesHandler(element);
+            localStylesheets = docFilesHandler.getStylesheets();
+            configuration.localStylesheetMap.put(element, localStylesheets);
+        }
+        for (DocPath stylesheet : localStylesheets) {
+            stylesheetContent.addContent(HtmlTree.LINK("stylesheet",
+                    "text/css", stylesheet.getPath(), "Style"));
+        }
+        return stylesheetContent;
+    }
+
 }

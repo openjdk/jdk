@@ -178,10 +178,10 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
     @Override
     public void printDocument(Content contentTree) throws DocFileIOException {
         String description = getDescription("declaration", typeElement);
+        PackageElement pkg = utils.containingPackage(typeElement);
+        Content stylesheetContent = getLocalStylesheetContent(pkg);
         printHtmlDocument(configuration.metakeywords.getMetaKeywords(typeElement),
-                description,
-                true,
-                contentTree);
+                description, true, stylesheetContent, contentTree);
     }
 
     /**

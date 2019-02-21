@@ -31,7 +31,6 @@ import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.util.DocTreeFactory;
 import com.sun.tools.doclint.HtmlTag;
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Navigation;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -125,6 +124,16 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
         }
     }
 
+    public List<DocPath> getStylesheets() throws DocFileIOException {
+        List<DocPath> stylesheets = new ArrayList<DocPath>();
+        for (DocFile srcdir : DocFile.list(configuration, location, source)) {
+            for (DocFile srcFile : srcdir.list()) {
+                if (srcFile.getName().endsWith(".css"))
+                    stylesheets.add(DocPaths.DOC_FILES.resolve(srcFile.getName()));
+            }
+        }
+        return stylesheets;
+    }
 
     private void copyDirectory(DocFile srcdir, final DocPath dstDocPath,
                                boolean first) throws DocFileIOException {

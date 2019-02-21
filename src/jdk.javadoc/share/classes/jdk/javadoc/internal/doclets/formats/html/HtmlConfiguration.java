@@ -240,6 +240,8 @@ public class HtmlConfiguration extends BaseConfiguration {
 
     public DocPaths docPaths;
 
+    public Map<Element, List<DocPath>> localStylesheetMap = new HashMap<>();
+
     /**
      * Creates an object to hold the configuration for a doclet.
      *

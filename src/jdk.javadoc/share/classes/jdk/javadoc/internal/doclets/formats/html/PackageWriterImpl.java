@@ -317,9 +317,8 @@ public class PackageWriterImpl extends HtmlDocletWriter
     @Override
     public void printDocument(Content contentTree) throws DocFileIOException {
         String description = getDescription("declaration", packageElement);
+        Content stylesheetContent = getLocalStylesheetContent(packageElement);
         printHtmlDocument(configuration.metakeywords.getMetaKeywords(packageElement),
-                description,
-                true,
-                contentTree);
+                description, true, stylesheetContent, contentTree);
     }
 }

@@ -153,10 +153,10 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
     @Override
     public void printDocument(Content contentTree) throws DocFileIOException {
         String description = getDescription("declaration", annotationType);
+        PackageElement pkg = utils.containingPackage(this.annotationType);
+        Content stylesheetContent = getLocalStylesheetContent(pkg);
         printHtmlDocument(configuration.metakeywords.getMetaKeywords(annotationType),
-                description,
-                true,
-                contentTree);
+                description, true, stylesheetContent, contentTree);
     }
 
     /**
