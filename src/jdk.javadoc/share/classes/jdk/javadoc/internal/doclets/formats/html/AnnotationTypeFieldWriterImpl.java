@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -71,7 +72,7 @@ public class AnnotationTypeFieldWriterImpl extends AbstractMemberWriter
     public Content getMemberSummaryHeader(TypeElement typeElement,
             Content memberSummaryTree) {
         memberSummaryTree.addContent(
-                MarkerComments.START_OF_ANNOTATION_TYPE_FIELD_SUMMARY);
+                HtmlConstants.START_OF_ANNOTATION_TYPE_FIELD_SUMMARY);
         Content memberTree = writer.getMemberTreeHeader();
         writer.addSummaryHeader(this, typeElement, memberTree);
         return memberTree;
@@ -95,7 +96,7 @@ public class AnnotationTypeFieldWriterImpl extends AbstractMemberWriter
      * {@inheritDoc}
      */
     public void addAnnotationFieldDetailsMarker(Content memberDetails) {
-        memberDetails.addContent(MarkerComments.START_OF_ANNOTATION_TYPE_FIELD_DETAILS);
+        memberDetails.addContent(HtmlConstants.START_OF_ANNOTATION_TYPE_FIELD_DETAILS);
     }
 
     /**
@@ -106,7 +107,7 @@ public class AnnotationTypeFieldWriterImpl extends AbstractMemberWriter
         if (!writer.printedAnnotationFieldHeading) {
             memberDetailsTree.addContent(links.createAnchor(
                     SectionName.ANNOTATION_TYPE_FIELD_DETAIL));
-            Content heading = HtmlTree.HEADING(Headings.TypeDeclaration.DETAILS_HEADING,
+            Content heading = HtmlTree.HEADING(HtmlConstants.DETAILS_HEADING,
                     contents.fieldDetailsLabel);
             memberDetailsTree.addContent(heading);
             writer.printedAnnotationFieldHeading = true;
@@ -120,7 +121,7 @@ public class AnnotationTypeFieldWriterImpl extends AbstractMemberWriter
             Content annotationDetailsTree) {
         annotationDetailsTree.addContent(links.createAnchor(name(member)));
         Content annotationDocTree = writer.getMemberTreeHeader();
-        Content heading = new HtmlTree(Headings.TypeDeclaration.MEMBER_HEADING);
+        Content heading = new HtmlTree(HtmlConstants.MEMBER_HEADING);
         heading.addContent(name(member));
         annotationDocTree.addContent(heading);
         return annotationDocTree;
@@ -187,7 +188,7 @@ public class AnnotationTypeFieldWriterImpl extends AbstractMemberWriter
      * {@inheritDoc}
      */
     public void addSummaryLabel(Content memberTree) {
-        Content label = HtmlTree.HEADING(Headings.TypeDeclaration.SUMMARY_HEADING,
+        Content label = HtmlTree.HEADING(HtmlConstants.SUMMARY_HEADING,
                 contents.fieldSummaryLabel);
         memberTree.addContent(label);
     }

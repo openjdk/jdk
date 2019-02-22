@@ -75,7 +75,7 @@ public class TestHref extends JavadocTester {
 
         checkOutput("pkg/C4.html", true,
                 //Header does not link to the page itself.
-                "Class C4&lt;E extends C4&lt;E&gt;&gt;</h1>",
+                "Class C4&lt;E extends C4&lt;E&gt;&gt;</h2>",
                 //Signature does not link to the page itself.
                 "public abstract class <span class=\"typeNameLabel\">C4&lt;E extends C4&lt;E&gt;&gt;</span>"
         );

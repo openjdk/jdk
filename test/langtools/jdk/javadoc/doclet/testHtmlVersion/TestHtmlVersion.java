@@ -349,46 +349,46 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a id=\"nested.class.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h2>Nested Class Summary</h2>\n"
+                + "<h3>Nested Class Summary</h3>\n"
                 + "<div class=\"memberSummary\">\n<table>",
                 "<section role=\"region\">\n"
                 + "<ul class=\"blockList\">\n"
                 + "<li class=\"blockList\"><a id=\"field.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h2>Field Summary</h2>\n"
+                + "<h3>Field Summary</h3>\n"
                 + "<div class=\"memberSummary\">\n<table>",
                 "<section role=\"region\">\n"
                 + "<ul class=\"blockList\">\n"
                 + "<li class=\"blockList\"><a id=\"constructor.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h2>Constructor Summary</h2>\n"
+                + "<h3>Constructor Summary</h3>\n"
                 + "<div class=\"memberSummary\">\n<table>",
                 "<section role=\"region\">\n"
                 + "<ul class=\"blockList\">\n"
                 + "<li class=\"blockList\"><a id=\"method.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h2>Method Summary</h2>",
+                + "<h3>Method Summary</h3>",
                 "<section role=\"region\">\n"
                 + "<ul class=\"blockList\">\n"
                 + "<li class=\"blockList\"><a id=\"field.detail\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h2>Field Detail</h2>",
+                + "<h3>Field Detail</h3>",
                 "<section role=\"region\">\n"
                 + "<ul class=\"blockList\">\n"
                 + "<li class=\"blockList\"><a id=\"constructor.detail\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h2>Constructor Detail</h2>",
+                + "<h3>Constructor Detail</h3>",
                 "<section role=\"region\">\n"
                 + "<ul class=\"blockList\">\n"
                 + "<li class=\"blockList\"><a id=\"method.detail\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h2>Method Detail</h2>",
+                + "<h3>Method Detail</h3>",
                 "<footer role=\"contentinfo\">\n"
                 + "<nav role=\"navigation\">\n"
                 + "<!-- ======= START OF BOTTOM NAVBAR ====== -->");
@@ -411,7 +411,7 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a id=\"enum.constant.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h2>Enum Constant Summary</h2>\n"
+                + "<h3>Enum Constant Summary</h3>\n"
                 + "<div class=\"memberSummary\">\n",
                 "<table aria-labelledby=\"t0\">\n",
                 "<section role=\"region\">\n"
@@ -419,7 +419,7 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a id=\"method.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h2>Method Summary</h2>\n"
+                + "<h3>Method Summary</h3>\n"
                 + "<div class=\"memberSummary\">\n",
                 "<table aria-labelledby=\"t0\">",
                 "<section role=\"region\">\n"
@@ -427,13 +427,13 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a id=\"enum.constant.detail\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h2>Enum Constant Detail</h2>",
+                + "<h3>Enum Constant Detail</h3>",
                 "<section role=\"region\">\n"
                 + "<ul class=\"blockList\">\n"
                 + "<li class=\"blockList\"><a id=\"method.detail\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h2>Method Detail</h2>",
+                + "<h3>Method Detail</h3>",
                 "<footer role=\"contentinfo\">\n"
                 + "<nav role=\"navigation\">\n"
                 + "<!-- ======= START OF BOTTOM NAVBAR ====== -->");
@@ -456,7 +456,7 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a id=\"method.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h2>Method Summary</h2>\n"
+                + "<h3>Method Summary</h3>\n"
                 + "<div class=\"memberSummary\">\n",
                 "<table aria-labelledby=\"t0\">\n",
                 "<section role=\"region\">\n"
@@ -464,7 +464,7 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a id=\"method.detail\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h2>Method Detail</h2>",
+                + "<h3>Method Detail</h3>",
                 "<footer role=\"contentinfo\">\n"
                 + "<nav role=\"navigation\">\n"
                 + "<!-- ======= START OF BOTTOM NAVBAR ====== -->");
@@ -487,13 +487,13 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a id=\"constructor.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h2>Constructor Summary</h2>",
+                + "<h3>Constructor Summary</h3>",
                 "<section role=\"region\">\n"
                 + "<ul class=\"blockList\">\n"
                 + "<li class=\"blockList\"><a id=\"constructor.detail\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h2>Constructor Detail</h2>",
+                + "<h3>Constructor Detail</h3>",
                 "<footer role=\"contentinfo\">\n"
                 + "<nav role=\"navigation\">\n"
                 + "<!-- ======= START OF BOTTOM NAVBAR ====== -->");
@@ -516,13 +516,13 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a id=\"constructor.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h2>Constructor Summary</h2>",
+                + "<h3>Constructor Summary</h3>",
                 "<section role=\"region\">\n"
                 + "<ul class=\"blockList\">\n"
                 + "<li class=\"blockList\"><a id=\"constructor.detail\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h2>Constructor Detail</h2>",
+                + "<h3>Constructor Detail</h3>",
                 "<footer role=\"contentinfo\">\n"
                 + "<nav role=\"navigation\">\n"
                 + "<!-- ======= START OF BOTTOM NAVBAR ====== -->");
@@ -545,21 +545,21 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a id=\"annotation.type.required.element.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h2>Required Element Summary</h2>\n"
+                + "<h3>Required Element Summary</h3>\n"
                 + "<div class=\"memberSummary\">\n<table>",
                 "<section role=\"region\">\n"
                 + "<ul class=\"blockList\">\n"
                 + "<li class=\"blockList\"><a id=\"annotation.type.optional.element.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h2>Optional Element Summary</h2>\n"
+                + "<h3>Optional Element Summary</h3>\n"
                 + "<div class=\"memberSummary\">\n<table>",
                 "<section role=\"region\">\n"
                 + "<ul class=\"blockList\">\n"
                 + "<li class=\"blockList\"><a id=\"annotation.type.element.detail\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h2>Element Detail</h2>",
+                + "<h3>Element Detail</h3>",
                 "<footer role=\"contentinfo\">\n"
                 + "<nav role=\"navigation\">\n"
                 + "<!-- ======= START OF BOTTOM NAVBAR ====== -->");
@@ -581,7 +581,7 @@ public class TestHtmlVersion extends JavadocTester {
                 "<section role=\"region\"><a id=\"pkg\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h2>Uses of <a href=\"../RegClass.html\" title=\"class in pkg1\">RegClass</a> in <a href=\"../../pkg/package-summary.html\">pkg</a></h2>\n"
+                + "<h3>Uses of <a href=\"../RegClass.html\" title=\"class in pkg1\">RegClass</a> in <a href=\"../../pkg/package-summary.html\">pkg</a></h3>\n"
                 + "<div class=\"useSummary\">\n<table>",
                 "<footer role=\"contentinfo\">\n"
                 + "<nav role=\"navigation\">\n"
@@ -823,7 +823,7 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a name=\"nested.class.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h2>Nested Class Summary</h2>\n"
+                + "<h3>Nested Class Summary</h3>\n"
                 + "<div class=\"memberSummary\">\n"
                 + "<table summary=\"Nested Class Summary table, listing nested classes, and an explanation\">",
                 "<!-- =========== FIELD SUMMARY =========== -->\n"
@@ -831,7 +831,7 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a name=\"field.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h2>Field Summary</h2>\n"
+                + "<h3>Field Summary</h3>\n"
                 + "<div class=\"memberSummary\">\n"
                 + "<table summary=\"Field Summary table, listing fields, and an explanation\">",
                 "<!-- ======== CONSTRUCTOR SUMMARY ======== -->\n"
@@ -839,7 +839,7 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a name=\"constructor.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h2>Constructor Summary</h2>\n"
+                + "<h3>Constructor Summary</h3>\n"
                 + "<div class=\"memberSummary\">\n"
                 + "<table summary=\"Constructor Summary table, listing constructors, and an explanation\">",
                 "<!-- ========== METHOD SUMMARY =========== -->\n"
@@ -847,7 +847,7 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a name=\"method.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h2>Method Summary</h2>\n"
+                + "<h3>Method Summary</h3>\n"
                 + "<div class=\"memberSummary\">\n"
                 + "<table summary=\"Method Summary table, listing methods, and an explanation\">",
                 "<!-- ============ FIELD DETAIL =========== -->\n"
@@ -855,19 +855,19 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a name=\"field.detail\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h2>Field Detail</h2>",
+                + "<h3>Field Detail</h3>",
                 "<!-- ========= CONSTRUCTOR DETAIL ======== -->\n"
                 + "<ul class=\"blockList\">\n"
                 + "<li class=\"blockList\"><a name=\"constructor.detail\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h2>Constructor Detail</h2>",
+                + "<h3>Constructor Detail</h3>",
                 "<!-- ============ METHOD DETAIL ========== -->\n"
                 + "<ul class=\"blockList\">\n"
                 + "<li class=\"blockList\"><a name=\"method.detail\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h2>Method Detail</h2>");
+                + "<h3>Method Detail</h3>");
 
         // Negated test for enum page
         checkOutput("pkg/AnotherClass.ModalExclusionType.html", false,
@@ -883,7 +883,7 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a name=\"enum.constant.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h2>Enum Constant Summary</h2>\n"
+                + "<h3>Enum Constant Summary</h3>\n"
                 + "<div class=\"memberSummary\">\n"
                 + "<table summary=\"Enum Constant Summary table, listing enum constants, and an explanation\">",
                 "<!-- ========== METHOD SUMMARY =========== -->\n"
@@ -891,7 +891,7 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a name=\"method.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h2>Method Summary</h2>\n"
+                + "<h3>Method Summary</h3>\n"
                 + "<div class=\"memberSummary\">\n"
                 + "<table summary=\"Method Summary table, listing methods, and an explanation\">",
                 "<!-- ============ ENUM CONSTANT DETAIL =========== -->\n"
@@ -899,13 +899,13 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a name=\"enum.constant.detail\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h2>Enum Constant Detail</h2>",
+                + "<h3>Enum Constant Detail</h3>",
                 "<!-- ============ METHOD DETAIL ========== -->\n"
                 + "<ul class=\"blockList\">\n"
                 + "<li class=\"blockList\"><a name=\"method.detail\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h2>Method Detail</h2>");
+                + "<h3>Method Detail</h3>");
 
         // Negated test for interface page
         checkOutput("pkg2/Interface.html", false,
@@ -921,7 +921,7 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a name=\"method.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h2>Method Summary</h2>\n"
+                + "<h3>Method Summary</h3>\n"
                 + "<div class=\"memberSummary\">\n"
                 + "<table summary=\"Method Summary table, listing methods, and an explanation\">",
                 "<!-- ============ METHOD DETAIL ========== -->\n"
@@ -929,7 +929,7 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a name=\"method.detail\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h2>Method Detail</h2>");
+                + "<h3>Method Detail</h3>");
 
         // Negated test for error page
         checkOutput("pkg/TestError.html", false,
@@ -945,13 +945,13 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a name=\"constructor.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h2>Constructor Summary</h2>",
+                + "<h3>Constructor Summary</h3>",
                 "<!-- ========= CONSTRUCTOR DETAIL ======== -->\n"
                 + "<ul class=\"blockList\">\n"
                 + "<li class=\"blockList\"><a name=\"constructor.detail\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h2>Constructor Detail</h2>");
+                + "<h3>Constructor Detail</h3>");
 
         // Negated test for exception page
         checkOutput("pkg/TestException.html", false,
@@ -967,13 +967,13 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a name=\"constructor.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h2>Constructor Summary</h2>",
+                + "<h3>Constructor Summary</h3>",
                 "<!-- ========= CONSTRUCTOR DETAIL ======== -->\n"
                 + "<ul class=\"blockList\">\n"
                 + "<li class=\"blockList\"><a name=\"constructor.detail\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h2>Constructor Detail</h2>");
+                + "<h3>Constructor Detail</h3>");
 
         // Negated test for annotation page
         checkOutput("pkg2/TestAnnotationType.html", false,
@@ -989,7 +989,7 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a name=\"annotation.type.required.element.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h2>Required Element Summary</h2>\n"
+                + "<h3>Required Element Summary</h3>\n"
                 + "<div class=\"memberSummary\">\n"
                 + "<table summary=\"Required Element Summary table, listing required elements, and an explanation\">",
                 "<!-- =========== ANNOTATION TYPE OPTIONAL MEMBER SUMMARY =========== -->\n"
@@ -997,7 +997,7 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a name=\"annotation.type.optional.element.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h2>Optional Element Summary</h2>\n"
+                + "<h3>Optional Element Summary</h3>\n"
                 + "<div class=\"memberSummary\">\n"
                 + "<table summary=\"Optional Element Summary table, listing optional elements, and an explanation\">",
                 "<!-- ============ ANNOTATION TYPE MEMBER DETAIL =========== -->\n"
@@ -1005,7 +1005,7 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a name=\"annotation.type.element.detail\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h2>Element Detail</h2>");
+                + "<h3>Element Detail</h3>");
 
         // Negated test for class use page
         checkOutput("pkg1/class-use/RegClass.html", false,
@@ -1027,7 +1027,7 @@ public class TestHtmlVersion extends JavadocTester {
                 "<li class=\"blockList\"><a name=\"pkg\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h2>Uses of <a href=\"../RegClass.html\" title=\"class in pkg1\">RegClass</a> in <a href=\"../../pkg/package-summary.html\">pkg</a></h2>\n"
+                + "<h3>Uses of <a href=\"../RegClass.html\" title=\"class in pkg1\">RegClass</a> in <a href=\"../../pkg/package-summary.html\">pkg</a></h3>\n"
                 + "<div class=\"useSummary\">\n<table summary=\"Use table, listing fields, and an explanation\">");
 
         // Negated test for main index page

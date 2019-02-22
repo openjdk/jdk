@@ -109,7 +109,7 @@ public class TestHtmlLandmarkRegions extends JavadocTester {
         Path srcDir = base.resolve("src");
         createPackages(srcDir);
 
-        Path outDir = base.resolve("out");
+        Path outDir = base.resolve("out3");
         javadoc("-d", outDir.toString(),
                 "-doctitle", "Document Title",
                 "-header", "Test Header",
@@ -153,7 +153,7 @@ public class TestHtmlLandmarkRegions extends JavadocTester {
                 + "  </body>\n"
                 + "</html>"));
 
-        Path outDir = base.resolve("out");
+        Path outDir = base.resolve("out5");
         javadoc("-d", outDir.toString(),
                 "-sourcepath", srcDir.toString(),
                 "pkg1", "pkg2");
@@ -171,12 +171,12 @@ public class TestHtmlLandmarkRegions extends JavadocTester {
 
     void createModules(Path srcDir) throws Exception {
         new ModuleBuilder(tb, "m1")
-                .classes("package p1; public class a { }")
-                .classes("package p2; public class b { }")
+                .classes("package p1; public class a{}")
+                .classes("package p2; public class b{}")
                 .write(srcDir);
         new ModuleBuilder(tb, "m2")
-                .classes("package p3; public class c { }")
-                .classes("package p4; public class d { }")
+                .classes("package p3; public class c{}")
+                .classes("package p4; public class d{}")
                 .write(srcDir);
     }
 

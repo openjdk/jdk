@@ -33,6 +33,7 @@ import java.util.Set;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -56,12 +57,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
  * @author Bhavesh Patel
  */
 public class ModulePackageIndexFrameWriter extends AbstractModuleIndexWriter {
-    /**
-     * The heading (h1 or h2) to use for the module packages list,
-     * set by addNavigationBarHeader depending on whether or not there
-     * is an additional initial heading.
-     */
-    private HtmlTag modulePackagesListHeading;
 
     /**
      * Construct the ModulePackageIndexFrameWriter object.
@@ -94,7 +89,7 @@ public class ModulePackageIndexFrameWriter extends AbstractModuleIndexWriter {
     protected void addModulePackagesList(Map<ModuleElement, Set<PackageElement>> modules, String text,
             String tableSummary, Content main, ModuleElement mdle) {
         Content profNameContent = new StringContent(mdle.getQualifiedName().toString());
-        Content heading = HtmlTree.HEADING(modulePackagesListHeading, true,
+        Content heading = HtmlTree.HEADING(HtmlConstants.PACKAGE_HEADING, true,
                 getTargetModuleLink("classFrame", profNameContent, mdle));
         heading.addContent(Contents.SPACE);
         heading.addContent(contents.packagesLabel);
@@ -117,7 +112,7 @@ public class ModulePackageIndexFrameWriter extends AbstractModuleIndexWriter {
     protected void addModulePackagesList(Set<ModuleElement> modules, String text,
             String tableSummary, Content body, ModuleElement mdle) {
         Content moduleNameContent = new StringContent(mdle.getQualifiedName().toString());
-        Content heading = HtmlTree.HEADING(modulePackagesListHeading, true,
+        Content heading = HtmlTree.HEADING(HtmlConstants.PACKAGE_HEADING, true,
                 getTargetModuleLink("classFrame", moduleNameContent, mdle));
         heading.addContent(Contents.SPACE);
         heading.addContent(contents.packagesLabel);
@@ -162,16 +157,15 @@ public class ModulePackageIndexFrameWriter extends AbstractModuleIndexWriter {
      * {@inheritDoc}
      */
     protected void addNavigationBarHeader(Content header) {
-        String headerContent = !configuration.packagesheader.isEmpty() ? configuration.packagesheader
-                : configuration.header;
-        if (!headerContent.isEmpty()) {
-            Content heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, true,
-                    HtmlStyle.bar, new RawHtml(replaceDocRootDir(headerContent)));
-            header.addContent(heading);
-            modulePackagesListHeading = Headings.IndexFrames.PACKAGE_HEADING;
+        Content headerContent;
+        if (configuration.packagesheader.length() > 0) {
+            headerContent = new RawHtml(replaceDocRootDir(configuration.packagesheader));
         } else {
-            modulePackagesListHeading = Headings.PAGE_TITLE_HEADING;
+            headerContent = new RawHtml(replaceDocRootDir(configuration.header));
         }
+        Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, true,
+                HtmlStyle.bar, headerContent);
+        header.addContent(heading);
     }
 
     /**
@@ -183,7 +177,6 @@ public class ModulePackageIndexFrameWriter extends AbstractModuleIndexWriter {
     /**
      * Do nothing as there is no modules list on this page.
      */
-    @Override
     protected void addModulesList(Content body) {
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,12 +75,12 @@ public class TestIndexTaglet extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOrder("pkg/A.html",
-                "<h2>Method Detail</h2>\n",
+                "<h3>Method Detail</h3>\n",
                 "<div class=\"block\">test description with <a id=\"search_phrase_a\" "
                  +    "class=\"searchTagResult\">search_phrase_a</a></div>");
 
         checkOrder("pkg/A.html",
-                "<h2>Method Summary</h2>\n",
+                "<h3>Method Summary</h3>\n",
                 "<div class=\"block\">test description with search_phrase_a</div>");
     }
 

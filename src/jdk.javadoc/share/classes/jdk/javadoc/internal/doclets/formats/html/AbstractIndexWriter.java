@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.util.*;
 import java.util.zip.*;
 
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
@@ -37,6 +38,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.SimpleElementVisitor9;
 
 import com.sun.source.doctree.DocTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -168,7 +170,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         String unicode = uc.toString();
         contentTree.addContent(getMarkerAnchorForIndex(unicode));
         Content headContent = new StringContent(unicode);
-        Content heading = HtmlTree.HEADING(Headings.CONTENT_HEADING, false,
+        Content heading = HtmlTree.HEADING(HtmlConstants.CONTENT_HEADING, false,
                 HtmlStyle.title, headContent);
         contentTree.addContent(heading);
     }

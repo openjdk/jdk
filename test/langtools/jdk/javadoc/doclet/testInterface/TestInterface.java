@@ -131,7 +131,7 @@ public class TestInterface extends JavadocTester {
                 "<dt><span class=\"overrideSpecifyLabel\">Specified by:</span></dt>\n");
 
         checkOutput("pkg/ClassWithStaticMembers.html", true,
-                "<h3>f</h3>\n"
+                "<h4>f</h4>\n"
                 + "<pre>public static&nbsp;int f</pre>\n"
                 + "<div class=\"block\">A hider field</div>",
 
@@ -142,7 +142,7 @@ public class TestInterface extends JavadocTester {
                 + "<div class=\"block\">A hider method</div>\n"
                 + "</td>\n",
 
-                "<h3>staticMethod</h3>\n"
+                "<h4>staticMethod</h4>\n"
                 + "<pre class=\"methodSignature\">public static&nbsp;void&nbsp;staticMethod()</pre>\n"
                 + "<div class=\"block\"><span class=\"descfrmTypeLabel\">"
                 + "Description copied from interface:&nbsp;<code>"
@@ -183,8 +183,8 @@ public class TestInterface extends JavadocTester {
 
         checkOutput("pkg2/Spliterator.OfDouble.html", true,
             // Ensure the correct type parameters are displayed correctly
-            "<h2>Nested classes/interfaces inherited from interface&nbsp;pkg2."
-            + "<a href=\"Spliterator.html\" title=\"interface in pkg2\">Spliterator</a></h2>\n"
+            "<h3>Nested classes/interfaces inherited from interface&nbsp;pkg2."
+            + "<a href=\"Spliterator.html\" title=\"interface in pkg2\">Spliterator</a></h3>\n"
             + "<code><a href=\"Spliterator.OfDouble.html\" title=\"interface in pkg2\">"
             + "Spliterator.OfDouble</a>, <a href=\"Spliterator.OfInt.html\" "
             + "title=\"interface in pkg2\">Spliterator.OfInt</a>&lt;"

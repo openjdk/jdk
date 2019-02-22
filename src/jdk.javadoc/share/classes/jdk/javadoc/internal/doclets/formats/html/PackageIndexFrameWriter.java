@@ -27,6 +27,7 @@ package jdk.javadoc.internal.doclets.formats.html;
 
 import javax.lang.model.element.PackageElement;
 
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -78,7 +79,7 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
      */
     @Override
     protected void addPackagesList(Content main) {
-        Content heading = HtmlTree.HEADING(Headings.IndexFrames.PACKAGE_HEADING, true,
+        Content heading = HtmlTree.HEADING(HtmlConstants.PACKAGE_HEADING, true,
                 contents.packagesLabel);
         HtmlTree htmlTree = HtmlTree.DIV(HtmlStyle.indexContainer, heading);
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
@@ -129,7 +130,7 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
         } else {
             headerContent = new RawHtml(replaceDocRootDir(configuration.header));
         }
-        Content heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, true,
+        Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, true,
                 HtmlStyle.bar, headerContent);
         header.addContent(heading);
     }

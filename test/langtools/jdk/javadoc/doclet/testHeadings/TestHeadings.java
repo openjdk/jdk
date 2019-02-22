@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,23 @@
 import javadoc.tester.JavadocTester;
 
 public class TestHeadings extends JavadocTester {
+
+    private static final String[][] TEST = {
+
+        {
+        },
+        { "serialized-form.html"
+        },
+        { "serialized-form.html"
+        },
+
+        {
+        },
+        { "overview-frame.html"
+        },
+        {
+        }
+    };
 
     public static void main(String... args) throws Exception {
         TestHeadings tester = new TestHeadings();
@@ -91,7 +108,7 @@ public class TestHeadings extends JavadocTester {
                 "<h2 title=\"Package\">Package&nbsp;pkg1</h2>",
                 "<h3>Class <a href=\"pkg1/C1.html\" title=\"class in pkg1\">"
                 + "pkg1.C1</a> extends java.lang.Object implements Serializable</h3>",
-                "<h4>Serialized Fields</h4>");
+                "<h3>Serialized Fields</h3>");
 
         // Overview Frame
         checkOutput("overview-frame.html", true,

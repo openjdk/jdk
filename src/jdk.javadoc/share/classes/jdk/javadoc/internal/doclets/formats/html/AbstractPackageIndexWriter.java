@@ -29,6 +29,7 @@ import java.util.*;
 
 import javax.lang.model.element.PackageElement;
 
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -179,7 +180,7 @@ public abstract class AbstractPackageIndexWriter extends HtmlDocletWriter {
     protected void addConfigurationTitle(Content body) {
         if (configuration.doctitle.length() > 0) {
             Content title = new RawHtml(configuration.doctitle);
-            Content heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
+            Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING,
                     HtmlStyle.title, title);
             Content div = HtmlTree.DIV(HtmlStyle.header, heading);
             body.addContent(div);

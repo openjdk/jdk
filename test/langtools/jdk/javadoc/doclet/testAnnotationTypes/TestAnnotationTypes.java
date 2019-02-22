@@ -57,11 +57,11 @@ public class TestAnnotationTypes extends JavadocTester {
                 + "<li><a href=\"#annotation.type."
                 + "field.detail\">Field</a>&nbsp;|&nbsp;</li>",
                 "<!-- =========== ANNOTATION TYPE FIELD SUMMARY =========== -->",
-                "<h2>Field Summary</h2>",
+                "<h3>Field Summary</h3>",
                 "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\"><a href=\"#DEFAULT_NAME\">DEFAULT_NAME</a></span>"
                 + "</code></th>",
                 "<!-- ============ ANNOTATION TYPE FIELD DETAIL =========== -->",
-                "<h3>DEFAULT_NAME</h3>\n"
+                "<h4>DEFAULT_NAME</h4>\n"
                 + "<pre>static final&nbsp;java."
                 + "lang.String&nbsp;DEFAULT_NAME</pre>");
 
@@ -77,13 +77,13 @@ public class TestAnnotationTypes extends JavadocTester {
                     "<li class=\"blockList\"><a id=\"annotation.type.element.detail\">",
                     "<!--   -->",
                     "</a>",
-                    "<h2>Element Detail</h2>",
+                    "<h3>Element Detail</h3>",
                     "<a id=\"value()\">",
                     "<!--   -->",
                     "</a>",
                     "<ul class=\"blockListLast\">",
                     "<li class=\"blockList\">",
-                    "<h3>value</h3>",
+                    "<h4>value</h4>",
                     "<pre>int&nbsp;value</pre>" );
 
         checkOutput("pkg/AnnotationType.html", false,

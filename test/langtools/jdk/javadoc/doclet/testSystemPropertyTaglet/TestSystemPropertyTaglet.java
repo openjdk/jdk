@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,9 +76,9 @@ public class TestSystemPropertyTaglet extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOrder("pkg/A.html",
-                "<h1 title=\"Class A\" class=\"title\">Class A</h1>",
+                "<h2 title=\"Class A\" class=\"title\">Class A</h2>",
                 "test with <code><a id=\"user.name\" class=\"searchTagResult\">user.name</a></code>",
-                "<h2>Method Detail</h2>",
+                "<h3>Method Detail</h3>",
                 "test with <code><a id=\"java.version\" class=\"searchTagResult\">java.version</a></code>");
 
         checkOrder("index-all.html",

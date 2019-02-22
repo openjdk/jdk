@@ -173,7 +173,7 @@ public class TestModuleServices extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("m/module-summary.html", false,
-                "<h2>Services</h2>");
+                "<h3>Services</h3>");
     }
 
     @Test
@@ -194,7 +194,7 @@ public class TestModuleServices extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("m/module-summary.html", true,
-                "<h2>Services</h2>");
+                "<h3>Services</h3>");
 
         checkOutput("m/module-summary.html", true,
                 "<div class=\"usesSummary\">\n<table>\n" +
@@ -235,7 +235,7 @@ public class TestModuleServices extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("m/module-summary.html", true,
-                "<h2>Services</h2>");
+                "<h3>Services</h3>");
 
         checkOutput("m/module-summary.html", true,
                 "<div class=\"usesSummary\">\n<table>\n" +
@@ -276,7 +276,7 @@ public class TestModuleServices extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("m/module-summary.html", false,
-                "<h2>Services</h2>");
+                "<h3>Services</h3>");
     }
 
     @Test
@@ -302,7 +302,7 @@ public class TestModuleServices extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("m/module-summary.html", true,
-                "<h2>Services</h2>");
+                "<h3>Services</h3>");
 
         checkOutput("m/module-summary.html", true,
                 "<div class=\"providesSummary\">\n<table>\n" +
@@ -346,7 +346,7 @@ public class TestModuleServices extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("m/module-summary.html", true,
-                "<h2>Services</h2>");
+                "<h3>Services</h3>");
 
         checkOutput("m/module-summary.html", true,
                 "<div class=\"providesSummary\">\n<table>\n" +
@@ -389,7 +389,7 @@ public class TestModuleServices extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("m/module-summary.html", true,
-                "<h2>Services</h2>");
+                "<h3>Services</h3>");
 
         checkOutput("m/module-summary.html", true,
                 "<div class=\"providesSummary\">\n<table>\n" +

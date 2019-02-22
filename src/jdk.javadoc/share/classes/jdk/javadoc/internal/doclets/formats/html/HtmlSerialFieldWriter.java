@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import javax.lang.model.type.TypeMirror;
 import com.sun.source.doctree.DocTree;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -107,7 +108,8 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
         li.setStyle(HtmlStyle.blockList);
         if (serializableFieldsTree.isValid()) {
             Content headingContent = new StringContent(heading);
-            Content serialHeading = HtmlTree.HEADING(Headings.SerializedForm.CLASS_SUBHEADING, headingContent);
+            Content serialHeading = HtmlTree.HEADING(HtmlConstants.SERIALIZED_MEMBER_HEADING,
+                    headingContent);
             li.addContent(serialHeading);
             li.addContent(serializableFieldsTree);
         }
@@ -118,7 +120,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
     public void addMemberHeader(TypeElement fieldType, String fieldTypeStr,
             String fieldDimensions, String fieldName, Content contentTree) {
         Content nameContent = new StringContent(fieldName);
-        Content heading = HtmlTree.HEADING(Headings.SerializedForm.MEMBER_HEADING, nameContent);
+        Content heading = HtmlTree.HEADING(HtmlConstants.MEMBER_HEADING, nameContent);
         contentTree.addContent(heading);
         Content pre = new HtmlTree(HtmlTag.PRE);
         if (fieldType == null) {
@@ -136,7 +138,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
     @Override
     public void addMemberHeader(TypeMirror fieldType, String fieldName, Content contentTree) {
         Content nameContent = new StringContent(fieldName);
-        Content heading = HtmlTree.HEADING(HtmlTag.H5, nameContent);
+        Content heading = HtmlTree.HEADING(HtmlConstants.MEMBER_HEADING, nameContent);
         contentTree.addContent(heading);
         Content pre = new HtmlTree(HtmlTag.PRE);
         Content fieldContent = writer.getLink(new LinkInfoImpl(

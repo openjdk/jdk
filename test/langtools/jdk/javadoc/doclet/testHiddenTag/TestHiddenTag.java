@@ -67,8 +67,8 @@ public class TestHiddenTag extends JavadocTester {
         checkOutput("pkg1/A.VisibleInner.html", true,
                 "<code><a href=\"A.html#visibleField\">visibleField</a></code>",
                 "<code><a href=\"A.html#visibleMethod()\">visibleMethod</a></code>",
-                "<h2>Nested classes/interfaces inherited from class&nbsp;pkg1." +
-                "<a href=\"A.html\" title=\"class in pkg1\">A</a></h2>\n" +
+                "<h3>Nested classes/interfaces inherited from class&nbsp;pkg1." +
+                "<a href=\"A.html\" title=\"class in pkg1\">A</a></h3>\n" +
                 "<code><a href=\"A.VisibleInner.html\" title=\"class in pkg1\">" +
                 "A.VisibleInner</a>, <a href=\"A.VisibleInnerExtendsInvisibleInner.html\" " +
                 "title=\"class in pkg1\">A.VisibleInnerExtendsInvisibleInner</a></code></li>\n" +

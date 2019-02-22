@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,12 @@
  * questions.
  */
 
-package jdk.javadoc.internal.doclets.formats.html;
+package jdk.javadoc.internal.doclets.formats.html.markup;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.Comment;
+import jdk.javadoc.internal.doclets.toolkit.Content;
 
 /**
- *  Marker comments to identify regions in the generated files.
+ * Stores constants for Html Doclet.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
@@ -37,162 +37,216 @@ import jdk.javadoc.internal.doclets.formats.html.markup.Comment;
  *
  * @author Bhavesh Patel
  */
-public class MarkerComments {
+public class HtmlConstants {
 
     /**
      * Marker to identify start of top navigation bar.
      */
-    public static final Comment START_OF_TOP_NAVBAR =
+    public static final Content START_OF_TOP_NAVBAR =
             new Comment("========= START OF TOP NAVBAR =======");
 
     /**
      * Marker to identify start of bottom navigation bar.
      */
-    public static final Comment START_OF_BOTTOM_NAVBAR =
+    public static final Content START_OF_BOTTOM_NAVBAR =
             new Comment("======= START OF BOTTOM NAVBAR ======");
 
     /**
      * Marker to identify end of top navigation bar.
      */
-    public static final Comment END_OF_TOP_NAVBAR =
+    public static final Content END_OF_TOP_NAVBAR =
             new Comment("========= END OF TOP NAVBAR =========");
 
     /**
      * Marker to identify end of bottom navigation bar.
      */
-    public static final Comment END_OF_BOTTOM_NAVBAR =
+    public static final Content END_OF_BOTTOM_NAVBAR =
             new Comment("======== END OF BOTTOM NAVBAR =======");
 
     /**
      * Marker to identify start of module description.
      */
-    public static final Comment START_OF_MODULE_DESCRIPTION =
+    public static final Content START_OF_MODULE_DESCRIPTION =
             new Comment("============ MODULE DESCRIPTION ===========");
 
     /**
      * Marker to identify start of modules summary.
      */
-    public static final Comment START_OF_MODULES_SUMMARY =
+    public static final Content START_OF_MODULES_SUMMARY =
             new Comment("============ MODULES SUMMARY ===========");
 
     /**
      * Marker to identify start of packages summary.
      */
-    public static final Comment START_OF_PACKAGES_SUMMARY =
+    public static final Content START_OF_PACKAGES_SUMMARY =
             new Comment("============ PACKAGES SUMMARY ===========");
 
     /**
      * Marker to identify start of services summary.
      */
-    public static final Comment START_OF_SERVICES_SUMMARY =
+    public static final Content START_OF_SERVICES_SUMMARY =
             new Comment("============ SERVICES SUMMARY ===========");
 
     /**
      * Marker to identify start of class data.
      */
-    public static final Comment START_OF_CLASS_DATA =
+    public static final Content START_OF_CLASS_DATA =
             new Comment("======== START OF CLASS DATA ========");
 
     /**
      * Marker to identify end of class data.
      */
-    public static final Comment END_OF_CLASS_DATA =
+    public static final Content END_OF_CLASS_DATA =
             new Comment("========= END OF CLASS DATA =========");
 
     /**
      * Marker to identify start of nested class summary.
      */
-    public static final Comment START_OF_NESTED_CLASS_SUMMARY =
+    public static final Content START_OF_NESTED_CLASS_SUMMARY =
             new Comment("======== NESTED CLASS SUMMARY ========");
 
     /**
      * Marker to identify start of annotation type optional member summary.
      */
-    public static final Comment START_OF_ANNOTATION_TYPE_OPTIONAL_MEMBER_SUMMARY =
+    public static final Content START_OF_ANNOTATION_TYPE_OPTIONAL_MEMBER_SUMMARY =
             new Comment("=========== ANNOTATION TYPE OPTIONAL MEMBER SUMMARY ===========");
 
     /**
      * Marker to identify start of annotation type required member summary.
      */
-    public static final Comment START_OF_ANNOTATION_TYPE_REQUIRED_MEMBER_SUMMARY =
+    public static final Content START_OF_ANNOTATION_TYPE_REQUIRED_MEMBER_SUMMARY =
             new Comment("=========== ANNOTATION TYPE REQUIRED MEMBER SUMMARY ===========");
 
     /**
      * Marker to identify start of annotation type required member summary.
      */
-    public static final Comment START_OF_ANNOTATION_TYPE_FIELD_SUMMARY =
+    public static final Content START_OF_ANNOTATION_TYPE_FIELD_SUMMARY =
             new Comment("=========== ANNOTATION TYPE FIELD SUMMARY ===========");
 
     /**
      * Marker to identify start of constructor summary.
      */
-    public static final Comment START_OF_CONSTRUCTOR_SUMMARY =
+    public static final Content START_OF_CONSTRUCTOR_SUMMARY =
             new Comment("======== CONSTRUCTOR SUMMARY ========");
 
     /**
      * Marker to identify start of enum constants summary.
      */
-    public static final Comment START_OF_ENUM_CONSTANT_SUMMARY =
+    public static final Content START_OF_ENUM_CONSTANT_SUMMARY =
             new Comment("=========== ENUM CONSTANT SUMMARY ===========");
 
     /**
      * Marker to identify start of field summary.
      */
-    public static final Comment START_OF_FIELD_SUMMARY =
+    public static final Content START_OF_FIELD_SUMMARY =
             new Comment("=========== FIELD SUMMARY ===========");
 
     /**
      * Marker to identify start of properties summary.
      */
-    public static final Comment START_OF_PROPERTY_SUMMARY =
+    public static final Content START_OF_PROPERTY_SUMMARY =
             new Comment("=========== PROPERTY SUMMARY ===========");
 
     /**
      * Marker to identify start of method summary.
      */
-    public static final Comment START_OF_METHOD_SUMMARY =
+    public static final Content START_OF_METHOD_SUMMARY =
             new Comment("========== METHOD SUMMARY ===========");
 
     /**
      * Marker to identify start of annotation type details.
      */
-    public static final Comment START_OF_ANNOTATION_TYPE_DETAILS =
+    public static final Content START_OF_ANNOTATION_TYPE_DETAILS =
             new Comment("============ ANNOTATION TYPE MEMBER DETAIL ===========");
 
     /**
      * Marker to identify start of annotation type field details.
      */
-    public static final Comment START_OF_ANNOTATION_TYPE_FIELD_DETAILS =
+    public static final Content START_OF_ANNOTATION_TYPE_FIELD_DETAILS =
             new Comment("============ ANNOTATION TYPE FIELD DETAIL ===========");
 
     /**
      * Marker to identify start of method details.
      */
-    public static final Comment START_OF_METHOD_DETAILS =
+    public static final Content START_OF_METHOD_DETAILS =
             new Comment("============ METHOD DETAIL ==========");
 
     /**
      * Marker to identify start of field details.
      */
-    public static final Comment START_OF_FIELD_DETAILS =
+    public static final Content START_OF_FIELD_DETAILS =
             new Comment("============ FIELD DETAIL ===========");
 
     /**
      * Marker to identify start of property details.
      */
-    public static final Comment START_OF_PROPERTY_DETAILS =
+    public static final Content START_OF_PROPERTY_DETAILS =
             new Comment("============ PROPERTY DETAIL ===========");
 
     /**
      * Marker to identify start of constructor details.
      */
-    public static final Comment START_OF_CONSTRUCTOR_DETAILS =
+    public static final Content START_OF_CONSTRUCTOR_DETAILS =
             new Comment("========= CONSTRUCTOR DETAIL ========");
 
     /**
      * Marker to identify start of enum constants details.
      */
-    public static final Comment START_OF_ENUM_CONSTANT_DETAILS =
+    public static final Content START_OF_ENUM_CONSTANT_DETAILS =
             new Comment("============ ENUM CONSTANT DETAIL ===========");
 
+    /**
+     * Html tag for the page title heading.
+     */
+    public static final HtmlTag TITLE_HEADING = HtmlTag.H1;
+
+    /**
+     * Html tag for the class page title heading.
+     */
+    public static final HtmlTag CLASS_PAGE_HEADING = HtmlTag.H2;
+
+    /**
+     * Html tag for the content heading.
+     */
+    public static final HtmlTag CONTENT_HEADING = HtmlTag.H2;
+
+    /**
+     * Html tag for the package name heading.
+     */
+    public static final HtmlTag PACKAGE_HEADING = HtmlTag.H2;
+
+    /**
+     * Html tag for the module name heading.
+     */
+    public static final HtmlTag MODULE_HEADING = HtmlTag.H2;
+
+    /**
+     * Html tag for the member summary heading.
+     */
+    public static final HtmlTag SUMMARY_HEADING = HtmlTag.H3;
+
+    /**
+     * Html tag for the inherited member summary heading.
+     */
+    public static final HtmlTag INHERITED_SUMMARY_HEADING = HtmlTag.H3;
+
+    /**
+     * Html tag for the member details heading.
+     */
+    public static final HtmlTag DETAILS_HEADING = HtmlTag.H3;
+
+    /**
+     * Html tag for the serialized member heading.
+     */
+    public static final HtmlTag SERIALIZED_MEMBER_HEADING = HtmlTag.H3;
+
+    /**
+     * Html tag for the member heading.
+     */
+    public static final HtmlTag MEMBER_HEADING = HtmlTag.H4;
+
+    /**
+     * Default charset for HTML.
+     */
+    public static final String HTML_DEFAULT_CHARSET = "utf-8";
 }
