@@ -53,19 +53,19 @@ void JfrChunkState::reset() {
   set_previous_checkpoint_offset(0);
 }
 
-void JfrChunkState::set_previous_checkpoint_offset(jlong offset) {
+void JfrChunkState::set_previous_checkpoint_offset(int64_t offset) {
   _previous_checkpoint_offset = offset;
 }
 
-jlong JfrChunkState::previous_checkpoint_offset() const {
+int64_t JfrChunkState::previous_checkpoint_offset() const {
   return _previous_checkpoint_offset;
 }
 
-jlong JfrChunkState::previous_start_ticks() const {
+int64_t JfrChunkState::previous_start_ticks() const {
   return _previous_start_ticks;
 }
 
-jlong JfrChunkState::previous_start_nanos() const {
+int64_t JfrChunkState::previous_start_nanos() const {
   return _previous_start_nanos;
 }
 
@@ -92,7 +92,7 @@ void JfrChunkState::update_time_to_now() {
   save_current_and_update_start_ticks();
 }
 
-jlong JfrChunkState::last_chunk_duration() const {
+int64_t JfrChunkState::last_chunk_duration() const {
   return _start_nanos - _previous_start_nanos;
 }
 

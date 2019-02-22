@@ -44,7 +44,7 @@ StreamWriterHost<Adapter, AP>::StreamWriterHost(Thread* thread) :
 }
 
 template <typename Adapter, typename AP>
-inline intptr_t StreamWriterHost<Adapter, AP>::current_stream_position() const {
+inline int64_t StreamWriterHost<Adapter, AP>::current_stream_position() const {
   return this->used_offset() + _stream_pos;
 }
 
@@ -73,7 +73,7 @@ template <typename Adapter, typename AP>
 inline void StreamWriterHost<Adapter, AP>::flush(size_t size) {
   assert(size > 0, "invariant");
   assert(this->is_valid(), "invariant");
-  _stream_pos += os::write(_fd, this->start_pos(), (int)size);
+  _stream_pos += os::write(_fd, this->start_pos(), (unsigned int)size);
   StorageHost<Adapter, AP>::reset();
   assert(0 == this->used_offset(), "invariant");
 }
@@ -84,12 +84,12 @@ inline bool StreamWriterHost<Adapter, AP>::has_valid_fd() const {
 }
 
 template <typename Adapter, typename AP>
-inline intptr_t StreamWriterHost<Adapter, AP>::current_offset() const {
+inline int64_t StreamWriterHost<Adapter, AP>::current_offset() const {
   return current_stream_position();
 }
 
 template <typename Adapter, typename AP>
-void StreamWriterHost<Adapter, AP>::seek(intptr_t offset) {
+void StreamWriterHost<Adapter, AP>::seek(int64_t offset) {
   this->flush();
   assert(0 == this->used_offset(), "can only seek from beginning");
   _stream_pos = os::seek_to_file_offset(_fd, offset);
@@ -110,7 +110,7 @@ void StreamWriterHost<Adapter, AP>::write_unbuffered(const void* buf, size_t len
   this->flush();
   assert(0 == this->used_offset(), "can only seek from beginning");
   while (len > 0) {
-    const int n = MIN2<int>((int)len, INT_MAX);
+    const unsigned int n = MIN2((unsigned int)len, (unsigned int)INT_MAX);
     _stream_pos += os::write(_fd, buf, n);
     len -= n;
   }

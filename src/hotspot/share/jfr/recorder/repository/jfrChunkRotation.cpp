@@ -29,7 +29,7 @@
 #include "runtime/handles.inline.hpp"
 
 static jobject chunk_monitor = NULL;
-static intptr_t threshold = 0;
+static int64_t threshold = 0;
 static bool rotate = false;
 
 static jobject install_chunk_monitor(Thread* thread) {
@@ -62,7 +62,6 @@ void JfrChunkRotation::evaluate(const JfrChunkWriter& writer) {
     // already in progress
     return;
   }
-  assert(!rotate, "invariant");
   if (writer.size_written() > threshold) {
     rotate = true;
     notify();
@@ -77,6 +76,6 @@ void JfrChunkRotation::on_rotation() {
   rotate = false;
 }
 
-void JfrChunkRotation::set_threshold(intptr_t bytes) {
+void JfrChunkRotation::set_threshold(int64_t bytes) {
   threshold = bytes;
 }

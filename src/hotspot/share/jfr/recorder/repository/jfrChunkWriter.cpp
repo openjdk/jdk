@@ -32,9 +32,8 @@
 #include "runtime/os.hpp"
 #include "runtime/os.inline.hpp"
 
-const u2 JFR_VERSION_MAJOR = 2;
-const u2 JFR_VERSION_MINOR = 0;
-
+static const u2 JFR_VERSION_MAJOR = 2;
+static const u2 JFR_VERSION_MINOR = 0;
 static const size_t MAGIC_LEN = 4;
 static const size_t FILEHEADER_SLOT_SIZE = 8;
 static const size_t CHUNK_SIZE_OFFSET = 8;
@@ -79,14 +78,14 @@ bool JfrChunkWriter::open() {
   return is_open;
 }
 
-size_t JfrChunkWriter::close(intptr_t metadata_offset) {
+size_t JfrChunkWriter::close(int64_t metadata_offset) {
   write_header(metadata_offset);
   this->flush();
   this->close_fd();
-  return size_written();
+  return (size_t)size_written();
 }
 
-void JfrChunkWriter::write_header(intptr_t metadata_offset) {
+void JfrChunkWriter::write_header(int64_t metadata_offset) {
   assert(this->is_valid(), "invariant");
   // Chunk size
   this->write_be_at_offset(size_written(), CHUNK_SIZE_OFFSET);
@@ -106,15 +105,15 @@ void JfrChunkWriter::set_chunk_path(const char* chunk_path) {
   _chunkstate->set_path(chunk_path);
 }
 
-intptr_t JfrChunkWriter::size_written() const {
+int64_t JfrChunkWriter::size_written() const {
   return this->is_valid() ? this->current_offset() : 0;
 }
 
-intptr_t JfrChunkWriter::previous_checkpoint_offset() const {
+int64_t JfrChunkWriter::previous_checkpoint_offset() const {
   return _chunkstate->previous_checkpoint_offset();
 }
 
-void JfrChunkWriter::set_previous_checkpoint_offset(intptr_t offset) {
+void JfrChunkWriter::set_previous_checkpoint_offset(int64_t offset) {
   _chunkstate->set_previous_checkpoint_offset(offset);
 }
 

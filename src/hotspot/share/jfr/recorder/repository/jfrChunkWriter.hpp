@@ -41,16 +41,16 @@ class JfrChunkWriter : public JfrChunkWriterBase {
   JfrChunkState* _chunkstate;
 
   bool open();
-  size_t close(intptr_t metadata_offset);
-  void write_header(intptr_t metadata_offset);
+  size_t close(int64_t metadata_offset);
+  void write_header(int64_t metadata_offset);
   void set_chunk_path(const char* chunk_path);
 
  public:
   JfrChunkWriter();
   bool initialize();
-  intptr_t size_written() const;
-  intptr_t previous_checkpoint_offset() const;
-  void set_previous_checkpoint_offset(intptr_t offset);
+  int64_t size_written() const;
+  int64_t previous_checkpoint_offset() const;
+  void set_previous_checkpoint_offset(int64_t offset);
   void time_stamp_chunk_now();
 };
 
