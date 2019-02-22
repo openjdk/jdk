@@ -5320,27 +5320,6 @@ void Parker::unpark() {
 
 // Platform Monitor implementation
 
-os::PlatformMonitor::PlatformMonitor() {
-  InitializeConditionVariable(&_cond);
-  InitializeCriticalSection(&_mutex);
-}
-
-os::PlatformMonitor::~PlatformMonitor() {
-  DeleteCriticalSection(&_mutex);
-}
-
-void os::PlatformMonitor::lock() {
-  EnterCriticalSection(&_mutex);
-}
-
-void os::PlatformMonitor::unlock() {
-  LeaveCriticalSection(&_mutex);
-}
-
-bool os::PlatformMonitor::try_lock() {
-  return TryEnterCriticalSection(&_mutex);
-}
-
 // Must already be locked
 int os::PlatformMonitor::wait(jlong millis) {
   assert(millis >= 0, "negative timeout");
@@ -5357,14 +5336,6 @@ int os::PlatformMonitor::wait(jlong millis) {
   }
   #endif
   return ret;
-}
-
-void os::PlatformMonitor::notify() {
-  WakeConditionVariable(&_cond);
-}
-
-void os::PlatformMonitor::notify_all() {
-  WakeAllConditionVariable(&_cond);
 }
 
 // Run the specified command in a separate process. Return its exit value,

@@ -86,4 +86,35 @@ inline void os::exit(int num) {
   win32::exit_process_or_thread(win32::EPT_PROCESS, num);
 }
 
+// Platform Monitor implementation
+
+inline os::PlatformMonitor::PlatformMonitor() {
+  InitializeConditionVariable(&_cond);
+  InitializeCriticalSection(&_mutex);
+}
+
+inline os::PlatformMonitor::~PlatformMonitor() {
+  DeleteCriticalSection(&_mutex);
+}
+
+inline void os::PlatformMonitor::lock() {
+  EnterCriticalSection(&_mutex);
+}
+
+inline void os::PlatformMonitor::unlock() {
+  LeaveCriticalSection(&_mutex);
+}
+
+inline bool os::PlatformMonitor::try_lock() {
+  return TryEnterCriticalSection(&_mutex);
+}
+
+inline void os::PlatformMonitor::notify() {
+  WakeConditionVariable(&_cond);
+}
+
+inline void os::PlatformMonitor::notify_all() {
+  WakeAllConditionVariable(&_cond);
+}
+
 #endif // OS_WINDOWS_OS_WINDOWS_INLINE_HPP
