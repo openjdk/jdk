@@ -80,7 +80,9 @@ class KlassFactory : AllStatic {
                                           InstanceKlass* ik,
                                           Symbol* class_name,
                                           Handle class_loader,
-                                          Handle protection_domain, TRAPS);
+                                          Handle protection_domain,
+                                          const ClassFileStream *cfs,
+                                          TRAPS);
 };
 
 #endif // SHARE_CLASSFILE_KLASSFACTORY_HPP

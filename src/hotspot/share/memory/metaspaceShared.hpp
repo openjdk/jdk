@@ -69,14 +69,10 @@ class MetaspaceShared : AllStatic {
     ro = 2,  // read-only shared space in the heap
     md = 3,  // miscellaneous data for initializing tables, etc.
     num_core_spaces = 4, // number of non-string regions
-
-    // optional mapped spaces
-    // Currently it only contains class file data.
-    od = num_core_spaces,
-    num_non_heap_spaces = od + 1,
+    num_non_heap_spaces = 4,
 
     // mapped java heap regions
-    first_closed_archive_heap_region = od + 1,
+    first_closed_archive_heap_region = md + 1,
     max_closed_archive_heap_region = 2,
     last_closed_archive_heap_region = first_closed_archive_heap_region + max_closed_archive_heap_region - 1,
     first_open_archive_heap_region = last_closed_archive_heap_region + 1,

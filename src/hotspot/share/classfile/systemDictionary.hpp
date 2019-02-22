@@ -628,6 +628,7 @@ protected:
   static InstanceKlass* load_shared_class(InstanceKlass* ik,
                                           Handle class_loader,
                                           Handle protection_domain,
+                                          const ClassFileStream *cfs,
                                           TRAPS);
   static InstanceKlass* load_shared_boot_class(Symbol* class_name,
                                                TRAPS);

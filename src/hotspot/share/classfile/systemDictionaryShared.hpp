@@ -207,6 +207,7 @@ private:
                                  InstanceKlass *ik,
                                  Handle class_loader,
                                  Handle protection_domain,
+                                 const ClassFileStream* cfs,
                                  TRAPS);
   static DumpTimeSharedClassInfo* find_or_allocate_info_for(InstanceKlass* k);
   static void write_dictionary(RunTimeSharedDictionary* dictionary, bool is_builtin);
