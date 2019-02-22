@@ -41,6 +41,7 @@
 // Note: When new VM_XXX comes up, add 'XXX' to the template table.
 #define VM_OPS_DO(template)                       \
   template(None)                                  \
+  template(Cleanup)                               \
   template(ThreadStop)                            \
   template(ThreadDump)                            \
   template(PrintThreads)                          \
@@ -213,7 +214,7 @@ class VM_Operation: public CHeapObj<mtInternal> {
 
   // Debugging
   virtual void print_on_error(outputStream* st) const;
-  const char* name() const { return _names[type()]; }
+  virtual const char* name() const  { return _names[type()]; }
   static const char* name(int type) {
     assert(type >= 0 && type < VMOp_Terminating, "invalid VM operation type");
     return _names[type];
@@ -221,6 +222,21 @@ class VM_Operation: public CHeapObj<mtInternal> {
 #ifndef PRODUCT
   void print_on(outputStream* st) const { print_on_error(st); }
 #endif
+};
+
+class VM_None: public VM_Operation {
+  const char* _reason;
+ public:
+  VM_None(const char* reason) : _reason(reason) {}
+  const char* name() const { return _reason; }
+  VMOp_Type type() const { return VMOp_None; }
+  void doit() {};
+};
+
+class VM_Cleanup: public VM_Operation {
+ public:
+  VMOp_Type type() const { return VMOp_Cleanup; }
+  void doit() {};
 };
 
 class VM_ThreadStop: public VM_Operation {

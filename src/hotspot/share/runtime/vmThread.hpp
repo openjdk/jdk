@@ -119,12 +119,11 @@ class VMThread: public NamedThread {
   static bool _terminated;
   static Monitor * _terminate_lock;
   static PerfCounter* _perf_accumulated_vm_operation_time;
-
-  static const char* _no_op_reason;
+  static uint64_t _coalesced_count;
 
   static VMOperationTimeoutTask* _timeout_task;
 
-  static bool no_op_safepoint_needed(bool check_time);
+  static VM_Operation* no_op_safepoint(bool check_time);
 
   void evaluate_operation(VM_Operation* op);
 
@@ -155,9 +154,8 @@ class VMThread: public NamedThread {
 
   // Returns the current vm operation if any.
   static VM_Operation* vm_operation()             { return _cur_vm_operation; }
-
-  // Returns the current vm operation name or set reason
-  static const char* vm_safepoint_description()   { return _cur_vm_operation != NULL ? _cur_vm_operation->name() : _no_op_reason; };
+  static VM_Operation::VMOp_Type vm_op_type()     { return _cur_vm_operation->type(); }
+  static uint64_t get_coalesced_count()           { return _coalesced_count; }
 
   // Returns the single instance of VMThread.
   static VMThread* vm_thread()                    { return _vm_thread; }

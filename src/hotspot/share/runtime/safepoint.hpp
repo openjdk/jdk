@@ -28,6 +28,7 @@
 #include "memory/allocation.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.hpp"
+#include "runtime/vmOperations.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/waitBarrier.hpp"
 
@@ -77,11 +78,6 @@ class SafepointSynchronize : AllStatic {
   friend class ThreadSafepointState;
   friend class HandshakeState;
 
-  enum SafepointTimeoutReason {
-    _spinning_timeout = 0,
-    _blocking_timeout = 1
-  };
-
   // Threads might read this flag directly, without acquiring the Threads_lock:
   static volatile SynchronizeState _state;
   // Number of threads we are waiting for to block:
@@ -110,7 +106,7 @@ class SafepointSynchronize : AllStatic {
   static void print_statistics();
 
   // For debug long safepoint
-  static void print_safepoint_timeout(SafepointTimeoutReason timeout_reason);
+  static void print_safepoint_timeout();
 
   // Helper methods for safepoint procedure:
   static void arm_safepoint();
@@ -150,18 +146,8 @@ public:
   // Exception handling for page polling
   static void handle_polling_page_exception(JavaThread *thread);
 
-  // VM Thread interface for determining safepoint rate
-  static long last_non_safepoint_interval() {
-    return os::javaTimeMillis() - _end_of_last_safepoint;
-  }
-  static long end_of_last_safepoint() {
-    return _end_of_last_safepoint;
-  }
   static bool is_cleanup_needed();
   static void do_cleanup_tasks();
-
-  static void print_stat_on_exit();
-  static void inc_vmop_coalesced_count() { _coalesced_vmop_count++; }
 
   static void set_is_at_safepoint()             { _state = _synchronized; }
   static void set_is_not_at_safepoint()         { _state = _not_synchronized; }
@@ -247,6 +233,48 @@ class ThreadSafepointState: public CHeapObj<mtThread> {
   static void destroy(JavaThread *thread);
 };
 
+class SafepointTracing : public AllStatic {
+private:
+  // Absolute
+  static jlong _last_safepoint_begin_time_ns;
+  static jlong _last_safepoint_sync_time_ns;
+  static jlong _last_safepoint_cleanup_time_ns;
+  static jlong _last_safepoint_end_time_ns;
+  // Relative
+  static jlong _last_app_time_ns;
 
+  static int _nof_threads;
+  static int _nof_running;
+  static int _page_trap;
+
+  static VM_Operation::VMOp_Type _current_type;
+  static jlong     _max_sync_time;
+  static jlong     _max_vmop_time;
+  static uint64_t  _op_count[VM_Operation::VMOp_Terminating];
+
+  static void statistics_log();
+
+public:
+  static void init();
+
+  static void begin(VM_Operation::VMOp_Type type);
+  static void synchronized(int nof_threads, int nof_running, int traps);
+  static void cleanup();
+  static void end();
+
+  static void statistics_exit_log();
+
+  static jlong time_since_last_safepoint_ms() {
+    return (os::javaTimeNanos() - _last_safepoint_end_time_ns) / (NANOUNITS / MILLIUNITS);
+  }
+
+  static jlong end_of_last_safepoint_ms() {
+    return _last_safepoint_end_time_ns / (NANOUNITS / MILLIUNITS);
+  }
+
+  static jlong start_of_safepoint() {
+    return _last_safepoint_begin_time_ns;
+  }
+};
 
 #endif // SHARE_RUNTIME_SAFEPOINT_HPP

@@ -3953,9 +3953,6 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
     }
 #endif
 
-    // Tracks the time application was running before GC
-    RuntimeService::record_application_start();
-
     // Notify JVMTI
     if (JvmtiExport::should_post_thread_life()) {
        JvmtiExport::post_thread_start(thread);

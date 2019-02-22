@@ -533,12 +533,6 @@
     <Field type="int" name="iterations" label="Iterations" description="Number of state check iterations" />
   </Event>
 
-  <Event name="SafepointWaitBlocked" category="Java Virtual Machine, Runtime, Safepoint" label="Safepoint Wait Blocked" description="Safepointing begin waiting on running threads to block"
-    thread="true">
-    <Field type="ulong" name="safepointId" label="Safepoint Identifier" relation="SafepointId" />
-    <Field type="int" name="runningThreadCount" label="Running Threads" description="The number running of threads wait for safe point" />
-  </Event>
-
   <Event name="SafepointCleanup" category="Java Virtual Machine, Runtime, Safepoint" label="Safepoint Cleanup" description="Safepointing begin running cleanup tasks"
     thread="true">
     <Field type="ulong" name="safepointId" label="Safepoint Identifier" relation="SafepointId" />

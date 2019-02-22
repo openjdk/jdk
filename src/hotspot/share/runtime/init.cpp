@@ -174,10 +174,7 @@ void exit_globals() {
       ObjectSynchronizer::audit_and_print_stats(true /* on_exit */);
     }
     perfMemory_exit();
-    if (log_is_enabled(Debug, safepoint, stats)) {
-      // Print the collected safepoint statistics.
-      SafepointSynchronize::print_stat_on_exit();
-    }
+    SafepointTracing::statistics_exit_log();
     if (PrintStringTableStatistics) {
       SymbolTable::dump(tty);
       StringTable::dump(tty);
