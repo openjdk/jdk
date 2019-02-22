@@ -591,7 +591,7 @@ void ConstantPoolCacheEntry::adjust_method_entry(Method* old_method,
 
 // a constant pool cache entry should never contain old or obsolete methods
 bool ConstantPoolCacheEntry::check_no_old_or_obsolete_entries() {
-  Method* m = get_interesting_method_entry(NULL);
+  Method* m = get_interesting_method_entry();
   // return false if m refers to a non-deleted old or obsolete method
   if (m != NULL) {
     assert(m->is_valid() && m->is_method(), "m is a valid method");
@@ -601,7 +601,7 @@ bool ConstantPoolCacheEntry::check_no_old_or_obsolete_entries() {
   }
 }
 
-Method* ConstantPoolCacheEntry::get_interesting_method_entry(Klass* k) {
+Method* ConstantPoolCacheEntry::get_interesting_method_entry() {
   if (!is_method_entry()) {
     // not a method entry so not interesting by default
     return NULL;
@@ -622,12 +622,9 @@ Method* ConstantPoolCacheEntry::get_interesting_method_entry(Klass* k) {
     }
   }
   assert(m != NULL && m->is_method(), "sanity check");
-  if (m == NULL || !m->is_method() || (k != NULL && m->method_holder() != k)) {
-    // robustness for above sanity checks or method is not in
-    // the interesting class
+  if (m == NULL || !m->is_method()) {
     return NULL;
   }
-  // the method is in the interesting class so the entry is interesting
   return m;
 }
 #endif // INCLUDE_JVMTI
@@ -777,10 +774,10 @@ void ConstantPoolCache::set_archived_references(oop o) {
 // RedefineClasses() API support:
 // If any entry of this ConstantPoolCache points to any of
 // old_methods, replace it with the corresponding new_method.
-void ConstantPoolCache::adjust_method_entries(InstanceKlass* holder, bool * trace_name_printed) {
+void ConstantPoolCache::adjust_method_entries(bool * trace_name_printed) {
   for (int i = 0; i < length(); i++) {
     ConstantPoolCacheEntry* entry = entry_at(i);
-    Method* old_method = entry->get_interesting_method_entry(holder);
+    Method* old_method = entry->get_interesting_method_entry();
     if (old_method == NULL || !old_method->is_old()) {
       continue; // skip uninteresting entries
     }
@@ -789,11 +786,7 @@ void ConstantPoolCache::adjust_method_entries(InstanceKlass* holder, bool * trac
       entry->initialize_entry(entry->constant_pool_index());
       continue;
     }
-    Method* new_method = holder->method_with_idnum(old_method->orig_method_idnum());
-
-    assert(new_method != NULL, "method_with_idnum() should not be NULL");
-    assert(old_method != new_method, "sanity check");
-
+    Method* new_method = old_method->get_new_method();
     entry_at(i)->adjust_method_entry(old_method, new_method, trace_name_printed);
   }
 }
@@ -801,7 +794,7 @@ void ConstantPoolCache::adjust_method_entries(InstanceKlass* holder, bool * trac
 // the constant pool cache should never contain old or obsolete methods
 bool ConstantPoolCache::check_no_old_or_obsolete_entries() {
   for (int i = 1; i < length(); i++) {
-    if (entry_at(i)->get_interesting_method_entry(NULL) != NULL &&
+    if (entry_at(i)->get_interesting_method_entry() != NULL &&
         !entry_at(i)->check_no_old_or_obsolete_entries()) {
       return false;
     }
@@ -811,7 +804,7 @@ bool ConstantPoolCache::check_no_old_or_obsolete_entries() {
 
 void ConstantPoolCache::dump_cache() {
   for (int i = 1; i < length(); i++) {
-    if (entry_at(i)->get_interesting_method_entry(NULL) != NULL) {
+    if (entry_at(i)->get_interesting_method_entry() != NULL) {
       entry_at(i)->print(tty, i);
     }
   }

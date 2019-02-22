@@ -2917,22 +2917,18 @@ Method* InstanceKlass::method_at_itable(Klass* holder, int index, TRAPS) {
 // not yet in the vtable due to concurrent subclass define and superinterface
 // redefinition
 // Note: those in the vtable, should have been updated via adjust_method_entries
-void InstanceKlass::adjust_default_methods(InstanceKlass* holder, bool* trace_name_printed) {
+void InstanceKlass::adjust_default_methods(bool* trace_name_printed) {
   // search the default_methods for uses of either obsolete or EMCP methods
   if (default_methods() != NULL) {
     for (int index = 0; index < default_methods()->length(); index ++) {
       Method* old_method = default_methods()->at(index);
-      if (old_method == NULL || old_method->method_holder() != holder || !old_method->is_old()) {
+      if (old_method == NULL || !old_method->is_old()) {
         continue; // skip uninteresting entries
       }
       assert(!old_method->is_deleted(), "default methods may not be deleted");
-
-      Method* new_method = holder->method_with_idnum(old_method->orig_method_idnum());
-
-      assert(new_method != NULL, "method_with_idnum() should not be NULL");
-      assert(old_method != new_method, "sanity check");
-
+      Method* new_method = old_method->get_new_method();
       default_methods()->at_put(index, new_method);
+
       if (log_is_enabled(Info, redefine, class, update)) {
         ResourceMark rm;
         if (!(*trace_name_printed)) {

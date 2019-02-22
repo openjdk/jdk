@@ -376,7 +376,7 @@ class ConstantPoolCacheEntry {
   void adjust_method_entry(Method* old_method, Method* new_method,
          bool* trace_name_printed);
   bool check_no_old_or_obsolete_entries();
-  Method* get_interesting_method_entry(Klass* k);
+  Method* get_interesting_method_entry();
 #endif // INCLUDE_JVMTI
 
   // Debugging & Printing
@@ -496,7 +496,7 @@ class ConstantPoolCache: public MetaspaceObj {
   // trace_name_printed is set to true if the current call has
   // printed the klass name so that other routines in the adjust_*
   // group don't print the klass name.
-  void adjust_method_entries(InstanceKlass* holder, bool* trace_name_printed);
+  void adjust_method_entries(bool* trace_name_printed);
   bool check_no_old_or_obsolete_entries();
   void dump_cache();
 #endif // INCLUDE_JVMTI

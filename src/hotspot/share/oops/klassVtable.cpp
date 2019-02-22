@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -942,21 +942,18 @@ bool klassVtable::adjust_default_method(int vtable_index, Method* old_method, Me
 }
 
 // search the vtable for uses of either obsolete or EMCP methods
-void klassVtable::adjust_method_entries(InstanceKlass* holder, bool * trace_name_printed) {
+void klassVtable::adjust_method_entries(bool * trace_name_printed) {
   int prn_enabled = 0;
   for (int index = 0; index < length(); index++) {
     Method* old_method = unchecked_method_at(index);
-    if (old_method == NULL || old_method->method_holder() != holder || !old_method->is_old()) {
+    if (old_method == NULL || !old_method->is_old()) {
       continue; // skip uninteresting entries
     }
     assert(!old_method->is_deleted(), "vtable methods may not be deleted");
 
-    Method* new_method = holder->method_with_idnum(old_method->orig_method_idnum());
-
-    assert(new_method != NULL, "method_with_idnum() should not be NULL");
-    assert(old_method != new_method, "sanity check");
-
+    Method* new_method = old_method->get_new_method();
     put_method_at(new_method, index);
+
     // For default methods, need to update the _default_methods array
     // which can only have one method entry for a given signature
     bool updated_default = false;
@@ -1272,21 +1269,16 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Insta
 
 #if INCLUDE_JVMTI
 // search the itable for uses of either obsolete or EMCP methods
-void klassItable::adjust_method_entries(InstanceKlass* holder, bool * trace_name_printed) {
+void klassItable::adjust_method_entries(bool * trace_name_printed) {
 
   itableMethodEntry* ime = method_entry(0);
   for (int i = 0; i < _size_method_table; i++, ime++) {
     Method* old_method = ime->method();
-    if (old_method == NULL || old_method->method_holder() != holder || !old_method->is_old()) {
+    if (old_method == NULL || !old_method->is_old()) {
       continue; // skip uninteresting entries
     }
     assert(!old_method->is_deleted(), "itable methods may not be deleted");
-
-    Method* new_method = holder->method_with_idnum(old_method->orig_method_idnum());
-
-    assert(new_method != NULL, "method_with_idnum() should not be NULL");
-    assert(old_method != new_method, "sanity check");
-
+    Method* new_method = old_method->get_new_method();
     ime->initialize(new_method);
 
     if (log_is_enabled(Info, redefine, class, update)) {

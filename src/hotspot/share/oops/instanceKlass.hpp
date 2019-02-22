@@ -1141,7 +1141,7 @@ public:
   Method* method_at_itable(Klass* holder, int index, TRAPS);
 
 #if INCLUDE_JVMTI
-  void adjust_default_methods(InstanceKlass* holder, bool* trace_name_printed);
+  void adjust_default_methods(bool* trace_name_printed);
 #endif // INCLUDE_JVMTI
 
   void clean_weak_instanceklass_links();
