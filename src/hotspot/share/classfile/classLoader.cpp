@@ -620,12 +620,13 @@ void ClassLoader::setup_module_search_path(const char* path, TRAPS) {
   update_module_path_entry_list(path, THREAD);
 }
 
+#endif // INCLUDE_CDS
+
 void ClassLoader::close_jrt_image() {
-  assert(ClassLoader::has_jrt_entry(), "Not applicable for exploded builds");
+  // Not applicable for exploded builds
+  if (!ClassLoader::has_jrt_entry()) return;
   _jrt_entry->close_jimage();
 }
-
-#endif // INCLUDE_CDS
 
 // Construct the array of module/path pairs as specified to --patch-module
 // for the boot loader to search ahead of the jimage, if the class being

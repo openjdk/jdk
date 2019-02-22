@@ -1359,11 +1359,9 @@ void os::shutdown() {
 void os::abort(bool dump_core, void* siginfo, const void* context) {
   os::shutdown();
   if (dump_core) {
-#ifndef ZERO
     if (DumpPrivateMappingsInCore) {
       ClassLoader::close_jrt_image();
     }
-#endif
 #ifndef PRODUCT
     fdStream out(defaultStream::output_fd());
     out.print_raw("Current thread is ");
