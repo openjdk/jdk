@@ -436,18 +436,16 @@ Symbol* SymbolTable::lookup_only_unicode(const jchar* name, int utf16_length,
   }
 }
 
-void SymbolTable::add(ClassLoaderData* loader_data, const constantPoolHandle& cp,
-                      int names_count, const char** names, int* lengths,
-                      int* cp_indices, unsigned int* hashValues, TRAPS) {
+void SymbolTable::new_symbols(ClassLoaderData* loader_data, const constantPoolHandle& cp,
+                              int names_count, const char** names, int* lengths,
+                              int* cp_indices, unsigned int* hashValues, TRAPS) {
   bool c_heap = !loader_data->is_the_null_class_loader_data();
   for (int i = 0; i < names_count; i++) {
     const char *name = names[i];
     int len = lengths[i];
     unsigned int hash = hashValues[i];
-    Symbol* sym = SymbolTable::the_table()->lookup_common(name, len, hash);
-    if (sym == NULL) {
-      sym = SymbolTable::the_table()->do_add_if_needed(name, len, hash, c_heap, CHECK);
-    }
+    assert(SymbolTable::the_table()->lookup_shared(name, len, hash) == NULL, "must have checked already");
+    Symbol* sym = SymbolTable::the_table()->do_add_if_needed(name, len, hash, c_heap, CHECK);
     assert(sym->refcount() != 0, "lookup should have incremented the count");
     cp->symbol_at_put(cp_indices[i], sym);
   }
