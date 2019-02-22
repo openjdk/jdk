@@ -270,6 +270,25 @@ class Heap$Type$Buffer$RW$
 #end[rw]
     }
 
+#if[char]
+
+    public $Type$Buffer put(String src, int start, int end) {
+        int length = end - start;
+        checkBounds(start, length, src.length());
+        if (isReadOnly())
+            throw new ReadOnlyBufferException();
+        int pos = position();
+        int lim = limit();
+        int rem = (pos <= lim) ? lim - pos : 0;
+        if (length > rem)
+            throw new BufferOverflowException();
+        src.getChars(start, end, hb, ix(pos));
+        position(pos + length);
+        return this;
+    }
+
+#end[char]
+
     public $Type$Buffer compact() {
 #if[rw]
         System.arraycopy(hb, ix(position()), hb, ix(0), remaining());
