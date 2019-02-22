@@ -756,6 +756,13 @@ public class Start extends ToolOption.Helper {
                 }
                 String text = messager.getText("main.doclet_class_not_found", userDocletName);
                 throw new ToolException(CMDERR, text, cnfe);
+            } catch (NoClassDefFoundError ncfe) {
+                if (ncfe.getMessage().contains("com/sun/javadoc/Doclet")) {
+                    String text = messager.getText("main.not_a_doclet", userDocletName);
+                    throw new ToolException(ERROR, text, ncfe);
+                } else {
+                    throw ncfe;
+                }
             }
         }
 
