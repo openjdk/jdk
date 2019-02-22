@@ -63,9 +63,6 @@ module jdk.javadoc {
     requires transitive java.compiler;
     requires transitive jdk.compiler;
 
-    exports com.sun.javadoc;
-    exports com.sun.tools.javadoc;
-
     exports jdk.javadoc.doclet;
 
     provides java.util.spi.ToolProvider with

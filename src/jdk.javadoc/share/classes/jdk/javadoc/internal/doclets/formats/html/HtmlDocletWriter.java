@@ -1652,7 +1652,7 @@ public class HtmlDocletWriter {
      * If this link appeared in the index, we would redirect
      * the link like this:
      *
-     * {@literal <a href="./com/sun/javadoc/package-summary.html">The package Page</a>}
+     * {@literal <a href="./jdk/javadoc/doclet/package-summary.html">The package Page</a>}
      *
      * @param element the Element object whose documentation is being written.
      * @param tt the text being written.
