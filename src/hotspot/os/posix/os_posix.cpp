@@ -191,10 +191,6 @@ int os::create_file_for_heap(const char* dir) {
 
   os::native_path(fullname);
 
-  sigset_t set, oldset;
-  int ret = sigfillset(&set);
-  assert_with_errno(ret == 0, "sigfillset returned error");
-
   // set the file creation mask.
   mode_t file_mode = S_IRUSR | S_IWUSR;
 
@@ -208,7 +204,7 @@ int os::create_file_for_heap(const char* dir) {
   }
 
   // delete the name from the filesystem. When 'fd' is closed, the file (and space) will be deleted.
-  ret = unlink(fullname);
+  int ret = unlink(fullname);
   assert_with_errno(ret == 0, "unlink returned error");
 
   os::free(fullname);
