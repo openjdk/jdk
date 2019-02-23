@@ -356,11 +356,11 @@ void xmlStream::va_done(const char* format, va_list ap) {
   size_t kind_len;
   if (kind_end != NULL) {
     kind_len = kind_end - kind;
-    int n = snprintf(buffer, sizeof(buffer), "%.*s_done", (int)kind_len, kind);
+    int n = os::snprintf(buffer, sizeof(buffer), "%.*s_done", (int)kind_len, kind);
     assert((size_t)n < sizeof(buffer), "Unexpected number of characters in string");
   } else {
     kind_len = format_len;
-    int n = snprintf(buffer, sizeof(buffer), "%s_done%s", kind, kind + kind_len);
+    int n = os::snprintf(buffer, sizeof(buffer), "%s_done%s", kind, kind + kind_len);
     assert((size_t)n < sizeof(buffer), "Unexpected number of characters in string");
   }
   // Output the trailing event with the timestamp.

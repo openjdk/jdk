@@ -208,7 +208,7 @@ void ClassLoaderExt::process_jar_manifest(ClassPathEntry* entry,
         ResourceMark rm(THREAD);
         size_t libname_len = dir_len + name_len;
         char* libname = NEW_RESOURCE_ARRAY(char, libname_len + 1);
-        int n = snprintf(libname, libname_len + 1, "%.*s%s", dir_len, dir_name, file_start);
+        int n = os::snprintf(libname, libname_len + 1, "%.*s%s", dir_len, dir_name, file_start);
         assert((size_t)n == libname_len, "Unexpected number of characters in string");
         trace_class_path("library = ", libname);
         ClassLoader::update_class_path_entry_list(libname, true, false);

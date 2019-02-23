@@ -180,7 +180,7 @@ template <> void DCmdArgument<char*>::parse_value(const char* str,
     _value = NULL;
   } else {
     _value = NEW_C_HEAP_ARRAY(char, len + 1, mtInternal);
-    int n = snprintf(_value, len + 1, "%.*s", (int)len, str);
+    int n = os::snprintf(_value, len + 1, "%.*s", (int)len, str);
     assert((size_t)n <= len, "Unexpected number of characters in string");
   }
 }

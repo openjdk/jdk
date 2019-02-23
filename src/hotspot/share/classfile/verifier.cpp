@@ -2982,14 +2982,14 @@ void ClassVerifier::verify_anewarray(
     // add one dimension to component
     length++;
     arr_sig_str = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, length + 1);
-    int n = snprintf(arr_sig_str, length + 1, "[%s", component_name);
+    int n = os::snprintf(arr_sig_str, length + 1, "[%s", component_name);
     assert(n == length, "Unexpected number of characters in string");
   } else {         // it's an object or interface
     const char* component_name = component_type.name()->as_utf8();
     // add one dimension to component with 'L' prepended and ';' postpended.
     length = (int)strlen(component_name) + 3;
     arr_sig_str = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, length + 1);
-    int n = snprintf(arr_sig_str, length + 1, "[L%s;", component_name);
+    int n = os::snprintf(arr_sig_str, length + 1, "[L%s;", component_name);
     assert(n == length, "Unexpected number of characters in string");
   }
   Symbol* arr_sig = create_temporary_symbol(

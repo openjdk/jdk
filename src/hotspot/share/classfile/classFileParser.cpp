@@ -60,6 +60,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/os.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/reflection.hpp"
 #include "runtime/safepointVerifiers.hpp"
@@ -5747,8 +5748,8 @@ void ClassFileParser::prepend_host_package_name(const InstanceKlass* unsafe_anon
     int class_name_len = _class_name->utf8_length();
     int symbol_len = host_pkg_len + 1 + class_name_len;
     char* new_anon_name = NEW_RESOURCE_ARRAY(char, symbol_len + 1);
-    int n = snprintf(new_anon_name, symbol_len + 1, "%s/%.*s",
-                     host_pkg_name, class_name_len, _class_name->base());
+    int n = os::snprintf(new_anon_name, symbol_len + 1, "%s/%.*s",
+                         host_pkg_name, class_name_len, _class_name->base());
     assert(n == symbol_len, "Unexpected number of characters in string");
 
     // Decrement old _class_name to avoid leaking.
