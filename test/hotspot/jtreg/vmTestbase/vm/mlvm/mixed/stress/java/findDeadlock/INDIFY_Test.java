@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.lang.invoke.MutableCallSite;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.lang.reflect.Method;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -53,6 +54,7 @@ public class INDIFY_Test extends MlvmTest {
     static MutableCallSite[] _cs = new MutableCallSite[THREAD_NUM];
 
     static CyclicBarrier _threadRaceStartBarrier;
+    static CountDownLatch _threadsRunningLatch;
     static volatile boolean _testFailed;
     static volatile boolean _testDone;
     static volatile int _iteration;
@@ -63,22 +65,22 @@ public class INDIFY_Test extends MlvmTest {
         boolean locked = false;
         place =  Thread.currentThread().getName() + ": " + place;
         if ( ! lockInterruptible ) {
-            Env.traceVerbose(place + ": Locking " + n);
+            Env.traceVerbose("Iteration " + _iteration + " " + place + ": Locking " + n);
             _locks[n].lock();
             locked = true;
         } else {
             try {
-                Env.traceVerbose(place + ": Locking interruptibly " + n);
+                Env.traceVerbose("Iteration " + _iteration + " " + place + ": Locking interruptibly " + n);
                 _locks[n].lockInterruptibly();
                 locked = true;
 
                 if ( ! _testDone )
                     throw new Exception(place + ": LOCKED " + n);
                 else
-                    Env.traceVerbose(place + ": LOCKED " + n);
+                    Env.traceVerbose("Iteration " + _iteration + " " + place + ": LOCKED " + n);
 
             } catch ( InterruptedException swallow ) {
-                Env.traceVerbose(place + ": interrupted while locking " + n);
+                Env.traceVerbose("Iteration " + _iteration + " " + place + ": interrupted while locking " + n);
             }
         }
 
@@ -87,9 +89,9 @@ public class INDIFY_Test extends MlvmTest {
 
     private static boolean unlock(String place, int n) throws Throwable {
         place =  Thread.currentThread().getName() + ": " + place;
-        Env.traceVerbose(place + ": Unlocking " + n);
+        Env.traceVerbose("Iteration " + _iteration + " " + place + ": Unlocking " + n);
         _locks[n].unlock();
-        Env.traceVerbose(place + ": UNLOCKED " + n);
+        Env.traceVerbose("Iteration " + _iteration + " " + place + ": UNLOCKED " + n);
         return false;
     }
 
@@ -98,7 +100,7 @@ public class INDIFY_Test extends MlvmTest {
 
         if ( l instanceof MethodHandles.Lookup ) {
             // Method is used as BSM
-            Env.traceVerbose(thread.getName() + ": Entered BSM. Lock=" + lockNum);
+            Env.traceVerbose("Iteration " + _iteration + " " + thread.getName() + ": Entered BSM. Lock=" + lockNum);
 
             if ( _iteration > 0 )
                 throw new Exception("BSM called twice!");
@@ -107,6 +109,7 @@ public class INDIFY_Test extends MlvmTest {
             case 0:
                 thread._lockedCurrent = lock("BSM", lockNum, false);
                 _threadRaceStartBarrier.await();
+                _threadsRunningLatch.countDown();
                 thread._lockedNext = lock("BSM", nextLock(lockNum), true);
                 break;
 
@@ -123,7 +126,7 @@ public class INDIFY_Test extends MlvmTest {
 
         } else {
             // Method is used as target
-            Env.traceVerbose(thread.getName() + ": Entered target method. Lock=" + lockNum);
+            Env.traceVerbose("Iteration " + _iteration + " " + thread.getName() + ": Entered target method. Lock=" + lockNum);
 
             try {
                 if ( _iteration > 0 ) {
@@ -132,26 +135,29 @@ public class INDIFY_Test extends MlvmTest {
                     case 0:
                         thread._lockedCurrent = lock("Target", lockNum, false);
                         _threadRaceStartBarrier.await();
+                        _threadsRunningLatch.countDown();
                         thread._lockedNext = lock("Target", nextLock(lockNum), true);
                         break;
 
                     case 1:
                         thread._lockedCurrent = lock("Target", lockNum, false);
                         _threadRaceStartBarrier.await();
-                        Env.traceVerbose(thread.getName() + ": Entering synchronize ( " + lockNum + " )");
+                        _threadsRunningLatch.countDown();
+                        Env.traceVerbose("Iteration " + _iteration + " " + thread.getName() + ": Entering synchronize ( " + lockNum + " )");
                         synchronized ( _locks[nextLock(lockNum)] ) {
                         }
-                        Env.traceVerbose(thread.getName() + ": Exited synchronize ( " + lockNum + " )");
+                        Env.traceVerbose("Iteration " + _iteration + " " + thread.getName() + ": Exited synchronize ( " + lockNum + " )");
                         break;
 
                     case 2:
-                        Env.traceVerbose(thread.getName() + ": Entering synchronize ( " + lockNum + " )");
+                        Env.traceVerbose("Iteration " + _iteration + " " + thread.getName() + ": Entering synchronize ( " + lockNum + " )");
                         synchronized ( _locks[lockNum] ) {
                             _threadRaceStartBarrier.await();
+                            _threadsRunningLatch.countDown();
                             thread._lockedNext = lock("Target", nextLock(lockNum), true);
                             thread._lockedNext = unlock("Target", nextLock(lockNum));
                         }
-                        Env.traceVerbose(thread.getName() + ": Exited synchronize ( " + lockNum + " )");
+                        Env.traceVerbose("Iteration " + _iteration + " " + thread.getName() + ": Exited synchronize ( " + lockNum + " )");
                         break;
                     }
 
@@ -163,12 +169,14 @@ public class INDIFY_Test extends MlvmTest {
 
                     case 1:
                         _threadRaceStartBarrier.await();
+                        _threadsRunningLatch.countDown();
                         thread._lockedNext = lock("Target", nextLock(lockNum), true);
                         break;
 
                     case 2:
                         thread._lockedCurrent = lock("Target", lockNum, false);
                         _threadRaceStartBarrier.await();
+                        _threadsRunningLatch.countDown();
                         thread._lockedNext = lock("Target", nextLock(lockNum), true);
                         break;
                     }
@@ -18205,8 +18213,9 @@ public class INDIFY_Test extends MlvmTest {
     }
 
     boolean test() throws Throwable {
-        Env.traceNormal("Starting test...");
+        Env.traceNormal("Iteration " + _iteration + " Starting test...");
 
+        // Sanity check that all the locks are available.
         for ( int i = 0; i < THREAD_NUM; i++ ) {
             if ( _locks[i].isLocked() ) {
                 Env.getLog().complain("Lock " + i + " is still locked!");
@@ -18217,60 +18226,87 @@ public class INDIFY_Test extends MlvmTest {
         if ( _testFailed )
             throw new Exception("Some locks are still locked");
 
+        // Threads generally wait on this after claiming their first lock,
+        // and then when released will try to claim the second, which leads
+        // to deadlock.
         _threadRaceStartBarrier = new CyclicBarrier(THREAD_NUM + 1);
+
+        // Threads signal this latch after being released from the startbarrier
+        // so that they are closer to triggering deadlock before the main thread
+        // starts to check for it.
+        _threadsRunningLatch = new CountDownLatch(THREAD_NUM);
+
         _testDone = false;
         _testFailed = false;
 
-        for ( int i = 0; i < THREAD_NUM; i++ )
+        // Start the new batch of threads.
+        for ( int i = 0; i < THREAD_NUM; i++ ) {
             (_threads[i] = new DeadlockedThread(i)).start();
+        }
 
         try {
-            _threadRaceStartBarrier.await();
-            Env.traceVerbose("Start race...");
-
-            //
-            // Wait for the deadlock and detect it using ThreadMXBean
-            //
-
-            boolean resultsReady = false;
-            for ( int i = 0; i < 10 && ! resultsReady && ! _testFailed; i++ ) {
-                Env.traceNormal("Waiting for threads to lock up...");
-                Thread.sleep(100);
-
-                resultsReady = true;
-                for ( int t = 0; t < THREAD_NUM; t++ ) {
-                    if ( _iteration == 0 && t % 3 != 2 && ! _locks[t].hasQueuedThreads() ) {
-                        Env.traceVerbose("Lock " + t + ": no waiters");
-                        resultsReady = false;
-                    } else {
-                        Env.traceVerbose("Lock " + t + ": has waiters");
-                    }
-                }
+            // If a thread encounters an error before it reaches the start barrier
+            // then we will hang here until the test times out. So we do a token
+            // check for such failure.
+            if (_testFailed) {
+                Env.complain("Unexpected thread failure before startBarrier was reached");
+                return false;
             }
 
-            if ( ! resultsReady )
-                Env.traceImportant("Warning: threads are still not deadlocked?");
+            _threadRaceStartBarrier.await();
+            Env.traceVerbose("Iteration " + _iteration + " Start race...");
 
-            long[] deadlockedThreads = _threadMXBean.findDeadlockedThreads();
-            if ( deadlockedThreads == null ) {
-                Env.complain("Found no deadlocked threads. Expected to find " + THREAD_NUM);
+            // Wait till all threads poised to deadlock. Again we may hang here
+            // if unexpected errors are encountered, so again a token check.
+            if (_testFailed) {
+                Env.complain("Unexpected thread failure after startBarrier was reached");
                 return false;
-            } else if ( deadlockedThreads.length != THREAD_NUM ) {
+            }
+
+            _threadsRunningLatch.await();
+
+            // There is a race now between checking for a deadlock and the threads
+            // actually engaging in that deadlock. We can't query all of the "locks"
+            // involved to see if they are owned and have waiters (no API for built-in
+            // monitors). Nor can we check the thread states because they could be blocked
+            // on incidental synchronization (like I/O monitors when logging is enabled).
+            // So we simply loop checking for a deadlock until we find it, or else the
+            // overall test times out.
+
+            long[] deadlockedThreads = null;
+            do {
+                deadlockedThreads = _threadMXBean.findDeadlockedThreads();
+            } while (deadlockedThreads == null && !_testFailed);
+
+            if (_testFailed) {
+                Env.complain("Unexpected thread failure while checking for deadlock");
+                return false;
+            }
+
+            if (deadlockedThreads.length != THREAD_NUM) {
                 Env.complain("Found " + deadlockedThreads.length + " deadlocked threads. Expected to find " + THREAD_NUM);
                 return false;
             } else {
                 Env.traceNormal("Found " + deadlockedThreads.length + " deadlocked threads as expected");
-                return ! _testFailed;
+                return true;
             }
         } finally {
+            // Tells the locking threads the interrupt was expected.
             _testDone = true;
 
+            // Break the deadlock by dropping the attempt to lock
+            // the interruptible locks, which then causes all other
+            // locks to be released and allow threads acquiring
+            // non-interruptible locks to proceed.
             _threads[0].interrupt();
 
-            for ( int i = 0; i < THREAD_NUM; i++ ) {
-                _threads[i].join(1000);
-                if ( _threads[i].isAlive() )
-                    Env.getLog().complain("Thread " + _threads[i].getName() + " is still alive");
+            // Wait for all threads to terminate before proceeding to next
+            // iteration. If we only join() for a limited time and its too short
+            // then we not only complain here, but will also find locks that are
+            // still locked. It is far simpler to only proceed when all threads
+            // are done and rely on the overall test timeout to detect problems.
+            for (int i = 0; i < THREAD_NUM; i++) {
+                _threads[i].join();
             }
 
             MutableCallSite.syncAll(_cs);
