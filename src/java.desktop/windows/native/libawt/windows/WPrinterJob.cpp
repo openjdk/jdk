@@ -249,7 +249,7 @@ Java_sun_print_PrintServiceLookupProvider_getRemotePrintersNames(JNIEnv *env,
     if (clazz == NULL) {
         return NULL;
     }
-    jobjectArray nameArray;
+    jobjectArray nameArray = NULL;
 
     try {
         ::EnumPrinters(PRINTER_ENUM_LOCAL | PRINTER_ENUM_CONNECTIONS,
@@ -270,13 +270,14 @@ Java_sun_print_PrintServiceLookupProvider_getRemotePrintersNames(JNIEnv *env,
                 }
             }
 
-            // Allocate space only for the network type printers
-            nameArray = env->NewObjectArray(remotePrintersCount, clazz, NULL);
-            if (nameArray == NULL) {
-                throw std::bad_alloc();
+            // return remote printers only if the list contains it.
+            if (remotePrintersCount > 0) {
+                // Allocate space only for the network type printers
+                nameArray = env->NewObjectArray(remotePrintersCount, clazz, NULL);
+                if (nameArray == NULL) {
+                    throw std::bad_alloc();
+                }
             }
-        } else {
-            nameArray = NULL;
         }
 
         // Loop thro' network printers list only
@@ -298,7 +299,12 @@ Java_sun_print_PrintServiceLookupProvider_getRemotePrintersNames(JNIEnv *env,
 
     delete [] pPrinterEnum;
     delete [] pNetworkPrinterLoc;
-    return nameArray;
+
+    if (nameArray != NULL) {
+      return nameArray;
+    } else {
+      return env->NewObjectArray(0, clazz, NULL);
+    }
 
     CATCH_BAD_ALLOC_RET(NULL);
 }
