@@ -24,6 +24,7 @@
 import java.io.File;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
+import java.net.UnknownHostException;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,33 +34,32 @@ import jdk.test.lib.thread.ProcessThread;
 import jdk.test.lib.process.ProcessTools;
 
 /**
- * NOTE:
- *    This test requires at least a setup similar to the following in
- *    /etc/hosts file (or the windows equivalent). I.e. it expects it to
- *    be multi-homed and not both being the loop-back interface.
- *    For example:
- *    ----->8-------- /etc/hosts ----------->8---
- *    127.0.0.1   localhost
- *    192.168.0.1 localhost
- *    ----->8-------- /etc/hosts ----------->8---
- *
  * @test
  * @bug     6425769
  * @summary Test JMX agent host address binding. Same ports but different
- *          interfaces to bind to (using plain sockets and SSL sockets).
+ *          interfaces to bind to (selecting plain or SSL sockets at random
+ * @key intermittent
  *
  * @library /test/lib
  * @modules java.management.rmi
  *
  * @build JMXAgentInterfaceBinding
- * @run main/timeout=5 JMXInterfaceBindingTest
+ * @run main/timeout=60 JMXInterfaceBindingTest
  */
 public class JMXInterfaceBindingTest {
 
     public static final int COMMUNICATION_ERROR_EXIT_VAL = 1;
-    public static final int STOP_PROCESS_EXIT_VAL = 143;
-    public static final int JMX_PORT = 9111;
-    public static final int RMI_PORT = 9112;
+    public static final int STOP_PROCESS_EXIT_VAL = 10;
+    public static final int JMX_PORT_RANGE_LOWER = 9100;
+    public static final int JMX_PORT_RANGE_UPPER = 9200;
+    public static final int JMX_PORT = getRandomPortInRange(JMX_PORT_RANGE_LOWER,
+                                                            JMX_PORT_RANGE_UPPER);
+    public static final int JMX_PORT_RANGE_LOWER_SSL = 9201; // 9200 might be RMI Port
+    public static final int JMX_PORT_RANGE_UPPER_SSL = 9300;
+    public static final int JMX_PORT_SSL = getRandomPortInRange(JMX_PORT_RANGE_LOWER_SSL,
+                                                                JMX_PORT_RANGE_UPPER_SSL);
+    public static final int RMI_PORT = JMX_PORT + 1;
+    public static final int RMI_PORT_SSL = JMX_PORT_SSL + 1;
     public static final String READY_MSG = "MainThread: Ready for connections";
     public static final String TEST_CLASS = JMXAgentInterfaceBinding.class.getSimpleName();
     public static final String KEYSTORE_LOC = System.getProperty("test.src", ".") +
@@ -89,8 +89,8 @@ public class JMXInterfaceBindingTest {
             System.out.println();
             String msg = String.format("DEBUG: Launching java tester for triplet (HOSTNAME,JMX_PORT,RMI_PORT) == (%s,%d,%d)",
                     address,
-                    JMX_PORT,
-                    RMI_PORT);
+                    useSSL ? JMX_PORT_SSL : JMX_PORT,
+                    useSSL ? RMI_PORT_SSL : RMI_PORT);
             System.out.println(msg);
             ProcessThread jvm = runJMXBindingTest(address, useSSL);
             jvms.add(jvm);
@@ -100,9 +100,9 @@ public class JMXInterfaceBindingTest {
         int failedProcesses = 0;
         for (ProcessThread pt: jvms) {
             try {
-                pt.stopProcess();
+                pt.sendMessage("Exit: " + STOP_PROCESS_EXIT_VAL);
                 pt.join();
-            } catch (InterruptedException e) {
+            } catch (Throwable e) {
                 System.err.println("Failed to stop process: " + pt.getName());
                 throw new RuntimeException("Test failed", e);
             }
@@ -131,10 +131,12 @@ public class JMXInterfaceBindingTest {
         args.add("-classpath");
         args.add(TEST_CLASSPATH);
         args.add("-Dcom.sun.management.jmxremote.host=" + address);
-        args.add("-Dcom.sun.management.jmxremote.port=" + JMX_PORT);
-        args.add("-Dcom.sun.management.jmxremote.rmi.port=" + RMI_PORT);
+        args.add("-Dcom.sun.management.jmxremote.port=" + (useSSL ? JMX_PORT_SSL : JMX_PORT));
+        args.add("-Dcom.sun.management.jmxremote.rmi.port=" + (useSSL ? RMI_PORT_SSL : RMI_PORT));
         args.add("-Dcom.sun.management.jmxremote.authenticate=false");
         args.add("-Dcom.sun.management.jmxremote.ssl=" + Boolean.toString(useSSL));
+        // This is needed for testing on loopback
+        args.add("-Djava.rmi.server.hostname=" + address);
         if (useSSL) {
             args.add("-Dcom.sun.management.jmxremote.registry.ssl=true");
             args.add("-Djavax.net.ssl.keyStore=" + KEYSTORE_LOC);
@@ -144,8 +146,8 @@ public class JMXInterfaceBindingTest {
         }
         args.add(TEST_CLASS);
         args.add(address);
-        args.add(Integer.toString(JMX_PORT));
-        args.add(Integer.toString(RMI_PORT));
+        args.add(Integer.toString(useSSL ? JMX_PORT_SSL : JMX_PORT));
+        args.add(Integer.toString(useSSL ? RMI_PORT_SSL : RMI_PORT));
         args.add(Boolean.toString(useSSL));
         try {
             ProcessBuilder builder = ProcessTools.createJavaProcessBuilder(args.toArray(new String[] {}));
@@ -175,35 +177,42 @@ public class JMXInterfaceBindingTest {
         }
     }
 
+    private static int getRandomPortInRange(int lower, int upper) {
+        if (upper <= lower) {
+            throw new IllegalArgumentException("upper <= lower");
+        }
+        int range = upper - lower;
+        int randPort = lower + (int)(Math.random() * range);
+        return randPort;
+    }
+
     public static void main(String[] args) {
-        List<InetAddress> addrs = getAddressesForLocalHost();
-        if (addrs.size() < 2) {
-            System.out.println("Ignoring manual test since no more than one IPs are configured for 'localhost'");
+        List<InetAddress> addrs = getNonLoopbackAddressesForLocalHost();
+        if (addrs.isEmpty()) {
+            System.out.println("Ignoring test since no non-loopback IPs are available to bind to " +
+                               "in addition to the loopback interface.");
             return;
         }
         JMXInterfaceBindingTest test = new JMXInterfaceBindingTest();
+        // Add loopback interface too as we'd like to verify whether it's
+        // possible to bind to multiple addresses on the same host. This
+        // wasn't possible prior JDK-6425769. It used to bind to *all* local
+        // interfaces. We add loopback here, since that eases test setup.
+        addrs.add(InetAddress.getLoopbackAddress());
         test.run(addrs);
         System.out.println("All tests PASSED.");
     }
 
-    private static List<InetAddress> getAddressesForLocalHost() {
-
+    private static List<InetAddress> getNonLoopbackAddressesForLocalHost() {
+        List<InetAddress> addrs = new ArrayList<>();
         try {
-            return NetworkInterface.networkInterfaces()
-                .flatMap(NetworkInterface::inetAddresses)
-                .filter(JMXInterfaceBindingTest::isNonloopbackLocalhost)
-                .collect(Collectors.toList());
-        } catch (SocketException e) {
+            InetAddress localHost = InetAddress.getLocalHost();
+            if (!localHost.isLoopbackAddress()) {
+                addrs.add(localHost);
+            }
+            return addrs;
+        } catch (UnknownHostException e) {
             throw new RuntimeException("Test failed", e);
         }
-    }
-
-    // we need 'real' localhost addresses only (eg. not loopback ones)
-    // so we can bind the remote JMX connector to them
-    private static boolean isNonloopbackLocalhost(InetAddress i) {
-        if (!i.isLoopbackAddress()) {
-            return i.getHostName().toLowerCase().equals("localhost");
-        }
-        return false;
     }
 }
