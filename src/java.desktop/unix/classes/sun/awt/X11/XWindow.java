@@ -449,14 +449,7 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
             if (!doEraseBackground()) {
                 return;
             }
-            // 6304250: XAWT: Items in choice show a blue border on OpenGL + Solaris10 when background color is set
-            // Note: When OGL is enabled, surfaceData.pixelFor() will not
-            // return a pixel value appropriate for passing to
-            // XSetWindowBackground().  Therefore, we will use the ColorModel
-            // for this component in order to calculate a pixel value from
-            // the given RGB value.
-            ColorModel cm = getColorModel();
-            int pixel = PixelConverter.instance.rgbToPixel(c.getRGB(), cm);
+            int pixel = surfaceData.pixelFor(c.getRGB());
             XlibWrapper.XSetWindowBackground(XToolkit.getDisplay(), getContentWindow(), pixel);
             XlibWrapper.XClearWindow(XToolkit.getDisplay(), getContentWindow());
         }
