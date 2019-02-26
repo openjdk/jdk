@@ -1362,6 +1362,19 @@ public class CSS implements Serializable {
         } else {
             digits = value;
         }
+        // Some webpage passes 3 digit color code as in #fff which is
+        // decoded as #000FFF resulting in blue background.
+        // As per https://www.w3.org/TR/CSS1/#color-units,
+        // The three-digit RGB notation (#rgb) is converted into six-digit form
+        // (#rrggbb) by replicating digits, not by adding zeros.
+        // This makes sure that white (#ffffff) can be specified with the short notation
+        // (#fff) and removes any dependencies on the color depth of the display.
+        if (digits.length() == 3) {
+            final String r = digits.substring(0, 1);
+            final String g = digits.substring(1, 2);
+            final String b = digits.substring(2, 3);
+            digits = String.format("%s%s%s%s%s%s", r, r, g, g, b, b);
+        }
         String hstr = "0x" + digits;
         Color c;
         try {
