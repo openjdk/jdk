@@ -23,7 +23,6 @@
 
 #include "precompiled.hpp"
 #include "gc/z/zLock.inline.hpp"
-#include "gc/z/zNMethodAllocator.hpp"
 #include "gc/z/zNMethodData.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
@@ -42,12 +41,12 @@ ZNMethodDataOops* ZNMethodDataOops::create(const GrowableArray<oop*>& immediates
   // Allocate memory for the ZNMethodDataOops object
   // plus the immediate oop* array that follows right after.
   const size_t size = ZNMethodDataOops::header_size() + (sizeof(oop*) * immediates.length());
-  void* const mem = ZNMethodAllocator::allocate(size);
+  void* const mem = NEW_C_HEAP_ARRAY(uint8_t, size, mtGC);
   return ::new (mem) ZNMethodDataOops(immediates, has_non_immediates);
 }
 
 void ZNMethodDataOops::destroy(ZNMethodDataOops* oops) {
-  ZNMethodAllocator::free(oops);
+  FREE_C_HEAP_ARRAY(uint8_t, oops);
 }
 
 ZNMethodDataOops::ZNMethodDataOops(const GrowableArray<oop*>& immediates, bool has_non_immediates) :
@@ -81,7 +80,7 @@ ZNMethodData::ZNMethodData() :
     _oops(NULL) {}
 
 ZNMethodData::~ZNMethodData() {
-  ZNMethodAllocator::free(_oops);
+  ZNMethodDataOops::destroy(_oops);
 }
 
 ZReentrantLock* ZNMethodData::lock() {
@@ -93,5 +92,8 @@ ZNMethodDataOops* ZNMethodData::oops() const {
 }
 
 ZNMethodDataOops* ZNMethodData::swap_oops(ZNMethodDataOops* new_oops) {
-  return Atomic::xchg(new_oops, &_oops);
+  ZLocker<ZReentrantLock> locker(&_lock);
+  ZNMethodDataOops* const old_oops = _oops;
+  _oops = new_oops;
+  return old_oops;
 }
