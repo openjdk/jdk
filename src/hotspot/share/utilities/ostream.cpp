@@ -559,13 +559,6 @@ void fileStream::flush() {
   fflush(_file);
 }
 
-fdStream::~fdStream() {
-  if (_fd != -1) {
-    if (_need_close) close(_fd);
-    _fd = -1;
-  }
-}
-
 void fdStream::write(const char* s, size_t len) {
   if (_fd != -1) {
     // Make an unused local variable to avoid warning from gcc 4.x compiler.
