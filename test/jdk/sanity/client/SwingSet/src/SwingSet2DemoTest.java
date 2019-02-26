@@ -34,6 +34,7 @@ import org.jtregext.GuiTestListener;
 import org.netbeans.jemmy.ClassReference;
 import org.netbeans.jemmy.ComponentChooser;
 import org.netbeans.jemmy.TimeoutExpiredException;
+import org.netbeans.jemmy.Timeouts;
 import org.netbeans.jemmy.operators.ComponentOperator;
 import org.netbeans.jemmy.operators.JButtonOperator;
 import org.netbeans.jemmy.operators.JCheckBoxMenuItemOperator;
@@ -67,6 +68,7 @@ public class SwingSet2DemoTest {
     private static final String OCEAN_THEME_NAME = "Ocean";
     private static final String STEEL_THEME_NAME = "Steel";
     private static final int TOOLTIP_DISMISS_DELAY = 60000;
+    private final static long TOOLTIP_TIMEOUT = 5000;
 
     /**
      * Testing check box menu item, radio button menu item, nested menus and
@@ -157,6 +159,8 @@ public class SwingSet2DemoTest {
         // tooltip is showing for demo toggle button
         toolTipMenuItem.push();
         toolTipMenuItem.waitSelected(false);
+        // Set tooltip timeout as 5 seconds
+        testComp.getTimeouts().setTimeout("JToolTipOperator.WaitToolTipTimeout", TOOLTIP_TIMEOUT);
         boolean isToolTipTimeout = false;
         try {
             testComp.showToolTip();
