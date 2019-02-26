@@ -138,6 +138,7 @@ class Universe: AllStatic {
   static LatestMethodCache* _finalizer_register_cache; // static method for registering finalizable objects
   static LatestMethodCache* _loader_addClass_cache;    // method for registering loaded classes in class loader vector
   static LatestMethodCache* _throw_illegal_access_error_cache; // Unsafe.throwIllegalAccessError() method
+  static LatestMethodCache* _throw_no_such_method_error_cache; // Unsafe.throwNoSuchMethodError() method
   static LatestMethodCache* _do_stack_walk_cache;      // method for stack walker callback
 
   // preallocated error objects (no backtrace)
@@ -322,6 +323,7 @@ class Universe: AllStatic {
   static Method*      loader_addClass_method()        { return _loader_addClass_cache->get_method(); }
 
   static Method*      throw_illegal_access_error()    { return _throw_illegal_access_error_cache->get_method(); }
+  static Method*      throw_no_such_method_error()    { return _throw_no_such_method_error_cache->get_method(); }
 
   static Method*      do_stack_walk_method()          { return _do_stack_walk_cache->get_method(); }
 
