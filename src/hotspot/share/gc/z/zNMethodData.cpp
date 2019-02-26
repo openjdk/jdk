@@ -76,19 +76,13 @@ bool ZNMethodDataOops::has_non_immediates() const {
   return _has_non_immediates;
 }
 
-ZNMethodData* ZNMethodData::create(nmethod* nm) {
-  void* const mem = ZNMethodAllocator::allocate(sizeof(ZNMethodData));
-  return ::new (mem) ZNMethodData(nm);
-}
-
-void ZNMethodData::destroy(ZNMethodData* data) {
-  ZNMethodAllocator::free(data->oops());
-  ZNMethodAllocator::free(data);
-}
-
-ZNMethodData::ZNMethodData(nmethod* nm) :
+ZNMethodData::ZNMethodData() :
     _lock(),
     _oops(NULL) {}
+
+ZNMethodData::~ZNMethodData() {
+  ZNMethodAllocator::free(_oops);
+}
 
 ZReentrantLock* ZNMethodData::lock() {
   return &_lock;

@@ -34,7 +34,6 @@ class ZWorkers;
 class ZNMethod : public AllStatic {
 private:
   static void attach_gc_data(nmethod* nm);
-  static void detach_gc_data(nmethod* nm);
 
   static void log_register(const nmethod* nm);
   static void log_unregister(const nmethod* nm);
@@ -42,6 +41,7 @@ private:
 public:
   static void register_nmethod(nmethod* nm);
   static void unregister_nmethod(nmethod* nm);
+  static void flush_nmethod(nmethod* nm);
 
   static void disarm_nmethod(nmethod* nm);
 
