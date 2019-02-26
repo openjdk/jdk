@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,8 +126,9 @@ public interface ToolProvider {
     default int run(PrintStream out, PrintStream err, String... args) {
         Objects.requireNonNull(out);
         Objects.requireNonNull(err);
+        Objects.requireNonNull(args);
         for (String arg : args) {
-            Objects.requireNonNull(args);
+            Objects.requireNonNull(arg);
         }
 
         PrintWriter outWriter = new PrintWriter(out);
