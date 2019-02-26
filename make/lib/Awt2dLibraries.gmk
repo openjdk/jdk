@@ -613,7 +613,8 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBFONTMANAGER, \
         type-limits missing-field-initializers implicit-fallthrough \
         strict-aliasing undef unused-function, \
     DISABLED_WARNINGS_CXX_gcc := reorder delete-non-virtual-dtor strict-overflow \
-        maybe-uninitialized, \
+        maybe-uninitialized \
+        missing-attributes class-memaccess, \
     DISABLED_WARNINGS_clang := unused-value incompatible-pointer-types \
         tautological-constant-out-of-range-compare int-to-pointer-cast \
         sign-compare undef missing-field-initializers, \
