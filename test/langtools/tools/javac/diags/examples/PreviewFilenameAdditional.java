@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 // key: compiler.note.preview.filename.additional
 // key: compiler.warn.preview.feature.use
 // key: compiler.misc.feature.diamond
-// options: -Xlint:preview -Xmaxwarns 1 -XDforcePreview  -source 13 --enable-preview
+// options: -Xlint:preview -Xmaxwarns 1 -XDforcePreview  -source ${jdk.version} --enable-preview
 
 import java.util.ArrayList;
 

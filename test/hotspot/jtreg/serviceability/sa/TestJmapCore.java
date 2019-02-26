@@ -138,19 +138,8 @@ public class TestJmapCore {
         if (dumpFile.exists() && dumpFile.isFile()) {
             HprofParser.parse(dumpFile);
         } else {
-            boolean ZGCUsed = false;
-
-            for (String opt: Utils.getFilteredTestJavaOpts()) {
-                if (opt.contains("+UseZGC")) {
-                    ZGCUsed = true;
-                    break;
-                }
-            }
-
-            if (!ZGCUsed) {
-                throw new RuntimeException(
-                    "Could not find dump file " + dumpFile.getAbsolutePath());
-            }
+          throw new RuntimeException(
+            "Could not find dump file " + dumpFile.getAbsolutePath());
         }
 
         System.out.println("PASSED");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,12 +61,13 @@ public class BreakTest {
 
     public static void main(String[] args) throws Exception {
         final JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
+        String sourceVersion = Integer.toString(Runtime.version().feature());
         assert tool != null;
         DiagnosticListener<JavaFileObject> noErrors = d -> {};
 
         StringWriter out = new StringWriter();
         JavacTask ct = (JavacTask) tool.getTask(out, null, noErrors,
-            List.of("-XDdev", "--enable-preview", "-source", "13"), null,
+            List.of("-XDdev", "--enable-preview", "-source", sourceVersion), null,
             Arrays.asList(new MyFileObject(CODE)));
         List<String> labels = new ArrayList<>();
         new TreePathScanner<Void, Void>() {

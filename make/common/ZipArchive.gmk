@@ -62,8 +62,9 @@ define SetupZipArchiveBody
     $1_FIND_LIST := $$($1_SRC)
   endif
 
-  # Find all files in the source tree.
-  $1_ALL_SRCS := $$(call not-containing,_the.,$$(call CacheFind,$$($1_FIND_LIST)))
+  # Find all files in the source tree. Follow symlinks in this find since that is
+  # what zip does.
+  $1_ALL_SRCS := $$(call not-containing,_the.,$$(call CacheFind,$$($1_FIND_LIST), , -L))
 
   # Filter on suffixes if set
   ifneq ($$($1_SUFFIXES),)
@@ -126,10 +127,14 @@ define SetupZipArchiveBody
   $$($1_ZIP) : $$($1_ALL_SRCS) $$($1_EXTRA_DEPS)
 	$$(call LogWarn, Updating $$($1_NAME))
 	$$(call MakeTargetDir)
-	$$(foreach s,$$($1_SRC),(cd $$s && $(ZIPEXE) -qru $$($1_ZIP_OPTIONS) $$@ . \
-	    $$($1_ZIP_INCLUDES) $$($1_ZIP_EXCLUDES) -x \*_the.\* \
-	    $$($1_ZIP_EXCLUDES_$$s) \
-	    || test "$$$$?" = "12" )$$(NEWLINE)) true
+	$$(foreach s,$$($1_SRC), $$(call ExecuteWithLog, \
+	    $$(SUPPORT_OUTPUTDIR)/zip/$$(patsubst $$(OUTPUTDIR)/%,%, $$@), \
+	    (cd $$s && $(ZIPEXE) -qru $$($1_ZIP_OPTIONS) $$@ . \
+	        $$($1_ZIP_INCLUDES) $$($1_ZIP_EXCLUDES) -x \*_the.\* \
+	        $$($1_ZIP_EXCLUDES_$$s) \
+	        || test "$$$$?" = "12" \
+	    ))$$(NEWLINE) \
+	) true \
 	$(TOUCH) $$@
 
   # Add zip to target list

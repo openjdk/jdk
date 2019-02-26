@@ -150,6 +150,9 @@ Mutex*   DCmdFactory_lock             = NULL;
 #if INCLUDE_NMT
 Mutex*   NMTQuery_lock                = NULL;
 #endif
+#if INCLUDE_CDS && INCLUDE_JVMTI
+Mutex*   CDSClassFileStream_lock      = NULL;
+#endif
 
 #define MAX_NUM_MUTEX 128
 static Monitor * _mutex_array[MAX_NUM_MUTEX];
@@ -338,6 +341,9 @@ void mutex_init() {
   def(DCmdFactory_lock             , PaddedMutex  , leaf,        true,  Monitor::_safepoint_check_never);
 #if INCLUDE_NMT
   def(NMTQuery_lock                , PaddedMutex  , max_nonleaf, false, Monitor::_safepoint_check_always);
+#endif
+#if INCLUDE_CDS && INCLUDE_JVMTI
+  def(CDSClassFileStream_lock      , PaddedMutex  , max_nonleaf, false, Monitor::_safepoint_check_always);
 #endif
 }
 

@@ -180,19 +180,16 @@ int os::create_file_for_heap(const char* dir) {
 
   const char name_template[] = "/jvmheap.XXXXXX";
 
-  char *fullname = (char*)os::malloc((strlen(dir) + strlen(name_template) + 1), mtInternal);
+  size_t fullname_len = strlen(dir) + strlen(name_template);
+  char *fullname = (char*)os::malloc(fullname_len + 1, mtInternal);
   if (fullname == NULL) {
     vm_exit_during_initialization(err_msg("Malloc failed during creation of backing file for heap (%s)", os::strerror(errno)));
     return -1;
   }
-  (void)strncpy(fullname, dir, strlen(dir)+1);
-  (void)strncat(fullname, name_template, strlen(name_template));
+  int n = snprintf(fullname, fullname_len + 1, "%s%s", dir, name_template);
+  assert((size_t)n == fullname_len, "Unexpected number of characters in string");
 
   os::native_path(fullname);
-
-  sigset_t set, oldset;
-  int ret = sigfillset(&set);
-  assert_with_errno(ret == 0, "sigfillset returned error");
 
   // set the file creation mask.
   mode_t file_mode = S_IRUSR | S_IWUSR;
@@ -207,7 +204,7 @@ int os::create_file_for_heap(const char* dir) {
   }
 
   // delete the name from the filesystem. When 'fd' is closed, the file (and space) will be deleted.
-  ret = unlink(fullname);
+  int ret = unlink(fullname);
   assert_with_errno(ret == 0, "unlink returned error");
 
   os::free(fullname);
@@ -2218,22 +2215,6 @@ os::PlatformMonitor::~PlatformMonitor() {
   assert_status(status == 0, status, "mutex_destroy");
 }
 
-void os::PlatformMonitor::lock() {
-  int status = pthread_mutex_lock(&_mutex);
-  assert_status(status == 0, status, "mutex_lock");
-}
-
-void os::PlatformMonitor::unlock() {
-  int status = pthread_mutex_unlock(&_mutex);
-  assert_status(status == 0, status, "mutex_unlock");
-}
-
-bool os::PlatformMonitor::try_lock() {
-  int status = pthread_mutex_trylock(&_mutex);
-  assert_status(status == 0 || status == EBUSY, status, "mutex_trylock");
-  return status == 0;
-}
-
 // Must already be locked
 int os::PlatformMonitor::wait(jlong millis) {
   assert(millis >= 0, "negative timeout");
@@ -2260,16 +2241,6 @@ int os::PlatformMonitor::wait(jlong millis) {
     assert_status(status == 0, status, "cond_wait");
     return OS_OK;
   }
-}
-
-void os::PlatformMonitor::notify() {
-  int status = pthread_cond_signal(&_cond);
-  assert_status(status == 0, status, "cond_signal");
-}
-
-void os::PlatformMonitor::notify_all() {
-  int status = pthread_cond_broadcast(&_cond);
-  assert_status(status == 0, status, "cond_broadcast");
 }
 
 #endif // !SOLARIS

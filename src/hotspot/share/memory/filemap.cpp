@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/java.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/memTracker.hpp"
@@ -501,6 +502,16 @@ bool FileMapInfo::validate_shared_path_table() {
   }
 
   _validating_shared_path_table = false;
+
+#if INCLUDE_JVMTI
+  if (_classpath_entries_for_jvmti != NULL) {
+    os::free(_classpath_entries_for_jvmti);
+  }
+  size_t sz = sizeof(ClassPathEntry*) *  _shared_path_table_size;
+  _classpath_entries_for_jvmti = (ClassPathEntry**)os::malloc(sz, mtClass);
+  memset(_classpath_entries_for_jvmti, 0, sz);
+#endif
+
   return true;
 }
 
@@ -550,7 +561,7 @@ bool FileMapInfo::init_from_file(int fd) {
 // Read the FileMapInfo information from the file.
 bool FileMapInfo::open_for_read() {
   _full_path = Arguments::GetSharedArchivePath();
-  int fd = open(_full_path, O_RDONLY | O_BINARY, 0);
+  int fd = os::open(_full_path, O_RDONLY | O_BINARY, 0);
   if (fd < 0) {
     if (errno == ENOENT) {
       // Not locating the shared archive is ok.
@@ -585,7 +596,7 @@ void FileMapInfo::open_for_write() {
   // Use remove() to delete the existing file because, on Unix, this will
   // allow processes that have it open continued access to the file.
   remove(_full_path);
-  int fd = open(_full_path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0444);
+  int fd = os::open(_full_path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0444);
   if (fd < 0) {
     fail_stop("Unable to create shared archive file %s: (%s).", _full_path,
               os::strerror(errno));
@@ -1440,3 +1451,57 @@ void FileMapInfo::stop_sharing_and_unmap(const char* msg) {
     fail_stop("%s", msg);
   }
 }
+
+#if INCLUDE_JVMTI
+ClassPathEntry** FileMapInfo::_classpath_entries_for_jvmti = NULL;
+
+ClassPathEntry* FileMapInfo::get_classpath_entry_for_jvmti(int i, TRAPS) {
+  ClassPathEntry* ent = _classpath_entries_for_jvmti[i];
+  if (ent == NULL) {
+    if (i == 0) {
+      ent = ClassLoader:: get_jrt_entry();
+      assert(ent != NULL, "must be");
+    } else {
+      SharedClassPathEntry* scpe = shared_path(i);
+      assert(scpe->is_jar(), "must be"); // other types of scpe will not produce archived classes
+
+      const char* path = scpe->name();
+      struct stat st;
+      if (os::stat(path, &st) != 0) {
+        char *msg = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, strlen(path) + 128); ;
+        jio_snprintf(msg, strlen(path) + 127, "error in opening JAR file %s", path);
+        THROW_MSG_(vmSymbols::java_io_IOException(), msg, NULL);
+      } else {
+        ent = ClassLoader::create_class_path_entry(path, &st, /*throw_exception=*/true, false, CHECK_NULL);
+      }
+    }
+
+    MutexLocker mu(CDSClassFileStream_lock, THREAD);
+    if (_classpath_entries_for_jvmti[i] == NULL) {
+      _classpath_entries_for_jvmti[i] = ent;
+    } else {
+      // Another thread has beat me to creating this entry
+      delete ent;
+      ent = _classpath_entries_for_jvmti[i];
+    }
+  }
+
+  return ent;
+}
+
+ClassFileStream* FileMapInfo::open_stream_for_jvmti(InstanceKlass* ik, TRAPS) {
+  int path_index = ik->shared_classpath_index();
+  assert(path_index >= 0, "should be called for shared built-in classes only");
+  assert(path_index < (int)_shared_path_table_size, "sanity");
+
+  ClassPathEntry* cpe = get_classpath_entry_for_jvmti(path_index, CHECK_NULL);
+  assert(cpe != NULL, "must be");
+
+  Symbol* name = ik->name();
+  const char* const class_name = name->as_C_string();
+  const char* const file_name = ClassLoader::file_name_for_class_name(class_name,
+                                                                      name->utf8_length());
+  return cpe->open_stream(file_name, THREAD);
+}
+
+#endif

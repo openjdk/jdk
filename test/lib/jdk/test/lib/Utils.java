@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,6 +88,11 @@ public final class Utils {
      */
     public static final String TEST_SRC = System.getProperty("test.src", "").trim();
 
+    /**
+     * Returns the value of 'test.root' system property.
+     */
+    public static final String TEST_ROOT = System.getProperty("test.root", "").trim();
+
     /*
      * Returns the value of 'test.jdk' system property
      */
@@ -96,12 +101,13 @@ public final class Utils {
     /*
      * Returns the value of 'compile.jdk' system property
      */
-    public static final String COMPILE_JDK= System.getProperty("compile.jdk", TEST_JDK);
+    public static final String COMPILE_JDK = System.getProperty("compile.jdk", TEST_JDK);
 
     /**
      * Returns the value of 'test.classes' system property
      */
     public static final String TEST_CLASSES = System.getProperty("test.classes", ".");
+
     /**
      * Defines property name for seed value.
      */
@@ -118,9 +124,9 @@ public final class Utils {
      */
     public static final long SEED = Long.getLong(SEED_PROPERTY_NAME, new Random().nextLong());
     /**
-    * Returns the value of 'test.timeout.factor' system property
-    * converted to {@code double}.
-    */
+     * Returns the value of 'test.timeout.factor' system property
+     * converted to {@code double}.
+     */
     public static final double TIMEOUT_FACTOR;
     static {
         String toFactor = System.getProperty("test.timeout.factor", "1.0");
@@ -128,9 +134,9 @@ public final class Utils {
     }
 
     /**
-    * Returns the value of JTREG default test timeout in milliseconds
-    * converted to {@code long}.
-    */
+     * Returns the value of JTREG default test timeout in milliseconds
+     * converted to {@code long}.
+     */
     public static final long DEFAULT_TEST_TIMEOUT = TimeUnit.SECONDS.toMillis(120);
 
     private Utils() {

@@ -302,6 +302,10 @@ public:
   bool validate_shared_path_table();
   static void update_shared_classpath(ClassPathEntry *cpe, SharedClassPathEntry* ent, TRAPS);
 
+#if INCLUDE_JVMTI
+  static ClassFileStream* open_stream_for_jvmti(InstanceKlass* ik, TRAPS);
+#endif
+
   static SharedClassPathEntry* shared_path(int index) {
     if (index < 0) {
       return NULL;
@@ -348,6 +352,11 @@ public:
   }
 
   address decode_start_address(CDSFileMapRegion* spc, bool with_current_oop_encoding_mode);
+
+#if INCLUDE_JVMTI
+  static ClassPathEntry** _classpath_entries_for_jvmti;
+  static ClassPathEntry* get_classpath_entry_for_jvmti(int i, TRAPS);
+#endif
 };
 
 #endif // SHARE_MEMORY_FILEMAP_HPP

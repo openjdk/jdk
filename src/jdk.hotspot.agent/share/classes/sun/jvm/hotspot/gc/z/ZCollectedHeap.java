@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,20 +25,22 @@
 package sun.jvm.hotspot.gc.z;
 
 import java.io.PrintStream;
+import java.util.Iterator;
 
 import sun.jvm.hotspot.debugger.Address;
 import sun.jvm.hotspot.debugger.OopHandle;
 import sun.jvm.hotspot.gc.shared.CollectedHeap;
 import sun.jvm.hotspot.gc.shared.CollectedHeapName;
+import sun.jvm.hotspot.gc.shared.LiveRegionsClosure;
 import sun.jvm.hotspot.runtime.VM;
 import sun.jvm.hotspot.runtime.VMObjectFactory;
 import sun.jvm.hotspot.types.Type;
 import sun.jvm.hotspot.types.TypeDataBase;
+import sun.jvm.hotspot.utilities.BitMapInterface;
 
 // Mirror class for ZCollectedHeap.
 
 public class ZCollectedHeap extends CollectedHeap {
-
     private static long zHeapFieldOffset;
 
     static {
@@ -70,17 +72,42 @@ public class ZCollectedHeap extends CollectedHeap {
         super(addr);
     }
 
-    public OopHandle oop_load_at(OopHandle handle, long offset) {
-        assert(!VM.getVM().isCompressedOopsEnabled());
+    @Override
+    public long capacity() {
+        return heap().capacity();
+    }
 
-        Address oopAddress = handle.getAddressAt(offset);
+    @Override
+    public long used() {
+        return heap().used();
+    }
 
+
+
+    private OopHandle oop_load_barrier(Address oopAddress) {
         oopAddress = ZBarrier.weak_barrier(oopAddress);
         if (oopAddress == null) {
             return null;
         }
 
         return oopAddress.addOffsetToAsOopHandle(0);
+    }
+
+    @Override
+    public OopHandle oop_load_at(OopHandle handle, long offset) {
+        assert(!VM.getVM().isCompressedOopsEnabled());
+
+        Address oopAddress = handle.getAddressAt(offset);
+
+        return oop_load_barrier(oopAddress);
+    }
+
+    // addr can be either in heap or in native
+    @Override
+    public OopHandle oop_load_in_native(Address addr) {
+        Address oopAddress = addr.getAddressAt(0);
+
+        return oop_load_barrier(oopAddress);
     }
 
     public String oopAddressDescription(OopHandle handle) {
@@ -91,5 +118,20 @@ public class ZCollectedHeap extends CollectedHeap {
         } else {
             return handle.toString();
         }
+    }
+
+    @Override
+    public void liveRegionsIterate(LiveRegionsClosure closure) {
+        Iterator<ZPage> iter = heap().pageTable().activePagesIterator();
+        while (iter.hasNext()) {
+            ZPage page = iter.next();
+            closure.doLiveRegions(page);
+        }
+    }
+
+    @Override
+    public BitMapInterface createBitMap(long size) {
+        // Ignores the size
+        return new ZExternalBitMap(this);
     }
 }

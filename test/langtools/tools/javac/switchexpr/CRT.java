@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,8 @@ public class CRT {
     public static void main(String... args) throws Exception {
         new CRT().run();
     }
+
+    private static final String SOURCE_VERSION = Integer.toString(Runtime.version().feature());
 
     private ToolBox tb = new ToolBox();
 
@@ -151,7 +153,7 @@ public class CRT {
         new JavacTask(tb)
                 .options("-Xjcov",
                          "--enable-preview",
-                         "-source", "13")
+                         "-source", SOURCE_VERSION)
                 .outdir(classes)
                 .sources("public class Test {\n" +
                          code +

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,12 @@ import java.io.*;
 import java.util.*;
 
 import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.gc.shared.*;
 import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
+import sun.jvm.hotspot.utilities.BitMapInterface;
+import sun.jvm.hotspot.utilities.BitMapSegmented;
 
 public abstract class CollectedHeap extends VMObject {
   private static long         reservedFieldOffset;
@@ -58,8 +61,8 @@ public abstract class CollectedHeap extends VMObject {
     return reservedRegion().start();
   }
 
-  public long capacity() { return 0; }
-  public long used()     { return 0; }
+  public abstract long capacity();
+  public abstract long used();
 
   public MemRegion reservedRegion() {
     return new MemRegion(addr.addOffsetTo(reservedFieldOffset));
@@ -75,6 +78,8 @@ public abstract class CollectedHeap extends VMObject {
 
   public abstract CollectedHeapName kind();
 
+  public abstract void liveRegionsIterate(LiveRegionsClosure closure);
+
   public String oopAddressDescription(OopHandle handle) {
       return handle.toString();
   }
@@ -83,10 +88,18 @@ public abstract class CollectedHeap extends VMObject {
       return handle.getOopHandleAt(offset);
   }
 
+  public OopHandle oop_load_in_native(Address addr) {
+      return addr.getOopHandleAt(0);
+  }
+
   public void print() { printOn(System.out); }
   public void printOn(PrintStream tty) {
     MemRegion mr = reservedRegion();
     tty.println("unknown subtype of CollectedHeap @ " + getAddress() + " (" +
                 mr.start() + "," + mr.end() + ")");
+  }
+
+  public BitMapInterface createBitMap(long bits) {
+    return new BitMapSegmented(bits);
   }
 }

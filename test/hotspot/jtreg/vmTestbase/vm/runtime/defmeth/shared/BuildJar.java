@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,13 +41,14 @@ import java.util.Arrays;
  */
 public class BuildJar {
     public static void main(String[] args) {
-        Path manifest = testRoot().resolve("vmTestbase")
-                                  .resolve("vm")
-                                  .resolve("runtime")
-                                  .resolve("defmeth")
-                                  .resolve("shared")
-                                  .resolve("retransform.mf")
-                                  .toAbsolutePath();
+        Path manifest = Paths.get(Utils.TEST_ROOT)
+                             .resolve("vmTestbase")
+                             .resolve("vm")
+                             .resolve("runtime")
+                             .resolve("defmeth")
+                             .resolve("shared")
+                             .resolve("retransform.mf")
+                             .toAbsolutePath();
         if (Files.notExists(manifest)) {
             throw new Error("can't find manifest file: " + manifest);
         }
@@ -89,14 +90,6 @@ public class BuildJar {
             }
         }
         throw new Error("can't find " + file + " in " + Utils.TEST_CLASS_PATH);
-    }
-
-    private static Path testRoot() {
-        Path p = Paths.get(Utils.TEST_SRC);
-        while (!Files.exists(p.resolve("TEST.ROOT"))) {
-            p = p.getParent();
-        }
-        return p;
     }
 }
 

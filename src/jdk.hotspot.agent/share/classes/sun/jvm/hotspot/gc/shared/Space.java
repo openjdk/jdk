@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,9 +88,6 @@ public abstract class Space extends VMObject {
   public OopHandle nextOopHandle(OopHandle handle, long size) {
     return handle.addOffsetToAsOopHandle(size);
   }
-
-  /** returns all MemRegions where live objects are */
-  public abstract List/*<MemRegion>*/ getLiveRegions();
 
   /** Returned value is in bytes */
   public long capacity() { return end().minus(bottom()); }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import java.util.SortedMap;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
@@ -124,11 +123,13 @@ public abstract class AbstractModuleIndexWriter extends HtmlDocletWriter {
      * methods from the sub-class in order to generate Frame or Non
      * Frame format.
      *
-     * @param title the title of the window.
+     * @param title the title of the window
+     * @param description the content for the description META tag
      * @param includeScript boolean set true if windowtitle script is to be included
      * @throws DocFileIOException if there is a problem building the module index file
      */
-    protected void buildModuleIndexFile(String title, boolean includeScript) throws DocFileIOException {
+    protected void buildModuleIndexFile(String title, String description, boolean includeScript)
+            throws DocFileIOException {
         String windowOverview = resources.getText(title);
         Content body = getBody(includeScript, getWindowTitle(windowOverview));
         Content header = HtmlTree.HEADER();
@@ -142,8 +143,10 @@ public abstract class AbstractModuleIndexWriter extends HtmlDocletWriter {
         body.addContent(header);
         body.addContent(main);
         body.addContent(footer);
-        printHtmlDocument(configuration.metakeywords.getOverviewMetaKeywords(title,
-                configuration.doctitle), includeScript, body);
+        printHtmlDocument(
+                configuration.metakeywords.getOverviewMetaKeywords(title, configuration.doctitle),
+                description,
+                body);
     }
 
     /**
@@ -152,11 +155,12 @@ public abstract class AbstractModuleIndexWriter extends HtmlDocletWriter {
      * Frame format.
      *
      * @param title the title of the window.
+     * @param description the content for the description META tag
      * @param includeScript boolean set true if windowtitle script is to be included
      * @param mdle the name of the module being documented
      * @throws DocFileIOException if there is an exception building the module packages index file
      */
-    protected void buildModulePackagesIndexFile(String title,
+    protected void buildModulePackagesIndexFile(String title, String description,
             boolean includeScript, ModuleElement mdle) throws DocFileIOException {
         String windowOverview = resources.getText(title);
         Content body = getBody(includeScript, getWindowTitle(windowOverview));
@@ -171,8 +175,10 @@ public abstract class AbstractModuleIndexWriter extends HtmlDocletWriter {
         body.addContent(header);
         body.addContent(main);
         body.addContent(footer);
-        printHtmlDocument(configuration.metakeywords.getOverviewMetaKeywords(title,
-                configuration.doctitle), includeScript, body);
+        printHtmlDocument(
+                configuration.metakeywords.getOverviewMetaKeywords(title, configuration.doctitle),
+                description,
+                body);
     }
 
     /**

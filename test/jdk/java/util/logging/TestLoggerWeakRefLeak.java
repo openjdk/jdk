@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,7 +123,7 @@ public class TestLoggerWeakRefLeak {
     }
 
     /**
-     * 'vm.heapHisto("-live")' will request a full GC
+     * 'vm.heapHisto("", "-live")' will request a full GC
      */
     private static int getInstanceCountFromHeapHisto() throws AttachNotSupportedException, Exception {
         int instanceCount = 0;
@@ -131,7 +131,7 @@ public class TestLoggerWeakRefLeak {
         HotSpotVirtualMachine vm = (HotSpotVirtualMachine) VirtualMachine
                 .attach(Long.toString(ProcessTools.getProcessId()));
         try {
-            try (InputStream heapHistoStream = vm.heapHisto("-live");
+            try (InputStream heapHistoStream = vm.heapHisto("", "-live");
                     BufferedReader in = new BufferedReader(new InputStreamReader(heapHistoStream))) {
                 String inputLine;
                 while ((inputLine = in.readLine()) != null) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,6 +162,9 @@ public class JdbCommand {
     public static JdbCommand stopIn(String targetClass, String methodName) {
         return new JdbCommand("stop in " + targetClass + "." + methodName);
     }
+    public static JdbCommand stopInThreadid(String targetClass, String methodName, String threadid) {
+        return new JdbCommand("stop " + threadid + " in " + targetClass + "." + methodName);
+    }
     public static JdbCommand thread(int threadNumber) {
         return new JdbCommand("thread " + threadNumber);
     }
@@ -224,6 +227,10 @@ public class JdbCommand {
 
     public static JdbCommand methods(String classId) {
         return new JdbCommand("methods " + classId);
+    }
+
+    public static JdbCommand threads() {
+        return new JdbCommand("threads");
     }
 
     // trace [go] methods [thread]

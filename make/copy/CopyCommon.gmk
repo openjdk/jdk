@@ -66,6 +66,8 @@ endif
 # Setup make rules for copying legal files. This is only needed if the files
 # need to be filtered due to optional components being enabled/disabled.
 # Otherwise CreateJmods.gmk will find the legal files in the original src dirs.
+# If multiple license files with the same name are found, only the first one
+# found will get copied.
 #
 # Parameter 1 is the name of the rule.
 #
@@ -75,10 +77,12 @@ SetupCopyLegalFiles = $(NamedParamsMacroTemplate)
 define SetupCopyLegalFilesBody
   $$(foreach f, $$(filter-out $$(addprefix %/, $$($1_EXCLUDES)), \
       $$(wildcard $$(addsuffix /*, $$(call FindModuleLegalSrcDirs, $$(MODULE))))), \
-    $$(eval $$(call SetupCopyFiles, $1_$$(notdir $$f), \
-        DEST := $$(LEGAL_DST_DIR), \
-        FILES := $$f, \
-    )) \
-    $$(eval $1 += $$($1_$$(notdir $$f))) \
+    $$(if $$(filter $$($1_$$(notdir $$f)), $$($1)), , \
+      $$(eval $$(call SetupCopyFiles, $1_$$(notdir $$f), \
+          DEST := $$(LEGAL_DST_DIR), \
+          FILES := $$f, \
+      )) \
+      $$(eval $1 += $$($1_$$(notdir $$f))) \
+    ) \
   )
 endef

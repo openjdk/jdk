@@ -241,7 +241,7 @@ var getJibProfilesCommon = function (input, data) {
     common.main_profile_names = [
         "linux-x64", "linux-x86", "macosx-x64", "solaris-x64",
         "solaris-sparcv9", "windows-x64", "windows-x86",
-        "linux-aarch64", "linux-arm32"
+        "linux-aarch64", "linux-arm32", "linux-ppc64le", "linux-s390x"
     ];
 
     // These are the base setttings for all the main build profiles.
@@ -464,6 +464,28 @@ var getJibProfilesProfiles = function (input, common, data) {
                 "--with-abi-profile=arm-vfp-hflt", "--disable-warnings-as-errors"
             ],
         },
+
+        "linux-ppc64le": {
+            target_os: "linux",
+            target_cpu: "ppc64le",
+            build_cpu: "x64",
+            dependencies: ["devkit", "build_devkit", "cups"],
+            configure_args: [
+                "--openjdk-target=ppc64le-linux-gnu", "--with-freetype=bundled",
+                "--disable-warnings-as-errors"
+            ],
+        },
+
+        "linux-s390x": {
+            target_os: "linux",
+            target_cpu: "s390x",
+            build_cpu: "x64",
+            dependencies: ["devkit", "build_devkit", "cups"],
+            configure_args: [
+                "--openjdk-target=s390x-linux-gnu", "--with-freetype=bundled",
+                "--disable-warnings-as-errors"
+            ],
+        },
     };
 
     // Add the base settings to all the main profiles
@@ -498,6 +520,15 @@ var getJibProfilesProfiles = function (input, common, data) {
             profiles[maketestName] = concatObjects(profiles[name], testmakeBase);
             profiles[maketestName].default_make_targets = [ "test-make" ];
         });
+
+    // Generate -gcov profiles
+    [ "linux-x64", "macosx-x64" ].forEach(function (name) {
+        var gcovName = name + "-gcov";
+        profiles[gcovName] = clone(profiles[name]);
+        profiles[gcovName].default_make_targets = ["product-bundles", "test-bundles"];
+        profiles[gcovName].configure_args = concat(profiles[gcovName].configure_args,
+            ["--enable-native-coverage", "--disable-warnings-as-errors"]);
+    });
 
     // Profiles for building the zero jvm variant. These are used for verification.
     var zeroProfiles = {
@@ -626,6 +657,12 @@ var getJibProfilesProfiles = function (input, common, data) {
         },
        "linux-arm32": {
             platform: "linux-arm32",
+        },
+       "linux-ppc64le": {
+            platform: "linux-ppc64le",
+        },
+       "linux-s390x": {
+            platform: "linux-s390x",
         }
     }
     // Generate common artifacts for all main profiles
@@ -744,6 +781,40 @@ var getJibProfilesProfiles = function (input, common, data) {
             };
         });
 
+    // Artifacts of gcov (native-code-coverage) profiles
+    [ "linux-x64", "macosx-x64" ].forEach(function (name) {
+        var o = artifactData[name]
+        var pf = o.platform
+        var jdk_subdir = (o.jdk_subdir != null ? o.jdk_subdir : "jdk-" + data.version);
+        var jdk_suffix = (o.jdk_suffix != null ? o.jdk_suffix : "tar.gz");
+        var gcovName = name + "-gcov";
+        profiles[gcovName].artifacts = {
+            jdk: {
+                local: "bundles/\\(jdk.*bin." + jdk_suffix + "\\)",
+                remote: [
+                    "bundles/" + pf + "/jdk-" + data.version + "_" + pf + "_bin-gcov." + jdk_suffix,
+                ],
+                subdir: jdk_subdir,
+                exploded: "images/jdk",
+            },
+            test: {
+                    local: "bundles/\\(jdk.*bin-tests.tar.gz\\)",
+                    remote: [
+                        "bundles/" + pf + "/jdk-" + data.version + "_" + pf + "_bin-gcov-tests.tar.gz",
+                    ],
+                    exploded: "images/test"
+            },
+            jdk_symbols: {
+                    local: "bundles/\\(jdk.*bin-symbols.tar.gz\\)",
+                    remote: [
+                        "bundles/" + pf + "/jdk-" + data.version + "_" + pf + "_bin-gcov-symbols.tar.gz",
+                    ],
+                    subdir: jdk_subdir,
+                    exploded: "images/jdk"
+                },
+            };
+    });
+
     // Profiles used to run tests.
     var testOnlyProfiles = {
         "run-test": {
@@ -770,6 +841,10 @@ var getJibProfilesProfiles = function (input, common, data) {
     } else {
         testedProfileTest = testedProfile + ".test";
     }
+    var testOnlyMake = [ "run-test-prebuilt", "LOG_CMDLINES=true", "JTREG_VERBOSE=fail,error,time" ];
+    if (testedProfile.endsWith("-gcov")) {
+        testOnlyMake = concat(testOnlyMake, "GCOV_ENABLED=true")
+    }
     var testOnlyProfilesPrebuilt = {
         "run-test-prebuilt": {
             target_os: input.build_os,
@@ -779,7 +854,7 @@ var getJibProfilesProfiles = function (input, common, data) {
                 testedProfileTest
             ],
             src: "src.conf",
-            make_args: [ "run-test-prebuilt", "LOG_CMDLINES=true", "JTREG_VERBOSE=fail,error,time" ],
+            make_args: testOnlyMake,
             environment: {
                 "BOOT_JDK": common.boot_jdk_home,
                 "JDK_IMAGE_DIR": input.get(testedProfileJDK, "home_path"),
@@ -870,7 +945,9 @@ var getJibProfilesDependencies = function (input, common) {
         solaris_sparcv9: "SS12u6-Solaris11u3+1.0",
         windows_x64: "VS2017-15.5.5+1.0",
         linux_aarch64: "gcc7.3.0-Fedora27+1.2",
-        linux_arm: "gcc7.3.0-Fedora27+1.2"
+        linux_arm: "gcc7.3.0-Fedora27+1.2",
+        linux_ppc64le: "gcc7.3.0-Fedora27+1.0",
+        linux_s390x: "gcc7.3.0-Fedora27+1.0"
     };
 
     var devkit_platform = (input.target_cpu == "x86"
@@ -930,7 +1007,7 @@ var getJibProfilesDependencies = function (input, common) {
         jtreg: {
             server: "javare",
             revision: "4.2",
-            build_number: "b13",
+            build_number: "b14",
             checksum_file: "MD5_VALUES",
             file: "jtreg_bin-4.2.zip",
             environment_name: "JT_HOME",

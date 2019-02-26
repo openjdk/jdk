@@ -30,7 +30,7 @@
 #include "gc/shared/gcBehaviours.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/z/zLock.inline.hpp"
-#include "gc/z/zNMethodTable.hpp"
+#include "gc/z/zNMethod.hpp"
 #include "gc/z/zOopClosures.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zUnload.hpp"
@@ -75,7 +75,7 @@ private:
 public:
   virtual bool is_unloading(CompiledMethod* method) const {
     nmethod* const nm = method->as_nmethod();
-    ZReentrantLock* const lock = ZNMethodTable::lock_for_nmethod(nm);
+    ZReentrantLock* const lock = ZNMethod::lock_for_nmethod(nm);
     if (lock == NULL) {
       return is_unloading(nm);
     } else {
@@ -89,7 +89,7 @@ class ZCompiledICProtectionBehaviour : public CompiledICProtectionBehaviour {
 public:
   virtual bool lock(CompiledMethod* method) {
     nmethod* const nm = method->as_nmethod();
-    ZReentrantLock* const lock = ZNMethodTable::lock_for_nmethod(nm);
+    ZReentrantLock* const lock = ZNMethod::lock_for_nmethod(nm);
     if (lock != NULL) {
       lock->lock();
     }
@@ -98,7 +98,7 @@ public:
 
   virtual void unlock(CompiledMethod* method) {
     nmethod* const nm = method->as_nmethod();
-    ZReentrantLock* const lock = ZNMethodTable::lock_for_nmethod(nm);
+    ZReentrantLock* const lock = ZNMethod::lock_for_nmethod(nm);
     if (lock != NULL) {
       lock->unlock();
     }
@@ -110,7 +110,7 @@ public:
     }
 
     nmethod* const nm = method->as_nmethod();
-    ZReentrantLock* const lock = ZNMethodTable::lock_for_nmethod(nm);
+    ZReentrantLock* const lock = ZNMethod::lock_for_nmethod(nm);
     return lock == NULL || lock->is_owned();
   }
 };
@@ -149,7 +149,7 @@ void ZUnload::unlink() {
 
   Klass::clean_weak_klass_links(unloading_occurred);
 
-  ZNMethodTable::unlink(_workers, unloading_occurred);
+  ZNMethod::unlink(_workers, unloading_occurred);
 
   DependencyContext::cleaning_end();
 }
@@ -157,7 +157,7 @@ void ZUnload::unlink() {
 void ZUnload::purge() {
   {
     SuspendibleThreadSetJoiner sts;
-    ZNMethodTable::purge(_workers);
+    ZNMethod::purge(_workers);
   }
 
   ClassLoaderDataGraph::purge();

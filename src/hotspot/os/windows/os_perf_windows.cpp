@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1253,14 +1253,7 @@ int SystemProcessInterface::SystemProcesses::ProcessIterator::current(SystemProc
 
 char* SystemProcessInterface::SystemProcesses::ProcessIterator::allocate_string(const char* str) const {
   if (str != NULL) {
-    size_t len = strlen(str);
-    char* tmp = NEW_C_HEAP_ARRAY(char, len+1, mtInternal);
-    if (NULL == tmp) {
-      return NULL;
-    }
-    strncpy(tmp, str, len);
-    tmp[len] = '\0';
-    return tmp;
+    return os::strdup_check_oom(str, mtInternal);
   }
   return NULL;
 }

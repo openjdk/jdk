@@ -27,6 +27,7 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
+#include "oops/constantPool.hpp"
 #include "oops/generateOopMap.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"

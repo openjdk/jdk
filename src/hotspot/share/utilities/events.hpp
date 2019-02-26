@@ -183,6 +183,14 @@ class UnloadingEventLog : public EventLogBase<StringLogMessage> {
   void log(Thread* thread, InstanceKlass* ik);
 };
 
+// Event log for exceptions
+class ExceptionsEventLog : public ExtendedStringEventLog {
+ public:
+  ExceptionsEventLog(const char* name, int count = LogEventsBufferEntries) : ExtendedStringEventLog(name, count) {}
+
+  void log(Thread* thread, Handle h_exception, const char* message, const char* file, int line);
+};
+
 
 class Events : AllStatic {
   friend class EventLog;
@@ -195,7 +203,7 @@ class Events : AllStatic {
 
   // A log for internal exception related messages, like internal
   // throws and implicit exceptions.
-  static ExtendedStringEventLog* _exceptions;
+  static ExceptionsEventLog* _exceptions;
 
   // Deoptization related messages
   static StringEventLog* _deopt_messages;
@@ -216,6 +224,7 @@ class Events : AllStatic {
 
   // Log exception related message
   static void log_exception(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
+  static void log_exception(Thread* thread, Handle h_exception, const char* message, const char* file, int line);
 
   static void log_redefinition(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
 
@@ -242,6 +251,12 @@ inline void Events::log_exception(Thread* thread, const char* format, ...) {
     va_start(ap, format);
     _exceptions->logv(thread, format, ap);
     va_end(ap);
+  }
+}
+
+inline void Events::log_exception(Thread* thread, Handle h_exception, const char* message, const char* file, int line) {
+  if (LogEvents) {
+    _exceptions->log(thread, h_exception, message, file, line);
   }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.Name;
 import javax.lang.model.element.PackageElement;
+import javax.lang.model.element.QualifiedNameable;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
@@ -421,14 +422,15 @@ public class HtmlDocletWriter {
      * @param metakeywords Array of String keywords for META tag. Each element
      *                     of the array is assigned to a separate META tag.
      *                     Pass in null for no array
-     * @param includeScript true if printing windowtitle script
-     *                      false for files that appear in the left-hand frames
+     * @param description the content for the description META tag.
      * @param body the body htmltree to be included in the document
      * @throws DocFileIOException if there is a problem writing the file
      */
-    public void printHtmlDocument(List<String> metakeywords, boolean includeScript,
-                                  Content body) throws DocFileIOException {
-        printHtmlDocument(metakeywords, includeScript, new ContentBuilder(), body);
+    public void printHtmlDocument(List<String> metakeywords,
+                                  String description,
+                                  Content body)
+            throws DocFileIOException {
+        printHtmlDocument(metakeywords, description, new ContentBuilder(), body);
     }
 
     /**
@@ -437,24 +439,28 @@ public class HtmlDocletWriter {
      * @param metakeywords Array of String keywords for META tag. Each element
      *                     of the array is assigned to a separate META tag.
      *                     Pass in null for no array
-     * @param includeScript true if printing windowtitle script
-     *                      false for files that appear in the left-hand frames
-     * @param extraContent any additional content to be included in the HEAD element
+     * @param description the content for the description META tag.
+     * @param extraHeadContent any additional content to be included in the HEAD element
      * @param body the body htmltree to be included in the document
      * @throws DocFileIOException if there is a problem writing the file
      */
-    public void printHtmlDocument(List<String> metakeywords, boolean includeScript, Content extraContent,
-                                  Content body) throws DocFileIOException {
+    public void printHtmlDocument(List<String> metakeywords,
+                                  String description,
+                                  Content extraHeadContent,
+                                  Content body)
+            throws DocFileIOException {
         Content htmlComment = contents.newPage;
         Head head = new Head(path, configuration.docletVersion)
                 .setTimestamp(!configuration.notimestamp)
+                .setDescription(description)
+                .setGenerator(getGenerator(getClass()))
                 .setTitle(winTitle)
                 .setCharset(configuration.charset)
                 .addKeywords(metakeywords)
                 .setStylesheets(configuration.getMainStylesheet(), configuration.getAdditionalStylesheets())
                 .setUseModuleDirectories(configuration.useModuleDirectories)
                 .setIndex(configuration.createindex, mainBodyScript)
-                .addContent(extraContent);
+                .addContent(extraHeadContent);
 
         Content htmlTree = HtmlTree.HTML(configuration.getLocale().getLanguage(), head.toContent(), body);
         HtmlDocument htmlDocument = new HtmlDocument(htmlComment, htmlTree);
@@ -1646,7 +1652,7 @@ public class HtmlDocletWriter {
      * If this link appeared in the index, we would redirect
      * the link like this:
      *
-     * {@literal <a href="./com/sun/javadoc/package-summary.html">The package Page</a>}
+     * {@literal <a href="./jdk/javadoc/doclet/package-summary.html">The package Page</a>}
      *
      * @param element the Element object whose documentation is being written.
      * @param tt the text being written.
@@ -2111,6 +2117,55 @@ public class HtmlDocletWriter {
     }
 
     /**
+     * Generates a string for use in a description meta element,
+     * based on an element and its enclosing elements
+     * @param prefix a prefix for the string
+     * @param elem the element
+     * @return the description
+     */
+    static String getDescription(String prefix, Element elem) {
+        LinkedList<Element> chain = new LinkedList<>();
+        for (Element e = elem; e != null; e = e.getEnclosingElement()) {
+            // ignore unnamed enclosing elements
+            if (e.getSimpleName().length() == 0 && e != elem) {
+                break;
+            }
+            chain.addFirst(e);
+        }
+        StringBuilder sb = new StringBuilder();
+        for (Element e: chain) {
+            CharSequence name;
+            switch (e.getKind()) {
+                case MODULE:
+                case PACKAGE:
+                    name = ((QualifiedNameable) e).getQualifiedName();
+                    if (name.length() == 0) {
+                        name = "<unnamed>";
+                    }
+                    break;
+
+                default:
+                    name = e.getSimpleName();
+                    break;
+            }
+
+            if (sb.length() == 0) {
+                sb.append(prefix).append(": ");
+            } else {
+                sb.append(", ");
+            }
+            sb.append(e.getKind().toString().toLowerCase(Locale.US).replace("_", " "))
+                    .append(": ")
+                    .append(name);
+        }
+        return sb.toString();
+    }
+
+    static String getGenerator(Class<?> clazz) {
+        return "javadoc/" + clazz.getSimpleName();
+    }
+
+    /**
      * Returns an HtmlTree for the SCRIPT tag.
      *
      * @return an HtmlTree for the SCRIPT tag
@@ -2158,4 +2213,21 @@ public class HtmlDocletWriter {
     Script getMainBodyScript() {
         return mainBodyScript;
     }
+
+    Content getLocalStylesheetContent(Element element) throws DocFileIOException {
+        Content stylesheetContent = new ContentBuilder();
+        List<DocPath> localStylesheets = configuration.localStylesheetMap.get(element);
+        if (localStylesheets == null) {
+            DocFilesHandlerImpl docFilesHandler = (DocFilesHandlerImpl)configuration
+                    .getWriterFactory().getDocFilesHandler(element);
+            localStylesheets = docFilesHandler.getStylesheets();
+            configuration.localStylesheetMap.put(element, localStylesheets);
+        }
+        for (DocPath stylesheet : localStylesheets) {
+            stylesheetContent.addContent(HtmlTree.LINK("stylesheet",
+                    "text/css", stylesheet.getPath(), "Style"));
+        }
+        return stylesheetContent;
+    }
+
 }

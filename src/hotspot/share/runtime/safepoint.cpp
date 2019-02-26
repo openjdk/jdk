@@ -103,16 +103,6 @@ static void post_safepoint_synchronize_event(EventSafepointStateSynchronization&
   }
 }
 
-static void post_safepoint_wait_blocked_event(EventSafepointWaitBlocked& event,
-                                              uint64_t safepoint_id,
-                                              int initial_threads_waiting_to_block) {
-  if (event.should_commit()) {
-    event.set_safepointId(safepoint_id);
-    event.set_runningThreadCount(initial_threads_waiting_to_block);
-    event.commit();
-  }
-}
-
 static void post_safepoint_cleanup_task_event(EventSafepointCleanupTask& event,
                                               uint64_t safepoint_id,
                                               const char* name) {
@@ -138,27 +128,21 @@ int SafepointSynchronize::_waiting_to_block = 0;
 volatile uint64_t SafepointSynchronize::_safepoint_counter = 0;
 const uint64_t SafepointSynchronize::InactiveSafepointCounter = 0;
 int SafepointSynchronize::_current_jni_active_count = 0;
-long SafepointSynchronize::_end_of_last_safepoint = 0;
 
 WaitBarrier* SafepointSynchronize::_wait_barrier;
-
-// We need a place to save the desc since it is released before we need it.
-static char stopped_description[64] = "";
-static bool _vm_is_waiting = false;
 
 static volatile bool PageArmed = false;        // safepoint polling page is RO|RW vs PROT_NONE
 static bool timeout_error_printed = false;
 
 // Statistic related
-julong SafepointSynchronize::_coalesced_vmop_count = 0;
 static jlong _safepoint_begin_time = 0;
-static float _ts_of_current_safepoint = 0.0f;
 static volatile int _nof_threads_hit_polling_page = 0;
 
 void SafepointSynchronize::init(Thread* vmthread) {
   // WaitBarrier should never be destroyed since we will have
   // threads waiting on it while exiting.
   _wait_barrier = new WaitBarrier(vmthread);
+  SafepointTracing::init();
 }
 
 void SafepointSynchronize::increment_jni_active_count() {
@@ -244,16 +228,13 @@ int SafepointSynchronize::synchronize_threads(jlong safepoint_limit_time, int no
   DEBUG_ONLY(assert_list_is_valid(tss_head, still_running);)
 
   *initial_running = still_running;
-  if (log_is_enabled(Debug, safepoint, stats)) {
-    begin_statistics(nof_threads, still_running);
-  }
 
   int iterations = 1; // The first iteration is above.
 
   while (still_running > 0) {
     // Check if this has taken too long:
     if (SafepointTimeout && safepoint_limit_time < os::javaTimeNanos()) {
-      print_safepoint_timeout(_spinning_timeout);
+      print_safepoint_timeout();
     }
     if (int(iterations) == -1) { // overflow - something is wrong.
       // We can only overflow here when we are using global
@@ -291,9 +272,6 @@ int SafepointSynchronize::synchronize_threads(jlong safepoint_limit_time, int no
 
   assert(tss_head == NULL, "Must be empty");
 
-  if (log_is_enabled(Debug, safepoint, stats)) {
-    update_statistics_on_spin_end();
-  }
   return iterations;
 }
 
@@ -303,8 +281,11 @@ void SafepointSynchronize::arm_safepoint() {
   // stopped by different mechanisms:
   //
   //  1. Running interpreted
-  //     The interpreter dispatch table is changed to force it to
-  //     check for a safepoint condition between bytecodes.
+  //     When executing branching/returning byte codes interpreter
+  //     checks if the poll is armed, if so blocks in SS::block().
+  //     When using global polling the interpreter dispatch table
+  //     is changed to force it to check for a safepoint condition
+  //     between bytecodes.
   //  2. Running in native code
   //     When returning from the native code, a Java thread must check
   //     the safepoint _state to see if we must block.  If the
@@ -322,9 +303,9 @@ void SafepointSynchronize::arm_safepoint() {
   //     block condition until the safepoint operation is complete.
   //  5. In VM or Transitioning between states
   //     If a Java thread is currently running in the VM or transitioning
-  //     between states, the safepointing code will wait for the thread to
-  //     block itself when it attempts transitions to a new state.
-  //
+  //     between states, the safepointing code will poll the thread state
+  //     until the thread blocks itself when it attempts transitions to a
+  //     new state or locking a safepoint checked monitor.
 
   // We must never miss a thread with correct safepoint id, so we must make sure we arm
   // the wait barrier for the next safepoint id/counter.
@@ -363,17 +344,10 @@ void SafepointSynchronize::arm_safepoint() {
 
 // Roll all threads forward to a safepoint and suspend them all
 void SafepointSynchronize::begin() {
-  EventSafepointBegin begin_event;
   assert(Thread::current()->is_VM_thread(), "Only VM thread may execute a safepoint");
 
-  strncpy(stopped_description, VMThread::vm_safepoint_description(), sizeof(stopped_description) - 1);
-  stopped_description[sizeof(stopped_description) - 1] = '\0';
-
-  if (log_is_enabled(Debug, safepoint, stats)) {
-    _safepoint_begin_time = os::javaTimeNanos();
-    _ts_of_current_safepoint = tty->time_stamp().seconds();
-    _nof_threads_hit_polling_page = 0;
-  }
+  EventSafepointBegin begin_event;
+  SafepointTracing::begin(VMThread::vm_op_type());
 
   Universe::heap()->safepoint_synchronize_begin();
 
@@ -385,9 +359,9 @@ void SafepointSynchronize::begin() {
 
   int nof_threads = Threads::number_of_threads();
 
-  log_debug(safepoint)("Safepoint synchronization initiated using %s wait barrier. (%d threads)", _wait_barrier->description(), nof_threads);
+  _nof_threads_hit_polling_page = 0;
 
-  RuntimeService::record_safepoint_begin();
+  log_debug(safepoint)("Safepoint synchronization initiated using %s wait barrier. (%d threads)", _wait_barrier->description(), nof_threads);
 
   // Reset the count of active JNI critical threads
   _current_jni_active_count = 0;
@@ -399,9 +373,9 @@ void SafepointSynchronize::begin() {
   if (SafepointTimeout) {
     // Set the limit time, so that it can be compared to see if this has taken
     // too long to complete.
-    safepoint_limit_time = os::javaTimeNanos() + (jlong)SafepointTimeoutDelay * MICROUNITS;
+    safepoint_limit_time = SafepointTracing::start_of_safepoint() + (jlong)SafepointTimeoutDelay * (NANOUNITS / MILLIUNITS);
+    timeout_error_printed = false;
   }
-  timeout_error_printed = false;
 
   EventSafepointStateSynchronization sync_event;
   int initial_running = 0;
@@ -413,20 +387,13 @@ void SafepointSynchronize::begin() {
   int iterations = synchronize_threads(safepoint_limit_time, nof_threads, &initial_running);
   assert(_waiting_to_block == 0, "No thread should be running");
 
-  post_safepoint_synchronize_event(sync_event, _safepoint_counter, initial_running,
-                                   _waiting_to_block, iterations);
-
-  // Keep event from now.
-  EventSafepointWaitBlocked wait_blocked_event;
-
 #ifndef PRODUCT
-  if (SafepointTimeout) {
+  if (safepoint_limit_time != 0) {
     jlong current_time = os::javaTimeNanos();
     if (safepoint_limit_time < current_time) {
       log_warning(safepoint)("# SafepointSynchronize: Finished after "
                     INT64_FORMAT_W(6) " ms",
-                    (int64_t)((current_time - safepoint_limit_time) / MICROUNITS +
-                              (jlong)SafepointTimeoutDelay));
+                    (int64_t)(current_time - SafepointTracing::start_of_safepoint()) / (NANOUNITS / MILLIUNITS));
     }
   }
 #endif
@@ -438,8 +405,6 @@ void SafepointSynchronize::begin() {
 
   OrderAccess::fence();
 
-  post_safepoint_wait_blocked_event(wait_blocked_event, _safepoint_counter, 0);
-
 #ifdef ASSERT
   // Make sure all the threads were visited.
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *cur = jtiwh.next(); ) {
@@ -450,12 +415,12 @@ void SafepointSynchronize::begin() {
   // Update the count of active JNI critical regions
   GCLocker::set_jni_lock_count(_current_jni_active_count);
 
-  log_info(safepoint)("Entering safepoint region: %s", stopped_description);
+  post_safepoint_synchronize_event(sync_event,
+                                   _safepoint_counter,
+                                   initial_running,
+                                   _waiting_to_block, iterations);
 
-  RuntimeService::record_safepoint_synchronized();
-  if (log_is_enabled(Debug, safepoint, stats)) {
-    update_statistics_on_sync_end(os::javaTimeNanos());
-  }
+  SafepointTracing::synchronized(nof_threads, initial_running, _nof_threads_hit_polling_page);
 
   // We do the safepoint cleanup first since a GC related safepoint
   // needs cleanup to be completed before running the GC op.
@@ -463,12 +428,8 @@ void SafepointSynchronize::begin() {
   do_cleanup_tasks();
   post_safepoint_cleanup_event(cleanup_event, _safepoint_counter);
 
-  if (log_is_enabled(Debug, safepoint, stats)) {
-    // Record how much time spend on the above cleanup tasks
-    update_statistics_on_cleanup_end(os::javaTimeNanos());
-  }
-
   post_safepoint_begin_event(begin_event, _safepoint_counter, nof_threads, _current_jni_active_count);
+  SafepointTracing::cleanup();
 }
 
 void SafepointSynchronize::disarm_safepoint() {
@@ -520,10 +481,6 @@ void SafepointSynchronize::disarm_safepoint() {
     }
   } // ~JavaThreadIteratorWithHandle
 
-  log_info(safepoint)("Leaving safepoint region");
-
-  RuntimeService::record_safepoint_end();
-
   // Release threads lock, so threads can be created/destroyed again.
   Threads_lock->unlock();
 
@@ -539,19 +496,11 @@ void SafepointSynchronize::end() {
   uint64_t safepoint_id = _safepoint_counter;
   assert(Thread::current()->is_VM_thread(), "Only VM thread can execute a safepoint");
 
-  if (log_is_enabled(Debug, safepoint, stats)) {
-    end_statistics(os::javaTimeNanos());
-  }
-
   disarm_safepoint();
-
-  RuntimeService::record_safepoint_epilog(stopped_description);
 
   Universe::heap()->safepoint_synchronize_end();
 
-  // record this time so VMThread can keep track how much time has elapsed
-  // since last safepoint.
-  _end_of_last_safepoint = os::javaTimeMillis();
+  SafepointTracing::end();
 
   post_safepoint_end_event(event, safepoint_id);
 }
@@ -915,7 +864,7 @@ void SafepointSynchronize::handle_polling_page_exception(JavaThread *thread) {
     assert(SafepointSynchronize::is_synchronizing(), "polling encountered outside safepoint synchronization");
   }
 
-  if (log_is_enabled(Debug, safepoint, stats)) {
+  if (log_is_enabled(Info, safepoint, stats)) {
     Atomic::inc(&_nof_threads_hit_polling_page);
   }
 
@@ -925,7 +874,7 @@ void SafepointSynchronize::handle_polling_page_exception(JavaThread *thread) {
 }
 
 
-void SafepointSynchronize::print_safepoint_timeout(SafepointTimeoutReason reason) {
+void SafepointSynchronize::print_safepoint_timeout() {
   if (!timeout_error_printed) {
     timeout_error_printed = true;
     // Print out the thread info which didn't reach the safepoint for debugging
@@ -937,20 +886,10 @@ void SafepointSynchronize::print_safepoint_timeout(SafepointTimeoutReason reason
 
       ls.cr();
       ls.print_cr("# SafepointSynchronize::begin: Timeout detected:");
-      if (reason ==  _spinning_timeout) {
-        ls.print_cr("# SafepointSynchronize::begin: Timed out while spinning to reach a safepoint.");
-      } else if (reason == _blocking_timeout) {
-        ls.print_cr("# SafepointSynchronize::begin: Timed out while waiting for threads to stop.");
-      }
-
+      ls.print_cr("# SafepointSynchronize::begin: Timed out while spinning to reach a safepoint.");
       ls.print_cr("# SafepointSynchronize::begin: Threads which did not reach the safepoint:");
-      ThreadSafepointState *cur_state;
       for (JavaThreadIteratorWithHandle jtiwh; JavaThread *cur_thread = jtiwh.next(); ) {
-        cur_state = cur_thread->safepoint_state();
-
-        if (cur_thread->thread_state() != _thread_blocked &&
-          ((reason == _spinning_timeout && cur_state->is_running()) ||
-             (reason == _blocking_timeout))) {
+        if (cur_thread->safepoint_state()->is_running()) {
           ls.print("# ");
           cur_thread->print_on(&ls);
           ls.cr();
@@ -964,10 +903,9 @@ void SafepointSynchronize::print_safepoint_timeout(SafepointTimeoutReason reason
   // ShowMessageBoxOnError.
   if (AbortVMOnSafepointTimeout) {
     fatal("Safepoint sync time longer than " INTX_FORMAT "ms detected when executing %s.",
-          SafepointTimeoutDelay, VMThread::vm_safepoint_description());
+          SafepointTimeoutDelay, VMThread::vm_operation()->name());
   }
 }
-
 
 // -------------------------------------------------------------------------------------------------------
 // Implementation of ThreadSafepointState
@@ -1176,108 +1114,25 @@ void ThreadSafepointState::handle_polling_page_exception() {
 }
 
 
-//
-//                     Statistics & Instrumentations
-//
-struct SafepointStats {
-    float  _time_stamp;                        // record when the current safepoint occurs in seconds
-    int    _vmop_type;                         // tyep of VM operation triggers the safepoint
-    int    _nof_total_threads;                 // total number of Java threads
-    int    _nof_initial_running_threads;       // total number of initially seen running threads
-    int    _nof_threads_wait_to_block;         // total number of threads waiting for to block
-    bool   _page_armed;                        // true if polling page is armed, false otherwise
-    int _nof_threads_hit_page_trap;            // total number of threads hitting the page trap
-    jlong  _time_to_spin;                      // total time in millis spent in spinning
-    jlong  _time_to_wait_to_block;             // total time in millis spent in waiting for to block
-    jlong  _time_to_do_cleanups;               // total time in millis spent in performing cleanups
-    jlong  _time_to_sync;                      // total time in millis spent in getting to _synchronized
-    jlong  _time_to_exec_vmop;                 // total time in millis spent in vm operation itself
-};
+// -------------------------------------------------------------------------------------------------------
+// Implementation of SafepointTracing
 
-static const int _statistics_header_count = 30;
-static int _cur_stat_index = 0;
-static SafepointStats safepoint_stats = {0};  // zero initialize
-static SafepointStats* spstat = &safepoint_stats;
+jlong SafepointTracing::_last_safepoint_begin_time_ns = 0;
+jlong SafepointTracing::_last_safepoint_sync_time_ns = 0;
+jlong SafepointTracing::_last_safepoint_cleanup_time_ns = 0;
+jlong SafepointTracing::_last_safepoint_end_time_ns = 0;
+jlong SafepointTracing::_last_app_time_ns = 0;
+int SafepointTracing::_nof_threads = 0;
+int SafepointTracing::_nof_running = 0;
+int SafepointTracing::_page_trap = 0;
+VM_Operation::VMOp_Type SafepointTracing::_current_type;
+jlong     SafepointTracing::_max_sync_time = 0;
+jlong     SafepointTracing::_max_vmop_time = 0;
+uint64_t  SafepointTracing::_op_count[VM_Operation::VMOp_Terminating] = {0};
 
-static julong _safepoint_reasons[VM_Operation::VMOp_Terminating];
-static jlong  _max_sync_time = 0;
-static jlong  _max_vmop_time = 0;
-
-static jlong  cleanup_end_time = 0;
-
-void SafepointSynchronize::begin_statistics(int nof_threads, int nof_running) {
-
-  spstat->_time_stamp = _ts_of_current_safepoint;
-
-  VM_Operation *op = VMThread::vm_operation();
-  spstat->_vmop_type = op != NULL ? op->type() : VM_Operation::VMOp_None;
-  _safepoint_reasons[spstat->_vmop_type]++;
-
-  spstat->_nof_total_threads = nof_threads;
-  spstat->_nof_initial_running_threads = nof_running;
-
-  // Records the start time of spinning. The real time spent on spinning
-  // will be adjusted when spin is done. Same trick is applied for time
-  // spent on waiting for threads to block.
-  if (nof_running != 0) {
-    spstat->_time_to_spin = os::javaTimeNanos();
-  }  else {
-    spstat->_time_to_spin = 0;
-  }
-}
-
-void SafepointSynchronize::update_statistics_on_spin_end() {
-  jlong cur_time = os::javaTimeNanos();
-
-  spstat->_nof_threads_wait_to_block = _waiting_to_block;
-  if (spstat->_nof_initial_running_threads != 0) {
-    spstat->_time_to_spin = cur_time - spstat->_time_to_spin;
-  }
-
-  // Records the start time of waiting for to block. Updated when block is done.
-  if (_waiting_to_block != 0) {
-    spstat->_time_to_wait_to_block = cur_time;
-  } else {
-    spstat->_time_to_wait_to_block = 0;
-  }
-}
-
-void SafepointSynchronize::update_statistics_on_sync_end(jlong end_time) {
-
-  if (spstat->_nof_threads_wait_to_block != 0) {
-    spstat->_time_to_wait_to_block = end_time -
-      spstat->_time_to_wait_to_block;
-  }
-
-  // Records the end time of sync which will be used to calculate the total
-  // vm operation time. Again, the real time spending in syncing will be deducted
-  // from the start of the sync time later when end_statistics is called.
-  spstat->_time_to_sync = end_time - _safepoint_begin_time;
-  if (spstat->_time_to_sync > _max_sync_time) {
-    _max_sync_time = spstat->_time_to_sync;
-  }
-
-  spstat->_time_to_do_cleanups = end_time;
-}
-
-void SafepointSynchronize::update_statistics_on_cleanup_end(jlong end_time) {
-
-  // Record how long spent in cleanup tasks.
-  spstat->_time_to_do_cleanups = end_time - spstat->_time_to_do_cleanups;
-  cleanup_end_time = end_time;
-}
-
-void SafepointSynchronize::end_statistics(jlong vmop_end_time) {
-
-  // Update the vm operation time.
-  spstat->_time_to_exec_vmop = vmop_end_time -  cleanup_end_time;
-  if (spstat->_time_to_exec_vmop > _max_vmop_time) {
-    _max_vmop_time = spstat->_time_to_exec_vmop;
-  }
-
-  spstat->_nof_threads_hit_page_trap = _nof_threads_hit_polling_page;
-
-  print_statistics();
+void SafepointTracing::init() {
+  // Application start
+  _last_safepoint_end_time_ns = os::javaTimeNanos();
 }
 
 // Helper method to print the header.
@@ -1285,66 +1140,121 @@ static void print_header(outputStream* st) {
   // The number of spaces is significant here, and should match the format
   // specifiers in print_statistics().
 
-  st->print("          vmop                            "
-            "[ threads:    total initially_running wait_to_block ]"
-            "[ time:    spin   block    sync cleanup    vmop ] ");
+  st->print("VM Operation                 "
+            "[ threads: total initial_running ]"
+            "[ time:       sync    cleanup       vmop      total ]");
 
-  st->print_cr("page_trap_count");
+  st->print_cr(" page_trap_count");
 }
 
 // This prints a nice table.  To get the statistics to not shift due to the logging uptime
-// decorator, use the option as: -Xlog:safepoint+stats=debug:[outputfile]:none
-void SafepointSynchronize::print_statistics() {
-  LogTarget(Debug, safepoint, stats) lt;
+// decorator, use the option as: -Xlog:safepoint+stats:[outputfile]:none
+void SafepointTracing::statistics_log() {
+  LogTarget(Info, safepoint, stats) lt;
   assert (lt.is_enabled(), "should only be called when printing statistics is enabled");
   LogStream ls(lt);
 
+  static int _cur_stat_index = 0;
+
   // Print header every 30 entries
-  if ((_cur_stat_index % _statistics_header_count) == 0) {
+  if ((_cur_stat_index % 30) == 0) {
     print_header(&ls);
     _cur_stat_index = 1;  // wrap
   } else {
     _cur_stat_index++;
   }
 
-  ls.print("%8.3f: ", spstat->_time_stamp);
-  ls.print("%-28s  [          "
-           INT32_FORMAT_W(8) " " INT32_FORMAT_W(17) " " INT32_FORMAT_W(13) " "
+  ls.print("%-28s [       "
+           INT32_FORMAT_W(8) "        " INT32_FORMAT_W(8) " "
            "]",
-           VM_Operation::name(spstat->_vmop_type),
-           spstat->_nof_total_threads,
-           spstat->_nof_initial_running_threads,
-           spstat->_nof_threads_wait_to_block);
-  // "/ MICROUNITS " is to convert the unit from nanos to millis.
+           VM_Operation::name(_current_type),
+           _nof_threads,
+           _nof_running);
   ls.print("[       "
-           INT64_FORMAT_W(7) " " INT64_FORMAT_W(7) " "
-           INT64_FORMAT_W(7) " " INT64_FORMAT_W(7) " "
-           INT64_FORMAT_W(7) " ] ",
-           (int64_t)(spstat->_time_to_spin / MICROUNITS),
-           (int64_t)(spstat->_time_to_wait_to_block / MICROUNITS),
-           (int64_t)(spstat->_time_to_sync / MICROUNITS),
-           (int64_t)(spstat->_time_to_do_cleanups / MICROUNITS),
-           (int64_t)(spstat->_time_to_exec_vmop / MICROUNITS));
+           INT64_FORMAT_W(10) " " INT64_FORMAT_W(10) " "
+           INT64_FORMAT_W(10) " " INT64_FORMAT_W(10) " ]",
+           (int64_t)(_last_safepoint_sync_time_ns - _last_safepoint_begin_time_ns),
+           (int64_t)(_last_safepoint_cleanup_time_ns - _last_safepoint_sync_time_ns),
+           (int64_t)(_last_safepoint_end_time_ns - _last_safepoint_cleanup_time_ns),
+           (int64_t)(_last_safepoint_end_time_ns - _last_safepoint_begin_time_ns));
 
-  ls.print_cr(INT32_FORMAT_W(15) " ", spstat->_nof_threads_hit_page_trap);
+  ls.print_cr(INT32_FORMAT_W(16), _page_trap);
 }
 
 // This method will be called when VM exits. This tries to summarize the sampling.
 // Current thread may already be deleted, so don't use ResourceMark.
-void SafepointSynchronize::print_stat_on_exit() {
-
+void SafepointTracing::statistics_exit_log() {
+  if (!log_is_enabled(Info, safepoint, stats)) {
+    return;
+  }
   for (int index = 0; index < VM_Operation::VMOp_Terminating; index++) {
-    if (_safepoint_reasons[index] != 0) {
-      log_debug(safepoint, stats)("%-28s" UINT64_FORMAT_W(10), VM_Operation::name(index),
-                _safepoint_reasons[index]);
+    if (_op_count[index] != 0) {
+      log_info(safepoint, stats)("%-28s" UINT64_FORMAT_W(10), VM_Operation::name(index),
+               _op_count[index]);
     }
   }
 
-  log_debug(safepoint, stats)("VM operations coalesced during safepoint " INT64_FORMAT,
-                              _coalesced_vmop_count);
-  log_debug(safepoint, stats)("Maximum sync time  " INT64_FORMAT" ms",
-                              (int64_t)(_max_sync_time / MICROUNITS));
-  log_debug(safepoint, stats)("Maximum vm operation time (except for Exit VM operation)  "
-                              INT64_FORMAT " ms",
-                              (int64_t)(_max_vmop_time / MICROUNITS));
+  log_info(safepoint, stats)("VM operations coalesced during safepoint " INT64_FORMAT,
+                              VMThread::get_coalesced_count());
+  log_info(safepoint, stats)("Maximum sync time  " INT64_FORMAT" ns",
+                              (int64_t)(_max_sync_time));
+  log_info(safepoint, stats)("Maximum vm operation time (except for Exit VM operation)  "
+                              INT64_FORMAT " ns",
+                              (int64_t)(_max_vmop_time));
+}
+
+void SafepointTracing::begin(VM_Operation::VMOp_Type type) {
+  _op_count[type]++;
+  _current_type = type;
+
+  // update the time stamp to begin recording safepoint time
+  _last_safepoint_begin_time_ns = os::javaTimeNanos();
+  _last_safepoint_sync_time_ns = 0;
+  _last_safepoint_cleanup_time_ns = 0;
+
+  _last_app_time_ns = _last_safepoint_begin_time_ns - _last_safepoint_end_time_ns;
+  _last_safepoint_end_time_ns = 0;
+
+  RuntimeService::record_safepoint_begin(_last_app_time_ns);
+}
+
+void SafepointTracing::synchronized(int nof_threads, int nof_running, int traps) {
+  _last_safepoint_sync_time_ns = os::javaTimeNanos();
+  _nof_threads = nof_threads;
+  _nof_running = nof_running;
+  _page_trap   = traps;
+  RuntimeService::record_safepoint_synchronized(_last_safepoint_sync_time_ns - _last_safepoint_begin_time_ns);
+}
+
+void SafepointTracing::cleanup() {
+  _last_safepoint_cleanup_time_ns = os::javaTimeNanos();
+}
+
+void SafepointTracing::end() {
+  _last_safepoint_end_time_ns = os::javaTimeNanos();
+
+  if (_max_sync_time < (_last_safepoint_sync_time_ns - _last_safepoint_begin_time_ns)) {
+    _max_sync_time = _last_safepoint_sync_time_ns - _last_safepoint_begin_time_ns;
+  }
+  if (_max_vmop_time < (_last_safepoint_end_time_ns - _last_safepoint_sync_time_ns)) {
+    _max_vmop_time = _last_safepoint_end_time_ns - _last_safepoint_sync_time_ns;
+  }
+  if (log_is_enabled(Info, safepoint, stats)) {
+    statistics_log();
+  }
+
+  log_info(safepoint)(
+     "Safepoint \"%s\", "
+     "Time since last: " JLONG_FORMAT " ns, "
+     "Reaching safepoint: " JLONG_FORMAT " ns, "
+     "At safepoint: " JLONG_FORMAT " ns, "
+     "Total: " JLONG_FORMAT " ns",
+      VM_Operation::name(_current_type),
+      _last_app_time_ns,
+      _last_safepoint_cleanup_time_ns - _last_safepoint_begin_time_ns,
+      _last_safepoint_end_time_ns     - _last_safepoint_cleanup_time_ns,
+      _last_safepoint_end_time_ns     - _last_safepoint_begin_time_ns
+     );
+
+  RuntimeService::record_safepoint_end(_last_safepoint_end_time_ns - _last_safepoint_cleanup_time_ns);
 }

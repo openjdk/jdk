@@ -35,16 +35,6 @@
  *  while doclets provide a user-selectable backend for determining
  *  how to process the documentation comments.
  *
- *  <p><em>Historical Note:</em> Prior to the introduction of the
- *  {@link javax.lang.model Language Model API} in JDK 6, it was
- *  not unusual to use the {@link com.sun.javadoc} API as a
- *  modeling API. But the Language Model API, and associated
- *  {@link javax.annotation.processing Annotation Processing API}
- *  provided a better way to model programs, and in JDK 9,
- *  javadoc itself was converted to using the Language Model API,
- *  with the {@code com.sun.javadoc API} being deprecated for
- *  eventual removal.
- *  </p>
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.

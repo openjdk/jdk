@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.util.*;
 
 import javax.lang.model.element.PackageElement;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
@@ -109,11 +108,13 @@ public abstract class AbstractPackageIndexWriter extends HtmlDocletWriter {
      * methods from the sub-class in order to generate Frame or Non
      * Frame format.
      *
-     * @param title the title of the window.
+     * @param title the title of the window
+     * @param description the content for the description META tag
      * @param includeScript boolean set true if windowtitle script is to be included
      * @throws DocFileIOException if there is a problem building the package index file
      */
-    protected void buildPackageIndexFile(String title, boolean includeScript) throws DocFileIOException {
+    protected void buildPackageIndexFile(String title, String description, boolean includeScript)
+            throws DocFileIOException {
         String windowOverview = resources.getText(title);
         Content body = getBody(includeScript, getWindowTitle(windowOverview));
         Content header = HtmlTree.HEADER();
@@ -127,8 +128,9 @@ public abstract class AbstractPackageIndexWriter extends HtmlDocletWriter {
         body.addContent(header);
         body.addContent(main);
         body.addContent(footer);
-        printHtmlDocument(configuration.metakeywords.getOverviewMetaKeywords(title,
-                configuration.doctitle), includeScript, body);
+        printHtmlDocument(
+                configuration.metakeywords.getOverviewMetaKeywords(title, configuration.doctitle),
+                description, body);
     }
 
     /**

@@ -1,6 +1,0 @@
-interface pkg1.A<T>
-  name: A / A / pkg1.A
-  type parameters:
-    T
-  methods:
-    void m1(T)

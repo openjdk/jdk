@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,11 +33,12 @@
 #include "utilities/ostream.hpp"
 
 LogTestFixture::LogTestFixture() : _n_snapshots(0), _configuration_snapshot(NULL) {
-  // Set up TestLogFileName to include PID, testcase name and test name
-  int ret = jio_snprintf(_filename, sizeof(_filename), "testlog.pid%d.%s.%s.log",
-                         os::current_process_id(),
-                         ::testing::UnitTest::GetInstance()->current_test_info()->test_case_name(),
-                         ::testing::UnitTest::GetInstance()->current_test_info()->name());
+
+  // Set up TestLogFileName to include temp_dir, PID, testcase name and test name.
+  const testing::TestInfo* test_info = ::testing::UnitTest::GetInstance()->current_test_info();
+  int ret = jio_snprintf(_filename, sizeof(_filename), "%s%stestlog.pid%d.%s.%s.log",
+                         os::get_temp_directory(), os::file_separator(), os::current_process_id(),
+                         test_info->test_case_name(), test_info->name());
   EXPECT_GT(ret, 0) << "_filename buffer issue";
   TestLogFileName = _filename;
 

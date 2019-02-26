@@ -27,12 +27,12 @@
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zOopClosures.hpp"
-#include "gc/z/zNMethodTable.hpp"
+#include "gc/z/zNMethod.hpp"
 #include "gc/z/zThreadLocalData.hpp"
 #include "logging/log.hpp"
 
 bool ZBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
-  ZLocker<ZReentrantLock> locker(ZNMethodTable::lock_for_nmethod(nm));
+  ZLocker<ZReentrantLock> locker(ZNMethod::lock_for_nmethod(nm));
   log_trace(nmethod, barrier)("Entered critical zone for %p", nm);
 
   if (!is_armed(nm)) {

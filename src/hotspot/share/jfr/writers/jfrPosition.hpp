@@ -48,8 +48,8 @@ class Position : public AP {
 
  public:
   size_t available_size() const;
-  intptr_t used_offset() const;
-  intptr_t current_offset() const;
+  int64_t used_offset() const;
+  int64_t current_offset() const;
   size_t used_size() const;
   void reset();
 };

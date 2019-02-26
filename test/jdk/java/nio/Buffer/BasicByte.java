@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,6 +87,18 @@ public class BasicByte
         }
     }
 
+    private static void absBulkGet(ByteBuffer b) {
+        int n = b.capacity();
+        int len = n - 7*2;
+        byte[] a = new byte[n + 7];
+        b.position(42);
+        b.get(7, a, 7, len);
+        ck(b, b.position() == 42);
+        for (int i = 0; i < len; i++) {
+            ck(b, (long)a[i + 7], (long)((byte)ic(i)));
+        }
+    }
+
     private static void relPut(ByteBuffer b) {
         int n = b.capacity();
         b.clear();
@@ -134,6 +146,20 @@ public class BasicByte
                      + " put into same buffer");
             }
         }
+    }
+
+    private static void absBulkPutArray(ByteBuffer b) {
+        int n = b.capacity();
+        b.clear();
+        int lim = n - 7;
+        int len = lim - 7;
+        b.limit(lim);
+        byte[] a = new byte[len + 7];
+        for (int i = 0; i < len; i++)
+            a[i + 7] = (byte)ic(i);
+        b.position(42);
+        b.put(7, a, 7, len);
+        ck(b, b.position() == 42);
     }
 
     //6231529
@@ -452,6 +478,10 @@ public class BasicByte
         fail(problem + String.format(": x=%s y=%s", x, y), xb, yb);
     }
 
+    private static void catchNullArgument(Buffer b, Runnable thunk) {
+        tryCatch(b, NullPointerException.class, thunk);
+    }
+
     private static void catchIllegalArgument(Buffer b, Runnable thunk) {
         tryCatch(b, IllegalArgumentException.class, thunk);
     }
@@ -476,7 +506,10 @@ public class BasicByte
             if (ex.isAssignableFrom(x.getClass())) {
                 caught = true;
             } else {
-                fail(x.getMessage() + " not expected");
+                String s = x.getMessage();
+                if (s == null)
+                    s = x.getClass().getName();
+                fail(s + " not expected");
             }
         }
         if (!caught) {
@@ -512,6 +545,9 @@ public class BasicByte
 
         bulkPutBuffer(b);
         relGet(b);
+
+        absBulkPutArray(b);
+        absBulkGet(b);
 
 
 
@@ -611,6 +647,26 @@ public class BasicByte
                      + " negative limit");
             }
         }
+
+        // Exceptions in absolute bulk operations
+
+        catchNullArgument(b, () -> b.get(7, null, 0, 42));
+        catchNullArgument(b, () -> b.put(7, (byte[])null, 0, 42));
+
+        byte[] tmpa = new byte[42];
+        catchIndexOutOfBounds(b, () -> b.get(7, tmpa, -1, 42));
+        catchIndexOutOfBounds(b, () -> b.get(7, tmpa, 42, 1));
+        catchIndexOutOfBounds(b, () -> b.get(7, tmpa, 41, -1));
+        catchIndexOutOfBounds(b, () -> b.get(-1, tmpa, 0, 1));
+        catchIndexOutOfBounds(b, () -> b.get(b.limit(), tmpa, 0, 1));
+        catchIndexOutOfBounds(b, () -> b.get(b.limit() - 41, tmpa, 0, 42));
+
+        catchIndexOutOfBounds(b, () -> b.put(7, tmpa, -1, 42));
+        catchIndexOutOfBounds(b, () -> b.put(7, tmpa, 42, 1));
+        catchIndexOutOfBounds(b, () -> b.put(7, tmpa, 41, -1));
+        catchIndexOutOfBounds(b, () -> b.put(-1, tmpa, 0, 1));
+        catchIndexOutOfBounds(b, () -> b.put(b.limit(), tmpa, 0, 1));
+        catchIndexOutOfBounds(b, () -> b.put(b.limit() - 41, tmpa, 0, 42));
 
         // Values
 
@@ -819,6 +875,7 @@ public class BasicByte
         catchReadOnlyBuffer(b, () -> absPut(rb));
         catchReadOnlyBuffer(b, () -> bulkPutArray(rb));
         catchReadOnlyBuffer(b, () -> bulkPutBuffer(rb));
+        catchReadOnlyBuffer(b, () -> absBulkPutArray(rb));
 
         // put(ByteBuffer) should not change source position
         final ByteBuffer src = ByteBuffer.allocate(1);
@@ -884,6 +941,13 @@ public class BasicByte
         testAlign(b, direct);
 
     }
+
+
+
+
+
+
+
 
 
 

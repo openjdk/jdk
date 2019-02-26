@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  * @modules jdk.compiler/com.sun.tools.javac.main
  * @modules jdk.javadoc/jdk.javadoc.internal.api
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @library /tools/lib /tools/javadoc/lib
+ * @library /tools/lib
  * @build toolbox.JavacTask toolbox.JavadocTask toolbox.TestRunner toolbox.ToolBox
  * @run main EncodingTest
  */

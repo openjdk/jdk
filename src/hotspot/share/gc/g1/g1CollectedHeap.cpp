@@ -3282,10 +3282,6 @@ public:
 
       _root_processor->evacuate_roots(pss, worker_id);
 
-      // We pass a weak code blobs closure to the remembered set scanning because we want to avoid
-      // treating the nmethods visited to act as roots for concurrent marking.
-      // We only want to make sure that the oops in the nmethods are adjusted with regard to the
-      // objects copied by the current evacuation.
       _g1h->g1_rem_set()->oops_into_collection_set_do(pss, worker_id);
 
       double strong_roots_sec = os::elapsedTime() - start_strong_roots_sec;
@@ -3303,26 +3299,21 @@ public:
 
         G1GCPhaseTimes* p = _g1h->g1_policy()->phase_times();
         p->add_time_secs(G1GCPhaseTimes::ObjCopy, worker_id, elapsed_sec - term_sec);
+
+        p->record_or_add_thread_work_item(G1GCPhaseTimes::ObjCopy,
+                                          worker_id,
+                                          pss->lab_waste_words() * HeapWordSize,
+                                          G1GCPhaseTimes::ObjCopyLABWaste);
+        p->record_or_add_thread_work_item(G1GCPhaseTimes::ObjCopy,
+                                          worker_id,
+                                          pss->lab_undo_waste_words() * HeapWordSize,
+                                          G1GCPhaseTimes::ObjCopyLABUndoWaste);
+
         p->record_time_secs(G1GCPhaseTimes::Termination, worker_id, term_sec);
         p->record_thread_work_item(G1GCPhaseTimes::Termination, worker_id, evac_term_attempts);
       }
 
       assert(pss->queue_is_empty(), "should be empty");
-
-      if (log_is_enabled(Debug, gc, task, stats)) {
-        MutexLockerEx x(ParGCRareEvent_lock, Mutex::_no_safepoint_check_flag);
-        size_t lab_waste;
-        size_t lab_undo_waste;
-        pss->waste(lab_waste, lab_undo_waste);
-        _g1h->print_termination_stats(worker_id,
-                                      (os::elapsedTime() - start_sec) * 1000.0,   /* elapsed time */
-                                      strong_roots_sec * 1000.0,                  /* strong roots time */
-                                      term_sec * 1000.0,                          /* evac term time */
-                                      evac_term_attempts,                         /* evac term attempts */
-                                      lab_waste,                                  /* alloc buffer waste */
-                                      lab_undo_waste                              /* undo waste */
-                                      );
-      }
 
       // Close the inner scope so that the ResourceMark and HandleMark
       // destructors are executed here and are included as part of the
@@ -3331,31 +3322,6 @@ public:
     _g1h->g1_policy()->phase_times()->record_time_secs(G1GCPhaseTimes::GCWorkerEnd, worker_id, os::elapsedTime());
   }
 };
-
-void G1CollectedHeap::print_termination_stats_hdr() {
-  log_debug(gc, task, stats)("GC Termination Stats");
-  log_debug(gc, task, stats)("     elapsed  --strong roots-- -------termination------- ------waste (KiB)------");
-  log_debug(gc, task, stats)("thr     ms        ms      %%        ms      %%    attempts  total   alloc    undo");
-  log_debug(gc, task, stats)("--- --------- --------- ------ --------- ------ -------- ------- ------- -------");
-}
-
-void G1CollectedHeap::print_termination_stats(uint worker_id,
-                                              double elapsed_ms,
-                                              double strong_roots_ms,
-                                              double term_ms,
-                                              size_t term_attempts,
-                                              size_t alloc_buffer_waste,
-                                              size_t undo_waste) const {
-  log_debug(gc, task, stats)
-              ("%3d %9.2f %9.2f %6.2f "
-               "%9.2f %6.2f " SIZE_FORMAT_W(8) " "
-               SIZE_FORMAT_W(7) " " SIZE_FORMAT_W(7) " " SIZE_FORMAT_W(7),
-               worker_id, elapsed_ms, strong_roots_ms, strong_roots_ms * 100 / elapsed_ms,
-               term_ms, term_ms * 100 / elapsed_ms, term_attempts,
-               (alloc_buffer_waste + undo_waste) * HeapWordSize / K,
-               alloc_buffer_waste * HeapWordSize / K,
-               undo_waste * HeapWordSize / K);
-}
 
 void G1CollectedHeap::complete_cleaning(BoolObjectClosure* is_alive,
                                         bool class_unloading_occurred) {
@@ -3766,8 +3732,6 @@ void G1CollectedHeap::evacuate_collection_set(G1ParScanThreadStateSet* per_threa
     const uint n_workers = workers()->active_workers();
     G1RootProcessor root_processor(this, n_workers);
     G1ParTask g1_par_task(this, per_thread_states, _task_queues, &root_processor, n_workers);
-
-    print_termination_stats_hdr();
 
     workers()->run_task(&g1_par_task);
     end_par_time_sec = os::elapsedTime();

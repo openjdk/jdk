@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,7 @@ public class PackageFrameWriter extends HtmlDocletWriter {
 
     /**
      * Generate a package summary page for the left-hand bottom frame. Construct
-     * the PackageFrameWriter object and then uses it generate the file.
+     * the PackageFrameWriter object and then use it generate the file.
      *
      * @param configuration the current configuration of the doclet.
      * @param packageElement The package for which "pacakge-frame.html" is to be generated.
@@ -111,7 +111,9 @@ public class PackageFrameWriter extends HtmlDocletWriter {
         htmlTree.addContent(div);
         body.addContent(htmlTree);
         packgen.printHtmlDocument(
-                configuration.metakeywords.getMetaKeywords(packageElement), false, body);
+                configuration.metakeywords.getMetaKeywords(packageElement),
+                getDescription("package summary (frame)", packageElement),
+                body);
     }
 
     /**

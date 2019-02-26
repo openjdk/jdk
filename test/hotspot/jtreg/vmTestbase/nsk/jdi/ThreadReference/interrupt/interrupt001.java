@@ -153,7 +153,7 @@ public class interrupt001 {
         pipe = debuggee.createIOPipe();
 
         debuggee.redirectStderr(out);
-        log2("interrupt002a debuggee launched");
+        log2(debuggeeName + " debuggee launched");
         debuggee.resume();
 
         try {

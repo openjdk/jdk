@@ -127,9 +127,8 @@ public:
   G1EvacuationRootClosures* closures() { return _closures; }
   uint worker_id() { return _worker_id; }
 
-  // Returns the current amount of waste due to alignment or not being able to fit
-  // objects within LABs and the undo waste.
-  virtual void waste(size_t& wasted, size_t& undo_wasted);
+  size_t lab_waste_words() const;
+  size_t lab_undo_waste_words() const;
 
   size_t* surviving_young_words() {
     // We add one to hide entry 0 which accumulates surviving words for

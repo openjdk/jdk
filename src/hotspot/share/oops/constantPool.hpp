@@ -131,7 +131,7 @@ class ConstantPool : public Metadata {
 
   void set_tags(Array<u1>* tags)               { _tags = tags; }
   void tag_at_put(int which, jbyte t)          { tags()->at_put(which, t); }
-  void release_tag_at_put(int which, jbyte t);
+  void release_tag_at_put(int which, jbyte t)  { tags()->release_at_put(which, t); }
 
   u1* tag_addr_at(int which) const             { return tags()->adr_at(which); }
 
@@ -379,7 +379,7 @@ class ConstantPool : public Metadata {
 
   // Tag query
 
-  constantTag tag_at(int which) const;
+  constantTag tag_at(int which) const { return (constantTag)tags()->at_acquire(which); }
 
   // Fetching constants
 

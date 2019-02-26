@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,16 @@
  * questions.
  */
 
+//
+// SunJSSE does not support dynamic system properties, no way to re-use
+// system properties in samevm/agentvm mode.
+//
+
 /*
  * @test
- * @bug 4919147
+ * @bug 4919147 8168069
  * @summary Support for token-based KeyStores
  * @run main/othervm BadKSProvider
- *
- *     SunJSSE does not support dynamic system properties, no way to re-use
- *     system properties in samevm/agentvm mode.
  */
 
 import java.io.*;
@@ -176,16 +178,16 @@ public class BadKSProvider {
             // catching the exception is ok,
             // but let's try to confirm it is the right exception.
             //
-            // XXX this test must be updated if the exception message changes
+            // Note: this test must be updated if the exception message changes
 
             Throwable cause = se.getCause();
-            if (cause instanceof java.security.NoSuchAlgorithmException == false) {
+            if (!(cause instanceof java.security.NoSuchAlgorithmException)) {
                 se.printStackTrace();
                 throw new Exception("Unexpected exception" + se);
             }
 
             cause = cause.getCause();
-            if (cause instanceof java.security.NoSuchProviderException == false) {
+            if (!(cause instanceof java.security.KeyManagementException)) {
                 se.printStackTrace();
                 throw new Exception("Unexpected exception" + se);
             }

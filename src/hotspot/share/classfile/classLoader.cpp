@@ -101,7 +101,6 @@ static JImagePackageToModule_t         JImagePackageToModule  = NULL;
 static JImageFindResource_t            JImageFindResource     = NULL;
 static JImageGetResource_t             JImageGetResource      = NULL;
 static JImageResourceIterator_t        JImageResourceIterator = NULL;
-static JImage_ResourcePath_t           JImageResourcePath     = NULL;
 
 // Globals
 
@@ -621,12 +620,13 @@ void ClassLoader::setup_module_search_path(const char* path, TRAPS) {
   update_module_path_entry_list(path, THREAD);
 }
 
+#endif // INCLUDE_CDS
+
 void ClassLoader::close_jrt_image() {
-  assert(ClassLoader::has_jrt_entry(), "Not applicable for exploded builds");
+  // Not applicable for exploded builds
+  if (!ClassLoader::has_jrt_entry()) return;
   _jrt_entry->close_jimage();
 }
-
-#endif // INCLUDE_CDS
 
 // Construct the array of module/path pairs as specified to --patch-module
 // for the boot loader to search ahead of the jimage, if the class being
@@ -1094,8 +1094,6 @@ void ClassLoader::load_jimage_library() {
   guarantee(JImageGetResource != NULL, "function JIMAGE_GetResource not found");
   JImageResourceIterator = CAST_TO_FN_PTR(JImageResourceIterator_t, os::dll_lookup(handle, "JIMAGE_ResourceIterator"));
   guarantee(JImageResourceIterator != NULL, "function JIMAGE_ResourceIterator not found");
-  JImageResourcePath = CAST_TO_FN_PTR(JImage_ResourcePath_t, os::dll_lookup(handle, "JIMAGE_ResourcePath"));
-  guarantee(JImageResourcePath != NULL, "function JIMAGE_ResourcePath not found");
 }
 
 jboolean ClassLoader::decompress(void *in, u8 inSize, void *out, u8 outSize, char **pmsg) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,10 @@ public class ModulePackageIndexFrameWriter extends AbstractModuleIndexWriter {
     public static void generate(HtmlConfiguration configuration, ModuleElement mdle) throws DocFileIOException {
         DocPath filename = configuration.docPaths.moduleFrame(mdle);
         ModulePackageIndexFrameWriter modpackgen = new ModulePackageIndexFrameWriter(configuration, filename);
-        modpackgen.buildModulePackagesIndexFile("doclet.Window_Overview", false, mdle);
+        modpackgen.buildModulePackagesIndexFile("doclet.Window_Overview",
+                getDescription("module package index", mdle) + " (frame)",
+                false,
+                mdle);
     }
 
     /**

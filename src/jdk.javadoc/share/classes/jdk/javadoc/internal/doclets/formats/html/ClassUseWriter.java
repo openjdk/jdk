@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package jdk.javadoc.internal.doclets.formats.html;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.Table;
 
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -241,7 +240,8 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         footer.addContent(navBar.getContent(false));
         addBottom(footer);
         body.addContent(footer);
-        printHtmlDocument(null, true, body);
+        String description = getDescription("use", typeElement);
+        printHtmlDocument(null, description, body);
     }
 
     /**

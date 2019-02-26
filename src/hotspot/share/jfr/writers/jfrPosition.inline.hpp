@@ -80,12 +80,12 @@ inline size_t Position<AP>::available_size() const {
 }
 
 template <typename AP>
-inline intptr_t Position<AP>::used_offset() const {
+inline int64_t Position<AP>::used_offset() const {
   return _current_pos - _start_pos;
 }
 
 template <typename AP>
-inline intptr_t Position<AP>::current_offset() const {
+inline int64_t Position<AP>::current_offset() const {
   return this->used_offset();
 }
 

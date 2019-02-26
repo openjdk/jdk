@@ -359,7 +359,7 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_runtime_stub(StubAssembler* 
 // ZBarrierSetRuntime::load_barrier_on_weak_oop_field_preloaded().
 static address generate_load_barrier_stub(StubCodeGenerator* cgen, Register raddr, DecoratorSet decorators) {
   // Don't generate stub for invalid registers
-  if (raddr == rsp || raddr == r12 || raddr == r15) {
+  if (raddr == rsp || raddr == r15) {
     return NULL;
   }
 

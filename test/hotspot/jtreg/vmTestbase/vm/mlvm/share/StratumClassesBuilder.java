@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import java.util.stream.Stream;
 
 public class StratumClassesBuilder {
     public static void main(String[] args) {
-        Path root = testRoot();
+        Path root = Paths.get(Utils.TEST_ROOT);
         Arrays.stream(args)
               .map(root::resolve)
               .forEach(StratumClassesBuilder::build);
@@ -112,13 +112,5 @@ public class StratumClassesBuilder {
         String filename = file.getFileName().toString();
         return file.getParent()
                    .resolve(filename.replaceFirst("\\.class$", ".smap"));
-    }
-
-    private static Path testRoot() {
-        Path p = Paths.get(Utils.TEST_SRC);
-        while (!Files.exists(p.resolve("TEST.ROOT"))) {
-            p = p.getParent();
-        }
-        return p;
     }
 }

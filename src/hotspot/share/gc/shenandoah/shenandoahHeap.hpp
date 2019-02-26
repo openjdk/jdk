@@ -511,6 +511,7 @@ public:
 
   GrowableArray<GCMemoryManager*> memory_managers();
   GrowableArray<MemoryPool*> memory_pools();
+  MemoryUsage memory_usage();
   GCTracer* tracer();
   GCTimer* gc_timer() const;
   CollectorPolicy* collector_policy() const;
@@ -676,6 +677,7 @@ public:
   void reset_mark_bitmap();
 
   // SATB barriers hooks
+  template<bool RESOLVE>
   inline bool requires_marking(const void* entry) const;
   void force_satb_flush_all_threads();
 

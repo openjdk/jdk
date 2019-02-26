@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,12 +47,13 @@ import com.sun.source.util.TreePathScanner;
 public class CaseTest {
 
     public static void main(String[] args) throws Exception {
-        new CaseTest().testLabels();
-        new CaseTest().testStatement();
-        new CaseTest().testRule();
+        String sourceVersion = Integer.toString(Runtime.version().feature());
+        new CaseTest().testLabels(sourceVersion);
+        new CaseTest().testStatement(sourceVersion);
+        new CaseTest().testRule(sourceVersion);
     }
 
-    void testLabels() throws Exception {
+    void testLabels(String sourceVersion) throws Exception {
         String code = "class Test {\n" +
                       "    void t(int i) {\n" +
                       "         switch(i) {\n" +
@@ -72,7 +73,7 @@ public class CaseTest {
                                                 .collect(Collectors.joining(",", "[", "]")));
                 return super.visitCase(node, p);
             }
-        }.scan(parse(code), null);
+        }.scan(parse(code, sourceVersion), null);
 
         List<String> expected = Arrays.asList("0", "[0]", "1", "[1,2]", "null", "[]");
 
@@ -81,7 +82,7 @@ public class CaseTest {
         }
     }
 
-    void testStatement() throws Exception {
+    void testStatement(String sourceVersion) throws Exception {
         String code = "class Test {\n" +
                       "    void t(int i) {\n" +
                       "         switch(i) {\n" +
@@ -102,10 +103,10 @@ public class CaseTest {
                 }
                 return super.visitCase(node, p);
             }
-        }.scan(parse(code), null);
+        }.scan(parse(code, sourceVersion), null);
     }
 
-    void testRule() throws Exception {
+    void testRule(String sourceVersion) throws Exception {
         String code = "class Test {\n" +
                       "    void t(int i) {\n" +
                       "         switch(i) {\n" +
@@ -126,17 +127,17 @@ public class CaseTest {
                 }
                 return super.visitCase(node, p);
             }
-        }.scan(parse(code), null);
+        }.scan(parse(code, sourceVersion), null);
     }
 
-    private CompilationUnitTree parse(String code) throws IOException {
+    private CompilationUnitTree parse(String code, String sourceVersion) throws IOException {
         final JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
         assert tool != null;
         DiagnosticListener<JavaFileObject> noErrors = d -> {};
 
         StringWriter out = new StringWriter();
         JavacTask ct = (JavacTask) tool.getTask(out, null, noErrors,
-            List.of("-XDdev", "--enable-preview", "-source", "13"), null,
+            List.of("-XDdev", "--enable-preview", "-source", sourceVersion), null,
             Arrays.asList(new MyFileObject(code)));
         return ct.parse().iterator().next();
     }

@@ -55,6 +55,9 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     SystemDictionaryRoots,
     CLDGRoots,
     JVMTIRoots,
+#if INCLUDE_AOT
+    AOTCodeRoots,
+#endif
     CMRefRoots,
     WaitForStrongCLD,
     WeakCLDRoots,
@@ -64,9 +67,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     ScanRS,
     OptScanRS,
     CodeRoots,
-#if INCLUDE_AOT
-    AOTCodeRoots,
-#endif
     ObjCopy,
     OptObjCopy,
     Termination,
@@ -93,6 +93,11 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     UpdateRSSkippedCards
   };
 
+  enum GCObjCopyWorkItems {
+    ObjCopyLABWaste,
+    ObjCopyLABUndoWaste
+  };
+
   enum GCOptCSetWorkItems {
       OptCSetScannedCards,
       OptCSetClaimedCards,
@@ -113,6 +118,9 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   WorkerDataArray<size_t>* _scan_rs_scanned_cards;
   WorkerDataArray<size_t>* _scan_rs_claimed_cards;
   WorkerDataArray<size_t>* _scan_rs_skipped_cards;
+
+  WorkerDataArray<size_t>* _obj_copy_lab_waste;
+  WorkerDataArray<size_t>* _obj_copy_lab_undo_waste;
 
   WorkerDataArray<size_t>* _opt_cset_scanned_cards;
   WorkerDataArray<size_t>* _opt_cset_claimed_cards;

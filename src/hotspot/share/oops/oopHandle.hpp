@@ -36,6 +36,7 @@
 // future uses for read barriers.
 
 class OopHandle {
+  friend class VMStructs;
 private:
   oop* _obj;
 

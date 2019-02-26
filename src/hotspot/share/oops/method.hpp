@@ -974,6 +974,15 @@ class Method : public Metadata {
   // Deallocation function for redefine classes or if an error occurs
   void deallocate_contents(ClassLoaderData* loader_data);
 
+  Method* get_new_method() const {
+    InstanceKlass* holder = method_holder();
+    Method* new_method = holder->method_with_idnum(orig_method_idnum());
+
+    assert(new_method != NULL, "method_with_idnum() should not be NULL");
+    assert(this != new_method, "sanity check");
+    return new_method;
+  }
+
   // Printing
 #ifndef PRODUCT
   void print_on(outputStream* st) const;

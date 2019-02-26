@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@ public class ZGlobals {
     // Pointer part of address
     public static long ZAddressOffsetBits;
     public static long ZAddressOffsetMask;
+    public static long ZAddressOffsetMax;
 
     // Address space start/end/size
     public static long ZAddressSpaceStart;
@@ -84,6 +85,7 @@ public class ZGlobals {
 
         ZAddressOffsetBits = db.lookupLongConstant("ZAddressOffsetBits").longValue();
         ZAddressOffsetMask = db.lookupLongConstant("ZAddressOffsetMask").longValue();
+        ZAddressOffsetMax  = db.lookupLongConstant("ZAddressOffsetMax").longValue();
 
         ZAddressSpaceStart = db.lookupLongConstant("ZAddressSpaceStart").longValue();
     }
@@ -94,6 +96,10 @@ public class ZGlobals {
 
     public static int ZGlobalPhase() {
         return instance().ZGlobalPhase();
+    }
+
+    public static int ZGlobalSeqNum() {
+        return instance().ZGlobalSeqNum();
     }
 
     public static long ZAddressGoodMask() {

@@ -2970,14 +2970,15 @@ void os::large_page_init() {
 int os::create_file_for_heap(const char* dir) {
 
   const char name_template[] = "/jvmheap.XXXXXX";
-  char *fullname = (char*)os::malloc((strlen(dir) + strlen(name_template) + 1), mtInternal);
+
+  size_t fullname_len = strlen(dir) + strlen(name_template);
+  char *fullname = (char*)os::malloc(fullname_len + 1, mtInternal);
   if (fullname == NULL) {
     vm_exit_during_initialization(err_msg("Malloc failed during creation of backing file for heap (%s)", os::strerror(errno)));
     return -1;
   }
-
-  (void)strncpy(fullname, dir, strlen(dir)+1);
-  (void)strncat(fullname, name_template, strlen(name_template));
+  int n = snprintf(fullname, fullname_len + 1, "%s%s", dir, name_template);
+  assert((size_t)n == fullname_len, "Unexpected number of characters in string");
 
   os::native_path(fullname);
 
@@ -5319,27 +5320,6 @@ void Parker::unpark() {
 
 // Platform Monitor implementation
 
-os::PlatformMonitor::PlatformMonitor() {
-  InitializeConditionVariable(&_cond);
-  InitializeCriticalSection(&_mutex);
-}
-
-os::PlatformMonitor::~PlatformMonitor() {
-  DeleteCriticalSection(&_mutex);
-}
-
-void os::PlatformMonitor::lock() {
-  EnterCriticalSection(&_mutex);
-}
-
-void os::PlatformMonitor::unlock() {
-  LeaveCriticalSection(&_mutex);
-}
-
-bool os::PlatformMonitor::try_lock() {
-  return TryEnterCriticalSection(&_mutex);
-}
-
 // Must already be locked
 int os::PlatformMonitor::wait(jlong millis) {
   assert(millis >= 0, "negative timeout");
@@ -5356,14 +5336,6 @@ int os::PlatformMonitor::wait(jlong millis) {
   }
   #endif
   return ret;
-}
-
-void os::PlatformMonitor::notify() {
-  WakeConditionVariable(&_cond);
-}
-
-void os::PlatformMonitor::notify_all() {
-  WakeAllConditionVariable(&_cond);
 }
 
 // Run the specified command in a separate process. Return its exit value,

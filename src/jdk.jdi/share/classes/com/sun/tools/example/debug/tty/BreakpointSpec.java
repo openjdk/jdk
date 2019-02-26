@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,20 +44,24 @@ class BreakpointSpec extends EventRequestSpec {
     String methodId;
     List<String> methodArgs;
     int lineNumber;
+    ThreadReference threadFilter; /* Thread to break in. null if global breakpoint. */
+    public static final String locationTokenDelimiter = ":( \t\n\r";
 
-    BreakpointSpec(ReferenceTypeSpec refSpec, int lineNumber) {
+    BreakpointSpec(ReferenceTypeSpec refSpec, int lineNumber, ThreadReference threadFilter) {
         super(refSpec);
         this.methodId = null;
         this.methodArgs = null;
         this.lineNumber = lineNumber;
+        this.threadFilter = threadFilter;
     }
 
-    BreakpointSpec(ReferenceTypeSpec refSpec, String methodId,
+    BreakpointSpec(ReferenceTypeSpec refSpec, String methodId, ThreadReference threadFilter,
                    List<String> methodArgs) throws MalformedMemberNameException {
         super(refSpec);
         this.methodId = methodId;
         this.methodArgs = methodArgs;
         this.lineNumber = 0;
+        this.threadFilter = threadFilter;
         if (!isValidMethodName(methodId)) {
             throw new MalformedMemberNameException(methodId);
         }
@@ -78,8 +82,11 @@ class BreakpointSpec extends EventRequestSpec {
             throw new InvalidTypeException();
         }
         EventRequestManager em = refType.virtualMachine().eventRequestManager();
-        EventRequest bp = em.createBreakpointRequest(location);
+        BreakpointRequest bp = em.createBreakpointRequest(location);
         bp.setSuspendPolicy(suspendPolicy);
+        if (threadFilter != null) {
+            bp.addThreadFilter(threadFilter);
+        }
         bp.enable();
         return bp;
     }
@@ -104,7 +111,8 @@ class BreakpointSpec extends EventRequestSpec {
     public int hashCode() {
         return refSpec.hashCode() + lineNumber +
             ((methodId != null) ? methodId.hashCode() : 0) +
-            ((methodArgs != null) ? methodArgs.hashCode() : 0);
+            ((methodArgs != null) ? methodArgs.hashCode() : 0) +
+            ((threadFilter != null) ? threadFilter.hashCode() : 0);
     }
 
     @Override
@@ -118,6 +126,9 @@ class BreakpointSpec extends EventRequestSpec {
                    ((methodArgs != null) ?
                         methodArgs.equals(breakpoint.methodArgs)
                       : methodArgs == breakpoint.methodArgs) &&
+                   ((threadFilter != null) ?
+                        threadFilter.equals(breakpoint.threadFilter)
+                      : threadFilter == breakpoint.threadFilter) &&
                    refSpec.equals(breakpoint.refSpec) &&
                    (lineNumber == breakpoint.lineNumber);
         } else {

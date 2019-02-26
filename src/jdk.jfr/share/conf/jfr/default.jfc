@@ -133,11 +133,6 @@
       <setting name="threshold">10 ms</setting>
     </event>
 
-    <event name="jdk.SafepointWaitBlocked">
-      <setting name="enabled">false</setting>
-      <setting name="threshold">10 ms</setting>
-    </event>
-
     <event name="jdk.SafepointCleanup">
       <setting name="enabled">false</setting>
       <setting name="threshold">10 ms</setting>

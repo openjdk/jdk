@@ -57,9 +57,9 @@ compiler/cpuflags/TestAESIntrinsicsOnSupportedConfig.java 8190680 generic-all
 
 compiler/runtime/Test8168712.java 8211769,8211771 generic-ppc64,generic-ppc64le,linux-s390x
 
-applications/ctw/modules/java_desktop.java   8189604 windows-all
-applications/ctw/modules/java_desktop_2.java 8189604 windows-all
-applications/ctw/modules/jdk_jconsole.java   8189604 windows-all
+applications/ctw/modules/java_desktop.java   8205016 windows-all
+applications/ctw/modules/java_desktop_2.java 8205016 windows-all
+applications/ctw/modules/jdk_jconsole.java   8205016 windows-all
 
 #############################################################################
 
@@ -81,6 +81,7 @@ gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java 8193639 solaris-all
 # :hotspot_runtime
 
 runtime/handshake/HandshakeWalkSuspendExitTest.java 8214174 generic-all
+runtime/NMT/CheckForProperDetailStackTrace.java 8218458 generic-all
 runtime/SharedArchiveFile/SASymbolTableTest.java 8193639 solaris-all
 
 #############################################################################
@@ -188,7 +189,6 @@ vmTestbase/vm/mlvm/meth/stress/compiler/sequences/Test.java 8058176 generic-all
 vmTestbase/vm/mlvm/meth/stress/gc/callSequencesDuringGC/Test.java 8058176 generic-all
 vmTestbase/vm/mlvm/meth/stress/java/sequences/Test.java 8058176 generic-all
 vmTestbase/vm/mlvm/meth/stress/jdi/breakpointInCompiledCode/Test.java 8058176 generic-all
-vmTestbase/vm/mlvm/mixed/stress/java/findDeadlock/TestDescription.java 8208278 macosx-all
 vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2none_a/TestDescription.java 8013267 generic-all
 vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manyDiff_b/TestDescription.java 8013267 generic-all
 vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manySame_b/TestDescription.java 8013267 generic-all

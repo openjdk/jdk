@@ -479,7 +479,7 @@ void TieredThresholdPolicy::update_rate(jlong t, Method* m) {
 
   // We don't update the rate if we've just came out of a safepoint.
   // delta_s is the time since last safepoint in milliseconds.
-  jlong delta_s = t - SafepointSynchronize::end_of_last_safepoint();
+  jlong delta_s = t - SafepointTracing::end_of_last_safepoint_ms();
   jlong delta_t = t - (m->prev_time() != 0 ? m->prev_time() : start_time()); // milliseconds since the last measurement
   // How many events were there since the last time?
   int event_count = m->invocation_count() + m->backedge_count();
@@ -504,7 +504,7 @@ void TieredThresholdPolicy::update_rate(jlong t, Method* m) {
 // Check if this method has been stale from a given number of milliseconds.
 // See select_task().
 bool TieredThresholdPolicy::is_stale(jlong t, jlong timeout, Method* m) {
-  jlong delta_s = t - SafepointSynchronize::end_of_last_safepoint();
+  jlong delta_s = t - SafepointTracing::end_of_last_safepoint_ms();
   jlong delta_t = t - m->prev_time();
   if (delta_t > timeout && delta_s > timeout) {
     int event_count = m->invocation_count() + m->backedge_count();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8214114
  * @summary Verify try-catch inside a switch expression works properly.
- * @compile --enable-preview -source 13 TryCatch.java
+ * @compile --enable-preview -source ${jdk.version} TryCatch.java
  * @run main/othervm --enable-preview TryCatch
  */
 public class TryCatch {

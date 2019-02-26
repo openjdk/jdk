@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 
 MonitorChunk::MonitorChunk(int number_on_monitors) {
   _number_of_monitors = number_on_monitors;
-  _monitors           = NEW_C_HEAP_ARRAY(BasicObjectLock, number_on_monitors, mtInternal);
+  _monitors           = NEW_C_HEAP_ARRAY(BasicObjectLock, number_on_monitors, mtSynchronizer);
   _next               = NULL;
 }
 

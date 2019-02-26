@@ -133,6 +133,9 @@ extern Mutex*   DCmdFactory_lock;                // serialize access to DCmdFact
 #if INCLUDE_NMT
 extern Mutex*   NMTQuery_lock;                   // serialize NMT Dcmd queries
 #endif
+#if INCLUDE_CDS && INCLUDE_JVMTI
+extern Mutex*   CDSClassFileStream_lock;         // FileMapInfo::open_stream_for_jvmti
+#endif
 #if INCLUDE_JFR
 extern Mutex*   JfrStacktrace_lock;              // used to guard access to the JFR stacktrace table
 extern Monitor* JfrMsg_lock;                     // protects JFR messaging

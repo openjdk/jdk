@@ -41,8 +41,6 @@ public class SafepointTest {
                                                                   InnerClass.class.getName());
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("Safepoint synchronization initiated");
-        output.shouldContain("Entering safepoint region: ");
-        output.shouldContain("Leaving safepoint region");
         output.shouldHaveExitValue(0);
     }
 

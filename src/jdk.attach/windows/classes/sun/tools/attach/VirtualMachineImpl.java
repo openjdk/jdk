@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
     InputStream execute(String cmd, Object ... args)
         throws AgentLoadException, IOException
     {
-        assert args.length <= 3;        // includes null
+        assert args.length <= 4;        // includes null
 
         // create a pipe using a random name
         Random rnd = new Random();

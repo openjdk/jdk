@@ -39,6 +39,8 @@ protected:
   ~LogMessageTest();
 };
 
+Log(logging) LogMessageTest::_log;
+
 const char* LogMessageTest::_level_filename[] = {
   NULL, // LogLevel::Off
 #define LOG_LEVEL(name, printname) "multiline-" #printname ".log",

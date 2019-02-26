@@ -27,6 +27,7 @@
 #define OS_AIX_OS_AIX_INLINE_HPP
 
 #include "runtime/os.hpp"
+#include "os_posix.inline.hpp"
 
 // System includes
 

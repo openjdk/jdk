@@ -211,56 +211,12 @@ class Env {
         ReferenceType clazz = ref.referenceType();
         long id = ref.uniqueID();
         if (clazz == null) {
-            return toHex(id);
+            return Long.toString(id);
         } else {
-            return MessageOutput.format("object description and hex id",
+            return MessageOutput.format("object description and id",
                                         new Object [] {clazz.name(),
-                                                       toHex(id)});
+                                                       Long.toString(id)});
         }
-    }
-
-    /** Convert a long to a hexadecimal string. */
-    static String toHex(long n) {
-        char s1[] = new char[16];
-        char s2[] = new char[18];
-
-        /* Store digits in reverse order. */
-        int i = 0;
-        do {
-            long d = n & 0xf;
-            s1[i++] = (char)((d < 10) ? ('0' + d) : ('a' + d - 10));
-        } while ((n >>>= 4) > 0);
-
-        /* Now reverse the array. */
-        s2[0] = '0';
-        s2[1] = 'x';
-        int j = 2;
-        while (--i >= 0) {
-            s2[j++] = s1[i];
-        }
-        return new String(s2, 0, j);
-    }
-
-    /** Convert hexadecimal strings to longs. */
-    static long fromHex(String hexStr) {
-        String str = hexStr.startsWith("0x") ?
-            hexStr.substring(2).toLowerCase() : hexStr.toLowerCase();
-        if (hexStr.length() == 0) {
-            throw new NumberFormatException();
-        }
-
-        long ret = 0;
-        for (int i = 0; i < str.length(); i++) {
-            int c = str.charAt(i);
-            if (c >= '0' && c <= '9') {
-                ret = (ret * 16) + (c - '0');
-            } else if (c >= 'a' && c <= 'f') {
-                ret = (ret * 16) + (c - 'a' + 10);
-            } else {
-                throw new NumberFormatException();
-            }
-        }
-        return ret;
     }
 
     static ReferenceType getReferenceTypeFromToken(String idToken) {

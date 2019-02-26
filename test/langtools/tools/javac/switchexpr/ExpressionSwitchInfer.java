@@ -2,7 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 8206986
  * @summary Check types inferred for switch expressions.
- * @compile/fail/ref=ExpressionSwitchInfer.out -XDrawDiagnostics --enable-preview -source 13 ExpressionSwitchInfer.java
+ * @compile/fail/ref=ExpressionSwitchInfer.out -XDrawDiagnostics --enable-preview -source ${jdk.version} ExpressionSwitchInfer.java
  */
 
 import java.util.ArrayList;

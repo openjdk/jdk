@@ -32,16 +32,16 @@
 // --------------------------
 //
 //   6
-//   3                                                                  3 2 1 0
-//  +--------------------------------------------------------------------+-+-+-+
-//  |11111111 11111111 11111111 11111111 11111111 11111111 11111111 11111|1|1|1|
-//  +--------------------------------------------------------------------+-+-+-+
-//  |                                                                    | | |
-//  |                               2-2 Non-immediate Oops Flag (1-bits) * | |
-//  |                                                                      | |
-//  |                        1-1 Immediate Oops/Unregistered Flag (1-bits) * |
-//  |                                                                        |
-//  |                                           0-0 Registered Flag (1-bits) *
+//   3                                                                   2 1 0
+//  +---------------------------------------------------------------------+-+-+
+//  |11111111 11111111 11111111 11111111 11111111 11111111 11111111 111111|1|1|
+//  +---------------------------------------------------------------------+-+-+
+//  |                                                                     | |
+//  |                                                                     | |
+//  |                                                                     | |
+//  |                                      1-1 Unregistered Flag (1-bits) * |
+//  |                                                                       |
+//  |                                          0-0 Registered Flag (1-bits) *
 //  |
 //  * 63-3 NMethod Address (61-bits)
 //
@@ -52,22 +52,20 @@ class ZNMethodTableEntry : public CHeapObj<mtGC> {
 private:
   typedef ZBitField<uint64_t, bool,     0,  1>    field_registered;
   typedef ZBitField<uint64_t, bool,     1,  1>    field_unregistered;
-  typedef ZBitField<uint64_t, bool,     1,  1>    field_immediate_oops;
-  typedef ZBitField<uint64_t, bool,     2,  1>    field_non_immediate_oops;
-  typedef ZBitField<uint64_t, nmethod*, 3, 61, 3> field_method;
+  typedef ZBitField<uint64_t, nmethod*, 2, 62, 2> field_method;
 
   uint64_t _entry;
 
 public:
   explicit ZNMethodTableEntry(bool unregistered = false) :
-      _entry(field_unregistered::encode(unregistered) |
-             field_registered::encode(false)) {}
+      _entry(field_registered::encode(false) |
+             field_unregistered::encode(unregistered) |
+             field_method::encode(NULL)) {}
 
-  ZNMethodTableEntry(nmethod* method, bool non_immediate_oops, bool immediate_oops) :
-      _entry(field_method::encode(method) |
-             field_non_immediate_oops::encode(non_immediate_oops) |
-             field_immediate_oops::encode(immediate_oops) |
-             field_registered::encode(true)) {}
+  explicit ZNMethodTableEntry(nmethod* method) :
+      _entry(field_registered::encode(true) |
+             field_unregistered::encode(false) |
+             field_method::encode(method)) {}
 
   bool registered() const {
     return field_registered::decode(_entry);
@@ -75,14 +73,6 @@ public:
 
   bool unregistered() const {
     return field_unregistered::decode(_entry);
-  }
-
-  bool immediate_oops() const {
-    return field_immediate_oops::decode(_entry);
-  }
-
-  bool non_immediate_oops() const {
-    return field_non_immediate_oops::decode(_entry);
   }
 
   nmethod* method() const {

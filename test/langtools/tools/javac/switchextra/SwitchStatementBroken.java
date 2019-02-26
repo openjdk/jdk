@@ -2,7 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 8206986
  * @summary Verify that rule and ordinary cases cannot be mixed.
- * @compile/fail/ref=SwitchStatementBroken.out -XDrawDiagnostics --enable-preview -source 13 SwitchStatementBroken.java
+ * @compile/fail/ref=SwitchStatementBroken.out -XDrawDiagnostics --enable-preview -source ${jdk.version} SwitchStatementBroken.java
  */
 
 public class SwitchStatementBroken {

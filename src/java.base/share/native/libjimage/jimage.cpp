@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -214,30 +214,4 @@ JIMAGE_ResourceIterator(JImageFile* image,
             break;
         }
     }
-}
-
-/*
- * JIMAGE_ResourcePath- Given an open image file, a location reference, a buffer
- * and a maximum buffer size, copy the path of the resource into the buffer.
- * Returns false if not a valid location reference.
- *
- * Ex.
- *   JImageLocationRef location = ...
- *   char path[JIMAGE_MAX_PATH];
- *    (*JImageResourcePath)(image, location, path, JIMAGE_MAX_PATH);
- */
-extern "C" JNIEXPORT bool
-JIMAGE_ResourcePath(JImageFile* image, JImageLocationRef locationRef,
-                                    char* path, size_t max) {
-    ImageFileReader* imageFile = (ImageFileReader*) image;
-
-    u4 offset = (u4) locationRef;
-    if (offset >= imageFile->locations_size()) {
-        return false;
-    }
-
-    ImageLocation location(imageFile->get_location_offset_data(offset));
-    imageFile->location_path(location, path, max);
-
-    return true;
 }

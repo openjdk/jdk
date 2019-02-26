@@ -408,23 +408,8 @@ public class Start extends ToolOption.Helper {
                 return ERROR;
             }
         } else {
-            if (apiMode) {
-                com.sun.tools.javadoc.main.Start ostart
-                        = new com.sun.tools.javadoc.main.Start(context);
-                return ostart.begin(docletClass, options, fileObjects)
-                        ? OK
-                        : ERROR;
-            }
-            warn("main.legacy_api");
-            String[] array = options.toArray(new String[options.size()]);
-            int rc = com.sun.tools.javadoc.Main.execute(
-                    messager.programName,
-                    messager.getWriter(WriterKind.ERROR),
-                    messager.getWriter(WriterKind.WARNING),
-                    messager.getWriter(WriterKind.NOTICE),
-                    docletClass.getName(),
-                    array);
-            return (rc == 0) ? OK : ERROR;
+            error("main.not_a_doclet", docletClass.getName());
+            return ERROR;
         }
 
         Result result = OK;
@@ -771,6 +756,13 @@ public class Start extends ToolOption.Helper {
                 }
                 String text = messager.getText("main.doclet_class_not_found", userDocletName);
                 throw new ToolException(CMDERR, text, cnfe);
+            } catch (NoClassDefFoundError ncfe) {
+                if (ncfe.getMessage().contains("com/sun/javadoc/Doclet")) {
+                    String text = messager.getText("main.not_a_doclet", userDocletName);
+                    throw new ToolException(ERROR, text, ncfe);
+                } else {
+                    throw ncfe;
+                }
             }
         }
 

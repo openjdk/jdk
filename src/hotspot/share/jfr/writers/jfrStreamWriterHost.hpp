@@ -33,9 +33,9 @@ class StreamWriterHost : public MemoryWriterHost<Adapter, AP> {
  public:
   typedef typename Adapter::StorageType StorageType;
  private:
-  intptr_t _stream_pos;
+  int64_t _stream_pos;
   fio_fd _fd;
-  intptr_t current_stream_position() const;
+  int64_t current_stream_position() const;
 
  protected:
   StreamWriterHost(StorageType* storage, Thread* thread);
@@ -47,8 +47,8 @@ class StreamWriterHost : public MemoryWriterHost<Adapter, AP> {
   bool has_valid_fd() const;
 
  public:
-  intptr_t current_offset() const;
-  void seek(intptr_t offset);
+  int64_t current_offset() const;
+  void seek(int64_t offset);
   void flush();
   void write_unbuffered(const void* src, size_t len);
   bool is_valid() const;

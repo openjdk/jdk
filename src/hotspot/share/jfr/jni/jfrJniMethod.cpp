@@ -114,7 +114,7 @@ NO_TRANSITION(void, jfr_set_enabled(JNIEnv* env, jobject jvm, jlong event_type_i
 NO_TRANSITION_END
 
 NO_TRANSITION(void, jfr_set_file_notification(JNIEnv* env, jobject jvm, jlong threshold))
-  JfrChunkRotation::set_threshold((intptr_t)threshold);
+  JfrChunkRotation::set_threshold(threshold);
 NO_TRANSITION_END
 
 NO_TRANSITION(void, jfr_set_sample_threads(JNIEnv* env, jobject jvm, jboolean sampleThreads))

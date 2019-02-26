@@ -36,7 +36,7 @@ class JfrChunkWriter;
 class JfrChunkRotation : AllStatic {
  public:
   static void evaluate(const JfrChunkWriter& writer);
-  static void set_threshold(intptr_t bytes);
+  static void set_threshold(int64_t bytes);
   static bool should_rotate();
   static void on_rotation();
 };

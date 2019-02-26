@@ -2,7 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 8206986
  * @summary Check behavior for invalid breaks.
- * @compile/fail/ref=ExpressionSwitchBreaks2.out -XDrawDiagnostics --enable-preview -source 13 ExpressionSwitchBreaks2.java
+ * @compile/fail/ref=ExpressionSwitchBreaks2.out -XDrawDiagnostics --enable-preview -source ${jdk.version} ExpressionSwitchBreaks2.java
  */
 
 public class ExpressionSwitchBreaks2 {

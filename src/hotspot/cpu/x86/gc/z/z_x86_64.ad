@@ -26,9 +26,8 @@ source %{
 #include "gc/z/zBarrierSetAssembler.hpp"
 
 static void z_load_barrier_slow_reg(MacroAssembler& _masm, Register dst, Address src, bool weak) {
-  assert(dst != r12, "Invalid register");
-  assert(dst != r15, "Invalid register");
   assert(dst != rsp, "Invalid register");
+  assert(dst != r15, "Invalid register");
 
   const address stub = weak ? ZBarrierSet::assembler()->load_barrier_weak_slow_stub(dst)
                             : ZBarrierSet::assembler()->load_barrier_slow_stub(dst);

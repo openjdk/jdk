@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,7 @@ public class MarkBits {
     start = reserved.start();
     end   = reserved.end();
     long numOopHandles = end.minus(start) / VM.getVM().getOopSize();
-    // FIXME: will have trouble with larger heap sizes
-    bits = new BitMap((int) numOopHandles);
+    bits = heap.createBitMap(numOopHandles);
   }
 
   public void clear() {
@@ -60,34 +59,22 @@ public class MarkBits {
     }
 
     OopHandle handle = obj.getHandle();
-    // FIXME: will have trouble with larger heap sizes
     long idx = handle.minus(start) / VM.getVM().getOopSize();
-    if ((idx < 0) || (idx >= bits.size())) {
-      System.err.println("MarkBits: WARNING: object " + handle + " outside of heap, ignoring");
-      return false;
-    }
-    int intIdx = (int) idx;
-    if (bits.at(intIdx)) {
+    if (bits.at(idx)) {
       return false; // already marked
     }
-    bits.atPut(intIdx, true);
+    bits.atPut(idx, true);
     return true;
   }
 
   /** Forces clearing of a given mark bit. */
   public void clear(Oop obj) {
     OopHandle handle = obj.getHandle();
-    // FIXME: will have trouble with larger heap sizes
     long idx = handle.minus(start) / VM.getVM().getOopSize();
-    if ((idx < 0) || (idx >= bits.size())) {
-      System.err.println("MarkBits: WARNING: object " + handle + " outside of heap, ignoring");
-      return;
-    }
-    int intIdx = (int) idx;
-    bits.atPut(intIdx, false);
+    bits.atPut(idx, false);
   }
 
-  private BitMap  bits;
+  private BitMapInterface bits;
   private Address start;
   private Address end;
 }

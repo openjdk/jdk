@@ -155,7 +155,8 @@ private:
 public:
   G1PLABAllocator(G1Allocator* allocator);
 
-  void waste(size_t& wasted, size_t& undo_wasted);
+  size_t waste() const;
+  size_t undo_waste() const;
 
   // Allocate word_sz words in dest, either directly into the regions or by
   // allocating a new PLAB. Returns the address of the allocated memory, NULL if

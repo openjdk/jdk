@@ -79,6 +79,8 @@ public class IndexRedirectWriter extends HtmlDocletWriter {
         Content htmlComment = contents.newPage;
         Head head = new Head(path, configuration.docletVersion)
                 .setTimestamp(true)
+                .setDescription("index redirect")
+                .setGenerator(getGenerator(getClass()))
                 .setStylesheets(configuration.getMainStylesheet(), Collections.emptyList()) // avoid reference to default stylesheet
                 .addDefaultScript(false);
 

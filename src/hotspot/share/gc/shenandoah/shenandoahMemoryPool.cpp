@@ -26,7 +26,7 @@
 
 ShenandoahMemoryPool::ShenandoahMemoryPool(ShenandoahHeap* heap) :
         CollectedMemoryPool("Shenandoah",
-                            heap->capacity(),
+                            heap->initial_capacity(),
                             heap->max_capacity(),
                             true /* support_usage_threshold */),
                             _heap(heap) {}
@@ -37,9 +37,15 @@ MemoryUsage ShenandoahMemoryPool::get_memory_usage() {
   size_t used      = used_in_bytes();
   size_t committed = _heap->committed();
 
+  // These asserts can never fail: max is stable, and all updates to other values never overflow max.
   assert(initial <= max,    "initial: "   SIZE_FORMAT ", max: "       SIZE_FORMAT, initial,   max);
   assert(used <= max,       "used: "      SIZE_FORMAT ", max: "       SIZE_FORMAT, used,      max);
   assert(committed <= max,  "committed: " SIZE_FORMAT ", max: "       SIZE_FORMAT, committed, max);
+
+  // Committed and used are updated concurrently and independently. They can momentarily break
+  // the assert below, which would also fail in downstream code. To avoid that, adjust values
+  // to make sense under the race. See JDK-8207200.
+  committed = MAX2(used, committed);
   assert(used <= committed, "used: "      SIZE_FORMAT ", committed: " SIZE_FORMAT, used,      committed);
 
   return MemoryUsage(initial, used, committed, max);

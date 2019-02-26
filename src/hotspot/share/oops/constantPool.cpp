@@ -39,7 +39,7 @@
 #include "memory/metaspaceShared.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/array.inline.hpp"
+#include "oops/array.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "oops/cpCache.inline.hpp"
 #include "oops/instanceKlass.hpp"
@@ -55,10 +55,6 @@
 #include "runtime/thread.inline.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "utilities/copy.hpp"
-
-constantTag ConstantPool::tag_at(int which) const { return (constantTag)tags()->at_acquire(which); }
-
-void ConstantPool::release_tag_at_put(int which, jbyte t) { tags()->release_at_put(which, t); }
 
 ConstantPool* ConstantPool::allocate(ClassLoaderData* loader_data, int length, TRAPS) {
   Array<u1>* tags = MetadataFactory::new_array<u1>(loader_data, length, 0, CHECK_NULL);

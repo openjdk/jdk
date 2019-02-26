@@ -847,14 +847,6 @@ public:
   JvmtiCachedClassFieldMap* jvmti_cached_class_field_map() const {
     return _jvmti_cached_class_field_map;
   }
-
-#if INCLUDE_CDS
-  void set_archived_class_data(JvmtiCachedClassFileData* data) {
-    _cached_class_file = data;
-  }
-
-  JvmtiCachedClassFileData * get_archived_class_data();
-#endif // INCLUDE_CDS
 #else // INCLUDE_JVMTI
 
   static void purge_previous_versions(InstanceKlass* ik) { return; };
@@ -1149,7 +1141,7 @@ public:
   Method* method_at_itable(Klass* holder, int index, TRAPS);
 
 #if INCLUDE_JVMTI
-  void adjust_default_methods(InstanceKlass* holder, bool* trace_name_printed);
+  void adjust_default_methods(bool* trace_name_printed);
 #endif // INCLUDE_JVMTI
 
   void clean_weak_instanceklass_links();

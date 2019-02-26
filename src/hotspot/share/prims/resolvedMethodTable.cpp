@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -232,12 +232,7 @@ void ResolvedMethodTable::adjust_method_entries(bool * trace_name_printed) {
           continue;
         }
 
-        InstanceKlass* holder = old_method->method_holder();
-        Method* new_method = holder->method_with_idnum(old_method->orig_method_idnum());
-        assert(holder == new_method->method_holder(), "call after swapping redefined guts");
-        assert(new_method != NULL, "method_with_idnum() should not be NULL");
-        assert(old_method != new_method, "sanity check");
-
+        Method* new_method = old_method->get_new_method();
         java_lang_invoke_ResolvedMethodName::set_vmtarget(mem_name, new_method);
 
         ResourceMark rm;

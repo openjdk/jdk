@@ -931,7 +931,7 @@ public class TTY implements EventNotifier {
                    // Old-style options (These should remain in place as long as
                    //  the standard VM accepts them)
                    token.equals("-noasyncgc") || token.equals("-prof") ||
-                   token.equals("-verify") || token.equals("-noverify") ||
+                   token.equals("-verify") ||
                    token.equals("-verifyremote") ||
                    token.equals("-verbosegc") ||
                    token.startsWith("-ms") || token.startsWith("-mx") ||

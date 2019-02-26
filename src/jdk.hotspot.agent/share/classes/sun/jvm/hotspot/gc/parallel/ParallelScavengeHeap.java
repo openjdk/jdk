@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.util.*;
 
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.gc.shared.*;
+import sun.jvm.hotspot.memory.MemRegion;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
 
@@ -86,6 +87,35 @@ public class ParallelScavengeHeap extends CollectedHeap {
 
    public CollectedHeapName kind() {
       return CollectedHeapName.PARALLEL;
+   }
+
+   // Simple wrapper to provide toString() usable for debugging.
+   private class LiveRegionProviderImpl implements LiveRegionsProvider {
+      private String name;
+      private MutableSpace space;
+
+      public LiveRegionProviderImpl(String name, MutableSpace space) {
+         this.name = name;
+         this.space = space;
+      }
+
+      @Override
+      public List<MemRegion> getLiveRegions() {
+         return space.getLiveRegions();
+      }
+      @Override
+      public String toString() {
+         return name;
+      }
+   }
+
+   public void liveRegionsIterate(LiveRegionsClosure closure) {
+      // Add eden space
+      closure.doLiveRegions(new LiveRegionProviderImpl("eden", youngGen().edenSpace()));
+      // Add from-space but not to-space
+      closure.doLiveRegions(new LiveRegionProviderImpl("from", youngGen().fromSpace()));
+
+      closure.doLiveRegions(new LiveRegionProviderImpl("old ", oldGen().objectSpace()));
    }
 
    public void printOn(PrintStream tty) {

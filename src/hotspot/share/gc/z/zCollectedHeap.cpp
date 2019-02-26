@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 #include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeap.inline.hpp"
-#include "gc/z/zNMethodTable.hpp"
+#include "gc/z/zNMethod.hpp"
 #include "gc/z/zServiceability.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zUtils.inline.hpp"
@@ -116,10 +116,6 @@ bool ZCollectedHeap::is_in(const void* p) const {
 
 bool ZCollectedHeap::is_in_closed_subset(const void* p) const {
   return is_in(p);
-}
-
-void ZCollectedHeap::fill_with_dummy_object(HeapWord* start, HeapWord* end, bool zap) {
-  // Does nothing, not a parsable heap
 }
 
 HeapWord* ZCollectedHeap::allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size) {
@@ -259,11 +255,11 @@ bool ZCollectedHeap::block_is_obj(const HeapWord* addr) const {
 }
 
 void ZCollectedHeap::register_nmethod(nmethod* nm) {
-  ZNMethodTable::register_nmethod(nm);
+  ZNMethod::register_nmethod(nm);
 }
 
 void ZCollectedHeap::unregister_nmethod(nmethod* nm) {
-  ZNMethodTable::unregister_nmethod(nm);
+  ZNMethod::unregister_nmethod(nm);
 }
 
 void ZCollectedHeap::verify_nmethod(nmethod* nm) {

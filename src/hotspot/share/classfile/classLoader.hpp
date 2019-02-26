@@ -247,11 +247,11 @@ class ClassLoader: AllStatic {
 
   static void load_zip_library();
   static void load_jimage_library();
+
+ public:
   static ClassPathEntry* create_class_path_entry(const char *path, const struct stat* st,
                                                  bool throw_exception,
                                                  bool is_boot_append, TRAPS);
-
- public:
 
   // If the package for the fully qualified class name is in the boot
   // loader's package entry table then add_package() sets the classpath_index

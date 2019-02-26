@@ -112,6 +112,9 @@ GTEST_LAUNCHER_DIRS := $(patsubst %/gtestLauncher, %, \
 GTEST_VARIANTS := $(strip $(patsubst $(TEST_IMAGE_DIR)/hotspot/gtest/%, %, \
     $(GTEST_LAUNCHER_DIRS)))
 
+COV_ENVIRONMENT :=
+JTREG_COV_OPTIONS :=
+
 ifeq ($(TEST_OPTS_JCOV), true)
   JCOV_OUTPUT_DIR := $(TEST_RESULTS_DIR)/jcov-output
   JCOV_GRABBER_LOG := $(JCOV_OUTPUT_DIR)/grabber.log
@@ -122,10 +125,16 @@ ifeq ($(TEST_OPTS_JCOV), true)
   # Replace our normal test JDK with the JCov image.
   JDK_UNDER_TEST := $(JCOV_IMAGE_DIR)
 
-  JCOV_ENVIRONMENT := JAVA_TOOL_OPTIONS="$(JCOV_MEM_OPTIONS)" \
+  COV_ENVIRONMENT += JAVA_TOOL_OPTIONS="$(JCOV_MEM_OPTIONS)" \
       _JAVA_OPTIONS="$(JCOV_MEM_OPTIONS)"
-  JTREG_JCOV_OPTIONS := -e:JAVA_TOOL_OPTIONS='$(JCOV_MEM_OPTIONS)' \
+  JTREG_COV_OPTIONS += -e:JAVA_TOOL_OPTIONS='$(JCOV_MEM_OPTIONS)' \
       -e:_JAVA_OPTIONS='$(JCOV_MEM_OPTIONS)'
+endif
+
+ifeq ($(GCOV_ENABLED), true)
+  GCOV_OUTPUT_DIR := $(TEST_RESULTS_DIR)/gcov-output
+  COV_ENVIRONMENT += GCOV_PREFIX="$(GCOV_OUTPUT_DIR)"
+  JTREG_COV_OPTIONS += -e:GCOV_PREFIX="$(GCOV_OUTPUT_DIR)"
 endif
 
 ################################################################################
@@ -170,6 +179,7 @@ define SetupAotModuleBody
 	$$(call LogWarn, Generating $$(patsubst $$(OUTPUTDIR)/%, %, $$@))
 	$$(call MakeTargetDir)
 	$$(call ExecuteWithLog, $$@, \
+	    $((COV_ENVIRONMENT) \
 	    $$(FIXPATH) $$(JDK_UNDER_TEST)/bin/jaotc \
 	        $$($1_JAOTC_OPTS) --output $$@ --module $$($1_MODULE) \
 	)
@@ -658,6 +668,8 @@ define SetupRunMicroTestBody
 
   # Current tests needs to open java.io
   $1_MICRO_JAVA_OPTIONS += --add-opens=java.base/java.io=ALL-UNNAMED
+  # Set library path for native dependencies
+  $1_MICRO_JAVA_OPTIONS += -Djava.library.path=$$(TEST_IMAGE_DIR)/micro/native
 
   # Save output as JSON or CSV file
   ifneq ($$(MICRO_RESULTS_FORMAT), )
@@ -690,7 +702,8 @@ define SetupRunMicroTestBody
 	$$(call LogWarn, Running test '$$($1_TEST)')
 	$$(call MakeDir, $$($1_TEST_RESULTS_DIR) $$($1_TEST_SUPPORT_DIR))
 	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/micro, \
-	    $$($1_MICRO_TEST_JDK)/bin/java $$($1_MICRO_JAVA_OPTIONS) -jar $$($1_MICRO_BENCHMARKS_JAR) \
+	    $$(FIXPATH) $$($1_MICRO_TEST_JDK)/bin/java $$($1_MICRO_JAVA_OPTIONS) \
+	        -jar $$($1_MICRO_BENCHMARKS_JAR) \
 	        $$($1_MICRO_ITER) $$($1_MICRO_FORK) $$($1_MICRO_TIME) \
 	        $$($1_MICRO_WARMUP_ITER) $$($1_MICRO_WARMUP_TIME) \
 	        $$($1_MICRO_VM_OPTIONS) $$($1_MICRO_BASIC_OPTIONS) $$(MICRO_OPTIONS) \
@@ -904,7 +917,7 @@ define SetupRunJtregTestBody
 	$$(call LogWarn, Running test '$$($1_TEST)')
 	$$(call MakeDir, $$($1_TEST_RESULTS_DIR) $$($1_TEST_SUPPORT_DIR))
 	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/jtreg, \
-	    $$(JCOV_ENVIRONMENT) \
+	    $$(COV_ENVIRONMENT) \
 	    $$(JAVA) $$($1_JTREG_LAUNCHER_OPTIONS) \
 	        -Dprogram=jtreg -jar $$(JT_HOME)/lib/jtreg.jar \
 	        $$($1_JTREG_BASIC_OPTIONS) \
@@ -914,7 +927,7 @@ define SetupRunJtregTestBody
 	        -workDir:$$($1_TEST_SUPPORT_DIR) \
 	        $$(JTREG_OPTIONS) \
 	        $$(JTREG_FAILURE_HANDLER_OPTIONS) \
-	        $$(JTREG_JCOV_OPTIONS) \
+	        $$(JTREG_COV_OPTIONS) \
 	        $$($1_TEST_NAME) \
 	    && $$(ECHO) $$$$? > $$($1_EXITCODE) \
 	    || $$(ECHO) $$$$? > $$($1_EXITCODE) \

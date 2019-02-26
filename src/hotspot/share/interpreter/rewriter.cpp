@@ -28,6 +28,7 @@
 #include "interpreter/rewriter.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/constantPool.hpp"
 #include "oops/generateOopMap.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"

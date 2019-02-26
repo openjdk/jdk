@@ -48,7 +48,6 @@ import jdk.test.lib.Asserts;
  * @bug 8171084
  * @requires vm.hasSAandCanAttach & (vm.bits == "64" & os.maxMemory > 8g)
  * @requires vm.gc != "Shenandoah"
- * @requires vm.gc != "Z"
  * @modules java.base/jdk.internal.misc
  *          jdk.hotspot.agent/sun.jvm.hotspot
  *          jdk.hotspot.agent/sun.jvm.hotspot.utilities

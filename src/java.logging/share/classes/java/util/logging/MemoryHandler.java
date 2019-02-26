@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -270,7 +270,7 @@ public class MemoryHandler extends Handler {
      * check whether the {@code LogRecord} would result in a "push" of the
      * buffer contents. It will return false if the {@code LogRecord} is null.
      *
-     * @param record  a {@code LogRecord}
+     * @param record  a {@code LogRecord} (may be null).
      * @return true if the {@code LogRecord} would be logged.
      *
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.util.Observer;
 import sun.jvm.hotspot.debugger.Address;
 import sun.jvm.hotspot.debugger.OopHandle;
 import sun.jvm.hotspot.gc.shared.CompactibleSpace;
+import sun.jvm.hotspot.gc.shared.LiveRegionsProvider;
 import sun.jvm.hotspot.memory.MemRegion;
 import sun.jvm.hotspot.runtime.VM;
 import sun.jvm.hotspot.runtime.VMObjectFactory;
@@ -43,7 +44,7 @@ import sun.jvm.hotspot.types.TypeDataBase;
 // Mirror class for HeapRegion. Currently we don't actually include
 // any of its fields but only iterate over it.
 
-public class HeapRegion extends CompactibleSpace {
+public class HeapRegion extends CompactibleSpace implements LiveRegionsProvider {
     // static int GrainBytes;
     static private CIntegerField grainBytesField;
     static private AddressField topField;
@@ -86,8 +87,8 @@ public class HeapRegion extends CompactibleSpace {
     }
 
     @Override
-    public List getLiveRegions() {
-        List res = new ArrayList();
+    public List<MemRegion> getLiveRegions() {
+        List<MemRegion> res = new ArrayList<>();
         res.add(new MemRegion(bottom(), top()));
         return res;
     }

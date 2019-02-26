@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ public class Klass extends Metadata implements ClassConstants {
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     Type type    = db.lookupType("Klass");
-    javaMirror   = type.getAddressField("_java_mirror");
+    javaMirrorFieldOffset = type.getField("_java_mirror").getOffset();
     superField   = new MetadataField(type.getAddressField("_super"), 0);
     layoutHelper = new IntField(type.getJIntField("_layout_helper"), 0);
     name         = type.getAddressField("_name");
@@ -89,7 +89,7 @@ public class Klass extends Metadata implements ClassConstants {
   public boolean isArrayKlass()        { return false; }
 
   // Fields
-  private static AddressField   javaMirror;
+  private static long javaMirrorFieldOffset;
   private static MetadataField  superField;
   private static IntField layoutHelper;
   private static AddressField  name;
@@ -101,23 +101,15 @@ public class Klass extends Metadata implements ClassConstants {
   private static CIntField vtableLen;
   private static AddressField classLoaderData;
 
-  private Address getValue(AddressField field) {
-    return addr.getAddressAt(field.getOffset());
-  }
-
   protected Symbol getSymbol(AddressField field) {
     return Symbol.create(addr.getAddressAt(field.getOffset()));
   }
 
   // Accessors for declared fields
   public Instance getJavaMirror() {
-    Address handle = javaMirror.getValue(getAddress());
-    if (handle != null) {
-      // Load through the handle
-      OopHandle refs = handle.getOopHandleAt(0);
-      return (Instance)VM.getVM().getObjectHeap().newOop(refs);
-    }
-    return null;
+    Address addr = getAddress().addOffsetTo(javaMirrorFieldOffset);
+    VMOopHandle vmOopHandle = VMObjectFactory.newObject(VMOopHandle.class, addr);
+    return vmOopHandle.resolve();
   }
   public Klass    getSuper()            { return (Klass)    superField.getValue(this);   }
   public Klass    getJavaSuper()        { return null;  }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -191,7 +191,7 @@ int ZBackingFile::create_file_fd(const char* name) const {
 
   // Try to create an anonymous file using the O_TMPFILE flag. Note that this
   // flag requires kernel >= 3.11. If this fails we fall back to open/unlink.
-  const int fd_anon = open(path.get(), O_TMPFILE|O_EXCL|O_RDWR|O_CLOEXEC, S_IRUSR|S_IWUSR);
+  const int fd_anon = os::open(path.get(), O_TMPFILE|O_EXCL|O_RDWR|O_CLOEXEC, S_IRUSR|S_IWUSR);
   if (fd_anon == -1) {
     ZErrno err;
     log_debug(gc, init)("Failed to create anonymous file in %s (%s)", path.get(),
@@ -217,7 +217,7 @@ int ZBackingFile::create_file_fd(const char* name) const {
   snprintf(filename, sizeof(filename), "%s/%s.%d", path.get(), name, os::current_process_id());
 
   // Create file
-  const int fd = open(filename, O_CREAT|O_EXCL|O_RDWR|O_CLOEXEC, S_IRUSR|S_IWUSR);
+  const int fd = os::open(filename, O_CREAT|O_EXCL|O_RDWR|O_CLOEXEC, S_IRUSR|S_IWUSR);
   if (fd == -1) {
     ZErrno err;
     log_error(gc, init)("Failed to create file %s (%s)", filename, err.to_string());

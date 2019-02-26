@@ -38,6 +38,7 @@
 #include "memory/filemap.hpp"
 #include "oops/oop.inline.hpp"
 #include "os_linux.inline.hpp"
+#include "os_posix.inline.hpp"
 #include "os_share_linux.hpp"
 #include "osContainer_linux.hpp"
 #include "prims/jniFastGetField.hpp"
@@ -131,6 +132,7 @@
 
 enum CoredumpFilterBit {
   FILE_BACKED_PVT_BIT = 1 << 2,
+  FILE_BACKED_SHARED_BIT = 1 << 3,
   LARGEPAGES_BIT = 1 << 6,
   DAX_SHARED_BIT = 1 << 8
 };
@@ -1357,11 +1359,9 @@ void os::shutdown() {
 void os::abort(bool dump_core, void* siginfo, const void* context) {
   os::shutdown();
   if (dump_core) {
-#if INCLUDE_CDS
-    if (UseSharedSpaces && DumpPrivateMappingsInCore) {
+    if (DumpPrivateMappingsInCore) {
       ClassLoader::close_jrt_image();
     }
-#endif
 #ifndef PRODUCT
     fdStream out(defaultStream::output_fd());
     out.print_raw("Current thread is ");
@@ -3432,8 +3432,6 @@ bool os::Linux::hugetlbfs_sanity_check(bool warn, size_t page_size) {
   return result;
 }
 
-// Set the coredump_filter bits to include largepages in core dump (bit 6)
-//
 // From the coredump_filter documentation:
 //
 // - (bit 0) anonymous private memory
@@ -5131,11 +5129,13 @@ jint os::init_2(void) {
     set_coredump_filter(DAX_SHARED_BIT);
   }
 
-#if INCLUDE_CDS
-  if (UseSharedSpaces && DumpPrivateMappingsInCore) {
+  if (DumpPrivateMappingsInCore) {
     set_coredump_filter(FILE_BACKED_PVT_BIT);
   }
-#endif
+
+  if (DumpSharedMappingsInCore) {
+    set_coredump_filter(FILE_BACKED_SHARED_BIT);
+  }
 
   return JNI_OK;
 }

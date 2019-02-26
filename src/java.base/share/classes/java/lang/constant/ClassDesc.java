@@ -170,7 +170,7 @@ public interface ClassDesc
      *
      * @param rank the rank of the array
      * @return a {@linkplain ClassDesc} describing the array type
-     * @throws IllegalArgumentException if the rank is less than zero or if the rank of the resulting array type is
+     * @throws IllegalArgumentException if the rank is less than or equal to zero or if the rank of the resulting array type is
      * greater than 255
      * @jvms 4.4.1 The CONSTANT_Class_info Structure
      */

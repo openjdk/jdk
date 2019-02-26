@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,8 @@ package java.nio;
  * instance of this class rather than of the superclass.
 #end[rw]
  */
+
+import java.util.Objects;
 
 class Heap$Type$Buffer$RW$
     extends {#if[ro]?Heap}$Type$Buffer
@@ -181,6 +183,13 @@ class Heap$Type$Buffer$RW$
         return this;
     }
 
+    public $Type$Buffer get(int index, $type$[] dst, int offset, int length) {
+        Objects.checkFromIndexSize(index, length, limit());
+        Objects.checkFromIndexSize(offset, length, dst.length);
+        System.arraycopy(hb, ix(index), dst, offset, length);
+        return this;
+    }
+
     public boolean isDirect() {
         return false;
     }
@@ -249,6 +258,36 @@ class Heap$Type$Buffer$RW$
         throw new ReadOnlyBufferException();
 #end[rw]
     }
+
+    public $Type$Buffer put(int index, $type$[] src, int offset, int length) {
+#if[rw]
+        Objects.checkFromIndexSize(index, length, limit());
+        Objects.checkFromIndexSize(offset, length, src.length);
+        System.arraycopy(src, offset, hb, ix(index), length);
+        return this;
+#else[rw]
+        throw new ReadOnlyBufferException();
+#end[rw]
+    }
+
+#if[char]
+
+    public $Type$Buffer put(String src, int start, int end) {
+        int length = end - start;
+        checkBounds(start, length, src.length());
+        if (isReadOnly())
+            throw new ReadOnlyBufferException();
+        int pos = position();
+        int lim = limit();
+        int rem = (pos <= lim) ? lim - pos : 0;
+        if (length > rem)
+            throw new BufferOverflowException();
+        src.getChars(start, end, hb, ix(pos));
+        position(pos + length);
+        return this;
+    }
+
+#end[char]
 
     public $Type$Buffer compact() {
 #if[rw]

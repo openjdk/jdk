@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,12 +79,13 @@ public class GenClassesBuilder {
         } catch (IOException e) {
             throw new Error("can't create dirs for" + dir, e);
         }
-        Path pattern = testRoot().resolve("vmTestbase")
-                                 .resolve("nsk")
-                                 .resolve("monitoring")
-                                 .resolve("share")
-                                 .resolve("LoadableClass.pattern")
-                                 .toAbsolutePath();
+        Path pattern = Paths.get(Utils.TEST_ROOT)
+                            .resolve("vmTestbase")
+                            .resolve("nsk")
+                            .resolve("monitoring")
+                            .resolve("share")
+                            .resolve("LoadableClass.pattern")
+                            .toAbsolutePath();
         if (Files.notExists(pattern)) {
             throw new Error("can't find pattern file: " + pattern);
         }
@@ -93,14 +94,6 @@ public class GenClassesBuilder {
         } catch (Exception e) {
             throw new Error("can't generate classes", e);
         }
-    }
-
-    private static Path testRoot() {
-        Path p = Paths.get(Utils.TEST_SRC);
-        while (!Files.exists(p.resolve("TEST.ROOT"))) {
-            p = p.getParent();
-        }
-        return p;
     }
 }
 

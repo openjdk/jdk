@@ -921,29 +921,45 @@ public abstract class SSLContextImpl extends SSLContextSpi {
 
         static {
             Exception reserved = null;
-            TrustManager[] tmMediator;
+            TrustManager[] tmMediator = null;
             try {
                 tmMediator = getTrustManagers();
             } catch (Exception e) {
                 reserved = e;
-                tmMediator = new TrustManager[0];
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,defaultctx")) {
+                    SSLLogger.warning(
+                            "Failed to load default trust managers", e);
+                }
             }
-            trustManagers = tmMediator;
 
+            KeyManager[] kmMediator = null;
             if (reserved == null) {
-                KeyManager[] kmMediator;
                 try {
                     kmMediator = getKeyManagers();
                 } catch (Exception e) {
                     reserved = e;
-                    kmMediator = new KeyManager[0];
+                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,defaultctx")) {
+                        SSLLogger.warning(
+                                "Failed to load default key managers", e);
+                    }
                 }
-                keyManagers = kmMediator;
-            } else {
-                keyManagers = new KeyManager[0];
             }
 
-            reservedException = reserved;
+            if (reserved != null) {
+                trustManagers = new TrustManager[0];
+                keyManagers = new KeyManager[0];
+
+                // Important note: please don't reserve the original exception
+                // object, which may be not garbage collection friendly as
+                // 'reservedException' is a static filed.
+                reservedException =
+                        new KeyManagementException(reserved.getMessage());
+            } else {
+                trustManagers = tmMediator;
+                keyManagers = kmMediator;
+
+                reservedException = null;
+            }
         }
 
         private static TrustManager[] getTrustManagers() throws Exception {
@@ -1071,21 +1087,30 @@ public abstract class SSLContextImpl extends SSLContextSpi {
     private static final class DefaultSSLContextHolder {
 
         private static final SSLContextImpl sslContext;
-        static Exception reservedException = null;
+        private static final Exception reservedException;
 
         static {
+            Exception reserved = null;
             SSLContextImpl mediator = null;
             if (DefaultManagersHolder.reservedException != null) {
-                reservedException = DefaultManagersHolder.reservedException;
+                reserved = DefaultManagersHolder.reservedException;
             } else {
                 try {
                     mediator = new DefaultSSLContext();
                 } catch (Exception e) {
-                    reservedException = e;
+                    // Important note: please don't reserve the original
+                    // exception object, which may be not garbage collection
+                    // friendly as 'reservedException' is a static filed.
+                    reserved = new KeyManagementException(e.getMessage());
+                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,defaultctx")) {
+                        SSLLogger.warning(
+                                "Failed to load default SSLContext", e);
+                    }
                 }
             }
 
             sslContext = mediator;
+            reservedException = reserved;
         }
     }
 

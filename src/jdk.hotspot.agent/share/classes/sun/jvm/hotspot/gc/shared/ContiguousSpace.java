@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
 
-public class ContiguousSpace extends CompactibleSpace {
+public class ContiguousSpace extends CompactibleSpace implements LiveRegionsProvider {
   private static AddressField topField;
 
   static {
@@ -79,8 +79,8 @@ public class ContiguousSpace extends CompactibleSpace {
   }
 
   /** Returns regions of Space where live objects live */
-  public List/*<MemRegion>*/ getLiveRegions() {
-    List res = new ArrayList();
+  public List<MemRegion> getLiveRegions() {
+    List<MemRegion> res = new ArrayList<>();
     res.add(new MemRegion(bottom(), top()));
     return res;
   }

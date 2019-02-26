@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * @summary Check that invokevirtual of clone() finds the clone() method that
  *          is local to the calling class.
  * @compile DefMethClone.jasm SuperClass.jasm I1.java HasLocalClone.jasm
- * @run main/othervm -noverify HasLocalClone
+ * @run main/othervm -XX:-BytecodeVerificationRemote -XX:-BytecodeVerificationLocal HasLocalClone
  */
 
 // The below .jasm code implements the following java code:

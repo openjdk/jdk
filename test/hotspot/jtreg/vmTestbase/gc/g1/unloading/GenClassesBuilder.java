@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,12 +35,13 @@ import java.nio.file.Paths;
  */
 public class GenClassesBuilder {
     public static void main(String[] args) {
-        Path template = testRoot().resolve("vmTestbase")
-                                  .resolve("gc")
-                                  .resolve("g1")
-                                  .resolve("unloading")
-                                  .resolve("ClassNNN.java.template")
-                                  .toAbsolutePath();
+        Path template = Paths.get(Utils.TEST_ROOT)
+                             .resolve("vmTestbase")
+                             .resolve("gc")
+                             .resolve("g1")
+                             .resolve("unloading")
+                             .resolve("ClassNNN.java.template")
+                             .toAbsolutePath();
         Path dir = Paths.get(".").toAbsolutePath();
         String count = "1000";
         if (Files.notExists(template)) {
@@ -51,14 +52,6 @@ public class GenClassesBuilder {
         } catch (Exception e) {
             throw new Error("can't generate classPool.jar", e);
         }
-    }
-
-    private static Path testRoot() {
-        Path p = Paths.get(Utils.TEST_SRC);
-        while (!Files.exists(p.resolve("TEST.ROOT"))) {
-            p = p.getParent();
-        }
-        return p;
     }
 }
 

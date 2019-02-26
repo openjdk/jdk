@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,7 +106,7 @@ abstract class P11Key implements Key, Length {
     static {
         PrivilegedAction<String> getKeyExtractionProp =
                 () -> System.getProperty(
-                        "sun.security.pkcs11.disableKeyExtraction", "true");
+                        "sun.security.pkcs11.disableKeyExtraction", "false");
         String disableKeyExtraction =
                 AccessController.doPrivileged(getKeyExtractionProp);
         DISABLE_NATIVE_KEYS_EXTRACTION =

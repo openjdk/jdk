@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,15 +54,38 @@ public class ZAddressRangeMapForPageTable  extends VMObject {
         return mapField.getValue(addr);
     }
 
+    public long size() {
+        return ZGlobals.ZAddressOffsetMax >> AddressRangeShift;
+    }
+
     private long index_for_addr(Address addr) {
         long index = ZAddress.offset(addr) >> AddressRangeShift;
 
         return index;
     }
 
+    Address at(long index) {
+        return map().getAddressAt(index * VM.getVM().getBytesPerLong());
+    }
+
     Address get(Address addr) {
         long index = index_for_addr(addr);
+        return at(index);
+    }
 
-        return map().getAddressAt(index * VM.getVM().getBytesPerLong());
+    public class Iterator {
+        private long next = 0;
+
+        boolean hasNext() {
+            return next < size();
+        }
+
+        Address next() {
+            if (next >= size()) {
+                throw new RuntimeException("OOIBE");
+            }
+
+            return at(next++);
+        }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 // key: compiler.misc.feature.switch.rules
 // key: compiler.warn.preview.feature.use.plural
-// options: --enable-preview -source 13 -Xlint:preview
+// options: --enable-preview -source ${jdk.version} -Xlint:preview
 
 class SwitchExpressions {
     void m(int i) {

@@ -1726,6 +1726,18 @@ void ConnectionGraph::adjust_scalar_replaceable_state(JavaObjectNode* jobj) {
     // access its field since the field value is unknown after it.
     //
     Node* n = field->ideal_node();
+
+    // Test for an unsafe access that was parsed as maybe off heap
+    // (with a CheckCastPP to raw memory).
+    assert(n->is_AddP(), "expect an address computation");
+    if (n->in(AddPNode::Base)->is_top() &&
+        n->in(AddPNode::Address)->Opcode() == Op_CheckCastPP) {
+      assert(n->in(AddPNode::Address)->bottom_type()->isa_rawptr(), "raw address so raw cast expected");
+      assert(_igvn->type(n->in(AddPNode::Address)->in(1))->isa_oopptr(), "cast pattern at unsafe access expected");
+      jobj->set_scalar_replaceable(false);
+      return;
+    }
+
     for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
       Node* u = n->fast_out(i);
       if (u->is_LoadStore() || (u->is_Mem() && u->as_Mem()->is_mismatched_access())) {

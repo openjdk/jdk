@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -308,7 +308,8 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
         htmlTree.addContent(navBar.getContent(false));
         addBottom(htmlTree);
         body.addContent(htmlTree);
-        printHtmlDocument(null, true, body);
+        String description = "deprecated elements";
+        printHtmlDocument(null, description, body);
     }
 
     /**

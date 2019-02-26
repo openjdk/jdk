@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,10 +48,11 @@ import com.sun.source.util.Trees;
 public class RuleParsingTest {
 
     public static void main(String[] args) throws Exception {
-        new RuleParsingTest().testParseComplexExpressions();
+        String sourceVersion = Integer.toString(Runtime.version().feature());
+        new RuleParsingTest().testParseComplexExpressions(sourceVersion);
     }
 
-    void testParseComplexExpressions() throws Exception {
+    void testParseComplexExpressions(String sourceVersion) throws Exception {
         String[] expressions = {
             "(a)",
             "a",
@@ -94,7 +95,7 @@ public class RuleParsingTest {
 
         StringWriter out = new StringWriter();
         JavacTask ct = (JavacTask) tool.getTask(out, null, noErrors,
-            List.of("--enable-preview", "-source", "13"), null,
+            List.of("--enable-preview", "-source", sourceVersion), null,
             Arrays.asList(new MyFileObject(code.toString())));
         CompilationUnitTree cut = ct.parse().iterator().next();
         Trees trees = Trees.instance(ct);
