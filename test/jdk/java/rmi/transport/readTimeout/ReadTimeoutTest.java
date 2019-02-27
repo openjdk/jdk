@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,9 +82,9 @@ public class ReadTimeoutTest
 
             // Now, connect to that port
             //Thread.sleep(2000);
-            System.err.println("(connecting to listening port on 127.0.0.1:" +
+            System.err.println("(connecting to listening port on localhost:" +
                                port + ")");
-            DoS = new Socket("127.0.0.1", port);
+            DoS = new Socket(InetAddress.getLoopbackAddress(), port);
             InputStream stream = DoS.getInputStream();
 
             // Read on the socket in the background

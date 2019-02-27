@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -182,7 +182,7 @@ public class AsyncCloseAndInterrupt {
         = new ChannelFactory("DatagramChannel") {
                 InterruptibleChannel create() throws IOException {
                     DatagramChannel dc = DatagramChannel.open();
-                    InetAddress lb = InetAddress.getByName("127.0.0.1");
+                    InetAddress lb = InetAddress.getLoopbackAddress();
                     dc.bind(new InetSocketAddress(lb, 0));
                     dc.connect(new InetSocketAddress(lb, 80));
                     return dc;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,8 +64,9 @@ public class TunnelThroughProxy {
             int serverPort = server.getLocalPort();
 
             Socket sock;
-            sock = new Socket(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1", proxyPort)));
-            InetSocketAddress dest = new InetSocketAddress("127.0.0.1", serverPort);
+            sock = new Socket(new Proxy(Proxy.Type.HTTP,
+                    new InetSocketAddress(InetAddress.getLoopbackAddress(), proxyPort)));
+            InetSocketAddress dest = new InetSocketAddress(InetAddress.getLoopbackAddress(), serverPort);
             sock.connect(dest);
             int localPort = sock.getLocalPort();
             if (localPort == proxyPort)

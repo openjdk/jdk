@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ public class CloseRegisteredChannel {
         //System.out.println ("listening on port " + port);
 
         SocketChannel client = SocketChannel.open ();
-        client.connect (new InetSocketAddress ("127.0.0.1", port));
+        client.connect (new InetSocketAddress (InetAddress.getLoopbackAddress(), port));
         SocketChannel slave = server.accept ();
         slave.configureBlocking (true);
 

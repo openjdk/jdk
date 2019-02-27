@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  */
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -39,7 +40,6 @@ public class AsyncCloseChannel {
     static volatile boolean keepGoing = true;
     static int maxAcceptCount = 100;
     static volatile int acceptCount = 0;
-    static String host = "127.0.0.1";
     static int sensorPort;
     static int targetPort;
 
@@ -149,7 +149,7 @@ public class AsyncCloseChannel {
                         }
                         wake = false;
                     }
-                    s.connect(new InetSocketAddress(host, sensorPort));
+                    s.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(), sensorPort));
                     try {
                         Thread.sleep(10);
                     } catch (InterruptedException ex) { }
@@ -183,7 +183,7 @@ public class AsyncCloseChannel {
             while(keepGoing) {
                 try {
                     final SocketChannel s = SocketChannel.open(
-                        new InetSocketAddress(host, targetPort));
+                        new InetSocketAddress(InetAddress.getLoopbackAddress(), targetPort));
                     s.finishConnect();
                     s.socket().setSoLinger(false, 0);
                     ready = false;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,7 +93,7 @@ public class AdaptorCloseAndInterrupt {
     void scReadAsyncClose() throws IOException {
         try {
             SocketChannel sc = SocketChannel.open(new InetSocketAddress(
-                "127.0.0.1", port));
+                InetAddress.getLoopbackAddress(), port));
             sc.socket().setSoTimeout(30*1000);
 
             doAsyncClose(sc);
@@ -115,7 +115,7 @@ public class AdaptorCloseAndInterrupt {
     void scReadAsyncInterrupt() throws IOException {
         try {
             final SocketChannel sc = SocketChannel.open(new InetSocketAddress(
-                "127.0.0.1", port));
+                InetAddress.getLoopbackAddress(), port));
             sc.socket().setSoTimeout(30*1000);
 
             doAsyncInterrupt();
@@ -141,7 +141,7 @@ public class AdaptorCloseAndInterrupt {
     void dcReceiveAsyncClose() throws IOException {
         DatagramChannel dc = DatagramChannel.open();
         dc.connect(new InetSocketAddress(
-            "127.0.0.1", port));
+            InetAddress.getLoopbackAddress(), port));
         dc.socket().setSoTimeout(30*1000);
 
         doAsyncClose(dc);
@@ -159,7 +159,7 @@ public class AdaptorCloseAndInterrupt {
     void dcReceiveAsyncInterrupt() throws IOException {
         DatagramChannel dc = DatagramChannel.open();
         dc.connect(new InetSocketAddress(
-            "127.0.0.1", port));
+            InetAddress.getLoopbackAddress(), port));
         dc.socket().setSoTimeout(30*1000);
 
         doAsyncInterrupt();
