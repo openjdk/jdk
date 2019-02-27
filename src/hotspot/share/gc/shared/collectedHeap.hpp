@@ -521,6 +521,7 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // Override with specific mechanism for each specialized heap type.
   virtual void register_nmethod(nmethod* nm) {}
   virtual void unregister_nmethod(nmethod* nm) {}
+  virtual void flush_nmethod(nmethod* nm) {}
   virtual void verify_nmethod(nmethod* nmethod) {}
 
   void trace_heap_before_gc(const GCTracer* gc_tracer);

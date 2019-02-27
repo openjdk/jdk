@@ -89,7 +89,7 @@ public:
 
   // Called from java_lang_invoke_ResolvedMethodName
   static oop find_method(Method* method);
-  static oop add_method(Handle rmethod_name);
+  static oop add_method(const methodHandle& method, Handle rmethod_name);
 
   static bool has_work() { return _dead_entries; }
   static void trigger_cleanup();

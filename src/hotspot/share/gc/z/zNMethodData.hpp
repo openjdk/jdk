@@ -22,6 +22,7 @@
  */
 
 #include "gc/z/zLock.hpp"
+#include "memory/allocation.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -51,16 +52,14 @@ public:
   bool has_non_immediates() const;
 };
 
-class ZNMethodData {
+class ZNMethodData : public CHeapObj<mtGC> {
 private:
   ZReentrantLock             _lock;
   ZNMethodDataOops* volatile _oops;
 
-  ZNMethodData(nmethod* nm);
-
 public:
-  static ZNMethodData* create(nmethod* nm);
-  static void destroy(ZNMethodData* data);
+  ZNMethodData();
+  ~ZNMethodData();
 
   ZReentrantLock* lock();
 

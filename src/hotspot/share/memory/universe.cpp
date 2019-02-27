@@ -107,6 +107,7 @@ oop Universe::_the_min_jint_string                   = NULL;
 LatestMethodCache* Universe::_finalizer_register_cache = NULL;
 LatestMethodCache* Universe::_loader_addClass_cache    = NULL;
 LatestMethodCache* Universe::_throw_illegal_access_error_cache = NULL;
+LatestMethodCache* Universe::_throw_no_such_method_error_cache = NULL;
 LatestMethodCache* Universe::_do_stack_walk_cache     = NULL;
 oop Universe::_out_of_memory_error_java_heap          = NULL;
 oop Universe::_out_of_memory_error_metaspace          = NULL;
@@ -230,6 +231,7 @@ void Universe::metaspace_pointers_do(MetaspaceClosure* it) {
   _finalizer_register_cache->metaspace_pointers_do(it);
   _loader_addClass_cache->metaspace_pointers_do(it);
   _throw_illegal_access_error_cache->metaspace_pointers_do(it);
+  _throw_no_such_method_error_cache->metaspace_pointers_do(it);
   _do_stack_walk_cache->metaspace_pointers_do(it);
 }
 
@@ -271,6 +273,7 @@ void Universe::serialize(SerializeClosure* f) {
   _finalizer_register_cache->serialize(f);
   _loader_addClass_cache->serialize(f);
   _throw_illegal_access_error_cache->serialize(f);
+  _throw_no_such_method_error_cache->serialize(f);
   _do_stack_walk_cache->serialize(f);
 }
 
@@ -689,6 +692,7 @@ jint universe_init() {
   Universe::_finalizer_register_cache = new LatestMethodCache();
   Universe::_loader_addClass_cache    = new LatestMethodCache();
   Universe::_throw_illegal_access_error_cache = new LatestMethodCache();
+  Universe::_throw_no_such_method_error_cache = new LatestMethodCache();
   Universe::_do_stack_walk_cache = new LatestMethodCache();
 
 #if INCLUDE_CDS
@@ -933,6 +937,11 @@ void Universe::initialize_known_methods(TRAPS) {
   initialize_known_method(_throw_illegal_access_error_cache,
                           SystemDictionary::internal_Unsafe_klass(),
                           "throwIllegalAccessError",
+                          vmSymbols::void_method_signature(), true, CHECK);
+
+  initialize_known_method(_throw_no_such_method_error_cache,
+                          SystemDictionary::internal_Unsafe_klass(),
+                          "throwNoSuchMethodError",
                           vmSymbols::void_method_signature(), true, CHECK);
 
   // Set up method for registering loaded classes in class loader vector

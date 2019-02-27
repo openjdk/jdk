@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -523,36 +523,46 @@ class Bundle {
         for (String k : patternKeys) {
             if (myMap.containsKey(calendarPrefix + k)) {
                 int len = patternKeys.length;
-                List<String> rawPatterns = new ArrayList<>(len);
-                List<String> patterns = new ArrayList<>(len);
+                List<String> dateTimePatterns = new ArrayList<>(len);
+                List<String> sdfPatterns = new ArrayList<>(len);
                 for (int i = 0; i < len; i++) {
                     String key = calendarPrefix + patternKeys[i];
                     String pattern = (String) myMap.remove(key);
                     if (pattern == null) {
                         pattern = (String) parentsMap.remove(key);
                     }
-                    rawPatterns.add(i, pattern);
                     if (pattern != null) {
-                        patterns.add(i, translateDateFormatLetters(calendarType, pattern));
+                        // Perform date-time format pattern conversion which is
+                        // applicable to both SimpleDateFormat and j.t.f.DateTimeFormatter.
+                        // For example, character 'B' is mapped with 'a', as 'B' is not
+                        // supported in either SimpleDateFormat or j.t.f.DateTimeFormatter
+                        String transPattern = translateDateFormatLetters(calendarType, pattern, this::convertDateTimePatternLetter);
+                        dateTimePatterns.add(i, transPattern);
+                        // Additionally, perform SDF specific date-time format pattern conversion
+                        sdfPatterns.add(i, translateDateFormatLetters(calendarType, transPattern, this::convertSDFLetter));
                     } else {
-                        patterns.add(i, null);
+                        dateTimePatterns.add(i, null);
+                        sdfPatterns.add(i, null);
                     }
                 }
-                // If patterns is empty or has any nulls, discard patterns.
-                if (patterns.isEmpty()) {
+                // If empty, discard patterns
+                if (sdfPatterns.isEmpty()) {
                     return;
                 }
                 String key = calendarPrefix + name;
-                if (!rawPatterns.equals(patterns)) {
-                    myMap.put("java.time." + key, rawPatterns.toArray(new String[len]));
+
+                // If additional changes are made in the SDF specific conversion,
+                // keep the commonly converted patterns as java.time patterns
+                if (!dateTimePatterns.equals(sdfPatterns)) {
+                    myMap.put("java.time." + key, dateTimePatterns.toArray(String[]::new));
                 }
-                myMap.put(key, patterns.toArray(new String[len]));
+                myMap.put(key, sdfPatterns.toArray(new String[len]));
                 break;
             }
         }
     }
 
-    private String translateDateFormatLetters(CalendarType calendarType, String cldrFormat) {
+    private String translateDateFormatLetters(CalendarType calendarType, String cldrFormat, ConvertDateTimeLetters converter) {
         String pattern = cldrFormat;
         int length = pattern.length();
         boolean inQuote = false;
@@ -571,7 +581,7 @@ class Bundle {
                     if (nextc == '\'') {
                         i++;
                         if (count != 0) {
-                            convert(calendarType, lastLetter, count, jrePattern);
+                            converter.convert(calendarType, lastLetter, count, jrePattern);
                             lastLetter = 0;
                             count = 0;
                         }
@@ -581,7 +591,7 @@ class Bundle {
                 }
                 if (!inQuote) {
                     if (count != 0) {
-                        convert(calendarType, lastLetter, count, jrePattern);
+                        converter.convert(calendarType, lastLetter, count, jrePattern);
                         lastLetter = 0;
                         count = 0;
                     }
@@ -598,7 +608,7 @@ class Bundle {
             }
             if (!(c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z')) {
                 if (count != 0) {
-                    convert(calendarType, lastLetter, count, jrePattern);
+                    converter.convert(calendarType, lastLetter, count, jrePattern);
                     lastLetter = 0;
                     count = 0;
                 }
@@ -611,7 +621,7 @@ class Bundle {
                 count++;
                 continue;
             }
-            convert(calendarType, lastLetter, count, jrePattern);
+            converter.convert(calendarType, lastLetter, count, jrePattern);
             lastLetter = c;
             count = 1;
         }
@@ -621,7 +631,7 @@ class Bundle {
         }
 
         if (count != 0) {
-            convert(calendarType, lastLetter, count, jrePattern);
+            converter.convert(calendarType, lastLetter, count, jrePattern);
         }
         if (cldrFormat.contentEquals(jrePattern)) {
             return cldrFormat;
@@ -676,71 +686,91 @@ class Bundle {
         }
     }
 
-    private void convert(CalendarType calendarType, char cldrLetter, int count, StringBuilder sb) {
+    /**
+     * Perform a generic conversion of CLDR date-time format pattern letter based
+     * on the support given by the SimpleDateFormat and the j.t.f.DateTimeFormatter
+     * for date-time formatting.
+     */
+    private void convertDateTimePatternLetter(CalendarType calendarType, char cldrLetter, int count, StringBuilder sb) {
         switch (cldrLetter) {
-        case 'G':
-            if (calendarType != CalendarType.GREGORIAN) {
-                // Adjust the number of 'G's for JRE SimpleDateFormat
-                if (count == 5) {
-                    // CLDR narrow -> JRE short
-                    count = 1;
-                } else if (count == 1) {
-                    // CLDR abbr -> JRE long
-                    count = 4;
+            case 'u':
+                // Change cldr letter 'u' to 'y', as 'u' is interpreted as
+                // "Extended year (numeric)" in CLDR/LDML,
+                // which is not supported in SimpleDateFormat and
+                // j.t.f.DateTimeFormatter, so it is replaced with 'y'
+                // as the best approximation
+                appendN('y', count, sb);
+                break;
+            case 'B':
+                // 'B' character (day period) is not supported by
+                // SimpleDateFormat and j.t.f.DateTimeFormatter,
+                // this is a workaround in which 'B' character
+                // appearing in CLDR date-time pattern is replaced
+                // with 'a' character and hence resolved with am/pm strings.
+                // This workaround is based on the the fallback mechanism
+                // specified in LDML spec for 'B' character, when a locale
+                // does not have data for day period ('B')
+                appendN('a', count, sb);
+                break;
+            default:
+                appendN(cldrLetter, count, sb);
+                break;
+
+        }
+    }
+
+    /**
+     * Perform a conversion of CLDR date-time format pattern letter which is
+     * specific to the SimpleDateFormat.
+     */
+    private void convertSDFLetter(CalendarType calendarType, char cldrLetter, int count, StringBuilder sb) {
+        switch (cldrLetter) {
+            case 'G':
+                if (calendarType != CalendarType.GREGORIAN) {
+                    // Adjust the number of 'G's for JRE SimpleDateFormat
+                    if (count == 5) {
+                        // CLDR narrow -> JRE short
+                        count = 1;
+                    } else if (count == 1) {
+                        // CLDR abbr -> JRE long
+                        count = 4;
+                    }
                 }
-            }
-            appendN(cldrLetter, count, sb);
-            break;
-
-        // TODO: support 'c' and 'e' in JRE SimpleDateFormat
-        // Use 'u' and 'E' for now.
-        case 'c':
-        case 'e':
-            switch (count) {
-            case 1:
-                sb.append('u');
+                appendN(cldrLetter, count, sb);
                 break;
-            case 3:
-            case 4:
-                appendN('E', count, sb);
+
+            // TODO: support 'c' and 'e' in JRE SimpleDateFormat
+            // Use 'u' and 'E' for now.
+            case 'c':
+            case 'e':
+                switch (count) {
+                    case 1:
+                        sb.append('u');
+                        break;
+                    case 3:
+                    case 4:
+                        appendN('E', count, sb);
+                        break;
+                    case 5:
+                        appendN('E', 3, sb);
+                        break;
+                }
                 break;
-            case 5:
-                appendN('E', 3, sb);
+
+            case 'v':
+            case 'V':
+                appendN('z', count, sb);
                 break;
-            }
-            break;
 
-        case 'l':
-            // 'l' is deprecated as a pattern character. Should be ignored.
-            break;
+            case 'Z':
+                if (count == 4 || count == 5) {
+                    sb.append("XXX");
+                }
+                break;
 
-        case 'u':
-            // Use 'y' for now.
-            appendN('y', count, sb);
-            break;
-
-        case 'v':
-        case 'V':
-            appendN('z', count, sb);
-            break;
-
-        case 'Z':
-            if (count == 4 || count == 5) {
-                sb.append("XXX");
-            }
-            break;
-
-        case 'U':
-        case 'q':
-        case 'Q':
-        case 'g':
-        case 'j':
-        case 'A':
-            throw new InternalError(String.format("Unsupported letter: '%c', count=%d, id=%s%n",
-                                                  cldrLetter, count, id));
-        default:
-            appendN(cldrLetter, count, sb);
-            break;
+            default:
+                appendN(cldrLetter, count, sb);
+                break;
         }
     }
 
@@ -757,5 +787,10 @@ class Bundle {
             }
         }
         return false;
+    }
+
+    @FunctionalInterface
+    private interface ConvertDateTimeLetters {
+        void convert(CalendarType calendarType, char cldrLetter, int count, StringBuilder sb);
     }
 }

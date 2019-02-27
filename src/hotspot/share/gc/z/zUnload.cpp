@@ -65,23 +65,14 @@ public:
 };
 
 class ZIsUnloadingBehaviour : public IsUnloadingBehaviour {
-private:
-  bool is_unloading(nmethod* nm) const {
-    ZIsUnloadingOopClosure cl;
-    nm->oops_do(&cl, true /* allow_zombie */);
-    return cl.is_unloading();
-  }
-
 public:
   virtual bool is_unloading(CompiledMethod* method) const {
     nmethod* const nm = method->as_nmethod();
     ZReentrantLock* const lock = ZNMethod::lock_for_nmethod(nm);
-    if (lock == NULL) {
-      return is_unloading(nm);
-    } else {
-      ZLocker<ZReentrantLock> locker(lock);
-      return is_unloading(nm);
-    }
+    ZLocker<ZReentrantLock> locker(lock);
+    ZIsUnloadingOopClosure cl;
+    nm->oops_do(&cl, true /* allow_zombie */);
+    return cl.is_unloading();
   }
 };
 
@@ -90,18 +81,14 @@ public:
   virtual bool lock(CompiledMethod* method) {
     nmethod* const nm = method->as_nmethod();
     ZReentrantLock* const lock = ZNMethod::lock_for_nmethod(nm);
-    if (lock != NULL) {
-      lock->lock();
-    }
+    lock->lock();
     return true;
   }
 
   virtual void unlock(CompiledMethod* method) {
     nmethod* const nm = method->as_nmethod();
     ZReentrantLock* const lock = ZNMethod::lock_for_nmethod(nm);
-    if (lock != NULL) {
-      lock->unlock();
-    }
+    lock->unlock();
   }
 
   virtual bool is_safe(CompiledMethod* method) {
@@ -111,7 +98,7 @@ public:
 
     nmethod* const nm = method->as_nmethod();
     ZReentrantLock* const lock = ZNMethod::lock_for_nmethod(nm);
-    return lock == NULL || lock->is_owned();
+    return lock->is_owned();
   }
 };
 

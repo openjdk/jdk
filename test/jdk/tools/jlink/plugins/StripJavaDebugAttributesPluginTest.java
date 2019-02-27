@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Test StripDebugPlugin
+ * @summary Test StripJavaDebugAttributesPlugin
  * @author Jean-Francois Denise
  * @library ../../lib
  * @build tests.*
@@ -35,7 +35,7 @@
  *          jdk.jlink/jdk.tools.jmod
  *          jdk.jdeps/com.sun.tools.classfile
  *          jdk.compiler
- * @run main StripDebugPluginTest
+ * @run main StripJavaDebugAttributesPluginTest
  */
 
 import java.io.ByteArrayInputStream;
@@ -44,6 +44,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Stream;
@@ -53,18 +54,17 @@ import com.sun.tools.classfile.ClassFile;
 import com.sun.tools.classfile.Code_attribute;
 import com.sun.tools.classfile.ConstantPoolException;
 import com.sun.tools.classfile.Method;
-import java.util.HashMap;
-import java.util.Map;
+
 import jdk.tools.jlink.internal.ResourcePoolManager;
-import jdk.tools.jlink.internal.plugins.StripDebugPlugin;
-import jdk.tools.jlink.plugin.ResourcePoolEntry;
-import jdk.tools.jlink.plugin.ResourcePool;
+import jdk.tools.jlink.internal.plugins.StripJavaDebugAttributesPlugin;
 import jdk.tools.jlink.plugin.Plugin;
+import jdk.tools.jlink.plugin.ResourcePool;
+import jdk.tools.jlink.plugin.ResourcePoolEntry;
 import tests.Helper;
 
-public class StripDebugPluginTest {
+public class StripJavaDebugAttributesPluginTest {
     public static void main(String[] args) throws Exception {
-        new StripDebugPluginTest().test();
+        new StripJavaDebugAttributesPluginTest().test();
     }
 
     public void test() throws Exception {
@@ -105,7 +105,7 @@ public class StripDebugPluginTest {
 
     private void check(String path, byte[] content, String infoPath, byte[] moduleInfo) throws Exception {
         path = path.replace('\\', '/');
-        StripDebugPlugin debug = new StripDebugPlugin();
+        StripJavaDebugAttributesPlugin debug = new StripJavaDebugAttributesPlugin();
         debug.configure(new HashMap<>());
         ResourcePoolEntry result1 = stripDebug(debug, ResourcePoolEntry.create(path,content), path, infoPath, moduleInfo);
 

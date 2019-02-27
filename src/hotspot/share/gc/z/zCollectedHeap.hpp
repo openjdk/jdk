@@ -105,6 +105,7 @@ public:
 
   virtual void register_nmethod(nmethod* nm);
   virtual void unregister_nmethod(nmethod* nm);
+  virtual void flush_nmethod(nmethod* nm);
   virtual void verify_nmethod(nmethod* nmethod);
 
   virtual WorkGang* get_safepoint_workers();
