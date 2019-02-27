@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,7 +181,7 @@ JNIEXPORT jobjectArray JNICALL Java_sun_security_smartcardio_PCSC_SCardListReade
 {
     SCARDCONTEXT context = (SCARDCONTEXT)jContext;
     LONG rv;
-    LPTSTR mszReaders = NULL;
+    LPSTR mszReaders = NULL;
     DWORD size = 0;
     jobjectArray result;
 
@@ -220,7 +220,7 @@ JNIEXPORT jlong JNICALL Java_sun_security_smartcardio_PCSC_SCardConnect
 {
     SCARDCONTEXT context = (SCARDCONTEXT)jContext;
     LONG rv;
-    LPCTSTR readerName;
+    LPCSTR readerName;
     SCARDHANDLE card = 0;
     DWORD proto = 0;
 
