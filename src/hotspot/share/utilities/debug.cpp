@@ -643,6 +643,7 @@ void help() {
   tty->print_cr("                   pns($sp, $rbp, $pc) on Linux/amd64 and Solaris/amd64 or");
   tty->print_cr("                   pns($sp, $ebp, $pc) on Linux/x86 or");
   tty->print_cr("                   pns($sp, 0, $pc)    on Linux/ppc64 or");
+  tty->print_cr("                   pns($sp, $s8, $pc)  on Linux/mips or");
   tty->print_cr("                   pns($sp + 0x7ff, 0, $pc) on Solaris/SPARC");
   tty->print_cr("                 - in gdb do 'set overload-resolution off' before calling pns()");
   tty->print_cr("                 - in dbx do 'frame 1' before calling pns()");
