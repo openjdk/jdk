@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -616,7 +616,7 @@ public class Throwable implements Serializable {
      *          ... 1 more
      * </pre>
      * Note that the "... n more" notation is used on suppressed exceptions
-     * just at it is used on causes. Unlike causes, suppressed exceptions are
+     * just as it is used on causes. Unlike causes, suppressed exceptions are
      * indented beyond their "containing exceptions."
      *
      * <p>An exception can have both a cause and one or more suppressed
