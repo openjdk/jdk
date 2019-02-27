@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
  * @run main/othervm ToolProviderTest
  */
 
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
@@ -46,6 +45,10 @@ public class ToolProviderTest {
     void run() throws Exception {
         initServices();
 
+        System.out.println("Validate an NPE is thrown with null arguments");
+
+        testNullArgs();
+
         System.out.println("test without security manager present:");
         test();
 
@@ -60,6 +63,33 @@ public class ToolProviderTest {
         int rc = testProvider.run(System.out, System.err, "hello test");
         if (rc != 0) {
             throw new Exception("unexpected exit code: " + rc);
+        }
+    }
+
+    private void testNullArgs() {
+        ToolProvider testProvider = ToolProvider.findFirst("test").get();
+
+        // out null check
+        expectNullPointerException(() -> testProvider.run(null, System.err));
+
+        // err null check
+        expectNullPointerException(() -> testProvider.run(System.out, null));
+
+        // args array null check
+        expectNullPointerException(() ->
+                testProvider.run(System.out, System.err, (String[]) null));
+
+        // args array elements null check
+        expectNullPointerException(() ->
+                testProvider.run(System.out, System.err, (String) null));
+    }
+
+    private static void expectNullPointerException(Runnable test) {
+        try {
+            test.run();
+            throw new Error("NullPointerException not thrown");
+        } catch (NullPointerException e) {
+            // expected
         }
     }
 

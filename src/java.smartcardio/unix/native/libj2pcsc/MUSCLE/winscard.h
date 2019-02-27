@@ -1,13 +1,38 @@
 /*
- * This handles smartcard reader communications.
- *
- * MUSCLE SmartCard Development ( http://www.linuxnet.com )
+ * MUSCLE SmartCard Development ( https://pcsclite.apdu.fr/ )
  *
  * Copyright (C) 1999-2003
- *  David Corcoran <corcoran@linuxnet.com>
+ *  David Corcoran <corcoran@musclecard.com>
+ * Copyright (C) 2002-2009
  *  Ludovic Rousseau <ludovic.rousseau@free.fr>
  *
- * $Id: winscard.h,v 1.13 2004/08/06 12:12:19 rousseau Exp $
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+
+1. Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+3. The name of the author may not be used to endorse or promote products
+   derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+/**
+ * @file
+ * @brief This handles smart card reader communications.
  */
 
 #ifndef __winscard_h__
@@ -20,71 +45,79 @@ extern "C"
 {
 #endif
 
-        LONG SCardEstablishContext(DWORD dwScope,
-                LPCVOID pvReserved1, LPCVOID pvReserved2, LPSCARDCONTEXT phContext);
+#ifndef PCSC_API
+#define PCSC_API
+#endif
 
-        LONG SCardReleaseContext(SCARDCONTEXT hContext);
+      PCSC_API LONG SCardEstablishContext(DWORD dwScope,
+            /*@null@*/ LPCVOID pvReserved1, /*@null@*/ LPCVOID pvReserved2,
+            /*@out@*/ LPSCARDCONTEXT phContext);
 
-        LONG SCardSetTimeout(SCARDCONTEXT hContext, DWORD dwTimeout);
+      PCSC_API LONG SCardReleaseContext(SCARDCONTEXT hContext);
 
-        LONG SCardConnect(SCARDCONTEXT hContext,
-                LPCTSTR szReader,
-                DWORD dwShareMode,
-                DWORD dwPreferredProtocols,
-                LPSCARDHANDLE phCard, LPDWORD pdwActiveProtocol);
+      PCSC_API LONG SCardIsValidContext(SCARDCONTEXT hContext);
 
-        LONG SCardReconnect(SCARDHANDLE hCard,
-                DWORD dwShareMode,
-                DWORD dwPreferredProtocols,
-                DWORD dwInitialization, LPDWORD pdwActiveProtocol);
+      PCSC_API LONG SCardConnect(SCARDCONTEXT hContext,
+            LPCSTR szReader,
+            DWORD dwShareMode,
+            DWORD dwPreferredProtocols,
+            /*@out@*/ LPSCARDHANDLE phCard, /*@out@*/ LPDWORD pdwActiveProtocol);
 
-        LONG SCardDisconnect(SCARDHANDLE hCard, DWORD dwDisposition);
+      PCSC_API LONG SCardReconnect(SCARDHANDLE hCard,
+            DWORD dwShareMode,
+            DWORD dwPreferredProtocols,
+            DWORD dwInitialization, /*@out@*/ LPDWORD pdwActiveProtocol);
 
-        LONG SCardBeginTransaction(SCARDHANDLE hCard);
+      PCSC_API LONG SCardDisconnect(SCARDHANDLE hCard, DWORD dwDisposition);
 
-        LONG SCardEndTransaction(SCARDHANDLE hCard, DWORD dwDisposition);
+      PCSC_API LONG SCardBeginTransaction(SCARDHANDLE hCard);
 
-        LONG SCardCancelTransaction(SCARDHANDLE hCard);
+      PCSC_API LONG SCardEndTransaction(SCARDHANDLE hCard, DWORD dwDisposition);
 
-        LONG SCardStatus(SCARDHANDLE hCard,
-                LPTSTR mszReaderNames, LPDWORD pcchReaderLen,
-                LPDWORD pdwState,
-                LPDWORD pdwProtocol,
-                LPBYTE pbAtr, LPDWORD pcbAtrLen);
+      PCSC_API LONG SCardStatus(SCARDHANDLE hCard,
+            /*@null@*/ /*@out@*/ LPSTR mszReaderName,
+            /*@null@*/ /*@out@*/ LPDWORD pcchReaderLen,
+            /*@null@*/ /*@out@*/ LPDWORD pdwState,
+            /*@null@*/ /*@out@*/ LPDWORD pdwProtocol,
+            /*@null@*/ /*@out@*/ LPBYTE pbAtr,
+            /*@null@*/ /*@out@*/ LPDWORD pcbAtrLen);
 
-        LONG SCardGetStatusChange(SCARDCONTEXT hContext,
-                DWORD dwTimeout,
-                LPSCARD_READERSTATE_A rgReaderStates, DWORD cReaders);
+      PCSC_API LONG SCardGetStatusChange(SCARDCONTEXT hContext,
+            DWORD dwTimeout,
+            SCARD_READERSTATE *rgReaderStates, DWORD cReaders);
 
-        LONG SCardControl(SCARDHANDLE hCard, DWORD dwControlCode,
-                LPCVOID pbSendBuffer, DWORD cbSendLength,
-                LPVOID pbRecvBuffer, DWORD cbRecvLength, LPDWORD lpBytesReturned);
+      PCSC_API LONG SCardControl(SCARDHANDLE hCard, DWORD dwControlCode,
+            LPCVOID pbSendBuffer, DWORD cbSendLength,
+            /*@out@*/ LPVOID pbRecvBuffer, DWORD cbRecvLength,
+            LPDWORD lpBytesReturned);
 
-        LONG SCardTransmit(SCARDHANDLE hCard,
-                LPCSCARD_IO_REQUEST pioSendPci,
-                LPCBYTE pbSendBuffer, DWORD cbSendLength,
-                LPSCARD_IO_REQUEST pioRecvPci,
-                LPBYTE pbRecvBuffer, LPDWORD pcbRecvLength);
+      PCSC_API LONG SCardTransmit(SCARDHANDLE hCard,
+            const SCARD_IO_REQUEST *pioSendPci,
+            LPCBYTE pbSendBuffer, DWORD cbSendLength,
+            /*@out@*/ SCARD_IO_REQUEST *pioRecvPci,
+            /*@out@*/ LPBYTE pbRecvBuffer, LPDWORD pcbRecvLength);
 
-        LONG SCardListReaderGroups(SCARDCONTEXT hContext,
-                LPTSTR mszGroups, LPDWORD pcchGroups);
+      PCSC_API LONG SCardListReaderGroups(SCARDCONTEXT hContext,
+            /*@out@*/ LPSTR mszGroups, LPDWORD pcchGroups);
 
-        LONG SCardListReaders(SCARDCONTEXT hContext,
-                LPCTSTR mszGroups,
-                LPTSTR mszReaders, LPDWORD pcchReaders);
+      PCSC_API LONG SCardListReaders(SCARDCONTEXT hContext,
+            /*@null@*/ /*@out@*/ LPCSTR mszGroups,
+            /*@null@*/ /*@out@*/ LPSTR mszReaders,
+            /*@out@*/ LPDWORD pcchReaders);
 
-        LONG SCardCancel(SCARDCONTEXT hContext);
+      PCSC_API LONG SCardFreeMemory(SCARDCONTEXT hContext, LPCVOID pvMem);
 
-        LONG SCardGetAttrib(SCARDHANDLE hCard, DWORD dwAttrId, LPBYTE pbAttr,
-                        LPDWORD pcbAttrLen);
+      PCSC_API LONG SCardCancel(SCARDCONTEXT hContext);
 
-        LONG SCardSetAttrib(SCARDHANDLE hCard, DWORD dwAttrId, LPCBYTE pbAttr,
-                        DWORD cbAttrLen);
+      PCSC_API LONG SCardGetAttrib(SCARDHANDLE hCard, DWORD dwAttrId,
+            /*@out@*/ LPBYTE pbAttr, LPDWORD pcbAttrLen);
 
-        void SCardUnload(void);
+      PCSC_API LONG SCardSetAttrib(SCARDHANDLE hCard, DWORD dwAttrId,
+            LPCBYTE pbAttr, DWORD cbAttrLen);
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif
+

@@ -3635,7 +3635,7 @@ oop java_lang_invoke_ResolvedMethodName::find_resolved_method(const methodHandle
     // distinct loaders) to ensure the metadata is kept alive.
     // This mirror may be different than the one in clazz field.
     new_resolved_method->obj_field_put(_vmholder_offset, m->method_holder()->java_mirror());
-    resolved_method = ResolvedMethodTable::add_method(Handle(THREAD, new_resolved_method));
+    resolved_method = ResolvedMethodTable::add_method(m, Handle(THREAD, new_resolved_method));
   }
   return resolved_method;
 }

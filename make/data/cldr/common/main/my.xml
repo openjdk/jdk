@@ -1446,17 +1446,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<pattern>z HH:mm:ss</pattern>
 						</timeFormat>
 					</timeFormatLength>
-					<!--Pattern for medium and short replaced with CLDR 29's patterns 
-					    as character 'B' is currently not supported in SimpleDateFormat and java.time.DateTimeFormatter 
-					    classes. This is a restriction until JDK-8209175 is resolved.-->
 					<timeFormatLength type="medium">
 						<timeFormat>
-							<pattern>HH:mm:ss</pattern>
+							<pattern>B HH:mm:ss</pattern>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
-							<pattern>H:mm</pattern>
+							<pattern>B H:mm</pattern>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>

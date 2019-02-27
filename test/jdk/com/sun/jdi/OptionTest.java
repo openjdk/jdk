@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,6 @@
  * @run driver OptionTest
  */
 
-import java.net.ServerSocket;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class OptionTest extends Object {
@@ -127,18 +125,12 @@ public class OptionTest extends Object {
     }
 
     public static void main(String[] args) throws Exception {
-        // find a free port
-        ServerSocket ss = new ServerSocket(0);
-        int port = ss.getLocalPort();
-        ss.close();
-        String address = String.valueOf(port);
-
         String javaExe = System.getProperty("java.home") +
             java.io.File.separator + "bin" +
             java.io.File.separator + "java";
         String targetClass = "HelloWorld";
         String baseOptions = "transport=dt_socket" +
-                              ",address=" + address +
+                              ",address=0" +
                               ",server=y" +
                               ",suspend=n";
 

@@ -25,26 +25,27 @@
 package jdk.tools.jlink.internal.plugins;
 
 import java.util.function.Predicate;
+
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.ClassWriter;
+import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
-import jdk.tools.jlink.plugin.Plugin;
 
 /**
  *
- * Strip debug attributes plugin
+ * Strip java debug attributes plugin
  */
-public final class StripDebugPlugin implements Plugin {
-    public static final String NAME = "strip-debug";
+public final class StripJavaDebugAttributesPlugin implements Plugin {
+    public static final String NAME = "strip-java-debug-attributes";
     private final Predicate<String> predicate;
 
-    public StripDebugPlugin() {
+    public StripJavaDebugAttributesPlugin() {
         this((path) -> false);
     }
 
-    StripDebugPlugin(Predicate<String> predicate) {
+    StripJavaDebugAttributesPlugin(Predicate<String> predicate) {
         this.predicate = predicate;
     }
 

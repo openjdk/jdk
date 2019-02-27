@@ -49,9 +49,9 @@ import jdk.tools.jlink.builder.DefaultImageBuilder;
 import jdk.tools.jlink.builder.ImageBuilder;
 import jdk.tools.jlink.internal.Jlink.PluginsConfiguration;
 import jdk.tools.jlink.internal.plugins.DefaultCompressPlugin;
+import jdk.tools.jlink.internal.plugins.DefaultStripDebugPlugin;
 import jdk.tools.jlink.internal.plugins.ExcludeJmodSectionPlugin;
 import jdk.tools.jlink.internal.plugins.PluginsResourceBundle;
-import jdk.tools.jlink.internal.plugins.StripDebugPlugin;
 import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.Plugin.Category;
 import jdk.tools.jlink.plugin.PluginException;
@@ -375,7 +375,7 @@ public final class TaskHelper {
                                 m.put(DefaultCompressPlugin.NAME, DefaultCompressPlugin.LEVEL_2);
                             }, false, "--compress", "-c");
                     mainOptions.add(plugOption);
-                } else if (plugin instanceof StripDebugPlugin) {
+                } else if (plugin instanceof DefaultStripDebugPlugin) {
                     plugOption
                         = new PluginOption(false,
                             (task, opt, arg) -> {

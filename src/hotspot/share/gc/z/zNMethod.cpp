@@ -82,7 +82,7 @@ void ZNMethod::attach_gc_data(nmethod* nm) {
   // Attach GC data to nmethod
   ZNMethodData* data = gc_data(nm);
   if (data == NULL) {
-    data = ZNMethodData::create(nm);
+    data = new ZNMethodData();
     set_gc_data(nm, data);
   }
 
@@ -92,18 +92,8 @@ void ZNMethod::attach_gc_data(nmethod* nm) {
   ZNMethodDataOops::destroy(old_oops);
 }
 
-void ZNMethod::detach_gc_data(nmethod* nm) {
-  // Destroy GC data
-  ZNMethodData::destroy(gc_data(nm));
-  set_gc_data(nm, NULL);
-}
-
 ZReentrantLock* ZNMethod::lock_for_nmethod(nmethod* nm) {
-  ZNMethodData* const data = gc_data(nm);
-  if (data == NULL) {
-    return NULL;
-  }
-  return data->lock();
+  return gc_data(nm)->lock();
 }
 
 void ZNMethod::log_register(const nmethod* nm) {
@@ -190,9 +180,11 @@ void ZNMethod::unregister_nmethod(nmethod* nm) {
   log_unregister(nm);
 
   ZNMethodTable::unregister_nmethod(nm);
+}
 
-  // Destroy and detach gc data
-  detach_gc_data(nm);
+void ZNMethod::flush_nmethod(nmethod* nm) {
+  // Destroy GC data
+  delete gc_data(nm);
 }
 
 void ZNMethod::disarm_nmethod(nmethod* nm) {
