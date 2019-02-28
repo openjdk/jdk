@@ -153,28 +153,81 @@ TEST_VM_ASSERT_MSG(os, page_size_for_region_with_zero_min_pages, "sanity") {
 }
 #endif
 
-TEST(os, test_print_hex_dump) {
+static void do_test_print_hex_dump(address addr, size_t len, int unitsize, const char* expected) {
+  char buf[256];
+  buf[0] = '\0';
+  stringStream ss(buf, sizeof(buf));
+  os::print_hex_dump(&ss, addr, addr + len, unitsize);
+//  tty->print_cr("expected: %s", expected);
+//  tty->print_cr("result: %s", buf);
+  ASSERT_NE(strstr(buf, expected), (char*)NULL);
+}
+
+TEST_VM(os, test_print_hex_dump) {
+  const char* pattern [4] = {
+#ifdef VM_LITTLE_ENDIAN
+    "00 01 02 03 04 05 06 07",
+    "0100 0302 0504 0706",
+    "03020100 07060504",
+    "0706050403020100"
+#else
+    "00 01 02 03 04 05 06 07",
+    "0001 0203 0405 0607",
+    "00010203 04050607",
+    "0001020304050607"
+#endif
+  };
+
+  const char* pattern_not_readable [4] = {
+    "?? ?? ?? ?? ?? ?? ?? ??",
+    "???? ???? ???? ????",
+    "???????? ????????",
+    "????????????????"
+  };
+
+  // On AIX, zero page is readable.
+  address unreadable =
+#ifdef AIX
+    (address) 0xFFFFFFFFFFFF0000ULL;
+#else
+    (address) 0
+#endif
+    ;
+
   ResourceMark rm;
-  stringStream ss;
+  char buf[64];
+  stringStream ss(buf, sizeof(buf));
   outputStream* out = &ss;
 //  outputStream* out = tty; // enable for printout
 
-  // Test dumping unreadable memory does not fail
-  os::print_hex_dump(out, (address)0, (address)100, 1);
-  os::print_hex_dump(out, (address)0, (address)100, 2);
-  os::print_hex_dump(out, (address)0, (address)100, 4);
-  os::print_hex_dump(out, (address)0, (address)100, 8);
+  // Test dumping unreadable memory
+  // Exclude test for Windows for now, since it needs SEH handling to work which cannot be
+  // guaranteed when we call directly into VM code. (see JDK-8220220)
+#ifndef _WIN32
+  do_test_print_hex_dump(unreadable, 100, 1, pattern_not_readable[0]);
+  do_test_print_hex_dump(unreadable, 100, 2, pattern_not_readable[1]);
+  do_test_print_hex_dump(unreadable, 100, 4, pattern_not_readable[2]);
+  do_test_print_hex_dump(unreadable, 100, 8, pattern_not_readable[3]);
+#endif
 
-  // Test dumping readable memory does not fail
-  char arr[100];
+  // Test dumping readable memory
+  address arr = (address)os::malloc(100, mtInternal);
   for (int c = 0; c < 100; c++) {
     arr[c] = c;
   }
-  address addr = (address)&arr;
-  os::print_hex_dump(out, addr, addr + 100, 1);
-  os::print_hex_dump(out, addr, addr + 100, 2);
-  os::print_hex_dump(out, addr, addr + 100, 4);
-  os::print_hex_dump(out, addr, addr + 100, 8);
+
+  // properly aligned
+  do_test_print_hex_dump(arr, 100, 1, pattern[0]);
+  do_test_print_hex_dump(arr, 100, 2, pattern[1]);
+  do_test_print_hex_dump(arr, 100, 4, pattern[2]);
+  do_test_print_hex_dump(arr, 100, 8, pattern[3]);
+
+  // Not properly aligned. Should automatically down-align by unitsize
+  do_test_print_hex_dump(arr + 1, 100, 2, pattern[1]);
+  do_test_print_hex_dump(arr + 1, 100, 4, pattern[2]);
+  do_test_print_hex_dump(arr + 1, 100, 8, pattern[3]);
+
+  os::free(arr);
 }
 
 //////////////////////////////////////////////////////////////////////////////
