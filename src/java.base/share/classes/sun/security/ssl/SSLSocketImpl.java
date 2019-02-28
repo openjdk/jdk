@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -916,8 +916,12 @@ public final class SSLSocketImpl
         /**
          * Try the best to use up the input records so as to close the
          * socket gracefully, without impact the performance too much.
+         *
+         * Note: please don't synchronize this method as the read() method
+         * may hold the lock. A race should be fine as this method is
+         * designed for cleanup only.
          */
-        private synchronized void deplete() {
+        private void deplete() {
             if (!conContext.isInboundClosed()) {
                 if (!(conContext.inputRecord instanceof SSLSocketInputRecord)) {
                     return;
