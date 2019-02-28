@@ -230,14 +230,16 @@ class ConstantPoolCacheEntry {
     Bytecodes::Code invoke_code,                 // the bytecode used for invoking the method
     const methodHandle& method,                  // the method/prototype if any (NULL, otherwise)
     int             vtable_index,                // the vtable index if any, else negative
-    bool            sender_is_interface
+    bool            sender_is_interface,         // 'logical' sender (may be host of VMAC)
+    InstanceKlass*  pool_holder                  // class from which the call is made
   );
 
  public:
   void set_direct_call(                          // sets entry to exact concrete method entry
     Bytecodes::Code invoke_code,                 // the bytecode used for invoking the method
     const methodHandle& method,                  // the method to call
-    bool            sender_is_interface
+    bool            sender_is_interface,         // 'logical' sender (may be host of VMAC)
+    InstanceKlass*  pool_holder                  // class from which the call is made
   );
 
   void set_vtable_call(                          // sets entry to vtable index
