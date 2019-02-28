@@ -482,7 +482,9 @@ void ShenandoahHeap::print_on(outputStream* st) const {
 class ShenandoahInitGCLABClosure : public ThreadClosure {
 public:
   void do_thread(Thread* thread) {
-    if (thread != NULL && (thread->is_Java_thread() || thread->is_Worker_thread())) {
+    assert(thread != NULL, "Sanity");
+    assert(!thread->is_Java_thread(), "Don't expect JavaThread this early");
+    if (thread->is_Worker_thread()) {
       ShenandoahThreadLocalData::initialize_gclab(thread);
     }
   }
@@ -494,8 +496,6 @@ void ShenandoahHeap::post_initialize() {
 
   ShenandoahInitGCLABClosure init_gclabs;
   Threads::threads_do(&init_gclabs);
-  _workers->threads_do(&init_gclabs);
-  _safepoint_workers->threads_do(&init_gclabs);
 
   // gclab can not be initialized early during VM startup, as it can not determinate its max_size.
   // Now, we will let WorkGang to initialize gclab when new worker is created.
