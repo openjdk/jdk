@@ -39,6 +39,7 @@
 
 Mutex*   Patching_lock                = NULL;
 Monitor* SystemDictionary_lock        = NULL;
+Mutex*   ProtectionDomainSet_lock     = NULL;
 Mutex*   SharedDictionary_lock        = NULL;
 Mutex*   Module_lock                  = NULL;
 Mutex*   CompiledIC_lock              = NULL;
@@ -254,6 +255,7 @@ void mutex_init() {
   def(JmethodIdCreation_lock       , PaddedMutex  , leaf,        true,  Monitor::_safepoint_check_always);     // used for creating jmethodIDs.
 
   def(SystemDictionary_lock        , PaddedMonitor, leaf,        true,  Monitor::_safepoint_check_always);     // lookups done by VM thread
+  def(ProtectionDomainSet_lock     , PaddedMutex  , leaf-1,      true,  Monitor::_safepoint_check_never);
   def(SharedDictionary_lock        , PaddedMutex  , leaf,        true,  Monitor::_safepoint_check_always);     // lookups done by VM thread
   def(Module_lock                  , PaddedMutex  , leaf+2,      true,  Monitor::_safepoint_check_always);
   def(InlineCacheBuffer_lock       , PaddedMutex  , leaf,        true,  Monitor::_safepoint_check_never);
