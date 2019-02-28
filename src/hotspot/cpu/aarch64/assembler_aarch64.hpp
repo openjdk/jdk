@@ -2209,13 +2209,15 @@ public:
     rf(Vn, 5), rf(Vd, 0);                                                               \
   }
 
-  INSN(addv, 0, 0b100001);
-  INSN(subv, 1, 0b100001);
-  INSN(mulv, 0, 0b100111);
-  INSN(mlav, 0, 0b100101);
-  INSN(mlsv, 1, 0b100101);
-  INSN(sshl, 0, 0b010001);
-  INSN(ushl, 1, 0b010001);
+  INSN(addv,   0, 0b100001);
+  INSN(subv,   1, 0b100001);
+  INSN(mulv,   0, 0b100111);
+  INSN(mlav,   0, 0b100101);
+  INSN(mlsv,   1, 0b100101);
+  INSN(sshl,   0, 0b010001);
+  INSN(ushl,   1, 0b010001);
+  INSN(umullv, 1, 0b110000);
+  INSN(umlalv, 1, 0b100000);
 
 #undef INSN
 
@@ -2227,13 +2229,14 @@ public:
     rf(Vn, 5), rf(Vd, 0);                                                               \
   }
 
-  INSN(absr,  0, 0b100000101110);
-  INSN(negr,  1, 0b100000101110);
-  INSN(notr,  1, 0b100000010110);
-  INSN(addv,  0, 0b110001101110);
-  INSN(cls,   0, 0b100000010010);
-  INSN(clz,   1, 0b100000010010);
-  INSN(cnt,   0, 0b100000010110);
+  INSN(absr,   0, 0b100000101110);
+  INSN(negr,   1, 0b100000101110);
+  INSN(notr,   1, 0b100000010110);
+  INSN(addv,   0, 0b110001101110);
+  INSN(cls,    0, 0b100000010010);
+  INSN(clz,    1, 0b100000010010);
+  INSN(cnt,    0, 0b100000010110);
+  INSN(uaddlv, 1, 0b110000001110);
 
 #undef INSN
 

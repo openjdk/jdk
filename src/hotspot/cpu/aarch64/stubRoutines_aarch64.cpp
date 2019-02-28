@@ -287,6 +287,11 @@ juint StubRoutines::aarch64::_crc_table[] ATTRIBUTE_ALIGNED(4096) =
     0xD502ED78UL, 0xAE7D62EDUL,         // byte swap of word swap
 };
 
+// Accumulation coefficients for adler32 upper 16 bits
+jubyte StubRoutines::aarch64::_adler_table[] __attribute__ ((aligned(64))) = {
+    16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1
+};
+
 juint StubRoutines::aarch64::_npio2_hw[] __attribute__ ((aligned(64))) = {
     // first, various coefficient values: 0.5, invpio2, pio2_1, pio2_1t, pio2_2,
     // pio2_2t, pio2_3, pio2_3t
