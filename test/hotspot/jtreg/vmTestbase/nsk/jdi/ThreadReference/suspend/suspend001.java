@@ -23,6 +23,7 @@
 
 package nsk.jdi.ThreadReference.suspend;
 
+import jdk.test.lib.Utils;
 import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
@@ -429,7 +430,8 @@ public class suspend001 {
      * It removes events from EventQueue until gets first BreakpointEvent.
      * To get next EventSet value, it uses the method
      *    EventQueue.remove(int timeout)
-     * The timeout argument passed to the method, is "waitTime*60000".
+     * The timeout argument passed to the method, is "waitTime*1000" adjusted to
+     * test.timeout.factor system property.
      * Note: the value of waitTime is set up with
      *       the method ArgumentHandler.getWaitTime() at the beginning of the test.
      *
@@ -451,7 +453,7 @@ public class suspend001 {
 
                 log2("       new:  eventSet = eventQueue.remove();");
                 try {
-                    eventSet = eventQueue.remove (waitTime*60000);
+                    eventSet = eventQueue.remove(Utils.adjustTimeout(waitTime*1000));
                     if (eventSet == null) {
                         log2("::::::  timeout when waiting for a BreakpintEvent");
 //                        log3("ERROR:  timeout for waiting for a BreakpintEvent");

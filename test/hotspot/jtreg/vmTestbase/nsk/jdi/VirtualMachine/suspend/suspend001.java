@@ -23,6 +23,7 @@
 
 package nsk.jdi.VirtualMachine.suspend;
 
+import jdk.test.lib.Utils;
 import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
@@ -318,9 +319,10 @@ public class suspend001 {
                 eventSet1.resume();
                 eventSet.resume();
 
-                log2("       before: Thread.sleep(waitTime*60000);");
+                log2("       before: Thread.sleep(waitTime*1000);");
+
                 try {
-                    Thread.sleep(waitTime*60000);
+                    Thread.sleep(Utils.adjustTimeout(waitTime*1000));
                 } catch ( InterruptedException e ) {
                     log3("ERROR: InterruptedException");
                     expresult = returnCode1;
