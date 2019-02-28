@@ -22,20 +22,17 @@
  */
 
 /*
-  test
-  @bug       6382750
+  @test
+  @key headful
+  @bug        6382750
   @summary   Tests that modal dialog doesn't request extra initial focus on show.
-  @author    anton.tarasov@sun.com: area=awt.focus
-  @run       applet ModalDialogInitialFocusTest.html
+  @run        main ModalDialogInitialFocusTest
 */
 
 import java.awt.*;
 import java.awt.event.*;
-import java.applet.Applet;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.lang.reflect.InvocationTargetException;
 
-public class ModalDialogInitialFocusTest extends Applet {
+public class ModalDialogInitialFocusTest {
     Robot robot;
 
     Dialog dialog = new Dialog((Window)null, "Test Dialog", Dialog.ModalityType.TOOLKIT_MODAL);
@@ -55,10 +52,6 @@ public class ModalDialogInitialFocusTest extends Applet {
         } catch (AWTException e) {
             throw new RuntimeException("Error: unable to create robot", e);
         }
-        // Create instructions for the user here, as well as set up
-        // the environment -- set the layout manager, add buttons,
-        // etc.
-        this.setLayout (new BorderLayout ());
     }
 
     public void start() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,10 @@
  */
 
 /*
-  @test      %W% %E%
+  @test
   @key headful
   @bug       6637607
   @summary   Showing a modal dlg on TAB KEY_PRESS shouldn't consume inappropriate KEY_TYPED.
-  @author    Anton Tarasov: area=awt-focus
   @library   ../../regtesthelpers
   @build     Util
   @run       main ConsumeNextKeyTypedOnModalShowTest
@@ -34,12 +33,9 @@
 
 import java.awt.*;
 import java.awt.event.*;
-import java.applet.Applet;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.lang.reflect.InvocationTargetException;
 import test.java.awt.regtesthelpers.Util;
 
-public class ConsumeNextKeyTypedOnModalShowTest extends Applet {
+public class ConsumeNextKeyTypedOnModalShowTest {
     Robot robot;
     Frame frame = new Frame("Frame");
     Dialog dialog = new Dialog(frame, "Dialog", true);
@@ -76,6 +72,7 @@ public class ConsumeNextKeyTypedOnModalShowTest extends Applet {
     }
 
     public void start() {
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
         Util.waitTillShown(frame);
 

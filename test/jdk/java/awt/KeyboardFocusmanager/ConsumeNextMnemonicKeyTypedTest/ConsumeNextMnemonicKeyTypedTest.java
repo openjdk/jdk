@@ -22,13 +22,13 @@
  */
 
 /*
-  test
-  @bug       6346690
-  @summary   Tests that key_typed is consumed after mnemonic key_pressed is handled for a menu item.
-  @author    anton.tarasov@sun.com: area=awt-focus
-  @library   /test/lib
-  @build     jdk.test.lib.Platform
-  @run       applet ConsumeNextMnemonicKeyTypedTest.html
+  @test
+  @key headful
+  @bug        6346690
+  @summary    Tests that key_typed is consumed after mnemonic key_pressed is handled for a menu item.
+  @library    /test/lib
+  @build      jdk.test.lib.Platform
+  @run        main ConsumeNextMnemonicKeyTypedTest
 */
 
 import jdk.test.lib.Platform;
@@ -36,10 +36,8 @@ import jdk.test.lib.Platform;
 import java.awt.*;
 import javax.swing.*;
 import java.awt.event.*;
-import java.applet.Applet;
 
-
-public class ConsumeNextMnemonicKeyTypedTest extends Applet {
+public class ConsumeNextMnemonicKeyTypedTest {
     Robot robot;
     JFrame frame = new JFrame("Test Frame");
     JTextField text = new JTextField();
@@ -60,10 +58,6 @@ public class ConsumeNextMnemonicKeyTypedTest extends Applet {
         } catch (AWTException e) {
             throw new RuntimeException("Error: unable to create robot", e);
         }
-        // Create instructions for the user here, as well as set up
-        // the environment -- set the layout manager, add buttons,
-        // etc.
-        this.setLayout (new BorderLayout ());
     }
 
     public void start() {
@@ -76,7 +70,7 @@ public class ConsumeNextMnemonicKeyTypedTest extends Applet {
         frame.setJMenuBar(bar);
         frame.pack();
 
-        frame.setLocation(800, 0);
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
 
         test();

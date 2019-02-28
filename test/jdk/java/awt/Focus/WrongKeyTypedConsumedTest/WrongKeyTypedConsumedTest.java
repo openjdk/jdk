@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,24 +26,15 @@
   @key headful
   @bug      4782886
   @summary  FocusManager consumes wrong KEY_TYPED events
-  @author   Oleg.Sukhodolsky: area=awt.focus
   @library  ../../regtesthelpers
   @build    Util
   @run      main WrongKeyTypedConsumedTest
 */
 
-import java.applet.Applet;
-import java.awt.AWTException;
 import java.awt.AWTKeyStroke;
 import java.awt.BorderLayout;
-import java.awt.Dialog;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Frame;
 import java.awt.KeyboardFocusManager;
-import java.awt.Point;
 import java.awt.Robot;
-import java.awt.TextArea;
 
 import java.awt.event.KeyEvent;
 
@@ -56,7 +47,7 @@ import javax.swing.JTextArea;
 
 import test.java.awt.regtesthelpers.Util;
 
-public class WrongKeyTypedConsumedTest extends Applet
+public class WrongKeyTypedConsumedTest
 {
     Robot robot = Util.createRobot();
 
@@ -67,10 +58,6 @@ public class WrongKeyTypedConsumedTest extends Applet
 
     public void start ()
     {
-        setSize (200,200);
-        setVisible(true);
-        validate();
-
         JFrame frame = new JFrame("The Frame");
         Set ftk = new HashSet();
         ftk.add(AWTKeyStroke.getAWTKeyStroke(KeyEvent.VK_DOWN, 0));
@@ -85,6 +72,7 @@ public class WrongKeyTypedConsumedTest extends Applet
         frame.getContentPane().add(textarea);
 
         frame.pack();
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
         Util.waitForIdle(robot);
 

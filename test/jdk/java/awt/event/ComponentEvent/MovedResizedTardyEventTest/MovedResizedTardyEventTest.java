@@ -22,26 +22,26 @@
  */
 
 /*
-  test
-  @bug      4985250
-  @summary  COMPONENT_MOVED/RESIZED tardy events shouldn't be generated.
-  @author   tav@sparc.spb.su
-  @run applet MovedResizedTardyEventTest.html
+  @test
+  @key headful
+  @bug          4985250
+  @summary      COMPONENT_MOVED/RESIZED tardy events shouldn't be generated.
+  @modules java.desktop/sun.awt
+  @run main MovedResizedTardyEventTest
 */
 
 import java.awt.*;
 import java.awt.event.*;
-import java.applet.Applet;
 import java.lang.reflect.InvocationTargetException;
 
-public class MovedResizedTardyEventTest extends Applet {
+public class MovedResizedTardyEventTest {
     Frame f1 = new Frame("F-1");
     Frame f2 = new Frame("F-2");
 
     boolean eventFlag = false;
 
     public static void main(String[] args) {
-        Applet a = new MovedResizedTardyEventTest();
+        MovedResizedTardyEventTest a = new MovedResizedTardyEventTest();
         a.start();
     }
 

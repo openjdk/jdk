@@ -22,22 +22,22 @@
  */
 
 /*
-  test
-  @bug       6396785
-  @summary   MenuItem activated with space should swallow this space.
-  @author    anton.tarasov@...: area=awt.focus
-  @run       applet MenuItemActivatedTest.html
+  @test
+  @key headful
+  @bug        6396785
+  @summary    MenuItem activated with space should swallow this space.
+  @library    ../../../regtesthelpers
+  @build      Util
+  @run        main MenuItemActivatedTest
 */
 
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
-import java.applet.Applet;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.lang.reflect.InvocationTargetException;
 import test.java.awt.regtesthelpers.Util;
 
-public class MenuItemActivatedTest extends Applet {
+public class MenuItemActivatedTest {
     Robot robot;
     JFrame frame = new JFrame("Test Frame");
     JDialog dialog = new JDialog((Window)null, "Test Dialog", Dialog.ModalityType.DOCUMENT_MODAL);
@@ -55,11 +55,6 @@ public class MenuItemActivatedTest extends Applet {
 
     public void init() {
         robot = Util.createRobot();
-
-        // Create instructions for the user here, as well as set up
-        // the environment -- set the layout manager, add buttons,
-        // etc.
-        this.setLayout (new BorderLayout ());
     }
 
     public void start() {
@@ -68,6 +63,7 @@ public class MenuItemActivatedTest extends Applet {
         bar.add(menu);
         frame.setJMenuBar(bar);
         frame.pack();
+        frame.setLocationRelativeTo(null);
 
         item.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent ae) {

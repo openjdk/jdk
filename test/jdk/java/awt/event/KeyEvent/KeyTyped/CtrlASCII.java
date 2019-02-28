@@ -22,37 +22,16 @@
  */
 
 /*
- * test
- * @bug 6497426
- * @summary Tests that pressing of Ctrl+ascii mostly fires KEY_TYPED with a Unicode control symbols
- * @author Yuri.Nesterenko@... area=awt.keyboard
- * @run applet CtrlASCII.html
+  @test
+  @key headful
+  @bug  6497426
+  @summary ests that pressing of Ctrl+ascii mostly fires KEY_TYPED with a Unicode control symbols
+  @run main CtrlASCII
  */
 
-// Note there is no @ in front of test above.  This is so that the
-//  harness will not mistake this file as a test file.  It should
-//  only see the html file as a test file. (the harness runs all
-//  valid test files, so it would run this test twice if this file
-//  were valid as well as the html file.)
-// Also, note the area= after Your Name in the author tag.  Here, you
-//  should put which functional area the test falls in.  See the
-//  AWT-core home page -> test areas and/or -> AWT team  for a list of
-//  areas.
-// Note also the 'RobotLWTest.html' in the run tag.  This should
-//  be changed to the name of the test.
-
-
-/**
- * CtrlASCII.java
- *
- * @summary Tests that pressing of Ctrl+ascii mostly fires KEY_TYPED with a Unicode control symbols
- */
-
-import java.applet.Applet;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
-
 
 //
 // In this test, a key listener for KEY_TYPED checks if a character typed has
@@ -63,8 +42,7 @@ import java.util.*;
 // produce a unicode character, so there will be no KEY_TYPED and no problem.
 // Test doesn't try to verify Ctrl+deadkey behavior.
 //
-
-public class CtrlASCII extends Applet implements KeyListener
+public class CtrlASCII extends Frame implements KeyListener
 {
     // Declare things used in the test, like buttons and labels here
     static Hashtable<Character, Integer> keycharHash = new Hashtable<Character, Integer>();
@@ -194,6 +172,7 @@ public class CtrlASCII extends Applet implements KeyListener
     public void start ()
     {
         setSize(400,300);
+        setLocationRelativeTo(null);
         setVisible(true);
 
         String original = "0123456789";

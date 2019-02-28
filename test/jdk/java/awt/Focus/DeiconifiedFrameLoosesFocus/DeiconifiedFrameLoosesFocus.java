@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,19 @@
  */
 
 /*
-  test
-  @bug       6480534
-  @summary   A Frame changing its state from ICONIFIED to NORMAL should regain focus.
-  @author    anton.tarasov@...: area=awt.focus
-  @run       applet DeiconifiedFrameLoosesFocus.html
+  @test
+  @key headful
+  @bug        6480534
+  @summary    A Frame changing its state from ICONIFIED to NORMAL should regain focus.
+  @library    ../../regtesthelpers
+  @build      Util
+  @run        main DeiconifiedFrameLoosesFocus
 */
 
 import java.awt.*;
-import java.applet.Applet;
 import test.java.awt.regtesthelpers.Util;
 
-public class DeiconifiedFrameLoosesFocus extends Applet {
+public class DeiconifiedFrameLoosesFocus {
     Robot robot;
     static final Frame frame = new Frame("Frame");
 
@@ -45,11 +46,6 @@ public class DeiconifiedFrameLoosesFocus extends Applet {
 
     public void init() {
         robot = Util.createRobot();
-
-        // Create instructions for the user here, as well as set up
-        // the environment -- set the layout manager, add buttons,
-        // etc.
-        this.setLayout (new BorderLayout ());
     }
 
     public void start() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,22 +22,27 @@
  */
 
 /*
-  test
+  @test
+  @key headful
   @bug        5082319
   @summary    Tests that focus request for already focused component doesn't block key events.
-  @author     anton.tarasov@sun.com
-  @run applet FocusSubRequestTest.html
+  @run main FocusSubRequestTest
 */
 
-import java.applet.Applet;
 import java.awt.*;
 import java.awt.event.*;
 
-public class FocusSubRequestTest extends Applet {
+public class FocusSubRequestTest {
     Frame frame = new Frame("Test Frame");
     Button button = new Button("button");
     boolean passed = false;
     Robot robot;
+
+    public static void main(final String[] args) {
+        FocusSubRequestTest app = new FocusSubRequestTest();
+        app.init();
+        app.start();
+    }
 
     public void init() {
         frame.add(button);
@@ -64,7 +69,7 @@ public class FocusSubRequestTest extends Applet {
 
     public void start() {
         frame.pack();
-        frame.setLocation(getLocation().x + getSize().width + 20, 0);
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
 
         waitTillShown(button);

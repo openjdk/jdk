@@ -22,11 +22,10 @@
  */
 
 /*
-  @test      %W% %E%
+  @test
   @key headful
   @bug       6598089
   @summary   Tests restoring focus on a single disabled coponent
-  @author    Anton Tarasov: area=awt-focus
   @library   ../../regtesthelpers
   @build     Util
   @run       main RestoreFocusOnDisabledComponentTest
@@ -34,13 +33,12 @@
 
 import java.awt.*;
 import java.awt.event.*;
-import java.applet.Applet;
 import test.java.awt.regtesthelpers.Util;
 
 /*
  * The bug is not reproducible on Windows.
  */
-public class RestoreFocusOnDisabledComponentTest extends Applet {
+public class RestoreFocusOnDisabledComponentTest {
     Frame frame = new Frame("Frame") {public String toString() {return "FRAME";}};
     Button b0 = new Button("button0") {public String toString() {return "B-0";}};
     Button b1 = new Button("button1") {public String toString() {return "B-1";}};
@@ -62,7 +60,7 @@ public class RestoreFocusOnDisabledComponentTest extends Applet {
         frame.add(b1);
         frame.setLayout(new FlowLayout());
         frame.pack();
-
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
 
         Util.waitForIdle(robot);

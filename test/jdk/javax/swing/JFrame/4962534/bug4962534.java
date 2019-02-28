@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,19 +22,19 @@
  */
 
 /*
- test
- @bug 4962534 7104594
- @summary JFrame dances very badly
- @author dav@sparc.spb.su area=
- @run applet bug4962534.html
+  @test
+  @key headful
+  @bug 4962534
+  @summary JFrame dances very badly
+  @run main bug4962534
  */
-import java.applet.Applet;
+
 import java.awt.*;
 import java.awt.event.*;
 import java.util.Random;
 import javax.swing.*;
 
-public class bug4962534 extends Applet {
+public class bug4962534 {
 
     Robot robot;
     volatile Point framePosition;
@@ -46,7 +46,12 @@ public class bug4962534 extends Applet {
     volatile boolean titleFound = false;
     public static Object LOCK = new Object();
 
-    @Override
+    public static void main(final String[] args) {
+        bug4962534 app = new bug4962534();
+        app.init();
+        app.start();
+    }
+
     public void init() {
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
@@ -60,10 +65,7 @@ public class bug4962534 extends Applet {
         }
     }//End  init()
 
-    @Override
     public void start() {
-        validate();
-
         try {
             setJLayeredPaneEDT();
             setTitleComponentEDT();
@@ -149,6 +151,7 @@ public class bug4962534 extends Applet {
         frame = new JFrame("JFrame Dance Test");
         frame.pack();
         frame.setSize(450, 260);
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 

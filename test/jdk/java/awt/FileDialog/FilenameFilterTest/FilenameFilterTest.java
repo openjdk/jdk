@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,20 +22,15 @@
  */
 
 /*
-  test
+  @test
+  @key headful
   @bug 6448069
   @summary namefilter is not called for file dialog on windows
-  @author oleg.sukhodolsky: area= awt.filedialog
-  @run applet FilenameFilterTest.html
+  @library ../../regtesthelpers
+  @build Util
+  @run main FilenameFilterTest
 */
 
-/**
- * FilenameFilterTest.java
- *
- * summary: namefilter is not called for file dialog on windows
- */
-
-import java.applet.Applet;
 import java.awt.*;
 
 import java.io.File;
@@ -43,28 +38,12 @@ import java.io.FilenameFilter;
 
 import test.java.awt.regtesthelpers.Util;
 
-public class FilenameFilterTest extends Applet
-{
-    //Declare things used in the test, like buttons and labels here
-    volatile boolean filter_was_called = false;
-    FileDialog fd;
+public class FilenameFilterTest {
 
-    public void init()
-    {
-        // Set up the environment -- set the layout manager, add
-        // buttons, etc.
+    static volatile boolean filter_was_called = false;
+    static FileDialog fd;
 
-        setLayout (new BorderLayout ());
-
-    }//End  init()
-
-    public void start ()
-    {
-        //Get things going.  Request focus, set size, et cetera
-        setSize (200,200);
-        setVisible(true);
-        validate();
-
+    public static void main(final String[] args) {
         EventQueue.invokeLater(new Runnable() {
                 public void run() {
                     fd = new FileDialog(new Frame(""), "hello world", FileDialog.LOAD);
@@ -93,6 +72,5 @@ public class FilenameFilterTest extends Applet
         if (!filter_was_called) {
             throw new RuntimeException("Filter was not called");
         }
-    }// start()
-
+    }
 }// class FilenameFilterTest

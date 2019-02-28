@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
   @key headful
   @bug       6314575
   @summary   Tests that previosly focused owned window doesn't steal focus when an owner's component requests focus.
-  @author    Anton.Tarasov: area=awt.focus
   @library   ../../regtesthelpers
   @build     Util
   @run       main ActualFocusedWindowBlockingTest
@@ -34,12 +33,9 @@
 
 import java.awt.*;
 import java.awt.event.*;
-import java.applet.Applet;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.lang.reflect.InvocationTargetException;
 import test.java.awt.regtesthelpers.Util;
 
-public class ActualFocusedWindowBlockingTest extends Applet {
+public class ActualFocusedWindowBlockingTest {
     Robot robot = Util.createRobot();
     Frame owner = new Frame("Owner Frame");
     Window win = new Window(owner);

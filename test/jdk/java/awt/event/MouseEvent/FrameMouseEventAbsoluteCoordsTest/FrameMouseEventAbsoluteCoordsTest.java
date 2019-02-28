@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,15 @@
  */
 
 /*
-  test
+  @test
+  @key headful
   @bug 4992908
   @summary Need way to get location of MouseEvent in screen  coordinates (Unit-test)
-  @author Andrei.Dmitriev area=event
-  @run applet FrameMouseEventAbsoluteCoordsTest.html
+  @library ../../../regtesthelpers
+  @build Util
+  @run main FrameMouseEventAbsoluteCoordsTest
 */
 
-import java.applet.Applet;
 import java.awt.*;
 import java.awt.event.*;
 import test.java.awt.regtesthelpers.Util;
@@ -39,7 +40,7 @@ import test.java.awt.regtesthelpers.Util;
 // Click on this frame.
 // verify that our MouseEvent contain correct xAbs, yAbs values
 
-public class FrameMouseEventAbsoluteCoordsTest extends Applet implements MouseListener
+public class FrameMouseEventAbsoluteCoordsTest implements MouseListener
 {
     Robot robot;
     Frame frame = new Frame("MouseEvent Test Frame II");
@@ -47,20 +48,23 @@ public class FrameMouseEventAbsoluteCoordsTest extends Applet implements MouseLi
     Point mousePositionAbsolute;
     Point mousePosition;
 
+    public static void main(final String[] args) {
+        FrameMouseEventAbsoluteCoordsTest app = new FrameMouseEventAbsoluteCoordsTest();
+        app.init();
+        app.start();
+    }
+
     public void init()
     {
-
-        this.setLayout (new BorderLayout ());
         button.addMouseListener(this);
         frame.add(button);
         frame.pack();
+        frame.setLocationRelativeTo(null);
     }//End  init()
 
     public void start ()
     {
-        setSize (200,200);
         frame.setVisible(true);
-        validate();
         Util.waitForIdle(robot);
 
         try {

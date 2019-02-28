@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
  * @key       headful
  * @bug       6516675
  * @summary   Tests that EmbeddedFrame can be focused.
- * @author    anton.tarasov: area=awt-focus
  * @requires (os.family == "windows")
  * @modules   java.desktop/java.awt.peer
  *            java.desktop/sun.awt
@@ -39,13 +38,10 @@
 
 import java.awt.*;
 import java.awt.event.*;
-import java.applet.Applet;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.lang.reflect.InvocationTargetException;
 import test.java.awt.regtesthelpers.Util;
 import test.java.awt.regtesthelpers.UtilInternal;
 
-public class FocusEmbeddedFrameTest extends Applet {
+public class FocusEmbeddedFrameTest {
     static Frame embedder = new Frame("Embedder");
     static Frame ef = null;
     static volatile boolean passed;

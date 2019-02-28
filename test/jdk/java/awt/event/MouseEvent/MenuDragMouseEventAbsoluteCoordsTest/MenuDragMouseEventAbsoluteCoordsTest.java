@@ -22,19 +22,18 @@
  */
 
 /*
-  test
+  @test
+  @key headful
   @bug 4992908
   @summary Need way to get location of MouseEvent in screen coordinates
-  @author Andrei.Dmitriev area=event
-  @run applet MenuDragMouseEventAbsoluteCoordsTest.html
+  @library ../../../regtesthelpers
+  @build Util
+  @run main MenuDragMouseEventAbsoluteCoordsTest
 */
 
-import java.applet.Applet;
 import java.awt.*;
 import javax.swing.event.*;
 import java.awt.event.*;
-import javax.swing.MenuSelectionManager;
-import javax.swing.MenuElement;
 import test.java.awt.regtesthelpers.Util;
 
 // The test consits of several parts:
@@ -44,12 +43,19 @@ import test.java.awt.regtesthelpers.Util;
 // getLocationOnScreen(),  get(X|Y), getPoint() .
 
 
-public class MenuDragMouseEventAbsoluteCoordsTest extends Applet implements MouseListener
+public class MenuDragMouseEventAbsoluteCoordsTest implements MouseListener
 {
     Frame frame = new Frame("MenuDragMouseEvent Test Frame");
 
     Point mousePositionOnScreen = new Point(200, 200);
     Point mousePosition = new Point(100, 100);
+
+    public static void main(String[] args) {
+        MenuDragMouseEventAbsoluteCoordsTest app = new MenuDragMouseEventAbsoluteCoordsTest();
+        app.init();
+        app.start();
+    }
+
     public void init()
     {
         frame.addMouseListener(this);
@@ -60,7 +66,6 @@ public class MenuDragMouseEventAbsoluteCoordsTest extends Applet implements Mous
         //Get things going.  Request focus, set size, et cetera
         frame.setSize (200,200);
         frame.setVisible(true);
-        validate();
 
         try {
             Util.waitForIdle(new Robot());

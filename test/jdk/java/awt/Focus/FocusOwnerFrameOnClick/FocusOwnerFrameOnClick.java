@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,10 @@
  */
 
 /*
-  @test      FocusOwnerFrameOnClick.java %W% %E%
+  @test
   @key headful
   @bug       6886678
   @summary   Tests that clicking an owner frame switches focus from its owned window.
-  @author    Anton Tarasov: area=awt.focus
   @library   ../../regtesthelpers
   @build     Util
   @run       main FocusOwnerFrameOnClick
@@ -34,12 +33,10 @@
 
 import java.awt.*;
 import java.awt.event.*;
-import java.applet.Applet;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.lang.reflect.InvocationTargetException;
 import test.java.awt.regtesthelpers.Util;
 
-public class FocusOwnerFrameOnClick extends Applet {
+public class FocusOwnerFrameOnClick {
     Robot robot;
     Frame frame = new Frame("Frame");
     Window window = new Window(frame);

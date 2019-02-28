@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,18 +26,16 @@
   @key headful
   @bug       6522725
   @summary   Tests for proper request-focus-back on FOCUS_LOST.
-  @author    Anton Tarasov: area=awt-focus
   @library   ../../regtesthelpers
   @build     Util
   @run       main IconifiedFrameFocusChangeTest
 */
 
 import java.awt.*;
-import java.applet.Applet;
 import java.awt.event.*;
 import test.java.awt.regtesthelpers.Util;
 
-public class IconifiedFrameFocusChangeTest extends Applet {
+public class IconifiedFrameFocusChangeTest {
     Frame testFrame = new Frame("Test Frame");
     Frame otherFrame = new Frame("Other Frame");
     Button testButton = new Button("test button");

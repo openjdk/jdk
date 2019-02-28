@@ -20,69 +20,22 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
-  test
+  @test
   @bug 4185854
   @summary Checks that constructors do not accept nulls and throw NPE
-  @run applet ConstructorsNullTest.html
+  @run main ConstructorsNullTest
 */
 
-// Note there is no @ in front of test above.  This is so that the
-//  harness will not mistake this file as a test file.  It should
-//  only see the html file as a test file. (the harness runs all
-//  valid test files, so it would run this test twice if this file
-//  were valid as well as the html file.)
-// Also, note the area= after Your Name in the author tag.  Here, you
-//  should put which functional area the test falls in.  See the
-//  AWT-core home page -> test areas and/or -> AWT team  for a list of
-//  areas.
-// Note also the 'ConstructorsNullTest.html' in the run tag.  This should
-//  be changed to the name of the test.
+import java.awt.RenderingHints;
+import java.awt.color.ColorSpace;
+import java.awt.color.ICC_Profile;
+import java.awt.image.ColorConvertOp;
 
+public class ConstructorsNullTest {
 
-/**
- * ConstructorsNullTest.java
- *
- * summary:
- */
-
-import java.applet.Applet;
-import java.awt.*;
-import java.awt.image.*;
-import java.awt.color.*;
-
-
-//Automated tests should run as applet tests if possible because they
-// get their environments cleaned up, including AWT threads, any
-// test created threads, and any system resources used by the test
-// such as file descriptors.  (This is normally not a problem as
-// main tests usually run in a separate VM, however on some platforms
-// such as the Mac, separate VMs are not possible and non-applet
-// tests will cause problems).  Also, you don't have to worry about
-// synchronisation stuff in Applet tests they way you do in main
-// tests...
-
-
-public class ConstructorsNullTest extends Applet
- {
-   //Declare things used in the test, like buttons and labels here
-
-   public void init()
-    {
-      //Create instructions for the user here, as well as set up
-      // the environment -- set the layout manager, add buttons,
-      // etc.
-
-      this.setLayout (new BorderLayout ());
-
-    }//End  init()
-
-   public void start ()
-    {
-      //Get things going.  Request focus, set size, et cetera
-      setSize (200,200);
-      show();
-
+    public static void main(final String[] args) {
       ColorConvertOp gp;
       boolean passed = false;
       try {
@@ -104,12 +57,5 @@ public class ConstructorsNullTest extends Applet
           throw new RuntimeException("Test FAILED: one of constructors didn't throw NullPointerException.");
       }
       System.out.println("Test PASSED: all constructors threw NullPointerException.");
-
-      //What would normally go into main() will probably go here.
-      //Use System.out.println for diagnostic messages that you want
-      //to read after the test is done.
-      //Use System.out.println for messages you want the tester to read.
-
-    }// start()
-
- }// class ConstructorsNullTest
+    }
+}// class ConstructorsNullTest

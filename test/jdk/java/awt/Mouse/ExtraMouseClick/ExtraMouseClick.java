@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,16 @@
  */
 
  /*
-  test
-  @bug 5039416 6404008 7087869
+  @test
+  @key headful
+  @bug 5039416 6404008
   @summary REGRESSION: Extra mouse click dispatched after press-drag- release sequence.
   @library ../../regtesthelpers
   @build Util
-  @author  andrei.dmitriev area=awt.event
-  @run applet ExtraMouseClick.html
+  @run main ExtraMouseClick
  */
 
-import java.applet.Applet;
 import java.awt.AWTException;
-import java.awt.BorderLayout;
 import java.awt.Frame;
 import java.awt.Point;
 import java.awt.Robot;
@@ -50,9 +48,7 @@ import test.java.awt.regtesthelpers.Util;
 // Note that this test may not fail easily. But it must always pass on
 // patched workspace.
 //**
-
-public class ExtraMouseClick extends Applet
-{
+public class ExtraMouseClick {
     Frame frame = new Frame("Extra Click After MouseDrag");
     final int TRIALS = 10;
     final int SMUDGE_WIDTH = 4;
@@ -64,10 +60,14 @@ public class ExtraMouseClick extends Applet
     boolean pressed = false;
     boolean released = false;
 
+    public static void main(final String[] args) {
+        ExtraMouseClick app = new ExtraMouseClick();
+        app.init();
+        app.start();
+    }
+
     public void init()
     {
-        this.setLayout (new BorderLayout ());
-
         frame.addMouseListener(new MouseAdapter() {
                 public void mousePressed(MouseEvent e) {
                     System.out.println("MousePressed");
@@ -99,6 +99,7 @@ public class ExtraMouseClick extends Applet
     public void start ()
     {
         frame.setSize(480, 300);
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
         try{
             robot = new Robot();

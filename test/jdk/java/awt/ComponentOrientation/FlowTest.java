@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,9 +39,8 @@
 
 import java.awt.*;
 import java.awt.event.*;
-import java.applet.Applet;
 
-public class FlowTest extends Applet {
+public class FlowTest extends Panel {
     Panel       panel;
 
     public FlowTest() {
@@ -141,8 +140,6 @@ public class FlowTest extends Applet {
         } );
 
         FlowTest flowTest = new FlowTest();
-        flowTest.init();
-        flowTest.start();
 
         f.add("Center", flowTest);
         f.setSize(300, 300);

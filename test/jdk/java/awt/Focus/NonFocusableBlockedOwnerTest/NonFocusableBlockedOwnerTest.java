@@ -22,19 +22,19 @@
  */
 
 /*
-  test
-  @bug       6272324
-  @summary   Modal excluded Window which decorated parent is blocked should be non-focusable.
-  @author    anton.tarasov@sun.com: area=awt.focus
-  @run       applet NonFocusableBlockedOwnerTest.html
+  @test
+  @key headful
+  @bug        6272324
+  @summary    Modal excluded Window which decorated parent is blocked should be non-focusable.
+  @modules java.desktop/sun.awt
+  @run        main NonFocusableBlockedOwnerTest
 */
 
-import java.applet.Applet;
 import java.awt.*;
 import java.awt.event.*;
 import java.lang.reflect.*;
 
-public class NonFocusableBlockedOwnerTest extends Applet {
+public class NonFocusableBlockedOwnerTest {
     Robot robot;
     Frame frame = new Frame("Modal Blocked Frame");
     Dialog dialog = new Dialog(frame, "Modal Dialog", true);
@@ -53,10 +53,6 @@ public class NonFocusableBlockedOwnerTest extends Applet {
         } catch (AWTException e) {
             throw new RuntimeException("Error: unable to create robot", e);
         }
-        // Create instructions for the user here, as well as set up
-        // the environment -- set the layout manager, add buttons,
-        // etc.
-        this.setLayout (new BorderLayout ());
     }
 
     public void start() {

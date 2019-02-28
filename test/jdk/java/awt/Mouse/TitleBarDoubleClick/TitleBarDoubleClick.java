@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,20 @@
  */
 
 /*
-  test
+  @test
+  @key headful
   @bug 4664415
-  @summary REGRESSION: double click jframe titlebar generating mouse events in panel
-  @author Andrei Dmitriev: area=awt.mouse
-  @run applet TitleBarDoubleClick.html
+  @summary Test that double clicking the titlebar does not send RELEASE/CLICKED
+  @library    ../../regtesthelpers
+  @build      Util
+  @run main TitleBarDoubleClick
 */
-import java.applet.Applet;
+
 import java.awt.*;
 import java.awt.event.*;
 import test.java.awt.regtesthelpers.Util;
 
-public class TitleBarDoubleClick extends Applet implements MouseListener,
+public class TitleBarDoubleClick implements MouseListener,
  WindowListener
 {
     //Declare things used in the test, like buttons and labels here
@@ -43,24 +45,13 @@ public class TitleBarDoubleClick extends Applet implements MouseListener,
     Frame frame;
     Robot robot;
 
-    public void init()
-    {
-        this.setLayout (new BorderLayout ());
-
-    }//End  init()
+    public static void main(final String[] args) {
+        TitleBarDoubleClick app = new TitleBarDoubleClick();
+        app.start();
+    }
 
     public void start ()
     {
-        //Get things going.  Request focus, set size, et cetera
-        setSize (200,200);
-        setVisible(true);
-        validate();
-
-        //What would normally go into main() will probably go here.
-        //Use System.out.println for diagnostic messages that you want
-        //to read after the test is done.
-        //Use Sysout.println for messages you want the tester to read.
-
             robot = Util.createRobot();
             robot.setAutoDelay(100);
             robot.mouseMove(BOUNDS.x + (BOUNDS.width / 2),

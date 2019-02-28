@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,25 +22,29 @@
  */
 
 /*
-  test
+  @test
+  @key headful
   @bug 6387275
   @summary List: the focus is at the top of the first item, XAWT
-  @author Dmitry.Cherepanov@SUN.COM area=awt.list
-  @run applet FocusEmptyListTest.html
+  @requires (os.family == "linux" | os.family == "solaris")
+  @modules java.desktop/sun.awt
+           java.desktop/java.awt.peer
+           java.desktop/sun.awt.X11:open
+  @run main FocusEmptyListTest
 */
 
-import java.applet.Applet;
 import java.awt.*;
 import java.lang.reflect.*;
 import java.awt.peer.ListPeer;
 
 import sun.awt.AWTAccessor;
 
-public class FocusEmptyListTest extends Applet {
+public class FocusEmptyListTest extends Frame {
 
-    public void init() {
-        setLayout(new BorderLayout());
-    }//End  init()
+    public static void main(final String[] args) {
+        FocusEmptyListTest app = new FocusEmptyListTest();
+        app.start();
+    }
 
     public void start() {
         boolean isXToolkit = Toolkit.getDefaultToolkit()
@@ -61,6 +65,8 @@ public class FocusEmptyListTest extends Applet {
         list.add("item1");
 
         setSize(200, 200);
+        setUndecorated(true);
+        setLocationRelativeTo(null);
         setVisible(true);
         validate();
 

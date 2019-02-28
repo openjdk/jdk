@@ -28,18 +28,14 @@
   @summary   Tests that showing a toplvel in a not foreground Java process activates it.
   @library   ../../regtesthelpers
   @build     Util
-  @author    Anton Tarasov: area=awt-focus
   @run       main ShowFrameCheckForegroundTest
  */
 
 import java.awt.*;
 import java.awt.event.*;
-import java.applet.Applet;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.lang.reflect.InvocationTargetException;
 import test.java.awt.regtesthelpers.Util;
 
-public class ShowFrameCheckForegroundTest extends Applet {
+public class ShowFrameCheckForegroundTest {
     Robot robot;
     Frame nofocusFrame = new Frame("Non-focusable");
     Frame frame = new Frame("Frame");
@@ -76,6 +72,7 @@ public class ShowFrameCheckForegroundTest extends Applet {
         nofocusFrame.add(showButton);
         nofocusFrame.pack();
         nofocusFrame.setFocusableWindowState(false);
+        nofocusFrame.setLocation(200, 200);
         nofocusFrame.setVisible(true);
         Util.waitForIdle(robot);
 
@@ -97,7 +94,7 @@ public class ShowFrameCheckForegroundTest extends Applet {
     private void test(Window toplevel, int stage) {
         toplevel.add(testButton);
         toplevel.pack();
-        toplevel.setLocation(200, 0);
+        toplevel.setLocation(400, 200);
 
         switch (stage) {
             case 1:

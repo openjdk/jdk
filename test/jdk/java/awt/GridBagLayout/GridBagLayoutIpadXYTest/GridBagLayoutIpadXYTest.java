@@ -22,32 +22,22 @@
  */
 
 /*
-  test
+  @test
+  @key headful
   @bug 5004032
   @summary GridBagConstraints.ipad(x|y) defined in a new way
-  @author dav@sparc.spb.su area=
-  @run applet GridBagLayoutIpadXYTest.html
+  @run main GridBagLayoutIpadXYTest
 */
 
-import java.applet.Applet;
 import java.awt.*;
 
-public class GridBagLayoutIpadXYTest extends Applet
-{
-    Frame frame = new Frame();
-    TextField jtf = null;
-    final int customIpadx = 300;
-    final int customIpady = 40;
+public class GridBagLayoutIpadXYTest {
+    static Frame frame = new Frame();
+    static TextField jtf = null;
+    static final int customIpadx = 300;
+    static final int customIpady = 40;
 
-    public void init()
-    {
-        this.setLayout (new BorderLayout ());
-
-    }//End  init()
-
-    public void start ()
-    {
-        validate();
+    public static void main(final String[] args) {
         frame.setLayout(new GridBagLayout());
         GridBagConstraints gc = new GridBagConstraints();
         Insets fieldInsets = new Insets(0,5,5,0);
@@ -64,6 +54,7 @@ public class GridBagLayoutIpadXYTest extends Applet
         frame.add(jtf, gc);
 
         frame.pack();
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
 
         Robot robot;
@@ -86,6 +77,5 @@ public class GridBagLayoutIpadXYTest extends Applet
             throw new RuntimeException("Test Failed. TextField has incorrect width. ");
         }
         System.out.println("Test Passed.");
-
-    }// start()
+    }
 }

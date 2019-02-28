@@ -22,13 +22,14 @@
  */
 
 /**
- *
+ * @test
  * @bug 4023283
  * @key headful
  * @summary Checks that an Error which propogates up to the EventDispatch
  * loop does not crash AWT.
  * @author Andrei Dmitriev: area=awt.event
  * @library ../../regtesthelpers
+ * @modules java.desktop/sun.awt
  * @build Util
  * @run main LoopRobustness
  */

@@ -21,70 +21,22 @@
  * questions.
  */
 
-
 /*
-  test
+  @test
+  @key headful
   @bug 4828019
   @summary Frame/Window deadlock
-  @author yan@sparc.spb.su: area=
-  @run applet NonEDT_GUI_Deadlock.html
+  @run main/timeout=9999 NonEDT_GUI_Deadlock
 */
 
-// Note there is no @ in front of test above.  This is so that the
-//  harness will not mistake this file as a test file.  It should
-//  only see the html file as a test file. (the harness runs all
-//  valid test files, so it would run this test twice if this file
-//  were valid as well as the html file.)
-// Also, note the area= after Your Name in the author tag.  Here, you
-//  should put which functional area the test falls in.  See the
-//  AWT-core home page -> test areas and/or -> AWT team  for a list of
-//  areas.
-// Note also the 'AutomaticAppletTest.html' in the run tag.  This should
-//  be changed to the name of the test.
-
-
-/**
- * NonEDT_GUI_Deadlock.java
- *
- * summary:
- */
-
-import java.applet.Applet;
 import java.awt.*;
-import java.awt.event.*;
-import java.net.*;
-import java.io.*;
 
-
-//Automated tests should run as applet tests if possible because they
-// get their environments cleaned up, including AWT threads, any
-// test created threads, and any system resources used by the test
-// such as file descriptors.  (This is normally not a problem as
-// main tests usually run in a separate VM, however on some platforms
-// such as the Mac, separate VMs are not possible and non-applet
-// tests will cause problems).  Also, you don't have to worry about
-// synchronisation stuff in Applet tests they way you do in main
-// tests...
-
-
-public class NonEDT_GUI_Deadlock extends Applet
-{
-    //Declare things used in the test, like buttons and labels here
+public class NonEDT_GUI_Deadlock {
     boolean bOK = false;
     Thread badThread = null;
 
-    public void init()
-    {
-    }//End  init()
-
     public void start ()
     {
-        //Get things going.  Request focus, set size, et cetera
-
-        setSize (200,300);
-        setVisible(true);
-        validate();
-
         final Frame theFrame = new Frame("Window test");
         theFrame.setSize(240, 200);
 
@@ -164,7 +116,6 @@ public class NonEDT_GUI_Deadlock extends Applet
 
     public static void main(String args[]) {
        NonEDT_GUI_Deadlock imt = new NonEDT_GUI_Deadlock();
-       imt.init();
        imt.start();
     }
 
