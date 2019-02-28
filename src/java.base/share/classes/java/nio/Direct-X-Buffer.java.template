@@ -218,14 +218,17 @@ class Direct$Type$Buffer$RW$$BO$
         return new Direct$Type$Buffer$RW$$BO$(this, -1, 0, rem, rem, off);
     }
 
-#if[byte]
-    public $Type$Buffer slice(int pos, int lim) {
-        assert (pos >= 0);
-        assert (pos <= lim);
-        int rem = lim - pos;
-        return new Direct$Type$Buffer$RW$$BO$(this, -1, 0, rem, rem, pos);
+    @Override
+    public $Type$Buffer slice(int index, int length) {
+        Objects.checkIndex(index, limit() + 1);
+        Objects.checkIndex(length, limit() - index + 1);
+        return new Direct$Type$Buffer$RW$$BO$(this,
+                                              -1,
+                                              0,
+                                              length,
+                                              length,
+                                              index);
     }
-#end[byte]
 
     public $Type$Buffer duplicate() {
         return new Direct$Type$Buffer$RW$$BO$(this,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package java.nio;
 
+import java.util.Objects;
 
 // ## If the sequence is a string, use reflection to share its array
 
@@ -49,6 +50,18 @@ class StringCharBuffer                                  // package-private
                                     this.remaining(),
                                     this.remaining(),
                                     offset + this.position());
+    }
+
+    @Override
+    public CharBuffer slice(int index, int length) {
+        Objects.checkIndex(index, limit() + 1);
+        Objects.checkIndex(length, limit() - index + 1);
+        return new StringCharBuffer(str,
+                                    -1,
+                                    0,
+                                    length,
+                                    length,
+                                    offset + index);
     }
 
     private StringCharBuffer(CharSequence s,

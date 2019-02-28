@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,8 +134,9 @@ import java.util.Spliterator;
  *   it already contains: It leaves the limit unchanged and sets the position
  *   to zero.  </p></li>
  *
- *   <li><p> {@link #slice} creates a subsequence of a buffer: It leaves the
- *   limit and the position unchanged. </p></li>
+ *   <li><p> The {@link #slice} and {@link #slice(int,int) slice(index,length)}
+ *   methods create a subsequence of a buffer: They leave the limit and the
+ *   position unchanged. </p></li>
  *
  *   <li><p> {@link #duplicate} creates a shallow copy of a buffer: It leaves
  *   the limit and the position unchanged. </p></li>
@@ -598,6 +599,39 @@ public abstract class Buffer {
      * @since 9
      */
     public abstract Buffer slice();
+
+    /**
+     * Creates a new buffer whose content is a shared subsequence of
+     * this buffer's content.
+     *
+     * <p> The content of the new buffer will start at position {@code index}
+     * in this buffer, and will contain {@code length} elements. Changes to
+     * this buffer's content will be visible in the new buffer, and vice versa;
+     * the two buffers' position, limit, and mark values will be independent.
+     *
+     * <p> The new buffer's position will be zero, its capacity and its limit
+     * will be {@code length}, its mark will be undefined. The new buffer will
+     * be direct if, and only if, this buffer is direct, and it will be
+     * read-only if, and only if, this buffer is read-only.  </p>
+     *
+     * @param   index
+     *          The position in this buffer at which the content of the new
+     *          buffer will start; must be non-negative and no larger than
+     *          {@link #limit() limit()}
+     *
+     * @param   length
+     *          The number of elements the new buffer will contain; must be
+     *          non-negative and no larger than {@code limit() - index}
+     *
+     * @return  The new buffer
+     *
+     * @throws  IndexOutOfBoundsException
+     *          If {@code index} is negative or greater than {@code limit()},
+     *          {@code length} is negative, or {@code length > limit() - index}
+     *
+     * @since 13
+     */
+    public abstract Buffer slice(int index, int length);
 
     /**
      * Creates a new buffer that shares this buffer's content.

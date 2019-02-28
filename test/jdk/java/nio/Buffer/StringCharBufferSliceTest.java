@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,14 @@
  */
 
 /* @test
- * @bug 4997655 7000913
+ * @bug 4997655 5071718 7000913
  * @summary (bf) CharBuffer.slice() on wrapped CharSequence results in wrong position
  */
 
-import java.nio.*;
+import java.nio.CharBuffer;
+import java.nio.InvalidMarkException;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 public class StringCharBufferSliceTest {
     public static void main( String[] args) throws Exception {
@@ -40,85 +43,114 @@ public class StringCharBufferSliceTest {
 
         CharBuffer buff = CharBuffer.wrap(in);
         test(buff, buff.slice());
+        test(buff, buff.slice(0, buff.remaining()));
 
         System.out.println(
             ">>> StringCharBufferSliceTest-main: testing with new position.");
 
         buff.position(2);
         test(buff, buff.slice());
+        test(buff, buff.slice(2, buff.remaining()));
 
         System.out.println(
           ">>> StringCharBufferSliceTest-main: testing with non zero initial position.");
 
         buff = CharBuffer.wrap(in, 3, in.length());
         test(buff, buff.slice());
+        test(buff, buff.slice(0, buff.remaining()));
 
         System.out.println(
             ">>> StringCharBufferSliceTest-main: testing slice result with get()");
         buff.position(4);
         buff.limit(7);
-        CharBuffer slice = buff.slice();
-        for (int i = 0; i < 3; i++) {
-            if (slice.get() != buff.get()) {
-                throw new RuntimeException("Wrong characters in slice result.");
+        BiConsumer<CharBuffer,CharBuffer> bitest = (b, s) -> {
+            for (int i = 0; i < 3; i++) {
+                if (s.get() != b.get()) {
+                    throw new RuntimeException
+                        ("Wrong characters in slice result.");
+                }
             }
-        }
+        };
+        bitest.accept(buff, buff.slice());
+        buff.position(4);
+        bitest.accept(buff, buff.slice(4, 3));
 
         System.out.println(
             ">>> StringCharBufferSliceTest-main: testing slice result with get(int)");
         buff.position(4);
         buff.limit(7);
-        slice = buff.slice();
-        for (int i = 0; i < 3; i++) {
-            if (slice.get(i) != buff.get(4 + i)) {
-                throw new RuntimeException("Wrong characters in slice result.");
+        bitest = (b, s) -> {
+            for (int i = 0; i < 3; i++) {
+                if (s.get(i) != b.get(4 + i)) {
+                    throw new RuntimeException
+                        ("Wrong characters in slice result.");
+                }
             }
-        }
+        };
+        bitest.accept(buff, buff.slice());
+        buff.position(4);
+        bitest.accept(buff, buff.slice(4, 3));
 
         System.out.println(
           ">>> StringCharBufferSliceTest-main: testing slice with result of slice");
         buff.position(0);
         buff.limit(buff.capacity());
-        slice = buff.slice();
-        for (int i=0; i<4; i++) {
-            slice.position(i);
-            CharBuffer nextSlice = slice.slice();
-            if (nextSlice.position() != 0)
-                throw new RuntimeException("New buffer's position should be zero");
-            if (!nextSlice.equals(slice))
-                throw new RuntimeException("New buffer should be equal");
-            slice = nextSlice;
-        }
+        Consumer<CharBuffer> test = (s) -> {
+            for (int i=0; i<4; i++) {
+                s.position(i);
+                CharBuffer nextSlice = s.slice();
+                if (nextSlice.position() != 0)
+                    throw new RuntimeException
+                        ("New buffer's position should be zero");
+                if (!nextSlice.equals(s))
+                    throw new RuntimeException("New buffer should be equal");
+                s = nextSlice;
+            }
+        };
+        test.accept(buff.slice());
+        test.accept(buff.slice(0, buff.capacity()));
 
         System.out.println(
           ">>> StringCharBufferSliceTest-main: testing toString.");
         buff.position(4);
         buff.limit(7);
-        slice = buff.slice();
-        if (!slice.toString().equals("tes")) {
-            throw new RuntimeException("bad toString() after slice(): " + slice.toString());
-        }
+        test = (s) -> {
+            if (!s.toString().equals("tes")) {
+                throw new RuntimeException
+                    ("bad toString() after slice(): " + s.toString());
+            }
+        };
+        test.accept(buff.slice());
+        test.accept(buff.slice(4, 3));
 
         System.out.println(
           ">>> StringCharBufferSliceTest-main: testing subSequence.");
         buff.position(4);
         buff.limit(8);
-        slice = buff.slice();
-        CharSequence subSeq = slice.subSequence(1, 3);
-        if (subSeq.charAt(0) != 'e' || subSeq.charAt(1) != 's') {
-            throw new RuntimeException("bad subSequence() after slice(): '" + subSeq + "'");
-        }
+        test = (s) -> {
+            CharSequence subSeq = s.subSequence(1, 3);
+            if (subSeq.charAt(0) != 'e' || subSeq.charAt(1) != 's') {
+                throw new RuntimeException
+                    ("bad subSequence() after slice(): '" + subSeq + "'");
+            }
+        };
+        test.accept(buff.slice());
+        test.accept(buff.slice(4, 4));
 
         System.out.println(
           ">>> StringCharBufferSliceTest-main: testing duplicate.");
         buff.position(4);
         buff.limit(8);
-        slice = buff.slice();
-        CharBuffer dupe = slice.duplicate();
-        if (dupe.charAt(0) != 't' || dupe.charAt(1) != 'e'
-            || dupe.charAt(2) != 's' || dupe.charAt(3) != 't') {
-            throw new RuntimeException("bad duplicate() after slice(): '" + dupe + "'");
-        }
+        test = (s) -> {
+            CharBuffer dupe = s.duplicate();
+            if (dupe.charAt(0) != 't' || dupe.charAt(1) != 'e'
+                || dupe.charAt(2) != 's' || dupe.charAt(3) != 't') {
+                throw new RuntimeException
+                    ("bad duplicate() after slice(): '" + dupe + "'");
+            }
+        };
+        test.accept(buff.slice());
+        test.accept(buff.slice(4, 4));
 
         System.out.println(">>> StringCharBufferSliceTest-main: done!");
     }

@@ -27,6 +27,8 @@
 
 package java.nio;
 
+import java.util.Objects;
+
 /**
 #if[rw]
  * A read/write Heap$Type$Buffer.
@@ -37,8 +39,6 @@ package java.nio;
  * instance of this class rather than of the superclass.
 #end[rw]
  */
-
-import java.util.Objects;
 
 class Heap$Type$Buffer$RW$
     extends {#if[ro]?Heap}$Type$Buffer
@@ -112,19 +112,17 @@ class Heap$Type$Buffer$RW$
                                         this.position() + offset);
     }
 
-#if[byte]
-    $Type$Buffer slice(int pos, int lim) {
-        assert (pos >= 0);
-        assert (pos <= lim);
-        int rem = lim - pos;
+    @Override
+    public $Type$Buffer slice(int index, int length) {
+        Objects.checkIndex(index, limit() + 1);
+        Objects.checkIndex(length, limit() - index + 1);
         return new Heap$Type$Buffer$RW$(hb,
                                         -1,
                                         0,
-                                        rem,
-                                        rem,
-                                        pos + offset);
+                                        length,
+                                        length,
+                                        index + offset);
     }
-#end[byte]
 
     public $Type$Buffer duplicate() {
         return new Heap$Type$Buffer$RW$(hb,

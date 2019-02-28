@@ -648,7 +648,7 @@ public class BasicFloat
             }
         }
 
-        // Exceptions in absolute bulk operations
+        // Exceptions in absolute bulk and slice operations
 
         catchNullArgument(b, () -> b.get(7, null, 0, 42));
         catchNullArgument(b, () -> b.put(7, (float[])null, 0, 42));
@@ -667,6 +667,11 @@ public class BasicFloat
         catchIndexOutOfBounds(b, () -> b.put(-1, tmpa, 0, 1));
         catchIndexOutOfBounds(b, () -> b.put(b.limit(), tmpa, 0, 1));
         catchIndexOutOfBounds(b, () -> b.put(b.limit() - 41, tmpa, 0, 42));
+
+        catchIndexOutOfBounds(b, () -> b.slice(-1, 7));
+        catchIndexOutOfBounds(b, () -> b.slice(b.limit() + 1, 7));
+        catchIndexOutOfBounds(b, () -> b.slice(0, -1));
+        catchIndexOutOfBounds(b, () -> b.slice(7, b.limit() - 7 + 1));
 
         // Values
 
@@ -831,6 +836,20 @@ public class BasicFloat
             fail("Array offsets do not match: "
                  + sb.arrayOffset() + " != " + sb2.arrayOffset(), sb, sb2);
         }
+
+        int bPos = b.position();
+        int bLim = b.limit();
+
+        b.position(7);
+        b.limit(42);
+        FloatBuffer rsb = b.slice();
+        b.position(0);
+        b.limit(b.capacity());
+        FloatBuffer asb = b.slice(7, 35);
+        checkSlice(rsb, asb);
+
+        b.position(bPos);
+        b.limit(bLim);
 
 
 

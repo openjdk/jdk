@@ -547,6 +547,46 @@ public abstract class $Type$Buffer
     public abstract $Type$Buffer slice();
 
     /**
+     * Creates a new $type$ buffer whose content is a shared subsequence of
+     * this buffer's content.
+     *
+     * <p> The content of the new buffer will start at position {@code index}
+     * in this buffer, and will contain {@code length} elements. Changes to
+     * this buffer's content will be visible in the new buffer, and vice versa;
+     * the two buffers' position, limit, and mark values will be independent.
+     *
+     * <p> The new buffer's position will be zero, its capacity and its limit
+     * will be {@code length}, its mark will be undefined, and its byte order
+     * will be
+#if[byte]
+     * {@link ByteOrder#BIG_ENDIAN BIG_ENDIAN}.
+#else[byte]
+     * identical to that of this buffer.
+#end[byte]
+     * The new buffer will be direct if, and only if, this buffer is direct,
+     * and it will be read-only if, and only if, this buffer is read-only. </p>
+     *
+     * @param   index
+     *          The position in this buffer at which the content of the new
+     *          buffer will start; must be non-negative and no larger than
+     *          {@link #limit() limit()}
+     *
+     * @param   length
+     *          The number of elements the new buffer will contain; must be
+     *          non-negative and no larger than {@code limit() - index}
+     *
+     * @return  The new buffer
+     *
+     * @throws  IndexOutOfBoundsException
+     *          If {@code index} is negative or greater than {@code limit()},
+     *          {@code length} is negative, or {@code length > limit() - index}
+     *
+     * @since 13
+     */
+    @Override
+    public abstract $Type$Buffer slice(int index, int length);
+
+    /**
      * Creates a new $type$ buffer that shares this buffer's content.
      *
      * <p> The content of the new buffer will be that of this buffer.  Changes
@@ -1950,10 +1990,8 @@ public abstract class $Type$Buffer
             aligned_pos = aligned_lim = pos;
         }
 
-        return slice(aligned_pos, aligned_lim);
+        return slice(aligned_pos, aligned_lim - aligned_pos);
     }
-
-    abstract ByteBuffer slice(int pos, int lim);
 
     // #BIN
     //
