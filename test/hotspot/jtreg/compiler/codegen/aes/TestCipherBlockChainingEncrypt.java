@@ -25,7 +25,12 @@
  * @test
  * @bug 8209951
  * @summary SIGBUS in com.sun.crypto.provider.CipherBlockChaining
- * @run main/othervm/timeout=300 -Xbatch
+ * @library /test/lib /
+ * @build sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
+ *
+ * @run main/othervm -Xbatch
+ *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *      compiler.codegen.aes.TestCipherBlockChainingEncrypt
  */
 
@@ -40,6 +45,10 @@ import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 
+import compiler.whitebox.CompilerWhiteBoxTest;
+import sun.hotspot.code.Compiler;
+import jtreg.SkippedException;
+
 public class TestCipherBlockChainingEncrypt {
     private static String algorithm = "PBEWithHmacSHA1AndAES_256";
     private static final String PBEPASS = "Hush, it's supposed to be a secret!";
@@ -53,8 +62,11 @@ public class TestCipherBlockChainingEncrypt {
     private static Cipher ci;
 
     public static void main(String[] args) throws Exception {
-     for(int i=0; i<5_000; i++) {
-        if (!(new TestCipherBlockChainingEncrypt().test(args))) {
+        if (!Compiler.isIntrinsicAvailable(CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION, "com.sun.crypto.provider.CipherBlockChaining", "implEncrypt", byte[].class, int.class, int.class, byte[].class, int.class)) {
+            throw new SkippedException("Base64 intrinsic is not available");
+        }
+        for(int i=0; i<2_000; i++) {
+          if (!(new TestCipherBlockChainingEncrypt().test(args))) {
             throw new RuntimeException("TestCipherBlockChainingEncrypt test failed");
        }
      }
