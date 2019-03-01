@@ -440,7 +440,7 @@ class IndexSetIterator {
     uint current = _current;
     if (current != 0) {
       uint advance = count_trailing_zeros(current);
-      assert((current >> advance) & 0x1 == 1, "sanity");
+      assert(((current >> advance) & 0x1) == 1, "sanity");
       _current = (current >> advance) - 1;
       _value += advance;
       return _value;
