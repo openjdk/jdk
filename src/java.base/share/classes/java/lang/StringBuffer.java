@@ -157,10 +157,6 @@ import jdk.internal.HotSpotIntrinsicCandidate;
      * as the specified {@code CharSequence}. The initial capacity of
      * the string buffer is {@code 16} plus the length of the
      * {@code CharSequence} argument.
-     * <p>
-     * If the length of the specified {@code CharSequence} is
-     * less than or equal to zero, then an empty buffer of capacity
-     * {@code 16} is returned.
      *
      * @param      seq   the sequence to copy.
      * @since 1.5
