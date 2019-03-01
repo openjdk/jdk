@@ -1556,6 +1556,8 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
       }
       if (method() != NULL) {
         method()->print_metadata();
+      } else if (stub_name() != NULL) {
+        tty->print_cr("Generating RuntimeStub - %s", stub_name());
       }
       dump_asm(node_offsets, node_offset_limit);
       if (xtty != NULL) {
