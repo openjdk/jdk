@@ -219,6 +219,16 @@ void VM_Version::get_processor_features() {
     }
   }
 
+  // HiSilicon TSV110
+  if (_cpu == CPU_HISILICON && _model == 0xd01) {
+    if (FLAG_IS_DEFAULT(AvoidUnalignedAccesses)) {
+      FLAG_SET_DEFAULT(AvoidUnalignedAccesses, true);
+    }
+    if (FLAG_IS_DEFAULT(UseSIMDForMemoryOps)) {
+      FLAG_SET_DEFAULT(UseSIMDForMemoryOps, true);
+    }
+  }
+
   // Cortex A53
   if (_cpu == CPU_ARM && (_model == 0xd03 || _model2 == 0xd03)) {
     _features |= CPU_A53MAC;
