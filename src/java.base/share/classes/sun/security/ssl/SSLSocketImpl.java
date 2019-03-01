@@ -916,12 +916,8 @@ public final class SSLSocketImpl
         /**
          * Try the best to use up the input records so as to close the
          * socket gracefully, without impact the performance too much.
-         *
-         * Note: please don't synchronize this method as the read() method
-         * may hold the lock. A race should be fine as this method is
-         * designed for cleanup only.
          */
-        private void deplete() {
+        private synchronized void deplete() {
             if (!conContext.isInboundClosed()) {
                 if (!(conContext.inputRecord instanceof SSLSocketInputRecord)) {
                     return;
