@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1376,17 +1376,13 @@ methodHandle SharedRuntime::resolve_sub_helper(JavaThread *thread,
   }
 #endif
 
-  // Do not patch call site for static call to another class
-  // when the class is not fully initialized.
+  // Do not patch call site for static call when the class is not
+  // fully initialized.
   if (invoke_code == Bytecodes::_invokestatic &&
-      !callee_method->method_holder()->is_initialized() &&
-      callee_method->method_holder() != caller_nm->method()->method_holder()) {
+      !callee_method->method_holder()->is_initialized()) {
     assert(callee_method->method_holder()->is_linked(), "must be");
     return callee_method;
   }
-  assert(callee_method->method_holder()->is_initialized() ||
-         callee_method->method_holder()->is_reentrant_initialization(thread),
-         "invalid class initalization state");
 
   // JSR 292 key invariant:
   // If the resolved method is a MethodHandle invoke target, the call
