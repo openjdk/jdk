@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
  * @summary verify getInstance() works using Provider.getService()
  *          Export "PKIX" as the standard algorithm name of KeyManagerFactory
  * @author Andreas Sterbenz
- * @modules java.base/com.sun.net.ssl
  */
 
 import java.security.*;
@@ -113,38 +112,7 @@ public class GetInstance {
         tmf = TrustManagerFactory.getInstance("X.509", p);
         same(p, tmf.getProvider());
 
-        testComSun();
-
         long stop = System.currentTimeMillis();
         System.out.println("Done (" + (stop - start) + " ms).");
     }
-
-    private static void testComSun() throws Exception {
-        Provider p = Security.getProvider("SunJSSE");
-
-        com.sun.net.ssl.SSLContext context;
-        context = com.sun.net.ssl.SSLContext.getInstance("SSL");
-        same(p, context.getProvider());
-        context = com.sun.net.ssl.SSLContext.getInstance("SSL", "SunJSSE");
-        same(p, context.getProvider());
-        context = com.sun.net.ssl.SSLContext.getInstance("SSL", p);
-        same(p, context.getProvider());
-
-        com.sun.net.ssl.KeyManagerFactory kmf;
-        kmf = com.sun.net.ssl.KeyManagerFactory.getInstance("SunX509");
-        same(p, kmf.getProvider());
-        kmf = com.sun.net.ssl.KeyManagerFactory.getInstance("SunX509", "SunJSSE");
-        same(p, kmf.getProvider());
-        kmf = com.sun.net.ssl.KeyManagerFactory.getInstance("SunX509", p);
-        same(p, kmf.getProvider());
-
-        com.sun.net.ssl.TrustManagerFactory tmf;
-        tmf = com.sun.net.ssl.TrustManagerFactory.getInstance("SunX509");
-        same(p, tmf.getProvider());
-        tmf = com.sun.net.ssl.TrustManagerFactory.getInstance("SunX509", "SunJSSE");
-        same(p, tmf.getProvider());
-        tmf = com.sun.net.ssl.TrustManagerFactory.getInstance("SunX509", p);
-        same(p, tmf.getProvider());
-    }
-
 }

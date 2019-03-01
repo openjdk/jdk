@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -178,8 +178,12 @@ final class ProviderConfig {
             p = new sun.security.rsa.SunRsaSign();
         } else if (provName.equals("SunJCE") || provName.equals("com.sun.crypto.provider.SunJCE")) {
             p = new com.sun.crypto.provider.SunJCE();
-        } else if (provName.equals("SunJSSE") || provName.equals("com.sun.net.ssl.internal.ssl.Provider")) {
-            p = new com.sun.net.ssl.internal.ssl.Provider();
+        } else if (provName.equals("SunJSSE") ||
+                provName.equals("com.sun.net.ssl.internal.ssl.Provider")) {
+            // com.sun.net.ssl.internal.ssl.Provider is the legacy SunJSSE
+            // provider implementation. For compatibility, let's continue to
+            // support the legacy name for a while.
+            p = new sun.security.ssl.SunJSSE();
         } else if (provName.equals("Apple") || provName.equals("apple.security.AppleProvider")) {
             // need to use reflection since this class only exists on MacOsx
             p = AccessController.doPrivileged(new PrivilegedAction<Provider>() {
