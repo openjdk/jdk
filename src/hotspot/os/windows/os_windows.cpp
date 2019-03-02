@@ -923,13 +923,9 @@ double os::elapsedVTime() {
 }
 
 jlong os::javaTimeMillis() {
-  if (UseFakeTimers) {
-    return fake_time++;
-  } else {
-    FILETIME wt;
-    GetSystemTimeAsFileTime(&wt);
-    return windows_to_java_time(wt);
-  }
+  FILETIME wt;
+  GetSystemTimeAsFileTime(&wt);
+  return windows_to_java_time(wt);
 }
 
 void os::javaTimeSystemUTC(jlong &seconds, jlong &nanos) {

@@ -651,9 +651,6 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
   develop(bool, BreakAtWarning, false,                                      \
           "Execute breakpoint upon encountering VM warning")                \
                                                                             \
-  develop(bool, UseFakeTimers, false,                                       \
-          "Tell whether the VM should use system time or a fake timer")     \
-                                                                            \
   product(ccstr, NativeMemoryTracking, "off",                               \
           "Native memory tracking options")                                 \
                                                                             \
