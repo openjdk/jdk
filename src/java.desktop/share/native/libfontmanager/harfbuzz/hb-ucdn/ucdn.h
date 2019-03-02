@@ -456,8 +456,6 @@ int ucdn_compat_decompose(uint32_t code, uint32_t *decomposed);
  */
 int ucdn_compose(uint32_t *code, uint32_t a, uint32_t b);
 
-#ifdef __cplusplus
-}
-#endif
+HB_END_HEADER
 
 #endif

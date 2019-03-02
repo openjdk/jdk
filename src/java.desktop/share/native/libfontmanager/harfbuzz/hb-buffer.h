@@ -44,7 +44,6 @@ HB_BEGIN_DECLS
  * hb_glyph_info_t:
  * @codepoint: either a Unicode code point (before shaping) or a glyph index
  *             (after shaping).
- * @mask:
  * @cluster: the index of the character in the original text that corresponds
  *           to this #hb_glyph_info_t, or whatever the client passes to
  *           hb_buffer_add(). More than one #hb_glyph_info_t can have the same
@@ -59,11 +58,13 @@ HB_BEGIN_DECLS
  *
  * The #hb_glyph_info_t is the structure that holds information about the
  * glyphs and their relation to input text.
- *
  */
-typedef struct hb_glyph_info_t {
+typedef struct hb_glyph_info_t
+{
   hb_codepoint_t codepoint;
-  hb_mask_t      mask; /* Holds hb_glyph_flags_t after hb_shape(), plus other things. */
+  /*< private >*/
+  hb_mask_t      mask;
+  /*< public >*/
   uint32_t       cluster;
 
   /*< private >*/
@@ -88,6 +89,9 @@ typedef struct hb_glyph_info_t {
  *                                 of each line after line-breaking, or limiting
  *                                 the reshaping to a small piece around the
  *                                 breaking point only.
+ * @HB_GLYPH_FLAG_DEFINED: All the currently defined flags.
+ *
+ * Since: 1.5.0
  */
 typedef enum { /*< flags >*/
   HB_GLYPH_FLAG_UNSAFE_TO_BREAK         = 0x00000001,
@@ -298,7 +302,15 @@ hb_buffer_set_flags (hb_buffer_t       *buffer,
 HB_EXTERN hb_buffer_flags_t
 hb_buffer_get_flags (hb_buffer_t *buffer);
 
-/*
+/**
+ * hb_buffer_cluster_level_t:
+ * @HB_BUFFER_CLUSTER_LEVEL_MONOTONE_GRAPHEMES: Return cluster values grouped by graphemes into
+ *   monotone order.
+ * @HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS: Return cluster values grouped into monotone order.
+ * @HB_BUFFER_CLUSTER_LEVEL_CHARACTERS: Don't group cluster values.
+ * @HB_BUFFER_CLUSTER_LEVEL_DEFAULT: Default cluster level,
+ *   equal to @HB_BUFFER_CLUSTER_LEVEL_MONOTONE_GRAPHEMES.
+ *
  * Since: 0.9.42
  */
 typedef enum {
@@ -331,6 +343,13 @@ hb_buffer_set_replacement_codepoint (hb_buffer_t    *buffer,
 
 HB_EXTERN hb_codepoint_t
 hb_buffer_get_replacement_codepoint (hb_buffer_t    *buffer);
+
+HB_EXTERN void
+hb_buffer_set_invisible_glyph (hb_buffer_t    *buffer,
+                               hb_codepoint_t  invisible);
+
+HB_EXTERN hb_codepoint_t
+hb_buffer_get_invisible_glyph (hb_buffer_t    *buffer);
 
 
 HB_EXTERN void

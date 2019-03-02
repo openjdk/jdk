@@ -29,7 +29,7 @@
 #ifndef HB_BUFFER_DESERIALIZE_JSON_HH
 #define HB_BUFFER_DESERIALIZE_JSON_HH
 
-#include "hb-private.hh"
+#include "hb.hh"
 
 
 #line 36 "hb-buffer-deserialize-json.hh"

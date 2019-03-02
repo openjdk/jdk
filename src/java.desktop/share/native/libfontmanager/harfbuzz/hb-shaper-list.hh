@@ -34,14 +34,8 @@
 /* Only picks up fonts that have a "Silf" table. */
 HB_SHAPER_IMPLEMENT (graphite2)
 #endif
-#ifdef HAVE_CORETEXT
-/* Only picks up fonts that have a "mort" or "morx" table. */
-HB_SHAPER_IMPLEMENT (coretext_aat)
-#endif
 
-#ifdef HAVE_OT
 HB_SHAPER_IMPLEMENT (ot) /* <--- This is our main OpenType shaper. */
-#endif
 
 #ifdef HAVE_UNISCRIBE
 HB_SHAPER_IMPLEMENT (uniscribe)
@@ -51,6 +45,10 @@ HB_SHAPER_IMPLEMENT (directwrite)
 #endif
 #ifdef HAVE_CORETEXT
 HB_SHAPER_IMPLEMENT (coretext)
+
+/* Only picks up fonts that have a "mort" or "morx" table.
+   Probably going to be removed https://github.com/harfbuzz/harfbuzz/issues/1478 */
+HB_SHAPER_IMPLEMENT (coretext_aat)
 #endif
 
 #ifdef HAVE_FALLBACK

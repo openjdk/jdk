@@ -24,10 +24,19 @@
  * Google Author(s): Behdad Esfahbod
  */
 
-#include "hb-map-private.hh"
+#include "hb-map.hh"
 
 
-/* Public API */
+/**
+ * SECTION:hb-map
+ * @title: hb-map
+ * @short_description: Object representing integer to integer mapping
+ * @include: hb.h
+ *
+ * Map objects are integer-to-integer hash-maps.  Currently they are
+ * not used in the HarfBuzz public API, but are provided for client's
+ * use if desired.
+ **/
 
 
 /**
@@ -38,7 +47,7 @@
  * Since: 1.7.7
  **/
 hb_map_t *
-hb_map_create (void)
+hb_map_create ()
 {
   hb_map_t *map;
 
@@ -58,7 +67,7 @@ hb_map_create (void)
  * Since: 1.7.7
  **/
 hb_map_t *
-hb_map_get_empty (void)
+hb_map_get_empty ()
 {
   return const_cast<hb_map_t *> (&Null(hb_map_t));
 }
@@ -157,8 +166,6 @@ hb_map_allocation_successful (const hb_map_t  *map)
  *
  *
  *
- * Return value:
- *
  * Since: 1.7.7
  **/
 void
@@ -188,7 +195,7 @@ hb_map_get (const hb_map_t *map,
 /**
  * hb_map_del:
  * @map: a map.
- * @codepoint:
+ * @key:
  *
  *
  *
@@ -204,7 +211,7 @@ hb_map_del (hb_map_t       *map,
 /**
  * hb_map_has:
  * @map: a map.
- * @codepoint:
+ * @key:
  *
  *
  *

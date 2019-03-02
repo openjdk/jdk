@@ -40,6 +40,14 @@
 HB_BEGIN_DECLS
 
 
+/**
+ * HB_UNICODE_MAX
+ *
+ * Since: 1.9.0
+ **/
+#define HB_UNICODE_MAX 0x10FFFFu
+
+
 /* hb_unicode_general_category_t */
 
 /* Unicode Character Database property: General_Category (gc) */
@@ -222,9 +230,6 @@ hb_unicode_funcs_get_parent (hb_unicode_funcs_t *ufuncs);
 typedef hb_unicode_combining_class_t    (*hb_unicode_combining_class_func_t)    (hb_unicode_funcs_t *ufuncs,
                                                                                  hb_codepoint_t      unicode,
                                                                                  void               *user_data);
-typedef unsigned int                    (*hb_unicode_eastasian_width_func_t)    (hb_unicode_funcs_t *ufuncs,
-                                                                                 hb_codepoint_t      unicode,
-                                                                                 void               *user_data);
 typedef hb_unicode_general_category_t   (*hb_unicode_general_category_func_t)   (hb_unicode_funcs_t *ufuncs,
                                                                                  hb_codepoint_t      unicode,
                                                                                  void               *user_data);
@@ -246,32 +251,6 @@ typedef hb_bool_t                       (*hb_unicode_decompose_func_t)          
                                                                                  hb_codepoint_t     *b,
                                                                                  void               *user_data);
 
-/**
- * hb_unicode_decompose_compatibility_func_t:
- * @ufuncs: a Unicode function structure
- * @u: codepoint to decompose
- * @decomposed: address of codepoint array (of length %HB_UNICODE_MAX_DECOMPOSITION_LEN) to write decomposition into
- * @user_data: user data pointer as passed to hb_unicode_funcs_set_decompose_compatibility_func()
- *
- * Fully decompose @u to its Unicode compatibility decomposition. The codepoints of the decomposition will be written to @decomposed.
- * The complete length of the decomposition will be returned.
- *
- * If @u has no compatibility decomposition, zero should be returned.
- *
- * The Unicode standard guarantees that a buffer of length %HB_UNICODE_MAX_DECOMPOSITION_LEN codepoints will always be sufficient for any
- * compatibility decomposition plus an terminating value of 0.  Consequently, @decompose must be allocated by the caller to be at least this length.  Implementations
- * of this function type must ensure that they do not write past the provided array.
- *
- * Return value: number of codepoints in the full compatibility decomposition of @u, or 0 if no decomposition available.
- */
-typedef unsigned int                    (*hb_unicode_decompose_compatibility_func_t)    (hb_unicode_funcs_t *ufuncs,
-                                                                                         hb_codepoint_t      u,
-                                                                                         hb_codepoint_t     *decomposed,
-                                                                                         void               *user_data);
-
-/* See Unicode 6.1 for details on the maximum decomposition length. */
-#define HB_UNICODE_MAX_DECOMPOSITION_LEN (18+1) /* codepoints */
-
 /* setters */
 
 /**
@@ -288,22 +267,6 @@ typedef unsigned int                    (*hb_unicode_decompose_compatibility_fun
 HB_EXTERN void
 hb_unicode_funcs_set_combining_class_func (hb_unicode_funcs_t *ufuncs,
                                            hb_unicode_combining_class_func_t func,
-                                           void *user_data, hb_destroy_func_t destroy);
-
-/**
- * hb_unicode_funcs_set_eastasian_width_func:
- * @ufuncs: a Unicode function structure
- * @func: (closure user_data) (destroy destroy) (scope notified):
- * @user_data:
- * @destroy:
- *
- *
- *
- * Since: 0.9.2
- **/
-HB_EXTERN void
-hb_unicode_funcs_set_eastasian_width_func (hb_unicode_funcs_t *ufuncs,
-                                           hb_unicode_eastasian_width_func_t func,
                                            void *user_data, hb_destroy_func_t destroy);
 
 /**
@@ -386,22 +349,6 @@ hb_unicode_funcs_set_decompose_func (hb_unicode_funcs_t *ufuncs,
                                      hb_unicode_decompose_func_t func,
                                      void *user_data, hb_destroy_func_t destroy);
 
-/**
- * hb_unicode_funcs_set_decompose_compatibility_func:
- * @ufuncs: a Unicode function structure
- * @func: (closure user_data) (destroy destroy) (scope notified):
- * @user_data:
- * @destroy:
- *
- *
- *
- * Since: 0.9.2
- **/
-HB_EXTERN void
-hb_unicode_funcs_set_decompose_compatibility_func (hb_unicode_funcs_t *ufuncs,
-                                                   hb_unicode_decompose_compatibility_func_t func,
-                                                   void *user_data, hb_destroy_func_t destroy);
-
 /* accessors */
 
 /**
@@ -411,15 +358,6 @@ hb_unicode_funcs_set_decompose_compatibility_func (hb_unicode_funcs_t *ufuncs,
  **/
 HB_EXTERN hb_unicode_combining_class_t
 hb_unicode_combining_class (hb_unicode_funcs_t *ufuncs,
-                            hb_codepoint_t unicode);
-
-/**
- * hb_unicode_eastasian_width:
- *
- * Since: 0.9.2
- **/
-HB_EXTERN unsigned int
-hb_unicode_eastasian_width (hb_unicode_funcs_t *ufuncs,
                             hb_codepoint_t unicode);
 
 /**
@@ -460,11 +398,6 @@ hb_unicode_decompose (hb_unicode_funcs_t *ufuncs,
                       hb_codepoint_t      ab,
                       hb_codepoint_t     *a,
                       hb_codepoint_t     *b);
-
-HB_EXTERN unsigned int
-hb_unicode_decompose_compatibility (hb_unicode_funcs_t *ufuncs,
-                                    hb_codepoint_t      u,
-                                    hb_codepoint_t     *decomposed);
 
 HB_END_DECLS
 

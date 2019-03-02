@@ -24,63 +24,41 @@
  * Google Author(s): Behdad Esfahbod
  */
 
-#include "hb-private.hh"
-#include "hb-shaper-private.hh"
-#include "hb-atomic-private.hh"
+#include "hb.hh"
+#include "hb-shaper.hh"
+#include "hb-machinery.hh"
 
 
-static const hb_shaper_pair_t all_shapers[] = {
+static const hb_shaper_entry_t all_shapers[] = {
 #define HB_SHAPER_IMPLEMENT(name) {#name, _hb_##name##_shape},
 #include "hb-shaper-list.hh"
 #undef HB_SHAPER_IMPLEMENT
 };
 
-
-/* Thread-safe, lock-free, shapers */
-
-static const hb_shaper_pair_t *static_shapers;
-
-#ifdef HB_USE_ATEXIT
-static
-void free_static_shapers (void)
-{
-retry:
-  hb_shaper_pair_t *shapers = (hb_shaper_pair_t *) hb_atomic_ptr_get (&static_shapers);
-  if (!hb_atomic_ptr_cmpexch (&static_shapers, shapers, nullptr))
-    goto retry;
-
-  if (unlikely (shapers != all_shapers))
-    free ((void *) shapers);
-}
+#if HB_USE_ATEXIT
+static void free_static_shapers ();
 #endif
 
-const hb_shaper_pair_t *
-_hb_shapers_get (void)
+static struct hb_shapers_lazy_loader_t : hb_lazy_loader_t<const hb_shaper_entry_t,
+                                                          hb_shapers_lazy_loader_t>
 {
-retry:
-  hb_shaper_pair_t *shapers = (hb_shaper_pair_t *) hb_atomic_ptr_get (&static_shapers);
-
-  if (unlikely (!shapers))
+  static hb_shaper_entry_t *create ()
   {
     char *env = getenv ("HB_SHAPER_LIST");
-    if (!env || !*env) {
-      (void) hb_atomic_ptr_cmpexch (&static_shapers, nullptr, &all_shapers[0]);
-      return (const hb_shaper_pair_t *) all_shapers;
-    }
+    if (!env || !*env)
+      return nullptr;
 
-    /* Not found; allocate one. */
-    shapers = (hb_shaper_pair_t *) calloc (1, sizeof (all_shapers));
-    if (unlikely (!shapers)) {
-      (void) hb_atomic_ptr_cmpexch (&static_shapers, nullptr, &all_shapers[0]);
-      return (const hb_shaper_pair_t *) all_shapers;
-    }
+    hb_shaper_entry_t *shapers = (hb_shaper_entry_t *) calloc (1, sizeof (all_shapers));
+    if (unlikely (!shapers))
+      return nullptr;
 
     memcpy (shapers, all_shapers, sizeof (all_shapers));
 
      /* Reorder shaper list to prefer requested shapers. */
     unsigned int i = 0;
     char *end, *p = env;
-    for (;;) {
+    for (;;)
+    {
       end = strchr (p, ',');
       if (!end)
         end = p + strlen (p);
@@ -90,7 +68,7 @@ retry:
             0 == strncmp (shapers[j].name, p, end - p))
         {
           /* Reorder this shaper to position i */
-         struct hb_shaper_pair_t t = shapers[j];
+         struct hb_shaper_entry_t t = shapers[j];
          memmove (&shapers[i + 1], &shapers[i], sizeof (shapers[i]) * (j - i));
          shapers[i] = t;
          i++;
@@ -102,15 +80,26 @@ retry:
         p = end + 1;
     }
 
-    if (!hb_atomic_ptr_cmpexch (&static_shapers, nullptr, shapers)) {
-      free (shapers);
-      goto retry;
-    }
-
-#ifdef HB_USE_ATEXIT
-    atexit (free_static_shapers); /* First person registers atexit() callback. */
+#if HB_USE_ATEXIT
+    atexit (free_static_shapers);
 #endif
-  }
 
-  return shapers;
+    return shapers;
+  }
+  static void destroy (const hb_shaper_entry_t *p) { free ((void *) p); }
+  static const hb_shaper_entry_t *get_null ()      { return all_shapers; }
+} static_shapers;
+
+#if HB_USE_ATEXIT
+static
+void free_static_shapers ()
+{
+  static_shapers.free_instance ();
+}
+#endif
+
+const hb_shaper_entry_t *
+_hb_shapers_get ()
+{
+  return static_shapers.get_unconst ();
 }

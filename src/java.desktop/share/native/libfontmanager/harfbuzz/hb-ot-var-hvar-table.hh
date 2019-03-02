@@ -27,7 +27,7 @@
 #ifndef HB_OT_VAR_HVAR_TABLE_HH
 #define HB_OT_VAR_HVAR_TABLE_HH
 
-#include "hb-ot-layout-common-private.hh"
+#include "hb-ot-layout-common.hh"
 
 
 namespace OT {
@@ -35,11 +35,13 @@ namespace OT {
 
 struct DeltaSetIndexMap
 {
-  inline bool sanitize (hb_sanitize_context_t *c) const
+  bool sanitize (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
     return_trace (c->check_struct (this) &&
-                  c->check_array (mapData, get_width (), mapCount));
+                  c->check_range (mapDataZ.arrayZ,
+                                  mapCount,
+                                  get_width ()));
   }
 
   unsigned int map (unsigned int v) const /* Returns 16.16 outer.inner. */
@@ -55,7 +57,7 @@ struct DeltaSetIndexMap
     unsigned int u = 0;
     { /* Fetch it. */
       unsigned int w = get_width ();
-      const HBUINT8 *p = mapData + w * v;
+      const HBUINT8 *p = mapDataZ.arrayZ + w * v;
       for (; w; w--)
         u = (u << 8) + *p++;
     }
@@ -71,20 +73,19 @@ struct DeltaSetIndexMap
   }
 
   protected:
-  inline unsigned int get_width (void) const
-  { return ((format >> 4) & 3) + 1; }
+  unsigned int get_width () const          { return ((format >> 4) & 3) + 1; }
 
-  inline unsigned int get_inner_bitcount (void) const
-  { return (format & 0xF) + 1; }
+  unsigned int get_inner_bitcount () const { return (format & 0xF) + 1; }
 
   protected:
   HBUINT16      format;         /* A packed field that describes the compressed
                                  * representation of delta-set indices. */
   HBUINT16      mapCount;       /* The number of mapping entries. */
-  HBUINT8               mapData[VAR];   /* The delta-set index mapping data. */
+  UnsizedArrayOf<HBUINT8>
+                mapDataZ;       /* The delta-set index mapping data. */
 
   public:
-  DEFINE_SIZE_ARRAY (4, mapData);
+  DEFINE_SIZE_ARRAY (4, mapDataZ);
 };
 
 
@@ -99,10 +100,10 @@ struct DeltaSetIndexMap
 
 struct HVARVVAR
 {
-  static const hb_tag_t HVARTag = HB_OT_TAG_HVAR;
-  static const hb_tag_t VVARTag = HB_OT_TAG_VVAR;
+  static constexpr hb_tag_t HVARTag = HB_OT_TAG_HVAR;
+  static constexpr hb_tag_t VVARTag = HB_OT_TAG_VVAR;
 
-  inline bool sanitize (hb_sanitize_context_t *c) const
+  bool sanitize (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
     return_trace (version.sanitize (c) &&
@@ -113,15 +114,14 @@ struct HVARVVAR
                   rsbMap.sanitize (c, this));
   }
 
-  inline float get_advance_var (hb_codepoint_t glyph,
-                                int *coords, unsigned int coord_count) const
+  float get_advance_var (hb_codepoint_t glyph,
+                         const int *coords, unsigned int coord_count) const
   {
     unsigned int varidx = (this+advMap).map (glyph);
     return (this+varStore).get_delta (varidx, coords, coord_count);
   }
 
-  inline bool has_sidebearing_deltas (void) const
-  { return lsbMap && rsbMap; }
+  bool has_sidebearing_deltas () const { return lsbMap && rsbMap; }
 
   protected:
   FixedVersion<>version;        /* Version of the metrics variation table
@@ -140,12 +140,12 @@ struct HVARVVAR
 };
 
 struct HVAR : HVARVVAR {
-  static const hb_tag_t tableTag        = HB_OT_TAG_HVAR;
+  static constexpr hb_tag_t tableTag = HB_OT_TAG_HVAR;
 };
 struct VVAR : HVARVVAR {
-  static const hb_tag_t tableTag        = HB_OT_TAG_VVAR;
+  static constexpr hb_tag_t tableTag = HB_OT_TAG_VVAR;
 
-  inline bool sanitize (hb_sanitize_context_t *c) const
+  bool sanitize (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
     return_trace (static_cast<const HVARVVAR *> (this)->sanitize (c) &&

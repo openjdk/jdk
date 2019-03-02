@@ -36,8 +36,32 @@
 #define HB_UNUSED
 #endif
 
+
 static hb_bool_t
-hb_jdk_get_glyph (hb_font_t *font HB_UNUSED,
+hb_jdk_get_nominal_glyph (hb_font_t *font HB_UNUSED,
+		          void *font_data,
+		          hb_codepoint_t unicode,
+		          hb_codepoint_t *glyph,
+		          void *user_data HB_UNUSED)
+{
+
+    JDKFontInfo *jdkFontInfo = (JDKFontInfo*)font_data;
+    JNIEnv* env = jdkFontInfo->env;
+    jobject font2D = jdkFontInfo->font2D;
+    *glyph = (hb_codepoint_t)env->CallIntMethod(
+              font2D, sunFontIDs.f2dCharToGlyphMID, unicode);
+    if (env->ExceptionOccurred())
+    {
+        env->ExceptionClear();
+    }
+    if ((int)*glyph < 0) {
+        *glyph = 0;
+    }
+    return (*glyph != 0);
+}
+
+static hb_bool_t
+hb_jdk_get_variation_glyph (hb_font_t *font HB_UNUSED,
 		 void *font_data,
 		 hb_codepoint_t unicode,
 		 hb_codepoint_t variation_selector,
@@ -48,14 +72,9 @@ hb_jdk_get_glyph (hb_font_t *font HB_UNUSED,
     JDKFontInfo *jdkFontInfo = (JDKFontInfo*)font_data;
     JNIEnv* env = jdkFontInfo->env;
     jobject font2D = jdkFontInfo->font2D;
-    if (variation_selector == 0) {
-        *glyph = (hb_codepoint_t)env->CallIntMethod(
-                     font2D, sunFontIDs.f2dCharToGlyphMID, unicode);
-    } else {
-        *glyph = (hb_codepoint_t)env->CallIntMethod(
-                     font2D, sunFontIDs.f2dCharToVariationGlyphMID, 
-                     unicode, variation_selector);
-    }
+    *glyph = (hb_codepoint_t)env->CallIntMethod(
+              font2D, sunFontIDs.f2dCharToVariationGlyphMID, 
+              unicode, variation_selector);
     if (env->ExceptionOccurred())
     {
         env->ExceptionClear();
@@ -251,7 +270,8 @@ _hb_jdk_get_font_funcs (void)
   if (!jdk_ffuncs) {
       ff = hb_font_funcs_create();
 
-      hb_font_funcs_set_glyph_func(ff, hb_jdk_get_glyph, NULL, NULL);
+      hb_font_funcs_set_nominal_glyph_func(ff, hb_jdk_get_nominal_glyph, NULL, NULL);
+      hb_font_funcs_set_variation_glyph_func(ff, hb_jdk_get_variation_glyph, NULL, NULL);
       hb_font_funcs_set_glyph_h_advance_func(ff,
                     hb_jdk_get_glyph_h_advance, NULL, NULL);
       hb_font_funcs_set_glyph_v_advance_func(ff,

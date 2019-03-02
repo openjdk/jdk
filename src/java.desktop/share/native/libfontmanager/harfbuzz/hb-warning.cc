@@ -24,16 +24,14 @@
  * Google Author(s): Behdad Esfahbod
  */
 
-#include "hb-atomic-private.hh"
-#include "hb-mutex-private.hh"
-
+#include "hb.hh"
 
 #if defined(HB_ATOMIC_INT_NIL)
 #error "Could not find any system to define atomic_int macros, library WILL NOT be thread-safe"
-#error "Check hb-atomic-private.hh for possible resolutions."
+#error "Check hb-atomic.hh for possible resolutions."
 #endif
 
 #if defined(HB_MUTEX_IMPL_NIL)
 #error "Could not find any system to define mutex macros, library WILL NOT be thread-safe"
-#error "Check hb-mutex-private.hh for possible resolutions."
+#error "Check hb-mutex.hh for possible resolutions."
 #endif

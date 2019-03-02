@@ -536,7 +536,8 @@ HARFBUZZ_CFLAGS := -DHAVE_OT -DHAVE_FALLBACK -DHAVE_UCDN -DHAVE_ROUND
 
 ifeq ($(call isTargetOs, windows), false)
   HARFBUZZ_CFLAGS += -DGETPAGESIZE -DHAVE_MPROTECT -DHAVE_PTHREAD \
-                      -DHAVE_SYSCONF -DHAVE_SYS_MMAN_H -DHAVE_UNISTD_H
+                      -DHAVE_SYSCONF -DHAVE_SYS_MMAN_H -DHAVE_UNISTD_H \
+                      -DHB_NO_PRAGMA_GCC_DIAGNOSTIC
 endif
 ifeq ($(call isTargetOs, linux macosx), true)
   HARFBUZZ_CFLAGS += -DHAVE_INTEL_ATOMIC_PRIMITIVES
@@ -613,8 +614,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBFONTMANAGER, \
         type-limits missing-field-initializers implicit-fallthrough \
         strict-aliasing undef unused-function, \
     DISABLED_WARNINGS_CXX_gcc := reorder delete-non-virtual-dtor strict-overflow \
-        maybe-uninitialized \
-        missing-attributes class-memaccess, \
+        maybe-uninitialized class-memaccess, \
     DISABLED_WARNINGS_clang := unused-value incompatible-pointer-types \
         tautological-constant-out-of-range-compare int-to-pointer-cast \
         sign-compare undef missing-field-initializers, \
@@ -624,8 +624,8 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBFONTMANAGER, \
         E_ENUM_VAL_OVERFLOWS_INT_MAX, \
     DISABLED_WARNINGS_CXX_solstudio := \
         truncwarn wvarhidenmem wvarhidemem wbadlkginit identexpected \
-        hidevf w_novirtualdescr arrowrtn2, \
-    DISABLED_WARNINGS_microsoft := 4267 4244 4018 4090 4996 4146 4334 4819 4101, \
+        hidevf w_novirtualdescr arrowrtn2 refmemnoconstr_aggr unknownpragma, \
+    DISABLED_WARNINGS_microsoft := 4267 4244 4018 4090 4996 4146 4334 4819 4101 4068 4805 4138, \
     LDFLAGS := $(subst -Xlinker -z -Xlinker defs,, \
         $(subst -Wl$(COMMA)-z$(COMMA)defs,,$(LDFLAGS_JDKLIB))) $(LDFLAGS_CXX_JDK) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \

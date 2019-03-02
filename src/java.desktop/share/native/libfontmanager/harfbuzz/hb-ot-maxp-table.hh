@@ -27,8 +27,7 @@
 #ifndef HB_OT_MAXP_TABLE_HH
 #define HB_OT_MAXP_TABLE_HH
 
-#include "hb-open-type-private.hh"
-#include "hb-subset-plan.hh"
+#include "hb-open-type.hh"
 
 namespace OT {
 
@@ -42,7 +41,7 @@ namespace OT {
 
 struct maxpV1Tail
 {
-  inline bool sanitize (hb_sanitize_context_t *c) const
+  bool sanitize (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
     return_trace (c->check_struct (this));
@@ -72,19 +71,16 @@ struct maxpV1Tail
 
 struct maxp
 {
-  static const hb_tag_t tableTag = HB_OT_TAG_maxp;
+  static constexpr hb_tag_t tableTag = HB_OT_TAG_maxp;
 
-  inline unsigned int get_num_glyphs (void) const
-  {
-    return numGlyphs;
-  }
+  unsigned int get_num_glyphs () const { return numGlyphs; }
 
-  inline void set_num_glyphs (unsigned int count)
+  void set_num_glyphs (unsigned int count)
   {
     numGlyphs.set (count);
   }
 
-  inline bool sanitize (hb_sanitize_context_t *c) const
+  bool sanitize (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
     if (unlikely (!c->check_struct (this)))
@@ -93,23 +89,23 @@ struct maxp
     if (version.major == 1)
     {
       const maxpV1Tail &v1 = StructAfter<maxpV1Tail> (*this);
-      return v1.sanitize (c);
+      return_trace (v1.sanitize (c));
     }
     return_trace (likely (version.major == 0 && version.minor == 0x5000u));
   }
 
-  inline bool subset (hb_subset_plan_t *plan) const
+  bool subset (hb_subset_plan_t *plan) const
   {
-    hb_blob_t *maxp_blob = OT::Sanitizer<OT::maxp>().sanitize (hb_face_reference_table (plan->source, HB_OT_TAG_maxp));
+    hb_blob_t *maxp_blob = hb_sanitize_context_t().reference_table<maxp> (plan->source);
     hb_blob_t *maxp_prime_blob = hb_blob_copy_writable_or_fail (maxp_blob);
     hb_blob_destroy (maxp_blob);
 
     if (unlikely (!maxp_prime_blob)) {
       return false;
     }
-    OT::maxp *maxp_prime = (OT::maxp *) hb_blob_get_data (maxp_prime_blob, nullptr);
+    maxp *maxp_prime = (maxp *) hb_blob_get_data (maxp_prime_blob, nullptr);
 
-    maxp_prime->set_num_glyphs (plan->glyphs.len);
+    maxp_prime->set_num_glyphs (plan->glyphs.length);
     if (plan->drop_hints)
       drop_hint_fields (plan, maxp_prime);
 
@@ -118,7 +114,7 @@ struct maxp
     return result;
   }
 
-  static inline void drop_hint_fields (hb_subset_plan_t *plan, OT::maxp *maxp_prime)
+  static void drop_hint_fields (hb_subset_plan_t *plan HB_UNUSED, maxp *maxp_prime)
   {
     if (maxp_prime->version.major == 1)
     {
@@ -137,7 +133,7 @@ struct maxp
   FixedVersion<>version;                /* Version of the maxp table (0.5 or 1.0),
                                          * 0x00005000u or 0x00010000u. */
   HBUINT16      numGlyphs;              /* The number of glyphs in the font. */
-/*maxpV1Tail v1Tail[VAR]; */
+/*maxpV1Tail    v1Tail[VAR]; */
   public:
   DEFINE_SIZE_STATIC (6);
 };

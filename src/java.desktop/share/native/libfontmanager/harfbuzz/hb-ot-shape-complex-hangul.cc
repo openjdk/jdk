@@ -24,7 +24,7 @@
  * Google Author(s): Behdad Esfahbod
  */
 
-#include "hb-ot-shape-complex-private.hh"
+#include "hb-ot-shape-complex.hh"
 
 
 /* Hangul shaper */
@@ -56,7 +56,7 @@ collect_features_hangul (hb_ot_shape_planner_t *plan)
   hb_ot_map_builder_t *map = &plan->map;
 
   for (unsigned int i = FIRST_HANGUL_FEATURE; i < HANGUL_FEATURE_COUNT; i++)
-    map->add_feature (hangul_features[i], 1, F_NONE);
+    map->add_feature (hangul_features[i]);
 }
 
 static void
@@ -65,13 +65,11 @@ override_features_hangul (hb_ot_shape_planner_t *plan)
   /* Uniscribe does not apply 'calt' for Hangul, and certain fonts
    * (Noto Sans CJK, Source Sans Han, etc) apply all of jamo lookups
    * in calt, which is not desirable. */
-  plan->map.add_feature (HB_TAG('c','a','l','t'), 0, F_GLOBAL);
+  plan->map.disable_feature (HB_TAG('c','a','l','t'));
 }
 
 struct hangul_shape_plan_t
 {
-  ASSERT_POD ();
-
   hb_mask_t mask_array[HANGUL_FEATURE_COUNT];
 };
 
@@ -128,7 +126,7 @@ is_zero_width_char (hb_font_t *font,
 }
 
 static void
-preprocess_text_hangul (const hb_ot_shape_plan_t *plan,
+preprocess_text_hangul (const hb_ot_shape_plan_t *plan HB_UNUSED,
                         hb_buffer_t              *buffer,
                         hb_font_t                *font)
 {
@@ -345,13 +343,6 @@ preprocess_text_hangul (const hb_ot_shape_plan_t *plan,
         {
           unsigned int s_len = tindex ? 3 : 2;
           buffer->replace_glyphs (1, s_len, decomposed);
-          if (unlikely (!buffer->successful))
-            return;
-
-          /* We decomposed S: apply jamo features to the individual glyphs
-           * that are now in buffer->out_info.
-           */
-          hb_glyph_info_t *info = buffer->out_info;
 
           /* If we decomposed an LV because of a non-combining T following,
            * we want to include this T in the syllable.
@@ -361,6 +352,14 @@ preprocess_text_hangul (const hb_ot_shape_plan_t *plan,
             buffer->next_glyph ();
             s_len++;
           }
+
+          if (unlikely (!buffer->successful))
+            return;
+
+          /* We decomposed S: apply jamo features to the individual glyphs
+           * that are now in buffer->out_info.
+           */
+          hb_glyph_info_t *info = buffer->out_info;
           end = start + s_len;
 
           unsigned int i = start;
@@ -368,6 +367,7 @@ preprocess_text_hangul (const hb_ot_shape_plan_t *plan,
           info[i++].hangul_shaping_feature() = VJMO;
           if (i < end)
             info[i++].hangul_shaping_feature() = TJMO;
+
           if (buffer->cluster_level == HB_BUFFER_CLUSTER_LEVEL_MONOTONE_GRAPHEMES)
             buffer->merge_out_clusters (start, end);
           continue;
@@ -424,7 +424,7 @@ const hb_ot_complex_shaper_t _hb_ot_complex_shaper_hangul =
   nullptr, /* decompose */
   nullptr, /* compose */
   setup_masks_hangul,
-  nullptr, /* disable_otl */
+  HB_TAG_NONE, /* gpos_tag */
   nullptr, /* reorder_marks */
   HB_OT_SHAPE_ZERO_WIDTH_MARKS_NONE,
   false, /* fallback_position */
