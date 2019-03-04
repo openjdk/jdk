@@ -163,16 +163,16 @@ public:
 void G1YoungRemSetSamplingThread::sample_young_list_rs_lengths() {
   SuspendibleThreadSetJoiner sts;
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  G1Policy* g1p = g1h->g1_policy();
+  G1Policy* policy = g1h->policy();
 
-  if (g1p->adaptive_young_list_length()) {
+  if (policy->adaptive_young_list_length()) {
     G1YoungRemSetSamplingClosure cl(&sts);
 
     G1CollectionSet* g1cs = g1h->collection_set();
     g1cs->iterate(&cl);
 
     if (cl.is_complete()) {
-      g1p->revise_young_list_target_length_if_necessary(cl.sampled_rs_lengths());
+      policy->revise_young_list_target_length_if_necessary(cl.sampled_rs_lengths());
     }
   }
 }

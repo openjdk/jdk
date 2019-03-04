@@ -45,7 +45,7 @@
 class G1RefineCardConcurrentlyClosure: public G1CardTableEntryClosure {
 public:
   bool do_card_ptr(jbyte* card_ptr, uint worker_i) {
-    G1CollectedHeap::heap()->g1_rem_set()->refine_card_concurrently(card_ptr, worker_i);
+    G1CollectedHeap::heap()->rem_set()->refine_card_concurrently(card_ptr, worker_i);
 
     if (SuspendibleThreadSet::should_yield()) {
       // Caller will actually yield.

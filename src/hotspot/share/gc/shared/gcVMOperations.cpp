@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,16 +201,16 @@ bool VM_CollectForMetadataAllocation::initiate_concurrent_GC() {
 #if INCLUDE_G1GC
   if (UseG1GC && ClassUnloadingWithConcurrentMark) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    g1h->g1_policy()->collector_state()->set_initiate_conc_mark_if_possible(true);
+    g1h->policy()->collector_state()->set_initiate_conc_mark_if_possible(true);
 
     GCCauseSetter x(g1h, _gc_cause);
 
     // At this point we are supposed to start a concurrent cycle. We
     // will do so if one is not already in progress.
-    bool should_start = g1h->g1_policy()->force_initial_mark_if_outside_cycle(_gc_cause);
+    bool should_start = g1h->policy()->force_initial_mark_if_outside_cycle(_gc_cause);
 
     if (should_start) {
-      double pause_target = g1h->g1_policy()->max_pause_time_ms();
+      double pause_target = g1h->policy()->max_pause_time_ms();
       g1h->do_collection_pause_at_safepoint(pause_target);
     }
     return true;

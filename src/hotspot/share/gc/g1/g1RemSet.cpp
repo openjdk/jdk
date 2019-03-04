@@ -288,7 +288,7 @@ G1RemSet::G1RemSet(G1CollectedHeap* g1h,
   _g1h(g1h),
   _num_conc_refined_cards(0),
   _ct(ct),
-  _g1p(_g1h->g1_policy()),
+  _g1p(_g1h->policy()),
   _hot_card_cache(hot_card_cache) {
 }
 
@@ -467,7 +467,7 @@ class G1RefineCardClosure: public G1CardTableEntryClosure {
   size_t _cards_skipped;
 public:
   G1RefineCardClosure(G1CollectedHeap* g1h, G1ScanObjsDuringUpdateRSClosure* update_rs_cl) :
-    _g1rs(g1h->g1_rem_set()), _update_rs_cl(update_rs_cl), _cards_scanned(0), _cards_skipped(0)
+    _g1rs(g1h->rem_set()), _update_rs_cl(update_rs_cl), _cards_scanned(0), _cards_skipped(0)
   {}
 
   bool do_card_ptr(jbyte* card_ptr, uint worker_i) {
@@ -530,7 +530,7 @@ void G1RemSet::prepare_for_oops_into_collection_set_do() {
 }
 
 void G1RemSet::cleanup_after_oops_into_collection_set_do() {
-  G1GCPhaseTimes* phase_times = _g1h->g1_policy()->phase_times();
+  G1GCPhaseTimes* phase_times = _g1h->policy()->phase_times();
 
   // Set all cards back to clean.
   double start = os::elapsedTime();

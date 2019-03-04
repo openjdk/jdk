@@ -138,7 +138,7 @@ G1FullCollector::~G1FullCollector() {
 }
 
 void G1FullCollector::prepare_collection() {
-  _heap->g1_policy()->record_full_collection_start();
+  _heap->policy()->record_full_collection_start();
 
   _heap->print_heap_before_gc();
   _heap->print_heap_regions();
@@ -192,7 +192,7 @@ void G1FullCollector::complete_collection() {
 
   _heap->prepare_heap_for_mutators();
 
-  _heap->g1_policy()->record_full_collection_end();
+  _heap->policy()->record_full_collection_end();
   _heap->gc_epilogue(true);
 
   _heap->verify_after_full_collection();

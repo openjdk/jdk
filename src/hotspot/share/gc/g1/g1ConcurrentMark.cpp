@@ -1013,7 +1013,7 @@ class G1UpdateRemSetTrackingBeforeRebuildTask : public AbstractGangTask {
     uint _num_regions_selected_for_rebuild;  // The number of regions actually selected for rebuild.
 
     void update_remset_before_rebuild(HeapRegion* hr) {
-      G1RemSetTrackingPolicy* tracking_policy = _g1h->g1_policy()->remset_tracker();
+      G1RemSetTrackingPolicy* tracking_policy = _g1h->policy()->remset_tracker();
 
       bool selected_for_rebuild;
       if (hr->is_humongous()) {
@@ -1118,7 +1118,7 @@ public:
   G1UpdateRemSetTrackingAfterRebuild(G1CollectedHeap* g1h) : _g1h(g1h) { }
 
   virtual bool do_heap_region(HeapRegion* r) {
-    _g1h->g1_policy()->remset_tracker()->update_after_rebuild(r);
+    _g1h->policy()->remset_tracker()->update_after_rebuild(r);
     return false;
   }
 };
@@ -1132,8 +1132,8 @@ void G1ConcurrentMark::remark() {
     return;
   }
 
-  G1Policy* g1p = _g1h->g1_policy();
-  g1p->record_concurrent_mark_remark_start();
+  G1Policy* policy = _g1h->policy();
+  policy->record_concurrent_mark_remark_start();
 
   double start = os::elapsedTime();
 
@@ -1220,7 +1220,7 @@ void G1ConcurrentMark::remark() {
   _remark_weak_ref_times.add((now - mark_work_end) * 1000.0);
   _remark_times.add((now - start) * 1000.0);
 
-  g1p->record_concurrent_mark_remark_end();
+  policy->record_concurrent_mark_remark_end();
 }
 
 class G1ReclaimEmptyRegionsTask : public AbstractGangTask {
@@ -1338,8 +1338,8 @@ void G1ConcurrentMark::cleanup() {
     return;
   }
 
-  G1Policy* g1p = _g1h->g1_policy();
-  g1p->record_concurrent_mark_cleanup_start();
+  G1Policy* policy = _g1h->policy();
+  policy->record_concurrent_mark_cleanup_start();
 
   double start = os::elapsedTime();
 
@@ -1369,7 +1369,7 @@ void G1ConcurrentMark::cleanup() {
 
   {
     GCTraceTime(Debug, gc, phases) debug("Finalize Concurrent Mark Cleanup", _gc_timer_cm);
-    _g1h->g1_policy()->record_concurrent_mark_cleanup_end();
+    policy->record_concurrent_mark_cleanup_end();
   }
 }
 
@@ -1993,7 +1993,7 @@ void G1ConcurrentMark::verify_no_cset_oops() {
 #endif // PRODUCT
 
 void G1ConcurrentMark::rebuild_rem_set_concurrently() {
-  _g1h->g1_rem_set()->rebuild_rem_set(this, _concurrent_workers, _worker_id_offset);
+  _g1h->rem_set()->rebuild_rem_set(this, _concurrent_workers, _worker_id_offset);
 }
 
 void G1ConcurrentMark::print_stats() {
@@ -2572,7 +2572,7 @@ void G1CMTask::do_marking_step(double time_target_ms,
   // and do_marking_step() is not being called serially.
   bool do_stealing = do_termination && !is_serial;
 
-  double diff_prediction_ms = _g1h->g1_policy()->predictor().get_new_prediction(&_marking_step_diffs_ms);
+  double diff_prediction_ms = _g1h->policy()->predictor().get_new_prediction(&_marking_step_diffs_ms);
   _time_target_ms = time_target_ms - diff_prediction_ms;
 
   // set up the variables that are used in the work-based scheme to
