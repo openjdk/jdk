@@ -630,14 +630,14 @@ double G1HeapVerifier::verify(G1VerifyType type, VerifyOption vo, const char* ms
 void G1HeapVerifier::verify_before_gc(G1VerifyType type) {
   if (VerifyBeforeGC) {
     double verify_time_ms = verify(type, VerifyOption_G1UsePrevMarking, "Before GC");
-    _g1h->policy()->phase_times()->record_verify_before_time_ms(verify_time_ms);
+    _g1h->phase_times()->record_verify_before_time_ms(verify_time_ms);
   }
 }
 
 void G1HeapVerifier::verify_after_gc(G1VerifyType type) {
   if (VerifyAfterGC) {
     double verify_time_ms = verify(type, VerifyOption_G1UsePrevMarking, "After GC");
-    _g1h->policy()->phase_times()->record_verify_after_time_ms(verify_time_ms);
+    _g1h->phase_times()->record_verify_after_time_ms(verify_time_ms);
   }
 }
 

@@ -954,6 +954,8 @@ public:
   // The remembered set.
   G1RemSet* rem_set() const { return _rem_set; }
 
+  inline G1GCPhaseTimes* phase_times() const;
+
   HeapRegionManager* hrm() const { return _hrm; }
 
   const G1CollectionSet* collection_set() const { return &_collection_set; }

@@ -530,7 +530,7 @@ void G1RemSet::prepare_for_oops_into_collection_set_do() {
 }
 
 void G1RemSet::cleanup_after_oops_into_collection_set_do() {
-  G1GCPhaseTimes* phase_times = _g1h->policy()->phase_times();
+  G1GCPhaseTimes* phase_times = _g1h->phase_times();
 
   // Set all cards back to clean.
   double start = os::elapsedTime();

@@ -1962,7 +1962,7 @@ void G1CollectedHeap::iterate_dirty_card_closure(G1CardTableEntryClosure* cl, ui
     n_completed_buffers++;
   }
   assert(dcqs.completed_buffers_num() == 0, "Completed buffers exist!");
-  policy()->phase_times()->record_thread_work_item(G1GCPhaseTimes::UpdateRS, worker_i, n_completed_buffers, G1GCPhaseTimes::UpdateRSProcessedBuffers);
+  phase_times()->record_thread_work_item(G1GCPhaseTimes::UpdateRS, worker_i, n_completed_buffers, G1GCPhaseTimes::UpdateRSProcessedBuffers);
 }
 
 // Computes the sum of the storage used by the various regions.
@@ -2550,7 +2550,7 @@ void G1CollectedHeap::gc_prologue(bool full) {
   // Fill TLAB's and such
   double start = os::elapsedTime();
   ensure_parsability(true);
-  policy()->phase_times()->record_prepare_tlab_time_ms((os::elapsedTime() - start) * 1000.0);
+  phase_times()->record_prepare_tlab_time_ms((os::elapsedTime() - start) * 1000.0);
 }
 
 void G1CollectedHeap::gc_epilogue(bool full) {
@@ -2573,7 +2573,7 @@ void G1CollectedHeap::gc_epilogue(bool full) {
 
   double start = os::elapsedTime();
   resize_all_tlabs();
-  policy()->phase_times()->record_resize_tlab_time_ms((os::elapsedTime() - start) * 1000.0);
+  phase_times()->record_resize_tlab_time_ms((os::elapsedTime() - start) * 1000.0);
 
   MemoryService::track_memory_usage();
   // We have just completed a GC. Update the soft reference
@@ -2767,7 +2767,7 @@ class RegisterHumongousWithInCSetFastTestClosure : public HeapRegionClosure {
 
 void G1CollectedHeap::register_humongous_regions_with_cset() {
   if (!G1EagerReclaimHumongousObjects) {
-    policy()->phase_times()->record_fast_reclaim_humongous_stats(0.0, 0, 0);
+    phase_times()->record_fast_reclaim_humongous_stats(0.0, 0, 0);
     return;
   }
   double time = os::elapsed_counter();
@@ -2777,9 +2777,9 @@ void G1CollectedHeap::register_humongous_regions_with_cset() {
   heap_region_iterate(&cl);
 
   time = ((double)(os::elapsed_counter() - time) / os::elapsed_frequency()) * 1000.0;
-  policy()->phase_times()->record_fast_reclaim_humongous_stats(time,
-                                                               cl.total_humongous(),
-                                                               cl.candidate_humongous());
+  phase_times()->record_fast_reclaim_humongous_stats(time,
+                                                     cl.total_humongous(),
+                                                     cl.candidate_humongous());
   _has_humongous_reclaim_candidates = cl.candidate_humongous() > 0;
 
   // Finally flush all remembered set entries to re-check into the global DCQS.
@@ -2849,7 +2849,7 @@ void G1CollectedHeap::wait_for_root_region_scanning() {
     double scan_wait_end = os::elapsedTime();
     wait_time_ms = (scan_wait_end - scan_wait_start) * 1000.0;
   }
-  policy()->phase_times()->record_root_region_scan_wait_time(wait_time_ms);
+  phase_times()->record_root_region_scan_wait_time(wait_time_ms);
 }
 
 class G1PrintCollectionSetClosure : public HeapRegionClosure {
@@ -3067,12 +3067,12 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 
         double start = os::elapsedTime();
         start_new_collection_set();
-        policy()->phase_times()->record_start_new_cset_time_ms((os::elapsedTime() - start) * 1000.0);
+        phase_times()->record_start_new_cset_time_ms((os::elapsedTime() - start) * 1000.0);
 
         if (evacuation_failed()) {
           double recalculate_used_start = os::elapsedTime();
           set_used(recalculate_used());
-          policy()->phase_times()->record_evac_fail_recalc_used_time((os::elapsedTime() - recalculate_used_start) * 1000.0);
+          phase_times()->record_evac_fail_recalc_used_time((os::elapsedTime() - recalculate_used_start) * 1000.0);
 
           if (_archive_allocator != NULL) {
             _archive_allocator->clear_used();
@@ -3112,7 +3112,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
             if (!expand(expand_bytes, _workers, &expand_ms)) {
               // We failed to expand the heap. Cannot do anything about it.
             }
-            policy()->phase_times()->record_expand_heap_time(expand_ms);
+            phase_times()->record_expand_heap_time(expand_ms);
           }
         }
 
@@ -3125,7 +3125,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         // investigate this in CR 7178365.
         double sample_end_time_sec = os::elapsedTime();
         double pause_time_ms = (sample_end_time_sec - sample_start_time_sec) * MILLIUNITS;
-        size_t total_cards_scanned = policy()->phase_times()->sum_thread_work_items(G1GCPhaseTimes::ScanRS, G1GCPhaseTimes::ScanRSScannedCards);
+        size_t total_cards_scanned = phase_times()->sum_thread_work_items(G1GCPhaseTimes::ScanRS, G1GCPhaseTimes::ScanRSScannedCards);
         policy()->record_collection_pause_end(pause_time_ms, total_cards_scanned, heap_used_bytes_before_gc);
 
         evacuation_info.set_collectionset_used_before(collection_set()->bytes_used_before());
@@ -3217,7 +3217,7 @@ void G1CollectedHeap::restore_after_evac_failure() {
   SharedRestorePreservedMarksTaskExecutor task_executor(workers());
   _preserved_marks_set.restore(&task_executor);
 
-  policy()->phase_times()->record_evac_fail_remove_self_forwards((os::elapsedTime() - remove_self_forwards_start) * 1000.0);
+  phase_times()->record_evac_fail_remove_self_forwards((os::elapsedTime() - remove_self_forwards_start) * 1000.0);
 }
 
 void G1CollectedHeap::preserve_mark_during_evac_failure(uint worker_id, oop obj, markOop m) {
@@ -3275,7 +3275,7 @@ public:
     if (worker_id >= _n_workers) return;  // no work needed this round
 
     double start_sec = os::elapsedTime();
-    _g1h->policy()->phase_times()->record_time_secs(G1GCPhaseTimes::GCWorkerStart, worker_id, start_sec);
+    _g1h->phase_times()->record_time_secs(G1GCPhaseTimes::GCWorkerStart, worker_id, start_sec);
 
     {
       ResourceMark rm;
@@ -3305,7 +3305,7 @@ public:
         term_sec = evac.term_time();
         double elapsed_sec = os::elapsedTime() - start;
 
-        G1GCPhaseTimes* p = _g1h->policy()->phase_times();
+        G1GCPhaseTimes* p = _g1h->phase_times();
         p->add_time_secs(G1GCPhaseTimes::ObjCopy, worker_id, elapsed_sec - term_sec);
 
         p->record_or_add_thread_work_item(G1GCPhaseTimes::ObjCopy,
@@ -3327,7 +3327,7 @@ public:
       // destructors are executed here and are included as part of the
       // "GC Worker Time".
     }
-    _g1h->policy()->phase_times()->record_time_secs(G1GCPhaseTimes::GCWorkerEnd, worker_id, os::elapsedTime());
+    _g1h->phase_times()->record_time_secs(G1GCPhaseTimes::GCWorkerEnd, worker_id, os::elapsedTime());
   }
 };
 
@@ -3392,13 +3392,13 @@ class G1RedirtyLoggedCardsTask : public AbstractGangTask {
     _queue(queue), _g1h(g1h) { }
 
   virtual void work(uint worker_id) {
-    G1GCPhaseTimes* phase_times = _g1h->policy()->phase_times();
-    G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::RedirtyCards, worker_id);
+    G1GCPhaseTimes* p = _g1h->phase_times();
+    G1GCParPhaseTimesTracker x(p, G1GCPhaseTimes::RedirtyCards, worker_id);
 
     RedirtyLoggedCardTableEntryClosure cl(_g1h);
     _queue->par_apply_closure_to_all_completed_buffers(&cl);
 
-    phase_times->record_thread_work_item(G1GCPhaseTimes::RedirtyCards, worker_id, cl.num_dirtied());
+    p->record_thread_work_item(G1GCPhaseTimes::RedirtyCards, worker_id, cl.num_dirtied());
   }
 };
 
@@ -3413,7 +3413,7 @@ void G1CollectedHeap::redirty_logged_cards() {
   dcq.merge_bufferlists(&dirty_card_queue_set());
   assert(dirty_card_queue_set().completed_buffers_num() == 0, "All should be consumed");
 
-  policy()->phase_times()->record_redirty_logged_cards_time_ms((os::elapsedTime() - redirty_logged_cards_start) * 1000.0);
+  phase_times()->record_redirty_logged_cards_time_ms((os::elapsedTime() - redirty_logged_cards_start) * 1000.0);
 }
 
 // Weak Reference Processing support
@@ -3646,7 +3646,7 @@ void G1CollectedHeap::process_discovered_references(G1ParScanThreadStateSet* per
   // Setup the soft refs policy...
   rp->setup_policy(false);
 
-  ReferenceProcessorPhaseTimes* pt = policy()->phase_times()->ref_phase_times();
+  ReferenceProcessorPhaseTimes* pt = phase_times()->ref_phase_times();
 
   ReferenceProcessorStats stats;
   if (!rp->processing_is_mt()) {
@@ -3682,7 +3682,7 @@ void G1CollectedHeap::process_discovered_references(G1ParScanThreadStateSet* per
   rp->verify_no_references_recorded();
 
   double ref_proc_time = os::elapsedTime() - ref_proc_start;
-  policy()->phase_times()->record_ref_proc_time(ref_proc_time * 1000.0);
+  phase_times()->record_ref_proc_time(ref_proc_time * 1000.0);
 }
 
 void G1CollectedHeap::make_pending_list_reachable() {
@@ -3698,7 +3698,7 @@ void G1CollectedHeap::make_pending_list_reachable() {
 void G1CollectedHeap::merge_per_thread_state_info(G1ParScanThreadStateSet* per_thread_states) {
   double merge_pss_time_start = os::elapsedTime();
   per_thread_states->flush();
-  policy()->phase_times()->record_merge_pss_time_ms((os::elapsedTime() - merge_pss_time_start) * 1000.0);
+  phase_times()->record_merge_pss_time_ms((os::elapsedTime() - merge_pss_time_start) * 1000.0);
 }
 
 void G1CollectedHeap::pre_evacuate_collection_set() {
@@ -3712,8 +3712,6 @@ void G1CollectedHeap::pre_evacuate_collection_set() {
   rem_set()->prepare_for_oops_into_collection_set_do();
   _preserved_marks_set.assert_empty();
 
-  G1GCPhaseTimes* phase_times = policy()->phase_times();
-
   // InitialMark needs claim bits to keep track of the marked-through CLDs.
   if (collector_state()->in_initial_mark_gc()) {
     double start_clear_claimed_marks = os::elapsedTime();
@@ -3721,7 +3719,7 @@ void G1CollectedHeap::pre_evacuate_collection_set() {
     ClassLoaderDataGraph::clear_claimed_marks();
 
     double recorded_clear_claimed_marks_time_ms = (os::elapsedTime() - start_clear_claimed_marks) * 1000.0;
-    phase_times->record_clear_claimed_marks_time_ms(recorded_clear_claimed_marks_time_ms);
+    phase_times()->record_clear_claimed_marks_time_ms(recorded_clear_claimed_marks_time_ms);
   }
 }
 
@@ -3730,8 +3728,6 @@ void G1CollectedHeap::evacuate_collection_set(G1ParScanThreadStateSet* per_threa
   NOT_PRODUCT(set_evacuation_failure_alot_for_current_gc();)
 
   assert(dirty_card_queue_set().completed_buffers_num() == 0, "Should be empty");
-
-  G1GCPhaseTimes* phase_times = policy()->phase_times();
 
   double start_par_time_sec = os::elapsedTime();
   double end_par_time_sec;
@@ -3752,11 +3748,11 @@ void G1CollectedHeap::evacuate_collection_set(G1ParScanThreadStateSet* per_threa
   }
 
   double par_time_ms = (end_par_time_sec - start_par_time_sec) * 1000.0;
-  phase_times->record_par_time(par_time_ms);
+  phase_times()->record_par_time(par_time_ms);
 
   double code_root_fixup_time_ms =
         (os::elapsedTime() - end_par_time_sec) * 1000.0;
-  phase_times->record_code_root_fixup_time(code_root_fixup_time_ms);
+  phase_times()->record_code_root_fixup_time(code_root_fixup_time_ms);
 }
 
 class G1EvacuateOptionalRegionTask : public AbstractGangTask {
@@ -3802,7 +3798,7 @@ class G1EvacuateOptionalRegionTask : public AbstractGangTask {
     }
 
     Tickspan scan_time = (Ticks::now() - start) - copy_time;
-    G1GCPhaseTimes* p = _g1h->policy()->phase_times();
+    G1GCPhaseTimes* p = _g1h->phase_times();
     p->record_or_add_time_secs(G1GCPhaseTimes::OptScanRS, worker_id, scan_time.seconds());
     p->record_or_add_time_secs(G1GCPhaseTimes::OptObjCopy, worker_id, copy_time.seconds());
 
@@ -3818,7 +3814,7 @@ class G1EvacuateOptionalRegionTask : public AbstractGangTask {
     cl.do_void();
 
     Tickspan evac_time = (Ticks::now() - start);
-    G1GCPhaseTimes* p = _g1h->policy()->phase_times();
+    G1GCPhaseTimes* p = _g1h->phase_times();
     p->record_or_add_time_secs(G1GCPhaseTimes::OptObjCopy, worker_id, evac_time.seconds());
     assert(pss->trim_ticks().seconds() == 0.0, "Unexpected partial trimming done during optional evacuation");
   }
@@ -3867,8 +3863,7 @@ void G1CollectedHeap::evacuate_optional_collection_set(G1ParScanThreadStateSet* 
     return;
   }
 
-  G1GCPhaseTimes* phase_times = policy()->phase_times();
-  const double gc_start_time_ms = phase_times->cur_collection_start_sec() * 1000.0;
+  const double gc_start_time_ms = phase_times()->cur_collection_start_sec() * 1000.0;
 
   double start_time_sec = os::elapsedTime();
 
@@ -3895,7 +3890,7 @@ void G1CollectedHeap::evacuate_optional_collection_set(G1ParScanThreadStateSet* 
     }
   } while (!optional_cset.is_empty());
 
-  phase_times->record_optional_evacuation((os::elapsedTime() - start_time_sec) * 1000.0);
+  phase_times()->record_optional_evacuation((os::elapsedTime() - start_time_sec) * 1000.0);
 }
 
 void G1CollectedHeap::post_evacuate_collection_set(G1EvacuationInfo& evacuation_info, G1ParScanThreadStateSet* per_thread_states) {
@@ -3914,15 +3909,15 @@ void G1CollectedHeap::post_evacuate_collection_set(G1EvacuationInfo& evacuation_
   G1KeepAliveClosure keep_alive(this);
 
   WeakProcessor::weak_oops_do(workers(), &is_alive, &keep_alive,
-                              policy()->phase_times()->weak_phase_times());
+                              phase_times()->weak_phase_times());
 
   if (G1StringDedup::is_enabled()) {
     double string_dedup_time_ms = os::elapsedTime();
 
-    string_dedup_cleaning(&is_alive, &keep_alive, policy()->phase_times());
+    string_dedup_cleaning(&is_alive, &keep_alive, phase_times());
 
     double string_cleanup_time_ms = (os::elapsedTime() - string_dedup_time_ms) * 1000.0;
-    policy()->phase_times()->record_string_deduplication_time(string_cleanup_time_ms);
+    phase_times()->record_string_deduplication_time(string_cleanup_time_ms);
   }
 
   if (evacuation_failed()) {
@@ -3952,7 +3947,7 @@ void G1CollectedHeap::post_evacuate_collection_set(G1EvacuationInfo& evacuation_
 #if COMPILER2_OR_JVMCI
   double start = os::elapsedTime();
   DerivedPointerTable::update_pointers();
-  policy()->phase_times()->record_derived_pointer_table_update_time((os::elapsedTime() - start) * 1000.0);
+  phase_times()->record_derived_pointer_table_update_time((os::elapsedTime() - start) * 1000.0);
 #endif
   policy()->print_age_table();
 }
@@ -4219,7 +4214,7 @@ public:
   static uint chunk_size() { return 32; }
 
   virtual void work(uint worker_id) {
-    G1GCPhaseTimes* timer = G1CollectedHeap::heap()->policy()->phase_times();
+    G1GCPhaseTimes* timer = G1CollectedHeap::heap()->phase_times();
 
     // Claim serial work.
     if (_serial_work_claim == 0) {
@@ -4296,7 +4291,7 @@ void G1CollectedHeap::free_collection_set(G1CollectionSet* collection_set, G1Eva
                         _collection_set.region_length());
     workers()->run_task(&cl, num_workers);
   }
-  policy()->phase_times()->record_total_free_cset_time_ms((os::elapsedTime() - free_cset_start_time) * 1000.0);
+  phase_times()->record_total_free_cset_time_ms((os::elapsedTime() - free_cset_start_time) * 1000.0);
 
   collection_set->clear();
 }
@@ -4421,7 +4416,7 @@ void G1CollectedHeap::eagerly_reclaim_humongous_regions() {
 
   if (!G1EagerReclaimHumongousObjects ||
       (!_has_humongous_reclaim_candidates && !log_is_enabled(Debug, gc, humongous))) {
-    policy()->phase_times()->record_fast_reclaim_humongous_time_ms(0.0, 0);
+    phase_times()->record_fast_reclaim_humongous_time_ms(0.0, 0);
     return;
   }
 
@@ -4446,8 +4441,8 @@ void G1CollectedHeap::eagerly_reclaim_humongous_regions() {
   prepend_to_freelist(&local_cleanup_list);
   decrement_summary_bytes(cl.bytes_freed());
 
-  policy()->phase_times()->record_fast_reclaim_humongous_time_ms((os::elapsedTime() - start_time) * 1000.0,
-                                                                 cl.humongous_objects_reclaimed());
+  phase_times()->record_fast_reclaim_humongous_time_ms((os::elapsedTime() - start_time) * 1000.0,
+                                                       cl.humongous_objects_reclaimed());
 }
 
 class G1AbandonCollectionSetClosure : public HeapRegionClosure {
@@ -4826,7 +4821,7 @@ void G1CollectedHeap::purge_code_root_memory() {
   double purge_start = os::elapsedTime();
   G1CodeRootSet::purge();
   double purge_time_ms = (os::elapsedTime() - purge_start) * 1000.0;
-  policy()->phase_times()->record_strong_code_root_purge_time(purge_time_ms);
+  phase_times()->record_strong_code_root_purge_time(purge_time_ms);
 }
 
 class RebuildStrongCodeRootClosure: public CodeBlobClosure {
