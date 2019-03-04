@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -48,16 +48,14 @@ BUILD_DIR="${SCRIPT_DIR}/../../build/devkit"
 # Find the version of Xcode
 XCODE_VERSION="$($XCODE_APP/Contents/Developer/usr/bin/xcodebuild -version \
     | awk '/Xcode/ { print $2 }' )"
-SDK_VERSION="MacOSX10.13"
-if [ ! -e "$XCODE_APP/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/${SDK_VERSION}.sdk" ]; then
-    echo "Expected SDK version not found: ${SDK_VERSION}"
-    exit 1
-fi
+SDK_VERSION="$(ls $XCODE_APP/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs \
+    | grep [0-9] | sort -r | head -n1 | sed 's/\.sdk//')"
 
 DEVKIT_ROOT="${BUILD_DIR}/Xcode${XCODE_VERSION}-${SDK_VERSION}"
 DEVKIT_BUNDLE="${DEVKIT_ROOT}.tar.gz"
 
 echo "Xcode version: $XCODE_VERSION"
+echo "SDK version: $SDK_VERSION"
 echo "Creating devkit in $DEVKIT_ROOT"
 
 mkdir -p $DEVKIT_ROOT
