@@ -3779,7 +3779,8 @@ final public class AccessBridge {
     }
 
     /*
-     * returns the JMenuItem accelerator
+     * Returns the JMenuItem accelerator. Similar implementation is used on
+     * macOS, see CAccessibility.getAcceleratorText(AccessibleContext).
      */
     private KeyStroke getAccelerator(final AccessibleContext ac) {
         // workaround for getAccessibleKeyBinding not returning the
