@@ -197,9 +197,11 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
             }
 
             // Parse the files in the packages and subpackages to be documented
-            ListBuffer<JCCompilationUnit> packageTrees = new ListBuffer<>();
-            parse(etable.getFilesToParse(), packageTrees, false);
-            modules.enter(packageTrees.toList(), null);
+            ListBuffer<JCCompilationUnit> allTrees = new ListBuffer<>();
+            allTrees.addAll(classTrees);
+            parse(etable.getFilesToParse(), allTrees, false);
+            modules.newRound();
+            modules.initModules(allTrees.toList());
 
             if (messager.hasErrors()) {
                 return null;
@@ -207,7 +209,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
 
             // Enter symbols for all files
             toolEnv.notice("main.Building_tree");
-            javadocEnter.main(classTrees.toList().appendList(packageTrees));
+            javadocEnter.main(allTrees.toList());
 
             if (messager.hasErrors()) {
                 return null;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -504,12 +504,8 @@ public class Modules extends JCTree.Visitor {
                 module.completer = sym -> completeModule((ModuleSymbol) sym);
             } else {
                 Assert.check(rootModules.isEmpty());
-                String moduleOverride = singleModuleOverride(trees);
-                if (moduleOverride != null) {
-                    module = moduleFinder.findModule(names.fromString(moduleOverride));
-                } else {
-                    module = defaultModule;
-                }
+                Assert.checkNonNull(c);
+                module = c.packge().modle;
                 rootModules.add(module);
             }
 
@@ -1796,6 +1792,7 @@ public class Modules extends JCTree.Visitor {
     public void newRound() {
         allModules = null;
         rootModules = null;
+        defaultModule = null;
         warnedMissing.clear();
     }
 
