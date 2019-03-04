@@ -1366,7 +1366,7 @@ public:
   // WhiteBox testing support.
   virtual bool supports_concurrent_phase_control() const;
   virtual bool request_concurrent_phase(const char* phase);
-  bool is_hetero_heap() const;
+  bool is_heterogeneous_heap() const;
 
   virtual WorkGang* get_safepoint_workers() { return _workers; }
 

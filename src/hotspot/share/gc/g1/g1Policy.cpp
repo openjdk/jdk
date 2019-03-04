@@ -90,7 +90,7 @@ G1Policy::~G1Policy() {
 }
 
 G1Policy* G1Policy::create_policy(G1CollectorPolicy* policy, STWGCTimer* gc_timer_stw) {
-  if (policy->is_hetero_heap()) {
+  if (policy->is_heterogeneous_heap()) {
     return new G1HeterogeneousHeapPolicy(policy, gc_timer_stw);
   } else {
     return new G1Policy(policy, gc_timer_stw);

@@ -41,7 +41,7 @@ protected:
 public:
   G1HeterogeneousCollectorPolicy() {}
   virtual size_t heap_reserved_size_bytes() const;
-  virtual bool is_hetero_heap() const;
+  virtual bool is_heterogeneous_heap() const;
   static size_t reasonable_max_memory_for_young();
 };
 

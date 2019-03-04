@@ -98,6 +98,6 @@ size_t G1HeterogeneousCollectorPolicy::heap_reserved_size_bytes() const {
     return 2 * _max_heap_byte_size;
 }
 
-bool G1HeterogeneousCollectorPolicy::is_hetero_heap() const {
+bool G1HeterogeneousCollectorPolicy::is_heterogeneous_heap() const {
   return true;
 }

@@ -2332,8 +2332,8 @@ bool G1CollectedHeap::request_concurrent_phase(const char* phase) {
   return _cm_thread->request_concurrent_phase(phase);
 }
 
-bool G1CollectedHeap::is_hetero_heap() const {
-  return _collector_policy->is_hetero_heap();
+bool G1CollectedHeap::is_heterogeneous_heap() const {
+  return _collector_policy->is_heterogeneous_heap();
 }
 
 class PrintRegionClosure: public HeapRegionClosure {

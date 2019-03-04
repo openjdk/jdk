@@ -131,7 +131,7 @@ void G1YoungGenSizer::heap_size_changed(uint new_number_of_heap_regions) {
 }
 
 G1YoungGenSizer* G1YoungGenSizer::create_gen_sizer(G1CollectorPolicy* policy) {
-  if (policy->is_hetero_heap()) {
+  if (policy->is_heterogeneous_heap()) {
     return new G1HeterogeneousHeapYoungGenSizer();
   } else {
     return new G1YoungGenSizer();
