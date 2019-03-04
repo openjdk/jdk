@@ -1061,6 +1061,11 @@ public:
   // "CollectedHeap" supports.
   virtual void collect(GCCause::Cause cause);
 
+  // Perform a collection of the heap with the given cause; if the VM operation
+  // fails to execute for any reason, retry only if retry_on_gc_failure is set.
+  // Returns whether this collection actually executed.
+  bool try_collect(GCCause::Cause cause, bool retry_on_gc_failure);
+
   // True iff an evacuation has failed in the most-recent collection.
   bool evacuation_failed() { return _evacuation_failed; }
 

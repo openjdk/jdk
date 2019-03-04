@@ -2113,15 +2113,21 @@ void G1CollectedHeap::increment_old_marking_cycles_completed(bool concurrent) {
 }
 
 void G1CollectedHeap::collect(GCCause::Cause cause) {
+  try_collect(cause, true);
+}
+
+bool G1CollectedHeap::try_collect(GCCause::Cause cause, bool retry_on_gc_failure) {
   assert_heap_not_locked();
 
-  uint gc_count_before;
-  uint old_marking_count_before;
-  uint full_gc_count_before;
-  bool retry_gc;
+  bool gc_succeeded;
+  bool should_retry_gc;
 
   do {
-    retry_gc = false;
+    should_retry_gc = false;
+
+    uint gc_count_before;
+    uint old_marking_count_before;
+    uint full_gc_count_before;
 
     {
       MutexLocker ml(Heap_lock);
@@ -2142,19 +2148,18 @@ void G1CollectedHeap::collect(GCCause::Cause cause) {
                                    true,  /* should_initiate_conc_mark */
                                    g1_policy()->max_pause_time_ms());
       VMThread::execute(&op);
-      if (!op.pause_succeeded()) {
+      gc_succeeded = op.gc_succeeded();
+      if (!gc_succeeded && retry_on_gc_failure) {
         if (old_marking_count_before == _old_marking_cycles_started) {
-          retry_gc = op.should_retry_gc();
+          should_retry_gc = op.should_retry_gc();
         } else {
           // A Full GC happened while we were trying to schedule the
-          // initial-mark GC. No point in starting a new cycle given
+          // concurrent cycle. No point in starting a new cycle given
           // that the whole heap was collected anyway.
         }
 
-        if (retry_gc) {
-          if (GCLocker::is_active_and_needs_gc()) {
-            GCLocker::stall_until_clear();
-          }
+        if (should_retry_gc && GCLocker::is_active_and_needs_gc()) {
+          GCLocker::stall_until_clear();
         }
       }
     } else {
@@ -2169,13 +2174,16 @@ void G1CollectedHeap::collect(GCCause::Cause cause) {
                                      false, /* should_initiate_conc_mark */
                                      g1_policy()->max_pause_time_ms());
         VMThread::execute(&op);
+        gc_succeeded = op.gc_succeeded();
       } else {
         // Schedule a Full GC.
         VM_G1CollectFull op(gc_count_before, full_gc_count_before, cause);
         VMThread::execute(&op);
+        gc_succeeded = op.gc_succeeded();
       }
     }
-  } while (retry_gc);
+  } while (should_retry_gc);
+  return gc_succeeded;
 }
 
 bool G1CollectedHeap::is_in(const void* p) const {
@@ -2586,7 +2594,7 @@ HeapWord* G1CollectedHeap::do_collection_pause(size_t word_size,
   VMThread::execute(&op);
 
   HeapWord* result = op.result();
-  bool ret_succeeded = op.prologue_succeeded() && op.pause_succeeded();
+  bool ret_succeeded = op.prologue_succeeded() && op.gc_succeeded();
   assert(result == NULL || ret_succeeded,
          "the result should be NULL if the VM did not succeed");
   *succeeded = ret_succeeded;

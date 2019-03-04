@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,10 @@ void G1YoungRemSetSamplingThread::check_for_periodic_gc(){
   if ((os::elapsedTime() - _last_periodic_gc_attempt_s) > (G1PeriodicGCInterval / 1000.0)) {
     log_debug(gc, periodic)("Checking for periodic GC.");
     if (should_start_periodic_gc()) {
-      Universe::heap()->collect(GCCause::_g1_periodic_collection);
+      if (!G1CollectedHeap::heap()->try_collect(GCCause::_g1_periodic_collection,
+                                                    false /* retry_on_vmop_failure */)) {
+        log_debug(gc, periodic)("GC request denied. Skipping.");
+      }
     }
     _last_periodic_gc_attempt_s = os::elapsedTime();
   }
