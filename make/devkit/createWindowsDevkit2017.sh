@@ -107,34 +107,37 @@ MSVCP_DLL=${MSVC_DIR}/msvcp${VS_DLL_VERSION}.dll
 ################################################################################
 # Copy Visual Studio files
 
-if [ ! -d $DEVKIT_ROOT/VC ]; then
-    VC_SUBDIR="VC/Tools/MSVC/$MSVC_FULL_VERSION"
-    REDIST_SUBDIR="VC/Redist/MSVC/$REDIST_FULL_VERSION"
-    echo "Copying VC..."
-    mkdir -p $DEVKIT_ROOT/VC/bin
-    cp -r "$VS_INSTALL_DIR/${VC_SUBDIR}/bin/Hostx64/x64" $DEVKIT_ROOT/VC/bin/
-    cp -r "$VS_INSTALL_DIR/${VC_SUBDIR}/bin/Hostx86/x86" $DEVKIT_ROOT/VC/bin/
-    mkdir -p $DEVKIT_ROOT/VC/lib
-    cp -r "$VS_INSTALL_DIR/${VC_SUBDIR}/lib/x64" $DEVKIT_ROOT/VC/lib/
-    cp -r "$VS_INSTALL_DIR/${VC_SUBDIR}/lib/x86" $DEVKIT_ROOT/VC/lib/
-    cp -r "$VS_INSTALL_DIR/${VC_SUBDIR}/include" $DEVKIT_ROOT/VC/
-    mkdir -p $DEVKIT_ROOT/VC/atlmfc/lib
-    cp -r "$VS_INSTALL_DIR/${VC_SUBDIR}/atlmfc/lib/x64" $DEVKIT_ROOT/VC/atlmfc/lib/
-    cp -r "$VS_INSTALL_DIR/${VC_SUBDIR}/atlmfc/lib/x86" $DEVKIT_ROOT/VC/atlmfc/lib/
-    cp -r "$VS_INSTALL_DIR/${VC_SUBDIR}/atlmfc/include" $DEVKIT_ROOT/VC/atlmfc/
-    mkdir -p $DEVKIT_ROOT/VC/Auxiliary
-    cp -r "$VS_INSTALL_DIR/VC/Auxiliary/Build" $DEVKIT_ROOT/VC/Auxiliary/
-    mkdir -p $DEVKIT_ROOT/VC/redist
-    cp -r "$VS_INSTALL_DIR/$REDIST_SUBDIR/x64" $DEVKIT_ROOT/VC/redist/
-    cp -r "$VS_INSTALL_DIR/$REDIST_SUBDIR/x86" $DEVKIT_ROOT/VC/redist/
+TOOLS_VERSION="$(ls "$VS_INSTALL_DIR/VC/Tools/MSVC" | sort -r -n | head -n1)"
+echo "Found Tools version: $TOOLS_VERSION"
+VC_SUBDIR="VC/Tools/MSVC/$TOOLS_VERSION"
+REDIST_VERSION="$(ls "$VS_INSTALL_DIR/VC/Redist/MSVC" | sort -r -n | head -n1)"
+echo "Found Redist version: $REDIST_VERSION"
+REDIST_SUBDIR="VC/Redist/MSVC/$REDIST_VERSION"
+echo "Copying VC..."
+rm -rf $DEVKIT_ROOT/VC
+mkdir -p $DEVKIT_ROOT/VC/bin
+cp -r "$VS_INSTALL_DIR/${VC_SUBDIR}/bin/Hostx64/x64" $DEVKIT_ROOT/VC/bin/
+cp -r "$VS_INSTALL_DIR/${VC_SUBDIR}/bin/Hostx86/x86" $DEVKIT_ROOT/VC/bin/
+mkdir -p $DEVKIT_ROOT/VC/lib
+cp -r "$VS_INSTALL_DIR/${VC_SUBDIR}/lib/x64" $DEVKIT_ROOT/VC/lib/
+cp -r "$VS_INSTALL_DIR/${VC_SUBDIR}/lib/x86" $DEVKIT_ROOT/VC/lib/
+cp -r "$VS_INSTALL_DIR/${VC_SUBDIR}/include" $DEVKIT_ROOT/VC/
+mkdir -p $DEVKIT_ROOT/VC/atlmfc/lib
+cp -r "$VS_INSTALL_DIR/${VC_SUBDIR}/atlmfc/lib/x64" $DEVKIT_ROOT/VC/atlmfc/lib/
+cp -r "$VS_INSTALL_DIR/${VC_SUBDIR}/atlmfc/lib/x86" $DEVKIT_ROOT/VC/atlmfc/lib/
+cp -r "$VS_INSTALL_DIR/${VC_SUBDIR}/atlmfc/include" $DEVKIT_ROOT/VC/atlmfc/
+mkdir -p $DEVKIT_ROOT/VC/Auxiliary
+cp -r "$VS_INSTALL_DIR/VC/Auxiliary/Build" $DEVKIT_ROOT/VC/Auxiliary/
+mkdir -p $DEVKIT_ROOT/VC/redist
+cp -r "$VS_INSTALL_DIR/$REDIST_SUBDIR/x64" $DEVKIT_ROOT/VC/redist/
+cp -r "$VS_INSTALL_DIR/$REDIST_SUBDIR/x86" $DEVKIT_ROOT/VC/redist/
 
-    # The redist runtime libs are needed to run the compiler but may not be
-    # installed on the machine where the devkit will be used.
-    cp $DEVKIT_ROOT/VC/redist/x86/$MSVCR_DLL $DEVKIT_ROOT/VC/bin/x86
-    cp $DEVKIT_ROOT/VC/redist/x86/$MSVCP_DLL $DEVKIT_ROOT/VC/bin/x86
-    cp $DEVKIT_ROOT/VC/redist/x64/$MSVCR_DLL $DEVKIT_ROOT/VC/bin/x64
-    cp $DEVKIT_ROOT/VC/redist/x64/$MSVCP_DLL $DEVKIT_ROOT/VC/bin/x64
-fi
+# The redist runtime libs are needed to run the compiler but may not be
+# installed on the machine where the devkit will be used.
+cp $DEVKIT_ROOT/VC/redist/x86/$MSVCR_DLL $DEVKIT_ROOT/VC/bin/x86
+cp $DEVKIT_ROOT/VC/redist/x86/$MSVCP_DLL $DEVKIT_ROOT/VC/bin/x86
+cp $DEVKIT_ROOT/VC/redist/x64/$MSVCR_DLL $DEVKIT_ROOT/VC/bin/x64
+cp $DEVKIT_ROOT/VC/redist/x64/$MSVCP_DLL $DEVKIT_ROOT/VC/bin/x64
 
 ################################################################################
 # Copy SDK files
@@ -142,21 +145,24 @@ fi
 SDK_INSTALL_DIR="$PROGRAMFILES_X86/Windows Kits/$SDK_VERSION"
 echo "SDK_INSTALL_DIR: $SDK_INSTALL_DIR"
 
-if [ ! -d $DEVKIT_ROOT/$SDK_VERSION ]; then
-    echo "Copying SDK..."
-    mkdir -p $DEVKIT_ROOT/$SDK_VERSION/bin
-    cp -r "$SDK_INSTALL_DIR/bin/$SDK_FULL_VERSION/x64" $DEVKIT_ROOT/$SDK_VERSION/bin/
-    cp -r "$SDK_INSTALL_DIR/bin/$SDK_FULL_VERSION/x86" $DEVKIT_ROOT/$SDK_VERSION/bin/
-    mkdir -p $DEVKIT_ROOT/$SDK_VERSION/lib
-    cp -r "$SDK_INSTALL_DIR/lib/$SDK_FULL_VERSION/um/x64" $DEVKIT_ROOT/$SDK_VERSION/lib/
-    cp -r "$SDK_INSTALL_DIR/lib/$SDK_FULL_VERSION/um/x86" $DEVKIT_ROOT/$SDK_VERSION/lib/
-    cp -r "$SDK_INSTALL_DIR/lib/$SDK_FULL_VERSION/ucrt/x64" $DEVKIT_ROOT/$SDK_VERSION/lib/
-    cp -r "$SDK_INSTALL_DIR/lib/$SDK_FULL_VERSION/ucrt/x86" $DEVKIT_ROOT/$SDK_VERSION/lib/
-    mkdir -p $DEVKIT_ROOT/$SDK_VERSION/Redist
-    cp -r "$SDK_INSTALL_DIR/Redist/ucrt" $DEVKIT_ROOT/$SDK_VERSION/Redist/
-    mkdir -p $DEVKIT_ROOT/$SDK_VERSION/include
-    cp -r "$SDK_INSTALL_DIR/include/$SDK_FULL_VERSION/"* $DEVKIT_ROOT/$SDK_VERSION/include/
-fi
+SDK_FULL_VERSION="$(ls "$SDK_INSTALL_DIR/bin" | sort -r -n | head -n1)"
+echo "Found SDK version: $SDK_FULL_VERSION"
+UCRT_VERSION="$(ls "$SDK_INSTALL_DIR/Redist" | grep $SDK_VERSION | sort -r -n | head -n1)"
+echo "Found UCRT version: $UCRT_VERSION"
+echo "Copying SDK..."
+rm -rf $DEVKIT_ROOT/$SDK_VERSION
+mkdir -p $DEVKIT_ROOT/$SDK_VERSION/bin
+cp -r "$SDK_INSTALL_DIR/bin/$SDK_FULL_VERSION/x64" $DEVKIT_ROOT/$SDK_VERSION/bin/
+cp -r "$SDK_INSTALL_DIR/bin/$SDK_FULL_VERSION/x86" $DEVKIT_ROOT/$SDK_VERSION/bin/
+mkdir -p $DEVKIT_ROOT/$SDK_VERSION/lib
+cp -r "$SDK_INSTALL_DIR/lib/$SDK_FULL_VERSION/um/x64" $DEVKIT_ROOT/$SDK_VERSION/lib/
+cp -r "$SDK_INSTALL_DIR/lib/$SDK_FULL_VERSION/um/x86" $DEVKIT_ROOT/$SDK_VERSION/lib/
+cp -r "$SDK_INSTALL_DIR/lib/$SDK_FULL_VERSION/ucrt/x64" $DEVKIT_ROOT/$SDK_VERSION/lib/
+cp -r "$SDK_INSTALL_DIR/lib/$SDK_FULL_VERSION/ucrt/x86" $DEVKIT_ROOT/$SDK_VERSION/lib/
+mkdir -p $DEVKIT_ROOT/$SDK_VERSION/Redist
+cp -r "$SDK_INSTALL_DIR/Redist/$UCRT_VERSION/ucrt" $DEVKIT_ROOT/$SDK_VERSION/Redist/
+mkdir -p $DEVKIT_ROOT/$SDK_VERSION/include
+cp -r "$SDK_INSTALL_DIR/include/$SDK_FULL_VERSION/"* $DEVKIT_ROOT/$SDK_VERSION/include/
 
 ################################################################################
 # Generate devkit.info
@@ -184,6 +190,11 @@ echo-info "DEVKIT_VS_LIB_x86_64=\"\$DEVKIT_ROOT/VC/lib/x64;\$DEVKIT_ROOT/VC/atlm
 echo-info "DEVKIT_MSVCR_DLL_x86_64=\"\$DEVKIT_ROOT/VC/redist/x64/$MSVCR_DLL\""
 echo-info "DEVKIT_MSVCP_DLL_x86_64=\"\$DEVKIT_ROOT/VC/redist/x64/$MSVCP_DLL\""
 echo-info "DEVKIT_UCRT_DLL_DIR_x86_64=\"\$DEVKIT_ROOT/10/Redist/ucrt/DLLs/x64\""
+echo-info ""
+echo-info "DEVKIT_TOOLS_VERSION=\"$TOOLS_VERSION\""
+echo-info "DEVKIT_REDIST_VERSION=\"$REDIST_VERSION\""
+echo-info "DEVKIT_SDK_VERSION=\"$SDK_FULL_VERSION\""
+echo-info "DEVKIT_UCRT_VERSION=\"$UCRT_VERSION\""
 
 ################################################################################
 # Copy this script
