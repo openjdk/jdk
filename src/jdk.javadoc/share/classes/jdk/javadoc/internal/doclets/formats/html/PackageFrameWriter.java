@@ -30,7 +30,6 @@ import java.util.*;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -102,7 +101,7 @@ public class PackageFrameWriter extends HtmlDocletWriter {
         HtmlTree body = packgen.getBody(false, packgen.getWindowTitle(pkgName));
         Content pkgNameContent = new StringContent(pkgName);
         HtmlTree htmlTree = HtmlTree.MAIN();
-        Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, HtmlStyle.bar,
+        Content heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, HtmlStyle.bar,
                 packgen.getTargetPackageLink(packageElement, "classFrame", pkgNameContent));
         htmlTree.addContent(heading);
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
@@ -177,7 +176,7 @@ public class PackageFrameWriter extends HtmlDocletWriter {
                     continue;
                 }
                 if (!printedHeader) {
-                    Content heading = HtmlTree.HEADING(HtmlConstants.CONTENT_HEADING,
+                    Content heading = HtmlTree.HEADING(Headings.CONTENT_HEADING,
                                                        true, labelContent);
                     htmlTree.addContent(heading);
                     printedHeader = true;

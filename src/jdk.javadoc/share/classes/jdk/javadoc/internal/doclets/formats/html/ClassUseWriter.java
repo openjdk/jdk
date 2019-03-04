@@ -42,7 +42,6 @@ import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -325,7 +324,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
                     getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.CLASS_USE_HEADER,
                             typeElement)),
                     getPackageLink(pkg, utils.getPackageName(pkg)));
-            Content heading = HtmlTree.HEADING(HtmlConstants.SUMMARY_HEADING, link);
+            Content heading = HtmlTree.HEADING(Headings.TypeUse.SUMMARY_HEADING, link);
             htmlTree.addContent(heading);
             addClassUse(pkg, htmlTree);
             ul.addContent(HtmlTree.LI(HtmlStyle.blockList, htmlTree));
@@ -452,7 +451,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         headContent.addContent(contents.getContent("doclet.ClassUse_Title", cltype));
         headContent.addContent(new HtmlTree(HtmlTag.BR));
         headContent.addContent(clname);
-        Content heading = HtmlTree.HEADING(HtmlConstants.CLASS_PAGE_HEADING,
+        Content heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
                 true, HtmlStyle.title, headContent);
         Content div = HtmlTree.DIV(HtmlStyle.header, heading);
         mainTree.addContent(div);
