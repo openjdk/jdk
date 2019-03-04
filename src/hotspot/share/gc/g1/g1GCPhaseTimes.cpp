@@ -385,7 +385,7 @@ double G1GCPhaseTimes::print_evacuate_collection_set() const {
 
   trace_phase(_gc_par_phases[GCWorkerStart], false);
   debug_phase(_gc_par_phases[ExtRootScan]);
-  for (int i = ThreadRoots; i <= SATBFiltering; i++) {
+  for (int i = ExtRootScanSubPhasesStart; i <= ExtRootScanSubPhasesEnd; i++) {
     trace_phase(_gc_par_phases[i]);
   }
   if (G1HotCardCache::default_use_cache()) {
