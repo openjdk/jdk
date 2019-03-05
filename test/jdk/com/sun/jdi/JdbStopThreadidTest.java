@@ -32,6 +32,7 @@
  * @run main/othervm JdbStopThreadidTest
  */
 
+import jdk.test.lib.process.OutputAnalyzer;
 import lib.jdb.Jdb;
 import lib.jdb.JdbCommand;
 import lib.jdb.JdbTest;
@@ -138,6 +139,7 @@ public class JdbStopThreadidTest extends JdbTest {
         jdb.command(JdbCommand.cont().waitForPrompt("Breakpoint hit: \"thread=MYTHREAD-2\", \\S+MyThread.brkMethod", true));
         // Continue until the application exits. Once again, hitting a breakpoint will cause
         // a failure because we are not suppose to hit one.
-        jdb.command(JdbCommand.cont().waitForPrompt(Jdb.APPLICATION_EXIT, true));
+        jdb.contToExit(1);
+        new OutputAnalyzer(getJdbOutput()).shouldContain(Jdb.APPLICATION_EXIT);
     }
 }
