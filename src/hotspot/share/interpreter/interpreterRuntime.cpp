@@ -920,19 +920,23 @@ void InterpreterRuntime::resolve_invoke(JavaThread* thread, Bytecodes::Code byte
            info.call_kind() == CallInfo::vtable_call, "");
   }
 #endif
-  // Get sender or sender's unsafe_anonymous_host, and only set cpCache entry to resolved if
-  // it is not an interface.  The receiver for invokespecial calls within interface
-  // methods must be checked for every call.
-  InstanceKlass* sender = pool->pool_holder();
-  sender = sender->is_unsafe_anonymous() ? sender->unsafe_anonymous_host() : sender;
 
   switch (info.call_kind()) {
-  case CallInfo::direct_call:
+  case CallInfo::direct_call: {
+    // Get sender or sender's unsafe_anonymous_host, and only set cpCache entry to resolved if
+    // it is not an interface.  The receiver for invokespecial calls within interface
+    // methods must be checked for every call.
+    InstanceKlass* pool_holder = pool->pool_holder();
+    InstanceKlass* sender = pool_holder->is_unsafe_anonymous() ?
+                              pool_holder->unsafe_anonymous_host() : pool_holder;
+
     cp_cache_entry->set_direct_call(
       bytecode,
       info.resolved_method(),
-      sender->is_interface());
+      sender->is_interface(),
+      pool_holder);
     break;
+  }
   case CallInfo::vtable_call:
     cp_cache_entry->set_vtable_call(
       bytecode,
