@@ -1777,13 +1777,9 @@ static void gtk3_paint_flat_box(WidgetType widget_type, GtkStateType state_type,
         (widget_type == CHECK_BOX || widget_type == RADIO_BUTTON)) {
         return;
     }
-    gtk3_widget = gtk3_get_widget(widget_type);
-
-    GtkStyleContext* context = fp_gtk_widget_get_style_context (gtk3_widget);
-    fp_gtk_style_context_save (context);
-
-    if (detail != 0) {
-        transform_detail_string(detail, context);
+    GtkStyleContext* context = get_style(widget_type, detail);
+    if (widget_type == TOOL_TIP) {
+        fp_gtk_style_context_add_class(context, "background");
     }
 
     GtkStateFlags flags = get_gtk_flags(state_type);
@@ -1800,7 +1796,7 @@ static void gtk3_paint_flat_box(WidgetType widget_type, GtkStateType state_type,
 
     fp_gtk_render_background (context, cr, x, y, width, height);
 
-    fp_gtk_style_context_restore (context);
+    disposeOrRestoreContext(context);
 }
 
 static void gtk3_paint_focus(WidgetType widget_type, GtkStateType state_type,
@@ -2365,12 +2361,12 @@ static gint gtk3_get_color_for_state(JNIEnv *env, WidgetType widget_type,
         widget_type = TEXT_AREA;
     }
 
-    gtk3_widget = gtk3_get_widget(widget_type);
-
-    GtkStyleContext* context = fp_gtk_widget_get_style_context(gtk3_widget);
-
+    GtkStyleContext* context = NULL;
     if (widget_type == TOOL_TIP) {
-        fp_gtk_style_context_add_class(context, "tooltip");
+        context = get_style(widget_type, "tooltip");
+    } else {
+        gtk3_widget = gtk3_get_widget(widget_type);
+        context = fp_gtk_widget_get_style_context(gtk3_widget);
     }
     if (widget_type == CHECK_BOX_MENU_ITEM
      || widget_type == RADIO_BUTTON_MENU_ITEM) {
@@ -2388,7 +2384,9 @@ static gint gtk3_get_color_for_state(JNIEnv *env, WidgetType widget_type,
 
     result = recode_color(color.alpha) << 24 | recode_color(color.red) << 16 |
              recode_color(color.green) << 8 | recode_color(color.blue);
-
+    if (widget_type == TOOL_TIP) {
+        disposeOrRestoreContext(context);
+    }
     return result;
 }
 
