@@ -42,6 +42,7 @@ import java.security.SignatureException;
 import java.security.spec.AlgorithmParameterSpec;
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import org.jcp.xml.dsig.internal.MacOutputStream;
@@ -117,30 +118,32 @@ public abstract class DOMHMACSignatureMethod extends AbstractDOMSignatureMethod 
         }
     }
 
-    @Override
     public final AlgorithmParameterSpec getParameterSpec() {
         return params;
     }
 
-    @Override
     SignatureMethodParameterSpec unmarshalParams(Element paramsElem)
         throws MarshalException
     {
-        outputLength = Integer.parseInt(textOfNode(paramsElem));
+        outputLength = Integer.parseInt(paramsElem.getFirstChild().getNodeValue());
         outputLengthSet = true;
         LOG.debug("unmarshalled outputLength: {}", outputLength);
         return new HMACParameterSpec(outputLength);
     }
 
-    @Override
-    void marshalParams(XmlWriter xwriter, String prefix)
+    void marshalParams(Element parent, String prefix)
         throws MarshalException
     {
-        xwriter.writeTextElement(prefix, "HMACOutputLength", XMLSignature.XMLNS, String.valueOf(outputLength));
+        Document ownerDoc = DOMUtils.getOwnerDocument(parent);
+        Element hmacElem = DOMUtils.createElement(ownerDoc, "HMACOutputLength",
+                                                  XMLSignature.XMLNS, prefix);
+        hmacElem.appendChild(ownerDoc.createTextNode
+           (String.valueOf(outputLength)));
+
+        parent.appendChild(hmacElem);
     }
 
-    @Override
-    boolean verify(Key key, DOMSignedInfo si, byte[] sig,
+    boolean verify(Key key, SignedInfo si, byte[] sig,
                    XMLValidateContext context)
         throws InvalidKeyException, SignatureException, XMLSignatureException
     {
@@ -162,14 +165,13 @@ public abstract class DOMHMACSignatureMethod extends AbstractDOMSignatureMethod 
                 ("HMACOutputLength must not be less than " + getDigestLength());
         }
         hmac.init(key);
-        si.canonicalize(context, new MacOutputStream(hmac));
+        ((DOMSignedInfo)si).canonicalize(context, new MacOutputStream(hmac));
         byte[] result = hmac.doFinal();
 
         return MessageDigest.isEqual(sig, result);
     }
 
-    @Override
-    byte[] sign(Key key, DOMSignedInfo si, XMLSignContext context)
+    byte[] sign(Key key, SignedInfo si, XMLSignContext context)
         throws InvalidKeyException, XMLSignatureException
     {
         if (key == null || si == null) {
@@ -190,11 +192,10 @@ public abstract class DOMHMACSignatureMethod extends AbstractDOMSignatureMethod 
                 ("HMACOutputLength must not be less than " + getDigestLength());
         }
         hmac.init(key);
-        si.canonicalize(context, new MacOutputStream(hmac));
+        ((DOMSignedInfo)si).canonicalize(context, new MacOutputStream(hmac));
         return hmac.doFinal();
     }
 
-    @Override
     boolean paramsEqual(AlgorithmParameterSpec spec) {
         if (getParameterSpec() == spec) {
             return true;
@@ -207,7 +208,6 @@ public abstract class DOMHMACSignatureMethod extends AbstractDOMSignatureMethod 
         return outputLength == ospec.getOutputLength();
     }
 
-    @Override
     Type getAlgorithmType() {
         return Type.HMAC;
     }
@@ -225,15 +225,12 @@ public abstract class DOMHMACSignatureMethod extends AbstractDOMSignatureMethod 
         SHA1(Element dmElem) throws MarshalException {
             super(dmElem);
         }
-        @Override
         public String getAlgorithm() {
             return SignatureMethod.HMAC_SHA1;
         }
-        @Override
         String getJCAAlgorithm() {
             return "HmacSHA1";
         }
-        @Override
         int getDigestLength() {
             return 160;
         }
@@ -269,15 +266,12 @@ public abstract class DOMHMACSignatureMethod extends AbstractDOMSignatureMethod 
         SHA256(Element dmElem) throws MarshalException {
             super(dmElem);
         }
-        @Override
         public String getAlgorithm() {
             return HMAC_SHA256;
         }
-        @Override
         String getJCAAlgorithm() {
             return "HmacSHA256";
         }
-        @Override
         int getDigestLength() {
             return 256;
         }
@@ -291,15 +285,12 @@ public abstract class DOMHMACSignatureMethod extends AbstractDOMSignatureMethod 
         SHA384(Element dmElem) throws MarshalException {
             super(dmElem);
         }
-        @Override
         public String getAlgorithm() {
             return HMAC_SHA384;
         }
-        @Override
         String getJCAAlgorithm() {
             return "HmacSHA384";
         }
-        @Override
         int getDigestLength() {
             return 384;
         }
@@ -313,15 +304,12 @@ public abstract class DOMHMACSignatureMethod extends AbstractDOMSignatureMethod 
         SHA512(Element dmElem) throws MarshalException {
             super(dmElem);
         }
-        @Override
         public String getAlgorithm() {
             return HMAC_SHA512;
         }
-        @Override
         String getJCAAlgorithm() {
             return "HmacSHA512";
         }
-        @Override
         int getDigestLength() {
             return 512;
         }

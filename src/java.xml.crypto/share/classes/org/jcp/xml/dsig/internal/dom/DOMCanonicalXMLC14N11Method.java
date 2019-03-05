@@ -48,7 +48,6 @@ public final class DOMCanonicalXMLC14N11Method extends ApacheCanonicalizer {
     public static final String C14N_11_WITH_COMMENTS
         = "http://www.w3.org/2006/12/xml-c14n11#WithComments";
 
-    @Override
     public void init(TransformParameterSpec params)
         throws InvalidAlgorithmParameterException {
         if (params != null) {
@@ -57,7 +56,6 @@ public final class DOMCanonicalXMLC14N11Method extends ApacheCanonicalizer {
         }
     }
 
-    @Override
     public Data transform(Data data, XMLCryptoContext xc)
         throws TransformException {
 

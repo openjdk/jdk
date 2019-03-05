@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 4635230 6283345 6303830 6824440 6867348 7094155 8038184 8038349 8046949
- *      8046724 8079693 8177334 8205507 8210736
+ *      8046724 8079693 8177334 8205507 8210736 8217878
  * @summary Basic unit tests for generating XML Signatures with JSR 105
  * @modules java.base/sun.security.util
  *          java.base/sun.security.x509
@@ -126,8 +126,12 @@ public class GenerationTests {
     private final static String CRL =
         DATA_DIR + System.getProperty("file.separator") + "certs" +
         System.getProperty("file.separator") + "crl";
+    // XML Document with a DOCTYPE declaration
     private final static String ENVELOPE =
         DATA_DIR + System.getProperty("file.separator") + "envelope.xml";
+    // XML Document without a DOCTYPE declaration
+    private final static String ENVELOPE2 =
+        DATA_DIR + System.getProperty("file.separator") + "envelope2.xml";
     private static URIDereferencer httpUd = null;
     private final static String STYLESHEET =
         "http://www.w3.org/TR/xml-stylesheet";
@@ -328,6 +332,10 @@ public class GenerationTests {
         test_create_signature_reference_dependency();
         test_create_signature_with_attr_in_no_namespace();
         test_create_signature_with_empty_id();
+        test_create_signature_enveloping_over_doc(ENVELOPE, true);
+        test_create_signature_enveloping_over_doc(ENVELOPE2, true);
+        test_create_signature_enveloping_over_doc(ENVELOPE, false);
+        test_create_signature_enveloping_dom_level1();
 
         // run tests for detached signatures with local http server
         try (Http server = Http.startServer()) {
@@ -1038,6 +1046,109 @@ public class GenerationTests {
                                                "signature", null);
         DOMSignContext dsc = new DOMSignContext(getPrivateKey("RSA", 512), doc);
         sig.sign(dsc);
+
+        System.out.println();
+    }
+
+    static void test_create_signature_enveloping_over_doc(String filename,
+        boolean pass) throws Exception
+    {
+        System.out.println("* Generating signature-enveloping-over-doc.xml");
+
+        // create reference
+        Reference ref = fac.newReference("#object", sha256);
+
+        // create SignedInfo
+        SignedInfo si = fac.newSignedInfo(withoutComments, rsaSha256,
+            Collections.singletonList(ref));
+
+        // create object
+        Document doc = null;
+        try (FileInputStream fis = new FileInputStream(filename)) {
+            doc = db.parse(fis);
+        }
+        DOMStructure ds = pass ? new DOMStructure(doc.getDocumentElement())
+                               : new DOMStructure(doc);
+        XMLObject obj = fac.newXMLObject(Collections.singletonList(ds),
+            "object", null, "UTF-8");
+
+        // This creates an enveloping signature over the entire XML Document
+        XMLSignature sig = fac.newXMLSignature(si, rsa,
+                                               Collections.singletonList(obj),
+                                               "signature", null);
+        DOMSignContext dsc = new DOMSignContext(getPrivateKey("RSA", 1024), doc);
+        try {
+            sig.sign(dsc);
+            if (!pass) {
+                // A Document node can only exist at the root of the doc so this
+                // should fail
+                throw new Exception("Test unexpectedly passed");
+            }
+        } catch (Exception e) {
+            if (!pass) {
+                System.out.println("Test failed as expected: " + e);
+            } else {
+                throw e;
+            }
+        }
+
+        if (pass) {
+            DOMValidateContext dvc = new DOMValidateContext
+                (getPublicKey("RSA", 1024), doc.getDocumentElement());
+            XMLSignature sig2 = fac.unmarshalXMLSignature(dvc);
+
+            if (sig.equals(sig2) == false) {
+                throw new Exception
+                    ("Unmarshalled signature is not equal to generated signature");
+            }
+            if (sig2.validate(dvc) == false) {
+                throw new Exception("Validation of generated signature failed");
+            }
+        }
+
+        System.out.println();
+    }
+
+    static void test_create_signature_enveloping_dom_level1() throws Exception {
+        System.out.println("* Generating signature-enveloping-dom-level1.xml");
+
+        // create reference
+        Reference ref = fac.newReference("#object", sha256);
+
+        // create SignedInfo
+        SignedInfo si = fac.newSignedInfo(withoutComments, rsaSha256,
+            Collections.singletonList(ref));
+
+        // create object using DOM Level 1 methods
+        Document doc = db.newDocument();
+        Element child = doc.createElement("Child");
+        child.setAttribute("Version", "1.0");
+        child.setAttribute("Id", "child");
+        child.setIdAttribute("Id", true);
+        child.appendChild(doc.createComment("Comment"));
+        XMLObject obj = fac.newXMLObject(
+            Collections.singletonList(new DOMStructure(child)),
+            "object", null, "UTF-8");
+
+        XMLSignature sig = fac.newXMLSignature(si, rsa,
+                                               Collections.singletonList(obj),
+                                               "signature", null);
+        DOMSignContext dsc = new DOMSignContext(getPrivateKey("RSA", 1024), doc);
+        sig.sign(dsc);
+
+        DOMValidateContext dvc = new DOMValidateContext
+            (getPublicKey("RSA", 1024), doc.getDocumentElement());
+        XMLSignature sig2 = fac.unmarshalXMLSignature(dvc);
+
+        if (sig.equals(sig2) == false) {
+            throw new Exception
+                ("Unmarshalled signature is not equal to generated signature");
+        }
+        if (sig2.validate(dvc) == false) {
+            throw new Exception("Validation of generated signature failed");
+        }
+
+        System.out.println();
     }
 
     static void test_create_signature() throws Exception {

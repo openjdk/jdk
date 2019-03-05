@@ -29,18 +29,21 @@
 package org.jcp.xml.dsig.internal.dom;
 
 import javax.xml.crypto.*;
+import javax.xml.crypto.dom.DOMCryptoContext;
 import javax.xml.crypto.dsig.*;
 
 import java.security.Provider;
 import java.util.*;
 
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 /**
  * DOM-based implementation of Manifest.
  *
  */
-public final class DOMManifest extends BaseStructure implements Manifest {
+public final class DOMManifest extends DOMStructure implements Manifest {
 
     private final List<Reference> references;
     private final String id;
@@ -58,7 +61,7 @@ public final class DOMManifest extends BaseStructure implements Manifest {
      * @throws ClassCastException if {@code references} contains any
      *    entries that are not of type {@link Reference}
      */
-    public DOMManifest(List<DOMReference> references, String id) {
+    public DOMManifest(List<? extends Reference> references, String id) {
         if (references == null) {
             throw new NullPointerException("references cannot be null");
         }
@@ -114,7 +117,6 @@ public final class DOMManifest extends BaseStructure implements Manifest {
         this.references = Collections.unmodifiableList(refs);
     }
 
-    @Override
     public String getId() {
         return id;
     }
@@ -129,18 +131,21 @@ public final class DOMManifest extends BaseStructure implements Manifest {
         return references;
     }
 
-    public static void marshal(XmlWriter xwriter, Manifest manif, String dsPrefix, XMLCryptoContext context)
-    throws MarshalException {
-        xwriter.writeStartElement(dsPrefix, "Manifest", XMLSignature.XMLNS);
-        xwriter.writeIdAttribute("", "", "Id", manif.getId());
+    @Override
+    public void marshal(Node parent, String dsPrefix, DOMCryptoContext context)
+        throws MarshalException
+    {
+        Document ownerDoc = DOMUtils.getOwnerDocument(parent);
+        Element manElem = DOMUtils.createElement(ownerDoc, "Manifest",
+                                                 XMLSignature.XMLNS, dsPrefix);
+
+        DOMUtils.setAttributeID(manElem, "Id", id);
 
         // add references
-        @SuppressWarnings("unchecked")
-        List<Reference> references = manif.getReferences();
         for (Reference ref : references) {
-            ((DOMReference)ref).marshal(xwriter, dsPrefix, context);
+            ((DOMReference)ref).marshal(manElem, dsPrefix, context);
         }
-        xwriter.writeEndElement(); // "Manifest"
+        parent.appendChild(manElem);
     }
 
     @Override
