@@ -2356,9 +2356,11 @@ static gint gtk3_get_color_for_state(JNIEnv *env, WidgetType widget_type,
 
     init_containers();
 
-    if (widget_type == TEXT_FIELD && state_type == GTK_STATE_SELECTED &&
-        color_type == TEXT_BACKGROUND) {
-        widget_type = TEXT_AREA;
+    if (gtk3_version_3_20) {
+        if ((widget_type == TEXT_FIELD || widget_type == PASSWORD_FIELD || widget_type == SPINNER_TEXT_FIELD ||
+            widget_type == FORMATTED_TEXT_FIELD) && state_type == GTK_STATE_SELECTED && color_type == TEXT_BACKGROUND) {
+            widget_type = TEXT_AREA;
+        }
     }
 
     GtkStyleContext* context = NULL;
