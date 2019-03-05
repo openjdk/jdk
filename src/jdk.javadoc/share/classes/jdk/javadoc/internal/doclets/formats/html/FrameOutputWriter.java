@@ -96,6 +96,7 @@ public class FrameOutputWriter extends HtmlDocletWriter {
     protected void generateFrameFile() throws DocFileIOException {
         Content frame = getFrameDetails();
         HtmlTree body = new HtmlTree(HtmlTag.BODY);
+        body.addAttr(HtmlAttr.CLASS, "frames");
         body.addAttr(HtmlAttr.ONLOAD, "loadFrames()");
         String topFilePath = configuration.topFile.getPath();
         Script script = new Script(

@@ -591,7 +591,7 @@ public class TestHtmlVersion extends JavadocTester {
         checkOutput("index.html", true,
                 "<!DOCTYPE HTML>",
                 "<link rel=\"stylesheet\" type=\"text/css\" href=\"stylesheet.css\" title=\"Style\">",
-                "<body onload=\"loadFrames()\">\n"
+                "<body class=\"frames\" onload=\"loadFrames()\">\n"
                 + "<script type=\"text/javascript\">\n"
                 + "if (targetPage == \"\" || targetPage == \"undefined\")\n"
                 + "     window.location.replace('overview-summary.html');\n"

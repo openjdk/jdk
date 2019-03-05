@@ -26,6 +26,7 @@
 package jdk.javadoc.internal.doclets.formats.html;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.Head;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
 
 import java.util.*;
@@ -2197,6 +2198,8 @@ public class HtmlDocletWriter {
      */
     public HtmlTree getBody(boolean includeScript, String title) {
         HtmlTree body = new HtmlTree(HtmlTag.BODY);
+        body.addAttr(HtmlAttr.CLASS, getBodyClass());
+
         // Set window title string which is later printed
         this.winTitle = title;
         // Don't print windowtitle script for overview-frame, allclasses-frame
@@ -2208,6 +2211,15 @@ public class HtmlDocletWriter {
             body.addContent(noScript);
         }
         return body;
+    }
+
+    public String getBodyClass() {
+        return getClass().getSimpleName()
+                .replaceAll("(Writer)?(Impl)?$", "")
+                .replaceAll("AnnotationType", "Class")
+                .replaceAll("(.)([A-Z])", "$1-$2")
+                .replaceAll("(?i)^(module|package|class)$", "$1-declaration")
+                .toLowerCase(Locale.US);
     }
 
     Script getMainBodyScript() {

@@ -37,6 +37,7 @@ import javax.tools.FileObject;
 
 import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.internal.doclets.formats.html.markup.DocType;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlDocument;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
@@ -264,7 +265,7 @@ public class SourceToHTMLConverter {
      * @return the header content for the HTML file
      */
     private static Content getHeader() {
-        return new HtmlTree(HtmlTag.BODY);
+        return new HtmlTree(HtmlTag.BODY).addAttr(HtmlAttr.CLASS, "source");
     }
 
     /**

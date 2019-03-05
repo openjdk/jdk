@@ -107,7 +107,8 @@ public class IndexRedirectWriter extends HtmlDocletWriter {
 
         bodyContent.addContent(HtmlTree.P(HtmlTree.A(targetPath, new StringContent(targetPath))));
 
-        Content body = new HtmlTree(HtmlTag.BODY);
+        Content body = new HtmlTree(HtmlTag.BODY)
+                .addAttr(HtmlAttr.CLASS, "index-redirect");
         HtmlTree main = HtmlTree.MAIN(bodyContent);
         body.addContent(main);
 

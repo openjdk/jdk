@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8218998
+ * @bug 8218998 8219946
  * @summary Add metadata to generated API documentation files
  * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -62,6 +62,7 @@ public class TestMetadata extends JavadocTester {
     enum Source { PACKAGES, MODULES };
 
     final ToolBox tb = new ToolBox();
+    final Set<String> allBodyClassesFound = new HashSet<>();
     final Set<String> allGeneratorsFound = new HashSet<>();
 
     public void runTests() throws Exception {
@@ -93,6 +94,7 @@ public class TestMetadata extends JavadocTester {
                      }
                      javadoc(args.toArray(new String[args.size()]));
                      checkExit(Exit.OK);
+                     checkBodyClasses();
                      checkMetadata();
 
                      // spot check the descriptions for declarations
@@ -126,10 +128,91 @@ public class TestMetadata extends JavadocTester {
             failed("not found: " + notFound);
         }
 
+        checking ("all body classes");
+        if (allBodyClassesFound.equals(allBodyClasses)) {
+            passed("all gbody classes found");
+        } else {
+            Set<String> notFound = new TreeSet<>(allBodyClasses);
+            notFound.removeAll(allBodyClassesFound);
+            failed("not found: " + notFound);
+        }
+
         printSummary();
     }
 
     final Pattern nl = Pattern.compile("[\\r\\n]+");
+    final Pattern bodyPattern = Pattern.compile("<body [^>]*class=\"([^\"]+)\"");
+    final Set<String> allBodyClasses = Set.of(
+        "all-classes-frame",
+        "all-classes-index",
+        "all-packages-index",
+        "class-declaration",
+        "class-use",
+        "constants-summary",
+        "deprecated-list",
+        "doc-file",
+        "frames",
+        "help",
+        "index-redirect",
+        "module-declaration",
+        "module-frame",
+        "module-index",
+        "module-index-frame",
+        "module-package-index-frame",
+        "package-declaration",
+        "package-frame",
+        "package-index",
+        "package-index-frame",
+        "package-tree",
+        "package-use",
+        "serialized-form",
+        "single-index",
+        "source",
+        "split-index",
+        "tree"
+    );
+
+    void checkBodyClasses() throws IOException {
+        Path outputDirPath = outputDir.toPath();
+        for (Path p : tb.findFiles(".html", outputDirPath)) {
+            checkBodyClass(outputDirPath.relativize(p));
+        }
+    }
+
+    void checkBodyClass(Path p) {
+        checking("Check body: " + p);
+
+        List<String> bodyLines = nl.splitAsStream(readOutputFile(p.toString()))
+                .filter(s -> s.contains("<body class="))
+                .collect(Collectors.toList());
+
+        String bodyLine;
+        switch (bodyLines.size()) {
+            case 0:
+                 failed("Not found: <body class=");
+                 return;
+            case 1:
+                 bodyLine = bodyLines.get(0);
+                 break;
+            default:
+                 failed("Multiple found: <body class=");
+                 return;
+        }
+
+        Matcher m = bodyPattern.matcher(bodyLine);
+        if (m.find()) {
+            String bodyClass = m.group(1);
+            if (allBodyClasses.contains(bodyClass)) {
+                passed("found: " + bodyClass);
+                allBodyClassesFound.add(bodyClass);
+            } else {
+                failed("Unrecognized body class: " + bodyClass);
+            }
+        } else {
+            failed("Unrecognized line:\n" + bodyLine);
+        }
+    }
+
     final Pattern contentPattern = Pattern.compile("content=\"([^\"]+)\">");
     final Pattern generatorPattern = Pattern.compile("content=\"javadoc/([^\"]+)\">");
     final Set<String> allGenerators = Set.of(

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,13 +56,13 @@ public class JavascriptWinTitle extends JavadocTester {
         checkExit(Exit.OK);
         checkOutput("overview-summary.html", true,
                 "<script type=\"text/javascript\">",
-                "<body>");
+                "<body class=\"package-index\">");
 
         // Test that "onload" is not present in BODY tag:
-        checkOutput("p1/package-summary.html", true, "<body>");
-        checkOutput("overview-frame.html", true, "<body>");
-        checkOutput("allclasses-frame.html", true, "<body>");
-        checkOutput("p1/package-frame.html", true, "<body>");
+        checkOutput("p1/package-summary.html", true, "<body class=\"package-declaration\">");
+        checkOutput("overview-frame.html", true, "<body class=\"package-index-frame\">");
+        checkOutput("allclasses-frame.html", true, "<body class=\"all-classes-frame\">");
+        checkOutput("p1/package-frame.html", true, "<body class=\"package-frame\">");
 
         // Test that win title javascript is followed by NOSCRIPT code.
         checkOutput("p1/C.html", true,
