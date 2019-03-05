@@ -252,8 +252,9 @@ Please note that running with JCov reporting can be very memory intensive.
 The test concurrency (`-concurrency`).
 
 Defaults to TEST_JOBS (if set by `--with-test-jobs=`), otherwise it defaults to
-JOBS, except for Hotspot, where the default is *number of CPU cores/2*, but
-never more than 12.
+JOBS, except for Hotspot, where the default is *number of CPU cores/2* (for
+sparc, if more than 16 cpus, then *number of CPU cores/5*, otherwise *number of
+CPU cores/4*), but never more than *memory size in GB/2*.
 
 #### TIMEOUT_FACTOR
 The timeout factor (`-timeoutFactor`).
