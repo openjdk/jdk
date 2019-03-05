@@ -479,14 +479,12 @@ void ShenandoahHeap::print_on(outputStream* st) const {
   }
 }
 
-class ShenandoahInitGCLABClosure : public ThreadClosure {
+class ShenandoahInitWorkerGCLABClosure : public ThreadClosure {
 public:
   void do_thread(Thread* thread) {
     assert(thread != NULL, "Sanity");
-    assert(!thread->is_Java_thread(), "Don't expect JavaThread this early");
-    if (thread->is_Worker_thread()) {
-      ShenandoahThreadLocalData::initialize_gclab(thread);
-    }
+    assert(thread->is_Worker_thread(), "Only worker thread expected");
+    ShenandoahThreadLocalData::initialize_gclab(thread);
   }
 };
 
@@ -494,8 +492,8 @@ void ShenandoahHeap::post_initialize() {
   CollectedHeap::post_initialize();
   MutexLocker ml(Threads_lock);
 
-  ShenandoahInitGCLABClosure init_gclabs;
-  Threads::threads_do(&init_gclabs);
+  ShenandoahInitWorkerGCLABClosure init_gclabs;
+  _workers->threads_do(&init_gclabs);
 
   // gclab can not be initialized early during VM startup, as it can not determinate its max_size.
   // Now, we will let WorkGang to initialize gclab when new worker is created.
@@ -1027,7 +1025,6 @@ void ShenandoahHeap::make_parsable(bool retire_tlabs) {
     cl.do_thread(t);
   }
   workers()->threads_do(&cl);
-  _safepoint_workers->threads_do(&cl);
 }
 
 void ShenandoahHeap::resize_tlabs() {
@@ -1113,7 +1110,6 @@ void ShenandoahHeap::retire_and_reset_gclabs() {
     cl.do_thread(t);
   }
   workers()->threads_do(&cl);
-  _safepoint_workers->threads_do(&cl);
 }
 
 void ShenandoahHeap::collect(GCCause::Cause cause) {
