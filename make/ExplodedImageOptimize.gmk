@@ -29,19 +29,21 @@ default: all
 
 include $(SPEC)
 include MakeBase.gmk
+include Execute.gmk
 include $(TOPDIR)/make/ModuleTools.gmk
 
 ################################################################################
 
-PACKAGES_ATTRIBUTE_TARGET := $(JDK_OUTPUTDIR)/_packages_attribute.done
 ALL_MODULEINFO_CLASSES := $(wildcard $(JDK_OUTPUTDIR)/modules/*/module-info.class)
 
-$(PACKAGES_ATTRIBUTE_TARGET): $(ALL_MODULEINFO_CLASSES) $(BUILD_JIGSAW_CLASSES)
-	$(call LogInfo, Optimizing the exploded image)
-	$(call ExecuteWithLog, $@, $(TOOL_ADD_PACKAGES_ATTRIBUTE) $(JDK_OUTPUTDIR))
-	$(TOUCH) $@
+$(eval $(call SetupExecute, optimize_image, \
+    INFO := Optimizing the exploded image, \
+    DEPS := $(ALL_MODULEINFO_CLASSES) $(BUILD_JIGSAW_CLASSES), \
+    OUTPUT_DIR := $(JDK_OUTPUTDIR), \
+    COMMAND := $(TOOL_ADD_PACKAGES_ATTRIBUTE) $(JDK_OUTPUTDIR), \
+))
 
-TARGETS := $(PACKAGES_ATTRIBUTE_TARGET)
+TARGETS := $(optimize_image_TARGET)
 
 ################################################################################
 

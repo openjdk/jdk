@@ -1,4 +1,4 @@
-# Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ default: all
 
 include $(SPEC)
 include MakeBase.gmk
+include Execute.gmk
 include Modules.gmk
 
 ifeq ($(MODULE), )
@@ -37,7 +38,8 @@ $(eval $(call IncludeCustomExtension, CreateJmods.gmk))
 ################################################################################
 
 JMODS_DIR := $(IMAGES_OUTPUTDIR)/jmods
-JMODS_TEMPDIR := $(SUPPORT_OUTPUTDIR)/jmods
+JMODS_SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/images/jmods
+JMOD_FILE := $(MODULE).jmod
 
 LIBS_DIR ?= $(firstword $(wildcard $(addsuffix /$(MODULE), \
     $(SUPPORT_OUTPUTDIR)/modules_libs $(IMPORT_MODULES_LIBS))))
@@ -152,26 +154,27 @@ endif
 # to avoid false incremental rebuilds.
 ifeq ($(INTERIM_JMOD), true)
   DEPS := $(filter-out $(SUPPORT_OUTPUTDIR)/modules_libs/java.base/classlist, $(DEPS))
+  INTERIM_MSG := interim$(SPACE)
 endif
 
 JMOD_FLAGS += --exclude '**{_the.*,_*.marker,*.diz,*.debuginfo,*.dSYM/**,*.dSYM,*.pdb,*.map}'
 
-# Create jmods in a temp dir and then move them into place to keep the
+# Create jmods in the support dir and then move them into place to keep the
 # module path in $(IMAGES_OUTPUTDIR)/jmods valid at all times.
-$(JMODS_DIR)/$(MODULE).jmod: $(DEPS)
-	$(call LogWarn, Creating $(patsubst $(OUTPUTDIR)/%, %, $@))
-	$(call MakeDir, $(JMODS_DIR) $(JMODS_TEMPDIR))
-	$(RM) $@ $(JMODS_TEMPDIR)/$(notdir $@)
-	$(call ExecuteWithLog, $(SUPPORT_OUTPUTDIR)/jmods/$(MODULE).jmod, \
-	    $(JMOD) create \
-	        --module-version $(VERSION_SHORT) \
-	        --target-platform '$(OPENJDK_MODULE_TARGET_PLATFORM)' \
-	        --module-path $(JMODS_DIR) \
-	        $(JMOD_FLAGS) $(JMODS_TEMPDIR)/$(notdir $@) \
-	)
-	$(MV) $(JMODS_TEMPDIR)/$(notdir $@) $@
+$(eval $(call SetupExecute, create_$(JMOD_FILE), \
+    WARN := Creating $(INTERIM_MSG)$(JMOD_FILE), \
+    DEPS := $(DEPS), \
+    OUTPUT_FILE := $(JMODS_DIR)/$(JMOD_FILE), \
+    SUPPORT_DIR := $(JMODS_SUPPORT_DIR), \
+    PRE_COMMAND := $(RM) $(JMODS_DIR)/$(JMOD_FILE) $(JMODS_SUPPORT_DIR)/$(JMOD_FILE), \
+    COMMAND := $(JMOD) create --module-version $(VERSION_SHORT) \
+        --target-platform '$(OPENJDK_MODULE_TARGET_PLATFORM)' \
+        --module-path $(JMODS_DIR) $(JMOD_FLAGS) \
+        $(JMODS_SUPPORT_DIR)/$(JMOD_FILE), \
+    POST_COMMAND := $(MV) $(JMODS_SUPPORT_DIR)/$(JMOD_FILE) $(JMODS_DIR)/$(JMOD_FILE), \
+))
 
-TARGETS += $(JMODS_DIR)/$(MODULE).jmod
+TARGETS += $(create_$(JMOD_FILE))
 
 ################################################################################
 
