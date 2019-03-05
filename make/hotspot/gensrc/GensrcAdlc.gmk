@@ -204,6 +204,6 @@ ifeq ($(call check-jvm-feature, compiler2), true)
 	     {print}' \
 	    < $(ADLC_SUPPORT_DIR)/$* > $@
 
-  TARGETS := $(ADLC_GENERATED_FILES)
+  TARGETS += $(ADLC_GENERATED_FILES)
 
 endif
