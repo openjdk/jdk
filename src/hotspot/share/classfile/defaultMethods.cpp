@@ -153,7 +153,7 @@ class HierarchyVisitor : StackObj {
     }
   };
 
-  bool _cancelled;
+  bool _visited_Object;
   GrowableArray<Node*> _path;
 
   Node* current_top() const { return _path.top(); }
@@ -161,22 +161,19 @@ class HierarchyVisitor : StackObj {
   void push(InstanceKlass* cls, void* data) {
     assert(cls != NULL, "Requires a valid instance class");
     Node* node = new Node(cls, data, has_super(cls));
+    if (cls == SystemDictionary::Object_klass()) {
+      _visited_Object = true;
+    }
     _path.push(node);
   }
   void pop() { _path.pop(); }
 
-  void reset_iteration() {
-    _cancelled = false;
-    _path.clear();
-  }
-  bool is_cancelled() const { return _cancelled; }
-
-  // This code used to skip interface classes because their only
-  // superclass was j.l.Object which would be also covered by class
-  // superclass hierarchy walks. Now that the starting point can be
-  // an interface, we must ensure we catch j.l.Object as the super.
-  static bool has_super(InstanceKlass* cls) {
-    return cls->super() != NULL;
+  // Since the starting point can be an interface, we must ensure we catch
+  // j.l.Object as the super once in those cases. The _visited_Object flag
+  // only ensures we don't then repeatedly enqueue Object for each interface
+  // in the class hierarchy.
+  bool has_super(InstanceKlass* cls) {
+    return cls->super() != NULL && (!_visited_Object || !cls->is_interface());
   }
 
   Node* node_at_depth(int i) const {
@@ -200,14 +197,10 @@ class HierarchyVisitor : StackObj {
   }
   void* current_data() { return data_at_depth(0); }
 
-  void cancel_iteration() { _cancelled = true; }
-
  public:
 
   void run(InstanceKlass* root) {
     ALGO* algo = static_cast<ALGO*>(this);
-
-    reset_iteration();
 
     void* algo_data = algo->new_node_data(root);
     push(root, algo_data);
@@ -242,7 +235,7 @@ class HierarchyVisitor : StackObj {
         push(next, algo_data);
         top_needs_visit = true;
       }
-    } while (!is_cancelled() && has_more_nodes());
+    } while (has_more_nodes());
   }
 };
 
@@ -444,15 +437,6 @@ class MethodFamily : public ResourceObj {
     }
   }
 
-  bool contains_signature(Symbol* query) {
-    for (int i = 0; i < _members.length(); ++i) {
-      if (query == _members.at(i).first->signature()) {
-        return true;
-      }
-    }
-    return false;
-  }
-
   void print_selected(outputStream* str, int indent) const {
     assert(has_target(), "Should be called otherwise");
     streamIndentor si(str, indent * 2);
@@ -521,22 +505,16 @@ class StatefulMethodFamily : public ResourceObj {
   }
 
  protected:
-  MethodFamily* _method_family;
+  MethodFamily _method_family;
 
  public:
   StatefulMethodFamily() {
-   _method_family = new MethodFamily();
    _qualification_state = QUALIFIED;
   }
 
-  StatefulMethodFamily(MethodFamily* mf) {
-   _method_family = mf;
-   _qualification_state = QUALIFIED;
-  }
+  void set_target_if_empty(Method* m) { _method_family.set_target_if_empty(m); }
 
-  void set_target_if_empty(Method* m) { _method_family->set_target_if_empty(m); }
-
-  MethodFamily* get_method_family() { return _method_family; }
+  MethodFamily* get_method_family() { return &_method_family; }
 
   StateRestorer* record_method_and_dq_further(Method* mo);
 };
@@ -556,9 +534,9 @@ class StateRestorer : public PseudoScopeMark {
 StateRestorer* StatefulMethodFamily::record_method_and_dq_further(Method* mo) {
   StateRestorer* mark = new StateRestorer(this, _qualification_state);
   if (_qualification_state == QUALIFIED) {
-    _method_family->record_qualified_method(mo);
+    _method_family.record_qualified_method(mo);
   } else {
-    _method_family->record_disqualified_method(mo);
+    _method_family.record_disqualified_method(mo);
   }
   // Everything found "above"??? this method in the hierarchy walk is set to
   // disqualified
@@ -606,12 +584,10 @@ static bool already_in_vtable_slots(GrowableArray<EmptyVtableSlot*>* slots, Meth
   return found;
 }
 
-static GrowableArray<EmptyVtableSlot*>* find_empty_vtable_slots(
+static void find_empty_vtable_slots(GrowableArray<EmptyVtableSlot*>* slots,
     InstanceKlass* klass, const GrowableArray<Method*>* mirandas, TRAPS) {
 
   assert(klass != NULL, "Must be valid class");
-
-  GrowableArray<EmptyVtableSlot*>* slots = new GrowableArray<EmptyVtableSlot*>();
 
   // All miranda methods are obvious candidates
   for (int i = 0; i < mirandas->length(); ++i) {
@@ -632,9 +608,9 @@ static GrowableArray<EmptyVtableSlot*>* find_empty_vtable_slots(
         // default method processing that occurred on behalf of our superclass,
         // so it's a method we want to re-examine in this new context.  That is,
         // unless we have a real implementation of it in the current class.
-        Method* impl = klass->lookup_method(m->name(), m->signature());
-        if (impl == NULL || impl->is_overpass() || impl->is_static()) {
-          if (!already_in_vtable_slots(slots, m)) {
+        if (!already_in_vtable_slots(slots, m)) {
+          Method *impl = klass->lookup_method(m->name(), m->signature());
+          if (impl == NULL || impl->is_overpass() || impl->is_static()) {
             slots->append(new EmptyVtableSlot(m));
           }
         }
@@ -649,9 +625,9 @@ static GrowableArray<EmptyVtableSlot*>* find_empty_vtable_slots(
         // default method processing that occurred on behalf of our superclass,
         // so it's a method we want to re-examine in this new context.  That is,
         // unless we have a real implementation of it in the current class.
-        Method* impl = klass->lookup_method(m->name(), m->signature());
-        if (impl == NULL || impl->is_overpass() || impl->is_static()) {
-          if (!already_in_vtable_slots(slots, m)) {
+        if (!already_in_vtable_slots(slots, m)) {
+          Method* impl = klass->lookup_method(m->name(), m->signature());
+          if (impl == NULL || impl->is_overpass() || impl->is_static()) {
             slots->append(new EmptyVtableSlot(m));
           }
         }
@@ -672,8 +648,6 @@ static GrowableArray<EmptyVtableSlot*>* find_empty_vtable_slots(
       ls.cr();
     }
   }
-
-  return slots;
 }
 
 // Iterates over the superinterface type hierarchy looking for all methods
@@ -749,8 +723,7 @@ static void create_defaults_and_exceptions(
     GrowableArray<EmptyVtableSlot*>* slots, InstanceKlass* klass, TRAPS);
 
 static void generate_erased_defaults(
-     InstanceKlass* klass, GrowableArray<EmptyVtableSlot*>* empty_slots,
-     EmptyVtableSlot* slot, bool is_intf, TRAPS) {
+     InstanceKlass* klass, EmptyVtableSlot* slot, bool is_intf, TRAPS) {
 
   // sets up a set of methods with the same exact erased signature
   FindMethodsByErasedSig visitor(slot->name(), slot->signature(), is_intf);
@@ -784,6 +757,7 @@ static void create_default_methods( InstanceKlass* klass,
 void DefaultMethods::generate_default_methods(
     InstanceKlass* klass, const GrowableArray<Method*>* mirandas, TRAPS) {
   assert(klass != NULL, "invariant");
+  assert(klass != SystemDictionary::Object_klass(), "Shouldn't be called for Object");
 
   // This resource mark is the bound for all memory allocation that takes
   // place during default method processing.  After this goes out of scope,
@@ -809,23 +783,25 @@ void DefaultMethods::generate_default_methods(
     printer.run(klass);
   }
 
-  GrowableArray<EmptyVtableSlot*>* empty_slots =
-      find_empty_vtable_slots(klass, mirandas, CHECK);
+  GrowableArray<EmptyVtableSlot*> empty_slots;
+  find_empty_vtable_slots(&empty_slots, klass, mirandas, CHECK);
 
-  for (int i = 0; i < empty_slots->length(); ++i) {
-    EmptyVtableSlot* slot = empty_slots->at(i);
-    LogTarget(Debug, defaultmethods) lt;
-    if (lt.is_enabled()) {
-      LogStream ls(lt);
-      streamIndentor si(&ls, 2);
-      ls.indent().print("Looking for default methods for slot ");
-      slot->print_on(&ls);
-      ls.cr();
+  if (empty_slots.length() > 0) {
+    for (int i = 0; i < empty_slots.length(); ++i) {
+      EmptyVtableSlot* slot = empty_slots.at(i);
+      LogTarget(Debug, defaultmethods) lt;
+      if (lt.is_enabled()) {
+        LogStream ls(lt);
+        streamIndentor si(&ls, 2);
+        ls.indent().print("Looking for default methods for slot ");
+        slot->print_on(&ls);
+        ls.cr();
+      }
+      generate_erased_defaults(klass, slot, klass->is_interface(), CHECK);
     }
-    generate_erased_defaults(klass, empty_slots, slot, klass->is_interface(), CHECK);
+    log_debug(defaultmethods)("Creating defaults and overpasses...");
+    create_defaults_and_exceptions(&empty_slots, klass, CHECK);
   }
-  log_debug(defaultmethods)("Creating defaults and overpasses...");
-  create_defaults_and_exceptions(empty_slots, klass, CHECK);
   log_debug(defaultmethods)("Default method processing complete");
 }
 
@@ -914,8 +890,7 @@ static void switchover_constant_pool(BytecodeConstantPool* bpool,
 // throwing methods then the loader constraint checking logic for vtable and
 // itable creation needs to be changed to check loader constraints for the
 // overpass methods that do not throw exceptions.
-static void create_defaults_and_exceptions(
-    GrowableArray<EmptyVtableSlot*>* slots,
+static void create_defaults_and_exceptions(GrowableArray<EmptyVtableSlot*>* slots,
     InstanceKlass* klass, TRAPS) {
 
   GrowableArray<Method*> overpasses;
@@ -979,7 +954,7 @@ static void create_defaults_and_exceptions(
   }
 }
 
-static void create_default_methods( InstanceKlass* klass,
+static void create_default_methods(InstanceKlass* klass,
     GrowableArray<Method*>* new_methods, TRAPS) {
 
   int new_size = new_methods->length();
