@@ -1774,23 +1774,18 @@ class G1RemarkThreadsClosure : public ThreadClosure {
     _thread_parity(Threads::thread_claim_parity()) {}
 
   void do_thread(Thread* thread) {
-    if (thread->is_Java_thread()) {
-      if (thread->claim_oops_do(true, _thread_parity)) {
-        JavaThread* jt = (JavaThread*)thread;
-
+    if (thread->claim_oops_do(true, _thread_parity)) {
+      SATBMarkQueue& queue = G1ThreadLocalData::satb_mark_queue(thread);
+      queue.apply_closure_and_empty(&_cm_satb_cl);
+      if (thread->is_Java_thread()) {
         // In theory it should not be neccessary to explicitly walk the nmethods to find roots for concurrent marking
         // however the liveness of oops reachable from nmethods have very complex lifecycles:
         // * Alive if on the stack of an executing method
         // * Weakly reachable otherwise
         // Some objects reachable from nmethods, such as the class loader (or klass_holder) of the receiver should be
         // live by the SATB invariant but other oops recorded in nmethods may behave differently.
+        JavaThread* jt = (JavaThread*)thread;
         jt->nmethods_do(&_code_cl);
-
-        G1ThreadLocalData::satb_mark_queue(jt).apply_closure_and_empty(&_cm_satb_cl);
-      }
-    } else if (thread->is_VM_thread()) {
-      if (thread->claim_oops_do(true, _thread_parity)) {
-        G1BarrierSet::satb_mark_queue_set().shared_satb_queue()->apply_closure_and_empty(&_cm_satb_cl);
       }
     }
   }

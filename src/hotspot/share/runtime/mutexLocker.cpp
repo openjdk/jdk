@@ -80,7 +80,6 @@ Monitor* CGC_lock                     = NULL;
 Monitor* STS_lock                     = NULL;
 Monitor* FullGCCount_lock             = NULL;
 Monitor* SATB_Q_CBL_mon               = NULL;
-Mutex*   Shared_SATB_Q_lock           = NULL;
 Monitor* DirtyCardQ_CBL_mon           = NULL;
 Mutex*   Shared_DirtyCardQ_lock       = NULL;
 Mutex*   MarkStackFreeList_lock       = NULL;
@@ -216,7 +215,6 @@ void mutex_init() {
   }
   if (UseG1GC) {
     def(SATB_Q_CBL_mon             , PaddedMonitor, access,      true,  Monitor::_safepoint_check_never);
-    def(Shared_SATB_Q_lock         , PaddedMutex  , access + 1,  true,  Monitor::_safepoint_check_never);
 
     def(DirtyCardQ_CBL_mon         , PaddedMonitor, access,      true,  Monitor::_safepoint_check_never);
     def(Shared_DirtyCardQ_lock     , PaddedMutex  , access + 1,  true,  Monitor::_safepoint_check_never);
@@ -235,7 +233,6 @@ void mutex_init() {
   }
   if (UseShenandoahGC) {
     def(SATB_Q_CBL_mon             , PaddedMonitor, access,      true,  Monitor::_safepoint_check_never);
-    def(Shared_SATB_Q_lock         , PaddedMutex  , access + 1,  true,  Monitor::_safepoint_check_never);
 
     def(StringDedupQueue_lock      , PaddedMonitor, leaf,        true,  Monitor::_safepoint_check_never);
     def(StringDedupTable_lock      , PaddedMutex  , leaf,        true,  Monitor::_safepoint_check_never);

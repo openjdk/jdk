@@ -1676,8 +1676,7 @@ jint G1CollectedHeap::initialize() {
                                                  SATB_Q_CBL_mon,
                                                  &bs->satb_mark_queue_buffer_allocator(),
                                                  G1SATBProcessCompletedThreshold,
-                                                 G1SATBBufferEnqueueingThresholdPercent,
-                                                 Shared_SATB_Q_lock);
+                                                 G1SATBBufferEnqueueingThresholdPercent);
 
   // process_completed_buffers_threshold and max_completed_buffers are updated
   // later, based on the concurrent refinement object.
@@ -2612,16 +2611,20 @@ void G1CollectedHeap::do_concurrent_mark() {
 }
 
 size_t G1CollectedHeap::pending_card_num() {
-  size_t extra_cards = 0;
-  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *curr = jtiwh.next(); ) {
-    G1DirtyCardQueue& dcq = G1ThreadLocalData::dirty_card_queue(curr);
-    extra_cards += dcq.size();
-  }
+  struct CountCardsClosure : public ThreadClosure {
+    size_t _cards;
+    CountCardsClosure() : _cards(0) {}
+    virtual void do_thread(Thread* t) {
+      _cards += G1ThreadLocalData::dirty_card_queue(t).size();
+    }
+  } count_from_threads;
+  Threads::threads_do(&count_from_threads);
+
   G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
   size_t buffer_size = dcqs.buffer_size();
   size_t buffer_num = dcqs.completed_buffers_num();
 
-  return buffer_size * buffer_num + extra_cards;
+  return buffer_size * buffer_num + count_from_threads._cards;
 }
 
 bool G1CollectedHeap::is_potential_eager_reclaim_candidate(HeapRegion* r) const {

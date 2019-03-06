@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,8 @@ public:
 
   virtual void on_thread_create(Thread* thread);
   virtual void on_thread_destroy(Thread* thread);
-  virtual void on_thread_attach(JavaThread* thread);
-  virtual void on_thread_detach(JavaThread* thread);
+  virtual void on_thread_attach(Thread* thread);
+  virtual void on_thread_detach(Thread* thread);
 
   virtual void print_on(outputStream* st) const {}
 

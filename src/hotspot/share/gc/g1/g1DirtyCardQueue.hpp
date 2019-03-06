@@ -30,7 +30,7 @@
 
 class G1DirtyCardQueueSet;
 class G1FreeIdSet;
-class JavaThread;
+class Thread;
 class Monitor;
 
 // A closure class for processing card table entries.  Note that we don't
@@ -128,7 +128,7 @@ public:
   // mutator threads to do card-processing work.
   static uint num_par_ids();
 
-  static void handle_zero_index_for_thread(JavaThread* t);
+  static void handle_zero_index_for_thread(Thread* t);
 
   // Apply G1RefineCardConcurrentlyClosure to completed buffers until there are stop_at
   // completed buffers remaining.

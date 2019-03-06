@@ -180,9 +180,8 @@ jint ShenandoahHeap::initialize() {
   // belong into a shared location.
   ShenandoahBarrierSet::satb_mark_queue_set().initialize(this,
                                                SATB_Q_CBL_mon,
-                                               20 /*G1SATBProcessCompletedThreshold */,
-                                               60 /* G1SATBBufferEnqueueingThresholdPercent */,
-                                               Shared_SATB_Q_lock);
+                                               20 /* G1SATBProcessCompletedThreshold */,
+                                               60 /* G1SATBBufferEnqueueingThresholdPercent */);
 
   // Reserve space for prev and next bitmap.
   size_t bitmap_page_size = UseLargePages ? (size_t)os::large_page_size() : (size_t)os::vm_page_size();

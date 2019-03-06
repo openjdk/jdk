@@ -1311,7 +1311,9 @@ void NonJavaThread::remove_from_the_list() {
 }
 
 void NonJavaThread::pre_run() {
+  // Initialize BarrierSet-related data before adding to list.
   assert(BarrierSet::barrier_set() != NULL, "invariant");
+  BarrierSet::barrier_set()->on_thread_attach(this);
   add_to_the_list();
 
   // This is slightly odd in that NamedThread is a subclass, but
@@ -1322,6 +1324,8 @@ void NonJavaThread::pre_run() {
 
 void NonJavaThread::post_run() {
   JFR_ONLY(Jfr::on_thread_exit(this);)
+  // Clean up BarrierSet data before removing from list.
+  BarrierSet::barrier_set()->on_thread_detach(this);
   remove_from_the_list();
   // Ensure thread-local-storage is cleared before termination.
   Thread::clear_thread_current();

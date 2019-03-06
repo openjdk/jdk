@@ -102,7 +102,7 @@ class CardTableBarrierSet: public ModRefBarrierSet {
   virtual bool card_mark_must_follow_store() const;
 
   virtual void on_slowpath_allocation_exit(JavaThread* thread, oop new_obj);
-  virtual void on_thread_detach(JavaThread* thread);
+  virtual void on_thread_detach(Thread* thread);
 
   virtual void make_parsable(JavaThread* thread) { flush_deferred_card_mark_barrier(thread); }
 

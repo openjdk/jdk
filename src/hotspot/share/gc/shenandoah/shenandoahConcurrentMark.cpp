@@ -227,15 +227,8 @@ public:
     _thread_parity(Threads::thread_claim_parity()) {}
 
   void do_thread(Thread* thread) {
-    if (thread->is_Java_thread()) {
-      if (thread->claim_oops_do(true, _thread_parity)) {
-        JavaThread* jt = (JavaThread*)thread;
-        ShenandoahThreadLocalData::satb_mark_queue(jt).apply_closure_and_empty(_satb_cl);
-      }
-    } else if (thread->is_VM_thread()) {
-      if (thread->claim_oops_do(true, _thread_parity)) {
-        ShenandoahBarrierSet::satb_mark_queue_set().shared_satb_queue()->apply_closure_and_empty(_satb_cl);
-      }
+    if (thread->claim_oops_do(true, _thread_parity)) {
+      ShenandoahThreadLocalData::satb_mark_queue(thread).apply_closure_and_empty(_satb_cl);
     }
   }
 };
