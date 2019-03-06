@@ -240,6 +240,8 @@ private:
   static jlong _last_safepoint_sync_time_ns;
   static jlong _last_safepoint_cleanup_time_ns;
   static jlong _last_safepoint_end_time_ns;
+  // amount of ms since epoch
+  static jlong _last_safepoint_end_time_epoch_ms;
   // Relative
   static jlong _last_app_time_ns;
 
@@ -268,8 +270,8 @@ public:
     return (os::javaTimeNanos() - _last_safepoint_end_time_ns) / (NANOUNITS / MILLIUNITS);
   }
 
-  static jlong end_of_last_safepoint_ms() {
-    return _last_safepoint_end_time_ns / (NANOUNITS / MILLIUNITS);
+  static jlong end_of_last_safepoint_epoch_ms() {
+    return _last_safepoint_end_time_epoch_ms;
   }
 
   static jlong start_of_safepoint() {
