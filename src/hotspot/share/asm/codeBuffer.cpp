@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1029,25 +1029,9 @@ void CodeBuffer::log_section_sizes(const char* name) {
 
 #ifndef PRODUCT
 
-void CodeSection::dump() {
-  address ptr = start();
-  for (csize_t step; ptr < end(); ptr += step) {
-    step = end() - ptr;
-    if (step > jintSize * 4)  step = jintSize * 4;
-    tty->print(INTPTR_FORMAT ": ", p2i(ptr));
-    while (step > 0) {
-      tty->print(" " PTR32_FORMAT, *(jint*)ptr);
-      ptr += jintSize;
-    }
-    tty->cr();
-  }
-}
-
-
 void CodeSection::decode() {
   Disassembler::decode(start(), end());
 }
-
 
 void CodeBuffer::block_comment(intptr_t offset, const char * comment) {
   _code_strings.add_comment(offset, comment);
@@ -1204,26 +1188,6 @@ void CodeBuffer::decode() {
   Disassembler::decode(decode_begin(), insts_end());
   _decode_begin = insts_end();
 }
-
-
-void CodeBuffer::skip_decode() {
-  _decode_begin = insts_end();
-}
-
-
-void CodeBuffer::decode_all() {
-  ttyLocker ttyl;
-  for (int n = 0; n < (int)SECT_LIMIT; n++) {
-    // dump contents of each section
-    CodeSection* cs = code_section(n);
-    tty->print_cr("! %s:", code_section_name(n));
-    if (cs != consts())
-      cs->decode();
-    else
-      cs->dump();
-  }
-}
-
 
 void CodeSection::print(const char* name) {
   csize_t locs_size = locs_end() - locs_start();
