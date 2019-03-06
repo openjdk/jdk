@@ -1241,8 +1241,8 @@ bool SuperWord::isomorphic(Node* s1, Node* s2) {
     // Therefore, if the control nodes for both are range checks, we accept them to be isomorphic.
     for (DUIterator_Fast imax, i = s1->fast_outs(imax); i < imax; i++) {
       Node* t1 = s1->fast_out(i);
-      for (DUIterator_Fast imax, i = s2->fast_outs(imax); i < imax; i++) {
-        Node* t2 = s2->fast_out(i);
+      for (DUIterator_Fast jmax, j = s2->fast_outs(jmax); j < jmax; j++) {
+        Node* t2 = s2->fast_out(j);
         if (VectorNode::is_muladds2i(t1) && VectorNode::is_muladds2i(t2)) {
           return true;
         }
