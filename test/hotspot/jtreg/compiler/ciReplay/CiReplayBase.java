@@ -294,7 +294,7 @@ public abstract class CiReplayBase {
         try {
             String cmd = ProcessTools.getCommandLine(ProcessTools.createJavaProcessBuilder(true, args));
             return new String[]{"sh", "-c", prefix
-                    + (Platform.isWindows() ? cmd.replace('\\', '/').replace(";", "\\;") : cmd)};
+                + (Platform.isWindows() ? cmd.replace('\\', '/').replace(";", "\\;").replace("|", "\\|") : cmd)};
         } catch(Throwable t) {
             throw new Error("Can't create process builder: " + t, t);
         }
