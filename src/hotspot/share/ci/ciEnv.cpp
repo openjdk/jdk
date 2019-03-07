@@ -119,6 +119,9 @@ ciEnv::ciEnv(CompileTask* task, int system_dictionary_modification_counter)
   _system_dictionary_modification_counter = system_dictionary_modification_counter;
   _num_inlined_bytecodes = 0;
   assert(task == NULL || thread->task() == task, "sanity");
+  if (task != NULL) {
+    task->mark_started(os::elapsed_counter());
+  }
   _task = task;
   _log = NULL;
 
