@@ -679,7 +679,9 @@ void GenCollectedHeap::do_collection(bool           full,
     // Track memory usage and detect low memory after GC finishes
     MemoryService::track_memory_usage();
 
-    gc_epilogue(complete);
+    // Need to tell the epilogue code we are done with Full GC, regardless what was
+    // the initial value for "complete" flag.
+    gc_epilogue(true);
 
     BiasedLocking::restore_marks();
 
