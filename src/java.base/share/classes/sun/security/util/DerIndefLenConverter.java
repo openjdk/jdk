@@ -94,37 +94,41 @@ class DerIndefLenConverter {
     private void parseTag() throws IOException {
         if (dataPos == dataSize)
             return;
-        if (isEOC(data[dataPos]) && (data[dataPos + 1] == 0)) {
-            int numOfEncapsulatedLenBytes = 0;
-            Object elem = null;
-            int index;
-            for (index = ndefsList.size()-1; index >= 0; index--) {
-                // Determine the first element in the vector that does not
-                // have a matching EOC
-                elem = ndefsList.get(index);
-                if (elem instanceof Integer) {
-                    break;
-                } else {
-                    numOfEncapsulatedLenBytes += ((byte[])elem).length - 3;
+        try {
+            if (isEOC(data[dataPos]) && (data[dataPos + 1] == 0)) {
+                int numOfEncapsulatedLenBytes = 0;
+                Object elem = null;
+                int index;
+                for (index = ndefsList.size()-1; index >= 0; index--) {
+                    // Determine the first element in the vector that does not
+                    // have a matching EOC
+                    elem = ndefsList.get(index);
+                    if (elem instanceof Integer) {
+                        break;
+                    } else {
+                        numOfEncapsulatedLenBytes += ((byte[])elem).length - 3;
+                    }
                 }
-            }
-            if (index < 0) {
-                throw new IOException("EOC does not have matching " +
-                                      "indefinite-length tag");
-            }
-            int sectionLen = dataPos - ((Integer)elem).intValue() +
-                             numOfEncapsulatedLenBytes;
-            byte[] sectionLenBytes = getLengthBytes(sectionLen);
-            ndefsList.set(index, sectionLenBytes);
-            unresolved--;
+                if (index < 0) {
+                    throw new IOException("EOC does not have matching " +
+                                          "indefinite-length tag");
+                }
+                int sectionLen = dataPos - ((Integer)elem).intValue() +
+                                 numOfEncapsulatedLenBytes;
+                byte[] sectionLenBytes = getLengthBytes(sectionLen);
+                ndefsList.set(index, sectionLenBytes);
+                unresolved--;
 
-            // Add the number of bytes required to represent this section
-            // to the total number of length bytes,
-            // and subtract the indefinite-length tag (1 byte) and
-            // EOC bytes (2 bytes) for this section
-            numOfTotalLenBytes += (sectionLenBytes.length - 3);
+                // Add the number of bytes required to represent this section
+                // to the total number of length bytes,
+                // and subtract the indefinite-length tag (1 byte) and
+                // EOC bytes (2 bytes) for this section
+                numOfTotalLenBytes += (sectionLenBytes.length - 3);
+            }
+            dataPos++;
+        } catch (IndexOutOfBoundsException iobe) {
+            throw new IOException(iobe);
         }
-        dataPos++;
     }
 
     /**
