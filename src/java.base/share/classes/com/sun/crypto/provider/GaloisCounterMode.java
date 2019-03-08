@@ -399,7 +399,6 @@ final class GaloisCounterMode extends FeedbackCipher {
         if (len > TRIGGERLEN) {
             int i = 0;
             int tlen;  // incremental lengths
-            // 96bit CTR x86 intrinsic
             final int plen = AES_BLOCK_SIZE * 6;
             // arbitrary formula to aid intrinsic without reaching buffer end
             final int count = len / 1024;
@@ -419,11 +418,11 @@ final class GaloisCounterMode extends FeedbackCipher {
         gctrPAndC.doFinal(in, inOfs, ilen, out, outOfs);
         processed += ilen;
 
-        int lastLen = len  % AES_BLOCK_SIZE;
+        int lastLen = ilen % AES_BLOCK_SIZE;
         if (lastLen != 0) {
-            ghashAllToS.update(ct, ctOfs, len - lastLen);
+            ghashAllToS.update(ct, ctOfs, ilen - lastLen);
             ghashAllToS.update(
-                    expandToOneBlock(ct, (ctOfs + len - lastLen), lastLen));
+                    expandToOneBlock(ct, (ctOfs + ilen - lastLen), lastLen));
         } else {
             ghashAllToS.update(ct, ctOfs, ilen);
         }

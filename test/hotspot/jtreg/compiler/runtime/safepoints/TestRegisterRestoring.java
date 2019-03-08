@@ -26,8 +26,8 @@
  * @bug 8148490
  * @summary Test correct saving and restoring of vector registers at safepoints.
  *
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xbatch -XX:-TieredCompilation
- *                   -XX:+SafepointALot
+ * @run main/othervm -Xbatch -XX:-TieredCompilation
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+SafepointALot
  *                   -XX:CompileCommand=exclude,compiler.runtime.safepoints.TestRegisterRestoring::main
  *                   compiler.runtime.safepoints.TestRegisterRestoring
  */

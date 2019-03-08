@@ -367,7 +367,7 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
           "Print out every time compilation is longer than "                \
           "a given threshold")                                              \
                                                                             \
-  develop(bool, SafepointALot, false,                                       \
+  diagnostic(bool, SafepointALot, false,                                    \
           "Generate a lot of safepoints. This works with "                  \
           "GuaranteedSafepointInterval")                                    \
                                                                             \

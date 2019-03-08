@@ -902,6 +902,16 @@ void SafepointSynchronize::print_safepoint_timeout() {
   // To debug the long safepoint, specify both AbortVMOnSafepointTimeout &
   // ShowMessageBoxOnError.
   if (AbortVMOnSafepointTimeout) {
+    // Send the blocking thread a signal to terminate and write an error file.
+    for (JavaThreadIteratorWithHandle jtiwh; JavaThread *cur_thread = jtiwh.next(); ) {
+      if (cur_thread->safepoint_state()->is_running()) {
+        if (!os::signal_thread(cur_thread, SIGILL, "blocking a safepoint")) {
+          break; // Could not send signal. Report fatal error.
+        }
+        // Give cur_thread a chance to report the error and terminate the VM.
+        os::sleep(Thread::current(), 3000, false);
+      }
+    }
     fatal("Safepoint sync time longer than " INTX_FORMAT "ms detected when executing %s.",
           SafepointTimeoutDelay, VMThread::vm_operation()->name());
   }

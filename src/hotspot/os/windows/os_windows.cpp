@@ -1797,6 +1797,11 @@ void os::print_memory_info(outputStream* st) {
   st->cr();
 }
 
+bool os::signal_sent_by_kill(const void* siginfo) {
+  // TODO: Is this possible?
+  return false;
+}
+
 void os::print_siginfo(outputStream *st, const void* siginfo) {
   const EXCEPTION_RECORD* const er = (EXCEPTION_RECORD*)siginfo;
   st->print("siginfo:");
@@ -1828,6 +1833,11 @@ void os::print_siginfo(outputStream *st, const void* siginfo) {
     }
   }
   st->cr();
+}
+
+bool os::signal_thread(Thread* thread, int sig, const char* reason) {
+  // TODO: Can we kill thread?
+  return false;
 }
 
 void os::print_signal_handlers(outputStream* st, char* buf, size_t buflen) {
