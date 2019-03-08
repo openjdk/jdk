@@ -52,7 +52,6 @@ class ClassFileStream: public ResourceObj {
   const char* const clone_source() const;
 
  public:
-  static const bool no_verification;
   static const bool verify;
 
   ClassFileStream(const u1* buffer,
@@ -92,21 +91,34 @@ class ClassFileStream: public ResourceObj {
   }
 
   // Read u1 from stream
-  u1 get_u1(TRAPS) const;
   u1 get_u1_fast() const {
     return *_current++;
   }
+  u1 get_u1(TRAPS) const {
+    if (_need_verify) {
+      guarantee_more(1, CHECK_0);
+    } else {
+      assert(1 <= _buffer_end - _current, "buffer overflow");
+    }
+    return get_u1_fast();
+  }
 
   // Read u2 from stream
-  u2 get_u2(TRAPS) const;
   u2 get_u2_fast() const {
     u2 res = Bytes::get_Java_u2((address)_current);
     _current += 2;
     return res;
   }
+  u2 get_u2(TRAPS) const {
+    if (_need_verify) {
+      guarantee_more(2, CHECK_0);
+    } else {
+      assert(2 <= _buffer_end - _current, "buffer overflow");
+    }
+    return get_u2_fast();
+  }
 
   // Read u4 from stream
-  u4 get_u4(TRAPS) const;
   u4 get_u4_fast() const {
     u4 res = Bytes::get_Java_u4((address)_current);
     _current += 4;
@@ -114,25 +126,27 @@ class ClassFileStream: public ResourceObj {
   }
 
   // Read u8 from stream
-  u8 get_u8(TRAPS) const;
   u8 get_u8_fast() const {
     u8 res = Bytes::get_Java_u8((address)_current);
     _current += 8;
     return res;
   }
 
-  // Skip length u1 or u2 elements from stream
-  void skip_u1(int length, TRAPS) const;
+  // Skip length elements from stream
+  void skip_u1(int length, TRAPS) const {
+    if (_need_verify) {
+      guarantee_more(length, CHECK);
+    }
+    skip_u1_fast(length);
+  }
   void skip_u1_fast(int length) const {
     _current += length;
   }
 
-  void skip_u2(int length, TRAPS) const;
   void skip_u2_fast(int length) const {
     _current += 2 * length;
   }
 
-  void skip_u4(int length, TRAPS) const;
   void skip_u4_fast(int length) const {
     _current += 4 * length;
   }
