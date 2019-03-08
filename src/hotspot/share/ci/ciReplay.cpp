@@ -274,15 +274,42 @@ class CompileReplay : public StackObj {
   // Parse a sequence of raw data encoded as bytes and return the
   // resulting data.
   char* parse_data(const char* tag, int& length) {
-    if (!parse_tag_and_count(tag, length)) {
+    int read_size = 0;
+    if (!parse_tag_and_count(tag, read_size)) {
       return NULL;
     }
 
-    char * result = NEW_RESOURCE_ARRAY(char, length);
-    for (int i = 0; i < length; i++) {
+    int actual_size = sizeof(MethodData);
+    char *result = NEW_RESOURCE_ARRAY(char, actual_size);
+    int i = 0;
+    if (read_size != actual_size) {
+      tty->print_cr("Warning: ciMethodData parsing sees MethodData size %i in file, current is %i", read_size,
+                    actual_size);
+      // Replay serializes the entire MethodData, but the data is at the end.
+      // If the MethodData instance size has changed, we can pad or truncate in the beginning
+      int padding = actual_size - read_size;
+      if (padding > 0) {
+        // pad missing data with zeros
+        tty->print_cr("- Padding MethodData");
+        for (; i < padding; i++) {
+          result[i] = 0;
+        }
+      } else if (padding < 0) {
+        // drop some data
+        tty->print_cr("- Truncating MethodData");
+        for (int j = 0; j < -padding; j++) {
+          int val = parse_int("data");
+          // discard val
+        }
+      }
+    }
+
+    assert(i < actual_size, "At least some data must remain to be copied");
+    for (; i < actual_size; i++) {
       int val = parse_int("data");
       result[i] = val;
     }
+    length = actual_size;
     return result;
   }
 
