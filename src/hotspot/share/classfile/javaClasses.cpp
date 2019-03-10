@@ -834,8 +834,8 @@ void java_lang_Class::set_mirror_module_field(Klass* k, Handle mirror, Handle mo
   if (module.is_null()) {
     // During startup, the module may be NULL only if java.base has not been defined yet.
     // Put the class on the fixup_module_list to patch later when the java.lang.Module
-    // for java.base is known.
-    assert(!Universe::is_module_initialized(), "Incorrect java.lang.Module pre module system initialization");
+    // for java.base is known. But note that since we captured the NULL module another
+    // thread may have completed that initialization.
 
     bool javabase_was_defined = false;
     {
