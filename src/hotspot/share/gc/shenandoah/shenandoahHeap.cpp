@@ -86,31 +86,45 @@ void ShenandoahAssertToSpaceClosure::do_oop(narrowOop* p) { do_oop_work(p); }
 void ShenandoahAssertToSpaceClosure::do_oop(oop* p)       { do_oop_work(p); }
 #endif
 
-class ShenandoahPretouchTask : public AbstractGangTask {
+class ShenandoahPretouchHeapTask : public AbstractGangTask {
 private:
   ShenandoahRegionIterator _regions;
-  char* _bitmap_base;
-  const size_t _bitmap_size;
-  const size_t _heap_page_size;
-  const size_t _bitmap_page_size;
+  const size_t _page_size;
 public:
-  ShenandoahPretouchTask(char* bitmap_base, size_t bitmap_size, size_t heap_page_size, size_t bitmap_page_size) :
-    AbstractGangTask("Shenandoah PreTouch"),
-    _bitmap_base(bitmap_base),
-    _bitmap_size(bitmap_size),
-    _heap_page_size(heap_page_size),
-    _bitmap_page_size(bitmap_page_size) {}
+  ShenandoahPretouchHeapTask(size_t page_size) :
+    AbstractGangTask("Shenandoah Pretouch Heap"),
+    _page_size(page_size) {}
 
   virtual void work(uint worker_id) {
     ShenandoahHeapRegion* r = _regions.next();
     while (r != NULL) {
-      os::pretouch_memory(r->bottom(), r->end(), _heap_page_size);
+      os::pretouch_memory(r->bottom(), r->end(), _page_size);
+      r = _regions.next();
+    }
+  }
+};
 
+class ShenandoahPretouchBitmapTask : public AbstractGangTask {
+private:
+  ShenandoahRegionIterator _regions;
+  char* _bitmap_base;
+  const size_t _bitmap_size;
+  const size_t _page_size;
+public:
+  ShenandoahPretouchBitmapTask(char* bitmap_base, size_t bitmap_size, size_t page_size) :
+    AbstractGangTask("Shenandoah Pretouch Bitmap"),
+    _bitmap_base(bitmap_base),
+    _bitmap_size(bitmap_size),
+    _page_size(page_size) {}
+
+  virtual void work(uint worker_id) {
+    ShenandoahHeapRegion* r = _regions.next();
+    while (r != NULL) {
       size_t start = r->region_number()       * ShenandoahHeapRegion::region_size_bytes() / MarkBitMap::heap_map_factor();
       size_t end   = (r->region_number() + 1) * ShenandoahHeapRegion::region_size_bytes() / MarkBitMap::heap_map_factor();
       assert (end <= _bitmap_size, "end is sane: " SIZE_FORMAT " < " SIZE_FORMAT, end, _bitmap_size);
 
-      os::pretouch_memory(_bitmap_base + start, _bitmap_base + end, _bitmap_page_size);
+      os::pretouch_memory(_bitmap_base + start, _bitmap_base + end, _page_size);
 
       r = _regions.next();
     }
@@ -164,7 +178,7 @@ jint ShenandoahHeap::initialize() {
          "Misaligned heap: " PTR_FORMAT, p2i(base()));
 
   ReservedSpace sh_rs = heap_rs.first_part(max_byte_size);
-  os::commit_memory_or_exit(sh_rs.base(), _initial_size, false,
+  os::commit_memory_or_exit(sh_rs.base(), _initial_size, heap_alignment, false,
                             "Cannot commit heap memory");
 
   //
@@ -204,14 +218,14 @@ jint ShenandoahHeap::initialize() {
   size_t bitmap_init_commit = _bitmap_bytes_per_slice *
                               align_up(num_committed_regions, _bitmap_regions_per_slice) / _bitmap_regions_per_slice;
   bitmap_init_commit = MIN2(_bitmap_size, bitmap_init_commit);
-  os::commit_memory_or_exit((char *)_bitmap_region.start(), bitmap_init_commit, false,
+  os::commit_memory_or_exit((char *)_bitmap_region.start(), bitmap_init_commit, bitmap_page_size, false,
                             "Cannot commit bitmap memory");
 
   _marking_context = new ShenandoahMarkingContext(_heap_region, _bitmap_region, _num_regions);
 
   if (ShenandoahVerify) {
     ReservedSpace verify_bitmap(_bitmap_size, bitmap_page_size);
-    os::commit_memory_or_exit(verify_bitmap.base(), verify_bitmap.size(), false,
+    os::commit_memory_or_exit(verify_bitmap.base(), verify_bitmap.size(), bitmap_page_size, false,
                               "Cannot commit verification bitmap memory");
     MemTracker::record_virtual_memory_type(verify_bitmap.base(), mtGC);
     MemRegion verify_bitmap_region = MemRegion((HeapWord *) verify_bitmap.base(), verify_bitmap.size() / HeapWordSize);
@@ -262,10 +276,31 @@ jint ShenandoahHeap::initialize() {
     // we touch the region and the corresponding bitmaps from the same thread.
     ShenandoahPushWorkerScope scope(workers(), _max_workers, false);
 
-    log_info(gc, init)("Pretouch " SIZE_FORMAT " regions; page sizes: " SIZE_FORMAT " heap, " SIZE_FORMAT " bitmap",
-                       _num_regions, heap_page_size, bitmap_page_size);
-    ShenandoahPretouchTask cl(bitmap.base(), _bitmap_size, heap_page_size, bitmap_page_size);
-    _workers->run_task(&cl);
+    size_t pretouch_heap_page_size = heap_page_size;
+    size_t pretouch_bitmap_page_size = bitmap_page_size;
+
+#ifdef LINUX
+    // UseTransparentHugePages would madvise that backing memory can be coalesced into huge
+    // pages. But, the kernel needs to know that every small page is used, in order to coalesce
+    // them into huge one. Therefore, we need to pretouch with smaller pages.
+    if (UseTransparentHugePages) {
+      pretouch_heap_page_size = (size_t)os::vm_page_size();
+      pretouch_bitmap_page_size = (size_t)os::vm_page_size();
+    }
+#endif
+
+    // OS memory managers may want to coalesce back-to-back pages. Make their jobs
+    // simpler by pre-touching continuous spaces (heap and bitmap) separately.
+
+    log_info(gc, init)("Pretouch bitmap: " SIZE_FORMAT " regions, " SIZE_FORMAT " bytes page",
+                       _num_regions, pretouch_bitmap_page_size);
+    ShenandoahPretouchBitmapTask bcl(bitmap.base(), _bitmap_size, pretouch_bitmap_page_size);
+    _workers->run_task(&bcl);
+
+    log_info(gc, init)("Pretouch heap: " SIZE_FORMAT " regions, " SIZE_FORMAT " bytes page",
+                       _num_regions, pretouch_heap_page_size);
+    ShenandoahPretouchHeapTask hcl(pretouch_heap_page_size);
+    _workers->run_task(&hcl);
   }
 
   //
