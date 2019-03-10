@@ -242,12 +242,14 @@ public:
 //
 private:
   MemRegion _heap_region;
+  bool      _heap_region_special;
   size_t    _num_regions;
   ShenandoahHeapRegion** _regions;
   ShenandoahRegionIterator _update_refs_iterator;
 
 public:
   inline size_t num_regions() const { return _num_regions; }
+  inline bool is_heap_region_special() { return _heap_region_special; }
 
   inline ShenandoahHeapRegion* const heap_region_containing(const void* addr) const;
   inline size_t heap_region_index_containing(const void* addr) const;
@@ -648,6 +650,9 @@ private:
   size_t _bitmap_size;
   size_t _bitmap_regions_per_slice;
   size_t _bitmap_bytes_per_slice;
+
+  bool _bitmap_region_special;
+  bool _aux_bitmap_region_special;
 
   // Used for buffering per-region liveness data.
   // Needed since ShenandoahHeapRegion uses atomics to update liveness.
