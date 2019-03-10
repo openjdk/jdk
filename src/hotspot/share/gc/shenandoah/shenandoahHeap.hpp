@@ -486,7 +486,7 @@ public:
   ShenandoahFreeSet*         free_set()          const { return _free_set;          }
   ShenandoahConcurrentMark*  concurrent_mark()         { return _scm;               }
   ShenandoahTraversalGC*     traversal_gc()            { return _traversal_gc;      }
-  ShenandoahPacer*           pacer() const             { return _pacer;             }
+  ShenandoahPacer*           pacer()             const { return _pacer;             }
 
   ShenandoahPhaseTimings*    phase_timings()     const { return _phase_timings;     }
   ShenandoahAllocTracker*    alloc_tracker()     const { return _alloc_tracker;     }

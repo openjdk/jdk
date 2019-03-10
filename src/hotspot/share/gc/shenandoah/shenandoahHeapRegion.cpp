@@ -56,7 +56,6 @@ ShenandoahHeapRegion::PaddedAllocSeqNum ShenandoahHeapRegion::_alloc_seq_num;
 ShenandoahHeapRegion::ShenandoahHeapRegion(ShenandoahHeap* heap, HeapWord* start,
                                            size_t size_words, size_t index, bool committed) :
   _heap(heap),
-  _pacer(ShenandoahPacing ? heap->pacer() : NULL),
   _reserved(MemRegion(start, size_words)),
   _region_number(index),
   _new_top(NULL),
