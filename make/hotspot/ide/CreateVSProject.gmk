@@ -30,6 +30,7 @@ include $(SPEC)
 include MakeBase.gmk
 include JavaCompilation.gmk
 include SetupJavaCompilers.gmk
+include Execute.gmk
 
 ifeq ($(call isTargetOs, windows), true)
   # The next part is a bit hacky. We include the CompileJvm.gmk to be
@@ -149,7 +150,7 @@ ifeq ($(call isTargetOs, windows), true)
       DEPS := $(BUILD_PROJECT_CREATOR) $(VCPROJ_VARDEPS_FILE), \
       OUTPUT_FILE := $(VCPROJ_FILE), \
       COMMAND := $(PROJECT_CREATOR_TOOL) $(PROJECT_CREATOR_CLASS) \
-          $(PROJECT_CREATOR_ARGS) -projectFileName $(call FixPath, $(VCPROJ_FILE))) \
+          $(PROJECT_CREATOR_ARGS) -projectFileName $(call FixPath, $(VCPROJ_FILE)) \
           $(LOG_INFO), \
   ))
 
