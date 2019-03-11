@@ -108,8 +108,8 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
         if (serializableFieldsTree.isValid()) {
             Content headingContent = new StringContent(heading);
             Content serialHeading = HtmlTree.HEADING(Headings.SerializedForm.CLASS_SUBHEADING, headingContent);
-            li.addContent(serialHeading);
-            li.addContent(serializableFieldsTree);
+            li.add(serialHeading);
+            li.add(serializableFieldsTree);
         }
         return li;
     }
@@ -119,32 +119,32 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
             String fieldDimensions, String fieldName, Content contentTree) {
         Content nameContent = new StringContent(fieldName);
         Content heading = HtmlTree.HEADING(Headings.SerializedForm.MEMBER_HEADING, nameContent);
-        contentTree.addContent(heading);
+        contentTree.add(heading);
         Content pre = new HtmlTree(HtmlTag.PRE);
         if (fieldType == null) {
-            pre.addContent(fieldTypeStr);
+            pre.add(fieldTypeStr);
         } else {
             Content fieldContent = writer.getLink(new LinkInfoImpl(
                     configuration, LinkInfoImpl.Kind.SERIAL_MEMBER, fieldType));
-            pre.addContent(fieldContent);
+            pre.add(fieldContent);
         }
-        pre.addContent(fieldDimensions + " ");
-        pre.addContent(fieldName);
-        contentTree.addContent(pre);
+        pre.add(fieldDimensions + " ");
+        pre.add(fieldName);
+        contentTree.add(pre);
     }
 
     @Override
     public void addMemberHeader(TypeMirror fieldType, String fieldName, Content contentTree) {
         Content nameContent = new StringContent(fieldName);
         Content heading = HtmlTree.HEADING(HtmlTag.H5, nameContent);
-        contentTree.addContent(heading);
+        contentTree.add(heading);
         Content pre = new HtmlTree(HtmlTag.PRE);
         Content fieldContent = writer.getLink(new LinkInfoImpl(
                 configuration, LinkInfoImpl.Kind.SERIAL_MEMBER, fieldType));
-        pre.addContent(fieldContent);
-        pre.addContent(" ");
-        pre.addContent(fieldName);
-        contentTree.addContent(pre);
+        pre.add(fieldContent);
+        pre.add(" ");
+        pre.add(fieldName);
+        contentTree.add(pre);
     }
 
     /**
@@ -185,7 +185,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
         if (!description.isEmpty()) {
             Content serialFieldContent = new RawHtml(ch.getText(description));
             Content div = HtmlTree.DIV(HtmlStyle.block, serialFieldContent);
-            contentTree.addContent(div);
+            contentTree.add(div);
         }
     }
 
@@ -201,8 +201,8 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
                 configuration.tagletManager.getBlockTaglets(field),
                 writer.getTagletWriterInstance(false), tagContent);
         Content dlTags = new HtmlTree(HtmlTag.DL);
-        dlTags.addContent(tagContent);
-        contentTree.addContent(dlTags);  // TODO: what if empty?
+        dlTags.add(tagContent);
+        contentTree.add(dlTags);  // TODO: what if empty?
     }
 
     /**

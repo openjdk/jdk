@@ -103,12 +103,12 @@ public class PackageFrameWriter extends HtmlDocletWriter {
         HtmlTree htmlTree = HtmlTree.MAIN();
         Content heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, HtmlStyle.bar,
                 packgen.getTargetPackageLink(packageElement, "classFrame", pkgNameContent));
-        htmlTree.addContent(heading);
+        htmlTree.add(heading);
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
         div.setStyle(HtmlStyle.indexContainer);
         packgen.addClassListing(div);
-        htmlTree.addContent(div);
-        body.addContent(htmlTree);
+        htmlTree.add(div);
+        body.add(htmlTree);
         packgen.printHtmlDocument(
                 configuration.metakeywords.getMetaKeywords(packageElement),
                 getDescription("package summary (frame)", packageElement),
@@ -178,7 +178,7 @@ public class PackageFrameWriter extends HtmlDocletWriter {
                 if (!printedHeader) {
                     Content heading = HtmlTree.HEADING(Headings.CONTENT_HEADING,
                                                        true, labelContent);
-                    htmlTree.addContent(heading);
+                    htmlTree.add(heading);
                     printedHeader = true;
                 }
                 Content arr_i_name = new StringContent(utils.getSimpleName(typeElement));
@@ -187,10 +187,10 @@ public class PackageFrameWriter extends HtmlDocletWriter {
                 Content link = getLink(new LinkInfoImpl(configuration,
                                                         LinkInfoImpl.Kind.PACKAGE_FRAME, typeElement).label(arr_i_name).target("classFrame"));
                 Content li = HtmlTree.LI(link);
-                ul.addContent(li);
+                ul.add(li);
             }
-            htmlTree.addContent(ul);
-            contentTree.addContent(htmlTree);
+            htmlTree.add(ul);
+            contentTree.add(htmlTree);
         }
     }
 }

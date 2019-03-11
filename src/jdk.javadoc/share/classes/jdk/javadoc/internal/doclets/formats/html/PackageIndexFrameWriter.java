@@ -94,11 +94,11 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
             // package is marked as deprecated.
             if (aPackage != null &&
                 (!(configuration.nodeprecated && utils.isDeprecated(aPackage)))) {
-                ul.addContent(getPackage(aPackage));
+                ul.add(getPackage(aPackage));
             }
         }
-        htmlTree.addContent(ul);
-        main.addContent(htmlTree);
+        htmlTree.add(ul);
+        main.add(htmlTree);
     }
 
     /**
@@ -138,7 +138,7 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
         if (!headerContent.isEmpty()) {
             Content heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, true,
                     HtmlStyle.bar, headerContent);
-            header.addContent(heading);
+            header.add(heading);
             packageListHeading = Headings.IndexFrames.PACKAGE_HEADING;
         } else {
             packageListHeading = Headings.PAGE_TITLE_HEADING;
@@ -163,7 +163,7 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
         Content linkContent = links.createLink(DocPaths.ALLCLASSES_FRAME,
                 contents.allClassesLabel, "", "packageFrame");
         Content li = HtmlTree.LI(linkContent);
-        ul.addContent(li);
+        ul.add(li);
     }
 
     /**
@@ -177,7 +177,7 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
         Content linkContent = links.createLink(DocPaths.MODULE_OVERVIEW_FRAME,
                 contents.allModulesLabel, "", "packageListFrame");
         Content li = HtmlTree.LI(linkContent);
-        ul.addContent(li);
+        ul.add(li);
     }
 
     /**
@@ -186,6 +186,6 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
     @Override
     protected void addNavigationBarFooter(Content footer) {
         Content p = HtmlTree.P(Contents.SPACE);
-        footer.addContent(p);
+        footer.add(p);
     }
 }

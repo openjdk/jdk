@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -360,7 +360,7 @@ public class Contents {
         Matcher m = p.matcher(text);
         int start = 0;
         while (m.find(start)) {
-            c.addContent(text.substring(start, m.start()));
+            c.add(text.substring(start, m.start()));
 
             Object o = null;
             switch (m.group(1).charAt(0)) {
@@ -370,17 +370,17 @@ public class Contents {
             }
 
             if (o == null) {
-                c.addContent("{" + m.group(1) + "}");
+                c.add("{" + m.group(1) + "}");
             } else if (o instanceof String) {
-                c.addContent((String) o);
+                c.add((String) o);
             } else if (o instanceof Content) {
-                c.addContent((Content) o);
+                c.add((Content) o);
             }
 
             start = m.end();
         }
 
-        c.addContent(text.substring(start));
+        c.add(text.substring(start));
         return c;
     }
 
@@ -399,11 +399,11 @@ public class Contents {
         int start = 0;
         int p;
         while ((p = text.indexOf(" ", start)) != -1) {
-            c.addContent(text.substring(start, p));
-            c.addContent(RawHtml.nbsp);
+            c.add(text.substring(start, p));
+            c.add(RawHtml.nbsp);
             start = p + 1;
         }
-        c.addContent(text.substring(start));
+        c.add(text.substring(start));
         return c; // TODO: should be made immutable
     }
 

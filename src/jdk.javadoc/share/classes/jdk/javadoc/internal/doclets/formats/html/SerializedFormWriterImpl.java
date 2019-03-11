@@ -82,13 +82,13 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
         HtmlTree htmlTree = HtmlTree.HEADER();
         addTop(htmlTree);
         navBar.setUserHeader(getUserHeaderFooter(true));
-        htmlTree.addContent(navBar.getContent(true));
-        bodyTree.addContent(htmlTree);
+        htmlTree.add(navBar.getContent(true));
+        bodyTree.add(htmlTree);
         Content h1Content = new StringContent(header);
         Content heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, true,
                 HtmlStyle.title, h1Content);
         Content div = HtmlTree.DIV(HtmlStyle.header, heading);
-        mainTree.addContent(div);
+        mainTree.add(div);
         return bodyTree;
     }
 
@@ -121,8 +121,8 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
     public Content getPackageHeader(String packageName) {
         Content heading = HtmlTree.HEADING(Headings.SerializedForm.PACKAGE_HEADING, true,
                 contents.packageLabel);
-        heading.addContent(Contents.SPACE);
-        heading.addContent(packageName);
+        heading.add(Contents.SPACE);
+        heading.add(packageName);
         return heading;
     }
 
@@ -172,7 +172,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
             contents.getContent(
             "doclet.Class_0_extends_implements_serializable", classLink,
             superClassLink);
-        li.addContent(HtmlTree.HEADING(Headings.SerializedForm.CLASS_HEADING, className));
+        li.add(HtmlTree.HEADING(Headings.SerializedForm.CLASS_HEADING, className));
         return li;
     }
 
@@ -198,9 +198,9 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
     public void addSerialUIDInfo(String header, String serialUID,
             Content serialUidTree) {
         Content headerContent = new StringContent(header);
-        serialUidTree.addContent(HtmlTree.DT(headerContent));
+        serialUidTree.add(HtmlTree.DT(headerContent));
         Content serialContent = new StringContent(serialUID);
-        serialUidTree.addContent(HtmlTree.DD(serialContent));
+        serialUidTree.add(HtmlTree.DD(serialContent));
     }
 
     /**
@@ -223,7 +223,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
     public Content getSerializedContent(Content serializedTreeContent) {
         HtmlTree divContent = HtmlTree.DIV(HtmlStyle.serializedFormContainer,
                 serializedTreeContent);
-        mainTree.addContent(divContent);
+        mainTree.add(divContent);
         return mainTree;
     }
 
@@ -232,7 +232,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
      */
     public void addPackageSerializedTree(Content serializedSummariesTree,
             Content packageSerializedTree) {
-        serializedSummariesTree.addContent(HtmlTree.LI(HtmlStyle.blockList, packageSerializedTree));
+        serializedSummariesTree.add(HtmlTree.LI(HtmlStyle.blockList, packageSerializedTree));
     }
 
     /**
@@ -243,9 +243,9 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
     public void addFooter(Content serializedTree) {
         Content htmlTree = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
-        htmlTree.addContent(navBar.getContent(false));
+        htmlTree.add(navBar.getContent(false));
         addBottom(htmlTree);
-        serializedTree.addContent(htmlTree);
+        serializedTree.add(htmlTree);
     }
 
     /**

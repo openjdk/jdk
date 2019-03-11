@@ -96,7 +96,7 @@ public class HtmlSerialMethodWriter extends MethodWriterImpl implements
         Content headingContent = new StringContent(heading);
         Content serialHeading = HtmlTree.HEADING(Headings.SerializedForm.CLASS_SUBHEADING, headingContent);
         Content li = HtmlTree.LI(HtmlStyle.blockList, serialHeading);
-        li.addContent(serializableMethodContent);
+        li.add(serializableMethodContent);
         return li;
     }
 
@@ -120,8 +120,8 @@ public class HtmlSerialMethodWriter extends MethodWriterImpl implements
     public void addMemberHeader(ExecutableElement member, Content methodsContentTree) {
         Content memberContent = new StringContent(name(member));
         Content heading = HtmlTree.HEADING(Headings.SerializedForm.MEMBER_HEADING, memberContent);
-        methodsContentTree.addContent(heading);
-        methodsContentTree.addContent(getSignature(member));
+        methodsContentTree.add(heading);
+        methodsContentTree.add(getSignature(member));
     }
 
     /**
@@ -158,8 +158,8 @@ public class HtmlSerialMethodWriter extends MethodWriterImpl implements
             tagletManager.getSerializedFormTaglets(),
             writer.getTagletWriterInstance(false), tagContent);
         Content dlTags = new HtmlTree(HtmlTag.DL);
-        dlTags.addContent(tagContent);
-        methodsContentTree.addContent(dlTags);
+        dlTags.add(tagContent);
+        methodsContentTree.add(dlTags);
         if (name(member).compareTo("writeExternal") == 0
                 && utils.getSerialDataTrees(member).isEmpty()) {
             serialWarning(member, "doclet.MissingSerialDataTag",

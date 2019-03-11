@@ -113,13 +113,13 @@ public class AllClassesFrameWriter extends HtmlDocletWriter {
         Content htmlTree = HtmlTree.MAIN();
         Content heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.bar, contents.allClassesLabel);
-        htmlTree.addContent(heading);
+        htmlTree.add(heading);
         Content ul = new HtmlTree(HtmlTag.UL);
         // Generate the class links and add it to the tdFont tree.
         addAllClasses(ul, wantFrames);
         HtmlTree div = HtmlTree.DIV(HtmlStyle.indexContainer, ul);
-        htmlTree.addContent(div);
-        body.addContent(htmlTree);
+        htmlTree.add(div);
+        body.add(htmlTree);
         printHtmlDocument(null, "all classes (frame)", body);
     }
 
@@ -163,7 +163,7 @@ public class AllClassesFrameWriter extends HtmlDocletWriter {
                 linkContent = getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.DEFAULT, typeElement).label(label));
             }
             Content li = HtmlTree.LI(linkContent);
-            content.addContent(li);
+            content.add(li);
         }
     }
 }

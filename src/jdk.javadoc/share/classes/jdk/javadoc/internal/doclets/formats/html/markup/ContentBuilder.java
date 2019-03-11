@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,12 +43,12 @@ public class ContentBuilder extends Content {
 
     public ContentBuilder(Content... contents) {
         for (Content c : contents) {
-            addContent(c);
+            add(c);
         }
     }
 
     @Override
-    public void addContent(Content content) {
+    public void add(Content content) {
         nullCheck(content);
         ensureMutableContents();
         if (content instanceof ContentBuilder) {
@@ -58,7 +58,7 @@ public class ContentBuilder extends Content {
     }
 
     @Override
-    public void addContent(CharSequence text) {
+    public void add(CharSequence text) {
         if (text.length() == 0)
             return;
         ensureMutableContents();
@@ -69,7 +69,7 @@ public class ContentBuilder extends Content {
         } else {
             contents.add(sc = new StringContent());
         }
-        sc.addContent(text);
+        sc.add(text);
     }
 
     @Override

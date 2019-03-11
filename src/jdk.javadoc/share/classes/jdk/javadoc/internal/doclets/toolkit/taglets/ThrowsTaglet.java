@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,9 +104,9 @@ public class ThrowsTaglet extends BaseTaglet
                 !alreadyDocumented.contains(utils.getSimpleName(klass)) &&
                 !alreadyDocumented.contains(utils.getFullyQualifiedName(klass))) {
                 if (alreadyDocumented.isEmpty()) {
-                    result.addContent(writer.getThrowsHeader());
+                    result.add(writer.getThrowsHeader());
                 }
-                result.addContent(writer.throwsTagOutput(declaredExceptionType));
+                result.add(writer.throwsTagOutput(declaredExceptionType));
                 alreadyDocumented.add(utils.getSimpleName(klass));
             }
         }
@@ -140,7 +140,7 @@ public class ThrowsTaglet extends BaseTaglet
                     declaredExceptionTags.put(inheritedDoc.tagList, (ExecutableElement)inheritedDoc.holder);
                 }
             }
-            result.addContent(throwsTagsOutput(declaredExceptionTags, writer, alreadyDocumented, false));
+            result.add(throwsTagsOutput(declaredExceptionTags, writer, alreadyDocumented, false));
         }
         return result;
     }
@@ -156,11 +156,11 @@ public class ThrowsTaglet extends BaseTaglet
         Content result = writer.getOutputInstance();
         HashSet<String> alreadyDocumented = new HashSet<>();
         if (!tagsMap.isEmpty()) {
-            result.addContent(throwsTagsOutput(tagsMap, writer, alreadyDocumented, true));
+            result.add(throwsTagsOutput(tagsMap, writer, alreadyDocumented, true));
         }
-        result.addContent(inheritThrowsDocumentation(holder,
+        result.add(inheritThrowsDocumentation(holder,
             execHolder.getThrownTypes(), alreadyDocumented, writer));
-        result.addContent(linkToUndocumentedDeclaredExceptions(
+        result.add(linkToUndocumentedDeclaredExceptions(
             execHolder.getThrownTypes(), alreadyDocumented, writer));
         return result;
     }
@@ -192,9 +192,9 @@ public class ThrowsTaglet extends BaseTaglet
                         continue;
                     }
                     if (alreadyDocumented.isEmpty()) {
-                        result.addContent(writer.getThrowsHeader());
+                        result.add(writer.getThrowsHeader());
                     }
-                    result.addContent(writer.throwsTagOutput(e, dt));
+                    result.add(writer.throwsTagOutput(e, dt));
                     alreadyDocumented.add(te != null
                             ? utils.getFullyQualifiedName(te)
                             : excName);

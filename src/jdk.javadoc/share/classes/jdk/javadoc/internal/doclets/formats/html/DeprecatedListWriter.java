@@ -284,7 +284,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
             throws DocFileIOException {
         HtmlTree body = getHeader();
         HtmlTree htmlTree = HtmlTree.MAIN();
-        htmlTree.addContent(getContentsList(deprapi));
+        htmlTree.add(getContentsList(deprapi));
         String memberTableSummary;
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
         div.setStyle(HtmlStyle.contentContainer);
@@ -300,13 +300,13 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
                             getHeadingKey(kind), memberTableSummary, memberTableHeader, div);
             }
         }
-        htmlTree.addContent(div);
-        body.addContent(htmlTree);
+        htmlTree.add(div);
+        body.add(htmlTree);
         htmlTree = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
-        htmlTree.addContent(navBar.getContent(false));
+        htmlTree.add(navBar.getContent(false));
         addBottom(htmlTree);
-        body.addContent(htmlTree);
+        body.add(htmlTree);
         String description = "deprecated elements";
         printHtmlDocument(null, description, body);
     }
@@ -323,7 +323,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
         if (builder.hasDocumentation(kind)) {
             Content li = HtmlTree.LI(links.createLink(getAnchorName(kind),
                     contents.getContent(getHeadingKey(kind))));
-            contentTree.addContent(li);
+            contentTree.add(li);
         }
     }
 
@@ -339,13 +339,13 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
                 HtmlStyle.title, headContent);
         Content div = HtmlTree.DIV(HtmlStyle.header, heading);
         Content headingContent = contents.contentsHeading;
-        div.addContent(HtmlTree.HEADING(Headings.CONTENT_HEADING, true,
+        div.add(HtmlTree.HEADING(Headings.CONTENT_HEADING, true,
                 headingContent));
         Content ul = new HtmlTree(HtmlTag.UL);
         for (DeprElementKind kind : DeprElementKind.values()) {
             addIndexLink(deprapi, kind, ul);
         }
-        div.addContent(ul);
+        div.add(ul);
         return div;
     }
 
@@ -358,7 +358,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
      */
     private void addAnchor(DeprecatedAPIListBuilder builder, DeprElementKind kind, Content htmlTree) {
         if (builder.hasDocumentation(kind)) {
-            htmlTree.addContent(links.createAnchor(getAnchorName(kind)));
+            htmlTree.add(links.createAnchor(getAnchorName(kind)));
         }
     }
 
@@ -373,8 +373,8 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
         HtmlTree htmlTree = HtmlTree.HEADER();
         addTop(htmlTree);
         navBar.setUserHeader(getUserHeaderFooter(true));
-        htmlTree.addContent(navBar.getContent(true));
-        bodyTree.addContent(htmlTree);
+        htmlTree.add(navBar.getContent(true));
+        bodyTree.add(htmlTree);
         return bodyTree;
     }
 
@@ -414,13 +414,13 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
                 if (!tags.isEmpty()) {
                     addInlineDeprecatedComment(e, tags.get(0), desc);
                 } else {
-                    desc.addContent(HtmlTree.EMPTY);
+                    desc.add(HtmlTree.EMPTY);
                 }
                 table.addRow(link, desc);
             }
             Content li = HtmlTree.LI(HtmlStyle.blockList, table.toContent());
             Content ul = HtmlTree.UL(HtmlStyle.blockList, li);
-            contentTree.addContent(ul);
+            contentTree.add(ul);
         }
     }
 

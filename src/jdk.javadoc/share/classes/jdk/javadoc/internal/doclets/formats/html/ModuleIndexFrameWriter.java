@@ -96,10 +96,10 @@ public class ModuleIndexFrameWriter extends AbstractModuleIndexWriter {
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
         ul.setTitle(contents.modulesLabel);
         for (ModuleElement mdle: configuration.modules) {
-            ul.addContent(getModuleLink(mdle));
+            ul.add(getModuleLink(mdle));
         }
-        htmlTree.addContent(ul);
-        main.addContent(htmlTree);
+        htmlTree.add(ul);
+        main.add(htmlTree);
     }
 
     /**
@@ -122,8 +122,8 @@ public class ModuleIndexFrameWriter extends AbstractModuleIndexWriter {
         DocLink cFrameLink = new DocLink(docPaths.moduleSummary(mdle));
         HtmlTree anchor = HtmlTree.A(mdlLink.toString(), label);
         String onclickStr = "updateModuleFrame('" + mtFrameLink + "','" + cFrameLink + "');";
-        anchor.addAttr(HtmlAttr.TARGET, target);
-        anchor.addAttr(HtmlAttr.ONCLICK, onclickStr);
+        anchor.put(HtmlAttr.TARGET, target);
+        anchor.put(HtmlAttr.ONCLICK, onclickStr);
         return anchor;
     }
 
@@ -136,7 +136,7 @@ public class ModuleIndexFrameWriter extends AbstractModuleIndexWriter {
         if (!headerContent.isEmpty()) {
             Content heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, true,
                     HtmlStyle.bar, new RawHtml(replaceDocRootDir(headerContent)));
-            header.addContent(heading);
+            header.add(heading);
             moduleListHeading = Headings.IndexFrames.MODULE_HEADING;
         } else {
             moduleListHeading = Headings.PAGE_TITLE_HEADING;
@@ -159,7 +159,7 @@ public class ModuleIndexFrameWriter extends AbstractModuleIndexWriter {
         Content linkContent = links.createLink(DocPaths.ALLCLASSES_FRAME,
                 contents.allClassesLabel, "", "packageFrame");
         Content li = HtmlTree.LI(linkContent);
-        ul.addContent(li);
+        ul.add(li);
     }
 
     /**
@@ -172,7 +172,7 @@ public class ModuleIndexFrameWriter extends AbstractModuleIndexWriter {
         Content linkContent = links.createLink(DocPaths.OVERVIEW_FRAME,
                 contents.allPackagesLabel, "", "packageListFrame");
         Content li = HtmlTree.LI(linkContent);
-        ul.addContent(li);
+        ul.add(li);
     }
 
     /**
@@ -180,7 +180,7 @@ public class ModuleIndexFrameWriter extends AbstractModuleIndexWriter {
      */
     protected void addNavigationBarFooter(Content footer) {
         Content p = HtmlTree.P(Contents.SPACE);
-        footer.addContent(p);
+        footer.add(p);
     }
 
     protected void addModulePackagesList(Map<ModuleElement, Set<PackageElement>> modules, String text,

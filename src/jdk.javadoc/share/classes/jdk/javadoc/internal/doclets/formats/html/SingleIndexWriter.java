@@ -96,10 +96,10 @@ public class SingleIndexWriter extends AbstractIndexWriter {
         HtmlTree header = HtmlTree.HEADER();
         addTop(header);
         navBar.setUserHeader(getUserHeaderFooter(true));
-        header.addContent(navBar.getContent(true));
-        body.addContent(header);
+        header.add(navBar.getContent(true));
+        body.add(header);
         HtmlTree main = HtmlTree.MAIN();
-        main.addContent(HtmlTree.DIV(HtmlStyle.header,
+        main.add(HtmlTree.DIV(HtmlStyle.header,
                 HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
                         contents.getContent("doclet.Index"))));
         HtmlTree divTree = new HtmlTree(HtmlTag.DIV);
@@ -118,13 +118,13 @@ public class SingleIndexWriter extends AbstractIndexWriter {
             }
         }
         addLinksForIndexes(divTree);
-        main.addContent(divTree);
-        body.addContent(main);
+        main.add(divTree);
+        body.add(main);
         HtmlTree footer = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
-        footer.addContent(navBar.getContent(false));
+        footer.add(navBar.getContent(false));
         addBottom(footer);
-        body.addContent(footer);
+        body.add(footer);
         createSearchIndexFiles();
         printHtmlDocument(null, "index", body);
     }
@@ -137,17 +137,17 @@ public class SingleIndexWriter extends AbstractIndexWriter {
     protected void addLinksForIndexes(Content contentTree) {
         for (Object ch : elements) {
             String unicode = ch.toString();
-            contentTree.addContent(
+            contentTree.add(
                     links.createLink(getNameForIndex(unicode),
                             new StringContent(unicode)));
-            contentTree.addContent(Contents.SPACE);
+            contentTree.add(Contents.SPACE);
         }
-        contentTree.addContent(new HtmlTree(HtmlTag.BR));
-        contentTree.addContent(links.createLink(DocPaths.ALLCLASSES_INDEX,
+        contentTree.add(new HtmlTree(HtmlTag.BR));
+        contentTree.add(links.createLink(DocPaths.ALLCLASSES_INDEX,
                 contents.allClassesLabel));
         if (!configuration.packages.isEmpty()) {
-            contentTree.addContent(Contents.SPACE);
-            contentTree.addContent(links.createLink(DocPaths.ALLPACKAGES_INDEX,
+            contentTree.add(Contents.SPACE);
+            contentTree.add(links.createLink(DocPaths.ALLPACKAGES_INDEX,
                     contents.allPackagesLabel));
     }
 }

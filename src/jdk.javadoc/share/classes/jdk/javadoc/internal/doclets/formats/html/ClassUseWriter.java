@@ -229,16 +229,16 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         if (pkgSet.size() > 0) {
             addClassUse(div);
         } else {
-            div.addContent(contents.getContent("doclet.ClassUse_No.usage.of.0",
+            div.add(contents.getContent("doclet.ClassUse_No.usage.of.0",
                     utils.getFullyQualifiedName(typeElement)));
         }
-        mainTree.addContent(div);
-        body.addContent(mainTree);
+        mainTree.add(div);
+        body.add(mainTree);
         HtmlTree footer = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
-        footer.addContent(navBar.getContent(false));
+        footer.add(navBar.getContent(false));
         addBottom(footer);
-        body.addContent(footer);
+        body.add(footer);
         String description = getDescription("use", typeElement);
         printHtmlDocument(null, description, body);
     }
@@ -256,7 +256,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
             addPackageAnnotationList(ul);
         }
         addClassList(ul);
-        contentTree.addContent(ul);
+        contentTree.add(ul);
     }
 
     /**
@@ -277,7 +277,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
             addPackageUse(pkg, table);
         }
         Content li = HtmlTree.LI(HtmlStyle.blockList, table.toContent());
-        contentTree.addContent(li);
+        contentTree.add(li);
     }
 
     /**
@@ -306,7 +306,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
             table.addRow(getPackageLink(pkg), summary);
         }
         Content li = HtmlTree.LI(HtmlStyle.blockList, table.toContent());
-        contentTree.addContent(li);
+        contentTree.add(li);
     }
 
     /**
@@ -325,12 +325,12 @@ public class ClassUseWriter extends SubWriterHolderWriter {
                             typeElement)),
                     getPackageLink(pkg, utils.getPackageName(pkg)));
             Content heading = HtmlTree.HEADING(Headings.TypeUse.SUMMARY_HEADING, link);
-            htmlTree.addContent(heading);
+            htmlTree.add(heading);
             addClassUse(pkg, htmlTree);
-            ul.addContent(HtmlTree.LI(HtmlStyle.blockList, htmlTree));
+            ul.add(HtmlTree.LI(HtmlStyle.blockList, htmlTree));
         }
         Content li = HtmlTree.LI(HtmlStyle.blockList, ul);
-        contentTree.addContent(li);
+        contentTree.add(li);
     }
 
     /**
@@ -445,16 +445,16 @@ public class ClassUseWriter extends SubWriterHolderWriter {
                 .label(resources.getText("doclet.Class")));
         navBar.setNavLinkClass(classLinkContent);
         navBar.setUserHeader(getUserHeaderFooter(true));
-        htmlTree.addContent(navBar.getContent(true));
-        bodyTree.addContent(htmlTree);
+        htmlTree.add(navBar.getContent(true));
+        bodyTree.add(htmlTree);
         ContentBuilder headContent = new ContentBuilder();
-        headContent.addContent(contents.getContent("doclet.ClassUse_Title", cltype));
-        headContent.addContent(new HtmlTree(HtmlTag.BR));
-        headContent.addContent(clname);
+        headContent.add(contents.getContent("doclet.ClassUse_Title", cltype));
+        headContent.add(new HtmlTree(HtmlTag.BR));
+        headContent.add(clname);
         Content heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
                 true, HtmlStyle.title, headContent);
         Content div = HtmlTree.DIV(HtmlStyle.header, heading);
-        mainTree.addContent(div);
+        mainTree.add(div);
         return bodyTree;
     }
 }

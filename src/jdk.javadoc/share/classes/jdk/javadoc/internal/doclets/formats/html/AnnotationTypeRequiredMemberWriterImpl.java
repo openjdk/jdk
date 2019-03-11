@@ -72,7 +72,7 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
      */
     public Content getMemberSummaryHeader(TypeElement typeElement,
             Content memberSummaryTree) {
-        memberSummaryTree.addContent(
+        memberSummaryTree.add(
                 MarkerComments.START_OF_ANNOTATION_TYPE_REQUIRED_MEMBER_SUMMARY);
         Content memberTree = writer.getMemberTreeHeader();
         writer.addSummaryHeader(this, typeElement, memberTree);
@@ -97,7 +97,7 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
      * {@inheritDoc}
      */
     public void addAnnotationDetailsMarker(Content memberDetails) {
-        memberDetails.addContent(MarkerComments.START_OF_ANNOTATION_TYPE_DETAILS);
+        memberDetails.add(MarkerComments.START_OF_ANNOTATION_TYPE_DETAILS);
     }
 
     /**
@@ -106,11 +106,11 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
     public void addAnnotationDetailsTreeHeader(TypeElement te,
             Content memberDetailsTree) {
         if (!writer.printedAnnotationHeading) {
-            memberDetailsTree.addContent(links.createAnchor(
+            memberDetailsTree.add(links.createAnchor(
                     SectionName.ANNOTATION_TYPE_ELEMENT_DETAIL));
             Content heading = HtmlTree.HEADING(Headings.TypeDeclaration.DETAILS_HEADING,
                     contents.annotationTypeDetailsLabel);
-            memberDetailsTree.addContent(heading);
+            memberDetailsTree.add(heading);
             writer.printedAnnotationHeading = true;
         }
     }
@@ -121,12 +121,12 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
     @Override
     public Content getAnnotationDocTreeHeader(Element member, Content annotationDetailsTree) {
         String simpleName = name(member);
-        annotationDetailsTree.addContent(links.createAnchor(
+        annotationDetailsTree.add(links.createAnchor(
                 simpleName + utils.signature((ExecutableElement) member)));
         Content annotationDocTree = writer.getMemberTreeHeader();
         Content heading = new HtmlTree(Headings.TypeDeclaration.MEMBER_HEADING);
-        heading.addContent(simpleName);
-        annotationDocTree.addContent(heading);
+        heading.add(simpleName);
+        annotationDocTree.add(heading);
         return annotationDocTree;
     }
 
@@ -140,8 +140,8 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
         Content link =
                 writer.getLink(new LinkInfoImpl(configuration,
                         LinkInfoImpl.Kind.MEMBER, getType(member)));
-        pre.addContent(link);
-        pre.addContent(Contents.SPACE);
+        pre.add(link);
+        pre.add(Contents.SPACE);
         if (configuration.linksource) {
             Content memberName = new StringContent(name(member));
             writer.addSrcLink(member, memberName, pre);
@@ -193,7 +193,7 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
     public void addSummaryLabel(Content memberTree) {
         Content label = HtmlTree.HEADING(Headings.TypeDeclaration.SUMMARY_HEADING,
                 contents.annotateTypeRequiredMemberSummaryLabel);
-        memberTree.addContent(label);
+        memberTree.add(label);
     }
 
     /**
@@ -230,7 +230,7 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
      * {@inheritDoc}
      */
     public void addSummaryAnchor(TypeElement typeElement, Content memberTree) {
-        memberTree.addContent(links.createAnchor(
+        memberTree.add(links.createAnchor(
                 SectionName.ANNOTATION_TYPE_REQUIRED_ELEMENT_SUMMARY));
     }
 
@@ -254,7 +254,7 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
         Content memberLink = HtmlTree.SPAN(HtmlStyle.memberNameLink,
                 writer.getDocLink(context, member, name(member), false));
         Content code = HtmlTree.CODE(memberLink);
-        tdSummary.addContent(code);
+        tdSummary.add(code);
     }
 
     /**

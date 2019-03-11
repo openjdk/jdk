@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,10 +137,10 @@ public class FieldBuilder extends AbstractMemberBuilder {
                 buildFieldComments(fieldDocTree);
                 buildTagInfo(fieldDocTree);
 
-                fieldDetailsTree.addContent(writer.getFieldDoc(
+                fieldDetailsTree.add(writer.getFieldDoc(
                         fieldDocTree, currentElement == lastElement));
             }
-            memberDetailsTree.addContent(
+            memberDetailsTree.add(
                     writer.getFieldDetails(fieldDetailsTree));
         }
     }
@@ -151,7 +151,7 @@ public class FieldBuilder extends AbstractMemberBuilder {
      * @param fieldDocTree the content tree to which the documentation will be added
      */
     protected void buildSignature(Content fieldDocTree) {
-        fieldDocTree.addContent(writer.getSignature(currentElement));
+        fieldDocTree.add(writer.getSignature(currentElement));
     }
 
     /**
