@@ -34,7 +34,7 @@
 #include "gc/shenandoah/shenandoahTimingTracker.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
-#include "gc/shared/weakProcessor.hpp"
+#include "gc/shared/weakProcessor.inline.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
@@ -47,7 +47,8 @@ ShenandoahRootProcessor::ShenandoahRootProcessor(ShenandoahHeap* heap, uint n_wo
   _srs(n_workers),
   _par_state_string(StringTable::weak_storage()),
   _phase(phase),
-  _coderoots_all_iterator(ShenandoahCodeRoots::iterator())
+  _coderoots_all_iterator(ShenandoahCodeRoots::iterator()),
+  _weak_processor_task(n_workers)
 {
   heap->phase_timings()->record_workers_start(_phase);
 
@@ -192,10 +193,9 @@ void ShenandoahRootProcessor::process_vm_roots(OopClosure* strong_roots,
     SystemDictionary::oops_do(strong_roots);
   }
   if (jni_weak_roots != NULL) {
-    if (_process_strong_tasks->try_claim_task(SHENANDOAH_RP_PS_JNIHandles_weak_oops_do)) {
       ShenandoahWorkerTimingsTracker timer(worker_times, ShenandoahPhaseTimings::JNIWeakRoots, worker_id);
-      WeakProcessor::oops_do(jni_weak_roots);
-    }
+      AlwaysTrueClosure always_true;
+      _weak_processor_task.work<AlwaysTrueClosure, OopClosure>(worker_id, &always_true, jni_weak_roots);
   }
 
   if (ShenandoahStringDedup::is_enabled() && weak_roots != NULL) {

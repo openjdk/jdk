@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2015, 2019, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -30,6 +30,7 @@
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shared/strongRootsScope.hpp"
+#include "gc/shared/weakProcessor.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
@@ -43,7 +44,6 @@ public:
 enum Shenandoah_process_roots_tasks {
   SHENANDOAH_RP_PS_Universe_oops_do,
   SHENANDOAH_RP_PS_JNIHandles_oops_do,
-  SHENANDOAH_RP_PS_JNIHandles_weak_oops_do,
   SHENANDOAH_RP_PS_ObjectSynchronizer_oops_do,
   SHENANDOAH_RP_PS_Management_oops_do,
   SHENANDOAH_RP_PS_SystemDictionary_oops_do,
@@ -60,6 +60,7 @@ class ShenandoahRootProcessor : public StackObj {
   ParallelCLDRootIterator   _cld_iterator;
   ShenandoahAllCodeRootsIterator _coderoots_all_iterator;
   CodeBlobClosure* _threads_nmethods_cl;
+  WeakProcessor::Task _weak_processor_task;
 
   void process_java_roots(OopClosure* scan_non_heap_roots,
                           CLDClosure* scan_strong_clds,
