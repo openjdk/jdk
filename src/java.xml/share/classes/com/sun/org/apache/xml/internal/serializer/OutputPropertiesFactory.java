@@ -70,7 +70,7 @@ import jdk.xml.internal.SecuritySupport;
  * @see SerializerFactory
  * @see Method
  * @see Serializer
- * @LastModified: Feb 2019
+ * @LastModified: Mar 2019
  */
 public final class OutputPropertiesFactory
 {
@@ -231,7 +231,7 @@ public final class OutputPropertiesFactory
     private static final String[] PROP_HTML = {
         "method",
         "indent",
-        "media",
+        "media-type",
         "version",
         "{http://xml.apache.org/xalan}indent-amount",
         "{http://xml.apache.org/xalan}content-handler",
