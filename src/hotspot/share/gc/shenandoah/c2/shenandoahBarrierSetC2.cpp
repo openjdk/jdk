@@ -657,7 +657,7 @@ Node* ShenandoahBarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue&
                                  static_cast<const TypeOopPtr*>(val.type()), NULL /* pre_val */, access.type());
   } else {
     assert(access.is_opt_access(), "only for optimization passes");
-    assert(((decorators & C2_TIGHLY_COUPLED_ALLOC) != 0 || !ShenandoahSATBBarrier) && (decorators & C2_ARRAY_COPY) != 0, "unexpected caller of this code");
+    assert(((decorators & C2_TIGHTLY_COUPLED_ALLOC) != 0 || !ShenandoahSATBBarrier) && (decorators & C2_ARRAY_COPY) != 0, "unexpected caller of this code");
     C2OptAccess& opt_access = static_cast<C2OptAccess&>(access);
     PhaseGVN& gvn =  opt_access.gvn();
     MergeMemNode* mm = opt_access.mem();

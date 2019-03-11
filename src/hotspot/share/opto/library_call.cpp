@@ -4461,7 +4461,7 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
   return true;
 }
 
-// If we have a tighly coupled allocation, the arraycopy may take care
+// If we have a tightly coupled allocation, the arraycopy may take care
 // of the array initialization. If one of the guards we insert between
 // the allocation and the arraycopy causes a deoptimization, an
 // unitialized array will escape the compiled method. To prevent that
