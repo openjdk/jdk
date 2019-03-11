@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,6 +86,17 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
         keyTypes.put(name.toUpperCase(Locale.ENGLISH), l);
     }
 
+    // returns the PKCS11 key type of the specified algorithm
+    // no psuedo KeyTypes
+    static long getPKCS11KeyType(String algorithm) {
+        long kt = getKeyType(algorithm);
+        if (kt == -1 || kt > PCKK_ANY) {
+            kt = CKK_GENERIC_SECRET;
+        }
+        return kt;
+    }
+
+    // returns direct lookup result of keyTypes using algorithm
     static long getKeyType(String algorithm) {
         Long l = keyTypes.get(algorithm);
         if (l == null) {
