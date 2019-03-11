@@ -78,8 +78,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBVERIFY, \
     NAME := verify, \
     OPTIMIZATION := $(LIBVERIFY_OPTIMIZATION), \
     CFLAGS := $(CFLAGS_JDKLIB), \
-    DISABLED_WARNINGS_gcc := implicit-fallthrough unused-function, \
-    DISABLED_WARNINGS_microsoft := 4244 4267, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_unix := -ljvm, \
