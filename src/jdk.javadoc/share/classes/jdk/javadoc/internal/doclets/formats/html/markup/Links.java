@@ -62,7 +62,6 @@ public class Links {
 
     /**
      * Creates an anchor of the form {@code <a id="name"><!-- --></a>}.
-     * In HTML4, a {@code name} attribute will be generated instead of an {@code id} attribute.
      *
      * @param name the value for the {@code id} or {@code name} attribute
      * @return a content tree for the anchor
@@ -73,7 +72,6 @@ public class Links {
 
     /**
      * Creates an anchor of the form {@code <a id="sectionName"><!-- --></a>}.
-     * In HTML4, a {@code name} attribute will be generated instead of an {@code id} attribute.
      *
      * @param sectionName the value for the {@code id} or {@code name} attribute
      * @return a content tree for the anchor
@@ -84,7 +82,6 @@ public class Links {
 
     /**
      * Creates an anchor of the form {@code <a id="sectionNameName"><!-- --></a>}.
-     * In HTML4, a {@code name} attribute will be generated instead of an {@code id} attribute.
      *
      * @param sectionName the first part of the value for the {@code id} or {@code name} attribute
      * @param name the second part of the value for the {@code id} or {@code name} attribute
@@ -96,7 +93,6 @@ public class Links {
 
     /**
      * Creates an anchor of the form {@code <a id="anchorName">content</a>}.
-     * In HTML4, a {@code name} attribute will be generated instead of an {@code id} attribute.
      *
      * @param name the value for the {@code id} or {@code name} attribute
      * @param content the content that should be added to the anchor,
