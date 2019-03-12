@@ -190,7 +190,7 @@ public class JMap {
         System.out.flush();
 
         // inspectHeap is not the same as jcmd GC.class_histogram
-        executeCommandForPid(pid, "inspectheap", filename, liveopt);
+        executeCommandForPid(pid, "inspectheap", liveopt, filename);
     }
 
     private static void dump(String pid, String options)
