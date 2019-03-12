@@ -182,8 +182,10 @@ void CompileTask::set_code(nmethod* nm) {
 }
 
 void CompileTask::mark_on_stack() {
+  if (is_unloaded()) {
+    return;
+  }
   // Mark these methods as something redefine classes cannot remove.
-  assert(!is_unloaded(), "unloaded method on the stack");
   _method->set_on_stack(true);
   if (_hot_method != NULL) {
     _hot_method->set_on_stack(true);
