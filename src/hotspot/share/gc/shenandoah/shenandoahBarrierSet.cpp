@@ -22,7 +22,6 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/g1/g1BarrierSet.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
