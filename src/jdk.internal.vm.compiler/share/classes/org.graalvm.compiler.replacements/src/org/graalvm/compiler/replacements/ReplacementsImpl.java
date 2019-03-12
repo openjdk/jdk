@@ -81,10 +81,13 @@ import org.graalvm.compiler.nodes.graphbuilderconf.MethodSubstitutionPlugin;
 import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
 import org.graalvm.compiler.nodes.spi.Replacements;
 import org.graalvm.compiler.nodes.spi.StampProvider;
+import org.graalvm.compiler.options.Option;
+import org.graalvm.compiler.options.OptionKey;
+import org.graalvm.compiler.options.OptionType;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
-import org.graalvm.compiler.phases.common.ConvertDeoptimizeToGuardPhase;
+import org.graalvm.compiler.loop.phases.ConvertDeoptimizeToGuardPhase;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
 import org.graalvm.compiler.phases.util.Providers;
@@ -98,6 +101,13 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 
 public class ReplacementsImpl implements Replacements, InlineInvokePlugin {
+
+    public static class Options {
+        // @formatter:off
+        @Option(help = "This is a testing option to exercise the SymbolicSnippetEncoder", type = OptionType.Expert)
+        public static final OptionKey<Boolean> UseEncodedSnippets = new OptionKey<>(false);
+        // @formatter:on
+    }
 
     protected final OptionValues options;
 
@@ -222,11 +232,6 @@ public class ReplacementsImpl implements Replacements, InlineInvokePlugin {
     }
 
     private static final TimerKey SnippetPreparationTime = DebugContext.timer("SnippetPreparationTime");
-
-    @Override
-    public StructuredGraph getSnippet(ResolvedJavaMethod method, Object[] args, boolean trackNodeSourcePosition, NodeSourcePosition replaceePosition) {
-        return getSnippet(method, null, args, trackNodeSourcePosition, replaceePosition);
-    }
 
     private static final AtomicInteger nextDebugContextId = new AtomicInteger();
 

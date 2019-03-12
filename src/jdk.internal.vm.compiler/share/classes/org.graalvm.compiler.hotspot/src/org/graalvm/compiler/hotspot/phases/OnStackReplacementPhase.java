@@ -36,6 +36,7 @@ import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
+import org.graalvm.compiler.loop.LoopEx;
 import org.graalvm.compiler.loop.LoopsData;
 import org.graalvm.compiler.loop.phases.LoopTransformations;
 import org.graalvm.compiler.nodeinfo.InputType;
@@ -71,6 +72,7 @@ import org.graalvm.compiler.options.OptionType;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.Phase;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
+import org.graalvm.compiler.serviceprovider.SpeculationReasonGroup;
 
 import jdk.vm.ci.meta.DeoptimizationAction;
 import jdk.vm.ci.meta.DeoptimizationReason;
@@ -87,7 +89,7 @@ public class OnStackReplacementPhase extends Phase {
                        "if there is no mature profile available for the rest of the method.", type = OptionType.Debug)
         public static final OptionKey<Boolean> DeoptAfterOSR = new OptionKey<>(true);
         @Option(help = "Support OSR compilations with locks. If DeoptAfterOSR is true we can per definition not have " +
-                       "unbalaced enter/extis mappings. If DeoptAfterOSR is false insert artificial monitor enters after " +
+                       "unbalanced enter/exits mappings. If DeoptAfterOSR is false insert artificial monitor enters after " +
                        "the OSRStart to have balanced enter/exits in the graph.", type = OptionType.Debug)
         public static final OptionKey<Boolean> SupportOSRWithLocks = new OptionKey<>(true);
         // @formatter:on
@@ -98,6 +100,8 @@ public class OnStackReplacementPhase extends Phase {
     private static boolean supportOSRWithLocks(OptionValues options) {
         return Options.SupportOSRWithLocks.getValue(options);
     }
+
+    private static final SpeculationReasonGroup OSR_LOCAL_SPECULATIONS = new SpeculationReasonGroup("OSRLocal", int.class, Stamp.class, int.class);
 
     @Override
     @SuppressWarnings("try")
@@ -152,7 +156,9 @@ public class OnStackReplacementPhase extends Phase {
                 l = l.getParent();
             }
 
-            LoopTransformations.peel(loops.loop(l));
+            LoopEx loop = loops.loop(l);
+            loop.loopBegin().markOsrLoop();
+            LoopTransformations.peel(loop);
             osr.replaceAtUsages(InputType.Guard, AbstractBeginNode.prevBegin((FixedNode) osr.predecessor()));
             for (Node usage : osr.usages().snapshot()) {
                 EntryProxyNode proxy = (EntryProxyNode) usage;
@@ -179,7 +185,7 @@ public class OnStackReplacementPhase extends Phase {
             final int locksSize = osrState.locksSize();
 
             for (int i = 0; i < localsSize + locksSize; i++) {
-                ValueNode value = null;
+                ValueNode value;
                 if (i >= localsSize) {
                     value = osrState.lockAt(i - localsSize);
                 } else {
@@ -201,7 +207,7 @@ public class OnStackReplacementPhase extends Phase {
                         osrLocal = graph.addOrUnique(new OSRLocalNode(i, unrestrictedStamp));
                     }
                     // Speculate on the OSRLocal stamps that could be more precise.
-                    OSRLocalSpeculationReason reason = new OSRLocalSpeculationReason(osrState.bci, narrowedStamp, i);
+                    SpeculationReason reason = OSR_LOCAL_SPECULATIONS.createSpeculationReason(osrState.bci, narrowedStamp, i);
                     if (graph.getSpeculationLog().maySpeculate(reason) && osrLocal instanceof OSRLocalNode && value.getStackKind().equals(JavaKind.Object) && !narrowedStamp.isUnrestricted()) {
                         // Add guard.
                         LogicNode check = graph.addOrUniqueWithInputs(InstanceOfNode.createHelper((ObjectStamp) narrowedStamp, osrLocal, null, null));
@@ -304,31 +310,5 @@ public class OnStackReplacementPhase extends Phase {
     @Override
     public float codeSizeIncrease() {
         return 5.0f;
-    }
-
-    private static class OSRLocalSpeculationReason implements SpeculationReason {
-        private int bci;
-        private Stamp speculatedStamp;
-        private int localIndex;
-
-        OSRLocalSpeculationReason(int bci, Stamp speculatedStamp, int localIndex) {
-            this.bci = bci;
-            this.speculatedStamp = speculatedStamp;
-            this.localIndex = localIndex;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (obj instanceof OSRLocalSpeculationReason) {
-                OSRLocalSpeculationReason that = (OSRLocalSpeculationReason) obj;
-                return this.bci == that.bci && this.speculatedStamp.equals(that.speculatedStamp) && this.localIndex == that.localIndex;
-            }
-            return false;
-        }
-
-        @Override
-        public int hashCode() {
-            return (bci << 16) ^ speculatedStamp.hashCode() ^ localIndex;
-        }
     }
 }

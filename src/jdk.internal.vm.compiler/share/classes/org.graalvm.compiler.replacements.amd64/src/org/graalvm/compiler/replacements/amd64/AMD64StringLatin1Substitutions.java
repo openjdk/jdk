@@ -30,6 +30,7 @@ import org.graalvm.compiler.api.replacements.Fold.InjectedParameter;
 import org.graalvm.compiler.api.replacements.MethodSubstitution;
 import org.graalvm.compiler.nodes.DeoptimizeNode;
 import org.graalvm.compiler.replacements.nodes.ArrayCompareToNode;
+import org.graalvm.compiler.replacements.nodes.ArrayRegionEqualsNode;
 import org.graalvm.compiler.word.Word;
 import jdk.internal.vm.compiler.word.Pointer;
 
@@ -89,7 +90,15 @@ public class AMD64StringLatin1Substitutions {
         return ArrayCompareToNode.compareTo(value, other, value.length, other.length, JavaKind.Byte, JavaKind.Char);
     }
 
-    @MethodSubstitution(optional = true)
+    private static Word pointer(byte[] target) {
+        return Word.objectToTrackedPointer(target).add(byteArrayBaseOffset(INJECTED));
+    }
+
+    private static Word byteOffsetPointer(byte[] source, int offset) {
+        return pointer(source).add(offset * byteArrayIndexScale(INJECTED));
+    }
+
+    @MethodSubstitution
     public static int indexOf(byte[] value, int ch, int origFromIndex) {
         int fromIndex = origFromIndex;
         if (ch >>> 8 != 0) {
@@ -103,12 +112,65 @@ public class AMD64StringLatin1Substitutions {
             // Note: fromIndex might be near -1>>>1.
             return -1;
         }
-        Pointer sourcePointer = Word.objectToTrackedPointer(value).add(byteArrayBaseOffset(INJECTED)).add(fromIndex);
+        Pointer sourcePointer = byteOffsetPointer(value, fromIndex);
         int result = AMD64ArrayIndexOf.indexOf1Byte(sourcePointer, length - fromIndex, (byte) ch);
         if (result != -1) {
             return result + fromIndex;
         }
         return result;
+    }
+
+    @MethodSubstitution
+    public static int indexOf(byte[] source, int sourceCount, byte[] target, int targetCount, int origFromIndex) {
+        int fromIndex = origFromIndex;
+        if (fromIndex >= sourceCount) {
+            return (targetCount == 0 ? sourceCount : -1);
+        }
+        if (fromIndex < 0) {
+            fromIndex = 0;
+        }
+        if (targetCount == 0) {
+            // The empty string is in every string.
+            return fromIndex;
+        }
+        if (sourceCount - fromIndex < targetCount) {
+            // The empty string contains nothing except the empty string.
+            return -1;
+        }
+        int totalOffset = fromIndex;
+        if (targetCount == 1) {
+            Pointer sourcePointer = byteOffsetPointer(source, totalOffset);
+            int indexOfResult = AMD64ArrayIndexOf.indexOf1Byte(sourcePointer, sourceCount - fromIndex, target[0]);
+            if (indexOfResult >= 0) {
+                return indexOfResult + totalOffset;
+            }
+            return indexOfResult;
+        } else if (targetCount == 2) {
+            Pointer sourcePointer = byteOffsetPointer(source, totalOffset);
+            int indexOfResult = AMD64ArrayIndexOf.indexOfTwoConsecutiveBytes(sourcePointer, sourceCount - fromIndex, target[0], target[1]);
+            if (indexOfResult >= 0) {
+                return indexOfResult + totalOffset;
+            }
+            return indexOfResult;
+        } else {
+            int haystackLength = sourceCount - (fromIndex + (targetCount - 2));
+            while (haystackLength > 0) {
+                Pointer sourcePointer = byteOffsetPointer(source, totalOffset);
+                int indexOfResult = AMD64ArrayIndexOf.indexOfTwoConsecutiveBytes(sourcePointer, haystackLength, target[0], target[1]);
+                if (indexOfResult < 0) {
+                    return -1;
+                }
+                totalOffset += indexOfResult;
+                haystackLength -= (indexOfResult + 1);
+                Pointer cmpSourcePointer = byteOffsetPointer(source, totalOffset);
+                Pointer targetPointer = pointer(target);
+                if (ArrayRegionEqualsNode.regionEquals(cmpSourcePointer, targetPointer, targetCount, JavaKind.Byte)) {
+                    return totalOffset;
+                }
+                totalOffset++;
+            }
+            return -1;
+        }
     }
 
     /**

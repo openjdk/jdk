@@ -125,7 +125,7 @@ public final class ArrayCompareToNode extends FixedWithNextNode implements LIRLo
 
     @Override
     public LocationIdentity getLocationIdentity() {
-        return NamedLocationIdentity.getArrayLocation(kind1);
+        return kind1 != kind2 ? LocationIdentity.ANY_LOCATION : NamedLocationIdentity.getArrayLocation(kind1);
     }
 
     @Override

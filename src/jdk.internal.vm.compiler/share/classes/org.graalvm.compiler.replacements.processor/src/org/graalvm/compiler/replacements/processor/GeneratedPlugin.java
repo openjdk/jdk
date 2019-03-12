@@ -208,7 +208,11 @@ public abstract class GeneratedPlugin {
         out.printf("        %s arg%d;\n", getErasedType(type), argIdx);
         out.printf("        if (args[%d].isConstant()) {\n", nodeIdx);
         if (type.equals(processor.getType("jdk.vm.ci.meta.ResolvedJavaType"))) {
-            out.printf("            arg%d = %s.asJavaType(args[%d].asConstant());\n", argIdx, deps.use(WellKnownDependency.CONSTANT_REFLECTION), nodeIdx);
+            out.printf("            jdk.vm.ci.meta.JavaConstant cst = args[%d].asJavaConstant();\n", nodeIdx);
+            out.printf("            arg%d = %s.asJavaType(cst);\n", argIdx, deps.use(WellKnownDependency.CONSTANT_REFLECTION));
+            out.printf("            if (arg%d == null) {\n", argIdx);
+            out.printf("                arg%d = %s.asObject(jdk.vm.ci.meta.ResolvedJavaType.class, cst);\n", argIdx, deps.use(WellKnownDependency.SNIPPET_REFLECTION));
+            out.printf("            }\n");
         } else {
             switch (type.getKind()) {
                 case BOOLEAN:

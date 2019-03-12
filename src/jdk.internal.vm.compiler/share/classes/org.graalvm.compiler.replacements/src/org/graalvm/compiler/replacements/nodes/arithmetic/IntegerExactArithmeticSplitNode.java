@@ -32,21 +32,11 @@ import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.Simplifiable;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
-import org.graalvm.compiler.nodes.BeginNode;
 import org.graalvm.compiler.nodes.ControlSplitNode;
-import org.graalvm.compiler.nodes.DeoptimizeNode;
-import org.graalvm.compiler.nodes.FixedNode;
-import org.graalvm.compiler.nodes.FixedWithNextNode;
-import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
-import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
-import jdk.vm.ci.meta.DeoptimizationAction;
-import jdk.vm.ci.meta.DeoptimizationReason;
-import jdk.vm.ci.meta.SpeculationLog;
 import jdk.vm.ci.meta.Value;
 
 @NodeInfo(cycles = CYCLES_2, cyclesRationale = "add+cmp", size = SIZE_2)
@@ -116,23 +106,6 @@ public abstract class IntegerExactArithmeticSplitNode extends ControlSplitNode i
     }
 
     protected abstract Value generateArithmetic(NodeLIRBuilderTool generator);
-
-    static void lower(LoweringTool tool, IntegerExactArithmeticNode node) {
-        if (node.asNode().graph().getGuardsStage() == StructuredGraph.GuardsStage.FIXED_DEOPTS) {
-            FloatingNode floatingNode = (FloatingNode) node;
-            FixedWithNextNode previous = tool.lastFixedNode();
-            FixedNode next = previous.next();
-            previous.setNext(null);
-            StructuredGraph graph = floatingNode.graph();
-            DeoptimizeNode deopt = graph.add(new DeoptimizeNode(DeoptimizationAction.InvalidateReprofile, DeoptimizationReason.ArithmeticException,
-                            node.getSpeculation() == null ? SpeculationLog.NO_SPECULATION : graph.getSpeculationLog().speculate(node.getSpeculation())));
-            AbstractBeginNode normalBegin = graph.add(new BeginNode());
-            normalBegin.setNext(next);
-            IntegerExactArithmeticSplitNode split = node.createSplit(normalBegin, BeginNode.begin(deopt));
-            previous.setNext(split);
-            floatingNode.replaceAndDelete(split);
-        }
-    }
 
     @Override
     public int getSuccessorCount() {

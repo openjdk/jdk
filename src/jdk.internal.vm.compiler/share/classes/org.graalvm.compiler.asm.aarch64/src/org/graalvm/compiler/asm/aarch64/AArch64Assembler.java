@@ -880,15 +880,15 @@ public abstract class AArch64Assembler extends Assembler {
     protected void tbnz(Register reg, int uimm6, int imm16, int pos) {
         assert reg.getRegisterCategory().equals(CPU);
         assert NumUtil.isUnsignedNbit(6, uimm6);
-        assert NumUtil.isSignedNbit(18, imm16);
-        assert (imm16 & 3) == 0;
+        assert NumUtil.isSignedNbit(16, imm16) : String.format("Offset value must fit in 16 bits signed: 0x%x", imm16);
+        assert (imm16 & 3) == 0 : String.format("Lower two bits must be zero: 0x%x", imm16 & 3);
         // size bit is overloaded as top bit of uimm6 bit index
         int size = (((uimm6 >> 5) & 1) == 0 ? 32 : 64);
         // remaining 5 bits are encoded lower down
-        int uimm5 = uimm6 >> 1;
-        int offset = (imm16 & NumUtil.getNbitNumberInt(16)) >> 2;
+        int uimm5 = uimm6 & 0x1F;
+        int imm14 = (imm16 & NumUtil.getNbitNumberInt(16)) >> 2;
         InstructionType type = generalFromSize(size);
-        int encoding = type.encoding | TBNZ.encoding | (uimm5 << 19) | (offset << 5) | rd(reg);
+        int encoding = type.encoding | TBNZ.encoding | (uimm5 << 19) | (imm14 << 5) | rd(reg);
         if (pos == -1) {
             emitInt(encoding);
         } else {
@@ -907,15 +907,15 @@ public abstract class AArch64Assembler extends Assembler {
     protected void tbz(Register reg, int uimm6, int imm16, int pos) {
         assert reg.getRegisterCategory().equals(CPU);
         assert NumUtil.isUnsignedNbit(6, uimm6);
-        assert NumUtil.isSignedNbit(18, imm16);
-        assert (imm16 & 3) == 0;
+        assert NumUtil.isSignedNbit(16, imm16) : String.format("Offset value must fit in 16 bits signed: 0x%x", imm16);
+        assert (imm16 & 3) == 0 : String.format("Lower two bits must be zero: 0x%x", imm16 & 3);
         // size bit is overloaded as top bit of uimm6 bit index
         int size = (((uimm6 >> 5) & 1) == 0 ? 32 : 64);
         // remaining 5 bits are encoded lower down
-        int uimm5 = uimm6 >> 1;
-        int offset = (imm16 & NumUtil.getNbitNumberInt(16)) >> 2;
+        int uimm5 = uimm6 & 0x1F;
+        int imm14 = (imm16 & NumUtil.getNbitNumberInt(16)) >> 2;
         InstructionType type = generalFromSize(size);
-        int encoding = type.encoding | TBZ.encoding | (uimm5 << 19) | (offset << 5) | rd(reg);
+        int encoding = type.encoding | TBZ.encoding | (uimm5 << 19) | (imm14 << 5) | rd(reg);
         if (pos == -1) {
             emitInt(encoding);
         } else {

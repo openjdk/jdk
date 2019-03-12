@@ -25,6 +25,7 @@
 package org.graalvm.compiler.replacements.nodes;
 
 import static jdk.vm.ci.code.BytecodeFrame.isPlaceholderBci;
+import static jdk.vm.ci.services.Services.IS_IN_NATIVE_IMAGE;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_UNKNOWN;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_UNKNOWN;
 
@@ -205,13 +206,15 @@ public abstract class MacroNode extends FixedWithNextNode implements Lowerable, 
 
             if (invoke.stateAfter() == null) {
                 ResolvedJavaMethod method = graph().method();
-                if (method.getAnnotation(MethodSubstitution.class) != null || method.getAnnotation(Snippet.class) != null) {
-                    // One cause for this is that a MacroNode is created for a method that
-                    // no longer needs a MacroNode. For example, Class.getComponentType()
-                    // only needs a MacroNode prior to JDK9 as it was given a non-native
-                    // implementation in JDK9.
-                    throw new GraalError("%s macro created for call to %s in %s must be lowerable to a snippet or intrinsic graph. " +
-                                    "Maybe a macro node is not needed for this method in the current JDK?", getClass().getSimpleName(), targetMethod.format("%h.%n(%p)"), graph());
+                if (!IS_IN_NATIVE_IMAGE) {
+                    if (method.getAnnotation(MethodSubstitution.class) != null || method.getAnnotation(Snippet.class) != null) {
+                        // One cause for this is that a MacroNode is created for a method that
+                        // no longer needs a MacroNode. For example, Class.getComponentType()
+                        // only needs a MacroNode prior to JDK9 as it was given a non-native
+                        // implementation in JDK9.
+                        throw new GraalError("%s macro created for call to %s in %s must be lowerable to a snippet or intrinsic graph. " +
+                                        "Maybe a macro node is not needed for this method in the current JDK?", getClass().getSimpleName(), targetMethod.format("%h.%n(%p)"), graph());
+                    }
                 }
                 throw new GraalError("%s: cannot lower to invoke without state: %s", graph(), this);
             }

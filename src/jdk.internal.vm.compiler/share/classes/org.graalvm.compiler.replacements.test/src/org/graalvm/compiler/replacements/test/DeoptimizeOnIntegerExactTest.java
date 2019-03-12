@@ -134,6 +134,7 @@ public class DeoptimizeOnIntegerExactTest extends GraalCompilerTest {
 
     @Override
     protected InstalledCode addMethod(DebugContext debug, final ResolvedJavaMethod method, final CompilationResult compilationResult) {
-        return getBackend().createInstalledCode(debug, method, compilationResult, speculationLog, null, false);
+        assert speculationLog == compilationResult.getSpeculationLog();
+        return getBackend().createInstalledCode(debug, method, compilationResult, null, false);
     }
 }

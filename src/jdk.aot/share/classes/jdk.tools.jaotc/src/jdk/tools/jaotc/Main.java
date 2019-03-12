@@ -166,7 +166,7 @@ public final class Main {
                 printer.printInfo(classesToCompile.size() + " classes found");
             }
 
-            OptionValues graalOptions = HotSpotGraalOptionValues.HOTSPOT_OPTIONS;
+            OptionValues graalOptions = HotSpotGraalOptionValues.defaultOptions();
             // Setting -Dgraal.TieredAOT overrides --compile-for-tiered
             if (!TieredAOT.hasBeenSet(graalOptions)) {
                 graalOptions = new OptionValues(graalOptions, TieredAOT, options.tiered);

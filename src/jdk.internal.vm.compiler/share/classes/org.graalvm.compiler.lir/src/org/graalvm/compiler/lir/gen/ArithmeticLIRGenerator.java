@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,6 +108,11 @@ public abstract class ArithmeticLIRGenerator implements ArithmeticLIRGeneratorTo
         }
 
         return isAdd ? emitAdd(resultKind, a, b, setFlags) : emitSub(resultKind, a, b, setFlags);
+    }
+
+    public Value emitRor(Value value, Value distance) {
+        // (value >>> distance) | (value << -distance)
+        return emitOr(emitUShr(value, distance), emitShl(value, emitNegate(distance)));
     }
 
 }

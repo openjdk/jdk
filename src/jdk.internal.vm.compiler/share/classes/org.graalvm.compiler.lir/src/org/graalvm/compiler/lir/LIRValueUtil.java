@@ -71,6 +71,11 @@ public final class LIRValueUtil {
         return asConstantValue(value).getJavaConstant();
     }
 
+    public static boolean isNullConstant(Value value) {
+        assert value != null;
+        return isJavaConstant(value) && asJavaConstant(value).isNull();
+    }
+
     public static boolean isIntConstant(Value value, long expected) {
         if (isJavaConstant(value)) {
             JavaConstant javaConstant = asJavaConstant(value);

@@ -94,4 +94,6 @@ public interface NodeLIRBuilderTool extends NodeValueMap {
     default OptionValues getOptions() {
         return getLIRGeneratorTool().getResult().getLIR().getOptions();
     }
+
+    void emitReadExceptionObject(ValueNode node);
 }

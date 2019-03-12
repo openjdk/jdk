@@ -80,6 +80,22 @@ public final class UnsignedRightShiftNode extends ShiftNode<UShr> {
             if (amount == 0) {
                 return forX;
             }
+
+            Stamp xStampGeneric = forX.stamp(view);
+            if (xStampGeneric instanceof IntegerStamp) {
+                IntegerStamp xStamp = (IntegerStamp) xStampGeneric;
+
+                if (xStamp.lowerBound() >>> amount == xStamp.upperBound() >>> amount) {
+                    // The result of the shift is constant.
+                    return ConstantNode.forIntegerKind(stamp.getStackKind(), xStamp.lowerBound() >>> amount);
+                }
+
+                if (amount == xStamp.getBits() - 1 && xStamp.lowerBound() == -1 && xStamp.upperBound() == 0) {
+                    // Shift is equivalent to a negation, i.e., turns -1 into 1 and keeps 0 at 0.
+                    return NegateNode.create(forX, view);
+                }
+            }
+
             if (forX instanceof ShiftNode) {
                 ShiftNode<?> other = (ShiftNode<?>) forX;
                 if (other.getY().isConstant()) {

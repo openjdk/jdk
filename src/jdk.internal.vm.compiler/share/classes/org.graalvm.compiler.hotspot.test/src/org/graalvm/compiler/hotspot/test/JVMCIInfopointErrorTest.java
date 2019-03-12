@@ -24,6 +24,7 @@
 
 package org.graalvm.compiler.hotspot.test;
 
+import static org.graalvm.compiler.debug.DebugOptions.DumpOnError;
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.REG;
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.STACK;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_IGNORED;
@@ -52,6 +53,7 @@ import org.graalvm.compiler.nodes.DeoptimizingFixedWithNextNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+import org.graalvm.compiler.options.OptionValues;
 import org.junit.Test;
 
 import jdk.vm.ci.code.BytecodeFrame;
@@ -139,6 +141,14 @@ public class JVMCIInfopointErrorTest extends GraalCompilerTest {
         test(getDebugContext(), spec);
     }
 
+    /**
+     * Avoids dumping during tests which are expected to fail.
+     */
+    private void testNoDump(TestSpec spec) {
+        OptionValues options = new OptionValues(getInitialOptions(), DumpOnError, false);
+        test(getDebugContext(options, null, null), spec);
+    }
+
     private void test(DebugContext debug, TestSpec spec) {
         ResolvedJavaMethod method = getResolvedJavaMethod("testMethod");
 
@@ -154,7 +164,7 @@ public class JVMCIInfopointErrorTest extends GraalCompilerTest {
 
     @Test(expected = Error.class)
     public void testInvalidShortOop() {
-        test((tool, state, safepoint) -> {
+        testNoDump((tool, state, safepoint) -> {
             PlatformKind kind = tool.target().arch.getPlatformKind(JavaKind.Short);
             LIRKind lirKind = LIRKind.reference(kind);
 
@@ -167,7 +177,7 @@ public class JVMCIInfopointErrorTest extends GraalCompilerTest {
 
     @Test(expected = Error.class)
     public void testInvalidShortDerivedOop() {
-        test((tool, state, safepoint) -> {
+        testNoDump((tool, state, safepoint) -> {
             Variable baseOop = tool.newVariable(LIRKind.fromJavaKind(tool.target().arch, JavaKind.Object));
             tool.append(new ValueDef(baseOop));
 

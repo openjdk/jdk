@@ -209,19 +209,19 @@ public class NewObjectSnippets implements Snippets {
     }
 
     @Snippet
-    public static Object allocateInstance(@ConstantParameter int size, KlassPointer hub, Word prototypeMarkWord, @ConstantParameter boolean fillContents,
+    public static Object allocateInstance(@ConstantParameter long size, KlassPointer hub, Word prototypeMarkWord, @ConstantParameter boolean fillContents,
                     @ConstantParameter Register threadRegister, @ConstantParameter boolean constantSize, @ConstantParameter String typeContext,
                     @ConstantParameter Counters counters) {
         return piCastToSnippetReplaceeStamp(allocateInstanceHelper(size, hub, prototypeMarkWord, fillContents, threadRegister, constantSize, typeContext, counters));
     }
 
-    public static Object allocateInstanceHelper(int size, KlassPointer hub, Word prototypeMarkWord, boolean fillContents,
+    public static Object allocateInstanceHelper(long size, KlassPointer hub, Word prototypeMarkWord, boolean fillContents,
                     Register threadRegister, boolean constantSize, String typeContext, Counters counters) {
         Object result;
         Word thread = registerAsWord(threadRegister);
         Word top = readTlabTop(thread);
         Word end = readTlabEnd(thread);
-        Word newTop = top.add(size);
+        Word newTop = top.add(WordFactory.unsigned(size));
         if (useTLAB(INJECTED_VMCONFIG) && probability(FAST_PATH_PROBABILITY, newTop.belowOrEqual(end))) {
             writeTlabTop(thread, newTop);
             emitPrefetchAllocate(newTop, false);
@@ -252,7 +252,7 @@ public class NewObjectSnippets implements Snippets {
     private static native Object newInstanceOrNull(@ConstantNodeParameter ForeignCallDescriptor descriptor, KlassPointer hub);
 
     @Snippet
-    public static Object allocateInstancePIC(@ConstantParameter int size, KlassPointer hub, Word prototypeMarkWord, @ConstantParameter boolean fillContents,
+    public static Object allocateInstancePIC(@ConstantParameter long size, KlassPointer hub, Word prototypeMarkWord, @ConstantParameter boolean fillContents,
                     @ConstantParameter Register threadRegister, @ConstantParameter boolean constantSize, @ConstantParameter String typeContext,
                     @ConstantParameter Counters counters) {
         // Klass must be initialized by the time the first instance is allocated, therefore we can
@@ -316,7 +316,7 @@ public class NewObjectSnippets implements Snippets {
                     @ConstantParameter Counters counters) {
         // Primitive array types are eagerly pre-resolved. We can use a floating load.
         KlassPointer picHub = LoadConstantIndirectlyNode.loadKlass(hub);
-        return allocateArrayImpl(picHub, length, prototypeMarkWord, headerSize, log2ElementSize, fillContents, threadRegister, maybeUnroll, typeContext, false, counters);
+        return allocateArrayImpl(picHub, length, prototypeMarkWord, headerSize, log2ElementSize, fillContents, threadRegister, maybeUnroll, typeContext, counters);
     }
 
     @Snippet
@@ -325,7 +325,7 @@ public class NewObjectSnippets implements Snippets {
                     @ConstantParameter Counters counters) {
         // Array type would be resolved by dominating resolution.
         KlassPointer picHub = LoadConstantIndirectlyFixedNode.loadKlass(hub);
-        return allocateArrayImpl(picHub, length, prototypeMarkWord, headerSize, log2ElementSize, fillContents, threadRegister, maybeUnroll, typeContext, false, counters);
+        return allocateArrayImpl(picHub, length, prototypeMarkWord, headerSize, log2ElementSize, fillContents, threadRegister, maybeUnroll, typeContext, counters);
     }
 
     @Snippet
@@ -348,7 +348,6 @@ public class NewObjectSnippets implements Snippets {
                         threadRegister,
                         maybeUnroll,
                         typeContext,
-                        false,
 
                         counters);
         return piArrayCastToSnippetReplaceeStamp(verifyOop(result), length);
@@ -364,14 +363,14 @@ public class NewObjectSnippets implements Snippets {
     }
 
     private static Object allocateArrayImpl(KlassPointer hub, int length, Word prototypeMarkWord, int headerSize, int log2ElementSize, boolean fillContents, Register threadRegister,
-                    boolean maybeUnroll, String typeContext, boolean skipNegativeCheck, Counters counters) {
+                    boolean maybeUnroll, String typeContext, Counters counters) {
         Object result;
-        int allocationSize = arrayAllocationSize(length, headerSize, log2ElementSize);
+        long allocationSize = arrayAllocationSize(length, headerSize, log2ElementSize);
         Word thread = registerAsWord(threadRegister);
         Word top = readTlabTop(thread);
         Word end = readTlabEnd(thread);
-        Word newTop = top.add(allocationSize);
-        if (probability(FREQUENT_PROBABILITY, skipNegativeCheck || belowThan(length, MAX_ARRAY_FAST_PATH_ALLOCATION_LENGTH)) && useTLAB(INJECTED_VMCONFIG) &&
+        Word newTop = top.add(WordFactory.unsigned(allocationSize));
+        if (probability(FREQUENT_PROBABILITY, belowThan(length, MAX_ARRAY_FAST_PATH_ALLOCATION_LENGTH)) && useTLAB(INJECTED_VMCONFIG) &&
                         probability(FAST_PATH_PROBABILITY, newTop.belowOrEqual(end))) {
             writeTlabTop(thread, newTop);
             emitPrefetchAllocate(newTop, true);
@@ -486,7 +485,7 @@ public class NewObjectSnippets implements Snippets {
         int headerSize = (layoutHelper >> layoutHelperHeaderSizeShift(INJECTED_VMCONFIG)) & layoutHelperHeaderSizeMask(INJECTED_VMCONFIG);
         int log2ElementSize = (layoutHelper >> layoutHelperLog2ElementSizeShift(INJECTED_VMCONFIG)) & layoutHelperLog2ElementSizeMask(INJECTED_VMCONFIG);
 
-        Object result = allocateArrayImpl(nonNullKlass, length, prototypeMarkWord, headerSize, log2ElementSize, fillContents, threadRegister, false, "dynamic type", true, counters);
+        Object result = allocateArrayImpl(nonNullKlass, length, prototypeMarkWord, headerSize, log2ElementSize, fillContents, threadRegister, false, "dynamic type", counters);
         return piArrayCastToSnippetReplaceeStamp(verifyOop(result), length);
     }
 
@@ -540,11 +539,11 @@ public class NewObjectSnippets implements Snippets {
      * @param startOffset offset to begin zeroing. May not be word aligned.
      * @param manualUnroll maximally unroll zeroing
      */
-    private static void zeroMemory(int size, Word memory, boolean constantSize, int startOffset, boolean manualUnroll, Counters counters) {
+    private static void zeroMemory(long size, Word memory, boolean constantSize, int startOffset, boolean manualUnroll, Counters counters) {
         fillMemory(0, size, memory, constantSize, startOffset, manualUnroll, counters);
     }
 
-    private static void fillMemory(long value, int size, Word memory, boolean constantSize, int startOffset, boolean manualUnroll, Counters counters) {
+    private static void fillMemory(long value, long size, Word memory, boolean constantSize, int startOffset, boolean manualUnroll, Counters counters) {
         ReplacementsUtil.runtimeAssert((size & 0x7) == 0, "unaligned object size");
         int offset = startOffset;
         if ((offset & 0x7) != 0) {
@@ -598,14 +597,14 @@ public class NewObjectSnippets implements Snippets {
      * @param startOffset offset to begin zeroing. May not be word aligned.
      * @param manualUnroll maximally unroll zeroing
      */
-    private static void fillWithGarbage(int size, Word memory, boolean constantSize, int startOffset, boolean manualUnroll, Counters counters) {
+    private static void fillWithGarbage(long size, Word memory, boolean constantSize, int startOffset, boolean manualUnroll, Counters counters) {
         fillMemory(0xfefefefefefefefeL, size, memory, constantSize, startOffset, manualUnroll, counters);
     }
 
     /**
      * Formats some allocated memory with an object header and zeroes out the rest.
      */
-    private static Object formatObject(KlassPointer hub, int size, Word memory, Word compileTimePrototypeMarkWord, boolean fillContents, boolean constantSize, Counters counters) {
+    private static Object formatObject(KlassPointer hub, long size, Word memory, Word compileTimePrototypeMarkWord, boolean fillContents, boolean constantSize, Counters counters) {
         Word prototypeMarkWord = useBiasedLocking(INJECTED_VMCONFIG) ? hub.readWord(prototypeMarkWordOffset(INJECTED_VMCONFIG), PROTOTYPE_MARK_WORD_LOCATION) : compileTimePrototypeMarkWord;
         initializeObjectHeader(memory, prototypeMarkWord, hub);
         if (fillContents) {
@@ -632,7 +631,7 @@ public class NewObjectSnippets implements Snippets {
     /**
      * Formats some allocated memory with an object header and zeroes out the rest.
      */
-    private static Object formatArray(KlassPointer hub, int allocationSize, int length, int headerSize, Word memory, Word prototypeMarkWord, boolean fillContents, boolean maybeUnroll,
+    private static Object formatArray(KlassPointer hub, long allocationSize, int length, int headerSize, Word memory, Word prototypeMarkWord, boolean fillContents, boolean maybeUnroll,
                     Counters counters) {
         memory.writeInt(arrayLengthOffset(INJECTED_VMCONFIG), length, LocationIdentity.init());
         /*
@@ -699,7 +698,7 @@ public class NewObjectSnippets implements Snippets {
             HotSpotResolvedObjectType type = (HotSpotResolvedObjectType) newInstanceNode.instanceClass();
             assert !type.isArray();
             ConstantNode hub = ConstantNode.forConstant(KlassPointerStamp.klassNonNull(), type.klass(), providers.getMetaAccess(), graph);
-            int size = instanceSize(type);
+            long size = instanceSize(type);
 
             OptionValues localOptions = graph.getOptions();
             SnippetInfo snippet = GeneratePIC.getValue(localOptions) ? allocateInstancePIC : allocateInstance;
@@ -824,8 +823,8 @@ public class NewObjectSnippets implements Snippets {
             template(newmultiarrayNode, args).instantiate(providers.getMetaAccess(), newmultiarrayNode, DEFAULT_REPLACER, args);
         }
 
-        private static int instanceSize(HotSpotResolvedObjectType type) {
-            int size = type.instanceSize();
+        private static long instanceSize(HotSpotResolvedObjectType type) {
+            long size = type.instanceSize();
             assert size >= 0;
             return size;
         }

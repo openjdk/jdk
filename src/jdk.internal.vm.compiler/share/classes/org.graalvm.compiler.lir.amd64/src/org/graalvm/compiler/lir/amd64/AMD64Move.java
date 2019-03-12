@@ -698,7 +698,7 @@ public class AMD64Move {
                     if (crb.mustReplaceWithNullRegister(input)) {
                         masm.movq(result, crb.nullRegister);
                     } else {
-                        masm.movq(result, 0x0L);
+                        masm.movslq(result, 0);
                     }
                 } else if (crb.target.inlineObjects) {
                     crb.recordInlineDataInCode(input);

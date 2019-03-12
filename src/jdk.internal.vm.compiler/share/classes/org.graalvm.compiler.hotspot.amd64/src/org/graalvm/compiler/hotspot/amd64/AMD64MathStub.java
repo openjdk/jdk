@@ -24,16 +24,8 @@
 
 package org.graalvm.compiler.hotspot.amd64;
 
-import static org.graalvm.compiler.hotspot.amd64.AMD64HotSpotForeignCallsProvider.ARITHMETIC_COS_STUB;
-import static org.graalvm.compiler.hotspot.amd64.AMD64HotSpotForeignCallsProvider.ARITHMETIC_EXP_STUB;
-import static org.graalvm.compiler.hotspot.amd64.AMD64HotSpotForeignCallsProvider.ARITHMETIC_LOG10_STUB;
-import static org.graalvm.compiler.hotspot.amd64.AMD64HotSpotForeignCallsProvider.ARITHMETIC_LOG_STUB;
-import static org.graalvm.compiler.hotspot.amd64.AMD64HotSpotForeignCallsProvider.ARITHMETIC_POW_STUB;
-import static org.graalvm.compiler.hotspot.amd64.AMD64HotSpotForeignCallsProvider.ARITHMETIC_SIN_STUB;
-import static org.graalvm.compiler.hotspot.amd64.AMD64HotSpotForeignCallsProvider.ARITHMETIC_TAN_STUB;
-
 import org.graalvm.compiler.api.replacements.Snippet;
-import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
+import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.hotspot.stubs.SnippetStub;
@@ -48,33 +40,38 @@ import org.graalvm.compiler.replacements.nodes.UnaryMathIntrinsicNode.UnaryOpera
  */
 public class AMD64MathStub extends SnippetStub {
 
-    public AMD64MathStub(ForeignCallDescriptor descriptor, OptionValues options, HotSpotProviders providers, HotSpotForeignCallLinkage linkage) {
-        super(snippetName(descriptor), options, providers, linkage);
+    public AMD64MathStub(UnaryOperation operation, OptionValues options, HotSpotProviders providers, HotSpotForeignCallLinkage linkage) {
+        super(snippetName(operation), options, providers, linkage);
     }
 
-    private static String snippetName(ForeignCallDescriptor descriptor) {
-        if (descriptor == ARITHMETIC_LOG_STUB) {
-            return "log";
+    public AMD64MathStub(BinaryOperation operation, OptionValues options, HotSpotProviders providers, HotSpotForeignCallLinkage linkage) {
+        super(snippetName(operation), options, providers, linkage);
+    }
+
+    private static String snippetName(UnaryOperation operation) {
+        switch (operation) {
+            case SIN:
+                return "sin";
+            case COS:
+                return "cos";
+            case TAN:
+                return "tan";
+            case EXP:
+                return "exp";
+            case LOG:
+                return "log";
+            case LOG10:
+                return "log10";
+            default:
+                throw GraalError.shouldNotReachHere("Unknown operation " + operation);
         }
-        if (descriptor == ARITHMETIC_LOG10_STUB) {
-            return "log10";
-        }
-        if (descriptor == ARITHMETIC_SIN_STUB) {
-            return "sin";
-        }
-        if (descriptor == ARITHMETIC_COS_STUB) {
-            return "cos";
-        }
-        if (descriptor == ARITHMETIC_TAN_STUB) {
-            return "tan";
-        }
-        if (descriptor == ARITHMETIC_EXP_STUB) {
-            return "exp";
-        }
-        if (descriptor == ARITHMETIC_POW_STUB) {
+    }
+
+    private static String snippetName(BinaryOperation operation) {
+        if (operation == BinaryOperation.POW) {
             return "pow";
         }
-        throw new InternalError("Unknown operation " + descriptor);
+        throw GraalError.shouldNotReachHere("Unknown operation " + operation);
     }
 
     @Snippet

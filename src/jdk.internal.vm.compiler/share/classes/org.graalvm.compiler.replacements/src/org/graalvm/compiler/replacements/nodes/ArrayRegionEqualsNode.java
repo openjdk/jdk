@@ -55,7 +55,8 @@ public final class ArrayRegionEqualsNode extends FixedWithNextNode implements LI
     public static final NodeClass<ArrayRegionEqualsNode> TYPE = NodeClass.create(ArrayRegionEqualsNode.class);
 
     /** {@link JavaKind} of the arrays to compare. */
-    private final JavaKind kind;
+    private final JavaKind kind1;
+    private final JavaKind kind2;
 
     /** Pointer to first array region to be tested for equality. */
     @Input private ValueNode array1;
@@ -68,16 +69,21 @@ public final class ArrayRegionEqualsNode extends FixedWithNextNode implements LI
 
     @OptionalInput(Memory) private MemoryNode lastLocationAccess;
 
-    public ArrayRegionEqualsNode(ValueNode array1, ValueNode array2, ValueNode length, @ConstantNodeParameter JavaKind kind) {
+    public ArrayRegionEqualsNode(ValueNode array1, ValueNode array2, ValueNode length, @ConstantNodeParameter JavaKind kind1, @ConstantNodeParameter JavaKind kind2) {
         super(TYPE, StampFactory.forKind(JavaKind.Boolean));
-        this.kind = kind;
+        this.kind1 = kind1;
+        this.kind2 = kind2;
         this.array1 = array1;
         this.array2 = array2;
         this.length = length;
     }
 
+    public static boolean regionEquals(Pointer array1, Pointer array2, int length, @ConstantNodeParameter JavaKind kind) {
+        return regionEquals(array1, array2, length, kind, kind);
+    }
+
     @NodeIntrinsic
-    public static native boolean regionEquals(Pointer array1, Pointer array2, int length, @ConstantNodeParameter JavaKind kind);
+    public static native boolean regionEquals(Pointer array1, Pointer array2, int length, @ConstantNodeParameter JavaKind kind1, @ConstantNodeParameter JavaKind kind2);
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
@@ -85,13 +91,18 @@ public final class ArrayRegionEqualsNode extends FixedWithNextNode implements LI
         if (length.isConstant()) {
             constantLength = length.asJavaConstant().asInt();
         }
-        Value result = gen.getLIRGeneratorTool().emitArrayEquals(kind, gen.operand(array1), gen.operand(array2), gen.operand(length), constantLength, true);
+        Value result;
+        if (kind1 == kind2) {
+            result = gen.getLIRGeneratorTool().emitArrayEquals(kind1, gen.operand(array1), gen.operand(array2), gen.operand(length), constantLength, true);
+        } else {
+            result = gen.getLIRGeneratorTool().emitArrayEquals(kind1, kind2, gen.operand(array1), gen.operand(array2), gen.operand(length), constantLength, true);
+        }
         gen.setResult(this, result);
     }
 
     @Override
     public LocationIdentity getLocationIdentity() {
-        return NamedLocationIdentity.getArrayLocation(kind);
+        return kind1 != kind2 ? LocationIdentity.ANY_LOCATION : NamedLocationIdentity.getArrayLocation(kind1);
     }
 
     @Override

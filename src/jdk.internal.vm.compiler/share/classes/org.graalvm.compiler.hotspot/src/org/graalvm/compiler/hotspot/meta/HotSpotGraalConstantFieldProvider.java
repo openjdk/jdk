@@ -24,6 +24,8 @@
 
 package org.graalvm.compiler.hotspot.meta;
 
+import static jdk.vm.ci.services.Services.IS_BUILDING_NATIVE_IMAGE;
+import static jdk.vm.ci.services.Services.IS_IN_NATIVE_IMAGE;
 import static org.graalvm.compiler.core.common.GraalOptions.ImmutableCode;
 
 import java.util.ArrayList;
@@ -63,7 +65,7 @@ public class HotSpotGraalConstantFieldProvider extends HotSpotConstantFieldProvi
     private volatile List<ResolvedJavaField> nonEmbeddableFields;
 
     protected boolean isEmbeddableField(ResolvedJavaField field) {
-        if (nonEmbeddableFields == null) {
+        if (!IS_IN_NATIVE_IMAGE && (IS_BUILDING_NATIVE_IMAGE || nonEmbeddableFields == null)) {
             synchronized (this) {
                 if (nonEmbeddableFields == null) {
                     List<ResolvedJavaField> fields = new ArrayList<>();

@@ -201,12 +201,17 @@ public final class ArrayCopyCallNode extends AbstractMemoryCheckpoint implements
         arraycopy(src, srcPos, dest, destPos, length, JavaKind.Object, LocationIdentity.any(), false, false, false, heapWordSize);
     }
 
-    public static void arraycopy(Object src, int srcPos, Object dest, int destPos, int length, @ConstantNodeParameter JavaKind elementKind, @ConstantNodeParameter int heapWordSize) {
-        arraycopy(src, srcPos, dest, destPos, length, elementKind, false, false, false, heapWordSize);
+    public static void arraycopy(Object src, int srcPos, Object dest, int destPos, int length, @ConstantNodeParameter JavaKind elementKind, @ConstantNodeParameter LocationIdentity locationIdentity,
+                    @ConstantNodeParameter int heapWordSize) {
+        arraycopy(src, srcPos, dest, destPos, length, elementKind, locationIdentity, false, false, false, heapWordSize);
     }
 
     public static void disjointArraycopy(Object src, int srcPos, Object dest, int destPos, int length, @ConstantNodeParameter JavaKind elementKind, @ConstantNodeParameter int heapWordSize) {
         arraycopy(src, srcPos, dest, destPos, length, elementKind, false, true, false, heapWordSize);
+    }
+
+    public static void disjointArraycopyKillsAny(Object src, int srcPos, Object dest, int destPos, int length, @ConstantNodeParameter JavaKind elementKind, @ConstantNodeParameter int heapWordSize) {
+        arraycopy(src, srcPos, dest, destPos, length, elementKind, LocationIdentity.any(), false, true, false, heapWordSize);
     }
 
     public static void disjointUninitializedArraycopy(Object src, int srcPos, Object dest, int destPos, int length, @ConstantNodeParameter JavaKind elementKind,

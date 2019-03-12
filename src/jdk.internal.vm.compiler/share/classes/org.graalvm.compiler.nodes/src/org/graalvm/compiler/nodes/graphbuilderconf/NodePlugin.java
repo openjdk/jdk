@@ -221,6 +221,9 @@ public interface NodePlugin extends GraphBuilderPlugin {
      * nodes) and fixed nodes must be manually {@linkplain FixedWithNextNode#setNext added} as
      * successors of {@code afterExceptionLoaded}.
      *
+     * The reason for this constraint is that when this plugin runs, it's inserting instructions
+     * into a different block than the one currently being parsed.
+     *
      * @param graph the graph being parsed
      * @param afterExceptionLoaded the last fixed node after loading the exception
      * @return the last fixed node after instrumentation

@@ -143,7 +143,7 @@ public class BasicInductionVariable extends InductionVariable {
     }
 
     @Override
-    public ValueNode extremumNode(boolean assumePositiveTripCount, Stamp stamp) {
+    public ValueNode extremumNode(boolean assumeLoopEntered, Stamp stamp) {
         Stamp fromStamp = phi.stamp(NodeView.DEFAULT);
         StructuredGraph graph = graph();
         ValueNode stride = strideNode();
@@ -152,7 +152,7 @@ public class BasicInductionVariable extends InductionVariable {
             stride = IntegerConvertNode.convert(stride, stamp, graph(), NodeView.DEFAULT);
             initNode = IntegerConvertNode.convert(initNode, stamp, graph(), NodeView.DEFAULT);
         }
-        ValueNode maxTripCount = loop.counted().maxTripCountNode(assumePositiveTripCount);
+        ValueNode maxTripCount = loop.counted().maxTripCountNode(assumeLoopEntered);
         if (!maxTripCount.stamp(NodeView.DEFAULT).isCompatible(stamp)) {
             maxTripCount = IntegerConvertNode.convert(maxTripCount, stamp, graph(), NodeView.DEFAULT);
         }

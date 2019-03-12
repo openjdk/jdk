@@ -40,6 +40,7 @@ import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
 import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.Opcode;
+import org.graalvm.compiler.lir.StandardOp.LabelHoldingOp;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 
 import jdk.vm.ci.code.Register;
@@ -126,7 +127,7 @@ public class AArch64Call {
         }
     }
 
-    public abstract static class ForeignCallOp extends CallOp {
+    public abstract static class ForeignCallOp extends CallOp implements LabelHoldingOp {
         protected final ForeignCallLinkage callTarget;
         protected final Label label;
 
@@ -147,6 +148,11 @@ public class AArch64Call {
         }
 
         protected abstract void emitCall(CompilationResultBuilder crb, AArch64MacroAssembler masm);
+
+        @Override
+        public Label getLabel() {
+            return label;
+        }
     }
 
     @Opcode("NEAR_FOREIGN_CALL")

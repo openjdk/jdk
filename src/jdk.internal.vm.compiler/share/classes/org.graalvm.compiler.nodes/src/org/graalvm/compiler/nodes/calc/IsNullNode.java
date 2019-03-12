@@ -35,7 +35,6 @@ import org.graalvm.compiler.nodes.CompressionNode;
 import org.graalvm.compiler.nodes.LogicConstantNode;
 import org.graalvm.compiler.nodes.LogicNode;
 import org.graalvm.compiler.nodes.NodeView;
-import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.UnaryOpLogicNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
@@ -43,7 +42,6 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.nodes.spi.Virtualizable;
 import org.graalvm.compiler.nodes.spi.VirtualizerTool;
 import org.graalvm.compiler.nodes.type.StampTool;
-import org.graalvm.compiler.nodes.util.GraphUtil;
 
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.TriState;
@@ -104,11 +102,6 @@ public final class IsNullNode extends UnaryOpLogicNode implements LIRLowerable, 
                 return LogicConstantNode.tautology();
             } else if (StampTool.isPointerNonNull(value)) {
                 return LogicConstantNode.contradiction();
-            }
-
-            if (value instanceof PiNode) {
-                value = GraphUtil.skipPi(value);
-                continue;
             }
 
             if (value instanceof ConvertNode) {

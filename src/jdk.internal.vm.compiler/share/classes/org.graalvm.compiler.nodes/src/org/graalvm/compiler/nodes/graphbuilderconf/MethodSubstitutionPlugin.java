@@ -24,6 +24,7 @@
 
 package org.graalvm.compiler.nodes.graphbuilderconf;
 
+import static jdk.vm.ci.services.Services.IS_IN_NATIVE_IMAGE;
 import static org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.resolveType;
 
 import java.lang.reflect.Method;
@@ -177,6 +178,10 @@ public final class MethodSubstitutionPlugin implements InvocationPlugin {
 
     @Override
     public boolean execute(GraphBuilderContext b, ResolvedJavaMethod targetMethod, InvocationPlugin.Receiver receiver, ValueNode[] argsIncludingReceiver) {
+        if (IS_IN_NATIVE_IMAGE) {
+            // these are currently unimplemented
+            return false;
+        }
         ResolvedJavaMethod subst = getSubstitute(b.getMetaAccess());
         return b.intrinsify(bytecodeProvider, targetMethod, subst, receiver, argsIncludingReceiver);
     }

@@ -43,6 +43,10 @@ public final class VoidStamp extends Stamp {
     }
 
     @Override
+    public void accept(Visitor v) {
+    }
+
+    @Override
     public Stamp unrestricted() {
         return this;
     }

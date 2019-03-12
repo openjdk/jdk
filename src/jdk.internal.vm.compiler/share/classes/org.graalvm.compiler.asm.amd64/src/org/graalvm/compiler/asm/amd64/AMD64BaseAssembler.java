@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -210,7 +210,7 @@ public abstract class AMD64BaseAssembler extends Assembler {
         }
     }
 
-    public abstract static class OperandDataAnnotation extends CodeAnnotation {
+    public static class OperandDataAnnotation extends CodeAnnotation {
         /**
          * The position (bytes from the beginning of the method) of the operand.
          */
@@ -239,30 +239,10 @@ public abstract class AMD64BaseAssembler extends Assembler {
         }
     }
 
-    /**
-     * Annotation that stores additional information about the displacement of a
-     * {@link Assembler#getPlaceholder placeholder address} that needs patching.
-     */
-    protected static class AddressDisplacementAnnotation extends OperandDataAnnotation {
-        AddressDisplacementAnnotation(int instructionPosition, int operandPosition, int operandSize, int nextInstructionPosition) {
-            super(instructionPosition, operandPosition, operandSize, nextInstructionPosition);
-        }
-    }
-
-    /**
-     * Annotation that stores additional information about the immediate operand, e.g., of a call
-     * instruction, that needs patching.
-     */
-    protected static class ImmediateOperandAnnotation extends OperandDataAnnotation {
-        ImmediateOperandAnnotation(int instructionPosition, int operandPosition, int operandSize, int nextInstructionPosition) {
-            super(instructionPosition, operandPosition, operandSize, nextInstructionPosition);
-        }
-    }
-
     protected void annotatePatchingImmediate(int operandOffset, int operandSize) {
         if (codePatchingAnnotationConsumer != null) {
             int pos = position();
-            codePatchingAnnotationConsumer.accept(new ImmediateOperandAnnotation(pos, pos + operandOffset, operandSize, pos + operandOffset + operandSize));
+            codePatchingAnnotationConsumer.accept(new OperandDataAnnotation(pos, pos + operandOffset, operandSize, pos + operandOffset + operandSize));
         }
     }
 
@@ -581,7 +561,7 @@ public abstract class AMD64BaseAssembler extends Assembler {
             assert index.equals(Register.None) : "cannot use RIP relative addressing with index register";
             emitByte(0x05 | regenc);
             if (codePatchingAnnotationConsumer != null && addr.instructionStartPosition >= 0) {
-                codePatchingAnnotationConsumer.accept(new AddressDisplacementAnnotation(addr.instructionStartPosition, position(), 4, position() + 4 + additionalInstructionSize));
+                codePatchingAnnotationConsumer.accept(new OperandDataAnnotation(addr.instructionStartPosition, position(), 4, position() + 4 + additionalInstructionSize));
             }
             emitInt(disp);
         } else if (base.isValid()) {

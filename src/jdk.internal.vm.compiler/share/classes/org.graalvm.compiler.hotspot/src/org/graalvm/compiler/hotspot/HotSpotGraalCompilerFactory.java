@@ -25,6 +25,7 @@
 package org.graalvm.compiler.hotspot;
 
 import static jdk.vm.ci.common.InitTimer.timer;
+import static jdk.vm.ci.services.Services.IS_BUILDING_NATIVE_IMAGE;
 import static org.graalvm.compiler.hotspot.HotSpotGraalOptionValues.GRAAL_OPTION_PROPERTY_PREFIX;
 
 import java.io.PrintStream;
@@ -71,7 +72,7 @@ public final class HotSpotGraalCompilerFactory extends HotSpotJVMCICompilerFacto
     public void onSelection() {
         JVMCIVersionCheck.check(false);
         assert options == null : "cannot select " + getClass() + " service more than once";
-        options = HotSpotGraalOptionValues.HOTSPOT_OPTIONS;
+        options = HotSpotGraalOptionValues.defaultOptions();
         initializeGraalCompilePolicyFields(options);
         isGraalPredicate = compileGraalWithC1Only ? new IsGraalPredicate() : null;
         /*
@@ -80,6 +81,10 @@ public final class HotSpotGraalCompilerFactory extends HotSpotJVMCICompilerFacto
          */
         adjustCompilationLevelInternal(Object.class, "hashCode", "()I", CompilationLevel.FullOptimization);
         adjustCompilationLevelInternal(Object.class, "hashCode", "()I", CompilationLevel.Simple);
+        if (IS_BUILDING_NATIVE_IMAGE) {
+            // Triggers initialization of all option descriptors
+            Options.CompileGraalWithC1Only.getName();
+        }
     }
 
     private static void initializeGraalCompilePolicyFields(OptionValues options) {

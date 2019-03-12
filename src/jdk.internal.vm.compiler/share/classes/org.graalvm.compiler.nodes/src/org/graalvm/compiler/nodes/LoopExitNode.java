@@ -35,6 +35,7 @@ import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.graph.spi.Simplifiable;
 import org.graalvm.compiler.graph.spi.SimplifierTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.util.GraphUtil;
 
 @NodeInfo(allowedUsageTypes = {Association}, cycles = CYCLES_0, size = SIZE_0)
 public final class LoopExitNode extends BeginStateSplitNode implements IterableNodeType, Simplifiable {
@@ -100,6 +101,15 @@ public final class LoopExitNode extends BeginStateSplitNode implements IterableN
             }
             return false;
         });
+    }
+
+    public void removeExit() {
+        this.removeProxies();
+        FrameState loopStateAfter = this.stateAfter();
+        graph().replaceFixedWithFixed(this, graph().add(new BeginNode()));
+        if (loopStateAfter != null) {
+            GraphUtil.tryKillUnused(loopStateAfter);
+        }
     }
 
     @Override

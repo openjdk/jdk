@@ -34,7 +34,7 @@ import org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.hotspot.nodes.AllocaNode;
 import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.compiler.serviceprovider.GraalServices;
+import org.graalvm.compiler.serviceprovider.JavaVersionUtil;
 import org.graalvm.compiler.word.Word;
 
 import jdk.vm.ci.code.Register;
@@ -48,7 +48,7 @@ public class OutOfBoundsExceptionStub extends CreateExceptionStub {
     }
 
     // JDK-8201593: Print array length in ArrayIndexOutOfBoundsException.
-    private static final boolean PRINT_LENGTH_IN_EXCEPTION = GraalServices.JAVA_SPECIFICATION_VERSION >= 11;
+    private static final boolean PRINT_LENGTH_IN_EXCEPTION = JavaVersionUtil.JAVA_SPECIFICATION_VERSION >= 11;
     private static final int MAX_INT_STRING_SIZE = Integer.toString(Integer.MIN_VALUE).length();
     private static final String STR_INDEX = "Index ";
     private static final String STR_OUTOFBOUNDSFORLENGTH = " out of bounds for length ";

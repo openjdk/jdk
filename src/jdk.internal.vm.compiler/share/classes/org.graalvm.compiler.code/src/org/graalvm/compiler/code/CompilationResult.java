@@ -55,6 +55,7 @@ import jdk.vm.ci.meta.Assumptions.Assumption;
 import jdk.vm.ci.meta.InvokeTarget;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.SpeculationLog;
 
 /**
  * Represents the output from compiling a method, including the compiled machine code, associated
@@ -221,6 +222,11 @@ public class CompilationResult {
     private ResolvedJavaMethod[] methods;
 
     /**
+     * The {@link SpeculationLog} log used during compilation.
+     */
+    private SpeculationLog speculationLog;
+
+    /**
      * The list of fields that were accessed from the bytecodes.
      */
     private ResolvedJavaField[] fields;
@@ -370,6 +376,21 @@ public class CompilationResult {
      */
     public ResolvedJavaMethod[] getMethods() {
         return methods;
+    }
+
+    /**
+     * Sets the {@link SpeculationLog} log used during compilation.
+     */
+    public void setSpeculationLog(SpeculationLog speculationLog) {
+        checkOpen();
+        this.speculationLog = speculationLog;
+    }
+
+    /**
+     * Gets the {@link SpeculationLog} log, if any, used during compilation.
+     */
+    public SpeculationLog getSpeculationLog() {
+        return speculationLog;
     }
 
     /**
@@ -615,7 +636,7 @@ public class CompilationResult {
     /**
      * @return the code annotations or {@code null} if there are none
      */
-    public List<CodeAnnotation> getAnnotations() {
+    public List<CodeAnnotation> getCodeAnnotations() {
         if (annotations == null) {
             return Collections.emptyList();
         }
@@ -706,7 +727,8 @@ public class CompilationResult {
      * Clears the information in this object pertaining to generating code. That is, the
      * {@linkplain #getMarks() marks}, {@linkplain #getInfopoints() infopoints},
      * {@linkplain #getExceptionHandlers() exception handlers}, {@linkplain #getDataPatches() data
-     * patches} and {@linkplain #getAnnotations() annotations} recorded in this object are cleared.
+     * patches} and {@linkplain #getCodeAnnotations() annotations} recorded in this object are
+     * cleared.
      */
     public void resetForEmittingCode() {
         checkOpen();
@@ -719,6 +741,14 @@ public class CompilationResult {
         if (annotations != null) {
             annotations.clear();
         }
+    }
+
+    public void clearInfopoints() {
+        infopoints.clear();
+    }
+
+    public void clearExceptionHandlers() {
+        exceptionHandlers.clear();
     }
 
     private void checkOpen() {

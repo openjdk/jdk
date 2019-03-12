@@ -35,6 +35,9 @@ import org.graalvm.compiler.core.common.GraalOptions;
  * snippet specific metrics.
  */
 public final class SnippetCounter implements Comparable<SnippetCounter> {
+
+    public static final SnippetCounter DISABLED_COUNTER = new SnippetCounter(null, "Disabled", "Disabled");
+
     /**
      * A group of related counters.
      */
@@ -130,7 +133,7 @@ public final class SnippetCounter implements Comparable<SnippetCounter> {
      * compile-time constant {@link SnippetCounter} object.
      */
     public void inc() {
-        if (group != null) {
+        if (getGroup() != null) {
             SnippetCounterNode.increment(this);
         }
     }
@@ -140,7 +143,7 @@ public final class SnippetCounter implements Comparable<SnippetCounter> {
      * compile-time constant {@link SnippetCounter} object.
      */
     public void add(int increment) {
-        if (group != null) {
+        if (getGroup() != null) {
             SnippetCounterNode.add(this, increment);
         }
     }

@@ -48,6 +48,13 @@ public abstract class AbstractObjectStamp extends AbstractPointerStamp {
         this.exactType = exactType;
     }
 
+    @Override
+    public void accept(Visitor v) {
+        super.accept(v);
+        v.visitObject(type);
+        v.visitBoolean(exactType);
+    }
+
     protected abstract AbstractObjectStamp copyWith(ResolvedJavaType newType, boolean newExactType, boolean newNonNull, boolean newAlwaysNull);
 
     @Override

@@ -30,6 +30,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import jdk.internal.vm.compiler.collections.EconomicMap;
+import org.graalvm.compiler.options.EnumOptionKey;
 import org.graalvm.compiler.options.Option;
 import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionType;
@@ -40,20 +41,28 @@ import org.graalvm.compiler.serviceprovider.GraalServices;
  * Options that configure a {@link DebugContext} and related functionality.
  */
 public class DebugOptions {
-    static class DeprecatedOptionKey<T> extends OptionKey<T> {
-        private final OptionKey<T> replacement;
 
-        DeprecatedOptionKey(OptionKey<T> replacement) {
-            super(replacement.getDefaultValue());
-            this.replacement = replacement;
-        }
+    /**
+     * Values for the {@link DebugOptions#PrintGraph} option denoting where graphs dumped as a
+     * result of the {@link DebugOptions#Dump} option are sent.
+     */
+    public enum PrintGraphTarget {
+        /**
+         * Dump graphs to files.
+         */
+        File,
 
-        @Override
-        protected void onValueUpdate(EconomicMap<OptionKey<?>, Object> values, T oldValue, T newValue) {
-            // Ideally we'd use TTY here but it may not yet be initialized.
-            System.err.printf("Warning: the %s option is deprecated - use %s instead%n", getName(), replacement.getName());
-            replacement.update(values, newValue);
-        }
+        /**
+         * Dump graphs to the network. The network destination is specified by the
+         * {@link DebugOptions#PrintGraphHost} and {@link DebugOptions#PrintGraphPort} options. If a
+         * network connection cannot be opened, dumping falls back to {@link #File} dumping.
+         */
+        Network,
+
+        /**
+         * Do not dump graphs.
+         */
+        Disable;
     }
 
     // @formatter:off
@@ -118,7 +127,7 @@ public class DebugOptions {
     public static final OptionKey<Boolean> LogVerbose = new OptionKey<>(false);
 
     @Option(help = "The directory where various Graal dump files are written.")
-    public static final OptionKey<String> DumpPath = new OptionKey<>("dumps");
+    public static final OptionKey<String> DumpPath = new OptionKey<>("graal_dumps");
     @Option(help = "Print the name of each dump file path as it's created.")
     public static final OptionKey<Boolean> ShowDumpFiles = new OptionKey<>(false);
 
@@ -127,15 +136,30 @@ public class DebugOptions {
     @Option(help = "Enable dumping LIR, register allocation and code generation info to the C1Visualizer.", type = OptionType.Debug)
     public static final OptionKey<Boolean> PrintBackendCFG = new OptionKey<>(true);
 
-    @Option(help = "Enable dumping to the IdealGraphVisualizer.", type = OptionType.Debug)
-    public static final OptionKey<Boolean> PrintGraph = new OptionKey<>(true);
-    @Option(help = "Print graphs to files instead of sending them over the network.", type = OptionType.Debug)
-    public static final OptionKey<Boolean> PrintGraphFile = new OptionKey<>(false);
+    @Option(help = "file:doc-files/PrintGraphHelp.txt", type = OptionType.Debug)
+    public static final EnumOptionKey<PrintGraphTarget> PrintGraph = new EnumOptionKey<>(PrintGraphTarget.File);
+
+    @Option(help = "Setting to true sets PrintGraph=file, setting to false sets PrintGraph=network", type = OptionType.Debug)
+    public static final OptionKey<Boolean> PrintGraphFile = new OptionKey<Boolean>(true) {
+        @Override
+        protected void onValueUpdate(EconomicMap<OptionKey<?>, Object> values, Boolean oldValue, Boolean newValue) {
+            PrintGraphTarget v = PrintGraph.getValueOrDefault(values);
+            if (newValue.booleanValue()) {
+                if (v != PrintGraphTarget.File) {
+                    PrintGraph.update(values, PrintGraphTarget.File);
+                }
+            } else {
+                if (v != PrintGraphTarget.Network) {
+                    PrintGraph.update(values, PrintGraphTarget.Network);
+                }
+            }
+        }
+    };
 
     @Option(help = "Host part of the address to which graphs are dumped.", type = OptionType.Debug)
     public static final OptionKey<String> PrintGraphHost = new OptionKey<>("127.0.0.1");
     @Option(help = "Port part of the address to which graphs are dumped in binary format.", type = OptionType.Debug)
-    public static final OptionKey<Integer> PrintBinaryGraphPort = new OptionKey<>(4445);
+    public static final OptionKey<Integer> PrintGraphPort = new OptionKey<>(4445);
     @Option(help = "Schedule graphs as they are dumped.", type = OptionType.Debug)
     public static final OptionKey<Boolean> PrintGraphWithSchedule = new OptionKey<>(false);
 

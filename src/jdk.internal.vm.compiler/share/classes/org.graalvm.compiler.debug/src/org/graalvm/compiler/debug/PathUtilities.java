@@ -84,7 +84,7 @@ public class PathUtilities {
 
     private static final String ELLIPSIS = "...";
 
-    static Path createUnique(OptionValues options, OptionKey<String> baseNameOption, String id, String label, String ext, boolean createDirectory) throws IOException {
+    static Path createUnique(OptionValues options, OptionKey<String> baseNameOption, String id, String label, String ext, boolean createMissingDirectory) throws IOException {
         String uniqueTag = "";
         int dumpCounter = 1;
         String prefix;
@@ -118,7 +118,7 @@ public class PathUtilities {
             Path dumpDir = DebugOptions.getDumpDirectory(options);
             Path result = Paths.get(dumpDir.toString(), fileName);
             try {
-                if (createDirectory) {
+                if (createMissingDirectory) {
                     return Files.createDirectory(result);
                 } else {
                     try {

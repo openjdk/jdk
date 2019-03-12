@@ -28,6 +28,8 @@ import static jdk.vm.ci.meta.DeoptimizationAction.None;
 import static jdk.vm.ci.meta.DeoptimizationReason.TransferToInterpreter;
 import static org.graalvm.compiler.core.common.GraalOptions.ImmutableCode;
 
+import java.lang.reflect.Field;
+
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.StampPair;
@@ -66,8 +68,6 @@ import jdk.vm.ci.meta.JavaTypeProfile;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
-
-import java.lang.reflect.Field;
 import sun.misc.Unsafe;
 
 /**
@@ -243,10 +243,9 @@ public final class HotSpotNodePlugin implements NodePlugin, TypePlugin {
     }
 
     private static final LocationIdentity JAVA_THREAD_SHOULD_POST_ON_EXCEPTIONS_FLAG_LOCATION = NamedLocationIdentity.mutable("JavaThread::_should_post_on_exceptions_flag");
+    static final Unsafe UNSAFE = initUnsafe();
 
-    private static final Unsafe UNSAFE = initUnsafe();
-
-    private static Unsafe initUnsafe() {
+    static Unsafe initUnsafe() {
         try {
             // Fast path when we are trusted.
             return Unsafe.getUnsafe();

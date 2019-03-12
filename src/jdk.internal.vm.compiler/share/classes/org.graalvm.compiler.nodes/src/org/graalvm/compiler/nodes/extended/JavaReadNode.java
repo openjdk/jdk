@@ -27,6 +27,7 @@ package org.graalvm.compiler.nodes.extended;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_2;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_1;
 
+import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
@@ -54,7 +55,11 @@ public final class JavaReadNode extends FixedAccessNode implements Lowerable, Gu
     protected final boolean compressible;
 
     public JavaReadNode(JavaKind readKind, AddressNode address, LocationIdentity location, BarrierType barrierType, boolean compressible) {
-        super(TYPE, address, location, StampFactory.forKind(readKind), barrierType);
+        this(StampFactory.forKind(readKind), readKind, address, location, barrierType, compressible);
+    }
+
+    public JavaReadNode(Stamp stamp, JavaKind readKind, AddressNode address, LocationIdentity location, BarrierType barrierType, boolean compressible) {
+        super(TYPE, address, location, stamp, barrierType);
         this.readKind = readKind;
         this.compressible = compressible;
     }

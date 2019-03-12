@@ -681,4 +681,8 @@ public final class FrameState extends VirtualState implements IterableNodeType {
         }
         return false;
     }
+
+    public boolean isExceptionHandlingBCI() {
+        return bci == BytecodeFrame.AFTER_EXCEPTION_BCI || bci == BytecodeFrame.UNWIND_BCI;
+    }
 }

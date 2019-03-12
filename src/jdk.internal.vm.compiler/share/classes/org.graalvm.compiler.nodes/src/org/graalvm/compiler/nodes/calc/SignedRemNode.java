@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package org.graalvm.compiler.nodes.calc;
 
 import org.graalvm.compiler.core.common.type.IntegerStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
+import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
@@ -37,13 +38,15 @@ import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.code.CodeUtil;
+import jdk.vm.ci.meta.Constant;
+import jdk.vm.ci.meta.PrimitiveConstant;
 
 @NodeInfo(shortName = "%")
 public class SignedRemNode extends IntegerDivRemNode implements LIRLowerable {
 
     public static final NodeClass<SignedRemNode> TYPE = NodeClass.create(SignedRemNode.class);
 
-    protected SignedRemNode(ValueNode x, ValueNode y, GuardingNode zeroCheck) {
+    public SignedRemNode(ValueNode x, ValueNode y, GuardingNode zeroCheck) {
         this(TYPE, x, y, zeroCheck);
     }
 
@@ -53,7 +56,7 @@ public class SignedRemNode extends IntegerDivRemNode implements LIRLowerable {
 
     public static ValueNode create(ValueNode x, ValueNode y, GuardingNode zeroCheck, NodeView view) {
         Stamp stamp = IntegerStamp.OPS.getRem().foldStamp(x.stamp(view), y.stamp(view));
-        return canonical(null, x, y, zeroCheck, stamp, view);
+        return canonical(null, x, y, zeroCheck, stamp, view, null);
     }
 
     @Override
@@ -64,10 +67,10 @@ public class SignedRemNode extends IntegerDivRemNode implements LIRLowerable {
     @Override
     public ValueNode canonical(CanonicalizerTool tool, ValueNode forX, ValueNode forY) {
         NodeView view = NodeView.from(tool);
-        return canonical(this, forX, forY, getZeroCheck(), stamp(view), view);
+        return canonical(this, forX, forY, getZeroCheck(), stamp(view), view, tool);
     }
 
-    private static ValueNode canonical(SignedRemNode self, ValueNode forX, ValueNode forY, GuardingNode zeroCheck, Stamp stamp, NodeView view) {
+    private static ValueNode canonical(SignedRemNode self, ValueNode forX, ValueNode forY, GuardingNode zeroCheck, Stamp stamp, NodeView view, CanonicalizerTool tool) {
         if (forX.isConstant() && forY.isConstant()) {
             long y = forY.asJavaConstant().asLong();
             if (y == 0) {
@@ -81,25 +84,50 @@ public class SignedRemNode extends IntegerDivRemNode implements LIRLowerable {
             IntegerStamp yStamp = (IntegerStamp) forY.stamp(view);
             if (constY < 0 && constY != CodeUtil.minValue(yStamp.getBits())) {
                 Stamp newStamp = IntegerStamp.OPS.getRem().foldStamp(forX.stamp(view), forY.stamp(view));
-                return canonical(null, forX, ConstantNode.forIntegerStamp(yStamp, -constY), zeroCheck, newStamp, view);
+                return canonical(null, forX, ConstantNode.forIntegerStamp(yStamp, -constY), zeroCheck, newStamp, view, tool);
             }
 
             if (constY == 1) {
                 return ConstantNode.forIntegerStamp(stamp, 0);
-            } else if (CodeUtil.isPowerOf2(constY)) {
-                if (xStamp.isPositive()) {
-                    // x & (y - 1)
-                    return new AndNode(forX, ConstantNode.forIntegerStamp(stamp, constY - 1));
-                } else if (xStamp.isNegative()) {
-                    // -((-x) & (y - 1))
-                    return new NegateNode(new AndNode(new NegateNode(forX), ConstantNode.forIntegerStamp(stamp, constY - 1)));
+            } else if (CodeUtil.isPowerOf2(constY) && tool != null && tool.allUsagesAvailable()) {
+                if (allUsagesCompareAgainstZero(self)) {
+                    // x % y == 0 <=> (x & (y-1)) == 0
+                    return new AndNode(forX, ConstantNode.forIntegerStamp(yStamp, constY - 1));
                 } else {
-                    // x - ((x / y) << log2(y))
-                    return SubNode.create(forX, LeftShiftNode.create(SignedDivNode.canonical(forX, constY, view), ConstantNode.forInt(CodeUtil.log2(constY)), view), view);
+                    if (xStamp.isPositive()) {
+                        // x & (y - 1)
+                        return new AndNode(forX, ConstantNode.forIntegerStamp(stamp, constY - 1));
+                    } else if (xStamp.isNegative()) {
+                        // -((-x) & (y - 1))
+                        return new NegateNode(new AndNode(new NegateNode(forX), ConstantNode.forIntegerStamp(stamp, constY - 1)));
+                    }
                 }
             }
         }
         return self != null ? self : new SignedRemNode(forX, forY, zeroCheck);
+    }
+
+    private static boolean allUsagesCompareAgainstZero(SignedRemNode self) {
+        int compareAgainstZero = 0;
+        int usageCount = self.getUsageCount();
+        for (int i = 0; i < usageCount; i++) {
+            Node usage = self.getUsageAt(i);
+            if (usage instanceof IntegerEqualsNode) {
+                IntegerEqualsNode equalsNode = (IntegerEqualsNode) usage;
+                ValueNode node = equalsNode.getY();
+                if (node == self) {
+                    node = equalsNode.getX();
+                }
+                if (node instanceof ConstantNode) {
+                    ConstantNode constantNode = (ConstantNode) node;
+                    Constant constant = constantNode.asConstant();
+                    if (constant instanceof PrimitiveConstant && ((PrimitiveConstant) constant).asLong() == 0) {
+                        compareAgainstZero++;
+                    }
+                }
+            }
+        }
+        return compareAgainstZero == usageCount;
     }
 
     @Override
