@@ -45,16 +45,6 @@
  *                   -XX:CompileCommand=print,compiler/intrinsics/math/TestFpMinMaxIntrinsics.*Test*
  *                   -XX:CompileCommand=compileonly,compiler/intrinsics/math/TestFpMinMaxIntrinsics.*Test*
  *                   compiler.intrinsics.math.TestFpMinMaxIntrinsics reductionTests 100
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+TieredCompilation
- *                   -XX:CompileCommand=print,compiler/intrinsics/math/TestFpMinMaxIntrinsics.min*
- *                   -XX:CompileCommand=dontinline,compiler/intrinsics/math/TestFpMinMaxIntrinsics.min*
- *                   compiler.intrinsics.math.TestFpMinMaxIntrinsics randomSearchTree 1
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+TieredCompilation
- *                   -XX:CompileCommand=print,compiler/intrinsics/math/TestFpMinMaxIntrinsics.min*
- *                   -XX:CompileCommand=dontinline,compiler/intrinsics/math/TestFpMinMaxIntrinsics.min*
- *                   compiler.intrinsics.math.TestFpMinMaxIntrinsics sortedSearchTree 1
  */
 
 package compiler.intrinsics.math;
