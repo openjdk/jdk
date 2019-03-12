@@ -166,6 +166,9 @@ JVM_OPTIMIZATION ?= HIGHEST_JVM
 # default.
 JVM_STRIPFLAGS ?= $(STRIPFLAGS)
 
+# This source set is reused so save in cache.
+$(eval $(call FillCacheFind, $(JVM_SRC_DIRS)))
+
 ################################################################################
 # Now set up the actual compilation of the main hotspot native library
 

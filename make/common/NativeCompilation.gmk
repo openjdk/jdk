@@ -505,8 +505,9 @@ define SetupNativeCompilationBody
   $$(foreach d, $$($1_SRC), $$(if $$(wildcard $$d), , \
       $$(error SRC specified to SetupNativeCompilation $1 contains missing directory $$d)))
 
-  # Find all files in the source trees. Preserve order.
-  $1_SRCS := $$(foreach s, $$($1_SRC), $$(call CacheFind, $$(s)))
+  $1_SRCS_RAW = $$(call CacheFind, $$($1_SRC))
+  # Order src files according to the order of the src dirs
+  $1_SRCS := $$(foreach d, $$($1_SRC), $$(filter $$d%, $$($1_SRCS_RAW)))
   $1_SRCS := $$(filter $$(NATIVE_SOURCE_EXTENSIONS), $$($1_SRCS))
   # Extract the C/C++ files.
   ifneq ($$($1_EXCLUDE_PATTERNS), )
@@ -970,10 +971,9 @@ define SetupNativeCompilationBody
           $$(shell $(RM) $$($1_TARGET))
         endif
         $$($1_IMPORT_LIBRARY): $$($1_TARGET)
-		$$(if $$(CORRECT_FUNCTION_IN_RECIPE_EVALUATION), \
-		  $$(if $$(wildcard $$@), , $$(error $$@ was not created for $$<)) \
-		)
 		$(TOUCH) $$@
+
+        $1 += $$($1_IMPORT_LIBRARY)
       endif
     endif
 

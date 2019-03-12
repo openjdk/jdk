@@ -112,7 +112,11 @@ $(eval $(call SetupExecute, jlink_jre, \
 JLINK_JRE_TARGETS := $(jlink_jre)
 
 ifeq ($(BUILD_CDS_ARCHIVE), true)
-  CDS_ARCHIVE := lib/server/classes.jsa
+  ifeq ($(OPENJDK_TARGET_OS), windows)
+    CDS_ARCHIVE := bin/server/classes.jsa
+  else
+    CDS_ARCHIVE := lib/server/classes.jsa
+  endif
 
   $(eval $(call SetupExecute, gen_cds_archive_jdk, \
       WARN := Creating CDS archive for jdk image, \

@@ -538,8 +538,13 @@ jdk.jfr_ADD_JAVAC_FLAGS := -XDstringConcat=inline -Xlint:-exports
 ################################################################################
 # If this is an imported module that has prebuilt classes, only compile
 # module-info.java.
-ifneq ($(wildcard $(IMPORT_MODULES_CLASSES)/$(MODULE)), )
-  $(MODULE)_INCLUDE_FILES := module-info.java
+ifneq ($(IMPORT_MODULES_CLASSES), )
+  IMPORT_MODULE_DIR := $(IMPORT_MODULES_CLASSES)/$(MODULE)
+  ifneq ($(wildcard $(IMPORT_MODULE_DIR)), )
+    $(MODULE)_INCLUDE_FILES := module-info.java
+  endif
+else
+  IMPORT_MODULE_DIR :=
 endif
 
 ################################################################################
@@ -645,13 +650,13 @@ endif
 # If this is an imported module, copy the pre built classes and resources into
 # the modules output dir
 
-ifneq ($(wildcard $(IMPORT_MODULES_CLASSES)/$(MODULE)), )
+ifneq ($(wildcard $(IMPORT_MODULE_DIR)), )
   $(JDK_OUTPUTDIR)/modules/$(MODULE)/_imported.marker: \
-      $(call CacheFind, $(IMPORT_MODULES_CLASSES)/$(MODULE))
+      $(call CacheFind, $(IMPORT_MODULE_DIR))
 	$(call MakeDir, $(@D))
         # Do not delete marker and build meta data files
 	$(RM) -r $(filter-out $(@D)/_%, $(wildcard $(@D)/*))
-	$(CP) -R $(IMPORT_MODULES_CLASSES)/$(MODULE)/* $(@D)/
+	$(CP) -R $(IMPORT_MODULE_DIR)/* $(@D)/
 	$(TOUCH) $@
 
   TARGETS += $(JDK_OUTPUTDIR)/modules/$(MODULE)/_imported.marker
