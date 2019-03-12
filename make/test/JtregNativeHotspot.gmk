@@ -1541,8 +1541,9 @@ build-test-hotspot-jtreg-native: $(BUILD_HOTSPOT_JTREG_LIBRARIES) $(BUILD_HOTSPO
 $(eval $(call SetupCopyFiles,COPY_HOTSPOT_JTREG_NATIVE, \
     SRC := $(BUILD_HOTSPOT_JTREG_OUTPUT_DIR), \
     DEST := $(TEST_IMAGE_DIR)/hotspot/jtreg/native, \
-    FILES := $(BUILD_HOTSPOT_JTREG_LIBRARIES) $(BUILD_HOTSPOT_JTREG_EXECUTABLES), \
-    FLATTEN := true))
+    FILES := $(wildcard $(addprefix $(BUILD_HOTSPOT_JTREG_OUTPUT_DIR), /bin/* /lib/*)), \
+    FLATTEN := true, \
+))
 
 test-image-hotspot-jtreg-native: $(COPY_HOTSPOT_JTREG_NATIVE)
 

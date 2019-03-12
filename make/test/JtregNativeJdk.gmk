@@ -110,8 +110,9 @@ build-test-jdk-jtreg-native: $(BUILD_JDK_JTREG_LIBRARIES) $(BUILD_JDK_JTREG_EXEC
 $(eval $(call SetupCopyFiles,COPY_JDK_JTREG_NATIVE, \
     SRC := $(BUILD_JDK_JTREG_OUTPUT_DIR), \
     DEST := $(TEST_IMAGE_DIR)/jdk/jtreg/native, \
-    FILES := $(BUILD_JDK_JTREG_LIBRARIES) $(BUILD_JDK_JTREG_EXECUTABLES), \
-    FLATTEN := true))
+    FILES := $(wildcard $(addprefix $(BUILD_JDK_JTREG_OUTPUT_DIR), /bin/* /lib/*)), \
+    FLATTEN := true, \
+))
 
 test-image-jdk-jtreg-native: $(COPY_JDK_JTREG_NATIVE)
 
