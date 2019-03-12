@@ -261,6 +261,14 @@ class ValueStack: public CompilationResourceObj {
        index += value->type()->size())
 
 
+#define for_each_lock_value(state, index, value)                                               \
+  int temp_var = state->locks_size();                                                          \
+  for (index = 0;                                                                              \
+       index < temp_var && (value = state->lock_at(index), true);                              \
+       index++)                                                                                \
+    if (value != NULL)
+
+
 // Macro definition for simple iteration of all state values of a ValueStack
 // Because the code cannot be executed in a single loop, the code must be passed
 // as a macro parameter.
