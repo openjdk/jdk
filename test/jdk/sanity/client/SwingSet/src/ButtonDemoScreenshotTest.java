@@ -42,7 +42,7 @@ import static org.jemmy2ext.JemmyExt.*;
 
 /*
  * @test
- * @key headful screenshots intermittent
+ * @key headful screenshots
  * @summary Verifies buttons on SwingSet3 ButtonDemo page by clicking each
  *          button, taking its screenshots and checking that pressed button
  *          image is different from initial button image.
