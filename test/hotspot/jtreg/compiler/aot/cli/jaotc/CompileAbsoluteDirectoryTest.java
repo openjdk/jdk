@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,12 @@
  * @requires vm.aot
  * @library / /test/lib /testlibrary
  * @modules java.base/jdk.internal.misc
- * @build compiler.aot.cli.jaotc.CompileDirectoryTest
+ * @build compiler.aot.cli.jaotc.CompileAbsoluteDirectoryTest
  * @run driver ClassFileInstaller compiler.aot.cli.jaotc.data.HelloWorldOne
  *                                compiler.aot.cli.jaotc.data.HelloWorldTwo
- * @run driver compiler.aot.cli.jaotc.CompileDirectoryTest
- * @summary check jaotc can compile directory with classes where directory is specified by relative path
+ * @run driver compiler.aot.cli.jaotc.CompileAbsoluteDirectoryTest
+ * @summary check jaotc can compile directory with classes where directory is specified by absolute path
+ * @bug 8218859
  */
 package compiler.aot.cli.jaotc;
 
@@ -40,14 +41,20 @@ import java.io.File;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
 
-public class CompileDirectoryTest {
+public class CompileAbsoluteDirectoryTest {
     public static void main(String[] args) {
-        OutputAnalyzer oa =JaotcTestHelper.compileLibrary("--directory", ".");
-        oa.shouldHaveExitValue(0);
-        File compiledLibrary = new File(JaotcTestHelper.DEFAULT_LIB_PATH);
-        Asserts.assertTrue(compiledLibrary.exists(), "Compiled library file missing");
-        Asserts.assertGT(compiledLibrary.length(), 0L, "Unexpected compiled library size");
-        JaotcTestHelper.checkLibraryUsage(HelloWorldOne.class.getName());
-        JaotcTestHelper.checkLibraryUsage(HelloWorldTwo.class.getName());
+        try {
+            String dir = new java.io.File(".").getAbsolutePath();
+            System.out.println("Do test --directory " + dir);
+            OutputAnalyzer oa = JaotcTestHelper.compileLibrary("--directory", dir);
+            oa.shouldHaveExitValue(0);
+            File compiledLibrary = new File(JaotcTestHelper.DEFAULT_LIB_PATH);
+            Asserts.assertTrue(compiledLibrary.exists(), "Compiled library file missing");
+            Asserts.assertGT(compiledLibrary.length(), 0L, "Unexpected compiled library size");
+            JaotcTestHelper.checkLibraryUsage(HelloWorldOne.class.getName());
+            JaotcTestHelper.checkLibraryUsage(HelloWorldTwo.class.getName());
+        } catch (Exception e) {
+            throw new Error("Can't get full path name for '.', got exception " + e, e);
+        }
     }
 }
