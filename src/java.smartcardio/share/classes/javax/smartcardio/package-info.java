@@ -69,7 +69,7 @@
  * </dl>
  *
  *
- * <h3>API Example</h3>
+ * <h2>API Example</h2>
  *
  * A simple example of using the API is:
  * <pre>
