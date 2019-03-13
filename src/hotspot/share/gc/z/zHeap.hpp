@@ -99,7 +99,6 @@ public:
 
   // Block
   uintptr_t block_start(uintptr_t addr) const;
-  size_t block_size(uintptr_t addr) const;
   bool block_is_obj(uintptr_t addr) const;
 
   // Workers

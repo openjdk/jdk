@@ -1192,12 +1192,6 @@ HeapWord* ShenandoahHeap::block_start(const void* addr) const {
   return NULL;
 }
 
-size_t ShenandoahHeap::block_size(const HeapWord* addr) const {
-  Space* sp = heap_region_containing(addr);
-  assert(sp != NULL, "block_size of address outside of heap");
-  return sp->block_size(addr);
-}
-
 bool ShenandoahHeap::block_is_obj(const HeapWord* addr) const {
   Space* sp = heap_region_containing(addr);
   return sp->block_is_obj(addr);

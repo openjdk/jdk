@@ -220,7 +220,6 @@ class ParallelScavengeHeap : public CollectedHeap {
   void safe_object_iterate(ObjectClosure* cl) { object_iterate(cl); }
 
   HeapWord* block_start(const void* addr) const;
-  size_t block_size(const HeapWord* addr) const;
   bool block_is_obj(const HeapWord* addr) const;
 
   jlong millis_since_last_gc();

@@ -532,10 +532,6 @@ HeapWord* ParallelScavengeHeap::block_start(const void* addr) const {
   return 0;
 }
 
-size_t ParallelScavengeHeap::block_size(const HeapWord* addr) const {
-  return oop(addr)->size();
-}
-
 bool ParallelScavengeHeap::block_is_obj(const HeapWord* addr) const {
   return block_start(addr) == addr;
 }

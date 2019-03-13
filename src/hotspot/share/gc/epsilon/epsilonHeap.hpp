@@ -128,7 +128,6 @@ public:
 
   // No support for block parsing.
   virtual HeapWord* block_start(const void* addr) const { return NULL;  }
-  virtual size_t block_size(const HeapWord* addr) const { return 0;     }
   virtual bool block_is_obj(const HeapWord* addr) const { return false; }
 
   // No GC threads

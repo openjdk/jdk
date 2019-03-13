@@ -450,11 +450,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // non-object.
   virtual HeapWord* block_start(const void* addr) const = 0;
 
-  // Requires "addr" to be the start of a chunk, and returns its size.
-  // "addr + size" is required to be the start of a new chunk, or the end
-  // of the active area of the heap.
-  virtual size_t block_size(const HeapWord* addr) const = 0;
-
   // Requires "addr" to be the start of a block, and returns "TRUE" iff
   // the block is an object.
   virtual bool block_is_obj(const HeapWord* addr) const = 0;

@@ -1064,18 +1064,6 @@ HeapWord* GenCollectedHeap::block_start(const void* addr) const {
   return _old_gen->block_start(addr);
 }
 
-size_t GenCollectedHeap::block_size(const HeapWord* addr) const {
-  assert(is_in_reserved(addr), "block_size of address outside of heap");
-  if (_young_gen->is_in_reserved(addr)) {
-    assert(_young_gen->is_in(addr), "addr should be in allocated part of generation");
-    return _young_gen->block_size(addr);
-  }
-
-  assert(_old_gen->is_in_reserved(addr), "Some generation should contain the address");
-  assert(_old_gen->is_in(addr), "addr should be in allocated part of generation");
-  return _old_gen->block_size(addr);
-}
-
 bool GenCollectedHeap::block_is_obj(const HeapWord* addr) const {
   assert(is_in_reserved(addr), "block_is_obj of address outside of heap");
   assert(block_start(addr) == addr, "addr must be a block start");

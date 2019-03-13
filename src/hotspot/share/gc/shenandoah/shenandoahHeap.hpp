@@ -567,7 +567,6 @@ public:
 
   // Used for parsing heap during error printing
   HeapWord* block_start(const void* addr) const;
-  size_t block_size(const HeapWord* addr) const;
   bool block_is_obj(const HeapWord* addr) const;
 
   // Used for native heap walkers: heap dumpers, mostly

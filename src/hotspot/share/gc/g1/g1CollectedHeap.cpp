@@ -2254,11 +2254,6 @@ HeapWord* G1CollectedHeap::block_start(const void* addr) const {
   return hr->block_start(addr);
 }
 
-size_t G1CollectedHeap::block_size(const HeapWord* addr) const {
-  HeapRegion* hr = heap_region_containing(addr);
-  return hr->block_size(addr);
-}
-
 bool G1CollectedHeap::block_is_obj(const HeapWord* addr) const {
   HeapRegion* hr = heap_region_containing(addr);
   return hr->block_is_obj(addr);

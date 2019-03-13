@@ -245,11 +245,6 @@ HeapWord* ZCollectedHeap::block_start(const void* addr) const {
   return (HeapWord*)_heap.block_start((uintptr_t)addr);
 }
 
-size_t ZCollectedHeap::block_size(const HeapWord* addr) const {
-  size_t size_in_bytes = _heap.block_size((uintptr_t)addr);
-  return ZUtils::bytes_to_words(size_in_bytes);
-}
-
 bool ZCollectedHeap::block_is_obj(const HeapWord* addr) const {
   return _heap.block_is_obj((uintptr_t)addr);
 }

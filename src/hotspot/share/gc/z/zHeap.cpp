@@ -185,11 +185,6 @@ uintptr_t ZHeap::block_start(uintptr_t addr) const {
   return page->block_start(addr);
 }
 
-size_t ZHeap::block_size(uintptr_t addr) const {
-  const ZPage* const page = _pagetable.get(addr);
-  return page->block_size(addr);
-}
-
 bool ZHeap::block_is_obj(uintptr_t addr) const {
   const ZPage* const page = _pagetable.get(addr);
   return page->block_is_obj(addr);

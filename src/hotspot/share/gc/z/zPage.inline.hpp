@@ -32,7 +32,6 @@
 #include "gc/z/zNUMA.hpp"
 #include "gc/z/zPage.hpp"
 #include "gc/z/zPhysicalMemory.inline.hpp"
-#include "gc/z/zUtils.inline.hpp"
 #include "gc/z/zVirtualMemory.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
@@ -157,14 +156,6 @@ inline uintptr_t ZPage::block_start(uintptr_t addr) const {
     return addr;
   } else {
     return ZAddress::good(top());
-  }
-}
-
-inline size_t ZPage::block_size(uintptr_t addr) const {
-  if (block_is_obj(addr)) {
-    return ZUtils::object_size(addr);
-  } else {
-    return end() - top();
   }
 }
 

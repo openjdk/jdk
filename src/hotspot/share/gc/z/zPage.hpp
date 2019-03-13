@@ -85,7 +85,6 @@ public:
   bool is_in(uintptr_t addr) const;
 
   uintptr_t block_start(uintptr_t addr) const;
-  size_t block_size(uintptr_t addr) const;
   bool block_is_obj(uintptr_t addr) const;
 
   bool is_active() const;

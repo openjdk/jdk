@@ -100,7 +100,6 @@ public:
   virtual void safe_object_iterate(ObjectClosure* cl);
 
   virtual HeapWord* block_start(const void* addr) const;
-  virtual size_t block_size(const HeapWord* addr) const;
   virtual bool block_is_obj(const HeapWord* addr) const;
 
   virtual void register_nmethod(nmethod* nm);
