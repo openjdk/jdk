@@ -50,8 +50,8 @@ public class ZPageTable extends VMObject {
         super(addr);
     }
 
-    private ZAddressRangeMapForPageTable map() {
-        return (ZAddressRangeMapForPageTable)VMObjectFactory.newObject(ZAddressRangeMapForPageTable.class, addr.addOffsetTo(mapFieldOffset));
+    private ZGranuleMapForPageTable map() {
+        return (ZGranuleMapForPageTable)VMObjectFactory.newObject(ZGranuleMapForPageTable.class, addr.addOffsetTo(mapFieldOffset));
     }
 
     private ZPageTableEntry getEntry(Address o) {
@@ -67,7 +67,7 @@ public class ZPageTable extends VMObject {
     }
 
     private class ZPagesIterator implements Iterator<ZPage> {
-        private ZAddressRangeMapForPageTable.Iterator mapIter;
+        private ZGranuleMapForPageTable.Iterator mapIter;
         private ZPage next;
 
         ZPagesIterator() {

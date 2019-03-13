@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,18 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZADDRESSRANGEMAP_HPP
-#define SHARE_GC_Z_ZADDRESSRANGEMAP_HPP
+#ifndef SHARE_GC_Z_ZGRANULEMAP_HPP
+#define SHARE_GC_Z_ZGRANULEMAP_HPP
 
 #include "memory/allocation.hpp"
 
-template<typename T, size_t AddressRangeShift>
-class ZAddressRangeMapIterator;
+template<typename T>
+class ZGranuleMapIterator;
 
-template <typename T, size_t AddressRangeShift>
-class ZAddressRangeMap {
+template <typename T>
+class ZGranuleMap {
   friend class VMStructs;
-  friend class ZAddressRangeMapIterator<T, AddressRangeShift>;
+  friend class ZGranuleMapIterator<T>;
 
 private:
   T* const _map;
@@ -41,23 +41,23 @@ private:
   size_t size() const;
 
 public:
-  ZAddressRangeMap();
-  ~ZAddressRangeMap();
+  ZGranuleMap();
+  ~ZGranuleMap();
 
   T get(uintptr_t addr) const;
   void put(uintptr_t addr, T value);
 };
 
-template <typename T, size_t AddressRangeShift>
-class ZAddressRangeMapIterator : public StackObj {
+template <typename T>
+class ZGranuleMapIterator : public StackObj {
 public:
-  const ZAddressRangeMap<T, AddressRangeShift>* const _map;
-  size_t                                              _next;
+  const ZGranuleMap<T>* const _map;
+  size_t                      _next;
 
 public:
-  ZAddressRangeMapIterator(const ZAddressRangeMap<T, AddressRangeShift>* map);
+  ZGranuleMapIterator(const ZGranuleMap<T>* map);
 
   bool next(T* value);
 };
 
-#endif // SHARE_GC_Z_ZADDRESSRANGEMAP_HPP
+#endif // SHARE_GC_Z_ZGRANULEMAP_HPP

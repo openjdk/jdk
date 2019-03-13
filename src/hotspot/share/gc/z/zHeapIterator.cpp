@@ -22,9 +22,9 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/z/zAddressRangeMap.inline.hpp"
 #include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zGlobals.hpp"
+#include "gc/z/zGranuleMap.inline.hpp"
 #include "gc/z/zHeapIterator.hpp"
 #include "gc/z/zOop.inline.hpp"
 #include "gc/z/zRootsIterator.hpp"

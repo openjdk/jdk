@@ -24,11 +24,11 @@
 #ifndef SHARE_GC_Z_ZHEAPITERATOR_HPP
 #define SHARE_GC_Z_ZHEAPITERATOR_HPP
 
-#include "gc/z/zAddressRangeMap.hpp"
-#include "gc/z/zGlobals.hpp"
+#include "gc/z/zGranuleMap.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/stack.hpp"
 
+class ObjectClosure;
 class ZHeapIteratorBitMap;
 
 class ZHeapIterator : public StackObj {
@@ -36,9 +36,9 @@ class ZHeapIterator : public StackObj {
   friend class ZHeapIteratorOopClosure;
 
 private:
-  typedef ZAddressRangeMap<ZHeapIteratorBitMap*, ZGranuleSizeShift>         ZVisitMap;
-  typedef ZAddressRangeMapIterator<ZHeapIteratorBitMap*, ZGranuleSizeShift> ZVisitMapIterator;
-  typedef Stack<oop, mtGC>                                                  ZVisitStack;
+  typedef ZGranuleMap<ZHeapIteratorBitMap*>         ZVisitMap;
+  typedef ZGranuleMapIterator<ZHeapIteratorBitMap*> ZVisitMapIterator;
+  typedef Stack<oop, mtGC>                          ZVisitStack;
 
   ZVisitStack _visit_stack;
   ZVisitMap   _visit_map;

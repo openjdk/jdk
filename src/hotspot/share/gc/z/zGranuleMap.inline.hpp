@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,57 +21,57 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZADDRESSRANGEMAP_INLINE_HPP
-#define SHARE_GC_Z_ZADDRESSRANGEMAP_INLINE_HPP
+#ifndef SHARE_GC_Z_ZGRANULEMAP_INLINE_HPP
+#define SHARE_GC_Z_ZGRANULEMAP_INLINE_HPP
 
 #include "gc/z/zAddress.inline.hpp"
-#include "gc/z/zAddressRangeMap.hpp"
 #include "gc/z/zGlobals.hpp"
+#include "gc/z/zGranuleMap.hpp"
 #include "memory/allocation.inline.hpp"
 
-template <typename T, size_t AddressRangeShift>
-ZAddressRangeMap<T, AddressRangeShift>::ZAddressRangeMap() :
+template <typename T>
+inline ZGranuleMap<T>::ZGranuleMap() :
     _map(MmapArrayAllocator<T>::allocate(size(), mtGC)) {}
 
-template <typename T, size_t AddressRangeShift>
-ZAddressRangeMap<T, AddressRangeShift>::~ZAddressRangeMap() {
+template <typename T>
+inline ZGranuleMap<T>::~ZGranuleMap() {
   MmapArrayAllocator<T>::free(_map, size());
 }
 
-template <typename T, size_t AddressRangeShift>
-size_t ZAddressRangeMap<T, AddressRangeShift>::index_for_addr(uintptr_t addr) const {
+template <typename T>
+inline size_t ZGranuleMap<T>::index_for_addr(uintptr_t addr) const {
   assert(!ZAddress::is_null(addr), "Invalid address");
 
-  const size_t index = ZAddress::offset(addr) >> AddressRangeShift;
+  const size_t index = ZAddress::offset(addr) >> ZGranuleSizeShift;
   assert(index < size(), "Invalid index");
 
   return index;
 }
 
-template <typename T, size_t AddressRangeShift>
-size_t ZAddressRangeMap<T, AddressRangeShift>::size() const {
-  return ZAddressOffsetMax >> AddressRangeShift;
+template <typename T>
+inline size_t ZGranuleMap<T>::size() const {
+  return ZAddressOffsetMax >> ZGranuleSizeShift;
 }
 
-template <typename T, size_t AddressRangeShift>
-T ZAddressRangeMap<T, AddressRangeShift>::get(uintptr_t addr) const {
-  const uintptr_t index = index_for_addr(addr);
+template <typename T>
+inline T ZGranuleMap<T>::get(uintptr_t addr) const {
+  const size_t index = index_for_addr(addr);
   return _map[index];
 }
 
-template <typename T, size_t AddressRangeShift>
-void ZAddressRangeMap<T, AddressRangeShift>::put(uintptr_t addr, T value) {
-  const uintptr_t index = index_for_addr(addr);
+template <typename T>
+inline void ZGranuleMap<T>::put(uintptr_t addr, T value) {
+  const size_t index = index_for_addr(addr);
   _map[index] = value;
 }
 
-template <typename T, size_t AddressRangeShift>
-inline ZAddressRangeMapIterator<T, AddressRangeShift>::ZAddressRangeMapIterator(const ZAddressRangeMap<T, AddressRangeShift>* map) :
+template <typename T>
+inline ZGranuleMapIterator<T>::ZGranuleMapIterator(const ZGranuleMap<T>* map) :
     _map(map),
     _next(0) {}
 
-template <typename T, size_t AddressRangeShift>
-inline bool ZAddressRangeMapIterator<T, AddressRangeShift>::next(T* value) {
+template <typename T>
+inline bool ZGranuleMapIterator<T>::next(T* value) {
   if (_next < _map->size()) {
     *value = _map->_map[_next++];
     return true;
@@ -81,4 +81,4 @@ inline bool ZAddressRangeMapIterator<T, AddressRangeShift>::next(T* value) {
   return false;
 }
 
-#endif // SHARE_GC_Z_ZADDRESSRANGEMAP_INLINE_HPP
+#endif // SHARE_GC_Z_ZGRANULEMAP_INLINE_HPP

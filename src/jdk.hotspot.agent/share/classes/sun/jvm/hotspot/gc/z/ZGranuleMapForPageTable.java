@@ -31,7 +31,7 @@ import sun.jvm.hotspot.types.AddressField;
 import sun.jvm.hotspot.types.Type;
 import sun.jvm.hotspot.types.TypeDataBase;
 
-public class ZAddressRangeMapForPageTable  extends VMObject {
+public class ZGranuleMapForPageTable  extends VMObject {
     private static AddressField mapField;
 
     static {
@@ -39,12 +39,12 @@ public class ZAddressRangeMapForPageTable  extends VMObject {
     }
 
     static private synchronized void initialize(TypeDataBase db) {
-        Type type = db.lookupType("ZAddressRangeMapForPageTable");
+        Type type = db.lookupType("ZGranuleMapForPageTable");
 
         mapField = type.getAddressField("_map");
     }
 
-    public ZAddressRangeMapForPageTable(Address addr) {
+    public ZGranuleMapForPageTable(Address addr) {
         super(addr);
     }
 
