@@ -114,12 +114,9 @@ private:
   // information. These are also called "dirty". Valid entries are from [0.._cur_dirty_region)
   uint* _dirty_region_buffer;
 
-  typedef jbyte IsDirtyRegionState;
-  static const IsDirtyRegionState Clean = 0;
-  static const IsDirtyRegionState Dirty = 1;
-  // Holds a flag for every region whether it is in the _dirty_region_buffer already
-  // to avoid duplicates. Uses jbyte since there are no atomic instructions for bools.
-  IsDirtyRegionState* _in_dirty_region_buffer;
+  // Flag for every region whether it is in the _dirty_region_buffer already
+  // to avoid duplicates.
+  bool volatile* _in_dirty_region_buffer;
   size_t _cur_dirty_region;
 
   // Creates a snapshot of the current _top values at the start of collection to
@@ -169,7 +166,7 @@ public:
       FREE_C_HEAP_ARRAY(uint, _dirty_region_buffer);
     }
     if (_in_dirty_region_buffer != NULL) {
-      FREE_C_HEAP_ARRAY(IsDirtyRegionState, _in_dirty_region_buffer);
+      FREE_C_HEAP_ARRAY(bool, _in_dirty_region_buffer);
     }
     if (_scan_top != NULL) {
       FREE_C_HEAP_ARRAY(HeapWord*, _scan_top);
@@ -183,7 +180,7 @@ public:
     _iter_states = NEW_C_HEAP_ARRAY(G1RemsetIterState, max_regions, mtGC);
     _iter_claims = NEW_C_HEAP_ARRAY(size_t, max_regions, mtGC);
     _dirty_region_buffer = NEW_C_HEAP_ARRAY(uint, max_regions, mtGC);
-    _in_dirty_region_buffer = NEW_C_HEAP_ARRAY(IsDirtyRegionState, max_regions, mtGC);
+    _in_dirty_region_buffer = NEW_C_HEAP_ARRAY(bool, max_regions, mtGC);
     _scan_top = NEW_C_HEAP_ARRAY(HeapWord*, max_regions, mtGC);
   }
 
@@ -197,7 +194,7 @@ public:
     G1CollectedHeap::heap()->heap_region_iterate(&cl);
 
     memset((void*)_iter_claims, 0, _max_regions * sizeof(size_t));
-    memset(_in_dirty_region_buffer, Clean, _max_regions * sizeof(IsDirtyRegionState));
+    memset((void*)_in_dirty_region_buffer, false, _max_regions * sizeof(bool));
     _cur_dirty_region = 0;
   }
 
@@ -241,12 +238,11 @@ public:
   }
 
   void add_dirty_region(uint region) {
-    if (_in_dirty_region_buffer[region] == Dirty) {
+    if (_in_dirty_region_buffer[region]) {
       return;
     }
 
-    bool marked_as_dirty = Atomic::cmpxchg(Dirty, &_in_dirty_region_buffer[region], Clean) == Clean;
-    if (marked_as_dirty) {
+    if (!Atomic::cmpxchg(true, &_in_dirty_region_buffer[region], false)) {
       size_t allocated = Atomic::add(1u, &_cur_dirty_region) - 1;
       _dirty_region_buffer[allocated] = region;
     }
