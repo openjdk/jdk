@@ -31,6 +31,7 @@
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/weakProcessor.hpp"
+#include "gc/shared/weakProcessorPhaseTimes.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
@@ -60,7 +61,9 @@ class ShenandoahRootProcessor : public StackObj {
   ParallelCLDRootIterator   _cld_iterator;
   ShenandoahAllCodeRootsIterator _coderoots_all_iterator;
   CodeBlobClosure* _threads_nmethods_cl;
-  WeakProcessor::Task _weak_processor_task;
+  WeakProcessorPhaseTimes _weak_processor_timings;
+  WeakProcessor::Task     _weak_processor_task;
+  bool                    _processed_weak_roots;
 
   void process_java_roots(OopClosure* scan_non_heap_roots,
                           CLDClosure* scan_strong_clds,
@@ -73,6 +76,10 @@ class ShenandoahRootProcessor : public StackObj {
                         OopClosure* scan_non_heap_weak_roots,
                         OopClosure* weak_jni_roots,
                         uint worker_i);
+
+  void weak_processor_timing_to_shenandoah_timing(const WeakProcessorPhases::Phase wpp,
+                                                  const ShenandoahPhaseTimings::GCParPhases spp,
+                                                  ShenandoahWorkerTimings* worker_times) const;
 
 public:
   ShenandoahRootProcessor(ShenandoahHeap* heap, uint n_workers,
