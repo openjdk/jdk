@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,6 @@ import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.JToggleButton;
 import javax.swing.ListModel;
-import javax.swing.UIManager;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileSystemView;
 import javax.swing.filechooser.FileView;
@@ -60,6 +59,7 @@ import org.netbeans.jemmy.Timeoutable;
 import org.netbeans.jemmy.Timeouts;
 import org.netbeans.jemmy.Waitable;
 import org.netbeans.jemmy.Waiter;
+import org.netbeans.jemmy.util.LookAndFeel;
 
 /**
  *
@@ -344,8 +344,7 @@ public class JFileChooserOperator extends JComponentOperator
         int index = 0;
         // In GTK and Motif L&F, there are two JLists, one is to list folders
         // and second one one is to list files
-        if (UIManager.getLookAndFeel().getID().equals("Motif")
-                || UIManager.getLookAndFeel().getID().equals("GTK")) {
+        if (LookAndFeel.isMotif() || LookAndFeel.isGTK()) {
             index =1;
         }
         return innerSearcher.
@@ -445,7 +444,7 @@ public class JFileChooserOperator extends JComponentOperator
         // In Windows and Windows Classic L&F, there is no 'Go Home' button,
         // but there is a toggle button to go desktop. In Windows platform
         // 'Go Home' button usually navigates to Desktop only.
-        if(UIManager.getLookAndFeel().getID().equals("Windows")) {
+        if(LookAndFeel.isWindows() || LookAndFeel.isWindowsClassic()) {
             homeOper =new JToggleButtonOperator(this, 1);
         } else {
             homeOper = new JButtonOperator(getHomeButton());

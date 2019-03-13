@@ -36,6 +36,8 @@ import org.netbeans.jemmy.ComponentChooser;
 import org.netbeans.jemmy.operators.JFrameOperator;
 import org.netbeans.jemmy.operators.JSliderOperator;
 import org.netbeans.jemmy.accessibility.AccessibleNameChooser;
+import org.netbeans.jemmy.util.LookAndFeel;
+
 import static com.sun.swingset3.demos.slider.SliderDemo.*;
 import org.testng.annotations.Listeners;
 
@@ -65,12 +67,10 @@ public class SliderDemoTest {
     private static final int HORIZONTAL_MINOR_TICKS_SLIDER_MAXIMUM = 11;
     private static final int VERTICAL_MINOR_TICKS_SLIDER_MINIMUM = 0;
     private static final int VERTICAL_MINOR_TICKS_SLIDER_MAXIMUM = 100;
-    private String currentLookAndFeel;
 
     @Test(dataProvider = "availableLookAndFeels", dataProviderClass = TestHelpers.class)
     public void test(String lookAndFeel) throws Exception {
         UIManager.setLookAndFeel(lookAndFeel);
-        currentLookAndFeel = lookAndFeel;
         new ClassReference(SliderDemo.class.getCanonicalName()).startApplication();
         JFrameOperator frame = new JFrameOperator(DEMO_TITLE);
         plain(frame, HORIZONTAL_PLAIN_SLIDER);
@@ -148,7 +148,7 @@ public class SliderDemoTest {
     }
 
     private void checkKeyboard(JSliderOperator jso) {
-        boolean isMotif = currentLookAndFeel.equals("com.sun.java.swing.plaf.motif.MotifLookAndFeel");
+        boolean isMotif = LookAndFeel.isMotif();
         checkKeyPress(jso, KeyEvent.VK_HOME,
                 jSlider -> jSlider.getValue() == jso.getMinimum());
 

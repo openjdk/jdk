@@ -53,6 +53,7 @@ import org.netbeans.jemmy.drivers.windows.DefaultFrameDriver;
 import org.netbeans.jemmy.drivers.windows.DefaultInternalFrameDriver;
 import org.netbeans.jemmy.drivers.windows.DefaultWindowDriver;
 import org.netbeans.jemmy.drivers.windows.InternalFramePopupMenuDriver;
+import org.netbeans.jemmy.util.LookAndFeel;
 
 /**
  * Installs all necessary drivers for Jemmy operators except low-level drivers
@@ -122,9 +123,9 @@ public class DefaultDriverInstaller extends ArrayDriverInstaller {
                     new ChoiceDriver(),
                     new DefaultFrameDriver(),
                     new DefaultWindowDriver(),
-                    "Motif".equals(UIManager.getLookAndFeel().getID())? new InternalFramePopupMenuDriver(): new DefaultInternalFrameDriver(),
-                    "Motif".equals(UIManager.getLookAndFeel().getID())? new InternalFramePopupMenuDriver(): new DefaultInternalFrameDriver(),
-                    "Motif".equals(UIManager.getLookAndFeel().getID())? new InternalFramePopupMenuDriver(): new DefaultInternalFrameDriver(),
+                    LookAndFeel.isMotif()? new InternalFramePopupMenuDriver(): new DefaultInternalFrameDriver(),
+                    LookAndFeel.isMotif()? new InternalFramePopupMenuDriver(): new DefaultInternalFrameDriver(),
+                    LookAndFeel.isMotif()? new InternalFramePopupMenuDriver(): new DefaultInternalFrameDriver(),
                     new APIFocusDriver(),
                     new MouseFocusDriver(),
                     (shortcutEvents ? new QueueJMenuDriver() : new DefaultJMenuDriver()),
