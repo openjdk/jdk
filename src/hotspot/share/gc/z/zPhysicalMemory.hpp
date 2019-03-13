@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ private:
   void nmt_uncommit(ZPhysicalMemory pmem, uintptr_t offset);
 
 public:
-  ZPhysicalMemoryManager(size_t max_capacity, size_t granule_size);
+  ZPhysicalMemoryManager(size_t max_capacity);
 
   bool is_initialized() const;
 

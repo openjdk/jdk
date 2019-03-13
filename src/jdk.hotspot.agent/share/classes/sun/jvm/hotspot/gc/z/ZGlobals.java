@@ -39,10 +39,12 @@ public class ZGlobals {
     public static byte ZPageTypeMedium;
     public static byte ZPageTypeLarge;
 
+    // Granule size shift
+    public static long ZGranuleSizeShift;
+
     // Page size shifts
     public static long ZPageSizeSmallShift;
     public static long ZPageSizeMediumShift;
-    public static long ZPageSizeMinShift;
 
     // Object alignment shifts
     public static int  ZObjectAlignmentMediumShift;
@@ -74,9 +76,10 @@ public class ZGlobals {
         ZPageTypeMedium = db.lookupIntConstant("ZPageTypeMedium").byteValue();
         ZPageTypeLarge = db.lookupIntConstant("ZPageTypeLarge").byteValue();
 
+        ZGranuleSizeShift = db.lookupLongConstant("ZGranuleSizeShift").longValue();
+
         ZPageSizeSmallShift = db.lookupLongConstant("ZPageSizeSmallShift").longValue();
         ZPageSizeMediumShift = db.lookupLongConstant("ZPageSizeMediumShift").longValue();
-        ZPageSizeMinShift = db.lookupLongConstant("ZPageSizeMinShift").longValue();
 
         ZObjectAlignmentMediumShift = db.lookupIntConstant("ZObjectAlignmentMediumShift").intValue();
         ZObjectAlignmentLargeShift = db.lookupIntConstant("ZObjectAlignmentLargeShift").intValue();;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,20 +40,22 @@ const uint32_t    ZPhaseRelocate                = 2;
 // Global sequence number
 extern uint32_t   ZGlobalSeqNum;
 
+// Granule shift/size
+const size_t      ZGranuleSizeShift             = ZPlatformGranuleSizeShift;
+const size_t      ZGranuleSize                  = (size_t)1 << ZGranuleSizeShift;
+
 // Page types
 const uint8_t     ZPageTypeSmall                = 0;
 const uint8_t     ZPageTypeMedium               = 1;
 const uint8_t     ZPageTypeLarge                = 2;
 
 // Page size shifts
-const size_t      ZPageSizeSmallShift           = ZPlatformPageSizeSmallShift;
+const size_t      ZPageSizeSmallShift           = ZGranuleSizeShift;
 const size_t      ZPageSizeMediumShift          = ZPageSizeSmallShift + 4;
-const size_t      ZPageSizeMinShift             = ZPageSizeSmallShift;
 
 // Page sizes
 const size_t      ZPageSizeSmall                = (size_t)1 << ZPageSizeSmallShift;
 const size_t      ZPageSizeMedium               = (size_t)1 << ZPageSizeMediumShift;
-const size_t      ZPageSizeMin                  = (size_t)1 << ZPageSizeMinShift;
 
 // Object size limits
 const size_t      ZObjectSizeLimitSmall         = (ZPageSizeSmall / 8);  // Allow 12.5% waste
@@ -133,7 +135,7 @@ const size_t      ZMarkStackMagazineSize        = (size_t)1 << 15; // 32K
 const size_t      ZMarkStackMagazineSlots       = (ZMarkStackMagazineSize / ZMarkStackSize) - 1;
 
 // Mark stripe size
-const size_t      ZMarkStripeShift              = ZPageSizeMinShift;
+const size_t      ZMarkStripeShift              = ZGranuleSizeShift;
 
 // Max number of mark stripes
 const size_t      ZMarkStripesMax               = 16; // Must be a power of two

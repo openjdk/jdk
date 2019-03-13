@@ -48,7 +48,7 @@ define zpo
             end
         end
     end
-    printf "\t Page: %llu\n", ((uintptr_t)$obj & ZAddressOffsetMask) >> ZPageSizeMinShift
+    printf "\t Page: %llu\n", ((uintptr_t)$obj & ZAddressOffsetMask) >> ZGranuleSizeShift
     x/16gx $obj
     printf "Mark:  0x%016llx\tKlass: %s\n", (uintptr_t)$obj->_mark, (char*)$obj->_metadata->_klass->_name->_body
 end
@@ -99,7 +99,7 @@ end
 define zmarked
     set $addr          = $arg0
     set $obj           = ((uintptr_t)$addr & ZAddressOffsetMask)
-    set $page_index    = $obj >> ZPageSizeMinShift
+    set $page_index    = $obj >> ZGranuleSizeShift
     set $page_entry    = (uintptr_t)ZHeap::_heap._pagetable._map._map[$page_index]
     set $page          = (ZPage*)($page_entry & ~1)
     set $page_start    = (uintptr_t)$page._virtual._start

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ ZPage::ZPage(uint8_t type, ZVirtualMemory vmem, ZPhysicalMemory pmem) :
   assert(!_virtual.is_null(), "Should not be null");
   assert((type == ZPageTypeSmall && size() == ZPageSizeSmall) ||
          (type == ZPageTypeMedium && size() == ZPageSizeMedium) ||
-         (type == ZPageTypeLarge && is_aligned(size(), ZPageSizeMin)),
+         (type == ZPageTypeLarge && is_aligned(size(), ZGranuleSize)),
          "Page type/size mismatch");
 }
 

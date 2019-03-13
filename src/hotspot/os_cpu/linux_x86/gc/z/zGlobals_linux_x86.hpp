@@ -74,7 +74,7 @@
 //  * 63-47 Fixed (17-bits, always zero)
 //
 
-const size_t    ZPlatformPageSizeSmallShift    = 21; // 2M
+const size_t    ZPlatformGranuleSizeShift      = 21; // 2M
 
 const size_t    ZPlatformAddressOffsetBits     = 42; // 4TB
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@ ZPage* const ZPageAllocator::gc_marker = (ZPage*)-1;
 ZPageAllocator::ZPageAllocator(size_t min_capacity, size_t max_capacity, size_t max_reserve) :
     _lock(),
     _virtual(),
-    _physical(max_capacity, ZPageSizeMin),
+    _physical(max_capacity),
     _cache(),
     _max_reserve(max_reserve),
     _pre_mapped(_virtual, _physical, try_ensure_unused_for_pre_mapped(min_capacity)),

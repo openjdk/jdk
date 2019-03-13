@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ class ZPageTable {
   friend class ZPageTableIterator;
 
 private:
-  ZAddressRangeMap<ZPageTableEntry, ZPageSizeMinShift> _map;
+  ZAddressRangeMap<ZPageTableEntry, ZGranuleSizeShift> _map;
 
   ZPageTableEntry get_entry(ZPage* page) const;
   void put_entry(ZPage* page, ZPageTableEntry entry);
@@ -55,7 +55,7 @@ public:
 
 class ZPageTableIterator : public StackObj {
 private:
-  ZAddressRangeMapIterator<ZPageTableEntry, ZPageSizeMinShift> _iter;
+  ZAddressRangeMapIterator<ZPageTableEntry, ZGranuleSizeShift> _iter;
   ZPage*                                                       _prev;
 
 public:

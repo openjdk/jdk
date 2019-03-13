@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ void ZPageTable::put_entry(ZPage* page, ZPageTableEntry entry) {
 
   const uintptr_t start = ZAddress::good(page->start());
   const uintptr_t end = start + page->size();
-  for (uintptr_t addr = start; addr < end; addr += ZPageSizeMin) {
+  for (uintptr_t addr = start; addr < end; addr += ZGranuleSize) {
     _map.put(addr, entry);
   }
 }
