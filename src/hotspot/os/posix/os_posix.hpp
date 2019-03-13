@@ -117,6 +117,9 @@ public:
   // effective gid, or if given uid is root.
   static bool matches_effective_uid_and_gid_or_root(uid_t uid, gid_t gid);
 
+  static struct sigaction *get_preinstalled_handler(int);
+  static void save_preinstalled_handler(int, struct sigaction&);
+
   static void print_umask(outputStream* st, mode_t umsk);
 
   static void print_user_info(outputStream* st);

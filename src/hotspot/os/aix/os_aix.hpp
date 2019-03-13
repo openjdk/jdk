@@ -37,8 +37,6 @@ class Aix {
   static bool libjsig_is_loaded;        // libjsig that interposes sigaction(),
                                         // __sigaction(), signal() is loaded
   static struct sigaction *(*get_signal_action)(int);
-  static struct sigaction *get_preinstalled_handler(int);
-  static void save_preinstalled_handler(int, struct sigaction&);
 
   static void check_signal_handler(int sig);
 

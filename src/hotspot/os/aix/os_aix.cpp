@@ -2996,8 +2996,6 @@ static void javaSignalHandler(int sig, siginfo_t* info, void* uc) {
 bool os::Aix::signal_handlers_are_installed = false;
 
 // For signal-chaining
-struct sigaction sigact[NSIG];
-sigset_t sigs;
 bool os::Aix::libjsig_is_loaded = false;
 typedef struct sigaction *(*get_signal_t)(int);
 get_signal_t os::Aix::get_signal_action = NULL;
@@ -3011,7 +3009,7 @@ struct sigaction* os::Aix::get_chained_signal_action(int sig) {
   }
   if (actp == NULL) {
     // Retrieve the preinstalled signal handler from jvm
-    actp = get_preinstalled_handler(sig);
+    actp = os::Posix::get_preinstalled_handler(sig);
   }
 
   return actp;
@@ -3074,19 +3072,6 @@ bool os::Aix::chained_handler(int sig, siginfo_t* siginfo, void* context) {
   return chained;
 }
 
-struct sigaction* os::Aix::get_preinstalled_handler(int sig) {
-  if (sigismember(&sigs, sig)) {
-    return &sigact[sig];
-  }
-  return NULL;
-}
-
-void os::Aix::save_preinstalled_handler(int sig, struct sigaction& oldAct) {
-  assert(sig > 0 && sig < NSIG, "vm signal out of expected range");
-  sigact[sig] = oldAct;
-  sigaddset(&sigs, sig);
-}
-
 // for diagnostic
 int sigflags[NSIG];
 
@@ -3118,7 +3103,7 @@ void os::Aix::set_signal_handler(int sig, bool set_installed) {
       return;
     } else if (UseSignalChaining) {
       // save the old handler in jvm
-      save_preinstalled_handler(sig, oldAct);
+      os::Posix::save_preinstalled_handler(sig, oldAct);
       // libjsig also interposes the sigaction() call below and saves the
       // old sigaction on it own.
     } else {
@@ -3174,7 +3159,6 @@ void os::Aix::install_signal_handlers() {
       (*begin_signal_setting)();
     }
 
-    ::sigemptyset(&sigs);
     set_signal_handler(SIGSEGV, true);
     set_signal_handler(SIGPIPE, true);
     set_signal_handler(SIGBUS, true);
