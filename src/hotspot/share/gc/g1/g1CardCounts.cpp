@@ -81,7 +81,7 @@ void G1CardCounts::initialize(G1RegionToSpaceMapper* mapper) {
   }
 }
 
-uint G1CardCounts::add_card_count(jbyte* card_ptr) {
+uint G1CardCounts::add_card_count(CardValue* card_ptr) {
   // Returns the number of times the card has been refined.
   // If we failed to reserve/commit the counts table, return 0.
   // If card_ptr is beyond the committed end of the counts table,
@@ -116,11 +116,11 @@ void G1CardCounts::clear_region(HeapRegion* hr) {
 
 void G1CardCounts::clear_range(MemRegion mr) {
   if (has_count_table()) {
-    const jbyte* from_card_ptr = _ct->byte_for_const(mr.start());
+    const CardValue* from_card_ptr = _ct->byte_for_const(mr.start());
     // We use the last address in the range as the range could represent the
     // last region in the heap. In which case trying to find the card will be an
     // OOB access to the card table.
-    const jbyte* last_card_ptr = _ct->byte_for_const(mr.last());
+    const CardValue* last_card_ptr = _ct->byte_for_const(mr.last());
 
 #ifdef ASSERT
     HeapWord* start_addr = _ct->addr_for(from_card_ptr);

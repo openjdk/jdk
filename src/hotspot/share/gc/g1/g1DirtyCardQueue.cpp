@@ -44,7 +44,7 @@
 // SuspendibleThreadSet after every card.
 class G1RefineCardConcurrentlyClosure: public G1CardTableEntryClosure {
 public:
-  bool do_card_ptr(jbyte* card_ptr, uint worker_i) {
+  bool do_card_ptr(CardValue* card_ptr, uint worker_i) {
     G1CollectedHeap::heap()->rem_set()->refine_card_concurrently(card_ptr, worker_i);
 
     if (SuspendibleThreadSet::should_yield()) {
@@ -113,7 +113,7 @@ bool G1DirtyCardQueueSet::apply_closure_to_buffer(G1CardTableEntryClosure* cl,
   size_t i = node->index();
   size_t limit = buffer_size();
   for ( ; i < limit; ++i) {
-    jbyte* card_ptr = static_cast<jbyte*>(buf[i]);
+    CardTable::CardValue* card_ptr = static_cast<CardTable::CardValue*>(buf[i]);
     assert(card_ptr != NULL, "invariant");
     if (!cl->do_card_ptr(card_ptr, worker_i)) {
       result = false;           // Incomplete processing.

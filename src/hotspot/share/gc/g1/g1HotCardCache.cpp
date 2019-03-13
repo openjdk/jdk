@@ -39,7 +39,7 @@ void G1HotCardCache::initialize(G1RegionToSpaceMapper* card_counts_storage) {
     _use_cache = true;
 
     _hot_cache_size = (size_t)1 << G1ConcRSLogCacheSize;
-    _hot_cache = ArrayAllocator<jbyte*>::allocate(_hot_cache_size, mtGC);
+    _hot_cache = ArrayAllocator<CardValue*>::allocate(_hot_cache_size, mtGC);
 
     reset_hot_cache_internal();
 
@@ -54,12 +54,12 @@ void G1HotCardCache::initialize(G1RegionToSpaceMapper* card_counts_storage) {
 G1HotCardCache::~G1HotCardCache() {
   if (default_use_cache()) {
     assert(_hot_cache != NULL, "Logic");
-    ArrayAllocator<jbyte*>::free(_hot_cache, _hot_cache_size);
+    ArrayAllocator<CardValue*>::free(_hot_cache, _hot_cache_size);
     _hot_cache = NULL;
   }
 }
 
-jbyte* G1HotCardCache::insert(jbyte* card_ptr) {
+CardTable::CardValue* G1HotCardCache::insert(CardValue* card_ptr) {
   uint count = _card_counts.add_card_count(card_ptr);
   if (!_card_counts.is_hot(count)) {
     // The card is not hot so do not store it in the cache;
@@ -69,7 +69,7 @@ jbyte* G1HotCardCache::insert(jbyte* card_ptr) {
   // Otherwise, the card is hot.
   size_t index = Atomic::add(1u, &_hot_cache_idx) - 1;
   size_t masked_index = index & (_hot_cache_size - 1);
-  jbyte* current_ptr = _hot_cache[masked_index];
+  CardValue* current_ptr = _hot_cache[masked_index];
 
   // Try to store the new card pointer into the cache. Compare-and-swap to guard
   // against the unlikely event of a race resulting in another card pointer to
@@ -77,9 +77,9 @@ jbyte* G1HotCardCache::insert(jbyte* card_ptr) {
   // card_ptr in favor of the other option, which would be starting over. This
   // should be OK since card_ptr will likely be the older card already when/if
   // this ever happens.
-  jbyte* previous_ptr = Atomic::cmpxchg(card_ptr,
-                                        &_hot_cache[masked_index],
-                                        current_ptr);
+  CardValue* previous_ptr = Atomic::cmpxchg(card_ptr,
+                                            &_hot_cache[masked_index],
+                                            current_ptr);
   return (previous_ptr == current_ptr) ? previous_ptr : card_ptr;
 }
 
@@ -96,7 +96,7 @@ void G1HotCardCache::drain(G1CardTableEntryClosure* cl, uint worker_i) {
     // The current worker has successfully claimed the chunk [start_idx..end_idx)
     end_idx = MIN2(end_idx, _hot_cache_size);
     for (size_t i = start_idx; i < end_idx; i++) {
-      jbyte* card_ptr = _hot_cache[i];
+      CardValue* card_ptr = _hot_cache[i];
       if (card_ptr != NULL) {
         bool result = cl->do_card_ptr(card_ptr, worker_i);
         assert(result, "Closure should always return true");

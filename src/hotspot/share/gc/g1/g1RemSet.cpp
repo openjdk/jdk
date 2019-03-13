@@ -470,7 +470,7 @@ public:
     _g1rs(g1h->rem_set()), _update_rs_cl(update_rs_cl), _cards_scanned(0), _cards_skipped(0)
   {}
 
-  bool do_card_ptr(jbyte* card_ptr, uint worker_i) {
+  bool do_card_ptr(CardValue* card_ptr, uint worker_i) {
     // The only time we care about recording cards that
     // contain references that point into the collection set
     // is during RSet updating within an evacuation pause.
@@ -538,7 +538,7 @@ void G1RemSet::cleanup_after_oops_into_collection_set_do() {
   phase_times->record_clear_ct_time((os::elapsedTime() - start) * 1000.0);
 }
 
-inline void check_card_ptr(jbyte* card_ptr, G1CardTable* ct) {
+inline void check_card_ptr(CardTable::CardValue* card_ptr, G1CardTable* ct) {
 #ifdef ASSERT
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   assert(g1h->is_in_exact(ct->addr_for(card_ptr)),
@@ -550,7 +550,7 @@ inline void check_card_ptr(jbyte* card_ptr, G1CardTable* ct) {
 #endif
 }
 
-void G1RemSet::refine_card_concurrently(jbyte* card_ptr,
+void G1RemSet::refine_card_concurrently(CardValue* card_ptr,
                                         uint worker_i) {
   assert(!_g1h->is_gc_active(), "Only call concurrently");
 
@@ -606,7 +606,7 @@ void G1RemSet::refine_card_concurrently(jbyte* card_ptr,
   if (_hot_card_cache->use_cache()) {
     assert(!SafepointSynchronize::is_at_safepoint(), "sanity");
 
-    const jbyte* orig_card_ptr = card_ptr;
+    const CardValue* orig_card_ptr = card_ptr;
     card_ptr = _hot_card_cache->insert(card_ptr);
     if (card_ptr == NULL) {
       // There was no eviction. Nothing to do.
@@ -647,7 +647,7 @@ void G1RemSet::refine_card_concurrently(jbyte* card_ptr,
   // Okay to clean and process the card now.  There are still some
   // stale card cases that may be detected by iteration and dealt with
   // as iteration failure.
-  *const_cast<volatile jbyte*>(card_ptr) = G1CardTable::clean_card_val();
+  *const_cast<volatile CardValue*>(card_ptr) = G1CardTable::clean_card_val();
 
   // This fence serves two purposes.  First, the card must be cleaned
   // before processing the contents.  Second, we can't proceed with
@@ -689,7 +689,7 @@ void G1RemSet::refine_card_concurrently(jbyte* card_ptr,
   }
 }
 
-bool G1RemSet::refine_card_during_gc(jbyte* card_ptr,
+bool G1RemSet::refine_card_during_gc(CardValue* card_ptr,
                                      G1ScanObjsDuringUpdateRSClosure* update_rs_cl) {
   assert(_g1h->is_gc_active(), "Only call during GC");
 

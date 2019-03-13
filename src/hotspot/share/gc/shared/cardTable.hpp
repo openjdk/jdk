@@ -32,6 +32,14 @@
 
 class CardTable: public CHeapObj<mtGC> {
   friend class VMStructs;
+public:
+  typedef uint8_t CardValue;
+
+  // All code generators assume that the size of a card table entry is one byte.
+  // They need to be updated to reflect any change to this.
+  // This code can typically be found by searching for the byte_map_base() method.
+  STATIC_ASSERT(sizeof(CardValue) == 1);
+
 protected:
   // The declaration order of these const fields is important; see the
   // constructor before changing.
@@ -43,8 +51,8 @@ protected:
   size_t          _last_valid_index; // index of the last valid element
   const size_t    _page_size;        // page size used when mapping _byte_map
   size_t          _byte_map_size;    // in bytes
-  jbyte*          _byte_map;         // the card marking array
-  jbyte*          _byte_map_base;
+  CardValue*      _byte_map;         // the card marking array
+  CardValue*      _byte_map_base;
 
   int _cur_covered_regions;
 
@@ -94,7 +102,7 @@ protected:
   static const int _max_covered_regions = 2;
 
   enum CardValues {
-    clean_card                  = -1,
+    clean_card                  = (CardValue)-1,
     // The mask contains zeros in places for all other values.
     clean_card_mask             = clean_card - 31,
 
@@ -145,17 +153,17 @@ public:
 
   // Return true if "p" is at the start of a card.
   bool is_card_aligned(HeapWord* p) {
-    jbyte* pcard = byte_for(p);
+    CardValue* pcard = byte_for(p);
     return (addr_for(pcard) == p);
   }
 
   // Mapping from address to card marking array entry
-  jbyte* byte_for(const void* p) const {
+  CardValue* byte_for(const void* p) const {
     assert(_whole_heap.contains(p),
            "Attempt to access p = " PTR_FORMAT " out of bounds of "
            " card marking array's _whole_heap = [" PTR_FORMAT "," PTR_FORMAT ")",
            p2i(p), p2i(_whole_heap.start()), p2i(_whole_heap.end()));
-    jbyte* result = &_byte_map_base[uintptr_t(p) >> card_shift];
+    CardValue* result = &_byte_map_base[uintptr_t(p) >> card_shift];
     assert(result >= _byte_map && result < _byte_map + _byte_map_size,
            "out of bounds accessor for card marking array");
     return result;
@@ -164,7 +172,7 @@ public:
   // The card table byte one after the card marking array
   // entry for argument address. Typically used for higher bounds
   // for loops iterating through the card table.
-  jbyte* byte_after(const void* p) const {
+  CardValue* byte_after(const void* p) const {
     return byte_for(p) + 1;
   }
 
@@ -173,20 +181,20 @@ public:
   void dirty(MemRegion mr);
 
   // Provide read-only access to the card table array.
-  const jbyte* byte_for_const(const void* p) const {
+  const CardValue* byte_for_const(const void* p) const {
     return byte_for(p);
   }
-  const jbyte* byte_after_const(const void* p) const {
+  const CardValue* byte_after_const(const void* p) const {
     return byte_after(p);
   }
 
   // Mapping from card marking array entry to address of first word
-  HeapWord* addr_for(const jbyte* p) const {
+  HeapWord* addr_for(const CardValue* p) const {
     assert(p >= _byte_map && p < _byte_map + _byte_map_size,
            "out of bounds access to card marking array. p: " PTR_FORMAT
            " _byte_map: " PTR_FORMAT " _byte_map + _byte_map_size: " PTR_FORMAT,
            p2i(p), p2i(_byte_map), p2i(_byte_map + _byte_map_size));
-    size_t delta = pointer_delta(p, _byte_map_base, sizeof(jbyte));
+    size_t delta = pointer_delta(p, _byte_map_base, sizeof(CardValue));
     HeapWord* result = (HeapWord*) (delta << card_shift);
     assert(_whole_heap.contains(result),
            "Returning result = " PTR_FORMAT " out of bounds of "
@@ -204,7 +212,7 @@ public:
     return byte_for(p) - _byte_map;
   }
 
-  const jbyte* byte_for_index(const size_t card_index) const {
+  CardValue* byte_for_index(const size_t card_index) const {
     return _byte_map + card_index;
   }
 
@@ -233,19 +241,19 @@ public:
     card_size_in_words          = card_size / sizeof(HeapWord)
   };
 
-  static jbyte clean_card_val()          { return clean_card; }
-  static jbyte clean_card_mask_val()     { return clean_card_mask; }
-  static jbyte dirty_card_val()          { return dirty_card; }
-  static jbyte claimed_card_val()        { return claimed_card; }
-  static jbyte precleaned_card_val()     { return precleaned_card; }
-  static jbyte deferred_card_val()       { return deferred_card; }
+  static CardValue clean_card_val()          { return clean_card; }
+  static CardValue clean_card_mask_val()     { return clean_card_mask; }
+  static CardValue dirty_card_val()          { return dirty_card; }
+  static CardValue claimed_card_val()        { return claimed_card; }
+  static CardValue precleaned_card_val()     { return precleaned_card; }
+  static CardValue deferred_card_val()       { return deferred_card; }
   static intptr_t clean_card_row_val()   { return clean_card_row; }
 
   // Card marking array base (adjusted for heap low boundary)
   // This would be the 0th element of _byte_map, if the heap started at 0x0.
   // But since the heap starts at some higher address, this points to somewhere
   // before the beginning of the actual _byte_map.
-  jbyte* byte_map_base() const { return _byte_map_base; }
+  CardValue* byte_map_base() const { return _byte_map_base; }
   bool scanned_concurrently() const { return _scanned_concurrently; }
 
   virtual bool is_in_young(oop obj) const = 0;
@@ -258,7 +266,7 @@ public:
 
   // val_equals -> it will check that all cards covered by mr equal val
   // !val_equals -> it will check that all cards covered by mr do not equal val
-  void verify_region(MemRegion mr, jbyte val, bool val_equals) PRODUCT_RETURN;
+  void verify_region(MemRegion mr, CardValue val, bool val_equals) PRODUCT_RETURN;
   void verify_not_dirty_region(MemRegion mr) PRODUCT_RETURN;
   void verify_dirty_region(MemRegion mr) PRODUCT_RETURN;
 };

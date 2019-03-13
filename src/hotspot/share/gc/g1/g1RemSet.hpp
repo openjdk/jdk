@@ -76,6 +76,8 @@ private:
   G1HotCardCache*        _hot_card_cache;
 
 public:
+
+  typedef CardTable::CardValue CardValue;
   // Gives an approximation on how many threads can be expected to add records to
   // a remembered set in parallel. This can be used for sizing data structures to
   // decrease performance losses due to data structure sharing.
@@ -108,13 +110,13 @@ public:
 
   // Refine the card corresponding to "card_ptr". Safe to be called concurrently
   // to the mutator.
-  void refine_card_concurrently(jbyte* card_ptr,
+  void refine_card_concurrently(CardValue* card_ptr,
                                 uint worker_i);
 
   // Refine the card corresponding to "card_ptr", applying the given closure to
   // all references found. Must only be called during gc.
   // Returns whether the card has been scanned.
-  bool refine_card_during_gc(jbyte* card_ptr, G1ScanObjsDuringUpdateRSClosure* update_rs_cl);
+  bool refine_card_during_gc(CardValue* card_ptr, G1ScanObjsDuringUpdateRSClosure* update_rs_cl);
 
   // Print accumulated summary info from the start of the VM.
   void print_summary_info();

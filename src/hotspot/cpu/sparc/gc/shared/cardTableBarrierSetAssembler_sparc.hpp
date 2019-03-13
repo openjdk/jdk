@@ -26,6 +26,7 @@
 #define CPU_SPARC_GC_SHARED_CARDTABLEBARRIERSETASSEMBLER_SPARC_HPP
 
 #include "asm/macroAssembler.hpp"
+#include "gc/shared/cardTable.hpp"
 #include "gc/shared/modRefBarrierSetAssembler.hpp"
 
 class CardTableBarrierSetAssembler: public ModRefBarrierSetAssembler {
@@ -33,7 +34,7 @@ protected:
   virtual void gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                                 Register addr, Register count, Register tmp);
 
-  void card_table_write(MacroAssembler* masm, jbyte* byte_map_base, Register tmp, Register obj);
+  void card_table_write(MacroAssembler* masm, CardTable::CardValue* byte_map_base, Register tmp, Register obj);
 
   void card_write_barrier_post(MacroAssembler* masm, Register store_addr, Register new_val, Register tmp);
 

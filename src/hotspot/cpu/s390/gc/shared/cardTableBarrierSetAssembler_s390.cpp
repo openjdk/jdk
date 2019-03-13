@@ -47,7 +47,6 @@ void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembl
                                                                     bool do_return) {
   CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
   CardTable* ct = ctbs->card_table();
-  assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
 
   NearLabel doXC, done;
   assert_different_registers(Z_R0, Z_R1, addr, count);
@@ -144,7 +143,6 @@ void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register st
   // register obj is destroyed afterwards.
   CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
   CardTable* ct = ctbs->card_table();
-  assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
 
   assert_different_registers(store_addr, tmp);
 

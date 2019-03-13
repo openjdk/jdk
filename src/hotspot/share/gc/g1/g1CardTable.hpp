@@ -62,7 +62,7 @@ public:
     return _byte_map[card_index] == dirty_card_val();
   }
 
-  static jbyte g1_young_card_val() { return g1_young_gen; }
+  static CardValue g1_young_card_val() { return g1_young_gen; }
 
 /*
    Claimed and deferred bits are used together in G1 during the evacuation
@@ -78,7 +78,7 @@ public:
  */
 
   bool is_card_claimed(size_t card_index) {
-    jbyte val = _byte_map[card_index];
+    CardValue val = _byte_map[card_index];
     return (val & (clean_card_mask_val() | claimed_card_val())) == claimed_card_val();
   }
 
@@ -90,7 +90,7 @@ public:
   bool mark_card_deferred(size_t card_index);
 
   bool is_card_deferred(size_t card_index) {
-    jbyte val = _byte_map[card_index];
+    CardValue val = _byte_map[card_index];
     return (val & (clean_card_mask_val() | deferred_card_val())) == deferred_card_val();
   }
 

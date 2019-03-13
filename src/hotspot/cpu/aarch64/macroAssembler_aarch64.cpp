@@ -4305,7 +4305,7 @@ void MacroAssembler::adrp(Register reg1, const Address &dest, unsigned long &byt
 }
 
 void MacroAssembler::load_byte_map_base(Register reg) {
-  jbyte *byte_map_base =
+  CardTable::CardValue* byte_map_base =
     ((CardTableBarrierSet*)(BarrierSet::barrier_set()))->card_table()->byte_map_base();
 
   if (is_valid_AArch64_address((address)byte_map_base)) {

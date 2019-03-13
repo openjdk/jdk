@@ -45,7 +45,6 @@ void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembl
                                                                     Register count, Register preserve) {
   CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
   CardTable* ct = ctbs->card_table();
-  assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
   assert_different_registers(addr, count, R0);
 
   Label Lskip_loop, Lstore_loop;
@@ -73,7 +72,7 @@ void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembl
 }
 
 void CardTableBarrierSetAssembler::card_table_write(MacroAssembler* masm,
-                                                    jbyte* byte_map_base,
+                                                    CardTable::CardValue* byte_map_base,
                                                     Register tmp, Register obj) {
   CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
   CardTable* ct = ctbs->card_table();

@@ -93,7 +93,7 @@ class CompilerToVM {
     static int _max_oop_map_stack_offset;
     static int _fields_annotations_base_offset;
 
-    static jbyte* cardtable_start_address;
+    static CardTable::CardValue* cardtable_start_address;
     static int cardtable_shift;
 
     static int vm_page_size;

@@ -43,10 +43,9 @@ const char* basictype_to_str(BasicType t) {
 
 // ------------------------------------------------------------------
 // card_table_base
-jbyte *ci_card_table_address() {
+CardTable::CardValue* ci_card_table_address() {
   BarrierSet* bs = BarrierSet::barrier_set();
   CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
   CardTable* ct = ctbs->card_table();
-  assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust users of this code");
   return ct->byte_map_base();
 }

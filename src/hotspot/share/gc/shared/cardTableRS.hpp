@@ -76,27 +76,27 @@ class CardTableRS: public CardTable {
   // used as the current value for a younger_refs_do iteration of that
   // portion of the table. The perm gen is index 0. The young gen is index 1,
   // but will always have the value "clean_card". The old gen is index 2.
-  jbyte* _last_cur_val_in_gen;
+  CardValue* _last_cur_val_in_gen;
 
-  jbyte _cur_youngergen_card_val;
+  CardValue _cur_youngergen_card_val;
 
   // Number of generations, plus one for lingering PermGen issues in CardTableRS.
   static const int _regions_to_iterate = 3;
 
-  jbyte cur_youngergen_card_val() {
+  CardValue cur_youngergen_card_val() {
     return _cur_youngergen_card_val;
   }
-  void set_cur_youngergen_card_val(jbyte v) {
+  void set_cur_youngergen_card_val(CardValue v) {
     _cur_youngergen_card_val = v;
   }
-  bool is_prev_youngergen_card_val(jbyte v) {
+  bool is_prev_youngergen_card_val(CardValue v) {
     return
       youngergen_card <= v &&
       v < cur_youngergen_and_prev_nonclean_card &&
       v != _cur_youngergen_card_val;
   }
   // Return a youngergen_card_value that is not currently in use.
-  jbyte find_unused_youngergenP_card_value();
+  CardValue find_unused_youngergenP_card_value();
 
 public:
   CardTableRS(MemRegion whole_heap, bool scanned_concurrently);
@@ -117,7 +117,7 @@ public:
   void younger_refs_iterate(Generation* g, OopsInGenClosure* blk, uint n_threads);
 
   void inline_write_ref_field_gc(void* field, oop new_val) {
-    jbyte* byte = byte_for(field);
+    CardValue* byte = byte_for(field);
     *byte = youngergen_card;
   }
   void write_ref_field_gc_work(void* field, oop new_val) {
@@ -140,32 +140,32 @@ public:
 
   void invalidate_or_clear(Generation* old_gen);
 
-  bool is_prev_nonclean_card_val(jbyte v) {
+  bool is_prev_nonclean_card_val(CardValue v) {
     return
       youngergen_card <= v &&
       v <= cur_youngergen_and_prev_nonclean_card &&
       v != _cur_youngergen_card_val;
   }
 
-  static bool youngergen_may_have_been_dirty(jbyte cv) {
+  static bool youngergen_may_have_been_dirty(CardValue cv) {
     return cv == CardTableRS::cur_youngergen_and_prev_nonclean_card;
   }
 
   // *** Support for parallel card scanning.
 
   // dirty and precleaned are equivalent wrt younger_refs_iter.
-  static bool card_is_dirty_wrt_gen_iter(jbyte cv) {
+  static bool card_is_dirty_wrt_gen_iter(CardValue cv) {
     return cv == dirty_card || cv == precleaned_card;
   }
 
   // Returns "true" iff the value "cv" will cause the card containing it
   // to be scanned in the current traversal.  May be overridden by
   // subtypes.
-  bool card_will_be_scanned(jbyte cv);
+  bool card_will_be_scanned(CardValue cv);
 
   // Returns "true" iff the value "cv" may have represented a dirty card at
   // some point.
-  bool card_may_have_been_dirty(jbyte cv);
+  bool card_may_have_been_dirty(CardValue cv);
 
   // Iterate over the portion of the card-table which covers the given
   // region mr in the given space and apply cl to any dirty sub-regions
@@ -185,7 +185,7 @@ public:
   // covered region.  Each entry of these arrays is the lowest non-clean
   // card of the corresponding chunk containing part of an object from the
   // previous chunk, or else NULL.
-  typedef jbyte*  CardPtr;
+  typedef CardValue* CardPtr;
   typedef CardPtr* CardArr;
   CardArr* _lowest_non_clean;
   size_t*  _lowest_non_clean_chunk_size;
@@ -199,15 +199,19 @@ class ClearNoncleanCardWrapper: public MemRegionClosure {
   DirtyCardToOopClosure* _dirty_card_closure;
   CardTableRS* _ct;
   bool _is_par;
+
+public:
+
+  typedef CardTable::CardValue CardValue;
 private:
   // Clears the given card, return true if the corresponding card should be
   // processed.
-  inline bool clear_card(jbyte* entry);
+  inline bool clear_card(CardValue* entry);
   // Work methods called by the clear_card()
-  inline bool clear_card_serial(jbyte* entry);
-  inline bool clear_card_parallel(jbyte* entry);
+  inline bool clear_card_serial(CardValue* entry);
+  inline bool clear_card_parallel(CardValue* entry);
   // check alignment of pointer
-  bool is_word_aligned(jbyte* entry);
+  bool is_word_aligned(CardValue* entry);
 
 public:
   ClearNoncleanCardWrapper(DirtyCardToOopClosure* dirty_card_closure, CardTableRS* ct, bool is_par);

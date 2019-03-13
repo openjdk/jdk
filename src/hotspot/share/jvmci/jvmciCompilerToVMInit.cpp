@@ -24,6 +24,7 @@
 // no precompiled headers
 #include "ci/ciUtilities.hpp"
 #include "gc/shared/barrierSet.hpp"
+#include "gc/shared/cardTable.hpp"
 #include "memory/oopFactory.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "jvmci/jvmciRuntime.hpp"
@@ -63,7 +64,7 @@ HeapWord* volatile* CompilerToVM::Data::_heap_top_addr;
 int CompilerToVM::Data::_max_oop_map_stack_offset;
 int CompilerToVM::Data::_fields_annotations_base_offset;
 
-jbyte* CompilerToVM::Data::cardtable_start_address;
+CardTable::CardValue* CompilerToVM::Data::cardtable_start_address;
 int CompilerToVM::Data::cardtable_shift;
 
 int CompilerToVM::Data::vm_page_size;
@@ -126,7 +127,7 @@ void CompilerToVM::Data::initialize(TRAPS) {
 
   BarrierSet* bs = BarrierSet::barrier_set();
   if (bs->is_a(BarrierSet::CardTableBarrierSet)) {
-    jbyte* base = ci_card_table_address();
+    CardTable::CardValue* base = ci_card_table_address();
     assert(base != NULL, "unexpected byte_map_base");
     cardtable_start_address = base;
     cardtable_shift = CardTable::card_shift;

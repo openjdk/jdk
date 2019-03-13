@@ -47,7 +47,6 @@ void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembl
   BarrierSet* bs = BarrierSet::barrier_set();
   CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
   CardTable* ct = ctbs->card_table();
-  assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
 
   Label L_cardtable_loop, L_done;
 
@@ -102,7 +101,6 @@ void CardTableBarrierSetAssembler::store_check_part1(MacroAssembler* masm, Regis
 
   CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
   CardTable* ct = ctbs->card_table();
-  assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "Adjust store check code");
 
   // Load card table base address.
 
@@ -132,7 +130,6 @@ void CardTableBarrierSetAssembler::store_check_part2(MacroAssembler* masm, Regis
 
   CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
   CardTable* ct = ctbs->card_table();
-  assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "Adjust store check code");
 
   assert(CardTable::dirty_card_val() == 0, "Dirty card value must be 0 due to optimizations.");
   Address card_table_addr(card_table_base, obj, lsr, CardTable::card_shift);

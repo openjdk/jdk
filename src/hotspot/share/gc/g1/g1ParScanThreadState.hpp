@@ -120,7 +120,7 @@ public:
     size_t card_index = ct()->index_for(p);
     // If the card hasn't been added to the buffer, do it.
     if (ct()->mark_card_deferred(card_index)) {
-      dirty_card_queue().enqueue((jbyte*)ct()->byte_for_index(card_index));
+      dirty_card_queue().enqueue(ct()->byte_for_index(card_index));
     }
   }
 

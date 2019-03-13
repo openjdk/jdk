@@ -114,7 +114,7 @@ class RedirtyLoggedCardTableEntryClosure : public G1CardTableEntryClosure {
   G1CollectedHeap* _g1h;
   G1CardTable* _g1_ct;
 
-  HeapRegion* region_for_card(jbyte* card_ptr) const {
+  HeapRegion* region_for_card(CardValue* card_ptr) const {
     return _g1h->heap_region_containing(_g1_ct->addr_for(card_ptr));
   }
 
@@ -128,7 +128,7 @@ class RedirtyLoggedCardTableEntryClosure : public G1CardTableEntryClosure {
   RedirtyLoggedCardTableEntryClosure(G1CollectedHeap* g1h) : G1CardTableEntryClosure(),
     _num_dirtied(0), _g1h(g1h), _g1_ct(g1h->card_table()) { }
 
-  bool do_card_ptr(jbyte* card_ptr, uint worker_i) {
+  bool do_card_ptr(CardValue* card_ptr, uint worker_i) {
     HeapRegion* hr = region_for_card(card_ptr);
 
     // Should only dirty cards in regions that won't be freed.
@@ -2726,7 +2726,7 @@ class RegisterHumongousWithInCSetFastTestClosure : public HeapRegionClosure {
         HeapRegionRemSetIterator hrrs(r->rem_set());
         size_t card_index;
         while (hrrs.has_next(card_index)) {
-          jbyte* card_ptr = (jbyte*)ct->byte_for_index(card_index);
+          CardTable::CardValue* card_ptr = ct->byte_for_index(card_index);
           // The remembered set might contain references to already freed
           // regions. Filter out such entries to avoid failing card table
           // verification.
