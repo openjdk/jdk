@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import java.math.*;
  * Alternatively, a vendor is free to implement its own version
  * by implementing this interface.
  *
- * <h3>1.0 Background</h3>
+ * <h2>1.0 Background</h2>
  *
  * There are occasions when a <code>RowSet</code> object has a need to provide a degree
  * of filtering to its contents. One possible solution is to provide
@@ -56,14 +56,14 @@ import java.math.*;
  * methods, which a <code>FilteredRowSet</code> implementation can override
  * to supply filtering support.
  *
- * <h3>2.0 Predicate Sharing</h3>
+ * <h2>2.0 Predicate Sharing</h2>
  *
  * If a <code>FilteredRowSet</code> implementation is shared using the
  * inherited <code>createShared</code> method in parent interfaces, the
  * <code>Predicate</code> should be shared without modification by all
  * <code>FilteredRowSet</code> instance clones.
  *
- * <h3>3.0 Usage</h3>
+ * <h2>3.0 Usage</h2>
  * <p>
  * By implementing a <code>Predicate</code> (see example in <a href="Predicate.html">Predicate</a>
  * class JavaDoc), a <code>FilteredRowSet</code> could then be used as described
@@ -92,7 +92,7 @@ import java.math.*;
  * used in combination to achieved the required filtering result with
  * out the need for query language processing.
  *
- * <h3>4.0 Updating a <code>FilteredRowSet</code> Object</h3>
+ * <h2>4.0 Updating a <code>FilteredRowSet</code> Object</h2>
  * The predicate set on a <code>FilteredRowSet</code> object
  * applies a criterion on all rows in a
  * <code>RowSet</code> object to manage a subset of rows in a <code>RowSet</code>
@@ -113,7 +113,7 @@ import java.math.*;
  * <code>FilteredRowSet</code> object, and all subsequent views and updates will be
  * subject to similar enforcement.
  *
- * <h3>5.0 Behavior of Rows Outside the Filter</h3>
+ * <h2>5.0 Behavior of Rows Outside the Filter</h2>
  * Rows that fall outside of the filter set on a <code>FilteredRowSet</code>
  * object cannot be modified until the filter is removed or a
  * new filter is applied.

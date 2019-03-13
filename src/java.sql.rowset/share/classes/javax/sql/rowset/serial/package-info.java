@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
  * a different VM or across layers within an application.<br>
  * </p>
  *
- * <h3>1.0 SerialArray</h3>
+ * <h2>1.0 SerialArray</h2>
  * A serializable mapping in the Java programming language of an SQL ARRAY
  * value. <br>
  * <br>
@@ -43,7 +43,7 @@
  * the SQL name for the base type, and methods for copying all or part of a
  * <code>SerialArray</code> object. <br>
  *
- * <h3>2.0 SerialBlob</h3>
+ * <h2>2.0 SerialBlob</h2>
  * A serializable mapping in the Java programming language of an SQL BLOB
  * value.  <br>
  * <br>
@@ -60,7 +60,7 @@
  * to locate a given pattern of bytes or a <code>Blob</code> object within a <code>SerialBlob</code>
  * object. <br>
  *
- * <h3>3.0 SerialClob</h3>
+ * <h2>3.0 SerialClob</h2>
  * A serializable mapping in the Java programming language of an SQL CLOB
  * value.  <br>
  * <br>
@@ -74,7 +74,7 @@
  * <code>SerialClob</code> object or to locate the start of a pattern of characters.
  * <br>
  *
- * <h3>5.0 SerialDatalink</h3>
+ * <h2>5.0 SerialDatalink</h2>
  * A serializable mapping in the Java programming language of an SQL DATALINK
  * value. A DATALINK value references a file outside of the underlying data source
  * that the originating data source manages. <br>
@@ -85,7 +85,7 @@
  * <br>
  * &nbsp;&nbsp;<code>&nbsp;&nbsp;&nbsp; java.net.URL url = rowset.getURL(1);</code><br>
  *
- * <h3>6.0 SerialJavaObject</h3>
+ * <h2>6.0 SerialJavaObject</h2>
  * A serializable mapping in the Java programming language of an SQL JAVA_OBJECT
  * value. Assuming the Java object instance implements the Serializable interface,
  * this simply wraps the serialization process. <br>
@@ -96,7 +96,7 @@
  * Static or transient fields cannot be serialized and attempting to do so
  * will result in a <code>SerialException</code> being thrown. <br>
  *
- * <h3>7.0 SerialRef</h3>
+ * <h2>7.0 SerialRef</h2>
  * A serializable mapping between the SQL REF type and the Java programming
  * language. <br>
  * <br>
@@ -104,7 +104,7 @@
  * instance from a <code>Ref</code> type and provides methods for getting
  * and setting the <code>Ref</code> object type. <br>
  *
- * <h3>8.0 SerialStruct</h3>
+ * <h2>8.0 SerialStruct</h2>
  * A serializable mapping in the Java programming language of an SQL structured
  * type. Each attribute that is not already serializable is mapped to a serializable
  * form, and if an attribute is itself a structured type, each of its attributes
@@ -119,7 +119,7 @@
  * type name of the SQL structured type in the database, and methods for retrieving
  * its attribute values. <br>
  *
- * <h3>9.0 SQLInputImpl</h3>
+ * <h2>9.0 SQLInputImpl</h2>
  *   An input stream used for custom mapping user-defined types (UDTs). An
  *   <code>SQLInputImpl</code> object is an input stream that contains a stream of
  *   values that are
@@ -142,7 +142,7 @@
  * method <code>SQLData.readSQL</code>,  which in turn calls the <code>SQLInputImpl</code>
  * methods to read the  attributes from the input stream. <br>
  *
- * <h3>10.0 SQLOutputImpl</h3>
+ * <h2>10.0 SQLOutputImpl</h2>
  *   The output stream for writing the attributes of a custom mapped user-defined
  *  type (UDT) back to the database. The driver uses this interface internally,
  *  and its methods are never directly invoked by an application programmer.
@@ -160,7 +160,7 @@
  * <code>SQLOutputImpl</code>
  * output  stream as the representation of an SQL user-defined type.
  *
- * <h3>Custom Mapping</h3>
+ * <h2>Custom Mapping</h2>
  * The JDBC API provides mechanisms for mapping an SQL structured type or DISTINCT
  * type to the Java programming language.  Typically, a structured type is mapped
  * to a class, and its attributes are mapped to fields in the class.

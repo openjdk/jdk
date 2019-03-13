@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  * by the Test Compatibility Kit (TCK) as mandated by the Java Community Process.
  * <br>
  *
- * <h3>1.0 Available JDBC RowSet Reference Implementations </h3>
+ * <h2>1.0 Available JDBC RowSet Reference Implementations </h2>
  * The following implementations are provided:<br>
  *
  * <blockquote><code><b>JdbcRowSetImpl</b></code> - The <code>javax.sql.rowset.JdbcRowSet</code>
@@ -53,7 +53,7 @@
  * SPI and helper classes are provided in the interface definitions in the <code>javax.sql.rowset</code>
  * package specification.<br>
  *
- * <h3>2.0 Usage</h3>
+ * <h2>2.0 Usage</h2>
  * The reference implementations represent robust implementations of the standard
  * <code>RowSet</code> interfaces defined in the <code>javax.sql.rowset</code> package.
  * All disconnected <code>RowSet</code> implementations, such as the <code>CachedRowSetImpl</code>
@@ -63,7 +63,7 @@
  * to use these implementations and integrate them into their products just as they
  * can with to other components of the Java platform.<br>
  *
- * <h3>3.0 Extending the JDBC RowSet Implementations</h3>
+ * <h2>3.0 Extending the JDBC RowSet Implementations</h2>
  *
  * The JDBC <code>RowSet</code> reference implementations are provided as non-final
  * classes so that any developer can extend them to provide additional features

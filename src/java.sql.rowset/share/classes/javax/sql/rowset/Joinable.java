@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ package javax.sql.rowset;
 import java.sql.SQLException;
 
 /**
- * <h3>1.0 Background</h3>
+ * <h2>1.0 Background</h2>
  * The <code>Joinable</code> interface provides the methods for getting and
  * setting a match column, which is the basis for forming the SQL <code>JOIN</code>
  * formed by adding <code>RowSet</code> objects to a <code>JoinRowSet</code>
@@ -58,7 +58,7 @@ import java.sql.SQLException;
  *     }
  * </pre>
  *
- * <h3>2.0 Usage Guidelines</h3>
+ * <h2>2.0 Usage Guidelines</h2>
  * <P>
  * The methods in the <code>Joinable</code> interface allow a <code>RowSet</code> object
  * to set a match column, retrieve a match column, or unset a match column, which is
@@ -98,7 +98,7 @@ import java.sql.SQLException;
  * become part of an SQL <code>JOIN</code> directly without having to become part
  * of a <code>JoinRowSet</code> object.
  *
- * <h3>3.0 Managing Multiple Match Columns</h3>
+ * <h2>3.0 Managing Multiple Match Columns</h2>
  * The index array passed into the <code>setMatchColumn</code> methods indicates
  * how many match columns are being set (the length of the array) in addition to
  * which columns will be used for the match. For example:

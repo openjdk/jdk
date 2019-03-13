@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import javax.sql.rowset.serial.*;
  * The basic functions include having properties and sending event notifications,
  * which all JavaBeans&trade; components must implement.
  *
- * <h3>1.0 Overview</h3>
+ * <h2>1.0 Overview</h2>
  * The <code>BaseRowSet</code> class provides the core functionality
  * for all <code>RowSet</code> implementations,
  * and all standard implementations <b>may</b> use this class in combination with
@@ -72,7 +72,7 @@ import javax.sql.rowset.serial.*;
  *  </ul>
  * </UL>
  *
- * <h3>2.0 Setting Properties</h3>
+ * <h2>2.0 Setting Properties</h2>
  * All rowsets maintain a set of properties, which will usually be set using
  * a tool.  The number and kinds of properties a rowset has will vary,
  * depending on what the <code>RowSet</code> implementation does and how it gets
@@ -95,7 +95,7 @@ import javax.sql.rowset.serial.*;
  * Interface&trade; (JNDI) API.  This registration
  * is usually done by a person acting in the capacity of a system administrator.
  *
- * <h3>3.0 Setting the Command and Its Parameters</h3>
+ * <h2>3.0 Setting the Command and Its Parameters</h2>
  * When a rowset gets its data from a relational database, it executes a command (a query)
  * that produces a <code>ResultSet</code> object.  This query is the command that is set
  * for the <code>RowSet</code> object's command property.  The rowset populates itself with data by reading the
@@ -143,7 +143,7 @@ import javax.sql.rowset.serial.*;
  * <code>SerialArray</code>, <code>SerialClob</code>, <code>SerialBlob</code>
  * and <code>SerialRef</code> objects respectively.
  *
- * <h3>4.0 Handling of Parameters Behind the Scenes</h3>
+ * <h2>4.0 Handling of Parameters Behind the Scenes</h2>
  *
  * NOTE: The <code>BaseRowSet</code> class provides two kinds of setter methods,
  * those that set properties and those that set placeholder parameters. The setter
@@ -227,7 +227,7 @@ import javax.sql.rowset.serial.*;
 * <code>RowSet</code> implementations extending this class; it is not normally called by an
 * application programmer directly.
 *
-* <h3>5.0 Event Notification</h3>
+* <h2>5.0 Event Notification</h2>
 * The <code>BaseRowSet</code> class provides the event notification
 * mechanism for rowsets.  It contains the field
 * <code>listeners</code>, methods for adding and removing listeners, and
@@ -255,7 +255,7 @@ import javax.sql.rowset.serial.*;
 * What the listener does with this information, which may be nothing, depends on how it was
 * implemented.
 *
-* <h3>6.0 Default Behavior</h3>
+* <h2>6.0 Default Behavior</h2>
 * A default <code>BaseRowSet</code> object is initialized with many starting values.
 *
 * The following is true of a default <code>RowSet</code> instance that extends

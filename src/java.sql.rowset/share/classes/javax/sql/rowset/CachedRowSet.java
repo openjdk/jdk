@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ import javax.sql.rowset.spi.*;
  * over the wire to a thin client such as a personal digital assistant (PDA).
  *
  *
- * <h3>1.0 Creating a <code>CachedRowSet</code> Object</h3>
+ * <h2>1.0 Creating a <code>CachedRowSet</code> Object</h2>
  * The following line of code uses the default constructor for
  * <code>CachedRowSet</code>
  * supplied in the reference implementation (RI) to create a default
@@ -140,7 +140,7 @@ import javax.sql.rowset.spi.*;
  * more details.
  *
  *
- * <h3>2.0 Retrieving Data from a <code>CachedRowSet</code> Object</h3>
+ * <h2>2.0 Retrieving Data from a <code>CachedRowSet</code> Object</h2>
  * Data is retrieved from a <code>CachedRowSet</code> object by using the
  * getter methods inherited from the <code>ResultSet</code>
  * interface.  The following examples, in which <code>crs</code> is a
@@ -171,7 +171,7 @@ import javax.sql.rowset.spi.*;
  *        System.out.println(name + "  " + id + "  " + comment + "  " + dept);
  *    }
  * </PRE>
- * <h4>2.1 Retrieving <code>RowSetMetaData</code></h4>
+ * <h3>2.1 Retrieving <code>RowSetMetaData</code></h3>
  * An application can get information about the columns in a <code>CachedRowSet</code>
  * object by calling <code>ResultSetMetaData</code> and <code>RowSetMetaData</code>
  * methods on a <code>RowSetMetaData</code> object. The following code fragment,
@@ -207,7 +207,7 @@ import javax.sql.rowset.spi.*;
  * override the <code>getMetaData()</code> method defined in
  * <code>java.sql.ResultSet</code> and return a <code>RowSetMetaData</code> object.
  *
- * <h3>3.0 Updating a <code>CachedRowSet</code> Object</h3>
+ * <h2>3.0 Updating a <code>CachedRowSet</code> Object</h2>
  * Updating a <code>CachedRowSet</code> object is similar to updating a
  * <code>ResultSet</code> object, but because the rowset is not connected to
  * its data source while it is being updated, it must take an additional step
@@ -261,7 +261,7 @@ import javax.sql.rowset.spi.*;
  * and <code>insertRow</code> have been made.  If <code>acceptChanges</code>
  * is called only once, only one connection needs to be established.
  *
- * <h3>4.0 Updating the Underlying Data Source</h3>
+ * <h2>4.0 Updating the Underlying Data Source</h2>
  * When the method <code>acceptChanges</code> is executed, the
  * <code>CachedRowSet</code> object's writer, a <code>RowSetWriterImpl</code>
  * object, is called behind the scenes to write the changes made to the
@@ -305,7 +305,7 @@ import javax.sql.rowset.spi.*;
  * Whether a writer checks for conflicts, what degree of checking it does, and how
  * it handles conflicts all depend on how it is implemented.
  *
- * <h3>5.0 Registering and Notifying Listeners</h3>
+ * <h2>5.0 Registering and Notifying Listeners</h2>
  * Being JavaBeans components, all rowsets participate in the JavaBeans event
  * model, inheriting methods for registering listeners and notifying them of
  * changes from the <code>BaseRowSet</code> class.  A listener for a
@@ -328,7 +328,7 @@ import javax.sql.rowset.spi.*;
  * <code>table</code> and <code>barGraph</code> will be notified when there is
  * a change in <code>crs</code>.
  *
- * <h3>6.0 Passing Data to Thin Clients</h3>
+ * <h2>6.0 Passing Data to Thin Clients</h2>
  * One of the main reasons to use a <code>CachedRowSet</code> object is to
  * pass data between different components of an application. Because it is
  * serializable, a <code>CachedRowSet</code> object can be used, for example,
@@ -344,7 +344,7 @@ import javax.sql.rowset.spi.*;
  * Thus, a <code>CachedRowSet</code> object provides a means to "get rows in"
  * without the need to implement the full JDBC API.
  *
- * <h3>7.0 Scrolling and Updating</h3>
+ * <h2>7.0 Scrolling and Updating</h2>
  * A second major use for <code>CachedRowSet</code> objects is to provide
  * scrolling and updating for <code>ResultSet</code> objects that
  * do not provide these capabilities themselves.  In other words, a
@@ -378,7 +378,7 @@ import javax.sql.rowset.spi.*;
  * <code>CachedRowSet</code> object does have a limitation: It is limited in
  * size by the amount of data it can store in memory at one time.
  *
- * <h3>8.0 Getting Universal Data Access</h3>
+ * <h2>8.0 Getting Universal Data Access</h2>
  * Another advantage of the <code>CachedRowSet</code> class is that it makes it
  * possible to retrieve and store data from sources other than a relational
  * database. The reader for a rowset can be implemented to read and populate
@@ -391,7 +391,7 @@ import javax.sql.rowset.spi.*;
  * <code>CachedRowSet</code> objects will contain data that was fetched
  * from an SQL database using the JDBC API.
  *
- * <h3>9.0 Setting Properties</h3>
+ * <h2>9.0 Setting Properties</h2>
  * All rowsets maintain a set of properties, which will usually be set using
  * a tool.  The number and kinds of properties a rowset has will vary,
  * depending on what the rowset does and how it gets its data.  For example,
@@ -492,7 +492,7 @@ import javax.sql.rowset.spi.*;
  *    crs.execute();
  * }</PRE>
  *
- * <h3>10.0 Paging Data</h3>
+ * <h2>10.0 Paging Data</h2>
  * Because a <code>CachedRowSet</code> object stores data in memory,
  * the amount of data that it can contain at any one
  * time is determined by the amount of memory available. To get around this limitation,

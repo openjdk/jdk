@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,7 @@ import javax.sql.*;
  * providers for additional guidance on how to implement a new
  * <code>SyncProvider</code> implementation.
  *
- * <h3>2.0 How a <code>RowSet</code> Object Gets Its Provider</h3>
+ * <h2>2.0 How a <code>RowSet</code> Object Gets Its Provider</h2>
  *
  * A disconnected <code>Rowset</code> object may get access to a
  * <code>SyncProvider</code> object in one of the following two ways:
@@ -130,7 +130,7 @@ import javax.sql.*;
  * assigned the default provider in the reference implementation, which is
  * <code>com.sun.rowset.providers.RIOptimisticProvider</code>.
  *
- * <h3>3.0 Violations and Synchronization Issues</h3>
+ * <h2>3.0 Violations and Synchronization Issues</h2>
  * If an update between a disconnected <code>RowSet</code> object
  * and a data source violates
  * the original query or the underlying data source constraints, this will
@@ -148,7 +148,7 @@ import javax.sql.*;
  * all <code>SyncProvider</code>
  * objects must throw a <code>SyncProviderException</code>.
  *
- * <h3>4.0 Updatable SQL VIEWs</h3>
+ * <h2>4.0 Updatable SQL VIEWs</h2>
  * It is possible for any disconnected or connected <code>RowSet</code> object to be populated
  * from an SQL query that is formulated originally from an SQL <code>VIEW</code>.
  * While in many cases it is possible for an update to be performed to an
@@ -168,7 +168,7 @@ import javax.sql.*;
  * The default is for a <code>RowSet</code> object not to be updatable if it was
  * populated with data from an SQL <code>VIEW</code>.
  *
- * <h3>5.0 <code>SyncProvider</code> Constants</h3>
+ * <h2>5.0 <code>SyncProvider</code> Constants</h2>
  * The <code>SyncProvider</code> class provides three sets of constants that
  * are used as return values or parameters for <code>SyncProvider</code> methods.
  * <code>SyncProvider</code> objects may be implemented to perform synchronization
