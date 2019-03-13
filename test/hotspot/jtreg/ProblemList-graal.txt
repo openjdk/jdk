@@ -207,8 +207,6 @@ serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorMultiArrayTest.java     81
 
 runtime/RedefineObject/TestRedefineObject.java                                8218399 generic-all
 
-vmTestbase/nsk/jvmti/scenarios/sampling/SP06/sp06t003/TestDescription.java    8218167 generic-all
-
 vmTestbase/gc/lock/jvmti/alloc/jvmtialloclock02/TestDescription.java          8218700 generic-all
 
 vmTestbase/nsk/jdb/unmonitor/unmonitor001/unmonitor001.java                   8218701 generic-all
