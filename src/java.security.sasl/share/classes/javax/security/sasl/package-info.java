@@ -30,7 +30,7 @@
  * It is used by developers to add authentication support for
  * connection-based protocols that use SASL.
  *
- * <h3>SASL Overview</h3>
+ * <h2>SASL Overview</h2>
  *
  * Simple Authentication and Security Layer (SASL) specifies a
  * challenge-response protocol in which data is exchanged between the
@@ -74,7 +74,7 @@
  * allow negotiation of the security layer.  For External, the
  * security layer is determined by the external protocol.
  *
- * <h3>Usage</h3>
+ * <h2>Usage</h2>
  *
  * Users of this API are typically developers who produce
  * client library implementations for connection-based protocols,
