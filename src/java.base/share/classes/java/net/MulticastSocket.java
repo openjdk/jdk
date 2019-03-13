@@ -52,8 +52,9 @@ import java.util.Set;
  * InetAddress group = InetAddress.getByName("228.5.6.7");
  * MulticastSocket s = new MulticastSocket(6789);
  * s.joinGroup(group);
- * DatagramPacket hi = new DatagramPacket(msg.getBytes(), msg.length(),
- *                             group, 6789);
+ * byte[] msgBytes = msg.getBytes(StandardCharsets.UTF_8);
+ * DatagramPacket hi = new DatagramPacket(msgBytes, msgBytes.length,
+ *                                        group, 6789);
  * s.send(hi);
  * // get their responses!
  * byte[] buf = new byte[1000];
