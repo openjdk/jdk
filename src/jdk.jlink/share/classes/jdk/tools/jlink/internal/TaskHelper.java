@@ -223,6 +223,8 @@ public final class TaskHelper {
 
     private final class PluginsHelper {
 
+        // Duplicated here so as to avoid a direct dependency on platform specific plugin
+        private static final String STRIP_NATIVE_DEBUG_SYMBOLS_NAME = "strip-native-debug-symbols";
         private ModuleLayer pluginsLayer = ModuleLayer.boot();
         private final List<Plugin> plugins;
         private String lastSorter;
@@ -424,6 +426,7 @@ public final class TaskHelper {
             }
 
             List<Plugin> pluginsList = new ArrayList<>();
+            Set<String> seenPlugins = new HashSet<>();
             for (Entry<Plugin, List<Map<String, String>>> entry : pluginToMaps.entrySet()) {
                 Plugin plugin = entry.getKey();
                 List<Map<String, String>> argsMaps = entry.getValue();
@@ -444,7 +447,17 @@ public final class TaskHelper {
                 }
 
                 if (!Utils.isDisabled(plugin)) {
+                    // make sure that --strip-debug and --strip-native-debug-symbols
+                    // aren't being used at the same time. --strip-debug invokes --strip-native-debug-symbols on
+                    // platforms that support it, so it makes little sense to allow both at the same time.
+                    if ((plugin instanceof DefaultStripDebugPlugin && seenPlugins.contains(STRIP_NATIVE_DEBUG_SYMBOLS_NAME)) ||
+                        (STRIP_NATIVE_DEBUG_SYMBOLS_NAME.equals(plugin.getName()) && seenPlugins.contains(DefaultStripDebugPlugin.NAME))) {
+                        throw new BadArgs("err.plugin.conflicts", "--" + DefaultStripDebugPlugin.NAME,
+                                                                "-G",
+                                                                "--" + STRIP_NATIVE_DEBUG_SYMBOLS_NAME);
+                    }
                     pluginsList.add(plugin);
+                    seenPlugins.add(plugin.getName());
                 }
             }
 

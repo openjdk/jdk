@@ -103,7 +103,7 @@ define SetupTestFilesCompilationBody
         TOOLCHAIN := $(if $$(filter %.cpp, $$(file)), TOOLCHAIN_LINK_CXX, TOOLCHAIN_DEFAULT), \
         OPTIMIZATION := $$(if $$($1_OPTIMIZATION_$$(name)),$$($1_OPTIMIZATION_$$(name)),LOW), \
         COPY_DEBUG_SYMBOLS := false, \
-        STRIP_SYMBOLS := false, \
+        STRIP_SYMBOLS := $$(if $$($1_STRIP_SYMBOLS_$$(name)),$$($1_STRIP_SYMBOLS_$$(name)),false), \
     )) \
     $$(eval $1 += $$(BUILD_TEST_$$(name)) )  \
   )

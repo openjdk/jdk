@@ -24,13 +24,17 @@
 #
 
 include GensrcCommonJdk.gmk
+include GensrcProperties.gmk
+include Modules.gmk
 
 ################################################################################
 
-include GensrcProperties.gmk
+# Use wildcard so as to avoid getting non-existing directories back
+JLINK_RESOURCES_DIRS := $(wildcard $(addsuffix /jdk/tools/jlink/resources, \
+    $(call FindModuleSrcDirs, jdk.jlink)))
 
 $(eval $(call SetupCompileProperties, JLINK_PROPERTIES, \
-    SRC_DIRS := $(TOPDIR)/src/jdk.jlink/share/classes/jdk/tools/jlink/resources, \
+    SRC_DIRS := $(JLINK_RESOURCES_DIRS), \
     CLASS := ListResourceBundle, \
 ))
 
