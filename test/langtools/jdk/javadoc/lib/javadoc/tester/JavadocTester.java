@@ -96,7 +96,7 @@ import java.util.function.Function;
  *      }
  *
  *      // test methods...
- *      @Test
+ *      {@literal @}Test
  *      void test() {
  *          javadoc(<i>args</i>);
  *          checkExit(Exit.OK);
