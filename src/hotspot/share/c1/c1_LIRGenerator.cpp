@@ -53,16 +53,11 @@
 #define PATCHED_ADDR  (max_jint)
 #endif
 
-void PhiResolverState::reset(int max_vregs) {
-  // Initialize array sizes
-  _virtual_operands.at_put_grow(max_vregs - 1, NULL, NULL);
-  _virtual_operands.trunc_to(0);
-  _other_operands.at_put_grow(max_vregs - 1, NULL, NULL);
-  _other_operands.trunc_to(0);
-  _vreg_table.at_put_grow(max_vregs - 1, NULL, NULL);
-  _vreg_table.trunc_to(0);
+void PhiResolverState::reset() {
+  _virtual_operands.clear();
+  _other_operands.clear();
+  _vreg_table.clear();
 }
-
 
 
 //--------------------------------------------------------------
@@ -78,13 +73,13 @@ void PhiResolverState::reset(int max_vregs) {
 //  r2 := r3  becomes  r1 := r2
 //  r1 := r2           r2 := r3
 
-PhiResolver::PhiResolver(LIRGenerator* gen, int max_vregs)
+PhiResolver::PhiResolver(LIRGenerator* gen)
  : _gen(gen)
  , _state(gen->resolver_state())
  , _temp(LIR_OprFact::illegalOpr)
 {
   // reinitialize the shared state arrays
-  _state.reset(max_vregs);
+  _state.reset();
 }
 
 
@@ -1021,8 +1016,7 @@ void LIRGenerator::move_to_phi(ValueStack* cur_state) {
 
     // a block with only one predecessor never has phi functions
     if (sux->number_of_preds() > 1) {
-      int max_phis = cur_state->stack_size() + cur_state->locals_size();
-      PhiResolver resolver(this, _virtual_register_number + max_phis * 2);
+      PhiResolver resolver(this);
 
       ValueStack* sux_state = sux->state();
       Value sux_value;
