@@ -164,17 +164,15 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
   // If the class should be verified, first see if we can use the split
   // verifier.  If not, or if verification fails and FailOverToOldVerifier
   // is set, then call the inference verifier.
-
   Symbol* exception_name = NULL;
   const size_t message_buffer_len = klass->name()->utf8_length() + 1024;
-  char* message_buffer = NEW_RESOURCE_ARRAY(char, message_buffer_len);
-  char* exception_message = message_buffer;
+  char* message_buffer = NULL;
+  char* exception_message = NULL;
 
-  const char* klassName = klass->external_name();
   bool can_failover = FailOverToOldVerifier &&
      klass->major_version() < NOFAILOVER_MAJOR_VERSION;
 
-  log_info(class, init)("Start class verification for: %s", klassName);
+  log_info(class, init)("Start class verification for: %s", klass->external_name());
   if (klass->major_version() >= STACKMAP_ATTRIBUTE_MAJOR_VERSION) {
     ClassVerifier split_verifier(klass, THREAD);
     split_verifier.verify_class(THREAD);
@@ -182,8 +180,10 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
     if (can_failover && !HAS_PENDING_EXCEPTION &&
         (exception_name == vmSymbols::java_lang_VerifyError() ||
          exception_name == vmSymbols::java_lang_ClassFormatError())) {
-      log_info(verification)("Fail over class verification to old verifier for: %s", klassName);
-      log_info(class, init)("Fail over class verification to old verifier for: %s", klassName);
+      log_info(verification)("Fail over class verification to old verifier for: %s", klass->external_name());
+      log_info(class, init)("Fail over class verification to old verifier for: %s", klass->external_name());
+      message_buffer = NEW_RESOURCE_ARRAY(char, message_buffer_len);
+      exception_message = message_buffer;
       exception_name = inference_verify(
         klass, message_buffer, message_buffer_len, THREAD);
     }
@@ -191,6 +191,8 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
       exception_message = split_verifier.exception_message();
     }
   } else {
+    message_buffer = NEW_RESOURCE_ARRAY(char, message_buffer_len);
+    exception_message = message_buffer;
     exception_name = inference_verify(
         klass, message_buffer, message_buffer_len, THREAD);
   }
@@ -198,20 +200,19 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
   LogTarget(Info, class, init) lt1;
   if (lt1.is_enabled()) {
     LogStream ls(lt1);
-    log_end_verification(&ls, klassName, exception_name, THREAD);
+    log_end_verification(&ls, klass->external_name(), exception_name, THREAD);
   }
   LogTarget(Info, verification) lt2;
   if (lt2.is_enabled()) {
     LogStream ls(lt2);
-    log_end_verification(&ls, klassName, exception_name, THREAD);
+    log_end_verification(&ls, klass->external_name(), exception_name, THREAD);
   }
 
   if (HAS_PENDING_EXCEPTION) {
     return false; // use the existing exception
   } else if (exception_name == NULL) {
-    return true; // verifcation succeeded
+    return true; // verification succeeded
   } else { // VerifyError or ClassFormatError to be created and thrown
-    ResourceMark rm(THREAD);
     Klass* kls =
       SystemDictionary::resolve_or_fail(exception_name, true, CHECK_false);
     if (log_is_enabled(Debug, class, resolve)) {
@@ -228,7 +229,10 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
       }
       kls = kls->super();
     }
-    message_buffer[message_buffer_len - 1] = '\0'; // just to be sure
+    if (message_buffer != NULL) {
+      message_buffer[message_buffer_len - 1] = '\0'; // just to be sure
+    }
+    assert(exception_message != NULL, "");
     THROW_MSG_(exception_name, exception_message, false);
   }
 }
@@ -569,17 +573,18 @@ void ErrorContext::stackmap_details(outputStream* ss, const Method* method) cons
 
 ClassVerifier::ClassVerifier(
     InstanceKlass* klass, TRAPS)
-    : _thread(THREAD), _exception_type(NULL), _message(NULL), _klass(klass) {
+    : _thread(THREAD), _previous_symbol(NULL), _symbols(NULL), _exception_type(NULL),
+      _message(NULL), _klass(klass) {
   _this_type = VerificationType::reference_type(klass->name());
-  // Create list to hold symbols in reference area.
-  _symbols = new GrowableArray<Symbol*>(100, 0, NULL);
 }
 
 ClassVerifier::~ClassVerifier() {
   // Decrement the reference count for any symbols created.
-  for (int i = 0; i < _symbols->length(); i++) {
-    Symbol* s = _symbols->at(i);
-    s->decrement_refcount();
+  if (_symbols != NULL) {
+    for (int i = 0; i < _symbols->length(); i++) {
+      Symbol* s = _symbols->at(i);
+      s->decrement_refcount();
+    }
   }
 }
 
@@ -3092,13 +3097,23 @@ void ClassVerifier::verify_return_value(
 // they can be reference counted.
 Symbol* ClassVerifier::create_temporary_symbol(const Symbol *s, int begin,
                                                int end, TRAPS) {
-  Symbol* sym = SymbolTable::new_symbol(s, begin, end, CHECK_NULL);
-  _symbols->push(sym);
-  return sym;
+  const char* name = (const char*)s->base() + begin;
+  int length = end - begin;
+  return create_temporary_symbol(name, length, CHECK_NULL);
 }
 
-Symbol* ClassVerifier::create_temporary_symbol(const char *s, int length, TRAPS) {
-  Symbol* sym = SymbolTable::new_symbol(s, length, CHECK_NULL);
-  _symbols->push(sym);
+Symbol* ClassVerifier::create_temporary_symbol(const char *name, int length, TRAPS) {
+  // Quick deduplication check
+  if (_previous_symbol != NULL && _previous_symbol->equals(name, length)) {
+    return _previous_symbol;
+  }
+  Symbol* sym = SymbolTable::new_symbol(name, length, CHECK_NULL);
+  if (!sym->is_permanent()) {
+    if (_symbols == NULL) {
+      _symbols = new GrowableArray<Symbol*>(50, 0, NULL);
+    }
+    _symbols->push(sym);
+  }
+  _previous_symbol = sym;
   return sym;
 }
