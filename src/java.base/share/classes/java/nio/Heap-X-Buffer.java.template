@@ -115,8 +115,7 @@ class Heap$Type$Buffer$RW$
 
     @Override
     public $Type$Buffer slice(int index, int length) {
-        Objects.checkIndex(index, limit() + 1);
-        Objects.checkIndex(length, limit() - index + 1);
+        Objects.checkFromIndexSize(index, length, limit());
         return new Heap$Type$Buffer$RW$(hb,
                                         -1,
                                         0,

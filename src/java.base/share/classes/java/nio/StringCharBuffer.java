@@ -54,8 +54,7 @@ class StringCharBuffer                                  // package-private
 
     @Override
     public CharBuffer slice(int index, int length) {
-        Objects.checkIndex(index, limit() + 1);
-        Objects.checkIndex(length, limit() - index + 1);
+        Objects.checkFromIndexSize(index, length, limit());
         return new StringCharBuffer(str,
                                     -1,
                                     0,

@@ -220,8 +220,7 @@ class Direct$Type$Buffer$RW$$BO$
 
     @Override
     public $Type$Buffer slice(int index, int length) {
-        Objects.checkIndex(index, limit() + 1);
-        Objects.checkIndex(length, limit() - index + 1);
+        Objects.checkFromIndexSize(index, length, limit());
         return new Direct$Type$Buffer$RW$$BO$(this,
                                               -1,
                                               0,
