@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,10 +147,6 @@ static int clean() {
     if (!NSK_JVMTI_VERIFY(
             jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_MONITOR_WAITED, NULL)))
         nsk_jvmti_setFailStatus();
-
-    /* dispose global references */
-    jni->DeleteGlobalRef(object);
-    jni->DeleteGlobalRef(thread);
 
     return NSK_TRUE;
 }
