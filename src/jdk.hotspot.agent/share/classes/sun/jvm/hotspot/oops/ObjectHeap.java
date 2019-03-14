@@ -255,7 +255,9 @@ public class ObjectHeap {
         OopHandle handle = bottom.addOffsetToAsOopHandle(0);
 
         while (handle.lessThan(top)) {
-        Oop obj = null;
+          Oop obj = null;
+          // Raw pointer walk
+          handle = handle.addOffsetToAsOopHandle(heap.oopOffset());
 
           try {
             obj = newOop(handle);

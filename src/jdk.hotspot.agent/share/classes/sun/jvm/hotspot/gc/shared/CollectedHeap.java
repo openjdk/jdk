@@ -64,6 +64,8 @@ public abstract class CollectedHeap extends VMObject {
   public abstract long capacity();
   public abstract long used();
 
+  public long oopOffset() { return 0; }
+
   public MemRegion reservedRegion() {
     return new MemRegion(addr.addOffsetTo(reservedFieldOffset));
   }
