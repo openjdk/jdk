@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 6371437 6371422 6371416 6371619 5058184 6371431 6639450 6569191 6577466 8212794
+ * @bug 6371437 6371422 6371416 6371619 5058184 6371431 6639450 6569191 6577466 8212794 8220281
  * @summary Check if the problems reported in above bugs have been fixed
  * @modules jdk.charsets
  */
@@ -31,6 +31,8 @@ import java.io.*;
 import java.nio.*;
 import java.nio.charset.*;
 import java.util.Arrays;
+import java.util.Locale;
+import java.util.HashSet;
 
 public class TestIBMBugs {
 
@@ -250,6 +252,77 @@ public class TestIBMBugs {
         }
     }
 
+    private static void bug8220281 () throws Exception {
+        if (System.getProperty("os.name").contains("AIX")) {
+            /* Following AIX codesets are used for Java default charset. */
+            /* They should be in sun.nio.cs package on AIX platform.     */
+            String[] codesets = new String[] {
+                "IBM-950", "BIG5-HKSCS", "GB18030", "IBM-1046",
+                "IBM-1124", "IBM-1129", "IBM-1252", "IBM-856",
+                "IBM-858", "IBM-921", "IBM-922", "IBM-932", "IBM-943C",
+                "IBM-eucCN", "IBM-eucJP", "IBM-eucKR", "IBM-eucTW",
+                "ISO8859-1", "ISO8859-15", "ISO8859-2", "ISO8859-4",
+                "ISO8859-5", "ISO8859-6", "ISO8859-7", "ISO8859-8",
+                "ISO8859-9", "TIS-620", "UTF-8", };
+            String[] charsets = new String[] {
+                "x-IBM950", "Big5-HKSCS", "GB18030", "x-IBM1046",
+                "x-IBM1124", "x-IBM1129", "windows-1252", "x-IBM856",
+                "IBM00858", "x-IBM921", "x-IBM922", "x-IBM942C",
+                "x-IBM943C", "x-IBM1383", "x-IBM29626C", "x-IBM970",
+                "x-IBM964", "ISO-8859-1", "ISO-8859-15", "ISO-8859-2",
+                "ISO-8859-4", "ISO-8859-5", "ISO-8859-6", "ISO-8859-7",
+                "ISO-8859-8", "ISO-8859-9", "TIS-620", "UTF-8", };
+            for(int i = 0; i < codesets.length; i++) {
+                Charset cs0 = Charset.forName(codesets[i]);
+                if (!"sun.nio.cs".equals(cs0.getClass().getPackage().getName())) {
+                    throw new Exception(cs0.getClass().getCanonicalName()+" faild");
+                }
+                Charset cs1 = Charset.forName(charsets[i]);
+                if (!cs0.equals(cs1)) {
+                    throw new Exception(codesets[i]+"("+cs0.name()+") failed");
+                }
+            }
+        }
+        for(Charset cs : Charset.availableCharsets().values()) {
+            String csName = cs.name().toLowerCase(Locale.ROOT);
+            String suffix = null;
+            HashSet<String> aliases = new HashSet<String>();
+            for(String s : cs.aliases()) {
+                aliases.add(s.toLowerCase(Locale.ROOT));
+            }
+            aliases.add(csName);
+            if (csName.startsWith("x-ibm-")) {
+                suffix = csName.replaceAll("x-ibm-0*", "");
+            } else if (csName.startsWith("x-ibm")) {
+                suffix = csName.replaceAll("x-ibm0*", "");
+            } else if (csName.startsWith("ibm-")) {
+                suffix = csName.replaceAll("ibm-0*", "");
+            } else if (csName.startsWith("ibm")) {
+                suffix = csName.replaceAll("ibm0*", "");
+            }
+            if ("ibm-thai".equals(csName)) {
+                suffix = "838";
+            }
+            if (null != suffix) {
+                while (suffix.length() < 3) {
+                    suffix = "0"+suffix;
+                }
+                if (!aliases.contains("cp"+suffix)) {
+                    throw new Exception(cs.name()+"\t"+"cp"+suffix);
+                }
+                if (!aliases.contains("ibm"+suffix)) {
+                    throw new Exception(cs.name()+"\t"+"ibm"+suffix);
+                }
+                if (!aliases.contains("ibm-"+suffix)) {
+                    throw new Exception(cs.name()+"\t"+"ibm-"+suffix);
+                }
+                if (!aliases.contains(suffix)) {
+                    throw new Exception(cs.name()+"\t"+suffix);
+                }
+            }
+        }
+    }
+
     public static void main (String[] args) throws Exception {
         bug6577466();
         // need to be tested before any other IBM949C test case
@@ -263,5 +336,6 @@ public class TestIBMBugs {
         bug8202329();
         bug8212794();
         bug8213618();
+        bug8220281();
     }
 }

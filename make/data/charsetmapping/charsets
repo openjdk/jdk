@@ -440,6 +440,8 @@ charset IBM00858 IBM858
     alias   cp00858
     alias   858
     alias   PC-Multilingual-850+euro
+    alias   ibm858
+    alias   ibm-858
 
 charset IBM862 IBM862
     package sun.nio.cs
@@ -1389,6 +1391,7 @@ charset x-IBM833 IBM833
      alias   cp833
      alias   ibm833
      alias   ibm-833
+     alias   833
 
 
 charset x-IBM834 IBM834 # EBCDIC DBCS-only Korean
@@ -1590,6 +1593,8 @@ charset IBM01140 IBM1140
     alias   cp01140
     alias   1140
     alias   ebcdic-us-037+euro
+    alias   ibm1140
+    alias   ibm-1140
 
 charset IBM01141 IBM1141
     package sun.nio.cs.ext
@@ -1601,6 +1606,8 @@ charset IBM01141 IBM1141
     alias   cp01141
     alias   1141
     alias   ebcdic-de-273+euro
+    alias   ibm1141
+    alias   ibm-1141
 
 charset IBM01142 IBM1142
     package sun.nio.cs.ext
@@ -1613,6 +1620,8 @@ charset IBM01142 IBM1142
     alias   1142
     alias   ebcdic-no-277+euro
     alias   ebcdic-dk-277+euro
+    alias   ibm1142
+    alias   ibm-1142
 
 charset IBM01143 IBM1143
     package sun.nio.cs.ext
@@ -1625,6 +1634,8 @@ charset IBM01143 IBM1143
     alias   1143
     alias   ebcdic-fi-278+euro
     alias   ebcdic-se-278+euro
+    alias   ibm1143
+    alias   ibm-1143
 
 charset IBM01144 IBM1144
     package sun.nio.cs.ext
@@ -1636,6 +1647,8 @@ charset IBM01144 IBM1144
     alias   cp01144
     alias   1144
     alias   ebcdic-it-280+euro
+    alias   ibm1144
+    alias   ibm-1144
 
 charset IBM01145 IBM1145
     package sun.nio.cs.ext
@@ -1647,6 +1660,8 @@ charset IBM01145 IBM1145
     alias   cp01145
     alias   1145
     alias   ebcdic-es-284+euro
+    alias   ibm1145
+    alias   ibm-1145
 
 charset IBM01146 IBM1146
     package sun.nio.cs.ext
@@ -1658,6 +1673,8 @@ charset IBM01146 IBM1146
     alias   cp01146
     alias   1146
     alias   ebcdic-gb-285+euro
+    alias   ibm1146
+    alias   ibm-1146
 
 charset IBM01147 IBM1147
     package sun.nio.cs.ext
@@ -1669,6 +1686,8 @@ charset IBM01147 IBM1147
     alias   cp01147
     alias   1147
     alias   ebcdic-fr-277+euro
+    alias   ibm1147
+    alias   ibm-1147
 
 charset IBM01148 IBM1148
     package sun.nio.cs.ext
@@ -1680,6 +1699,8 @@ charset IBM01148 IBM1148
     alias   cp01148
     alias   1148
     alias   ebcdic-international-500+euro
+    alias   ibm1148
+    alias   ibm-1148
 
 charset IBM01149 IBM1149
     package sun.nio.cs.ext
@@ -1691,6 +1712,8 @@ charset IBM01149 IBM1149
     alias   cp01149
     alias   1149
     alias   ebcdic-s-871+euro
+    alias   ibm1149
+    alias   ibm-1149
 
 charset IBM290 IBM290
     package sun.nio.cs.ext
