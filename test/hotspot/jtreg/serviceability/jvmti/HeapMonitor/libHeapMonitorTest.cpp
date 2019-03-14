@@ -28,27 +28,7 @@
 #include <string.h>
 #include "jvmti.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
-
-#ifndef JNI_ENV_ARG
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG(x)
-#define JNI_ENV_ARG2(x, y) y
-#define JNI_ENV_ARG3(x, y, z) y, z
-#define JNI_ENV_ARG4(x, y, z, w) y, z, w
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG(x) x
-#define JNI_ENV_ARG2(x, y) x, y
-#define JNI_ENV_ARG3(x, y, z) x, y, z
-#define JNI_ENV_ARG4(x, y, z, w) x, y, z, w
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
 
 #define TRUE 1
 #define FALSE 0
@@ -92,36 +72,35 @@ typedef struct _ExpectedContentFrame {
 
 static
 void event_storage_lock(EventStorage* storage) {
-  (*jvmti)->RawMonitorEnter(jvmti, storage->storage_monitor);
+  jvmti->RawMonitorEnter(storage->storage_monitor);
 }
 
 static
 void event_storage_unlock(EventStorage* storage) {
-  (*jvmti)->RawMonitorExit(jvmti, storage->storage_monitor);
+  jvmti->RawMonitorExit(storage->storage_monitor);
 }
 
 static
 void event_storage_lock_compaction(EventStorage* storage) {
-  (*jvmti)->RawMonitorEnter(jvmti, storage->compaction_monitor);
+  jvmti->RawMonitorEnter(storage->compaction_monitor);
 }
 
 static
 void event_storage_unlock_compaction(EventStorage* storage) {
-  (*jvmti)->RawMonitorExit(jvmti, storage->compaction_monitor);
+  jvmti->RawMonitorExit(storage->compaction_monitor);
 }
 
 // Given a method and a location, this method gets the line number.
 static
-jint get_line_number(jvmtiEnv* jvmti, jmethodID method,
-                     jlocation location) {
+jint get_line_number(jmethodID method, jlocation location) {
   // Read the line number table.
   jvmtiLineNumberEntry *table_ptr = 0;
   jint line_number_table_entries;
   int l;
   jlocation last_location;
-  int jvmti_error = (*jvmti)->GetLineNumberTable(jvmti, method,
-                                                 &line_number_table_entries,
-                                                 &table_ptr);
+  int jvmti_error = jvmti->GetLineNumberTable(method,
+                                              &line_number_table_entries,
+                                              &table_ptr);
 
   if (JVMTI_ERROR_NONE != jvmti_error) {
     return -1;
@@ -170,21 +149,18 @@ static void print_out_frames(JNIEnv* env, ObjectTrace* trace) {
     }
 
     // Transform into usable information.
-    line_number = get_line_number(jvmti, methodid, bci);
-    if (JVMTI_ERROR_NONE !=
-        (*jvmti)->GetMethodName(jvmti, methodid, &name, &signature, 0)) {
+    line_number = get_line_number(methodid, bci);
+    if (JVMTI_ERROR_NONE != jvmti->GetMethodName(methodid, &name, &signature, 0)) {
       fprintf(stderr, "\tUnknown method name\n");
       continue;
     }
 
-    if (JVMTI_ERROR_NONE !=
-        (*jvmti)->GetMethodDeclaringClass(jvmti, methodid, &declaring_class)) {
+    if (JVMTI_ERROR_NONE != jvmti->GetMethodDeclaringClass(methodid, &declaring_class)) {
       fprintf(stderr, "\tUnknown class\n");
       continue;
     }
 
-    err = (*jvmti)->GetSourceFileName(jvmti, declaring_class,
-                                      &file_name);
+    err = jvmti->GetSourceFileName(declaring_class, &file_name);
     if (err != JVMTI_ERROR_NONE) {
       fprintf(stderr, "\tUnknown file\n");
       continue;
@@ -206,8 +182,7 @@ static void print_out_frames(JNIEnv* env, ObjectTrace* trace) {
       continue;
     }
 
-    fprintf(stderr, "\t%s%s (%s: %d)\n",
-            name, signature, file_name, line_number);
+    fprintf(stderr, "\t%s%s (%s: %d)\n", name, signature, file_name, line_number);
   }
 }
 
@@ -240,16 +215,14 @@ static jboolean check_sample_content(JNIEnv* env,
     }
 
     // Transform into usable information.
-    line_number = get_line_number(jvmti, methodid, bci);
-    (*jvmti)->GetMethodName(jvmti, methodid, &name, &signature, 0);
+    line_number = get_line_number(methodid, bci);
+    jvmti->GetMethodName(methodid, &name, &signature, 0);
 
-    if (JVMTI_ERROR_NONE !=
-        (*jvmti)->GetMethodDeclaringClass(jvmti, methodid, &declaring_class)) {
+    if (JVMTI_ERROR_NONE != jvmti->GetMethodDeclaringClass(methodid, &declaring_class)) {
       return FALSE;
     }
 
-    err = (*jvmti)->GetSourceFileName(jvmti, declaring_class,
-                                      &file_name);
+    err = jvmti->GetSourceFileName(declaring_class, &file_name);
     if (err != JVMTI_ERROR_NONE) {
       return FALSE;
     }
@@ -303,105 +276,93 @@ static int fill_native_frames(JNIEnv* env, jobjectArray frames,
     const char* file_name = NULL;
     const char* signature = NULL;
 
-    jobject obj = JNI_ENV_PTR(env)->GetObjectArrayElement(
-        JNI_ENV_ARG3(env, frames, (jsize) i));
+    jobject obj = env->GetObjectArrayElement(frames, (jsize) i);
 
-    if (JNI_ENV_PTR(env)->ExceptionOccurred(JNI_ENV_ARG(env))) {
+    if (env->ExceptionOccurred()) {
       fprintf(stderr, "fill_native_frames: Exception in jni GetObjectArrayElement\n");
       return -1;
     }
 
-    frame_class = JNI_ENV_PTR(env)->GetObjectClass(JNI_ENV_ARG2(env, obj));
+    frame_class = env->GetObjectClass(obj);
 
-    if (JNI_ENV_PTR(env)->ExceptionOccurred(JNI_ENV_ARG(env))) {
+    if (env->ExceptionOccurred()) {
       fprintf(stderr, "fill_native_frames: Exception in jni GetObjectClass\n");
       return -1;
     }
 
-    line_number_field_id =
-        JNI_ENV_PTR(env)->GetFieldID(JNI_ENV_ARG4(env, frame_class, "lineNumber", "I"));
+    line_number_field_id = env->GetFieldID(frame_class, "lineNumber", "I");
 
-    if (JNI_ENV_PTR(env)->ExceptionOccurred(JNI_ENV_ARG(env))) {
+    if (env->ExceptionOccurred()) {
       fprintf(stderr, "fill_native_frames: Exception in jni GetFieldID\n");
       return -1;
     }
 
-    line_number = JNI_ENV_PTR(env)->GetIntField(JNI_ENV_ARG3(env, obj, line_number_field_id));
+    line_number = env->GetIntField(obj, line_number_field_id);
 
-    if (JNI_ENV_PTR(env)->ExceptionOccurred(JNI_ENV_ARG(env))) {
+    if (env->ExceptionOccurred()) {
       fprintf(stderr, "fill_native_frames: Exception in jni GetIntField\n");
       return -1;
     }
 
-    string_id = JNI_ENV_PTR(env)->GetFieldID(
-        JNI_ENV_ARG4(env, frame_class, "method", "Ljava/lang/String;"));
+    string_id = env->GetFieldID(frame_class, "method", "Ljava/lang/String;");
 
-    if (JNI_ENV_PTR(env)->ExceptionOccurred(JNI_ENV_ARG(env))) {
+    if (env->ExceptionOccurred()) {
       fprintf(stderr, "fill_native_frames: Exception in jni GetFieldID\n");
       return -1;
     }
 
-    string_object = (jstring) JNI_ENV_PTR(env)->GetObjectField(
-        JNI_ENV_ARG3(env, obj, string_id));
+    string_object = (jstring) env->GetObjectField(obj, string_id);
 
-    if (JNI_ENV_PTR(env)->ExceptionOccurred(JNI_ENV_ARG(env))) {
+    if (env->ExceptionOccurred()) {
       fprintf(stderr, "fill_native_frames: Exception in jni GetObjectField\n");
       return -1;
     }
 
-    method = JNI_ENV_PTR(env)->GetStringUTFChars(JNI_ENV_ARG3(env, string_object, 0));
+    method = env->GetStringUTFChars(string_object, 0);
 
-    if (JNI_ENV_PTR(env)->ExceptionOccurred(JNI_ENV_ARG(env))) {
+    if (env->ExceptionOccurred()) {
       fprintf(stderr, "Exception in jni GetStringUTFChars\n");
       return -1;
     }
 
-    string_id = JNI_ENV_PTR(env)->GetFieldID(
-        JNI_ENV_ARG4(env, frame_class, "fileName", "Ljava/lang/String;"));
+    string_id = env->GetFieldID(frame_class, "fileName", "Ljava/lang/String;");
 
-    if (JNI_ENV_PTR(env)->ExceptionOccurred(JNI_ENV_ARG(env))) {
+    if (env->ExceptionOccurred()) {
       fprintf(stderr, "Exception in jni GetFieldID\n");
       return -1;
     }
 
-    string_object =
-        (jstring) (JNI_ENV_PTR(env)->GetObjectField(
-            JNI_ENV_ARG3(env, obj, string_id)));
+    string_object = (jstring) (env->GetObjectField(obj, string_id));
 
-    if (JNI_ENV_PTR(env)->ExceptionOccurred(JNI_ENV_ARG(env))) {
+    if (env->ExceptionOccurred()) {
       fprintf(stderr, "fill_native_frames: Exception in second jni GetObjectField\n");
       return -1;
     }
 
-    file_name = JNI_ENV_PTR(env)->GetStringUTFChars(
-        JNI_ENV_ARG3(env, string_object, 0));
+    file_name = env->GetStringUTFChars(string_object, 0);
 
-    if (JNI_ENV_PTR(env)->ExceptionOccurred(JNI_ENV_ARG(env))) {
+    if (env->ExceptionOccurred()) {
       fprintf(stderr, "fill_native_frames: Exception in jni GetStringUTFChars\n");
       return -1;
     }
 
-    string_id = JNI_ENV_PTR(env)->GetFieldID(
-        JNI_ENV_ARG4(env, frame_class, "signature", "Ljava/lang/String;"));
+    string_id = env->GetFieldID(frame_class, "signature", "Ljava/lang/String;");
 
-    if (JNI_ENV_PTR(env)->ExceptionOccurred(JNI_ENV_ARG(env))) {
+    if (env->ExceptionOccurred()) {
       fprintf(stderr, "fill_native_frames: Exception in second jni GetFieldID\n");
       return -1;
     }
 
-    string_object =
-        (jstring) (JNI_ENV_PTR(env)->GetObjectField(
-            JNI_ENV_ARG3(env, obj, string_id)));
+    string_object = (jstring) (env->GetObjectField(obj, string_id));
 
-    if (JNI_ENV_PTR(env)->ExceptionOccurred(JNI_ENV_ARG(env))) {
+    if (env->ExceptionOccurred()) {
       fprintf(stderr, "fill_native_frames: Exception in third jni GetObjectField\n");
       return -1;
     }
 
-    signature = JNI_ENV_PTR(env)->GetStringUTFChars(
-        JNI_ENV_ARG3(env, string_object, 0));
+    signature = env->GetStringUTFChars(string_object, 0);
 
-    if (JNI_ENV_PTR(env)->ExceptionOccurred(JNI_ENV_ARG(env))) {
+    if (env->ExceptionOccurred()) {
       fprintf(stderr, "fill_native_frames: Exception in jni GetStringUTFChars\n");
       return -1;
     }
@@ -439,7 +400,7 @@ static void event_storage_set_garbage_history(EventStorage* storage, int value) 
   global_event_storage.garbage_history_size = value;
   free(global_event_storage.garbage_collected_objects);
   size = sizeof(*global_event_storage.garbage_collected_objects) * value;
-  global_event_storage.garbage_collected_objects = malloc(size);
+  global_event_storage.garbage_collected_objects = reinterpret_cast<ObjectTrace**>(malloc(size));
   memset(global_event_storage.garbage_collected_objects, 0, size);
   event_storage_unlock(storage);
 }
@@ -551,7 +512,7 @@ static jboolean event_storage_garbage_contains(JNIEnv* env,
 // No mutex here, handled by the caller.
 static void event_storage_augment_storage(EventStorage* storage) {
   int new_max = (storage->live_object_size * 2) + 1;
-  ObjectTrace** new_objects = malloc(new_max * sizeof(*new_objects));
+  ObjectTrace** new_objects = reinterpret_cast<ObjectTrace**>(malloc(new_max * sizeof(*new_objects)));
 
   int current_count = storage->live_object_count;
   memcpy(new_objects, storage->live_objects, current_count * sizeof(*new_objects));
@@ -570,7 +531,7 @@ static void event_storage_add(EventStorage* storage,
   jint count;
   jvmtiError err;
 
-  err = (*jvmti)->GetStackTrace(jvmti, thread, 0, 64, frames, &count);
+  err = jvmti->GetStackTrace(thread, 0, 64, frames, &count);
   if (err == JVMTI_ERROR_NONE && count >= 1) {
     ObjectTrace* live_object;
     jvmtiFrameInfo* allocated_frames = (jvmtiFrameInfo*) malloc(count * sizeof(*allocated_frames));
@@ -581,11 +542,10 @@ static void event_storage_add(EventStorage* storage,
     live_object->frame_count = count;
     live_object->size = size;
     live_object->thread = thread;
-    live_object->object = (*jni)->NewWeakGlobalRef(jni, object);
+    live_object->object = jni->NewWeakGlobalRef(object);
 
-    if (JNI_ENV_PTR(jni)->ExceptionOccurred(JNI_ENV_ARG(jni))) {
-      JNI_ENV_PTR(jni)->FatalError(
-          JNI_ENV_ARG2(jni, "Error in event_storage_add: Exception in jni NewWeakGlobalRef"));
+    if (jni->ExceptionOccurred()) {
+      jni->FatalError("Error in event_storage_add: Exception in jni NewWeakGlobalRef");
     }
 
     // Only now lock and get things done quickly.
@@ -627,13 +587,13 @@ static void event_storage_compact(EventStorage* storage, JNIEnv* jni) {
     ObjectTrace* live_object = live_objects[i];
     jweak object = live_object->object;
 
-    if (!(*jni)->IsSameObject(jni, object, NULL)) {
+    if (!jni->IsSameObject(object, NULL)) {
       if (dest != i) {
         live_objects[dest] = live_object;
         dest++;
       }
     } else {
-      (*jni)->DeleteWeakGlobalRef(jni, object);
+      jni->DeleteWeakGlobalRef(object);
       live_object->object = NULL;
 
       event_storage_add_garbage_collected_object(storage, live_object);
@@ -735,7 +695,7 @@ Java_MyPackage_HeapMonitorThreadDisabledTest_checkThreadSamplesOnlyFrom(
   char* expected_name;
   int found_thread = FALSE;
 
-  err = (*jvmti)->GetThreadInfo(jvmti, thread, &info);
+  err = jvmti->GetThreadInfo(thread, &info);
   expected_name = info.name;
 
   if (err != JVMTI_ERROR_NONE) {
@@ -763,7 +723,7 @@ static void add_thread_count(jthread thread) {
   jvmtiThreadInfo info;
   jvmtiError err;
 
-  err = (*jvmti)->GetThreadInfo(jvmti, thread, &info);
+  err = jvmti->GetThreadInfo(thread, &info);
   if (err != JVMTI_ERROR_NONE) {
     fprintf(stderr, "Thread info for %p failed, ignoring thread count\n",
             thread);
@@ -789,8 +749,8 @@ JNIEXPORT void JNICALL
 Java_MyPackage_HeapMonitorThreadDisabledTest_enableSamplingEvents(
     JNIEnv* env, jclass cls, jthread thread) {
   fprintf(stderr, "Enabling for %p\n", thread);
-  check_error((*jvmti)->SetEventNotificationMode(
-      jvmti, JVMTI_ENABLE, JVMTI_EVENT_SAMPLED_OBJECT_ALLOC, thread),
+  check_error(jvmti->SetEventNotificationMode(
+      JVMTI_ENABLE, JVMTI_EVENT_SAMPLED_OBJECT_ALLOC, thread),
               "Set event notifications for a single thread");
 }
 
@@ -838,14 +798,14 @@ void JNICALL GarbageCollectionFinish(jvmtiEnv *jvmti_env) {
 }
 
 static int enable_notifications() {
-  if (check_error((*jvmti)->SetEventNotificationMode(
-      jvmti, JVMTI_ENABLE, JVMTI_EVENT_GARBAGE_COLLECTION_FINISH, NULL),
+  if (check_error(jvmti->SetEventNotificationMode(
+      JVMTI_ENABLE, JVMTI_EVENT_GARBAGE_COLLECTION_FINISH, NULL),
                      "Set event notifications")) {
     return 1;
   }
 
-  return check_error((*jvmti)->SetEventNotificationMode(
-      jvmti, JVMTI_ENABLE, JVMTI_EVENT_SAMPLED_OBJECT_ALLOC, NULL),
+  return check_error(jvmti->SetEventNotificationMode(
+      JVMTI_ENABLE, JVMTI_EVENT_SAMPLED_OBJECT_ALLOC, NULL),
                      "Set event notifications");
 }
 
@@ -855,16 +815,14 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jvmtiEventCallbacks callbacks;
   jvmtiCapabilities caps;
 
-  res = JNI_ENV_PTR(jvm)->GetEnv(JNI_ENV_ARG3(jvm, (void **) &jvmti,
-                                 JVMTI_VERSION_9));
+  res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION);
   if (res != JNI_OK || jvmti == NULL) {
     fprintf(stderr, "Error: wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }
 
   // Get second jvmti environment.
-  res = JNI_ENV_PTR(jvm)->GetEnv(JNI_ENV_ARG3(jvm, (void **) &second_jvmti,
-                                 JVMTI_VERSION_9));
+  res = jvm->GetEnv((void **) &second_jvmti, JVMTI_VERSION);
   if (res != JNI_OK || second_jvmti == NULL) {
     fprintf(stderr, "Error: wrong result of a valid second call to GetEnv!\n");
     return JNI_ERR;
@@ -875,14 +833,14 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
             &global_event_storage, &second_global_event_storage);
   }
 
-  (*jvmti)->CreateRawMonitor(jvmti, "storage_monitor",
+  jvmti->CreateRawMonitor("storage_monitor",
                              &global_event_storage.storage_monitor);
-  (*jvmti)->CreateRawMonitor(jvmti, "second_storage_monitor",
+  jvmti->CreateRawMonitor("second_storage_monitor",
                              &second_global_event_storage.storage_monitor);
 
-  (*jvmti)->CreateRawMonitor(jvmti, "compaction_monitor",
+  jvmti->CreateRawMonitor("compaction_monitor",
                              &global_event_storage.compaction_monitor);
-  (*jvmti)->CreateRawMonitor(jvmti, "second_compaction_monitor",
+  jvmti->CreateRawMonitor("second_compaction_monitor",
                              &second_global_event_storage.compaction_monitor);
 
   event_storage_set_garbage_history(&global_event_storage, 200);
@@ -900,12 +858,12 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   caps.can_generate_garbage_collection_events = 1;
   caps.can_generate_sampled_object_alloc_events = 1;
   caps.can_generate_vm_object_alloc_events = 1;
-  if (check_error((*jvmti)->AddCapabilities(jvmti, &caps), "Add capabilities")) {
+  if (check_error(jvmti->AddCapabilities(&caps), "Add capabilities")) {
     return JNI_ERR;
   }
 
-  if (check_error((*jvmti)->SetEventCallbacks(jvmti, &callbacks,
-                                              sizeof(jvmtiEventCallbacks)),
+  if (check_error(jvmti->SetEventCallbacks(&callbacks,
+                                           sizeof(jvmtiEventCallbacks)),
                   " Set Event Callbacks")) {
     return JNI_ERR;
   }
@@ -914,7 +872,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
 JNIEXPORT void JNICALL
 Java_MyPackage_HeapMonitor_setSamplingInterval(JNIEnv* env, jclass cls, jint value) {
-  (*jvmti)->SetHeapSamplingInterval(jvmti, value);
+  jvmti->SetHeapSamplingInterval(value);
 }
 
 JNIEXPORT jboolean JNICALL
@@ -934,37 +892,32 @@ Java_MyPackage_HeapMonitor_enableSamplingEvents(JNIEnv* env, jclass cls) {
 
 JNIEXPORT void JNICALL
 Java_MyPackage_HeapMonitor_disableSamplingEvents(JNIEnv* env, jclass cls) {
-  check_error((*jvmti)->SetEventNotificationMode(
-      jvmti, JVMTI_DISABLE, JVMTI_EVENT_SAMPLED_OBJECT_ALLOC, NULL),
+  check_error(jvmti->SetEventNotificationMode(
+      JVMTI_DISABLE, JVMTI_EVENT_SAMPLED_OBJECT_ALLOC, NULL),
               "Set event notifications");
 
-  check_error((*jvmti)->SetEventNotificationMode(
-      jvmti, JVMTI_DISABLE, JVMTI_EVENT_GARBAGE_COLLECTION_FINISH, NULL),
+  check_error(jvmti->SetEventNotificationMode(
+      JVMTI_DISABLE, JVMTI_EVENT_GARBAGE_COLLECTION_FINISH, NULL),
               "Garbage Collection Finish");
 }
 
 static ExpectedContentFrame *get_native_frames(JNIEnv* env, jclass cls,
                                                jobjectArray frames) {
   ExpectedContentFrame *native_frames;
-  jsize size = JNI_ENV_PTR(env)->GetArrayLength(JNI_ENV_ARG2(env, frames));
+  jsize size = env->GetArrayLength(frames);
 
-  if (JNI_ENV_PTR(env)->ExceptionOccurred(JNI_ENV_ARG(env))) {
-    JNI_ENV_PTR(env)->FatalError(
-        JNI_ENV_ARG2(env, "get_native_frames failed with the GetArrayLength call"));
+  if (env->ExceptionOccurred()) {
+    env->FatalError("get_native_frames failed with the GetArrayLength call");
   }
 
-  native_frames = malloc(size * sizeof(*native_frames));
+  native_frames = reinterpret_cast<ExpectedContentFrame*> (malloc(size * sizeof(*native_frames)));
 
   if (native_frames == NULL) {
-    JNI_ENV_PTR(env)->FatalError(
-        JNI_ENV_ARG2(env,
-                     "Error in get_native_frames: malloc returned NULL\n"));
+    env->FatalError("Error in get_native_frames: malloc returned NULL\n");
   }
 
   if (fill_native_frames(env, frames, native_frames, size) != 0) {
-    JNI_ENV_PTR(env)->FatalError(
-        JNI_ENV_ARG2(env,
-                     "Error in get_native_frames: fill_native_frames returned failed status\n"));
+    env->FatalError("Error in get_native_frames: fill_native_frames returned failed status\n");
   }
 
   return native_frames;
@@ -975,7 +928,7 @@ Java_MyPackage_HeapMonitor_obtainedEvents(JNIEnv* env, jclass cls,
                                           jobjectArray frames,
                                           jboolean check_lines) {
   jboolean result;
-  jsize size = JNI_ENV_PTR(env)->GetArrayLength(JNI_ENV_ARG2(env, frames));
+  jsize size = env->GetArrayLength(frames);
   ExpectedContentFrame *native_frames = get_native_frames(env, cls, frames);
 
   result = event_storage_contains(env, &global_event_storage, native_frames,
@@ -990,7 +943,7 @@ Java_MyPackage_HeapMonitor_garbageContains(JNIEnv* env, jclass cls,
                                            jobjectArray frames,
                                            jboolean check_lines) {
   jboolean result;
-  jsize size = JNI_ENV_PTR(env)->GetArrayLength(JNI_ENV_ARG2(env, frames));
+  jsize size = env->GetArrayLength(frames);
   ExpectedContentFrame *native_frames = get_native_frames(env, cls, frames);
 
   result = event_storage_garbage_contains(env, &global_event_storage,
@@ -1005,7 +958,7 @@ Java_MyPackage_HeapMonitor_getSize(JNIEnv* env, jclass cls,
                                    jobjectArray frames,
                                    jboolean check_lines) {
   jlong result = 0;
-  jsize size = JNI_ENV_PTR(env)->GetArrayLength(JNI_ENV_ARG2(env, frames));
+  jsize size = env->GetArrayLength(frames);
   ExpectedContentFrame *native_frames = get_native_frames(env, cls, frames);
 
   result = event_storage_get_size(env, &global_event_storage,
@@ -1017,7 +970,7 @@ Java_MyPackage_HeapMonitor_getSize(JNIEnv* env, jclass cls,
 
 JNIEXPORT void JNICALL
 Java_MyPackage_HeapMonitor_forceGarbageCollection(JNIEnv* env, jclass cls) {
-  check_error((*jvmti)->ForceGarbageCollection(jvmti),
+  check_error(jvmti->ForceGarbageCollection(),
               "Forced Garbage Collection");
 }
 
@@ -1033,12 +986,12 @@ Java_MyPackage_HeapMonitorNoCapabilityTest_allSamplingMethodsFail(JNIEnv *env,
   jvmtiCapabilities caps;
   memset(&caps, 0, sizeof(caps));
   caps.can_generate_sampled_object_alloc_events = 1;
-  if (check_error((*jvmti)->RelinquishCapabilities(jvmti, &caps),
+  if (check_error(jvmti->RelinquishCapabilities(&caps),
                   "Add capabilities\n")){
     return FALSE;
   }
 
-  if (check_capability_error((*jvmti)->SetHeapSamplingInterval(jvmti, 1<<19),
+  if (check_capability_error(jvmti->SetHeapSamplingInterval(1<<19),
                              "Set Heap Sampling Interval")) {
     return FALSE;
   }
@@ -1048,22 +1001,22 @@ Java_MyPackage_HeapMonitorNoCapabilityTest_allSamplingMethodsFail(JNIEnv *env,
 JNIEXPORT jboolean JNICALL
 Java_MyPackage_HeapMonitorIllegalArgumentTest_testIllegalArgument(JNIEnv *env,
                                                                   jclass cls) {
-  if (check_error((*jvmti)->SetHeapSamplingInterval(jvmti, 0),
+  if (check_error(jvmti->SetHeapSamplingInterval(0),
                   "Sampling interval 0 failed\n")){
     return FALSE;
   }
 
-  if (check_error((*jvmti)->SetHeapSamplingInterval(jvmti, 1024),
+  if (check_error(jvmti->SetHeapSamplingInterval(1024),
                   "Sampling interval 1024 failed\n")){
     return FALSE;
   }
 
-  if (!check_error((*jvmti)->SetHeapSamplingInterval(jvmti, -1),
+  if (!check_error(jvmti->SetHeapSamplingInterval(-1),
                    "Sampling interval -1 passed\n")){
     return FALSE;
   }
 
-  if (!check_error((*jvmti)->SetHeapSamplingInterval(jvmti, -1024),
+  if (!check_error(jvmti->SetHeapSamplingInterval(-1024),
                    "Sampling interval -1024 passed\n")){
     return FALSE;
   }
@@ -1110,7 +1063,7 @@ Java_MyPackage_HeapMonitorTwoAgentsTest_enablingSamplingInSecondaryAgent(
 
   memset(&caps, 0, sizeof(caps));
   caps.can_generate_sampled_object_alloc_events = 1;
-  if (check_error((*second_jvmti)->AddCapabilities(second_jvmti, &caps),
+  if (check_error(second_jvmti->AddCapabilities(&caps),
                   "Set the capability for second agent")) {
     return FALSE;
   }
@@ -1118,8 +1071,8 @@ Java_MyPackage_HeapMonitorTwoAgentsTest_enablingSamplingInSecondaryAgent(
   memset(&callbacks, 0, sizeof(callbacks));
   callbacks.SampledObjectAlloc = &SampledObjectAlloc2;
 
-  if (check_error((*second_jvmti)->SetEventCallbacks(second_jvmti, &callbacks,
-                                                     sizeof(jvmtiEventCallbacks)),
+  if (check_error(second_jvmti->SetEventCallbacks(&callbacks,
+                                                  sizeof(jvmtiEventCallbacks)),
                   " Set Event Callbacks for second agent")) {
     return FALSE;
   }
@@ -1129,8 +1082,8 @@ Java_MyPackage_HeapMonitorTwoAgentsTest_enablingSamplingInSecondaryAgent(
 
 JNIEXPORT void JNICALL
 Java_MyPackage_HeapMonitor_enableVMEvents(JNIEnv* env, jclass cls) {
-  check_error((*jvmti)->SetEventNotificationMode(
-      jvmti, JVMTI_ENABLE, JVMTI_EVENT_VM_OBJECT_ALLOC, NULL),
+  check_error(jvmti->SetEventNotificationMode(
+      JVMTI_ENABLE, JVMTI_EVENT_VM_OBJECT_ALLOC, NULL),
               "Set vm event notifications");
 }
 
@@ -1146,27 +1099,24 @@ Java_MyPackage_HeapMonitor_sampledEvents(JNIEnv* env, jclass cls) {
 
 static jobject allocate_object(JNIEnv* env) {
   // Construct an Object.
-  jclass cls = JNI_ENV_PTR(env)->FindClass(JNI_ENV_ARG2(env, "java/lang/Object"));
+  jclass cls = env->FindClass("java/lang/Object");
   jmethodID constructor;
   jobject result;
 
-  if (JNI_ENV_PTR(env)->ExceptionOccurred(JNI_ENV_ARG(env)) || cls == NULL) {
-    JNI_ENV_PTR(env)->FatalError(
-        JNI_ENV_ARG2(env, "Error in jni FindClass: Cannot find Object class\n"));
+  if (env->ExceptionOccurred() || cls == NULL) {
+    env->FatalError("Error in jni FindClass: Cannot find Object class\n");
   }
 
-  constructor = JNI_ENV_PTR(env)->GetMethodID(JNI_ENV_ARG4(env, cls, "<init>", "()V"));
-  if (JNI_ENV_PTR(env)->ExceptionOccurred(JNI_ENV_ARG(env)) || constructor == NULL) {
-    JNI_ENV_PTR(env)->FatalError(
-        JNI_ENV_ARG2(env, "Error in jni GetMethodID: Cannot find Object class constructor\n"));
+  constructor = env->GetMethodID(cls, "<init>", "()V");
+  if (env->ExceptionOccurred() || constructor == NULL) {
+    env->FatalError("Error in jni GetMethodID: Cannot find Object class constructor\n");
   }
 
   // Call back constructor to allocate a new instance, with an int argument
-  result = JNI_ENV_PTR(env)->NewObject(JNI_ENV_ARG3(env, cls, constructor));
+  result = env->NewObject(cls, constructor);
 
-  if (JNI_ENV_PTR(env)->ExceptionOccurred(JNI_ENV_ARG(env)) || result == NULL) {
-    JNI_ENV_PTR(env)->FatalError(
-        JNI_ENV_ARG2(env, "Error in jni NewObject: Cannot allocate an object\n"));
+  if (env->ExceptionOccurred() || result == NULL) {
+    env->FatalError("Error in jni NewObject: Cannot allocate an object\n");
   }
   return result;
 }
@@ -1186,7 +1136,7 @@ void JNICALL RecursiveSampledObjectAlloc(jvmtiEnv *jvmti_env,
   int i;
   for (i = 0; i < 1000; i++) {
     if (allocate_object(jni_env) == NULL) {
-      JNI_ENV_PTR(jni_env)->FatalError(JNI_ENV_ARG2(jni_env, "allocate_object returned NULL\n"));
+      jni_env->FatalError("allocate_object returned NULL\n");
     }
   }
 
@@ -1205,13 +1155,11 @@ Java_MyPackage_HeapMonitorRecursiveTest_setCallbackToCallAllocateSomeMore(JNIEnv
   memset(&callbacks, 0, sizeof(callbacks));
   callbacks.SampledObjectAlloc = &RecursiveSampledObjectAlloc;
 
-  if (check_error((*jvmti)->SetEventCallbacks(jvmti, &callbacks,
-                                              sizeof(jvmtiEventCallbacks)),
-                  " Set Event Callbacks")) {
-    JNI_ENV_PTR(env)->FatalError(JNI_ENV_ARG2(env, "Cannot reset the callback."));
+  if (check_error(jvmti->SetEventCallbacks(&callbacks,
+                                           sizeof(jvmtiEventCallbacks)),
+                  "Set Event Callbacks")) {
+    env->FatalError("Cannot reset the callback.");
   }
 }
 
-#ifdef __cplusplus
 }
-#endif
