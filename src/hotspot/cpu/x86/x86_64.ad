@@ -547,7 +547,7 @@ void emit_d32_reloc(CodeBuffer& cbuf, int d32, RelocationHolder const& rspec, in
   if (rspec.reloc()->type() == relocInfo::oop_type &&
       d32 != 0 && d32 != (intptr_t) Universe::non_oop_word()) {
     assert(Universe::heap()->is_in_reserved((address)(intptr_t)d32), "should be real oop");
-    assert(oopDesc::is_oop(cast_to_oop((intptr_t)d32)) && (ScavengeRootsInCode || !Universe::heap()->is_scavengable(cast_to_oop((intptr_t)d32))), "cannot embed scavengable oops in code");
+    assert(oopDesc::is_oop(cast_to_oop((intptr_t)d32)), "cannot embed broken oops in code");
   }
 #endif
   cbuf.relocate(cbuf.insts_mark(), rspec, format);
@@ -574,8 +574,7 @@ void emit_d64_reloc(CodeBuffer& cbuf, int64_t d64, RelocationHolder const& rspec
   if (rspec.reloc()->type() == relocInfo::oop_type &&
       d64 != 0 && d64 != (int64_t) Universe::non_oop_word()) {
     assert(Universe::heap()->is_in_reserved((address)d64), "should be real oop");
-    assert(oopDesc::is_oop(cast_to_oop(d64)) && (ScavengeRootsInCode || !Universe::heap()->is_scavengable(cast_to_oop(d64))),
-           "cannot embed scavengable oops in code");
+    assert(oopDesc::is_oop(cast_to_oop(d64)), "cannot embed broken oops in code");
   }
 #endif
   cbuf.relocate(cbuf.insts_mark(), rspec, format);

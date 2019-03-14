@@ -4835,9 +4835,7 @@ public:
       return;
     }
 
-    if (ScavengeRootsInCode) {
-      _g1h->register_nmethod(nm);
-    }
+    _g1h->register_nmethod(nm);
   }
 };
 

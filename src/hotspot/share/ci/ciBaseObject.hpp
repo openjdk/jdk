@@ -54,10 +54,6 @@ class ciBaseObject : public ResourceObj {
 protected:
   uint     _ident;
 
-  enum { FLAG_BITS   = 1 };
-  enum {
-         SCAVENGABLE_FLAG = 1
-       };
 protected:
   ciBaseObject(): _ident(0) {}
 

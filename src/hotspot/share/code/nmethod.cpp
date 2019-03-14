@@ -611,10 +611,10 @@ nmethod::nmethod(
     code_buffer->copy_values_to(this);
 
     clear_unloading_state();
-    if (ScavengeRootsInCode) {
-      Universe::heap()->register_nmethod(this);
-    }
+
+    Universe::heap()->register_nmethod(this);
     debug_only(Universe::heap()->verify_nmethod(this));
+
     CodeCache::commit(this);
   }
 
@@ -771,9 +771,8 @@ nmethod::nmethod(
     debug_info->copy_to(this);
     dependencies->copy_to(this);
     clear_unloading_state();
-    if (ScavengeRootsInCode) {
-      Universe::heap()->register_nmethod(this);
-    }
+
+    Universe::heap()->register_nmethod(this);
     debug_only(Universe::heap()->verify_nmethod(this));
 
     CodeCache::commit(this);

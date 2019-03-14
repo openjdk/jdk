@@ -68,8 +68,6 @@ protected:
   // Get the VM oop that this object holds.
   oop get_oop() const;
 
-  void init_flags_from(oop x);
-
   // Virtual behavior of the print() method.
   virtual void print_impl(outputStream* st) {}
 
@@ -85,21 +83,8 @@ public:
   // A hash value for the convenience of compilers.
   int hash();
 
-  // Tells if this oop has an encoding as a constant.
-  // True if is_perm is true.
-  // Also true if ScavengeRootsInCode is non-zero.
-  // If it does not have an encoding, the compiler is responsible for
-  // making other arrangements for dealing with the oop.
-  // See ciEnv::make_array
-  bool can_be_constant();
-
   // Tells if this oop should be made a constant.
-  // True if is_perm is true or ScavengeRootsInCode > 1.
   bool should_be_constant();
-
-  // Might this object possibly move during a scavenge operation?
-  // If the answer is true and ScavengeRootsInCode==0, the oop cannot be embedded in code.
-  bool is_scavengable() { return (_ident & SCAVENGABLE_FLAG) != 0; }
 
   // The address which the compiler should embed into the
   // generated code to represent this oop.  This address
