@@ -36,6 +36,7 @@ compiler/compilercontrol/directives/ExcludeTest.java            8181753   generi
 compiler/compilercontrol/jcmd/AddExcludeTest.java               8181753   generic-all
 compiler/compilercontrol/jcmd/AddLogTest.java                   8181753   generic-all
 compiler/compilercontrol/mixed/RandomValidCommandsTest.java     8181753   generic-all
+compiler/compilercontrol/mixed/RandomCommandsTest.java          8181753   generic-all
 
 compiler/graalunit/JttThreadsTest.java                          8208066   generic-all
 
