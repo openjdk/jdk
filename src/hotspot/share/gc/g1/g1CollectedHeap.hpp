@@ -1307,9 +1307,6 @@ public:
 
   // Optimized nmethod scanning support routines
 
-  // Is an oop scavengeable
-  virtual bool is_scavengable(oop obj);
-
   // Register the given nmethod with the G1 heap.
   virtual void register_nmethod(nmethod* nm);
 

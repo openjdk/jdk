@@ -4193,9 +4193,6 @@ void CMSCollector::checkpointRootsFinalWork() {
 
   CMSHeap* heap = CMSHeap::heap();
 
-  if (should_unload_classes()) {
-    CodeCache::gc_prologue();
-  }
   assert(haveFreelistLocks(), "must have free list locks");
   assert_lock_strong(bitMapLock());
 
@@ -4251,7 +4248,7 @@ void CMSCollector::checkpointRootsFinalWork() {
   verify_overflow_empty();
 
   if (should_unload_classes()) {
-    CodeCache::gc_epilogue();
+    heap->prune_nmethods();
   }
   JvmtiExport::gc_epilogue();
 

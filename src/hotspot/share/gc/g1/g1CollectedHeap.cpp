@@ -4796,13 +4796,6 @@ public:
   void do_oop(narrowOop* p) { do_oop_work(p); }
 };
 
-// Returns true if the reference points to an object that
-// can move in an incremental collection.
-bool G1CollectedHeap::is_scavengable(oop obj) {
-  HeapRegion* hr = heap_region_containing(obj);
-  return !hr->is_pinned();
-}
-
 void G1CollectedHeap::register_nmethod(nmethod* nm) {
   guarantee(nm != NULL, "sanity");
   RegisterNMethodOopClosure reg_cl(this, nm);

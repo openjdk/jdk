@@ -71,7 +71,6 @@ public:
   virtual size_t used() const;
 
   virtual bool is_maximal_no_gc() const;
-  virtual bool is_scavengable(oop obj);
   virtual bool is_in(const void* p) const;
   virtual bool is_in_closed_subset(const void* p) const;
 

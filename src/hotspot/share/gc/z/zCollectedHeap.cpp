@@ -106,10 +106,6 @@ bool ZCollectedHeap::is_maximal_no_gc() const {
   return false;
 }
 
-bool ZCollectedHeap::is_scavengable(oop obj) {
-  return false;
-}
-
 bool ZCollectedHeap::is_in(const void* p) const {
   return is_in_reserved(p) && _heap.is_in((uintptr_t)p);
 }

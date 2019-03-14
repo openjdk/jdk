@@ -423,8 +423,6 @@ void nmethod::init_defaults() {
   _oops_do_mark_link       = NULL;
   _jmethod_id              = NULL;
   _osr_link                = NULL;
-  _scavenge_root_link      = NULL;
-  _scavenge_root_state     = 0;
 #if INCLUDE_RTM_OPT
   _rtm_state               = NoRTM;
 #endif
@@ -1360,10 +1358,6 @@ void nmethod::flush() {
     ec = next;
   }
 
-  if (on_scavenge_root_list()) {
-    CodeCache::drop_scavenge_root_nmethod(this);
-  }
-
 #if INCLUDE_JVMCI
   assert(_jvmci_installed_code == NULL, "should have been nulled out when transitioned to zombie");
   assert(_speculation_log == NULL, "should have been nulled out when transitioned to zombie");
@@ -1775,44 +1769,6 @@ void nmethod::oops_do_marking_epilogue() {
   nmethod* observed = Atomic::cmpxchg((nmethod*)NULL, &_oops_do_mark_nmethods, required);
   guarantee(observed == required, "no races in this sequential code");
   log_trace(gc, nmethod)("oops_do_marking_epilogue");
-}
-
-class DetectScavengeRoot: public OopClosure {
-  bool     _detected_scavenge_root;
-  nmethod* _print_nm;
-public:
-  DetectScavengeRoot(nmethod* nm) : _detected_scavenge_root(false), _print_nm(nm) {}
-
-  bool detected_scavenge_root() { return _detected_scavenge_root; }
-  virtual void do_oop(oop* p) {
-    if ((*p) != NULL && Universe::heap()->is_scavengable(*p)) {
-      NOT_PRODUCT(maybe_print(p));
-      _detected_scavenge_root = true;
-    }
-  }
-  virtual void do_oop(narrowOop* p) { ShouldNotReachHere(); }
-
-#ifndef PRODUCT
-  void maybe_print(oop* p) {
-    LogTarget(Trace, gc, nmethod) lt;
-    if (lt.is_enabled()) {
-      LogStream ls(lt);
-      if (!_detected_scavenge_root) {
-        CompileTask::print(&ls, _print_nm, "new scavenge root", /*short_form:*/ true);
-      }
-      ls.print("" PTR_FORMAT "[offset=%d] detected scavengable oop " PTR_FORMAT " (found at " PTR_FORMAT ") ",
-               p2i(_print_nm), (int)((intptr_t)p - (intptr_t)_print_nm),
-               p2i(*p), p2i(p));
-      ls.cr();
-    }
-  }
-#endif //PRODUCT
-};
-
-bool nmethod::detect_scavenge_root_oops() {
-  DetectScavengeRoot detect_scavenge_root(this);
-  oops_do(&detect_scavenge_root);
-  return detect_scavenge_root.detected_scavenge_root();
 }
 
 inline bool includes(void* p, void* from, void* to) {
@@ -2266,41 +2222,6 @@ void nmethod::verify_scopes() {
 
 
 // -----------------------------------------------------------------------------
-// Non-product code
-#ifndef PRODUCT
-
-class DebugScavengeRoot: public OopClosure {
-  nmethod* _nm;
-  bool     _ok;
-public:
-  DebugScavengeRoot(nmethod* nm) : _nm(nm), _ok(true) { }
-  bool ok() { return _ok; }
-  virtual void do_oop(oop* p) {
-    if ((*p) == NULL || !Universe::heap()->is_scavengable(*p))  return;
-    if (_ok) {
-      _nm->print_nmethod(true);
-      _ok = false;
-    }
-    tty->print_cr("*** scavengable oop " PTR_FORMAT " found at " PTR_FORMAT " (offset %d)",
-                  p2i(*p), p2i(p), (int)((intptr_t)p - (intptr_t)_nm));
-    (*p)->print();
-  }
-  virtual void do_oop(narrowOop* p) { ShouldNotReachHere(); }
-};
-
-void nmethod::verify_scavenge_root_oops() {
-  if (!on_scavenge_root_list()) {
-    // Actually look inside, to verify the claim that it's clean.
-    DebugScavengeRoot debug_scavenge_root(this);
-    oops_do(&debug_scavenge_root);
-    if (!debug_scavenge_root.ok())
-      fatal("found an unadvertised bad scavengable oop in the code cache");
-  }
-  assert(scavenge_root_not_marked(), "");
-}
-
-#endif // PRODUCT
-
 // Printing operations
 
 void nmethod::print() const {
@@ -2326,7 +2247,6 @@ void nmethod::print() const {
     tty->print(" for method " INTPTR_FORMAT , p2i(method()));
     tty->print(" { ");
     tty->print_cr("%s ", state());
-    if (on_scavenge_root_list())  tty->print("scavenge_root ");
     tty->print_cr("}:");
   }
   if (size              () > 0) tty->print_cr(" total in heap  [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",

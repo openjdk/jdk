@@ -41,6 +41,7 @@
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcWhen.hpp"
+#include "gc/shared/scavengableNMethods.hpp"
 #include "logging/log.hpp"
 #include "memory/metaspaceCounters.hpp"
 #include "oops/oop.inline.hpp"
@@ -150,6 +151,14 @@ void ParallelScavengeHeap::initialize_serviceability() {
 
 }
 
+class PSIsScavengable : public BoolObjectClosure {
+  bool do_object_b(oop obj) {
+    return ParallelScavengeHeap::heap()->is_in_young(obj);
+  }
+};
+
+static PSIsScavengable _is_scavengable;
+
 void ParallelScavengeHeap::post_initialize() {
   CollectedHeap::post_initialize();
   // Need to init the tenuring threshold
@@ -160,6 +169,8 @@ void ParallelScavengeHeap::post_initialize() {
     PSMarkSweepProxy::initialize();
   }
   PSPromotionManager::initialize();
+
+  ScavengableNMethods::initialize(&_is_scavengable);
 }
 
 void ParallelScavengeHeap::update_counters() {
@@ -693,16 +704,24 @@ void ParallelScavengeHeap::gen_mangle_unused_area() {
 }
 #endif
 
-bool ParallelScavengeHeap::is_scavengable(oop obj) {
-  return is_in_young(obj);
+void ParallelScavengeHeap::register_nmethod(nmethod* nm) {
+  ScavengableNMethods::register_nmethod(nm);
 }
 
-void ParallelScavengeHeap::register_nmethod(nmethod* nm) {
-  CodeCache::register_scavenge_root_nmethod(nm);
+void ParallelScavengeHeap::unregister_nmethod(nmethod* nm) {
+  ScavengableNMethods::unregister_nmethod(nm);
 }
 
 void ParallelScavengeHeap::verify_nmethod(nmethod* nm) {
-  CodeCache::verify_scavenge_root_nmethod(nm);
+  ScavengableNMethods::verify_nmethod(nm);
+}
+
+void ParallelScavengeHeap::flush_nmethod(nmethod* nm) {
+  ScavengableNMethods::flush_nmethod(nm);
+}
+
+void ParallelScavengeHeap::prune_nmethods() {
+  ScavengableNMethods::prune_nmethods();
 }
 
 GrowableArray<GCMemoryManager*> ParallelScavengeHeap::memory_managers() {

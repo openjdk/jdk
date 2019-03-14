@@ -1061,7 +1061,7 @@ void PSParallelCompact::post_compact()
   ClassLoaderDataGraph::purge();
   MetaspaceUtils::verify_metrics();
 
-  CodeCache::gc_epilogue();
+  heap->prune_nmethods();
   JvmtiExport::gc_epilogue();
 
 #if COMPILER2_OR_JVMCI
@@ -1806,8 +1806,6 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
 
     // Let the size policy know we're starting
     size_policy->major_collection_begin();
-
-    CodeCache::gc_prologue();
 
 #if COMPILER2_OR_JVMCI
     DerivedPointerTable::clear();

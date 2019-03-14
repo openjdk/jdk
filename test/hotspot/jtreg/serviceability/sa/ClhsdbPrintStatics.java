@@ -60,8 +60,7 @@ public class ClhsdbPrintStatics {
                     "ClassLoaderDataGraph::_head",
                     "JNIHandles::_weak_global_handles", "PerfMemory::_top",
                     "ObjectSynchronizer::gBlockList",
-                    "java_lang_Class::_oop_size_offset",
-                    "CodeCache::_scavenge_root_nmethods"));
+                    "java_lang_Class::_oop_size_offset"));
             expStrMap.put("printstatics SystemDictionary", List.of(
                     "Static fields of SystemDictionary",
                     "SystemDictionary::Class_klass_knum",

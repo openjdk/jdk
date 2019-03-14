@@ -47,6 +47,7 @@
 #include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/generationSpec.hpp"
 #include "gc/shared/oopStorageParState.inline.hpp"
+#include "gc/shared/scavengableNMethods.hpp"
 #include "gc/shared/space.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/weakProcessor.hpp"
@@ -175,6 +176,15 @@ char* GenCollectedHeap::allocate(size_t alignment,
   return heap_rs->base();
 }
 
+class GenIsScavengable : public BoolObjectClosure {
+public:
+  bool do_object_b(oop obj) {
+    return GenCollectedHeap::heap()->is_in_young(obj);
+  }
+};
+
+static GenIsScavengable _is_scavengable;
+
 void GenCollectedHeap::post_initialize() {
   CollectedHeap::post_initialize();
   ref_processing_init();
@@ -186,6 +196,8 @@ void GenCollectedHeap::post_initialize() {
                          def_new_gen->from()->capacity());
 
   MarkSweep::initialize();
+
+  ScavengableNMethods::initialize(&_is_scavengable);
 }
 
 void GenCollectedHeap::ref_processing_init() {
@@ -699,11 +711,23 @@ bool GenCollectedHeap::should_do_full_collection(size_t size, bool full, bool is
 }
 
 void GenCollectedHeap::register_nmethod(nmethod* nm) {
-  CodeCache::register_scavenge_root_nmethod(nm);
+  ScavengableNMethods::register_nmethod(nm);
+}
+
+void GenCollectedHeap::unregister_nmethod(nmethod* nm) {
+  ScavengableNMethods::unregister_nmethod(nm);
 }
 
 void GenCollectedHeap::verify_nmethod(nmethod* nm) {
-  CodeCache::verify_scavenge_root_nmethod(nm);
+  ScavengableNMethods::verify_nmethod(nm);
+}
+
+void GenCollectedHeap::flush_nmethod(nmethod* nm) {
+  ScavengableNMethods::flush_nmethod(nm);
+}
+
+void GenCollectedHeap::prune_nmethods() {
+  ScavengableNMethods::prune_nmethods();
 }
 
 HeapWord* GenCollectedHeap::satisfy_failed_allocation(size_t size, bool is_tlab) {
@@ -847,7 +871,7 @@ void GenCollectedHeap::process_roots(StrongRootsScope* scope,
       assert(code_roots != NULL, "must supply closure for code cache");
 
       // We only visit parts of the CodeCache when scavenging.
-      CodeCache::scavenge_root_nmethods_do(code_roots);
+      ScavengableNMethods::scavengable_nmethods_do(code_roots);
     }
     if (so & SO_AllCodeCache) {
       assert(code_roots != NULL, "must supply closure for code cache");
@@ -859,7 +883,7 @@ void GenCollectedHeap::process_roots(StrongRootsScope* scope,
     // Verify that the code cache contents are not subject to
     // movement by a scavenging collection.
     DEBUG_ONLY(CodeBlobToOopClosure assert_code_is_non_scavengable(&assert_is_non_scavengable_closure, !CodeBlobToOopClosure::FixRelocations));
-    DEBUG_ONLY(CodeCache::asserted_non_scavengable_nmethods_do(&assert_code_is_non_scavengable));
+    DEBUG_ONLY(ScavengableNMethods::asserted_non_scavengable_nmethods_do(&assert_code_is_non_scavengable));
   }
 }
 

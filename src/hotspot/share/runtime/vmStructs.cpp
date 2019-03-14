@@ -539,7 +539,6 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
      static_field(CodeCache,                   _heaps,                                        GrowableArray<CodeHeap*>*)             \
      static_field(CodeCache,                   _low_bound,                                    address)                               \
      static_field(CodeCache,                   _high_bound,                                   address)                               \
-     static_field(CodeCache,                   _scavenge_root_nmethods,                       nmethod*)                              \
                                                                                                                                      \
   /*******************************/                                                                                                  \
   /* CodeHeap (NOTE: incomplete) */                                                                                                  \
@@ -681,8 +680,6 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
                                                                                                                                      \
   nonstatic_field(nmethod,                     _entry_bci,                                    int)                                   \
   nonstatic_field(nmethod,                     _osr_link,                                     nmethod*)                              \
-  nonstatic_field(nmethod,                     _scavenge_root_link,                           nmethod*)                              \
-  nonstatic_field(nmethod,                     _scavenge_root_state,                          jbyte)                                 \
   nonstatic_field(nmethod,                     _state,                                        volatile signed char)                  \
   nonstatic_field(nmethod,                     _exception_offset,                             int)                                   \
   nonstatic_field(nmethod,                     _orig_pc_offset,                               int)                                   \

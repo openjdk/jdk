@@ -559,9 +559,6 @@ public:
   size_t obj_size(oop obj) const;
   virtual ptrdiff_t cell_header_size() const;
 
-  // All objects can potentially move
-  bool is_scavengable(oop obj) { return true; };
-
   void collect(GCCause::Cause cause);
   void do_full_collection(bool clear_all_soft_refs);
 
