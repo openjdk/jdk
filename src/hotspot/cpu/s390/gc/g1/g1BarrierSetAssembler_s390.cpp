@@ -309,14 +309,12 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm, Decorato
   Rbase = noreg; // end of lifetime
 
   // Filter young.
-  assert((unsigned int)G1CardTable::g1_young_card_val() <= 255, "otherwise check this code");
   __ z_cli(0, Rcard_addr, G1CardTable::g1_young_card_val());
   __ z_bre(filtered);
 
   // Check the card value. If dirty, we're done.
   // This also avoids false sharing of the (already dirty) card.
   __ z_sync(); // Required to support concurrent cleaning.
-  assert((unsigned int)G1CardTable::dirty_card_val() <= 255, "otherwise check this code");
   __ z_cli(0, Rcard_addr, G1CardTable::dirty_card_val()); // Reload after membar.
   __ z_bre(filtered);
 
