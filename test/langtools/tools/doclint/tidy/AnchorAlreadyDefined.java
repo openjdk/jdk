@@ -13,6 +13,6 @@
 /**
  * <a name="here">valid</a>
  * <a name="here">duplicate</a>
- * <h1 id="here">duplicate</h1>
+ * <h2 id="here">duplicate</h2>
  */
 public class AnchorAlreadyDefined { }

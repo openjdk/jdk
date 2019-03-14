@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ $(eval $(call IncludeCustomExtension, CompileJavaModules.gmk))
 ################################################################################
 # Module specific build settings
 
-java.base_ADD_JAVAC_FLAGS += -Xdoclint:all/protected,-reference '-Xdoclint/package:java.*,javax.*' -XDstringConcat=inline
+java.base_ADD_JAVAC_FLAGS += -Xdoclint:all/protected,-reference,-accessibility '-Xdoclint/package:java.*,javax.*' -XDstringConcat=inline
 java.base_COPY += .icu .dat .spp content-types.properties hijrah-config-islamic-umalqura.properties
 java.base_CLEAN += intrinsic.properties
 
@@ -70,7 +70,7 @@ endif
 
 ################################################################################
 
-java.compiler_ADD_JAVAC_FLAGS += -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
+java.compiler_ADD_JAVAC_FLAGS += -Xdoclint:all/protected,-accessibility '-Xdoclint/package:java.*,javax.*'
 
 ################################################################################
 
@@ -79,7 +79,7 @@ java.datatransfer_COPY += flavormap.properties
 
 ################################################################################
 
-java.desktop_ADD_JAVAC_FLAGS += -Xdoclint:all/protected,-reference \
+java.desktop_ADD_JAVAC_FLAGS += -Xdoclint:all/protected,-reference,-accessibility \
     '-Xdoclint/package:java.*,javax.*' -Xlint:exports \
     --doclint-format html4
 java.desktop_COPY += .gif .png .wav .txt .xml .css .pf
@@ -220,15 +220,15 @@ java.scripting_CLEAN += .properties
 
 ################################################################################
 
-java.instrument_ADD_JAVAC_FLAGS += -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
+java.instrument_ADD_JAVAC_FLAGS += -Xdoclint:all/protected,-accessibility '-Xdoclint/package:java.*,javax.*'
 
 ################################################################################
 
-java.logging_ADD_JAVAC_FLAGS += -Xdoclint:all/protected,-reference '-Xdoclint/package:java.*,javax.*'
+java.logging_ADD_JAVAC_FLAGS += -Xdoclint:all/protected,-reference,-accessibility '-Xdoclint/package:java.*,javax.*'
 
 ################################################################################
 
-java.management_ADD_JAVAC_FLAGS += -Xdoclint:all/protected,-reference '-Xdoclint/package:java.*,javax.*'
+java.management_ADD_JAVAC_FLAGS += -Xdoclint:all/protected,-reference,-accessibility '-Xdoclint/package:java.*,javax.*'
 
 ################################################################################
 
@@ -249,7 +249,7 @@ java.sql_SETUP := GENERATE_JDKBYTECODE_NOWARNINGS
 
 ################################################################################
 
-java.sql.rowset_ADD_JAVAC_FLAGS += -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
+java.sql.rowset_ADD_JAVAC_FLAGS += -Xdoclint:all/protected,-accessibility '-Xdoclint/package:java.*,javax.*'
 java.sql.rowset_CLEAN_FILES += $(wildcard \
     $(TOPDIR)/src/java.sql.rowset/share/classes/com/sun/rowset/*.properties \
     $(TOPDIR)/src/java.sql.rowset/share/classes/javax/sql/rowset/*.properties)
@@ -263,14 +263,14 @@ java.rmi_CLEAN_FILES += $(wildcard \
 
 ################################################################################
 
-java.xml_ADD_JAVAC_FLAGS += -Xdoclint:all/protected \
+java.xml_ADD_JAVAC_FLAGS += -Xdoclint:all/protected,-accessibility \
     '-Xdoclint/package:$(call CommaList, javax.xml.catalog javax.xml.datatype \
     javax.xml.transform javax.xml.validation javax.xml.xpath)'
 java.xml_CLEAN += .properties
 
 ################################################################################
 
-java.naming_ADD_JAVAC_FLAGS += -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*' -Xlint:-exports
+java.naming_ADD_JAVAC_FLAGS += -Xdoclint:all/protected,-accessibility '-Xdoclint/package:java.*,javax.*' -Xlint:-exports
 java.naming_CLEAN += jndiprovider.properties
 
 ################################################################################
@@ -279,7 +279,7 @@ java.security.jgss_ADD_JAVAC_FLAGS += -Xdoclint:all/protected '-Xdoclint/package
 
 ################################################################################
 
-java.smartcardio_ADD_JAVAC_FLAGS += -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
+java.smartcardio_ADD_JAVAC_FLAGS += -Xdoclint:all/protected,-accessibility '-Xdoclint/package:java.*,javax.*'
 
 ################################################################################
 

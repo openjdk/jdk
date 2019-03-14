@@ -83,7 +83,7 @@ public class HtmlVersionTagsAttrsTest {
      * </ol>
      * <img src="testImg.jpg" alt="imgTest" crossorigin="anonymous">
      * <div aria-labelledby="Topics" aria-describedby="t1">
-     * <h1 id="Topics">Topics</h1>
+     * <h4 id="Topics">Topics</h4>
      * <p id="t1">Aria attribute test</p>
      * <p id="t2" aria-label="Label">Label test</p>
      * </div>
@@ -98,8 +98,8 @@ public class HtmlVersionTagsAttrsTest {
      * <p><tt>Teletype text</tt></p>
      * <section>
      * <hgroup>
-     * <h1>Section</h1>
-     * <h2> Another heading</h2>
+     * <h4>Section</h4>
+     * <h5> Another heading</h5>
      * </hgroup>
      * hgroup no longer supported in HTML5.
      * </section>
@@ -113,12 +113,12 @@ public class HtmlVersionTagsAttrsTest {
     /**
      * <section>
      * <p>Testing section tag</p>
-     * <h1>Section</h1>
+     * <h4>Section</h4>
      * Section text.
      * </section>
      * <article>
      * <p>Testing article tag</p>
-     * <h1>Article</h1>
+     * <h5>Article</h5>
      * Article text.
      * </article>
      * <header>
@@ -133,7 +133,7 @@ public class HtmlVersionTagsAttrsTest {
      * Main content
      * </main>
      * <aside>
-     * <h2>Test aside</h2>
+     * <h4>Test aside</h4>
      * <p>Description</p>
      * </aside>
      * <ul>

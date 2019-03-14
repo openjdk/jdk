@@ -2,6 +2,6 @@ MissingTag.java:15: error: unexpected end tag: </p>
  * </p>
    ^
 MissingTag.java:16: error: end tag missing: </b>
- * <h1> <b> text </h1>
+ * <h2> <b> text </h2>
         ^
 2 errors
