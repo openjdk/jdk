@@ -190,7 +190,6 @@ public class Table {
      *
      * <p>Notes:
      * <ul>
-     * <li>This currently does not use a {@code <thead>} tag, but probably should, eventually
      * <li>The column styles are not currently applied to the header, but probably should, eventually
      * </ul>
      *
@@ -450,7 +449,9 @@ public class Table {
 
     private Content getTableBody() {
         ContentBuilder tableContent = new ContentBuilder();
-        tableContent.add(header.toContent());
+        Content thead = new HtmlTree(HtmlTag.THEAD);
+        thead.add(header.toContent());
+        tableContent.add(thead);
         Content tbody = new HtmlTree(HtmlTag.TBODY);
         bodyRows.forEach(row -> tbody.add(row));
         tableContent.add(tbody);

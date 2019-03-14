@@ -252,10 +252,13 @@ public class TestJavaFX extends JavadocTester {
         checkExit(Exit.OK);
         checkOutput("pkg2/Test.html", false, "<h2>Property Summary</h2>");
         checkOutput("pkg2/Test.html", true,
-                "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n"
+                "<thead>\n"
+                + "<tr>\n"
+                + "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n"
                 + "<th class=\"colSecond\" scope=\"col\">Method</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
                 + "</tr>\n"
+                + "</thead>\n"
                 + "<tbody>\n"
                 + "<tr class=\"altColor\" id=\"i0\">\n"
                 + "<td class=\"colFirst\"><code>&lt;T&gt;&nbsp;java.lang.Object</code></td>\n"

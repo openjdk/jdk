@@ -623,18 +623,22 @@ public class TestModules extends JavadocTester {
                 "<div class=\"overviewSummary\">\n"
                 + "<table summary=\"Module Summary table, listing modules, and an explanation\">\n"
                 + "<caption><span>Modules</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
+                + "<thead>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Module</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
-                + "</tr>");
+                + "</tr>\n"
+                + "</thead>");
         checkOutput("overview-summary.html", false,
                 "<div class=\"overviewSummary\">\n"
                 + "<table summary=\"Package Summary table, listing packages, and an explanation\">\n"
                 + "<caption><span>Packages</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
+                + "<thead>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Package</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
-                + "</tr>");
+                + "</tr>\n"
+                + "</thead>");
     }
 
     void checkOverviewSummaryPackages() {
@@ -642,10 +646,12 @@ public class TestModules extends JavadocTester {
                 "<div class=\"overviewSummary\">\n"
                 + "<table summary=\"Module Summary table, listing modules, and an explanation\">\n"
                 + "<caption><span>Modules</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
+                + "<thead>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Module</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
-                + "</tr>",
+                + "</tr>\n"
+                + "</thead>",
                 "</table>\n"
                 + "</div>\n"
                 + "<div class=\"contentContainer\">\n"
@@ -659,10 +665,12 @@ public class TestModules extends JavadocTester {
                 "<div class=\"overviewSummary\">\n"
                 + "<table summary=\"Package Summary table, listing packages, and an explanation\">\n"
                 + "<caption><span>Packages</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
+                + "<thead>n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Package</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
-                + "</tr>",
+                + "</tr>\n"
+                + "</thead>\n",
                 "</script>\n"
                 + "<div class=\"contentContainer\">\n"
                 + "<div class=\"block\">The overview summary page header.</div>\n"
@@ -678,18 +686,22 @@ public class TestModules extends JavadocTester {
                 "<div class=\"overviewSummary\">\n"
                 + "<table>\n"
                 + "<caption><span>Modules</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
+                + "<thead>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Module</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
-                + "</tr>");
+                + "</tr>\n"
+                + "</thead>");
         checkOutput("overview-summary.html", false,
                 "<div class=\"overviewSummary\">\n"
                 + "<table>\n"
                 + "<caption><span>Packages</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
+                + "<thead>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Package</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
-                + "</tr>");
+                + "</tr>\n"
+                + "</thead>");
     }
 
     void checkHtml5OverviewSummaryPackages() {
@@ -697,10 +709,12 @@ public class TestModules extends JavadocTester {
                 "<div class=\"overviewSummary\">\n"
                 + "<table>\n"
                 + "<caption><span>Modules</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
+                + "<thead>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Module</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
-                + "</tr>",
+                + "</tr>\n"
+                + "</thead>",
                 "</table>\n"
                 + "</div>\n"
                 + "</main>\n"
@@ -717,10 +731,12 @@ public class TestModules extends JavadocTester {
         checkOutput("overview-summary.html", true,
                 "<div class=\"overviewSummary\">\n<table>\n"
                 + "<caption><span>Packages</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
+                + "<thead>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Package</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
-                + "</tr>",
+                + "</tr>\n"
+                + "</thead>",
                 "</script>\n"
                 + "</nav>\n"
                 + "</header>\n"
@@ -788,20 +804,26 @@ public class TestModules extends JavadocTester {
                 + "<div class=\"block\">With a test description for uses.</div>\n</td>\n"
                 + "</tr>",
                 "<caption><span>Opens</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
+                + "<thead>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Package</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
-                + "</tr>",
+                + "</tr>\n"
+                + "</thead>",
                 "<caption><span>Uses</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
+                + "<thead>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Type</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
-                + "</tr>",
+                + "</tr>\n"
+                + "</thead>",
                 "<caption><span>Provides</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
+                + "<thead>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Type</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
-                + "</tr>");
+                + "</tr>\n"
+                + "</thead>");
     }
 
     void checkAggregatorModuleSummary() {
@@ -978,18 +1000,21 @@ public class TestModules extends JavadocTester {
                 + "</td>",
                 "<div class=\"requiresSummary\">\n<table>\n"
                 + "<caption><span>Requires</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
+                + "<thead>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Modifier</th>\n"
                 + "<th class=\"colSecond\" scope=\"col\">Module</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Description</th>",
                 "<div class=\"requiresSummary\">\n<table>\n"
                 + "<caption><span>Indirect Requires</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
+                + "<thead>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Modifier</th>\n"
                 + "<th class=\"colSecond\" scope=\"col\">Module</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Description</th>",
                 "<div class=\"packagesSummary\">\n<table>\n"
                 + "<caption><span>Indirect Opens</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
+                + "<thead>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">From</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Packages</th>\n"
@@ -1011,10 +1036,12 @@ public class TestModules extends JavadocTester {
                 + "<td class=\"colLast\">&nbsp;</td>",
                 "<div class=\"packagesSummary\">\n<table>\n"
                 + "<caption><span>Opens</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
+                + "<thead>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Package</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
                 + "</tr>\n"
+                + "</thead>\n"
                 + "<tbody>\n"
                 + "<tr class=\"altColor\" id=\"i0\">\n"
                 + "<th class=\"colFirst\" scope=\"row\"><a href=\"testpkgmdlB/package-summary.html\">testpkgmdlB</a></th>\n"
@@ -1081,11 +1108,13 @@ public class TestModules extends JavadocTester {
                 + " class=\"tableTab\" onclick=\"show(2);\">Opens</button></div>");
         checkOutput("moduleC/module-summary.html", found,
                 "<caption><span>Exports</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
+                + "<thead>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Package</th>\n"
                 + "<th class=\"colSecond\" scope=\"col\">Exported To Modules</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
-                + "</tr>");
+                + "</tr>\n"
+                + "</thead>");
         checkOutput("moduletags/module-summary.html", true,
                 "<th class=\"colFirst\" scope=\"row\"><a href=\"testpkgmdltags/package-summary.html\">testpkgmdltags</a></th>\n"
                 + "<td class=\"colLast\">&nbsp;</td>");
@@ -1301,16 +1330,20 @@ public class TestModules extends JavadocTester {
                 + " onclick=\"show(2);\">Class Summary</button><button role=\"tab\" aria-selected=\"false\""
                 + " aria-controls=\"typeSummary_tabpanel\" tabindex=\"-1\" onkeydown=\"switchTab(event)\""
                 + " id=\"t6\" class=\"tableTab\" onclick=\"show(32);\">Annotation Types Summary</button></div>\n",
-                "<tr>\n"
+                "<thead>\n"
+                + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Class</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
-                + "</tr>");
+                + "</tr>\n"
+                + "</thead>\n");
         checkOutput("allpackages-index.html", true,
                 "<caption><span>Package Summary</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
+                + "<thead>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Package</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
-                + "</tr>\n");
+                + "</tr>\n"
+                + "</thead>");
         checkOutput("allclasses-index.html", found,
                 "<table aria-labelledby=\"t0\">\n");
         checkOutput("allpackages-index.html", found,

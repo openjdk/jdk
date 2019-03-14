@@ -717,6 +717,7 @@ public class TestSearch extends JavadocTester {
                 + " id=\"t6\" class=\"tableTab\" onclick=\"show(32);\">Annotation Types Summary</button></div>\n"
                 + "<div id=\"typeSummary_tabpanel\" role=\"tabpanel\">\n"
                 + "<table aria-labelledby=\"t0\">\n"
+                + "<thead>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Class</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
@@ -726,6 +727,7 @@ public class TestSearch extends JavadocTester {
         checkOutput("allpackages-index.html", true,
                 "<div class=\"packagesSummary\">\n<table>\n"
                 + "<caption><span>Package Summary</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
+                + "<thead>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Package</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
