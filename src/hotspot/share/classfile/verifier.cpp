@@ -632,10 +632,9 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
   int32_t max_locals = m->max_locals();
   constantPoolHandle cp(THREAD, m->constants());
 
-  if (!SignatureVerifier::is_valid_method_signature(m->signature())) {
-    class_format_error("Invalid method signature");
-    return;
-  }
+  // Method signature was checked in ClassFileParser.
+  assert(SignatureVerifier::is_valid_method_signature(m->signature()),
+         "Invalid method signature");
 
   // Initial stack map frame: offset is 0, stack is initially empty.
   StackMapFrame current_frame(max_locals, max_stack, this);
@@ -2110,12 +2109,9 @@ void ClassVerifier::verify_ldc(
         vmSymbols::java_lang_invoke_MethodType()), CHECK_VERIFY(this));
   } else if (tag.is_dynamic_constant()) {
     Symbol* constant_type = cp->uncached_signature_ref_at(index);
-    if (!SignatureVerifier::is_valid_type_signature(constant_type)) {
-      class_format_error(
-        "Invalid type for dynamic constant in class %s referenced "
-        "from constant pool index %d", _klass->external_name(), index);
-      return;
-    }
+    // Field signature was checked in ClassFileParser.
+    assert(SignatureVerifier::is_valid_type_signature(constant_type),
+           "Invalid type for dynamic constant");
     assert(sizeof(VerificationType) == sizeof(uintptr_t),
           "buffer type must match VerificationType size");
     uintptr_t constant_type_buffer[2];
@@ -2235,12 +2231,9 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
   Symbol* field_name = cp->name_ref_at(index);
   Symbol* field_sig = cp->signature_ref_at(index);
 
-  if (!SignatureVerifier::is_valid_type_signature(field_sig)) {
-    class_format_error(
-      "Invalid signature for field in class %s referenced "
-      "from constant pool index %d", _klass->external_name(), index);
-    return;
-  }
+  // Field signature was checked in ClassFileParser.
+  assert(SignatureVerifier::is_valid_type_signature(field_sig),
+         "Invalid field signature");
 
   // Get referenced class type
   VerificationType ref_class_type = cp_ref_index_to_type(
@@ -2719,12 +2712,9 @@ void ClassVerifier::verify_invoke_instructions(
   Symbol* method_name = cp->name_ref_at(index);
   Symbol* method_sig = cp->signature_ref_at(index);
 
-  if (!SignatureVerifier::is_valid_method_signature(method_sig)) {
-    class_format_error(
-      "Invalid method signature in class %s referenced "
-      "from constant pool index %d", _klass->external_name(), index);
-    return;
-  }
+  // Method signature was checked in ClassFileParser.
+  assert(SignatureVerifier::is_valid_method_signature(method_sig),
+         "Invalid method signature");
 
   // Get referenced class type
   VerificationType ref_class_type;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -418,18 +418,7 @@ int SignatureStream::reference_parameter_count() {
   return args_count;
 }
 
-bool SignatureVerifier::is_valid_signature(Symbol* sig) {
-  const char* signature = (const char*)sig->bytes();
-  ssize_t len = sig->utf8_length();
-  if (signature == NULL || signature[0] == '\0' || len < 1) {
-    return false;
-  } else if (signature[0] == '(') {
-    return is_valid_method_signature(sig);
-  } else {
-    return is_valid_type_signature(sig);
-  }
-}
-
+#ifdef ASSERT
 bool SignatureVerifier::is_valid_method_signature(Symbol* sig) {
   const char* method_sig = (const char*)sig->bytes();
   ssize_t len = sig->utf8_length();
@@ -499,3 +488,4 @@ bool SignatureVerifier::invalid_name_char(char c) {
       return false;
   }
 }
+#endif // ASSERT

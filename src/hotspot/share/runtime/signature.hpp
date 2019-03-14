@@ -415,11 +415,9 @@ class SignatureStream : public StackObj {
   int reference_parameter_count();
 };
 
+#ifdef ASSERT
 class SignatureVerifier : public StackObj {
   public:
-    // Returns true if the symbol is valid method or type signature
-    static bool is_valid_signature(Symbol* sig);
-
     static bool is_valid_method_signature(Symbol* sig);
     static bool is_valid_type_signature(Symbol* sig);
   private:
@@ -427,5 +425,5 @@ class SignatureVerifier : public StackObj {
     static ssize_t is_valid_type(const char*, ssize_t);
     static bool invalid_name_char(char);
 };
-
+#endif
 #endif // SHARE_RUNTIME_SIGNATURE_HPP

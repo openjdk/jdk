@@ -3918,6 +3918,13 @@ jint Arguments::apply_ergo() {
     warning("Setting CompressedClassSpaceSize has no effect when compressed class pointers are not used");
   }
 
+  // Treat the odd case where local verification is enabled but remote
+  // verification is not as if both were enabled.
+  if (BytecodeVerificationLocal && !BytecodeVerificationRemote) {
+    log_info(verification)("Turning on remote verification because local verification is on");
+    FLAG_SET_DEFAULT(BytecodeVerificationRemote, true);
+  }
+
 #ifndef PRODUCT
   if (!LogVMOutput && FLAG_IS_DEFAULT(LogVMOutput)) {
     if (use_vm_log()) {
