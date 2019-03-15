@@ -1499,7 +1499,7 @@ void nmethod::post_compiled_method_unload() {
 }
 
 // Iterate over metadata calling this function.   Used by RedefineClasses
-void nmethod::metadata_do(void f(Metadata*)) {
+void nmethod::metadata_do(MetadataClosure* f) {
   {
     // Visit all immediate references that are embedded in the instruction stream.
     RelocIterator iter(this, oops_reloc_begin());
@@ -1514,7 +1514,7 @@ void nmethod::metadata_do(void f(Metadata*)) {
                "metadata must be found in exactly one place");
         if (r->metadata_is_immediate() && r->metadata_value() != NULL) {
           Metadata* md = r->metadata_value();
-          if (md != _method) f(md);
+          if (md != _method) f->do_metadata(md);
         }
       } else if (iter.type() == relocInfo::virtual_call_type) {
         // Check compiledIC holders associated with this nmethod
@@ -1522,12 +1522,12 @@ void nmethod::metadata_do(void f(Metadata*)) {
         CompiledIC *ic = CompiledIC_at(&iter);
         if (ic->is_icholder_call()) {
           CompiledICHolder* cichk = ic->cached_icholder();
-          f(cichk->holder_metadata());
-          f(cichk->holder_klass());
+          f->do_metadata(cichk->holder_metadata());
+          f->do_metadata(cichk->holder_klass());
         } else {
           Metadata* ic_oop = ic->cached_metadata();
           if (ic_oop != NULL) {
-            f(ic_oop);
+            f->do_metadata(ic_oop);
           }
         }
       }
@@ -1538,11 +1538,11 @@ void nmethod::metadata_do(void f(Metadata*)) {
   for (Metadata** p = metadata_begin(); p < metadata_end(); p++) {
     if (*p == Universe::non_oop_word() || *p == NULL)  continue;  // skip non-oops
     Metadata* md = *p;
-    f(md);
+    f->do_metadata(md);
   }
 
   // Visit metadata not embedded in the other places.
-  if (_method != NULL) f(_method);
+  if (_method != NULL) f->do_metadata(_method);
 }
 
 // The _is_unloading_state encodes a tuple comprising the unloading cycle

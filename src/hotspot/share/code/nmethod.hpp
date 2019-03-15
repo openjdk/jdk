@@ -591,7 +591,7 @@ public:
   static int osr_entry_point_offset()             { return offset_of(nmethod, _osr_entry_point); }
   static int state_offset()                       { return offset_of(nmethod, _state); }
 
-  virtual void metadata_do(void f(Metadata*));
+  virtual void metadata_do(MetadataClosure* f);
 
   NativeCallWrapper* call_wrapper_at(address call) const;
   NativeCallWrapper* call_wrapper_before(address return_pc) const;

@@ -241,7 +241,7 @@ private:
   address get_original_pc(const frame* fr) { return *orig_pc_addr(fr); }
   void    set_original_pc(const frame* fr, address pc) { *orig_pc_addr(fr) = pc; }
 
-  virtual void metadata_do(void f(Metadata*));
+  virtual void metadata_do(MetadataClosure* f);
 
   bool metadata_got_contains(Metadata **p) {
     return p >= &_metadata_got[0] && p < &_metadata_got[_metadata_size];

@@ -1115,13 +1115,13 @@ void frame::nmethods_do(CodeBlobClosure* cf) {
 }
 
 
-// call f() on the interpreted Method*s in the stack.
-// Have to walk the entire code cache for the compiled frames Yuck.
-void frame::metadata_do(void f(Metadata*)) {
+// Call f closure on the interpreted Method*s in the stack.
+void frame::metadata_do(MetadataClosure* f) {
+  ResourceMark rm;
   if (is_interpreted_frame()) {
     Method* m = this->interpreter_frame_method();
     assert(m != NULL, "expecting a method in this frame");
-    f(m);
+    f->do_metadata(m);
   }
 }
 

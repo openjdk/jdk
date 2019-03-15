@@ -378,7 +378,7 @@ class frame {
   void nmethods_do(CodeBlobClosure* cf);
 
   // RedefineClasses support for finding live interpreted methods on the stack
-  void metadata_do(void f(Metadata*));
+  void metadata_do(MetadataClosure* f);
 
   // Verification
   void verify(const RegisterMap* map);

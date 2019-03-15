@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -197,13 +197,13 @@ bool CompileTask::is_unloaded() const {
 }
 
 // RedefineClasses support
-void CompileTask::metadata_do(void f(Metadata*)) {
+void CompileTask::metadata_do(MetadataClosure* f) {
   if (is_unloaded()) {
     return;
   }
-  f(method());
+  f->do_metadata(method());
   if (hot_method() != NULL && hot_method() != method()) {
-    f(hot_method());
+    f->do_metadata(hot_method());
   }
 }
 

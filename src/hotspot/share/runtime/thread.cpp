@@ -2960,7 +2960,7 @@ void JavaThread::nmethods_do(CodeBlobClosure* cf) {
   }
 }
 
-void JavaThread::metadata_do(void f(Metadata*)) {
+void JavaThread::metadata_do(MetadataClosure* f) {
   if (has_last_Java_frame()) {
     // Traverse the execution stack to call f() on the methods in the stack
     for (StackFrameStream fst(this); !fst.is_done(); fst.next()) {
@@ -4574,7 +4574,7 @@ void Threads::nmethods_do(CodeBlobClosure* cf) {
   }
 }
 
-void Threads::metadata_do(void f(Metadata*)) {
+void Threads::metadata_do(MetadataClosure* f) {
   ALL_JAVA_THREADS(p) {
     p->metadata_do(f);
   }

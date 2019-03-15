@@ -147,7 +147,7 @@ class CodeCache : AllStatic {
   static void blobs_do(void f(CodeBlob* cb));              // iterates over all CodeBlobs
   static void blobs_do(CodeBlobClosure* f);                // iterates over all CodeBlobs
   static void nmethods_do(void f(nmethod* nm));            // iterates over all nmethods
-  static void metadata_do(void f(Metadata* m));            // iterates over metadata in alive nmethods
+  static void metadata_do(MetadataClosure* f);             // iterates over metadata in alive nmethods
 
   // Lookup
   static CodeBlob* find_blob(void* start);              // Returns the CodeBlob containing the given address

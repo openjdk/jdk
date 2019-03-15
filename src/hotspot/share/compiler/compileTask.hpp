@@ -177,7 +177,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
   bool         is_unloaded() const;
 
   // RedefineClasses support
-  void         metadata_do(void f(Metadata*));
+  void         metadata_do(MetadataClosure* f);
   void         mark_on_stack();
 
 private:

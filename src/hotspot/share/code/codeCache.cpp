@@ -667,7 +667,7 @@ void CodeCache::nmethods_do(void f(nmethod* nm)) {
   }
 }
 
-void CodeCache::metadata_do(void f(Metadata* m)) {
+void CodeCache::metadata_do(MetadataClosure* f) {
   assert_locked_or_safepoint(CodeCache_lock);
   NMethodIterator iter(NMethodIterator::only_alive_and_not_unloading);
   while(iter.next()) {
@@ -1061,13 +1061,14 @@ int CodeCache::mark_dependents_for_evol_deoptimization() {
       // ...Already marked in the previous pass; count it here.
       // Also counts AOT compiled methods, already marked.
       number_of_marked_CodeBlobs++;
-    } else if (nm->is_evol_dependent()) {
+    } else if (nm->has_evol_metadata()) {
       ResourceMark rm;
       nm->mark_for_deoptimization();
       number_of_marked_CodeBlobs++;
-    } else  {
-      // flush caches in case they refer to a redefined Method*
-      nm->clear_inline_caches();
+    } else {
+      // Inline caches that refer to an nmethod are deoptimized already, because
+      // the Method* is walked in the metadata section of the nmethod.
+      assert(!nm->is_evol_dependent(), "should no longer be necessary");
     }
   }
 
