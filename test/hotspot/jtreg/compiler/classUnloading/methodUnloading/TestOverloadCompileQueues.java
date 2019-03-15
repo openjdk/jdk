@@ -25,6 +25,7 @@
  * @test TestOverloadCompileQueues
  * @bug 8163511
  * @summary Test overloading the C1 and C2 compile queues with tasks.
+ * @requires !vm.graal.enabled
  * @run main/othervm -XX:-TieredCompilation -XX:CompileThreshold=2 -XX:CICompilerCount=1
  *                   compiler.classUnloading.methodUnloading.TestOverloadCompileQueues
  * @run main/othervm -XX:TieredCompileTaskTimeout=1000 -XX:CompileThresholdScaling=0.001 -XX:CICompilerCount=2
