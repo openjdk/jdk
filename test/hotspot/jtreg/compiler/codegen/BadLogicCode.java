@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,10 @@
  * @bug 4157675
  * @summary Solaris JIT generates bad code for logic expression
  * @author Tom Rodriguez
+ * @run main compiler.codegen.BadLogicCode
  */
+
+package compiler.codegen;
 
 public class BadLogicCode {
     static int values[] = {Integer.MIN_VALUE, -1, 0, 1, 4, 16, 31,

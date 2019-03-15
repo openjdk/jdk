@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,11 @@
  * @test
  * @bug 4154887
  * @summary self-parser test causes JDK 1.2 Beta4K segmentation fault
- * @run main/othervm JITClassInit
  * @author Tom Rodriguez
+ * @run main/othervm compiler.runtime.JITClassInit
  */
+
+package compiler.runtime;
 
 public class JITClassInit {
     public static void main(String[] args) {

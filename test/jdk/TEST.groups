@@ -103,8 +103,7 @@ jdk_lang = \
     jdk/internal/ref \
     jdk/internal/jimage \
     jdk/internal/math \
-    jdk/modules \
-    vm
+    jdk/modules
 
 # All of the java.util package
 jdk_util = \

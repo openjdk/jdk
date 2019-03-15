@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,24 +23,30 @@
 
 /*
  * @test
- * @bug 4063078
- * @summary Allocating a ridiculously large array should not crash the VM
- * @run main/othervm -Xmx32m -Xms32m ArraySize
+ * @bug 4098578
+ * @summary Check if the VM properly throws OutOfMemoryError
+ * @author Sheng Liang
+ * @run main/othervm -Xmx25M gc.InfiniteList
  */
 
-public class ArraySize {
+package gc;
 
+public class InfiniteList {
+    InfiniteList next;
+    long data[] = new long[50000];
     public static void main(String[] args) throws Exception {
-        boolean thrown = false;
+        InfiniteList p, q;
+        p = new InfiniteList ();
+        p.data[p.data.length -1 ] = 999;
         try {
-            byte[] buf = new byte[Integer.MAX_VALUE - 1];
-            System.out.print(buf[0]);
-        } catch (OutOfMemoryError x) {
-            thrown = true;
-        }
-        if (! thrown) {
-            throw new Exception("Didn't throw expected OutOfMemoryError");
+            while (p != null) {
+                q = new InfiniteList ();
+                q.next = p;
+                p = q;
+            }
+            throw new Exception ("OutOfMemoryError not thrown as expected.");
+        } catch (OutOfMemoryError e) {
+            return;
         }
     }
-
 }
