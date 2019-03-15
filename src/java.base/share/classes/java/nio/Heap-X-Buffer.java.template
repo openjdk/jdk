@@ -173,7 +173,7 @@ class Heap$Type$Buffer$RW$
 #end[streamableType]
 
     public $Type$Buffer get($type$[] dst, int offset, int length) {
-        checkBounds(offset, length, dst.length);
+        Objects.checkFromIndexSize(offset, length, dst.length);
         int pos = position();
         if (length > limit() - pos)
             throw new BufferUnderflowException();
@@ -219,7 +219,7 @@ class Heap$Type$Buffer$RW$
 
     public $Type$Buffer put($type$[] src, int offset, int length) {
 #if[rw]
-        checkBounds(offset, length, src.length);
+        Objects.checkFromIndexSize(offset, length, src.length);
         int pos = position();
         if (length > limit() - pos)
             throw new BufferOverflowException();
@@ -277,7 +277,7 @@ class Heap$Type$Buffer$RW$
 
     public $Type$Buffer put(String src, int start, int end) {
         int length = end - start;
-        checkBounds(start, length, src.length());
+        Objects.checkFromIndexSize(start, length, src.length());
         if (isReadOnly())
             throw new ReadOnlyBufferException();
         int pos = position();
@@ -659,11 +659,8 @@ class Heap$Type$Buffer$RW$
     // --- Methods to support CharSequence ---
 
     public CharBuffer subSequence(int start, int end) {
-        if ((start < 0)
-            || (end > length())
-            || (start > end))
-            throw new IndexOutOfBoundsException();
         int pos = position();
+        Objects.checkFromToIndex(start, end, limit() - pos);
         return new HeapCharBuffer$RW$(hb,
                                       -1,
                                       pos + start,

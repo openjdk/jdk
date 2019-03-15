@@ -206,8 +206,7 @@ class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
 #if[char]
 
     public String toString(int start, int end) {
-        if ((end > limit()) || (start > end))
-            throw new IndexOutOfBoundsException();
+        Objects.checkFromToIndex(start, end, limit());
         try {
             int len = end - start;
             char[] ca = new char[len];
@@ -232,8 +231,7 @@ class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
         pos = (pos <= lim ? pos : lim);
         int len = lim - pos;
 
-        if ((start < 0) || (end > len) || (start > end))
-            throw new IndexOutOfBoundsException();
+        Objects.checkFromToIndex(start, end, len);
         return new ByteBufferAsCharBuffer$RW$$BO$(bb,
                                                   -1,
                                                   pos + start,

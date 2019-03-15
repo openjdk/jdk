@@ -772,7 +772,7 @@ public abstract class $Type$Buffer
      *          parameters do not hold
      */
     public $Type$Buffer get($type$[] dst, int offset, int length) {
-        checkBounds(offset, length, dst.length);
+        Objects.checkFromIndexSize(offset, length, dst.length);
         if (length > remaining())
             throw new BufferUnderflowException();
         int end = offset + length;
@@ -996,7 +996,7 @@ public abstract class $Type$Buffer
      *          If this buffer is read-only
      */
     public $Type$Buffer put($type$[] src, int offset, int length) {
-        checkBounds(offset, length, src.length);
+        Objects.checkFromIndexSize(offset, length, src.length);
         if (length > remaining())
             throw new BufferOverflowException();
         int end = offset + length;
@@ -1176,7 +1176,7 @@ public abstract class $Type$Buffer
      *          If this buffer is read-only
      */
     public $Type$Buffer put(String src, int start, int end) {
-        checkBounds(start, end - start, src.length());
+        Objects.checkFromIndexSize(start, end - start, src.length());
         if (isReadOnly())
             throw new ReadOnlyBufferException();
         if (end - start > remaining())
