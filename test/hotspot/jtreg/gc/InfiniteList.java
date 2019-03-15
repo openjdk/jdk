@@ -26,7 +26,7 @@
  * @bug 4098578
  * @summary Check if the VM properly throws OutOfMemoryError
  * @author Sheng Liang
- * @run main/othervm -Xmx25M gc.InfiniteList
+ * @run main/othervm -Xmx128m gc.InfiniteList
  */
 
 package gc;

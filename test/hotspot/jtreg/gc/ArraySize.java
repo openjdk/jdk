@@ -25,7 +25,7 @@
  * @test
  * @bug 4063078
  * @summary Allocating a ridiculously large array should not crash the VM
- * @run main/othervm -Xmx32m -Xms32m gc.ArraySize
+ * @run main/othervm -Xmx128m -Xms32m gc.ArraySize
  */
 
 package gc;
