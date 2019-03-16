@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,7 +141,7 @@ class UnixAsynchronousServerSocketChannelImpl
         Throwable exc = null;
         try {
             begin();
-            int n = accept(this.fd, newfd, isaa);
+            int n = Net.accept(this.fd, newfd, isaa);
 
             // spurious wakeup, is this possible?
             if (n == IOStatus.UNAVAILABLE) {
@@ -221,7 +221,7 @@ class UnixAsynchronousServerSocketChannelImpl
                         SecurityManager sm = System.getSecurityManager();
                         if (sm != null) {
                             sm.checkAccept(remote.getAddress().getHostAddress(),
-                                           remote.getPort());
+                                    remote.getPort());
                         }
                         return null;
                     }
@@ -230,7 +230,7 @@ class UnixAsynchronousServerSocketChannelImpl
                 SecurityManager sm = System.getSecurityManager();
                 if (sm != null) {
                     sm.checkAccept(remote.getAddress().getHostAddress(),
-                                   remote.getPort());
+                            remote.getPort());
                 }
             }
         } catch (SecurityException x) {
@@ -277,7 +277,7 @@ class UnixAsynchronousServerSocketChannelImpl
         try {
             begin();
 
-            int n = accept(this.fd, newfd, isaa);
+            int n = Net.accept(this.fd, newfd, isaa);
             if (n == IOStatus.UNAVAILABLE) {
 
                 // need calling context when there is security manager as
@@ -294,7 +294,7 @@ class UnixAsynchronousServerSocketChannelImpl
                         this.acceptAttachment = att;
                     }
                     this.acceptAcc = (System.getSecurityManager() == null) ?
-                        null : AccessController.getContext();
+                            null : AccessController.getContext();
                     this.acceptPending = true;
                 }
 
@@ -330,34 +330,5 @@ class UnixAsynchronousServerSocketChannelImpl
             Invoker.invokeIndirectly(this, handler, att, child, exc);
             return null;
         }
-    }
-
-    /**
-     * Accept a connection on a socket.
-     *
-     * @implNote Wrap native call to allow instrumentation.
-     */
-    private int accept(FileDescriptor ssfd, FileDescriptor newfd,
-                       InetSocketAddress[] isaa)
-        throws IOException
-    {
-        return accept0(ssfd, newfd, isaa);
-    }
-
-    // -- Native methods --
-
-    private static native void initIDs();
-
-    // Accepts a new connection, setting the given file descriptor to refer to
-    // the new socket and setting isaa[0] to the socket's remote address.
-    // Returns 1 on success, or IOStatus.UNAVAILABLE.
-    //
-    private native int accept0(FileDescriptor ssfd, FileDescriptor newfd,
-                               InetSocketAddress[] isaa)
-        throws IOException;
-
-    static {
-        IOUtil.load();
-        initIDs();
     }
 }

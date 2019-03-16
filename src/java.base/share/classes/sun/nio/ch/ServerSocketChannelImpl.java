@@ -58,7 +58,7 @@ class ServerSocketChannelImpl
     implements SelChImpl
 {
     // Used to make native close and configure calls
-    private static NativeDispatcher nd;
+    private static final NativeDispatcher nd = new SocketDispatcher();
 
     // Our file descriptor
     private final FileDescriptor fd;
@@ -97,7 +97,7 @@ class ServerSocketChannelImpl
 
     ServerSocketChannelImpl(SelectorProvider sp) throws IOException {
         super(sp);
-        this.fd =  Net.serverSocket(true);
+        this.fd = Net.serverSocket(true);
         this.fdVal = IOUtil.fdVal(fd);
     }
 
@@ -261,46 +261,44 @@ class ServerSocketChannelImpl
 
     @Override
     public SocketChannel accept() throws IOException {
+        int n = 0;
+        FileDescriptor newfd = new FileDescriptor();
+        InetSocketAddress[] isaa = new InetSocketAddress[1];
+
         acceptLock.lock();
         try {
-            int n = 0;
-            FileDescriptor newfd = new FileDescriptor();
-            InetSocketAddress[] isaa = new InetSocketAddress[1];
-
             boolean blocking = isBlocking();
             try {
                 begin(blocking);
                 do {
-                    n = accept(this.fd, newfd, isaa);
+                    n = Net.accept(this.fd, newfd, isaa);
                 } while (n == IOStatus.INTERRUPTED && isOpen());
             } finally {
                 end(blocking, n > 0);
                 assert IOStatus.check(n);
             }
 
-            if (n < 1)
-                return null;
+        } finally {
+            acceptLock.unlock();
+        }
 
+        if (n < 1)
+            return null;
+
+        InetSocketAddress isa = isaa[0];
+        try {
             // newly accepted socket is initially in blocking mode
             IOUtil.configureBlocking(newfd, true);
-
-            InetSocketAddress isa = isaa[0];
-            SocketChannel sc = new SocketChannelImpl(provider(), newfd, isa);
 
             // check permitted to accept connections from the remote address
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
-                try {
-                    sm.checkAccept(isa.getAddress().getHostAddress(), isa.getPort());
-                } catch (SecurityException x) {
-                    sc.close();
-                    throw x;
-                }
+                sm.checkAccept(isa.getAddress().getHostAddress(), isa.getPort());
             }
-            return sc;
-
-        } finally {
-            acceptLock.unlock();
+            return new SocketChannelImpl(provider(), newfd, isa);
+        } catch (Exception e) {
+            nd.close(newfd);
+            throw e;
         }
     }
 
@@ -508,38 +506,4 @@ class ServerSocketChannelImpl
         sb.append(']');
         return sb.toString();
     }
-
-    /**
-     * Accept a connection on a socket.
-     *
-     * @implNote Wrap native call to allow instrumentation.
-     */
-    private int accept(FileDescriptor ssfd,
-                       FileDescriptor newfd,
-                       InetSocketAddress[] isaa)
-        throws IOException
-    {
-        return accept0(ssfd, newfd, isaa);
-    }
-
-    // -- Native methods --
-
-    // Accepts a new connection, setting the given file descriptor to refer to
-    // the new socket and setting isaa[0] to the socket's remote address.
-    // Returns 1 on success, or IOStatus.UNAVAILABLE (if non-blocking and no
-    // connections are pending) or IOStatus.INTERRUPTED.
-    //
-    private native int accept0(FileDescriptor ssfd,
-                               FileDescriptor newfd,
-                               InetSocketAddress[] isaa)
-        throws IOException;
-
-    private static native void initIDs();
-
-    static {
-        IOUtil.load();
-        initIDs();
-        nd = new SocketDispatcher();
-    }
-
 }
