@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,11 +93,10 @@ FD handleOpen(const char *path, int oflag, int mode);
 /*
  * Retry the operation if it is interrupted
  */
-#define RESTARTABLE(_cmd, _result) do { \
-    do { \
-        _result = _cmd; \
-    } while((_result == -1) && (errno == EINTR)); \
-} while(0)
+#define RESTARTABLE(_cmd, _result)                \
+    do {                                          \
+        _result = _cmd;                           \
+    } while ((_result == -1) && (errno == EINTR))
 
 void fileDescriptorClose(JNIEnv *env, jobject this);
 
