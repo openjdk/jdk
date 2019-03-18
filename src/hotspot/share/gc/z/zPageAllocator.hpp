@@ -30,6 +30,7 @@
 #include "gc/z/zPageCache.hpp"
 #include "gc/z/zPhysicalMemory.hpp"
 #include "gc/z/zPreMappedMemory.hpp"
+#include "gc/z/zSafeDelete.hpp"
 #include "gc/z/zVirtualMemory.hpp"
 #include "memory/allocation.hpp"
 
@@ -39,19 +40,19 @@ class ZPageAllocator {
   friend class VMStructs;
 
 private:
-  ZLock                    _lock;
-  ZVirtualMemoryManager    _virtual;
-  ZPhysicalMemoryManager   _physical;
-  ZPageCache               _cache;
-  const size_t             _max_reserve;
-  ZPreMappedMemory         _pre_mapped;
-  size_t                   _used_high;
-  size_t                   _used_low;
-  size_t                   _used;
-  size_t                   _allocated;
-  ssize_t                  _reclaimed;
-  ZList<ZPageAllocRequest> _queue;
-  ZList<ZPage>             _detached;
+  ZLock                      _lock;
+  ZVirtualMemoryManager      _virtual;
+  ZPhysicalMemoryManager     _physical;
+  ZPageCache                 _cache;
+  const size_t               _max_reserve;
+  ZPreMappedMemory           _pre_mapped;
+  size_t                     _used_high;
+  size_t                     _used_low;
+  size_t                     _used;
+  size_t                     _allocated;
+  ssize_t                    _reclaimed;
+  ZList<ZPageAllocRequest>   _queue;
+  mutable ZSafeDelete<ZPage> _safe_delete;
 
   static ZPage* const      gc_marker;
 
@@ -63,7 +64,8 @@ private:
   size_t try_ensure_unused_for_pre_mapped(size_t size);
 
   ZPage* create_page(uint8_t type, size_t size);
-  void detach_page(ZPage* page);
+  void destroy_page(ZPage* page);
+
   void flush_pre_mapped();
   void flush_cache(size_t size);
 
@@ -97,7 +99,9 @@ public:
 
   ZPage* alloc_page(uint8_t type, size_t size, ZAllocationFlags flags);
   void free_page(ZPage* page, bool reclaimed);
-  void destroy_detached_pages();
+
+  void enable_deferred_delete() const;
+  void disable_deferred_delete() const;
 
   void map_page(ZPage* page);
   void unmap_all_pages();

@@ -144,9 +144,6 @@ public:
   void mark_flush_and_free(Thread* thread);
   bool mark_end();
 
-  // Post-marking & Pre-relocation
-  void destroy_detached_pages();
-
   // Relocation set
   void select_relocation_set();
   void reset_relocation_set();

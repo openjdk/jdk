@@ -31,6 +31,7 @@
 #include "gc/z/zPageAllocator.hpp"
 #include "gc/z/zPageCache.inline.hpp"
 #include "gc/z/zPreMappedMemory.inline.hpp"
+#include "gc/z/zSafeDelete.inline.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zTracer.inline.hpp"
 #include "runtime/init.hpp"
@@ -96,7 +97,7 @@ ZPageAllocator::ZPageAllocator(size_t min_capacity, size_t max_capacity, size_t 
     _allocated(0),
     _reclaimed(0),
     _queue(),
-    _detached() {}
+    _safe_delete() {}
 
 bool ZPageAllocator::is_initialized() const {
   return _physical.is_initialized() &&
@@ -242,27 +243,12 @@ void ZPageAllocator::flush_pre_mapped() {
   _pre_mapped.clear();
 }
 
-void ZPageAllocator::detach_page(ZPage* page) {
-  // Detach the memory mapping.
+void ZPageAllocator::destroy_page(ZPage* page) {
+  // Detach virtual and physical memory
   detach_memory(page->virtual_memory(), page->physical_memory());
 
-  // Add to list of detached pages
-  _detached.insert_last(page);
-}
-
-void ZPageAllocator::destroy_detached_pages() {
-  ZList<ZPage> list;
-
-  // Get and reset list of detached pages
-  {
-    ZLocker<ZLock> locker(&_lock);
-    list.transfer(&_detached);
-  }
-
-  // Destroy pages
-  for (ZPage* page = list.remove_first(); page != NULL; page = list.remove_first()) {
-    delete page;
-  }
+  // Delete page safely
+  _safe_delete(page);
 }
 
 void ZPageAllocator::map_page(ZPage* page) {
@@ -286,7 +272,7 @@ void ZPageAllocator::flush_cache(size_t size) {
   _cache.flush(&list, size);
 
   for (ZPage* page = list.remove_first(); page != NULL; page = list.remove_first()) {
-    detach_page(page);
+    destroy_page(page);
   }
 }
 
@@ -475,6 +461,14 @@ void ZPageAllocator::free_page(ZPage* page, bool reclaimed) {
 
   // Try satisfy blocked allocations
   satisfy_alloc_queue();
+}
+
+void ZPageAllocator::enable_deferred_delete() const {
+  _safe_delete.enable_deferred_delete();
+}
+
+void ZPageAllocator::disable_deferred_delete() const {
+  _safe_delete.disable_deferred_delete();
 }
 
 bool ZPageAllocator::is_alloc_stalled() const {
