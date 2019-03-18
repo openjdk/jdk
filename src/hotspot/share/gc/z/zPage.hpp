@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,6 @@ private:
 
   const char* type_to_string() const;
   uint32_t object_max_count() const;
-  uintptr_t relocate_object_inner(uintptr_t from_index, uintptr_t from_offset);
 
   bool is_object_marked(uintptr_t addr) const;
   bool is_object_strongly_marked(uintptr_t addr) const;
@@ -101,6 +100,9 @@ public:
   bool is_forwarding() const;
   void set_forwarding();
   void reset_forwarding();
+  ZForwardingTableEntry find_forwarding(uintptr_t from_index);
+  ZForwardingTableEntry find_forwarding(uintptr_t from_index, ZForwardingTableCursor* cursor);
+  uintptr_t insert_forwarding(uintptr_t from_index, uintptr_t to_offset, ZForwardingTableCursor* cursor);
   void verify_forwarding() const;
 
   bool is_marked() const;
@@ -118,9 +120,6 @@ public:
 
   bool undo_alloc_object(uintptr_t addr, size_t size);
   bool undo_alloc_object_atomic(uintptr_t addr, size_t size);
-
-  uintptr_t relocate_object(uintptr_t from);
-  uintptr_t forward_object(uintptr_t from);
 
   void print_on(outputStream* out) const;
   void print() const;

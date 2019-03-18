@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,10 +34,14 @@ class ZRelocate {
 private:
   ZWorkers* const _workers;
 
+  uintptr_t relocate_object_inner(ZPage* from_page, uintptr_t from_index, uintptr_t from_offset) const;
   bool work(ZRelocationSetParallelIterator* iter);
 
 public:
   ZRelocate(ZWorkers* workers);
+
+  uintptr_t relocate_object(ZPage* from_page, uintptr_t from_addr) const;
+  uintptr_t forward_object(ZPage* from_page, uintptr_t from_addr) const;
 
   void start();
   bool relocate(ZRelocationSet* relocation_set);

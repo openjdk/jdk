@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -210,6 +210,18 @@ inline void ZPage::set_forwarding() {
 inline void ZPage::reset_forwarding() {
   _forwarding.reset();
   _pinned = 0;
+}
+
+inline ZForwardingTableEntry ZPage::find_forwarding(uintptr_t from_index) {
+  return _forwarding.find(from_index);
+}
+
+inline ZForwardingTableEntry ZPage::find_forwarding(uintptr_t from_index, ZForwardingTableCursor* cursor) {
+  return _forwarding.find(from_index, cursor);
+}
+
+inline uintptr_t ZPage::insert_forwarding(uintptr_t from_index, uintptr_t to_offset, ZForwardingTableCursor* cursor) {
+  return _forwarding.insert(from_index, to_offset, cursor);
 }
 
 inline void ZPage::verify_forwarding() const {

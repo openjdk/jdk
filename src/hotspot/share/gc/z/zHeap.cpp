@@ -497,7 +497,7 @@ uintptr_t ZHeap::relocate_object(uintptr_t addr) {
   assert(ZGlobalPhase == ZPhaseRelocate, "Relocate not allowed");
   ZPage* const page = _pagetable.get(addr);
   const bool retained = retain_page(page);
-  const uintptr_t new_addr = page->relocate_object(addr);
+  const uintptr_t new_addr = _relocate.relocate_object(page, addr);
   if (retained) {
     release_page(page, true /* reclaimed */);
   }
@@ -509,7 +509,7 @@ uintptr_t ZHeap::forward_object(uintptr_t addr) {
   assert(ZGlobalPhase == ZPhaseMark ||
          ZGlobalPhase == ZPhaseMarkCompleted, "Forward not allowed");
   ZPage* const page = _pagetable.get(addr);
-  return page->forward_object(addr);
+  return _relocate.forward_object(page, addr);
 }
 
 void ZHeap::relocate() {
