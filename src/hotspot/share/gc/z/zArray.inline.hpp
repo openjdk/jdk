@@ -80,6 +80,17 @@ inline void ZArray<T>::add(T value) {
 }
 
 template <typename T>
+inline void ZArray<T>::transfer(ZArray<T>* from) {
+  assert(_array == NULL, "Should be empty");
+  _array = from->_array;
+  _size = from->_size;
+  _capacity = from->_capacity;
+  from->_array = NULL;
+  from->_size = 0;
+  from->_capacity = 0;
+}
+
+template <typename T>
 inline void ZArray<T>::clear() {
   _size = 0;
 }
