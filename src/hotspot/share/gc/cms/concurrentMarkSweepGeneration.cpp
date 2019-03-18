@@ -4248,7 +4248,7 @@ void CMSCollector::checkpointRootsFinalWork() {
   verify_overflow_empty();
 
   if (should_unload_classes()) {
-    heap->prune_nmethods();
+    heap->prune_scavengable_nmethods();
   }
   JvmtiExport::gc_epilogue();
 

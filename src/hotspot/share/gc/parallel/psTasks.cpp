@@ -98,8 +98,8 @@ void ScavengeRootsTask::do_it(GCTaskManager* manager, uint which) {
 
     case code_cache:
       {
-        MarkingCodeBlobClosure each_scavengable_code_blob(&roots_to_old_closure, CodeBlobToOopClosure::FixRelocations);
-        ScavengableNMethods::scavengable_nmethods_do(&each_scavengable_code_blob);
+        MarkingCodeBlobClosure code_closure(&roots_to_old_closure, CodeBlobToOopClosure::FixRelocations);
+        ScavengableNMethods::nmethods_do(&code_closure);
         AOTLoader::oops_do(&roots_closure);
       }
       break;

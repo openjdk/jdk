@@ -720,7 +720,7 @@ void ParallelScavengeHeap::flush_nmethod(nmethod* nm) {
   // nothing particular
 }
 
-void ParallelScavengeHeap::prune_nmethods() {
+void ParallelScavengeHeap::prune_scavengable_nmethods() {
   ScavengableNMethods::prune_nmethods();
 }
 

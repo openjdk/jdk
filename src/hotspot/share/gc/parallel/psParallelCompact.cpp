@@ -1061,7 +1061,7 @@ void PSParallelCompact::post_compact()
   ClassLoaderDataGraph::purge();
   MetaspaceUtils::verify_metrics();
 
-  heap->prune_nmethods();
+  heap->prune_scavengable_nmethods();
   JvmtiExport::gc_epilogue();
 
 #if COMPILER2_OR_JVMCI

@@ -255,7 +255,7 @@ public:
   virtual void verify_nmethod(nmethod* nm);
   virtual void flush_nmethod(nmethod* nm);
 
-  void prune_nmethods();
+  void prune_scavengable_nmethods();
 
   // Iteration functions.
   void oop_iterate(OopIterateClosure* cl);

@@ -25,13 +25,10 @@
 #include "precompiled.hpp"
 #include "code/codeCache.hpp"
 #include "code/nmethod.hpp"
-#include "compiler/compileTask.hpp"
-#include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/scavengableNMethods.hpp"
 #include "gc/shared/scavengableNMethodsData.hpp"
-#include "logging/log.hpp"
-#include "logging/logStream.hpp"
 #include "memory/universe.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "utilities/debug.hpp"
 
 static ScavengableNMethodsData gc_data(nmethod* nm) {
@@ -60,8 +57,6 @@ void ScavengableNMethods::register_nmethod(nmethod* nm) {
   data.set_next(_head);
 
   _head = nm;
-
-  CodeCache::print_trace("register_nmethod", nm);
 }
 
 void ScavengableNMethods::unregister_nmethod(nmethod* nm) {
@@ -71,7 +66,6 @@ void ScavengableNMethods::unregister_nmethod(nmethod* nm) {
     nmethod* prev = NULL;
     for (nmethod* cur = _head; cur != NULL; cur = gc_data(cur).next()) {
       if (cur == nm) {
-        CodeCache::print_trace("unregister_nmethod", nm);
         unlist_nmethod(cur, prev);
         return;
       }
@@ -127,37 +121,18 @@ void ScavengableNMethods::verify_nmethod(nmethod* nm) {
 class HasScavengableOops: public OopClosure {
   BoolObjectClosure* _is_scavengable;
   bool               _found;
-  nmethod*           _print_nm;
 public:
   HasScavengableOops(BoolObjectClosure* is_scavengable, nmethod* nm) :
       _is_scavengable(is_scavengable),
-      _found(false),
-      _print_nm(nm) {}
+      _found(false) {}
 
   bool found() { return _found; }
   virtual void do_oop(oop* p) {
-    if (*p != NULL && _is_scavengable->do_object_b(*p)) {
-      NOT_PRODUCT(maybe_print(p));
+    if (!_found && *p != NULL && _is_scavengable->do_object_b(*p)) {
       _found = true;
     }
   }
   virtual void do_oop(narrowOop* p) { ShouldNotReachHere(); }
-
-#ifndef PRODUCT
-  void maybe_print(oop* p) {
-    LogTarget(Trace, gc, nmethod) lt;
-    if (lt.is_enabled()) {
-      LogStream ls(lt);
-      if (!_found) {
-        CompileTask::print(&ls, _print_nm, "new scavengable oop", /*short_form:*/ true);
-      }
-      ls.print("" PTR_FORMAT "[offset=%d] found scavengable oop " PTR_FORMAT " (found at " PTR_FORMAT ") ",
-               p2i(_print_nm), (int)((intptr_t)p - (intptr_t)_print_nm),
-               p2i(*p), p2i(p));
-      ls.cr();
-    }
-  }
-#endif //PRODUCT
 };
 
 bool ScavengableNMethods::has_scavengable_oops(nmethod* nm) {
@@ -167,42 +142,32 @@ bool ScavengableNMethods::has_scavengable_oops(nmethod* nm) {
 }
 
 // Walk the list of methods which might contain oops to the java heap.
-void ScavengableNMethods::scavengable_nmethods_do(CodeBlobToOopClosure* f) {
+void ScavengableNMethods::nmethods_do_and_prune(CodeBlobToOopClosure* cl) {
   assert_locked_or_safepoint(CodeCache_lock);
 
-  const bool fix_relocations = f->fix_relocations();
   debug_only(mark_on_list_nmethods());
 
   nmethod* prev = NULL;
   nmethod* cur = _head;
   while (cur != NULL) {
+    assert(cur->is_alive(), "Must be");
+
     ScavengableNMethodsData data = gc_data(cur);
     debug_only(data.clear_marked());
-    assert(data.not_marked(), "");
     assert(data.on_list(), "else shouldn't be on this list");
 
-    bool is_live = (!cur->is_zombie() && !cur->is_unloaded());
-    LogTarget(Trace, gc, nmethod) lt;
-    if (lt.is_enabled()) {
-      LogStream ls(lt);
-      CompileTask::print(&ls, cur,
-        is_live ? "scavengable root " : "dead scavengable root", /*short_form:*/ true);
+    if (cl != NULL) {
+      cl->do_code_blob(cur);
     }
-    if (is_live) {
-      // Perform cur->oops_do(f), maybe just once per nmethod.
-      f->do_code_blob(cur);
-    }
+
     nmethod* const next = data.next();
-    // The scavengable nmethod list must contain all methods with scavengable
-    // oops. It is safe to include more nmethod on the list, but we do not
-    // expect any live non-scavengable nmethods on the list.
-    if (fix_relocations) {
-      if (!is_live || !has_scavengable_oops(cur)) {
-        unlist_nmethod(cur, prev);
-      } else {
-        prev = cur;
-      }
+
+    if (!has_scavengable_oops(cur)) {
+      unlist_nmethod(cur, prev);
+    } else {
+      prev = cur;
     }
+
     cur = next;
   }
 
@@ -210,15 +175,24 @@ void ScavengableNMethods::scavengable_nmethods_do(CodeBlobToOopClosure* f) {
   debug_only(verify_unlisted_nmethods(NULL));
 }
 
+void ScavengableNMethods::prune_nmethods() {
+  nmethods_do_and_prune(NULL /* No closure */);
+}
+
+// Walk the list of methods which might contain oops to the java heap.
+void ScavengableNMethods::nmethods_do(CodeBlobToOopClosure* cl) {
+  nmethods_do_and_prune(cl);
+}
+
 #ifndef PRODUCT
-void ScavengableNMethods::asserted_non_scavengable_nmethods_do(CodeBlobClosure* f) {
+void ScavengableNMethods::asserted_non_scavengable_nmethods_do(CodeBlobClosure* cl) {
   // While we are here, verify the integrity of the list.
   mark_on_list_nmethods();
   for (nmethod* cur = _head; cur != NULL; cur = gc_data(cur).next()) {
     assert(gc_data(cur).on_list(), "else shouldn't be on this list");
     gc_data(cur).clear_marked();
   }
-  verify_unlisted_nmethods(f);
+  verify_unlisted_nmethods(cl);
 }
 #endif // PRODUCT
 
@@ -227,8 +201,6 @@ void ScavengableNMethods::unlist_nmethod(nmethod* nm, nmethod* prev) {
 
   assert((prev == NULL && _head == nm) ||
          (prev != NULL && gc_data(prev).next() == nm), "precondition");
-
-  CodeCache::print_trace("unlist_nmethod", nm);
 
   ScavengableNMethodsData data = gc_data(nm);
 
@@ -239,33 +211,6 @@ void ScavengableNMethods::unlist_nmethod(nmethod* nm, nmethod* prev) {
   }
   data.set_next(NULL);
   data.clear_on_list();
-}
-
-void ScavengableNMethods::prune_nmethods() {
-  assert_locked_or_safepoint(CodeCache_lock);
-
-  debug_only(mark_on_list_nmethods());
-
-  nmethod* last = NULL;
-  nmethod* cur = _head;
-  while (cur != NULL) {
-    nmethod* next = gc_data(cur).next();
-    debug_only(gc_data(cur).clear_marked());
-    assert(gc_data(cur).on_list(), "else shouldn't be on this list");
-
-    if (!cur->is_zombie() && !cur->is_unloaded() && has_scavengable_oops(cur)) {
-      // Keep it.  Advance 'last' to prevent deletion.
-      last = cur;
-    } else {
-      // Prune it from the list, so we don't have to look at it any more.
-      CodeCache::print_trace("prune_nmethods", cur);
-      unlist_nmethod(cur, last);
-    }
-    cur = next;
-  }
-
-  // Check for stray marks.
-  debug_only(verify_unlisted_nmethods(NULL));
 }
 
 #ifndef PRODUCT
@@ -283,15 +228,15 @@ void ScavengableNMethods::mark_on_list_nmethods() {
 
 // If the closure is given, run it on the unlisted nmethods.
 // Also make sure that the effects of mark_on_list_nmethods is gone.
-void ScavengableNMethods::verify_unlisted_nmethods(CodeBlobClosure* f_or_null) {
+void ScavengableNMethods::verify_unlisted_nmethods(CodeBlobClosure* cl) {
   NMethodIterator iter(NMethodIterator::only_alive);
   while(iter.next()) {
     nmethod* nm = iter.method();
 
     verify_nmethod(nm);
 
-    if (f_or_null != NULL && !gc_data(nm).on_list()) {
-      f_or_null->do_code_blob(nm);
+    if (cl != NULL && !gc_data(nm).on_list()) {
+      cl->do_code_blob(nm);
     }
   }
 }

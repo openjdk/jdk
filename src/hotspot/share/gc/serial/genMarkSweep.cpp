@@ -124,7 +124,7 @@ void GenMarkSweep::invoke_at_safepoint(ReferenceProcessor* rp, bool clear_all_so
     rs->invalidate_or_clear(old_gen);
   }
 
-  gch->prune_nmethods();
+  gch->prune_scavengable_nmethods();
   JvmtiExport::gc_epilogue();
 
   // refs processing: clean slate

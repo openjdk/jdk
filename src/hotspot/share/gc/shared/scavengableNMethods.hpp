@@ -46,24 +46,23 @@ public:
   static void unregister_nmethod(nmethod* nm);
   static void verify_nmethod(nmethod* nm);
 
+  // Remove nmethods that no longer have scavengable oops.
   static void prune_nmethods();
 
-  // Apply f to every live code blob in scavengable nmethods. Prune nmethods
-  // from the list of scavengable nmethods if f->fix_relocations() and a nmethod
-  // no longer has scavengable oops.  If f->fix_relocations(), then f must copy
-  // objects to their new location immediately to avoid fixing nmethods on the
-  // basis of the old object locations.
-  static void scavengable_nmethods_do(CodeBlobToOopClosure* f);
+  // Apply closure to every scavengable nmethod.
+  // Remove nmethods that no longer have scavengable oops.
+  static void nmethods_do(CodeBlobToOopClosure* cl);
 
-  static void asserted_non_scavengable_nmethods_do(CodeBlobClosure* f = NULL) PRODUCT_RETURN;
+  static void asserted_non_scavengable_nmethods_do(CodeBlobClosure* cl) PRODUCT_RETURN;
 
 private:
+  static void nmethods_do_and_prune(CodeBlobToOopClosure* cl);
   static void unlist_nmethod(nmethod* nm, nmethod* prev);
 
   static bool has_scavengable_oops(nmethod* nm);
 
   static void mark_on_list_nmethods() PRODUCT_RETURN;
-  static void verify_unlisted_nmethods(CodeBlobClosure* f_or_null) PRODUCT_RETURN;
+  static void verify_unlisted_nmethods(CodeBlobClosure* cl) PRODUCT_RETURN;
 };
 
 #endif // SHARE_GC_SHARED_SCAVENGABLENMETHODS_HPP
