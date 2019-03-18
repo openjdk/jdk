@@ -226,7 +226,10 @@ public:
 
     template <typename T>
     static void oop_store_in_heap(T* addr, oop value) {
-      ShenandoahBarrierSet::barrier_set()->write_ref_field_pre_work(addr, value);
+      const bool keep_alive = (decorators & AS_NO_KEEPALIVE) == 0;
+      if (keep_alive) {
+        ShenandoahBarrierSet::barrier_set()->write_ref_field_pre_work(addr, value);
+      }
       Raw::oop_store(addr, value);
     }
 
