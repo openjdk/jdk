@@ -174,7 +174,6 @@ public:
 
     // Teardown page
     page.physical_memory().clear();
-    page.set_inactive();
   }
 
   // Run the given function with a few different input values.

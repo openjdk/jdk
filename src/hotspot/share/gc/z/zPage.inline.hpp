@@ -149,20 +149,12 @@ inline bool ZPage::block_is_obj(uintptr_t addr) const {
   return ZAddress::offset(addr) < top();
 }
 
-inline bool ZPage::is_active() const {
-  return OrderAccess::load_acquire(&_active) != 0;
-}
-
-inline void ZPage::set_inactive() {
-  OrderAccess::release_store(&_active, (uint8_t)0);
-}
-
 inline bool ZPage::is_allocating() const {
-  return is_active() && _seqnum == ZGlobalSeqNum;
+  return _seqnum == ZGlobalSeqNum;
 }
 
 inline bool ZPage::is_relocatable() const {
-  return is_active() && _seqnum < ZGlobalSeqNum;
+  return _seqnum < ZGlobalSeqNum;
 }
 
 inline bool ZPage::is_mapped() const {

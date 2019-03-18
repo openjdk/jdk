@@ -25,13 +25,11 @@
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zPhysicalMemory.inline.hpp"
 #include "gc/z/zVirtualMemory.inline.hpp"
-#include "runtime/orderAccess.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 
 ZPage::ZPage(uint8_t type, ZVirtualMemory vmem, ZPhysicalMemory pmem) :
     _type(type),
-    _active(0),
     _numa_id((uint8_t)-1),
     _seqnum(0),
     _virtual(vmem),
@@ -47,30 +45,20 @@ ZPage::ZPage(uint8_t type, ZVirtualMemory vmem, ZPhysicalMemory pmem) :
 }
 
 ZPage::~ZPage() {
-  assert(!is_active(), "Should not be active");
-  assert(_physical.is_null(), "Should be detached");
+  assert(_physical.is_null(), "Should be null");
 }
 
 void ZPage::reset() {
-  assert(!is_active(), "Should not be active");
-
   _seqnum = ZGlobalSeqNum;
   _top = start();
   _livemap.reset();
-
-  // Make sure we don't make the page active before
-  // the reset of the above fields are visible.
-  OrderAccess::storestore();
-
-  _active = 1;
 }
 
 void ZPage::print_on(outputStream* out) const {
-  out->print_cr(" %-6s  " PTR_FORMAT " " PTR_FORMAT " " PTR_FORMAT " %s%s%s",
+  out->print_cr(" %-6s  " PTR_FORMAT " " PTR_FORMAT " " PTR_FORMAT " %s%s",
                 type_to_string(), start(), top(), end(),
                 is_allocating()  ? " Allocating"  : "",
-                is_relocatable() ? " Relocatable" : "",
-                !is_active()     ? " Inactive"    : "");
+                is_relocatable() ? " Relocatable" : "");
 }
 
 void ZPage::print() const {

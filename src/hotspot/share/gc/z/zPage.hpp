@@ -37,7 +37,6 @@ class ZPage : public CHeapObj<mtGC> {
 private:
   // Always hot
   const uint8_t        _type;             // Page type
-  volatile uint8_t     _active;           // Active flag
   uint8_t              _numa_id;          // NUMA node affinity
   uint32_t             _seqnum;           // Allocation sequence number
   const ZVirtualMemory _virtual;          // Virtual start/end address
@@ -79,9 +78,6 @@ public:
 
   uintptr_t block_start(uintptr_t addr) const;
   bool block_is_obj(uintptr_t addr) const;
-
-  bool is_active() const;
-  void set_inactive();
 
   bool is_allocating() const;
   bool is_relocatable() const;

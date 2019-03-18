@@ -118,8 +118,6 @@ ZPage* ZPageCache::alloc_page(uint8_t type, size_t size) {
 }
 
 void ZPageCache::free_page(ZPage* page) {
-  assert(!page->is_active(), "Invalid page state");
-
   const uint8_t type = page->type();
   if (type == ZPageTypeSmall) {
     _small.get(page->numa_id()).insert_first(page);
