@@ -65,7 +65,19 @@ void ScavengableNMethods::register_nmethod(nmethod* nm) {
 }
 
 void ScavengableNMethods::unregister_nmethod(nmethod* nm) {
-  // Do nothing. Unlinking is currently delayed until the purge phase.
+  assert_locked_or_safepoint(CodeCache_lock);
+
+  if (gc_data(nm).on_list()) {
+    nmethod* prev = NULL;
+    for (nmethod* cur = _head; cur != NULL; cur = gc_data(cur).next()) {
+      if (cur == nm) {
+        CodeCache::print_trace("unregister_nmethod", nm);
+        unlist_nmethod(cur, prev);
+        return;
+      }
+      prev = cur;
+    }
+  }
 }
 
 #ifndef PRODUCT
@@ -110,23 +122,6 @@ void ScavengableNMethods::verify_nmethod(nmethod* nm) {
   }
   assert(gc_data(nm).not_marked(), "");
 #endif // PRODUCT
-}
-
-void ScavengableNMethods::flush_nmethod(nmethod* nm) {
-  assert_locked_or_safepoint(CodeCache_lock);
-
-  // TODO: Should be done in unregister_nmethod, during the "unlink" phase.
-  if (gc_data(nm).on_list()) {
-    CodeCache::print_trace("flush_nmethod", nm);
-    nmethod* prev = NULL;
-    for (nmethod* cur = _head; cur != NULL; cur = gc_data(cur).next()) {
-      if (cur == nm) {
-        unlist_nmethod(cur, prev);
-        return;
-      }
-      prev = cur;
-    }
-  }
 }
 
 class HasScavengableOops: public OopClosure {

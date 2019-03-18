@@ -45,7 +45,6 @@ public:
   static void register_nmethod(nmethod* nm);
   static void unregister_nmethod(nmethod* nm);
   static void verify_nmethod(nmethod* nm);
-  static void flush_nmethod(nmethod* nm);
 
   static void prune_nmethods();
 

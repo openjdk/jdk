@@ -723,7 +723,7 @@ void GenCollectedHeap::verify_nmethod(nmethod* nm) {
 }
 
 void GenCollectedHeap::flush_nmethod(nmethod* nm) {
-  ScavengableNMethods::flush_nmethod(nm);
+  // Do nothing.
 }
 
 void GenCollectedHeap::prune_nmethods() {
