@@ -44,10 +44,6 @@ inline ReferenceDiscoverer* ZHeap::reference_discoverer() {
   return &_reference_processor;
 }
 
-inline ZForwarding* ZHeap::forwarding(uintptr_t addr) {
-  return _forwarding_table.get(addr);
-}
-
 inline bool ZHeap::is_object_live(uintptr_t addr) const {
   ZPage* page = _pagetable.get(addr);
   return page->is_object_live(addr);
@@ -101,11 +97,10 @@ inline uintptr_t ZHeap::relocate_object(uintptr_t addr) {
   }
 
   // Relocate object
-  const bool retained = forwarding->inc_refcount();
+  const bool retained = forwarding->retain_page();
   const uintptr_t new_addr = _relocate.relocate_object(forwarding, addr);
-  if (retained && forwarding->dec_refcount()) {
-    ZPage* const page = _pagetable.get(addr);
-    free_page(page, true /* reclaimed */);
+  if (retained) {
+    forwarding->release_page();
   }
 
   return new_addr;

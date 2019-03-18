@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,20 +33,20 @@ inline ZRelocationSetIteratorImpl<parallel>::ZRelocationSetIteratorImpl(ZRelocat
     _next(0) {}
 
 template <bool parallel>
-inline bool ZRelocationSetIteratorImpl<parallel>::next(ZPage** page) {
-  const size_t npages = _relocation_set->_npages;
+inline bool ZRelocationSetIteratorImpl<parallel>::next(ZForwarding** forwarding) {
+  const size_t nforwardings = _relocation_set->_nforwardings;
 
   if (parallel) {
-    if (_next < npages) {
+    if (_next < nforwardings) {
       const size_t next = Atomic::add(1u, &_next) - 1u;
-      if (next < npages) {
-        *page = _relocation_set->_pages[next];
+      if (next < nforwardings) {
+        *forwarding = _relocation_set->_forwardings[next];
         return true;
       }
     }
   } else {
-    if (_next < npages) {
-      *page = _relocation_set->_pages[_next++];
+    if (_next < nforwardings) {
+      *forwarding = _relocation_set->_forwardings[_next++];
       return true;
     }
   }

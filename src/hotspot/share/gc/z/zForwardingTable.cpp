@@ -22,7 +22,8 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/z/zForwarding.hpp"
+#include "gc/z/zAddress.inline.hpp"
+#include "gc/z/zForwarding.inline.hpp"
 #include "gc/z/zForwardingTable.inline.hpp"
 #include "gc/z/zGranuleMap.inline.hpp"
 #include "utilities/debug.hpp"
@@ -30,41 +31,18 @@
 ZForwardingTable::ZForwardingTable() :
     _map() {}
 
-void ZForwardingTable::insert(uintptr_t start,
-                              size_t size,
-                              size_t object_alignment_shift,
-                              uint32_t live_objects) {
-  // Allocate forwarding
-  ZForwarding* const forwarding = ZForwarding::create(start,
-                                                      object_alignment_shift,
-                                                      live_objects);
+void ZForwardingTable::insert(ZForwarding* forwarding) {
+  const uintptr_t addr = ZAddress::good(forwarding->start());
+  const size_t size = forwarding->size();
 
-  // Insert into forwarding table
-  const uintptr_t addr = ZAddress::good(start);
   assert(get(addr) == NULL, "Invalid entry");
   _map.put(addr, size, forwarding);
 }
 
-void ZForwardingTable::clear() {
-  ZForwarding* prev_forwarding = NULL;
+void ZForwardingTable::remove(ZForwarding* forwarding) {
+  const uintptr_t addr = ZAddress::good(forwarding->start());
+  const size_t size = forwarding->size();
 
-  // Clear and destroy all non-NULL entries
-  ZGranuleMapIterator<ZForwarding*> iter(&_map);
-  for (ZForwarding** entry; iter.next(&entry);) {
-    ZForwarding* const forwarding = *entry;
-    if (forwarding == NULL) {
-      // Skip entry
-      continue;
-    }
-
-    // Clear entry
-    *entry = NULL;
-
-    // More than one entry can point to the same
-    // forwarding. Make sure we only destroy it once.
-    if (forwarding != prev_forwarding) {
-      ZForwarding::destroy(forwarding);
-      prev_forwarding = forwarding;
-    }
-  }
+  assert(get(addr) == forwarding, "Invalid entry");
+  _map.put(addr, size, NULL);
 }

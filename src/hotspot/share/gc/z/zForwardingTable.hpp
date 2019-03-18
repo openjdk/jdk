@@ -37,11 +37,8 @@ public:
 
   ZForwarding* get(uintptr_t addr) const;
 
-  void insert(uintptr_t start,
-              size_t size,
-              size_t object_alignment_shift,
-              uint32_t live_objects);
-  void clear();
+  void insert(ZForwarding* forwarding);
+  void remove(ZForwarding* forwarding);
 };
 
 #endif // SHARE_GC_Z_ZFORWARDINGTABLE_HPP

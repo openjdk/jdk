@@ -149,11 +149,9 @@ public:
 
   // Relocation set
   void select_relocation_set();
-  void prepare_relocation_set();
   void reset_relocation_set();
 
   // Relocation
-  ZForwarding* forwarding(uintptr_t addr);
   void relocate_start();
   uintptr_t relocate_object(uintptr_t addr);
   uintptr_t remap_object(uintptr_t addr);

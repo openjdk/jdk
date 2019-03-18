@@ -22,7 +22,10 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zForwarding.inline.hpp"
+#include "gc/z/zGlobals.hpp"
+#include "gc/z/zPage.inline.hpp"
 #include "unittest.hpp"
 
 using namespace testing;
@@ -141,16 +144,37 @@ public:
   }
 
   static void test(void (*function)(ZForwarding*), uint32_t size) {
-    // Setup
-    ZForwarding* forwarding = ZForwarding::create(0 /* start */,
-                                                  0 /* object_alignment_shift */,
-                                                  size);
+    // Create page
+    const ZVirtualMemory vmem(0, ZPageSizeSmall);
+    const ZPhysicalMemory pmem(ZPhysicalMemorySegment(0, ZPageSizeSmall));
+    ZPage page(ZPageTypeSmall, vmem, pmem);
+
+    page.reset();
+
+    const size_t object_size = 16;
+    const uintptr_t object = page.alloc_object(object_size);
+
+    ZGlobalSeqNum++;
+
+    bool dummy = false;
+    page.mark_object(ZAddress::marked(object), dummy, dummy);
+
+    const uint32_t live_objects = size;
+    const uint32_t live_bytes = live_objects * object_size;
+    page.inc_live_atomic(live_objects, live_bytes);
+
+    // Setup forwarding
+    ZForwarding* const forwarding = ZForwarding::create(&page);
 
     // Actual test function
     (*function)(forwarding);
 
-    // Teardown
+    // Teardown forwarding
     ZForwarding::destroy(forwarding);
+
+    // Teardown page
+    page.physical_memory().clear();
+    page.set_inactive();
   }
 
   // Run the given function with a few different input values.

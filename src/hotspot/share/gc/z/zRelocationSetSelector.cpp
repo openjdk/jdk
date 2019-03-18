@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,10 +44,10 @@ ZRelocationSetSelectorGroup::ZRelocationSetSelectorGroup(const char* name,
     _fragmentation(0) {}
 
 ZRelocationSetSelectorGroup::~ZRelocationSetSelectorGroup() {
-  FREE_C_HEAP_ARRAY(const ZPage*, _sorted_pages);
+  FREE_C_HEAP_ARRAY(ZPage*, _sorted_pages);
 }
 
-void ZRelocationSetSelectorGroup::register_live_page(const ZPage* page, size_t garbage) {
+void ZRelocationSetSelectorGroup::register_live_page(ZPage* page, size_t garbage) {
   if (garbage > _fragmentation_limit) {
     _registered_pages.add(page);
   } else {
@@ -67,13 +67,13 @@ void ZRelocationSetSelectorGroup::semi_sort() {
   size_t partitions[npartitions];
 
   // Allocate destination array
-  _sorted_pages = REALLOC_C_HEAP_ARRAY(const ZPage*, _sorted_pages, npages, mtGC);
+  _sorted_pages = REALLOC_C_HEAP_ARRAY(ZPage*, _sorted_pages, npages, mtGC);
   debug_only(memset(_sorted_pages, 0, npages * sizeof(ZPage*)));
 
   // Calculate partition slots
   memset(partitions, 0, sizeof(partitions));
-  ZArrayIterator<const ZPage*> iter1(&_registered_pages);
-  for (const ZPage* page; iter1.next(&page);) {
+  ZArrayIterator<ZPage*> iter1(&_registered_pages);
+  for (ZPage* page; iter1.next(&page);) {
     const size_t index = page->live_bytes() >> partition_size_shift;
     partitions[index]++;
   }
@@ -87,8 +87,8 @@ void ZRelocationSetSelectorGroup::semi_sort() {
   }
 
   // Sort pages into partitions
-  ZArrayIterator<const ZPage*> iter2(&_registered_pages);
-  for (const ZPage* page; iter2.next(&page);) {
+  ZArrayIterator<ZPage*> iter2(&_registered_pages);
+  for (ZPage* page; iter2.next(&page);) {
     const size_t index = page->live_bytes() >> partition_size_shift;
     const size_t finger = partitions[index]++;
     assert(_sorted_pages[finger] == NULL, "Invalid finger");
@@ -140,7 +140,7 @@ void ZRelocationSetSelectorGroup::select() {
   // Update statistics
   _relocating = from_size;
   for (size_t i = _nselected; i < npages; i++) {
-    const ZPage* const page = _sorted_pages[i];
+    ZPage* const page = _sorted_pages[i];
     _fragmentation += page->size() - page->live_bytes();
   }
 
@@ -148,7 +148,7 @@ void ZRelocationSetSelectorGroup::select() {
                        _name, selected_from, selected_to, npages - _nselected);
 }
 
-const ZPage* const* ZRelocationSetSelectorGroup::selected() const {
+ZPage* const* ZRelocationSetSelectorGroup::selected() const {
   return _sorted_pages;
 }
 
@@ -171,7 +171,7 @@ ZRelocationSetSelector::ZRelocationSetSelector() :
     _garbage(0),
     _fragmentation(0) {}
 
-void ZRelocationSetSelector::register_live_page(const ZPage* page) {
+void ZRelocationSetSelector::register_live_page(ZPage* page) {
   const uint8_t type = page->type();
   const size_t live = page->live_bytes();
   const size_t garbage = page->size() - live;
@@ -188,7 +188,7 @@ void ZRelocationSetSelector::register_live_page(const ZPage* page) {
   _garbage += garbage;
 }
 
-void ZRelocationSetSelector::register_garbage_page(const ZPage* page) {
+void ZRelocationSetSelector::register_garbage_page(ZPage* page) {
   _garbage += page->size();
 }
 

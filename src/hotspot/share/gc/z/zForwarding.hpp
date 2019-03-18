@@ -25,6 +25,9 @@
 #define SHARE_GC_Z_ZFORWARDING_HPP
 
 #include "gc/z/zForwardingEntry.hpp"
+#include "gc/z/zVirtualMemory.hpp"
+
+class ZPage;
 
 typedef uint32_t ZForwardingCursor;
 
@@ -33,37 +36,43 @@ class ZForwarding {
   friend class ZForwardingTest;
 
 private:
-  const uintptr_t   _start;
-  const size_t      _object_alignment_shift;
-  const uint32_t    _nentries;
-  volatile uint32_t _refcount;
-  volatile bool     _pinned;
+  const ZVirtualMemory _virtual;
+  const size_t         _object_alignment_shift;
+  const uint32_t       _nentries;
+  ZPage*               _page;
+  volatile uint32_t    _refcount;
+  volatile bool        _pinned;
+
+  bool inc_refcount();
+  bool dec_refcount();
 
   ZForwardingEntry* entries() const;
   ZForwardingEntry at(ZForwardingCursor* cursor) const;
   ZForwardingEntry first(uintptr_t from_index, ZForwardingCursor* cursor) const;
   ZForwardingEntry next(ZForwardingCursor* cursor) const;
 
-  ZForwarding(uintptr_t start, size_t object_alignment_shift, uint32_t nentries);
+  ZForwarding(ZPage* page, uint32_t nentries);
 
 public:
-  static ZForwarding* create(uintptr_t start, size_t object_alignment_shift, uint32_t live_objects);
+  static ZForwarding* create(ZPage* page);
   static void destroy(ZForwarding* forwarding);
 
   uintptr_t start() const;
+  size_t size() const;
   size_t object_alignment_shift() const;
-
-  bool inc_refcount();
-  bool dec_refcount();
+  ZPage* page() const;
 
   bool is_pinned() const;
   void set_pinned();
+
+  bool retain_page();
+  void release_page();
 
   ZForwardingEntry find(uintptr_t from_index) const;
   ZForwardingEntry find(uintptr_t from_index, ZForwardingCursor* cursor) const;
   uintptr_t insert(uintptr_t from_index, uintptr_t to_offset, ZForwardingCursor* cursor);
 
-  void verify(uint32_t object_max_count, uint32_t live_objects) const;
+  void verify() const;
 };
 
 #endif // SHARE_GC_Z_ZFORWARDING_HPP

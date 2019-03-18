@@ -27,15 +27,33 @@
 #include "gc/z/zForwarding.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHash.inline.hpp"
+#include "gc/z/zHeap.hpp"
+#include "gc/z/zVirtualMemory.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 
 inline uintptr_t ZForwarding::start() const {
-  return _start;
+  return _virtual.start();
+}
+
+inline size_t ZForwarding::size() const {
+  return _virtual.size();
 }
 
 inline size_t ZForwarding::object_alignment_shift() const {
   return _object_alignment_shift;
+}
+
+inline ZPage* ZForwarding::page() const {
+  return _page;
+}
+
+inline bool ZForwarding::is_pinned() const {
+  return Atomic::load(&_pinned);
+}
+
+inline void ZForwarding::set_pinned() {
+  Atomic::store(true, &_pinned);
 }
 
 inline bool ZForwarding::inc_refcount() {
@@ -60,12 +78,15 @@ inline bool ZForwarding::dec_refcount() {
   return Atomic::sub(1u, &_refcount) == 0u;
 }
 
-inline bool ZForwarding::is_pinned() const {
-  return Atomic::load(&_pinned);
+inline bool ZForwarding::retain_page() {
+  return inc_refcount();
 }
 
-inline void ZForwarding::set_pinned() {
-  Atomic::store(true, &_pinned);
+inline void ZForwarding::release_page() {
+  if (dec_refcount()) {
+    ZHeap::heap()->free_page(_page, true /* reclaimed */);
+    _page = NULL;
+  }
 }
 
 inline ZForwardingEntry* ZForwarding::entries() const {

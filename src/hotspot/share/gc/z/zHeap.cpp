@@ -417,8 +417,8 @@ void ZHeap::destroy_detached_pages() {
 void ZHeap::select_relocation_set() {
   // Register relocatable pages with selector
   ZRelocationSetSelector selector;
-  ZPageTableIterator iter(&_pagetable);
-  for (ZPage* page; iter.next(&page);) {
+  ZPageTableIterator pt_iter(&_pagetable);
+  for (ZPage* page; pt_iter.next(&page);) {
     if (!page->is_relocatable()) {
       // Not relocatable, don't register
       continue;
@@ -439,6 +439,12 @@ void ZHeap::select_relocation_set() {
   // Select pages to relocate
   selector.select(&_relocation_set);
 
+  // Setup forwarding table
+  ZRelocationSetIterator rs_iter(&_relocation_set);
+  for (ZForwarding* forwarding; rs_iter.next(&forwarding);) {
+    _forwarding_table.insert(forwarding);
+  }
+
   // Update statistics
   ZStatRelocation::set_at_select_relocation_set(selector.relocating());
   ZStatHeap::set_at_select_relocation_set(selector.live(),
@@ -446,20 +452,15 @@ void ZHeap::select_relocation_set() {
                                           reclaimed());
 }
 
-void ZHeap::prepare_relocation_set() {
-  ZRelocationSetIterator iter(&_relocation_set);
-  for (ZPage* page; iter.next(&page);) {
-    // Setup forwarding for page
-    _forwarding_table.insert(page->start(),
-                             page->size(),
-                             page->object_alignment_shift(),
-                             page->live_objects());
-  }
-}
-
 void ZHeap::reset_relocation_set() {
-  // Clear forwarding table
-  _forwarding_table.clear();
+  // Reset forwarding table
+  ZRelocationSetIterator iter(&_relocation_set);
+  for (ZForwarding* forwarding; iter.next(&forwarding);) {
+    _forwarding_table.remove(forwarding);
+  }
+
+  // Reset relocation set
+  _relocation_set.reset();
 }
 
 void ZHeap::relocate_start() {

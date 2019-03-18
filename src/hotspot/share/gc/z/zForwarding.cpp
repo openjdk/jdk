@@ -23,30 +23,32 @@
 
 #include "precompiled.hpp"
 #include "gc/z/zForwarding.inline.hpp"
+#include "gc/z/zPage.inline.hpp"
 #include "gc/z/zUtils.inline.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/debug.hpp"
 
-ZForwarding::ZForwarding(uintptr_t start, size_t object_alignment_shift, uint32_t nentries) :
-    _start(start),
-    _object_alignment_shift(object_alignment_shift),
+ZForwarding::ZForwarding(ZPage* page, uint32_t nentries) :
+    _virtual(page->virtual_memory()),
+    _object_alignment_shift(page->object_alignment_shift()),
     _nentries(nentries),
+    _page(page),
     _refcount(1),
     _pinned(false) {}
 
-ZForwarding* ZForwarding::create(uintptr_t start, size_t object_alignment_shift, uint32_t live_objects) {
-  assert(live_objects > 0, "Invalid value");
+ZForwarding* ZForwarding::create(ZPage* page) {
+  assert(page->live_objects() > 0, "Invalid value");
 
   // Allocate table for linear probing. The size of the table must be
   // a power of two to allow for quick and inexpensive indexing/masking.
   // The table is sized to have a load factor of 50%, i.e. sized to have
   // double the number of entries actually inserted.
-  const uint32_t nentries = ZUtils::round_up_power_of_2(live_objects * 2);
-
+  const uint32_t nentries = ZUtils::round_up_power_of_2(page->live_objects() * 2);
   const size_t size = sizeof(ZForwarding) + (sizeof(ZForwardingEntry) * nentries);
   uint8_t* const addr = NEW_C_HEAP_ARRAY(uint8_t, size, mtGC);
   ZForwardingEntry* const entries = ::new (addr + sizeof(ZForwarding)) ZForwardingEntry[nentries];
-  ZForwarding* const forwarding = ::new (addr) ZForwarding(start, object_alignment_shift, nentries);
+  ZForwarding* const forwarding = ::new (addr) ZForwarding(page, nentries);
+
   return forwarding;
 }
 
@@ -54,8 +56,11 @@ void ZForwarding::destroy(ZForwarding* forwarding) {
   FREE_C_HEAP_ARRAY(uint8_t, forwarding);
 }
 
-void ZForwarding::verify(uint32_t object_max_count, uint32_t live_objects) const {
-  uint32_t count = 0;
+void ZForwarding::verify() const {
+  guarantee(_refcount > 0, "Invalid refcount");
+  guarantee(_page != NULL, "Invalid page");
+
+  uint32_t live_objects = 0;
 
   for (ZForwardingCursor i = 0; i < _nentries; i++) {
     const ZForwardingEntry entry = at(&i);
@@ -65,7 +70,7 @@ void ZForwarding::verify(uint32_t object_max_count, uint32_t live_objects) const
     }
 
     // Check from index
-    guarantee(entry.from_index() < object_max_count, "Invalid from index");
+    guarantee(entry.from_index() < _page->object_max_count(), "Invalid from index");
 
     // Check for duplicates
     for (ZForwardingCursor j = i + 1; j < _nentries; j++) {
@@ -74,9 +79,9 @@ void ZForwarding::verify(uint32_t object_max_count, uint32_t live_objects) const
       guarantee(entry.to_offset() != other.to_offset(), "Duplicate to");
     }
 
-    count++;
+    live_objects++;
   }
 
-  // Check number of non-null entries
-  guarantee(live_objects == count, "Count mismatch");
+  // Check number of non-empty entries
+  guarantee(live_objects == _page->live_objects(), "Invalid number of entries");
 }
