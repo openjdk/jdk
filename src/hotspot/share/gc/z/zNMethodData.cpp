@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/z/zAttachedArray.inline.hpp"
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zNMethodData.hpp"
 #include "memory/allocation.hpp"
@@ -31,40 +32,29 @@
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
 
-size_t ZNMethodDataOops::header_size() {
-  const size_t size = sizeof(ZNMethodDataOops);
-  assert(is_aligned(size, sizeof(oop*)), "Header misaligned");
-  return size;
-}
-
 ZNMethodDataOops* ZNMethodDataOops::create(const GrowableArray<oop*>& immediates, bool has_non_immediates) {
-  // Allocate memory for the ZNMethodDataOops object
-  // plus the immediate oop* array that follows right after.
-  const size_t size = ZNMethodDataOops::header_size() + (sizeof(oop*) * immediates.length());
-  void* const mem = NEW_C_HEAP_ARRAY(uint8_t, size, mtGC);
-  return ::new (mem) ZNMethodDataOops(immediates, has_non_immediates);
+  return ::new (AttachedArray::alloc(immediates.length())) ZNMethodDataOops(immediates, has_non_immediates);
 }
 
 void ZNMethodDataOops::destroy(ZNMethodDataOops* oops) {
-  FREE_C_HEAP_ARRAY(uint8_t, oops);
+  AttachedArray::free(oops);
 }
 
 ZNMethodDataOops::ZNMethodDataOops(const GrowableArray<oop*>& immediates, bool has_non_immediates) :
-    _nimmediates(immediates.length()),
+    _immediates(immediates.length()),
     _has_non_immediates(has_non_immediates) {
   // Save all immediate oops
-  for (size_t i = 0; i < _nimmediates; i++) {
+  for (size_t i = 0; i < immediates_count(); i++) {
     immediates_begin()[i] = immediates.at(i);
   }
 }
 
 size_t ZNMethodDataOops::immediates_count() const {
-  return _nimmediates;
+  return _immediates.length();
 }
 
 oop** ZNMethodDataOops::immediates_begin() const {
-  // The immediate oop* array starts immediately after this object
-  return (oop**)((uintptr_t)this + header_size());
+  return _immediates(this);
 }
 
 oop** ZNMethodDataOops::immediates_end() const {
