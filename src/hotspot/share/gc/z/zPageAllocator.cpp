@@ -253,12 +253,6 @@ void ZPageAllocator::detach_page(ZPage* page) {
 void ZPageAllocator::destroy_page(ZPage* page) {
   assert(page->is_detached(), "Invalid page state");
 
-  // Free virtual memory
-  {
-    ZLocker<ZLock> locker(&_lock);
-    _virtual.free(page->virtual_memory());
-  }
-
   delete page;
 }
 
@@ -452,6 +446,9 @@ void ZPageAllocator::satisfy_alloc_queue() {
 
 void ZPageAllocator::detach_memory(const ZVirtualMemory& vmem, ZPhysicalMemory& pmem) {
   const uintptr_t addr = vmem.start();
+
+  // Free virtual memory
+  _virtual.free(vmem);
 
   // Unmap physical memory
   _physical.unmap(pmem, addr);
