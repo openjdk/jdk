@@ -250,10 +250,19 @@ void ZPageAllocator::detach_page(ZPage* page) {
   _detached.insert_last(page);
 }
 
-void ZPageAllocator::destroy_page(ZPage* page) {
-  assert(page->is_detached(), "Invalid page state");
+void ZPageAllocator::destroy_detached_pages() {
+  ZList<ZPage> list;
 
-  delete page;
+  // Get and reset list of detached pages
+  {
+    ZLocker<ZLock> locker(&_lock);
+    list.transfer(&_detached);
+  }
+
+  // Destroy pages
+  for (ZPage* page = list.remove_first(); page != NULL; page = list.remove_first()) {
+    delete page;
+  }
 }
 
 void ZPageAllocator::map_page(ZPage* page) {
@@ -269,11 +278,6 @@ void ZPageAllocator::unmap_all_pages() {
   ZPhysicalMemory pmem(ZPhysicalMemorySegment(0 /* start */, ZAddressOffsetMax));
   _physical.debug_unmap(pmem, 0 /* offset */);
   pmem.clear();
-}
-
-void ZPageAllocator::flush_detached_pages(ZList<ZPage>* list) {
-  ZLocker<ZLock> locker(&_lock);
-  list->transfer(&_detached);
 }
 
 void ZPageAllocator::flush_cache(size_t size) {

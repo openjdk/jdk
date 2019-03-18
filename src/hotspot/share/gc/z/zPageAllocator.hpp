@@ -97,12 +97,10 @@ public:
 
   ZPage* alloc_page(uint8_t type, size_t size, ZAllocationFlags flags);
   void free_page(ZPage* page, bool reclaimed);
-  void destroy_page(ZPage* page);
+  void destroy_detached_pages();
 
   void map_page(ZPage* page);
   void unmap_all_pages();
-
-  void flush_detached_pages(ZList<ZPage>* list);
 
   bool is_alloc_stalled() const;
   void check_out_of_memory();

@@ -404,17 +404,6 @@ void ZHeap::process_non_strong_references() {
   _reference_processor.enqueue_references();
 }
 
-void ZHeap::destroy_detached_pages() {
-  ZList<ZPage> list;
-
-  _page_allocator.flush_detached_pages(&list);
-
-  for (ZPage* page = list.remove_first(); page != NULL; page = list.remove_first()) {
-    // Delete the page
-    _page_allocator.destroy_page(page);
-  }
-}
-
 void ZHeap::select_relocation_set() {
   // Register relocatable pages with selector
   ZRelocationSetSelector selector;
@@ -462,6 +451,10 @@ void ZHeap::reset_relocation_set() {
 
   // Reset relocation set
   _relocation_set.reset();
+}
+
+void ZHeap::destroy_detached_pages() {
+  _page_allocator.destroy_detached_pages();
 }
 
 void ZHeap::relocate_start() {
