@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -389,17 +389,17 @@ processJavaStart(   JPLISAgent *    agent,
      */
 
     /*
-     *  First make our emergency fallback InternalError throwable.
+     *  First make our fallback InternalError throwable.
      */
     result = initializeFallbackError(jnienv);
-    jplis_assert(result);
+    jplis_assert_msg(result, "fallback init failed");
 
     /*
      *  Now make the InstrumentationImpl instance.
      */
     if ( result ) {
         result = createInstrumentationImpl(jnienv, agent);
-        jplis_assert(result);
+        jplis_assert_msg(result, "instrumentation instance creation failed");
     }
 
 
@@ -409,7 +409,7 @@ processJavaStart(   JPLISAgent *    agent,
      */
     if ( result ) {
         result = setLivePhaseEventHandlers(agent);
-        jplis_assert(result);
+        jplis_assert_msg(result, "setting of live phase VM handlers failed");
     }
 
     /*
@@ -419,6 +419,7 @@ processJavaStart(   JPLISAgent *    agent,
         result = startJavaAgent(agent, jnienv,
                                 agent->mAgentClassName, agent->mOptionsString,
                                 agent->mPremainCaller);
+        jplis_assert_msg(result, "agent load/premain call failed");
     }
 
     /*
