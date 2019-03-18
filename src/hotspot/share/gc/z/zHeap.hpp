@@ -55,7 +55,7 @@ private:
   ZWorkers            _workers;
   ZObjectAllocator    _object_allocator;
   ZPageAllocator      _page_allocator;
-  ZPageTable          _pagetable;
+  ZPageTable          _page_table;
   ZForwardingTable    _forwarding_table;
   ZMark               _mark;
   ZReferenceProcessor _reference_processor;

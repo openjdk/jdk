@@ -53,17 +53,17 @@ define zpo
     printf "Mark:  0x%016llx\tKlass: %s\n", (uintptr_t)$obj->_mark, (char*)$obj->_metadata->_klass->_name->_body
 end
 
-# Print heap page by pagetable index
+# Print heap page by page table index
 define zpp
-    set $page = (ZPage*)((uintptr_t)ZHeap::_heap._pagetable._map._map[($arg0)] & ~1)
+    set $page = (ZPage*)((uintptr_t)ZHeap::_heap._page_table._map._map[($arg0)] & ~1)
     printf "Page %p\n", $page
     print *$page
 end
 
-# Print pagetable
+# Print page_table
 define zpt
     printf "Pagetable (first 128 slots)\n"
-    x/128gx ZHeap::_heap._pagetable._map._map
+    x/128gx ZHeap::_heap._page_table._map._map
 end
 
 # Print live map
@@ -100,7 +100,7 @@ define zmarked
     set $addr          = $arg0
     set $obj           = ((uintptr_t)$addr & ZAddressOffsetMask)
     set $page_index    = $obj >> ZGranuleSizeShift
-    set $page_entry    = (uintptr_t)ZHeap::_heap._pagetable._map._map[$page_index]
+    set $page_entry    = (uintptr_t)ZHeap::_heap._page_table._map._map[$page_index]
     set $page          = (ZPage*)($page_entry & ~1)
     set $page_start    = (uintptr_t)$page._virtual._start
     set $page_end      = (uintptr_t)$page._virtual._end

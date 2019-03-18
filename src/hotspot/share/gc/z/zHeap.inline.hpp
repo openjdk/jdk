@@ -45,12 +45,12 @@ inline ReferenceDiscoverer* ZHeap::reference_discoverer() {
 }
 
 inline bool ZHeap::is_object_live(uintptr_t addr) const {
-  ZPage* page = _pagetable.get(addr);
+  ZPage* page = _page_table.get(addr);
   return page->is_object_live(addr);
 }
 
 inline bool ZHeap::is_object_strongly_live(uintptr_t addr) const {
-  ZPage* page = _pagetable.get(addr);
+  ZPage* page = _page_table.get(addr);
   return page->is_object_strongly_live(addr);
 }
 
@@ -83,7 +83,7 @@ inline uintptr_t ZHeap::alloc_object_for_relocation(size_t size) {
 }
 
 inline void ZHeap::undo_alloc_object_for_relocation(uintptr_t addr, size_t size) {
-  ZPage* const page = _pagetable.get(addr);
+  ZPage* const page = _page_table.get(addr);
   _object_allocator.undo_alloc_object_for_relocation(page, addr, size);
 }
 

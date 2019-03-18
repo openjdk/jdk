@@ -48,7 +48,7 @@ public class ZHeap extends VMObject {
         Type type = db.lookupType("ZHeap");
 
         pageAllocatorFieldOffset = type.getAddressField("_page_allocator").getOffset();
-        pageTableFieldOffset = type.getAddressField("_pagetable").getOffset();
+        pageTableFieldOffset = type.getAddressField("_page_table").getOffset();
     }
 
     public ZHeap(Address addr) {

@@ -25,7 +25,6 @@
 #define SHARE_GC_Z_ZPAGETABLE_HPP
 
 #include "gc/z/zGranuleMap.hpp"
-#include "gc/z/zPageTableEntry.hpp"
 #include "memory/allocation.hpp"
 
 class ZPage;
@@ -35,30 +34,24 @@ class ZPageTable {
   friend class ZPageTableIterator;
 
 private:
-  ZGranuleMap<ZPageTableEntry> _map;
-
-  ZPageTableEntry get_entry(ZPage* page) const;
-  void put_entry(ZPage* page, ZPageTableEntry entry);
+  ZGranuleMap<ZPage*> _map;
 
 public:
   ZPageTable();
 
   ZPage* get(uintptr_t addr) const;
+
   void insert(ZPage* page);
   void remove(ZPage* page);
-
-  bool is_relocating(uintptr_t addr) const;
-  void set_relocating(ZPage* page);
-  void clear_relocating(ZPage* page);
 };
 
 class ZPageTableIterator : public StackObj {
 private:
-  ZGranuleMapIterator<ZPageTableEntry> _iter;
-  ZPage*                               _prev;
+  ZGranuleMapIterator<ZPage*> _iter;
+  ZPage*                      _prev;
 
 public:
-  ZPageTableIterator(const ZPageTable* pagetable);
+  ZPageTableIterator(const ZPageTable* page_table);
 
   bool next(ZPage** page);
 };

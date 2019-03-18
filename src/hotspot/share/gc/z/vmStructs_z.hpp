@@ -53,7 +53,7 @@ public:
   const int* _ZObjectAlignmentSmall;
 };
 
-typedef ZGranuleMap<ZPageTableEntry> ZGranuleMapForPageTable;
+typedef ZGranuleMap<ZPage*> ZGranuleMapForPageTable;
 
 #define VM_STRUCTS_ZGC(nonstatic_field, volatile_nonstatic_field, static_field)                      \
   static_field(ZGlobalsForVMStructs,            _instance_p,          ZGlobalsForVMStructs*)         \
@@ -68,7 +68,7 @@ typedef ZGranuleMap<ZPageTableEntry> ZGranuleMapForPageTable;
   nonstatic_field(ZCollectedHeap,               _heap,                ZHeap)                         \
                                                                                                      \
   nonstatic_field(ZHeap,                        _page_allocator,      ZPageAllocator)                \
-  nonstatic_field(ZHeap,                        _pagetable,           ZPageTable)                    \
+  nonstatic_field(ZHeap,                        _page_table,          ZPageTable)                    \
                                                                                                      \
   nonstatic_field(ZPage,                        _type,                const uint8_t)                 \
   nonstatic_field(ZPage,                        _seqnum,              uint32_t)                      \
@@ -80,7 +80,7 @@ typedef ZGranuleMap<ZPageTableEntry> ZGranuleMapForPageTable;
                                                                                                      \
   nonstatic_field(ZPageTable,                   _map,                 ZGranuleMapForPageTable)       \
                                                                                                      \
-  nonstatic_field(ZGranuleMapForPageTable,      _map,                 ZPageTableEntry* const)        \
+  nonstatic_field(ZGranuleMapForPageTable,      _map,                 ZPage** const)                 \
                                                                                                      \
   nonstatic_field(ZVirtualMemory,               _start,               uintptr_t)                     \
   nonstatic_field(ZVirtualMemory,               _end,                 uintptr_t)                     \
@@ -115,7 +115,6 @@ typedef ZGranuleMap<ZPageTableEntry> ZGranuleMapForPageTable;
   declare_toplevel_type(ZPage)                                                                       \
   declare_toplevel_type(ZPageAllocator)                                                              \
   declare_toplevel_type(ZPageTable)                                                                  \
-  declare_toplevel_type(ZPageTableEntry)                                                             \
   declare_toplevel_type(ZGranuleMapForPageTable)                                                     \
   declare_toplevel_type(ZVirtualMemory)                                                              \
   declare_toplevel_type(ZForwardingTable)                                                            \

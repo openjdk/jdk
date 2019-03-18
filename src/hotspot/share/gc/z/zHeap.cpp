@@ -63,9 +63,9 @@ ZHeap::ZHeap() :
     _workers(),
     _object_allocator(_workers.nworkers()),
     _page_allocator(heap_min_size(), heap_max_size(), heap_max_reserve_size()),
-    _pagetable(),
+    _page_table(),
     _forwarding_table(),
-    _mark(&_workers, &_pagetable),
+    _mark(&_workers, &_page_table),
     _reference_processor(&_workers),
     _weak_roots_processor(&_workers),
     _relocate(&_workers),
@@ -173,7 +173,7 @@ bool ZHeap::is_in(uintptr_t addr) const {
     return false;
   }
 
-  const ZPage* const page = _pagetable.get(addr);
+  const ZPage* const page = _page_table.get(addr);
   if (page != NULL) {
     return page->is_in(addr);
   }
@@ -182,12 +182,12 @@ bool ZHeap::is_in(uintptr_t addr) const {
 }
 
 uintptr_t ZHeap::block_start(uintptr_t addr) const {
-  const ZPage* const page = _pagetable.get(addr);
+  const ZPage* const page = _page_table.get(addr);
   return page->block_start(addr);
 }
 
 bool ZHeap::block_is_obj(uintptr_t addr) const {
-  const ZPage* const page = _pagetable.get(addr);
+  const ZPage* const page = _page_table.get(addr);
   return page->block_is_obj(addr);
 }
 
@@ -221,8 +221,8 @@ void ZHeap::out_of_memory() {
 ZPage* ZHeap::alloc_page(uint8_t type, size_t size, ZAllocationFlags flags) {
   ZPage* const page = _page_allocator.alloc_page(type, size, flags);
   if (page != NULL) {
-    // Update pagetable
-    _pagetable.insert(page);
+    // Update page table
+    _page_table.insert(page);
   }
 
   return page;
@@ -252,7 +252,7 @@ void ZHeap::before_flip() {
 void ZHeap::after_flip() {
   if (ZVerifyViews) {
     // Map all pages
-    ZPageTableIterator iter(&_pagetable);
+    ZPageTableIterator iter(&_page_table);
     for (ZPage* page; iter.next(&page);) {
       if (!page->is_detached()) {
         _page_allocator.map_page(page);
@@ -406,8 +406,8 @@ void ZHeap::destroy_detached_pages() {
   _page_allocator.flush_detached_pages(&list);
 
   for (ZPage* page = list.remove_first(); page != NULL; page = list.remove_first()) {
-    // Remove pagetable entry
-    _pagetable.remove(page);
+    // Remove page table entry
+    _page_table.remove(page);
 
     // Delete the page
     _page_allocator.destroy_page(page);
@@ -417,7 +417,7 @@ void ZHeap::destroy_detached_pages() {
 void ZHeap::select_relocation_set() {
   // Register relocatable pages with selector
   ZRelocationSetSelector selector;
-  ZPageTableIterator pt_iter(&_pagetable);
+  ZPageTableIterator pt_iter(&_page_table);
   for (ZPage* page; pt_iter.next(&page);) {
     if (!page->is_relocatable()) {
       // Not relocatable, don't register
@@ -529,7 +529,7 @@ void ZHeap::print_extended_on(outputStream* st) const {
   print_on(st);
   st->cr();
 
-  ZPageTableIterator iter(&_pagetable);
+  ZPageTableIterator iter(&_page_table);
   for (ZPage* page; iter.next(&page);) {
     page->print_on(st);
   }
