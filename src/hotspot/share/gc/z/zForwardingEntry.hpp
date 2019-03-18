@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,16 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZFORWARDINGTABLEENTRY_HPP
-#define SHARE_GC_Z_ZFORWARDINGTABLEENTRY_HPP
+#ifndef SHARE_GC_Z_ZFORWARDINGENTRY_HPP
+#define SHARE_GC_Z_ZFORWARDINGENTRY_HPP
 
 #include "gc/z/zBitField.hpp"
 #include "memory/allocation.hpp"
 #include "metaprogramming/primitiveConversions.hpp"
 
 //
-// Forwarding table entry layout
-// -----------------------------
+// Forwarding entry layout
+// -----------------------
 //
 //   6                      4 4                                             0
 //   3                      2 1                                             0
@@ -43,7 +43,7 @@
 //  * 63-42 From Object Index (22-bits)
 //
 
-class ZForwardingTableEntry {
+class ZForwardingEntry {
   friend struct PrimitiveConversions;
 
 private:
@@ -57,10 +57,10 @@ private:
   }
 
 public:
-  ZForwardingTableEntry() :
+  ZForwardingEntry() :
       _entry(empty()) {}
 
-  ZForwardingTableEntry(size_t from_index, size_t to_offset) :
+  ZForwardingEntry(size_t from_index, size_t to_offset) :
       _entry(field_from_index::encode(from_index) |
              field_to_offset::encode(to_offset)) {}
 
@@ -77,21 +77,21 @@ public:
   }
 };
 
-// Needed to allow atomic operations on ZForwardingTableEntry
+// Needed to allow atomic operations on ZForwardingEntry
 template <>
-struct PrimitiveConversions::Translate<ZForwardingTableEntry> : public TrueType {
-  typedef ZForwardingTableEntry Value;
-  typedef uint64_t              Decayed;
+struct PrimitiveConversions::Translate<ZForwardingEntry> : public TrueType {
+  typedef ZForwardingEntry Value;
+  typedef uint64_t         Decayed;
 
   static Decayed decay(Value v) {
     return v._entry;
   }
 
   static Value recover(Decayed d) {
-    ZForwardingTableEntry entry;
+    ZForwardingEntry entry;
     entry._entry = d;
     return entry;
   }
 };
 
-#endif // SHARE_GC_Z_ZFORWARDINGTABLEENTRY_HPP
+#endif // SHARE_GC_Z_ZFORWARDINGENTRY_HPP

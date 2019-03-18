@@ -31,14 +31,12 @@
 
 ZPage::ZPage(uint8_t type, ZVirtualMemory vmem, ZPhysicalMemory pmem) :
     _type(type),
-    _pinned(0),
+    _active(0),
     _numa_id((uint8_t)-1),
     _seqnum(0),
     _virtual(vmem),
     _top(start()),
     _livemap(object_max_count()),
-    _refcount(0),
-    _forwarding(),
     _physical(pmem) {
   assert(!_physical.is_null(), "Should not be null");
   assert(!_virtual.is_null(), "Should not be null");
@@ -55,7 +53,6 @@ ZPage::~ZPage() {
 
 void ZPage::reset() {
   assert(!is_active(), "Should not be active");
-  assert(!is_pinned(), "Should not be pinned");
   assert(!is_detached(), "Should not be detached");
 
   _seqnum = ZGlobalSeqNum;
@@ -66,16 +63,14 @@ void ZPage::reset() {
   // the reset of the above fields are visible.
   OrderAccess::storestore();
 
-  _refcount = 1;
+  _active = 1;
 }
 
 void ZPage::print_on(outputStream* out) const {
-  out->print_cr(" %-6s  " PTR_FORMAT " " PTR_FORMAT " " PTR_FORMAT " %s%s%s%s%s%s",
+  out->print_cr(" %-6s  " PTR_FORMAT " " PTR_FORMAT " " PTR_FORMAT " %s%s%s%s",
                 type_to_string(), start(), top(), end(),
                 is_allocating()  ? " Allocating"  : "",
                 is_relocatable() ? " Relocatable" : "",
-                is_forwarding()  ? " Forwarding"  : "",
-                is_pinned()      ? " Pinned"      : "",
                 is_detached()    ? " Detached"    : "",
                 !is_active()     ? " Inactive"    : "");
 }

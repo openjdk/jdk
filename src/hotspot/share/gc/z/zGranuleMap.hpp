@@ -46,6 +46,7 @@ public:
 
   T get(uintptr_t addr) const;
   void put(uintptr_t addr, T value);
+  void put(uintptr_t addr, size_t size, T value);
 };
 
 template <typename T>
@@ -58,6 +59,7 @@ public:
   ZGranuleMapIterator(const ZGranuleMap<T>* map);
 
   bool next(T* value);
+  bool next(T** value);
 };
 
 #endif // SHARE_GC_Z_ZGRANULEMAP_HPP

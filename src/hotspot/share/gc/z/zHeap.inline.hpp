@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 #define SHARE_GC_Z_ZHEAP_INLINE_HPP
 
 #include "gc/z/zAddress.inline.hpp"
+#include "gc/z/zForwarding.inline.hpp"
+#include "gc/z/zForwardingTable.inline.hpp"
 #include "gc/z/zHeap.hpp"
 #include "gc/z/zMark.inline.hpp"
 #include "gc/z/zOop.inline.hpp"
@@ -42,8 +44,8 @@ inline ReferenceDiscoverer* ZHeap::reference_discoverer() {
   return &_reference_processor;
 }
 
-inline bool ZHeap::is_relocating(uintptr_t addr) const {
-  return _pagetable.is_relocating(addr);
+inline ZForwarding* ZHeap::forwarding(uintptr_t addr) {
+  return _forwarding_table.get(addr);
 }
 
 inline bool ZHeap::is_object_live(uintptr_t addr) const {
@@ -87,6 +89,40 @@ inline uintptr_t ZHeap::alloc_object_for_relocation(size_t size) {
 inline void ZHeap::undo_alloc_object_for_relocation(uintptr_t addr, size_t size) {
   ZPage* const page = _pagetable.get(addr);
   _object_allocator.undo_alloc_object_for_relocation(page, addr, size);
+}
+
+inline uintptr_t ZHeap::relocate_object(uintptr_t addr) {
+  assert(ZGlobalPhase == ZPhaseRelocate, "Relocate not allowed");
+
+  ZForwarding* const forwarding = _forwarding_table.get(addr);
+  if (forwarding == NULL) {
+    // Not forwarding
+    return ZAddress::good(addr);
+  }
+
+  // Relocate object
+  const bool retained = forwarding->inc_refcount();
+  const uintptr_t new_addr = _relocate.relocate_object(forwarding, addr);
+  if (retained && forwarding->dec_refcount()) {
+    ZPage* const page = _pagetable.get(addr);
+    free_page(page, true /* reclaimed */);
+  }
+
+  return new_addr;
+}
+
+inline uintptr_t ZHeap::remap_object(uintptr_t addr) {
+  assert(ZGlobalPhase == ZPhaseMark ||
+         ZGlobalPhase == ZPhaseMarkCompleted, "Forward not allowed");
+
+  ZForwarding* const forwarding = _forwarding_table.get(addr);
+  if (forwarding == NULL) {
+    // Not forwarding
+    return ZAddress::good(addr);
+  }
+
+  // Forward object
+  return _relocate.forward_object(forwarding, addr);
 }
 
 inline bool ZHeap::is_alloc_stalled() const {

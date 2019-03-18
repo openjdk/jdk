@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/z/zForwardingTable.inline.hpp"
+#include "gc/z/zForwarding.inline.hpp"
 #include "unittest.hpp"
 
 using namespace testing;
@@ -33,11 +33,11 @@ using namespace testing;
 
 #define CAPTURE(expression) CAPTURE1(expression)
 
-class ZForwardingTableTest : public Test {
+class ZForwardingTest : public Test {
 public:
   // Helper functions
 
-  static bool is_power_of_2(size_t value) {
+  static bool is_power_of_2(uint32_t value) {
     return ::is_power_of_2((intptr_t)value);
   }
 
@@ -56,43 +56,43 @@ public:
 
   // Test functions
 
-  static void setup(ZForwardingTable& table) {
-    EXPECT_PRED1(is_power_of_2, table._size) << CAPTURE(table._size);
+  static void setup(ZForwarding* forwarding) {
+    EXPECT_PRED1(is_power_of_2, forwarding->_nentries) << CAPTURE(forwarding->_nentries);
   }
 
-  static void find_empty(ZForwardingTable& table) {
-    size_t size = table._size;
-    size_t entries_to_check = size * 2;
+  static void find_empty(ZForwarding* forwarding) {
+    uint32_t size = forwarding->_nentries;
+    uint32_t entries_to_check = size * 2;
 
     for (uint32_t i = 0; i < entries_to_check; i++) {
       uintptr_t from_index = SequenceToFromIndex::one_to_one(i);
 
-      EXPECT_TRUE(table.find(from_index).is_empty()) << CAPTURE2(from_index, size);
+      EXPECT_TRUE(forwarding->find(from_index).is_empty()) << CAPTURE2(from_index, size);
     }
 
-    EXPECT_TRUE(table.find(uintptr_t(-1)).is_empty()) << CAPTURE(size);
+    EXPECT_TRUE(forwarding->find(uintptr_t(-1)).is_empty()) << CAPTURE(size);
   }
 
-  static void find_full(ZForwardingTable& table) {
-    size_t size = table._size;
-    size_t entries_to_populate = size;
+  static void find_full(ZForwarding* forwarding) {
+    uint32_t size = forwarding->_nentries;
+    uint32_t entries_to_populate = size;
 
     // Populate
     for (uint32_t i = 0; i < entries_to_populate; i++) {
       uintptr_t from_index = SequenceToFromIndex::one_to_one(i);
 
-      ZForwardingTableCursor cursor;
-      ZForwardingTableEntry entry = table.find(from_index, &cursor);
+      ZForwardingCursor cursor;
+      ZForwardingEntry entry = forwarding->find(from_index, &cursor);
       ASSERT_TRUE(entry.is_empty()) << CAPTURE2(from_index, size);
 
-      table.insert(from_index, from_index, &cursor);
+      forwarding->insert(from_index, from_index, &cursor);
     }
 
     // Verify
     for (uint32_t i = 0; i < entries_to_populate; i++) {
       uintptr_t from_index = SequenceToFromIndex::one_to_one(i);
 
-      ZForwardingTableEntry entry = table.find(from_index);
+      ZForwardingEntry entry = forwarding->find(from_index);
       ASSERT_FALSE(entry.is_empty()) << CAPTURE2(from_index, size);
 
       ASSERT_EQ(entry.from_index(), from_index) << CAPTURE(size);
@@ -100,27 +100,27 @@ public:
     }
   }
 
-  static void find_every_other(ZForwardingTable& table) {
-    size_t size = table._size;
-    size_t entries_to_populate = size / 2;
+  static void find_every_other(ZForwarding* forwarding) {
+    uint32_t size = forwarding->_nentries;
+    uint32_t entries_to_populate = size / 2;
 
     // Populate even from indices
     for (uint32_t i = 0; i < entries_to_populate; i++) {
       uintptr_t from_index = SequenceToFromIndex::even(i);
 
-      ZForwardingTableCursor cursor;
-      ZForwardingTableEntry entry = table.find(from_index, &cursor);
+      ZForwardingCursor cursor;
+      ZForwardingEntry entry = forwarding->find(from_index, &cursor);
       ASSERT_TRUE(entry.is_empty()) << CAPTURE2(from_index, size);
 
-      table.insert(from_index, from_index, &cursor);
+      forwarding->insert(from_index, from_index, &cursor);
     }
 
     // Verify populated even indices
     for (uint32_t i = 0; i < entries_to_populate; i++) {
       uintptr_t from_index = SequenceToFromIndex::even(i);
 
-      ZForwardingTableCursor cursor;
-      ZForwardingTableEntry entry = table.find(from_index, &cursor);
+      ZForwardingCursor cursor;
+      ZForwardingEntry entry = forwarding->find(from_index, &cursor);
       ASSERT_FALSE(entry.is_empty()) << CAPTURE2(from_index, size);
 
       ASSERT_EQ(entry.from_index(), from_index) << CAPTURE(size);
@@ -134,28 +134,27 @@ public:
     for (uint32_t i = 0; i < entries_to_populate; i++) {
       uintptr_t from_index = SequenceToFromIndex::odd(i);
 
-      ZForwardingTableEntry entry = table.find(from_index);
+      ZForwardingEntry entry = forwarding->find(from_index);
 
       ASSERT_TRUE(entry.is_empty()) << CAPTURE2(from_index, size);
     }
   }
 
-  static void test(void (*function)(ZForwardingTable&), uint32_t size) {
+  static void test(void (*function)(ZForwarding*), uint32_t size) {
     // Setup
-    ZForwardingTable table;
-    table.setup(size);
-    ASSERT_FALSE(table.is_null());
+    ZForwarding* forwarding = ZForwarding::create(0 /* start */,
+                                                  0 /* object_alignment_shift */,
+                                                  size);
 
     // Actual test function
-    (*function)(table);
+    (*function)(forwarding);
 
     // Teardown
-    table.reset();
-    ASSERT_TRUE(table.is_null());
+    ZForwarding::destroy(forwarding);
   }
 
   // Run the given function with a few different input values.
-  static void test(void (*function)(ZForwardingTable&)) {
+  static void test(void (*function)(ZForwarding*)) {
     test(function, 1);
     test(function, 2);
     test(function, 3);
@@ -168,18 +167,18 @@ public:
   }
 };
 
-TEST_F(ZForwardingTableTest, setup) {
-  test(&ZForwardingTableTest::setup);
+TEST_F(ZForwardingTest, setup) {
+  test(&ZForwardingTest::setup);
 }
 
-TEST_F(ZForwardingTableTest, find_empty) {
-  test(&ZForwardingTableTest::find_empty);
+TEST_F(ZForwardingTest, find_empty) {
+  test(&ZForwardingTest::find_empty);
 }
 
-TEST_F(ZForwardingTableTest, find_full) {
-  test(&ZForwardingTableTest::find_full);
+TEST_F(ZForwardingTest, find_full) {
+  test(&ZForwardingTest::find_full);
 }
 
-TEST_F(ZForwardingTableTest, find_every_other) {
-  test(&ZForwardingTableTest::find_every_other);
+TEST_F(ZForwardingTest, find_every_other) {
+  test(&ZForwardingTest::find_every_other);
 }

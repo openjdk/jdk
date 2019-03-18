@@ -25,7 +25,6 @@
 #define SHARE_GC_Z_ZPAGE_INLINE_HPP
 
 #include "gc/z/zAddress.inline.hpp"
-#include "gc/z/zForwardingTable.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zLiveMap.inline.hpp"
 #include "gc/z/zMark.hpp"
@@ -35,6 +34,7 @@
 #include "gc/z/zVirtualMemory.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/orderAccess.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 
@@ -132,20 +132,6 @@ inline uint8_t ZPage::numa_id() {
   return _numa_id;
 }
 
-inline bool ZPage::inc_refcount() {
-  for (uint32_t prev_refcount = _refcount; prev_refcount > 0; prev_refcount = _refcount) {
-    if (Atomic::cmpxchg(prev_refcount + 1, &_refcount, prev_refcount) == prev_refcount) {
-      return true;
-    }
-  }
-  return false;
-}
-
-inline bool ZPage::dec_refcount() {
-  assert(is_active(), "Should be active");
-  return Atomic::sub(1u, &_refcount) == 0;
-}
-
 inline bool ZPage::is_in(uintptr_t addr) const {
   const uintptr_t offset = ZAddress::offset(addr);
   return offset >= start() && offset < top();
@@ -164,7 +150,11 @@ inline bool ZPage::block_is_obj(uintptr_t addr) const {
 }
 
 inline bool ZPage::is_active() const {
-  return _refcount > 0;
+  return OrderAccess::load_acquire(&_active) != 0;
+}
+
+inline void ZPage::set_inactive() {
+  OrderAccess::release_store(&_active, (uint8_t)0);
 }
 
 inline bool ZPage::is_allocating() const {
@@ -188,44 +178,6 @@ inline void ZPage::set_pre_mapped() {
   // memory has been mapped. So, we need to set it to non-zero when the memory
   // has been pre-mapped.
   _seqnum = 1;
-}
-
-inline bool ZPage::is_pinned() const {
-  return _pinned;
-}
-
-inline void ZPage::set_pinned() {
-  _pinned = 1;
-}
-
-inline bool ZPage::is_forwarding() const {
-  return !_forwarding.is_null();
-}
-
-inline void ZPage::set_forwarding() {
-  assert(is_marked(), "Should be marked");
-  _forwarding.setup(_livemap.live_objects());
-}
-
-inline void ZPage::reset_forwarding() {
-  _forwarding.reset();
-  _pinned = 0;
-}
-
-inline ZForwardingTableEntry ZPage::find_forwarding(uintptr_t from_index) {
-  return _forwarding.find(from_index);
-}
-
-inline ZForwardingTableEntry ZPage::find_forwarding(uintptr_t from_index, ZForwardingTableCursor* cursor) {
-  return _forwarding.find(from_index, cursor);
-}
-
-inline uintptr_t ZPage::insert_forwarding(uintptr_t from_index, uintptr_t to_offset, ZForwardingTableCursor* cursor) {
-  return _forwarding.insert(from_index, to_offset, cursor);
-}
-
-inline void ZPage::verify_forwarding() const {
-  _forwarding.verify(object_max_count(), _livemap.live_objects());
 }
 
 inline bool ZPage::is_marked() const {
@@ -263,6 +215,11 @@ inline bool ZPage::mark_object(uintptr_t addr, bool finalizable, bool& inc_live)
 
 inline void ZPage::inc_live_atomic(uint32_t objects, size_t bytes) {
   _livemap.inc_live_atomic(objects, bytes);
+}
+
+inline uint32_t ZPage::live_objects() const {
+  assert(is_marked(), "Should be marked");
+  return _livemap.live_objects();
 }
 
 inline size_t ZPage::live_bytes() const {

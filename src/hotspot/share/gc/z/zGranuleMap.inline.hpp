@@ -66,6 +66,17 @@ inline void ZGranuleMap<T>::put(uintptr_t addr, T value) {
 }
 
 template <typename T>
+inline void ZGranuleMap<T>::put(uintptr_t addr, size_t size, T value) {
+  assert(is_aligned(size, ZGranuleSize), "Misaligned");
+
+  const size_t start_index = index_for_addr(addr);
+  const size_t end_index = start_index + (size >> ZGranuleSizeShift);
+  for (size_t index = start_index; index < end_index; index++) {
+    _map[index] = value;
+  }
+}
+
+template <typename T>
 inline ZGranuleMapIterator<T>::ZGranuleMapIterator(const ZGranuleMap<T>* map) :
     _map(map),
     _next(0) {}
@@ -74,6 +85,17 @@ template <typename T>
 inline bool ZGranuleMapIterator<T>::next(T* value) {
   if (_next < _map->size()) {
     *value = _map->_map[_next++];
+    return true;
+  }
+
+  // End of map
+  return false;
+}
+
+template <typename T>
+inline bool ZGranuleMapIterator<T>::next(T** value) {
+  if (_next < _map->size()) {
+    *value = _map->_map + _next++;
     return true;
   }
 

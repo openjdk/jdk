@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,63 +22,49 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/z/zForwarding.hpp"
 #include "gc/z/zForwardingTable.inline.hpp"
-#include "gc/z/zUtils.inline.hpp"
-#include "memory/allocation.inline.hpp"
+#include "gc/z/zGranuleMap.inline.hpp"
 #include "utilities/debug.hpp"
 
-void ZForwardingTable::setup(size_t live_objects) {
-  assert(is_null(), "Should be empty");
-  assert(live_objects > 0, "Invalid size");
+ZForwardingTable::ZForwardingTable() :
+    _map() {}
 
-  // Allocate table for linear probing. The size of the table must be
-  // a power of two to allow for quick and inexpensive indexing/masking.
-  // The table is sized to have a load factor of 50%, i.e. sized to have
-  // double the number of entries actually inserted.
-  _size = ZUtils::round_up_power_of_2(live_objects * 2);
-  _table = MallocArrayAllocator<ZForwardingTableEntry>::allocate(_size, mtGC);
+void ZForwardingTable::insert(uintptr_t start,
+                              size_t size,
+                              size_t object_alignment_shift,
+                              uint32_t live_objects) {
+  // Allocate forwarding
+  ZForwarding* const forwarding = ZForwarding::create(start,
+                                                      object_alignment_shift,
+                                                      live_objects);
 
-  // Construct table entries
-  for (size_t i = 0; i < _size; i++) {
-    ::new (_table + i) ZForwardingTableEntry();
-  }
+  // Insert into forwarding table
+  const uintptr_t addr = ZAddress::good(start);
+  assert(get(addr) == NULL, "Invalid entry");
+  _map.put(addr, size, forwarding);
 }
 
-void ZForwardingTable::reset() {
-  // Destruct table entries
-  for (size_t i = 0; i < _size; i++) {
-    (_table + i)->~ZForwardingTableEntry();
-  }
+void ZForwardingTable::clear() {
+  ZForwarding* prev_forwarding = NULL;
 
-  // Free table
-  MallocArrayAllocator<ZForwardingTableEntry>::free(_table);
-  _table = NULL;
-  _size = 0;
-}
-
-void ZForwardingTable::verify(size_t object_max_count, size_t live_objects) const {
-  size_t count = 0;
-
-  for (size_t i = 0; i < _size; i++) {
-    const ZForwardingTableEntry entry = _table[i];
-    if (entry.is_empty()) {
-      // Skip empty entries
+  // Clear and destroy all non-NULL entries
+  ZGranuleMapIterator<ZForwarding*> iter(&_map);
+  for (ZForwarding** entry; iter.next(&entry);) {
+    ZForwarding* const forwarding = *entry;
+    if (forwarding == NULL) {
+      // Skip entry
       continue;
     }
 
-    // Check from index
-    guarantee(entry.from_index() < object_max_count, "Invalid from index");
+    // Clear entry
+    *entry = NULL;
 
-    // Check for duplicates
-    for (size_t j = i + 1; j < _size; j++) {
-      const ZForwardingTableEntry other = _table[j];
-      guarantee(entry.from_index() != other.from_index(), "Duplicate from");
-      guarantee(entry.to_offset() != other.to_offset(), "Duplicate to");
+    // More than one entry can point to the same
+    // forwarding. Make sure we only destroy it once.
+    if (forwarding != prev_forwarding) {
+      ZForwarding::destroy(forwarding);
+      prev_forwarding = forwarding;
     }
-
-    count++;
   }
-
-  // Check number of non-null entries
-  guarantee(live_objects == count, "Count mismatch");
 }

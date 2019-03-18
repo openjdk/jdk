@@ -64,6 +64,7 @@ ZHeap::ZHeap() :
     _object_allocator(_workers.nworkers()),
     _page_allocator(heap_min_size(), heap_max_size(), heap_max_reserve_size()),
     _pagetable(),
+    _forwarding_table(),
     _mark(&_workers, &_pagetable),
     _reference_processor(&_workers),
     _weak_roots_processor(&_workers),
@@ -234,17 +235,11 @@ void ZHeap::undo_alloc_page(ZPage* page) {
   log_trace(gc)("Undo page allocation, thread: " PTR_FORMAT " (%s), page: " PTR_FORMAT ", size: " SIZE_FORMAT,
                 ZThread::id(), ZThread::name(), p2i(page), page->size());
 
-  release_page(page, false /* reclaimed */);
+  free_page(page, false /* reclaimed */);
 }
 
-bool ZHeap::retain_page(ZPage* page) {
-  return page->inc_refcount();
-}
-
-void ZHeap::release_page(ZPage* page, bool reclaimed) {
-  if (page->dec_refcount()) {
-    _page_allocator.free_page(page, reclaimed);
-  }
+void ZHeap::free_page(ZPage* page, bool reclaimed) {
+  _page_allocator.free_page(page, reclaimed);
 }
 
 void ZHeap::before_flip() {
@@ -437,7 +432,7 @@ void ZHeap::select_relocation_set() {
       selector.register_garbage_page(page);
 
       // Reclaim page immediately
-      release_page(page, true /* reclaimed */);
+      free_page(page, true /* reclaimed */);
     }
   }
 
@@ -454,23 +449,17 @@ void ZHeap::select_relocation_set() {
 void ZHeap::prepare_relocation_set() {
   ZRelocationSetIterator iter(&_relocation_set);
   for (ZPage* page; iter.next(&page);) {
-    // Prepare for relocation
-    page->set_forwarding();
-
-    // Update pagetable
-    _pagetable.set_relocating(page);
+    // Setup forwarding for page
+    _forwarding_table.insert(page->start(),
+                             page->size(),
+                             page->object_alignment_shift(),
+                             page->live_objects());
   }
 }
 
 void ZHeap::reset_relocation_set() {
-  ZRelocationSetIterator iter(&_relocation_set);
-  for (ZPage* page; iter.next(&page);) {
-    // Reset relocation information
-    page->reset_forwarding();
-
-    // Update pagetable
-    _pagetable.clear_relocating(page);
-  }
+  // Clear forwarding table
+  _forwarding_table.clear();
 }
 
 void ZHeap::relocate_start() {
@@ -491,25 +480,6 @@ void ZHeap::relocate_start() {
 
   // Remap/Relocate roots
   _relocate.start();
-}
-
-uintptr_t ZHeap::relocate_object(uintptr_t addr) {
-  assert(ZGlobalPhase == ZPhaseRelocate, "Relocate not allowed");
-  ZPage* const page = _pagetable.get(addr);
-  const bool retained = retain_page(page);
-  const uintptr_t new_addr = _relocate.relocate_object(page, addr);
-  if (retained) {
-    release_page(page, true /* reclaimed */);
-  }
-
-  return new_addr;
-}
-
-uintptr_t ZHeap::forward_object(uintptr_t addr) {
-  assert(ZGlobalPhase == ZPhaseMark ||
-         ZGlobalPhase == ZPhaseMarkCompleted, "Forward not allowed");
-  ZPage* const page = _pagetable.get(addr);
-  return _relocate.forward_object(page, addr);
 }
 
 void ZHeap::relocate() {
