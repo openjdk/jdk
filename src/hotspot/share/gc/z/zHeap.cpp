@@ -221,7 +221,7 @@ void ZHeap::out_of_memory() {
 ZPage* ZHeap::alloc_page(uint8_t type, size_t size, ZAllocationFlags flags) {
   ZPage* const page = _page_allocator.alloc_page(type, size, flags);
   if (page != NULL) {
-    // Update page table
+    // Insert page table entry
     _page_table.insert(page);
   }
 
@@ -239,6 +239,10 @@ void ZHeap::undo_alloc_page(ZPage* page) {
 }
 
 void ZHeap::free_page(ZPage* page, bool reclaimed) {
+  // Remove page table entry
+  _page_table.remove(page);
+
+  // Free page
   _page_allocator.free_page(page, reclaimed);
 }
 
@@ -406,9 +410,6 @@ void ZHeap::destroy_detached_pages() {
   _page_allocator.flush_detached_pages(&list);
 
   for (ZPage* page = list.remove_first(); page != NULL; page = list.remove_first()) {
-    // Remove page table entry
-    _page_table.remove(page);
-
     // Delete the page
     _page_allocator.destroy_page(page);
   }

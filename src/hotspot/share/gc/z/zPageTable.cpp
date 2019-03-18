@@ -36,16 +36,12 @@ void ZPageTable::insert(ZPage* page) {
   const uintptr_t addr = ZAddress::good(page->start());
   const size_t size = page->size();
 
-  // Cached pages stays in the page table.
-  // Don't re-insert if it's already present.
-  if (get(addr) == NULL) {
-    // Make sure a newly created page is
-    // visible before updating the page table.
-    OrderAccess::storestore();
-    _map.put(addr, size, page);
-  }
+  // Make sure a newly created page is
+  // visible before updating the page table.
+  OrderAccess::storestore();
 
-  assert(get(addr) == page, "Invalid entry");
+  assert(get(addr) == NULL, "Invalid entry");
+  _map.put(addr, size, page);
 }
 
 void ZPageTable::remove(ZPage* page) {
