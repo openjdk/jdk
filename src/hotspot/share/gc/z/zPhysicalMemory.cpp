@@ -179,6 +179,10 @@ void ZPhysicalMemoryManager::unmap(ZPhysicalMemory pmem, uintptr_t offset) {
   _backing.unmap(pmem, offset);
 }
 
-void ZPhysicalMemoryManager::flip(ZPhysicalMemory pmem, uintptr_t offset) {
-  _backing.flip(pmem, offset);
+void ZPhysicalMemoryManager::debug_map(ZPhysicalMemory pmem, uintptr_t offset) {
+  _backing.debug_map(pmem, offset);
+}
+
+void ZPhysicalMemoryManager::debug_unmap(ZPhysicalMemory pmem, uintptr_t offset) {
+  _backing.debug_unmap(pmem, offset);
 }

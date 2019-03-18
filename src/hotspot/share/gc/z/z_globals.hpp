@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,8 +70,8 @@
   diagnostic(bool, ZProactive, true,                                        \
           "Enable proactive GC cycles")                                     \
                                                                             \
-  diagnostic(bool, ZUnmapBadViews, false,                                   \
-          "Unmap bad (inactive) heap views")                                \
+  diagnostic(bool, ZVerifyViews, false,                                     \
+          "Verify heap view accesses")                                      \
                                                                             \
   diagnostic(bool, ZVerifyMarking, false,                                   \
           "Verify marking stacks")                                          \

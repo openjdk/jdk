@@ -94,7 +94,9 @@ public:
 
   void map(ZPhysicalMemory pmem, uintptr_t offset);
   void unmap(ZPhysicalMemory pmem, uintptr_t offset);
-  void flip(ZPhysicalMemory pmem, uintptr_t offset);
+
+  void debug_map(ZPhysicalMemory pmem, uintptr_t offset);
+  void debug_unmap(ZPhysicalMemory pmem, uintptr_t offset);
 };
 
 #endif // SHARE_GC_Z_ZPHYSICALMEMORY_HPP

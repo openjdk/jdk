@@ -237,8 +237,8 @@ uintptr_t ZPhysicalMemoryBacking::nmt_address(uintptr_t offset) const {
 }
 
 void ZPhysicalMemoryBacking::map(ZPhysicalMemory pmem, uintptr_t offset) const {
-  if (ZUnmapBadViews) {
-    // Only map the good view, for debugging only
+  if (ZVerifyViews) {
+    // Map good view
     map_view(pmem, ZAddress::good(offset), AlwaysPreTouch);
   } else {
     // Map all views
@@ -249,8 +249,8 @@ void ZPhysicalMemoryBacking::map(ZPhysicalMemory pmem, uintptr_t offset) const {
 }
 
 void ZPhysicalMemoryBacking::unmap(ZPhysicalMemory pmem, uintptr_t offset) const {
-  if (ZUnmapBadViews) {
-    // Only map the good view, for debugging only
+  if (ZVerifyViews) {
+    // Unmap good view
     unmap_view(pmem, ZAddress::good(offset));
   } else {
     // Unmap all views
@@ -260,11 +260,14 @@ void ZPhysicalMemoryBacking::unmap(ZPhysicalMemory pmem, uintptr_t offset) const
   }
 }
 
-void ZPhysicalMemoryBacking::flip(ZPhysicalMemory pmem, uintptr_t offset) const {
-  assert(ZUnmapBadViews, "Should be enabled");
-  const uintptr_t addr_good = ZAddress::good(offset);
-  const uintptr_t addr_bad = ZAddress::is_marked(ZAddressGoodMask) ? ZAddress::remapped(offset) : ZAddress::marked(offset);
-  // Map/Unmap views
-  map_view(pmem, addr_good, false /* pretouch */);
-  unmap_view(pmem, addr_bad);
+void ZPhysicalMemoryBacking::debug_map(ZPhysicalMemory pmem, uintptr_t offset) const {
+  // Map good view
+  assert(ZVerifyViews, "Should be enabled");
+  map_view(pmem, ZAddress::good(offset), false /* pretouch */);
+}
+
+void ZPhysicalMemoryBacking::debug_unmap(ZPhysicalMemory pmem, uintptr_t offset) const {
+  // Unmap good view
+  assert(ZVerifyViews, "Should be enabled");
+  unmap_view(pmem, ZAddress::good(offset));
 }

@@ -58,7 +58,9 @@ public:
 
   void map(ZPhysicalMemory pmem, uintptr_t offset) const;
   void unmap(ZPhysicalMemory pmem, uintptr_t offset) const;
-  void flip(ZPhysicalMemory pmem, uintptr_t offset) const;
+
+  void debug_map(ZPhysicalMemory pmem, uintptr_t offset) const;
+  void debug_unmap(ZPhysicalMemory pmem, uintptr_t offset) const;
 };
 
 #endif // OS_CPU_LINUX_X86_GC_Z_ZPHYSICALMEMORYBACKING_LINUX_X86_HPP

@@ -242,11 +242,6 @@ void ZPageAllocator::flush_pre_mapped() {
   _pre_mapped.clear();
 }
 
-void ZPageAllocator::map_page(ZPage* page) {
-  // Map physical memory
-  _physical.map(page->physical_memory(), page->start());
-}
-
 void ZPageAllocator::detach_page(ZPage* page) {
   // Detach the memory mapping.
   detach_memory(page->virtual_memory(), page->physical_memory());
@@ -265,6 +260,21 @@ void ZPageAllocator::destroy_page(ZPage* page) {
   }
 
   delete page;
+}
+
+void ZPageAllocator::map_page(ZPage* page) {
+  // Map physical memory
+  if (!page->is_mapped()) {
+    _physical.map(page->physical_memory(), page->start());
+  } else if (ZVerifyViews) {
+    _physical.debug_map(page->physical_memory(), page->start());
+  }
+}
+
+void ZPageAllocator::unmap_all_pages() {
+  ZPhysicalMemory pmem(ZPhysicalMemorySegment(0 /* start */, ZAddressOffsetMax));
+  _physical.debug_unmap(pmem, 0 /* offset */);
+  pmem.clear();
 }
 
 void ZPageAllocator::flush_detached_pages(ZList<ZPage>* list) {
@@ -398,9 +408,7 @@ ZPage* ZPageAllocator::alloc_page(uint8_t type, size_t size, ZAllocationFlags fl
   }
 
   // Map page if needed
-  if (!page->is_mapped()) {
-    map_page(page);
-  }
+  map_page(page);
 
   // Reset page. This updates the page's sequence number and must
   // be done after page allocation, which potentially blocked in
@@ -453,27 +461,6 @@ void ZPageAllocator::detach_memory(const ZVirtualMemory& vmem, ZPhysicalMemory& 
 
   // Clear physical mapping
   pmem.clear();
-}
-
-void ZPageAllocator::flip_page(ZPage* page) {
-  const ZPhysicalMemory& pmem = page->physical_memory();
-  const uintptr_t addr = page->start();
-
-  // Flip physical mapping
-  _physical.flip(pmem, addr);
-}
-
-void ZPageAllocator::flip_pre_mapped() {
-  if (_pre_mapped.available() == 0) {
-    // Nothing to flip
-    return;
-  }
-
-  const ZPhysicalMemory& pmem = _pre_mapped.physical_memory();
-  const ZVirtualMemory& vmem = _pre_mapped.virtual_memory();
-
-  // Flip physical mapping
-  _physical.flip(pmem, vmem.start());
 }
 
 void ZPageAllocator::free_page(ZPage* page, bool reclaimed) {

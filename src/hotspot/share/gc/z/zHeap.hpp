@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,8 +67,13 @@ private:
   size_t heap_max_size() const;
   size_t heap_max_reserve_size() const;
 
+  void before_flip();
+  void after_flip();
+
+  void flip_to_marked();
+  void flip_to_remapped();
+
   void out_of_memory();
-  void flip_views();
   void fixup_partial_loads();
 
 public:

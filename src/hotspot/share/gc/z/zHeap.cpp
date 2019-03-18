@@ -247,20 +247,35 @@ void ZHeap::release_page(ZPage* page, bool reclaimed) {
   }
 }
 
-void ZHeap::flip_views() {
-  // For debugging only
-  if (ZUnmapBadViews) {
-    // Flip pages
+void ZHeap::before_flip() {
+  if (ZVerifyViews) {
+    // Unmap all pages
+    _page_allocator.unmap_all_pages();
+  }
+}
+
+void ZHeap::after_flip() {
+  if (ZVerifyViews) {
+    // Map all pages
     ZPageTableIterator iter(&_pagetable);
     for (ZPage* page; iter.next(&page);) {
       if (!page->is_detached()) {
-        _page_allocator.flip_page(page);
+        _page_allocator.map_page(page);
       }
     }
-
-    // Flip pre-mapped memory
-    _page_allocator.flip_pre_mapped();
   }
+}
+
+void ZHeap::flip_to_marked() {
+  before_flip();
+  ZAddressMasks::flip_to_marked();
+  after_flip();
+}
+
+void ZHeap::flip_to_remapped() {
+  before_flip();
+  ZAddressMasks::flip_to_remapped();
+  after_flip();
 }
 
 void ZHeap::mark_start() {
@@ -270,8 +285,7 @@ void ZHeap::mark_start() {
   ZStatSample(ZSamplerHeapUsedBeforeMark, used());
 
   // Flip address view
-  ZAddressMasks::flip_to_marked();
-  flip_views();
+  flip_to_marked();
 
   // Retire allocating pages
   _object_allocator.retire_pages();
@@ -466,8 +480,7 @@ void ZHeap::relocate_start() {
   _unload.finish();
 
   // Flip address view
-  ZAddressMasks::flip_to_remapped();
-  flip_views();
+  flip_to_remapped();
 
   // Enter relocate phase
   ZGlobalPhase = ZPhaseRelocate;
