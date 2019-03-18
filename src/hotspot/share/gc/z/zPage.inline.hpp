@@ -165,10 +165,6 @@ inline bool ZPage::is_relocatable() const {
   return is_active() && _seqnum < ZGlobalSeqNum;
 }
 
-inline bool ZPage::is_detached() const {
-  return _physical.is_null();
-}
-
 inline bool ZPage::is_mapped() const {
   return _seqnum > 0;
 }

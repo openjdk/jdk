@@ -48,12 +48,11 @@ ZPage::ZPage(uint8_t type, ZVirtualMemory vmem, ZPhysicalMemory pmem) :
 
 ZPage::~ZPage() {
   assert(!is_active(), "Should not be active");
-  assert(is_detached(), "Should be detached");
+  assert(_physical.is_null(), "Should be detached");
 }
 
 void ZPage::reset() {
   assert(!is_active(), "Should not be active");
-  assert(!is_detached(), "Should not be detached");
 
   _seqnum = ZGlobalSeqNum;
   _top = start();
@@ -67,11 +66,10 @@ void ZPage::reset() {
 }
 
 void ZPage::print_on(outputStream* out) const {
-  out->print_cr(" %-6s  " PTR_FORMAT " " PTR_FORMAT " " PTR_FORMAT " %s%s%s%s",
+  out->print_cr(" %-6s  " PTR_FORMAT " " PTR_FORMAT " " PTR_FORMAT " %s%s%s",
                 type_to_string(), start(), top(), end(),
                 is_allocating()  ? " Allocating"  : "",
                 is_relocatable() ? " Relocatable" : "",
-                is_detached()    ? " Detached"    : "",
                 !is_active()     ? " Inactive"    : "");
 }
 

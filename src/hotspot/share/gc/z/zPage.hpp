@@ -85,7 +85,6 @@ public:
 
   bool is_allocating() const;
   bool is_relocatable() const;
-  bool is_detached() const;
 
   bool is_mapped() const;
   void set_pre_mapped();

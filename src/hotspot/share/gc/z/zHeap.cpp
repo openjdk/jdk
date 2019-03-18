@@ -258,9 +258,7 @@ void ZHeap::after_flip() {
     // Map all pages
     ZPageTableIterator iter(&_page_table);
     for (ZPage* page; iter.next(&page);) {
-      if (!page->is_detached()) {
-        _page_allocator.map_page(page);
-      }
+      _page_allocator.map_page(page);
     }
   }
 }
