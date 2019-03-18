@@ -30,12 +30,12 @@
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHash.inline.hpp"
 #include "gc/z/zLock.inline.hpp"
-#include "gc/z/zNMethodAllocator.hpp"
 #include "gc/z/zNMethodData.hpp"
 #include "gc/z/zNMethodTable.hpp"
 #include "gc/z/zNMethodTableEntry.hpp"
 #include "gc/z/zNMethodTableIteration.hpp"
 #include "gc/z/zOopClosures.inline.hpp"
+#include "gc/z/zSafeDelete.inline.hpp"
 #include "gc/z/zTask.hpp"
 #include "gc/z/zWorkers.hpp"
 #include "logging/log.hpp"
@@ -51,15 +51,7 @@ size_t ZNMethodTable::_size = 0;
 size_t ZNMethodTable::_nregistered = 0;
 size_t ZNMethodTable::_nunregistered = 0;
 ZNMethodTableIteration ZNMethodTable::_iteration;
-
-ZNMethodTableEntry* ZNMethodTable::create(size_t size) {
-  void* const mem = ZNMethodAllocator::allocate(size * sizeof(ZNMethodTableEntry));
-  return ::new (mem) ZNMethodTableEntry[size];
-}
-
-void ZNMethodTable::destroy(ZNMethodTableEntry* table) {
-  ZNMethodAllocator::free(table);
-}
+ZSafeDelete<ZNMethodTableEntry[]> ZNMethodTable::_safe_delete;
 
 size_t ZNMethodTable::first_index(const nmethod* nm, size_t size) {
   assert(is_power_of_2(size), "Invalid size");
@@ -128,7 +120,7 @@ void ZNMethodTable::rebuild(size_t new_size) {
                          _nunregistered, percent_of(_nunregistered, _size), 0.0);
 
   // Allocate new table
-  ZNMethodTableEntry* const new_table = ZNMethodTable::create(new_size);
+  ZNMethodTableEntry* const new_table = new ZNMethodTableEntry[new_size];
 
   // Transfer all registered entries
   for (size_t i = 0; i < _size; i++) {
@@ -139,7 +131,7 @@ void ZNMethodTable::rebuild(size_t new_size) {
   }
 
   // Free old table
-  ZNMethodTable::destroy(_table);
+  _safe_delete(_table);
 
   // Install new table
   _table = new_table;
@@ -219,8 +211,8 @@ void ZNMethodTable::unregister_nmethod(nmethod* nm) {
 void ZNMethodTable::nmethods_do_begin() {
   MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
-  // Make sure we don't free data while iterating
-  ZNMethodAllocator::activate_deferred_frees();
+  // Do not allow the table to be deleted while iterating
+  _safe_delete.enable_deferred_delete();
 
   // Prepare iteration
   _iteration.nmethods_do_begin(_table, _size);
@@ -232,8 +224,8 @@ void ZNMethodTable::nmethods_do_end() {
   // Finish iteration
   _iteration.nmethods_do_end();
 
-  // Process deferred frees
-  ZNMethodAllocator::deactivate_and_process_deferred_frees();
+  // Allow the table to be deleted
+  _safe_delete.disable_deferred_delete();
 
   // Notify iteration done
   CodeCache_lock->notify_all();

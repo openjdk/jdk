@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZNMETHODTABLE_HPP
 
 #include "gc/z/zNMethodTableIteration.hpp"
+#include "gc/z/zSafeDelete.hpp"
 #include "memory/allocation.hpp"
 
 class nmethod;
@@ -34,11 +35,12 @@ class ZWorkers;
 
 class ZNMethodTable : public AllStatic {
 private:
-  static ZNMethodTableEntry*    _table;
-  static size_t                 _size;
-  static size_t                 _nregistered;
-  static size_t                 _nunregistered;
-  static ZNMethodTableIteration _iteration;
+  static ZNMethodTableEntry*               _table;
+  static size_t                            _size;
+  static size_t                            _nregistered;
+  static size_t                            _nunregistered;
+  static ZNMethodTableIteration            _iteration;
+  static ZSafeDelete<ZNMethodTableEntry[]> _safe_delete;
 
   static ZNMethodTableEntry* create(size_t size);
   static void destroy(ZNMethodTableEntry* table);
