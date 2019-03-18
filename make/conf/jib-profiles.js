@@ -955,7 +955,8 @@ var getJibProfilesDependencies = function (input, common) {
         : input.target_platform);
 
     var devkit_cross_prefix = "";
-    if (input.target_platform != input.build_platform) {
+    if (input.build_platform != input.target_platform
+       && input.build_platform != devkit_platform) {
         devkit_cross_prefix = input.build_platform + "-to-";
     }
 
