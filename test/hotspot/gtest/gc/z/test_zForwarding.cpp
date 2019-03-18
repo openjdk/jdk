@@ -60,11 +60,11 @@ public:
   // Test functions
 
   static void setup(ZForwarding* forwarding) {
-    EXPECT_PRED1(is_power_of_2, forwarding->_nentries) << CAPTURE(forwarding->_nentries);
+    EXPECT_PRED1(is_power_of_2, forwarding->_entries.length()) << CAPTURE(forwarding->_entries.length());
   }
 
   static void find_empty(ZForwarding* forwarding) {
-    uint32_t size = forwarding->_nentries;
+    uint32_t size = forwarding->_entries.length();
     uint32_t entries_to_check = size * 2;
 
     for (uint32_t i = 0; i < entries_to_check; i++) {
@@ -77,7 +77,7 @@ public:
   }
 
   static void find_full(ZForwarding* forwarding) {
-    uint32_t size = forwarding->_nentries;
+    uint32_t size = forwarding->_entries.length();
     uint32_t entries_to_populate = size;
 
     // Populate
@@ -104,7 +104,7 @@ public:
   }
 
   static void find_every_other(ZForwarding* forwarding) {
-    uint32_t size = forwarding->_nentries;
+    uint32_t size = forwarding->_entries.length();
     uint32_t entries_to_populate = size / 2;
 
     // Populate even from indices

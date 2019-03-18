@@ -28,33 +28,27 @@
 #include "memory/allocation.hpp"
 #include "utilities/debug.hpp"
 
-ZForwarding::ZForwarding(ZPage* page, uint32_t nentries) :
-    _virtual(page->virtual_memory()),
-    _object_alignment_shift(page->object_alignment_shift()),
-    _nentries(nentries),
-    _page(page),
-    _refcount(1),
-    _pinned(false) {}
-
 ZForwarding* ZForwarding::create(ZPage* page) {
-  assert(page->live_objects() > 0, "Invalid value");
-
   // Allocate table for linear probing. The size of the table must be
   // a power of two to allow for quick and inexpensive indexing/masking.
   // The table is sized to have a load factor of 50%, i.e. sized to have
   // double the number of entries actually inserted.
+  assert(page->live_objects() > 0, "Invalid value");
   const uint32_t nentries = ZUtils::round_up_power_of_2(page->live_objects() * 2);
-  const size_t size = sizeof(ZForwarding) + (sizeof(ZForwardingEntry) * nentries);
-  uint8_t* const addr = NEW_C_HEAP_ARRAY(uint8_t, size, mtGC);
-  ZForwardingEntry* const entries = ::new (addr + sizeof(ZForwarding)) ZForwardingEntry[nentries];
-  ZForwarding* const forwarding = ::new (addr) ZForwarding(page, nentries);
-
-  return forwarding;
+  return ::new (AttachedArray::alloc(nentries)) ZForwarding(page, nentries);
 }
 
 void ZForwarding::destroy(ZForwarding* forwarding) {
-  FREE_C_HEAP_ARRAY(uint8_t, forwarding);
+  AttachedArray::free(forwarding);
 }
+
+ZForwarding::ZForwarding(ZPage* page, uint32_t nentries) :
+    _virtual(page->virtual_memory()),
+    _object_alignment_shift(page->object_alignment_shift()),
+    _entries(nentries),
+    _page(page),
+    _refcount(1),
+    _pinned(false) {}
 
 void ZForwarding::verify() const {
   guarantee(_refcount > 0, "Invalid refcount");
@@ -62,7 +56,7 @@ void ZForwarding::verify() const {
 
   uint32_t live_objects = 0;
 
-  for (ZForwardingCursor i = 0; i < _nentries; i++) {
+  for (ZForwardingCursor i = 0; i < _entries.length(); i++) {
     const ZForwardingEntry entry = at(&i);
     if (entry.is_empty()) {
       // Skip empty entries
@@ -73,7 +67,7 @@ void ZForwarding::verify() const {
     guarantee(entry.from_index() < _page->object_max_count(), "Invalid from index");
 
     // Check for duplicates
-    for (ZForwardingCursor j = i + 1; j < _nentries; j++) {
+    for (ZForwardingCursor j = i + 1; j < _entries.length(); j++) {
       const ZForwardingEntry other = at(&j);
       guarantee(entry.from_index() != other.from_index(), "Duplicate from");
       guarantee(entry.to_offset() != other.to_offset(), "Duplicate to");

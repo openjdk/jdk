@@ -24,6 +24,7 @@
 #ifndef SHARE_GC_Z_VMSTRUCTS_Z_HPP
 #define SHARE_GC_Z_VMSTRUCTS_Z_HPP
 
+#include "gc/z/zAttachedArray.hpp"
 #include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zForwarding.hpp"
 #include "gc/z/zGranuleMap.hpp"
@@ -54,6 +55,7 @@ public:
 };
 
 typedef ZGranuleMap<ZPage*> ZGranuleMapForPageTable;
+typedef ZAttachedArray<ZForwarding, ZForwardingEntry> ZAttachedArrayForForwarding;
 
 #define VM_STRUCTS_ZGC(nonstatic_field, volatile_nonstatic_field, static_field)                      \
   static_field(ZGlobalsForVMStructs,            _instance_p,          ZGlobalsForVMStructs*)         \
@@ -85,7 +87,7 @@ typedef ZGranuleMap<ZPage*> ZGranuleMapForPageTable;
   nonstatic_field(ZVirtualMemory,               _start,               uintptr_t)                     \
   nonstatic_field(ZVirtualMemory,               _end,                 uintptr_t)                     \
                                                                                                      \
-  nonstatic_field(ZForwarding,                  _nentries,            const uint32_t)                \
+  nonstatic_field(ZForwarding,                  _entries,             const ZAttachedArrayForForwarding) \
                                                                                                      \
   nonstatic_field(ZPhysicalMemoryManager,       _max_capacity,        const size_t)                  \
   nonstatic_field(ZPhysicalMemoryManager,       _capacity,            size_t)
@@ -115,6 +117,7 @@ typedef ZGranuleMap<ZPage*> ZGranuleMapForPageTable;
   declare_toplevel_type(ZPage)                                                                       \
   declare_toplevel_type(ZPageAllocator)                                                              \
   declare_toplevel_type(ZPageTable)                                                                  \
+  declare_toplevel_type(ZAttachedArrayForForwarding)                                                 \
   declare_toplevel_type(ZGranuleMapForPageTable)                                                     \
   declare_toplevel_type(ZVirtualMemory)                                                              \
   declare_toplevel_type(ZForwardingTable)                                                            \

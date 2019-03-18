@@ -24,6 +24,7 @@
 #ifndef SHARE_GC_Z_ZFORWARDING_INLINE_HPP
 #define SHARE_GC_Z_ZFORWARDING_INLINE_HPP
 
+#include "gc/z/zAttachedArray.inline.hpp"
 #include "gc/z/zForwarding.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHash.inline.hpp"
@@ -90,7 +91,7 @@ inline void ZForwarding::release_page() {
 }
 
 inline ZForwardingEntry* ZForwarding::entries() const {
-  return reinterpret_cast<ZForwardingEntry*>(reinterpret_cast<uintptr_t>(this) + sizeof(*this));
+  return _entries(this);
 }
 
 inline ZForwardingEntry ZForwarding::at(ZForwardingCursor* cursor) const {
@@ -98,14 +99,14 @@ inline ZForwardingEntry ZForwarding::at(ZForwardingCursor* cursor) const {
 }
 
 inline ZForwardingEntry ZForwarding::first(uintptr_t from_index, ZForwardingCursor* cursor) const {
-  const uint32_t mask = _nentries - 1;
+  const uint32_t mask = _entries.length() - 1;
   const uint32_t hash = ZHash::uint32_to_uint32((uint32_t)from_index);
   *cursor = hash & mask;
   return at(cursor);
 }
 
 inline ZForwardingEntry ZForwarding::next(ZForwardingCursor* cursor) const {
-  const uint32_t mask = _nentries - 1;
+  const uint32_t mask = _entries.length() - 1;
   *cursor = (*cursor + 1) & mask;
   return at(cursor);
 }
@@ -135,7 +136,7 @@ inline ZForwardingEntry ZForwarding::find(uintptr_t from_index, ZForwardingCurso
 
 inline uintptr_t ZForwarding::insert(uintptr_t from_index, uintptr_t to_offset, ZForwardingCursor* cursor) {
   const ZForwardingEntry new_entry(from_index, to_offset);
-  const ZForwardingEntry old_entry; // empty
+  const ZForwardingEntry old_entry; // Empty
 
   for (;;) {
     const ZForwardingEntry prev_entry = Atomic::cmpxchg(new_entry, entries() + *cursor, old_entry);

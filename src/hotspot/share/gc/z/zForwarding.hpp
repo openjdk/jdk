@@ -24,6 +24,7 @@
 #ifndef SHARE_GC_Z_ZFORWARDING_HPP
 #define SHARE_GC_Z_ZFORWARDING_HPP
 
+#include "gc/z/zAttachedArray.hpp"
 #include "gc/z/zForwardingEntry.hpp"
 #include "gc/z/zVirtualMemory.hpp"
 
@@ -36,9 +37,11 @@ class ZForwarding {
   friend class ZForwardingTest;
 
 private:
+  typedef ZAttachedArray<ZForwarding, ZForwardingEntry> AttachedArray;
+
   const ZVirtualMemory _virtual;
   const size_t         _object_alignment_shift;
-  const uint32_t       _nentries;
+  const AttachedArray  _entries;
   ZPage*               _page;
   volatile uint32_t    _refcount;
   volatile bool        _pinned;
