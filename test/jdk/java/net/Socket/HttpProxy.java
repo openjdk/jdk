@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,12 @@
 
 /*
  * @test
- * @bug 6370908
+ * @bug 6370908 8220663
  * @summary Add support for HTTP_CONNECT proxy in Socket class
  * @modules java.base/sun.net.www
  * @run main HttpProxy
  * @run main/othervm -Djava.net.preferIPv4Stack=true HttpProxy
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true HttpProxy
  */
 
 import java.io.IOException;
@@ -40,6 +41,9 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketAddress;
+import java.util.ArrayList;
+import java.util.List;
 import sun.net.www.MessageHeader;
 
 public class HttpProxy {
@@ -50,9 +54,10 @@ public class HttpProxy {
     public static void main(String[] args) throws Exception {
         String host;
         int port;
+        ConnectProxyTunnelServer proxy = null;
         if (args.length == 0) {
             // Start internal proxy
-            ConnectProxyTunnelServer proxy = new ConnectProxyTunnelServer();
+            proxy = new ConnectProxyTunnelServer();
             proxy.start();
             host = "localhost";
             port = proxy.getLocalPort();
@@ -66,8 +71,13 @@ public class HttpProxy {
             return;
         }
 
-        HttpProxy p = new HttpProxy(host, port);
-        p.test();
+        try {
+            HttpProxy p = new HttpProxy(host, port);
+            p.test();
+        } finally {
+            if (proxy != null)
+                proxy.close();
+        }
     }
 
     public HttpProxy(String proxyHost, int proxyPort) {
@@ -79,26 +89,37 @@ public class HttpProxy {
         InetSocketAddress proxyAddress = new InetSocketAddress(proxyHost, proxyPort);
         Proxy httpProxy = new Proxy(Proxy.Type.HTTP, proxyAddress);
 
-        try (ServerSocket ss = new ServerSocket(0);
-             Socket sock = new Socket(httpProxy)) {
-            sock.setSoTimeout(SO_TIMEOUT);
-            sock.setTcpNoDelay(false);
+        try (ServerSocket ss = new ServerSocket(0)) {
+            List<InetSocketAddress> externalAddresses = new ArrayList<>();
+            externalAddresses.add(
+                new InetSocketAddress(InetAddress.getLocalHost(), ss.getLocalPort()));
 
-            InetSocketAddress externalAddress =
-                new InetSocketAddress(InetAddress.getLocalHost(), ss.getLocalPort());
+            if (!"true".equals(System.getProperty("java.net.preferIPv4Stack"))) {
+                byte[] bytes = new byte[] {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1};
+                var address = InetAddress.getByAddress(bytes);
+                externalAddresses.add(
+                        new InetSocketAddress(address, ss.getLocalPort()));
+            }
 
-            out.println("Trying to connect to server socket on " + externalAddress);
-            sock.connect(externalAddress);
-            try (Socket externalSock = ss.accept()) {
-                // perform some simple checks
-                check(sock.isBound(), "Socket is not bound");
-                check(sock.isConnected(), "Socket is not connected");
-                check(!sock.isClosed(), "Socket should not be closed");
-                check(sock.getSoTimeout() == SO_TIMEOUT,
-                        "Socket should have a previously set timeout");
-                check(sock.getTcpNoDelay() ==  false, "NODELAY should be false");
+            for (SocketAddress externalAddress : externalAddresses) {
+                try (Socket sock = new Socket(httpProxy)) {
+                    sock.setSoTimeout(SO_TIMEOUT);
+                    sock.setTcpNoDelay(false);
 
-                simpleDataExchange(sock, externalSock);
+                    out.println("Trying to connect to server socket on " + externalAddress);
+                    sock.connect(externalAddress);
+                    try (Socket externalSock = ss.accept()) {
+                        // perform some simple checks
+                        check(sock.isBound(), "Socket is not bound");
+                        check(sock.isConnected(), "Socket is not connected");
+                        check(!sock.isClosed(), "Socket should not be closed");
+                        check(sock.getSoTimeout() == SO_TIMEOUT,
+                                "Socket should have a previously set timeout");
+                        check(sock.getTcpNoDelay() == false, "NODELAY should be false");
+
+                        simpleDataExchange(sock, externalSock);
+                    }
+                }
             }
         }
     }
@@ -108,7 +129,7 @@ public class HttpProxy {
     }
 
     static Exception unexpected(Exception e) {
-        out.println("Unexcepted Exception: " + e);
+        out.println("Unexpected Exception: " + e);
         e.printStackTrace();
         return e;
     }
@@ -164,9 +185,10 @@ public class HttpProxy {
         return i1 * 256 + i2;
     }
 
-    static class ConnectProxyTunnelServer extends Thread {
+    static class ConnectProxyTunnelServer extends Thread implements AutoCloseable {
 
         private final ServerSocket ss;
+        private volatile boolean closed;
 
         public ConnectProxyTunnelServer() throws IOException {
             ss = new ServerSocket(0);
@@ -174,13 +196,20 @@ public class HttpProxy {
 
         @Override
         public void run() {
-            try (Socket clientSocket = ss.accept()) {
-                processRequest(clientSocket);
+            try {
+                while (!closed) {
+                    try (Socket clientSocket = ss.accept()) {
+                        processRequest(clientSocket);
+                    }
+                }
             } catch (Exception e) {
-                out.println("Proxy Failed: " + e);
-                e.printStackTrace();
+                if (!closed) {
+                    out.println("Proxy Failed: " + e);
+                    e.printStackTrace();
+                }
             } finally {
-                try { ss.close(); } catch (IOException x) { unexpected(x); }
+                if (!closed)
+                    try { ss.close(); } catch (IOException x) { unexpected(x); }
             }
         }
 
@@ -189,6 +218,12 @@ public class HttpProxy {
          */
         public int getLocalPort() {
             return ss.getLocalPort();
+        }
+
+        @Override
+        public void close() throws Exception {
+            closed = true;
+            ss.close();
         }
 
         /*
@@ -200,7 +235,7 @@ public class HttpProxy {
 
             if (!statusLine.startsWith("CONNECT")) {
                 out.println("proxy server: processes only "
-                                  + "CONNECT method requests, recieved: "
+                                  + "CONNECT method requests, received: "
                                   + statusLine);
                 return;
             }
@@ -246,12 +281,19 @@ public class HttpProxy {
                 int endi = connectStr.lastIndexOf(' ');
                 String connectInfo = connectStr.substring(starti+1, endi).trim();
                 // retrieve server name and port
-                endi = connectInfo.indexOf(':');
+                endi = connectInfo.lastIndexOf(':');
                 String name = connectInfo.substring(0, endi);
+
+                if (name.contains(":")) {
+                    if (!(name.startsWith("[") && name.endsWith("]"))) {
+                        throw new IOException("Invalid host:" + name);
+                    }
+                    name = name.substring(1, name.length() - 1);
+                }
                 int port = Integer.parseInt(connectInfo.substring(endi+1));
                 return new InetSocketAddress(name, port);
             } catch (Exception e) {
-                out.println("Proxy recieved a request: " + connectStr);
+                out.println("Proxy received a request: " + connectStr);
                 throw unexpected(e);
             }
         }
