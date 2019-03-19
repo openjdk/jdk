@@ -281,11 +281,6 @@ tier1_runtime = \
  -runtime/modules/ModuleStress/ExportModuleStressTest.java \
  -runtime/modules/ModuleStress/ModuleStressGC.java \
  -runtime/NMT \
- -runtime/RedefineObject/TestRedefineObject.java \
- -runtime/RedefineTests/RedefineLeak.java \
- -runtime/RedefineTests/RedefinePreviousVersions.java \
- -runtime/RedefineTests/RedefineRunningMethods.java \
- -runtime/RedefineTests/RedefineRunningMethodsWithBacktrace.java \
  -runtime/ReservedStack \
  -runtime/SelectionResolution/AbstractMethodErrorTest.java \
  -runtime/SelectionResolution/IllegalAccessErrorTest.java \
@@ -329,6 +324,12 @@ tier1_runtime_appcds_exclude = \
 tier1_serviceability = \
   serviceability/dcmd/compiler \
   -serviceability/dcmd/compiler/CompilerQueueTest.java \
+  serviceability/jvmti/RedefineClasses \
+  -serviceability/jvmti/RedefineClasses/RedefineLeak.java \
+  -serviceability/jvmti/RedefineClasses/RedefinePreviousVersions.java \
+  -serviceability/jvmti/RedefineClasses/RedefineRunningMethods.java \
+  -serviceability/jvmti/RedefineClasses/RedefineRunningMethodsWithBacktrace.java \
+  -serviceability/jvmti/RedefineClasses/TestRedefineObject.java \
   serviceability/logging \
   serviceability/sa \
   -serviceability/sa/ClhsdbScanOops.java \
