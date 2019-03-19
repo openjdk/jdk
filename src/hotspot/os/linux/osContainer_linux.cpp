@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,14 +99,14 @@ class CgroupSubsystem: CHeapObj<mtInternal> {
             buf[MAXPATHLEN-1] = '\0';
             _path = os::strdup(buf);
           } else {
-            char *p = strstr(_root, cgroup_path);
+            char *p = strstr(cgroup_path, _root);
             if (p != NULL && p == _root) {
               if (strlen(cgroup_path) > strlen(_root)) {
                 int buflen;
                 strncpy(buf, _mount_point, MAXPATHLEN);
                 buf[MAXPATHLEN-1] = '\0';
                 buflen = strlen(buf);
-                if ((buflen + strlen(cgroup_path)) > (MAXPATHLEN-1)) {
+                if ((buflen + strlen(cgroup_path) - strlen(_root)) > (MAXPATHLEN-1)) {
                   return;
                 }
                 strncat(buf, cgroup_path + strlen(_root), MAXPATHLEN-buflen);
