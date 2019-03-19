@@ -298,15 +298,15 @@ public class Metrics implements jdk.internal.platform.Metrics {
 
 
     public long getCpuPeriod() {
-        return SubSystem.getLongValue(cpuacct, "cpu.cfs_period_us");
+        return SubSystem.getLongValue(cpu, "cpu.cfs_period_us");
     }
 
     public long getCpuQuota() {
-        return SubSystem.getLongValue(cpuacct, "cpu.cfs_quota_us");
+        return SubSystem.getLongValue(cpu, "cpu.cfs_quota_us");
     }
 
     public long getCpuShares() {
-        long retval = SubSystem.getLongValue(cpuacct, "cpu.shares");
+        long retval = SubSystem.getLongValue(cpu, "cpu.shares");
         if (retval == 0 || retval == 1024)
             return -1;
         else
@@ -314,15 +314,15 @@ public class Metrics implements jdk.internal.platform.Metrics {
     }
 
     public long getCpuNumPeriods() {
-        return SubSystem.getLongEntry(cpuacct, "cpu.stat", "nr_periods");
+        return SubSystem.getLongEntry(cpu, "cpu.stat", "nr_periods");
     }
 
     public long getCpuNumThrottled() {
-        return SubSystem.getLongEntry(cpuacct, "cpu.stat", "nr_throttled");
+        return SubSystem.getLongEntry(cpu, "cpu.stat", "nr_throttled");
     }
 
     public long getCpuThrottledTime() {
-        return SubSystem.getLongEntry(cpuacct, "cpu.stat", "throttled_time");
+        return SubSystem.getLongEntry(cpu, "cpu.stat", "throttled_time");
     }
 
     public long getEffectiveCpuCount() {
