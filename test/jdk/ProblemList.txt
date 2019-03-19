@@ -840,8 +840,6 @@ com/sun/jdi/NashornPopFrameTest.java                            8187143 generic-
 
 # jdk_util
 
-java/util/Arrays/TimSortStackSize2.java                         8220613 generic-all
-
 ############################################################################
 
 # jdk_instrument
