@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,22 +21,30 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 4773417 5003746
+ * @library /test/lib
+ * @build jdk.test.lib.Utils
+ * @run main StackTraceTest
  * @summary  HttpURLConnection.getInputStream() produces IOException with
  *           bad stack trace; HttpURLConnection.getInputStream loses
  *           exception message, exception class
  */
 import java.net.*;
 import java.io.IOException;
+import jdk.test.lib.Utils;
 
 public class StackTraceTest {
     public static void main(String[] args) throws Exception {
-        URL url;
-        try (ServerSocket ss = new ServerSocket(0)) {  // refusing socket
-            url = new URL("http://localhost:" + ss.getLocalPort() + "/");
-        }
+        InetSocketAddress refusing = Utils.refusingEndpoint();
+        int port = refusing.getPort();
+        String host = refusing.getAddress().getHostAddress();
+        if (host.contains(":"))
+            host = "[" + host + "]";
+        URL url = URI.create("http://" + host + ":" + port + "/").toURL();
+        System.out.println("URL: " + url);
+
         URLConnection uc = url.openConnection();
 
         // Trigger implicit connection by trying to retrieve bogus
