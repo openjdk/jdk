@@ -50,28 +50,28 @@ inline int os::Posix::clock_getres(clockid_t clock_id, struct timespec *tp) {
 // Platform Monitor implementation
 
 inline void os::PlatformMonitor::lock() {
-  int status = pthread_mutex_lock(&_mutex);
+  int status = pthread_mutex_lock(mutex());
   assert_status(status == 0, status, "mutex_lock");
 }
 
 inline void os::PlatformMonitor::unlock() {
-  int status = pthread_mutex_unlock(&_mutex);
+  int status = pthread_mutex_unlock(mutex());
   assert_status(status == 0, status, "mutex_unlock");
 }
 
 inline bool os::PlatformMonitor::try_lock() {
-  int status = pthread_mutex_trylock(&_mutex);
+  int status = pthread_mutex_trylock(mutex());
   assert_status(status == 0 || status == EBUSY, status, "mutex_trylock");
   return status == 0;
 }
 
 inline void os::PlatformMonitor::notify() {
-  int status = pthread_cond_signal(&_cond);
+  int status = pthread_cond_signal(cond());
   assert_status(status == 0, status, "cond_signal");
 }
 
 inline void os::PlatformMonitor::notify_all() {
-  int status = pthread_cond_broadcast(&_cond);
+  int status = pthread_cond_broadcast(cond());
   assert_status(status == 0, status, "cond_broadcast");
 }
 

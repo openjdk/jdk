@@ -1671,6 +1671,8 @@ static void pthread_init_common(void) {
   if ((status = pthread_mutexattr_settype(_mutexAttr, PTHREAD_MUTEX_NORMAL)) != 0) {
     fatal("pthread_mutexattr_settype: %s", os::strerror(status));
   }
+  // Solaris has it's own PlatformMonitor, distinct from the one for POSIX.
+  NOT_SOLARIS(os::PlatformMonitor::init();)
 }
 
 #ifndef SOLARIS
@@ -2250,19 +2252,63 @@ void Parker::unpark() {
 
 // Platform Monitor implementation
 
-os::PlatformMonitor::PlatformMonitor() {
+os::PlatformMonitor::Impl::Impl() : _next(NULL) {
   int status = pthread_cond_init(&_cond, _condAttr);
   assert_status(status == 0, status, "cond_init");
   status = pthread_mutex_init(&_mutex, _mutexAttr);
   assert_status(status == 0, status, "mutex_init");
 }
 
-os::PlatformMonitor::~PlatformMonitor() {
+os::PlatformMonitor::Impl::~Impl() {
   int status = pthread_cond_destroy(&_cond);
   assert_status(status == 0, status, "cond_destroy");
   status = pthread_mutex_destroy(&_mutex);
   assert_status(status == 0, status, "mutex_destroy");
 }
+
+#if PLATFORM_MONITOR_IMPL_INDIRECT
+
+pthread_mutex_t os::PlatformMonitor::_freelist_lock;
+os::PlatformMonitor::Impl* os::PlatformMonitor::_freelist = NULL;
+
+void os::PlatformMonitor::init() {
+  int status = pthread_mutex_init(&_freelist_lock, _mutexAttr);
+  assert_status(status == 0, status, "freelist lock init");
+}
+
+struct os::PlatformMonitor::WithFreeListLocked : public StackObj {
+  WithFreeListLocked() {
+    int status = pthread_mutex_lock(&_freelist_lock);
+    assert_status(status == 0, status, "freelist lock");
+  }
+
+  ~WithFreeListLocked() {
+    int status = pthread_mutex_unlock(&_freelist_lock);
+    assert_status(status == 0, status, "freelist unlock");
+  }
+};
+
+os::PlatformMonitor::PlatformMonitor() {
+  {
+    WithFreeListLocked wfl;
+    _impl = _freelist;
+    if (_impl != NULL) {
+      _freelist = _impl->_next;
+      _impl->_next = NULL;
+      return;
+    }
+  }
+  _impl = new Impl();
+}
+
+os::PlatformMonitor::~PlatformMonitor() {
+  WithFreeListLocked wfl;
+  assert(_impl->_next == NULL, "invariant");
+  _impl->_next = _freelist;
+  _freelist = _impl;
+}
+
+#endif // PLATFORM_MONITOR_IMPL_INDIRECT
 
 // Must already be locked
 int os::PlatformMonitor::wait(jlong millis) {
@@ -2278,7 +2324,7 @@ int os::PlatformMonitor::wait(jlong millis) {
     to_abstime(&abst, millis * (NANOUNITS / MILLIUNITS), false, false);
 
     int ret = OS_TIMEOUT;
-    int status = pthread_cond_timedwait(&_cond, &_mutex, &abst);
+    int status = pthread_cond_timedwait(cond(), mutex(), &abst);
     assert_status(status == 0 || status == ETIMEDOUT,
                   status, "cond_timedwait");
     if (status == 0) {
@@ -2286,7 +2332,7 @@ int os::PlatformMonitor::wait(jlong millis) {
     }
     return ret;
   } else {
-    int status = pthread_cond_wait(&_cond, &_mutex);
+    int status = pthread_cond_wait(cond(), mutex());
     assert_status(status == 0, status, "cond_wait");
     return OS_OK;
   }

@@ -232,15 +232,60 @@ class PlatformParker : public CHeapObj<mtSynchronizer> {
   PlatformParker();
 };
 
+// Workaround for a bug in macOSX kernel's pthread support (fixed in Mojave?).
+// Avoid ever allocating a pthread_mutex_t at the same address as one of our
+// former pthread_cond_t, by using a freelist of mutex/condvar pairs.
+// Conditional to avoid extra indirection and padding loss on other platforms.
+#ifdef __APPLE__
+#define PLATFORM_MONITOR_IMPL_INDIRECT 1
+#else
+#define PLATFORM_MONITOR_IMPL_INDIRECT 0
+#endif
+
 // Platform specific implementation that underpins VM Monitor/Mutex class
 class PlatformMonitor : public CHeapObj<mtSynchronizer> {
- private:
-  pthread_mutex_t _mutex; // Native mutex for locking
-  pthread_cond_t  _cond;  // Native condition variable for blocking
+  class Impl : public CHeapObj<mtSynchronizer> {
+  public:
+    pthread_mutex_t _mutex;
+    pthread_cond_t _cond;
+    Impl* _next;
+
+    Impl();
+    ~Impl();
+  };
+
+#if PLATFORM_MONITOR_IMPL_INDIRECT
+
+  Impl* _impl;
+
+  pthread_mutex_t* mutex() { return &(_impl->_mutex); }
+  pthread_cond_t* cond() { return &(_impl->_cond); }
+
+  class WithFreeListLocked;
+  static pthread_mutex_t _freelist_lock;
+  static Impl* _freelist;
 
  public:
-  PlatformMonitor();
+  PlatformMonitor();            // Use freelist allocation of impl.
   ~PlatformMonitor();
+
+  static void init();           // Initialize the freelist.
+
+#else
+
+  Impl _impl;
+
+  pthread_mutex_t* mutex() { return &(_impl._mutex); }
+  pthread_cond_t* cond() { return &(_impl._cond); }
+
+ public:
+  static void init() {}         // Nothing needed for the non-indirect case.
+
+  // Default constructor and destructor.
+
+#endif // PLATFORM_MONITOR_IMPL_INDIRECT
+
+ public:
   void lock();
   void unlock();
   bool try_lock();
