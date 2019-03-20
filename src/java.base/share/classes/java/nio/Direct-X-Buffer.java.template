@@ -218,14 +218,16 @@ class Direct$Type$Buffer$RW$$BO$
         return new Direct$Type$Buffer$RW$$BO$(this, -1, 0, rem, rem, off);
     }
 
-#if[byte]
-    public $Type$Buffer slice(int pos, int lim) {
-        assert (pos >= 0);
-        assert (pos <= lim);
-        int rem = lim - pos;
-        return new Direct$Type$Buffer$RW$$BO$(this, -1, 0, rem, rem, pos);
+    @Override
+    public $Type$Buffer slice(int index, int length) {
+        Objects.checkFromIndexSize(index, length, limit());
+        return new Direct$Type$Buffer$RW$$BO$(this,
+                                              -1,
+                                              0,
+                                              length,
+                                              length,
+                                              index);
     }
-#end[byte]
 
     public $Type$Buffer duplicate() {
         return new Direct$Type$Buffer$RW$$BO$(this,
@@ -288,7 +290,7 @@ class Direct$Type$Buffer$RW$$BO$
     public $Type$Buffer get($type$[] dst, int offset, int length) {
 #if[rw]
         if (((long)length << $LG_BYTES_PER_VALUE$) > Bits.JNI_COPY_TO_ARRAY_THRESHOLD) {
-            checkBounds(offset, length, dst.length);
+            Objects.checkFromIndexSize(offset, length, dst.length);
             int pos = position();
             int lim = limit();
             assert (pos <= lim);
@@ -437,7 +439,7 @@ class Direct$Type$Buffer$RW$$BO$
     public $Type$Buffer put($type$[] src, int offset, int length) {
 #if[rw]
         if (((long)length << $LG_BYTES_PER_VALUE$) > Bits.JNI_COPY_FROM_ARRAY_THRESHOLD) {
-            checkBounds(offset, length, src.length);
+            Objects.checkFromIndexSize(offset, length, src.length);
             int pos = position();
             int lim = limit();
             assert (pos <= lim);
@@ -543,8 +545,7 @@ class Direct$Type$Buffer$RW$$BO$
 #if[char]
 
     public String toString(int start, int end) {
-        if ((end > limit()) || (start > end))
-            throw new IndexOutOfBoundsException();
+        Objects.checkFromToIndex(start, end, limit());
         try {
             int len = end - start;
             char[] ca = new char[len];
@@ -569,8 +570,7 @@ class Direct$Type$Buffer$RW$$BO$
         pos = (pos <= lim ? pos : lim);
         int len = lim - pos;
 
-        if ((start < 0) || (end > len) || (start > end))
-            throw new IndexOutOfBoundsException();
+        Objects.checkFromToIndex(start, end, len);
         return new DirectCharBuffer$RW$$BO$(this,
                                             -1,
                                             pos + start,

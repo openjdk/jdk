@@ -43,6 +43,10 @@ public final class UnsignedLong {
         return Long.compareUnsigned(value, unsignedValue) < 0;
     }
 
+    public boolean isGreaterThan(long unsignedValue) {
+        return Long.compareUnsigned(value, unsignedValue) > 0;
+    }
+
     public boolean isLessOrEqualTo(long unsignedValue) {
         return Long.compareUnsigned(value, unsignedValue) <= 0;
     }

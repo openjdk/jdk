@@ -98,7 +98,8 @@ class CompileTask : public CHeapObj<mtCompiler> {
   CompileTask* _next, *_prev;
   bool         _is_free;
   // Fields used for logging why the compilation was initiated:
-  jlong        _time_queued;  // in units of os::elapsed_counter()
+  jlong        _time_queued;  // time when task was enqueued
+  jlong        _time_started; // time when compilation started
   Method*      _hot_method;   // which method actually triggered this task
   jobject      _hot_method_holder;
   int          _hot_count;    // information about its invocation counter
@@ -156,11 +157,13 @@ class CompileTask : public CHeapObj<mtCompiler> {
 
   void         mark_complete()                   { _is_complete = true; }
   void         mark_success()                    { _is_success = true; }
+  void         mark_started(jlong time)          { _time_started = time; }
 
   int          comp_level()                      { return _comp_level;}
   void         set_comp_level(int comp_level)    { _comp_level = comp_level;}
 
   AbstractCompiler* compiler();
+  CompileTask*      select_for_compilation();
 
   int          num_inlined_bytecodes() const     { return _num_inlined_bytecodes; }
   void         set_num_inlined_bytecodes(int n)  { _num_inlined_bytecodes = n; }
@@ -171,15 +174,17 @@ class CompileTask : public CHeapObj<mtCompiler> {
   void         set_prev(CompileTask* prev)       { _prev = prev; }
   bool         is_free() const                   { return _is_free; }
   void         set_is_free(bool val)             { _is_free = val; }
+  bool         is_unloaded() const;
 
   // RedefineClasses support
-  void         metadata_do(void f(Metadata*));
+  void         metadata_do(MetadataClosure* f);
   void         mark_on_stack();
 
 private:
   static void  print_impl(outputStream* st, Method* method, int compile_id, int comp_level,
                                       bool is_osr_method = false, int osr_bci = -1, bool is_blocking = false,
-                                      const char* msg = NULL, bool short_form = false, bool cr = true);
+                                      const char* msg = NULL, bool short_form = false, bool cr = true,
+                                      jlong time_queued = 0, jlong time_started = 0);
 
 public:
   void         print(outputStream* st = tty, const char* msg = NULL, bool short_form = false, bool cr = true);

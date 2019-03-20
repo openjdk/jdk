@@ -28,12 +28,14 @@
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "gc/parallel/gcTaskManager.hpp"
+#include "gc/parallel/parallelScavengeHeap.inline.hpp"
 #include "gc/parallel/psCardTable.hpp"
 #include "gc/parallel/psClosure.inline.hpp"
 #include "gc/parallel/psPromotionManager.hpp"
 #include "gc/parallel/psPromotionManager.inline.hpp"
 #include "gc/parallel/psScavenge.inline.hpp"
 #include "gc/parallel/psTasks.hpp"
+#include "gc/shared/scavengableNMethods.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
@@ -96,8 +98,8 @@ void ScavengeRootsTask::do_it(GCTaskManager* manager, uint which) {
 
     case code_cache:
       {
-        MarkingCodeBlobClosure each_scavengable_code_blob(&roots_to_old_closure, CodeBlobToOopClosure::FixRelocations);
-        CodeCache::scavenge_root_nmethods_do(&each_scavengable_code_blob);
+        MarkingCodeBlobClosure code_closure(&roots_to_old_closure, CodeBlobToOopClosure::FixRelocations);
+        ScavengableNMethods::nmethods_do(&code_closure);
         AOTLoader::oops_do(&roots_closure);
       }
       break;

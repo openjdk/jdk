@@ -299,4 +299,9 @@ void ShenandoahPacer::print_on(outputStream* out) const {
   }
   out->print_cr("%23s: " SIZE_FORMAT_W(12) SIZE_FORMAT_W(12) " ms", "Total", total_count, total_sum);
   out->cr();
+  out->print_cr("Pacing delays are measured from entering the pacing code till exiting it. Therefore,");
+  out->print_cr("observed pacing delays may be higher than the threshold when paced thread spent more");
+  out->print_cr("time in the pacing code. It usually happens when thread is de-scheduled while paced,");
+  out->print_cr("OS takes longer to unblock the thread, or JVM experiences an STW pause.");
+  out->cr();
 }

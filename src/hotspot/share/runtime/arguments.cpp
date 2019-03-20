@@ -530,6 +530,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "UseMembar",                    JDK_Version::jdk(10), JDK_Version::jdk(12), JDK_Version::undefined() },
   { "CompilationPolicyChoice",      JDK_Version::jdk(13), JDK_Version::jdk(14), JDK_Version::undefined() },
   { "FailOverToOldVerifier",        JDK_Version::jdk(13), JDK_Version::jdk(14), JDK_Version::undefined() },
+  { "ThreadLocalHandshakes",        JDK_Version::jdk(13), JDK_Version::jdk(14), JDK_Version::jdk(15) },
 
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::undefined(), JDK_Version::undefined() },
@@ -3915,6 +3916,13 @@ jint Arguments::apply_ergo() {
 
   if (FLAG_IS_CMDLINE(CompressedClassSpaceSize) && !UseCompressedClassPointers) {
     warning("Setting CompressedClassSpaceSize has no effect when compressed class pointers are not used");
+  }
+
+  // Treat the odd case where local verification is enabled but remote
+  // verification is not as if both were enabled.
+  if (BytecodeVerificationLocal && !BytecodeVerificationRemote) {
+    log_info(verification)("Turning on remote verification because local verification is on");
+    FLAG_SET_DEFAULT(BytecodeVerificationRemote, true);
   }
 
 #ifndef PRODUCT

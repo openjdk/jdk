@@ -25,21 +25,24 @@
 #ifndef SHARE_GC_G1_G1DIRTYCARDQUEUE_HPP
 #define SHARE_GC_G1_G1DIRTYCARDQUEUE_HPP
 
+#include "gc/shared/cardTable.hpp"
 #include "gc/shared/ptrQueue.hpp"
 #include "memory/allocation.hpp"
 
 class G1DirtyCardQueueSet;
 class G1FreeIdSet;
-class JavaThread;
+class Thread;
 class Monitor;
 
 // A closure class for processing card table entries.  Note that we don't
 // require these closure objects to be stack-allocated.
 class G1CardTableEntryClosure: public CHeapObj<mtGC> {
 public:
+  typedef CardTable::CardValue CardValue;
+
   // Process the card whose card table entry is "card_ptr".  If returns
   // "false", terminate the iteration early.
-  virtual bool do_card_ptr(jbyte* card_ptr, uint worker_i) = 0;
+  virtual bool do_card_ptr(CardValue* card_ptr, uint worker_i) = 0;
 };
 
 // A ptrQueue whose elements are "oops", pointers to object heads.
@@ -128,7 +131,7 @@ public:
   // mutator threads to do card-processing work.
   static uint num_par_ids();
 
-  static void handle_zero_index_for_thread(JavaThread* t);
+  static void handle_zero_index_for_thread(Thread* t);
 
   // Apply G1RefineCardConcurrentlyClosure to completed buffers until there are stop_at
   // completed buffers remaining.

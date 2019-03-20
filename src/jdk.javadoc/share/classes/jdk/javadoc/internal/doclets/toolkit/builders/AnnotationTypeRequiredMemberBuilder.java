@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,9 +152,9 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
 
                 buildAnnotationTypeMemberChildren(annotationDocTree);
 
-                detailsTree.addContent(writer.getAnnotationDoc(
+                detailsTree.add(writer.getAnnotationDoc(
                         annotationDocTree, currentMember == lastMember));
-                memberDetailsTree.addContent(writer.getAnnotationDetails(detailsTree));
+                memberDetailsTree.add(writer.getAnnotationDetails(detailsTree));
             }
         }
     }
@@ -172,7 +172,7 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
      * @param annotationDocTree the content tree to which the documentation will be added
      */
     protected void buildSignature(Content annotationDocTree) {
-        annotationDocTree.addContent(writer.getSignature(currentMember));
+        annotationDocTree.add(writer.getSignature(currentMember));
     }
 
     /**

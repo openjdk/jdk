@@ -264,6 +264,30 @@ void Symbol::decrement_refcount() {
   }
 }
 
+void Symbol::make_permanent() {
+  uint32_t found = _length_and_refcount;
+  while (true) {
+    uint32_t old_value = found;
+    int refc = extract_refcount(old_value);
+    if (refc == PERM_REFCOUNT) {
+      return;  // refcount is permanent, permanent is sticky
+    } else if (refc == 0) {
+#ifdef ASSERT
+      print();
+      fatal("refcount underflow");
+#endif
+      return;
+    } else {
+      int len = extract_length(old_value);
+      found = Atomic::cmpxchg(pack_length_and_refcount(len, PERM_REFCOUNT), &_length_and_refcount, old_value);
+      if (found == old_value) {
+        return;  // successfully updated.
+      }
+      // refcount changed, try again.
+    }
+  }
+}
+
 void Symbol::metaspace_pointers_do(MetaspaceClosure* it) {
   if (log_is_enabled(Trace, cds)) {
     LogStream trace_stream(Log(cds)::trace());

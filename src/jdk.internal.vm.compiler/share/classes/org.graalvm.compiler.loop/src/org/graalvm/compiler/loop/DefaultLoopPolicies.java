@@ -33,6 +33,7 @@ import java.util.List;
 import org.graalvm.compiler.core.common.util.UnsignedLong;
 import org.graalvm.compiler.debug.CounterKey;
 import org.graalvm.compiler.debug.DebugContext;
+import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeBitMap;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
@@ -46,6 +47,7 @@ import org.graalvm.compiler.nodes.MergeNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.VirtualState;
 import org.graalvm.compiler.nodes.VirtualState.VirtualClosure;
+import org.graalvm.compiler.nodes.calc.CompareNode;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 import org.graalvm.compiler.nodes.debug.ControlFlowAnchorNode;
@@ -64,9 +66,10 @@ public class DefaultLoopPolicies implements LoopPolicies {
         @Option(help = "", type = OptionType.Expert) public static final OptionKey<Integer> LoopUnswitchTrivial = new OptionKey<>(10);
         @Option(help = "", type = OptionType.Expert) public static final OptionKey<Double> LoopUnswitchFrequencyBoost = new OptionKey<>(10.0);
 
-        @Option(help = "", type = OptionType.Expert) public static final OptionKey<Integer> FullUnrollMaxNodes = new OptionKey<>(300);
+        @Option(help = "", type = OptionType.Expert) public static final OptionKey<Integer> FullUnrollMaxNodes = new OptionKey<>(400);
+        @Option(help = "", type = OptionType.Expert) public static final OptionKey<Integer> FullUnrollConstantCompareBoost = new OptionKey<>(15);
         @Option(help = "", type = OptionType.Expert) public static final OptionKey<Integer> FullUnrollMaxIterations = new OptionKey<>(600);
-        @Option(help = "", type = OptionType.Expert) public static final OptionKey<Integer> ExactFullUnrollMaxNodes = new OptionKey<>(1200);
+        @Option(help = "", type = OptionType.Expert) public static final OptionKey<Integer> ExactFullUnrollMaxNodes = new OptionKey<>(800);
         @Option(help = "", type = OptionType.Expert) public static final OptionKey<Integer> ExactPartialUnrollMaxNodes = new OptionKey<>(200);
 
         @Option(help = "", type = OptionType.Expert) public static final OptionKey<Integer> UnrollMaxIterations = new OptionKey<>(16);
@@ -87,7 +90,7 @@ public class DefaultLoopPolicies implements LoopPolicies {
 
     @Override
     public boolean shouldFullUnroll(LoopEx loop) {
-        if (!loop.isCounted() || !loop.counted().isConstantMaxTripCount()) {
+        if (!loop.isCounted() || !loop.counted().isConstantMaxTripCount() || !loop.counted().counterNeverOverflows()) {
             return false;
         }
         OptionValues options = loop.entryPoint().getOptions();
@@ -96,9 +99,27 @@ public class DefaultLoopPolicies implements LoopPolicies {
         if (maxTrips.equals(0)) {
             return loop.canDuplicateLoop();
         }
-        int maxNodes = (counted.isExactTripCount() && counted.isConstantExactTripCount()) ? Options.ExactFullUnrollMaxNodes.getValue(options) : Options.FullUnrollMaxNodes.getValue(options);
-        maxNodes = Math.min(maxNodes, Math.max(0, MaximumDesiredSize.getValue(options) - loop.loopBegin().graph().getNodeCount()));
-        int size = Math.max(1, loop.size() - 1 - loop.loopBegin().phis().count());
+        if (maxTrips.isGreaterThan(Options.FullUnrollMaxIterations.getValue(options))) {
+            return false;
+        }
+        int globalMax = MaximumDesiredSize.getValue(options) - loop.loopBegin().graph().getNodeCount();
+        if (globalMax <= 0) {
+            return false;
+        }
+        int maxNodes = counted.isExactTripCount() ? Options.ExactFullUnrollMaxNodes.getValue(options) : Options.FullUnrollMaxNodes.getValue(options);
+        for (Node usage : counted.getCounter().valueNode().usages()) {
+            if (usage instanceof CompareNode) {
+                CompareNode compare = (CompareNode) usage;
+                if (compare.getY().isConstant()) {
+                    maxNodes += Options.FullUnrollConstantCompareBoost.getValue(options);
+                }
+            }
+        }
+        maxNodes = Math.min(maxNodes, globalMax);
+        int size = loop.inside().nodes().count();
+        size -= 2; // remove the counted if and its non-exit begin
+        size -= loop.loopBegin().loopEnds().count();
+        GraalError.guarantee(size >= 0, "Wrong size");
         /* @formatter:off
          * The check below should not throw ArithmeticException because:
          * maxTrips is guaranteed to be >= 1 by the check above
@@ -107,7 +128,7 @@ public class DefaultLoopPolicies implements LoopPolicies {
          *   - 1 <= size <= Integer.MAX_VALUE
          * @formatter:on
          */
-        if (maxTrips.isLessOrEqualTo(Options.FullUnrollMaxIterations.getValue(options)) && maxTrips.minus(1).times(size).isLessOrEqualTo(maxNodes)) {
+        if (maxTrips.minus(1).times(size).isLessOrEqualTo(maxNodes)) {
             // check whether we're allowed to unroll this loop
             return loop.canDuplicateLoop();
         } else {
@@ -240,5 +261,4 @@ public class DefaultLoopPolicies implements LoopPolicies {
             return false;
         }
     }
-
 }

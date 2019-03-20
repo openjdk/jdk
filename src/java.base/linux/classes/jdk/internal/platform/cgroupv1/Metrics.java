@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,7 +19,6 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- *
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
@@ -125,24 +124,19 @@ public class Metrics implements jdk.internal.platform.Metrics {
     /**
      * createSubSystem objects and initialize mount points
      */
-    private static void createSubSystem(Metrics metric, String [] mountentry) {
+    private static void createSubSystem(Metrics metric, String[] mountentry) {
         if (mountentry.length < 5) return;
 
         Path p = Paths.get(mountentry[4]);
-        String subsystemName = p.getFileName().toString();
+        String[] subsystemNames = p.getFileName().toString().split(",");
 
-        if (subsystemName != null) {
+        for (String subsystemName: subsystemNames) {
             switch (subsystemName) {
                 case "memory":
                     metric.setMemorySubSystem(new SubSystem(mountentry[3], mountentry[4]));
                     break;
                 case "cpuset":
                     metric.setCpuSetSubSystem(new SubSystem(mountentry[3], mountentry[4]));
-                    break;
-                case "cpu,cpuacct":
-                case "cpuacct,cpu":
-                    metric.setCpuSubSystem(new SubSystem(mountentry[3], mountentry[4]));
-                    metric.setCpuAcctSubSystem(new SubSystem(mountentry[3], mountentry[4]));
                     break;
                 case "cpuacct":
                     metric.setCpuAcctSubSystem(new SubSystem(mountentry[3], mountentry[4]));
@@ -163,7 +157,7 @@ public class Metrics implements jdk.internal.platform.Metrics {
     /**
      * setSubSystemPath based on the contents of /proc/self/cgroup
      */
-    private static void setSubSystemPath(Metrics metric, String [] entry) {
+    private static void setSubSystemPath(Metrics metric, String[] entry) {
         String controller;
         String base;
         SubSystem subsystem = null;
@@ -299,15 +293,15 @@ public class Metrics implements jdk.internal.platform.Metrics {
 
 
     public long getCpuPeriod() {
-        return SubSystem.getLongValue(cpuacct, "cpu.cfs_period_us");
+        return SubSystem.getLongValue(cpu, "cpu.cfs_period_us");
     }
 
     public long getCpuQuota() {
-        return SubSystem.getLongValue(cpuacct, "cpu.cfs_quota_us");
+        return SubSystem.getLongValue(cpu, "cpu.cfs_quota_us");
     }
 
     public long getCpuShares() {
-        long retval = SubSystem.getLongValue(cpuacct, "cpu.shares");
+        long retval = SubSystem.getLongValue(cpu, "cpu.shares");
         if (retval == 0 || retval == 1024)
             return -1;
         else
@@ -315,15 +309,15 @@ public class Metrics implements jdk.internal.platform.Metrics {
     }
 
     public long getCpuNumPeriods() {
-        return SubSystem.getLongEntry(cpuacct, "cpu.stat", "nr_periods");
+        return SubSystem.getLongEntry(cpu, "cpu.stat", "nr_periods");
     }
 
     public long getCpuNumThrottled() {
-        return SubSystem.getLongEntry(cpuacct, "cpu.stat", "nr_throttled");
+        return SubSystem.getLongEntry(cpu, "cpu.stat", "nr_throttled");
     }
 
     public long getCpuThrottledTime() {
-        return SubSystem.getLongEntry(cpuacct, "cpu.stat", "throttled_time");
+        return SubSystem.getLongEntry(cpu, "cpu.stat", "throttled_time");
     }
 
     public long getEffectiveCpuCount() {

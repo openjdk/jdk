@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ public class TestLogging extends Test {
                 System.out.println ("caught expected exception");
             }
 
-            Socket s = new Socket ("127.0.0.1", p1);
+            Socket s = new Socket (InetAddress.getLoopbackAddress(), p1);
             OutputStream os = s.getOutputStream();
             //os.write ("GET xxx HTTP/1.1\r\n".getBytes());
             os.write ("HELLO WORLD\r\n".getBytes());

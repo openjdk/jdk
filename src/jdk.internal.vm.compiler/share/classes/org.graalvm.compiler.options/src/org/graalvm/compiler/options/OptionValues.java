@@ -213,7 +213,7 @@ public class OptionValues {
             }
 
             String name = namePrefix + e.getKey();
-            String assign = containsKey(desc.optionKey) ? ":=" : "=";
+            String assign = containsKey(desc.getOptionKey()) ? ":=" : "=";
             String typeName = desc.getOptionKey() instanceof EnumOptionKey ? "String" : desc.getOptionValueType().getSimpleName();
             String linePrefix = String.format("%s %s %s ", name, assign, value);
             int typeStartPos = PROPERTY_LINE_WIDTH - typeName.length();

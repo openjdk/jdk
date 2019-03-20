@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,24 +22,35 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/z/zForwarding.hpp"
 #include "gc/z/zRelocationSet.hpp"
-#include "memory/allocation.inline.hpp"
+#include "memory/allocation.hpp"
 
 ZRelocationSet::ZRelocationSet() :
-    _pages(NULL),
-    _npages(0) {}
+    _forwardings(NULL),
+    _nforwardings(0) {}
 
-void ZRelocationSet::populate(const ZPage* const* group0, size_t ngroup0,
-                              const ZPage* const* group1, size_t ngroup1) {
-  _npages = ngroup0 + ngroup1;
-  _pages = REALLOC_C_HEAP_ARRAY(ZPage*, _pages, _npages, mtGC);
+void ZRelocationSet::populate(ZPage* const* group0, size_t ngroup0,
+                              ZPage* const* group1, size_t ngroup1) {
+  _nforwardings = ngroup0 + ngroup1;
+  _forwardings = REALLOC_C_HEAP_ARRAY(ZForwarding*, _forwardings, _nforwardings, mtGC);
 
-  if (_pages != NULL) {
-    if (group0 != NULL) {
-      memcpy(_pages, group0, ngroup0 * sizeof(ZPage*));
-    }
-    if (group1 != NULL) {
-      memcpy(_pages + ngroup0, group1, ngroup1 * sizeof(ZPage*));
-    }
+  size_t j = 0;
+
+  // Populate group 0
+  for (size_t i = 0; i < ngroup0; i++) {
+    _forwardings[j++] = ZForwarding::create(group0[i]);
+  }
+
+  // Populate group 1
+  for (size_t i = 0; i < ngroup1; i++) {
+    _forwardings[j++] = ZForwarding::create(group1[i]);
+  }
+}
+
+void ZRelocationSet::reset() {
+  for (size_t i = 0; i < _nforwardings; i++) {
+    ZForwarding::destroy(_forwardings[i]);
+    _forwardings[i] = NULL;
   }
 }

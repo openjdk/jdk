@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ Java_sun_nio_ch_IOUtil_fdVal(JNIEnv *env, jclass clazz, jobject fdo)
 JNIEXPORT void JNICALL
 Java_sun_nio_ch_IOUtil_setfdVal(JNIEnv *env, jclass clazz, jobject fdo, jint val)
 {
-    (*env)->SetIntField(env, fdo, fd_fdID, val);
+    setfdval(env, fdo, val);
 }
 
 static int
@@ -228,3 +228,10 @@ fdval(JNIEnv *env, jobject fdo)
 {
     return (*env)->GetIntField(env, fdo, fd_fdID);
 }
+
+void
+setfdval(JNIEnv *env, jobject fdo, jint val) {
+    (*env)->SetIntField(env, fdo, fd_fdID, val);
+}
+
+

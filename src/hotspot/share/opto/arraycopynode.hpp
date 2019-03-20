@@ -47,7 +47,7 @@ private:
   static const char* _kind_names[CopyOfRange+1];
 #endif
   // Is the alloc obtained with
-  // AllocateArrayNode::Ideal_array_allocation() tighly coupled
+  // AllocateArrayNode::Ideal_array_allocation() tightly coupled
   // (arraycopy follows immediately the allocation)?
   // We cache the result of LibraryCallKit::tightly_coupled_allocation
   // here because it's much easier to find whether there's a tightly

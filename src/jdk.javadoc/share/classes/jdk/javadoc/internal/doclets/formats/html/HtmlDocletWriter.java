@@ -26,10 +26,10 @@
 package jdk.javadoc.internal.doclets.formats.html;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.Head;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
 
 import java.util.*;
-import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -71,7 +71,6 @@ import com.sun.source.doctree.TextTree;
 import com.sun.source.util.SimpleDocTreeVisitor;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.DocType;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlDocument;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
@@ -286,7 +285,7 @@ public class HtmlDocletWriter {
         Content div = HtmlTree.DIV(script.asContent());
         Content div_noscript = HtmlTree.DIV(contents.noScriptMessage);
         Content noScript = HtmlTree.NOSCRIPT(div_noscript);
-        div.addContent(noScript);
+        div.add(noScript);
         return div;
     }
 
@@ -335,8 +334,8 @@ public class HtmlDocletWriter {
         TagletWriter.genTagOutput(configuration.tagletManager, e,
             configuration.tagletManager.getBlockTaglets(e),
                 getTagletWriterInstance(false), output);
-        dl.addContent(output);
-        htmltree.addContent(dl);
+        dl.add(output);
+        htmltree.add(dl);
     }
 
     /**
@@ -508,7 +507,7 @@ public class HtmlDocletWriter {
      */
     public void addTop(Content htmlTree) {
         Content top = new RawHtml(replaceDocRootDir(configuration.top));
-        fixedNavDiv.addContent(top);
+        fixedNavDiv.add(top);
     }
 
     /**
@@ -520,7 +519,7 @@ public class HtmlDocletWriter {
         Content bottom = new RawHtml(replaceDocRootDir(configuration.bottom));
         Content small = HtmlTree.SMALL(bottom);
         Content p = HtmlTree.P(HtmlStyle.legalCopy, small);
-        htmlTree.addContent(p);
+        htmlTree.add(p);
     }
 
     /**
@@ -547,7 +546,7 @@ public class HtmlDocletWriter {
         Content space = Contents.SPACE;
         Content tabSpan = HtmlTree.SPAN(HtmlStyle.tabEnd, space);
         Content caption = HtmlTree.CAPTION(captionSpan);
-        caption.addContent(tabSpan);
+        caption.add(tabSpan);
         return caption;
     }
 
@@ -698,9 +697,9 @@ public class HtmlDocletWriter {
                     .resolve(docPaths.forClass(te));
             Content content = links.createLink(href
                     .fragment(SourceToHTMLConverter.getAnchorName(utils, element)), label, "", "");
-            htmltree.addContent(content);
+            htmltree.add(content);
         } else {
-            htmltree.addContent(label);
+            htmltree.add(label);
         }
     }
 
@@ -822,9 +821,9 @@ public class HtmlDocletWriter {
         ContentBuilder classlink = new ContentBuilder();
         PackageElement pkg = utils.containingPackage(typeElement);
         if (pkg != null && ! configuration.shouldExcludeQualifier(pkg.getSimpleName().toString())) {
-            classlink.addContent(getEnclosingPackageName(typeElement));
+            classlink.add(getEnclosingPackageName(typeElement));
         }
-        classlink.addContent(getLink(new LinkInfoImpl(configuration,
+        classlink.add(getLink(new LinkInfoImpl(configuration,
                 context, typeElement).label(utils.getSimpleName(typeElement)).strong(isStrong)));
         return classlink;
     }
@@ -843,13 +842,13 @@ public class HtmlDocletWriter {
             TypeElement typeElement, boolean isStrong, Content contentTree) {
         PackageElement pkg = utils.containingPackage(typeElement);
         if(pkg != null && ! configuration.shouldExcludeQualifier(pkg.getSimpleName().toString())) {
-            contentTree.addContent(getEnclosingPackageName(typeElement));
+            contentTree.add(getEnclosingPackageName(typeElement));
         }
         LinkInfoImpl linkinfo = new LinkInfoImpl(configuration, context, typeElement)
                 .label(utils.getSimpleName(typeElement))
                 .strong(isStrong);
         Content link = getLink(linkinfo);
-        contentTree.addContent(link);
+        contentTree.add(link);
     }
 
     /**
@@ -1261,14 +1260,14 @@ public class HtmlDocletWriter {
         Content result = commentTagsToContent(null, element, tags, first, inSummary);
         if (depr) {
             div = HtmlTree.DIV(HtmlStyle.deprecationComment, result);
-            htmltree.addContent(div);
+            htmltree.add(div);
         }
         else {
             div = HtmlTree.DIV(HtmlStyle.block, result);
-            htmltree.addContent(div);
+            htmltree.add(div);
         }
         if (tags.isEmpty()) {
-            htmltree.addContent(Contents.SPACE);
+            htmltree.add(Contents.SPACE);
         }
     }
 
@@ -1340,8 +1339,8 @@ public class HtmlDocletWriter {
 
         final Content result = new ContentBuilder() {
             @Override
-            public void addContent(CharSequence text) {
-                super.addContent(utils.normalizeNewlines(text));
+            public void add(CharSequence text) {
+                super.add(utils.normalizeNewlines(text));
             }
         };
         CommentHelper ch = utils.getCommentHelper(element);
@@ -1391,7 +1390,7 @@ public class HtmlDocletWriter {
                 public Boolean visitAttribute(AttributeTree node, Content c) {
                     StringBuilder sb = new StringBuilder(SPACER).append(node.getName());
                     if (node.getValueKind() == ValueKind.EMPTY) {
-                        result.addContent(sb);
+                        result.add(sb);
                         return false;
                     }
                     sb.append("=");
@@ -1408,7 +1407,7 @@ public class HtmlDocletWriter {
                             break;
                     }
                     sb.append(quote);
-                    result.addContent(sb);
+                    result.add(sb);
                     Content docRootContent = new ContentBuilder();
 
                     boolean isHRef = inAnAtag() && node.getName().toString().equalsIgnoreCase("href");
@@ -1416,16 +1415,16 @@ public class HtmlDocletWriter {
                         if (utils.isText(dt) && isHRef) {
                             String text = ((TextTree) dt).getBody();
                             if (text.startsWith("/..") && !configuration.docrootparent.isEmpty()) {
-                                result.addContent(configuration.docrootparent);
+                                result.add(configuration.docrootparent);
                                 docRootContent = new ContentBuilder();
-                                result.addContent(textCleanup(text.substring(3), isLastNode));
+                                result.add(textCleanup(text.substring(3), isLastNode));
                             } else {
                                 if (!docRootContent.isEmpty()) {
                                     docRootContent = copyDocRootContent(docRootContent);
                                 } else {
                                     text = redirectRelativeLinks(element, (TextTree) dt);
                                 }
-                                result.addContent(textCleanup(text, isLastNode));
+                                result.add(textCleanup(text, isLastNode));
                             }
                         } else {
                             docRootContent = copyDocRootContent(docRootContent);
@@ -1433,19 +1432,19 @@ public class HtmlDocletWriter {
                         }
                     }
                     copyDocRootContent(docRootContent);
-                    result.addContent(quote);
+                    result.add(quote);
                     return false;
                 }
 
                 @Override
                 public Boolean visitComment(CommentTree node, Content c) {
-                    result.addContent(new RawHtml(node.getBody()));
+                    result.add(new RawHtml(node.getBody()));
                     return false;
                 }
 
                 private Content copyDocRootContent(Content content) {
                     if (!content.isEmpty()) {
-                        result.addContent(content);
+                        result.add(content);
                         return new ContentBuilder();
                     }
                     return content;
@@ -1459,9 +1458,9 @@ public class HtmlDocletWriter {
                             node,
                             getTagletWriterInstance(isFirstSentence));
                     if (c != null) {
-                        c.addContent(docRootContent);
+                        c.add(docRootContent);
                     } else {
-                        result.addContent(docRootContent);
+                        result.add(docRootContent);
                     }
                     return false;
                 }
@@ -1469,13 +1468,13 @@ public class HtmlDocletWriter {
                 @Override
                 public Boolean visitEndElement(EndElementTree node, Content c) {
                     RawHtml rawHtml = new RawHtml("</" + node.getName() + ">");
-                    result.addContent(rawHtml);
+                    result.add(rawHtml);
                     return false;
                 }
 
                 @Override
                 public Boolean visitEntity(EntityTree node, Content c) {
-                    result.addContent(new RawHtml(node.toString()));
+                    result.add(new RawHtml(node.toString()));
                     return false;
                 }
 
@@ -1483,7 +1482,7 @@ public class HtmlDocletWriter {
                 public Boolean visitErroneous(ErroneousTree node, Content c) {
                     messages.warning(ch.getDocTreePath(node),
                             "doclet.tag.invalid_usage", node);
-                    result.addContent(new RawHtml(node.toString()));
+                    result.add(new RawHtml(node.toString()));
                     return false;
                 }
 
@@ -1492,7 +1491,7 @@ public class HtmlDocletWriter {
                     Content output = TagletWriter.getInlineTagOutput(element,
                             configuration.tagletManager, holderTag,
                             tag, getTagletWriterInstance(isFirstSentence));
-                    result.addContent(output);
+                    result.add(output);
                     // if we obtained the first sentence successfully, nothing more to do
                     return (isFirstSentence && !output.isEmpty());
                 }
@@ -1503,7 +1502,7 @@ public class HtmlDocletWriter {
                             configuration.tagletManager, holderTag, tag,
                             getTagletWriterInstance(isFirstSentence, inSummary));
                     if (output != null) {
-                        result.addContent(output);
+                        result.add(output);
                     }
                     return false;
                 }
@@ -1511,7 +1510,7 @@ public class HtmlDocletWriter {
                 @Override
                 public Boolean visitLink(LinkTree node, Content c) {
                     // we need to pass the DocTreeImpl here, so ignore node
-                    result.addContent(seeTagToContent(element, tag));
+                    result.add(seeTagToContent(element, tag));
                     return false;
                 }
 
@@ -1521,14 +1520,14 @@ public class HtmlDocletWriter {
                     Content content = new StringContent(utils.normalizeNewlines(s));
                     if (node.getKind() == CODE)
                         content = HtmlTree.CODE(content);
-                    result.addContent(content);
+                    result.add(content);
                     return false;
                 }
 
                 @Override
                 public Boolean visitSee(SeeTree node, Content c) {
                     // we need to pass the DocTreeImpl here, so ignore node
-                    result.addContent(seeTagToContent(element, tag));
+                    result.add(seeTagToContent(element, tag));
                     return false;
                 }
 
@@ -1536,12 +1535,12 @@ public class HtmlDocletWriter {
                 public Boolean visitStartElement(StartElementTree node, Content c) {
                     String text = "<" + node.getName();
                     RawHtml rawHtml = new RawHtml(utils.normalizeNewlines(text));
-                    result.addContent(rawHtml);
+                    result.add(rawHtml);
 
                     for (DocTree dt : node.getAttributes()) {
                         dt.accept(this, null);
                     }
-                    result.addContent(new RawHtml(node.isSelfClosing() ? "/>" : ">"));
+                    result.add(new RawHtml(node.isSelfClosing() ? "/>" : ">"));
                     return false;
                 }
 
@@ -1550,7 +1549,7 @@ public class HtmlDocletWriter {
                     Content output = TagletWriter.getInlineTagOutput(element,
                             configuration.tagletManager, holderTag, tag,
                             getTagletWriterInstance(isFirstSentence));
-                    result.addContent(output);
+                    result.add(output);
                     return false;
                 }
 
@@ -1560,7 +1559,7 @@ public class HtmlDocletWriter {
                             configuration.tagletManager, holderTag, tag,
                             getTagletWriterInstance(isFirstSentence, inSummary));
                     if (output != null) {
-                        result.addContent(output);
+                        result.add(output);
                     }
                     return false;
                 }
@@ -1583,7 +1582,7 @@ public class HtmlDocletWriter {
                 @Override
                 public Boolean visitText(TextTree node, Content c) {
                     String text = node.getBody();
-                    result.addContent(new RawHtml(textCleanup(text, isLastNode, commentRemoved)));
+                    result.add(new RawHtml(textCleanup(text, isLastNode, commentRemoved)));
                     return false;
                 }
 
@@ -1593,7 +1592,7 @@ public class HtmlDocletWriter {
                             configuration.tagletManager, holderTag, tag,
                             getTagletWriterInstance(isFirstSentence));
                     if (output != null) {
-                        result.addContent(output);
+                        result.add(output);
                     }
                     return false;
                 }
@@ -1803,8 +1802,8 @@ public class HtmlDocletWriter {
             return false;
         }
         for (Content annotation: annotations) {
-            htmltree.addContent(sep);
-            htmltree.addContent(annotation);
+            htmltree.add(sep);
+            htmltree.add(annotation);
             if (!lineBreak) {
                 sep = " ";
             }
@@ -1893,8 +1892,8 @@ public class HtmlDocletWriter {
 
                     String sep = "";
                     for (AnnotationValue av : annotationTypeValues) {
-                        annotation.addContent(sep);
-                        annotation.addContent(annotationValueToContent(av));
+                        annotation.add(sep);
+                        annotation.add(annotationValueToContent(av));
                         sep = " ";
                     }
                 }
@@ -1917,8 +1916,8 @@ public class HtmlDocletWriter {
                     }
                     String sep = "";
                     for (AnnotationValue av : annotationTypeValues) {
-                        annotation.addContent(sep);
-                        annotation.addContent(annotationValueToContent(av));
+                        annotation.add(sep);
+                        annotation.add(annotationValueToContent(av));
                         sep = " ";
                     }
                 }
@@ -1933,7 +1932,7 @@ public class HtmlDocletWriter {
                 addAnnotations(annotationElement, linkInfo, annotation, pairs,
                                indent, linkBreak);
             }
-            annotation.addContent(linkBreak ? DocletConstants.NL : "");
+            annotation.add(linkBreak ? DocletConstants.NL : "");
             results.add(annotation);
         }
         return results;
@@ -1954,10 +1953,10 @@ public class HtmlDocletWriter {
                                 Map<? extends ExecutableElement, ? extends AnnotationValue> map,
                                 int indent, boolean linkBreak) {
         linkInfo.label = new StringContent("@");
-        linkInfo.label.addContent(annotationDoc.getSimpleName());
-        annotation.addContent(getLink(linkInfo));
+        linkInfo.label.add(annotationDoc.getSimpleName());
+        annotation.add(getLink(linkInfo));
         if (!map.isEmpty()) {
-            annotation.addContent("(");
+            annotation.add("(");
             boolean isFirst = true;
             Set<? extends ExecutableElement> keys = map.keySet();
             boolean multipleValues = keys.size() > 1;
@@ -1965,20 +1964,20 @@ public class HtmlDocletWriter {
                 if (isFirst) {
                     isFirst = false;
                 } else {
-                    annotation.addContent(",");
+                    annotation.add(",");
                     if (linkBreak) {
-                        annotation.addContent(DocletConstants.NL);
+                        annotation.add(DocletConstants.NL);
                         int spaces = annotationDoc.getSimpleName().length() + 2;
                         for (int k = 0; k < (spaces + indent); k++) {
-                            annotation.addContent(" ");
+                            annotation.add(" ");
                         }
                     }
                 }
                 String simpleName = element.getSimpleName().toString();
                 if (multipleValues || !"value".equals(simpleName)) { // Omit "value=" where unnecessary
-                    annotation.addContent(getDocLink(LinkInfoImpl.Kind.ANNOTATION,
+                    annotation.add(getDocLink(LinkInfoImpl.Kind.ANNOTATION,
                                                      element, simpleName, false));
-                    annotation.addContent("=");
+                    annotation.add("=");
                 }
                 AnnotationValue annotationValue = map.get(element);
                 List<AnnotationValue> annotationTypeValues = new ArrayList<>();
@@ -1994,17 +1993,17 @@ public class HtmlDocletWriter {
                         return null;
                     }
                 }.visit(annotationValue, annotationValue);
-                annotation.addContent(annotationTypeValues.size() == 1 ? "" : "{");
+                annotation.add(annotationTypeValues.size() == 1 ? "" : "{");
                 String sep = "";
                 for (AnnotationValue av : annotationTypeValues) {
-                    annotation.addContent(sep);
-                    annotation.addContent(annotationValueToContent(av));
+                    annotation.add(sep);
+                    annotation.add(annotationValueToContent(av));
                     sep = ",";
                 }
-                annotation.addContent(annotationTypeValues.size() == 1 ? "" : "}");
+                annotation.add(annotationTypeValues.size() == 1 ? "" : "}");
                 isContainerDocumented = false;
             }
-            annotation.addContent(")");
+            annotation.add(")");
         }
     }
 
@@ -2085,7 +2084,7 @@ public class HtmlDocletWriter {
                 List<Content> list = getAnnotations(0, a, false);
                 ContentBuilder buf = new ContentBuilder();
                 for (Content c : list) {
-                    buf.addContent(c);
+                    buf.add(c);
                 }
                 return buf;
             }
@@ -2099,8 +2098,8 @@ public class HtmlDocletWriter {
                 ContentBuilder buf = new ContentBuilder();
                 String sep = "";
                 for (AnnotationValue av : vals) {
-                    buf.addContent(sep);
-                    buf.addContent(visit(av));
+                    buf.add(sep);
+                    buf.add(visit(av));
                     sep = " ";
                 }
                 return buf;
@@ -2197,17 +2196,28 @@ public class HtmlDocletWriter {
      */
     public HtmlTree getBody(boolean includeScript, String title) {
         HtmlTree body = new HtmlTree(HtmlTag.BODY);
+        body.put(HtmlAttr.CLASS, getBodyClass());
+
         // Set window title string which is later printed
         this.winTitle = title;
         // Don't print windowtitle script for overview-frame, allclasses-frame
         // and package-frame
         if (includeScript) {
             this.mainBodyScript = getWinTitleScript();
-            body.addContent(mainBodyScript.asContent());
+            body.add(mainBodyScript.asContent());
             Content noScript = HtmlTree.NOSCRIPT(HtmlTree.DIV(contents.noScriptMessage));
-            body.addContent(noScript);
+            body.add(noScript);
         }
         return body;
+    }
+
+    public String getBodyClass() {
+        return getClass().getSimpleName()
+                .replaceAll("(Writer)?(Impl)?$", "")
+                .replaceAll("AnnotationType", "Class")
+                .replaceAll("(.)([A-Z])", "$1-$2")
+                .replaceAll("(?i)^(module|package|class)$", "$1-declaration")
+                .toLowerCase(Locale.US);
     }
 
     Script getMainBodyScript() {
@@ -2224,7 +2234,7 @@ public class HtmlDocletWriter {
             configuration.localStylesheetMap.put(element, localStylesheets);
         }
         for (DocPath stylesheet : localStylesheets) {
-            stylesheetContent.addContent(HtmlTree.LINK("stylesheet",
+            stylesheetContent.add(HtmlTree.LINK("stylesheet",
                     "text/css", stylesheet.getPath(), "Style"));
         }
         return stylesheetContent;

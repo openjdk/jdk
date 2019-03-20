@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,10 +69,12 @@ public class TestUnnamedPackage extends JavadocTester {
         checkOutput("allclasses-index.html", true,
                 "<div class=\"typeSummary\">\n<table>\n"
                 + "<caption><span>Class Summary</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
+                + "<thead>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Class</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
                 + "</tr>\n"
+                + "</thead>\n"
                 + "<tbody>\n"
                 + "<tr class=\"altColor\" id=\"i0\">\n"
                 + "<td class=\"colFirst\"><a href=\"C.html\" title=\"class in &lt;Unnamed&gt;\">C</a></td>\n"
@@ -86,10 +88,12 @@ public class TestUnnamedPackage extends JavadocTester {
         checkOutput("allpackages-index.html", true,
                 "<div class=\"packagesSummary\">\n<table>\n"
                 + "<caption><span>Package Summary</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
+                + "<thead>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Package</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
                 + "</tr>\n"
+                + "</thead>\n"
                 + "<tbody>\n"
                 + "<tr class=\"altColor\">\n"
                 + "<th class=\"colFirst\" scope=\"row\"><a href=\"package-summary.html\">&lt;Unnamed&gt;</a></th>\n"

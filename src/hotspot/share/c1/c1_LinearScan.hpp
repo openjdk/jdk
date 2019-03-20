@@ -34,7 +34,6 @@
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 
-class DebugInfoCache;
 class FpuStackAllocator;
 class IRScopeDebugInfo;
 class Interval;
@@ -190,15 +189,12 @@ class LinearScan : public CompilationResourceObj {
   int           interval_count() const           { return _intervals.length(); }
   Interval*     interval_at(int reg_num) const   { return _intervals.at(reg_num); }
 
-  IntervalList* new_intervals_from_allocation() const { return _new_intervals_from_allocation; }
-
   // access to LIR_Ops and Blocks indexed by op_id
   int          max_lir_op_id() const                { assert(_lir_ops.length() > 0, "no operations"); return (_lir_ops.length() - 1) << 1; }
   LIR_Op*      lir_op_with_id(int op_id) const      { assert(op_id >= 0 && op_id <= max_lir_op_id() && op_id % 2 == 0, "op_id out of range or not even"); return _lir_ops.at(op_id >> 1); }
   BlockBegin*  block_of_op_with_id(int op_id) const { assert(_block_of_op.length() > 0 && op_id >= 0 && op_id <= max_lir_op_id() + 1, "op_id out of range"); return _block_of_op.at(op_id >> 1); }
 
   bool is_block_begin(int op_id)                    { return op_id == 0 || block_of_op_with_id(op_id) != block_of_op_with_id(op_id - 1); }
-  bool covers_block_begin(int op_id_1, int op_id_2) { return block_of_op_with_id(op_id_1) != block_of_op_with_id(op_id_2); }
 
   bool has_call(int op_id)                          { assert(op_id % 2 == 0, "must be even"); return _has_call.at(op_id >> 1); }
   bool has_info(int op_id)                          { assert(op_id % 2 == 0, "must be even"); return _has_info.at(op_id >> 1); }
@@ -523,7 +519,7 @@ class Interval : public CompilationResourceObj {
   VMReg            _cached_vm_reg;
 
   Interval*        _split_parent;           // the original interval where this interval is derived from
-  IntervalList     _split_children;         // list of all intervals that are split off from this interval (only available for split parents)
+  IntervalList*    _split_children;         // list of all intervals that are split off from this interval (only available for split parents)
   Interval*        _current_split_child;    // the current split child that has been active or inactive last (always stored in split parents)
 
   int              _canonical_spill_slot;   // the stack slot where all split parts of this interval are spilled to (always stored in split parents)
@@ -549,7 +545,10 @@ class Interval : public CompilationResourceObj {
   Range*           first() const                 { return _first; }
   int              from() const                  { return _first->from(); }
   int              to()                          { if (_cached_to == -1) _cached_to = calc_to(); assert(_cached_to == calc_to(), "invalid cached value"); return _cached_to; }
+
+#ifndef PRODUCT
   int              num_use_positions() const     { return _use_pos_and_kinds.length() / 2; }
+#endif
 
   Interval*        next() const                  { return _next; }
   Interval**       next_addr()                   { return &_next; }
@@ -572,7 +571,6 @@ class Interval : public CompilationResourceObj {
   Interval*        split_parent() const          { assert(_split_parent->is_split_parent(), "must be"); return _split_parent; }
   Interval*        split_child_at_op_id(int op_id, LIR_OpVisitState::OprMode mode);
   Interval*        split_child_before_op_id(int op_id);
-  bool             split_child_covers(int op_id, LIR_OpVisitState::OprMode mode);
   DEBUG_ONLY(void  check_split_children();)
 
   // information stored in split parent, but available for all children
@@ -658,7 +656,6 @@ class IntervalWalker : public CompilationResourceObj {
   Interval** active_first_addr(IntervalKind kind)    { check_bounds(kind); return &_active_first[kind]; }
   Interval** inactive_first_addr(IntervalKind kind)  { check_bounds(kind); return &_inactive_first[kind]; }
 
-  void append_unsorted(Interval** first, Interval* interval);
   void append_sorted(Interval** first, Interval* interval);
   void append_to_unhandled(Interval** list, Interval* interval);
 
@@ -733,9 +730,7 @@ class LinearScanWalker : public IntervalWalker {
   void free_exclude_active_any();
   void free_collect_inactive_fixed(Interval* cur);
   void free_collect_inactive_any(Interval* cur);
-  void free_collect_unhandled(IntervalKind kind, Interval* cur);
   void spill_exclude_active_fixed();
-  void spill_block_unhandled_fixed(Interval* cur);
   void spill_block_inactive_fixed(Interval* cur);
   void spill_collect_active_any();
   void spill_collect_inactive_any(Interval* cur);
@@ -753,13 +748,12 @@ class LinearScanWalker : public IntervalWalker {
   int  find_free_double_reg(int reg_needed_until, int interval_to, int hint_reg, bool* need_split);
   bool alloc_free_reg(Interval* cur);
 
-  int  find_locked_reg(int reg_needed_until, int interval_to, int hint_reg, int ignore_reg, bool* need_split);
-  int  find_locked_double_reg(int reg_needed_until, int interval_to, int hint_reg, bool* need_split);
+  int  find_locked_reg(int reg_needed_until, int interval_to, int ignore_reg, bool* need_split);
+  int  find_locked_double_reg(int reg_needed_until, int interval_to, bool* need_split);
   void split_and_spill_intersecting_intervals(int reg, int regHi);
   void alloc_locked_reg(Interval* cur);
 
   bool no_allocation_possible(Interval* cur);
-  void update_phys_reg_range(bool requires_cpu_register);
   void init_vars_for_alloc(Interval* cur);
   bool pd_init_regs_for_alloc(Interval* cur);
 

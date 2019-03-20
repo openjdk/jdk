@@ -768,4 +768,13 @@ public abstract class NodeLIRBuilder implements NodeLIRBuilderTool, LIRGeneratio
     public LIRGeneratorTool getLIRGeneratorTool() {
         return gen;
     }
+
+    @Override
+    public void emitReadExceptionObject(ValueNode node) {
+        LIRGeneratorTool lirGenTool = getLIRGeneratorTool();
+        Value returnRegister = lirGenTool.getRegisterConfig().getReturnRegister(node.getStackKind()).asValue(
+                        LIRKind.fromJavaKind(lirGenTool.target().arch, node.getStackKind()));
+        lirGenTool.emitIncomingValues(new Value[]{returnRegister});
+        setResult(node, lirGenTool.emitMove(returnRegister));
+    }
 }

@@ -25,6 +25,7 @@
 #ifndef SHARE_MEMORY_METASPACE_METASPACECOMMON_HPP
 #define SHARE_MEMORY_METASPACE_METASPACECOMMON_HPP
 
+#include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -85,6 +86,14 @@ struct  internal_statistics_t {
   uintx num_external_deallocs;
   // Number of times an allocation was satisfied from deallocated blocks.
   uintx num_allocs_from_deallocated_blocks;
+  // Number of times a chunk was added to the freelist
+  uintx num_chunks_added_to_freelist;
+  // Number of times a chunk was removed from the freelist
+  uintx num_chunks_removed_from_freelist;
+  // Number of chunk merges
+  uintx num_chunk_merges;
+  // Number of chunk splits
+  uintx num_chunk_splits;
 };
 extern internal_statistics_t g_internal_statistics;
 #endif
@@ -110,6 +119,16 @@ ChunkIndex next_chunk_index(ChunkIndex i);
 ChunkIndex prev_chunk_index(ChunkIndex i);
 // Returns a descriptive name for a chunk type.
 const char* chunk_size_name(ChunkIndex index);
+
+// Verify chunk sizes.
+inline bool is_valid_chunksize(bool is_class, size_t size) {
+  const size_t reasonable_maximum_humongous_chunk_size = 1 * G;
+  return is_aligned(size, sizeof(MetaWord)) &&
+         size < reasonable_maximum_humongous_chunk_size &&
+         is_class ?
+             (size == ClassSpecializedChunk || size == ClassSmallChunk || size >= ClassMediumChunk) :
+             (size == SpecializedChunk || size == SmallChunk || size >= MediumChunk);
+}
 
 // Verify chunk type.
 inline bool is_valid_chunktype(ChunkIndex index) {

@@ -555,6 +555,78 @@ class XorVNode : public VectorNode {
   virtual int Opcode() const;
 };
 
+//------------------------------MinVNode--------------------------------------
+// Vector min
+class MinVNode : public VectorNode {
+public:
+  MinVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------MaxVNode--------------------------------------
+// Vector max
+class MaxVNode : public VectorNode {
+public:
+  MaxVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------MinReductionVNode--------------------------------------
+// Vector min as a reduction
+class MinReductionVNode : public ReductionNode {
+public:
+  MinReductionVNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  virtual int Opcode() const;
+  virtual const Type* bottom_type() const {
+    BasicType bt = in(1)->bottom_type()->basic_type();
+    if (bt == T_FLOAT) {
+      return Type::FLOAT;
+    } else if (bt == T_DOUBLE) {
+      return Type::DOUBLE;
+    }
+    assert(false, "unsupported basic type");
+    return NULL;
+  }
+  virtual uint ideal_reg() const {
+    BasicType bt = in(1)->bottom_type()->basic_type();
+    if (bt == T_FLOAT) {
+      return Op_RegF;
+    } else if (bt == T_DOUBLE) {
+      return Op_RegD;
+    }
+    assert(false, "unsupported basic type");
+    return 0;
+  }
+};
+
+//------------------------------MaxReductionVNode--------------------------------------
+// Vector max as a reduction
+class MaxReductionVNode : public ReductionNode {
+public:
+  MaxReductionVNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  virtual int Opcode() const;
+  virtual const Type* bottom_type() const {
+    BasicType bt = in(1)->bottom_type()->basic_type();
+    if (bt == T_FLOAT) {
+      return Type::FLOAT;
+    } else {
+      return Type::DOUBLE;
+    }
+    assert(false, "unsupported basic type");
+    return NULL;
+  }
+  virtual uint ideal_reg() const {
+    BasicType bt = in(1)->bottom_type()->basic_type();
+    if (bt == T_FLOAT) {
+      return Op_RegF;
+    } else {
+      return Op_RegD;
+    }
+    assert(false, "unsupported basic type");
+    return 0;
+  }
+};
+
 //================================= M E M O R Y ===============================
 
 //------------------------------LoadVectorNode---------------------------------

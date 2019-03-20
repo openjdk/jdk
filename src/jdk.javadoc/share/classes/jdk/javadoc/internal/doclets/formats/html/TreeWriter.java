@@ -29,7 +29,6 @@ import java.util.SortedSet;
 
 import javax.lang.model.element.PackageElement;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -108,25 +107,25 @@ public class TreeWriter extends AbstractTreeWriter {
     public void generateTreeFile() throws DocFileIOException {
         HtmlTree body = getTreeHeader();
         Content headContent = contents.hierarchyForAllPackages;
-        Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, false,
+        Content heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, false,
                 HtmlStyle.title, headContent);
         Content div = HtmlTree.DIV(HtmlStyle.header, heading);
         addPackageTreeLinks(div);
         HtmlTree htmlTree = HtmlTree.MAIN();
-        htmlTree.addContent(div);
+        htmlTree.add(div);
         HtmlTree divTree = new HtmlTree(HtmlTag.DIV);
         divTree.setStyle(HtmlStyle.contentContainer);
         addTree(classtree.baseClasses(), "doclet.Class_Hierarchy", divTree);
         addTree(classtree.baseInterfaces(), "doclet.Interface_Hierarchy", divTree);
         addTree(classtree.baseAnnotationTypes(), "doclet.Annotation_Type_Hierarchy", divTree);
         addTree(classtree.baseEnums(), "doclet.Enum_Hierarchy", divTree, true);
-        htmlTree.addContent(divTree);
-        body.addContent(htmlTree);
+        htmlTree.add(divTree);
+        body.add(htmlTree);
         htmlTree = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
-        htmlTree.addContent(navBar.getContent(false));
+        htmlTree.add(navBar.getContent(false));
         addBottom(htmlTree);
-        body.addContent(htmlTree);
+        body.add(htmlTree);
         printHtmlDocument(null, "class tree", body);
     }
 
@@ -143,7 +142,7 @@ public class TreeWriter extends AbstractTreeWriter {
         if (!classesOnly) {
             Content span = HtmlTree.SPAN(HtmlStyle.packageHierarchyLabel,
                     contents.packageHierarchies);
-            contentTree.addContent(span);
+            contentTree.add(span);
             HtmlTree ul = new HtmlTree(HtmlTag.UL);
             ul.setStyle(HtmlStyle.horizontal);
             int i = 0;
@@ -160,12 +159,12 @@ public class TreeWriter extends AbstractTreeWriter {
                 Content li = HtmlTree.LI(links.createLink(link,
                         new StringContent(utils.getPackageName(pkg))));
                 if (i < packages.size() - 1) {
-                    li.addContent(", ");
+                    li.add(", ");
                 }
-                ul.addContent(li);
+                ul.add(li);
                 i++;
             }
-            contentTree.addContent(ul);
+            contentTree.add(ul);
         }
     }
 
@@ -180,8 +179,8 @@ public class TreeWriter extends AbstractTreeWriter {
         HtmlTree htmlTree = HtmlTree.HEADER();
         addTop(htmlTree);
         navBar.setUserHeader(getUserHeaderFooter(true));
-        htmlTree.addContent(navBar.getContent(true));
-        bodyTree.addContent(htmlTree);
+        htmlTree.add(navBar.getContent(true));
+        bodyTree.add(htmlTree);
         return bodyTree;
     }
 

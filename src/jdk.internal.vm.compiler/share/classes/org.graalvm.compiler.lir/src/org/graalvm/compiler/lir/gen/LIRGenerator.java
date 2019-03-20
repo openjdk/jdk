@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,8 @@ import static org.graalvm.compiler.lir.LIRValueUtil.isVirtualStackSlot;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
-import jdk.vm.ci.code.RegisterConfig;
 import org.graalvm.compiler.asm.Label;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.Condition;
@@ -59,6 +59,7 @@ import org.graalvm.compiler.lir.StandardOp;
 import org.graalvm.compiler.lir.StandardOp.BlockEndOp;
 import org.graalvm.compiler.lir.StandardOp.LabelOp;
 import org.graalvm.compiler.lir.StandardOp.SaveRegistersOp;
+import org.graalvm.compiler.lir.hashing.Hasher;
 import org.graalvm.compiler.lir.SwitchStrategy;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.options.Option;
@@ -70,6 +71,7 @@ import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.code.CodeCacheProvider;
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.RegisterAttributes;
+import jdk.vm.ci.code.RegisterConfig;
 import jdk.vm.ci.code.StackSlot;
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.AllocatableValue;
@@ -449,29 +451,51 @@ public abstract class LIRGenerator implements LIRGeneratorTool {
 
     @Override
     public void emitStrategySwitch(JavaConstant[] keyConstants, double[] keyProbabilities, LabelRef[] keyTargets, LabelRef defaultTarget, Variable value) {
-        int keyCount = keyConstants.length;
         SwitchStrategy strategy = SwitchStrategy.getBestStrategy(keyProbabilities, keyConstants, keyTargets);
+
+        int keyCount = keyConstants.length;
+        double minDensity = 1 / Math.sqrt(strategy.getAverageEffort());
+        Optional<Hasher> hasher = hasherFor(keyConstants, minDensity);
+        double hashTableSwitchDensity = hasher.map(h -> keyCount / (double) h.cardinality()).orElse(0d);
         long valueRange = keyConstants[keyCount - 1].asLong() - keyConstants[0].asLong() + 1;
         double tableSwitchDensity = keyCount / (double) valueRange;
+
         /*
          * This heuristic tries to find a compromise between the effort for the best switch strategy
          * and the density of a tableswitch. If the effort for the strategy is at least 4, then a
          * tableswitch is preferred if better than a certain value that starts at 0.5 and lowers
          * gradually with additional effort.
          */
-        if (strategy.getAverageEffort() < 4 || tableSwitchDensity < (1 / Math.sqrt(strategy.getAverageEffort()))) {
+        if (strategy.getAverageEffort() < 4d || (tableSwitchDensity < minDensity && hashTableSwitchDensity < minDensity)) {
             emitStrategySwitch(strategy, value, keyTargets, defaultTarget);
         } else {
-            int minValue = keyConstants[0].asInt();
-            assert valueRange < Integer.MAX_VALUE;
-            LabelRef[] targets = new LabelRef[(int) valueRange];
-            for (int i = 0; i < valueRange; i++) {
-                targets[i] = defaultTarget;
+            if (hashTableSwitchDensity > tableSwitchDensity) {
+                Hasher h = hasher.get();
+                int cardinality = h.cardinality();
+                LabelRef[] targets = new LabelRef[cardinality];
+                JavaConstant[] keys = new JavaConstant[cardinality];
+                for (int i = 0; i < cardinality; i++) {
+                    keys[i] = JavaConstant.INT_0;
+                    targets[i] = defaultTarget;
+                }
+                for (int i = 0; i < keyCount; i++) {
+                    int idx = h.hash(keyConstants[i].asLong());
+                    keys[idx] = keyConstants[i];
+                    targets[idx] = keyTargets[i];
+                }
+                emitHashTableSwitch(h, keys, defaultTarget, targets, value);
+            } else {
+                int minValue = keyConstants[0].asInt();
+                assert valueRange < Integer.MAX_VALUE;
+                LabelRef[] targets = new LabelRef[(int) valueRange];
+                for (int i = 0; i < valueRange; i++) {
+                    targets[i] = defaultTarget;
+                }
+                for (int i = 0; i < keyCount; i++) {
+                    targets[keyConstants[i].asInt() - minValue] = keyTargets[i];
+                }
+                emitTableSwitch(minValue, defaultTarget, targets, value);
             }
-            for (int i = 0; i < keyCount; i++) {
-                targets[keyConstants[i].asInt() - minValue] = keyTargets[i];
-            }
-            emitTableSwitch(minValue, defaultTarget, targets, value);
         }
     }
 
@@ -479,6 +503,16 @@ public abstract class LIRGenerator implements LIRGeneratorTool {
     public abstract void emitStrategySwitch(SwitchStrategy strategy, Variable key, LabelRef[] keyTargets, LabelRef defaultTarget);
 
     protected abstract void emitTableSwitch(int lowKey, LabelRef defaultTarget, LabelRef[] targets, Value key);
+
+    @SuppressWarnings("unused")
+    protected Optional<Hasher> hasherFor(JavaConstant[] keyConstants, double minDensity) {
+        return Optional.empty();
+    }
+
+    @SuppressWarnings("unused")
+    protected void emitHashTableSwitch(Hasher hasher, JavaConstant[] keys, LabelRef defaultTarget, LabelRef[] targets, Value value) {
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " doesn't support hash table switches");
+    }
 
     @Override
     public void beforeRegisterAllocation() {

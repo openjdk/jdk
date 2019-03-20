@@ -28,12 +28,14 @@ import static java.lang.Thread.currentThread;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.concurrent.atomic.AtomicLong;
 
+import jdk.vm.ci.meta.SpeculationLog.SpeculationReason;
 import jdk.vm.ci.runtime.JVMCI;
 import jdk.vm.ci.services.JVMCIPermission;
 import jdk.vm.ci.services.Services;
@@ -42,30 +44,6 @@ import jdk.vm.ci.services.Services;
  * Interface to functionality that abstracts over which JDK version Graal is running on.
  */
 public final class GraalServices {
-
-    private static int getJavaSpecificationVersion() {
-        String value = System.getProperty("java.specification.version");
-        if (value.startsWith("1.")) {
-            value = value.substring(2);
-        }
-        return Integer.parseInt(value);
-    }
-
-    /**
-     * The integer value corresponding to the value of the {@code java.specification.version} system
-     * property after any leading {@code "1."} has been stripped.
-     */
-    public static final int JAVA_SPECIFICATION_VERSION = getJavaSpecificationVersion();
-
-    /**
-     * Determines if the Java runtime is version 8 or earlier.
-     */
-    public static final boolean Java8OrEarlier = JAVA_SPECIFICATION_VERSION <= 8;
-
-    /**
-     * Determines if the Java runtime is version 11 or earlier.
-     */
-    public static final boolean Java11OrEarlier = JAVA_SPECIFICATION_VERSION <= 11;
 
     private GraalServices() {
     }
@@ -192,6 +170,44 @@ public final class GraalServices {
             return true;
         }
         return false;
+    }
+
+    /**
+     * An implementation of {@link SpeculationReason} based on direct, unencoded values.
+     */
+    static final class DirectSpeculationReason implements SpeculationReason {
+        final int groupId;
+        final String groupName;
+        final Object[] context;
+
+        DirectSpeculationReason(int groupId, String groupName, Object[] context) {
+            this.groupId = groupId;
+            this.groupName = groupName;
+            this.context = context;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof DirectSpeculationReason) {
+                DirectSpeculationReason that = (DirectSpeculationReason) obj;
+                return this.groupId == that.groupId && Arrays.equals(this.context, that.context);
+            }
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return groupId + Arrays.hashCode(this.context);
+        }
+
+        @Override
+        public String toString() {
+            return String.format("%s@%d%s", groupName, groupId, Arrays.toString(context));
+        }
+    }
+
+    static SpeculationReason createSpeculationReason(int groupId, String groupName, Object... context) {
+        return new DirectSpeculationReason(groupId, groupName, context);
     }
 
     /**

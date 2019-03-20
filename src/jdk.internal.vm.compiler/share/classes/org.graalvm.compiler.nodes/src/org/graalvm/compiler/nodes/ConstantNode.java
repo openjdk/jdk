@@ -54,6 +54,7 @@ import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.PrimitiveConstant;
+import jdk.vm.ci.meta.ResolvedJavaType;
 
 /**
  * The {@code ConstantNode} represents a {@link Constant constant}.
@@ -97,6 +98,10 @@ public final class ConstantNode extends FloatingNode implements LIRLowerable, Ar
         } else {
             this.isDefaultStable = isDefaultStable;
         }
+    }
+
+    public ConstantNode(@InjectedNodeParameter Stamp stamp, @InjectedNodeParameter ConstantReflectionProvider constantReflection, @ConstantNodeParameter ResolvedJavaType type) {
+        this(constantReflection.asJavaClass(type), stamp);
     }
 
     /**
@@ -546,4 +551,7 @@ public final class ConstantNode extends FloatingNode implements LIRLowerable, Ar
         }
         return ConstantNode.forInt(length);
     }
+
+    @NodeIntrinsic
+    public static native Class<?> forClass(@ConstantNodeParameter ResolvedJavaType type);
 }

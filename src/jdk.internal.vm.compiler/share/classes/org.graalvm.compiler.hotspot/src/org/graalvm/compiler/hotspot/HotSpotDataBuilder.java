@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,12 +48,6 @@ public class HotSpotDataBuilder extends DataBuilder {
 
     public HotSpotDataBuilder(TargetDescription target) {
         this.target = target;
-    }
-
-    @Override
-    public boolean needDetailedPatchingInformation() {
-        /* The HotSpot VM finds operands that need patching by decoding the instruction. */
-        return false;
     }
 
     @Override

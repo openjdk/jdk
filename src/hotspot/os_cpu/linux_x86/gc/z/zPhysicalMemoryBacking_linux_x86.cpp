@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zBackingFile_linux_x86.hpp"
 #include "gc/z/zErrno.hpp"
+#include "gc/z/zGlobals.hpp"
 #include "gc/z/zLargePages.inline.hpp"
 #include "gc/z/zMemory.hpp"
 #include "gc/z/zNUMA.hpp"
@@ -47,23 +48,22 @@
 // Proc file entry for max map mount
 #define ZFILENAME_PROC_MAX_MAP_COUNT         "/proc/sys/vm/max_map_count"
 
-ZPhysicalMemoryBacking::ZPhysicalMemoryBacking(size_t max_capacity, size_t granule_size) :
+ZPhysicalMemoryBacking::ZPhysicalMemoryBacking(size_t max_capacity) :
     _manager(),
-    _file(),
-    _granule_size(granule_size) {
+    _file() {
 
   if (!_file.is_initialized()) {
     return;
   }
 
   // Check and warn if max map count is too low
-  check_max_map_count(max_capacity, granule_size);
+  check_max_map_count(max_capacity);
 
   // Check and warn if available space on filesystem is too low
   check_available_space_on_filesystem(max_capacity);
 }
 
-void ZPhysicalMemoryBacking::check_max_map_count(size_t max_capacity, size_t granule_size) const {
+void ZPhysicalMemoryBacking::check_max_map_count(size_t max_capacity) const {
   const char* const filename = ZFILENAME_PROC_MAX_MAP_COUNT;
   FILE* const file = fopen(filename, "r");
   if (file == NULL) {
@@ -86,7 +86,7 @@ void ZPhysicalMemoryBacking::check_max_map_count(size_t max_capacity, size_t gra
   // However, ZGC tends to create the most mappings and dominate the total count.
   // In the worst cases, ZGC will map each granule three times, i.e. once per heap view.
   // We speculate that we need another 20% to allow for non-ZGC subsystems to map memory.
-  const size_t required_max_map_count = (max_capacity / granule_size) * 3 * 1.2;
+  const size_t required_max_map_count = (max_capacity / ZGranuleSize) * 3 * 1.2;
   if (actual_max_map_count < required_max_map_count) {
     log_warning(gc, init)("***** WARNING! INCORRECT SYSTEM CONFIGURATION DETECTED! *****");
     log_warning(gc, init)("The system limit on number of memory mappings per process might be too low "
@@ -135,7 +135,7 @@ bool ZPhysicalMemoryBacking::is_initialized() const {
 size_t ZPhysicalMemoryBacking::try_expand(size_t old_capacity, size_t new_capacity) {
   assert(old_capacity < new_capacity, "Invalid old/new capacity");
 
-  const size_t capacity = _file.try_expand(old_capacity, new_capacity - old_capacity, _granule_size);
+  const size_t capacity = _file.try_expand(old_capacity, new_capacity - old_capacity, ZGranuleSize);
   if (capacity > old_capacity) {
     // Add expanded capacity to free list
     _manager.free(old_capacity, capacity - old_capacity);
@@ -145,15 +145,15 @@ size_t ZPhysicalMemoryBacking::try_expand(size_t old_capacity, size_t new_capaci
 }
 
 ZPhysicalMemory ZPhysicalMemoryBacking::alloc(size_t size) {
-  assert(is_aligned(size, _granule_size), "Invalid size");
+  assert(is_aligned(size, ZGranuleSize), "Invalid size");
 
   ZPhysicalMemory pmem;
 
   // Allocate segments
-  for (size_t allocated = 0; allocated < size; allocated += _granule_size) {
-    const uintptr_t start = _manager.alloc_from_front(_granule_size);
+  for (size_t allocated = 0; allocated < size; allocated += ZGranuleSize) {
+    const uintptr_t start = _manager.alloc_from_front(ZGranuleSize);
     assert(start != UINTPTR_MAX, "Allocation should never fail");
-    pmem.add_segment(ZPhysicalMemorySegment(start, _granule_size));
+    pmem.add_segment(ZPhysicalMemorySegment(start, ZGranuleSize));
   }
 
   return pmem;
@@ -237,8 +237,8 @@ uintptr_t ZPhysicalMemoryBacking::nmt_address(uintptr_t offset) const {
 }
 
 void ZPhysicalMemoryBacking::map(ZPhysicalMemory pmem, uintptr_t offset) const {
-  if (ZUnmapBadViews) {
-    // Only map the good view, for debugging only
+  if (ZVerifyViews) {
+    // Map good view
     map_view(pmem, ZAddress::good(offset), AlwaysPreTouch);
   } else {
     // Map all views
@@ -249,8 +249,8 @@ void ZPhysicalMemoryBacking::map(ZPhysicalMemory pmem, uintptr_t offset) const {
 }
 
 void ZPhysicalMemoryBacking::unmap(ZPhysicalMemory pmem, uintptr_t offset) const {
-  if (ZUnmapBadViews) {
-    // Only map the good view, for debugging only
+  if (ZVerifyViews) {
+    // Unmap good view
     unmap_view(pmem, ZAddress::good(offset));
   } else {
     // Unmap all views
@@ -260,11 +260,14 @@ void ZPhysicalMemoryBacking::unmap(ZPhysicalMemory pmem, uintptr_t offset) const
   }
 }
 
-void ZPhysicalMemoryBacking::flip(ZPhysicalMemory pmem, uintptr_t offset) const {
-  assert(ZUnmapBadViews, "Should be enabled");
-  const uintptr_t addr_good = ZAddress::good(offset);
-  const uintptr_t addr_bad = ZAddress::is_marked(ZAddressGoodMask) ? ZAddress::remapped(offset) : ZAddress::marked(offset);
-  // Map/Unmap views
-  map_view(pmem, addr_good, false /* pretouch */);
-  unmap_view(pmem, addr_bad);
+void ZPhysicalMemoryBacking::debug_map(ZPhysicalMemory pmem, uintptr_t offset) const {
+  // Map good view
+  assert(ZVerifyViews, "Should be enabled");
+  map_view(pmem, ZAddress::good(offset), false /* pretouch */);
+}
+
+void ZPhysicalMemoryBacking::debug_unmap(ZPhysicalMemory pmem, uintptr_t offset) const {
+  // Unmap good view
+  assert(ZVerifyViews, "Should be enabled");
+  unmap_view(pmem, ZAddress::good(offset));
 }

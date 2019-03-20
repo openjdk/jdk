@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -230,7 +230,7 @@ public class SctpServerChannelImpl extends SctpServerChannel
                     return null;
                 thread = NativeThread.current();
                 for (;;) {
-                    n = accept0(fd, newfd, isaa);
+                    n = Net.accept(fd, newfd, isaa);
                     if ((n == IOStatus.INTERRUPTED) && isOpen())
                         continue;
                     break;
@@ -411,23 +411,5 @@ public class SctpServerChannelImpl extends SctpServerChannel
 
             return SctpNet.getLocalAddresses(fdVal);
         }
-    }
-
-    /* Native */
-    private static native void initIDs();
-
-    private static native int accept0(FileDescriptor ssfd,
-        FileDescriptor newfd, InetSocketAddress[] isaa) throws IOException;
-
-    static {
-        IOUtil.load();   // loads nio & net native libraries
-        java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<Void>() {
-                public Void run() {
-                    System.loadLibrary("sctp");
-                    return null;
-                }
-            });
-        initIDs();
     }
 }

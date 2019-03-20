@@ -174,7 +174,7 @@ public class OptionProcessor extends AbstractProcessor {
             }
             enclosing = enclosing.getEnclosingElement();
         }
-        if (enclosingPackage == null) {
+        if (enclosingPackage == null || enclosingPackage.isUnnamed()) {
             processingEnv.getMessager().printMessage(Kind.ERROR, "Option field cannot be declared in the unnamed package", element);
             return;
         }

@@ -88,7 +88,7 @@ public class HotSpotCompiledCodeBuilder {
 
         ResolvedJavaMethod[] methods = compResult.getMethods();
 
-        List<CodeAnnotation> annotations = compResult.getAnnotations();
+        List<CodeAnnotation> annotations = compResult.getCodeAnnotations();
         Comment[] comments = new Comment[annotations.size()];
         if (!annotations.isEmpty()) {
             for (int i = 0; i < comments.length; i++) {
@@ -129,16 +129,16 @@ public class HotSpotCompiledCodeBuilder {
             boolean hasUnsafeAccess = compResult.hasUnsafeAccess();
 
             int id;
-            long jvmciEnv;
+            long jvmciCompileState;
             if (compRequest != null) {
                 id = compRequest.getId();
-                jvmciEnv = compRequest.getJvmciEnv();
+                jvmciCompileState = compRequest.getJvmciEnv();
             } else {
                 id = hsMethod.allocateCompileId(entryBCI);
-                jvmciEnv = 0L;
+                jvmciCompileState = 0L;
             }
             return new HotSpotCompiledNmethod(name, targetCode, targetCodeSize, sites, assumptions, methods, comments, dataSection, dataSectionAlignment, dataSectionPatches, isImmutablePIC,
-                            totalFrameSize, customStackArea, hsMethod, entryBCI, id, jvmciEnv, hasUnsafeAccess);
+                            totalFrameSize, customStackArea, hsMethod, entryBCI, id, jvmciCompileState, hasUnsafeAccess);
         } else {
             return new HotSpotCompiledCode(name, targetCode, targetCodeSize, sites, assumptions, methods, comments, dataSection, dataSectionAlignment, dataSectionPatches, isImmutablePIC,
                             totalFrameSize, customStackArea);

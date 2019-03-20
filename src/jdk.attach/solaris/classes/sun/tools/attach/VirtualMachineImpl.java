@@ -126,7 +126,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
      * Execute the given command in the target VM.
      */
     InputStream execute(String cmd, Object ... args) throws AgentLoadException, IOException {
-        assert args.length <= 4;                // includes null
+        assert args.length <= 3;                // includes null
 
         // first check that we are still attached
         int door;

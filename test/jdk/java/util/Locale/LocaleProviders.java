@@ -72,6 +72,10 @@ public class LocaleProviders {
                 bug8027289Test(args[1]);
                 break;
 
+            case "bug8220227Test":
+                bug8220227Test();
+                break;
+
             default:
                 throw new RuntimeException("Test method '"+methodName+"' not found.");
         }
@@ -246,6 +250,17 @@ public class LocaleProviders {
                 throw new RuntimeException(
                         "Unexpected Chinese currency symbol. returned: "
                                 + formatted + ", expected: " + expectedSymbol[0]);
+            }
+        }
+    }
+
+    static void bug8220227Test() {
+        if (System.getProperty("os.name").startsWith("Windows")) {
+            Locale l = new Locale("xx","XX");
+            String country = l.getDisplayCountry();
+            if (country.endsWith("(XX)")) {
+                throw new RuntimeException(
+                        "Unexpected Region name: " + country);
             }
         }
     }

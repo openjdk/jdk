@@ -1513,19 +1513,23 @@ else
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libterminatedThread += -lpthread
 endif
 
-$(eval $(call SetupTestFilesCompilation, BUILD_HOTSPOT_JTREG_LIBRARIES, \
-    TYPE := LIBRARY, \
-    SOURCE_DIRS := $(BUILD_HOTSPOT_JTREG_NATIVE_SRC), \
-    OUTPUT_DIR := $(BUILD_HOTSPOT_JTREG_OUTPUT_DIR), \
-    EXCLUDE := $(BUILD_HOTSPOT_JTREG_EXCLUDE), \
-))
+# This evaluation is expensive and should only be done if this target was
+# explicitly called.
+ifneq ($(filter build-test-hotspot-jtreg-native, $(MAKECMDGOALS)), )
+  $(eval $(call SetupTestFilesCompilation, BUILD_HOTSPOT_JTREG_LIBRARIES, \
+      TYPE := LIBRARY, \
+      SOURCE_DIRS := $(BUILD_HOTSPOT_JTREG_NATIVE_SRC), \
+      OUTPUT_DIR := $(BUILD_HOTSPOT_JTREG_OUTPUT_DIR), \
+      EXCLUDE := $(BUILD_HOTSPOT_JTREG_EXCLUDE), \
+  ))
 
-$(eval $(call SetupTestFilesCompilation, BUILD_HOTSPOT_JTREG_EXECUTABLES, \
-    TYPE := PROGRAM, \
-    SOURCE_DIRS := $(BUILD_HOTSPOT_JTREG_NATIVE_SRC), \
-    OUTPUT_DIR := $(BUILD_HOTSPOT_JTREG_OUTPUT_DIR), \
-    EXCLUDE := $(BUILD_HOTSPOT_JTREG_EXCLUDE), \
-))
+  $(eval $(call SetupTestFilesCompilation, BUILD_HOTSPOT_JTREG_EXECUTABLES, \
+      TYPE := PROGRAM, \
+      SOURCE_DIRS := $(BUILD_HOTSPOT_JTREG_NATIVE_SRC), \
+      OUTPUT_DIR := $(BUILD_HOTSPOT_JTREG_OUTPUT_DIR), \
+      EXCLUDE := $(BUILD_HOTSPOT_JTREG_EXCLUDE), \
+  ))
+endif
 
 build-test-hotspot-jtreg-native: $(BUILD_HOTSPOT_JTREG_LIBRARIES) $(BUILD_HOTSPOT_JTREG_EXECUTABLES)
 
@@ -1537,8 +1541,9 @@ build-test-hotspot-jtreg-native: $(BUILD_HOTSPOT_JTREG_LIBRARIES) $(BUILD_HOTSPO
 $(eval $(call SetupCopyFiles,COPY_HOTSPOT_JTREG_NATIVE, \
     SRC := $(BUILD_HOTSPOT_JTREG_OUTPUT_DIR), \
     DEST := $(TEST_IMAGE_DIR)/hotspot/jtreg/native, \
-    FILES := $(BUILD_HOTSPOT_JTREG_LIBRARIES) $(BUILD_HOTSPOT_JTREG_EXECUTABLES), \
-    FLATTEN := true))
+    FILES := $(wildcard $(addprefix $(BUILD_HOTSPOT_JTREG_OUTPUT_DIR), /bin/* /lib/*)), \
+    FLATTEN := true, \
+))
 
 test-image-hotspot-jtreg-native: $(COPY_HOTSPOT_JTREG_NATIVE)
 

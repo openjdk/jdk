@@ -93,13 +93,16 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
 
     /**
      * Creates an AbstractStringBuilder with the specified coder and with
-     * the initial capacity equal to the smaller of (capacity + addition)
+     * the initial capacity equal to the smaller of (length + addition)
      * and Integer.MAX_VALUE.
      */
-    AbstractStringBuilder(byte coder, int capacity, int addition) {
+    AbstractStringBuilder(byte coder, int length, int addition) {
+        if (length < 0) {
+            throw new NegativeArraySizeException("Negative length: " + length);
+        }
         this.coder = coder;
-        capacity = (capacity < Integer.MAX_VALUE - addition)
-                ? capacity + addition : Integer.MAX_VALUE;
+        int capacity = (length < Integer.MAX_VALUE - addition)
+                ? length + addition : Integer.MAX_VALUE;
         value = (coder == LATIN1)
                 ? new byte[capacity] : StringUTF16.newBytesFor(capacity);
     }

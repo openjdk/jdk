@@ -45,6 +45,13 @@ public abstract class NarrowOopStamp extends AbstractObjectStamp {
     }
 
     @Override
+    public void accept(Visitor v) {
+        super.accept(v);
+        v.visitLong(encoding.getBase());
+        v.visitInt(encoding.getShift());
+    }
+
+    @Override
     protected abstract AbstractObjectStamp copyWith(ResolvedJavaType type, boolean exactType, boolean nonNull, boolean alwaysNull);
 
     public Stamp uncompressed() {

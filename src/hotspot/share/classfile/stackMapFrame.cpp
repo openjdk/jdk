@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,13 +103,16 @@ VerificationType StackMapFrame::set_locals_from_arg(
     case T_ARRAY:
     {
       Symbol* sig = ss.as_symbol(CHECK_(VerificationType::bogus_type()));
-      // Create another symbol to save as signature stream unreferences
-      // this symbol.
-      Symbol* sig_copy =
-        verifier()->create_temporary_symbol(sig, 0, sig->utf8_length(),
-                                 CHECK_(VerificationType::bogus_type()));
-      assert(sig_copy == sig, "symbols don't match");
-      return VerificationType::reference_type(sig_copy);
+      if (!sig->is_permanent()) {
+        // Create another symbol to save as signature stream unreferences
+        // this symbol.
+        Symbol *sig_copy =
+          verifier()->create_temporary_symbol(sig, 0, sig->utf8_length(),
+        CHECK_(VerificationType::bogus_type()));
+        assert(sig_copy == sig, "symbols don't match");
+        sig = sig_copy;
+      }
+      return VerificationType::reference_type(sig);
     }
     case T_INT:     return VerificationType::integer_type();
     case T_BYTE:    return VerificationType::byte_type();

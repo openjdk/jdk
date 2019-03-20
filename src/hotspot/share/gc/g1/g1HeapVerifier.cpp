@@ -495,7 +495,7 @@ void G1HeapVerifier::verify(VerifyOption vo) {
 
   bool failures = rootsCl.failures() || codeRootsCl.failures();
 
-  if (!_g1h->g1_policy()->collector_state()->in_full_gc()) {
+  if (!_g1h->policy()->collector_state()->in_full_gc()) {
     // If we're verifying during a full GC then the region sets
     // will have been torn down at the start of the GC. Therefore
     // verifying the region sets will fail. So we only verify
@@ -630,14 +630,14 @@ double G1HeapVerifier::verify(G1VerifyType type, VerifyOption vo, const char* ms
 void G1HeapVerifier::verify_before_gc(G1VerifyType type) {
   if (VerifyBeforeGC) {
     double verify_time_ms = verify(type, VerifyOption_G1UsePrevMarking, "Before GC");
-    _g1h->g1_policy()->phase_times()->record_verify_before_time_ms(verify_time_ms);
+    _g1h->phase_times()->record_verify_before_time_ms(verify_time_ms);
   }
 }
 
 void G1HeapVerifier::verify_after_gc(G1VerifyType type) {
   if (VerifyAfterGC) {
     double verify_time_ms = verify(type, VerifyOption_G1UsePrevMarking, "After GC");
-    _g1h->g1_policy()->phase_times()->record_verify_after_time_ms(verify_time_ms);
+    _g1h->phase_times()->record_verify_after_time_ms(verify_time_ms);
   }
 }
 

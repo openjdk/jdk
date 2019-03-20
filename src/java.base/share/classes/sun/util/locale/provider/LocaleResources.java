@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,6 @@ import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import sun.security.action.GetPropertyAction;
-import sun.util.calendar.ZoneInfo;
 import sun.util.resources.LocaleData;
 import sun.util.resources.OpenListResourceBundle;
 import sun.util.resources.ParallelListResourceBundle;
@@ -271,17 +270,31 @@ public class LocaleResources {
 
         if (Objects.isNull(data) || Objects.isNull(val = data.get())) {
             TimeZoneNamesBundle tznb = localeData.getTimeZoneNames(locale);
-            if (tznb.containsKey(key)) {
-                if (key.startsWith(TZNB_EXCITY_PREFIX)) {
+            if (key.startsWith(TZNB_EXCITY_PREFIX)) {
+                if (tznb.containsKey(key)) {
                     val = tznb.getString(key);
                     assert val instanceof String;
                     trace("tznb: %s key: %s, val: %s\n", tznb, key, val);
+                }
+            } else {
+                String[] names = null;
+                if (tznb.containsKey(key)) {
+                    names = tznb.getStringArray(key);
                 } else {
-                    String[] names = tznb.getStringArray(key);
+                    var tz = TimeZoneNameUtility.canonicalTZID(key).orElse(key);
+                    if (tznb.containsKey(tz)) {
+                        names = tznb.getStringArray(tz);
+                    }
+                }
+
+                if (names != null) {
+                    names[0] = key;
                     trace("tznb: %s key: %s, names: %s, %s, %s, %s, %s, %s, %s\n", tznb, key,
                         names[0], names[1], names[2], names[3], names[4], names[5], names[6]);
                     val = names;
                 }
+            }
+            if (val != null) {
                 cache.put(cacheKey,
                           new ResourceReference(cacheKey, val, referenceQueue));
             }
@@ -321,8 +334,6 @@ public class LocaleResources {
         }
 
         if (type == LocaleProviderAdapter.Type.CLDR) {
-            // Add aliases data for CLDR
-            Map<String, String> aliases = ZoneInfo.getAliasTable();
             // Note: TimeZoneNamesBundle creates a String[] on each getStringArray call.
 
             // Add timezones which are not present in this keyset,
@@ -335,9 +346,10 @@ public class LocaleResources {
                         if (keyset.contains(tzid)) {
                             val = rb.getStringArray(tzid);
                         } else {
-                            String tz = aliases.get(tzid);
-                            if (keyset.contains(tz)) {
-                                val = rb.getStringArray(tz);
+                            var canonID = TimeZoneNameUtility.canonicalTZID(tzid)
+                                            .orElse(tzid);
+                            if (keyset.contains(canonID)) {
+                                val = rb.getStringArray(canonID);
                             }
                         }
                         val[0] = tzid;

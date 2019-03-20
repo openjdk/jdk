@@ -26,15 +26,6 @@
 #include "code/compressedStream.hpp"
 #include "utilities/ostream.hpp"
 
-// 32-bit one-to-one sign encoding taken from Pack200
-// converts leading sign bits into leading zeroes with trailing sign bit
-inline juint CompressedStream::encode_sign(jint  value) {
-  return (value << 1) ^ (value >> 31);
-}
-inline jint  CompressedStream::decode_sign(juint value) {
-  return (value >> 1) ^ -(jint)(value & 1);
-}
-
 // 32-bit self-inverse encoding of float bits
 // converts trailing zeroes (common in floats) to leading zeroes
 inline juint CompressedStream::reverse_int(juint i) {
@@ -45,7 +36,6 @@ inline juint CompressedStream::reverse_int(juint i) {
   i = (i << 24) | ((i & 0xff00) << 8) | ((i >> 8) & 0xff00) | (i >> 24);
   return i;
 }
-
 
 jint CompressedReadStream::read_signed_int() {
   return decode_sign(read_int());
@@ -90,11 +80,6 @@ void CompressedWriteStream::grow() {
   _size   = _size * 2;
 }
 
-void CompressedWriteStream::write_signed_int(jint value) {
-  // this encoding, called SIGNED5, is taken from Pack200
-  write_int(encode_sign(value));
-}
-
 void CompressedWriteStream::write_float(jfloat value) {
   juint f = jint_cast(value);
   juint rf = reverse_int(f);
@@ -117,136 +102,3 @@ void CompressedWriteStream::write_long(jlong value) {
   write_signed_int(low(value));
   write_signed_int(high(value));
 }
-
-
-/// The remaining details
-
-#ifndef PRODUCT
-// set this to trigger unit test
-void test_compressed_stream(int trace);
-bool test_compressed_stream_enabled = false;
-#endif
-
-void CompressedWriteStream::write_int_mb(jint value) {
-  debug_only(int pos1 = position());
-  juint sum = value;
-  for (int i = 0; ; ) {
-    if (sum < L || i == MAX_i) {
-      // remainder is either a "low code" or the 5th byte
-      assert(sum == (u_char)sum, "valid byte");
-      write((u_char)sum);
-      break;
-    }
-    sum -= L;
-    int b_i = L + (sum % H);  // this is a "high code"
-    sum >>= lg_H;             // extracted 6 bits
-    write(b_i); ++i;
-  }
-
-#ifndef PRODUCT
-  if (test_compressed_stream_enabled) {  // hack to enable this stress test
-    test_compressed_stream_enabled = false;
-    test_compressed_stream(0);
-  }
-#endif
-}
-
-
-#ifndef PRODUCT
-/// a unit test (can be run by hand from a debugger)
-
-// Avoid a VS2005 compiler stack overflow w/ fastdebug build.
-// The following pragma optimize turns off optimization ONLY
-// for this block (a matching directive turns it back on later).
-// These directives can be removed once the MS VS.NET 2005
-// compiler stack overflow is fixed.
-#if defined(_MSC_VER) && _MSC_VER >=1400 && !defined(_WIN64)
-#pragma optimize("", off)
-#pragma warning(disable: 4748)
-#endif
-
-// generator for an "interesting" set of critical values
-enum { stretch_limit = (1<<16) * (64-16+1) };
-static jlong stretch(jint x, int bits) {
-  // put x[high 4] into place
-  jlong h = (jlong)((x >> (16-4))) << (bits - 4);
-  // put x[low 12] into place, sign extended
-  jlong l = ((jlong)x << (64-12)) >> (64-12);
-  // move l upwards, maybe
-  l <<= (x >> 16);
-  return h ^ l;
-}
-
-PRAGMA_DIAG_PUSH
-PRAGMA_FORMAT_IGNORED // Someone needs to deal with this.
-void test_compressed_stream(int trace) {
-  CompressedWriteStream bytes(stretch_limit * 100);
-  jint n;
-  int step = 0, fails = 0;
-#define CHECKXY(x, y, fmt) { \
-    ++step; \
-    int xlen = (pos = decode.position()) - lastpos; lastpos = pos; \
-    if (trace > 0 && (step % trace) == 0) { \
-      tty->print_cr("step %d, n=%08x: value=" fmt " (len=%d)", \
-                    step, n, x, xlen); } \
-    if (x != y) {                                                     \
-      tty->print_cr("step %d, n=%d: " fmt " != " fmt, step, n, x, y); \
-      fails++; \
-    } }
-  for (n = 0; n < (1<<8); n++) {
-    jbyte x = (jbyte)n;
-    bytes.write_byte(x); ++step;
-  }
-  for (n = 0; n < stretch_limit; n++) {
-    jint x = (jint)stretch(n, 32);
-    bytes.write_int(x); ++step;
-    bytes.write_signed_int(x); ++step;
-    bytes.write_float(jfloat_cast(x)); ++step;
-  }
-  for (n = 0; n < stretch_limit; n++) {
-    jlong x = stretch(n, 64);
-    bytes.write_long(x); ++step;
-    bytes.write_double(jdouble_cast(x)); ++step;
-  }
-  int length = bytes.position();
-  if (trace != 0)
-    tty->print_cr("set up test of %d stream values, size %d", step, length);
-  step = 0;
-  // now decode it all
-  CompressedReadStream decode(bytes.buffer());
-  int pos, lastpos = decode.position();
-  for (n = 0; n < (1<<8); n++) {
-    jbyte x = (jbyte)n;
-    jbyte y = decode.read_byte();
-    CHECKXY(x, y, "%db");
-  }
-  for (n = 0; n < stretch_limit; n++) {
-    jint x = (jint)stretch(n, 32);
-    jint y1 = decode.read_int();
-    CHECKXY(x, y1, "%du");
-    jint y2 = decode.read_signed_int();
-    CHECKXY(x, y2, "%di");
-    jint y3 = jint_cast(decode.read_float());
-    CHECKXY(x, y3, "%df");
-  }
-  for (n = 0; n < stretch_limit; n++) {
-    jlong x = stretch(n, 64);
-    jlong y1 = decode.read_long();
-    CHECKXY(x, y1, INT64_FORMAT "l");
-    jlong y2 = jlong_cast(decode.read_double());
-    CHECKXY(x, y2, INT64_FORMAT "d");
-  }
-  int length2 = decode.position();
-  if (trace != 0)
-    tty->print_cr("finished test of %d stream values, size %d", step, length2);
-  guarantee(length == length2, "bad length");
-  guarantee(fails == 0, "test failures");
-}
-PRAGMA_DIAG_POP
-
-#if defined(_MSC_VER) &&_MSC_VER >=1400 && !defined(_WIN64)
-#pragma warning(default: 4748)
-#pragma optimize("", on)
-#endif
-
-#endif // PRODUCT

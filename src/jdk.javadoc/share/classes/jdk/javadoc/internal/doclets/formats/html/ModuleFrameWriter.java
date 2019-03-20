@@ -32,7 +32,6 @@ import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.ElementFilter;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -101,14 +100,14 @@ public class ModuleFrameWriter extends HtmlDocletWriter {
         DocPath moduleSummary = configuration.useModuleDirectories
                 ? DocPaths.DOT_DOT.resolve(configuration.docPaths.moduleSummary(moduleElement))
                 : configuration.docPaths.moduleSummary(moduleElement);
-        Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, HtmlStyle.bar,
+        Content heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, HtmlStyle.bar,
                 mdlgen.links.createLink(moduleSummary, mdlLabel, "", "classFrame"));
-        htmlTree.addContent(heading);
+        htmlTree.add(heading);
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
         div.setStyle(HtmlStyle.indexContainer);
         mdlgen.addClassListing(div);
-        htmlTree.addContent(div);
-        body.addContent(htmlTree);
+        htmlTree.add(div);
+        body.add(htmlTree);
         mdlgen.printHtmlDocument(
                 configuration.metakeywords.getMetaKeywordsForModule(moduleElement),
                 "module summary (frame)",
@@ -171,9 +170,9 @@ public class ModuleFrameWriter extends HtmlDocletWriter {
                     continue;
                 }
                 if (!printedHeader) {
-                    Content heading = HtmlTree.HEADING(HtmlConstants.CONTENT_HEADING,
+                    Content heading = HtmlTree.HEADING(Headings.CONTENT_HEADING,
                             true, labelContent);
-                    htmlTree.addContent(heading);
+                    htmlTree.add(heading);
                     printedHeader = true;
                 }
                 Content arr_i_name = new StringContent(utils.getSimpleName(typeElement));
@@ -183,10 +182,10 @@ public class ModuleFrameWriter extends HtmlDocletWriter {
                 Content link = getLink(new LinkInfoImpl(configuration,
                         LinkInfoImpl.Kind.ALL_CLASSES_FRAME, typeElement).label(arr_i_name).target("classFrame"));
                 Content li = HtmlTree.LI(link);
-                ul.addContent(li);
+                ul.add(li);
             }
-            htmlTree.addContent(ul);
-            contentTree.addContent(htmlTree);
+            htmlTree.add(ul);
+            contentTree.add(htmlTree);
         }
     }
 }

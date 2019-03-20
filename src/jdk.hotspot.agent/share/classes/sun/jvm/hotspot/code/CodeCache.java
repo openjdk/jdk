@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import sun.jvm.hotspot.utilities.*;
 
 public class CodeCache {
   private static GrowableArray<CodeHeap> heapArray;
-  private static AddressField scavengeRootNMethodsField;
   private static VirtualConstructor virtualConstructor;
 
   static {
@@ -56,8 +55,6 @@ public class CodeCache {
     AddressField heapsField = type.getAddressField("_heaps");
     heapArray = GrowableArray.create(heapsField.getValue(), heapConstructor);
 
-    scavengeRootNMethodsField = type.getAddressField("_scavenge_root_nmethods");
-
     virtualConstructor = new VirtualConstructor(db);
     // Add mappings for all possible CodeBlob subclasses
     virtualConstructor.addMapping("BufferBlob", BufferBlob.class);
@@ -71,10 +68,6 @@ public class CodeCache {
       virtualConstructor.addMapping("ExceptionBlob", ExceptionBlob.class);
       virtualConstructor.addMapping("UncommonTrapBlob", UncommonTrapBlob.class);
     }
-  }
-
-  public NMethod scavengeRootMethods() {
-    return (NMethod) VMObjectFactory.newObject(NMethod.class, scavengeRootNMethodsField.getValue());
   }
 
   public boolean contains(Address p) {

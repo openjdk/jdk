@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -558,32 +558,32 @@ eventHandlerVMInit( jvmtiEnv *      jvmtienv,
     environment = getJPLISEnvironment(jvmtienv);
 
     /* process the premain calls on the all the JPL agents */
-    if ( environment != NULL ) {
-        jthrowable outstandingException = NULL;
-        /*
-         * Add the jarfile to the system class path
-         */
-        JPLISAgent * agent = environment->mAgent;
-        if (appendClassPath(agent, agent->mJarfile)) {
-            fprintf(stderr, "Unable to add %s to system class path - "
-                    "the system class loader does not define the "
-                    "appendToClassPathForInstrumentation method or the method failed\n",
-                    agent->mJarfile);
-            free((void *)agent->mJarfile);
-            abortJVM(jnienv, JPLIS_ERRORMESSAGE_CANNOTSTART);
-        }
-        free((void *)agent->mJarfile);
-        agent->mJarfile = NULL;
-
-        outstandingException = preserveThrowable(jnienv);
-        success = processJavaStart( environment->mAgent,
-                                    jnienv);
-        restoreThrowable(jnienv, outstandingException);
+    if (environment == NULL) {
+        abortJVM(jnienv, JPLIS_ERRORMESSAGE_CANNOTSTART ", getting JPLIS environment failed");
     }
+    jthrowable outstandingException = NULL;
+    /*
+     * Add the jarfile to the system class path
+     */
+    JPLISAgent * agent = environment->mAgent;
+    if (appendClassPath(agent, agent->mJarfile)) {
+        fprintf(stderr, "Unable to add %s to system class path - "
+                "the system class loader does not define the "
+                "appendToClassPathForInstrumentation method or the method failed\n",
+                agent->mJarfile);
+        free((void *)agent->mJarfile);
+        abortJVM(jnienv, JPLIS_ERRORMESSAGE_CANNOTSTART ", appending to system class path failed");
+    }
+    free((void *)agent->mJarfile);
+    agent->mJarfile = NULL;
+
+    outstandingException = preserveThrowable(jnienv);
+    success = processJavaStart( environment->mAgent, jnienv);
+    restoreThrowable(jnienv, outstandingException);
 
     /* if we fail to start cleanly, bring down the JVM */
     if ( !success ) {
-        abortJVM(jnienv, JPLIS_ERRORMESSAGE_CANNOTSTART);
+        abortJVM(jnienv, JPLIS_ERRORMESSAGE_CANNOTSTART ", processJavaStart failed");
     }
 }
 

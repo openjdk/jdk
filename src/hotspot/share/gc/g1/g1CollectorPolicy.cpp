@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,6 @@ size_t G1CollectorPolicy::heap_reserved_size_bytes() const {
   return _max_heap_byte_size;
 }
 
-bool G1CollectorPolicy::is_hetero_heap() const {
+bool G1CollectorPolicy::is_heterogeneous_heap() const {
   return false;
 }

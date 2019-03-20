@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2039,7 +2039,8 @@ void PhaseIdealLoop::mark_reductions(IdealLoopTree *loop) {
         if (n_ctrl != NULL && loop->is_member(get_loop(n_ctrl))) {
           // Now test it to see if it fits the standard pattern for a reduction operator.
           int opc = def_node->Opcode();
-          if (opc != ReductionNode::opcode(opc, def_node->bottom_type()->basic_type())) {
+          if (opc != ReductionNode::opcode(opc, def_node->bottom_type()->basic_type())
+              || opc == Op_MinD || opc == Op_MinF || opc == Op_MaxD || opc == Op_MaxF) {
             if (!def_node->is_reduction()) { // Not marked yet
               // To be a reduction, the arithmetic node must have the phi as input and provide a def to it
               bool ok = false;

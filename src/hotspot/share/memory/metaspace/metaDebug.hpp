@@ -41,6 +41,17 @@ class Metadebug : AllStatic {
 #endif
 };
 
+#ifdef ASSERT
+#define EVERY_NTH(n)          \
+{ static int counter_ = 0;    \
+  if (n > 0) {                \
+    counter_ ++;              \
+    if (counter_ > n) {       \
+      counter_ = 0;           \
+
+#define END_EVERY_NTH         } } }
+#endif // ASSERT
+
 } // namespace metaspace
 
 #endif // SHARE_MEMORY_METASPACE_METADEBUG_HPP

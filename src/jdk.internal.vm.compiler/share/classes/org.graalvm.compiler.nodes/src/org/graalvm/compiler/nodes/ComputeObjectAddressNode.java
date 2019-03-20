@@ -30,6 +30,7 @@ import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodeinfo.NodeSize;
+import org.graalvm.compiler.nodes.calc.SignExtendNode;
 import org.graalvm.compiler.nodes.debug.ControlFlowAnchored;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
@@ -50,7 +51,7 @@ public final class ComputeObjectAddressNode extends FixedWithNextNode implements
     public ComputeObjectAddressNode(ValueNode obj, ValueNode offset) {
         super(TYPE, StampFactory.forKind(JavaKind.Long));
         this.object = obj;
-        this.offset = offset;
+        this.offset = SignExtendNode.create(offset, 64, NodeView.DEFAULT);
     }
 
     @NodeIntrinsic

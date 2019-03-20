@@ -1856,10 +1856,9 @@ static bool _print_ascii_file(const char* filename, outputStream* st, const char
   return true;
 }
 
-#if defined(S390)
+#if defined(S390) || defined(PPC64)
 // keywords_to_match - NULL terminated array of keywords
-static bool print_matching_lines_from_sysinfo_file(outputStream* st, const char* keywords_to_match[]) {
-  const char* filename = "/proc/sysinfo";
+static bool print_matching_lines_from_file(const char* filename, outputStream* st, const char* keywords_to_match[]) {
   char* line = NULL;
   size_t length = 0;
   FILE* fp = fopen(filename, "r");
@@ -2191,9 +2190,29 @@ void os::Linux::print_virtualization_info(outputStream* st) {
   // - whole "Box" (CPUs )
   // - z/VM / KVM (VM<nn>); this is not available in an LPAR-only setup
   const char* kw[] = { "LPAR", "CPUs", "VM", NULL };
+  const char* info_file = "/proc/sysinfo";
 
-  if (! print_matching_lines_from_sysinfo_file(st, kw)) {
-    st->print_cr("  </proc/sysinfo Not Available>");
+  if (!print_matching_lines_from_file(info_file, st, kw)) {
+    st->print_cr("  <%s Not Available>", info_file);
+  }
+#elif defined(PPC64)
+  const char* info_file = "/proc/ppc64/lparcfg";
+  const char* kw[] = { "system_type=", // qemu indicates PowerKVM
+                       "partition_entitled_capacity=", // entitled processor capacity percentage
+                       "partition_max_entitled_capacity=",
+                       "capacity_weight=", // partition CPU weight
+                       "partition_active_processors=",
+                       "partition_potential_processors=",
+                       "entitled_proc_capacity_available=",
+                       "capped=", // 0 - uncapped, 1 - vcpus capped at entitled processor capacity percentage
+                       "shared_processor_mode=", // (non)dedicated partition
+                       "system_potential_processors=",
+                       "pool=", // CPU-pool number
+                       "pool_capacity=",
+                       "NumLpars=", // on non-KVM machines, NumLpars is not found for full partition mode machines
+                       NULL };
+  if (!print_matching_lines_from_file(info_file, st, kw)) {
+    st->print_cr("  <%s Not Available>", info_file);
   }
 #endif
 }
@@ -2273,7 +2292,7 @@ const char* search_string = "CPU";
 #elif defined(PPC64)
 const char* search_string = "cpu";
 #elif defined(S390)
-const char* search_string = "processor";
+const char* search_string = "machine =";
 #elif defined(SPARC)
 const char* search_string = "cpu";
 #else
@@ -4444,11 +4463,6 @@ static void signalHandler(int sig, siginfo_t* info, void* uc) {
 bool os::Linux::signal_handlers_are_installed = false;
 
 // For signal-chaining
-struct sigaction sigact[NSIG];
-uint64_t sigs = 0;
-#if (64 < NSIG-1)
-#error "Not all signals can be encoded in sigs. Adapt its type!"
-#endif
 bool os::Linux::libjsig_is_loaded = false;
 typedef struct sigaction *(*get_signal_t)(int);
 get_signal_t os::Linux::get_signal_action = NULL;
@@ -4462,7 +4476,7 @@ struct sigaction* os::Linux::get_chained_signal_action(int sig) {
   }
   if (actp == NULL) {
     // Retrieve the preinstalled signal handler from jvm
-    actp = get_preinstalled_handler(sig);
+    actp = os::Posix::get_preinstalled_handler(sig);
   }
 
   return actp;
@@ -4526,19 +4540,6 @@ bool os::Linux::chained_handler(int sig, siginfo_t* siginfo, void* context) {
   return chained;
 }
 
-struct sigaction* os::Linux::get_preinstalled_handler(int sig) {
-  if ((((uint64_t)1 << (sig-1)) & sigs) != 0) {
-    return &sigact[sig];
-  }
-  return NULL;
-}
-
-void os::Linux::save_preinstalled_handler(int sig, struct sigaction& oldAct) {
-  assert(sig > 0 && sig < NSIG, "vm signal out of expected range");
-  sigact[sig] = oldAct;
-  sigs |= (uint64_t)1 << (sig-1);
-}
-
 // for diagnostic
 int sigflags[NSIG];
 
@@ -4570,7 +4571,7 @@ void os::Linux::set_signal_handler(int sig, bool set_installed) {
       return;
     } else if (UseSignalChaining) {
       // save the old handler in jvm
-      save_preinstalled_handler(sig, oldAct);
+      os::Posix::save_preinstalled_handler(sig, oldAct);
       // libjsig also interposes the sigaction() call below and saves the
       // old sigaction on it own.
     } else {

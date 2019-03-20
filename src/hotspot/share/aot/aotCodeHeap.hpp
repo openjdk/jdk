@@ -252,8 +252,8 @@ public:
 
 
   void oops_do(OopClosure* f);
-  void metadata_do(void f(Metadata*));
-  void got_metadata_do(void f(Metadata*));
+  void metadata_do(MetadataClosure* f);
+  void got_metadata_do(MetadataClosure* f);
 
 #ifdef ASSERT
   bool got_contains(Metadata **p) {

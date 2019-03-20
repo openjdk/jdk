@@ -1174,7 +1174,7 @@ public class ClassReader {
                 protected void read(Symbol sym, int attrLen) {
                     ClassSymbol c = (ClassSymbol) sym;
                     Name n = readName(nextChar());
-                    c.sourcefile = new SourceFileObject(n, c.flatname);
+                    c.sourcefile = new SourceFileObject(n);
                     // If the class is a toplevel class, originating from a Java source file,
                     // but the class name does not match the file name, then it is
                     // an auxiliary class.
@@ -2950,11 +2950,9 @@ public class ClassReader {
         /** The file's name.
          */
         private final Name name;
-        private final Name flatname;
 
-        public SourceFileObject(Name name, Name flatname) {
+        public SourceFileObject(Name name) {
             this.name = name;
-            this.flatname = flatname;
         }
 
         @Override @DefinedBy(Api.COMPILER)

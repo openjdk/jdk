@@ -44,8 +44,8 @@
 // SuspendibleThreadSet after every card.
 class G1RefineCardConcurrentlyClosure: public G1CardTableEntryClosure {
 public:
-  bool do_card_ptr(jbyte* card_ptr, uint worker_i) {
-    G1CollectedHeap::heap()->g1_rem_set()->refine_card_concurrently(card_ptr, worker_i);
+  bool do_card_ptr(CardValue* card_ptr, uint worker_i) {
+    G1CollectedHeap::heap()->rem_set()->refine_card_concurrently(card_ptr, worker_i);
 
     if (SuspendibleThreadSet::should_yield()) {
       // Caller will actually yield.
@@ -99,7 +99,7 @@ void G1DirtyCardQueueSet::initialize(Monitor* cbl_mon,
   }
 }
 
-void G1DirtyCardQueueSet::handle_zero_index_for_thread(JavaThread* t) {
+void G1DirtyCardQueueSet::handle_zero_index_for_thread(Thread* t) {
   G1ThreadLocalData::dirty_card_queue(t).handle_zero_index();
 }
 
@@ -113,7 +113,7 @@ bool G1DirtyCardQueueSet::apply_closure_to_buffer(G1CardTableEntryClosure* cl,
   size_t i = node->index();
   size_t limit = buffer_size();
   for ( ; i < limit; ++i) {
-    jbyte* card_ptr = static_cast<jbyte*>(buf[i]);
+    CardTable::CardValue* card_ptr = static_cast<CardTable::CardValue*>(buf[i]);
     assert(card_ptr != NULL, "invariant");
     if (!cl->do_card_ptr(card_ptr, worker_i)) {
       result = false;           // Incomplete processing.
@@ -207,11 +207,16 @@ void G1DirtyCardQueueSet::par_apply_closure_to_all_completed_buffers(G1CardTable
 void G1DirtyCardQueueSet::abandon_logs() {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at safepoint.");
   abandon_completed_buffers();
+
   // Since abandon is done only at safepoints, we can safely manipulate
   // these queues.
-  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
-    G1ThreadLocalData::dirty_card_queue(t).reset();
-  }
+  struct AbandonThreadLogClosure : public ThreadClosure {
+    virtual void do_thread(Thread* t) {
+      G1ThreadLocalData::dirty_card_queue(t).reset();
+    }
+  } closure;
+  Threads::threads_do(&closure);
+
   shared_dirty_card_queue()->reset();
 }
 
@@ -228,9 +233,17 @@ void G1DirtyCardQueueSet::concatenate_logs() {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at safepoint.");
   size_t old_limit = max_completed_buffers();
   set_max_completed_buffers(MaxCompletedBuffersUnlimited);
-  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
-    concatenate_log(G1ThreadLocalData::dirty_card_queue(t));
-  }
+
+  class ConcatenateThreadLogClosure : public ThreadClosure {
+    G1DirtyCardQueueSet* _qset;
+  public:
+    ConcatenateThreadLogClosure(G1DirtyCardQueueSet* qset) : _qset(qset) {}
+    virtual void do_thread(Thread* t) {
+      _qset->concatenate_log(G1ThreadLocalData::dirty_card_queue(t));
+    }
+  } closure(this);
+  Threads::threads_do(&closure);
+
   concatenate_log(_shared_dirty_card_queue);
   set_max_completed_buffers(old_limit);
 }

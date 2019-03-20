@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  */
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.util.concurrent.CountDownLatch;
 
@@ -42,7 +43,7 @@ public class Attack implements Runnable {
     @Override
     public void run() {
         try {
-            new Socket("127.0.0.1", 9999).close();
+            new Socket(InetAddress.getLoopbackAddress(), 9999).close();
             throw new RuntimeException("Connected (not expected)");
         } catch (IOException e) {
             throw new RuntimeException("IOException (not expected)");

@@ -102,7 +102,7 @@ class ResolveNode: public CompilationResourceObj {
 
 
 // This is shared state to be used by the PhiResolver so the operand
-// arrays don't have to be reallocated for reach resolution.
+// arrays don't have to be reallocated for each resolution.
 class PhiResolverState: public CompilationResourceObj {
   friend class PhiResolver;
 
@@ -114,7 +114,7 @@ class PhiResolverState: public CompilationResourceObj {
  public:
   PhiResolverState() {}
 
-  void reset(int max_vregs);
+  void reset();
 };
 
 
@@ -146,7 +146,7 @@ class PhiResolver: public CompilationResourceObj {
   }
 
  public:
-  PhiResolver(LIRGenerator* _lir_gen, int max_vregs);
+  PhiResolver(LIRGenerator* _lir_gen);
   ~PhiResolver();
 
   void move(LIR_Opr src, LIR_Opr dest);

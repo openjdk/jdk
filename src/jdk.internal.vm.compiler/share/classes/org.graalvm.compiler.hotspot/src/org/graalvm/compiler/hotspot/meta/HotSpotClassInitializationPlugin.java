@@ -24,9 +24,7 @@
 
 package org.graalvm.compiler.hotspot.meta;
 
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
+import java.lang.reflect.Method;
 import java.util.function.Supplier;
 
 import org.graalvm.compiler.core.common.type.ObjectStamp;
@@ -88,15 +86,16 @@ public final class HotSpotClassInitializationPlugin implements ClassInitializati
     }
 
     private static final Class<? extends ConstantPool> hscp;
-    private static final MethodHandle loadReferencedTypeIIZMH;
+    private static final Method loadReferencedTypeIIZMH;
 
     static {
-        MethodHandle m = null;
+        Method m = null;
         Class<? extends ConstantPool> c = null;
         try {
             c = Class.forName("jdk.vm.ci.hotspot.HotSpotConstantPool").asSubclass(ConstantPool.class);
-            m = MethodHandles.lookup().findVirtual(c, "loadReferencedType", MethodType.methodType(void.class, int.class, int.class, boolean.class));
+            m = c.getDeclaredMethod("loadReferencedType", int.class, int.class, boolean.class);
         } catch (Exception e) {
+            throw GraalError.shouldNotReachHere(e);
         }
         loadReferencedTypeIIZMH = m;
         hscp = c;

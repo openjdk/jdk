@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,9 +40,9 @@ Node* ModRefBarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val
   bool anonymous = (decorators & ON_UNKNOWN_OOP_REF) != 0;
   bool in_heap = (decorators & IN_HEAP) != 0;
   bool use_precise = is_array || anonymous;
-  bool tighly_coupled_alloc = (decorators & C2_TIGHLY_COUPLED_ALLOC) != 0;
+  bool tightly_coupled_alloc = (decorators & C2_TIGHTLY_COUPLED_ALLOC) != 0;
 
-  if (!access.is_oop() || tighly_coupled_alloc || (!in_heap && !anonymous)) {
+  if (!access.is_oop() || tightly_coupled_alloc || (!in_heap && !anonymous)) {
     return BarrierSetC2::store_at_resolved(access, val);
   }
 

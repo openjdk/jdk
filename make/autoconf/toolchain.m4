@@ -643,14 +643,21 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_LD_VERSION],
     [ LINKER_VERSION_NUMBER=`$ECHO $LINKER_VERSION_STRING | \
         $SED -e 's/.* \([0-9][0-9]*\(\.[0-9][0-9]*\)*\).*/\1/'` ]
   elif test  "x$TOOLCHAIN_TYPE" = xgcc; then
-    # gcc -Wl,-version output typically looks like
+    # gcc -Wl,-version output typically looks like:
     #   GNU ld (GNU Binutils for Ubuntu) 2.26.1
     #   Copyright (C) 2015 Free Software Foundation, Inc.
     #   This program is free software; [...]
-    LINKER_VERSION_STRING=`$LD -Wl,-version 2>&1 | $HEAD -n 1`
+    # If using gold it will look like:
+    #   GNU gold (GNU Binutils 2.30) 1.15
+    LINKER_VERSION_STRING=`$LD -Wl,--version 2> /dev/null | $HEAD -n 1`
     # Extract version number
-    [ LINKER_VERSION_NUMBER=`$ECHO $LINKER_VERSION_STRING | \
-        $SED -e 's/.* \([0-9][0-9]*\(\.[0-9][0-9]*\)*\).*/\1/'` ]
+    if [ [[ "$LINKER_VERSION_STRING" == *gold* ]] ]; then
+      [ LINKER_VERSION_NUMBER=`$ECHO $LINKER_VERSION_STRING | \
+          $SED -e 's/.* \([0-9][0-9]*\(\.[0-9][0-9]*\)*\).*) .*/\1/'` ]
+    else
+      [ LINKER_VERSION_NUMBER=`$ECHO $LINKER_VERSION_STRING | \
+          $SED -e 's/.* \([0-9][0-9]*\(\.[0-9][0-9]*\)*\).*/\1/'` ]
+    fi
   elif test  "x$TOOLCHAIN_TYPE" = xclang; then
     # clang -Wl,-v output typically looks like
     #   @(#)PROGRAM:ld  PROJECT:ld64-305

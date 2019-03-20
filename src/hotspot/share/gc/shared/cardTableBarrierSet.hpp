@@ -25,10 +25,9 @@
 #ifndef SHARE_GC_SHARED_CARDTABLEBARRIERSET_HPP
 #define SHARE_GC_SHARED_CARDTABLEBARRIERSET_HPP
 
+#include "gc/shared/cardTable.hpp"
 #include "gc/shared/modRefBarrierSet.hpp"
 #include "utilities/align.hpp"
-
-class CardTable;
 
 // This kind of "BarrierSet" allows a "CollectedHeap" to detect and
 // enumerate ref fields that have been modified (since the last
@@ -45,8 +44,11 @@ class CardTable;
 class CardTableBarrierSet: public ModRefBarrierSet {
   // Some classes get to look at some private stuff.
   friend class VMStructs;
- protected:
 
+public:
+
+  typedef CardTable::CardValue CardValue;
+protected:
   // Used in support of ReduceInitialCardMarks; only consulted if COMPILER2
   // or INCLUDE_JVMCI is being used
   bool       _defer_initial_card_mark;
@@ -102,7 +104,7 @@ class CardTableBarrierSet: public ModRefBarrierSet {
   virtual bool card_mark_must_follow_store() const;
 
   virtual void on_slowpath_allocation_exit(JavaThread* thread, oop new_obj);
-  virtual void on_thread_detach(JavaThread* thread);
+  virtual void on_thread_detach(Thread* thread);
 
   virtual void make_parsable(JavaThread* thread) { flush_deferred_card_mark_barrier(thread); }
 

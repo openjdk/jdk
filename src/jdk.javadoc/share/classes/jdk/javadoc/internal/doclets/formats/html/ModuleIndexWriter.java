@@ -102,8 +102,8 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
         if (configuration.showModules) {
             addAllModulesLink(ul);
         }
-        htmltree.addContent(ul);
-        header.addContent(htmltree);
+        htmltree.add(ul);
+        header.add(htmltree);
         addModulesList(main);
     }
 
@@ -148,7 +148,7 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
             }
 
             Content div = HtmlTree.DIV(HtmlStyle.contentContainer, table.toContent());
-            main.addContent(div);
+            main.add(div);
 
             if (table.needsScript()) {
                 mainBodyScript.append(table.getScript());
@@ -170,7 +170,7 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
             HtmlTree div = new HtmlTree(HtmlTag.DIV);
             div.setStyle(HtmlStyle.contentContainer);
             addOverviewComment(div);
-            main.addContent(div);
+            main.add(div);
         }
     }
 
@@ -198,7 +198,7 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
     protected void addNavigationBarHeader(Content header) {
         addTop(header);
         navBar.setUserHeader(getUserHeaderFooter(true));
-        header.addContent(navBar.getContent(true));
+        header.add(navBar.getContent(true));
     }
 
     /**
@@ -210,7 +210,7 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
     @Override
     protected void addNavigationBarFooter(Content footer) {
         navBar.setUserFooter(getUserHeaderFooter(false));
-        footer.addContent(navBar.getContent(false));
+        footer.add(navBar.getContent(false));
         addBottom(footer);
     }
 

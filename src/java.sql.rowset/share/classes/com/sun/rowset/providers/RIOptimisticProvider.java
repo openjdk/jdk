@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import com.sun.rowset.internal.*;
  * providing optimistic synchronization with a relational datastore
  * using any JDBC technology-enabled driver.
  *
- * <h3>1.0 Backgroud</h3>
+ * <h2>1.0 Backgroud</h2>
  * This synchronization provider is registered with the
  * <code>SyncFactory</code> by default as the
  * <code>com.sun.rowset.providers.RIOptimisticProvider</code>.
@@ -56,7 +56,7 @@ import com.sun.rowset.internal.*;
  * <code>RIOptimisticProvider</code> will not write any of the changes to the data
  * source and  will throw a <code>SyncProviderException</code> object.
  *
- * <h3>2.0 Usage</h3>
+ * <h2>2.0 Usage</h2>
  * Standard disconnected <code>RowSet</code> implementations may opt to use this
  * <code>SyncProvider</code> implementation in one of two ways:
  * <OL>

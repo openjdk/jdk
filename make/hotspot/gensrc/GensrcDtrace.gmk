@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -64,9 +64,9 @@ ifeq ($(call check-jvm-feature, dtrace), true)
     include lib/JvmFeatures.gmk
     include lib/JvmFlags.gmk
 
-    # We cannot compile until the JVMTI and JFR gensrc has finished
+    # We cannot compile until the JVMTI and JFR gensrc has finished.
+    # JFR_FILES is defined in GensrcJfr.gmk.
     JVMTI_H := $(JVM_VARIANT_OUTPUTDIR)/gensrc/jvmtifiles/jvmti.h
-    JFR_FILES := $(JVM_VARIANT_OUTPUTDIR)/gensrc/jfrfiles/jfrEventClasses.hpp
 
     $(eval $(call SetupNativeCompilation, BUILD_DTRACE_GEN_OFFSETS, \
         NAME := dtraceGenOffsets, \
@@ -87,12 +87,14 @@ ifeq ($(call check-jvm-feature, dtrace), true)
     # Argument 1: Output filename
     # Argument 2: dtrace-gen-offset tool command line option
     define SetupDtraceOffsetsGeneration
-      $1: $$(BUILD_DTRACE_GEN_OFFSETS)
-	$$(call LogInfo, Generating dtrace $2 file $$(@F))
-	$$(call MakeDir, $$(@D))
-	$$(call ExecuteWithLog, $$@, ( $$(DTRACE_GEN_OFFSETS_TOOL) -$$(strip $2) > $$@ ) )
+      $$(eval $$(call SetupExecute, dtrace_offset_$$(strip $2), \
+          INFO := Generating dtrace $2 file, \
+          DEPS := $$(BUILD_DTRACE_GEN_OFFSETS), \
+          OUTPUT_FILE := $1, \
+          COMMAND := ( $$(DTRACE_GEN_OFFSETS_TOOL) -$$(strip $2) > $1 ), \
+      ))
 
-      TARGETS += $1
+      TARGETS += $$(dtrace_offset_$$(strip $2)_TARGET)
     endef
 
     JVM_OFFSETS_H := $(DTRACE_GENSRC_DIR)/JvmOffsets.h

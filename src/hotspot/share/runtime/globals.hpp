@@ -367,7 +367,7 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
           "Print out every time compilation is longer than "                \
           "a given threshold")                                              \
                                                                             \
-  develop(bool, SafepointALot, false,                                       \
+  diagnostic(bool, SafepointALot, false,                                    \
           "Generate a lot of safepoints. This works with "                  \
           "GuaranteedSafepointInterval")                                    \
                                                                             \
@@ -650,9 +650,6 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
                                                                             \
   develop(bool, BreakAtWarning, false,                                      \
           "Execute breakpoint upon encountering VM warning")                \
-                                                                            \
-  develop(bool, UseFakeTimers, false,                                       \
-          "Tell whether the VM should use system time or a fake timer")     \
                                                                             \
   product(ccstr, NativeMemoryTracking, "off",                               \
           "Native memory tracking options")                                 \
@@ -2525,8 +2522,9 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
           "File of size Xmx is pre-allocated for performance reason, so"    \
           "we need that much space available")                              \
                                                                             \
-  develop(bool, VerifyMetaspace, false,                                     \
-          "Verify metaspace on chunk movements.")                           \
+  develop(int, VerifyMetaspaceInterval, DEBUG_ONLY(500) NOT_DEBUG(0),       \
+               "Run periodic metaspace verifications (0 - none, "           \
+               "1 - always, >1 every nth interval)")                        \
                                                                             \
   diagnostic(bool, ShowRegistersOnAssert, true,                             \
           "On internal errors, include registers in error report.")         \

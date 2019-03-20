@@ -24,6 +24,9 @@
 
 package org.graalvm.compiler.nodes.graphbuilderconf;
 
+import static jdk.vm.ci.services.Services.IS_BUILDING_NATIVE_IMAGE;
+import static jdk.vm.ci.services.Services.IS_IN_NATIVE_IMAGE;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 
@@ -63,6 +66,11 @@ public abstract class GeneratedInvocationPlugin implements InvocationPlugin {
 
     protected boolean checkInjectedArgument(GraphBuilderContext b, ValueNode arg, ResolvedJavaMethod foldAnnotatedMethod) {
         if (arg.isNullConstant()) {
+            return true;
+        }
+
+        if (IS_IN_NATIVE_IMAGE || IS_BUILDING_NATIVE_IMAGE) {
+            // The reflection here is problematic for SVM.
             return true;
         }
 

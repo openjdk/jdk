@@ -81,6 +81,9 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     GCParPhasesSentinel
   };
 
+  static const GCParPhases ExtRootScanSubPhasesStart = ThreadRoots;
+  static const GCParPhases ExtRootScanSubPhasesEnd = SATBFiltering;
+
   enum GCScanRSWorkItems {
     ScanRSScannedCards,
     ScanRSClaimedCards,

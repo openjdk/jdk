@@ -28,10 +28,15 @@
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1CollectorState.hpp"
+#include "gc/g1/g1Policy.hpp"
 #include "gc/g1/heapRegionManager.inline.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "runtime/orderAccess.hpp"
+
+G1GCPhaseTimes* G1CollectedHeap::phase_times() const {
+  return _policy->phase_times();
+}
 
 G1EvacStats* G1CollectedHeap::alloc_buffer_stats(InCSetState dest) {
   switch (dest.value()) {

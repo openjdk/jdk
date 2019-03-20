@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -283,12 +283,10 @@ public class AMD64ControlFlow {
             masm.jmp(scratchReg);
 
             // Inserting padding so that jump table address is 4-byte aligned
-            if ((masm.position() & 0x3) != 0) {
-                masm.nop(4 - (masm.position() & 0x3));
-            }
+            masm.align(4);
 
             // Patch LEA instruction above now that we know the position of the jump table
-            // TODO this is ugly and should be done differently
+            // this is ugly but there is no better way to do this given the assembler API
             final int jumpTablePos = masm.position();
             final int leaDisplacementPosition = afterLea - 4;
             masm.emitInt(jumpTablePos - afterLea, leaDisplacementPosition);
@@ -310,6 +308,99 @@ public class AMD64ControlFlow {
             }
 
             JumpTable jt = new JumpTable(jumpTablePos, lowKey, highKey, 4);
+            crb.compilationResult.addAnnotation(jt);
+        }
+    }
+
+    public static final class HashTableSwitchOp extends AMD64BlockEndOp {
+        public static final LIRInstructionClass<HashTableSwitchOp> TYPE = LIRInstructionClass.create(HashTableSwitchOp.class);
+        private final JavaConstant[] keys;
+        private final LabelRef defaultTarget;
+        private final LabelRef[] targets;
+        @Alive protected Value value;
+        @Alive protected Value hash;
+        @Temp({REG}) protected Value entryScratch;
+        @Temp({REG}) protected Value scratch;
+
+        public HashTableSwitchOp(final JavaConstant[] keys, final LabelRef defaultTarget, LabelRef[] targets, Value value, Value hash, Variable scratch, Variable entryScratch) {
+            super(TYPE);
+            this.keys = keys;
+            this.defaultTarget = defaultTarget;
+            this.targets = targets;
+            this.value = value;
+            this.hash = hash;
+            this.scratch = scratch;
+            this.entryScratch = entryScratch;
+        }
+
+        @Override
+        public void emitCode(CompilationResultBuilder crb, AMD64MacroAssembler masm) {
+            Register valueReg = asRegister(value, AMD64Kind.DWORD);
+            Register indexReg = asRegister(hash, AMD64Kind.DWORD);
+            Register scratchReg = asRegister(scratch, AMD64Kind.QWORD);
+            Register entryScratchReg = asRegister(entryScratch, AMD64Kind.QWORD);
+
+            // Set scratch to address of jump table
+            masm.leaq(scratchReg, new AMD64Address(AMD64.rip, 0));
+            final int afterLea = masm.position();
+
+            // When the default target is set, the jump table contains entries with two DWORDS:
+            // the original key before hashing and the label jump address
+            if (defaultTarget != null) {
+
+                // Move the table entry (two DWORDs) into a QWORD
+                masm.movq(entryScratchReg, new AMD64Address(scratchReg, indexReg, Scale.Times8, 0));
+
+                // Jump to the default target if the first DWORD (original key) doesn't match the
+                // current key. Accounts for hash collisions with unknown keys
+                masm.cmpl(entryScratchReg, valueReg);
+                masm.jcc(ConditionFlag.NotEqual, defaultTarget.label());
+
+                // Shift to the second DWORD
+                masm.sarq(entryScratchReg, 32);
+            } else {
+
+                // The jump table has a single DWORD with the label address if there's no
+                // default target
+                masm.movslq(entryScratchReg, new AMD64Address(scratchReg, indexReg, Scale.Times4, 0));
+            }
+            masm.addq(scratchReg, entryScratchReg);
+            masm.jmp(scratchReg);
+
+            // Inserting padding so that jump the table address is aligned
+            if (defaultTarget != null) {
+                masm.align(8);
+            } else {
+                masm.align(4);
+            }
+
+            // Patch LEA instruction above now that we know the position of the jump table
+            // this is ugly but there is no better way to do this given the assembler API
+            final int jumpTablePos = masm.position();
+            final int leaDisplacementPosition = afterLea - 4;
+            masm.emitInt(jumpTablePos - afterLea, leaDisplacementPosition);
+
+            // Emit jump table entries
+            for (int i = 0; i < targets.length; i++) {
+
+                Label label = targets[i].label();
+
+                if (defaultTarget != null) {
+                    masm.emitInt(keys[i].asInt());
+                }
+                if (label.isBound()) {
+                    int imm32 = label.position() - jumpTablePos;
+                    masm.emitInt(imm32);
+                } else {
+                    int offsetToJumpTableBase = masm.position() - jumpTablePos;
+                    label.addPatchAt(masm.position());
+                    masm.emitByte(0); // pseudo-opcode for jump table entry
+                    masm.emitShort(offsetToJumpTableBase);
+                    masm.emitByte(0); // padding to make jump table entry 4 bytes wide
+                }
+            }
+
+            JumpTable jt = new JumpTable(jumpTablePos, keys[0].asInt(), keys[keys.length - 1].asInt(), 4);
             crb.compilationResult.addAnnotation(jt);
         }
     }

@@ -547,7 +547,7 @@ void emit_d32_reloc(CodeBuffer& cbuf, int d32, RelocationHolder const& rspec, in
   if (rspec.reloc()->type() == relocInfo::oop_type &&
       d32 != 0 && d32 != (intptr_t) Universe::non_oop_word()) {
     assert(Universe::heap()->is_in_reserved((address)(intptr_t)d32), "should be real oop");
-    assert(oopDesc::is_oop(cast_to_oop((intptr_t)d32)) && (ScavengeRootsInCode || !Universe::heap()->is_scavengable(cast_to_oop((intptr_t)d32))), "cannot embed scavengable oops in code");
+    assert(oopDesc::is_oop(cast_to_oop((intptr_t)d32)), "cannot embed broken oops in code");
   }
 #endif
   cbuf.relocate(cbuf.insts_mark(), rspec, format);
@@ -574,8 +574,7 @@ void emit_d64_reloc(CodeBuffer& cbuf, int64_t d64, RelocationHolder const& rspec
   if (rspec.reloc()->type() == relocInfo::oop_type &&
       d64 != 0 && d64 != (int64_t) Universe::non_oop_word()) {
     assert(Universe::heap()->is_in_reserved((address)d64), "should be real oop");
-    assert(oopDesc::is_oop(cast_to_oop(d64)) && (ScavengeRootsInCode || !Universe::heap()->is_scavengable(cast_to_oop(d64))),
-           "cannot embed scavengable oops in code");
+    assert(oopDesc::is_oop(cast_to_oop(d64)), "cannot embed broken oops in code");
   }
 #endif
   cbuf.relocate(cbuf.insts_mark(), rspec, format);
@@ -698,6 +697,87 @@ void emit_cmpfp3(MacroAssembler& _masm, Register dst) {
   __ bind(done);
 }
 
+// Math.min()    # Math.max()
+// --------------------------
+// ucomis[s/d]   #
+// ja   -> b     # a
+// jp   -> NaN   # NaN
+// jb   -> a     # b
+// je            #
+// |-jz -> a | b # a & b
+// |    -> a     #
+void emit_fp_min_max(MacroAssembler& _masm, XMMRegister dst,
+                     XMMRegister a, XMMRegister b,
+                     XMMRegister xmmt, Register rt,
+                     bool min, bool single) {
+
+  Label nan, zero, below, above, done;
+
+  if (single)
+    __ ucomiss(a, b);
+  else
+    __ ucomisd(a, b);
+
+  if (dst->encoding() != (min ? b : a)->encoding())
+    __ jccb(Assembler::above, above); // CF=0 & ZF=0
+  else
+    __ jccb(Assembler::above, done);
+
+  __ jccb(Assembler::parity, nan);  // PF=1
+  __ jccb(Assembler::below, below); // CF=1
+
+  // equal
+  __ vpxor(xmmt, xmmt, xmmt, Assembler::AVX_128bit);
+  if (single) {
+    __ ucomiss(a, xmmt);
+    __ jccb(Assembler::equal, zero);
+
+    __ movflt(dst, a);
+    __ jmp(done);
+  }
+  else {
+    __ ucomisd(a, xmmt);
+    __ jccb(Assembler::equal, zero);
+
+    __ movdbl(dst, a);
+    __ jmp(done);
+  }
+
+  __ bind(zero);
+  if (min)
+    __ vpor(dst, a, b, Assembler::AVX_128bit);
+  else
+    __ vpand(dst, a, b, Assembler::AVX_128bit);
+
+  __ jmp(done);
+
+  __ bind(above);
+  if (single)
+    __ movflt(dst, min ? b : a);
+  else
+    __ movdbl(dst, min ? b : a);
+
+  __ jmp(done);
+
+  __ bind(nan);
+  if (single) {
+    __ movl(rt, 0x7fc00000); // Float.NaN
+    __ movdl(dst, rt);
+  }
+  else {
+    __ mov64(rt, 0x7ff8000000000000L); // Double.NaN
+    __ movdq(dst, rt);
+  }
+  __ jmp(done);
+
+  __ bind(below);
+  if (single)
+    __ movflt(dst, min ? a : b);
+  else
+    __ movdbl(dst, min ? a : b);
+
+  __ bind(done);
+}
 
 //=============================================================================
 const RegMask& MachConstantBaseNode::_out_RegMask = RegMask::Empty;
@@ -3548,6 +3628,15 @@ operand regF() %{
 %}
 
 // Float register operands
+operand legRegF() %{
+   constraint(ALLOC_IN_RC(float_reg_legacy));
+   match(RegF);
+
+   format %{ %}
+   interface(REG_INTER);
+%}
+
+// Float register operands
 operand vlRegF() %{
    constraint(ALLOC_IN_RC(float_reg_vl));
    match(RegF);
@@ -3559,6 +3648,15 @@ operand vlRegF() %{
 // Double register operands
 operand regD() %{
    constraint(ALLOC_IN_RC(double_reg));
+   match(RegD);
+
+   format %{ %}
+   interface(REG_INTER);
+%}
+
+// Double register operands
+operand legRegD() %{
+   constraint(ALLOC_IN_RC(double_reg_legacy));
    match(RegD);
 
    format %{ %}
@@ -5304,9 +5402,29 @@ instruct MoveF2VL(vlRegF dst, regF src) %{
 %}
 
 // Load Float
+instruct MoveF2LEG(legRegF dst, regF src) %{
+  match(Set dst src);
+  format %{ "movss $dst,$src\t# if src != dst load float (4 bytes)" %}
+  ins_encode %{
+    __ movflt($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+// Load Float
 instruct MoveVL2F(regF dst, vlRegF src) %{
   match(Set dst src);
   format %{ "movss $dst,$src\t! load float (4 bytes)" %}
+  ins_encode %{
+    __ movflt($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+// Load Float
+instruct MoveLEG2F(regF dst, legRegF src) %{
+  match(Set dst src);
+  format %{ "movss $dst,$src\t# if src != dst load float (4 bytes)" %}
   ins_encode %{
     __ movflt($dst$$XMMRegister, $src$$XMMRegister);
   %}
@@ -5351,6 +5469,16 @@ instruct MoveD2VL(vlRegD dst, regD src) %{
 %}
 
 // Load Double
+instruct MoveD2LEG(legRegD dst, regD src) %{
+  match(Set dst src);
+  format %{ "movsd $dst,$src\t# if src != dst load double (8 bytes)" %}
+  ins_encode %{
+    __ movdbl($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+// Load Double
 instruct MoveVL2D(regD dst, vlRegD src) %{
   match(Set dst src);
   format %{ "movsd $dst,$src\t! load double (8 bytes)" %}
@@ -5358,6 +5486,167 @@ instruct MoveVL2D(regD dst, vlRegD src) %{
     __ movdbl($dst$$XMMRegister, $src$$XMMRegister);
   %}
   ins_pipe( fpu_reg_reg );
+%}
+
+// Load Double
+instruct MoveLEG2D(regD dst, legRegD src) %{
+  match(Set dst src);
+  format %{ "movsd $dst,$src\t# if src != dst load double (8 bytes)" %}
+  ins_encode %{
+    __ movdbl($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+// Following pseudo code describes the algorithm for max[FD]:
+// Min algorithm is on similar lines
+//  btmp = (b < +0.0) ? a : b
+//  atmp = (b < +0.0) ? b : a
+//  Tmp  = Max_Float(atmp , btmp)
+//  Res  = (atmp == NaN) ? atmp : Tmp
+
+// max = java.lang.Math.max(float a, float b)
+instruct maxF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp, legRegF atmp, legRegF btmp) %{
+  predicate(UseAVX > 0 && !n->is_reduction());
+  match(Set dst (MaxF a b));
+  effect(USE a, USE b, TEMP tmp, TEMP atmp, TEMP btmp);
+  format %{
+     "blendvps         $btmp,$b,$a,$b           \n\t"
+     "blendvps         $atmp,$a,$b,$b           \n\t"
+     "vmaxss           $tmp,$atmp,$btmp         \n\t"
+     "cmpps.unordered  $btmp,$atmp,$atmp        \n\t"
+     "blendvps         $dst,$tmp,$atmp,$btmp    \n\t"
+  %}
+  ins_encode %{
+    int vector_len = Assembler::AVX_128bit;
+    __ blendvps($btmp$$XMMRegister, $b$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, vector_len);
+    __ blendvps($atmp$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $b$$XMMRegister, vector_len);
+    __ vmaxss($tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister);
+    __ cmpps($btmp$$XMMRegister, $atmp$$XMMRegister, $atmp$$XMMRegister, Assembler::_false, vector_len);
+    __ blendvps($dst$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, vector_len);
+ %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct maxF_reduction_reg(regF dst, regF a, regF b, regF xmmt, rRegI tmp, rFlagsReg cr) %{
+  predicate(UseAVX > 0 && n->is_reduction());
+  match(Set dst (MaxF a b));
+  effect(USE a, USE b, TEMP xmmt, TEMP tmp, KILL cr);
+
+  format %{ "$dst = max($a, $b)\t# intrinsic (float)" %}
+  ins_encode %{
+    emit_fp_min_max(_masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xmmt$$XMMRegister, $tmp$$Register,
+                    false /*min*/, true /*single*/);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// max = java.lang.Math.max(double a, double b)
+instruct maxD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp, legRegD atmp, legRegD btmp) %{
+  predicate(UseAVX > 0 && !n->is_reduction());
+  match(Set dst (MaxD a b));
+  effect(USE a, USE b, TEMP atmp, TEMP btmp, TEMP tmp);
+  format %{
+     "blendvpd         $btmp,$b,$a,$b            \n\t"
+     "blendvpd         $atmp,$a,$b,$b            \n\t"
+     "vmaxsd           $tmp,$atmp,$btmp          \n\t"
+     "cmppd.unordered  $btmp,$atmp,$atmp         \n\t"
+     "blendvpd         $dst,$tmp,$atmp,$btmp     \n\t"
+  %}
+  ins_encode %{
+    int vector_len = Assembler::AVX_128bit;
+    __ blendvpd($btmp$$XMMRegister, $b$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, vector_len);
+    __ blendvpd($atmp$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $b$$XMMRegister, vector_len);
+    __ vmaxsd($tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister);
+    __ cmppd($btmp$$XMMRegister, $atmp$$XMMRegister, $atmp$$XMMRegister, Assembler::_false, vector_len);
+    __ blendvpd($dst$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct maxD_reduction_reg(regD dst, regD a, regD b, regD xmmt, rRegL tmp, rFlagsReg cr) %{
+  predicate(UseAVX > 0 && n->is_reduction());
+  match(Set dst (MaxD a b));
+  effect(USE a, USE b, TEMP xmmt, TEMP tmp, KILL cr);
+
+  format %{ "$dst = max($a, $b)\t# intrinsic (double)" %}
+  ins_encode %{
+    emit_fp_min_max(_masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xmmt$$XMMRegister, $tmp$$Register,
+                    false /*min*/, false /*single*/);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// min = java.lang.Math.min(float a, float b)
+instruct minF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp, legRegF atmp, legRegF btmp) %{
+  predicate(UseAVX > 0 && !n->is_reduction());
+  match(Set dst (MinF a b));
+  effect(USE a, USE b, TEMP tmp, TEMP atmp, TEMP btmp);
+  format %{
+     "blendvps         $atmp,$a,$b,$a             \n\t"
+     "blendvps         $btmp,$b,$a,$a             \n\t"
+     "vminss           $tmp,$atmp,$btmp           \n\t"
+     "cmpps.unordered  $btmp,$atmp,$atmp          \n\t"
+     "blendvps         $dst,$tmp,$atmp,$btmp      \n\t"
+  %}
+  ins_encode %{
+    int vector_len = Assembler::AVX_128bit;
+    __ blendvps($atmp$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $a$$XMMRegister, vector_len);
+    __ blendvps($btmp$$XMMRegister, $b$$XMMRegister, $a$$XMMRegister, $a$$XMMRegister, vector_len);
+    __ vminss($tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister);
+    __ cmpps($btmp$$XMMRegister, $atmp$$XMMRegister, $atmp$$XMMRegister, Assembler::_false, vector_len);
+    __ blendvps($dst$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct minF_reduction_reg(regF dst, regF a, regF b, regF xmmt, rRegI tmp, rFlagsReg cr) %{
+  predicate(UseAVX > 0 && n->is_reduction());
+  match(Set dst (MinF a b));
+  effect(USE a, USE b, TEMP xmmt, TEMP tmp, KILL cr);
+
+  format %{ "$dst = min($a, $b)\t# intrinsic (float)" %}
+  ins_encode %{
+    emit_fp_min_max(_masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xmmt$$XMMRegister, $tmp$$Register,
+                    true /*min*/, true /*single*/);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// min = java.lang.Math.min(double a, double b)
+instruct minD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp, legRegD atmp, legRegD btmp) %{
+  predicate(UseAVX > 0 && !n->is_reduction());
+  match(Set dst (MinD a b));
+  effect(USE a, USE b, TEMP tmp, TEMP atmp, TEMP btmp);
+  format %{
+     "blendvpd         $atmp,$a,$b,$a           \n\t"
+     "blendvpd         $btmp,$b,$a,$a           \n\t"
+     "vminsd           $tmp,$atmp,$btmp         \n\t"
+     "cmppd.unordered  $btmp,$atmp,$atmp        \n\t"
+     "blendvpd         $dst,$tmp,$atmp,$btmp    \n\t"
+  %}
+  ins_encode %{
+    int vector_len = Assembler::AVX_128bit;
+    __ blendvpd($atmp$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $a$$XMMRegister, vector_len);
+    __ blendvpd($btmp$$XMMRegister, $b$$XMMRegister, $a$$XMMRegister, $a$$XMMRegister, vector_len);
+    __ vminsd($tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister);
+    __ cmppd($btmp$$XMMRegister, $atmp$$XMMRegister, $atmp$$XMMRegister, Assembler::_false, vector_len);
+    __ blendvpd($dst$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct minD_reduction_reg(regD dst, regD a, regD b, regD xmmt, rRegL tmp, rFlagsReg cr) %{
+  predicate(UseAVX > 0 && n->is_reduction());
+  match(Set dst (MinD a b));
+  effect(USE a, USE b, TEMP xmmt, TEMP tmp, KILL cr);
+
+  format %{ "$dst = min($a, $b)\t# intrinsic (double)" %}
+  ins_encode %{
+    emit_fp_min_max(_masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xmmt$$XMMRegister, $tmp$$Register,
+                    true /*min*/, false /*single*/);
+  %}
+  ins_pipe( pipe_slow );
 %}
 
 // Load Effective Address

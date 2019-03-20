@@ -34,14 +34,14 @@ import java.util.List;
  */
 public final class OptionDescriptor {
 
-    protected final String name;
-    protected final OptionType optionType;
-    protected final Class<?> optionValueType;
-    protected final String help;
-    protected final List<String> extraHelp;
-    protected final OptionKey<?> optionKey;
-    protected final Class<?> declaringClass;
-    protected final String fieldName;
+    private final String name;
+    private final OptionType optionType;
+    private final Class<?> optionValueType;
+    private final String help;
+    private final List<String> extraHelp;
+    private final OptionKey<?> optionKey;
+    private final Class<?> declaringClass;
+    private final String fieldName;
 
     private static final String[] NO_EXTRA_HELP = {};
 

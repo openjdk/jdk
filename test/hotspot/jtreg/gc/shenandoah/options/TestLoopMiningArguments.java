@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2017, 2019, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -53,50 +53,6 @@ public class TestLoopMiningArguments {
     }
 
     public static void main(String[] args) throws Exception {
-        testDefaultGC();
-        testShenandoah();
-    }
-
-    public static void testDefaultGC() throws Exception {
-        testWith("Default GC should have CLS enabled, LSM = 1000",
-                true, 1000);
-
-        testWith("Default GC with +CLS should set LSM = 1",
-                true, 1,
-                "-XX:+UseCountedLoopSafepoints"
-        );
-
-        testWith("Default GC with +CLS should not override LSM>1",
-                true, 10,
-                "-XX:LoopStripMiningIter=10",
-                "-XX:+UseCountedLoopSafepoints"
-        );
-
-        testWith("Default GC with +CLS should not override LSM=1",
-                true, 1,
-                "-XX:LoopStripMiningIter=1",
-                "-XX:+UseCountedLoopSafepoints"
-        );
-
-        testWith("Default GC with +CLS should override LSM=0 to 1",
-                true, 1,
-                "-XX:LoopStripMiningIter=0",
-                "-XX:+UseCountedLoopSafepoints"
-        );
-
-        testWith("Default GC with -CLS should set LSM = 0",
-                false, 0,
-                "-XX:-UseCountedLoopSafepoints"
-        );
-
-        testWith("Default GC with -CLS should override LSM to 0",
-                false, 0,
-                "-XX:LoopStripMiningIter=10",
-                "-XX:-UseCountedLoopSafepoints"
-        );
-    }
-
-    public static void testShenandoah() throws Exception {
         testWith("Shenandoah should have CLS and LSM enabled",
                 true, 1000,
                 "-XX:+UnlockExperimentalVMOptions",

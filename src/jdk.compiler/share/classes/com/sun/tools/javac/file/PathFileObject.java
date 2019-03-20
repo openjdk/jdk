@@ -288,6 +288,11 @@ public abstract class PathFileObject implements JavaFileObject {
             return userPath.toString();
         }
 
+        @Override @DefinedBy(Api.COMPILER)
+        public String getShortName() {
+            return userPath.getFileName().toString();
+        }
+
         @Override
         public String inferBinaryName(Iterable<? extends Path> paths) {
             Path absPath = path.toAbsolutePath();

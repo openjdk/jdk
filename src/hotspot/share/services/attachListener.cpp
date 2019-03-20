@@ -257,13 +257,22 @@ jint dump_heap(AttachOperation* op, outputStream* out) {
 // See also: ClassHistogramDCmd class
 //
 // Input arguments :-
-//   arg0: Name of the dump file or NULL
-//   arg1: "-live" or "-all"
+//   arg0: "-live" or "-all"
+//   arg1: Name of the dump file or NULL
 static jint heap_inspection(AttachOperation* op, outputStream* out) {
   bool live_objects_only = true;   // default is true to retain the behavior before this change is made
   outputStream* os = out;   // if path not specified or path is NULL, use out
   fileStream* fs = NULL;
-  const char* path = op->arg(0);
+  const char* arg0 = op->arg(0);
+  if (arg0 != NULL && (strlen(arg0) > 0)) {
+    if (strcmp(arg0, "-all") != 0 && strcmp(arg0, "-live") != 0) {
+      out->print_cr("Invalid argument to inspectheap operation: %s", arg0);
+      return JNI_ERR;
+    }
+    live_objects_only = strcmp(arg0, "-live") == 0;
+  }
+
+  const char* path = op->arg(1);
   if (path != NULL) {
     if (path[0] == '\0') {
       out->print_cr("No dump file specified");
@@ -277,14 +286,7 @@ static jint heap_inspection(AttachOperation* op, outputStream* out) {
       os = fs;
     }
   }
-  const char* arg1 = op->arg(1);
-  if (arg1 != NULL && (strlen(arg1) > 0)) {
-    if (strcmp(arg1, "-all") != 0 && strcmp(arg1, "-live") != 0) {
-      out->print_cr("Invalid argument to inspectheap operation: %s", arg1);
-      return JNI_ERR;
-    }
-    live_objects_only = strcmp(arg1, "-live") == 0;
-  }
+
   VM_GC_HeapInspection heapop(os, live_objects_only /* request full gc */);
   VMThread::execute(&heapop);
   if (os != NULL && os != out) {

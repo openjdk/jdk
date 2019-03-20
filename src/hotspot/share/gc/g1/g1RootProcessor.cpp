@@ -76,7 +76,7 @@ G1RootProcessor::G1RootProcessor(G1CollectedHeap* g1h, uint n_workers) :
     _n_workers_discovered_strong_classes(0) {}
 
 void G1RootProcessor::evacuate_roots(G1ParScanThreadState* pss, uint worker_i) {
-  G1GCPhaseTimes* phase_times = _g1h->g1_policy()->phase_times();
+  G1GCPhaseTimes* phase_times = _g1h->phase_times();
 
   G1EvacPhaseTimesTracker timer(phase_times, pss, G1GCPhaseTimes::ExtRootScan, worker_i);
 

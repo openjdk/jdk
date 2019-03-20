@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@
  * the default <code>SyncProvider</code> implementations and are accessible via the
  * <code>SyncProvider</code> SPI managed by the <code>SyncFactory</code>.
  *
- * <h3>1.0 <code>SyncProvider</code> Reference Implementations</h3>
+ * <h2>1.0 <code>SyncProvider</code> Reference Implementations</h2>
  *   The main job of a <code>SyncProvider</code> implementation is to manage
  * the reader and writer mechanisms.
  *  The <code>SyncProvider</code> SPI, as specified in the <code>javax.sql.rowset.spi</code>
@@ -106,7 +106,7 @@
  * definition.<br>
  * </UL>
  *
- * <h3>2.0 Basics in RowSet Population &amp; Synchronization</h3>
+ * <h2>2.0 Basics in RowSet Population &amp; Synchronization</h2>
  * A rowset's first task is to populate itself with rows of column values.
  * Generally,   these rows will come from a relational database, so a rowset
  * has properties   that supply what is necessary for making a connection to
@@ -147,7 +147,7 @@
  *  once again disconnects itself.<br>
  *   </p>
  *
- * <h3> 3.0 Other Possible Implementations</h3>
+ * <h2> 3.0 Other Possible Implementations</h2>
  *  There are many other possible implementations of the <code>SyncProvider</code> abstract
  *  class. One possibility is to employ a more robust synchronization model, which
  *  would give a <code>RowSet</code> object increased trust in the provider's

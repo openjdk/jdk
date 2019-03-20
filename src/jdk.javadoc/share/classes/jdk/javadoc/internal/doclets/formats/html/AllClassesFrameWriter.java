@@ -29,7 +29,6 @@ package jdk.javadoc.internal.doclets.formats.html;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -112,15 +111,15 @@ public class AllClassesFrameWriter extends HtmlDocletWriter {
         String label = resources.getText("doclet.All_Classes");
         Content body = getBody(false, getWindowTitle(label));
         Content htmlTree = HtmlTree.MAIN();
-        Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING,
+        Content heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.bar, contents.allClassesLabel);
-        htmlTree.addContent(heading);
+        htmlTree.add(heading);
         Content ul = new HtmlTree(HtmlTag.UL);
         // Generate the class links and add it to the tdFont tree.
         addAllClasses(ul, wantFrames);
         HtmlTree div = HtmlTree.DIV(HtmlStyle.indexContainer, ul);
-        htmlTree.addContent(div);
-        body.addContent(htmlTree);
+        htmlTree.add(div);
+        body.add(htmlTree);
         printHtmlDocument(null, "all classes (frame)", body);
     }
 
@@ -164,7 +163,7 @@ public class AllClassesFrameWriter extends HtmlDocletWriter {
                 linkContent = getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.DEFAULT, typeElement).label(label));
             }
             Content li = HtmlTree.LI(linkContent);
-            content.addContent(li);
+            content.add(li);
         }
     }
 }

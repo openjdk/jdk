@@ -1209,9 +1209,47 @@ bool SuperWord::are_adjacent_refs(Node* s1, Node* s2) {
 bool SuperWord::isomorphic(Node* s1, Node* s2) {
   if (s1->Opcode() != s2->Opcode()) return false;
   if (s1->req() != s2->req()) return false;
-  if (s1->in(0) != s2->in(0)) return false;
   if (!same_velt_type(s1, s2)) return false;
-  return true;
+  Node* s1_ctrl = s1->in(0);
+  Node* s2_ctrl = s2->in(0);
+  // If the control nodes are equivalent, no further checks are required to test for isomorphism.
+  if (s1_ctrl == s2_ctrl) {
+    return true;
+  } else {
+    bool s1_ctrl_inv = ((s1_ctrl == NULL) ? true : lpt()->is_invariant(s1_ctrl));
+    bool s2_ctrl_inv = ((s2_ctrl == NULL) ? true : lpt()->is_invariant(s2_ctrl));
+    // If the control nodes are not invariant for the loop, fail isomorphism test.
+    if (!s1_ctrl_inv || !s2_ctrl_inv) {
+      return false;
+    }
+    if(s1_ctrl != NULL && s2_ctrl != NULL) {
+      if (s1_ctrl->is_Proj()) {
+        s1_ctrl = s1_ctrl->in(0);
+        assert(lpt()->is_invariant(s1_ctrl), "must be invariant");
+      }
+      if (s2_ctrl->is_Proj()) {
+        s2_ctrl = s2_ctrl->in(0);
+        assert(lpt()->is_invariant(s2_ctrl), "must be invariant");
+      }
+      if (!s1_ctrl->is_RangeCheck() || !s2_ctrl->is_RangeCheck()) {
+        return false;
+      }
+    }
+    // Control nodes are invariant. However, we have no way of checking whether they resolve
+    // in an equivalent manner. But, we know that invariant range checks are guaranteed to
+    // throw before the loop (if they would have thrown). Thus, the loop would not have been reached.
+    // Therefore, if the control nodes for both are range checks, we accept them to be isomorphic.
+    for (DUIterator_Fast imax, i = s1->fast_outs(imax); i < imax; i++) {
+      Node* t1 = s1->fast_out(i);
+      for (DUIterator_Fast jmax, j = s2->fast_outs(jmax); j < jmax; j++) {
+        Node* t2 = s2->fast_out(j);
+        if (VectorNode::is_muladds2i(t1) && VectorNode::is_muladds2i(t2)) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
 }
 
 //------------------------------independent---------------------------

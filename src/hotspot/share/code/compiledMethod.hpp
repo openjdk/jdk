@@ -38,6 +38,7 @@ class CompiledStaticCall;
 class NativeCallWrapper;
 class ScopeDesc;
 class CompiledIC;
+class MetadataClosure;
 
 // This class is used internally by nmethods, to cache
 // exception/pc/handler information.
@@ -368,6 +369,8 @@ public:
   void verify_oop_relocations();
 
   virtual bool is_evol_dependent() = 0;
+  bool has_evol_metadata();
+
   // Fast breakpoint support. Tells if this compiled method is
   // dependent on the given method. Returns true if this nmethod
   // corresponds to the given method as well.
@@ -384,7 +387,7 @@ public:
   Method* attached_method(address call_pc);
   Method* attached_method_before_pc(address pc);
 
-  virtual void metadata_do(void f(Metadata*)) = 0;
+  virtual void metadata_do(MetadataClosure* f) = 0;
 
   // GC support
  protected:
@@ -408,10 +411,6 @@ private:
   PcDesc* find_pc_desc(address pc, bool approximate) {
     return _pc_desc_container.find_pc_desc(pc, approximate, PcDescSearch(code_begin(), scopes_pcs_begin(), scopes_pcs_end()));
   }
-
-protected:
-  // Used by some GCs to chain nmethods.
-  nmethod* _scavenge_root_link; // from CodeCache::scavenge_root_nmethods
 };
 
 #endif // SHARE_CODE_COMPILEDMETHOD_HPP

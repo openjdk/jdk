@@ -29,12 +29,14 @@
 package org.jcp.xml.dsig.internal.dom;
 
 import javax.xml.crypto.*;
+import javax.xml.crypto.dom.DOMCryptoContext;
 import javax.xml.crypto.dsig.*;
 
 import java.security.Provider;
 import java.util.*;
 
 import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -43,12 +45,13 @@ import org.w3c.dom.Node;
  * DOM-based implementation of XMLObject.
  *
  */
-public final class DOMXMLObject extends BaseStructure implements XMLObject {
+public final class DOMXMLObject extends DOMStructure implements XMLObject {
 
     private final String id;
     private final String mimeType;
     private final String encoding;
     private final List<XMLStructure> content;
+    private Element objectElem;
 
     /**
      * Creates an {@code XMLObject} from the specified parameters.
@@ -142,51 +145,56 @@ public final class DOMXMLObject extends BaseStructure implements XMLObject {
         } else {
             this.content = Collections.unmodifiableList(newContent);
         }
+        this.objectElem = objElem;
     }
 
-    @Override
     public List<XMLStructure> getContent() {
         return content;
     }
 
-    @Override
     public String getId() {
         return id;
     }
 
-    @Override
     public String getMimeType() {
         return mimeType;
     }
 
-    @Override
     public String getEncoding() {
         return encoding;
     }
 
-    public static void marshal(XmlWriter xwriter, XMLObject xmlObj, String dsPrefix, XMLCryptoContext context)
+    @Override
+    public void marshal(Node parent, String dsPrefix, DOMCryptoContext context)
         throws MarshalException {
-        xwriter.writeStartElement(dsPrefix, "Object", XMLSignature.XMLNS);
+        Document ownerDoc = DOMUtils.getOwnerDocument(parent);
 
-        // set attributes
-        xwriter.writeIdAttribute("", "", "Id", xmlObj.getId());
-        xwriter.writeAttribute("", "", "MimeType", xmlObj.getMimeType());
-        xwriter.writeAttribute("", "", "Encoding", xmlObj.getEncoding());
+        Element objElem = objectElem != null ? objectElem : null;
+        if (objElem == null) {
+            objElem = DOMUtils.createElement(ownerDoc, "Object",
+                                             XMLSignature.XMLNS, dsPrefix);
 
-        // create and append any elements and mixed content, if necessary
-        @SuppressWarnings("unchecked")
-        List<XMLStructure> content = xmlObj.getContent();
-        for (XMLStructure object : content) {
-            xwriter.marshalStructure(object, dsPrefix, context);
+            // set attributes
+            DOMUtils.setAttributeID(objElem, "Id", id);
+            DOMUtils.setAttribute(objElem, "MimeType", mimeType);
+            DOMUtils.setAttribute(objElem, "Encoding", encoding);
+
+            // create and append any elements and mixed content, if necessary
+            for (XMLStructure object : content) {
+                if (object instanceof DOMStructure) {
+                    ((DOMStructure)object).marshal(objElem, dsPrefix, context);
+                } else {
+                    javax.xml.crypto.dom.DOMStructure domObject =
+                        (javax.xml.crypto.dom.DOMStructure)object;
+                    DOMUtils.appendChild(objElem, domObject.getNode());
+                }
+            }
         }
-        xwriter.writeEndElement(); // "Object"
+
+        parent.appendChild(objElem);
     }
 
     @SuppressWarnings("unchecked")
-    public static List<XMLStructure> getXmlObjectContent(XMLObject xo) {
-        return xo.getContent();
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -208,7 +216,7 @@ public final class DOMXMLObject extends BaseStructure implements XMLObject {
                               : mimeType.equals(oxo.getMimeType());
 
         return idsEqual && encodingsEqual && mimeTypesEqual &&
-                equalsContent(getXmlObjectContent(oxo));
+                equalsContent(oxo.getContent());
     }
 
     @Override

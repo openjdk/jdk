@@ -32,7 +32,6 @@ import javax.lang.model.element.TypeElement;
 
 import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -106,17 +105,17 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
         HtmlTree header = HtmlTree.HEADER();
         addTop(header);
         navBar.setUserHeader(getUserHeaderFooter(true));
-        header.addContent(navBar.getContent(true));
-        bodyTree.addContent(header);
+        header.add(navBar.getContent(true));
+        bodyTree.add(header);
         Content allClassesContent = new ContentBuilder();
         addContents(allClassesContent);
-        mainTree.addContent(allClassesContent);
-        bodyTree.addContent(mainTree);
+        mainTree.add(allClassesContent);
+        bodyTree.add(mainTree);
         Content footer = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
-        footer.addContent(navBar.getContent(false));
+        footer.add(navBar.getContent(false));
         addBottom(footer);
-        bodyTree.addContent(footer);
+        bodyTree.add(footer);
         printHtmlDocument(null, "class index", bodyTree);
     }
 
@@ -148,17 +147,17 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
             }
         }
         Content titleContent = contents.allClassesLabel;
-        Content pHeading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, true,
+        Content pHeading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, true,
                 HtmlStyle.title, titleContent);
         Content headerDiv = HtmlTree.DIV(HtmlStyle.header, pHeading);
-        content.addContent(headerDiv);
+        content.add(headerDiv);
         if (!table.isEmpty()) {
             HtmlTree li = HtmlTree.LI(HtmlStyle.blockList, table.toContent());
             HtmlTree ul = HtmlTree.UL(HtmlStyle.blockList, li);
             HtmlTree div = new HtmlTree(HtmlTag.DIV);
             div.setStyle(HtmlStyle.allClassesContainer);
-            div.addContent(ul);
-            content.addContent(div);
+            div.add(ul);
+            content.add(div);
             if (table.needsScript()) {
                 getMainBodyScript().append(table.getScript());
             }
@@ -177,7 +176,7 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
                 configuration, LinkInfoImpl.Kind.INDEX, klass));
         ContentBuilder description = new ContentBuilder();
         if (utils.isDeprecated(klass)) {
-            description.addContent(getDeprecatedPhrase(klass));
+            description.add(getDeprecatedPhrase(klass));
             List<? extends DocTree> tags = utils.getDeprecatedTrees(klass);
             if (!tags.isEmpty()) {
                 addSummaryDeprecatedComment(klass, tags.get(0), description);

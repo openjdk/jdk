@@ -157,13 +157,12 @@ class ParallelScavengeHeap : public CollectedHeap {
   // collection.
   virtual bool is_maximal_no_gc() const;
 
-  // Return true if the reference points to an object that
-  // can be moved in a partial collection.  For currently implemented
-  // generational collectors that means during a collection of
-  // the young gen.
-  virtual bool is_scavengable(oop obj);
   virtual void register_nmethod(nmethod* nm);
-  virtual void verify_nmethod(nmethod* nmethod);
+  virtual void unregister_nmethod(nmethod* nm);
+  virtual void verify_nmethod(nmethod* nm);
+  virtual void flush_nmethod(nmethod* nm);
+
+  void prune_scavengable_nmethods();
 
   size_t max_capacity() const;
 
@@ -220,7 +219,6 @@ class ParallelScavengeHeap : public CollectedHeap {
   void safe_object_iterate(ObjectClosure* cl) { object_iterate(cl); }
 
   HeapWord* block_start(const void* addr) const;
-  size_t block_size(const HeapWord* addr) const;
   bool block_is_obj(const HeapWord* addr) const;
 
   jlong millis_since_last_gc();

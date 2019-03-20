@@ -52,6 +52,7 @@ import org.graalvm.compiler.lir.aarch64.AArch64ByteSwapOp;
 import org.graalvm.compiler.lir.aarch64.AArch64Compare;
 import org.graalvm.compiler.lir.aarch64.AArch64ControlFlow;
 import org.graalvm.compiler.lir.aarch64.AArch64ControlFlow.BranchOp;
+import org.graalvm.compiler.lir.aarch64.AArch64ControlFlow.CompareBranchZeroOp;
 import org.graalvm.compiler.lir.aarch64.AArch64ControlFlow.CondMoveOp;
 import org.graalvm.compiler.lir.aarch64.AArch64ControlFlow.CondSetOp;
 import org.graalvm.compiler.lir.aarch64.AArch64ControlFlow.StrategySwitchOp;
@@ -257,6 +258,27 @@ public abstract class AArch64LIRGenerator extends LIRGenerator {
     @Override
     public void emitCompareBranch(PlatformKind cmpKind, Value left, Value right, Condition cond, boolean unorderedIsTrue, LabelRef trueDestination, LabelRef falseDestination,
                     double trueDestinationProbability) {
+        if (cond == Condition.EQ) {
+            // emit cbz instruction for IsNullNode.
+            assert !LIRValueUtil.isNullConstant(left) : "emitNullCheckBranch()'s null input should be in right.";
+            if (LIRValueUtil.isNullConstant(right)) {
+                append(new CompareBranchZeroOp(asAllocatable(left), trueDestination, falseDestination, trueDestinationProbability));
+                return;
+            }
+
+            // emit cbz instruction for IntegerEquals when any of the inputs is zero.
+            AArch64Kind kind = (AArch64Kind) cmpKind;
+            if (kind.isInteger()) {
+                if (isIntConstant(left, 0)) {
+                    append(new CompareBranchZeroOp(asAllocatable(right), trueDestination, falseDestination, trueDestinationProbability));
+                    return;
+                } else if (isIntConstant(right, 0)) {
+                    append(new CompareBranchZeroOp(asAllocatable(left), trueDestination, falseDestination, trueDestinationProbability));
+                    return;
+                }
+            }
+        }
+
         boolean mirrored = emitCompare(cmpKind, left, right, cond, unorderedIsTrue);
         Condition finalCondition = mirrored ? cond.mirror() : cond;
         boolean finalUnorderedIsTrue = mirrored ? !unorderedIsTrue : unorderedIsTrue;

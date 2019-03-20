@@ -31,6 +31,7 @@ import java.nio.file.Path;
 
 import jdk.internal.vm.compiler.collections.EconomicMap;
 import org.graalvm.compiler.debug.DebugOptions;
+import org.graalvm.compiler.debug.DebugOptions.PrintGraphTarget;
 import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionValues;
 import org.junit.Test;
@@ -52,7 +53,7 @@ public class DumpPathTest extends GraalCompilerTest {
         String[] extensions = new String[]{".cfg", ".bgv", ".graph-strings"};
         EconomicMap<OptionKey<?>, Object> overrides = OptionValues.newOptionMap();
         overrides.put(DebugOptions.DumpPath, dumpDirectoryPath.toString());
-        overrides.put(DebugOptions.PrintGraphFile, true);
+        overrides.put(DebugOptions.PrintGraph, PrintGraphTarget.File);
         overrides.put(DebugOptions.PrintCanonicalGraphStrings, true);
         overrides.put(DebugOptions.Dump, "*");
 

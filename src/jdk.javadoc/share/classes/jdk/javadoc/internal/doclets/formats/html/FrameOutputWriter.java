@@ -26,7 +26,6 @@
 package jdk.javadoc.internal.doclets.formats.html;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.Head;
-import jdk.javadoc.internal.doclets.formats.html.markup.DocType;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlDocument;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
@@ -96,18 +95,19 @@ public class FrameOutputWriter extends HtmlDocletWriter {
     protected void generateFrameFile() throws DocFileIOException {
         Content frame = getFrameDetails();
         HtmlTree body = new HtmlTree(HtmlTag.BODY);
-        body.addAttr(HtmlAttr.ONLOAD, "loadFrames()");
+        body.put(HtmlAttr.CLASS, "frames");
+        body.put(HtmlAttr.ONLOAD, "loadFrames()");
         String topFilePath = configuration.topFile.getPath();
         Script script = new Script(
                 "\nif (targetPage == \"\" || targetPage == \"undefined\")\n" +
                 "     window.location.replace(")
                 .appendStringLiteral(topFilePath, '\'')
                 .append(");\n");
-        body.addContent(script.asContent());
+        body.add(script.asContent());
         Content noScript = HtmlTree.NOSCRIPT(contents.noScriptMessage);
-        body.addContent(noScript);
+        body.add(noScript);
         HtmlTree main = HtmlTree.MAIN(frame);
-        body.addContent(main);
+        body.add(main);
         if (configuration.windowtitle.length() > 0) {
             printFramesDocument(configuration.windowtitle, body);
         } else {
@@ -158,7 +158,7 @@ public class FrameOutputWriter extends HtmlDocletWriter {
         addAllClassesFrameTag(leftContainerDiv);
         addClassFrameTag(rightContainerDiv);
         HtmlTree mainContainer = HtmlTree.DIV(HtmlStyle.mainContainer, leftContainerDiv);
-        mainContainer.addContent(rightContainerDiv);
+        mainContainer.add(rightContainerDiv);
         return mainContainer;
     }
 
@@ -171,7 +171,7 @@ public class FrameOutputWriter extends HtmlDocletWriter {
         HtmlTree frame = HtmlTree.IFRAME(DocPaths.MODULE_OVERVIEW_FRAME.getPath(),
                 "packageListFrame", resources.getText("doclet.All_Modules"));
         HtmlTree leftTop = HtmlTree.DIV(HtmlStyle.leftTop, frame);
-        contentTree.addContent(leftTop);
+        contentTree.add(leftTop);
     }
 
     /**
@@ -183,7 +183,7 @@ public class FrameOutputWriter extends HtmlDocletWriter {
         HtmlTree frame = HtmlTree.IFRAME(DocPaths.OVERVIEW_FRAME.getPath(),
                 "packageListFrame", resources.getText("doclet.All_Packages"));
         HtmlTree leftTop = HtmlTree.DIV(HtmlStyle.leftTop, frame);
-        contentTree.addContent(leftTop);
+        contentTree.add(leftTop);
     }
 
     /**
@@ -195,7 +195,7 @@ public class FrameOutputWriter extends HtmlDocletWriter {
         HtmlTree frame = HtmlTree.IFRAME(DocPaths.ALLCLASSES_FRAME.getPath(),
                 "packageFrame", resources.getText("doclet.All_classes_and_interfaces"));
         HtmlTree leftBottom = HtmlTree.DIV(HtmlStyle.leftBottom, frame);
-        contentTree.addContent(leftBottom);
+        contentTree.add(leftBottom);
     }
 
     /**
@@ -207,7 +207,7 @@ public class FrameOutputWriter extends HtmlDocletWriter {
         HtmlTree frame = HtmlTree.IFRAME(configuration.topFile.getPath(), "classFrame",
                 resources.getText("doclet.Package_class_and_interface_descriptions"));
         frame.setStyle(HtmlStyle.rightIframe);
-        contentTree.addContent(frame);
+        contentTree.add(frame);
     }
 
     /**

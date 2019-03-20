@@ -94,13 +94,9 @@ class CodeCache : AllStatic {
   static address _low_bound;                            // Lower bound of CodeHeap addresses
   static address _high_bound;                           // Upper bound of CodeHeap addresses
   static int _number_of_nmethods_with_dependencies;     // Total number of nmethods with dependencies
-  static nmethod* _scavenge_root_nmethods;              // linked via nm->scavenge_root_link()
   static uint8_t _unloading_cycle;                      // Global state for recognizing old nmethods that need to be unloaded
 
   static ExceptionCache* volatile _exception_cache_purge_list;
-
-  static void mark_scavenge_root_nmethods() PRODUCT_RETURN;
-  static void verify_perm_nmethods(CodeBlobClosure* f_or_null) PRODUCT_RETURN;
 
   // CodeHeap management
   static void initialize_heaps();                             // Initializes the CodeHeaps
@@ -123,10 +119,6 @@ class CodeCache : AllStatic {
   static size_t bytes_allocated_in_freelists();
   static int    allocated_segments();
   static size_t freelists_length();
-
-  static void set_scavenge_root_nmethods(nmethod* nm) { _scavenge_root_nmethods = nm; }
-  static void prune_scavenge_root_nmethods();
-  static void unlink_scavenge_root_nmethod(nmethod* nm, nmethod* prev);
 
   // Make private to prevent unsafe calls.  Not all CodeBlob*'s are embedded in a CodeHeap.
   static bool contains(CodeBlob *p) { fatal("don't call me!"); return false; }
@@ -155,7 +147,7 @@ class CodeCache : AllStatic {
   static void blobs_do(void f(CodeBlob* cb));              // iterates over all CodeBlobs
   static void blobs_do(CodeBlobClosure* f);                // iterates over all CodeBlobs
   static void nmethods_do(void f(nmethod* nm));            // iterates over all nmethods
-  static void metadata_do(void f(Metadata* m));            // iterates over metadata in alive nmethods
+  static void metadata_do(MetadataClosure* f);             // iterates over metadata in alive nmethods
 
   // Lookup
   static CodeBlob* find_blob(void* start);              // Returns the CodeBlob containing the given address
@@ -171,8 +163,6 @@ class CodeCache : AllStatic {
   static int       nmethod_count(int code_blob_type);
 
   // GC support
-  static void gc_epilogue();
-  static void gc_prologue();
   static void verify_oops();
   // If any oops are not marked this method unloads (i.e., breaks root links
   // to) any unmarked codeBlobs in the cache.  Sets "marked_for_unloading"
@@ -189,24 +179,8 @@ class CodeCache : AllStatic {
   static void do_unloading(BoolObjectClosure* is_alive, bool unloading_occurred);
   static uint8_t unloading_cycle() { return _unloading_cycle; }
   static void increment_unloading_cycle();
-  static void asserted_non_scavengable_nmethods_do(CodeBlobClosure* f = NULL) PRODUCT_RETURN;
   static void release_exception_cache(ExceptionCache* entry);
   static void purge_exception_caches();
-
-  // Apply f to every live code blob in scavengable nmethods. Prune nmethods
-  // from the list of scavengable nmethods if f->fix_relocations() and a nmethod
-  // no longer has scavengable oops.  If f->fix_relocations(), then f must copy
-  // objects to their new location immediately to avoid fixing nmethods on the
-  // basis of the old object locations.
-  static void scavenge_root_nmethods_do(CodeBlobToOopClosure* f);
-
-  static nmethod* scavenge_root_nmethods()            { return _scavenge_root_nmethods; }
-  // register_scavenge_root_nmethod() conditionally adds the nmethod to the list
-  // if it is not already on the list and has a scavengeable root
-  static void register_scavenge_root_nmethod(nmethod* nm);
-  static void verify_scavenge_root_nmethod(nmethod* nm);
-  static void add_scavenge_root_nmethod(nmethod* nm);
-  static void drop_scavenge_root_nmethod(nmethod* nm);
 
   // Printing/debugging
   static void print();                           // prints summary

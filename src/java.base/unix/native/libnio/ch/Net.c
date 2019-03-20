@@ -146,9 +146,22 @@ static jboolean isSourceFilterSupported(){
 
 #endif  /* _AIX */
 
+static jclass isa_class;        /* java.net.InetSocketAddress */
+static jmethodID isa_ctorID;    /* InetSocketAddress(InetAddress, int) */
+
 JNIEXPORT void JNICALL
 Java_sun_nio_ch_Net_initIDs(JNIEnv *env, jclass clazz)
 {
+     jclass cls = (*env)->FindClass(env, "java/net/InetSocketAddress");
+     CHECK_NULL(cls);
+     isa_class = (*env)->NewGlobalRef(env, cls);
+     if (isa_class == NULL) {
+         JNU_ThrowOutOfMemoryError(env, NULL);
+         return;
+     }
+     isa_ctorID = (*env)->GetMethodID(env, cls, "<init>", "(Ljava/net/InetAddress;I)V");
+     CHECK_NULL(isa_ctorID);
+
      initInetAddressIDs(env);
 }
 
@@ -309,6 +322,51 @@ Java_sun_nio_ch_Net_connect0(JNIEnv *env, jclass clazz, jboolean preferIPv6,
 }
 
 JNIEXPORT jint JNICALL
+Java_sun_nio_ch_Net_accept(JNIEnv *env, jclass clazz, jobject fdo, jobject newfdo,
+                           jobjectArray isaa)
+{
+    jint fd = fdval(env, fdo);
+    jint newfd;
+    SOCKETADDRESS sa;
+    socklen_t sa_len = sizeof(SOCKETADDRESS);
+    jobject remote_ia;
+    jint remote_port = 0;
+    jobject isa;
+
+    /* accept connection but ignore ECONNABORTED */
+    for (;;) {
+        newfd = accept(fd, &sa.sa, &sa_len);
+        if (newfd >= 0) {
+            break;
+        }
+        if (errno != ECONNABORTED) {
+            break;
+        }
+        /* ECONNABORTED => restart accept */
+    }
+
+    if (newfd < 0) {
+        if (errno == EAGAIN || errno == EWOULDBLOCK)
+            return IOS_UNAVAILABLE;
+        if (errno == EINTR)
+            return IOS_INTERRUPTED;
+        JNU_ThrowIOExceptionWithLastError(env, "Accept failed");
+        return IOS_THROWN;
+    }
+
+    setfdval(env, newfdo, newfd);
+
+    remote_ia = NET_SockaddrToInetAddress(env, &sa, (int *)&remote_port);
+    CHECK_NULL_RETURN(remote_ia, IOS_THROWN);
+
+    isa = (*env)->NewObject(env, isa_class, isa_ctorID, remote_ia, remote_port);
+    CHECK_NULL_RETURN(isa, IOS_THROWN);
+    (*env)->SetObjectArrayElement(env, isaa, 0, isa);
+
+    return 1;
+}
+
+JNIEXPORT jint JNICALL
 Java_sun_nio_ch_Net_localPort(JNIEnv *env, jclass clazz, jobject fdo)
 {
     SOCKETADDRESS sa;
@@ -369,6 +427,33 @@ Java_sun_nio_ch_Net_localInetAddress(JNIEnv *env, jclass clazz, jobject fdo)
         handleSocketError(env, errno);
         return NULL;
 #endif /* _ALLBSD_SOURCE */
+    }
+    return NET_SockaddrToInetAddress(env, &sa, &port);
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_Net_remotePort(JNIEnv *env, jclass clazz, jobject fdo)
+{
+    SOCKETADDRESS sa;
+    socklen_t sa_len = sizeof(sa);
+
+    if (getpeername(fdval(env, fdo), &sa.sa, &sa_len) < 0) {
+        handleSocketError(env, errno);
+        return IOS_THROWN;
+    }
+    return NET_GetPortFromSockaddr(&sa);
+}
+
+JNIEXPORT jobject JNICALL
+Java_sun_nio_ch_Net_remoteInetAddress(JNIEnv *env, jclass clazz, jobject fdo)
+{
+    SOCKETADDRESS sa;
+    socklen_t sa_len = sizeof(sa);
+    int port;
+
+    if (getpeername(fdval(env, fdo), &sa.sa, &sa_len) < 0) {
+        handleSocketError(env, errno);
+        return NULL;
     }
     return NET_SockaddrToInetAddress(env, &sa, &port);
 }
@@ -830,6 +915,7 @@ jint handleSocketError(JNIEnv *env, jint errorValue)
             break;
         case EADDRINUSE:  /* Fall through */
         case EADDRNOTAVAIL:
+        case EACCES:
             xn = JNU_JAVANETPKG "BindException";
             break;
         default:

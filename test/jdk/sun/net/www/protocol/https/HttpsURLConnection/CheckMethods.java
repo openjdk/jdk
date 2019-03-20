@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,12 @@
  * @bug 4423074
  * @summary Need to rebase all the duplicated classes from Merlin.
  *          This test will check out http POST
- * @modules java.base/sun.net.www.protocol.https java.base/com.sun.net.ssl.internal.www.protocol.https
+ * @modules java.base/sun.net.www.protocol.https
  */
 import java.net.*;
 import java.util.*;
 import java.lang.reflect.*;
 import sun.net.www.protocol.https.HttpsURLConnectionImpl;
-import com.sun.net.ssl.internal.www.protocol.https.HttpsURLConnectionOldImpl;
 
 public class CheckMethods {
     static boolean debug = false;
@@ -85,9 +84,8 @@ public class CheckMethods {
         }
     }
 
-    // check HttpsURLConnectionImpl and HttpsURLConnectionOldImpl
-    // contain all public and protected methods defined in
-    // HttpURLConnection and URLConnection
+    // check HttpsURLConnectionImpl contain all public and protected methods
+    // defined in HttpURLConnection and URLConnection
     public static void main(String[] args) {
         ArrayList allMethods = new ArrayList(
             Arrays.asList(HttpURLConnection.class.getDeclaredMethods()));
@@ -119,24 +117,6 @@ public class CheckMethods {
 
         if (!httpsMethodSignatures.containsAll(allMethodSignatures)) {
             throw new RuntimeException("Method definition test failed on HttpsURLConnectionImpl");
-        }
-
-        // testing HttpsURLConnectionOldImpl
-        List httpsOldMethods =
-            Arrays.asList(HttpsURLConnectionOldImpl.class.getDeclaredMethods());
-
-        ArrayList httpsOldMethodSignatures = new ArrayList();
-        for (Iterator itr = httpsOldMethods.iterator(); itr.hasNext(); ) {
-            Method m = (Method)itr.next();
-            if (!Modifier.isStatic(m.getModifiers())) {
-                httpsOldMethodSignatures.add(
-                 new MethodSignature(m.getName(), m.getParameterTypes()));
-            }
-        }
-
-        if (!httpsOldMethodSignatures.containsAll(allMethodSignatures)) {
-            throw new RuntimeException("Method definition test failed" +
-                                       " on HttpsURLConnectionOldImpl");
         }
 
         // testing for non static public field

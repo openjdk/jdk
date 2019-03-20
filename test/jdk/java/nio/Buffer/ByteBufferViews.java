@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,8 @@ public class ByteBufferViews {
                       size -> ByteBuffer.allocate(size).position(8).slice()),
             Map.entry("ByteBuffer.allocate(size).position(8).slice().duplicate()",
                       size -> ByteBuffer.allocate(size).position(8).slice().duplicate()),
+            Map.entry("ByteBuffer.allocate(size).slice(8,size-8)",
+                      size -> ByteBuffer.allocate(size).slice(8,size-8)),
             // Unaligned
             Map.entry("ByteBuffer.allocate(size).position(1)",
                       size -> ByteBuffer.allocate(size).position(1)),
@@ -71,6 +73,8 @@ public class ByteBufferViews {
                       size -> ByteBuffer.allocate(size).position(1).slice()),
             Map.entry("ByteBuffer.allocate(size).position(1).slice().duplicate()",
                       size -> ByteBuffer.allocate(size).position(1).slice().duplicate()),
+            Map.entry("ByteBuffer.allocate(size).slice(1,size-1)",
+                      size -> ByteBuffer.allocate(size).slice(1,size-1)),
 
             // Off-heap
             Map.entry("ByteBuffer.allocateDirect(size)",
@@ -82,13 +86,17 @@ public class ByteBufferViews {
                       size -> ByteBuffer.allocateDirect(size).position(8).slice()),
             Map.entry("ByteBuffer.allocateDirect(size).position(8).slice().duplicate()",
                       size -> ByteBuffer.allocateDirect(size).position(8).slice().duplicate()),
+            Map.entry("ByteBuffer.allocateDirect(size).slice(8,size-8)",
+                      size -> ByteBuffer.allocateDirect(size).slice(8,size-8)),
             // Unaligned
             Map.entry("ByteBuffer.allocateDirect(size).position(1)",
                       size -> ByteBuffer.allocateDirect(size).position(1)),
             Map.entry("ByteBuffer.allocateDirect(size).position(1).slice()",
                       size -> ByteBuffer.allocateDirect(size).position(1).slice()),
             Map.entry("ByteBuffer.allocateDirect(size).position(1).slice().duplicate()",
-                      size -> ByteBuffer.allocateDirect(size).position(1).slice().duplicate())
+                      size -> ByteBuffer.allocateDirect(size).position(1).slice().duplicate()),
+            Map.entry("ByteBuffer.allocateDirect(size).slice(1,size-1)",
+                      size -> ByteBuffer.allocateDirect(size).slice(1,size-1))
     );
 
     // List of buffer byte order functions

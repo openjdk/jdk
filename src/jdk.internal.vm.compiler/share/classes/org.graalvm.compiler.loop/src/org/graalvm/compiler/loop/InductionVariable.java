@@ -99,7 +99,7 @@ public abstract class InductionVariable {
         return extremumNode(false, valueNode().stamp(NodeView.DEFAULT));
     }
 
-    public abstract ValueNode extremumNode(boolean assumePositiveTripCount, Stamp stamp);
+    public abstract ValueNode extremumNode(boolean assumeLoopEntered, Stamp stamp);
 
     public abstract boolean isConstantExtremum();
 

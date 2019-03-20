@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ public class B6361557 {
         server.start ();
 
         InetSocketAddress destaddr = new InetSocketAddress (
-                "127.0.0.1", server.getAddress().getPort()
+                InetAddress.getLoopbackAddress(), server.getAddress().getPort()
         );
         System.out.println ("destaddr " + destaddr);
 

@@ -121,7 +121,7 @@ public class HotSpotWordOperationPlugin extends WordOperationPlugin {
                 ValueNode pointer = args[0];
                 assert pointer.stamp(NodeView.DEFAULT) instanceof MetaspacePointerStamp;
 
-                LogicNode isNull = b.addWithInputs(IsNullNode.create(pointer));
+                LogicNode isNull = b.add(IsNullNode.create(pointer));
                 b.addPush(returnKind, ConditionalNode.create(isNull, b.add(forBoolean(true)), b.add(forBoolean(false)), NodeView.DEFAULT));
                 break;
 

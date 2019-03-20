@@ -1684,34 +1684,10 @@ void Method::print_codes_on(int from, int to, outputStream* st) const {
   while (s.next() >= 0) BytecodeTracer::trace(mh, s.bcp(), st);
 }
 
-
-// Simple compression of line number tables. We use a regular compressed stream, except that we compress deltas
-// between (bci,line) pairs since they are smaller. If (bci delta, line delta) fits in (5-bit unsigned, 3-bit unsigned)
-// we save it as one byte, otherwise we write a 0xFF escape character and use regular compression. 0x0 is used
-// as end-of-stream terminator.
-
-void CompressedLineNumberWriteStream::write_pair_regular(int bci_delta, int line_delta) {
-  // bci and line number does not compress into single byte.
-  // Write out escape character and use regular compression for bci and line number.
-  write_byte((jubyte)0xFF);
-  write_signed_int(bci_delta);
-  write_signed_int(line_delta);
-}
-
-// See comment in method.hpp which explains why this exists.
-#if defined(_M_AMD64) && _MSC_VER >= 1400
-#pragma optimize("", off)
-void CompressedLineNumberWriteStream::write_pair(int bci, int line) {
-  write_pair_inline(bci, line);
-}
-#pragma optimize("", on)
-#endif
-
 CompressedLineNumberReadStream::CompressedLineNumberReadStream(u_char* buffer) : CompressedReadStream(buffer) {
   _bci = 0;
   _line = 0;
 };
-
 
 bool CompressedLineNumberReadStream::read_pair() {
   jubyte next = read_byte();

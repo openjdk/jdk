@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -415,20 +415,22 @@ void CompiledMethod::clear_ic_callsites() {
 
 #ifdef ASSERT
 // Check class_loader is alive for this bit of metadata.
-static void check_class(Metadata* md) {
-   Klass* klass = NULL;
-   if (md->is_klass()) {
-     klass = ((Klass*)md);
-   } else if (md->is_method()) {
-     klass = ((Method*)md)->method_holder();
-   } else if (md->is_methodData()) {
-     klass = ((MethodData*)md)->method()->method_holder();
-   } else {
-     md->print();
-     ShouldNotReachHere();
-   }
-   assert(klass->is_loader_alive(), "must be alive");
-}
+class CheckClass : public MetadataClosure {
+  void do_metadata(Metadata* md) {
+    Klass* klass = NULL;
+    if (md->is_klass()) {
+      klass = ((Klass*)md);
+    } else if (md->is_method()) {
+      klass = ((Method*)md)->method_holder();
+    } else if (md->is_methodData()) {
+      klass = ((MethodData*)md)->method()->method_holder();
+    } else {
+      md->print();
+      ShouldNotReachHere();
+    }
+    assert(klass->is_loader_alive(), "must be alive");
+  }
+};
 #endif // ASSERT
 
 
@@ -550,8 +552,11 @@ bool CompiledMethod::unload_nmethod_caches(bool unloading_occurred) {
   // All static stubs need to be cleaned.
   clean_ic_stubs();
 
+#ifdef ASSERT
   // Check that the metadata embedded in the nmethod is alive
-  DEBUG_ONLY(metadata_do(check_class));
+  CheckClass check_class;
+  metadata_do(&check_class);
+#endif
   return true;
 }
 
@@ -627,4 +632,36 @@ bool CompiledMethod::nmethod_access_is_safe(nmethod* nm) {
          os::is_readable_pointer(method) &&
          os::is_readable_pointer(method->constants()) &&
          os::is_readable_pointer(method->signature());
+}
+
+class HasEvolDependency : public MetadataClosure {
+  bool _has_evol_dependency;
+ public:
+  HasEvolDependency() : _has_evol_dependency(false) {}
+  void do_metadata(Metadata* md) {
+    if (md->is_method()) {
+      Method* method = (Method*)md;
+      if (method->is_old()) {
+        _has_evol_dependency = true;
+      }
+    }
+  }
+  bool has_evol_dependency() const { return _has_evol_dependency; }
+};
+
+bool CompiledMethod::has_evol_metadata() {
+  // Check the metadata in relocIter and CompiledIC and also deoptimize
+  // any nmethod that has reference to old methods.
+  HasEvolDependency check_evol;
+  metadata_do(&check_evol);
+  if (check_evol.has_evol_dependency() && log_is_enabled(Debug, redefine, class, nmethod)) {
+    ResourceMark rm;
+    log_debug(redefine, class, nmethod)
+            ("Found evol dependency of nmethod %s.%s(%s) compile_id=%d on in nmethod metadata",
+             _method->method_holder()->external_name(),
+             _method->name()->as_C_string(),
+             _method->signature()->as_C_string(),
+             compile_id());
+  }
+  return check_evol.has_evol_dependency();
 }

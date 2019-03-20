@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 #ifndef SHARE_GC_Z_ZPAGE_HPP
 #define SHARE_GC_Z_ZPAGE_HPP
 
-#include "gc/z/zForwardingTable.hpp"
 #include "gc/z/zList.hpp"
 #include "gc/z/zLiveMap.hpp"
 #include "gc/z/zPhysicalMemory.hpp"
@@ -38,7 +37,6 @@ class ZPage : public CHeapObj<mtGC> {
 private:
   // Always hot
   const uint8_t        _type;             // Page type
-  volatile uint8_t     _pinned;           // Pinned flag
   uint8_t              _numa_id;          // NUMA node affinity
   uint32_t             _seqnum;           // Allocation sequence number
   const ZVirtualMemory _virtual;          // Virtual start/end address
@@ -46,14 +44,10 @@ private:
   ZLiveMap             _livemap;          // Live map
 
   // Hot when relocated and cached
-  volatile uint32_t    _refcount;         // Page reference count
-  ZForwardingTable     _forwarding;       // Forwarding table
   ZPhysicalMemory      _physical;         // Physical memory for page
   ZListNode<ZPage>     _node;             // Page list node
 
   const char* type_to_string() const;
-  uint32_t object_max_count() const;
-  uintptr_t relocate_object_inner(uintptr_t from_index, uintptr_t from_offset);
 
   bool is_object_marked(uintptr_t addr) const;
   bool is_object_strongly_marked(uintptr_t addr) const;
@@ -62,6 +56,7 @@ public:
   ZPage(uint8_t type, ZVirtualMemory vmem, ZPhysicalMemory pmem);
   ~ZPage();
 
+  uint32_t object_max_count() const;
   size_t object_alignment_shift() const;
   size_t object_alignment() const;
 
@@ -79,30 +74,16 @@ public:
 
   void reset();
 
-  bool inc_refcount();
-  bool dec_refcount();
-
   bool is_in(uintptr_t addr) const;
 
   uintptr_t block_start(uintptr_t addr) const;
-  size_t block_size(uintptr_t addr) const;
   bool block_is_obj(uintptr_t addr) const;
 
-  bool is_active() const;
   bool is_allocating() const;
   bool is_relocatable() const;
-  bool is_detached() const;
 
   bool is_mapped() const;
   void set_pre_mapped();
-
-  bool is_pinned() const;
-  void set_pinned();
-
-  bool is_forwarding() const;
-  void set_forwarding();
-  void reset_forwarding();
-  void verify_forwarding() const;
 
   bool is_marked() const;
   bool is_object_live(uintptr_t addr) const;
@@ -110,6 +91,7 @@ public:
   bool mark_object(uintptr_t addr, bool finalizable, bool& inc_live);
 
   void inc_live_atomic(uint32_t objects, size_t bytes);
+  uint32_t live_objects() const;
   size_t live_bytes() const;
 
   void object_iterate(ObjectClosure* cl);
@@ -119,9 +101,6 @@ public:
 
   bool undo_alloc_object(uintptr_t addr, size_t size);
   bool undo_alloc_object_atomic(uintptr_t addr, size_t size);
-
-  uintptr_t relocate_object(uintptr_t from);
-  uintptr_t forward_object(uintptr_t from);
 
   void print_on(outputStream* out) const;
   void print() const;

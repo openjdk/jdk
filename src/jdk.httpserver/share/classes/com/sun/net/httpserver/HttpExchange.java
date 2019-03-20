@@ -43,7 +43,7 @@ import java.util.*;
  * <ol><li>{@link #getRequestMethod()} to determine the command
  * <li>{@link #getRequestHeaders()} to examine the request headers (if needed)
  * <li>{@link #getRequestBody()} returns a {@link java.io.InputStream} for reading the request body.
- *     After reading the request body, the stream is close.
+ *     After reading the request body, the stream should be closed.
  * <li>{@link #getResponseHeaders()} to set any response headers, except content-length
  * <li>{@link #sendResponseHeaders(int,long)} to send the response headers. Must be called before
  * next step.

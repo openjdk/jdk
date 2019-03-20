@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ public class SignedDivNode extends IntegerDivRemNode implements LIRLowerable {
 
     public static final NodeClass<SignedDivNode> TYPE = NodeClass.create(SignedDivNode.class);
 
-    protected SignedDivNode(ValueNode x, ValueNode y, GuardingNode zeroCheck) {
+    public SignedDivNode(ValueNode x, ValueNode y, GuardingNode zeroCheck) {
         this(TYPE, x, y, zeroCheck);
     }
 
@@ -118,8 +118,8 @@ public class SignedDivNode extends IntegerDivRemNode implements LIRLowerable {
         }
         long abs = Math.abs(c);
         if (CodeUtil.isPowerOf2(abs) && forX.stamp(view) instanceof IntegerStamp) {
-            ValueNode dividend = forX;
             IntegerStamp stampX = (IntegerStamp) forX.stamp(view);
+            ValueNode dividend = forX;
             int log2 = CodeUtil.log2(abs);
             // no rounding if dividend is positive or if its low bits are always 0
             if (stampX.canBeNegative() || (stampX.upMask() & (abs - 1)) != 0) {

@@ -914,8 +914,7 @@ public class Throwable implements Serializable {
                 for (Throwable t : suppressedExceptions) {
                     // Enforce constraints on suppressed exceptions in
                     // case of corrupt or malicious stream.
-                    if (t == null)
-                        throw new NullPointerException(NULL_CAUSE_MESSAGE);
+                    Objects.requireNonNull(t, NULL_CAUSE_MESSAGE);
                     if (t == this)
                         throw new IllegalArgumentException(SELF_SUPPRESSION_MESSAGE);
                     suppressed.add(t);
@@ -942,8 +941,7 @@ public class Throwable implements Serializable {
                 stackTrace = null;
             } else { // Verify stack trace elements are non-null.
                 for(StackTraceElement ste : stackTrace) {
-                    if (ste == null)
-                        throw new NullPointerException("null StackTraceElement in serial stream. ");
+                    Objects.requireNonNull(ste, "null StackTraceElement in serial stream.");
                 }
             }
         } else {
@@ -1034,8 +1032,7 @@ public class Throwable implements Serializable {
         if (exception == this)
             throw new IllegalArgumentException(SELF_SUPPRESSION_MESSAGE, exception);
 
-        if (exception == null)
-            throw new NullPointerException(NULL_CAUSE_MESSAGE);
+        Objects.requireNonNull(exception, NULL_CAUSE_MESSAGE);
 
         if (suppressedExceptions == null) // Suppressed exceptions not recorded
             return;

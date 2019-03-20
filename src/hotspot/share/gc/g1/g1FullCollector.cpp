@@ -138,7 +138,7 @@ G1FullCollector::~G1FullCollector() {
 }
 
 void G1FullCollector::prepare_collection() {
-  _heap->g1_policy()->record_full_collection_start();
+  _heap->policy()->record_full_collection_start();
 
   _heap->print_heap_before_gc();
   _heap->print_heap_regions();
@@ -151,10 +151,6 @@ void G1FullCollector::prepare_collection() {
 
   reference_processor()->enable_discovery();
   reference_processor()->setup_policy(scope()->should_clear_soft_refs());
-
-  // When collecting the permanent generation Method*s may be moving,
-  // so we either have to flush all bcp data or convert it into bci.
-  CodeCache::gc_prologue();
 
   // We should save the marks of the currently locked biased monitors.
   // The marking doesn't preserve the marks of biased objects.
@@ -187,12 +183,11 @@ void G1FullCollector::complete_collection() {
   update_derived_pointers();
 
   BiasedLocking::restore_marks();
-  CodeCache::gc_epilogue();
   JvmtiExport::gc_epilogue();
 
   _heap->prepare_heap_for_mutators();
 
-  _heap->g1_policy()->record_full_collection_end();
+  _heap->policy()->record_full_collection_end();
   _heap->gc_epilogue(true);
 
   _heap->verify_after_full_collection();

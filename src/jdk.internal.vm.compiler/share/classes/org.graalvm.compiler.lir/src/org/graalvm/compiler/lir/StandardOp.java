@@ -70,10 +70,14 @@ public class StandardOp {
         boolean makeNullCheckFor(Value value, LIRFrameState nullCheckState, int implicitNullCheckLimit);
     }
 
+    public interface LabelHoldingOp {
+        Label getLabel();
+    }
+
     /**
      * LIR operation that defines the position of a label.
      */
-    public static final class LabelOp extends LIRInstruction {
+    public static final class LabelOp extends LIRInstruction implements LabelHoldingOp {
         public static final LIRInstructionClass<LabelOp> TYPE = LIRInstructionClass.create(LabelOp.class);
         public static final EnumSet<OperandFlag> incomingFlags = EnumSet.of(REG, STACK);
 
@@ -155,6 +159,7 @@ public class StandardOp {
             crb.asm.bind(label);
         }
 
+        @Override
         public Label getLabel() {
             return label;
         }

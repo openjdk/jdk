@@ -74,7 +74,7 @@ public final class AllocaNode extends FixedWithNextNode implements LIRLowerable 
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
-        VirtualStackSlot array = gen.getLIRGeneratorTool().getResult().getFrameMapBuilder().allocateStackSlots(slots, objects, null);
+        VirtualStackSlot array = gen.getLIRGeneratorTool().allocateStackSlots(slots, objects, null);
         Value result = gen.getLIRGeneratorTool().emitAddress(array);
         gen.setResult(this, result);
     }

@@ -275,7 +275,7 @@ static address dirty_card_log_enqueue = 0;
 static u_char* dirty_card_log_enqueue_end = 0;
 
 // This gets to assume that o0 contains the object address.
-static void generate_dirty_card_log_enqueue(jbyte* byte_map_base) {
+static void generate_dirty_card_log_enqueue(CardTable::CardValue* byte_map_base) {
   BufferBlob* bb = BufferBlob::create("dirty_card_enqueue", EnqueueCodeSize*2);
   CodeBuffer buf(bb);
   MacroAssembler masm(&buf);
@@ -626,7 +626,7 @@ void G1BarrierSetAssembler::generate_c1_post_barrier_runtime_stub(StubAssembler*
   Register cardtable = G5;
   Register tmp  = G1_scratch;
   Register tmp2 = G3_scratch;
-  jbyte* byte_map_base = bs->card_table()->byte_map_base();
+  CardTable::CardValue* byte_map_base = bs->card_table()->byte_map_base();
 
   Label not_already_dirty, restart, refill, young_card;
 

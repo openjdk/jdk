@@ -168,7 +168,8 @@ void ConstantPoolCacheEntry::set_parameter_size(int value) {
 void ConstantPoolCacheEntry::set_direct_or_vtable_call(Bytecodes::Code invoke_code,
                                                        const methodHandle& method,
                                                        int vtable_index,
-                                                       bool sender_is_interface) {
+                                                       bool sender_is_interface,
+                                                       InstanceKlass* pool_holder) {
   bool is_vtable_call = (vtable_index >= 0);  // FIXME: split this method on this boolean
   assert(method->interpreter_entry() != NULL, "should have been set at this point");
   assert(!method->is_obsolete(),  "attempt to write obsolete method to cpCache");
@@ -263,9 +264,17 @@ void ConstantPoolCacheEntry::set_direct_or_vtable_call(Bytecodes::Code invoke_co
     }
     // Don't mark invokestatic to method as resolved if the holder class has not yet completed
     // initialization. An invokestatic must only proceed if the class is initialized, but if
-    // we resolve it before then that class initialization check is skipped.
-    if (invoke_code == Bytecodes::_invokestatic && !method->method_holder()->is_initialized()) {
-      do_resolve = false;
+    // we resolve it before then that class initialization check is skipped. However if the call
+    // is from the same class we can resolve as we must be executing with <clinit> on our call stack.
+    if (invoke_code == Bytecodes::_invokestatic) {
+      if (!method->method_holder()->is_initialized() &&
+          method->method_holder() != pool_holder) {
+        do_resolve = false;
+      } else {
+        assert(method->method_holder()->is_initialized() ||
+               method->method_holder()->is_reentrant_initialization(Thread::current()),
+               "invalid class initialization state for invoke_static");
+      }
     }
     if (do_resolve) {
       set_bytecode_1(invoke_code);
@@ -310,17 +319,17 @@ void ConstantPoolCacheEntry::set_direct_or_vtable_call(Bytecodes::Code invoke_co
 }
 
 void ConstantPoolCacheEntry::set_direct_call(Bytecodes::Code invoke_code, const methodHandle& method,
-                                             bool sender_is_interface) {
+                                             bool sender_is_interface, InstanceKlass* pool_holder) {
   int index = Method::nonvirtual_vtable_index;
   // index < 0; FIXME: inline and customize set_direct_or_vtable_call
-  set_direct_or_vtable_call(invoke_code, method, index, sender_is_interface);
+  set_direct_or_vtable_call(invoke_code, method, index, sender_is_interface, pool_holder);
 }
 
 void ConstantPoolCacheEntry::set_vtable_call(Bytecodes::Code invoke_code, const methodHandle& method, int index) {
   // either the method is a miranda or its holder should accept the given index
   assert(method->method_holder()->is_interface() || method->method_holder()->verify_vtable_index(index), "");
   // index >= 0; FIXME: inline and customize set_direct_or_vtable_call
-  set_direct_or_vtable_call(invoke_code, method, index, false);
+  set_direct_or_vtable_call(invoke_code, method, index, false, NULL /* not used */);
 }
 
 void ConstantPoolCacheEntry::set_itable_call(Bytecodes::Code invoke_code,

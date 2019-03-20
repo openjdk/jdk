@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2017, SAP SE. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2378,23 +2378,28 @@ void LIR_Assembler::setup_md_access(ciMethod* method, int bci,
 
 
 void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, Label* failure, Label* obj_is_null) {
-  Register obj = op->object()->as_register();
+  const Register obj = op->object()->as_register(); // Needs to live in this register at safepoint (patching stub).
   Register k_RInfo = op->tmp1()->as_register();
   Register klass_RInfo = op->tmp2()->as_register();
   Register Rtmp1 = op->tmp3()->as_register();
   Register dst = op->result_opr()->as_register();
   ciKlass* k = op->klass();
   bool should_profile = op->should_profile();
-  bool move_obj_to_dst = (op->code() == lir_checkcast);
   // Attention: do_temp(opTypeCheck->_object) is not used, i.e. obj may be same as one of the temps.
-  bool reg_conflict = (obj == k_RInfo || obj == klass_RInfo || obj == Rtmp1);
-  bool restore_obj = move_obj_to_dst && reg_conflict;
+  bool reg_conflict = false;
+  if (obj == k_RInfo) {
+    k_RInfo = dst;
+    reg_conflict = true;
+  } else if (obj == klass_RInfo) {
+    klass_RInfo = dst;
+    reg_conflict = true;
+  } else if (obj == Rtmp1) {
+    Rtmp1 = dst;
+    reg_conflict = true;
+  }
+  assert_different_registers(obj, k_RInfo, klass_RInfo, Rtmp1);
 
   __ cmpdi(CCR0, obj, 0);
-  if (move_obj_to_dst || reg_conflict) {
-    __ mr_if_needed(dst, obj);
-    if (reg_conflict) { obj = dst; }
-  }
 
   ciMethodData* md = NULL;
   ciProfileData* data = NULL;
@@ -2460,12 +2465,27 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
     } else {
       // Call out-of-line instance of __ check_klass_subtype_slow_path(...):
       address entry = Runtime1::entry_for(Runtime1::slow_subtype_check_id);
-      //__ load_const_optimized(Rtmp1, entry, R0);
-      __ calculate_address_from_global_toc(Rtmp1, entry, true, true, false);
-      __ mtctr(Rtmp1);
+      // Stub needs fixed registers (tmp1-3).
+      Register original_k_RInfo = op->tmp1()->as_register();
+      Register original_klass_RInfo = op->tmp2()->as_register();
+      Register original_Rtmp1 = op->tmp3()->as_register();
+      bool keep_obj_alive = reg_conflict && (op->code() == lir_checkcast);
+      bool keep_klass_RInfo_alive = (obj == original_klass_RInfo) && should_profile;
+      if (keep_obj_alive && (obj != original_Rtmp1)) { __ mr(R0, obj); }
+      __ mr_if_needed(original_k_RInfo, k_RInfo);
+      __ mr_if_needed(original_klass_RInfo, klass_RInfo);
+      if (keep_obj_alive) { __ mr(dst, (obj == original_Rtmp1) ? obj : R0); }
+      //__ load_const_optimized(original_Rtmp1, entry, R0);
+      __ calculate_address_from_global_toc(original_Rtmp1, entry, true, true, false);
+      __ mtctr(original_Rtmp1);
       __ bctrl(); // sets CR0
+      if (keep_obj_alive) {
+        if (keep_klass_RInfo_alive) { __ mr(R0, obj); }
+        __ mr(obj, dst);
+      }
       if (should_profile) {
         __ bne(CCR0, *failure_target);
+        if (keep_klass_RInfo_alive) { __ mr(klass_RInfo, keep_obj_alive ? R0 : obj); }
         // Fall through to success case.
       } else {
         __ beq(CCR0, *success);
@@ -2493,11 +2513,6 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
   }
 
   __ bind(*failure);
-
-  if (restore_obj) {
-    __ mr(op->object()->as_register(), dst);
-    // Fall through to failure case.
-  }
 }
 
 
@@ -2590,10 +2605,11 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
 
   } else if (code == lir_checkcast) {
     Label success, failure;
-    emit_typecheck_helper(op, &success, /*fallthru*/&failure, &success); // Moves obj to dst.
+    emit_typecheck_helper(op, &success, /*fallthru*/&failure, &success);
     __ b(*op->stub()->entry());
     __ align(32, 12);
     __ bind(success);
+    __ mr_if_needed(op->result_opr()->as_register(), op->object()->as_register());
   } else if (code == lir_instanceof) {
     Register dst = op->result_opr()->as_register();
     Label success, failure, done;

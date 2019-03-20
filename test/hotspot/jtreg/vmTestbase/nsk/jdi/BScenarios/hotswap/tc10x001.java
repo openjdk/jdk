@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,7 @@ import java.io.*;
  */
 
 public class tc10x001 {
+    public final static String SGL_QUIT = "quit";
 
     public final static String UNEXPECTED_STRING = "***Unexpected exception ";
 
@@ -299,6 +300,8 @@ public class tc10x001 {
             } catch (Throwable e) {
                 complain(UNEXPECTED_STRING + e);
                 exitStatus = Consts.TEST_FAILED;
+            } finally {
+                debugee.sendSignal(tc10x001.SGL_QUIT); // Acknowledge debugee result received.
             }
         }
     }

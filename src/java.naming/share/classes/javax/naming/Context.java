@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import java.util.Hashtable;
  * consists of a set of name-to-object bindings.
  * It contains methods for examining and updating these bindings.
  *
- * <h1>Names</h1>
+ * <h2>Names</h2>
  * Each name passed as an argument to a {@code Context} method is relative
  * to that context.  The empty name is used to name the context itself.
  * A name parameter may never be null.
@@ -69,12 +69,12 @@ import java.util.Hashtable;
  * names in a composite namespace, at the discretion of the service
  * provider.
  *
- *<h1>Exceptions</h1>
+ *<h2>Exceptions</h2>
  * All the methods in this interface can throw a {@code NamingException} or
  * any of its subclasses. See {@code NamingException} and their subclasses
  * for details on each exception.
  *
- *<h1>Concurrent Access</h1>
+ *<h2>Concurrent Access</h2>
  * A Context instance is not guaranteed to be synchronized against
  * concurrent access by multiple threads.  Threads that need to access
  * a single Context instance concurrently should synchronize amongst
@@ -91,7 +91,7 @@ import java.util.Hashtable;
  * being followed.
  *
  *
- *<h1>Parameters</h1>
+ *<h2>Parameters</h2>
  * A {@code Name} parameter passed to any method of the
  * {@code Context} interface or one of its subinterfaces
  * will not be modified by the service provider.
@@ -103,7 +103,7 @@ import java.util.Hashtable;
  * The caller may subsequently modify it; the service provider may not.
  *
  *
- *<h1>Environment Properties</h1>
+ *<h2>Environment Properties</h2>
  *<p>
  * JNDI applications need a way to communicate various preferences
  * and properties that define the environment in which naming and
@@ -138,7 +138,7 @@ import java.util.Hashtable;
  *
  *<p>
  *<a id=RESOURCEFILES></a>
- *<h1>Resource Files</h1>
+ *<h2>Resource Files</h2>
  *<p>
  * To simplify the task of setting up the environment
  * required by a JNDI application,
@@ -165,7 +165,7 @@ import java.util.Hashtable;
  * There are two kinds of JNDI resource files:
  * <em>provider</em> and <em>application</em>.
  *
- * <h2>Provider Resource Files</h2>
+ * <h3>Provider Resource Files</h3>
  *
  * Each service provider has an optional resource that lists properties
  * specific to that provider.  The name of this resource is:
@@ -200,7 +200,7 @@ import java.util.Hashtable;
  * The service provider's documentation should clearly state which
  * properties are allowed; other properties in the file will be ignored.
  *
- * <h2>Application Resource Files</h2>
+ * <h3>Application Resource Files</h3>
  *
  * When an application is deployed, it will generally have several
  * codebase directories and JARs in its classpath. JNDI locates (using
@@ -228,7 +228,7 @@ import java.util.Hashtable;
  * collects and uses all of these export lists when searching for factory
  * classes.
  *
- * <h2>Search Algorithm for Properties</h2>
+ * <h3>Search Algorithm for Properties</h3>
  *
  * When JNDI constructs an initial context, the context's environment
  * is initialized with properties defined in the environment parameter

@@ -873,6 +873,8 @@ void os::abort(bool dump_core) {
 void os::print_hex_dump(outputStream* st, address start, address end, int unitsize) {
   assert(unitsize == 1 || unitsize == 2 || unitsize == 4 || unitsize == 8, "just checking");
 
+  start = align_down(start, unitsize);
+
   int cols = 0;
   int cols_per_line = 0;
   switch (unitsize) {

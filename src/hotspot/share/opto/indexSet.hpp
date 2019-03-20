@@ -29,6 +29,7 @@
 #include "memory/resourceArea.hpp"
 #include "opto/compile.hpp"
 #include "opto/regmask.hpp"
+#include "utilities/count_trailing_zeros.hpp"
 
 // This file defines the IndexSet class, a set of sparse integer indices.
 // This data structure is used by the compiler in its liveness analysis and
@@ -396,19 +397,6 @@ class IndexSet : public ResourceObj {
 class IndexSetIterator {
  friend class IndexSet;
 
- public:
-
-  // We walk over the bits in a word in chunks of size window_size.
-  enum { window_size = 5,
-         window_mask = right_n_bits(window_size),
-         table_size  = (1 << window_size) };
-
-  // For an integer of length window_size, what is the first set bit?
-  static const uint8_t _first_bit[table_size];
-
-  // For an integer of length window_size, what is the second set bit?
-  static const uint8_t _second_bit[table_size];
-
  private:
   // The current word we are inspecting
   uint32_t              _current;
@@ -440,7 +428,6 @@ class IndexSetIterator {
   // element in the set.
   uint advance_and_next();
 
-
  public:
 
   // If an iterator is built from a constant set then empty blocks
@@ -452,16 +439,11 @@ class IndexSetIterator {
   uint next() {
     uint current = _current;
     if (current != 0) {
-      uint value = _value;
-      while (mask_bits(current,window_mask) == 0) {
-        current >>= window_size;
-        value += window_size;
-      }
-
-      uint advance = _second_bit[mask_bits(current,window_mask)];
-      _current = current >> advance;
-      _value = value + advance;
-      return value + _first_bit[mask_bits(current,window_mask)];
+      uint advance = count_trailing_zeros(current);
+      assert(((current >> advance) & 0x1) == 1, "sanity");
+      _current = (current >> advance) - 1;
+      _value += advance;
+      return _value;
     } else {
       return advance_and_next();
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import java.util.Properties;
  * The most significant component is at index 0.
  * An empty composite name has no components.
  *
- * <h1>JNDI Composite Name Syntax</h1>
+ * <h2>JNDI Composite Name Syntax</h2>
  * JNDI defines a standard string representation for composite names. This
  * representation is the concatenation of the components of a composite name
  * from left to right using the component separator (a forward
@@ -73,7 +73,7 @@ import java.util.Properties;
  * a separator) denotes a trailing empty component.
  * Adjacent component separators denote an empty component.
  *
- *<h1>Composite Name Examples</h1>
+ *<h2>Composite Name Examples</h2>
  *This table shows examples of some composite names. Each row shows
  *the string form of a composite name and its corresponding structural form
  *({@code CompositeName}).
@@ -140,7 +140,7 @@ import java.util.Properties;
 </tbody>
 </table>
  *
- *<h1>Composition Examples</h1>
+ *<h2>Composition Examples</h2>
  * Here are some composition examples.  The right column shows composing
  * string composite names while the left column shows composing the
  * corresponding {@code CompositeName}s.  Notice that composing the
@@ -195,7 +195,7 @@ import java.util.Properties;
 </tbody>
 </table>
  *
- *<h1>Multithreaded Access</h1>
+ *<h2>Multithreaded Access</h2>
  * A {@code CompositeName} instance is not synchronized against concurrent
  * multithreaded access. Multiple threads trying to access and modify a
  * {@code CompositeName} should lock the object.

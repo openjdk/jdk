@@ -123,7 +123,7 @@ public class TestLoggerWeakRefLeak {
     }
 
     /**
-     * 'vm.heapHisto("", "-live")' will request a full GC
+     * 'vm.heapHisto("-live")' will request a full GC
      */
     private static int getInstanceCountFromHeapHisto() throws AttachNotSupportedException, Exception {
         int instanceCount = 0;
@@ -131,7 +131,7 @@ public class TestLoggerWeakRefLeak {
         HotSpotVirtualMachine vm = (HotSpotVirtualMachine) VirtualMachine
                 .attach(Long.toString(ProcessTools.getProcessId()));
         try {
-            try (InputStream heapHistoStream = vm.heapHisto("", "-live");
+            try (InputStream heapHistoStream = vm.heapHisto("-live");
                     BufferedReader in = new BufferedReader(new InputStreamReader(heapHistoStream))) {
                 String inputLine;
                 while ((inputLine = in.readLine()) != null) {

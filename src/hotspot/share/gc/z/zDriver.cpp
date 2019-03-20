@@ -43,9 +43,7 @@ static const ZStatPhaseConcurrent ZPhaseConcurrentMarkContinue("Concurrent Mark 
 static const ZStatPhasePause      ZPhasePauseMarkEnd("Pause Mark End");
 static const ZStatPhaseConcurrent ZPhaseConcurrentProcessNonStrongReferences("Concurrent Process Non-Strong References");
 static const ZStatPhaseConcurrent ZPhaseConcurrentResetRelocationSet("Concurrent Reset Relocation Set");
-static const ZStatPhaseConcurrent ZPhaseConcurrentDestroyDetachedPages("Concurrent Destroy Detached Pages");
 static const ZStatPhaseConcurrent ZPhaseConcurrentSelectRelocationSet("Concurrent Select Relocation Set");
-static const ZStatPhaseConcurrent ZPhaseConcurrentPrepareRelocationSet("Concurrent Prepare Relocation Set");
 static const ZStatPhasePause      ZPhasePauseRelocateStart("Pause Relocate Start");
 static const ZStatPhaseConcurrent ZPhaseConcurrentRelocated("Concurrent Relocate");
 static const ZStatCriticalPhase   ZCriticalPhaseGCLockerStall("GC Locker Stall", false /* verbose */);
@@ -300,11 +298,6 @@ void ZDriver::concurrent_reset_relocation_set() {
   ZHeap::heap()->reset_relocation_set();
 }
 
-void ZDriver::concurrent_destroy_detached_pages() {
-  ZStatTimer timer(ZPhaseConcurrentDestroyDetachedPages);
-  ZHeap::heap()->destroy_detached_pages();
-}
-
 void ZDriver::pause_verify() {
   if (VerifyBeforeGC || VerifyDuringGC || VerifyAfterGC) {
     VM_Verify op;
@@ -315,11 +308,6 @@ void ZDriver::pause_verify() {
 void ZDriver::concurrent_select_relocation_set() {
   ZStatTimer timer(ZPhaseConcurrentSelectRelocationSet);
   ZHeap::heap()->select_relocation_set();
-}
-
-void ZDriver::concurrent_prepare_relocation_set() {
-  ZStatTimer timer(ZPhaseConcurrentPrepareRelocationSet);
-  ZHeap::heap()->prepare_relocation_set();
 }
 
 void ZDriver::pause_relocate_start() {
@@ -384,22 +372,16 @@ void ZDriver::gc(GCCause::Cause cause) {
   // Phase 5: Concurrent Reset Relocation Set
   concurrent_reset_relocation_set();
 
-  // Phase 6: Concurrent Destroy Detached Pages
-  concurrent_destroy_detached_pages();
-
-  // Phase 7: Pause Verify
+  // Phase 6: Pause Verify
   pause_verify();
 
-  // Phase 8: Concurrent Select Relocation Set
+  // Phase 7: Concurrent Select Relocation Set
   concurrent_select_relocation_set();
 
-  // Phase 9: Concurrent Prepare Relocation Set
-  concurrent_prepare_relocation_set();
-
-  // Phase 10: Pause Relocate Start
+  // Phase 8: Pause Relocate Start
   pause_relocate_start();
 
-  // Phase 11: Concurrent Relocate
+  // Phase 9: Concurrent Relocate
   concurrent_relocate();
 }
 

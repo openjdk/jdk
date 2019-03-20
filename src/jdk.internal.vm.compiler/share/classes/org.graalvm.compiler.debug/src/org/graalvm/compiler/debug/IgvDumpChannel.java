@@ -24,6 +24,10 @@
 
 package org.graalvm.compiler.debug;
 
+import static org.graalvm.compiler.debug.DebugOptions.PrintGraphHost;
+import static org.graalvm.compiler.debug.DebugOptions.PrintGraphPort;
+
+import java.io.File;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.net.InetSocketAddress;
@@ -35,9 +39,11 @@ import java.nio.channels.WritableByteChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.function.Supplier;
-import static org.graalvm.compiler.debug.DebugOptions.PrintBinaryGraphPort;
-import static org.graalvm.compiler.debug.DebugOptions.PrintGraphHost;
+
+import org.graalvm.compiler.debug.DebugOptions.PrintGraphTarget;
 import org.graalvm.compiler.options.OptionValues;
+
+import jdk.vm.ci.common.NativeImageReinitialize;
 
 final class IgvDumpChannel implements WritableByteChannel {
     private final Supplier<Path> pathProvider;
@@ -52,7 +58,8 @@ final class IgvDumpChannel implements WritableByteChannel {
 
     @Override
     public int write(ByteBuffer src) throws IOException {
-        return channel().write(src);
+        WritableByteChannel channel = channel();
+        return channel == null ? 0 : channel.write(src);
     }
 
     @Override
@@ -77,10 +84,13 @@ final class IgvDumpChannel implements WritableByteChannel {
             throw new IOException();
         }
         if (sharedChannel == null) {
-            if (DebugOptions.PrintGraphFile.getValue(options)) {
-                sharedChannel = createFileChannel(pathProvider);
-            } else {
+            PrintGraphTarget target = DebugOptions.PrintGraph.getValue(options);
+            if (target == PrintGraphTarget.File) {
+                sharedChannel = createFileChannel(pathProvider, null);
+            } else if (target == PrintGraphTarget.Network) {
                 sharedChannel = createNetworkChannel(pathProvider, options);
+            } else {
+                TTY.println("WARNING: Graph dumping requested but value of %s option is %s", DebugOptions.PrintGraph.getName(), PrintGraphTarget.Disable);
             }
         }
         return sharedChannel;
@@ -88,10 +98,11 @@ final class IgvDumpChannel implements WritableByteChannel {
 
     private static WritableByteChannel createNetworkChannel(Supplier<Path> pathProvider, OptionValues options) throws IOException {
         String host = PrintGraphHost.getValue(options);
-        int port = PrintBinaryGraphPort.getValue(options);
+        int port = PrintGraphPort.getValue(options);
         try {
             WritableByteChannel channel = SocketChannel.open(new InetSocketAddress(host, port));
-            TTY.println("Connected to the IGV on %s:%d", host, port);
+            String targetAnnouncement = String.format("Connected to the IGV on %s:%d", host, port);
+            maybeAnnounceTarget(targetAnnouncement);
             return channel;
         } catch (ClosedByInterruptException | InterruptedIOException e) {
             /*
@@ -101,18 +112,39 @@ final class IgvDumpChannel implements WritableByteChannel {
              */
             return null;
         } catch (IOException e) {
-            if (!DebugOptions.PrintGraphFile.hasBeenSet(options)) {
-                return createFileChannel(pathProvider);
+            String networkFailure = String.format("Could not connect to the IGV on %s:%d", host, port);
+            if (pathProvider != null) {
+                return createFileChannel(pathProvider, networkFailure);
             } else {
-                throw new IOException(String.format("Could not connect to the IGV on %s:%d", host, port), e);
+                throw new IOException(networkFailure, e);
             }
         }
     }
 
-    private static WritableByteChannel createFileChannel(Supplier<Path> pathProvider) throws IOException {
+    @NativeImageReinitialize private static String lastTargetAnnouncement;
+
+    private static void maybeAnnounceTarget(String targetAnnouncement) {
+        if (!targetAnnouncement.equals(lastTargetAnnouncement)) {
+            // Ignore races - an extra announcement is ok
+            lastTargetAnnouncement = targetAnnouncement;
+            TTY.println(targetAnnouncement);
+        }
+    }
+
+    private static WritableByteChannel createFileChannel(Supplier<Path> pathProvider, String networkFailure) throws IOException {
         Path path = pathProvider.get();
         try {
-            return FileChannel.open(path, StandardOpenOption.WRITE, StandardOpenOption.CREATE);
+            FileChannel channel = FileChannel.open(path, StandardOpenOption.WRITE, StandardOpenOption.CREATE);
+            File dir = path.toFile();
+            if (!dir.isDirectory()) {
+                dir = dir.getParentFile();
+            }
+            if (networkFailure == null) {
+                maybeAnnounceTarget("Dumping IGV graphs in " + dir);
+            } else {
+                maybeAnnounceTarget(networkFailure + ". Dumping IGV graphs in " + dir);
+            }
+            return channel;
         } catch (IOException e) {
             throw new IOException(String.format("Failed to open %s to dump IGV graphs", path), e);
         }

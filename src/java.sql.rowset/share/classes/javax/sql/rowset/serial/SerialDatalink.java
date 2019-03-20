@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import java.net.URL;
  *      java.net.URL url = rowset.getURL(1);
  * </pre>
  *
- * <h3> Thread safety </h3>
+ * <h2> Thread safety </h2>
  *
  * A SerialDatalink is not safe for use by multiple concurrent threads.  If a
  * SerialDatalink is to be used by more than one thread then access to the

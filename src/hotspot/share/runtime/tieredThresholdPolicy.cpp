@@ -295,28 +295,24 @@ CompileTask* TieredThresholdPolicy::select_task(CompileQueue* compile_queue) {
   for (CompileTask* task = compile_queue->first(); task != NULL;) {
     CompileTask* next_task = task->next();
     Method* method = task->method();
+    // If a method was unloaded or has been stale for some time, remove it from the queue.
+    // Blocking tasks and tasks submitted from whitebox API don't become stale
+    if (task->is_unloaded() || (task->can_become_stale() && is_stale(t, TieredCompileTaskTimeout, method) && !is_old(method))) {
+      if (!task->is_unloaded()) {
+        if (PrintTieredEvents) {
+          print_event(REMOVE_FROM_QUEUE, method, method, task->osr_bci(), (CompLevel) task->comp_level());
+        }
+        method->clear_queued_for_compilation();
+      }
+      compile_queue->remove_and_mark_stale(task);
+      task = next_task;
+      continue;
+    }
     update_rate(t, method);
-    if (max_task == NULL) {
+    if (max_task == NULL || compare_methods(method, max_method)) {
+      // Select a method with the highest rate
       max_task = task;
       max_method = method;
-    } else {
-      // If a method has been stale for some time, remove it from the queue.
-      // Blocking tasks and tasks submitted from whitebox API don't become stale
-      if (task->can_become_stale() && is_stale(t, TieredCompileTaskTimeout, method) && !is_old(method)) {
-        if (PrintTieredEvents) {
-          print_event(REMOVE_FROM_QUEUE, method, method, task->osr_bci(), (CompLevel)task->comp_level());
-        }
-        compile_queue->remove_and_mark_stale(task);
-        method->clear_queued_for_compilation();
-        task = next_task;
-        continue;
-      }
-
-      // Select a method with a higher rate
-      if (compare_methods(method, max_method)) {
-        max_task = task;
-        max_method = method;
-      }
     }
 
     if (task->is_blocking()) {
@@ -479,7 +475,7 @@ void TieredThresholdPolicy::update_rate(jlong t, Method* m) {
 
   // We don't update the rate if we've just came out of a safepoint.
   // delta_s is the time since last safepoint in milliseconds.
-  jlong delta_s = t - SafepointTracing::end_of_last_safepoint_ms();
+  jlong delta_s = t - SafepointTracing::end_of_last_safepoint_epoch_ms();
   jlong delta_t = t - (m->prev_time() != 0 ? m->prev_time() : start_time()); // milliseconds since the last measurement
   // How many events were there since the last time?
   int event_count = m->invocation_count() + m->backedge_count();
@@ -501,10 +497,10 @@ void TieredThresholdPolicy::update_rate(jlong t, Method* m) {
   }
 }
 
-// Check if this method has been stale from a given number of milliseconds.
+// Check if this method has been stale for a given number of milliseconds.
 // See select_task().
 bool TieredThresholdPolicy::is_stale(jlong t, jlong timeout, Method* m) {
-  jlong delta_s = t - SafepointTracing::end_of_last_safepoint_ms();
+  jlong delta_s = t - SafepointTracing::end_of_last_safepoint_epoch_ms();
   jlong delta_t = t - m->prev_time();
   if (delta_t > timeout && delta_s > timeout) {
     int event_count = m->invocation_count() + m->backedge_count();

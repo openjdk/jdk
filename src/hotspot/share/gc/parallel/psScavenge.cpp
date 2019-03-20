@@ -537,8 +537,7 @@ bool PSScavenge::invoke_no_policy() {
                                                max_eden_size,
                                                false /* not full gc*/);
 
-          size_policy->check_gc_overhead_limit(young_live,
-                                               eden_live,
+          size_policy->check_gc_overhead_limit(eden_live,
                                                max_old_gen_size,
                                                max_eden_size,
                                                false /* not full gc*/,

@@ -303,6 +303,9 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
 
 #ifdef SETENV_REQUIRED
     jboolean mustsetenv = JNI_FALSE;
+#ifdef __solaris__
+    char *llp64 = NULL; /* existing LD_LIBRARY_PATH_64 setting */
+#endif // __solaris__
     char *runpath = NULL; /* existing effective LD_LIBRARY_PATH setting */
     char* new_runpath = NULL; /* desired new LD_LIBRARY_PATH string */
     char* newpath = NULL; /* path on new LD_LIBRARY_PATH */
@@ -367,7 +370,12 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
          * any.
          */
 
+#ifdef __solaris__
+        llp64 = getenv("LD_LIBRARY_PATH_64");
+        runpath = (llp64 == NULL) ? getenv(LD_LIBRARY_PATH) : llp64;
+#else
         runpath = getenv(LD_LIBRARY_PATH);
+#endif /* __solaris__ */
 
         /* runpath contains current effective LD_LIBRARY_PATH setting */
         { /* New scope to declare local variable */
@@ -440,6 +448,14 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
          * once at startup, so we have to re-exec the current executable
          * to get the changed environment variable to have an effect.
          */
+#ifdef __solaris__
+        /*
+         * new LD_LIBRARY_PATH took over for LD_LIBRARY_PATH_64
+         */
+        if (llp64 != NULL) {
+            UnsetEnv("LD_LIBRARY_PATH_64");
+        }
+#endif // __solaris__
 
         newenvp = environ;
     }

@@ -269,21 +269,13 @@ void StringDedupTable::transfer(StringDedupEntry** pentry, StringDedupTable* des
   *list = entry;
 }
 
-bool StringDedupTable::equals(typeArrayOop value1, typeArrayOop value2) {
-  return (oopDesc::equals(value1, value2) ||
-          (value1->length() == value2->length() &&
-          (!memcmp(value1->base(T_BYTE),
-                    value2->base(T_BYTE),
-                    value1->length() * sizeof(jbyte)))));
-}
-
 typeArrayOop StringDedupTable::lookup(typeArrayOop value, bool latin1, unsigned int hash,
                                       StringDedupEntry** list, uintx &count) {
   for (StringDedupEntry* entry = *list; entry != NULL; entry = entry->next()) {
     if (entry->hash() == hash && entry->latin1() == latin1) {
       oop* obj_addr = (oop*)entry->obj_addr();
       oop obj = NativeAccess<ON_PHANTOM_OOP_REF | AS_NO_KEEPALIVE>::oop_load(obj_addr);
-      if (equals(value, static_cast<typeArrayOop>(obj))) {
+      if (java_lang_String::value_equals(value, static_cast<typeArrayOop>(obj))) {
         obj = NativeAccess<ON_PHANTOM_OOP_REF>::oop_load(obj_addr);
         return static_cast<typeArrayOop>(obj);
       }
@@ -633,7 +625,7 @@ void StringDedupTable::verify() {
       while (*entry2 != NULL) {
         typeArrayOop value2 = (*entry2)->obj();
         bool latin1_2 = (*entry2)->latin1();
-        guarantee(latin1_1 != latin1_2 || !equals(value1, value2), "Table entries must not have identical arrays");
+        guarantee(latin1_1 != latin1_2 || !java_lang_String::value_equals(value1, value2), "Table entries must not have identical arrays");
         entry2 = (*entry2)->next_addr();
       }
       entry1 = (*entry1)->next_addr();

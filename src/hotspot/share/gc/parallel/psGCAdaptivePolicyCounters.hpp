@@ -51,7 +51,6 @@ class PSGCAdaptivePolicyCounters : public GCAdaptivePolicyCounters {
   PerfVariable* _live_space;
   PerfVariable* _free_space;
   PerfVariable* _avg_base_footprint;
-  PerfVariable* _gc_overhead_limit_exceeded_counter;
   PerfVariable* _live_at_last_full_gc_counter;
   PerfVariable* _old_capacity;
   PerfVariable* _boundary_moved;
@@ -177,7 +176,7 @@ class PSGCAdaptivePolicyCounters : public GCAdaptivePolicyCounters {
     );
   }
   inline void update_gc_overhead_limit_exceeded_counter() {
-    _gc_overhead_limit_exceeded_counter->set_value(
+    gc_overhead_limit_exceeded_counter()->set_value(
       (jlong) ps_size_policy()->gc_overhead_limit_exceeded());
   }
   inline void update_live_at_last_full_gc_counter() {

@@ -213,7 +213,6 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm, Decorato
   assert_different_registers(store_addr, new_val, tmp1, tmp2);
 
   CardTableBarrierSet* ct = barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
-  assert(sizeof(*ct->card_table()->byte_map_base()) == sizeof(jbyte), "adjust this code");
 
   // Does store cross heap regions?
   __ xorr(tmp1, store_addr, new_val);
@@ -478,7 +477,7 @@ void G1BarrierSetAssembler::generate_c1_post_barrier_runtime_stub(StubAssembler*
   Register tmp = R0;
   Register addr = R14;
   Register tmp2 = R15;
-  jbyte* byte_map_base = bs->card_table()->byte_map_base();
+  CardTable::CardValue* byte_map_base = bs->card_table()->byte_map_base();
 
   Label restart, refill, ret;
 

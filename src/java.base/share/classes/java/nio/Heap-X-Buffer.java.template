@@ -27,6 +27,8 @@
 
 package java.nio;
 
+import java.util.Objects;
+
 /**
 #if[rw]
  * A read/write Heap$Type$Buffer.
@@ -37,8 +39,6 @@ package java.nio;
  * instance of this class rather than of the superclass.
 #end[rw]
  */
-
-import java.util.Objects;
 
 class Heap$Type$Buffer$RW$
     extends {#if[ro]?Heap}$Type$Buffer
@@ -104,27 +104,25 @@ class Heap$Type$Buffer$RW$
     }
 
     public $Type$Buffer slice() {
+        int rem = this.remaining();
         return new Heap$Type$Buffer$RW$(hb,
                                         -1,
                                         0,
-                                        this.remaining(),
-                                        this.remaining(),
+                                        rem,
+                                        rem,
                                         this.position() + offset);
     }
 
-#if[byte]
-    $Type$Buffer slice(int pos, int lim) {
-        assert (pos >= 0);
-        assert (pos <= lim);
-        int rem = lim - pos;
+    @Override
+    public $Type$Buffer slice(int index, int length) {
+        Objects.checkFromIndexSize(index, length, limit());
         return new Heap$Type$Buffer$RW$(hb,
                                         -1,
                                         0,
-                                        rem,
-                                        rem,
-                                        pos + offset);
+                                        length,
+                                        length,
+                                        index + offset);
     }
-#end[byte]
 
     public $Type$Buffer duplicate() {
         return new Heap$Type$Buffer$RW$(hb,
@@ -175,11 +173,12 @@ class Heap$Type$Buffer$RW$
 #end[streamableType]
 
     public $Type$Buffer get($type$[] dst, int offset, int length) {
-        checkBounds(offset, length, dst.length);
-        if (length > remaining())
+        Objects.checkFromIndexSize(offset, length, dst.length);
+        int pos = position();
+        if (length > limit() - pos)
             throw new BufferUnderflowException();
-        System.arraycopy(hb, ix(position()), dst, offset, length);
-        position(position() + length);
+        System.arraycopy(hb, ix(pos), dst, offset, length);
+        position(pos + length);
         return this;
     }
 
@@ -220,11 +219,12 @@ class Heap$Type$Buffer$RW$
 
     public $Type$Buffer put($type$[] src, int offset, int length) {
 #if[rw]
-        checkBounds(offset, length, src.length);
-        if (length > remaining())
+        Objects.checkFromIndexSize(offset, length, src.length);
+        int pos = position();
+        if (length > limit() - pos)
             throw new BufferOverflowException();
-        System.arraycopy(src, offset, hb, ix(position()), length);
-        position(position() + length);
+        System.arraycopy(src, offset, hb, ix(pos), length);
+        position(pos + length);
         return this;
 #else[rw]
         throw new ReadOnlyBufferException();
@@ -237,19 +237,22 @@ class Heap$Type$Buffer$RW$
             if (src == this)
                 throw createSameBufferException();
             Heap$Type$Buffer sb = (Heap$Type$Buffer)src;
-            int n = sb.remaining();
-            if (n > remaining())
+            int pos = position();
+            int sbpos = sb.position();
+            int n = sb.limit() - sbpos;
+            if (n > limit() - pos)
                 throw new BufferOverflowException();
-            System.arraycopy(sb.hb, sb.ix(sb.position()),
-                             hb, ix(position()), n);
-            sb.position(sb.position() + n);
-            position(position() + n);
+            System.arraycopy(sb.hb, sb.ix(sbpos),
+                             hb, ix(pos), n);
+            sb.position(sbpos + n);
+            position(pos + n);
         } else if (src.isDirect()) {
             int n = src.remaining();
-            if (n > remaining())
+            int pos = position();
+            if (n > limit() - pos)
                 throw new BufferOverflowException();
-            src.get(hb, ix(position()), n);
-            position(position() + n);
+            src.get(hb, ix(pos), n);
+            position(pos + n);
         } else {
             super.put(src);
         }
@@ -274,7 +277,7 @@ class Heap$Type$Buffer$RW$
 
     public $Type$Buffer put(String src, int start, int end) {
         int length = end - start;
-        checkBounds(start, length, src.length());
+        Objects.checkFromIndexSize(start, length, src.length());
         if (isReadOnly())
             throw new ReadOnlyBufferException();
         int pos = position();
@@ -291,8 +294,10 @@ class Heap$Type$Buffer$RW$
 
     public $Type$Buffer compact() {
 #if[rw]
-        System.arraycopy(hb, ix(position()), hb, ix(0), remaining());
-        position(remaining());
+        int pos = position();
+        int rem = limit() - pos;
+        System.arraycopy(hb, ix(pos), hb, ix(0), rem);
+        position(rem);
         limit(capacity());
         discardMark();
         return this;
@@ -350,8 +355,9 @@ class Heap$Type$Buffer$RW$
     }
 
     public CharBuffer asCharBuffer() {
-        int size = this.remaining() >> 1;
-        long addr = address + position();
+        int pos = position();
+        int size = (limit() - pos) >> 1;
+        long addr = address + pos;
         return (bigEndian
                 ? (CharBuffer)(new ByteBufferAsCharBuffer$RW$B(this,
                                                                -1,
@@ -401,8 +407,9 @@ class Heap$Type$Buffer$RW$
     }
 
     public ShortBuffer asShortBuffer() {
-        int size = this.remaining() >> 1;
-        long addr = address + position();
+        int pos = position();
+        int size = (limit() - pos) >> 1;
+        long addr = address + pos;
         return (bigEndian
                 ? (ShortBuffer)(new ByteBufferAsShortBuffer$RW$B(this,
                                                                  -1,
@@ -452,8 +459,9 @@ class Heap$Type$Buffer$RW$
     }
 
     public IntBuffer asIntBuffer() {
-        int size = this.remaining() >> 2;
-        long addr = address + position();
+        int pos = position();
+        int size = (limit() - pos) >> 2;
+        long addr = address + pos;
         return (bigEndian
                 ? (IntBuffer)(new ByteBufferAsIntBuffer$RW$B(this,
                                                              -1,
@@ -503,8 +511,9 @@ class Heap$Type$Buffer$RW$
     }
 
     public LongBuffer asLongBuffer() {
-        int size = this.remaining() >> 3;
-        long addr = address + position();
+        int pos = position();
+        int size = (limit() - pos) >> 3;
+        long addr = address + pos;
         return (bigEndian
                 ? (LongBuffer)(new ByteBufferAsLongBuffer$RW$B(this,
                                                                -1,
@@ -558,8 +567,9 @@ class Heap$Type$Buffer$RW$
     }
 
     public FloatBuffer asFloatBuffer() {
-        int size = this.remaining() >> 2;
-        long addr = address + position();
+        int pos = position();
+        int size = (limit() - pos) >> 2;
+        long addr = address + pos;
         return (bigEndian
                 ? (FloatBuffer)(new ByteBufferAsFloatBuffer$RW$B(this,
                                                                  -1,
@@ -613,8 +623,9 @@ class Heap$Type$Buffer$RW$
     }
 
     public DoubleBuffer asDoubleBuffer() {
-        int size = this.remaining() >> 3;
-        long addr = address + position();
+        int pos = position();
+        int size = (limit() - pos) >> 3;
+        long addr = address + pos;
         return (bigEndian
                 ? (DoubleBuffer)(new ByteBufferAsDoubleBuffer$RW$B(this,
                                                                    -1,
@@ -648,11 +659,8 @@ class Heap$Type$Buffer$RW$
     // --- Methods to support CharSequence ---
 
     public CharBuffer subSequence(int start, int end) {
-        if ((start < 0)
-            || (end > length())
-            || (start > end))
-            throw new IndexOutOfBoundsException();
         int pos = position();
+        Objects.checkFromToIndex(start, end, limit() - pos);
         return new HeapCharBuffer$RW$(hb,
                                       -1,
                                       pos + start,

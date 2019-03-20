@@ -83,6 +83,15 @@ public final class RightShiftNode extends ShiftNode<Shr> {
             return new UnsignedRightShiftNode(forX, forY);
         }
 
+        Stamp xStampGeneric = forX.stamp(view);
+        if (xStampGeneric instanceof IntegerStamp) {
+            IntegerStamp xStamp = (IntegerStamp) xStampGeneric;
+            if (xStamp.lowerBound() >= -1 && xStamp.upperBound() <= 0) {
+                // Right shift by any amount does not change any bit.
+                return forX;
+            }
+        }
+
         if (forY.isConstant()) {
             int amount = forY.asJavaConstant().asInt();
             int originalAmout = amount;
@@ -91,6 +100,16 @@ public final class RightShiftNode extends ShiftNode<Shr> {
             if (amount == 0) {
                 return forX;
             }
+
+            if (xStampGeneric instanceof IntegerStamp) {
+                IntegerStamp xStamp = (IntegerStamp) xStampGeneric;
+
+                if (xStamp.lowerBound() >> amount == xStamp.upperBound() >> amount) {
+                    // Right shift turns the result of the expression into a constant.
+                    return ConstantNode.forIntegerKind(stamp.getStackKind(), xStamp.lowerBound() >> amount);
+                }
+            }
+
             if (forX instanceof ShiftNode) {
                 ShiftNode<?> other = (ShiftNode<?>) forX;
                 if (other.getY().isConstant()) {

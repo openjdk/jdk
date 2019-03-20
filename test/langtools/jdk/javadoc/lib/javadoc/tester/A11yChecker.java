@@ -36,7 +36,7 @@ public class A11yChecker extends HtmlChecker {
 
     private boolean html5;
 
-    private int currLevel;
+    private int currRank;
     private int headingErrors;
 
     private boolean inBody;
@@ -86,6 +86,7 @@ public class A11yChecker extends HtmlChecker {
         switch (name) {
             case "body":
                 inBody = true;
+                currRank = 0;
                 break;
 
             case "h1": case "h2": case "h3": case "h4": case "h5": case "h6":
@@ -126,18 +127,18 @@ public class A11yChecker extends HtmlChecker {
     }
 
     private void checkHeading(String h) {
-        int level = Character.digit(h.charAt(1), 10);
-        if (level > currLevel + 1) {
+        int rank = Character.digit(h.charAt(1), 10);
+        if (rank > currRank + 1) {
             headingErrors++;
             StringBuilder sb = new StringBuilder();
             String sep = "";
-            for (int i = currLevel + 1; i < level; i++) {
+            for (int i = currRank + 1; i < rank; i++) {
                 sb.append(sep).append("h").append(i);
                 sep = ", ";
             }
             error(currFile, getLineNumber(), "missing headings: " + sb);
         }
-        currLevel = level;
+        currRank = rank;
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ import sun.reflect.misc.ReflectUtil;
  * <code>RowSet</code> implementation can obtain its <code>SyncProvider</code>
  * implementation.
  *
- * <h3>1.0 Overview</h3>
+ * <h2>1.0 Overview</h2>
  * The <code>SyncFactory</code> class provides an internal registry of available
  * synchronization provider implementations (<code>SyncProvider</code> objects).
  * This registry may be queried to determine which
@@ -108,7 +108,7 @@ import sun.reflect.misc.ReflectUtil;
  * <code>SyncProvider</code> implementations are available, the reference
  * implementation providers are supplied.
  * </ol>
- * <h3>2.0 Registering <code>SyncProvider</code> Implementations</h3>
+ * <h2>2.0 Registering <code>SyncProvider</code> Implementations</h2>
  * <p>
  * Both vendors and developers can register <code>SyncProvider</code>
  * implementations using one of the following mechanisms.

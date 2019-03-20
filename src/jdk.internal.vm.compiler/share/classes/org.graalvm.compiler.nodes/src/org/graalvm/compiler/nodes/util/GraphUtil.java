@@ -1039,7 +1039,7 @@ public class GraphUtil {
             return;
         }
 
-        if (newLengthInt >= tool.getMaximumEntryCount()) {
+        if (newLengthInt > tool.getMaximumEntryCount()) {
             /* The new array size is higher than maximum allowed size of virtualized objects. */
             return;
         }

@@ -251,40 +251,40 @@ public class Head {
         Date now = showTimestamp ? calendar.getTime() : null;
 
         HtmlTree tree = new HtmlTree(HtmlTag.HEAD);
-        tree.addContent(getGeneratedBy(showTimestamp, now));
-        tree.addContent(HtmlTree.TITLE(title));
+        tree.add(getGeneratedBy(showTimestamp, now));
+        tree.add(HtmlTree.TITLE(title));
 
         if (charset != null) { // compatibility; should this be allowed?
-            tree.addContent(HtmlTree.META("Content-Type", "text/html", charset));
+            tree.add(HtmlTree.META("Content-Type", "text/html", charset));
         }
 
         if (showTimestamp) {
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-            tree.addContent(HtmlTree.META("dc.created", dateFormat.format(now)));
+            tree.add(HtmlTree.META("dc.created", dateFormat.format(now)));
         }
 
         if (description != null) {
-            tree.addContent(HtmlTree.META("description", description));
+            tree.add(HtmlTree.META("description", description));
         }
 
         if (generator != null) {
-            tree.addContent(HtmlTree.META("generator", generator));
+            tree.add(HtmlTree.META("generator", generator));
         }
 
         for (String k : keywords) {
-            tree.addContent(HtmlTree.META("keywords", k));
+            tree.add(HtmlTree.META("keywords", k));
         }
 
         if (canonicalLink != null) {
             HtmlTree link = new HtmlTree(HtmlTag.LINK);
-            link.addAttr(HtmlAttr.REL, "canonical");
-            link.addAttr(HtmlAttr.HREF, canonicalLink.getPath());
-            tree.addContent(link);
+            link.put(HtmlAttr.REL, "canonical");
+            link.put(HtmlAttr.HREF, canonicalLink.getPath());
+            tree.add(link);
         }
 
         addStylesheets(tree);
         addScripts(tree);
-        extraContent.forEach(tree::addContent);
+        extraContent.forEach(tree::add);
 
         return tree;
     }
@@ -316,13 +316,13 @@ public class Head {
     }
 
     private void addStylesheet(HtmlTree tree, DocPath stylesheet) {
-        tree.addContent(HtmlTree.LINK("stylesheet", "text/css",
+        tree.add(HtmlTree.LINK("stylesheet", "text/css",
                 pathToRoot.resolve(stylesheet).getPath(), "Style"));
     }
 
     private void addScripts(HtmlTree tree) {
         if (addDefaultScript) {
-            tree.addContent(HtmlTree.SCRIPT(pathToRoot.resolve(DocPaths.JAVASCRIPT).getPath()));
+            tree.add(HtmlTree.SCRIPT(pathToRoot.resolve(DocPaths.JAVASCRIPT).getPath()));
         }
         if (index) {
             if (pathToRoot != null && mainBodyScript != null) {
@@ -335,20 +335,20 @@ public class Head {
             }
             addJQueryFile(tree, DocPaths.JSZIP_MIN);
             addJQueryFile(tree, DocPaths.JSZIPUTILS_MIN);
-            tree.addContent(new RawHtml("<!--[if IE]>"));
+            tree.add(new RawHtml("<!--[if IE]>"));
             addJQueryFile(tree, DocPaths.JSZIPUTILS_IE_MIN);
-            tree.addContent(new RawHtml("<![endif]-->"));
+            tree.add(new RawHtml("<![endif]-->"));
             addJQueryFile(tree, DocPaths.JQUERY_JS_3_3);
             addJQueryFile(tree, DocPaths.JQUERY_MIGRATE);
             addJQueryFile(tree, DocPaths.JQUERY_JS);
         }
         for (Script script : scripts) {
-            tree.addContent(script.asContent());
+            tree.add(script.asContent());
         }
     }
 
     private void addJQueryFile(HtmlTree tree, DocPath filePath) {
         DocPath jqueryFile = pathToRoot.resolve(DocPaths.JQUERY_FILES.resolve(filePath));
-        tree.addContent(HtmlTree.SCRIPT(jqueryFile.getPath()));
+        tree.add(HtmlTree.SCRIPT(jqueryFile.getPath()));
     }
 }

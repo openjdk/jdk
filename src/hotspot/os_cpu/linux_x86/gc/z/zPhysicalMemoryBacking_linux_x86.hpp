@@ -34,9 +34,8 @@ class ZPhysicalMemoryBacking {
 private:
   ZMemoryManager _manager;
   ZBackingFile   _file;
-  const size_t   _granule_size;
 
-  void check_max_map_count(size_t max_capacity, size_t granule_size) const;
+  void check_max_map_count(size_t max_capacity) const;
   void check_available_space_on_filesystem(size_t max_capacity) const;
   void map_failed(ZErrno err) const;
 
@@ -46,7 +45,7 @@ private:
   void unmap_view(ZPhysicalMemory pmem, uintptr_t addr) const;
 
 public:
-  ZPhysicalMemoryBacking(size_t max_capacity, size_t granule_size);
+  ZPhysicalMemoryBacking(size_t max_capacity);
 
   bool is_initialized() const;
 
@@ -59,7 +58,9 @@ public:
 
   void map(ZPhysicalMemory pmem, uintptr_t offset) const;
   void unmap(ZPhysicalMemory pmem, uintptr_t offset) const;
-  void flip(ZPhysicalMemory pmem, uintptr_t offset) const;
+
+  void debug_map(ZPhysicalMemory pmem, uintptr_t offset) const;
+  void debug_unmap(ZPhysicalMemory pmem, uintptr_t offset) const;
 };
 
 #endif // OS_CPU_LINUX_X86_GC_Z_ZPHYSICALMEMORYBACKING_LINUX_X86_HPP

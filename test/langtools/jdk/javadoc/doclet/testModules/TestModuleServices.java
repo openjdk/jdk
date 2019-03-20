@@ -173,7 +173,7 @@ public class TestModuleServices extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("m/module-summary.html", false,
-                "<h3>Services</h3>");
+                "<h2>Services</h2>");
     }
 
     @Test
@@ -194,15 +194,17 @@ public class TestModuleServices extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("m/module-summary.html", true,
-                "<h3>Services</h3>");
+                "<h2>Services</h2>");
 
         checkOutput("m/module-summary.html", true,
                 "<div class=\"usesSummary\">\n<table>\n" +
                 "<caption><span>Uses</span><span class=\"tabEnd\">&nbsp;</span></caption>\n" +
+                "<thead>\n" +
                 "<tr>\n" +
                 "<th class=\"colFirst\" scope=\"col\">Type</th>\n" +
                 "<th class=\"colLast\" scope=\"col\">Description</th>\n" +
                 "</tr>\n" +
+                "</thead>\n" +
                 "<tbody>\n" +
                 "<tr class=\"altColor\">\n" +
                 "<th class=\"colFirst\" scope=\"row\"><a href=\"p1/A.html\" title=\"class in p1\">A</a></th>\n" +
@@ -235,15 +237,17 @@ public class TestModuleServices extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("m/module-summary.html", true,
-                "<h3>Services</h3>");
+                "<h2>Services</h2>");
 
         checkOutput("m/module-summary.html", true,
                 "<div class=\"usesSummary\">\n<table>\n" +
                 "<caption><span>Uses</span><span class=\"tabEnd\">&nbsp;</span></caption>\n" +
+                "<thead>\n" +
                 "<tr>\n" +
                 "<th class=\"colFirst\" scope=\"col\">Type</th>\n" +
                 "<th class=\"colLast\" scope=\"col\">Description</th>\n" +
                 "</tr>\n" +
+                "</thead>\n" +
                 "<tbody>\n" +
                 "<tr class=\"altColor\">\n" +
                 "<th class=\"colFirst\" scope=\"row\"><a href=\"p1/A.html\" title=\"class in p1\">A</a></th>\n" +
@@ -276,7 +280,7 @@ public class TestModuleServices extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("m/module-summary.html", false,
-                "<h3>Services</h3>");
+                "<h2>Services</h2>");
     }
 
     @Test
@@ -302,15 +306,17 @@ public class TestModuleServices extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("m/module-summary.html", true,
-                "<h3>Services</h3>");
+                "<h2>Services</h2>");
 
         checkOutput("m/module-summary.html", true,
                 "<div class=\"providesSummary\">\n<table>\n" +
                 "<caption><span>Provides</span><span class=\"tabEnd\">&nbsp;</span></caption>\n" +
+                "<thead>\n" +
                 "<tr>\n" +
                 "<th class=\"colFirst\" scope=\"col\">Type</th>\n" +
                 "<th class=\"colLast\" scope=\"col\">Description</th>\n" +
                 "</tr>\n" +
+                "</thead>\n" +
                 "<tbody>\n" +
                 "<tr class=\"altColor\">\n" +
                 "<th class=\"colFirst\" scope=\"row\"><a href=\"p1/A.html\" title=\"interface in p1\">A</a></th>\n" +
@@ -346,15 +352,17 @@ public class TestModuleServices extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("m/module-summary.html", true,
-                "<h3>Services</h3>");
+                "<h2>Services</h2>");
 
         checkOutput("m/module-summary.html", true,
                 "<div class=\"providesSummary\">\n<table>\n" +
                 "<caption><span>Provides</span><span class=\"tabEnd\">&nbsp;</span></caption>\n" +
+                "<thead>\n" +
                 "<tr>\n" +
                 "<th class=\"colFirst\" scope=\"col\">Type</th>\n" +
                 "<th class=\"colLast\" scope=\"col\">Description</th>\n" +
                 "</tr>\n" +
+                "</thead>\n" +
                 "<tbody>\n" +
                 "<tr class=\"altColor\">\n" +
                 "<th class=\"colFirst\" scope=\"row\"><a href=\"p1/A.html\" title=\"interface in p1\">A</a></th>\n" +
@@ -389,15 +397,17 @@ public class TestModuleServices extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("m/module-summary.html", true,
-                "<h3>Services</h3>");
+                "<h2>Services</h2>");
 
         checkOutput("m/module-summary.html", true,
                 "<div class=\"providesSummary\">\n<table>\n" +
                 "<caption><span>Provides</span><span class=\"tabEnd\">&nbsp;</span></caption>\n" +
+                "<thead>\n" +
                 "<tr>\n" +
                 "<th class=\"colFirst\" scope=\"col\">Type</th>\n" +
                 "<th class=\"colLast\" scope=\"col\">Description</th>\n" +
                 "</tr>\n" +
+                "</thead>\n" +
                 "<tbody>\n" +
                 "<tr class=\"altColor\">\n" +
                 "<th class=\"colFirst\" scope=\"row\"><a href=\"p1/A.html\" title=\"interface in p1\">A</a></th>\n" +
@@ -408,10 +418,12 @@ public class TestModuleServices extends JavadocTester {
                 "</table>",
                 "<div class=\"usesSummary\">\n<table>\n" +
                 "<caption><span>Uses</span><span class=\"tabEnd\">&nbsp;</span></caption>\n" +
+                "<thead>\n" +
                 "<tr>\n" +
                 "<th class=\"colFirst\" scope=\"col\">Type</th>\n" +
                 "<th class=\"colLast\" scope=\"col\">Description</th>\n" +
                 "</tr>\n" +
+                "</thead>\n" +
                 "<tbody>\n" +
                 "<tr class=\"altColor\">\n" +
                 "<th class=\"colFirst\" scope=\"row\"><a href=\"p2/B.html\" title=\"class in p2\">B</a></th>\n" +

@@ -121,7 +121,7 @@ public class CFGVerifier {
                     }
                 }
 
-                for (T block : loop.getExits()) {
+                for (T block : loop.getLoopExits()) {
                     assert block.getId() >= loop.getHeader().getId();
 
                     Loop<?> blockLoop = block.getLoop();

@@ -89,7 +89,7 @@ import sun.security.action.GetPropertyAction;
  * <li><a id="redirect-output">a destination for <i>standard output</i>
  * and <i>standard error</i></a>.  By default, the subprocess writes standard
  * output and standard error to pipes.  Java code can access these pipes
- * via the input streams returned by {@link Process#getOutputStream()} and
+ * via the input streams returned by {@link Process#getInputStream()} and
  * {@link Process#getErrorStream()}.  However, standard output and
  * standard error may be redirected to other destinations using
  * {@link #redirectOutput(Redirect) redirectOutput} and

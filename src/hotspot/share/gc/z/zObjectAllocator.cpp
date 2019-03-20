@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,7 +113,7 @@ uintptr_t ZObjectAllocator::alloc_large_object(size_t size, ZAllocationFlags fla
   uintptr_t addr = 0;
 
   // Allocate new large page
-  const size_t page_size = align_up(size, ZPageSizeMin);
+  const size_t page_size = align_up(size, ZGranuleSize);
   ZPage* const page = alloc_page(ZPageTypeLarge, page_size, flags);
   if (page != NULL) {
     // Allocate the object

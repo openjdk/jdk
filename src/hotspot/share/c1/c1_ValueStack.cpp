@@ -37,7 +37,7 @@ ValueStack::ValueStack(IRScope* scope, ValueStack* caller_state)
 , _kind(Parsing)
 , _locals(scope->method()->max_locals(), scope->method()->max_locals(), NULL)
 , _stack(scope->method()->max_stack())
-, _locks()
+, _locks(NULL)
 {
   verify();
 }
@@ -50,7 +50,7 @@ ValueStack::ValueStack(ValueStack* copy_from, Kind kind, int bci)
   , _kind(kind)
   , _locals()
   , _stack()
-  , _locks(copy_from->locks_size())
+  , _locks(copy_from->locks_size() == 0 ? NULL : new Values(copy_from->locks_size()))
 {
   assert(kind != EmptyExceptionState || !Compilation::current()->env()->should_retain_local_variables(), "need locals");
   if (kind != EmptyExceptionState) {
@@ -70,7 +70,9 @@ ValueStack::ValueStack(ValueStack* copy_from, Kind kind, int bci)
     _stack.appendAll(&copy_from->_stack);
   }
 
-  _locks.appendAll(&copy_from->_locks);
+  if (copy_from->locks_size() > 0) {
+    _locks->appendAll(copy_from->_locks);
+  }
 
   verify();
 }
@@ -90,8 +92,11 @@ bool ValueStack::is_same(ValueStack* s) {
   for_each_stack_value(this, index, value) {
     if (value->type()->tag() != s->stack_at(index)->type()->tag()) return false;
   }
-  for_each_lock_value(this, index, value) {
-    if (value != s->lock_at(index)) return false;
+  for (int i = 0; i < locks_size(); i++) {
+    value = lock_at(i);
+    if (value != NULL && value != s->lock_at(i)) {
+      return false;
+    }
   }
   return true;
 }
@@ -113,7 +118,7 @@ void ValueStack::pin_stack_for_linear_scan() {
 
 
 // apply function to all values of a list; factored out from values_do(f)
-void ValueStack::apply(Values list, ValueVisitor* f) {
+void ValueStack::apply(const Values& list, ValueVisitor* f) {
   for (int i = 0; i < list.length(); i++) {
     Value* va = list.adr_at(i);
     Value v0 = *va;
@@ -135,7 +140,9 @@ void ValueStack::values_do(ValueVisitor* f) {
   for_each_state(state) {
     apply(state->_locals, f);
     apply(state->_stack, f);
-    apply(state->_locks, f);
+    if (state->_locks != NULL) {
+      apply(*state->_locks, f);
+    }
   }
 }
 
@@ -160,7 +167,10 @@ int ValueStack::total_locks_size() const {
 }
 
 int ValueStack::lock(Value obj) {
-  _locks.push(obj);
+  if (_locks == NULL) {
+    _locks = new Values();
+  }
+  _locks->push(obj);
   int num_locks = total_locks_size();
   scope()->set_min_number_of_locks(num_locks);
   return num_locks - 1;
@@ -168,7 +178,8 @@ int ValueStack::lock(Value obj) {
 
 
 int ValueStack::unlock() {
-  _locks.pop();
+  assert(locks_size() > 0, "sanity");
+  _locks->pop();
   return total_locks_size();
 }
 

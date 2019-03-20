@@ -28,7 +28,6 @@
  * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build javadoc.tester.* toolbox.ToolBox builder.ClassBuilder
- * @compile OldDoclet.jasm
  * @run main RemoveOldDoclet
  */
 
@@ -44,6 +43,7 @@ import javadoc.tester.JavadocTester;
 public class RemoveOldDoclet extends JavadocTester {
 
     final ToolBox tb;
+    static final String Doclet_CLASS_NAME = TestDoclet.class.getName();
 
     public static void main(String... args) throws Exception {
         RemoveOldDoclet tester = new RemoveOldDoclet();
@@ -55,7 +55,7 @@ public class RemoveOldDoclet extends JavadocTester {
     }
 
     @Test
-    public void testInvokeOldDoclet(Path base) throws Exception {
+    public void testInvalidDoclet(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
 
@@ -64,14 +64,21 @@ public class RemoveOldDoclet extends JavadocTester {
                 .write(srcDir);
 
         javadoc("-d", outDir.toString(),
-                "-doclet", "OldDoclet",
+                "-doclet", Doclet_CLASS_NAME,
                 "-docletpath", System.getProperty("test.classes", "."),
                 "-sourcepath", srcDir.toString(),
                 "pkg");
 
         checkExit(Exit.ERROR);
         checkOutput(Output.OUT, true,
-                "javadoc: error - Class OldDoclet is not a valid doclet.\n"
-                + "Note: As of JDK 13, the com.sun.javadoc API is no longer supported.");
+                "javadoc: error - Class " + Doclet_CLASS_NAME + " is not a valid doclet.\n"
+                        + "Note: As of JDK 13, the com.sun.javadoc API is no longer supported.");
+    }
+
+    static class TestDoclet {
+        public static boolean start() {
+            System.out.println("OLD_DOCLET_MARKER");
+            return true;
+        }
     }
 }

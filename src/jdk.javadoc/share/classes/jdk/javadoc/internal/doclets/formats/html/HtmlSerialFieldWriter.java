@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import javax.lang.model.type.TypeMirror;
 import com.sun.source.doctree.DocTree;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -108,10 +107,9 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
         li.setStyle(HtmlStyle.blockList);
         if (serializableFieldsTree.isValid()) {
             Content headingContent = new StringContent(heading);
-            Content serialHeading = HtmlTree.HEADING(HtmlConstants.SERIALIZED_MEMBER_HEADING,
-                    headingContent);
-            li.addContent(serialHeading);
-            li.addContent(serializableFieldsTree);
+            Content serialHeading = HtmlTree.HEADING(Headings.SerializedForm.CLASS_SUBHEADING, headingContent);
+            li.add(serialHeading);
+            li.add(serializableFieldsTree);
         }
         return li;
     }
@@ -120,33 +118,33 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
     public void addMemberHeader(TypeElement fieldType, String fieldTypeStr,
             String fieldDimensions, String fieldName, Content contentTree) {
         Content nameContent = new StringContent(fieldName);
-        Content heading = HtmlTree.HEADING(HtmlConstants.MEMBER_HEADING, nameContent);
-        contentTree.addContent(heading);
+        Content heading = HtmlTree.HEADING(Headings.SerializedForm.MEMBER_HEADING, nameContent);
+        contentTree.add(heading);
         Content pre = new HtmlTree(HtmlTag.PRE);
         if (fieldType == null) {
-            pre.addContent(fieldTypeStr);
+            pre.add(fieldTypeStr);
         } else {
             Content fieldContent = writer.getLink(new LinkInfoImpl(
                     configuration, LinkInfoImpl.Kind.SERIAL_MEMBER, fieldType));
-            pre.addContent(fieldContent);
+            pre.add(fieldContent);
         }
-        pre.addContent(fieldDimensions + " ");
-        pre.addContent(fieldName);
-        contentTree.addContent(pre);
+        pre.add(fieldDimensions + " ");
+        pre.add(fieldName);
+        contentTree.add(pre);
     }
 
     @Override
     public void addMemberHeader(TypeMirror fieldType, String fieldName, Content contentTree) {
         Content nameContent = new StringContent(fieldName);
-        Content heading = HtmlTree.HEADING(HtmlConstants.MEMBER_HEADING, nameContent);
-        contentTree.addContent(heading);
+        Content heading = HtmlTree.HEADING(HtmlTag.H5, nameContent);
+        contentTree.add(heading);
         Content pre = new HtmlTree(HtmlTag.PRE);
         Content fieldContent = writer.getLink(new LinkInfoImpl(
                 configuration, LinkInfoImpl.Kind.SERIAL_MEMBER, fieldType));
-        pre.addContent(fieldContent);
-        pre.addContent(" ");
-        pre.addContent(fieldName);
-        contentTree.addContent(pre);
+        pre.add(fieldContent);
+        pre.add(" ");
+        pre.add(fieldName);
+        contentTree.add(pre);
     }
 
     /**
@@ -187,7 +185,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
         if (!description.isEmpty()) {
             Content serialFieldContent = new RawHtml(ch.getText(description));
             Content div = HtmlTree.DIV(HtmlStyle.block, serialFieldContent);
-            contentTree.addContent(div);
+            contentTree.add(div);
         }
     }
 
@@ -203,8 +201,8 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
                 configuration.tagletManager.getBlockTaglets(field),
                 writer.getTagletWriterInstance(false), tagContent);
         Content dlTags = new HtmlTree(HtmlTag.DL);
-        dlTags.addContent(tagContent);
-        contentTree.addContent(dlTags);  // TODO: what if empty?
+        dlTags.add(tagContent);
+        contentTree.add(dlTags);  // TODO: what if empty?
     }
 
     /**

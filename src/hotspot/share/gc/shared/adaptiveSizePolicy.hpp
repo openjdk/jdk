@@ -26,6 +26,7 @@
 #define SHARE_GC_SHARED_ADAPTIVESIZEPOLICY_HPP
 
 #include "gc/shared/gcCause.hpp"
+#include "gc/shared/gcOverheadChecker.hpp"
 #include "gc/shared/gcUtil.hpp"
 #include "memory/allocation.hpp"
 
@@ -34,7 +35,6 @@
 
 // Forward decls
 class elapsedTimer;
-class SoftRefPolicy;
 
 class AdaptiveSizePolicy : public CHeapObj<mtGC> {
  friend class GCAdaptivePolicyCounters;
@@ -81,18 +81,8 @@ class AdaptiveSizePolicy : public CHeapObj<mtGC> {
 
   size_t _survivor_size;    // calculated survivor size in bytes
 
-  // This is a hint for the heap:  we've detected that GC times
-  // are taking longer than GCTimeLimit allows.
-  bool _gc_overhead_limit_exceeded;
-  // Use for diagnostics only.  If UseGCOverheadLimit is false,
-  // this variable is still set.
-  bool _print_gc_overhead_limit_would_be_exceeded;
-  // Count of consecutive GC that have exceeded the
-  // GC time limit criterion
-  uint _gc_overhead_limit_count;
-  // This flag signals that GCTimeLimit is being exceeded
-  // but may not have done so for the required number of consecutive
-  // collections
+  // Support for UseGCOverheadLimit
+  GCOverheadChecker _overhead_checker;
 
   // Minor collection timers used to determine both
   // pause and interval times for collections
@@ -412,26 +402,20 @@ class AdaptiveSizePolicy : public CHeapObj<mtGC> {
     return _survivor_size;
   }
 
-  // This is a hint for the heap:  we've detected that gc times
-  // are taking longer than GCTimeLimit allows.
-  // Most heaps will choose to throw an OutOfMemoryError when
-  // this occurs but it is up to the heap to request this information
-  // of the policy
   bool gc_overhead_limit_exceeded() {
-    return _gc_overhead_limit_exceeded;
+    return _overhead_checker.gc_overhead_limit_exceeded();
   }
   void set_gc_overhead_limit_exceeded(bool v) {
-    _gc_overhead_limit_exceeded = v;
+    _overhead_checker.set_gc_overhead_limit_exceeded(v);
   }
 
-  // Tests conditions indicate the GC overhead limit is being approached.
   bool gc_overhead_limit_near() {
-    return gc_overhead_limit_count() >=
-        (AdaptiveSizePolicyGCTimeLimitThreshold - 1);
+    return _overhead_checker.gc_overhead_limit_near();
   }
-  uint gc_overhead_limit_count() { return _gc_overhead_limit_count; }
-  void reset_gc_overhead_limit_count() { _gc_overhead_limit_count = 0; }
-  void inc_gc_overhead_limit_count() { _gc_overhead_limit_count++; }
+
+  void reset_gc_overhead_limit_count() {
+    _overhead_checker.reset_gc_overhead_limit_count();
+  }
   // accessors for flags recording the decisions to resize the
   // generations to meet the pause goal.
 
@@ -448,8 +432,7 @@ class AdaptiveSizePolicy : public CHeapObj<mtGC> {
 
   // Check the conditions for an out-of-memory due to excessive GC time.
   // Set _gc_overhead_limit_exceeded if all the conditions have been met.
-  void check_gc_overhead_limit(size_t young_live,
-                               size_t eden_live,
+  void check_gc_overhead_limit(size_t eden_live,
                                size_t max_old_gen_size,
                                size_t max_eden_size,
                                bool   is_full_gc,

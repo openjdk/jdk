@@ -36,10 +36,13 @@ import java.util.List;
 import javax.xml.crypto.MarshalException;
 import javax.xml.crypto.XMLCryptoContext;
 import javax.xml.crypto.XMLStructure;
+import javax.xml.crypto.dom.DOMCryptoContext;
 import javax.xml.crypto.dsig.XMLSignature;
 import javax.xml.crypto.dsig.dom.DOMSignContext;
 import javax.xml.crypto.dsig.keyinfo.KeyInfo;
 
+import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
@@ -47,7 +50,7 @@ import org.w3c.dom.Node;
  * DOM-based implementation of KeyInfo.
  *
  */
-public final class DOMKeyInfo extends BaseStructure implements KeyInfo {
+public final class DOMKeyInfo extends DOMStructure implements KeyInfo {
 
     private final String id;
     private final List<XMLStructure> keyInfoTypes;
@@ -101,7 +104,14 @@ public final class DOMKeyInfo extends BaseStructure implements KeyInfo {
                       Provider provider)
         throws MarshalException
     {
-        id = DOMUtils.getIdAttributeValue(kiElem, "Id");
+        // get Id attribute, if specified
+        Attr attr = kiElem.getAttributeNodeNS(null, "Id");
+        if (attr != null) {
+            id = attr.getValue();
+            kiElem.setIdAttributeNode(attr, true);
+        } else {
+            id = null;
+        }
 
         // get all children nodes
         List<XMLStructure> content = new ArrayList<>();
@@ -134,17 +144,14 @@ public final class DOMKeyInfo extends BaseStructure implements KeyInfo {
         keyInfoTypes = Collections.unmodifiableList(content);
     }
 
-    @Override
     public String getId() {
         return id;
     }
 
-    @Override
     public List<XMLStructure> getContent() {
         return keyInfoTypes;
     }
 
-    @Override
     public void marshal(XMLStructure parent, XMLCryptoContext context)
         throws MarshalException
     {
@@ -155,44 +162,62 @@ public final class DOMKeyInfo extends BaseStructure implements KeyInfo {
             throw new ClassCastException("parent must be of type DOMStructure");
         }
 
-        internalMarshal( (javax.xml.crypto.dom.DOMStructure) parent, context);
-    }
-
-    private void internalMarshal(javax.xml.crypto.dom.DOMStructure parent, XMLCryptoContext context)
-            throws MarshalException {
-        Node pNode = parent.getNode();
+        Node pNode = ((javax.xml.crypto.dom.DOMStructure)parent).getNode();
         String dsPrefix = DOMUtils.getSignaturePrefix(context);
+        Element kiElem = DOMUtils.createElement
+            (DOMUtils.getOwnerDocument(pNode), "KeyInfo",
+             XMLSignature.XMLNS, dsPrefix);
+        if (dsPrefix == null || dsPrefix.length() == 0) {
+            kiElem.setAttributeNS("http://www.w3.org/2000/xmlns/",
+                                  "xmlns", XMLSignature.XMLNS);
+        } else {
+            kiElem.setAttributeNS("http://www.w3.org/2000/xmlns/",
+                                  "xmlns:" + dsPrefix, XMLSignature.XMLNS);
+        }
 
         Node nextSibling = null;
         if (context instanceof DOMSignContext) {
             nextSibling = ((DOMSignContext)context).getNextSibling();
         }
-
-        XmlWriterToTree xwriter = new XmlWriterToTree(Marshaller.getMarshallers(), pNode, nextSibling);
-        marshalInternal(xwriter, this, dsPrefix, context, true);
+        marshal(pNode, kiElem, nextSibling, dsPrefix, (DOMCryptoContext)context);
     }
 
-    public static void marshal(XmlWriter xwriter, KeyInfo ki, String dsPrefix,
-    XMLCryptoContext context) throws MarshalException {
-        marshalInternal(xwriter, ki, dsPrefix, context, false);
+    @Override
+    public void marshal(Node parent, String dsPrefix,
+                        DOMCryptoContext context)
+        throws MarshalException
+    {
+        marshal(parent, null, dsPrefix, context);
     }
 
-    private static void marshalInternal(XmlWriter xwriter, KeyInfo ki,
-        String dsPrefix, XMLCryptoContext context, boolean declareNamespace) throws MarshalException {
+    public void marshal(Node parent, Node nextSibling, String dsPrefix,
+                        DOMCryptoContext context)
+        throws MarshalException
+    {
+        Document ownerDoc = DOMUtils.getOwnerDocument(parent);
+        Element kiElem = DOMUtils.createElement(ownerDoc, "KeyInfo",
+                                                XMLSignature.XMLNS, dsPrefix);
+        marshal(parent, kiElem, nextSibling, dsPrefix, context);
+    }
 
-        xwriter.writeStartElement(dsPrefix, "KeyInfo", XMLSignature.XMLNS);
-        if (declareNamespace) {
-            xwriter.writeNamespace(dsPrefix, XMLSignature.XMLNS);
-        }
-
-        xwriter.writeIdAttribute("", "", "Id", ki.getId());
+    private void marshal(Node parent, Element kiElem, Node nextSibling,
+                         String dsPrefix, DOMCryptoContext context)
+        throws MarshalException
+    {
         // create and append KeyInfoType elements
-        List<XMLStructure> keyInfoTypes = getContent(ki);
         for (XMLStructure kiType : keyInfoTypes) {
-            xwriter.marshalStructure(kiType, dsPrefix, context);
+            if (kiType instanceof DOMStructure) {
+                ((DOMStructure)kiType).marshal(kiElem, dsPrefix, context);
+            } else {
+                DOMUtils.appendChild(kiElem,
+                    ((javax.xml.crypto.dom.DOMStructure)kiType).getNode());
+            }
         }
 
-        xwriter.writeEndElement(); // "KeyInfo"
+        // append id attribute
+        DOMUtils.setAttributeID(kiElem, "Id", id);
+
+        parent.insertBefore(kiElem, nextSibling);
     }
 
     @Override

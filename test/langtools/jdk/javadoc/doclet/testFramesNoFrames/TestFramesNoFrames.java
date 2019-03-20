@@ -330,7 +330,7 @@ public class TestFramesNoFrames extends JavadocTester {
             checkOutput("index.html", frames,
                     "<iframe ",
                     "</iframe>",
-                    "<body onload=\"loadFrames()\">\n"
+                    "<body class=\"frames\" onload=\"loadFrames()\">\n"
                     + "<script type=\"text/javascript\">\n"
                     + "if (targetPage == \"\" || targetPage == \"undefined\")");
 

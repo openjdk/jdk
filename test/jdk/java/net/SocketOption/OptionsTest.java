@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,7 +100,7 @@ public class OptionsTest {
     static void doSocketTests() throws Exception {
         try (
             ServerSocket srv = new ServerSocket(0);
-            Socket c = new Socket("127.0.0.1", srv.getLocalPort());
+            Socket c = new Socket(InetAddress.getLoopbackAddress(), srv.getLocalPort());
             Socket s = srv.accept();
         ) {
             Set<SocketOption<?>> options = c.supportedOptions();

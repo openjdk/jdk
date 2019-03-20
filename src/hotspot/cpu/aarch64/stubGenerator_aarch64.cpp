@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3257,11 +3257,14 @@ class StubGenerator: public StubCodeGenerator {
     Register buff   = c_rarg1;
     Register len    = c_rarg2;
     Register nmax  = r4;
-    Register base = r5;
+    Register base  = r5;
     Register count = r6;
     Register temp0 = rscratch1;
     Register temp1 = rscratch2;
-    Register temp2 = r7;
+    FloatRegister vbytes = v0;
+    FloatRegister vs1acc = v1;
+    FloatRegister vs2acc = v2;
+    FloatRegister vtable = v3;
 
     // Max number of bytes we can process before having to take the mod
     // 0x15B0 is 5552 in decimal, the largest n such that 255n(n+1)/2 + (n+1)(BASE-1) <= 2^32-1
@@ -3270,6 +3273,10 @@ class StubGenerator: public StubCodeGenerator {
 
     __ mov(base, BASE);
     __ mov(nmax, NMAX);
+
+    // Load accumulation coefficients for the upper 16 bits
+    __ lea(temp0, ExternalAddress((address) StubRoutines::aarch64::_adler_table));
+    __ ld1(vtable, __ T16B, Address(temp0));
 
     // s1 is initialized to the lower 16 bits of adler
     // s2 is initialized to the upper 16 bits of adler
@@ -3311,53 +3318,8 @@ class StubGenerator: public StubCodeGenerator {
 
     __ bind(L_nmax_loop);
 
-    __ ldp(temp0, temp1, Address(__ post(buff, 16)));
-
-    __ add(s1, s1, temp0, ext::uxtb);
-    __ ubfx(temp2, temp0, 8, 8);
-    __ add(s2, s2, s1);
-    __ add(s1, s1, temp2);
-    __ ubfx(temp2, temp0, 16, 8);
-    __ add(s2, s2, s1);
-    __ add(s1, s1, temp2);
-    __ ubfx(temp2, temp0, 24, 8);
-    __ add(s2, s2, s1);
-    __ add(s1, s1, temp2);
-    __ ubfx(temp2, temp0, 32, 8);
-    __ add(s2, s2, s1);
-    __ add(s1, s1, temp2);
-    __ ubfx(temp2, temp0, 40, 8);
-    __ add(s2, s2, s1);
-    __ add(s1, s1, temp2);
-    __ ubfx(temp2, temp0, 48, 8);
-    __ add(s2, s2, s1);
-    __ add(s1, s1, temp2);
-    __ add(s2, s2, s1);
-    __ add(s1, s1, temp0, Assembler::LSR, 56);
-    __ add(s2, s2, s1);
-
-    __ add(s1, s1, temp1, ext::uxtb);
-    __ ubfx(temp2, temp1, 8, 8);
-    __ add(s2, s2, s1);
-    __ add(s1, s1, temp2);
-    __ ubfx(temp2, temp1, 16, 8);
-    __ add(s2, s2, s1);
-    __ add(s1, s1, temp2);
-    __ ubfx(temp2, temp1, 24, 8);
-    __ add(s2, s2, s1);
-    __ add(s1, s1, temp2);
-    __ ubfx(temp2, temp1, 32, 8);
-    __ add(s2, s2, s1);
-    __ add(s1, s1, temp2);
-    __ ubfx(temp2, temp1, 40, 8);
-    __ add(s2, s2, s1);
-    __ add(s1, s1, temp2);
-    __ ubfx(temp2, temp1, 48, 8);
-    __ add(s2, s2, s1);
-    __ add(s1, s1, temp2);
-    __ add(s2, s2, s1);
-    __ add(s1, s1, temp1, Assembler::LSR, 56);
-    __ add(s2, s2, s1);
+    generate_updateBytesAdler32_accum(s1, s2, buff, temp0, temp1,
+                                      vbytes, vs1acc, vs2acc, vtable);
 
     __ subs(count, count, 16);
     __ br(Assembler::HS, L_nmax_loop);
@@ -3400,53 +3362,8 @@ class StubGenerator: public StubCodeGenerator {
 
     __ bind(L_by16_loop);
 
-    __ ldp(temp0, temp1, Address(__ post(buff, 16)));
-
-    __ add(s1, s1, temp0, ext::uxtb);
-    __ ubfx(temp2, temp0, 8, 8);
-    __ add(s2, s2, s1);
-    __ add(s1, s1, temp2);
-    __ ubfx(temp2, temp0, 16, 8);
-    __ add(s2, s2, s1);
-    __ add(s1, s1, temp2);
-    __ ubfx(temp2, temp0, 24, 8);
-    __ add(s2, s2, s1);
-    __ add(s1, s1, temp2);
-    __ ubfx(temp2, temp0, 32, 8);
-    __ add(s2, s2, s1);
-    __ add(s1, s1, temp2);
-    __ ubfx(temp2, temp0, 40, 8);
-    __ add(s2, s2, s1);
-    __ add(s1, s1, temp2);
-    __ ubfx(temp2, temp0, 48, 8);
-    __ add(s2, s2, s1);
-    __ add(s1, s1, temp2);
-    __ add(s2, s2, s1);
-    __ add(s1, s1, temp0, Assembler::LSR, 56);
-    __ add(s2, s2, s1);
-
-    __ add(s1, s1, temp1, ext::uxtb);
-    __ ubfx(temp2, temp1, 8, 8);
-    __ add(s2, s2, s1);
-    __ add(s1, s1, temp2);
-    __ ubfx(temp2, temp1, 16, 8);
-    __ add(s2, s2, s1);
-    __ add(s1, s1, temp2);
-    __ ubfx(temp2, temp1, 24, 8);
-    __ add(s2, s2, s1);
-    __ add(s1, s1, temp2);
-    __ ubfx(temp2, temp1, 32, 8);
-    __ add(s2, s2, s1);
-    __ add(s1, s1, temp2);
-    __ ubfx(temp2, temp1, 40, 8);
-    __ add(s2, s2, s1);
-    __ add(s1, s1, temp2);
-    __ ubfx(temp2, temp1, 48, 8);
-    __ add(s2, s2, s1);
-    __ add(s1, s1, temp2);
-    __ add(s2, s2, s1);
-    __ add(s1, s1, temp1, Assembler::LSR, 56);
-    __ add(s2, s2, s1);
+    generate_updateBytesAdler32_accum(s1, s2, buff, temp0, temp1,
+                                      vbytes, vs1acc, vs2acc, vtable);
 
     __ subs(len, len, 16);
     __ br(Assembler::HS, L_by16_loop);
@@ -3498,6 +3415,43 @@ class StubGenerator: public StubCodeGenerator {
     __ ret(lr);
 
     return start;
+  }
+
+  void generate_updateBytesAdler32_accum(Register s1, Register s2, Register buff,
+          Register temp0, Register temp1, FloatRegister vbytes,
+          FloatRegister vs1acc, FloatRegister vs2acc, FloatRegister vtable) {
+    // Below is a vectorized implementation of updating s1 and s2 for 16 bytes.
+    // We use b1, b2, ..., b16 to denote the 16 bytes loaded in each iteration.
+    // In non-vectorized code, we update s1 and s2 as:
+    //   s1 <- s1 + b1
+    //   s2 <- s2 + s1
+    //   s1 <- s1 + b2
+    //   s2 <- s2 + b1
+    //   ...
+    //   s1 <- s1 + b16
+    //   s2 <- s2 + s1
+    // Putting above assignments together, we have:
+    //   s1_new = s1 + b1 + b2 + ... + b16
+    //   s2_new = s2 + (s1 + b1) + (s1 + b1 + b2) + ... + (s1 + b1 + b2 + ... + b16)
+    //          = s2 + s1 * 16 + (b1 * 16 + b2 * 15 + ... + b16 * 1)
+    //          = s2 + s1 * 16 + (b1, b2, ... b16) dot (16, 15, ... 1)
+    __ ld1(vbytes, __ T16B, Address(__ post(buff, 16)));
+
+    // s2 = s2 + s1 * 16
+    __ add(s2, s2, s1, Assembler::LSL, 4);
+
+    // vs1acc = b1 + b2 + b3 + ... + b16
+    // vs2acc = (b1 * 16) + (b2 * 15) + (b3 * 14) + ... + (b16 * 1)
+    __ umullv(vs2acc, __ T8B, vtable, vbytes);
+    __ umlalv(vs2acc, __ T16B, vtable, vbytes);
+    __ uaddlv(vs1acc, __ T16B, vbytes);
+    __ uaddlv(vs2acc, __ T8H, vs2acc);
+
+    // s1 = s1 + vs1acc, s2 = s2 + vs2acc
+    __ fmovd(temp0, vs1acc);
+    __ fmovd(temp1, vs2acc);
+    __ add(s1, s1, temp0);
+    __ add(s2, s2, temp1);
   }
 
   /**
@@ -4846,7 +4800,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // Set up last_Java_sp and last_Java_fp
     address the_pc = __ pc();
-    __ set_last_Java_frame(sp, rfp, (address)NULL, rscratch1);
+    __ set_last_Java_frame(sp, rfp, the_pc, rscratch1);
 
     // Call runtime
     if (arg1 != noreg) {

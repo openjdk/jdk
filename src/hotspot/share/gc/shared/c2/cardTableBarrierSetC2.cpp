@@ -37,7 +37,7 @@
 
 Node* CardTableBarrierSetC2::byte_map_base_node(GraphKit* kit) const {
   // Get base of card map
-  jbyte* card_table_base = ci_card_table_address();
+  CardTable::CardValue* card_table_base = ci_card_table_address();
    if (card_table_base != NULL) {
      return kit->makecon(TypeRawPtr::make((address)card_table_base));
    } else {

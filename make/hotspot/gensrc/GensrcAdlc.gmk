@@ -166,18 +166,16 @@ ifeq ($(call check-jvm-feature, compiler2), true)
   ##############################################################################
   # Run the adlc tool on the single concatenated ad source file, and store the
   # output in support/adlc for further processing.
-  ADLC_RUN_MARKER := $(ADLC_SUPPORT_DIR)/_adlc_run.marker
-
-  $(ADLC_RUN_MARKER): $(BUILD_ADLC) $(SINGLE_AD_SRCFILE)
-	$(call LogInfo, Generating adlc files)
-	$(call MakeDir, $(@D))
-	$(call ExecuteWithLog, $(ADLC_SUPPORT_DIR)/adlc_run, \
-	    $(FIXPATH) $(ADLC_TOOL) $(ADLCFLAGS) $(SINGLE_AD_SRCFILE) \
-	        -c$(ADLC_SUPPORT_DIR)/ad_$(HOTSPOT_TARGET_CPU_ARCH).cpp \
-	        -h$(ADLC_SUPPORT_DIR)/ad_$(HOTSPOT_TARGET_CPU_ARCH).hpp \
-	        -a$(ADLC_SUPPORT_DIR)/dfa_$(HOTSPOT_TARGET_CPU_ARCH).cpp \
-	        -v$(ADLC_SUPPORT_DIR)/adGlobals_$(HOTSPOT_TARGET_CPU_ARCH).hpp)
-	$(TOUCH) $@
+  $(eval $(call SetupExecute, adlc_run, \
+      INFO := Generating adlc files, \
+      DEPS := $(BUILD_ADLC) $(SINGLE_AD_SRCFILE), \
+      OUTPUT_DIR := $(ADLC_SUPPORT_DIR), \
+      COMMAND := $(FIXPATH) $(ADLC_TOOL) $(ADLCFLAGS) $(SINGLE_AD_SRCFILE) \
+          -c$(ADLC_SUPPORT_DIR)/ad_$(HOTSPOT_TARGET_CPU_ARCH).cpp \
+          -h$(ADLC_SUPPORT_DIR)/ad_$(HOTSPOT_TARGET_CPU_ARCH).hpp \
+          -a$(ADLC_SUPPORT_DIR)/dfa_$(HOTSPOT_TARGET_CPU_ARCH).cpp \
+          -v$(ADLC_SUPPORT_DIR)/adGlobals_$(HOTSPOT_TARGET_CPU_ARCH).hpp, \
+  ))
 
   ##############################################################################
   # Finally copy the generated files from support/adlc into gensrc/adfiles,
@@ -197,7 +195,7 @@ ifeq ($(call check-jvm-feature, compiler2), true)
       dfa_$(HOTSPOT_TARGET_CPU_ARCH).cpp \
   )
 
-  $(JVM_VARIANT_OUTPUTDIR)/gensrc/adfiles/%: $(ADLC_RUN_MARKER)
+  $(JVM_VARIANT_OUTPUTDIR)/gensrc/adfiles/%: $(adlc_run_TARGET)
 	$(call LogInfo, Postprocessing adlc file $*)
 	$(call MakeDir, $(@D))
 	$(NAWK) \
@@ -206,6 +204,6 @@ ifeq ($(call check-jvm-feature, compiler2), true)
 	     {print}' \
 	    < $(ADLC_SUPPORT_DIR)/$* > $@
 
-  TARGETS := $(ADLC_GENERATED_FILES)
+  TARGETS += $(ADLC_GENERATED_FILES)
 
 endif

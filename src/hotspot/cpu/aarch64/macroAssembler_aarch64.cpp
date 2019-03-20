@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -373,15 +373,9 @@ void MacroAssembler::set_last_Java_frame(Register last_java_sp,
                                          Register last_java_fp,
                                          address  last_java_pc,
                                          Register scratch) {
-  if (last_java_pc != NULL) {
-    adr(scratch, last_java_pc);
-  } else {
-    // FIXME: This is almost never correct.  We should delete all
-    // cases of set_last_Java_frame with last_java_pc=NULL and use the
-    // correct return address instead.
-    adr(scratch, pc());
-  }
+  assert(last_java_pc != NULL, "must provide a valid PC");
 
+  adr(scratch, last_java_pc);
   str(scratch, Address(rthread,
                        JavaThread::frame_anchor_offset()
                        + JavaFrameAnchor::last_Java_pc_offset()));
@@ -398,7 +392,7 @@ void MacroAssembler::set_last_Java_frame(Register last_java_sp,
   } else {
     InstructionMark im(this);
     L.add_patch_at(code(), locator());
-    set_last_Java_frame(last_java_sp, last_java_fp, (address)NULL, scratch);
+    set_last_Java_frame(last_java_sp, last_java_fp, pc() /* Patched later */, scratch);
   }
 }
 
@@ -4311,7 +4305,7 @@ void MacroAssembler::adrp(Register reg1, const Address &dest, unsigned long &byt
 }
 
 void MacroAssembler::load_byte_map_base(Register reg) {
-  jbyte *byte_map_base =
+  CardTable::CardValue* byte_map_base =
     ((CardTableBarrierSet*)(BarrierSet::barrier_set()))->card_table()->byte_map_base();
 
   if (is_valid_AArch64_address((address)byte_map_base)) {

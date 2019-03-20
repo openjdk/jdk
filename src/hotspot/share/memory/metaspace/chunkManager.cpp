@@ -29,6 +29,7 @@
 #include "memory/freeList.inline.hpp"
 #include "memory/metaspace/chunkManager.hpp"
 #include "memory/metaspace/metachunk.hpp"
+#include "memory/metaspace/metaDebug.hpp"
 #include "memory/metaspace/metaspaceCommon.hpp"
 #include "memory/metaspace/metaspaceStatistics.hpp"
 #include "memory/metaspace/occupancyMap.hpp"
@@ -140,15 +141,21 @@ bool ChunkManager::attempt_to_coalesce_around_chunk(Metachunk* chunk, ChunkIndex
   _free_chunks_count -= num_chunks_removed;
   _free_chunks_count ++;
 
-  // VirtualSpaceNode::container_count does not have to be modified:
+  // VirtualSpaceNode::chunk_count does not have to be modified:
   // it means "number of active (non-free) chunks", so merging free chunks
   // should not affect that count.
 
   // At the end of a chunk merge, run verification tests.
-  if (VerifyMetaspace) {
-    DEBUG_ONLY(this->locked_verify());
-    DEBUG_ONLY(vsn->verify());
-  }
+#ifdef ASSERT
+
+  EVERY_NTH(VerifyMetaspaceInterval)
+    locked_verify(true);
+    vsn->verify(true);
+  END_EVERY_NTH
+
+  g_internal_statistics.num_chunk_merges ++;
+
+#endif
 
   return true;
 }
@@ -189,14 +196,6 @@ int ChunkManager::remove_chunks_in_area(MetaWord* p, size_t word_size) {
   return num_removed;
 }
 
-size_t ChunkManager::free_chunks_total_words() {
-  return _free_chunks_total;
-}
-
-size_t ChunkManager::free_chunks_total_bytes() {
-  return free_chunks_total_words() * BytesPerWord;
-}
-
 // Update internal accounting after a chunk was added
 void ChunkManager::account_for_added_chunk(const Metachunk* c) {
   assert_lock_strong(MetaspaceExpand_lock);
@@ -216,19 +215,6 @@ void ChunkManager::account_for_removed_chunk(const Metachunk* c) {
   _free_chunks_total -= c->word_size();
 }
 
-size_t ChunkManager::free_chunks_count() {
-#ifdef ASSERT
-  if (!UseConcMarkSweepGC && !MetaspaceExpand_lock->is_locked()) {
-    MutexLockerEx cl(MetaspaceExpand_lock,
-                     Mutex::_no_safepoint_check_flag);
-    // This lock is only needed in debug because the verification
-    // of the _free_chunks_totals walks the list of free chunks
-    slow_locked_verify_free_chunks_count();
-  }
-#endif
-  return _free_chunks_count;
-}
-
 ChunkIndex ChunkManager::list_index(size_t size) {
   return get_chunk_type_by_size(size, is_class());
 }
@@ -239,43 +225,48 @@ size_t ChunkManager::size_by_index(ChunkIndex index) const {
   return get_size_for_nonhumongous_chunktype(index, is_class());
 }
 
-void ChunkManager::locked_verify_free_chunks_total() {
-  assert_lock_strong(MetaspaceExpand_lock);
-  assert(sum_free_chunks() == _free_chunks_total,
-         "_free_chunks_total " SIZE_FORMAT " is not the"
-         " same as sum " SIZE_FORMAT, _free_chunks_total,
-         sum_free_chunks());
-}
-
-void ChunkManager::locked_verify_free_chunks_count() {
-  assert_lock_strong(MetaspaceExpand_lock);
-  assert(sum_free_chunks_count() == _free_chunks_count,
-         "_free_chunks_count " SIZE_FORMAT " is not the"
-         " same as sum " SIZE_FORMAT, _free_chunks_count,
-         sum_free_chunks_count());
-}
-
-void ChunkManager::verify() {
+#ifdef ASSERT
+void ChunkManager::verify(bool slow) const {
   MutexLockerEx cl(MetaspaceExpand_lock,
                      Mutex::_no_safepoint_check_flag);
-  locked_verify();
+  locked_verify(slow);
 }
 
-void ChunkManager::locked_verify() {
-  locked_verify_free_chunks_count();
-  locked_verify_free_chunks_total();
+void ChunkManager::locked_verify(bool slow) const {
+  log_trace(gc, metaspace, freelist)("verifying %s chunkmanager (%s).",
+    (is_class() ? "class space" : "metaspace"), (slow ? "slow" : "quick"));
+
+  assert_lock_strong(MetaspaceExpand_lock);
+
+  size_t chunks_counted = 0;
+  size_t wordsize_chunks_counted = 0;
   for (ChunkIndex i = ZeroIndex; i < NumberOfFreeLists; i = next_chunk_index(i)) {
-    ChunkList* list = free_chunks(i);
+    const ChunkList* list = _free_chunks + i;
     if (list != NULL) {
       Metachunk* chunk = list->head();
       while (chunk) {
-        DEBUG_ONLY(do_verify_chunk(chunk);)
+        if (slow) {
+          do_verify_chunk(chunk);
+        }
         assert(chunk->is_tagged_free(), "Chunk should be tagged as free.");
+        chunks_counted ++;
+        wordsize_chunks_counted += chunk->size();
         chunk = chunk->next();
       }
     }
   }
+
+  chunks_counted += humongous_dictionary()->total_free_blocks();
+  wordsize_chunks_counted += humongous_dictionary()->total_size();
+
+  assert(chunks_counted == _free_chunks_count && wordsize_chunks_counted == _free_chunks_total,
+         "freelist accounting mismatch: "
+         "we think: " SIZE_FORMAT " chunks, total " SIZE_FORMAT " words, "
+         "reality: " SIZE_FORMAT " chunks, total " SIZE_FORMAT " words.",
+         _free_chunks_count, _free_chunks_total,
+         chunks_counted, wordsize_chunks_counted);
 }
+#endif // ASSERT
 
 void ChunkManager::locked_print_free_chunks(outputStream* st) {
   assert_lock_strong(MetaspaceExpand_lock);
@@ -283,49 +274,10 @@ void ChunkManager::locked_print_free_chunks(outputStream* st) {
                 _free_chunks_total, _free_chunks_count);
 }
 
-void ChunkManager::locked_print_sum_free_chunks(outputStream* st) {
-  assert_lock_strong(MetaspaceExpand_lock);
-  st->print_cr("Sum free chunk total " SIZE_FORMAT "  count " SIZE_FORMAT,
-                sum_free_chunks(), sum_free_chunks_count());
-}
-
 ChunkList* ChunkManager::free_chunks(ChunkIndex index) {
   assert(index == SpecializedIndex || index == SmallIndex || index == MediumIndex,
          "Bad index: %d", (int)index);
-
   return &_free_chunks[index];
-}
-
-// These methods that sum the free chunk lists are used in printing
-// methods that are used in product builds.
-size_t ChunkManager::sum_free_chunks() {
-  assert_lock_strong(MetaspaceExpand_lock);
-  size_t result = 0;
-  for (ChunkIndex i = ZeroIndex; i < NumberOfFreeLists; i = next_chunk_index(i)) {
-    ChunkList* list = free_chunks(i);
-
-    if (list == NULL) {
-      continue;
-    }
-
-    result = result + list->count() * list->size();
-  }
-  result = result + humongous_dictionary()->total_size();
-  return result;
-}
-
-size_t ChunkManager::sum_free_chunks_count() {
-  assert_lock_strong(MetaspaceExpand_lock);
-  size_t count = 0;
-  for (ChunkIndex i = ZeroIndex; i < NumberOfFreeLists; i = next_chunk_index(i)) {
-    ChunkList* list = free_chunks(i);
-    if (list == NULL) {
-      continue;
-    }
-    count = count + list->count();
-  }
-  count = count + humongous_dictionary()->total_free_blocks();
-  return count;
 }
 
 ChunkList* ChunkManager::find_free_chunks_list(size_t word_size) {
@@ -427,13 +379,17 @@ Metachunk* ChunkManager::split_chunk(size_t target_chunk_word_size, Metachunk* l
 
   }
 
+  // Note: at this point, the VirtualSpaceNode is invalid since we split a chunk and
+  // did not yet hand out part of that split; so, vsn->verify_free_chunks_are_ideally_merged()
+  // would assert. Instead, do all verifications in the caller.
+
+  DEBUG_ONLY(g_internal_statistics.num_chunk_splits ++);
+
   return target_chunk;
 }
 
 Metachunk* ChunkManager::free_chunks_get(size_t word_size) {
   assert_lock_strong(MetaspaceExpand_lock);
-
-  slow_locked_verify();
 
   Metachunk* chunk = NULL;
   bool we_did_split_a_chunk = false;
@@ -524,14 +480,19 @@ Metachunk* ChunkManager::free_chunks_get(size_t word_size) {
 
   // Run some verifications (some more if we did a chunk split)
 #ifdef ASSERT
-  if (VerifyMetaspace) {
-    locked_verify();
+
+  EVERY_NTH(VerifyMetaspaceInterval)
+    // Be extra verify-y when chunk split happened.
+    locked_verify(true);
     VirtualSpaceNode* const vsn = chunk->container();
-    vsn->verify();
+    vsn->verify(true);
     if (we_did_split_a_chunk) {
       vsn->verify_free_chunks_are_ideally_merged();
     }
-  }
+  END_EVERY_NTH
+
+  g_internal_statistics.num_chunks_removed_from_freelist ++;
+
 #endif
 
   return chunk;
@@ -539,7 +500,6 @@ Metachunk* ChunkManager::free_chunks_get(size_t word_size) {
 
 Metachunk* ChunkManager::chunk_freelist_allocate(size_t word_size) {
   assert_lock_strong(MetaspaceExpand_lock);
-  slow_locked_verify();
 
   // Take from the beginning of the list
   Metachunk* chunk = free_chunks_get(word_size);
@@ -570,9 +530,17 @@ Metachunk* ChunkManager::chunk_freelist_allocate(size_t word_size) {
 }
 
 void ChunkManager::return_single_chunk(Metachunk* chunk) {
+
+#ifdef ASSERT
+  EVERY_NTH(VerifyMetaspaceInterval)
+    this->locked_verify(false);
+    do_verify_chunk(chunk);
+  END_EVERY_NTH
+#endif
+
   const ChunkIndex index = chunk->get_chunk_type();
   assert_lock_strong(MetaspaceExpand_lock);
-  DEBUG_ONLY(do_verify_chunk(chunk);)
+  DEBUG_ONLY(g_internal_statistics.num_chunks_added_to_freelist ++;)
   assert(chunk != NULL, "Expected chunk.");
   assert(chunk->container() != NULL, "Container should have been set.");
   assert(chunk->is_tagged_free() == false, "Chunk should be in use.");
@@ -582,6 +550,9 @@ void ChunkManager::return_single_chunk(Metachunk* chunk) {
   // matter for the freelist (non-humongous chunks), but the humongous chunk dictionary
   // keeps tree node pointers in the chunk payload area which mangle will overwrite.
   DEBUG_ONLY(chunk->mangle(badMetaWordVal);)
+
+  // may need node for verification later after chunk may have been merged away.
+  DEBUG_ONLY(VirtualSpaceNode* vsn = chunk->container(); )
 
   if (index != HumongousIndex) {
     // Return non-humongous chunk to freelist.
@@ -617,6 +588,16 @@ void ChunkManager::return_single_chunk(Metachunk* chunk) {
       }
     }
   }
+
+  // From here on do not access chunk anymore, it may have been merged with another chunk.
+
+#ifdef ASSERT
+  EVERY_NTH(VerifyMetaspaceInterval)
+    this->locked_verify(true);
+    vsn->verify(true);
+    vsn->verify_free_chunks_are_ideally_merged();
+  END_EVERY_NTH
+#endif
 
 }
 

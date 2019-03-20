@@ -23,6 +23,8 @@
  * questions.
  */
 
+#include <assert.h>
+#include <limits.h>
 #include <setjmp.h>
 #include <stdlib.h>
 #include <string.h>
@@ -232,7 +234,9 @@ skip_over_field_signature(char *name, jboolean void_okay,
 JNIEXPORT jboolean
 VerifyClassname(char *name, jboolean allowArrayClass)
 {
-    unsigned int length = strlen(name);
+    size_t s = strlen(name);
+    assert(s <= UINT_MAX);
+    unsigned int length = (unsigned int)s;
     char *p;
 
     if (length > 0 && name[0] == JVM_SIGNATURE_ARRAY) {

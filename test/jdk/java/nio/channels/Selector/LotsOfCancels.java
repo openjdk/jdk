@@ -1,5 +1,5 @@
 /*
- * Copyright 2009 Google Inc.  All Rights Reserved.
+ * Copyright 2009, 2019, Google Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,7 @@
  * questions.
  */
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.channels.SelectionKey;
@@ -87,7 +88,7 @@ public class LotsOfCancels {
             throws Exception {
         testStartTime = System.nanoTime();
 
-        InetSocketAddress address = new InetSocketAddress("127.0.0.1", 7359);
+        InetSocketAddress address = new InetSocketAddress(InetAddress.getLoopbackAddress(), 7359);
 
         // Create server channel, add it to selector and run epoll_ctl.
         log("Setting up server");

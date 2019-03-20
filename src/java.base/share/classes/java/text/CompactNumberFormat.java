@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -406,6 +406,11 @@ public final class CompactNumberFormat extends NumberFormat {
     public final StringBuffer format(Object number,
             StringBuffer toAppendTo,
             FieldPosition fieldPosition) {
+
+        if (number == null) {
+            throw new IllegalArgumentException("Cannot format null as a number");
+        }
+
         if (number instanceof Long || number instanceof Integer
                 || number instanceof Short || number instanceof Byte
                 || number instanceof AtomicInteger
@@ -1052,6 +1057,11 @@ public final class CompactNumberFormat extends NumberFormat {
      *
      */
     private void applyPattern(String pattern, int index) {
+
+        if (pattern == null) {
+            throw new IllegalArgumentException("A null compact pattern" +
+                    " encountered at index: " + index);
+        }
 
         int start = 0;
         boolean gotNegative = false;

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, 2018, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1782,14 +1782,11 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   }
 
   // Change state to native (we save the return address in the thread, since it might not
-  // be pushed on the stack when we do a a stack traversal). It is enough that the pc()
-  // points into the right code segment. It does not have to be the correct return pc.
+  // be pushed on the stack when we do a stack traversal).
   // We use the same pc/oopMap repeatedly when we call out
 
-  intptr_t the_pc = (intptr_t) __ pc();
-  oop_maps->add_gc_map(the_pc - start, map);
-
-  __ set_last_Java_frame(sp, noreg, (address)the_pc, rscratch1);
+  Label native_return;
+  __ set_last_Java_frame(sp, noreg, native_return, rscratch1);
 
   Label dtrace_method_entry, dtrace_method_entry_done;
   {
@@ -1921,6 +1918,11 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
             float_args,   // and up to 8 float args
             return_type);
   }
+
+  __ bind(native_return);
+
+  intptr_t return_pc = (intptr_t) __ pc();
+  oop_maps->add_gc_map(return_pc - start, map);
 
   // Unpack native results.
   switch (ret_type) {

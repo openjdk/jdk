@@ -43,10 +43,8 @@ private:
   void concurrent_mark_continue();
   void concurrent_process_non_strong_references();
   void concurrent_reset_relocation_set();
-  void concurrent_destroy_detached_pages();
   void pause_verify();
   void concurrent_select_relocation_set();
-  void concurrent_prepare_relocation_set();
   void pause_relocate_start();
   void concurrent_relocate();
 

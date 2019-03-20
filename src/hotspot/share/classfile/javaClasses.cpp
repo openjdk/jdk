@@ -578,7 +578,7 @@ Symbol* java_lang_String::as_symbol_or_null(oop java_string) {
 }
 
 int java_lang_String::utf8_length(oop java_string, typeArrayOop value) {
-  assert(oopDesc::equals(value, java_lang_String::value(java_string)),
+  assert(value_equals(value, java_lang_String::value(java_string)),
          "value must be same as java_lang_String::value(java_string)");
   int length = java_lang_String::length(java_string, value);
   if (length == 0) {
@@ -610,7 +610,7 @@ char* java_lang_String::as_utf8_string(oop java_string) {
 }
 
 char* java_lang_String::as_utf8_string(oop java_string, typeArrayOop value, char* buf, int buflen) {
-  assert(oopDesc::equals(value, java_lang_String::value(java_string)),
+  assert(value_equals(value, java_lang_String::value(java_string)),
          "value must be same as java_lang_String::value(java_string)");
   int     length = java_lang_String::length(java_string, value);
   bool is_latin1 = java_lang_String::is_latin1(java_string);
@@ -642,7 +642,7 @@ char* java_lang_String::as_utf8_string(oop java_string, int start, int len) {
 }
 
 char* java_lang_String::as_utf8_string(oop java_string, typeArrayOop value, int start, int len, char* buf, int buflen) {
-  assert(oopDesc::equals(value, java_lang_String::value(java_string)),
+  assert(value_equals(value, java_lang_String::value(java_string)),
          "value must be same as java_lang_String::value(java_string)");
   assert(start + len <= java_lang_String::length(java_string), "just checking");
   bool is_latin1 = java_lang_String::is_latin1(java_string);
@@ -686,24 +686,15 @@ bool java_lang_String::equals(oop str1, oop str2) {
   assert(str2->klass() == SystemDictionary::String_klass(),
          "must be java String");
   typeArrayOop value1    = java_lang_String::value_no_keepalive(str1);
-  int          length1   = java_lang_String::length(str1, value1);
   bool         is_latin1 = java_lang_String::is_latin1(str1);
   typeArrayOop value2    = java_lang_String::value_no_keepalive(str2);
-  int          length2   = java_lang_String::length(str2, value2);
   bool         is_latin2 = java_lang_String::is_latin1(str2);
 
-  if ((length1 != length2) || (is_latin1 != is_latin2)) {
-    // Strings of different size or with different
-    // coders are never equal.
+  if (is_latin1 != is_latin2) {
+    // Strings with different coders are never equal.
     return false;
   }
-  int blength1 = value1->length();
-  for (int i = 0; i < blength1; i++) {
-    if (value1->byte_at(i) != value2->byte_at(i)) {
-      return false;
-    }
-  }
-  return true;
+  return value_equals(value1, value2);
 }
 
 void java_lang_String::print(oop java_string, outputStream* st) {
@@ -834,8 +825,8 @@ void java_lang_Class::set_mirror_module_field(Klass* k, Handle mirror, Handle mo
   if (module.is_null()) {
     // During startup, the module may be NULL only if java.base has not been defined yet.
     // Put the class on the fixup_module_list to patch later when the java.lang.Module
-    // for java.base is known.
-    assert(!Universe::is_module_initialized(), "Incorrect java.lang.Module pre module system initialization");
+    // for java.base is known. But note that since we captured the NULL module another
+    // thread may have completed that initialization.
 
     bool javabase_was_defined = false;
     {

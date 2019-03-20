@@ -391,11 +391,6 @@ public class LoopFragmentInside extends LoopFragment {
     }
 
     @Override
-    protected void finishDuplication() {
-        // TODO (gd) ?
-    }
-
-    @Override
     protected void beforeDuplication() {
         // Nothing to do
     }

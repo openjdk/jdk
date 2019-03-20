@@ -36,7 +36,7 @@ import javax.lang.model.element.TypeElement;
 import javax.tools.FileObject;
 
 import jdk.javadoc.doclet.DocletEnvironment;
-import jdk.javadoc.internal.doclets.formats.html.markup.DocType;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlDocument;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
@@ -195,7 +195,7 @@ public class SourceToHTMLConverter {
             }
             addBlankLines(pre);
             Content div = HtmlTree.DIV(HtmlStyle.sourceContainer, pre);
-            body.addContent(HtmlTree.MAIN(div));
+            body.add(HtmlTree.MAIN(div));
             writeToFile(body, outputdir.resolve(configuration.docPaths.forClass(te)), te);
         } catch (IOException e) {
             String message = resources.getText("doclet.exception.read.file", fo.getName());
@@ -241,7 +241,7 @@ public class SourceToHTMLConverter {
         }
         DocPath p = relativePath.resolve(stylesheet);
         HtmlTree link = HtmlTree.LINK("stylesheet", "text/css", p.getPath(), "Style");
-        head.addContent(link);
+        head.add(link);
         addStylesheets(head);
     }
 
@@ -253,7 +253,7 @@ public class SourceToHTMLConverter {
                 DocPath ssheetPath = DocPath.create(file.getName());
                 HtmlTree slink = HtmlTree.LINK("stylesheet", "text/css", relativePath.resolve(ssheetPath).getPath(),
                         "Style");
-                tree.addContent(slink);
+                tree.add(slink);
             });
         }
     }
@@ -264,7 +264,7 @@ public class SourceToHTMLConverter {
      * @return the header content for the HTML file
      */
     private static Content getHeader() {
-        return new HtmlTree(HtmlTag.BODY);
+        return new HtmlTree(HtmlTag.BODY).put(HtmlAttr.CLASS, "source");
     }
 
     /**
@@ -277,13 +277,13 @@ public class SourceToHTMLConverter {
         HtmlTree span = new HtmlTree(HtmlTag.SPAN);
         span.setStyle(HtmlStyle.sourceLineNo);
         if (lineno < 10) {
-            span.addContent("00" + Integer.toString(lineno));
+            span.add("00" + Integer.toString(lineno));
         } else if (lineno < 100) {
-            span.addContent("0" + Integer.toString(lineno));
+            span.add("0" + Integer.toString(lineno));
         } else {
-            span.addContent(Integer.toString(lineno));
+            span.add(Integer.toString(lineno));
         }
-        pre.addContent(span);
+        pre.add(span);
     }
 
     /**
@@ -298,8 +298,8 @@ public class SourceToHTMLConverter {
             Content anchor = HtmlTree.A_ID(
                     "line." + Integer.toString(currentLineNo),
                     new StringContent(utils.replaceTabs(line)));
-            pre.addContent(anchor);
-            pre.addContent(NEW_LINE);
+            pre.add(anchor);
+            pre.add(NEW_LINE);
         }
     }
 
@@ -310,7 +310,7 @@ public class SourceToHTMLConverter {
      */
     private static void addBlankLines(Content pre) {
         for (int i = 0; i < NUM_BLANK_LINES; i++) {
-            pre.addContent(NEW_LINE);
+            pre.add(NEW_LINE);
         }
     }
 

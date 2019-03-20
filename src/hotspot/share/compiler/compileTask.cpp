@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,27 +63,30 @@ CompileTask* CompileTask::allocate() {
 /**
 * Add a task to the free list.
 */
-
 void CompileTask::free(CompileTask* task) {
- MutexLocker locker(CompileTaskAlloc_lock);
- if (!task->is_free()) {
-   task->set_code(NULL);
-   assert(!task->lock()->is_locked(), "Should not be locked when freed");
-   JNIHandles::destroy_global(task->_method_holder);
-   JNIHandles::destroy_global(task->_hot_method_holder);
+  MutexLocker locker(CompileTaskAlloc_lock);
+  if (!task->is_free()) {
+    task->set_code(NULL);
+    assert(!task->lock()->is_locked(), "Should not be locked when freed");
+    if ((task->_method_holder != NULL && JNIHandles::is_weak_global_handle(task->_method_holder)) ||
+        (task->_hot_method_holder != NULL && JNIHandles::is_weak_global_handle(task->_hot_method_holder))) {
+      JNIHandles::destroy_weak_global(task->_method_holder);
+      JNIHandles::destroy_weak_global(task->_hot_method_holder);
+    } else {
+      JNIHandles::destroy_global(task->_method_holder);
+      JNIHandles::destroy_global(task->_hot_method_holder);
+    }
+    if (task->_failure_reason_on_C_heap && task->_failure_reason != NULL) {
+      os::free((void*) task->_failure_reason);
+    }
+    task->_failure_reason = NULL;
+    task->_failure_reason_on_C_heap = false;
 
-   if (task->_failure_reason_on_C_heap && task->_failure_reason != NULL) {
-     os::free((void*) task->_failure_reason);
-   }
-   task->_failure_reason = NULL;
-   task->_failure_reason_on_C_heap = false;
-
-   task->set_is_free(true);
-   task->set_next(_task_free_list);
-   _task_free_list = task;
- }
+    task->set_is_free(true);
+    task->set_next(_task_free_list);
+    _task_free_list = task;
+  }
 }
-
 
 void CompileTask::initialize(int compile_id,
                              const methodHandle& method,
@@ -98,7 +101,7 @@ void CompileTask::initialize(int compile_id,
   Thread* thread = Thread::current();
   _compile_id = compile_id;
   _method = method();
-  _method_holder = JNIHandles::make_global(Handle(thread, method->method_holder()->klass_holder()));
+  _method_holder = JNIHandles::make_weak_global(Handle(thread, method->method_holder()->klass_holder()));
   _osr_bci = osr_bci;
   _is_blocking = is_blocking;
   JVMCI_ONLY(_has_waiter = CompileBroker::compiler(comp_level)->is_jvmci();)
@@ -113,20 +116,20 @@ void CompileTask::initialize(int compile_id,
   _hot_method = NULL;
   _hot_method_holder = NULL;
   _hot_count = hot_count;
-  _time_queued = 0;  // tidy
+  _time_queued = os::elapsed_counter();
+  _time_started = 0;
   _compile_reason = compile_reason;
   _failure_reason = NULL;
   _failure_reason_on_C_heap = false;
 
   if (LogCompilation) {
-    _time_queued = os::elapsed_counter();
     if (hot_method.not_null()) {
       if (hot_method == method) {
         _hot_method = _method;
       } else {
         _hot_method = hot_method();
         // only add loader or mirror if different from _method_holder
-        _hot_method_holder = JNIHandles::make_global(Handle(thread, hot_method->method_holder()->klass_holder()));
+        _hot_method_holder = JNIHandles::make_weak_global(Handle(thread, hot_method->method_holder()->klass_holder()));
       }
     }
   }
@@ -139,6 +142,24 @@ void CompileTask::initialize(int compile_id,
  */
 AbstractCompiler* CompileTask::compiler() {
   return CompileBroker::compiler(_comp_level);
+}
+
+// Replace weak handles by strong handles to avoid unloading during compilation.
+CompileTask* CompileTask::select_for_compilation() {
+  if (is_unloaded()) {
+    // Guard against concurrent class unloading
+    return NULL;
+  }
+  Thread* thread = Thread::current();
+  assert(_method->method_holder()->is_loader_alive(), "should be alive");
+  Handle method_holder(thread, _method->method_holder()->klass_holder());
+  JNIHandles::destroy_weak_global(_method_holder);
+  JNIHandles::destroy_weak_global(_hot_method_holder);
+  _method_holder = JNIHandles::make_global(method_holder);
+  if (_hot_method != NULL) {
+    _hot_method_holder = JNIHandles::make_global(Handle(thread, _hot_method->method_holder()->klass_holder()));
+  }
+  return this;
 }
 
 // ------------------------------------------------------------------
@@ -161,6 +182,9 @@ void CompileTask::set_code(nmethod* nm) {
 }
 
 void CompileTask::mark_on_stack() {
+  if (is_unloaded()) {
+    return;
+  }
   // Mark these methods as something redefine classes cannot remove.
   _method->set_on_stack(true);
   if (_hot_method != NULL) {
@@ -168,11 +192,18 @@ void CompileTask::mark_on_stack() {
   }
 }
 
+bool CompileTask::is_unloaded() const {
+  return _method_holder != NULL && JNIHandles::is_weak_global_handle(_method_holder) && JNIHandles::is_global_weak_cleared(_method_holder);
+}
+
 // RedefineClasses support
-void CompileTask::metadata_do(void f(Metadata*)) {
-  f(method());
+void CompileTask::metadata_do(MetadataClosure* f) {
+  if (is_unloaded()) {
+    return;
+  }
+  f->do_metadata(method());
   if (hot_method() != NULL && hot_method() != method()) {
-    f(hot_method());
+    f->do_metadata(hot_method());
   }
 }
 
@@ -206,10 +237,20 @@ void CompileTask::print_tty() {
 // ------------------------------------------------------------------
 // CompileTask::print_impl
 void CompileTask::print_impl(outputStream* st, Method* method, int compile_id, int comp_level,
-                                         bool is_osr_method, int osr_bci, bool is_blocking,
-                                         const char* msg, bool short_form, bool cr) {
+                             bool is_osr_method, int osr_bci, bool is_blocking,
+                             const char* msg, bool short_form, bool cr,
+                             jlong time_queued, jlong time_started) {
   if (!short_form) {
-    st->print("%7d ", (int) st->time_stamp().milliseconds());  // print timestamp
+    // Print current time
+    st->print("%7d ", (int)st->time_stamp().milliseconds());
+    if (Verbose && time_queued != 0) {
+      // Print time in queue and time being processed by compiler thread
+      jlong now = os::elapsed_counter();
+      st->print("%d ", (int)TimeHelper::counter_to_millis(now-time_queued));
+      if (time_started != 0) {
+        st->print("%d ", (int)TimeHelper::counter_to_millis(now-time_started));
+      }
+    }
   }
   // print compiler name if requested
   if (CIPrintCompilerName) {
@@ -284,7 +325,7 @@ void CompileTask::print_inline_indent(int inline_level, outputStream* st) {
 // CompileTask::print_compilation
 void CompileTask::print(outputStream* st, const char* msg, bool short_form, bool cr) {
   bool is_osr_method = osr_bci() != InvocationEntryBci;
-  print_impl(st, method(), compile_id(), comp_level(), is_osr_method, osr_bci(), is_blocking(), msg, short_form, cr);
+  print_impl(st, is_unloaded() ? NULL : method(), compile_id(), comp_level(), is_osr_method, osr_bci(), is_blocking(), msg, short_form, cr, _time_queued, _time_started);
 }
 
 // ------------------------------------------------------------------

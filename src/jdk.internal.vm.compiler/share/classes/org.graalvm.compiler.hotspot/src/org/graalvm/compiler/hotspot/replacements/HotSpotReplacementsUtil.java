@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,10 +138,12 @@ public class HotSpotReplacementsUtil {
         }
     }
 
-    public static ResolvedJavaType methodHolderClass(@Fold.InjectedParameter IntrinsicContext context) {
+    @Fold
+    public static ResolvedJavaType methodHolderClass(@InjectedParameter IntrinsicContext context) {
         return context.getOriginalMethod().getDeclaringClass();
     }
 
+    @Fold
     static ResolvedJavaType getType(@Fold.InjectedParameter IntrinsicContext context, String typeName) {
         try {
             UnresolvedJavaType unresolved = UnresolvedJavaType.create(typeName);
@@ -151,6 +153,7 @@ public class HotSpotReplacementsUtil {
         }
     }
 
+    @Fold
     static int getFieldOffset(ResolvedJavaType type, String fieldName) {
         for (ResolvedJavaField field : type.getInstanceFields(true)) {
             if (field.getName().equals(fieldName)) {
@@ -584,7 +587,7 @@ public class HotSpotReplacementsUtil {
      * Calls {@link #arrayAllocationSize(int, int, int, int)} using an injected VM configuration
      * object.
      */
-    public static int arrayAllocationSize(int length, int headerSize, int log2ElementSize) {
+    public static long arrayAllocationSize(int length, int headerSize, int log2ElementSize) {
         return arrayAllocationSize(length, headerSize, log2ElementSize, objectAlignment(INJECTED_VMCONFIG));
     }
 
@@ -600,9 +603,9 @@ public class HotSpotReplacementsUtil {
      *            requirement}
      * @return the size of the memory chunk
      */
-    public static int arrayAllocationSize(int length, int headerSize, int log2ElementSize, int alignment) {
-        int size = (length << log2ElementSize) + headerSize + (alignment - 1);
-        int mask = ~(alignment - 1);
+    public static long arrayAllocationSize(int length, int headerSize, int log2ElementSize, int alignment) {
+        long size = ((long) length << log2ElementSize) + headerSize + (alignment - 1);
+        long mask = ~(alignment - 1);
         return size & mask;
     }
 
@@ -730,7 +733,7 @@ public class HotSpotReplacementsUtil {
     }
 
     public static KlassPointer loadKlassFromObject(Object object, int offset, LocationIdentity identity) {
-        ReplacementsUtil.staticAssert(offset != hubOffset(INJECTED_VMCONFIG), "Use loadHubIntrinsic instead of loadWordFromObject");
+        ReplacementsUtil.staticAssert(offset != hubOffset(INJECTED_VMCONFIG), "Use loadHubIntrinsic instead of loadKlassFromObject");
         return loadKlassFromObjectIntrinsic(object, offset, identity, getWordKind());
     }
 

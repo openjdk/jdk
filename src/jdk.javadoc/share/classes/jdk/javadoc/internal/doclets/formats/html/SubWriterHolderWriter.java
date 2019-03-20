@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,14 +122,14 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
             if (!deprs.isEmpty()) {
                 addSummaryDeprecatedComment(member, deprs.get(0), div);
             }
-            tdSummary.addContent(div);
+            tdSummary.add(div);
             return;
         } else {
             Element te = member.getEnclosingElement();
             if (te != null &&  utils.isTypeElement(te) && utils.isDeprecated(te)) {
                 Content deprLabel = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(te));
                 div = HtmlTree.DIV(HtmlStyle.block, deprLabel);
-                tdSummary.addContent(div);
+                tdSummary.add(div);
             }
         }
         addSummaryComment(member, firstSentenceTags, tdSummary);
@@ -172,7 +172,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
     public void addInheritedMemberSummary(AbstractMemberWriter mw, TypeElement typeElement,
             Element member, boolean isFirst, Content linksTree) {
         if (! isFirst) {
-            linksTree.addContent(", ");
+            linksTree.add(", ");
         }
         mw.addInheritedSummaryLink(typeElement, member, linksTree);
     }
@@ -195,8 +195,8 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
      * @param classContentTree class content tree which will be added to the content tree
      */
     public void addClassContentTree(Content contentTree, Content classContentTree) {
-        mainTree.addContent(classContentTree);
-        contentTree.addContent(mainTree);
+        mainTree.add(classContentTree);
+        contentTree.add(mainTree);
     }
 
     /**
@@ -228,7 +228,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
      */
     public void addMemberTree(Content memberSummaryTree, Content memberTree) {
         HtmlTree htmlTree = HtmlTree.SECTION(getMemberTree(memberTree));
-        memberSummaryTree.addContent(htmlTree);
+        memberSummaryTree.add(htmlTree);
     }
 
     /**

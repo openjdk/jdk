@@ -227,7 +227,6 @@ private:
 
   // Never updated fields
   ShenandoahHeap* _heap;
-  ShenandoahPacer* _pacer;
   MemRegion _reserved;
   size_t _region_number;
 

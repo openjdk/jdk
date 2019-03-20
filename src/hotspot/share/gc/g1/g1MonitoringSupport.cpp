@@ -234,7 +234,7 @@ void G1MonitoringSupport::recalculate_sizes() {
   uint eden_list_length = young_list_length - survivor_list_length;
   // Max length includes any potential extensions to the young gen
   // we'll do when the GC locker is active.
-  uint young_list_max_length = _g1h->g1_policy()->young_list_max_length();
+  uint young_list_max_length = _g1h->policy()->young_list_max_length();
   assert(young_list_max_length >= survivor_list_length, "invariant");
   uint eden_list_max_length = young_list_max_length - survivor_list_length;
 

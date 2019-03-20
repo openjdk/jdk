@@ -204,42 +204,75 @@ public class TagletManager {
     }
 
     /**
-     * Add a new {@code Taglet}.  Print a message to indicate whether or not
+     * Initializes the location TAGLET_PATH which is used to locate the custom taglets.
+     * @param fileManager the filemanager to load classes and resources.
+     * @param tagletPath the path to the custom taglet.
+     * @throws IOException if an error occurs while setting the location.
+     */
+    public void initTagletPath(JavaFileManager fileManager, String tagletPath) throws IOException {
+        if (fileManager instanceof StandardJavaFileManager) {
+            StandardJavaFileManager sfm = (StandardJavaFileManager)fileManager;
+            if (tagletPath != null) {
+                List<File> paths = new ArrayList<>();
+                for (String pathname : tagletPath.split(File.pathSeparator)) {
+                    paths.add(new File(pathname));
+                }
+                sfm.setLocation(TAGLET_PATH, paths);
+            } else if (!sfm.hasLocation(TAGLET_PATH)) {
+                sfm.setLocation(TAGLET_PATH, Collections.emptyList());
+            }
+        } else if (tagletPath != null) {
+            messages.error("doclet.not_standard_file_manager");
+        }
+    }
+
+    /**
+     * Adds a new {@code Taglet}.  Print a message to indicate whether or not
      * the Taglet was registered properly.
      * @param classname  the name of the class representing the custom tag.
      * @param fileManager the filemanager to load classes and resources.
-     * @param tagletPath  the path to the class representing the custom tag.
      */
-    public void addCustomTag(String classname, JavaFileManager fileManager, String tagletPath) {
+    public void addCustomTag(String classname, JavaFileManager fileManager) {
         try {
             ClassLoader tagClassLoader;
-            if (!fileManager.hasLocation(TAGLET_PATH)) {
-                List<File> paths = new ArrayList<>();
-                if (tagletPath != null) {
-                    for (String pathname : tagletPath.split(File.pathSeparator)) {
-                        paths.add(new File(pathname));
-                    }
-                }
-                if (fileManager instanceof StandardJavaFileManager) {
-                    ((StandardJavaFileManager) fileManager).setLocation(TAGLET_PATH, paths);
-                }
-            }
             tagClassLoader = fileManager.getClassLoader(TAGLET_PATH);
             Class<? extends jdk.javadoc.doclet.Taglet> customTagClass =
                     tagClassLoader.loadClass(classname).asSubclass(jdk.javadoc.doclet.Taglet.class);
             jdk.javadoc.doclet.Taglet instance = customTagClass.getConstructor().newInstance();
-            instance.init(docEnv, doclet);
-            Taglet newLegacy = new UserTaglet(instance);
-            String tname = newLegacy.getName();
-            Taglet t = allTaglets.get(tname);
-            if (t != null) {
-                allTaglets.remove(tname);
-            }
-            allTaglets.put(tname, newLegacy);
-            messages.notice("doclet.Notice_taglet_registered", classname);
-        } catch (Exception exc) {
-            messages.error("doclet.Error_taglet_not_registered", exc.getClass().getName(), classname);
+            registerTaglet(instance);
+        } catch (ReflectiveOperationException exc) {
+            messages.error("doclet.Error_taglet_not_registered", exc.getClass().getName(),
+                    classname);
         }
+    }
+
+    /**
+     * Loads taglets from a taglet path using service loader.
+     * @param fileManager the filemanager to load the taglets.
+     * @throws IOException if an error occurs while getting the service loader.
+     */
+    public void loadTaglets(JavaFileManager fileManager) throws IOException {
+        Iterable<? extends File> location = ((StandardJavaFileManager)fileManager).getLocation(TAGLET_PATH);
+        if (location != null && location.iterator().hasNext()) {
+            ServiceLoader<jdk.javadoc.doclet.Taglet> serviceLoader =
+                    fileManager.getServiceLoader(TAGLET_PATH, jdk.javadoc.doclet.Taglet.class);
+            Iterator<jdk.javadoc.doclet.Taglet> iterator = serviceLoader.iterator();
+            while (iterator.hasNext()) {
+                jdk.javadoc.doclet.Taglet taglet = iterator.next();
+                registerTaglet(taglet);
+            }
+        }
+    }
+
+    /**
+     * Registers the {@code Taglet}. Prints a message if a {@code Taglet} got registered properly.
+     * @param instance the {@code Taglet} instance.
+     */
+    private void registerTaglet(jdk.javadoc.doclet.Taglet instance) {
+        instance.init(docEnv, doclet);
+        Taglet newLegacy = new UserTaglet(instance);
+        allTaglets.put(newLegacy.getName(), newLegacy);
+        messages.notice("doclet.Notice_taglet_registered", instance.getClass().getName());
     }
 
     /**

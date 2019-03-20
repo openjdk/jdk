@@ -465,7 +465,7 @@ public:
   void record_out_of_memory_failure();
 
   // RedefineClasses support
-  void metadata_do(void f(Metadata*)) { _factory->metadata_do(f); }
+  void metadata_do(MetadataClosure* f) { _factory->metadata_do(f); }
 
   // Dump the compilation replay data for the ciEnv to the stream.
   void dump_replay_data(int compile_id);

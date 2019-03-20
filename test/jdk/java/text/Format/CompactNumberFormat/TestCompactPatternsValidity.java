@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 /*
  * @test
- * @bug 8177552
+ * @bug 8177552 8217254
  * @summary Checks the validity of compact number patterns specified through
  *          CompactNumberFormat constructor
  * @run testng/othervm TestCompactPatternsValidity
@@ -80,7 +80,9 @@ public class TestCompactPatternsValidity {
             // A non empty pattern containing no 0s (min integer digits)
             {new String[]{"K", "0K", "00K"}},
             // 0s (min integer digits) exceeding for the range at index 3
-            {new String[]{"", "", "0K", "00000K"}},};
+            {new String[]{"", "", "0K", "00000K"}},
+            // null as a compact pattern
+            {new String[]{"", "", null, "00K"}},};
     }
 
     @DataProvider(name = "validPatternsFormat")
@@ -124,7 +126,7 @@ public class TestCompactPatternsValidity {
     }
 
     @Test(dataProvider = "invalidPatterns",
-            expectedExceptions = RuntimeException.class)
+            expectedExceptions = IllegalArgumentException.class)
     public void testInvalidCompactPatterns(String[] compactPatterns) {
         new CompactNumberFormat("#,##0.0#", DecimalFormatSymbols
                 .getInstance(Locale.US), compactPatterns);

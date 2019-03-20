@@ -70,9 +70,6 @@ CodeCacheUnloadingTask::CodeCacheUnloadingTask(uint num_workers, BoolObjectClosu
 
 CodeCacheUnloadingTask::~CodeCacheUnloadingTask() {
   CodeCache::verify_clean_inline_caches();
-
-  guarantee(CodeCache::scavenge_root_nmethods() == NULL, "Must be");
-
   CodeCache::verify_icholder_relocations();
 }
 

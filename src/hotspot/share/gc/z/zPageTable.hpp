@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,7 @@
 #ifndef SHARE_GC_Z_ZPAGETABLE_HPP
 #define SHARE_GC_Z_ZPAGETABLE_HPP
 
-#include "gc/z/zAddressRangeMap.hpp"
-#include "gc/z/zGlobals.hpp"
-#include "gc/z/zPageTableEntry.hpp"
+#include "gc/z/zGranuleMap.hpp"
 #include "memory/allocation.hpp"
 
 class ZPage;
@@ -36,30 +34,24 @@ class ZPageTable {
   friend class ZPageTableIterator;
 
 private:
-  ZAddressRangeMap<ZPageTableEntry, ZPageSizeMinShift> _map;
-
-  ZPageTableEntry get_entry(ZPage* page) const;
-  void put_entry(ZPage* page, ZPageTableEntry entry);
+  ZGranuleMap<ZPage*> _map;
 
 public:
   ZPageTable();
 
   ZPage* get(uintptr_t addr) const;
+
   void insert(ZPage* page);
   void remove(ZPage* page);
-
-  bool is_relocating(uintptr_t addr) const;
-  void set_relocating(ZPage* page);
-  void clear_relocating(ZPage* page);
 };
 
 class ZPageTableIterator : public StackObj {
 private:
-  ZAddressRangeMapIterator<ZPageTableEntry, ZPageSizeMinShift> _iter;
-  ZPage*                                                       _prev;
+  ZGranuleMapIterator<ZPage*> _iter;
+  ZPage*                      _prev;
 
 public:
-  ZPageTableIterator(const ZPageTable* pagetable);
+  ZPageTableIterator(const ZPageTable* page_table);
 
   bool next(ZPage** page);
 };

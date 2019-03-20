@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,10 @@ MetadataOnStackBuffer* MetadataOnStackMark::_free_buffers = NULL;
 MetadataOnStackBuffer* MetadataOnStackMark::_current_buffer = NULL;
 NOT_PRODUCT(bool MetadataOnStackMark::_is_active = false;)
 
+class MetadataOnStackClosure : public MetadataClosure {
+  void do_metadata(Metadata* m) { Metadata::mark_on_stack(m); }
+};
+
 // Walk metadata on the stack and mark it so that redefinition doesn't delete
 // it.  Class unloading only deletes in-error class files, methods created by
 // the relocator and dummy constant pools.  None of these appear anywhere except
@@ -55,8 +59,9 @@ MetadataOnStackMark::MetadataOnStackMark(bool redefinition_walk) {
   Threads::metadata_handles_do(Metadata::mark_on_stack);
 
   if (redefinition_walk) {
-    Threads::metadata_do(Metadata::mark_on_stack);
-    CodeCache::metadata_do(Metadata::mark_on_stack);
+    MetadataOnStackClosure md_on_stack;
+    Threads::metadata_do(&md_on_stack);
+    CodeCache::metadata_do(&md_on_stack);
     CompileBroker::mark_on_stack();
     JvmtiCurrentBreakpoints::metadata_do(Metadata::mark_on_stack);
     ThreadService::metadata_do(Metadata::mark_on_stack);

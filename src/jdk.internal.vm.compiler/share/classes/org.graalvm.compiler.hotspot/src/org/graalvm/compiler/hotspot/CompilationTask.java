@@ -368,8 +368,14 @@ public class CompilationTask {
         installedCode = null;
         Object[] context = {new DebugDumpScope(getIdString(), true), codeCache, getMethod(), compResult};
         try (DebugContext.Scope s = debug.scope("CodeInstall", context)) {
-            installedCode = (HotSpotInstalledCode) backend.createInstalledCode(debug, getRequest().getMethod(), getRequest(), compResult,
-                            getRequest().getMethod().getSpeculationLog(), null, installAsDefault, context);
+            HotSpotCompilationRequest request = getRequest();
+            installedCode = (HotSpotInstalledCode) backend.createInstalledCode(debug,
+                            request.getMethod(),
+                            request,
+                            compResult,
+                            null,
+                            installAsDefault,
+                            context);
         } catch (Throwable e) {
             throw debug.handle(e);
         }

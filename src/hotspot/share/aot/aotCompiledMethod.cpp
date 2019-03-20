@@ -246,7 +246,7 @@ bool AOTCompiledMethod::make_entrant() {
 
 // Iterate over metadata calling this function.   Used by RedefineClasses
 // Copied from nmethod::metadata_do
-void AOTCompiledMethod::metadata_do(void f(Metadata*)) {
+void AOTCompiledMethod::metadata_do(MetadataClosure* f) {
   address low_boundary = verified_entry_point();
   {
     // Visit all immediate references that are embedded in the instruction stream.
@@ -262,7 +262,7 @@ void AOTCompiledMethod::metadata_do(void f(Metadata*)) {
                "metadata must be found in exactly one place");
         if (r->metadata_is_immediate() && r->metadata_value() != NULL) {
           Metadata* md = r->metadata_value();
-          if (md != _method) f(md);
+          if (md != _method) f->do_metadata(md);
         }
       } else if (iter.type() == relocInfo::virtual_call_type) {
         ResourceMark rm;
@@ -270,13 +270,13 @@ void AOTCompiledMethod::metadata_do(void f(Metadata*)) {
         CompiledIC *ic = CompiledIC_at(&iter);
         if (ic->is_icholder_call()) {
           CompiledICHolder* cichk = ic->cached_icholder();
-          f(cichk->holder_metadata());
-          f(cichk->holder_klass());
+          f->do_metadata(cichk->holder_metadata());
+          f->do_metadata(cichk->holder_klass());
         } else {
           // Get Klass* or NULL (if value is -1) from GOT cell of virtual call PLT stub.
           Metadata* ic_oop = ic->cached_metadata();
           if (ic_oop != NULL) {
-            f(ic_oop);
+            f->do_metadata(ic_oop);
           }
         }
       } else if (iter.type() == relocInfo::static_call_type ||
@@ -284,7 +284,7 @@ void AOTCompiledMethod::metadata_do(void f(Metadata*)) {
         // Check Method* in AOT c2i stub for other calls.
         Metadata* meta = (Metadata*)nativeLoadGot_at(nativePltCall_at(iter.addr())->plt_c2i_stub())->data();
         if (meta != NULL) {
-          f(meta);
+          f->do_metadata(meta);
         }
       }
     }
@@ -302,11 +302,11 @@ void AOTCompiledMethod::metadata_do(void f(Metadata*)) {
       continue;
     }
     assert(Metaspace::contains(m), "");
-    f(m);
+    f->do_metadata(m);
   }
 
   // Visit metadata not embedded in the other places.
-  if (_method != NULL) f(_method);
+  if (_method != NULL) f->do_metadata(_method);
 }
 
 void AOTCompiledMethod::print() const {

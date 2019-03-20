@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -522,6 +522,9 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->print("%s", buf);
        st->print(" (0x%x)", _id);                // signal number
        st->print(" at pc=" PTR_FORMAT, p2i(_pc));
+       if (_siginfo != NULL && os::signal_sent_by_kill(_siginfo)) {
+         st->print(" (sent by kill)");
+       }
      } else {
        if (should_report_bug(_id)) {
          st->print("Internal Error");

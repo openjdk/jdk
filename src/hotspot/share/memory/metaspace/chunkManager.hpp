@@ -33,7 +33,7 @@
 #include "memory/metaspaceChunkFreeListSummary.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-class ChunkManagerTest;
+class ChunkManagerTestAccessor;
 
 namespace metaspace {
 
@@ -42,7 +42,7 @@ typedef BinaryTreeDictionary<Metachunk, FreeList<Metachunk> > ChunkTreeDictionar
 
 // Manages the global free lists of chunks.
 class ChunkManager : public CHeapObj<mtInternal> {
-  friend class ::ChunkManagerTest;
+  friend class ::ChunkManagerTestAccessor;
 
   // Free list of chunks of different sizes.
   //   SpecializedChunk
@@ -63,9 +63,8 @@ class ChunkManager : public CHeapObj<mtInternal> {
   ChunkTreeDictionary _humongous_dictionary;
 
   // Returns the humongous chunk dictionary.
-  ChunkTreeDictionary* humongous_dictionary() {
-    return &_humongous_dictionary;
-  }
+  ChunkTreeDictionary* humongous_dictionary() { return &_humongous_dictionary; }
+  const ChunkTreeDictionary* humongous_dictionary() const { return &_humongous_dictionary; }
 
   // Size, in metaspace words, of all chunks managed by this ChunkManager
   size_t _free_chunks_total;
@@ -75,22 +74,6 @@ class ChunkManager : public CHeapObj<mtInternal> {
   // Update counters after a chunk was added or removed removed.
   void account_for_added_chunk(const Metachunk* c);
   void account_for_removed_chunk(const Metachunk* c);
-
-  size_t sum_free_chunks();
-  size_t sum_free_chunks_count();
-
-  void locked_verify_free_chunks_total();
-  void slow_locked_verify_free_chunks_total() {
-    if (VerifyMetaspace) {
-      locked_verify_free_chunks_total();
-    }
-  }
-  void locked_verify_free_chunks_count();
-  void slow_locked_verify_free_chunks_count() {
-    if (VerifyMetaspace) {
-      locked_verify_free_chunks_count();
-    }
-  }
 
   // Given a pointer to a chunk, attempts to merge it with neighboring
   // free chunks to form a bigger chunk. Returns true if successful.
@@ -147,11 +130,11 @@ class ChunkManager : public CHeapObj<mtInternal> {
   void return_chunk_list(Metachunk* chunk);
 
   // Total of the space in the free chunks list
-  size_t free_chunks_total_words();
-  size_t free_chunks_total_bytes();
+  size_t free_chunks_total_words() const { return _free_chunks_total; }
+  size_t free_chunks_total_bytes() const { return free_chunks_total_words() * BytesPerWord; }
 
   // Number of chunks in the free chunks list
-  size_t free_chunks_count();
+  size_t free_chunks_count() const { return _free_chunks_count; }
 
   // Remove from a list by size.  Selects list based on size of chunk.
   Metachunk* free_chunks_get(size_t chunk_word_size);
@@ -195,22 +178,14 @@ class ChunkManager : public CHeapObj<mtInternal> {
                                          size_free_chunks_in_bytes(HumongousIndex));
   }
 
+#ifdef ASSERT
   // Debug support
-  void verify();
-  void slow_verify() {
-    if (VerifyMetaspace) {
-      verify();
-    }
-  }
-  void locked_verify();
-  void slow_locked_verify() {
-    if (VerifyMetaspace) {
-      locked_verify();
-    }
-  }
+  // Verify free list integrity. slow=true: verify chunk-internal integrity too.
+  void verify(bool slow) const;
+  void locked_verify(bool slow) const;
+#endif
 
   void locked_print_free_chunks(outputStream* st);
-  void locked_print_sum_free_chunks(outputStream* st);
 
   // Fill in current statistic values to the given statistics object.
   void collect_statistics(ChunkManagerStatistics* out) const;

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,27 +26,22 @@
 # Generate java sources using the X11 offsets that are precalculated in files
 # make/data/x11wrappergen/sizes-<address size>.txt.
 
-GENSRC_X11WRAPPERS_OUTPUT_TOP := $(SUPPORT_OUTPUTDIR)/gensrc/java.desktop
-
-GENSRC_X11WRAPPERS_MARKER := $(GENSRC_X11WRAPPERS_OUTPUT_TOP)/_x11wrappers.marker
-
 # Put the generated Java classes used to interface X11 from awt here.
-GENSRC_X11WRAPPERS_OUTPUTDIR := $(GENSRC_X11WRAPPERS_OUTPUT_TOP)/sun/awt/X11
+GENSRC_X11WRAPPERS_OUTPUTDIR := $(SUPPORT_OUTPUTDIR)/gensrc/java.desktop/sun/awt/X11
 
 # The pre-calculated offset file are stored here:
 GENSRC_X11WRAPPERS_DATADIR := $(TOPDIR)/make/data/x11wrappergen
 GENSRC_X11WRAPPERS_DATA := $(GENSRC_X11WRAPPERS_DATADIR)/sizes-$(OPENJDK_TARGET_CPU_BITS).txt
 
 # Run the tool on the offset files to generate several Java classes used in awt.
-$(GENSRC_X11WRAPPERS_MARKER): $(BUILD_TOOLS_JDK) $(GENSRC_X11WRAPPERS_DATA) \
-    $(GENSRC_X11WRAPPERS_DATADIR)/xlibtypes.txt
-	$(call MakeDir, $(GENSRC_X11WRAPPERS_OUTPUTDIR))
-	$(call LogInfo, Generating X11 wrapper source files)
-	$(call ExecuteWithLog, $@, \
-	    $(TOOL_WRAPPERGENERATOR) gen_java $(GENSRC_X11WRAPPERS_OUTPUTDIR) \
-	        $(GENSRC_X11WRAPPERS_DATADIR)/xlibtypes.txt $(GENSRC_X11WRAPPERS_DATA) \
-	        $(OPENJDK_TARGET_CPU_BITS))
-	$(TOUCH) $@
+$(eval $(call SetupExecute, gen_x11wrappers, \
+    INFO := Generating X11 wrapper source files, \
+    DEPS := $(BUILD_TOOLS_JDK) $(GENSRC_X11WRAPPERS_DATA) \
+        $(GENSRC_X11WRAPPERS_DATADIR)/xlibtypes.txt, \
+    OUTPUT_DIR := $(GENSRC_X11WRAPPERS_OUTPUTDIR), \
+    COMMAND := $(TOOL_WRAPPERGENERATOR) gen_java $(GENSRC_X11WRAPPERS_OUTPUTDIR) \
+        $(GENSRC_X11WRAPPERS_DATADIR)/xlibtypes.txt $(GENSRC_X11WRAPPERS_DATA) \
+        $(OPENJDK_TARGET_CPU_BITS), \
+))
 
-
-GENSRC_JAVA_DESKTOP += $(GENSRC_X11WRAPPERS_MARKER)
+GENSRC_JAVA_DESKTOP += $(gen_x11wrappers_TARGET)

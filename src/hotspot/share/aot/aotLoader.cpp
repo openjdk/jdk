@@ -78,7 +78,7 @@ void AOTLoader::oops_do(OopClosure* f) {
   }
 }
 
-void AOTLoader::metadata_do(void f(Metadata*)) {
+void AOTLoader::metadata_do(MetadataClosure* f) {
   if (UseAOT) {
     FOR_ALL_AOT_HEAPS(heap) {
       (*heap)->metadata_do(f);

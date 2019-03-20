@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "gc/z/zPageAllocator.hpp"
 #include "gc/z/zPageCache.inline.hpp"
 #include "gc/z/zPreMappedMemory.inline.hpp"
+#include "gc/z/zSafeDelete.inline.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zTracer.inline.hpp"
 #include "runtime/init.hpp"
@@ -86,7 +87,7 @@ ZPage* const ZPageAllocator::gc_marker = (ZPage*)-1;
 ZPageAllocator::ZPageAllocator(size_t min_capacity, size_t max_capacity, size_t max_reserve) :
     _lock(),
     _virtual(),
-    _physical(max_capacity, ZPageSizeMin),
+    _physical(max_capacity),
     _cache(),
     _max_reserve(max_reserve),
     _pre_mapped(_virtual, _physical, try_ensure_unused_for_pre_mapped(min_capacity)),
@@ -96,7 +97,7 @@ ZPageAllocator::ZPageAllocator(size_t min_capacity, size_t max_capacity, size_t 
     _allocated(0),
     _reclaimed(0),
     _queue(),
-    _detached() {}
+    _safe_delete() {}
 
 bool ZPageAllocator::is_initialized() const {
   return _physical.is_initialized() &&
@@ -242,34 +243,27 @@ void ZPageAllocator::flush_pre_mapped() {
   _pre_mapped.clear();
 }
 
-void ZPageAllocator::map_page(ZPage* page) {
-  // Map physical memory
-  _physical.map(page->physical_memory(), page->start());
-}
-
-void ZPageAllocator::detach_page(ZPage* page) {
-  // Detach the memory mapping.
+void ZPageAllocator::destroy_page(ZPage* page) {
+  // Detach virtual and physical memory
   detach_memory(page->virtual_memory(), page->physical_memory());
 
-  // Add to list of detached pages
-  _detached.insert_last(page);
+  // Delete page safely
+  _safe_delete(page);
 }
 
-void ZPageAllocator::destroy_page(ZPage* page) {
-  assert(page->is_detached(), "Invalid page state");
-
-  // Free virtual memory
-  {
-    ZLocker<ZLock> locker(&_lock);
-    _virtual.free(page->virtual_memory());
+void ZPageAllocator::map_page(ZPage* page) {
+  // Map physical memory
+  if (!page->is_mapped()) {
+    _physical.map(page->physical_memory(), page->start());
+  } else if (ZVerifyViews) {
+    _physical.debug_map(page->physical_memory(), page->start());
   }
-
-  delete page;
 }
 
-void ZPageAllocator::flush_detached_pages(ZList<ZPage>* list) {
-  ZLocker<ZLock> locker(&_lock);
-  list->transfer(&_detached);
+void ZPageAllocator::unmap_all_pages() {
+  ZPhysicalMemory pmem(ZPhysicalMemorySegment(0 /* start */, ZAddressOffsetMax));
+  _physical.debug_unmap(pmem, 0 /* offset */);
+  pmem.clear();
 }
 
 void ZPageAllocator::flush_cache(size_t size) {
@@ -278,7 +272,7 @@ void ZPageAllocator::flush_cache(size_t size) {
   _cache.flush(&list, size);
 
   for (ZPage* page = list.remove_first(); page != NULL; page = list.remove_first()) {
-    detach_page(page);
+    destroy_page(page);
   }
 }
 
@@ -398,9 +392,7 @@ ZPage* ZPageAllocator::alloc_page(uint8_t type, size_t size, ZAllocationFlags fl
   }
 
   // Map page if needed
-  if (!page->is_mapped()) {
-    map_page(page);
-  }
+  map_page(page);
 
   // Reset page. This updates the page's sequence number and must
   // be done after page allocation, which potentially blocked in
@@ -445,6 +437,9 @@ void ZPageAllocator::satisfy_alloc_queue() {
 void ZPageAllocator::detach_memory(const ZVirtualMemory& vmem, ZPhysicalMemory& pmem) {
   const uintptr_t addr = vmem.start();
 
+  // Free virtual memory
+  _virtual.free(vmem);
+
   // Unmap physical memory
   _physical.unmap(pmem, addr);
 
@@ -453,27 +448,6 @@ void ZPageAllocator::detach_memory(const ZVirtualMemory& vmem, ZPhysicalMemory& 
 
   // Clear physical mapping
   pmem.clear();
-}
-
-void ZPageAllocator::flip_page(ZPage* page) {
-  const ZPhysicalMemory& pmem = page->physical_memory();
-  const uintptr_t addr = page->start();
-
-  // Flip physical mapping
-  _physical.flip(pmem, addr);
-}
-
-void ZPageAllocator::flip_pre_mapped() {
-  if (_pre_mapped.available() == 0) {
-    // Nothing to flip
-    return;
-  }
-
-  const ZPhysicalMemory& pmem = _pre_mapped.physical_memory();
-  const ZVirtualMemory& vmem = _pre_mapped.virtual_memory();
-
-  // Flip physical mapping
-  _physical.flip(pmem, vmem.start());
 }
 
 void ZPageAllocator::free_page(ZPage* page, bool reclaimed) {
@@ -487,6 +461,14 @@ void ZPageAllocator::free_page(ZPage* page, bool reclaimed) {
 
   // Try satisfy blocked allocations
   satisfy_alloc_queue();
+}
+
+void ZPageAllocator::enable_deferred_delete() const {
+  _safe_delete.enable_deferred_delete();
+}
+
+void ZPageAllocator::disable_deferred_delete() const {
+  _safe_delete.disable_deferred_delete();
 }
 
 bool ZPageAllocator::is_alloc_stalled() const {

@@ -369,7 +369,7 @@ bool G1ArchiveAllocator::alloc_new_region() {
   } else {
     hr->set_closed_archive();
   }
-  _g1h->g1_policy()->remset_tracker()->update_at_allocate(hr);
+  _g1h->policy()->remset_tracker()->update_at_allocate(hr);
   _g1h->archive_set_add(hr);
   _g1h->hr_printer()->alloc(hr);
   _allocated_regions.append(hr);

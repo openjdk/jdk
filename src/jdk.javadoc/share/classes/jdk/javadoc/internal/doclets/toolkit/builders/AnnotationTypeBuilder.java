@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,7 +156,7 @@ public class AnnotationTypeBuilder extends AbstractBuilder {
         buildAnnotationTypeDescription(annotationInfoTree);
         buildAnnotationTypeTagInfo(annotationInfoTree);
 
-        annotationContentTree.addContent(writer.getAnnotationInfo(annotationInfoTree));
+        annotationContentTree.add(writer.getAnnotationInfo(annotationInfoTree));
     }
 
     /**
@@ -205,7 +205,7 @@ public class AnnotationTypeBuilder extends AbstractBuilder {
     protected void buildMemberSummary(Content annotationContentTree) throws DocletException {
         Content memberSummaryTree = writer.getMemberTreeHeader();
         builderFactory.getMemberSummaryBuilder(writer).build(memberSummaryTree);
-        annotationContentTree.addContent(writer.getMemberSummaryTree(memberSummaryTree));
+        annotationContentTree.add(writer.getMemberSummaryTree(memberSummaryTree));
     }
 
     /**
@@ -223,7 +223,7 @@ public class AnnotationTypeBuilder extends AbstractBuilder {
         buildAnnotationTypeOptionalMemberDetails(memberDetailsTree);
 
         if (memberDetailsTree.isValid()) {
-            annotationContentTree.addContent(writer.getMemberDetailsTree(memberDetailsTree));
+            annotationContentTree.add(writer.getMemberDetailsTree(memberDetailsTree));
         }
     }
 

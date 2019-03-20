@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,8 +91,8 @@ void ZPhysicalMemory::clear() {
   }
 }
 
-ZPhysicalMemoryManager::ZPhysicalMemoryManager(size_t max_capacity, size_t granule_size) :
-    _backing(max_capacity, granule_size),
+ZPhysicalMemoryManager::ZPhysicalMemoryManager(size_t max_capacity) :
+    _backing(max_capacity),
     _max_capacity(max_capacity),
     _current_max_capacity(max_capacity),
     _capacity(0),
@@ -179,6 +179,10 @@ void ZPhysicalMemoryManager::unmap(ZPhysicalMemory pmem, uintptr_t offset) {
   _backing.unmap(pmem, offset);
 }
 
-void ZPhysicalMemoryManager::flip(ZPhysicalMemory pmem, uintptr_t offset) {
-  _backing.flip(pmem, offset);
+void ZPhysicalMemoryManager::debug_map(ZPhysicalMemory pmem, uintptr_t offset) {
+  _backing.debug_map(pmem, offset);
+}
+
+void ZPhysicalMemoryManager::debug_unmap(ZPhysicalMemory pmem, uintptr_t offset) {
+  _backing.debug_unmap(pmem, offset);
 }

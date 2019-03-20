@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,16 @@
 #define SHARE_GC_Z_ZPAGE_INLINE_HPP
 
 #include "gc/z/zAddress.inline.hpp"
-#include "gc/z/zForwardingTable.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zLiveMap.inline.hpp"
 #include "gc/z/zMark.hpp"
 #include "gc/z/zNUMA.hpp"
 #include "gc/z/zPage.hpp"
 #include "gc/z/zPhysicalMemory.inline.hpp"
-#include "gc/z/zUtils.inline.hpp"
 #include "gc/z/zVirtualMemory.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/orderAccess.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 
@@ -133,20 +132,6 @@ inline uint8_t ZPage::numa_id() {
   return _numa_id;
 }
 
-inline bool ZPage::inc_refcount() {
-  for (uint32_t prev_refcount = _refcount; prev_refcount > 0; prev_refcount = _refcount) {
-    if (Atomic::cmpxchg(prev_refcount + 1, &_refcount, prev_refcount) == prev_refcount) {
-      return true;
-    }
-  }
-  return false;
-}
-
-inline bool ZPage::dec_refcount() {
-  assert(is_active(), "Should be active");
-  return Atomic::sub(1u, &_refcount) == 0;
-}
-
 inline bool ZPage::is_in(uintptr_t addr) const {
   const uintptr_t offset = ZAddress::offset(addr);
   return offset >= start() && offset < top();
@@ -160,32 +145,16 @@ inline uintptr_t ZPage::block_start(uintptr_t addr) const {
   }
 }
 
-inline size_t ZPage::block_size(uintptr_t addr) const {
-  if (block_is_obj(addr)) {
-    return ZUtils::object_size(addr);
-  } else {
-    return end() - top();
-  }
-}
-
 inline bool ZPage::block_is_obj(uintptr_t addr) const {
   return ZAddress::offset(addr) < top();
 }
 
-inline bool ZPage::is_active() const {
-  return _refcount > 0;
-}
-
 inline bool ZPage::is_allocating() const {
-  return is_active() && _seqnum == ZGlobalSeqNum;
+  return _seqnum == ZGlobalSeqNum;
 }
 
 inline bool ZPage::is_relocatable() const {
-  return is_active() && _seqnum < ZGlobalSeqNum;
-}
-
-inline bool ZPage::is_detached() const {
-  return _physical.is_null();
+  return _seqnum < ZGlobalSeqNum;
 }
 
 inline bool ZPage::is_mapped() const {
@@ -197,32 +166,6 @@ inline void ZPage::set_pre_mapped() {
   // memory has been mapped. So, we need to set it to non-zero when the memory
   // has been pre-mapped.
   _seqnum = 1;
-}
-
-inline bool ZPage::is_pinned() const {
-  return _pinned;
-}
-
-inline void ZPage::set_pinned() {
-  _pinned = 1;
-}
-
-inline bool ZPage::is_forwarding() const {
-  return !_forwarding.is_null();
-}
-
-inline void ZPage::set_forwarding() {
-  assert(is_marked(), "Should be marked");
-  _forwarding.setup(_livemap.live_objects());
-}
-
-inline void ZPage::reset_forwarding() {
-  _forwarding.reset();
-  _pinned = 0;
-}
-
-inline void ZPage::verify_forwarding() const {
-  _forwarding.verify(object_max_count(), _livemap.live_objects());
 }
 
 inline bool ZPage::is_marked() const {
@@ -260,6 +203,11 @@ inline bool ZPage::mark_object(uintptr_t addr, bool finalizable, bool& inc_live)
 
 inline void ZPage::inc_live_atomic(uint32_t objects, size_t bytes) {
   _livemap.inc_live_atomic(objects, bytes);
+}
+
+inline uint32_t ZPage::live_objects() const {
+  assert(is_marked(), "Should be marked");
+  return _livemap.live_objects();
 }
 
 inline size_t ZPage::live_bytes() const {

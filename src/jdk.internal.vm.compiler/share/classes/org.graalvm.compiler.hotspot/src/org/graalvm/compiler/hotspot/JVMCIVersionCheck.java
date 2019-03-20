@@ -38,8 +38,9 @@ import java.util.Formatter;
  */
 class JVMCIVersionCheck {
 
+    // 0.55 introduces new HotSpotSpeculationLog API
     private static final int JVMCI8_MIN_MAJOR_VERSION = 0;
-    private static final int JVMCI8_MIN_MINOR_VERSION = 46;
+    private static final int JVMCI8_MIN_MINOR_VERSION = 55;
 
     private static void failVersionCheck(boolean exit, String reason, Object... args) {
         Formatter errorMessage = new Formatter().format(reason, args);

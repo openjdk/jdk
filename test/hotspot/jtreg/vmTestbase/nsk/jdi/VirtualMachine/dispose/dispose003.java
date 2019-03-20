@@ -23,6 +23,7 @@
 
 package nsk.jdi.VirtualMachine.dispose;
 
+import jdk.test.lib.Utils;
 import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
@@ -179,6 +180,7 @@ public class dispose003 {
 
             int expresult = returnCode0;
 
+
             String threadName = "testedThread";
 
             List            allThreads   = null;
@@ -236,28 +238,28 @@ public class dispose003 {
                 if (expresult != returnCode0)
                     break label1;
 
-                log2("      Thread.sleep(waitTime*60000);");
-                try {
-                    Thread.sleep(waitTime*60000);
-                } catch ( InterruptedException e ) {
-                    log3("ERROR: InterruptedException");
-                    expresult = returnCode1;
-                    break label1;
-                }
+                log2("      Waiting for thread2 is not alive");
 
-                log2("......sending to the debuggee: 'check_alive'");
-                log2("       expected reply: 'not_alive'");
-                pipe.println("check_alive");
-                line = pipe.readln();
-                if (line.equals("alive")) {
-                    log3("ERROR: thread2 is alive");
-                    expresult = returnCode1;
-                } else if (line.equals("not_alive")) {
-                    log2("     thread2 is not alive");
-                } else {
-                    log3("ERROR: unexpected reply: " + line);
-                    expresult = returnCode4;
-                }
+                Utils.waitForCondition(
+                        () -> {
+                            log2("......sending to the debuggee: 'check_alive'");
+                            log2("       expected reply: 'not_alive'");
+                            pipe.println("check_alive");
+                            String reply = pipe.readln();
+                            if (reply.equals("alive")) {
+                                log3("ERROR: thread2 is alive");
+                                return false;
+                            } else if (reply.equals("not_alive")) {
+                                log2("     thread2 is not alive");
+                                return true;
+                            } else {
+                                log3("ERROR: unexpected reply: " + reply);
+                                throw new RuntimeException("ERROR: unexpected reply: " + reply);
+                            }
+                        },
+                        Utils.adjustTimeout(waitTime * 60000),
+                        1000);
+                pipe.println("check_done");
 
             }
 
@@ -287,4 +289,6 @@ public class dispose003 {
         }
         return testExitCode;
     }
+
+
 }

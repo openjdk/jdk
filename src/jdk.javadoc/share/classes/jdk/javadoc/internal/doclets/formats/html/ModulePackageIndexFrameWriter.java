@@ -33,7 +33,6 @@ import java.util.Set;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -57,6 +56,12 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
  * @author Bhavesh Patel
  */
 public class ModulePackageIndexFrameWriter extends AbstractModuleIndexWriter {
+    /**
+     * The heading (h1 or h2) to use for the module packages list,
+     * set by addNavigationBarHeader depending on whether or not there
+     * is an additional initial heading.
+     */
+    private HtmlTag modulePackagesListHeading;
 
     /**
      * Construct the ModulePackageIndexFrameWriter object.
@@ -89,21 +94,21 @@ public class ModulePackageIndexFrameWriter extends AbstractModuleIndexWriter {
     protected void addModulePackagesList(Map<ModuleElement, Set<PackageElement>> modules, String text,
             String tableSummary, Content main, ModuleElement mdle) {
         Content profNameContent = new StringContent(mdle.getQualifiedName().toString());
-        Content heading = HtmlTree.HEADING(HtmlConstants.PACKAGE_HEADING, true,
+        Content heading = HtmlTree.HEADING(modulePackagesListHeading, true,
                 getTargetModuleLink("classFrame", profNameContent, mdle));
-        heading.addContent(Contents.SPACE);
-        heading.addContent(contents.packagesLabel);
+        heading.add(Contents.SPACE);
+        heading.add(contents.packagesLabel);
         HtmlTree htmlTree = HtmlTree.DIV(HtmlStyle.indexContainer, heading);
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
         ul.setTitle(contents.packagesLabel);
         List<PackageElement> packages = new ArrayList<>(modules.get(mdle));
         for (PackageElement pkg : packages) {
             if ((!(configuration.nodeprecated && utils.isDeprecated(pkg)))) {
-                ul.addContent(getPackage(pkg, mdle));
+                ul.add(getPackage(pkg, mdle));
             }
         }
-        htmlTree.addContent(ul);
-        main.addContent(htmlTree);
+        htmlTree.add(ul);
+        main.add(htmlTree);
     }
 
     /**
@@ -112,21 +117,21 @@ public class ModulePackageIndexFrameWriter extends AbstractModuleIndexWriter {
     protected void addModulePackagesList(Set<ModuleElement> modules, String text,
             String tableSummary, Content body, ModuleElement mdle) {
         Content moduleNameContent = new StringContent(mdle.getQualifiedName().toString());
-        Content heading = HtmlTree.HEADING(HtmlConstants.PACKAGE_HEADING, true,
+        Content heading = HtmlTree.HEADING(modulePackagesListHeading, true,
                 getTargetModuleLink("classFrame", moduleNameContent, mdle));
-        heading.addContent(Contents.SPACE);
-        heading.addContent(contents.packagesLabel);
+        heading.add(Contents.SPACE);
+        heading.add(contents.packagesLabel);
         HtmlTree htmlTree = HtmlTree.MAIN(HtmlStyle.indexContainer, heading);
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
         ul.setTitle(contents.packagesLabel);
         Set<PackageElement> modulePackages = configuration.modulePackages.get(mdle);
         for (PackageElement pkg: modulePackages) {
             if ((!(configuration.nodeprecated && utils.isDeprecated(pkg)))) {
-                ul.addContent(getPackage(pkg, mdle));
+                ul.add(getPackage(pkg, mdle));
             }
         }
-        htmlTree.addContent(ul);
-        body.addContent(htmlTree);
+        htmlTree.add(ul);
+        body.add(htmlTree);
     }
 
     /**
@@ -157,15 +162,16 @@ public class ModulePackageIndexFrameWriter extends AbstractModuleIndexWriter {
      * {@inheritDoc}
      */
     protected void addNavigationBarHeader(Content header) {
-        Content headerContent;
-        if (configuration.packagesheader.length() > 0) {
-            headerContent = new RawHtml(replaceDocRootDir(configuration.packagesheader));
+        String headerContent = !configuration.packagesheader.isEmpty() ? configuration.packagesheader
+                : configuration.header;
+        if (!headerContent.isEmpty()) {
+            Content heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, true,
+                    HtmlStyle.bar, new RawHtml(replaceDocRootDir(headerContent)));
+            header.add(heading);
+            modulePackagesListHeading = Headings.IndexFrames.PACKAGE_HEADING;
         } else {
-            headerContent = new RawHtml(replaceDocRootDir(configuration.header));
+            modulePackagesListHeading = Headings.PAGE_TITLE_HEADING;
         }
-        Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, true,
-                HtmlStyle.bar, headerContent);
-        header.addContent(heading);
     }
 
     /**
@@ -177,6 +183,7 @@ public class ModulePackageIndexFrameWriter extends AbstractModuleIndexWriter {
     /**
      * Do nothing as there is no modules list on this page.
      */
+    @Override
     protected void addModulesList(Content body) {
     }
 
@@ -193,7 +200,7 @@ public class ModulePackageIndexFrameWriter extends AbstractModuleIndexWriter {
         Content linkContent = links.createLink(allClassesFrame,
                 contents.allClassesLabel, "", "packageFrame");
         Content li = HtmlTree.LI(linkContent);
-        ul.addContent(li);
+        ul.add(li);
     }
 
     /**
@@ -209,7 +216,7 @@ public class ModulePackageIndexFrameWriter extends AbstractModuleIndexWriter {
         Content linkContent = links.createLink(overviewFrame,
                 contents.allPackagesLabel, "", "packageListFrame");
         Content li = HtmlTree.LI(linkContent);
-        ul.addContent(li);
+        ul.add(li);
     }
 
     /**
@@ -225,7 +232,7 @@ public class ModulePackageIndexFrameWriter extends AbstractModuleIndexWriter {
         Content linkContent = links.createLink(moduleOverviewFrame,
                 contents.allModulesLabel, "", "packageListFrame");
         Content li = HtmlTree.LI(linkContent);
-        ul.addContent(li);
+        ul.add(li);
     }
 
     /**
@@ -233,6 +240,6 @@ public class ModulePackageIndexFrameWriter extends AbstractModuleIndexWriter {
      */
     protected void addNavigationBarFooter(Content footer) {
         Content p = HtmlTree.P(Contents.SPACE);
-        footer.addContent(p);
+        footer.add(p);
     }
 }

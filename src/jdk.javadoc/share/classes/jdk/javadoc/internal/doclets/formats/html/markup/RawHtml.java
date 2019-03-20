@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ public class RawHtml extends Content {
      * @param content content that needs to be added
      * @throws UnsupportedOperationException always
      */
-    public void addContent(Content content) {
+    public void add(Content content) {
         throw new UnsupportedOperationException();
     }
 
@@ -75,7 +75,7 @@ public class RawHtml extends Content {
      * @throws UnsupportedOperationException always
      */
     @Override
-    public void addContent(CharSequence stringContent) {
+    public void add(CharSequence stringContent) {
         throw new UnsupportedOperationException();
     }
 

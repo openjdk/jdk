@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,7 @@ public class WorkArounds {
     }
 
     // TODO: fix this up correctly
-    public void initDocLint(Collection<String> opts, Collection<String> customTagNames, String htmlVersion) {
+    public void initDocLint(Collection<String> opts, Collection<String> customTagNames) {
         ArrayList<String> doclintOpts = new ArrayList<>();
         boolean msgOptionSeen = false;
 
@@ -137,12 +137,10 @@ public class WorkArounds {
             sep = DocLint.SEPARATOR;
         }
         doclintOpts.add(DocLint.XCUSTOM_TAGS_PREFIX + customTags.toString());
-        doclintOpts.add(DocLint.XHTML_VERSION_PREFIX + htmlVersion);
+        doclintOpts.add(DocLint.XHTML_VERSION_PREFIX + "html5");
 
         JavacTask t = BasicJavacTask.instance(toolEnv.context);
         doclint = new DocLint();
-        // standard doclet normally generates H1, H2
-        doclintOpts.add(DocLint.XIMPLICIT_HEADERS + "2");
         doclint.init(t, doclintOpts.toArray(new String[doclintOpts.size()]), false);
     }
 

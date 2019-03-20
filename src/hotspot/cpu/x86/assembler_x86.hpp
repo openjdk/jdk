@@ -1934,6 +1934,11 @@ private:
   void vsubss(XMMRegister dst, XMMRegister nds, Address src);
   void vsubss(XMMRegister dst, XMMRegister nds, XMMRegister src);
 
+  void vmaxss(XMMRegister dst, XMMRegister nds, XMMRegister src);
+  void vmaxsd(XMMRegister dst, XMMRegister nds, XMMRegister src);
+  void vminss(XMMRegister dst, XMMRegister nds, XMMRegister src);
+  void vminsd(XMMRegister dst, XMMRegister nds, XMMRegister src);
+
   void shlxl(Register dst, Register src1, Register src2);
   void shlxq(Register dst, Register src1, Register src2);
 

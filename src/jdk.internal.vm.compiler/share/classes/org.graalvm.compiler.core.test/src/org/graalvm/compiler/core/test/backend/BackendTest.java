@@ -25,6 +25,7 @@
 package org.graalvm.compiler.core.test.backend;
 
 import org.graalvm.compiler.core.GraalCompiler;
+import org.graalvm.compiler.core.gen.LIRCompilerBackend;
 import org.graalvm.compiler.core.test.GraalCompilerTest;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
@@ -52,7 +53,7 @@ public abstract class BackendTest extends GraalCompilerTest {
             throw debug.handle(e);
         }
 
-        LIRGenerationResult lirGen = GraalCompiler.emitLIR(getBackend(), graph, null, null, createLIRSuites(graph.getOptions()));
+        LIRGenerationResult lirGen = LIRCompilerBackend.emitLIR(getBackend(), graph, null, null, createLIRSuites(graph.getOptions()));
         return lirGen;
     }
 

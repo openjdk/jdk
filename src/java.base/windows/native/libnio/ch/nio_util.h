@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@
 #define MAX_BUFFER_SIZE             ((128*1024)-1)
 
 jint fdval(JNIEnv *env, jobject fdo);
+void setfdval(JNIEnv *env, jobject fdo, jint val);
 jlong handleval(JNIEnv *env, jobject fdo);
 jint convertReturnVal(JNIEnv *env, jint n, jboolean r);
 jlong convertLongReturnVal(JNIEnv *env, jlong n, jboolean r);

@@ -28,12 +28,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.graalvm.compiler.asm.Label;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.core.common.cfg.AbstractControlFlowGraph;
 import org.graalvm.compiler.core.common.cfg.BlockMap;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.lir.StandardOp.BlockEndOp;
 import org.graalvm.compiler.lir.StandardOp.LabelOp;
+import org.graalvm.compiler.lir.StandardOp.LabelHoldingOp;
 import org.graalvm.compiler.lir.gen.LIRGenerator;
 import org.graalvm.compiler.options.OptionValues;
 
@@ -233,8 +235,11 @@ public final class LIR extends LIRGenerator.VariableProvider {
                 continue;
             }
             for (LIRInstruction inst : lirInstructions.get(block)) {
-                if (inst instanceof LabelOp) {
-                    ((LabelOp) inst).getLabel().reset();
+                if (inst instanceof LabelHoldingOp) {
+                    Label label = ((LabelHoldingOp) inst).getLabel();
+                    if (label != null) {
+                        label.reset();
+                    }
                 }
             }
         }

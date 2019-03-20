@@ -28,6 +28,7 @@ import java.math.BigInteger;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -441,6 +442,25 @@ public final class XMLUtils {
             Document doc = e.getOwnerDocument();
             e.insertBefore(doc.createTextNode("\n"), child);
         }
+    }
+
+    public static String encodeToString(byte[] bytes) {
+        if (ignoreLineBreaks) {
+            return Base64.getEncoder().encodeToString(bytes);
+        }
+        return Base64.getMimeEncoder().encodeToString(bytes);
+    }
+
+    public static byte[] decode(String encodedString) {
+        return Base64.getMimeDecoder().decode(encodedString);
+    }
+
+    public static byte[] decode(byte[] encodedBytes) {
+        return Base64.getMimeDecoder().decode(encodedBytes);
+    }
+
+    public static boolean isIgnoreLineBreaks() {
+        return ignoreLineBreaks;
     }
 
     /**

@@ -33,6 +33,7 @@
 
 extern Mutex*   Patching_lock;                   // a lock used to guard code patching of compiled code
 extern Monitor* SystemDictionary_lock;           // a lock on the system dictionary
+extern Mutex*   ProtectionDomainSet_lock;        // a lock on the pd_set list in the system dictionary
 extern Mutex*   SharedDictionary_lock;           // a lock on the CDS shared dictionary
 extern Mutex*   Module_lock;                     // a lock on module and package related data structures
 extern Mutex*   CompiledIC_lock;                 // a lock used to guard compiled IC patching and access
@@ -77,10 +78,6 @@ extern Monitor* STS_lock;                        // used for joining/leaving Sus
 extern Monitor* FullGCCount_lock;                // in support of "concurrent" full gc
 extern Monitor* SATB_Q_CBL_mon;                  // Protects SATB Q
                                                  // completed buffer queue.
-extern Mutex*   Shared_SATB_Q_lock;              // Lock protecting SATB
-                                                 // queue shared by
-                                                 // non-Java threads.
-
 extern Monitor* DirtyCardQ_CBL_mon;              // Protects dirty card Q
                                                  // completed buffer queue.
 extern Mutex*   Shared_DirtyCardQ_lock;          // Lock protecting dirty card

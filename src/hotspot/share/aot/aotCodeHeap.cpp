@@ -931,13 +931,13 @@ void AOTCodeHeap::oops_do(OopClosure* f) {
 // Scan only klasses_got cells which should have only Klass*,
 // metadata_got cells are scanned only for alive AOT methods
 // by AOTCompiledMethod::metadata_do().
-void AOTCodeHeap::got_metadata_do(void f(Metadata*)) {
+void AOTCodeHeap::got_metadata_do(MetadataClosure* f) {
   for (int i = 1; i < _klasses_got_size; i++) {
     Metadata** p = &_klasses_got[i];
     Metadata* md = *p;
     if (md == NULL)  continue;  // skip non-oops
     if (Metaspace::contains(md)) {
-      f(md);
+      f->do_metadata(md);
     } else {
       intptr_t meta = (intptr_t)md;
       fatal("Invalid value in _klasses_got[%d] = " INTPTR_FORMAT, i, meta);
@@ -969,7 +969,7 @@ int AOTCodeHeap::verify_icholder_relocations() {
 }
 #endif
 
-void AOTCodeHeap::metadata_do(void f(Metadata*)) {
+void AOTCodeHeap::metadata_do(MetadataClosure* f) {
   for (int index = 0; index < _method_count; index++) {
     if (_code_to_aot[index]._state != in_use) {
       continue; // Skip uninitialized entries.

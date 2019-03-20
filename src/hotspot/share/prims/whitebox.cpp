@@ -483,7 +483,7 @@ WB_ENTRY(jlong, WB_DramReservedStart(JNIEnv* env, jobject o))
 #if INCLUDE_G1GC
   if (UseG1GC) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    if (g1h->g1_collector_policy()->is_hetero_heap()) {
+    if (g1h->is_heterogeneous_heap()) {
       uint start_region = HeterogeneousHeapRegionManager::manager()->start_index_of_dram();
       return (jlong)(g1h->base() + start_region * HeapRegion::GrainBytes);
     } else {
@@ -509,7 +509,7 @@ WB_ENTRY(jlong, WB_DramReservedEnd(JNIEnv* env, jobject o))
 #if INCLUDE_G1GC
   if (UseG1GC) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    if (g1h->g1_collector_policy()->is_hetero_heap()) {
+    if (g1h->is_heterogeneous_heap()) {
       uint end_region = HeterogeneousHeapRegionManager::manager()->end_index_of_dram();
       return (jlong)(g1h->base() + (end_region + 1) * HeapRegion::GrainBytes - 1);
     } else {
@@ -535,7 +535,7 @@ WB_ENTRY(jlong, WB_NvdimmReservedStart(JNIEnv* env, jobject o))
 #if INCLUDE_G1GC
   if (UseG1GC) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    if (g1h->g1_collector_policy()->is_hetero_heap()) {
+    if (g1h->is_heterogeneous_heap()) {
       uint start_region = HeterogeneousHeapRegionManager::manager()->start_index_of_nvdimm();
       return (jlong)(g1h->base() + start_region * HeapRegion::GrainBytes);
     } else {
@@ -561,7 +561,7 @@ WB_ENTRY(jlong, WB_NvdimmReservedEnd(JNIEnv* env, jobject o))
 #if INCLUDE_G1GC
   if (UseG1GC) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    if (g1h->g1_collector_policy()->is_hetero_heap()) {
+    if (g1h->is_heterogeneous_heap()) {
       uint end_region = HeterogeneousHeapRegionManager::manager()->start_index_of_nvdimm();
       return (jlong)(g1h->base() + (end_region + 1) * HeapRegion::GrainBytes - 1);
     } else {

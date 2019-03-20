@@ -902,6 +902,16 @@ void SafepointSynchronize::print_safepoint_timeout() {
   // To debug the long safepoint, specify both AbortVMOnSafepointTimeout &
   // ShowMessageBoxOnError.
   if (AbortVMOnSafepointTimeout) {
+    // Send the blocking thread a signal to terminate and write an error file.
+    for (JavaThreadIteratorWithHandle jtiwh; JavaThread *cur_thread = jtiwh.next(); ) {
+      if (cur_thread->safepoint_state()->is_running()) {
+        if (!os::signal_thread(cur_thread, SIGILL, "blocking a safepoint")) {
+          break; // Could not send signal. Report fatal error.
+        }
+        // Give cur_thread a chance to report the error and terminate the VM.
+        os::sleep(Thread::current(), 3000, false);
+      }
+    }
     fatal("Safepoint sync time longer than " INTX_FORMAT "ms detected when executing %s.",
           SafepointTimeoutDelay, VMThread::vm_operation()->name());
   }
@@ -1121,6 +1131,7 @@ jlong SafepointTracing::_last_safepoint_begin_time_ns = 0;
 jlong SafepointTracing::_last_safepoint_sync_time_ns = 0;
 jlong SafepointTracing::_last_safepoint_cleanup_time_ns = 0;
 jlong SafepointTracing::_last_safepoint_end_time_ns = 0;
+jlong SafepointTracing::_last_safepoint_end_time_epoch_ms = 0;
 jlong SafepointTracing::_last_app_time_ns = 0;
 int SafepointTracing::_nof_threads = 0;
 int SafepointTracing::_nof_running = 0;
@@ -1133,6 +1144,8 @@ uint64_t  SafepointTracing::_op_count[VM_Operation::VMOp_Terminating] = {0};
 void SafepointTracing::init() {
   // Application start
   _last_safepoint_end_time_ns = os::javaTimeNanos();
+  // amount of time since epoch
+  _last_safepoint_end_time_epoch_ms = os::javaTimeMillis();
 }
 
 // Helper method to print the header.
@@ -1232,6 +1245,8 @@ void SafepointTracing::cleanup() {
 
 void SafepointTracing::end() {
   _last_safepoint_end_time_ns = os::javaTimeNanos();
+  // amount of time since epoch
+  _last_safepoint_end_time_epoch_ms = os::javaTimeMillis();
 
   if (_max_sync_time < (_last_safepoint_sync_time_ns - _last_safepoint_begin_time_ns)) {
     _max_sync_time = _last_safepoint_sync_time_ns - _last_safepoint_begin_time_ns;

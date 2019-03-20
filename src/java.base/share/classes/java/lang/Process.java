@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -206,20 +206,20 @@ public abstract class Process {
     public boolean waitFor(long timeout, TimeUnit unit)
         throws InterruptedException
     {
-        long startTime = System.nanoTime();
-        long rem = unit.toNanos(timeout);
+        long remainingNanos = unit.toNanos(timeout); // throw NPE before other conditions
+        if (hasExited())
+            return true;
+        if (timeout <= 0)
+            return false;
 
+        long deadline = System.nanoTime() + remainingNanos;
         do {
-            try {
-                exitValue();
+            Thread.sleep(Math.min(TimeUnit.NANOSECONDS.toMillis(remainingNanos) + 1, 100));
+            if (hasExited())
                 return true;
-            } catch(IllegalThreadStateException ex) {
-                if (rem > 0)
-                    Thread.sleep(
-                        Math.min(TimeUnit.NANOSECONDS.toMillis(rem) + 1, 100));
-            }
-            rem = unit.toNanos(timeout) - (System.nanoTime() - startTime);
-        } while (rem > 0);
+            remainingNanos = deadline - System.nanoTime();
+        } while (remainingNanos > 0);
+
         return false;
     }
 
@@ -320,11 +320,20 @@ public abstract class Process {
      * @since 1.8
      */
     public boolean isAlive() {
+        return !hasExited();
+    }
+
+    /**
+     * This is called from the default implementation of
+     * {@code waitFor(long, TimeUnit)}, which is specified to poll
+     * {@code exitValue()}.
+     */
+    private boolean hasExited() {
         try {
             exitValue();
-            return false;
-        } catch(IllegalThreadStateException e) {
             return true;
+        } catch (IllegalThreadStateException e) {
+            return false;
         }
     }
 

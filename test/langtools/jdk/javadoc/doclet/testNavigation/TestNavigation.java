@@ -144,43 +144,10 @@ public class TestNavigation extends JavadocTester {
                 + "</nav>");
     }
 
-    // Test to make sure that no extra padding for nav bar gets generated if -nonavbar is specified for HTML4.
+    // Test to make sure that no extra padding for nav bar gets generated if -nonavbar is specified.
     @Test
     public void test2(Path ignore) {
         javadoc("-d", "out-2",
-                "-nonavbar",
-                "--frames",
-                "-sourcepath", testSrc,
-                "pkg");
-        checkExit(Exit.OK);
-        checkSubNav();
-
-        checkOutput("pkg/A.html", false,
-                "<!-- ========= END OF TOP NAVBAR ========= -->\n"
-                + "</div>\n"
-                + "<div class=\"navPadding\">&nbsp;</div>\n"
-                + "<script type=\"text/javascript\"><!--\n"
-                + "$('.navPadding').css('padding-top', $('.fixedNav').css(\"height\"));\n"
-                + "//-->\n"
-                + "</script>\n"
-                + "<!-- ======== START OF CLASS DATA ======== -->");
-
-        checkOutput("pkg/package-summary.html", false,
-                "<!-- ========= END OF TOP NAVBAR ========= -->\n"
-                + "</div>\n"
-                + "<div class=\"navPadding\">&nbsp;</div>\n"
-                + "<script type=\"text/javascript\"><!--\n"
-                + "$('.navPadding').css('padding-top', $('.fixedNav').css(\"height\"));\n"
-                + "//-->\n"
-                + "</script>\n"
-                + "<div class=\"header\">");
-    }
-
-    // Test to make sure that no extra padding for nav bar gets generated if -nonavbar is specified for HTML5.
-    @Test
-    public void test3(Path ignore) {
-        javadoc("-d", "out-3",
-                "-html5",
                 "-nonavbar",
                 "--frames",
                 "-sourcepath", testSrc,
@@ -212,7 +179,7 @@ public class TestNavigation extends JavadocTester {
     }
 
     @Test
-    public void test4(Path base) throws IOException {
+    public void test3(Path base) throws IOException {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "package pkg1; public class A {\n"
@@ -255,7 +222,7 @@ public class TestNavigation extends JavadocTester {
                 "package pkg1; public interface InterfaceWithNoMembers {\n"
                 + "}");
 
-        javadoc("-d", "out-4",
+        javadoc("-d", "out-3",
                 "-sourcepath", src.toString(),
                 "pkg1");
         checkExit(Exit.OK);

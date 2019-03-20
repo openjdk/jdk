@@ -32,7 +32,7 @@ import java.net.URLStreamHandlerFactory;
  * @summary Test bootstrap problem when a URLStreamHandlerFactory is loaded
  *          by the application class loader.
  * @modules java.base/sun.net.www.protocol.file
- * @run main HandlerLoop
+ * @run main/othervm HandlerLoop
  */
 public class HandlerLoop {
 

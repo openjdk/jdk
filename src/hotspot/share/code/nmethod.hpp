@@ -131,8 +131,6 @@ class nmethod : public CompiledMethod {
   bool _oops_are_stale;  // indicates that it's no longer safe to access oops section
 #endif
 
-  jbyte _scavenge_root_state;
-
 #if INCLUDE_RTM_OPT
   // RTM state at compile time. Used during deoptimization to decide
   // whether to restart collecting RTM locking abort statistic again.
@@ -410,24 +408,6 @@ public:
   void fix_oop_relocations(address begin, address end) { fix_oop_relocations(begin, end, false); }
   void fix_oop_relocations()                           { fix_oop_relocations(NULL, NULL, false); }
 
-  // Scavengable oop support
-  bool  on_scavenge_root_list() const                  { return (_scavenge_root_state & 1) != 0; }
- protected:
-  enum { sl_on_list = 0x01, sl_marked = 0x10 };
-  void  set_on_scavenge_root_list()                    { _scavenge_root_state = sl_on_list; }
-  void  clear_on_scavenge_root_list()                  { _scavenge_root_state = 0; }
-  // assertion-checking and pruning logic uses the bits of _scavenge_root_state
-#ifndef PRODUCT
-  void  set_scavenge_root_marked()                     { _scavenge_root_state |= sl_marked; }
-  void  clear_scavenge_root_marked()                   { _scavenge_root_state &= ~sl_marked; }
-  bool  scavenge_root_not_marked()                     { return (_scavenge_root_state &~ sl_on_list) == 0; }
-  // N.B. there is no positive marked query, and we only use the not_marked query for asserts.
-#endif //PRODUCT
-  nmethod* scavenge_root_link() const                  { return _scavenge_root_link; }
-  void     set_scavenge_root_link(nmethod *n)          { _scavenge_root_link = n; }
-
- public:
-
   // Sweeper support
   long  stack_traversal_mark()                    { return _stack_traversal_mark; }
   void  set_stack_traversal_mark(long l)          { _stack_traversal_mark = l; }
@@ -504,8 +484,6 @@ public:
  public:
   void oops_do(OopClosure* f) { oops_do(f, false); }
   void oops_do(OopClosure* f, bool allow_zombie);
-  bool detect_scavenge_root_oops();
-  void verify_scavenge_root_oops() PRODUCT_RETURN;
 
   bool test_set_oops_do_mark();
   static void oops_do_marking_prologue();
@@ -613,7 +591,7 @@ public:
   static int osr_entry_point_offset()             { return offset_of(nmethod, _osr_entry_point); }
   static int state_offset()                       { return offset_of(nmethod, _state); }
 
-  virtual void metadata_do(void f(Metadata*));
+  virtual void metadata_do(MetadataClosure* f);
 
   NativeCallWrapper* call_wrapper_at(address call) const;
   NativeCallWrapper* call_wrapper_before(address return_pc) const;

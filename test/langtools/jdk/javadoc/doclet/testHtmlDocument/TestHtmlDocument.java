@@ -76,31 +76,31 @@ public class TestHtmlDocument extends JavadocTester {
         HtmlTree title = new HtmlTree(HtmlTag.TITLE);
         // String content within the document
         StringContent titleContent = new StringContent("Markup test");
-        title.addContent(titleContent);
-        head.addContent(title);
+        title.add(titleContent);
+        head.add(title);
         // Test META tag
         HtmlTree meta = new HtmlTree(HtmlTag.META);
-        meta.addAttr(HtmlAttr.NAME, "keywords");
-        meta.addAttr(HtmlAttr.CONTENT, "testContent");
-        head.addContent(meta);
+        meta.put(HtmlAttr.NAME, "keywords");
+        meta.put(HtmlAttr.CONTENT, "testContent");
+        head.add(meta);
         // Test invalid META tag
         HtmlTree invmeta = new HtmlTree(HtmlTag.META);
-        head.addContent(invmeta);
+        head.add(invmeta);
         // Test LINK tag
         HtmlTree link = new HtmlTree(HtmlTag.LINK);
-        link.addAttr(HtmlAttr.REL, "testRel");
-        link.addAttr(HtmlAttr.HREF, "testLink.html");
-        head.addContent(link);
+        link.put(HtmlAttr.REL, "testRel");
+        link.put(HtmlAttr.HREF, "testLink.html");
+        head.add(link);
         // Test invalid LINK tag
         HtmlTree invlink = new HtmlTree(HtmlTag.LINK);
-        head.addContent(invlink);
-        html.addContent(head);
+        head.add(invlink);
+        html.add(head);
         // Comment within the document
         Comment bodyMarker = new Comment("======== START OF BODY ========");
-        html.addContent(bodyMarker);
+        html.add(bodyMarker);
         HtmlTree body = new HtmlTree(HtmlTag.BODY);
         Comment pMarker = new Comment("======== START OF PARAGRAPH ========");
-        body.addContent(pMarker);
+        body.add(pMarker);
         HtmlTree p = new HtmlTree(HtmlTag.P);
         StringContent bodyContent = new StringContent(
                 "This document is generated from sample source code and HTML " +
@@ -108,41 +108,41 @@ public class TestHtmlDocument extends JavadocTester {
                 "subclasses, subinterfaces, nested classes, nested interfaces," +
                 "inheriting from other packages, constructors, fields," +
                 "methods, and so forth. ");
-        p.addContent(bodyContent);
+        p.add(bodyContent);
         StringContent anchorContent = new StringContent("Click Here");
-        p.addContent(HtmlTree.A("testLink.html", anchorContent));
+        p.add(HtmlTree.A("testLink.html", anchorContent));
         StringContent pContent = new StringContent(" to <test> out a link.");
-        p.addContent(pContent);
-        body.addContent(p);
+        p.add(pContent);
+        body.add(p);
         HtmlTree p1 = new HtmlTree(HtmlTag.P);
         // Test another version of A tag.
         HtmlTree anchor = new HtmlTree(HtmlTag.A);
-        anchor.addAttr(HtmlAttr.HREF, "testLink.html");
-        anchor.addAttr(HtmlAttr.ID, "Another version of a tag");
-        p1.addContent(anchor);
-        body.addContent(p1);
+        anchor.put(HtmlAttr.HREF, "testLink.html");
+        anchor.put(HtmlAttr.ID, "Another version of a tag");
+        p1.add(anchor);
+        body.add(p1);
         // Test for empty tags.
         HtmlTree dl = new HtmlTree(HtmlTag.DL);
-        html.addContent(dl);
+        html.add(dl);
         // Test for empty nested tags.
         HtmlTree dlTree = new HtmlTree(HtmlTag.DL);
-        dlTree.addContent(new HtmlTree(HtmlTag.DT));
-        dlTree.addContent(new HtmlTree (HtmlTag.DD));
-        html.addContent(dlTree);
+        dlTree.add(new HtmlTree(HtmlTag.DT));
+        dlTree.add(new HtmlTree (HtmlTag.DD));
+        html.add(dlTree);
         HtmlTree dlDisplay = new HtmlTree(HtmlTag.DL);
-        dlDisplay.addContent(new HtmlTree(HtmlTag.DT));
+        dlDisplay.add(new HtmlTree(HtmlTag.DT));
         HtmlTree dd = new HtmlTree (HtmlTag.DD);
         StringContent ddContent = new StringContent("Test DD");
-        dd.addContent(ddContent);
-        dlDisplay.addContent(dd);
-        body.addContent(dlDisplay);
+        dd.add(ddContent);
+        dlDisplay.add(dd);
+        body.add(dlDisplay);
         StringContent emptyString = new StringContent("");
-        body.addContent(emptyString);
+        body.add(emptyString);
         Comment emptyComment = new Comment("");
-        body.addContent(emptyComment);
+        body.add(emptyComment);
         HtmlTree hr = new HtmlTree(HtmlTag.HR);
-        body.addContent(hr);
-        html.addContent(body);
+        body.add(hr);
+        html.add(body);
         HtmlDocument htmlDoc = new HtmlDocument(html);
         return htmlDoc.toString();
     }

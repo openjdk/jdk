@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@
 
 package java.nio;
 
+import java.util.Objects;
 import jdk.internal.misc.Unsafe;
-
 
 class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
     extends {#if[ro]?ByteBufferAs}$Type$Buffer{#if[ro]?$BO$}
@@ -83,6 +83,17 @@ class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
         int rem = (pos <= lim ? lim - pos : 0);
         long addr = byteOffset(pos);
         return new ByteBufferAs$Type$Buffer$RW$$BO$(bb, -1, 0, rem, rem, addr);
+    }
+
+    @Override
+    public $Type$Buffer slice(int index, int length) {
+        Objects.checkFromIndexSize(index, length, limit());
+        return new ByteBufferAs$Type$Buffer$RW$$BO$(bb,
+                                                    -1,
+                                                    0,
+                                                    length,
+                                                    length,
+                                                    byteOffset(index));
     }
 
     public $Type$Buffer duplicate() {
@@ -195,8 +206,7 @@ class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
 #if[char]
 
     public String toString(int start, int end) {
-        if ((end > limit()) || (start > end))
-            throw new IndexOutOfBoundsException();
+        Objects.checkFromToIndex(start, end, limit());
         try {
             int len = end - start;
             char[] ca = new char[len];
@@ -221,8 +231,7 @@ class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
         pos = (pos <= lim ? pos : lim);
         int len = lim - pos;
 
-        if ((start < 0) || (end > len) || (start > end))
-            throw new IndexOutOfBoundsException();
+        Objects.checkFromToIndex(start, end, len);
         return new ByteBufferAsCharBuffer$RW$$BO$(bb,
                                                   -1,
                                                   pos + start,

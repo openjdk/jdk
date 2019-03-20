@@ -187,7 +187,6 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
     // Let the size policy know we're starting
     size_policy->major_collection_begin();
 
-    CodeCache::gc_prologue();
     BiasedLocking::preserve_marks();
 
     // Capture metadata size before collection for sizing.
@@ -255,7 +254,7 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
     MetaspaceUtils::verify_metrics();
 
     BiasedLocking::restore_marks();
-    CodeCache::gc_epilogue();
+    heap->prune_scavengable_nmethods();
     JvmtiExport::gc_epilogue();
 
 #if COMPILER2_OR_JVMCI
@@ -316,8 +315,7 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
                                                     max_eden_size,
                                                     true /* full gc*/);
 
-        size_policy->check_gc_overhead_limit(young_live,
-                                             eden_live,
+        size_policy->check_gc_overhead_limit(eden_live,
                                              max_old_gen_size,
                                              max_eden_size,
                                              true /* full gc*/,
@@ -525,7 +523,7 @@ void PSMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
     SystemDictionary::oops_do(mark_and_push_closure());
     ClassLoaderDataGraph::always_strong_cld_do(follow_cld_closure());
     // Do not treat nmethods as strong roots for mark/sweep, since we can unload them.
-    //CodeCache::scavenge_root_nmethods_do(CodeBlobToOopClosure(mark_and_push_closure()));
+    //ScavengableNMethods::scavengable_nmethods_do(CodeBlobToOopClosure(mark_and_push_closure()));
     AOTLoader::oops_do(mark_and_push_closure());
   }
 

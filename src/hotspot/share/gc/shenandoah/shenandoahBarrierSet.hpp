@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2013, 2019, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -84,8 +84,8 @@ public:
 
   virtual void on_thread_create(Thread* thread);
   virtual void on_thread_destroy(Thread* thread);
-  virtual void on_thread_attach(JavaThread* thread);
-  virtual void on_thread_detach(JavaThread* thread);
+  virtual void on_thread_attach(Thread* thread);
+  virtual void on_thread_detach(Thread* thread);
 
   virtual oop read_barrier(oop src);
 
@@ -226,7 +226,10 @@ public:
 
     template <typename T>
     static void oop_store_in_heap(T* addr, oop value) {
-      ShenandoahBarrierSet::barrier_set()->write_ref_field_pre_work(addr, value);
+      const bool keep_alive = (decorators & AS_NO_KEEPALIVE) == 0;
+      if (keep_alive) {
+        ShenandoahBarrierSet::barrier_set()->write_ref_field_pre_work(addr, value);
+      }
       Raw::oop_store(addr, value);
     }
 

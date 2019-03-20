@@ -124,8 +124,12 @@ public class SplitIndexWriter extends AbstractIndexWriter {
         HtmlTree header = HtmlTree.HEADER();
         addTop(header);
         navBar.setUserHeader(getUserHeaderFooter(true));
-        header.addContent(navBar.getContent(true));
-        body.addContent(header);
+        header.add(navBar.getContent(true));
+        body.add(header);
+        HtmlTree main = HtmlTree.MAIN();
+        main.add(HtmlTree.DIV(HtmlStyle.header,
+                HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
+                        contents.getContent("doclet.Index"))));
         HtmlTree divTree = new HtmlTree(HtmlTag.DIV);
         divTree.setStyle(HtmlStyle.contentContainer);
         addLinksForIndexes(divTree);
@@ -138,12 +142,13 @@ public class SplitIndexWriter extends AbstractIndexWriter {
                     configuration.tagSearchIndexMap.get(unicode), divTree);
         }
         addLinksForIndexes(divTree);
-        body.addContent(HtmlTree.MAIN(divTree));
+        main.add(divTree);
+        body.add(main);
         HtmlTree footer = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
-        footer.addContent(navBar.getContent(false));
+        footer.add(navBar.getContent(false));
         addBottom(footer);
-        body.addContent(footer);
+        body.add(footer);
         String description = "index: " + unicode;
         printHtmlDocument(null, description, body);
     }
@@ -156,16 +161,16 @@ public class SplitIndexWriter extends AbstractIndexWriter {
     protected void addLinksForIndexes(Content contentTree) {
         for (int i = 0; i < indexElements.size(); i++) {
             int j = i + 1;
-            contentTree.addContent(links.createLink(DocPaths.indexN(j),
+            contentTree.add(links.createLink(DocPaths.indexN(j),
                     new StringContent(indexElements.get(i).toString())));
-            contentTree.addContent(Contents.SPACE);
+            contentTree.add(Contents.SPACE);
         }
-        contentTree.addContent(new HtmlTree(HtmlTag.BR));
-        contentTree.addContent(links.createLink(pathToRoot.resolve(DocPaths.ALLCLASSES_INDEX),
+        contentTree.add(new HtmlTree(HtmlTag.BR));
+        contentTree.add(links.createLink(pathToRoot.resolve(DocPaths.ALLCLASSES_INDEX),
                 contents.allClassesLabel));
         if (!configuration.packages.isEmpty()) {
-            contentTree.addContent(Contents.SPACE);
-            contentTree.addContent(links.createLink(pathToRoot.resolve(DocPaths.ALLPACKAGES_INDEX),
+            contentTree.add(Contents.SPACE);
+            contentTree.add(links.createLink(pathToRoot.resolve(DocPaths.ALLPACKAGES_INDEX),
                     contents.allPackagesLabel));
     }
 }

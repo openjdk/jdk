@@ -30,6 +30,7 @@ include $(SPEC)
 include MakeBase.gmk
 include JavaCompilation.gmk
 include SetupJavaCompilers.gmk
+include Execute.gmk
 
 ifeq ($(call isTargetOs, windows), true)
   # The next part is a bit hacky. We include the CompileJvm.gmk to be
@@ -144,14 +145,16 @@ ifeq ($(call isTargetOs, windows), true)
   VCPROJ_VARDEPS_FILE := $(call DependOnVariable, VCPROJ_VARDEPS, \
     $(VCPROJ_FILE).vardeps)
 
-  $(VCPROJ_FILE): $(BUILD_PROJECT_CREATOR) $(VCPROJ_VARDEPS_FILE)
-	$(call MakeDir, $(@D))
-	$(call ExecuteWithLog, $@, \
-	    $(PROJECT_CREATOR_TOOL) $(PROJECT_CREATOR_CLASS) \
-	    $(PROJECT_CREATOR_ARGS) -projectFileName $(call FixPath, $@)) \
-	    $(LOG_INFO)
+  $(eval $(call SetupExecute, vcproj_file, \
+      INFO := Generating Visual Studio project file, \
+      DEPS := $(BUILD_PROJECT_CREATOR) $(VCPROJ_VARDEPS_FILE), \
+      OUTPUT_FILE := $(VCPROJ_FILE), \
+      COMMAND := $(PROJECT_CREATOR_TOOL) $(PROJECT_CREATOR_CLASS) \
+          $(PROJECT_CREATOR_ARGS) -projectFileName $(call FixPath, $(VCPROJ_FILE)) \
+          $(LOG_INFO), \
+  ))
 
-  TARGETS += $(VCPROJ_FILE)
+  TARGETS += $(vcproj_file_TARGET)
 
   all: $(TARGETS)
 

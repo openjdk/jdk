@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 import java.util.Date;
 import java.util.Locale;
+import java.util.TimeZone;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.util.JarUtils;
@@ -46,6 +47,7 @@ public class NoTimestampTest extends Test {
      * and checks that proper warnings are shown.
      */
     public static void main(String[] args) throws Throwable {
+
         Locale reservedLocale = Locale.getDefault();
         Locale.setDefault(Locale.US);
 
@@ -61,6 +63,9 @@ public class NoTimestampTest extends Test {
     private void start() throws Throwable {
         String timezone = System.getProperty("user.timezone");
         System.out.println(String.format("Timezone = %s", timezone));
+        if (timezone != null) {
+            TimeZone.setDefault(TimeZone.getTimeZone(timezone));
+        }
 
         // create a jar file that contains one class file
         Utils.createFiles(FIRST_FILE);
@@ -73,10 +78,11 @@ public class NoTimestampTest extends Test {
                 "-validity", Integer.toString(VALIDITY));
 
         Date expirationDate = getCertExpirationDate();
+        System.out.println("Cert expiration: " + expirationDate);
 
         // sign jar file
         OutputAnalyzer analyzer = jarsigner(
-                "-J-Duser.timezone=" + timezone,
+                userTimezoneOpt(timezone),
                 "-keystore", KEYSTORE,
                 "-storepass", PASSWORD,
                 "-keypass", PASSWORD,
@@ -90,7 +96,7 @@ public class NoTimestampTest extends Test {
 
         // verify signed jar
         analyzer = jarsigner(
-                "-J-Duser.timezone=" + timezone,
+                userTimezoneOpt(timezone),
                 "-verify",
                 "-keystore", KEYSTORE,
                 "-storepass", PASSWORD,
@@ -103,7 +109,7 @@ public class NoTimestampTest extends Test {
 
         // verify signed jar in strict mode
         analyzer = jarsigner(
-                "-J-Duser.timezone=" + timezone,
+                userTimezoneOpt(timezone),
                 "-verify",
                 "-strict",
                 "-keystore", KEYSTORE,
@@ -115,6 +121,10 @@ public class NoTimestampTest extends Test {
         checkVerifying(analyzer, 0, warning);
 
         System.out.println("Test passed");
+    }
+
+    private static String userTimezoneOpt(String timezone) {
+        return timezone == null ? null : "-J-Duser.timezone=" + timezone;
     }
 
     private static Date getCertExpirationDate() throws Exception {

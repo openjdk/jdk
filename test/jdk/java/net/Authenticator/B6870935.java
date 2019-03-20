@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -240,7 +240,7 @@ public class B6870935 {
         try  {
 
             Authenticator.setDefault (new MyAuthenticator ());
-            SocketAddress addr = new InetSocketAddress ("127.0.0.1", port);
+            SocketAddress addr = new InetSocketAddress (InetAddress.getLoopbackAddress(), port);
             Proxy proxy = new Proxy (Proxy.Type.HTTP, addr);
             String s = "http://www.ibm.com";
             URL url = new URL(s);

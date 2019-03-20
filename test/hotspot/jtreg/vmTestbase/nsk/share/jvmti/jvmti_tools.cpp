@@ -584,6 +584,10 @@ void nsk_jvmti_agentFailed() {
 int isThreadExpected(jvmtiEnv *jvmti, jthread thread) {
     static const char *vm_jfr_buffer_thread_name = "VM JFR Buffer Thread";
     static const char *jfr_request_timer_thread_name = "JFR request timer";
+    static const char *graal_management_bean_registration_thread_name =
+                                            "HotSpotGraalManagement Bean Registration";
+    static const char *graal_compiler_thread_name_prefix = "JVMCI CompilerThread";
+    static const size_t prefixLength = strlen(graal_compiler_thread_name_prefix);
 
     jvmtiThreadInfo threadinfo;
     NSK_JVMTI_VERIFY(jvmti->GetThreadInfo(thread, &threadinfo));
@@ -592,6 +596,13 @@ int isThreadExpected(jvmtiEnv *jvmti, jthread thread) {
         return 0;
 
     if (strcmp(threadinfo.name, jfr_request_timer_thread_name) == 0)
+        return 0;
+
+    if (strcmp(threadinfo.name, graal_management_bean_registration_thread_name) == 0)
+        return 0;
+
+    if ((strlen(threadinfo.name) > prefixLength) &&
+         strncmp(threadinfo.name, graal_compiler_thread_name_prefix, prefixLength) == 0)
         return 0;
 
     return 1;

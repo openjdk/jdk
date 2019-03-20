@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8160489
+ * @bug 8160489 8217868
  * @summary tests for --patch-modules
  * @library /tools/lib
  * @modules
@@ -191,6 +191,24 @@ public class PatchModulesTest extends ModuleTestBase {
         if (Files.exists(classes.resolve("javax"))) {
             throw new AssertionError();
         }
+    }
+
+    @Test
+    public void testPatchModuleSourcePathClash(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src,
+                          "module m { uses test.Test; }",
+                          "package test; public class Test { }");
+        Path classes = base.resolve("classes");
+        tb.createDirectories(classes);
+
+        new toolbox.JavacTask(tb)
+            .options("--patch-module", "other=" + src.toString(),
+                     "-sourcepath", src.toString())
+            .outdir(classes)
+            .files(findJavaFiles(src.resolve("module-info.java")))
+            .run()
+            .writeAll();
     }
 }
 

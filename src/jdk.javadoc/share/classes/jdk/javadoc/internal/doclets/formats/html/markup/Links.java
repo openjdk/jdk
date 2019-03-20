@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,6 @@ public class Links {
 
     /**
      * Creates an anchor of the form {@code <a id="name"><!-- --></a>}.
-     * In HTML4, a {@code name} attribute will be generated instead of an {@code id} attribute.
      *
      * @param name the value for the {@code id} or {@code name} attribute
      * @return a content tree for the anchor
@@ -73,7 +72,6 @@ public class Links {
 
     /**
      * Creates an anchor of the form {@code <a id="sectionName"><!-- --></a>}.
-     * In HTML4, a {@code name} attribute will be generated instead of an {@code id} attribute.
      *
      * @param sectionName the value for the {@code id} or {@code name} attribute
      * @return a content tree for the anchor
@@ -84,7 +82,6 @@ public class Links {
 
     /**
      * Creates an anchor of the form {@code <a id="sectionNameName"><!-- --></a>}.
-     * In HTML4, a {@code name} attribute will be generated instead of an {@code id} attribute.
      *
      * @param sectionName the first part of the value for the {@code id} or {@code name} attribute
      * @param name the second part of the value for the {@code id} or {@code name} attribute
@@ -96,7 +93,6 @@ public class Links {
 
     /**
      * Creates an anchor of the form {@code <a id="anchorName">content</a>}.
-     * In HTML4, a {@code name} attribute will be generated instead of an {@code id} attribute.
      *
      * @param name the value for the {@code id} or {@code name} attribute
      * @param content the content that should be added to the anchor,
@@ -237,10 +233,10 @@ public class Links {
     public Content createLink(DocLink link, Content label, String title, String target) {
         HtmlTree anchor = HtmlTree.A(link.relativizeAgainst(file).toString(), label);
         if (title != null && title.length() != 0) {
-            anchor.addAttr(HtmlAttr.TITLE, title);
+            anchor.put(HtmlAttr.TITLE, title);
         }
         if (target != null && target.length() != 0) {
-            anchor.addAttr(HtmlAttr.TARGET, target);
+            anchor.put(HtmlAttr.TARGET, target);
         }
         return anchor;
     }
@@ -283,10 +279,10 @@ public class Links {
         }
         HtmlTree l = HtmlTree.A(link.relativizeAgainst(file).toString(), body);
         if (title != null && title.length() != 0) {
-            l.addAttr(HtmlAttr.TITLE, title);
+            l.put(HtmlAttr.TITLE, title);
         }
         if (target != null && target.length() != 0) {
-            l.addAttr(HtmlAttr.TARGET, target);
+            l.put(HtmlAttr.TARGET, target);
         }
         if (isExternal) {
             l.setStyle(HtmlStyle.externalLink);

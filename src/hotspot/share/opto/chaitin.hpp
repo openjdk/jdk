@@ -114,9 +114,9 @@ public:
     _msize_valid=1;
     if (_is_vector) {
       assert(!_fat_proj, "sanity");
-      _mask.verify_sets(_num_regs);
+      assert(_mask.is_aligned_sets(_num_regs), "mask is not aligned, adjacent sets");
     } else if (_num_regs == 2 && !_fat_proj) {
-      _mask.verify_pairs();
+      assert(_mask.is_aligned_pairs(), "mask is not aligned, adjacent pairs");
     }
 #endif
   }

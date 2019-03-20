@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -1450,6 +1450,15 @@ const bool Matcher::match_rule_supported(int opcode) {
       if (UseSSE < 2)
         ret_value = false;
       break;
+#ifdef _LP64
+    case Op_MaxD:
+    case Op_MaxF:
+    case Op_MinD:
+    case Op_MinF:
+      if (UseAVX < 1) // enabled for AVX only
+        ret_value = false;
+      break;
+#endif
   }
 
   return ret_value;  // Per default match rules are supported.

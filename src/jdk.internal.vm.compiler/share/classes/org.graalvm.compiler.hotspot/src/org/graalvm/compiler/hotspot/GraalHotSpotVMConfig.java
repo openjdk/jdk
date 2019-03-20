@@ -92,6 +92,7 @@ public class GraalHotSpotVMConfig extends GraalHotSpotVMConfigBase {
     public final boolean useBiasedLocking = getFlag("UseBiasedLocking", Boolean.class);
     public final boolean usePopCountInstruction = getFlag("UsePopCountInstruction", Boolean.class);
     public final boolean useAESIntrinsics = getFlag("UseAESIntrinsics", Boolean.class);
+    public final boolean useAESCTRIntrinsics = getFlag("UseAESCTRIntrinsics", Boolean.class, false);
     public final boolean useCRC32Intrinsics = getFlag("UseCRC32Intrinsics", Boolean.class);
     public final boolean useCRC32CIntrinsics = versioned.useCRC32CIntrinsics;
     public final boolean threadLocalHandshakes = getFlag("ThreadLocalHandshakes", Boolean.class, false);
@@ -100,10 +101,12 @@ public class GraalHotSpotVMConfig extends GraalHotSpotVMConfigBase {
     private final boolean useSHA1Intrinsics = getFlag("UseSHA1Intrinsics", Boolean.class);
     private final boolean useSHA256Intrinsics = getFlag("UseSHA256Intrinsics", Boolean.class);
     private final boolean useSHA512Intrinsics = getFlag("UseSHA512Intrinsics", Boolean.class);
+    private final boolean useGHASHIntrinsics = getFlag("UseGHASHIntrinsics", Boolean.class, false);
     private final boolean useMontgomeryMultiplyIntrinsic = getFlag("UseMontgomeryMultiplyIntrinsic", Boolean.class, false);
     private final boolean useMontgomerySquareIntrinsic = getFlag("UseMontgomerySquareIntrinsic", Boolean.class, false);
     private final boolean useMulAddIntrinsic = getFlag("UseMulAddIntrinsic", Boolean.class, false);
     private final boolean useSquareToLenIntrinsic = getFlag("UseSquareToLenIntrinsic", Boolean.class, false);
+    public final boolean useVectorizedMismatchIntrinsic = getFlag("UseVectorizedMismatchIntrinsic", Boolean.class, false);
 
     /*
      * These are methods because in some JDKs the flags are visible but the stubs themselves haven't
@@ -114,15 +117,19 @@ public class GraalHotSpotVMConfig extends GraalHotSpotVMConfigBase {
     }
 
     public boolean useSHA1Intrinsics() {
-        return useSHA1Intrinsics && sha1ImplCompress != 0;
+        return useSHA1Intrinsics && sha1ImplCompress != 0 && sha1ImplCompressMultiBlock != 0;
     }
 
     public boolean useSHA256Intrinsics() {
-        return useSHA256Intrinsics && sha256ImplCompress != 0;
+        return useSHA256Intrinsics && sha256ImplCompress != 0 && sha256ImplCompressMultiBlock != 0;
     }
 
     public boolean useSHA512Intrinsics() {
-        return useSHA512Intrinsics && sha512ImplCompress != 0;
+        return useSHA512Intrinsics && sha512ImplCompress != 0 && sha512ImplCompressMultiBlock != 0;
+    }
+
+    public boolean useGHASHIntrinsics() {
+        return useGHASHIntrinsics && ghashProcessBlocks != 0;
     }
 
     public boolean useMontgomeryMultiplyIntrinsic() {
@@ -309,7 +316,17 @@ public class GraalHotSpotVMConfig extends GraalHotSpotVMConfigBase {
     public final int jvmAccWrittenFlags = getConstant("JVM_ACC_WRITTEN_FLAGS", Integer.class);
     public final int jvmAccSynthetic = getConstant("JVM_ACC_SYNTHETIC", Integer.class);
 
-    public final int jvmciCompileStateCanPostOnExceptionsOffset = getFieldOffset("JVMCIEnv::_jvmti_can_post_on_exceptions", Integer.class, "jbyte", Integer.MIN_VALUE);
+    public final int jvmciCompileStateCanPostOnExceptionsOffset = getJvmciCompileStateCanPostOnExceptionsOffset();
+
+    // Integer.MIN_VALUE if not available
+    private int getJvmciCompileStateCanPostOnExceptionsOffset() {
+        int offset = getFieldOffset("JVMCICompileState::_jvmti_can_post_on_exceptions", Integer.class, "jbyte", Integer.MIN_VALUE);
+        if (offset == Integer.MIN_VALUE) {
+            // JDK 12
+            offset = getFieldOffset("JVMCIEnv::_jvmti_can_post_on_exceptions", Integer.class, "jbyte", Integer.MIN_VALUE);
+        }
+        return offset;
+    }
 
     public final int threadTlabOffset = getFieldOffset("Thread::_tlab", Integer.class, "ThreadLocalAllocBuffer");
     public final int javaThreadAnchorOffset = getFieldOffset("JavaThread::_anchor", Integer.class, "JavaFrameAnchor");
@@ -372,11 +389,28 @@ public class GraalHotSpotVMConfig extends GraalHotSpotVMConfigBase {
     public final int pendingExceptionOffset = getFieldOffset("ThreadShadow::_pending_exception", Integer.class, "oop");
 
     public final int pendingDeoptimizationOffset = getFieldOffset("JavaThread::_pending_deoptimization", Integer.class, "int");
-    public final int pendingFailedSpeculationOffset = getFieldOffset("JavaThread::_pending_failed_speculation", Integer.class, "long");
     public final int pendingTransferToInterpreterOffset = getFieldOffset("JavaThread::_pending_transfer_to_interpreter", Integer.class, "bool");
 
     private final int javaFrameAnchorLastJavaSpOffset = getFieldOffset("JavaFrameAnchor::_last_Java_sp", Integer.class, "intptr_t*");
     private final int javaFrameAnchorLastJavaPcOffset = getFieldOffset("JavaFrameAnchor::_last_Java_pc", Integer.class, "address");
+
+    public final int pendingFailedSpeculationOffset;
+    {
+        String name = "JavaThread::_pending_failed_speculation";
+        int offset = -1;
+        try {
+            offset = getFieldOffset(name, Integer.class, "jlong");
+        } catch (JVMCIError e) {
+            try {
+                offset = getFieldOffset(name, Integer.class, "long");
+            } catch (JVMCIError e2) {
+            }
+        }
+        if (offset == -1) {
+            throw new JVMCIError("cannot get offset of field " + name + " with type long or jlong");
+        }
+        pendingFailedSpeculationOffset = offset;
+    }
 
     public int threadLastJavaSpOffset() {
         return javaThreadAnchorOffset + javaFrameAnchorLastJavaSpOffset;
@@ -602,11 +636,11 @@ public class GraalHotSpotVMConfig extends GraalHotSpotVMConfigBase {
     public final long crcTableAddress = getFieldValue("StubRoutines::_crc_table_adr", Long.class, "address");
 
     public final long sha1ImplCompress = getFieldValue("StubRoutines::_sha1_implCompress", Long.class, "address", 0L);
-    public final long sha1ImplCompressMB = getFieldValue("StubRoutines::_sha1_implCompressMB", Long.class, "address", 0L);
+    public final long sha1ImplCompressMultiBlock = getFieldValue("StubRoutines::_sha1_implCompressMB", Long.class, "address", 0L);
     public final long sha256ImplCompress = getFieldValue("StubRoutines::_sha256_implCompress", Long.class, "address", 0L);
-    public final long sha256ImplCompressMB = getFieldValue("StubRoutines::_sha256_implCompressMB", Long.class, "address", 0L);
+    public final long sha256ImplCompressMultiBlock = getFieldValue("StubRoutines::_sha256_implCompressMB", Long.class, "address", 0L);
     public final long sha512ImplCompress = getFieldValue("StubRoutines::_sha512_implCompress", Long.class, "address", 0L);
-    public final long sha512ImplCompressMB = getFieldValue("StubRoutines::_sha512_implCompressMB", Long.class, "address", 0L);
+    public final long sha512ImplCompressMultiBlock = getFieldValue("StubRoutines::_sha512_implCompressMB", Long.class, "address", 0L);
     public final long multiplyToLen = getFieldValue("StubRoutines::_multiplyToLen", Long.class, "address", longRequiredOnAMD64);
 
     public final long counterModeAESCrypt = getFieldValue("StubRoutines::_counterMode_AESCrypt", Long.class, "address", 0L);

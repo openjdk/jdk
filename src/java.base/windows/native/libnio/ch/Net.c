@@ -83,10 +83,23 @@ jint handleSocketError(JNIEnv *env, int errorValue)
     return IOS_THROWN;
 }
 
+static jclass isa_class;        /* java.net.InetSocketAddress */
+static jmethodID isa_ctorID;    /* InetSocketAddress(InetAddress, int) */
+
 JNIEXPORT void JNICALL
 Java_sun_nio_ch_Net_initIDs(JNIEnv *env, jclass clazz)
 {
-    initInetAddressIDs(env);
+     jclass cls = (*env)->FindClass(env, "java/net/InetSocketAddress");
+     CHECK_NULL(cls);
+     isa_class = (*env)->NewGlobalRef(env, cls);
+     if (isa_class == NULL) {
+         JNU_ThrowOutOfMemoryError(env, NULL);
+         return;
+     }
+     isa_ctorID = (*env)->GetMethodID(env, cls, "<init>", "(Ljava/net/InetAddress;I)V");
+     CHECK_NULL(isa_ctorID);
+
+     initInetAddressIDs(env);
 }
 
 JNIEXPORT jboolean JNICALL
@@ -192,7 +205,6 @@ Java_sun_nio_ch_Net_listen(JNIEnv *env, jclass cl, jobject fdo, jint backlog)
     }
 }
 
-
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_Net_connect0(JNIEnv *env, jclass clazz, jboolean preferIPv6, jobject fdo,
                              jobject iao, jint port)
@@ -222,6 +234,42 @@ Java_sun_nio_ch_Net_connect0(JNIEnv *env, jclass clazz, jboolean preferIPv6, job
             setConnectionReset(s, TRUE);
         }
     }
+    return 1;
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_Net_accept(JNIEnv *env, jclass clazz, jobject fdo, jobject newfdo,
+                           jobjectArray isaa)
+{
+    jint fd = fdval(env,fdo);
+    jint newfd;
+    SOCKETADDRESS sa;
+    int addrlen = sizeof(sa);
+    jobject remote_ia;
+    jint remote_port = 0;
+    jobject isa;
+
+    memset((char *)&sa, 0, sizeof(sa));
+    newfd = (jint) accept(fd, &sa.sa, &addrlen);
+    if (newfd == INVALID_SOCKET) {
+        int theErr = (jint)WSAGetLastError();
+        if (theErr == WSAEWOULDBLOCK) {
+            return IOS_UNAVAILABLE;
+        }
+        JNU_ThrowIOExceptionWithLastError(env, "Accept failed");
+        return IOS_THROWN;
+    }
+
+    SetHandleInformation((HANDLE)(UINT_PTR)newfd, HANDLE_FLAG_INHERIT, 0);
+    setfdval(env, newfdo, newfd);
+
+    remote_ia = NET_SockaddrToInetAddress(env, &sa, (int *)&remote_port);
+    CHECK_NULL_RETURN(remote_ia, IOS_THROWN);
+
+    isa = (*env)->NewObject(env, isa_class, isa_ctorID, remote_ia, remote_port);
+    CHECK_NULL_RETURN(isa, IOS_THROWN);
+    (*env)->SetObjectArrayElement(env, isaa, 0, isa);
+
     return 1;
 }
 

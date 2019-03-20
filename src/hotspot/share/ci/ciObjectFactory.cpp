@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -689,11 +689,11 @@ ciSymbol* ciObjectFactory::vm_symbol_at(int index) {
 
 // ------------------------------------------------------------------
 // ciObjectFactory::metadata_do
-void ciObjectFactory::metadata_do(void f(Metadata*)) {
+void ciObjectFactory::metadata_do(MetadataClosure* f) {
   if (_ci_metadata == NULL) return;
   for (int j = 0; j< _ci_metadata->length(); j++) {
     Metadata* o = _ci_metadata->at(j)->constant_encoding();
-    f(o);
+    f->do_metadata(o);
   }
 }
 

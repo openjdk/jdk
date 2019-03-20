@@ -39,6 +39,11 @@ public abstract class PrimitiveStamp extends ArithmeticStamp {
         this.bits = bits;
     }
 
+    @Override
+    public void accept(Visitor v) {
+        v.visitInt(bits);
+    }
+
     /**
      * The width in bits of the value described by this stamp.
      */

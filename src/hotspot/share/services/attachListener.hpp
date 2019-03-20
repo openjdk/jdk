@@ -106,7 +106,7 @@ class AttachOperation: public CHeapObj<mtInternal> {
   enum {
     name_length_max = 16,       // maximum length of  name
     arg_length_max = 1024,      // maximum length of argument
-    arg_count_max = 4           // maximum number of arguments
+    arg_count_max = 3           // maximum number of arguments
   };
 
   // name of special operation that can be enqueued when all

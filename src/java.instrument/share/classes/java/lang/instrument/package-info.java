@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
  * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the Classpath exception as provided
+ * particular file as subject to the "Classpath" exception as provided
  * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
@@ -52,7 +52,7 @@
  * <p> Each of these ways to start an agent is described below.
  *
  *
- * <h3>Starting an Agent from the Command-Line Interface</h3>
+ * <h2>Starting an Agent from the Command-Line Interface</h2>
  *
  * <p> Where an implementation provides a means to start agents from the
  * command-line interface, an agent is started by adding the following option
@@ -113,7 +113,7 @@
  * threads, is legal from {@code premain}.
  *
  *
- * <h3>Starting an Agent After VM Startup</h3>
+ * <h2>Starting an Agent After VM Startup</h2>
  *
  * <p> An implementation may provide a mechanism to start agents sometime after
  * the the VM has started. The details as to how this is initiated are
@@ -164,7 +164,7 @@
  * by the JVM for troubleshooting purposes).
  *
  *
- * <h3>Including an Agent in an Executable JAR file</h3>
+ * <h2>Including an Agent in an Executable JAR file</h2>
  *
  * <p> The JAR File Specification defines manifest attributes for standalone
  * applications that are packaged as <em>executable JAR files</em>. If an
@@ -194,8 +194,8 @@
  * an uncaught exception or error, the JVM will abort.
  *
  *
- * <h3> Loading agent classes and the modules/classes available to the agent
- * class </h3>
+ * <h2> Loading agent classes and the modules/classes available to the agent
+ * class </h2>
  *
  * <p> Classes loaded from the agent JAR file are loaded by the
  * {@linkplain ClassLoader#getSystemClassLoader() system class loader} and are
@@ -242,7 +242,7 @@
  * In other words, a custom system class loader must support the mechanism to
  * add an agent JAR file to the system class loader search.
  *
- * <h3>Manifest Attributes</h3>
+ * <h2>Manifest Attributes</h2>
  *
  * <p> The following manifest attributes are defined for an agent JAR file:
  *
@@ -311,7 +311,7 @@
  * ignored).
  *
  *
- * <h3>Instrumenting code in modules</h3>
+ * <h2>Instrumenting code in modules</h2>
  *
  * <p> As an aid to agents that deploy supporting classes on the search path of
  * the bootstrap class loader, or the search path of the class loader that loads

@@ -30,7 +30,6 @@
 #include "memory/resourceArea.hpp"
 
 const bool ClassFileStream::verify = true;
-const bool ClassFileStream::no_verification = false;
 
 void ClassFileStream::truncated_file_error(TRAPS) const {
   THROW_MSG(vmSymbols::java_lang_ClassFormatError(), "Truncated class file");
@@ -71,69 +70,6 @@ const ClassFileStream* ClassFileStream::clone() const {
                              length(),
                              clone_source(),
                              need_verify());
-}
-
-u1 ClassFileStream::get_u1(TRAPS) const {
-  if (_need_verify) {
-    guarantee_more(1, CHECK_0);
-  } else {
-    assert(1 <= _buffer_end - _current, "buffer overflow");
-  }
-  return *_current++;
-}
-
-u2 ClassFileStream::get_u2(TRAPS) const {
-  if (_need_verify) {
-    guarantee_more(2, CHECK_0);
-  } else {
-    assert(2 <= _buffer_end - _current, "buffer overflow");
-  }
-  const u1* tmp = _current;
-  _current += 2;
-  return Bytes::get_Java_u2((address)tmp);
-}
-
-u4 ClassFileStream::get_u4(TRAPS) const {
-  if (_need_verify) {
-    guarantee_more(4, CHECK_0);
-  } else {
-    assert(4 <= _buffer_end - _current, "buffer overflow");
-  }
-  const u1* tmp = _current;
-  _current += 4;
-  return Bytes::get_Java_u4((address)tmp);
-}
-
-u8 ClassFileStream::get_u8(TRAPS) const {
-  if (_need_verify) {
-    guarantee_more(8, CHECK_0);
-  } else {
-    assert(8 <= _buffer_end - _current, "buffer overflow");
-  }
-  const u1* tmp = _current;
-  _current += 8;
-  return Bytes::get_Java_u8((address)tmp);
-}
-
-void ClassFileStream::skip_u1(int length, TRAPS) const {
-  if (_need_verify) {
-    guarantee_more(length, CHECK);
-  }
-  _current += length;
-}
-
-void ClassFileStream::skip_u2(int length, TRAPS) const {
-  if (_need_verify) {
-    guarantee_more(length * 2, CHECK);
-  }
-  _current += length * 2;
-}
-
-void ClassFileStream::skip_u4(int length, TRAPS) const {
-  if (_need_verify) {
-    guarantee_more(length * 4, CHECK);
-  }
-  _current += length * 4;
 }
 
 uint64_t ClassFileStream::compute_fingerprint() const {

@@ -75,10 +75,6 @@ void GenMarkSweep::invoke_at_safepoint(ReferenceProcessor* rp, bool clear_all_so
 
   gch->trace_heap_before_gc(_gc_tracer);
 
-  // When collecting the permanent generation Method*s may be moving,
-  // so we either have to flush all bcp data or convert it into bci.
-  CodeCache::gc_prologue();
-
   // Increment the invocation count
   _total_invocations++;
 
@@ -128,7 +124,7 @@ void GenMarkSweep::invoke_at_safepoint(ReferenceProcessor* rp, bool clear_all_so
     rs->invalidate_or_clear(old_gen);
   }
 
-  CodeCache::gc_epilogue();
+  gch->prune_scavengable_nmethods();
   JvmtiExport::gc_epilogue();
 
   // refs processing: clean slate

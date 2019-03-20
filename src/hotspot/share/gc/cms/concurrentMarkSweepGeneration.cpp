@@ -1498,8 +1498,7 @@ void CMSCollector::acquire_control_and_collect(bool full,
   // Has the GC time limit been exceeded?
   size_t max_eden_size = _young_gen->max_eden_size();
   GCCause::Cause gc_cause = heap->gc_cause();
-  size_policy()->check_gc_overhead_limit(_young_gen->used(),
-                                         _young_gen->eden()->used(),
+  size_policy()->check_gc_overhead_limit(_young_gen->eden()->used(),
                                          _cmsGen->max_capacity(),
                                          max_eden_size,
                                          full,
@@ -4194,9 +4193,6 @@ void CMSCollector::checkpointRootsFinalWork() {
 
   CMSHeap* heap = CMSHeap::heap();
 
-  if (should_unload_classes()) {
-    CodeCache::gc_prologue();
-  }
   assert(haveFreelistLocks(), "must have free list locks");
   assert_lock_strong(bitMapLock());
 
@@ -4252,7 +4248,7 @@ void CMSCollector::checkpointRootsFinalWork() {
   verify_overflow_empty();
 
   if (should_unload_classes()) {
-    CodeCache::gc_epilogue();
+    heap->prune_scavengable_nmethods();
   }
   JvmtiExport::gc_epilogue();
 

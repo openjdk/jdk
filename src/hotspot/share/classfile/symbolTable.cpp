@@ -487,8 +487,8 @@ Symbol* SymbolTable::new_permanent_symbol(const char* name, TRAPS) {
   if (sym == NULL) {
     sym = SymbolTable::the_table()->do_add_if_needed(name, len, hash, false, CHECK_NULL);
   }
-  if (sym->refcount() != PERM_REFCOUNT) {
-    sym->increment_refcount();
+  if (!sym->is_permanent()) {
+    sym->make_permanent();
     log_trace_symboltable_helper(sym, "Asked for a permanent symbol, but got a regular one");
   }
   return sym;

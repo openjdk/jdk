@@ -40,23 +40,21 @@ import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.ReturnNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
-import org.graalvm.compiler.nodes.StructuredGraph.GuardsStage;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
+import org.graalvm.compiler.phases.common.GuardLoweringPhase;
 import org.graalvm.compiler.phases.common.LoweringPhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
-import org.graalvm.compiler.phases.tiers.PhaseContext;
+import org.graalvm.compiler.phases.tiers.MidTierContext;
 import org.graalvm.compiler.replacements.nodes.arithmetic.IntegerExactArithmeticNode;
 import org.graalvm.compiler.replacements.nodes.arithmetic.IntegerExactArithmeticSplitNode;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-@Ignore
 @RunWith(Parameterized.class)
 public class IntegerExactFoldTest extends GraalCompilerTest {
     private final long lowerBoundA;
@@ -97,6 +95,7 @@ public class IntegerExactFoldTest extends GraalCompilerTest {
         assertNotNull("original node must be in the graph", originalNode);
 
         new CanonicalizerPhase().apply(graph, getDefaultHighTierContext());
+
         ValueNode node = findNode(graph);
         boolean overflowExpected = node instanceof IntegerExactArithmeticNode;
 
@@ -110,17 +109,19 @@ public class IntegerExactFoldTest extends GraalCompilerTest {
 
         Node originalNode = graph.getNodes().filter(x -> x instanceof IntegerExactArithmeticNode).first();
         assertNotNull("original node must be in the graph", originalNode);
-
-        graph.setGuardsStage(GuardsStage.FIXED_DEOPTS);
         CanonicalizerPhase canonicalizer = new CanonicalizerPhase();
-        PhaseContext context = new PhaseContext(getProviders());
-        new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.HIGH_TIER).apply(graph, context);
+        HighTierContext highTierContext = getDefaultHighTierContext();
+        new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.HIGH_TIER).apply(graph, highTierContext);
+        MidTierContext midTierContext = getDefaultMidTierContext();
+        new GuardLoweringPhase().apply(graph, midTierContext);
+        new CanonicalizerPhase().apply(graph, midTierContext);
+
         IntegerExactArithmeticSplitNode loweredNode = graph.getNodes().filter(IntegerExactArithmeticSplitNode.class).first();
         assertNotNull("the lowered node must be in the graph", loweredNode);
 
         loweredNode.getX().setStamp(StampFactory.forInteger(bits, lowerBoundA, upperBoundA));
         loweredNode.getY().setStamp(StampFactory.forInteger(bits, lowerBoundB, upperBoundB));
-        new CanonicalizerPhase().apply(graph, context);
+        new CanonicalizerPhase().apply(graph, midTierContext);
 
         ValueNode node = findNode(graph);
         boolean overflowExpected = node instanceof IntegerExactArithmeticSplitNode;

@@ -37,11 +37,14 @@ import org.graalvm.compiler.core.match.ComplexMatchResult;
 import org.graalvm.compiler.core.match.MatchRule;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.lir.LIRFrameState;
+import org.graalvm.compiler.lir.LabelRef;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.aarch64.AArch64ArithmeticOp;
+import org.graalvm.compiler.lir.aarch64.AArch64ControlFlow;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.DeoptimizingNode;
+import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.AddNode;
@@ -176,6 +179,28 @@ public class AArch64NodeMatchRules extends NodeMatchRules {
             return builder -> getArithmeticLIRGenerator().emitMAdd(operand(a), operand(b), operand(c));
         }
         return builder -> getArithmeticLIRGenerator().emitMSub(operand(a), operand(b), operand(c));
+    }
+
+    /**
+     * ((x & (1 << n)) == 0) -> tbz/tbnz n label.
+     */
+    @MatchRule("(If (IntegerTest value Constant=a))")
+    public ComplexMatchResult testBitAndBranch(IfNode root, ValueNode value, ConstantNode a) {
+        if (value.getStackKind().isNumericInteger()) {
+            long constant = a.asJavaConstant().asLong();
+            if (Long.bitCount(constant) == 1) {
+                int bitToTest = Long.numberOfTrailingZeros(constant);
+                return builder -> {
+                    LabelRef trueDestination = getLIRBlock(root.trueSuccessor());
+                    LabelRef falseDestination = getLIRBlock(root.falseSuccessor());
+                    AllocatableValue src = moveSp(gen.asAllocatable(operand(value)));
+                    double trueDestinationProbability = root.getTrueSuccessorProbability();
+                    gen.append(new AArch64ControlFlow.BitTestAndBranchOp(trueDestination, falseDestination, src, trueDestinationProbability, bitToTest));
+                    return null;
+                };
+            }
+        }
+        return null;
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import jdk.tools.jaotc.LoadedClass;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
+import java.io.File;
 
 public final class ClassSearch {
     private final List<SourceProvider> providers = new ArrayList<>();
@@ -106,7 +107,7 @@ public final class ClassSearch {
 
     public static List<SearchFor> makeList(String type, String argument) {
         List<SearchFor> list = new ArrayList<>();
-        String[] elements = argument.split(":");
+        String[] elements = argument.split(File.pathSeparator);
         for (String element : elements) {
             list.add(new SearchFor(element, type));
         }

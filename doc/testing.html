@@ -1,24 +1,19 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<html>
 <head>
-  <meta charset="utf-8" />
-  <meta name="generator" content="pandoc" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
   <title>Testing the JDK</title>
-  <style type="text/css">
-      code{white-space: pre-wrap;}
-      span.smallcaps{font-variant: small-caps;}
-      span.underline{text-decoration: underline;}
-      div.column{display: inline-block; vertical-align: top; width: 50%;}
-  </style>
-  <link rel="stylesheet" href="../make/data/docs-resources/resources/jdk-default.css" />
+  <style type="text/css">code{white-space: pre;}</style>
+  <link rel="stylesheet" href="../make/data/docs-resources/resources/jdk-default.css">
   <!--[if lt IE 9]>
     <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
   <![endif]-->
   <style type="text/css">pre, code, tt { color: #1d6ae5; }</style>
 </head>
 <body>
-<header id="title-block-header">
+<header>
 <h1 class="title">Testing the JDK</h1>
 </header>
 <nav id="TOC">
@@ -124,7 +119,7 @@ TEST FAILURE</code></pre>
 <h3 id="jtreg-keywords">JTReg keywords</h3>
 <h4 id="jobs-1">JOBS</h4>
 <p>The test concurrency (<code>-concurrency</code>).</p>
-<p>Defaults to TEST_JOBS (if set by <code>--with-test-jobs=</code>), otherwise it defaults to JOBS, except for Hotspot, where the default is <em>number of CPU cores/2</em>, but never more than 12.</p>
+<p>Defaults to TEST_JOBS (if set by <code>--with-test-jobs=</code>), otherwise it defaults to JOBS, except for Hotspot, where the default is <em>number of CPU cores/2</em> (for sparc, if more than 16 cpus, then <em>number of CPU cores/5</em>, otherwise <em>number of CPU cores/4</em>), but never more than <em>memory size in GB/2</em>.</p>
 <h4 id="timeout_factor-1">TIMEOUT_FACTOR</h4>
 <p>The timeout factor (<code>-timeoutFactor</code>).</p>
 <p>Defaults to 4.</p>

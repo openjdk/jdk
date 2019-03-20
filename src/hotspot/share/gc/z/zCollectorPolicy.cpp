@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,6 @@
 #include "gc/z/zGlobals.hpp"
 
 void ZCollectorPolicy::initialize_alignments() {
-  _space_alignment = ZPageSizeMin;
+  _space_alignment = ZGranuleSize;
   _heap_alignment = _space_alignment;
 }

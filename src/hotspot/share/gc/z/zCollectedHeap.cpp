@@ -106,10 +106,6 @@ bool ZCollectedHeap::is_maximal_no_gc() const {
   return false;
 }
 
-bool ZCollectedHeap::is_scavengable(oop obj) {
-  return false;
-}
-
 bool ZCollectedHeap::is_in(const void* p) const {
   return is_in_reserved(p) && _heap.is_in((uintptr_t)p);
 }
@@ -243,11 +239,6 @@ void ZCollectedHeap::safe_object_iterate(ObjectClosure* cl) {
 
 HeapWord* ZCollectedHeap::block_start(const void* addr) const {
   return (HeapWord*)_heap.block_start((uintptr_t)addr);
-}
-
-size_t ZCollectedHeap::block_size(const HeapWord* addr) const {
-  size_t size_in_bytes = _heap.block_size((uintptr_t)addr);
-  return ZUtils::bytes_to_words(size_in_bytes);
 }
 
 bool ZCollectedHeap::block_is_obj(const HeapWord* addr) const {

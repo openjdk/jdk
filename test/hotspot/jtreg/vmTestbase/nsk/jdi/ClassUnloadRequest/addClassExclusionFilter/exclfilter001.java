@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,15 @@
 
 package nsk.jdi.ClassUnloadRequest.addClassExclusionFilter;
 
+import jdk.test.lib.Utils;
 import nsk.share.*;
 import nsk.share.jdi.*;
 
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;
 import com.sun.jdi.request.*;
+
 import java.io.*;
-import java.util.*;
 
 /**
  * Debugger requests <code>ClassUnloadEvent</code> and sets class filter by calling
@@ -64,7 +65,7 @@ public class exclfilter001 {
     private static int exitStatus;
     private static Log log;
     private static Debugee debugee;
-    private static int eventWaitTime;
+    private static long waitTime;
 
     String[] patterns = {
                     prefix + "Sub*",
@@ -88,7 +89,7 @@ public class exclfilter001 {
         exclfilter001 tstObj = new exclfilter001();
 
         ArgumentHandler argHandler = new ArgumentHandler(argv);
-        eventWaitTime = argHandler.getWaitTime() * 60000;
+        waitTime = argHandler.getWaitTime();
         log = new Log(out, argHandler);
 
         debugee = Debugee.prepareDebugee(argHandler, log, debugeeName);
@@ -121,7 +122,7 @@ public class exclfilter001 {
             debugee.sendSignal(SGNL_UNLOAD);
             debugee.receiveExpectedSignal(SGNL_READY);
 
-            receiveEvents(eventWaitTime, patterns[i]);
+            receiveEvents(patterns[i]);
 
             display("");
             debugee.getEventRequestManager().deleteEventRequest(request);
@@ -146,19 +147,20 @@ public class exclfilter001 {
         return request;
     }
 
-    private void receiveEvents(int waitTime, String pattern) {
+    private void receiveEvents(String pattern) {
         EventSet eventSet = null;
         Event event;
-        int totalTime = waitTime;
+        long totalWaitTime = Utils.adjustTimeout(waitTime * 10000);
+        long waitTimeout = Utils.adjustTimeout(waitTime * 1000);
         long begin, delta;
         int count = 0;
         boolean exit = false;
 
         try {
             begin = System.currentTimeMillis();
-            eventSet = debugee.VM().eventQueue().remove(totalTime);
+            eventSet = debugee.VM().eventQueue().remove(waitTimeout);
             delta = System.currentTimeMillis() - begin;
-            totalTime -= delta;
+            totalWaitTime -= delta;
             while (eventSet != null) {
                 EventIterator eventIterator = eventSet.eventIterator();
                 while (eventIterator.hasNext()) {
@@ -174,14 +176,14 @@ public class exclfilter001 {
                         throw new Failure("Unexpected VMDisconnectEvent received");
                     }
                 }
-                if (totalTime <= 0 || exit) {
+                if (totalWaitTime <= 0 || exit) {
                     break;
                 }
                 debugee.resume();
-                    begin = System.currentTimeMillis();
-                eventSet = debugee.VM().eventQueue().remove(totalTime);
+                begin = System.currentTimeMillis();
+                eventSet = debugee.VM().eventQueue().remove(waitTimeout);
                 delta = System.currentTimeMillis() - begin;
-                totalTime -= delta;
+                totalWaitTime -= delta;
             }
         } catch(InterruptedException e) {
             throw new Failure(e);

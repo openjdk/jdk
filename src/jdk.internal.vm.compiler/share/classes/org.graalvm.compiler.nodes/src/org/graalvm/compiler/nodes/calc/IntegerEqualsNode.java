@@ -165,21 +165,83 @@ public final class IntegerEqualsNode extends CompareNode implements BinaryCommut
                 ValueNode v1 = null;
                 ValueNode v2 = null;
                 if (addX.getX() == addY.getX()) {
+                    // (x + y) == (x + z) => y == z
                     v1 = addX.getY();
                     v2 = addY.getY();
                 } else if (addX.getX() == addY.getY()) {
+                    // (x + y) == (z + x) => y == z
                     v1 = addX.getY();
                     v2 = addY.getX();
                 } else if (addX.getY() == addY.getX()) {
+                    // (y + x) == (x + z) => y == z
                     v1 = addX.getX();
                     v2 = addY.getY();
                 } else if (addX.getY() == addY.getY()) {
+                    // (y + x) == (z + x) => y == z
                     v1 = addX.getX();
                     v2 = addY.getX();
                 }
                 if (v1 != null) {
                     assert v2 != null;
                     return create(v1, v2, view);
+                }
+            }
+
+            if (forX instanceof SubNode && forY instanceof SubNode) {
+                SubNode subX = (SubNode) forX;
+                SubNode subY = (SubNode) forY;
+                ValueNode v1 = null;
+                ValueNode v2 = null;
+                if (subX.getX() == subY.getX()) {
+                    // (x - y) == (x - z) => y == z
+                    v1 = subX.getY();
+                    v2 = subY.getY();
+                } else if (subX.getY() == subY.getY()) {
+                    // (y - x) == (z - x) => y == z
+                    v1 = subX.getX();
+                    v2 = subY.getX();
+                }
+                if (v1 != null) {
+                    assert v2 != null;
+                    return create(v1, v2, view);
+                }
+            }
+
+            if (forX instanceof AddNode) {
+                AddNode addNode = (AddNode) forX;
+                if (addNode.getX() == forY) {
+                    // (x + y) == x => y == 0
+                    return create(addNode.getY(), ConstantNode.forIntegerStamp(view.stamp(addNode), 0), view);
+                } else if (addNode.getY() == forY) {
+                    // (x + y) == y => x == 0
+                    return create(addNode.getX(), ConstantNode.forIntegerStamp(view.stamp(addNode), 0), view);
+                }
+            }
+
+            if (forY instanceof AddNode) {
+                AddNode addNode = (AddNode) forY;
+                if (addNode.getX() == forX) {
+                    // x == (x + y) => y == 0
+                    return create(addNode.getY(), ConstantNode.forIntegerStamp(view.stamp(addNode), 0), view);
+                } else if (addNode.getY() == forX) {
+                    // y == (x + y) => x == 0
+                    return create(addNode.getX(), ConstantNode.forIntegerStamp(view.stamp(addNode), 0), view);
+                }
+            }
+
+            if (forX instanceof SubNode) {
+                SubNode subNode = (SubNode) forX;
+                if (subNode.getX() == forY) {
+                    // (x - y) == x => y == 0
+                    return create(subNode.getY(), ConstantNode.forIntegerStamp(view.stamp(subNode), 0), view);
+                }
+            }
+
+            if (forY instanceof SubNode) {
+                SubNode subNode = (SubNode) forY;
+                if (forX == subNode.getX()) {
+                    // x == (x - y) => y == 0
+                    return create(subNode.getY(), ConstantNode.forIntegerStamp(view.stamp(subNode), 0), view);
                 }
             }
 
@@ -305,5 +367,20 @@ public final class IntegerEqualsNode extends CompareNode implements BinaryCommut
             }
         }
         return TriState.UNKNOWN;
+    }
+
+    @Override
+    public TriState implies(boolean thisNegated, LogicNode other) {
+        // x == y => !(x < y)
+        // x == y => !(y < x)
+        if (!thisNegated && other instanceof IntegerLessThanNode) {
+            ValueNode otherX = ((IntegerLessThanNode) other).getX();
+            ValueNode otherY = ((IntegerLessThanNode) other).getY();
+            if ((getX() == otherX && getY() == otherY) || (getX() == otherY && getY() == otherX)) {
+                return TriState.FALSE;
+            }
+        }
+
+        return super.implies(thisNegated, other);
     }
 }

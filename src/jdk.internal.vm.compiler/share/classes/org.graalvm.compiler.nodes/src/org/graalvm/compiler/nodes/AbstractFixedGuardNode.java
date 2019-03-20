@@ -126,6 +126,14 @@ public abstract class AbstractFixedGuardNode extends DeoptimizingFixedWithNextNo
         try (DebugCloseable position = this.withNodeSourcePosition()) {
             FixedNode currentNext = next();
             setNext(null);
+            if (currentNext instanceof AbstractBeginNode && currentNext instanceof StateSplit && ((StateSplit) currentNext).stateAfter() != null) {
+                // Force an extra BeginNode in case any guarded Nodes are inputs to the StateSplit
+                BeginNode begin = graph().add(new BeginNode());
+                begin.setNodeSourcePosition(getNoDeoptSuccessorPosition());
+                begin.setNext(currentNext);
+                currentNext = begin;
+            }
+
             DeoptimizeNode deopt = graph().add(new DeoptimizeNode(action, reason, speculation));
             deopt.setStateBefore(stateBefore());
             IfNode ifNode;

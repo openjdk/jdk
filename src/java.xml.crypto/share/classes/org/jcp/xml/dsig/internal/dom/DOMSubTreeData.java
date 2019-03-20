@@ -82,7 +82,6 @@ public class DOMSubTreeData implements NodeSetData<Node> {
             this.withComments = !excludeComments;
         }
 
-        @Override
         public boolean hasNext() {
             if (nodeSet == null) {
                 nodeSet = dereferenceSameDocumentURI(root);
@@ -91,7 +90,6 @@ public class DOMSubTreeData implements NodeSetData<Node> {
             return li.hasNext();
         }
 
-        @Override
         public Node next() {
             if (nodeSet == null) {
                 nodeSet = dereferenceSameDocumentURI(root);
@@ -104,7 +102,6 @@ public class DOMSubTreeData implements NodeSetData<Node> {
             }
         }
 
-        @Override
         public void remove() {
             throw new UnsupportedOperationException();
         }

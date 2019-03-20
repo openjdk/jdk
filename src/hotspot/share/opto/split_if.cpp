@@ -523,7 +523,9 @@ void PhaseIdealLoop::do_split_if( Node *iff ) {
   }
   _igvn.remove_dead_node(new_iff);
   // Lazy replace IDOM info with the region's dominator
-  lazy_replace( iff, region_dom );
+  lazy_replace(iff, region_dom);
+  lazy_update(region, region_dom); // idom must be update before handle_uses
+  region->set_req(0, NULL);        // Break the self-cycle. Required for lazy_update to work on region
 
   // Now make the original merge point go dead, by handling all its uses.
   small_cache region_cache;
@@ -566,13 +568,8 @@ void PhaseIdealLoop::do_split_if( Node *iff ) {
     --k;
   } // End of while merge point has phis
 
-  assert(region->outcnt() == 1, "Only self reference should remain"); // Just Self on the Region
-  region->set_req(0, NULL);       // Break the self-cycle
+  _igvn.remove_dead_node(region);
 
-  // Any leftover bits in the splitting block must not have depended on local
-  // Phi inputs (these have already been split-up).  Hence it's safe to hoist
-  // these guys to the dominating point.
-  lazy_replace( region, region_dom );
 #ifndef PRODUCT
   if( VerifyLoopOptimizations ) verify();
 #endif

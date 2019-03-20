@@ -27,6 +27,7 @@
 
 #include "gc/shared/ageTable.hpp"
 #include "gc/shared/cardGeneration.hpp"
+#include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
@@ -119,12 +120,12 @@
   nonstatic_field(CardTable,                   _last_valid_index,                             const size_t)                          \
   nonstatic_field(CardTable,                   _page_size,                                    const size_t)                          \
   nonstatic_field(CardTable,                   _byte_map_size,                                const size_t)                          \
-  nonstatic_field(CardTable,                   _byte_map,                                     jbyte*)                                \
+  nonstatic_field(CardTable,                   _byte_map,                                     CardTable::CardValue*)                                \
   nonstatic_field(CardTable,                   _cur_covered_regions,                          int)                                   \
   nonstatic_field(CardTable,                   _covered,                                      MemRegion*)                            \
   nonstatic_field(CardTable,                   _committed,                                    MemRegion*)                            \
   nonstatic_field(CardTable,                   _guard_region,                                 MemRegion)                             \
-  nonstatic_field(CardTable,                   _byte_map_base,                                jbyte*)                                \
+  nonstatic_field(CardTable,                   _byte_map_base,                                CardTable::CardValue*)                                \
   nonstatic_field(CardTableBarrierSet,         _defer_initial_card_mark,                      bool)                                  \
   nonstatic_field(CardTableBarrierSet,         _card_table,                                   CardTable*)                            \
                                                                                                                                      \
@@ -217,6 +218,7 @@
   /* Miscellaneous other GC types */                                      \
                                                                           \
   declare_toplevel_type(AgeTable)                                         \
+  declare_toplevel_type(CardTable::CardValue)                             \
   declare_toplevel_type(Generation::StatRecord)                           \
   declare_toplevel_type(GenerationSpec)                                   \
   declare_toplevel_type(HeapWord)                                         \

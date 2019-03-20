@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,15 +123,6 @@ void SignatureIterator::check_signature_end() {
 }
 
 
-void SignatureIterator::dispatch_field() {
-  // no '(', just one (field) type
-  _index = 0;
-  _parameter_index = 0;
-  parse_type();
-  check_signature_end();
-}
-
-
 void SignatureIterator::iterate_parameters() {
   // Parse parameters
   _index = 0;
@@ -196,7 +187,6 @@ void SignatureIterator::iterate_parameters( uint64_t fingerprint ) {
         break;
       case done_parm:
         return;
-        break;
       default:
         tty->print_cr("*** parameter is " UINT64_FORMAT, fingerprint & parameter_feature_mask);
         tty->print_cr("*** fingerprint is " PTR64_FORMAT, saved_fingerprint);
@@ -205,7 +195,6 @@ void SignatureIterator::iterate_parameters( uint64_t fingerprint ) {
     }
     fingerprint >>= parameter_feature_size;
   }
-  _parameter_index = 0;
 }
 
 
@@ -239,10 +228,7 @@ void SignatureIterator::iterate_returntype() {
         break;
       case '[':
         {
-          int begin = ++_index;
-          while (sig->char_at(_index) == '[') {
-            _index++;
-          }
+          while (sig->char_at(++_index) == '[') ;
           if (sig->char_at(_index) == 'L') {
             while (sig->char_at(_index++) != ';') ;
           } else {
@@ -281,16 +267,17 @@ void SignatureIterator::iterate() {
 
 // Implementation of SignatureStream
 SignatureStream::SignatureStream(Symbol* signature, bool is_method) :
-                   _signature(signature), _at_return_type(false) {
+                   _signature(signature), _at_return_type(false), _previous_name(NULL), _names(NULL) {
   _begin = _end = (is_method ? 1 : 0);  // skip first '(' in method signatures
-  _names = new GrowableArray<Symbol*>(10);
   next();
 }
 
 SignatureStream::~SignatureStream() {
   // decrement refcount for names created during signature parsing
-  for (int i = 0; i < _names->length(); i++) {
-    _names->at(i)->decrement_refcount();
+  if (_names != NULL) {
+    for (int i = 0; i < _names->length(); i++) {
+      _names->at(i)->decrement_refcount();
+    }
   }
 }
 
@@ -359,10 +346,35 @@ Symbol* SignatureStream::as_symbol(TRAPS) {
     end--;
   }
 
+  const char* symbol_chars = (const char*)_signature->base() + begin;
+  int len = end - begin;
+
+  // Quick check for common symbols in signatures
+  assert((vmSymbols::java_lang_String()->utf8_length() == 16 && vmSymbols::java_lang_Object()->utf8_length() == 16), "sanity");
+  if (len == 16 &&
+      strncmp(symbol_chars, "java/lang/", 10) == 0) {
+    if (strncmp("String", symbol_chars + 10, 6) == 0) {
+      return vmSymbols::java_lang_String();
+    } else if (strncmp("Object", symbol_chars + 10, 6) == 0) {
+      return vmSymbols::java_lang_Object();
+    }
+  }
+
+  Symbol* name = _previous_name;
+  if (name != NULL && name->equals(symbol_chars, len)) {
+    return name;
+  }
+
   // Save names for cleaning up reference count at the end of
   // SignatureStream scope.
-  Symbol* name = SymbolTable::new_symbol(_signature, begin, end, CHECK_NULL);
-  _names->push(name);  // save new symbol for decrementing later
+  name = SymbolTable::new_symbol(symbol_chars, len, CHECK_NULL);
+  if (!name->is_permanent()) {
+    if (_names == NULL) {
+      _names = new GrowableArray<Symbol*>(10);
+    }
+    _names->push(name);  // save new symbol for decrementing later
+  }
+  _previous_name = name;
   return name;
 }
 
@@ -418,18 +430,7 @@ int SignatureStream::reference_parameter_count() {
   return args_count;
 }
 
-bool SignatureVerifier::is_valid_signature(Symbol* sig) {
-  const char* signature = (const char*)sig->bytes();
-  ssize_t len = sig->utf8_length();
-  if (signature == NULL || signature[0] == '\0' || len < 1) {
-    return false;
-  } else if (signature[0] == '(') {
-    return is_valid_method_signature(sig);
-  } else {
-    return is_valid_type_signature(sig);
-  }
-}
-
+#ifdef ASSERT
 bool SignatureVerifier::is_valid_method_signature(Symbol* sig) {
   const char* method_sig = (const char*)sig->bytes();
   ssize_t len = sig->utf8_length();
@@ -478,11 +479,12 @@ ssize_t SignatureVerifier::is_valid_type(const char* type, ssize_t limit) {
     case 'L':
       for (index = index + 1; index < limit; ++index) {
         char c = type[index];
-        if (c == ';') {
-          return index + 1;
-        }
-        if (invalid_name_char(c)) {
-          return -1;
+        switch (c) {
+          case ';':
+            return index + 1;
+          case '\0': case '.': case '[':
+            return -1;
+          default: ; // fall through
         }
       }
       // fall through
@@ -490,12 +492,4 @@ ssize_t SignatureVerifier::is_valid_type(const char* type, ssize_t limit) {
   }
   return -1;
 }
-
-bool SignatureVerifier::invalid_name_char(char c) {
-  switch (c) {
-    case '\0': case '.': case ';': case '[':
-      return true;
-    default:
-      return false;
-  }
-}
+#endif // ASSERT

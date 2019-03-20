@@ -48,7 +48,6 @@
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/intHisto.hpp"
 #include "utilities/stack.inline.hpp"
 #include "utilities/ticks.hpp"
 
@@ -115,12 +114,9 @@ private:
   // information. These are also called "dirty". Valid entries are from [0.._cur_dirty_region)
   uint* _dirty_region_buffer;
 
-  typedef jbyte IsDirtyRegionState;
-  static const IsDirtyRegionState Clean = 0;
-  static const IsDirtyRegionState Dirty = 1;
-  // Holds a flag for every region whether it is in the _dirty_region_buffer already
-  // to avoid duplicates. Uses jbyte since there are no atomic instructions for bools.
-  IsDirtyRegionState* _in_dirty_region_buffer;
+  // Flag for every region whether it is in the _dirty_region_buffer already
+  // to avoid duplicates.
+  bool volatile* _in_dirty_region_buffer;
   size_t _cur_dirty_region;
 
   // Creates a snapshot of the current _top values at the start of collection to
@@ -170,7 +166,7 @@ public:
       FREE_C_HEAP_ARRAY(uint, _dirty_region_buffer);
     }
     if (_in_dirty_region_buffer != NULL) {
-      FREE_C_HEAP_ARRAY(IsDirtyRegionState, _in_dirty_region_buffer);
+      FREE_C_HEAP_ARRAY(bool, _in_dirty_region_buffer);
     }
     if (_scan_top != NULL) {
       FREE_C_HEAP_ARRAY(HeapWord*, _scan_top);
@@ -184,7 +180,7 @@ public:
     _iter_states = NEW_C_HEAP_ARRAY(G1RemsetIterState, max_regions, mtGC);
     _iter_claims = NEW_C_HEAP_ARRAY(size_t, max_regions, mtGC);
     _dirty_region_buffer = NEW_C_HEAP_ARRAY(uint, max_regions, mtGC);
-    _in_dirty_region_buffer = NEW_C_HEAP_ARRAY(IsDirtyRegionState, max_regions, mtGC);
+    _in_dirty_region_buffer = NEW_C_HEAP_ARRAY(bool, max_regions, mtGC);
     _scan_top = NEW_C_HEAP_ARRAY(HeapWord*, max_regions, mtGC);
   }
 
@@ -198,7 +194,7 @@ public:
     G1CollectedHeap::heap()->heap_region_iterate(&cl);
 
     memset((void*)_iter_claims, 0, _max_regions * sizeof(size_t));
-    memset(_in_dirty_region_buffer, Clean, _max_regions * sizeof(IsDirtyRegionState));
+    memset((void*)_in_dirty_region_buffer, false, _max_regions * sizeof(bool));
     _cur_dirty_region = 0;
   }
 
@@ -242,12 +238,11 @@ public:
   }
 
   void add_dirty_region(uint region) {
-    if (_in_dirty_region_buffer[region] == Dirty) {
+    if (_in_dirty_region_buffer[region]) {
       return;
     }
 
-    bool marked_as_dirty = Atomic::cmpxchg(Dirty, &_in_dirty_region_buffer[region], Clean) == Clean;
-    if (marked_as_dirty) {
+    if (!Atomic::cmpxchg(true, &_in_dirty_region_buffer[region], false)) {
       size_t allocated = Atomic::add(1u, &_cur_dirty_region) - 1;
       _dirty_region_buffer[allocated] = region;
     }
@@ -289,7 +284,7 @@ G1RemSet::G1RemSet(G1CollectedHeap* g1h,
   _g1h(g1h),
   _num_conc_refined_cards(0),
   _ct(ct),
-  _g1p(_g1h->g1_policy()),
+  _g1p(_g1h->policy()),
   _hot_card_cache(hot_card_cache) {
 }
 
@@ -468,10 +463,10 @@ class G1RefineCardClosure: public G1CardTableEntryClosure {
   size_t _cards_skipped;
 public:
   G1RefineCardClosure(G1CollectedHeap* g1h, G1ScanObjsDuringUpdateRSClosure* update_rs_cl) :
-    _g1rs(g1h->g1_rem_set()), _update_rs_cl(update_rs_cl), _cards_scanned(0), _cards_skipped(0)
+    _g1rs(g1h->rem_set()), _update_rs_cl(update_rs_cl), _cards_scanned(0), _cards_skipped(0)
   {}
 
-  bool do_card_ptr(jbyte* card_ptr, uint worker_i) {
+  bool do_card_ptr(CardValue* card_ptr, uint worker_i) {
     // The only time we care about recording cards that
     // contain references that point into the collection set
     // is during RSet updating within an evacuation pause.
@@ -531,7 +526,7 @@ void G1RemSet::prepare_for_oops_into_collection_set_do() {
 }
 
 void G1RemSet::cleanup_after_oops_into_collection_set_do() {
-  G1GCPhaseTimes* phase_times = _g1h->g1_policy()->phase_times();
+  G1GCPhaseTimes* phase_times = _g1h->phase_times();
 
   // Set all cards back to clean.
   double start = os::elapsedTime();
@@ -539,7 +534,7 @@ void G1RemSet::cleanup_after_oops_into_collection_set_do() {
   phase_times->record_clear_ct_time((os::elapsedTime() - start) * 1000.0);
 }
 
-inline void check_card_ptr(jbyte* card_ptr, G1CardTable* ct) {
+inline void check_card_ptr(CardTable::CardValue* card_ptr, G1CardTable* ct) {
 #ifdef ASSERT
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   assert(g1h->is_in_exact(ct->addr_for(card_ptr)),
@@ -551,7 +546,7 @@ inline void check_card_ptr(jbyte* card_ptr, G1CardTable* ct) {
 #endif
 }
 
-void G1RemSet::refine_card_concurrently(jbyte* card_ptr,
+void G1RemSet::refine_card_concurrently(CardValue* card_ptr,
                                         uint worker_i) {
   assert(!_g1h->is_gc_active(), "Only call concurrently");
 
@@ -607,7 +602,7 @@ void G1RemSet::refine_card_concurrently(jbyte* card_ptr,
   if (_hot_card_cache->use_cache()) {
     assert(!SafepointSynchronize::is_at_safepoint(), "sanity");
 
-    const jbyte* orig_card_ptr = card_ptr;
+    const CardValue* orig_card_ptr = card_ptr;
     card_ptr = _hot_card_cache->insert(card_ptr);
     if (card_ptr == NULL) {
       // There was no eviction. Nothing to do.
@@ -648,7 +643,7 @@ void G1RemSet::refine_card_concurrently(jbyte* card_ptr,
   // Okay to clean and process the card now.  There are still some
   // stale card cases that may be detected by iteration and dealt with
   // as iteration failure.
-  *const_cast<volatile jbyte*>(card_ptr) = G1CardTable::clean_card_val();
+  *const_cast<volatile CardValue*>(card_ptr) = G1CardTable::clean_card_val();
 
   // This fence serves two purposes.  First, the card must be cleaned
   // before processing the contents.  Second, we can't proceed with
@@ -690,7 +685,7 @@ void G1RemSet::refine_card_concurrently(jbyte* card_ptr,
   }
 }
 
-bool G1RemSet::refine_card_during_gc(jbyte* card_ptr,
+bool G1RemSet::refine_card_during_gc(CardValue* card_ptr,
                                      G1ScanObjsDuringUpdateRSClosure* update_rs_cl) {
   assert(_g1h->is_gc_active(), "Only call during GC");
 

@@ -112,9 +112,13 @@ import jdk.vm.ci.code.Architecture;
  */
 public class GraphEncoder {
 
-    /** The orderId that always represents {@code null}. */
+    /**
+     * The orderId that always represents {@code null}.
+     */
     public static final int NULL_ORDER_ID = 0;
-    /** The orderId of the {@link StructuredGraph#start() start node} of the encoded graph. */
+    /**
+     * The orderId of the {@link StructuredGraph#start() start node} of the encoded graph.
+     */
     public static final int START_NODE_ORDER_ID = 1;
     /**
      * The orderId of the first actual node after the {@link StructuredGraph#start() start node}.
@@ -148,6 +152,8 @@ public class GraphEncoder {
     /** The last snapshot of {@link #nodeClasses} that was retrieved. */
     protected NodeClass<?>[] nodeClassesArray;
 
+    protected DebugContext debug;
+
     /**
      * Utility method that does everything necessary to encode a single graph.
      */
@@ -160,7 +166,12 @@ public class GraphEncoder {
     }
 
     public GraphEncoder(Architecture architecture) {
+        this(architecture, null);
+    }
+
+    public GraphEncoder(Architecture architecture, DebugContext debug) {
         this.architecture = architecture;
+        this.debug = debug;
         objects = FrequencyEncoder.createEqualityEncoder();
         nodeClasses = FrequencyEncoder.createIdentityEncoder();
         writer = UnsafeArrayTypeWriter.create(architecture.supportsUnalignedMemoryAccess());
@@ -170,6 +181,7 @@ public class GraphEncoder {
      * Must be invoked before {@link #finishPrepare()} and {@link #encode}.
      */
     public void prepare(StructuredGraph graph) {
+        objects.addObject(graph.getGuardsStage());
         for (Node node : graph.getNodes()) {
             NodeClass<? extends Node> nodeClass = node.getNodeClass();
             nodeClasses.addObject(nodeClass);
@@ -288,9 +300,10 @@ public class GraphEncoder {
         for (int i = 0; i < nodeCount; i++) {
             writer.putUV(metadataStart - nodeStartOffsets[i]);
         }
+        writeObjectId(graph.getGuardsStage());
 
         /* Check that the decoding of the encode graph is the same as the input. */
-        assert verifyEncoding(graph, new EncodedGraph(getEncoding(), metadataStart, getObjects(), getNodeClasses(), graph), architecture);
+        assert verifyEncoding(graph, new EncodedGraph(getEncoding(), metadataStart, getObjects(), getNodeClasses(), graph));
 
         return metadataStart;
     }
@@ -434,10 +447,10 @@ public class GraphEncoder {
      * original graph.
      */
     @SuppressWarnings("try")
-    public static boolean verifyEncoding(StructuredGraph originalGraph, EncodedGraph encodedGraph, Architecture architecture) {
-        DebugContext debug = originalGraph.getDebug();
+    public boolean verifyEncoding(StructuredGraph originalGraph, EncodedGraph encodedGraph) {
+        DebugContext debugContext = debug != null ? debug : originalGraph.getDebug();
         // @formatter:off
-        StructuredGraph decodedGraph = new StructuredGraph.Builder(originalGraph.getOptions(), debug, AllowAssumptions.YES).
+        StructuredGraph decodedGraph = new StructuredGraph.Builder(originalGraph.getOptions(), debugContext, AllowAssumptions.YES).
                         method(originalGraph.method()).
                         setIsSubstitution(originalGraph.isSubstitution()).
                         trackNodeSourcePosition(originalGraph.trackNodeSourcePosition()).
@@ -451,9 +464,9 @@ public class GraphEncoder {
             GraphComparison.verifyGraphsEqual(originalGraph, decodedGraph);
         } catch (Throwable ex) {
             originalGraph.getDebug();
-            try (DebugContext.Scope scope = debug.scope("GraphEncoder")) {
-                debug.dump(DebugContext.VERBOSE_LEVEL, originalGraph, "Original Graph");
-                debug.dump(DebugContext.VERBOSE_LEVEL, decodedGraph, "Decoded Graph");
+            try (DebugContext.Scope scope = debugContext.scope("GraphEncoder")) {
+                debugContext.dump(DebugContext.VERBOSE_LEVEL, originalGraph, "Original Graph");
+                debugContext.dump(DebugContext.VERBOSE_LEVEL, decodedGraph, "Decoded Graph");
             }
             throw ex;
         }

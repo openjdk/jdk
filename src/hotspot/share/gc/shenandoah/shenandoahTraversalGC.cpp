@@ -127,12 +127,7 @@ public:
     _satb_cl(satb_cl) {}
 
   void do_thread(Thread* thread) {
-    if (thread->is_Java_thread()) {
-      JavaThread* jt = (JavaThread*)thread;
-      ShenandoahThreadLocalData::satb_mark_queue(jt).apply_closure_and_empty(_satb_cl);
-    } else if (thread->is_VM_thread()) {
-      ShenandoahBarrierSet::satb_mark_queue_set().shared_satb_queue()->apply_closure_and_empty(_satb_cl);
-    }
+    ShenandoahThreadLocalData::satb_mark_queue(thread).apply_closure_and_empty(_satb_cl);
   }
 };
 

@@ -64,7 +64,7 @@ public:
     }
     size_t card_index = _ct->index_for(p);
     if (_ct->mark_card_deferred(card_index)) {
-      _dcq->enqueue((jbyte*)_ct->byte_for_index(card_index));
+      _dcq->enqueue(_ct->byte_for_index(card_index));
     }
   }
 };

@@ -88,11 +88,6 @@ public:
     return _space->is_in(p);
   }
 
-  virtual bool is_scavengable(oop obj) {
-    // No GC is going to happen, therefore no objects ever move.
-    return false;
-  }
-
   virtual bool is_maximal_no_gc() const {
     // No GC is going to happen. Return "we are at max", when we are about to fail.
     return used() == capacity();
@@ -128,7 +123,6 @@ public:
 
   // No support for block parsing.
   virtual HeapWord* block_start(const void* addr) const { return NULL;  }
-  virtual size_t block_size(const HeapWord* addr) const { return 0;     }
   virtual bool block_is_obj(const HeapWord* addr) const { return false; }
 
   // No GC threads

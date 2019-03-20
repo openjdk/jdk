@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import javax.sql.rowset.spi.*;
  * with the ability to read and write rowsets in well formed XML using the
  * standard WebRowSet schema.
  *
- * <h3>1.0 Background</h3>
+ * <h2>1.0 Background</h2>
  * This synchronization provider is registered with the
  * <code>SyncFactory</code> by default as the
  * <code>com.sun.rowset.providers.RIXMLProvider</code>.
@@ -51,7 +51,7 @@ import javax.sql.rowset.spi.*;
  * The <code>RIXMLProvider</code> implementation has a synchronization level of
  * GRADE_NONE, which means that it does no checking at all for conflicts.  It
  * simply writes a <code>WebRowSet</code> object to a file.
- * <h3>2.0 Usage</h3>
+ * <h2>2.0 Usage</h2>
  * A <code>WebRowSet</code> implementation is created with an <code>RIXMLProvider</code>
  * by default.
  * <pre>

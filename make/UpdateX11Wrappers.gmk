@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ default: all
 
 include $(SPEC)
 include MakeBase.gmk
+include Execute.gmk
 include NativeCompilation.gmk
 include ToolsJdk.gmk
 
@@ -47,17 +48,21 @@ ifeq ($(COMPILE_TYPE), cross)
 endif
 
 X11WRAPPERS_OUTPUT := $(SUPPORT_OUTPUTDIR)/x11wrappers
+GENERATOR_SOURCE_FILE := $(X11WRAPPERS_OUTPUT)/src/data_generator.c
 
 GENSRC_X11WRAPPERS_DATADIR := $(TOPDIR)/make/data/x11wrappergen
+WRAPPER_OUTPUT_FILE := $(GENSRC_X11WRAPPERS_DATADIR)/sizes-$(BITS).txt
 
 BITS := $(OPENJDK_TARGET_CPU_BITS)
 
 # Generate the C code for the program that will output the offset file.
-$(X11WRAPPERS_OUTPUT)/src/data_generator.c: $(GENSRC_X11WRAPPERS_DATADIR)/xlibtypes.txt $(BUILD_TOOLS_JDK)
-	$(call LogInfo, Generating X11 wrapper data generator source code)
-	$(call MakeDir, $(@D))
-	$(call ExecuteWithLog, $@, \
-	    $(TOOL_WRAPPERGENERATOR) gen_c_source $@ $(GENSRC_X11WRAPPERS_DATADIR)/xlibtypes.txt $(BITS))
+$(eval $(call SetupExecute, gensrc_generator, \
+    INFO := Generating X11 wrapper data generator source code, \
+    DEPS := $(GENSRC_X11WRAPPERS_DATADIR)/xlibtypes.txt $(BUILD_TOOLS_JDK), \
+    OUTPUT_FILE := $(GENERATOR_SOURCE_FILE), \
+    COMMAND := $(TOOL_WRAPPERGENERATOR) gen_c_source $(GENERATOR_SOURCE_FILE) \
+        $(GENSRC_X11WRAPPERS_DATADIR)/xlibtypes.txt $(BITS), \
+))
 
 DATA_GENERATOR_INCLUDES := \
     -I$(TOPDIR)/src/hotspot/share/include \
@@ -75,7 +80,7 @@ DATA_GENERATOR_INCLUDES := \
 $(eval $(call SetupNativeCompilation, BUILD_DATA_GENERATOR, \
     PROGRAM := data_generator, \
     OUTPUT_DIR := $(X11WRAPPERS_OUTPUT)/bin, \
-    EXTRA_FILES := $(X11WRAPPERS_OUTPUT)/src/data_generator.c, \
+    EXTRA_FILES := $(GENERATOR_SOURCE_FILE), \
     CFLAGS := $(X_CFLAGS) $(DATA_GENERATOR_INCLUDES) $(CFLAGS_JDKEXE), \
     LDFLAGS := $(LDFLAGS_JDKEXE), \
     LIBS := $(X_LIBS), \
@@ -83,16 +88,19 @@ $(eval $(call SetupNativeCompilation, BUILD_DATA_GENERATOR, \
 ))
 
 # Run the executable to create the data file.
-$(GENSRC_X11WRAPPERS_DATADIR)/sizes-$(BITS).txt: $(BUILD_DATA_GENERATOR_TARGET)
-	$(call LogInfo, Generating X11 wrapper data files)
-	$(call MakeDir, $(@D))
-	$(call ExecuteWithLog, $(X11WRAPPERS_OUTPUT)/generation, \
-	    $(BUILD_DATA_GENERATOR_TARGET) | $(SORT) > $@)
+$(eval $(call SetupExecute, run_wrappergen, \
+    INFO := Generating X11 wrapper data files, \
+    DEPS := $(BUILD_DATA_GENERATOR), \
+    OUTPUT_FILE := $(WRAPPER_OUTPUT_FILE), \
+    COMMAND := $(BUILD_DATA_GENERATOR_TARGET) | $(SORT) > $(WRAPPER_OUTPUT_FILE), \
+))
+
+wrapper-information: $(run_wrappergen)
 	$(ECHO) IMPORTANT: If you update the X11 wrapper data files, they most certainly
 	$(ECHO) need to be updated for both 32 and 64 bit platforms. You have now
 	$(ECHO) updated them for $(BITS) bit platforms only.
 
-TARGETS += $(GENSRC_X11WRAPPERS_DATADIR)/sizes-$(BITS).txt
+TARGETS += $(run_wrappergen) wrapper-information
 
 ################################################################################
 

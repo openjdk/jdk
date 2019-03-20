@@ -52,7 +52,7 @@
 #include "oops/klass.inline.hpp"
 #include "oops/klassVtable.hpp"
 #include "oops/metadata.hpp"
-#include "oops/method.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -1972,46 +1972,6 @@ const ClassFileParser::unsafe_u2* ClassFileParser::parse_localvariable_table(con
     }
   }
   return localvariable_table_start;
-}
-
-
-void ClassFileParser::parse_type_array(u2 array_length,
-                                       u4 code_length,
-                                       u4* const u1_index,
-                                       u4* const u2_index,
-                                       u1* const u1_array,
-                                       u2* const u2_array,
-                                       TRAPS) {
-  const ClassFileStream* const cfs = _stream;
-  u2 index = 0; // index in the array with long/double occupying two slots
-  u4 i1 = *u1_index;
-  u4 i2 = *u2_index + 1;
-  for(int i = 0; i < array_length; i++) {
-    const u1 tag = u1_array[i1++] = cfs->get_u1(CHECK);
-    index++;
-    if (tag == ITEM_Long || tag == ITEM_Double) {
-      index++;
-    } else if (tag == ITEM_Object) {
-      const u2 class_index = u2_array[i2++] = cfs->get_u2(CHECK);
-      guarantee_property(valid_klass_reference_at(class_index),
-                         "Bad class index %u in StackMap in class file %s",
-                         class_index, CHECK);
-    } else if (tag == ITEM_Uninitialized) {
-      const u2 offset = u2_array[i2++] = cfs->get_u2(CHECK);
-      guarantee_property(
-        offset < code_length,
-        "Bad uninitialized type offset %u in StackMap in class file %s",
-        offset, CHECK);
-    } else {
-      guarantee_property(
-        tag <= (u1)ITEM_Uninitialized,
-        "Unknown variable type %u in StackMap in class file %s",
-        tag, CHECK);
-    }
-  }
-  u2_array[*u2_index] = index;
-  *u1_index = i1;
-  *u2_index = i2;
 }
 
 static const u1* parse_stackmap_table(const ClassFileStream* const cfs,

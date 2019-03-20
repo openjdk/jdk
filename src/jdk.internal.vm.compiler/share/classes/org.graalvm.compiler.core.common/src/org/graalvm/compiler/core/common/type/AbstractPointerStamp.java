@@ -36,6 +36,12 @@ public abstract class AbstractPointerStamp extends Stamp {
     private final boolean nonNull;
     private final boolean alwaysNull;
 
+    @Override
+    public void accept(Visitor v) {
+        v.visitBoolean(nonNull);
+        v.visitBoolean(alwaysNull);
+    }
+
     protected AbstractPointerStamp(boolean nonNull, boolean alwaysNull) {
         this.nonNull = nonNull;
         this.alwaysNull = alwaysNull;

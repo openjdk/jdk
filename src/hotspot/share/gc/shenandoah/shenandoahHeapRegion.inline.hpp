@@ -94,7 +94,7 @@ inline void ShenandoahHeapRegion::increase_live_data_alloc_words(size_t s) {
 inline void ShenandoahHeapRegion::increase_live_data_gc_words(size_t s) {
   internal_increase_live_data(s);
   if (ShenandoahPacing) {
-    _pacer->report_mark(s);
+    _heap->pacer()->report_mark(s);
   }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package java.lang;
 
 import java.io.PrintStream;
 import java.util.Arrays;
-import jdk.internal.misc.VM;
 
 /**
  * A thread group represents a set of threads. In addition, a thread
@@ -425,7 +424,7 @@ class ThreadGroup implements Thread.UncaughtExceptionHandler {
         ThreadGroup[] groupsSnapshot = null;
         synchronized (this) {
             if (destroyed) {
-                return 0;
+                return n;
             }
             int nt = nthreads;
             if (nt > list.length - n) {
@@ -559,7 +558,7 @@ class ThreadGroup implements Thread.UncaughtExceptionHandler {
         ThreadGroup[] groupsSnapshot = null;
         synchronized (this) {
             if (destroyed) {
-                return 0;
+                return n;
             }
             int ng = ngroups;
             if (ng > list.length - n) {

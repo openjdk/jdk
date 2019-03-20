@@ -64,9 +64,9 @@ non_clean_card_iterate_parallel_work(Space* sp, MemRegion mr,
          "n_threads: %u > ParallelGCThreads: %u", n_threads, ParallelGCThreads);
 
   // Make sure the LNC array is valid for the space.
-  jbyte**   lowest_non_clean;
-  uintptr_t lowest_non_clean_base_chunk_index;
-  size_t    lowest_non_clean_chunk_size;
+  CardValue** lowest_non_clean;
+  uintptr_t   lowest_non_clean_base_chunk_index;
+  size_t      lowest_non_clean_chunk_size;
   get_LNC_array_for_space(sp, lowest_non_clean,
                           lowest_non_clean_base_chunk_index,
                           lowest_non_clean_chunk_size);
@@ -106,7 +106,7 @@ process_stride(Space* sp,
                jint stride, int n_strides,
                OopsInGenClosure* cl,
                CardTableRS* ct,
-               jbyte** lowest_non_clean,
+               CardValue** lowest_non_clean,
                uintptr_t lowest_non_clean_base_chunk_index,
                size_t    lowest_non_clean_chunk_size) {
   // We go from higher to lower addresses here; it wouldn't help that much
@@ -114,21 +114,19 @@ process_stride(Space* sp,
 
   // Find the first card address of the first chunk in the stride that is
   // at least "bottom" of the used region.
-  jbyte*    start_card  = byte_for(used.start());
-  jbyte*    end_card    = byte_after(used.last());
+  CardValue* start_card  = byte_for(used.start());
+  CardValue* end_card    = byte_after(used.last());
   uintptr_t start_chunk = addr_to_chunk_index(used.start());
   uintptr_t start_chunk_stride_num = start_chunk % n_strides;
-  jbyte* chunk_card_start;
+  CardValue* chunk_card_start;
 
   if ((uintptr_t)stride >= start_chunk_stride_num) {
-    chunk_card_start = (jbyte*)(start_card +
-                                (stride - start_chunk_stride_num) *
-                                ParGCCardsPerStrideChunk);
+    chunk_card_start = (start_card +
+                        (stride - start_chunk_stride_num) * ParGCCardsPerStrideChunk);
   } else {
     // Go ahead to the next chunk group boundary, then to the requested stride.
-    chunk_card_start = (jbyte*)(start_card +
-                                (n_strides - start_chunk_stride_num + stride) *
-                                ParGCCardsPerStrideChunk);
+    chunk_card_start = (start_card +
+                        (n_strides - start_chunk_stride_num + stride) * ParGCCardsPerStrideChunk);
   }
 
   while (chunk_card_start < end_card) {
@@ -139,11 +137,11 @@ process_stride(Space* sp,
     // by suitably initializing the "min_done" field in process_chunk_boundaries()
     // below, together with the dirty region extension accomplished in
     // DirtyCardToOopClosure::do_MemRegion().
-    jbyte*    chunk_card_end = chunk_card_start + ParGCCardsPerStrideChunk;
+    CardValue* chunk_card_end = chunk_card_start + ParGCCardsPerStrideChunk;
     // Invariant: chunk_mr should be fully contained within the "used" region.
-    MemRegion chunk_mr       = MemRegion(addr_for(chunk_card_start),
-                                         chunk_card_end >= end_card ?
-                                           used.end() : addr_for(chunk_card_end));
+    MemRegion chunk_mr = MemRegion(addr_for(chunk_card_start),
+                                   chunk_card_end >= end_card ?
+                                   used.end() : addr_for(chunk_card_end));
     assert(chunk_mr.word_size() > 0, "[chunk_card_start > used_end)");
     assert(used.contains(chunk_mr), "chunk_mr should be subset of used");
 
@@ -185,7 +183,7 @@ process_chunk_boundaries(Space* sp,
                          DirtyCardToOopClosure* dcto_cl,
                          MemRegion chunk_mr,
                          MemRegion used,
-                         jbyte** lowest_non_clean,
+                         CardValue** lowest_non_clean,
                          uintptr_t lowest_non_clean_base_chunk_index,
                          size_t    lowest_non_clean_chunk_size)
 {
@@ -224,21 +222,20 @@ process_chunk_boundaries(Space* sp,
     // does not scan an object straddling the mutual boundary
     // too far to the right, and attempt to scan a portion of
     // that object twice.
-    jbyte* first_dirty_card = NULL;
-    jbyte* last_card_of_first_obj =
+    CardValue* first_dirty_card = NULL;
+    CardValue* last_card_of_first_obj =
         byte_for(first_block + sp->block_size(first_block) - 1);
-    jbyte* first_card_of_cur_chunk = byte_for(chunk_mr.start());
-    jbyte* last_card_of_cur_chunk = byte_for(chunk_mr.last());
-    jbyte* last_card_to_check =
-      (jbyte*) MIN2((intptr_t) last_card_of_cur_chunk,
-                    (intptr_t) last_card_of_first_obj);
+    CardValue* first_card_of_cur_chunk = byte_for(chunk_mr.start());
+    CardValue* last_card_of_cur_chunk = byte_for(chunk_mr.last());
+    CardValue* last_card_to_check = MIN2(last_card_of_cur_chunk, last_card_of_first_obj);
     // Note that this does not need to go beyond our last card
     // if our first object completely straddles this chunk.
-    for (jbyte* cur = first_card_of_cur_chunk;
+    for (CardValue* cur = first_card_of_cur_chunk;
          cur <= last_card_to_check; cur++) {
-      jbyte val = *cur;
+      CardValue val = *cur;
       if (card_will_be_scanned(val)) {
-        first_dirty_card = cur; break;
+        first_dirty_card = cur;
+        break;
       } else {
         assert(!card_may_have_been_dirty(val), "Error");
       }
@@ -253,7 +250,7 @@ process_chunk_boundaries(Space* sp,
     // In this case we can help our neighbor by just asking them
     // to stop at our first card (even though it may not be dirty).
     assert(lowest_non_clean[cur_chunk_index] == NULL, "Write once : value should be stable hereafter");
-    jbyte* first_card_of_cur_chunk = byte_for(chunk_mr.start());
+    CardValue* first_card_of_cur_chunk = byte_for(chunk_mr.start());
     lowest_non_clean[cur_chunk_index] = first_card_of_cur_chunk;
   }
 
@@ -278,8 +275,8 @@ process_chunk_boundaries(Space* sp,
       // last_obj_card is the card corresponding to the start of the last object
       // in the chunk.  Note that the last object may not start in
       // the chunk.
-      jbyte* const last_obj_card = byte_for(last_block);
-      const jbyte val = *last_obj_card;
+      CardValue* const last_obj_card = byte_for(last_block);
+      const CardValue val = *last_obj_card;
       if (!card_will_be_scanned(val)) {
         assert(!card_may_have_been_dirty(val), "Error");
         // The card containing the head is not dirty.  Any marks on
@@ -290,20 +287,20 @@ process_chunk_boundaries(Space* sp,
         // The last object must be considered dirty, and extends onto the
         // following chunk.  Look for a dirty card in that chunk that will
         // bound our processing.
-        jbyte* limit_card = NULL;
+        CardValue* limit_card = NULL;
         const size_t last_block_size = sp->block_size(last_block);
-        jbyte* const last_card_of_last_obj =
+        CardValue* const last_card_of_last_obj =
           byte_for(last_block + last_block_size - 1);
-        jbyte* const first_card_of_next_chunk = byte_for(chunk_mr.end());
+        CardValue* const first_card_of_next_chunk = byte_for(chunk_mr.end());
         // This search potentially goes a long distance looking
         // for the next card that will be scanned, terminating
         // at the end of the last_block, if no earlier dirty card
         // is found.
         assert(byte_for(chunk_mr.end()) - byte_for(chunk_mr.start()) == ParGCCardsPerStrideChunk,
                "last card of next chunk may be wrong");
-        for (jbyte* cur = first_card_of_next_chunk;
+        for (CardValue* cur = first_card_of_next_chunk;
              cur <= last_card_of_last_obj; cur++) {
-          const jbyte val = *cur;
+          const CardValue val = *cur;
           if (card_will_be_scanned(val)) {
             limit_card = cur; break;
           } else {
@@ -359,7 +356,7 @@ process_chunk_boundaries(Space* sp,
         for (uintptr_t lnc_index = cur_chunk_index + 1;
              lnc_index <= last_chunk_index_to_check;
              lnc_index++) {
-          jbyte* lnc_card = lowest_non_clean[lnc_index];
+          CardValue* lnc_card = lowest_non_clean[lnc_index];
           if (lnc_card != NULL) {
             // we can stop at the first non-NULL entry we find
             if (lnc_card <= limit_card) {
@@ -391,7 +388,7 @@ process_chunk_boundaries(Space* sp,
 void
 CMSCardTable::
 get_LNC_array_for_space(Space* sp,
-                        jbyte**& lowest_non_clean,
+                        CardValue**& lowest_non_clean,
                         uintptr_t& lowest_non_clean_base_chunk_index,
                         size_t& lowest_non_clean_chunk_size) {
 
