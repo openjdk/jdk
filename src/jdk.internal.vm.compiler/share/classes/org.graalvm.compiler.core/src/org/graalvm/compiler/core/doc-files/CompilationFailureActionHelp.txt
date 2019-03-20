@@ -1,4 +1,4 @@
-Specifies the action to take when compilation fails with a bailout exception.
+Specifies the action to take when compilation fails.
 The accepted values are:
     Silent - Print nothing to the console.
      Print - Print a stack trace to the console.

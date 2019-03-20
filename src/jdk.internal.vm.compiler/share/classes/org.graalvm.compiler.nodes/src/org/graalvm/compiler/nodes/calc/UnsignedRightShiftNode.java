@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 package org.graalvm.compiler.nodes.calc;
 
+import jdk.vm.ci.code.CodeUtil;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.ShiftOp.UShr;
 import org.graalvm.compiler.core.common.type.IntegerStamp;
@@ -84,10 +85,13 @@ public final class UnsignedRightShiftNode extends ShiftNode<UShr> {
             Stamp xStampGeneric = forX.stamp(view);
             if (xStampGeneric instanceof IntegerStamp) {
                 IntegerStamp xStamp = (IntegerStamp) xStampGeneric;
+                long xMask = CodeUtil.mask(xStamp.getBits());
+                long xLowerBound = xStamp.lowerBound() & xMask;
+                long xUpperBound = xStamp.upperBound() & xMask;
 
-                if (xStamp.lowerBound() >>> amount == xStamp.upperBound() >>> amount) {
+                if (xLowerBound >>> amount == xUpperBound >>> amount) {
                     // The result of the shift is constant.
-                    return ConstantNode.forIntegerKind(stamp.getStackKind(), xStamp.lowerBound() >>> amount);
+                    return ConstantNode.forIntegerKind(stamp.getStackKind(), xLowerBound >>> amount);
                 }
 
                 if (amount == xStamp.getBits() - 1 && xStamp.lowerBound() == -1 && xStamp.upperBound() == 0) {
