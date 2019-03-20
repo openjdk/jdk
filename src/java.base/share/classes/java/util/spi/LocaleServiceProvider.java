@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import java.util.Locale;
  * interfaces to offer support for locales beyond the set of locales
  * supported by the Java runtime environment itself.
  *
- * <h3>Packaging of Locale Sensitive Service Provider Implementations</h3>
+ * <h2>Packaging of Locale Sensitive Service Provider Implementations</h2>
  * Implementations of these locale sensitive services can be made available
  * by adding them to the application's class path. A provider identifies itself with a
  * provider-configuration file in the resource directory META-INF/services,
@@ -75,7 +75,7 @@ import java.util.Locale;
  * </pre>
  * which is the fully qualified class name of the class implementing
  * <code>DateFormatProvider</code>.
- * <h4>Invocation of Locale Sensitive Services</h4>
+ * <h3>Invocation of Locale Sensitive Services</h3>
  * <p>
  * Locale sensitive factory methods and methods for name retrieval in the
  * <code>java.text</code> and <code>java.util</code> packages invoke

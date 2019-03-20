@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,7 +156,7 @@ import static java.lang.module.ModuleDescriptor.Modifier.SYNTHETIC;
  * like they do for instances of {@code java.lang.Object}.
  * </ul>
  *
- * <h3><a id="membership">Package and Module Membership of Proxy Class</a></h3>
+ * <h2><a id="membership">Package and Module Membership of Proxy Class</a></h2>
  *
  * The package and module to which a proxy class belongs are chosen such that
  * the accessibility of the proxy class is in line with the accessibility of

@@ -128,7 +128,7 @@ import sun.security.action.GetPropertyAction;
  * created, the abstract pathname represented by a <code>File</code> object
  * will never change.
  *
- * <h3>Interoperability with {@code java.nio.file} package</h3>
+ * <h2>Interoperability with {@code java.nio.file} package</h2>
  *
  * <p> The <a href="../../java/nio/file/package-summary.html">{@code java.nio.file}</a>
  * package defines interfaces and classes for the Java virtual machine to access

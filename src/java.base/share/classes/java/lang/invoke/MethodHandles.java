@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -268,7 +268,7 @@ public class MethodHandles {
      * This includes all methods, constructors, and fields which are allowed to the lookup class,
      * even private ones.
      *
-     * <h1><a id="lookups"></a>Lookup Factory Methods</h1>
+     * <h2><a id="lookups"></a>Lookup Factory Methods</h2>
      * The factory methods on a {@code Lookup} object correspond to all major
      * use cases for methods, constructors, and fields.
      * Each method handle created by a factory method is the functional
@@ -395,7 +395,7 @@ public class MethodHandles {
      * <a href="MethodHandle.html#maxarity">too many parameters.</a>
      * </ul>
      *
-     * <h1><a id="access"></a>Access checking</h1>
+     * <h2><a id="access"></a>Access checking</h2>
      * Access checks are applied in the factory methods of {@code Lookup},
      * when a method handle is created.
      * This is a key difference from the Core Reflection API, since
@@ -529,7 +529,7 @@ public class MethodHandles {
      * whose <a href="MethodHandles.Lookup.html#equiv">bytecode behaviors</a> and Java language access permissions
      * can be reliably determined and emulated by method handles.
      *
-     * <h1><a id="secmgr"></a>Security manager interactions</h1>
+     * <h2><a id="secmgr"></a>Security manager interactions</h2>
      * Although bytecode instructions can only refer to classes in
      * a related class loader, this API can search for methods in any
      * class, as long as a reference to its {@code Class} object is
@@ -588,7 +588,7 @@ public class MethodHandles {
      * or else that is being accessed from a lookup class that has
      * rights to access the member or class.
      *
-     * <h1><a id="callsens"></a>Caller sensitive methods</h1>
+     * <h2><a id="callsens"></a>Caller sensitive methods</h2>
      * A small number of Java methods have a special property called caller sensitivity.
      * A <em>caller-sensitive</em> method can behave differently depending on the
      * identity of its immediate caller.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ import java.util.Locale;
  * behavior is defined by the pattern that you provide as well as the
  * subformats used for inserted arguments.
  *
- * <h3><a id="patterns">Patterns and Their Interpretation</a></h3>
+ * <h2><a id="patterns">Patterns and Their Interpretation</a></h2>
  *
  * <code>MessageFormat</code> uses patterns of the following form:
  * <blockquote><pre>
@@ -220,7 +220,7 @@ import java.util.Locale;
  * </tbody>
  * </table>
  *
- * <h4>Usage Information</h4>
+ * <h3>Usage Information</h3>
  *
  * <p>
  * Here are some examples of usage.
@@ -326,7 +326,7 @@ import java.util.Locale;
  * // result now equals {new String("z")}
  * </pre></blockquote>
  *
- * <h4><a id="synchronization">Synchronization</a></h4>
+ * <h3><a id="synchronization">Synchronization</a></h3>
  *
  * <p>
  * Message formats are not synchronized.

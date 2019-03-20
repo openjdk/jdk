@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ import java.lang.NullPointerException;  // for javadoc
  * and relativizing URI instances.  Instances of this class are immutable.
  *
  *
- * <h3> URI syntax and components </h3>
+ * <h2> URI syntax and components </h2>
  *
  * At the highest level a URI reference (hereinafter simply "URI") in string
  * form has the syntax
@@ -168,7 +168,7 @@ import java.lang.NullPointerException;  // for javadoc
  * will be defined and the user-information and port components may be defined.
  *
  *
- * <h4> Operations on URI instances </h4>
+ * <h3> Operations on URI instances </h3>
  *
  * The key operations supported by this class are those of
  * <i>normalization</i>, <i>resolution</i>, and <i>relativization</i>.
@@ -247,7 +247,7 @@ import java.lang.NullPointerException;  // for javadoc
  * yields the relative URI {@code sample/a/index.html#28}.
  *
  *
- * <h4> Character categories </h4>
+ * <h3> Character categories </h3>
  *
  * RFC&nbsp;2396 specifies precisely which characters are permitted in the
  * various components of a URI reference.  The following categories, most of
@@ -298,7 +298,7 @@ import java.lang.NullPointerException;  // for javadoc
  * characters.
  *
  *
- * <h4> Escaped octets, quotation, encoding, and decoding </h4>
+ * <h3> Escaped octets, quotation, encoding, and decoding </h3>
  *
  * RFC 2396 allows escaped octets to appear in the user-info, path, query, and
  * fragment components.  Escaping serves two purposes in URIs:
@@ -390,7 +390,7 @@ import java.lang.NullPointerException;  // for javadoc
  * </ul>
  *
  *
- * <h4> Identities </h4>
+ * <h3> Identities </h3>
  *
  * For any URI <i>u</i>, it is always the case that
  *
@@ -426,7 +426,7 @@ import java.lang.NullPointerException;  // for javadoc
  * authority.
  *
  *
- * <h4> URIs, URLs, and URNs </h4>
+ * <h3> URIs, URLs, and URNs </h3>
  *
  * A URI is a uniform resource <i>identifier</i> while a URL is a uniform
  * resource <i>locator</i>.  Hence every URL is a URI, abstractly speaking, but

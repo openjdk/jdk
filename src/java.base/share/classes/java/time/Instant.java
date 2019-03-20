@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +108,7 @@ import java.util.Objects;
  * For both the epoch-second and nanosecond parts, a larger value is always later on the time-line
  * than a smaller value.
  *
- * <h3>Time-scale</h3>
+ * <h2>Time-scale</h2>
  * <p>
  * The length of the solar day is the standard way that humans measure time.
  * This has traditionally been subdivided into 24 hours of 60 minutes of 60 seconds,

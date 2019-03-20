@@ -71,7 +71,7 @@ import sun.net.util.IPAddressUtil;
  * with a host name or whether it has already done reverse host name
  * resolution).
  *
- * <h3> Address types </h3>
+ * <h2> Address types </h2>
  *
  * <table class="striped" style="margin-left:2em">
  *   <caption style="display:none">Description of unicast and multicast address types</caption>
@@ -105,7 +105,7 @@ import sun.net.util.IPAddressUtil;
  * </tbody>
  * </table>
  *
- * <h4> IP address scope </h4>
+ * <h3> IP address scope </h3>
  *
  * <p> <i>Link-local</i> addresses are designed to be used for addressing
  * on a single link for purposes such as auto-address configuration,
@@ -116,7 +116,7 @@ import sun.net.util.IPAddressUtil;
  *
  * <p> <i>Global</i> addresses are unique across the internet.
  *
- * <h4> Textual representation of IP addresses </h4>
+ * <h3> Textual representation of IP addresses </h3>
  *
  * The textual representation of an IP address is address family specific.
  *
@@ -130,7 +130,7 @@ import sun.net.util.IPAddressUtil;
  * <P>There is a <a href="doc-files/net-properties.html#Ipv4IPv6">couple of
  * System Properties</a> affecting how IPv4 and IPv6 addresses are used.</P>
  *
- * <h4> Host Name Resolution </h4>
+ * <h3> Host Name Resolution </h3>
  *
  * Host name-to-IP address <i>resolution</i> is accomplished through
  * the use of a combination of local machine configuration information
@@ -145,7 +145,7 @@ import sun.net.util.IPAddressUtil;
  * <p> The InetAddress class provides methods to resolve host names to
  * their IP addresses and vice versa.
  *
- * <h4> InetAddress Caching </h4>
+ * <h3> InetAddress Caching </h3>
  *
  * The InetAddress class has a cache to store successful as well as
  * unsuccessful host name resolutions.

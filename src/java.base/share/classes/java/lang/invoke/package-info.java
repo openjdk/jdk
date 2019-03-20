@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,12 +53,12 @@
  * </li>
  * </ul>
  *
- * <h1><a id="jvm_mods"></a>Dynamic resolution of call sites and constants</h1>
+ * <h2><a id="jvm_mods"></a>Dynamic resolution of call sites and constants</h2>
  * The following low-level information summarizes relevant parts of the
  * Java Virtual Machine specification.  For full details, please see the
  * current version of that specification.
  *
- * <h2><a id="indyinsn"></a>Dynamically-computed call sites</h2>
+ * <h3><a id="indyinsn"></a>Dynamically-computed call sites</h3>
  * An {@code invokedynamic} instruction is originally in an unlinked state.
  * In this state, there is no target method for the instruction to invoke.
  * <p>
@@ -74,7 +74,7 @@
  * The constant pool reference also specifies the invocation's name and method type descriptor,
  * just like {@code invokestatic} and the other invoke instructions.
  *
- * <h2><a id="condycon"></a>Dynamically-computed constants</h2>
+ * <h3><a id="condycon"></a>Dynamically-computed constants</h3>
  * The constant pool may contain constants tagged {@code CONSTANT_Dynamic},
  * equipped with bootstrap methods which perform their resolution.
  * Such a <em>dynamic constant</em> is originally in an unresolved state.
@@ -90,7 +90,7 @@
  * (Roughly speaking, a dynamically-computed constant is to a dynamically-computed call site
  * as a {@code CONSTANT_Fieldref} is to a {@code CONSTANT_Methodref}.)
  *
- * <h2><a id="bsm"></a>Execution of bootstrap methods</h2>
+ * <h3><a id="bsm"></a>Execution of bootstrap methods</h3>
  * Resolving a dynamically-computed call site or constant
  * starts with resolving constants from the constant pool for the
  * following items:
@@ -136,7 +136,7 @@
  * subsequent attempts to execute the {@code invokedynamic} instruction or load the
  * dynamically-computed constant.
  *
- * <h2>Timing of resolution</h2>
+ * <h3>Timing of resolution</h3>
  * An {@code invokedynamic} instruction is linked just before its first execution.
  * A dynamically-computed constant is resolved just before the first time it is used
  * (by pushing it on the stack or linking it as a bootstrap method parameter).
@@ -171,7 +171,7 @@
  * just before its first invocation.
  * There is no way to undo the effect of a completed bootstrap method call.
  *
- * <h2>Types of bootstrap methods</h2>
+ * <h3>Types of bootstrap methods</h3>
  * For a dynamically-computed call site, the bootstrap method is invoked with parameter
  * types {@code MethodHandles.Lookup}, {@code String}, {@code MethodType}, and the types
  * of any static arguments; the return type is {@code CallSite}.

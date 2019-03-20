@@ -44,7 +44,7 @@ import jdk.internal.misc.VM;
  * and for converting characters from uppercase to lowercase and vice
  * versa.
  *
- * <h3><a id="conformance">Unicode Conformance</a></h3>
+ * <h2><a id="conformance">Unicode Conformance</a></h2>
  * <p>
  * The fields and methods of class {@code Character} are defined in terms
  * of character information from the Unicode Standard, specifically the
@@ -59,7 +59,7 @@ import jdk.internal.misc.VM;
  * {@code U+32FF}, from the first version of the Unicode Standard
  * after 11.0 that assigns the code point.
  *
- * <h3><a id="unicode">Unicode Character Representations</a></h3>
+ * <h2><a id="unicode">Unicode Character Representations</a></h2>
  *
  * <p>The {@code char} data type (and therefore the value that a
  * {@code Character} object encapsulates) are based on the

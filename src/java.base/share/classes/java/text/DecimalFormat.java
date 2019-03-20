@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * the <code>NumberFormat</code> factory methods, the pattern and symbols are
  * read from localized <code>ResourceBundle</code>s.
  *
- * <h3>Patterns</h3>
+ * <h2>Patterns</h2>
  *
  * <code>DecimalFormat</code> patterns have the following syntax:
  * <blockquote><pre>
@@ -154,7 +154,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * used. So <code>"#,##,###,####"</code> == <code>"######,####"</code> ==
  * <code>"##,####,####"</code>.
  *
- * <h4><a id="special_pattern_character">Special Pattern Characters</a></h4>
+ * <h3><a id="special_pattern_character">Special Pattern Characters</a></h3>
  *
  * <p>Many characters in a pattern are taken literally; they are matched during
  * parsing and output unchanged during formatting.  Special characters, on the
@@ -245,7 +245,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * </table>
  * </blockquote>
  *
- * <h4>Scientific Notation</h4>
+ * <h3>Scientific Notation</h3>
  *
  * <p>Numbers in scientific notation are expressed as the product of a mantissa
  * and a power of ten, for example, 1234 can be expressed as 1.234 x 10^3.  The
@@ -292,13 +292,13 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * <li>Exponential patterns may not contain grouping separators.
  * </ul>
  *
- * <h4>Rounding</h4>
+ * <h3>Rounding</h3>
  *
  * <code>DecimalFormat</code> provides rounding modes defined in
  * {@link java.math.RoundingMode} for formatting.  By default, it uses
  * {@link java.math.RoundingMode#HALF_EVEN RoundingMode.HALF_EVEN}.
  *
- * <h4>Digits</h4>
+ * <h3>Digits</h3>
  *
  * For formatting, <code>DecimalFormat</code> uses the ten consecutive
  * characters starting with the localized zero digit defined in the
@@ -328,7 +328,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * and <code>isParseIntegerOnly()</code> are false.
  * </ul>
  *
- * <h4><a id="synchronization">Synchronization</a></h4>
+ * <h3><a id="synchronization">Synchronization</a></h3>
  *
  * <p>
  * Decimal formats are generally not synchronized.
@@ -336,7 +336,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * If multiple threads access a format concurrently, it must be synchronized
  * externally.
  *
- * <h4>Example</h4>
+ * <h3>Example</h3>
  *
  * <blockquote><pre>{@code
  * <strong>// Print out a number using the localized number, integer, currency,

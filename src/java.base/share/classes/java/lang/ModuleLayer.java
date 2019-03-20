@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,7 +120,7 @@ import sun.security.util.SecurityConstants;
  * in this class causes a {@link NullPointerException NullPointerException} to
  * be thrown. </p>
  *
- * <h3> Example usage: </h3>
+ * <h2> Example usage: </h2>
  *
  * <p> This example creates a configuration by resolving a module named
  * "{@code myapp}" with the configuration for the boot layer as the parent. It
