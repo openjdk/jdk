@@ -1725,7 +1725,16 @@ void VMError::controlled_crash(int how) {
   const char* const eol = os::line_separator();
   const char* const msg = "this message should be truncated during formatting";
   char * const dataPtr = NULL;  // bad data pointer
-  const void (*funcPtr)(void) = (const void(*)()) 0xF;  // bad function pointer
+  const void (*funcPtr)(void);  // bad function pointer
+
+#if defined(PPC64) && !defined(ABI_ELFv2)
+  struct FunctionDescriptor functionDescriptor;
+
+  functionDescriptor.set_entry((address) 0xF);
+  funcPtr = (const void(*)()) &functionDescriptor;
+#else
+  funcPtr = (const void(*)()) 0xF;
+#endif
 
   // Keep this in sync with test/hotspot/jtreg/runtime/ErrorHandling/ErrorHandler.java
   // which tests cases 1 thru 13.
