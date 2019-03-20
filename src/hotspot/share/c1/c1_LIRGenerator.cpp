@@ -3279,7 +3279,14 @@ void LIRGenerator::do_ProfileInvoke(ProfileInvoke* x) {
 
 void LIRGenerator::increment_backedge_counter_conditionally(LIR_Condition cond, LIR_Opr left, LIR_Opr right, CodeEmitInfo* info, int left_bci, int right_bci, int bci) {
   if (compilation()->count_backedges()) {
+#if defined(X86) && !defined(_LP64)
+    // BEWARE! On 32-bit x86 cmp clobbers its left argument so we need a temp copy.
+    LIR_Opr left_copy = new_register(left->type());
+    __ move(left, left_copy);
+    __ cmp(cond, left_copy, right);
+#else
     __ cmp(cond, left, right);
+#endif
     LIR_Opr step = new_register(T_INT);
     LIR_Opr plus_one = LIR_OprFact::intConst(InvocationCounter::count_increment);
     LIR_Opr zero = LIR_OprFact::intConst(0);
