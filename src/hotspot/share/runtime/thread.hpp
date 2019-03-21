@@ -1348,16 +1348,10 @@ class JavaThread: public Thread {
   inline void clear_ext_suspended();
 
  public:
-  void java_suspend(); // higher-level suspension logic called by the public APIs
-  void java_resume();  // higher-level resume logic called by the public APIs
-  int  java_suspend_self(); // low-level self-suspension mechanics
+  void java_suspend();
+  void java_resume();
+  int  java_suspend_self();
 
- private:
-  // mid-level wrapper around java_suspend_self to set up correct state and
-  // check for a pending safepoint at the end
-  void java_suspend_self_with_safepoint_check();
-
- public:
   void check_and_wait_while_suspended() {
     assert(JavaThread::current() == this, "sanity check");
 

@@ -2264,19 +2264,48 @@ void JavaThread::check_and_handle_async_exceptions(bool check_unsafe_error) {
 
 void JavaThread::handle_special_runtime_exit_condition(bool check_asyncs) {
   //
-  // Check for pending external suspend.
+  // Check for pending external suspend. Internal suspend requests do
+  // not use handle_special_runtime_exit_condition().
   // If JNIEnv proxies are allowed, don't self-suspend if the target
   // thread is not the current thread. In older versions of jdbx, jdbx
   // threads could call into the VM with another thread's JNIEnv so we
   // can be here operating on behalf of a suspended thread (4432884).
   bool do_self_suspend = is_external_suspend_with_lock();
   if (do_self_suspend && (!AllowJNIEnvProxy || this == JavaThread::current())) {
+    //
+    // Because thread is external suspended the safepoint code will count
+    // thread as at a safepoint. This can be odd because we can be here
+    // as _thread_in_Java which would normally transition to _thread_blocked
+    // at a safepoint. We would like to mark the thread as _thread_blocked
+    // before calling java_suspend_self like all other callers of it but
+    // we must then observe proper safepoint protocol. (We can't leave
+    // _thread_blocked with a safepoint in progress). However we can be
+    // here as _thread_in_native_trans so we can't use a normal transition
+    // constructor/destructor pair because they assert on that type of
+    // transition. We could do something like:
+    //
+    // JavaThreadState state = thread_state();
+    // set_thread_state(_thread_in_vm);
+    // {
+    //   ThreadBlockInVM tbivm(this);
+    //   java_suspend_self()
+    // }
+    // set_thread_state(_thread_in_vm_trans);
+    // if (safepoint) block;
+    // set_thread_state(state);
+    //
+    // but that is pretty messy. Instead we just go with the way the
+    // code has worked before and note that this is the only path to
+    // java_suspend_self that doesn't put the thread in _thread_blocked
+    // mode.
+
     frame_anchor()->make_walkable(this);
-    java_suspend_self_with_safepoint_check();
+    java_suspend_self();
+
+    // We might be here for reasons in addition to the self-suspend request
+    // so check for other async requests.
   }
 
-  // We might be here for reasons in addition to the self-suspend request
-  // so check for other async requests.
   if (check_asyncs) {
     check_and_handle_async_exceptions();
   }
@@ -2395,7 +2424,6 @@ void JavaThread::java_suspend() {
 //       to complete an external suspend request.
 //
 int JavaThread::java_suspend_self() {
-  assert(thread_state() == _thread_blocked, "wrong state for java_suspend_self()");
   int ret = 0;
 
   // we are in the process of exiting so don't suspend
@@ -2443,27 +2471,6 @@ int JavaThread::java_suspend_self() {
   return ret;
 }
 
-// Helper routine to set up the correct thread state before calling java_suspend_self.
-// This is called when regular thread-state transition helpers can't be used because
-// we can be in various states, in particular _thread_in_native_trans.
-// Because this thread is external suspended the safepoint code will count it as at
-// a safepoint, regardless of what its actual current thread-state is. But
-// is_ext_suspend_completed() may be waiting to see a thread transition from
-// _thread_in_native_trans to _thread_blocked. So we set the thread state directly
-// to _thread_blocked. The problem with setting thread state directly is that a
-// safepoint could happen just after java_suspend_self() returns after being resumed,
-// and the VM thread will see the _thread_blocked state. So we must check for a safepoint
-// after restoring the state to make sure we won't leave while a safepoint is in progress.
-void JavaThread::java_suspend_self_with_safepoint_check() {
-  assert(this == Thread::current(), "invariant");
-  JavaThreadState state = thread_state();
-  set_thread_state(_thread_blocked);
-  java_suspend_self();
-  set_thread_state(state);
-  InterfaceSupport::serialize_thread_state_with_handler(this);
-  SafepointMechanism::block_if_requested(this);
-}
-
 #ifdef ASSERT
 // Verify the JavaThread has not yet been published in the Threads::list, and
 // hence doesn't need protection from concurrent access at this stage.
@@ -2495,10 +2502,32 @@ void JavaThread::check_safepoint_and_suspend_for_native_trans(JavaThread *thread
   // threads could call into the VM with another thread's JNIEnv so we
   // can be here operating on behalf of a suspended thread (4432884).
   if (do_self_suspend && (!AllowJNIEnvProxy || curJT == thread)) {
-    thread->java_suspend_self_with_safepoint_check();
-  } else {
-    SafepointMechanism::block_if_requested(curJT);
+    JavaThreadState state = thread->thread_state();
+
+    // We mark this thread_blocked state as a suspend-equivalent so
+    // that a caller to is_ext_suspend_completed() won't be confused.
+    // The suspend-equivalent state is cleared by java_suspend_self().
+    thread->set_suspend_equivalent();
+
+    // If the safepoint code sees the _thread_in_native_trans state, it will
+    // wait until the thread changes to other thread state. There is no
+    // guarantee on how soon we can obtain the SR_lock and complete the
+    // self-suspend request. It would be a bad idea to let safepoint wait for
+    // too long. Temporarily change the state to _thread_blocked to
+    // let the VM thread know that this thread is ready for GC. The problem
+    // of changing thread state is that safepoint could happen just after
+    // java_suspend_self() returns after being resumed, and VM thread will
+    // see the _thread_blocked state. We must check for safepoint
+    // after restoring the state and make sure we won't leave while a safepoint
+    // is in progress.
+    thread->set_thread_state(_thread_blocked);
+    thread->java_suspend_self();
+    thread->set_thread_state(state);
+
+    InterfaceSupport::serialize_thread_state_with_handler(thread);
   }
+
+  SafepointMechanism::block_if_requested(curJT);
 
   if (thread->is_deopt_suspend()) {
     thread->clear_deopt_suspend();
