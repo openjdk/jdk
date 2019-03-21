@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # The Universal Permissive License (UPL), Version 1.0
@@ -200,6 +200,10 @@ SOURCE		= hsdis.c
 LIBRARIES =	$(TARGET_DIR)/bfd/libbfd.a \
 		$(TARGET_DIR)/opcodes/libopcodes.a \
 		$(TARGET_DIR)/libiberty/libiberty.a
+
+ifneq ($(MINGW),)
+LIBRARIES +=	$(TARGET_DIR)/zlib/libz.a
+endif
 
 DEMO_TARGET	= $(TARGET_DIR)/hsdis-demo
 DEMO_SOURCE	= hsdis-demo.c
