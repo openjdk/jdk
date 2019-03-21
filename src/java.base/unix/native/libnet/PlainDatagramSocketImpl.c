@@ -1496,6 +1496,7 @@ jobject getMulticastInterface(JNIEnv *env, jobject this, int fd, jint opt) {
             CHECK_NULL_RETURN(ni_class, NULL);
         }
         ni = Java_java_net_NetworkInterface_getByInetAddress0(env, ni_class, addr);
+        JNU_CHECK_EXCEPTION_RETURN(env, NULL);
         if (ni) {
             return ni;
         }
