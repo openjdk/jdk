@@ -342,15 +342,8 @@ public final class SSLSocketImpl
 
     @Override
     public synchronized SSLSession getHandshakeSession() {
-        if (conContext.handshakeContext != null) {
-            synchronized (this) {
-                if (conContext.handshakeContext != null) {
-                    return conContext.handshakeContext.handshakeSession;
-                }
-            }
-        }
-
-        return null;
+        return conContext.handshakeContext == null ?
+                null : conContext.handshakeContext.handshakeSession;
     }
 
     @Override
