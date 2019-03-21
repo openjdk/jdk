@@ -91,22 +91,25 @@ public class SignatureDigestTruncate {
         String privateKeyStr, String msgStr, String kStr, String sigStr)
         throws Exception {
 
+        System.out.println("Testing " + alg + " with " + curveName);
+
         byte[] privateKey = Convert.hexStringToByteArray(privateKeyStr);
         byte[] msg = Convert.hexStringToByteArray(msgStr);
         byte[] k = Convert.hexStringToByteArray(kStr);
         byte[] expectedSig = Convert.hexStringToByteArray(sigStr);
 
-        AlgorithmParameters params = AlgorithmParameters.getInstance("EC");
+        AlgorithmParameters params =
+            AlgorithmParameters.getInstance("EC", "SunEC");
         params.init(new ECGenParameterSpec(curveName));
         ECParameterSpec ecParams =
             params.getParameterSpec(ECParameterSpec.class);
 
-        KeyFactory kf = KeyFactory.getInstance("EC");
+        KeyFactory kf = KeyFactory.getInstance("EC", "SunEC");
         BigInteger s = new BigInteger(1, privateKey);
         ECPrivateKeySpec privKeySpec = new ECPrivateKeySpec(s, ecParams);
         PrivateKey privKey = kf.generatePrivate(privKeySpec);
 
-        Signature sig = Signature.getInstance(alg);
+        Signature sig = Signature.getInstance(alg, "SunEC");
         sig.initSign(privKey, new FixedRandom(k));
         sig.update(msg);
         byte[] computedSig = sig.sign();
