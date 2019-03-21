@@ -64,10 +64,15 @@ public class MetricsMemoryTester {
         long count = Metrics.systemMetrics().getMemoryFailCount();
 
         // Allocate 512M of data
-        long[][] longs = new long[64][];
-        for (int i = 1; i <= 64; i++) {
+        byte[][] bytes = new byte[64][];
+        for (int i = 0; i < 64; i++) {
             try {
-                longs[i] = new long[8 * 1024 * 1024];
+                bytes[i] = new byte[8 * 1024 * 1024];
+                // Break out as soon as we see an increase in failcount
+                // to avoid getting killed by the OOM killer.
+                if (Metrics.systemMetrics().getMemoryFailCount() > count) {
+                    break;
+                }
             } catch (Error e) { // OOM error
                 break;
             }
