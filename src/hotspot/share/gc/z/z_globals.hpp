@@ -49,10 +49,6 @@
   experimental(double, ZFragmentationLimit, 25.0,                           \
           "Maximum allowed heap fragmentation")                             \
                                                                             \
-  experimental(bool, ZStallOnOutOfMemory, true,                             \
-          "Allow Java threads to stall and wait for GC to complete "        \
-          "instead of immediately throwing an OutOfMemoryError")            \
-                                                                            \
   experimental(size_t, ZMarkStackSpaceLimit, 8*G,                           \
           "Maximum number of bytes allocated for mark stacks")              \
           range(32*M, 1024*G)                                               \

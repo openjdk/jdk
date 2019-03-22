@@ -186,10 +186,6 @@ uintptr_t ZObjectAllocator::alloc_object(size_t size) {
   ZAllocationFlags flags;
   flags.set_no_reserve();
 
-  if (!ZStallOnOutOfMemory) {
-    flags.set_non_blocking();
-  }
-
   return alloc_object(size, flags);
 }
 
