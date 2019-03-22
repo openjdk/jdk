@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,6 +79,14 @@ public final class IOStatus {
     // Return true iff n is not one of the IOStatus values
     public static boolean checkAll(long n) {
         return ((n > EOF) || (n < UNSUPPORTED_CASE));
+    }
+
+    /**
+     * Returns true if the error code is UNAVAILABLE or INTERRUPTED, the
+     * error codes to indicate that an I/O operation can be retried.
+     */
+    static boolean okayToRetry(long n) {
+        return (n == IOStatus.UNAVAILABLE) || (n == IOStatus.INTERRUPTED);
     }
 
 }

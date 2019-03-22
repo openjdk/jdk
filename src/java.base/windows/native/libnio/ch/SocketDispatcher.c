@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,11 @@ Java_sun_nio_ch_SocketDispatcher_read0(JNIEnv *env, jclass clazz, jobject fdo,
         if (theErr == WSAEWOULDBLOCK) {
             return IOS_UNAVAILABLE;
         }
-        JNU_ThrowIOExceptionWithLastError(env, "Read failed");
+        if (theErr == WSAECONNRESET) {
+            JNU_ThrowByName(env, "sun/net/ConnectionResetException", "Connection reset");
+        } else {
+            JNU_ThrowIOExceptionWithLastError(env, "Read failed");
+        }
         return IOS_THROWN;
     }
 
@@ -128,7 +132,11 @@ Java_sun_nio_ch_SocketDispatcher_readv0(JNIEnv *env, jclass clazz, jobject fdo,
         if (theErr == WSAEWOULDBLOCK) {
             return IOS_UNAVAILABLE;
         }
-        JNU_ThrowIOExceptionWithLastError(env, "Vector read failed");
+        if (theErr == WSAECONNRESET) {
+            JNU_ThrowByName(env, "sun/net/ConnectionResetException", "Connection reset");
+        } else {
+            JNU_ThrowIOExceptionWithLastError(env, "Vector read failed");
+        }
         return IOS_THROWN;
     }
 
@@ -174,7 +182,11 @@ Java_sun_nio_ch_SocketDispatcher_write0(JNIEnv *env, jclass clazz, jobject fdo,
                if (theErr == WSAEWOULDBLOCK) {
                    return IOS_UNAVAILABLE;
                }
-               JNU_ThrowIOExceptionWithLastError(env, "Write failed");
+               if (theErr == WSAECONNRESET) {
+                   JNU_ThrowIOException(env, "Connection reset by peer");
+               } else {
+                   JNU_ThrowIOExceptionWithLastError(env, "Write failed");
+               }
                return IOS_THROWN;
             }
         }
@@ -256,7 +268,11 @@ Java_sun_nio_ch_SocketDispatcher_writev0(JNIEnv *env, jclass clazz,
         if (theErr == WSAEWOULDBLOCK) {
             return IOS_UNAVAILABLE;
         }
-        JNU_ThrowIOExceptionWithLastError(env, "Vector write failed");
+        if (theErr == WSAECONNRESET) {
+            JNU_ThrowIOException(env, "Connection reset by peer");
+        } else {
+            JNU_ThrowIOExceptionWithLastError(env, "Vector write failed");
+        }
         return IOS_THROWN;
     }
 

@@ -32,6 +32,7 @@ import java.net.InetSocketAddress;
 import java.net.ProtocolFamily;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.net.SocketException;
 import java.net.SocketOption;
 import java.net.StandardProtocolFamily;
 import java.net.StandardSocketOptions;
@@ -52,6 +53,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 
+import sun.net.ConnectionResetException;
 import sun.net.NetHooks;
 import sun.net.ext.ExtendedSocketOptions;
 import sun.net.util.SocketExceptions;
@@ -84,6 +86,9 @@ class SocketChannelImpl
     // Input/Output closed
     private volatile boolean isInputClosed;
     private volatile boolean isOutputClosed;
+
+    // Connection reset protected by readLock
+    private boolean connectionReset;
 
     // -- The following fields are protected by stateLock
 
@@ -230,7 +235,7 @@ class SocketChannelImpl
             }
 
             // no options that require special handling
-            Net.setSocketOption(fd, Net.UNSPEC, name, value);
+            Net.setSocketOption(fd, name, value);
             return this;
         }
     }
@@ -260,7 +265,7 @@ class SocketChannelImpl
             }
 
             // no options that require special handling
-            return (T) Net.getSocketOption(fd, Net.UNSPEC, name);
+            return (T) Net.getSocketOption(fd, name);
         }
     }
 
@@ -334,6 +339,10 @@ class SocketChannelImpl
         }
     }
 
+    private void throwConnectionReset() throws SocketException {
+        throw new SocketException("Connection reset");
+    }
+
     @Override
     public int read(ByteBuffer buf) throws IOException {
         Objects.requireNonNull(buf);
@@ -344,6 +353,10 @@ class SocketChannelImpl
             int n = 0;
             try {
                 beginRead(blocking);
+
+                // check if connection has been reset
+                if (connectionReset)
+                    throwConnectionReset();
 
                 // check if input is shutdown
                 if (isInputClosed)
@@ -356,6 +369,9 @@ class SocketChannelImpl
                 } else {
                     n = IOUtil.read(fd, buf, -1, nd);
                 }
+            } catch (ConnectionResetException e) {
+                connectionReset = true;
+                throwConnectionReset();
             } finally {
                 endRead(blocking, n > 0);
                 if (n <= 0 && isInputClosed)
@@ -380,6 +396,10 @@ class SocketChannelImpl
             try {
                 beginRead(blocking);
 
+                // check if connection has been reset
+                if (connectionReset)
+                    throwConnectionReset();
+
                 // check if input is shutdown
                 if (isInputClosed)
                     return IOStatus.EOF;
@@ -391,6 +411,9 @@ class SocketChannelImpl
                 } else {
                     n = IOUtil.read(fd, dsts, offset, length, nd);
                 }
+            } catch (ConnectionResetException e) {
+                connectionReset = true;
+                throwConnectionReset();
             } finally {
                 endRead(blocking, n > 0);
                 if (n <= 0 && isInputClosed)
@@ -769,15 +792,13 @@ class SocketChannelImpl
                     boolean connected = false;
                     try {
                         beginFinishConnect(blocking);
-                        int n = 0;
                         if (blocking) {
                             do {
-                                n = Net.pollConnect(fd, -1);
-                            } while ((n == 0 || n == IOStatus.INTERRUPTED) && isOpen());
+                                connected = Net.pollConnect(fd, -1);
+                            } while (!connected && isOpen());
                         } else {
-                            n = Net.pollConnect(fd, 0);
+                            connected = Net.pollConnect(fd, 0);
                         }
-                        connected = (n > 0);
                     } finally {
                         endFinishConnect(blocking, connected);
                     }
@@ -1003,6 +1024,20 @@ class SocketChannelImpl
             }
         } finally {
             readLock.unlock();
+        }
+    }
+
+    /**
+     * Return the number of bytes in the socket input buffer.
+     */
+    int available() throws IOException {
+        synchronized (stateLock) {
+            ensureOpenAndConnected();
+            if (isInputClosed) {
+                return 0;
+            } else {
+                return Net.available(fd);
+            }
         }
     }
 
