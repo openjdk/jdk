@@ -47,6 +47,9 @@ endif
 ifeq ($(call check-jvm-feature, zero), true)
   JVM_CFLAGS_FEATURES += -DZERO -DCC_INTERP -DZERO_LIBARCH='"$(OPENJDK_TARGET_CPU_LEGACY_LIB)"' $(LIBFFI_CFLAGS)
   JVM_LIBS_FEATURES += $(LIBFFI_LIBS)
+  ifeq ($(ENABLE_LIBFFI_BUNDLING), true)
+    JVM_LDFLAGS_FEATURES += $(call SET_EXECUTABLE_ORIGIN,/..)
+  endif
   ifeq ($(call isTargetCpu, sparcv9), true)
     BUILD_LIBJVM_EXTRA_FILES := $(TOPDIR)/src/hotspot/cpu/sparc/memset_with_concurrent_readers_sparc.cpp
   endif
