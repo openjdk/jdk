@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,7 +120,7 @@ import sun.util.locale.provider.LocaleResources;
  * </ul>
  * Together these two values allow a year or month to be divided into weeks.
  *
- * <h3>Week of Month</h3>
+ * <h2>Week of Month</h2>
  * One field is used: week-of-month.
  * The calculation ensures that weeks never overlap a month boundary.
  * The month is divided into periods where each period starts on the defined first day-of-week.
@@ -145,14 +145,14 @@ import sun.util.locale.provider.LocaleResources;
  * </tbody>
  * </table>
  *
- * <h3>Week of Year</h3>
+ * <h2>Week of Year</h2>
  * One field is used: week-of-year.
  * The calculation ensures that weeks never overlap a year boundary.
  * The year is divided into periods where each period starts on the defined first day-of-week.
  * The earliest period is referred to as week 0 if it has less than the minimal number of days
  * and week 1 if it has at least the minimal number of days.
  *
- * <h3>Week Based Year</h3>
+ * <h2>Week Based Year</h2>
  * Two fields are used for week-based-year, one for the
  * {@link #weekOfWeekBasedYear() week-of-week-based-year} and one for
  * {@link #weekBasedYear() week-based-year}.  In a week-based-year, each week

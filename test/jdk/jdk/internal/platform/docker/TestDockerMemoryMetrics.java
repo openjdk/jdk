@@ -90,6 +90,7 @@ public class TestDockerMemoryMetrics {
                 new DockerRunOptions(imageName, "/jdk/bin/java", "MetricsMemoryTester");
         opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/")
                 .addDockerOpts("--memory=" + value)
+                .addJavaOpts("-Xmx" + value)
                 .addJavaOpts("-cp", "/test-classes/")
                 .addJavaOpts("--add-exports", "java.base/jdk.internal.platform=ALL-UNNAMED")
                 .addClassOptions("failcount");

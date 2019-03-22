@@ -2140,46 +2140,87 @@ void os::Linux::print_container_info(outputStream* st) {
   st->print("container (cgroup) information:\n");
 
   const char *p_ct = OSContainer::container_type();
-  st->print("container_type: %s\n", p_ct != NULL ? p_ct : "failed");
+  st->print("container_type: %s\n", p_ct != NULL ? p_ct : "not supported");
 
   char *p = OSContainer::cpu_cpuset_cpus();
-  st->print("cpu_cpuset_cpus: %s\n", p != NULL ? p : "failed");
+  st->print("cpu_cpuset_cpus: %s\n", p != NULL ? p : "not supported");
   free(p);
 
   p = OSContainer::cpu_cpuset_memory_nodes();
-  st->print("cpu_memory_nodes: %s\n", p != NULL ? p : "failed");
+  st->print("cpu_memory_nodes: %s\n", p != NULL ? p : "not supported");
   free(p);
 
   int i = OSContainer::active_processor_count();
+  st->print("active_processor_count: ");
   if (i > 0) {
-    st->print("active_processor_count: %d\n", i);
+    st->print("%d\n", i);
   } else {
-    st->print("active_processor_count: failed\n");
+    st->print("not supported\n");
   }
 
   i = OSContainer::cpu_quota();
-  st->print("cpu_quota: %d\n", i);
+  st->print("cpu_quota: ");
+  if (i > 0) {
+    st->print("%d\n", i);
+  } else {
+    st->print("%s\n", i == OSCONTAINER_ERROR ? "not supported" : "no quota");
+  }
 
   i = OSContainer::cpu_period();
-  st->print("cpu_period: %d\n", i);
+  st->print("cpu_period: ");
+  if (i > 0) {
+    st->print("%d\n", i);
+  } else {
+    st->print("%s\n", i == OSCONTAINER_ERROR ? "not supported" : "no period");
+  }
 
   i = OSContainer::cpu_shares();
-  st->print("cpu_shares: %d\n", i);
+  st->print("cpu_shares: ");
+  if (i > 0) {
+    st->print("%d\n", i);
+  } else {
+    st->print("%s\n", i == OSCONTAINER_ERROR ? "not supported" : "no shares");
+  }
 
   jlong j = OSContainer::memory_limit_in_bytes();
-  st->print("memory_limit_in_bytes: " JLONG_FORMAT "\n", j);
+  st->print("memory_limit_in_bytes: ");
+  if (j > 0) {
+    st->print(JLONG_FORMAT "\n", j);
+  } else {
+    st->print("%s\n", j == OSCONTAINER_ERROR ? "not supported" : "unlimited");
+  }
 
   j = OSContainer::memory_and_swap_limit_in_bytes();
-  st->print("memory_and_swap_limit_in_bytes: " JLONG_FORMAT "\n", j);
+  st->print("memory_and_swap_limit_in_bytes: ");
+  if (j > 0) {
+    st->print(JLONG_FORMAT "\n", j);
+  } else {
+    st->print("%s\n", j == OSCONTAINER_ERROR ? "not supported" : "unlimited");
+  }
 
   j = OSContainer::memory_soft_limit_in_bytes();
-  st->print("memory_soft_limit_in_bytes: " JLONG_FORMAT "\n", j);
+  st->print("memory_soft_limit_in_bytes: ");
+  if (j > 0) {
+    st->print(JLONG_FORMAT "\n", j);
+  } else {
+    st->print("%s\n", j == OSCONTAINER_ERROR ? "not supported" : "unlimited");
+  }
 
   j = OSContainer::OSContainer::memory_usage_in_bytes();
-  st->print("memory_usage_in_bytes: " JLONG_FORMAT "\n", j);
+  st->print("memory_usage_in_bytes: ");
+  if (j > 0) {
+    st->print(JLONG_FORMAT "\n", j);
+  } else {
+    st->print("%s\n", j == OSCONTAINER_ERROR ? "not supported" : "unlimited");
+  }
 
   j = OSContainer::OSContainer::memory_max_usage_in_bytes();
-  st->print("memory_max_usage_in_bytes: " JLONG_FORMAT "\n", j);
+  st->print("memory_max_usage_in_bytes: ");
+  if (j > 0) {
+    st->print(JLONG_FORMAT "\n", j);
+  } else {
+    st->print("%s\n", j == OSCONTAINER_ERROR ? "not supported" : "unlimited");
+  }
   st->cr();
 }
 

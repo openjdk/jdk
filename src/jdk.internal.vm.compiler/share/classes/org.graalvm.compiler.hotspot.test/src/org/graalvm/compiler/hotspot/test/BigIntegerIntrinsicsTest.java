@@ -21,6 +21,8 @@
  * questions.
  */
 
+
+
 package org.graalvm.compiler.hotspot.test;
 
 import java.lang.reflect.InvocationTargetException;
@@ -193,8 +195,7 @@ public final class BigIntegerIntrinsicsTest extends GraalCompilerTest {
         Object invokeCode(Object... args) {
             try {
                 return testcode.executeVarargs(args);
-            }
-            catch (InvalidInstalledCodeException e) {
+            } catch (InvalidInstalledCodeException e) {
                 // Ensure the installed code is valid, possibly recompiled.
                 testcode = getCode(testmethod);
 
@@ -208,8 +209,7 @@ public final class BigIntegerIntrinsicsTest extends GraalCompilerTest {
         private Object invokeSafe(ResolvedJavaMethod method, Object receiver, Object... args) {
             try {
                 return invoke(method, receiver, args);
-            } catch (IllegalAccessException   | InvocationTargetException |
-                     IllegalArgumentException | InstantiationException e) {
+            } catch (IllegalAccessException | InvocationTargetException | IllegalArgumentException | InstantiationException e) {
                 throw new RuntimeException(e);
             }
         }
@@ -220,8 +220,7 @@ public final class BigIntegerIntrinsicsTest extends GraalCompilerTest {
         private InstalledCode testcode;
     }
 
-    private static GraalHotSpotVMConfig config =
-        ((HotSpotGraalRuntimeProvider) Graal.getRequiredCapability(RuntimeProvider.class)).getVMConfig();
+    private static GraalHotSpotVMConfig config = ((HotSpotGraalRuntimeProvider) Graal.getRequiredCapability(RuntimeProvider.class)).getVMConfig();
 
     private static BigInteger bigTwo = BigInteger.valueOf(2);
     private static Random rnd = new Random(17);

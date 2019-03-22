@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,7 +91,7 @@ import sun.util.calendar.ZoneInfo;
  * adjustment may be made if desired for dates that are prior to the Gregorian
  * changeover and which fall between January 1 and March 24.
  *
- * <h3><a id="week_and_year">Week Of Year and Week Year</a></h3>
+ * <h2><a id="week_and_year">Week Of Year and Week Year</a></h2>
  *
  * <p>Values calculated for the {@link Calendar#WEEK_OF_YEAR
  * WEEK_OF_YEAR} field range from 1 to 53. The first week of a
@@ -133,7 +133,7 @@ import sun.util.calendar.ZoneInfo;
  * ends on January 10, 1998; the first three days of 1998 then are
  * part of week 53 of 1997 and their week year is 1997.
  *
- * <h4>Week Of Month</h4>
+ * <h3>Week Of Month</h3>
  *
  * <p>Values calculated for the <code>WEEK_OF_MONTH</code> field range from 0
  * to 6.  Week 1 of a month (the days with <code>WEEK_OF_MONTH =
@@ -153,7 +153,7 @@ import sun.util.calendar.ZoneInfo;
  * <code>getMinimalDaysInFirstWeek()</code> is changed to 3, then January 1
  * through January 3 have a <code>WEEK_OF_MONTH</code> of 1.
  *
- * <h4>Default Fields Values</h4>
+ * <h3>Default Fields Values</h3>
  *
  * <p>The <code>clear</code> method sets calendar field(s)
  * undefined. <code>GregorianCalendar</code> uses the following

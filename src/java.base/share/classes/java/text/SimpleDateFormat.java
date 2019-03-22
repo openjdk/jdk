@@ -74,7 +74,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * For more information on using these methods, see
  * {@link DateFormat}.
  *
- * <h3>Date and Time Patterns</h3>
+ * <h2>Date and Time Patterns</h2>
  * <p>
  * Date and time formats are specified by <em>date and time pattern</em>
  * strings.
@@ -370,7 +370,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * <code>SimpleDateFormat</code> does not deal with the localization of text
  * other than the pattern letters; that's up to the client of the class.
  *
- * <h4>Examples</h4>
+ * <h3>Examples</h3>
  *
  * The following examples show how date and time patterns are interpreted in
  * the U.S. locale. The given date and time are 2001-07-04 12:08:56 local time
@@ -421,7 +421,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * </table>
  * </blockquote>
  *
- * <h4><a id="synchronization">Synchronization</a></h4>
+ * <h3><a id="synchronization">Synchronization</a></h3>
  *
  * <p>
  * Date formats are not synchronized.

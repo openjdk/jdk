@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,7 +91,7 @@ import sun.util.locale.provider.LocaleResources;
  * <p>
  * This class defines fields and units that are specific to the ISO calendar system.
  *
- * <h3>Quarter of year</h3>
+ * <h2>Quarter of year</h2>
  * The ISO-8601 standard is based on the standard civic 12 month year.
  * This is commonly divided into four quarters, often abbreviated as Q1, Q2, Q3 and Q4.
  * <p>
@@ -107,7 +107,7 @@ import sun.util.locale.provider.LocaleResources;
  * <li>{@link ChronoField#YEAR YEAR} - the standard ISO year
  * </ul>
  *
- * <h3>Week based years</h3>
+ * <h2>Week based years</h2>
  * The ISO-8601 standard was originally intended as a data interchange format,
  * defining a string format for dates and times. However, it also defines an
  * alternate way of expressing the date, based on the concept of week-based-year.

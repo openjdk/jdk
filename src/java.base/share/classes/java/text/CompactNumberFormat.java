@@ -73,7 +73,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * String result = fmt.format(1000);
  * </pre></blockquote>
  *
- * <h3><a id="compact_number_style">Style</a></h3>
+ * <h2><a id="compact_number_style">Style</a></h2>
  * <p>
  * A number can be formatted in the compact forms with two different
  * styles, {@link NumberFormat.Style#SHORT SHORT}
@@ -88,7 +88,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * {@link NumberFormat.Style#LONG LONG} style instance in same locale
  * formats {@code 10000} as {@code "10 thousand"}.
  *
- * <h3><a id="compact_number_patterns">Compact Number Patterns</a></h3>
+ * <h2><a id="compact_number_patterns">Compact Number Patterns</a></h2>
  * <p>
  * The compact number patterns are represented in a series of patterns where each
  * pattern is used to format a range of numbers. An example of
@@ -151,7 +151,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * unless noted otherwise, if they are to appear in the prefix or suffix
  * as literals. For example, 0\u0915'.'.
  *
- * <h3>Formatting</h3>
+ * <h2>Formatting</h2>
  * The default formatting behavior returns a formatted string with no fractional
  * digits, however users can use the {@link #setMinimumFractionDigits(int)}
  * method to include the fractional part.
@@ -165,14 +165,14 @@ import java.util.concurrent.atomic.AtomicLong;
  * {@link java.text.DecimalFormat DecimalFormat}
  * for the specified locale is used.
  *
- * <h3>Parsing</h3>
+ * <h2>Parsing</h2>
  * The default parsing behavior does not allow a grouping separator until
  * grouping used is set to {@code true} by using
  * {@link #setGroupingUsed(boolean)}. The parsing of the fractional part
  * depends on the {@link #isParseIntegerOnly()}. For example, if the
  * parse integer only is set to true, then the fractional part is skipped.
  *
- * <h3>Rounding</h3>
+ * <h2>Rounding</h2>
  * {@code CompactNumberFormat} provides rounding modes defined in
  * {@link java.math.RoundingMode} for formatting.  By default, it uses
  * {@link java.math.RoundingMode#HALF_EVEN RoundingMode.HALF_EVEN}.

@@ -684,6 +684,7 @@ sun/security/pkcs11/tls/TestLeadingZeroesP11.java               8204203 windows-
 sun/security/pkcs11/tls/TestMasterSecret.java                   8204203 windows-all
 sun/security/pkcs11/tls/TestPRF.java                            8204203 windows-all
 sun/security/pkcs11/tls/TestPremaster.java                      8204203 windows-all
+sun/security/pkcs11/tls/tls12/TestTLS12.java                    8221271 windows-all
 sun/security/tools/keytool/NssTest.java                         8204203 windows-all
 
 ############################################################################

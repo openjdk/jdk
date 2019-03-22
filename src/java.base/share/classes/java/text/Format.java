@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ import java.io.Serializable;
  * no separator in between, and in this case the <code>parseObject</code> could
  * not tell which digits belong to which number.
  *
- * <h3>Subclassing</h3>
+ * <h2>Subclassing</h2>
  *
  * <p>
  * The Java Platform provides three specialized subclasses of <code>Format</code>--
@@ -115,7 +115,7 @@ import java.io.Serializable;
  * the field. For examples of these constants, see <code>ERA_FIELD</code> and its
  * friends in {@link DateFormat}.
  *
- * <h4><a id="synchronization">Synchronization</a></h4>
+ * <h3><a id="synchronization">Synchronization</a></h3>
  *
  * <p>
  * Formats are generally not synchronized.

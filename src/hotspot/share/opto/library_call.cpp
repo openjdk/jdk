@@ -2407,7 +2407,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   }
 
   // Can base be NULL? Otherwise, always on-heap access.
-  bool can_access_non_heap = TypePtr::NULL_PTR->higher_equal(_gvn.type(heap_base_oop));
+  bool can_access_non_heap = TypePtr::NULL_PTR->higher_equal(_gvn.type(base));
 
   if (!can_access_non_heap) {
     decorators |= IN_HEAP;

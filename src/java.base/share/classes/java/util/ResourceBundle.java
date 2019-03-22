@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -204,18 +204,18 @@ import static sun.security.util.SecurityConstants.GET_CLASSLOADER_PERMISSION;
  * known concrete subclasses {@code ListResourceBundle} and
  * {@code PropertyResourceBundle} are thread-safe.
  *
- * <h3><a id="resource-bundle-modules">Resource Bundles and Named Modules</a></h3>
+ * <h2><a id="resource-bundle-modules">Resource Bundles and Named Modules</a></h2>
  *
  * Resource bundles can be deployed in modules in the following ways:
  *
- * <h4>Resource bundles together with an application</h4>
+ * <h3>Resource bundles together with an application</h3>
  *
  * Resource bundles can be deployed together with an application in the same
  * module.  In that case, the resource bundles are loaded
  * by code in the module by calling the {@link #getBundle(String)}
  * or {@link #getBundle(String, Locale)} method.
  *
- * <h4><a id="service-providers">Resource bundles as service providers</a></h4>
+ * <h3><a id="service-providers">Resource bundles as service providers</a></h3>
  *
  * Resource bundles can be deployed in one or more <em>service provider modules</em>
  * and they can be located using {@link ServiceLoader}.
@@ -232,7 +232,7 @@ import static sun.security.util.SecurityConstants.GET_CLASSLOADER_PERMISSION;
  * provide resource bundles in any format such XML which replaces the need
  * of {@link Control ResourceBundle.Control}.
  *
- * <h4><a id="other-modules">Resource bundles in other modules and class path</a></h4>
+ * <h3><a id="other-modules">Resource bundles in other modules and class path</a></h3>
  *
  * Resource bundles in a named module may be <em>encapsulated</em> so that
  * it cannot be located by code in other modules.  Resource bundles
@@ -255,7 +255,7 @@ import static sun.security.util.SecurityConstants.GET_CLASSLOADER_PERMISSION;
  * resource bundle provider</a>, it does not fall back to the
  * class loader search.
  *
- * <h4>Resource bundles in automatic modules</h4>
+ * <h3>Resource bundles in automatic modules</h3>
  *
  * A common format of resource bundles is in {@linkplain PropertyResourceBundle
  * .properties} file format.  Typically {@code .properties} resource bundles
@@ -300,7 +300,7 @@ import static sun.security.util.SecurityConstants.GET_CLASSLOADER_PERMISSION;
  * the first one returned from {@link ServiceLoader} will be used.
  * A custom {@link Control} implementation is ignored by named modules.
  *
- * <h3>Cache Management</h3>
+ * <h2>Cache Management</h2>
  *
  * Resource bundle instances created by the <code>getBundle</code> factory
  * methods are cached by default, and the factory methods return the same
@@ -316,7 +316,7 @@ import static sun.security.util.SecurityConstants.GET_CLASSLOADER_PERMISSION;
  * Control#needsReload(String, Locale, String, ClassLoader, ResourceBundle,
  * long) ResourceBundle.Control.needsReload} for details.
  *
- * <h3>Example</h3>
+ * <h2>Example</h2>
  *
  * The following is a very simple example of a <code>ResourceBundle</code>
  * subclass, <code>MyResources</code>, that manages two resources (for a larger number of

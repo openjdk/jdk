@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
  * will cause a {@code NullPointerException}, unless otherwise specified. </p>
  *
  *
- * <h1><a id="resolution"></a>{@index "Module Resolution"}</h1>
+ * <h2><a id="resolution"></a>{@index "Module Resolution"}</h2>
  *
  * <p> Resolution is the process of computing how modules depend on each other.
  * The process occurs at compile time and run time. </p>
@@ -45,7 +45,7 @@
  * The readability graph embodies how modules depend on each other, which in
  * turn controls access across module boundaries. </p>
  *
- * <h2> Step 1: Recursive enumeration </h2>
+ * <h3> Step 1: Recursive enumeration </h3>
  *
  * <p> Recursive enumeration takes a set of module names, looks up each of their
  * module declarations, and for each module declaration, recursively enumerates:
@@ -91,7 +91,7 @@
  *
  * <p> Otherwise, resolution proceeds to step 2. </p>
  *
- * <h2> Step 2: Computing the readability graph </h2>
+ * <h3> Step 2: Computing the readability graph </h3>
  *
  * <p> A 'requires' directive (irrespective of 'transitive') expresses that
  * one module depends on some other module. The effect of the 'transitive'
@@ -147,7 +147,7 @@
  * <p> Otherwise, resolution succeeds, and the result of resolution is the
  * readability graph.
  *
- * <h2> Root modules </h2>
+ * <h3> Root modules </h3>
  *
  * <p> The set of root modules at compile-time is usually the set of modules
  * being compiled. At run-time, the set of root modules is usually the
@@ -158,7 +158,7 @@
  * that is observable on the upgrade module path or among the system modules,
  * and that exports at least one package without qualification. </p>
  *
- * <h2> Observable modules </h2>
+ * <h3> Observable modules </h3>
  *
  * <p> The set of observable modules at both compile-time and run-time is
  * determined by searching several different paths, and also by searching
@@ -183,7 +183,7 @@
  *
  * </ol>
  *
- * <h2> 'requires' directives with 'static' modifier </h2>
+ * <h3> 'requires' directives with 'static' modifier </h3>
  *
  * <p> 'requires' directives that have the 'static' modifier express an optional
  * dependence at run time. If a module declares that it 'requires static M' then
@@ -191,7 +191,7 @@
  * However, if M is recursively enumerated at step 1 then all modules that are
  * enumerated and `requires static M` will read M. </p>
  *
- * <h2> Completeness </h2>
+ * <h3> Completeness </h3>
  *
  * <p> Resolution may be partial at compile-time in that the complete transitive
  * closure may not be required to compile a set of modules. Minimally, the

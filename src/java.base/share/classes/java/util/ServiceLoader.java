@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,7 @@ import jdk.internal.reflect.Reflection;
  * service providers (based on the functionality they expose through the service),
  * and handling the possibility that no service providers are located.
  *
- * <h3> Obtaining a service loader </h3>
+ * <h2> Obtaining a service loader </h2>
  *
  * <p> An application obtains a service loader for a given service by invoking
  * one of the static {@code load} methods of {@code ServiceLoader}. If the
@@ -141,7 +141,7 @@ import jdk.internal.reflect.Reflection;
  *   <li> {@code get()} yields an instance of {@code CodecFactory} </li>
  * </ol>
  *
- * <h3> Designing services </h3>
+ * <h2> Designing services </h2>
  *
  * <p> A service is a single type, usually an interface or abstract class. A
  * concrete class can be used, but this is not recommended. The type may have
@@ -167,7 +167,7 @@ import jdk.internal.reflect.Reflection;
  *   or complicated to produce certain codecs. </p></li>
  * </ol>
  *
- * <h3> <a id="developing-service-providers">Developing service providers</a> </h3>
+ * <h2> <a id="developing-service-providers">Developing service providers</a> </h2>
  *
  * <p> A service provider is a single type, usually a concrete class. An
  * interface or abstract class is permitted because it may declare a static
@@ -188,7 +188,7 @@ import jdk.internal.reflect.Reflection;
  * the service loader's stream, without knowledge of the service providers'
  * locations.
  *
- * <h3> Deploying service providers as modules </h3>
+ * <h2> Deploying service providers as modules </h2>
  *
  * <p> A service provider that is developed in a module must be specified in a
  * <i>provides</i> directive in the module declaration. The provides directive
@@ -253,7 +253,7 @@ import jdk.internal.reflect.Reflection;
  * the service provider) will be instantiated by an entity (that is, a service
  * loader) which is outside the class's package.
  *
- * <h3> Deploying service providers on the class path </h3>
+ * <h2> Deploying service providers on the class path </h2>
  *
  * A service provider that is packaged as a JAR file for the class path is
  * identified by placing a <i>provider-configuration file</i> in the resource
@@ -293,7 +293,7 @@ import jdk.internal.reflect.Reflection;
  * not necessarily the class loader which ultimately locates the
  * provider-configuration file.
  *
- * <h3> Timing of provider discovery </h3>
+ * <h2> Timing of provider discovery </h2>
  *
  * <p> Service providers are loaded and instantiated lazily, that is, on demand.
  * A service loader maintains a cache of the providers that have been loaded so
@@ -306,7 +306,7 @@ import jdk.internal.reflect.Reflection;
  * locates any remaining providers. Caches are cleared via the {@link #reload
  * reload} method.
  *
- * <h3> <a id="errors">Errors</a> </h3>
+ * <h2> <a id="errors">Errors</a> </h2>
  *
  * <p> When using the service loader's {@code iterator}, the {@link
  * Iterator#hasNext() hasNext} and {@link Iterator#next() next} methods will
@@ -361,7 +361,7 @@ import jdk.internal.reflect.Reflection;
  *
  * </ul>
  *
- * <h3> Security </h3>
+ * <h2> Security </h2>
  *
  * <p> Service loaders always execute in the security context of the caller
  * of the iterator or stream methods and may also be restricted by the security
@@ -370,7 +370,7 @@ import jdk.internal.reflect.Reflection;
  * the methods of the iterators which they return, from within a privileged
  * security context.
  *
- * <h3> Concurrency </h3>
+ * <h2> Concurrency </h2>
  *
  * <p> Instances of this class are not safe for use by multiple concurrent
  * threads.

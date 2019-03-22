@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ import java.util.stream.StreamSupport;
  * such use.
  *
  *
- * <h3><a id="sum">Summary of regular-expression constructs</a></h3>
+ * <h2><a id="sum">Summary of regular-expression constructs</a></h2>
  *
  * <table class="borderless">
  * <caption style="display:none">Regular expression constructs, and what they match</caption>
@@ -378,7 +378,7 @@ import java.util.stream.StreamSupport;
  * <hr>
  *
  *
- * <h3><a id="bs">Backslashes, escapes, and quoting</a></h3>
+ * <h2><a id="bs">Backslashes, escapes, and quoting</a></h2>
  *
  * <p> The backslash character ({@code '\'}) serves to introduce escaped
  * constructs, as defined in the table above, as well as to quote characters
@@ -406,7 +406,7 @@ import java.util.stream.StreamSupport;
  * {@code (hello)} the string literal {@code "\\(hello\\)"}
  * must be used.
  *
- * <h3><a id="cc">Character Classes</a></h3>
+ * <h2><a id="cc">Character Classes</a></h2>
  *
  *    <p> Character classes may appear within other character classes, and
  *    may be composed by the union operator (implicit) and the intersection
@@ -449,7 +449,7 @@ import java.util.stream.StreamSupport;
  *    character class, while the expression {@code -} becomes a range
  *    forming metacharacter.
  *
- * <h3><a id="lt">Line terminators</a></h3>
+ * <h2><a id="lt">Line terminators</a></h2>
  *
  * <p> A <i>line terminator</i> is a one- or two-character sequence that marks
  * the end of a line of the input character sequence.  The following are
@@ -484,9 +484,9 @@ import java.util.stream.StreamSupport;
  * except at the end of input. When in {@link #MULTILINE} mode {@code $}
  * matches just before a line terminator or the end of the input sequence.
  *
- * <h3><a id="cg">Groups and capturing</a></h3>
+ * <h2><a id="cg">Groups and capturing</a></h2>
  *
- * <h4><a id="gnumber">Group number</a></h4>
+ * <h3><a id="gnumber">Group number</a></h3>
  * <p> Capturing groups are numbered by counting their opening parentheses from
  * left to right.  In the expression {@code ((A)(B(C)))}, for example, there
  * are four such groups: </p>
@@ -505,7 +505,7 @@ import java.util.stream.StreamSupport;
  * subsequence may be used later in the expression, via a back reference, and
  * may also be retrieved from the matcher once the match operation is complete.
  *
- * <h4><a id="groupname">Group name</a></h4>
+ * <h3><a id="groupname">Group name</a></h3>
  * <p>A capturing group can also be assigned a "name", a {@code named-capturing group},
  * and then be back-referenced later by the "name". Group names are composed of
  * the following characters. The first character must be a {@code letter}.
@@ -534,7 +534,7 @@ import java.util.stream.StreamSupport;
  * that do not capture text and do not count towards the group total, or
  * <i>named-capturing</i> group.
  *
- * <h3> Unicode support </h3>
+ * <h2> Unicode support </h2>
  *
  * <p> This class is in conformance with Level 1 of <a
  * href="http://www.unicode.org/reports/tr18/"><i>Unicode Technical
@@ -688,7 +688,7 @@ import java.util.stream.StreamSupport;
  * available through the same <code>\p{</code><i>prop</i><code>}</code> syntax where
  * the specified property has the name <code>java<i>methodname</i></code></a>.
  *
- * <h3> Comparison to Perl 5 </h3>
+ * <h2> Comparison to Perl 5 </h2>
  *
  * <p>The {@code Pattern} engine performs traditional NFA-based matching
  * with ordered alternation as occurs in Perl 5.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ static volatile jint result = PASSED;
 static jvmtiEnv *jvmti = NULL;
 static jvmtiEventCallbacks callbacks;
 
-static int vm_started = 0;
+static volatile int callbacksEnabled = NSK_TRUE;
 static jrawMonitorID agent_lock;
 
 static void initCounters() {
@@ -82,7 +82,7 @@ ClassLoad(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thread, jclass klass) {
 
     jvmti->RawMonitorEnter(agent_lock);
 
-    if (vm_started) {
+    if (callbacksEnabled) {
         // GetClassSignature may be called only during the start or the live phase
         if (!NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(klass, &sig, &generic)))
             env->FatalError("failed to obtain a class signature\n");
@@ -196,11 +196,20 @@ void JNICALL
 VMStart(jvmtiEnv *jvmti_env, JNIEnv* jni_env) {
     jvmti->RawMonitorEnter(agent_lock);
 
-    vm_started = 1;
+    callbacksEnabled = NSK_TRUE;
 
     jvmti->RawMonitorExit(agent_lock);
 }
 
+
+void JNICALL
+VMDeath(jvmtiEnv *jvmti_env, JNIEnv* jni_env) {
+    jvmti->RawMonitorEnter(agent_lock);
+
+    callbacksEnabled = NSK_FALSE;
+
+    jvmti->RawMonitorExit(agent_lock);
+}
 /************************/
 
 JNIEXPORT jint JNICALL
@@ -268,12 +277,16 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     callbacks.ClassLoad = &ClassLoad;
     callbacks.Breakpoint = &Breakpoint;
     callbacks.VMStart = &VMStart;
+    callbacks.VMDeath = &VMDeath;
+
     if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks))))
         return JNI_ERR;
 
     NSK_DISPLAY0("setting event callbacks done\nenabling JVMTI events ...\n");
 
     if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_START, NULL)))
+        return JNI_ERR;
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, NULL)))
         return JNI_ERR;
     if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_LOAD, NULL)))
         return JNI_ERR;
