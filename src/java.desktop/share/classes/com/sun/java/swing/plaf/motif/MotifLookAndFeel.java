@@ -60,8 +60,12 @@ import sun.awt.OSInfo;
  * long term persistence.
  *
  * @author unattributed
+ * @deprecated The Motif Look and Feel is deprecated with the intent to remove
+ *             it in some future release. It is recommended to use
+ *             {@link javax.swing.plaf.metal.MetalLookAndFeel} instead.
  */
 @SuppressWarnings("serial") // Superclass is not serializable across versions
+@Deprecated(since="13", forRemoval=true)
 public class MotifLookAndFeel extends BasicLookAndFeel
 {
     public String getName() {

@@ -38,7 +38,7 @@ import javax.swing.plaf.basic.BasicBorders;
 import com.sun.java.swing.plaf.motif.*;
 import sun.awt.X11.XComponentPeer;
 
-@SuppressWarnings("serial") // JDK-implementation class
+@SuppressWarnings({"serial", "removal"}) // JDK-implementation class
 class XAWTLookAndFeel extends MotifLookAndFeel {
 
     /**
