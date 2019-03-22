@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,7 +121,7 @@ import java.util.Objects;
  *                first, last);
  * </pre>
  *
- * <h3>Adding Calendars</h3>
+ * <h2>Adding Calendars</h2>
  * <p> The set of calendars is extensible by defining a subclass of {@link ChronoLocalDate}
  * to represent a date instance and an implementation of {@code Chronology}
  * to be the factory for the ChronoLocalDate subclass.

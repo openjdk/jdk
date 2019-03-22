@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -675,5 +675,33 @@ public class AMD64HotSpotLIRGenerator extends AMD64LIRGenerator implements HotSp
     @Override
     protected StrategySwitchOp createStrategySwitchOp(SwitchStrategy strategy, LabelRef[] keyTargets, LabelRef defaultTarget, Variable key, AllocatableValue temp) {
         return new AMD64HotSpotStrategySwitchOp(strategy, keyTargets, defaultTarget, key, temp);
+    }
+
+    @Override
+    public ForeignCallLinkage lookupArrayEqualsStub(JavaKind kind, int constantLength) {
+        if (constantLength >= 0 && constantLength * kind.getByteCount() < 2 * getMaxVectorSize()) {
+            // Yield constant-length arrays comparison assembly
+            return null;
+        }
+        switch (kind) {
+            case Boolean:
+                return getForeignCalls().lookupForeignCall(AMD64ArrayEqualsStub.STUB_BOOLEAN_ARRAY_EQUALS);
+            case Byte:
+                return getForeignCalls().lookupForeignCall(AMD64ArrayEqualsStub.STUB_BYTE_ARRAY_EQUALS);
+            case Char:
+                return getForeignCalls().lookupForeignCall(AMD64ArrayEqualsStub.STUB_CHAR_ARRAY_EQUALS);
+            case Short:
+                return getForeignCalls().lookupForeignCall(AMD64ArrayEqualsStub.STUB_SHORT_ARRAY_EQUALS);
+            case Int:
+                return getForeignCalls().lookupForeignCall(AMD64ArrayEqualsStub.STUB_INT_ARRAY_EQUALS);
+            case Long:
+                return getForeignCalls().lookupForeignCall(AMD64ArrayEqualsStub.STUB_LONG_ARRAY_EQUALS);
+            case Float:
+                return getForeignCalls().lookupForeignCall(AMD64ArrayEqualsStub.STUB_FLOAT_ARRAY_EQUALS);
+            case Double:
+                return getForeignCalls().lookupForeignCall(AMD64ArrayEqualsStub.STUB_DOUBLE_ARRAY_EQUALS);
+            default:
+                return null;
+        }
     }
 }

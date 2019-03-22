@@ -861,7 +861,7 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
           "by the application (Solaris & Linux only)")                      \
                                                                             \
   product(bool, AllowJNIEnvProxy, false,                                    \
-          "Allow JNIEnv proxies for jdbx")                                  \
+          "(Deprecated) Allow JNIEnv proxies for jdbx")                     \
                                                                             \
   product(bool, RestoreMXCSROnJNICalls, false,                              \
           "Restore MXCSR when returning from JNI calls")                    \
@@ -1234,7 +1234,7 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
           "exit")                                                           \
                                                                             \
   product(bool, PrintFlagsRanges, false,                                    \
-          "Print VM flags and their ranges and exit VM")                    \
+          "Print VM flags and their ranges")                                \
                                                                             \
   diagnostic(bool, SerializeVMOutput, true,                                 \
           "Use a mutex to serialize output to tty and LogFile")             \

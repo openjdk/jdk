@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import java.util.ResourceBundle;
  * factory methods to locate and load the service providers that are deployed as
  * modules via {@link java.util.ServiceLoader ServiceLoader}.
  *
- * <h3>Developing resource bundle services</h3>
+ * <h2>Developing resource bundle services</h2>
  *
  * A service for a resource bundle of a given <em>{@code baseName}</em> must have
  * a fully-qualified class name of the form:
@@ -55,7 +55,7 @@ import java.util.ResourceBundle;
  * }
  * }</pre></blockquote>
  *
- * <h3>Deploying resource bundle service providers</h3>
+ * <h2>Deploying resource bundle service providers</h2>
  *
  * Resource bundles can be deployed in one or more service providers
  * in modules.  For example, a provider for a service
@@ -114,7 +114,7 @@ import java.util.ResourceBundle;
  *     provides com.example.app.spi.MyResourcesProvider with com.example.impl.MyResourcesProviderImpl;
  * </pre>
  *
- * <h3><a id="obtain-resource-bundle">Obtaining resource bundles from providers</a></h3>
+ * <h2><a id="obtain-resource-bundle">Obtaining resource bundles from providers</a></h2>
  *
  * The module declaration of the <em>consumer module</em> that calls one of the
  * {@code ResourceBundle.getBundle} factory methods to obtain a resource

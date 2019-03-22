@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ package java.io;
  * may be thrown if the input stream has been
  * closed.
  *
- * <h3><a id="modified-utf-8">Modified UTF-8</a></h3>
+ * <h2><a id="modified-utf-8">Modified UTF-8</a></h2>
  * <p>
  * Implementations of the DataInput and DataOutput interfaces represent
  * Unicode strings in a format that is a slight modification of UTF-8.

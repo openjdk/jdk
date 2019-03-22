@@ -25,7 +25,7 @@
 package org.graalvm.compiler.core;
 
 import static org.graalvm.compiler.core.CompilationWrapper.ExceptionAction.ExitVM;
-import static org.graalvm.compiler.core.GraalCompilerOptions.CompilationBailoutAction;
+import static org.graalvm.compiler.core.GraalCompilerOptions.CompilationBailoutAsFailure;
 import static org.graalvm.compiler.core.GraalCompilerOptions.CompilationFailureAction;
 import static org.graalvm.compiler.core.GraalCompilerOptions.ExitVMOnException;
 import static org.graalvm.compiler.core.GraalCompilerOptions.MaxCompilationProblemsPerAction;
@@ -45,14 +45,13 @@ import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.DiagnosticsOutputDirectory;
 import org.graalvm.compiler.debug.PathUtilities;
 import org.graalvm.compiler.debug.TTY;
-import org.graalvm.compiler.options.EnumOptionKey;
 import org.graalvm.compiler.options.OptionValues;
 
 import jdk.vm.ci.code.BailoutException;
 
 /**
  * Wrapper for a compilation that centralizes what action to take based on
- * {@link GraalCompilerOptions#CompilationBailoutAction} and
+ * {@link GraalCompilerOptions#CompilationBailoutAsFailure} and
  * {@link GraalCompilerOptions#CompilationFailureAction} when an uncaught exception occurs during
  * compilation.
  */
@@ -71,14 +70,17 @@ public abstract class CompilationWrapper<T> {
          * Print nothing to the console.
          */
         Silent,
+
         /**
          * Print a stack trace to the console.
          */
         Print,
+
         /**
          * An exception causes the compilation to be retried with extra diagnostics enabled.
          */
         Diagnose,
+
         /**
          * Same as {@link #Diagnose} except that the VM process is exited after retrying.
          */
@@ -122,27 +124,30 @@ public abstract class CompilationWrapper<T> {
     protected abstract T handleException(Throwable t);
 
     /**
-     * Gets the action to take based on the value of {@code actionKey} in {@code options}.
+     * Gets the action to take based on the value of
+     * {@link GraalCompilerOptions#CompilationBailoutAsFailure},
+     * {@link GraalCompilerOptions#CompilationFailureAction} and
+     * {@link GraalCompilerOptions#ExitVMOnException} in {@code options}.
      *
-     * Subclasses can override this to choose a different action based on factors such as whether
-     * {@code actionKey} has been explicitly set in {@code options} for example.
+     * Subclasses can override this to choose a different action.
      *
      * @param cause the cause of the bailout or failure
      */
-    protected ExceptionAction lookupAction(OptionValues options, EnumOptionKey<ExceptionAction> actionKey, Throwable cause) {
-        if (actionKey == CompilationFailureAction) {
-            if (ExitVMOnException.getValue(options)) {
-                assert CompilationFailureAction.getDefaultValue() != ExceptionAction.ExitVM;
-                assert ExitVMOnException.getDefaultValue() != true;
-                if (CompilationFailureAction.hasBeenSet(options) && CompilationFailureAction.getValue(options) != ExceptionAction.ExitVM) {
-                    TTY.printf("WARNING: Ignoring %s=%s since %s=true has been explicitly specified.%n",
-                                    CompilationFailureAction.getName(), CompilationFailureAction.getValue(options),
-                                    ExitVMOnException.getName());
-                }
-                return ExceptionAction.ExitVM;
-            }
+    protected ExceptionAction lookupAction(OptionValues options, Throwable cause) {
+        if (cause instanceof BailoutException && !CompilationBailoutAsFailure.getValue(options)) {
+            return ExceptionAction.Silent;
         }
-        return actionKey.getValue(options);
+        if (ExitVMOnException.getValue(options)) {
+            assert CompilationFailureAction.getDefaultValue() != ExceptionAction.ExitVM;
+            assert ExitVMOnException.getDefaultValue() != true;
+            if (CompilationFailureAction.hasBeenSet(options) && CompilationFailureAction.getValue(options) != ExceptionAction.ExitVM) {
+                TTY.printf("WARNING: Ignoring %s=%s since %s=true has been explicitly specified.%n",
+                                CompilationFailureAction.getName(), CompilationFailureAction.getValue(options),
+                                ExitVMOnException.getName());
+            }
+            return ExceptionAction.ExitVM;
+        }
+        return CompilationFailureAction.getValue(options);
     }
 
     /**
@@ -173,15 +178,6 @@ public abstract class CompilationWrapper<T> {
         } catch (Throwable cause) {
             OptionValues initialOptions = initialDebug.getOptions();
 
-            String causeType = "failure";
-            EnumOptionKey<ExceptionAction> actionKey;
-            if (cause instanceof BailoutException) {
-                actionKey = CompilationBailoutAction;
-                causeType = "bailout";
-            } else {
-                actionKey = CompilationFailureAction;
-                causeType = "failure";
-            }
             synchronized (CompilationFailureAction) {
                 // Serialize all compilation failure handling.
                 // This prevents retry compilation storms and interleaving
@@ -191,9 +187,9 @@ public abstract class CompilationWrapper<T> {
                 // forced crash (i.e., use of GraalCompilerOptions.CrashAt)
                 // is truncated.
 
-                ExceptionAction action = lookupAction(initialOptions, actionKey, cause);
+                ExceptionAction action = lookupAction(initialOptions, cause);
 
-                action = adjustAction(initialOptions, actionKey, action);
+                action = adjustAction(initialOptions, action);
 
                 if (action == ExceptionAction.Silent) {
                     return handleException(cause);
@@ -204,16 +200,14 @@ public abstract class CompilationWrapper<T> {
                     try (PrintStream ps = new PrintStream(baos)) {
                         ps.printf("%s: Compilation of %s failed: ", Thread.currentThread(), this);
                         cause.printStackTrace(ps);
-                        ps.printf("To disable compilation %s notifications, set %s to %s (e.g., -Dgraal.%s=%s).%n",
-                                        causeType,
-                                        actionKey.getName(), ExceptionAction.Silent,
-                                        actionKey.getName(), ExceptionAction.Silent);
-                        ps.printf("To capture more information for diagnosing or reporting a compilation %s, " +
+                        ps.printf("To disable compilation failure notifications, set %s to %s (e.g., -Dgraal.%s=%s).%n",
+                                        CompilationFailureAction.getName(), ExceptionAction.Silent,
+                                        CompilationFailureAction.getName(), ExceptionAction.Silent);
+                        ps.printf("To capture more information for diagnosing or reporting a compilation failure, " +
                                         "set %s to %s or %s (e.g., -Dgraal.%s=%s).%n",
-                                        causeType,
-                                        actionKey.getName(), ExceptionAction.Diagnose,
+                                        CompilationFailureAction.getName(), ExceptionAction.Diagnose,
                                         ExceptionAction.ExitVM,
-                                        actionKey.getName(), ExceptionAction.Diagnose);
+                                        CompilationFailureAction.getName(), ExceptionAction.Diagnose);
                     }
                     TTY.print(baos.toString());
                     return handleException(cause);
@@ -249,15 +243,13 @@ public abstract class CompilationWrapper<T> {
                 try (PrintStream ps = new PrintStream(baos)) {
                     ps.printf("%s: Compilation of %s failed:%n", Thread.currentThread(), this);
                     cause.printStackTrace(ps);
-                    ps.printf("To disable compilation %s notifications, set %s to %s (e.g., -Dgraal.%s=%s).%n",
-                                    causeType,
-                                    actionKey.getName(), ExceptionAction.Silent,
-                                    actionKey.getName(), ExceptionAction.Silent);
-                    ps.printf("To print a message for a compilation %s without retrying the compilation, " +
+                    ps.printf("To disable compilation failure notifications, set %s to %s (e.g., -Dgraal.%s=%s).%n",
+                                    CompilationFailureAction.getName(), ExceptionAction.Silent,
+                                    CompilationFailureAction.getName(), ExceptionAction.Silent);
+                    ps.printf("To print a message for a compilation failure without retrying the compilation, " +
                                     "set %s to %s (e.g., -Dgraal.%s=%s).%n",
-                                    causeType,
-                                    actionKey.getName(), ExceptionAction.Print,
-                                    actionKey.getName(), ExceptionAction.Print);
+                                    CompilationFailureAction.getName(), ExceptionAction.Print,
+                                    CompilationFailureAction.getName(), ExceptionAction.Print);
                     if (dumpPath != null) {
                         ps.println("Retrying compilation of " + this);
                     } else {
@@ -320,7 +312,7 @@ public abstract class CompilationWrapper<T> {
      * Adjusts {@code initialAction} if necessary based on
      * {@link GraalCompilerOptions#MaxCompilationProblemsPerAction}.
      */
-    private ExceptionAction adjustAction(OptionValues initialOptions, EnumOptionKey<ExceptionAction> actionKey, ExceptionAction initialAction) {
+    private ExceptionAction adjustAction(OptionValues initialOptions, ExceptionAction initialAction) {
         ExceptionAction action = initialAction;
         int maxProblems = MaxCompilationProblemsPerAction.getValue(initialOptions);
         if (action != ExceptionAction.ExitVM) {
@@ -329,7 +321,7 @@ public abstract class CompilationWrapper<T> {
                     int problems = problemsHandledPerAction.getOrDefault(action, 0);
                     if (problems >= maxProblems) {
                         if (problems == maxProblems) {
-                            TTY.printf("Warning: adjusting %s from %s to %s after %s (%d) failed compilations%n", actionKey, action, action.quieter(),
+                            TTY.printf("Warning: adjusting %s from %s to %s after %s (%d) failed compilations%n", CompilationFailureAction, action, action.quieter(),
                                             MaxCompilationProblemsPerAction, maxProblems);
                             // Ensure that the message above is only printed once
                             problemsHandledPerAction.put(action, problems + 1);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import java.util.Arrays;
  * Defined by <a href="http://www.ietf.org/rfc/rfc2373.txt">
  * <i>RFC&nbsp;2373: IP Version 6 Addressing Architecture</i></a>.
  *
- * <h3> <a id="format">Textual representation of IP addresses</a> </h3>
+ * <h2> <a id="format">Textual representation of IP addresses</a> </h2>
  *
  * Textual representation of IPv6 address used as input to methods
  * takes one of the following forms:
@@ -116,7 +116,7 @@ import java.util.Arrays;
  * form because it is unambiguous when used in combination with other
  * textual data.
  *
- * <h4> Special IPv6 address </h4>
+ * <h3> Special IPv6 address </h3>
  *
  * <blockquote>
  * <table class="borderless">
@@ -135,7 +135,7 @@ import java.util.Arrays;
  *         address.</td></tr>
  * </table></blockquote>
  *
- * <h4><a id="scoped">Textual representation of IPv6 scoped addresses</a></h4>
+ * <h3><a id="scoped">Textual representation of IPv6 scoped addresses</a></h3>
  *
  * <p> The textual representation of IPv6 addresses as described above can be
  * extended to specify IPv6 scoped addresses. This extension to the basic

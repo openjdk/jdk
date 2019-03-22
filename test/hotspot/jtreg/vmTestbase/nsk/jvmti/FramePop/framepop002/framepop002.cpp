@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,9 @@ static int push_count = 0;
 static int thr_count = 0;
 static int max_depth = 0;
 static thr threads[MAX_THREADS];
+
+static volatile int callbacksEnabled = NSK_FALSE;
+static jrawMonitorID agent_lock;
 
 static
 int isTestThread(jvmtiEnv *jvmti_env, jthread thr) {
@@ -211,12 +214,20 @@ void JNICALL MethodEntry(jvmtiEnv *jvmti_env, JNIEnv *env,
 
     if (watch_events == JNI_FALSE) return;
 
+    jvmti->RawMonitorEnter(agent_lock);
+
+    if (!callbacksEnabled) {
+        jvmti->RawMonitorExit(agent_lock);
+        return;
+    }
+
     err = jvmti_env->GetFrameCount(thr, &frameCount);
     if (err != JVMTI_ERROR_NONE) {
         printf("(GetFrameCount#entry) unexpected error: %s (%d)\n",
                TranslateError(err), err);
         printInfo(jvmti_env, thr, method, frameCount);
         result = STATUS_FAILED;
+        jvmti->RawMonitorExit(agent_lock);
         return;
     }
 
@@ -259,6 +270,25 @@ void JNICALL MethodEntry(jvmtiEnv *jvmti_env, JNIEnv *env,
             }
         }
     }
+
+    jvmti->RawMonitorExit(agent_lock);
+}
+
+void JNICALL VMStart(jvmtiEnv *jvmti_env, JNIEnv* jni_env) {
+    jvmti->RawMonitorEnter(agent_lock);
+
+    callbacksEnabled = NSK_TRUE;
+
+    jvmti->RawMonitorExit(agent_lock);
+}
+
+
+void JNICALL VMDeath(jvmtiEnv *jvmti_env, JNIEnv* jni_env) {
+    jvmti->RawMonitorEnter(agent_lock);
+
+    callbacksEnabled = NSK_FALSE;
+
+    jvmti->RawMonitorExit(agent_lock);
 }
 
 void JNICALL FramePop(jvmtiEnv *jvmti_env, JNIEnv *env,
@@ -266,12 +296,19 @@ void JNICALL FramePop(jvmtiEnv *jvmti_env, JNIEnv *env,
     jvmtiError err;
     jint frameCount;
 
+    jvmti->RawMonitorEnter(agent_lock);
+
+    if (!callbacksEnabled) {
+        jvmti->RawMonitorExit(agent_lock);
+        return;
+    }
     err = jvmti_env->GetFrameCount(thr, &frameCount);
     if (err != JVMTI_ERROR_NONE) {
         printf("(GetFrameCount#entry) unexpected error: %s (%d)\n",
                TranslateError(err), err);
         printInfo(jvmti_env, thr, method, frameCount);
         result = STATUS_FAILED;
+        jvmti->RawMonitorExit(agent_lock);
         return;
     }
 
@@ -296,6 +333,8 @@ void JNICALL FramePop(jvmtiEnv *jvmti_env, JNIEnv *env,
             result = STATUS_FAILED;
         }
     }
+
+    jvmti->RawMonitorExit(agent_lock);
 }
 
 #ifdef STATIC_BUILD
@@ -355,12 +394,24 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
             caps.can_generate_method_entry_events) {
         callbacks.MethodEntry = &MethodEntry;
         callbacks.FramePop = &FramePop;
+        callbacks.VMStart = &VMStart;
+        callbacks.VMDeath = &VMDeath;
+
         err = jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks));
         if (err != JVMTI_ERROR_NONE) {
             printf("(SetEventCallbacks) unexpected error: %s (%d)\n",
                    TranslateError(err), err);
             return JNI_ERR;
         }
+        if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_START, NULL)))
+            return JNI_ERR;
+        if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, NULL)))
+            return JNI_ERR;
+
+        if (jvmti->CreateRawMonitor("agent_lock", &agent_lock) != JVMTI_ERROR_NONE) {
+            return JNI_ERR;
+        }
+
     } else {
         printf("Warning: FramePop or MethodEntry event is not implemented\n");
     }

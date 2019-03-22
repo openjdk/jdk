@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,6 +121,22 @@ public class AMD64HotSpotForeignCallsProvider extends HotSpotHostForeignCallsPro
         link(new AMD64ArrayIndexOfStub(AMD64ArrayIndexOf.STUB_INDEX_OF_4_CHARS, options, providers,
                         registerStubCall(AMD64ArrayIndexOf.STUB_INDEX_OF_4_CHARS, LEAF, REEXECUTABLE, NO_LOCATIONS)));
 
+        link(new AMD64ArrayEqualsStub(AMD64ArrayEqualsStub.STUB_BOOLEAN_ARRAY_EQUALS, options, providers,
+                        registerStubCall(AMD64ArrayEqualsStub.STUB_BOOLEAN_ARRAY_EQUALS, LEAF, REEXECUTABLE, NO_LOCATIONS)));
+        link(new AMD64ArrayEqualsStub(AMD64ArrayEqualsStub.STUB_BYTE_ARRAY_EQUALS, options, providers,
+                        registerStubCall(AMD64ArrayEqualsStub.STUB_BYTE_ARRAY_EQUALS, LEAF, REEXECUTABLE, NO_LOCATIONS)));
+        link(new AMD64ArrayEqualsStub(AMD64ArrayEqualsStub.STUB_CHAR_ARRAY_EQUALS, options, providers,
+                        registerStubCall(AMD64ArrayEqualsStub.STUB_CHAR_ARRAY_EQUALS, LEAF, REEXECUTABLE, NO_LOCATIONS)));
+        link(new AMD64ArrayEqualsStub(AMD64ArrayEqualsStub.STUB_SHORT_ARRAY_EQUALS, options, providers,
+                        registerStubCall(AMD64ArrayEqualsStub.STUB_SHORT_ARRAY_EQUALS, LEAF, REEXECUTABLE, NO_LOCATIONS)));
+        link(new AMD64ArrayEqualsStub(AMD64ArrayEqualsStub.STUB_INT_ARRAY_EQUALS, options, providers,
+                        registerStubCall(AMD64ArrayEqualsStub.STUB_INT_ARRAY_EQUALS, LEAF, REEXECUTABLE, NO_LOCATIONS)));
+        link(new AMD64ArrayEqualsStub(AMD64ArrayEqualsStub.STUB_LONG_ARRAY_EQUALS, options, providers,
+                        registerStubCall(AMD64ArrayEqualsStub.STUB_LONG_ARRAY_EQUALS, LEAF, REEXECUTABLE, NO_LOCATIONS)));
+        link(new AMD64ArrayEqualsStub(AMD64ArrayEqualsStub.STUB_FLOAT_ARRAY_EQUALS, options, providers,
+                        registerStubCall(AMD64ArrayEqualsStub.STUB_FLOAT_ARRAY_EQUALS, LEAF, REEXECUTABLE, NO_LOCATIONS)));
+        link(new AMD64ArrayEqualsStub(AMD64ArrayEqualsStub.STUB_DOUBLE_ARRAY_EQUALS, options, providers,
+                        registerStubCall(AMD64ArrayEqualsStub.STUB_DOUBLE_ARRAY_EQUALS, LEAF, REEXECUTABLE, NO_LOCATIONS)));
         super.initialize(providers, options);
     }
 

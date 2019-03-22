@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,7 +111,7 @@ import static java.util.Map.entry;
  * Similarly, a comparison of two IDs only examines the ID, whereas
  * a comparison of two rules examines the entire data set.
  *
- * <h3>Time-zone IDs</h3>
+ * <h2>Time-zone IDs</h2>
  * The ID is unique within the system.
  * There are three types of ID.
  * <p>
@@ -147,7 +147,7 @@ import static java.util.Map.entry;
  * The recommended format for region IDs from groups other than TZDB is 'group~region'.
  * Thus if IATA data were defined, Utrecht airport would be 'IATA~UTC'.
  *
- * <h3>Serialization</h3>
+ * <h2>Serialization</h2>
  * This class can be serialized and stores the string zone ID in the external form.
  * The {@code ZoneOffset} subclass uses a dedicated format that only stores the
  * offset from UTC/Greenwich.

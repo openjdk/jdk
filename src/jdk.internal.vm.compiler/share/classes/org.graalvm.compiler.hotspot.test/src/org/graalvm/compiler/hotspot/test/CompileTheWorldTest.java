@@ -24,7 +24,7 @@
 
 package org.graalvm.compiler.hotspot.test;
 
-import static org.graalvm.compiler.core.GraalCompilerOptions.CompilationBailoutAction;
+import static org.graalvm.compiler.core.GraalCompilerOptions.CompilationBailoutAsFailure;
 import static org.graalvm.compiler.core.GraalCompilerOptions.CompilationFailureAction;
 
 import jdk.internal.vm.compiler.collections.EconomicMap;
@@ -44,7 +44,7 @@ public class CompileTheWorldTest extends GraalCompilerTest {
 
     @Test
     public void testJDK() throws Throwable {
-        ExceptionAction originalBailoutAction = CompilationBailoutAction.getValue(getInitialOptions());
+        boolean originalBailoutAction = CompilationBailoutAsFailure.getValue(getInitialOptions());
         ExceptionAction originalFailureAction = CompilationFailureAction.getValue(getInitialOptions());
         // Compile a couple classes in rt.jar
         HotSpotJVMCIRuntime runtime = HotSpotJVMCIRuntime.runtime();
@@ -52,7 +52,7 @@ public class CompileTheWorldTest extends GraalCompilerTest {
         OptionValues initialOptions = getInitialOptions();
         EconomicMap<OptionKey<?>, Object> compilationOptions = CompileTheWorld.parseOptions("Inline=false");
         new CompileTheWorld(runtime, (HotSpotGraalCompiler) runtime.getCompiler(), CompileTheWorld.SUN_BOOT_CLASS_PATH, 1, 5, null, null, false, initialOptions, compilationOptions).compile();
-        assert CompilationBailoutAction.getValue(initialOptions) == originalBailoutAction;
+        assert CompilationBailoutAsFailure.getValue(initialOptions) == originalBailoutAction;
         assert CompilationFailureAction.getValue(initialOptions) == originalFailureAction;
     }
 }

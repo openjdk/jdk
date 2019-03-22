@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,7 +92,7 @@ import java.time.DateTimeException;
  * of this interface may be in calendar systems other than ISO.
  * See {@link java.time.chrono.ChronoLocalDate} for a fuller discussion of the issues.
  *
- * <h3>When to implement</h3>
+ * <h2>When to implement</h2>
  * <p>
  * A class should implement this interface if it meets three criteria:
  * <ul>
