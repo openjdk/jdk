@@ -33,8 +33,8 @@ import jdk.test.lib.process.OutputAnalyzer;
  * sure cached versions used afterward are the current version.
  *
  * @test
- * @bug 8005056
- * @bug 8009728
+ * @bug 8005056 8009728 8218399
+ * @requires !vm.graal.enabled
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.instrument
