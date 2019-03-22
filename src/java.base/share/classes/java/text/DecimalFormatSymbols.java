@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,12 +38,14 @@
 
 package java.text;
 
+import java.io.InvalidObjectException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.text.spi.DecimalFormatSymbolsProvider;
 import java.util.Currency;
 import java.util.Locale;
+import java.util.Objects;
 import sun.util.locale.provider.CalendarDataUtility;
 import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.LocaleServiceProviderPool;
@@ -51,11 +53,11 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
 
 /**
  * This class represents the set of symbols (such as the decimal separator,
- * the grouping separator, and so on) needed by <code>DecimalFormat</code>
- * to format numbers. <code>DecimalFormat</code> creates for itself an instance of
- * <code>DecimalFormatSymbols</code> from its locale data.  If you need to change any
- * of these symbols, you can get the <code>DecimalFormatSymbols</code> object from
- * your <code>DecimalFormat</code> and modify it.
+ * the grouping separator, and so on) needed by {@code DecimalFormat}
+ * to format numbers. {@code DecimalFormat} creates for itself an instance of
+ * {@code DecimalFormatSymbols} from its locale data.  If you need to change any
+ * of these symbols, you can get the {@code DecimalFormatSymbols} object from
+ * your {@code DecimalFormat} and modify it.
  *
  * <p>If the locale contains "rg" (region override)
  * <a href="../util/Locale.html#def_locale_extension">Unicode extension</a>,
@@ -107,7 +109,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * instead of the Latin numbering system.
      *
      * @param locale the desired locale
-     * @exception NullPointerException if <code>locale</code> is null
+     * @exception NullPointerException if {@code locale} is null
      */
     public DecimalFormatSymbols( Locale locale ) {
         initialize( locale );
@@ -115,16 +117,16 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
 
     /**
      * Returns an array of all locales for which the
-     * <code>getInstance</code> methods of this class can return
+     * {@code getInstance} methods of this class can return
      * localized instances.
      * The returned array represents the union of locales supported by the Java
      * runtime and by installed
      * {@link java.text.spi.DecimalFormatSymbolsProvider DecimalFormatSymbolsProvider}
-     * implementations.  It must contain at least a <code>Locale</code>
+     * implementations.  It must contain at least a {@code Locale}
      * instance equal to {@link java.util.Locale#US Locale.US}.
      *
      * @return an array of locales for which localized
-     *         <code>DecimalFormatSymbols</code> instances are available.
+     *         {@code DecimalFormatSymbols} instances are available.
      * @since 1.6
      */
     public static Locale[] getAvailableLocales() {
@@ -134,8 +136,8 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     }
 
     /**
-     * Gets the <code>DecimalFormatSymbols</code> instance for the default
-     * locale.  This method provides access to <code>DecimalFormatSymbols</code>
+     * Gets the {@code DecimalFormatSymbols} instance for the default
+     * locale.  This method provides access to {@code DecimalFormatSymbols}
      * instances for locales supported by the Java runtime itself as well
      * as for those supported by installed
      * {@link java.text.spi.DecimalFormatSymbolsProvider
@@ -145,7 +147,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      *     getInstance(Locale.getDefault(Locale.Category.FORMAT))}.
      * @see java.util.Locale#getDefault(java.util.Locale.Category)
      * @see java.util.Locale.Category#FORMAT
-     * @return a <code>DecimalFormatSymbols</code> instance.
+     * @return a {@code DecimalFormatSymbols} instance.
      * @since 1.6
      */
     public static final DecimalFormatSymbols getInstance() {
@@ -153,8 +155,8 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     }
 
     /**
-     * Gets the <code>DecimalFormatSymbols</code> instance for the specified
-     * locale.  This method provides access to <code>DecimalFormatSymbols</code>
+     * Gets the {@code DecimalFormatSymbols} instance for the specified
+     * locale.  This method provides access to {@code DecimalFormatSymbols}
      * instances for locales supported by the Java runtime itself as well
      * as for those supported by installed
      * {@link java.text.spi.DecimalFormatSymbolsProvider
@@ -169,8 +171,8 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * instead of the Latin numbering system.
      *
      * @param locale the desired locale.
-     * @return a <code>DecimalFormatSymbols</code> instance.
-     * @exception NullPointerException if <code>locale</code> is null
+     * @return a {@code DecimalFormatSymbols} instance.
+     * @exception NullPointerException if {@code locale} is null
      * @since 1.6
      */
     public static final DecimalFormatSymbols getInstance(Locale locale) {
@@ -255,6 +257,41 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      */
     public void setPerMill(char perMill) {
         this.perMill = perMill;
+        this.perMillText = Character.toString(perMill);
+    }
+
+    /**
+     * Gets the string used for per mille sign. Different for Arabic, etc.
+     *
+     * @return the string used for per mille sign
+     * @since 13
+     */
+    String getPerMillText() {
+        return perMillText;
+    }
+
+    /**
+     * Sets the string used for per mille sign. Different for Arabic, etc.
+     *
+     * Setting the {@code perMillText} affects the return value of
+     * {@link #getPerMill()}, in which the first non-format character of
+     * {@code perMillText} is returned.
+     *
+     * @param perMillText the string used for per mille sign
+     * @throws NullPointerException if {@code perMillText} is null
+     * @throws IllegalArgumentException if {@code perMillText} is an empty string
+     * @see #getPerMill()
+     * @see #getPerMillText()
+     * @since 13
+     */
+    void setPerMillText(String perMillText) {
+        Objects.requireNonNull(perMillText);
+        if (perMillText.isEmpty()) {
+            throw new IllegalArgumentException("Empty argument string");
+        }
+
+        this.perMillText = perMillText;
+        this.perMill = findNonFormatChar(perMillText, '\u2030');
     }
 
     /**
@@ -273,6 +310,41 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      */
     public void setPercent(char percent) {
         this.percent = percent;
+        this.percentText = Character.toString(percent);
+    }
+
+    /**
+     * Gets the string used for percent sign. Different for Arabic, etc.
+     *
+     * @return the string used for percent sign
+     * @since 13
+     */
+    String getPercentText() {
+        return percentText;
+    }
+
+    /**
+     * Sets the string used for percent sign. Different for Arabic, etc.
+     *
+     * Setting the {@code percentText} affects the return value of
+     * {@link #getPercent()}, in which the first non-format character of
+     * {@code percentText} is returned.
+     *
+     * @param percentText the string used for percent sign
+     * @throws NullPointerException if {@code percentText} is null
+     * @throws IllegalArgumentException if {@code percentText} is an empty string
+     * @see #getPercent()
+     * @see #getPercentText()
+     * @since 13
+     */
+    void setPercentText(String percentText) {
+        Objects.requireNonNull(percentText);
+        if (percentText.isEmpty()) {
+            throw new IllegalArgumentException("Empty argument string");
+        }
+
+        this.percentText = percentText;
+        this.percent = findNonFormatChar(percentText, '%');
     }
 
     /**
@@ -373,6 +445,46 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      */
     public void setMinusSign(char minusSign) {
         this.minusSign = minusSign;
+        this.minusSignText = Character.toString(minusSign);
+    }
+
+    /**
+     * Gets the string used to represent minus sign. If no explicit
+     * negative format is specified, one is formed by prefixing
+     * minusSignText to the positive format.
+     *
+     * @return the string representing minus sign
+     * @since 13
+     */
+    String getMinusSignText() {
+        return minusSignText;
+    }
+
+    /**
+     * Sets the string used to represent minus sign. If no explicit
+     * negative format is specified, one is formed by prefixing
+     * minusSignText to the positive format.
+     *
+     * Setting the {@code minusSignText} affects the return value of
+     * {@link #getMinusSign()}, in which the first non-format character of
+     * {@code minusSignText} is returned.
+     *
+     * @param minusSignText the character representing minus sign
+     * @throws NullPointerException if {@code minusSignText} is null
+     * @throws IllegalArgumentException if {@code minusSignText} is an
+     *  empty string
+     * @see #getMinusSign()
+     * @see #getMinusSignText()
+     * @since 13
+     */
+    void setMinusSignText(String minusSignText) {
+        Objects.requireNonNull(minusSignText);
+        if (minusSignText.isEmpty()) {
+            throw new IllegalArgumentException("Empty argument string");
+        }
+
+        this.minusSignText = minusSignText;
+        this.minusSign = findNonFormatChar(minusSignText, '-');
     }
 
     /**
@@ -464,7 +576,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * symbol attribute to the currency's ISO 4217 currency code.
      *
      * @param currency the new currency to be used
-     * @exception NullPointerException if <code>currency</code> is null
+     * @exception NullPointerException if {@code currency} is null
      * @since 1.4
      * @see #setCurrencySymbol
      * @see #setInternationalCurrencySymbol
@@ -540,7 +652,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * Examples: "x10^" for 1.23x10^4, "E" for 1.23E4.
      *
      * @param exp the exponent separator string
-     * @exception NullPointerException if <code>exp</code> is null
+     * @exception NullPointerException if {@code exp} is null
      * @see #getExponentSeparator()
      * @since 1.6
      */
@@ -583,9 +695,12 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
         groupingSeparator == other.groupingSeparator &&
         decimalSeparator == other.decimalSeparator &&
         percent == other.percent &&
+        percentText.equals(other.percentText) &&
         perMill == other.perMill &&
+        perMillText.equals(other.perMillText) &&
         digit == other.digit &&
         minusSign == other.minusSign &&
+        minusSignText.equals(other.minusSignText) &&
         patternSeparator == other.patternSeparator &&
         infinity.equals(other.infinity) &&
         NaN.equals(other.NaN) &&
@@ -631,13 +746,16 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
         decimalSeparator = numberElements[0].charAt(0);
         groupingSeparator = numberElements[1].charAt(0);
         patternSeparator = numberElements[2].charAt(0);
-        percent = numberElements[3].charAt(0);
+        percentText = numberElements[3];
+        percent = findNonFormatChar(percentText, '%');
         zeroDigit = numberElements[4].charAt(0); //different for Arabic,etc.
         digit = numberElements[5].charAt(0);
-        minusSign = numberElements[6].charAt(0);
+        minusSignText = numberElements[6];
+        minusSign = findNonFormatChar(minusSignText, '-');
         exponential = numberElements[7].charAt(0);
         exponentialSeparator = numberElements[7]; //string representation new since 1.6
-        perMill = numberElements[8].charAt(0);
+        perMillText = numberElements[8];
+        perMill = findNonFormatChar(perMillText, '\u2030');
         infinity  = numberElements[9];
         NaN = numberElements[10];
 
@@ -649,6 +767,16 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
         // standard decimal separator for all locales that we support.
         // If that changes, add a new entry to NumberElements.
         monetarySeparator = decimalSeparator;
+    }
+
+    /**
+     * Obtains non-format single character from String
+     */
+    private char findNonFormatChar(String src, char defChar) {
+        return (char)src.chars()
+            .filter(c -> Character.getType(c) != Character.FORMAT)
+            .findFirst()
+            .orElse(defChar);
     }
 
     /**
@@ -704,18 +832,24 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     /**
      * Reads the default serializable fields, provides default values for objects
      * in older serial versions, and initializes non-serializable fields.
-     * If <code>serialVersionOnStream</code>
-     * is less than 1, initializes <code>monetarySeparator</code> to be
-     * the same as <code>decimalSeparator</code> and <code>exponential</code>
+     * If {@code serialVersionOnStream}
+     * is less than 1, initializes {@code monetarySeparator} to be
+     * the same as {@code decimalSeparator} and {@code exponential}
      * to be 'E'.
-     * If <code>serialVersionOnStream</code> is less than 2,
-     * initializes <code>locale</code>to the root locale, and initializes
-     * If <code>serialVersionOnStream</code> is less than 3, it initializes
-     * <code>exponentialSeparator</code> using <code>exponential</code>.
-     * Sets <code>serialVersionOnStream</code> back to the maximum allowed value so that
+     * If {@code serialVersionOnStream} is less than 2,
+     * initializes {@code locale}to the root locale, and initializes
+     * If {@code serialVersionOnStream} is less than 3, it initializes
+     * {@code exponentialSeparator} using {@code exponential}.
+     * If {@code serialVersionOnStream} is less than 4, it initializes
+     * {@code perMillText}, {@code percentText}, and
+     * {@code minusSignText} using {@code perMill}, {@code percent}, and
+     * {@code minusSign} respectively.
+     * Sets {@code serialVersionOnStream} back to the maximum allowed value so that
      * default serialization will work properly if this object is streamed out again.
      * Initializes the currency from the intlCurrencySymbol field.
      *
+     * @throws InvalidObjectException if {@code char} and {@code String}
+     *      representations of either percent, per mille, and/or minus sign disagree.
      * @since  1.1.6
      */
     private void readObject(ObjectInputStream stream)
@@ -735,6 +869,23 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
             // didn't have exponentialSeparator. Create one using exponential
             exponentialSeparator = Character.toString(exponential);
         }
+        if (serialVersionOnStream < 4) {
+            // didn't have perMillText, percentText, and minusSignText.
+            // Create one using corresponding char variations.
+            perMillText = Character.toString(perMill);
+            percentText = Character.toString(percent);
+            minusSignText = Character.toString(minusSign);
+        } else {
+            // Check whether char and text fields agree
+            if (findNonFormatChar(perMillText, '\uFFFF') != perMill ||
+                findNonFormatChar(percentText, '\uFFFF') != percent ||
+                findNonFormatChar(minusSignText, '\uFFFF') != minusSign) {
+                throw new InvalidObjectException(
+                    "'char' and 'String' representations of either percent, " +
+                    "per mille, and/or minus sign disagree.");
+            }
+        }
+
         serialVersionOnStream = currentSerialVersion;
 
         if (intlCurrencySymbol != null) {
@@ -862,8 +1013,8 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * The string used to separate the mantissa from the exponent.
      * Examples: "x10^" for 1.23x10^4, "E" for 1.23E4.
      * <p>
-     * If both <code>exponential</code> and <code>exponentialSeparator</code>
-     * exist, this <code>exponentialSeparator</code> has the precedence.
+     * If both {@code exponential} and {@code exponentialSeparator}
+     * exist, this {@code exponentialSeparator} has the precedence.
      *
      * @serial
      * @since 1.6
@@ -878,6 +1029,39 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      */
     private Locale locale;
 
+    /**
+     * String representation of per mille sign, which may include
+     * formatting characters, such as BiDi control characters.
+     * The first non-format character of this string is the same as
+     * {@code perMill}.
+     *
+     * @serial
+     * @since 13
+     */
+    private  String perMillText;
+
+    /**
+     * String representation of percent sign, which may include
+     * formatting characters, such as BiDi control characters.
+     * The first non-format character of this string is the same as
+     * {@code percent}.
+     *
+     * @serial
+     * @since 13
+     */
+    private  String percentText;
+
+    /**
+     * String representation of minus sign, which may include
+     * formatting characters, such as BiDi control characters.
+     * The first non-format character of this string is the same as
+     * {@code minusSign}.
+     *
+     * @serial
+     * @since 13
+     */
+    private  String minusSignText;
+
     // currency; only the ISO code is serialized.
     private transient Currency currency;
     private transient volatile boolean currencyInitialized;
@@ -891,23 +1075,28 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     //     monetarySeparator and exponential.
     // - 2 for version from J2SE 1.4, which includes locale field.
     // - 3 for version from J2SE 1.6, which includes exponentialSeparator field.
-    private static final int currentSerialVersion = 3;
+    // - 4 for version from Java SE 13, which includes perMillText, percentText,
+    //      and minusSignText field.
+    private static final int currentSerialVersion = 4;
 
     /**
-     * Describes the version of <code>DecimalFormatSymbols</code> present on the stream.
+     * Describes the version of {@code DecimalFormatSymbols} present on the stream.
      * Possible values are:
      * <ul>
      * <li><b>0</b> (or uninitialized): versions prior to JDK 1.1.6.
      *
      * <li><b>1</b>: Versions written by JDK 1.1.6 or later, which include
-     *      two new fields: <code>monetarySeparator</code> and <code>exponential</code>.
+     *      two new fields: {@code monetarySeparator} and {@code exponential}.
      * <li><b>2</b>: Versions written by J2SE 1.4 or later, which include a
-     *      new <code>locale</code> field.
+     *      new {@code locale} field.
      * <li><b>3</b>: Versions written by J2SE 1.6 or later, which include a
-     *      new <code>exponentialSeparator</code> field.
+     *      new {@code exponentialSeparator} field.
+     * <li><b>4</b>: Versions written by Java SE 13 or later, which include
+     *      new {@code perMillText}, {@code percentText}, and
+     *      {@code minusSignText} field.
      * </ul>
-     * When streaming out a <code>DecimalFormatSymbols</code>, the most recent format
-     * (corresponding to the highest allowable <code>serialVersionOnStream</code>)
+     * When streaming out a {@code DecimalFormatSymbols}, the most recent format
+     * (corresponding to the highest allowable {@code serialVersionOnStream})
      * is always written.
      *
      * @serial

@@ -836,7 +836,8 @@ public final class CompactNumberFormat extends NumberFormat {
             if (ch == QUOTE) {
                 ch = pattern.charAt(index++);
                 if (ch == MINUS_SIGN) {
-                    ch = symbols.getMinusSign();
+                    sb.append(symbols.getMinusSignText());
+                    continue;
                 }
             }
             sb.append(ch);
@@ -859,11 +860,14 @@ public final class CompactNumberFormat extends NumberFormat {
             if (ch == QUOTE) {
                 ch = pattern.charAt(index++);
                 if (ch == MINUS_SIGN) {
-                    ch = symbols.getMinusSign();
+                    String minusText = symbols.getMinusSignText();
                     FieldPosition fp = new FieldPosition(NumberFormat.Field.SIGN);
                     fp.setBeginIndex(stringIndex);
-                    fp.setEndIndex(stringIndex + 1);
+                    fp.setEndIndex(stringIndex + minusText.length());
                     positions.add(fp);
+                    stringIndex += minusText.length();
+                    affix.append(minusText);
+                    continue;
                 }
             }
             stringIndex++;
