@@ -35,14 +35,14 @@
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmThread.hpp"
 
-SATBMarkQueue::SATBMarkQueue(SATBMarkQueueSet* qset, bool permanent) :
+SATBMarkQueue::SATBMarkQueue(SATBMarkQueueSet* qset) :
   // SATB queues are only active during marking cycles. We create
   // them with their active field set to false. If a thread is
   // created during a cycle and its SATB queue needs to be activated
   // before the thread starts running, we'll need to set its active
   // field to true. This must be done in the collector-specific
   // BarrierSet thread attachment protocol.
-  PtrQueue(qset, permanent, false /* active */)
+  PtrQueue(qset, false /* active */)
 { }
 
 void SATBMarkQueue::flush() {

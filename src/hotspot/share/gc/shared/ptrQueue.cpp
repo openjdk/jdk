@@ -36,18 +36,16 @@
 
 #include <new>
 
-PtrQueue::PtrQueue(PtrQueueSet* qset, bool permanent, bool active) :
+PtrQueue::PtrQueue(PtrQueueSet* qset, bool active) :
   _qset(qset),
   _active(active),
-  _permanent(permanent),
   _index(0),
   _capacity_in_bytes(0),
-  _buf(NULL),
-  _lock(NULL)
+  _buf(NULL)
 {}
 
 PtrQueue::~PtrQueue() {
-  assert(_permanent || (_buf == NULL), "queue must be flushed before delete");
+  assert(_buf == NULL, "queue must be flushed before delete");
 }
 
 void PtrQueue::flush_impl() {
@@ -271,23 +269,13 @@ void PtrQueue::handle_zero_index() {
       return;
     }
 
-    if (_lock) {
-      assert(_lock->owned_by_self(), "Required.");
-
-      BufferNode* node = BufferNode::make_node_from_buffer(_buf, index());
-      _buf = NULL;         // clear shared _buf field
-
-      qset()->enqueue_completed_buffer(node);
-      assert(_buf == NULL, "multiple enqueuers appear to be racing");
-    } else {
-      BufferNode* node = BufferNode::make_node_from_buffer(_buf, index());
-      if (qset()->process_or_enqueue_completed_buffer(node)) {
-        // Recycle the buffer. No allocation.
-        assert(_buf == BufferNode::make_buffer_from_node(node), "invariant");
-        assert(capacity() == qset()->buffer_size(), "invariant");
-        reset();
-        return;
-      }
+    BufferNode* node = BufferNode::make_node_from_buffer(_buf, index());
+    if (qset()->process_or_enqueue_completed_buffer(node)) {
+      // Recycle the buffer. No allocation.
+      assert(_buf == BufferNode::make_buffer_from_node(node), "invariant");
+      assert(capacity() == qset()->buffer_size(), "invariant");
+      reset();
+      return;
     }
   }
   // Set capacity in case this is the first allocation.

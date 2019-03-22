@@ -58,7 +58,8 @@ G1BarrierSet::G1BarrierSet(G1CardTable* card_table) :
   _satb_mark_queue_buffer_allocator("SATB Buffer Allocator", G1SATBBufferSize),
   _dirty_card_queue_buffer_allocator("DC Buffer Allocator", G1UpdateBufferSize),
   _satb_mark_queue_set(),
-  _dirty_card_queue_set()
+  _dirty_card_queue_set(),
+  _shared_dirty_card_queue(&_dirty_card_queue_set)
 {}
 
 void G1BarrierSet::enqueue(oop pre_val) {
