@@ -219,6 +219,7 @@ java/awt/font/TextLayout/CombiningPerf.java 8192931 generic-all
 java/awt/font/TextLayout/TextLayoutBounds.java 8169188 generic-all
 java/awt/font/StyledMetrics/BoldSpace.java 8198422 linux-all
 java/awt/FontMetrics/FontCrash.java 8198336 windows-all
+java/awt/FontMetrics/MaxAdvanceIsMax.java 8221305 solaris-all,macosx-all
 java/awt/image/DrawImage/IncorrectAlphaSurface2SW.java 8056077 generic-all
 java/awt/image/DrawImage/IncorrectClipXorModeSW2Surface.java 8196025 windows-all
 java/awt/image/DrawImage/IncorrectClipXorModeSurface2Surface.java 8196025 windows-all
