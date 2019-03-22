@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8146946 8176743
+ * @bug 8146946 8176743 8200286
  * @summary implement javac -m option
  * @library /tools/lib
  * @modules
@@ -39,7 +39,6 @@ import java.nio.file.attribute.FileTime;
 
 import toolbox.JavacTask;
 import toolbox.Task;
-import toolbox.ToolBox;
 
 public class MOptionTest extends ModuleTestBase {
     public static void main(String... args) throws Exception {
@@ -93,9 +92,10 @@ public class MOptionTest extends ModuleTestBase {
             throw new AssertionError("Classfile update!");
         }
 
-        Thread.sleep(2000); //timestamps
-
-        Files.setLastModifiedTime(testTest, FileTime.fromMillis(System.currentTimeMillis()));
+        // Date back the source file by one second compared to the current time.
+        // Cases have been observed where the resulting class file had an earlier
+        // timestamp than the java source.
+        Files.setLastModifiedTime(testTest, FileTime.fromMillis(System.currentTimeMillis() - 1000));
 
         new JavacTask(tb)
                 .options("-m", "m1x", "--module-source-path", src.toString(), "-d", build.toString())
@@ -235,10 +235,11 @@ public class MOptionTest extends ModuleTestBase {
             throw new AssertionError("Classfile update!");
         }
 
-        Thread.sleep(2000); //timestamps
-
-        Files.setLastModifiedTime(C1Source, FileTime.fromMillis(System.currentTimeMillis()));
-        Files.setLastModifiedTime(C2Source, FileTime.fromMillis(System.currentTimeMillis()));
+        // Date back the source file by one second compared to the current time.
+        // Cases have been observed where the resulting class file had an earlier
+        // timestamp than the java source.
+        Files.setLastModifiedTime(C1Source, FileTime.fromMillis(System.currentTimeMillis() - 1000));
+        Files.setLastModifiedTime(C2Source, FileTime.fromMillis(System.currentTimeMillis() - 1000));
 
         new JavacTask(tb)
                 .options("-m", "m1x,m2x", "--module-source-path", src.toString(), "-d", build.toString())
