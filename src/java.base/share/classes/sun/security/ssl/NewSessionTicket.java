@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import java.security.ProviderException;
 import java.security.SecureRandom;
 import java.text.MessageFormat;
 import java.util.Locale;
-import java.util.Optional;
 import javax.crypto.SecretKey;
 import javax.net.ssl.SSLHandshakeException;
 import sun.security.ssl.PskKeyExchangeModesExtension.PskKeyExchangeModesSpec;
@@ -224,9 +223,9 @@ final class NewSessionTicket {
             SessionId newId = new SessionId(true,
                 shc.sslContext.getSecureRandom());
 
-            Optional<SecretKey> resumptionMasterSecret =
+            SecretKey resumptionMasterSecret =
                 shc.handshakeSession.getResumptionMasterSecret();
-            if (!resumptionMasterSecret.isPresent()) {
+            if (resumptionMasterSecret == null) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "Session has no resumption secret. No ticket sent.");
@@ -239,7 +238,7 @@ final class NewSessionTicket {
             byte[] nonceArr = nonce.toByteArray();
             SecretKey psk = derivePreSharedKey(
                     shc.negotiatedCipherSuite.hashAlg,
-                    resumptionMasterSecret.get(), nonceArr);
+                    resumptionMasterSecret, nonceArr);
 
             int sessionTimeoutSeconds = sessionCache.getSessionTimeout();
             if (sessionTimeoutSeconds > MAX_TICKET_LIFETIME) {
@@ -354,9 +353,9 @@ final class NewSessionTicket {
 
             SSLSessionImpl sessionToSave = hc.conContext.conSession;
 
-            Optional<SecretKey> resumptionMasterSecret =
+            SecretKey resumptionMasterSecret =
                 sessionToSave.getResumptionMasterSecret();
-            if (!resumptionMasterSecret.isPresent()) {
+            if (resumptionMasterSecret == null) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                     "Session has no resumption master secret. Ignoring ticket.");
@@ -366,7 +365,7 @@ final class NewSessionTicket {
 
             // derive the PSK
             SecretKey psk = derivePreSharedKey(
-                sessionToSave.getSuite().hashAlg, resumptionMasterSecret.get(),
+                sessionToSave.getSuite().hashAlg, resumptionMasterSecret,
                 nstm.ticketNonce);
 
             // create and cache the new session
