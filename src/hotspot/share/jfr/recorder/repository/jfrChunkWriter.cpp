@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,13 +46,9 @@ bool JfrChunkWriter::initialize() {
   return _chunkstate != NULL;
 }
 
-static fio_fd open_existing(const char* path) {
-  return os::open(path, O_RDWR, S_IREAD | S_IWRITE);
-}
-
 static fio_fd open_chunk(const char* path) {
   assert(JfrStream_lock->owned_by_self(), "invariant");
-  return path != NULL ? open_existing(path) : invalid_fd;
+  return path != NULL ? os::open(path, O_CREAT | O_RDWR, S_IREAD | S_IWRITE) : invalid_fd;
 }
 
 bool JfrChunkWriter::open() {
