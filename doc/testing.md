@@ -12,11 +12,10 @@ also an alternate target `exploded-test` that uses the exploded image
 instead. Not all tests will run successfully on the exploded image, but using
 this target can greatly improve rebuild times for certain workflows.
 
-Previously, `make test` was used invoke an old system for running test, and
+Previously, `make test` was used to invoke an old system for running tests, and
 `make run-test` was used for the new test framework. For backward compatibility
 with scripts and muscle memory, `run-test` (and variants like
-`exploded-run-test` or `run-test-tier1`) are kept as aliases. The old system
-can still be accessed for some time using `cd test && make`.
+`exploded-run-test` or `run-test-tier1`) are kept as aliases.
 
 Some example command-lines:
 
