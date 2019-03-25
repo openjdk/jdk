@@ -33,7 +33,7 @@ protected:
   void store_check(MacroAssembler* masm, Register obj, Address dst);
 
   virtual void gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
-                                                Register start, Register end, Register tmp, RegSet saved_regs);
+                                                Register start, Register count, Register tmp, RegSet saved_regs);
   virtual void oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                             Address dst, Register val, Register tmp1, Register tmp2);
 

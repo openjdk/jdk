@@ -39,7 +39,7 @@ protected:
   void gen_write_ref_array_pre_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                        Register addr, Register count, RegSet saved_regs);
   void gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
-                                        Register start, Register end, Register tmp, RegSet saved_regs);
+                                        Register start, Register count, Register tmp, RegSet saved_regs);
 
   void g1_write_barrier_pre(MacroAssembler* masm,
                             Register obj,

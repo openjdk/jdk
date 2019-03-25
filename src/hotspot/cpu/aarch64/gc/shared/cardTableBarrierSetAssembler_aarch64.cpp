@@ -62,18 +62,22 @@ void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register ob
 }
 
 void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
-                                                                    Register start, Register end, Register scratch, RegSet saved_regs) {
+                                                                    Register start, Register count, Register scratch, RegSet saved_regs) {
   BarrierSet* bs = BarrierSet::barrier_set();
   CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
   CardTable* ct = ctbs->card_table();
 
-  Label L_loop;
+  Label L_loop, L_done;
+  const Register end = count;
 
+  __ cbz(count, L_done); // zero count - nothing to do
+
+  __ lea(end, Address(start, count, Address::lsl(LogBytesPerHeapOop))); // end = start + count << LogBytesPerHeapOop
+  __ sub(end, end, BytesPerHeapOop); // last element address to make inclusive
   __ lsr(start, start, CardTable::card_shift);
   __ lsr(end, end, CardTable::card_shift);
-  __ sub(end, end, start); // number of bytes to copy
+  __ sub(count, end, start); // number of bytes to copy
 
-  const Register count = end; // 'end' register contains bytes count now
   __ load_byte_map_base(scratch);
   __ add(start, start, scratch);
   if (ct->scanned_concurrently()) {
@@ -83,6 +87,7 @@ void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembl
   __ strb(zr, Address(start, count));
   __ subs(count, count, 1);
   __ br(Assembler::GE, L_loop);
+  __ bind(L_done);
 }
 
 void CardTableBarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
