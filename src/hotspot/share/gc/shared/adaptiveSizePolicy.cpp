@@ -48,40 +48,38 @@ AdaptiveSizePolicy::AdaptiveSizePolicy(size_t init_eden_size,
     _eden_size(init_eden_size),
     _promo_size(init_promo_size),
     _survivor_size(init_survivor_size),
+    _avg_minor_pause(new AdaptivePaddedAverage(AdaptiveTimeWeight, PausePadding)),
+    _avg_minor_interval(new AdaptiveWeightedAverage(AdaptiveTimeWeight)),
+    _avg_minor_gc_cost(new AdaptiveWeightedAverage(AdaptiveTimeWeight)),
+    _avg_major_interval(new AdaptiveWeightedAverage(AdaptiveTimeWeight)),
+    _avg_major_gc_cost(new AdaptiveWeightedAverage(AdaptiveTimeWeight)),
+    _avg_young_live(new AdaptiveWeightedAverage(AdaptiveSizePolicyWeight)),
+    _avg_eden_live(new AdaptiveWeightedAverage(AdaptiveSizePolicyWeight)),
+    _avg_old_live(new AdaptiveWeightedAverage(AdaptiveSizePolicyWeight)),
+    _avg_survived(new AdaptivePaddedAverage(AdaptiveSizePolicyWeight, SurvivorPadding)),
+    _avg_pretenured(new AdaptivePaddedNoZeroDevAverage(AdaptiveSizePolicyWeight, SurvivorPadding)),
+    _minor_pause_old_estimator(new LinearLeastSquareFit(AdaptiveSizePolicyWeight)),
+    _minor_pause_young_estimator(new LinearLeastSquareFit(AdaptiveSizePolicyWeight)),
+    _minor_collection_estimator(new LinearLeastSquareFit(AdaptiveSizePolicyWeight)),
+    _major_collection_estimator(new LinearLeastSquareFit(AdaptiveSizePolicyWeight)),
     _latest_minor_mutator_interval_seconds(0),
     _threshold_tolerance_percent(1.0 + ThresholdTolerance/100.0),
     _gc_pause_goal_sec(gc_pause_goal_sec),
+    _young_gen_policy_is_ready(false),
+    _change_young_gen_for_min_pauses(0),
+    _change_old_gen_for_maj_pauses(0),
+    _change_old_gen_for_throughput(0),
+    _change_young_gen_for_throughput(0),
+    _increment_tenuring_threshold_for_gc_cost(false),
+    _decrement_tenuring_threshold_for_gc_cost(false),
+    _decrement_tenuring_threshold_for_survivor_limit(false),
+    _decrease_for_footprint(0),
+    _decide_at_full_gc(0),
     _young_gen_change_for_minor_throughput(0),
     _old_gen_change_for_major_throughput(0) {
-  _avg_minor_pause    =
-    new AdaptivePaddedAverage(AdaptiveTimeWeight, PausePadding);
-  _avg_minor_interval = new AdaptiveWeightedAverage(AdaptiveTimeWeight);
-  _avg_minor_gc_cost  = new AdaptiveWeightedAverage(AdaptiveTimeWeight);
-  _avg_major_gc_cost  = new AdaptiveWeightedAverage(AdaptiveTimeWeight);
-
-  _avg_young_live     = new AdaptiveWeightedAverage(AdaptiveSizePolicyWeight);
-  _avg_old_live       = new AdaptiveWeightedAverage(AdaptiveSizePolicyWeight);
-  _avg_eden_live      = new AdaptiveWeightedAverage(AdaptiveSizePolicyWeight);
-
-  _avg_survived       = new AdaptivePaddedAverage(AdaptiveSizePolicyWeight,
-                                                  SurvivorPadding);
-  _avg_pretenured     = new AdaptivePaddedNoZeroDevAverage(
-                                                  AdaptiveSizePolicyWeight,
-                                                  SurvivorPadding);
-
-  _minor_pause_old_estimator =
-    new LinearLeastSquareFit(AdaptiveSizePolicyWeight);
-  _minor_pause_young_estimator =
-    new LinearLeastSquareFit(AdaptiveSizePolicyWeight);
-  _minor_collection_estimator =
-    new LinearLeastSquareFit(AdaptiveSizePolicyWeight);
-  _major_collection_estimator =
-    new LinearLeastSquareFit(AdaptiveSizePolicyWeight);
 
   // Start the timers
   _minor_timer.start();
-
-  _young_gen_policy_is_ready = false;
 }
 
 bool AdaptiveSizePolicy::tenuring_threshold_change() const {

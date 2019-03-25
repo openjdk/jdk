@@ -34,7 +34,6 @@ private:
   bool _mapping_succeeded;
 public:
   PSFileBackedVirtualSpace(ReservedSpace rs, size_t alignment, const char* file_path);
-  PSFileBackedVirtualSpace(ReservedSpace rs, const char* file_path);
 
   bool   initialize();
   bool   expand_by(size_t bytes);

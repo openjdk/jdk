@@ -47,8 +47,6 @@ private:
   GCTaskTimeStamp* time_stamp_at(uint index);
   void add_task_timestamp(const char* name, jlong t_entry, jlong t_exit);
 
-  bool _is_working;                     // True if participating in GC tasks
-
   // Factory create and destroy methods.
   static GCTaskThread* create(GCTaskManager* manager,
                               uint           which,
@@ -85,7 +83,6 @@ protected:
   uint processor_id() const {
     return _processor_id;
   }
-  void set_is_working(bool v) { _is_working = v; }
 };
 
 class GCTaskTimeStamp : public CHeapObj<mtGC>

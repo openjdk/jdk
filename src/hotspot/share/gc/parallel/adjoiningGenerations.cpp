@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,7 +119,7 @@ AdjoiningGenerations::AdjoiningGenerations(ReservedSpace old_young_rs,
   }
 }
 
-AdjoiningGenerations::AdjoiningGenerations() { }
+AdjoiningGenerations::AdjoiningGenerations(): _young_gen(NULL), _old_gen(NULL), _virtual_spaces(NULL) { }
 
 size_t AdjoiningGenerations::reserved_byte_size() {
   return virtual_spaces()->reserved_space().size();

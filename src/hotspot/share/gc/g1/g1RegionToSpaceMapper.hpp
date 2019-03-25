@@ -101,12 +101,10 @@ class G1RegionToSpaceMapper : public CHeapObj<mtGC> {
 // part of space is mapped to dram and part to nv-dimm
 class G1RegionToHeteroSpaceMapper : public G1RegionToSpaceMapper {
 private:
-  size_t _pages_per_region;
   ReservedSpace _rs;
   G1RegionToSpaceMapper* _dram_mapper;
   uint _num_committed_dram;
   uint _num_committed_nvdimm;
-  uint _start_index_of_nvdimm;
   uint _start_index_of_dram;
   size_t _page_size;
   size_t _commit_factor;

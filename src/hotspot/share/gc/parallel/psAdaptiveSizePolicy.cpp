@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,34 +49,25 @@ PSAdaptiveSizePolicy::PSAdaptiveSizePolicy(size_t init_eden_size,
                         init_survivor_size,
                         gc_pause_goal_sec,
                         gc_cost_ratio),
+     _avg_major_pause(new AdaptivePaddedAverage(AdaptiveTimeWeight, PausePadding)),
+     _avg_base_footprint(new AdaptiveWeightedAverage(AdaptiveSizePolicyWeight)),
+     _gc_stats(),
      _collection_cost_margin_fraction(AdaptiveSizePolicyCollectionCostMargin / 100.0),
+     _major_pause_old_estimator(new LinearLeastSquareFit(AdaptiveSizePolicyWeight)),
+     _major_pause_young_estimator(new LinearLeastSquareFit(AdaptiveSizePolicyWeight)),
      _latest_major_mutator_interval_seconds(0),
      _space_alignment(space_alignment),
      _gc_minor_pause_goal_sec(gc_minor_pause_goal_sec),
      _live_at_last_full_gc(init_promo_size),
-     _young_gen_change_for_major_pause_count(0)
+     _change_old_gen_for_min_pauses(0),
+     _change_young_gen_for_maj_pauses(0),
+     _old_gen_policy_is_ready(false),
+     _young_gen_size_increment_supplement(YoungGenerationSizeSupplement),
+     _old_gen_size_increment_supplement(TenuredGenerationSizeSupplement),
+     _bytes_absorbed_from_eden(0)
 {
-  // Sizing policy statistics
-  _avg_major_pause    =
-    new AdaptivePaddedAverage(AdaptiveTimeWeight, PausePadding);
-  _avg_minor_interval = new AdaptiveWeightedAverage(AdaptiveTimeWeight);
-  _avg_major_interval = new AdaptiveWeightedAverage(AdaptiveTimeWeight);
-
-  _avg_base_footprint = new AdaptiveWeightedAverage(AdaptiveSizePolicyWeight);
-  _major_pause_old_estimator =
-    new LinearLeastSquareFit(AdaptiveSizePolicyWeight);
-  _major_pause_young_estimator =
-    new LinearLeastSquareFit(AdaptiveSizePolicyWeight);
-  _major_collection_estimator =
-    new LinearLeastSquareFit(AdaptiveSizePolicyWeight);
-
-  _young_gen_size_increment_supplement = YoungGenerationSizeSupplement;
-  _old_gen_size_increment_supplement = TenuredGenerationSizeSupplement;
-
   // Start the timers
   _major_timer.start();
-
-  _old_gen_policy_is_ready = false;
 }
 
 size_t PSAdaptiveSizePolicy::calculate_free_based_on_live(size_t live, uintx ratio_as_percentage) {

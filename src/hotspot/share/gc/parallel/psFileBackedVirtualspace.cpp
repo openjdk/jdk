@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,10 +49,6 @@ bool PSFileBackedVirtualSpace::initialize() {
   _special = true;
   os::close(_fd);
   return true;
-}
-
-PSFileBackedVirtualSpace::PSFileBackedVirtualSpace(ReservedSpace rs, const char* path) {
-  PSFileBackedVirtualSpace(rs, os::vm_page_size(), path);
 }
 
 bool PSFileBackedVirtualSpace::expand_by(size_t bytes) {
