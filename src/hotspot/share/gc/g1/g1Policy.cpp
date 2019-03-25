@@ -1188,9 +1188,11 @@ uint G1Policy::calc_max_old_cset_length() const {
   return (uint) result;
 }
 
-void G1Policy::finalize_collection_set(double target_pause_time_ms, G1SurvivorRegions* survivor) {
+uint G1Policy::finalize_collection_set(double target_pause_time_ms, G1SurvivorRegions* survivor) {
   double time_remaining_ms = _collection_set->finalize_young_part(target_pause_time_ms, survivor);
   _collection_set->finalize_old_part(time_remaining_ms);
+
+  return _collection_set->region_length();
 }
 
 void G1Policy::transfer_survivors_to_cset(const G1SurvivorRegions* survivors) {
