@@ -1267,6 +1267,12 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
   product(bool, DisplayVMOutputToStdout, false,                             \
           "If DisplayVMOutput is true, display all VM output to stdout")    \
                                                                             \
+  product(bool, ErrorFileToStderr, false,                                   \
+          "If true, error data is printed to stderr instead of a file")     \
+                                                                            \
+  product(bool, ErrorFileToStdout, false,                                   \
+          "If true, error data is printed to stdout instead of a file")     \
+                                                                            \
   product(bool, UseHeavyMonitors, false,                                    \
           "use heavyweight instead of lightweight Java monitors")           \
                                                                             \
