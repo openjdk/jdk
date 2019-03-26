@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.PrintStream;
 import java.security.ProtectionDomain;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 import nsk.share.Consts;
 import nsk.share.test.Stresser;
@@ -77,12 +79,20 @@ public class resexhausted003 {
 
 
     public static int run(String args[], PrintStream out) {
-        if ( args == null || args.length < 1 ) {
-            System.err.println("TEST BUG: Classes directory should be the first argument. Check .cfg file.");
+        String testclasspath = System.getProperty("test.class.path");
+        String [] testpaths = testclasspath.split(System.getProperty("path.separator"));
+        String classesDir = "";
+
+        Pattern pattern = Pattern.compile("^(.*)classes(.*)vmTestbase(.*)$");
+        for (int i = 0 ; i < testpaths.length; i++) {
+            if (pattern.matcher(testpaths[i]).matches()) {
+                classesDir = testpaths[i];
+            }
+        }
+        if (classesDir.equals("")) {
+            System.err.println("TEST BUG: Classes directory not found in test,class.path.");
             return Consts.TEST_FAILED;
         }
-
-        String classesDir = args[0];
         Stresser stress = new Stresser(args);
 
         String className = Helper.class.getName();
