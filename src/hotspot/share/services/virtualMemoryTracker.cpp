@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "runtime/os.hpp"
 #include "runtime/threadCritical.hpp"
 #include "services/memTracker.hpp"
+#include "services/threadStackTracker.hpp"
 #include "services/virtualMemoryTracker.hpp"
 
 size_t VirtualMemorySummary::_snapshot[CALC_OBJ_SIZE_IN_TYPE(VirtualMemorySnapshot, size_t)];
@@ -40,9 +41,12 @@ void VirtualMemorySummary::initialize() {
 }
 
 void VirtualMemorySummary::snapshot(VirtualMemorySnapshot* s) {
-  // Snapshot current thread stacks
-  VirtualMemoryTracker::snapshot_thread_stacks();
-  as_snapshot()->copy_to(s);
+  // Only if thread stack is backed by virtual memory
+  if (ThreadStackTracker::track_as_vm()) {
+    // Snapshot current thread stacks
+    VirtualMemoryTracker::snapshot_thread_stacks();
+    as_snapshot()->copy_to(s);
+  }
 }
 
 SortedLinkedList<ReservedMemoryRegion, compare_reserved_region_base>* VirtualMemoryTracker::_reserved_regions;

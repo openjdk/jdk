@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "services/memReporter.hpp"
 #include "services/mallocTracker.inline.hpp"
 #include "services/memTracker.hpp"
+#include "services/threadStackTracker.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/vmError.hpp"
@@ -92,7 +93,8 @@ NMT_TrackingLevel MemTracker::init_tracking_level() {
 void MemTracker::init() {
   NMT_TrackingLevel level = tracking_level();
   if (level >= NMT_summary) {
-    if (!VirtualMemoryTracker::late_initialize(level)) {
+    if (!VirtualMemoryTracker::late_initialize(level) ||
+        !ThreadStackTracker::late_initialize(level)) {
       shutdown();
       return;
     }
@@ -164,6 +166,7 @@ bool MemTracker::transition_to(NMT_TrackingLevel level) {
     OrderAccess::fence();
     VirtualMemoryTracker::transition(current_level, level);
     MallocTracker::transition(current_level, level);
+    ThreadStackTracker::transition(current_level, level);
   } else {
     // Upgrading tracking level is not supported and has never been supported.
     // Allocating and deallocating malloc tracking structures is not thread safe and
