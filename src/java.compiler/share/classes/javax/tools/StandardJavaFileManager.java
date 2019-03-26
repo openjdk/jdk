@@ -28,9 +28,11 @@ package javax.tools;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * File manager based on {@linkplain File java.io.File} and {@linkplain Path java.nio.file.Path}.
@@ -199,11 +201,40 @@ public interface StandardJavaFileManager extends JavaFileManager {
      * a directory or if this file manager does not support any of the
      * given paths.
      *
-     * @since 9
+     * @since 13
      */
     default Iterable<? extends JavaFileObject> getJavaFileObjectsFromPaths(
-            Iterable<? extends Path> paths) {
+            Collection<? extends Path> paths) {
         return getJavaFileObjectsFromFiles(asFiles(paths));
+    }
+
+    /**
+     * Returns file objects representing the given paths.
+     *
+     * @implSpec
+     * The default implementation converts each path to a file and calls
+     * {@link #getJavaFileObjectsFromFiles getJavaObjectsFromFiles}.
+     * IllegalArgumentException will be thrown if any of the paths
+     * cannot be converted to a file.
+     *
+     * @param paths a list of paths
+     * @return a list of file objects
+     * @throws IllegalArgumentException if the list of paths includes
+     * a directory or if this file manager does not support any of the
+     * given paths.
+     *
+     * @since 9
+     * @deprecated use {@link #getJavaFileObjectsFromPaths(Collection)} instead,
+     * to prevent the possibility of accidentally calling the method with a
+     * single {@code Path} as such an argument. Although {@code Path} implements
+     * {@code Iterable<Path>}, it would almost never be correct to pass a single
+     * {@code Path} and have it be treated as an {@code Iterable} of its
+     * components.
+     */
+    @Deprecated(since = "13")
+    default Iterable<? extends JavaFileObject> getJavaFileObjectsFromPaths(
+            Iterable<? extends Path> paths) {
+        return getJavaFileObjectsFromPaths(asCollection(paths));
     }
 
     /**
@@ -483,5 +514,14 @@ public interface StandardJavaFileManager extends JavaFileManager {
                 }
             }
         };
+    }
+
+    private static <T> Collection<T> asCollection(Iterable<T> iterable) {
+        if (iterable instanceof Collection) {
+            return (Collection<T>) iterable;
+        }
+        List<T> result = new ArrayList<>();
+        for (T item : iterable) result.add(item);
+        return result;
     }
 }

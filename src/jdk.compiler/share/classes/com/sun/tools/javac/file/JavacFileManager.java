@@ -897,7 +897,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
 
     @Override @DefinedBy(Api.COMPILER)
     public Iterable<? extends JavaFileObject> getJavaFileObjectsFromPaths(
-        Iterable<? extends Path> paths)
+        Collection<? extends Path> paths)
     {
         ArrayList<PathFileObject> result;
         if (paths instanceof Collection<?>)
