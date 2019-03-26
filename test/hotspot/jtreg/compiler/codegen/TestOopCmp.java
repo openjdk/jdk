@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 8221083
+ * @requires vm.gc.Serial
  * @requires vm.bits == 64 & vm.opt.final.UseCompressedOops == true
  * @summary On ppc64, C1 erroneously emits a 32-bit compare instruction for oop compares.
  * @modules java.base/jdk.internal.misc:+open
