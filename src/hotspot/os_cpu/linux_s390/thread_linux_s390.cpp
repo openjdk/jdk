@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ bool JavaThread::pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, 
 
     if (ret_frame.is_interpreted_frame()) {
       frame::z_ijava_state* istate = ret_frame.ijava_state_unchecked();
-       if (!((Method*)(istate->method))->is_metaspace_object()) {
+       if ((stack_base() >= (address)istate && (address)istate > stack_end()) || !((Method*)(istate->method))->is_metaspace_object()) {
          return false;
        }
        uint64_t reg_bcp = uc->uc_mcontext.gregs[13/*Z_BCP*/];
