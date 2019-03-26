@@ -575,7 +575,8 @@ public final class Configuration {
     }
 
     Set<ResolvedModule> reads(ResolvedModule m) {
-        return Collections.unmodifiableSet(graph.get(m));
+        // The sets stored in the graph are already immutable sets
+        return Set.copyOf(graph.get(m));
     }
 
     /**
