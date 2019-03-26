@@ -4449,7 +4449,7 @@ void Threads::add(JavaThread* p, bool force_daemon) {
 
 void Threads::remove(JavaThread* p) {
 
-  // Reclaim the objectmonitors from the omInUseList and omFreeList of the moribund thread.
+  // Reclaim the ObjectMonitors from the omInUseList and omFreeList of the moribund thread.
   ObjectSynchronizer::omFlush(p);
 
   // Extra scope needed for Thread_lock, so we can check

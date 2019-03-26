@@ -1270,6 +1270,21 @@ void ObjectSynchronizer::omFlush(Thread * Self) {
   }
 
   Thread::muxRelease(&gListLock);
+
+  LogStreamHandle(Debug, monitorinflation) lsh_debug;
+  LogStreamHandle(Info, monitorinflation) lsh_info;
+  LogStream * ls = NULL;
+  if (log_is_enabled(Debug, monitorinflation)) {
+    ls = &lsh_debug;
+  } else if ((tally != 0 || inUseTally != 0) &&
+             log_is_enabled(Info, monitorinflation)) {
+    ls = &lsh_info;
+  }
+  if (ls != NULL) {
+    ls->print_cr("omFlush: jt=" INTPTR_FORMAT ", free_monitor_tally=%d"
+                 ", in_use_monitor_tally=%d" ", omFreeProvision=%d",
+                 p2i(Self), tally, inUseTally, Self->omFreeProvision);
+  }
 }
 
 static void post_monitor_inflate_event(EventJavaMonitorInflate* event,
@@ -1665,24 +1680,18 @@ void ObjectSynchronizer::finish_deflate_idle_monitors(DeflateMonitorCounters* co
   // than a beginning to end measurement of the phase.
   log_info(safepoint, cleanup)("deflating per-thread idle monitors, %3.7f secs, monitors=%d", counters->perThreadTimes, counters->perThreadScavenged);
 
-  LogStreamHandle(Debug, monitorinflation) lsh_debug;
-  LogStreamHandle(Info, monitorinflation) lsh_info;
-  LogStream * ls = NULL;
-  if (log_is_enabled(Debug, monitorinflation)) {
-    ls = &lsh_debug;
-  } else if (counters->perThreadScavenged != 0 && log_is_enabled(Info, monitorinflation)) {
-    ls = &lsh_info;
-  }
-  if (ls != NULL) {
-    ls->print_cr("deflating per-thread idle monitors, %3.7f secs, %d monitors", counters->perThreadTimes, counters->perThreadScavenged);
-  }
-
   gMonitorFreeCount += counters->nScavenged;
 
   if (log_is_enabled(Debug, monitorinflation)) {
     // exit_globals()'s call to audit_and_print_stats() is done
     // at the Info level.
     ObjectSynchronizer::audit_and_print_stats(false /* on_exit */);
+  } else if (log_is_enabled(Info, monitorinflation)) {
+    Thread::muxAcquire(&gListLock, "finish_deflate_idle_monitors");
+    log_info(monitorinflation)("gMonitorPopulation=%d, gOmInUseCount=%d, "
+                               "gMonitorFreeCount=%d", gMonitorPopulation,
+                               gOmInUseCount, gMonitorFreeCount);
+    Thread::muxRelease(&gListLock);
   }
 
   ForceMonitorScavenge = 0;    // Reset
@@ -1708,8 +1717,6 @@ void ObjectSynchronizer::deflate_thread_local_monitors(Thread* thread, DeflateMo
 
   int deflated_count = deflate_monitor_list(thread->omInUseList_addr(), &freeHeadp, &freeTailp);
 
-  timer.stop();
-
   Thread::muxAcquire(&gListLock, "deflate_thread_local_monitors");
 
   // Adjust counters
@@ -1718,8 +1725,6 @@ void ObjectSynchronizer::deflate_thread_local_monitors(Thread* thread, DeflateMo
   counters->nScavenged += deflated_count;
   counters->nInuse += thread->omInUseCount;
   counters->perThreadScavenged += deflated_count;
-  // For now, we only care about cumulative per-thread deflation time.
-  counters->perThreadTimes += timer.seconds();
 
   // Move the scavenged monitors back to the global free list.
   if (freeHeadp != NULL) {
@@ -1730,7 +1735,26 @@ void ObjectSynchronizer::deflate_thread_local_monitors(Thread* thread, DeflateMo
     freeTailp->FreeNext = gFreeList;
     gFreeList = freeHeadp;
   }
+
+  timer.stop();
+  // Safepoint logging cares about cumulative perThreadTimes and
+  // we'll capture most of the cost, but not the muxRelease() which
+  // should be cheap.
+  counters->perThreadTimes += timer.seconds();
+
   Thread::muxRelease(&gListLock);
+
+  LogStreamHandle(Debug, monitorinflation) lsh_debug;
+  LogStreamHandle(Info, monitorinflation) lsh_info;
+  LogStream * ls = NULL;
+  if (log_is_enabled(Debug, monitorinflation)) {
+    ls = &lsh_debug;
+  } else if (deflated_count != 0 && log_is_enabled(Info, monitorinflation)) {
+    ls = &lsh_info;
+  }
+  if (ls != NULL) {
+    ls->print_cr("jt=" INTPTR_FORMAT ": deflating per-thread idle monitors, %3.7f secs, %d monitors", p2i(thread), timer.seconds(), deflated_count);
+  }
 }
 
 // Monitor cleanup on JavaThread::exit
@@ -1839,13 +1863,13 @@ void ObjectSynchronizer::audit_and_print_stats(bool on_exit) {
 
   // Check gMonitorPopulation:
   if (gMonitorPopulation == chkMonitorPopulation) {
-     ls->print_cr("gMonitorPopulation=%d equals chkMonitorPopulation=%d",
-                  gMonitorPopulation, chkMonitorPopulation);
+    ls->print_cr("gMonitorPopulation=%d equals chkMonitorPopulation=%d",
+                 gMonitorPopulation, chkMonitorPopulation);
   } else {
-     ls->print_cr("ERROR: gMonitorPopulation=%d is not equal to "
-                  "chkMonitorPopulation=%d", gMonitorPopulation,
-                  chkMonitorPopulation);
-     error_cnt++;
+    ls->print_cr("ERROR: gMonitorPopulation=%d is not equal to "
+                 "chkMonitorPopulation=%d", gMonitorPopulation,
+                 chkMonitorPopulation);
+    error_cnt++;
   }
 
   // Check gOmInUseList and gOmInUseCount:
