@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,13 +45,14 @@ public class Jstatd {
     private static Registry registry;
     private static int port = -1;
     private static boolean startRegistry = true;
+    private static RemoteHost remoteHost;
 
     private static void printUsage() {
         System.err.println("usage: jstatd [-nr] [-p port] [-n rminame]\n" +
                            "       jstatd -?|-h|--help");
     }
 
-    static void bind(String name, RemoteHostImpl remoteHost)
+    static void bind(String name, RemoteHost remoteHost)
                 throws RemoteException, MalformedURLException, Exception {
 
         try {
@@ -138,10 +139,10 @@ public class Jstatd {
         try {
             // use 1.5.0 dynamically generated subs.
             System.setProperty("java.rmi.server.ignoreSubClasses", "true");
-            RemoteHostImpl remoteHost = new RemoteHostImpl();
+            remoteHost = new RemoteHostImpl();
             RemoteHost stub = (RemoteHost) UnicastRemoteObject.exportObject(
                     remoteHost, 0);
-            bind(name.toString(), remoteHost);
+            bind(name.toString(), stub);
             System.out.println("jstatd started (bound to " + name.toString() + ")");
             System.out.flush();
         } catch (MalformedURLException e) {
