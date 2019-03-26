@@ -26,9 +26,11 @@
 package com.sun.tools.javac.file;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.sun.tools.javac.util.Context;
@@ -44,6 +46,12 @@ import com.sun.tools.javac.util.Context.Factory;
  */
 public class CacheFSInfo extends FSInfo {
 
+    protected final ConcurrentHashMap<Path, Path> canonicalPathCache = new ConcurrentHashMap<>();
+    protected final ConcurrentHashMap<Path, Optional<BasicFileAttributes>> attributeCache =
+            new ConcurrentHashMap<>();
+    protected final ConcurrentHashMap<Path, List<Path>> jarClassPathCache =
+            new ConcurrentHashMap<>();
+
     /**
      * Register a Context.Factory to create a CacheFSInfo.
      */
@@ -56,68 +64,53 @@ public class CacheFSInfo extends FSInfo {
     }
 
     public void clearCache() {
-        cache.clear();
+        canonicalPathCache.clear();
+        attributeCache.clear();
+        jarClassPathCache.clear();
     }
 
     @Override
     public Path getCanonicalFile(Path file) {
-        Entry e = getEntry(file);
-        return e.canonicalFile;
+        return canonicalPathCache.computeIfAbsent(file, super::getCanonicalFile);
     }
 
     @Override
     public boolean exists(Path file) {
-        Entry e = getEntry(file);
-        return e.exists;
+        return getAttributes(file).isPresent();
     }
 
     @Override
     public boolean isDirectory(Path file) {
-        Entry e = getEntry(file);
-        return e.isDirectory;
+        return getAttributes(file).map(BasicFileAttributes::isDirectory).orElse(false);
     }
 
     @Override
     public boolean isFile(Path file) {
-        Entry e = getEntry(file);
-        return e.isFile;
+        return getAttributes(file).map(BasicFileAttributes::isRegularFile).orElse(false);
     }
 
     @Override
     public List<Path> getJarClassPath(Path file) throws IOException {
-        // don't bother to lock the cache, because it is thread-safe, and
-        // because the worst that can happen would be to create two identical
-        // jar class paths together and have one overwrite the other.
-        Entry e = getEntry(file);
-        if (e.jarClassPath == null)
-            e.jarClassPath = super.getJarClassPath(file);
-        return e.jarClassPath;
-    }
-
-    private Entry getEntry(Path file) {
-        // don't bother to lock the cache, because it is thread-safe, and
-        // because the worst that can happen would be to create two identical
-        // entries together and have one overwrite the other.
-        Entry e = cache.get(file);
-        if (e == null) {
-            e = new Entry();
-            e.canonicalFile = super.getCanonicalFile(file);
-            e.exists = super.exists(file);
-            e.isDirectory = super.isDirectory(file);
-            e.isFile = super.isFile(file);
-            cache.put(file, e);
+        synchronized (jarClassPathCache) {
+            List<Path> jarClassPath = jarClassPathCache.get(file);
+            if (jarClassPath == null) {
+                jarClassPath = super.getJarClassPath(file);
+                jarClassPathCache.put(file, jarClassPath);
+            }
+            return jarClassPath;
         }
-        return e;
     }
 
-    // could also be a Map<File,SoftReference<Entry>> ?
-    private final Map<Path,Entry> cache = new ConcurrentHashMap<>();
+    protected Optional<BasicFileAttributes> getAttributes(Path file) {
+        return attributeCache.computeIfAbsent(file, this::maybeReadAttributes);
+    }
 
-    private static class Entry {
-        Path canonicalFile;
-        boolean exists;
-        boolean isFile;
-        boolean isDirectory;
-        List<Path> jarClassPath;
+    protected Optional<BasicFileAttributes> maybeReadAttributes(Path file) {
+        try {
+            return Optional.of(Files.readAttributes(file, BasicFileAttributes.class));
+        } catch (IOException e) {
+            // Ignore; means file not found
+            return Optional.empty();
+        }
     }
 }
