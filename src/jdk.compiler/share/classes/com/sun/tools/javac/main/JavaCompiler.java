@@ -990,6 +990,8 @@ public class JavaCompiler {
             if (!log.hasDiagnosticListener()) {
                 printCount("error", errorCount());
                 printCount("warn", warningCount());
+                printSuppressedCount(errorCount(), log.nsuppressederrors, "count.error.recompile");
+                printSuppressedCount(warningCount(), log.nsuppressedwarns, "count.warn.recompile");
             }
             if (!taskListener.isEmpty()) {
                 taskListener.finished(new TaskEvent(TaskEvent.Kind.COMPILATION));
@@ -1841,6 +1843,15 @@ public class JavaCompiler {
             else
                 key = "count." + kind + ".plural";
             log.printLines(WriterKind.ERROR, key, String.valueOf(count));
+            log.flush(Log.WriterKind.ERROR);
+        }
+    }
+
+    private void printSuppressedCount(int shown, int suppressed, String diagKey) {
+        if (suppressed > 0) {
+            int total = shown + suppressed;
+            log.printLines(WriterKind.ERROR, diagKey,
+                    String.valueOf(shown), String.valueOf(total));
             log.flush(Log.WriterKind.ERROR);
         }
     }
