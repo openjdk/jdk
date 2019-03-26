@@ -25,7 +25,7 @@
 
 #include "debug_util.h"
 
-static void DTrace_PrintStdErr(const char *msg);
+static void JNICALL DTrace_PrintStdErr(const char *msg);
 
 #if defined(DEBUG)
 enum {
@@ -298,7 +298,7 @@ void DTrace_SetOutputCallback(DTRACE_OUTPUT_CALLBACK pfn) {
  * Support for Java tracing in release or debug mode builds
  */
 
-static void DTrace_PrintStdErr(const char *msg) {
+static void JNICALL DTrace_PrintStdErr(const char *msg) {
     fprintf(stderr, "%s", msg);
     fflush(stderr);
 }

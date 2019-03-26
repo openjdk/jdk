@@ -45,10 +45,10 @@ enum {
 };
 
 /* prototype for client provided output callback function */
-typedef void (*DTRACE_OUTPUT_CALLBACK)(const char * msg);
+typedef void (JNICALL *DTRACE_OUTPUT_CALLBACK)(const char * msg);
 
 /* prototype for client provided print callback function */
-typedef void (*DTRACE_PRINT_CALLBACK)(const char * file, int line, int argc, const char * fmt, va_list arglist);
+typedef void (JNICALL *DTRACE_PRINT_CALLBACK)(const char * file, int line, int argc, const char * fmt, va_list arglist);
 
 extern void DTrace_EnableAll(dbool_t enabled);
 extern void DTrace_EnableFile(const char * file, dbool_t enabled);
