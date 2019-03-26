@@ -371,6 +371,10 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
           "Generate a lot of safepoints. This works with "                  \
           "GuaranteedSafepointInterval")                                    \
                                                                             \
+  diagnostic(bool, HandshakeALot, false,                                    \
+          "Generate a lot of handshakes. This works with "                  \
+          "GuaranteedSafepointInterval")                                    \
+                                                                            \
   product_pd(bool, BackgroundCompilation,                                   \
           "A thread requesting compilation is not blocked during "          \
           "compilation")                                                    \

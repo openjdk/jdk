@@ -2928,9 +2928,21 @@ void JavaThread::oops_do(OopClosure* f, CodeBlobClosure* cf) {
   }
 }
 
+#ifdef ASSERT
+void JavaThread::verify_states_for_handshake() {
+  // This checks that the thread has a correct frame state during a handshake.
+  assert((!has_last_Java_frame() && java_call_counter() == 0) ||
+         (has_last_Java_frame() && java_call_counter() > 0),
+         "unexpected frame info: has_last_frame=%d, java_call_counter=%d",
+         has_last_Java_frame(), java_call_counter());
+}
+#endif
+
 void JavaThread::nmethods_do(CodeBlobClosure* cf) {
   assert((!has_last_Java_frame() && java_call_counter() == 0) ||
-         (has_last_Java_frame() && java_call_counter() > 0), "wrong java_sp info!");
+         (has_last_Java_frame() && java_call_counter() > 0),
+         "unexpected frame info: has_last_frame=%d, java_call_counter=%d",
+         has_last_Java_frame(), java_call_counter());
 
   if (has_last_Java_frame()) {
     // Traverse the execution stack

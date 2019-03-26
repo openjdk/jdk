@@ -123,7 +123,7 @@ class VMThread: public NamedThread {
 
   static VMOperationTimeoutTask* _timeout_task;
 
-  static VM_Operation* no_op_safepoint(bool check_time);
+  static VM_Operation* no_op_safepoint();
 
   void evaluate_operation(VM_Operation* op);
 

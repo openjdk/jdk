@@ -62,6 +62,7 @@ public class HandshakeTransitionTest {
                     true,
                     "-Djava.library.path=" + lib,
                     "-XX:+SafepointALot",
+                    "-XX:+HandshakeALot",
                     "-XX:GuaranteedSafepointInterval=20",
                     "-Xlog:ergo*",
                     "-XX:ParallelGCThreads=1",

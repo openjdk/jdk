@@ -80,7 +80,6 @@ gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java 8193639 solaris-all
 
 # :hotspot_runtime
 
-runtime/handshake/HandshakeWalkSuspendExitTest.java 8214174 generic-all
 runtime/NMT/CheckForProperDetailStackTrace.java 8218458 generic-all
 runtime/SharedArchiveFile/SASymbolTableTest.java 8193639 solaris-all
 runtime/containers/docker/TestCPUSets.java 8220672 generic-all

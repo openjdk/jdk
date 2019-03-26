@@ -1874,6 +1874,9 @@ class JavaThread: public Thread {
   // RedefineClasses Support
   void metadata_do(MetadataClosure* f);
 
+  // Debug method asserting thread states are correct during a handshake operation.
+  DEBUG_ONLY(void verify_states_for_handshake();)
+
   // Misc. operations
   char* name() const { return (char*)get_thread_name(); }
   void print_on(outputStream* st, bool print_extended_info) const;

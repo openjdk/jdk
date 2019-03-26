@@ -434,22 +434,35 @@ void VMThread::evaluate_operation(VM_Operation* op) {
 static VM_None    safepointALot_op("SafepointALot");
 static VM_Cleanup cleanup_op;
 
-VM_Operation* VMThread::no_op_safepoint(bool check_time) {
+class HandshakeALotTC : public ThreadClosure {
+ public:
+  virtual void do_thread(Thread* thread) {
+#ifdef ASSERT
+    assert(thread->is_Java_thread(), "must be");
+    JavaThread* jt = (JavaThread*)thread;
+    jt->verify_states_for_handshake();
+#endif
+  }
+};
+
+VM_Operation* VMThread::no_op_safepoint() {
+  // Check for handshakes first since we may need to return a VMop.
+  if (HandshakeALot) {
+    HandshakeALotTC haltc;
+    Handshake::execute(&haltc);
+  }
+  // Check for a cleanup before SafepointALot to keep stats correct.
+  long interval_ms = SafepointTracing::time_since_last_safepoint_ms();
+  bool max_time_exceeded = GuaranteedSafepointInterval != 0 &&
+                           (interval_ms >= GuaranteedSafepointInterval);
+  if (max_time_exceeded && SafepointSynchronize::is_cleanup_needed()) {
+    return &cleanup_op;
+  }
   if (SafepointALot) {
     return &safepointALot_op;
   }
-  if (!SafepointSynchronize::is_cleanup_needed()) {
-    return NULL;
-  }
-  if (check_time) {
-    long interval_ms = SafepointTracing::time_since_last_safepoint_ms();
-    bool max_time_exceeded = GuaranteedSafepointInterval != 0 &&
-                             (interval_ms > GuaranteedSafepointInterval);
-    if (!max_time_exceeded) {
-      return NULL;
-    }
-  }
-  return &cleanup_op;
+  // Nothing to be done.
+  return NULL;
 }
 
 void VMThread::loop() {
@@ -491,19 +504,22 @@ void VMThread::loop() {
           exit(-1);
         }
 
-        if (timedout && (_cur_vm_operation = VMThread::no_op_safepoint(false)) != NULL) {
-          MutexUnlockerEx mul(VMOperationQueue_lock,
-                              Mutex::_no_safepoint_check_flag);
-          // Force a safepoint since we have not had one for at least
-          // 'GuaranteedSafepointInterval' milliseconds.  This will run all
-          // the clean-up processing that needs to be done regularly at a
-          // safepoint
-          SafepointSynchronize::begin();
-          #ifdef ASSERT
+        if (timedout) {
+          // Have to unlock VMOperationQueue_lock just in case no_op_safepoint()
+          // has to do a handshake.
+          MutexUnlockerEx mul(VMOperationQueue_lock, Mutex::_no_safepoint_check_flag);
+          if ((_cur_vm_operation = VMThread::no_op_safepoint()) != NULL) {
+            // Force a safepoint since we have not had one for at least
+            // 'GuaranteedSafepointInterval' milliseconds and we need to clean
+            // something. This will run all the clean-up processing that needs
+            // to be done at a safepoint.
+            SafepointSynchronize::begin();
+            #ifdef ASSERT
             if (GCALotAtAllSafepoints) InterfaceSupport::check_gc_alot();
-          #endif
-          SafepointSynchronize::end();
-          _cur_vm_operation = NULL;
+            #endif
+            SafepointSynchronize::end();
+            _cur_vm_operation = NULL;
+          }
         }
         _cur_vm_operation = _vm_queue->remove_next();
 
@@ -615,10 +631,9 @@ void VMThread::loop() {
       VMOperationRequest_lock->notify_all();
     }
 
-    //
-    // We want to make sure that we get to a safepoint regularly.
-    //
-    if ((_cur_vm_operation = VMThread::no_op_safepoint(false)) != NULL) {
+    // We want to make sure that we get to a safepoint regularly
+    // even when executing VMops that don't require safepoints.
+    if ((_cur_vm_operation = VMThread::no_op_safepoint()) != NULL) {
       HandleMark hm(VMThread::vm_thread());
       SafepointSynchronize::begin();
       SafepointSynchronize::end();
