@@ -42,9 +42,9 @@ public class HandshakeSuspendExitTest  implements Runnable {
         while (!_exit_now) {
             // Leave last 2 threads running.
             for (int i = 0; i < _suspend_threads.length - 2; i++) {
-                if (Thread.currentThread() != thr) {
-                    thr.suspend();
-                    thr.resume();
+                if (Thread.currentThread() != _suspend_threads[i]) {
+                    _suspend_threads[i].suspend();
+                    _suspend_threads[i].resume();
                 }
             }
         }
