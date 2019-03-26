@@ -742,8 +742,6 @@ public:
 
   void stop_concurrent_marking();
 
-  void roots_iterate(OopClosure* cl);
-
 private:
   void trash_cset_regions();
   void update_heap_references(bool concurrent);
