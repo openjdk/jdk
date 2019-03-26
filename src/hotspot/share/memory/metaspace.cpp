@@ -534,6 +534,23 @@ void MetaspaceUtils::print_vs(outputStream* out, size_t scale) {
   }
 }
 
+static void print_basic_switches(outputStream* out, size_t scale) {
+  out->print("MaxMetaspaceSize: ");
+  if (MaxMetaspaceSize >= (max_uintx) - (2 * os::vm_page_size())) {
+    // aka "very big". Default is max_uintx, but due to rounding in arg parsing the real
+    // value is smaller.
+    out->print("unlimited");
+  } else {
+    print_human_readable_size(out, MaxMetaspaceSize, scale);
+  }
+  out->cr();
+  if (Metaspace::using_class_space()) {
+    out->print("CompressedClassSpaceSize: ");
+    print_human_readable_size(out, CompressedClassSpaceSize, scale);
+  }
+  out->cr();
+}
+
 // This will print out a basic metaspace usage report but
 // unlike print_report() is guaranteed not to lock or to walk the CLDG.
 void MetaspaceUtils::print_basic_report(outputStream* out, size_t scale) {
@@ -614,6 +631,12 @@ void MetaspaceUtils::print_basic_report(outputStream* out, size_t scale) {
                               Metaspace::chunk_manager_metadata()->free_chunks_total_bytes(), scale);
     out->cr();
   }
+
+  out->cr();
+
+  // Print basic settings
+  print_basic_switches(out, scale);
+
   out->cr();
 
 }
@@ -805,19 +828,11 @@ void MetaspaceUtils::print_report(outputStream* out, size_t scale, int flags) {
   // Print some interesting settings
   out->cr();
   out->cr();
-  out->print("MaxMetaspaceSize: ");
-  print_human_readable_size(out, MaxMetaspaceSize, scale);
+  print_basic_switches(out, scale);
+
   out->cr();
   out->print("InitialBootClassLoaderMetaspaceSize: ");
   print_human_readable_size(out, InitialBootClassLoaderMetaspaceSize, scale);
-  out->cr();
-
-  out->print("UseCompressedClassPointers: %s", UseCompressedClassPointers ? "true" : "false");
-  out->cr();
-  if (Metaspace::using_class_space()) {
-    out->print("CompressedClassSpaceSize: ");
-    print_human_readable_size(out, CompressedClassSpaceSize, scale);
-  }
 
   out->cr();
   out->cr();
