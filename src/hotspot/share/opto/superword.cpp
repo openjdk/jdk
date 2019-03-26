@@ -613,7 +613,7 @@ void SuperWord::find_adjacent_refs() {
     // alignment is set and vectors will be aligned.
     bool create_pack = true;
     if (memory_alignment(mem_ref, best_iv_adjustment) == 0 || _do_vector_loop) {
-      if (!Matcher::misaligned_vectors_ok()) {
+      if (!Matcher::misaligned_vectors_ok() || AlignVector) {
         int vw = vector_width(mem_ref);
         int vw_best = vector_width(best_align_to_mem_ref);
         if (vw > vw_best) {
@@ -638,7 +638,7 @@ void SuperWord::find_adjacent_refs() {
       } else {
         // Allow independent (different type) unaligned memory operations
         // if HW supports them.
-        if (!Matcher::misaligned_vectors_ok()) {
+        if (!Matcher::misaligned_vectors_ok() || AlignVector) {
           create_pack = false;
         } else {
           // Check if packs of the same memory type but
@@ -1209,9 +1209,47 @@ bool SuperWord::are_adjacent_refs(Node* s1, Node* s2) {
 bool SuperWord::isomorphic(Node* s1, Node* s2) {
   if (s1->Opcode() != s2->Opcode()) return false;
   if (s1->req() != s2->req()) return false;
-  if (s1->in(0) != s2->in(0)) return false;
   if (!same_velt_type(s1, s2)) return false;
-  return true;
+  Node* s1_ctrl = s1->in(0);
+  Node* s2_ctrl = s2->in(0);
+  // If the control nodes are equivalent, no further checks are required to test for isomorphism.
+  if (s1_ctrl == s2_ctrl) {
+    return true;
+  } else {
+    bool s1_ctrl_inv = ((s1_ctrl == NULL) ? true : lpt()->is_invariant(s1_ctrl));
+    bool s2_ctrl_inv = ((s2_ctrl == NULL) ? true : lpt()->is_invariant(s2_ctrl));
+    // If the control nodes are not invariant for the loop, fail isomorphism test.
+    if (!s1_ctrl_inv || !s2_ctrl_inv) {
+      return false;
+    }
+    if(s1_ctrl != NULL && s2_ctrl != NULL) {
+      if (s1_ctrl->is_Proj()) {
+        s1_ctrl = s1_ctrl->in(0);
+        assert(lpt()->is_invariant(s1_ctrl), "must be invariant");
+      }
+      if (s2_ctrl->is_Proj()) {
+        s2_ctrl = s2_ctrl->in(0);
+        assert(lpt()->is_invariant(s2_ctrl), "must be invariant");
+      }
+      if (!s1_ctrl->is_RangeCheck() || !s2_ctrl->is_RangeCheck()) {
+        return false;
+      }
+    }
+    // Control nodes are invariant. However, we have no way of checking whether they resolve
+    // in an equivalent manner. But, we know that invariant range checks are guaranteed to
+    // throw before the loop (if they would have thrown). Thus, the loop would not have been reached.
+    // Therefore, if the control nodes for both are range checks, we accept them to be isomorphic.
+    for (DUIterator_Fast imax, i = s1->fast_outs(imax); i < imax; i++) {
+      Node* t1 = s1->fast_out(i);
+      for (DUIterator_Fast jmax, j = s2->fast_outs(jmax); j < jmax; j++) {
+        Node* t2 = s2->fast_out(j);
+        if (VectorNode::is_muladds2i(t1) && VectorNode::is_muladds2i(t2)) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
 }
 
 //------------------------------independent---------------------------
@@ -3372,9 +3410,9 @@ void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
     _igvn.register_new_node_with_optimizer(e);
     _phase->set_ctrl(e, pre_ctrl);
   }
-  if (vw > ObjectAlignmentInBytes) {
+  if (vw > ObjectAlignmentInBytes || align_to_ref_p.base()->is_top()) {
     // incorporate base e +/- base && Mask >>> log2(elt)
-    Node* xbase = new CastP2XNode(NULL, align_to_ref_p.base());
+    Node* xbase = new CastP2XNode(NULL, align_to_ref_p.adr());
     _igvn.register_new_node_with_optimizer(xbase);
 #ifdef _LP64
     xbase  = new ConvL2INode(xbase);
@@ -3566,8 +3604,8 @@ SWPointer::SWPointer(MemNode* mem, SuperWord* slp, Node_Stack *nstack, bool anal
     assert(!valid(), "base address is loop variant");
     return;
   }
-  //unsafe reference could not be aligned appropriately without runtime checking
-  if (base == NULL || base->bottom_type() == Type::TOP) {
+  // unsafe references require misaligned vector access support
+  if (base->is_top() && !Matcher::misaligned_vectors_ok()) {
     assert(!valid(), "unsafe access");
     return;
   }
@@ -3591,6 +3629,16 @@ SWPointer::SWPointer(MemNode* mem, SuperWord* slp, Node_Stack *nstack, bool anal
       break; // stop looking at addp's
     }
   }
+  if (!invariant(adr)) {
+    assert(!valid(), "adr is loop variant");
+    return;
+  }
+
+  if (!base->is_top() && adr != base) {
+    assert(!valid(), "adr and base differ");
+    return;
+  }
+
   NOT_PRODUCT(if(_slp->is_trace_alignment()) _tracer.restore_depth();)
   NOT_PRODUCT(_tracer.ctor_6(mem);)
 

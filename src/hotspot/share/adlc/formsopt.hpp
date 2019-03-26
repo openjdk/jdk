@@ -242,9 +242,6 @@ public:
   char* code_snippet() {
     return _code_snippet;
   }
-  void set_stack_version(bool flag) {
-    assert(false, "User defined register classes are not allowed to spill to the stack.");
-  }
   void declare_register_masks(FILE* fp);
   void build_register_masks(FILE* fp) {
     // We do not need to generate register masks because we select at runtime

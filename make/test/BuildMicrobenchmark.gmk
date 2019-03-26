@@ -30,6 +30,7 @@ include $(SPEC)
 include MakeBase.gmk
 include JavaCompilation.gmk
 include SetupJavaCompilers.gmk
+include TestFilesCompilation.gmk
 
 ifeq ($(JMH_CORE_JAR), )
   $(info Error: JMH is missing. Please use configure --with-jmh.)
@@ -39,7 +40,8 @@ endif
 #### Variables
 
 MICROBENCHMARK_SRC := $(TOPDIR)/test/micro
-MICROBENCHMARK_JAR := $(IMAGES_OUTPUTDIR)/test/micro/benchmarks.jar
+MICROBENCHMARK_IMAGE_DIR := $(TEST_IMAGE_DIR)/micro
+MICROBENCHMARK_JAR := $(MICROBENCHMARK_IMAGE_DIR)/benchmarks.jar
 
 MICROBENCHMARK_OUTPUT := $(SUPPORT_OUTPUTDIR)/test/micro
 MICROBENCHMARK_CLASSES := $(MICROBENCHMARK_OUTPUT)/classes
@@ -53,6 +55,11 @@ JMH_COMPILE_JARS := $(JMH_CORE_JAR) $(JMH_GENERATOR_JAR)
 JMH_RUNTIME_JARS := $(JMH_CORE_JAR) $(JMH_COMMONS_MATH_JAR) $(JMH_JOPT_SIMPLE_JAR)
 
 MICROBENCHMARK_CLASSPATH := $(call PathList, $(JMH_COMPILE_JARS))
+
+# Native dependencies
+MICROBENCHMARK_NATIVE_SRC_DIRS := $(MICROBENCHMARK_SRC)
+MICROBENCHMARK_NATIVE_OUTPUT := $(MICROBENCHMARK_OUTPUT)/native
+MICROBENCHMARK_NATIVE_EXCLUDE :=
 
 ###
 
@@ -108,6 +115,22 @@ $(eval $(call SetupJarArchive, BUILD_JDK_JAR, \
     JAR := $(MICROBENCHMARK_JAR), \
 ))
 
-all: $(MICROBENCHMARK_JAR)
+# Setup compilation of native library dependencies
+$(eval $(call SetupTestFilesCompilation, BUILD_MICROBENCHMARK_LIBRARIES, \
+    TYPE := LIBRARY, \
+    SOURCE_DIRS := $(MICROBENCHMARK_NATIVE_SRC_DIRS), \
+    OUTPUT_DIR := $(MICROBENCHMARK_NATIVE_OUTPUT), \
+    EXCLUDE := $(MICROBENCHMARK_NATIVE_EXCLUDE), \
+))
+
+# Setup copy of native dependencies to image output dir
+$(eval $(call SetupCopyFiles, COPY_MICROBENCHMARK_NATIVE, \
+    SRC := $(MICROBENCHMARK_NATIVE_OUTPUT), \
+    DEST := $(MICROBENCHMARK_IMAGE_DIR)/native, \
+    FILES := $(BUILD_MICROBENCHMARK_LIBRARIES), \
+    FLATTEN := true, \
+))
+
+all: $(MICROBENCHMARK_JAR) $(BUILD_MICROBENCHMARK_LIBRARIES) $(COPY_MICROBENCHMARK_NATIVE)
 
 .PHONY: all

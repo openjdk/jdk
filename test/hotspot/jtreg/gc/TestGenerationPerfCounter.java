@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,9 @@
  * questions.
  */
 
+package gc;
+
 import static jdk.test.lib.Asserts.*;
-import gc.testlibrary.PerfCounter;
 import gc.testlibrary.PerfCounters;
 
 
@@ -35,9 +36,9 @@ import gc.testlibrary.PerfCounters;
  *          java.compiler
  *          java.management/sun.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run main/othervm -XX:+UsePerfData -XX:+UseSerialGC TestGenerationPerfCounter
- * @run main/othervm -XX:+UsePerfData -XX:+UseParallelGC TestGenerationPerfCounter
- * @run main/othervm -XX:+UsePerfData -XX:+UseG1GC TestGenerationPerfCounter
+ * @run main/othervm -XX:+UsePerfData -XX:+UseSerialGC gc.TestGenerationPerfCounter
+ * @run main/othervm -XX:+UsePerfData -XX:+UseParallelGC gc.TestGenerationPerfCounter
+ * @run main/othervm -XX:+UsePerfData -XX:+UseG1GC gc.TestGenerationPerfCounter
  */
 
 /* @test TestGenerationPerfCounterCMS
@@ -50,7 +51,7 @@ import gc.testlibrary.PerfCounters;
  *          java.compiler
  *          java.management/sun.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run main/othervm -XX:+UsePerfData -XX:+UseConcMarkSweepGC TestGenerationPerfCounter
+ * @run main/othervm -XX:+UsePerfData -XX:+UseConcMarkSweepGC gc.TestGenerationPerfCounter
  */
 
 public class TestGenerationPerfCounter {

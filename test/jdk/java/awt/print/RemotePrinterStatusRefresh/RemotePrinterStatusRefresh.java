@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8153732
+ * @bug 8153732 8212202
  * @requires (os.family == "Windows")
  * @summary Windows remote printer changes do not reflect in lookupPrintServices()
  * @ignore Requires a new network printer installation\removal

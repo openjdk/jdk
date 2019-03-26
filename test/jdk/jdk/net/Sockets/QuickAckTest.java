@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
  */
 import java.io.IOException;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -38,12 +39,10 @@ import jdk.net.Sockets;
 
 public class QuickAckTest {
 
-    private static final String LOCAL_HOST = "127.0.0.1";
-
     public static void main(String args[]) throws IOException {
 
         try (ServerSocket ss = new ServerSocket(0);
-                Socket s = new Socket(LOCAL_HOST, ss.getLocalPort());
+                Socket s = new Socket(InetAddress.getLoopbackAddress(), ss.getLocalPort());
                 DatagramSocket ds = new DatagramSocket(0);
                 MulticastSocket mc = new MulticastSocket(0)) {
 

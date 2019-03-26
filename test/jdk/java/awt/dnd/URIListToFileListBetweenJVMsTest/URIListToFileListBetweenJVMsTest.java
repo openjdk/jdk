@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,41 +22,30 @@
  */
 
 /*
-  test
+  @test
+  @key headful
   @bug 8029565
   @summary Conversion of a URI list to File list fails
-  @author Petr Pchelko <petr.pchelko@oracle.com>
   @library ../../regtesthelpers
   @library ../../regtesthelpers/process
   @build Util
   @build ProcessResults ProcessCommunicator
-  @run applet/othervm URIListToFileListBetweenJVMsTest.html
- */
-
-/**
- * URIListToFileListBetweenJVMsTest.java
- *
- * summary: DnD of File-List across JVM adds two empty items to the list
+  @run main/othervm URIListToFileListBetweenJVMsTest main
  */
 
 import test.java.awt.regtesthelpers.Util;
 import test.java.awt.regtesthelpers.process.ProcessCommunicator;
 import test.java.awt.regtesthelpers.process.ProcessResults;
 
-import java.applet.Applet;
 import java.awt.*;
 import java.awt.event.InputEvent;
 
 import static java.lang.Thread.sleep;
 
-public class URIListToFileListBetweenJVMsTest extends Applet {
+public class URIListToFileListBetweenJVMsTest {
 
     // information related to the test in common
     static int VISIBLE_RAWS_IN_LIST=15;
-
-    public void init() {
-        setLayout(new BorderLayout());
-    }
 
     public void start() {
 
@@ -127,7 +116,11 @@ public class URIListToFileListBetweenJVMsTest extends Applet {
         }
     }
 
-    public static void main (String [] args) throws Exception {
+    public static void main(final String [] args) throws Exception {
+        if (args.length > 0 && args[0].equals("main")) {
+            new URIListToFileListBetweenJVMsTest().start();
+            return;
+        }
         Point dragSourcePoint = new Point(InterprocessArguments.DRAG_SOURCE_POINT_X_ARGUMENT.extract(args),
                 InterprocessArguments.DRAG_SOURCE_POINT_Y_ARGUMENT.extract(args));
         Point targetFrameLocation = new Point(InterprocessArguments.TARGET_FRAME_X_POSITION_ARGUMENT.extract(args),

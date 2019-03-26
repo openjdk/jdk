@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -263,11 +263,6 @@ size_t ReservedSpace::page_align_size_down(size_t size) {
 
 size_t ReservedSpace::allocation_align_size_up(size_t size) {
   return align_up(size, os::vm_allocation_granularity());
-}
-
-
-size_t ReservedSpace::allocation_align_size_down(size_t size) {
-  return align_down(size, os::vm_allocation_granularity());
 }
 
 

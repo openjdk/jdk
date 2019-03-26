@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -55,6 +55,7 @@ public:
   }
 
   virtual ~OWSTTaskTerminator() {
+    assert(_spin_master == NULL, "Should have been reset");
     assert(_blocker != NULL, "Can not be NULL");
     delete _blocker;
   }

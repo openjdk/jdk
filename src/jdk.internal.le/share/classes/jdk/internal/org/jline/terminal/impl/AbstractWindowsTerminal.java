@@ -86,8 +86,8 @@ public abstract class AbstractWindowsTerminal extends AbstractTerminal {
         super(name, type, selectCharset(encoding, codepage), signalHandler);
         NonBlockingPumpReader reader = NonBlocking.nonBlockingPumpReader();
         this.slaveInputPipe = reader.getWriter();
-        this.reader = reader;
         this.input = inputStreamWrapper.apply(NonBlocking.nonBlockingStream(reader, encoding()));
+        this.reader = NonBlocking.nonBlocking(name, input, encoding());
         this.writer = new PrintWriter(writer);
         this.output = new WriterOutputStream(writer, encoding());
         parseInfoCmp();

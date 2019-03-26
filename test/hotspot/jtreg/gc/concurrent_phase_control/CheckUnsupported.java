@@ -42,13 +42,6 @@ public class CheckUnsupported {
                 gcName + " unexpectedly supports phase control");
         }
 
-        // Verify phase sequence is empty.
-        String[] phases = WB.getConcurrentGCPhases();
-        if (phases.length > 0) {
-            throw new RuntimeException(
-                gcName + " unexpectedly has non-empty phases");
-        }
-
         // Verify IllegalStateException thrown by request attempt.
         boolean illegalStateThrown = false;
         try {

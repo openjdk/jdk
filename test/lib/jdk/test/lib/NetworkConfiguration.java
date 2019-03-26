@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 package jdk.test.lib;
 
+import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
-import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -35,9 +35,9 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import static java.net.NetworkInterface.getNetworkInterfaces;
 import static java.util.Collections.list;
 
@@ -49,12 +49,140 @@ public class NetworkConfiguration {
 
     private Map<NetworkInterface,List<Inet4Address>> ip4Interfaces;
     private Map<NetworkInterface,List<Inet6Address>> ip6Interfaces;
+    private final boolean isIPv6Available;
+    private boolean has_testableipv6address = false;
+    private boolean has_sitelocaladdress = false;
+    private boolean has_linklocaladdress = false;
+    private boolean has_globaladdress = false;
 
     private NetworkConfiguration(
             Map<NetworkInterface,List<Inet4Address>> ip4Interfaces,
             Map<NetworkInterface,List<Inet6Address>> ip6Interfaces) {
         this.ip4Interfaces = ip4Interfaces;
         this.ip6Interfaces = ip6Interfaces;
+
+        // initialize properties that can be queried
+        isIPv6Available = !ip6Interfaces().collect(Collectors.toList()).isEmpty();
+        ip6Interfaces().forEach(nif -> {
+            ip6Addresses(nif)
+                // On Solaris or AIX, a configuration with only local or loopback
+                // addresses does not fully enable IPv6 operations.
+                // E.g. IPv6 multicasting does not work.
+                // So, don't set has_testableipv6address if we only find these.
+                .filter(addr -> Platform.isSolaris() || Platform.isAix() ?
+                    !(addr.isAnyLocalAddress() || addr.isLoopbackAddress()) : true)
+                .forEach(ia -> {
+                    has_testableipv6address = true;
+                    if (ia.isLinkLocalAddress()) has_linklocaladdress = true;
+                    if (ia.isSiteLocalAddress()) has_sitelocaladdress = true;
+
+                    if (!ia.isLinkLocalAddress() &&
+                        !ia.isSiteLocalAddress() &&
+                        !ia.isLoopbackAddress()) {
+                        has_globaladdress = true;
+                    }
+                });
+        });
+    }
+
+    private static boolean isNotExcludedInterface(NetworkInterface nif) {
+        if (Platform.isOSX() && nif.getName().contains("awdl")) {
+            return false;
+        }
+        if (Platform.isWindows()) {
+            String dName = nif.getDisplayName();
+            if (dName != null && dName.contains("Teredo")) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean isNotLoopback(NetworkInterface nif) {
+        try {
+            return !nif.isLoopback();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private boolean hasIp4Addresses(NetworkInterface nif) {
+        return ip4Interfaces.get(nif).stream().anyMatch(a -> !a.isAnyLocalAddress());
+    }
+
+    private boolean hasIp6Addresses(NetworkInterface nif) {
+        return ip6Interfaces.get(nif).stream().anyMatch(a -> !a.isAnyLocalAddress());
+    }
+
+    private boolean supportsIp4Multicast(NetworkInterface nif) {
+        try {
+            if (!nif.supportsMulticast()) {
+                return false;
+            }
+
+            // On AIX there is a bug:
+            // When IPv6 is enabled on the system, the JDK opens sockets as AF_INET6.
+            // If there's an interface configured with IPv4 addresses only, it should
+            // be able to become the network interface for a multicast socket (that
+            // could be in both, IPv4 or IPv6 space). But both possible setsockopt
+            // calls for either IPV6_MULTICAST_IF or IP_MULTICAST_IF return
+            // EADDRNOTAVAIL. So we must skip such interfaces here.
+            if (Platform.isAix() && isIPv6Available() && !hasIp6Addresses(nif)) {
+                return false;
+            }
+
+            return hasIp4Addresses(nif);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private boolean supportsIp6Multicast(NetworkInterface nif) {
+        try {
+            if (!nif.supportsMulticast()) {
+                return false;
+            }
+
+            return hasIp6Addresses(nif);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    /**
+     * Returns whether IPv6 is available at all.
+     * This should resemble the result of native ipv6_available() in net_util.c
+     */
+    public boolean isIPv6Available() {
+        return isIPv6Available;
+    }
+
+    /**
+     * Does any (usable) IPv6 address exist in the network configuration?
+     */
+    public boolean hasTestableIPv6Address() {
+        return has_testableipv6address;
+    }
+
+    /**
+     * Does any site local address exist?
+     */
+    public boolean hasSiteLocalAddress() {
+        return has_sitelocaladdress;
+    }
+
+    /**
+     * Does any link local address exist?
+     */
+    public boolean hasLinkLocalAddress() {
+        return has_linklocaladdress;
+    }
+
+    /**
+     * Does any global IPv6 address exist?
+     */
+    public boolean has_globaladdress() {
+        return has_globaladdress;
     }
 
     /**
@@ -72,7 +200,7 @@ public class NetworkConfiguration {
         return ip4Interfaces.keySet()
                             .stream()
                             .filter(NetworkConfiguration::isNotExcludedInterface)
-                            .filter(hasIp4Addresses);
+                            .filter(this::hasIp4Addresses);
     }
 
     /**
@@ -82,63 +210,56 @@ public class NetworkConfiguration {
         return ip6Interfaces.keySet()
                             .stream()
                             .filter(NetworkConfiguration::isNotExcludedInterface)
-                            .filter(hasIp6Addresses);
+                            .filter(this::hasIp6Addresses);
     }
 
-    private static boolean isNotExcludedInterface(NetworkInterface nif) {
-        if (Platform.isOSX() && nif.getName().contains("awdl")) {
-            return false;
-        }
-        String dName = nif.getDisplayName();
-        if (Platform.isWindows() && dName != null && dName.contains("Teredo")) {
-            return false;
-        }
-        return true;
+    /**
+     * Returns a stream of interfaces suitable for functional tests.
+     */
+    public Stream<NetworkInterface> multicastInterfaces(boolean includeLoopback) {
+        return Stream
+            .concat(ip4MulticastInterfaces(includeLoopback),
+                    ip6MulticastInterfaces(includeLoopback))
+            .distinct();
     }
 
-    private final Predicate<NetworkInterface> hasIp4Addresses = nif ->
-            ip4Interfaces.get(nif).stream().anyMatch(a -> !a.isAnyLocalAddress());
-
-    private final Predicate<NetworkInterface> hasIp6Addresses = nif ->
-            ip6Interfaces.get(nif).stream().anyMatch(a -> !a.isAnyLocalAddress());
-
+    /**
+     * Returns a stream of interfaces suitable for IPv4 multicast tests.
+     *
+     * The loopback interface will not be included.
+     */
+    public Stream<NetworkInterface> ip4MulticastInterfaces() {
+        return ip4MulticastInterfaces(false);
+    }
 
     /**
      * Returns a stream of interfaces suitable for IPv4 multicast tests.
      */
-    public Stream<NetworkInterface> ip4MulticastInterfaces() {
-        return ip4Interfaces().filter(supportsIp4Multicast);
+    public Stream<NetworkInterface> ip4MulticastInterfaces(boolean includeLoopback) {
+        return (includeLoopback) ?
+            ip4Interfaces().filter(this::supportsIp4Multicast) :
+            ip4Interfaces().filter(this::supportsIp4Multicast)
+                .filter(NetworkConfiguration::isNotLoopback);
+    }
+
+    /**
+     * Returns a stream of interfaces suitable for IPv6 multicast tests.
+     *
+     * The loopback interface will not be included.
+     */
+    public Stream<NetworkInterface> ip6MulticastInterfaces() {
+        return ip6MulticastInterfaces(false);
     }
 
     /**
      * Returns a stream of interfaces suitable for IPv6 multicast tests.
      */
-    public Stream<NetworkInterface> ip6MulticastInterfaces() {
-        return ip6Interfaces().filter(supportsIp6Multicast);
+    public Stream<NetworkInterface> ip6MulticastInterfaces(boolean includeLoopback) {
+        return (includeLoopback) ?
+            ip6Interfaces().filter(this::supportsIp6Multicast) :
+            ip6Interfaces().filter(this::supportsIp6Multicast)
+                .filter(NetworkConfiguration::isNotLoopback);
     }
-
-    private final Predicate<NetworkInterface> supportsIp4Multicast = nif -> {
-        try {
-            if (!nif.supportsMulticast() || nif.isLoopback()) {
-                return false;
-            }
-            return hasIp4Addresses.test(nif);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    };
-
-    private final Predicate<NetworkInterface> supportsIp6Multicast = nif -> {
-        try {
-            if (!nif.supportsMulticast() || nif.isLoopback()) {
-                return false;
-            }
-
-            return hasIp6Addresses.test(nif);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    };
 
     /**
      * Returns all addresses on all "functional" interfaces.
@@ -176,6 +297,12 @@ public class NetworkConfiguration {
         return ip6Interfaces.get(nif).stream();
     }
 
+    @Override
+    public String toString() {
+        return interfaces().map(NetworkConfiguration::interfaceInformation)
+                           .collect(Collectors.joining());
+    }
+
     /**
      * Return a NetworkConfiguration instance.
      */
@@ -203,12 +330,6 @@ public class NetworkConfiguration {
             }
         }
         return new NetworkConfiguration(ip4Interfaces, ip6Interfaces);
-    }
-
-    @Override
-    public String toString() {
-        return interfaces().map(NetworkConfiguration::interfaceInformation)
-                           .collect(Collectors.joining());
     }
 
     /** Returns detailed information for the given interface. */

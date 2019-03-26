@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  */
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -35,6 +36,9 @@ import javax.net.ssl.SSLParameters;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+
 import jdk.test.lib.net.SimpleSSLContext;
 
 /**
@@ -42,10 +46,14 @@ import jdk.test.lib.net.SimpleSSLContext;
  * @bug 8207966
  * @library /test/lib
  * @build jdk.test.lib.net.SimpleSSLContext
- * @run main/othervm -Djdk.tls.acknowledgeCloseNotify=true UnknownBodyLengthTest plain false
- * @run main/othervm -Djdk.tls.acknowledgeCloseNotify=true UnknownBodyLengthTest SSL false
- * @run main/othervm -Djdk.tls.acknowledgeCloseNotify=true UnknownBodyLengthTest plain true
- * @run main/othervm -Djdk.tls.acknowledgeCloseNotify=true UnknownBodyLengthTest SSL true
+ * @run main/othervm -Djdk.httpclient.enableAllMethodRetry
+ *                   -Djdk.tls.acknowledgeCloseNotify=true UnknownBodyLengthTest plain false
+ * @run main/othervm -Djdk.httpclient.enableAllMethodRetry
+ *                   -Djdk.tls.acknowledgeCloseNotify=true UnknownBodyLengthTest SSL false
+ * @run main/othervm -Djdk.httpclient.enableAllMethodRetry
+ *                   -Djdk.tls.acknowledgeCloseNotify=true UnknownBodyLengthTest plain true
+ * @run main/othervm -Djdk.httpclient.enableAllMethodRetry
+ *                   -Djdk.tls.acknowledgeCloseNotify=true UnknownBodyLengthTest SSL true
  */
 
 public class UnknownBodyLengthTest {
@@ -56,6 +64,7 @@ public class UnknownBodyLengthTest {
     volatile String clientURL;
     volatile int port;
     final ServerSocket ss;
+    final List<Socket> acceptedList = new CopyOnWriteArrayList<>();
 
     UnknownBodyLengthTest(boolean useSSL) throws Exception {
         ctx = new SimpleSSLContext().get();
@@ -64,7 +73,7 @@ public class UnknownBodyLengthTest {
                          : ServerSocketFactory.getDefault();
         ss = factory.createServerSocket();
         ss.setReuseAddress(true);
-        ss.bind(new InetSocketAddress("127.0.0.1", 0));
+        ss.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
         System.out.println("ServerSocket = " + ss.getClass() + " " + ss);
         port = ss.getLocalPort();
         clientURL = (useSSL ? "https" : "http") + "://localhost:"
@@ -84,46 +93,64 @@ public class UnknownBodyLengthTest {
                 throw new RuntimeException("error at position " + i);
     }
 
+    volatile boolean stopped;
+
     void server(final boolean withContentLength) {
         fillBuf(BUF);
         try {
-            Socket s = ss.accept();
-            s.setTcpNoDelay(true);
-            s.setSoLinger(true, 1);
-            System.out.println("Accepted: "+s.getRemoteSocketAddress());
-            System.out.println("Accepted: "+s);
-            OutputStream os = s.getOutputStream();
-            InputStream is = s.getInputStream();
-            boolean done = false;
-            byte[] buf = new byte[1024];
-            String rsp = "";
-            while (!done) {
-                int c = is.read(buf);
-                if (c < 0) break;
-                String s1 = new String(buf, 0, c, "ISO-8859-1");
-                rsp += s1;
-                done = rsp.endsWith("!#!#");
+            while (!stopped) {
+                try {
+                    Socket s = ss.accept();
+                    acceptedList.add(s);
+                    s.setTcpNoDelay(true);
+                    // if we use linger=1 we still see some
+                    // intermittent failures caused by IOException
+                    // "Connection reset by peer".
+                    // The client side is expecting EOF, but gets reset instead.
+                    // 30 is a 'magic' value that may need to be adjusted again.
+                    s.setSoLinger(true, 30);
+                    System.out.println("Accepted: " + s.getRemoteSocketAddress());
+                    System.out.println("Accepted: " + s);
+                    OutputStream os = s.getOutputStream();
+                    InputStream is = s.getInputStream();
+                    boolean done = false;
+                    byte[] buf = new byte[1024];
+                    String rsp = "";
+                    while (!done) {
+                        int c = is.read(buf);
+                        if (c < 0) break;
+                        String s1 = new String(buf, 0, c, "ISO-8859-1");
+                        rsp += s1;
+                        done = rsp.endsWith("!#!#");
+                    }
+                    String r = "HTTP/1.0 200 OK\r\nConnection: close\r\nContent-Type:" +
+                            " text/xml; charset=UTF-8\r\n";
+                    os.write(r.getBytes());
+                    String chdr = "Content-Length: " + Integer.toString(BUF.length) +
+                            "\r\n";
+                    System.out.println(chdr);
+                    if (withContentLength)
+                        os.write(chdr.getBytes());
+                    os.write("\r\n".getBytes());
+                    os.write(BUF);
+                    if (is.available() > 0) {
+                        System.out.println("Draining input: " + s);
+                        is.read(buf);
+                    }
+                    os.flush();
+                    s.shutdownOutput();
+                    System.out.println("Closed output: " + s);
+                } catch(Exception e) {
+                    if (!stopped) {
+                        System.out.println("Unexpected server exception: " + e);
+                        e.printStackTrace();
+                    }
+                }
             }
-            String r = "HTTP/1.0 200 OK\r\nConnection: close\r\nContent-Type:" +
-                       " text/xml; charset=UTF-8\r\n";
-            os.write(r.getBytes());
-            String chdr = "Content-Length: " + Integer.toString(BUF.length) +
-                     "\r\n";
-            System.out.println(chdr);
-            if(withContentLength)
-                os.write(chdr.getBytes());
-            os.write("\r\n".getBytes());
-            os.write(BUF);
-            if (is.available() > 0)
-                is.read(buf);
-            os.flush();
-            os.close();
-            s.shutdownOutput();
-            s.close();
         } catch(final Throwable t) {
-          t.printStackTrace();
+            if (!stopped) t.printStackTrace();
         } finally {
-            try {ss.close(); } catch (Exception e) {}
+            stop();
         }
     }
 
@@ -154,11 +181,23 @@ public class UnknownBodyLengthTest {
         boolean ssl = args[0].equals("SSL");
         boolean fixedlen = args[1].equals("true");
         UnknownBodyLengthTest test = new UnknownBodyLengthTest(ssl);
-        test.run(ssl, fixedlen);
+        try {
+            test.run(ssl, fixedlen);
+        } finally {
+            test.stop();
+        }
     }
 
     public void run(boolean ssl, boolean fixedlen) throws Exception {
         new Thread(()->server(fixedlen)).start();
         client(ssl);
+    }
+
+    public void stop() {
+        stopped = true;
+        try { ss.close(); } catch (Throwable t) { }
+        for (Socket s : acceptedList) {
+            try { s.close(); } catch (Throwable t) { }
+        }
     }
 }

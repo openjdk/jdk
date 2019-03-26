@@ -91,6 +91,18 @@ public abstract class LogicNode extends FloatingNode implements IndirectCanonica
      * @param other the other condition.
      */
     public TriState implies(boolean thisNegated, LogicNode other) {
+        if (this == other) {
+            return TriState.get(!thisNegated);
+        }
+        if (other instanceof LogicNegationNode) {
+            return flip(this.implies(thisNegated, ((LogicNegationNode) other).getValue()));
+        }
         return TriState.UNKNOWN;
+    }
+
+    private static TriState flip(TriState triState) {
+        return triState.isUnknown()
+                        ? triState
+                        : TriState.get(!triState.toBoolean());
     }
 }

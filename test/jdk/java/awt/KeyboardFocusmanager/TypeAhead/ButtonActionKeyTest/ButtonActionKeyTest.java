@@ -22,22 +22,22 @@
  */
 
 /*
-  test
-  @bug       6396785
-  @summary   Action key pressed on a button should be swallowed.
-  @author    anton.tarasov@...: area=awt.focus
-  @run       applet ButtonActionKeyTest.html
+  @test
+  @key headful
+  @bug        6396785
+  @summary    Action key pressed on a button should be swallowed.
+  @library    ../../../regtesthelpers
+  @build      Util
+  @run        main ButtonActionKeyTest
 */
 
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
-import java.applet.Applet;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.lang.reflect.InvocationTargetException;
 import test.java.awt.regtesthelpers.Util;
 
-public class ButtonActionKeyTest extends Applet {
+public class ButtonActionKeyTest {
     Robot robot;
     JFrame frame = new JFrame("Frame");
     JButton button = new JButton("button");
@@ -52,11 +52,6 @@ public class ButtonActionKeyTest extends Applet {
 
     public void init() {
         robot = Util.createRobot();
-
-        // Create instructions for the user here, as well as set up
-        // the environment -- set the layout manager, add buttons,
-        // etc.
-        this.setLayout (new BorderLayout ());
     }
 
     public void start() {
@@ -84,7 +79,7 @@ public class ButtonActionKeyTest extends Applet {
                     }
                 }
             });
-
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
         Util.waitForIdle(robot);
 

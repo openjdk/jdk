@@ -63,7 +63,8 @@ module jdk.jlink {
         jdk.tools.jlink.internal.Main.JlinkToolProvider;
 
     provides jdk.tools.jlink.plugin.Plugin with
-        jdk.tools.jlink.internal.plugins.StripDebugPlugin,
+        jdk.tools.jlink.internal.plugins.DefaultStripDebugPlugin,
+        jdk.tools.jlink.internal.plugins.StripJavaDebugAttributesPlugin,
         jdk.tools.jlink.internal.plugins.ExcludePlugin,
         jdk.tools.jlink.internal.plugins.ExcludeFilesPlugin,
         jdk.tools.jlink.internal.plugins.ExcludeJmodSectionPlugin,

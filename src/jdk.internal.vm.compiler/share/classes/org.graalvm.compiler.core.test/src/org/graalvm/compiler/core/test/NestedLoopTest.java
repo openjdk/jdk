@@ -161,9 +161,9 @@ public class NestedLoopTest extends GraalCompilerTest {
         Assert.assertTrue(containsDirect(innerMostLoop, d, cfg));
         Assert.assertTrue(contains(rootLoop, d, cfg));
         Assert.assertTrue(contains(nestedLoop, d, cfg));
-        Assert.assertEquals(rootExits, rootLoop.getExits().size());
-        Assert.assertEquals(nestedExits, nestedLoop.getExits().size());
-        Assert.assertEquals(innerExits, innerMostLoop.getExits().size());
+        Assert.assertEquals(rootExits, rootLoop.getLoopExits().size());
+        Assert.assertEquals(nestedExits, nestedLoop.getLoopExits().size());
+        Assert.assertEquals(innerExits, innerMostLoop.getLoopExits().size());
         debug.dump(DebugContext.BASIC_LEVEL, graph, "Graph");
     }
 

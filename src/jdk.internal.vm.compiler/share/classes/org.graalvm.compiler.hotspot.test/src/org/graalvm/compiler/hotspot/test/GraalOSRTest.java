@@ -53,6 +53,11 @@ public class GraalOSRTest extends GraalOSRTestBase {
         testOSR(getInitialOptions(), "testNonReduceLoop");
     }
 
+    @Test
+    public void testOSR04() {
+        testOSR(getInitialOptions(), "testDeoptAfterCountedLoop");
+    }
+
     static int limit = 10000;
 
     public static int sideEffect;
@@ -99,5 +104,15 @@ public class GraalOSRTest extends GraalOSRTestBase {
         }
         GraalDirectives.controlFlowAnchor();
         return ret;
+    }
+
+    public static ReturnValue testDeoptAfterCountedLoop() {
+        long ret = 0;
+        for (int i = 0; GraalDirectives.injectBranchProbability(1, i < limit * limit); i++) {
+            GraalDirectives.blackhole(i);
+            ret = GraalDirectives.opaque(i);
+        }
+        GraalDirectives.controlFlowAnchor();
+        return ret + 1 == limit * limit ? ReturnValue.SUCCESS : ReturnValue.FAILURE;
     }
 }

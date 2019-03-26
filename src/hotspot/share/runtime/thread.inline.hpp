@@ -121,15 +121,25 @@ inline void JavaThread::set_pending_async_exception(oop e) {
   set_has_async_exception();
 }
 
-#if defined(PPC64) || defined (AARCH64)
 inline JavaThreadState JavaThread::thread_state() const    {
+#if defined(PPC64) || defined (AARCH64)
+  // Use membars when accessing volatile _thread_state. See
+  // Threads::create_vm() for size checks.
   return (JavaThreadState) OrderAccess::load_acquire((volatile jint*)&_thread_state);
+#else
+  return _thread_state;
+#endif
 }
 
 inline void JavaThread::set_thread_state(JavaThreadState s) {
+#if defined(PPC64) || defined (AARCH64)
+  // Use membars when accessing volatile _thread_state. See
+  // Threads::create_vm() for size checks.
   OrderAccess::release_store((volatile jint*)&_thread_state, (jint)s);
-}
+#else
+  _thread_state = s;
 #endif
+}
 
 ThreadSafepointState* JavaThread::safepoint_state() const  {
   return _safepoint_state;

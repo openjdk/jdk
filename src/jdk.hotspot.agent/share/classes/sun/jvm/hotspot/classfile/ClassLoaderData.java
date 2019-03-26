@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 
 package sun.jvm.hotspot.classfile;
 
-import java.io.PrintStream;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.runtime.*;
@@ -42,14 +41,14 @@ public class ClassLoaderData extends VMObject {
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     Type type      = db.lookupType("ClassLoaderData");
-    classLoaderField = type.getAddressField("_class_loader");
+    classLoaderFieldOffset = type.getAddressField("_class_loader").getOffset();
     nextField = type.getAddressField("_next");
     klassesField = new MetadataField(type.getAddressField("_klasses"), 0);
     isUnsafeAnonymousField = new CIntField(type.getCIntegerField("_is_unsafe_anonymous"), 0);
     dictionaryField = type.getAddressField("_dictionary");
   }
 
-  private static AddressField   classLoaderField;
+  private static long classLoaderFieldOffset;
   private static AddressField nextField;
   private static MetadataField  klassesField;
   private static CIntField isUnsafeAnonymousField;
@@ -72,13 +71,9 @@ public class ClassLoaderData extends VMObject {
   }
 
   public Oop getClassLoader() {
-    Address handle = classLoaderField.getValue(getAddress());
-    if (handle != null) {
-      // Load through the handle
-      OopHandle refs = handle.getOopHandleAt(0);
-      return (Instance)VM.getVM().getObjectHeap().newOop(refs);
-    }
-    return null;
+    Address addr = getAddress().addOffsetTo(classLoaderFieldOffset);
+    VMOopHandle vmOopHandle = VMObjectFactory.newObject(VMOopHandle.class, addr);
+    return vmOopHandle.resolve();
   }
 
   public boolean getisUnsafeAnonymous() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/constantPool.hpp"
 #include "oops/method.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -47,6 +48,7 @@
 #include "runtime/compilationPolicy.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -1284,36 +1286,6 @@ void Deoptimization::revoke_biases_of_monitors(JavaThread* thread, frame fr, Reg
 }
 
 
-void Deoptimization::revoke_biases_of_monitors(CodeBlob* cb) {
-  if (!UseBiasedLocking) {
-    return;
-  }
-
-  assert(SafepointSynchronize::is_at_safepoint(), "must only be called from safepoint");
-  GrowableArray<Handle>* objects_to_revoke = new GrowableArray<Handle>();
-  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *jt = jtiwh.next(); ) {
-    if (jt->has_last_Java_frame()) {
-      StackFrameStream sfs(jt, true);
-      while (!sfs.is_done()) {
-        frame* cur = sfs.current();
-        if (cb->contains(cur->pc())) {
-          vframe* vf = vframe::new_vframe(cur, sfs.register_map(), jt);
-          compiledVFrame* cvf = compiledVFrame::cast(vf);
-          // Revoke monitors' biases in all scopes
-          while (!cvf->is_top()) {
-            collect_monitors(cvf, objects_to_revoke);
-            cvf = compiledVFrame::cast(cvf->sender());
-          }
-          collect_monitors(cvf, objects_to_revoke);
-        }
-        sfs.next();
-      }
-    }
-  }
-  BiasedLocking::revoke_at_safepoint(objects_to_revoke);
-}
-
-
 void Deoptimization::deoptimize_single_frame(JavaThread* thread, frame fr, Deoptimization::DeoptReason reason) {
   assert(fr.can_be_deoptimized(), "checking frame type");
 
@@ -2298,11 +2270,6 @@ void Deoptimization::gather_statistics(DeoptReason reason, DeoptAction action,
 
 jint Deoptimization::total_deoptimization_count() {
   return _deoptimization_hist[Reason_none][0][0];
-}
-
-jint Deoptimization::deoptimization_count(DeoptReason reason) {
-  assert(reason >= 0 && reason < Reason_LIMIT, "oob");
-  return _deoptimization_hist[reason][0][0];
 }
 
 void Deoptimization::print_statistics() {

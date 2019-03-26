@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,7 +170,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
 
             buildPackageSerializedForm(serializedSummariesTree);
         }
-        serializedTree.addContent(writer.getSerializedContent(
+        serializedTree.add(writer.getSerializedContent(
                 serializedSummariesTree));
     }
 
@@ -205,7 +205,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
      * @param packageSerializedTree content tree to which the documentation will be added
      */
     protected void buildPackageHeader(Content packageSerializedTree) {
-        packageSerializedTree.addContent(writer.getPackageHeader(
+        packageSerializedTree.add(writer.getPackageHeader(
                 utils.getPackageName(currentPackage)));
     }
 
@@ -232,10 +232,10 @@ public class SerializedFormBuilder extends AbstractBuilder {
                 buildSerialUIDInfo(classTree);
                 buildClassContent(classTree);
 
-                classSerializedTree.addContent(classTree);
+                classSerializedTree.add(classTree);
             }
         }
-        packageSerializedTree.addContent(classSerializedTree);
+        packageSerializedTree.add(classSerializedTree);
     }
 
     /**
@@ -254,7 +254,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
                 break;
             }
         }
-        classTree.addContent(serialUidTree);
+        classTree.add(serialUidTree);
     }
 
     /**
@@ -270,7 +270,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
         buildFieldHeader(classContentTree);
         buildSerializableFields(classContentTree);
 
-        classTree.addContent(classContentTree);
+        classTree.add(classContentTree);
     }
 
     /**
@@ -292,20 +292,20 @@ public class SerializedFormBuilder extends AbstractBuilder {
                 buildDeprecatedMethodInfo(methodsContentTree);
                 buildMethodInfo(methodsContentTree);
 
-                serializableMethodTree.addContent(methodsContentTree);
+                serializableMethodTree.add(methodsContentTree);
             }
         }
         if (!utils.serializationMethods(currentTypeElement).isEmpty()) {
-            classContentTree.addContent(methodWriter.getSerializableMethods(
+            classContentTree.add(methodWriter.getSerializableMethods(
                     resources.getText("doclet.Serialized_Form_methods"),
                     serializableMethodTree));
             if (utils.isSerializable(currentTypeElement) && !utils.isExternalizable(currentTypeElement)) {
                 if (utils.serializationMethods(currentTypeElement).isEmpty()) {
                     Content noCustomizationMsg = methodWriter.getNoCustomizationMsg(
                             resources.getText("doclet.Serializable_no_customization"));
-                    classContentTree.addContent(methodWriter.getSerializableMethods(
-                    resources.getText("doclet.Serialized_Form_methods"),
-                    noCustomizationMsg));
+                    classContentTree.add(methodWriter.getSerializableMethods(
+                            resources.getText("doclet.Serialized_Form_methods"),
+                            noCustomizationMsg));
                 }
             }
         }
@@ -402,8 +402,8 @@ public class SerializedFormBuilder extends AbstractBuilder {
                     fieldWriter.addMemberDescription(ve, fieldsOverviewContentTree);
                     fieldWriter.addMemberTags(ve, fieldsOverviewContentTree);
                 }
-                serializableFieldsTree.addContent(fieldsOverviewContentTree);
-                classContentTree.addContent(fieldWriter.getSerializableFields(
+                serializableFieldsTree.add(fieldsOverviewContentTree);
+                classContentTree.add(fieldWriter.getSerializableFields(
                         resources.getText("doclet.Serialized_Form_class"),
                         serializableFieldsTree));
             }
@@ -431,12 +431,12 @@ public class SerializedFormBuilder extends AbstractBuilder {
                     buildFieldDeprecationInfo(fieldsContentTree);
                     buildFieldInfo(fieldsContentTree);
 
-                    serializableFieldsTree.addContent(fieldsContentTree);
+                    serializableFieldsTree.add(fieldsContentTree);
                 } else {
                     buildSerialFieldTagsInfo(serializableFieldsTree);
                 }
             }
-            classContentTree.addContent(fieldWriter.getSerializableFields(
+            classContentTree.add(fieldWriter.getSerializableFields(
                     resources.getText("doclet.Serialized_Form_fields"),
                     serializableFieldsTree));
         }
@@ -511,7 +511,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
             fieldWriter.addMemberHeader(te, fieldType, "",
                     tag.getName().getName().toString(), fieldsContentTree);
             fieldWriter.addMemberDescription(field, tag, fieldsContentTree);
-            serializableFieldsTree.addContent(fieldsContentTree);
+            serializableFieldsTree.add(fieldsContentTree);
         }
     }
 

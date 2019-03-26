@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import org.xml.sax.*;
  * The standard interface that all implementations of a {@code WebRowSet}
  * must implement.
  *
- * <h3>1.0 Overview</h3>
+ * <h2>1.0 Overview</h2>
  * The {@code WebRowSetImpl} provides the standard
  * reference implementation, which may be extended if required.
  * <P>
@@ -78,12 +78,12 @@ import org.xml.sax.*;
  * </li>
  * </ul>
  *
- * <h3>2.0 WebRowSet States</h3>
+ * <h2>2.0 WebRowSet States</h2>
  * The following sections demonstrates how a {@code WebRowSet} implementation
  * should use the XML Schema to describe update, insert, and delete operations
  * and to describe the state of a {@code WebRowSet} object in XML.
  *
- * <h4>2.1 State 1 - Outputting a {@code WebRowSet} Object to XML</h4>
+ * <h2>2.1 State 1 - Outputting a {@code WebRowSet} Object to XML</h2>
  * In this example, a {@code WebRowSet} object is created and populated with a simple 2 column,
  * 5 row table from a data source. Having the 5 rows in a {@code WebRowSet} object
  * makes it possible to describe them in XML. The
@@ -216,7 +216,7 @@ import org.xml.sax.*;
  *      </currentRow>
  * </data>
  * }</PRE>
- * <h4>2.2 State 2 - Deleting a Row</h4>
+ * <h2>2.2 State 2 - Deleting a Row</h2>
  * Deleting a row in a {@code WebRowSet} object involves simply moving to the row
  * to be deleted and then calling the method {@code deleteRow}, as in any other
  * {@code RowSet} object.  The following
@@ -265,7 +265,7 @@ import org.xml.sax.*;
  *      </currentRow>
  * </data>
  *} </PRE>
- * <h4>2.3 State 3 - Inserting a Row</h4>
+ * <h2>2.3 State 3 - Inserting a Row</h2>
  * A {@code WebRowSet} object can insert a new row by moving to the insert row,
  * calling the appropriate updater methods for each column in the row, and then
  * calling the method {@code insertRow}.
@@ -337,7 +337,7 @@ import org.xml.sax.*;
  *      </currentRow>
  * </date>
  *} </PRE>
- * <h4>2.4 State 4 - Modifying a Row</h4>
+ * <h2>2.4 State 4 - Modifying a Row</h2>
  * Modifying a row produces specific XML that records both the new value and the
  * value that was replaced.  The value that was replaced becomes the original value,
  * and the new value becomes the current value. The following

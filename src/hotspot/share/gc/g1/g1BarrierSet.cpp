@@ -58,24 +58,14 @@ G1BarrierSet::G1BarrierSet(G1CardTable* card_table) :
   _satb_mark_queue_buffer_allocator("SATB Buffer Allocator", G1SATBBufferSize),
   _dirty_card_queue_buffer_allocator("DC Buffer Allocator", G1UpdateBufferSize),
   _satb_mark_queue_set(),
-  _dirty_card_queue_set()
+  _dirty_card_queue_set(),
+  _shared_dirty_card_queue(&_dirty_card_queue_set)
 {}
 
 void G1BarrierSet::enqueue(oop pre_val) {
   // Nulls should have been already filtered.
   assert(oopDesc::is_oop(pre_val, true), "Error");
-
-  G1SATBMarkQueueSet& queue_set = satb_mark_queue_set();
-  if (!queue_set.is_active()) {
-    return;
-  }
-  Thread* thr = Thread::current();
-  if (thr->is_Java_thread()) {
-    G1ThreadLocalData::satb_mark_queue(thr).enqueue(pre_val);
-  } else {
-    MutexLockerEx x(Shared_SATB_Q_lock, Mutex::_no_safepoint_check_flag);
-    queue_set.shared_satb_queue()->enqueue(pre_val);
-  }
+  G1ThreadLocalData::satb_mark_queue(Thread::current()).enqueue(pre_val);
 }
 
 template <class T> void
@@ -102,20 +92,14 @@ void G1BarrierSet::write_ref_array_pre(narrowOop* dst, size_t count, bool dest_u
   }
 }
 
-void G1BarrierSet::write_ref_field_post_slow(volatile jbyte* byte) {
+void G1BarrierSet::write_ref_field_post_slow(volatile CardValue* byte) {
   // In the slow path, we know a card is not young
   assert(*byte != G1CardTable::g1_young_card_val(), "slow path invoked without filtering");
   OrderAccess::storeload();
   if (*byte != G1CardTable::dirty_card_val()) {
     *byte = G1CardTable::dirty_card_val();
     Thread* thr = Thread::current();
-    if (thr->is_Java_thread()) {
-      G1ThreadLocalData::dirty_card_queue(thr).enqueue(byte);
-    } else {
-      MutexLockerEx x(Shared_DirtyCardQ_lock,
-                      Mutex::_no_safepoint_check_flag);
-      _dirty_card_queue_set.shared_dirty_card_queue()->enqueue(byte);
-    }
+    G1ThreadLocalData::dirty_card_queue(thr).enqueue(byte);
   }
 }
 
@@ -123,36 +107,22 @@ void G1BarrierSet::invalidate(MemRegion mr) {
   if (mr.is_empty()) {
     return;
   }
-  volatile jbyte* byte = _card_table->byte_for(mr.start());
-  jbyte* last_byte = _card_table->byte_for(mr.last());
-  Thread* thr = Thread::current();
-    // skip all consecutive young cards
+  volatile CardValue* byte = _card_table->byte_for(mr.start());
+  CardValue* last_byte = _card_table->byte_for(mr.last());
+  // skip initial young cards
   for (; byte <= last_byte && *byte == G1CardTable::g1_young_card_val(); byte++);
 
   if (byte <= last_byte) {
     OrderAccess::storeload();
     // Enqueue if necessary.
-    if (thr->is_Java_thread()) {
-      for (; byte <= last_byte; byte++) {
-        if (*byte == G1CardTable::g1_young_card_val()) {
-          continue;
-        }
-        if (*byte != G1CardTable::dirty_card_val()) {
-          *byte = G1CardTable::dirty_card_val();
-          G1ThreadLocalData::dirty_card_queue(thr).enqueue(byte);
-        }
-      }
-    } else {
-      MutexLockerEx x(Shared_DirtyCardQ_lock,
-                      Mutex::_no_safepoint_check_flag);
-      for (; byte <= last_byte; byte++) {
-        if (*byte == G1CardTable::g1_young_card_val()) {
-          continue;
-        }
-        if (*byte != G1CardTable::dirty_card_val()) {
-          *byte = G1CardTable::dirty_card_val();
-          _dirty_card_queue_set.shared_dirty_card_queue()->enqueue(byte);
-        }
+    Thread* thr = Thread::current();
+    G1DirtyCardQueue& queue = G1ThreadLocalData::dirty_card_queue(thr);
+    for (; byte <= last_byte; byte++) {
+      CardValue bv = *byte;
+      if ((bv != G1CardTable::g1_young_card_val()) &&
+          (bv != G1CardTable::dirty_card_val())) {
+        *byte = G1CardTable::dirty_card_val();
+        queue.enqueue(byte);
       }
     }
   }
@@ -168,38 +138,40 @@ void G1BarrierSet::on_thread_destroy(Thread* thread) {
   G1ThreadLocalData::destroy(thread);
 }
 
-void G1BarrierSet::on_thread_attach(JavaThread* thread) {
-  // This method initializes the SATB and dirty card queues before a
-  // JavaThread is added to the Java thread list. Right now, we don't
-  // have to do anything to the dirty card queue (it should have been
-  // activated when the thread was created), but we have to activate
-  // the SATB queue if the thread is created while a marking cycle is
-  // in progress. The activation / de-activation of the SATB queues at
-  // the beginning / end of a marking cycle is done during safepoints
-  // so we have to make sure this method is called outside one to be
-  // able to safely read the active field of the SATB queue set. Right
-  // now, it is called just before the thread is added to the Java
-  // thread list in the Threads::add() method. That method is holding
-  // the Threads_lock which ensures we are outside a safepoint. We
-  // cannot do the obvious and set the active field of the SATB queue
-  // when the thread is created given that, in some cases, safepoints
-  // might happen between the JavaThread constructor being called and the
-  // thread being added to the Java thread list (an example of this is
-  // when the structure for the DestroyJavaVM thread is created).
-  assert(!SafepointSynchronize::is_at_safepoint(), "We should not be at a safepoint");
+void G1BarrierSet::on_thread_attach(Thread* thread) {
   assert(!G1ThreadLocalData::satb_mark_queue(thread).is_active(), "SATB queue should not be active");
   assert(G1ThreadLocalData::satb_mark_queue(thread).is_empty(), "SATB queue should be empty");
   assert(G1ThreadLocalData::dirty_card_queue(thread).is_active(), "Dirty card queue should be active");
+  // Can't assert that the DCQ is empty.  There is early execution on
+  // the main thread, before it gets added to the threads list, which
+  // is where this is called.  That execution may enqueue dirty cards.
 
   // If we are creating the thread during a marking cycle, we should
-  // set the active field of the SATB queue to true.
-  if (_satb_mark_queue_set.is_active()) {
-    G1ThreadLocalData::satb_mark_queue(thread).set_active(true);
-  }
+  // set the active field of the SATB queue to true.  That involves
+  // copying the global is_active value to this thread's queue, which
+  // is done without any direct synchronization here.
+  //
+  // The activation and deactivation of the SATB queues occurs at the
+  // beginning / end of a marking cycle, and is done during
+  // safepoints.  This function is called just before a thread is
+  // added to its corresponding threads list (for Java or non-Java
+  // threads, respectively).
+  //
+  // For Java threads, that's done while holding the Threads_lock,
+  // which ensures we're not at a safepoint, so reading the global
+  // is_active state is synchronized against update.
+  assert(!thread->is_Java_thread() || !SafepointSynchronize::is_at_safepoint(),
+         "Should not be at a safepoint");
+  // For non-Java threads, thread creation (and list addition) may,
+  // and indeed usually does, occur during a safepoint.  But such
+  // creation isn't concurrent with updating the global SATB active
+  // state.
+  bool is_satb_active = _satb_mark_queue_set.is_active();
+  G1ThreadLocalData::satb_mark_queue(thread).set_active(is_satb_active);
 }
 
-void G1BarrierSet::on_thread_detach(JavaThread* thread) {
-  // Flush any deferred card marks, SATB buffers and dirty card queue buffers
+void G1BarrierSet::on_thread_detach(Thread* thread) {
+  // Flush any deferred card marks.
   CardTableBarrierSet::on_thread_detach(thread);
   G1ThreadLocalData::satb_mark_queue(thread).flush();
   G1ThreadLocalData::dirty_card_queue(thread).flush();

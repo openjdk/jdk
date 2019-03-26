@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 package nsk.jdi.EventQueue.remove_l;
 
+import jdk.test.lib.Utils;
 import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
@@ -30,7 +31,6 @@ import nsk.share.jdi.*;
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;
 import com.sun.jdi.request.*;
-
 import java.util.*;
 import java.io.*;
 
@@ -63,8 +63,8 @@ import java.io.*;
  * to be suspended and to inform the debugger with the event.           <BR>
  * The case for testing consists of of two steps.                       <BR>
  * In the first one the first assertion is checked up on as follows:    <BR>
- * the debugger sleeps for "WAITTIME * 90 sec";                         <BR>
- * hence, no event is expected in the debugger within WAITTINE, and     <BR>
+ * the debugger sleeps for some time;                                   <BR>
+ * hence, no event is expected in the debugger within WAITTIME, and     <BR>
  * debugger's method breakpointForCommunication() should get null.      <BR>
  * After WAITTIME, the debugger just expects to get normal breakpoint event.<BR>
  */
@@ -126,7 +126,7 @@ public class remove_l004 {
     static Debugee          debuggee;
     static ArgumentHandler  argsHandler;
 
-    static int waitTime;
+    static long waitTime;
 
     static VirtualMachine      vm            = null;
     static EventRequestManager eventRManager = null;
@@ -135,6 +135,8 @@ public class remove_l004 {
     static EventIterator       eventIterator = null;
 
     static ReferenceType       debuggeeClass = null;
+
+    static Value trueValue;
 
     static int  testExitCode = PASSED;
 
@@ -152,7 +154,7 @@ public class remove_l004 {
         logHandler      = new Log(out, argsHandler);
         Binder binder   = new Binder(argsHandler, logHandler);
 
-        waitTime        = argsHandler.getWaitTime() * 60000;
+        waitTime        = Utils.adjustTimeout(argsHandler.getWaitTime() * 1000);
 
         try {
             log2("launching a debuggee :");
@@ -281,6 +283,8 @@ public class remove_l004 {
         if (!debuggeeClass.name().equals(debuggeeName))
            throw new JDITestRuntimeException("** Unexpected ClassName for ClassPrepareEvent **");
 
+        trueValue = debuggeeClass.getValue(debuggeeClass.fieldByName("BOOLEAN_TRUE_VALUE"));
+
         log2("      received: ClassPrepareEvent for debuggeeClass");
 
         String bPointMethod = "methodForCommunication";
@@ -326,6 +330,11 @@ public class remove_l004 {
                     testExitCode = FAILED;
                     throw new JDITestRuntimeException("** unexpected Exception **");
                 }
+
+                // Signal to debuggee to stop sleeping
+                ((ClassType) debuggeeClass).setValue(debuggeeClass.fieldByName("stopSleeping"),
+                        trueValue);
+
             }
             //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

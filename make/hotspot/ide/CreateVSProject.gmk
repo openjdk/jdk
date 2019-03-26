@@ -30,8 +30,9 @@ include $(SPEC)
 include MakeBase.gmk
 include JavaCompilation.gmk
 include SetupJavaCompilers.gmk
+include Execute.gmk
 
-ifeq ($(OPENJDK_TARGET_OS), windows)
+ifeq ($(call isTargetOs, windows), true)
   # The next part is a bit hacky. We include the CompileJvm.gmk to be
   # able to extact flags, but we do not wish to execute the rules.
 
@@ -46,12 +47,12 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
 
   # Helper macro to convert a unix path to a Windows path, suitable for
   # inclusion in a command line.
-  ifeq ($(OPENJDK_BUILD_OS_ENV), windows.cygwin)
+  ifeq ($(call isBuildOsEnv, windows.cygwin), true)
     FixPath = \
         $(strip $(subst \,\\,$(shell $(CYGPATH) -w $1)))
     FixLinuxExecutable = \
         $(call FixPath, $1)
-  else ifeq ($(OPENJDK_BUILD_OS_ENV), windows.wsl)
+  else ifeq ($(call isBuildOsEnv, windows.wsl), true)
     FixPath = \
         $(strip $(subst \,\\,$(shell $(WSLPATH) -w $1)))
     FixLinuxExecutable = \
@@ -144,14 +145,16 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
   VCPROJ_VARDEPS_FILE := $(call DependOnVariable, VCPROJ_VARDEPS, \
     $(VCPROJ_FILE).vardeps)
 
-  $(VCPROJ_FILE): $(BUILD_PROJECT_CREATOR) $(VCPROJ_VARDEPS_FILE)
-	$(call MakeDir, $(@D))
-	$(call ExecuteWithLog, $@, \
-	    $(PROJECT_CREATOR_TOOL) $(PROJECT_CREATOR_CLASS) \
-	    $(PROJECT_CREATOR_ARGS) -projectFileName $(call FixPath, $@)) \
-	    $(LOG_INFO)
+  $(eval $(call SetupExecute, vcproj_file, \
+      INFO := Generating Visual Studio project file, \
+      DEPS := $(BUILD_PROJECT_CREATOR) $(VCPROJ_VARDEPS_FILE), \
+      OUTPUT_FILE := $(VCPROJ_FILE), \
+      COMMAND := $(PROJECT_CREATOR_TOOL) $(PROJECT_CREATOR_CLASS) \
+          $(PROJECT_CREATOR_ARGS) -projectFileName $(call FixPath, $(VCPROJ_FILE)) \
+          $(LOG_INFO), \
+  ))
 
-  TARGETS += $(VCPROJ_FILE)
+  TARGETS += $(vcproj_file_TARGET)
 
   all: $(TARGETS)
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.net.ssl.SSLException;
@@ -544,7 +543,7 @@ final class ServerHello {
                         shc.negotiatedProtocol, shc.negotiatedCipherSuite);
 
                 setUpPskKD(shc,
-                        shc.resumingSession.consumePreSharedKey().get());
+                        shc.resumingSession.consumePreSharedKey());
 
                 // The session can't be resumed again---remove it from cache
                 SSLSessionContextImpl sessionCache = (SSLSessionContextImpl)
@@ -1223,16 +1222,16 @@ final class ServerHello {
                         chc.sslConfig.maximumPacketSize);
             } else {
                 // The PSK is consumed to allow it to be deleted
-                Optional<SecretKey> psk =
+                SecretKey psk =
                         chc.resumingSession.consumePreSharedKey();
-                if(!psk.isPresent()) {
+                if(psk == null) {
                     throw chc.conContext.fatal(Alert.INTERNAL_ERROR,
                     "No PSK available. Unable to resume.");
                 }
 
                 chc.handshakeSession = chc.resumingSession;
 
-                setUpPskKD(chc, psk.get());
+                setUpPskKD(chc, psk);
             }
 
             //

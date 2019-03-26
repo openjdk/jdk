@@ -199,7 +199,7 @@ public class AMD64HotSpotAddressLowering extends AMD64CompressAddressLowering {
                 CountedLoopInfo countedLoopInfo = loop.counted();
                 IntegerStamp initStamp = (IntegerStamp) inductionVariable.initNode().stamp(NodeView.DEFAULT);
                 if (initStamp.isPositive()) {
-                    if (inductionVariable.isConstantExtremum()) {
+                    if (inductionVariable.isConstantExtremum() && countedLoopInfo.counterNeverOverflows()) {
                         long init = inductionVariable.constantInit();
                         long stride = inductionVariable.constantStride();
                         long extremum = inductionVariable.constantExtremum();
@@ -211,7 +211,9 @@ public class AMD64HotSpotAddressLowering extends AMD64CompressAddressLowering {
                             }
                         }
                     }
-                    if (countedLoopInfo.getCounter() == inductionVariable && inductionVariable.direction() == InductionVariable.Direction.Up && countedLoopInfo.getOverFlowGuard() != null) {
+                    if (countedLoopInfo.getCounter() == inductionVariable &&
+                                    inductionVariable.direction() == InductionVariable.Direction.Up &&
+                                    (countedLoopInfo.getOverFlowGuard() != null || countedLoopInfo.counterNeverOverflows())) {
                         return graph.unique(new ZeroExtendNode(input, INT_BITS, ADDRESS_BITS, true));
                     }
                 }

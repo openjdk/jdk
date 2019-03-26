@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,22 +35,8 @@
 
 //-------------------------Virtual Functions-----------------------------------
 // These functions MUST be implemented by the inheriting class.
-class SparseSet;
-/* Removed for MCC BUG
-   Set::operator const SparseSet*() const { assert(0); return NULL; } */
-const SparseSet *Set::asSparseSet() const { assert(0); return NULL; }
 class VectorSet;
-/* Removed for MCC BUG
-   Set::operator const VectorSet*() const { assert(0); return NULL; } */
 const VectorSet *Set::asVectorSet() const { assert(0); return NULL; }
-class ListSet;
-/* Removed for MCC BUG
-   Set::operator const ListSet*() const { assert(0); return NULL; } */
-const ListSet *Set::asListSet() const { assert(0); return NULL; }
-class CoSet;
-/* Removed for MCC BUG
-   Set::operator const CoSet*() const { assert(0); return NULL; } */
-const CoSet *Set::asCoSet() const { assert(0); return NULL; }
 
 //------------------------------setstr-----------------------------------------
 // Create a string with a printable representation of a set.

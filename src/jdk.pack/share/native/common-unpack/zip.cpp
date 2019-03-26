@@ -416,9 +416,11 @@ uLong jar::dostime(int y, int n, int d, int h, int m, int s) {
     ((uLong)h << 11) | ((uLong)m << 5) | ((uLong)s >> 1);
 }
 
-#ifdef _REENTRANT // solaris
-extern "C" struct tm *gmtime_r(const time_t *, struct tm *);
-#else
+/*
+ * For thread-safe reasons, non-Windows platforms need gmtime_r
+ * while Windows can directly use gmtime that is already thread-safe.
+ */
+#ifdef _MSC_VER
 #define gmtime_r(t, s) gmtime(t)
 #endif
 /*

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,16 +54,4 @@ public class TestLinkToSerialForm extends JavadocTester {
         checkOutput("pkg/C.html", true,
                 "<a href=\"../serialized-form.html#pkg.C\">");
     }
-
-    @Test
-    public void test_html4() {
-        javadoc("-d", "out-html4",
-                "-html4",
-                "-sourcepath", testSrc,
-                "pkg");
-        checkExit(Exit.OK);
-
-        checkOutput("serialized-form.html", true,
-                "<a name=\"pkg.C\">");
-}
 }

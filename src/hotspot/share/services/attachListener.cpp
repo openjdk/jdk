@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -258,8 +258,11 @@ jint dump_heap(AttachOperation* op, outputStream* out) {
 //
 // Input arguments :-
 //   arg0: "-live" or "-all"
+//   arg1: Name of the dump file or NULL
 static jint heap_inspection(AttachOperation* op, outputStream* out) {
   bool live_objects_only = true;   // default is true to retain the behavior before this change is made
+  outputStream* os = out;   // if path not specified or path is NULL, use out
+  fileStream* fs = NULL;
   const char* arg0 = op->arg(0);
   if (arg0 != NULL && (strlen(arg0) > 0)) {
     if (strcmp(arg0, "-all") != 0 && strcmp(arg0, "-live") != 0) {
@@ -268,8 +271,28 @@ static jint heap_inspection(AttachOperation* op, outputStream* out) {
     }
     live_objects_only = strcmp(arg0, "-live") == 0;
   }
-  VM_GC_HeapInspection heapop(out, live_objects_only /* request full gc */);
+
+  const char* path = op->arg(1);
+  if (path != NULL) {
+    if (path[0] == '\0') {
+      out->print_cr("No dump file specified");
+    } else {
+      // create file
+      fs = new (ResourceObj::C_HEAP, mtInternal) fileStream(path);
+      if (fs == NULL) {
+        out->print_cr("Failed to allocate space for file: %s", path);
+        return JNI_ERR;
+      }
+      os = fs;
+    }
+  }
+
+  VM_GC_HeapInspection heapop(os, live_objects_only /* request full gc */);
   VMThread::execute(&heapop);
+  if (os != NULL && os != out) {
+    out->print_cr("Heap inspection file created: %s", path);
+    delete fs;
+  }
   return JNI_OK;
 }
 

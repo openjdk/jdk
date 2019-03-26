@@ -14,8 +14,10 @@
  * # Date: 2017-10-16, 24:39:00 GMT [KW]
  */
 
-#include "hb-ot-shape-complex-indic-private.hh"
+#include "hb-ot-shape-complex-indic.hh"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-macros"
 
 #define ISC_A   INDIC_SYLLABIC_CATEGORY_AVAGRAHA                /*  16 chars; Avagraha */
 #define ISC_Bi  INDIC_SYLLABIC_CATEGORY_BINDU                   /*  83 chars; Bindu */
@@ -69,6 +71,7 @@
 #define IMC_TLR INDIC_MATRA_CATEGORY_TOP_AND_LEFT_AND_RIGHT     /*   4 chars; Top_And_Left_And_Right */
 #define IMC_TR  INDIC_MATRA_CATEGORY_TOP_AND_RIGHT              /*  13 chars; Top_And_Right */
 #define IMC_VOL INDIC_MATRA_CATEGORY_VISUAL_ORDER_LEFT          /*  19 chars; Visual_Order_Left */
+#pragma GCC diagnostic pop
 
 #define _(S,M) INDIC_COMBINE_CATEGORIES (ISC_##S, IMC_##M)
 

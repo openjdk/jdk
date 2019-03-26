@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,7 @@ import jdk.internal.vm.annotation.Stable;
  * ModuleLayer.boot().configuration()}. The configuration for the boot layer
  * will often be the parent when creating new configurations. </p>
  *
- * <h3> Example </h3>
+ * <h2> Example </h2>
  *
  * <p> The following example uses the {@link
  * #resolve(ModuleFinder,ModuleFinder,Collection) resolve} method to resolve a

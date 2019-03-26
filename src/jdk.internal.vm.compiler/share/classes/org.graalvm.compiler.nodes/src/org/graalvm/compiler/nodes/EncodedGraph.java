@@ -82,7 +82,7 @@ public class EncodedGraph {
         return startOffset;
     }
 
-    protected Object[] getObjects() {
+    public Object[] getObjects() {
         return objects;
     }
 

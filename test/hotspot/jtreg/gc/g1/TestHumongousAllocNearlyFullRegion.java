@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,10 @@
  * questions.
  */
 
+package gc.g1;
+
+import static java.lang.ref.Reference.reachabilityFence;
+
 /*
  * @test TestHumongousAllocNearlyFullRegion
  * @bug 8143587
@@ -29,7 +33,7 @@
  * @requires vm.gc.G1
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @run driver TestHumongousAllocNearlyFullRegion
+ * @run driver gc.g1.TestHumongousAllocNearlyFullRegion
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
@@ -60,7 +64,7 @@ public class TestHumongousAllocNearlyFullRegion {
             for (int i = 0; i < heapSize; i++) {
                 // 131069 is the number of longs it takes to fill a heapRegion except
                 // for 8 bytes on 64 bit.
-                long[] largeObect = new long[131069];
+                reachabilityFence(new long[131069]);
             }
         }
     }

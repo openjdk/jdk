@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,11 @@
   @key headful
   @bug       6607170
   @summary   Tests for focus-auto-transfer.
-  @author    Anton Tarasov: area=awt-focus
   @library   ../../regtesthelpers
   @build     Util
   @run       main ContainerFocusAutoTransferTest
 */
 
-import java.applet.Applet;
 import java.awt.AWTEvent;
 import java.awt.Component;
 import java.awt.ComponentOrientation;
@@ -50,7 +48,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import test.java.awt.regtesthelpers.Util;
 
-public class ContainerFocusAutoTransferTest extends Applet {
+public class ContainerFocusAutoTransferTest {
     Robot robot;
     TestFrame frame;
     KeyboardFocusManager kfm;

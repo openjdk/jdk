@@ -55,7 +55,6 @@ class CallInfo : public StackObj {
                                         //               others inferred), vtable, itable)
   int          _call_index;             // vtable or itable index of selected class method (if any)
   Handle       _resolved_appendix;      // extra argument in constant pool (if CPCE::has_appendix)
-  Handle       _resolved_method_type;   // MethodType (for invokedynamic and invokehandle call sites)
   Handle       _resolved_method_name;   // Object holding the ResolvedMethodName
 
   void set_static(Klass* resolved_klass, const methodHandle& resolved_method, TRAPS);
@@ -68,10 +67,10 @@ class CallInfo : public StackObj {
                    const methodHandle& selected_method,
                    int vtable_index, TRAPS);
   void set_handle(const methodHandle& resolved_method,
-                  Handle resolved_appendix, Handle resolved_method_type, TRAPS);
+                  Handle resolved_appendix, TRAPS);
   void set_handle(Klass* resolved_klass,
                   const methodHandle& resolved_method,
-                  Handle resolved_appendix, Handle resolved_method_type, TRAPS);
+                  Handle resolved_appendix, TRAPS);
   void set_common(Klass* resolved_klass, Klass* selected_klass,
                   const methodHandle& resolved_method,
                   const methodHandle& selected_method,
@@ -98,7 +97,6 @@ class CallInfo : public StackObj {
   methodHandle resolved_method() const           { return _resolved_method; }
   methodHandle selected_method() const           { return _selected_method; }
   Handle       resolved_appendix() const         { return _resolved_appendix; }
-  Handle       resolved_method_type() const      { return _resolved_method_type; }
   Handle       resolved_method_name() const      { return _resolved_method_name; }
   // Materialize a java.lang.invoke.ResolvedMethodName for this resolved_method
   void     set_resolved_method_name(TRAPS);
@@ -207,8 +205,7 @@ class LinkResolver: AllStatic {
   static Method* lookup_method_in_interfaces(const LinkInfo& link_info);
 
   static methodHandle lookup_polymorphic_method(const LinkInfo& link_info,
-                                                Handle *appendix_result_or_null,
-                                                Handle *method_type_result, TRAPS);
+                                                Handle *appendix_result_or_null, TRAPS);
  JVMCI_ONLY(public:) // Needed for CompilerToVM.resolveMethod()
   // Not Linktime so doesn't take LinkInfo
   static methodHandle lookup_instance_method_in_klasses (Klass* klass, Symbol* name, Symbol* signature,

@@ -38,7 +38,6 @@ import javax.xml.crypto.dsig.spec.TransformParameterSpec;
  */
 public final class DOMEnvelopedTransform extends ApacheTransform {
 
-    @Override
     public void init(TransformParameterSpec params)
         throws InvalidAlgorithmParameterException {
         if (params != null) {

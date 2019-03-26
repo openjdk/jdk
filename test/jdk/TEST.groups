@@ -1,4 +1,4 @@
-#  Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+#  Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
 #  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 #  This code is free software; you can redistribute it and/or modify it
@@ -103,8 +103,7 @@ jdk_lang = \
     jdk/internal/ref \
     jdk/internal/jimage \
     jdk/internal/math \
-    jdk/modules \
-    vm
+    jdk/modules
 
 # All of the java.util package
 jdk_util = \
@@ -214,8 +213,7 @@ jdk_security3 = \
     sun/security \
     -sun/security/krb5 \
     -sun/security/jgss \
-    javax/net \
-    com/sun/net/ssl
+    javax/net
 
 jdk_security4 = \
     com/sun/security/jgss \
@@ -375,7 +373,8 @@ jdk_desktop = \
     :jdk_swing \
     :jdk_sound \
     :jdk_imageio \
-    :jfc_demo
+    :jfc_demo \
+    :jdk_client_sanity
 
 # SwingSet3 tests.
 jdk_client_sanity = \

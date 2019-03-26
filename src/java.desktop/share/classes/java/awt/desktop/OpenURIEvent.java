@@ -34,12 +34,18 @@ import java.net.URI;
  * Event sent when the app is asked to open a {@code URI}.
  *
  * @see OpenURIHandler#openURI(OpenURIEvent)
- *
  * @since 9
  */
 public final class OpenURIEvent extends AppEvent {
 
+    /**
+     * Use serialVersionUID from JDK 9 for interoperability.
+     */
     private static final long serialVersionUID = 221209100935933476L;
+
+    /**
+     * The {@code URI} the app was asked to open.
+     */
     final URI uri;
 
     /**
@@ -58,7 +64,8 @@ public final class OpenURIEvent extends AppEvent {
     }
 
     /**
-     * Get the {@code URI} the app was asked to open
+     * Get the {@code URI} the app was asked to open.
+     *
      * @return the {@code URI}
      */
     public URI getURI() {

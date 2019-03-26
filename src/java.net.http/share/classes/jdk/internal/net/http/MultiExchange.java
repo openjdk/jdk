@@ -259,7 +259,7 @@ class MultiExchange<T> {
 
     private boolean bodyIsPresent(Response r) {
         HttpHeaders headers = r.headers();
-        if (headers.firstValue("Content-length").isPresent())
+        if (headers.firstValueAsLong("Content-length").orElse(0L) != 0L)
             return true;
         if (headers.firstValue("Transfer-encoding").isPresent())
             return true;
@@ -271,9 +271,9 @@ class MultiExchange<T> {
     private CompletableFuture<HttpResponse<T>> handleNoBody(Response r, Exchange<T> exch) {
         BodySubscriber<T> bs = responseHandler.apply(new ResponseInfoImpl(r.statusCode(),
                 r.headers(), r.version()));
-        CompletionStage<T> cs = bs.getBody();
         bs.onSubscribe(new NullSubscription());
         bs.onComplete();
+        CompletionStage<T> cs = ResponseSubscribers.getBodyAsync(executor, bs);
         MinimalFuture<HttpResponse<T>> result = new MinimalFuture<>();
         cs.whenComplete((nullBody, exception) -> {
             if (exception != null)

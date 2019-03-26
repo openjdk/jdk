@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,8 +69,7 @@ ClassFileLoadHook(jvmtiEnv *jvmti_env, JNIEnv *jni_env,
             }
 
             if (!NSK_JNI_VERIFY(jni_env, (*new_class_data = (unsigned char*)
-                    jni_env->GetByteArrayElements(classBytes, NULL))
-                        != NULL)) {
+                    jni_env->GetByteArrayElements(classBytes, NULL)) != NULL)) {
                 nsk_jvmti_setFailStatus();
                 return;
             }
@@ -97,8 +96,7 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
         return NSK_FALSE;
 
     if (!NSK_JNI_VERIFY(jni, (classBytes = (jbyteArray)
-            jni->GetStaticObjectField(debugeeClass, field))
-                != NULL))
+            jni->GetStaticObjectField(debugeeClass, field)) != NULL))
         return NSK_FALSE;
 
     if (!NSK_JNI_VERIFY(jni, (classBytes = (jbyteArray)jni->NewGlobalRef(classBytes)) != NULL))

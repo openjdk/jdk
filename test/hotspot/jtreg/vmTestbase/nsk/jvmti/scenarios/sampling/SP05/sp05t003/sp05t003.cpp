@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ static const char* threadsName[THREADS_COUNT] = {
 /* references to tested threads */
 static jthread threadsList[THREADS_COUNT];
 
-/* events conunts */
+/* events counts */
 static volatile int eventsStart = 0;
 static volatile int eventsEnd   = 0;
 
@@ -371,17 +371,18 @@ callbackThreadStart(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
     /* check if event is for tested thread */
     for (i = 0; i < THREADS_COUNT; i++) {
         if (jni->IsSameObject(threadsList[i], thread)) {
-                NSK_DISPLAY0("SUCCESS: expected THREAD_START event\n");
+            NSK_DISPLAY0("SUCCESS: expected THREAD_START event\n");
 
             /* suspend thread */
             NSK_DISPLAY3("  suspend starting thread #%d (%s): %p\n",
                                 i, threadsName[i], (void*)thread);
+            /* must bump the count before we suspend */
+            eventsStart++;
 
             if (!NSK_JVMTI_VERIFY(jvmti->SuspendThread(thread))) {
                 nsk_jvmti_setFailStatus();
                 return;
             }
-            eventsStart++;
 
             break;
         }
@@ -406,6 +407,8 @@ callbackThreadEnd(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
     for (i = 0; i < THREADS_COUNT; i++) {
         if (jni->IsSameObject(threadsList[i], thread)) {
                 NSK_DISPLAY0("SUCCESS: expected THREAD_END event\n");
+            /* must bump the count before we suspend */
+            eventsEnd++;
 
             /* suspend thread */
             NSK_DISPLAY3("  suspend finishing thread #%d (%s): %p\n",
@@ -415,7 +418,6 @@ callbackThreadEnd(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
                 nsk_jvmti_setFailStatus();
                 return;
             }
-            eventsEnd++;
 
             break;
         }

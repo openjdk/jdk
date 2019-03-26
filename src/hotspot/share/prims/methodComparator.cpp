@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,17 +123,17 @@ bool MethodComparator::args_same(Bytecodes::Code c_old, Bytecodes::Code c_new) {
 
     int cpi_old = _old_cp->cache()->entry_at(cpci_old)->constant_pool_index();
     int cpi_new = _new_cp->cache()->entry_at(cpci_new)->constant_pool_index();
-    int bsm_old = _old_cp->invoke_dynamic_bootstrap_method_ref_index_at(cpi_old);
-    int bsm_new = _new_cp->invoke_dynamic_bootstrap_method_ref_index_at(cpi_new);
+    int bsm_old = _old_cp->bootstrap_method_ref_index_at(cpi_old);
+    int bsm_new = _new_cp->bootstrap_method_ref_index_at(cpi_new);
     if (!pool_constants_same(bsm_old, bsm_new))
       return false;
-    int cnt_old = _old_cp->invoke_dynamic_argument_count_at(cpi_old);
-    int cnt_new = _new_cp->invoke_dynamic_argument_count_at(cpi_new);
+    int cnt_old = _old_cp->bootstrap_argument_count_at(cpi_old);
+    int cnt_new = _new_cp->bootstrap_argument_count_at(cpi_new);
     if (cnt_old != cnt_new)
       return false;
     for (int arg_i = 0; arg_i < cnt_old; arg_i++) {
-      int idx_old = _old_cp->invoke_dynamic_argument_index_at(cpi_old, arg_i);
-      int idx_new = _new_cp->invoke_dynamic_argument_index_at(cpi_new, arg_i);
+      int idx_old = _old_cp->bootstrap_argument_index_at(cpi_old, arg_i);
+      int idx_new = _new_cp->bootstrap_argument_index_at(cpi_new, arg_i);
       if (!pool_constants_same(idx_old, idx_new))
         return false;
     }

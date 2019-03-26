@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,20 +56,5 @@ public class TestTypeVariableLinks extends JavadocTester {
                 "<div class=\"block\">Linking to Additional.doAction() <a href=\"Additional.html#doAction()\"><code>Additional.doAction()</code></a></div>");
         checkOutput("pkg1/C.html", true,
                 "<div class=\"block\">Linking to I.abstractAction() <a href=\"I.html#abstractAction()\"><code>I.abstractAction()</code></a></div>");
-    }
-
-    @Test
-    public void test1_html4() {
-        javadoc("-d", "out-html4",
-                "-html4",
-                "-sourcepath", testSrc,
-                "-package",
-                "pkg1");
-        checkExit(Exit.OK);
-
-        checkOutput("pkg1/C.html", true,
-                "<div class=\"block\">Linking to Additional.doAction() <a href=\"Additional.html#doAction--\"><code>Additional.doAction()</code></a></div>");
-        checkOutput("pkg1/C.html", true,
-                "<div class=\"block\">Linking to I.abstractAction() <a href=\"I.html#abstractAction--\"><code>I.abstractAction()</code></a></div>");
     }
 }

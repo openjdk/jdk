@@ -25,24 +25,27 @@
  * @test
  * @bug 6332435
  * @summary Basic tests for CountDownLatch
+ * @library /test/lib
  * @author Seetharam Avadhanam, Martin Buchholz
  */
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-
-interface AwaiterFactory {
-    Awaiter getAwaiter();
-}
-
-abstract class Awaiter extends Thread {
-    private volatile Throwable result = null;
-    protected void result(Throwable result) { this.result = result; }
-    public Throwable result() { return this.result; }
-}
+import jdk.test.lib.Utils;
 
 public class Basic {
+    static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);
+
+    interface AwaiterFactory {
+        Awaiter getAwaiter();
+    }
+
+    abstract static class Awaiter extends Thread {
+        private volatile Throwable result = null;
+        protected void result(Throwable result) { this.result = result; }
+        public Throwable result() { return this.result; }
+    }
 
     private void toTheStartingGate(CountDownLatch gate) {
         try {
@@ -78,15 +81,12 @@ public class Basic {
             catch (Throwable result) { result(result); }}};
     }
 
-    private AwaiterFactory awaiterFactories(final CountDownLatch latch,
-                                            final CountDownLatch gate,
-                                            final int i) {
-        if (i == 1)
-            return new AwaiterFactory() { public Awaiter getAwaiter() {
-                return awaiter(latch, gate); }};
+    AwaiterFactory awaiterFactory(CountDownLatch latch, CountDownLatch gate) {
+        return () -> awaiter(latch, gate);
+    }
 
-        return new AwaiterFactory() { public Awaiter getAwaiter() {
-            return awaiter(latch, gate, 10000); }};
+    AwaiterFactory timedAwaiterFactory(CountDownLatch latch, CountDownLatch gate) {
+        return () -> awaiter(latch, gate, LONG_DELAY_MS);
     }
 
     //----------------------------------------------------------------
@@ -100,8 +100,8 @@ public class Basic {
 
         for (int i = 0; i < 3; i++) {
             CountDownLatch gate = new CountDownLatch(4);
-            AwaiterFactory factory1 = test.awaiterFactories(latch, gate, 1);
-            AwaiterFactory factory2 = test.awaiterFactories(latch, gate, 0);
+            AwaiterFactory factory1 = test.awaiterFactory(latch, gate);
+            AwaiterFactory factory2 = test.timedAwaiterFactory(latch, gate);
             a[count] = factory1.getAwaiter(); a[count++].start();
             a[count] = factory1.getAwaiter(); a[count++].start();
             a[count] = factory2.getAwaiter(); a[count++].start();
@@ -129,8 +129,8 @@ public class Basic {
 
         for (int i = 0; i < 3; i++) {
             CountDownLatch gate = new CountDownLatch(4);
-            AwaiterFactory factory1 = test.awaiterFactories(latch, gate, 1);
-            AwaiterFactory factory2 = test.awaiterFactories(latch, gate, 0);
+            AwaiterFactory factory1 = test.awaiterFactory(latch, gate);
+            AwaiterFactory factory2 = test.timedAwaiterFactory(latch, gate);
             a[count] = factory1.getAwaiter(); a[count++].start();
             a[count] = factory1.getAwaiter(); a[count++].start();
             a[count] = factory2.getAwaiter(); a[count++].start();
@@ -162,8 +162,8 @@ public class Basic {
 
         for (int i = 0; i < 3; i++) {
             CountDownLatch gate = new CountDownLatch(4);
-            AwaiterFactory factory1 = test.awaiterFactories(latch, gate, 1);
-            AwaiterFactory factory2 = test.awaiterFactories(latch, gate, 0);
+            AwaiterFactory factory1 = test.awaiterFactory(latch, gate);
+            AwaiterFactory factory2 = test.timedAwaiterFactory(latch, gate);
             a[count] = test.awaiter(latch, gate, timeout[i]); a[count++].start();
             a[count] = factory1.getAwaiter(); a[count++].start();
             a[count] = factory2.getAwaiter(); a[count++].start();

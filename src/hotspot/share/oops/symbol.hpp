@@ -104,7 +104,6 @@ class ClassLoaderData;
 class Symbol : public MetaspaceObj {
   friend class VMStructs;
   friend class SymbolTable;
-  friend class MoveSymbols;
 
  private:
 
@@ -136,7 +135,6 @@ class Symbol : public MetaspaceObj {
   Symbol(const u1* name, int length, int refcount);
   void* operator new(size_t size, int len, TRAPS) throw();
   void* operator new(size_t size, int len, Arena* arena, TRAPS) throw();
-  void* operator new(size_t size, int len, ClassLoaderData* loader_data, TRAPS) throw();
 
   void  operator delete(void* p);
 
@@ -172,6 +170,7 @@ class Symbol : public MetaspaceObj {
   bool is_permanent() {
     return (refcount() == PERM_REFCOUNT);
   }
+  void make_permanent();
 
   // Function char_at() returns the Symbol's selected u1 byte as a char type.
   //
@@ -207,9 +206,6 @@ class Symbol : public MetaspaceObj {
 
   // Tests if the symbol starts with the given prefix.
   int index_of_at(int i, const char* str, int len) const;
-  int index_of_at(int i, const char* str) const {
-    return index_of_at(i, str, (int) strlen(str));
-  }
 
   // Three-way compare for sorting; returns -1/0/1 if receiver is </==/> than arg
   // note that the ordering is not alfabetical
@@ -219,17 +215,12 @@ class Symbol : public MetaspaceObj {
   // allocated in resource area, or in the char buffer provided by caller.
   char* as_C_string() const;
   char* as_C_string(char* buf, int size) const;
-  // Use buf if needed buffer length is <= size.
-  char* as_C_string_flexible_buffer(Thread* t, char* buf, int size) const;
 
   // Returns an escaped form of a Java string.
   char* as_quoted_ascii() const;
 
   // Returns a null terminated utf8 string in a resource array
   char* as_utf8() const { return as_C_string(); }
-  char* as_utf8_flexible_buffer(Thread* t, char* buf, int size) const {
-    return as_C_string_flexible_buffer(t, buf, size);
-  }
 
   jchar* as_unicode(int& length) const;
 

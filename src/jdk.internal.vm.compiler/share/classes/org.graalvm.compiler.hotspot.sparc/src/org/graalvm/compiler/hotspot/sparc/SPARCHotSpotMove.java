@@ -24,20 +24,21 @@
 
 package org.graalvm.compiler.hotspot.sparc;
 
+import static jdk.vm.ci.code.ValueUtil.asRegister;
 import static org.graalvm.compiler.asm.sparc.SPARCAssembler.BPR;
 import static org.graalvm.compiler.asm.sparc.SPARCAssembler.Annul.ANNUL;
+import static org.graalvm.compiler.asm.sparc.SPARCAssembler.Annul.NOT_ANNUL;
+import static org.graalvm.compiler.asm.sparc.SPARCAssembler.BranchPredict.PREDICT_NOT_TAKEN;
 import static org.graalvm.compiler.asm.sparc.SPARCAssembler.BranchPredict.PREDICT_TAKEN;
+import static org.graalvm.compiler.asm.sparc.SPARCAssembler.RCondition.Rc_nz;
 import static org.graalvm.compiler.asm.sparc.SPARCAssembler.RCondition.Rc_z;
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.ILLEGAL;
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.REG;
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.STACK;
 import static org.graalvm.compiler.lir.sparc.SPARCMove.loadFromConstantTable;
-import static jdk.vm.ci.code.ValueUtil.asRegister;
 
 import org.graalvm.compiler.asm.Label;
 import org.graalvm.compiler.asm.sparc.SPARCAddress;
-import org.graalvm.compiler.asm.sparc.SPARCAssembler.CC;
-import org.graalvm.compiler.asm.sparc.SPARCAssembler.ConditionFlag;
 import org.graalvm.compiler.asm.sparc.SPARCMacroAssembler;
 import org.graalvm.compiler.asm.sparc.SPARCMacroAssembler.ScratchRegister;
 import org.graalvm.compiler.core.common.CompressEncoding;
@@ -53,6 +54,7 @@ import jdk.vm.ci.code.ValueUtil;
 import jdk.vm.ci.hotspot.HotSpotConstant;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Constant;
+import jdk.vm.ci.sparc.SPARC;
 
 public class SPARCHotSpotMove {
 
@@ -150,17 +152,33 @@ public class SPARCHotSpotMove {
             if (encoding.hasBase()) {
                 Register baseReg = asRegister(baseRegister);
                 if (!nonNull) {
-                    masm.cmp(inputRegister, baseReg);
-                    masm.movcc(ConditionFlag.Equal, CC.Xcc, baseReg, resReg);
-                    masm.sub(resReg, baseReg, resReg);
+                    Label done = new Label();
+                    if (inputRegister.equals(resReg)) {
+                        BPR.emit(masm, Rc_nz, ANNUL, PREDICT_TAKEN, inputRegister, done);
+                        masm.sub(inputRegister, baseReg, resReg);
+                        masm.bind(done);
+                        if (encoding.getShift() != 0) {
+                            masm.srlx(resReg, encoding.getShift(), resReg);
+                        }
+                    } else {
+                        BPR.emit(masm, Rc_z, NOT_ANNUL, PREDICT_NOT_TAKEN, inputRegister, done);
+                        masm.mov(SPARC.g0, resReg);
+                        masm.sub(inputRegister, baseReg, resReg);
+                        if (encoding.getShift() != 0) {
+                            masm.srlx(resReg, encoding.getShift(), resReg);
+                        }
+                        masm.bind(done);
+                    }
                 } else {
                     masm.sub(inputRegister, baseReg, resReg);
-                }
-                if (encoding.getShift() != 0) {
-                    masm.srlx(resReg, encoding.getShift(), resReg);
+                    if (encoding.getShift() != 0) {
+                        masm.srlx(resReg, encoding.getShift(), resReg);
+                    }
                 }
             } else {
-                masm.srlx(inputRegister, encoding.getShift(), resReg);
+                if (encoding.getShift() != 0) {
+                    masm.srlx(inputRegister, encoding.getShift(), resReg);
+                }
             }
         }
     }
@@ -196,7 +214,7 @@ public class SPARCHotSpotMove {
         public static void emitUncompressCode(SPARCMacroAssembler masm, Register inputRegister, Register resReg, Register baseReg, int shift, boolean nonNull) {
             Register secondaryInput;
             if (shift != 0) {
-                masm.sll(inputRegister, shift, resReg);
+                masm.sllx(inputRegister, shift, resReg);
                 secondaryInput = resReg;
             } else {
                 secondaryInput = inputRegister;
@@ -207,7 +225,7 @@ public class SPARCHotSpotMove {
                     masm.add(secondaryInput, baseReg, resReg);
                 } else {
                     Label done = new Label();
-                    BPR.emit(masm, Rc_z, ANNUL, PREDICT_TAKEN, secondaryInput, done);
+                    BPR.emit(masm, Rc_nz, ANNUL, PREDICT_TAKEN, secondaryInput, done);
                     masm.add(baseReg, secondaryInput, resReg);
                     masm.bind(done);
                 }

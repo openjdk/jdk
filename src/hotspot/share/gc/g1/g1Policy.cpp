@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,11 @@
 #include "gc/g1/g1Analytics.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
+#include "gc/g1/g1CollectionSetCandidates.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
+#include "gc/g1/g1CollectionSetChooser.hpp"
 #include "gc/g1/g1HeterogeneousHeapPolicy.hpp"
 #include "gc/g1/g1HotCardCache.hpp"
 #include "gc/g1/g1IHOPControl.hpp"
@@ -88,7 +90,7 @@ G1Policy::~G1Policy() {
 }
 
 G1Policy* G1Policy::create_policy(G1CollectorPolicy* policy, STWGCTimer* gc_timer_stw) {
-  if (policy->is_hetero_heap()) {
+  if (policy->is_heterogeneous_heap()) {
     return new G1HeterogeneousHeapPolicy(policy, gc_timer_stw);
   } else {
     return new G1Policy(policy, gc_timer_stw);
@@ -438,7 +440,7 @@ void G1Policy::record_full_collection_start() {
   // Release the future to-space so that it is available for compaction into.
   collector_state()->set_in_young_only_phase(false);
   collector_state()->set_in_full_gc(true);
-  cset_chooser()->clear();
+  _collection_set->clear_candidates();
 }
 
 void G1Policy::record_full_collection_end() {
@@ -544,10 +546,6 @@ double G1Policy::other_time_ms(double pause_time_ms) const {
 
 double G1Policy::constant_other_time_ms(double pause_time_ms) const {
   return other_time_ms(pause_time_ms) - phase_times()->total_free_cset_time_ms();
-}
-
-CollectionSetChooser* G1Policy::cset_chooser() const {
-  return _collection_set->cset_chooser();
 }
 
 bool G1Policy::about_to_start_mixed_phase() const {
@@ -773,8 +771,6 @@ void G1Policy::record_collection_pause_end(double pause_time_ms, size_t cards_sc
   _g1h->concurrent_refine()->adjust(average_time_ms(G1GCPhaseTimes::UpdateRS),
                                     phase_times()->sum_thread_work_items(G1GCPhaseTimes::UpdateRS),
                                     update_rs_time_goal_ms);
-
-  cset_chooser()->verify();
 }
 
 G1IHOPControl* G1Policy::create_ihop_control(const G1Predictions* predictor){
@@ -1032,7 +1028,8 @@ void G1Policy::decide_on_conc_mark_initiation() {
 }
 
 void G1Policy::record_concurrent_mark_cleanup_end() {
-  cset_chooser()->rebuild(_g1h->workers(), _g1h->num_regions());
+  G1CollectionSetCandidates* candidates = G1CollectionSetChooser::build(_g1h->workers(), _g1h->num_regions());
+  _collection_set->set_candidates(candidates);
 
   bool mixed_gc_pending = next_gc_should_be_mixed("request mixed gcs", "request young-only gcs");
   if (!mixed_gc_pending) {
@@ -1063,10 +1060,10 @@ class G1ClearCollectionSetCandidateRemSets : public HeapRegionClosure {
 
 void G1Policy::clear_collection_set_candidates() {
   // Clear remembered sets of remaining candidate regions and the actual candidate
-  // list.
+  // set.
   G1ClearCollectionSetCandidateRemSets cl;
-  cset_chooser()->iterate(&cl);
-  cset_chooser()->clear();
+  _collection_set->candidates()->iterate(&cl);
+  _collection_set->clear_candidates();
 }
 
 void G1Policy::maybe_start_marking() {
@@ -1132,22 +1129,24 @@ void G1Policy::abort_time_to_mixed_tracking() {
 
 bool G1Policy::next_gc_should_be_mixed(const char* true_action_str,
                                        const char* false_action_str) const {
-  if (cset_chooser()->is_empty()) {
+  G1CollectionSetCandidates* candidates = _collection_set->candidates();
+
+  if (candidates->is_empty()) {
     log_debug(gc, ergo)("%s (candidate old regions not available)", false_action_str);
     return false;
   }
 
   // Is the amount of uncollected reclaimable space above G1HeapWastePercent?
-  size_t reclaimable_bytes = cset_chooser()->remaining_reclaimable_bytes();
+  size_t reclaimable_bytes = candidates->remaining_reclaimable_bytes();
   double reclaimable_percent = reclaimable_bytes_percent(reclaimable_bytes);
   double threshold = (double) G1HeapWastePercent;
   if (reclaimable_percent <= threshold) {
     log_debug(gc, ergo)("%s (reclaimable percentage not over threshold). candidate old regions: %u reclaimable: " SIZE_FORMAT " (%1.2f) threshold: " UINTX_FORMAT,
-                        false_action_str, cset_chooser()->remaining_regions(), reclaimable_bytes, reclaimable_percent, G1HeapWastePercent);
+                        false_action_str, candidates->num_remaining(), reclaimable_bytes, reclaimable_percent, G1HeapWastePercent);
     return false;
   }
   log_debug(gc, ergo)("%s (candidate old regions available). candidate old regions: %u reclaimable: " SIZE_FORMAT " (%1.2f) threshold: " UINTX_FORMAT,
-                      true_action_str, cset_chooser()->remaining_regions(), reclaimable_bytes, reclaimable_percent, G1HeapWastePercent);
+                      true_action_str, candidates->num_remaining(), reclaimable_bytes, reclaimable_percent, G1HeapWastePercent);
   return true;
 }
 
@@ -1159,10 +1158,10 @@ uint G1Policy::calc_min_old_cset_length() const {
   // maximum desired number of mixed GCs.
   //
   // The calculation is based on the number of marked regions we added
-  // to the CSet chooser in the first place, not how many remain, so
+  // to the CSet candidates in the first place, not how many remain, so
   // that the result is the same during all mixed GCs that follow a cycle.
 
-  const size_t region_num = (size_t) cset_chooser()->length();
+  const size_t region_num = _collection_set->candidates()->num_regions();
   const size_t gc_num = (size_t) MAX2(G1MixedGCCountTarget, (uintx) 1);
   size_t result = region_num / gc_num;
   // emulate ceiling

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,14 +97,14 @@ public class LinkFactoryImpl extends LinkFactory {
                 DocPath filename = getPath(classLinkInfo);
                 if (linkInfo.linkToSelf ||
                                 !(docPaths.forName(typeElement)).equals(m_writer.filename)) {
-                        link.addContent(m_writer.links.createLink(
+                        link.add(m_writer.links.createLink(
                                 filename.fragment(classLinkInfo.where),
                                 label,
                                 classLinkInfo.isStrong,
                                 title,
                                 classLinkInfo.target));
                         if (noLabel && !classLinkInfo.excludeTypeParameterLinks) {
-                            link.addContent(getTypeParameterLinks(linkInfo));
+                            link.add(getTypeParameterLinks(linkInfo));
                         }
                         return link;
                 }
@@ -114,17 +114,17 @@ public class LinkFactoryImpl extends LinkFactory {
                 typeElement, classLinkInfo.where,
                 label, classLinkInfo.isStrong, true);
             if (crossLink != null) {
-                link.addContent(crossLink);
+                link.add(crossLink);
                 if (noLabel && !classLinkInfo.excludeTypeParameterLinks) {
-                    link.addContent(getTypeParameterLinks(linkInfo));
+                    link.add(getTypeParameterLinks(linkInfo));
                 }
                 return link;
             }
         }
         // Can't link so just write label.
-        link.addContent(label);
+        link.add(label);
         if (noLabel && !classLinkInfo.excludeTypeParameterLinks) {
-            link.addContent(getTypeParameterLinks(linkInfo));
+            link.add(getTypeParameterLinks(linkInfo));
         }
         return link;
     }
@@ -157,17 +157,17 @@ public class LinkFactoryImpl extends LinkFactory {
         }
         if (((linkInfo.includeTypeInClassLinkLabel && isClassLabel)
                 || (linkInfo.includeTypeAsSepLink && !isClassLabel)) && !vars.isEmpty()) {
-            links.addContent("<");
+            links.add("<");
             boolean many = false;
             for (TypeMirror t : vars) {
                 if (many) {
-                    links.addContent(",");
-                    links.addContent(Contents.ZERO_WIDTH_SPACE);
+                    links.add(",");
+                    links.add(Contents.ZERO_WIDTH_SPACE);
                 }
-                links.addContent(getTypeParameterLink(linkInfo, t));
+                links.add(getTypeParameterLink(linkInfo, t));
                 many = true;
             }
-            links.addContent(">");
+            links.add(">");
         }
         return links;
     }
@@ -222,13 +222,13 @@ public class LinkFactoryImpl extends LinkFactory {
         boolean isFirst = true;
         for (Content anno : annos) {
             if (!isFirst) {
-                links.addContent(" ");
+                links.add(" ");
             }
-            links.addContent(anno);
+            links.add(anno);
             isFirst = false;
         }
         if (!annos.isEmpty()) {
-            links.addContent(" ");
+            links.add(" ");
         }
 
         return links;

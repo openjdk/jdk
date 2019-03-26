@@ -25,9 +25,9 @@
 #ifndef SHARE_GC_G1_G1PARSCANTHREADSTATE_HPP
 #define SHARE_GC_G1_G1PARSCANTHREADSTATE_HPP
 
-#include "gc/g1/dirtyCardQueue.hpp"
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
+#include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/g1/g1OopClosures.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RemSet.hpp"
@@ -46,7 +46,7 @@ class outputStream;
 class G1ParScanThreadState : public CHeapObj<mtGC> {
   G1CollectedHeap* _g1h;
   RefToScanQueue*  _refs;
-  DirtyCardQueue   _dcq;
+  G1DirtyCardQueue _dcq;
   G1CardTable*     _ct;
   G1EvacuationRootClosures* _closures;
 
@@ -77,7 +77,7 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
 
 #define PADDING_ELEM_NUM (DEFAULT_CACHE_LINE_SIZE / sizeof(size_t))
 
-  DirtyCardQueue& dirty_card_queue()             { return _dcq;  }
+  G1DirtyCardQueue& dirty_card_queue()           { return _dcq; }
   G1CardTable* ct()                              { return _ct; }
 
   InCSetState dest(InCSetState original) const {
@@ -120,16 +120,15 @@ public:
     size_t card_index = ct()->index_for(p);
     // If the card hasn't been added to the buffer, do it.
     if (ct()->mark_card_deferred(card_index)) {
-      dirty_card_queue().enqueue((jbyte*)ct()->byte_for_index(card_index));
+      dirty_card_queue().enqueue(ct()->byte_for_index(card_index));
     }
   }
 
   G1EvacuationRootClosures* closures() { return _closures; }
   uint worker_id() { return _worker_id; }
 
-  // Returns the current amount of waste due to alignment or not being able to fit
-  // objects within LABs and the undo waste.
-  virtual void waste(size_t& wasted, size_t& undo_wasted);
+  size_t lab_waste_words() const;
+  size_t lab_undo_waste_words() const;
 
   size_t* surviving_young_words() {
     // We add one to hide entry 0 which accumulates surviving words for

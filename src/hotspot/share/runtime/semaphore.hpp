@@ -40,7 +40,7 @@
 class JavaThread;
 
 // Implements the limited, platform independent Semaphore API.
-class Semaphore : public CHeapObj<mtInternal> {
+class Semaphore : public CHeapObj<mtSynchronizer> {
   SemaphoreImpl _impl;
 
   // Prevent copying and assignment of Semaphore instances.

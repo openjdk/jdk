@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,14 @@
  * questions.
  */
 
+package gc;
+
 /*
  * @test TestStackOverflow
  * @key gc
  * @bug 4396719
  * @summary Test verifies only that VM doesn't crash but throw expected Error.
- * @run main/othervm TestStackOverflow
+ * @run main/othervm gc.TestStackOverflow
  */
 
 public class TestStackOverflow {

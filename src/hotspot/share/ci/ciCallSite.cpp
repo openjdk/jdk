@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,12 +31,6 @@
 
 bool ciCallSite::is_constant_call_site() {
   return klass()->is_subclass_of(CURRENT_ENV->ConstantCallSite_klass());
-}
-bool ciCallSite::is_mutable_call_site() {
-  return klass()->is_subclass_of(CURRENT_ENV->MutableCallSite_klass());
-}
-bool ciCallSite::is_volatile_call_site() {
-  return klass()->is_subclass_of(CURRENT_ENV->VolatileCallSite_klass());
 }
 
 // ------------------------------------------------------------------

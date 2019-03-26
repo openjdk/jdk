@@ -460,7 +460,7 @@ JNIEXPORT void JNICALL Java_jdk_internal_org_jline_terminal_impl_jna_win_Kernel3
     HANDLE h = GetStdHandle((jint) env->GetLongField(in_hConsoleOutput, pointerValue));
     INPUT_RECORD *buffer = new INPUT_RECORD[in_nLength];
     DWORD numberOfEventsRead;
-    if (!ReadConsoleInput(h, buffer, in_nLength, &numberOfEventsRead)) {
+    if (!ReadConsoleInputW(h, buffer, in_nLength, &numberOfEventsRead)) {
         delete buffer;
         DWORD error = GetLastError();
         jobject exc = env->NewObject(lastErrorExceptionClass,

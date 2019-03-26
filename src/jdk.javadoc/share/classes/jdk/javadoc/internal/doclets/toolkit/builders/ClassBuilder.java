@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,7 +181,7 @@ public class ClassBuilder extends AbstractBuilder {
         buildClassDescription(classInfoTree);
         buildClassTagInfo(classInfoTree);
 
-        classContentTree.addContent(writer.getClassInfo(classInfoTree));
+        classContentTree.add(writer.getClassInfo(classInfoTree));
     }
 
     /**
@@ -322,7 +322,7 @@ public class ClassBuilder extends AbstractBuilder {
     protected void buildMemberSummary(Content classContentTree) throws DocletException {
         Content memberSummaryTree = writer.getMemberTreeHeader();
         builderFactory.getMemberSummaryBuilder(writer).build(memberSummaryTree);
-        classContentTree.addContent(writer.getMemberSummaryTree(memberSummaryTree));
+        classContentTree.add(writer.getMemberSummaryTree(memberSummaryTree));
     }
 
     /**
@@ -340,7 +340,7 @@ public class ClassBuilder extends AbstractBuilder {
         buildConstructorDetails(memberDetailsTree);
         buildMethodDetails(memberDetailsTree);
 
-        classContentTree.addContent(writer.getMemberDetailsTree(memberDetailsTree));
+        classContentTree.add(writer.getMemberDetailsTree(memberDetailsTree));
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,31 +73,28 @@ public class CLDRTimeZoneNameProviderImpl extends TimeZoneNameProviderImpl {
 
     @Override
     protected String[] getDisplayNameArray(String id, Locale locale) {
-        String tzid = TimeZoneNameUtility.canonicalTZID(id).orElse(id);
-        String[] namesSuper = super.getDisplayNameArray(tzid, locale);
+        // Use English for the ROOT locale
+        locale = locale.equals(Locale.ROOT) ? Locale.ENGLISH : locale;
+        String[] namesSuper = super.getDisplayNameArray(id, locale);
 
-        if (Objects.nonNull(namesSuper)) {
+        if (namesSuper == null) {
+            // try canonical id instead
+            namesSuper = super.getDisplayNameArray(
+                TimeZoneNameUtility.canonicalTZID(id).orElse(id),
+                locale);
+        }
+
+        if (namesSuper != null) {
             // CLDR's resource bundle has an translated entry for this id.
             // Fix up names if needed, either missing or no-inheritance
             namesSuper[INDEX_TZID] = id;
-
-            // Check if standard long name exists. If not, try to retrieve the name
-            // from language only locale resources. E.g., "Europe/London"
-            // for en-GB only contains DST names
-            if (!exists(namesSuper, INDEX_STD_LONG) && !locale.getCountry().isEmpty()) {
-                String[] names =
-                        getDisplayNameArray(id, Locale.forLanguageTag(locale.getLanguage()));
-                if (exists(names, INDEX_STD_LONG)) {
-                    namesSuper[INDEX_STD_LONG] = names[INDEX_STD_LONG];
-                }
-            }
 
             for(int i = INDEX_STD_LONG; i < namesSuper.length; i++) { // index 0 is the 'id' itself
                 switch (namesSuper[i]) {
                 case "":
                     // Fill in empty elements
                     deriveFallbackName(namesSuper, i, locale,
-                            namesSuper[INDEX_DST_LONG].isEmpty());
+                                       !exists(namesSuper, INDEX_DST_LONG));
                     break;
                 case NO_INHERITANCE_MARKER:
                     // CLDR's "no inheritance marker"
@@ -141,21 +138,30 @@ public class CLDRTimeZoneNameProviderImpl extends TimeZoneNameProviderImpl {
 
     // Derive fallback time zone name according to LDML's logic
     private void deriveFallbackNames(String[] names, Locale locale) {
+        boolean noDST = !exists(names, INDEX_DST_LONG);
         for (int i = INDEX_STD_LONG; i <= INDEX_GEN_SHORT; i++) {
-            deriveFallbackName(names, i, locale, false);
+            deriveFallbackName(names, i, locale, noDST);
         }
     }
 
     private void deriveFallbackName(String[] names, int index, Locale locale, boolean noDST) {
+        String id = names[INDEX_TZID];
+
         if (exists(names, index)) {
+            if (names[index].equals(NO_INHERITANCE_MARKER)) {
+                // CLDR's "no inheritance marker"
+                names[index] = toGMTFormat(id,
+                                    index == INDEX_DST_LONG || index == INDEX_DST_SHORT,
+                                    index % 2 != 0, locale);
+            }
             return;
         }
 
         // Check if COMPAT can substitute the name
         if (LocaleProviderAdapter.getAdapterPreference().contains(Type.JRE)) {
             String[] compatNames = (String[])LocaleProviderAdapter.forJRE()
-                .getLocaleResources(locale)
-                .getTimeZoneNames(names[INDEX_TZID]);
+                .getLocaleResources(mapChineseLocale(locale))
+                .getTimeZoneNames(id);
             if (compatNames != null) {
                 for (int i = INDEX_STD_LONG; i <= INDEX_GEN_SHORT; i++) {
                     // Assumes COMPAT has no empty slots
@@ -178,9 +184,8 @@ public class CLDRTimeZoneNameProviderImpl extends TimeZoneNameProviderImpl {
         }
 
         // last resort
-        String id = names[INDEX_TZID].toUpperCase(Locale.ROOT);
-        if (!id.startsWith("UT")) {
-            names[index] = toGMTFormat(names[INDEX_TZID],
+        if (!id.toUpperCase(Locale.ROOT).startsWith("UT")) {
+            names[index] = toGMTFormat(id,
                                        index == INDEX_DST_LONG || index == INDEX_DST_SHORT,
                                        index % 2 != 0,
                                        locale);
@@ -283,5 +288,34 @@ public class CLDRTimeZoneNameProviderImpl extends TimeZoneNameProviderImpl {
             return MessageFormat.format(gmtFormat,
                     String.format(l, hourFormat, offset / 60, offset % 60));
         }
+    }
+
+    // Mapping CLDR's Simplified/Traditional Chinese resources
+    // to COMPAT's zh-CN/TW
+    private Locale mapChineseLocale(Locale locale) {
+        if (locale.getLanguage() == "zh") {
+            switch (locale.getScript()) {
+                case "Hans":
+                    return Locale.CHINA;
+                case "Hant":
+                    return Locale.TAIWAN;
+                case "":
+                    // no script, guess from country code.
+                    switch (locale.getCountry()) {
+                        case "":
+                        case "CN":
+                        case "SG":
+                            return Locale.CHINA;
+                        case "HK":
+                        case "MO":
+                        case "TW":
+                            return Locale.TAIWAN;
+                    }
+                    break;
+            }
+        }
+
+        // no need to map
+        return locale;
     }
 }

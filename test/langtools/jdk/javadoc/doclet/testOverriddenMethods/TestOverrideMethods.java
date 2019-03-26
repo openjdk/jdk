@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -255,107 +255,6 @@ public class TestOverrideMethods  extends JavadocTester {
                 "Returns the enum constant of this type with the specified name.",
                 "Returns an array containing the constants of this enum type, in\n" +
                         "the order they are declared."
-        );
-    }
-
-    @Test
-    public void testSummary_html4() {
-        javadoc("-d", "out-summary-html4",
-                "-html4",
-                "-sourcepath", testSrc,
-                "-javafx",
-                "--override-methods=summary",
-                "pkg5");
-
-        checkExit(Exit.OK);
-
-        checkOrder("pkg5/Classes.C.html",
-                "#m1--\">m1",
-                "#m4-java.lang.String-java.lang.String-\">m4",
-                "Classes.GP.html#m0--\">m0",
-                "Classes.GP.html#m7--\">m7"
-        );
-
-        checkOrder("pkg5/Classes.C.html",
-                // Check footnotes 2
-                "Classes.P.html#getRate--\">getRate",
-                "Classes.P.html#m2--\">m2",
-                "Classes.P.html#m3--\">m3",
-                "Classes.P.html#m4-K-V-\">m4",
-                "Classes.P.html#rateProperty--\">rateProperty",
-                "Classes.P.html#setRate-double-\">setRate",
-
-                // Check @link
-                "Classes.GP.html#m0--",
-                "#m1--",
-                "Classes.P.html#m2--",
-                "Classes.P.html#m3--",
-                "Classes.P.html#m5--",
-                "#m6--",
-                "#m7--",
-
-                // Check @see
-                "Classes.GP.html#m0--",
-                "#m1--",
-                "Classes.P.html#m2--",
-                "Classes.P.html#m3--",
-                "#m4-java.lang.String-java.lang.String-",
-                "Classes.P.html#m5--\"><code>Classes.P.m5()",
-                "#m6--\"><code>m6()",
-                "#m7--\"><code>m7()"
-        );
-
-        // Tests for interfaces
-
-        // Make sure the static methods in the super interface
-        // do not make it to this interface
-        checkOrder("pkg5/Interfaces.D.html",
-                "Interfaces.A.html#m0--\"><code>Interfaces.A.m0()",
-                "Interfaces.A.html#m1--\"><code>Interfaces.A.m1()",
-                "Interfaces.A.html#m2--\"><code>Interfaces.A.m2()",
-                "Interfaces.A.html#m3--\"><code>Interfaces.A.m3()",
-                "#m--\"><code>m()",
-                "#n--\"><code>n()",
-                "Interfaces.C.html#o--\"><code>Interfaces.C.o()",
-                "Interfaces.A.html#m0--\"><code>Interfaces.A.m0()",
-                "Interfaces.A.html#m1--\"><code>Interfaces.A.m1()",
-                "Interfaces.A.html#m2--\"><code>Interfaces.A.m2()",
-                "Interfaces.A.html#m3--\"><code>Interfaces.A.m3()",
-                "#m--\"><code>m()",
-                "#n--\"><code>n()",
-                "Interfaces.C.html#o--\"><code>Interfaces.C.o()",
-                "#m--\">m",
-                "#n--\">n",
-                "Interfaces.A.html#getRate--\">getRate",
-                "Interfaces.A.html#rateProperty--\">rateProperty",
-                "Interfaces.A.html#setRate-double-",
-                "Interfaces.B.html#m1--\">m1",
-                "Interfaces.B.html#m3--\">m3",
-                "<a href=\"Interfaces.C.html#o--\">o</a>"
-        );
-
-        // Test synthetic values and valuesof of an enum.
-        checkOrder("index-all.html",
-                "<a href=\"pkg5/Interfaces.C.html#m--\">m()",
-                "<a href=\"pkg5/Interfaces.D.html#m--\">m()</a>",
-                "<a href=\"pkg5/Classes.GP.html#m0--\">m0()",
-                "<a href=\"pkg5/Interfaces.A.html#m0--\">m0()</a>",
-                "<a href=\"pkg5/Classes.C.html#m1--\">m1()</a>",
-                "<a href=\"pkg5/Classes.P.html#m1--\">m1()</a>",
-                "<a href=\"pkg5/Interfaces.A.html#m1--\">m1()</a>",
-                "<a href=\"pkg5/Interfaces.B.html#m1--\">m1()</a>",
-                "<a href=\"pkg5/Classes.P.html#m2--\">m2()</a>",
-                "<a href=\"pkg5/Interfaces.A.html#m2--\">m2()</a>",
-                "<a href=\"pkg5/Classes.P.html#m3--\">m3()</a>",
-                "<a href=\"pkg5/Interfaces.A.html#m3--\">m3()</a>",
-                "<a href=\"pkg5/Interfaces.B.html#m3--\">m3()</a>",
-                "<a href=\"pkg5/Classes.C.html#m4-java.lang.String-java.lang.String-\">m4(String, String)</a>",
-                "<a href=\"pkg5/Classes.P.html#m4-K-V-\">m4(K, V)</a>",
-                "<a href=\"pkg5/Classes.P.html#m5--\">m5()</a>",
-                "<a href=\"pkg5/Classes.C.html#m6--\">m6()</a>",
-                "<a href=\"pkg5/Classes.P.html#m6--\">m6()</a>",
-                "<a href=\"pkg5/Classes.C.html#m7--\">m7()</a>",
-                "<a href=\"pkg5/Classes.GP.html#m7--\">m7()</a>"
         );
     }
 }

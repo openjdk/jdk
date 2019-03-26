@@ -346,7 +346,6 @@ class Arguments : AllStatic {
 
   // Late-binding agents not started via arguments
   static void add_loaded_agent(AgentLibrary *agentLib);
-  static void add_loaded_agent(const char* name, char* options, bool absolute_path, void* os_lib);
 
   // Operation modi
   static Mode _mode;
@@ -368,7 +367,6 @@ class Arguments : AllStatic {
   static bool _UseOnStackReplacement;
   static bool _BackgroundCompilation;
   static bool _ClipInlining;
-  static bool _CIDynamicCompilePriority;
   static intx _Tier3InvokeNotifyFreqLog;
   static intx _Tier4InvocationThreshold;
 
@@ -664,5 +662,17 @@ do {                                                     \
     FLAG_SET_DEFAULT(opt, false);                        \
   }                                                      \
 } while(0)
+
+// similar to UNSUPPORTED_OPTION but sets flag to NULL
+#define UNSUPPORTED_OPTION_NULL(opt)                     \
+do {                                                     \
+  if (opt) {                                             \
+    if (FLAG_IS_CMDLINE(opt)) {                          \
+      warning("-XX flag " #opt " not supported in this VM"); \
+    }                                                    \
+    FLAG_SET_DEFAULT(opt, NULL);                         \
+  }                                                      \
+} while(0)
+
 
 #endif // SHARE_RUNTIME_ARGUMENTS_HPP

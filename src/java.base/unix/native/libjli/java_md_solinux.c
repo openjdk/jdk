@@ -303,6 +303,9 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
 
 #ifdef SETENV_REQUIRED
     jboolean mustsetenv = JNI_FALSE;
+#ifdef __solaris__
+    char *llp64 = NULL; /* existing LD_LIBRARY_PATH_64 setting */
+#endif // __solaris__
     char *runpath = NULL; /* existing effective LD_LIBRARY_PATH setting */
     char* new_runpath = NULL; /* desired new LD_LIBRARY_PATH string */
     char* newpath = NULL; /* path on new LD_LIBRARY_PATH */
@@ -367,7 +370,12 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
          * any.
          */
 
+#ifdef __solaris__
+        llp64 = getenv("LD_LIBRARY_PATH_64");
+        runpath = (llp64 == NULL) ? getenv(LD_LIBRARY_PATH) : llp64;
+#else
         runpath = getenv(LD_LIBRARY_PATH);
+#endif /* __solaris__ */
 
         /* runpath contains current effective LD_LIBRARY_PATH setting */
         { /* New scope to declare local variable */
@@ -440,6 +448,14 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
          * once at startup, so we have to re-exec the current executable
          * to get the changed environment variable to have an effect.
          */
+#ifdef __solaris__
+        /*
+         * new LD_LIBRARY_PATH took over for LD_LIBRARY_PATH_64
+         */
+        if (llp64 != NULL) {
+            UnsetEnv("LD_LIBRARY_PATH_64");
+        }
+#endif // __solaris__
 
         newenvp = environ;
     }
@@ -718,10 +734,17 @@ void SplashFreeLibrary() {
 }
 
 /*
- * Block current thread and continue execution in a new thread
+ * Signature adapter for pthread_create() or thr_create().
+ */
+static void* ThreadJavaMain(void* args) {
+    return (void*)(intptr_t)JavaMain(args);
+}
+
+/*
+ * Block current thread and continue execution in a new thread.
  */
 int
-ContinueInNewThread0(int (JNICALL *continuation)(void *), jlong stack_size, void * args) {
+CallJavaMainInNewThread(jlong stack_size, void* args) {
     int rslt;
 #ifndef __solaris__
     pthread_t tid;
@@ -730,35 +753,35 @@ ContinueInNewThread0(int (JNICALL *continuation)(void *), jlong stack_size, void
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
     if (stack_size > 0) {
-      pthread_attr_setstacksize(&attr, stack_size);
+        pthread_attr_setstacksize(&attr, stack_size);
     }
     pthread_attr_setguardsize(&attr, 0); // no pthread guard page on java threads
 
-    if (pthread_create(&tid, &attr, (void *(*)(void*))continuation, (void*)args) == 0) {
-      void * tmp;
-      pthread_join(tid, &tmp);
-      rslt = (int)(intptr_t)tmp;
+    if (pthread_create(&tid, &attr, ThreadJavaMain, args) == 0) {
+        void* tmp;
+        pthread_join(tid, &tmp);
+        rslt = (int)(intptr_t)tmp;
     } else {
-     /*
-      * Continue execution in current thread if for some reason (e.g. out of
-      * memory/LWP)  a new thread can't be created. This will likely fail
-      * later in continuation as JNI_CreateJavaVM needs to create quite a
-      * few new threads, anyway, just give it a try..
-      */
-      rslt = continuation(args);
+       /*
+        * Continue execution in current thread if for some reason (e.g. out of
+        * memory/LWP)  a new thread can't be created. This will likely fail
+        * later in JavaMain as JNI_CreateJavaVM needs to create quite a
+        * few new threads, anyway, just give it a try..
+        */
+        rslt = JavaMain(args);
     }
 
     pthread_attr_destroy(&attr);
 #else /* __solaris__ */
     thread_t tid;
     long flags = 0;
-    if (thr_create(NULL, stack_size, (void *(*)(void *))continuation, args, flags, &tid) == 0) {
-      void * tmp;
-      thr_join(tid, NULL, &tmp);
-      rslt = (int)(intptr_t)tmp;
+    if (thr_create(NULL, stack_size, ThreadJavaMain, args, flags, &tid) == 0) {
+        void* tmp;
+        thr_join(tid, NULL, &tmp);
+        rslt = (int)(intptr_t)tmp;
     } else {
-      /* See above. Continue in current thread if thr_create() failed */
-      rslt = continuation(args);
+        /* See above. Continue in current thread if thr_create() failed */
+        rslt = JavaMain(args);
     }
 #endif /* !__solaris__ */
     return rslt;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8087342
  * @summary Test linkresolver search static, instance and overpass duplicates
  * @modules java.base/jdk.internal.org.objectweb.asm
- * @run main/othervm -Xverify:none TestStaticandInstance
+ * @run main/othervm -XX:-BytecodeVerificationRemote -XX:-BytecodeVerificationLocal TestStaticandInstance
  */
 
 
@@ -94,7 +94,7 @@ interface I {
   default int q() { return 3; } // trigger defmeth processing: C gets AME overpass
 }
 
-// C gets static, private and AME overpass m()I with -Xverify:none
+// C gets static, private and AME overpass m()I with the verifier turned off
 class C implements I {
   static int m() { return 1;}  // javac with "n()" and patch to "m()"
   private int m() { return 2;} // javac with public and patch to private

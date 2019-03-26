@@ -57,19 +57,12 @@ public class ClhsdbInspect {
 
             String jstackOutput = test.run(theApp.getPid(), cmds, null, null);
 
-            if (jstackOutput == null) {
-                // Output could be null due to attach permission issues
-                // and if we are skipping this.
-                LingeredApp.stopApp(theApp);
-                throw new SkippedException("attach permission issues");
-            }
-
             Map<String, String> tokensMap = new HashMap<>();
             tokensMap.put("(a java.lang.Class for LingeredAppWithLock)",
                           "instance of Oop for java/lang/Class");
             tokensMap.put("Method*=", "Type is Method");
             tokensMap.put("(a java.lang.ref.ReferenceQueue$Lock)",
-                          "instance of Oop for java/lang/ref/ReferenceQueue$Lock");
+                          "instance of Oop for java/lang/ref/ReferenceQueue\\$Lock");
 
             String[] lines = jstackOutput.split("\\R");
 

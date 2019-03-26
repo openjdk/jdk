@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,20 +26,22 @@
 
 #include "memory/allocation.hpp"
 
+class ZForwarding;
 class ZPage;
 
 class ZRelocationSet {
   template <bool> friend class ZRelocationSetIteratorImpl;
 
 private:
-  ZPage** _pages;
-  size_t  _npages;
+  ZForwarding** _forwardings;
+  size_t        _nforwardings;
 
 public:
   ZRelocationSet();
 
-  void populate(const ZPage* const* group0, size_t ngroup0,
-                const ZPage* const* group1, size_t ngroup1);
+  void populate(ZPage* const* group0, size_t ngroup0,
+                ZPage* const* group1, size_t ngroup1);
+  void reset();
 };
 
 template <bool parallel>
@@ -51,7 +53,7 @@ private:
 public:
   ZRelocationSetIteratorImpl(ZRelocationSet* relocation_set);
 
-  bool next(ZPage** page);
+  bool next(ZForwarding** forwarding);
 };
 
 // Iterator types

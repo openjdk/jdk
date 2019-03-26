@@ -49,7 +49,7 @@ template <typename BE, typename IE, typename WriterPolicyImpl>
 inline intptr_t EventWriterHost<BE, IE, WriterPolicyImpl>::end_write(void) {
   assert(this->is_acquired(),
     "state corruption, calling end with writer with non-acquired state!");
-  return this->is_valid() ? this->used_offset() : 0;
+  return this->is_valid() ? (intptr_t)this->used_offset() : 0;
 }
 
 template <typename BE, typename IE, typename WriterPolicyImpl>

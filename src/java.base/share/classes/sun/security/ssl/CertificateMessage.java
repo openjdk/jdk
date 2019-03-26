@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -717,6 +717,13 @@ final class CertificateMessage {
                     alert = chc.staplingActive ?
                             Alert.BAD_CERT_STATUS_RESPONSE :
                             Alert.CERTIFICATE_UNKNOWN;
+                } else if (reason == BasicReason.ALGORITHM_CONSTRAINED) {
+                    alert = Alert.UNSUPPORTED_CERTIFICATE;
+                } else if (reason == BasicReason.EXPIRED) {
+                    alert = Alert.CERTIFICATE_EXPIRED;
+                } else if (reason == BasicReason.INVALID_SIGNATURE ||
+                        reason == BasicReason.NOT_YET_VALID) {
+                    alert = Alert.BAD_CERTIFICATE;
                 }
             }
 

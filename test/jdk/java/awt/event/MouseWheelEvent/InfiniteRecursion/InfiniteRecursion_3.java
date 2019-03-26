@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,13 @@
  */
 
 /*
-  test
+  @test
+  @key headful
   @bug 6480024
   @library ../../../regtesthelpers
   @build Util Sysout AbstractTest
-  @summary stack overflow on mouse wheel rotation within Applet
-  @author Andrei Dmitriev: area=awt.event
-  @run applet InfiniteRecursion_3.html
+  @summary stack overflow on mouse wheel rotation within JApplet
+  @run main InfiniteRecursion_3
 */
 
 /**
@@ -44,16 +44,20 @@ import java.awt.event.*;
 import javax.swing.*;
 import test.java.awt.regtesthelpers.Util;
 import test.java.awt.regtesthelpers.AbstractTest;
-import test.java.awt.regtesthelpers.Sysout;
-import java.applet.Applet;
 
-public class InfiniteRecursion_3 extends Applet {
+public class InfiniteRecursion_3 extends Frame {
     final static Robot robot = Util.createRobot();
     final static int MOVE_COUNT = 5;
     //*2 for both rotation directions,
     //*2 as Java sends the wheel event to every for nested component in hierarchy under cursor
     final static int EXPECTED_COUNT = MOVE_COUNT * 2 * 2;
     static int actualEvents = 0;
+
+    public static void main(final String[] args) {
+        InfiniteRecursion_3 app = new InfiniteRecursion_3();
+        app.init();
+        app.start();
+    }
 
     public void init()
     {
@@ -74,7 +78,7 @@ public class InfiniteRecursion_3 extends Applet {
             });
 
         this.add(jButton);
-
+        this.setLocationRelativeTo(null);
         this.setVisible(true);
         this.validate();
 

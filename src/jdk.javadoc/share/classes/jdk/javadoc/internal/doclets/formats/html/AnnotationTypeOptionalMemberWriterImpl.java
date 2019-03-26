@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,9 +33,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Navigation;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeOptionalMemberWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -74,8 +72,8 @@ public class AnnotationTypeOptionalMemberWriterImpl extends
     @Override
     public Content getMemberSummaryHeader(TypeElement typeElement,
             Content memberSummaryTree) {
-        memberSummaryTree.addContent(
-                HtmlConstants.START_OF_ANNOTATION_TYPE_OPTIONAL_MEMBER_SUMMARY);
+        memberSummaryTree.add(
+                MarkerComments.START_OF_ANNOTATION_TYPE_OPTIONAL_MEMBER_SUMMARY);
         Content memberTree = writer.getMemberTreeHeader();
         writer.addSummaryHeader(this, typeElement, memberTree);
         return memberTree;
@@ -101,8 +99,8 @@ public class AnnotationTypeOptionalMemberWriterImpl extends
                 Content dt = HtmlTree.DT(contents.default_);
                 Content dl = HtmlTree.DL(dt);
                 Content dd = HtmlTree.DD(new StringContent(value.toString()));
-                dl.addContent(dd);
-                annotationDocTree.addContent(dl);
+                dl.add(dd);
+                annotationDocTree.add(dl);
             }
         }
     }
@@ -112,19 +110,9 @@ public class AnnotationTypeOptionalMemberWriterImpl extends
      */
     @Override
     public void addSummaryLabel(Content memberTree) {
-        Content label = HtmlTree.HEADING(HtmlConstants.SUMMARY_HEADING,
+        Content label = HtmlTree.HEADING(Headings.TypeDeclaration.SUMMARY_HEADING,
                 contents.annotateTypeOptionalMemberSummaryLabel);
-        memberTree.addContent(label);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected String getTableSummary() {
-        return resources.getText("doclet.Member_Table_Summary",
-                resources.getText("doclet.Annotation_Type_Optional_Member_Summary"),
-                resources.getText("doclet.annotation_type_optional_members"));
+        memberTree.add(label);
     }
 
     /**
@@ -149,7 +137,7 @@ public class AnnotationTypeOptionalMemberWriterImpl extends
      */
     @Override
     public void addSummaryAnchor(TypeElement typeElement, Content memberTree) {
-        memberTree.addContent(links.createAnchor(
+        memberTree.add(links.createAnchor(
                 SectionName.ANNOTATION_TYPE_OPTIONAL_ELEMENT_SUMMARY));
     }
 }

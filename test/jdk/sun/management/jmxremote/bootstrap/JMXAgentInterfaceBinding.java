@@ -28,10 +28,13 @@ import java.net.MalformedURLException;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.management.remote.JMXConnector;
 import javax.management.remote.JMXConnectorFactory;
@@ -135,9 +138,9 @@ public class JMXAgentInterfaceBinding {
         private final int rmiPort;
         private final boolean useSSL;
         private final CountDownLatch latch;
-        private boolean failed;
-        private boolean jmxConnectWorked;
-        private boolean rmiConnectWorked;
+        private volatile boolean failed;
+        private volatile boolean jmxConnectWorked;
+        private volatile boolean rmiConnectWorked;
 
         private JMXConnectorThread(String addr,
                                    int jmxPort,
@@ -156,6 +159,7 @@ public class JMXAgentInterfaceBinding {
             try {
                 connect();
             } catch (IOException e) {
+                e.printStackTrace();
                 failed = true;
             }
         }
@@ -223,14 +227,16 @@ public class JMXAgentInterfaceBinding {
 
     private static class MainThread extends Thread {
 
-        private static final int WAIT_FOR_JMX_AGENT_TIMEOUT_MS = 500;
+        private static final String EXP_TERM_MSG_REG = "Exit: ([0-9]+)";
+        private static final Pattern EXIT_PATTERN = Pattern.compile(EXP_TERM_MSG_REG);
+        private static final String COOP_EXIT = "MainThread: Cooperative Exit";
+        private static final int WAIT_FOR_JMX_AGENT_TIMEOUT_MS = 20_000;
         private final String addr;
         private final int jmxPort;
         private final int rmiPort;
         private final boolean useSSL;
-        private boolean terminated = false;
         private boolean jmxAgentStarted = false;
-        private Exception excptn;
+        private volatile Exception excptn;
 
         private MainThread(InetAddress bindAddress, int jmxPort, int rmiPort, boolean useSSL) {
             this.addr = wrapAddress(bindAddress.getHostAddress());
@@ -243,14 +249,16 @@ public class JMXAgentInterfaceBinding {
         public void run() {
             try {
                 waitUntilReadyForConnections();
-                // Do nothing, but wait for termination.
-                try {
-                    while (!terminated) {
-                        Thread.sleep(100);
-                    }
-                } catch (InterruptedException e) { // ignore
+
+                // Wait for termination message
+                String actualTerm = new String(System.in.readAllBytes(), StandardCharsets.UTF_8).trim();
+                System.err.println("DEBUG: MainThread: actualTerm: '" + actualTerm + "'");
+                Matcher matcher = EXIT_PATTERN.matcher(actualTerm);
+                if (matcher.matches()) {
+                    int expExitCode = Integer.parseInt(matcher.group(1));
+                    System.out.println(COOP_EXIT);
+                    System.exit(expExitCode); // The main test expects this exit value
                 }
-                System.out.println("MainThread: Thread stopped.");
             } catch (Exception e) {
                 this.excptn = e;
             }

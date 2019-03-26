@@ -148,9 +148,6 @@ class frame {
   // returns the sending frame
   frame sender(RegisterMap* map) const;
 
-  // for Profiling - acting on another frame. walks sender frames
-  // if valid.
-  frame profile_find_Java_sender_frame(JavaThread *thread);
   bool safe_for_sender(JavaThread *thread);
 
   // returns the sender, but skips conversion frames
@@ -381,7 +378,7 @@ class frame {
   void nmethods_do(CodeBlobClosure* cf);
 
   // RedefineClasses support for finding live interpreted methods on the stack
-  void metadata_do(void f(Metadata*));
+  void metadata_do(MetadataClosure* f);
 
   // Verification
   void verify(const RegisterMap* map);

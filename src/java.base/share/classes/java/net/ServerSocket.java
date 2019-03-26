@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,6 @@
 
 package java.net;
 
-import jdk.internal.access.JavaNetSocketAccess;
-import jdk.internal.access.SharedSecrets;
-
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -37,6 +34,10 @@ import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
 import java.util.Set;
 import java.util.Collections;
+
+import jdk.internal.access.JavaNetSocketAccess;
+import jdk.internal.access.SharedSecrets;
+import sun.net.PlatformSocketImpl;
 
 /**
  * This class implements server sockets. A server socket waits for
@@ -290,13 +291,12 @@ class ServerSocket implements java.io.Closeable {
     }
 
     private void setImpl() {
+        SocketImplFactory factory = ServerSocket.factory;
         if (factory != null) {
             impl = factory.createSocketImpl();
             checkOldImpl();
         } else {
-            // No need to do a checkOldImpl() here, we know it's an up to date
-            // SocketImpl!
-            impl = new SocksSocketImpl();
+            impl = SocketImpl.createPlatformSocketImpl(true);
         }
         if (impl != null)
             impl.setServerSocket(this);
@@ -542,38 +542,134 @@ class ServerSocket implements java.io.Closeable {
      * @spec JSR-51
      */
     protected final void implAccept(Socket s) throws IOException {
-        SocketImpl si = null;
-        try {
-            if (s.impl == null)
-              s.setImpl();
-            else {
-                s.impl.reset();
-            }
-            si = s.impl;
-            s.impl = null;
-            si.address = new InetAddress();
-            si.fd = new FileDescriptor();
-            getImpl().accept(si);
-            SocketCleanable.register(si.fd);   // raw fd has been set
+        SocketImpl si = s.impl;
 
-            SecurityManager security = System.getSecurityManager();
-            if (security != null) {
-                security.checkAccept(si.getInetAddress().getHostAddress(),
-                                     si.getPort());
+        // Socket has no SocketImpl
+        if (si == null) {
+            si = implAccept();
+            s.setImpl(si);
+            s.postAccept();
+            return;
+        }
+
+        // Socket has a SOCKS or HTTP SocketImpl, need delegate
+        if (si instanceof DelegatingSocketImpl) {
+            si = ((DelegatingSocketImpl) si).delegate();
+            assert si instanceof PlatformSocketImpl;
+        }
+
+        // Accept connection with a platform or custom SocketImpl.
+        // For the platform SocketImpl case:
+        // - the connection is accepted with a new SocketImpl
+        // - the SO_TIMEOUT socket option is copied to the new SocketImpl
+        // - the Socket is connected to the new SocketImpl
+        // - the existing/old SocketImpl is closed
+        // For the custom SocketImpl case, the connection is accepted with the
+        // existing custom SocketImpl.
+        ensureCompatible(si);
+        if (impl instanceof PlatformSocketImpl) {
+            SocketImpl psi = platformImplAccept();
+            si.copyOptionsTo(psi);
+            s.setImpl(psi);
+            si.closeQuietly();
+        } else {
+            s.impl = null; // temporarily break connection to impl
+            try {
+                customImplAccept(si);
+            } finally {
+                s.impl = si;  // restore connection to impl
             }
-        } catch (IOException e) {
-            if (si != null)
-                si.reset();
-            s.impl = si;
-            throw e;
-        } catch (SecurityException e) {
-            if (si != null)
-                si.reset();
-            s.impl = si;
+        }
+        s.postAccept();
+    }
+
+    /**
+     * Accepts a connection with a new SocketImpl.
+     * @return the new SocketImpl
+     */
+    private SocketImpl implAccept() throws IOException {
+        if (impl instanceof PlatformSocketImpl) {
+            return platformImplAccept();
+        } else {
+            // custom server SocketImpl, client SocketImplFactory must be set
+            SocketImplFactory factory = Socket.socketImplFactory();
+            if (factory == null) {
+                throw new IOException("An instance of " + impl.getClass() +
+                    " cannot accept connection with 'null' SocketImpl:" +
+                    " client socket implementation factory not set");
+            }
+            SocketImpl si = factory.createSocketImpl();
+            customImplAccept(si);
+            return si;
+        }
+    }
+
+    /**
+     * Accepts a connection with a new platform SocketImpl.
+     * @return the new platform SocketImpl
+     */
+    private SocketImpl platformImplAccept() throws IOException {
+        assert impl instanceof PlatformSocketImpl;
+
+        // create a new platform SocketImpl and accept the connection
+        SocketImpl psi = SocketImpl.createPlatformSocketImpl(false);
+        implAccept(psi);
+        return psi;
+    }
+
+    /**
+     * Accepts a new connection with the given custom SocketImpl.
+     */
+    private void customImplAccept(SocketImpl si) throws IOException {
+        assert !(impl instanceof PlatformSocketImpl)
+                && !(si instanceof PlatformSocketImpl);
+
+        si.reset();
+        try {
+            // custom SocketImpl may expect fd/address objects to be created
+            si.fd = new FileDescriptor();
+            si.address = new InetAddress();
+            implAccept(si);
+        } catch (Exception e) {
+            si.reset();
             throw e;
         }
-        s.impl = si;
-        s.postAccept();
+    }
+
+    /**
+     * Accepts a new connection so that the given SocketImpl is connected to
+     * the peer. The SocketImpl and connection are closed if the connection is
+     * denied by the security manager.
+     * @throws IOException if an I/O error occurs
+     * @throws SecurityException if the security manager's checkAccept method fails
+     */
+    private void implAccept(SocketImpl si) throws IOException {
+        assert !(si instanceof DelegatingSocketImpl);
+
+        // accept a connection
+        impl.accept(si);
+
+        // check permission, close SocketImpl/connection if denied
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            try {
+                sm.checkAccept(si.getInetAddress().getHostAddress(), si.getPort());
+            } catch (SecurityException se) {
+                si.close();
+                throw se;
+            }
+        }
+    }
+
+    /**
+     * Throws IOException if the server SocketImpl and the given client
+     * SocketImpl are not both platform or custom SocketImpls.
+     */
+    private void ensureCompatible(SocketImpl si) throws IOException {
+        if ((impl instanceof PlatformSocketImpl) != (si instanceof PlatformSocketImpl)) {
+            throw new IOException("An instance of " + impl.getClass() +
+                " cannot accept a connection with an instance of " + si.getClass());
+        }
     }
 
     /**
@@ -778,7 +874,7 @@ class ServerSocket implements java.io.Closeable {
     /**
      * The factory for all server sockets.
      */
-    private static SocketImplFactory factory = null;
+    private static volatile SocketImplFactory factory;
 
     /**
      * Sets the server socket implementation factory for the

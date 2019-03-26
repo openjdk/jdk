@@ -41,6 +41,7 @@
 // Note: When new VM_XXX comes up, add 'XXX' to the template table.
 #define VM_OPS_DO(template)                       \
   template(None)                                  \
+  template(Cleanup)                               \
   template(ThreadStop)                            \
   template(ThreadDump)                            \
   template(PrintThreads)                          \
@@ -68,7 +69,9 @@
   template(G1CollectForAllocation)                \
   template(G1CollectFull)                         \
   template(G1Concurrent)                          \
-  template(ZOperation)                            \
+  template(ZMarkStart)                            \
+  template(ZMarkEnd)                              \
+  template(ZRelocateStart)                        \
   template(HandshakeOneThread)                    \
   template(HandshakeAllThreads)                   \
   template(HandshakeFallback)                     \
@@ -119,7 +122,6 @@
   template(PrintCompileQueue)                     \
   template(PrintClassHierarchy)                   \
   template(ThreadSuspend)                         \
-  template(CTWThreshold)                          \
   template(ThreadsSuspendJVMTI)                   \
   template(ICBufferFull)                          \
   template(ScavengeMonitors)                      \
@@ -212,7 +214,7 @@ class VM_Operation: public CHeapObj<mtInternal> {
 
   // Debugging
   virtual void print_on_error(outputStream* st) const;
-  const char* name() const { return _names[type()]; }
+  virtual const char* name() const  { return _names[type()]; }
   static const char* name(int type) {
     assert(type >= 0 && type < VMOp_Terminating, "invalid VM operation type");
     return _names[type];
@@ -220,6 +222,21 @@ class VM_Operation: public CHeapObj<mtInternal> {
 #ifndef PRODUCT
   void print_on(outputStream* st) const { print_on_error(st); }
 #endif
+};
+
+class VM_None: public VM_Operation {
+  const char* _reason;
+ public:
+  VM_None(const char* reason) : _reason(reason) {}
+  const char* name() const { return _reason; }
+  VMOp_Type type() const { return VMOp_None; }
+  void doit() {};
+};
+
+class VM_Cleanup: public VM_Operation {
+ public:
+  VMOp_Type type() const { return VMOp_Cleanup; }
+  void doit() {};
 };
 
 class VM_ThreadStop: public VM_Operation {
@@ -268,12 +285,6 @@ class VM_ForceSafepoint: public VM_Operation {
 class VM_ThreadSuspend: public VM_ForceSafepoint {
  public:
   VMOp_Type type() const { return VMOp_ThreadSuspend; }
-};
-
-// empty vm op, when forcing a safepoint due to ctw threshold is reached for the sweeper
-class VM_CTWThreshold: public VM_ForceSafepoint {
- public:
-  VMOp_Type type() const { return VMOp_CTWThreshold; }
 };
 
 // empty vm op, when forcing a safepoint to suspend threads from jvmti
@@ -445,7 +456,7 @@ class VM_ThreadDump : public VM_Operation {
   bool                           _with_locked_monitors;
   bool                           _with_locked_synchronizers;
 
-  ThreadSnapshot* snapshot_thread(JavaThread* java_thread, ThreadConcurrentLocks* tcl);
+  void snapshot_thread(JavaThread* java_thread, ThreadConcurrentLocks* tcl);
 
  public:
   VM_ThreadDump(ThreadDumpResult* result,

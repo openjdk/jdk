@@ -1,0 +1,9 @@
+Select a strategy to mitigate speculative execution attacks (e.g., SPECTRE).
+The accepted values are:
+                  None - No mitigations are used in JIT compiled code.
+            AllTargets - All branches are protected against speculative attacks.
+                         This has a significant performance impact.
+          GuardTargets - Only branches that preserve Java memory safety are protected.
+                         This has less performance impact than AllTargets.
+  NonDeoptGuardTargets - GuardTargets except that branches which deoptimize are not
+                         protected since they can not be executed repeatedly.

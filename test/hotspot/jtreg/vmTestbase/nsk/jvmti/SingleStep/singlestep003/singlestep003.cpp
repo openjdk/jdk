@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,9 @@ static volatile jint result = PASSED;
 static jvmtiEnv *jvmti = NULL;
 static jvmtiEventCallbacks callbacks;
 
+static volatile int callbacksEnabled = NSK_FALSE;
+static jrawMonitorID agent_lock;
+
 static void setBP(jvmtiEnv *jvmti_env, JNIEnv *env, jclass klass) {
     jmethodID mid;
 
@@ -76,6 +79,13 @@ void JNICALL
 ClassLoad(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thread, jclass klass) {
     char *sig, *generic;
 
+    jvmti->RawMonitorEnter(agent_lock);
+
+    if (!callbacksEnabled) {
+        jvmti->RawMonitorExit(agent_lock);
+        return;
+    }
+
     if (!NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(klass, &sig, &generic)))
         env->FatalError("failed to obtain a class signature\n");
 
@@ -86,6 +96,27 @@ ClassLoad(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thread, jclass klass) {
             sig);
         setBP(jvmti_env, env, klass);
     }
+
+    jvmti->RawMonitorExit(agent_lock);
+}
+
+void JNICALL
+VMStart(jvmtiEnv *jvmti_env, JNIEnv* jni_env) {
+    jvmti->RawMonitorEnter(agent_lock);
+
+    callbacksEnabled = NSK_TRUE;
+
+    jvmti->RawMonitorExit(agent_lock);
+}
+
+
+void JNICALL
+VMDeath(jvmtiEnv *jvmti_env, JNIEnv* jni_env) {
+    jvmti->RawMonitorEnter(agent_lock);
+
+    callbacksEnabled = NSK_FALSE;
+
+    jvmti->RawMonitorExit(agent_lock);
 }
 
 void JNICALL
@@ -93,6 +124,13 @@ Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thr, jmethodID method,
         jlocation loc) {
     jclass klass;
     char *sig, *generic;
+
+    jvmti->RawMonitorEnter(agent_lock);
+
+    if (!callbacksEnabled) {
+        jvmti->RawMonitorExit(agent_lock);
+        return;
+    }
 
     NSK_DISPLAY0("Breakpoint event received\n");
     if (!NSK_JVMTI_VERIFY(jvmti_env->GetMethodDeclaringClass(method, &klass)))
@@ -113,6 +151,8 @@ Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thr, jmethodID method,
         NSK_COMPLAIN1("TEST FAILURE: unexpected breakpoint event in method of class \"%s\"\n\n",
             sig);
     }
+
+    jvmti->RawMonitorExit(agent_lock);
 }
 
 void JNICALL
@@ -276,15 +316,26 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     callbacks.ClassLoad = &ClassLoad;
     callbacks.Breakpoint = &Breakpoint;
     callbacks.SingleStep = &SingleStep;
+    callbacks.VMStart = &VMStart;
+    callbacks.VMDeath = &VMDeath;
+
     if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks))))
         return JNI_ERR;
 
     NSK_DISPLAY0("setting event callbacks done\nenabling JVMTI events ...\n");
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_START, NULL)))
+        return JNI_ERR;
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, NULL)))
+        return JNI_ERR;
     if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_LOAD, NULL)))
         return JNI_ERR;
     if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, NULL)))
         return JNI_ERR;
     NSK_DISPLAY0("enabling the events done\n\n");
+
+    if (jvmti->CreateRawMonitor("agent_lock", &agent_lock) != JVMTI_ERROR_NONE) {
+        return JNI_ERR;
+    }
 
     return JNI_OK;
 }

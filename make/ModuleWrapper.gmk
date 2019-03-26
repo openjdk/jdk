@@ -42,7 +42,7 @@ TARGETS :=
 include $(MAKEFILE_PREFIX)-$(MODULE).gmk
 
 # Setup copy rules from the modules directories to the jdk image directory.
-ifeq ($(OPENJDK_TARGET_OS), windows)
+ifeq ($(call isTargetOs, windows), true)
   TO_BIN_FILTER := %$(SHARED_LIBRARY_SUFFIX) %.diz %.pdb %.map
 
   $(eval $(call SetupCopyFiles, COPY_LIBS_TO_BIN, \

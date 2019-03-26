@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,6 @@ import javax.lang.model.element.Element;
 
 import jdk.javadoc.internal.doclets.formats.html.Contents;
 import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 
 /**
  * A builder for HTML tables, such as the summary tables for various
@@ -61,9 +60,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
  *  deletion without notice.</b>
  */
 public class Table {
-    private final HtmlVersion version;
     private final HtmlStyle tableStyle;
-    private String summary;
     private Content caption;
     private Map<String, Predicate<Element>> tabMap;
     private String defaultTab;
@@ -84,29 +81,12 @@ public class Table {
     /**
      * Creates a builder for an HTML table.
      *
-     * @param version   the version of HTML, used to determine is a {@code summary}
-     *                  attribute is needed
      * @param style     the style class for the {@code <table>} tag
      */
-    public Table(HtmlVersion version, HtmlStyle style) {
-        this.version = version;
+    public Table(HtmlStyle style) {
         this.tableStyle = style;
         bodyRows = new ArrayList<>();
         bodyRowMasks = new ArrayList<>();
-    }
-
-    /**
-     * Sets the summary for the table.
-     * This is ignored if the HTML version for the table is not {@link HtmlVersion#HTML4}.
-     *
-     * @param summary the summary
-     * @return this object
-     */
-    public Table setSummary(String summary) {
-        if (version == HtmlVersion.HTML4) {
-            this.summary = summary;
-        }
-        return this;
     }
 
     /**
@@ -210,7 +190,6 @@ public class Table {
      *
      * <p>Notes:
      * <ul>
-     * <li>This currently does not use a {@code <thead>} tag, but probably should, eventually
      * <li>The column styles are not currently applied to the header, but probably should, eventually
      * </ul>
      *
@@ -366,7 +345,7 @@ public class Table {
 
         if (stripedStyles != null) {
             int rowIndex = bodyRows.size();
-            row.addAttr(HtmlAttr.CLASS, stripedStyles.get(rowIndex % 2).name());
+            row.put(HtmlAttr.CLASS, stripedStyles.get(rowIndex % 2).name());
         }
         int colIndex = 0;
         for (Content c : contents) {
@@ -376,14 +355,14 @@ public class Table {
             HtmlTree cell = (colIndex == rowScopeColumnIndex)
                     ? HtmlTree.TH(cellStyle, "row", c)
                     : HtmlTree.TD(cellStyle, c);
-            row.addContent(cell);
+            row.add(cell);
             colIndex++;
         }
         bodyRows.add(row);
 
         if (tabMap != null) {
             int index = bodyRows.size() - 1;
-            row.addAttr(HtmlAttr.ID, (rowIdPrefix + index));
+            row.put(HtmlAttr.ID, (rowIdPrefix + index));
             int mask = 0;
             int maskBit = 1;
             for (Map.Entry<String, Predicate<Element>> e : tabMap.entrySet()) {
@@ -418,65 +397,64 @@ public class Table {
         HtmlTree mainDiv = new HtmlTree(HtmlTag.DIV);
         mainDiv.setStyle(tableStyle);
         HtmlTree table = new HtmlTree(HtmlTag.TABLE);
-        if (summary != null) {
-            table.addAttr(HtmlAttr.SUMMARY, summary);
-        }
         if (tabMap == null || tabs.size() == 1) {
             if (tabMap == null) {
-                table.addContent(caption);
+                table.add(caption);
             } else if (tabs.size() == 1) {
                 String tabName = tabs.iterator().next();
-                table.addContent(getCaption(new StringContent(tabName)));
+                table.add(getCaption(new StringContent(tabName)));
             }
-            table.addContent(getTableBody());
-            mainDiv.addContent(table);
+            table.add(getTableBody());
+            mainDiv.add(table);
         } else {
             HtmlTree tablist = new HtmlTree(HtmlTag.DIV)
-                    .addAttr(HtmlAttr.ROLE, "tablist")
-                    .addAttr(HtmlAttr.ARIA_ORIENTATION, "horizontal");
+                    .put(HtmlAttr.ROLE, "tablist")
+                    .put(HtmlAttr.ARIA_ORIENTATION, "horizontal");
 
             int tabIndex = 0;
-            tablist.addContent(createTab(tabId.apply(tabIndex), activeTabStyle, true, defaultTab));
-            table.addAttr(HtmlAttr.ARIA_LABELLEDBY, tabId.apply(tabIndex));
+            tablist.add(createTab(tabId.apply(tabIndex), activeTabStyle, true, defaultTab));
+            table.put(HtmlAttr.ARIA_LABELLEDBY, tabId.apply(tabIndex));
             for (String tabName : tabMap.keySet()) {
                 tabIndex++;
                 if (tabs.contains(tabName)) {
                     String script = tabScript.apply(1 << (tabIndex - 1));
                     HtmlTree tab = createTab(tabId.apply(tabIndex), tabStyle, false, tabName);
-                    tab.addAttr(HtmlAttr.ONCLICK, script);
-                    tablist.addContent(tab);
+                    tab.put(HtmlAttr.ONCLICK, script);
+                    tablist.add(tab);
                 }
             }
             HtmlTree tabpanel = new HtmlTree(HtmlTag.DIV)
-                    .addAttr(HtmlAttr.ID, tableStyle + "_tabpanel")
-                    .addAttr(HtmlAttr.ROLE, "tabpanel");
-            table.addContent(getTableBody());
-            tabpanel.addContent(table);
-            mainDiv.addContent(tablist);
-            mainDiv.addContent(tabpanel);
+                    .put(HtmlAttr.ID, tableStyle + "_tabpanel")
+                    .put(HtmlAttr.ROLE, "tabpanel");
+            table.add(getTableBody());
+            tabpanel.add(table);
+            mainDiv.add(tablist);
+            mainDiv.add(tabpanel);
         }
         return mainDiv;
     }
 
     private HtmlTree createTab(String tabId, HtmlStyle style, boolean defaultTab, String tabName) {
         HtmlTree tab = new HtmlTree(HtmlTag.BUTTON)
-                .addAttr(HtmlAttr.ROLE, "tab")
-                .addAttr(HtmlAttr.ARIA_SELECTED, defaultTab ? "true" : "false")
-                .addAttr(HtmlAttr.ARIA_CONTROLS, tableStyle + "_tabpanel")
-                .addAttr(HtmlAttr.TABINDEX, defaultTab ? "0" : "-1")
-                .addAttr(HtmlAttr.ONKEYDOWN, "switchTab(event)")
-                .addAttr(HtmlAttr.ID, tabId)
+                .put(HtmlAttr.ROLE, "tab")
+                .put(HtmlAttr.ARIA_SELECTED, defaultTab ? "true" : "false")
+                .put(HtmlAttr.ARIA_CONTROLS, tableStyle + "_tabpanel")
+                .put(HtmlAttr.TABINDEX, defaultTab ? "0" : "-1")
+                .put(HtmlAttr.ONKEYDOWN, "switchTab(event)")
+                .put(HtmlAttr.ID, tabId)
                 .setStyle(style);
-        tab.addContent(tabName);
+        tab.add(tabName);
         return tab;
     }
 
     private Content getTableBody() {
         ContentBuilder tableContent = new ContentBuilder();
-        tableContent.addContent(header.toContent());
+        Content thead = new HtmlTree(HtmlTag.THEAD);
+        thead.add(header.toContent());
+        tableContent.add(thead);
         Content tbody = new HtmlTree(HtmlTag.TBODY);
-        bodyRows.forEach(row -> tbody.addContent(row));
-        tableContent.addContent(tbody);
+        bodyRows.forEach(row -> tbody.add(row));
+        tableContent.add(tbody);
         return tableContent;
     }
 

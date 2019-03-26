@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,9 @@ package jdk.javadoc.internal.doclets.formats.html;
 
 import javax.lang.model.element.PackageElement;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Links;
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -53,6 +51,12 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
  * @author Atul M Dambalkar
  */
 public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
+    /**
+     * The heading (h1 or h2) to use for the module list,
+     * set by addNavigationBarHeader depending on whether or not there
+     * is an additional initial heading.
+     */
+    private HtmlTag packageListHeading;
 
     /**
      * Construct the PackageIndexFrameWriter object.
@@ -70,7 +74,9 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
     public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
         DocPath filename = DocPaths.OVERVIEW_FRAME;
         PackageIndexFrameWriter packgen = new PackageIndexFrameWriter(configuration, filename);
-        packgen.buildPackageIndexFile("doclet.Window_Overview", false);
+        packgen.buildPackageIndexFile("doclet.Window_Overview",
+                "package index (frame)",
+                false);
     }
 
     /**
@@ -78,7 +84,7 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
      */
     @Override
     protected void addPackagesList(Content main) {
-        Content heading = HtmlTree.HEADING(HtmlConstants.PACKAGE_HEADING, true,
+        Content heading = HtmlTree.HEADING(packageListHeading, true,
                 contents.packagesLabel);
         HtmlTree htmlTree = HtmlTree.DIV(HtmlStyle.indexContainer, heading);
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
@@ -88,11 +94,11 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
             // package is marked as deprecated.
             if (aPackage != null &&
                 (!(configuration.nodeprecated && utils.isDeprecated(aPackage)))) {
-                ul.addContent(getPackage(aPackage));
+                ul.add(getPackage(aPackage));
             }
         }
-        htmlTree.addContent(ul);
-        main.addContent(htmlTree);
+        htmlTree.add(ul);
+        main.add(htmlTree);
     }
 
     /**
@@ -129,9 +135,14 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
         } else {
             headerContent = new RawHtml(replaceDocRootDir(configuration.header));
         }
-        Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, true,
-                HtmlStyle.bar, headerContent);
-        header.addContent(heading);
+        if (!headerContent.isEmpty()) {
+            Content heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, true,
+                    HtmlStyle.bar, headerContent);
+            header.add(heading);
+            packageListHeading = Headings.IndexFrames.PACKAGE_HEADING;
+        } else {
+            packageListHeading = Headings.PAGE_TITLE_HEADING;
+        }
     }
 
     /**
@@ -152,7 +163,7 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
         Content linkContent = links.createLink(DocPaths.ALLCLASSES_FRAME,
                 contents.allClassesLabel, "", "packageFrame");
         Content li = HtmlTree.LI(linkContent);
-        ul.addContent(li);
+        ul.add(li);
     }
 
     /**
@@ -166,7 +177,7 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
         Content linkContent = links.createLink(DocPaths.MODULE_OVERVIEW_FRAME,
                 contents.allModulesLabel, "", "packageListFrame");
         Content li = HtmlTree.LI(linkContent);
-        ul.addContent(li);
+        ul.add(li);
     }
 
     /**
@@ -175,6 +186,6 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
     @Override
     protected void addNavigationBarFooter(Content footer) {
         Content p = HtmlTree.P(Contents.SPACE);
-        footer.addContent(p);
+        footer.add(p);
     }
 }

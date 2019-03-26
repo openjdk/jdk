@@ -26,7 +26,6 @@
   @key headful
   @bug       6496958
   @summary   Tests that breaking the proccess of clearing LW requests doesn't break focus.
-  @author    anton.tarasov@...: area=awt-focus
   @library    ../../regtesthelpers
   @build      Util
   @run       main ClearLwQueueBreakTest
@@ -35,11 +34,10 @@
 import java.awt.*;
 import javax.swing.*;
 import java.awt.event.*;
-import java.applet.Applet;
 import test.java.awt.regtesthelpers.Util;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class ClearLwQueueBreakTest extends Applet {
+public class ClearLwQueueBreakTest {
     JFrame f1 = new JFrame("frame");
     JFrame f2 = new JFrame("frame");
     JButton b = new JButton("button");
@@ -60,11 +58,6 @@ public class ClearLwQueueBreakTest extends Applet {
 
     public void init() {
         robot = Util.createRobot();
-
-        // Create instructions for the user here, as well as set up
-        // the environment -- set the layout manager, add buttons,
-        // etc.
-        this.setLayout (new BorderLayout ());
     }
 
     public void start() {
@@ -118,6 +111,7 @@ public class ClearLwQueueBreakTest extends Applet {
         f1.add(tf3);
         f1.setLayout(new FlowLayout());
         f1.pack();
+        f1.setLocationRelativeTo(null);
         f1.setVisible(true);
         Util.waitForIdle(robot);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * String result = fmt.format(1000);
  * </pre></blockquote>
  *
- * <h3><a id="compact_number_style">Style</a></h3>
+ * <h2><a id="compact_number_style">Style</a></h2>
  * <p>
  * A number can be formatted in the compact forms with two different
  * styles, {@link NumberFormat.Style#SHORT SHORT}
@@ -88,7 +88,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * {@link NumberFormat.Style#LONG LONG} style instance in same locale
  * formats {@code 10000} as {@code "10 thousand"}.
  *
- * <h3><a id="compact_number_patterns">Compact Number Patterns</a></h3>
+ * <h2><a id="compact_number_patterns">Compact Number Patterns</a></h2>
  * <p>
  * The compact number patterns are represented in a series of patterns where each
  * pattern is used to format a range of numbers. An example of
@@ -151,7 +151,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * unless noted otherwise, if they are to appear in the prefix or suffix
  * as literals. For example, 0\u0915'.'.
  *
- * <h3>Formatting</h3>
+ * <h2>Formatting</h2>
  * The default formatting behavior returns a formatted string with no fractional
  * digits, however users can use the {@link #setMinimumFractionDigits(int)}
  * method to include the fractional part.
@@ -165,14 +165,14 @@ import java.util.concurrent.atomic.AtomicLong;
  * {@link java.text.DecimalFormat DecimalFormat}
  * for the specified locale is used.
  *
- * <h3>Parsing</h3>
+ * <h2>Parsing</h2>
  * The default parsing behavior does not allow a grouping separator until
  * grouping used is set to {@code true} by using
  * {@link #setGroupingUsed(boolean)}. The parsing of the fractional part
  * depends on the {@link #isParseIntegerOnly()}. For example, if the
  * parse integer only is set to true, then the fractional part is skipped.
  *
- * <h3>Rounding</h3>
+ * <h2>Rounding</h2>
  * {@code CompactNumberFormat} provides rounding modes defined in
  * {@link java.math.RoundingMode} for formatting.  By default, it uses
  * {@link java.math.RoundingMode#HALF_EVEN RoundingMode.HALF_EVEN}.
@@ -406,6 +406,11 @@ public final class CompactNumberFormat extends NumberFormat {
     public final StringBuffer format(Object number,
             StringBuffer toAppendTo,
             FieldPosition fieldPosition) {
+
+        if (number == null) {
+            throw new IllegalArgumentException("Cannot format null as a number");
+        }
+
         if (number instanceof Long || number instanceof Integer
                 || number instanceof Short || number instanceof Byte
                 || number instanceof AtomicInteger
@@ -831,7 +836,8 @@ public final class CompactNumberFormat extends NumberFormat {
             if (ch == QUOTE) {
                 ch = pattern.charAt(index++);
                 if (ch == MINUS_SIGN) {
-                    ch = symbols.getMinusSign();
+                    sb.append(symbols.getMinusSignText());
+                    continue;
                 }
             }
             sb.append(ch);
@@ -854,11 +860,14 @@ public final class CompactNumberFormat extends NumberFormat {
             if (ch == QUOTE) {
                 ch = pattern.charAt(index++);
                 if (ch == MINUS_SIGN) {
-                    ch = symbols.getMinusSign();
+                    String minusText = symbols.getMinusSignText();
                     FieldPosition fp = new FieldPosition(NumberFormat.Field.SIGN);
                     fp.setBeginIndex(stringIndex);
-                    fp.setEndIndex(stringIndex + 1);
+                    fp.setEndIndex(stringIndex + minusText.length());
                     positions.add(fp);
+                    stringIndex += minusText.length();
+                    affix.append(minusText);
+                    continue;
                 }
             }
             stringIndex++;
@@ -1052,6 +1061,11 @@ public final class CompactNumberFormat extends NumberFormat {
      *
      */
     private void applyPattern(String pattern, int index) {
+
+        if (pattern == null) {
+            throw new IllegalArgumentException("A null compact pattern" +
+                    " encountered at index: " + index);
+        }
 
         int start = 0;
         boolean gotNegative = false;

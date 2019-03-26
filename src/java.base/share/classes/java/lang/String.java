@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2698,7 +2698,7 @@ public final class String
      * <p>
      * Otherwise, returns a substring of this string beginning with the first
      * code point that is not a {@link Character#isWhitespace(int) white space}
-     * up to to and including the last code point of this string.
+     * up to and including the last code point of this string.
      * <p>
      * This method may be used to trim
      * {@link Character#isWhitespace(int) white space} from

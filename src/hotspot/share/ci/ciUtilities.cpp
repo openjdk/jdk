@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,18 +42,10 @@ const char* basictype_to_str(BasicType t) {
 }
 
 // ------------------------------------------------------------------
-// basictype_to_char
-const char basictype_to_char(BasicType t) {
-  char c = type2char(t);
-  return c ? c : 'X';
-}
-
-// ------------------------------------------------------------------
 // card_table_base
-jbyte *ci_card_table_address() {
+CardTable::CardValue* ci_card_table_address() {
   BarrierSet* bs = BarrierSet::barrier_set();
   CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
   CardTable* ct = ctbs->card_table();
-  assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust users of this code");
   return ct->byte_map_base();
 }

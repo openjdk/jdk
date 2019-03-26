@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc.arguments;
+
 /*
  * @test TestObjectTenuringFlags
  * @key gc
@@ -29,9 +31,10 @@
  * @summary Tests argument processing for NeverTenure, AlwaysTenure,
  * and MaxTenuringThreshold
  * @library /test/lib
+ * @library /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main/othervm TestObjectTenuringFlags
+ * @run main/othervm gc.arguments.TestObjectTenuringFlags
  */
 
 import jdk.test.lib.process.OutputAnalyzer;

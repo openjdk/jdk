@@ -50,7 +50,6 @@ import jdk.test.lib.hprof.model.Snapshot;
  * @test
  * @library /test/lib
  * @requires vm.hasSAandCanAttach & os.family != "mac"
- * @requires vm.gc != "Z"
  * @modules java.base/jdk.internal.misc
  *          jdk.hotspot.agent/sun.jvm.hotspot
  *          jdk.hotspot.agent/sun.jvm.hotspot.utilities

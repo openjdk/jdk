@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ package javax.security.cert;
  * @see Certificate
  * @deprecated Use the classes in {@code java.security.cert} instead.
  */
-@Deprecated(since="9")
+@Deprecated(since="9", forRemoval=true)
 public class CertificateException extends Exception {
 
     private static final long serialVersionUID = -5757213374030785290L;

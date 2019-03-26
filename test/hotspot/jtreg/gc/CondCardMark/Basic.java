@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,20 +21,22 @@
  * questions.
  */
 
+package gc.CondCardMark;
+
 /**
  * @test
  * @bug 8076987
  * @bug 8078438
  * @summary Verify UseCondCardMark works
  * @modules java.base/jdk.internal.misc
- * @run main/othervm -Xint Basic
- * @run main/othervm -Xint -XX:+UseCondCardMark Basic
- * @run main/othervm -XX:TieredStopAtLevel=1 Basic
- * @run main/othervm -XX:TieredStopAtLevel=1 -XX:+UseCondCardMark Basic
- * @run main/othervm -XX:TieredStopAtLevel=4 Basic
- * @run main/othervm -XX:TieredStopAtLevel=4 -XX:+UseCondCardMark Basic
- * @run main/othervm -XX:-TieredCompilation Basic
- * @run main/othervm -XX:-TieredCompilation -XX:+UseCondCardMark Basic
+ * @run main/othervm -Xint gc.CondCardMark.Basic
+ * @run main/othervm -Xint -XX:+UseCondCardMark gc.CondCardMark.Basic
+ * @run main/othervm -XX:TieredStopAtLevel=1 gc.CondCardMark.Basic
+ * @run main/othervm -XX:TieredStopAtLevel=1 -XX:+UseCondCardMark gc.CondCardMark.Basic
+ * @run main/othervm -XX:TieredStopAtLevel=4 gc.CondCardMark.Basic
+ * @run main/othervm -XX:TieredStopAtLevel=4 -XX:+UseCondCardMark gc.CondCardMark.Basic
+ * @run main/othervm -XX:-TieredCompilation gc.CondCardMark.Basic
+ * @run main/othervm -XX:-TieredCompilation -XX:+UseCondCardMark gc.CondCardMark.Basic
 */
 public class Basic {
 

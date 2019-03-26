@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -224,10 +224,6 @@ public:
   { }
 };
 
-const char* const* G1ConcurrentMarkThread::concurrent_phases() const {
-  return concurrent_phase_names;
-}
-
 bool G1ConcurrentMarkThread::request_concurrent_phase(const char* phase_name) {
   int phase = lookup_concurrent_phase(phase_name);
   if (phase < 0) return false;
@@ -247,7 +243,7 @@ void G1ConcurrentMarkThread::run_service() {
   _vtime_start = os::elapsedVTime();
 
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  G1Policy* g1_policy = g1h->g1_policy();
+  G1Policy* policy = g1h->policy();
 
   G1ConcPhaseManager cpmanager(G1ConcurrentPhase::IDLE, this);
 
@@ -326,7 +322,7 @@ void G1ConcurrentMarkThread::run_service() {
           double mark_end_time = os::elapsedVTime();
           jlong mark_end = os::elapsed_counter();
           _vtime_mark_accum += (mark_end_time - cycle_start);
-          delay_to_keep_mmu(g1_policy, true /* remark */);
+          delay_to_keep_mmu(policy, true /* remark */);
           if (_cm->has_aborted()) {
             break;
           }
@@ -365,7 +361,7 @@ void G1ConcurrentMarkThread::run_service() {
       _vtime_accum = (end_time - _vtime_start);
 
       if (!_cm->has_aborted()) {
-        delay_to_keep_mmu(g1_policy, false /* cleanup */);
+        delay_to_keep_mmu(policy, false /* cleanup */);
       }
 
       if (!_cm->has_aborted()) {

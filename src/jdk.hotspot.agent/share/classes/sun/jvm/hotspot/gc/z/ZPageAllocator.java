@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import sun.jvm.hotspot.types.TypeDataBase;
 
 public class ZPageAllocator extends VMObject {
 
-    private static AddressField physicalField;
+    private static long physicalFieldOffset;
     private static CIntegerField usedField;
 
     static {
@@ -47,12 +47,12 @@ public class ZPageAllocator extends VMObject {
     static private synchronized void initialize(TypeDataBase db) {
         Type type = db.lookupType("ZPageAllocator");
 
-        physicalField = type.getAddressField("_physical");
+        physicalFieldOffset = type.getAddressField("_physical").getOffset();
         usedField = type.getCIntegerField("_used");
     }
 
     private ZPhysicalMemoryManager physical() {
-      Address physicalAddr = physicalField.getValue(addr);
+      Address physicalAddr = addr.addOffsetTo(physicalFieldOffset);
       return (ZPhysicalMemoryManager)VMObjectFactory.newObject(ZPhysicalMemoryManager.class, physicalAddr);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ public class TestBadOverride extends JavadocTester {
 
         checkOutput("pkg4/Foo.html", true,
                 "<li class=\"blockList\">\n"
-                + "<h4>toString</h4>\n"
+                + "<h3>toString</h3>\n"
                 + "<pre class=\"methodSignature\">public&nbsp;void&nbsp;toString()</pre>\n"
                 + "<div class=\"block\">Why can't I do this ?</div>\n"
                 + "</li>");

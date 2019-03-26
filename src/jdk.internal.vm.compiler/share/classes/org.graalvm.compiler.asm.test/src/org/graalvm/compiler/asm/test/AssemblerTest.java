@@ -32,6 +32,7 @@ import org.graalvm.compiler.api.test.Graal;
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.code.DisassemblerProvider;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
+import org.graalvm.compiler.core.gen.LIRGenerationProvider;
 import org.graalvm.compiler.core.target.Backend;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.nodes.StructuredGraph;
@@ -90,7 +91,7 @@ public abstract class AssemblerTest extends GraalTest {
             RegisterConfig registerConfig = codeCache.getRegisterConfig();
             CompilationIdentifier compilationId = backend.getCompilationIdentifier(method);
             StructuredGraph graph = new StructuredGraph.Builder(options, debug).method(method).compilationId(compilationId).build();
-            CallingConvention cc = backend.newLIRGenerationResult(compilationId, null, null, graph, null).getCallingConvention();
+            CallingConvention cc = ((LIRGenerationProvider) backend).newLIRGenerationResult(compilationId, null, null, graph, null).getCallingConvention();
 
             CompilationResult compResult = new CompilationResult(graph.compilationId());
             byte[] targetCode = test.generateCode(compResult, codeCache.getTarget(), registerConfig, cc);

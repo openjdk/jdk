@@ -22,51 +22,21 @@
  */
 
 /*
-test
-@bug 4799136
-@summary Tests that type-ahead for dialog works and doesn't block program
-@author  area=awt.focus
-@run applet TestDialogTypeAhead.html
+  @test
+  @key headful
+  @bug 4799136
+  @summary Tests that type-ahead for dialog works and doesn't block program
+  @library    ../../regtesthelpers
+  @modules java.desktop/sun.awt
+  @build      Util
+  @run main TestDialogTypeAhead
 */
 
-// Note there is no @ in front of test above.  This is so that the
-//  harness will not mistake this file as a test file.  It should
-//  only see the html file as a test file. (the harness runs all
-//  valid test files, so it would run this test twice if this file
-//  were valid as well as the html file.)
-// Also, note the area= after Your Name in the author tag.  Here, you
-//  should put which functional area the test falls in.  See the
-//  AWT-core home page -> test areas and/or -> AWT team  for a list of
-//  areas.
-// Note also the 'TestDialogTypeAhead.html' in the run tag.  This should
-//  be changed to the name of the test.
-
-
-/**
- * TestDialogTypeAhead.java
- *
- * summary:
- */
-
-import java.applet.Applet;
 import java.awt.*;
 import java.awt.event.*;
 import java.lang.reflect.InvocationTargetException;
-import test.java.awt.regtesthelpers.Util;
 
-//Automated tests should run as applet tests if possible because they
-// get their environments cleaned up, including AWT threads, any
-// test created threads, and any system resources used by the test
-// such as file descriptors.  (This is normally not a problem as
-// main tests usually run in a separate VM, however on some platforms
-// such as the Mac, separate VMs are not possible and non-applet
-// tests will cause problems).  Also, you don't have to worry about
-// synchronisation stuff in Applet tests they way you do in main
-// tests...
-
-
-public class TestDialogTypeAhead extends Applet
-{
+public class TestDialogTypeAhead {
     //Declare things used in the test, like buttons and labels here
     static Frame f;
     static Button b;
@@ -76,12 +46,15 @@ public class TestDialogTypeAhead extends Applet
     static Semaphore robotSema = new Semaphore();
     static volatile boolean gotFocus = false;
     static Robot robot;
+
+    public static void main(final String[] args) {
+        TestDialogTypeAhead app = new TestDialogTypeAhead();
+        app.init();
+        app.start();
+    }
+
     public void init()
     {
-        //Create instructions for the user here, as well as set up
-        // the environment -- set the layout manager, add buttons,
-        // etc.
-
         Toolkit.getDefaultToolkit().addAWTEventListener(new AWTEventListener() {
                 public void eventDispatched(AWTEvent e) {
                     System.err.println(e.toString());
@@ -89,8 +62,6 @@ public class TestDialogTypeAhead extends Applet
             }, AWTEvent.KEY_EVENT_MASK);
 
         KeyboardFocusManager.setCurrentKeyboardFocusManager(new TestKFM());
-
-        this.setLayout (new BorderLayout ());
 
         f = new Frame("frame");
         b = new Button("press");
@@ -139,16 +110,12 @@ public class TestDialogTypeAhead extends Applet
 
     public void start ()
     {
-        //Get things going.  Request focus, set size, et cetera
-        setSize (200,200);
-        setVisible(true);
-        validate();
         try {
             robot = new Robot();
         } catch (Exception e) {
             throw new RuntimeException("Can't create robot:" + e);
         }
-
+        f.setLocationRelativeTo(null);
         f.setVisible(true);
         waitTillShown(b);
         System.err.println("b is shown");

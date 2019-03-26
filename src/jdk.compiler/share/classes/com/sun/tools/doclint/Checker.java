@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,6 @@ import com.sun.source.doctree.ErroneousTree;
 import com.sun.source.doctree.IdentifierTree;
 import com.sun.source.doctree.IndexTree;
 import com.sun.source.doctree.InheritDocTree;
-import com.sun.source.doctree.InlineTagTree;
 import com.sun.source.doctree.LinkTree;
 import com.sun.source.doctree.LiteralTree;
 import com.sun.source.doctree.ParamTree;
@@ -140,16 +139,15 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     }
 
     private final Deque<TagStackItem> tagStack; // TODO: maybe want to record starting tree as well
-    private HtmlTag currHeaderTag;
+    private HtmlTag currHeadingTag;
 
-    private final int implicitHeaderLevel;
+    private int implicitHeadingRank;
 
     // <editor-fold defaultstate="collapsed" desc="Top level">
 
     Checker(Env env) {
         this.env = Assert.checkNonNull(env);
         tagStack = new LinkedList<>();
-        implicitHeaderLevel = env.implicitHeaderLevel;
     }
 
     public Void scan(DocCommentTree tree, TreePath p) {
@@ -188,13 +186,44 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         }
 
         tagStack.clear();
-        currHeaderTag = null;
+        currHeadingTag = null;
 
         foundParams.clear();
         foundThrows.clear();
         foundInheritDoc = false;
         foundReturn = false;
         hasNonWhitespaceText = false;
+
+        switch (p.getLeaf().getKind()) {
+            // the following are for declarations that have their own top-level page,
+            // and so the doc comment comes after the <h1> page title.
+            case MODULE:
+            case PACKAGE:
+            case CLASS:
+            case INTERFACE:
+            case ENUM:
+            case ANNOTATION_TYPE:
+                implicitHeadingRank = 1;
+                break;
+
+            // this is for html files
+            // ... if it is a legacy package.html, the doc comment comes after the <h1> page title
+            // ... otherwise, (e.g. overview file and doc-files/*.html files) no additional headings are inserted
+            case COMPILATION_UNIT:
+                implicitHeadingRank = fo.isNameCompatible("package", JavaFileObject.Kind.HTML) ? 1 : 0;
+                break;
+
+            // the following are for member declarations, which appear in the page
+            // for the enclosing type, and so appear after the <h2> "Members"
+            // aggregate heading and the specific <h3> "Member signature" heading.
+            case METHOD:
+            case VARIABLE:
+                implicitHeadingRank = 3;
+                break;
+
+            default:
+                Assert.error("unexpected tree kind: " + p.getLeaf().getKind() + " " + fo);
+        }
 
         scan(new DocTreePath(p, tree), null);
 
@@ -328,9 +357,9 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
             // tag specific checks
             switch (t) {
-                // check for out of sequence headers, such as <h1>...</h1>  <h3>...</h3>
+                // check for out of sequence headings, such as <h1>...</h1>  <h3>...</h3>
                 case H1: case H2: case H3: case H4: case H5: case H6:
-                    checkHeader(tree, t);
+                    checkHeading(tree, t);
                     break;
             }
 
@@ -446,23 +475,27 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         env.messages.error(HTML, tree, "dc.tag.not.allowed.here", treeName);
     }
 
-    private void checkHeader(StartElementTree tree, HtmlTag tag) {
+    private void checkHeading(StartElementTree tree, HtmlTag tag) {
         // verify the new tag
-        if (getHeaderLevel(tag) > getHeaderLevel(currHeaderTag) + 1) {
-            if (currHeaderTag == null) {
-                env.messages.error(ACCESSIBILITY, tree, "dc.tag.header.sequence.1", tag);
+        if (getHeadingRank(tag) > getHeadingRank(currHeadingTag) + 1) {
+            if (currHeadingTag == null) {
+                env.messages.error(ACCESSIBILITY, tree, "dc.tag.heading.sequence.1",
+                        tag, implicitHeadingRank);
             } else {
-                env.messages.error(ACCESSIBILITY, tree, "dc.tag.header.sequence.2",
-                    tag, currHeaderTag);
+                env.messages.error(ACCESSIBILITY, tree, "dc.tag.heading.sequence.2",
+                    tag, currHeadingTag);
             }
+        } else if (getHeadingRank(tag) <= implicitHeadingRank) {
+            env.messages.error(ACCESSIBILITY, tree, "dc.tag.heading.sequence.3",
+                    tag, implicitHeadingRank);
         }
 
-        currHeaderTag = tag;
+        currHeadingTag = tag;
     }
 
-    private int getHeaderLevel(HtmlTag tag) {
+    private int getHeadingRank(HtmlTag tag) {
         if (tag == null)
-            return implicitHeaderLevel;
+            return implicitHeadingRank;
         switch (tag) {
             case H1: return 1;
             case H2: return 2;
@@ -666,11 +699,11 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                 break;
 
             case OBSOLETE:
-                env.messages.warning(ACCESSIBILITY, tree, "dc.attr.obsolete", name);
+                env.messages.warning(HTML, tree, "dc.attr.obsolete", name);
                 break;
 
             case USE_CSS:
-                env.messages.warning(ACCESSIBILITY, tree, "dc.attr.obsolete.use.css", name);
+                env.messages.warning(HTML, tree, "dc.attr.obsolete.use.css", name);
                 break;
 
             case HTML5:

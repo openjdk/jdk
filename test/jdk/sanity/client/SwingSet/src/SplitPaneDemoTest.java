@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import org.netbeans.jemmy.operators.JFrameOperator;
 import org.netbeans.jemmy.operators.JRadioButtonOperator;
 import org.netbeans.jemmy.operators.JSplitPaneOperator;
 import org.netbeans.jemmy.operators.JTextFieldOperator;
+import org.netbeans.jemmy.util.LookAndFeel;
 
 import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
@@ -76,7 +77,7 @@ public class SplitPaneDemoTest {
         JSplitPaneOperator splitPane = new JSplitPaneOperator(frame);
 
         // OneTouch feature is not available in GTK L&F
-        if(!"GTK".equals(UIManager.getLookAndFeel().getID())) {
+        if(!LookAndFeel.isGTK()) {
             // Toggle OneTouch Expandable
             checkOneTouch(frame, splitPane, true);
             checkOneTouch(frame, splitPane, false);
@@ -89,7 +90,7 @@ public class SplitPaneDemoTest {
 
         // TODO Skipping this code for Motif L&F as the fix for "CODETOOLS-7902324"
         // is deferred now
-        if(!("Motif".equals(UIManager.getLookAndFeel().getID()))) {
+        if(!LookAndFeel.isMotif()) {
             // Check moving the divider
             checkDividerMoves(frame, splitPane, false);
             checkDividerMoves(frame, splitPane, true);

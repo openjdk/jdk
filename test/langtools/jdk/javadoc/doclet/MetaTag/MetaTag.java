@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,36 +78,6 @@ public class MetaTag extends JavadocTester {
         checkMeta("dc.created", false);
     }
 
-    @Test
-    public void testStandard_html4() {
-        javadoc("-d", "out-1-html4",
-                "-html4",
-                "-sourcepath", testSrc,
-                "-keywords",
-                "--frames",
-                "-doctitle", "Sample Packages",
-                "p1", "p2");
-
-        checkExit(Exit.OK);
-
-        checkMeta("date", true);
-    }
-
-    @Test
-    public void testNoTimestamp_html4() {
-        javadoc("-d", "out-2-html4",
-                "-html4",
-                "-sourcepath", testSrc,
-                "-notimestamp",
-                "--frames",
-                "-doctitle", "Sample Packages",
-                "p1", "p2");
-        checkExit(Exit.OK);
-
-        // No keywords when -keywords is not used.
-        checkMeta("date", false);
-    }
-
     void checkMeta(String metaNameDate, boolean found) {
         checkOutput("p1/C1.html", found,
                 "<meta name=\"keywords\" content=\"p1.C1 class\">",
@@ -123,14 +93,19 @@ public class MetaTag extends JavadocTester {
                 "<meta name=\"keywords\" content=\"Overview, Sample Packages\">");
 
         // NOTE: Hopefully, this regression test is not run at midnight.  If the output
-        // was generated yesterday and this test is run today, the test will fail.
-        checkOutput("overview-summary.html", found,
-                "<meta name=\"" + metaNameDate + "\" content=\"" + date() + "\">");
+        // was generated yesterday and this test is run today, this check could fail ...
+        // so make sure the date has not changed since the test started
+        String date = date();
+        if (date.equals(startDate)) {
+            checkOutput("overview-summary.html", found,
+                    "<meta name=\"" + metaNameDate + "\" content=\"" + date + "\">");
+        }
     }
 
     private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+    private static final String startDate = date();
 
-    String date() {
+    static String date() {
         return dateFormat.format(new Date());
     }
 }

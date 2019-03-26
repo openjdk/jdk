@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,43 +22,26 @@
  */
 
 /*
-  test
+  @test
+  @key headful
   @bug 5098433
   @summary REG: DnD of File-List between JVM is broken for non ASCII file names - Win32
-  @author Denis Fokin: area=dnd
-  @library    ../../regtesthelpers
+  @library ../../regtesthelpers
   @library ../../regtesthelpers/process
   @build Util
   @build ProcessResults ProcessCommunicator
-
-
-  @run applet/othervm DragUnicodeBetweenJVMTest.html
+  @run main/othervm DragUnicodeBetweenJVMTest main
 */
-
-/**
- * DragUnicodeBetweenJVMTest.java
- *
- * summary: The test drags a list of files (DataFlavor.javaFileListFlavor) from one jvm to another.
- *          The files have Unicode names. The list on target side must be equal to
- *          the list on the source side.
- */
-
 
 import java.awt.*;
 import java.awt.event.*;
-import java.applet.Applet;
 
 import test.java.awt.regtesthelpers.process.ProcessCommunicator;
 import test.java.awt.regtesthelpers.process.ProcessResults;
 import test.java.awt.regtesthelpers.Util;
 import static java.lang.Thread.sleep;
 
-public class DragUnicodeBetweenJVMTest extends Applet
-{
-
-    public void init() {
-        setLayout(new BorderLayout());
-    }//End  init()
+public class DragUnicodeBetweenJVMTest {
 
     public void start() {
 
@@ -176,7 +159,11 @@ public class DragUnicodeBetweenJVMTest extends Applet
         }
     }
 
-    public static void main (String [] args) {
+    public static void main(final String [] args) {
+        if (args.length > 0 && args[0].equals("main")) {
+            new DragUnicodeBetweenJVMTest().start();
+            return;
+        }
         Point dragSourcePoint = new Point(InterprocessArguments.DRAG_SOURCE_POINT_X_ARGUMENT.extract(args),
                 InterprocessArguments.DRAG_SOURCE_POINT_Y_ARGUMENT.extract(args));
         Point targetFrameLocation = new Point(InterprocessArguments.TARGET_FRAME_X_POSITION_ARGUMENT.extract(args),
@@ -188,6 +175,4 @@ public class DragUnicodeBetweenJVMTest extends Applet
             e.printStackTrace();
         }
     }
-
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.awt.Dimension;
 import java.awt.KeyboardFocusManager;
 import java.awt.Point;
 import java.awt.Window;
+import java.awt.event.KeyEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.lang.reflect.InvocationTargetException;
@@ -54,7 +55,9 @@ import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.JEditorPane;
 import javax.swing.JLabel;
+import javax.swing.JMenuItem;
 import javax.swing.JTextArea;
+import javax.swing.KeyStroke;
 
 import sun.awt.AWTAccessor;
 import sun.lwawt.LWWindowPeer;
@@ -355,6 +358,10 @@ class CAccessibility implements PropertyChangeListener {
                 if (accessibleName == null) {
                     return ac.getAccessibleDescription();
                 }
+                final String acceleratorText = getAcceleratorText(ac);
+                if (!acceleratorText.isEmpty()) {
+                    return accessibleName +' '+ acceleratorText;
+                }
                 return accessibleName;
             }
         }, c);
@@ -372,6 +379,41 @@ class CAccessibility implements PropertyChangeListener {
                 return accessibleText;
             }
         }, c);
+    }
+
+    /*
+     * Returns the JMenuItem accelerator. Implementation of this method is based
+     * on AccessBridge.getAccelerator(AccessibleContext) to access the KeyStroke
+     * and on AquaMenuPainter.paintMenuItem() to convert it to string.
+     */
+    @SuppressWarnings("deprecation")
+    private static String getAcceleratorText(AccessibleContext ac) {
+        String accText = "";
+        Accessible parent = ac.getAccessibleParent();
+        if (parent != null) {
+            // workaround for getAccessibleKeyBinding not returning the
+            // JMenuItem accelerator
+            int indexInParent = ac.getAccessibleIndexInParent();
+            Accessible child = parent.getAccessibleContext()
+                                     .getAccessibleChild(indexInParent);
+            if (child instanceof JMenuItem) {
+                JMenuItem menuItem = (JMenuItem) child;
+                KeyStroke keyStroke = menuItem.getAccelerator();
+                if (keyStroke != null) {
+                    int modifiers = keyStroke.getModifiers();
+                    if (modifiers > 0) {
+                        accText = KeyEvent.getKeyModifiersText(modifiers);
+                    }
+                    int keyCode = keyStroke.getKeyCode();
+                    if (keyCode != 0) {
+                        accText += KeyEvent.getKeyText(keyCode);
+                    } else {
+                        accText += keyStroke.getKeyChar();
+                    }
+                }
+            }
+        }
+        return accText;
     }
 
     public static String getAccessibleDescription(final Accessible a, final Component c) {

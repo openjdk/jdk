@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,15 @@
  * questions.
  */
 
-/* @test
-   @bug 8211987
-   @requires (os.family == "windows")
-   @summary Verify if Menu bar gets input focus even if Alt-released event is consumed.
-   @modules java.desktop/com.sun.java.swing.plaf.windows
-   @run main AltFocusIssueTest
-*/
+/**
+ * @test
+ * @bug 8211987
+ * @key headful
+ * @requires (os.family == "windows")
+ * @summary Verify if Menu bar gets input focus even if Alt-released event is consumed.
+ * @modules java.desktop/com.sun.java.swing.plaf.windows
+ * @run main AltFocusIssueTest
+ */
 
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
@@ -145,7 +147,9 @@ public class AltFocusIssueTest {
         try {
             testAltEvents();
         } finally {
-            SwingUtilities.invokeAndWait(() -> frame.dispose());
+            if (frame != null) {
+                SwingUtilities.invokeAndWait(() -> frame.dispose());
+            }
         }
     }
 }

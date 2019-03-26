@@ -55,7 +55,6 @@ public final class DOMXSLTTransform extends ApacheTransform {
         this.params = params;
     }
 
-    @Override
     public void init(XMLStructure parent, XMLCryptoContext context)
         throws InvalidAlgorithmParameterException {
 
@@ -68,7 +67,6 @@ public final class DOMXSLTTransform extends ApacheTransform {
             (new javax.xml.crypto.dom.DOMStructure(sheet));
     }
 
-    @Override
     public void marshalParams(XMLStructure parent, XMLCryptoContext context)
         throws MarshalException {
         super.marshalParams(parent, context);

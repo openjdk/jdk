@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,6 +30,7 @@
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BarrierSetAssembler.hpp"
 #include "gc/g1/g1BarrierSetRuntime.hpp"
+#include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/g1/g1SATBMarkQueueSet.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/heapRegion.hpp"
@@ -268,7 +269,6 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm, Decorato
   Label callRuntime, filtered;
 
   CardTableBarrierSet* ct = barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
-  assert(sizeof(*ct->card_table()->byte_map_base()) == sizeof(jbyte), "adjust this code");
 
   BLOCK_COMMENT("g1_write_barrier_post {");
 
@@ -297,7 +297,6 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm, Decorato
   Rnew_val = noreg; // end of lifetime
 
   // Storing region crossing non-NULL, is card already dirty?
-  assert(sizeof(*ct->card_table()->byte_map_base()) == sizeof(jbyte), "adjust this code");
   assert_different_registers(Rtmp1, Rtmp2, Rtmp3);
   // Make sure not to use Z_R0 for any of these registers.
   Register Rcard_addr = (Rtmp1 != Z_R0_scratch) ? Rtmp1 : Rtmp3;
@@ -310,14 +309,12 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm, Decorato
   Rbase = noreg; // end of lifetime
 
   // Filter young.
-  assert((unsigned int)G1CardTable::g1_young_card_val() <= 255, "otherwise check this code");
   __ z_cli(0, Rcard_addr, G1CardTable::g1_young_card_val());
   __ z_bre(filtered);
 
   // Check the card value. If dirty, we're done.
   // This also avoids false sharing of the (already dirty) card.
   __ z_sync(); // Required to support concurrent cleaning.
-  assert((unsigned int)G1CardTable::dirty_card_val() <= 255, "otherwise check this code");
   __ z_cli(0, Rcard_addr, G1CardTable::dirty_card_val()); // Reload after membar.
   __ z_bre(filtered);
 
@@ -541,7 +538,7 @@ void G1BarrierSetAssembler::generate_c1_post_barrier_runtime_stub(StubAssembler*
   Register cardtable = r1;   // Must be non-volatile, because it is used to save addr_card.
   CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
   CardTable* ct = ctbs->card_table();
-  jbyte* byte_map_base = ct->byte_map_base();
+  CardTable::CardValue* byte_map_base = ct->byte_map_base();
 
   // Save registers used below (see assertion in G1PreBarrierStub::emit_code()).
   __ z_stg(r1, 0*BytesPerWord + FrameMap::first_available_sp_in_frame, Z_SP);
@@ -587,7 +584,7 @@ void G1BarrierSetAssembler::generate_c1_post_barrier_runtime_stub(StubAssembler*
 
   __ bind(restart);
 
-  // Get the index into the update buffer. DirtyCardQueue::_index is
+  // Get the index into the update buffer. G1DirtyCardQueue::_index is
   // a size_t so z_ltg is appropriate here.
   __ z_ltg(idx, Address(Z_thread, dirty_card_q_index_byte_offset));
 
@@ -607,7 +604,7 @@ void G1BarrierSetAssembler::generate_c1_post_barrier_runtime_stub(StubAssembler*
   __ bind(refill);
   save_volatile_registers(sasm);
   __ z_lgr(idx, addr_card); // Save addr_card, tmp3 must be non-volatile.
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, DirtyCardQueueSet::handle_zero_index_for_thread),
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1DirtyCardQueueSet::handle_zero_index_for_thread),
                                    Z_thread);
   __ z_lgr(addr_card, idx);
   restore_volatile_registers(sasm); // Restore addr_card.

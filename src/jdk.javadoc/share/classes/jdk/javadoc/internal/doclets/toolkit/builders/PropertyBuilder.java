@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.PropertyWriter;
-import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 
 import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.*;
 
@@ -138,10 +137,10 @@ public class PropertyBuilder extends AbstractMemberBuilder {
                 buildPropertyComments(propertyDocTree);
                 buildTagInfo(propertyDocTree);
 
-                propertyDetailsTree.addContent(writer.getPropertyDoc(
+                propertyDetailsTree.add(writer.getPropertyDoc(
                         propertyDocTree, currentProperty == lastElement));
             }
-            memberDetailsTree.addContent(
+            memberDetailsTree.add(
                     writer.getPropertyDetails(propertyDetailsTree));
         }
     }
@@ -152,7 +151,7 @@ public class PropertyBuilder extends AbstractMemberBuilder {
      * @param propertyDocTree the content tree to which the documentation will be added
      */
     protected void buildSignature(Content propertyDocTree) {
-        propertyDocTree.addContent(writer.getSignature(currentProperty));
+        propertyDocTree.add(writer.getSignature(currentProperty));
     }
 
     /**

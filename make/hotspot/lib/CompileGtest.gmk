@@ -31,7 +31,7 @@ GTEST_FRAMEWORK_SRC := $(TOPDIR)/test/fmw/gtest
 
 # On Windows, there are no internal debug symbols so must set copying to true
 # to get any at all.
-ifeq ($(OPENJDK_TARGET_OS), windows)
+ifeq ($(call isTargetOs, windows), true)
   GTEST_COPY_DEBUG_SYMBOLS := true
 else
   GTEST_COPY_DEBUG_SYMBOLS := false
@@ -39,7 +39,7 @@ endif
 
 ################################################################################
 
-ifeq ($(OPENJDK_TARGET_OS), windows)
+ifeq ($(call isTargetOs, windows), true)
   GTEST_JVM_MAPFILE := $(JVM_MAPFILE)
 else
   GTEST_JVM_MAPFILE := $(JVM_OUTPUTDIR)/gtest/mapfile

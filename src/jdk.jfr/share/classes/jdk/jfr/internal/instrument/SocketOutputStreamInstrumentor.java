@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,15 +27,14 @@ package jdk.jfr.internal.instrument;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.Socket;
 
 import jdk.jfr.events.SocketWriteEvent;
 
 /**
  * See {@link JITracer} for an explanation of this code.
  */
-@JIInstrumentationTarget("java.net.SocketOutputStream")
-@JITypeMapping(from = "jdk.jfr.internal.instrument.SocketOutputStreamInstrumentor$AbstractPlainSocketImpl",
-            to = "java.net.AbstractPlainSocketImpl")
+@JIInstrumentationTarget("java.net.Socket$SocketOutputStream")
 final class SocketOutputStreamInstrumentor {
 
     private SocketOutputStreamInstrumentor() {
@@ -43,27 +42,25 @@ final class SocketOutputStreamInstrumentor {
 
     @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
-    private void socketWrite(byte b[], int off, int len) throws IOException {
+    public void write(byte b[], int off, int len) throws IOException {
         SocketWriteEvent event = SocketWriteEvent.EVENT.get();
         if (!event.isEnabled()) {
-            socketWrite(b, off, len);
+            write(b, off, len);
             return;
         }
         int bytesWritten = 0;
         try {
             event.begin();
-            socketWrite(b, off, len);
+            write(b, off, len);
             bytesWritten = len;
         } finally {
             event.end() ;
             if (event.shouldCommit()) {
-                String hostString  = impl.address.toString();
-                int delimiterIndex = hostString.lastIndexOf('/');
-
-                event.host         = hostString.substring(0, delimiterIndex);
-                event.address      = hostString.substring(delimiterIndex + 1);
-                event.port         = impl.port;
-                event.bytesWritten = bytesWritten < 0 ? 0 : bytesWritten;
+                InetAddress remote = parent.getInetAddress();
+                event.host = remote.getHostName();
+                event.address = remote.getHostAddress();
+                event.port = parent.getPort();
+                event.bytesWritten = bytesWritten;
 
                 event.commit();
                 event.reset();
@@ -71,14 +68,6 @@ final class SocketOutputStreamInstrumentor {
         }
     }
 
-    private AbstractPlainSocketImpl impl = null;
-
-    void silenceFindBugsUnwrittenField(InetAddress dummy) {
-        impl.address = dummy;
-    }
-
-    static class AbstractPlainSocketImpl {
-        InetAddress address;
-        int port;
-    }
+    // private field in java.net.Socket$SocketOutputStream
+    private Socket parent;
 }

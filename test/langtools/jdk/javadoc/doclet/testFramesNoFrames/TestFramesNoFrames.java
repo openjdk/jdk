@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,7 +111,6 @@ public class TestFramesNoFrames extends JavadocTester {
     }
 
     enum HtmlKind {
-        HTML4("-html4"),
         HTML5("-html5");
         HtmlKind(String... opts) {
             this.opts = Arrays.asList(opts);
@@ -126,18 +125,16 @@ public class TestFramesNoFrames extends JavadocTester {
             if (a != null) {
                 for (FrameKind fk : FrameKind.values()) {
                     for (OverviewKind ok : OverviewKind.values()) {
-                        for (HtmlKind hk : HtmlKind.values()) {
-                            try {
-                                out.println("Running test " + m.getName() + " " + fk + " " + ok + " " + hk);
-                                Path base = Paths.get(m.getName() + "_" + fk + "_" + ok + "_" + hk);
-                                Files.createDirectories(base);
-                                m.invoke(this, new Object[]{base, fk, ok, hk});
-                            } catch (InvocationTargetException e) {
-                                Throwable cause = e.getCause();
-                                throw (cause instanceof Exception) ? ((Exception) cause) : e;
-                            }
-                            out.println();
+                        try {
+                            out.println("Running test " + m.getName() + " " + fk + " " + ok);
+                            Path base = Paths.get(m.getName() + "_" + fk + "_" + ok);
+                            Files.createDirectories(base);
+                            m.invoke(this, new Object[]{base, fk, ok});
+                        } catch (InvocationTargetException e) {
+                            Throwable cause = e.getCause();
+                            throw (cause instanceof Exception) ? ((Exception)cause) : e;
                         }
+                        out.println();
                     }
                 }
             }
@@ -145,58 +142,56 @@ public class TestFramesNoFrames extends JavadocTester {
         printSummary();
     }
 
-    void javadoc(Path outDir, FrameKind fKind, OverviewKind oKind, HtmlKind hKind, String... rest) {
+    void javadoc(Path outDir, FrameKind fKind, OverviewKind oKind, String... rest) {
         List<String> args = new ArrayList<>();
         args.add("-d");
         args.add(outDir.toString());
         args.addAll(fKind.opts);
         args.addAll(oKind.opts);
-        args.addAll(hKind.opts);
         args.addAll(Arrays.asList(rest));
         javadoc(args.toArray(new String[0]));
         checkExit(Exit.OK);
     }
 
     @Test
-    public void testClass(Path base, FrameKind fKind, OverviewKind oKind, HtmlKind hKind) throws Exception {
-        javadoc(base, fKind, oKind, hKind,
-            gensrcPackages.resolve("p1/P1C1.java").toString());
+    public void testClass(Path base, FrameKind fKind, OverviewKind oKind) throws Exception {
+        javadoc(base, fKind, oKind, gensrcPackages.resolve("p1/P1C1.java").toString());
 
-        new Checker(fKind, oKind, hKind)
+        new Checker(fKind, oKind)
             .classes("p1.P1C1")
             .check();
     }
 
     @Test
-    public void testClasses(Path base, FrameKind fKind, OverviewKind oKind, HtmlKind hKind) throws IOException {
-        javadoc(base, fKind, oKind, hKind,
+    public void testClasses(Path base, FrameKind fKind, OverviewKind oKind) throws IOException {
+        javadoc(base, fKind, oKind,
             gensrcPackages.resolve("p1/P1C1.java").toString(),
             gensrcPackages.resolve("p1/P1C2.java").toString(),
             gensrcPackages.resolve("p1/P1C3.java").toString());
 
-        new Checker(fKind, oKind, hKind)
+        new Checker(fKind, oKind)
             .classes("p1.P1C1", "p1.P1C2", "p1.P1C3")
             .check();
     }
 
     @Test
-    public void testPackage(Path base, FrameKind fKind, OverviewKind oKind, HtmlKind hKind) throws IOException {
-        javadoc(base, fKind, oKind, hKind,
+    public void testPackage(Path base, FrameKind fKind, OverviewKind oKind) throws IOException {
+        javadoc(base, fKind, oKind,
             "-sourcepath", gensrcPackages.toString(),
             "p1");
 
-        new Checker(fKind, oKind, hKind)
+        new Checker(fKind, oKind)
             .classes("p1.P1C1", "p1.P1C2", "p1.P1C3")
             .check();
     }
 
     @Test
-    public void testPackages(Path base, FrameKind fKind, OverviewKind oKind, HtmlKind hKind) throws IOException {
-        javadoc(base, fKind, oKind, hKind,
+    public void testPackages(Path base, FrameKind fKind, OverviewKind oKind) throws IOException {
+        javadoc(base, fKind, oKind,
             "-sourcepath", gensrcPackages.toString(),
             "p1", "p2", "p3");
 
-        new Checker(fKind, oKind, hKind)
+        new Checker(fKind, oKind)
             .classes("p1.P1C1", "p1.P1C2", "p1.P1C3",
                     "p2.P2C1", "p2.P2C2", "p2.P2C3",
                     "p3.P3C1", "p3.P3C2", "p3.P3C3")
@@ -204,12 +199,12 @@ public class TestFramesNoFrames extends JavadocTester {
     }
 
     @Test
-    public void testModules(Path base, FrameKind fKind, OverviewKind oKind, HtmlKind hKind) throws IOException {
-        javadoc(base, fKind, oKind, hKind,
+    public void testModules(Path base, FrameKind fKind, OverviewKind oKind) throws IOException {
+        javadoc(base, fKind, oKind,
             "--module-source-path", gensrcModules.toString(),
             "--module", "m1,m2,m3");
 
-        new Checker(fKind, oKind, hKind)
+        new Checker(fKind, oKind)
             .classes("m1/m1p1.M1P1C1", "m1/m1p1.M1P1C2", "m1/m1p1.M1P1C3",
                     "m2/m2p1.M2P1C1", "m2/m2p1.M2P1C2", "m2/m2p1.M2P1C3",
                     "m3/m3p1.M3P1C1", "m3/m3p1.M3P1C2", "m3/m3p1.M3P1C3")
@@ -223,7 +218,6 @@ public class TestFramesNoFrames extends JavadocTester {
     class Checker {
         private final FrameKind fKind;
         private final OverviewKind oKind;
-        private final HtmlKind hKind;
         List<String> classes;
 
         private boolean frames;
@@ -234,10 +228,9 @@ public class TestFramesNoFrames extends JavadocTester {
                 + "frames will be removed in a future release.\n"
                 + "To suppress this warning, remove the --frames option and avoid the use of frames.";
 
-        Checker(FrameKind fKind, OverviewKind oKind, HtmlKind hKind) {
+        Checker(FrameKind fKind, OverviewKind oKind) {
             this.fKind = fKind;
             this.oKind = oKind;
-            this.hKind = hKind;
         }
 
         Checker classes(String... classes) {
@@ -271,7 +264,7 @@ public class TestFramesNoFrames extends JavadocTester {
                     break;
             }
 
-            out.println("Checker: " + fKind + " " + oKind + " " + hKind
+            out.println("Checker: " + fKind + " " + oKind
                 + ": frames:" + frames + " overview:" + overview);
 
             checkAllClassesFiles();
@@ -337,7 +330,7 @@ public class TestFramesNoFrames extends JavadocTester {
             checkOutput("index.html", frames,
                     "<iframe ",
                     "</iframe>",
-                    "<body onload=\"loadFrames()\">\n"
+                    "<body class=\"frames\" onload=\"loadFrames()\">\n"
                     + "<script type=\"text/javascript\">\n"
                     + "if (targetPage == \"\" || targetPage == \"undefined\")");
 
@@ -357,9 +350,8 @@ public class TestFramesNoFrames extends JavadocTester {
                     "<meta http-equiv=\"Refresh\" content=\"0;",
                     "<script type=\"text/javascript\">window.location.replace(");
 
-            // the index.html file <meta> refresh should only use <noscript> in HTML 5
             if (!frames && !overview) {
-                checkOutput("index.html", hKind == HtmlKind.HTML5,
+                checkOutput("index.html", true,
                         "<noscript>\n<meta http-equiv=\"Refresh\" content=\"0;");
             }
         }

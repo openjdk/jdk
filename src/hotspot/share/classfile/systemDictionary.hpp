@@ -481,7 +481,6 @@ public:
                                                  Symbol* signature,
                                                  Klass* accessing_klass,
                                                  Handle *appendix_result,
-                                                 Handle *method_type_result,
                                                  TRAPS);
   // for a given signature, find the internal MethodHandle method (linkTo* or invokeBasic)
   // (does not ask Java, since this is a low-level intrinsic defined by the JVM)
@@ -544,7 +543,6 @@ public:
                                                      Symbol* name,
                                                      Symbol* type,
                                                      Handle *appendix_result,
-                                                     Handle *method_type_result,
                                                      TRAPS);
 
   // Record the error when the first attempt to resolve a reference from a constant
@@ -630,6 +628,7 @@ protected:
   static InstanceKlass* load_shared_class(InstanceKlass* ik,
                                           Handle class_loader,
                                           Handle protection_domain,
+                                          const ClassFileStream *cfs,
                                           TRAPS);
   static InstanceKlass* load_shared_boot_class(Symbol* class_name,
                                                TRAPS);

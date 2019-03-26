@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
@@ -100,7 +101,7 @@ public class TruncatedRequestBody {
 
         // Test 1: fixed length
 
-        Socket sock = new Socket("127.0.0.1", port);
+        Socket sock = new Socket(InetAddress.getLoopbackAddress(), port);
         String s1 = "POST /foo HTTP/1.1\r\nContent-length: 200000\r\n"
                 + "\r\nfoo bar99";
 
@@ -114,7 +115,7 @@ public class TruncatedRequestBody {
 
         String s2 = "POST /foo HTTP/1.1\r\nTransfer-encoding: chunked\r\n\r\n" +
                 "100\r\nFoo bar";
-        sock = new Socket("127.0.0.1", port);
+        sock = new Socket(InetAddress.getLoopbackAddress(), port);
         os = sock.getOutputStream();
         os.write(s2.getBytes(StandardCharsets.ISO_8859_1));
         Thread.sleep(500);

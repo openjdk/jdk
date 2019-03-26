@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.util.*;
 
 import javax.lang.model.element.TypeElement;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -93,9 +92,9 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
                 addExtendsImplements(parent, local, li);
                 addLevelInfo(local, classtree.directSubClasses(local, isEnum),
                              isEnum, li);   // Recurse
-                ul.addContent(li);
+                ul.add(li);
             }
-            contentTree.addContent(ul);
+            contentTree.add(ul);
         }
     }
 
@@ -117,20 +116,12 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
         if (!sset.isEmpty()) {
             TypeElement firstTypeElement = sset.first();
             Content headingContent = contents.getContent(heading);
-            Content sectionHeading = HtmlTree.HEADING(HtmlConstants.CONTENT_HEADING, true,
+            Content sectionHeading = HtmlTree.HEADING(Headings.CONTENT_HEADING, true,
                     headingContent);
-            HtmlTree htmlTree;
-            if (configuration.allowTag(HtmlTag.SECTION)) {
-                htmlTree = HtmlTree.SECTION(sectionHeading);
-            } else {
-                div.addContent(sectionHeading);
-                htmlTree = div;
-            }
+            HtmlTree htmlTree = HtmlTree.SECTION(sectionHeading);
             addLevelInfo(!utils.isInterface(firstTypeElement) ? firstTypeElement : null,
                     sset, isEnums, htmlTree);
-            if (configuration.allowTag(HtmlTag.SECTION)) {
-                div.addContent(htmlTree);
-            }
+            div.add(htmlTree);
         }
     }
 
@@ -156,21 +147,21 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
                         if (isFirst) {
                             isFirst = false;
                             if (utils.isInterface(typeElement)) {
-                                contentTree.addContent(" (");
-                                contentTree.addContent(contents.also);
-                                contentTree.addContent(" extends ");
+                                contentTree.add(" (");
+                                contentTree.add(contents.also);
+                                contentTree.add(" extends ");
                             } else {
-                                contentTree.addContent(" (implements ");
+                                contentTree.add(" (implements ");
                             }
                         } else {
-                            contentTree.addContent(", ");
+                            contentTree.add(", ");
                         }
                         addPreQualifiedClassLink(LinkInfoImpl.Kind.TREE, intf, contentTree);
                     }
                 }
             }
             if (!isFirst) {
-                contentTree.addContent(")");
+                contentTree.add(")");
             }
         }
     }

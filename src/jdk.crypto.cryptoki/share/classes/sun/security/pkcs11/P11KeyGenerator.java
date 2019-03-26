@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,11 +119,13 @@ final class P11KeyGenerator extends KeyGeneratorSpi {
                 // RC4 which is in bits. However, some PKCS#11 impls still use
                 // bytes for all mechs, e.g. NSS. We try to detect this
                 // inconsistency if the minKeySize seems unreasonably small.
-                int minKeySize = (int)info.ulMinKeySize;
-                int maxKeySize = (int)info.ulMaxKeySize;
+                int minKeySize = info.iMinKeySize;
+                int maxKeySize = info.iMaxKeySize;
                 if (keyGenMech != CKM_RC4_KEY_GEN || minKeySize < 8) {
-                    minKeySize = (int)info.ulMinKeySize << 3;
-                    maxKeySize = (int)info.ulMaxKeySize << 3;
+                    minKeySize = Math.multiplyExact(minKeySize, 8);
+                    if (maxKeySize != Integer.MAX_VALUE) {
+                        maxKeySize = Math.multiplyExact(maxKeySize, 8);
+                    }
                 }
                 // Explicitly disallow keys shorter than 40-bits for security
                 if (minKeySize < 40) minKeySize = 40;

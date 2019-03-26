@@ -39,6 +39,9 @@ import java.util.List;
  */
 public final class PrintFilesEvent extends FilesEvent {
 
+    /**
+     * Use serialVersionUID from JDK 9 for interoperability.
+     */
     private static final long serialVersionUID = -5752560876153618618L;
 
     /**

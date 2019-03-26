@@ -132,6 +132,7 @@ class AllocatedObj {
   f(mtArguments,     "Arguments")                                                   \
   f(mtModule,        "Module")                                                      \
   f(mtSafepoint,     "Safepoint")                                                   \
+  f(mtSynchronizer,  "Synchronization")                                             \
   f(mtNone,          "Unknown")                                                     \
   //end
 

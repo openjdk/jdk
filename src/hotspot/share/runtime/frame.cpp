@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -366,29 +366,6 @@ frame frame::real_sender(RegisterMap* map) const {
     result = result.sender(map);
   }
   return result;
-}
-
-// Note: called by profiler - NOT for current thread
-frame frame::profile_find_Java_sender_frame(JavaThread *thread) {
-// If we don't recognize this frame, walk back up the stack until we do
-  RegisterMap map(thread, false);
-  frame first_java_frame = frame();
-
-  // Find the first Java frame on the stack starting with input frame
-  if (is_java_frame()) {
-    // top frame is compiled frame or deoptimized frame
-    first_java_frame = *this;
-  } else if (safe_for_sender(thread)) {
-    for (frame sender_frame = sender(&map);
-      sender_frame.safe_for_sender(thread) && !sender_frame.is_first_frame();
-      sender_frame = sender_frame.sender(&map)) {
-      if (sender_frame.is_java_frame()) {
-        first_java_frame = sender_frame;
-        break;
-      }
-    }
-  }
-  return first_java_frame;
 }
 
 // Interpreter frames
@@ -1138,13 +1115,13 @@ void frame::nmethods_do(CodeBlobClosure* cf) {
 }
 
 
-// call f() on the interpreted Method*s in the stack.
-// Have to walk the entire code cache for the compiled frames Yuck.
-void frame::metadata_do(void f(Metadata*)) {
+// Call f closure on the interpreted Method*s in the stack.
+void frame::metadata_do(MetadataClosure* f) {
+  ResourceMark rm;
   if (is_interpreted_frame()) {
     Method* m = this->interpreter_frame_method();
     assert(m != NULL, "expecting a method in this frame");
-    f(m);
+    f->do_metadata(m);
   }
 }
 

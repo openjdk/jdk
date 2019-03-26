@@ -105,7 +105,7 @@
   TEST(category, CONCAT(name, _vm_assert)) {                        \
     ASSERT_EXIT(child_ ## category ## _ ## name ## _(),             \
                 ::testing::ExitedWithCode(1),                       \
-                "assert failed: " msg);                             \
+                "^assert failed: " msg);                             \
   }                                                                 \
                                                                     \
   void test_ ## category ## _ ## name ## _()

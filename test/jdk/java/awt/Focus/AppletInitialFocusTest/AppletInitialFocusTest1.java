@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,36 @@
  * questions.
  */
 
-import java.applet.Applet;
 import java.awt.*;
 import java.awt.event.*;
 
-public class AppletInitialFocusTest1 extends Applet implements FocusListener {
+/*
+  @test
+  @key headful
+  @bug 4411534 4517274
+  @summary ensures that user's requestFocus() during applet initialization
+           is not ignored
+  @library ../../regtesthelpers
+  @build   Util
+  @run main AppletInitialFocusTest1
+ */
+public class AppletInitialFocusTest1 extends Frame implements FocusListener {
 
     Button button1 = new Button("Button1");
     Button button2 = new Button("Button2");
 
     Object lock = new Object();
 
+    public static void main(final String[] args) throws Exception {
+        AppletInitialFocusTest1 app = new AppletInitialFocusTest1();
+        app.init();
+        Thread.sleep(10000);
+    }
+
     public void init() {
+        setSize(200, 200);
+        setLocationRelativeTo(null);
+        setLayout(new FlowLayout());
 
         Component parent = this;
         while (parent != null && !(parent instanceof Window)) {
@@ -52,34 +70,18 @@ public class AppletInitialFocusTest1 extends Applet implements FocusListener {
         button2.addFocusListener(this);
         add(button1);
         add(button2);
+        setVisible(true);
         button2.requestFocus();
     }
 
     public void focusGained(FocusEvent e) {
         if (e.getSource() == button1) {
             synchronized (lock) {
-                System.err.println("failed: focus on the wrong button");
-                System.exit(2);
+                throw new RuntimeException("failed: focus on the wrong button");
             }
         }
     }
 
     public void focusLost(FocusEvent e) {
-    }
-
-    public void start() {
-        Thread thread = new Thread(new Runnable() {
-            public void run() {
-                try {
-                    Thread.sleep(10000);
-                    synchronized (lock) {
-                        System.err.println("passed");
-                        System.exit(0);
-                    }
-                } catch(InterruptedException e) {
-                }
-            }
-        });
-        thread.start();
     }
 }

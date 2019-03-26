@@ -22,15 +22,18 @@
  *
  */
 
+package gc.stress.systemgc;
+
 /*
  * @test TestSystemGCWithShenandoah
  * @key gc
  * @key stress
+ * @library /
  * @requires vm.gc.Shenandoah
  * @summary Stress the Shenandoah GC full GC by allocating objects of different lifetimes concurrently with System.gc().
- * @run main/othervm/timeout=300 -Xlog:gc*=info -Xmx512m -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions -XX:+ShenandoahVerify -XX:+UseShenandoahGC TestSystemGCWithShenandoah 270
- * @run main/othervm/timeout=300 -Xlog:gc*=info -Xmx512m -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions -XX:+ShenandoahVerify -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=traversal TestSystemGCWithShenandoah 270
- * @run main/othervm/timeout=300 -Xlog:gc*=info -Xmx512m -XX:+UnlockExperimentalVMOptions                                                      -XX:+UseShenandoahGC TestSystemGCWithShenandoah 270
+ * @run main/othervm/timeout=300 -Xlog:gc*=info -Xmx512m -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions -XX:+ShenandoahVerify -XX:+UseShenandoahGC gc.stress.systemgc.TestSystemGCWithShenandoah 270
+ * @run main/othervm/timeout=300 -Xlog:gc*=info -Xmx512m -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions -XX:+ShenandoahVerify -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=traversal gc.stress.systemgc.TestSystemGCWithShenandoah 270
+ * @run main/othervm/timeout=300 -Xlog:gc*=info -Xmx512m -XX:+UnlockExperimentalVMOptions                                                      -XX:+UseShenandoahGC gc.stress.systemgc.TestSystemGCWithShenandoah 270
  */
 public class TestSystemGCWithShenandoah {
     public static void main(String[] args) throws Exception {

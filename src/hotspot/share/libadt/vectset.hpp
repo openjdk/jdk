@@ -95,7 +95,6 @@ public:
   int disjoint   (const Set       &s) const;  // True if sets are disjoint
 
   int operator [](uint elem) const; // Test for membership
-  uint getelem(void) const;         // Return a random element
   void Clear(void);                 // Clear a set
   uint Size(void) const;            // Number of elements in the Set.
   void Sort(void);                  // Sort before iterating
@@ -110,7 +109,6 @@ public:
 
   // Expose internals for speed-critical fast iterators
   uint word_size() const { return size; }
-  uint32_t* EXPOSE() const { return data; }
 
   // Fast inlined "test and set".  Replaces the idiom:
   //     if( visited[idx] ) return;

@@ -140,7 +140,7 @@ public:
 
   GrowableArray<ciMetadata*>* get_ci_metadata() const { return _ci_metadata; }
   // RedefineClasses support
-  void metadata_do(void f(Metadata*));
+  void metadata_do(MetadataClosure* f);
 
   void print_contents();
   void print();

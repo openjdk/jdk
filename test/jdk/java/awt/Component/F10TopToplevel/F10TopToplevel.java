@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,51 +20,25 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
-  test
+  @test
+  @key headful
   @bug 6533175
   @summary Block F10 if closest toplevel to keystroke target is not a Frame.
-  @author yuri nesterenko : area=awt.toplevel
-  @run applet F10TopToplevel.html
+  @run main F10TopToplevel
 */
 
-
-
-/**
- * F10TopToplevel.java
- *
- * summary: tests if F10 has no effect if focused toplevel if not Frame
- */
-
-import java.applet.Applet;
 import java.awt.*;
 import java.awt.event.*;
 
+public class F10TopToplevel {
 
-public class F10TopToplevel extends Applet
-{
-    //Declare things used in the test, like buttons and labels here
-    Frame frame;
-    Dialog dialog;
-    volatile boolean menuToggled = false;
+    static Frame frame;
+    static Dialog dialog;
+    static volatile boolean menuToggled = false;
 
-    public void init()
-    {
-        setLayout (new BorderLayout ());
-
-    }//End  init()
-
-    public void start ()
-    {
-        //Get things going.  Request focus, set size, et cetera
-        setSize (200,200);
-        setVisible(true);
-        validate();
-
-
-        //What would normally go into main() will probably go here.
-        //Use System.out.println for diagnostic messages that you want
-        //to read after the test is done.
+    public static void main(final String[] args) {
         MenuBar mb;
         Menu menu;
         MenuItem item;
@@ -115,6 +89,5 @@ public class F10TopToplevel extends Applet
             throw new RuntimeException("Oops! Menu should not open.");
         }
 
-    }// start()
-
+    }
 }// class F10TopToplevel

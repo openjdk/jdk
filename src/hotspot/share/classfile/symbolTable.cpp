@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,10 +49,6 @@ const double PREF_AVG_LIST_LEN = 8.0;
 const size_t END_SIZE = 17;
 // If a chain gets to 100 something might be wrong
 const size_t REHASH_LEN = 100;
-// We only get a chance to check whether we need
-// to clean infrequently (on class unloading),
-// so if we have even one dead entry then mark table for cleaning
-const double CLEAN_DEAD_HIGH_WATER_MARK = 0.0;
 
 const size_t ON_STACK_BUFFER_LENGTH = 128;
 
@@ -142,7 +138,7 @@ static size_t ceil_log2(size_t value) {
 SymbolTable::SymbolTable() :
   _symbols_removed(0), _symbols_counted(0), _local_table(NULL),
   _current_size(0), _has_work(0), _needs_rehashing(false),
-  _items_count(0), _uncleaned_items_count(0) {
+  _items_count(0), _has_items_to_clean(false) {
 
   size_t start_size_log_2 = ceil_log2(SymbolTableSize);
   _current_size = ((size_t)1) << start_size_log_2;
@@ -171,20 +167,12 @@ void SymbolTable::update_needs_rehash(bool rehash) {
   }
 }
 
+void SymbolTable::reset_has_items_to_clean() { Atomic::store(false, &_has_items_to_clean); }
+void SymbolTable::mark_has_items_to_clean()  { Atomic::store(true, &_has_items_to_clean); }
+bool SymbolTable::has_items_to_clean() const { return Atomic::load(&_has_items_to_clean); }
+
 void SymbolTable::item_added() {
   Atomic::inc(&(SymbolTable::the_table()->_items_count));
-}
-
-void SymbolTable::set_item_clean_count(size_t ncl) {
-  Atomic::store(ncl, &(SymbolTable::the_table()->_uncleaned_items_count));
-  log_trace(symboltable)("Set uncleaned items:" SIZE_FORMAT, SymbolTable::the_table()->_uncleaned_items_count);
-}
-
-// Mark one item as needing to be cleaned, but only if no other items are marked yet
-void SymbolTable::mark_item_clean_count() {
-  if (Atomic::cmpxchg((size_t)1, &(SymbolTable::the_table()->_uncleaned_items_count), (size_t)0) == 0) {
-    log_trace(symboltable)("Marked uncleaned items:" SIZE_FORMAT, SymbolTable::the_table()->_uncleaned_items_count);
-  }
 }
 
 void SymbolTable::item_removed() {
@@ -196,15 +184,11 @@ double SymbolTable::get_load_factor() const {
   return (double)_items_count/_current_size;
 }
 
-double SymbolTable::get_dead_factor() const {
-  return (double)_uncleaned_items_count/_current_size;
-}
-
 size_t SymbolTable::table_size() {
   return ((size_t)1) << _local_table->get_size_log2(Thread::current());
 }
 
-void SymbolTable::trigger_concurrent_work() {
+void SymbolTable::trigger_cleanup() {
   MutexLockerEx ml(Service_lock, Mutex::_no_safepoint_check_flag);
   SymbolTable::the_table()->_has_work = true;
   Service_lock->notify_all();
@@ -452,18 +436,16 @@ Symbol* SymbolTable::lookup_only_unicode(const jchar* name, int utf16_length,
   }
 }
 
-void SymbolTable::add(ClassLoaderData* loader_data, const constantPoolHandle& cp,
-                      int names_count, const char** names, int* lengths,
-                      int* cp_indices, unsigned int* hashValues, TRAPS) {
+void SymbolTable::new_symbols(ClassLoaderData* loader_data, const constantPoolHandle& cp,
+                              int names_count, const char** names, int* lengths,
+                              int* cp_indices, unsigned int* hashValues, TRAPS) {
   bool c_heap = !loader_data->is_the_null_class_loader_data();
   for (int i = 0; i < names_count; i++) {
     const char *name = names[i];
     int len = lengths[i];
     unsigned int hash = hashValues[i];
-    Symbol* sym = SymbolTable::the_table()->lookup_common(name, len, hash);
-    if (sym == NULL) {
-      sym = SymbolTable::the_table()->do_add_if_needed(name, len, hash, c_heap, CHECK);
-    }
+    assert(SymbolTable::the_table()->lookup_shared(name, len, hash) == NULL, "must have checked already");
+    Symbol* sym = SymbolTable::the_table()->do_add_if_needed(name, len, hash, c_heap, CHECK);
     assert(sym->refcount() != 0, "lookup should have incremented the count");
     cp->symbol_at_put(cp_indices[i], sym);
   }
@@ -490,12 +472,7 @@ Symbol* SymbolTable::do_add_if_needed(const char* name, int len, uintx hash, boo
   update_needs_rehash(rehash_warning);
 
   if (clean_hint) {
-    // we just found out that there is a dead item,
-    // which we were unable to clean right now,
-    // but we have no way of telling whether it's
-    // been previously counted or not, so mark
-    // it only if no other items were found yet
-    mark_item_clean_count();
+    mark_has_items_to_clean();
     check_concurrent_work();
   }
 
@@ -510,8 +487,8 @@ Symbol* SymbolTable::new_permanent_symbol(const char* name, TRAPS) {
   if (sym == NULL) {
     sym = SymbolTable::the_table()->do_add_if_needed(name, len, hash, false, CHECK_NULL);
   }
-  if (sym->refcount() != PERM_REFCOUNT) {
-    sym->increment_refcount();
+  if (!sym->is_permanent()) {
+    sym->make_permanent();
     log_trace_symboltable_helper(sym, "Asked for a permanent symbol, but got a regular one");
   }
   return sym;
@@ -697,7 +674,7 @@ void SymbolTable::clean_dead_entries(JavaThread* jt) {
       }
       bdt.cont(jt);
     }
-    SymbolTable::the_table()->set_item_clean_count(0);
+    SymbolTable::the_table()->reset_has_items_to_clean();
     bdt.done(jt);
   }
 
@@ -711,17 +688,13 @@ void SymbolTable::check_concurrent_work() {
   if (_has_work) {
     return;
   }
-  double load_factor = SymbolTable::get_load_factor();
-  double dead_factor = SymbolTable::get_dead_factor();
-  // We should clean/resize if we have more dead than alive,
+  // We should clean/resize if we have
   // more items than preferred load factor or
   // more dead items than water mark.
-  if ((dead_factor > load_factor) ||
-      (load_factor > PREF_AVG_LIST_LEN) ||
-      (dead_factor > CLEAN_DEAD_HIGH_WATER_MARK)) {
-    log_debug(symboltable)("Concurrent work triggered, live factor:%f dead factor:%f",
-                           load_factor, dead_factor);
-    trigger_concurrent_work();
+  if (has_items_to_clean() || (get_load_factor() > PREF_AVG_LIST_LEN)) {
+    log_debug(symboltable)("Concurrent work triggered, load factor: %f, items to clean: %s",
+                           get_load_factor(), has_items_to_clean() ? "true" : "false");
+    trigger_cleanup();
   }
 }
 
@@ -735,34 +708,6 @@ void SymbolTable::concurrent_work(JavaThread* jt) {
     clean_dead_entries(jt);
   }
   _has_work = false;
-}
-
-class CountDead : StackObj {
-  size_t _count;
-public:
-  CountDead() : _count(0) {}
-  bool operator()(Symbol** value) {
-    assert(value != NULL, "expected valid value");
-    assert(*value != NULL, "value should point to a symbol");
-    Symbol* sym = *value;
-    if (sym->refcount() == 0) {
-      _count++;
-    }
-    return true;
-  };
-  size_t get_dead_count() const {
-    return _count;
-  }
-};
-
-void SymbolTable::do_check_concurrent_work() {
-  CountDead counter;
-  if (!SymbolTable::the_table()->_local_table->try_scan(Thread::current(), counter)) {
-    log_info(symboltable)("count dead unavailable at this moment");
-  } else {
-    SymbolTable::the_table()->set_item_clean_count(counter.get_dead_count());
-    SymbolTable::the_table()->check_concurrent_work();
-  }
 }
 
 void SymbolTable::do_concurrent_work(JavaThread* jt) {
@@ -800,7 +745,7 @@ void SymbolTable::try_rehash_table() {
   if (get_load_factor() > PREF_AVG_LIST_LEN &&
       !_local_table->is_max_size_reached()) {
     log_debug(symboltable)("Choosing growing over rehashing.");
-    trigger_concurrent_work();
+    trigger_cleanup();
     _needs_rehashing = false;
     return;
   }
@@ -808,7 +753,7 @@ void SymbolTable::try_rehash_table() {
   // Already rehashed.
   if (rehashed) {
     log_warning(symboltable)("Rehashing already done, still long lists.");
-    trigger_concurrent_work();
+    trigger_cleanup();
     _needs_rehashing = false;
     return;
   }

@@ -2285,7 +2285,7 @@ public class Check {
             return;
         if (seen.contains(t)) {
             tv = (TypeVar)t;
-            tv.bound = types.createErrorType(t);
+            tv.setUpperBound(types.createErrorType(t));
             log.error(pos, Errors.CyclicInheritance(t));
         } else if (t.hasTag(TYPEVAR)) {
             tv = (TypeVar)t;

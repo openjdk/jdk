@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ G1RootProcessor::G1RootProcessor(G1CollectedHeap* g1h, uint n_workers) :
     _n_workers_discovered_strong_classes(0) {}
 
 void G1RootProcessor::evacuate_roots(G1ParScanThreadState* pss, uint worker_i) {
-  G1GCPhaseTimes* phase_times = _g1h->g1_policy()->phase_times();
+  G1GCPhaseTimes* phase_times = _g1h->phase_times();
 
   G1EvacPhaseTimesTracker timer(phase_times, pss, G1GCPhaseTimes::ExtRootScan, worker_i);
 
@@ -90,7 +90,6 @@ void G1RootProcessor::evacuate_roots(G1ParScanThreadState* pss, uint worker_i) {
   }
 
   process_vm_roots(closures, phase_times, worker_i);
-  process_string_table_roots(closures, phase_times, worker_i);
 
   {
     // Now the CM ref_processor roots.
@@ -188,32 +187,15 @@ public:
 
 void G1RootProcessor::process_all_roots(OopClosure* oops,
                                         CLDClosure* clds,
-                                        CodeBlobClosure* blobs,
-                                        bool process_string_table) {
+                                        CodeBlobClosure* blobs) {
   AllRootsClosures closures(oops, clds);
 
   process_java_roots(&closures, NULL, 0);
   process_vm_roots(&closures, NULL, 0);
 
-  if (process_string_table) {
-    process_string_table_roots(&closures, NULL, 0);
-  }
   process_code_cache_roots(blobs, NULL, 0);
 
   _process_strong_tasks.all_tasks_completed(n_workers());
-}
-
-void G1RootProcessor::process_all_roots(OopClosure* oops,
-                                        CLDClosure* clds,
-                                        CodeBlobClosure* blobs) {
-  process_all_roots(oops, clds, blobs, true);
-}
-
-void G1RootProcessor::process_all_roots_no_string_table(OopClosure* oops,
-                                                        CLDClosure* clds,
-                                                        CodeBlobClosure* blobs) {
-  assert(!ClassUnloading, "Should only be used when class unloading is disabled");
-  process_all_roots(oops, clds, blobs, false);
 }
 
 void G1RootProcessor::process_java_roots(G1RootClosures* closures,
@@ -293,16 +275,6 @@ void G1RootProcessor::process_vm_roots(G1RootClosures* closures,
       SystemDictionary::oops_do(strong_roots);
     }
   }
-}
-
-void G1RootProcessor::process_string_table_roots(G1RootClosures* closures,
-                                                 G1GCPhaseTimes* phase_times,
-                                                 uint worker_i) {
-  assert(closures->weak_oops() != NULL, "Should only be called when all roots are processed");
-  G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::StringTableRoots, worker_i);
-  // All threads execute the following. A specific chunk of buckets
-  // from the StringTable are the individual tasks.
-  StringTable::possibly_parallel_oops_do(&_par_state_string, closures->weak_oops());
 }
 
 void G1RootProcessor::process_code_cache_roots(CodeBlobClosure* code_closure,

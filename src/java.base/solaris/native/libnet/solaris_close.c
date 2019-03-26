@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,10 +57,6 @@ int NET_RecvFrom(int s, void *buf, int len, unsigned int flags,
 
 int NET_ReadV(int s, const struct iovec * vector, int count) {
     RESTARTABLE_RETURN_INT(readv(s, vector, count));
-}
-
-int NET_WriteV(int s, const struct iovec * vector, int count) {
-    RESTARTABLE_RETURN_INT(writev(s, vector, count));
 }
 
 int NET_Send(int s, void *msg, int len, unsigned int flags) {

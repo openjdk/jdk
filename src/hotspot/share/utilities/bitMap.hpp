@@ -429,12 +429,6 @@ class BitMap2D {
     return _map.size();
   }
 
-  // Returns number of full slots that have been allocated
-  idx_t size_in_slots() {
-    // Round down
-    return _map.size() / _bits_per_slot;
-  }
-
   bool is_valid_index(idx_t slot_index, idx_t bit_within_slot_index);
   bool at(idx_t slot_index, idx_t bit_within_slot_index) const;
   void set_bit(idx_t slot_index, idx_t bit_within_slot_index);

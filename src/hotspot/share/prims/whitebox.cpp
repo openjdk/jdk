@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,7 @@
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/handles.inline.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
@@ -93,6 +94,9 @@
 #include "services/memTracker.hpp"
 #include "utilities/nativeCallStack.hpp"
 #endif // INCLUDE_NMT
+#if INCLUDE_AOT
+#include "aot/aotLoader.hpp"
+#endif // INCLUDE_AOT
 
 #ifdef LINUX
 #include "osContainer_linux.hpp"
@@ -390,32 +394,6 @@ WB_ENTRY(jboolean, WB_SupportsConcurrentGCPhaseControl(JNIEnv* env, jobject o))
   return Universe::heap()->supports_concurrent_phase_control();
 WB_END
 
-WB_ENTRY(jobjectArray, WB_GetConcurrentGCPhases(JNIEnv* env, jobject o))
-  const char* const* phases = Universe::heap()->concurrent_phases();
-  jint nphases = 0;
-  for ( ; phases[nphases] != NULL; ++nphases) ;
-
-  ResourceMark rm(thread);
-  ThreadToNativeFromVM ttn(thread);
-  jclass clazz = env->FindClass(vmSymbols::java_lang_Object()->as_C_string());
-  CHECK_JNI_EXCEPTION_(env, NULL);
-
-  jobjectArray result = env->NewObjectArray(nphases, clazz, NULL);
-  CHECK_JNI_EXCEPTION_(env, NULL);
-
-  // If push fails, return with pending exception.
-  if (env->PushLocalFrame(nphases) < 0) return NULL;
-  for (jint i = 0; i < nphases; ++i) {
-    jstring phase = env->NewStringUTF(phases[i]);
-    CHECK_JNI_EXCEPTION_(env, NULL);
-    env->SetObjectArrayElement(result, i, phase);
-    CHECK_JNI_EXCEPTION_(env, NULL);
-  }
-  env->PopLocalFrame(NULL);
-
-  return result;
-WB_END
-
 WB_ENTRY(jboolean, WB_RequestConcurrentGCPhase(JNIEnv* env, jobject o, jstring name))
   Handle h_name(THREAD, JNIHandles::resolve(name));
   ResourceMark rm;
@@ -505,7 +483,7 @@ WB_ENTRY(jlong, WB_DramReservedStart(JNIEnv* env, jobject o))
 #if INCLUDE_G1GC
   if (UseG1GC) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    if (g1h->g1_collector_policy()->is_hetero_heap()) {
+    if (g1h->is_heterogeneous_heap()) {
       uint start_region = HeterogeneousHeapRegionManager::manager()->start_index_of_dram();
       return (jlong)(g1h->base() + start_region * HeapRegion::GrainBytes);
     } else {
@@ -531,7 +509,7 @@ WB_ENTRY(jlong, WB_DramReservedEnd(JNIEnv* env, jobject o))
 #if INCLUDE_G1GC
   if (UseG1GC) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    if (g1h->g1_collector_policy()->is_hetero_heap()) {
+    if (g1h->is_heterogeneous_heap()) {
       uint end_region = HeterogeneousHeapRegionManager::manager()->end_index_of_dram();
       return (jlong)(g1h->base() + (end_region + 1) * HeapRegion::GrainBytes - 1);
     } else {
@@ -557,7 +535,7 @@ WB_ENTRY(jlong, WB_NvdimmReservedStart(JNIEnv* env, jobject o))
 #if INCLUDE_G1GC
   if (UseG1GC) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    if (g1h->g1_collector_policy()->is_hetero_heap()) {
+    if (g1h->is_heterogeneous_heap()) {
       uint start_region = HeterogeneousHeapRegionManager::manager()->start_index_of_nvdimm();
       return (jlong)(g1h->base() + start_region * HeapRegion::GrainBytes);
     } else {
@@ -583,7 +561,7 @@ WB_ENTRY(jlong, WB_NvdimmReservedEnd(JNIEnv* env, jobject o))
 #if INCLUDE_G1GC
   if (UseG1GC) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    if (g1h->g1_collector_policy()->is_hetero_heap()) {
+    if (g1h->is_heterogeneous_heap()) {
       uint end_region = HeterogeneousHeapRegionManager::manager()->start_index_of_nvdimm();
       return (jlong)(g1h->base() + (end_region + 1) * HeapRegion::GrainBytes - 1);
     } else {
@@ -714,6 +692,13 @@ WB_ENTRY(jlong, WB_NMTMallocWithPseudoStack(JNIEnv* env, jobject o, jlong size, 
   address pc = (address)(size_t)pseudo_stack;
   NativeCallStack stack(&pc, 1);
   return (jlong)(uintptr_t)os::malloc(size, mtTest, stack);
+WB_END
+
+// Alloc memory with pseudo call stack and specific memory type.
+WB_ENTRY(jlong, WB_NMTMallocWithPseudoStackAndType(JNIEnv* env, jobject o, jlong size, jint pseudo_stack, jint type))
+  address pc = (address)(size_t)pseudo_stack;
+  NativeCallStack stack(&pc, 1);
+  return (jlong)(uintptr_t)os::malloc(size, (MEMFLAGS)type, stack);
 WB_END
 
 // Free the memory allocated by NMTAllocTest
@@ -1559,9 +1544,6 @@ WB_ENTRY(jobjectArray, WB_GetCodeHeapEntries(JNIEnv* env, jobject o, jint blob_t
       blobs.append(stub);
     }
   }
-  if (blobs.length() == 0) {
-    return NULL;
-  }
   ThreadToNativeFromVM ttn(thread);
   jobjectArray result = NULL;
   jclass clazz = env->FindClass(vmSymbols::java_lang_Object()->as_C_string());
@@ -2118,6 +2100,14 @@ WB_ENTRY(jint, WB_ProtectionDomainRemovedCount(JNIEnv* env, jobject o))
   return (jint) SystemDictionary::pd_cache_table()->removed_entries_count();
 WB_END
 
+WB_ENTRY(jint, WB_AotLibrariesCount(JNIEnv* env, jobject o))
+  jint result = 0;
+#if INCLUDE_AOT
+  result = (jint) AOTLoader::heaps_count();
+#endif
+  return result;
+WB_END
+
 #define CC (char*)
 
 static JNINativeMethod methods[] = {
@@ -2175,6 +2165,7 @@ static JNINativeMethod methods[] = {
 #if INCLUDE_NMT
   {CC"NMTMalloc",           CC"(J)J",                 (void*)&WB_NMTMalloc          },
   {CC"NMTMallocWithPseudoStack", CC"(JI)J",           (void*)&WB_NMTMallocWithPseudoStack},
+  {CC"NMTMallocWithPseudoStackAndType", CC"(JII)J",   (void*)&WB_NMTMallocWithPseudoStackAndType},
   {CC"NMTFree",             CC"(J)V",                 (void*)&WB_NMTFree            },
   {CC"NMTReserveMemory",    CC"(J)J",                 (void*)&WB_NMTReserveMemory   },
   {CC"NMTAttemptReserveMemoryAt",    CC"(JJ)J",       (void*)&WB_NMTAttemptReserveMemoryAt },
@@ -2339,8 +2330,6 @@ static JNINativeMethod methods[] = {
   {CC"isGCSelected",              CC"(I)Z",           (void*)&WB_IsGCSelected},
   {CC"isGCSelectedErgonomically", CC"()Z",            (void*)&WB_IsGCSelectedErgonomically},
   {CC"supportsConcurrentGCPhaseControl", CC"()Z",     (void*)&WB_SupportsConcurrentGCPhaseControl},
-  {CC"getConcurrentGCPhases",     CC"()[Ljava/lang/String;",
-                                                      (void*)&WB_GetConcurrentGCPhases},
   {CC"requestConcurrentGCPhase0", CC"(Ljava/lang/String;)Z",
                                                       (void*)&WB_RequestConcurrentGCPhase},
   {CC"checkLibSpecifiesNoexecstack", CC"(Ljava/lang/String;)Z",
@@ -2350,6 +2339,7 @@ static JNINativeMethod methods[] = {
   {CC"disableElfSectionCache",    CC"()V",            (void*)&WB_DisableElfSectionCache },
   {CC"resolvedMethodRemovedCount",     CC"()I",       (void*)&WB_ResolvedMethodRemovedCount },
   {CC"protectionDomainRemovedCount",   CC"()I",       (void*)&WB_ProtectionDomainRemovedCount },
+  {CC"aotLibrariesCount", CC"()I",                    (void*)&WB_AotLibrariesCount },
 };
 
 

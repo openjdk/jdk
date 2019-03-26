@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
  * {@linkplain java.lang.invoke.MethodHandles#dropArguments deletion},
  * and {@linkplain java.lang.invoke.MethodHandles#filterArguments substitution}.
  *
- * <h1>Method handle contents</h1>
+ * <h2>Method handle contents</h2>
  * Method handles are dynamically and strongly typed according to their parameter and return types.
  * They are not distinguished by the name or the defining class of their underlying methods.
  * A method handle must be invoked using a symbolic type descriptor which matches
@@ -89,7 +89,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
  * from its specific class, as the method handle class hierarchy (if any)
  * may change from time to time or across implementations from different vendors.
  *
- * <h1>Method handle compilation</h1>
+ * <h2>Method handle compilation</h2>
  * A Java method call expression naming {@code invokeExact} or {@code invoke}
  * can invoke a method handle from Java source code.
  * From the viewpoint of source code, these methods can take any arguments
@@ -121,7 +121,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
  * The ambiguity with the type {@code Void} is harmless, since there are no references of type
  * {@code Void} except the null reference.
  *
- * <h1>Method handle invocation</h1>
+ * <h2>Method handle invocation</h2>
  * The first time an {@code invokevirtual} instruction is executed
  * it is linked by symbolically resolving the names in the instruction
  * and verifying that the method call is statically legal.
@@ -164,7 +164,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
  * (<em>Note:</em> The adjusted method handle {@code M2} is not directly observable,
  * and implementations are therefore not required to materialize it.)
  *
- * <h1>Invocation checking</h1>
+ * <h2>Invocation checking</h2>
  * In typical programs, method handle type matching will usually succeed.
  * But if a match fails, the JVM will throw a {@link WrongMethodTypeException},
  * either directly (in the case of {@code invokeExact}) or indirectly as if
@@ -205,7 +205,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
  * They should not be passed to untrusted code unless their use from
  * the untrusted code would be harmless.
  *
- * <h1>Method handle creation</h1>
+ * <h2>Method handle creation</h2>
  * Java code can create a method handle that directly accesses
  * any method, constructor, or field that is accessible to that code.
  * This is done via a reflective, capability-based API called
@@ -263,7 +263,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
  * of an {@code invokevirtual} or {@code invokeinterface} instruction on
  * a private method (as applicable).
  *
- * <h1>Usage examples</h1>
+ * <h2>Usage examples</h2>
  * Here are some examples of usage:
  * <blockquote><pre>{@code
 Object x, y; String s; int i;
@@ -309,7 +309,7 @@ mh.invokeExact(System.out, "Hello, world.");
  * be a method which calls {@link java.util.Objects#equals(Object,Object) Objects.equals}
  * on its arguments, and asserts that the result is true.
  *
- * <h1>Exceptions</h1>
+ * <h2>Exceptions</h2>
  * The methods {@code invokeExact} and {@code invoke} are declared
  * to throw {@link java.lang.Throwable Throwable},
  * which is to say that there is no static restriction on what a method handle
@@ -322,7 +322,7 @@ mh.invokeExact(System.out, "Hello, world.");
  * throwables locally, rethrowing only those which are legal in the context,
  * and wrapping ones which are illegal.
  *
- * <h1><a id="sigpoly"></a>Signature polymorphism</h1>
+ * <h2><a id="sigpoly"></a>Signature polymorphism</h2>
  * The unusual compilation and linkage behavior of
  * {@code invokeExact} and plain {@code invoke}
  * is referenced by the term <em>signature polymorphism</em>.
@@ -347,7 +347,7 @@ mh.invokeExact(System.out, "Hello, world.");
  * Tools which determine symbolic linkage are required to accept such
  * untransformed descriptors, without reporting linkage errors.
  *
- * <h1>Interoperation between method handles and the Core Reflection API</h1>
+ * <h2>Interoperation between method handles and the Core Reflection API</h2>
  * Using factory methods in the {@link java.lang.invoke.MethodHandles.Lookup Lookup} API,
  * any class member represented by a Core Reflection API object
  * can be converted to a behaviorally equivalent method handle.
@@ -389,7 +389,7 @@ mh.invokeExact(System.out, "Hello, world.");
  * to call {@code invokeExact} or plain {@code invoke},
  * for any specified type descriptor .
  *
- * <h1>Interoperation between method handles and Java generics</h1>
+ * <h2>Interoperation between method handles and Java generics</h2>
  * A method handle can be obtained on a method, constructor, or field
  * which is declared with Java generic types.
  * As with the Core Reflection API, the type of the method handle
@@ -416,7 +416,7 @@ mh.invokeExact(System.out, "Hello, world.");
  * genericity with a Java type parameter.</li>
  * </ul>
  *
- * <h1><a id="maxarity"></a>Arity limits</h1>
+ * <h2><a id="maxarity"></a>Arity limits</h2>
  * The JVM imposes on all methods and constructors of any kind an absolute
  * limit of 255 stacked arguments.  This limit can appear more restrictive
  * in certain cases:
@@ -1083,7 +1083,7 @@ assertEquals("[A, B, C]", (String) caToString2.invokeExact('A', "BC".toCharArray
       * else if (makeVarargs)
       *   return asVarargsCollector(type().lastParameterType());
       * else
-      *   return return asFixedArity();
+      *   return asFixedArity();
       * }</pre></blockquote>
       * @param makeVarargs true if the return method handle should have variable arity behavior
       * @return a method handle of the same type, with possibly adjusted variable arity behavior

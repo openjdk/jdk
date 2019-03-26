@@ -31,19 +31,19 @@
 #include "runtime/orderAccess.hpp"
 
 bool G1CardTable::mark_card_deferred(size_t card_index) {
-  jbyte val = _byte_map[card_index];
+  CardValue val = _byte_map[card_index];
   // It's already processed
   if ((val & (clean_card_mask_val() | deferred_card_val())) == deferred_card_val()) {
     return false;
   }
 
   // Cached bit can be installed either on a clean card or on a claimed card.
-  jbyte new_val = val;
+  CardValue new_val = val;
   if (val == clean_card_val()) {
-    new_val = (jbyte)deferred_card_val();
+    new_val = deferred_card_val();
   } else {
     if (val & claimed_card_val()) {
-      new_val = val | (jbyte)deferred_card_val();
+      new_val = val | deferred_card_val();
     }
   }
   if (new_val != val) {
@@ -53,8 +53,8 @@ bool G1CardTable::mark_card_deferred(size_t card_index) {
 }
 
 void G1CardTable::g1_mark_as_young(const MemRegion& mr) {
-  jbyte *const first = byte_for(mr.start());
-  jbyte *const last = byte_after(mr.last());
+  CardValue *const first = byte_for(mr.start());
+  CardValue *const last = byte_after(mr.last());
 
   memset_with_concurrent_readers(first, g1_young_gen, last - first);
 }
@@ -85,7 +85,7 @@ void G1CardTable::initialize(G1RegionToSpaceMapper* mapper) {
   _cur_covered_regions = 1;
   _covered[0] = _whole_heap;
 
-  _byte_map = (jbyte*) mapper->reserved().start();
+  _byte_map = (CardValue*) mapper->reserved().start();
   _byte_map_base = _byte_map - (uintptr_t(low_bound) >> card_shift);
   assert(byte_for(low_bound) == &_byte_map[0], "Checking start of map");
   assert(byte_for(high_bound-1) <= &_byte_map[_last_valid_index], "Checking end of map");
@@ -97,6 +97,6 @@ void G1CardTable::initialize(G1RegionToSpaceMapper* mapper) {
 }
 
 bool G1CardTable::is_in_young(oop obj) const {
-  volatile jbyte* p = byte_for(obj);
+  volatile CardValue* p = byte_for(obj);
   return *p == G1CardTable::g1_young_card_val();
 }

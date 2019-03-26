@@ -38,8 +38,6 @@ public:
   bool is_call_site() const { return true; }
 
   bool is_constant_call_site();
-  bool is_mutable_call_site();
-  bool is_volatile_call_site();
 
   // Return the target MethodHandle of this CallSite.
   ciMethodHandle* get_target() const;

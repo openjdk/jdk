@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  * questions.
  */
 
-
 package sun.print;
 
 import java.awt.GraphicsConfiguration;
@@ -32,36 +31,40 @@ import java.awt.Window;
 
 public final class PrinterGraphicsDevice extends GraphicsDevice {
 
-    String printerID;
-    GraphicsConfiguration graphicsConf;
+    private final String printerID;
+    private final GraphicsConfiguration config;
 
-    protected PrinterGraphicsDevice(GraphicsConfiguration conf, String id) {
+    PrinterGraphicsDevice(GraphicsConfiguration conf, String id) {
         printerID = id;
-        graphicsConf = conf;
+        config = conf;
     }
 
+    @Override
     public int getType() {
         return TYPE_PRINTER;
     }
 
+    @Override
     public String getIDstring() {
         return printerID;
     }
 
+    @Override
     public GraphicsConfiguration[] getConfigurations() {
-        GraphicsConfiguration[] confs = new GraphicsConfiguration[1];
-        confs[0] = graphicsConf;
-        return confs;
+        return new GraphicsConfiguration[]{config};
     }
 
+    @Override
     public GraphicsConfiguration getDefaultConfiguration() {
-        return graphicsConf;
+        return config;
     }
 
+    @Override
     public void setFullScreenWindow(Window w) {
         // Do nothing
     }
 
+    @Override
     public Window getFullScreenWindow() {
         return null;
     }

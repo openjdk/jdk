@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,10 +136,10 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
                 buildEnumConstantComments(enumConstantsTree);
                 buildTagInfo(enumConstantsTree);
 
-                enumConstantsDetailsTree.addContent(writer.getEnumConstants(
+                enumConstantsDetailsTree.add(writer.getEnumConstants(
                         enumConstantsTree, currentElement == lastElement));
             }
-            memberDetailsTree.addContent(
+            memberDetailsTree.add(
                     writer.getEnumConstantsDetails(enumConstantsDetailsTree));
         }
     }
@@ -150,7 +150,7 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
      * @param enumConstantsTree the content tree to which the documentation will be added
      */
     protected void buildSignature(Content enumConstantsTree) {
-        enumConstantsTree.addContent(writer.getSignature(currentElement));
+        enumConstantsTree.add(writer.getSignature(currentElement));
     }
 
     /**

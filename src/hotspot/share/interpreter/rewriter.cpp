@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "interpreter/rewriter.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/constantPool.hpp"
 #include "oops/generateOopMap.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
@@ -221,13 +222,13 @@ void Rewriter::maybe_rewrite_invokehandle(address opc, int cp_index, int cache_i
             MethodHandles::is_signature_polymorphic_name(SystemDictionary::MethodHandle_klass(),
                                                          _pool->name_ref_at(cp_index))) {
           // we may need a resolved_refs entry for the appendix
-          add_invokedynamic_resolved_references_entries(cp_index, cache_index);
+          add_invokedynamic_resolved_references_entry(cp_index, cache_index);
           status = +1;
         } else if (_pool->klass_ref_at_noresolve(cp_index) == vmSymbols::java_lang_invoke_VarHandle() &&
                    MethodHandles::is_signature_polymorphic_name(SystemDictionary::VarHandle_klass(),
                                                                 _pool->name_ref_at(cp_index))) {
           // we may need a resolved_refs entry for the appendix
-          add_invokedynamic_resolved_references_entries(cp_index, cache_index);
+          add_invokedynamic_resolved_references_entry(cp_index, cache_index);
           status = +1;
         } else {
           status = -1;
@@ -259,7 +260,7 @@ void Rewriter::rewrite_invokedynamic(address bcp, int offset, bool reverse) {
   if (!reverse) {
     int cp_index = Bytes::get_Java_u2(p);
     int cache_index = add_invokedynamic_cp_cache_entry(cp_index);
-    int resolved_index = add_invokedynamic_resolved_references_entries(cp_index, cache_index);
+    int resolved_index = add_invokedynamic_resolved_references_entry(cp_index, cache_index);
     // Replace the trailing four bytes with a CPC index for the dynamic
     // call site.  Unlike other CPC entries, there is one per bytecode,
     // not just one per distinct CP entry.  In other words, the
@@ -307,12 +308,9 @@ void Rewriter::patch_invokedynamic_bytecodes() {
       // invokedynamic resolved references map also points to cp cache and must
       // add delta to each.
       int resolved_index = _patch_invokedynamic_refs->at(i);
-      for (int entry = 0; entry < ConstantPoolCacheEntry::_indy_resolved_references_entries; entry++) {
-        assert(_invokedynamic_references_map.at(resolved_index + entry) == cache_index,
+        assert(_invokedynamic_references_map.at(resolved_index) == cache_index,
              "should be the same index");
-        _invokedynamic_references_map.at_put(resolved_index+entry,
-                                             cache_index + delta);
-      }
+        _invokedynamic_references_map.at_put(resolved_index, cache_index + delta);
     }
   }
 }

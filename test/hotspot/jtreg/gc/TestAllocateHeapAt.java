@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,15 @@
  * questions.
  */
 
+package gc;
+
 /* @test TestAllocateHeapAt.java
  * @key gc
  * @summary Test to check allocation of Java Heap with AllocateHeapAt option
  * @requires vm.gc != "Z" & os.family != "aix"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
+ * @run main gc.TestAllocateHeapAt
  */
 
 import jdk.test.lib.JDKToolFinder;
@@ -37,7 +40,7 @@ import java.util.Collections;
 
 public class TestAllocateHeapAt {
   public static void main(String args[]) throws Exception {
-    ArrayList<String> vmOpts = new ArrayList();
+    ArrayList<String> vmOpts = new ArrayList<>();
 
     String testVmOptsStr = System.getProperty("test.java.opts");
     if (!testVmOptsStr.isEmpty()) {

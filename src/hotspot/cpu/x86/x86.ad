@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -1450,6 +1450,15 @@ const bool Matcher::match_rule_supported(int opcode) {
       if (UseSSE < 2)
         ret_value = false;
       break;
+#ifdef _LP64
+    case Op_MaxD:
+    case Op_MaxF:
+    case Op_MinD:
+    case Op_MinF:
+      if (UseAVX < 1) // enabled for AVX only
+        ret_value = false;
+      break;
+#endif
   }
 
   return ret_value;  // Per default match rules are supported.
@@ -1585,7 +1594,7 @@ const uint Matcher::vector_shift_count_ideal_reg(int size) {
 
 // x86 supports misaligned vectors store/load.
 const bool Matcher::misaligned_vectors_ok() {
-  return !AlignVector; // can be changed by flag
+  return true;
 }
 
 // x86 AES instructions are compatible with SunJCE expanded
@@ -1638,6 +1647,7 @@ bool Matcher::clone_address_expressions(AddPNode* m, Matcher::MStack& mstack, Ve
     // Cheap to find it by looking for screwy base.
     if (adr->is_AddP() &&
         !adr->in(AddPNode::Base)->is_top() &&
+        LP64_ONLY( off->get_long() == (int) (off->get_long()) && ) // immL32
         // Are there other uses besides address expressions?
         !is_visited(adr)) {
       address_visited.set(adr->_idx); // Flag as address_visited
@@ -1684,26 +1694,24 @@ static int vec_mov_helper(CodeBuffer *cbuf, bool do_size, int src_lo, int dst_lo
     case Op_VecS: // copy whole register
     case Op_VecD:
     case Op_VecX:
-#ifndef LP64
+#ifndef _LP64
       __ movdqu(as_XMMRegister(Matcher::_regEncode[dst_lo]), as_XMMRegister(Matcher::_regEncode[src_lo]));
 #else
       if ((UseAVX < 3) || VM_Version::supports_avx512vl()) {
         __ movdqu(as_XMMRegister(Matcher::_regEncode[dst_lo]), as_XMMRegister(Matcher::_regEncode[src_lo]));
       } else {
-        __ vpxor(as_XMMRegister(Matcher::_regEncode[dst_lo]), as_XMMRegister(Matcher::_regEncode[dst_lo]), 2);
-        __ vinserti32x4(as_XMMRegister(Matcher::_regEncode[dst_lo]), as_XMMRegister(Matcher::_regEncode[dst_lo]), as_XMMRegister(Matcher::_regEncode[src_lo]), 0x0);
+        __ vextractf32x4(as_XMMRegister(Matcher::_regEncode[dst_lo]), as_XMMRegister(Matcher::_regEncode[src_lo]), 0x0);
      }
 #endif
       break;
     case Op_VecY:
-#ifndef LP64
+#ifndef _LP64
       __ vmovdqu(as_XMMRegister(Matcher::_regEncode[dst_lo]), as_XMMRegister(Matcher::_regEncode[src_lo]));
 #else
       if ((UseAVX < 3) || VM_Version::supports_avx512vl()) {
         __ vmovdqu(as_XMMRegister(Matcher::_regEncode[dst_lo]), as_XMMRegister(Matcher::_regEncode[src_lo]));
       } else {
-        __ vpxor(as_XMMRegister(Matcher::_regEncode[dst_lo]), as_XMMRegister(Matcher::_regEncode[dst_lo]), 2);
-        __ vinserti64x4(as_XMMRegister(Matcher::_regEncode[dst_lo]), as_XMMRegister(Matcher::_regEncode[dst_lo]), as_XMMRegister(Matcher::_regEncode[src_lo]), 0x0);
+        __ vextractf64x4(as_XMMRegister(Matcher::_regEncode[dst_lo]), as_XMMRegister(Matcher::_regEncode[src_lo]), 0x0);
      }
 #endif
       break;
@@ -1757,26 +1765,26 @@ static int vec_spill_helper(CodeBuffer *cbuf, bool do_size, bool is_load,
         __ movq(as_XMMRegister(Matcher::_regEncode[reg]), Address(rsp, stack_offset));
         break;
       case Op_VecX:
-#ifndef LP64
+#ifndef _LP64
         __ movdqu(as_XMMRegister(Matcher::_regEncode[reg]), Address(rsp, stack_offset));
 #else
         if ((UseAVX < 3) || VM_Version::supports_avx512vl()) {
           __ movdqu(as_XMMRegister(Matcher::_regEncode[reg]), Address(rsp, stack_offset));
         } else {
-          __ vpxor(as_XMMRegister(Matcher::_regEncode[reg]), as_XMMRegister(Matcher::_regEncode[reg]), 2);
-          __ vinserti32x4(as_XMMRegister(Matcher::_regEncode[reg]), as_XMMRegister(Matcher::_regEncode[reg]), Address(rsp, stack_offset),0x0);
+          __ vpxor(as_XMMRegister(Matcher::_regEncode[reg]), as_XMMRegister(Matcher::_regEncode[reg]), as_XMMRegister(Matcher::_regEncode[reg]), 2);
+          __ vinsertf32x4(as_XMMRegister(Matcher::_regEncode[reg]), as_XMMRegister(Matcher::_regEncode[reg]), Address(rsp, stack_offset),0x0);
         }
 #endif
         break;
       case Op_VecY:
-#ifndef LP64
+#ifndef _LP64
         __ vmovdqu(as_XMMRegister(Matcher::_regEncode[reg]), Address(rsp, stack_offset));
 #else
         if ((UseAVX < 3) || VM_Version::supports_avx512vl()) {
           __ vmovdqu(as_XMMRegister(Matcher::_regEncode[reg]), Address(rsp, stack_offset));
         } else {
-          __ vpxor(as_XMMRegister(Matcher::_regEncode[reg]), as_XMMRegister(Matcher::_regEncode[reg]), 2);
-          __ vinserti64x4(as_XMMRegister(Matcher::_regEncode[reg]), as_XMMRegister(Matcher::_regEncode[reg]), Address(rsp, stack_offset),0x0);
+          __ vpxor(as_XMMRegister(Matcher::_regEncode[reg]), as_XMMRegister(Matcher::_regEncode[reg]), as_XMMRegister(Matcher::_regEncode[reg]), 2);
+          __ vinsertf64x4(as_XMMRegister(Matcher::_regEncode[reg]), as_XMMRegister(Matcher::_regEncode[reg]), Address(rsp, stack_offset),0x0);
         }
 #endif
         break;
@@ -1795,26 +1803,26 @@ static int vec_spill_helper(CodeBuffer *cbuf, bool do_size, bool is_load,
         __ movq(Address(rsp, stack_offset), as_XMMRegister(Matcher::_regEncode[reg]));
         break;
       case Op_VecX:
-#ifndef LP64
+#ifndef _LP64
         __ movdqu(Address(rsp, stack_offset), as_XMMRegister(Matcher::_regEncode[reg]));
 #else
         if ((UseAVX < 3) || VM_Version::supports_avx512vl()) {
           __ movdqu(Address(rsp, stack_offset), as_XMMRegister(Matcher::_regEncode[reg]));
         }
         else {
-          __ vextracti32x4(Address(rsp, stack_offset), as_XMMRegister(Matcher::_regEncode[reg]), as_XMMRegister(Matcher::_regEncode[reg]), 0x0);
+          __ vextractf32x4(Address(rsp, stack_offset), as_XMMRegister(Matcher::_regEncode[reg]), 0x0);
         }
 #endif
         break;
       case Op_VecY:
-#ifndef LP64
+#ifndef _LP64
         __ vmovdqu(Address(rsp, stack_offset), as_XMMRegister(Matcher::_regEncode[reg]));
 #else
         if ((UseAVX < 3) || VM_Version::supports_avx512vl()) {
           __ vmovdqu(Address(rsp, stack_offset), as_XMMRegister(Matcher::_regEncode[reg]));
         }
         else {
-          __ vextracti64x4(Address(rsp, stack_offset), as_XMMRegister(Matcher::_regEncode[reg]), as_XMMRegister(Matcher::_regEncode[reg]), 0x0);
+          __ vextractf64x4(Address(rsp, stack_offset), as_XMMRegister(Matcher::_regEncode[reg]), 0x0);
         }
 #endif
         break;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,31 +22,24 @@
  */
 
 /*
-  test
+  @test
+  @key headful
   @bug 4868278
-  @summary Tests that GraphicsConfig for invisible (peerless) window is
-   updated after showing the window
-  @author artem.ananiev, area=awt.multiscreen
+  @summary Tests that GraphicsConfig for invisible (peerless) windows is
+           updated after showing the window
   @library ../../regtesthelpers
   @build Util
-  @run applet WindowGCChangeTest.html
+  @run main WindowGCChangeTest
 */
-
-import java.applet.Applet;
 
 import java.awt.*;
 import java.awt.event.*;
 
 import test.java.awt.regtesthelpers.Util;
 
-public class WindowGCChangeTest extends Applet
-{
-    public void init()
-    {
-    }
+public class WindowGCChangeTest {
 
-    public void start()
-    {
+    public static void main(final String[] args) {
         Robot robot = null;
         try
         {
@@ -57,10 +50,6 @@ public class WindowGCChangeTest extends Applet
             z.printStackTrace(System.err);
             throw new RuntimeException("Test FAILED: couldn't create Robot instance", z);
         }
-
-        setSize(200, 200);
-        setVisible(true);
-        validate();
         Util.waitForIdle(robot);
 
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();

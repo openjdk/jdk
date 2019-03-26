@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -216,9 +216,8 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
 
   // storing region crossing non-NULL, is card already dirty?
   const Register card_addr = tmp1;
-  assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
 
-  __ mov_address(tmp2, (address)ct->byte_map_base(), symbolic_Relocation::card_table_reference);
+  __ mov_address(tmp2, (address)ct->byte_map_base());
   __ add(card_addr, tmp2, AsmOperand(store_addr, lsr, CardTable::card_shift));
 
   __ ldrb(tmp2, Address(card_addr));

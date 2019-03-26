@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc;
+
 /* @test TestVerifySilently.java
  * @key gc
  * @bug 8032771
@@ -28,6 +30,7 @@
  * @requires vm.gc != "Z"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
+ * @run main gc.TestVerifySilently
  */
 
 import jdk.test.lib.process.ProcessTools;
@@ -36,7 +39,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import jdk.test.lib.Utils;
 
-class RunSystemGC {
+class TestVerifySilentlyRunSystemGC {
   public static void main(String args[]) throws Exception {
     System.gc();
   }
@@ -46,7 +49,7 @@ class RunSystemGC {
 public class TestVerifySilently {
 
   private static OutputAnalyzer runTest(boolean verifySilently) throws Exception {
-    ArrayList<String> vmOpts = new ArrayList();
+    ArrayList<String> vmOpts = new ArrayList<>();
 
     Collections.addAll(vmOpts, Utils.getFilteredTestJavaOpts("-Xlog.*"));
     Collections.addAll(vmOpts, new String[] {"-XX:+UnlockDiagnosticVMOptions",
@@ -54,7 +57,7 @@ public class TestVerifySilently {
                                              "-XX:+VerifyBeforeGC",
                                              "-XX:+VerifyAfterGC",
                                              (verifySilently ? "-Xlog:gc":"-Xlog:gc+verify=debug"),
-                                             RunSystemGC.class.getName()});
+                                             TestVerifySilentlyRunSystemGC.class.getName()});
     ProcessBuilder pb =
       ProcessTools.createJavaProcessBuilder(vmOpts.toArray(new String[vmOpts.size()]));
     OutputAnalyzer output = new OutputAnalyzer(pb.start());

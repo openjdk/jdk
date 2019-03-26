@@ -22,19 +22,19 @@
  */
 
 /*
-  test
-  @bug       6271849
-  @summary   Tests that component in modal excluded Window which parent is blocked responses to mouse clicks.
-  @author    anton.tarasov@sun.com: area=awt.focus
-  @run       applet ModalExcludedWindowClickTest.html
+  @test
+  @key headful
+  @bug        6271849
+  @summary    Tests that component in modal excluded Window which parent is blocked responses to mouse clicks.
+  @modules java.desktop/sun.awt
+  @run        main ModalExcludedWindowClickTest
 */
 
-import java.applet.Applet;
 import java.awt.*;
 import java.awt.event.*;
 import java.lang.reflect.*;
 
-public class ModalExcludedWindowClickTest extends Applet {
+public class ModalExcludedWindowClickTest {
     Robot robot;
     Frame frame = new Frame("Frame");
     Window w = new Window(frame);
@@ -54,10 +54,6 @@ public class ModalExcludedWindowClickTest extends Applet {
         } catch (AWTException e) {
             throw new RuntimeException("Error: unable to create robot", e);
         }
-        // Create instructions for the user here, as well as set up
-        // the environment -- set the layout manager, add buttons,
-        // etc.
-        this.setLayout (new BorderLayout ());
     }
 
     public void start() {

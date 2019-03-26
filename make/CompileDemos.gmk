@@ -234,7 +234,7 @@ $(SUPPORT_OUTPUTDIR)/demos/image/nbproject/%: $(DEMO_SHARE_SRC)/nbproject/%
 	$(call install-file)
 	$(CHMOD) -f ug+w $@
 
-ifeq ($(OPENJDK_TARGET_OS), solaris)
+ifeq ($(call isTargetOs, solaris), true)
   TARGETS += $(patsubst $(DEMO_SHARE_SRC)/nbproject/%, \
     $(SUPPORT_OUTPUTDIR)/demos/image/nbproject/%, \
     $(call CacheFind, $(DEMO_SHARE_SRC)/nbproject))

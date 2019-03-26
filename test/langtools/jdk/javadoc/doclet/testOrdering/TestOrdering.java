@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -551,126 +551,108 @@ public class TestOrdering extends JavadocTester {
             checkExit(Exit.OK);
 
             checkOrder("pkg5/AnnoFieldTest.html",
-                    "<h3>Field Detail</h3>",
+                    "<h2>Field Detail</h2>",
                     "<pre>static final&nbsp;int&nbsp;one</pre>",
                     "<pre>static final&nbsp;int&nbsp;two</pre>",
                     "<pre>static final&nbsp;int&nbsp;three</pre>",
                     "<pre>static final&nbsp;int&nbsp;four</pre>");
 
             checkOrder("pkg5/AnnoOptionalTest.html",
-                    "<h3>Optional Element Summary</h3>",
+                    "<h2>Optional Element Summary</h2>",
                     "<a href=\"#four()\">four</a>",
                     "<a href=\"#one()\">one</a>",
                     "<a href=\"#three()\">three</a>",
                     "<a href=\"#two()\">two</a>",
-                    "<h3>Element Detail</h3>",
-                    "<h4>one</h4>",
-                    "<h4>two</h4>",
-                    "<h4>three</h4>",
-                    "<h4>four</h4>");
+                    "<h2>Element Detail</h2>",
+                    "<h3>one</h3>",
+                    "<h3>two</h3>",
+                    "<h3>three</h3>",
+                    "<h3>four</h3>");
 
             checkOrder("pkg5/AnnoRequiredTest.html",
-                    "<h3>Required Element Summary</h3>",
+                    "<h2>Required Element Summary</h2>",
                     "<a href=\"#four()\">four</a>",
                     "<a href=\"#one()\">one</a>",
                     "<a href=\"#three()\">three</a>",
                     "<a href=\"#two()\">two</a>",
-                    "<h3>Element Detail</h3>",
-                    "<h4>one</h4>",
-                    "<h4>two</h4>",
-                    "<h4>three</h4>",
-                    "<h4>four</h4>");
+                    "<h2>Element Detail</h2>",
+                    "<h3>one</h3>",
+                    "<h3>two</h3>",
+                    "<h3>three</h3>",
+                    "<h3>four</h3>");
 
             checkOrder("pkg5/CtorTest.html",
-                    "<h3>Constructor Summary</h3>",
+                    "<h2>Constructor Summary</h2>",
                     "<a href=\"#%3Cinit%3E(int)\"",
                     "<a href=\"#%3Cinit%3E(int,int)\"",
                     "<a href=\"#%3Cinit%3E(int,int,int)\"",
                     "<a href=\"#%3Cinit%3E(int,int,int,int)\"",
-                    "<h3>Constructor Detail</h3>",
+                    "<h2>Constructor Detail</h2>",
                     "<a id=\"&lt;init&gt;(int,int,int,int)\">",
                     "<a id=\"&lt;init&gt;(int,int,int)\">",
                     "<a id=\"&lt;init&gt;(int,int)\">",
                     "<a id=\"&lt;init&gt;(int)\">");
 
             checkOrder("pkg5/EnumTest.html",
-                    "<h3>Enum Constant Summary</h3>",
+                    "<h2>Enum Constant Summary</h2>",
                     "<a href=\"#FOUR\">FOUR</a>",
                     "<a href=\"#ONE\">ONE</a>",
                     "<a href=\"#THREE\">THREE</a>",
                     "<a href=\"#TWO\">TWO</a>",
-                    "<h3>Enum Constant Detail</h3>",
-                    "<h4>ONE</h4>",
-                    "<h4>TWO</h4>",
-                    "<h4>THREE</h4>",
-                    "<h4>FOUR</h4>");
+                    "<h2>Enum Constant Detail</h2>",
+                    "<h3>ONE</h3>",
+                    "<h3>TWO</h3>",
+                    "<h3>THREE</h3>",
+                    "<h3>FOUR</h3>");
 
             checkOrder("pkg5/FieldTest.html",
-                    "<h3>Field Summary</h3>",
+                    "<h2>Field Summary</h2>",
                     "<a href=\"#four\">four</a>",
                     "<a href=\"#one\">one</a>",
                     "<a href=\"#three\">three</a>",
                     "<a href=\"#two\">two</a>",
-                    "<h3>Field Detail</h3>",
-                    "<h4>one</h4>",
-                    "<h4>two</h4>",
-                    "<h4>three</h4>",
-                    "<h4>four</h4>");
+                    "<h2>Field Detail</h2>",
+                    "<h3>one</h3>",
+                    "<h3>two</h3>",
+                    "<h3>three</h3>",
+                    "<h3>four</h3>");
 
             checkOrder("pkg5/IntfTest.html",
-                    "<h3>Method Summary</h3>",
+                    "<h2>Method Summary</h2>",
                     "<a href=\"#four()\">four</a>",
                     "<a href=\"#one()\">one</a>",
                     "<a href=\"#three()\">three</a>",
                     "<a href=\"#two()\">two</a>",
-                    "<h3>Method Detail</h3>",
-                    "<h4>one</h4>",
-                    "<h4>two</h4>",
-                    "<h4>three</h4>",
-                    "<h4>four</h4>");
+                    "<h2>Method Detail</h2>",
+                    "<h3>one</h3>",
+                    "<h3>two</h3>",
+                    "<h3>three</h3>",
+                    "<h3>four</h3>");
 
             checkOrder("pkg5/MethodTest.html",
-                    "<h3>Method Summary</h3>",
+                    "<h2>Method Summary</h2>",
                     "<a href=\"#four()\">four</a>",
                     "<a href=\"#one()\">one</a>",
                     "<a href=\"#three()\">three</a>",
                     "<a href=\"#two()\">two</a>",
-                    "<h3>Method Detail</h3>",
-                    "<h4>one</h4>",
-                    "<h4>two</h4>",
-                    "<h4>three</h4>",
-                    "<h4>four</h4>");
+                    "<h2>Method Detail</h2>",
+                    "<h3>one</h3>",
+                    "<h3>two</h3>",
+                    "<h3>three</h3>",
+                    "<h3>four</h3>");
 
             checkOrder("pkg5/PropertyTest.html",
-                    "<h3>Property Summary</h3>",
+                    "<h2>Property Summary</h2>",
                     "<a href=\"#fourProperty\">four</a>",
                     "<a href=\"#oneProperty\">one</a>",
                     "<a href=\"#threeProperty\">three</a>",
                     "<a href=\"#twoProperty\">two</a>",
-                    "<h3>Property Detail</h3>",
-                    "<h4>oneProperty</h4>",
-                    "<h4>twoProperty</h4>",
-                    "<h4>threeProperty</h4>",
-                    "<h4>fourProperty</h4>");
+                    "<h2>Property Detail</h2>",
+                    "<h3>oneProperty</h3>",
+                    "<h3>twoProperty</h3>",
+                    "<h3>threeProperty</h3>",
+                    "<h3>fourProperty</h3>");
 
-            javadoc("-d", "out-5-html4",
-                    "-html4",
-                    "-javafx",
-                    "-sourcepath", testSrc(new File(".").getPath()),
-                    "pkg5"
-            );
-
-            checkExit(Exit.OK);
-
-            checkOrder("pkg5/CtorTest.html",
-                    "<a href=\"#CtorTest-int-\"",
-                    "<a href=\"#CtorTest-int-int-\"",
-                    "<a href=\"#CtorTest-int-int-int-\"",
-                    "<a href=\"#CtorTest-int-int-int-int-\"",
-                    "<a name=\"CtorTest-int-int-int-int-\">",
-                    "<a name=\"CtorTest-int-int-int-\">",
-                    "<a name=\"CtorTest-int-int-\">",
-                    "<a name=\"CtorTest-int-\">");
         }
     }
 }

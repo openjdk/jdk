@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,31 +49,9 @@ public class SampleApiTest {
                 "-r=" + System.getProperty("test.src") + "/res"
             });
 
-        // html4 / unnamed modules
-        System.err.println(">> HTML4, unnamed modules");
-        int res1 = Main.execute(
-            new String[] {
-                "-d", "out/doc.html4.unnamed",
-                "-verbose",
-                "-private",
-                "-use",
-                "-splitindex",
-                "-linksource",
-                "-html4",
-                "-javafx",
-                "-windowtitle", "SampleAPI",
-                "-overview", "overview.html",
-                "-sourcepath", "out/src" + File.pathSeparator + "out/src/sat.sampleapi",
-                "sampleapi.simple",
-                "sampleapi.simple.sub",
-                "sampleapi.tiny",
-                "sampleapi.tiny.sub",
-                "sampleapi.fx"
-            });
-
         // html5 / unnamed modules
         System.err.println(">> HTML5, unnamed modules");
-        int res2 = Main.execute(
+        int res = Main.execute(
             new String[] {
                 "-d", "out/doc.html5.unnamed",
                 "-verbose",
@@ -93,8 +71,7 @@ public class SampleApiTest {
                 "sampleapi.fx"
             });
 
-        if (res1 > 0 || res2 > 0)
-            throw new Exception("One of exit statuses is non-zero: "
-                + res1 + " for HTML4, " + res2 + " for HTML5.");
+        if (res > 0)
+            throw new Exception("exit status is non-zero: " + res + " for HTML5.");
     }
 }

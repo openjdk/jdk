@@ -13,6 +13,6 @@
 
 /**
  * </p>
- * <h1> <b> text </h1>
+ * <h2> <b> text </h2>
  */
 public class MissingTag { }

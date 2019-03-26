@@ -207,7 +207,7 @@ public:
 };
 
 
-DumpRegion _mc_region("mc"), _ro_region("ro"), _rw_region("rw"), _md_region("md"), _od_region("od");
+DumpRegion _mc_region("mc"), _ro_region("ro"), _rw_region("rw"), _md_region("md");
 size_t _total_closed_archive_region_size = 0, _total_open_archive_region_size = 0;
 
 char* MetaspaceShared::misc_code_space_alloc(size_t num_bytes) {
@@ -216,10 +216,6 @@ char* MetaspaceShared::misc_code_space_alloc(size_t num_bytes) {
 
 char* MetaspaceShared::read_only_space_alloc(size_t num_bytes) {
   return _ro_region.allocate(num_bytes);
-}
-
-char* MetaspaceShared::read_only_space_top() {
-  return _ro_region.top();
 }
 
 void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
@@ -597,23 +593,6 @@ static void rewrite_nofast_bytecodes_and_calculate_fingerprints() {
         Fingerprinter fp(m);
         // The side effect of this call sets method's fingerprint field.
         fp.fingerprint();
-      }
-    }
-  }
-}
-
-static void relocate_cached_class_file() {
-  for (int i = 0; i < _global_klass_objects->length(); i++) {
-    Klass* k = _global_klass_objects->at(i);
-    if (k->is_instance_klass()) {
-      InstanceKlass* ik = InstanceKlass::cast(k);
-      JvmtiCachedClassFileData* p = ik->get_archived_class_data();
-      if (p != NULL) {
-        int size = offset_of(JvmtiCachedClassFileData, data) + p->length;
-        JvmtiCachedClassFileData* q = (JvmtiCachedClassFileData*)_od_region.allocate(size);
-        q->length = p->length;
-        memcpy(q->data, p->data, p->length);
-        ik->set_archived_class_data(q);
       }
     }
   }
@@ -1442,15 +1421,11 @@ void VM_PopulateDumpSharedSpace::doit() {
 
   char* vtbl_list = _md_region.top();
   MetaspaceShared::allocate_cpp_vtable_clones();
-  _md_region.pack(&_od_region);
+  _md_region.pack();
 
-  // Relocate the archived class file data into the od region
-  relocate_cached_class_file();
-  _od_region.pack();
-
-  // The 5 core spaces are allocated consecutively mc->rw->ro->md->od, so there total size
+  // The 4 core spaces are allocated consecutively mc->rw->ro->md, so there total size
   // is just the spaces between the two ends.
-  size_t core_spaces_size = _od_region.end() - _mc_region.base();
+  size_t core_spaces_size = _md_region.end() - _mc_region.base();
   assert(core_spaces_size == (size_t)align_up(core_spaces_size, Metaspace::reserve_alignment()),
          "should already be aligned");
 
@@ -1492,7 +1467,6 @@ void VM_PopulateDumpSharedSpace::doit() {
     write_region(mapinfo, MetaspaceShared::rw, &_rw_region, /*read_only=*/false,/*allow_exec=*/false);
     write_region(mapinfo, MetaspaceShared::ro, &_ro_region, /*read_only=*/true, /*allow_exec=*/false);
     write_region(mapinfo, MetaspaceShared::md, &_md_region, /*read_only=*/false,/*allow_exec=*/false);
-    write_region(mapinfo, MetaspaceShared::od, &_od_region, /*read_only=*/true, /*allow_exec=*/false);
 
     _total_closed_archive_region_size = mapinfo->write_archive_heap_regions(
                                         _closed_archive_heap_regions,
@@ -1539,12 +1513,10 @@ void VM_PopulateDumpSharedSpace::print_region_stats() {
   // Print statistics of all the regions
   const size_t total_reserved = _ro_region.reserved()  + _rw_region.reserved() +
                                 _mc_region.reserved()  + _md_region.reserved() +
-                                _od_region.reserved()  +
                                 _total_closed_archive_region_size +
                                 _total_open_archive_region_size;
   const size_t total_bytes = _ro_region.used()  + _rw_region.used() +
                              _mc_region.used()  + _md_region.used() +
-                             _od_region.used()  +
                              _total_closed_archive_region_size +
                              _total_open_archive_region_size;
   const double total_u_perc = percent_of(total_bytes, total_reserved);
@@ -1553,7 +1525,6 @@ void VM_PopulateDumpSharedSpace::print_region_stats() {
   _rw_region.print(total_reserved);
   _ro_region.print(total_reserved);
   _md_region.print(total_reserved);
-  _od_region.print(total_reserved);
   print_heap_region_stats(_closed_archive_heap_regions, "ca", total_reserved);
   print_heap_region_stats(_open_archive_heap_regions, "oa", total_reserved);
 
@@ -1935,33 +1906,30 @@ bool MetaspaceShared::map_shared_spaces(FileMapInfo* mapinfo) {
   char* rw_base = NULL; char* rw_top;
   char* mc_base = NULL; char* mc_top;
   char* md_base = NULL; char* md_top;
-  char* od_base = NULL; char* od_top;
 
   // Map each shared region
   if ((mc_base = mapinfo->map_region(mc, &mc_top)) != NULL &&
       (rw_base = mapinfo->map_region(rw, &rw_top)) != NULL &&
       (ro_base = mapinfo->map_region(ro, &ro_top)) != NULL &&
       (md_base = mapinfo->map_region(md, &md_top)) != NULL &&
-      (od_base = mapinfo->map_region(od, &od_top)) != NULL &&
       (image_alignment == (size_t)os::vm_allocation_granularity()) &&
       mapinfo->validate_shared_path_table()) {
     // Success -- set up MetaspaceObj::_shared_metaspace_{base,top} for
     // fast checking in MetaspaceShared::is_in_shared_metaspace() and
     // MetaspaceObj::is_shared().
     //
-    // We require that mc->rw->ro->md->od to be laid out consecutively, with no
+    // We require that mc->rw->ro->md to be laid out consecutively, with no
     // gaps between them. That way, we can ensure that the OS won't be able to
     // allocate any new memory spaces inside _shared_metaspace_{base,top}, which
     // would mess up the simple comparision in MetaspaceShared::is_in_shared_metaspace().
-    assert(mc_base < ro_base && mc_base < rw_base && mc_base < md_base && mc_base < od_base, "must be");
-    assert(od_top  > ro_top  && od_top  > rw_top  && od_top  > md_top  && od_top  > mc_top , "must be");
+    assert(mc_base < ro_base && mc_base < rw_base && mc_base < md_base, "must be");
+    assert(md_top  > ro_top  && md_top  > rw_top  && md_top  > mc_top , "must be");
     assert(mc_top == rw_base, "must be");
     assert(rw_top == ro_base, "must be");
     assert(ro_top == md_base, "must be");
-    assert(md_top == od_base, "must be");
 
     _core_spaces_size = mapinfo->core_spaces_size();
-    MetaspaceObj::set_shared_metaspace_range((void*)mc_base, (void*)od_top);
+    MetaspaceObj::set_shared_metaspace_range((void*)mc_base, (void*)md_top);
     return true;
   } else {
     // If there was a failure in mapping any of the spaces, unmap the ones
@@ -1970,7 +1938,6 @@ bool MetaspaceShared::map_shared_spaces(FileMapInfo* mapinfo) {
     if (rw_base != NULL) mapinfo->unmap_region(rw);
     if (mc_base != NULL) mapinfo->unmap_region(mc);
     if (md_base != NULL) mapinfo->unmap_region(md);
-    if (od_base != NULL) mapinfo->unmap_region(od);
 #ifndef _WINDOWS
     // Release the entire mapped region
     shared_rs.release();
@@ -2053,7 +2020,6 @@ void MetaspaceShared::report_out_of_space(const char* name, size_t needed_bytes)
   _rw_region.print_out_of_space_msg(name, needed_bytes);
   _ro_region.print_out_of_space_msg(name, needed_bytes);
   _md_region.print_out_of_space_msg(name, needed_bytes);
-  _od_region.print_out_of_space_msg(name, needed_bytes);
 
   vm_exit_during_initialization(err_msg("Unable to allocate from '%s' region", name),
                                 "Please reduce the number of shared classes.");

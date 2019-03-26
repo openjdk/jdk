@@ -122,9 +122,6 @@ class VMError : public AllStatic {
                              void* context, const char* detail_fmt, ...) ATTRIBUTE_PRINTF(6, 7);
   static void report_and_die(const char* message, const char* detail_fmt, ...) ATTRIBUTE_PRINTF(2, 3);
 
-  static fdStream out;
-  static fdStream log; // error log used by VMError::report_and_die()
-
   // Timeout handling.
   // Hook functions for platform dependend functionality:
   static void reporting_started();

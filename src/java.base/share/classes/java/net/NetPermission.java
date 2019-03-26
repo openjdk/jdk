@@ -43,7 +43,7 @@ import java.util.StringTokenizer;
  * signify a wildcard match. For example: "foo.*" and "*" signify a wildcard
  * match, while "*foo" and "a*b" do not.
  * <P>
- * The following table lists all the possible NetPermission target names,
+ * The following table lists the standard NetPermission target names,
  * and for each provides a description of what the permission allows
  * and a discussion of the risks of granting code the permission.
  *
@@ -157,6 +157,10 @@ import java.util.StringTokenizer;
  * </tr>
    </tbody>
  * </table>
+ *
+ * @implNote
+ * Implementations may define additional target names, but should use naming
+ * conventions such as reverse domain name notation to avoid name clashes.
  *
  * @see java.security.BasicPermission
  * @see java.security.Permission

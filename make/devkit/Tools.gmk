@@ -51,9 +51,9 @@ endif
 
 $(info ARCH=$(ARCH))
 
-ifeq ($(BASE_OS), OEL6)
+ifeq ($(BASE_OS), OL)
   BASE_URL := http://yum.oracle.com/repo/OracleLinux/OL6/4/base/$(ARCH)/
-  LINUX_VERSION := OEL6.4
+  LINUX_VERSION := OL6.4
 else ifeq ($(BASE_OS), Fedora)
   DEFAULT_OS_VERSION := 27
   ifeq ($(BASE_OS_VERSION), )
@@ -79,8 +79,17 @@ endif
 # Define external dependencies
 
 # Latest that could be made to work.
-GCC_VER := 7.3.0
-ifeq ($(GCC_VER), 7.3.0)
+GCC_VER := 8.2.0
+ifeq ($(GCC_VER), 8.2.0)
+  gcc_ver := gcc-8.2.0
+  binutils_ver := binutils-2.30
+  ccache_ver := ccache-3.5.1a
+  CCACHE_DIRNAME := ccache-3.5.1
+  mpfr_ver := mpfr-3.1.5
+  gmp_ver := gmp-6.1.2
+  mpc_ver := mpc-1.0.3
+  gdb_ver := gdb-8.2.1
+else ifeq ($(GCC_VER), 7.3.0)
   gcc_ver := gcc-7.3.0
   binutils_ver := binutils-2.30
   ccache_ver := ccache-3.3.6
@@ -103,7 +112,7 @@ endif
 GCC := http://ftp.gnu.org/pub/gnu/gcc/$(gcc_ver)/$(gcc_ver).tar.xz
 BINUTILS := http://ftp.gnu.org/pub/gnu/binutils/$(binutils_ver).tar.xz
 CCACHE := https://samba.org/ftp/ccache/$(ccache_ver).tar.xz
-MPFR := http://www.mpfr.org/${mpfr_ver}/${mpfr_ver}.tar.bz2
+MPFR := https://www.mpfr.org/${mpfr_ver}/${mpfr_ver}.tar.bz2
 GMP := http://ftp.gnu.org/pub/gnu/gmp/${gmp_ver}.tar.bz2
 MPC := http://ftp.gnu.org/pub/gnu/mpc/${mpc_ver}.tar.gz
 GDB := http://ftp.gnu.org/gnu/gdb/${gdb_ver}.tar.xz
@@ -174,14 +183,16 @@ download-rpms:
 
 # Generate downloading + unpacking of sources.
 define Download
-  $(1)_DIR = $(abspath $(SRCDIR)/$(basename $(basename $(notdir $($(1))))))
+  # Allow override
+  $(1)_DIRNAME ?= $(basename $(basename $(notdir $($(1)))))
+  $(1)_DIR = $(abspath $(SRCDIR)/$$($(1)_DIRNAME))
   $(1)_CFG = $$($(1)_DIR)/configure
   $(1)_FILE = $(DOWNLOAD)/$(notdir $($(1)))
 
   $$($(1)_CFG) : $$($(1)_FILE)
 	mkdir -p $$(SRCDIR)
 	tar -C $$(SRCDIR) -xf $$<
-	$$(foreach p,$$(abspath $$(wildcard $$(notdir $$($(1)_DIR)).patch)), \
+	$$(foreach p,$$(abspath $$(wildcard patches/$$(notdir $$($(1)_DIR)).patch)), \
 	  echo PATCHING $$(p) ; \
 	  patch -d $$($(1)_DIR) -p1 -i $$(p) ; \
 	)
@@ -355,6 +366,7 @@ $(gcc) \
 $(BUILDDIR)/$(binutils_ver)/Makefile : CONFIG += --enable-64-bit-bfd --libdir=$(PREFIX)/$(word 1,$(LIBDIRS))
 
 # Makefile creation. Simply run configure in build dir.
+# Setting CFLAGS to -O2 generates a much faster ld.
 $(bfdmakes) \
 $(BUILDDIR)/$(binutils_ver)/Makefile \
     : $(BINUTILS_CFG)
@@ -362,14 +374,15 @@ $(BUILDDIR)/$(binutils_ver)/Makefile \
 	@mkdir -p $(@D)
 	( \
 	  cd $(@D) ; \
-	  $(PATHPRE) $(ENVS) CFLAGS="$(CFLAGS)" \
+	  $(PATHPRE) $(ENVS) CFLAGS="-O2 $(CFLAGS)" \
 	      $(BINUTILS_CFG) \
 	      $(CONFIG) \
 	      --with-sysroot=$(SYSROOT) \
 	      --disable-nls \
 	      --program-prefix=$(TARGET)- \
 	      --enable-multilib \
-	      --enable-gold \
+	      --enable-gold=default \
+	      --enable-threads \
 	      --enable-plugins \
 	) > $(@D)/log.config 2>&1
 	@echo 'done'

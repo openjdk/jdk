@@ -115,10 +115,6 @@ class VirtualSpaceNode : public CHeapObj<mtClass> {
   uintx container_count() { return _container_count; }
   void inc_container_count();
   void dec_container_count();
-#ifdef ASSERT
-  uintx container_count_slow();
-  void verify_container_count();
-#endif
 
   // used and capacity in this single entry in the list
   size_t used_words_in_vs() const;
@@ -152,10 +148,10 @@ class VirtualSpaceNode : public CHeapObj<mtClass> {
 
   // Debug support
   DEBUG_ONLY(void mangle();)
-  // Verify counters, all chunks in this list node and the occupancy map.
-  DEBUG_ONLY(void verify();)
+  // Verify counters and basic structure. Slow mode: verify all chunks in depth and occupancy map.
+  DEBUG_ONLY(void verify(bool slow);)
   // Verify that all free chunks in this node are ideally merged
-  // (there not should be multiple small chunks where a large chunk could exist.)
+  // (there should not be multiple small chunks where a large chunk could exist.)
   DEBUG_ONLY(void verify_free_chunks_are_ideally_merged();)
 
 };

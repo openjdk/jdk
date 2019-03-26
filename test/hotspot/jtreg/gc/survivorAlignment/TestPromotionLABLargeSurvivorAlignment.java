@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc.survivorAlignment;
+
 /**
  * @test
  * @bug 8060463
@@ -31,32 +33,32 @@
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=8 -XX:SurvivorRatio=1
  *                   -XX:-ExplicitGCInvokesConcurrent -XX:-ResizePLAB
- *                   TestPromotionLABLargeSurvivorAlignment
+ *                   gc.survivorAlignment.TestPromotionLABLargeSurvivorAlignment
  * @run main/othervm -Xmx128m
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=16 -XX:SurvivorRatio=1
  *                   -XX:-ExplicitGCInvokesConcurrent -XX:-ResizePLAB
- *                   TestPromotionLABLargeSurvivorAlignment
+ *                   gc.survivorAlignment.TestPromotionLABLargeSurvivorAlignment
  * @run main/othervm -Xmx128m
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=512 -XX:SurvivorRatio=1
  *                   -XX:-ExplicitGCInvokesConcurrent -XX:-ResizePLAB
- *                   TestPromotionLABLargeSurvivorAlignment
+ *                   gc.survivorAlignment.TestPromotionLABLargeSurvivorAlignment
  * @run main/othervm -Xmx128m
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=1k -XX:SurvivorRatio=1
  *                   -XX:-ExplicitGCInvokesConcurrent -XX:-ResizePLAB
- *                   TestPromotionLABLargeSurvivorAlignment
+ *                   gc.survivorAlignment.TestPromotionLABLargeSurvivorAlignment
  * @run main/othervm -Xmx128m
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=4k -XX:SurvivorRatio=1
  *                   -XX:-ExplicitGCInvokesConcurrent -XX:-ResizePLAB
- *                   TestPromotionLABLargeSurvivorAlignment
+ *                   gc.survivorAlignment.TestPromotionLABLargeSurvivorAlignment
  * @run main/othervm -Xmx128m
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=16k -XX:SurvivorRatio=1
  *                   -XX:-ExplicitGCInvokesConcurrent -XX:-ResizePLAB
- *                   TestPromotionLABLargeSurvivorAlignment
+ *                   gc.survivorAlignment.TestPromotionLABLargeSurvivorAlignment
  */
 public class TestPromotionLABLargeSurvivorAlignment {
     public static void main(String args[]) {

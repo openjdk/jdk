@@ -65,10 +65,13 @@ define ProcessMarkdown
     endif
   endif
 
-  $1_$2_OPTIONS := $$(shell $$(GREP) _pandoc-options_: $3/$2 | $$(CUT) -d : -f 2-)
+  # This does not need to be included in VARDEPS since it's from the actual
+  # source file. Only run the shell if the recipe gets executed below.
+  $1_$2_OPTIONS_FROM_SRC = \
+      $$(shell $$(GREP) _pandoc-options_: $3/$2 | $$(CUT) -d : -f 2-)
 
   ifneq ($$($1_FILTER), )
-    $1_$2_OPTIONS += --filter $$($1_FILTER)
+    $1_$2_OPTIONS := --filter $$($1_FILTER)
   endif
 
   $1_$2_VARDEPS := $$($1_OPTIONS) $$($1_$2_OPTIONS) $$($1_CSS) \
@@ -80,9 +83,10 @@ define ProcessMarkdown
 	$$(call LogInfo, Converting $2 to $$($1_FORMAT))
 	$$(call MakeDir, $$(SUPPORT_OUTPUTDIR)/markdown $$(dir $$($1_$2_PANDOC_OUTPUT)))
 	$$(call ExecuteWithLog, $$(SUPPORT_OUTPUTDIR)/markdown/$$($1_$2_MARKER), \
-	    $$(PANDOC) $$($1_OPTIONS) -f markdown-smart -t $$($1_FORMAT) --standalone \
-	    $$($1_$2_CSS_OPTION) $$($1_$2_OPTIONS) '$$($1_$2_PANDOC_INPUT)' \
-	    -o '$$($1_$2_PANDOC_OUTPUT)')
+	    $$(PANDOC) $$($1_OPTIONS) -f $$(PANDOC_MARKDOWN_FLAG) \
+	    -t $$($1_FORMAT) --standalone \
+	    $$($1_$2_CSS_OPTION) $$($1_$2_OPTIONS_FROM_SRC) $$($1_$2_OPTIONS) \
+	    '$$($1_$2_PANDOC_INPUT)' -o '$$($1_$2_PANDOC_OUTPUT)')
         ifneq ($$(findstring $$(LOG_LEVEL), debug trace),)
 	  TOO_LONG_LINES=`$$(GREP) -E -e '^.{80}.+$$$$' $$<` || true ; \
 	  if [ "x$$$$TOO_LONG_LINES" != x ]; then \

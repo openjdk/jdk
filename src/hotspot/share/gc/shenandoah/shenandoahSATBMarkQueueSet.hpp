@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -31,7 +31,7 @@
 
 class ShenandoahSATBMarkQueue: public SATBMarkQueue {
 public:
-  ShenandoahSATBMarkQueue(SATBMarkQueueSet* qset) : SATBMarkQueue(qset, /* permanent = */ false) {}
+  ShenandoahSATBMarkQueue(SATBMarkQueueSet* qset) : SATBMarkQueue(qset) {}
   virtual bool should_enqueue_buffer();
 };
 
@@ -45,10 +45,9 @@ public:
   void initialize(ShenandoahHeap* const heap,
                   Monitor* cbl_mon,
                   int process_completed_threshold,
-                  uint buffer_enqueue_threshold_percentage,
-                  Mutex* lock);
+                  uint buffer_enqueue_threshold_percentage);
 
-  virtual SATBMarkQueue& satb_queue_for_thread(JavaThread* const t) const;
+  virtual SATBMarkQueue& satb_queue_for_thread(Thread* const t) const;
   virtual void filter(SATBMarkQueue* queue);
 };
 

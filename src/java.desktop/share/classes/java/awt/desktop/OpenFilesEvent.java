@@ -35,12 +35,18 @@ import java.util.List;
  * Event sent when the app is asked to open a list of files.
  *
  * @see OpenFilesHandler#openFiles
- *
  * @since 9
  */
 public final class OpenFilesEvent extends FilesEvent {
 
+    /**
+     * Use serialVersionUID from JDK 9 for interoperability.
+     */
     private static final long serialVersionUID = -3982871005867718956L;
+
+    /**
+     * The search term used to find the files.
+     */
     final String searchTerm;
 
     /**
@@ -63,10 +69,10 @@ public final class OpenFilesEvent extends FilesEvent {
     }
 
     /**
-     * Gets the search term. The platform may optionally provide the search
-     * term that was used to find the files. This is for example the case
-     * on Mac OS X, when the files were opened using the Spotlight search
-     * menu or a Finder search window.
+     * Gets the search term. The platform may optionally provide the search term
+     * that was used to find the files. This is for example the case on MacOS,
+     * when the files were opened using the Spotlight search menu or a Finder
+     * search window.
      * <p>
      * This is useful for highlighting the search term in the documents when
      * they are opened.

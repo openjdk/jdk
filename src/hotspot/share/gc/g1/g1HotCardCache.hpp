@@ -32,8 +32,7 @@
 #include "runtime/thread.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-class CardTableEntryClosure;
-class DirtyCardQueue;
+class G1CardTableEntryClosure;
 class G1CollectedHeap;
 class HeapRegion;
 
@@ -54,7 +53,10 @@ class HeapRegion;
 // code, increasing throughput.
 
 class G1HotCardCache: public CHeapObj<mtGC> {
+public:
+  typedef CardTable::CardValue CardValue;
 
+private:
   G1CollectedHeap*  _g1h;
 
   bool              _use_cache;
@@ -63,7 +65,7 @@ class G1HotCardCache: public CHeapObj<mtGC> {
 
 
   // The card cache table
-  jbyte**           _hot_cache;
+  CardValue** _hot_cache;
 
   size_t            _hot_cache_size;
 
@@ -108,11 +110,11 @@ class G1HotCardCache: public CHeapObj<mtGC> {
   // adding, NULL is returned and no further action in needed.
   // If we evict a card from the cache to make room for the new card,
   // the evicted card is then returned for refinement.
-  jbyte* insert(jbyte* card_ptr);
+  CardValue* insert(CardValue* card_ptr);
 
   // Refine the cards that have delayed as a result of
   // being in the cache.
-  void drain(CardTableEntryClosure* cl, uint worker_i);
+  void drain(G1CardTableEntryClosure* cl, uint worker_i);
 
   // Set up for parallel processing of the cards in the hot cache
   void reset_hot_cache_claimed_index() {

@@ -321,16 +321,26 @@ void G1PLABAllocator::flush_and_retire_stats() {
   }
 }
 
-void G1PLABAllocator::waste(size_t& wasted, size_t& undo_wasted) {
-  wasted = 0;
-  undo_wasted = 0;
+size_t G1PLABAllocator::waste() const {
+  size_t result = 0;
   for (uint state = 0; state < InCSetState::Num; state++) {
     PLAB * const buf = _alloc_buffers[state];
     if (buf != NULL) {
-      wasted += buf->waste();
-      undo_wasted += buf->undo_waste();
+      result += buf->waste();
     }
   }
+  return result;
+}
+
+size_t G1PLABAllocator::undo_waste() const {
+  size_t result = 0;
+  for (uint state = 0; state < InCSetState::Num; state++) {
+    PLAB * const buf = _alloc_buffers[state];
+    if (buf != NULL) {
+      result += buf->undo_waste();
+    }
+  }
+  return result;
 }
 
 bool G1ArchiveAllocator::_archive_check_enabled = false;
@@ -359,7 +369,7 @@ bool G1ArchiveAllocator::alloc_new_region() {
   } else {
     hr->set_closed_archive();
   }
-  _g1h->g1_policy()->remset_tracker()->update_at_allocate(hr);
+  _g1h->policy()->remset_tracker()->update_at_allocate(hr);
   _g1h->archive_set_add(hr);
   _g1h->hr_printer()->alloc(hr);
   _allocated_regions.append(hr);

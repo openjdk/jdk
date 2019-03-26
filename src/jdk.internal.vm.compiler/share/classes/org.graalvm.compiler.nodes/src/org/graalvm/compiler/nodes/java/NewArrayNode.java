@@ -98,7 +98,7 @@ public class NewArrayNode extends AbstractNewArrayNode implements VirtualizableA
         ValueNode lengthAlias = tool.getAlias(length());
         if (lengthAlias.asConstant() != null) {
             int constantLength = lengthAlias.asJavaConstant().asInt();
-            if (constantLength >= 0 && constantLength < tool.getMaximumEntryCount()) {
+            if (constantLength >= 0 && constantLength <= tool.getMaximumEntryCount()) {
                 ValueNode[] state = new ValueNode[constantLength];
                 ConstantNode defaultForKind = constantLength == 0 ? null : defaultElementValue();
                 for (int i = 0; i < constantLength; i++) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,15 @@
 
 package sun.lwawt.macosx;
 
-import java.awt.*;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
 
-public class CPrinterDevice extends GraphicsDevice {
-    GraphicsConfiguration gc;
+public final class CPrinterDevice extends GraphicsDevice {
 
-    public CPrinterDevice(CPrinterGraphicsConfig gc) {
-        this.gc = gc;
+    private final GraphicsConfiguration config;
+
+    public CPrinterDevice(final CPrinterGraphicsConfig config) {
+        this.config = config;
     }
 
     /**
@@ -42,6 +44,7 @@ public class CPrinterDevice extends GraphicsDevice {
      * @see #TYPE_PRINTER
      * @see #TYPE_IMAGE_BUFFER
      */
+    @Override
     public int getType() {
         return GraphicsDevice.TYPE_PRINTER;
     }
@@ -52,6 +55,7 @@ public class CPrinterDevice extends GraphicsDevice {
      * @return a {@code String} that is the identification
      * of this {@code GraphicsDevice}.
      */
+    @Override
     public String getIDstring() {
         return ("Printer");
     }
@@ -63,8 +67,9 @@ public class CPrinterDevice extends GraphicsDevice {
      * objects that are associated with this
      * {@code GraphicsDevice}.
      */
+    @Override
     public GraphicsConfiguration[] getConfigurations() {
-        return new GraphicsConfiguration[] { gc };
+        return new GraphicsConfiguration[]{config};
     }
 
     /**
@@ -73,7 +78,8 @@ public class CPrinterDevice extends GraphicsDevice {
      * @return the default {@code GraphicsConfiguration}
      * of this {@code GraphicsDevice}.
      */
+    @Override
     public GraphicsConfiguration getDefaultConfiguration() {
-        return gc;
+        return config;
     }
 }

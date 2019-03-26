@@ -202,14 +202,14 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
     }
 
     // Try using the type profile.
-    if (call_does_dispatch && site_count > 0 && receiver_count > 0) {
+    if (call_does_dispatch && site_count > 0 && UseTypeProfile) {
       // The major receiver's count >= TypeProfileMajorReceiverPercent of site_count.
-      bool have_major_receiver = (100.*profile.receiver_prob(0) >= (float)TypeProfileMajorReceiverPercent);
+      bool have_major_receiver = profile.has_receiver(0) && (100.*profile.receiver_prob(0) >= (float)TypeProfileMajorReceiverPercent);
       ciMethod* receiver_method = NULL;
 
       int morphism = profile.morphism();
       if (speculative_receiver_type != NULL) {
-        if (!too_many_traps(caller, bci, Deoptimization::Reason_speculate_class_check)) {
+        if (!too_many_traps_or_recompiles(caller, bci, Deoptimization::Reason_speculate_class_check)) {
           // We have a speculative type, we should be able to resolve
           // the call. We do that before looking at the profiling at
           // this invoke because it may lead to bimorphic inlining which
@@ -258,10 +258,11 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
             }
           }
           CallGenerator* miss_cg;
-          Deoptimization::DeoptReason reason = morphism == 2 ?
-            Deoptimization::Reason_bimorphic : Deoptimization::reason_class_check(speculative_receiver_type != NULL);
+          Deoptimization::DeoptReason reason = (morphism == 2
+                                               ? Deoptimization::Reason_bimorphic
+                                               : Deoptimization::reason_class_check(speculative_receiver_type != NULL));
           if ((morphism == 1 || (morphism == 2 && next_hit_cg != NULL)) &&
-              !too_many_traps(caller, bci, reason)
+              !too_many_traps_or_recompiles(caller, bci, reason)
              ) {
             // Generate uncommon trap for class check failure path
             // in case of monomorphic or bimorphic virtual call site.
@@ -281,12 +282,57 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
               miss_cg = CallGenerator::for_predicted_call(profile.receiver(1), miss_cg, next_hit_cg, PROB_MAX);
             }
             if (miss_cg != NULL) {
-              trace_type_profile(C, jvms->method(), jvms->depth() - 1, jvms->bci(), receiver_method, profile.receiver(0), site_count, receiver_count);
               ciKlass* k = speculative_receiver_type != NULL ? speculative_receiver_type : profile.receiver(0);
+              trace_type_profile(C, jvms->method(), jvms->depth() - 1, jvms->bci(), receiver_method, k, site_count, receiver_count);
               float hit_prob = speculative_receiver_type != NULL ? 1.0 : profile.receiver_prob(0);
               CallGenerator* cg = CallGenerator::for_predicted_call(k, miss_cg, hit_cg, hit_prob);
               if (cg != NULL)  return cg;
             }
+          }
+        }
+      }
+    }
+
+    // If there is only one implementor of this interface then we
+    // may be able to bind this invoke directly to the implementing
+    // klass but we need both a dependence on the single interface
+    // and on the method we bind to. Additionally since all we know
+    // about the receiver type is that it's supposed to implement the
+    // interface we have to insert a check that it's the class we
+    // expect.  Interface types are not checked by the verifier so
+    // they are roughly equivalent to Object.
+    // The number of implementors for declared_interface is less or
+    // equal to the number of implementors for target->holder() so
+    // if number of implementors of target->holder() == 1 then
+    // number of implementors for decl_interface is 0 or 1. If
+    // it's 0 then no class implements decl_interface and there's
+    // no point in inlining.
+    if (call_does_dispatch && bytecode == Bytecodes::_invokeinterface) {
+      ciInstanceKlass* declared_interface =
+          caller->get_declared_method_holder_at_bci(bci)->as_instance_klass();
+
+      if (declared_interface->nof_implementors() == 1 &&
+          (!callee->is_default_method() || callee->is_overpass()) /* CHA doesn't support default methods yet */) {
+        ciInstanceKlass* singleton = declared_interface->implementor();
+        ciMethod* cha_monomorphic_target =
+            callee->find_monomorphic_target(caller->holder(), declared_interface, singleton);
+
+        if (cha_monomorphic_target != NULL &&
+            cha_monomorphic_target->holder() != env()->Object_klass()) { // subtype check against Object is useless
+          ciKlass* holder = cha_monomorphic_target->holder();
+
+          // Try to inline the method found by CHA. Inlined method is guarded by the type check.
+          CallGenerator* hit_cg = call_generator(cha_monomorphic_target,
+              vtable_index, !call_does_dispatch, jvms, allow_inline, prof_factor);
+
+          // Deoptimize on type check fail. The interpreter will throw ICCE for us.
+          CallGenerator* miss_cg = CallGenerator::for_uncommon_trap(callee,
+              Deoptimization::Reason_class_check, Deoptimization::Action_none);
+
+          CallGenerator* cg = CallGenerator::for_guarded_call(holder, miss_cg, hit_cg);
+          if (hit_cg != NULL && cg != NULL) {
+            dependencies()->assert_unique_concrete_method(declared_interface, cha_monomorphic_target);
+            return cg;
           }
         }
       }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ package com.sun.tools.example.debug.tty;
 
 import com.sun.jdi.request.EventRequest;
 import com.sun.jdi.event.ClassPrepareEvent;
+import com.sun.jdi.ThreadReference;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -108,21 +109,21 @@ class EventRequestSpecList {
         }
     }
 
-    BreakpointSpec createBreakpoint(String classPattern, int line)
+    BreakpointSpec createBreakpoint(String classPattern, int line, ThreadReference threadFilter)
         throws ClassNotFoundException {
         ReferenceTypeSpec refSpec =
             new PatternReferenceTypeSpec(classPattern);
-        return new BreakpointSpec(refSpec, line);
+        return new BreakpointSpec(refSpec, line, threadFilter);
     }
 
     BreakpointSpec createBreakpoint(String classPattern,
-                                 String methodId,
+                                    String methodId, ThreadReference threadFilter,
                                     List<String> methodArgs)
                                 throws MalformedMemberNameException,
                                        ClassNotFoundException {
         ReferenceTypeSpec refSpec =
             new PatternReferenceTypeSpec(classPattern);
-        return new BreakpointSpec(refSpec, methodId, methodArgs);
+        return new BreakpointSpec(refSpec, methodId, threadFilter, methodArgs);
     }
 
     EventRequestSpec createExceptionCatch(String classPattern,

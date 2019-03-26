@@ -123,8 +123,6 @@ void ShenandoahMarkCompact::do_it(GCCause::Cause gc_cause) {
 
   heap->make_parsable(true);
 
-  CodeCache::gc_prologue();
-
   OrderAccess::fence();
 
   phase1_mark_heap();
@@ -168,7 +166,6 @@ void ShenandoahMarkCompact::do_it(GCCause::Cause gc_cause) {
   }
   FREE_C_HEAP_ARRAY(ShenandoahHeapRegionSet*, worker_slices);
 
-  CodeCache::gc_epilogue();
   JvmtiExport::gc_epilogue();
 
   heap->set_full_gc_move_in_progress(false);

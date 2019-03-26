@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,19 +108,19 @@ public class Script  {
         ScriptContent scriptContent = new ScriptContent(sb);
         HtmlTree tree = new HtmlTree(HtmlTag.SCRIPT) {
             @Override
-            public void addContent(CharSequence s) {
+            public void add(CharSequence s) {
                 throw new UnsupportedOperationException();
             }
             @Override
-            public void addContent(Content c) {
+            public void add(Content c) {
                 if (c != scriptContent) {
                     throw new IllegalArgumentException();
                 }
-                super.addContent(scriptContent);
+                super.add(scriptContent);
             }
         };
-        tree.addAttr(HtmlAttr.TYPE, "text/javascript");
-        tree.addContent(scriptContent);
+        tree.put(HtmlAttr.TYPE, "text/javascript");
+        tree.add(scriptContent);
         return tree;
     }
 
@@ -200,12 +200,12 @@ public class Script  {
         }
 
         @Override
-        public void addContent(Content content) {
+        public void add(Content content) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public void addContent(CharSequence code) {
+        public void add(CharSequence code) {
             sb.append(code);
         }
 

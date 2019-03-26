@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,9 +46,17 @@ const TypeFunc* CallGenerator::tf() const {
   return TypeFunc::make(method());
 }
 
-bool CallGenerator::is_inlined_method_handle_intrinsic(JVMState* jvms, ciMethod* callee) {
-  ciMethod* symbolic_info = jvms->method()->get_method_at_bci(jvms->bci());
-  return symbolic_info->is_method_handle_intrinsic() && !callee->is_method_handle_intrinsic();
+bool CallGenerator::is_inlined_method_handle_intrinsic(JVMState* jvms, ciMethod* m) {
+  return is_inlined_method_handle_intrinsic(jvms->method(), jvms->bci(), m);
+}
+
+bool CallGenerator::is_inlined_method_handle_intrinsic(ciMethod* caller, int bci, ciMethod* m) {
+  ciMethod* symbolic_info = caller->get_method_at_bci(bci);
+  return is_inlined_method_handle_intrinsic(symbolic_info, m);
+}
+
+bool CallGenerator::is_inlined_method_handle_intrinsic(ciMethod* symbolic_info, ciMethod* m) {
+  return symbolic_info->is_method_handle_intrinsic() && !m->is_method_handle_intrinsic();
 }
 
 //-----------------------------ParseGenerator---------------------------------
@@ -90,7 +98,6 @@ JVMState* ParseGenerator::generate(JVMState* jvms) {
   // Grab signature for matching/allocation
 #ifdef ASSERT
   if (parser.tf() != (parser.depth() == 1 ? C->tf() : tf())) {
-    MutexLockerEx ml(Compile_lock, Mutex::_no_safepoint_check_flag);
     assert(C->env()->system_dictionary_modification_counter_changed(),
            "Must invalidate if TypeFuncs differ");
   }
@@ -289,16 +296,16 @@ CallGenerator* CallGenerator::for_virtual_call(ciMethod* m, int vtable_index) {
 // Allow inlining decisions to be delayed
 class LateInlineCallGenerator : public DirectCallGenerator {
  private:
-  // unique id for log compilation
-  jlong _unique_id;
+  jlong _unique_id;   // unique id for log compilation
+  bool _is_pure_call; // a hint that the call doesn't have important side effects to care about
 
  protected:
   CallGenerator* _inline_cg;
   virtual bool do_late_inline_check(JVMState* jvms) { return true; }
 
  public:
-  LateInlineCallGenerator(ciMethod* method, CallGenerator* inline_cg) :
-    DirectCallGenerator(method, true), _unique_id(0), _inline_cg(inline_cg) {}
+  LateInlineCallGenerator(ciMethod* method, CallGenerator* inline_cg, bool is_pure_call = false) :
+    DirectCallGenerator(method, true), _unique_id(0), _is_pure_call(is_pure_call), _inline_cg(inline_cg) {}
 
   virtual bool is_late_inline() const { return true; }
 
@@ -382,78 +389,86 @@ void LateInlineCallGenerator::do_late_inline() {
     C->remove_macro_node(call);
   }
 
-  // Make a clone of the JVMState that appropriate to use for driving a parse
-  JVMState* old_jvms = call->jvms();
-  JVMState* jvms = old_jvms->clone_shallow(C);
-  uint size = call->req();
-  SafePointNode* map = new SafePointNode(size, jvms);
-  for (uint i1 = 0; i1 < size; i1++) {
-    map->init_req(i1, call->in(i1));
+  bool result_not_used = (callprojs.resproj == NULL || callprojs.resproj->outcnt() == 0);
+  if (_is_pure_call && result_not_used) {
+    // The call is marked as pure (no important side effects), but result isn't used.
+    // It's safe to remove the call.
+    GraphKit kit(call->jvms());
+    kit.replace_call(call, C->top(), true);
+  } else {
+    // Make a clone of the JVMState that appropriate to use for driving a parse
+    JVMState* old_jvms = call->jvms();
+    JVMState* jvms = old_jvms->clone_shallow(C);
+    uint size = call->req();
+    SafePointNode* map = new SafePointNode(size, jvms);
+    for (uint i1 = 0; i1 < size; i1++) {
+      map->init_req(i1, call->in(i1));
+    }
+
+    // Make sure the state is a MergeMem for parsing.
+    if (!map->in(TypeFunc::Memory)->is_MergeMem()) {
+      Node* mem = MergeMemNode::make(map->in(TypeFunc::Memory));
+      C->initial_gvn()->set_type_bottom(mem);
+      map->set_req(TypeFunc::Memory, mem);
+    }
+
+    uint nargs = method()->arg_size();
+    // blow away old call arguments
+    Node* top = C->top();
+    for (uint i1 = 0; i1 < nargs; i1++) {
+      map->set_req(TypeFunc::Parms + i1, top);
+    }
+    jvms->set_map(map);
+
+    // Make enough space in the expression stack to transfer
+    // the incoming arguments and return value.
+    map->ensure_stack(jvms, jvms->method()->max_stack());
+    for (uint i1 = 0; i1 < nargs; i1++) {
+      map->set_argument(jvms, i1, call->in(TypeFunc::Parms + i1));
+    }
+
+    C->print_inlining_assert_ready();
+
+    C->print_inlining_move_to(this);
+
+    C->log_late_inline(this);
+
+    // This check is done here because for_method_handle_inline() method
+    // needs jvms for inlined state.
+    if (!do_late_inline_check(jvms)) {
+      map->disconnect_inputs(NULL, C);
+      return;
+    }
+
+    // Setup default node notes to be picked up by the inlining
+    Node_Notes* old_nn = C->node_notes_at(call->_idx);
+    if (old_nn != NULL) {
+      Node_Notes* entry_nn = old_nn->clone(C);
+      entry_nn->set_jvms(jvms);
+      C->set_default_node_notes(entry_nn);
+    }
+
+    // Now perform the inlining using the synthesized JVMState
+    JVMState* new_jvms = _inline_cg->generate(jvms);
+    if (new_jvms == NULL)  return;  // no change
+    if (C->failing())      return;
+
+    // Capture any exceptional control flow
+    GraphKit kit(new_jvms);
+
+    // Find the result object
+    Node* result = C->top();
+    int   result_size = method()->return_type()->size();
+    if (result_size != 0 && !kit.stopped()) {
+      result = (result_size == 1) ? kit.pop() : kit.pop_pair();
+    }
+
+    C->set_has_loops(C->has_loops() || _inline_cg->method()->has_loops());
+    C->env()->notice_inlined_method(_inline_cg->method());
+    C->set_inlining_progress(true);
+    C->set_do_cleanup(kit.stopped()); // path is dead; needs cleanup
+    kit.replace_call(call, result, true);
   }
-
-  // Make sure the state is a MergeMem for parsing.
-  if (!map->in(TypeFunc::Memory)->is_MergeMem()) {
-    Node* mem = MergeMemNode::make(map->in(TypeFunc::Memory));
-    C->initial_gvn()->set_type_bottom(mem);
-    map->set_req(TypeFunc::Memory, mem);
-  }
-
-  uint nargs = method()->arg_size();
-  // blow away old call arguments
-  Node* top = C->top();
-  for (uint i1 = 0; i1 < nargs; i1++) {
-    map->set_req(TypeFunc::Parms + i1, top);
-  }
-  jvms->set_map(map);
-
-  // Make enough space in the expression stack to transfer
-  // the incoming arguments and return value.
-  map->ensure_stack(jvms, jvms->method()->max_stack());
-  for (uint i1 = 0; i1 < nargs; i1++) {
-    map->set_argument(jvms, i1, call->in(TypeFunc::Parms + i1));
-  }
-
-  C->print_inlining_assert_ready();
-
-  C->print_inlining_move_to(this);
-
-  C->log_late_inline(this);
-
-  // This check is done here because for_method_handle_inline() method
-  // needs jvms for inlined state.
-  if (!do_late_inline_check(jvms)) {
-    map->disconnect_inputs(NULL, C);
-    return;
-  }
-
-  // Setup default node notes to be picked up by the inlining
-  Node_Notes* old_nn = C->node_notes_at(call->_idx);
-  if (old_nn != NULL) {
-    Node_Notes* entry_nn = old_nn->clone(C);
-    entry_nn->set_jvms(jvms);
-    C->set_default_node_notes(entry_nn);
-  }
-
-  // Now perform the inlining using the synthesized JVMState
-  JVMState* new_jvms = _inline_cg->generate(jvms);
-  if (new_jvms == NULL)  return;  // no change
-  if (C->failing())      return;
-
-  // Capture any exceptional control flow
-  GraphKit kit(new_jvms);
-
-  // Find the result object
-  Node* result = C->top();
-  int   result_size = method()->return_type()->size();
-  if (result_size != 0 && !kit.stopped()) {
-    result = (result_size == 1) ? kit.pop() : kit.pop_pair();
-  }
-
-  C->set_has_loops(C->has_loops() || _inline_cg->method()->has_loops());
-  C->env()->notice_inlined_method(_inline_cg->method());
-  C->set_inlining_progress(true);
-
-  kit.replace_call(call, result, true);
 }
 
 
@@ -544,7 +559,7 @@ class LateInlineBoxingCallGenerator : public LateInlineCallGenerator {
 
  public:
   LateInlineBoxingCallGenerator(ciMethod* method, CallGenerator* inline_cg) :
-    LateInlineCallGenerator(method, inline_cg) {}
+    LateInlineCallGenerator(method, inline_cg, /*is_pure=*/true) {}
 
   virtual JVMState* generate(JVMState* jvms) {
     Compile *C = Compile::current();
@@ -645,11 +660,13 @@ class PredictedCallGenerator : public CallGenerator {
   CallGenerator* _if_missed;
   CallGenerator* _if_hit;
   float          _hit_prob;
+  bool           _exact_check;
 
 public:
   PredictedCallGenerator(ciKlass* predicted_receiver,
                          CallGenerator* if_missed,
-                         CallGenerator* if_hit, float hit_prob)
+                         CallGenerator* if_hit, bool exact_check,
+                         float hit_prob)
     : CallGenerator(if_missed->method())
   {
     // The call profile data may predict the hit_prob as extreme as 0 or 1.
@@ -661,6 +678,7 @@ public:
     _if_missed          = if_missed;
     _if_hit             = if_hit;
     _hit_prob           = hit_prob;
+    _exact_check        = exact_check;
   }
 
   virtual bool      is_virtual()   const    { return true; }
@@ -675,9 +693,16 @@ CallGenerator* CallGenerator::for_predicted_call(ciKlass* predicted_receiver,
                                                  CallGenerator* if_missed,
                                                  CallGenerator* if_hit,
                                                  float hit_prob) {
-  return new PredictedCallGenerator(predicted_receiver, if_missed, if_hit, hit_prob);
+  return new PredictedCallGenerator(predicted_receiver, if_missed, if_hit,
+                                    /*exact_check=*/true, hit_prob);
 }
 
+CallGenerator* CallGenerator::for_guarded_call(ciKlass* guarded_receiver,
+                                               CallGenerator* if_missed,
+                                               CallGenerator* if_hit) {
+  return new PredictedCallGenerator(guarded_receiver, if_missed, if_hit,
+                                    /*exact_check=*/false, PROB_ALWAYS);
+}
 
 JVMState* PredictedCallGenerator::generate(JVMState* jvms) {
   GraphKit kit(jvms);
@@ -688,8 +713,8 @@ JVMState* PredictedCallGenerator::generate(JVMState* jvms) {
   Node* receiver = kit.argument(0);
   CompileLog* log = kit.C->log();
   if (log != NULL) {
-    log->elem("predicted_call bci='%d' klass='%d'",
-              jvms->bci(), log->identify(_predicted_receiver));
+    log->elem("predicted_call bci='%d' exact='%d' klass='%d'",
+              jvms->bci(), (_exact_check ? 1 : 0), log->identify(_predicted_receiver));
   }
 
   receiver = kit.null_check_receiver_before_call(method());
@@ -701,10 +726,15 @@ JVMState* PredictedCallGenerator::generate(JVMState* jvms) {
   ReplacedNodes replaced_nodes = kit.map()->replaced_nodes();
   replaced_nodes.clone();
 
-  Node* exact_receiver = receiver;  // will get updated in place...
-  Node* slow_ctl = kit.type_check_receiver(receiver,
-                                           _predicted_receiver, _hit_prob,
-                                           &exact_receiver);
+  Node* casted_receiver = receiver;  // will get updated in place...
+  Node* slow_ctl = NULL;
+  if (_exact_check) {
+    slow_ctl = kit.type_check_receiver(receiver, _predicted_receiver, _hit_prob,
+                                       &casted_receiver);
+  } else {
+    slow_ctl = kit.subtype_check_receiver(receiver, _predicted_receiver,
+                                          &casted_receiver);
+  }
 
   SafePointNode* slow_map = NULL;
   JVMState* slow_jvms = NULL;
@@ -729,7 +759,7 @@ JVMState* PredictedCallGenerator::generate(JVMState* jvms) {
   }
 
   // fall through if the instance exactly matches the desired type
-  kit.replace_in_map(receiver, exact_receiver);
+  kit.replace_in_map(receiver, casted_receiver);
 
   // Make the hot call:
   JVMState* new_jvms = _if_hit->generate(kit.sync_jvms());
@@ -889,7 +919,8 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
           const TypeOopPtr* arg_type = arg->bottom_type()->isa_oopptr();
           const Type*       sig_type = TypeOopPtr::make_from_klass(signature->accessing_klass());
           if (arg_type != NULL && !arg_type->higher_equal(sig_type)) {
-            Node* cast_obj = gvn.transform(new CheckCastPPNode(kit.control(), arg, sig_type));
+            const Type* recv_type = arg_type->join_speculative(sig_type); // keep speculative part
+            Node* cast_obj = gvn.transform(new CheckCastPPNode(kit.control(), arg, recv_type));
             kit.set_argument(0, cast_obj);
           }
         }
@@ -901,7 +932,8 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
             const TypeOopPtr* arg_type = arg->bottom_type()->isa_oopptr();
             const Type*       sig_type = TypeOopPtr::make_from_klass(t->as_klass());
             if (arg_type != NULL && !arg_type->higher_equal(sig_type)) {
-              Node* cast_obj = gvn.transform(new CheckCastPPNode(kit.control(), arg, sig_type));
+              const Type* narrowed_arg_type = arg_type->join_speculative(sig_type); // keep speculative part
+              Node* cast_obj = gvn.transform(new CheckCastPPNode(kit.control(), arg, narrowed_arg_type));
               kit.set_argument(receiver_skip + j, cast_obj);
             }
           }

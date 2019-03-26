@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -557,18 +557,6 @@ fileStream::~fileStream() {
 
 void fileStream::flush() {
   fflush(_file);
-}
-
-fdStream::fdStream(const char* file_name) {
-  _fd = open(file_name, O_WRONLY | O_CREAT | O_TRUNC, 0666);
-  _need_close = true;
-}
-
-fdStream::~fdStream() {
-  if (_fd != -1) {
-    if (_need_close) close(_fd);
-    _fd = -1;
-  }
 }
 
 void fdStream::write(const char* s, size_t len) {

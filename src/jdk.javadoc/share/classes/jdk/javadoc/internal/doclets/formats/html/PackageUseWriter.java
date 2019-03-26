@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -130,26 +129,20 @@ public class PackageUseWriter extends SubWriterHolderWriter {
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
         div.setStyle(HtmlStyle.contentContainer);
         if (usingPackageToUsedClasses.isEmpty()) {
-            div.addContent(contents.getContent("doclet.ClassUse_No.usage.of.0", utils.getPackageName(packageElement)));
+            div.add(contents.getContent("doclet.ClassUse_No.usage.of.0", utils.getPackageName(packageElement)));
         } else {
             addPackageUse(div);
         }
-        if (configuration.allowTag(HtmlTag.MAIN)) {
-            mainTree.addContent(div);
-            body.addContent(mainTree);
-        } else {
-            body.addContent(div);
-        }
-        HtmlTree tree = (configuration.allowTag(HtmlTag.FOOTER))
-                ? HtmlTree.FOOTER()
-                : body;
+        mainTree.add(div);
+        body.add(mainTree);
+        HtmlTree footer = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
-        tree.addContent(navBar.getContent(false));
-        addBottom(tree);
-        if (configuration.allowTag(HtmlTag.FOOTER)) {
-            body.addContent(tree);
-        }
-        printHtmlDocument(null, true, body);
+        footer.add(navBar.getContent(false));
+        addBottom(footer);
+        body.add(footer);
+        printHtmlDocument(null,
+                getDescription("use", packageElement),
+                body);
     }
 
     /**
@@ -164,7 +157,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
             addPackageList(ul);
         }
         addClassList(ul);
-        contentTree.addContent(ul);
+        contentTree.add(ul);
     }
 
     /**
@@ -176,8 +169,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
         Content caption = contents.getContent(
                 "doclet.ClassUse_Packages.that.use.0",
                 getPackageLink(packageElement, utils.getPackageName(packageElement)));
-        Table table = new Table(configuration.htmlVersion, HtmlStyle.useSummary)
-                .setSummary(packageUseTableSummary)
+        Table table = new Table(HtmlStyle.useSummary)
                 .setCaption(caption)
                 .setHeader(getPackageTableHeader())
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
@@ -189,12 +181,12 @@ public class PackageUseWriter extends SubWriterHolderWriter {
             if (pkg != null && !pkg.isUnnamed()) {
                 addSummaryComment(pkg, summary);
             } else {
-                summary.addContent(Contents.SPACE);
+                summary.add(Contents.SPACE);
             }
             table.addRow(packageLink, summary);
         }
         Content li = HtmlTree.LI(HtmlStyle.blockList, table.toContent());
-        contentTree.addContent(li);
+        contentTree.add(li);
     }
 
     /**
@@ -209,15 +201,14 @@ public class PackageUseWriter extends SubWriterHolderWriter {
             PackageElement usingPackage = utils.elementUtils.getPackageElement(packageName);
             HtmlTree li = new HtmlTree(HtmlTag.LI);
             li.setStyle(HtmlStyle.blockList);
-            li.addContent(links.createAnchor(getPackageAnchorName(usingPackage)));
+            li.add(links.createAnchor(getPackageAnchorName(usingPackage)));
             String tableSummary = resources.getText("doclet.Use_Table_Summary",
                                                         resources.getText("doclet.classes"));
             Content caption = contents.getContent(
                     "doclet.ClassUse_Classes.in.0.used.by.1",
                     getPackageLink(packageElement, utils.getPackageName(packageElement)),
                     getPackageLink(usingPackage, utils.getPackageName(usingPackage)));
-            Table table = new Table(configuration.htmlVersion, HtmlStyle.useSummary)
-                    .setSummary(tableSummary)
+            Table table = new Table(HtmlStyle.useSummary)
                     .setCaption(caption)
                     .setHeader(classTableHeader)
                     .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
@@ -232,8 +223,8 @@ public class PackageUseWriter extends SubWriterHolderWriter {
 
                 table.addRow(typeContent, summary);
             }
-            li.addContent(table.toContent());
-            contentTree.addContent(li);
+            li.add(table.toContent());
+            contentTree.add(li);
         }
     }
 
@@ -247,30 +238,22 @@ public class PackageUseWriter extends SubWriterHolderWriter {
         String name = packageElement.isUnnamed() ? "" : utils.getPackageName(packageElement);
         String title = resources.getText("doclet.Window_ClassUse_Header", packageText, name);
         HtmlTree bodyTree = getBody(true, getWindowTitle(title));
-        HtmlTree htmlTree = (configuration.allowTag(HtmlTag.HEADER))
-                ? HtmlTree.HEADER()
-                : bodyTree;
+        HtmlTree htmlTree = HtmlTree.HEADER();
         addTop(htmlTree);
         Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(packageElement),
                 contents.moduleLabel);
         navBar.setNavLinkModule(linkContent);
         navBar.setUserHeader(getUserHeaderFooter(true));
-        htmlTree.addContent(navBar.getContent(true));
-        if (configuration.allowTag(HtmlTag.HEADER)) {
-            bodyTree.addContent(htmlTree);
-        }
+        htmlTree.add(navBar.getContent(true));
+        bodyTree.add(htmlTree);
         ContentBuilder headContent = new ContentBuilder();
-        headContent.addContent(contents.getContent("doclet.ClassUse_Title", packageText));
-        headContent.addContent(new HtmlTree(HtmlTag.BR));
-        headContent.addContent(name);
-        Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, true,
+        headContent.add(contents.getContent("doclet.ClassUse_Title", packageText));
+        headContent.add(new HtmlTree(HtmlTag.BR));
+        headContent.add(name);
+        Content heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, true,
                 HtmlStyle.title, headContent);
         Content div = HtmlTree.DIV(HtmlStyle.header, heading);
-        if (configuration.allowTag(HtmlTag.MAIN)) {
-            mainTree.addContent(div);
-        } else {
-            bodyTree.addContent(div);
-        }
+        mainTree.add(div);
         return bodyTree;
     }
 }

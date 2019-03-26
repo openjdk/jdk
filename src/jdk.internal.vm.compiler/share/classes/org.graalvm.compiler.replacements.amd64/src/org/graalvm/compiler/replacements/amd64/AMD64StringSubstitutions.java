@@ -82,7 +82,6 @@ public class AMD64StringSubstitutions {
             // The empty string contains nothing except the empty string.
             return -1;
         }
-        assert sourceCount - fromIndex > 0 && targetCount > 0;
 
         if (targetCount == 1) {
             Pointer sourcePointer = Word.objectToTrackedPointer(source).add(charArrayBaseOffset(INJECTED)).add(totalOffset * charArrayIndexScale(INJECTED));

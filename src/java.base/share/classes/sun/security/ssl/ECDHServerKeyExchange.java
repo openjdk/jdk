@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ import sun.security.ssl.SupportedGroupsExtension.NamedGroup;
 import sun.security.ssl.SupportedGroupsExtension.SupportedGroups;
 import sun.security.ssl.X509Authentication.X509Credentials;
 import sun.security.ssl.X509Authentication.X509Possession;
+import sun.security.util.ECUtil;
 import sun.security.util.HexDumpEncoder;
 
 /**
@@ -120,7 +121,7 @@ final class ECDHServerKeyExchange {
             publicKey = ecdhePossession.publicKey;
             ECParameterSpec params = publicKey.getParams();
             ECPoint point = publicKey.getW();
-            publicPoint = JsseJce.encodePoint(point, params.getCurve());
+            publicPoint = ECUtil.encodePoint(point, params.getCurve());
 
             this.namedGroup = NamedGroup.valueOf(params);
             if ((namedGroup == null) || (namedGroup.oid == null) ) {
@@ -221,7 +222,7 @@ final class ECDHServerKeyExchange {
             }
 
             ECParameterSpec parameters =
-                    JsseJce.getECParameterSpec(namedGroup.oid);
+                    ECUtil.getECParameterSpec(null, namedGroup.oid);
             if (parameters == null) {
                 throw chc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                     "No supported EC parameter: " + namedGroup);
@@ -236,8 +237,8 @@ final class ECDHServerKeyExchange {
             ECPublicKey ecPublicKey = null;
             try {
                 ECPoint point =
-                        JsseJce.decodePoint(publicPoint, parameters.getCurve());
-                KeyFactory factory = JsseJce.getKeyFactory("EC");
+                        ECUtil.decodePoint(publicPoint, parameters.getCurve());
+                KeyFactory factory = KeyFactory.getInstance("EC");
                 ecPublicKey = (ECPublicKey)factory.generatePublic(
                     new ECPublicKeySpec(point, parameters));
             } catch (NoSuchAlgorithmException |
@@ -446,7 +447,7 @@ final class ECDHServerKeyExchange {
             Signature signer = null;
             switch (keyAlgorithm) {
                 case "EC":
-                    signer = JsseJce.getSignature(JsseJce.SIGNATURE_ECDSA);
+                    signer = Signature.getInstance(JsseJce.SIGNATURE_ECDSA);
                     break;
                 case "RSA":
                     signer = RSASignature.getInstance();

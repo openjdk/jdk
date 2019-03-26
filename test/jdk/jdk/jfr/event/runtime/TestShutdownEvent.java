@@ -31,6 +31,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import jdk.internal.misc.Unsafe;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordedFrame;
 import jdk.jfr.consumer.RecordedStackTrace;
@@ -41,7 +42,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
-import sun.misc.Unsafe;
+
 
 /**
  * @test
@@ -50,7 +51,8 @@ import sun.misc.Unsafe;
  * @requires vm.hasJFR
  * @library /test/lib
  * @modules jdk.jfr
- * @run main jdk.jfr.event.runtime.TestShutdownEvent
+ *          java.base/jdk.internal.misc
+ * @run main/othervm jdk.jfr.event.runtime.TestShutdownEvent
  */
 public class TestShutdownEvent {
     private static ShutdownEventSubTest subTests[] = {
@@ -61,7 +63,8 @@ public class TestShutdownEvent {
              new TestRuntimeHalt(),
              new TestSig("TERM"),
              new TestSig("HUP"),
-             new TestSig("INT")};
+             new TestSig("INT")
+    };
 
     public static void main(String[] args) throws Throwable {
         for (int i = 0; i < subTests.length; ++i) {
@@ -77,12 +80,14 @@ public class TestShutdownEvent {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true,
                                 "-Xlog:jfr=debug",
                                 "-XX:-CreateCoredumpOnCrash",
+                                "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
                                 "-XX:StartFlightRecording=filename=./dumped.jfr,dumponexit=true,settings=default",
                                 "jdk.jfr.event.runtime.TestShutdownEvent$TestMain",
                                 String.valueOf(subTestIndex));
         OutputAnalyzer output = ProcessTools.executeProcess(pb);
         System.out.println(output.getOutput());
-        System.out.println("Exit code: " + output.getExitValue());
+        int exitCode = output.getExitValue();
+        System.out.println("Exit code: " + exitCode);
 
         String recordingName = output.firstMatch("emergency jfr file: (.*.jfr)", 1);
         if (recordingName == null) {
@@ -97,7 +102,7 @@ public class TestShutdownEvent {
 
         Asserts.assertEquals(filteredEvents.size(), 1);
         RecordedEvent event = filteredEvents.get(0);
-        subTests[subTestIndex].verifyEvents(event);
+        subTests[subTestIndex].verifyEvents(event, exitCode);
     }
 
     @SuppressWarnings("unused")
@@ -114,18 +119,7 @@ public class TestShutdownEvent {
             return true;
         }
         void runTest();
-        void verifyEvents(RecordedEvent event);
-    }
-
-    public static Unsafe getUnsafe() {
-        try {
-            Field f = Unsafe.class.getDeclaredField("theUnsafe");
-            f.setAccessible(true);
-            return (Unsafe)f.get(null);
-        } catch (Exception e) {
-            Asserts.fail("Could not access Unsafe");
-        }
-        return null;
+        void verifyEvents(RecordedEvent event, int exitCode);
     }
 
     // Basic stack trace validation, checking that the runTest method is part of the stack
@@ -145,7 +139,7 @@ public class TestShutdownEvent {
         }
 
         @Override
-        public void verifyEvents(RecordedEvent event) {
+        public void verifyEvents(RecordedEvent event, int exitCode) {
             Events.assertField(event, "reason").equal("No remaining non-daemon Java threads");
         }
     }
@@ -158,7 +152,7 @@ public class TestShutdownEvent {
         }
 
         @Override
-        public void verifyEvents(RecordedEvent event) {
+        public void verifyEvents(RecordedEvent event, int exitCode) {
             Events.assertField(event, "reason").equal("Shutdown requested from Java");
             validateStackTrace(event.getStackTrace());
         }
@@ -169,11 +163,11 @@ public class TestShutdownEvent {
         @Override
         public void runTest() {
             System.out.println("Attempting to crash");
-            getUnsafe().putInt(0L, 0);
+            Unsafe.getUnsafe().putInt(0L, 0);
         }
 
         @Override
-        public void verifyEvents(RecordedEvent event) {
+        public void verifyEvents(RecordedEvent event, int exitCode) {
             Events.assertField(event, "reason").equal("VM Error");
             validateStackTrace(event.getStackTrace());
         }
@@ -186,7 +180,7 @@ public class TestShutdownEvent {
         }
 
         @Override
-        public void verifyEvents(RecordedEvent event) {
+        public void verifyEvents(RecordedEvent event, int exitCode) {
             Events.assertField(event, "reason").equal("No remaining non-daemon Java threads");
         }
     }
@@ -199,7 +193,7 @@ public class TestShutdownEvent {
         }
 
         @Override
-        public void verifyEvents(RecordedEvent event) {
+        public void verifyEvents(RecordedEvent event, int exitCode) {
             Events.assertField(event, "reason").equal("Shutdown requested from Java");
             validateStackTrace(event.getStackTrace());
         }
@@ -235,11 +229,15 @@ public class TestShutdownEvent {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            Asserts.fail("Process survived the SIG" + signalName + " signal!");
+            System.out.println("Process survived the SIG" + signalName + " signal!");
         }
 
         @Override
-        public void verifyEvents(RecordedEvent event) {
+        public void verifyEvents(RecordedEvent event, int exitCode) {
+            if (exitCode == 0) {
+                System.out.println("Process exited normally with exit code 0, skipping the verification");
+                return;
+            }
             Events.assertField(event, "reason").equal("Shutdown requested from Java");
             Events.assertEventThread(event);
             Asserts.assertEquals(event.getThread().getJavaName(), "SIG" + signalName + " handler");

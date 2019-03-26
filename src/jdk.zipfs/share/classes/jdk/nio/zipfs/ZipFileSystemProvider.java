@@ -39,6 +39,9 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.FileAttributeView;
 import java.nio.file.spi.FileSystemProvider;
+import java.security.AccessController;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -317,7 +320,13 @@ public class ZipFileSystemProvider extends FileSystemProvider {
     //////////////////////////////////////////////////////////////
     void removeFileSystem(Path zfpath, ZipFileSystem zfs) throws IOException {
         synchronized (filesystems) {
-            zfpath = zfpath.toRealPath();
+            Path tempPath = zfpath;
+            PrivilegedExceptionAction<Path> action = tempPath::toRealPath;
+            try {
+                zfpath = AccessController.doPrivileged(action);
+            } catch (PrivilegedActionException e) {
+                throw (IOException) e.getException();
+            }
             if (filesystems.get(zfpath) == zfs)
                 filesystems.remove(zfpath);
         }

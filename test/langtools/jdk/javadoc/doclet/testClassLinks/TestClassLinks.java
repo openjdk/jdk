@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,25 +85,4 @@ public class TestClassLinks extends JavadocTester {
         checkOutput("p/IT2.html", true,
                 "code><a href=\"C3.html\" title=\"class in p\">C3</a></code>");
     }
-
-    @Test
-    public void test_html4() {
-
-        javadoc("-d", "out-html4",
-                "-html4",
-                "-Xdoclint:none",
-                "-sourcepath", testSrc,
-                "-package",
-                "p");
-        checkExit(Exit.OK);
-
-        checkOutput("p/C1.html", true,
-                "<code><span class=\"memberNameLink\"><a href=\"#C1--\">C1</a></span>()</code>");
-
-        checkOutput("p/C2.html", true,
-                "<code><span class=\"memberNameLink\"><a href=\"#C2--\">C2</a></span>()</code>");
-
-        checkOutput("p/C3.html", true,
-                "<code><span class=\"memberNameLink\"><a href=\"#C3--\">C3</a></span>()</code>");
-}
 }

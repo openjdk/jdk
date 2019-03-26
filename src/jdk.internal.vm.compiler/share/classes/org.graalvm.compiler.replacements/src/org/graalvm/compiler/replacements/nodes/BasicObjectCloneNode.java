@@ -154,7 +154,7 @@ public abstract class BasicObjectCloneNode extends MacroStateSplitNode implement
                     return;
                 }
                 int constantLength = lengthAlias.asJavaConstant().asInt();
-                if (constantLength >= 0 && constantLength < tool.getMaximumEntryCount()) {
+                if (constantLength >= 0 && constantLength <= tool.getMaximumEntryCount()) {
                     ValueNode[] state = new ValueNode[constantLength];
                     ResolvedJavaType componentType = type.getComponentType();
                     for (int i = 0; i < constantLength; i++) {

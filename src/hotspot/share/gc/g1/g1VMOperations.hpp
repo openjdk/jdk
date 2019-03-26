@@ -35,22 +35,26 @@
 //   - VM_G1CollectFull
 
 class VM_G1CollectFull : public VM_GC_Operation {
+  bool _gc_succeeded;
+
 public:
   VM_G1CollectFull(uint gc_count_before,
                    uint full_gc_count_before,
                    GCCause::Cause cause) :
-    VM_GC_Operation(gc_count_before, cause, full_gc_count_before, true) { }
+    VM_GC_Operation(gc_count_before, cause, full_gc_count_before, true),
+    _gc_succeeded(false) { }
   virtual VMOp_Type type() const { return VMOp_G1CollectFull; }
   virtual void doit();
+  bool gc_succeeded() { return _gc_succeeded; }
 };
 
 class VM_G1CollectForAllocation : public VM_CollectForAllocation {
-  bool         _pause_succeeded;
+  bool _gc_succeeded;
 
-  bool         _should_initiate_conc_mark;
-  bool         _should_retry_gc;
-  double       _target_pause_time_ms;
-  uint         _old_marking_cycles_completed_before;
+  bool _should_initiate_conc_mark;
+  bool _should_retry_gc;
+  double _target_pause_time_ms;
+  uint  _old_marking_cycles_completed_before;
 
 public:
   VM_G1CollectForAllocation(size_t         word_size,
@@ -63,7 +67,7 @@ public:
   virtual void doit();
   virtual void doit_epilogue();
   bool should_retry_gc() const { return _should_retry_gc; }
-  bool pause_succeeded() { return _pause_succeeded; }
+  bool gc_succeeded() { return _gc_succeeded; }
 };
 
 // Concurrent G1 stop-the-world operations such as remark and cleanup.

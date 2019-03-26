@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 
 import com.sun.nio.sctp.*;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -36,7 +37,7 @@ import static java.nio.ByteBuffer.*;
 
 public class SendFailed {
 
-    static final SocketAddress remoteAddress = new InetSocketAddress("127.0.0.1", 3000);
+    static final SocketAddress remoteAddress = new InetSocketAddress(InetAddress.getLoopbackAddress(), 3000);
 
     static final int[] bufferSizes =
             { 20, 49, 50, 51, 100, 101, 1024, 1025, 4095, 4096, 4097, 8191, 8192, 8193};

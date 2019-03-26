@@ -50,6 +50,7 @@ import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.PrimitiveConstant;
+import jdk.vm.ci.meta.TriState;
 
 @NodeInfo(shortName = "<")
 public final class IntegerLessThanNode extends IntegerLowerThanNode {
@@ -225,7 +226,6 @@ public final class IntegerLessThanNode extends IntegerLowerThanNode {
                             }
                         }
                     }
-
                 }
             }
 
@@ -295,5 +295,30 @@ public final class IntegerLessThanNode extends IntegerLowerThanNode {
         protected IntegerStamp forInteger(int bits, long min, long max) {
             return StampFactory.forInteger(bits, cast(min, bits), cast(max, bits));
         }
+    }
+
+    @Override
+    public TriState implies(boolean thisNegated, LogicNode other) {
+        if (!thisNegated) {
+            if (other instanceof IntegerLessThanNode) {
+                ValueNode otherX = ((IntegerLessThanNode) other).getX();
+                ValueNode otherY = ((IntegerLessThanNode) other).getY();
+                // x < y => !y < x
+                if (getX() == otherY && getY() == otherX) {
+                    return TriState.FALSE;
+                }
+            }
+
+            // x < y => !x == y
+            // x < y => !y == x
+            if (other instanceof IntegerEqualsNode) {
+                ValueNode otherX = ((IntegerEqualsNode) other).getX();
+                ValueNode otherY = ((IntegerEqualsNode) other).getY();
+                if ((getX() == otherX && getY() == otherY) || (getX() == otherY && getY() == otherX)) {
+                    return TriState.FALSE;
+                }
+            }
+        }
+        return super.implies(thisNegated, other);
     }
 }

@@ -421,11 +421,21 @@ class Thread: public ThreadShadow {
 
 #ifdef ASSERT
  private:
-  bool _visited_for_critical_count;
+  volatile uint64_t _visited_for_critical_count;
 
  public:
-  void set_visited_for_critical_count(bool z) { _visited_for_critical_count = z; }
-  bool was_visited_for_critical_count() const   { return _visited_for_critical_count; }
+  void set_visited_for_critical_count(uint64_t safepoint_id) {
+    assert(_visited_for_critical_count == 0, "Must be reset before set");
+    assert((safepoint_id & 0x1) == 1, "Must be odd");
+    _visited_for_critical_count = safepoint_id;
+  }
+  void reset_visited_for_critical_count(uint64_t safepoint_id) {
+    assert(_visited_for_critical_count == safepoint_id, "Was not visited");
+    _visited_for_critical_count = 0;
+  }
+  bool was_visited_for_critical_count(uint64_t safepoint_id) const {
+    return _visited_for_critical_count == safepoint_id;
+  }
 #endif
 
  public:
@@ -647,7 +657,7 @@ class Thread: public ThreadShadow {
   // uses an atomic instruction to set the current threads parity to
   // "collection_parity", if it is not already.  Returns "true" iff the
   // calling thread does the update, this indicates that the calling thread
-  // has claimed the thread's stack as a root groop in the current
+  // has claimed the thread's stack as a root group in the current
   // collection.
   bool claim_oops_do(bool is_par, int collection_parity) {
     if (!is_par) {
@@ -782,7 +792,6 @@ protected:
   volatile int _TypeTag;
   ParkEvent * _ParkEvent;                     // for synchronized()
   ParkEvent * _SleepEvent;                    // for Thread.sleep
-  ParkEvent * _MutexEvent;                    // for native internal Mutex/Monitor
   ParkEvent * _MuxEvent;                      // for low-level muxAcquire-muxRelease
   int NativeSyncRecursion;                    // diagnostic
 
@@ -791,8 +800,6 @@ protected:
   jint _hashStateX;                           // thread-specific hashCode generator state
   jint _hashStateY;
   jint _hashStateZ;
-
-  volatile jint rng[4];                      // RNG for spin loop
 
   // Low-level leaf-lock primitives used to implement synchronization
   // and native monitor-mutex infrastructure.
@@ -1280,15 +1287,8 @@ class JavaThread: public Thread {
   address last_Java_pc(void)                     { return _anchor.last_Java_pc(); }
 
   // Safepoint support
-#if !(defined(PPC64) || defined(AARCH64))
-  JavaThreadState thread_state() const           { return _thread_state; }
-  void set_thread_state(JavaThreadState s)       { _thread_state = s;    }
-#else
-  // Use membars when accessing volatile _thread_state. See
-  // Threads::create_vm() for size checks.
   inline JavaThreadState thread_state() const;
   inline void set_thread_state(JavaThreadState s);
-#endif
   inline ThreadSafepointState* safepoint_state() const;
   inline void set_safepoint_state(ThreadSafepointState* state);
   inline bool is_at_poll_safepoint();
@@ -1348,10 +1348,16 @@ class JavaThread: public Thread {
   inline void clear_ext_suspended();
 
  public:
-  void java_suspend();
-  void java_resume();
-  int  java_suspend_self();
+  void java_suspend(); // higher-level suspension logic called by the public APIs
+  void java_resume();  // higher-level resume logic called by the public APIs
+  int  java_suspend_self(); // low-level self-suspension mechanics
 
+ private:
+  // mid-level wrapper around java_suspend_self to set up correct state and
+  // check for a pending safepoint at the end
+  void java_suspend_self_with_safepoint_check();
+
+ public:
   void check_and_wait_while_suspended() {
     assert(JavaThread::current() == this, "sanity check");
 
@@ -1866,7 +1872,7 @@ class JavaThread: public Thread {
   virtual void nmethods_do(CodeBlobClosure* cf);
 
   // RedefineClasses Support
-  void metadata_do(void f(Metadata*));
+  void metadata_do(MetadataClosure* f);
 
   // Misc. operations
   char* name() const { return (char*)get_thread_name(); }
@@ -2250,7 +2256,7 @@ class Threads: AllStatic {
   // The "thread claim parity" provides a way for threads to be claimed
   // by parallel worker tasks.
   //
-  // Each thread contains a a "parity" field. A task will claim the
+  // Each thread contains a "parity" field. A task will claim the
   // thread only if its parity field is the same as the global parity,
   // which is updated by calling change_thread_claim_parity().
   //
@@ -2259,7 +2265,7 @@ class Threads: AllStatic {
   // that should claim threads.
   //
   // New threads get their parity set to 0 and change_thread_claim_parity()
-  // never set the global parity to 0.
+  // never sets the global parity to 0.
   static int thread_claim_parity() { return _thread_claim_parity; }
   static void change_thread_claim_parity();
   static void assert_all_threads_claimed() NOT_DEBUG_RETURN;
@@ -2281,7 +2287,7 @@ class Threads: AllStatic {
   static void nmethods_do(CodeBlobClosure* cf);
 
   // RedefineClasses support
-  static void metadata_do(void f(Metadata*));
+  static void metadata_do(MetadataClosure* f);
   static void metadata_handles_do(void f(Metadata*));
 
 #ifdef ASSERT
@@ -2298,7 +2304,7 @@ class Threads: AllStatic {
   static void print_on_error(outputStream* st, Thread* current, char* buf, int buflen);
   static void print_on_error(Thread* this_thread, outputStream* st, Thread* current, char* buf,
                              int buflen, bool* found_current);
-  static void print_threads_compiling(outputStream* st, char* buf, int buflen);
+  static void print_threads_compiling(outputStream* st, char* buf, int buflen, bool short_form = false);
 
   // Get Java threads that are waiting to enter a monitor.
   static GrowableArray<JavaThread*>* get_pending_threads(ThreadsList * t_list,

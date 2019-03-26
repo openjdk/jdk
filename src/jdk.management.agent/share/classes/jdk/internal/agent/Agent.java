@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -663,11 +663,7 @@ public class Agent {
         System.err.print(getText("agent.err.error") + ": " + keyText);
 
         if (params != null && params.length != 0) {
-           StringBuffer message = new StringBuffer(params[0]);
-           for (int i = 1; i < params.length; i++) {
-               message.append(" " + params[i]);
-           }
-           System.err.println(": " + message);
+           System.err.println(": " + String.join(" ", params));
         }
         e.printStackTrace();
         throw new RuntimeException(e);

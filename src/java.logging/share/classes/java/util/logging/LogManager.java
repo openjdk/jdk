@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ import static jdk.internal.logger.DefaultLoggerFinder.isSystem;
  * At startup the LogManager class is located using the
  * java.util.logging.manager system property.
  *
- * <h3>LogManager Configuration</h3>
+ * <h2>LogManager Configuration</h2>
  *
  * A LogManager initializes the logging configuration via
  * the {@link #readConfiguration()} method during LogManager initialization.

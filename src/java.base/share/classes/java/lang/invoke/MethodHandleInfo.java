@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import static java.lang.invoke.MethodHandleStatics.*;
  * A symbolic reference obtained by cracking a direct method handle
  * into its consitutent symbolic parts.
  * To crack a direct method handle, call {@link Lookup#revealDirect Lookup.revealDirect}.
- * <h1><a id="directmh"></a>Direct Method Handles</h1>
+ * <h2><a id="directmh"></a>Direct Method Handles</h2>
  * A <em>direct method handle</em> represents a method, constructor, or field without
  * any intervening argument bindings or other transformations.
  * The method, constructor, or field referred to by a direct method handle is called
@@ -58,7 +58,7 @@ import static java.lang.invoke.MethodHandleStatics.*;
  *     to convert a {@link Field} into a method handle.
  * </ul>
  *
- * <h1>Restrictions on Cracking</h1>
+ * <h2>Restrictions on Cracking</h2>
  * Given a suitable {@code Lookup} object, it is possible to crack any direct method handle
  * to recover a symbolic reference for the underlying method, constructor, or field.
  * Cracking must be done via a {@code Lookup} object equivalent to that which created
@@ -77,7 +77,7 @@ import static java.lang.invoke.MethodHandleStatics.*;
  * handle with symbolic information (or caller binding) from an unexpected scope.
  * Use {@link java.lang.invoke.MethodHandles#reflectAs} to override this limitation.
  *
- * <h1><a id="refkinds"></a>Reference kinds</h1>
+ * <h2><a id="refkinds"></a>Reference kinds</h2>
  * The <a href="MethodHandles.Lookup.html#lookups">Lookup Factory Methods</a>
  * correspond to all major use cases for methods, constructors, and fields.
  * These use cases may be distinguished using small integers as follows:

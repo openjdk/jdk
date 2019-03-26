@@ -147,13 +147,16 @@ class java_lang_String : AllStatic {
   static inline unsigned int hash(oop java_string);
   static inline bool is_latin1(oop java_string);
   static inline int length(oop java_string);
+  static inline int length(oop java_string, typeArrayOop string_value);
   static int utf8_length(oop java_string);
+  static int utf8_length(oop java_string, typeArrayOop string_value);
 
   // String converters
   static char*  as_utf8_string(oop java_string);
   static char*  as_utf8_string(oop java_string, char* buf, int buflen);
   static char*  as_utf8_string(oop java_string, int start, int len);
-  static char*  as_utf8_string(oop java_string, int start, int len, char* buf, int buflen);
+  static char*  as_utf8_string(oop java_string, typeArrayOop value, char* buf, int buflen);
+  static char*  as_utf8_string(oop java_string, typeArrayOop value, int start, int len, char* buf, int buflen);
   static char*  as_platform_dependent_str(Handle java_string, TRAPS);
   static jchar* as_unicode_string(oop java_string, int& length, TRAPS);
   // produce an ascii string with all other values quoted using \u####
@@ -191,6 +194,7 @@ class java_lang_String : AllStatic {
 
   static bool equals(oop java_string, const jchar* chars, int len);
   static bool equals(oop str1, oop str2);
+  static inline bool value_equals(typeArrayOop str_value1, typeArrayOop str_value2);
 
   // Conversion between '.' and '/' formats
   static Handle externalize_classname(Handle java_string, TRAPS) { return char_converter(java_string, '/', '.', THREAD); }

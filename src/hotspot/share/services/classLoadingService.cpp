@@ -137,11 +137,6 @@ void ClassLoadingService::notify_class_unloaded(InstanceKlass* k) {
       _class_methods_size->inc(-methods->at(i)->size());
     }
   }
-
-  if (log_is_enabled(Info, class, unload)) {
-    ResourceMark rm;
-    log_info(class, unload)("unloading class %s " INTPTR_FORMAT , k->external_name(), p2i(k));
-  }
 }
 
 void ClassLoadingService::notify_class_loaded(InstanceKlass* k, bool shared_class) {

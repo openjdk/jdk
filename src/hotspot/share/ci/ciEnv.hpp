@@ -292,6 +292,8 @@ private:
   // respect to method dependencies (e.g. concurrent class loading).
   void validate_compile_task_dependencies(ciMethod* target);
 
+  // Call internally when Compile_lock is already held.
+  bool system_dictionary_modification_counter_changed_locked();
 public:
   enum {
     MethodCompilable,
@@ -463,7 +465,7 @@ public:
   void record_out_of_memory_failure();
 
   // RedefineClasses support
-  void metadata_do(void f(Metadata*)) { _factory->metadata_do(f); }
+  void metadata_do(MetadataClosure* f) { _factory->metadata_do(f); }
 
   // Dump the compilation replay data for the ciEnv to the stream.
   void dump_replay_data(int compile_id);

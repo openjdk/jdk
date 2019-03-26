@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,9 @@
  * questions.
  */
 
+package gc;
+
 import java.util.List;
-import java.util.ArrayList;
 import java.lang.management.*;
 import static jdk.test.lib.Asserts.*;
 import java.util.stream.*;
@@ -34,9 +35,9 @@ import java.util.stream.*;
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @requires vm.gc == null
- * @run main/othervm -XX:+UseG1GC TestMemoryMXBeansAndPoolsPresence G1
- * @run main/othervm -XX:+UseParallelGC TestMemoryMXBeansAndPoolsPresence Parallel
- * @run main/othervm -XX:+UseSerialGC TestMemoryMXBeansAndPoolsPresence Serial
+ * @run main/othervm -XX:+UseG1GC gc.TestMemoryMXBeansAndPoolsPresence G1
+ * @run main/othervm -XX:+UseParallelGC gc.TestMemoryMXBeansAndPoolsPresence Parallel
+ * @run main/othervm -XX:+UseSerialGC gc.TestMemoryMXBeansAndPoolsPresence Serial
  */
 
 /* @test TestMemoryMXBeansAndPoolsPresenceCMS
@@ -46,7 +47,7 @@ import java.util.stream.*;
  *          java.management
  * @comment Graal does not support CMS
  * @requires vm.gc == null & !vm.graal.enabled
- * @run main/othervm -XX:+UseConcMarkSweepGC TestMemoryMXBeansAndPoolsPresence CMS
+ * @run main/othervm -XX:+UseConcMarkSweepGC gc.TestMemoryMXBeansAndPoolsPresence CMS
  */
 
 class GCBeanDescription {

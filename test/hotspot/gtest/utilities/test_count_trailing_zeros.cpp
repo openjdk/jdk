@@ -39,16 +39,15 @@ TEST(count_trailing_zeros, one_or_two_set_bits) {
   }
 }
 
-TEST(count_trailing_zeros, all_ones_followed_by_all_zeros) {
-  unsigned i = BitsPerWord - 1; // Index of most significant set bit.
+TEST(count_trailing_zeros, high_zeros_low_ones) {
   uintx value = ~(uintx)0;
-  for ( ; value != 0; value >>= 1, --i) {
+  for ( ; value != 0; value >>= 1) {
     EXPECT_EQ(0u, count_trailing_zeros(value))
       << "value = " << value;
   }
 }
 
-TEST(count_trailing_zeros, all_zeros_followed_by_all_ones) {
+TEST(count_trailing_zeros, high_ones_low_zeros) {
   unsigned i = 0;               // Index of least significant set bit.
   uintx value = ~(uintx)0;
   for ( ; value != 0; value <<= 1, ++i) {

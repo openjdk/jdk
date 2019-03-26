@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,6 @@ LAUNCHER_CFLAGS += -I$(TOPDIR)/src/java.base/share/native/launcher \
     -I$(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS)/native/libjli \
     #
 GLOBAL_VERSION_INFO_RESOURCE := $(TOPDIR)/src/java.base/windows/native/common/version.rc
-JAVA_VERSION_INFO_RESOURCE := $(TOPDIR)/src/java.base/windows/native/launcher/java.rc
 MACOSX_PLIST_DIR := $(TOPDIR)/src/java.base/macosx/native/launcher
 JAVA_MANIFEST := $(TOPDIR)/src/java.base/windows/native/launcher/java.manifest
 
@@ -105,7 +104,7 @@ define SetupBuildLauncherBody
       $$(addprefix -J, $$($1_JAVA_ARGS)) $$($1_LAUNCHER_CLASS), "$$a"$(COMMA) )) }'
   $1_CFLAGS += -DJAVA_ARGS=$$($1_JAVA_ARGS_STR)
 
-  ifeq ($(OPENJDK_TARGET_OS), macosx)
+  ifeq ($(call isTargetOs, macosx), true)
     ifeq ($$($1_MACOSX_SIGNED), true)
       $1_PLIST_FILE := Info-privileged.plist
         $1_CODESIGN := true
@@ -179,11 +178,11 @@ define SetupBuildLauncherBody
   $1 += $$(BUILD_LAUNCHER_$1)
   TARGETS += $$($1)
 
-  ifeq ($(OPENJDK_TARGET_OS), aix)
+  ifeq ($(call isTargetOs, aix), true)
     $$(BUILD_LAUNCHER_$1): $(call FindStaticLib, java.base, jli_static)
   endif
 
-  ifeq ($(OPENJDK_TARGET_OS), windows)
+  ifeq ($(call isTargetOs, windows), true)
     $$(BUILD_LAUNCHER_$1): $(call FindStaticLib, java.base, java, /libjava) \
         $$($1_WINDOWS_JLI_LIB)
   endif
@@ -194,7 +193,7 @@ endef
 # relationship between executables and man pages (even if this is not always
 # the case), so piggyback man page generation on the launcher compilation.
 
-ifeq ($(OPENJDK_TARGET_OS_TYPE), unix)
+ifeq ($(call isTargetOsType, unix), true)
   # Only build manpages on unix systems.
   # We assume all our man pages should reside in section 1.
 

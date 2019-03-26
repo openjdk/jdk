@@ -246,15 +246,25 @@ public:
     return (PackageEntry*)Hashtable<Symbol*, mtModule>::bucket(i);
   }
 
-  // Create package in loader's package entry table and return the entry.
-  // If entry already exists, return null.  Assume Module lock was taken by caller.
-  PackageEntry* locked_create_entry_or_null(Symbol* name, ModuleEntry* module);
+  // Create package entry in loader's package entry table.  Assume Module
+  // lock was taken by caller.
+  void locked_create_entry(Symbol* name, ModuleEntry* module);
 
-  // lookup Package with loader's package entry table, if not found add
+  // Create package entry in loader's package entry table if it does not
+  // already exist.  Assume Module lock was taken by caller.
+  void locked_create_entry_if_not_exist(Symbol* name, ModuleEntry* module);
+
+  // Lookup Package with loader's package entry table, add it if not found.
+  // This will acquire the Module lock.
   PackageEntry* lookup(Symbol* name, ModuleEntry* module);
 
   // Only lookup Package within loader's package entry table.
+  // This will acquire the Module lock.
   PackageEntry* lookup_only(Symbol* Package);
+
+  // Only lookup Package within loader's package entry table.  Assume Module lock
+  // was taken by caller.
+  PackageEntry* locked_lookup_only(Symbol* Package);
 
   void verify_javabase_packages(GrowableArray<Symbol*> *pkg_list);
 

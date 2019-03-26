@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,48 +31,35 @@
 #include "memory/resourceArea.hpp"
 #include "logging/log.hpp"
 
-StringCleaningTask::StringCleaningTask(BoolObjectClosure* is_alive, StringDedupUnlinkOrOopsDoClosure* dedup_closure, bool process_strings) :
-  AbstractGangTask("String Unlinking"),
-  _is_alive(is_alive),
-  _dedup_closure(dedup_closure),
-  _par_state_string(StringTable::weak_storage()),
-  _initial_string_table_size((int) StringTable::the_table()->table_size()),
-  _process_strings(process_strings), _strings_processed(0), _strings_removed(0) {
+StringDedupCleaningTask::StringDedupCleaningTask(BoolObjectClosure* is_alive,
+                                                 OopClosure* keep_alive,
+                                                 bool resize_table) :
+  AbstractGangTask("String Dedup Cleaning"),
+  _dedup_closure(is_alive, keep_alive) {
 
-  if (process_strings) {
-    StringTable::reset_dead_counter();
+  if (StringDedup::is_enabled()) {
+    StringDedup::gc_prologue(resize_table);
   }
 }
 
-StringCleaningTask::~StringCleaningTask() {
-  log_info(gc, stringtable)(
-      "Cleaned string table, "
-      "strings: " SIZE_FORMAT " processed, " SIZE_FORMAT " removed",
-      strings_processed(), strings_removed());
-  if (_process_strings) {
-    StringTable::finish_dead_counter();
+StringDedupCleaningTask::~StringDedupCleaningTask() {
+  if (StringDedup::is_enabled()) {
+    StringDedup::gc_epilogue();
   }
 }
 
-void StringCleaningTask::work(uint worker_id) {
-  size_t strings_processed = 0;
-  size_t strings_removed = 0;
-  if (_process_strings) {
-    StringTable::possibly_parallel_unlink(&_par_state_string, _is_alive, &strings_processed, &strings_removed);
-    Atomic::add(strings_processed, &_strings_processed);
-    Atomic::add(strings_removed, &_strings_removed);
-  }
-  if (_dedup_closure != NULL) {
-    StringDedup::parallel_unlink(_dedup_closure, worker_id);
+void StringDedupCleaningTask::work(uint worker_id) {
+  if (StringDedup::is_enabled()) {
+    StringDedup::parallel_unlink(&_dedup_closure, worker_id);
   }
 }
 
 CodeCacheUnloadingTask::CodeCacheUnloadingTask(uint num_workers, BoolObjectClosure* is_alive, bool unloading_occurred) :
-      _unloading_scope(is_alive),
-      _unloading_occurred(unloading_occurred),
-      _num_workers(num_workers),
-      _first_nmethod(NULL),
-      _claimed_nmethod(NULL) {
+  _unloading_scope(is_alive),
+  _unloading_occurred(unloading_occurred),
+  _num_workers(num_workers),
+  _first_nmethod(NULL),
+  _claimed_nmethod(NULL) {
   // Get first alive nmethod
   CompiledMethodIterator iter(CompiledMethodIterator::only_alive);
   if(iter.next()) {
@@ -83,9 +70,6 @@ CodeCacheUnloadingTask::CodeCacheUnloadingTask(uint num_workers, BoolObjectClosu
 
 CodeCacheUnloadingTask::~CodeCacheUnloadingTask() {
   CodeCache::verify_clean_inline_caches();
-
-  guarantee(CodeCache::scavenge_root_nmethods() == NULL, "Must be");
-
   CodeCache::verify_icholder_relocations();
 }
 
@@ -175,10 +159,12 @@ void KlassCleaningTask::work() {
 }
 
 ParallelCleaningTask::ParallelCleaningTask(BoolObjectClosure* is_alive,
-  StringDedupUnlinkOrOopsDoClosure* dedup_closure, uint num_workers, bool unloading_occurred) :
+                                           uint num_workers,
+                                           bool unloading_occurred,
+                                           bool resize_dedup_table) :
   AbstractGangTask("Parallel Cleaning"),
   _unloading_occurred(unloading_occurred),
-  _string_task(is_alive, StringDedup::is_enabled() ? dedup_closure : NULL, true),
+  _string_dedup_task(is_alive, NULL, resize_dedup_table),
   _code_cache_task(num_workers, is_alive, unloading_occurred),
   _klass_cleaning_task() {
 }
@@ -188,8 +174,8 @@ void ParallelCleaningTask::work(uint worker_id) {
   // Do first pass of code cache cleaning.
   _code_cache_task.work(worker_id);
 
-  // Clean the Strings and Symbols.
-  _string_task.work(worker_id);
+  // Clean the string dedup data structures.
+  _string_dedup_task.work(worker_id);
 
   // Clean all klasses that were not unloaded.
   // The weak metadata in klass doesn't need to be

@@ -176,7 +176,7 @@ public class LinearScanLifetimeAnalysisPhase extends LinearScanAllocationPhase {
 
                     ValueConsumer useConsumer = (operand, mode, flags) -> {
                         if (isVariable(operand)) {
-                            int operandNum = allocator.operandNumber(operand);
+                            int operandNum = getOperandNumber(operand);
                             if (!liveKillScratch.get(operandNum)) {
                                 liveGenScratch.set(operandNum);
                                 if (debug.isLogEnabled()) {
@@ -194,7 +194,7 @@ public class LinearScanLifetimeAnalysisPhase extends LinearScanAllocationPhase {
                     };
                     ValueConsumer stateConsumer = (operand, mode, flags) -> {
                         if (LinearScan.isVariableOrRegister(operand)) {
-                            int operandNum = allocator.operandNumber(operand);
+                            int operandNum = getOperandNumber(operand);
                             if (!liveKillScratch.get(operandNum)) {
                                 liveGenScratch.set(operandNum);
                                 if (debug.isLogEnabled()) {
@@ -205,7 +205,7 @@ public class LinearScanLifetimeAnalysisPhase extends LinearScanAllocationPhase {
                     };
                     ValueConsumer defConsumer = (operand, mode, flags) -> {
                         if (isVariable(operand)) {
-                            int varNum = allocator.operandNumber(operand);
+                            int varNum = getOperandNumber(operand);
                             liveKillScratch.set(varNum);
                             if (debug.isLogEnabled()) {
                                 debug.log("liveKill for operand %d(%s)", varNum, operand);
@@ -268,7 +268,7 @@ public class LinearScanLifetimeAnalysisPhase extends LinearScanAllocationPhase {
          */
         if (isRegister(operand)) {
             if (allocator.isProcessed(operand)) {
-                liveKill.set(allocator.operandNumber(operand));
+                liveKill.set(getOperandNumber(operand));
             }
         }
     }
@@ -281,9 +281,13 @@ public class LinearScanLifetimeAnalysisPhase extends LinearScanAllocationPhase {
          */
         if (isRegister(operand) && block != allocator.getLIR().getControlFlowGraph().getStartBlock()) {
             if (allocator.isProcessed(operand)) {
-                assert liveKill.get(allocator.operandNumber(operand)) : "using fixed register " + asRegister(operand) + " that is not defined in this block " + block;
+                assert liveKill.get(getOperandNumber(operand)) : "using fixed register " + asRegister(operand) + " that is not defined in this block " + block;
             }
         }
+    }
+
+    protected int getOperandNumber(Value operand) {
+        return allocator.operandNumber(operand);
     }
 
     /**

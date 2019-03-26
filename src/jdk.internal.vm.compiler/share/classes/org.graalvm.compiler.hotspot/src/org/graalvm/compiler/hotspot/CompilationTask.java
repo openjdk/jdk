@@ -26,7 +26,7 @@ package org.graalvm.compiler.hotspot;
 
 import static org.graalvm.compiler.core.CompilationWrapper.ExceptionAction.Diagnose;
 import static org.graalvm.compiler.core.CompilationWrapper.ExceptionAction.ExitVM;
-import static org.graalvm.compiler.core.GraalCompilerOptions.CompilationBailoutAction;
+import static org.graalvm.compiler.core.GraalCompilerOptions.CompilationBailoutAsFailure;
 import static org.graalvm.compiler.core.GraalCompilerOptions.CompilationFailureAction;
 import static org.graalvm.compiler.core.phases.HighTier.Options.Inline;
 import static org.graalvm.compiler.java.BytecodeParserOptions.InlineDuringParsing;
@@ -47,7 +47,6 @@ import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.DebugDumpScope;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.debug.TimerKey;
-import org.graalvm.compiler.options.EnumOptionKey;
 import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.printer.GraalDebugHandlersFactory;
@@ -145,25 +144,34 @@ public class CompilationTask {
         }
 
         @Override
-        protected ExceptionAction lookupAction(OptionValues values, EnumOptionKey<ExceptionAction> actionKey, Throwable cause) {
-            // Respect current action if it has been explicitly set.
-            if (!actionKey.hasBeenSet(values)) {
-                if (actionKey == CompilationFailureAction) {
-                    // Automatically exit on non-bailout during bootstrap
-                    // or when assertions are enabled.
-                    if (Assertions.assertionsEnabled() || compiler.getGraalRuntime().isBootstrapping()) {
-                        return ExitVM;
-                    }
-                } else if (actionKey == CompilationBailoutAction && ((BailoutException) cause).isPermanent()) {
-                    // Get more info for permanent bailouts during bootstrap
-                    // or when assertions are enabled.
-                    assert CompilationBailoutAction.getDefaultValue() == ExceptionAction.Silent;
-                    if (Assertions.assertionsEnabled() || compiler.getGraalRuntime().isBootstrapping()) {
-                        return Diagnose;
+        protected ExceptionAction lookupAction(OptionValues values, Throwable cause) {
+            if (cause instanceof BailoutException) {
+                BailoutException bailout = (BailoutException) cause;
+                if (bailout.isPermanent()) {
+                    // Respect current action if it has been explicitly set.
+                    if (!CompilationBailoutAsFailure.hasBeenSet(values)) {
+                        // Get more info for permanent bailouts during bootstrap
+                        // or when assertions are enabled.
+                        if (Assertions.assertionsEnabled() || compiler.getGraalRuntime().isBootstrapping()) {
+                            return Diagnose;
+                        }
+
                     }
                 }
+                if (!CompilationBailoutAsFailure.getValue(values)) {
+                    return super.lookupAction(values, cause);
+                }
             }
-            return super.lookupAction(values, actionKey, cause);
+
+            // Respect current action if it has been explicitly set.
+            if (!CompilationFailureAction.hasBeenSet(values)) {
+                // Automatically exit on failure during bootstrap
+                // or when assertions are enabled.
+                if (Assertions.assertionsEnabled() || compiler.getGraalRuntime().isBootstrapping()) {
+                    return ExitVM;
+                }
+            }
+            return super.lookupAction(values, cause);
         }
 
         @SuppressWarnings("try")
@@ -368,8 +376,14 @@ public class CompilationTask {
         installedCode = null;
         Object[] context = {new DebugDumpScope(getIdString(), true), codeCache, getMethod(), compResult};
         try (DebugContext.Scope s = debug.scope("CodeInstall", context)) {
-            installedCode = (HotSpotInstalledCode) backend.createInstalledCode(debug, getRequest().getMethod(), getRequest(), compResult,
-                            getRequest().getMethod().getSpeculationLog(), null, installAsDefault, context);
+            HotSpotCompilationRequest request = getRequest();
+            installedCode = (HotSpotInstalledCode) backend.createInstalledCode(debug,
+                            request.getMethod(),
+                            request,
+                            compResult,
+                            null,
+                            installAsDefault,
+                            context);
         } catch (Throwable e) {
             throw debug.handle(e);
         }

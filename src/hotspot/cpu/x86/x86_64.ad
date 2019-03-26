@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -169,135 +169,94 @@ alloc_class chunk0(R10,         R10_H,
 // Empty register class.
 reg_class no_reg();
 
-// Class for all pointer registers (including RSP and RBP)
-reg_class any_reg_with_rbp(RAX, RAX_H,
-                           RDX, RDX_H,
-                           RBP, RBP_H,
-                           RDI, RDI_H,
-                           RSI, RSI_H,
-                           RCX, RCX_H,
-                           RBX, RBX_H,
-                           RSP, RSP_H,
-                           R8,  R8_H,
-                           R9,  R9_H,
-                           R10, R10_H,
-                           R11, R11_H,
-                           R12, R12_H,
-                           R13, R13_H,
-                           R14, R14_H,
-                           R15, R15_H);
+// Class for all pointer/long registers
+reg_class all_reg(RAX, RAX_H,
+                  RDX, RDX_H,
+                  RBP, RBP_H,
+                  RDI, RDI_H,
+                  RSI, RSI_H,
+                  RCX, RCX_H,
+                  RBX, RBX_H,
+                  RSP, RSP_H,
+                  R8,  R8_H,
+                  R9,  R9_H,
+                  R10, R10_H,
+                  R11, R11_H,
+                  R12, R12_H,
+                  R13, R13_H,
+                  R14, R14_H,
+                  R15, R15_H);
 
-// Class for all pointer registers (including RSP, but excluding RBP)
-reg_class any_reg_no_rbp(RAX, RAX_H,
-                         RDX, RDX_H,
-                         RDI, RDI_H,
-                         RSI, RSI_H,
-                         RCX, RCX_H,
-                         RBX, RBX_H,
-                         RSP, RSP_H,
-                         R8,  R8_H,
-                         R9,  R9_H,
-                         R10, R10_H,
-                         R11, R11_H,
-                         R12, R12_H,
-                         R13, R13_H,
-                         R14, R14_H,
-                         R15, R15_H);
+// Class for all int registers
+reg_class all_int_reg(RAX
+                      RDX,
+                      RBP,
+                      RDI,
+                      RSI,
+                      RCX,
+                      RBX,
+                      R8,
+                      R9,
+                      R10,
+                      R11,
+                      R12,
+                      R13,
+                      R14);
 
-// Dynamic register class that selects at runtime between register classes
-// any_reg_no_rbp and any_reg_with_rbp (depending on the value of the flag PreserveFramePointer).
-// Equivalent to: return PreserveFramePointer ? any_reg_no_rbp : any_reg_with_rbp;
-reg_class_dynamic any_reg(any_reg_no_rbp, any_reg_with_rbp, %{ PreserveFramePointer %});
+// Class for all pointer registers
+reg_class any_reg %{
+  return _ANY_REG_mask;
+%}
 
 // Class for all pointer registers (excluding RSP)
-reg_class ptr_reg_with_rbp(RAX, RAX_H,
-                           RDX, RDX_H,
-                           RBP, RBP_H,
-                           RDI, RDI_H,
-                           RSI, RSI_H,
-                           RCX, RCX_H,
-                           RBX, RBX_H,
-                           R8,  R8_H,
-                           R9,  R9_H,
-                           R10, R10_H,
-                           R11, R11_H,
-                           R13, R13_H,
-                           R14, R14_H);
+reg_class ptr_reg %{
+  return _PTR_REG_mask;
+%}
 
 // Class for all pointer registers (excluding RSP and RBP)
-reg_class ptr_reg_no_rbp(RAX, RAX_H,
-                         RDX, RDX_H,
-                         RDI, RDI_H,
-                         RSI, RSI_H,
-                         RCX, RCX_H,
-                         RBX, RBX_H,
-                         R8,  R8_H,
-                         R9,  R9_H,
-                         R10, R10_H,
-                         R11, R11_H,
-                         R13, R13_H,
-                         R14, R14_H);
-
-// Dynamic register class that selects between ptr_reg_no_rbp and ptr_reg_with_rbp.
-reg_class_dynamic ptr_reg(ptr_reg_no_rbp, ptr_reg_with_rbp, %{ PreserveFramePointer %});
+reg_class ptr_reg_no_rbp %{
+  return _PTR_REG_NO_RBP_mask;
+%}
 
 // Class for all pointer registers (excluding RAX and RSP)
-reg_class ptr_no_rax_reg_with_rbp(RDX, RDX_H,
-                                  RBP, RBP_H,
-                                  RDI, RDI_H,
-                                  RSI, RSI_H,
-                                  RCX, RCX_H,
-                                  RBX, RBX_H,
-                                  R8,  R8_H,
-                                  R9,  R9_H,
-                                  R10, R10_H,
-                                  R11, R11_H,
-                                  R13, R13_H,
-                                  R14, R14_H);
-
-// Class for all pointer registers (excluding RAX, RSP, and RBP)
-reg_class ptr_no_rax_reg_no_rbp(RDX, RDX_H,
-                                RDI, RDI_H,
-                                RSI, RSI_H,
-                                RCX, RCX_H,
-                                RBX, RBX_H,
-                                R8,  R8_H,
-                                R9,  R9_H,
-                                R10, R10_H,
-                                R11, R11_H,
-                                R13, R13_H,
-                                R14, R14_H);
-
-// Dynamic register class that selects between ptr_no_rax_reg_no_rbp and ptr_no_rax_reg_with_rbp.
-reg_class_dynamic ptr_no_rax_reg(ptr_no_rax_reg_no_rbp, ptr_no_rax_reg_with_rbp, %{ PreserveFramePointer %});
+reg_class ptr_no_rax_reg %{
+  return _PTR_NO_RAX_REG_mask;
+%}
 
 // Class for all pointer registers (excluding RAX, RBX, and RSP)
-reg_class ptr_no_rax_rbx_reg_with_rbp(RDX, RDX_H,
-                                      RBP, RBP_H,
-                                      RDI, RDI_H,
-                                      RSI, RSI_H,
-                                      RCX, RCX_H,
-                                      R8,  R8_H,
-                                      R9,  R9_H,
-                                      R10, R10_H,
-                                      R11, R11_H,
-                                      R13, R13_H,
-                                      R14, R14_H);
+reg_class ptr_no_rax_rbx_reg %{
+  return _PTR_NO_RAX_RBX_REG_mask;
+%}
 
-// Class for all pointer registers (excluding RAX, RBX, RSP, and RBP)
-reg_class ptr_no_rax_rbx_reg_no_rbp(RDX, RDX_H,
-                                    RDI, RDI_H,
-                                    RSI, RSI_H,
-                                    RCX, RCX_H,
-                                    R8,  R8_H,
-                                    R9,  R9_H,
-                                    R10, R10_H,
-                                    R11, R11_H,
-                                    R13, R13_H,
-                                    R14, R14_H);
+// Class for all long registers (excluding RSP)
+reg_class long_reg %{
+  return _LONG_REG_mask;
+%}
 
-// Dynamic register class that selects between ptr_no_rax_rbx_reg_no_rbp and ptr_no_rax_rbx_reg_with_rbp.
-reg_class_dynamic ptr_no_rax_rbx_reg(ptr_no_rax_rbx_reg_no_rbp, ptr_no_rax_rbx_reg_with_rbp, %{ PreserveFramePointer %});
+// Class for all long registers (excluding RAX, RDX and RSP)
+reg_class long_no_rax_rdx_reg %{
+  return _LONG_NO_RAX_RDX_REG_mask;
+%}
+
+// Class for all long registers (excluding RCX and RSP)
+reg_class long_no_rcx_reg %{
+  return _LONG_NO_RCX_REG_mask;
+%}
+
+// Class for all int registers (excluding RSP)
+reg_class int_reg %{
+  return _INT_REG_mask;
+%}
+
+// Class for all int registers (excluding RAX, RDX, and RSP)
+reg_class int_no_rax_rdx_reg %{
+  return _INT_NO_RAX_RDX_REG_mask;
+%}
+
+// Class for all int registers (excluding RCX and RSP)
+reg_class int_no_rcx_reg %{
+  return _INT_NO_RCX_REG_mask;
+%}
 
 // Singleton class for RAX pointer register
 reg_class ptr_rax_reg(RAX, RAX_H);
@@ -317,96 +276,6 @@ reg_class ptr_rsp_reg(RSP, RSP_H);
 // Singleton class for TLS pointer
 reg_class ptr_r15_reg(R15, R15_H);
 
-// Class for all long registers (excluding RSP)
-reg_class long_reg_with_rbp(RAX, RAX_H,
-                            RDX, RDX_H,
-                            RBP, RBP_H,
-                            RDI, RDI_H,
-                            RSI, RSI_H,
-                            RCX, RCX_H,
-                            RBX, RBX_H,
-                            R8,  R8_H,
-                            R9,  R9_H,
-                            R10, R10_H,
-                            R11, R11_H,
-                            R13, R13_H,
-                            R14, R14_H);
-
-// Class for all long registers (excluding RSP and RBP)
-reg_class long_reg_no_rbp(RAX, RAX_H,
-                          RDX, RDX_H,
-                          RDI, RDI_H,
-                          RSI, RSI_H,
-                          RCX, RCX_H,
-                          RBX, RBX_H,
-                          R8,  R8_H,
-                          R9,  R9_H,
-                          R10, R10_H,
-                          R11, R11_H,
-                          R13, R13_H,
-                          R14, R14_H);
-
-// Dynamic register class that selects between long_reg_no_rbp and long_reg_with_rbp.
-reg_class_dynamic long_reg(long_reg_no_rbp, long_reg_with_rbp, %{ PreserveFramePointer %});
-
-// Class for all long registers (excluding RAX, RDX and RSP)
-reg_class long_no_rax_rdx_reg_with_rbp(RBP, RBP_H,
-                                       RDI, RDI_H,
-                                       RSI, RSI_H,
-                                       RCX, RCX_H,
-                                       RBX, RBX_H,
-                                       R8,  R8_H,
-                                       R9,  R9_H,
-                                       R10, R10_H,
-                                       R11, R11_H,
-                                       R13, R13_H,
-                                       R14, R14_H);
-
-// Class for all long registers (excluding RAX, RDX, RSP, and RBP)
-reg_class long_no_rax_rdx_reg_no_rbp(RDI, RDI_H,
-                                     RSI, RSI_H,
-                                     RCX, RCX_H,
-                                     RBX, RBX_H,
-                                     R8,  R8_H,
-                                     R9,  R9_H,
-                                     R10, R10_H,
-                                     R11, R11_H,
-                                     R13, R13_H,
-                                     R14, R14_H);
-
-// Dynamic register class that selects between long_no_rax_rdx_reg_no_rbp and long_no_rax_rdx_reg_with_rbp.
-reg_class_dynamic long_no_rax_rdx_reg(long_no_rax_rdx_reg_no_rbp, long_no_rax_rdx_reg_with_rbp, %{ PreserveFramePointer %});
-
-// Class for all long registers (excluding RCX and RSP)
-reg_class long_no_rcx_reg_with_rbp(RBP, RBP_H,
-                                   RDI, RDI_H,
-                                   RSI, RSI_H,
-                                   RAX, RAX_H,
-                                   RDX, RDX_H,
-                                   RBX, RBX_H,
-                                   R8,  R8_H,
-                                   R9,  R9_H,
-                                   R10, R10_H,
-                                   R11, R11_H,
-                                   R13, R13_H,
-                                   R14, R14_H);
-
-// Class for all long registers (excluding RCX, RSP, and RBP)
-reg_class long_no_rcx_reg_no_rbp(RDI, RDI_H,
-                                 RSI, RSI_H,
-                                 RAX, RAX_H,
-                                 RDX, RDX_H,
-                                 RBX, RBX_H,
-                                 R8,  R8_H,
-                                 R9,  R9_H,
-                                 R10, R10_H,
-                                 R11, R11_H,
-                                 R13, R13_H,
-                                 R14, R14_H);
-
-// Dynamic register class that selects between long_no_rcx_reg_no_rbp and long_no_rcx_reg_with_rbp.
-reg_class_dynamic long_no_rcx_reg(long_no_rcx_reg_no_rbp, long_no_rcx_reg_with_rbp, %{ PreserveFramePointer %});
-
 // Singleton class for RAX long register
 reg_class long_rax_reg(RAX, RAX_H);
 
@@ -415,96 +284,6 @@ reg_class long_rcx_reg(RCX, RCX_H);
 
 // Singleton class for RDX long register
 reg_class long_rdx_reg(RDX, RDX_H);
-
-// Class for all int registers (excluding RSP)
-reg_class int_reg_with_rbp(RAX,
-                           RDX,
-                           RBP,
-                           RDI,
-                           RSI,
-                           RCX,
-                           RBX,
-                           R8,
-                           R9,
-                           R10,
-                           R11,
-                           R13,
-                           R14);
-
-// Class for all int registers (excluding RSP and RBP)
-reg_class int_reg_no_rbp(RAX,
-                         RDX,
-                         RDI,
-                         RSI,
-                         RCX,
-                         RBX,
-                         R8,
-                         R9,
-                         R10,
-                         R11,
-                         R13,
-                         R14);
-
-// Dynamic register class that selects between int_reg_no_rbp and int_reg_with_rbp.
-reg_class_dynamic int_reg(int_reg_no_rbp, int_reg_with_rbp, %{ PreserveFramePointer %});
-
-// Class for all int registers (excluding RCX and RSP)
-reg_class int_no_rcx_reg_with_rbp(RAX,
-                                  RDX,
-                                  RBP,
-                                  RDI,
-                                  RSI,
-                                  RBX,
-                                  R8,
-                                  R9,
-                                  R10,
-                                  R11,
-                                  R13,
-                                  R14);
-
-// Class for all int registers (excluding RCX, RSP, and RBP)
-reg_class int_no_rcx_reg_no_rbp(RAX,
-                                RDX,
-                                RDI,
-                                RSI,
-                                RBX,
-                                R8,
-                                R9,
-                                R10,
-                                R11,
-                                R13,
-                                R14);
-
-// Dynamic register class that selects between int_no_rcx_reg_no_rbp and int_no_rcx_reg_with_rbp.
-reg_class_dynamic int_no_rcx_reg(int_no_rcx_reg_no_rbp, int_no_rcx_reg_with_rbp, %{ PreserveFramePointer %});
-
-// Class for all int registers (excluding RAX, RDX, and RSP)
-reg_class int_no_rax_rdx_reg_with_rbp(RBP,
-                                      RDI,
-                                      RSI,
-                                      RCX,
-                                      RBX,
-                                      R8,
-                                      R9,
-                                      R10,
-                                      R11,
-                                      R13,
-                                      R14);
-
-// Class for all int registers (excluding RAX, RDX, RSP, and RBP)
-reg_class int_no_rax_rdx_reg_no_rbp(RDI,
-                                    RSI,
-                                    RCX,
-                                    RBX,
-                                    R8,
-                                    R9,
-                                    R10,
-                                    R11,
-                                    R13,
-                                    R14);
-
-// Dynamic register class that selects between int_no_rax_rdx_reg_no_rbp and int_no_rax_rdx_reg_with_rbp.
-reg_class_dynamic int_no_rax_rdx_reg(int_no_rax_rdx_reg_no_rbp, int_no_rax_rdx_reg_with_rbp, %{ PreserveFramePointer %});
 
 // Singleton class for RAX int register
 reg_class int_rax_reg(RAX);
@@ -526,20 +305,125 @@ reg_class int_rdi_reg(RDI);
 
 %}
 
-source_hpp %{
-#if INCLUDE_ZGC
-#include "gc/z/zBarrierSetAssembler.hpp"
-#endif
-%}
-
 //----------SOURCE BLOCK-------------------------------------------------------
 // This is a block of C++ code which provides values, functions, and
 // definitions necessary in the rest of the architecture description
+source_hpp %{
+
+extern RegMask _ANY_REG_mask;
+extern RegMask _PTR_REG_mask;
+extern RegMask _PTR_REG_NO_RBP_mask;
+extern RegMask _PTR_NO_RAX_REG_mask;
+extern RegMask _PTR_NO_RAX_RBX_REG_mask;
+extern RegMask _LONG_REG_mask;
+extern RegMask _LONG_NO_RAX_RDX_REG_mask;
+extern RegMask _LONG_NO_RCX_REG_mask;
+extern RegMask _INT_REG_mask;
+extern RegMask _INT_NO_RAX_RDX_REG_mask;
+extern RegMask _INT_NO_RCX_REG_mask;
+
+extern RegMask _STACK_OR_PTR_REG_mask;
+extern RegMask _STACK_OR_LONG_REG_mask;
+extern RegMask _STACK_OR_INT_REG_mask;
+
+inline const RegMask& STACK_OR_PTR_REG_mask()  { return _STACK_OR_PTR_REG_mask;  }
+inline const RegMask& STACK_OR_LONG_REG_mask() { return _STACK_OR_LONG_REG_mask; }
+inline const RegMask& STACK_OR_INT_REG_mask()  { return _STACK_OR_INT_REG_mask;  }
+
+%}
+
 source %{
 #define   RELOC_IMM64    Assembler::imm_operand
 #define   RELOC_DISP32   Assembler::disp32_operand
 
 #define __ _masm.
+
+RegMask _ANY_REG_mask;
+RegMask _PTR_REG_mask;
+RegMask _PTR_REG_NO_RBP_mask;
+RegMask _PTR_NO_RAX_REG_mask;
+RegMask _PTR_NO_RAX_RBX_REG_mask;
+RegMask _LONG_REG_mask;
+RegMask _LONG_NO_RAX_RDX_REG_mask;
+RegMask _LONG_NO_RCX_REG_mask;
+RegMask _INT_REG_mask;
+RegMask _INT_NO_RAX_RDX_REG_mask;
+RegMask _INT_NO_RCX_REG_mask;
+RegMask _STACK_OR_PTR_REG_mask;
+RegMask _STACK_OR_LONG_REG_mask;
+RegMask _STACK_OR_INT_REG_mask;
+
+static bool need_r12_heapbase() {
+  return UseCompressedOops || UseCompressedClassPointers;
+}
+
+void reg_mask_init() {
+  // _ALL_REG_mask is generated by adlc from the all_reg register class below.
+  // We derive a number of subsets from it.
+  _ANY_REG_mask = _ALL_REG_mask;
+
+  if (PreserveFramePointer) {
+    _ANY_REG_mask.Remove(OptoReg::as_OptoReg(rbp->as_VMReg()));
+    _ANY_REG_mask.Remove(OptoReg::as_OptoReg(rbp->as_VMReg()->next()));
+  }
+  if (need_r12_heapbase()) {
+    _ANY_REG_mask.Remove(OptoReg::as_OptoReg(r12->as_VMReg()));
+    _ANY_REG_mask.Remove(OptoReg::as_OptoReg(r12->as_VMReg()->next()));
+  }
+
+  _PTR_REG_mask = _ANY_REG_mask;
+  _PTR_REG_mask.Remove(OptoReg::as_OptoReg(rsp->as_VMReg()));
+  _PTR_REG_mask.Remove(OptoReg::as_OptoReg(rsp->as_VMReg()->next()));
+  _PTR_REG_mask.Remove(OptoReg::as_OptoReg(r15->as_VMReg()));
+  _PTR_REG_mask.Remove(OptoReg::as_OptoReg(r15->as_VMReg()->next()));
+
+  _STACK_OR_PTR_REG_mask = _PTR_REG_mask;
+  _STACK_OR_PTR_REG_mask.OR(STACK_OR_STACK_SLOTS_mask());
+
+  _PTR_REG_NO_RBP_mask = _PTR_REG_mask;
+  _PTR_REG_NO_RBP_mask.Remove(OptoReg::as_OptoReg(rbp->as_VMReg()));
+  _PTR_REG_NO_RBP_mask.Remove(OptoReg::as_OptoReg(rbp->as_VMReg()->next()));
+
+  _PTR_NO_RAX_REG_mask = _PTR_REG_mask;
+  _PTR_NO_RAX_REG_mask.Remove(OptoReg::as_OptoReg(rax->as_VMReg()));
+  _PTR_NO_RAX_REG_mask.Remove(OptoReg::as_OptoReg(rax->as_VMReg()->next()));
+
+  _PTR_NO_RAX_RBX_REG_mask = _PTR_NO_RAX_REG_mask;
+  _PTR_NO_RAX_RBX_REG_mask.Remove(OptoReg::as_OptoReg(rbx->as_VMReg()));
+  _PTR_NO_RAX_RBX_REG_mask.Remove(OptoReg::as_OptoReg(rbx->as_VMReg()->next()));
+
+  _LONG_REG_mask = _PTR_REG_mask;
+  _STACK_OR_LONG_REG_mask = _LONG_REG_mask;
+  _STACK_OR_LONG_REG_mask.OR(STACK_OR_STACK_SLOTS_mask());
+
+  _LONG_NO_RAX_RDX_REG_mask = _LONG_REG_mask;
+  _LONG_NO_RAX_RDX_REG_mask.Remove(OptoReg::as_OptoReg(rax->as_VMReg()));
+  _LONG_NO_RAX_RDX_REG_mask.Remove(OptoReg::as_OptoReg(rax->as_VMReg()->next()));
+  _LONG_NO_RAX_RDX_REG_mask.Remove(OptoReg::as_OptoReg(rdx->as_VMReg()));
+  _LONG_NO_RAX_RDX_REG_mask.Remove(OptoReg::as_OptoReg(rdx->as_VMReg()->next()));
+
+  _LONG_NO_RCX_REG_mask = _LONG_REG_mask;
+  _LONG_NO_RCX_REG_mask.Remove(OptoReg::as_OptoReg(rcx->as_VMReg()));
+  _LONG_NO_RCX_REG_mask.Remove(OptoReg::as_OptoReg(rcx->as_VMReg()->next()));
+
+  _INT_REG_mask = _ALL_INT_REG_mask;
+  if (PreserveFramePointer) {
+    _INT_REG_mask.Remove(OptoReg::as_OptoReg(rbp->as_VMReg()));
+  }
+  if (need_r12_heapbase()) {
+    _INT_REG_mask.Remove(OptoReg::as_OptoReg(r12->as_VMReg()));
+  }
+
+  _STACK_OR_INT_REG_mask = _INT_REG_mask;
+  _STACK_OR_INT_REG_mask.OR(STACK_OR_STACK_SLOTS_mask());
+
+  _INT_NO_RAX_RDX_REG_mask = _INT_REG_mask;
+  _INT_NO_RAX_RDX_REG_mask.Remove(OptoReg::as_OptoReg(rax->as_VMReg()));
+  _INT_NO_RAX_RDX_REG_mask.Remove(OptoReg::as_OptoReg(rdx->as_VMReg()));
+
+  _INT_NO_RCX_REG_mask = _INT_REG_mask;
+  _INT_NO_RCX_REG_mask.Remove(OptoReg::as_OptoReg(rcx->as_VMReg()));
+}
 
 static bool generate_vzeroupper(Compile* C) {
   return (VM_Version::supports_vzeroupper() && (C->max_vector_size() > 16 || C->clear_upper_avx() == true)) ? true: false;  // Generate vzeroupper
@@ -663,7 +547,7 @@ void emit_d32_reloc(CodeBuffer& cbuf, int d32, RelocationHolder const& rspec, in
   if (rspec.reloc()->type() == relocInfo::oop_type &&
       d32 != 0 && d32 != (intptr_t) Universe::non_oop_word()) {
     assert(Universe::heap()->is_in_reserved((address)(intptr_t)d32), "should be real oop");
-    assert(oopDesc::is_oop(cast_to_oop((intptr_t)d32)) && (ScavengeRootsInCode || !Universe::heap()->is_scavengable(cast_to_oop((intptr_t)d32))), "cannot embed scavengable oops in code");
+    assert(oopDesc::is_oop(cast_to_oop((intptr_t)d32)), "cannot embed broken oops in code");
   }
 #endif
   cbuf.relocate(cbuf.insts_mark(), rspec, format);
@@ -690,8 +574,7 @@ void emit_d64_reloc(CodeBuffer& cbuf, int64_t d64, RelocationHolder const& rspec
   if (rspec.reloc()->type() == relocInfo::oop_type &&
       d64 != 0 && d64 != (int64_t) Universe::non_oop_word()) {
     assert(Universe::heap()->is_in_reserved((address)d64), "should be real oop");
-    assert(oopDesc::is_oop(cast_to_oop(d64)) && (ScavengeRootsInCode || !Universe::heap()->is_scavengable(cast_to_oop(d64))),
-           "cannot embed scavengable oops in code");
+    assert(oopDesc::is_oop(cast_to_oop(d64)), "cannot embed broken oops in code");
   }
 #endif
   cbuf.relocate(cbuf.insts_mark(), rspec, format);
@@ -814,6 +697,87 @@ void emit_cmpfp3(MacroAssembler& _masm, Register dst) {
   __ bind(done);
 }
 
+// Math.min()    # Math.max()
+// --------------------------
+// ucomis[s/d]   #
+// ja   -> b     # a
+// jp   -> NaN   # NaN
+// jb   -> a     # b
+// je            #
+// |-jz -> a | b # a & b
+// |    -> a     #
+void emit_fp_min_max(MacroAssembler& _masm, XMMRegister dst,
+                     XMMRegister a, XMMRegister b,
+                     XMMRegister xmmt, Register rt,
+                     bool min, bool single) {
+
+  Label nan, zero, below, above, done;
+
+  if (single)
+    __ ucomiss(a, b);
+  else
+    __ ucomisd(a, b);
+
+  if (dst->encoding() != (min ? b : a)->encoding())
+    __ jccb(Assembler::above, above); // CF=0 & ZF=0
+  else
+    __ jccb(Assembler::above, done);
+
+  __ jccb(Assembler::parity, nan);  // PF=1
+  __ jccb(Assembler::below, below); // CF=1
+
+  // equal
+  __ vpxor(xmmt, xmmt, xmmt, Assembler::AVX_128bit);
+  if (single) {
+    __ ucomiss(a, xmmt);
+    __ jccb(Assembler::equal, zero);
+
+    __ movflt(dst, a);
+    __ jmp(done);
+  }
+  else {
+    __ ucomisd(a, xmmt);
+    __ jccb(Assembler::equal, zero);
+
+    __ movdbl(dst, a);
+    __ jmp(done);
+  }
+
+  __ bind(zero);
+  if (min)
+    __ vpor(dst, a, b, Assembler::AVX_128bit);
+  else
+    __ vpand(dst, a, b, Assembler::AVX_128bit);
+
+  __ jmp(done);
+
+  __ bind(above);
+  if (single)
+    __ movflt(dst, min ? b : a);
+  else
+    __ movdbl(dst, min ? b : a);
+
+  __ jmp(done);
+
+  __ bind(nan);
+  if (single) {
+    __ movl(rt, 0x7fc00000); // Float.NaN
+    __ movdl(dst, rt);
+  }
+  else {
+    __ mov64(rt, 0x7ff8000000000000L); // Double.NaN
+    __ movdq(dst, rt);
+  }
+  __ jmp(done);
+
+  __ bind(below);
+  if (single)
+    __ movflt(dst, min ? a : b);
+  else
+    __ movdbl(dst, min ? a : b);
+
+  __ bind(done);
+}
 
 //=============================================================================
 const RegMask& MachConstantBaseNode::_out_RegMask = RegMask::Empty;
@@ -3664,6 +3628,15 @@ operand regF() %{
 %}
 
 // Float register operands
+operand legRegF() %{
+   constraint(ALLOC_IN_RC(float_reg_legacy));
+   match(RegF);
+
+   format %{ %}
+   interface(REG_INTER);
+%}
+
+// Float register operands
 operand vlRegF() %{
    constraint(ALLOC_IN_RC(float_reg_vl));
    match(RegF);
@@ -3675,6 +3648,15 @@ operand vlRegF() %{
 // Double register operands
 operand regD() %{
    constraint(ALLOC_IN_RC(double_reg));
+   match(RegD);
+
+   format %{ %}
+   interface(REG_INTER);
+%}
+
+// Double register operands
+operand legRegD() %{
+   constraint(ALLOC_IN_RC(double_reg_legacy));
    match(RegD);
 
    format %{ %}
@@ -5420,9 +5402,29 @@ instruct MoveF2VL(vlRegF dst, regF src) %{
 %}
 
 // Load Float
+instruct MoveF2LEG(legRegF dst, regF src) %{
+  match(Set dst src);
+  format %{ "movss $dst,$src\t# if src != dst load float (4 bytes)" %}
+  ins_encode %{
+    __ movflt($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+// Load Float
 instruct MoveVL2F(regF dst, vlRegF src) %{
   match(Set dst src);
   format %{ "movss $dst,$src\t! load float (4 bytes)" %}
+  ins_encode %{
+    __ movflt($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+// Load Float
+instruct MoveLEG2F(regF dst, legRegF src) %{
+  match(Set dst src);
+  format %{ "movss $dst,$src\t# if src != dst load float (4 bytes)" %}
   ins_encode %{
     __ movflt($dst$$XMMRegister, $src$$XMMRegister);
   %}
@@ -5467,6 +5469,16 @@ instruct MoveD2VL(vlRegD dst, regD src) %{
 %}
 
 // Load Double
+instruct MoveD2LEG(legRegD dst, regD src) %{
+  match(Set dst src);
+  format %{ "movsd $dst,$src\t# if src != dst load double (8 bytes)" %}
+  ins_encode %{
+    __ movdbl($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+// Load Double
 instruct MoveVL2D(regD dst, vlRegD src) %{
   match(Set dst src);
   format %{ "movsd $dst,$src\t! load double (8 bytes)" %}
@@ -5474,6 +5486,167 @@ instruct MoveVL2D(regD dst, vlRegD src) %{
     __ movdbl($dst$$XMMRegister, $src$$XMMRegister);
   %}
   ins_pipe( fpu_reg_reg );
+%}
+
+// Load Double
+instruct MoveLEG2D(regD dst, legRegD src) %{
+  match(Set dst src);
+  format %{ "movsd $dst,$src\t# if src != dst load double (8 bytes)" %}
+  ins_encode %{
+    __ movdbl($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+// Following pseudo code describes the algorithm for max[FD]:
+// Min algorithm is on similar lines
+//  btmp = (b < +0.0) ? a : b
+//  atmp = (b < +0.0) ? b : a
+//  Tmp  = Max_Float(atmp , btmp)
+//  Res  = (atmp == NaN) ? atmp : Tmp
+
+// max = java.lang.Math.max(float a, float b)
+instruct maxF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp, legRegF atmp, legRegF btmp) %{
+  predicate(UseAVX > 0 && !n->is_reduction());
+  match(Set dst (MaxF a b));
+  effect(USE a, USE b, TEMP tmp, TEMP atmp, TEMP btmp);
+  format %{
+     "blendvps         $btmp,$b,$a,$b           \n\t"
+     "blendvps         $atmp,$a,$b,$b           \n\t"
+     "vmaxss           $tmp,$atmp,$btmp         \n\t"
+     "cmpps.unordered  $btmp,$atmp,$atmp        \n\t"
+     "blendvps         $dst,$tmp,$atmp,$btmp    \n\t"
+  %}
+  ins_encode %{
+    int vector_len = Assembler::AVX_128bit;
+    __ blendvps($btmp$$XMMRegister, $b$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, vector_len);
+    __ blendvps($atmp$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $b$$XMMRegister, vector_len);
+    __ vmaxss($tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister);
+    __ cmpps($btmp$$XMMRegister, $atmp$$XMMRegister, $atmp$$XMMRegister, Assembler::_false, vector_len);
+    __ blendvps($dst$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, vector_len);
+ %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct maxF_reduction_reg(regF dst, regF a, regF b, regF xmmt, rRegI tmp, rFlagsReg cr) %{
+  predicate(UseAVX > 0 && n->is_reduction());
+  match(Set dst (MaxF a b));
+  effect(USE a, USE b, TEMP xmmt, TEMP tmp, KILL cr);
+
+  format %{ "$dst = max($a, $b)\t# intrinsic (float)" %}
+  ins_encode %{
+    emit_fp_min_max(_masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xmmt$$XMMRegister, $tmp$$Register,
+                    false /*min*/, true /*single*/);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// max = java.lang.Math.max(double a, double b)
+instruct maxD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp, legRegD atmp, legRegD btmp) %{
+  predicate(UseAVX > 0 && !n->is_reduction());
+  match(Set dst (MaxD a b));
+  effect(USE a, USE b, TEMP atmp, TEMP btmp, TEMP tmp);
+  format %{
+     "blendvpd         $btmp,$b,$a,$b            \n\t"
+     "blendvpd         $atmp,$a,$b,$b            \n\t"
+     "vmaxsd           $tmp,$atmp,$btmp          \n\t"
+     "cmppd.unordered  $btmp,$atmp,$atmp         \n\t"
+     "blendvpd         $dst,$tmp,$atmp,$btmp     \n\t"
+  %}
+  ins_encode %{
+    int vector_len = Assembler::AVX_128bit;
+    __ blendvpd($btmp$$XMMRegister, $b$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, vector_len);
+    __ blendvpd($atmp$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $b$$XMMRegister, vector_len);
+    __ vmaxsd($tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister);
+    __ cmppd($btmp$$XMMRegister, $atmp$$XMMRegister, $atmp$$XMMRegister, Assembler::_false, vector_len);
+    __ blendvpd($dst$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct maxD_reduction_reg(regD dst, regD a, regD b, regD xmmt, rRegL tmp, rFlagsReg cr) %{
+  predicate(UseAVX > 0 && n->is_reduction());
+  match(Set dst (MaxD a b));
+  effect(USE a, USE b, TEMP xmmt, TEMP tmp, KILL cr);
+
+  format %{ "$dst = max($a, $b)\t# intrinsic (double)" %}
+  ins_encode %{
+    emit_fp_min_max(_masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xmmt$$XMMRegister, $tmp$$Register,
+                    false /*min*/, false /*single*/);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// min = java.lang.Math.min(float a, float b)
+instruct minF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp, legRegF atmp, legRegF btmp) %{
+  predicate(UseAVX > 0 && !n->is_reduction());
+  match(Set dst (MinF a b));
+  effect(USE a, USE b, TEMP tmp, TEMP atmp, TEMP btmp);
+  format %{
+     "blendvps         $atmp,$a,$b,$a             \n\t"
+     "blendvps         $btmp,$b,$a,$a             \n\t"
+     "vminss           $tmp,$atmp,$btmp           \n\t"
+     "cmpps.unordered  $btmp,$atmp,$atmp          \n\t"
+     "blendvps         $dst,$tmp,$atmp,$btmp      \n\t"
+  %}
+  ins_encode %{
+    int vector_len = Assembler::AVX_128bit;
+    __ blendvps($atmp$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $a$$XMMRegister, vector_len);
+    __ blendvps($btmp$$XMMRegister, $b$$XMMRegister, $a$$XMMRegister, $a$$XMMRegister, vector_len);
+    __ vminss($tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister);
+    __ cmpps($btmp$$XMMRegister, $atmp$$XMMRegister, $atmp$$XMMRegister, Assembler::_false, vector_len);
+    __ blendvps($dst$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct minF_reduction_reg(regF dst, regF a, regF b, regF xmmt, rRegI tmp, rFlagsReg cr) %{
+  predicate(UseAVX > 0 && n->is_reduction());
+  match(Set dst (MinF a b));
+  effect(USE a, USE b, TEMP xmmt, TEMP tmp, KILL cr);
+
+  format %{ "$dst = min($a, $b)\t# intrinsic (float)" %}
+  ins_encode %{
+    emit_fp_min_max(_masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xmmt$$XMMRegister, $tmp$$Register,
+                    true /*min*/, true /*single*/);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// min = java.lang.Math.min(double a, double b)
+instruct minD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp, legRegD atmp, legRegD btmp) %{
+  predicate(UseAVX > 0 && !n->is_reduction());
+  match(Set dst (MinD a b));
+  effect(USE a, USE b, TEMP tmp, TEMP atmp, TEMP btmp);
+  format %{
+     "blendvpd         $atmp,$a,$b,$a           \n\t"
+     "blendvpd         $btmp,$b,$a,$a           \n\t"
+     "vminsd           $tmp,$atmp,$btmp         \n\t"
+     "cmppd.unordered  $btmp,$atmp,$atmp        \n\t"
+     "blendvpd         $dst,$tmp,$atmp,$btmp    \n\t"
+  %}
+  ins_encode %{
+    int vector_len = Assembler::AVX_128bit;
+    __ blendvpd($atmp$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $a$$XMMRegister, vector_len);
+    __ blendvpd($btmp$$XMMRegister, $b$$XMMRegister, $a$$XMMRegister, $a$$XMMRegister, vector_len);
+    __ vminsd($tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister);
+    __ cmppd($btmp$$XMMRegister, $atmp$$XMMRegister, $atmp$$XMMRegister, Assembler::_false, vector_len);
+    __ blendvpd($dst$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct minD_reduction_reg(regD dst, regD a, regD b, regD xmmt, rRegL tmp, rFlagsReg cr) %{
+  predicate(UseAVX > 0 && n->is_reduction());
+  match(Set dst (MinD a b));
+  effect(USE a, USE b, TEMP xmmt, TEMP tmp, KILL cr);
+
+  format %{ "$dst = min($a, $b)\t# intrinsic (double)" %}
+  ins_encode %{
+    emit_fp_min_max(_masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xmmt$$XMMRegister, $tmp$$Register,
+                    true /*min*/, false /*single*/);
+  %}
+  ins_pipe( pipe_slow );
 %}
 
 // Load Effective Address
@@ -12709,170 +12882,6 @@ instruct RethrowException()
   format %{ "jmp     rethrow_stub" %}
   ins_encode(enc_rethrow);
   ins_pipe(pipe_jmp);
-%}
-
-//
-// Execute ZGC load barrier (strong) slow path
-//
-
-// For XMM and YMM enabled processors
-instruct loadBarrierSlowRegXmmAndYmm(rRegP dst, memory mem, rFlagsReg cr,
-                                     rxmm0 x0, rxmm1 x1, rxmm2 x2,rxmm3 x3,
-                                     rxmm4 x4, rxmm5 x5, rxmm6 x6, rxmm7 x7,
-                                     rxmm8 x8, rxmm9 x9, rxmm10 x10, rxmm11 x11,
-                                     rxmm12 x12, rxmm13 x13, rxmm14 x14, rxmm15 x15) %{
-
-  match(Set dst (LoadBarrierSlowReg mem));
-  predicate(UseAVX <= 2);
-
-  effect(DEF dst, KILL cr,
-         KILL x0, KILL x1, KILL x2, KILL x3,
-         KILL x4, KILL x5, KILL x6, KILL x7,
-         KILL x8, KILL x9, KILL x10, KILL x11,
-         KILL x12, KILL x13, KILL x14, KILL x15);
-
-  format %{"LoadBarrierSlowRegXmmAndYmm $dst, $mem" %}
-  ins_encode %{
-#if INCLUDE_ZGC
-    Register d = $dst$$Register;
-    ZBarrierSetAssembler* bs = (ZBarrierSetAssembler*)BarrierSet::barrier_set()->barrier_set_assembler();
-
-    assert(d != r12, "Can't be R12!");
-    assert(d != r15, "Can't be R15!");
-    assert(d != rsp, "Can't be RSP!");
-
-    __ lea(d, $mem$$Address);
-    __ call(RuntimeAddress(bs->load_barrier_slow_stub(d)));
-#else
-    ShouldNotReachHere();
-#endif
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-// For ZMM enabled processors
-instruct loadBarrierSlowRegZmm(rRegP dst, memory mem, rFlagsReg cr,
-                               rxmm0 x0, rxmm1 x1, rxmm2 x2,rxmm3 x3,
-                               rxmm4 x4, rxmm5 x5, rxmm6 x6, rxmm7 x7,
-                               rxmm8 x8, rxmm9 x9, rxmm10 x10, rxmm11 x11,
-                               rxmm12 x12, rxmm13 x13, rxmm14 x14, rxmm15 x15,
-                               rxmm16 x16, rxmm17 x17, rxmm18 x18, rxmm19 x19,
-                               rxmm20 x20, rxmm21 x21, rxmm22 x22, rxmm23 x23,
-                               rxmm24 x24, rxmm25 x25, rxmm26 x26, rxmm27 x27,
-                               rxmm28 x28, rxmm29 x29, rxmm30 x30, rxmm31 x31) %{
-
-  match(Set dst (LoadBarrierSlowReg mem));
-  predicate(UseAVX == 3);
-
-  effect(DEF dst, KILL cr,
-         KILL x0, KILL x1, KILL x2, KILL x3,
-         KILL x4, KILL x5, KILL x6, KILL x7,
-         KILL x8, KILL x9, KILL x10, KILL x11,
-         KILL x12, KILL x13, KILL x14, KILL x15,
-         KILL x16, KILL x17, KILL x18, KILL x19,
-         KILL x20, KILL x21, KILL x22, KILL x23,
-         KILL x24, KILL x25, KILL x26, KILL x27,
-         KILL x28, KILL x29, KILL x30, KILL x31);
-
-  format %{"LoadBarrierSlowRegZmm $dst, $mem" %}
-  ins_encode %{
-#if INCLUDE_ZGC
-    Register d = $dst$$Register;
-    ZBarrierSetAssembler* bs = (ZBarrierSetAssembler*)BarrierSet::barrier_set()->barrier_set_assembler();
-
-    assert(d != r12, "Can't be R12!");
-    assert(d != r15, "Can't be R15!");
-    assert(d != rsp, "Can't be RSP!");
-
-    __ lea(d, $mem$$Address);
-    __ call(RuntimeAddress(bs->load_barrier_slow_stub(d)));
-#else
-    ShouldNotReachHere();
-#endif
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-//
-// Execute ZGC load barrier (weak) slow path
-//
-
-// For XMM and YMM enabled processors
-instruct loadBarrierWeakSlowRegXmmAndYmm(rRegP dst, memory mem, rFlagsReg cr,
-                                         rxmm0 x0, rxmm1 x1, rxmm2 x2,rxmm3 x3,
-                                         rxmm4 x4, rxmm5 x5, rxmm6 x6, rxmm7 x7,
-                                         rxmm8 x8, rxmm9 x9, rxmm10 x10, rxmm11 x11,
-                                         rxmm12 x12, rxmm13 x13, rxmm14 x14, rxmm15 x15) %{
-
-  match(Set dst (LoadBarrierWeakSlowReg mem));
-  predicate(UseAVX <= 2);
-
-  effect(DEF dst, KILL cr,
-         KILL x0, KILL x1, KILL x2, KILL x3,
-         KILL x4, KILL x5, KILL x6, KILL x7,
-         KILL x8, KILL x9, KILL x10, KILL x11,
-         KILL x12, KILL x13, KILL x14, KILL x15);
-
-  format %{"LoadBarrierWeakSlowRegXmmAndYmm $dst, $mem" %}
-  ins_encode %{
-#if INCLUDE_ZGC
-    Register d = $dst$$Register;
-    ZBarrierSetAssembler* bs = (ZBarrierSetAssembler*)BarrierSet::barrier_set()->barrier_set_assembler();
-
-    assert(d != r12, "Can't be R12!");
-    assert(d != r15, "Can't be R15!");
-    assert(d != rsp, "Can't be RSP!");
-
-    __ lea(d,$mem$$Address);
-    __ call(RuntimeAddress(bs->load_barrier_weak_slow_stub(d)));
-#else
-    ShouldNotReachHere();
-#endif
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-// For ZMM enabled processors
-instruct loadBarrierWeakSlowRegZmm(rRegP dst, memory mem, rFlagsReg cr,
-                                   rxmm0 x0, rxmm1 x1, rxmm2 x2,rxmm3 x3,
-                                   rxmm4 x4, rxmm5 x5, rxmm6 x6, rxmm7 x7,
-                                   rxmm8 x8, rxmm9 x9, rxmm10 x10, rxmm11 x11,
-                                   rxmm12 x12, rxmm13 x13, rxmm14 x14, rxmm15 x15,
-                                   rxmm16 x16, rxmm17 x17, rxmm18 x18, rxmm19 x19,
-                                   rxmm20 x20, rxmm21 x21, rxmm22 x22, rxmm23 x23,
-                                   rxmm24 x24, rxmm25 x25, rxmm26 x26, rxmm27 x27,
-                                   rxmm28 x28, rxmm29 x29, rxmm30 x30, rxmm31 x31) %{
-
-  match(Set dst (LoadBarrierWeakSlowReg mem));
-  predicate(UseAVX == 3);
-
-  effect(DEF dst, KILL cr,
-         KILL x0, KILL x1, KILL x2, KILL x3,
-         KILL x4, KILL x5, KILL x6, KILL x7,
-         KILL x8, KILL x9, KILL x10, KILL x11,
-         KILL x12, KILL x13, KILL x14, KILL x15,
-         KILL x16, KILL x17, KILL x18, KILL x19,
-         KILL x20, KILL x21, KILL x22, KILL x23,
-         KILL x24, KILL x25, KILL x26, KILL x27,
-         KILL x28, KILL x29, KILL x30, KILL x31);
-
-  format %{"LoadBarrierWeakSlowRegZmm $dst, $mem" %}
-  ins_encode %{
-#if INCLUDE_ZGC
-    Register d = $dst$$Register;
-    ZBarrierSetAssembler* bs = (ZBarrierSetAssembler*)BarrierSet::barrier_set()->barrier_set_assembler();
-
-    assert(d != r12, "Can't be R12!");
-    assert(d != r15, "Can't be R15!");
-    assert(d != rsp, "Can't be RSP!");
-
-    __ lea(d,$mem$$Address);
-    __ call(RuntimeAddress(bs->load_barrier_weak_slow_stub(d)));
-#else
-    ShouldNotReachHere();
-#endif
-  %}
-  ins_pipe(pipe_slow);
 %}
 
 // ============================================================================

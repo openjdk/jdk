@@ -114,6 +114,7 @@ class ClassPathImageEntry: public ClassPathEntry {
 private:
   JImageFile* _jimage;
   const char* _name;
+  DEBUG_ONLY(static ClassPathImageEntry* _singleton;)
 public:
   bool is_modules_image() const;
   bool is_jar_file() const { return false; }
@@ -247,11 +248,11 @@ class ClassLoader: AllStatic {
 
   static void load_zip_library();
   static void load_jimage_library();
+
+ public:
   static ClassPathEntry* create_class_path_entry(const char *path, const struct stat* st,
                                                  bool throw_exception,
                                                  bool is_boot_append, TRAPS);
-
- public:
 
   // If the package for the fully qualified class name is in the boot
   // loader's package entry table then add_package() sets the classpath_index
@@ -438,8 +439,6 @@ class ClassLoader: AllStatic {
   // *bad_class_name is set to true if there's a problem with parsing class_name, to
   // distinguish from a class_name with no package name, as both cases have a NULL return value
   static const char* package_from_name(const char* const class_name, bool* bad_class_name = NULL);
-
-  static bool is_modules_image(const char* name) { return string_ends_with(name, MODULES_IMAGE_NAME); }
 
   // Debugging
   static void verify()              PRODUCT_RETURN;

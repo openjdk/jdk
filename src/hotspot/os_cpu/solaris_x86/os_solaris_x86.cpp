@@ -779,8 +779,8 @@ void os::print_context(outputStream *st, const void *context) {
   // this at the end, and hope for the best.
   ExtendedPC epc = os::Solaris::ucontext_get_ExtendedPC(uc);
   address pc = epc.pc();
-  st->print_cr("Instructions: (pc=" PTR_FORMAT ")", pc);
-  print_hex_dump(st, pc - 32, pc + 32, sizeof(char));
+  print_instructions(st, pc, sizeof(char));
+  st->cr();
 }
 
 void os::print_register_info(outputStream *st, const void *context) {

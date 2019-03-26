@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,36 +24,21 @@
 #ifndef SHARE_GC_Z_ZFORWARDINGTABLE_HPP
 #define SHARE_GC_Z_ZFORWARDINGTABLE_HPP
 
-#include "gc/z/zForwardingTableEntry.hpp"
-#include "memory/allocation.hpp"
+#include "gc/z/zGranuleMap.hpp"
 
-typedef size_t ZForwardingTableCursor;
+class ZForwarding;
 
 class ZForwardingTable {
-  friend class VMStructs;
-  friend class ZForwardingTableTest;
-
 private:
-  ZForwardingTableEntry* _table;
-  size_t                 _size;
-
-  ZForwardingTableEntry at(ZForwardingTableCursor* cursor) const;
-  ZForwardingTableEntry first(uintptr_t from_index, ZForwardingTableCursor* cursor) const;
-  ZForwardingTableEntry next(ZForwardingTableCursor* cursor) const;
+  ZGranuleMap<ZForwarding*> _map;
 
 public:
   ZForwardingTable();
-  ~ZForwardingTable();
 
-  bool is_null() const;
-  void setup(size_t live_objects);
-  void reset();
+  ZForwarding* get(uintptr_t addr) const;
 
-  ZForwardingTableEntry find(uintptr_t from_index) const;
-  ZForwardingTableEntry find(uintptr_t from_index, ZForwardingTableCursor* cursor) const;
-  uintptr_t insert(uintptr_t from_index, uintptr_t to_offset, ZForwardingTableCursor* cursor);
-
-  void verify(size_t object_max_count, size_t live_objects) const;
+  void insert(ZForwarding* forwarding);
+  void remove(ZForwarding* forwarding);
 };
 
 #endif // SHARE_GC_Z_ZFORWARDINGTABLE_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@ import java.io.OutputStream;
 import java.io.FileDescriptor;
 import java.util.Set;
 
+import sun.net.PlatformSocketImpl;
+
 /**
  * The abstract class {@code SocketImpl} is a common superclass
  * of all classes that actually implement sockets. It is used to
@@ -43,6 +45,15 @@ import java.util.Set;
  * @since   1.0
  */
 public abstract class SocketImpl implements SocketOptions {
+
+    /**
+     * Creates an instance of platform's SocketImpl
+     */
+    @SuppressWarnings("unchecked")
+    static <S extends SocketImpl & PlatformSocketImpl> S createPlatformSocketImpl(boolean server) {
+        return (S) new PlainSocketImpl();
+    }
+
     /**
      * The actual Socket object.
      */
@@ -178,6 +189,15 @@ public abstract class SocketImpl implements SocketOptions {
     protected abstract void close() throws IOException;
 
     /**
+     * Closes this socket, ignoring any IOException that is thrown by close.
+     */
+    void closeQuietly() {
+        try {
+            close();
+        } catch (IOException ignore) { }
+    }
+
+    /**
      * Places the input stream for this socket at "end of stream".
      * Any data sent to this socket is acknowledged and then
      * silently discarded.
@@ -306,7 +326,8 @@ public abstract class SocketImpl implements SocketOptions {
             ",port=" + getPort() + ",localport=" + getLocalPort()  + "]";
     }
 
-    void reset() throws IOException {
+    void reset() {
+        fd = null;
         address = null;
         port = 0;
         localport = 0;
@@ -441,6 +462,19 @@ public abstract class SocketImpl implements SocketOptions {
         } else {
             throw new UnsupportedOperationException("unsupported option");
         }
+    }
+
+    /**
+     * Attempts to copy socket options from this SocketImpl to a target SocketImpl.
+     * At this time, only the SO_TIMEOUT make sense to copy.
+     */
+    void copyOptionsTo(SocketImpl target) {
+        try {
+            Object timeout = getOption(SocketOptions.SO_TIMEOUT);
+            if (timeout instanceof Integer) {
+                target.setOption(SocketOptions.SO_TIMEOUT, timeout);
+            }
+        } catch (IOException ignore) { }
     }
 
     private static final Set<SocketOption<?>> socketOptions;

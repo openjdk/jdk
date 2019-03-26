@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,14 +37,18 @@
 #include "gc/z/c1/zBarrierSetC1.hpp"
 #endif // COMPILER1
 
-#undef __
-#define __ masm->
+ZBarrierSetAssembler::ZBarrierSetAssembler() :
+    _load_barrier_slow_stub(),
+    _load_barrier_weak_slow_stub() {}
 
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */
 #else
 #define BLOCK_COMMENT(str) __ block_comment(str)
 #endif
+
+#undef __
+#define __ masm->
 
 static void call_vm(MacroAssembler* masm,
                     address entry_point,
@@ -274,20 +278,21 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
 
   Register ref = stub->ref()->as_register();
   Register ref_addr = noreg;
+  Register tmp = noreg;
 
-  if (stub->ref_addr()->is_register()) {
-    // Address already in register
-    ref_addr = stub->ref_addr()->as_pointer_register();
-  } else {
+  if (stub->tmp()->is_valid()) {
     // Load address into tmp register
-    ce->leal(stub->ref_addr(), stub->tmp(), stub->patch_code(), stub->patch_info());
-    ref_addr = stub->tmp()->as_pointer_register();
+    ce->leal(stub->ref_addr(), stub->tmp());
+    ref_addr = tmp = stub->tmp()->as_pointer_register();
+  } else {
+    // Address already in register
+    ref_addr = stub->ref_addr()->as_address_ptr()->base()->as_pointer_register();
   }
 
   assert_different_registers(ref, ref_addr, noreg);
 
-  // Save rax unless it is the result register
-  if (ref != rax) {
+  // Save rax unless it is the result or tmp register
+  if (ref != rax && tmp != rax) {
     __ push(rax);
   }
 
@@ -301,9 +306,13 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
   // Verify result
   __ verify_oop(rax, "Bad oop");
 
-  // Restore rax unless it is the result register
+  // Move result into place
   if (ref != rax) {
     __ movptr(ref, rax);
+  }
+
+  // Restore rax unless it is the result or tmp register
+  if (ref != rax && tmp != rax) {
     __ pop(rax);
   }
 
@@ -350,7 +359,7 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_runtime_stub(StubAssembler* 
 // ZBarrierSetRuntime::load_barrier_on_weak_oop_field_preloaded().
 static address generate_load_barrier_stub(StubCodeGenerator* cgen, Register raddr, DecoratorSet decorators) {
   // Don't generate stub for invalid registers
-  if (raddr == rsp || raddr == r12 || raddr == r15) {
+  if (raddr == rsp || raddr == r15) {
     return NULL;
   }
 
@@ -460,4 +469,12 @@ static void barrier_stubs_init_inner(const char* label, const DecoratorSet decor
 void ZBarrierSetAssembler::barrier_stubs_init() {
   barrier_stubs_init_inner("zgc_load_barrier_stubs", ON_STRONG_OOP_REF, _load_barrier_slow_stub);
   barrier_stubs_init_inner("zgc_load_barrier_weak_stubs", ON_WEAK_OOP_REF, _load_barrier_weak_slow_stub);
+}
+
+address ZBarrierSetAssembler::load_barrier_slow_stub(Register reg) {
+  return _load_barrier_slow_stub[reg->encoding()];
+}
+
+address ZBarrierSetAssembler::load_barrier_weak_slow_stub(Register reg) {
+  return _load_barrier_weak_slow_stub[reg->encoding()];
 }

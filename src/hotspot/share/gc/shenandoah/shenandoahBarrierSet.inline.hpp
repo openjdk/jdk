@@ -58,7 +58,8 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_ato
     expected = res;
   } while ((! oopDesc::equals_raw(compare_value, expected)) && oopDesc::equals_raw(resolve_forwarded(compare_value), resolve_forwarded(expected)));
   if (oopDesc::equals_raw(expected, compare_value)) {
-    if (ShenandoahSATBBarrier && !CompressedOops::is_null(compare_value)) {
+    const bool keep_alive = (decorators & AS_NO_KEEPALIVE) == 0;
+    if (keep_alive && ShenandoahSATBBarrier && !CompressedOops::is_null(compare_value)) {
       ShenandoahBarrierSet::barrier_set()->enqueue(compare_value);
     }
   }
@@ -70,7 +71,8 @@ template <typename T>
 inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_atomic_xchg_in_heap(oop new_value, T* addr) {
   oop previous = Raw::oop_atomic_xchg(new_value, addr);
   if (ShenandoahSATBBarrier) {
-    if (!CompressedOops::is_null(previous)) {
+    const bool keep_alive = (decorators & AS_NO_KEEPALIVE) == 0;
+    if (keep_alive && !CompressedOops::is_null(previous)) {
       ShenandoahBarrierSet::barrier_set()->enqueue(previous);
     }
   }

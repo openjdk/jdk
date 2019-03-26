@@ -36,6 +36,7 @@ class DataLayout;
 class KlassClosure;
 class ClassLoaderData;
 class Symbol;
+class Metadata;
 
 // The following classes are C++ `closures` for iterating over objects, roots and spaces
 
@@ -122,6 +123,11 @@ class KlassClosure : public Closure {
 class CLDClosure : public Closure {
  public:
   virtual void do_cld(ClassLoaderData* cld) = 0;
+};
+
+class MetadataClosure : public Closure {
+ public:
+  virtual void do_metadata(Metadata* md) = 0;
 };
 
 
@@ -261,6 +267,11 @@ class MarkingCodeBlobClosure : public CodeBlobToOopClosure {
   // Called for each code blob, but at most once per unique blob.
 
   virtual void do_code_blob(CodeBlob* cb);
+};
+
+class NMethodClosure : public Closure {
+ public:
+  virtual void do_nmethod(nmethod* n) = 0;
 };
 
 // MonitorClosure is used for iterating over monitors in the monitors cache

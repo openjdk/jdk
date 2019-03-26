@@ -26,12 +26,12 @@ package org.graalvm.compiler.hotspot.test;
 
 import static java.util.Collections.singletonList;
 import static org.graalvm.compiler.core.CompilationWrapper.ExceptionAction.Print;
-import static org.graalvm.compiler.core.GraalCompilerOptions.CompilationBailoutAction;
+import static org.graalvm.compiler.core.GraalCompilerOptions.CompilationBailoutAsFailure;
 import static org.graalvm.compiler.core.GraalCompilerOptions.CompilationFailureAction;
 import static org.graalvm.compiler.core.test.ReflectionOptionDescriptors.extractEntries;
 import static org.graalvm.compiler.debug.MemUseTrackerKey.getCurrentThreadAllocatedBytes;
 import static org.graalvm.compiler.hotspot.test.CompileTheWorld.Options.DESCRIPTORS;
-import static org.graalvm.compiler.serviceprovider.GraalServices.Java8OrEarlier;
+import static org.graalvm.compiler.serviceprovider.JavaVersionUtil.Java8OrEarlier;
 
 import java.io.Closeable;
 import java.io.File;
@@ -90,7 +90,7 @@ import org.graalvm.compiler.options.OptionDescriptors;
 import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.options.OptionsParser;
-import org.graalvm.compiler.serviceprovider.GraalServices;
+import org.graalvm.compiler.serviceprovider.JavaVersionUtil;
 
 import jdk.vm.ci.hotspot.HotSpotCodeCacheProvider;
 import jdk.vm.ci.hotspot.HotSpotCompilationRequest;
@@ -110,7 +110,7 @@ public final class CompileTheWorld {
 
     /**
      * Magic token to denote that JDK classes are to be compiled. If
-     * {@link GraalServices#Java8OrEarlier}, then the classes in {@code rt.jar} are compiled.
+     * {@link JavaVersionUtil#Java8OrEarlier}, then the classes in {@code rt.jar} are compiled.
      * Otherwise the classes in the Java runtime image are compiled.
      */
     public static final String SUN_BOOT_CLASS_PATH = "sun.boot.class.path";
@@ -215,7 +215,7 @@ public final class CompileTheWorld {
         compilationOptionsCopy.putAll(compilationOptions);
 
         // We want to see stack traces when a method fails to compile
-        CompilationBailoutAction.putIfAbsent(compilationOptionsCopy, Print);
+        CompilationBailoutAsFailure.putIfAbsent(compilationOptionsCopy, true);
         CompilationFailureAction.putIfAbsent(compilationOptionsCopy, Print);
 
         // By default only report statistics for the CTW threads themselves

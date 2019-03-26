@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,11 +41,7 @@ import com.sun.tools.doclint.DocLint;
 
 import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.DocletEnvironment;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlVersion;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
-import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
@@ -53,7 +49,6 @@ import jdk.javadoc.internal.doclets.toolkit.WriterFactory;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
-import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 import static javax.tools.Diagnostic.Kind.*;
 
@@ -81,6 +76,11 @@ import static javax.tools.Diagnostic.Kind.*;
  * @author Bhavesh Patel (Modified)
  */
 public class HtmlConfiguration extends BaseConfiguration {
+
+    /**
+     * Default charset for HTML.
+     */
+    public static final String HTML_DEFAULT_CHARSET = "utf-8";
 
     /**
      * Argument for command line option "-header".
@@ -203,12 +203,6 @@ public class HtmlConfiguration extends BaseConfiguration {
     public boolean frames = false;
 
     /**
-     * This is the HTML version of the generated pages.
-     * The default value is determined later.
-     */
-    public HtmlVersion htmlVersion = null;
-
-    /**
      * Collected set of doclint options
      */
     public Map<Doclet.Option, String> doclintOpts = new LinkedHashMap<>();
@@ -245,6 +239,8 @@ public class HtmlConfiguration extends BaseConfiguration {
     protected final Messages messages;
 
     public DocPaths docPaths;
+
+    public Map<Element, List<DocPath>> localStylesheetMap = new HashMap<>();
 
     /**
      * Creates an object to hold the configuration for a doclet.
@@ -301,10 +297,6 @@ public class HtmlConfiguration extends BaseConfiguration {
         // check shared options
         if (!generalValidOptions()) {
             return false;
-        }
-
-        if (htmlVersion == null) {
-            htmlVersion = HtmlVersion.HTML5;
         }
 
         // check if helpfile exists
@@ -364,23 +356,8 @@ public class HtmlConfiguration extends BaseConfiguration {
         docPaths = new DocPaths(utils, useModuleDirectories);
         setCreateOverview();
         setTopFile(docEnv);
-        workArounds.initDocLint(doclintOpts.values(), tagletManager.getAllTagletNames(),
-                Utils.toLowerCase(htmlVersion.name()));
+        workArounds.initDocLint(doclintOpts.values(), tagletManager.getAllTagletNames());
         return true;
-    }
-
-    /**
-     * Return true if the generated output is HTML5.
-     */
-    public boolean isOutputHtml5() {
-        return htmlVersion == HtmlVersion.HTML5;
-    }
-
-    /**
-     * Return true if the tag is allowed for this specific version of HTML.
-     */
-    public boolean allowTag(HtmlTag htmlTag) {
-        return htmlTag.allowTag(this.htmlVersion);
     }
 
     /**
@@ -588,18 +565,9 @@ public class HtmlConfiguration extends BaseConfiguration {
                     return true;
                 }
             },
-            new Option(resources, "-html4") {
-                @Override
-                public boolean process(String opt,  List<String> args) {
-                    reporter.print(WARNING, resources.getText("doclet.HTML_4_specified", helpfile));
-                    htmlVersion = HtmlVersion.HTML4;
-                    return true;
-                }
-            },
             new Option(resources, "-html5") {
                 @Override
                 public boolean process(String opt,  List<String> args) {
-                    htmlVersion = HtmlVersion.HTML5;
                     return true;
                 }
             },
@@ -793,7 +761,7 @@ public class HtmlConfiguration extends BaseConfiguration {
     protected boolean finishOptionSettings0() throws DocletException {
         if (docencoding == null) {
             if (charset == null) {
-                docencoding = charset = (encoding == null) ? HtmlConstants.HTML_DEFAULT_CHARSET : encoding;
+                docencoding = charset = (encoding == null) ? HTML_DEFAULT_CHARSET : encoding;
             } else {
                 docencoding = charset;
             }

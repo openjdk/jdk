@@ -10,17 +10,37 @@
 
 /** */
 public class AccessibilityTest {
+    /**
+     * <h1> ... </h1>
+     */
+    public class Bad_H1 { }
+
+    /**
+     * <h3> ... </h3>
+     */
+    public class Missing_H2 { }
+
+    /**
+     * <h2> ... </h2>
+     * <h4> ... </h4>
+     */
+    public class Missing_H3 { }
 
     /**
      * <h2> ... </h2>
      */
-    public void missing_h1() { }
+    public void bad_h2() { }
 
     /**
-     * <h1> ... </h1>
-     * <h3> ... </h3>
+     * <h4> ... </h4>
      */
-    public void missing_h2() { }
+    public void missing_h3() { }
+
+    /**
+     * <h3> ... </h3>
+     * <h5> ... </h5>
+     */
+    public void missing_h4() { }
 
     /**
      * <img src="x.jpg">

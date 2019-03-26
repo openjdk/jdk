@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/stringTable.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageParState.inline.hpp"
-#include "gc/shared/weakProcessor.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/weakProcessorPhases.hpp"
 #include "gc/shared/weakProcessorPhaseTimes.hpp"
@@ -39,7 +39,17 @@ void WeakProcessor::weak_oops_do(BoolObjectClosure* is_alive, OopClosure* keep_a
     if (WeakProcessorPhases::is_serial(phase)) {
       WeakProcessorPhases::processor(phase)(is_alive, keep_alive);
     } else {
-      WeakProcessorPhases::oop_storage(phase)->weak_oops_do(is_alive, keep_alive);
+      if (WeakProcessorPhases::is_stringtable(phase)) {
+        StringTable::reset_dead_counter();
+
+        CountingSkippedIsAliveClosure<BoolObjectClosure, OopClosure> cl(is_alive, keep_alive);
+        WeakProcessorPhases::oop_storage(phase)->oops_do(&cl);
+
+        StringTable::inc_dead_counter(cl.num_dead() + cl.num_skipped());
+        StringTable::finish_dead_counter();
+      } else {
+        WeakProcessorPhases::oop_storage(phase)->weak_oops_do(is_alive, keep_alive);
+      }
     }
   }
 }
@@ -93,6 +103,7 @@ void WeakProcessor::Task::initialize() {
     OopStorage* storage = WeakProcessorPhases::oop_storage(phase);
     new (states++) StorageState(storage, _nworkers);
   }
+  StringTable::reset_dead_counter();
 }
 
 WeakProcessor::Task::Task(uint nworkers) :
@@ -122,6 +133,7 @@ WeakProcessor::Task::~Task() {
     }
     FREE_C_HEAP_ARRAY(StorageState, _storage_states);
   }
+  StringTable::finish_dead_counter();
 }
 
 void WeakProcessor::GangTask::work(uint worker_id) {

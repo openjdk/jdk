@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,8 +102,8 @@ public class SpaceUtilizationCheck {
                 }
             }
         }
-        if (checked.size() != 5) {
-          throw new RuntimeException("Must have 5 consecutive, fully utilized regions");
+        if (checked.size() != 4) {
+          throw new RuntimeException("Must have 4 consecutive, fully utilized regions");
         }
     }
 }

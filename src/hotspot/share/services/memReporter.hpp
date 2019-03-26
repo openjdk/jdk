@@ -230,7 +230,7 @@ class MemDetailDiffReporter : public MemSummaryDiffReporter {
   void diff_malloc_site(const NativeCallStack* stack, size_t current_size,
     size_t currrent_count, size_t early_size, size_t early_count, MEMFLAGS flags) const;
   void diff_virtual_memory_site(const NativeCallStack* stack, size_t current_reserved,
-    size_t current_committed, size_t early_reserved, size_t early_committed) const;
+    size_t current_committed, size_t early_reserved, size_t early_committed, MEMFLAGS flag) const;
 };
 
 #endif // INCLUDE_NMT

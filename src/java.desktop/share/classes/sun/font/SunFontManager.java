@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.swing.plaf.FontUIResource;
-import sun.awt.AppContext;
+
 import sun.awt.FontConfiguration;
 import sun.awt.SunToolkit;
 import sun.awt.util.ThreadGroupUtils;
@@ -254,11 +254,6 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
 
     public FilenameFilter getType1Filter() {
         return t1Filter;
-    }
-
-    @Override
-    public boolean usingPerAppContextComposites() {
-        return _usingPerAppContextComposites;
     }
 
     static {
@@ -1936,7 +1931,6 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
     public Font2D findFont2D(String name, int style, int fallback) {
         String lowerCaseName = name.toLowerCase(Locale.ENGLISH);
         String mapName = lowerCaseName + dotStyleStr(style);
-        Font2D font;
 
         /* If preferLocaleFonts() or preferProportionalFonts() has been
          * called we may be using an alternate set of composite fonts in this
@@ -1944,19 +1938,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
          * this is so, and gives access to the alternate composite for the
          * name.
          */
-        if (_usingPerAppContextComposites) {
-            @SuppressWarnings("unchecked")
-            ConcurrentHashMap<String, Font2D> altNameCache =
-                (ConcurrentHashMap<String, Font2D>)
-                AppContext.getAppContext().get(CompositeFont.class);
-            if (altNameCache != null) {
-                font = altNameCache.get(mapName);
-            } else {
-                font = null;
-            }
-        } else {
-            font = fontNameCache.get(mapName);
-        }
+        Font2D font = fontNameCache.get(mapName);
         if (font != null) {
             return font;
         }
@@ -2161,25 +2143,9 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
          * cache for these.
          */
 
-        if (fontsAreRegistered || fontsAreRegisteredPerAppContext) {
-            Hashtable<String, FontFamily> familyTable = null;
-            Hashtable<String, Font2D> nameTable;
-
-            if (fontsAreRegistered) {
-                familyTable = createdByFamilyName;
-                nameTable = createdByFullName;
-            } else {
-                AppContext appContext = AppContext.getAppContext();
-                @SuppressWarnings("unchecked")
-                Hashtable<String,FontFamily> tmp1 =
-                    (Hashtable<String,FontFamily>)appContext.get(regFamilyKey);
-                familyTable = tmp1;
-
-                @SuppressWarnings("unchecked")
-                Hashtable<String, Font2D> tmp2 =
-                    (Hashtable<String,Font2D>)appContext.get(regFullNameKey);
-                nameTable = tmp2;
-            }
+        if (fontsAreRegistered) {
+            Hashtable<String, FontFamily> familyTable = createdByFamilyName;
+            Hashtable<String, Font2D> nameTable = createdByFullName;
 
             family = familyTable.get(lowerCaseName);
             if (family != null) {
@@ -2684,9 +2650,6 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
      * Calling the methods below is "heavyweight" but it is expected that
      * these methods will be called very rarely.
      *
-     * If _usingPerAppContextComposites is true, we are in "applet"
-     * (eg browser) environment and at least one context has selected
-     * an alternate composite font behaviour.
      * If _usingAlternateComposites is true, we are not in an "applet"
      * environment and the (single) application has selected
      * an alternate composite font behaviour.
@@ -2698,21 +2661,13 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
      * but that may have to wait. The results should be correct, just not
      * optimal.
      */
-    private static final Object altJAFontKey       = new Object();
-    private static final Object localeFontKey       = new Object();
-    private static final Object proportionalFontKey = new Object();
-    private boolean _usingPerAppContextComposites = false;
     private boolean _usingAlternateComposites = false;
 
-    /* These values are used only if we are running as a standalone
-     * application, as determined by maybeMultiAppContext();
-     */
     private static boolean gAltJAFont = false;
     private boolean gLocalePref = false;
     private boolean gPropPref = false;
 
-    /* This method doesn't check if alternates are selected in this app
-     * context. Its used by the FontMetrics caching code which in such
+    /* Its used by the FontMetrics caching code which in such
      * a case cannot retrieve a cached metrics solely on the basis of
      * the Font.equals() method since it needs to also check if the Font2D
      * is the same.
@@ -2724,26 +2679,8 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
      * logical font definitions we may need to revisit this if GTK reports
      * combined metrics instead. For now though this test can be simple.
      */
-    public boolean maybeUsingAlternateCompositeFonts() {
-       return _usingAlternateComposites || _usingPerAppContextComposites;
-    }
-
     public boolean usingAlternateCompositeFonts() {
-        return (_usingAlternateComposites ||
-                (_usingPerAppContextComposites &&
-                AppContext.getAppContext().get(CompositeFont.class) != null));
-    }
-
-    private static boolean maybeMultiAppContext() {
-        Boolean appletSM = (Boolean)
-            java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<Object>() {
-                        public Object run() {
-                            SecurityManager sm = System.getSecurityManager();
-                            return sm instanceof sun.awt.AWTSecurityManager;
-                        }
-                    });
-        return appletSM.booleanValue();
+        return _usingAlternateComposites;
     }
 
     /* Modifies the behaviour of a subsequent call to preferLocaleFonts()
@@ -2758,22 +2695,11 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
         if (!FontUtilities.isWindows) {
             return;
         }
-
-        if (!maybeMultiAppContext()) {
-            gAltJAFont = true;
-        } else {
-            AppContext appContext = AppContext.getAppContext();
-            appContext.put(altJAFontKey, altJAFontKey);
-        }
+        gAltJAFont = true;
     }
 
     public boolean usingAlternateFontforJALocales() {
-        if (!maybeMultiAppContext()) {
-            return gAltJAFont;
-        } else {
-            AppContext appContext = AppContext.getAppContext();
-            return appContext.get(altJAFontKey) == altJAFontKey;
-        }
+        return gAltJAFont;
     }
 
     public synchronized void preferLocaleFonts() {
@@ -2784,29 +2710,12 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
         if (!FontConfiguration.willReorderForStartupLocale()) {
             return;
         }
-
-        if (!maybeMultiAppContext()) {
-            if (gLocalePref == true) {
-                return;
-            }
-            gLocalePref = true;
-            createCompositeFonts(fontNameCache, gLocalePref, gPropPref);
-            _usingAlternateComposites = true;
-        } else {
-            AppContext appContext = AppContext.getAppContext();
-            if (appContext.get(localeFontKey) == localeFontKey) {
-                return;
-            }
-            appContext.put(localeFontKey, localeFontKey);
-            boolean acPropPref =
-                appContext.get(proportionalFontKey) == proportionalFontKey;
-            ConcurrentHashMap<String, Font2D>
-                altNameCache = new ConcurrentHashMap<String, Font2D> ();
-            /* If there is an existing hashtable, we can drop it. */
-            appContext.put(CompositeFont.class, altNameCache);
-            _usingPerAppContextComposites = true;
-            createCompositeFonts(altNameCache, true, acPropPref);
+        if (gLocalePref == true) {
+            return;
         }
+        gLocalePref = true;
+        createCompositeFonts(fontNameCache, gLocalePref, gPropPref);
+        _usingAlternateComposites = true;
     }
 
     public synchronized void preferProportionalFonts() {
@@ -2820,29 +2729,12 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
         if (!FontConfiguration.hasMonoToPropMap()) {
             return;
         }
-
-        if (!maybeMultiAppContext()) {
-            if (gPropPref == true) {
-                return;
-            }
-            gPropPref = true;
-            createCompositeFonts(fontNameCache, gLocalePref, gPropPref);
-            _usingAlternateComposites = true;
-        } else {
-            AppContext appContext = AppContext.getAppContext();
-            if (appContext.get(proportionalFontKey) == proportionalFontKey) {
-                return;
-            }
-            appContext.put(proportionalFontKey, proportionalFontKey);
-            boolean acLocalePref =
-                appContext.get(localeFontKey) == localeFontKey;
-            ConcurrentHashMap<String, Font2D>
-                altNameCache = new ConcurrentHashMap<String, Font2D> ();
-            /* If there is an existing hashtable, we can drop it. */
-            appContext.put(CompositeFont.class, altNameCache);
-            _usingPerAppContextComposites = true;
-            createCompositeFonts(altNameCache, acLocalePref, true);
+        if (gPropPref == true) {
+            return;
         }
+        gPropPref = true;
+        createCompositeFonts(fontNameCache, gLocalePref, gPropPref);
+        _usingAlternateComposites = true;
     }
 
     private static HashSet<String> installedNames = null;
@@ -2865,13 +2757,10 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
         return installedNames;
     }
 
-    /* Keys are used to lookup per-AppContext Hashtables */
-    private static final Object regFamilyKey  = new Object();
-    private static final Object regFullNameKey = new Object();
+    private static final Object regFamilyLock  = new Object();
     private Hashtable<String,FontFamily> createdByFamilyName;
     private Hashtable<String,Font2D>     createdByFullName;
     private boolean fontsAreRegistered = false;
-    private boolean fontsAreRegisteredPerAppContext = false;
 
     public boolean registerFont(Font font) {
         /* This method should not be called with "null".
@@ -2882,7 +2771,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
         }
 
         /* Initialise these objects only once we start to use this API */
-        synchronized (regFamilyKey) {
+        synchronized (regFamilyLock) {
             if (createdByFamilyName == null) {
                 createdByFamilyName = new Hashtable<String,FontFamily>();
                 createdByFullName = new Hashtable<String,Font2D>();
@@ -2919,31 +2808,10 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
         }
 
         /* Checks passed, now register the font */
-        Hashtable<String,FontFamily> familyTable;
-        Hashtable<String,Font2D> fullNameTable;
-        if (!maybeMultiAppContext()) {
-            familyTable = createdByFamilyName;
-            fullNameTable = createdByFullName;
-            fontsAreRegistered = true;
-        } else {
-            AppContext appContext = AppContext.getAppContext();
-            @SuppressWarnings("unchecked")
-            Hashtable<String,FontFamily> tmp1 =
-                (Hashtable<String,FontFamily>)appContext.get(regFamilyKey);
-            familyTable = tmp1;
-            @SuppressWarnings("unchecked")
-            Hashtable<String,Font2D> tmp2 =
-                (Hashtable<String,Font2D>)appContext.get(regFullNameKey);
-            fullNameTable = tmp2;
+        Hashtable<String, FontFamily> familyTable = createdByFamilyName;
+        Hashtable<String, Font2D> fullNameTable = createdByFullName;
+        fontsAreRegistered = true;
 
-            if (familyTable == null) {
-                familyTable = new Hashtable<String,FontFamily>();
-                fullNameTable = new Hashtable<String,Font2D>();
-                appContext.put(regFamilyKey, familyTable);
-                appContext.put(regFullNameKey, fullNameTable);
-            }
-            fontsAreRegisteredPerAppContext = true;
-        }
         /* Create the FontFamily and add font to the tables */
         Font2D font2D = FontUtilities.getFont2D(font);
         int style = font2D.getStyle();
@@ -2989,12 +2857,6 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
         Hashtable<String,FontFamily> familyTable;
         if (fontsAreRegistered) {
             familyTable = createdByFamilyName;
-        } else if (fontsAreRegisteredPerAppContext) {
-            AppContext appContext = AppContext.getAppContext();
-            @SuppressWarnings("unchecked")
-            Hashtable<String,FontFamily> tmp =
-                (Hashtable<String,FontFamily>)appContext.get(regFamilyKey);
-            familyTable = tmp;
         } else {
             return null;
         }
@@ -3019,12 +2881,6 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
         Hashtable<String,Font2D> nameTable;
         if (fontsAreRegistered) {
             nameTable = createdByFullName;
-        } else if (fontsAreRegisteredPerAppContext) {
-            AppContext appContext = AppContext.getAppContext();
-            @SuppressWarnings("unchecked")
-            Hashtable<String,Font2D> tmp =
-                (Hashtable<String,Font2D>)appContext.get(regFullNameKey);
-            nameTable = tmp;
         } else {
             return null;
         }

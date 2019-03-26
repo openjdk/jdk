@@ -47,14 +47,17 @@ endif
 ifeq ($(call check-jvm-feature, zero), true)
   JVM_CFLAGS_FEATURES += -DZERO -DCC_INTERP -DZERO_LIBARCH='"$(OPENJDK_TARGET_CPU_LEGACY_LIB)"' $(LIBFFI_CFLAGS)
   JVM_LIBS_FEATURES += $(LIBFFI_LIBS)
-  ifeq ($(OPENJDK_TARGET_CPU), sparcv9)
+  ifeq ($(ENABLE_LIBFFI_BUNDLING), true)
+    JVM_LDFLAGS_FEATURES += $(call SET_EXECUTABLE_ORIGIN,/..)
+  endif
+  ifeq ($(call isTargetCpu, sparcv9), true)
     BUILD_LIBJVM_EXTRA_FILES := $(TOPDIR)/src/hotspot/cpu/sparc/memset_with_concurrent_readers_sparc.cpp
   endif
 endif
 
 ifeq ($(call check-jvm-feature, minimal), true)
   JVM_CFLAGS_FEATURES += -DMINIMAL_JVM -DVMTYPE=\"Minimal\"
-  ifeq ($(OPENJDK_TARGET_OS), linux)
+  ifeq ($(call isTargetOs, linux), true)
     # Override the default -g with a more liberal strip policy for the minimal JVM
     JVM_STRIPFLAGS := --strip-unneeded
   endif

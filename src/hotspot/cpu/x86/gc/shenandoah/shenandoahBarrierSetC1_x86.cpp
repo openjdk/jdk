@@ -28,19 +28,35 @@
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
 #include "gc/shenandoah/c1/shenandoahBarrierSetC1.hpp"
 
+#define __ masm->masm()->
+
 void LIR_OpShenandoahCompareAndSwap::emit_code(LIR_Assembler* masm) {
   Register addr = _addr->as_register_lo();
   Register newval = _new_value->as_register();
   Register cmpval = _cmp_value->as_register();
   Register tmp1 = _tmp1->as_register();
   Register tmp2 = _tmp2->as_register();
+  Register result = result_opr()->as_register();
   assert(cmpval == rax, "wrong register");
   assert(newval != NULL, "new val must be register");
   assert(cmpval != newval, "cmp and new values must be in different registers");
   assert(cmpval != addr, "cmp and addr must be in different registers");
   assert(newval != addr, "new value and addr must be in different registers");
-  ShenandoahBarrierSet::assembler()->cmpxchg_oop(masm->masm(), NULL, Address(addr, 0), cmpval, newval, true, true, tmp1, tmp2);
+
+  // Apply storeval barrier to newval.
+  ShenandoahBarrierSet::assembler()->storeval_barrier(masm->masm(), newval, tmp1);
+
+  if (UseCompressedOops) {
+    __ encode_heap_oop(cmpval);
+    __ mov(rscratch1, newval);
+    __ encode_heap_oop(rscratch1);
+    newval = rscratch1;
+  }
+
+  ShenandoahBarrierSet::assembler()->cmpxchg_oop(masm->masm(), result, Address(addr, 0), cmpval, newval, false, tmp1, tmp2);
 }
+
+#undef __
 
 #ifdef ASSERT
 #define __ gen->lir(__FILE__, __LINE__)->
@@ -63,12 +79,9 @@ LIR_Opr ShenandoahBarrierSetC1::atomic_cmpxchg_at_resolved(LIRAccess& access, LI
       LIR_Opr t1 = gen->new_register(T_OBJECT);
       LIR_Opr t2 = gen->new_register(T_OBJECT);
       LIR_Opr addr = access.resolved_addr()->as_address_ptr()->base();
-
-      __ append(new LIR_OpShenandoahCompareAndSwap(addr, cmp_value.result(), new_value.result(), t1, t2, LIR_OprFact::illegalOpr));
-
       LIR_Opr result = gen->new_register(T_INT);
-      __ cmove(lir_cond_equal, LIR_OprFact::intConst(1), LIR_OprFact::intConst(0),
-               result, T_INT);
+
+      __ append(new LIR_OpShenandoahCompareAndSwap(addr, cmp_value.result(), new_value.result(), t1, t2, result));
       return result;
     }
   }

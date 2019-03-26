@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,7 +131,7 @@ void G1YoungGenSizer::heap_size_changed(uint new_number_of_heap_regions) {
 }
 
 G1YoungGenSizer* G1YoungGenSizer::create_gen_sizer(G1CollectorPolicy* policy) {
-  if (policy->is_hetero_heap()) {
+  if (policy->is_heterogeneous_heap()) {
     return new G1HeterogeneousHeapYoungGenSizer();
   } else {
     return new G1YoungGenSizer();

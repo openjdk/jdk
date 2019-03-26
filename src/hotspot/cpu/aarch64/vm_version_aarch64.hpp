@@ -72,6 +72,7 @@ public:
     CPU_BROADCOM  = 'B',
     CPU_CAVIUM    = 'C',
     CPU_DEC       = 'D',
+    CPU_HISILICON = 'H',
     CPU_INFINEON  = 'I',
     CPU_MOTOROLA  = 'M',
     CPU_NVIDIA    = 'N',

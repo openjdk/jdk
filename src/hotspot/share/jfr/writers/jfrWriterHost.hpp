@@ -91,12 +91,12 @@ class WriterHost : public WriterPolicyImpl {
   void bytes(const void* buf, size_t len);
   void write_utf8_u2_len(const char* value);
   template <typename T>
-  void write_padded_at_offset(T value, intptr_t offset);
+  void write_padded_at_offset(T value, int64_t offset);
   template <typename T>
-  void write_at_offset(T value, intptr_t offset);
+  void write_at_offset(T value, int64_t offset);
   template <typename T>
-  void write_be_at_offset(T value, intptr_t offset);
-  intptr_t reserve(size_t size);
+  void write_be_at_offset(T value, int64_t offset);
+  int64_t reserve(size_t size);
 };
 
 #endif // SHARE_JFR_WRITERS_JFRWRITERHOST_HPP

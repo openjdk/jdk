@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,13 +43,7 @@ extern "C" {
 static jint redefineNumber = 0;
 static jvmtiEnv * jvmti = NULL;
 
-typedef enum {
-  suspend_error = -1,
-  not_suspended,
-  suspended
-} thread_suspend_status_t;
-
-static volatile thread_suspend_status_t thread_suspend_status = not_suspended;
+static volatile bool thread_suspend_error = false;
 
 void JNICALL callbackMethodExit(jvmtiEnv *jvmti_env,
                                 JNIEnv* jni_env,
@@ -75,10 +69,10 @@ void JNICALL callbackMethodExit(jvmtiEnv *jvmti_env,
                 nsk_printf("Agent::SUSPENDING>> \n");
                 err=jvmti_env->SuspendThread(thread);
                 if (err == JVMTI_ERROR_NONE) {
-                    thread_suspend_status = suspended;
-                    nsk_printf("Agent:: Thread successfully suspended..\n");
-                } else if (err == JVMTI_ERROR_THREAD_SUSPENDED) {
-                    thread_suspend_status = suspend_error;
+                  // we don't get here until we are resumed
+                    nsk_printf("Agent:: Thread successfully suspended and was resumed\n");
+                } else {
+                    thread_suspend_error = true;
                     nsk_printf(" ## Error occured %s \n",TranslateError(err));
                 }
             }
@@ -175,7 +169,6 @@ Java_nsk_jvmti_scenarios_hotswap_HS202_hs202t002_hs202t002_resumeThread(JNIEnv *
 
     err = jvmti->ResumeThread(thread);
     if (err == JVMTI_ERROR_NONE) {
-        thread_suspend_status = not_suspended;
         retvalue = JNI_TRUE;
         nsk_printf(" Agent:: Thread Resumed.. \n");
     } else {
@@ -189,13 +182,21 @@ JNIEXPORT jboolean JNICALL
 Java_nsk_jvmti_scenarios_hotswap_HS202_hs202t002_hs202t002_isThreadSuspended(JNIEnv* jni,
                                                                              jclass clas,
                                                                              jthread thread) {
-    if (suspend_error == thread_suspend_status) {
+    if (thread_suspend_error) {
         jclass ex_class = jni->FindClass("java/lang/IllegalThreadStateException");
         jni->ThrowNew(ex_class, "Thread has failed to self suspend");
         return JNI_FALSE;
     }
 
-    return suspended == thread_suspend_status;
+    // There is an inherent race here if the suspend fails for some reason but
+    // thread_suspend_error is not yet set. But as long as we report the suspend
+    // state correctly there is no problem as the Java code will simply loop and call
+    // this again until we see thread_suspend_error is true.
+
+    jint state = 0;
+    // No errors possible here: thread is valid, and state is not NULL
+    jvmti->GetThreadState(thread, &state);
+    return (state & JVMTI_THREAD_STATE_SUSPENDED) != 0;
 }
 
-}
+} // extern C

@@ -29,6 +29,8 @@
 
 // processor dependent initialization for i486
 
+LP64_ONLY(extern void reg_mask_init();)
+
 void Compile::pd_compiler2_init() {
   guarantee(CodeEntryAlignment >= InteriorEntryAlignment, "" );
   // QQQ presumably all 64bit cpu's support this. Seems like the ifdef could
@@ -58,4 +60,5 @@ void Compile::pd_compiler2_init() {
       OptoReg::invalidate(i);
     }
   }
+  LP64_ONLY(reg_mask_init();)
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -393,7 +393,11 @@ Node *ConvI2LNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     assert(rxlo == (int)rxlo && rxhi == (int)rxhi, "x should not overflow");
     assert(rylo == (int)rylo && ryhi == (int)ryhi, "y should not overflow");
     Node* cx = phase->C->constrained_convI2L(phase, x, TypeInt::make(rxlo, rxhi, widen), NULL);
+    Node *hook = new Node(1);
+    hook->init_req(0, cx);  // Add a use to cx to prevent him from dying
     Node* cy = phase->C->constrained_convI2L(phase, y, TypeInt::make(rylo, ryhi, widen), NULL);
+    hook->del_req(0);  // Just yank bogus edge
+    hook->destruct();
     switch (op) {
       case Op_AddI:  return new AddLNode(cx, cy);
       case Op_SubI:  return new SubLNode(cx, cy);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,13 +35,15 @@ import jdk.test.lib.security.SecurityUtils;
 
 /**
  * @test
- * @bug 8207258
+ * @bug 8207258 8216280
  * @summary Check that TLS Server certificates chaining back to distrusted
  *          Symantec roots are invalid
  * @library /test/lib
  * @modules java.base/sun.security.validator
- * @run main/othervm Distrust true
- * @run main/othervm Distrust false
+ * @run main/othervm Distrust after policyOn invalid
+ * @run main/othervm Distrust after policyOff valid
+ * @run main/othervm Distrust before policyOn valid
+ * @run main/othervm Distrust before policyOff valid
  */
 
 public class Distrust {
@@ -57,20 +59,51 @@ public class Distrust {
         "thawteprimaryrootcag3", "verisignclass3g3ca", "verisignclass3g4ca",
         "verisignclass3g5ca", "verisignuniversalrootca" };
 
+    // Each of the subCAs with a delayed distrust date have a test certificate
+    // chain stored in a file named "<subCA>-chain.pem".
+    private static String[] subCAsToTest = new String[] {
+        "appleistca2g1", "appleistca8g1" };
+
     // A date that is after the restrictions take affect
     private static final Date APRIL_17_2019 =
         Date.from(LocalDate.of(2019, 4, 17)
                            .atStartOfDay(ZoneOffset.UTC)
                            .toInstant());
 
+    // A date that is a second before the restrictions take affect
+    private static final Date BEFORE_APRIL_17_2019 =
+        Date.from(LocalDate.of(2019, 4, 17)
+                           .atStartOfDay(ZoneOffset.UTC)
+                           .minusSeconds(1)
+                           .toInstant());
+
+    // A date that is after the subCA restrictions take affect
+    private static final Date JANUARY_1_2020 =
+        Date.from(LocalDate.of(2020, 1, 1)
+                           .atStartOfDay(ZoneOffset.UTC)
+                           .toInstant());
+
+    // A date that is a second before the subCA restrictions take affect
+    private static final Date BEFORE_JANUARY_1_2020 =
+        Date.from(LocalDate.of(2020, 1, 1)
+                           .atStartOfDay(ZoneOffset.UTC)
+                           .minusSeconds(1)
+                           .toInstant());
+
     public static void main(String[] args) throws Exception {
 
         cf = CertificateFactory.getInstance("X.509");
-        boolean distrust = args[0].equals("true");
-        if (!distrust) {
-            // disable policy
+
+        boolean before = args[0].equals("before");
+        boolean policyOn = args[1].equals("policyOn");
+        boolean isValid = args[2].equals("valid");
+
+        if (!policyOn) {
+            // disable policy (default is on)
             Security.setProperty("jdk.security.caDistrustPolicies", "");
         }
+
+        Date notBefore = before ? BEFORE_APRIL_17_2019 : APRIL_17_2019;
 
         X509TrustManager pkixTM = getTMF("PKIX", null);
         X509TrustManager sunX509TM = getTMF("SunX509", null);
@@ -78,14 +111,15 @@ public class Distrust {
             System.err.println("Testing " + test);
             X509Certificate[] chain = loadCertificateChain(test);
 
-            testTM(sunX509TM, chain, !distrust);
-            testTM(pkixTM, chain, !distrust);
+            testTM(sunX509TM, chain, notBefore, isValid);
+            testTM(pkixTM, chain, notBefore, isValid);
         }
 
         // test chain if params are passed to TrustManager
         System.err.println("Testing verisignuniversalrootca with params");
         testTM(getTMF("PKIX", getParams()),
-               loadCertificateChain("verisignuniversalrootca"), !distrust);
+               loadCertificateChain("verisignuniversalrootca"),
+               notBefore, isValid);
 
         // test code-signing chain (should be valid as restrictions don't apply)
         System.err.println("Testing verisignclass3g5ca code-signing chain");
@@ -95,6 +129,16 @@ public class Distrust {
         // set validation date so this will still pass when cert expires
         v.setValidationDate(new Date(1544197375493l));
         v.validate(loadCertificateChain("verisignclass3g5ca-codesigning"));
+
+        // test chains issued through subCAs
+        notBefore = before ? BEFORE_JANUARY_1_2020 : JANUARY_1_2020;
+        for (String test : subCAsToTest) {
+            System.err.println("Testing " + test);
+            X509Certificate[] chain = loadCertificateChain(test);
+
+            testTM(sunX509TM, chain, notBefore, isValid);
+            testTM(pkixTM, chain, notBefore, isValid);
+        }
     }
 
     private static X509TrustManager getTMF(String type,
@@ -122,12 +166,13 @@ public class Distrust {
     }
 
     private static void testTM(X509TrustManager xtm, X509Certificate[] chain,
-                               boolean valid) throws Exception {
+                               Date notBefore, boolean valid) throws Exception {
         // Check if TLS Server certificate (the first element of the chain)
-        // is issued after April 16, 2019 (should be rejected unless distrust
-        // property is false). To do this, we need to fake the notBefore date
-        // since none of the test certs are issued after then.
-        chain[0] = new DistrustedTLSServerCert(chain[0], APRIL_17_2019);
+        // is issued after the specified notBefore date (should be rejected
+        // unless distrust property is false). To do this, we need to
+        // fake the notBefore date since none of the test certs are issued
+        // after then.
+        chain[0] = new DistrustedTLSServerCert(chain[0], notBefore);
 
         try {
             xtm.checkServerTrusted(chain, "ECDHE_RSA");

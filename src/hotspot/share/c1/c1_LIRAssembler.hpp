@@ -240,7 +240,7 @@ class LIR_Assembler: public CompilationResourceObj {
   void align_call(LIR_Code code);
 
   void negate(LIR_Opr left, LIR_Opr dest, LIR_Opr tmp = LIR_OprFact::illegalOpr);
-  void leal(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_code, CodeEmitInfo* info);
+  void leal(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_code = lir_patch_none, CodeEmitInfo* info = NULL);
 
   void rt_call(LIR_Opr result, address dest, const LIR_OprList* args, LIR_Opr tmp, CodeEmitInfo* info);
 

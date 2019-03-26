@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8133885
- * @summary monitorinflation=debug should have logging from each of the statements in the code
+ * @summary monitorinflation=trace should have logging from each of the statements in the code
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -37,8 +37,8 @@ import jdk.test.lib.process.ProcessTools;
 public class MonitorInflationTest {
     static void analyzeOutputOn(ProcessBuilder pb) throws Exception {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Inflating object");
-        output.shouldContain("type MonitorInflationTest$Waiter");
+        output.shouldContain("inflate(has_locker):");
+        output.shouldContain("type='MonitorInflationTest$Waiter'");
         output.shouldContain("I've been waiting.");
         output.shouldHaveExitValue(0);
     }
@@ -50,7 +50,7 @@ public class MonitorInflationTest {
     }
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:monitorinflation=debug",
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:monitorinflation=trace",
                                                                   InnerClass.class.getName());
         analyzeOutputOn(pb);
 

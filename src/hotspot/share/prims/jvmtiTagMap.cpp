@@ -28,7 +28,6 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "code/codeCache.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
@@ -3043,11 +3042,6 @@ inline bool VM_HeapWalkOperation::collect_simple_roots() {
   // exceptions) will be visible.
   blk.set_kind(JVMTI_HEAP_REFERENCE_OTHER);
   Universe::oops_do(&blk);
-
-  // If there are any non-perm roots in the code cache, visit them.
-  blk.set_kind(JVMTI_HEAP_REFERENCE_OTHER);
-  CodeBlobToOopClosure look_in_blobs(&blk, !CodeBlobToOopClosure::FixRelocations);
-  CodeCache::scavenge_root_nmethods_do(&look_in_blobs);
 
   return true;
 }

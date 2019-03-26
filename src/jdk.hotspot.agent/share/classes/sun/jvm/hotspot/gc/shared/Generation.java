@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,6 +184,7 @@ public abstract class Generation extends VMObject {
 
   /** Iteration - do not use for time critical operations */
   public abstract void spaceIterate(SpaceClosure blk, boolean usedOnly);
+  public abstract void liveRegionsIterate(LiveRegionsClosure closure);
 
   public void print() { printOn(System.out); }
   public abstract void printOn(PrintStream tty);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,7 +115,7 @@ public final class JulianFields {
      * the Julian Day value is validated against the range of valid values.
      * In {@linkplain ResolverStyle#LENIENT lenient mode} no validation occurs.
      *
-     * <h3>Astronomical and Scientific Notes</h3>
+     * <h4>Astronomical and Scientific Notes</h4>
      * The standard astronomical definition uses a fraction to indicate the time-of-day,
      * where each day is counted from midday to midday. For example,
      * a fraction of 0 represents midday, a fraction of 0.25
@@ -169,7 +169,7 @@ public final class JulianFields {
      * the Modified Julian Day value is validated against the range of valid values.
      * In {@linkplain ResolverStyle#LENIENT lenient mode} no validation occurs.
      *
-     * <h3>Astronomical and Scientific Notes</h3>
+     * <h4>Astronomical and Scientific Notes</h4>
      * <pre>
      *  | ISO date          | Modified Julian Day |      Decimal MJD |
      *  | 1970-01-01T00:00  |             40,587  |       40,587.0   |

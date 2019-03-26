@@ -1167,8 +1167,15 @@ jceks.key.serialFilter = java.base/java.lang.Enum;java.base/java.security.KeyRep
 # of which represents a policy for determining if a CA should be distrusted.
 # The supported values are:
 #
-# SYMANTEC_TLS : Distrust TLS Server certificates anchored by
-#                a Symantec root CA and issued after April 16, 2019.
+#   SYMANTEC_TLS : Distrust TLS Server certificates anchored by a Symantec
+#   root CA and issued after April 16, 2019 unless issued by one of the
+#   following subordinate CAs which have a later distrust date:
+#     1. Apple IST CA 2 - G1, SHA-256 fingerprint:
+#        AC2B922ECFD5E01711772FEA8ED372DE9D1E2245FCE3F57A9CDBEC77296A424B
+#        Distrust after December 31, 2019.
+#     2. Apple IST CA 8 - G1, SHA-256 fingerprint:
+#        A4FE7C7F15155F3F0AEF7AAA83CF6E06DEB97CA3F909DF920AC1490882D488ED
+#        Distrust after December 31, 2019.
 #
 # Leading and trailing whitespace surrounding each value are ignored.
 # Unknown values are ignored. If the property is commented out or set to the

@@ -46,29 +46,25 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
  * @author Bhavesh Patel
  */
 public class HtmlDocument {
-    private final DocType docType;
+    private final DocType docType = DocType.HTML5;
     private final List<Content> docContent;
 
     /**
      * Constructor to construct an HTML document.
      *
-     * @param docType document type for the HTML document
      * @param docComment comment for the document
      * @param htmlTree HTML tree of the document
      */
-    public HtmlDocument(DocType docType, Content docComment, Content htmlTree) {
-        this.docType = docType;
+    public HtmlDocument(Content docComment, Content htmlTree) {
         docContent = Arrays.asList(docComment, htmlTree);
     }
 
     /**
      * Constructor to construct an HTML document.
      *
-     * @param docType document type for the HTML document
      * @param htmlTree HTML tree of the document
      */
-    public HtmlDocument(DocType docType, Content htmlTree) {
-        this.docType = docType;
+    public HtmlDocument(Content htmlTree) {
         docContent = Collections.singletonList(htmlTree);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,28 +26,27 @@
 package sun.awt;
 
 import java.awt.AWTPermission;
-import java.awt.GraphicsDevice;
-import java.awt.GraphicsConfiguration;
-import java.awt.GraphicsEnvironment;
 import java.awt.DisplayMode;
 import java.awt.EventQueue;
 import java.awt.Frame;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
 import java.awt.Rectangle;
 import java.awt.Window;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.awt.geom.Point2D;
 import java.awt.image.ColorModel;
+import java.awt.peer.WindowPeer;
 import java.util.ArrayList;
 import java.util.Vector;
-import java.awt.peer.WindowPeer;
-import java.security.AccessController;
+
 import sun.awt.windows.WWindowPeer;
 import sun.java2d.SunGraphicsEnvironment;
 import sun.java2d.opengl.WGLGraphicsConfig;
 import sun.java2d.windows.WindowsFlags;
-import sun.security.action.GetPropertyAction;
+
 import static sun.awt.Win32GraphicsEnvironment.debugScaleX;
 import static sun.awt.Win32GraphicsEnvironment.debugScaleY;
 
@@ -131,6 +130,7 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
      * @see #TYPE_PRINTER
      * @see #TYPE_IMAGE_BUFFER
      */
+    @Override
     public int getType() {
         return TYPE_RASTER_SCREEN;
     }
@@ -189,6 +189,7 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
      * Returns the identification string associated with this graphics
      * device.
      */
+    @Override
     public String getIDstring() {
         return idString;
     }
@@ -198,6 +199,7 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
      * Returns all of the graphics
      * configurations associated with this graphics device.
      */
+    @Override
     public GraphicsConfiguration[] getConfigurations() {
         if (configs==null) {
             if (WindowsFlags.isOGLEnabled() && isDefaultDevice()) {
@@ -290,6 +292,7 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
      * Returns the default graphics configuration
      * associated with this graphics device.
      */
+    @Override
     public GraphicsConfiguration getDefaultConfiguration() {
         if (defaultConfig == null) {
             // first try to create a WGLGraphicsConfig if OGL is enabled
@@ -329,6 +332,7 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
         return defaultConfig;
     }
 
+    @Override
     public String toString() {
         return valid ? descString + "]" : descString + ", removed]";
     }
@@ -519,6 +523,7 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
      * Called from Win32GraphicsEnvironment when the display settings have
      * changed.
      */
+    @Override
     public void displayChanged() {
         dynamicColorModel = null;
         defaultConfig = null;
@@ -532,6 +537,7 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
      * Part of the DisplayChangedListener interface: devices
      * do not need to react to this event
      */
+    @Override
     public void paletteChanged() {
     }
 
@@ -659,6 +665,7 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
         // Fix for 6709453. Using invokeLater to avoid listening
         // for the events already posted to the queue.
         EventQueue.invokeLater(new Runnable() {
+            @Override
             public void run() {
                 w.addWindowListener(fsWindowListener);
             }

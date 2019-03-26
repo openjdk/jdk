@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -329,12 +329,13 @@ public abstract class Handler {
      * handler from logging the {@code LogRecord}. It will return false if
      * the {@code LogRecord} is null.
      *
-     * @param record  a {@code LogRecord}
+     * @param record  a {@code LogRecord} (may be null).
      * @return true if the {@code LogRecord} would be logged.
      *
      */
     public boolean isLoggable(LogRecord record) {
         final int levelValue = getLevel().intValue();
+        if (record == null) return false;
         if (record.getLevel().intValue() < levelValue || levelValue == offValue) {
             return false;
         }

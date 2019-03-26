@@ -40,8 +40,8 @@ environment variable to point to the JTReg home before running `configure`.)
 
 To be able to run microbenchmarks, `configure` needs to know where to find
 the JMH dependency. Use `--with-jmh=<path to JMH jars>` to point to a directory
-containing the core JMH and transitive dependencies. The recommended dependencies 
-can be retrieved by running `sh make/devkit/createJMHBundle.sh`, after which 
+containing the core JMH and transitive dependencies. The recommended dependencies
+can be retrieved by running `sh make/devkit/createJMHBundle.sh`, after which
 `--with-jmh=build/jmh/jars` should work.
 
 ## Test selection
@@ -202,16 +202,61 @@ proper quoting of command line arguments through.)
 As far as possible, the names of the keywords have been standardized between
 test suites.
 
+### General keywords (TEST_OPTS)
+
+Some keywords are valid across different test suites. If you want to run
+tests from multiple test suites, or just don't want to care which test suite specific
+control variable to use, then you can use the general TEST_OPTS control variable.
+
+There are also some keywords that applies globally to the test runner system,
+not to any specific test suites. These are also available as TEST_OPTS keywords.
+
+#### JOBS
+
+Currently only applies to JTReg.
+
+#### TIMEOUT_FACTOR
+
+Currently only applies to JTReg.
+
+#### VM_OPTIONS
+
+Applies to JTReg, GTest and Micro.
+
+#### JAVA_OPTIONS
+
+Applies to JTReg, GTest and Micro.
+
+#### AOT_MODULES
+
+Applies to JTReg and GTest.
+
+#### JCOV
+
+This keywords applies globally to the test runner system. If set to `true`, it
+enables JCov coverage reporting for all tests run. To be useful, the JDK under
+test must be run with a JDK built with JCov instrumentation (`configure
+--with-jcov=<path to directory containing lib/jcov.jar>`, `make jcov-image`).
+
+The simplest way to run tests with JCov coverage report is to use the special
+target `jcov-test` instead of `test`, e.g. `make jcov-test TEST=jdk_lang`. This
+will make sure the JCov image is built, and that JCov reporting is enabled.
+
+The JCov report is stored in `build/$BUILD/test-results/jcov-output`.
+
+Please note that running with JCov reporting can be very memory intensive.
+
 ### JTReg keywords
 
 #### JOBS
 The test concurrency (`-concurrency`).
 
 Defaults to TEST_JOBS (if set by `--with-test-jobs=`), otherwise it defaults to
-JOBS, except for Hotspot, where the default is *number of CPU cores/2*, but
-never more than 12.
+JOBS, except for Hotspot, where the default is *number of CPU cores/2* (for
+sparc, if more than 16 cpus, then *number of CPU cores/5*, otherwise *number of
+CPU cores/4*), but never more than *memory size in GB/2*.
 
-#### TIMEOUT
+#### TIMEOUT_FACTOR
 The timeout factor (`-timeoutFactor`).
 
 Defaults to 4.
@@ -245,6 +290,24 @@ to disable the limits.
 
 Defaults to 512m, except for hotspot, where it defaults to 0 (no limit).
 
+#### KEYWORDS
+
+JTReg kewords sent to JTReg using `-k`. Please be careful in making sure that
+spaces and special characters (like `!`) are properly quoted. To avoid some
+issues, the special value `%20` can be used instead of space.
+
+#### EXTRA_PROBLEM_LISTS
+
+Use additional problem lists file or files, in addition to the default
+ProblemList.txt located at the JTReg test roots.
+
+If multiple file names are specified, they should be separated by space (or, to
+help avoid quoting issues, the special value `%20`).
+
+The file names should be either absolute, or relative to the JTReg test root of
+the tests to be run.
+
+
 #### OPTIONS
 Additional options to the JTReg test framework.
 
@@ -255,6 +318,12 @@ Additional Java options to JTReg (`-javaoption`).
 
 #### VM_OPTIONS
 Additional VM options to JTReg (`-vmoption`).
+
+#### AOT_MODULES
+
+Generate AOT modules before testing for the specified module, or set of
+modules. If multiple modules are specified, they should be separated by space
+(or, to help avoid quoting issues, the special value `%20`).
 
 ### Gtest keywords
 
@@ -269,6 +338,12 @@ problem.
 Additional options to the Gtest test framework.
 
 Use `GTEST="OPTIONS=--help"` to see all available Gtest options.
+
+#### AOT_MODULES
+
+Generate AOT modules before testing for the specified module, or set of
+modules. If multiple modules are specified, they should be separated by space
+(or, to help avoid quoting issues, the special value `%20`).
 
 ### Microbenchmark keywords
 

@@ -61,7 +61,7 @@ TARGETS += $(BUILD_FAILURE_HANDLER)
 
 ################################################################################
 
-ifeq ($(OPENJDK_TARGET_OS), windows)
+ifeq ($(call isTargetOs, windows), true)
 
   $(eval $(call SetupNativeCompilation, BUILD_LIBTIMEOUT_HANDLER, \
         NAME := timeoutHandler, \
@@ -99,7 +99,7 @@ IMAGES_TARGETS += $(COPY_FH)
 #
 RUN_DIR := $(FH_SUPPORT)/test
 # Add the dir of the dll to the path on windows
-ifeq ($(OPENJDK_TARGET_OS), windows)
+ifeq ($(call isTargetOs, windows), true)
   export PATH := $(PATH);$(FH_SUPPORT)
 endif
 

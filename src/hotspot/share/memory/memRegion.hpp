@@ -34,11 +34,11 @@
 
 // Note that MemRegions are passed by value, not by reference.
 // The intent is that they remain very small and contain no
-// objects. These should never be allocated in heap but we do
+// objects. The copy constructor and destructor must be trivial,
+// to support optimization for pass-by-value.
+// These should never be allocated in heap but we do
 // create MemRegions (in CardTableBarrierSet) in heap so operator
 // new and operator new [] added for this special case.
-
-class MetaWord;
 
 class MemRegion {
   friend class VMStructs;
@@ -58,8 +58,6 @@ public:
     _start((HeapWord*)start), _word_size(pointer_delta(end, start)) {
     assert(end >= start, "incorrect constructor arguments");
   }
-
-  MemRegion(const MemRegion& mr): _start(mr._start), _word_size(mr._word_size) {}
 
   MemRegion intersection(const MemRegion mr2) const;
   // regions must overlap or be adjacent

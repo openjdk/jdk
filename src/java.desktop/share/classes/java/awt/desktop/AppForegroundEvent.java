@@ -35,11 +35,13 @@ import java.awt.HeadlessException;
  *
  * @see AppForegroundListener#appRaisedToForeground(AppForegroundEvent)
  * @see AppForegroundListener#appMovedToBackground(AppForegroundEvent)
- *
  * @since 9
  */
 public final class AppForegroundEvent extends AppEvent {
 
+    /**
+     * Use serialVersionUID from JDK 9 for interoperability.
+     */
     private static final long serialVersionUID = -5513582555740533911L;
 
     /**

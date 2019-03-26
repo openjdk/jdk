@@ -45,7 +45,6 @@ void CardTableBarrierSetC1::post_barrier(LIRAccess& access, LIR_OprDesc* addr, L
   BarrierSet* bs = BarrierSet::barrier_set();
   CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
   CardTable* ct = ctbs->card_table();
-  assert(sizeof(*(ct->byte_map_base())) == sizeof(jbyte), "adjust this code");
   LIR_Const* card_table_base = new LIR_Const(ct->byte_map_base());
   if (addr->is_address()) {
     LIR_Address* address = addr->as_address_ptr();

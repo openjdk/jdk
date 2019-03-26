@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ final class P11KeyPairGenerator extends KeyPairGeneratorSpi {
     private BigInteger rsaPublicExponent = RSAKeyGenParameterSpec.F4;
 
     // the supported keysize range of the native PKCS11 library
-    // if the value cannot be retrieved or unspecified, -1 is used.
+    // if mechanism info is unavailable, 0/Integer.MAX_VALUE is used
     private final int minKeySize;
     private final int maxKeySize;
 
@@ -83,13 +83,13 @@ final class P11KeyPairGenerator extends KeyPairGeneratorSpi {
     P11KeyPairGenerator(Token token, String algorithm, long mechanism)
             throws PKCS11Exception {
         super();
-        int minKeyLen = -1;
-        int maxKeyLen = -1;
+        int minKeyLen = 0;
+        int maxKeyLen = Integer.MAX_VALUE;
         try {
             CK_MECHANISM_INFO mechInfo = token.getMechanismInfo(mechanism);
             if (mechInfo != null) {
-                minKeyLen = (int) mechInfo.ulMinKeySize;
-                maxKeyLen = (int) mechInfo.ulMaxKeySize;
+                minKeyLen = mechInfo.iMinKeySize;
+                maxKeyLen = mechInfo.iMaxKeySize;
             }
         } catch (PKCS11Exception p11e) {
             // Should never happen
@@ -101,10 +101,10 @@ final class P11KeyPairGenerator extends KeyPairGeneratorSpi {
         // override upper limit to deter DOS attack
         if (algorithm.equals("EC")) {
             keySize = DEF_EC_KEY_SIZE;
-            if ((minKeyLen == -1) || (minKeyLen < 112)) {
+            if (minKeyLen < 112) {
                 minKeyLen = 112;
             }
-            if ((maxKeyLen == -1) || (maxKeyLen > 2048)) {
+            if (maxKeyLen > 2048) {
                 maxKeyLen = 2048;
             }
         } else {
@@ -112,24 +112,22 @@ final class P11KeyPairGenerator extends KeyPairGeneratorSpi {
                 keySize = DEF_DSA_KEY_SIZE;
             } else if (algorithm.equals("RSA")) {
                 keySize = DEF_RSA_KEY_SIZE;
+                if (maxKeyLen > 64 * 1024) {
+                    maxKeyLen = 64 * 1024;
+                }
             } else {
                 keySize = DEF_DH_KEY_SIZE;
             }
-            if ((minKeyLen == -1) || (minKeyLen < 512)) {
+            if (minKeyLen < 512) {
                 minKeyLen = 512;
-            }
-            if (algorithm.equals("RSA")) {
-                if ((maxKeyLen == -1) || (maxKeyLen > 64 * 1024)) {
-                    maxKeyLen = 64 * 1024;
-                }
             }
         }
 
         // auto-adjust default keysize in case it's out-of-range
-        if ((minKeyLen != -1) && (keySize < minKeyLen)) {
+        if (keySize < minKeyLen) {
             keySize = minKeyLen;
         }
-        if ((maxKeyLen != -1) && (keySize > maxKeyLen)) {
+        if (keySize > maxKeyLen) {
             keySize = maxKeyLen;
         }
         this.token = token;
@@ -233,13 +231,17 @@ final class P11KeyPairGenerator extends KeyPairGeneratorSpi {
 
     private void checkKeySize(int keySize, AlgorithmParameterSpec params)
         throws InvalidAlgorithmParameterException {
+        if (keySize <= 0) {
+            throw new InvalidAlgorithmParameterException
+                    ("key size must be positive, got " + keySize);
+        }
         // check native range first
-        if ((minKeySize != -1) && (keySize < minKeySize)) {
+        if (keySize < minKeySize) {
             throw new InvalidAlgorithmParameterException(algorithm +
                 " key must be at least " + minKeySize + " bits. " +
                 "The specific key size " + keySize + " is not supported");
         }
-        if ((maxKeySize != -1) && (keySize > maxKeySize)) {
+        if (keySize > maxKeySize) {
             throw new InvalidAlgorithmParameterException(algorithm +
                 " key must be at most " + maxKeySize + " bits. " +
                 "The specific key size " + keySize + " is not supported");
@@ -272,12 +274,8 @@ final class P11KeyPairGenerator extends KeyPairGeneratorSpi {
                         ((RSAKeyGenParameterSpec)params).getPublicExponent();
                 }
                 try {
-                    // Reuse the checking in SunRsaSign provider.
-                    // If maxKeySize is -1, then replace it with
-                    // Integer.MAX_VALUE to indicate no limit.
                     RSAKeyFactory.checkKeyLengths(keySize, tmpExponent,
-                        minKeySize,
-                        (maxKeySize==-1? Integer.MAX_VALUE:maxKeySize));
+                        minKeySize, maxKeySize);
                 } catch (InvalidKeyException e) {
                     throw new InvalidAlgorithmParameterException(e);
                 }

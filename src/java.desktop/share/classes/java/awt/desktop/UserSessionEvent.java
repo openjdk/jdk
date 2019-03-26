@@ -30,19 +30,23 @@ import java.awt.GraphicsEnvironment;
 import java.awt.HeadlessException;
 
 /**
- * Event sent when the user session has been changed.
- *
- * Some systems may provide a reason of a user session change.
+ * Event sent when the user session has been changed. Some systems may provide a
+ * reason of a user session change.
  *
  * @see UserSessionListener#userSessionActivated(UserSessionEvent)
  * @see UserSessionListener#userSessionDeactivated(UserSessionEvent)
- *
  * @since 9
  */
 public final class UserSessionEvent extends AppEvent {
 
+    /**
+     * Use serialVersionUID from JDK 9 for interoperability.
+     */
     private static final long serialVersionUID = 6747138462796569055L;
 
+    /**
+     * The reason of the user session change.
+     */
     private final Reason reason;
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,7 +140,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *   // -&gt; s == "Duke's Birthday: May 23, 1995"
  * </pre></blockquote>
  *
- * <h3><a id="org">Organization</a></h3>
+ * <h2><a id="org">Organization</a></h2>
  *
  * <p> This specification is divided into two sections.  The first section, <a
  * href="#summary">Summary</a>, covers the basic formatting concepts.  This
@@ -150,13 +150,13 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * details.  It is intended for users who want more precise specification of
  * formatting behavior.
  *
- * <h3><a id="summary">Summary</a></h3>
+ * <h2><a id="summary">Summary</a></h2>
  *
  * <p> This section is intended to provide a brief overview of formatting
  * concepts.  For precise behavioral details, refer to the <a
  * href="#detail">Details</a> section.
  *
- * <h4><a id="syntax">Format String Syntax</a></h4>
+ * <h3><a id="syntax">Format String Syntax</a></h3>
  *
  * <p> Every method which produces formatted output requires a <i>format
  * string</i> and an <i>argument list</i>.  The format string is a {@link
@@ -236,7 +236,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *
  * </ul>
  *
- * <h4> Conversions </h4>
+ * <h3> Conversions </h3>
  *
  * <p> Conversions are divided into the following categories:
  *
@@ -376,7 +376,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * <p> Any characters not explicitly defined as conversions are illegal and are
  * reserved for future extensions.
  *
- * <h4><a id="dt">Date/Time Conversions</a></h4>
+ * <h3><a id="dt">Date/Time Conversions</a></h3>
  *
  * <p> The following date and time conversion suffix characters are defined for
  * the {@code 't'} and {@code 'T'} conversions.  The types are similar to but
@@ -550,7 +550,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * <p> Any characters not explicitly defined as date/time conversion suffixes
  * are illegal and are reserved for future extensions.
  *
- * <h4> Flags </h4>
+ * <h3> Flags </h3>
  *
  * <p> The following table summarizes the supported flags.  <i>y</i> means the
  * flag is supported for the indicated argument types.
@@ -636,13 +636,13 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * <p> Any characters not explicitly defined as flags are illegal and are
  * reserved for future extensions.
  *
- * <h4> Width </h4>
+ * <h3> Width </h3>
  *
  * <p> The width is the minimum number of characters to be written to the
  * output.  For the line separator conversion, width is not applicable; if it
  * is provided, an exception will be thrown.
  *
- * <h4> Precision </h4>
+ * <h3> Precision </h3>
  *
  * <p> For general argument types, the precision is the maximum number of
  * characters to be written to the output.
@@ -657,7 +657,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * and line separator conversions, the precision is not applicable; if a
  * precision is provided, an exception will be thrown.
  *
- * <h4> Argument Index </h4>
+ * <h3> Argument Index </h3>
  *
  * <p> The argument index is a decimal integer indicating the position of the
  * argument in the argument list.  The first argument is referenced by
@@ -676,7 +676,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * </pre></blockquote>
  *
  * <hr>
- * <h3><a id="detail">Details</a></h3>
+ * <h2><a id="detail">Details</a></h2>
  *
  * <p> This section is intended to provide behavioral details for formatting,
  * including conditions and exceptions, supported data types, localization, and
@@ -717,7 +717,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * invocation, then the {@link java.util.Locale.Category#FORMAT default locale}
  * is used.
  *
- * <h4><a id="dgen">General</a></h4>
+ * <h3><a id="dgen">General</a></h3>
  *
  * <p> The following general conversions may be applied to any argument type:
  *
@@ -814,7 +814,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * the precision.  If the precision is not specified then there is no explicit
  * limit on the number of characters.
  *
- * <h4><a id="dchar">Character</a></h4>
+ * <h3><a id="dchar">Character</a></h3>
  *
  * This conversion may be applied to {@code char} and {@link Character}.  It
  * may also be applied to the types {@code byte}, {@link Byte},
@@ -853,7 +853,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * <p> The precision is not applicable.  If the precision is specified then an
  * {@link IllegalFormatPrecisionException} will be thrown.
  *
- * <h4><a id="dnum">Numeric</a></h4>
+ * <h3><a id="dnum">Numeric</a></h3>
  *
  * <p> Numeric conversions are divided into the following categories:
  *
@@ -1547,7 +1547,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * href="#floatDPrec">precision</a> is the same as defined for Float and
  * Double.
  *
- * <h4><a id="ddt">Date/Time</a></h4>
+ * <h3><a id="ddt">Date/Time</a></h3>
  *
  * <p> This conversion may be applied to {@code long}, {@link Long}, {@link
  * Calendar}, {@link Date} and {@link TemporalAccessor TemporalAccessor}
@@ -1796,7 +1796,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * <p> The precision is not applicable.  If the precision is specified then an
  * {@link IllegalFormatPrecisionException} will be thrown.
  *
- * <h4><a id="dper">Percent</a></h4>
+ * <h3><a id="dper">Percent</a></h3>
  *
  * <p> The conversion does not correspond to any argument.
  *
@@ -1824,7 +1824,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * </tbody>
  * </table>
  *
- * <h4><a id="dls">Line Separator</a></h4>
+ * <h3><a id="dls">Line Separator</a></h3>
  *
  * <p> The conversion does not correspond to any argument.
  *
@@ -1843,7 +1843,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * {@link IllegalFormatFlagsException}, {@link IllegalFormatWidthException},
  * and {@link IllegalFormatPrecisionException}, respectively will be thrown.
  *
- * <h4><a id="dpos">Argument Index</a></h4>
+ * <h3><a id="dpos">Argument Index</a></h3>
  *
  * <p> Format specifiers can reference arguments in three ways:
  *

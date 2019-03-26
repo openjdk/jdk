@@ -141,6 +141,18 @@ public class OptionKey<T> {
     }
 
     /**
+     * Gets the value of this option in {@code values} if it is present, otherwise
+     * {@link #getDefaultValue()}.
+     */
+    @SuppressWarnings("unchecked")
+    public T getValueOrDefault(EconomicMap<OptionKey<?>, Object> values) {
+        if (!values.containsKey(this)) {
+            return defaultValue;
+        }
+        return (T) values.get(this);
+    }
+
+    /**
      * Sets the value of this option in a given map. The
      * {@link #onValueUpdate(EconomicMap, Object, Object)} method is called once the value is set.
      *

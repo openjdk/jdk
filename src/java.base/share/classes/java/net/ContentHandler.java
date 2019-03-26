@@ -47,7 +47,7 @@ import java.io.IOException;
  * If no content handler could be {@linkplain URLConnection#getContent() found},
  * URLConnection will look for a content handler in a user-definable set of places.
  * Users can define a vertical-bar delimited set of class prefixes
- * to search through by defining the <i>{@link java.net.URLConnection#contentPathProp}</i>
+ * to search through by defining the <i>{@value java.net.URLConnection#contentPathProp}</i>
  * property. The class name must be of the form:
  * <blockquote>
  *     <i>{package-prefix}.{major}.{minor}</i>

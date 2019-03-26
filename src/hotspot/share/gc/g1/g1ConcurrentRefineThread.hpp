@@ -25,11 +25,9 @@
 #ifndef SHARE_GC_G1_G1CONCURRENTREFINETHREAD_HPP
 #define SHARE_GC_G1_G1CONCURRENTREFINETHREAD_HPP
 
-#include "gc/g1/dirtyCardQueue.hpp"
 #include "gc/shared/concurrentGCThread.hpp"
 
 // Forward Decl.
-class CardTableEntryClosure;
 class G1ConcurrentRefine;
 
 // One or more G1 Concurrent Refinement Threads may be active if concurrent

@@ -132,6 +132,7 @@ public class GraphDecoder {
                         nodeStartOffsets[i] = encodedGraph.getStartOffset() - reader.getUVInt();
                     }
                     encodedGraph.nodeStartOffsets = nodeStartOffsets;
+                    graph.setGuardsStage((StructuredGraph.GuardsStage) readObject(this));
                 }
             } else {
                 reader = null;
@@ -1322,7 +1323,7 @@ public class GraphDecoder {
     }
 
     protected Object readObject(MethodScope methodScope) {
-        return methodScope.encodedGraph.getObjects()[methodScope.reader.getUVInt()];
+        return methodScope.encodedGraph.getObject(methodScope.reader.getUVInt());
     }
 
     /**

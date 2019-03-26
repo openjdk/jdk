@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,6 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import sun.net.NetHooks;
 import sun.net.ext.ExtendedSocketOptions;
-import static sun.net.ext.ExtendedSocketOptions.SOCK_STREAM;
 
 /**
  * Base implementation of AsynchronousServerSocketChannel.
@@ -236,7 +235,7 @@ abstract class AsynchronousServerSocketChannelImpl
             if (Net.isReusePortAvailable()) {
                 set.add(StandardSocketOptions.SO_REUSEPORT);
             }
-            set.addAll(ExtendedSocketOptions.options(SOCK_STREAM));
+            set.addAll(ExtendedSocketOptions.serverSocketOptions());
             return Collections.unmodifiableSet(set);
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 4052223 4089987 4469904 4326988 4486735 8008577 8045998 8140571
+ *      8216969
  * @summary test DateFormat and SimpleDateFormat.
  * @library /java/text/testlib
  * @modules jdk.localedata
@@ -1204,5 +1205,19 @@ test commented out pending API-change approval
             // Restore the initial time zone
             TimeZone.setDefault(initialTimeZone);
         }
+    }
+
+    public void Test8216969() throws Exception {
+        Locale locale = new Locale("ru");
+        String format = "\u0434\u0435\u043a";
+        String standalone = "\u0434\u0435\u043a.";
+
+        // Check that format form is used so that the dot is parsed correctly.
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd MMM.yyyy", locale);
+        System.out.println(simpleDateFormat.parse("28 " + format + ".2018"));
+
+        // Check that standalone form is used.
+        simpleDateFormat = new SimpleDateFormat("MMM", locale);
+        System.out.println(simpleDateFormat.parse(standalone));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc.concurrent_phase_control;
+
 /*
  * @test TestConcurrentPhaseControlG1
  * @bug 8169517
@@ -32,7 +34,7 @@
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *    sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run driver TestConcurrentPhaseControlG1
+ * @run driver gc.concurrent_phase_control.TestConcurrentPhaseControlG1
  */
 
 import gc.concurrent_phase_control.CheckControl;

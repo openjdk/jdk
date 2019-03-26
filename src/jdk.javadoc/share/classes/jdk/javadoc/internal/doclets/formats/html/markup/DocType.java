@@ -36,21 +36,11 @@ package jdk.javadoc.internal.doclets.formats.html.markup;
  * @author Bhavesh Patel
  */
 public enum DocType {
-    HTML4_TRANSITIONAL("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" "
-            + "\"http://www.w3.org/TR/html4/loose.dtd\">"),
     HTML5("<!DOCTYPE HTML>");
 
     public final String text;
 
     DocType(String text) {
         this.text = text;
-    }
-
-    public static DocType forVersion(HtmlVersion v) {
-        switch (v) {
-            case HTML4: return HTML4_TRANSITIONAL;
-            case HTML5: return HTML5;
-            default: throw new IllegalArgumentException();
-        }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,7 +132,7 @@ public class Types {
         if (t.hasTag(WILDCARD)) {
             WildcardType w = (WildcardType) t;
             if (w.isSuperBound())
-                return w.bound == null ? syms.objectType : w.bound.bound;
+                return w.bound == null ? syms.objectType : w.bound.getUpperBound();
             else
                 return wildUpperBound(w.type);
         }
@@ -146,7 +146,7 @@ public class Types {
     public Type cvarUpperBound(Type t) {
         if (t.hasTag(TYPEVAR)) {
             TypeVar v = (TypeVar) t;
-            return v.isCaptured() ? cvarUpperBound(v.bound) : v;
+            return v.isCaptured() ? cvarUpperBound(v.getUpperBound()) : v;
         }
         else return t;
     }
@@ -1821,14 +1821,14 @@ public class Types {
                 case TYPEVAR:
                     if (isSubtype(t, s)) {
                         return true;
-                    } else if (isCastable(t.bound, s, noWarnings)) {
+                    } else if (isCastable(t.getUpperBound(), s, noWarnings)) {
                         warnStack.head.warn(LintCategory.UNCHECKED);
                         return true;
                     } else {
                         return false;
                     }
                 default:
-                    return isCastable(t.bound, s, warnStack.head);
+                    return isCastable(t.getUpperBound(), s, warnStack.head);
                 }
             }
 
@@ -1954,7 +1954,7 @@ public class Types {
         if (t == s) return false;
         if (t.hasTag(TYPEVAR)) {
             TypeVar tv = (TypeVar) t;
-            return !isCastable(tv.bound,
+            return !isCastable(tv.getUpperBound(),
                                relaxBound(s),
                                noWarnings);
         }
@@ -2150,7 +2150,7 @@ public class Types {
                 if (t.tsym == sym)
                     return t;
                 else
-                    return asSuper(t.bound, sym);
+                    return asSuper(t.getUpperBound(), sym);
             }
 
             @Override
@@ -2269,7 +2269,7 @@ public class Types {
 
             @Override
             public Type visitTypeVar(TypeVar t, Symbol sym) {
-                return memberType(t.bound, sym);
+                return memberType(t.getUpperBound(), sym);
             }
 
             @Override
@@ -2392,7 +2392,7 @@ public class Types {
 
             @Override
             public Type visitTypeVar(TypeVar t, Boolean recurse) {
-                Type erased = erasure(t.bound, recurse);
+                Type erased = erasure(t.getUpperBound(), recurse);
                 return combineMetadata(erased, t);
             }
         };
@@ -2498,11 +2498,11 @@ public class Types {
              */
             @Override
             public Type visitTypeVar(TypeVar t, Void ignored) {
-                if (t.bound.hasTag(TYPEVAR) ||
-                    (!t.bound.isCompound() && !t.bound.isInterface())) {
-                    return t.bound;
+                if (t.getUpperBound().hasTag(TYPEVAR) ||
+                    (!t.getUpperBound().isCompound() && !t.getUpperBound().isInterface())) {
+                    return t.getUpperBound();
                 } else {
-                    return supertype(t.bound);
+                    return supertype(t.getUpperBound());
                 }
             }
 
@@ -2573,11 +2573,11 @@ public class Types {
 
             @Override
             public List<Type> visitTypeVar(TypeVar t, Void ignored) {
-                if (t.bound.isCompound())
-                    return interfaces(t.bound);
+                if (t.getUpperBound().isCompound())
+                    return interfaces(t.getUpperBound());
 
-                if (t.bound.isInterface())
-                    return List.of(t.bound);
+                if (t.getUpperBound().isInterface())
+                    return List.of(t.getUpperBound());
 
                 return List.nil();
             }
@@ -2662,9 +2662,9 @@ public class Types {
      * @param allInterfaces are all bounds interface types?
      */
     public void setBounds(TypeVar t, List<Type> bounds, boolean allInterfaces) {
-        t.bound = bounds.tail.isEmpty() ?
+        t.setUpperBound( bounds.tail.isEmpty() ?
                 bounds.head :
-                makeIntersectionType(bounds, allInterfaces);
+                makeIntersectionType(bounds, allInterfaces) );
         t.rank_field = -1;
     }
     // </editor-fold>
@@ -2674,10 +2674,10 @@ public class Types {
      * Return list of bounds of the given type variable.
      */
     public List<Type> getBounds(TypeVar t) {
-        if (t.bound.hasTag(NONE))
+        if (t.getUpperBound().hasTag(NONE))
             return List.nil();
-        else if (t.bound.isErroneous() || !t.bound.isCompound())
-            return List.of(t.bound);
+        else if (t.getUpperBound().isErroneous() || !t.getUpperBound().isCompound())
+            return List.of(t.getUpperBound());
         else if ((erasure(t).tsym.flags() & INTERFACE) == 0)
             return interfaces(t).prepend(supertype(t));
         else
@@ -3361,8 +3361,8 @@ public class Types {
         // calculate new bounds
         for (Type t : tvars) {
             TypeVar tv = (TypeVar) t;
-            Type bound = subst(tv.bound, from, to);
-            if (bound != tv.bound)
+            Type bound = subst(tv.getUpperBound(), from, to);
+            if (bound != tv.getUpperBound())
                 changed = true;
             newBoundsBuf.append(bound);
         }
@@ -3386,15 +3386,15 @@ public class Types {
         // set the bounds of new type variables to the new bounds
         for (Type t : newTvars.toList()) {
             TypeVar tv = (TypeVar) t;
-            tv.bound = newBounds.head;
+            tv.setUpperBound( newBounds.head );
             newBounds = newBounds.tail;
         }
         return newTvars.toList();
     }
 
     public TypeVar substBound(TypeVar t, List<Type> from, List<Type> to) {
-        Type bound1 = subst(t.bound, from, to);
-        if (bound1 == t.bound)
+        Type bound1 = subst(t.getUpperBound(), from, to);
+        if (bound1 == t.getUpperBound())
             return t;
         else {
             // create new type variable without bounds
@@ -3402,7 +3402,7 @@ public class Types {
                                      t.getMetadata());
             // the new bound should use the new type variable in place
             // of the old
-            tv.bound = subst(bound1, List.of(t), List.of(tv));
+            tv.setUpperBound( subst(bound1, List.of(t), List.of(tv)) );
             return tv;
         }
     }
@@ -3435,7 +3435,7 @@ public class Types {
         List<Type> tvars1 = tvars.map(newInstanceFun);
         for (List<Type> l = tvars1; l.nonEmpty(); l = l.tail) {
             TypeVar tv = (TypeVar) l.head;
-            tv.bound = subst(tv.bound, tvars, tvars1);
+            tv.setUpperBound( subst(tv.getUpperBound(), tvars, tvars1) );
         }
         return tvars1;
     }
@@ -3614,11 +3614,11 @@ public class Types {
         }
         private void appendTyparamString(TypeVar t, StringBuilder buf) {
             buf.append(t);
-            if (t.bound == null ||
-                t.bound.tsym.getQualifiedName() == names.java_lang_Object)
+            if (t.getUpperBound() == null ||
+                t.getUpperBound().tsym.getQualifiedName() == names.java_lang_Object)
                 return;
             buf.append(" extends "); // Java syntax; no need for i18n
-            Type bound = t.bound;
+            Type bound = t.getUpperBound();
             if (!bound.isCompound()) {
                 buf.append(bound);
             } else if ((erasure(t).tsym.flags() & INTERFACE) == 0) {
@@ -4375,24 +4375,24 @@ public class Types {
                     Ui = syms.objectType;
                 switch (Ti.kind) {
                 case UNBOUND:
-                    Si.bound = subst(Ui, A, S);
+                    Si.setUpperBound( subst(Ui, A, S) );
                     Si.lower = syms.botType;
                     break;
                 case EXTENDS:
-                    Si.bound = glb(Ti.getExtendsBound(), subst(Ui, A, S));
+                    Si.setUpperBound( glb(Ti.getExtendsBound(), subst(Ui, A, S)) );
                     Si.lower = syms.botType;
                     break;
                 case SUPER:
-                    Si.bound = subst(Ui, A, S);
+                    Si.setUpperBound( subst(Ui, A, S) );
                     Si.lower = Ti.getSuperBound();
                     break;
                 }
-                Type tmpBound = Si.bound.hasTag(UNDETVAR) ? ((UndetVar)Si.bound).qtype : Si.bound;
+                Type tmpBound = Si.getUpperBound().hasTag(UNDETVAR) ? ((UndetVar)Si.getUpperBound()).qtype : Si.getUpperBound();
                 Type tmpLower = Si.lower.hasTag(UNDETVAR) ? ((UndetVar)Si.lower).qtype : Si.lower;
-                if (!Si.bound.hasTag(ERROR) &&
+                if (!Si.getUpperBound().hasTag(ERROR) &&
                     !Si.lower.hasTag(ERROR) &&
                     isSameType(tmpBound, tmpLower)) {
-                    currentS.head = Si.bound;
+                    currentS.head = Si.getUpperBound();
                 }
             }
             currentA = currentA.tail;
@@ -4720,9 +4720,9 @@ public class Types {
         @Override
         public Type visitTypeVar(TypeVar t, Void s) {
             if (rewriteTypeVars) {
-                Type bound = t.bound.contains(t) ?
-                        erasure(t.bound) :
-                        visit(t.bound);
+                Type bound = t.getUpperBound().contains(t) ?
+                        erasure(t.getUpperBound()) :
+                        visit(t.getUpperBound());
                 return rewriteAsWildcardType(bound, t, EXTENDS);
             } else {
                 return t;

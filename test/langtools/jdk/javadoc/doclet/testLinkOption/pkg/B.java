@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import java.io.File;
 public class B {
     /**
      * A method with html tag the method {@link ClassLoader#getSystemClassLoader()
-     * <tt>getSystemClassLoader()</tt>} as the parent class loader.
+     * <b>getSystemClassLoader()</b>} as the parent class loader.
      */
     public void  method1() {}
 
@@ -60,7 +60,7 @@ public class B {
     * Resource Identifiers (URI): Generic Syntax</i></a>, <br><a
     * href="http://www.ietf.org/rfc/rfc2732.txt"><i>RFC&nbsp;2732: Format for
     * Literal IPv6 Addresses in URLs</i></a>, <br><a
-    * href="URISyntaxException.html">URISyntaxException</a>
+    * href="C.html">A nearby file</a>
     */
    public void externalLink() {}
 }

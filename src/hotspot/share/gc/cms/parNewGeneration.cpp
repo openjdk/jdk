@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,6 @@
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/handles.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/thread.inline.hpp"
@@ -606,8 +605,7 @@ void ParNewGenTask::work(uint worker_id) {
   heap->young_process_roots(_strong_roots_scope,
                            &par_scan_state.to_space_root_closure(),
                            &par_scan_state.older_gen_closure(),
-                           &cld_scan_closure,
-                           &_par_state_string);
+                           &cld_scan_closure);
 
   par_scan_state.end_strong_roots();
 
@@ -626,7 +624,7 @@ void ParNewGenTask::work(uint worker_id) {
 }
 
 ParNewGeneration::ParNewGeneration(ReservedSpace rs, size_t initial_byte_size)
-  : DefNewGeneration(rs, initial_byte_size, "PCopy"),
+  : DefNewGeneration(rs, initial_byte_size, "CMS young collection pauses"),
   _plab_stats("Young", YoungPLABSize, PLABWeight),
   _overflow_list(NULL),
   _is_alive_closure(this)

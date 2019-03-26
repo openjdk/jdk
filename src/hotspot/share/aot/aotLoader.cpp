@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 #include "memory/allocation.inline.hpp"
 #include "oops/method.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/os.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/timerTrace.hpp"
 
 GrowableArray<AOTCodeHeap*>* AOTLoader::_heaps = new(ResourceObj::C_HEAP, mtCode) GrowableArray<AOTCodeHeap*> (2, true);
@@ -78,10 +78,18 @@ void AOTLoader::oops_do(OopClosure* f) {
   }
 }
 
-void AOTLoader::metadata_do(void f(Metadata*)) {
+void AOTLoader::metadata_do(MetadataClosure* f) {
   if (UseAOT) {
     FOR_ALL_AOT_HEAPS(heap) {
       (*heap)->metadata_do(f);
+    }
+  }
+}
+
+void AOTLoader::mark_evol_dependent_methods(InstanceKlass* dependee) {
+  if (UseAOT) {
+    FOR_ALL_AOT_HEAPS(heap) {
+      (*heap)->mark_evol_dependent_methods(dependee);
     }
   }
 }

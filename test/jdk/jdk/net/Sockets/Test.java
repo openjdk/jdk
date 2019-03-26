@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,14 +79,14 @@ public class Test {
              DatagramSocket dg = new DatagramSocket(0)) {
 
             int tcp_port = ss.getLocalPort();
-            final InetAddress loop = InetAddress.getByName("127.0.0.1");
+            final InetAddress loop = InetAddress.getLoopbackAddress();
             final InetSocketAddress loopad = new InetSocketAddress(loop, tcp_port);
 
             final int udp_port = dg.getLocalPort();
 
-            final Socket s = new Socket("127.0.0.1", tcp_port);
+            final Socket s = new Socket(loop, tcp_port);
             final SocketChannel sc = SocketChannel.open();
-            sc.connect(new InetSocketAddress("127.0.0.1", tcp_port));
+            sc.connect(new InetSocketAddress(loop, tcp_port));
 
             doTest("Sockets.setOption Socket", () -> {
                 out.println(flowIn);

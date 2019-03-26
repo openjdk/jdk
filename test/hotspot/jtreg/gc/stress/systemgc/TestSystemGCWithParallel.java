@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,16 @@
  *
  */
 
+package gc.stress.systemgc;
+
 /*
  * @test TestSystemGCWithParallel
  * @key gc stress
  * @bug 8190703
+ * @library /
  * @requires vm.gc.Parallel
  * @summary Stress the Parallel GC full GC by allocating objects of different lifetimes concurrently with System.gc().
- * @run main/othervm/timeout=300 -Xlog:gc=info -Xmx512m -XX:+UseParallelGC TestSystemGCWithParallel 270
+ * @run main/othervm/timeout=300 -Xlog:gc=info -Xmx512m -XX:+UseParallelGC gc.stress.systemgc.TestSystemGCWithParallel 270
  */
 public class TestSystemGCWithParallel {
     public static void main(String[] args) throws Exception {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,8 @@
  * @test
  * @library /test/lib
  * @build jdk.test.lib.Utils
- * @bug 8204233 8207846 8208691
+ * @bug 8204233
  * @summary Add configurable option for enhanced socket IOException messages
- * @run main/othervm
- *       ExceptionText
  * @run main/othervm
  *       ExceptionText
  *       WITHOUT_Enhanced_Text
@@ -64,7 +62,6 @@ import java.net.Socket;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SocketChannel;
-import java.security.Security;
 import java.util.concurrent.ExecutionException;
 import jdk.test.lib.Utils;
 
@@ -73,32 +70,19 @@ public class ExceptionText {
     enum TestTarget {SOCKET, CHANNEL, ASYNC_CHANNEL};
 
     public static void main(String args[]) throws Exception {
-        if (args.length == 0) {
-            testSecProp();
+        String passOrFail = args[0];
+        boolean expectEnhancedText;
+        if (passOrFail.equals("expectEnhancedText")) {
+            expectEnhancedText = true;
         } else {
-            String passOrFail = args[0];
-            boolean expectEnhancedText;
-            if (passOrFail.equals("expectEnhancedText")) {
-                expectEnhancedText = true;
-            } else {
-                expectEnhancedText = false;
-            }
-            test(expectEnhancedText);
+            expectEnhancedText = false;
         }
+        test(expectEnhancedText);
     }
 
     static final InetSocketAddress dest  = Utils.refusingEndpoint();
     static final String PORT = ":" + Integer.toString(dest.getPort());
     static final String HOST = dest.getHostString();
-
-    static void testSecProp() {
-        String incInExc = Security.getProperty("jdk.includeInExceptions");
-        if (incInExc != null) {
-            throw new RuntimeException("Test failed: default value of " +
-                "jdk.includeInExceptions security property is not null: " +
-                incInExc);
-        }
-    }
 
     static void test(boolean withProperty) {
         // Socket
@@ -132,10 +116,11 @@ public class ExceptionText {
     static IOException getException(TestTarget target) {
         try {
             if (target == TestTarget.SOCKET) {
-                Socket s = new Socket();
-                s.connect(dest);
+                try (Socket s = new Socket()) {
+                    s.connect(dest);
+                }
             } else if (target == TestTarget.CHANNEL) {
-                SocketChannel c = SocketChannel.open(dest);
+                SocketChannel.open(dest);
             } else if (target == TestTarget.ASYNC_CHANNEL) {
                 AsynchronousSocketChannel c = AsynchronousSocketChannel.open();
                 try {

@@ -1593,12 +1593,17 @@ void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
     } else {
       new_limit = igvn->transform(new SubINode(iv_phi, min));
     }
-    Node* cmp = inner_cle->cmp_node()->clone();
-    igvn->replace_input_of(cmp, 2, new_limit);
-    Node* bol = inner_cle->in(CountedLoopEndNode::TestValue)->clone();
-    cmp->set_req(2, limit);
-    bol->set_req(1, igvn->transform(cmp));
-    igvn->replace_input_of(outer_loop_end(), 1, igvn->transform(bol));
+    Node* inner_cmp = inner_cle->cmp_node();
+    Node* inner_bol = inner_cle->in(CountedLoopEndNode::TestValue);
+    Node* outer_bol = inner_bol;
+    // cmp node for inner loop may be shared
+    inner_cmp = inner_cmp->clone();
+    inner_cmp->set_req(2, new_limit);
+    inner_bol = inner_bol->clone();
+    inner_bol->set_req(1, igvn->transform(inner_cmp));
+    igvn->replace_input_of(inner_cle, CountedLoopEndNode::TestValue, igvn->transform(inner_bol));
+    // Set the outer loop's exit condition too
+    igvn->replace_input_of(outer_loop_end(), 1, outer_bol);
   } else {
     assert(false, "should be able to adjust outer loop");
     IfNode* outer_le = outer_loop_end();
@@ -2711,8 +2716,6 @@ bool PhaseIdealLoop::process_expensive_nodes() {
 void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
   bool do_split_ifs = (mode == LoopOptsDefault || mode == LoopOptsLastRound);
   bool skip_loop_opts = (mode == LoopOptsNone);
-
-  ResourceMark rm;
 
   int old_progress = C->major_progress();
   uint orig_worklist_size = _igvn._worklist.size();

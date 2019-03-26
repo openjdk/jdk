@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,8 +114,7 @@ public class SendDatagramToBadAddress {
         if (OSsupportsFeature()) {
             print ("running on OS that supports ICMP port unreachable");
         }
-        String host = "127.0.0.1";
-        InetAddress addr = InetAddress.getByName(host);
+        InetAddress addr = InetAddress.getLoopbackAddress();
         DatagramSocket sock = new DatagramSocket();
         DatagramSocket serversock = new DatagramSocket(0);
         DatagramPacket p;

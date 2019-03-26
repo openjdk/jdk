@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import java.security.AccessController;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
 import sun.net.ConnectionResetException;
 import sun.net.NetHooks;
+import sun.net.PlatformSocketImpl;
 import sun.net.ResourceManager;
 import sun.net.util.SocketExceptions;
 
@@ -46,7 +50,7 @@ import sun.net.util.SocketExceptions;
  *
  * @author  Steven B. Byrne
  */
-abstract class AbstractPlainSocketImpl extends SocketImpl {
+abstract class AbstractPlainSocketImpl extends SocketImpl implements PlatformSocketImpl {
     /* instance variable for SO_TIMEOUT */
     int timeout;   // timeout in millisec
     // traffic class
@@ -450,15 +454,17 @@ abstract class AbstractPlainSocketImpl extends SocketImpl {
 
     /**
      * Accepts connections.
-     * @param s the connection
+     * @param si the socket impl
      */
-    protected void accept(SocketImpl s) throws IOException {
+    protected void accept(SocketImpl si) throws IOException {
+        si.fd = new FileDescriptor();
         acquireFD();
         try {
-            socketAccept(s);
+            socketAccept(si);
         } finally {
             releaseFD();
         }
+        SocketCleanable.register(si.fd);
     }
 
     /**
@@ -470,8 +476,14 @@ abstract class AbstractPlainSocketImpl extends SocketImpl {
                 throw new IOException("Socket Closed");
             if (shut_rd)
                 throw new IOException("Socket input is shutdown");
-            if (socketInputStream == null)
-                socketInputStream = new SocketInputStream(this);
+            if (socketInputStream == null) {
+                PrivilegedExceptionAction<SocketInputStream> pa = () -> new SocketInputStream(this);
+                try {
+                    socketInputStream = AccessController.doPrivileged(pa);
+                } catch (PrivilegedActionException e) {
+                    throw (IOException) e.getCause();
+                }
+            }
         }
         return socketInputStream;
     }
@@ -489,8 +501,14 @@ abstract class AbstractPlainSocketImpl extends SocketImpl {
                 throw new IOException("Socket Closed");
             if (shut_wr)
                 throw new IOException("Socket output is shutdown");
-            if (socketOutputStream == null)
-                socketOutputStream = new SocketOutputStream(this);
+            if (socketOutputStream == null) {
+                PrivilegedExceptionAction<SocketOutputStream> pa = () -> new SocketOutputStream(this);
+                try {
+                    socketOutputStream = AccessController.doPrivileged(pa);
+                } catch (PrivilegedActionException e) {
+                    throw (IOException) e.getCause();
+                }
+            }
         }
         return socketOutputStream;
     }
@@ -589,14 +607,9 @@ abstract class AbstractPlainSocketImpl extends SocketImpl {
         }
     }
 
-    void reset() throws IOException {
-        if (fd != null) {
-            socketClose();
-        }
-        fd = null;
-        super.reset();
+    void reset() {
+        throw new InternalError("should not get here");
     }
-
 
     /**
      * Shutdown read-half of the socket connection;

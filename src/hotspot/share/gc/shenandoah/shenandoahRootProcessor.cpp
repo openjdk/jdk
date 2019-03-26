@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2015, 2019, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -34,12 +34,31 @@
 #include "gc/shenandoah/shenandoahTimingTracker.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
-#include "gc/shared/weakProcessor.hpp"
+#include "gc/shared/weakProcessor.inline.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/thread.hpp"
 #include "services/management.hpp"
+
+struct PhaseMap {
+  WeakProcessorPhases::Phase            _weak_processor_phase;
+  ShenandoahPhaseTimings::GCParPhases   _shenandoah_phase;
+};
+
+static const struct PhaseMap phase_mapping[] = {
+#if INCLUDE_JVMTI
+  {WeakProcessorPhases::jvmti,       ShenandoahPhaseTimings::JVMTIWeakRoots},
+#endif
+#if INCLUDE_JFR
+  {WeakProcessorPhases::jfr,         ShenandoahPhaseTimings::JFRWeakRoots},
+#endif
+  {WeakProcessorPhases::jni,         ShenandoahPhaseTimings::JNIWeakRoots},
+  {WeakProcessorPhases::stringtable, ShenandoahPhaseTimings::StringTableRoots},
+  {WeakProcessorPhases::vm,          ShenandoahPhaseTimings::VMWeakRoots}
+};
+
+STATIC_ASSERT(sizeof(phase_mapping) / sizeof(PhaseMap) == WeakProcessorPhases::phase_count);
 
 ShenandoahRootProcessor::ShenandoahRootProcessor(ShenandoahHeap* heap, uint n_workers,
                                                  ShenandoahPhaseTimings::Phase phase) :
@@ -47,8 +66,10 @@ ShenandoahRootProcessor::ShenandoahRootProcessor(ShenandoahHeap* heap, uint n_wo
   _srs(n_workers),
   _par_state_string(StringTable::weak_storage()),
   _phase(phase),
-  _coderoots_all_iterator(ShenandoahCodeRoots::iterator())
-{
+  _coderoots_all_iterator(ShenandoahCodeRoots::iterator()),
+  _weak_processor_timings(n_workers),
+  _weak_processor_task(&_weak_processor_timings, n_workers),
+  _processed_weak_roots(false) {
   heap->phase_timings()->record_workers_start(_phase);
 
   if (ShenandoahStringDedup::is_enabled()) {
@@ -62,7 +83,30 @@ ShenandoahRootProcessor::~ShenandoahRootProcessor() {
     StringDedup::gc_epilogue();
   }
 
+  ShenandoahWorkerTimings* worker_times = ShenandoahHeap::heap()->phase_timings()->worker_times();
+
+  if (_processed_weak_roots) {
+    assert(_weak_processor_timings.max_threads() == n_workers(), "Must match");
+    for (uint index = 0; index < WeakProcessorPhases::phase_count; index ++) {
+      weak_processor_timing_to_shenandoah_timing(phase_mapping[index]._weak_processor_phase,
+                                                 phase_mapping[index]._shenandoah_phase,
+                                                 worker_times);
+    }
+  }
+
   ShenandoahHeap::heap()->phase_timings()->record_workers_end(_phase);
+}
+
+void ShenandoahRootProcessor::weak_processor_timing_to_shenandoah_timing(const WeakProcessorPhases::Phase wpp,
+                                                                         const ShenandoahPhaseTimings::GCParPhases spp,
+                                                                         ShenandoahWorkerTimings* worker_times) const {
+  if (WeakProcessorPhases::is_serial(wpp)) {
+    worker_times->record_time_secs(spp, 0, _weak_processor_timings.phase_time_sec(wpp));
+  } else {
+    for (uint index = 0; index < _weak_processor_timings.max_threads(); index ++) {
+      worker_times->record_time_secs(spp, index, _weak_processor_timings.worker_time_sec(index, wpp));
+    }
+  }
 }
 
 void ShenandoahRootProcessor::process_all_roots_slow(OopClosure* oops) {
@@ -78,7 +122,6 @@ void ShenandoahRootProcessor::process_all_roots_slow(OopClosure* oops) {
   WeakProcessor::oops_do(oops);
   ObjectSynchronizer::oops_do(oops);
   SystemDictionary::oops_do(oops);
-  StringTable::oops_do(oops);
 
   if (ShenandoahStringDedup::is_enabled()) {
     ShenandoahStringDedup::oops_do_slow(oops);
@@ -193,10 +236,9 @@ void ShenandoahRootProcessor::process_vm_roots(OopClosure* strong_roots,
     SystemDictionary::oops_do(strong_roots);
   }
   if (jni_weak_roots != NULL) {
-    if (_process_strong_tasks->try_claim_task(SHENANDOAH_RP_PS_JNIHandles_weak_oops_do)) {
-      ShenandoahWorkerTimingsTracker timer(worker_times, ShenandoahPhaseTimings::JNIWeakRoots, worker_id);
-      WeakProcessor::oops_do(jni_weak_roots);
-    }
+    AlwaysTrueClosure always_true;
+    _weak_processor_task.work<AlwaysTrueClosure, OopClosure>(worker_id, &always_true, jni_weak_roots);
+    _processed_weak_roots = true;
   }
 
   if (ShenandoahStringDedup::is_enabled() && weak_roots != NULL) {
@@ -208,13 +250,6 @@ void ShenandoahRootProcessor::process_vm_roots(OopClosure* strong_roots,
     if (_process_strong_tasks->try_claim_task(SHENANDOAH_RP_PS_ObjectSynchronizer_oops_do)) {
       ObjectSynchronizer::oops_do(strong_roots);
     }
-  }
-
-  // All threads execute the following. A specific chunk of buckets
-  // from the StringTable are the individual tasks.
-  if (weak_roots != NULL) {
-    ShenandoahWorkerTimingsTracker timer(worker_times, ShenandoahPhaseTimings::StringTableRoots, worker_id);
-    StringTable::possibly_parallel_oops_do(&_par_state_string, weak_roots);
   }
 }
 

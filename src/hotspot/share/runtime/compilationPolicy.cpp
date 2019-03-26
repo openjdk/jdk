@@ -176,6 +176,14 @@ bool CompilationPolicy::is_compilation_enabled() {
 }
 
 CompileTask* CompilationPolicy::select_task_helper(CompileQueue* compile_queue) {
+  // Remove unloaded methods from the queue
+  for (CompileTask* task = compile_queue->first(); task != NULL; ) {
+    CompileTask* next = task->next();
+    if (task->is_unloaded()) {
+      compile_queue->remove_and_mark_stale(task);
+    }
+    task = next;
+  }
 #if INCLUDE_JVMCI
   if (UseJVMCICompiler && !BackgroundCompilation) {
     /*

@@ -22,20 +22,21 @@
  */
 
 /*
-  test
-  @bug       6426132
-  @summary   A Window should be initially focused on its showing (XAWT bug).
-  @author    anton.tarasov@...: area=awt.focus
-  @run       applet WindowInitialFocusTest.html
+  @test
+  @key headful
+  @bug        6426132
+  @summary    A Window should be focused upon start (XAWT bug).
+  @library    ../../regtesthelpers
+  @build      Util
+  @run        main WindowInitialFocusTest
 */
 
 import java.awt.*;
 import java.awt.event.*;
-import java.applet.Applet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import test.java.awt.regtesthelpers.Util;
 
-public class WindowInitialFocusTest extends Applet {
+public class WindowInitialFocusTest {
     Frame frame = new Frame("Test Frame");
     Window window = new Window(frame);
     Button button = new Button("button");
@@ -44,15 +45,7 @@ public class WindowInitialFocusTest extends Applet {
 
     public static void main(String[] args) {
         WindowInitialFocusTest app = new WindowInitialFocusTest();
-        app.init();
         app.start();
-    }
-
-    public void init() {
-        // Create instructions for the user here, as well as set up
-        // the environment -- set the layout manager, add buttons,
-        // etc.
-        this.setLayout (new BorderLayout ());
     }
 
     public void start() {

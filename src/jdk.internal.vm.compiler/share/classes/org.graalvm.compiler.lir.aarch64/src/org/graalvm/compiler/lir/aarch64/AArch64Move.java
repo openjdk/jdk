@@ -24,13 +24,6 @@
 
 package org.graalvm.compiler.lir.aarch64;
 
-import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.COMPOSITE;
-import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.HINT;
-import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.REG;
-import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.STACK;
-import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.UNINITIALIZED;
-import static org.graalvm.compiler.lir.LIRValueUtil.asJavaConstant;
-import static org.graalvm.compiler.lir.LIRValueUtil.isJavaConstant;
 import static jdk.vm.ci.aarch64.AArch64.sp;
 import static jdk.vm.ci.aarch64.AArch64.zr;
 import static jdk.vm.ci.code.ValueUtil.asAllocatableValue;
@@ -38,6 +31,13 @@ import static jdk.vm.ci.code.ValueUtil.asRegister;
 import static jdk.vm.ci.code.ValueUtil.asStackSlot;
 import static jdk.vm.ci.code.ValueUtil.isRegister;
 import static jdk.vm.ci.code.ValueUtil.isStackSlot;
+import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.COMPOSITE;
+import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.HINT;
+import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.REG;
+import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.STACK;
+import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.UNINITIALIZED;
+import static org.graalvm.compiler.lir.LIRValueUtil.asJavaConstant;
+import static org.graalvm.compiler.lir.LIRValueUtil.isJavaConstant;
 
 import org.graalvm.compiler.asm.aarch64.AArch64Address;
 import org.graalvm.compiler.asm.aarch64.AArch64MacroAssembler;
@@ -56,6 +56,7 @@ import org.graalvm.compiler.lir.VirtualStackSlot;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 
 import jdk.vm.ci.aarch64.AArch64Kind;
+import jdk.vm.ci.code.MemoryBarriers;
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.StackSlot;
 import jdk.vm.ci.meta.AllocatableValue;
@@ -212,14 +213,20 @@ public class AArch64Move {
         // a compiler bug which warns that crb is unused, and also
         // warns that @SuppressWarnings("unused") is unnecessary.
         public void emitCode(@SuppressWarnings("all") CompilationResultBuilder crb, AArch64MacroAssembler masm) {
-            // As I understand it load acquire/store release have the same semantics as on IA64
-            // and allow us to handle LoadStore, LoadLoad and StoreStore without an explicit
-            // barrier.
-            // But Graal support to figure out if a load/store is volatile is non-existant so for
-            // now just use memory barriers everywhere.
-            // if ((barrier & MemoryBarriers.STORE_LOAD) != 0) {
-            masm.dmb(AArch64MacroAssembler.BarrierKind.ANY_ANY);
-            // }
+            assert barriers >= MemoryBarriers.LOAD_LOAD && barriers <= (MemoryBarriers.STORE_STORE | MemoryBarriers.STORE_LOAD | MemoryBarriers.LOAD_STORE | MemoryBarriers.LOAD_LOAD);
+            switch (barriers) {
+                case MemoryBarriers.STORE_STORE:
+                    masm.dmb(AArch64MacroAssembler.BarrierKind.STORE_STORE);
+                    break;
+                case MemoryBarriers.LOAD_LOAD:
+                case MemoryBarriers.LOAD_STORE:
+                case MemoryBarriers.LOAD_LOAD | MemoryBarriers.LOAD_STORE:
+                    masm.dmb(AArch64MacroAssembler.BarrierKind.LOAD_LOAD);
+                    break;
+                default:
+                    masm.dmb(AArch64MacroAssembler.BarrierKind.ANY_ANY);
+                    break;
+            }
         }
     }
 

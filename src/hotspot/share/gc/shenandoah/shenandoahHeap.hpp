@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2013, 2019, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -242,12 +242,14 @@ public:
 //
 private:
   MemRegion _heap_region;
+  bool      _heap_region_special;
   size_t    _num_regions;
   ShenandoahHeapRegion** _regions;
   ShenandoahRegionIterator _update_refs_iterator;
 
 public:
   inline size_t num_regions() const { return _num_regions; }
+  inline bool is_heap_region_special() { return _heap_region_special; }
 
   inline ShenandoahHeapRegion* const heap_region_containing(const void* addr) const;
   inline size_t heap_region_index_containing(const void* addr) const;
@@ -380,7 +382,7 @@ private:
   };
 
   ShenandoahSharedEnumFlag<CancelState> _cancelled_gc;
-  inline bool try_cancel_gc();
+  bool try_cancel_gc();
 
 public:
   static address cancelled_gc_addr();
@@ -486,7 +488,7 @@ public:
   ShenandoahFreeSet*         free_set()          const { return _free_set;          }
   ShenandoahConcurrentMark*  concurrent_mark()         { return _scm;               }
   ShenandoahTraversalGC*     traversal_gc()            { return _traversal_gc;      }
-  ShenandoahPacer*           pacer() const             { return _pacer;             }
+  ShenandoahPacer*           pacer()             const { return _pacer;             }
 
   ShenandoahPhaseTimings*    phase_timings()     const { return _phase_timings;     }
   ShenandoahAllocTracker*    alloc_tracker()     const { return _alloc_tracker;     }
@@ -511,6 +513,7 @@ public:
 
   GrowableArray<GCMemoryManager*> memory_managers();
   GrowableArray<MemoryPool*> memory_pools();
+  MemoryUsage memory_usage();
   GCTracer* tracer();
   GCTimer* gc_timer() const;
   CollectorPolicy* collector_policy() const;
@@ -556,15 +559,11 @@ public:
   size_t obj_size(oop obj) const;
   virtual ptrdiff_t cell_header_size() const;
 
-  // All objects can potentially move
-  bool is_scavengable(oop obj) { return true; };
-
   void collect(GCCause::Cause cause);
   void do_full_collection(bool clear_all_soft_refs);
 
   // Used for parsing heap during error printing
   HeapWord* block_start(const void* addr) const;
-  size_t block_size(const HeapWord* addr) const;
   bool block_is_obj(const HeapWord* addr) const;
 
   // Used for native heap walkers: heap dumpers, mostly
@@ -648,6 +647,9 @@ private:
   size_t _bitmap_regions_per_slice;
   size_t _bitmap_bytes_per_slice;
 
+  bool _bitmap_region_special;
+  bool _aux_bitmap_region_special;
+
   // Used for buffering per-region liveness data.
   // Needed since ShenandoahHeapRegion uses atomics to update liveness.
   //
@@ -676,6 +678,7 @@ public:
   void reset_mark_bitmap();
 
   // SATB barriers hooks
+  template<bool RESOLVE>
   inline bool requires_marking(const void* entry) const;
   void force_satb_flush_all_threads();
 

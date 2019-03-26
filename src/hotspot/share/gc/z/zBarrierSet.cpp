@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,12 +86,12 @@ void ZBarrierSet::on_thread_destroy(Thread* thread) {
   ZThreadLocalData::destroy(thread);
 }
 
-void ZBarrierSet::on_thread_attach(JavaThread* thread) {
+void ZBarrierSet::on_thread_attach(Thread* thread) {
   // Set thread local address bad mask
   ZThreadLocalData::set_address_bad_mask(thread, ZAddressBadMask);
 }
 
-void ZBarrierSet::on_thread_detach(JavaThread* thread) {
+void ZBarrierSet::on_thread_detach(Thread* thread) {
   // Flush and free any remaining mark stacks
   ZHeap::heap()->mark_flush_and_free(thread);
 }

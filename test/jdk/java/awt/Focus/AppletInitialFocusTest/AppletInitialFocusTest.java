@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,30 +22,42 @@
  */
 
 /*
-  test
-  @bug     4041703 4096228 4025223 4260929
+  @test
+  @key headful
+  @bug 4041703 4096228 4025223 4260929
   @summary Ensures that appletviewer sets a reasonable default focus for an Applet on start
-  @author  das area=appletviewer
-  @run     applet AppletInitialFocusTest.html
+  @library ../../regtesthelpers
+  @build   Util
+  @run main AppletInitialFocusTest
 */
 
-import java.applet.Applet;
 import java.awt.Button;
-import java.awt.Component;
+import java.awt.FlowLayout;
+import java.awt.Frame;
 import java.awt.Robot;
-import java.awt.Window;
 import test.java.awt.regtesthelpers.Util;
 
-public class AppletInitialFocusTest extends Applet {
+public class AppletInitialFocusTest extends Frame {
+
     Robot robot = Util.createRobot();
     Button button = new Button("Button");
 
-    public void init() {
-        add(button);
+    public static void main(final String[] args) throws Exception {
+        AppletInitialFocusTest app = new AppletInitialFocusTest();
+        app.init();
+        app.start();
     }
 
-    public void start() {
-        new Thread(new Runnable() {
+    public void init() {
+        setSize(200, 200);
+        setLocationRelativeTo(null);
+        setLayout(new FlowLayout());
+        add(button);
+        setVisible(true);
+    }
+
+    public void start() throws Exception {
+        Thread thread = new Thread(new Runnable() {
                 public void run() {
                     Util.waitTillShown(button);
                     robot.delay(1000); // delay the thread to let EDT to start dispatching focus events
@@ -54,6 +66,8 @@ public class AppletInitialFocusTest extends Applet {
                         throw new RuntimeException("Appletviewer doesn't set default focus correctly.");
                     }
                 }
-            }).start();
+            });
+        thread.start();
+        thread.join();
     }
 }

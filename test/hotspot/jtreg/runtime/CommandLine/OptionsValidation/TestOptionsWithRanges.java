@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -203,7 +203,13 @@ public class TestOptionsWithRanges {
         allOptionsAsMap = JVMOptionsUtils.getOptionsWithRangeAsMap(origin -> (!(origin.contains("develop") || origin.contains("notproduct"))));
 
         /*
-         * Remove CICompilerCount from testing because currently it can hang system
+         * Exclude VMThreadStackSize from max range testing, because it will always exit with code 1,
+         * which technically passes, but really it fails, and worse yet, it produces hs_err_pid file.
+         */
+        excludeTestMaxRange("VMThreadStackSize");
+
+        /*
+         * Exclude CICompilerCount from testing because currently it can hang system
          */
         excludeTestMaxRange("CICompilerCount");
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -331,7 +331,7 @@ final class TrustStoreManager {
         }
 
         /**
-         * Load the the KeyStore as described in the specified descriptor.
+         * Load the KeyStore as described in the specified descriptor.
          */
         private static KeyStore loadKeyStore(
                 TrustStoreDescriptor descriptor) throws Exception {

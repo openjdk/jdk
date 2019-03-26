@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4404702
+ * @bug 4404702 8216528
  * @summary When the RMI runtime (lazily) spawns system threads that could
  * outlive the application context in which they were (happened to be)
  * created, such threads should not inherit (thread local) data specific to
@@ -106,7 +106,10 @@ public class RuntimeThreadInheritanceLeak implements Remote {
              * context class loader-- by giving it a chance to pass away.
              */
             Thread.sleep(2000);
-            System.gc();
+            while (loaderRef.get() != null) {
+                System.gc();
+                Thread.sleep(100);
+            }
 
             System.err.println(
                 "waiting to be notified of loader being weakly reachable...");

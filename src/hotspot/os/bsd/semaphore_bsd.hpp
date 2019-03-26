@@ -50,10 +50,9 @@ class OSXSemaphore : public CHeapObj<mtInternal>{
   void wait();
 
   bool trywait();
-  bool timedwait(unsigned int sec, int nsec);
 
- private:
-  static int64_t currenttime();
+  // wait until the given relative time elapses
+  bool timedwait(int64_t millis);
 };
 
 typedef OSXSemaphore SemaphoreImpl;

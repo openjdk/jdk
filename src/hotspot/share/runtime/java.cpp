@@ -58,6 +58,7 @@
 #include "runtime/compilationPolicy.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/flags/flagSetting.hpp"
+#include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
@@ -289,9 +290,6 @@ void print_statistics() {
 
   if (TimeOopMap) {
     GenerateOopMap::print_time();
-  }
-  if (ProfilerCheckIntervals) {
-    PeriodicTask::print_intervals();
   }
   if (PrintSymbolTableSizeHistogram) {
     SymbolTable::print_histogram();

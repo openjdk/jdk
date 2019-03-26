@@ -22,19 +22,17 @@
  */
 
 /*
-  test
+  @test
+  @key headful
   @bug        5090325
   @summary    Tests that Window's child can be focused on XAWT.
-  @author     anton.tarasov@sun.com: area=awt.focus
-  @run        applet ChildWindowFocusTest.html
+  @run        main ChildWindowFocusTest
 */
 
 import java.awt.*;
 import java.awt.event.*;
-import java.applet.Applet;
-import java.lang.reflect.*;
 
-public class ChildWindowFocusTest extends Applet {
+public class ChildWindowFocusTest {
     Robot robot;
     Frame frame = new Frame("Owner");
     Button button0 = new Button("button-0");
@@ -46,16 +44,18 @@ public class ChildWindowFocusTest extends Applet {
     Button button1 = new Button("button-1");
     int shift;
 
+    public static void main(final String[] args) {
+        ChildWindowFocusTest app = new ChildWindowFocusTest();
+        app.init();
+        app.start();
+    }
+
     public void init() {
         try {
             robot = new Robot();
         } catch (AWTException e) {
             throw new RuntimeException("Error: unable to create robot", e);
         }
-        // Create instructions for the user here, as well as set up
-        // the environment -- set the layout manager, add buttons,
-        // etc.
-        this.setLayout (new BorderLayout ());
         shift = 100;
     }
 

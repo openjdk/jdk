@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc.survivorAlignment;
+
 /**
  * @test
  * @bug 8031323
@@ -28,6 +30,7 @@
  *          full GC are not aligned to SurvivorAlignmentInBytes value.
  * @requires vm.gc != "Z" & vm.gc != "Shenandoah"
  * @library /test/lib
+ * @library /
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build sun.hotspot.WhiteBox
@@ -39,42 +42,42 @@
  *                   -XX:-ExplicitGCInvokesConcurrent -XX:-ResizePLAB
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=32
- *                   TestPromotionFromEdenToTenured 10m 9 TENURED
+ *                   gc.survivorAlignment.TestPromotionFromEdenToTenured 10m 9 TENURED
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=64m -XX:MaxNewSize=64m
  *                   -XX:OldSize=32m -XX:MaxHeapSize=96m -XX:SurvivorRatio=1
  *                   -XX:-ExplicitGCInvokesConcurrent -XX:-ResizePLAB
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=32
- *                   TestPromotionFromEdenToTenured 10m 47 TENURED
+ *                   gc.survivorAlignment.TestPromotionFromEdenToTenured 10m 47 TENURED
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=64m -XX:MaxNewSize=64m
  *                   -XX:OldSize=32m  -XX:MaxHeapSize=96m
  *                   -XX:SurvivorRatio=1 -XX:-ExplicitGCInvokesConcurrent -XX:-ResizePLAB
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=64
- *                   TestPromotionFromEdenToTenured 10m 9 TENURED
+ *                   gc.survivorAlignment.TestPromotionFromEdenToTenured 10m 9 TENURED
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=64m -XX:MaxNewSize=64m
  *                   -XX:OldSize=32m -XX:MaxHeapSize=128m
  *                   -XX:SurvivorRatio=1 -XX:-ExplicitGCInvokesConcurrent -XX:-ResizePLAB
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=64
- *                   TestPromotionFromEdenToTenured 10m 87 TENURED
+ *                   gc.survivorAlignment.TestPromotionFromEdenToTenured 10m 87 TENURED
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=64m -XX:MaxNewSize=64m
  *                   -XX:OldSize=32M -XX:MaxHeapSize=96m -XX:SurvivorRatio=1
  *                   -XX:-ExplicitGCInvokesConcurrent -XX:-ResizePLAB
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=128
- *                   TestPromotionFromEdenToTenured 10m 9 TENURED
+ *                   gc.survivorAlignment.TestPromotionFromEdenToTenured 10m 9 TENURED
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=64m -XX:MaxNewSize=64m
  *                   -XX:OldSize=32m -XX:MaxHeapSize=96m -XX:SurvivorRatio=1
  *                   -XX:-ExplicitGCInvokesConcurrent -XX:-ResizePLAB
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=128
- *                   TestPromotionFromEdenToTenured 10m 147 TENURED
+ *                   gc.survivorAlignment.TestPromotionFromEdenToTenured 10m 147 TENURED
  */
 public class TestPromotionFromEdenToTenured {
     public static void main(String args[]) {

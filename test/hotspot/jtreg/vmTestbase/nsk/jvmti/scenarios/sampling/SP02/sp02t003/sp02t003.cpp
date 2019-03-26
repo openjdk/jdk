@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -275,7 +275,6 @@ static int checkThreads(int suspended, const char* kind) {
         jint frameCount = 0;
         jint frameStackSize = 0;
         jvmtiFrameInfo frameStack[MAX_STACK_SIZE];
-        int commonDepth = 0;
         int found = 0;
         int j;
 
@@ -296,12 +295,8 @@ static int checkThreads(int suspended, const char* kind) {
         }
         NSK_DISPLAY1("    stack depth: %d\n", (int)frameStackSize);
 
-        commonDepth = (frameCount < frameStackSize ? frameCount : frameStackSize);
-        NSK_DISPLAY1("         common: %d\n", (int)commonDepth);
-
-        /* check first commonDepth frames and find expected method there */
         found = 0;
-        for (j = 0; j < commonDepth; j++) {
+        for (j = 0; j < frameStackSize; j++) {
             jmethodID qMethod = (jmethodID)NULL;
             jlocation qLocation = NSK_JVMTI_INVALID_JLOCATION;
 

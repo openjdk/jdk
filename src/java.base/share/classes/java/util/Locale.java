@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -190,7 +190,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * requirement (is well-formed), but does not validate the value
  * itself.  See {@link Builder} for details.
  *
- * <h3><a id="def_locale_extension">Unicode locale/language extension</a></h3>
+ * <h2><a id="def_locale_extension">Unicode locale/language extension</a></h2>
  *
  * <p>UTS#35, "Unicode Locale Data Markup Language" defines optional
  * attributes and keywords to override or refine the default behavior
@@ -230,17 +230,17 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * implementations in a Java Runtime Environment might not support any
  * particular Unicode locale attributes or key/type pairs.
  *
- * <h4>Creating a Locale</h4>
+ * <h3>Creating a Locale</h3>
  *
  * <p>There are several different ways to create a <code>Locale</code>
  * object.
  *
- * <h5>Builder</h5>
+ * <h4>Builder</h4>
  *
  * <p>Using {@link Builder} you can construct a <code>Locale</code> object
  * that conforms to BCP 47 syntax.
  *
- * <h5>Constructors</h5>
+ * <h4>Constructors</h4>
  *
  * <p>The <code>Locale</code> class provides three constructors:
  * <blockquote>
@@ -254,12 +254,12 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * with language, country and variant, but you cannot specify
  * script or extensions.
  *
- * <h5>Factory Methods</h5>
+ * <h4>Factory Methods</h4>
  *
  * <p>The method {@link #forLanguageTag} creates a <code>Locale</code>
  * object for a well-formed BCP 47 language tag.
  *
- * <h5>Locale Constants</h5>
+ * <h4>Locale Constants</h4>
  *
  * <p>The <code>Locale</code> class provides a number of convenient constants
  * that you can use to create <code>Locale</code> objects for commonly used
@@ -271,7 +271,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * </pre>
  * </blockquote>
  *
- * <h4><a id="LocaleMatching">Locale Matching</a></h4>
+ * <h3><a id="LocaleMatching">Locale Matching</a></h3>
  *
  * <p>If an application or a system is internationalized and provides localized
  * resources for multiple locales, it sometimes needs to find one or more
@@ -292,7 +292,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * language ranges: basic and extended. See
  * {@link Locale.LanguageRange Locale.LanguageRange} for details.
  *
- * <h5>Filtering</h5>
+ * <h4>Filtering</h4>
  *
  * <p>The filtering operation returns all matching language tags. It is defined
  * in RFC 4647 as follows:
@@ -310,7 +310,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * {@link Locale.FilteringMode} is a parameter to specify how filtering should
  * be done.
  *
- * <h5>Lookup</h5>
+ * <h4>Lookup</h4>
  *
  * <p>The lookup operation returns the best matching language tags. It is
  * defined in RFC 4647 as follows:
@@ -342,7 +342,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * an {@link Iterator} over a {@link Collection} of language tags is treated as
  * the best matching one.
  *
- * <h4>Use of Locale</h4>
+ * <h3>Use of Locale</h3>
  *
  * <p>Once you've created a <code>Locale</code> you can query it for information
  * about itself. Use <code>getCountry</code> to get the country (or region)
@@ -385,7 +385,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * <STRONG>just</STRONG> a mechanism for identifying objects,
  * <STRONG>not</STRONG> a container for the objects themselves.
  *
- * <h4>Compatibility</h4>
+ * <h3>Compatibility</h3>
  *
  * <p>In order to maintain compatibility with existing usage, Locale's
  * constructors retain their behavior prior to the Java Runtime
@@ -410,7 +410,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * Clients desiring a string representation of the complete locale can
  * then always rely on <code>toLanguageTag</code> for this purpose.
  *
- * <h5><a id="special_cases_constructor">Special cases</a></h5>
+ * <h4><a id="special_cases_constructor">Special cases</a></h4>
  *
  * <p>For compatibility reasons, two
  * non-conforming locales are treated as special cases.  These are
@@ -435,7 +435,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * constructor is called with the arguments "th", "TH", "TH", the
  * extension "u-nu-thai" is automatically added.
  *
- * <h5>Serialization</h5>
+ * <h4>Serialization</h4>
  *
  * <p>During serialization, writeObject writes all fields to the output
  * stream, including extensions.
@@ -444,7 +444,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * in <a href="#special_cases_constructor">Special Cases</a>, only
  * for the two cases th_TH_TH and ja_JP_JP.
  *
- * <h5>Legacy language codes</h5>
+ * <h4>Legacy language codes</h4>
  *
  * <p>Locale's constructor has always converted three language codes to
  * their earlier, obsoleted forms: {@code he} maps to {@code iw},
@@ -462,7 +462,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * lookup mechanism also implements this mapping, so that resources
  * can be named using either convention, see {@link ResourceBundle.Control}.
  *
- * <h5>Three-letter language/country(region) codes</h5>
+ * <h4>Three-letter language/country(region) codes</h4>
  *
  * <p>The Locale constructors have always specified that the language
  * and the country param be two characters in length, although in

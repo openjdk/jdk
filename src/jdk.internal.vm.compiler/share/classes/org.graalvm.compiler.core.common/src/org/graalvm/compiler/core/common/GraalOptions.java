@@ -83,8 +83,8 @@ public final class GraalOptions {
     @Option(help = "", type = OptionType.Debug)
     public static final OptionKey<String> EscapeAnalyzeOnly = new OptionKey<>(null);
 
-    @Option(help = "", type = OptionType.Expert)
-    public static final OptionKey<Integer> MaximumEscapeAnalysisArrayLength = new OptionKey<>(32);
+    @Option(help = "The maximum length of an array that will be escape analyzed.", type = OptionType.Expert)
+    public static final OptionKey<Integer> MaximumEscapeAnalysisArrayLength = new OptionKey<>(128);
 
     @Option(help = "", type = OptionType.Debug)
     public static final OptionKey<Boolean> PEAInliningHints = new OptionKey<>(false);
@@ -142,7 +142,7 @@ public final class GraalOptions {
     public static final OptionKey<Boolean> VerifyPhases = new OptionKey<>(false);
 
     // Debug settings:
-    @Option(help = "", type = OptionType.Debug)
+    @Option(help = "Start tracing compiled GC barriers after N garbage collections (disabled if N <= 0).", type = OptionType.Debug)
     public static final OptionKey<Integer> GCDebugStartCycle = new OptionKey<>(-1);
 
     @Option(help = "Perform platform dependent validation of the Java heap at returns", type = OptionType.Debug)
@@ -205,9 +205,6 @@ public final class GraalOptions {
 
     @Option(help = "Generate position independent code", type = OptionType.Expert)
     public static final OptionKey<Boolean> GeneratePIC = new OptionKey<>(false);
-
-    @Option(help = "", type = OptionType.Expert)
-    public static final OptionKey<Boolean> CallArrayCopy = new OptionKey<>(true);
 
     // Runtime settings
     @Option(help = "", type = OptionType.Expert)

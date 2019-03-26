@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,11 @@
 #ifndef SHARE_GC_Z_ZHEAPITERATOR_HPP
 #define SHARE_GC_Z_ZHEAPITERATOR_HPP
 
-#include "gc/z/zAddressRangeMap.hpp"
-#include "gc/z/zGlobals.hpp"
+#include "gc/z/zGranuleMap.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/stack.hpp"
 
+class ObjectClosure;
 class ZHeapIteratorBitMap;
 
 class ZHeapIterator : public StackObj {
@@ -36,9 +36,9 @@ class ZHeapIterator : public StackObj {
   friend class ZHeapIteratorOopClosure;
 
 private:
-  typedef ZAddressRangeMap<ZHeapIteratorBitMap*, ZPageSizeMinShift>         ZVisitMap;
-  typedef ZAddressRangeMapIterator<ZHeapIteratorBitMap*, ZPageSizeMinShift> ZVisitMapIterator;
-  typedef Stack<oop, mtGC>                                                  ZVisitStack;
+  typedef ZGranuleMap<ZHeapIteratorBitMap*>         ZVisitMap;
+  typedef ZGranuleMapIterator<ZHeapIteratorBitMap*> ZVisitMapIterator;
+  typedef Stack<oop, mtGC>                          ZVisitStack;
 
   ZVisitStack _visit_stack;
   ZVisitMap   _visit_map;

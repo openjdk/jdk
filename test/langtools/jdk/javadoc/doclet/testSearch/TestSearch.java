@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,18 +92,6 @@ public class TestSearch extends JavadocTester {
     }
 
     @Test
-    public void test2_html4() {
-        javadoc("-d", "out-2-html4",
-                "-html4",
-                "-Xdoclint:none",
-                "-sourcepath", testSrc,
-                "-use",
-                "pkg", "pkg1", "pkg2", "pkg3");
-        checkExit(Exit.OK);
-        checkSingleIndex(true, false);
-    }
-
-    @Test
     public void test2a() {
         javadoc("-d", "out-2a",
                 "-Xdoclint:all",
@@ -127,17 +115,6 @@ public class TestSearch extends JavadocTester {
                 "package-search-index.js",
                 "tag-search-index.js",
                 "type-search-index.js");
-    }
-
-    @Test
-    public void test2a_html4() {
-        javadoc("-d", "out-2a-html4",
-                "-html4",
-                "-Xdoclint:all",
-                "-sourcepath", testSrc,
-                "-use",
-                "pkg", "pkg1", "pkg2", "pkg3");
-        checkSingleIndex(true, false);
     }
 
     @Test
@@ -347,21 +324,6 @@ public class TestSearch extends JavadocTester {
         checkExit(Exit.OK);
         checkSearchJS();
         checkSearchIndex(true);
-    }
-
-    @Test
-    public void testURLEncoding_html4() {
-        javadoc("-d", "out-encode-html4",
-                "-html4",
-                "--no-module-directories",
-                "-Xdoclint:none",
-                "-sourcepath", testSrc,
-                "-use",
-                "--frames",
-                "pkg", "pkg1", "pkg2", "pkg3");
-        checkExit(Exit.OK);
-        checkSearchJS();
-        checkSearchIndex(false);
     }
 
     @Test
@@ -755,6 +717,7 @@ public class TestSearch extends JavadocTester {
                 + " id=\"t6\" class=\"tableTab\" onclick=\"show(32);\">Annotation Types Summary</button></div>\n"
                 + "<div id=\"typeSummary_tabpanel\" role=\"tabpanel\">\n"
                 + "<table aria-labelledby=\"t0\">\n"
+                + "<thead>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Class</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
@@ -764,6 +727,7 @@ public class TestSearch extends JavadocTester {
         checkOutput("allpackages-index.html", true,
                 "<div class=\"packagesSummary\">\n<table>\n"
                 + "<caption><span>Package Summary</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
+                + "<thead>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Package</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Description</th>\n"

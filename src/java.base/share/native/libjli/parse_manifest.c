@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -362,9 +362,11 @@ find_file(int fd, zentry *entry, const char *file_name)
     bp = buffer;
 
     if (find_positions(fd, bp, &base_offset, &censtart) == -1) {
+        free(buffer);
         return -1;
     }
     if (JLI_Lseek(fd, censtart, SEEK_SET) < (jlong) 0) {
+        free(buffer);
         return -1;
     }
 
@@ -583,7 +585,7 @@ JLI_ParseManifest(char *jarfile, manifest_info *info)
     int     rc;
     char    *splashscreen_name = NULL;
 
-    if ((fd = open(jarfile, O_RDONLY
+    if ((fd = JLI_Open(jarfile, O_RDONLY
 #ifdef O_LARGEFILE
         | O_LARGEFILE /* large file mode */
 #endif
@@ -640,7 +642,7 @@ JLI_JarUnpackFile(const char *jarfile, const char *filename, int *size) {
     zentry  entry;
     void    *data = NULL;
 
-    if ((fd = open(jarfile, O_RDONLY
+    if ((fd = JLI_Open(jarfile, O_RDONLY
 #ifdef O_LARGEFILE
         | O_LARGEFILE /* large file mode */
 #endif
@@ -688,7 +690,7 @@ JLI_ManifestIterate(const char *jarfile, attribute_closure ac, void *user_data)
     char    *value;
     int     rc;
 
-    if ((fd = open(jarfile, O_RDONLY
+    if ((fd = JLI_Open(jarfile, O_RDONLY
 #ifdef O_LARGEFILE
         | O_LARGEFILE /* large file mode */
 #endif

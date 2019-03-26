@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.util.DocTreeFactory;
 import com.sun.tools.doclint.HtmlTag;
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Navigation;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -125,6 +124,16 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
         }
     }
 
+    public List<DocPath> getStylesheets() throws DocFileIOException {
+        List<DocPath> stylesheets = new ArrayList<DocPath>();
+        for (DocFile srcdir : DocFile.list(configuration, location, source)) {
+            for (DocFile srcFile : srcdir.list()) {
+                if (srcFile.getName().endsWith(".css"))
+                    stylesheets.add(DocPaths.DOC_FILES.resolve(srcFile.getName()));
+            }
+        }
+        return stylesheets;
+    }
 
     private void copyDirectory(DocFile srcdir, final DocPath dstDocPath,
                                boolean first) throws DocFileIOException {
@@ -181,29 +190,23 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
         Content pkgLinkContent = docletWriter.getPackageLink(pkg, docletWriter.contents.packageLabel);
         navBar.setNavLinkPackage(pkgLinkContent);
         navBar.setUserHeader(docletWriter.getUserHeaderFooter(true));
-        Content header = docletWriter.createTagIfAllowed(
-                jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag.HEADER, HtmlTree::HEADER,
-                ContentBuilder::new);
-        header.addContent(navBar.getContent(true));
-        htmlContent.addContent(header);
+        Content header = HtmlTree.HEADER();
+        header.add(navBar.getContent(true));
+        htmlContent.add(header);
 
         List<? extends DocTree> fullBody = utils.getFullBody(dfElement);
         Content bodyContent = docletWriter.commentTagsToContent(null, dfElement, fullBody, false);
         docletWriter.addTagsInfo(dfElement, bodyContent);
-        Content main = docletWriter.createTagIfAllowed(
-                jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag.MAIN, HtmlTree::MAIN,
-                ContentBuilder::new);
-        main.addContent(bodyContent);
-        htmlContent.addContent(main);
+        Content main = HtmlTree.MAIN();
+        main.add(bodyContent);
+        htmlContent.add(main);
 
         navBar.setUserFooter(docletWriter.getUserHeaderFooter(false));
-        Content footer = docletWriter.createTagIfAllowed(
-                jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag.FOOTER, HtmlTree::FOOTER,
-                ContentBuilder::new);
-        footer.addContent(navBar.getContent(false));
+        Content footer = HtmlTree.FOOTER();
+        footer.add(navBar.getContent(false));
         docletWriter.addBottom(footer);
-        htmlContent.addContent(footer);
-        docletWriter.printHtmlDocument(Collections.emptyList(), false, localTagsContent, htmlContent);
+        htmlContent.add(footer);
+        docletWriter.printHtmlDocument(Collections.emptyList(), null, localTagsContent, htmlContent);
     }
 
 

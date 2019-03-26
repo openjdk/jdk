@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -490,14 +490,12 @@ void G1HeapVerifier::verify(VerifyOption vo) {
 
   {
     G1RootProcessor root_processor(_g1h, 1);
-    root_processor.process_all_roots(&rootsCl,
-                                     &cldCl,
-                                     &blobsCl);
+    root_processor.process_all_roots(&rootsCl, &cldCl, &blobsCl);
   }
 
   bool failures = rootsCl.failures() || codeRootsCl.failures();
 
-  if (!_g1h->g1_policy()->collector_state()->in_full_gc()) {
+  if (!_g1h->policy()->collector_state()->in_full_gc()) {
     // If we're verifying during a full GC then the region sets
     // will have been torn down at the start of the GC. Therefore
     // verifying the region sets will fail. So we only verify
@@ -632,14 +630,14 @@ double G1HeapVerifier::verify(G1VerifyType type, VerifyOption vo, const char* ms
 void G1HeapVerifier::verify_before_gc(G1VerifyType type) {
   if (VerifyBeforeGC) {
     double verify_time_ms = verify(type, VerifyOption_G1UsePrevMarking, "Before GC");
-    _g1h->g1_policy()->phase_times()->record_verify_before_time_ms(verify_time_ms);
+    _g1h->phase_times()->record_verify_before_time_ms(verify_time_ms);
   }
 }
 
 void G1HeapVerifier::verify_after_gc(G1VerifyType type) {
   if (VerifyAfterGC) {
     double verify_time_ms = verify(type, VerifyOption_G1UsePrevMarking, "After GC");
-    _g1h->g1_policy()->phase_times()->record_verify_after_time_ms(verify_time_ms);
+    _g1h->phase_times()->record_verify_after_time_ms(verify_time_ms);
   }
 }
 

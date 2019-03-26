@@ -22,39 +22,32 @@
  */
 
 /*
-  test
+  @test
+  @key headful
   @bug 4092033 4529626
   @summary Tests that toFront makes window focused unless it is non-focusable
-  @author  area=awt.focus
-  @run applet ToFrontFocus.html
+  @library ../../regtesthelpers
+  @build Util
+  @run main ToFrontFocus
 */
 
-/**
- * ToFrontFocus.java
- *
- * summary:
- */
-
-import java.applet.Applet;
 import java.awt.*;
 import java.awt.event.*;
 import test.java.awt.regtesthelpers.Util;
 
-public class ToFrontFocus extends Applet
- {
-   //Declare things used in the test, like buttons and labels here
-
+public class ToFrontFocus {
      Frame cover, focus_frame, nonfocus_frame;
      Button focus_button, nonfocus_button;
      volatile boolean focus_gained = false, nonfocus_gained = false;
-   public void init()
+
+    public static void main(final String[] args) {
+        ToFrontFocus app = new ToFrontFocus();
+        app.init();
+        app.start();
+    }
+
+    public void init()
     {
-      //Create instructions for the user here, as well as set up
-      // the environment -- set the layout manager, add buttons,
-      // etc.
-
-      this.setLayout (new BorderLayout ());
-
       cover = new Frame("Cover frame");
       cover.setBounds(100, 100, 200, 200);
       focus_frame = new Frame("Focusable frame");
@@ -78,9 +71,6 @@ public class ToFrontFocus extends Applet
 
    public void start ()
     {
-      //Get things going.  Request focus, set size, et cetera
-      setSize (200,200);
-      show();
       Util.waitForIdle(null);
 
       focus_frame.setFocusTraversalPolicy(new DefaultFocusTraversalPolicy() {

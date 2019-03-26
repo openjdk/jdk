@@ -828,7 +828,6 @@ class MacroAssembler: public Assembler {
   void load_reverse_32(Register dst, Register src);
   int  crc32_table_columns(Register table, Register tc0, Register tc1, Register tc2, Register tc3);
   void fold_byte_crc32(Register crc, Register val, Register table, Register tmp);
-  void fold_8bit_crc32(Register crc, Register table, Register tmp);
   void update_byte_crc32(Register crc, Register val, Register table);
   void update_byteLoop_crc32(Register crc, Register buf, Register len, Register table,
                              Register data, bool loopAlignment);
@@ -839,20 +838,16 @@ class MacroAssembler: public Assembler {
                           Register t0,  Register t1,  Register t2,  Register t3,
                           Register tc0, Register tc1, Register tc2, Register tc3,
                           bool invertCRC);
-  void kernel_crc32_1byte(Register crc, Register buf, Register len, Register table,
-                          Register t0,  Register t1,  Register t2,  Register t3,
-                          bool invertCRC);
-  void kernel_crc32_vpmsum(Register crc, Register buf, Register len, Register table, Register constants,
-                          Register t0, Register t1, Register t2, Register t3, Register t4, Register t5,
-                          bool invertCRC);
+  void kernel_crc32_vpmsum(Register crc, Register buf, Register len, Register constants,
+                           Register t0, Register t1, Register t2, Register t3, Register t4,
+                           Register t5, Register t6, bool invertCRC);
   void kernel_crc32_vpmsum_aligned(Register crc, Register buf, Register len, Register constants,
-                                   Register t0, Register t1, Register t2, Register t3, Register t4, Register t5);
+                                   Register t0, Register t1, Register t2, Register t3, Register t4,
+                                   Register t5, Register t6);
   // Version which internally decides what to use.
   void crc32(Register crc, Register buf, Register len, Register t0, Register t1, Register t2,
              Register t3, Register t4, Register t5, Register t6, Register t7, bool is_crc32c);
 
-  void kernel_crc32_singleByte(Register crc, Register buf, Register len, Register table, Register tmp,
-                               bool invertCRC);
   void kernel_crc32_singleByteReg(Register crc, Register val, Register table,
                                   bool invertCRC);
 

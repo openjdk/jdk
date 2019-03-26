@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import com.sun.jdi.request.*;
  * <code>com.sun.jdi.VirtualMachine.allThreads()</code>         <BR>
  * complies with the its spec.                                  <BR>
  * <BR>
- * The test checks up the reasults of the method when           <BR>
+ * The test checks up the results of the method when            <BR>
  * it is invoked two times in raw immediately after             <BR>
  * new thread has been started in the debuggee VM.              <BR>
  *                                                              <BR>
@@ -155,7 +155,7 @@ public class allthreads001 {
         IOPipe pipe     = new IOPipe(debuggee);
 
         debuggee.redirectStderr(out);
-        log2("location001a debuggee launched");
+        log2(debuggeeName + " debuggee launched");
         debuggee.resume();
 
         String line = pipe.readln();
@@ -192,11 +192,15 @@ public class allthreads001 {
 
             String threadName = "testedThread";
 
+            // Suspend VM to ensure no new background thread (e.g. JVMCI
+            // compiler thread) is started between two allThreads() calls.
+            vm.suspend();
             List allThreads1 = vm.allThreads();
             log2("allThreads1.size() = " + allThreads1.size());
 
             List allThreads2 = vm.allThreads();
             log2("allThreads2.size() = " + allThreads2.size());
+            vm.resume();
 
             if ( allThreads1.size() != allThreads2.size() ) {
                 log3("ERROR:  allThreads1.size() != allThreads2.size()");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,8 +67,8 @@ public class TestHiddenTag extends JavadocTester {
         checkOutput("pkg1/A.VisibleInner.html", true,
                 "<code><a href=\"A.html#visibleField\">visibleField</a></code>",
                 "<code><a href=\"A.html#visibleMethod()\">visibleMethod</a></code>",
-                "<h3>Nested classes/interfaces inherited from class&nbsp;pkg1." +
-                "<a href=\"A.html\" title=\"class in pkg1\">A</a></h3>\n" +
+                "<h2>Nested classes/interfaces inherited from class&nbsp;pkg1." +
+                "<a href=\"A.html\" title=\"class in pkg1\">A</a></h2>\n" +
                 "<code><a href=\"A.VisibleInner.html\" title=\"class in pkg1\">" +
                 "A.VisibleInner</a>, <a href=\"A.VisibleInnerExtendsInvisibleInner.html\" " +
                 "title=\"class in pkg1\">A.VisibleInnerExtendsInvisibleInner</a></code></li>\n" +
@@ -100,33 +100,5 @@ public class TestHiddenTag extends JavadocTester {
         checkFiles(false,
                 "pkg1/A.InvisibleInner.html",
                 "pkg1/A.InvisibleInnerExtendsVisibleInner.html");
-    }
-
-    @Test
-    public void test1_html4() {
-        javadoc("-d", "out1-html4",
-                "-html4",
-                "-sourcepath", testSrc,
-                "-package",
-                "pkg1");
-        checkExit(Exit.OK);
-
-        checkOutput("pkg1/A.html", true,
-                "<a name=\"visibleField\">",
-                "<a name=\"visibleMethod--\">");
-
-        checkOutput("pkg1/A.VisibleInner.html", true,
-                "<code><a href=\"A.html#visibleMethod--\">visibleMethod</a></code>");
-
-        checkOutput("pkg1/A.VisibleInnerExtendsInvisibleInner.html", true,
-                "<code><a href=\"A.html#visibleMethod--\">visibleMethod</a></code>");
-
-        checkOutput("pkg1/A.html", false,
-                "<a name=\"inVisibleMethod--\">");
-
-        checkOutput("pkg1/A.VisibleInner.html", false,
-                "../pkg1/A.VisibleInner.html#VisibleInner--",
-                "<a name=\"inVisibleField\">",
-                "<a name=\"inVisibleMethod--\">");
     }
 }

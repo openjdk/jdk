@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -70,17 +70,17 @@ ifeq (4.0, $(firstword $(sort 4.0 $(MAKE_VERSION))))
   CORRECT_FUNCTION_IN_RECIPE_EVALUATION := true
 endif
 
-##############################
-# Functions
-##############################
 
-### Debug functions
+# For convenience, MakeBase.gmk continues to include these separate files, at
+# least for now.
 
-# Prints the name and value of a variable
-PrintVar = \
-    $(info $(strip $1) >$($(strip $1))<)
+include $(TOPDIR)/make/common/Utils.gmk
+include $(TOPDIR)/make/common/MakeIO.gmk
+include $(TOPDIR)/make/common/CopyFiles.gmk
 
-### Functions for timers
+################################################################################
+# Functions for timers
+################################################################################
 
 # Store the build times in this directory.
 BUILDTIMESDIR=$(OUTPUTDIR)/make-support/build-times
@@ -115,227 +115,6 @@ define TargetExit
 	$(PRINTF) "## Finished $(patsubst %-only,%,$@) (build time %s)\n\n" \
 	    "`$(CAT) $(BUILDTIMESDIR)/build_time_diff_$(patsubst %-only,%,$@) | $(CUT) -f 1 -d ' '`"
 endef
-
-################################################################################
-# This macro translates $ into \$ to protect the $ from expansion in the shell.
-# To make this macro resilient against already escaped strings, first remove
-# any present escapes before escaping so that no double escapes are added.
-EscapeDollar = $(subst $$,\$$,$(subst \$$,$$,$(strip $1)))
-
-################################################################################
-# This macro works just like EscapeDollar above, but for #.
-EscapeHash = $(subst \#,\\\#,$(subst \\\#,\#,$(strip $1)))
-
-################################################################################
-# This macro translates $ into $$ to protect the string from make itself.
-DoubleDollar = $(subst $$,$$$$,$(strip $1))
-
-################################################################################
-# ListPathsSafely can be used to print command parameters to a file. This is
-# typically done if the command line lenght risk being too long for the
-# OS/shell. In later make versions, the file function can be used for this
-# purpose. For earlier versions, a more complex implementation is provided.
-#
-# The function ListPathsSafely can be called either directly or, more commonly
-# from a recipe line. If called from a recipe, it will be executed in the
-# evaluation phase of that recipe, which means that it will write to the file
-# before any other line in the recipe has been run.
-ifeq ($(HAS_FILE_FUNCTION), true)
-  # Param 1 - Name of variable containing paths/arguments to output
-  # Param 2 - File to print to
-  # Param 3 - Set to true to append to file instead of overwriting
-  define ListPathsSafely
-    $$(call MakeDir, $$(dir $$(strip $2)))
-    $$(file $$(if $$(filter true, $$(strip $3)),>>,>) \
-        $$(strip $2),$$(subst $$(SPACE),$$(NEWLINE),$$(strip $$($$(strip $1)))))
-  endef
-
-else # HAS_FILE_FUNCTION = false
-
-  $(eval compress_paths = \
-      $(strip $(shell $(CAT) $(TOPDIR)/make/common/support/ListPathsSafely-pre-compress.incl)))
-  compress_paths += \
-      $(subst $(TOPDIR),X97, \
-      $(subst $(OUTPUTDIR),X98, \
-      $(subst X,X00, \
-      $(subst $(SPACE),\n,$(strip $1)))))
-  $(eval compress_paths += \
-      $(strip $(shell $(CAT) $(TOPDIR)/make/common/support/ListPathsSafely-post-compress.incl)))
-
-  decompress_paths=$(SED) -f $(TOPDIR)/make/common/support/ListPathsSafely-uncompress.sed \
-      -e 's|X99|\\n|g' \
-      -e 's|X98|$(OUTPUTDIR)|g' -e 's|X97|$(TOPDIR)|g' \
-      -e 's|X00|X|g'
-
-  ListPathsSafely_IfPrintf = \
-      $(if $(word $3,$($(strip $1))), \
-          $(shell $(PRINTF) -- "$(strip $(call EscapeDollar, \
-              $(call compress_paths, $(wordlist $3,$4,$($(strip $1))))))\n" \
-              | $(decompress_paths) >> $2))
-
-  # Param 1 - Name of variable containing paths/arguments to output
-  # Param 2 - File to print to
-  # Param 3 - Set to true to append to file instead of overwriting
-  define ListPathsSafely
-    ifneq (,$$(word 30001,$$($$(strip $1))))
-      $$(error Cannot list safely more than 30000 paths. $1 has $$(words $$($$(strip $1))) paths!)
-    endif
-    $$(call MakeDir, $$(dir $2))
-    ifneq ($$(strip $3), true)
-      $$(shell $(RM) $$(strip $2))
-    endif
-
-    $$(call ListPathsSafely_IfPrintf,$1,$2,1,250)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,251,500)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,501,750)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,751,1000)
-
-    $$(call ListPathsSafely_IfPrintf,$1,$2,1001,1250)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,1251,1500)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,1501,1750)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,1751,2000)
-
-    $$(call ListPathsSafely_IfPrintf,$1,$2,2001,2250)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,2251,2500)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,2501,2750)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,2751,3000)
-
-    $$(call ListPathsSafely_IfPrintf,$1,$2,3001,3250)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,3251,3500)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,3501,3750)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,3751,4000)
-
-    $$(call ListPathsSafely_IfPrintf,$1,$2,4001,4250)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,4251,4500)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,4501,4750)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,4751,5000)
-
-    $$(call ListPathsSafely_IfPrintf,$1,$2,5001,5250)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,5251,5500)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,5501,5750)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,5751,6000)
-
-    $$(call ListPathsSafely_IfPrintf,$1,$2,6001,6250)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,6251,6500)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,6501,6750)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,6751,7000)
-
-    $$(call ListPathsSafely_IfPrintf,$1,$2,7001,7250)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,7251,7500)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,7501,7750)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,7751,8000)
-
-    $$(call ListPathsSafely_IfPrintf,$1,$2,8001,8250)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,8251,8500)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,8501,8750)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,8751,9000)
-
-    $$(call ListPathsSafely_IfPrintf,$1,$2,9001,9250)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,9251,9500)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,9501,9750)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,9751,10000)
-
-    $$(call ListPathsSafely_IfPrintf,$1,$2,10001,10250)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,10251,10500)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,10501,10750)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,10751,11000)
-
-    $$(call ListPathsSafely_IfPrintf,$1,$2,11001,11250)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,11251,11500)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,11501,11750)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,11751,12000)
-
-    $$(call ListPathsSafely_IfPrintf,$1,$2,12001,12250)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,12251,12500)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,12501,12750)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,12751,13000)
-
-    $$(call ListPathsSafely_IfPrintf,$1,$2,13001,13250)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,13251,13500)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,13501,13750)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,13751,14000)
-
-    $$(call ListPathsSafely_IfPrintf,$1,$2,14001,14250)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,14251,14500)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,14501,14750)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,14751,15000)
-
-    $$(call ListPathsSafely_IfPrintf,$1,$2,15001,15250)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,15251,15500)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,15501,15750)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,15751,16000)
-
-    $$(call ListPathsSafely_IfPrintf,$1,$2,16001,16250)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,16251,16500)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,16501,16750)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,16751,17000)
-
-    $$(call ListPathsSafely_IfPrintf,$1,$2,17001,17250)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,17251,17500)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,17501,17750)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,17751,18000)
-
-    $$(call ListPathsSafely_IfPrintf,$1,$2,18001,18250)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,18251,18500)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,18501,18750)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,18751,19000)
-
-    $$(call ListPathsSafely_IfPrintf,$1,$2,19001,19250)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,19251,19500)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,19501,19750)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,19751,20000)
-
-    $$(call ListPathsSafely_IfPrintf,$1,$2,20001,20250)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,20251,20500)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,20501,20750)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,20751,21000)
-
-    $$(call ListPathsSafely_IfPrintf,$1,$2,21001,21250)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,21251,21500)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,21501,21750)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,21751,22000)
-
-    $$(call ListPathsSafely_IfPrintf,$1,$2,22001,22250)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,22251,22500)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,22501,22750)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,22751,23000)
-
-    $$(call ListPathsSafely_IfPrintf,$1,$2,23001,23250)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,23251,23500)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,23501,23750)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,23751,24000)
-
-    $$(call ListPathsSafely_IfPrintf,$1,$2,24001,24250)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,24251,24500)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,24501,24750)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,24751,25000)
-
-    $$(call ListPathsSafely_IfPrintf,$1,$2,25001,25250)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,25251,25500)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,25501,25750)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,25751,26000)
-
-    $$(call ListPathsSafely_IfPrintf,$1,$2,26001,26250)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,26251,26500)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,26501,26750)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,26751,27000)
-
-    $$(call ListPathsSafely_IfPrintf,$1,$2,27001,27250)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,27251,27500)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,27501,27750)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,27751,28000)
-
-    $$(call ListPathsSafely_IfPrintf,$1,$2,28001,28250)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,28251,28500)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,28501,28750)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,28751,29000)
-
-    $$(call ListPathsSafely_IfPrintf,$1,$2,29001,29250)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,29251,29500)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,29501,29750)
-    $$(call ListPathsSafely_IfPrintf,$1,$2,29751,30000)
-  endef
-endif # HAS_FILE_FUNCTION
 
 ################################################################################
 
@@ -409,21 +188,6 @@ endef
 $(eval $(call SetupLogging))
 
 ################################################################################
-# Creates a sequence of increasing numbers (inclusive).
-# Param 1 - starting number
-# Param 2 - ending number
-sequence = \
-    $(wordlist $1, $2, $(strip \
-        $(eval SEQUENCE_COUNT :=) \
-        $(call _sequence-do,$(strip $2))))
-
-_sequence-do = \
-    $(if $(word $1, $(SEQUENCE_COUNT)),, \
-      $(eval SEQUENCE_COUNT += .) \
-      $(words $(SEQUENCE_COUNT)) \
-      $(call _sequence-do,$1))
-
-################################################################################
 
 MAX_PARAMS := 36
 PARAM_SEQUENCE := $(call sequence, 2, $(MAX_PARAMS))
@@ -465,16 +229,6 @@ define NamedParamsMacroTemplate
 endef
 
 ################################################################################
-# Replace question marks with space in string. This macro needs to be called on
-# files from CacheFind in case any of them contains space in their file name,
-# since CacheFind replaces space with ?.
-# Param 1 - String to replace in
-DecodeSpace = \
-    $(subst ?,$(SPACE),$(strip $1))
-EncodeSpace = \
-    $(subst $(SPACE),?,$(strip $1))
-
-################################################################################
 # Make directory without forking mkdir if not needed.
 #
 # If a directory with an encoded space is provided, the wildcard function
@@ -502,16 +256,9 @@ MakeTargetDir = \
     $(call MakeDir, $(dir $(call EncodeSpace, $@)))
 
 ################################################################################
-# Assign a variable only if it is empty
-# Param 1 - Variable to assign
-# Param 2 - Value to assign
-SetIfEmpty = \
-    $(if $($(strip $1)),,$(eval $(strip $1) := $2))
-
-################################################################################
 # All install-file and related macros automatically call DecodeSpace when needed.
 
-ifeq ($(OPENJDK_TARGET_OS),solaris)
+ifeq ($(call isTargetOs, solaris), true)
   # On Solaris, if the target is a symlink and exists, cp won't overwrite.
   # Cp has to operate in recursive mode to allow for -P flag, to preserve soft links. If the
   # name of the target file differs from the source file, rename after copy.
@@ -537,7 +284,7 @@ ifeq ($(OPENJDK_TARGET_OS),solaris)
 	  $(CP) -f '$(call DecodeSpace, $<)' '$(call DecodeSpace, $@)'; \
 	fi
   endef
-else ifeq ($(OPENJDK_TARGET_OS),macosx)
+else ifeq ($(call isTargetOs, macosx), true)
   # On mac, extended attributes sometimes creep into the source files, which may later
   # cause the creation of ._* files which confuses testing. Clear these with xattr if
   # set. Some files get their write permissions removed after being copied to the
@@ -576,46 +323,6 @@ define install-file-nolink
 endef
 
 ################################################################################
-# Take two paths and return the path of the last common directory.
-# Ex: /foo/bar/baz, /foo/bar/banan -> /foo/bar
-#     foo/bar/baz, /foo/bar -> <empty>
-#
-# The x prefix is used to preserve the presence of the initial slash
-#
-# $1 - Path to compare
-# $2 - Other path to compare
-FindCommonPathPrefix = \
-    $(patsubst x%,%,$(subst $(SPACE),/,$(strip \
-        $(call FindCommonPathPrefixHelper, \
-            $(subst /,$(SPACE),x$(strip $1)), $(subst /,$(SPACE),x$(strip $2))) \
-    )))
-
-FindCommonPathPrefixHelper = \
-    $(if $(call equals, $(firstword $1), $(firstword $2)), \
-      $(firstword $1) \
-      $(call FindCommonPathPrefixHelper, \
-          $(wordlist 2, $(words $1), $1), $(wordlist 2, $(words $2), $2) \
-      ) \
-    )
-
-# Convert a partial path into as many directory levels of ../, removing
-# leading and following /.
-# Ex: foo/bar/baz/ -> ../../..
-#     foo/bar -> ../..
-#     /foo -> ..
-DirToDotDot = \
-    $(subst $(SPACE),/,$(foreach d, $(subst /,$(SPACE),$1),..))
-
-# Computes the relative path from a directory to a file
-# $1 - File to compute the relative path to
-# $2 - Directory to compute the relative path from
-RelativePath = \
-    $(eval $1_prefix := $(call FindCommonPathPrefix, $1, $2)) \
-    $(eval $1_dotdots := $(call DirToDotDot, $(patsubst $($(strip $1)_prefix)/%, %, $2))) \
-    $(eval $1_suffix := $(patsubst $($(strip $1)_prefix)/%, %, $1)) \
-    $($(strip $1)_dotdots)/$($(strip $1)_suffix)
-
-################################################################################
 # link-file-* works similarly to install-file but creates a symlink instead.
 # There are two versions, either creating a relative or an absolute link. Be
 # careful when using this on Windows since the symlink created is only valid in
@@ -631,60 +338,6 @@ define link-file-absolute
 	$(RM) '$(call DecodeSpace, $@)'
 	$(LN) -s '$(call DecodeSpace, $<)' '$(call DecodeSpace, $@)'
 endef
-
-################################################################################
-# Filter out duplicate sub strings while preserving order. Keeps the first occurance.
-uniq = \
-    $(strip $(if $1,$(firstword $1) $(call uniq,$(filter-out $(firstword $1),$1))))
-
-# Returns all whitespace-separated words in $2 where at least one of the
-# whitespace-separated words in $1 is a substring.
-containing = \
-    $(strip \
-        $(foreach v,$(strip $2),\
-          $(call uniq,$(foreach p,$(strip $1),$(if $(findstring $p,$v),$v)))))
-
-# Returns all whitespace-separated words in $2 where none of the
-# whitespace-separated words in $1 is a substring.
-not-containing = \
-    $(strip $(filter-out $(call containing,$1,$2),$2))
-
-# Return a list of all string elements that are duplicated in $1.
-dups = \
-    $(strip $(foreach v, $(sort $1), $(if $(filter-out 1, \
-        $(words $(filter $v, $1))), $v)))
-
-# String equals
-equals = \
-    $(if $(strip $1)$(strip $2),$(strip \
-      $(and $(findstring $(strip $1),$(strip $2)),\
-        $(findstring $(strip $2),$(strip $1)))), \
-      true \
-    )
-
-# Remove a whole list of prefixes
-# $1 - List of prefixes
-# $2 - List of elements to process
-remove-prefixes = \
-    $(strip $(if $1,$(patsubst $(firstword $1)%,%,\
-      $(call remove-prefixes,$(filter-out $(firstword $1),$1),$2)),$2))
-
-# Convert the string given to upper case, without any $(shell)
-# Inspired by http://lists.gnu.org/archive/html/help-make/2013-09/msg00009.html
-uppercase_table := a,A b,B c,C d,D e,E f,F g,G h,H i,I j,J k,K l,L m,M n,N o,O \
-    p,P q,Q r,R s,S t,T u,U v,V w,W x,X y,Y z,Z
-
-uppercase_internal = \
-  $(if $(strip $1), $$(subst $(firstword $1), $(call uppercase_internal, \
-      $(wordlist 2, $(words $1), $1), $2)), $2)
-
-# Convert a string to upper case. Works only on a-z.
-# $1 - The string to convert
-uppercase = \
-  $(strip \
-    $(eval uppercase_result := $(call uppercase_internal, $(uppercase_table), $1)) \
-    $(uppercase_result) \
-  )
 
 ################################################################################
 
@@ -739,9 +392,10 @@ ifneq ($(DISABLE_CACHE_FIND), true)
   #
   # Param 1 - Dirs to find in
   # Param 2 - (optional) specialization. Normally "-a \( ... \)" expression.
+  # Param 3 - (optional) options to find.
   define CacheFind
     $(if $(filter-out $(addsuffix /%,- $(FIND_CACHE_DIRS)) $(FIND_CACHE_DIRS),$1), \
-      $(if $(wildcard $1), $(shell $(FIND) $(wildcard $1) \( -type f -o -type l \) $2 \
+      $(if $(wildcard $1), $(shell $(FIND) $3 $(wildcard $1) \( -type f -o -type l \) $2 \
           | $(TR) ' ' '?')), \
       $(filter $(addsuffix /%,$(patsubst %/,%,$1)) $1,$(FIND_CACHE)))
   endef
@@ -758,144 +412,6 @@ else
 endif
 
 ################################################################################
-
-define AddFileToCopy
-  # Helper macro for SetupCopyFiles
-  # 1 : Source file
-  # 2 : Dest file
-  # 3 : Variable to add targets to
-  # 4 : Macro to call for copy operation
-  # 5 : Action text to log
-  $2: $1
-	$$(call LogInfo, $(strip $5) $$(patsubst $(OUTPUTDIR)/%,%,$$(call DecodeSpace, $$@)))
-	$$($$(strip $4))
-
-  $3 += $2
-  $3_SOURCES += $1
-endef
-
-# Returns the value of the first argument
-identity = \
-    $(strip $1)
-
-# Setup make rules for copying files, with an option to do more complex
-# processing instead of copying.
-#
-# Parameter 1 is the name of the rule. This name is used as variable prefix,
-# and the targets generated are listed in a variable by that name.
-#
-# The list of all source files is returned in $1_SOURCES.
-#
-# Remaining parameters are named arguments. These include:
-#   SRC     : Source root dir (defaults to dir of first file)
-#   DEST    : Dest root dir
-#   FILES   : List of files to copy with absolute paths, or path relative to SRC.
-#             Must be in SRC.
-#   FLATTEN : Set to flatten the directory structure in the DEST dir.
-#   MACRO   : Optionally override the default macro used for making the copy.
-#             Default is 'install-file'
-#   NAME_MACRO : Optionally supply a macro that rewrites the target file name
-#                based on the source file name
-#   LOG_ACTION : Optionally specify a different action text for log messages
-SetupCopyFiles = $(NamedParamsMacroTemplate)
-define SetupCopyFilesBody
-
-  ifeq ($$($1_MACRO), )
-    $1_MACRO := install-file
-  endif
-
-  # Default SRC to the dir of the first file.
-  ifeq ($$($1_SRC), )
-    $1_SRC := $$(dir $$(firstword $$($1_FILES)))
-  endif
-
-  ifeq ($$($1_NAME_MACRO), )
-    $1_NAME_MACRO := identity
-  endif
-
-  ifeq ($$($1_LOG_ACTION), )
-    $1_LOG_ACTION := Copying
-  endif
-
-  # Remove any trailing slash from SRC and DEST
-  $1_SRC := $$(patsubst %/,%,$$($1_SRC))
-  $1_DEST := $$(patsubst %/,%,$$($1_DEST))
-
-  # Need to wrap arguments in DoubleDollar because of the eval nested inside an
-  # eval macro body.
-  $$(foreach f, $$(patsubst $$($1_SRC)/%,%,$$($1_FILES)), \
-    $$(eval $$(call AddFileToCopy, \
-        $$(call DoubleDollar, $$($1_SRC)/$$f), \
-        $$(call DoubleDollar, \
-            $$($1_DEST)/$$(call $$(strip $$($1_NAME_MACRO)),$$(if $$($1_FLATTEN),$$(notdir $$f),$$f)) \
-        ), \
-        $1, \
-        $$($1_MACRO), \
-        $$($1_LOG_ACTION) \
-    )) \
-  )
-
-endef
-
-################################################################################
-# Parse a multiple-keyword variable, like FOO="KEYWORD1=val1;KEYWORD2=val2;..."
-# These will be converted into a series of variables like FOO_KEYWORD1=val1,
-# FOO_KEYWORD2=val2, etc. Unknown keywords will cause an error.
-#
-# Parameter 1 is the name of the rule, and is also the name of the variable.
-#
-# Remaining parameters are named arguments. These include:
-#   SINGLE_KEYWORDS   A list of valid keywords with single string values
-#   STRING_KEYWORDS   A list of valid keywords, processed as string. This means
-#       that '%20' will be replaced by ' ' to allow for multi-word strings.
-#
-ParseKeywordVariable = $(NamedParamsMacroTemplate)
-define ParseKeywordVariableBody
-  ifneq ($$($1), )
-    # To preserve spaces, substitute them with a hopefully unique pattern
-    # before splitting and then re-substitute spaces back.
-    $1_MANGLED := $$(subst $$(SPACE),||||,$$($1))
-    $$(foreach mangled_part, $$(subst ;, , $$($1_MANGLED)), \
-      $$(eval mangled_part_eval := $$(call DoubleDollar, $$(mangled_part))) \
-      $$(eval part := $$$$(subst ||||,$$$$(SPACE),$$$$(mangled_part_eval))) \
-      $$(eval $1_NO_MATCH := true) \
-      $$(foreach keyword, $$($1_SINGLE_KEYWORDS), \
-        $$(eval keyword_eval := $$(call DoubleDollar, $$(keyword))) \
-        $$(if $$(filter $$(keyword)=%, $$(part)), \
-          $$(eval $(strip $1)_$$$$(keyword_eval) := $$$$(strip $$$$(patsubst $$$$(keyword_eval)=%, %, $$$$(part)))) \
-          $$(eval $1_NO_MATCH := ) \
-        ) \
-      ) \
-      $$(foreach keyword, $$($1_STRING_KEYWORDS), \
-        $$(eval keyword_eval := $$(call DoubleDollar, $$(keyword))) \
-        $$(if $$(filter $$(keyword)=%, $$(part)), \
-          $$(eval $(strip $1)_$$$$(keyword_eval) := $$$$(strip $$$$(subst %20, , $$$$(patsubst $$$$(keyword_eval)=%, %, $$$$(part))))) \
-          $$(eval $1_NO_MATCH := ) \
-        ) \
-      ) \
-      $$(if $$($1_NO_MATCH), \
-        $$(if $$(filter $$(part), $$($1_SINGLE_KEYWORDS) $$($1_STRING_KEYWORDS)), \
-          $$(info Keyword $$(part) for $1 needs to be assigned a value.) \
-        , \
-          $$(info $$(part) is not a valid keyword for $1.) \
-          $$(info Valid keywords: $$($1_SINGLE_KEYWORDS) $$($1_STRING_KEYWORDS).) \
-        ) \
-        $$(error Cannot continue) \
-      ) \
-    )
-  endif
-endef
-
-################################################################################
-# ShellQuote
-#
-# Quotes a string with single quotes and replaces single quotes with '\'' so
-# that the contents survives being given to the shell.
-
-ShellQuote = \
-    $(SQUOTE)$(subst $(SQUOTE),$(SQUOTE)\$(SQUOTE)$(SQUOTE),$(strip $1))$(SQUOTE)
-
-################################################################################
 # FixPath
 #
 # On Windows, converts a path from cygwin/unix style (e.g. /bin/foo) into
@@ -903,41 +419,12 @@ ShellQuote = \
 # unchanged.
 # This is normally not needed since we use the FIXPATH prefix for command lines,
 # but might be needed in certain circumstances.
-ifeq ($(OPENJDK_TARGET_OS), windows)
+ifeq ($(call isTargetOs, windows), true)
   FixPath = \
       $(shell $(CYGPATH) -m $1)
 else
   FixPath = \
       $1
-endif
-
-################################################################################
-# Write to and read from file
-
-# Param 1 - File to read
-ReadFile = \
-    $(shell $(CAT) $1)
-
-# Param 1 - Text to write
-# Param 2 - File to write to
-ifeq ($(HAS_FILE_FUNCTION), true)
-  WriteFile = \
-      $(file >$2,$(strip $1))
-else
-  # Use printf to get consistent behavior on all platforms.
-  WriteFile = \
-      $(shell $(PRINTF) "%s" $(call ShellQuote, $1) > $2)
-endif
-
-# Param 1 - Text to write
-# Param 2 - File to write to
-ifeq ($(HAS_FILE_FUNCTION), true)
-  AppendFile = \
-      $(file >>$2,$(strip $1))
-else
-  # Use printf to get consistent behavior on all platforms.
-  AppendFile = \
-      $(shell $(PRINTF) "%s" $(call ShellQuote, $1) >> $2)
 endif
 
 ################################################################################
@@ -1024,75 +511,6 @@ ExecuteWithLog = \
       $(CP) $(strip $1).log $(MAKESUPPORT_OUTPUTDIR)/failure-logs/$(subst /,_,$(patsubst $(OUTPUTDIR)/%,%,$(strip $1))).log && \
       $(CP) $(strip $1).cmdline $(MAKESUPPORT_OUTPUTDIR)/failure-logs/$(subst /,_,$(patsubst $(OUTPUTDIR)/%,%,$(strip $1))).cmdline && \
       exit $(DOLLAR)exitcode ) )
-
-################################################################################
-# Find lib dir for module
-# Param 1 - module name
-FindLibDirForModule = \
-    $(SUPPORT_OUTPUTDIR)/modules_libs/$(strip $1)
-
-################################################################################
-# Find executable dir for module
-# Param 1 - module name
-FindExecutableDirForModule = \
-    $(SUPPORT_OUTPUTDIR)/modules_cmds/$(strip $1)
-
-################################################################################
-# Return a string suitable for use after a -classpath or --module-path option. It
-# will be correct and safe to use on all platforms. Arguments are given as space
-# separate classpath entries. Safe for multiple nested calls.
-# param 1 : A space separated list of classpath entries
-# The surrounding strip is needed to keep additional whitespace out
-PathList = \
-  "$(subst $(SPACE),$(PATH_SEP),$(strip $(subst $(DQUOTE),,$1)))"
-
-################################################################################
-# Check if a specified hotspot variant is being built, or at least one of a
-# list of variants. Will return 'true' or 'false'.
-# $1 - the variant to test for
-check-jvm-variant = \
-  $(strip \
-    $(if $(filter-out $(VALID_JVM_VARIANTS), $1), \
-      $(error Internal error: Invalid variant tested: $1)) \
-    $(if $(filter $1, $(JVM_VARIANTS)), true, false))
-
-################################################################################
-# Converts a space separated list to a comma separated list.
-#
-# Replacing double-comma with a single comma is to workaround the issue with
-# some version of make on windows that doesn't substitute spaces with one comma
-# properly.
-CommaList = \
-  $(strip \
-      $(subst $(COMMA)$(COMMA),$(COMMA),$(subst $(SPACE),$(COMMA),$(strip $1))) \
-  )
-
-################################################################################
-# Converts a space separated list to a colon separated list.
-#
-# Replacing double-colon with a single colon is to workaround the issue with
-# some version of make on windows that doesn't substitute spaces with one colon
-# properly.
-ColonList = \
-  $(strip \
-      $(subst ::,:,$(subst $(SPACE),:,$(strip $1))) \
-  )
-
-################################################################################
-# Given a list of files, filters out locale specific files for translations
-# that should be excluded from this build.
-# $1 - The list of files to filter
-# $2 - The suffix of the files that should be considered (.java or .properties)
-FilterExcludedTranslations = \
-  $(strip $(if $(EXCLUDE_TRANSLATIONS), \
-    $(filter-out \
-        $(foreach suffix, $2, \
-          $(addprefix %_, $(addsuffix $(suffix), $(EXCLUDE_TRANSLATIONS))) \
-        ), \
-        $1 \
-    ), \
-    $1 \
-  ))
 
 ################################################################################
 

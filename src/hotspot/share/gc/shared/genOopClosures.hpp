@@ -29,7 +29,6 @@
 #include "oops/oop.hpp"
 
 class Generation;
-class HeapWord;
 class CardTableRS;
 class CardTableBarrierSet;
 class DefNewGeneration;

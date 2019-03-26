@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
- Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -29,14 +29,14 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 </head>
 <body>
-<h2>Java Collections API Design FAQ</h2>
+<h1>Java Collections API Design FAQ</h1>
 <!-- Body text begins here -->
 <hr>
 This document answers frequently asked questions concerning the
 design of the Java collections framework. It is derived from the
 large volume of traffic on the collections-comments alias. It
 serves as a design rationale for the collections framework.
-<h3>Core Interfaces - General Questions</h3>
+<h2>Core Interfaces - General Questions</h2>
 <ol>
 <li><a href="#a1"><b>Why don't you support immutability directly in
 the core collection interfaces so that you can do away with
@@ -50,7 +50,7 @@ throw an UnsupportedOperationException?</b></a></li>
 <li><a href="#a28"><b>Why didn't you use "Beans-style names" for
 consistency?</b></a></li>
 </ol>
-<h3>Collection Interface</h3>
+<h2>Collection Interface</h2>
 <ol>
 <li><a href="#a5"><b>Why doesn't Collection extend Cloneable and
 Serializable?</b></a></li>
@@ -67,7 +67,7 @@ JDK have Enumeration (or Iterator) constructors?</b></a></li>
 <li><a href="#a10"><b>Why don't you provide an Iterator.add
 method?</b></a></li>
 </ol>
-<h3>List Interface</h3>
+<h2>List Interface</h2>
 <ol>
 <li><a href="#a11"><b>Why don't you rename the List interface to
 Sequence; doesn't "list" generally suggest "linked list"? Also,
@@ -75,12 +75,12 @@ doesn't it conflict with java.awt.List?</b></a></li>
 <li><a href="#a12"><b>Why don't you rename List's set method to
 replace, to avoid confusion with Set.</b></a></li>
 </ol>
-<h3>Map Interface</h3>
+<h2>Map Interface</h2>
 <ol>
 <li><a href="#a14"><b>Why doesn't Map extend
 Collection?</b></a></li>
 </ol>
-<h3>Iterator Interface</h3>
+<h2>Iterator Interface</h2>
 <ol>
 <li><a href="#a18"><b>Why doesn't Iterator extend
 Enumeration?</b></a></li>
@@ -88,7 +88,7 @@ Enumeration?</b></a></li>
 that allows you to look at the next element in an iteration without
 advancing the iterator?</b></a></li>
 </ol>
-<h3>Miscellaneous</h3>
+<h2>Miscellaneous</h2>
 <ol>
 <li><a href="#a23"><b>Why did you write a new collections framework
 instead of adopting JGL (a preexisting collections package from
@@ -102,7 +102,7 @@ collections that send out Events when they're
 modified?</b></a></li>
 </ol>
 <hr>
-<h3>Core Interfaces - General Questions</h3>
+<h2>Core Interfaces - General Questions</h2>
 <ol>
 <li><a id="a1"><b>Why don't you support immutability
 directly in the core collection interfaces so that you can do away
@@ -204,7 +204,7 @@ case. Thus, we adopted the "traditional" JDK style rather than the
 Beans style.</li>
 </ol>
 <hr>
-<h3>Collection Interface</h3>
+<h2>Collection Interface</h2>
 <ol>
 <li><a id="a5"><b>Why doesn't Collection extend Cloneable
 and Serializable?</b></a>
@@ -264,7 +264,7 @@ guarantee the order of the iteration.</p>
 </li>
 </ol>
 <hr>
-<h3>List Interface</h3>
+<h2>List Interface</h2>
 <ol>
 <li><a id="a11"><b>Why don't you rename the List
 interface to Sequence; doesn't "list" generally suggest "linked
@@ -288,7 +288,7 @@ enough enshrined in the language that we'd stick with it.</p>
 </li>
 </ol>
 <hr>
-<h3>Map Interface</h3>
+<h2>Map Interface</h2>
 <ol>
 <li><a id="a14"><b>Why doesn't Map extend
 Collection?</b></a>
@@ -314,7 +314,7 @@ Lists.</p>
 </li>
 </ol>
 <hr>
-<h3>Iterator Interface</h3>
+<h2>Iterator Interface</h2>
 <ol>
 <li><a id="a18"><b>Why doesn't Iterator extend
 Enumeration?</b></a>
@@ -335,7 +335,7 @@ that everyone has to implement.</p>
 </li>
 </ol>
 <hr>
-<h3>Miscellaneous</h3>
+<h2>Miscellaneous</h2>
 <ol>
 <li><a id="a23"><b>Why did you write a new collections
 framework instead of adopting JGL (a preexisting collections

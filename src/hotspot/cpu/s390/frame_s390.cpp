@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/monitorChunk.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -478,6 +479,7 @@ void frame::back_trace(outputStream* st, intptr_t* start_sp, intptr_t* top_pc, u
           // name
           Method* method = *(Method**)((address)current_fp + _z_ijava_state_neg(method));
           if (method) {
+            ResourceMark rm;
             if (method->is_synchronized()) st->print("synchronized ");
             if (method->is_static()) st->print("static ");
             if (method->is_native()) st->print("native ");
@@ -542,6 +544,7 @@ void frame::back_trace(outputStream* st, intptr_t* start_sp, intptr_t* top_pc, u
           // name
           Method* method = ((nmethod *)blob)->method();
           if (method) {
+            ResourceMark rm;
             method->name_and_sig_as_C_string(buf, sizeof(buf));
             st->print("%s ", buf);
           }

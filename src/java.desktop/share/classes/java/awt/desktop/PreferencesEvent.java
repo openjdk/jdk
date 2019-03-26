@@ -33,11 +33,13 @@ import java.awt.HeadlessException;
  * Event sent when the application is asked to open its preferences window.
  *
  * @see PreferencesHandler#handlePreferences
- *
  * @since 9
  */
 public final class PreferencesEvent extends AppEvent {
 
+    /**
+     * Use serialVersionUID from JDK 9 for interoperability.
+     */
     private static final long serialVersionUID = -6398607097086476160L;
 
     /**

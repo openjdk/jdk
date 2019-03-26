@@ -403,18 +403,36 @@ public class PrintServiceLookupProvider extends PrintServiceLookup {
        list.
     */
     class RemotePrinterChangeListener implements Runnable {
-        private String[] prevRemotePrinters;
+        private String[] prevRemotePrinters = null;
 
         RemotePrinterChangeListener() {
             prevRemotePrinters = getRemotePrintersNames();
         }
 
         boolean doCompare(String[] str1, String[] str2) {
+            if (str1 == null && str2 == null) {
+                return false;
+            } else if (str1 == null || str2 == null) {
+                return true;
+            }
+
             if (str1.length != str2.length) {
                 return true;
             } else {
                 for (int i = 0;i < str1.length;i++) {
                     for (int j = 0;j < str2.length;j++) {
+                        // skip if both are nulls
+                        if (str1[i] == null && str2[j] == null) {
+                            continue;
+                        }
+
+                        // return true if there is a 'difference' but
+                        // no need to access the individual string
+                        if (str1[i] == null || str2[j] == null) {
+                            return true;
+                        }
+
+                        // do comparison only if they are non-nulls
                         if (!str1[i].equals(str2[j])) {
                             return true;
                         }
@@ -428,15 +446,19 @@ public class PrintServiceLookupProvider extends PrintServiceLookup {
         @Override
         public void run() {
             while (true) {
-                String[] currentRemotePrinters = getRemotePrintersNames();
-                if (doCompare(prevRemotePrinters, currentRemotePrinters)) {
+                if (prevRemotePrinters != null && prevRemotePrinters.length > 0) {
+                    String[] currentRemotePrinters = getRemotePrintersNames();
+                    if (doCompare(prevRemotePrinters, currentRemotePrinters)) {
 
-                    // updated the printers data
-                    // printers list now contains both local and network printer data
-                    refreshServices();
+                        // updated the printers data
+                        // printers list now contains both local and network printer data
+                        refreshServices();
 
-                    // store the current data for next comparison
-                    prevRemotePrinters = currentRemotePrinters;
+                        // store the current data for next comparison
+                        prevRemotePrinters = currentRemotePrinters;
+                    }
+                } else {
+                    prevRemotePrinters = getRemotePrintersNames();
                 }
 
                 try {

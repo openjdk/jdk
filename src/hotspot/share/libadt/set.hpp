@@ -164,9 +164,6 @@ class Set : public ResourceObj {
   virtual int operator <=(const Set &s) const=0;
   int operator >=(const Set &s) const { return s <= *this; }
 
-  // Return any member of the Set.  Undefined if the Set is empty.
-  virtual uint getelem(void) const=0;
-
   // Clear all the elements in the Set
   virtual void Clear(void)=0;
 
@@ -188,15 +185,7 @@ class Set : public ResourceObj {
   virtual int parse(const char *s);
 
   // Convert a generic Set to a specific Set
-  /* Removed for MCC BUG
-     virtual operator const SparseSet* (void) const;
-     virtual operator const VectorSet* (void) const;
-     virtual operator const ListSet  * (void) const;
-     virtual operator const CoSet    * (void) const; */
-  virtual const SparseSet *asSparseSet(void) const;
   virtual const VectorSet *asVectorSet(void) const;
-  virtual const ListSet   *asListSet  (void) const;
-  virtual const CoSet     *asCoSet    (void) const;
 
   // Hash the set.  Sets of different types but identical elements will NOT
   // hash the same.  Same set type, same elements WILL hash the same.
@@ -204,16 +193,11 @@ class Set : public ResourceObj {
 
 protected:
   friend class SetI;
-  friend class CoSet;
   virtual class SetI_ *iterate(uint&) const=0;
 
   // Need storeage for the set
   Arena *_set_arena;
 };
-typedef Set&((*Set_Constructor)(Arena *arena));
-extern Set &ListSet_Construct(Arena *arena);
-extern Set &VectorSet_Construct(Arena *arena);
-extern Set &SparseSet_Construct(Arena *arena);
 
 //------------------------------Iteration--------------------------------------
 // Loop thru all elements of the set, setting "elem" to the element numbers

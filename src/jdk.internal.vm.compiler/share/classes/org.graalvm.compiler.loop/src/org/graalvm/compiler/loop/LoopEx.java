@@ -76,8 +76,6 @@ import org.graalvm.compiler.nodes.debug.ControlFlowAnchored;
 import org.graalvm.compiler.nodes.extended.ValueAnchorNode;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 
-import jdk.vm.ci.code.BytecodeFrame;
-
 public class LoopEx {
     private final Loop<Block> loop;
     private LoopFragmentInside inside;
@@ -85,6 +83,7 @@ public class LoopEx {
     private CountedLoopInfo counted;
     private LoopsData data;
     private EconomicMap<Node, InductionVariable> ivs;
+    private boolean countedLoopChecked;
 
     LoopEx(Loop<Block> loop, LoopsData data) {
         this.loop = loop;
@@ -143,10 +142,12 @@ public class LoopEx {
     }
 
     public boolean isCounted() {
+        assert countedLoopChecked;
         return counted != null;
     }
 
     public CountedLoopInfo counted() {
+        assert countedLoopChecked;
         return counted;
     }
 
@@ -211,6 +212,10 @@ public class LoopEx {
     }
 
     public boolean detectCounted() {
+        if (countedLoopChecked) {
+            return isCounted();
+        }
+        countedLoopChecked = true;
         LoopBeginNode loopBegin = loopBegin();
         FixedNode next = loopBegin.next();
         while (next instanceof FixedGuardNode || next instanceof ValueAnchorNode || next instanceof FullInfopointNode) {
@@ -219,8 +224,8 @@ public class LoopEx {
         if (next instanceof IfNode) {
             IfNode ifNode = (IfNode) next;
             boolean negated = false;
-            if (!loopBegin.isLoopExit(ifNode.falseSuccessor())) {
-                if (!loopBegin.isLoopExit(ifNode.trueSuccessor())) {
+            if (!isCfgLoopExit(ifNode.falseSuccessor())) {
+                if (!isCfgLoopExit(ifNode.trueSuccessor())) {
                     return false;
                 }
                 negated = true;
@@ -301,12 +306,17 @@ public class LoopEx {
                     }
                     break;
                 default:
-                    throw GraalError.shouldNotReachHere();
+                    throw GraalError.shouldNotReachHere(condition.toString());
             }
             counted = new CountedLoopInfo(this, iv, ifNode, limit, oneOff, negated ? ifNode.falseSuccessor() : ifNode.trueSuccessor());
             return true;
         }
         return false;
+    }
+
+    private boolean isCfgLoopExit(AbstractBeginNode begin) {
+        Block block = data.getCFG().blockFor(begin);
+        return loop.getDepth() > block.getLoopDepth() || loop.isNaturalExit(block);
     }
 
     public LoopsData loopsData() {
@@ -321,7 +331,7 @@ public class LoopEx {
         work.add(cfg.blockFor(branch));
         while (!work.isEmpty()) {
             Block b = work.remove();
-            if (loop().getExits().contains(b)) {
+            if (loop().isLoopExit(b)) {
                 assert !exits.contains(b.getBeginNode());
                 exits.add(b.getBeginNode());
             } else if (blocks.add(b.getBeginNode())) {
@@ -465,7 +475,7 @@ public class LoopEx {
             }
             if (node instanceof FrameState) {
                 FrameState frameState = (FrameState) node;
-                if (frameState.bci == BytecodeFrame.AFTER_EXCEPTION_BCI || frameState.bci == BytecodeFrame.UNWIND_BCI) {
+                if (frameState.isExceptionHandlingBCI()) {
                     return false;
                 }
             }

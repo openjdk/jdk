@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSetAssembler.hpp"
 #include "gc/shared/cardTableBarrierSet.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -194,11 +195,13 @@ void CardTableBarrierSet::flush_deferred_card_mark_barrier(JavaThread* thread) {
 #endif
 }
 
-void CardTableBarrierSet::on_thread_detach(JavaThread* thread) {
+void CardTableBarrierSet::on_thread_detach(Thread* thread) {
   // The deferred store barriers must all have been flushed to the
   // card-table (or other remembered set structure) before GC starts
   // processing the card-table (or other remembered set).
-  flush_deferred_card_mark_barrier(thread);
+  if (thread->is_Java_thread()) { // Only relevant for Java threads.
+    flush_deferred_card_mark_barrier((JavaThread*)thread);
+  }
 }
 
 bool CardTableBarrierSet::card_mark_must_follow_store() const {

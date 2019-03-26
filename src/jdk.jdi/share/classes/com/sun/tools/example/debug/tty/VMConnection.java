@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ class VMConnection {
 
     private final Connector connector;
     private final Map<String, com.sun.jdi.connect.Connector.Argument> connectorArgs;
-    private final int traceFlags;
+    private int traceFlags;
 
     synchronized void notifyOutputComplete() {
         outputCompleteCount++;
@@ -319,6 +319,17 @@ class VMConnection {
 
         connectorArgs = parseConnectorArgs(connector, argString);
         this.traceFlags = traceFlags;
+    }
+
+    public void setTraceFlags(int flags) {
+        this.traceFlags = flags;
+        /*
+         * If vm is not connected now, then vm.setDebugTraceMode() will
+         * be called when it is connected.
+         */
+        if (vm != null) {
+            vm.setDebugTraceMode(flags);
+        }
     }
 
     synchronized VirtualMachine open() {

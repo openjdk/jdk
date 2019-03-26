@@ -22,7 +22,9 @@ com/apple/laf com/sun/java/accessibility com/sun/java/swing sanity/client demo/j
 javax/management sun/awt sun/java2d javax/xml/jaxp/testng/validation java/lang/ProcessHandle
 
 # Tests that cannot run concurrently
-exclusiveAccess.dirs=java/rmi/Naming java/util/prefs sun/management/jmxremote sun/tools/jstatd sun/security/mscapi java/util/stream java/util/Arrays/largeMemory java/util/BitSet/stream javax/rmi
+exclusiveAccess.dirs=java/rmi/Naming java/util/prefs sun/management/jmxremote sun/tools/jstatd \
+sun/security/mscapi java/util/stream java/util/Arrays/largeMemory java/util/BitSet/stream javax/rmi
+
 # Group definitions
 groups=TEST.groups
 
@@ -42,6 +44,7 @@ requires.properties= \
     vm.compiler1.enabled \
     vm.compiler2.enabled \
     vm.cds \
+    vm.debug \
     vm.hasSA \
     vm.hasSAandCanAttach \
     vm.hasJFR \
@@ -49,7 +52,7 @@ requires.properties= \
     release.implementor
 
 # Minimum jtreg version
-requiredVersion=4.2 b13
+requiredVersion=4.2 b14
 
 # Path to libraries in the topmost test directory. This is needed so @library
 # does not need ../../ notation to reach them
@@ -60,3 +63,6 @@ useNewOptions=true
 
 # Use --patch-module instead of -Xmodule:
 useNewPatchModule=true
+
+# disabled till JDK-8219408 is fixed
+allowSmartActionArgs=false

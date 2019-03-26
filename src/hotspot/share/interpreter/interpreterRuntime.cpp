@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,11 +134,6 @@ public:
 
   frame& get_frame()                             { return _last_frame; }
 };
-
-
-bool InterpreterRuntime::is_breakpoint(JavaThread *thread) {
-  return Bytecodes::code_or_bp_at(LastFrameAccessor(thread).bcp()) == Bytecodes::_breakpoint;
-}
 
 //------------------------------------------------------------------------------------------------------------------------
 // State accessors
@@ -925,19 +920,23 @@ void InterpreterRuntime::resolve_invoke(JavaThread* thread, Bytecodes::Code byte
            info.call_kind() == CallInfo::vtable_call, "");
   }
 #endif
-  // Get sender or sender's unsafe_anonymous_host, and only set cpCache entry to resolved if
-  // it is not an interface.  The receiver for invokespecial calls within interface
-  // methods must be checked for every call.
-  InstanceKlass* sender = pool->pool_holder();
-  sender = sender->is_unsafe_anonymous() ? sender->unsafe_anonymous_host() : sender;
 
   switch (info.call_kind()) {
-  case CallInfo::direct_call:
+  case CallInfo::direct_call: {
+    // Get sender or sender's unsafe_anonymous_host, and only set cpCache entry to resolved if
+    // it is not an interface.  The receiver for invokespecial calls within interface
+    // methods must be checked for every call.
+    InstanceKlass* pool_holder = pool->pool_holder();
+    InstanceKlass* sender = pool_holder->is_unsafe_anonymous() ?
+                              pool_holder->unsafe_anonymous_host() : pool_holder;
+
     cp_cache_entry->set_direct_call(
       bytecode,
       info.resolved_method(),
-      sender->is_interface());
+      sender->is_interface(),
+      pool_holder);
     break;
+  }
   case CallInfo::vtable_call:
     cp_cache_entry->set_vtable_call(
       bytecode,
@@ -981,9 +980,6 @@ void InterpreterRuntime::resolve_invokedynamic(JavaThread* thread) {
   Thread* THREAD = thread;
   LastFrameAccessor last_frame(thread);
   const Bytecodes::Code bytecode = Bytecodes::_invokedynamic;
-
-  //TO DO: consider passing BCI to Java.
-  //  int caller_bci = last_frame.method()->bci_from(last_frame.bcp());
 
   // resolve method
   CallInfo info;

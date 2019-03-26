@@ -144,6 +144,10 @@ class CallGenerator : public ResourceObj {
                                            CallGenerator* if_hit,
                                            float hit_prob);
 
+  static CallGenerator* for_guarded_call(ciKlass* predicted_receiver,
+                                         CallGenerator* if_missed,
+                                         CallGenerator* if_hit);
+
   // How to make a call that optimistically assumes a MethodHandle target:
   static CallGenerator* for_predicted_dynamic_call(ciMethodHandle* predicted_method_handle,
                                                    CallGenerator* if_missed,
@@ -176,6 +180,8 @@ class CallGenerator : public ResourceObj {
   }
 
   static bool is_inlined_method_handle_intrinsic(JVMState* jvms, ciMethod* m);
+  static bool is_inlined_method_handle_intrinsic(ciMethod* caller, int bci, ciMethod* m);
+  static bool is_inlined_method_handle_intrinsic(ciMethod* symbolic_info, ciMethod* m);
 };
 
 

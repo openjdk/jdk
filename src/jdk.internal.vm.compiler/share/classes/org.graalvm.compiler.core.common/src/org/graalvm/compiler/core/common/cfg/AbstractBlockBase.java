@@ -24,6 +24,8 @@
 
 package org.graalvm.compiler.core.common.cfg;
 
+import java.util.Comparator;
+
 public abstract class AbstractBlockBase<T extends AbstractBlockBase<T>> {
 
     protected int id;
@@ -171,4 +173,13 @@ public abstract class AbstractBlockBase<T extends AbstractBlockBase<T>> {
     public int hashCode() {
         return id;
     }
+
+    public static class BlockIdComparator implements Comparator<AbstractBlockBase<?>> {
+        @Override
+        public int compare(AbstractBlockBase<?> o1, AbstractBlockBase<?> o2) {
+            return Integer.compare(o1.getId(), o2.getId());
+        }
+    }
+
+    public static final BlockIdComparator BLOCK_ID_COMPARATOR = new BlockIdComparator();
 }

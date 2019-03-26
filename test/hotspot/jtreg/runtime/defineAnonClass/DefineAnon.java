@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @library /testlibrary
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.management
+ *          java.base/jdk.internal.misc
  * @compile -XDignore.symbol.file=true DefineAnon.java
  * @run main/othervm p1.DefineAnon
  */
@@ -36,7 +37,7 @@ package p1;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 
 class T {
@@ -48,17 +49,7 @@ class T {
 
 public class DefineAnon {
 
-    private static Unsafe getUnsafe() {
-        try {
-            java.lang.reflect.Field singleoneInstanceField = Unsafe.class.getDeclaredField("theUnsafe");
-            singleoneInstanceField.setAccessible(true);
-            return (Unsafe) singleoneInstanceField.get(null);
-        } catch (Throwable ex) {
-            throw new RuntimeException("Was unable to get Unsafe instance.");
-        }
-    }
-
-    static Unsafe UNSAFE = DefineAnon.getUnsafe();
+    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     static Class<?> getAnonClass(Class<?> hostClass, final String className) {
         final String superName = "java/lang/Object";

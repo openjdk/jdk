@@ -25,12 +25,13 @@
 #include "jvm.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
+#include "os_posix.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
-#include "runtime/os.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/align.hpp"
+#include "utilities/events.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
@@ -180,19 +181,16 @@ int os::create_file_for_heap(const char* dir) {
 
   const char name_template[] = "/jvmheap.XXXXXX";
 
-  char *fullname = (char*)os::malloc((strlen(dir) + strlen(name_template) + 1), mtInternal);
+  size_t fullname_len = strlen(dir) + strlen(name_template);
+  char *fullname = (char*)os::malloc(fullname_len + 1, mtInternal);
   if (fullname == NULL) {
     vm_exit_during_initialization(err_msg("Malloc failed during creation of backing file for heap (%s)", os::strerror(errno)));
     return -1;
   }
-  (void)strncpy(fullname, dir, strlen(dir)+1);
-  (void)strncat(fullname, name_template, strlen(name_template));
+  int n = snprintf(fullname, fullname_len + 1, "%s%s", dir, name_template);
+  assert((size_t)n == fullname_len, "Unexpected number of characters in string");
 
   os::native_path(fullname);
-
-  sigset_t set, oldset;
-  int ret = sigfillset(&set);
-  assert_with_errno(ret == 0, "sigfillset returned error");
 
   // set the file creation mask.
   mode_t file_mode = S_IRUSR | S_IWUSR;
@@ -207,7 +205,7 @@ int os::create_file_for_heap(const char* dir) {
   }
 
   // delete the name from the filesystem. When 'fd' is closed, the file (and space) will be deleted.
-  ret = unlink(fullname);
+  int ret = unlink(fullname);
   assert_with_errno(ret == 0, "unlink returned error");
 
   os::free(fullname);
@@ -1272,6 +1270,15 @@ static bool get_signal_code_description(const siginfo_t* si, enum_sigcode_desc_t
   return true;
 }
 
+bool os::signal_sent_by_kill(const void* siginfo) {
+  const siginfo_t* const si = (const siginfo_t*)siginfo;
+  return si->si_code == SI_USER || si->si_code == SI_QUEUE
+#ifdef SI_TKILL
+         || si->si_code == SI_TKILL
+#endif
+  ;
+}
+
 void os::print_siginfo(outputStream* os, const void* si0) {
 
   const siginfo_t* const si = (const siginfo_t*) si0;
@@ -1302,7 +1309,7 @@ void os::print_siginfo(outputStream* os, const void* si0) {
   // so it depends on the context which member to use. For synchronous error signals,
   // we print si_addr, unless the signal was sent by another process or thread, in
   // which case we print out pid or tid of the sender.
-  if (si->si_code == SI_USER || si->si_code == SI_QUEUE) {
+  if (signal_sent_by_kill(si)) {
     const pid_t pid = si->si_pid;
     os->print(", si_pid: %ld", (long) pid);
     if (IS_VALID_PID(pid)) {
@@ -1326,6 +1333,25 @@ void os::print_siginfo(outputStream* os, const void* si0) {
 #endif
   }
 
+}
+
+bool os::signal_thread(Thread* thread, int sig, const char* reason) {
+  OSThread* osthread = thread->osthread();
+  if (osthread) {
+#if defined (SOLARIS)
+    // Note: we cannot use pthread_kill on Solaris - not because
+    // its missing, but because we do not have the pthread_t id.
+    int status = thr_kill(osthread->thread_id(), sig);
+#else
+    int status = pthread_kill(osthread->pthread_id(), sig);
+#endif
+    if (status == 0) {
+      Events::log(Thread::current(), "sent signal %d to Thread " INTPTR_FORMAT " because %s.",
+                  sig, p2i(thread), reason);
+      return true;
+    }
+  }
+  return false;
 }
 
 int os::Posix::unblock_thread_signal_mask(const sigset_t *set) {
@@ -1619,11 +1645,9 @@ void os::ThreadCrashProtection::check_crash_protection(int sig,
   }
 }
 
-
-// Shared pthread_mutex/cond based PlatformEvent implementation.
-// Not currently usable by Solaris.
-
-#ifndef SOLARIS
+// Shared clock/time and other supporting routines for pthread_mutex/cond
+// initialization. This is enabled on Solaris but only some of the clock/time
+// functionality is actually used there.
 
 // Shared condattr object for use with relative timed-waits. Will be associated
 // with CLOCK_MONOTONIC if available to avoid issues with time-of-day changes,
@@ -1647,7 +1671,27 @@ static void pthread_init_common(void) {
   if ((status = pthread_mutexattr_settype(_mutexAttr, PTHREAD_MUTEX_NORMAL)) != 0) {
     fatal("pthread_mutexattr_settype: %s", os::strerror(status));
   }
+  // Solaris has it's own PlatformMonitor, distinct from the one for POSIX.
+  NOT_SOLARIS(os::PlatformMonitor::init();)
 }
+
+#ifndef SOLARIS
+sigset_t sigs;
+struct sigaction sigact[NSIG];
+
+struct sigaction* os::Posix::get_preinstalled_handler(int sig) {
+  if (sigismember(&sigs, sig)) {
+    return &sigact[sig];
+  }
+  return NULL;
+}
+
+void os::Posix::save_preinstalled_handler(int sig, struct sigaction& oldAct) {
+  assert(sig > 0 && sig < NSIG, "vm signal out of expected range");
+  sigact[sig] = oldAct;
+  sigaddset(&sigs, sig);
+}
+#endif
 
 // Not all POSIX types and API's are available on all notionally "posix"
 // platforms. If we have build-time support then we will check for actual
@@ -1661,25 +1705,12 @@ static void pthread_init_common(void) {
 
 // This means we have clockid_t, clock_gettime et al and CLOCK_MONOTONIC
 
-static int (*_clock_gettime)(clockid_t, struct timespec *);
-static int (*_clock_getres)(clockid_t, struct timespec *);
-static int (*_pthread_condattr_setclock)(pthread_condattr_t *, clockid_t);
+int (*os::Posix::_clock_gettime)(clockid_t, struct timespec *) = NULL;
+int (*os::Posix::_clock_getres)(clockid_t, struct timespec *) = NULL;
 
-static bool _use_clock_monotonic_condattr;
+static int (*_pthread_condattr_setclock)(pthread_condattr_t *, clockid_t) = NULL;
 
-// Exported clock functionality
-
-int os::Posix::clock_gettime(clockid_t clock_id, struct timespec *tp) {
-  return _clock_gettime != NULL ? _clock_gettime(clock_id, tp) : -1;
-}
-
-int os::Posix::clock_getres(clockid_t clock_id, struct timespec *tp) {
-  return _clock_getres != NULL ? _clock_getres(clock_id, tp) : -1;
-}
-
-bool os::Posix::supports_monotonic_clock() {
-  return _clock_gettime != NULL;
-}
+static bool _use_clock_monotonic_condattr = false;
 
 // Determine what POSIX API's are present and do appropriate
 // configuration.
@@ -1707,9 +1738,6 @@ void os::Posix::init(void) {
     handle = RTLD_DEFAULT;
   }
 
-  _clock_gettime = NULL;
-  _clock_getres = NULL;
-
   int (*clock_getres_func)(clockid_t, struct timespec*) =
     (int(*)(clockid_t, struct timespec*))dlsym(handle, "clock_getres");
   int (*clock_gettime_func)(clockid_t, struct timespec*) =
@@ -1736,8 +1764,6 @@ void os::Posix::init(void) {
 
   // 2. Check for pthread_condattr_setclock support.
 
-  _pthread_condattr_setclock = NULL;
-
   // libpthread is already loaded.
   int (*condattr_setclock_func)(pthread_condattr_t*, clockid_t) =
     (int (*)(pthread_condattr_t*, clockid_t))dlsym(RTLD_DEFAULT,
@@ -1750,6 +1776,7 @@ void os::Posix::init(void) {
 
   pthread_init_common();
 
+#ifndef SOLARIS
   int status;
   if (_pthread_condattr_setclock != NULL && _clock_gettime != NULL) {
     if ((status = _pthread_condattr_setclock(_condAttr, CLOCK_MONOTONIC)) != 0) {
@@ -1763,18 +1790,21 @@ void os::Posix::init(void) {
     } else {
       _use_clock_monotonic_condattr = true;
     }
-  } else {
-    _use_clock_monotonic_condattr = false;
   }
+#endif // !SOLARIS
+
 }
 
 void os::Posix::init_2(void) {
+#ifndef SOLARIS
   log_info(os)("Use of CLOCK_MONOTONIC is%s supported",
                (_clock_gettime != NULL ? "" : " not"));
   log_info(os)("Use of pthread_condattr_setclock is%s supported",
                (_pthread_condattr_setclock != NULL ? "" : " not"));
   log_info(os)("Relative timed-wait using pthread_cond_timedwait is associated with %s",
                _use_clock_monotonic_condattr ? "CLOCK_MONOTONIC" : "the default clock");
+  sigemptyset(&sigs);
+#endif // !SOLARIS
 }
 
 #else // !SUPPORTS_CLOCK_MONOTONIC
@@ -1784,30 +1814,26 @@ void os::Posix::init(void) {
 }
 
 void os::Posix::init_2(void) {
+#ifndef SOLARIS
   log_info(os)("Use of CLOCK_MONOTONIC is not supported");
   log_info(os)("Use of pthread_condattr_setclock is not supported");
   log_info(os)("Relative timed-wait using pthread_cond_timedwait is associated with the default clock");
+  sigemptyset(&sigs);
+#endif // !SOLARIS
 }
 
 #endif // SUPPORTS_CLOCK_MONOTONIC
 
-os::PlatformEvent::PlatformEvent() {
-  int status = pthread_cond_init(_cond, _condAttr);
-  assert_status(status == 0, status, "cond_init");
-  status = pthread_mutex_init(_mutex, _mutexAttr);
-  assert_status(status == 0, status, "mutex_init");
-  _event   = 0;
-  _nParked = 0;
-}
-
 // Utility to convert the given timeout to an absolute timespec
-// (based on the appropriate clock) to use with pthread_cond_timewait.
+// (based on the appropriate clock) to use with pthread_cond_timewait,
+// and sem_timedwait().
 // The clock queried here must be the clock used to manage the
-// timeout of the condition variable.
+// timeout of the condition variable or semaphore.
 //
 // The passed in timeout value is either a relative time in nanoseconds
 // or an absolute time in milliseconds. A relative timeout will be
-// associated with CLOCK_MONOTONIC if available; otherwise, or if absolute,
+// associated with CLOCK_MONOTONIC if available, unless the real-time clock
+// is explicitly requested; otherwise, or if absolute,
 // the default time-of-day clock will be used.
 
 // Given time is a 64-bit value and the time_t used in the timespec is
@@ -1824,7 +1850,7 @@ os::PlatformEvent::PlatformEvent() {
 
 // Calculate a new absolute time that is "timeout" nanoseconds from "now".
 // "unit" indicates the unit of "now_part_sec" (may be nanos or micros depending
-// on which clock is being used).
+// on which clock API is being used).
 static void calc_rel_time(timespec* abstime, jlong timeout, jlong now_sec,
                           jlong now_part_sec, jlong unit) {
   time_t max_secs = now_sec + MAX_SECS;
@@ -1849,6 +1875,7 @@ static void calc_rel_time(timespec* abstime, jlong timeout, jlong now_sec,
 
 // Unpack the given deadline in milliseconds since the epoch, into the given timespec.
 // The current time in seconds is also passed in to enforce an upper bound as discussed above.
+// This is only used with gettimeofday, when clock_gettime is not available.
 static void unpack_abs_time(timespec* abstime, jlong deadline, jlong now_sec) {
   time_t max_secs = now_sec + MAX_SECS;
 
@@ -1865,7 +1892,18 @@ static void unpack_abs_time(timespec* abstime, jlong deadline, jlong now_sec) {
   }
 }
 
-static void to_abstime(timespec* abstime, jlong timeout, bool isAbsolute) {
+static jlong millis_to_nanos(jlong millis) {
+  // We have to watch for overflow when converting millis to nanos,
+  // but if millis is that large then we will end up limiting to
+  // MAX_SECS anyway, so just do that here.
+  if (millis / MILLIUNITS > MAX_SECS) {
+    millis = jlong(MAX_SECS) * MILLIUNITS;
+  }
+  return millis * (NANOUNITS / MILLIUNITS);
+}
+
+static void to_abstime(timespec* abstime, jlong timeout,
+                       bool isAbsolute, bool isRealtime) {
   DEBUG_ONLY(int max_secs = MAX_SECS;)
 
   if (timeout < 0) {
@@ -1874,9 +1912,14 @@ static void to_abstime(timespec* abstime, jlong timeout, bool isAbsolute) {
 
 #ifdef SUPPORTS_CLOCK_MONOTONIC
 
-  if (_use_clock_monotonic_condattr && !isAbsolute) {
+  clockid_t clock = CLOCK_MONOTONIC;
+  // need to ensure we have a runtime check for clock_gettime support
+  if (!isAbsolute && os::Posix::supports_monotonic_clock()) {
+    if (!_use_clock_monotonic_condattr || isRealtime) {
+      clock = CLOCK_REALTIME;
+    }
     struct timespec now;
-    int status = _clock_gettime(CLOCK_MONOTONIC, &now);
+    int status = os::Posix::clock_gettime(clock, &now);
     assert_status(status == 0, status, "clock_gettime");
     calc_rel_time(abstime, timeout, now.tv_sec, now.tv_nsec, NANOUNITS);
     DEBUG_ONLY(max_secs += now.tv_sec;)
@@ -1906,6 +1949,19 @@ static void to_abstime(timespec* abstime, jlong timeout, bool isAbsolute) {
   assert(abstime->tv_nsec < NANOUNITS, "tv_nsec >= NANOUNITS");
 }
 
+// Create an absolute time 'millis' milliseconds in the future, using the
+// real-time (time-of-day) clock. Used by PosixSemaphore.
+void os::Posix::to_RTC_abstime(timespec* abstime, int64_t millis) {
+  to_abstime(abstime, millis_to_nanos(millis),
+             false /* not absolute */,
+             true  /* use real-time clock */);
+}
+
+// Shared pthread_mutex/cond based PlatformEvent implementation.
+// Not currently usable by Solaris.
+
+#ifndef SOLARIS
+
 // PlatformEvent
 //
 // Assumption:
@@ -1920,6 +1976,15 @@ static void to_abstime(timespec* abstime, jlong timeout, bool isAbsolute) {
 //
 //    Having three states allows for some detection of bad usage - see
 //    comments on unpark().
+
+os::PlatformEvent::PlatformEvent() {
+  int status = pthread_cond_init(_cond, _condAttr);
+  assert_status(status == 0, status, "cond_init");
+  status = pthread_mutex_init(_mutex, _mutexAttr);
+  assert_status(status == 0, status, "mutex_init");
+  _event   = 0;
+  _nParked = 0;
+}
 
 void os::PlatformEvent::park() {       // AKA "down()"
   // Transitions for _event:
@@ -1982,13 +2047,7 @@ int os::PlatformEvent::park(jlong millis) {
 
   if (v == 0) { // Do this the hard way by blocking ...
     struct timespec abst;
-    // We have to watch for overflow when converting millis to nanos,
-    // but if millis is that large then we will end up limiting to
-    // MAX_SECS anyway, so just do that here.
-    if (millis / MILLIUNITS > MAX_SECS) {
-      millis = jlong(MAX_SECS) * MILLIUNITS;
-    }
-    to_abstime(&abst, millis * (NANOUNITS / MILLIUNITS), false);
+    to_abstime(&abst, millis_to_nanos(millis), false, false);
 
     int ret = OS_TIMEOUT;
     int status = pthread_mutex_lock(_mutex);
@@ -2106,7 +2165,7 @@ void Parker::park(bool isAbsolute, jlong time) {
     return;
   }
   if (time > 0) {
-    to_abstime(&absTime, time, isAbsolute);
+    to_abstime(&absTime, time, isAbsolute, false);
   }
 
   // Enter safepoint region
@@ -2191,5 +2250,92 @@ void Parker::unpark() {
   }
 }
 
+// Platform Monitor implementation
+
+os::PlatformMonitor::Impl::Impl() : _next(NULL) {
+  int status = pthread_cond_init(&_cond, _condAttr);
+  assert_status(status == 0, status, "cond_init");
+  status = pthread_mutex_init(&_mutex, _mutexAttr);
+  assert_status(status == 0, status, "mutex_init");
+}
+
+os::PlatformMonitor::Impl::~Impl() {
+  int status = pthread_cond_destroy(&_cond);
+  assert_status(status == 0, status, "cond_destroy");
+  status = pthread_mutex_destroy(&_mutex);
+  assert_status(status == 0, status, "mutex_destroy");
+}
+
+#if PLATFORM_MONITOR_IMPL_INDIRECT
+
+pthread_mutex_t os::PlatformMonitor::_freelist_lock;
+os::PlatformMonitor::Impl* os::PlatformMonitor::_freelist = NULL;
+
+void os::PlatformMonitor::init() {
+  int status = pthread_mutex_init(&_freelist_lock, _mutexAttr);
+  assert_status(status == 0, status, "freelist lock init");
+}
+
+struct os::PlatformMonitor::WithFreeListLocked : public StackObj {
+  WithFreeListLocked() {
+    int status = pthread_mutex_lock(&_freelist_lock);
+    assert_status(status == 0, status, "freelist lock");
+  }
+
+  ~WithFreeListLocked() {
+    int status = pthread_mutex_unlock(&_freelist_lock);
+    assert_status(status == 0, status, "freelist unlock");
+  }
+};
+
+os::PlatformMonitor::PlatformMonitor() {
+  {
+    WithFreeListLocked wfl;
+    _impl = _freelist;
+    if (_impl != NULL) {
+      _freelist = _impl->_next;
+      _impl->_next = NULL;
+      return;
+    }
+  }
+  _impl = new Impl();
+}
+
+os::PlatformMonitor::~PlatformMonitor() {
+  WithFreeListLocked wfl;
+  assert(_impl->_next == NULL, "invariant");
+  _impl->_next = _freelist;
+  _freelist = _impl;
+}
+
+#endif // PLATFORM_MONITOR_IMPL_INDIRECT
+
+// Must already be locked
+int os::PlatformMonitor::wait(jlong millis) {
+  assert(millis >= 0, "negative timeout");
+  if (millis > 0) {
+    struct timespec abst;
+    // We have to watch for overflow when converting millis to nanos,
+    // but if millis is that large then we will end up limiting to
+    // MAX_SECS anyway, so just do that here.
+    if (millis / MILLIUNITS > MAX_SECS) {
+      millis = jlong(MAX_SECS) * MILLIUNITS;
+    }
+    to_abstime(&abst, millis * (NANOUNITS / MILLIUNITS), false, false);
+
+    int ret = OS_TIMEOUT;
+    int status = pthread_cond_timedwait(cond(), mutex(), &abst);
+    assert_status(status == 0 || status == ETIMEDOUT,
+                  status, "cond_timedwait");
+    if (status == 0) {
+      ret = OS_OK;
+    }
+    return ret;
+  } else {
+    int status = pthread_cond_wait(cond(), mutex());
+    assert_status(status == 0, status, "cond_wait");
+    return OS_OK;
+  }
+}
 
 #endif // !SOLARIS

@@ -70,8 +70,8 @@ class VirtualMemory {
 // Virtual memory allocation site, keeps track where the virtual memory is reserved.
 class VirtualMemoryAllocationSite : public AllocationSite<VirtualMemory> {
  public:
-  VirtualMemoryAllocationSite(const NativeCallStack& stack) :
-    AllocationSite<VirtualMemory>(stack) { }
+  VirtualMemoryAllocationSite(const NativeCallStack& stack, MEMFLAGS flag) :
+    AllocationSite<VirtualMemory>(stack, flag) { }
 
   inline void reserve_memory(size_t sz)  { data()->reserve_memory(sz);  }
   inline void commit_memory (size_t sz)  { data()->commit_memory(sz);   }

@@ -1066,16 +1066,6 @@ inline bool ConcurrentHashTable<VALUE, CONFIG, F>::
 }
 
 template <typename VALUE, typename CONFIG, MEMFLAGS F>
-template <typename LOOKUP_FUNC>
-inline VALUE ConcurrentHashTable<VALUE, CONFIG, F>::
-  get_copy(Thread* thread, LOOKUP_FUNC& lookup_f, bool* grow_hint)
-{
-  ScopedCS cs(thread, this);
-  VALUE* val = internal_get(thread, lookup_f, grow_hint);
-  return val != NULL ? *val : CONFIG::notfound();
-}
-
-template <typename VALUE, typename CONFIG, MEMFLAGS F>
 inline bool ConcurrentHashTable<VALUE, CONFIG, F>::
   unsafe_insert(const VALUE& value) {
   bool dead_hash = false;

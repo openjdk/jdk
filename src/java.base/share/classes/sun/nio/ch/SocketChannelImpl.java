@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.net.InetSocketAddress;
 import java.net.ProtocolFamily;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.net.SocketException;
 import java.net.SocketOption;
 import java.net.StandardProtocolFamily;
 import java.net.StandardSocketOptions;
@@ -52,10 +53,10 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 
+import sun.net.ConnectionResetException;
 import sun.net.NetHooks;
 import sun.net.ext.ExtendedSocketOptions;
 import sun.net.util.SocketExceptions;
-import static sun.net.ext.ExtendedSocketOptions.SOCK_STREAM;
 
 /**
  * An implementation of SocketChannels
@@ -66,7 +67,7 @@ class SocketChannelImpl
     implements SelChImpl
 {
     // Used to make native read and write calls
-    private static NativeDispatcher nd;
+    private static final NativeDispatcher nd = new SocketDispatcher();
 
     // Our file descriptor object
     private final FileDescriptor fd;
@@ -85,6 +86,9 @@ class SocketChannelImpl
     // Input/Output closed
     private volatile boolean isInputClosed;
     private volatile boolean isOutputClosed;
+
+    // Connection reset protected by readLock
+    private boolean connectionReset;
 
     // -- The following fields are protected by stateLock
 
@@ -231,7 +235,7 @@ class SocketChannelImpl
             }
 
             // no options that require special handling
-            Net.setSocketOption(fd, Net.UNSPEC, name, value);
+            Net.setSocketOption(fd, name, value);
             return this;
         }
     }
@@ -261,7 +265,7 @@ class SocketChannelImpl
             }
 
             // no options that require special handling
-            return (T) Net.getSocketOption(fd, Net.UNSPEC, name);
+            return (T) Net.getSocketOption(fd, name);
         }
     }
 
@@ -282,7 +286,7 @@ class SocketChannelImpl
             // additional options required by socket adaptor
             set.add(StandardSocketOptions.IP_TOS);
             set.add(ExtendedSocketOption.SO_OOBINLINE);
-            set.addAll(ExtendedSocketOptions.options(SOCK_STREAM));
+            set.addAll(ExtendedSocketOptions.clientSocketOptions());
             return Collections.unmodifiableSet(set);
         }
     }
@@ -335,6 +339,10 @@ class SocketChannelImpl
         }
     }
 
+    private void throwConnectionReset() throws SocketException {
+        throw new SocketException("Connection reset");
+    }
+
     @Override
     public int read(ByteBuffer buf) throws IOException {
         Objects.requireNonNull(buf);
@@ -345,6 +353,10 @@ class SocketChannelImpl
             int n = 0;
             try {
                 beginRead(blocking);
+
+                // check if connection has been reset
+                if (connectionReset)
+                    throwConnectionReset();
 
                 // check if input is shutdown
                 if (isInputClosed)
@@ -357,6 +369,9 @@ class SocketChannelImpl
                 } else {
                     n = IOUtil.read(fd, buf, -1, nd);
                 }
+            } catch (ConnectionResetException e) {
+                connectionReset = true;
+                throwConnectionReset();
             } finally {
                 endRead(blocking, n > 0);
                 if (n <= 0 && isInputClosed)
@@ -381,6 +396,10 @@ class SocketChannelImpl
             try {
                 beginRead(blocking);
 
+                // check if connection has been reset
+                if (connectionReset)
+                    throwConnectionReset();
+
                 // check if input is shutdown
                 if (isInputClosed)
                     return IOStatus.EOF;
@@ -392,6 +411,9 @@ class SocketChannelImpl
                 } else {
                     n = IOUtil.read(fd, dsts, offset, length, nd);
                 }
+            } catch (ConnectionResetException e) {
+                connectionReset = true;
+                throwConnectionReset();
             } finally {
                 endRead(blocking, n > 0);
                 if (n <= 0 && isInputClosed)
@@ -518,10 +540,10 @@ class SocketChannelImpl
                 beginWrite(blocking);
                 if (blocking) {
                     do {
-                        n = sendOutOfBandData(fd, b);
+                        n = Net.sendOOB(fd, b);
                     } while (n == IOStatus.INTERRUPTED && isOpen());
                 } else {
-                    n = sendOutOfBandData(fd, b);
+                    n = Net.sendOOB(fd, b);
                 }
             } finally {
                 endWrite(blocking, n > 0);
@@ -770,15 +792,13 @@ class SocketChannelImpl
                     boolean connected = false;
                     try {
                         beginFinishConnect(blocking);
-                        int n = 0;
                         if (blocking) {
                             do {
-                                n = checkConnect(fd, true);
-                            } while ((n == 0 || n == IOStatus.INTERRUPTED) && isOpen());
+                                connected = Net.pollConnect(fd, -1);
+                            } while (!connected && isOpen());
                         } else {
-                            n = checkConnect(fd, false);
+                            connected = Net.pollConnect(fd, 0);
                         }
-                        connected = (n > 0);
                     } finally {
                         endFinishConnect(blocking, connected);
                     }
@@ -1008,6 +1028,20 @@ class SocketChannelImpl
     }
 
     /**
+     * Return the number of bytes in the socket input buffer.
+     */
+    int available() throws IOException {
+        synchronized (stateLock) {
+            ensureOpenAndConnected();
+            if (isInputClosed) {
+                return 0;
+            } else {
+                return Net.available(fd);
+            }
+        }
+    }
+
+    /**
      * Translates native poll revent ops into a ready operation ops
      */
     public boolean translateReadyOps(int ops, int initialOps, SelectionKeyImpl ski) {
@@ -1113,19 +1147,4 @@ class SocketChannelImpl
         sb.append(']');
         return sb.toString();
     }
-
-
-    // -- Native methods --
-
-    private static native int checkConnect(FileDescriptor fd, boolean block)
-        throws IOException;
-
-    private static native int sendOutOfBandData(FileDescriptor fd, byte data)
-        throws IOException;
-
-    static {
-        IOUtil.load();
-        nd = new SocketDispatcher();
-    }
-
 }

@@ -138,6 +138,7 @@ class Universe: AllStatic {
   static LatestMethodCache* _finalizer_register_cache; // static method for registering finalizable objects
   static LatestMethodCache* _loader_addClass_cache;    // method for registering loaded classes in class loader vector
   static LatestMethodCache* _throw_illegal_access_error_cache; // Unsafe.throwIllegalAccessError() method
+  static LatestMethodCache* _throw_no_such_method_error_cache; // Unsafe.throwNoSuchMethodError() method
   static LatestMethodCache* _do_stack_walk_cache;      // method for stack walker callback
 
   // preallocated error objects (no backtrace)
@@ -258,7 +259,6 @@ class Universe: AllStatic {
   static uintptr_t _verify_oop_bits;
 
   static void calculate_verify_data(HeapWord* low_boundary, HeapWord* high_boundary) PRODUCT_RETURN;
-  static void compute_verify_oop_data();
 
  public:
   // Known classes in the VM
@@ -323,6 +323,7 @@ class Universe: AllStatic {
   static Method*      loader_addClass_method()        { return _loader_addClass_cache->get_method(); }
 
   static Method*      throw_illegal_access_error()    { return _throw_illegal_access_error_cache->get_method(); }
+  static Method*      throw_no_such_method_error()    { return _throw_no_such_method_error_cache->get_method(); }
 
   static Method*      do_stack_walk_method()          { return _do_stack_walk_cache->get_method(); }
 
@@ -392,8 +393,6 @@ class Universe: AllStatic {
   };
   static NARROW_OOP_MODE narrow_oop_mode();
   static const char* narrow_oop_mode_to_string(NARROW_OOP_MODE mode);
-  static char*    preferred_heap_base(size_t heap_size, size_t alignment, NARROW_OOP_MODE mode);
-  static char*    preferred_metaspace_base(size_t heap_size, NARROW_OOP_MODE mode);
   static address  narrow_oop_base()                  { return  _narrow_oop._base; }
   // Test whether bits of addr and possible offsets into the heap overlap.
   static bool     is_disjoint_heap_base_address(address addr) {
@@ -416,10 +415,8 @@ class Universe: AllStatic {
 
   // For UseCompressedClassPointers
   static address  narrow_klass_base()                     { return  _narrow_klass._base; }
-  static bool  is_narrow_klass_base(void* addr)           { return (narrow_klass_base() == (address)addr); }
   static uint64_t narrow_klass_range()                    { return  _narrow_klass_range; }
   static int      narrow_klass_shift()                    { return  _narrow_klass._shift; }
-  static bool     narrow_klass_use_implicit_null_checks() { return  _narrow_klass._use_implicit_null_checks; }
 
   static address* narrow_ptrs_base_addr()                 { return &_narrow_ptrs_base; }
   static void     set_narrow_ptrs_base(address a)         { _narrow_ptrs_base = a; }
@@ -441,7 +438,6 @@ class Universe: AllStatic {
   static ReservedSpace reserve_heap(size_t heap_size, size_t alignment);
 
   // Historic gc information
-  static size_t get_heap_capacity_at_last_gc()         { return _heap_capacity_at_last_gc; }
   static size_t get_heap_free_at_last_gc()             { return _heap_capacity_at_last_gc - _heap_used_at_last_gc; }
   static size_t get_heap_used_at_last_gc()             { return _heap_used_at_last_gc; }
   static void update_heap_info_at_gc();
@@ -515,27 +511,6 @@ class Universe: AllStatic {
 
   // Compiler support
   static int base_vtable_size()               { return _base_vtable_size; }
-};
-
-class DeferredObjAllocEvent : public CHeapObj<mtInternal> {
-  private:
-    oop    _oop;
-    size_t _bytesize;
-    jint   _arena_id;
-
-  public:
-    DeferredObjAllocEvent(const oop o, const size_t s, const jint id) {
-      _oop      = o;
-      _bytesize = s;
-      _arena_id = id;
-    }
-
-    ~DeferredObjAllocEvent() {
-    }
-
-    jint   arena_id() { return _arena_id; }
-    size_t bytesize() { return _bytesize; }
-    oop    get_oop()  { return _oop; }
 };
 
 #endif // SHARE_MEMORY_UNIVERSE_HPP

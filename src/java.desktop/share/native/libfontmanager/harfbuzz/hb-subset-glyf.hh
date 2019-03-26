@@ -27,14 +27,14 @@
 #ifndef HB_SUBSET_GLYF_HH
 #define HB_SUBSET_GLYF_HH
 
-#include "hb-private.hh"
+#include "hb.hh"
 
-#include "hb-subset-plan.hh"
+#include "hb-subset.hh"
 
 HB_INTERNAL bool
 hb_subset_glyf_and_loca (hb_subset_plan_t *plan,
                          bool             *use_short_loca, /* OUT */
-                         hb_blob_t       **glyf_prime /* OUT */,
-                         hb_blob_t       **loca_prime /* OUT */);
+                         hb_blob_t       **glyf_prime      /* OUT */,
+                         hb_blob_t       **loca_prime      /* OUT */);
 
 #endif /* HB_SUBSET_GLYF_HH */

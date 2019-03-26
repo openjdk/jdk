@@ -81,8 +81,8 @@ public class DerivedConvertedInductionVariable extends DerivedInductionVariable 
     }
 
     @Override
-    public ValueNode extremumNode(boolean assumePositiveTripCount, Stamp s) {
-        return base.extremumNode(assumePositiveTripCount, s);
+    public ValueNode extremumNode(boolean assumeLoopEntered, Stamp s) {
+        return base.extremumNode(assumeLoopEntered, s);
     }
 
     @Override

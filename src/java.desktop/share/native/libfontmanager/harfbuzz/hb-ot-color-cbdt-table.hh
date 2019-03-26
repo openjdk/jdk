@@ -27,7 +27,7 @@
 #ifndef HB_OT_COLOR_CBDT_TABLE_HH
 #define HB_OT_COLOR_CBDT_TABLE_HH
 
-#include "hb-open-type-private.hh"
+#include "hb-open-type.hh"
 
 /*
  * CBLC -- Color Bitmap Location
@@ -45,18 +45,18 @@ namespace OT {
 
 struct SmallGlyphMetrics
 {
-  inline bool sanitize (hb_sanitize_context_t *c) const
+  bool sanitize (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
     return_trace (c->check_struct (this));
   }
 
-  inline void get_extents (hb_glyph_extents_t *extents) const
+  void get_extents (hb_glyph_extents_t *extents) const
   {
     extents->x_bearing = bearingX;
     extents->y_bearing = bearingY;
     extents->width = width;
-    extents->height = -height;
+    extents->height = - (hb_position_t) height;
   }
 
   HBUINT8       height;
@@ -79,7 +79,7 @@ struct BigGlyphMetrics : SmallGlyphMetrics
 
 struct SBitLineMetrics
 {
-  inline bool sanitize (hb_sanitize_context_t *c) const
+  bool sanitize (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
     return_trace (c->check_struct (this));
@@ -108,7 +108,7 @@ struct SBitLineMetrics
 
 struct IndexSubtableHeader
 {
-  inline bool sanitize (hb_sanitize_context_t *c) const
+  bool sanitize (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
     return_trace (c->check_struct (this));
@@ -124,11 +124,11 @@ struct IndexSubtableHeader
 template <typename OffsetType>
 struct IndexSubtableFormat1Or3
 {
-  inline bool sanitize (hb_sanitize_context_t *c, unsigned int glyph_count) const
+  bool sanitize (hb_sanitize_context_t *c, unsigned int glyph_count) const
   {
     TRACE_SANITIZE (this);
     return_trace (c->check_struct (this) &&
-                  c->check_array (offsetArrayZ, offsetArrayZ[0].static_size, glyph_count + 1));
+                  offsetArrayZ.sanitize (c, glyph_count + 1));
   }
 
   bool get_image_data (unsigned int idx,
@@ -144,7 +144,8 @@ struct IndexSubtableFormat1Or3
   }
 
   IndexSubtableHeader   header;
-  Offset<OffsetType>    offsetArrayZ[VAR];
+  UnsizedArrayOf<Offset<OffsetType> >
+                        offsetArrayZ;
   public:
   DEFINE_SIZE_ARRAY(8, offsetArrayZ);
 };
@@ -154,7 +155,7 @@ struct IndexSubtableFormat3 : IndexSubtableFormat1Or3<HBUINT16> {};
 
 struct IndexSubtable
 {
-  inline bool sanitize (hb_sanitize_context_t *c, unsigned int glyph_count) const
+  bool sanitize (hb_sanitize_context_t *c, unsigned int glyph_count) const
   {
     TRACE_SANITIZE (this);
     if (!u.header.sanitize (c)) return_trace (false);
@@ -165,7 +166,7 @@ struct IndexSubtable
     }
   }
 
-  inline bool get_extents (hb_glyph_extents_t *extents) const
+  bool get_extents (hb_glyph_extents_t *extents HB_UNUSED) const
   {
     switch (u.header.indexFormat) {
     case 2: case 5: /* TODO */
@@ -200,29 +201,28 @@ struct IndexSubtable
 
 struct IndexSubtableRecord
 {
-  inline bool sanitize (hb_sanitize_context_t *c, const void *base) const
+  bool sanitize (hb_sanitize_context_t *c, const void *base) const
   {
     TRACE_SANITIZE (this);
     return_trace (c->check_struct (this) &&
                   firstGlyphIndex <= lastGlyphIndex &&
-                  offsetToSubtable.sanitize (c, this, lastGlyphIndex - firstGlyphIndex + 1));
+                  offsetToSubtable.sanitize (c, base, lastGlyphIndex - firstGlyphIndex + 1));
   }
 
-  inline bool get_extents (hb_glyph_extents_t *extents) const
+  bool get_extents (hb_glyph_extents_t *extents,
+                    const void *base) const
   {
-    return (this+offsetToSubtable).get_extents (extents);
+    return (base+offsetToSubtable).get_extents (extents);
   }
 
-  bool get_image_data (unsigned int gid,
+  bool get_image_data (unsigned int  gid,
+                       const void   *base,
                        unsigned int *offset,
                        unsigned int *length,
                        unsigned int *format) const
   {
-    if (gid < firstGlyphIndex || gid > lastGlyphIndex)
-    {
-      return false;
-    }
-    return (this+offsetToSubtable).get_image_data (gid - firstGlyphIndex,
+    if (gid < firstGlyphIndex || gid > lastGlyphIndex) return false;
+    return (base+offsetToSubtable).get_image_data (gid - firstGlyphIndex,
                                                    offset, length, format);
   }
 
@@ -237,15 +237,10 @@ struct IndexSubtableArray
 {
   friend struct CBDT;
 
-  inline bool sanitize (hb_sanitize_context_t *c, unsigned int count) const
+  bool sanitize (hb_sanitize_context_t *c, unsigned int count) const
   {
     TRACE_SANITIZE (this);
-    if (unlikely (!c->check_array (&indexSubtablesZ, indexSubtablesZ[0].static_size, count)))
-      return_trace (false);
-    for (unsigned int i = 0; i < count; i++)
-      if (unlikely (!indexSubtablesZ[i].sanitize (c, this)))
-        return_trace (false);
-    return_trace (true);
+    return_trace (indexSubtablesZ.sanitize (c, count, this));
   }
 
   public:
@@ -255,17 +250,14 @@ struct IndexSubtableArray
     {
       unsigned int firstGlyphIndex = indexSubtablesZ[i].firstGlyphIndex;
       unsigned int lastGlyphIndex = indexSubtablesZ[i].lastGlyphIndex;
-      if (firstGlyphIndex <= glyph && glyph <= lastGlyphIndex) {
+      if (firstGlyphIndex <= glyph && glyph <= lastGlyphIndex)
         return &indexSubtablesZ[i];
-      }
     }
     return nullptr;
   }
 
   protected:
-  IndexSubtableRecord   indexSubtablesZ[VAR];
-  public:
-  DEFINE_SIZE_ARRAY(0, indexSubtablesZ);
+  UnsizedArrayOf<IndexSubtableRecord>   indexSubtablesZ;
 };
 
 struct BitmapSizeTable
@@ -273,23 +265,25 @@ struct BitmapSizeTable
   friend struct CBLC;
   friend struct CBDT;
 
-  inline bool sanitize (hb_sanitize_context_t *c, const void *base) const
+  bool sanitize (hb_sanitize_context_t *c, const void *base) const
   {
     TRACE_SANITIZE (this);
     return_trace (c->check_struct (this) &&
                   indexSubtableArrayOffset.sanitize (c, base, numberOfIndexSubtables) &&
-                  c->check_range (&(base+indexSubtableArrayOffset), indexTablesSize) &&
                   horizontal.sanitize (c) &&
                   vertical.sanitize (c));
   }
 
-  const IndexSubtableRecord *find_table (hb_codepoint_t glyph, const void *base) const
+  const IndexSubtableRecord *find_table (hb_codepoint_t glyph,
+                                         const void *base,
+                                         const void **out_base) const
   {
+    *out_base = &(base+indexSubtableArrayOffset);
     return (base+indexSubtableArrayOffset).find_table (glyph, numberOfIndexSubtables);
   }
 
   protected:
-  LOffsetTo<IndexSubtableArray>
+  LNNOffsetTo<IndexSubtableArray>
                         indexSubtableArrayOffset;
   HBUINT32              indexTablesSize;
   HBUINT32              numberOfIndexSubtables;
@@ -338,9 +332,9 @@ struct CBLC
 {
   friend struct CBDT;
 
-  static const hb_tag_t tableTag = HB_OT_TAG_CBLC;
+  static constexpr hb_tag_t tableTag = HB_OT_TAG_CBLC;
 
-  inline bool sanitize (hb_sanitize_context_t *c) const
+  bool sanitize (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
     return_trace (c->check_struct (this) &&
@@ -349,25 +343,30 @@ struct CBLC
   }
 
   protected:
-  const IndexSubtableRecord *find_table (hb_codepoint_t glyph,
-                                         unsigned int *x_ppem, unsigned int *y_ppem) const
+  const BitmapSizeTable &choose_strike (hb_font_t *font) const
   {
-    /* TODO: Make it possible to select strike. */
+    unsigned count = sizeTables.len;
+    if (unlikely (!count))
+      return Null(BitmapSizeTable);
 
-    unsigned int count = sizeTables.len;
-    for (uint32_t i = 0; i < count; ++i)
+    unsigned int requested_ppem = MAX (font->x_ppem, font->y_ppem);
+    if (!requested_ppem)
+      requested_ppem = 1<<30; /* Choose largest strike. */
+    unsigned int best_i = 0;
+    unsigned int best_ppem = MAX (sizeTables[0].ppemX, sizeTables[0].ppemY);
+
+    for (unsigned int i = 1; i < count; i++)
     {
-      unsigned int startGlyphIndex = sizeTables.arrayZ[i].startGlyphIndex;
-      unsigned int endGlyphIndex = sizeTables.arrayZ[i].endGlyphIndex;
-      if (startGlyphIndex <= glyph && glyph <= endGlyphIndex)
+      unsigned int ppem = MAX (sizeTables[i].ppemX, sizeTables[i].ppemY);
+      if ((requested_ppem <= ppem && ppem < best_ppem) ||
+          (requested_ppem > best_ppem && ppem > best_ppem))
       {
-        *x_ppem = sizeTables[i].ppemX;
-        *y_ppem = sizeTables[i].ppemY;
-        return sizeTables[i].find_table (glyph, this);
+        best_i = i;
+        best_ppem = ppem;
       }
     }
 
-    return nullptr;
+    return sizeTables[best_i];
   }
 
   protected:
@@ -379,60 +378,42 @@ struct CBLC
 
 struct CBDT
 {
-  static const hb_tag_t tableTag = HB_OT_TAG_CBDT;
-
-  inline bool sanitize (hb_sanitize_context_t *c) const
-  {
-    TRACE_SANITIZE (this);
-    return_trace (c->check_struct (this) &&
-                  likely (version.major == 2 || version.major == 3));
-  }
+  static constexpr hb_tag_t tableTag = HB_OT_TAG_CBDT;
 
   struct accelerator_t
   {
-    inline void init (hb_face_t *face)
+    void init (hb_face_t *face)
     {
+      cblc = hb_sanitize_context_t().reference_table<CBLC> (face);
+      cbdt = hb_sanitize_context_t().reference_table<CBDT> (face);
+
       upem = hb_face_get_upem (face);
-
-      cblc_blob = Sanitizer<CBLC>().sanitize (face->reference_table (HB_OT_TAG_CBLC));
-      cbdt_blob = Sanitizer<CBDT>().sanitize (face->reference_table (HB_OT_TAG_CBDT));
-      cbdt_len = hb_blob_get_length (cbdt_blob);
-
-      if (hb_blob_get_length (cblc_blob) == 0) {
-        cblc = nullptr;
-        cbdt = nullptr;
-        return;  /* Not a bitmap font. */
-      }
-      cblc = cblc_blob->as<CBLC> ();
-      cbdt = cbdt_blob->as<CBDT> ();
-
     }
 
-    inline void fini (void)
+    void fini ()
     {
-      hb_blob_destroy (this->cblc_blob);
-      hb_blob_destroy (this->cbdt_blob);
+      this->cblc.destroy ();
+      this->cbdt.destroy ();
     }
 
-    inline bool get_extents (hb_codepoint_t glyph, hb_glyph_extents_t *extents) const
+    bool get_extents (hb_font_t *font, hb_codepoint_t glyph,
+                      hb_glyph_extents_t *extents) const
     {
-      unsigned int x_ppem = upem, y_ppem = upem; /* TODO Use font ppem if available. */
-
-      if (!cblc)
-        return false;  // Not a color bitmap font.
-
-      const IndexSubtableRecord *subtable_record = this->cblc->find_table(glyph, &x_ppem, &y_ppem);
-      if (!subtable_record || !x_ppem || !y_ppem)
+      const void *base;
+      const BitmapSizeTable &strike = this->cblc->choose_strike (font);
+      const IndexSubtableRecord *subtable_record = strike.find_table (glyph, cblc, &base);
+      if (!subtable_record || !strike.ppemX || !strike.ppemY)
         return false;
 
-      if (subtable_record->get_extents (extents))
+      if (subtable_record->get_extents (extents, base))
         return true;
 
       unsigned int image_offset = 0, image_length = 0, image_format = 0;
-      if (!subtable_record->get_image_data (glyph, &image_offset, &image_length, &image_format))
+      if (!subtable_record->get_image_data (glyph, base, &image_offset, &image_length, &image_format))
         return false;
 
       {
+        unsigned int cbdt_len = cbdt.get_length ();
         if (unlikely (image_offset > cbdt_len || cbdt_len - image_offset < image_length))
           return false;
 
@@ -441,97 +422,113 @@ struct CBDT
           case 17: {
             if (unlikely (image_length < GlyphBitmapDataFormat17::min_size))
               return false;
-
             const GlyphBitmapDataFormat17& glyphFormat17 =
                 StructAtOffset<GlyphBitmapDataFormat17> (this->cbdt, image_offset);
             glyphFormat17.glyphMetrics.get_extents (extents);
+            break;
           }
-          break;
+          case 18: {
+            if (unlikely (image_length < GlyphBitmapDataFormat18::min_size))
+              return false;
+            const GlyphBitmapDataFormat18& glyphFormat18 =
+                StructAtOffset<GlyphBitmapDataFormat18> (this->cbdt, image_offset);
+            glyphFormat18.glyphMetrics.get_extents (extents);
+            break;
+          }
           default:
             // TODO: Support other image formats.
             return false;
         }
       }
 
-      /* Convert to the font units. */
-      extents->x_bearing *= upem / (float) x_ppem;
-      extents->y_bearing *= upem / (float) y_ppem;
-      extents->width *= upem / (float) x_ppem;
-      extents->height *= upem / (float) y_ppem;
+      /* Convert to font units. */
+      double x_scale = upem / (double) strike.ppemX;
+      double y_scale = upem / (double) strike.ppemY;
+      extents->x_bearing = round (extents->x_bearing * x_scale);
+      extents->y_bearing = round (extents->y_bearing * y_scale);
+      extents->width = round (extents->width * x_scale);
+      extents->height = round (extents->height * y_scale);
 
       return true;
     }
 
-    inline void dump (void (*callback) (const uint8_t* data, unsigned int length,
-        unsigned int group, unsigned int gid)) const
+    hb_blob_t* reference_png (hb_font_t      *font,
+                                     hb_codepoint_t  glyph) const
     {
-      if (!cblc)
-        return;  // Not a color bitmap font.
+      const void *base;
+      const BitmapSizeTable &strike = this->cblc->choose_strike (font);
+      const IndexSubtableRecord *subtable_record = strike.find_table (glyph, cblc, &base);
+      if (!subtable_record || !strike.ppemX || !strike.ppemY)
+        return hb_blob_get_empty ();
 
-      for (unsigned int i = 0; i < cblc->sizeTables.len; ++i)
+      unsigned int image_offset = 0, image_length = 0, image_format = 0;
+      if (!subtable_record->get_image_data (glyph, base, &image_offset, &image_length, &image_format))
+        return hb_blob_get_empty ();
+
       {
-        const BitmapSizeTable &sizeTable = cblc->sizeTables[i];
-        const IndexSubtableArray &subtable_array = cblc+sizeTable.indexSubtableArrayOffset;
-        for (unsigned int j = 0; j < sizeTable.numberOfIndexSubtables; ++j)
+        unsigned int cbdt_len = cbdt.get_length ();
+        if (unlikely (image_offset > cbdt_len || cbdt_len - image_offset < image_length))
+          return hb_blob_get_empty ();
+
+        switch (image_format)
         {
-          const IndexSubtableRecord &subtable_record = subtable_array.indexSubtablesZ[j];
-          for (unsigned int gid = subtable_record.firstGlyphIndex;
-                gid <= subtable_record.lastGlyphIndex; ++gid)
-          {
-            unsigned int image_offset = 0, image_length = 0, image_format = 0;
-
-            if (!subtable_record.get_image_data (gid,
-                  &image_offset, &image_length, &image_format))
-              continue;
-
-            switch (image_format)
-            {
-            case 17: {
-              const GlyphBitmapDataFormat17& glyphFormat17 =
-                StructAtOffset<GlyphBitmapDataFormat17> (this->cbdt, image_offset);
-              callback ((const uint8_t *) &glyphFormat17.data.arrayZ,
-                glyphFormat17.data.len, i, gid);
-            }
-            break;
-            case 18: {
-              const GlyphBitmapDataFormat18& glyphFormat18 =
-                StructAtOffset<GlyphBitmapDataFormat18> (this->cbdt, image_offset);
-              callback ((const uint8_t *) &glyphFormat18.data.arrayZ,
-                glyphFormat18.data.len, i, gid);
-            }
-            break;
-            case 19: {
-              const GlyphBitmapDataFormat19& glyphFormat19 =
-                StructAtOffset<GlyphBitmapDataFormat19> (this->cbdt, image_offset);
-              callback ((const uint8_t *) &glyphFormat19.data.arrayZ,
-                glyphFormat19.data.len, i, gid);
-            }
-            break;
-            default:
-              continue;
-            }
+          case 17: {
+            if (unlikely (image_length < GlyphBitmapDataFormat17::min_size))
+              return hb_blob_get_empty ();
+            const GlyphBitmapDataFormat17& glyphFormat17 =
+              StructAtOffset<GlyphBitmapDataFormat17> (this->cbdt, image_offset);
+            return hb_blob_create_sub_blob (cbdt.get_blob (),
+                                            image_offset + GlyphBitmapDataFormat17::min_size,
+                                            glyphFormat17.data.len);
+          }
+          case 18: {
+            if (unlikely (image_length < GlyphBitmapDataFormat18::min_size))
+              return hb_blob_get_empty ();
+            const GlyphBitmapDataFormat18& glyphFormat18 =
+              StructAtOffset<GlyphBitmapDataFormat18> (this->cbdt, image_offset);
+            return hb_blob_create_sub_blob (cbdt.get_blob (),
+                                            image_offset + GlyphBitmapDataFormat18::min_size,
+                                            glyphFormat18.data.len);
+          }
+          case 19: {
+            if (unlikely (image_length < GlyphBitmapDataFormat19::min_size))
+              return hb_blob_get_empty ();
+            const GlyphBitmapDataFormat19& glyphFormat19 =
+              StructAtOffset<GlyphBitmapDataFormat19> (this->cbdt, image_offset);
+            return hb_blob_create_sub_blob (cbdt.get_blob (),
+                                            image_offset + GlyphBitmapDataFormat19::min_size,
+                                            glyphFormat19.data.len);
           }
         }
       }
+
+      return hb_blob_get_empty ();
     }
 
-    private:
-    hb_blob_t *cblc_blob;
-    hb_blob_t *cbdt_blob;
-    const CBLC *cblc;
-    const CBDT *cbdt;
+    bool has_data () const { return cbdt.get_length (); }
 
-    unsigned int cbdt_len;
+    private:
+    hb_blob_ptr_t<CBLC> cblc;
+    hb_blob_ptr_t<CBDT> cbdt;
+
     unsigned int upem;
   };
 
+  bool sanitize (hb_sanitize_context_t *c) const
+  {
+    TRACE_SANITIZE (this);
+    return_trace (c->check_struct (this) &&
+                  likely (version.major == 2 || version.major == 3));
+  }
 
   protected:
-  FixedVersion<>        version;
-  HBUINT8               dataZ[VAR];
+  FixedVersion<>                version;
+  UnsizedArrayOf<HBUINT8>       dataZ;
   public:
   DEFINE_SIZE_ARRAY(4, dataZ);
 };
+
+struct CBDT_accelerator_t : CBDT::accelerator_t {};
 
 } /* namespace OT */
 

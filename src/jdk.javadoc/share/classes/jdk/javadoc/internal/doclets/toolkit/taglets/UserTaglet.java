@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,7 +132,7 @@ public class UserTaglet implements Taglet {
      */
     public Content getTagletOutput(Element element, DocTree tag, TagletWriter writer){
         Content output = writer.getOutputInstance();
-        output.addContent(new RawHtml(userTaglet.toString(Collections.singletonList(tag), element)));
+        output.add(new RawHtml(userTaglet.toString(Collections.singletonList(tag), element)));
         return output;
     }
 
@@ -146,7 +146,7 @@ public class UserTaglet implements Taglet {
         if (!tags.isEmpty()) {
             String tagString = userTaglet.toString(tags, holder);
             if (tagString != null) {
-                output.addContent(new RawHtml(tagString));
+                output.add(new RawHtml(tagString));
             }
         }
         return output;

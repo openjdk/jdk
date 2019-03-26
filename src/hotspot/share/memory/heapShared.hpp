@@ -191,9 +191,6 @@ private:
   static void verify_subgraph_from(oop orig_obj) PRODUCT_RETURN;
 
   static KlassSubGraphInfo* get_subgraph_info(Klass *k);
-  static int num_of_subgraph_infos();
-
-  static void build_archived_subgraph_info_records(int num_records);
 
   static void init_subgraph_entry_fields(ArchivableStaticFieldInfo fields[],
                                          int num, Thread* THREAD);
@@ -321,10 +318,6 @@ private:
 
   inline static bool is_archived_object(oop p) NOT_CDS_JAVA_HEAP_RETURN_(false);
 
-  static void archive_java_heap_objects() NOT_CDS_JAVA_HEAP_RETURN;
-
-  static char* read_archived_subgraph_infos(char* buffer) NOT_CDS_JAVA_HEAP_RETURN_(buffer);
-  static void write_archived_subgraph_infos() NOT_CDS_JAVA_HEAP_RETURN;
   static void initialize_from_archived_subgraph(Klass* k) NOT_CDS_JAVA_HEAP_RETURN;
 
   // NarrowOops stored in the CDS archive may use a different encoding scheme

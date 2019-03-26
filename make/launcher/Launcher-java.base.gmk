@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ include LauncherCommon.gmk
 
 $(eval $(call IncludeCustomExtension, launcher/Launcher-java.base.gmk))
 
+JAVA_VERSION_INFO_RESOURCE := $(TOPDIR)/src/java.base/windows/native/launcher/java.rc
+
 JAVA_RC_FLAGS += -I$(TOPDIR)/src/java.base/windows/native/common
 JAVA_RC_FLAGS += -I$(TOPDIR)/src/java.base/windows/native/launcher/icons
 
@@ -51,7 +53,7 @@ $(SUPPORT_OUTPUTDIR)/modules_cmds/java.base/java$(EXE_SUFFIX): $(BUILD_LAUNCHER_
 
 TARGETS += $(SUPPORT_OUTPUTDIR)/modules_cmds/java.base/java$(EXE_SUFFIX)
 
-ifeq ($(OPENJDK_TARGET_OS), windows)
+ifeq ($(call isTargetOs, windows), true)
   $(eval $(call SetupBuildLauncher, javaw, \
       CFLAGS := -DJAVAW -DEXPAND_CLASSPATH_WILDCARDS -DENABLE_ARG_FILES, \
       EXTRA_RC_FLAGS := $(JAVA_RC_FLAGS), \
@@ -65,7 +67,7 @@ $(eval $(call SetupBuildLauncher, keytool, \
 
 ################################################################################
 
-ifeq ($(OPENJDK_TARGET_OS), linux)
+ifeq ($(call isTargetOs, linux), true)
   $(eval $(call SetupJdkExecutable, BUILD_JEXEC, \
       NAME := jexec, \
       SRC := $(TOPDIR)/src/$(MODULE)/unix/native/launcher, \
@@ -84,7 +86,7 @@ endif
 
 ################################################################################
 
-ifneq ($(findstring $(OPENJDK_TARGET_OS), macosx solaris aix linux), )
+ifeq ($(call isTargetOs, macosx solaris aix linux), true)
   $(eval $(call SetupJdkExecutable, BUILD_JSPAWNHELPER, \
       NAME := jspawnhelper, \
       SRC := $(TOPDIR)/src/$(MODULE)/unix/native/jspawnhelper, \

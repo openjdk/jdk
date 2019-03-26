@@ -176,6 +176,12 @@ public class ClassDescTest extends SymbolicDescTest {
         } catch (IllegalArgumentException e) {
             // good
         }
+        try {
+            cr.arrayType(0);
+            fail("");
+        } catch (IllegalArgumentException e) {
+            // good
+        }
     }
 
     public void testArrayClassDesc() throws ReflectiveOperationException {

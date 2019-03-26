@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package sun.print;
 
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
-
 import java.awt.Rectangle;
 import java.awt.Transparency;
 import java.awt.geom.AffineTransform;
@@ -35,32 +34,35 @@ import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.DirectColorModel;
 
-public class PrinterGraphicsConfig extends GraphicsConfiguration {
+public final class PrinterGraphicsConfig extends GraphicsConfiguration {
 
     static ColorModel theModel;
 
-    GraphicsDevice gd;
-    int pageWidth, pageHeight;
-    AffineTransform deviceTransform;
+    private final GraphicsDevice device;
+    private final int pageWidth;
+    private final int pageHeight;
+    private final AffineTransform deviceTransform;
 
     public PrinterGraphicsConfig(String printerID, AffineTransform deviceTx,
                                  int pageWid, int pageHgt) {
         this.pageWidth = pageWid;
         this.pageHeight = pageHgt;
         this.deviceTransform = deviceTx;
-        this.gd = new PrinterGraphicsDevice(this, printerID);
+        this.device = new PrinterGraphicsDevice(this, printerID);
     }
 
     /**
      * Return the graphics device associated with this configuration.
      */
+    @Override
     public GraphicsDevice getDevice() {
-        return gd;
+        return device;
     }
 
     /**
      * Returns the color model associated with this configuration.
      */
+    @Override
     public ColorModel getColorModel() {
         if (theModel == null) {
             BufferedImage bufImg =
@@ -75,6 +77,7 @@ public class PrinterGraphicsConfig extends GraphicsConfiguration {
      * Returns the color model associated with this configuration that
      * supports the specified transparency.
      */
+    @Override
     public ColorModel getColorModel(int transparency) {
         switch (transparency) {
         case Transparency.OPAQUE:
@@ -97,6 +100,7 @@ public class PrinterGraphicsConfig extends GraphicsConfiguration {
      * increasing to the right and Y coordinates increasing downwards.
      * For image buffers, this Transform will be the Identity transform.
      */
+    @Override
     public AffineTransform getDefaultTransform() {
         return new AffineTransform(deviceTransform);
     }
@@ -120,10 +124,12 @@ public class PrinterGraphicsConfig extends GraphicsConfiguration {
      * For image buffers, this Transform will be the Identity transform,
      * since there is no valid distance measurement.
      */
+    @Override
     public AffineTransform getNormalizingTransform() {
         return new AffineTransform();
     }
 
+    @Override
     public Rectangle getBounds() {
         return new Rectangle(0, 0, pageWidth, pageHeight);
     }

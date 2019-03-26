@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ public class CheckSecurityProvider {
         expected.add("sun.security.rsa.SunRsaSign");
         layer.findModule("jdk.crypto.ec")
             .ifPresent(m -> expected.add("sun.security.ec.SunEC"));
-        expected.add("com.sun.net.ssl.internal.ssl.Provider");
+        expected.add("sun.security.ssl.SunJSSE");
         expected.add("com.sun.crypto.provider.SunJCE");
         layer.findModule("jdk.security.jgss")
             .ifPresent(m -> expected.add("sun.security.jgss.SunProvider"));

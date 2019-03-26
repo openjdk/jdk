@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc.logging;
+
 /*
  * @test TestPrintReferences
  * @bug 8136991 8186402 8186465 8188245
@@ -29,12 +31,11 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
+ * @run main gc.logging.TestPrintReferences
  */
 
 import java.lang.ref.SoftReference;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import java.util.regex.Pattern;
@@ -130,7 +131,6 @@ public class TestPrintReferences {
 
     // Find the first Reference Processing log and check its format.
     private static void checkLogFormat(OutputAnalyzer output, boolean parallelRefProcEnabled) {
-        String countRegex = "[0-9]+";
         String timeRegex = doubleRegex + "ms";
 
         /* Total Reference processing time */

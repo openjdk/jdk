@@ -31,6 +31,7 @@
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
+#include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/g1/g1EdenRegions.hpp"
 #include "gc/g1/g1EvacFailure.hpp"
 #include "gc/g1/g1EvacStats.hpp"
@@ -365,7 +366,7 @@ private:
   G1NewTracer* _gc_tracer_stw;
 
   // The current policy object for the collector.
-  G1Policy* _g1_policy;
+  G1Policy* _policy;
   G1HeapSizingPolicy* _heap_sizing_policy;
 
   G1CollectionSet _collection_set;
@@ -737,16 +738,6 @@ private:
   void pre_evacuate_collection_set();
   void post_evacuate_collection_set(G1EvacuationInfo& evacuation_info, G1ParScanThreadStateSet* pss);
 
-  // Print the header for the per-thread termination statistics.
-  static void print_termination_stats_hdr();
-  // Print actual per-thread termination statistics.
-  void print_termination_stats(uint worker_id,
-                               double elapsed_ms,
-                               double strong_roots_ms,
-                               double term_ms,
-                               size_t term_attempts,
-                               size_t alloc_buffer_waste,
-                               size_t undo_waste) const;
   // Update object copying statistics.
   void record_obj_copy_mem_stats();
 
@@ -754,11 +745,11 @@ private:
   G1HotCardCache* _hot_card_cache;
 
   // The g1 remembered set of the heap.
-  G1RemSet* _g1_rem_set;
+  G1RemSet* _rem_set;
 
   // A set of cards that cover the objects for which the Rsets should be updated
   // concurrently after the collection.
-  DirtyCardQueueSet _dirty_card_queue_set;
+  G1DirtyCardQueueSet _dirty_card_queue_set;
 
   // After a collection pause, convert the regions in the collection set into free
   // regions.
@@ -918,7 +909,7 @@ public:
   uint num_task_queues() const;
 
   // A set of cards where updates happened during the GC
-  DirtyCardQueueSet& dirty_card_queue_set() { return _dirty_card_queue_set; }
+  G1DirtyCardQueueSet& dirty_card_queue_set() { return _dirty_card_queue_set; }
 
   // Create a G1CollectedHeap with the specified policy.
   // Must call the initialize method afterwards.
@@ -959,7 +950,11 @@ public:
   G1CollectorState* collector_state() { return &_collector_state; }
 
   // The current policy object for the collector.
-  G1Policy* g1_policy() const { return _g1_policy; }
+  G1Policy* policy() const { return _policy; }
+  // The remembered set.
+  G1RemSet* rem_set() const { return _rem_set; }
+
+  inline G1GCPhaseTimes* phase_times() const;
 
   HeapRegionManager* hrm() const { return _hrm; }
 
@@ -967,7 +962,6 @@ public:
   G1CollectionSet* collection_set() { return &_collection_set; }
 
   virtual CollectorPolicy* collector_policy() const;
-  virtual G1CollectorPolicy* g1_collector_policy() const;
 
   virtual SoftRefPolicy* soft_ref_policy();
 
@@ -976,17 +970,14 @@ public:
   virtual GrowableArray<GCMemoryManager*> memory_managers();
   virtual GrowableArray<MemoryPool*> memory_pools();
 
-  // The rem set and barrier set.
-  G1RemSet* g1_rem_set() const { return _g1_rem_set; }
-
   // Try to minimize the remembered set.
   void scrub_rem_set();
 
   // Apply the given closure on all cards in the Hot Card Cache, emptying it.
-  void iterate_hcc_closure(CardTableEntryClosure* cl, uint worker_i);
+  void iterate_hcc_closure(G1CardTableEntryClosure* cl, uint worker_i);
 
   // Apply the given closure on all cards in the Dirty Card Queue Set, emptying it.
-  void iterate_dirty_card_closure(CardTableEntryClosure* cl, uint worker_i);
+  void iterate_dirty_card_closure(G1CardTableEntryClosure* cl, uint worker_i);
 
   // The shared block offset table array.
   G1BlockOffsetTable* bot() const { return _bot; }
@@ -1069,6 +1060,11 @@ public:
   // "System.gc".  This probably implies as full a collection as the
   // "CollectedHeap" supports.
   virtual void collect(GCCause::Cause cause);
+
+  // Perform a collection of the heap with the given cause; if the VM operation
+  // fails to execute for any reason, retry only if retry_on_gc_failure is set.
+  // Returns whether this collection actually executed.
+  bool try_collect(GCCause::Cause cause, bool retry_on_gc_failure);
 
   // True iff an evacuation has failed in the most-recent collection.
   bool evacuation_failed() { return _evacuation_failed; }
@@ -1195,11 +1191,6 @@ public:
   // non-object.
   virtual HeapWord* block_start(const void* addr) const;
 
-  // Requires "addr" to be the start of a chunk, and returns its size.
-  // "addr + size" is required to be the start of a new chunk, or the end
-  // of the active area of the heap.
-  virtual size_t block_size(const HeapWord* addr) const;
-
   // Requires "addr" to be the start of a block, and returns "TRUE" iff
   // the block is an object.
   virtual bool block_is_obj(const HeapWord* addr) const;
@@ -1316,9 +1307,6 @@ public:
 
   // Optimized nmethod scanning support routines
 
-  // Is an oop scavengeable
-  virtual bool is_scavengable(oop obj);
-
   // Register the given nmethod with the G1 heap.
   virtual void register_nmethod(nmethod* nm);
 
@@ -1332,14 +1320,12 @@ public:
   // after a full GC.
   void rebuild_strong_code_roots();
 
-  // Partial cleaning used when class unloading is disabled.
-  // Let the caller choose what structures to clean out:
-  // - StringTable
-  // - StringDeduplication structures
-  void partial_cleaning(BoolObjectClosure* is_alive, bool unlink_strings, bool unlink_string_dedup);
+  // Partial cleaning of VM internal data structures.
+  void string_dedup_cleaning(BoolObjectClosure* is_alive,
+                             OopClosure* keep_alive,
+                             G1GCPhaseTimes* phase_times = NULL);
 
-  // Complete cleaning used when class unloading is enabled.
-  // Cleans out all structures handled by partial_cleaning and also the CodeCache.
+  // Performs cleaning of data structures after class unloading.
   void complete_cleaning(BoolObjectClosure* is_alive, bool class_unloading_occurred);
 
   // Redirty logged cards in the refinement queue.
@@ -1371,8 +1357,8 @@ public:
 
   // WhiteBox testing support.
   virtual bool supports_concurrent_phase_control() const;
-  virtual const char* const* concurrent_phases() const;
   virtual bool request_concurrent_phase(const char* phase);
+  bool is_heterogeneous_heap() const;
 
   virtual WorkGang* get_safepoint_workers() { return _workers; }
 

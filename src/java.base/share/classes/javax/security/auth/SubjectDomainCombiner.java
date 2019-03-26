@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ public class SubjectDomainCombiner implements java.security.DomainCombiner {
      * {@code SubjectDomainCombiner}.
      *
      * @param subject the {@code Subject} to be associated with
-     *          with this {@code SubjectDomainCombiner}.
+     *          this {@code SubjectDomainCombiner}.
      */
     public SubjectDomainCombiner(Subject subject) {
         this.subject = subject;

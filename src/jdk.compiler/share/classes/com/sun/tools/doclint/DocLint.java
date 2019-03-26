@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,6 @@ public class DocLint implements Plugin {
     public static final String XMSGS_OPTION = "-Xmsgs";
     public static final String XMSGS_CUSTOM_PREFIX = "-Xmsgs:";
     private static final String STATS = "-stats";
-    public static final String XIMPLICIT_HEADERS = "-XimplicitHeaders:";
     public static final String XCUSTOM_TAGS_PREFIX = "-XcustomTags:";
     public static final String XHTML_VERSION_PREFIX = "-XhtmlVersion:";
     public static final String XCHECK_PACKAGE = "-XcheckPackage:";
@@ -289,9 +288,6 @@ public class DocLint implements Plugin {
                 env.messages.setOptions(null);
             } else if (arg.startsWith(XMSGS_CUSTOM_PREFIX)) {
                 env.messages.setOptions(arg.substring(arg.indexOf(":") + 1));
-            } else if (arg.matches(XIMPLICIT_HEADERS + "[1-6]")) {
-                char ch = arg.charAt(arg.length() - 1);
-                env.setImplicitHeaders(Character.digit(ch, 10));
             } else if (arg.startsWith(XCUSTOM_TAGS_PREFIX)) {
                 env.setCustomTags(arg.substring(arg.indexOf(":") + 1));
             } else if (arg.startsWith(XHTML_VERSION_PREFIX)) {

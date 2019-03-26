@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,26 @@ include GensrcCommonJdk.gmk
 $(eval $(call IncludeCustomExtension, gensrc/Gensrc-jdk.localedata.gmk))
 
 include GensrcLocaleData.gmk
-include GensrcCLDR.gmk
+
+################################################################################
+
+CLDR_DATA_DIR := $(TOPDIR)/make/data/cldr/common
+GENSRC_DIR := $(SUPPORT_OUTPUTDIR)/gensrc/jdk.localedata
+CLDR_GEN_DONE := $(GENSRC_DIR)/_cldr-gensrc.marker
+
+$(CLDR_GEN_DONE): $(wildcard $(CLDR_DATA_DIR)/dtd/*.dtd) \
+    $(wildcard $(CLDR_DATA_DIR)/main/*.xml) \
+    $(wildcard $(CLDR_DATA_DIR)/supplemental/*.xml) \
+    $(BUILD_TOOLS_JDK)
+	$(call MakeDir, $(GENSRC_DIR))
+	$(call LogInfo, Processing CLDR data for jdk.localedata)
+	$(call ExecuteWithLog, $@, \
+	    $(TOOL_CLDRCONVERTER) -base $(CLDR_DATA_DIR) \
+	    -baselocales "en-US" \
+	    -o $(GENSRC_DIR))
+	$(TOUCH) $@
+
+GENSRC_JDK_LOCALEDATA += $(CLDR_GEN_DONE)
 
 ################################################################################
 

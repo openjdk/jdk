@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,38 +22,29 @@
  */
 
 /*
-  test
+  @test
+  @key headful
   @bug 5079469
   @summary DnD of File-List across JVM adds two empty items to the list
-  @author : area=dnd
-  @run applet FileListBetweenJVMsTest.html
+  @library ../../regtesthelpers
+  @library ../../regtesthelpers/process
+  @build Util
+  @build ProcessResults ProcessCommunicator
+  @run main/othervm FileListBetweenJVMsTest main
 */
-
-/**
- * FileListBetweenJVMsTest.java
- *
- * summary: DnD of File-List across JVM adds two empty items to the list
- */
 
 import static java.lang.Thread.sleep;
 
 import test.java.awt.regtesthelpers.process.ProcessCommunicator;
 import test.java.awt.regtesthelpers.process.ProcessResults;
 import test.java.awt.regtesthelpers.Util;
-import java.applet.Applet;
 import java.awt.*;
 import java.awt.event.InputEvent;
-import java.io.*;
 
-public class FileListBetweenJVMsTest extends Applet {
+public class FileListBetweenJVMsTest {
 
     // information related to the test in common
     static int VISIBLE_RAWS_IN_LIST=15;
-
-    public void init() {
-        setLayout(new BorderLayout());
-
-    }//End  init()
 
     public void start() {
 
@@ -130,7 +121,11 @@ public class FileListBetweenJVMsTest extends Applet {
         }
     }
 
-    public static void main (String [] args) {
+    public static void main(final String [] args) {
+        if (args.length > 0 && args[0].equals("main")) {
+            new FileListBetweenJVMsTest().start();
+            return;
+        }
         Point dragSourcePoint = new Point(InterprocessArguments.DRAG_SOURCE_POINT_X_ARGUMENT.extract(args),
                 InterprocessArguments.DRAG_SOURCE_POINT_Y_ARGUMENT.extract(args));
         Point targetFrameLocation = new Point(InterprocessArguments.TARGET_FRAME_X_POSITION_ARGUMENT.extract(args),

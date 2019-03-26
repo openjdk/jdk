@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -390,9 +390,6 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
 
     public synchronized void write(String fileName) throws IOException {
         VM vm = VM.getVM();
-        if (vm.getUniverse().heap() instanceof ZCollectedHeap) {
-            throw new RuntimeException("This operation is not supported with ZGC.");
-        }
 
         // open file stream and create buffered data output stream
         fos = new FileOutputStream(fileName);
@@ -941,10 +938,16 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
     }
 
     protected void writeInstance(Instance instance) throws IOException {
+        Klass klass = instance.getKlass();
+        if (klass.getClassLoaderData() == null) {
+            // Ignoring this object since the corresponding Klass is not loaded.
+            // Might be a dormant archive object.
+            return;
+        }
+
         out.writeByte((byte) HPROF_GC_INSTANCE_DUMP);
         writeObjectID(instance);
         out.writeInt(DUMMY_STACK_TRACE_ID);
-        Klass klass = instance.getKlass();
         writeObjectID(klass.getJavaMirror());
 
         ClassData cd = (ClassData) classDataCache.get(klass);

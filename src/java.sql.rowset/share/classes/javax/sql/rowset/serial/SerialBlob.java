@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ import java.util.Arrays;
  * <code>Blob</code> object within a <code>SerialBlob</code> object
  * and to update or truncate a <code>Blob</code> object.
  *
- * <h3> Thread safety </h3>
+ * <h2> Thread safety </h2>
  *
  * <p> A SerialBlob is not safe for use by multiple concurrent threads.  If a
  * SerialBlob is to be used by more than one thread then access to the SerialBlob

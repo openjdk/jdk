@@ -28,9 +28,10 @@ package java.net;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.nio.channels.SocketChannel;
 import java.security.AccessController;
-import java.security.PrivilegedExceptionAction;
 import java.security.PrivilegedAction;
 import java.util.Set;
 import java.util.Collections;
@@ -74,6 +75,22 @@ class Socket implements java.io.Closeable {
      * Are we using an older SocketImpl?
      */
     private boolean oldImpl = false;
+
+    /**
+     * Socket input/output streams
+     */
+    private volatile InputStream in;
+    private volatile OutputStream out;
+    private static final VarHandle IN, OUT;
+    static {
+        try {
+            MethodHandles.Lookup l = MethodHandles.lookup();
+            IN = l.findVarHandle(Socket.class, "in", InputStream.class);
+            OUT = l.findVarHandle(Socket.class, "out", OutputStream.class);
+        } catch (Exception e) {
+            throw new InternalError(e);
+        }
+    }
 
     /**
      * Creates an unconnected socket, with the
@@ -137,16 +154,22 @@ class Socket implements java.io.Closeable {
                     security.checkConnect(epoint.getAddress().getHostAddress(),
                                   epoint.getPort());
             }
-            impl = type == Proxy.Type.SOCKS ? new SocksSocketImpl(p)
-                                            : new HttpConnectSocketImpl(p);
+
+            // create a SOCKS or HTTP SocketImpl that delegates to a platform SocketImpl
+            SocketImpl delegate = SocketImpl.createPlatformSocketImpl(false);
+            impl = (type == Proxy.Type.SOCKS) ? new SocksSocketImpl(p, delegate)
+                                              : new HttpConnectSocketImpl(p, delegate);
             impl.setSocket(this);
         } else {
             if (p == Proxy.NO_PROXY) {
+                // create a platform or custom SocketImpl for the DIRECT case
+                SocketImplFactory factory = Socket.factory;
                 if (factory == null) {
-                    impl = new PlainSocketImpl();
-                    impl.setSocket(this);
-                } else
-                    setImpl();
+                    impl = SocketImpl.createPlatformSocketImpl(false);
+                } else {
+                    impl = factory.createSocketImpl();
+                }
+                impl.setSocket(this);
             } else
                 throw new IllegalArgumentException("Invalid Proxy");
         }
@@ -491,23 +514,28 @@ class Socket implements java.io.Closeable {
         });
     }
 
+    void setImpl(SocketImpl si) {
+         impl = si;
+         impl.setSocket(this);
+    }
+
     /**
      * Sets impl to the system-default type of SocketImpl.
      * @since 1.4
      */
     void setImpl() {
+        SocketImplFactory factory = Socket.factory;
         if (factory != null) {
             impl = factory.createSocketImpl();
             checkOldImpl();
         } else {
-            // No need to do a checkOldImpl() here, we know it's an up to date
-            // SocketImpl!
-            impl = new SocksSocketImpl();
+            // create a SOCKS SocketImpl that delegates to a platform SocketImpl
+            SocketImpl delegate = SocketImpl.createPlatformSocketImpl(false);
+            impl = new SocksSocketImpl(delegate);
         }
         if (impl != null)
             impl.setSocket(this);
     }
-
 
     /**
      * Get the {@code SocketImpl} attached to this socket, creating
@@ -907,18 +935,49 @@ class Socket implements java.io.Closeable {
             throw new SocketException("Socket is not connected");
         if (isInputShutdown())
             throw new SocketException("Socket input is shutdown");
-        InputStream is = null;
-        try {
-            is = AccessController.doPrivileged(
-                new PrivilegedExceptionAction<>() {
-                    public InputStream run() throws IOException {
-                        return impl.getInputStream();
-                    }
-                });
-        } catch (java.security.PrivilegedActionException e) {
-            throw (IOException) e.getException();
+        InputStream in = this.in;
+        if (in == null) {
+            // wrap the input stream so that the close method closes this socket
+            in = new SocketInputStream(this, impl.getInputStream());
+            if (!IN.compareAndSet(this, null, in)) {
+                in = this.in;
+            }
         }
-        return is;
+        return in;
+    }
+
+    /**
+     * An InputStream that delegates read/available operations to an underlying
+     * input stream. The close method is overridden to close the Socket.
+     *
+     * This class is instrumented by Java Flight Recorder (JFR) to get socket
+     * I/O events.
+     */
+    private static class SocketInputStream extends InputStream {
+        private final Socket parent;
+        private final InputStream in;
+        SocketInputStream(Socket parent, InputStream in) {
+            this.parent = parent;
+            this.in = in;
+        }
+        @Override
+        public int read() throws IOException {
+            byte[] a = new byte[1];
+            int n = read(a, 0, 1);
+            return (n > 0) ? (a[0] & 0xff) : -1;
+        }
+        @Override
+        public int read(byte b[], int off, int len) throws IOException {
+            return in.read(b, off, len);
+        }
+        @Override
+        public int available() throws IOException {
+            return in.available();
+        }
+        @Override
+        public void close() throws IOException {
+            parent.close();
+        }
     }
 
     /**
@@ -946,18 +1005,44 @@ class Socket implements java.io.Closeable {
             throw new SocketException("Socket is not connected");
         if (isOutputShutdown())
             throw new SocketException("Socket output is shutdown");
-        OutputStream os = null;
-        try {
-            os = AccessController.doPrivileged(
-                new PrivilegedExceptionAction<>() {
-                    public OutputStream run() throws IOException {
-                        return impl.getOutputStream();
-                    }
-                });
-        } catch (java.security.PrivilegedActionException e) {
-            throw (IOException) e.getException();
+        OutputStream out = this.out;
+        if (out == null) {
+            // wrap the output stream so that the close method closes this socket
+            out = new SocketOutputStream(this, impl.getOutputStream());
+            if (!OUT.compareAndSet(this, null, out)) {
+                out = this.out;
+            }
         }
-        return os;
+        return out;
+    }
+
+    /**
+     * An OutputStream that delegates write operations to an underlying output
+     * stream. The close method is overridden to close the Socket.
+     *
+     * This class is instrumented by Java Flight Recorder (JFR) to get socket
+     * I/O events.
+     */
+    private static class SocketOutputStream extends OutputStream {
+        private final Socket parent;
+        private final OutputStream out;
+        SocketOutputStream(Socket parent, OutputStream out) {
+            this.parent = parent;
+            this.out = out;
+        }
+        @Override
+        public void write(int b) throws IOException {
+            byte[] a = new byte[] { (byte) b };
+            write(a, 0, 1);
+        }
+        @Override
+        public void write(byte b[], int off, int len) throws IOException {
+            out.write(b, off, len);
+        }
+        @Override
+        public void close() throws IOException {
+            parent.close();
+        }
     }
 
     /**
@@ -1644,7 +1729,11 @@ class Socket implements java.io.Closeable {
     /**
      * The factory for all client sockets.
      */
-    private static SocketImplFactory factory = null;
+    private static volatile SocketImplFactory factory;
+
+    static SocketImplFactory socketImplFactory() {
+        return factory;
+    }
 
     /**
      * Sets the client socket implementation factory for the

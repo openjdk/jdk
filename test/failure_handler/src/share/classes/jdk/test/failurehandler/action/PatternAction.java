@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ public class PatternAction implements Action {
 
     public PatternAction(String name, String id, Properties properties)
             throws InvalidValueException {
-        action = new SimpleAction(("pattern." + name), id, properties);
+        action = new SimpleAction(name != null ? ("pattern." + name) : "pattern", id, properties);
         ValueHandler.apply(this, properties, id);
         originalArgs = action.args.clone();
     }

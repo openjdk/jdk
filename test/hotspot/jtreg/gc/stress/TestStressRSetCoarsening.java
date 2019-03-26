@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc.stress;
+
 import java.util.concurrent.TimeoutException;
 import sun.hotspot.WhiteBox;
 
@@ -41,27 +43,27 @@ import sun.hotspot.WhiteBox;
  * @run main/othervm/timeout=300
  *     -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:+UseG1GC -Xlog:gc* -XX:MaxGCPauseMillis=1000
- *     -Xmx500m -XX:G1HeapRegionSize=1m TestStressRSetCoarsening  1  0 300
+ *     -Xmx500m -XX:G1HeapRegionSize=1m gc.stress.TestStressRSetCoarsening  1  0 300
  * @run main/othervm/timeout=300
  *     -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:+UseG1GC -Xlog:gc* -XX:MaxGCPauseMillis=1000
- *     -Xmx500m -XX:G1HeapRegionSize=8m TestStressRSetCoarsening  1 10 300
+ *     -Xmx500m -XX:G1HeapRegionSize=8m gc.stress.TestStressRSetCoarsening  1 10 300
  * @run main/othervm/timeout=300
  *     -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:+UseG1GC -Xlog:gc* -XX:MaxGCPauseMillis=1000
- *     -Xmx500m -XX:G1HeapRegionSize=32m TestStressRSetCoarsening 42 10 300
+ *     -Xmx500m -XX:G1HeapRegionSize=32m gc.stress.TestStressRSetCoarsening 42 10 300
  * @run main/othervm/timeout=300
  *     -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:+UseG1GC -Xlog:gc* -XX:MaxGCPauseMillis=1000
- *     -Xmx500m -XX:G1HeapRegionSize=1m TestStressRSetCoarsening  2 0 300
+ *     -Xmx500m -XX:G1HeapRegionSize=1m gc.stress.TestStressRSetCoarsening  2 0 300
  * @run main/othervm/timeout=1800
  *     -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:+UseG1GC -Xlog:gc* -XX:MaxGCPauseMillis=1000
- *     -Xmx1G -XX:G1HeapRegionSize=1m TestStressRSetCoarsening 500 0  1800
+ *     -Xmx1G -XX:G1HeapRegionSize=1m gc.stress.TestStressRSetCoarsening 500 0  1800
  * @run main/othervm/timeout=1800
  *     -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:+UseG1GC -Xlog:gc* -XX:MaxGCPauseMillis=1000
- *     -Xmx1G -XX:G1HeapRegionSize=1m TestStressRSetCoarsening 10  10 1800
+ *     -Xmx1G -XX:G1HeapRegionSize=1m gc.stress.TestStressRSetCoarsening 10  10 1800
  */
 
 /**

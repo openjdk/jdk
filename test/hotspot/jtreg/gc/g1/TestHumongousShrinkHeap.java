@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc.g1;
+
 /**
  * @test TestHumongousShrinkHeap
  * @bug 8036025 8056043
@@ -32,7 +34,7 @@
  * @modules java.management/sun.management
  * @run main/othervm -XX:-ExplicitGCInvokesConcurrent -XX:MinHeapFreeRatio=10
  * -XX:MaxHeapFreeRatio=12 -XX:+UseG1GC -XX:G1HeapRegionSize=1M -verbose:gc
- * TestHumongousShrinkHeap
+ * gc.g1.TestHumongousShrinkHeap
  */
 
 import com.sun.management.HotSpotDiagnosticMXBean;
@@ -50,7 +52,7 @@ public class TestHumongousShrinkHeap {
     public static final String MIN_FREE_RATIO_FLAG_NAME = "MinHeapFreeRatio";
     public static final String MAX_FREE_RATIO_FLAG_NAME = "MaxHeapFreeRatio";
 
-    private static final List<List<byte[]>> garbage = new ArrayList();
+    private static final List<List<byte[]>> garbage = new ArrayList<>();
     private static final int REGION_SIZE = 1024 * 1024; // 1M
     private static final int LISTS_COUNT = 10;
     private static final int HUMON_SIZE = Math.round(.9f * REGION_SIZE);
@@ -106,7 +108,7 @@ public class TestHumongousShrinkHeap {
     private void allocate() {
 
         for (int i = 0; i < LISTS_COUNT; i++) {
-            List<byte[]> stuff = new ArrayList();
+            List<byte[]> stuff = new ArrayList<>();
             allocateList(stuff, HUMON_COUNT, HUMON_SIZE);
             MemoryUsagePrinter.printMemoryUsage("allocate #" + (i+1));
             garbage.add(stuff);
@@ -118,12 +120,12 @@ public class TestHumongousShrinkHeap {
         garbage.subList(0, garbage.size() - 1).clear();
 
         // do not free last one element from last list
-        List stuff = garbage.get(garbage.size() - 1);
+        List<byte[]> stuff = garbage.get(garbage.size() - 1);
         stuff.subList(0, stuff.size() - 1).clear();
         System.gc();
     }
 
-    private static void allocateList(List garbage, int count, int size) {
+    private static void allocateList(List<byte[]> garbage, int count, int size) {
         for (int i = 0; i < count; i++) {
             garbage.add(new byte[size]);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,15 @@
 
 /*
  * @test
- * @key headful
  * @bug 4300666
  * @summary Printing UIDefaults throws NoSuchElementExcept
- * @author Andrey Pikalev
- * @run applet bug4300666.html
  */
 
 import javax.swing.*;
 
+public class bug4300666 {
 
-public class bug4300666 extends JApplet {
-
-    public void init() {
+    public static void main(final String[] args) {
         UIDefaults d = UIManager.getDefaults();
         d.toString();
     }

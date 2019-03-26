@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,8 @@
  * questions.
  */
 
-import jdk.test.lib.JDKToolFinder;
+package gc;
+
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Platform;
@@ -34,7 +35,7 @@ import jdk.test.lib.Platform;
  * @requires vm.gc.Parallel
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- * @run driver TestCardTablePageCommits
+ * @run driver gc.TestCardTablePageCommits
  */
 public class TestCardTablePageCommits {
     public static void main(String args[]) throws Exception {

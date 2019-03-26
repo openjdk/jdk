@@ -244,10 +244,6 @@ const Type* Type::make_from_constant(ciConstant constant, bool require_constant,
     case T_DOUBLE:   return TypeD::make(constant.as_double());
     case T_ARRAY:
     case T_OBJECT: {
-        // cases:
-        //   can_be_constant    = (oop not scavengable || ScavengeRootsInCode != 0)
-        //   should_be_constant = (oop not scavengable || ScavengeRootsInCode >= 2)
-        // An oop is not scavengable if it is in the perm gen.
         const Type* con_type = NULL;
         ciObject* oop_constant = constant.as_object();
         if (oop_constant->is_null_object()) {
@@ -3228,15 +3224,17 @@ const TypeOopPtr* TypeOopPtr::make_from_klass_common(ciKlass *klass, bool klass_
 // Make a java pointer from an oop constant
 const TypeOopPtr* TypeOopPtr::make_from_constant(ciObject* o, bool require_constant) {
   assert(!o->is_null_object(), "null object not yet handled here.");
+
+  const bool make_constant = require_constant || o->should_be_constant();
+
   ciKlass* klass = o->klass();
   if (klass->is_instance_klass()) {
     // Element is an instance
-    if (require_constant) {
-      if (!o->can_be_constant())  return NULL;
-    } else if (!o->should_be_constant()) {
+    if (make_constant) {
+      return TypeInstPtr::make(o);
+    } else {
       return TypeInstPtr::make(TypePtr::NotNull, klass, true, NULL, 0);
     }
-    return TypeInstPtr::make(o);
   } else if (klass->is_obj_array_klass()) {
     // Element is an object array. Recursively call ourself.
     const TypeOopPtr *etype =
@@ -3245,13 +3243,11 @@ const TypeOopPtr* TypeOopPtr::make_from_constant(ciObject* o, bool require_const
     // We used to pass NotNull in here, asserting that the sub-arrays
     // are all not-null.  This is not true in generally, as code can
     // slam NULLs down in the subarrays.
-    if (require_constant) {
-      if (!o->can_be_constant())  return NULL;
-    } else if (!o->should_be_constant()) {
+    if (make_constant) {
+      return TypeAryPtr::make(TypePtr::Constant, o, arr0, klass, true, 0);
+    } else {
       return TypeAryPtr::make(TypePtr::NotNull, arr0, klass, true, 0);
     }
-    const TypeAryPtr* arr = TypeAryPtr::make(TypePtr::Constant, o, arr0, klass, true, 0);
-    return arr;
   } else if (klass->is_type_array_klass()) {
     // Element is an typeArray
     const Type* etype =
@@ -3259,13 +3255,11 @@ const TypeOopPtr* TypeOopPtr::make_from_constant(ciObject* o, bool require_const
     const TypeAry* arr0 = TypeAry::make(etype, TypeInt::make(o->as_array()->length()));
     // We used to pass NotNull in here, asserting that the array pointer
     // is not-null. That was not true in general.
-    if (require_constant) {
-      if (!o->can_be_constant())  return NULL;
-    } else if (!o->should_be_constant()) {
+    if (make_constant) {
+      return TypeAryPtr::make(TypePtr::Constant, o, arr0, klass, true, 0);
+    } else {
       return TypeAryPtr::make(TypePtr::NotNull, arr0, klass, true, 0);
     }
-    const TypeAryPtr* arr = TypeAryPtr::make(TypePtr::Constant, o, arr0, klass, true, 0);
-    return arr;
   }
 
   fatal("unhandled object type");
@@ -3434,6 +3428,12 @@ const TypePtr* TypeOopPtr::with_inline_depth(int depth) const {
     return this;
   }
   return make(_ptr, _offset, _instance_id, _speculative, depth);
+}
+
+//------------------------------with_instance_id--------------------------------
+const TypePtr* TypeOopPtr::with_instance_id(int instance_id) const {
+  assert(_instance_id != -1, "should be known");
+  return make(_ptr, _offset, instance_id, _speculative, _inline_depth);
 }
 
 //------------------------------meet_instance_id--------------------------------
@@ -4044,6 +4044,11 @@ const TypePtr *TypeInstPtr::with_inline_depth(int depth) const {
   return make(_ptr, klass(), klass_is_exact(), const_oop(), _offset, _instance_id, _speculative, depth);
 }
 
+const TypePtr *TypeInstPtr::with_instance_id(int instance_id) const {
+  assert(is_known_instance(), "should be known");
+  return make(_ptr, klass(), klass_is_exact(), const_oop(), _offset, instance_id, _speculative, _inline_depth);
+}
+
 //=============================================================================
 // Convenience common pre-built types.
 const TypeAryPtr *TypeAryPtr::RANGE;
@@ -4528,6 +4533,11 @@ const TypePtr *TypeAryPtr::with_inline_depth(int depth) const {
     return this;
   }
   return make(_ptr, _const_oop, _ary->remove_speculative()->is_ary(), _klass, _klass_is_exact, _offset, _instance_id, _speculative, depth);
+}
+
+const TypePtr *TypeAryPtr::with_instance_id(int instance_id) const {
+  assert(is_known_instance(), "should be known");
+  return make(_ptr, _const_oop, _ary->remove_speculative()->is_ary(), _klass, _klass_is_exact, _offset, instance_id, _speculative, _inline_depth);
 }
 
 //=============================================================================

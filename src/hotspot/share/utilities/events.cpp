@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
+#include "oops/instanceKlass.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/osThread.hpp"
@@ -35,8 +36,9 @@
 
 EventLog* Events::_logs = NULL;
 StringEventLog* Events::_messages = NULL;
-StringEventLog* Events::_exceptions = NULL;
+ExceptionsEventLog* Events::_exceptions = NULL;
 StringEventLog* Events::_redefinitions = NULL;
+UnloadingEventLog* Events::_class_unloading = NULL;
 StringEventLog* Events::_deopt_messages = NULL;
 
 EventLog::EventLog() {
@@ -65,8 +67,9 @@ void Events::print() {
 void Events::init() {
   if (LogEvents) {
     _messages = new StringEventLog("Events");
-    _exceptions = new StringEventLog("Internal exceptions");
+    _exceptions = new ExceptionsEventLog("Internal exceptions");
     _redefinitions = new StringEventLog("Classes redefined");
+    _class_unloading = new UnloadingEventLog("Classes unloaded");
     _deopt_messages = new StringEventLog("Deoptimization events");
   }
 }
@@ -95,4 +98,34 @@ EventMark::~EventMark() {
     _buffer.append(" done");
     Events::log(NULL, "%s", _buffer.buffer());
   }
+}
+
+void UnloadingEventLog::log(Thread* thread, InstanceKlass* ik) {
+  if (!should_log()) return;
+
+  double timestamp = fetch_timestamp();
+  // Unloading events are single threaded.
+  int index = compute_log_index();
+  _records[index].thread = thread;
+  _records[index].timestamp = timestamp;
+  stringStream st = _records[index].data.stream();
+  st.print("Unloading class " INTPTR_FORMAT " ", p2i(ik));
+  ik->name()->print_value_on(&st);
+}
+
+void ExceptionsEventLog::log(Thread* thread, Handle h_exception, const char* message, const char* file, int line) {
+  if (!should_log()) return;
+
+  double timestamp = fetch_timestamp();
+  MutexLockerEx ml(&_mutex, Mutex::_no_safepoint_check_flag);
+  int index = compute_log_index();
+  _records[index].thread = thread;
+  _records[index].timestamp = timestamp;
+  stringStream st = _records[index].data.stream();
+  st.print("Exception <");
+  h_exception->print_value_on(&st);
+  st.print("%s%s> (" INTPTR_FORMAT ") \n"
+           "thrown [%s, line %d]\nfor thread " INTPTR_FORMAT,
+           message ? ": " : "", message ? message : "",
+           p2i(h_exception()), file, line, p2i(thread));
 }

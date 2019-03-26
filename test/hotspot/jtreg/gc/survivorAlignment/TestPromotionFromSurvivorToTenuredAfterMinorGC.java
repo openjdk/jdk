@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc.survivorAlignment;
+
 /**
  * @test
  * @bug 8031323
@@ -40,7 +42,7 @@
  *                   -XX:-ExplicitGCInvokesConcurrent
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=32
- *                   TestPromotionFromSurvivorToTenuredAfterMinorGC 10m 9
+ *                   gc.survivorAlignment.TestPromotionFromSurvivorToTenuredAfterMinorGC 10m 9
  *                   TENURED
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=128m -XX:MaxNewSize=128m
@@ -48,7 +50,7 @@
  *                   -XX:-ExplicitGCInvokesConcurrent
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=32
- *                   TestPromotionFromSurvivorToTenuredAfterMinorGC 20m 47
+ *                   gc.survivorAlignment.TestPromotionFromSurvivorToTenuredAfterMinorGC 20m 47
  *                   TENURED
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=200m -XX:MaxNewSize=200m
@@ -56,7 +58,7 @@
  *                   -XX:-ExplicitGCInvokesConcurrent
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=64
- *                   TestPromotionFromSurvivorToTenuredAfterMinorGC 10m 9
+ *                   gc.survivorAlignment.TestPromotionFromSurvivorToTenuredAfterMinorGC 10m 9
  *                   TENURED
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=128m -XX:MaxNewSize=128m
@@ -64,7 +66,7 @@
  *                   -XX:-ExplicitGCInvokesConcurrent
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=64
- *                   TestPromotionFromSurvivorToTenuredAfterMinorGC 20m 87
+ *                   gc.survivorAlignment.TestPromotionFromSurvivorToTenuredAfterMinorGC 20m 87
  *                   TENURED
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=256m -XX:MaxNewSize=256m
@@ -72,7 +74,7 @@
  *                   -XX:-ExplicitGCInvokesConcurrent
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=128
- *                    TestPromotionFromSurvivorToTenuredAfterMinorGC 10m 9
+ *                    gc.survivorAlignment.TestPromotionFromSurvivorToTenuredAfterMinorGC 10m 9
  *                    TENURED
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=128m -XX:MaxNewSize=128m
@@ -80,7 +82,7 @@
  *                   -XX:-ExplicitGCInvokesConcurrent
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=128
- *                   TestPromotionFromSurvivorToTenuredAfterMinorGC 20m 147
+ *                   gc.survivorAlignment.TestPromotionFromSurvivorToTenuredAfterMinorGC 20m 147
  *                   TENURED
  */
 public class TestPromotionFromSurvivorToTenuredAfterMinorGC {

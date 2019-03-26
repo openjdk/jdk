@@ -69,6 +69,7 @@
 #include "runtime/flags/jvmFlagWriteableList.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/handles.inline.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -293,7 +294,6 @@ Thread::Thread() {
   // and ::Release()
   _ParkEvent   = ParkEvent::Allocate(this);
   _SleepEvent  = ParkEvent::Allocate(this);
-  _MutexEvent  = ParkEvent::Allocate(this);
   _MuxEvent    = ParkEvent::Allocate(this);
 
 #ifdef CHECK_UNHANDLED_OOPS
@@ -459,7 +459,6 @@ Thread::~Thread() {
   // We NULL out the fields for good hygiene.
   ParkEvent::Release(_ParkEvent); _ParkEvent   = NULL;
   ParkEvent::Release(_SleepEvent); _SleepEvent  = NULL;
-  ParkEvent::Release(_MutexEvent); _MutexEvent  = NULL;
   ParkEvent::Release(_MuxEvent); _MuxEvent    = NULL;
 
   delete handle_area();
@@ -1312,7 +1311,9 @@ void NonJavaThread::remove_from_the_list() {
 }
 
 void NonJavaThread::pre_run() {
+  // Initialize BarrierSet-related data before adding to list.
   assert(BarrierSet::barrier_set() != NULL, "invariant");
+  BarrierSet::barrier_set()->on_thread_attach(this);
   add_to_the_list();
 
   // This is slightly odd in that NamedThread is a subclass, but
@@ -1323,6 +1324,8 @@ void NonJavaThread::pre_run() {
 
 void NonJavaThread::post_run() {
   JFR_ONLY(Jfr::on_thread_exit(this);)
+  // Clean up BarrierSet data before removing from list.
+  BarrierSet::barrier_set()->on_thread_detach(this);
   remove_from_the_list();
   // Ensure thread-local-storage is cleared before termination.
   Thread::clear_thread_current();
@@ -2261,48 +2264,19 @@ void JavaThread::check_and_handle_async_exceptions(bool check_unsafe_error) {
 
 void JavaThread::handle_special_runtime_exit_condition(bool check_asyncs) {
   //
-  // Check for pending external suspend. Internal suspend requests do
-  // not use handle_special_runtime_exit_condition().
+  // Check for pending external suspend.
   // If JNIEnv proxies are allowed, don't self-suspend if the target
   // thread is not the current thread. In older versions of jdbx, jdbx
   // threads could call into the VM with another thread's JNIEnv so we
   // can be here operating on behalf of a suspended thread (4432884).
   bool do_self_suspend = is_external_suspend_with_lock();
   if (do_self_suspend && (!AllowJNIEnvProxy || this == JavaThread::current())) {
-    //
-    // Because thread is external suspended the safepoint code will count
-    // thread as at a safepoint. This can be odd because we can be here
-    // as _thread_in_Java which would normally transition to _thread_blocked
-    // at a safepoint. We would like to mark the thread as _thread_blocked
-    // before calling java_suspend_self like all other callers of it but
-    // we must then observe proper safepoint protocol. (We can't leave
-    // _thread_blocked with a safepoint in progress). However we can be
-    // here as _thread_in_native_trans so we can't use a normal transition
-    // constructor/destructor pair because they assert on that type of
-    // transition. We could do something like:
-    //
-    // JavaThreadState state = thread_state();
-    // set_thread_state(_thread_in_vm);
-    // {
-    //   ThreadBlockInVM tbivm(this);
-    //   java_suspend_self()
-    // }
-    // set_thread_state(_thread_in_vm_trans);
-    // if (safepoint) block;
-    // set_thread_state(state);
-    //
-    // but that is pretty messy. Instead we just go with the way the
-    // code has worked before and note that this is the only path to
-    // java_suspend_self that doesn't put the thread in _thread_blocked
-    // mode.
-
     frame_anchor()->make_walkable(this);
-    java_suspend_self();
-
-    // We might be here for reasons in addition to the self-suspend request
-    // so check for other async requests.
+    java_suspend_self_with_safepoint_check();
   }
 
+  // We might be here for reasons in addition to the self-suspend request
+  // so check for other async requests.
   if (check_asyncs) {
     check_and_handle_async_exceptions();
   }
@@ -2392,8 +2366,19 @@ void JavaThread::java_suspend() {
     }
   }
 
-  VM_ThreadSuspend vm_suspend;
-  VMThread::execute(&vm_suspend);
+  if (Thread::current() == this) {
+    // Safely self-suspend.
+    // If we don't do this explicitly it will implicitly happen
+    // before we transition back to Java, and on some other thread-state
+    // transition paths, but not as we exit a JVM TI SuspendThread call.
+    // As SuspendThread(current) must not return (until resumed) we must
+    // self-suspend here.
+    ThreadBlockInVM tbivm(this);
+    java_suspend_self();
+  } else {
+    VM_ThreadSuspend vm_suspend;
+    VMThread::execute(&vm_suspend);
+  }
 }
 
 // Part II of external suspension.
@@ -2410,6 +2395,7 @@ void JavaThread::java_suspend() {
 //       to complete an external suspend request.
 //
 int JavaThread::java_suspend_self() {
+  assert(thread_state() == _thread_blocked, "wrong state for java_suspend_self()");
   int ret = 0;
 
   // we are in the process of exiting so don't suspend
@@ -2457,6 +2443,36 @@ int JavaThread::java_suspend_self() {
   return ret;
 }
 
+// Helper routine to set up the correct thread state before calling java_suspend_self.
+// This is called when regular thread-state transition helpers can't be used because
+// we can be in various states, in particular _thread_in_native_trans.
+// Because this thread is external suspended the safepoint code will count it as at
+// a safepoint, regardless of what its actual current thread-state is. But
+// is_ext_suspend_completed() may be waiting to see a thread transition from
+// _thread_in_native_trans to _thread_blocked. So we set the thread state directly
+// to _thread_blocked. The problem with setting thread state directly is that a
+// safepoint could happen just after java_suspend_self() returns after being resumed,
+// and the VM thread will see the _thread_blocked state. So we must check for a safepoint
+// after restoring the state to make sure we won't leave while a safepoint is in progress.
+// However, not all initial-states are allowed when performing a safepoint check, as we
+// should never be blocking at a safepoint whilst in those states. Of these 'bad' states
+// only _thread_in_native is possible when executing this code (based on our two callers).
+// A thread that is _thread_in_native is already safepoint-safe and so it doesn't matter
+// whether the VMThread sees the _thread_blocked state, or the _thread_in_native state,
+// and so we don't need the explicit safepoint check.
+
+void JavaThread::java_suspend_self_with_safepoint_check() {
+  assert(this == Thread::current(), "invariant");
+  JavaThreadState state = thread_state();
+  set_thread_state(_thread_blocked);
+  java_suspend_self();
+  set_thread_state(state);
+  InterfaceSupport::serialize_thread_state_with_handler(this);
+  if (state != _thread_in_native) {
+    SafepointMechanism::block_if_requested(this);
+  }
+}
+
 #ifdef ASSERT
 // Verify the JavaThread has not yet been published in the Threads::list, and
 // hence doesn't need protection from concurrent access at this stage.
@@ -2488,32 +2504,10 @@ void JavaThread::check_safepoint_and_suspend_for_native_trans(JavaThread *thread
   // threads could call into the VM with another thread's JNIEnv so we
   // can be here operating on behalf of a suspended thread (4432884).
   if (do_self_suspend && (!AllowJNIEnvProxy || curJT == thread)) {
-    JavaThreadState state = thread->thread_state();
-
-    // We mark this thread_blocked state as a suspend-equivalent so
-    // that a caller to is_ext_suspend_completed() won't be confused.
-    // The suspend-equivalent state is cleared by java_suspend_self().
-    thread->set_suspend_equivalent();
-
-    // If the safepoint code sees the _thread_in_native_trans state, it will
-    // wait until the thread changes to other thread state. There is no
-    // guarantee on how soon we can obtain the SR_lock and complete the
-    // self-suspend request. It would be a bad idea to let safepoint wait for
-    // too long. Temporarily change the state to _thread_blocked to
-    // let the VM thread know that this thread is ready for GC. The problem
-    // of changing thread state is that safepoint could happen just after
-    // java_suspend_self() returns after being resumed, and VM thread will
-    // see the _thread_blocked state. We must check for safepoint
-    // after restoring the state and make sure we won't leave while a safepoint
-    // is in progress.
-    thread->set_thread_state(_thread_blocked);
-    thread->java_suspend_self();
-    thread->set_thread_state(state);
-
-    InterfaceSupport::serialize_thread_state_with_handler(thread);
+    thread->java_suspend_self_with_safepoint_check();
+  } else {
+    SafepointMechanism::block_if_requested(curJT);
   }
-
-  SafepointMechanism::block_if_requested(curJT);
 
   if (thread->is_deopt_suspend()) {
     thread->clear_deopt_suspend();
@@ -2946,7 +2940,7 @@ void JavaThread::nmethods_do(CodeBlobClosure* cf) {
   }
 }
 
-void JavaThread::metadata_do(void f(Metadata*)) {
+void JavaThread::metadata_do(MetadataClosure* f) {
   if (has_last_Java_frame()) {
     // Traverse the execution stack to call f() on the methods in the stack
     for (StackFrameStream fst(this); !fst.is_done(); fst.next()) {
@@ -4560,7 +4554,7 @@ void Threads::nmethods_do(CodeBlobClosure* cf) {
   }
 }
 
-void Threads::metadata_do(void f(Metadata*)) {
+void Threads::metadata_do(MetadataClosure* f) {
   ALL_JAVA_THREADS(p) {
     p->metadata_do(f);
   }
@@ -4759,7 +4753,7 @@ void Threads::print_on_error(outputStream* st, Thread* current, char* buf,
   print_threads_compiling(st, buf, buflen);
 }
 
-void Threads::print_threads_compiling(outputStream* st, char* buf, int buflen) {
+void Threads::print_threads_compiling(outputStream* st, char* buf, int buflen, bool short_form) {
   ALL_JAVA_THREADS(thread) {
     if (thread->is_Compiler_thread()) {
       CompilerThread* ct = (CompilerThread*) thread;
@@ -4772,7 +4766,7 @@ void Threads::print_threads_compiling(outputStream* st, char* buf, int buflen) {
       if (task != NULL) {
         thread->print_name_on_error(st, buf, buflen);
         st->print("  ");
-        task->print(st, NULL, true, true);
+        task->print(st, NULL, short_form, true);
       }
     }
   }

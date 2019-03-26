@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @summary  Verify that some special headers - such as User-Agent
  *           can be specified by the caller.
- * @bug 8203771
+ * @bug 8203771 8218546
  * @modules java.base/sun.net.www.http
  *          java.net.http/jdk.internal.net.http.common
  *          java.net.http/jdk.internal.net.http.frame
@@ -64,8 +64,6 @@ import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -74,13 +72,13 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
-
-import static java.lang.System.err;
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
+import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import org.testng.Assert;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
 
 public class SpecialHeadersTest implements HttpServerAdapters {
 
@@ -151,7 +149,11 @@ public class SpecialHeadersTest implements HttpServerAdapters {
         "USER-AGENT", u -> userAgent(), "HOST", u -> u.getRawAuthority());
 
     @Test(dataProvider = "variants")
-    void test(String uriString, String headerNameAndValue, boolean sameClient) throws Exception {
+    void test(String uriString,
+              String headerNameAndValue,
+              boolean sameClient)
+        throws Exception
+    {
         out.println("\n--- Starting ");
 
         int index = headerNameAndValue.indexOf(":");
@@ -183,21 +185,41 @@ public class SpecialHeadersTest implements HttpServerAdapters {
             assertEquals(resp.statusCode(), 200,
                     "Expected 200, got:" + resp.statusCode());
 
-            String receivedHeaderString = value == null ? null
-                    : resp.headers().firstValue("X-"+key).get();
-            out.println("Got X-" + key + ": " + resp.headers().allValues("X-"+key));
-            if (value != null) {
-                assertEquals(receivedHeaderString, value);
-                assertEquals(resp.headers().allValues("X-"+key), List.of(value));
-            } else {
-                assertEquals(resp.headers().allValues("X-"+key).size(), 0);
-            }
+            boolean isInitialRequest = i == 0;
+            boolean isSecure = uri.getScheme().equalsIgnoreCase("https");
+            boolean isHTTP2 = resp.version() == HTTP_2;
+            boolean isNotH2CUpgrade = isSecure || (sameClient == true && !isInitialRequest);
+            boolean isDefaultHostHeader = name.equalsIgnoreCase("host") && useDefault;
 
+            // By default, HTTP/2 sets the `:authority:` pseudo-header, instead
+            // of the `Host` header. Therefore, there should be no "X-Host"
+            // header in the response, except the response to the h2c Upgrade
+            // request which will have been sent through HTTP/1.1.
+
+            if (isDefaultHostHeader && isHTTP2 && isNotH2CUpgrade) {
+                assertTrue(resp.headers().firstValue("X-" + key).isEmpty());
+                assertTrue(resp.headers().allValues("X-" + key).isEmpty());
+                out.println("No X-" + key + " header received, as expected");
+            } else {
+                String receivedHeaderString = value == null ? null
+                        : resp.headers().firstValue("X-"+key).get();
+                out.println("Got X-" + key + ": " + resp.headers().allValues("X-"+key));
+                if (value != null) {
+                    assertEquals(receivedHeaderString, value);
+                    assertEquals(resp.headers().allValues("X-"+key), List.of(value));
+                } else {
+                    assertEquals(resp.headers().allValues("X-"+key).size(), 0);
+                }
+            }
         }
     }
 
     @Test(dataProvider = "variants")
-    void testHomeMadeIllegalHeader(String uriString, String headerNameAndValue, boolean sameClient) throws Exception {
+    void testHomeMadeIllegalHeader(String uriString,
+                                   String headerNameAndValue,
+                                   boolean sameClient)
+        throws Exception
+    {
         out.println("\n--- Starting ");
         final URI uri = URI.create(uriString);
 
@@ -266,6 +288,11 @@ public class SpecialHeadersTest implements HttpServerAdapters {
             }
             HttpRequest request = requestBuilder.build();
 
+            boolean isInitialRequest = i == 0;
+            boolean isSecure = uri.getScheme().equalsIgnoreCase("https");
+            boolean isNotH2CUpgrade = isSecure || (sameClient == true && !isInitialRequest);
+            boolean isDefaultHostHeader = name.equalsIgnoreCase("host") && useDefault;
+
             client.sendAsync(request, BodyHandlers.ofString())
                     .thenApply(response -> {
                         out.println("Got response: " + response);
@@ -273,15 +300,27 @@ public class SpecialHeadersTest implements HttpServerAdapters {
                         assertEquals(response.statusCode(), 200);
                         return response;})
                     .thenAccept(resp -> {
-                        String receivedHeaderString = value == null ? null
-                                : resp.headers().firstValue("X-"+key).get();
-                        out.println("Got X-" + key + ": " + resp.headers().allValues("X-"+key));
-                        if (value != null) {
-                            assertEquals(receivedHeaderString, value);
-                            assertEquals(resp.headers().allValues("X-" + key), List.of(value));
+                        // By default, HTTP/2 sets the `:authority:` pseudo-header, instead
+                        // of the `Host` header. Therefore, there should be no "X-Host"
+                        // header in the response, except the response to the h2c Upgrade
+                        // request which will have been sent through HTTP/1.1.
+
+                        if (isDefaultHostHeader && resp.version() == HTTP_2 && isNotH2CUpgrade) {
+                            assertTrue(resp.headers().firstValue("X-" + key).isEmpty());
+                            assertTrue(resp.headers().allValues("X-" + key).isEmpty());
+                            out.println("No X-" + key + " header received, as expected");
                         } else {
-                            assertEquals(resp.headers().allValues("X-" + key).size(), 1);
-                        } })
+                            String receivedHeaderString = value == null ? null
+                                    : resp.headers().firstValue("X-"+key).get();
+                            out.println("Got X-" + key + ": " + resp.headers().allValues("X-"+key));
+                            if (value != null) {
+                                assertEquals(receivedHeaderString, value);
+                                assertEquals(resp.headers().allValues("X-" + key), List.of(value));
+                            } else {
+                                assertEquals(resp.headers().allValues("X-" + key).size(), 1);
+                            }
+                        }
+                    })
                     .join();
         }
     }

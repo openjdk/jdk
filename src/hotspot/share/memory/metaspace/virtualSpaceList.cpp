@@ -97,7 +97,7 @@ void VirtualSpaceList::purge(ChunkManager* chunk_manager) {
   VirtualSpaceNode* next_vsl = prev_vsl;
   while (next_vsl != NULL) {
     VirtualSpaceNode* vsl = next_vsl;
-    DEBUG_ONLY(vsl->verify_container_count();)
+    DEBUG_ONLY(vsl->verify(false);)
     next_vsl = vsl->next();
     // Don't free the current virtual space since it will likely
     // be needed soon.

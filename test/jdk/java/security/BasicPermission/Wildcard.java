@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,7 @@ import javax.net.ssl.SSLPermission;
  * @summary Check that BasicPermission subclasses don't throw exception if name
  *          contains wildcard character ("*") but does not signify a
  *          wildcard match
- * @modules java.base/com.sun.net.ssl
- *          java.sql
+ * @modules java.sql
  */
 
 public class Wildcard {
@@ -51,6 +50,5 @@ public class Wildcard {
         new SQLPermission(wildcard);
         new PropertyPermission(wildcard, "read");
         new SSLPermission(wildcard);
-        new com.sun.net.ssl.SSLPermission(wildcard);
     }
 }

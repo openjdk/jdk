@@ -25,23 +25,25 @@
 #ifndef SHARE_GC_G1_G1COLLECTIONSET_HPP
 #define SHARE_GC_G1_G1COLLECTIONSET_HPP
 
-#include "gc/g1/collectionSetChooser.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class G1CollectedHeap;
+class G1CollectionSetCandidates;
 class G1CollectorState;
 class G1GCPhaseTimes;
 class G1ParScanThreadStateSet;
 class G1Policy;
 class G1SurvivorRegions;
 class HeapRegion;
+class HeapRegionClosure;
 
 class G1CollectionSet {
   G1CollectedHeap* _g1h;
   G1Policy* _policy;
 
-  CollectionSetChooser* _cset_chooser;
+  // All old gen collection set candidate regions for the current mixed gc phase.
+  G1CollectionSetCandidates* _candidates;
 
   uint _eden_region_length;
   uint _survivor_region_length;
@@ -128,7 +130,13 @@ public:
   void initialize_optional(uint max_length);
   void free_optional_regions();
 
-  CollectionSetChooser* cset_chooser();
+  void clear_candidates();
+
+  void set_candidates(G1CollectionSetCandidates* candidates) {
+    assert(_candidates == NULL, "Trying to replace collection set candidates.");
+    _candidates = candidates;
+  }
+  G1CollectionSetCandidates* candidates() { return _candidates; }
 
   void init_region_lengths(uint eden_cset_region_length,
                            uint survivor_cset_region_length);
@@ -253,8 +261,8 @@ public:
     _current_limit(0),
     _prepare_failed(false),
     _evacuation_failed(false) { }
-  // The destructor returns regions to the cset-chooser and
-  // frees the optional structure in the cset.
+  // The destructor returns regions to the collection set candidates set and
+  // frees the optional structure in the collection set.
   ~G1OptionalCSet();
 
   uint current_index() { return _current_index; }

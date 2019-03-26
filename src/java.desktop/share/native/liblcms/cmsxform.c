@@ -836,7 +836,7 @@ _cmsTRANSFORM* AllocEmptyTransform(cmsContext ContextID, cmsPipeline* lut,
 
                             // Save the day? (Ignore the warning)
                             if (Plugin->OldXform) {
-                                   p->OldXform = (_cmsTransformFn) p->xform;
+                                   p->OldXform = (_cmsTransformFn)(void*) p->xform;
                                    p->xform = _cmsTransform2toTransformAdaptor;
                             }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,8 +143,7 @@ public class OpeningHandshake {
         requestBuilder.version(Version.HTTP_1_1).GET();
         request = requestBuilder.buildForWebSocket();
         request.isWebSocket(true);
-        request.setSystemHeader(HEADER_UPGRADE, "websocket");
-        request.setSystemHeader(HEADER_CONNECTION, "Upgrade");
+        Utils.setWebSocketUpgradeHeaders(request);
         request.setProxy(proxy);
     }
 

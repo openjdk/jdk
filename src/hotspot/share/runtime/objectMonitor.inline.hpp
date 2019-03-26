@@ -58,17 +58,16 @@ inline void* ObjectMonitor::owner() const {
 }
 
 inline void ObjectMonitor::clear() {
-  assert(_header, "Fatal logic error in ObjectMonitor header!");
+  assert(_header != NULL, "Fatal logic error in ObjectMonitor header!");
   assert(_count == 0, "Fatal logic error in ObjectMonitor count!");
   assert(_waiters == 0, "Fatal logic error in ObjectMonitor waiters!");
   assert(_recursions == 0, "Fatal logic error in ObjectMonitor recursions!");
   assert(_object != NULL, "Fatal logic error in ObjectMonitor object!");
-  assert(_owner == 0, "Fatal logic error in ObjectMonitor owner!");
+  assert(_owner == NULL, "Fatal logic error in ObjectMonitor owner!");
 
   _header = NULL;
   _object = NULL;
 }
-
 
 inline void* ObjectMonitor::object() const {
   return _object;
@@ -95,7 +94,6 @@ inline bool ObjectMonitor::check(TRAPS) {
   return true;
 }
 
-
 // return number of threads contending for this monitor
 inline jint ObjectMonitor::contentions() const {
   return _count;
@@ -108,6 +106,5 @@ inline void ObjectMonitor::set_owner(void* owner) {
   _owner = owner;
   _recursions = 0;
 }
-
 
 #endif // SHARE_RUNTIME_OBJECTMONITOR_INLINE_HPP

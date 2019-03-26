@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,7 @@ final class Finished {
             }
 
             if (m.remaining() != verifyDataLen) {
-                throw context.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw context.conContext.fatal(Alert.DECODE_ERROR,
                     "Inappropriate finished message: need " + verifyDataLen +
                     " but remaining " + m.remaining() + " bytes verify_data");
             }
@@ -120,7 +120,7 @@ final class Finished {
                         "Failed to generate verify_data", ioe);
             }
             if (!MessageDigest.isEqual(myVerifyData, verifyData)) {
-                throw context.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                throw context.conContext.fatal(Alert.DECRYPT_ERROR,
                         "The Finished message cannot be verified.");
             }
         }
@@ -257,7 +257,7 @@ final class Finished {
                 TlsPrfParameterSpec spec = new TlsPrfParameterSpec(
                     masterSecretKey, tlsLabel, seed, 12,
                     hashAlg.name, hashAlg.hashLength, hashAlg.blockSize);
-                KeyGenerator kg = JsseJce.getKeyGenerator(prfAlg);
+                KeyGenerator kg = KeyGenerator.getInstance(prfAlg);
                 kg.init(spec);
                 SecretKey prfKey = kg.generateKey();
                 if (!"RAW".equals(prfKey.getFormat())) {
@@ -309,7 +309,7 @@ final class Finished {
                 TlsPrfParameterSpec spec = new TlsPrfParameterSpec(
                     masterSecretKey, tlsLabel, seed, 12,
                     hashAlg.name, hashAlg.hashLength, hashAlg.blockSize);
-                KeyGenerator kg = JsseJce.getKeyGenerator(prfAlg);
+                KeyGenerator kg = KeyGenerator.getInstance(prfAlg);
                 kg.init(spec);
                 SecretKey prfKey = kg.generateKey();
                 if (!"RAW".equals(prfKey.getFormat())) {
@@ -350,7 +350,7 @@ final class Finished {
             String hmacAlg =
                 "Hmac" + hashAlg.name.replace("-", "");
             try {
-                Mac hmac = JsseJce.getMac(hmacAlg);
+                Mac hmac = Mac.getInstance(hmacAlg);
                 hmac.init(finishedSecret);
                 return hmac.doFinal(context.handshakeHash.digest());
             } catch (NoSuchAlgorithmException |InvalidKeyException ex) {

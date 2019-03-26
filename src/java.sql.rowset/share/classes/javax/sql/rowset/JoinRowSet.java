@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ import javax.sql.rowset.*;
  * alternatively be set by supplying it to the appropriate version of the
  * <code>JointRowSet</code> method <code>addRowSet</code>.
  *
- * <h3>1.0 Overview</h3>
+ * <h2>1.0 Overview</h2>
  * Disconnected <code>RowSet</code> objects (<code>CachedRowSet</code> objects
  * and implementations extending the <code>CachedRowSet</code> interface)
  * do not have a standard way to establish an SQL <code>JOIN</code> between
@@ -98,7 +98,7 @@ import javax.sql.rowset.*;
  * <code>JoinRowSet</code> interface explain these <code>JOIN</code> types, which are
  * standard SQL <code>JOIN</code> types.
  *
- * <h3>2.0 Using a <code>JoinRowSet</code> Object for Creating a <code>JOIN</code></h3>
+ * <h2>2.0 Using a <code>JoinRowSet</code> Object for Creating a <code>JOIN</code></h2>
  * When a <code>JoinRowSet</code> object is created, it is empty.
  * The first <code>RowSet</code> object to be added becomes the basis for the
  * <code>JOIN</code> relationship.
@@ -126,7 +126,7 @@ import javax.sql.rowset.*;
  *  These four methods set or reset the match column at the time a <code>RowSet</code>
  *  object is being added to a <code>JoinRowSet</code> object.
  * </ul>
- * <h3>3.0 Sample Usage</h3>
+ * <h2>3.0 Sample Usage</h2>
  * <p>
  * The following code fragment adds two <code>CachedRowSet</code>
  * objects to a <code>JoinRowSet</code> object. Note that in this example,
@@ -193,7 +193,7 @@ import javax.sql.rowset.*;
  * <code>EMP_ID</code> column matches a value for the <code>EMP_ID</code> column
  * in <i>jrs</i> has been added to <i>jrs</i>.
  *
- * <h3>4.0 <code>JoinRowSet</code> Methods</h3>
+ * <h2>4.0 <code>JoinRowSet</code> Methods</h2>
  * The <code>JoinRowSet</code> interface supplies several methods for adding
  * <code>RowSet</code> objects and for getting information about the
  * <code>JoinRowSet</code> object.

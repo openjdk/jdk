@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
   @key headful
   @bug       6182359
   @summary   Tests that Window having non-focusable owner can't be a focus owner.
-  @author    Anton.Tarasov: area=awt.focus
   @library   ../../regtesthelpers
   @build     Util
   @run       main NonfocusableOwnerTest
@@ -34,12 +33,9 @@
 
 import java.awt.*;
 import java.awt.event.*;
-import java.applet.Applet;
-import java.lang.reflect.*;
-import java.io.*;
 import test.java.awt.regtesthelpers.Util;
 
-public class NonfocusableOwnerTest extends Applet {
+public class NonfocusableOwnerTest {
     Robot robot = Util.createRobot();
     Frame frame;
     Dialog dialog;

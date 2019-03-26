@@ -244,6 +244,7 @@ public:
   Klass* get_klass_from_got(const char* klass_name, int klass_len, const Method* method);
 
   bool is_dependent_method(Klass* dependee, AOTCompiledMethod* aot);
+  void mark_evol_dependent_methods(InstanceKlass* dependee);
 
   const char* get_name_at(int offset) {
     return _metaspace_names + offset;
@@ -251,8 +252,8 @@ public:
 
 
   void oops_do(OopClosure* f);
-  void metadata_do(void f(Metadata*));
-  void got_metadata_do(void f(Metadata*));
+  void metadata_do(MetadataClosure* f);
+  void got_metadata_do(MetadataClosure* f);
 
 #ifdef ASSERT
   bool got_contains(Metadata **p) {

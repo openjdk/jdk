@@ -193,10 +193,10 @@ public class TestOptions extends JavadocTester {
                 "<pre>@Documented\npublic @interface <a href="
                 + "\"../src-html/linksource/AnnotationTypeField.html#line.31\">"
                 + "AnnotationTypeField</a></pre>",
-                "<h4>DEFAULT_NAME</h4>\n<pre>static final&nbsp;java.lang.String&nbsp;"
+                "<h3>DEFAULT_NAME</h3>\n<pre>static final&nbsp;java.lang.String&nbsp;"
                 + "<a href=\"../src-html/linksource/AnnotationTypeField.html#line.32\">"
                 + "DEFAULT_NAME</a></pre>",
-                "<h4>name</h4>\n<pre>java.lang.String&nbsp;<a href="
+                "<h3>name</h3>\n<pre>java.lang.String&nbsp;<a href="
                 + "\"../src-html/linksource/AnnotationTypeField.html#line.34\">name</a></pre>");
 
         checkOutput("src-html/linksource/AnnotationTypeField.html", true,
@@ -249,41 +249,6 @@ public class TestOptions extends JavadocTester {
         checkOutput("src-html/linksource/SomeEnum.html", true,
                 "<span class=\"sourceLineNo\">029</span><a id=\"line.29\">    VALUE1,</a>",
                 "<span class=\"sourceLineNo\">030</span><a id=\"line.30\">    VALUE2</a>");
-    }
-
-    @Test
-    public void testLinkSource_html4() {
-        javadoc("-d", "out-9-html4",
-                "-html4",
-                "-linksource",
-                "-javafx",
-                "--disable-javafx-strict-checks",
-                "-sourcepath", testSrc,
-                "-package",
-                "linksource");
-        checkExit(Exit.OK);
-
-        checkOutput("src-html/linksource/AnnotationTypeField.html", true,
-                "<span class=\"sourceLineNo\">031</span><a name=\"line.31\">"
-                + "@Documented public @interface AnnotationTypeField {</a>");
-
-        checkOutput("src-html/linksource/Properties.html", true,
-                "<span class=\"sourceLineNo\">031</span><a name=\"line.31\">    "
-                + "public Object someProperty() {</a>");
-
-        checkOutput("src-html/linksource/SomeClass.html", true,
-                "<span class=\"sourceLineNo\">029</span><a name=\"line.29\">"
-                + "public class SomeClass {</a>",
-                "<span class=\"sourceLineNo\">031</span><a name=\"line.31\">    "
-                + "public int field;</a>",
-                "<span class=\"sourceLineNo\">033</span><a name=\"line.33\">    "
-                + "public SomeClass() {</a>",
-                "<span class=\"sourceLineNo\">036</span><a name=\"line.36\">    "
-                + "public int method() {</a>");
-
-        checkOutput("src-html/linksource/SomeEnum.html", true,
-                "<span class=\"sourceLineNo\">029</span><a name=\"line.29\">    VALUE1,</a>",
-                "<span class=\"sourceLineNo\">030</span><a name=\"line.30\">    VALUE2</a>");
     }
 
     @Test

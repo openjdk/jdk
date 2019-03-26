@@ -230,13 +230,7 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
         #define HOTSPOT_BUILD_COMPILER "unknown MS VC++:" XSTR(_MSC_VER)
       #endif
     #elif defined(__SUNPRO_CC)
-      #if   __SUNPRO_CC == 0x420
-        #define HOTSPOT_BUILD_COMPILER "Workshop 4.2"
-      #elif __SUNPRO_CC == 0x500
-        #define HOTSPOT_BUILD_COMPILER "Workshop 5.0 compat=" XSTR(__SUNPRO_CC_COMPAT)
-      #elif __SUNPRO_CC == 0x520
-        #define HOTSPOT_BUILD_COMPILER "Workshop 5.2 compat=" XSTR(__SUNPRO_CC_COMPAT)
-      #elif __SUNPRO_CC == 0x580
+      #if __SUNPRO_CC == 0x580
         #define HOTSPOT_BUILD_COMPILER "Workshop 5.8"
       #elif __SUNPRO_CC == 0x590
         #define HOTSPOT_BUILD_COMPILER "Workshop 5.9"
@@ -249,6 +243,8 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
       #else
         #define HOTSPOT_BUILD_COMPILER "unknown Workshop:" XSTR(__SUNPRO_CC)
       #endif
+    #elif defined(__clang_version__)
+        #define HOTSPOT_BUILD_COMPILER "clang " __VERSION__
     #elif defined(__GNUC__)
         #define HOTSPOT_BUILD_COMPILER "gcc " __VERSION__
     #elif defined(__IBMCPP__)

@@ -173,7 +173,7 @@ public class SocksIPv6Test {
             server.stop(1);
         }
         if (socks != null) {
-            socks.terminate();
+            socks.close();
         }
     }
 }

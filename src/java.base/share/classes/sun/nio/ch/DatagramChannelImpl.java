@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,6 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import sun.net.ResourceManager;
 import sun.net.ext.ExtendedSocketOptions;
-import static sun.net.ext.ExtendedSocketOptions.SOCK_DGRAM;
 
 /**
  * An implementation of DatagramChannels.
@@ -335,7 +334,7 @@ class DatagramChannelImpl
             set.add(StandardSocketOptions.IP_MULTICAST_IF);
             set.add(StandardSocketOptions.IP_MULTICAST_TTL);
             set.add(StandardSocketOptions.IP_MULTICAST_LOOP);
-            set.addAll(ExtendedSocketOptions.options(SOCK_DGRAM));
+            set.addAll(ExtendedSocketOptions.datagramSocketOptions());
             return Collections.unmodifiableSet(set);
         }
     }

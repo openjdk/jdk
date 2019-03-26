@@ -421,7 +421,7 @@ Handle java_lang_String::char_converter(Handle java_string, jchar from_char, jch
   oop          obj    = java_string();
   // Typical usage is to convert all '/' to '.' in string.
   typeArrayOop value  = java_lang_String::value(obj);
-  int          length = java_lang_String::length(obj);
+  int          length = java_lang_String::length(obj, value);
   bool      is_latin1 = java_lang_String::is_latin1(obj);
 
   // First check if any from_char exist
@@ -485,7 +485,7 @@ Handle java_lang_String::char_converter(Handle java_string, jchar from_char, jch
 
 jchar* java_lang_String::as_unicode_string(oop java_string, int& length, TRAPS) {
   typeArrayOop value  = java_lang_String::value(java_string);
-               length = java_lang_String::length(java_string);
+               length = java_lang_String::length(java_string, value);
   bool      is_latin1 = java_lang_String::is_latin1(java_string);
 
   jchar* result = NEW_RESOURCE_ARRAY_RETURN_NULL(jchar, length);
@@ -506,11 +506,11 @@ jchar* java_lang_String::as_unicode_string(oop java_string, int& length, TRAPS) 
 }
 
 unsigned int java_lang_String::hash_code(oop java_string) {
-  int          length = java_lang_String::length(java_string);
+  typeArrayOop value  = java_lang_String::value(java_string);
+  int          length = java_lang_String::length(java_string, value);
   // Zero length string will hash to zero with String.hashCode() function.
   if (length == 0) return 0;
 
-  typeArrayOop value  = java_lang_String::value(java_string);
   bool      is_latin1 = java_lang_String::is_latin1(java_string);
 
   if (is_latin1) {
@@ -522,7 +522,7 @@ unsigned int java_lang_String::hash_code(oop java_string) {
 
 char* java_lang_String::as_quoted_ascii(oop java_string) {
   typeArrayOop value  = java_lang_String::value(java_string);
-  int          length = java_lang_String::length(java_string);
+  int          length = java_lang_String::length(java_string, value);
   bool      is_latin1 = java_lang_String::is_latin1(java_string);
 
   if (length == 0) return NULL;
@@ -547,7 +547,7 @@ char* java_lang_String::as_quoted_ascii(oop java_string) {
 
 Symbol* java_lang_String::as_symbol(oop java_string, TRAPS) {
   typeArrayOop value  = java_lang_String::value(java_string);
-  int          length = java_lang_String::length(java_string);
+  int          length = java_lang_String::length(java_string, value);
   bool      is_latin1 = java_lang_String::is_latin1(java_string);
   if (!is_latin1) {
     jchar* base = (length == 0) ? NULL : value->char_at_addr(0);
@@ -564,7 +564,7 @@ Symbol* java_lang_String::as_symbol(oop java_string, TRAPS) {
 
 Symbol* java_lang_String::as_symbol_or_null(oop java_string) {
   typeArrayOop value  = java_lang_String::value(java_string);
-  int          length = java_lang_String::length(java_string);
+  int          length = java_lang_String::length(java_string, value);
   bool      is_latin1 = java_lang_String::is_latin1(java_string);
   if (!is_latin1) {
     jchar* base = (length == 0) ? NULL : value->char_at_addr(0);
@@ -577,23 +577,28 @@ Symbol* java_lang_String::as_symbol_or_null(oop java_string) {
   }
 }
 
-int java_lang_String::utf8_length(oop java_string) {
-  typeArrayOop value  = java_lang_String::value(java_string);
-  int          length = java_lang_String::length(java_string);
-  bool      is_latin1 = java_lang_String::is_latin1(java_string);
+int java_lang_String::utf8_length(oop java_string, typeArrayOop value) {
+  assert(value_equals(value, java_lang_String::value(java_string)),
+         "value must be same as java_lang_String::value(java_string)");
+  int length = java_lang_String::length(java_string, value);
   if (length == 0) {
     return 0;
   }
-  if (!is_latin1) {
+  if (!java_lang_String::is_latin1(java_string)) {
     return UNICODE::utf8_length(value->char_at_addr(0), length);
   } else {
     return UNICODE::utf8_length(value->byte_at_addr(0), length);
   }
 }
 
+int java_lang_String::utf8_length(oop java_string) {
+  typeArrayOop value = java_lang_String::value(java_string);
+  return utf8_length(java_string, value);
+}
+
 char* java_lang_String::as_utf8_string(oop java_string) {
   typeArrayOop value  = java_lang_String::value(java_string);
-  int          length = java_lang_String::length(java_string);
+  int          length = java_lang_String::length(java_string, value);
   bool      is_latin1 = java_lang_String::is_latin1(java_string);
   if (!is_latin1) {
     jchar* position = (length == 0) ? NULL : value->char_at_addr(0);
@@ -601,27 +606,32 @@ char* java_lang_String::as_utf8_string(oop java_string) {
   } else {
     jbyte* position = (length == 0) ? NULL : value->byte_at_addr(0);
     return UNICODE::as_utf8(position, length);
+  }
+}
+
+char* java_lang_String::as_utf8_string(oop java_string, typeArrayOop value, char* buf, int buflen) {
+  assert(value_equals(value, java_lang_String::value(java_string)),
+         "value must be same as java_lang_String::value(java_string)");
+  int     length = java_lang_String::length(java_string, value);
+  bool is_latin1 = java_lang_String::is_latin1(java_string);
+  if (!is_latin1) {
+    jchar* position = (length == 0) ? NULL : value->char_at_addr(0);
+    return UNICODE::as_utf8(position, length, buf, buflen);
+  } else {
+    jbyte* position = (length == 0) ? NULL : value->byte_at_addr(0);
+    return UNICODE::as_utf8(position, length, buf, buflen);
   }
 }
 
 char* java_lang_String::as_utf8_string(oop java_string, char* buf, int buflen) {
-  typeArrayOop value  = java_lang_String::value(java_string);
-  int          length = java_lang_String::length(java_string);
-  bool      is_latin1 = java_lang_String::is_latin1(java_string);
-  if (!is_latin1) {
-    jchar* position = (length == 0) ? NULL : value->char_at_addr(0);
-    return UNICODE::as_utf8(position, length, buf, buflen);
-  } else {
-    jbyte* position = (length == 0) ? NULL : value->byte_at_addr(0);
-    return UNICODE::as_utf8(position, length, buf, buflen);
-  }
+  typeArrayOop value = java_lang_String::value(java_string);
+  return as_utf8_string(java_string, value, buf, buflen);
 }
 
 char* java_lang_String::as_utf8_string(oop java_string, int start, int len) {
   typeArrayOop value  = java_lang_String::value(java_string);
-  int          length = java_lang_String::length(java_string);
-  assert(start + len <= length, "just checking");
   bool      is_latin1 = java_lang_String::is_latin1(java_string);
+  assert(start + len <= java_lang_String::length(java_string), "just checking");
   if (!is_latin1) {
     jchar* position = value->char_at_addr(start);
     return UNICODE::as_utf8(position, len);
@@ -631,11 +641,11 @@ char* java_lang_String::as_utf8_string(oop java_string, int start, int len) {
   }
 }
 
-char* java_lang_String::as_utf8_string(oop java_string, int start, int len, char* buf, int buflen) {
-  typeArrayOop value  = java_lang_String::value(java_string);
-  int          length = java_lang_String::length(java_string);
-  assert(start + len <= length, "just checking");
-  bool      is_latin1 = java_lang_String::is_latin1(java_string);
+char* java_lang_String::as_utf8_string(oop java_string, typeArrayOop value, int start, int len, char* buf, int buflen) {
+  assert(value_equals(value, java_lang_String::value(java_string)),
+         "value must be same as java_lang_String::value(java_string)");
+  assert(start + len <= java_lang_String::length(java_string), "just checking");
+  bool is_latin1 = java_lang_String::is_latin1(java_string);
   if (!is_latin1) {
     jchar* position = value->char_at_addr(start);
     return UNICODE::as_utf8(position, len, buf, buflen);
@@ -649,7 +659,7 @@ bool java_lang_String::equals(oop java_string, const jchar* chars, int len) {
   assert(java_string->klass() == SystemDictionary::String_klass(),
          "must be java_string");
   typeArrayOop value = java_lang_String::value_no_keepalive(java_string);
-  int length = java_lang_String::length(java_string);
+  int length = java_lang_String::length(java_string, value);
   if (length != len) {
     return false;
   }
@@ -676,24 +686,15 @@ bool java_lang_String::equals(oop str1, oop str2) {
   assert(str2->klass() == SystemDictionary::String_klass(),
          "must be java String");
   typeArrayOop value1    = java_lang_String::value_no_keepalive(str1);
-  int          length1   = java_lang_String::length(str1);
   bool         is_latin1 = java_lang_String::is_latin1(str1);
   typeArrayOop value2    = java_lang_String::value_no_keepalive(str2);
-  int          length2   = java_lang_String::length(str2);
   bool         is_latin2 = java_lang_String::is_latin1(str2);
 
-  if ((length1 != length2) || (is_latin1 != is_latin2)) {
-    // Strings of different size or with different
-    // coders are never equal.
+  if (is_latin1 != is_latin2) {
+    // Strings with different coders are never equal.
     return false;
   }
-  int blength1 = value1->length();
-  for (int i = 0; i < blength1; i++) {
-    if (value1->byte_at(i) != value2->byte_at(i)) {
-      return false;
-    }
-  }
-  return true;
+  return value_equals(value1, value2);
 }
 
 void java_lang_String::print(oop java_string, outputStream* st) {
@@ -707,7 +708,7 @@ void java_lang_String::print(oop java_string, outputStream* st) {
     return;
   }
 
-  int length = java_lang_String::length(java_string);
+  int length = java_lang_String::length(java_string, value);
   bool is_latin1 = java_lang_String::is_latin1(java_string);
 
   st->print("\"");
@@ -824,8 +825,8 @@ void java_lang_Class::set_mirror_module_field(Klass* k, Handle mirror, Handle mo
   if (module.is_null()) {
     // During startup, the module may be NULL only if java.base has not been defined yet.
     // Put the class on the fixup_module_list to patch later when the java.lang.Module
-    // for java.base is known.
-    assert(!Universe::is_module_initialized(), "Incorrect java.lang.Module pre module system initialization");
+    // for java.base is known. But note that since we captured the NULL module another
+    // thread may have completed that initialization.
 
     bool javabase_was_defined = false;
     {
@@ -3625,7 +3626,7 @@ oop java_lang_invoke_ResolvedMethodName::find_resolved_method(const methodHandle
     // distinct loaders) to ensure the metadata is kept alive.
     // This mirror may be different than the one in clazz field.
     new_resolved_method->obj_field_put(_vmholder_offset, m->method_holder()->java_mirror());
-    resolved_method = ResolvedMethodTable::add_method(Handle(THREAD, new_resolved_method));
+    resolved_method = ResolvedMethodTable::add_method(m, Handle(THREAD, new_resolved_method));
   }
   return resolved_method;
 }

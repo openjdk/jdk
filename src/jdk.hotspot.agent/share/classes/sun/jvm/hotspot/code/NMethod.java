@@ -38,8 +38,6 @@ public class NMethod extends CompiledMethod {
   private static CIntegerField entryBCIField;
   /** To support simple linked-list chaining of nmethods */
   private static AddressField  osrLinkField;
-  private static AddressField  scavengeRootLinkField;
-  private static JByteField    scavengeRootStateField;
 
   /** Offsets for different nmethod parts */
   private static CIntegerField exceptionOffsetField;
@@ -88,8 +86,6 @@ public class NMethod extends CompiledMethod {
 
     entryBCIField               = type.getCIntegerField("_entry_bci");
     osrLinkField                = type.getAddressField("_osr_link");
-    scavengeRootLinkField       = type.getAddressField("_scavenge_root_link");
-    scavengeRootStateField      = type.getJByteField("_scavenge_root_state");
 
     exceptionOffsetField        = type.getCIntegerField("_exception_offset");
     origPCOffsetField           = type.getCIntegerField("_orig_pc_offset");
@@ -249,14 +245,6 @@ public class NMethod extends CompiledMethod {
 
   public NMethod getOSRLink() {
     return (NMethod) VMObjectFactory.newObject(NMethod.class, osrLinkField.getValue(addr));
-  }
-
-  public NMethod getScavengeRootLink() {
-    return (NMethod) VMObjectFactory.newObject(NMethod.class, scavengeRootLinkField.getValue(addr));
-  }
-
-  public int getScavengeRootState() {
-    return (int) scavengeRootStateField.getValue(addr);
   }
 
   // MethodHandle

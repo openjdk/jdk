@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,7 +148,7 @@ import jdk.internal.HotSpotIntrinsicCandidate;
      */
     @HotSpotIntrinsicCandidate
     public StringBuffer(String str) {
-        super(str.length() + 16);
+        super(str.coder(), str.length(), 16);
         append(str);
     }
 
@@ -157,16 +157,12 @@ import jdk.internal.HotSpotIntrinsicCandidate;
      * as the specified {@code CharSequence}. The initial capacity of
      * the string buffer is {@code 16} plus the length of the
      * {@code CharSequence} argument.
-     * <p>
-     * If the length of the specified {@code CharSequence} is
-     * less than or equal to zero, then an empty buffer of capacity
-     * {@code 16} is returned.
      *
      * @param      seq   the sequence to copy.
      * @since 1.5
      */
     public StringBuffer(CharSequence seq) {
-        this(seq.length() + 16);
+        super(String.LATIN1, seq.length(), 16);
         append(seq);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,14 +49,14 @@ import sun.java2d.pipe.hw.ContextCapabilities;
 import static sun.java2d.pipe.hw.AccelSurface.*;
 import static sun.java2d.d3d.D3DContext.D3DContextCaps.*;
 
-public class D3DGraphicsConfig
+public final class D3DGraphicsConfig
     extends Win32GraphicsConfig
     implements AccelGraphicsConfig
 {
     private static ImageCapabilities imageCaps = new D3DImageCaps();
 
     private BufferCapabilities bufferCaps;
-    private D3DGraphicsDevice device;
+    private final D3DGraphicsDevice device;
 
     @SuppressWarnings("deprecation")
     protected D3DGraphicsConfig(D3DGraphicsDevice device) {
@@ -107,7 +107,7 @@ public class D3DGraphicsConfig
 
     @Override
     public String toString() {
-        return ("D3DGraphicsConfig[dev="+screen+",pixfmt="+visual+"]");
+        return ("D3DGraphicsConfig[dev="+device+",pixfmt="+visual+"]");
     }
 
     /**
@@ -263,21 +263,11 @@ public class D3DGraphicsConfig
         return device;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @see sun.java2d.pipe.hw.BufferedContextProvider#getContext
-     */
     @Override
     public D3DContext getContext() {
         return device.getContext();
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @see sun.java2d.pipe.hw.AccelGraphicsConfig#createCompatibleVolatileImage
-     */
     @Override
     public VolatileImage
         createCompatibleVolatileImage(int width, int height,
@@ -313,11 +303,6 @@ public class D3DGraphicsConfig
         return vi;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @see sun.java2d.pipe.hw.AccelGraphicsConfig#getContextCapabilities
-     */
     @Override
     public ContextCapabilities getContextCapabilities() {
         return device.getContextCapabilities();

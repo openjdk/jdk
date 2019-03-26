@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "aot/aotLoader.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "interpreter/linkResolver.hpp"
@@ -29,12 +30,12 @@
 #include "oops/cpCache.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/compilationPolicy.hpp"
-#include "runtime/frame.inline.hpp"
 #include "runtime/deoptimization.hpp"
+#include "runtime/frame.inline.hpp"
+#include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "utilities/sizes.hpp"
-#include "aot/aotLoader.hpp"
 
 // Resolve and allocate String
 JRT_BLOCK_ENTRY(void, CompilerRuntime::resolve_string_by_symbol(JavaThread *thread, void* string_result, const char* name))

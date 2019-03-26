@@ -33,11 +33,13 @@ import java.awt.HeadlessException;
  * Event sent when the application is asked to re-open itself.
  *
  * @see AppReopenedListener#appReopened(AppReopenedEvent)
- *
  * @since 9
  */
 public final class AppReopenedEvent extends AppEvent {
 
+    /**
+     * Use serialVersionUID from JDK 9 for interoperability.
+     */
     private static final long serialVersionUID = 1503238361530407990L;
 
     /**

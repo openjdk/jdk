@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc.arguments;
+
 /*
  * @test TestMaxNewSize
  * @key gc
@@ -31,9 +33,9 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main TestMaxNewSize -XX:+UseSerialGC
- * @run main TestMaxNewSize -XX:+UseParallelGC
- * @run main TestMaxNewSize -XX:+UseG1GC
+ * @run main gc.arguments.TestMaxNewSize -XX:+UseSerialGC
+ * @run main gc.arguments.TestMaxNewSize -XX:+UseParallelGC
+ * @run main gc.arguments.TestMaxNewSize -XX:+UseG1GC
  * @author thomas.schatzl@oracle.com, jesper.wilhelmsson@oracle.com
  */
 
@@ -46,7 +48,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main TestMaxNewSize -XX:+UseConcMarkSweepGC
+ * @run main gc.arguments.TestMaxNewSize -XX:+UseConcMarkSweepGC
  */
 
 import java.util.regex.Matcher;
@@ -118,19 +120,16 @@ public class TestMaxNewSize {
 
   public static void main(String args[]) throws Exception {
     String gcName = args[0];
-    final int M32 = 32 * 1024 * 1024;
-    final int M64 = 64 * 1024 * 1024;
-    final int M96 = 96 * 1024 * 1024;
-    final int M128 = 128 * 1024 * 1024;
-    checkMaxNewSize(new String[] { gcName, "-Xmx128M" }, M128);
-    checkMaxNewSize(new String[] { gcName, "-Xmx128M", "-XX:NewRatio=5" }, M128);
-    checkMaxNewSize(new String[] { gcName, "-Xmx128M", "-XX:NewSize=32M" }, M128);
-    checkMaxNewSize(new String[] { gcName, "-Xmx128M", "-XX:OldSize=96M" }, M128);
-    checkMaxNewSize(new String[] { gcName, "-Xmx128M", "-XX:MaxNewSize=32M" }, M32);
-    checkMaxNewSize(new String[] { gcName, "-Xmx128M", "-XX:NewSize=32M", "-XX:MaxNewSize=32M" }, M32);
-    checkMaxNewSize(new String[] { gcName, "-Xmx128M", "-XX:NewRatio=6", "-XX:MaxNewSize=32M" }, M32);
-    checkMaxNewSize(new String[] { gcName, "-Xmx128M", "-Xms96M" }, M128);
-    checkMaxNewSize(new String[] { gcName, "-Xmx96M", "-Xms96M" }, M96);
-    checkMaxNewSize(new String[] { gcName, "-XX:NewSize=128M", "-XX:MaxNewSize=50M"}, M128);
+    final int M = 1024 * 1024;
+    checkMaxNewSize(new String[] { gcName, "-Xmx128M" }, 128 * M);
+    checkMaxNewSize(new String[] { gcName, "-Xmx128M", "-XX:NewRatio=5" }, 128 * M);
+    checkMaxNewSize(new String[] { gcName, "-Xmx128M", "-XX:NewSize=32M" }, 128 * M);
+    checkMaxNewSize(new String[] { gcName, "-Xmx128M", "-XX:OldSize=96M" }, 128 * M);
+    checkMaxNewSize(new String[] { gcName, "-Xmx128M", "-XX:MaxNewSize=32M" }, 32 * M);
+    checkMaxNewSize(new String[] { gcName, "-Xmx128M", "-XX:NewSize=32M", "-XX:MaxNewSize=32M" }, 32 * M);
+    checkMaxNewSize(new String[] { gcName, "-Xmx128M", "-XX:NewRatio=6", "-XX:MaxNewSize=32M" }, 32 * M);
+    checkMaxNewSize(new String[] { gcName, "-Xmx128M", "-Xms96M" }, 128 * M);
+    checkMaxNewSize(new String[] { gcName, "-Xmx96M", "-Xms96M" }, 96 * M);
+    checkMaxNewSize(new String[] { gcName, "-XX:NewSize=128M", "-XX:MaxNewSize=50M"}, 128 * M);
   }
 }

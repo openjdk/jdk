@@ -154,9 +154,6 @@ class Deoptimization : AllStatic {
   // Helper function to revoke biases of all monitors in frame if UseBiasedLocking
   // is enabled
   static void revoke_biases_of_monitors(JavaThread* thread, frame fr, RegisterMap* map);
-  // Helper function to revoke biases of all monitors in frames
-  // executing in a particular CodeBlob if UseBiasedLocking is enabled
-  static void revoke_biases_of_monitors(CodeBlob* cb);
 
 #if COMPILER2_OR_JVMCI
 JVMCI_ONLY(public:)
@@ -420,7 +417,6 @@ JVMCI_ONLY(public:)
                                          int trap_request);
 
   static jint total_deoptimization_count();
-  static jint deoptimization_count(DeoptReason reason);
 
   // JVMTI PopFrame support
 

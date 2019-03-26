@@ -2,7 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 8206986
  * @summary Verify behavior of not exhaustive switch expressions.
- * @compile/fail/ref=ExpressionSwitchNotExhaustive.out -XDrawDiagnostics --enable-preview -source 13 ExpressionSwitchNotExhaustive.java
+ * @compile/fail/ref=ExpressionSwitchNotExhaustive.out -XDrawDiagnostics --enable-preview -source ${jdk.version} ExpressionSwitchNotExhaustive.java
  */
 
 public class ExpressionSwitchNotExhaustive {

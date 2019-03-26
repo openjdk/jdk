@@ -40,11 +40,11 @@ final class ProtocolImpl<Graph, Node, NodeClass, Port, Block, ResolvedJavaMethod
     private final GraphElements<ResolvedJavaMethod, ResolvedJavaField, Signature, NodeSourcePosition> elements;
     private final GraphLocations<ResolvedJavaMethod, NodeSourcePosition, Location> locations;
 
-    ProtocolImpl(int major, int minor, GraphStructure<Graph, Node, NodeClass, Port> structure, GraphTypes enums, GraphBlocks<Graph, Block, Node> blocks,
+    ProtocolImpl(int major, int minor, boolean embedded, GraphStructure<Graph, Node, NodeClass, Port> structure, GraphTypes enums, GraphBlocks<Graph, Block, Node> blocks,
                     GraphElements<ResolvedJavaMethod, ResolvedJavaField, Signature, NodeSourcePosition> elements,
                     GraphLocations<ResolvedJavaMethod, NodeSourcePosition, Location> locs,
                     WritableByteChannel channel) throws IOException {
-        super(channel, major, minor);
+        super(channel, major, minor, embedded);
         this.structure = structure;
         this.types = enums;
         this.blocks = blocks;

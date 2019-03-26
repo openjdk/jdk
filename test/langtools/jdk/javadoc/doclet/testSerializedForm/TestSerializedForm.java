@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4341304 4485668 4966728 8032066 8071982 8192933
+ * @bug 4341304 4485668 4966728 8032066 8071982 8192933 8215307
  * @summary Test that methods readResolve and writeReplace show
  * up in serialized-form.html the same way that readObject and writeObject do.
  * If the doclet includes readResolve and writeReplace in the serialized-form
@@ -109,6 +109,8 @@ public class TestSerializedForm extends JavadocTester {
                 testSrc("SerializedForm.java"), testSrc("ExternalizedForm.java"), "pkg1");
         checkExit(Exit.OK);
 
+        showHeadings("serialized-form.html");
+
         checkOutput("serialized-form.html", true,
                 "<h3>Class <a href=\"pkg1/NestedInnerClass.InnerClass.ProNestedInnerClass.html\" "
                 + "title=\"class in pkg1\">pkg1.NestedInnerClass.InnerClass.ProNestedInnerClass</a> "
@@ -130,15 +132,15 @@ public class TestSerializedForm extends JavadocTester {
                 + "extends java.lang.Object implements Serializable</h3>");
 
         checkOutput("serialized-form.html", true,
-                "<h3>Serialized Fields</h3>\n" +
+                "<h4>Serialized Fields</h4>\n" +
                 "<ul class=\"blockList\">\n" +
                 "<li class=\"blockList\">\n" +
-                "<h4>longs</h4>\n" +
+                "<h5>longs</h5>\n" +
                 "<pre>Long[] longs</pre>\n" +
                 "<div class=\"block\">the longs</div>\n" +
                 "</li>\n" +
                 "<li class=\"blockListLast\">\n" +
-                "<h4>name</h4>\n" +
+                "<h5>name</h5>\n" +
                 "<pre>java.lang.String name</pre>\n" +
                 "<div class=\"block\">a test</div>");
     }

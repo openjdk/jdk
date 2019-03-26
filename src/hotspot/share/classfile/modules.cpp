@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -206,13 +206,12 @@ static void define_javabase_module(jobject module, jstring version,
       package_table->verify_javabase_packages(pkg_list);
 
       // loop through and add any new packages for java.base
-      PackageEntry* pkg;
       for (int x = 0; x < pkg_list->length(); x++) {
         // Some of java.base's packages were added early in bootstrapping, ignore duplicates.
-        if (package_table->lookup_only(pkg_list->at(x)) == NULL) {
-          pkg = package_table->locked_create_entry_or_null(pkg_list->at(x), ModuleEntryTable::javabase_moduleEntry());
-          assert(pkg != NULL, "Unable to create a " JAVA_BASE_NAME " package entry");
-        }
+        package_table->locked_create_entry_if_not_exist(pkg_list->at(x),
+                                                        ModuleEntryTable::javabase_moduleEntry());
+        assert(package_table->locked_lookup_only(pkg_list->at(x)) != NULL,
+               "Unable to create a " JAVA_BASE_NAME " package entry");
         // Unable to have a GrowableArray of TempNewSymbol.  Must decrement the refcount of
         // the Symbol* that was created above for each package. The refcount was incremented
         // by SymbolTable::new_symbol and as well by the PackageEntry creation.
@@ -335,8 +334,8 @@ void Modules::define_module(jobject module, jboolean is_open, jstring version,
           (package_name[JAVAPKG_LEN] == '/' || package_name[JAVAPKG_LEN] == '\0'))) {
       const char* class_loader_name = loader_data->loader_name_and_id();
       size_t pkg_len = strlen(package_name);
-      char* pkg_name = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, pkg_len);
-      strncpy(pkg_name, package_name, pkg_len);
+      char* pkg_name = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, pkg_len + 1);
+      strncpy(pkg_name, package_name, pkg_len + 1);
       StringUtils::replace_no_expand(pkg_name, "/", ".");
       const char* msg_text1 = "Class loader (instance of): ";
       const char* msg_text2 = " tried to define prohibited package name: ";
@@ -388,7 +387,7 @@ void Modules::define_module(jobject module, jboolean is_open, jstring version,
 
       // Check that none of the packages exist in the class loader's package table.
       for (int x = 0; x < pkg_list->length(); x++) {
-        existing_pkg = package_table->lookup_only(pkg_list->at(x));
+        existing_pkg = package_table->locked_lookup_only(pkg_list->at(x));
         if (existing_pkg != NULL) {
           // This could be because the module was already defined.  If so,
           // report that error instead of the package error.
@@ -402,20 +401,17 @@ void Modules::define_module(jobject module, jboolean is_open, jstring version,
 
     // Add the module and its packages.
     if (!dupl_modules && existing_pkg == NULL) {
-      // Create the entry for this module in the class loader's module entry table.
-      ModuleEntry* module_entry = module_table->locked_create_entry_or_null(module_handle,
+      if (module_table->lookup_only(module_symbol) == NULL) {
+        // Create the entry for this module in the class loader's module entry table.
+        ModuleEntry* module_entry = module_table->locked_create_entry(module_handle,
                                     (is_open == JNI_TRUE), module_symbol,
                                     version_symbol, location_symbol, loader_data);
+        assert(module_entry != NULL, "module_entry creation failed");
 
-      if (module_entry == NULL) {
-        dupl_modules = true;
-      } else {
         // Add the packages.
         assert(pkg_list->length() == 0 || package_table != NULL, "Bad package table");
-        PackageEntry* pkg;
         for (int y = 0; y < pkg_list->length(); y++) {
-          pkg = package_table->locked_create_entry_or_null(pkg_list->at(y), module_entry);
-          assert(pkg != NULL, "Unable to create a module's package entry");
+          package_table->locked_create_entry(pkg_list->at(y), module_entry);
 
           // Unable to have a GrowableArray of TempNewSymbol.  Must decrement the refcount of
           // the Symbol* that was created above for each package. The refcount was incremented
@@ -425,6 +421,8 @@ void Modules::define_module(jobject module, jboolean is_open, jstring version,
 
         // Store pointer to ModuleEntry record in java.lang.Module object.
         java_lang_Module::set_module_entry(module_handle(), module_entry);
+      } else {
+         dupl_modules = true;
       }
     }
   }  // Release the lock

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2407,7 +2407,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   }
 
   // Can base be NULL? Otherwise, always on-heap access.
-  bool can_access_non_heap = TypePtr::NULL_PTR->higher_equal(_gvn.type(heap_base_oop));
+  bool can_access_non_heap = TypePtr::NULL_PTR->higher_equal(_gvn.type(base));
 
   if (!can_access_non_heap) {
     decorators |= IN_HEAP;
@@ -3850,6 +3850,13 @@ LibraryCallKit::generate_method_call(vmIntrinsics::ID method_id, bool is_virtual
                                 method, bci());
     slow_call->set_optimized_virtual(true);
   }
+  if (CallGenerator::is_inlined_method_handle_intrinsic(this->method(), bci(), callee())) {
+    // To be able to issue a direct call (optimized virtual or virtual)
+    // and skip a call to MH.linkTo*/invokeBasic adapter, additional information
+    // about the method being invoked should be attached to the call site to
+    // make resolution logic work (see SharedRuntime::resolve_{virtual,opt_virtual}_call_C).
+    slow_call->set_override_symbolic_info(true);
+  }
   set_arguments_for_java_call(slow_call);
   set_edges_for_java_call(slow_call);
   return slow_call;
@@ -4454,7 +4461,7 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
   return true;
 }
 
-// If we have a tighly coupled allocation, the arraycopy may take care
+// If we have a tightly coupled allocation, the arraycopy may take care
 // of the array initialization. If one of the guards we insert between
 // the allocation and the arraycopy causes a deoptimization, an
 // unitialized array will escape the compiled method. To prevent that
@@ -6267,6 +6274,11 @@ bool LibraryCallKit::inline_base64_encodeBlock() {
   Node* dp = argument(5);
   Node* isURL = argument(6);
 
+  src = must_be_not_null(src, true);
+  src = access_resolve(src, ACCESS_READ);
+  dest = must_be_not_null(dest, true);
+  dest = access_resolve(dest, ACCESS_WRITE);
+
   Node* src_start = array_element_address(src, intcon(0), T_BYTE);
   assert(src_start, "source array is NULL");
   Node* dest_start = array_element_address(dest, intcon(0), T_BYTE);
@@ -6597,6 +6609,40 @@ bool LibraryCallKit::inline_character_compare(vmIntrinsics::ID id) {
 
 //------------------------------inline_fp_min_max------------------------------
 bool LibraryCallKit::inline_fp_min_max(vmIntrinsics::ID id) {
+/* DISABLED BECAUSE METHOD DATA ISN'T COLLECTED PER CALL-SITE, SEE JDK-8015416.
+
+  // The intrinsic should be used only when the API branches aren't predictable,
+  // the last one performing the most important comparison. The following heuristic
+  // uses the branch statistics to eventually bail out if necessary.
+
+  ciMethodData *md = callee()->method_data();
+
+  if ( md != NULL && md->is_mature() && md->invocation_count() > 0 ) {
+    ciCallProfile cp = caller()->call_profile_at_bci(bci());
+
+    if ( ((double)cp.count()) / ((double)md->invocation_count()) < 0.8 ) {
+      // Bail out if the call-site didn't contribute enough to the statistics.
+      return false;
+    }
+
+    uint taken = 0, not_taken = 0;
+
+    for (ciProfileData *p = md->first_data(); md->is_valid(p); p = md->next_data(p)) {
+      if (p->is_BranchData()) {
+        taken = ((ciBranchData*)p)->taken();
+        not_taken = ((ciBranchData*)p)->not_taken();
+      }
+    }
+
+    double balance = (((double)taken) - ((double)not_taken)) / ((double)md->invocation_count());
+    balance = balance < 0 ? -balance : balance;
+    if ( balance > 0.2 ) {
+      // Bail out if the most important branch is predictable enough.
+      return false;
+    }
+  }
+*/
+
   Node *a = NULL;
   Node *b = NULL;
   Node *n = NULL;

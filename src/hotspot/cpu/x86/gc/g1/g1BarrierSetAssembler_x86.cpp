@@ -273,7 +273,6 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
 
   CardTableBarrierSet* ct =
     barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
-  assert(sizeof(*ct->card_table()->byte_map_base()) == sizeof(jbyte), "adjust this code");
 
   Label done;
   Label runtime;
@@ -522,7 +521,6 @@ void G1BarrierSetAssembler::generate_c1_post_barrier_runtime_stub(StubAssembler*
 
   CardTableBarrierSet* ct =
     barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
-  assert(sizeof(*ct->card_table()->byte_map_base()) == sizeof(jbyte), "adjust this code");
 
   Label done;
   Label enqueued;

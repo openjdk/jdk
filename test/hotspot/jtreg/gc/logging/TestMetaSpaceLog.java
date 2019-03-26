@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,11 +22,11 @@
  * questions.
  */
 
+package gc.logging;
+
 import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.List;
-import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
@@ -47,7 +47,7 @@ import sun.hotspot.WhiteBox;
  *
  * @compile TestMetaSpaceLog.java
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- * @run main TestMetaSpaceLog
+ * @run main gc.logging.TestMetaSpaceLog
  */
 
 public class TestMetaSpaceLog {
@@ -66,8 +66,6 @@ public class TestMetaSpaceLog {
   }
 
   private static void verifyContainsMetaSpaceUpdate(OutputAnalyzer output) {
-    Predicate<String> collectedMetaSpace = line -> check(line);
-
     // At least one metaspace line from GC should show GC being collected.
     boolean foundCollectedMetaSpace = output.asLines().stream()
         .filter(s -> s.contains("[gc,metaspace"))

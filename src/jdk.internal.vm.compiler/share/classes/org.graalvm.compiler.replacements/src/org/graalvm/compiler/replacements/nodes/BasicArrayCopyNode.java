@@ -83,15 +83,12 @@ public class BasicArrayCopyNode extends AbstractMemoryCheckpoint implements Virt
     public BasicArrayCopyNode(NodeClass<? extends AbstractMemoryCheckpoint> type, ValueNode src, ValueNode srcPos, ValueNode dest, ValueNode destPos, ValueNode length, JavaKind elementKind, int bci) {
         super(type, StampFactory.forKind(JavaKind.Void));
         this.bci = bci;
-        args = new NodeInputList<>(this, new ValueNode[]{src, srcPos, dest, destPos, length});
+        this.args = new NodeInputList<>(this, new ValueNode[]{src, srcPos, dest, destPos, length});
         this.elementKind = elementKind != JavaKind.Illegal ? elementKind : null;
     }
 
     public BasicArrayCopyNode(NodeClass<? extends AbstractMemoryCheckpoint> type, ValueNode src, ValueNode srcPos, ValueNode dest, ValueNode destPos, ValueNode length, JavaKind elementKind) {
-        super(type, StampFactory.forKind(JavaKind.Void));
-        this.bci = BytecodeFrame.INVALID_FRAMESTATE_BCI;
-        args = new NodeInputList<>(this, new ValueNode[]{src, srcPos, dest, destPos, length});
-        this.elementKind = elementKind != JavaKind.Illegal ? elementKind : null;
+        this(type, src, srcPos, dest, destPos, length, elementKind, BytecodeFrame.INVALID_FRAMESTATE_BCI);
     }
 
     public ValueNode getSource() {

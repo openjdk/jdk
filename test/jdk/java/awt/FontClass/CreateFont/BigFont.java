@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,23 @@
  * questions.
  */
 
-import java.applet.*;
-import java.awt.*;
-import java.io.*;
-import java.net.*;
+import java.awt.Font;
+import java.awt.FontFormatException;
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.nio.file.Paths;
 
-public class BigFont extends Applet {
+/**
+ * @test
+ * @key headful
+ * @bug 6522586
+ * @summary Enforce limits on font creation
+ * @run main BigFont 1 A.ttf
+ * @run main BigFont 2 A.ttf
+ */
+public class BigFont {
 
    static private class SizedInputStream extends InputStream {
 
@@ -51,12 +62,12 @@ public class BigFont extends Applet {
        }
    }
 
-    String id;
-    String fileName;
+    static String id;
+    static String fileName;
 
-    public void init() {
-        id = getParameter("number");
-        fileName = getParameter("font");
+    public static void main(final String[] args) {
+        id = args[0];
+        fileName = args[1];
 
         System.out.println("Applet " + id + " "+
                            Thread.currentThread().getThreadGroup());
@@ -102,7 +113,10 @@ public class BigFont extends Applet {
 
     int getFileSize(String fileName) {
         try {
-            URL url = new URL(getCodeBase(), fileName);
+            String path = Paths.get(System.getProperty("test.src", "."),
+                                    fileName).toAbsolutePath().normalize()
+                                             .toString();
+            URL url = new URL(path);
             InputStream inStream = url.openStream();
             BufferedInputStream fontStream = new BufferedInputStream(inStream);
             int size = 0;
@@ -123,7 +137,10 @@ public class BigFont extends Applet {
         boolean gotException = false;
         for (int i=0; i<fontCnt; i++) {
             try {
-                URL url = new URL(getCodeBase(), fileName);
+                String path = Paths.get(System.getProperty("test.src", "."),
+                                        fileName).toAbsolutePath().normalize()
+                                                 .toString();
+                URL url = new URL(path);
                 InputStream inStream = url.openStream();
                 BufferedInputStream fontStream =
                     new BufferedInputStream(inStream);

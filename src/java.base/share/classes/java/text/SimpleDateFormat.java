@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * For more information on using these methods, see
  * {@link DateFormat}.
  *
- * <h3>Date and Time Patterns</h3>
+ * <h2>Date and Time Patterns</h2>
  * <p>
  * Date and time formats are specified by <em>date and time pattern</em>
  * strings.
@@ -370,7 +370,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * <code>SimpleDateFormat</code> does not deal with the localization of text
  * other than the pattern letters; that's up to the client of the class.
  *
- * <h4>Examples</h4>
+ * <h3>Examples</h3>
  *
  * The following examples show how date and time patterns are interpreted in
  * the U.S. locale. The given date and time are 2001-07-04 12:08:56 local time
@@ -421,7 +421,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * </table>
  * </blockquote>
  *
- * <h4><a id="synchronization">Synchronization</a></h4>
+ * <h3><a id="synchronization">Synchronization</a></h3>
  *
  * <p>
  * Date formats are not synchronized.
@@ -1189,7 +1189,7 @@ public class SimpleDateFormat extends DateFormat {
             }
             break;
 
-        case PATTERN_MONTH:            // 'M' (context seinsive)
+        case PATTERN_MONTH:            // 'M' (context sensitive)
             if (useDateFormatSymbols) {
                 String[] months;
                 if (count >= 4) {
@@ -2033,7 +2033,7 @@ public class SimpleDateFormat extends DateFormat {
                         return index;
                     }
                 } else {
-                    Map<String, Integer> map = getDisplayNamesMap(field, locale);
+                    Map<String, Integer> map = getDisplayContextNamesMap(field, locale);
                     if ((index = matchString(text, start, field, map, calb)) > 0) {
                         return index;
                     }
@@ -2445,6 +2445,22 @@ public class SimpleDateFormat extends DateFormat {
             if (m != null) {
                 map.putAll(m);
             }
+        }
+        return map;
+    }
+
+    /**
+     * Obtains display names map, taking the context into account. Currently only
+     * the month name pattern 'M' is context dependent.
+     */
+    private Map<String, Integer> getDisplayContextNamesMap(int field, Locale locale) {
+        Map<String, Integer> map = calendar.getDisplayNames(field,
+            forceStandaloneForm ? Calendar.SHORT_STANDALONE : Calendar.SHORT_FORMAT, locale);
+        // Get the LONG style
+        Map<String, Integer> m = calendar.getDisplayNames(field,
+            forceStandaloneForm ? Calendar.LONG_STANDALONE : Calendar.LONG_FORMAT, locale);
+        if (m != null) {
+            map.putAll(m);
         }
         return map;
     }

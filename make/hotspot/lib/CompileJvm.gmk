@@ -56,9 +56,9 @@ JVM_EXCLUDE_FILES += args.cc
 JVM_EXCLUDES += adlc
 
 # Needed by vm_version.cpp
-ifeq ($(OPENJDK_TARGET_CPU), x86_64)
+ifeq ($(call isTargetCpu, x86_64), true)
   OPENJDK_TARGET_CPU_VM_VERSION := amd64
-else ifeq ($(OPENJDK_TARGET_CPU), sparcv9)
+else ifeq ($(call isTargetCpu, sparcv9), true)
   OPENJDK_TARGET_CPU_VM_VERSION := sparc
 else
   OPENJDK_TARGET_CPU_VM_VERSION := $(OPENJDK_TARGET_CPU)
@@ -107,10 +107,10 @@ DISABLED_WARNINGS_microsoft :=
 
 # ARM source selection
 
-ifeq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU), linux-arm)
+ifeq ($(call And, $(call isTargetOs, linux) $(call isTargetCpu, arm)), true)
   JVM_EXCLUDE_PATTERNS += arm_64
 
-else ifeq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU), linux-aarch64)
+else ifeq ($(call And, $(call isTargetOs, linux) $(call isTargetCpu, aarch64)), true)
   # For 64-bit arm builds, we use the 64 bit hotspot/src/cpu/arm
   # hotspot sources if HOTSPOT_TARGET_CPU_ARCH is set to arm.
   # Exclude the aarch64 and 32 bit arm files for this build.
@@ -119,21 +119,21 @@ else ifeq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU), linux-aarch64)
   endif
 endif
 
-ifneq ($(filter $(OPENJDK_TARGET_OS), linux macosx windows), )
+ifeq ($(call isTargetOs, linux macosx windows), true)
   JVM_PRECOMPILED_HEADER := $(TOPDIR)/src/hotspot/share/precompiled/precompiled.hpp
 endif
 
-ifeq ($(OPENJDK_TARGET_CPU), x86)
+ifeq ($(call isTargetCpu, x86), true)
   JVM_EXCLUDE_PATTERNS += x86_64
-else ifeq ($(OPENJDK_TARGET_CPU), x86_64)
+else ifeq ($(call isTargetCpu, x86_64), true)
   JVM_EXCLUDE_PATTERNS += x86_32
 endif
 
 # Inline assembly for solaris
-ifeq ($(OPENJDK_TARGET_OS), solaris)
-  ifeq ($(OPENJDK_TARGET_CPU), x86_64)
+ifeq ($(call isTargetOs, solaris), true)
+  ifeq ($(call isTargetCpu, x86_64), true)
     JVM_CFLAGS += $(TOPDIR)/src/hotspot/os_cpu/solaris_x86/solaris_x86_64.il
-  else ifeq ($(OPENJDK_TARGET_CPU), sparcv9)
+  else ifeq ($(call isTargetCpu, sparcv9), true)
     JVM_CFLAGS += $(TOPDIR)/src/hotspot/os_cpu/solaris_sparc/solaris_sparc.il
   endif
   # Exclude warnings in devstudio 12.6
@@ -143,7 +143,7 @@ ifeq ($(OPENJDK_TARGET_OS), solaris)
   endif
 endif
 
-ifeq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU), solaris-sparcv9)
+ifeq ($(call And, $(call isTargetOs, solaris) $(call isTargetCpu, sparcv9)), true)
   ifeq ($(COMPILE_WITH_DEBUG_SYMBOLS), false)
     # NOTE: In the old build, we weirdly enough set -g/-g0 always, regardless
     # of if debug symbols were needed. Without it, compilation fails on
@@ -152,8 +152,8 @@ ifeq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU), solaris-sparcv9)
   endif
 endif
 
-ifeq ($(OPENJDK_TARGET_OS), windows)
-  ifeq ($(OPENJDK_TARGET_CPU_BITS), 64)
+ifeq ($(call isTargetOs, windows), true)
+  ifeq ($(call isTargetCpuBits, 64), true)
     RC_DESC := 64-Bit$(SPACE)
   endif
   JVM_RCFLAGS += -D"HS_FILEDESC=$(HOTSPOT_VM_DISTRO) $(RC_DESC)$(JVM_VARIANT) VM"
@@ -165,6 +165,9 @@ JVM_OPTIMIZATION ?= HIGHEST_JVM
 # parameter to SetupNativeCompilation allows an empty value to override the
 # default.
 JVM_STRIPFLAGS ?= $(STRIPFLAGS)
+
+# This source set is reused so save in cache.
+$(eval $(call FillCacheFind, $(JVM_SRC_DIRS)))
 
 ################################################################################
 # Now set up the actual compilation of the main hotspot native library
@@ -209,7 +212,7 @@ $(VM_VERSION_OBJ): $(filter-out $(VM_VERSION_OBJ) $(JVM_MAPFILE), \
     $(BUILD_LIBJVM_TARGET_DEPS))
 
 ifneq ($(GENERATE_COMPILE_COMMANDS_ONLY), true)
-  ifeq ($(OPENJDK_TARGET_OS), windows)
+  ifeq ($(call isTargetOs, windows), true)
     # It doesn't matter which jvm.lib file gets exported, but we need
     # to pick just one.
     ifeq ($(JVM_VARIANT), $(JVM_VARIANT_MAIN))

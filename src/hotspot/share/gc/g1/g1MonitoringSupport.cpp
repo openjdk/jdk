@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,15 +119,15 @@ G1MonitoringSupport::G1MonitoringSupport(G1CollectedHeap* g1h) :
   //  name "collector.0".  In a generational collector this would be the
   // young generation collection.
   _incremental_collection_counters =
-    new CollectorCounters("G1 incremental collections", 0);
+    new CollectorCounters("G1 young collection pauses", 0);
   //   name "collector.1".  In a generational collector this would be the
   // old generation collection.
   _full_collection_counters =
-    new CollectorCounters("G1 stop-the-world full collections", 1);
+    new CollectorCounters("G1 full collection pauses", 1);
   //   name "collector.2".  In a generational collector this would be the
   // STW phases in concurrent collection.
   _conc_collection_counters =
-    new CollectorCounters("G1 stop-the-world phases", 2);
+    new CollectorCounters("G1 concurrent cycle pauses", 2);
 
   // "Generation" and "Space" counters.
   //
@@ -234,7 +234,7 @@ void G1MonitoringSupport::recalculate_sizes() {
   uint eden_list_length = young_list_length - survivor_list_length;
   // Max length includes any potential extensions to the young gen
   // we'll do when the GC locker is active.
-  uint young_list_max_length = _g1h->g1_policy()->young_list_max_length();
+  uint young_list_max_length = _g1h->policy()->young_list_max_length();
   assert(young_list_max_length >= survivor_list_length, "invariant");
   uint eden_list_max_length = young_list_max_length - survivor_list_length;
 

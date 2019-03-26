@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,12 @@ package org.graalvm.compiler.hotspot.lir.test;
 import static org.graalvm.compiler.test.SubprocessUtil.getVMCommandLine;
 import static org.graalvm.compiler.test.SubprocessUtil.withoutDebuggerArguments;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.graalvm.compiler.api.directives.GraalDirectives;
 import org.graalvm.compiler.core.common.LIRKind;
@@ -121,6 +124,7 @@ public class BenchmarkCounterOverflowTest extends LIRTest {
         Assert.assertNotEquals("Expected non-zero exit status", 0, proc.exitCode);
 
         Iterator<String> it = proc.output.iterator();
+        boolean foundProblematicFrame = false;
         while (it.hasNext()) {
             String line = it.next();
             if (line.contains("Problematic frame:")) {
@@ -130,11 +134,34 @@ public class BenchmarkCounterOverflowTest extends LIRTest {
                 }
                 line = it.next();
                 if (line.contains(BenchmarkCounterOverflowTest.class.getName() + ".test")) {
-                    return;
+                    foundProblematicFrame = true;
+                    break;
                 }
                 Assert.fail("Unexpected stack trace: " + line);
             }
         }
-        Assert.fail(String.format("Could not find method in output:%n%s", proc));
+        // find and delete hserr file
+        while (it.hasNext()) {
+            String line = it.next();
+            if (line.contains("An error report file with more information is saved as:")) {
+                if (!it.hasNext()) {
+                    // no more line
+                    break;
+                }
+                line = it.next();
+                Pattern pattern = Pattern.compile("^# (.*hs_err_pid.*log)$");
+                Matcher matcher = pattern.matcher(line);
+                if (matcher.matches()) {
+                    File hserrFile = new File(matcher.group(1));
+                    if (hserrFile.exists()) {
+                        if (VERBOSE) {
+                            System.out.println("Deleting error report file:" + hserrFile.getAbsolutePath());
+                        }
+                        hserrFile.delete();
+                    }
+                }
+            }
+        }
+        Assert.assertTrue(String.format("Could not find method in output:%n%s", proc), foundProblematicFrame);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 #include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeap.inline.hpp"
-#include "gc/z/zNMethodTable.hpp"
+#include "gc/z/zNMethod.hpp"
 #include "gc/z/zServiceability.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zUtils.inline.hpp"
@@ -106,20 +106,12 @@ bool ZCollectedHeap::is_maximal_no_gc() const {
   return false;
 }
 
-bool ZCollectedHeap::is_scavengable(oop obj) {
-  return false;
-}
-
 bool ZCollectedHeap::is_in(const void* p) const {
   return is_in_reserved(p) && _heap.is_in((uintptr_t)p);
 }
 
 bool ZCollectedHeap::is_in_closed_subset(const void* p) const {
   return is_in(p);
-}
-
-void ZCollectedHeap::fill_with_dummy_object(HeapWord* start, HeapWord* end, bool zap) {
-  // Does nothing, not a parsable heap
 }
 
 HeapWord* ZCollectedHeap::allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size) {
@@ -249,21 +241,20 @@ HeapWord* ZCollectedHeap::block_start(const void* addr) const {
   return (HeapWord*)_heap.block_start((uintptr_t)addr);
 }
 
-size_t ZCollectedHeap::block_size(const HeapWord* addr) const {
-  size_t size_in_bytes = _heap.block_size((uintptr_t)addr);
-  return ZUtils::bytes_to_words(size_in_bytes);
-}
-
 bool ZCollectedHeap::block_is_obj(const HeapWord* addr) const {
   return _heap.block_is_obj((uintptr_t)addr);
 }
 
 void ZCollectedHeap::register_nmethod(nmethod* nm) {
-  ZNMethodTable::register_nmethod(nm);
+  ZNMethod::register_nmethod(nm);
 }
 
 void ZCollectedHeap::unregister_nmethod(nmethod* nm) {
-  ZNMethodTable::unregister_nmethod(nm);
+  ZNMethod::unregister_nmethod(nm);
+}
+
+void ZCollectedHeap::flush_nmethod(nmethod* nm) {
+  ZNMethod::flush_nmethod(nm);
 }
 
 void ZCollectedHeap::verify_nmethod(nmethod* nm) {

@@ -676,9 +676,10 @@ static StatusWindow *createStatusWindow(Window parent) {
         return NULL;
     }
     statusWindow->w = status;
-    //12-point font
+    //12, 13-point fonts
     statusWindow->fontset = XCreateFontSet(dpy,
-                                           "-*-*-medium-r-normal-*-*-120-*-*-*-*",
+                                           "-*-*-medium-r-normal-*-*-120-*-*-*-*," \
+                                           "-*-*-medium-r-normal-*-*-130-*-*-*-*",
                                            &mclr, &mccr, &dsr);
     /* In case we didn't find the font set, release the list of missing characters */
     if (mccr > 0) {

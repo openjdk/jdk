@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 package nsk.jdi.VirtualMachine.suspend;
 
+import jdk.test.lib.Utils;
 import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
@@ -155,7 +156,7 @@ public class suspend001 {
         IOPipe pipe     = new IOPipe(debuggee);
 
         debuggee.redirectStderr(out);
-        log2("issuspended002a debuggee launched");
+        log2(debuggeeName + " debuggee launched");
         debuggee.resume();
 
         String line = pipe.readln();
@@ -318,9 +319,10 @@ public class suspend001 {
                 eventSet1.resume();
                 eventSet.resume();
 
-                log2("       before: Thread.sleep(waitTime*60000);");
+                log2("       before: Thread.sleep(waitTime*1000);");
+
                 try {
-                    Thread.sleep(waitTime*60000);
+                    Thread.sleep(Utils.adjustTimeout(waitTime*1000));
                 } catch ( InterruptedException e ) {
                     log3("ERROR: InterruptedException");
                     expresult = returnCode1;

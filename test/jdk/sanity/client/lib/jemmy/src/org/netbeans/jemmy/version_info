@@ -1,6 +1,6 @@
 Manifest-version: 1.0
 Main-Class: org.netbeans.jemmy.JemmyProperties
 Jemmy-MajorVersion: 3.0
-Jemmy-MinorVersion: 6.0
+Jemmy-MinorVersion: 8.0
 Jemmy-Build: @BUILD_NUMBER@
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,48 +23,49 @@
  * questions.
  */
 
-typedef LONG (*FPTR_SCardEstablishContext)(ULONG dwScope,
-                const void *pvReserved1,
-                const void *pvReserved2,
-                LONG *phContext);
+typedef LONG (*FPTR_SCardEstablishContext)(DWORD dwScope,
+                LPCVOID pvReserved1,
+                LPCVOID pvReserved2,
+                LPSCARDCONTEXT phContext);
 
-typedef LONG (*FPTR_SCardConnect)(LONG hContext,
-                const char *szReader,
-                ULONG dwShareMode,
-                ULONG dwPreferredProtocols,
-                LONG *phCard, ULONG *pdwActiveProtocol);
+typedef LONG (*FPTR_SCardConnect)(SCARDCONTEXT hContext,
+                LPCSTR szReader,
+                DWORD dwShareMode,
+                DWORD dwPreferredProtocols,
+                LPSCARDHANDLE phCard, LPDWORD pdwActiveProtocol);
 
-typedef LONG (*FPTR_SCardDisconnect)(LONG hCard, ULONG dwDisposition);
+typedef LONG (*FPTR_SCardDisconnect)(SCARDHANDLE hCard, DWORD dwDisposition);
 
-typedef LONG (*FPTR_SCardStatus)(LONG hCard,
-                char *mszReaderNames,
-                ULONG *pcchReaderLen,
-                ULONG *pdwState,
-                ULONG *pdwProtocol,
-                unsigned char *pbAtr, ULONG *pcbAtrLen);
+typedef LONG (*FPTR_SCardStatus)(SCARDHANDLE hCard,
+                LPSTR mszReaderNames,
+                LPDWORD pcchReaderLen,
+                LPDWORD pdwState,
+                LPDWORD pdwProtocol,
+                LPBYTE pbAtr, LPDWORD pcbAtrLen);
 
-typedef LONG (*FPTR_SCardGetStatusChange)(LONG hContext,
-                ULONG dwTimeout,
-                LPSCARD_READERSTATE_A rgReaderStates, ULONG cReaders);
+typedef LONG (*FPTR_SCardGetStatusChange)(SCARDCONTEXT hContext,
+                DWORD dwTimeout,
+                SCARD_READERSTATE *rgReaderStates, DWORD cReaders);
 
-typedef LONG (*FPTR_SCardTransmit)(LONG hCard,
-                LPCSCARD_IO_REQUEST pioSendPci,
-                const unsigned char *pbSendBuffer,
-                ULONG cbSendLength,
-                LPSCARD_IO_REQUEST pioRecvPci,
-                unsigned char *pbRecvBuffer, ULONG *pcbRecvLength);
+typedef LONG (*FPTR_SCardTransmit)(SCARDHANDLE hCard,
+                const SCARD_IO_REQUEST *pioSendPci,
+                LPCBYTE pbSendBuffer,
+                DWORD cbSendLength,
+                SCARD_IO_REQUEST *pioRecvPci,
+                LPBYTE pbRecvBuffer, LPDWORD pcbRecvLength);
 
-typedef LONG (*FPTR_SCardListReaders)(LONG hContext,
-                const char *mszGroups,
-                char *mszReaders, ULONG *pcchReaders);
+typedef LONG (*FPTR_SCardListReaders)(SCARDCONTEXT hContext,
+                LPCSTR mszGroups,
+                LPSTR mszReaders, LPDWORD pcchReaders);
 
-typedef LONG (*FPTR_SCardBeginTransaction)(LONG hCard);
+typedef LONG (*FPTR_SCardBeginTransaction)(SCARDHANDLE hCard);
 
-typedef LONG (*FPTR_SCardEndTransaction)(LONG hCard, ULONG dwDisposition);
+typedef LONG (*FPTR_SCardEndTransaction)(SCARDHANDLE hCard,
+                DWORD dwDisposition);
 
-typedef LONG (*FPTR_SCardControl)(LONG hCard, ULONG dwControlCode,
-    const void* pbSendBuffer, ULONG cbSendLength, const void* pbRecvBuffer,
-    ULONG pcbRecvLength, ULONG *lpBytesReturned);
+typedef LONG (*FPTR_SCardControl)(SCARDHANDLE hCard, DWORD dwControlCode,
+                LPCVOID pbSendBuffer, DWORD cbSendLength, LPVOID pbRecvBuffer,
+                DWORD pcbRecvLength, LPDWORD lpBytesReturned);
 
 #define CALL_SCardEstablishContext(dwScope, pvReserved1, pvReserved2, phContext) \
     ((scardEstablishContext)(dwScope, pvReserved1, pvReserved2, phContext))

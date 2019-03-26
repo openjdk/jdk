@@ -24,7 +24,7 @@ import java.net.*;
 import java.io.*;
 import java.util.HashMap;
 
-public class SocksServer extends Thread {
+public class SocksServer extends Thread implements Closeable {
     // Some useful SOCKS constant
 
     static final int PROTO_VERS4        = 4;
@@ -503,7 +503,7 @@ public class SocksServer extends Thread {
         return port;
     }
 
-    public void terminate() {
+    public void close() {
         done = true;
         try { server.close(); } catch (IOException unused) {}
     }

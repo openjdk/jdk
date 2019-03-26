@@ -51,7 +51,7 @@ class PSPromotionManager;
 // _f2        [  entry specific   ]  vtable or res_ref index, or vfinal method ptr
 // _flags     [tos|0|F=1|0|0|0|f|v|0 |0000|field_index] (for field entries)
 // bit length [ 4 |1| 1 |1|1|1|1|1|1 |1     |-3-|----16-----]
-// _flags     [tos|0|F=0|M|A|I|f|0|vf|indy_rf|000|00000|psize] (for method entries)
+// _flags     [tos|0|F=0|S|A|I|f|0|vf|indy_rf|000|00000|psize] (for method entries)
 // bit length [ 4 |1| 1 |1|1|1|1|1|1 |-4--|--8--|--8--]
 
 // --------------------------------
@@ -114,7 +114,7 @@ class PSPromotionManager;
 // _f2      = vtable/itable index (or final Method*) for virtual calls only,
 //            unused by non-virtual.  The is_vfinal flag indicates this is a
 //            method pointer for a final method, not an index.
-// _flags   = method type info (t section),
+// _flags   = has local signature (MHs and indy),
 //            virtual final bit (vfinal),
 //            parameter size (psize section)
 //
@@ -180,7 +180,7 @@ class ConstantPoolCacheEntry {
     tos_state_shift            = BitsPerInt - tos_state_bits,  // see verify_tos_state_shift below
     // misc. option bits; can be any bit position in [16..27]
     is_field_entry_shift       = 26,  // (F) is it a field or a method?
-    has_method_type_shift      = 25,  // (M) does the call site have a MethodType?
+    has_local_signature_shift  = 25,  // (S) does the call site have a per-site signature (sig-poly methods)?
     has_appendix_shift         = 24,  // (A) does the call site have an appendix argument?
     is_forced_virtual_shift    = 23,  // (I) is the interface reference forced to virtual mode?
     is_final_shift             = 22,  // (f) is the field or method final?
@@ -230,14 +230,16 @@ class ConstantPoolCacheEntry {
     Bytecodes::Code invoke_code,                 // the bytecode used for invoking the method
     const methodHandle& method,                  // the method/prototype if any (NULL, otherwise)
     int             vtable_index,                // the vtable index if any, else negative
-    bool            sender_is_interface
+    bool            sender_is_interface,         // 'logical' sender (may be host of VMAC)
+    InstanceKlass*  pool_holder                  // class from which the call is made
   );
 
  public:
   void set_direct_call(                          // sets entry to exact concrete method entry
     Bytecodes::Code invoke_code,                 // the bytecode used for invoking the method
     const methodHandle& method,                  // the method to call
-    bool            sender_is_interface
+    bool            sender_is_interface,         // 'logical' sender (may be host of VMAC)
+    InstanceKlass*  pool_holder                  // class from which the call is made
   );
 
   void set_vtable_call(                          // sets entry to vtable index
@@ -291,19 +293,10 @@ class ConstantPoolCacheEntry {
   bool save_and_throw_indy_exc(const constantPoolHandle& cpool, int cpool_index,
                                int index, constantTag tag, TRAPS);
 
-  // invokedynamic and invokehandle call sites have two entries in the
-  // resolved references array:
-  //   appendix   (at index+0)
-  //   MethodType (at index+1)
-  enum {
-    _indy_resolved_references_appendix_offset    = 0,
-    _indy_resolved_references_method_type_offset = 1,
-    _indy_resolved_references_entries
-  };
-
+  // invokedynamic and invokehandle call sites have an "appendix" item in the
+  // resolved references array.
   Method*      method_if_resolved(const constantPoolHandle& cpool);
   oop        appendix_if_resolved(const constantPoolHandle& cpool);
-  oop     method_type_if_resolved(const constantPoolHandle& cpool);
 
   void set_parameter_size(int value);
 
@@ -356,7 +349,7 @@ class ConstantPoolCacheEntry {
   bool is_vfinal() const                         { return (_flags & (1 << is_vfinal_shift))         != 0; }
   bool indy_resolution_failed() const;
   bool has_appendix() const;
-  bool has_method_type() const;
+  bool has_local_signature() const;
   bool is_method_entry() const                   { return (_flags & (1 << is_field_entry_shift))    == 0; }
   bool is_field_entry() const                    { return (_flags & (1 << is_field_entry_shift))    != 0; }
   bool is_long() const                           { return flag_state() == ltos; }
@@ -385,7 +378,7 @@ class ConstantPoolCacheEntry {
   void adjust_method_entry(Method* old_method, Method* new_method,
          bool* trace_name_printed);
   bool check_no_old_or_obsolete_entries();
-  Method* get_interesting_method_entry(Klass* k);
+  Method* get_interesting_method_entry();
 #endif // INCLUDE_JVMTI
 
   // Debugging & Printing
@@ -444,7 +437,6 @@ class ConstantPoolCache: public MetaspaceObj {
                                      const intStack& cp_cache_map,
                                      const intStack& invokedynamic_cp_cache_map,
                                      const intStack& invokedynamic_references_map, TRAPS);
-  bool is_constantPoolCache() const { return true; }
 
   int length() const                      { return _length; }
   void metaspace_pointers_do(MetaspaceClosure* it);
@@ -506,7 +498,7 @@ class ConstantPoolCache: public MetaspaceObj {
   // trace_name_printed is set to true if the current call has
   // printed the klass name so that other routines in the adjust_*
   // group don't print the klass name.
-  void adjust_method_entries(InstanceKlass* holder, bool* trace_name_printed);
+  void adjust_method_entries(bool* trace_name_printed);
   bool check_no_old_or_obsolete_entries();
   void dump_cache();
 #endif // INCLUDE_JVMTI

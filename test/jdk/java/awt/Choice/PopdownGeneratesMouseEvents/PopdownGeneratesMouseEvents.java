@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,26 +22,31 @@
  */
 
 /*
-  test
+  @test
+  @key headful
   @bug 6200670
   @summary MouseMoved events are triggered by Choice when mouse is moved outside the component, XToolkit
   @library ../../regtesthelpers/
-  @author andrei.dmitriev area=choice
   @build Util
-  @run applet PopdownGeneratesMouseEvents.html
+  @run main PopdownGeneratesMouseEvents
 */
 
 import test.java.awt.regtesthelpers.Util;
 
-import java.applet.Applet;
 import java.awt.*;
 import java.awt.event.*;
 
-public class PopdownGeneratesMouseEvents extends Applet {
+public class PopdownGeneratesMouseEvents extends Frame {
     private volatile Robot robot;
     private final Choice choice1 = new Choice();
 
     private volatile MouseMotionHandler mmh;
+
+    public static void main(final String[] args) {
+        PopdownGeneratesMouseEvents app = new PopdownGeneratesMouseEvents();
+        app.init();
+        app.start();
+    }
 
     public void init() {
         for (int i = 1; i < 10; i++) {
@@ -61,6 +66,7 @@ public class PopdownGeneratesMouseEvents extends Applet {
 
     public void start() {
         setSize(300, 200);
+        setLocationRelativeTo(null);
         setVisible(true);
         validate();
         String toolkit = Toolkit.getDefaultToolkit().getClass().getName();

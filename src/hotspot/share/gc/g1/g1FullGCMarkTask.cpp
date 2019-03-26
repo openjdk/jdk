@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,15 +49,13 @@ void G1FullGCMarkTask::work(uint worker_id) {
   MarkingCodeBlobClosure code_closure(marker->mark_closure(), !CodeBlobToOopClosure::FixRelocations);
 
   if (ClassUnloading) {
-    _root_processor.process_strong_roots(
-        marker->mark_closure(),
-        marker->cld_closure(),
-        &code_closure);
+    _root_processor.process_strong_roots(marker->mark_closure(),
+                                         marker->cld_closure(),
+                                         &code_closure);
   } else {
-    _root_processor.process_all_roots_no_string_table(
-        marker->mark_closure(),
-        marker->cld_closure(),
-        &code_closure);
+    _root_processor.process_all_roots(marker->mark_closure(),
+                                      marker->cld_closure(),
+                                      &code_closure);
   }
 
   // Mark stack is populated, now process and drain it.

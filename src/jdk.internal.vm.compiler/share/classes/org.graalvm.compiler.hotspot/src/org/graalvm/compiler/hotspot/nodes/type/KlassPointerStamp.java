@@ -72,6 +72,13 @@ public final class KlassPointerStamp extends MetaspacePointerStamp {
     }
 
     @Override
+    public void accept(Visitor v) {
+        super.accept(v);
+        v.visitLong(encoding.getBase());
+        v.visitInt(encoding.getShift());
+    }
+
+    @Override
     protected AbstractPointerStamp copyWith(boolean newNonNull, boolean newAlwaysNull) {
         return new KlassPointerStamp(newNonNull, newAlwaysNull, encoding);
     }

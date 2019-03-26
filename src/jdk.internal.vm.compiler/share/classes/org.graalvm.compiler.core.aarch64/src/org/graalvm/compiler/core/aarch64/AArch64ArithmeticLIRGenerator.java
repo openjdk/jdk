@@ -485,26 +485,6 @@ public class AArch64ArithmeticLIRGenerator extends ArithmeticLIRGenerator implem
     }
 
     @Override
-    public Value emitMathLog(Value input, boolean base10) {
-        throw GraalError.unimplemented();
-    }
-
-    @Override
-    public Value emitMathCos(Value input) {
-        throw GraalError.unimplemented();
-    }
-
-    @Override
-    public Value emitMathSin(Value input) {
-        throw GraalError.unimplemented();
-    }
-
-    @Override
-    public Value emitMathTan(Value input) {
-        throw GraalError.unimplemented();
-    }
-
-    @Override
     public void emitCompareOp(AArch64Kind cmpKind, Variable left, Value right) {
         throw GraalError.unimplemented();
     }

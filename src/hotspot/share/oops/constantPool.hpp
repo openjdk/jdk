@@ -131,7 +131,7 @@ class ConstantPool : public Metadata {
 
   void set_tags(Array<u1>* tags)               { _tags = tags; }
   void tag_at_put(int which, jbyte t)          { tags()->at_put(which, t); }
-  void release_tag_at_put(int which, jbyte t);
+  void release_tag_at_put(int which, jbyte t)  { tags()->release_at_put(which, t); }
 
   u1* tag_addr_at(int which) const             { return tags()->adr_at(which); }
 
@@ -246,15 +246,21 @@ class ConstantPool : public Metadata {
   // The invokedynamic points at a CP cache entry.  This entry points back
   // at the original CP entry (CONSTANT_InvokeDynamic) and also (via f2) at an entry
   // in the resolved_references array (which provides the appendix argument).
-  int invokedynamic_cp_cache_index(int index) const {
-    assert (is_invokedynamic_index(index), "should be a invokedynamic index");
-    int cache_index = decode_invokedynamic_index(index);
+  int invokedynamic_cp_cache_index(int indy_index) const {
+    assert(is_invokedynamic_index(indy_index), "should be a invokedynamic index");
+    int cache_index = decode_invokedynamic_index(indy_index);
     return cache_index;
   }
-  ConstantPoolCacheEntry* invokedynamic_cp_cache_entry_at(int index) const {
+  ConstantPoolCacheEntry* invokedynamic_cp_cache_entry_at(int indy_index) const {
     // decode index that invokedynamic points to.
-    int cp_cache_index = invokedynamic_cp_cache_index(index);
+    int cp_cache_index = invokedynamic_cp_cache_index(indy_index);
     return cache()->entry_at(cp_cache_index);
+  }
+  // Given the per-instruction index of an indy instruction, report the
+  // main constant pool entry for its bootstrap specifier.
+  // From there, uncached_name/signature_ref_at will get the name/type.
+  int invokedynamic_bootstrap_ref_index_at(int indy_index) const {
+    return invokedynamic_cp_cache_entry_at(indy_index)->constant_pool_index();
   }
 
   // Assembly code support
@@ -294,14 +300,14 @@ class ConstantPool : public Metadata {
     *int_at_addr(which) = ref_index;
   }
 
-  void dynamic_constant_at_put(int which, int bootstrap_specifier_index, int name_and_type_index) {
+  void dynamic_constant_at_put(int which, int bsms_attribute_index, int name_and_type_index) {
     tag_at_put(which, JVM_CONSTANT_Dynamic);
-    *int_at_addr(which) = ((jint) name_and_type_index<<16) | bootstrap_specifier_index;
+    *int_at_addr(which) = ((jint) name_and_type_index<<16) | bsms_attribute_index;
   }
 
-  void invoke_dynamic_at_put(int which, int bootstrap_specifier_index, int name_and_type_index) {
+  void invoke_dynamic_at_put(int which, int bsms_attribute_index, int name_and_type_index) {
     tag_at_put(which, JVM_CONSTANT_InvokeDynamic);
-    *int_at_addr(which) = ((jint) name_and_type_index<<16) | bootstrap_specifier_index;
+    *int_at_addr(which) = ((jint) name_and_type_index<<16) | bsms_attribute_index;
   }
 
   void unresolved_string_at_put(int which, Symbol* s) {
@@ -373,7 +379,7 @@ class ConstantPool : public Metadata {
 
   // Tag query
 
-  constantTag tag_at(int which) const;
+  constantTag tag_at(int which) const { return (constantTag)tags()->at_acquire(which); }
 
   // Fetching constants
 
@@ -534,26 +540,22 @@ class ConstantPool : public Metadata {
     return symbol_at(sym);
   }
 
-  int invoke_dynamic_name_and_type_ref_index_at(int which) {
-    assert(tag_at(which).is_invoke_dynamic() ||
-           tag_at(which).is_dynamic_constant() ||
-           tag_at(which).is_dynamic_constant_in_error(), "Corrupted constant pool");
+  int bootstrap_name_and_type_ref_index_at(int which) {
+    assert(tag_at(which).has_bootstrap(), "Corrupted constant pool");
     return extract_high_short_from_int(*int_at_addr(which));
   }
-  int invoke_dynamic_bootstrap_specifier_index(int which) {
-    assert(tag_at(which).is_invoke_dynamic() ||
-           tag_at(which).is_dynamic_constant() ||
-           tag_at(which).is_dynamic_constant_in_error(), "Corrupted constant pool");
+  int bootstrap_methods_attribute_index(int which) {
+    assert(tag_at(which).has_bootstrap(), "Corrupted constant pool");
     return extract_low_short_from_int(*int_at_addr(which));
   }
-  int invoke_dynamic_operand_base(int which) {
-    int bootstrap_specifier_index = invoke_dynamic_bootstrap_specifier_index(which);
-    return operand_offset_at(operands(), bootstrap_specifier_index);
+  int bootstrap_operand_base(int which) {
+    int bsms_attribute_index = bootstrap_methods_attribute_index(which);
+    return operand_offset_at(operands(), bsms_attribute_index);
   }
   // The first part of the operands array consists of an index into the second part.
   // Extract a 32-bit index value from the first part.
-  static int operand_offset_at(Array<u2>* operands, int bootstrap_specifier_index) {
-    int n = (bootstrap_specifier_index * 2);
+  static int operand_offset_at(Array<u2>* operands, int bsms_attribute_index) {
+    int n = (bsms_attribute_index * 2);
     assert(n >= 0 && n+2 <= operands->length(), "oob");
     // The first 32-bit index points to the beginning of the second part
     // of the operands array.  Make sure this index is in the first part.
@@ -566,8 +568,8 @@ class ConstantPool : public Metadata {
     assert(offset == 0 || offset >= second_part && offset <= operands->length(), "oob (3)");
     return offset;
   }
-  static void operand_offset_at_put(Array<u2>* operands, int bootstrap_specifier_index, int offset) {
-    int n = bootstrap_specifier_index * 2;
+  static void operand_offset_at_put(Array<u2>* operands, int bsms_attribute_index, int offset) {
+    int n = bsms_attribute_index * 2;
     assert(n >= 0 && n+2 <= operands->length(), "oob");
     operands->at_put(n+0, extract_low_short_from_int(offset));
     operands->at_put(n+1, extract_high_short_from_int(offset));
@@ -580,20 +582,23 @@ class ConstantPool : public Metadata {
 
 #ifdef ASSERT
   // operand tuples fit together exactly, end to end
-  static int operand_limit_at(Array<u2>* operands, int bootstrap_specifier_index) {
-    int nextidx = bootstrap_specifier_index + 1;
+  static int operand_limit_at(Array<u2>* operands, int bsms_attribute_index) {
+    int nextidx = bsms_attribute_index + 1;
     if (nextidx == operand_array_length(operands))
       return operands->length();
     else
       return operand_offset_at(operands, nextidx);
   }
-  int invoke_dynamic_operand_limit(int which) {
-    int bootstrap_specifier_index = invoke_dynamic_bootstrap_specifier_index(which);
-    return operand_limit_at(operands(), bootstrap_specifier_index);
+  int bootstrap_operand_limit(int which) {
+    int bsms_attribute_index = bootstrap_methods_attribute_index(which);
+    return operand_limit_at(operands(), bsms_attribute_index);
   }
 #endif //ASSERT
 
-  // layout of InvokeDynamic and Dynamic bootstrap method specifier (in second part of operands array):
+  // Layout of InvokeDynamic and Dynamic bootstrap method specifier
+  // data in second part of operands array.  This encodes one record in
+  // the BootstrapMethods attribute.  The whole specifier also includes
+  // the name and type information from the main constant pool entry.
   enum {
          _indy_bsm_offset  = 0,  // CONSTANT_MethodHandle bsm
          _indy_argc_offset = 1,  // u2 argc
@@ -602,35 +607,35 @@ class ConstantPool : public Metadata {
 
   // These functions are used in RedefineClasses for CP merge
 
-  int operand_offset_at(int bootstrap_specifier_index) {
-    assert(0 <= bootstrap_specifier_index &&
-           bootstrap_specifier_index < operand_array_length(operands()),
+  int operand_offset_at(int bsms_attribute_index) {
+    assert(0 <= bsms_attribute_index &&
+           bsms_attribute_index < operand_array_length(operands()),
            "Corrupted CP operands");
-    return operand_offset_at(operands(), bootstrap_specifier_index);
+    return operand_offset_at(operands(), bsms_attribute_index);
   }
-  int operand_bootstrap_method_ref_index_at(int bootstrap_specifier_index) {
-    int offset = operand_offset_at(bootstrap_specifier_index);
+  int operand_bootstrap_method_ref_index_at(int bsms_attribute_index) {
+    int offset = operand_offset_at(bsms_attribute_index);
     return operands()->at(offset + _indy_bsm_offset);
   }
-  int operand_argument_count_at(int bootstrap_specifier_index) {
-    int offset = operand_offset_at(bootstrap_specifier_index);
+  int operand_argument_count_at(int bsms_attribute_index) {
+    int offset = operand_offset_at(bsms_attribute_index);
     int argc = operands()->at(offset + _indy_argc_offset);
     return argc;
   }
-  int operand_argument_index_at(int bootstrap_specifier_index, int j) {
-    int offset = operand_offset_at(bootstrap_specifier_index);
+  int operand_argument_index_at(int bsms_attribute_index, int j) {
+    int offset = operand_offset_at(bsms_attribute_index);
     return operands()->at(offset + _indy_argv_offset + j);
   }
-  int operand_next_offset_at(int bootstrap_specifier_index) {
-    int offset = operand_offset_at(bootstrap_specifier_index) + _indy_argv_offset
-                   + operand_argument_count_at(bootstrap_specifier_index);
+  int operand_next_offset_at(int bsms_attribute_index) {
+    int offset = operand_offset_at(bsms_attribute_index) + _indy_argv_offset
+                   + operand_argument_count_at(bsms_attribute_index);
     return offset;
   }
-  // Compare a bootsrap specifier in the operands arrays
-  bool compare_operand_to(int bootstrap_specifier_index1, const constantPoolHandle& cp2,
-                          int bootstrap_specifier_index2, TRAPS);
-  // Find a bootsrap specifier in the operands array
-  int find_matching_operand(int bootstrap_specifier_index, const constantPoolHandle& search_cp,
+  // Compare a bootstrap specifier data in the operands arrays
+  bool compare_operand_to(int bsms_attribute_index1, const constantPoolHandle& cp2,
+                          int bsms_attribute_index2, TRAPS);
+  // Find a bootstrap specifier data in the operands array
+  int find_matching_operand(int bsms_attribute_index, const constantPoolHandle& search_cp,
                             int operands_cur_len, TRAPS);
   // Resize the operands array with delta_len and delta_size
   void resize_operands(int delta_len, int delta_size, TRAPS);
@@ -639,26 +644,22 @@ class ConstantPool : public Metadata {
   // Shrink the operands array to a smaller array with new_len length
   void shrink_operands(int new_len, TRAPS);
 
-  int invoke_dynamic_bootstrap_method_ref_index_at(int which) {
-    assert(tag_at(which).is_invoke_dynamic() ||
-           tag_at(which).is_dynamic_constant() ||
-           tag_at(which).is_dynamic_constant_in_error(), "Corrupted constant pool");
-    int op_base = invoke_dynamic_operand_base(which);
+  int bootstrap_method_ref_index_at(int which) {
+    assert(tag_at(which).has_bootstrap(), "Corrupted constant pool");
+    int op_base = bootstrap_operand_base(which);
     return operands()->at(op_base + _indy_bsm_offset);
   }
-  int invoke_dynamic_argument_count_at(int which) {
-    assert(tag_at(which).is_invoke_dynamic() ||
-           tag_at(which).is_dynamic_constant() ||
-           tag_at(which).is_dynamic_constant_in_error(), "Corrupted constant pool");
-    int op_base = invoke_dynamic_operand_base(which);
+  int bootstrap_argument_count_at(int which) {
+    assert(tag_at(which).has_bootstrap(), "Corrupted constant pool");
+    int op_base = bootstrap_operand_base(which);
     int argc = operands()->at(op_base + _indy_argc_offset);
     DEBUG_ONLY(int end_offset = op_base + _indy_argv_offset + argc;
-               int next_offset = invoke_dynamic_operand_limit(which));
+               int next_offset = bootstrap_operand_limit(which));
     assert(end_offset == next_offset, "matched ending");
     return argc;
   }
-  int invoke_dynamic_argument_index_at(int which, int j) {
-    int op_base = invoke_dynamic_operand_base(which);
+  int bootstrap_argument_index_at(int which, int j) {
+    int op_base = bootstrap_operand_base(which);
     DEBUG_ONLY(int argc = operands()->at(op_base + _indy_argc_offset));
     assert((uint)j < (uint)argc, "oob");
     return operands()->at(op_base + _indy_argv_offset + j);
@@ -796,8 +797,7 @@ class ConstantPool : public Metadata {
   static Method*          method_at_if_loaded      (const constantPoolHandle& this_cp, int which);
   static bool       has_appendix_at_if_loaded      (const constantPoolHandle& this_cp, int which);
   static oop            appendix_at_if_loaded      (const constantPoolHandle& this_cp, int which);
-  static bool    has_method_type_at_if_loaded      (const constantPoolHandle& this_cp, int which);
-  static oop         method_type_at_if_loaded      (const constantPoolHandle& this_cp, int which);
+  static bool has_local_signature_at_if_loaded     (const constantPoolHandle& this_cp, int which);
   static Klass*            klass_at_if_loaded      (const constantPoolHandle& this_cp, int which);
 
   // Routines currently used for annotations (only called by jvm.cpp) but which might be used in the

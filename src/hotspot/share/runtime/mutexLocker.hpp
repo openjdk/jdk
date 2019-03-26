@@ -33,6 +33,7 @@
 
 extern Mutex*   Patching_lock;                   // a lock used to guard code patching of compiled code
 extern Monitor* SystemDictionary_lock;           // a lock on the system dictionary
+extern Mutex*   ProtectionDomainSet_lock;        // a lock on the pd_set list in the system dictionary
 extern Mutex*   SharedDictionary_lock;           // a lock on the CDS shared dictionary
 extern Mutex*   Module_lock;                     // a lock on module and package related data structures
 extern Mutex*   CompiledIC_lock;                 // a lock used to guard compiled IC patching and access
@@ -68,7 +69,6 @@ extern Mutex*   DerivedPointerTableGC_lock;      // a lock to protect the derive
 extern Monitor* CGCPhaseManager_lock;            // a lock to protect a concurrent GC's phase management
 extern Monitor* VMOperationQueue_lock;           // a lock on queue of vm_operations waiting to execute
 extern Monitor* VMOperationRequest_lock;         // a lock on Threads waiting for a vm_operation to terminate
-extern Monitor* Safepoint_lock;                  // a lock used by the safepoint abstraction
 extern Monitor* Threads_lock;                    // a lock on the Threads table of active Java threads
                                                  // (also used by Safepoints too to block threads creation/destruction)
 extern Mutex*   NonJavaThreadsList_lock;         // a lock on the NonJavaThreads list
@@ -78,10 +78,6 @@ extern Monitor* STS_lock;                        // used for joining/leaving Sus
 extern Monitor* FullGCCount_lock;                // in support of "concurrent" full gc
 extern Monitor* SATB_Q_CBL_mon;                  // Protects SATB Q
                                                  // completed buffer queue.
-extern Mutex*   Shared_SATB_Q_lock;              // Lock protecting SATB
-                                                 // queue shared by
-                                                 // non-Java threads.
-
 extern Monitor* DirtyCardQ_CBL_mon;              // Protects dirty card Q
                                                  // completed buffer queue.
 extern Mutex*   Shared_DirtyCardQ_lock;          // Lock protecting dirty card
@@ -133,6 +129,9 @@ extern Mutex*   SharedDecoder_lock;              // serializes access to the dec
 extern Mutex*   DCmdFactory_lock;                // serialize access to DCmdFactory information
 #if INCLUDE_NMT
 extern Mutex*   NMTQuery_lock;                   // serialize NMT Dcmd queries
+#endif
+#if INCLUDE_CDS && INCLUDE_JVMTI
+extern Mutex*   CDSClassFileStream_lock;         // FileMapInfo::open_stream_for_jvmti
 #endif
 #if INCLUDE_JFR
 extern Mutex*   JfrStacktrace_lock;              // used to guard access to the JFR stacktrace table
@@ -272,18 +271,16 @@ class MonitorLockerEx: public MutexLockerEx {
     return false;
   }
 
-  bool notify_all() {
+  void notify_all() {
     if (_monitor != NULL) {
-      return _monitor->notify_all();
+      _monitor->notify_all();
     }
-    return true;
   }
 
-  bool notify() {
+  void notify() {
     if (_monitor != NULL) {
-      return _monitor->notify();
+      _monitor->notify();
     }
-    return true;
   }
 };
 

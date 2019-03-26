@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ SpanSubjectToDiscoveryClosure PSMarkSweep::_span_based_discoverer;
 void PSMarkSweep::initialize() {
   _span_based_discoverer.set_span(ParallelScavengeHeap::heap()->reserved_region());
   set_ref_processor(new ReferenceProcessor(&_span_based_discoverer));     // a vanilla ref proc
-  _counters = new CollectorCounters("PSMarkSweep", 1);
+  _counters = new CollectorCounters("Serial full collection pauses", 1);
   MarkSweep::initialize();
 }
 
@@ -187,7 +187,6 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
     // Let the size policy know we're starting
     size_policy->major_collection_begin();
 
-    CodeCache::gc_prologue();
     BiasedLocking::preserve_marks();
 
     // Capture metadata size before collection for sizing.
@@ -255,7 +254,7 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
     MetaspaceUtils::verify_metrics();
 
     BiasedLocking::restore_marks();
-    CodeCache::gc_epilogue();
+    heap->prune_scavengable_nmethods();
     JvmtiExport::gc_epilogue();
 
 #if COMPILER2_OR_JVMCI
@@ -316,8 +315,7 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
                                                     max_eden_size,
                                                     true /* full gc*/);
 
-        size_policy->check_gc_overhead_limit(young_live,
-                                             eden_live,
+        size_policy->check_gc_overhead_limit(eden_live,
                                              max_old_gen_size,
                                              max_eden_size,
                                              true /* full gc*/,
@@ -525,7 +523,7 @@ void PSMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
     SystemDictionary::oops_do(mark_and_push_closure());
     ClassLoaderDataGraph::always_strong_cld_do(follow_cld_closure());
     // Do not treat nmethods as strong roots for mark/sweep, since we can unload them.
-    //CodeCache::scavenge_root_nmethods_do(CodeBlobToOopClosure(mark_and_push_closure()));
+    //ScavengableNMethods::scavengable_nmethods_do(CodeBlobToOopClosure(mark_and_push_closure()));
     AOTLoader::oops_do(mark_and_push_closure());
   }
 
@@ -564,18 +562,6 @@ void PSMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
 
     // Prune dead klasses from subklass/sibling/implementor lists.
     Klass::clean_weak_klass_links(purged_class);
-  }
-
-  {
-    GCTraceTime(Debug, gc, phases) t("Scrub String Table", _gc_timer);
-    // Delete entries for dead interned strings.
-    StringTable::unlink(is_alive_closure());
-  }
-
-  {
-    GCTraceTime(Debug, gc, phases) t("Scrub Symbol Table", _gc_timer);
-    // Clean up unreferenced symbols in symbol table.
-    SymbolTable::unlink();
   }
 
   _gc_tracer->report_object_count_after_gc(is_alive_closure());
@@ -630,7 +616,6 @@ void PSMarkSweep::mark_sweep_phase3() {
   CodeBlobToOopClosure adjust_from_blobs(adjust_pointer_closure(), CodeBlobToOopClosure::FixRelocations);
   CodeCache::blobs_do(&adjust_from_blobs);
   AOTLoader::oops_do(adjust_pointer_closure());
-  StringTable::oops_do(adjust_pointer_closure());
   ref_processor()->weak_oops_do(adjust_pointer_closure());
   PSScavenge::reference_processor()->weak_oops_do(adjust_pointer_closure());
 

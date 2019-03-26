@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@
 #include "memory/metaspaceShared.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/array.inline.hpp"
+#include "oops/array.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "oops/cpCache.inline.hpp"
 #include "oops/instanceKlass.hpp"
@@ -52,12 +52,9 @@
 #include "runtime/init.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/signature.hpp"
+#include "runtime/thread.inline.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "utilities/copy.hpp"
-
-constantTag ConstantPool::tag_at(int which) const { return (constantTag)tags()->at_acquire(which); }
-
-void ConstantPool::release_tag_at_put(int which, jbyte t) { tags()->release_at_put(which, t); }
 
 ConstantPool* ConstantPool::allocate(ClassLoaderData* loader_data, int length, TRAPS) {
   Array<u1>* tags = MetadataFactory::new_array<u1>(loader_data, length, 0, CHECK_NULL);
@@ -448,6 +445,7 @@ void ConstantPool::trace_class_resolution(const constantPoolHandle& this_cp, Kla
 Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int which,
                                    bool save_resolution_error, TRAPS) {
   assert(THREAD->is_Java_thread(), "must be a Java thread");
+  JavaThread* javaThread = (JavaThread*)THREAD;
 
   // A resolved constantPool entry will contain a Klass*, otherwise a Symbol*.
   // It is not safe to rely on the tag bit's here, since we don't have a lock, and
@@ -480,7 +478,14 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int which,
   Symbol* name = this_cp->symbol_at(name_index);
   Handle loader (THREAD, this_cp->pool_holder()->class_loader());
   Handle protection_domain (THREAD, this_cp->pool_holder()->protection_domain());
-  Klass* k = SystemDictionary::resolve_or_fail(name, loader, protection_domain, true, THREAD);
+
+  Klass* k;
+  {
+    // Turn off the single stepping while doing class resolution
+    JvmtiHideSingleStepping jhss(javaThread);
+    k = SystemDictionary::resolve_or_fail(name, loader, protection_domain, true, THREAD);
+  } //  JvmtiHideSingleStepping jhss(javaThread);
+
   if (!HAS_PENDING_EXCEPTION) {
     // preserve the resolved klass from unloading
     mirror_handle = Handle(THREAD, k->java_mirror());
@@ -585,20 +590,12 @@ oop ConstantPool::appendix_at_if_loaded(const constantPoolHandle& cpool, int whi
 }
 
 
-bool ConstantPool::has_method_type_at_if_loaded(const constantPoolHandle& cpool, int which) {
+bool ConstantPool::has_local_signature_at_if_loaded(const constantPoolHandle& cpool, int which) {
   if (cpool->cache() == NULL)  return false;  // nothing to load yet
   int cache_index = decode_cpcache_index(which, true);
   ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
-  return e->has_method_type();
+  return e->has_local_signature();
 }
-
-oop ConstantPool::method_type_at_if_loaded(const constantPoolHandle& cpool, int which) {
-  if (cpool->cache() == NULL)  return NULL;  // nothing to load yet
-  int cache_index = decode_cpcache_index(which, true);
-  ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
-  return e->method_type_if_resolved(cpool);
-}
-
 
 Symbol* ConstantPool::impl_name_ref_at(int which, bool uncached) {
   int name_index = name_ref_index_at(impl_name_and_type_ref_index_at(which, uncached));
@@ -616,26 +613,22 @@ int ConstantPool::impl_name_and_type_ref_index_at(int which, bool uncached) {
   if (!uncached && cache() != NULL) {
     if (ConstantPool::is_invokedynamic_index(which)) {
       // Invokedynamic index is index into the constant pool cache
-      int pool_index = invokedynamic_cp_cache_entry_at(which)->constant_pool_index();
-      pool_index = invoke_dynamic_name_and_type_ref_index_at(pool_index);
+      int pool_index = invokedynamic_bootstrap_ref_index_at(which);
+      pool_index = bootstrap_name_and_type_ref_index_at(pool_index);
       assert(tag_at(pool_index).is_name_and_type(), "");
       return pool_index;
     }
     // change byte-ordering and go via cache
     i = remap_instruction_operand_from_cache(which);
   } else {
-    if (tag_at(which).is_invoke_dynamic() ||
-        tag_at(which).is_dynamic_constant() ||
-        tag_at(which).is_dynamic_constant_in_error()) {
-      int pool_index = invoke_dynamic_name_and_type_ref_index_at(which);
+    if (tag_at(which).has_bootstrap()) {
+      int pool_index = bootstrap_name_and_type_ref_index_at(which);
       assert(tag_at(pool_index).is_name_and_type(), "");
       return pool_index;
     }
   }
   assert(tag_at(i).is_field_or_method(), "Corrupted constant pool");
-  assert(!tag_at(i).is_invoke_dynamic() &&
-         !tag_at(i).is_dynamic_constant() &&
-         !tag_at(i).is_dynamic_constant_in_error(), "Must be handled above");
+  assert(!tag_at(i).has_bootstrap(), "Must be handled above");
   jint ref_index = *int_at_addr(i);
   return extract_high_short_from_int(ref_index);
 }
@@ -645,7 +638,7 @@ constantTag ConstantPool::impl_tag_ref_at(int which, bool uncached) {
   if (!uncached && cache() != NULL) {
     if (ConstantPool::is_invokedynamic_index(which)) {
       // Invokedynamic index is index into resolved_references
-      pool_index = invokedynamic_cp_cache_entry_at(which)->constant_pool_index();
+      pool_index = invokedynamic_bootstrap_ref_index_at(which);
     } else {
       // change byte-ordering and go via cache
       pool_index = remap_instruction_operand_from_cache(which);
@@ -817,9 +810,9 @@ constantTag ConstantPool::constant_tag_at(int which) {
   constantTag tag = tag_at(which);
   if (tag.is_dynamic_constant() ||
       tag.is_dynamic_constant_in_error()) {
-    // have to look at the signature for this one
-    Symbol* constant_type = uncached_signature_ref_at(which);
-    return constantTag::ofBasicType(FieldType::basic_type(constant_type));
+    BasicType bt = basic_type_for_constant_at(which);
+    // dynamic constant could return an array, treat as object
+    return constantTag::ofBasicType(is_reference_type(bt) ? T_OBJECT : bt);
   }
   return tag;
 }
@@ -1119,14 +1112,14 @@ oop ConstantPool::resolve_bootstrap_specifier_at_impl(const constantPoolHandle& 
     // JVM_CONSTANT_Dynamic is an ordered pair of [bootm, name&ftype], plus optional arguments
     // In both cases, the bootm, being a JVM_CONSTANT_MethodHandle, has its own cache entry.
     // It is accompanied by the optional arguments.
-    int bsm_index = this_cp->invoke_dynamic_bootstrap_method_ref_index_at(index);
+    int bsm_index = this_cp->bootstrap_method_ref_index_at(index);
     oop bsm_oop = this_cp->resolve_possibly_cached_constant_at(bsm_index, CHECK_NULL);
     if (!java_lang_invoke_MethodHandle::is_instance(bsm_oop)) {
       THROW_MSG_NULL(vmSymbols::java_lang_LinkageError(), "BSM not an MethodHandle");
     }
 
     // Extract the optional static arguments.
-    argc = this_cp->invoke_dynamic_argument_count_at(index);
+    argc = this_cp->bootstrap_argument_count_at(index);
 
     // if there are no static arguments, return the bsm by itself:
     if (argc == 0 && UseBootstrapCallInfo < 2)  return bsm_oop;
@@ -1168,7 +1161,7 @@ oop ConstantPool::resolve_bootstrap_specifier_at_impl(const constantPoolHandle& 
   if (!use_BSCI && this_cp->tag_at(index).is_dynamic_constant()) {
     bool found_unresolved_condy = false;
     for (int i = 0; i < argc; i++) {
-      int arg_index = this_cp->invoke_dynamic_argument_index_at(index, i);
+      int arg_index = this_cp->bootstrap_argument_index_at(index, i);
       if (this_cp->tag_at(arg_index).is_dynamic_constant()) {
         // potential recursion point condy -> condy
         bool found_it = false;
@@ -1188,7 +1181,7 @@ oop ConstantPool::resolve_bootstrap_specifier_at_impl(const constantPoolHandle& 
     bool all_resolved = true;
     for (int i = 0; i < argc; i++) {
       bool found_it = false;
-      int arg_index = this_cp->invoke_dynamic_argument_index_at(index, i);
+      int arg_index = this_cp->bootstrap_argument_index_at(index, i);
       this_cp->find_cached_constant_at(arg_index, found_it, CHECK_NULL);
       if (!found_it) { all_resolved = false; break; }
     }
@@ -1235,7 +1228,7 @@ void ConstantPool::copy_bootstrap_arguments_at_impl(const constantPoolHandle& th
       !(this_cp->tag_at(index).is_invoke_dynamic()    ||
         this_cp->tag_at(index).is_dynamic_constant()) ||
       (0 > start_arg || start_arg > end_arg) ||
-      (end_arg > (argc = this_cp->invoke_dynamic_argument_count_at(index))) ||
+      (end_arg > (argc = this_cp->bootstrap_argument_count_at(index))) ||
       (0 > pos       || pos > limit)         ||
       (info.is_null() || limit > info->length())) {
     // An index or something else went wrong; throw an error.
@@ -1246,7 +1239,7 @@ void ConstantPool::copy_bootstrap_arguments_at_impl(const constantPoolHandle& th
   // now we can loop safely
   int info_i = pos;
   for (int i = start_arg; i < end_arg; i++) {
-    int arg_index = this_cp->invoke_dynamic_argument_index_at(index, i);
+    int arg_index = this_cp->bootstrap_argument_index_at(index, i);
     oop arg_oop;
     if (must_resolve) {
       arg_oop = this_cp->resolve_possibly_cached_constant_at(arg_index, CHECK);
@@ -1445,10 +1438,10 @@ bool ConstantPool::compare_entry_to(int index1, const constantPoolHandle& cp2,
 
   case JVM_CONSTANT_Dynamic:
   {
-    int k1 = invoke_dynamic_name_and_type_ref_index_at(index1);
-    int k2 = cp2->invoke_dynamic_name_and_type_ref_index_at(index2);
-    int i1 = invoke_dynamic_bootstrap_specifier_index(index1);
-    int i2 = cp2->invoke_dynamic_bootstrap_specifier_index(index2);
+    int k1 = bootstrap_name_and_type_ref_index_at(index1);
+    int k2 = cp2->bootstrap_name_and_type_ref_index_at(index2);
+    int i1 = bootstrap_methods_attribute_index(index1);
+    int i2 = cp2->bootstrap_methods_attribute_index(index2);
     // separate statements and variables because CHECK_false is used
     bool match_entry = compare_entry_to(k1, cp2, k2, CHECK_false);
     bool match_operand = compare_operand_to(i1, cp2, i2, CHECK_false);
@@ -1457,10 +1450,10 @@ bool ConstantPool::compare_entry_to(int index1, const constantPoolHandle& cp2,
 
   case JVM_CONSTANT_InvokeDynamic:
   {
-    int k1 = invoke_dynamic_name_and_type_ref_index_at(index1);
-    int k2 = cp2->invoke_dynamic_name_and_type_ref_index_at(index2);
-    int i1 = invoke_dynamic_bootstrap_specifier_index(index1);
-    int i2 = cp2->invoke_dynamic_bootstrap_specifier_index(index2);
+    int k1 = bootstrap_name_and_type_ref_index_at(index1);
+    int k2 = cp2->bootstrap_name_and_type_ref_index_at(index2);
+    int i1 = bootstrap_methods_attribute_index(index1);
+    int i2 = cp2->bootstrap_methods_attribute_index(index2);
     // separate statements and variables because CHECK_false is used
     bool match_entry = compare_entry_to(k1, cp2, k2, CHECK_false);
     bool match_operand = compare_operand_to(i1, cp2, i2, CHECK_false);
@@ -1784,16 +1777,16 @@ void ConstantPool::copy_entry_to(const constantPoolHandle& from_cp, int from_i,
   case JVM_CONSTANT_Dynamic:
   case JVM_CONSTANT_DynamicInError:
   {
-    int k1 = from_cp->invoke_dynamic_bootstrap_specifier_index(from_i);
-    int k2 = from_cp->invoke_dynamic_name_and_type_ref_index_at(from_i);
+    int k1 = from_cp->bootstrap_methods_attribute_index(from_i);
+    int k2 = from_cp->bootstrap_name_and_type_ref_index_at(from_i);
     k1 += operand_array_length(to_cp->operands());  // to_cp might already have operands
     to_cp->dynamic_constant_at_put(to_i, k1, k2);
   } break;
 
   case JVM_CONSTANT_InvokeDynamic:
   {
-    int k1 = from_cp->invoke_dynamic_bootstrap_specifier_index(from_i);
-    int k2 = from_cp->invoke_dynamic_name_and_type_ref_index_at(from_i);
+    int k1 = from_cp->bootstrap_methods_attribute_index(from_i);
+    int k2 = from_cp->bootstrap_name_and_type_ref_index_at(from_i);
     k1 += operand_array_length(to_cp->operands());  // to_cp might already have operands
     to_cp->invoke_dynamic_at_put(to_i, k1, k2);
   } break;
@@ -2243,7 +2236,7 @@ int ConstantPool::copy_cpool_bytes(int cpool_size,
         *bytes = tag;
         idx1 = extract_low_short_from_int(*int_at_addr(idx));
         idx2 = extract_high_short_from_int(*int_at_addr(idx));
-        assert(idx2 == invoke_dynamic_name_and_type_ref_index_at(idx), "correct half of u4");
+        assert(idx2 == bootstrap_name_and_type_ref_index_at(idx), "correct half of u4");
         Bytes::put_Java_u2((address) (bytes+1), idx1);
         Bytes::put_Java_u2((address) (bytes+3), idx2);
         DBG(printf("JVM_CONSTANT_Dynamic: %hd %hd", idx1, idx2));
@@ -2253,7 +2246,7 @@ int ConstantPool::copy_cpool_bytes(int cpool_size,
         *bytes = tag;
         idx1 = extract_low_short_from_int(*int_at_addr(idx));
         idx2 = extract_high_short_from_int(*int_at_addr(idx));
-        assert(idx2 == invoke_dynamic_name_and_type_ref_index_at(idx), "correct half of u4");
+        assert(idx2 == bootstrap_name_and_type_ref_index_at(idx), "correct half of u4");
         Bytes::put_Java_u2((address) (bytes+1), idx1);
         Bytes::put_Java_u2((address) (bytes+3), idx2);
         DBG(printf("JVM_CONSTANT_InvokeDynamic: %hd %hd", idx1, idx2));
@@ -2434,12 +2427,12 @@ void ConstantPool::print_entry_on(const int index, outputStream* st) {
     case JVM_CONSTANT_Dynamic :
     case JVM_CONSTANT_DynamicInError :
       {
-        st->print("bootstrap_method_index=%d", invoke_dynamic_bootstrap_method_ref_index_at(index));
-        st->print(" type_index=%d", invoke_dynamic_name_and_type_ref_index_at(index));
-        int argc = invoke_dynamic_argument_count_at(index);
+        st->print("bootstrap_method_index=%d", bootstrap_method_ref_index_at(index));
+        st->print(" type_index=%d", bootstrap_name_and_type_ref_index_at(index));
+        int argc = bootstrap_argument_count_at(index);
         if (argc > 0) {
           for (int arg_i = 0; arg_i < argc; arg_i++) {
-            int arg = invoke_dynamic_argument_index_at(index, arg_i);
+            int arg = bootstrap_argument_index_at(index, arg_i);
             st->print((arg_i == 0 ? " arguments={%d" : ", %d"), arg);
           }
           st->print("}");
@@ -2448,12 +2441,12 @@ void ConstantPool::print_entry_on(const int index, outputStream* st) {
       break;
     case JVM_CONSTANT_InvokeDynamic :
       {
-        st->print("bootstrap_method_index=%d", invoke_dynamic_bootstrap_method_ref_index_at(index));
-        st->print(" name_and_type_index=%d", invoke_dynamic_name_and_type_ref_index_at(index));
-        int argc = invoke_dynamic_argument_count_at(index);
+        st->print("bootstrap_method_index=%d", bootstrap_method_ref_index_at(index));
+        st->print(" name_and_type_index=%d", bootstrap_name_and_type_ref_index_at(index));
+        int argc = bootstrap_argument_count_at(index);
         if (argc > 0) {
           for (int arg_i = 0; arg_i < argc; arg_i++) {
-            int arg = invoke_dynamic_argument_index_at(index, arg_i);
+            int arg = bootstrap_argument_index_at(index, arg_i);
             st->print((arg_i == 0 ? " arguments={%d" : ", %d"), arg);
           }
           st->print("}");
@@ -2514,11 +2507,6 @@ void ConstantPool::verify_on(outputStream* st) {
       CPSlot entry = slot_at(i);
       guarantee(entry.get_symbol()->refcount() != 0, "should have nonzero reference count");
     }
-  }
-  if (cache() != NULL) {
-    // Note: cache() can be NULL before a class is completely setup or
-    // in temporary constant pools used during constant pool merging
-    guarantee(cache()->is_constantPoolCache(), "should be constant pool cache");
   }
   if (pool_holder() != NULL) {
     // Note: pool_holder() can be NULL in temporary constant pools

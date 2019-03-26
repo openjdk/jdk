@@ -21,14 +21,17 @@
  * questions.
  */
 
+package gc.nvdimm;
+
 /*
  * @test TestOldObjectsOnNvdimm
  * @summary Check that objects in old generation reside in dram.
  * @requires vm.gc=="null" & os.family != "aix"
+ * @requires test.vm.gc.nvdimm
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- * @run main TestOldObjectsOnNvdimm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ * @run main gc.nvdimm.TestOldObjectsOnNvdimm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                                  -XX:+WhiteBoxAPI
  */
 
@@ -38,7 +41,6 @@ import jdk.test.lib.Asserts;
 import sun.hotspot.WhiteBox;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Collections;
 
 /*
@@ -51,7 +53,7 @@ public class TestOldObjectsOnNvdimm {
     private static ArrayList<String> testOpts;
 
     public static void main(String args[]) throws Exception {
-        testOpts = new ArrayList();
+        testOpts = new ArrayList<>();
 
         String[] common_options = new String[] {
             "-Xbootclasspath/a:.",

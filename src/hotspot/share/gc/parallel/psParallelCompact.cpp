@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -883,7 +883,7 @@ void PSParallelCompact::post_initialize() {
     new PCReferenceProcessor(&_span_based_discoverer,
                              &_is_alive_closure); // non-header is alive closure
 
-  _counters = new CollectorCounters("PSParallelCompact", 1);
+  _counters = new CollectorCounters("Parallel full collection pauses", 1);
 
   // Initialize static fields in ParCompactionManager.
   ParCompactionManager::initialize(mark_bitmap());
@@ -1061,7 +1061,7 @@ void PSParallelCompact::post_compact()
   ClassLoaderDataGraph::purge();
   MetaspaceUtils::verify_metrics();
 
-  CodeCache::gc_epilogue();
+  heap->prune_scavengable_nmethods();
   JvmtiExport::gc_epilogue();
 
 #if COMPILER2_OR_JVMCI
@@ -1807,8 +1807,6 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     // Let the size policy know we're starting
     size_policy->major_collection_begin();
 
-    CodeCache::gc_prologue();
-
 #if COMPILER2_OR_JVMCI
     DerivedPointerTable::clear();
 #endif
@@ -1889,8 +1887,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
                                                     max_eden_size,
                                                     true /* full gc*/);
 
-        size_policy->check_gc_overhead_limit(young_live,
-                                             eden_live,
+        size_policy->check_gc_overhead_limit(eden_live,
                                              max_old_gen_size,
                                              max_eden_size,
                                              true /* full gc*/,
@@ -2184,18 +2181,6 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
     Klass::clean_weak_klass_links(purged_class);
   }
 
-  {
-    GCTraceTime(Debug, gc, phases) t("Scrub String Table", &_gc_timer);
-    // Delete entries for dead interned strings.
-    StringTable::unlink(is_alive_closure());
-  }
-
-  {
-    GCTraceTime(Debug, gc, phases) t("Scrub Symbol Table", &_gc_timer);
-    // Clean up unreferenced symbols in symbol table.
-    SymbolTable::unlink();
-  }
-
   _gc_tracer.report_object_count_after_gc(is_alive_closure());
 }
 
@@ -2226,7 +2211,6 @@ void PSParallelCompact::adjust_roots(ParCompactionManager* cm) {
   CodeBlobToOopClosure adjust_from_blobs(&oop_closure, CodeBlobToOopClosure::FixRelocations);
   CodeCache::blobs_do(&adjust_from_blobs);
   AOTLoader::oops_do(&oop_closure);
-  StringTable::oops_do(&oop_closure);
   ref_processor()->weak_oops_do(&oop_closure);
   // Roots were visited so references into the young gen in roots
   // may have been scanned.  Process them also.

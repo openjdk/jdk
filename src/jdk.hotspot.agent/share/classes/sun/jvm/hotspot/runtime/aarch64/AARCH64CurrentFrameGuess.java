@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2015, Red Hat Inc.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -223,7 +223,13 @@ public class AARCH64CurrentFrameGuess {
         }
       }
 
-      setValues(sp, fp, null);
+      // We found a PC in the frame anchor. Check that it's plausible, and
+      // if it is, use it.
+      if (vm.isJavaPCDbg(pc)) {
+        setValues(sp, fp, pc);
+      } else {
+        setValues(sp, fp, null);
+      }
 
       return true;
     }

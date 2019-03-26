@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2424,22 +2424,6 @@ void ciTypeFlow::flow_block(ciTypeFlow::Block* block,
 
   // Pass our state to successors.
   flow_successors(successors, state);
-}
-
-// ------------------------------------------------------------------
-// ciTypeFlow::PostOrderLoops::next
-//
-// Advance to next loop tree using a postorder, left-to-right traversal.
-void ciTypeFlow::PostorderLoops::next() {
-  assert(!done(), "must not be done.");
-  if (_current->sibling() != NULL) {
-    _current = _current->sibling();
-    while (_current->child() != NULL) {
-      _current = _current->child();
-    }
-  } else {
-    _current = _current->parent();
-  }
 }
 
 // ------------------------------------------------------------------

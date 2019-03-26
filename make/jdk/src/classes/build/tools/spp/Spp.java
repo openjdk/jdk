@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,8 @@ import java.util.regex.*;
  * Spp: A simple regex-based stream preprocessor based on Mark Reinhold's
  *      sed-based spp.sh
  *
- * Usage: java build.tools.spp.Spp [-be] [-nel] [-Kkey] -Dvar=value ... <in >out
+ * Usage:
+ * java build.tools.spp.Spp [-be] [-nel] [-Kkey] -Dvar=value ... -iin -oout
  *
  * If -nel is declared then empty lines will not be substituted for lines of
  * text in the template that do not appear in the output.

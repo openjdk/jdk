@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4812591 4705328 5019111
+ * @bug 4812591 4705328 5019111 8218228
  * @summary Test append and insert methods with CharSequence params
  * @key randomness
  */
@@ -230,6 +230,35 @@ public class AppendCharSequence {
                 throw new RuntimeException("CharSequence constructor failure");
             }
         }
+        checkNegativeLenCharSeq(-1);
+        checkNegativeLenCharSeq(-16);
+        checkNegativeLenCharSeq(-17);
+        checkNegativeLenCharSeq(Integer.MIN_VALUE);
     }
 
+    // Test constructing from CharSequence of negative length
+    private static void checkNegativeLenCharSeq(int len) {
+        try {
+            CharSequence seq = new MyNegativeLenCharSeq(len);
+            StringBuffer sb = new StringBuffer(seq);
+        } catch (NegativeArraySizeException expected) {
+        } catch (Throwable exc) {
+            throw new RuntimeException("Unexpected: " + exc, exc);
+        }
+    }
+
+    private static class MyNegativeLenCharSeq implements CharSequence {
+        int length;
+        MyNegativeLenCharSeq(int length) {
+            this.length = length;
+        }
+        public char charAt(int i) {
+            throw new UnsupportedOperationException();
+        }
+        public int length() { return length; }
+        public CharSequence subSequence(int st, int e) {
+            throw new UnsupportedOperationException();
+        }
+        public String toString() { return ""; }
+    }
 }

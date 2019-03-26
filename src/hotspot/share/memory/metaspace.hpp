@@ -57,7 +57,6 @@
 
 class ClassLoaderData;
 class MetaspaceTracer;
-class MetaWord;
 class Mutex;
 class outputStream;
 
@@ -333,7 +332,6 @@ class MetaspaceUtils : AllStatic {
   // Utils to check if a pointer or range is part of a committed metaspace region
   // without acquiring any locks.
   static metaspace::VirtualSpaceNode* find_enclosing_virtual_space(const void* p);
-  static bool is_in_committed(const void* p);
   static bool is_range_in_committed(const void* from, const void* to);
 
 public:
@@ -387,9 +385,6 @@ public:
   }
 
   static size_t min_chunk_size_words();
-  static size_t min_chunk_size_bytes() {
-    return min_chunk_size_words() * BytesPerWord;
-  }
 
   // Flags for print_report().
   enum ReportFlag {
@@ -461,7 +456,8 @@ class MetaspaceGC : AllStatic {
   static size_t capacity_until_GC();
   static bool inc_capacity_until_GC(size_t v,
                                     size_t* new_cap_until_GC = NULL,
-                                    size_t* old_cap_until_GC = NULL);
+                                    size_t* old_cap_until_GC = NULL,
+                                    bool* can_retry = NULL);
   static size_t dec_capacity_until_GC(size_t v);
 
   static bool should_concurrent_collect() { return _should_concurrent_collect; }

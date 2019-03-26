@@ -34,11 +34,13 @@ import java.awt.HeadlessException;
  *
  * @see SystemSleepListener#systemAboutToSleep(SystemSleepEvent)
  * @see SystemSleepListener#systemAwoke(SystemSleepEvent)
- *
  * @since 9
  */
 public final class SystemSleepEvent extends AppEvent {
 
+    /**
+     * Use serialVersionUID from JDK 9 for interoperability.
+     */
     private static final long serialVersionUID = 11372269824930549L;
 
     /**

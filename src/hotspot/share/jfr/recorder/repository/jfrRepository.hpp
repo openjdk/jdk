@@ -55,7 +55,7 @@ class JfrRepository : public JfrCHeapObj {
   bool set_path(const char* path);
   void set_chunk_path(const char* path);
   bool open_chunk(bool vm_error = false);
-  size_t close_chunk(jlong metadata_offset);
+  size_t close_chunk(int64_t metadata_offset);
   void on_vm_error();
   static void notify_on_new_chunk_path();
   static JfrChunkWriter& chunkwriter();

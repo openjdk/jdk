@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -228,7 +228,9 @@ void UTF8::as_quoted_ascii(const char* utf8_str, int utf8_length, char* buf, int
   *p = '\0';
 }
 
-
+#ifndef PRODUCT
+// converts a quoted ascii string back to utf8
+// no longer used, but could be useful to test output of UTF8::as_quoted_ascii
 const char* UTF8::from_quoted_ascii(const char* quoted_ascii_str) {
   const char *ptr = quoted_ascii_str;
   char* result = NULL;
@@ -302,7 +304,7 @@ const char* UTF8::from_quoted_ascii(const char* quoted_ascii_str) {
   }
   return buffer;
 }
-
+#endif // !PRODUCT
 
 // Returns NULL if 'c' it not found. This only works as long
 // as 'c' is an ASCII character
@@ -468,7 +470,6 @@ char* UNICODE::as_utf8(const jchar* base, int length, char* buf, int buflen) {
 
 char* UNICODE::as_utf8(const jbyte* base, int length, char* buf, int buflen) {
   u_char* p = (u_char*)buf;
-  u_char* end = (u_char*)buf + buflen;
   for (int index = 0; index < length; index++) {
     jbyte c = base[index];
     int sz = utf8_size(c);

@@ -26,7 +26,6 @@
   @key headful
   @bug       6187066
   @summary   Tests the Window.autoRequestFocus property for the Window.toFront() method.
-  @author    anton.tarasov: area=awt.focus
   @library /java/awt/patchlib     ../../regtesthelpers
   @build java.desktop/java.awt.Helper
   @build      Util
@@ -34,13 +33,9 @@
 */
 
 import java.awt.*;
-import java.awt.event.*;
-import java.applet.Applet;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.lang.reflect.InvocationTargetException;
 import test.java.awt.regtesthelpers.Util;
 
-public class AutoRequestFocusToFrontTest extends Applet {
+public class AutoRequestFocusToFrontTest {
     static boolean haveDelays;
 
     static Frame auxFrame;
@@ -76,10 +71,6 @@ public class AutoRequestFocusToFrontTest extends Applet {
     }
 
     public void init() {
-        // Create instructions for the user here, as well as set up
-        // the environment -- set the layout manager, add buttons,
-        // etc.
-        this.setLayout (new BorderLayout ());
         toolkitClassName = Toolkit.getDefaultToolkit().getClass().getName();
     }
 

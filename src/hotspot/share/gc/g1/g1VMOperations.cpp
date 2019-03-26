@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@
 void VM_G1CollectFull::doit() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   GCCauseSetter x(g1h, _gc_cause);
-  g1h->do_full_collection(false /* clear_all_soft_refs */);
+  _gc_succeeded = g1h->do_full_collection(true /* explicit_gc */, false /* clear_all_soft_refs */);
 }
 
 VM_G1CollectForAllocation::VM_G1CollectForAllocation(size_t         word_size,
@@ -45,7 +45,7 @@ VM_G1CollectForAllocation::VM_G1CollectForAllocation(size_t         word_size,
                                                      bool           should_initiate_conc_mark,
                                                      double         target_pause_time_ms) :
   VM_CollectForAllocation(word_size, gc_count_before, gc_cause),
-  _pause_succeeded(false),
+  _gc_succeeded(false),
   _should_initiate_conc_mark(should_initiate_conc_mark),
   _should_retry_gc(false),
   _target_pause_time_ms(target_pause_time_ms),
@@ -85,7 +85,7 @@ void VM_G1CollectForAllocation::doit() {
     if (_result != NULL) {
       // If we can successfully allocate before we actually do the
       // pause then we will consider this pause successful.
-      _pause_succeeded = true;
+      _gc_succeeded = true;
       return;
     }
   }
@@ -100,7 +100,7 @@ void VM_G1CollectForAllocation::doit() {
 
     // At this point we are supposed to start a concurrent cycle. We
     // will do so if one is not already in progress.
-    bool res = g1h->g1_policy()->force_initial_mark_if_outside_cycle(_gc_cause);
+    bool res = g1h->policy()->force_initial_mark_if_outside_cycle(_gc_cause);
 
     // The above routine returns true if we were able to force the
     // next GC pause to be an initial mark; it returns false if a
@@ -130,13 +130,13 @@ void VM_G1CollectForAllocation::doit() {
   }
 
   // Try a partial collection of some kind.
-  _pause_succeeded = g1h->do_collection_pause_at_safepoint(_target_pause_time_ms);
+  _gc_succeeded = g1h->do_collection_pause_at_safepoint(_target_pause_time_ms);
 
-  if (_pause_succeeded) {
+  if (_gc_succeeded) {
     if (_word_size > 0) {
       // An allocation had been requested. Do it, eventually trying a stronger
       // kind of GC.
-      _result = g1h->satisfy_failed_allocation(_word_size, &_pause_succeeded);
+      _result = g1h->satisfy_failed_allocation(_word_size, &_gc_succeeded);
     } else {
       bool should_upgrade_to_full = g1h->should_upgrade_to_full_gc(_gc_cause);
 
@@ -145,11 +145,11 @@ void VM_G1CollectForAllocation::doit() {
         // information on how much memory has been asked for. In case there are
         // absolutely no regions left to allocate into, do a maximally compacting full GC.
         log_info(gc, ergo)("Attempting maximally compacting collection");
-        _pause_succeeded = g1h->do_full_collection(false, /* explicit gc */
+        _gc_succeeded = g1h->do_full_collection(false, /* explicit gc */
                                                    true   /* clear_all_soft_refs */);
       }
     }
-    guarantee(_pause_succeeded, "Elevated collections during the safepoint must always succeed.");
+    guarantee(_gc_succeeded, "Elevated collections during the safepoint must always succeed.");
   } else {
     assert(_result == NULL, "invariant");
     // The only reason for the pause to not be successful is that, the GC locker is

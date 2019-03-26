@@ -1,4 +1,28 @@
 /*
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+/*
  * reserved comment block
  * DO NOT REMOVE OR ALTER!
  */
@@ -47,7 +71,7 @@
 
 package sun.security.pkcs11.wrapper;
 
-
+import java.security.ProviderException;
 
 /**
  * class CK_MECHANISM_INFO provides information about a particular mechanism.
@@ -74,6 +98,10 @@ public class CK_MECHANISM_INFO {
      */
     public long ulMinKeySize;
 
+    // the integer version of ulMinKeySize for doing the actual range
+    // check in SunPKCS11 provider, defaults to 0
+    public final int iMinKeySize;
+
     /**
      * <B>PKCS#11:</B>
      * <PRE>
@@ -81,6 +109,10 @@ public class CK_MECHANISM_INFO {
      * </PRE>
      */
     public long ulMaxKeySize;
+
+    // the integer version of ulMaxKeySize for doing the actual range
+    // check in SunPKCS11 provider, defaults to Integer.MAX_VALUE
+    public final int iMaxKeySize;
 
     /**
      * <B>PKCS#11:</B>
@@ -94,6 +126,10 @@ public class CK_MECHANISM_INFO {
                              long flags) {
         this.ulMinKeySize = minKeySize;
         this.ulMaxKeySize = maxKeySize;
+        this.iMinKeySize = ((minKeySize < Integer.MAX_VALUE && minKeySize > 0)?
+                (int)minKeySize : 0);
+        this.iMaxKeySize = ((maxKeySize < Integer.MAX_VALUE && maxKeySize > 0)?
+                (int)maxKeySize : Integer.MAX_VALUE);
         this.flags = flags;
     }
 

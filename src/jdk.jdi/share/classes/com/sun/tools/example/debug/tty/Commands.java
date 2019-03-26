@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1037,16 +1037,16 @@ class Commands {
     }
 
 
-    private void printBreakpointCommandUsage(String atForm, String inForm) {
-        MessageOutput.println("printbreakpointcommandusage",
-                              new Object [] {atForm, inForm});
+    private void printBreakpointCommandUsage(String usageMessage) {
+        MessageOutput.println(usageMessage);
     }
 
-    protected BreakpointSpec parseBreakpointSpec(StringTokenizer t,
-                                             String atForm, String inForm) {
+    protected BreakpointSpec parseBreakpointSpec(StringTokenizer t, String next_token,
+                                                 ThreadReference threadFilter,
+                                                 String usageMessage) {
         BreakpointSpec breakpoint = null;
         try {
-            String token = t.nextToken(":( \t\n\r");
+            String token = next_token;
 
             // We can't use hasMoreTokens here because it will cause any leading
             // paren to be lost.
@@ -1064,16 +1064,24 @@ class Commands {
 
                 NumberFormat nf = NumberFormat.getNumberInstance();
                 nf.setParseIntegerOnly(true);
-                Number n = nf.parse(lineToken);
+                Number n;
+                try {
+                    n = nf.parse(lineToken);
+                } catch (java.text.ParseException pe) {
+                    MessageOutput.println("Invalid line number specified");
+                    printBreakpointCommandUsage(usageMessage);
+                    return null;
+                }
                 int lineNumber = n.intValue();
 
                 if (t.hasMoreTokens()) {
-                    printBreakpointCommandUsage(atForm, inForm);
+                    MessageOutput.println("Extra tokens after breakpoint location");
+                    printBreakpointCommandUsage(usageMessage);
                     return null;
                 }
                 try {
                     breakpoint = Env.specList.createBreakpoint(classId,
-                                                               lineNumber);
+                                                               lineNumber, threadFilter);
                 } catch (ClassNotFoundException exc) {
                     MessageOutput.println("is not a valid class name", classId);
                 }
@@ -1082,7 +1090,8 @@ class Commands {
                 int idot = token.lastIndexOf('.');
                 if ( (idot <= 0) ||                     /* No dot or dot in first char */
                      (idot >= token.length() - 1) ) { /* dot in last char */
-                    printBreakpointCommandUsage(atForm, inForm);
+                    MessageOutput.println("Invalid <class>.<method_name> specification");
+                    printBreakpointCommandUsage(usageMessage);
                     return null;
                 }
                 String methodName = token.substring(idot + 1);
@@ -1090,9 +1099,9 @@ class Commands {
                 List<String> argumentList = null;
                 if (rest != null) {
                     if (!rest.startsWith("(") || !rest.endsWith(")")) {
-                        MessageOutput.println("Invalid method specification:",
+                        MessageOutput.println("Invalid <method_name> specification:",
                                               methodName + rest);
-                        printBreakpointCommandUsage(atForm, inForm);
+                        printBreakpointCommandUsage(usageMessage);
                         return null;
                     }
                     // Trim the parens
@@ -1107,6 +1116,7 @@ class Commands {
                 try {
                     breakpoint = Env.specList.createBreakpoint(classId,
                                                                methodName,
+                                                               threadFilter,
                                                                argumentList);
                 } catch (MalformedMemberNameException exc) {
                     MessageOutput.println("is not a valid method name", methodName);
@@ -1115,7 +1125,7 @@ class Commands {
                 }
             }
         } catch (Exception e) {
-            printBreakpointCommandUsage(atForm, inForm);
+            printBreakpointCommandUsage(usageMessage);
             return null;
         }
         return breakpoint;
@@ -1128,34 +1138,91 @@ class Commands {
         }
     }
 
-    void commandStop(StringTokenizer t) {
-        String atIn;
-        byte suspendPolicy = EventRequest.SUSPEND_ALL;
-
+    void commandDbgTrace(StringTokenizer t) {
+        int traceFlags;
         if (t.hasMoreTokens()) {
-            atIn = t.nextToken();
-            if (atIn.equals("go") && t.hasMoreTokens()) {
-                suspendPolicy = EventRequest.SUSPEND_NONE;
-                atIn = t.nextToken();
-            } else if (atIn.equals("thread") && t.hasMoreTokens()) {
-                suspendPolicy = EventRequest.SUSPEND_EVENT_THREAD;
-                atIn = t.nextToken();
+            String flagStr = t.nextToken();
+            try {
+                traceFlags = Integer.decode(flagStr).intValue();
+            } catch (NumberFormatException nfe) {
+                MessageOutput.println("dbgtrace command value must be an integer:", flagStr);
+                return;
             }
         } else {
+            traceFlags = VirtualMachine.TRACE_ALL;
+        }
+        Env.setTraceFlags(traceFlags);
+    }
+
+    void commandStop(StringTokenizer t) {
+        byte suspendPolicy = EventRequest.SUSPEND_ALL;
+        ThreadReference threadFilter = null;
+
+        /*
+         * Allowed syntax:
+         *    stop [go|thread] [<thread_id>] <at|in> <location>
+         * If no options are given, the current list of breakpoints is printed.
+         * If "go" is specified, then immediately resume after stopping. No threads are suspended.
+         * If "thread" is specified, then only suspend the thread we stop in.
+         * If neither "go" nor "thread" are specified, then suspend all threads.
+         * If an integer <thread_id> is specified, then only stop in the specified thread.
+         * <location> can either be a line number or a method:
+         *    - <class id>:<line>
+         *    - <class id>.<method>[(argument_type,...)]
+         */
+
+        if (!t.hasMoreTokens()) {
             listBreakpoints();
             return;
         }
 
-        BreakpointSpec spec = parseBreakpointSpec(t, "stop at", "stop in");
-        if (spec != null) {
-            // Enforcement of "at" vs. "in". The distinction is really
-            // unnecessary and we should consider not checking for this
-            // (and making "at" and "in" optional).
-            if (atIn.equals("at") && spec.isMethodBreakpoint()) {
-                MessageOutput.println("Use stop at to set a breakpoint at a line number");
-                printBreakpointCommandUsage("stop at", "stop in");
+        String token = t.nextToken();
+
+        /* Check for "go" or "thread" modifiers. */
+        if (token.equals("go") && t.hasMoreTokens()) {
+            suspendPolicy = EventRequest.SUSPEND_NONE;
+            token = t.nextToken();
+        } else if (token.equals("thread") && t.hasMoreTokens()) {
+            suspendPolicy = EventRequest.SUSPEND_EVENT_THREAD;
+            token = t.nextToken();
+        }
+
+        /* Handle <thread_id> modifier. */
+        if (!token.equals("at") && !token.equals("in")) {
+            Long threadid;
+            try {
+                threadid = Long.decode(token);
+            } catch (NumberFormatException nfe) {
+                MessageOutput.println("Expected at, in, or an integer <thread_id>:", token);
+                printBreakpointCommandUsage("printstopcommandusage");
                 return;
             }
+            try {
+                ThreadInfo threadInfo = ThreadInfo.getThreadInfo(token);
+                if (threadInfo == null) {
+                    MessageOutput.println("Invalid <thread_id>:", token);
+                    return;
+                }
+                threadFilter = threadInfo.getThread();
+                token = t.nextToken(BreakpointSpec.locationTokenDelimiter);
+            } catch (VMNotConnectedException vmnce) {
+                MessageOutput.println("<thread_id> option not valid until the VM is started with the run command");
+                return;
+            }
+
+        }
+
+        /* Make sure "at" or "in" comes next. */
+        if (!token.equals("at") && !token.equals("in")) {
+            MessageOutput.println("Missing at or in");
+            printBreakpointCommandUsage("printstopcommandusage");
+            return;
+        }
+
+        token = t.nextToken(BreakpointSpec.locationTokenDelimiter);
+
+        BreakpointSpec spec = parseBreakpointSpec(t, token, threadFilter, "printstopcommandusage");
+        if (spec != null) {
             spec.suspendPolicy = suspendPolicy;
             resolveNow(spec);
         }
@@ -1167,7 +1234,8 @@ class Commands {
             return;
         }
 
-        BreakpointSpec spec = parseBreakpointSpec(t, "clear", "clear");
+        String token = t.nextToken(BreakpointSpec.locationTokenDelimiter);
+        BreakpointSpec spec = parseBreakpointSpec(t, token, null, "printclearcommandusage");
         if (spec != null) {
             if (Env.specList.delete(spec)) {
                 MessageOutput.println("Removed:", spec.toString());

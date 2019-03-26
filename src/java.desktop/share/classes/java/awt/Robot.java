@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,8 +134,6 @@ public class Robot {
         Toolkit toolkit = Toolkit.getDefaultToolkit();
         if (toolkit instanceof ComponentFactory) {
             peer = ((ComponentFactory)toolkit).createRobot(this, screen);
-            disposer = new RobotDisposer(peer);
-            sun.java2d.Disposer.addRecord(anchor, disposer);
         }
         initLegalButtonMask();
     }
@@ -176,22 +174,6 @@ public class Robot {
             throw new IllegalArgumentException("not a valid screen device");
         }
     }
-
-    private transient Object anchor = new Object();
-
-    static class RobotDisposer implements sun.java2d.DisposerRecord {
-        private final RobotPeer peer;
-        public RobotDisposer(RobotPeer peer) {
-            this.peer = peer;
-        }
-        public void dispose() {
-            if (peer != null) {
-                peer.dispose();
-            }
-        }
-    }
-
-    private transient RobotDisposer disposer;
 
     /**
      * Moves mouse pointer to given screen coordinates.

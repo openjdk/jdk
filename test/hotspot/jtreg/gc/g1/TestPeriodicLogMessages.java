@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc.g1;
+
 /**
  * @test TestPeriodicLogMessages
  * @bug 8216490
@@ -29,11 +31,11 @@
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  * @modules java.management/sun.management
+ * @run main gc.g1.TestPeriodicLogMessages
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.Platform;
 
 public class TestPeriodicLogMessages {
 

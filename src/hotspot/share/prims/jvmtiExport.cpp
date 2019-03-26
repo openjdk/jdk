@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@
 #include "prims/jvmtiThreadState.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
-#include "runtime/handles.hpp"
+#include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.inline.hpp"
@@ -2426,7 +2426,7 @@ void JvmtiExport::post_monitor_contended_enter(JavaThread *thread, ObjectMonitor
   Handle h(thread, object);
 
   EVT_TRIG_TRACE(JVMTI_EVENT_MONITOR_CONTENDED_ENTER,
-                     ("[%s] montior contended enter event triggered",
+                     ("[%s] monitor contended enter event triggered",
                       JvmtiTrace::safe_get_thread_name(thread)));
 
   JvmtiEnvThreadStateIterator it(state);
@@ -2457,7 +2457,7 @@ void JvmtiExport::post_monitor_contended_entered(JavaThread *thread, ObjectMonit
   Handle h(thread, object);
 
   EVT_TRIG_TRACE(JVMTI_EVENT_MONITOR_CONTENDED_ENTERED,
-                     ("[%s] montior contended entered event triggered",
+                     ("[%s] monitor contended entered event triggered",
                       JvmtiTrace::safe_get_thread_name(thread)));
 
   JvmtiEnvThreadStateIterator it(state);
@@ -2488,7 +2488,7 @@ void JvmtiExport::post_monitor_wait(JavaThread *thread, oop object,
   Handle h(thread, object);
 
   EVT_TRIG_TRACE(JVMTI_EVENT_MONITOR_WAIT,
-                     ("[%s] montior wait event triggered",
+                     ("[%s] monitor wait event triggered",
                       JvmtiTrace::safe_get_thread_name(thread)));
 
   JvmtiEnvThreadStateIterator it(state);
@@ -2520,7 +2520,7 @@ void JvmtiExport::post_monitor_waited(JavaThread *thread, ObjectMonitor *obj_mnt
   Handle h(thread, object);
 
   EVT_TRIG_TRACE(JVMTI_EVENT_MONITOR_WAITED,
-                     ("[%s] montior waited event triggered",
+                     ("[%s] monitor waited event triggered",
                       JvmtiTrace::safe_get_thread_name(thread)));
 
   JvmtiEnvThreadStateIterator it(state);

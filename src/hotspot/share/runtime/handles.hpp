@@ -31,6 +31,7 @@
 
 class InstanceKlass;
 class Klass;
+class Thread;
 
 //------------------------------------------------------------------------------------------------------------------------
 // In order to preserve oops during garbage collection, they should be
@@ -252,6 +253,8 @@ class HandleMark {
   HandleMark* previous_handle_mark() const        { return _previous_handle_mark; }
 
   size_t size_in_bytes() const { return _size_in_bytes; }
+  // remove all chunks beginning with the next
+  void chop_later_chunks();
  public:
   HandleMark();                            // see handles_inline.hpp
   HandleMark(Thread* thread)                      { initialize(thread); }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,24 +36,17 @@ ZLoadBarrierStubC1::ZLoadBarrierStubC1(LIRAccess& access, LIR_Opr ref, address r
     _ref_addr(access.resolved_addr()),
     _ref(ref),
     _tmp(LIR_OprFact::illegalOpr),
-    _patch_info(access.patch_emit_info()),
     _runtime_stub(runtime_stub) {
 
-  // Allocate tmp register if needed
-  if (!_ref_addr->is_register()) {
-    assert(_ref_addr->is_address(), "Must be an address");
-    if (_ref_addr->as_address_ptr()->index()->is_valid() ||
-        _ref_addr->as_address_ptr()->disp() != 0) {
-      // Has index or displacement, need tmp register to load address into
-      _tmp = access.gen()->new_pointer_register();
-    } else {
-      // No index or displacement, address available in base register
-      _ref_addr = _ref_addr->as_address_ptr()->base();
-    }
-  }
-
+  assert(_ref_addr->is_address(), "Must be an address");
   assert(_ref->is_register(), "Must be a register");
-  assert(_ref_addr->is_register() != _tmp->is_register(), "Only one should be a register");
+
+  // Allocate tmp register if needed
+  if (_ref_addr->as_address_ptr()->index()->is_valid() ||
+      _ref_addr->as_address_ptr()->disp() != 0) {
+    // Has index or displacement, need tmp register to load address into
+    _tmp = access.gen()->new_pointer_register();
+  }
 }
 
 DecoratorSet ZLoadBarrierStubC1::decorators() const {
@@ -72,28 +65,14 @@ LIR_Opr ZLoadBarrierStubC1::tmp() const {
   return _tmp;
 }
 
-LIR_PatchCode ZLoadBarrierStubC1::patch_code() const {
-  return (_decorators & C1_NEEDS_PATCHING) != 0 ? lir_patch_normal : lir_patch_none;
-}
-
-CodeEmitInfo*& ZLoadBarrierStubC1::patch_info() {
-  return _patch_info;
-}
-
 address ZLoadBarrierStubC1::runtime_stub() const {
   return _runtime_stub;
 }
 
 void ZLoadBarrierStubC1::visit(LIR_OpVisitState* visitor) {
-  if (_patch_info != NULL) {
-    visitor->do_slow_case(_patch_info);
-  } else {
-    visitor->do_slow_case();
-  }
-
+  visitor->do_slow_case();
   visitor->do_input(_ref_addr);
   visitor->do_output(_ref);
-
   if (_tmp->is_valid()) {
     visitor->do_temp(_tmp);
   }
@@ -172,6 +151,14 @@ void ZBarrierSetC1::load_barrier(LIRAccess& access, LIR_Opr result) const {
   CodeStub* const stub = new ZLoadBarrierStubC1(access, result, runtime_stub);
   __ branch(lir_cond_notEqual, T_ADDRESS, stub);
   __ branch_destination(stub->continuation());
+}
+
+LIR_Opr ZBarrierSetC1::resolve_address(LIRAccess& access, bool resolve_in_register) {
+  // We must resolve in register when patching. This is to avoid
+  // having a patch area in the load barrier stub, since the call
+  // into the runtime to patch will not have the proper oop map.
+  const bool patch_before_barrier = barrier_needed(access) && (access.decorators() & C1_NEEDS_PATCHING) != 0;
+  return BarrierSetC1::resolve_address(access, resolve_in_register || patch_before_barrier);
 }
 
 #undef __

@@ -237,7 +237,7 @@
 <p>For rpm-based distributions (Fedora, Red Hat, etc), try this:</p>
 <pre><code>sudo yum groupinstall &quot;Development Tools&quot;</code></pre>
 <h3 id="aix">AIX</h3>
-<p>The regular builds by SAP is using AIX version 7.1, but AIX 5.3 is also supported. See the <a href="http://cr.openjdk.java.net/~simonis/ppc-aix-port">OpenJDK PowerPC Port Status Page</a> for details.</p>
+<p>Please consult the AIX section of the <a href="https://wiki.openjdk.java.net/display/Build/Supported+Build+Platforms">Supported Build Platforms</a> OpenJDK Build Wiki page for details about which versions of AIX are supported.</p>
 <h2 id="native-compiler-toolchain-requirements">Native Compiler (Toolchain) Requirements</h2>
 <p>Large portions of the JDK consists of native code, that needs to be compiled to be able to run on the target platform. In theory, toolchain and operating system should be independent factors, but in practice there's more or less a one-to-one correlation between target operating system and toolchain.</p>
 <table>
@@ -373,8 +373,7 @@ CC: Sun C++ 5.13 SunOS_i386 151846-10 2015/10/30</code></pre>
 <p>If you have multiple versions of Visual Studio installed, <code>configure</code> will by default pick the latest. You can request a specific version to be used by setting <code>--with-toolchain-version</code>, e.g. <code>--with-toolchain-version=2015</code>.</p>
 <p>If you get <code>LINK: fatal error LNK1123: failure during conversion to COFF: file invalid</code> when building using Visual Studio 2010, you have encountered <a href="http://support.microsoft.com/kb/2757355">KB2757355</a>, a bug triggered by a specific installation order. However, the solution suggested by the KB article does not always resolve the problem. See <a href="https://stackoverflow.com/questions/10888391">this stackoverflow discussion</a> for other suggestions.</p>
 <h3 id="ibm-xl-cc">IBM XL C/C++</h3>
-<p>The regular builds by SAP is using version 12.1, described as <code>IBM XL C/C++ for AIX, V12.1 (5765-J02, 5725-C72) Version: 12.01.0000.0017</code>.</p>
-<p>See the <a href="http://cr.openjdk.java.net/~simonis/ppc-aix-port">OpenJDK PowerPC Port Status Page</a> for details.</p>
+<p>Please consult the AIX section of the <a href="https://wiki.openjdk.java.net/display/Build/Supported+Build+Platforms">Supported Build Platforms</a> OpenJDK Build Wiki page for details about which versions of XLC are supported.</p>
 <h2 id="boot-jdk-requirements">Boot JDK Requirements</h2>
 <p>Paradoxically, building the JDK requires a pre-existing JDK. This is called the &quot;boot JDK&quot;. The boot JDK does not, however, have to be a JDK built directly from the source code available in the OpenJDK Community. If you are porting the JDK to a new platform, chances are that there already exists another JDK for that platform that is usable as boot JDK.</p>
 <p>The rule of thumb is that the boot JDK for building JDK major version <em>N</em> should be a JDK of major version <em>N-1</em>, so for building JDK 9 a JDK 8 would be suitable as boot JDK. However, the JDK should be able to &quot;build itself&quot;, so an up-to-date build of the current JDK source is an acceptable alternative. If you are following the <em>N-1</em> rule, make sure you've got the latest update version, since JDK 8 GA might not be able to build JDK 9 on all platforms.</p>

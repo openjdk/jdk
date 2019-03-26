@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,7 @@ public class SwitchExpressionSimpleVisitorTest {
 
         StringWriter out = new StringWriter();
         JavacTask ct = (JavacTask) tool.getTask(out, null, noErrors,
-            List.of("--enable-preview", "-source", "13"), null,
+            List.of("--enable-preview", "-source", Integer.toString(Runtime.version().feature())), null,
             Arrays.asList(new MyFileObject(code)));
         return ct.parse().iterator().next();
     }

@@ -24,21 +24,23 @@
 
 package org.graalvm.compiler.replacements.test;
 
-import jdk.vm.ci.aarch64.AArch64;
-import jdk.vm.ci.amd64.AMD64;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+import static org.graalvm.compiler.core.common.GraalOptions.RemoveNeverExecutedCode;
+
+import java.util.List;
+
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.replacements.nodes.ArrayCompareToNode;
 import org.graalvm.compiler.serviceprovider.GraalServices;
+import org.graalvm.compiler.serviceprovider.JavaVersionUtil;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
 
-import java.util.List;
-
-import static org.graalvm.compiler.core.common.GraalOptions.RemoveNeverExecutedCode;
+import jdk.vm.ci.aarch64.AArch64;
+import jdk.vm.ci.amd64.AMD64;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 /**
  * Tests compareTo method intrinsic.
@@ -89,7 +91,7 @@ public class StringCompareToTest extends StringSubstitutionTestBase {
         OptionValues options;
         boolean needCheckNode = true;
 
-        if (GraalServices.Java8OrEarlier) {
+        if (JavaVersionUtil.Java8OrEarlier) {
             needCheckNode = false;
         } else {
             List<String> vmArgs = GraalServices.getInputArguments();

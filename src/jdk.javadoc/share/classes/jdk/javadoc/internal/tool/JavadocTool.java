@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,9 @@
 
 package jdk.javadoc.internal.tool;
 
-
-import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -165,7 +166,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
             // Normally, the args should be a series of package names or file names.
             // Parse the files and collect the package names.
             for (String arg: javaNames) {
-                if (fm != null && arg.endsWith(".java") && new File(arg).exists()) {
+                if (fm != null && arg.endsWith(".java") && isRegularFile(arg)) {
                     parse(fm.getJavaFileObjects(arg), classTrees, true);
                 } else if (isValidPackageName(arg)) {
                     packageNames.add(arg);
@@ -196,9 +197,11 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
             }
 
             // Parse the files in the packages and subpackages to be documented
-            ListBuffer<JCCompilationUnit> packageTrees = new ListBuffer<>();
-            parse(etable.getFilesToParse(), packageTrees, false);
-            modules.enter(packageTrees.toList(), null);
+            ListBuffer<JCCompilationUnit> allTrees = new ListBuffer<>();
+            allTrees.addAll(classTrees);
+            parse(etable.getFilesToParse(), allTrees, false);
+            modules.newRound();
+            modules.initModules(allTrees.toList());
 
             if (messager.hasErrors()) {
                 return null;
@@ -206,7 +209,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
 
             // Enter symbols for all files
             toolEnv.notice("main.Building_tree");
-            javadocEnter.main(classTrees.toList().appendList(packageTrees));
+            javadocEnter.main(allTrees.toList());
 
             if (messager.hasErrors()) {
                 return null;
@@ -245,6 +248,14 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
 
         toolEnv.docEnv = new DocEnvImpl(toolEnv, etable);
         return toolEnv.docEnv;
+    }
+
+    private boolean isRegularFile(String s) {
+        try {
+            return Files.isRegularFile(Paths.get(s));
+        } catch (InvalidPathException e) {
+            return false;
+        }
     }
 
     /** Is the given string a valid package name? */

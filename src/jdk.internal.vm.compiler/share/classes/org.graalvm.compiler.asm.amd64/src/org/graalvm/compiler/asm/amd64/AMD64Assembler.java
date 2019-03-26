@@ -683,7 +683,7 @@ public class AMD64Assembler extends AMD64BaseAssembler {
             emitImmediate(asm, size, imm);
             int nextInsnPos = asm.position();
             if (annotateImm && asm.codePatchingAnnotationConsumer != null) {
-                asm.codePatchingAnnotationConsumer.accept(new ImmediateOperandAnnotation(insnPos, immPos, nextInsnPos - immPos, nextInsnPos));
+                asm.codePatchingAnnotationConsumer.accept(new OperandDataAnnotation(insnPos, immPos, nextInsnPos - immPos, nextInsnPos));
             }
         }
 
@@ -700,7 +700,7 @@ public class AMD64Assembler extends AMD64BaseAssembler {
             emitImmediate(asm, size, imm);
             int nextInsnPos = asm.position();
             if (annotateImm && asm.codePatchingAnnotationConsumer != null) {
-                asm.codePatchingAnnotationConsumer.accept(new ImmediateOperandAnnotation(insnPos, immPos, nextInsnPos - immPos, nextInsnPos));
+                asm.codePatchingAnnotationConsumer.accept(new OperandDataAnnotation(insnPos, immPos, nextInsnPos - immPos, nextInsnPos));
             }
         }
     }
@@ -2023,7 +2023,7 @@ public class AMD64Assembler extends AMD64BaseAssembler {
         emitInt(imm32);
         int nextInsnPos = position();
         if (annotateImm && codePatchingAnnotationConsumer != null) {
-            codePatchingAnnotationConsumer.accept(new ImmediateOperandAnnotation(insnPos, immPos, nextInsnPos - immPos, nextInsnPos));
+            codePatchingAnnotationConsumer.accept(new OperandDataAnnotation(insnPos, immPos, nextInsnPos - immPos, nextInsnPos));
         }
     }
 
@@ -2201,10 +2201,11 @@ public class AMD64Assembler extends AMD64BaseAssembler {
     }
 
     public final void movswl(Register dst, AMD64Address src) {
-        prefix(src, dst);
-        emitByte(0x0F);
-        emitByte(0xBF);
-        emitOperandHelper(dst, src, 0);
+        AMD64RMOp.MOVSX.emit(this, DWORD, dst, src);
+    }
+
+    public final void movswq(Register dst, AMD64Address src) {
+        AMD64RMOp.MOVSX.emit(this, QWORD, dst, src);
     }
 
     public final void movw(AMD64Address dst, int imm16) {
@@ -2222,6 +2223,13 @@ public class AMD64Assembler extends AMD64BaseAssembler {
         emitOperandHelper(src, dst, 0);
     }
 
+    public final void movw(Register dst, AMD64Address src) {
+        emitByte(0x66);
+        prefix(src, dst);
+        emitByte(0x8B);
+        emitOperandHelper(dst, src, 0);
+    }
+
     public final void movzbl(Register dst, AMD64Address src) {
         prefix(src, dst);
         emitByte(0x0F);
@@ -2237,11 +2245,16 @@ public class AMD64Assembler extends AMD64BaseAssembler {
         AMD64RMOp.MOVZXB.emit(this, QWORD, dst, src);
     }
 
+    public final void movzbq(Register dst, AMD64Address src) {
+        AMD64RMOp.MOVZXB.emit(this, QWORD, dst, src);
+    }
+
     public final void movzwl(Register dst, AMD64Address src) {
-        prefix(src, dst);
-        emitByte(0x0F);
-        emitByte(0xB7);
-        emitOperandHelper(dst, src, 0);
+        AMD64RMOp.MOVZX.emit(this, DWORD, dst, src);
+    }
+
+    public final void movzwq(Register dst, AMD64Address src) {
+        AMD64RMOp.MOVZX.emit(this, QWORD, dst, src);
     }
 
     public final void negl(Register dst) {
@@ -2557,14 +2570,61 @@ public class AMD64Assembler extends AMD64BaseAssembler {
         emitModRM(dst, src);
     }
 
-    // Insn: VPMOVZXBW xmm1, xmm2/m64
-
-    public final void pmovzxbw(Register dst, AMD64Address src) {
+    private void pmovSZx(Register dst, AMD64Address src, int op) {
         assert supports(CPUFeature.SSE4_1);
         assert inRC(XMM, dst);
         simdPrefix(dst, Register.None, src, PD, P_0F38, false);
-        emitByte(0x30);
+        emitByte(op);
         emitOperandHelper(dst, src, 0);
+    }
+
+    public final void pmovsxbw(Register dst, AMD64Address src) {
+        pmovSZx(dst, src, 0x20);
+    }
+
+    public final void pmovsxbd(Register dst, AMD64Address src) {
+        pmovSZx(dst, src, 0x21);
+    }
+
+    public final void pmovsxbq(Register dst, AMD64Address src) {
+        pmovSZx(dst, src, 0x22);
+    }
+
+    public final void pmovsxwd(Register dst, AMD64Address src) {
+        pmovSZx(dst, src, 0x23);
+    }
+
+    public final void pmovsxwq(Register dst, AMD64Address src) {
+        pmovSZx(dst, src, 0x24);
+    }
+
+    public final void pmovsxdq(Register dst, AMD64Address src) {
+        pmovSZx(dst, src, 0x25);
+    }
+
+    // Insn: VPMOVZXBW xmm1, xmm2/m64
+    public final void pmovzxbw(Register dst, AMD64Address src) {
+        pmovSZx(dst, src, 0x30);
+    }
+
+    public final void pmovzxbd(Register dst, AMD64Address src) {
+        pmovSZx(dst, src, 0x31);
+    }
+
+    public final void pmovzxbq(Register dst, AMD64Address src) {
+        pmovSZx(dst, src, 0x32);
+    }
+
+    public final void pmovzxwd(Register dst, AMD64Address src) {
+        pmovSZx(dst, src, 0x33);
+    }
+
+    public final void pmovzxwq(Register dst, AMD64Address src) {
+        pmovSZx(dst, src, 0x34);
+    }
+
+    public final void pmovzxdq(Register dst, AMD64Address src) {
+        pmovSZx(dst, src, 0x35);
     }
 
     public final void pmovzxbw(Register dst, Register src) {
@@ -2881,6 +2941,10 @@ public class AMD64Assembler extends AMD64BaseAssembler {
         XOR.rmOp.emit(this, DWORD, dst, src);
     }
 
+    public final void xorq(Register dst, Register src) {
+        XOR.rmOp.emit(this, QWORD, dst, src);
+    }
+
     public final void xorpd(Register dst, Register src) {
         SSEOp.XOR.emit(this, PD, dst, src);
     }
@@ -3045,7 +3109,7 @@ public class AMD64Assembler extends AMD64BaseAssembler {
         emitLong(imm64);
         int nextInsnPos = position();
         if (annotateImm && codePatchingAnnotationConsumer != null) {
-            codePatchingAnnotationConsumer.accept(new ImmediateOperandAnnotation(insnPos, immPos, nextInsnPos - immPos, nextInsnPos));
+            codePatchingAnnotationConsumer.accept(new OperandDataAnnotation(insnPos, immPos, nextInsnPos - immPos, nextInsnPos));
         }
     }
 
@@ -3187,6 +3251,19 @@ public class AMD64Assembler extends AMD64BaseAssembler {
         emitByte(0xD3);
         // Unsigned divide dst by 2, CL times.
         emitModRM(5, dst);
+    }
+
+    public final void sarq(Register dst, int imm8) {
+        assert isShiftCount(imm8 >> 1) : "illegal shift count";
+        prefixq(dst);
+        if (imm8 == 1) {
+            emitByte(0xD1);
+            emitModRM(7, dst);
+        } else {
+            emitByte(0xC1);
+            emitModRM(7, dst);
+            emitByte(imm8);
+        }
     }
 
     public final void sbbq(Register dst, Register src) {

@@ -42,7 +42,7 @@ TARGETS += $(SA_PROPERTIES)
 
 ################################################################################
 
-ifeq ($(OPENJDK_TARGET_OS), macosx)
+ifeq ($(call isTargetOs, macosx), true)
   MIG_OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/gensrc/jdk.hotspot.agent
   MACH_EXC_HEADER := $(MIG_OUTPUT_DIR)/mach_exc.h
   MACH_EXC_USER := $(MIG_OUTPUT_DIR)/mach_excUser.c

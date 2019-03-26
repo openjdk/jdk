@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
   @key headful
   @bug       4685768
   @summary   Tests that auto-transfering focus doesn't stuck on a disabled component.
-  @author    Anton Tarasov: area=awt.focus
   @library   ../../regtesthelpers
   @build     Util
   @run       main NoAutotransferToDisabledCompTest
@@ -36,10 +35,9 @@ import java.awt.Robot;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.applet.Applet;
 import test.java.awt.regtesthelpers.Util;
 
-public class NoAutotransferToDisabledCompTest extends Applet {
+public class NoAutotransferToDisabledCompTest {
     Robot robot;
     JFrame frame = new JFrame("Frame");
     JButton b0 = new JButton("b0");

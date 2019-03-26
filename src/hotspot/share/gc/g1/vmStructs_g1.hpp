@@ -102,7 +102,7 @@
   declare_toplevel_type(PtrQueue)                                             \
   declare_toplevel_type(HeapRegionType)                                       \
   declare_toplevel_type(SATBMarkQueue)                                        \
-  declare_toplevel_type(DirtyCardQueue)                                       \
+  declare_toplevel_type(G1DirtyCardQueue)                                     \
                                                                               \
   declare_toplevel_type(G1CollectedHeap*)                                     \
   declare_toplevel_type(HeapRegion*)                                          \

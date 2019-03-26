@@ -287,8 +287,6 @@ SpaceManager::~SpaceManager() {
   MutexLockerEx fcl(MetaspaceExpand_lock,
                     Mutex::_no_safepoint_check_flag);
 
-  chunk_manager()->slow_locked_verify();
-
   account_for_spacemanager_death();
 
   Log(gc, metaspace, freelist) log;
@@ -313,7 +311,11 @@ SpaceManager::~SpaceManager() {
   _current_chunk = NULL;
 #endif
 
-  chunk_manager()->slow_locked_verify();
+#ifdef ASSERT
+  EVERY_NTH(VerifyMetaspaceInterval)
+    chunk_manager()->locked_verify(true);
+  END_EVERY_NTH
+#endif
 
   if (_block_freelists != NULL) {
     delete _block_freelists;
@@ -405,8 +407,6 @@ MetaWord* SpaceManager::allocate(size_t word_size) {
   BlockFreelist* fl =  block_freelists();
   MetaWord* p = NULL;
 
-  DEBUG_ONLY(if (VerifyMetaspace) verify_metrics_locked());
-
   // Allocation from the dictionary is expensive in the sense that
   // the dictionary has to be searched for a size.  Don't allocate
   // from the dictionary until it starts to get fat.  Is this
@@ -421,6 +421,12 @@ MetaWord* SpaceManager::allocate(size_t word_size) {
   if (p == NULL) {
     p = allocate_work(raw_word_size);
   }
+
+#ifdef ASSERT
+  EVERY_NTH(VerifyMetaspaceInterval)
+    verify_metrics_locked();
+  END_EVERY_NTH
+#endif
 
   return p;
 }

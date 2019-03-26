@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,9 @@ final class GaloisCounterMode extends FeedbackCipher {
     // java byte array, e.g. Integer.MAX_VALUE, since all data
     // can only be returned by the doFinal(...) call.
     private static final int MAX_BUF_SIZE = Integer.MAX_VALUE;
+
+    // data size when buffer is divided up to aid in intrinsics
+    private static final int TRIGGERLEN = 65536;  // 64k
 
     // buffer for AAD data; if null, meaning update has been called
     private ByteArrayOutputStream aadBuffer = new ByteArrayOutputStream();
@@ -380,12 +383,10 @@ final class GaloisCounterMode extends FeedbackCipher {
     // Utility to process the last block; used by encryptFinal and decryptFinal
     void doLastBlock(byte[] in, int inOfs, int len, byte[] out, int outOfs,
                      boolean isEncrypt) throws IllegalBlockSizeException {
-        // process data in 'in'
-        gctrPAndC.doFinal(in, inOfs, len, out, outOfs);
-        processed += len;
-
         byte[] ct;
         int ctOfs;
+        int ilen = len;  // internal length
+
         if (isEncrypt) {
             ct = out;
             ctOfs = outOfs;
@@ -393,14 +394,37 @@ final class GaloisCounterMode extends FeedbackCipher {
             ct = in;
             ctOfs = inOfs;
         }
-        int lastLen = len  % AES_BLOCK_SIZE;
+
+        // Divide up larger data sizes to trigger CTR & GHASH intrinsic quicker
+        if (len > TRIGGERLEN) {
+            int i = 0;
+            int tlen;  // incremental lengths
+            final int plen = AES_BLOCK_SIZE * 6;
+            // arbitrary formula to aid intrinsic without reaching buffer end
+            final int count = len / 1024;
+
+            while (count > i) {
+                tlen = gctrPAndC.update(in, inOfs, plen, out, outOfs);
+                ghashAllToS.update(ct, ctOfs, tlen);
+                inOfs += tlen;
+                outOfs += tlen;
+                ctOfs += tlen;
+                i++;
+            }
+            ilen -= count * plen;
+            processed += count * plen;
+        }
+
+        gctrPAndC.doFinal(in, inOfs, ilen, out, outOfs);
+        processed += ilen;
+
+        int lastLen = ilen % AES_BLOCK_SIZE;
         if (lastLen != 0) {
-            ghashAllToS.update(ct, ctOfs, len - lastLen);
-            byte[] padded =
-                expandToOneBlock(ct, (ctOfs + len - lastLen), lastLen);
-            ghashAllToS.update(padded);
+            ghashAllToS.update(ct, ctOfs, ilen - lastLen);
+            ghashAllToS.update(
+                    expandToOneBlock(ct, (ctOfs + ilen - lastLen), lastLen));
         } else {
-            ghashAllToS.update(ct, ctOfs, len);
+            ghashAllToS.update(ct, ctOfs, ilen);
         }
     }
 
@@ -562,15 +586,19 @@ final class GaloisCounterMode extends FeedbackCipher {
         System.arraycopy(in, inOfs + len - tagLenBytes, tag, 0, tagLenBytes);
         len -= tagLenBytes;
 
-        if (len > 0) {
-            ibuffer.write(in, inOfs, len);
-        }
+        // If decryption is in-place or there is buffered "ibuffer" data, copy
+        // the "in" byte array into the ibuffer before proceeding.
+        if (in == out || ibuffer.size() > 0) {
+            if (len > 0) {
+                ibuffer.write(in, inOfs, len);
+            }
 
-        // refresh 'in' to all buffered-up bytes
-        in = ibuffer.toByteArray();
-        inOfs = 0;
-        len = in.length;
-        ibuffer.reset();
+            // refresh 'in' to all buffered-up bytes
+            in = ibuffer.toByteArray();
+            inOfs = 0;
+            len = in.length;
+            ibuffer.reset();
+        }
 
         if (len > 0) {
             doLastBlock(in, inOfs, len, out, outOfs, false);

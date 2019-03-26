@@ -125,6 +125,11 @@ static FILETIME process_kernel_time;
   #define __CPU__ i486
 #endif
 
+#if INCLUDE_AOT
+PVOID  topLevelVectoredExceptionHandler = NULL;
+LONG WINAPI topLevelVectoredExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo);
+#endif
+
 // save DLL module handle, used by GetModuleFileName
 
 HINSTANCE vm_lib_handle;
@@ -143,6 +148,12 @@ BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved) {
     if (ForceTimeHighResolution) {
       timeEndPeriod(1L);
     }
+#if INCLUDE_AOT
+    if (topLevelVectoredExceptionHandler != NULL) {
+      RemoveVectoredExceptionHandler(topLevelVectoredExceptionHandler);
+      topLevelVectoredExceptionHandler = NULL;
+    }
+#endif
     break;
   default:
     break;
@@ -591,7 +602,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   HANDLE interrupt_event = CreateEvent(NULL, true, false, NULL);
   if (interrupt_event == NULL) {
     delete osthread;
-    return NULL;
+    return false;
   }
   osthread->set_interrupt_event(interrupt_event);
   osthread->set_interrupted(false);
@@ -665,7 +676,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     CloseHandle(osthread->interrupt_event());
     thread->set_osthread(NULL);
     delete osthread;
-    return NULL;
+    return false;
   }
 
   Atomic::inc(&os::win32::_os_thread_count);
@@ -912,13 +923,9 @@ double os::elapsedVTime() {
 }
 
 jlong os::javaTimeMillis() {
-  if (UseFakeTimers) {
-    return fake_time++;
-  } else {
-    FILETIME wt;
-    GetSystemTimeAsFileTime(&wt);
-    return windows_to_java_time(wt);
-  }
+  FILETIME wt;
+  GetSystemTimeAsFileTime(&wt);
+  return windows_to_java_time(wt);
 }
 
 void os::javaTimeSystemUTC(jlong &seconds, jlong &nanos) {
@@ -1790,6 +1797,11 @@ void os::print_memory_info(outputStream* st) {
   st->cr();
 }
 
+bool os::signal_sent_by_kill(const void* siginfo) {
+  // TODO: Is this possible?
+  return false;
+}
+
 void os::print_siginfo(outputStream *st, const void* siginfo) {
   const EXCEPTION_RECORD* const er = (EXCEPTION_RECORD*)siginfo;
   st->print("siginfo:");
@@ -1821,6 +1833,11 @@ void os::print_siginfo(outputStream *st, const void* siginfo) {
     }
   }
   st->cr();
+}
+
+bool os::signal_thread(Thread* thread, int sig, const char* reason) {
+  // TODO: Can we kill thread?
+  return false;
 }
 
 void os::print_signal_handlers(outputStream* st, char* buf, size_t buflen) {
@@ -2324,6 +2341,25 @@ bool os::win32::get_frame_at_stack_banging_point(JavaThread* thread,
   assert(fr->is_java_frame(), "Safety check");
   return true;
 }
+
+#if INCLUDE_AOT
+LONG WINAPI topLevelVectoredExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
+  PEXCEPTION_RECORD exceptionRecord = exceptionInfo->ExceptionRecord;
+  address addr = (address) exceptionRecord->ExceptionInformation[1];
+  address pc = (address) exceptionInfo->ContextRecord->Rip;
+
+  // Handle the case where we get an implicit exception in AOT generated
+  // code.  AOT DLL's loaded are not registered for structured exceptions.
+  // If the exception occurred in the codeCache or AOT code, pass control
+  // to our normal exception handler.
+  CodeBlob* cb = CodeCache::find_blob(pc);
+  if (cb != NULL) {
+    return topLevelExceptionFilter(exceptionInfo);
+  }
+
+  return EXCEPTION_CONTINUE_SEARCH;
+}
+#endif
 
 //-----------------------------------------------------------------------------
 LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
@@ -2940,14 +2976,15 @@ void os::large_page_init() {
 int os::create_file_for_heap(const char* dir) {
 
   const char name_template[] = "/jvmheap.XXXXXX";
-  char *fullname = (char*)os::malloc((strlen(dir) + strlen(name_template) + 1), mtInternal);
+
+  size_t fullname_len = strlen(dir) + strlen(name_template);
+  char *fullname = (char*)os::malloc(fullname_len + 1, mtInternal);
   if (fullname == NULL) {
     vm_exit_during_initialization(err_msg("Malloc failed during creation of backing file for heap (%s)", os::strerror(errno)));
     return -1;
   }
-
-  (void)strncpy(fullname, dir, strlen(dir)+1);
-  (void)strncat(fullname, name_template, strlen(name_template));
+  int n = snprintf(fullname, fullname_len + 1, "%s%s", dir, name_template);
+  assert((size_t)n == fullname_len, "Unexpected number of characters in string");
 
   os::native_path(fullname);
 
@@ -4079,6 +4116,16 @@ jint os::init_2(void) {
   DEBUG_ONLY(os::set_mutex_init_done();)
 
   // Setup Windows Exceptions
+
+#if INCLUDE_AOT
+  // If AOT is enabled we need to install a vectored exception handler
+  // in order to forward implicit exceptions from code in AOT
+  // generated DLLs.  This is necessary since these DLLs are not
+  // registered for structured exceptions like codecache methods are.
+  if (UseAOT) {
+    topLevelVectoredExceptionHandler = AddVectoredExceptionHandler( 1, topLevelVectoredExceptionFilter);
+  }
+#endif
 
   // for debugging float code generation bugs
   if (ForceFloatExceptions) {
@@ -5275,6 +5322,26 @@ void Parker::park(bool isAbsolute, jlong time) {
 void Parker::unpark() {
   guarantee(_ParkEvent != NULL, "invariant");
   SetEvent(_ParkEvent);
+}
+
+// Platform Monitor implementation
+
+// Must already be locked
+int os::PlatformMonitor::wait(jlong millis) {
+  assert(millis >= 0, "negative timeout");
+  int ret = OS_TIMEOUT;
+  int status = SleepConditionVariableCS(&_cond, &_mutex,
+                                        millis == 0 ? INFINITE : millis);
+  if (status != 0) {
+    ret = OS_OK;
+  }
+  #ifndef PRODUCT
+  else {
+    DWORD err = GetLastError();
+    assert(err == ERROR_TIMEOUT, "SleepConditionVariableCS: %ld:", err);
+  }
+  #endif
+  return ret;
 }
 
 // Run the specified command in a separate process. Return its exit value,

@@ -45,7 +45,10 @@ class PosixSemaphore : public CHeapObj<mtInternal> {
   void wait();
 
   bool trywait();
+  // wait until the given absolute time is reached
   bool timedwait(struct timespec ts);
+  // wait until the given relative time elapses
+  bool timedwait(int64_t millis);
 };
 
 typedef PosixSemaphore SemaphoreImpl;

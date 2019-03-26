@@ -11,6 +11,7 @@ EA9           org.graalvm.compiler.core.jdk9.test.ea
 Debug         org.graalvm.compiler.debug.test
 Graph         org.graalvm.compiler.graph.test      @requires vm.graal.enabled
 HotspotAmd64  org.graalvm.compiler.hotspot.amd64.test
+HotspotJdk9   org.graalvm.compiler.hotspot.jdk9.test
 HotspotSparc  org.graalvm.compiler.hotspot.sparc.test @requires vm.simpleArch == "sparcv9"
 HotspotLir    org.graalvm.compiler.hotspot.lir.test
 Hotspot       org.graalvm.compiler.hotspot.test

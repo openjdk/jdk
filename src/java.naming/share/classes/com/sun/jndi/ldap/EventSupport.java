@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,20 +78,20 @@ import javax.naming.ldap.UnsolicitedNotification;
  *When a context no longer needs this EventSupport, it should invoke
  *cleanup() on it.
  *<p>
- *<h4>Registration</h4>
+ *<h2>Registration</h2>
  *When a registration request is made, this class attempts to find an
  *existing notifier that's already working on the request. If one is
  *found, the listener is added to the notifier's list. If one is not found,
  *a new notifier is created for the listener.
  *
- *<h4>Deregistration</h4>
+ *<h2>Deregistration</h2>
  *When a deregistration request is made, this class attempts to find its
  *corresponding notifier. If the notifier is found, the listener is removed
  *from the notifier's list. If the listener is the last listener on the list,
  *the notifier's thread is terminated and removed from this class's hashtable.
  *Nothing happens if the notifier is not found.
  *
- *<h4>Event Dispatching</h4>
+ *<h2>Event Dispatching</h2>
  *The notifiers are responsible for gather information for generating events
  *requested by their respective listeners. When a notifier gets sufficient
  *information to generate an event, it creates invokes the
@@ -101,7 +101,7 @@ import javax.naming.ldap.UnsolicitedNotification;
  *This class maintains an event queue and a dispatching thread that dequeues
  *events from the queue and dispatches them to the listeners.
  *
- *<h4>Synchronization</h4>
+ *<h2>Synchronization</h2>
  *This class is used by the main thread (LdapCtx) to add/remove listeners.
  *It is also used asynchronously by NamingEventNotifiers threads and
  *the context's Connection thread. It is used by the notifier threads to

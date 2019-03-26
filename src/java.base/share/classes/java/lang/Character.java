@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,37 +35,31 @@ import jdk.internal.misc.VM;
 
 /**
  * The {@code Character} class wraps a value of the primitive
- * type {@code char} in an object. An object of type
+ * type {@code char} in an object. An object of class
  * {@code Character} contains a single field whose type is
  * {@code char}.
  * <p>
- * In addition, this class provides several methods for determining
- * a character's category (lowercase letter, digit, etc.) and for converting
- * characters from uppercase to lowercase and vice versa.
- * <p>
- * Character information is based on the Unicode Standard, version 11.0.0.
- * <p>
- * The methods and data of class {@code Character} are defined by
- * the information in the <i>UnicodeData</i> file that is part of the
- * Unicode Character Database maintained by the Unicode
- * Consortium. This file specifies various properties including name
- * and general category for every defined Unicode code point or
- * character range.
- * <p>
- * The file and its description are available from the Unicode Consortium at:
- * <ul>
- * <li><a href="http://www.unicode.org">http://www.unicode.org</a>
- * </ul>
- * <p>
- * The code point, U+32FF, is reserved by the Unicode Consortium
- * to represent the Japanese square character for the new era that begins
- * May 2019. Relevant methods in the Character class return the same
- * properties as for the existing Japanese era characters (e.g., U+337E for
- * "Meizi"). For the details of the code point, refer to
- * <a href="http://blog.unicode.org/2018/09/new-japanese-era.html">
- * http://blog.unicode.org/2018/09/new-japanese-era.html</a>.
+ * In addition, this class provides a large number of static methods for
+ * determining a character's category (lowercase letter, digit, etc.)
+ * and for converting characters from uppercase to lowercase and vice
+ * versa.
  *
- * <h3><a id="unicode">Unicode Character Representations</a></h3>
+ * <h2><a id="conformance">Unicode Conformance</a></h2>
+ * <p>
+ * The fields and methods of class {@code Character} are defined in terms
+ * of character information from the Unicode Standard, specifically the
+ * <i>UnicodeData</i> file that is part of the Unicode Character Database.
+ * This file specifies properties including name and category for every
+ * assigned Unicode code point or character range. The file is available
+ * from the Unicode Consortium at
+ * <a href="http://www.unicode.org">http://www.unicode.org</a>.
+ * <p>
+ * The Java SE 13 Platform uses character information from version 11.0
+ * of the Unicode Standard, plus the Japanese Era code point,
+ * {@code U+32FF}, from the first version of the Unicode Standard
+ * after 11.0 that assigns the code point.
+ *
+ * <h2><a id="unicode">Unicode Character Representations</a></h2>
  *
  * <p>The {@code char} data type (and therefore the value that a
  * {@code Character} object encapsulates) are based on the
@@ -9495,7 +9489,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * character in a Java identifier.
      * <p>
      * A character may start a Java identifier if and only if
-     * one of the following is true:
+     * one of the following conditions is true:
      * <ul>
      * <li> {@link #isLetter(char) isLetter(ch)} returns {@code true}
      * <li> {@link #getType(char) getType(ch)} returns {@code LETTER_NUMBER}
@@ -9524,8 +9518,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * Determines if the specified character may be part of a Java
      * identifier as other than the first character.
      * <p>
-     * A character may be part of a Java identifier if and only if any
-     * of the following are true:
+     * A character may be part of a Java identifier if and only if one
+     * of the following conditions is true:
      * <ul>
      * <li>  it is a letter
      * <li>  it is a currency symbol (such as {@code '$'})
@@ -9667,7 +9661,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * identifier as other than the first character.
      * <p>
      * A character may be part of a Java identifier if any of the following
-     * are true:
+     * conditions are true:
      * <ul>
      * <li>  it is a letter
      * <li>  it is a currency symbol (such as {@code '$'})
@@ -9704,7 +9698,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * identifier as other than the first character.
      * <p>
      * A character may be part of a Java identifier if any of the following
-     * are true:
+     * conditions are true:
      * <ul>
      * <li>  it is a letter
      * <li>  it is a currency symbol (such as {@code '$'})
@@ -9715,7 +9709,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * <li>  it is a non-spacing mark
      * <li> {@link #isIdentifierIgnorable(int)
      * isIdentifierIgnorable(codePoint)} returns {@code true} for
-     * the character
+     * the code point
      * </ul>
      *
      * @param   codePoint the character (Unicode code point) to be tested.

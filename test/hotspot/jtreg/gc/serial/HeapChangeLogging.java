@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc.serial;
+
 /*
  * @test HeapChangeLogging.java
  * @bug 8027440
@@ -28,7 +30,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @summary Allocate to get a promotion failure and verify that that heap change logging is present.
- * @run main HeapChangeLogging
+ * @run main gc.serial.HeapChangeLogging
  */
 
 import java.util.regex.Matcher;
@@ -39,7 +41,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class HeapChangeLogging {
   public static void main(String[] args) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xmx128m", "-Xmn100m", "-XX:+UseSerialGC", "-Xlog:gc", "HeapFiller");
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xmx128m", "-Xmn100m", "-XX:+UseSerialGC", "-Xlog:gc", HeapFiller.class.getName());
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     String stdout = output.getStdout();
     System.out.println(stdout);

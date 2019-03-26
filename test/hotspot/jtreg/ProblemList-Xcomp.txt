@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,5 +27,4 @@
 #
 #############################################################################
 
-vmTestbase/vm/mlvm/meth/stress/jni/nativeAndMH/Test.java 8208235 solaris-all
-runtime/appcds/cacheObject/DifferentHeapSizes.java 8210102 solaris-all
+vmTestbase/vm/mlvm/meth/stress/jni/nativeAndMH/Test.java 8058176 solaris-all

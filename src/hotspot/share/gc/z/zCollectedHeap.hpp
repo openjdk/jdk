@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,11 +71,8 @@ public:
   virtual size_t used() const;
 
   virtual bool is_maximal_no_gc() const;
-  virtual bool is_scavengable(oop obj);
   virtual bool is_in(const void* p) const;
   virtual bool is_in_closed_subset(const void* p) const;
-
-  virtual void fill_with_dummy_object(HeapWord* start, HeapWord* end, bool zap);
 
   virtual HeapWord* mem_allocate(size_t size, bool* gc_overhead_limit_was_exceeded);
   virtual MetaWord* satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,
@@ -102,11 +99,11 @@ public:
   virtual void safe_object_iterate(ObjectClosure* cl);
 
   virtual HeapWord* block_start(const void* addr) const;
-  virtual size_t block_size(const HeapWord* addr) const;
   virtual bool block_is_obj(const HeapWord* addr) const;
 
   virtual void register_nmethod(nmethod* nm);
   virtual void unregister_nmethod(nmethod* nm);
+  virtual void flush_nmethod(nmethod* nm);
   virtual void verify_nmethod(nmethod* nmethod);
 
   virtual WorkGang* get_safepoint_workers();

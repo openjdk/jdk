@@ -78,10 +78,11 @@ void InvocationCounter::print_short() {
 
 int                       InvocationCounter::_init  [InvocationCounter::number_of_states];
 InvocationCounter::Action InvocationCounter::_action[InvocationCounter::number_of_states];
+
+#ifdef CC_INTERP
 int                       InvocationCounter::InterpreterInvocationLimit;
 int                       InvocationCounter::InterpreterBackwardBranchLimit;
-int                       InvocationCounter::InterpreterProfileLimit;
-
+#endif
 
 const char* InvocationCounter::state_as_string(State state) {
   switch (state) {
@@ -136,8 +137,8 @@ void InvocationCounter::reinitialize() {
   def(wait_for_nothing, 0, do_nothing);
   def(wait_for_compile, 0, do_decay);
 
+#ifdef CC_INTERP
   InterpreterInvocationLimit = CompileThreshold << number_of_noncount_bits;
-  InterpreterProfileLimit = ((CompileThreshold * InterpreterProfilePercentage) / 100)<< number_of_noncount_bits;
 
   // When methodData is collected, the backward branch limit is compared against a
   // methodData counter, rather than an InvocationCounter.  In the former case, we
@@ -149,12 +150,8 @@ void InvocationCounter::reinitialize() {
     InterpreterBackwardBranchLimit = (int)(((int64_t)CompileThreshold * OnStackReplacePercentage / 100) << number_of_noncount_bits);
   }
 
-  assert(0 <= InterpreterBackwardBranchLimit,
-         "OSR threshold should be non-negative");
-  assert(0 <= InterpreterProfileLimit &&
-         InterpreterProfileLimit <= InterpreterInvocationLimit,
-         "profile threshold should be less than the compilation threshold "
-         "and non-negative");
+  assert(0 <= InterpreterBackwardBranchLimit, "OSR threshold should be non-negative");
+#endif
 }
 
 void invocationCounter_init() {

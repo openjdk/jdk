@@ -27,6 +27,7 @@ package java.lang.invoke;
 
 import jdk.internal.perf.PerfCounter;
 import jdk.internal.vm.annotation.DontInline;
+import jdk.internal.vm.annotation.Hidden;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.Wrapper;
 
@@ -1826,15 +1827,6 @@ class LambdaForm {
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)
     @interface Compiled {
-    }
-
-    /**
-     * Internal marker for LambdaForm interpreter frames.
-     */
-    /*non-public*/
-    @Target(ElementType.METHOD)
-    @Retention(RetentionPolicy.RUNTIME)
-    @interface Hidden {
     }
 
     private static final HashMap<String,Integer> DEBUG_NAME_COUNTERS;

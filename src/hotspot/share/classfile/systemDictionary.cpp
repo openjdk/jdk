@@ -1174,7 +1174,7 @@ InstanceKlass* SystemDictionary::load_shared_boot_class(Symbol* class_name,
                                                         TRAPS) {
   InstanceKlass* ik = SystemDictionaryShared::find_builtin_class(class_name);
   if (ik != NULL && ik->is_shared_boot_class()) {
-    return load_shared_class(ik, Handle(), Handle(), THREAD);
+    return load_shared_class(ik, Handle(), Handle(), NULL, THREAD);
   }
   return NULL;
 }
@@ -1274,7 +1274,9 @@ bool SystemDictionary::is_shared_class_visible(Symbol* class_name,
 
 InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
                                                    Handle class_loader,
-                                                   Handle protection_domain, TRAPS) {
+                                                   Handle protection_domain,
+                                                   const ClassFileStream *cfs,
+                                                   TRAPS) {
 
   if (ik != NULL) {
     Symbol* class_name = ik->name();
@@ -1321,7 +1323,7 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
     }
 
     InstanceKlass* new_ik = KlassFactory::check_shared_class_file_load_hook(
-        ik, class_name, class_loader, protection_domain, CHECK_NULL);
+        ik, class_name, class_loader, protection_domain, cfs, CHECK_NULL);
     if (new_ik != NULL) {
       // The class is changed by CFLH. Return the new class. The shared class is
       // not used.
@@ -1825,40 +1827,27 @@ bool SystemDictionary::do_unloading(GCTimer* gc_timer) {
     if (unloading_occurred) {
       MutexLockerEx ml2(is_concurrent ? Module_lock : NULL);
       JFR_ONLY(Jfr::on_unloading_classes();)
+
       MutexLockerEx ml1(is_concurrent ? SystemDictionary_lock : NULL);
       ClassLoaderDataGraph::clean_module_and_package_info();
-    }
-  }
-
-  // Cleanup ResolvedMethodTable even if no unloading occurred.
-  {
-    GCTraceTime(Debug, gc, phases) t("ResolvedMethodTable", gc_timer);
-    ResolvedMethodTable::trigger_cleanup();
-  }
-
-  if (unloading_occurred) {
-    {
-      GCTraceTime(Debug, gc, phases) t("SymbolTable", gc_timer);
-      // Check if there's work to do in the SymbolTable
-      SymbolTable::do_check_concurrent_work();
-    }
-
-    {
-      MutexLockerEx ml(is_concurrent ? SystemDictionary_lock : NULL);
-      GCTraceTime(Debug, gc, phases) t("Dictionary", gc_timer);
       constraints()->purge_loader_constraints();
       resolution_errors()->purge_resolution_errors();
     }
+  }
 
-    {
-      GCTraceTime(Debug, gc, phases) t("ResolvedMethodTable", gc_timer);
-      // Oops referenced by the protection domain cache table may get unreachable independently
-      // of the class loader (eg. cached protection domain oops). So we need to
-      // explicitly unlink them here.
-      // All protection domain oops are linked to the caller class, so if nothing
-      // unloads, this is not needed.
-      _pd_cache_table->trigger_cleanup();
-    }
+  GCTraceTime(Debug, gc, phases) t("Trigger cleanups", gc_timer);
+  // Trigger cleaning the ResolvedMethodTable even if no unloading occurred.
+  ResolvedMethodTable::trigger_cleanup();
+
+  if (unloading_occurred) {
+    SymbolTable::trigger_cleanup();
+
+    // Oops referenced by the protection domain cache table may get unreachable independently
+    // of the class loader (eg. cached protection domain oops). So we need to
+    // explicitly unlink them here.
+    // All protection domain oops are linked to the caller class, so if nothing
+    // unloads, this is not needed.
+    _pd_cache_table->trigger_cleanup();
   }
 
   return unloading_occurred;
@@ -2127,7 +2116,7 @@ void SystemDictionary::check_constraints(unsigned int d_hash,
         ss.print(" wants to load %s %s.",
                  k->external_kind(), k->external_name());
         Klass *existing_klass = constraints()->find_constrained_klass(name, class_loader);
-        if (existing_klass->class_loader() != class_loader()) {
+        if (existing_klass != NULL && existing_klass->class_loader() != class_loader()) {
           ss.print(" A different %s with the same name was previously loaded by %s. (%s)",
                    existing_klass->external_kind(),
                    existing_klass->class_loader_data()->loader_name_and_id(),
@@ -2472,7 +2461,6 @@ methodHandle SystemDictionary::find_method_handle_invoker(Klass* klass,
                                                           Symbol* signature,
                                                           Klass* accessing_klass,
                                                           Handle *appendix_result,
-                                                          Handle *method_type_result,
                                                           TRAPS) {
   methodHandle empty;
   assert(THREAD->can_call_java() ,"");
@@ -2505,7 +2493,6 @@ methodHandle SystemDictionary::find_method_handle_invoker(Klass* klass,
                          vmSymbols::linkMethod_signature(),
                          &args, CHECK_(empty));
   Handle mname(THREAD, (oop) result.get_jobject());
-  (*method_type_result) = method_type;
   return unpack_method_and_appendix(mname, accessing_klass, appendix_box, appendix_result, THREAD);
 }
 
@@ -2824,7 +2811,6 @@ methodHandle SystemDictionary::find_dynamic_call_site_invoker(Klass* caller,
                                                               Symbol* name,
                                                               Symbol* type,
                                                               Handle *appendix_result,
-                                                              Handle *method_type_result,
                                                               TRAPS) {
   methodHandle empty;
   Handle bsm, info;
@@ -2866,7 +2852,6 @@ methodHandle SystemDictionary::find_dynamic_call_site_invoker(Klass* caller,
                          vmSymbols::linkCallSite_signature(),
                          &args, CHECK_(empty));
   Handle mname(THREAD, (oop) result.get_jobject());
-  (*method_type_result) = method_type;
   return unpack_method_and_appendix(mname, caller, appendix_box, appendix_result, THREAD);
 }
 

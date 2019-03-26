@@ -206,7 +206,8 @@ private:
   // AOT compiled methods do not get into zombie state
   virtual bool can_convert_to_zombie() { return false; }
 
-  virtual bool is_evol_dependent_on(Klass* dependee);
+  // Evol dependent methods already marked.
+  virtual bool is_evol_dependent() { return false; }
   virtual bool is_dependent_on_method(Method* dependee) { return true; }
 
   virtual void clear_inline_caches();
@@ -240,7 +241,7 @@ private:
   address get_original_pc(const frame* fr) { return *orig_pc_addr(fr); }
   void    set_original_pc(const frame* fr, address pc) { *orig_pc_addr(fr) = pc; }
 
-  virtual void metadata_do(void f(Metadata*));
+  virtual void metadata_do(MetadataClosure* f);
 
   bool metadata_got_contains(Metadata **p) {
     return p >= &_metadata_got[0] && p < &_metadata_got[_metadata_size];

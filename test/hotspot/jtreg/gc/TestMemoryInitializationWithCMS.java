@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,16 @@
  * questions.
  */
 
+package gc;
+
 /*
  * @test TestMemoryInitializationWithCMS
  * @key gc
  * @bug 4668531
+ * @library /
  * @requires vm.debug & vm.gc.ConcMarkSweep & !vm.graal.enabled
  * @summary Simple test for -XX:+CheckMemoryInitialization doesn't crash VM
- * @run main/othervm -XX:+UseConcMarkSweepGC -XX:+CheckMemoryInitialization TestMemoryInitializationWithCMS
+ * @run main/othervm -XX:+UseConcMarkSweepGC -XX:+CheckMemoryInitialization gc.TestMemoryInitializationWithCMS
  */
 
 public class TestMemoryInitializationWithCMS {

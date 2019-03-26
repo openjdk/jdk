@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,31 +32,38 @@
  */
 
 import java.beans.PropertyEditorManager;
+import java.lang.ref.WeakReference;
 
 public class Test6397609 {
     public static void main(String[] args) throws Exception {
-        MemoryClassLoader loader = new MemoryClassLoader();
-        PropertyEditorManager.registerEditor(
-                Object.class,
-                loader.compile("Editor",
-                               "public class Editor extends java.beans.PropertyEditorSupport {}"));
+        Class<?> targetClass = Object.class;
+        Class<?> editorClass = new MemoryClassLoader().compile("Editor",
+                "public class Editor extends java.beans.PropertyEditorSupport {}");
+        PropertyEditorManager.registerEditor(targetClass, editorClass);
 
-        if (!isEditorExist(Object.class)) {
+        // trigger a gc
+        Object object = new Object();
+        var r = new WeakReference<Object>(object);
+        object = null;
+        while (r.get() != null) {
+            System.gc();
+            Thread.sleep(100);
+        }
+
+        if (PropertyEditorManager.findEditor(targetClass) == null) {
             throw new Error("the editor is lost");
         }
-        loader = null; // clean the reference
-        if (isEditorExist(Object.class)) {
+
+        // allow, and wait for, Editor class to be unloaded
+        var ref = new WeakReference<Class<?>>(editorClass);
+        editorClass = null;
+        while (ref.get() != null) {
+            System.gc();
+            Thread.sleep(100);
+        }
+
+        if (PropertyEditorManager.findEditor(targetClass) != null) {
             throw new Error("unexpected editor is found");
         }
-    }
-
-    private static boolean isEditorExist(Class type) {
-        for (int i = 0; i < 10; i++) {
-            System.gc(); // clean all weak references
-            if (null == PropertyEditorManager.findEditor(type)) {
-                return false;
-            }
-        }
-        return true;
     }
 }

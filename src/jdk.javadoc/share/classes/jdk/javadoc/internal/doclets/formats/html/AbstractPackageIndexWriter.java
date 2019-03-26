@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,6 @@ import java.util.*;
 
 import javax.lang.model.element.PackageElement;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -109,26 +107,29 @@ public abstract class AbstractPackageIndexWriter extends HtmlDocletWriter {
      * methods from the sub-class in order to generate Frame or Non
      * Frame format.
      *
-     * @param title the title of the window.
+     * @param title the title of the window
+     * @param description the content for the description META tag
      * @param includeScript boolean set true if windowtitle script is to be included
      * @throws DocFileIOException if there is a problem building the package index file
      */
-    protected void buildPackageIndexFile(String title, boolean includeScript) throws DocFileIOException {
+    protected void buildPackageIndexFile(String title, String description, boolean includeScript)
+            throws DocFileIOException {
         String windowOverview = resources.getText(title);
         Content body = getBody(includeScript, getWindowTitle(windowOverview));
-        Content header = createTagIfAllowed(HtmlTag.HEADER, HtmlTree::HEADER, ContentBuilder::new);
+        Content header = HtmlTree.HEADER();
         addNavigationBarHeader(header);
-        Content main = createTagIfAllowed(HtmlTag.MAIN, HtmlTree::MAIN, ContentBuilder::new);
+        Content main = HtmlTree.MAIN();
         addOverviewHeader(main);
         addIndex(header, main);
         addOverview(main);
-        Content footer = createTagIfAllowed(HtmlTag.FOOTER, HtmlTree::FOOTER, ContentBuilder::new);
+        Content footer = HtmlTree.FOOTER();
         addNavigationBarFooter(footer);
-        body.addContent(header);
-        body.addContent(main);
-        body.addContent(footer);
-        printHtmlDocument(configuration.metakeywords.getOverviewMetaKeywords(title,
-                configuration.doctitle), includeScript, body);
+        body.add(header);
+        body.add(main);
+        body.add(footer);
+        printHtmlDocument(
+                configuration.metakeywords.getOverviewMetaKeywords(title, configuration.doctitle),
+                description, body);
     }
 
     /**
@@ -157,15 +158,15 @@ public abstract class AbstractPackageIndexWriter extends HtmlDocletWriter {
      */
     protected void addIndexContents(Content header, Content main) {
         if (!packages.isEmpty()) {
-            HtmlTree htmlTree = (HtmlTree)createTagIfAllowed(HtmlTag.NAV, HtmlTree::NAV, () -> new HtmlTree(HtmlTag.DIV));
+            HtmlTree htmlTree = HtmlTree.NAV();
             htmlTree.setStyle(HtmlStyle.indexNav);
             HtmlTree ul = new HtmlTree(HtmlTag.UL);
             addAllClassesLink(ul);
             if (configuration.showModules  && configuration.modules.size() > 1) {
                 addAllModulesLink(ul);
             }
-            htmlTree.addContent(ul);
-            header.addContent(htmlTree);
+            htmlTree.add(ul);
+            header.add(htmlTree);
             addPackagesList(main);
         }
     }
@@ -178,10 +179,10 @@ public abstract class AbstractPackageIndexWriter extends HtmlDocletWriter {
     protected void addConfigurationTitle(Content body) {
         if (configuration.doctitle.length() > 0) {
             Content title = new RawHtml(configuration.doctitle);
-            Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING,
+            Content heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
                     HtmlStyle.title, title);
             Content div = HtmlTree.DIV(HtmlStyle.header, heading);
-            body.addContent(div);
+            body.add(div);
         }
     }
 

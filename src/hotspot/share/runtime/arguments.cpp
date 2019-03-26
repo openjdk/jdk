@@ -328,10 +328,6 @@ void Arguments::add_loaded_agent(AgentLibrary *agentLib) {
   _agentList.add(agentLib);
 }
 
-void Arguments::add_loaded_agent(const char* name, char* options, bool absolute_path, void* os_lib) {
-  _agentList.add(new AgentLibrary(name, options, absolute_path, os_lib));
-}
-
 // Return TRUE if option matches 'property', or 'property=', or 'property.'.
 static bool matches_property_suffix(const char* option, const char* property, size_t len) {
   return ((strncmp(option, property, len) == 0) &&
@@ -532,6 +528,10 @@ static SpecialFlag const special_jvm_flags[] = {
   { "MinRAMFraction",               JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "InitialRAMFraction",           JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "UseMembar",                    JDK_Version::jdk(10), JDK_Version::jdk(12), JDK_Version::undefined() },
+  { "CompilationPolicyChoice",      JDK_Version::jdk(13), JDK_Version::jdk(14), JDK_Version::undefined() },
+  { "FailOverToOldVerifier",        JDK_Version::jdk(13), JDK_Version::jdk(14), JDK_Version::undefined() },
+  { "AllowJNIEnvProxy",             JDK_Version::jdk(13), JDK_Version::jdk(14), JDK_Version::jdk(15) },
+  { "ThreadLocalHandshakes",        JDK_Version::jdk(13), JDK_Version::jdk(14), JDK_Version::jdk(15) },
 
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::undefined(), JDK_Version::undefined() },
@@ -545,15 +545,26 @@ static SpecialFlag const special_jvm_flags[] = {
   { "SharedReadOnlySize",            JDK_Version::undefined(), JDK_Version::jdk(10), JDK_Version::undefined() },
   { "SharedMiscDataSize",            JDK_Version::undefined(), JDK_Version::jdk(10), JDK_Version::undefined() },
   { "SharedMiscCodeSize",            JDK_Version::undefined(), JDK_Version::jdk(10), JDK_Version::undefined() },
+  { "ProfilerPrintByteCodeStatistics", JDK_Version::undefined(), JDK_Version::jdk(13), JDK_Version::jdk(14) },
+  { "ProfilerRecordPC",              JDK_Version::undefined(), JDK_Version::jdk(13), JDK_Version::jdk(14) },
+  { "ProfileVM",                     JDK_Version::undefined(), JDK_Version::jdk(13), JDK_Version::jdk(14) },
+  { "ProfileIntervals",              JDK_Version::undefined(), JDK_Version::jdk(13), JDK_Version::jdk(14) },
+  { "ProfileIntervalsTicks",         JDK_Version::undefined(), JDK_Version::jdk(13), JDK_Version::jdk(14) },
+  { "ProfilerCheckIntervals",        JDK_Version::undefined(), JDK_Version::jdk(13), JDK_Version::jdk(14) },
+  { "ProfilerNumberOfInterpretedMethods", JDK_Version::undefined(), JDK_Version::jdk(13), JDK_Version::jdk(14) },
+  { "ProfilerNumberOfCompiledMethods", JDK_Version::undefined(), JDK_Version::jdk(13), JDK_Version::jdk(14) },
+  { "ProfilerNumberOfStubMethods",   JDK_Version::undefined(), JDK_Version::jdk(13), JDK_Version::jdk(14) },
+  { "ProfilerNumberOfRuntimeStubNodes", JDK_Version::undefined(), JDK_Version::jdk(13), JDK_Version::jdk(14) },
+  { "UseImplicitStableValues",       JDK_Version::undefined(), JDK_Version::jdk(13), JDK_Version::jdk(14) },
 
 #ifdef TEST_VERIFY_SPECIAL_JVM_FLAGS
+  // These entries will generate build errors.  Their purpose is to test the macros.
   { "dep > obs",                    JDK_Version::jdk(9), JDK_Version::jdk(8), JDK_Version::undefined() },
   { "dep > exp ",                   JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::jdk(8) },
   { "obs > exp ",                   JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(8) },
   { "not deprecated or obsolete",   JDK_Version::undefined(), JDK_Version::undefined(), JDK_Version::jdk(9) },
   { "dup option",                   JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::undefined() },
   { "dup option",                   JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::undefined() },
-  { "BytecodeVerificationRemote",   JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::undefined() },
 #endif
 
   { NULL, JDK_Version(0), JDK_Version(0) }
@@ -583,7 +594,7 @@ static AliasedLoggingFlag const aliased_logging_flags[] = {
   { "TraceClassUnloading",       LogLevel::Info,  true,  LOG_TAGS(class, unload) },
   { "TraceExceptions",           LogLevel::Info,  true,  LOG_TAGS(exceptions) },
   { "TraceLoaderConstraints",    LogLevel::Info,  true,  LOG_TAGS(class, loader, constraints) },
-  { "TraceMonitorInflation",     LogLevel::Debug, true,  LOG_TAGS(monitorinflation) },
+  { "TraceMonitorInflation",     LogLevel::Trace, true,  LOG_TAGS(monitorinflation) },
   { "TraceSafepointCleanupTime", LogLevel::Info,  true,  LOG_TAGS(safepoint, cleanup) },
   { "TraceJVMTIObjectTagging",   LogLevel::Debug, true,  LOG_TAGS(jvmti, objecttagging) },
   { "TraceRedefineClasses",      LogLevel::Info,  false, LOG_TAGS(redefine, class) },
@@ -2445,9 +2456,15 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
           (is_absolute_path = match_option(option, "-agentpath:", &tail))) {
       if(tail != NULL) {
         const char* pos = strchr(tail, '=');
-        size_t len = (pos == NULL) ? strlen(tail) : pos - tail;
-        char* name = strncpy(NEW_C_HEAP_ARRAY(char, len + 1, mtArguments), tail, len);
-        name[len] = '\0';
+        char* name;
+        if (pos == NULL) {
+          name = os::strdup_check_oom(tail, mtArguments);
+        } else {
+          size_t len = pos - tail;
+          name = NEW_C_HEAP_ARRAY(char, len + 1, mtArguments);
+          memcpy(name, tail, len);
+          name[len] = '\0';
+        }
 
         char *options = NULL;
         if(pos != NULL) {
@@ -2741,6 +2758,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         if (FLAG_SET_CMDLINE(bool, BytecodeVerificationRemote, false) != JVMFlag::SUCCESS) {
           return JNI_EINVAL;
         }
+        warning("Options -Xverify:none and -noverify were deprecated in JDK 13 and will likely be removed in a future release.");
       } else if (is_bad_option(option, args->ignoreUnrecognized, "verification")) {
         return JNI_EINVAL;
       }
@@ -3788,8 +3806,8 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
 #endif
 
 #if defined(AIX)
-  UNSUPPORTED_OPTION(AllocateHeapAt);
-  UNSUPPORTED_OPTION(AllocateOldGenAt);
+  UNSUPPORTED_OPTION_NULL(AllocateHeapAt);
+  UNSUPPORTED_OPTION_NULL(AllocateOldGenAt);
 #endif
 
 #ifndef PRODUCT
@@ -3899,6 +3917,13 @@ jint Arguments::apply_ergo() {
 
   if (FLAG_IS_CMDLINE(CompressedClassSpaceSize) && !UseCompressedClassPointers) {
     warning("Setting CompressedClassSpaceSize has no effect when compressed class pointers are not used");
+  }
+
+  // Treat the odd case where local verification is enabled but remote
+  // verification is not as if both were enabled.
+  if (BytecodeVerificationLocal && !BytecodeVerificationRemote) {
+    log_info(verification)("Turning on remote verification because local verification is on");
+    FLAG_SET_DEFAULT(BytecodeVerificationRemote, true);
   }
 
 #ifndef PRODUCT

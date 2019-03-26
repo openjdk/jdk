@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8211437 8216974
+ * @bug 8211437 8216974 8218662
  * @run main/othervm -Djdk.httpclient.HttpClient.log=headers,requests Response204
  * @summary
  */
@@ -33,12 +33,13 @@ import com.sun.net.httpserver.*;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.*;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.*;
 import java.io.*;
 import java.net.*;
+import static java.net.http.HttpClient.Builder.NO_PROXY;
 
 /**
  * Verify that a 204 response code with no content-length is handled correctly
@@ -55,14 +56,18 @@ public class Response204 {
         logger.addHandler (c);
         logger.setLevel (Level.WARNING);
         Handler handler = new Handler();
-        InetSocketAddress addr = new InetSocketAddress (0);
+        InetSocketAddress addr = new InetSocketAddress (InetAddress.getLoopbackAddress(), 0);
         HttpServer server = HttpServer.create (addr, 0);
         HttpContext ctx = server.createContext ("/test", handler);
+        server.createContext ("/zero", new ZeroContentLengthHandler());
         ExecutorService executor = Executors.newCachedThreadPool();
         server.setExecutor (executor);
         server.start ();
 
-        URI uri = new URI("http://localhost:"+server.getAddress().getPort()+"/test/foo.html");
+        URI uri = new URI("http", null,
+                server.getAddress().getHostString(),
+                server.getAddress().getPort(),
+                "/test/foo.html", null, null);
 
         try {
             HttpClient client = HttpClient.newHttpClient();
@@ -88,10 +93,29 @@ public class Response204 {
             // check for 8216974
             Exception error = serverError.get();
             if (error != null) throw error;
+
+            // Test 3
+            testZeroContentLength(uri.resolve("/zero/xxyy"));
+            System.out.println ("OK 3");
         } finally {
             server.stop(2);
             executor.shutdown();
         }
+    }
+
+    static void testZeroContentLength(URI uri) throws Exception {
+        System.out.println("--- testZeroContentLength ---");
+        HttpClient client = HttpClient.newBuilder().proxy(NO_PROXY).build();
+        HttpRequest request = HttpRequest.newBuilder(uri).build();
+        HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
+        System.out.println("Received response:" + response);
+        System.out.println("Received headers:" + response.headers());
+        if (response.statusCode() != 204)
+            throw new RuntimeException("Expected 204, got:" + response.statusCode());
+        if (response.body() != null && !response.body().equals(""))
+            throw new RuntimeException("Expected empty response, got: " + response.body());
+        if (response.headers().firstValueAsLong("Content-Length").orElse(-1L) != 0L)
+            throw new RuntimeException("Expected Content-Length:0, in: " + response.headers());
     }
 
     public static boolean error = false;
@@ -126,6 +150,18 @@ public class Response204 {
                     serverError.set(new Exception(msg));
                 }
             }
+            t.sendResponseHeaders(204, -1);
+            t.close();
+        }
+    }
+
+    // A handler that returns a 204 with a `Content-Length: 0` header/value
+    static class ZeroContentLengthHandler implements HttpHandler {
+        public void handle(HttpExchange t) throws IOException {
+            try (InputStream is = t.getRequestBody()) {
+                is.readAllBytes();
+            }
+            t.getResponseHeaders().set("Content-length", "0");
             t.sendResponseHeaders(204, -1);
             t.close();
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import java.awt.image.ColorModel;
 import java.awt.image.DataBuffer;
 import java.awt.image.DirectColorModel;
 import java.awt.image.VolatileImage;
+
 import sun.awt.Win32GraphicsConfig;
 import sun.awt.Win32GraphicsDevice;
 import sun.awt.image.SunVolatileImage;
@@ -48,15 +49,19 @@ import sun.java2d.DisposerRecord;
 import sun.java2d.SunGraphics2D;
 import sun.java2d.Surface;
 import sun.java2d.SurfaceData;
+import sun.java2d.opengl.OGLContext.OGLContextCaps;
 import sun.java2d.pipe.hw.AccelSurface;
 import sun.java2d.pipe.hw.AccelTypedVolatileImage;
 import sun.java2d.pipe.hw.ContextCapabilities;
-import static sun.java2d.opengl.OGLContext.OGLContextCaps.*;
-import static sun.java2d.opengl.WGLSurfaceData.*;
-import sun.java2d.opengl.OGLContext.OGLContextCaps;
 import sun.java2d.windows.GDIWindowSurfaceData;
 
-public class WGLGraphicsConfig
+import static sun.java2d.opengl.OGLContext.OGLContextCaps.CAPS_DOUBLEBUFFERED;
+import static sun.java2d.opengl.OGLContext.OGLContextCaps.CAPS_EXT_FBOBJECT;
+import static sun.java2d.opengl.WGLSurfaceData.FBOBJECT;
+import static sun.java2d.opengl.WGLSurfaceData.TEXTURE;
+import static sun.java2d.opengl.WGLSurfaceData.WGLVSyncOffScreenSurfaceData;
+
+public final class WGLGraphicsConfig
     extends Win32GraphicsConfig
     implements OGLGraphicsConfig
 {
@@ -93,10 +98,12 @@ public class WGLGraphicsConfig
                            new WGLGCDisposerRecord(pConfigInfo));
     }
 
+    @Override
     public Object getProxyKey() {
         return this;
     }
 
+    @Override
     public SurfaceData createManagedSurface(int w, int h, int transparency) {
         return WGLSurfaceData.createData(this, w, h,
                                          getColorModel(transparency),
@@ -127,6 +134,7 @@ public class WGLGraphicsConfig
             if (cfginfo != 0L) {
                 OGLContext.setScratchSurface(cfginfo);
                 rq.flushAndInvokeNow(new Runnable() {
+                    @Override
                     public void run() {
                         ids[0] = OGLContext.getOGLIdString();
                     }
@@ -157,6 +165,7 @@ public class WGLGraphicsConfig
             this.screen = screen;
             this.pixfmt = pixfmt;
         }
+        @Override
         public void run() {
             cfginfo = getWGLConfigInfo(screen, pixfmt);
         }
@@ -183,11 +192,6 @@ public class WGLGraphicsConfig
         return pConfigInfo;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @see sun.java2d.pipe.hw.BufferedContextProvider#getContext
-     */
     @Override
     public final OGLContext getContext() {
         return context;
@@ -198,6 +202,7 @@ public class WGLGraphicsConfig
         public WGLGCDisposerRecord(long pCfgInfo) {
             this.pCfgInfo = pCfgInfo;
         }
+        @Override
         public void dispose() {
             if (pCfgInfo != 0) {
                 OGLRenderQueue.disposeGraphicsConfig(pCfgInfo);
@@ -242,7 +247,7 @@ public class WGLGraphicsConfig
 
     @Override
     public String toString() {
-        return ("WGLGraphicsConfig[dev="+screen+",pixfmt="+visual+"]");
+        return ("WGLGraphicsConfig[dev="+getDevice()+",pixfmt="+visual+"]");
     }
 
     /**
@@ -388,6 +393,7 @@ public class WGLGraphicsConfig
         private WGLImageCaps() {
             super(true);
         }
+        @Override
         public boolean isTrueVolatile() {
             return true;
         }
@@ -398,11 +404,6 @@ public class WGLGraphicsConfig
         return imageCaps;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @see sun.java2d.pipe.hw.AccelGraphicsConfig#createCompatibleVolatileImage
-     */
     @Override
     public VolatileImage
         createCompatibleVolatileImage(int width, int height,
@@ -426,11 +427,6 @@ public class WGLGraphicsConfig
         return vi;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @see sun.java2d.pipe.hw.AccelGraphicsConfig#getContextCapabilities
-     */
     @Override
     public ContextCapabilities getContextCapabilities() {
         return oglCaps;

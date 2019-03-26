@@ -33,7 +33,7 @@ import jdk.vm.ci.meta.ValueKind;
  * Represents a value that is yet to be bound to a machine location (such as a {@link RegisterValue}
  * or {@link StackSlot}) by a register allocator.
  */
-public final class Variable extends AllocatableValue {
+public class Variable extends AllocatableValue {
 
     /**
      * The identifier of the variable. This is a non-zero index in a contiguous 0-based name space.

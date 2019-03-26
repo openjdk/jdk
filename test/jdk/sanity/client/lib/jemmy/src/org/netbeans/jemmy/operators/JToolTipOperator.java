@@ -37,8 +37,11 @@ import javax.swing.plaf.ToolTipUI;
 
 import org.netbeans.jemmy.ComponentChooser;
 import org.netbeans.jemmy.ComponentSearcher;
+import org.netbeans.jemmy.JemmyException;
 import org.netbeans.jemmy.TimeoutExpiredException;
+import org.netbeans.jemmy.Timeouts;
 import org.netbeans.jemmy.Waitable;
+import org.netbeans.jemmy.Waiter;
 
 /**
  * <BR>
@@ -52,6 +55,8 @@ import org.netbeans.jemmy.Waitable;
  */
 public class JToolTipOperator extends JComponentOperator {
 
+    private static long WAIT_TOOLTIP_TIMEOUT = 60000;
+
     /**
      * Identifier for a "tip text" property.
      *
@@ -59,6 +64,9 @@ public class JToolTipOperator extends JComponentOperator {
      */
     public static final String TIP_TEXT_DPROP = "TipText";
 
+    static {
+        Timeouts.initDefault("JToolTipOperator.WaitToolTipTimeout", WAIT_TOOLTIP_TIMEOUT);
+    }
     /**
      * Constructs a JToolTipOperator object, waiting for a shown
      * JToolTip.
@@ -286,8 +294,7 @@ public class JToolTipOperator extends JComponentOperator {
      */
     public static JToolTip waitJToolTip(ComponentOperator comp,
             ComponentChooser chooser) {
-        return Operator.getEnvironmentOperator().
-                waitState(new Waitable<JToolTip, Void>() {
+        Waitable<JToolTip, Void> waitable = new Waitable<JToolTip, Void>() {
             @Override
             public JToolTip actionProduced(Void obj) {
                 return findJToolTip(comp, chooser);
@@ -304,7 +311,19 @@ public class JToolTipOperator extends JComponentOperator {
                 return "JToolTipOperator.waitJToolTip.Waitable{description = "
                         + getDescription() + '}';
             }
-        });
+        };
+        Waiter<JToolTip, Void> stateWaiter = new Waiter<>(waitable);
+        stateWaiter.setTimeoutsToCloneOf(Operator.getEnvironmentOperator().
+                getTimeouts(), "JToolTipOperator.WaitToolTipTimeout");
+        stateWaiter.setOutput(Operator.getEnvironmentOperator().
+                getOutput().createErrorOutput());
+        try {
+            return stateWaiter.waitAction(null);
+        } catch (InterruptedException e) {
+           Thread.currentThread().interrupt();
+           throw (new JemmyException("Waiting of " + waitable.getDescription()
+               + " state has been interrupted!"));
+        }
     }
 
     /**

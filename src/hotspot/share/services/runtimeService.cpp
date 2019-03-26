@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/classLoader.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/attachListener.hpp"
 #include "services/management.hpp"
@@ -34,16 +35,12 @@
 #include "utilities/macros.hpp"
 
 #if INCLUDE_MANAGEMENT
-TimeStamp RuntimeService::_app_timer;
-TimeStamp RuntimeService::_safepoint_timer;
 PerfCounter*  RuntimeService::_sync_time_ticks = NULL;
 PerfCounter*  RuntimeService::_total_safepoints = NULL;
 PerfCounter*  RuntimeService::_safepoint_time_ticks = NULL;
 PerfCounter*  RuntimeService::_application_time_ticks = NULL;
-double RuntimeService::_last_safepoint_sync_time_sec = 0.0;
 
 void RuntimeService::init() {
-
   if (UsePerfData) {
     EXCEPTION_MARK;
 
@@ -84,57 +81,26 @@ void RuntimeService::init() {
   }
 }
 
-void RuntimeService::record_safepoint_begin() {
+void RuntimeService::record_safepoint_begin(jlong app_ticks) {
   HS_PRIVATE_SAFEPOINT_BEGIN();
-
-  // Print the time interval in which the app was executing
-  if (_app_timer.is_updated()) {
-    log_info(safepoint)("Application time: %3.7f seconds", last_application_time_sec());
-  }
-
-  // update the time stamp to begin recording safepoint time
-  _safepoint_timer.update();
-  _last_safepoint_sync_time_sec = 0.0;
   if (UsePerfData) {
     _total_safepoints->inc();
-    if (_app_timer.is_updated()) {
-      _application_time_ticks->inc(_app_timer.ticks_since_update());
-    }
+    _application_time_ticks->inc(app_ticks);
   }
 }
 
-void RuntimeService::record_safepoint_synchronized() {
+void RuntimeService::record_safepoint_synchronized(jlong sync_ticks) {
   if (UsePerfData) {
-    _sync_time_ticks->inc(_safepoint_timer.ticks_since_update());
-  }
-  if (log_is_enabled(Info, safepoint)) {
-    _last_safepoint_sync_time_sec = last_safepoint_time_sec();
+    _sync_time_ticks->inc(sync_ticks);
   }
 }
 
-void RuntimeService::record_safepoint_end() {
+void RuntimeService::record_safepoint_end(jlong safepoint_ticks) {
   HS_PRIVATE_SAFEPOINT_END();
-
-  // Print the time interval for which the app was stopped
-  // during the current safepoint operation.
-  log_info(safepoint)("Total time for which application threads were stopped: %3.7f seconds, Stopping threads took: %3.7f seconds",
-                      last_safepoint_time_sec(), _last_safepoint_sync_time_sec);
-
-  // update the time stamp to begin recording app time
-  _app_timer.update();
   if (UsePerfData) {
-    _safepoint_time_ticks->inc(_safepoint_timer.ticks_since_update());
+    _safepoint_time_ticks->inc(safepoint_ticks);
   }
 }
-
-void RuntimeService::record_application_start() {
-  // update the time stamp to begin recording app time
-  _app_timer.update();
-}
-
-// Don't need to record application end because we currently
-// exit at a safepoint and record_safepoint_begin() handles updating
-// the application time counter at VM exit.
 
 jlong RuntimeService::safepoint_sync_time_ms() {
   return UsePerfData ?

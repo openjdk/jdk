@@ -46,7 +46,7 @@ public final class RethrowDeoptMaterializeTest extends GraalCompilerTest {
         @SuppressWarnings("sync-override")
         @Override
         public final Throwable fillInStackTrace() {
-            return null;
+            return this;
         }
     }
 

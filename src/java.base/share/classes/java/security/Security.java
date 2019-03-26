@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,7 +201,7 @@ public final class Security {
     private static void initializeStatic() {
         props.put("security.provider.1", "sun.security.provider.Sun");
         props.put("security.provider.2", "sun.security.rsa.SunRsaSign");
-        props.put("security.provider.3", "com.sun.net.ssl.internal.ssl.Provider");
+        props.put("security.provider.3", "sun.security.ssl.SunJSSE");
         props.put("security.provider.4", "com.sun.crypto.provider.SunJCE");
         props.put("security.provider.5", "sun.security.jgss.SunProvider");
         props.put("security.provider.6", "com.sun.security.sasl.Provider");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,28 +33,22 @@ import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.Image;
-import java.awt.ImageCapabilities;
 import java.awt.Rectangle;
-import java.awt.Toolkit;
 import java.awt.Transparency;
-import java.awt.Window;
 import java.awt.geom.AffineTransform;
-import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.DirectColorModel;
-import java.awt.image.Raster;
 import java.awt.image.VolatileImage;
 import java.awt.image.WritableRaster;
 
-import sun.awt.windows.WComponentPeer;
 import sun.awt.image.OffScreenImage;
 import sun.awt.image.SunVolatileImage;
 import sun.awt.image.SurfaceManager;
+import sun.awt.windows.WComponentPeer;
 import sun.java2d.SurfaceData;
-import sun.java2d.InvalidPipeException;
+import sun.java2d.loops.CompositeType;
 import sun.java2d.loops.RenderLoops;
 import sun.java2d.loops.SurfaceType;
-import sun.java2d.loops.CompositeType;
 import sun.java2d.windows.GDIWindowSurfaceData;
 
 /**
@@ -67,7 +61,7 @@ import sun.java2d.windows.GDIWindowSurfaceData;
 public class Win32GraphicsConfig extends GraphicsConfiguration
     implements DisplayChangedListener, SurfaceManager.ProxiedGraphicsConfig
 {
-    protected Win32GraphicsDevice screen;
+    private final Win32GraphicsDevice device;
     protected int visual;  //PixelFormatID
     protected RenderLoops solidloops;
 
@@ -98,7 +92,7 @@ public class Win32GraphicsConfig extends GraphicsConfiguration
      */
     @Deprecated
     public Win32GraphicsConfig(GraphicsDevice device, int visualnum) {
-        this.screen = (Win32GraphicsDevice)device;
+        this.device = (Win32GraphicsDevice)device;
         this.visual = visualnum;
         ((Win32GraphicsDevice)device).addDisplayChangedListener(this);
     }
@@ -106,8 +100,9 @@ public class Win32GraphicsConfig extends GraphicsConfiguration
     /**
      * Return the graphics device associated with this configuration.
      */
+    @Override
     public Win32GraphicsDevice getDevice() {
-        return screen;
+        return device;
     }
 
     /**
@@ -117,8 +112,9 @@ public class Win32GraphicsConfig extends GraphicsConfiguration
         return visual;
     }
 
+    @Override
     public Object getProxyKey() {
-        return screen;
+        return device;
     }
 
     /**
@@ -139,8 +135,9 @@ public class Win32GraphicsConfig extends GraphicsConfiguration
     /**
      * Returns the color model associated with this configuration.
      */
+    @Override
     public synchronized ColorModel getColorModel() {
-        return screen.getColorModel();
+        return device.getColorModel();
     }
 
     /**
@@ -152,13 +149,14 @@ public class Win32GraphicsConfig extends GraphicsConfiguration
      * to reflect the new situation.
      */
     public ColorModel getDeviceColorModel() {
-        return screen.getDynamicColorModel();
+        return device.getDynamicColorModel();
     }
 
     /**
      * Returns the color model associated with this configuration that
      * supports the specified transparency.
      */
+    @Override
     public ColorModel getColorModel(int transparency) {
         switch (transparency) {
         case Transparency.OPAQUE:
@@ -181,9 +179,10 @@ public class Win32GraphicsConfig extends GraphicsConfiguration
      * increasing to the right and Y coordinates increasing downwards.
      * For image buffers, this Transform will be the Identity transform.
      */
+    @Override
     public AffineTransform getDefaultTransform() {
-        double scaleX = screen.getDefaultScaleX();
-        double scaleY = screen.getDefaultScaleY();
+        double scaleX = device.getDefaultScaleX();
+        double scaleY = device.getDefaultScaleY();
         return AffineTransform.getScaleInstance(scaleX, scaleY);
     }
 
@@ -206,6 +205,7 @@ public class Win32GraphicsConfig extends GraphicsConfiguration
      * For image buffers, this Transform will be the Identity transform,
      * since there is no valid distance measurement.
      */
+    @Override
     public AffineTransform getNormalizingTransform() {
         Win32GraphicsEnvironment ge = (Win32GraphicsEnvironment)
             GraphicsEnvironment.getLocalGraphicsEnvironment();
@@ -215,19 +215,22 @@ public class Win32GraphicsConfig extends GraphicsConfiguration
     }
 
     public String toString() {
-        return (super.toString()+"[dev="+screen+",pixfmt="+visual+"]");
+        return (super.toString()+"[dev="+device+",pixfmt="+visual+"]");
     }
 
     private native Rectangle getBounds(int screen);
 
+    @Override
     public Rectangle getBounds() {
-        return getBounds(screen.getScreen());
+        return getBounds(device.getScreen());
     }
 
+    @Override
     public synchronized void displayChanged() {
         solidloops = null;
     }
 
+    @Override
     public void paletteChanged() {}
 
     /**

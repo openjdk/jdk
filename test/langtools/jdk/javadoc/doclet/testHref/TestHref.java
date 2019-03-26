@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,7 @@ public class TestHref extends JavadocTester {
 
         checkOutput("pkg/C4.html", true,
                 //Header does not link to the page itself.
-                "Class C4&lt;E extends C4&lt;E&gt;&gt;</h2>",
+                "Class C4&lt;E extends C4&lt;E&gt;&gt;</h1>",
                 //Signature does not link to the page itself.
                 "public abstract class <span class=\"typeNameLabel\">C4&lt;E extends C4&lt;E&gt;&gt;</span>"
         );
@@ -84,37 +84,4 @@ public class TestHref extends JavadocTester {
                 "<a> tag is malformed");
     }
 
-    @Test
-    public void test_html4() {
-        javadoc("-Xdoclint:none",
-                "-d", "out-html4",
-                "-source", "8",
-                "-html4",
-                "-sourcepath", testSrc,
-                "-linkoffline", "http://java.sun.com/j2se/1.4/docs/api/", testSrc,
-                "pkg");
-        checkExit(Exit.OK);
-
-        checkOutput("pkg/C1.html", true,
-                //External link.
-                "href=\"http://java.sun.com/j2se/1.4/docs/api/java/lang/Object.html?is-external=true#wait-long-int-\"",
-                //Member summary table link.
-                "href=\"#method-int-int-java.util.ArrayList-\"",
-                //Anchor test.
-                "<a name=\"method-int-int-java.util.ArrayList-\">\n"
-                + "<!--   -->\n"
-                + "</a>",
-                //Backward compatibility anchor test."pkg/C1.html",
-                "<a name=\"method-int-int-java.util.ArrayList-\">\n"
-                + "<!--   -->\n"
-                + "</a>");
-
-        checkOutput("pkg/C2.html", true,
-                //{@link} test.
-                "Link: <a href=\"C1.html#method-int-int-java.util.ArrayList-\">",
-                //@see test.
-                "See Also:</span></dt>\n"
-                + "<dd><a href=\"C1.html#method-int-int-java.util.ArrayList-\">"
-        );
-    }
 }

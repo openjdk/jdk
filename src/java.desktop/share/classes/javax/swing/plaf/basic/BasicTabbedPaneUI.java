@@ -3322,11 +3322,11 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
     private class TabbedPaneScrollLayout extends TabbedPaneLayout {
 
         protected int preferredTabAreaHeight(int tabPlacement, int width) {
-            return calculateMaxTabHeight(tabPlacement);
+            return calculateTabAreaHeight(tabPlacement, 1, calculateMaxTabHeight(tabPlacement));
         }
 
         protected int preferredTabAreaWidth(int tabPlacement, int height) {
-            return calculateMaxTabWidth(tabPlacement);
+            return calculateTabAreaWidth(tabPlacement, 1, calculateMaxTabWidth(tabPlacement));
         }
 
         @SuppressWarnings("deprecation")

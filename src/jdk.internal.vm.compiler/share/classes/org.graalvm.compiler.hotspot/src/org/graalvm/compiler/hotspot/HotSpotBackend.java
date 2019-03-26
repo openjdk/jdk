@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ import org.graalvm.compiler.hotspot.nodes.aot.ResolveConstantStubCall;
 import org.graalvm.compiler.hotspot.replacements.AESCryptSubstitutions;
 import org.graalvm.compiler.hotspot.replacements.BigIntegerSubstitutions;
 import org.graalvm.compiler.hotspot.replacements.CipherBlockChainingSubstitutions;
+import org.graalvm.compiler.hotspot.replacements.DigestBaseSubstitutions;
 import org.graalvm.compiler.hotspot.replacements.SHA2Substitutions;
 import org.graalvm.compiler.hotspot.replacements.SHA5Substitutions;
 import org.graalvm.compiler.hotspot.replacements.SHASubstitutions;
@@ -71,6 +72,7 @@ import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionType;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.tiers.SuitesProvider;
+import org.graalvm.compiler.serviceprovider.JavaVersionUtil;
 import org.graalvm.compiler.word.Word;
 import jdk.internal.vm.compiler.word.Pointer;
 
@@ -95,7 +97,7 @@ public abstract class HotSpotBackend extends Backend implements FrameMap.Referen
     public static class Options {
         // @formatter:off
         @Option(help = "Use Graal arithmetic stubs instead of HotSpot stubs where possible")
-        public static final OptionKey<Boolean> GraalArithmeticStubs = new OptionKey<>(false); // GR-8276
+        public static final OptionKey<Boolean> GraalArithmeticStubs = new OptionKey<>(JavaVersionUtil.JAVA_SPECIFICATION_VERSION >= 9);
         @Option(help = "Enables instruction profiling on assembler level. Valid values are a comma separated list of supported instructions." +
                         " Compare with subclasses of Assembler.InstructionCounter.", type = OptionType.Debug)
         public static final OptionKey<String> ASMInstructionProfiling = new OptionKey<>(null);
@@ -261,12 +263,73 @@ public abstract class HotSpotBackend extends Backend implements FrameMap.Referen
     @NodeIntrinsic(ForeignCallNode.class)
     private static native void sha5ImplCompressStub(@ConstantNodeParameter ForeignCallDescriptor descriptor, Word bufAddr, Object state);
 
+    /**
+     * @see DigestBaseSubstitutions#implCompressMultiBlock0
+     */
+    public static final ForeignCallDescriptor SHA_IMPL_COMPRESS_MB = new ForeignCallDescriptor("shaImplCompressMB", int.class, Word.class, Object.class, int.class, int.class);
+
+    public static int shaImplCompressMBStub(Word bufAddr, Object stateAddr, int ofs, int limit) {
+        return shaImplCompressMBStub(HotSpotBackend.SHA_IMPL_COMPRESS_MB, bufAddr, stateAddr, ofs, limit);
+    }
+
+    @NodeIntrinsic(ForeignCallNode.class)
+    private static native int shaImplCompressMBStub(@ConstantNodeParameter ForeignCallDescriptor descriptor, Word bufAddr, Object state, int ofs, int limit);
+
+    public static final ForeignCallDescriptor SHA2_IMPL_COMPRESS_MB = new ForeignCallDescriptor("sha2ImplCompressMB", int.class, Word.class, Object.class, int.class, int.class);
+
+    public static int sha2ImplCompressMBStub(Word bufAddr, Object stateAddr, int ofs, int limit) {
+        return sha2ImplCompressMBStub(HotSpotBackend.SHA2_IMPL_COMPRESS_MB, bufAddr, stateAddr, ofs, limit);
+    }
+
+    @NodeIntrinsic(ForeignCallNode.class)
+    private static native int sha2ImplCompressMBStub(@ConstantNodeParameter ForeignCallDescriptor descriptor, Word bufAddr, Object state, int ofs, int limit);
+
+    public static final ForeignCallDescriptor SHA5_IMPL_COMPRESS_MB = new ForeignCallDescriptor("sha5ImplCompressMB", int.class, Word.class, Object.class, int.class, int.class);
+
+    public static int sha5ImplCompressMBStub(Word bufAddr, Object stateAddr, int ofs, int limit) {
+        return sha5ImplCompressMBStub(HotSpotBackend.SHA5_IMPL_COMPRESS_MB, bufAddr, stateAddr, ofs, limit);
+    }
+
+    @NodeIntrinsic(ForeignCallNode.class)
+    private static native int sha5ImplCompressMBStub(@ConstantNodeParameter ForeignCallDescriptor descriptor, Word bufAddr, Object state, int ofs, int limit);
+
     public static void unsafeArraycopy(Word srcAddr, Word dstAddr, Word size) {
         unsafeArraycopyStub(UNSAFE_ARRAYCOPY, srcAddr, dstAddr, size);
     }
 
     @NodeIntrinsic(ForeignCallNode.class)
     private static native void unsafeArraycopyStub(@ConstantNodeParameter ForeignCallDescriptor descriptor, Word srcAddr, Word dstAddr, Word size);
+
+    /**
+     * Descriptor for {@code StubRoutines::_ghash_processBlocks}.
+     */
+    public static final ForeignCallDescriptor GHASH_PROCESS_BLOCKS = new ForeignCallDescriptor("ghashProcessBlocks", void.class, Word.class, Word.class, Word.class, int.class);
+
+    /**
+     * Descriptor for {@code StubRoutines::_counterMode_AESCrypt}.
+     */
+    public static final ForeignCallDescriptor COUNTERMODE_IMPL_CRYPT = new ForeignCallDescriptor("counterModeAESCrypt", int.class, Word.class, Word.class, Word.class, Word.class, int.class,
+                    Word.class, Word.class);
+
+    public static int counterModeAESCrypt(Word srcAddr, Word dstAddr, Word kPtr, Word cntPtr, int len, Word encCntPtr, Word used) {
+        return counterModeAESCrypt(COUNTERMODE_IMPL_CRYPT, srcAddr, dstAddr, kPtr, cntPtr, len, encCntPtr, used);
+    }
+
+    @NodeIntrinsic(ForeignCallNode.class)
+    private static native int counterModeAESCrypt(@ConstantNodeParameter ForeignCallDescriptor descriptor, Word srcAddr, Word dstAddr, Word kPtr, Word cntPtr, int len, Word encCntPtr,
+                    Word used);
+
+    /**
+     * Descriptor for {@code StubRoutines::_vectorizedMismatch}.
+     */
+    public static final ForeignCallDescriptor VECTORIZED_MISMATCHED = new ForeignCallDescriptor("vectorizedMismatch", int.class, Word.class, Word.class, int.class, int.class);
+
+    public static int vectorizedMismatch(Word aAddr, Word bAddr, int length, int log2ArrayIndexScale) {
+        return vectorizedMismatchStub(VECTORIZED_MISMATCHED, aAddr, bAddr, length, log2ArrayIndexScale);
+    }
+
+    @NodeIntrinsic(ForeignCallNode.class)
+    private static native int vectorizedMismatchStub(@ConstantNodeParameter ForeignCallDescriptor descriptor, Word aAddr, Word bAddr, int length, int log2ArrayIndexScale);
 
     /**
      * @see VMErrorNode
@@ -387,6 +450,13 @@ public abstract class HotSpotBackend extends Backend implements FrameMap.Referen
         }
         return translateToCallerRegisters(destroyedRegisters);
     }
+
+    /**
+     * Translates a set of registers from the callee's perspective to the caller's perspective. This
+     * is needed for architectures where input/output registers are renamed during a call (e.g.
+     * register windows on SPARC). Registers which are not visible by the caller are removed.
+     */
+    protected abstract EconomicSet<Register> translateToCallerRegisters(EconomicSet<Register> calleeRegisters);
 
     /**
      * Updates a given stub with respect to the registers it destroys.

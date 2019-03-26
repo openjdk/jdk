@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,20 +26,15 @@
   @key headful
   @bug       6785058
   @summary   Tests that an owner is activated on closing its owned dialog with the warning icon.
-  @author    Anton Tarasov: area=awt.focus
   @library   ../../regtesthelpers
   @build     Util
   @run       main/othervm/policy=java.policy -Djava.security.manager CloseDialogActivateOwnerTest
 */
 
 import java.awt.*;
-import java.awt.event.*;
-import java.applet.Applet;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.lang.reflect.InvocationTargetException;
 import test.java.awt.regtesthelpers.Util;
 
-public class CloseDialogActivateOwnerTest extends Applet {
+public class CloseDialogActivateOwnerTest {
     Robot robot;
 
     public static void main(String[] args) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,38 +58,6 @@ public class TestHtmlVersion extends JavadocTester {
     }
 
     @Test
-    public void test2() {
-        javadoc("-d", "out-2",
-                "-html4",
-                "-private",
-                "-linksource",
-                "--frames",
-                "-sourcepath", testSrc,
-                "-use",
-                "pkg", "pkg1", "pkg2", "pkg3");
-        checkExit(Exit.OK);
-
-        html4Output();
-        html4NegatedOutput();
-    }
-
-    @Test
-    public void test3() {
-        javadoc("-d", "out-3",
-                "-html4",
-                "-private",
-                "-linksource",
-                "--frames",
-                "-sourcepath", testSrc,
-                "-use",
-                "pkg", "pkg1", "pkg2", "pkg3");
-        checkExit(Exit.OK);
-
-        html4Output();
-        html4NegatedOutput();
-    }
-
-    @Test
     public void test4() {
         javadoc("-d", "out-4",
                 "-private",
@@ -110,7 +78,7 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li><a href=\"allclasses-frame.html\" target=\"packageFrame\">All&nbsp;Classes</a></li>",
                 "<main role=\"main\">\n"
                 + "<div class=\"indexContainer\">\n"
-                + "<h2 title=\"Packages\">Packages</h2>");
+                + "<h1 title=\"Packages\">Packages</h1>");
 
         // Test for allclasses-frame page
         checkOutput("allclasses-frame.html", true,
@@ -381,46 +349,46 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a id=\"nested.class.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h3>Nested Class Summary</h3>\n"
+                + "<h2>Nested Class Summary</h2>\n"
                 + "<div class=\"memberSummary\">\n<table>",
                 "<section role=\"region\">\n"
                 + "<ul class=\"blockList\">\n"
                 + "<li class=\"blockList\"><a id=\"field.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h3>Field Summary</h3>\n"
+                + "<h2>Field Summary</h2>\n"
                 + "<div class=\"memberSummary\">\n<table>",
                 "<section role=\"region\">\n"
                 + "<ul class=\"blockList\">\n"
                 + "<li class=\"blockList\"><a id=\"constructor.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h3>Constructor Summary</h3>\n"
+                + "<h2>Constructor Summary</h2>\n"
                 + "<div class=\"memberSummary\">\n<table>",
                 "<section role=\"region\">\n"
                 + "<ul class=\"blockList\">\n"
                 + "<li class=\"blockList\"><a id=\"method.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h3>Method Summary</h3>",
+                + "<h2>Method Summary</h2>",
                 "<section role=\"region\">\n"
                 + "<ul class=\"blockList\">\n"
                 + "<li class=\"blockList\"><a id=\"field.detail\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h3>Field Detail</h3>",
+                + "<h2>Field Detail</h2>",
                 "<section role=\"region\">\n"
                 + "<ul class=\"blockList\">\n"
                 + "<li class=\"blockList\"><a id=\"constructor.detail\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h3>Constructor Detail</h3>",
+                + "<h2>Constructor Detail</h2>",
                 "<section role=\"region\">\n"
                 + "<ul class=\"blockList\">\n"
                 + "<li class=\"blockList\"><a id=\"method.detail\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h3>Method Detail</h3>",
+                + "<h2>Method Detail</h2>",
                 "<footer role=\"contentinfo\">\n"
                 + "<nav role=\"navigation\">\n"
                 + "<!-- ======= START OF BOTTOM NAVBAR ====== -->");
@@ -443,7 +411,7 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a id=\"enum.constant.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h3>Enum Constant Summary</h3>\n"
+                + "<h2>Enum Constant Summary</h2>\n"
                 + "<div class=\"memberSummary\">\n",
                 "<table aria-labelledby=\"t0\">\n",
                 "<section role=\"region\">\n"
@@ -451,7 +419,7 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a id=\"method.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h3>Method Summary</h3>\n"
+                + "<h2>Method Summary</h2>\n"
                 + "<div class=\"memberSummary\">\n",
                 "<table aria-labelledby=\"t0\">",
                 "<section role=\"region\">\n"
@@ -459,13 +427,13 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a id=\"enum.constant.detail\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h3>Enum Constant Detail</h3>",
+                + "<h2>Enum Constant Detail</h2>",
                 "<section role=\"region\">\n"
                 + "<ul class=\"blockList\">\n"
                 + "<li class=\"blockList\"><a id=\"method.detail\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h3>Method Detail</h3>",
+                + "<h2>Method Detail</h2>",
                 "<footer role=\"contentinfo\">\n"
                 + "<nav role=\"navigation\">\n"
                 + "<!-- ======= START OF BOTTOM NAVBAR ====== -->");
@@ -488,7 +456,7 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a id=\"method.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h3>Method Summary</h3>\n"
+                + "<h2>Method Summary</h2>\n"
                 + "<div class=\"memberSummary\">\n",
                 "<table aria-labelledby=\"t0\">\n",
                 "<section role=\"region\">\n"
@@ -496,7 +464,7 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a id=\"method.detail\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h3>Method Detail</h3>",
+                + "<h2>Method Detail</h2>",
                 "<footer role=\"contentinfo\">\n"
                 + "<nav role=\"navigation\">\n"
                 + "<!-- ======= START OF BOTTOM NAVBAR ====== -->");
@@ -519,13 +487,13 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a id=\"constructor.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h3>Constructor Summary</h3>",
+                + "<h2>Constructor Summary</h2>",
                 "<section role=\"region\">\n"
                 + "<ul class=\"blockList\">\n"
                 + "<li class=\"blockList\"><a id=\"constructor.detail\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h3>Constructor Detail</h3>",
+                + "<h2>Constructor Detail</h2>",
                 "<footer role=\"contentinfo\">\n"
                 + "<nav role=\"navigation\">\n"
                 + "<!-- ======= START OF BOTTOM NAVBAR ====== -->");
@@ -548,13 +516,13 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a id=\"constructor.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h3>Constructor Summary</h3>",
+                + "<h2>Constructor Summary</h2>",
                 "<section role=\"region\">\n"
                 + "<ul class=\"blockList\">\n"
                 + "<li class=\"blockList\"><a id=\"constructor.detail\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h3>Constructor Detail</h3>",
+                + "<h2>Constructor Detail</h2>",
                 "<footer role=\"contentinfo\">\n"
                 + "<nav role=\"navigation\">\n"
                 + "<!-- ======= START OF BOTTOM NAVBAR ====== -->");
@@ -577,21 +545,21 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a id=\"annotation.type.required.element.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h3>Required Element Summary</h3>\n"
+                + "<h2>Required Element Summary</h2>\n"
                 + "<div class=\"memberSummary\">\n<table>",
                 "<section role=\"region\">\n"
                 + "<ul class=\"blockList\">\n"
                 + "<li class=\"blockList\"><a id=\"annotation.type.optional.element.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h3>Optional Element Summary</h3>\n"
+                + "<h2>Optional Element Summary</h2>\n"
                 + "<div class=\"memberSummary\">\n<table>",
                 "<section role=\"region\">\n"
                 + "<ul class=\"blockList\">\n"
                 + "<li class=\"blockList\"><a id=\"annotation.type.element.detail\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h3>Element Detail</h3>",
+                + "<h2>Element Detail</h2>",
                 "<footer role=\"contentinfo\">\n"
                 + "<nav role=\"navigation\">\n"
                 + "<!-- ======= START OF BOTTOM NAVBAR ====== -->");
@@ -613,7 +581,7 @@ public class TestHtmlVersion extends JavadocTester {
                 "<section role=\"region\"><a id=\"pkg\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h3>Uses of <a href=\"../RegClass.html\" title=\"class in pkg1\">RegClass</a> in <a href=\"../../pkg/package-summary.html\">pkg</a></h3>\n"
+                + "<h2>Uses of <a href=\"../RegClass.html\" title=\"class in pkg1\">RegClass</a> in <a href=\"../../pkg/package-summary.html\">pkg</a></h2>\n"
                 + "<div class=\"useSummary\">\n<table>",
                 "<footer role=\"contentinfo\">\n"
                 + "<nav role=\"navigation\">\n"
@@ -623,7 +591,7 @@ public class TestHtmlVersion extends JavadocTester {
         checkOutput("index.html", true,
                 "<!DOCTYPE HTML>",
                 "<link rel=\"stylesheet\" type=\"text/css\" href=\"stylesheet.css\" title=\"Style\">",
-                "<body onload=\"loadFrames()\">\n"
+                "<body class=\"frames\" onload=\"loadFrames()\">\n"
                 + "<script type=\"text/javascript\">\n"
                 + "if (targetPage == \"\" || targetPage == \"undefined\")\n"
                 + "     window.location.replace('overview-summary.html');\n"
@@ -855,7 +823,7 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a name=\"nested.class.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h3>Nested Class Summary</h3>\n"
+                + "<h2>Nested Class Summary</h2>\n"
                 + "<div class=\"memberSummary\">\n"
                 + "<table summary=\"Nested Class Summary table, listing nested classes, and an explanation\">",
                 "<!-- =========== FIELD SUMMARY =========== -->\n"
@@ -863,7 +831,7 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a name=\"field.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h3>Field Summary</h3>\n"
+                + "<h2>Field Summary</h2>\n"
                 + "<div class=\"memberSummary\">\n"
                 + "<table summary=\"Field Summary table, listing fields, and an explanation\">",
                 "<!-- ======== CONSTRUCTOR SUMMARY ======== -->\n"
@@ -871,7 +839,7 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a name=\"constructor.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h3>Constructor Summary</h3>\n"
+                + "<h2>Constructor Summary</h2>\n"
                 + "<div class=\"memberSummary\">\n"
                 + "<table summary=\"Constructor Summary table, listing constructors, and an explanation\">",
                 "<!-- ========== METHOD SUMMARY =========== -->\n"
@@ -879,7 +847,7 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a name=\"method.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h3>Method Summary</h3>\n"
+                + "<h2>Method Summary</h2>\n"
                 + "<div class=\"memberSummary\">\n"
                 + "<table summary=\"Method Summary table, listing methods, and an explanation\">",
                 "<!-- ============ FIELD DETAIL =========== -->\n"
@@ -887,19 +855,19 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a name=\"field.detail\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h3>Field Detail</h3>",
+                + "<h2>Field Detail</h2>",
                 "<!-- ========= CONSTRUCTOR DETAIL ======== -->\n"
                 + "<ul class=\"blockList\">\n"
                 + "<li class=\"blockList\"><a name=\"constructor.detail\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h3>Constructor Detail</h3>",
+                + "<h2>Constructor Detail</h2>",
                 "<!-- ============ METHOD DETAIL ========== -->\n"
                 + "<ul class=\"blockList\">\n"
                 + "<li class=\"blockList\"><a name=\"method.detail\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h3>Method Detail</h3>");
+                + "<h2>Method Detail</h2>");
 
         // Negated test for enum page
         checkOutput("pkg/AnotherClass.ModalExclusionType.html", false,
@@ -915,7 +883,7 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a name=\"enum.constant.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h3>Enum Constant Summary</h3>\n"
+                + "<h2>Enum Constant Summary</h2>\n"
                 + "<div class=\"memberSummary\">\n"
                 + "<table summary=\"Enum Constant Summary table, listing enum constants, and an explanation\">",
                 "<!-- ========== METHOD SUMMARY =========== -->\n"
@@ -923,7 +891,7 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a name=\"method.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h3>Method Summary</h3>\n"
+                + "<h2>Method Summary</h2>\n"
                 + "<div class=\"memberSummary\">\n"
                 + "<table summary=\"Method Summary table, listing methods, and an explanation\">",
                 "<!-- ============ ENUM CONSTANT DETAIL =========== -->\n"
@@ -931,13 +899,13 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a name=\"enum.constant.detail\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h3>Enum Constant Detail</h3>",
+                + "<h2>Enum Constant Detail</h2>",
                 "<!-- ============ METHOD DETAIL ========== -->\n"
                 + "<ul class=\"blockList\">\n"
                 + "<li class=\"blockList\"><a name=\"method.detail\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h3>Method Detail</h3>");
+                + "<h2>Method Detail</h2>");
 
         // Negated test for interface page
         checkOutput("pkg2/Interface.html", false,
@@ -953,7 +921,7 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a name=\"method.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h3>Method Summary</h3>\n"
+                + "<h2>Method Summary</h2>\n"
                 + "<div class=\"memberSummary\">\n"
                 + "<table summary=\"Method Summary table, listing methods, and an explanation\">",
                 "<!-- ============ METHOD DETAIL ========== -->\n"
@@ -961,7 +929,7 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a name=\"method.detail\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h3>Method Detail</h3>");
+                + "<h2>Method Detail</h2>");
 
         // Negated test for error page
         checkOutput("pkg/TestError.html", false,
@@ -977,13 +945,13 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a name=\"constructor.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h3>Constructor Summary</h3>",
+                + "<h2>Constructor Summary</h2>",
                 "<!-- ========= CONSTRUCTOR DETAIL ======== -->\n"
                 + "<ul class=\"blockList\">\n"
                 + "<li class=\"blockList\"><a name=\"constructor.detail\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h3>Constructor Detail</h3>");
+                + "<h2>Constructor Detail</h2>");
 
         // Negated test for exception page
         checkOutput("pkg/TestException.html", false,
@@ -999,13 +967,13 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a name=\"constructor.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h3>Constructor Summary</h3>",
+                + "<h2>Constructor Summary</h2>",
                 "<!-- ========= CONSTRUCTOR DETAIL ======== -->\n"
                 + "<ul class=\"blockList\">\n"
                 + "<li class=\"blockList\"><a name=\"constructor.detail\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h3>Constructor Detail</h3>");
+                + "<h2>Constructor Detail</h2>");
 
         // Negated test for annotation page
         checkOutput("pkg2/TestAnnotationType.html", false,
@@ -1021,7 +989,7 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a name=\"annotation.type.required.element.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h3>Required Element Summary</h3>\n"
+                + "<h2>Required Element Summary</h2>\n"
                 + "<div class=\"memberSummary\">\n"
                 + "<table summary=\"Required Element Summary table, listing required elements, and an explanation\">",
                 "<!-- =========== ANNOTATION TYPE OPTIONAL MEMBER SUMMARY =========== -->\n"
@@ -1029,7 +997,7 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a name=\"annotation.type.optional.element.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h3>Optional Element Summary</h3>\n"
+                + "<h2>Optional Element Summary</h2>\n"
                 + "<div class=\"memberSummary\">\n"
                 + "<table summary=\"Optional Element Summary table, listing optional elements, and an explanation\">",
                 "<!-- ============ ANNOTATION TYPE MEMBER DETAIL =========== -->\n"
@@ -1037,7 +1005,7 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<li class=\"blockList\"><a name=\"annotation.type.element.detail\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h3>Element Detail</h3>");
+                + "<h2>Element Detail</h2>");
 
         // Negated test for class use page
         checkOutput("pkg1/class-use/RegClass.html", false,
@@ -1059,7 +1027,7 @@ public class TestHtmlVersion extends JavadocTester {
                 "<li class=\"blockList\"><a name=\"pkg\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h3>Uses of <a href=\"../RegClass.html\" title=\"class in pkg1\">RegClass</a> in <a href=\"../../pkg/package-summary.html\">pkg</a></h3>\n"
+                + "<h2>Uses of <a href=\"../RegClass.html\" title=\"class in pkg1\">RegClass</a> in <a href=\"../../pkg/package-summary.html\">pkg</a></h2>\n"
                 + "<div class=\"useSummary\">\n<table summary=\"Use table, listing fields, and an explanation\">");
 
         // Negated test for main index page
@@ -1071,963 +1039,6 @@ public class TestHtmlVersion extends JavadocTester {
                 + "     window.location.replace('overview-summary.html');\n"
                 + "</script>\n"
                 + "<noscript>JavaScript is disabled on your browser.</noscript>\n"
-                + "<div class=\"mainContainer\">\n");
-    }
-
-    void html4Output() {
-        // Test for overview-frame page
-        checkOutput("overview-frame.html", true,
-                "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">",
-                "<meta name=\"date\"",
-                "<div class=\"indexNav\">\n"
-                + "<ul>\n"
-                + "<li><a href=\"allclasses-frame.html\" target=\"packageFrame\">All&nbsp;Classes</a></li>",
-                "<div class=\"indexContainer\">\n"
-                + "<h2 title=\"Packages\">Packages</h2>");
-
-        // Test for allclasses-frame page
-        checkOutput("allclasses-frame.html", true,
-                "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">",
-                "<meta name=\"date\"",
-                "<div class=\"indexContainer\">\n"
-                + "<ul>\n"
-                + "<li>");
-
-        // Test for overview-summary page
-        checkOutput("overview-summary.html", true,
-                "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">",
-                "<meta name=\"date\"",
-                "<a name=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
-                "<div class=\"overviewSummary\">\n"
-                + "<table summary=\"Package Summary table, listing packages, and an explanation\">\n"
-                + "<caption>",
-                "</noscript>\n"
-                + "<div class=\"fixedNav\">\n"
-                + "<!-- ========= START OF TOP NAVBAR ======= -->");
-
-        // Test for package-frame page
-        checkOutput("pkg/package-frame.html", true,
-                "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">",
-                "<meta name=\"date\"",
-                "<body>\n"
-                + "<h1 class=\"bar\"><a href=\"package-summary.html\" target=\"classFrame\">pkg</a></h1>");
-
-        // Test for package-summary page
-        checkOutput("pkg/package-summary.html", true,
-                "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">",
-                "<meta name=\"date\"",
-                "<a name=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
-                "<div class=\"contentContainer\"><a name=\"package.description\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<div class=\"block\">Test package.</div>",
-                "<div class=\"typeSummary\">\n<table summary=\"Interface Summary table, listing interfaces, and an explanation\">",
-                "<div class=\"typeSummary\">\n<table summary=\"Class Summary table, listing classes, and an explanation\">",
-                "<div class=\"typeSummary\">\n<table summary=\"Enum Summary table, listing enums, and an explanation\">",
-                "<div class=\"typeSummary\">\n<table summary=\"Exception Summary table, listing exceptions, and an explanation\">",
-                "<div class=\"typeSummary\">\n<table summary=\"Error Summary table, listing errors, and an explanation\">",
-                "<div class=\"typeSummary\">\n<table summary=\"Annotation Types Summary table, listing annotation types, and an explanation\">");
-        // No Package description
-        checkOutput("pkg1/package-summary.html", true,
-                "<div class=\"contentContainer\">\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\">\n"
-                + "<div class=\"typeSummary\">\n"
-                + "<table summary=\"Class Summary table, listing classes, and an explanation\">\n"
-                + "<caption><span>Class Summary</span><span class=\"tabEnd\">&nbsp;</span></caption>");
-
-        // Test for package-tree page
-        checkOutput("pkg/package-tree.html", true,
-                "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">",
-                "<meta name=\"date\"",
-                "<a name=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
-                "<li class=\"circle\">");
-
-        // Test for package-use page
-        checkOutput("pkg1/package-use.html", true,
-                "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">",
-                "<meta name=\"date\"",
-                "<a name=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
-                "<div class=\"useSummary\">\n"
-                + "<table summary=\"Use table, listing packages, and an explanation\">");
-
-        // Test for constant-values page
-        checkOutput("constant-values.html", true,
-                "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">",
-                "<meta name=\"date\"",
-                "<a name=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
-                "<!-- ========= END OF TOP NAVBAR ========= -->\n"
-                + "</div>\n"
-                + "<div class=\"navPadding\">&nbsp;</div>\n"
-                + "<script type=\"text/javascript\"><!--\n"
-                + "$('.navPadding').css('padding-top', $('.fixedNav').css(\"height\"));\n"
-                + "//-->\n"
-                + "</script>\n"
-                + "<div class=\"header\">",
-                "<div class=\"constantsSummary\">\n"
-                + "<table summary=\"Constant Field Values table, listing constant fields, and values\">");
-
-        // Test for deprecated-list page
-        checkOutput("deprecated-list.html", true,
-                "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">",
-                "<meta name=\"date\"",
-                "<a name=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
-                "<!-- ========= END OF TOP NAVBAR ========= -->\n"
-                + "</div>\n"
-                + "<div class=\"navPadding\">&nbsp;</div>\n"
-                + "<script type=\"text/javascript\"><!--\n"
-                + "$('.navPadding').css('padding-top', $('.fixedNav').css(\"height\"));\n"
-                + "//-->\n"
-                + "</script>\n"
-                + "<div class=\"header\">\n"
-                + "<h1 title=\"Deprecated API\" class=\"title\">Deprecated API</h1>\n"
-                + "<h2 title=\"Contents\">Contents</h2>",
-                "<div class=\"deprecatedSummary\">\n"
-                + "<table summary=\"Classes table, listing classes, and an explanation\">",
-                "<div class=\"deprecatedSummary\">\n"
-                + "<table summary=\"Enums table, listing enums, and an explanation\">",
-                "<div class=\"deprecatedSummary\">\n"
-                + "<table summary=\"Exceptions table, listing exceptions, and an explanation\">",
-                "<div class=\"deprecatedSummary\">\n"
-                + "<table summary=\"Errors table, listing errors, and an explanation\">",
-                "<div class=\"deprecatedSummary\">\n"
-                + "<table summary=\"Annotation Types table, listing annotation types, and an explanation\">",
-                "<div class=\"deprecatedSummary\">\n"
-                + "<table summary=\"Fields table, listing fields, and an explanation\">",
-                "<div class=\"deprecatedSummary\">\n"
-                + "<table summary=\"Methods table, listing methods, and an explanation\">",
-                "<div class=\"deprecatedSummary\">\n"
-                + "<table summary=\"Constructors table, listing constructors, and an explanation\">",
-                "<div class=\"deprecatedSummary\">\n"
-                + "<table summary=\"Enum Constants table, listing enum constants, and an explanation\">",
-                "<div class=\"deprecatedSummary\">\n"
-                + "<table summary=\"Annotation Type Elements table, listing annotation type elements, and an explanation\">");
-
-        // Test for serialized-form page
-        checkOutput("serialized-form.html", true,
-                "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">",
-                "<meta name=\"date\"",
-                "<a name=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
-                "<!-- ========= END OF TOP NAVBAR ========= -->\n"
-                + "</div>\n"
-                + "<div class=\"navPadding\">&nbsp;</div>\n"
-                + "<script type=\"text/javascript\"><!--\n"
-                + "$('.navPadding').css('padding-top', $('.fixedNav').css(\"height\"));\n"
-                + "//-->\n"
-                + "</script>\n"
-                + "<div class=\"header\">",
-                "<li class=\"blockList\">\n"
-                + "<h2 title=\"Package\">Package&nbsp;pkg</h2>");
-
-        // Test for overview-tree page
-        checkOutput("overview-tree.html", true,
-                "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">",
-                "<meta name=\"date\"",
-                "<a name=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
-                "<li class=\"circle\">",
-                "<!-- ========= END OF TOP NAVBAR ========= -->\n"
-                + "</div>\n"
-                + "<div class=\"navPadding\">&nbsp;</div>\n"
-                + "<script type=\"text/javascript\"><!--\n"
-                + "$('.navPadding').css('padding-top', $('.fixedNav').css(\"height\"));\n"
-                + "//-->\n"
-                + "</script>\n"
-                + "<div class=\"header\">",
-                "<h1 class=\"title\">Hierarchy For All Packages</h1>\n"
-                + "<span class=\"packageHierarchyLabel\">Package Hierarchies:</span>",
-                "<div class=\"contentContainer\">\n"
-                + "<h2 title=\"Class Hierarchy\">Class Hierarchy</h2>",
-                "</ul>\n"
-                + "<h2 title=\"Interface Hierarchy\">Interface Hierarchy</h2>",
-                "</ul>\n"
-                + "<h2 title=\"Enum Hierarchy\">Enum Hierarchy</h2>");
-
-        // Test for index-all page
-        checkOutput("index-all.html", true,
-                "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">",
-                "<meta name=\"date\"",
-                "<a name=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
-                "<!-- ========= END OF TOP NAVBAR ========= -->\n"
-                + "</div>\n"
-                + "<div class=\"navPadding\">&nbsp;</div>\n"
-                + "<script type=\"text/javascript\"><!--\n"
-                + "$('.navPadding').css('padding-top', $('.fixedNav').css(\"height\"));\n"
-                + "//-->\n"
-                + "</script>\n"
-                + "<div class=\"contentContainer\">");
-
-        // Test for src-html page
-        checkOutput("src-html/pkg/AnotherClass.html", true,
-                "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">",
-                "<body>\n"
-                + "<div class=\"sourceContainer\">");
-
-        // Test for help-doc page
-        checkOutput("help-doc.html", true,
-                "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">",
-                "<meta name=\"date\"",
-                "<a name=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
-                "<!-- ========= END OF TOP NAVBAR ========= -->\n"
-                + "</div>\n"
-                + "<div class=\"navPadding\">&nbsp;</div>\n"
-                + "<script type=\"text/javascript\"><!--\n"
-                + "$('.navPadding').css('padding-top', $('.fixedNav').css(\"height\"));\n"
-                + "//-->\n"
-                + "</script>\n"
-                + "<div class=\"header\">",
-                "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\">\n"
-                + "<h2>Overview</h2>",
-                "<li class=\"blockList\">\n"
-                + "<h2>Package</h2>",
-                "<li class=\"blockList\">\n"
-                + "<h2>Class or Interface</h2>");
-
-        // Test for a regular class page and members (nested class, field, constructore and method)
-        checkOutput("pkg/AnotherClass.html", true,
-                "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">",
-                "<meta name=\"date\"",
-                "<a name=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
-                "<!-- ======== START OF CLASS DATA ======== -->\n"
-                + "<div class=\"header\">",
-                "<!-- ======== NESTED CLASS SUMMARY ======== -->\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a name=\"nested.class.summary\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<h3>Nested Class Summary</h3>\n"
-                + "<div class=\"memberSummary\">",
-                "<table summary=\"Nested Class Summary table, listing nested classes, and an explanation\">",
-                "<!-- =========== FIELD SUMMARY =========== -->\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a name=\"field.summary\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<h3>Field Summary</h3>\n"
-                + "<div class=\"memberSummary\">\n<table summary=\"Field Summary table, listing fields, and an explanation\">",
-                "<!-- ======== CONSTRUCTOR SUMMARY ======== -->\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a name=\"constructor.summary\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<h3>Constructor Summary</h3>\n"
-                + "<div class=\"memberSummary\">\n<table summary=\"Constructor Summary table, listing constructors, and an explanation\">",
-                "<!-- ========== METHOD SUMMARY =========== -->\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a name=\"method.summary\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<h3>Method Summary</h3>\n"
-                + "<div class=\"memberSummary\">\n",
-                "<table summary=\"Method Summary table, listing methods, and an explanation\" aria-labelledby=\"t0\">",
-                "<!-- ============ FIELD DETAIL =========== -->\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a name=\"field.detail\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<h3>Field Detail</h3>",
-                "<!-- ========= CONSTRUCTOR DETAIL ======== -->\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a name=\"constructor.detail\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<h3>Constructor Detail</h3>",
-                "<!-- ============ METHOD DETAIL ========== -->\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a name=\"method.detail\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<h3>Method Detail</h3>");
-
-        // Test for enum page
-        checkOutput("pkg/AnotherClass.ModalExclusionType.html", true,
-                "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">",
-                "<meta name=\"date\"",
-                "<a name=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
-                "<!-- ======== START OF CLASS DATA ======== -->\n"
-                + "<div class=\"header\">",
-                "<!-- =========== ENUM CONSTANT SUMMARY =========== -->\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a name=\"enum.constant.summary\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<h3>Enum Constant Summary</h3>\n"
-                + "<div class=\"memberSummary\">",
-                "<table summary=\"Enum Constant Summary table, listing enum constants, and an explanation\"",
-                "<!-- ========== METHOD SUMMARY =========== -->\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a name=\"method.summary\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<h3>Method Summary</h3>\n"
-                + "<div class=\"memberSummary\">\n",
-                "<table summary=\"Method Summary table, listing methods, and an explanation\" aria-labelledby=\"t0\">",
-                "<!-- ============ ENUM CONSTANT DETAIL =========== -->\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a name=\"enum.constant.detail\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<h3>Enum Constant Detail</h3>",
-                "<!-- ============ METHOD DETAIL ========== -->\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a name=\"method.detail\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<h3>Method Detail</h3>");
-
-        // Test for interface page
-        checkOutput("pkg2/Interface.html", true,
-                "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">",
-                "<meta name=\"date\"",
-                "<a name=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
-                "<!-- ======== START OF CLASS DATA ======== -->\n"
-                + "<div class=\"header\">",
-                "<!-- ========== METHOD SUMMARY =========== -->\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a name=\"method.summary\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<h3>Method Summary</h3>\n"
-                + "<div class=\"memberSummary\">\n",
-                "<table summary=\"Method Summary table, listing methods, and an explanation\""
-                + " aria-labelledby=\"t0\">",
-                "<!-- ============ METHOD DETAIL ========== -->\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a name=\"method.detail\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<h3>Method Detail</h3>");
-
-        // Test for error page
-        checkOutput("pkg/TestError.html", true,
-                "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">",
-                "<meta name=\"date\"",
-                "<a name=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
-                "<!-- ======== START OF CLASS DATA ======== -->\n"
-                + "<div class=\"header\">",
-                "<!-- ======== CONSTRUCTOR SUMMARY ======== -->\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a name=\"constructor.summary\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<h3>Constructor Summary</h3>",
-                "<!-- ========= CONSTRUCTOR DETAIL ======== -->\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a name=\"constructor.detail\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<h3>Constructor Detail</h3>");
-
-        // Test for exception page
-        checkOutput("pkg/TestException.html", true,
-                "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">",
-                "<meta name=\"date\"",
-                "<a name=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
-                "<!-- ======== START OF CLASS DATA ======== -->\n"
-                + "<div class=\"header\">",
-                "<!-- ======== CONSTRUCTOR SUMMARY ======== -->\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a name=\"constructor.summary\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<h3>Constructor Summary</h3>",
-                "<!-- ========= CONSTRUCTOR DETAIL ======== -->\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a name=\"constructor.detail\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<h3>Constructor Detail</h3>");
-
-        // Test for annotation page
-        checkOutput("pkg2/TestAnnotationType.html", true,
-                "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">",
-                "<meta name=\"date\"",
-                "<a name=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
-                "<!-- ======== START OF CLASS DATA ======== -->\n"
-                + "<div class=\"header\">",
-                "<!-- =========== ANNOTATION TYPE REQUIRED MEMBER SUMMARY =========== -->\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a name=\"annotation.type.required.element.summary\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<h3>Required Element Summary</h3>\n"
-                + "<div class=\"memberSummary\">\n<table summary=\"Required Element Summary table, listing required elements, and an explanation\">",
-                "<!-- =========== ANNOTATION TYPE OPTIONAL MEMBER SUMMARY =========== -->\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a name=\"annotation.type.optional.element.summary\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<h3>Optional Element Summary</h3>\n"
-                + "<div class=\"memberSummary\">\n<table summary=\"Optional Element Summary table, listing optional elements, and an explanation\">",
-                "<!-- ============ ANNOTATION TYPE MEMBER DETAIL =========== -->\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a name=\"annotation.type.element.detail\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<h3>Element Detail</h3>");
-
-        // Test for class use page
-        checkOutput("pkg1/class-use/RegClass.html", true,
-                "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">",
-                "<meta name=\"date\"",
-                "<a name=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
-                "<!-- ========= END OF TOP NAVBAR ========= -->\n"
-                + "</div>\n"
-                + "<div class=\"navPadding\">&nbsp;</div>\n"
-                + "<script type=\"text/javascript\"><!--\n"
-                + "$('.navPadding').css('padding-top', $('.fixedNav').css(\"height\"));\n"
-                + "//-->\n"
-                + "</script>\n"
-                + "<div class=\"header\">",
-                "<div class=\"useSummary\">\n<table summary=\"Use table, listing packages, and an explanation\">",
-                "<li class=\"blockList\"><a name=\"pkg\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<h3>Uses of <a href=\"../RegClass.html\" title=\"class in pkg1\">RegClass</a> in <a href=\"../../pkg/package-summary.html\">pkg</a></h3>\n"
-                + "<div class=\"useSummary\">\n<table summary=\"Use table, listing fields, and an explanation\">");
-
-        // Test for main index page
-        checkOutput("index.html", true,
-                "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">",
-                "<link rel=\"stylesheet\" type=\"text/css\" href=\"stylesheet.css\" title=\"Style\">",
-                "<body onload=\"loadFrames()\">\n"
-                + "<script type=\"text/javascript\">\n"
-                + "if (targetPage == \"\" || targetPage == \"undefined\")\n"
-                + "     window.location.replace('overview-summary.html');\n"
-                + "</script>\n"
-                + "<noscript>JavaScript is disabled on your browser.</noscript>\n"
-                + "<div class=\"mainContainer\">\n"
-                + "<div class=\"leftContainer\">\n"
-                + "<div class=\"leftTop\">\n"
-                + "<iframe src=\"overview-frame.html\" name=\"packageListFrame\" title=\"All Packages\"></iframe>\n"
-                + "</div>");
-    }
-
-    void html4NegatedOutput() {
-        // Negated test for overview-frame page
-        checkOutput("overview-frame.html", false,
-                "<!DOCTYPE HTML>",
-                "<meta name=\"dc.created\"",
-                "<nav role=\"navigation\" class=\"indexNav\">\n"
-                + "<ul>\n"
-                + "<li><a href=\"allclasses-frame.html\" target=\"packageFrame\">All&nbsp;Classes</a></li>",
-                "<main role=\"main\" class=\"indexContainer\">\n"
-                + "<h2 title=\"Packages\">Packages</h2>");
-
-        // Negated test for allclasses-frame page
-        checkOutput("allclasses-frame.html", false,
-                "<!DOCTYPE HTML>",
-                "<meta name=\"dc.created\"",
-                "<main role=\"main\" class=\"indexContainer\">\n"
-                + "<ul>\n"
-                + "<li>");
-
-        // Negated test for overview-summary page
-        checkOutput("overview-summary.html", false,
-                "<!DOCTYPE HTML>",
-                "<meta name=\"dc.created\"",
-                "<a id=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
-                "<div class=\"overviewSummary\">\n"
-                + "<caption>",
-                "<header role=\"banner\">\n"
-                + "<nav role=\"navigation\">\n"
-                + "<!-- ========= START OF TOP NAVBAR ======= -->");
-
-        // Negated test for package-frame page
-        checkOutput("pkg/package-frame.html", false,
-                "<!DOCTYPE HTML>",
-                "<meta name=\"dc.created\"",
-                "<main role=\"main\">\n"
-                + "<h1 class=\"bar\"><a href=\"package-summary.html\" target=\"classFrame\">pkg</a></h1>",
-                "<section role=\"region\">\n"
-                + "<h2 title=\"Interfaces\">Interfaces</h2>",
-                "<section role=\"region\">\n"
-                + "<h2 title=\"Classes\">Classes</h2>",
-                "<section role=\"region\">\n"
-                + "<h2 title=\"Enums\">Enums</h2>",
-                "<section role=\"region\">\n"
-                + "<h2 title=\"Exceptions\">Exceptions</h2>",
-                "<section role=\"region\">\n"
-                + "<h2 title=\"Errors\">Errors</h2>",
-                "<section role=\"region\">\n"
-                + "<h2 title=\"Annotation Types\">Annotation Types</h2>");
-
-        // Negated test for package-summary page
-        checkOutput("pkg/package-summary.html", false,
-                "<!DOCTYPE HTML>",
-                "<meta name=\"dc.created\"",
-                "<a id=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
-                "<div class=\"typeSummary\">\n<table\">",
-                "<header role=\"banner\">\n"
-                + "<nav role=\"navigation\">\n"
-                + "<!-- ========= START OF TOP NAVBAR ======= -->",
-                "<main role=\"main\">\n"
-                + "<div class=\"header\">",
-                "<h2 title=\"Package pkg Description\">Package pkg Description</h2>\n",
-                "<footer role=\"contentinfo\">\n"
-                + "<nav role=\"navigation\">\n"
-                + "<!-- ======= START OF BOTTOM NAVBAR ====== -->");
-
-        // Negated test for package-tree page
-        checkOutput("pkg/package-tree.html", false,
-                "<!DOCTYPE HTML>",
-                "<meta name=\"dc.created\"",
-                "<a id=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
-                "<header role=\"banner\">\n"
-                + "<nav role=\"navigation\">\n"
-                + "<!-- ========= START OF TOP NAVBAR ======= -->",
-                "<main role=\"main\">\n"
-                + "<div class=\"header\">",
-                "<section role=\"region\">\n"
-                + "<h2 title=\"Class Hierarchy\">Class Hierarchy</h2>",
-                "<section role=\"region\">\n"
-                + "<h2 title=\"Interface Hierarchy\">Interface Hierarchy</h2>",
-                "<section role=\"region\">\n"
-                + "<h2 title=\"Annotation Type Hierarchy\">Annotation Type Hierarchy</h2>",
-                "<section role=\"region\">\n"
-                + "<h2 title=\"Enum Hierarchy\">Enum Hierarchy</h2>",
-                "<footer role=\"contentinfo\">\n"
-                + "<nav role=\"navigation\">\n"
-                + "<!-- ======= START OF BOTTOM NAVBAR ====== -->");
-
-        // Negated test for package-use page
-        checkOutput("pkg1/package-use.html", false,
-                "<!DOCTYPE HTML>",
-                "<meta name=\"dc.created\"",
-                "<a id=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
-                "<div class=\"useSummary\">\n<table>",
-                "<header role=\"banner\">\n"
-                + "<nav role=\"navigation\">\n"
-                + "<!-- ========= START OF TOP NAVBAR ======= -->",
-                "<main role=\"main\">\n"
-                + "<div class=\"header\">",
-                "<footer role=\"contentinfo\">\n"
-                + "<nav role=\"navigation\">\n"
-                + "<!-- ======= START OF BOTTOM NAVBAR ====== -->");
-
-        // Negated test for constant-values page
-        checkOutput("constant-values.html", false,
-                "<!DOCTYPE HTML>",
-                "<meta name=\"dc.created\"",
-                "<a id=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
-                "<div class=\"constantsSummary\">\n<table>",
-                "<header role=\"banner\">\n"
-                + "<nav role=\"navigation\">\n"
-                + "<!-- ========= START OF TOP NAVBAR ======= -->",
-                "<main role=\"main\">\n"
-                + "<div class=\"header\">",
-                "<section role=\"region\">\n"
-                + "<h2 title=\"Contents\">Contents</h2>\n",
-                "<section role=\"region\">\n"
-                + "<h2 title=\"pkg\">pkg.*</h2>\n",
-                "<footer role=\"contentinfo\">\n"
-                + "<nav role=\"navigation\">\n"
-                + "<!-- ======= START OF BOTTOM NAVBAR ====== -->");
-
-        // Negated test for deprecated-list page
-        checkOutput("deprecated-list.html", false,
-                "<!DOCTYPE HTML>",
-                "<meta name=\"dc.created\"",
-                "<a id=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
-                "<div class=\"deprecatedSummary\">\n<table>",
-                "<header role=\"banner\">\n"
-                + "<nav role=\"navigation\">\n"
-                + "<!-- ========= START OF TOP NAVBAR ======= -->",
-                "<main role=\"main\">\n"
-                + "<div class=\"header\">",
-                "<footer role=\"contentinfo\">\n"
-                + "<nav role=\"navigation\">\n"
-                + "<!-- ======= START OF BOTTOM NAVBAR ====== -->");
-
-        // Negated test for serialized-form page
-        checkOutput("serialized-form.html", false,
-                "<!DOCTYPE HTML>",
-                "<meta name=\"dc.created\"",
-                "<a id=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
-                "<header role=\"banner\">\n"
-                + "<nav role=\"navigation\">\n"
-                + "<!-- ========= START OF TOP NAVBAR ======= -->",
-                "<main role=\"main\">\n"
-                + "<div class=\"header\">",
-                "<section role=\"region\">\n"
-                + "<h2 title=\"Package\">Package&nbsp;pkg</h2>\n",
-                "<footer role=\"contentinfo\">\n"
-                + "<nav role=\"navigation\">\n"
-                + "<!-- ======= START OF BOTTOM NAVBAR ====== -->");
-
-        // Negated test for overview-tree page
-        checkOutput("overview-tree.html", false,
-                "<!DOCTYPE HTML>",
-                "<meta name=\"dc.created\"",
-                "<a id=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
-                "<header role=\"banner\">\n"
-                + "<nav role=\"navigation\">\n"
-                + "<!-- ========= START OF TOP NAVBAR ======= -->",
-                "<main role=\"main\">\n"
-                + "<div class=\"header\">",
-                "<section role=\"region\">\n"
-                + "<h2 title=\"Class Hierarchy\">Class Hierarchy</h2>\n",
-                "<section role=\"region\">\n"
-                + "<h2 title=\"Interface Hierarchy\">Interface Hierarchy</h2>\n",
-                "<section role=\"region\">\n"
-                + "<h2 title=\"Annotation Type Hierarchy\">Annotation Type Hierarchy</h2>\n",
-                "<section role=\"region\">\n"
-                + "<h2 title=\"Enum Hierarchy\">Enum Hierarchy</h2>\n",
-                "<footer role=\"contentinfo\">\n"
-                + "<nav role=\"navigation\">\n"
-                + "<!-- ======= START OF BOTTOM NAVBAR ====== -->");
-
-        // Negated test for index-all page
-        checkOutput("index-all.html", false,
-                "<!DOCTYPE HTML>",
-                "<meta name=\"dc.created\"",
-                "<a id=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
-                "<header role=\"banner\">\n"
-                + "<nav role=\"navigation\">\n"
-                + "<!-- ========= START OF TOP NAVBAR ======= -->",
-                "</header>\n"
-                + "<main role=\"main\">",
-                "<footer role=\"contentinfo\">\n"
-                + "<nav role=\"navigation\">\n"
-                + "<!-- ======= START OF BOTTOM NAVBAR ====== -->");
-
-        // Negated test for src-html page
-        checkOutput("src-html/pkg/AnotherClass.html", false,
-                "<!DOCTYPE HTML>",
-                "<main role=\"main\">\n"
-                + "<div class=\"sourceContainer\">");
-
-        // Negated test for help-doc page
-        checkOutput("help-doc.html", false,
-                "<!DOCTYPE HTML>",
-                "<meta name=\"dc.created\"",
-                "<a id=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
-                "<header role=\"banner\">\n"
-                + "<nav role=\"navigation\">\n"
-                + "<!-- ========= START OF TOP NAVBAR ======= -->",
-                "<main role=\"main\">\n"
-                + "<div class=\"header\">",
-                "<section role=\"region\">\n"
-                + "<h2>Overview</h2>\n",
-                "<section role=\"region\">\n"
-                + "<h2>Package</h2>\n",
-                "<section role=\"region\">\n"
-                + "<h2>Class/Interface</h2>\n",
-                "<footer role=\"contentinfo\">\n"
-                + "<nav role=\"navigation\">\n"
-                + "<!-- ======= START OF BOTTOM NAVBAR ====== -->");
-
-        // Negated test for a regular class page and members (nested class, field, constructore and method)
-        checkOutput("pkg/AnotherClass.html", false,
-                "<!DOCTYPE HTML>",
-                "<meta name=\"dc.created\"",
-                "<a id=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
-                "<header role=\"banner\">\n"
-                + "<nav role=\"navigation\">\n"
-                + "<!-- ========= START OF TOP NAVBAR ======= -->",
-                "<main role=\"main\">\n"
-                + "<div class=\"header\">",
-                "<section role=\"region\">\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a id=\"nested.class.summary\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<h3>Nested Class Summary</h3>\n"
-                + "<div class=\"memberSummary\">",
-                "<section role=\"region\">\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a id=\"field.summary\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<h3>Field Summary</h3>\n"
-                + "<div class=\"memberSummary\">",
-                "<section role=\"region\">\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a id=\"constructor.summary\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<h3>Constructor Summary</h3>\n"
-                + "<div class=\"memberSummary\">",
-                "<section role=\"region\">\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a id=\"method.summary\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<h3>Method Summary</h3>",
-                "<section role=\"region\">\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a id=\"field.detail\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<h3>Field Detail</h3>",
-                "<section role=\"region\">\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a id=\"constructor.detail\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<h3>Constructor Detail</h3>",
-                "<section role=\"region\">\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a id=\"method.detail\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<h3>Method Detail</h3>",
-                "<footer role=\"contentinfo\">\n"
-                + "<nav role=\"navigation\">\n"
-                + "<!-- ======= START OF BOTTOM NAVBAR ====== -->");
-
-        // Negated test for enum page
-        checkOutput("pkg/AnotherClass.ModalExclusionType.html", false,
-                "<!DOCTYPE HTML>",
-                "<meta name=\"dc.created\"",
-                "<a id=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
-                "<header role=\"banner\">\n"
-                + "<nav role=\"navigation\">\n"
-                + "<!-- ========= START OF TOP NAVBAR ======= -->",
-                "<main role=\"main\">\n"
-                + "<div class=\"header\">",
-                "<section role=\"region\">\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a id=\"enum.constant.summary\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<h3>Enum Constant Summary</h3>\n"
-                + "<div class=\"memberSummary\">",
-                "<section role=\"region\">\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a id=\"method.summary\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<h3>Method Summary</h3>\n"
-                + "<div class=\"memberSummary\">",
-                "<section role=\"region\">\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a id=\"enum.constant.detail\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<h3>Enum Constant Detail</h3>",
-                "<section role=\"region\">\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a id=\"method.detail\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<h3>Method Detail</h3>",
-                "<footer role=\"contentinfo\">\n"
-                + "<nav role=\"navigation\">\n"
-                + "<!-- ======= START OF BOTTOM NAVBAR ====== -->");
-
-        // Negated test for interface page
-        checkOutput("pkg2/Interface.html", false,
-                "<!DOCTYPE HTML>",
-                "<meta name=\"dc.created\"",
-                "<a id=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
-                "<header role=\"banner\">\n"
-                + "<nav role=\"navigation\">\n"
-                + "<!-- ========= START OF TOP NAVBAR ======= -->",
-                "<main role=\"main\">\n"
-                + "<div class=\"header\">",
-                "<section role=\"region\">\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a id=\"method.summary\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<h3>Method Summary</h3>\n"
-                + "<div class=\"memberSummary\">",
-                "<section role=\"region\">\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a id=\"method.detail\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<h3>Method Detail</h3>",
-                "<footer role=\"contentinfo\">\n"
-                + "<nav role=\"navigation\">\n"
-                + "<!-- ======= START OF BOTTOM NAVBAR ====== -->");
-
-        // Negated test for error page
-        checkOutput("pkg/TestError.html", false,
-                "<!DOCTYPE HTML>",
-                "<meta name=\"dc.created\"",
-                "<a id=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
-                "<header role=\"banner\">\n"
-                + "<nav role=\"navigation\">\n"
-                + "<!-- ========= START OF TOP NAVBAR ======= -->",
-                "<main role=\"main\">\n"
-                + "<div class=\"header\">",
-                "<section role=\"region\">\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a id=\"constructor.summary\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<h3>Constructor Summary</h3>",
-                "<section role=\"region\">\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a id=\"constructor.detail\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<h3>Constructor Detail</h3>",
-                "<footer role=\"contentinfo\">\n"
-                + "<nav role=\"navigation\">\n"
-                + "<!-- ======= START OF BOTTOM NAVBAR ====== -->");
-
-        // Negated test for exception page
-        checkOutput("pkg/TestException.html", false,
-                "<!DOCTYPE HTML>",
-                "<meta name=\"dc.created\"",
-                "<a id=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
-                "<header role=\"banner\">\n"
-                + "<nav role=\"navigation\">\n"
-                + "<!-- ========= START OF TOP NAVBAR ======= -->",
-                "<main role=\"main\">\n"
-                + "<div class=\"header\">",
-                "<section role=\"region\">\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a id=\"constructor.summary\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<h3>Constructor Summary</h3>",
-                "<section role=\"region\">\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a id=\"constructor.detail\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<h3>Constructor Detail</h3>",
-                "<footer role=\"contentinfo\">\n"
-                + "<nav role=\"navigation\">\n"
-                + "<!-- ======= START OF BOTTOM NAVBAR ====== -->");
-
-        // Negated test for annotation page
-        checkOutput("pkg2/TestAnnotationType.html", false,
-                "<!DOCTYPE HTML>",
-                "<meta name=\"dc.created\"",
-                "<a id=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
-                "<header role=\"banner\">\n"
-                + "<nav role=\"navigation\">\n"
-                + "<!-- ========= START OF TOP NAVBAR ======= -->",
-                "<main role=\"main\">\n"
-                + "<div class=\"header\">",
-                "<section role=\"region\">\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a id=\"annotation.type.required.element.summary\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<h3>Required Element Summary</h3>\n"
-                + "<div class=\"memberSummary\">",
-                "<section role=\"region\">\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a id=\"annotation.type.optional.element.summary\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<h3>Optional Element Summary</h3>\n"
-                + "<div class=\"memberSummary\">",
-                "<section role=\"region\">\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a id=\"annotation.type.element.detail\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<h3>Element Detail</h3>",
-                "<footer role=\"contentinfo\">\n"
-                + "<nav role=\"navigation\">\n"
-                + "<!-- ======= START OF BOTTOM NAVBAR ====== -->");
-
-        // Negated test for class use page
-        checkOutput("pkg1/class-use/RegClass.html", false,
-                "<!DOCTYPE HTML>",
-                "<meta name=\"dc.created\"",
-                "<a id=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
-                "<header role=\"banner\">\n"
-                + "<nav role=\"navigation\">\n"
-                + "<!-- ========= START OF TOP NAVBAR ======= -->",
-                "<main role=\"main\">\n"
-                + "<div class=\"header\">",
-                "<div class=\"useSummary\">\n<table>\n",
-                "<section role=\"region\"><a id=\"pkg\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<h3>Uses of <a href=\"../RegClass.html\" title=\"class in pkg1\">RegClass</a> in <a href=\"../../pkg/package-summary.html\">pkg</a></h3>\n"
-                + "\n"
-                + "<div class=\"useSummary\">",
-                "<footer role=\"contentinfo\">\n"
-                + "<nav role=\"navigation\">\n"
-                + "<!-- ======= START OF BOTTOM NAVBAR ====== -->");
-
-        // Negated test for main index page
-        checkOutput("index.html", false,
-                "<!DOCTYPE HTML>",
-                "<body>\n"
-                + "<script type=\"text/javascript\">\n"
-                + "if (targetPage == \"\" || targetPage == \"undefined\")\n"
-                + "     window.location.replace('overview-summary.html');\n"
-                + "</script>\n"
-                + "<noscript>JavaScript is disabled on your browser.</noscript>\n"
-                + "<main role=\"main\">\n"
                 + "<div class=\"mainContainer\">\n");
     }
 }

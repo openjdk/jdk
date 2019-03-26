@@ -34,7 +34,7 @@ include ProcessMarkdown.gmk
 #
 ################################################################################
 
-ifeq ($(PANDOC), )
+ifeq ($(ENABLE_PANDOC), false)
   $(info No pandoc executable was detected by configure)
   $(error Cannot continue)
 endif

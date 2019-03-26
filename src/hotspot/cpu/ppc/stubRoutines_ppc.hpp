@@ -38,14 +38,7 @@ enum platform_dependent_constants {
 };
 
 // CRC32 Intrinsics.
-#define CRC32_COLUMN_SIZE 256
-#define CRC32_BYFOUR
-#ifdef  CRC32_BYFOUR
-  #define CRC32_TABLES 8
-#else
-  #define CRC32_TABLES 1
-#endif
-
+#define CRC32_TABLE_SIZE (4 * 256)
 #define REVERSE_CRC32_POLY  0xEDB88320
 #define REVERSE_CRC32C_POLY 0x82F63B78
 #define INVERSE_REVERSE_CRC32_POLY  0x1aab14226ull
@@ -53,24 +46,6 @@ enum platform_dependent_constants {
 #define CRC32_UNROLL_FACTOR 2048
 #define CRC32_UNROLL_FACTOR2 8
 
-
-class ppc64 {
- friend class StubGenerator;
-
- private:
-
-  // CRC32 Intrinsics.
-  static juint _crc_table[CRC32_TABLES][CRC32_COLUMN_SIZE];
-  static juint _crc32c_table[CRC32_TABLES][CRC32_COLUMN_SIZE];
-  static juint *_crc_constants;
-  static juint *_crc32c_constants;
-
- public:
-
-  // CRC32 Intrinsics.
-  static address crc_constants() { return (address)_crc_constants; }
-  static address crc32c_constants() { return (address)_crc32c_constants; }
-  static juint* generate_crc_constants(juint reverse_poly);
-};
+static address generate_crc_constants(juint reverse_poly);
 
 #endif // CPU_PPC_STUBROUTINES_PPC_HPP

@@ -143,45 +143,6 @@ public class TestUseOption extends JavadocTester {
     }
 
     @Test
-    public void test1_html4() {
-        javadoc("-d", "out-1-html4",
-                "-html4",
-                "-sourcepath", testSrc,
-                "-use",
-                "pkg1", "pkg2");
-        checkExit(Exit.OK);
-
-        checkOutput("pkg1/class-use/UsedClass.html", true,
-          "<a href=\"../C1.html#methodInC1ReturningType--\">methodInC1ReturningType</a>"
-        );
-        checkOutput("pkg1/class-use/UsedInterface.html", true,
-            "../C10.html#withReturningTypeParameters--"
-        );
-        checkOutput("pkg1/class-use/UsedInterface.html", true,
-            "../C10.html#withTypeParametersOfType-java.lang.Class-"
-        );
-        checkOutput("pkg1/class-use/UsedInterface.html", true,
-            "<a href=\"../C10.html#addAll-pkg1.UsedInterface...-\">addAll</a>"
-        );
-        checkOutput("pkg1/class-use/UsedInterface.html", true,
-            "<a href=\"../C10.html#create-pkg1.UsedInterfaceA-pkg1." +
-            "UsedInterface-java.lang.String-\">"
-        );
-        checkOutput("pkg1/class-use/UsedInterface.html", true,
-            "<a href=\"../C10.html#withTypeParametersOfType-java.lang.Class-\">" +
-            "withTypeParametersOfType</a>"
-        );
-        checkOutput("pkg1/class-use/UsedThrowable.html", true,
-            "Methods in <a href=\"../package-summary.html\">pkg1</a> that throw "
-            + "<a href=\"../UsedThrowable.html\" title=\"class in pkg1\">UsedThrowable</a>",
-            "<td class=\"colFirst\"><code>void</code></td>\n<th class=\"colSecond\" scope=\"row\"><span class="
-            + "\"typeNameLabel\">C1.</span><code><span class=\"memberNameLink\">"
-            + "<a href=\"../C1.html#methodInC1ThrowsThrowable--\">methodInC1ThrowsThrowable"
-            + "</a></span>()</code></th>"
-        );
-    }
-
-    @Test
     public void test2() {
         javadoc("-d", "out-2",
                 "-sourcepath", testSrc,
@@ -206,24 +167,6 @@ public class TestUseOption extends JavadocTester {
     }
 
     @Test
-    public void test2_html4() {
-        javadoc("-d", "out-2-html4",
-                "-html4",
-                "-sourcepath", testSrc,
-                "-use",
-                testSrc("C.java"), testSrc("UsedInC.java"), "pkg3");
-        checkExit(Exit.OK);
-
-        checkOutput("class-use/UsedInC.html", true,
-                "<li class=\"blockList\"><a name=\"unnamed.package\">"
-        );
-        checkOutput("package-use.html", true,
-                "<th class=\"colFirst\" scope=\"row\"><a href=\"#unnamed.package\">&lt;Unnamed&gt;</a></th>\n"
-                + "<td class=\"colLast\">&nbsp;</td>"
-        );
-    }
-
-    @Test
     public void test3() {
         javadoc("-d", "out-3",
                 "-sourcepath", testSrc,
@@ -235,20 +178,5 @@ public class TestUseOption extends JavadocTester {
                 "<a href=\"../C1.html#umethod2(unique.UseMe,unique.UseMe)\">",
                 "<a href=\"../C1.html#umethod3(unique.UseMe,unique.UseMe)\">",
                 "<a href=\"../C1.html#%3Cinit%3E(unique.UseMe,unique.UseMe)\">");
-    }
-
-    @Test
-    public void test3_html4() {
-        javadoc("-d", "out-3-html4",
-                "-html4",
-                "-sourcepath", testSrc,
-                "-use",
-                "-package", "unique");
-        checkExit(Exit.OK);
-        checkUnique("unique/class-use/UseMe.html",
-                "<a href=\"../C1.html#umethod1-unique.UseMe-unique.UseMe:A-\">",
-                "<a href=\"../C1.html#umethod2-unique.UseMe-unique.UseMe-\">",
-                "<a href=\"../C1.html#umethod3-unique.UseMe-unique.UseMe-\">",
-                "<a href=\"../C1.html#C1-unique.UseMe-unique.UseMe-\">");
     }
 }

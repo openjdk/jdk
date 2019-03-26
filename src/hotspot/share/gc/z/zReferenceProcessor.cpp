@@ -39,45 +39,11 @@
 static const ZStatSubPhase ZSubPhaseConcurrentReferencesProcess("Concurrent References Process");
 static const ZStatSubPhase ZSubPhaseConcurrentReferencesEnqueue("Concurrent References Enqueue");
 
-ZReferenceProcessor::ZReferenceProcessor(ZWorkers* workers) :
-    _workers(workers),
-    _soft_reference_policy(NULL),
-    _encountered_count(),
-    _discovered_count(),
-    _enqueued_count(),
-    _discovered_list(NULL),
-    _pending_list(NULL),
-    _pending_list_tail(_pending_list.addr()) {}
-
-void ZReferenceProcessor::set_soft_reference_policy(bool clear) {
-  static AlwaysClearPolicy always_clear_policy;
-  static LRUMaxHeapPolicy lru_max_heap_policy;
-
-  if (clear) {
-    log_info(gc, ref)("Clearing All Soft References");
-    _soft_reference_policy = &always_clear_policy;
-  } else {
-    _soft_reference_policy = &lru_max_heap_policy;
-  }
-
-  _soft_reference_policy->setup();
+static ReferenceType reference_type(oop reference) {
+  return InstanceKlass::cast(reference->klass())->reference_type();
 }
 
-void ZReferenceProcessor::update_soft_reference_clock() const {
-  const jlong now = os::javaTimeNanos() / NANOSECS_PER_MILLISEC;
-  java_lang_ref_SoftReference::set_clock(now);
-}
-
-bool ZReferenceProcessor::is_inactive_final_reference(oop obj, ReferenceType type) const {
-  // A non-null next field for a FinalReference means the reference is inactive.
-  return (type == REF_FINAL) && (java_lang_ref_Reference::next(obj) != NULL);
-}
-
-ReferenceType ZReferenceProcessor::reference_type(oop obj) const {
-  return InstanceKlass::cast(obj->klass())->reference_type();
-}
-
-const char* ZReferenceProcessor::reference_type_name(ReferenceType type) const {
+static const char* reference_type_name(ReferenceType type) {
   switch (type) {
   case REF_SOFT:
     return "Soft";
@@ -97,53 +63,134 @@ const char* ZReferenceProcessor::reference_type_name(ReferenceType type) const {
   }
 }
 
-volatile oop* ZReferenceProcessor::reference_referent_addr(oop obj) const {
-  return (volatile oop*)java_lang_ref_Reference::referent_addr_raw(obj);
+static volatile oop* reference_referent_addr(oop reference) {
+  return (volatile oop*)java_lang_ref_Reference::referent_addr_raw(reference);
 }
 
-oop ZReferenceProcessor::reference_referent(oop obj) const {
-  return *reference_referent_addr(obj);
+static oop reference_referent(oop reference) {
+  return *reference_referent_addr(reference);
 }
 
-bool ZReferenceProcessor::is_referent_strongly_alive_or_null(oop obj, ReferenceType type) const {
-  // Check if the referent is strongly alive or null, in which case we don't want to
-  // discover the reference. It can only be null if the application called
-  // Reference.enqueue() or Reference.clear().
-  //
+static void reference_set_referent(oop reference, oop referent) {
+  java_lang_ref_Reference::set_referent_raw(reference, referent);
+}
+
+static oop* reference_discovered_addr(oop reference) {
+  return (oop*)java_lang_ref_Reference::discovered_addr_raw(reference);
+}
+
+static oop reference_discovered(oop reference) {
+  return *reference_discovered_addr(reference);
+}
+
+static void reference_set_discovered(oop reference, oop discovered) {
+  java_lang_ref_Reference::set_discovered_raw(reference, discovered);
+}
+
+static oop* reference_next_addr(oop reference) {
+  return (oop*)java_lang_ref_Reference::next_addr_raw(reference);
+}
+
+static oop reference_next(oop reference) {
+  return *reference_next_addr(reference);
+}
+
+static void reference_set_next(oop reference, oop next) {
+  java_lang_ref_Reference::set_next_raw(reference, next);
+}
+
+static void soft_reference_update_clock() {
+  const jlong now = os::javaTimeNanos() / NANOSECS_PER_MILLISEC;
+  java_lang_ref_SoftReference::set_clock(now);
+}
+
+ZReferenceProcessor::ZReferenceProcessor(ZWorkers* workers) :
+    _workers(workers),
+    _soft_reference_policy(NULL),
+    _encountered_count(),
+    _discovered_count(),
+    _enqueued_count(),
+    _discovered_list(NULL),
+    _pending_list(NULL),
+    _pending_list_tail(_pending_list.addr()) {}
+
+void ZReferenceProcessor::set_soft_reference_policy(bool clear) {
+  static AlwaysClearPolicy always_clear_policy;
+  static LRUMaxHeapPolicy lru_max_heap_policy;
+
+  if (clear) {
+    log_info(gc, ref)("Clearing All SoftReferences");
+    _soft_reference_policy = &always_clear_policy;
+  } else {
+    _soft_reference_policy = &lru_max_heap_policy;
+  }
+
+  _soft_reference_policy->setup();
+}
+
+bool ZReferenceProcessor::is_inactive(oop reference, oop referent, ReferenceType type) const {
+  if (type == REF_FINAL) {
+    // A FinalReference is inactive if its next field is non-null. An application can't
+    // call enqueue() or clear() on a FinalReference.
+    return reference_next(reference) != NULL;
+  } else {
+    // A non-FinalReference is inactive if the referent is null. The referent can only
+    // be null if the application called Reference.enqueue() or Reference.clear().
+    return referent == NULL;
+  }
+}
+
+bool ZReferenceProcessor::is_strongly_live(oop referent) const {
+  return ZHeap::heap()->is_object_strongly_live(ZOop::to_address(referent));
+}
+
+bool ZReferenceProcessor::is_softly_live(oop reference, ReferenceType type) const {
+  if (type != REF_SOFT) {
+    // Not a SoftReference
+    return false;
+  }
+
+  // Ask SoftReference policy
+  const jlong clock = java_lang_ref_SoftReference::clock();
+  assert(clock != 0, "Clock not initialized");
+  assert(_soft_reference_policy != NULL, "Policy not initialized");
+  return !_soft_reference_policy->should_clear_reference(reference, clock);
+}
+
+bool ZReferenceProcessor::should_discover(oop reference, ReferenceType type) const {
+  volatile oop* const referent_addr = reference_referent_addr(reference);
+  const oop referent = ZBarrier::weak_load_barrier_on_oop_field(referent_addr);
+
+  if (is_inactive(reference, referent, type)) {
+    return false;
+  }
+
+  if (is_strongly_live(referent)) {
+    return false;
+  }
+
+  if (is_softly_live(reference, type)) {
+    return false;
+  }
+
   // PhantomReferences with finalizable marked referents should technically not have
   // to be discovered. However, InstanceRefKlass::oop_oop_iterate_ref_processing()
   // does not know about the finalizable mark concept, and will therefore mark
   // referents in non-discovered PhantomReferences as strongly live. To prevent
   // this, we always discover PhantomReferences with finalizable marked referents.
   // They will automatically be dropped during the reference processing phase.
-
-  volatile oop* const p = reference_referent_addr(obj);
-  const oop o = ZBarrier::weak_load_barrier_on_oop_field(p);
-  return o == NULL || ZHeap::heap()->is_object_strongly_live(ZOop::to_address(o));
+  return true;
 }
 
-bool ZReferenceProcessor::is_referent_softly_alive(oop obj, ReferenceType type) const {
-  if (type != REF_SOFT) {
-    // Not a soft reference
-    return false;
-  }
-
-  // Ask soft reference policy
-  const jlong clock = java_lang_ref_SoftReference::clock();
-  assert(clock != 0, "Clock not initialized");
-  assert(_soft_reference_policy != NULL, "Policy not initialized");
-  return !_soft_reference_policy->should_clear_reference(obj, clock);
-}
-
-bool ZReferenceProcessor::should_drop_reference(oop obj, ReferenceType type) const {
+bool ZReferenceProcessor::should_drop(oop reference, ReferenceType type) const {
   // This check is racing with a call to Reference.clear() from the application.
   // If the application clears the reference after this check it will still end
   // up on the pending list, and there's nothing we can do about that without
   // changing the Reference.clear() API. This check is also racing with a call
   // to Reference.enqueue() from the application, which is unproblematic, since
   // the application wants the reference to be enqueued anyway.
-  const oop o = reference_referent(obj);
-  if (o == NULL) {
+  const oop referent = reference_referent(reference);
+  if (referent == NULL) {
     // Reference has been cleared, by a call to Reference.enqueue()
     // or Reference.clear() from the application, which means we
     // should drop the reference.
@@ -153,22 +200,14 @@ bool ZReferenceProcessor::should_drop_reference(oop obj, ReferenceType type) con
   // Check if the referent is still alive, in which case we should
   // drop the reference.
   if (type == REF_PHANTOM) {
-    return ZBarrier::is_alive_barrier_on_phantom_oop(o);
+    return ZBarrier::is_alive_barrier_on_phantom_oop(referent);
   } else {
-    return ZBarrier::is_alive_barrier_on_weak_oop(o);
+    return ZBarrier::is_alive_barrier_on_weak_oop(referent);
   }
 }
 
-bool ZReferenceProcessor::should_mark_referent(ReferenceType type) const {
-  // Referents of final references (and its reachable sub graph) are
-  // always marked finalizable during discovery. This avoids the problem
-  // of later having to mark those objects if the referent is still final
-  // reachable during processing.
-  return type == REF_FINAL;
-}
-
-void ZReferenceProcessor::keep_referent_alive(oop obj, ReferenceType type) const {
-  volatile oop* const p = reference_referent_addr(obj);
+void ZReferenceProcessor::keep_alive(oop reference, ReferenceType type) const {
+  volatile oop* const p = reference_referent_addr(reference);
   if (type == REF_PHANTOM) {
     ZBarrier::keep_alive_barrier_on_phantom_oop_field(p);
   } else {
@@ -176,82 +215,86 @@ void ZReferenceProcessor::keep_referent_alive(oop obj, ReferenceType type) const
   }
 }
 
-bool ZReferenceProcessor::discover_reference(oop obj, ReferenceType type) {
+void ZReferenceProcessor::make_inactive(oop reference, ReferenceType type) const {
+  if (type == REF_FINAL) {
+    // Don't clear referent. It is needed by the Finalizer thread to make the call
+    // to finalize(). A FinalReference is instead made inactive by self-looping the
+    // next field. An application can't call FinalReference.enqueue(), so there is
+    // no race to worry about when setting the next field.
+    assert(reference_next(reference) == NULL, "Already inactive");
+    reference_set_next(reference, reference);
+  } else {
+    // Clear referent
+    reference_set_referent(reference, NULL);
+  }
+}
+
+void ZReferenceProcessor::discover(oop reference, ReferenceType type) {
+  log_trace(gc, ref)("Discovered Reference: " PTR_FORMAT " (%s)", p2i(reference), reference_type_name(type));
+
+  // Update statistics
+  _discovered_count.get()[type]++;
+
+  if (type == REF_FINAL) {
+    // Mark referent (and its reachable subgraph) finalizable. This avoids
+    // the problem of later having to mark those objects if the referent is
+    // still final reachable during processing.
+    volatile oop* const referent_addr = reference_referent_addr(reference);
+    ZBarrier::mark_barrier_on_oop_field(referent_addr, true /* finalizable */);
+  }
+
+  // Add reference to discovered list
+  assert(reference_discovered(reference) == NULL, "Already discovered");
+  oop* const list = _discovered_list.addr();
+  reference_set_discovered(reference, *list);
+  *list = reference;
+}
+
+bool ZReferenceProcessor::discover_reference(oop reference, ReferenceType type) {
   if (!RegisterReferences) {
     // Reference processing disabled
     return false;
   }
 
-  log_trace(gc, ref)("Encountered Reference: " PTR_FORMAT " (%s)", p2i(obj), reference_type_name(type));
+  log_trace(gc, ref)("Encountered Reference: " PTR_FORMAT " (%s)", p2i(reference), reference_type_name(type));
 
   // Update statistics
   _encountered_count.get()[type]++;
 
-  if (is_referent_strongly_alive_or_null(obj, type) ||
-      is_inactive_final_reference(obj, type) ||
-      is_referent_softly_alive(obj, type)) {
+  if (!should_discover(reference, type)) {
     // Not discovered
     return false;
   }
 
-  discover(obj, type);
+  discover(reference, type);
 
   // Discovered
   return true;
 }
 
-void ZReferenceProcessor::discover(oop obj, ReferenceType type) {
-  log_trace(gc, ref)("Discovered Reference: " PTR_FORMAT " (%s)", p2i(obj), reference_type_name(type));
-
-  // Update statistics
-  _discovered_count.get()[type]++;
-
-  // Mark referent finalizable
-  if (should_mark_referent(type)) {
-    oop* const referent_addr = (oop*)java_lang_ref_Reference::referent_addr_raw(obj);
-    ZBarrier::mark_barrier_on_oop_field(referent_addr, true /* finalizable */);
-  }
-
-  // Add reference to discovered list
-  assert(java_lang_ref_Reference::discovered(obj) == NULL, "Already discovered");
-  oop* const list = _discovered_list.addr();
-  java_lang_ref_Reference::set_discovered(obj, *list);
-  *list = obj;
-}
-
-oop ZReferenceProcessor::drop(oop obj, ReferenceType type) {
-  log_trace(gc, ref)("Dropped Reference: " PTR_FORMAT " (%s)", p2i(obj), reference_type_name(type));
+oop ZReferenceProcessor::drop(oop reference, ReferenceType type) {
+  log_trace(gc, ref)("Dropped Reference: " PTR_FORMAT " (%s)", p2i(reference), reference_type_name(type));
 
   // Keep referent alive
-  keep_referent_alive(obj, type);
+  keep_alive(reference, type);
 
   // Unlink and return next in list
-  const oop next = java_lang_ref_Reference::discovered(obj);
-  java_lang_ref_Reference::set_discovered(obj, NULL);
+  const oop next = reference_discovered(reference);
+  reference_set_discovered(reference, NULL);
   return next;
 }
 
-oop* ZReferenceProcessor::keep(oop obj, ReferenceType type) {
-  log_trace(gc, ref)("Enqueued Reference: " PTR_FORMAT " (%s)", p2i(obj), reference_type_name(type));
+oop* ZReferenceProcessor::keep(oop reference, ReferenceType type) {
+  log_trace(gc, ref)("Enqueued Reference: " PTR_FORMAT " (%s)", p2i(reference), reference_type_name(type));
 
   // Update statistics
   _enqueued_count.get()[type]++;
 
-  if (type != REF_FINAL) {
-    // Clear referent
-    java_lang_ref_Reference::set_referent(obj, NULL);
-  } else {
-    // For a FinalReference, don't clear the referent, because it is
-    // needed for the finalize call.  Instead, make the reference
-    // inactive by self-looping the 'next' field.  FinalReference
-    // doesn't allow Reference.enqueue, so there's no race to worry
-    // about when setting 'next'.
-    assert(java_lang_ref_Reference::next(obj) == NULL, "enqueued FinalReference");
-    java_lang_ref_Reference::set_next_raw(obj, obj);
-  }
+  // Make reference inactive
+  make_inactive(reference, type);
 
   // Return next in list
-  return (oop*)java_lang_ref_Reference::discovered_addr_raw(obj);
+  return reference_discovered_addr(reference);
 }
 
 void ZReferenceProcessor::work() {
@@ -260,13 +303,13 @@ void ZReferenceProcessor::work() {
   oop* p = list;
 
   while (*p != NULL) {
-    const oop obj = *p;
-    const ReferenceType type = reference_type(obj);
+    const oop reference = *p;
+    const ReferenceType type = reference_type(reference);
 
-    if (should_drop_reference(obj, type)) {
-      *p = drop(obj, type);
+    if (should_drop(reference, type)) {
+      *p = drop(reference, type);
     } else {
-      p = keep(obj, type);
+      p = keep(reference, type);
     }
   }
 
@@ -390,8 +433,8 @@ void ZReferenceProcessor::process_references() {
   ZReferenceProcessorTask task(this);
   _workers->run_concurrent(&task);
 
-  // Update soft reference clock
-  update_soft_reference_clock();
+  // Update SoftReference clock
+  soft_reference_update_clock();
 
   // Collect, log and trace statistics
   collect_statistics();

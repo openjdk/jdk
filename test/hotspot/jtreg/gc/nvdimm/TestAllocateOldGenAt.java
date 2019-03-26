@@ -21,12 +21,16 @@
  * questions.
  */
 
+package gc.nvdimm;
+
 /* @test TestAllocateOldGenAt.java
  * @key gc
  * @summary Test to check allocation of Java Heap with AllocateOldGenAt option
  * @requires vm.gc=="null" & os.family != "aix"
+ * @requires test.vm.gc.nvdimm
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
+ * @run main gc.nvdimm.TestAllocateOldGenAt
  */
 
 import jdk.test.lib.JDKToolFinder;
@@ -39,7 +43,7 @@ public class TestAllocateOldGenAt {
   private static ArrayList<String> commonOpts;
 
   public static void main(String args[]) throws Exception {
-    commonOpts = new ArrayList();
+    commonOpts = new ArrayList<>();
 
     String testVmOptsStr = System.getProperty("test.java.opts");
     if (!testVmOptsStr.isEmpty()) {
@@ -59,7 +63,7 @@ public class TestAllocateOldGenAt {
   }
 
   private static void runTest(String... extraFlags) throws Exception {
-    ArrayList<String> testOpts = new ArrayList();
+    ArrayList<String> testOpts = new ArrayList<>();
     Collections.addAll(testOpts, commonOpts.toArray(new String[commonOpts.size()]));
     Collections.addAll(testOpts, extraFlags);
 

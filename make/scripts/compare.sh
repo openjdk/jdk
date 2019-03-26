@@ -340,7 +340,9 @@ compare_file_types() {
 
     echo -n File types...
     found=""
-    for f in `cd $OTHER_DIR && $FIND . ! -type d`
+    # The file command does not know about jmod files and this sometimes results
+    # in different types being detected more or less randomly.
+    for f in $(cd $OTHER_DIR && $FIND . ! -type d -a ! -name "*.jmod")
     do
         if [ ! -f ${OTHER_DIR}/$f ]; then continue; fi
         if [ ! -f ${THIS_DIR}/$f ]; then continue; fi
@@ -494,7 +496,7 @@ compare_zip_file() {
     $RM -rf $THIS_UNZIPDIR $OTHER_UNZIPDIR
     $MKDIR -p $THIS_UNZIPDIR
     $MKDIR -p $OTHER_UNZIPDIR
-    if [ "$TYPE" = "jar" -o "$TYPE" = "war" -o "$TYPE" = "zip" -o "$TYPE" = "jmod" ]
+    if [ "$TYPE" = "jar" -o "$TYPE" = "war" -o "$TYPE" = "zip" ]
     then
         (cd $THIS_UNZIPDIR && $UNARCHIVE $THIS_ZIP)
         (cd $OTHER_UNZIPDIR && $UNARCHIVE $OTHER_ZIP)
@@ -502,6 +504,10 @@ compare_zip_file() {
     then
         (cd $THIS_UNZIPDIR && $GUNZIP -c $THIS_ZIP | $TAR xf -)
         (cd $OTHER_UNZIPDIR && $GUNZIP -c $OTHER_ZIP | $TAR xf -)
+    elif [ "$TYPE" = "jmod" ]
+    then
+        (cd $THIS_UNZIPDIR && $JMOD extract $THIS_ZIP)
+        (cd $OTHER_UNZIPDIR && $JMOD extract $OTHER_ZIP)
     else
         (cd $THIS_UNZIPDIR && $JIMAGE extract $THIS_ZIP)
         (cd $OTHER_UNZIPDIR && $JIMAGE extract $OTHER_ZIP)
@@ -559,16 +565,16 @@ compare_zip_file() {
         return_value=1
     fi
 
-    if [ "$OPENJDK_TARGET_OS" = "solaris" ]; then
-        DIFFING_FILES=$($GREP -e 'differ$' -e '^diff ' $CONTENTS_DIFF_FILE \
-            | $SED -e 's/^Files //g' -e 's/diff -r //g' | $CUT -f 1 -d ' ' \
-            | $SED "s|$OTHER_UNZIPDIR/||g")
-    else
-        DIFFING_FILES=$($GREP -e "differ$" $CONTENTS_DIFF_FILE \
-            | $CUT -f 2 -d ' ' | $SED "s|$OTHER_UNZIPDIR/||g")
-    fi
-
     if [ "$CMP_ZIPS_CONTENTS" = "true" ]; then
+        if [ "$OPENJDK_TARGET_OS" = "solaris" ]; then
+            DIFFING_FILES=$($GREP -e 'differ$' -e '^diff ' $CONTENTS_DIFF_FILE \
+                | $SED -e 's/^Files //g' -e 's/diff -r //g' | $CUT -f 1 -d ' ' \
+                | $SED "s|$OTHER_UNZIPDIR/||g")
+        else
+            DIFFING_FILES=$($GREP -e "differ$" $CONTENTS_DIFF_FILE \
+                | $CUT -f 2 -d ' ' | $SED "s|$OTHER_UNZIPDIR/||g")
+        fi
+
         $RM -f $WORK_DIR/$ZIP_FILE.diffs
         for file in $DIFFING_FILES; do
             if [[ "$ACCEPTED_JARZIP_CONTENTS $EXCEPTIONS" != *"$file"* ]]; then
@@ -600,6 +606,48 @@ compare_zip_file() {
     return $return_value
 }
 
+################################################################################
+# Compare jmod file
+
+compare_jmod_file() {
+    THIS_DIR=$1
+    OTHER_DIR=$2
+    WORK_DIR=$3
+    JMOD_FILE=$4
+
+    THIS_JMOD=$THIS_DIR/$JMOD_FILE
+    OTHER_JMOD=$OTHER_DIR/$JMOD_FILE
+
+    if $CMP $OTHER_JMOD $THIS_JMOD > /dev/null; then
+        return 0
+    fi
+
+    THIS_JMOD_LIST=$WORK_DIR/$JMOD_FILE.list.this
+    OTHER_JMOD_LIST=$WORK_DIR/$JMOD_FILE.list.other
+    mkdir -p $(dirname $THIS_JMOD_LIST) $(dirname $OTHER_JMOD_LIST)
+
+    $JMOD list $THIS_JMOD | sort > $THIS_JMOD_LIST
+    $JMOD list $OTHER_JMOD | sort > $OTHER_JMOD_LIST
+    JMOD_LIST_DIFF_FILE=$WORK_DIR/$JMOD_FILE.list.diff
+    LC_ALL=C $DIFF $THIS_JMOD_LIST $OTHER_JMOD_LIST > $JMOD_LIST_DIFF_FILE
+
+    ONLY_THIS=$($GREP "^<" $JMOD_LIST_DIFF_FILE)
+    ONLY_OTHER=$($GREP "^>" $JMOD_LIST_DIFF_FILE)
+
+    if [ -n "$ONLY_OTHER" ]; then
+        echo "        Only OTHER $JMOD_FILE contains:"
+        echo "$ONLY_OTHER" | sed "s|^>|            |"g | sed 's|: |/|g'
+        return_value=1
+    fi
+
+    if [ -n "$ONLY_THIS" ]; then
+        echo "        Only THIS $JMOD_FILE contains:"
+        echo "$ONLY_THIS" | sed "s|^<|            |"g | sed 's|: |/|g'
+        return_value=1
+    fi
+
+    return $return_value
+}
 
 ################################################################################
 # Compare all zip files
@@ -619,6 +667,34 @@ compare_all_zip_files() {
         for f in $ZIPS; do
             if [ -f "$OTHER_DIR/$f" ]; then
                 compare_zip_file $THIS_DIR $OTHER_DIR $WORK_DIR $f
+                if [ "$?" != "0" ]; then
+                    return_value=1
+                    REGRESSIONS=true
+                fi
+            fi
+        done
+    fi
+
+    return $return_value
+}
+
+################################################################################
+# Compare all jmod files
+
+compare_all_jmod_files() {
+    THIS_DIR=$1
+    OTHER_DIR=$2
+    WORK_DIR=$3
+
+    JMODS=$(cd $THIS_DIR && $FIND . -type f -name "*.jmod" | $SORT | $FILTER )
+
+    if [ -n "$JMODS" ]; then
+        echo Jmod files...
+
+        return_value=0
+        for f in $JMODS; do
+            if [ -f "$OTHER_DIR/$f" ]; then
+                compare_jmod_file $THIS_DIR $OTHER_DIR $WORK_DIR $f
                 if [ "$?" != "0" ]; then
                     return_value=1
                     REGRESSIONS=true
@@ -1141,6 +1217,7 @@ if [ -z "$1" ] || [ "$1" = "-h" ] || [ "$1" = "-?" ] || [ "$1" = "/h" ] || [ "$1
     echo "-zips               Compare the contents of all zip files and files in them"
     echo "-zips-names         Compare the file names inside all zip files"
     echo "-jars               Compare the contents of all jar files"
+    echo "-jmods              Compare the listings of all jmod files"
     echo "-libs               Compare all native libraries"
     echo "-execs              Compare all executables"
     echo "-v                  Verbose output, does not hide known differences"
@@ -1169,6 +1246,7 @@ CMP_GENERAL=false
 CMP_ZIPS=false
 CMP_ZIPS_CONTENTS=true
 CMP_JARS=false
+CMP_JMODS=false
 CMP_LIBS=false
 CMP_EXECS=false
 
@@ -1194,6 +1272,7 @@ while [ -n "$1" ]; do
             CMP_GENERAL=true
             CMP_ZIPS=true
             CMP_JARS=true
+            CMP_JMODS=true
             CMP_LIBS=true
             CMP_EXECS=true
             ;;
@@ -1219,6 +1298,9 @@ while [ -n "$1" ]; do
             ;;
         -jars)
             CMP_JARS=true
+            ;;
+        -jmods)
+            CMP_JMODS=true
             ;;
         -libs)
             CMP_LIBS=true
@@ -1264,6 +1346,7 @@ while [ -n "$1" ]; do
             CMP_TYPES=false
             CMP_ZIPS=true
             CMP_JARS=true
+            CMP_JMODS=true
             CMP_LIBS=true
             CMP_EXECS=true
 
@@ -1317,13 +1400,22 @@ if [ "$CMP_2_BINS" = "true" ]; then
     exit
 fi
 
-if [ "$CMP_NAMES" = "false" ] && [ "$CMP_TYPES" = "false" ] && [ "$CMP_PERMS" = "false" ] && [ "$CMP_GENERAL" = "false" ] && [ "$CMP_ZIPS" = "false" ] && [ "$CMP_JARS" = "false" ] && [ "$CMP_LIBS" = "false" ] && [ "$CMP_EXECS" = "false" ]; then
+if [ "$CMP_NAMES" = "false" ] \
+       && [ "$CMP_TYPES" = "false" ] \
+       && [ "$CMP_PERMS" = "false" ] \
+       && [ "$CMP_GENERAL" = "false" ] \
+       && [ "$CMP_ZIPS" = "false" ] \
+       && [ "$CMP_JARS" = "false" ] \
+       && [ "$CMP_JMODS" = "false" ] \
+       && [ "$CMP_LIBS" = "false" ] \
+       && [ "$CMP_EXECS" = "false" ]; then
     CMP_NAMES=true
     CMP_PERMS=true
     CMP_TYPES=true
     CMP_GENERAL=true
     CMP_ZIPS=true
     CMP_JARS=true
+    CMP_JMODS=true
     CMP_LIBS=true
     CMP_EXECS=true
 fi
@@ -1373,6 +1465,7 @@ if [ "$SKIP_DEFAULT" != "true" ]; then
         OTHER_JDK="$OTHER/images/jdk"
         # Rewrite the path to tools that are used from the build
         JIMAGE="$(echo "$JIMAGE" | $SED "s|$OLD_THIS|$THIS|g")"
+        JMOD="$(echo "$JMOD" | $SED "s|$OLD_THIS|$THIS|g")"
         JAVAP="$(echo "$JAVAP" | $SED "s|$OLD_THIS|$THIS|g")"
     else
         echo "No common images found."
@@ -1610,6 +1703,15 @@ if [ "$CMP_JARS" = "true" ]; then
     fi
     if [ -n "$THIS_DEPLOY_APPLET_PLUGIN_DIR" ] && [ -n "$OTHER_DEPLOY_APPLET_PLUGIN_DIR" ]; then
         compare_all_jar_files $THIS_DEPLOY_APPLET_PLUGIN_DIR $OTHER_DEPLOY_APPLET_PLUGIN_DIR $COMPARE_ROOT/plugin
+    fi
+fi
+
+if [ "$CMP_JMODS" = "true" ]; then
+    if [ -n "$THIS_JDK" ] && [ -n "$OTHER_JDK" ]; then
+        compare_all_jmod_files $THIS_JDK $OTHER_JDK $COMPARE_ROOT/jdk
+    fi
+    if [ -n "$THIS_BASE_DIR" ] && [ -n "$OTHER_BASE_DIR" ]; then
+        compare_all_jmod_files $THIS_BASE_DIR $OTHER_BASE_DIR $COMPARE_ROOT/base_dir
     fi
 fi
 

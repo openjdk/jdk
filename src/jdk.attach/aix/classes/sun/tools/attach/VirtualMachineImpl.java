@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2018, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -166,7 +166,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
             writeString(s, PROTOCOL_VERSION);
             writeString(s, cmd);
 
-            for (int i=0; i<3; i++) {
+            for (int i = 0; i < 3; i++) {
                 if (i < args.length && args[i] != null) {
                     writeString(s, (String)args[i]);
                 } else {

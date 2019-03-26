@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,21 +22,24 @@
  */
 
 
+
 package org.graalvm.compiler.hotspot.test;
 
+import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
 import java.util.Random;
 
 import org.graalvm.compiler.api.test.Graal;
+import org.graalvm.compiler.core.test.GraalCompilerTest;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
 import org.graalvm.compiler.hotspot.HotSpotGraalRuntimeProvider;
-import org.graalvm.compiler.replacements.test.MethodSubstitutionTest;
 import org.graalvm.compiler.runtime.RuntimeProvider;
 
 import org.junit.Test;
 
 import jdk.vm.ci.amd64.AMD64;
 import jdk.vm.ci.code.InstalledCode;
+import jdk.vm.ci.code.InvalidInstalledCodeException;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 /*
@@ -52,7 +55,7 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
  * is not tested per se (only execution based on admissible intrinsics).
  *
  */
-public final class BigIntegerIntrinsicsTest extends MethodSubstitutionTest {
+public final class BigIntegerIntrinsicsTest extends GraalCompilerTest {
 
     static final int N = 100;
 
@@ -149,8 +152,8 @@ public final class BigIntegerIntrinsicsTest extends MethodSubstitutionTest {
 
             assertDeepEquals(res1, res2);
 
-            // Invoke BigInteger testMontgomeryAux(BigInteger, BigExp, BigInteger) through code
-            // handle.
+            // Invoke BigInteger testMontgomeryAux(BigInteger, BigExp, BigInteger)
+            // through code handle.
             BigInteger res3 = (BigInteger) tin.invokeCode(big1, bigTwo, big2);
 
             assertDeepEquals(res1, res3);
@@ -168,7 +171,6 @@ public final class BigIntegerIntrinsicsTest extends MethodSubstitutionTest {
     private class TestIntrinsic {
 
         TestIntrinsic(String testmname, Class<?> javaclass, String javamname, Class<?>... params) {
-
             javamethod = getResolvedJavaMethod(javaclass, javamname, params);
             testmethod = getResolvedJavaMethod(testmname);
 
@@ -179,21 +181,37 @@ public final class BigIntegerIntrinsicsTest extends MethodSubstitutionTest {
             testcode = getCode(testmethod);
 
             assert testcode != null;
+            assert testcode.isValid();
         }
 
         Object invokeJava(BigInteger big, Object... args) {
-
             return invokeSafe(javamethod, big, args);
         }
 
         Object invokeTest(Object... args) {
-
             return invokeSafe(testmethod, null, args);
         }
 
         Object invokeCode(Object... args) {
+            try {
+                return testcode.executeVarargs(args);
+            } catch (InvalidInstalledCodeException e) {
+                // Ensure the installed code is valid, possibly recompiled.
+                testcode = getCode(testmethod);
 
-            return executeVarargsSafe(testcode, args);
+                assert testcode != null;
+                assert testcode.isValid();
+
+                return invokeCode(args);
+            }
+        }
+
+        private Object invokeSafe(ResolvedJavaMethod method, Object receiver, Object... args) {
+            try {
+                return invoke(method, receiver, args);
+            } catch (IllegalAccessException | InvocationTargetException | IllegalArgumentException | InstantiationException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         // Private data section:

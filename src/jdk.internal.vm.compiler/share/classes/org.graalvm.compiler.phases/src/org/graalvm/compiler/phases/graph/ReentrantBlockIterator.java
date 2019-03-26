@@ -77,13 +77,13 @@ public final class ReentrantBlockIterator {
         EconomicMap<FixedNode, StateT> blockEndStates = apply(closure, loop.getHeader(), initialState, block -> !(block.getLoop() == loop || block.isLoopHeader()));
 
         Block[] predecessors = loop.getHeader().getPredecessors();
-        LoopInfo<StateT> info = new LoopInfo<>(predecessors.length - 1, loop.getExits().size());
+        LoopInfo<StateT> info = new LoopInfo<>(predecessors.length - 1, loop.getLoopExits().size());
         for (int i = 1; i < predecessors.length; i++) {
             StateT endState = blockEndStates.get(predecessors[i].getEndNode());
             // make sure all end states are unique objects
             info.endStates.add(closure.cloneState(endState));
         }
-        for (Block loopExit : loop.getExits()) {
+        for (Block loopExit : loop.getLoopExits()) {
             assert loopExit.getPredecessorCount() == 1;
             assert blockEndStates.containsKey(loopExit.getBeginNode()) : loopExit.getBeginNode() + " " + blockEndStates;
             StateT exitState = blockEndStates.get(loopExit.getBeginNode());
@@ -210,8 +210,8 @@ public final class ReentrantBlockIterator {
         List<StateT> exitStates = closure.processLoop(loop, state);
 
         int i = 0;
-        assert loop.getExits().size() == exitStates.size();
-        for (Block exit : loop.getExits()) {
+        assert loop.getLoopExits().size() == exitStates.size();
+        for (Block exit : loop.getLoopExits()) {
             states.put(exit.getBeginNode(), exitStates.get(i++));
             blockQueue.addFirst(exit);
         }

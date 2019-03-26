@@ -35,10 +35,6 @@ private:
   static PerfCounter* _safepoint_time_ticks;   // Accumulated time at safepoints
   static PerfCounter* _application_time_ticks; // Accumulated time not at safepoints
 
-  static TimeStamp _safepoint_timer;
-  static TimeStamp _app_timer;
-  static double _last_safepoint_sync_time_sec;
-
 public:
   static void init();
 
@@ -47,15 +43,10 @@ public:
   static jlong safepoint_time_ms();
   static jlong application_time_ms();
 
-  static double last_safepoint_time_sec()      { return _safepoint_timer.seconds(); }
-  static double last_application_time_sec()    { return _app_timer.seconds(); }
-
   // callbacks
-  static void record_safepoint_begin() NOT_MANAGEMENT_RETURN;
-  static void record_safepoint_synchronized() NOT_MANAGEMENT_RETURN;
-  static void record_safepoint_end() NOT_MANAGEMENT_RETURN;
-  static void record_application_start() NOT_MANAGEMENT_RETURN;
-
+  static void record_safepoint_begin(jlong app_ticks) NOT_MANAGEMENT_RETURN;
+  static void record_safepoint_synchronized(jlong sync_ticks) NOT_MANAGEMENT_RETURN;
+  static void record_safepoint_end(jlong safepoint_ticks) NOT_MANAGEMENT_RETURN;
 };
 
 #endif // SHARE_SERVICES_RUNTIMESERVICE_HPP

@@ -46,6 +46,10 @@ public final class IllegalStamp extends Stamp {
     }
 
     @Override
+    public void accept(Visitor v) {
+    }
+
+    @Override
     public JavaKind getStackKind() {
         return JavaKind.Illegal;
     }

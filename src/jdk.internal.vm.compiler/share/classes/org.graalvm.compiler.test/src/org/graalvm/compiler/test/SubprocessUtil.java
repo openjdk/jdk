@@ -37,7 +37,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.graalvm.compiler.serviceprovider.GraalServices;
+import org.graalvm.compiler.serviceprovider.JavaVersionUtil;
 import org.graalvm.util.CollectionsUtil;
 import org.junit.Assume;
 
@@ -249,7 +249,7 @@ public final class SubprocessUtil {
         return new Subprocess(command, process.waitFor(), output);
     }
 
-    private static final boolean isJava8OrEarlier = GraalServices.Java8OrEarlier;
+    private static final boolean isJava8OrEarlier = JavaVersionUtil.Java8OrEarlier;
 
     private static boolean hasArg(String optionName) {
         if (optionName.equals("-cp") || optionName.equals("-classpath")) {

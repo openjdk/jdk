@@ -26,7 +26,6 @@
   @key headful
   @bug      4823903
   @summary  Tests actual focused window retaining.
-  @author   Anton.Tarasov: area=awt.focus
   @library  ../../regtesthelpers
   @build    Util
   @run      main ActualFocusedWindowRetaining
@@ -34,11 +33,9 @@
 
 import java.awt.*;
 import java.awt.event.*;
-import java.lang.reflect.*;
-import java.applet.*;
 import test.java.awt.regtesthelpers.Util;
 
-public class ActualFocusedWindowRetaining extends Applet {
+public class ActualFocusedWindowRetaining {
     public static Frame frame = new Frame("Other Frame");
     public static Frame owner = new Frame("Test Frame");
     public static Button otherButton1 = new Button("Other Button 1");
@@ -54,7 +51,6 @@ public class ActualFocusedWindowRetaining extends Applet {
 
     public static void main(String[] args) {
         ActualFocusedWindowRetaining a = new ActualFocusedWindowRetaining();
-        a.init();
         a.start();
     }
 
@@ -75,10 +71,6 @@ public class ActualFocusedWindowRetaining extends Applet {
                     }
                 }
             }, AWTEvent.WINDOW_EVENT_MASK | AWTEvent.WINDOW_FOCUS_EVENT_MASK | AWTEvent.FOCUS_EVENT_MASK);
-
-        setSize (500, 200);
-        setVisible(true);
-        validate();
 
         frame.setSize(new Dimension(400, 100));
         frame.setLocation(800, 400);

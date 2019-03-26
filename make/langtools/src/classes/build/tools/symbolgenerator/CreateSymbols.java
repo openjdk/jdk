@@ -1786,9 +1786,13 @@ public class CreateSymbols {
             if (existing.equals(headerDesc)) {
                 headerDesc = existing;
                 existed = true;
-            } else {
-                //check if the only difference between the 7 and 8 version is the Profile annotation
-                //if so, copy it to the pre-8 version, so save space
+            }
+        }
+
+        if (!existed) {
+            //check if the only difference between the 7 and 8 version is the Profile annotation
+            //if so, copy it to the pre-8 version, so save space
+            for (ClassHeaderDescription existing : clazzDesc.header) {
                 List<AnnotationDescription> annots = existing.classAnnotations;
 
                 if (annots != null) {
@@ -2610,6 +2614,40 @@ public class CreateSymbols {
                                                req.requires_flags,
                                                ver);
             }
+
+            @Override
+            public int hashCode() {
+                int hash = 7;
+                hash = 53 * hash + Objects.hashCode(this.moduleName);
+                hash = 53 * hash + this.flags;
+                hash = 53 * hash + Objects.hashCode(this.version);
+                return hash;
+            }
+
+            @Override
+            public boolean equals(Object obj) {
+                if (this == obj) {
+                    return true;
+                }
+                if (obj == null) {
+                    return false;
+                }
+                if (getClass() != obj.getClass()) {
+                    return false;
+                }
+                final RequiresDescription other = (RequiresDescription) obj;
+                if (this.flags != other.flags) {
+                    return false;
+                }
+                if (!Objects.equals(this.moduleName, other.moduleName)) {
+                    return false;
+                }
+                if (!Objects.equals(this.version, other.version)) {
+                    return false;
+                }
+                return true;
+            }
+
         }
 
         static class ProvidesDescription {
@@ -2644,6 +2682,35 @@ public class CreateSymbols {
                               .mapToObj(wi -> getClassName(cf, wi))
                               .collect(Collectors.toList());
                 return new ProvidesDescription(api, impls);
+            }
+
+            @Override
+            public int hashCode() {
+                int hash = 5;
+                hash = 53 * hash + Objects.hashCode(this.interfaceName);
+                hash = 53 * hash + Objects.hashCode(this.implNames);
+                return hash;
+            }
+
+            @Override
+            public boolean equals(Object obj) {
+                if (this == obj) {
+                    return true;
+                }
+                if (obj == null) {
+                    return false;
+                }
+                if (getClass() != obj.getClass()) {
+                    return false;
+                }
+                final ProvidesDescription other = (ProvidesDescription) obj;
+                if (!Objects.equals(this.interfaceName, other.interfaceName)) {
+                    return false;
+                }
+                if (!Objects.equals(this.implNames, other.implNames)) {
+                    return false;
+                }
+                return true;
             }
         }
     }
@@ -2806,7 +2873,7 @@ public class CreateSymbols {
             if (!Objects.equals(this.nestHost, other.nestHost)) {
                 return false;
             }
-            if (!Objects.equals(this.nestMembers, other.nestMembers)) {
+            if (!listEquals(this.nestMembers, other.nestMembers)) {
                 return false;
             }
             return true;

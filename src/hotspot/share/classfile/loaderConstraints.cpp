@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,10 @@ LoaderConstraintEntry** LoaderConstraintTable::find_loader_constraint(
     if (p->hash() == hash) {
       if (p->name() == name) {
         for (int i = p->num_loaders() - 1; i >= 0; i--) {
-          if (p->loader_data(i) == loader_data) {
+          if (p->loader_data(i) == loader_data &&
+              // skip unloaded klasses
+              (p->klass() == NULL ||
+               p->klass()->is_loader_alive())) {
             return pp;
           }
         }

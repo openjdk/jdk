@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc;
+
 /**
  * @test TestSoftReferencesBehaviorOnOOME
  * @key gc
@@ -28,9 +30,9 @@
  * @requires vm.gc != "Z"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- * @run main/othervm -Xmx128m TestSoftReferencesBehaviorOnOOME 512 2k
- * @run main/othervm -Xmx128m TestSoftReferencesBehaviorOnOOME 128k 256k
- * @run main/othervm -Xmx128m TestSoftReferencesBehaviorOnOOME 2k 32k
+ * @run main/othervm -Xmx128m gc.TestSoftReferencesBehaviorOnOOME 512 2k
+ * @run main/othervm -Xmx128m gc.TestSoftReferencesBehaviorOnOOME 128k 256k
+ * @run main/othervm -Xmx128m gc.TestSoftReferencesBehaviorOnOOME 2k 32k
  */
 import jdk.test.lib.Utils;
 import jdk.test.lib.Asserts;
@@ -69,9 +71,9 @@ public class TestSoftReferencesBehaviorOnOOME {
     void softReferencesOom(long minSize, long maxSize) {
         System.out.format( "minSize = %d, maxSize = %d%n", minSize, maxSize );
 
-        LinkedList<SoftReference> arrSoftRefs = new LinkedList();
+        LinkedList<SoftReference<byte[]>> arrSoftRefs = new LinkedList<>();
         staticRef = arrSoftRefs;
-        LinkedList arrObjects = new LinkedList();
+        LinkedList<byte[]> arrObjects = new LinkedList<>();
         staticRef = arrObjects;
 
         long multiplier = maxSize - minSize;
@@ -87,7 +89,7 @@ public class TestSoftReferencesBehaviorOnOOME {
             while (numSofts-- > 0) {
                 int allocationSize = ((int) (RND_GENERATOR.nextDouble() * multiplier))
                             + (int)minSize;
-                arrSoftRefs.add(new SoftReference(new byte[allocationSize]));
+                arrSoftRefs.add(new SoftReference<byte[]>(new byte[allocationSize]));
             }
 
             System.out.println("free: " + Runtime.getRuntime().freeMemory());
@@ -104,7 +106,7 @@ public class TestSoftReferencesBehaviorOnOOME {
             arrObjects = null;
             long oomSoftArraySize = arrSoftRefs.size();
 
-            for (SoftReference sr : arrSoftRefs) {
+            for (SoftReference<byte[]> sr : arrSoftRefs) {
                 Object o = sr.get();
 
                 if (o != null) {

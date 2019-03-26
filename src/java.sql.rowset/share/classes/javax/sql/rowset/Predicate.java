@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import java.sql.*;
  * The standard interface that provides the framework for all
  * <code>FilteredRowSet</code> objects to describe their filters.
  *
- * <h3>1.0 Background</h3>
+ * <h2>1.0 Background</h2>
  * The <code>Predicate</code> interface is a standard interface that
  * applications can implement to define the filter they wish to apply to a
  * a <code>FilteredRowSet</code> object. A <code>FilteredRowSet</code>
@@ -43,7 +43,7 @@ import java.sql.*;
  * the constraints of the filter; and conversely, it inserts, modifies, or updates
  * only rows that are within the constraints of the filter.
  *
- * <h3>2.0 Implementation Guidelines</h3>
+ * <h2>2.0 Implementation Guidelines</h2>
  * In order to supply a predicate for the <code>FilteredRowSet</code>.
  * this interface must be implemented.  At this time, the JDBC RowSet
  * Implementations (JSR-114) does not specify any standard filters definitions.
@@ -101,7 +101,7 @@ import java.sql.*;
  *
  */
 
- // <h3>3.0 FilteredRowSet Internals</h3>
+ // <h2>3.0 FilteredRowSet Internals</h2>
  // internalNext, First, Last. Discuss guidelines on how to approach this
  // and cite examples in reference implementations.
 public interface Predicate {

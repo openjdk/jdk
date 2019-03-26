@@ -70,7 +70,7 @@ TARGETS += $(IMAGES_OUTPUTDIR)/sec-bin.zip
 #
 # Windows specific binary security packages.
 #
-ifeq ($(OPENJDK_TARGET_OS), windows)
+ifeq ($(call isTargetOs, windows), true)
   # sec-windows-bin.zip is used by builds where the corresponding sources are not available
   $(eval $(call SetupZipArchive,BUILD_SEC_WINDOWS_BIN_ZIP, \
       SRC := $(JDK_OUTPUTDIR), \
@@ -80,7 +80,7 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
   TARGETS += $(IMAGES_OUTPUTDIR)/sec-windows-bin.zip
 
   # JGSS files contain the native Kerberos library
-  ifeq ($(OPENJDK_TARGET_CPU), x86_64)
+  ifeq ($(call isTargetCpu, x86_64), true)
     JGSS_ZIP_NAME = jgss-windows-x64-bin.zip
   else
     JGSS_ZIP_NAME = jgss-windows-i586-bin.zip

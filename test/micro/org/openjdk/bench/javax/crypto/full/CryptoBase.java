@@ -45,7 +45,7 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 
-@Fork(5)
+@Fork(jvmArgsAppend = {"-XX:+AlwaysPreTouch"}, value = 5)
 @Warmup(iterations = 3, time = 3)
 @Measurement(iterations = 8, time = 2)
 @OutputTimeUnit(TimeUnit.SECONDS)

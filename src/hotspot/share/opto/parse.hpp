@@ -57,6 +57,8 @@ class InlineTree : public ResourceObj {
 
   GrowableArray<InlineTree*> _subtrees;
 
+  bool pass_initial_checks(ciMethod* caller_method, int caller_bci, ciMethod* callee_method);
+
   void print_impl(outputStream* stj, int indent) const PRODUCT_RETURN;
   const char* _msg;
 protected:

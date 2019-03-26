@@ -38,6 +38,7 @@
 #include "memory/filemap.hpp"
 #include "oops/oop.inline.hpp"
 #include "os_linux.inline.hpp"
+#include "os_posix.inline.hpp"
 #include "os_share_linux.hpp"
 #include "osContainer_linux.hpp"
 #include "prims/jniFastGetField.hpp"
@@ -131,6 +132,7 @@
 
 enum CoredumpFilterBit {
   FILE_BACKED_PVT_BIT = 1 << 2,
+  FILE_BACKED_SHARED_BIT = 1 << 3,
   LARGEPAGES_BIT = 1 << 6,
   DAX_SHARED_BIT = 1 << 8
 };
@@ -1357,11 +1359,9 @@ void os::shutdown() {
 void os::abort(bool dump_core, void* siginfo, const void* context) {
   os::shutdown();
   if (dump_core) {
-#if INCLUDE_CDS
-    if (UseSharedSpaces && DumpPrivateMappingsInCore) {
+    if (DumpPrivateMappingsInCore) {
       ClassLoader::close_jrt_image();
     }
-#endif
 #ifndef PRODUCT
     fdStream out(defaultStream::output_fd());
     out.print_raw("Current thread is ");
@@ -1856,6 +1856,35 @@ static bool _print_ascii_file(const char* filename, outputStream* st, const char
   return true;
 }
 
+#if defined(S390) || defined(PPC64)
+// keywords_to_match - NULL terminated array of keywords
+static bool print_matching_lines_from_file(const char* filename, outputStream* st, const char* keywords_to_match[]) {
+  char* line = NULL;
+  size_t length = 0;
+  FILE* fp = fopen(filename, "r");
+  if (fp == NULL) {
+    return false;
+  }
+
+  st->print_cr("Virtualization information:");
+  while (getline(&line, &length, fp) != -1) {
+    int i = 0;
+    while (keywords_to_match[i] != NULL) {
+      if (strncmp(line, keywords_to_match[i], strlen(keywords_to_match[i])) == 0) {
+        st->print("%s", line);
+        break;
+      }
+      i++;
+    }
+  }
+
+  free(line);
+  fclose(fp);
+
+  return true;
+}
+#endif
+
 void os::print_dll_info(outputStream *st) {
   st->print_cr("Dynamic libraries:");
 
@@ -1939,6 +1968,8 @@ void os::print_os_info(outputStream* st) {
   os::Linux::print_ld_preload_file(st);
 
   os::Linux::print_container_info(st);
+
+  os::Linux::print_virtualization_info(st);
 }
 
 // Try to identify popular distros.
@@ -2109,47 +2140,122 @@ void os::Linux::print_container_info(outputStream* st) {
   st->print("container (cgroup) information:\n");
 
   const char *p_ct = OSContainer::container_type();
-  st->print("container_type: %s\n", p_ct != NULL ? p_ct : "failed");
+  st->print("container_type: %s\n", p_ct != NULL ? p_ct : "not supported");
 
   char *p = OSContainer::cpu_cpuset_cpus();
-  st->print("cpu_cpuset_cpus: %s\n", p != NULL ? p : "failed");
+  st->print("cpu_cpuset_cpus: %s\n", p != NULL ? p : "not supported");
   free(p);
 
   p = OSContainer::cpu_cpuset_memory_nodes();
-  st->print("cpu_memory_nodes: %s\n", p != NULL ? p : "failed");
+  st->print("cpu_memory_nodes: %s\n", p != NULL ? p : "not supported");
   free(p);
 
   int i = OSContainer::active_processor_count();
+  st->print("active_processor_count: ");
   if (i > 0) {
-    st->print("active_processor_count: %d\n", i);
+    st->print("%d\n", i);
   } else {
-    st->print("active_processor_count: failed\n");
+    st->print("not supported\n");
   }
 
   i = OSContainer::cpu_quota();
-  st->print("cpu_quota: %d\n", i);
+  st->print("cpu_quota: ");
+  if (i > 0) {
+    st->print("%d\n", i);
+  } else {
+    st->print("%s\n", i == OSCONTAINER_ERROR ? "not supported" : "no quota");
+  }
 
   i = OSContainer::cpu_period();
-  st->print("cpu_period: %d\n", i);
+  st->print("cpu_period: ");
+  if (i > 0) {
+    st->print("%d\n", i);
+  } else {
+    st->print("%s\n", i == OSCONTAINER_ERROR ? "not supported" : "no period");
+  }
 
   i = OSContainer::cpu_shares();
-  st->print("cpu_shares: %d\n", i);
+  st->print("cpu_shares: ");
+  if (i > 0) {
+    st->print("%d\n", i);
+  } else {
+    st->print("%s\n", i == OSCONTAINER_ERROR ? "not supported" : "no shares");
+  }
 
   jlong j = OSContainer::memory_limit_in_bytes();
-  st->print("memory_limit_in_bytes: " JLONG_FORMAT "\n", j);
+  st->print("memory_limit_in_bytes: ");
+  if (j > 0) {
+    st->print(JLONG_FORMAT "\n", j);
+  } else {
+    st->print("%s\n", j == OSCONTAINER_ERROR ? "not supported" : "unlimited");
+  }
 
   j = OSContainer::memory_and_swap_limit_in_bytes();
-  st->print("memory_and_swap_limit_in_bytes: " JLONG_FORMAT "\n", j);
+  st->print("memory_and_swap_limit_in_bytes: ");
+  if (j > 0) {
+    st->print(JLONG_FORMAT "\n", j);
+  } else {
+    st->print("%s\n", j == OSCONTAINER_ERROR ? "not supported" : "unlimited");
+  }
 
   j = OSContainer::memory_soft_limit_in_bytes();
-  st->print("memory_soft_limit_in_bytes: " JLONG_FORMAT "\n", j);
+  st->print("memory_soft_limit_in_bytes: ");
+  if (j > 0) {
+    st->print(JLONG_FORMAT "\n", j);
+  } else {
+    st->print("%s\n", j == OSCONTAINER_ERROR ? "not supported" : "unlimited");
+  }
 
   j = OSContainer::OSContainer::memory_usage_in_bytes();
-  st->print("memory_usage_in_bytes: " JLONG_FORMAT "\n", j);
+  st->print("memory_usage_in_bytes: ");
+  if (j > 0) {
+    st->print(JLONG_FORMAT "\n", j);
+  } else {
+    st->print("%s\n", j == OSCONTAINER_ERROR ? "not supported" : "unlimited");
+  }
 
   j = OSContainer::OSContainer::memory_max_usage_in_bytes();
-  st->print("memory_max_usage_in_bytes: " JLONG_FORMAT "\n", j);
+  st->print("memory_max_usage_in_bytes: ");
+  if (j > 0) {
+    st->print(JLONG_FORMAT "\n", j);
+  } else {
+    st->print("%s\n", j == OSCONTAINER_ERROR ? "not supported" : "unlimited");
+  }
   st->cr();
+}
+
+void os::Linux::print_virtualization_info(outputStream* st) {
+#if defined(S390)
+  // /proc/sysinfo contains interesting information about
+  // - LPAR
+  // - whole "Box" (CPUs )
+  // - z/VM / KVM (VM<nn>); this is not available in an LPAR-only setup
+  const char* kw[] = { "LPAR", "CPUs", "VM", NULL };
+  const char* info_file = "/proc/sysinfo";
+
+  if (!print_matching_lines_from_file(info_file, st, kw)) {
+    st->print_cr("  <%s Not Available>", info_file);
+  }
+#elif defined(PPC64)
+  const char* info_file = "/proc/ppc64/lparcfg";
+  const char* kw[] = { "system_type=", // qemu indicates PowerKVM
+                       "partition_entitled_capacity=", // entitled processor capacity percentage
+                       "partition_max_entitled_capacity=",
+                       "capacity_weight=", // partition CPU weight
+                       "partition_active_processors=",
+                       "partition_potential_processors=",
+                       "entitled_proc_capacity_available=",
+                       "capped=", // 0 - uncapped, 1 - vcpus capped at entitled processor capacity percentage
+                       "shared_processor_mode=", // (non)dedicated partition
+                       "system_potential_processors=",
+                       "pool=", // CPU-pool number
+                       "pool_capacity=",
+                       "NumLpars=", // on non-KVM machines, NumLpars is not found for full partition mode machines
+                       NULL };
+  if (!print_matching_lines_from_file(info_file, st, kw)) {
+    st->print_cr("  <%s Not Available>", info_file);
+  }
+#endif
 }
 
 void os::print_memory_info(outputStream* st) {
@@ -2227,7 +2333,7 @@ const char* search_string = "CPU";
 #elif defined(PPC64)
 const char* search_string = "cpu";
 #elif defined(S390)
-const char* search_string = "processor";
+const char* search_string = "machine =";
 #elif defined(SPARC)
 const char* search_string = "cpu";
 #else
@@ -2434,26 +2540,6 @@ static void UserHandler(int sig, void *siginfo, void *context) {
 
 void* os::user_handler() {
   return CAST_FROM_FN_PTR(void*, UserHandler);
-}
-
-static struct timespec create_semaphore_timespec(unsigned int sec, int nsec) {
-  struct timespec ts;
-  // Semaphore's are always associated with CLOCK_REALTIME
-  os::Posix::clock_gettime(CLOCK_REALTIME, &ts);
-  // see os_posix.cpp for discussion on overflow checking
-  if (sec >= MAX_SECS) {
-    ts.tv_sec += MAX_SECS;
-    ts.tv_nsec = 0;
-  } else {
-    ts.tv_sec += sec;
-    ts.tv_nsec += nsec;
-    if (ts.tv_nsec >= NANOSECS_PER_SEC) {
-      ts.tv_nsec -= NANOSECS_PER_SEC;
-      ++ts.tv_sec; // note: this must be <= max_secs
-    }
-  }
-
-  return ts;
 }
 
 extern "C" {
@@ -3406,8 +3492,6 @@ bool os::Linux::hugetlbfs_sanity_check(bool warn, size_t page_size) {
   return result;
 }
 
-// Set the coredump_filter bits to include largepages in core dump (bit 6)
-//
 // From the coredump_filter documentation:
 //
 // - (bit 0) anonymous private memory
@@ -4327,7 +4411,7 @@ static bool do_suspend(OSThread* osthread) {
 
   // managed to send the signal and switch to SUSPEND_REQUEST, now wait for SUSPENDED
   while (true) {
-    if (sr_semaphore.timedwait(create_semaphore_timespec(0, 2 * NANOSECS_PER_MILLISEC))) {
+    if (sr_semaphore.timedwait(2)) {
       break;
     } else {
       // timeout
@@ -4361,7 +4445,7 @@ static void do_resume(OSThread* osthread) {
 
   while (true) {
     if (sr_notify(osthread) == 0) {
-      if (sr_semaphore.timedwait(create_semaphore_timespec(0, 2 * NANOSECS_PER_MILLISEC))) {
+      if (sr_semaphore.timedwait(2)) {
         if (osthread->sr.is_running()) {
           return;
         }
@@ -4420,11 +4504,6 @@ static void signalHandler(int sig, siginfo_t* info, void* uc) {
 bool os::Linux::signal_handlers_are_installed = false;
 
 // For signal-chaining
-struct sigaction sigact[NSIG];
-uint64_t sigs = 0;
-#if (64 < NSIG-1)
-#error "Not all signals can be encoded in sigs. Adapt its type!"
-#endif
 bool os::Linux::libjsig_is_loaded = false;
 typedef struct sigaction *(*get_signal_t)(int);
 get_signal_t os::Linux::get_signal_action = NULL;
@@ -4438,7 +4517,7 @@ struct sigaction* os::Linux::get_chained_signal_action(int sig) {
   }
   if (actp == NULL) {
     // Retrieve the preinstalled signal handler from jvm
-    actp = get_preinstalled_handler(sig);
+    actp = os::Posix::get_preinstalled_handler(sig);
   }
 
   return actp;
@@ -4502,19 +4581,6 @@ bool os::Linux::chained_handler(int sig, siginfo_t* siginfo, void* context) {
   return chained;
 }
 
-struct sigaction* os::Linux::get_preinstalled_handler(int sig) {
-  if ((((uint64_t)1 << (sig-1)) & sigs) != 0) {
-    return &sigact[sig];
-  }
-  return NULL;
-}
-
-void os::Linux::save_preinstalled_handler(int sig, struct sigaction& oldAct) {
-  assert(sig > 0 && sig < NSIG, "vm signal out of expected range");
-  sigact[sig] = oldAct;
-  sigs |= (uint64_t)1 << (sig-1);
-}
-
 // for diagnostic
 int sigflags[NSIG];
 
@@ -4546,7 +4612,7 @@ void os::Linux::set_signal_handler(int sig, bool set_installed) {
       return;
     } else if (UseSignalChaining) {
       // save the old handler in jvm
-      save_preinstalled_handler(sig, oldAct);
+      os::Posix::save_preinstalled_handler(sig, oldAct);
       // libjsig also interposes the sigaction() call below and saves the
       // old sigaction on it own.
     } else {
@@ -5105,11 +5171,13 @@ jint os::init_2(void) {
     set_coredump_filter(DAX_SHARED_BIT);
   }
 
-#if INCLUDE_CDS
-  if (UseSharedSpaces && DumpPrivateMappingsInCore) {
+  if (DumpPrivateMappingsInCore) {
     set_coredump_filter(FILE_BACKED_PVT_BIT);
   }
-#endif
+
+  if (DumpSharedMappingsInCore) {
+    set_coredump_filter(FILE_BACKED_SHARED_BIT);
+  }
 
   return JNI_OK;
 }

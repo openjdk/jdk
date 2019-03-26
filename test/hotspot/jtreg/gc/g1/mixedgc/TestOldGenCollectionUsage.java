@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,19 +21,20 @@
  * questions.
  */
 
+package gc.g1.mixedgc;
+
 /*
  * @test TestOldGenCollectionUsage.java
  * @bug 8195115
  * @summary G1 Old Gen's CollectionUsage.used is zero after mixed GC which is incorrect
  * @key gc
  * @requires vm.gc.G1
- * @requires vm.opt.MaxGCPauseMillis == "null"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @modules java.management
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UseG1GC -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -verbose:gc -XX:SurvivorRatio=1 -Xmx14m -Xms14m -XX:MaxTenuringThreshold=1 -XX:InitiatingHeapOccupancyPercent=100 -XX:-G1UseAdaptiveIHOP -XX:G1MixedGCCountTarget=4 -XX:MaxGCPauseMillis=30000 -XX:G1HeapRegionSize=1m -XX:G1HeapWastePercent=0 -XX:G1MixedGCLiveThresholdPercent=100 TestOldGenCollectionUsage
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UseG1GC -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -verbose:gc -XX:SurvivorRatio=1 -Xmx14m -Xms14m -XX:MaxTenuringThreshold=1 -XX:InitiatingHeapOccupancyPercent=100 -XX:-G1UseAdaptiveIHOP -XX:G1MixedGCCountTarget=4 -XX:MaxGCPauseMillis=30000 -XX:G1HeapRegionSize=1m -XX:G1HeapWastePercent=0 -XX:G1MixedGCLiveThresholdPercent=100 gc.g1.mixedgc.TestOldGenCollectionUsage
  */
 
 import jdk.test.lib.Asserts;
@@ -41,8 +42,6 @@ import sun.hotspot.WhiteBox;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Collections;
-
 import java.lang.management.*;
 
 // 8195115 says that for the "G1 Old Gen" MemoryPool, CollectionUsage.used

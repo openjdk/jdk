@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,32 +25,33 @@
 
 package java.awt.desktop;
 
-
 /**
  * Implementors receive notification when the user session changes.
- *
- * This notification is useful for discontinuing a costly animation,
- * or indicating that the user is no longer present on a network service.
- *
+ * <p>
+ * This notification is useful for discontinuing a costly animation, or
+ * indicating that the user is no longer present on a network service.
+ * <p>
  * Some systems may provide a reason of the user session change.
  *
  * @see UserSessionEvent.Reason#UNSPECIFIED
  * @see UserSessionEvent.Reason#CONSOLE
  * @see UserSessionEvent.Reason#REMOTE
  * @see UserSessionEvent.Reason#LOCK
- *
  * @since 9
  */
 public interface UserSessionListener extends SystemEventListener {
+
     /**
      * Called when the user session has been switched away.
-     * @param e the user session switch event
+     *
+     * @param  e the user session switch event
      */
-    public void userSessionDeactivated(final UserSessionEvent e);
+    public void userSessionDeactivated(UserSessionEvent e);
 
     /**
      * Called when the user session has been switched to.
-     * @param e the user session switch event
+     *
+     * @param  e the user session switch event
      */
-    public void userSessionActivated(final UserSessionEvent e);
+    public void userSessionActivated(UserSessionEvent e);
 }

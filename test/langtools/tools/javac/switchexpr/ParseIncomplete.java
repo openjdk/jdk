@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,13 +61,14 @@ public class ParseIncomplete {
         final JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
         assert tool != null;
         DiagnosticListener<JavaFileObject> noErrors = d -> {};
+        String sourceVersion = Integer.toString(Runtime.version().feature());
 
         for (int i = 0; i < CODE.length(); i++) {
             String code = CODE.substring(0, i + 1);
             StringWriter out = new StringWriter();
             try {
                 JavacTask ct = (JavacTask) tool.getTask(out, null, noErrors,
-                    List.of("-XDdev", "--enable-preview", "-source", "13"), null,
+                    List.of("-XDdev", "--enable-preview", "-source", sourceVersion), null,
                     Arrays.asList(new MyFileObject(code)));
                 ct.parse().iterator().next();
             } catch (Throwable t) {

@@ -423,86 +423,60 @@ void ShenandoahBarrierSetAssembler::resolve(MacroAssembler* masm, DecoratorSet d
 }
 
 void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm, Register addr, Register expected, Register new_val,
-                                                bool acquire, bool release, bool weak, bool encode,
-                                                Register tmp1, Register tmp2, Register tmp3,
+                                                bool acquire, bool release, bool weak, bool is_cae,
                                                 Register result) {
-
-  if (!ShenandoahCASBarrier) {
-    if (UseCompressedOops) {
-      if (encode) {
-        __ encode_heap_oop(tmp1, expected);
-        expected = tmp1;
-        __ encode_heap_oop(tmp3, new_val);
-        new_val = tmp3;
-      }
-      __ cmpxchg(addr, expected, new_val, Assembler::word, /* acquire*/ true, /* release*/ true, /* weak*/ false, rscratch1);
-      __ membar(__ AnyAny);
-    } else {
-      __ cmpxchg(addr, expected, new_val, Assembler::xword, /* acquire*/ true, /* release*/ true, /* weak*/ false, rscratch1);
-      __ membar(__ AnyAny);
-    }
-    return;
-  }
-
-  if (encode) {
-    storeval_barrier(masm, new_val, tmp3);
-  }
-
-  if (UseCompressedOops) {
-    if (encode) {
-      __ encode_heap_oop(tmp1, expected);
-      expected = tmp1;
-      __ encode_heap_oop(tmp2, new_val);
-      new_val = tmp2;
-    }
-  }
-  bool is_cae = (result != noreg);
+  Register tmp1 = rscratch1;
+  Register tmp2 = rscratch2;
   bool is_narrow = UseCompressedOops;
   Assembler::operand_size size = is_narrow ? Assembler::word : Assembler::xword;
-  if (! is_cae) result = rscratch1;
 
-  assert_different_registers(addr, expected, new_val, result, tmp3);
+  assert_different_registers(addr, expected, new_val, tmp1, tmp2);
 
   Label retry, done, fail;
 
   // CAS, using LL/SC pair.
   __ bind(retry);
-  __ load_exclusive(result, addr, size, acquire);
+  __ load_exclusive(tmp1, addr, size, acquire);
   if (is_narrow) {
-    __ cmpw(result, expected);
+    __ cmpw(tmp1, expected);
   } else {
-    __ cmp(result, expected);
+    __ cmp(tmp1, expected);
   }
   __ br(Assembler::NE, fail);
-  __ store_exclusive(tmp3, new_val, addr, size, release);
+  __ store_exclusive(tmp2, new_val, addr, size, release);
   if (weak) {
-    __ cmpw(tmp3, 0u); // If the store fails, return NE to our caller
+    __ cmpw(tmp2, 0u); // If the store fails, return NE to our caller
   } else {
-    __ cbnzw(tmp3, retry);
+    __ cbnzw(tmp2, retry);
   }
   __ b(done);
 
  __  bind(fail);
-  // Check if rb(expected)==rb(result)
+  // Check if rb(expected)==rb(tmp1)
   // Shuffle registers so that we have memory value ready for next expected.
-  __ mov(tmp3, expected);
-  __ mov(expected, result);
+  __ mov(tmp2, expected);
+  __ mov(expected, tmp1);
   if (is_narrow) {
-    __ decode_heap_oop(result, result);
-    __ decode_heap_oop(tmp3, tmp3);
+    __ decode_heap_oop(tmp1, tmp1);
+    __ decode_heap_oop(tmp2, tmp2);
   }
-  read_barrier_impl(masm, result);
-  read_barrier_impl(masm, tmp3);
-  __ cmp(result, tmp3);
+  read_barrier_impl(masm, tmp1);
+  read_barrier_impl(masm, tmp2);
+  __ cmp(tmp1, tmp2);
   // Retry with expected now being the value we just loaded from addr.
   __ br(Assembler::EQ, retry);
-  if (is_narrow && is_cae) {
+  if (is_cae && is_narrow) {
     // For cmp-and-exchange and narrow oops, we need to restore
     // the compressed old-value. We moved it to 'expected' a few lines up.
-    __ mov(result, expected);
+    __ mov(tmp1, expected);
   }
   __ bind(done);
 
+  if (is_cae) {
+    __ mov(result, tmp1);
+  } else {
+    __ cset(result, Assembler::EQ);
+  }
 }
 
 #ifdef COMPILER1

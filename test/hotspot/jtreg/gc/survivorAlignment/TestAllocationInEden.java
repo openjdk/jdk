@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc.survivorAlignment;
+
 /**
  * @test
  * @bug 8031323
@@ -28,6 +30,7 @@
  *          SurvivorAlignmentInBytes option.
  * @requires vm.gc != "Z" & vm.gc != "Shenandoah"
  * @library /test/lib
+ * @library /
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build sun.hotspot.WhiteBox
@@ -39,42 +42,42 @@
  *                   -XX:SurvivorAlignmentInBytes=32 -XX:-UseTLAB -XX:-ResizePLAB
  *                   -XX:OldSize=128m -XX:MaxHeapSize=192m
  *                   -XX:-ExplicitGCInvokesConcurrent
- *                   TestAllocationInEden 10m 9 EDEN
+ *                   gc.survivorAlignment.TestAllocationInEden 10m 9 EDEN
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=64m -XX:MaxNewSize=64m
  *                   -XX:SurvivorRatio=1 -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=32 -XX:-UseTLAB -XX:-ResizePLAB
  *                   -XX:OldSize=128m -XX:MaxHeapSize=192m
  *                   -XX:-ExplicitGCInvokesConcurrent
- *                   TestAllocationInEden 10m 47 EDEN
+ *                   gc.survivorAlignment.TestAllocationInEden 10m 47 EDEN
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=64m -XX:MaxNewSize=64m
  *                   -XX:SurvivorRatio=1 -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=64 -XX:-UseTLAB -XX:-ResizePLAB
  *                   -XX:OldSize=128m  -XX:MaxHeapSize=192m
  *                   -XX:-ExplicitGCInvokesConcurrent
- *                   TestAllocationInEden 10m 9 EDEN
+ *                   gc.survivorAlignment.TestAllocationInEden 10m 9 EDEN
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=64m -XX:MaxNewSize=64m
  *                   -XX:SurvivorRatio=1 -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=64 -XX:-UseTLAB -XX:-ResizePLAB
  *                   -XX:OldSize=128m  -XX:MaxHeapSize=192m
  *                   -XX:-ExplicitGCInvokesConcurrent
- *                   TestAllocationInEden 10m 87 EDEN
+ *                   gc.survivorAlignment.TestAllocationInEden 10m 87 EDEN
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=64m -XX:MaxNewSize=64m
  *                   -XX:SurvivorRatio=1 -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=128 -XX:-UseTLAB -XX:-ResizePLAB
  *                   -XX:OldSize=128m -XX:MaxHeapSize=192m
  *                   -XX:-ExplicitGCInvokesConcurrent
- *                   TestAllocationInEden 10m 9 EDEN
+ *                   gc.survivorAlignment.TestAllocationInEden 10m 9 EDEN
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=64m -XX:MaxNewSize=64m
  *                   -XX:SurvivorRatio=1 -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=128 -XX:-UseTLAB -XX:-ResizePLAB
  *                   -XX:OldSize=128m -XX:MaxHeapSize=192m
  *                   -XX:-ExplicitGCInvokesConcurrent
- *                   TestAllocationInEden 10m 147 EDEN
+ *                   gc.survivorAlignment.TestAllocationInEden 10m 147 EDEN
  */
 public class TestAllocationInEden {
     public static void main(String args[]) {

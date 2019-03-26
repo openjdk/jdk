@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,14 +105,14 @@ public class TestInstrumentation implements ClassFileTransformer {
         "java/io/FileOutputStream::write::(I)V",
         "java/io/FileOutputStream::write::([B)V",
         "java/io/FileOutputStream::write::([BII)V",
-        "java/net/SocketInputStream::read::()I",
-        "java/net/SocketInputStream::read::([B)I",
-        "java/net/SocketInputStream::read::([BII)I",
-        "java/net/SocketInputStream::close::()V",
-        "java/net/SocketOutputStream::write::(I)V",
-        "java/net/SocketOutputStream::write::([B)V",
-        "java/net/SocketOutputStream::write::([BII)V",
-        "java/net/SocketOutputStream::close::()V",
+        "java/net/Socket$SocketInputStream::read::()I",
+        "java/net/Socket$SocketInputStream::read::([B)I",
+        "java/net/Socket$SocketInputStream::read::([BII)I",
+        "java/net/Socket$SocketInputStream::close::()V",
+        "java/net/Socket$SocketOutputStream::write::(I)V",
+        "java/net/Socket$SocketOutputStream::write::([B)V",
+        "java/net/Socket$SocketOutputStream::write::([BII)V",
+        "java/net/Socket$SocketOutputStream::close::()V",
         "java/nio/channels/FileChannel::read::([Ljava/nio/ByteBuffer;)J",
         "java/nio/channels/FileChannel::write::([Ljava/nio/ByteBuffer;)J",
         "java/nio/channels/SocketChannel::open::()Ljava/nio/channels/SocketChannel;",

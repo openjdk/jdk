@@ -140,19 +140,19 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
   // It is a waste to get here if empty.
   assert(sp->bottom() < sp->top(), "Should not be called if empty");
   oop* sp_top = (oop*)space_top;
-  jbyte* start_card = byte_for(sp->bottom());
-  jbyte* end_card   = byte_for(sp_top - 1) + 1;
+  CardValue* start_card = byte_for(sp->bottom());
+  CardValue* end_card   = byte_for(sp_top - 1) + 1;
   oop* last_scanned = NULL; // Prevent scanning objects more than once
   // The width of the stripe ssize*stripe_total must be
   // consistent with the number of stripes so that the complete slice
   // is covered.
   size_t slice_width = ssize * stripe_total;
-  for (jbyte* slice = start_card; slice < end_card; slice += slice_width) {
-    jbyte* worker_start_card = slice + stripe_number * ssize;
+  for (CardValue* slice = start_card; slice < end_card; slice += slice_width) {
+    CardValue* worker_start_card = slice + stripe_number * ssize;
     if (worker_start_card >= end_card)
       return; // We're done.
 
-    jbyte* worker_end_card = worker_start_card + ssize;
+    CardValue* worker_end_card = worker_start_card + ssize;
     if (worker_end_card > end_card)
       worker_end_card = end_card;
 
@@ -209,13 +209,13 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
     assert(worker_start_card <= end_card, "worker start card beyond end card");
     assert(worker_end_card <= end_card, "worker end card beyond end card");
 
-    jbyte* current_card = worker_start_card;
+    CardValue* current_card = worker_start_card;
     while (current_card < worker_end_card) {
       // Find an unclean card.
       while (current_card < worker_end_card && card_is_clean(*current_card)) {
         current_card++;
       }
-      jbyte* first_unclean_card = current_card;
+      CardValue* first_unclean_card = current_card;
 
       // Find the end of a run of contiguous unclean cards
       while (current_card < worker_end_card && !card_is_clean(*current_card)) {
@@ -232,7 +232,7 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
           HeapWord* last_object_in_dirty_region = start_array->object_start(addr_for(current_card)-1);
           size_t size_of_last_object = oop(last_object_in_dirty_region)->size();
           HeapWord* end_of_last_object = last_object_in_dirty_region + size_of_last_object;
-          jbyte* ending_card_of_last_object = byte_for(end_of_last_object);
+          CardValue* ending_card_of_last_object = byte_for(end_of_last_object);
           assert(ending_card_of_last_object <= worker_end_card, "ending_card_of_last_object is greater than worker_end_card");
           if (ending_card_of_last_object > current_card) {
             // This means the object spans the next complete card.
@@ -241,7 +241,7 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
           }
         }
       }
-      jbyte* following_clean_card = current_card;
+      CardValue* following_clean_card = current_card;
 
       if (first_unclean_card < worker_end_card) {
         oop* p = (oop*) start_array->object_start(addr_for(first_unclean_card));
@@ -342,8 +342,8 @@ void PSCardTable::verify_all_young_refs_precise() {
 }
 
 void PSCardTable::verify_all_young_refs_precise_helper(MemRegion mr) {
-  jbyte* bot = byte_for(mr.start());
-  jbyte* top = byte_for(mr.end());
+  CardValue* bot = byte_for(mr.start());
+  CardValue* top = byte_for(mr.end());
   while (bot <= top) {
     assert(*bot == clean_card || *bot == verify_card, "Found unwanted or unknown card mark");
     if (*bot == verify_card)
@@ -353,8 +353,8 @@ void PSCardTable::verify_all_young_refs_precise_helper(MemRegion mr) {
 }
 
 bool PSCardTable::addr_is_marked_imprecise(void *addr) {
-  jbyte* p = byte_for(addr);
-  jbyte val = *p;
+  CardValue* p = byte_for(addr);
+  CardValue val = *p;
 
   if (card_is_dirty(val))
     return true;
@@ -372,8 +372,8 @@ bool PSCardTable::addr_is_marked_imprecise(void *addr) {
 
 // Also includes verify_card
 bool PSCardTable::addr_is_marked_precise(void *addr) {
-  jbyte* p = byte_for(addr);
-  jbyte val = *p;
+  CardValue* p = byte_for(addr);
+  CardValue val = *p;
 
   if (card_is_newgen(val))
     return true;
@@ -473,7 +473,7 @@ void PSCardTable::resize_covered_region_by_end(int changed_region,
   log_trace(gc, barrier)("    byte_for(start): " INTPTR_FORMAT "  byte_for(last): " INTPTR_FORMAT,
                 p2i(byte_for(_covered[ind].start())),  p2i(byte_for(_covered[ind].last())));
   log_trace(gc, barrier)("    addr_for(start): " INTPTR_FORMAT "  addr_for(last): " INTPTR_FORMAT,
-                p2i(addr_for((jbyte*) _committed[ind].start())), p2i(addr_for((jbyte*) _committed[ind].last())));
+                p2i(addr_for((CardValue*) _committed[ind].start())), p2i(addr_for((CardValue*) _committed[ind].last())));
 
   debug_only(verify_guard();)
 }
@@ -503,7 +503,7 @@ bool PSCardTable::resize_commit_uncommit(int changed_region,
          "Starts should have proper alignment");
 #endif
 
-  jbyte* new_start = byte_for(new_region.start());
+  CardValue* new_start = byte_for(new_region.start());
   // Round down because this is for the start address
   HeapWord* new_start_aligned = align_down((HeapWord*)new_start, os::vm_page_size());
   // The guard page is always committed and should not be committed over.
@@ -575,7 +575,7 @@ bool PSCardTable::resize_commit_uncommit(int changed_region,
 void PSCardTable::resize_update_committed_table(int changed_region,
                                                 MemRegion new_region) {
 
-  jbyte* new_start = byte_for(new_region.start());
+  CardValue* new_start = byte_for(new_region.start());
   // Set the new start of the committed region
   HeapWord* new_start_aligned = align_down((HeapWord*)new_start, os::vm_page_size());
   MemRegion new_committed = MemRegion(new_start_aligned,
@@ -590,13 +590,13 @@ void PSCardTable::resize_update_card_table_entries(int changed_region,
   MemRegion original_covered = _covered[changed_region];
   // Initialize the card entries.  Only consider the
   // region covered by the card table (_whole_heap)
-  jbyte* entry;
+  CardValue* entry;
   if (new_region.start() < _whole_heap.start()) {
     entry = byte_for(_whole_heap.start());
   } else {
     entry = byte_for(new_region.start());
   }
-  jbyte* end = byte_for(original_covered.start());
+  CardValue* end = byte_for(original_covered.start());
   // If _whole_heap starts at the original covered regions start,
   // this loop will not execute.
   while (entry < end) { *entry++ = clean_card; }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,6 @@ import java.io.FilePermission;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.lang.System.Logger.Level;
-import java.net.http.HttpHeaders;
-import java.net.http.HttpResponse;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
@@ -50,6 +47,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
@@ -67,7 +65,50 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class ResponseSubscribers {
 
-    public static class ConsumerSubscriber implements BodySubscriber<Void> {
+    /**
+     * This interface is used by our BodySubscriber implementations to
+     * declare whether calling getBody() inline is safe, or whether
+     * it needs to be called asynchronously in an executor thread.
+     * Calling getBody() inline is usually safe except when it
+     * might block - which can be the case if the BodySubscriber
+     * is provided by custom code, or if it uses a finisher that
+     * might be called and might block before the last bit is
+     * received (for instance, if a mapping subscriber is used with
+     * a mapper function that maps an InputStream to a GZIPInputStream,
+     * as the the constructor of GZIPInputStream calls read()).
+     * @param <T> The response type.
+     */
+    public interface TrustedSubscriber<T> extends BodySubscriber<T> {
+        /**
+         * Returns true if getBody() should be called asynchronously.
+         * @implSpec The default implementation of this method returns
+         *           false.
+         * @return true if getBody() should be called asynchronously.
+         */
+        default boolean needsExecutor() { return false;}
+
+        /**
+         * Returns true if calling {@code bs::getBody} might block
+         * and requires an executor.
+         *
+         * @implNote
+         * In particular this method returns
+         * true if {@code bs} is not a {@code TrustedSubscriber}.
+         * If it is a {@code TrustedSubscriber}, it returns
+         * {@code ((TrustedSubscriber) bs).needsExecutor()}.
+         *
+         * @param bs A BodySubscriber.
+         * @return true if calling {@code bs::getBody} requires using
+         *         an executor.
+         */
+        static boolean needsExecutor(BodySubscriber<?> bs) {
+            if (bs instanceof TrustedSubscriber) {
+                return ((TrustedSubscriber) bs).needsExecutor();
+            } else return true;
+        }
+    }
+
+    public static class ConsumerSubscriber implements TrustedSubscriber<Void> {
         private final Consumer<Optional<byte[]>> consumer;
         private Flow.Subscription subscription;
         private final CompletableFuture<Void> result = new MinimalFuture<>();
@@ -122,7 +163,7 @@ public class ResponseSubscribers {
      * asserts the specific, write, file permissions that were checked during
      * the construction of this PathSubscriber.
      */
-    public static class PathSubscriber implements BodySubscriber<Path> {
+    public static class PathSubscriber implements TrustedSubscriber<Path> {
 
         private static final FilePermission[] EMPTY_FILE_PERMISSIONS = new FilePermission[0];
 
@@ -223,7 +264,7 @@ public class ResponseSubscribers {
         }
     }
 
-    public static class ByteArraySubscriber<T> implements BodySubscriber<T> {
+    public static class ByteArraySubscriber<T> implements TrustedSubscriber<T> {
         private final Function<byte[], T> finisher;
         private final CompletableFuture<T> result = new MinimalFuture<>();
         private final List<ByteBuffer> received = new ArrayList<>();
@@ -292,7 +333,7 @@ public class ResponseSubscribers {
      * An InputStream built on top of the Flow API.
      */
     public static class HttpResponseInputStream extends InputStream
-        implements BodySubscriber<InputStream>
+        implements TrustedSubscriber<InputStream>
     {
         final static int MAX_BUFFERS_IN_QUEUE = 1;  // lock-step with the producer
 
@@ -410,6 +451,24 @@ public class ResponseSubscribers {
         }
 
         @Override
+        public int available() throws IOException {
+            // best effort: returns the number of remaining bytes in
+            // the current buffer if any, or 1 if the current buffer
+            // is null or empty but the queue or current buffer list
+            // are not empty. Returns 0 otherwise.
+            if (closed) return 0;
+            int available = 0;
+            ByteBuffer current = currentBuffer;
+            if (current == LAST_BUFFER) return 0;
+            if (current != null) available = current.remaining();
+            if (available != 0) return available;
+            Iterator<?> iterator = currentListItr;
+            if (iterator != null && iterator.hasNext()) return 1;
+            if (buffers.isEmpty()) return 0;
+            return 1;
+        }
+
+        @Override
         public void onSubscribe(Flow.Subscription s) {
             try {
                 if (!subscribed.compareAndSet(false, true)) {
@@ -517,17 +576,19 @@ public class ResponseSubscribers {
     public static BodySubscriber<Stream<String>> createLineStream(Charset charset) {
         Objects.requireNonNull(charset);
         BodySubscriber<InputStream> s = new HttpResponseInputStream();
+        // Creates a MappingSubscriber with a trusted finisher that is
+        // trusted not to block.
         return new MappingSubscriber<InputStream,Stream<String>>(s,
             (InputStream stream) -> {
                 return new BufferedReader(new InputStreamReader(stream, charset))
                             .lines().onClose(() -> Utils.close(stream));
-            });
+            }, true);
     }
 
     /**
      * Currently this consumes all of the data and ignores it
      */
-    public static class NullSubscriber<T> implements BodySubscriber<T> {
+    public static class NullSubscriber<T> implements TrustedSubscriber<T> {
 
         private final CompletableFuture<T> cf = new MinimalFuture<>();
         private final Optional<T> result;
@@ -573,13 +634,16 @@ public class ResponseSubscribers {
 
     /** An adapter between {@code BodySubscriber} and {@code Flow.Subscriber}. */
     public static final class SubscriberAdapter<S extends Subscriber<? super List<ByteBuffer>>,R>
-        implements BodySubscriber<R>
+        implements TrustedSubscriber<R>
     {
         private final CompletableFuture<R> cf = new MinimalFuture<>();
         private final S subscriber;
         private final Function<? super S,? extends R> finisher;
         private volatile Subscription subscription;
 
+        // The finisher isn't called until all bytes have been received,
+        // and so shouldn't need an executor. No need to override
+        // TrustedSubscriber::needsExecutor
         public SubscriberAdapter(S subscriber, Function<? super S,? extends R> finisher) {
             this.subscriber = Objects.requireNonNull(subscriber);
             this.finisher = Objects.requireNonNull(finisher);
@@ -647,16 +711,40 @@ public class ResponseSubscribers {
      * @param <T> the upstream body type
      * @param <U> this subscriber's body type
      */
-    public static class MappingSubscriber<T,U> implements BodySubscriber<U> {
+    public static class MappingSubscriber<T,U> implements TrustedSubscriber<U> {
         private final BodySubscriber<T> upstream;
         private final Function<? super T,? extends U> mapper;
+        private final boolean trusted;
 
         public MappingSubscriber(BodySubscriber<T> upstream,
                                  Function<? super T,? extends U> mapper) {
-            this.upstream = Objects.requireNonNull(upstream);
-            this.mapper = Objects.requireNonNull(mapper);
+            this(upstream, mapper, false);
         }
 
+        // creates a MappingSubscriber with a mapper that is trusted
+        // to not block when called.
+        MappingSubscriber(BodySubscriber<T> upstream,
+                          Function<? super T,? extends U> mapper,
+                          boolean trusted) {
+            this.upstream = Objects.requireNonNull(upstream);
+            this.mapper = Objects.requireNonNull(mapper);
+            this.trusted = trusted;
+        }
+
+        // There is no way to know whether a custom mapper function
+        // might block or not - so we should return true unless the
+        // mapper is implemented and trusted by our own code not to
+        // block.
+        @Override
+        public boolean needsExecutor() {
+            return !trusted || TrustedSubscriber.needsExecutor(upstream);
+        }
+
+        // If upstream.getBody() is already completed (case of InputStream),
+        // then calling upstream.getBody().thenApply(mapper) might block
+        // if the mapper blocks. We should probably add a variant of
+        // MappingSubscriber that calls thenApplyAsync instead, but this
+        // needs a new public API point. See needsExecutor() above.
         @Override
         public CompletionStage<U> getBody() {
             return upstream.getBody().thenApply(mapper);
@@ -685,7 +773,7 @@ public class ResponseSubscribers {
 
     // A BodySubscriber that returns a Publisher<List<ByteBuffer>>
     static class PublishingBodySubscriber
-            implements BodySubscriber<Flow.Publisher<List<ByteBuffer>>> {
+            implements TrustedSubscriber<Flow.Publisher<List<ByteBuffer>>> {
         private final MinimalFuture<Flow.Subscription>
                 subscriptionCF = new MinimalFuture<>();
         private final MinimalFuture<SubscriberRef>
@@ -894,4 +982,110 @@ public class ResponseSubscribers {
         return new PublishingBodySubscriber();
     }
 
+
+    /**
+     * Tries to determine whether bs::getBody must be invoked asynchronously,
+     * and if so, uses the provided executor to do it.
+     * If the executor is a {@link HttpClientImpl.DelegatingExecutor},
+     * uses the executor's delegate.
+     * @param e    The executor to use if an executor is required.
+     * @param bs   The BodySubscriber (trusted or not)
+     * @param <T>  The type of the response.
+     * @return A completion stage that completes when the completion
+     *         stage returned by bs::getBody completes. This may, or
+     *         may not, be the same completion stage.
+     */
+    public static <T> CompletionStage<T> getBodyAsync(Executor e, BodySubscriber<T> bs) {
+        if (TrustedSubscriber.needsExecutor(bs)) {
+            // getBody must be called in the executor
+            return getBodyAsync(e, bs, new MinimalFuture<>());
+        } else {
+            // No executor needed
+            return bs.getBody();
+        }
+    }
+
+    /**
+     * Invokes bs::getBody using the provided executor.
+     * If invoking bs::getBody requires an executor, and the given executor
+     * is a {@link HttpClientImpl.DelegatingExecutor}, then the executor's
+     * delegate is used. If an error occurs anywhere then the given {code cf}
+     * is completed exceptionally (this method does not throw).
+     * @param e   The executor that should be used to call bs::getBody
+     * @param bs  The BodySubscriber
+     * @param cf  A completable future that this function will set up
+     *            to complete when the completion stage returned by
+     *            bs::getBody completes.
+     *            In case of any error while trying to set up the
+     *            completion chain, {@code cf} will be completed
+     *            exceptionally with that error.
+     * @param <T> The response type.
+     * @return The provided {@code cf}.
+     */
+    public static <T> CompletableFuture<T> getBodyAsync(Executor e,
+                                                      BodySubscriber<T> bs,
+                                                      CompletableFuture<T> cf) {
+        return getBodyAsync(e, bs, cf, cf::completeExceptionally);
+    }
+
+    /**
+     * Invokes bs::getBody using the provided executor.
+     * If invoking bs::getBody requires an executor, and the given executor
+     * is a {@link HttpClientImpl.DelegatingExecutor}, then the executor's
+     * delegate is used.
+     * The provided {@code cf} is completed with the result (exceptional
+     * or not) of the completion stage returned by bs::getBody.
+     * If an error occurs when trying to set up the
+     * completion chain, the provided {@code errorHandler} is invoked,
+     * but {@code cf} is not necessarily affected.
+     * This method does not throw.
+     * @param e   The executor that should be used to call bs::getBody
+     * @param bs  The BodySubscriber
+     * @param cf  A completable future that this function will set up
+     *            to complete when the completion stage returned by
+     *            bs::getBody completes.
+     *            In case of any error while trying to set up the
+     *            completion chain, {@code cf} will be completed
+     *            exceptionally with that error.
+     * @param errorHandler The handler to invoke if an error is raised
+     *                     while trying to set up the completion chain.
+     * @param <T> The response type.
+     * @return The provide {@code cf}. If the {@code errorHandler} is
+     * invoked, it is the responsibility of the {@code errorHandler} to
+     * complete the {@code cf}, if needed.
+     */
+    public static <T> CompletableFuture<T> getBodyAsync(Executor e,
+                                                      BodySubscriber<T> bs,
+                                                      CompletableFuture<T> cf,
+                                                      Consumer<Throwable> errorHandler) {
+        assert errorHandler != null;
+        try {
+            assert e != null;
+            assert cf != null;
+
+            if (TrustedSubscriber.needsExecutor(bs)) {
+                e = (e instanceof HttpClientImpl.DelegatingExecutor)
+                        ? ((HttpClientImpl.DelegatingExecutor) e).delegate() : e;
+            }
+
+            e.execute(() -> {
+                try {
+                    bs.getBody().whenComplete((r, t) -> {
+                        if (t != null) {
+                            cf.completeExceptionally(t);
+                        } else {
+                            cf.complete(r);
+                        }
+                    });
+                } catch (Throwable t) {
+                    errorHandler.accept(t);
+                }
+            });
+            return cf;
+
+        } catch (Throwable t) {
+            errorHandler.accept(t);
+        }
+        return cf;
+    }
 }

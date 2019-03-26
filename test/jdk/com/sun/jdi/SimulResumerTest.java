@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -210,7 +210,9 @@ public class SimulResumerTest extends TestScaffold {
                 }
 
             } catch (IncompatibleThreadStateException ee) {
-                // ignore
+                // ignore checks if thread was not suspended
+            } catch (ObjectCollectedException ee) {
+                // ignore ownedMonitors failure
             } catch (VMDisconnectedException ee) {
                 // This is how we stop.  The debuggee runs to completion
                 // and we get this exception.
@@ -249,7 +251,7 @@ public class SimulResumerTest extends TestScaffold {
                 public void run() {
                     while (true) {
                         iters++;
-                        System.out.println("bkpts = " + bkpts + ", iters = " + iters);
+                        // System.out.println("bkpts = " + bkpts + ", iters = " + iters);
                         try {
                             Thread.sleep(waitTime);
                             check(debuggeeThread1);

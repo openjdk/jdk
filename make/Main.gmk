@@ -456,7 +456,7 @@ define DeclareInterimJmodRecipe
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CreateJmods.gmk \
 	    MODULE=$1 \
 	    JMODS_DIR=$(INTERIM_JMODS_DIR) \
-	    JMODS_TEMPDIR=$(INTERIM_JMODS_DIR)/temp \
+	    JMODS_SUPPORT_DIR=$(INTERIM_JMODS_DIR)/support \
 	    INTERIM_JMOD=true \
 	)
 endef
@@ -479,10 +479,11 @@ ALL_TARGETS += $(INTERIM_JMOD_TARGETS) interim-image generate-link-opt-data
 
 define DeclareRunTestRecipe
   test-$1:
-	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f RunTests.gmk run-test TEST="$1")
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f RunTests.gmk \
+	    TEST="$1")
 
   exploded-test-$1:
-	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f RunTests.gmk run-test \
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f RunTests.gmk \
 	    TEST="$1" JDK_IMAGE_DIR=$(JDK_OUTPUTDIR))
 endef
 
@@ -490,21 +491,11 @@ endef
 $(foreach t, $(ALL_NAMED_TESTS), $(eval $(call DeclareRunTestRecipe,$t)))
 ALL_TEST_TARGETS := $(addprefix test-, $(ALL_NAMED_TESTS))
 
-define DeclareRunJCovTestRecipe
-  jcov-test-$1:
-	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f RunTests.gmk \
-	    TEST="$1" TEST_OPTS_JCOV=true)
-endef
-
-# jcov-test only makes sense for some of the tests
-$(foreach t, $(JCOV_NAMED_TESTS), $(eval $(call DeclareRunJCovTestRecipe,$t)))
-ALL_JCOV_TEST_TARGETS := $(addprefix jcov-test-, $(JCOV_NAMED_TESTS))
-
 # We only support the "exploded-test-gtest" shortcut
 ALL_EXPLODED_TESTS := gtest
 ALL_EXPLODED_TEST_TARGETS := $(addprefix exploded-test-, $(ALL_EXPLODED_TESTS))
 
-ALL_TARGETS += $(ALL_TEST_TARGETS) $(ALL_EXPLODED_TEST_TARGETS) $(ALL_JCOV_TEST_TARGETS)
+ALL_TARGETS += $(ALL_TEST_TARGETS) $(ALL_EXPLODED_TEST_TARGETS)
 
 ################################################################################
 # Build tests and microbenchmarks
@@ -571,10 +562,11 @@ ALL_TARGETS += prepare-test-image build-test-hotspot-jtreg-native \
 # Run tests
 
 test:
-	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f RunTests.gmk run-test TEST="$(TEST)")
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f RunTests.gmk \
+	    TEST="$(TEST)")
 
 exploded-test:
-	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f RunTests.gmk run-test \
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f RunTests.gmk \
 	    TEST="$(TEST)" JDK_IMAGE_DIR=$(JDK_OUTPUTDIR))
 
 jcov-test:
@@ -774,6 +766,8 @@ else
   $(foreach m, $(GENSRC_MODULES), $(eval $m-libs-compile-commands: $m-gensrc))
   $(foreach m, $(filter $(JAVA_MODULES), $(LIBS_MODULES)), $(eval $m-libs-compile-commands: $m-java))
 
+  $(COMPILE_COMMANDS_TARGETS_HOTSPOT): clean-compile-commands
+  $(COMPILE_COMMANDS_TARGETS_JDK): clean-compile-commands
   compile-commands-hotspot: $(COMPILE_COMMANDS_TARGETS_HOTSPOT)
   compile-commands: $(COMPILE_COMMANDS_TARGETS_HOTSPOT) $(COMPILE_COMMANDS_TARGETS_JDK)
 
@@ -891,7 +885,6 @@ else
   # Declare dependency for all generated test targets
   $(foreach t, $(filter-out test-make%, $(ALL_TEST_TARGETS)), $(eval $t: jdk-image test-image))
   $(foreach t, $(ALL_EXPLODED_TEST_TARGETS), $(eval $t: exploded-image test-image))
-  $(ALL_JCOV_TEST_TARGETS): jcov-image test-image
 
   create-buildjdk-copy: jdk.jlink-java java.base-gendata \
       $(addsuffix -java, $(INTERIM_IMAGE_MODULES))
@@ -1041,7 +1034,7 @@ ifneq ($(CREATE_BUILDJDK), true)
   endif
 endif
 
-ifeq ($(OPENJDK_TARGET_OS), macosx)
+ifeq ($(call isTargetOs, macosx), true)
   product-images: mac-jdk-bundle
 endif
 
@@ -1127,7 +1120,8 @@ ALL_TARGETS += $(RUN_TEST_TARGETS) run-test exploded-run-test check \
 # file.
 
 CLEAN_DIRS += hotspot jdk bootcycle-build test buildtools support \
-    images make-support test-make bundles buildjdk test-results test-support
+    images make-support test-make bundles buildjdk test-results test-support \
+    support/images
 CLEAN_DIR_TARGETS := $(addprefix clean-, $(CLEAN_DIRS))
 CLEAN_SUPPORT_DIRS += demos
 CLEAN_SUPPORT_DIR_TARGETS := $(addprefix clean-, $(CLEAN_SUPPORT_DIRS))
@@ -1147,6 +1141,9 @@ clean: $(CLEAN_DIR_TARGETS)
 
 clean-docs:
 	$(call CleanDocs)
+
+clean-compile-commands:
+	$(call CleanMakeSupportDir,compile-commands)
 
 $(CLEAN_DIR_TARGETS):
 	$(call CleanDir,$(patsubst clean-%, %, $@))
@@ -1174,6 +1171,9 @@ clean-support: clean-jdk
 
 clean-test: clean-test-results clean-test-support
 
+# When cleaning images, also clean the support/images directory.
+clean-images: clean-support/images
+
 # Remove everything, including configure configuration. If the output
 # directory was created by configure and now becomes empty, remove it as well.
 dist-clean: clean
@@ -1190,9 +1190,9 @@ dist-clean: clean
 	)
 	$(ECHO) Cleaned everything, you will have to re-run configure.
 
-ALL_TARGETS += clean clean-docs dist-clean $(CLEAN_DIR_TARGETS) $(CLEAN_SUPPORT_DIR_TARGETS) \
-    $(CLEAN_TEST_TARGETS) $(CLEAN_PHASE_TARGETS) $(CLEAN_MODULE_TARGETS) \
-    $(CLEAN_MODULE_PHASE_TARGETS)
+ALL_TARGETS += clean clean-docs clean-compile-commands dist-clean $(CLEAN_DIR_TARGETS) \
+    $(CLEAN_SUPPORT_DIR_TARGETS) $(CLEAN_TEST_TARGETS) $(CLEAN_PHASE_TARGETS) \
+    $(CLEAN_MODULE_TARGETS) $(CLEAN_MODULE_PHASE_TARGETS)
 
 ################################################################################
 # Declare *-only targets for each normal target

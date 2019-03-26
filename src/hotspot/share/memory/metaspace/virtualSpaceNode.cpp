@@ -29,6 +29,7 @@
 #include "memory/metaspace/metachunk.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspace/chunkManager.hpp"
+#include "memory/metaspace/metaDebug.hpp"
 #include "memory/metaspace/metaspaceCommon.hpp"
 #include "memory/metaspace/occupancyMap.hpp"
 #include "memory/metaspace/virtualSpaceNode.hpp"
@@ -73,8 +74,9 @@ VirtualSpaceNode::VirtualSpaceNode(bool is_class, size_t bytes) :
 }
 
 void VirtualSpaceNode::purge(ChunkManager* chunk_manager) {
-  DEBUG_ONLY(this->verify();)
-    Metachunk* chunk = first_chunk();
+  // When a node is purged, lets give it a thorough examination.
+  DEBUG_ONLY(verify(true);)
+  Metachunk* chunk = first_chunk();
   Metachunk* invalid_chunk = (Metachunk*) top();
   while (chunk < invalid_chunk ) {
     assert(chunk->is_tagged_free(), "Should be tagged free");
@@ -171,49 +173,39 @@ void VirtualSpaceNode::print_map(outputStream* st, bool is_class) const {
 
 
 #ifdef ASSERT
-uintx VirtualSpaceNode::container_count_slow() {
-  uintx count = 0;
-  Metachunk* chunk = first_chunk();
-  Metachunk* invalid_chunk = (Metachunk*) top();
-  while (chunk < invalid_chunk ) {
-    MetaWord* next = ((MetaWord*)chunk) + chunk->word_size();
-    do_verify_chunk(chunk);
-    // Don't count the chunks on the free lists.  Those are
-    // still part of the VirtualSpaceNode but not currently
-    // counted.
-    if (!chunk->is_tagged_free()) {
-      count++;
-    }
-    chunk = (Metachunk*) next;
-  }
-  return count;
-}
-#endif
 
-#ifdef ASSERT
 // Verify counters, all chunks in this list node and the occupancy map.
-void VirtualSpaceNode::verify() {
+void VirtualSpaceNode::verify(bool slow) {
+  log_trace(gc, metaspace, freelist)("verifying %s virtual space node (%s).",
+    (is_class() ? "class space" : "metaspace"), (slow ? "slow" : "quick"));
+  // Fast mode: just verify chunk counters and basic geometry
+  // Slow mode: verify chunks and occupancy map
   uintx num_in_use_chunks = 0;
   Metachunk* chunk = first_chunk();
   Metachunk* invalid_chunk = (Metachunk*) top();
 
   // Iterate the chunks in this node and verify each chunk.
   while (chunk < invalid_chunk ) {
-    DEBUG_ONLY(do_verify_chunk(chunk);)
-      if (!chunk->is_tagged_free()) {
-        num_in_use_chunks ++;
-      }
-    MetaWord* next = ((MetaWord*)chunk) + chunk->word_size();
+    if (slow) {
+      do_verify_chunk(chunk);
+    }
+    if (!chunk->is_tagged_free()) {
+      num_in_use_chunks ++;
+    }
+    const size_t s = chunk->word_size();
+    // Prevent endless loop on invalid chunk size.
+    assert(is_valid_chunksize(is_class(), s), "Invalid chunk size: " SIZE_FORMAT ".", s);
+    MetaWord* next = ((MetaWord*)chunk) + s;
     chunk = (Metachunk*) next;
   }
   assert(_container_count == num_in_use_chunks, "Container count mismatch (real: " UINTX_FORMAT
       ", counter: " UINTX_FORMAT ".", num_in_use_chunks, _container_count);
   // Also verify the occupancy map.
-  occupancy_map()->verify(this->bottom(), this->top());
+  if (slow) {
+    occupancy_map()->verify(bottom(), top());
+  }
 }
-#endif // ASSERT
 
-#ifdef ASSERT
 // Verify that all free chunks in this node are ideally merged
 // (there not should be multiple small chunks where a large chunk could exist.)
 void VirtualSpaceNode::verify_free_chunks_are_ideally_merged() {
@@ -224,23 +216,31 @@ void VirtualSpaceNode::verify_free_chunks_are_ideally_merged() {
   const size_t size_small = (is_class() ? ClassSmallChunk : SmallChunk) * BytesPerWord;
   int num_free_chunks_since_last_med_boundary = -1;
   int num_free_chunks_since_last_small_boundary = -1;
-  while (chunk < invalid_chunk ) {
+  bool error = false;
+  char err[256];
+  while (!error && chunk < invalid_chunk ) {
     // Test for missed chunk merge opportunities: count number of free chunks since last chunk boundary.
     // Reset the counter when encountering a non-free chunk.
     if (chunk->get_chunk_type() != HumongousIndex) {
       if (chunk->is_tagged_free()) {
         // Count successive free, non-humongous chunks.
         if (is_aligned(chunk, size_small)) {
-          assert(num_free_chunks_since_last_small_boundary <= 1,
-              "Missed chunk merge opportunity at " PTR_FORMAT " for chunk size " SIZE_FORMAT_HEX ".", p2i(chunk) - size_small, size_small);
-          num_free_chunks_since_last_small_boundary = 0;
+          if (num_free_chunks_since_last_small_boundary > 0) {
+            error = true;
+            jio_snprintf(err, sizeof(err), "Missed chunk merge opportunity to merge a small chunk preceding " PTR_FORMAT ".", p2i(chunk));
+          } else {
+            num_free_chunks_since_last_small_boundary = 0;
+          }
         } else if (num_free_chunks_since_last_small_boundary != -1) {
           num_free_chunks_since_last_small_boundary ++;
         }
         if (is_aligned(chunk, size_med)) {
-          assert(num_free_chunks_since_last_med_boundary <= 1,
-              "Missed chunk merge opportunity at " PTR_FORMAT " for chunk size " SIZE_FORMAT_HEX ".", p2i(chunk) - size_med, size_med);
-          num_free_chunks_since_last_med_boundary = 0;
+          if (num_free_chunks_since_last_med_boundary > 0) {
+            error = true;
+            jio_snprintf(err, sizeof(err), "Missed chunk merge opportunity to merge a medium chunk preceding " PTR_FORMAT ".", p2i(chunk));
+          } else {
+            num_free_chunks_since_last_med_boundary = 0;
+          }
         } else if (num_free_chunks_since_last_med_boundary != -1) {
           num_free_chunks_since_last_med_boundary ++;
         }
@@ -253,6 +253,11 @@ void VirtualSpaceNode::verify_free_chunks_are_ideally_merged() {
       // One cannot merge areas with a humongous chunk in the middle. Reset counters.
       num_free_chunks_since_last_med_boundary = -1;
       num_free_chunks_since_last_small_boundary = -1;
+    }
+
+    if (error) {
+      print_map(tty, is_class());
+      fatal("%s", err);
     }
 
     MetaWord* next = ((MetaWord*)chunk) + chunk->word_size();
@@ -270,14 +275,6 @@ void VirtualSpaceNode::dec_container_count() {
   assert_lock_strong(MetaspaceExpand_lock);
   _container_count--;
 }
-
-#ifdef ASSERT
-void VirtualSpaceNode::verify_container_count() {
-  assert(_container_count == container_count_slow(),
-      "Inconsistency in container_count _container_count " UINTX_FORMAT
-      " container_count_slow() " UINTX_FORMAT, _container_count, container_count_slow());
-}
-#endif
 
 VirtualSpaceNode::~VirtualSpaceNode() {
   _rs.release();
@@ -309,7 +306,7 @@ void VirtualSpaceNode::allocate_padding_chunks_until_top_is_at(MetaWord* target_
   assert(target_top > top(), "Sanity");
 
   // Padding chunks are added to the freelist.
-  ChunkManager* const chunk_manager = Metaspace::get_chunk_manager(this->is_class());
+  ChunkManager* const chunk_manager = Metaspace::get_chunk_manager(is_class());
 
   // shorthands
   const size_t spec_word_size = chunk_manager->specialized_chunk_word_size();
@@ -378,7 +375,7 @@ Metachunk* VirtualSpaceNode::take_from_committed(size_t chunk_word_size) {
   // chunks. These chunks are created and added to the freelist.
 
   // The chunk manager to which we will give our padding chunks.
-  ChunkManager* const chunk_manager = Metaspace::get_chunk_manager(this->is_class());
+  ChunkManager* const chunk_manager = Metaspace::get_chunk_manager(is_class());
 
   // shorthands
   const size_t spec_word_size = chunk_manager->specialized_chunk_word_size();
@@ -450,12 +447,13 @@ Metachunk* VirtualSpaceNode::take_from_committed(size_t chunk_word_size) {
 
   inc_container_count();
 
-  if (VerifyMetaspace) {
-    DEBUG_ONLY(chunk_manager->locked_verify());
-    DEBUG_ONLY(this->verify());
-  }
-
-  DEBUG_ONLY(do_verify_chunk(result));
+#ifdef ASSERT
+  EVERY_NTH(VerifyMetaspaceInterval)
+    chunk_manager->locked_verify(true);
+    verify(true);
+  END_EVERY_NTH
+  do_verify_chunk(result);
+#endif
 
   result->inc_use_count();
 
@@ -558,8 +556,13 @@ void VirtualSpaceNode::mangle() {
 #endif // ASSERT
 
 void VirtualSpaceNode::retire(ChunkManager* chunk_manager) {
-  DEBUG_ONLY(verify_container_count();)
-  assert(this->is_class() == chunk_manager->is_class(), "Wrong ChunkManager?");
+  assert(is_class() == chunk_manager->is_class(), "Wrong ChunkManager?");
+#ifdef ASSERT
+  verify(false);
+  EVERY_NTH(VerifyMetaspaceInterval)
+    verify(true);
+  END_EVERY_NTH
+#endif
   for (int i = (int)MediumIndex; i >= (int)ZeroIndex; --i) {
     ChunkIndex index = (ChunkIndex)i;
     size_t chunk_size = chunk_manager->size_by_index(index);
@@ -577,7 +580,6 @@ void VirtualSpaceNode::retire(ChunkManager* chunk_manager) {
       }
       chunk_manager->return_single_chunk(chunk);
     }
-    DEBUG_ONLY(verify_container_count();)
   }
   assert(free_words_in_vs() == 0, "should be empty now");
 }

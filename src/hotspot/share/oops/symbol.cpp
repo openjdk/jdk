@@ -131,19 +131,6 @@ char* Symbol::as_C_string() const {
   return as_C_string(str, len + 1);
 }
 
-char* Symbol::as_C_string_flexible_buffer(Thread* t,
-                                                 char* buf, int size) const {
-  char* str;
-  int len = utf8_length();
-  int buf_len = len + 1;
-  if (size < buf_len) {
-    str = NEW_RESOURCE_ARRAY(char, buf_len);
-  } else {
-    str = buf;
-  }
-  return as_C_string(str, buf_len);
-}
-
 void Symbol::print_utf8_on(outputStream* st) const {
   st->print("%s", as_C_string());
 }
@@ -269,6 +256,30 @@ void Symbol::decrement_refcount() {
       return;
     } else {
       found = Atomic::cmpxchg(old_value - 1, &_length_and_refcount, old_value);
+      if (found == old_value) {
+        return;  // successfully updated.
+      }
+      // refcount changed, try again.
+    }
+  }
+}
+
+void Symbol::make_permanent() {
+  uint32_t found = _length_and_refcount;
+  while (true) {
+    uint32_t old_value = found;
+    int refc = extract_refcount(old_value);
+    if (refc == PERM_REFCOUNT) {
+      return;  // refcount is permanent, permanent is sticky
+    } else if (refc == 0) {
+#ifdef ASSERT
+      print();
+      fatal("refcount underflow");
+#endif
+      return;
+    } else {
+      int len = extract_length(old_value);
+      found = Atomic::cmpxchg(pack_length_and_refcount(len, PERM_REFCOUNT), &_length_and_refcount, old_value);
       if (found == old_value) {
         return;  // successfully updated.
       }

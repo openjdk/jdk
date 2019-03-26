@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,15 @@
  */
 
 /*
-  test
+  @test
+  @key headful
   @bug 4992908
   @summary Need way to get location of MouseEvent in screen coordinates
-  @author Andrei.Dmitriev area=event
-  @run applet MouseWheelEventAbsoluteCoordsTest.html
+  @library ../../../regtesthelpers
+  @build Util
+  @run main MouseWheelEventAbsoluteCoordsTest
 */
 
-import java.applet.Applet;
 import java.awt.*;
 import java.awt.event.*;
 import test.java.awt.regtesthelpers.Util;
@@ -41,17 +42,21 @@ import test.java.awt.regtesthelpers.Util;
 // getLocationOnScreen(),  get(X|Y), getPoint() .
 
 
-public class MouseWheelEventAbsoluteCoordsTest extends Applet implements MouseWheelListener
+public class MouseWheelEventAbsoluteCoordsTest implements MouseWheelListener
 {
     Frame frame = new Frame("MouseWheelEvent Test Frame");
 
     Point mousePositionOnScreen = new Point(200, 200);
     Point mousePosition = new Point(100, 100);
+
+    public static void main(final String[] args) {
+        MouseWheelEventAbsoluteCoordsTest app = new MouseWheelEventAbsoluteCoordsTest();
+        app.init();
+        app.start();
+    }
+
     public void init()
     {
-
-        this.setLayout (new BorderLayout ());
-
         frame.addMouseWheelListener(this);
     }//End  init()
 
@@ -62,7 +67,6 @@ public class MouseWheelEventAbsoluteCoordsTest extends Applet implements MouseWh
         frame.setLocation(47, 47);
 
         frame.setVisible(true);
-        validate();
         try {
             Util.waitForIdle(new Robot());
         }catch (Exception e){

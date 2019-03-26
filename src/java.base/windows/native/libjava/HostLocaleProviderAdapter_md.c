@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,11 +167,6 @@ WCHAR * fixes[2][2][3][16] =
         }
     }
 };
-
-
-// Localized region name for unknown regions (Windows 10)
-#define UNKNOWN_REGION  L"Unknown Region ("
-#define UNKNOWN_REGION_SIZE wcslen(UNKNOWN_REGION)
 
 /*
  * Class:     sun_util_locale_provider_HostLocaleProviderAdapterImpl
@@ -755,15 +750,10 @@ JNIEXPORT jstring JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapte
     (*env)->ReleaseStringChars(env, jStr, pjChar);
 
     if (got) {
-        // Hack: Windows 10 returns "Unknown Region (XX)" for localized XX region name.
-        // Take that as not known.
-        if (type != sun_util_locale_provider_HostLocaleProviderAdapterImpl_DN_LOCALE_REGION ||
-            wcsncmp(UNKNOWN_REGION, buf, UNKNOWN_REGION_SIZE) != 0) {
-            return (*env)->NewString(env, buf, (jsize)wcslen(buf));
-        }
+        return (*env)->NewString(env, buf, (jsize)wcslen(buf));
+    } else {
+        return NULL;
     }
-
-    return NULL;
 }
 
 int getLocaleInfoWrapper(const jchar *langtag, LCTYPE type, LPWSTR data, int buflen) {

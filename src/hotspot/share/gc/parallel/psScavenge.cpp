@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -430,12 +430,6 @@ bool PSScavenge::invoke_no_policy() {
       WeakProcessor::weak_oops_do(&_is_alive_closure, &root_closure);
     }
 
-    {
-      GCTraceTime(Debug, gc, phases) tm("Scrub String Table", &_gc_timer);
-      // Unlink any dead interned Strings and process the remaining live ones.
-      StringTable::unlink_or_oops_do(&_is_alive_closure, &root_closure);
-    }
-
     // Verify that usage of root_closure didn't copy any objects.
     assert(promotion_manager->stacks_empty(),"stacks should be empty at this point");
 
@@ -543,8 +537,7 @@ bool PSScavenge::invoke_no_policy() {
                                                max_eden_size,
                                                false /* not full gc*/);
 
-          size_policy->check_gc_overhead_limit(young_live,
-                                               eden_live,
+          size_policy->check_gc_overhead_limit(eden_live,
                                                max_old_gen_size,
                                                max_eden_size,
                                                false /* not full gc*/,
@@ -760,5 +753,5 @@ void PSScavenge::initialize() {
   // Cache the cardtable
   _card_table = heap->card_table();
 
-  _counters = new CollectorCounters("PSScavenge", 0);
+  _counters = new CollectorCounters("Parallel young collection pauses", 0);
 }

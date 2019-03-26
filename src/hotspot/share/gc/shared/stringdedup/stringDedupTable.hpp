@@ -199,8 +199,6 @@ private:
     return _table->_hash_seed == 0;
   }
 
-  static bool equals(typeArrayOop value1, typeArrayOop value2);
-
   // Computes the hash code for the given character array, using the
   // currently active hash function and hash seed.
   static unsigned int hash_code(typeArrayOop value, bool latin1);

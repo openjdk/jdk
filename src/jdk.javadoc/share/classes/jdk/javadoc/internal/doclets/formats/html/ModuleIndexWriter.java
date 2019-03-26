@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
     public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
         DocPath filename = DocPaths.overviewSummary(configuration.frames);
         ModuleIndexWriter mdlgen = new ModuleIndexWriter(configuration, filename);
-        mdlgen.buildModuleIndexFile("doclet.Window_Overview_Summary", true);
+        mdlgen.buildModuleIndexFile("doclet.Window_Overview_Summary", "module index", true);
     }
 
     /**
@@ -95,15 +95,15 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
      * @param main the document tree to which the modules list will be added
      */
     protected void addIndexContents(Content header, Content main) {
-        HtmlTree htmltree = (HtmlTree)createTagIfAllowed(HtmlTag.NAV, HtmlTree::NAV, () -> new HtmlTree(HtmlTag.DIV));
+        HtmlTree htmltree = HtmlTree.NAV();
         htmltree.setStyle(HtmlStyle.indexNav);
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
         addAllClassesLink(ul);
         if (configuration.showModules) {
             addAllModulesLink(ul);
         }
-        htmltree.addContent(ul);
-        header.addContent(htmltree);
+        htmltree.add(ul);
+        header.add(htmltree);
         addModulesList(main);
     }
 
@@ -121,8 +121,7 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
             String tableSummary = resources.getText("doclet.Member_Table_Summary",
                     resources.getText("doclet.Module_Summary"), resources.getText("doclet.modules"));
             TableHeader header = new TableHeader(contents.moduleLabel, contents.descriptionLabel);
-            Table table =  new Table(configuration.htmlVersion, HtmlStyle.overviewSummary)
-                    .setSummary(tableSummary)
+            Table table =  new Table(HtmlStyle.overviewSummary)
                     .setHeader(header)
                     .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
                     .setDefaultTab(resources.getText("doclet.All_Modules"))
@@ -149,7 +148,7 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
             }
 
             Content div = HtmlTree.DIV(HtmlStyle.contentContainer, table.toContent());
-            main.addContent(div);
+            main.add(div);
 
             if (table.needsScript()) {
                 mainBodyScript.append(table.getScript());
@@ -171,7 +170,7 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
             HtmlTree div = new HtmlTree(HtmlTag.DIV);
             div.setStyle(HtmlStyle.contentContainer);
             addOverviewComment(div);
-            main.addContent(div);
+            main.add(div);
         }
     }
 
@@ -199,7 +198,7 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
     protected void addNavigationBarHeader(Content header) {
         addTop(header);
         navBar.setUserHeader(getUserHeaderFooter(true));
-        header.addContent(navBar.getContent(true));
+        header.add(navBar.getContent(true));
     }
 
     /**
@@ -211,7 +210,7 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
     @Override
     protected void addNavigationBarFooter(Content footer) {
         navBar.setUserFooter(getUserHeaderFooter(false));
-        footer.addContent(navBar.getContent(false));
+        footer.add(navBar.getContent(false));
         addBottom(footer);
     }
 

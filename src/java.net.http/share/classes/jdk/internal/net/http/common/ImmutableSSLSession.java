@@ -91,7 +91,8 @@ public class ImmutableSSLSession implements SSLSession {
         return delegate.getLocalCertificates();
     }
 
-    @Deprecated
+    @SuppressWarnings("removal")
+    @Deprecated(since="11", forRemoval=true)
     public javax.security.cert.X509Certificate [] getPeerCertificateChain()
             throws SSLPeerUnverifiedException {
         return delegate.getPeerCertificateChain();

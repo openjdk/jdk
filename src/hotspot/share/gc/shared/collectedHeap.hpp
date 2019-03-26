@@ -450,11 +450,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // non-object.
   virtual HeapWord* block_start(const void* addr) const = 0;
 
-  // Requires "addr" to be the start of a chunk, and returns its size.
-  // "addr + size" is required to be the start of a new chunk, or the end
-  // of the active area of the heap.
-  virtual size_t block_size(const HeapWord* addr) const = 0;
-
   // Requires "addr" to be the start of a block, and returns "TRUE" iff
   // the block is an object.
   virtual bool block_is_obj(const HeapWord* addr) const = 0;
@@ -514,13 +509,11 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   void print_heap_before_gc();
   void print_heap_after_gc();
 
-  // An object is scavengable if its location may move during a scavenge.
-  // (A scavenge is a GC which is not a full GC.)
-  virtual bool is_scavengable(oop obj) = 0;
   // Registering and unregistering an nmethod (compiled code) with the heap.
   // Override with specific mechanism for each specialized heap type.
   virtual void register_nmethod(nmethod* nm) {}
   virtual void unregister_nmethod(nmethod* nm) {}
+  virtual void flush_nmethod(nmethod* nm) {}
   virtual void verify_nmethod(nmethod* nmethod) {}
 
   void trace_heap_before_gc(const GCTracer* gc_tracer);
@@ -533,12 +526,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // request_concurrent_phase_control) is supported by this collector.
   // The default implementation returns false.
   virtual bool supports_concurrent_phase_control() const;
-
-  // Return a NULL terminated array of concurrent phase names provided
-  // by this collector.  Supports Whitebox testing.  These are the
-  // names recognized by request_concurrent_phase(). The default
-  // implementation returns an array of one NULL element.
-  virtual const char* const* concurrent_phases() const;
 
   // Request the collector enter the indicated concurrent phase, and
   // wait until it does so.  Supports WhiteBox testing.  Only one

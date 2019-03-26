@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc.g1;
+
 /**
  * @test TestPeriodicCollection
  * @requires vm.gc.G1
@@ -29,8 +31,8 @@
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  * @modules java.management/sun.management
- * @run main/othervm -XX:MaxNewSize=32M -XX:InitialHeapSize=48M -Xmx128M -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=25 -XX:+UseG1GC -XX:G1PeriodicGCInterval=3000 -XX:+G1PeriodicGCInvokesConcurrent -Xlog:gc,gc+periodic=debug,gc+ergo+heap=debug TestPeriodicCollection
- * @run main/othervm -XX:MaxNewSize=32M -XX:InitialHeapSize=48M -Xmx128M -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=25 -XX:+UseG1GC -XX:G1PeriodicGCInterval=3000 -XX:-G1PeriodicGCInvokesConcurrent -Xlog:gc,gc+periodic=debug,gc+ergo+heap=debug TestPeriodicCollection
+ * @run main/othervm -XX:MaxNewSize=32M -XX:InitialHeapSize=48M -Xmx128M -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=25 -XX:+UseG1GC -XX:G1PeriodicGCInterval=3000 -XX:+G1PeriodicGCInvokesConcurrent -Xlog:gc,gc+periodic=debug,gc+ergo+heap=debug gc.g1.TestPeriodicCollection
+ * @run main/othervm -XX:MaxNewSize=32M -XX:InitialHeapSize=48M -Xmx128M -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=25 -XX:+UseG1GC -XX:G1PeriodicGCInterval=3000 -XX:-G1PeriodicGCInvokesConcurrent -Xlog:gc,gc+periodic=debug,gc+ergo+heap=debug gc.g1.TestPeriodicCollection
  */
 
 import com.sun.management.HotSpotDiagnosticMXBean;
@@ -61,7 +63,7 @@ public class TestPeriodicCollection {
 
     public static void main(String[] args) {
         MemoryUsage muInitial = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
-        MemoryUsagePrinter.printMemoryUsage("initial", muInitial);
+        printMemoryUsage("initial", muInitial);
 
         if (gcOccurred()) {
           System.out.println("At least one garbage collection occurred. Exiting as this may have already shrunk the heap.");
@@ -75,7 +77,7 @@ public class TestPeriodicCollection {
         }
 
         MemoryUsage muAfter = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
-        MemoryUsagePrinter.printMemoryUsage("after", muAfter);
+        printMemoryUsage("after", muAfter);
 
         assertLessThan(muAfter.getCommitted(), muInitial.getCommitted(), String.format(
                 "committed free heap size is not less than committed full heap size, heap hasn't been shrunk?%n"
@@ -88,12 +90,6 @@ public class TestPeriodicCollection {
                     .getVMOption(MAX_FREE_RATIO_FLAG_NAME).getValue()
         ));
     }
-}
-
-/**
- * Prints memory usage to standard output
- */
-class MemoryUsagePrinter {
 
     public static final NumberFormat NF = Helpers.numberFormatter();
 

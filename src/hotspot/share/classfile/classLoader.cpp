@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,6 @@
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/compilationPolicy.hpp"
-#include "runtime/handles.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -102,7 +101,6 @@ static JImagePackageToModule_t         JImagePackageToModule  = NULL;
 static JImageFindResource_t            JImageFindResource     = NULL;
 static JImageGetResource_t             JImageGetResource      = NULL;
 static JImageResourceIterator_t        JImageResourceIterator = NULL;
-static JImage_ResourcePath_t           JImageResourcePath     = NULL;
 
 // Globals
 
@@ -363,6 +361,8 @@ void ClassPathZipEntry::contents_do(void f(const char* name, void* context), voi
   }
 }
 
+DEBUG_ONLY(ClassPathImageEntry* ClassPathImageEntry::_singleton = NULL;)
+
 void ClassPathImageEntry::close_jimage() {
   if (_jimage != NULL) {
     (*JImageClose)(_jimage);
@@ -375,12 +375,17 @@ ClassPathImageEntry::ClassPathImageEntry(JImageFile* jimage, const char* name) :
   _jimage(jimage) {
   guarantee(jimage != NULL, "jimage file is null");
   guarantee(name != NULL, "jimage file name is null");
+  assert(_singleton == NULL, "VM supports only one jimage");
+  DEBUG_ONLY(_singleton = this);
   size_t len = strlen(name) + 1;
   _name = NEW_C_HEAP_ARRAY(const char, len, mtClass);
   strncpy((char *)_name, name, len);
 }
 
 ClassPathImageEntry::~ClassPathImageEntry() {
+  assert(_singleton == this, "must be");
+  DEBUG_ONLY(_singleton = NULL);
+
   if (_name != NULL) {
     FREE_C_HEAP_ARRAY(const char, _name);
     _name = NULL;
@@ -444,10 +449,12 @@ ClassFileStream* ClassPathImageEntry::open_stream(const char* name, TRAPS) {
     char* data = NEW_RESOURCE_ARRAY(char, size);
     (*JImageGetResource)(_jimage, location, data, size);
     // Resource allocated
+    assert(this == (ClassPathImageEntry*)ClassLoader::get_jrt_entry(), "must be");
     return new ClassFileStream((u1*)data,
                                (int)size,
                                _name,
-                               ClassFileStream::verify);
+                               ClassFileStream::verify,
+                               true); // from_boot_loader_modules_image
   }
 
   return NULL;
@@ -461,7 +468,9 @@ JImageLocationRef ClassLoader::jimage_find_resource(JImageFile* jf,
 }
 
 bool ClassPathImageEntry::is_modules_image() const {
-  return ClassLoader::is_modules_image(name());
+  assert(this == _singleton, "VM supports a single jimage");
+  assert(this == (ClassPathImageEntry*)ClassLoader::get_jrt_entry(), "must be used for jrt entry");
+  return true;
 }
 
 #if INCLUDE_CDS
@@ -622,12 +631,13 @@ void ClassLoader::setup_module_search_path(const char* path, TRAPS) {
   update_module_path_entry_list(path, THREAD);
 }
 
+#endif // INCLUDE_CDS
+
 void ClassLoader::close_jrt_image() {
-  assert(ClassLoader::has_jrt_entry(), "Not applicable for exploded builds");
+  // Not applicable for exploded builds
+  if (!ClassLoader::has_jrt_entry()) return;
   _jrt_entry->close_jimage();
 }
-
-#endif // INCLUDE_CDS
 
 // Construct the array of module/path pairs as specified to --patch-module
 // for the boot loader to search ahead of the jimage, if the class being
@@ -738,8 +748,8 @@ void ClassLoader::setup_boot_search_path(const char *class_path) {
         // Check for a jimage
         if (Arguments::has_jimage()) {
           assert(_jrt_entry == NULL, "should not setup bootstrap class search path twice");
-          assert(new_entry != NULL && new_entry->is_modules_image(), "No java runtime image present");
           _jrt_entry = new_entry;
+          assert(new_entry != NULL && new_entry->is_modules_image(), "No java runtime image present");
           assert(_jrt_entry->jimage() != NULL, "No java runtime image");
         }
       } else {
@@ -1095,8 +1105,6 @@ void ClassLoader::load_jimage_library() {
   guarantee(JImageGetResource != NULL, "function JIMAGE_GetResource not found");
   JImageResourceIterator = CAST_TO_FN_PTR(JImageResourceIterator_t, os::dll_lookup(handle, "JIMAGE_ResourceIterator"));
   guarantee(JImageResourceIterator != NULL, "function JIMAGE_ResourceIterator not found");
-  JImageResourcePath = CAST_TO_FN_PTR(JImage_ResourcePath_t, os::dll_lookup(handle, "JIMAGE_ResourcePath"));
-  guarantee(JImageResourcePath != NULL, "function JIMAGE_ResourcePath not found");
 }
 
 jboolean ClassLoader::decompress(void *in, u8 inSize, void *out, u8 outSize, char **pmsg) {
@@ -1502,7 +1510,7 @@ void ClassLoader::record_result(InstanceKlass* ik, const ClassFileStream* stream
       }
       // for index 0 and the stream->source() is the modules image or has the jrt: protocol.
       // The class must be from the runtime modules image.
-      if (i == 0 && (is_modules_image(src) || string_starts_with(src, "jrt:"))) {
+      if (i == 0 && (stream->from_boot_loader_modules_image() || string_starts_with(src, "jrt:"))) {
         classpath_index = i;
         break;
       }
@@ -1518,7 +1526,7 @@ void ClassLoader::record_result(InstanceKlass* ik, const ClassFileStream* stream
     // The shared path table is set up after module system initialization.
     // The path table contains no entry before that. Any classes loaded prior
     // to the setup of the shared path table must be from the modules image.
-    assert(is_modules_image(src), "stream must be from modules image");
+    assert(stream->from_boot_loader_modules_image(), "stream must be loaded by boot loader from modules image");
     assert(FileMapInfo::get_number_of_shared_paths() == 0, "shared path table must not have been setup");
     classpath_index = 0;
   }
@@ -1724,7 +1732,7 @@ void ClassLoader::create_javabase() {
 
   {
     MutexLocker ml(Module_lock, THREAD);
-    ModuleEntry* jb_module = null_cld_modules->locked_create_entry_or_null(Handle(),
+    ModuleEntry* jb_module = null_cld_modules->locked_create_entry(Handle(),
                                false, vmSymbols::java_base(), NULL, NULL, null_cld);
     if (jb_module == NULL) {
       vm_exit_during_initialization("Unable to create ModuleEntry for " JAVA_BASE_NAME);

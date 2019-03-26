@@ -24,7 +24,7 @@
  * Google Author(s): Behdad Esfahbod
  */
 
-#include "hb-buffer-private.hh"
+#include "hb-buffer.hh"
 
 
 static const char *serialize_formats[] = {
@@ -44,7 +44,7 @@ static const char *serialize_formats[] = {
  * Since: 0.9.7
  **/
 const char **
-hb_buffer_serialize_list_formats (void)
+hb_buffer_serialize_list_formats ()
 {
   return serialize_formats;
 }
@@ -246,7 +246,7 @@ _hb_buffer_serialize_glyphs_text (hb_buffer_t *buffer,
 
     if (flags & HB_BUFFER_SERIALIZE_FLAG_GLYPH_FLAGS)
     {
-      if (info[i].mask &HB_GLYPH_FLAG_DEFINED)
+      if (info[i].mask & HB_GLYPH_FLAG_DEFINED)
         p += MAX (0, snprintf (p, ARRAY_LENGTH (b) - (p - b), "#%X", info[i].mask &HB_GLYPH_FLAG_DEFINED));
     }
 
@@ -440,8 +440,8 @@ hb_bool_t
 hb_buffer_deserialize_glyphs (hb_buffer_t *buffer,
                               const char *buf,
                               int buf_len, /* -1 means nul-terminated */
-                              const char **end_ptr, /* May be nullptr */
-                              hb_font_t *font, /* May be nullptr */
+                              const char **end_ptr, /* May be NULL */
+                              hb_font_t *font, /* May be NULL */
                               hb_buffer_serialize_format_t format)
 {
   const char *end;

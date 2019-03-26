@@ -103,10 +103,13 @@ public class URLClassPath {
         DISABLE_ACC_CHECKING = p != null ? p.equals("true") || p.isEmpty() : false;
 
         // This property will be removed in a later release
-        p = props.getProperty("jdk.net.URLClassPath.disableClassPathURLCheck", "true");
-
+        p = props.getProperty("jdk.net.URLClassPath.disableClassPathURLCheck");
         DISABLE_CP_URL_CHECK = p != null ? p.equals("true") || p.isEmpty() : false;
-        DEBUG_CP_URL_CHECK = "debug".equals(p);
+
+        // Print a message for each Class-Path entry that is ignored (assuming
+        // the check is not disabled).
+        p = props.getProperty("jdk.net.URLClassPath.showIgnoredClassPathEntries");
+        DEBUG_CP_URL_CHECK = p != null ? p.equals("true") || p.isEmpty() : false;
     }
 
     /* The original search path of URLs. */

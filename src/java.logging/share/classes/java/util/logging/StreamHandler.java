@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -225,7 +225,7 @@ public class StreamHandler extends Handler {
      * whether it satisfies any {@code Filter}.  It will also return false if
      * no output stream has been assigned yet or the LogRecord is null.
      *
-     * @param record  a {@code LogRecord}
+     * @param record  a {@code LogRecord} (may be null).
      * @return true if the {@code LogRecord} would be logged.
      *
      */

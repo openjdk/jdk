@@ -574,8 +574,7 @@ void os::print_context(outputStream *st, const void *context) {
   // point to garbage if entry point in an nmethod is corrupted. Leave
   // this at the end, and hope for the best.
   address pc = os::Linux::ucontext_get_pc(uc);
-  st->print_cr("Instructions: (pc=" PTR_FORMAT ")", p2i(pc));
-  print_hex_dump(st, pc - 64, pc + 64, /*instrsize=*/4);
+  print_instructions(st, pc, /*instrsize=*/4);
   st->cr();
 }
 

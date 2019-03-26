@@ -48,7 +48,7 @@ private:
   // Ensures that these arrays are of sufficient size, allocating if necessary.
   // May be called by several threads concurrently.
   void get_LNC_array_for_space(Space* sp,
-                               jbyte**& lowest_non_clean,
+                               CardValue**& lowest_non_clean,
                                uintptr_t& lowest_non_clean_base_chunk_index,
                                size_t& lowest_non_clean_chunk_size);
 
@@ -59,7 +59,7 @@ private:
                       jint stride, int n_strides,
                       OopsInGenClosure* cl,
                       CardTableRS* ct,
-                      jbyte** lowest_non_clean,
+                      CardValue** lowest_non_clean,
                       uintptr_t lowest_non_clean_base_chunk_index,
                       size_t lowest_non_clean_chunk_size);
 
@@ -70,7 +70,7 @@ private:
                                 DirtyCardToOopClosure* dcto_cl,
                                 MemRegion chunk_mr,
                                 MemRegion used,
-                                jbyte** lowest_non_clean,
+                                CardValue** lowest_non_clean,
                                 uintptr_t lowest_non_clean_base_chunk_index,
                                 size_t    lowest_non_clean_chunk_size);
 

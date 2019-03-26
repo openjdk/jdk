@@ -22,29 +22,24 @@
  */
 
 /*
-  test
+  @test
+  @key headful
   @bug 4350402
   @summary Tests that mouse behavior on LW component
+  @compile ../../../regtesthelpers/Util.java
+  @run main RobotLWTest
 */
 
-/**
- * RobotLWTest.java
- *
- * summary:
- */
-
-import java.applet.Applet;
 import java.awt.*;
 import java.awt.event.*;
 import test.java.awt.regtesthelpers.Util;
 
-public class RobotLWTest extends Applet
-{
-    //Declare things used in the test, like buttons and labels here
+public class RobotLWTest {
 
-    public void init()
-    {
-    }//End  init()
+    public static void main(String[] args) {
+        RobotLWTest app = new RobotLWTest();
+        app.start();
+    }
 
     public void start ()
     {
@@ -54,6 +49,7 @@ public class RobotLWTest extends Applet
         c.add(b);
         frame.add(c);
         frame.setSize(400,400);
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
 
         try {

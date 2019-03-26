@@ -35,10 +35,11 @@ class ObjectMonitor;
 class ThreadsList;
 
 struct DeflateMonitorCounters {
-  int nInuse;             // currently associated with objects
-  int nInCirculation;     // extant
-  int nScavenged;         // reclaimed
-  double perThreadTimes;  // per-thread scavenge times
+  int nInuse;              // currently associated with objects
+  int nInCirculation;      // extant
+  int nScavenged;          // reclaimed (global and per-thread)
+  int perThreadScavenged;  // per-thread scavenge total
+  double perThreadTimes;   // per-thread scavenge times
 };
 
 class ObjectSynchronizer : AllStatic {
@@ -114,7 +115,7 @@ class ObjectSynchronizer : AllStatic {
   // Inflate light weight monitor to heavy weight monitor
   static ObjectMonitor* inflate(Thread * Self, oop obj, const InflateCause cause);
   // This version is only for internal use
-  static ObjectMonitor* inflate_helper(oop obj);
+  static void inflate_helper(oop obj);
   static const char* inflate_cause_name(const InflateCause cause);
 
   // Returns the identity hash value for an oop
@@ -153,6 +154,23 @@ class ObjectSynchronizer : AllStatic {
   static void thread_local_used_oops_do(Thread* thread, OopClosure* f);
 
   // debugging
+  static void audit_and_print_stats(bool on_exit);
+  static void chk_free_entry(JavaThread * jt, ObjectMonitor * n,
+                             outputStream * out, int *error_cnt_p);
+  static void chk_global_free_list_and_count(outputStream * out,
+                                             int *error_cnt_p);
+  static void chk_global_in_use_list_and_count(outputStream * out,
+                                               int *error_cnt_p);
+  static void chk_in_use_entry(JavaThread * jt, ObjectMonitor * n,
+                               outputStream * out, int *error_cnt_p);
+  static void chk_per_thread_in_use_list_and_count(JavaThread *jt,
+                                                   outputStream * out,
+                                                   int *error_cnt_p);
+  static void chk_per_thread_free_list_and_count(JavaThread *jt,
+                                                 outputStream * out,
+                                                 int *error_cnt_p);
+  static void log_in_use_monitor_details(outputStream * out, bool on_exit);
+  static int  log_monitor_list_counts(outputStream * out);
   static int  verify_objmon_isinpool(ObjectMonitor *addr) PRODUCT_RETURN0;
 
  private:

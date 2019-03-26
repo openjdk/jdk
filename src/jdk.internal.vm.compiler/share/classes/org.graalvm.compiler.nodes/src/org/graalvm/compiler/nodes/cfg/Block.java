@@ -33,13 +33,11 @@ import org.graalvm.compiler.core.common.cfg.Loop;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodeinfo.Verbosity;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
-import org.graalvm.compiler.nodes.BeginNode;
 import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.InvokeWithExceptionNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.LoopEndNode;
-import org.graalvm.compiler.nodes.LoopExitNode;
 import org.graalvm.compiler.nodes.memory.MemoryCheckpoint;
 import jdk.internal.vm.compiler.word.LocationIdentity;
 
@@ -67,21 +65,6 @@ public final class Block extends AbstractBlockBase<Block> {
 
     public FixedNode getEndNode() {
         return endNode;
-    }
-
-    /**
-     * Return the {@link LoopExitNode} for this block if it exists.
-     */
-    public LoopExitNode getLoopExit() {
-        if (beginNode instanceof BeginNode) {
-            if (beginNode.next() instanceof LoopExitNode) {
-                return (LoopExitNode) beginNode.next();
-            }
-        }
-        if (beginNode instanceof LoopExitNode) {
-            return (LoopExitNode) beginNode;
-        }
-        return null;
     }
 
     @Override

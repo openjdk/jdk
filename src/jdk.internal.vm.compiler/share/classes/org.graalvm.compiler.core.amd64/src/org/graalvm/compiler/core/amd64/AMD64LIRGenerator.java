@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,8 @@ import static org.graalvm.compiler.lir.LIRValueUtil.isConstantValue;
 import static org.graalvm.compiler.lir.LIRValueUtil.isIntConstant;
 import static org.graalvm.compiler.lir.LIRValueUtil.isJavaConstant;
 
+import java.util.Optional;
+
 import org.graalvm.compiler.asm.amd64.AMD64Assembler.AMD64BinaryArithmetic;
 import org.graalvm.compiler.asm.amd64.AMD64Assembler.AMD64MIOp;
 import org.graalvm.compiler.asm.amd64.AMD64Assembler.AMD64RMOp;
@@ -81,6 +83,7 @@ import org.graalvm.compiler.lir.amd64.AMD64ControlFlow.FloatCondSetOp;
 import org.graalvm.compiler.lir.amd64.AMD64ControlFlow.ReturnOp;
 import org.graalvm.compiler.lir.amd64.AMD64ControlFlow.StrategySwitchOp;
 import org.graalvm.compiler.lir.amd64.AMD64ControlFlow.TableSwitchOp;
+import org.graalvm.compiler.lir.amd64.AMD64ControlFlow.HashTableSwitchOp;
 import org.graalvm.compiler.lir.amd64.AMD64LFenceOp;
 import org.graalvm.compiler.lir.amd64.AMD64Move;
 import org.graalvm.compiler.lir.amd64.AMD64Move.CompareAndSwapOp;
@@ -93,6 +96,7 @@ import org.graalvm.compiler.lir.amd64.AMD64ZapRegistersOp;
 import org.graalvm.compiler.lir.amd64.AMD64ZapStackOp;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.lir.gen.LIRGenerator;
+import org.graalvm.compiler.lir.hashing.Hasher;
 import org.graalvm.compiler.phases.util.Providers;
 
 import jdk.vm.ci.amd64.AMD64;
@@ -545,7 +549,14 @@ public abstract class AMD64LIRGenerator extends LIRGenerator {
     @Override
     public Variable emitArrayEquals(JavaKind kind, Value array1, Value array2, Value length, int constantLength, boolean directPointers) {
         Variable result = newVariable(LIRKind.value(AMD64Kind.DWORD));
-        append(new AMD64ArrayEqualsOp(this, kind, result, array1, array2, asAllocatable(length), constantLength, directPointers, getMaxVectorSize()));
+        append(new AMD64ArrayEqualsOp(this, kind, kind, result, array1, array2, asAllocatable(length), constantLength, directPointers, getMaxVectorSize()));
+        return result;
+    }
+
+    @Override
+    public Variable emitArrayEquals(JavaKind kind1, JavaKind kind2, Value array1, Value array2, Value length, int constantLength, boolean directPointers) {
+        Variable result = newVariable(LIRKind.value(AMD64Kind.DWORD));
+        append(new AMD64ArrayEqualsOp(this, kind1, kind2, result, array1, array2, asAllocatable(length), constantLength, directPointers, getMaxVectorSize()));
         return result;
     }
 
@@ -632,6 +643,19 @@ public abstract class AMD64LIRGenerator extends LIRGenerator {
     @Override
     protected void emitTableSwitch(int lowKey, LabelRef defaultTarget, LabelRef[] targets, Value key) {
         append(new TableSwitchOp(lowKey, defaultTarget, targets, key, newVariable(LIRKind.value(target().arch.getWordKind())), newVariable(key.getValueKind())));
+    }
+
+    @Override
+    protected Optional<Hasher> hasherFor(JavaConstant[] keyConstants, double minDensity) {
+        return Hasher.forKeys(keyConstants, minDensity);
+    }
+
+    @Override
+    protected void emitHashTableSwitch(Hasher hasher, JavaConstant[] keys, LabelRef defaultTarget, LabelRef[] targets, Value value) {
+        Value index = hasher.hash(value, arithmeticLIRGen);
+        Variable scratch = newVariable(LIRKind.value(target().arch.getWordKind()));
+        Variable entryScratch = newVariable(LIRKind.value(target().arch.getWordKind()));
+        append(new HashTableSwitchOp(keys, defaultTarget, targets, value, index, scratch, entryScratch));
     }
 
     @Override

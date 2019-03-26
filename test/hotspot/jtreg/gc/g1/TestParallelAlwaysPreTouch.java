@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc.g1;
+
 /*
  * @test
  * @key gc regression
@@ -29,7 +31,7 @@
  * Allocates a few humongous objects that will be allocated by expanding the heap, causing concurrent parallel
  * pre-touch.
  * @requires vm.gc.G1
- * @run main/othervm -XX:+UseG1GC -Xms10M -Xmx100m -XX:G1HeapRegionSize=1M -XX:+AlwaysPreTouch -XX:PreTouchParallelChunkSize=512k -Xlog:gc+ergo+heap=debug,gc+heap=debug,gc=debug TestParallelAlwaysPreTouch
+ * @run main/othervm -XX:+UseG1GC -Xms10M -Xmx100m -XX:G1HeapRegionSize=1M -XX:+AlwaysPreTouch -XX:PreTouchParallelChunkSize=512k -Xlog:gc+ergo+heap=debug,gc+heap=debug,gc=debug gc.g1.TestParallelAlwaysPreTouch
  */
 
 public class TestParallelAlwaysPreTouch {

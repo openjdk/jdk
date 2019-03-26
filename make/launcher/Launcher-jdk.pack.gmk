@@ -45,7 +45,7 @@ ifeq ($(TOOLCHAIN_TYPE), gcc)
   CXXFLAGS_JDKEXE += -fvisibility=hidden
   LDFLAGS_JDKEXE += -Wl,--exclude-libs,ALL
 else ifeq ($(TOOLCHAIN_TYPE), clang)
-  ifneq ($(OPENJDK_TARGET_OS), macosx)
+  ifeq ($(call isTargetOs, macosx), false)
     CXXFLAGS_JDKEXE += -fvisibility=hidden
   endif
 else ifeq ($(TOOLCHAIN_TYPE), solstudio)

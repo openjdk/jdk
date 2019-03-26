@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,10 +147,10 @@ static void date_time(char* buffer, size_t buffer_len) {
   iso8601_to_date_time(buffer);
 }
 
-static jlong file_size(fio_fd fd) {
+static int64_t file_size(fio_fd fd) {
   assert(fd != invalid_fd, "invariant");
-  const jlong current_offset = os::current_file_offset(fd);
-  const jlong size = os::lseek(fd, 0, SEEK_END);
+  const int64_t current_offset = os::current_file_offset(fd);
+  const int64_t size = os::lseek(fd, 0, SEEK_END);
   os::seek_to_file_offset(fd, current_offset);
   return size;
 }
@@ -209,8 +209,7 @@ const char* const RepositoryIterator::filter(const char* entry) const {
   if (entry_name == NULL) {
     return NULL;
   }
-  strncpy(entry_name, entry, entry_len);
-  entry_name[entry_len] = '\0';
+  strncpy(entry_name, entry, entry_len + 1);
   const char* const fully_qualified_path_entry = fully_qualified(entry_name);
   if (NULL == fully_qualified_path_entry) {
     return NULL;
@@ -219,7 +218,7 @@ const char* const RepositoryIterator::filter(const char* entry) const {
   if (invalid_fd == entry_fd) {
     return NULL;
   }
-  const jlong entry_size = file_size(entry_fd);
+  const int64_t entry_size = file_size(entry_fd);
   os::close(entry_fd);
   if (0 == entry_size) {
     return NULL;
@@ -261,6 +260,7 @@ void RepositoryIterator::print_repository_files() const {
   }
 }
 #endif
+
 bool RepositoryIterator::has_next() const {
   return (_files != NULL && _iterator < _files->length());
 }
@@ -276,21 +276,27 @@ static void write_emergency_file(fio_fd emergency_fd, const RepositoryIterator& 
   if (file_copy_block == NULL) {
     return;
   }
- jlong bytes_written_total = 0;
+ int64_t bytes_written_total = 0;
   while (iterator.has_next()) {
     fio_fd current_fd = invalid_fd;
     const char* const fqn = iterator.next();
     if (fqn != NULL) {
       current_fd = open_existing(fqn);
       if (current_fd != invalid_fd) {
-        const jlong current_filesize = file_size(current_fd);
+        const int64_t current_filesize = file_size(current_fd);
         assert(current_filesize > 0, "invariant");
-        jlong bytes_read = 0;
-        jlong bytes_written = 0;
+        int64_t bytes_read = 0;
+        int64_t bytes_written = 0;
         while (bytes_read < current_filesize) {
-          bytes_read += (jlong)os::read_at(current_fd, file_copy_block, size_of_file_copy_block, bytes_read);
-          assert(bytes_read - bytes_written <= (jlong)size_of_file_copy_block, "invariant");
-          bytes_written += (jlong)os::write(emergency_fd, file_copy_block, bytes_read - bytes_written);
+          const ssize_t read_result = os::read_at(current_fd, file_copy_block, size_of_file_copy_block, bytes_read);
+          if (-1 == read_result) {
+            log_info(jfr) ( // For user, should not be "jfr, system"
+              "Unable to recover JFR data");
+            break;
+          }
+          bytes_read += (int64_t)read_result;
+          assert(bytes_read - bytes_written <= (int64_t)size_of_file_copy_block, "invariant");
+          bytes_written += (int64_t)os::write(emergency_fd, file_copy_block, bytes_read - bytes_written);
           assert(bytes_read == bytes_written, "invariant");
         }
         os::close(current_fd);
@@ -332,8 +338,7 @@ static const char* create_emergency_dump_path() {
     if (NULL == emergency_dump_path) {
       return NULL;
     }
-    strncpy(emergency_dump_path, buffer, emergency_filename_length);
-    emergency_dump_path[emergency_filename_length] = '\0';
+    strncpy(emergency_dump_path, buffer, emergency_filename_length + 1);
   }
   return emergency_dump_path;
 }
@@ -407,8 +412,7 @@ bool JfrRepository::set_path(const char* path) {
   if (_path == NULL) {
     return false;
   }
-  strncpy(_path, path, path_len);
-  _path[path_len] = '\0';
+  strncpy(_path, path, path_len + 1);
   return true;
 }
 
@@ -471,6 +475,6 @@ bool JfrRepository::open_chunk(bool vm_error /* false */) {
   return _chunkwriter->open();
 }
 
-size_t JfrRepository::close_chunk(jlong metadata_offset) {
+size_t JfrRepository::close_chunk(int64_t metadata_offset) {
   return _chunkwriter->close(metadata_offset);
 }

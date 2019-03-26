@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2015, 2019, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -31,7 +31,6 @@
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #include "gc/shenandoah/shenandoahBrooksPointer.inline.hpp"
-#include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahWorkGroup.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
@@ -42,8 +41,6 @@
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/interfaceSupport.inline.hpp"
-#include "runtime/prefetch.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/copy.hpp"
@@ -216,22 +213,6 @@ inline bool ShenandoahHeap::check_cancelled_gc_and_yield(bool sts_active) {
   }
 }
 
-inline bool ShenandoahHeap::try_cancel_gc() {
-  while (true) {
-    jbyte prev = _cancelled_gc.cmpxchg(CANCELLED, CANCELLABLE);
-    if (prev == CANCELLABLE) return true;
-    else if (prev == CANCELLED) return false;
-    assert(ShenandoahSuspendibleWorkers, "should not get here when not using suspendible workers");
-    assert(prev == NOT_CANCELLED, "must be NOT_CANCELLED");
-    {
-      // We need to provide a safepoint here, otherwise we might
-      // spin forever if a SP is pending.
-      ThreadBlockInVM sp(JavaThread::current());
-      SpinPause();
-    }
-  }
-}
-
 inline void ShenandoahHeap::clear_cancelled_gc() {
   _cancelled_gc.set(CANCELLABLE);
   _oom_evac_handler.clear();
@@ -335,8 +316,13 @@ inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
   }
 }
 
+template<bool RESOLVE>
 inline bool ShenandoahHeap::requires_marking(const void* entry) const {
-  return !_marking_context->is_marked(oop(entry));
+  oop obj = oop(entry);
+  if (RESOLVE) {
+    obj = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+  }
+  return !_marking_context->is_marked(obj);
 }
 
 template <class T>

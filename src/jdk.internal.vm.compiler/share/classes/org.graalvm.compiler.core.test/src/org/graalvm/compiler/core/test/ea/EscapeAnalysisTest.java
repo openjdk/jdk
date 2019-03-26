@@ -293,7 +293,7 @@ public class EscapeAnalysisTest extends EATestBase {
         @SuppressWarnings("sync-override")
         @Override
         public final Throwable fillInStackTrace() {
-            return null;
+            return this;
         }
     }
 

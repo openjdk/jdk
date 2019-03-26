@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1ConcurrentRefineThread.hpp"
+#include "gc/g1/g1DirtyCardQueue.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/java.hpp"
@@ -378,7 +379,7 @@ void G1ConcurrentRefine::update_zones(double update_rs_time,
 void G1ConcurrentRefine::adjust(double update_rs_time,
                                 size_t update_rs_processed_buffers,
                                 double goal_ms) {
-  DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
+  G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
 
   if (G1UseAdaptiveConcRefinement) {
     update_zones(update_rs_time, update_rs_processed_buffers, goal_ms);
@@ -386,7 +387,7 @@ void G1ConcurrentRefine::adjust(double update_rs_time,
     // Change the barrier params
     if (max_num_threads() == 0) {
       // Disable dcqs notification when there are no threads to notify.
-      dcqs.set_process_completed_buffers_threshold(DirtyCardQueueSet::ProcessCompletedBuffersThresholdNever);
+      dcqs.set_process_completed_buffers_threshold(G1DirtyCardQueueSet::ProcessCompletedBuffersThresholdNever);
     } else {
       // Worker 0 is the primary; wakeup is via dcqs notification.
       STATIC_ASSERT(max_yellow_zone <= INT_MAX);
@@ -417,7 +418,7 @@ size_t G1ConcurrentRefine::deactivation_threshold(uint worker_id) const {
 }
 
 uint G1ConcurrentRefine::worker_id_offset() {
-  return DirtyCardQueueSet::num_par_ids();
+  return G1DirtyCardQueueSet::num_par_ids();
 }
 
 void G1ConcurrentRefine::maybe_activate_more_threads(uint worker_id, size_t num_cur_buffers) {
@@ -427,7 +428,7 @@ void G1ConcurrentRefine::maybe_activate_more_threads(uint worker_id, size_t num_
 }
 
 bool G1ConcurrentRefine::do_refinement_step(uint worker_id) {
-  DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
+  G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
 
   size_t curr_buffer_num = dcqs.completed_buffers_num();
   // If the number of the buffers falls down into the yellow zone,

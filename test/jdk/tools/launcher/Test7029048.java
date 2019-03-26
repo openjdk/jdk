@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 7029048 8217340
+ * @bug 7029048 8217340 8217216
  * @summary Ensure that the launcher defends against user settings of the
  *          LD_LIBRARY_PATH environment variable on Unixes
  * @library /test/lib
@@ -89,6 +89,29 @@ public class Test7029048 extends TestHelper {
     }
 
     static void analyze(TestResult tr, int nLLPComponents, String caseID) {
+        if (isSolaris) {
+            String envValue = getValue("LD_LIBRARY_PATH_64", tr.testOutput);
+           /*
+            * the envValue can never be null, since the test code should always
+            * print a "null" string.
+            */
+            if (envValue == null) {
+                throw new RuntimeException("NPE, likely a program crash ??");
+            }
+            boolean noLLP64 = envValue.equals("null");
+            if (nLLPComponents == 0 && noLLP64) {
+                System.out.println("FAIL: test7029048, " + caseID);
+                System.out.println(" Missing LD_LIBRARY_PATH_64");
+                errors++;
+                return;
+            } else if (nLLPComponents > 3 && !noLLP64) {
+                System.out.println("FAIL: test7029048, " + caseID);
+                System.out.println(" Unexpected LD_LIBRARY_PATH_64: " + envValue);
+                errors++;
+                return;
+            }
+        }
+
         String envValue = getValue(LD_LIBRARY_PATH, tr.testOutput);
        /*
         * the envValue can never be null, since the test code should always
@@ -155,12 +178,22 @@ public class Test7029048 extends TestHelper {
                     }
 
                     desc = "LD_LIBRARY_PATH should not be set (no libjvm.so)";
+                    if (TestHelper.isAIX) {
+                        System.out.println("Skipping test case \"" + desc +
+                                           "\" because the Aix launcher adds the paths in any case.");
+                        continue;
+                    }
                     break;
                 case NO_DIR:
                     if (dstLibDir.exists()) {
                         recursiveDelete(dstLibDir);
                     }
                     desc = "LD_LIBRARY_PATH should not be set (no directory)";
+                    if (TestHelper.isAIX) {
+                        System.out.println("Skipping test case \"" + desc +
+                                           "\" because the Aix launcher adds the paths in any case.");
+                        continue;
+                    }
                     break;
                 default:
                     throw new RuntimeException("unknown case");
@@ -192,8 +225,8 @@ public class Test7029048 extends TestHelper {
                 env.clear();
                 env.put(LD_LIBRARY_PATH_64, dstServerDir.getAbsolutePath());
                 run(env,
-                    v.value,            // Do not add one, since we didn't set
-                                        // LD_LIBRARY_PATH here
+                    // LD_LIBRARY_PATH_64 is copied into LD_LIBRARY_PATH for LIBJVM case
+                    v.value == 0 ? 0 : v.value + 1,
                     "Case 3: " + desc);
             }
         }

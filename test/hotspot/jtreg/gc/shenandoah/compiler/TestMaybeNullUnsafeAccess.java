@@ -28,7 +28,12 @@
  * @requires vm.gc.Shenandoah
  * @modules java.base/jdk.internal.misc:+open
  *
- * @run main/othervm -XX:-UseOnStackReplacement -XX:-BackgroundCompilation -XX:-TieredCompilation TestMaybeNullUnsafeAccess
+ * @run main/othervm -XX:-UseOnStackReplacement -XX:-BackgroundCompilation -XX:-TieredCompilation
+ *                   TestMaybeNullUnsafeAccess
+ *
+ * @run main/othervm -XX:-UseOnStackReplacement -XX:-BackgroundCompilation -XX:-TieredCompilation
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC
+ *                   TestMaybeNullUnsafeAccess
  *
  */
 

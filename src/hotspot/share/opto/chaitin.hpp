@@ -35,12 +35,11 @@
 #include "opto/regmask.hpp"
 #include "opto/machnode.hpp"
 
-class LoopTree;
 class Matcher;
 class PhaseCFG;
 class PhaseLive;
 class PhaseRegAlloc;
-class   PhaseChaitin;
+class PhaseChaitin;
 
 #define OPTO_DEBUG_SPLIT_FREQ  BLOCK_FREQUENCY(0.001)
 #define OPTO_LRG_HIGH_FREQ     BLOCK_FREQUENCY(0.25)
@@ -115,9 +114,9 @@ public:
     _msize_valid=1;
     if (_is_vector) {
       assert(!_fat_proj, "sanity");
-      _mask.verify_sets(_num_regs);
+      assert(_mask.is_aligned_sets(_num_regs), "mask is not aligned, adjacent sets");
     } else if (_num_regs == 2 && !_fat_proj) {
-      _mask.verify_pairs();
+      assert(_mask.is_aligned_pairs(), "mask is not aligned, adjacent pairs");
     }
 #endif
   }
@@ -136,7 +135,6 @@ public:
 
   void Insert( OptoReg::Name reg ) { _mask.Insert(reg);  debug_only(_msize_valid=0;) }
   void Remove( OptoReg::Name reg ) { _mask.Remove(reg);  debug_only(_msize_valid=0;) }
-  void clear_to_pairs() { _mask.clear_to_pairs(); debug_only(_msize_valid=0;) }
   void clear_to_sets()  { _mask.clear_to_sets(_num_regs); debug_only(_msize_valid=0;) }
 
   // Number of registers this live range uses when it colors
@@ -236,9 +234,6 @@ public:
 
   // Add edge between a and b.  Returns true if actually addded.
   int add_edge( uint a, uint b );
-
-  // Add edge between a and everything in the vector
-  void add_vector( uint a, IndexSet *vec );
 
   // Test for edge existance
   int test_edge( uint a, uint b ) const;
@@ -401,7 +396,6 @@ class PhaseChaitin : public PhaseRegAlloc {
 
   PhaseLive *_live;             // Liveness, used in the interference graph
   PhaseIFG *_ifg;               // Interference graph (for original chunk)
-  Node_List **_lrg_nodes;       // Array of node; lists for lrgs which spill
   VectorSet _spilled_once;      // Nodes that have been spilled
   VectorSet _spilled_twice;     // Nodes that have been spilled twice
 
@@ -496,8 +490,7 @@ private:
   void de_ssa();
 
   // Add edge between reg and everything in the vector.
-  // Same as _ifg->add_vector(reg,live) EXCEPT use the RegMask
-  // information to trim the set of interferences.  Return the
+  // Use the RegMask information to trim the set of interferences.  Return the
   // count of edges added.
   void interfere_with_live(uint lid, IndexSet* liveout);
 #ifdef ASSERT
@@ -666,16 +659,8 @@ private:
   // coalescing, it should Simplify.  This call sets the was-lo-degree bit.
   void set_was_low();
 
-  // Split live-ranges that must spill due to register conflicts (as opposed
-  // to capacity spills).  Typically these are things def'd in a register
-  // and used on the stack or vice-versa.
-  void pre_spill();
-
   // Init LRG caching of degree, numregs.  Init lo_degree list.
   void cache_lrg_info( );
-
-  // Simplify the IFG by removing LRGs of low degree with no copies
-  void Pre_Simplify();
 
   // Simplify the IFG by removing LRGs of low degree
   void Simplify();
@@ -692,8 +677,6 @@ private:
   // Return new number of live ranges
   uint Split(uint maxlrg, ResourceArea* split_arena);
 
-  // Copy 'was_spilled'-edness from one Node to another.
-  void copy_was_spilled( Node *src, Node *dst );
   // Set the 'spilled_once' or 'spilled_twice' flag on a node.
   void set_was_spilled( Node *n );
 

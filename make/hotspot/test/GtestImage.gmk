@@ -37,7 +37,7 @@ $(foreach v, $(JVM_VARIANTS), \
   $(eval TARGETS += $$(COPY_GTEST_$v)) \
 )
 
-ifeq ($(OPENJDK_TARGET_OS), windows)
+ifeq ($(call isTargetOs, windows), true)
   $(foreach v, $(JVM_VARIANTS), \
     $(eval $(call SetupCopyFiles, COPY_GTEST_MSVCR_$v, \
         DEST := $(TEST_IMAGE_DIR)/hotspot/gtest/$v, \
@@ -54,7 +54,7 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
   )
 endif
 
-ifeq ($(OPENJDK_TARGET_OS), solaris)
+ifeq ($(call isTargetOs, solaris), true)
   $(foreach v, $(JVM_VARIANTS), \
     $(eval $(call SetupCopyFiles, COPY_GTEST_STLPORT_$v, \
         DEST := $(TEST_IMAGE_DIR)/hotspot/gtest/$v, \

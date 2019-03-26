@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 package nsk.jdi.EventQueue.remove;
 
+import jdk.test.lib.Utils;
 import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
@@ -63,6 +64,12 @@ public class remove004a {
 
     static int lineForComm = 2;
 
+    // Used for communication between debugger and debuggee
+    static volatile boolean stopSleeping = false;
+
+    // Used by debugger to set stopSleeping flag to true
+    static  final boolean BOOLEAN_TRUE_VALUE = true;
+
     private static void methodForCommunication() {
         int i1 = instruction;
         int i2 = i1;
@@ -97,10 +104,12 @@ public class remove004a {
                                 log1("before: methodForCommunication();");
                                 methodForCommunication();
                                 log1("before: Thread.sleep");
-                                try {
-                                    Thread.sleep(argHandler.getWaitTime()*90000);
-                                } catch (InterruptedException e) {
-                                }
+                                Utils.waitForCondition(
+                                        () -> {
+                                            return stopSleeping;
+                                        },
+                                        Utils.adjustTimeout(argHandler.getWaitTime() * 10000),
+                                        100);
                                 log1("after: Thread.sleep");
                                 break ;
 

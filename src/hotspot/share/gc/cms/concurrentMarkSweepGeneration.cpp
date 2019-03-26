@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -636,8 +636,8 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
   }
 
   NOT_PRODUCT(_overflow_counter = CMSMarkStackOverflowInterval;)
-  _gc_counters = new CollectorCounters("CMS", 1);
-  _cgc_counters = new CollectorCounters("CMS stop-the-world phases", 2);
+  _gc_counters = new CollectorCounters("CMS full collection pauses", 1);
+  _cgc_counters = new CollectorCounters("CMS concurrent cycle pauses", 2);
   _completed_initialization = true;
   _inter_sweep_timer.start();  // start of time
 }
@@ -1498,8 +1498,7 @@ void CMSCollector::acquire_control_and_collect(bool full,
   // Has the GC time limit been exceeded?
   size_t max_eden_size = _young_gen->max_eden_size();
   GCCause::Cause gc_cause = heap->gc_cause();
-  size_policy()->check_gc_overhead_limit(_young_gen->used(),
-                                         _young_gen->eden()->used(),
+  size_policy()->check_gc_overhead_limit(_young_gen->eden()->used(),
                                          _cmsGen->max_capacity(),
                                          max_eden_size,
                                          full,
@@ -2761,7 +2760,7 @@ CMSPhaseAccounting::CMSPhaseAccounting(CMSCollector *collector,
 CMSPhaseAccounting::~CMSPhaseAccounting() {
   _collector->gc_timer_cm()->register_gc_concurrent_end();
   _collector->stopTimer();
-  log_debug(gc)("Concurrent active time: %.3fms", TimeHelper::counter_to_seconds(_collector->timerTicks()));
+  log_debug(gc)("Concurrent active time: %.3fms", TimeHelper::counter_to_millis(_collector->timerTicks()));
   log_trace(gc)(" (CMS %s yielded %d times)", _title, _collector->yields());
 }
 
@@ -4194,9 +4193,6 @@ void CMSCollector::checkpointRootsFinalWork() {
 
   CMSHeap* heap = CMSHeap::heap();
 
-  if (should_unload_classes()) {
-    CodeCache::gc_prologue();
-  }
   assert(haveFreelistLocks(), "must have free list locks");
   assert_lock_strong(bitMapLock());
 
@@ -4252,7 +4248,7 @@ void CMSCollector::checkpointRootsFinalWork() {
   verify_overflow_empty();
 
   if (should_unload_classes()) {
-    CodeCache::gc_epilogue();
+    heap->prune_scavengable_nmethods();
   }
   JvmtiExport::gc_epilogue();
 
@@ -4333,8 +4329,7 @@ void CMSParInitialMarkTask::work(uint worker_id) {
                           GenCollectedHeap::ScanningOption(_collector->CMSCollector::roots_scanning_options()),
                           _collector->should_unload_classes(),
                           &par_mri_cl,
-                          &cld_closure,
-                          &_par_state_string);
+                          &cld_closure);
 
   assert(_collector->should_unload_classes()
          || (_collector->CMSCollector::roots_scanning_options() & GenCollectedHeap::SO_AllCodeCache),
@@ -4464,8 +4459,7 @@ void CMSParRemarkTask::work(uint worker_id) {
                           GenCollectedHeap::ScanningOption(_collector->CMSCollector::roots_scanning_options()),
                           _collector->should_unload_classes(),
                           &par_mrias_cl,
-                          NULL,     // The dirty klasses will be handled below
-                          &_par_state_string);
+                          NULL);     // The dirty klasses will be handled below
 
   assert(_collector->should_unload_classes()
          || (_collector->CMSCollector::roots_scanning_options() & GenCollectedHeap::SO_AllCodeCache),
@@ -5270,18 +5264,6 @@ void CMSCollector::refProcessingWork() {
 
       // Prune dead klasses from subklass/sibling/implementor lists.
       Klass::clean_weak_klass_links(purged_class);
-    }
-
-    {
-      GCTraceTime(Debug, gc, phases) t("Scrub Symbol Table", _gc_timer_cm);
-      // Clean up unreferenced symbols in symbol table.
-      SymbolTable::unlink();
-    }
-
-    {
-      GCTraceTime(Debug, gc, phases) t("Scrub String Table", _gc_timer_cm);
-      // Delete entries for dead interned strings.
-      StringTable::unlink(&_is_alive_closure);
     }
   }
 

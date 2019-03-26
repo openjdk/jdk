@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -98,7 +97,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
     @Override
     public Content getMemberSummaryHeader(TypeElement typeElement,
             Content memberSummaryTree) {
-        memberSummaryTree.addContent(HtmlConstants.START_OF_CONSTRUCTOR_SUMMARY);
+        memberSummaryTree.add(MarkerComments.START_OF_CONSTRUCTOR_SUMMARY);
         Content memberTree = writer.getMemberTreeHeader();
         writer.addSummaryHeader(this, typeElement, memberTree);
         return memberTree;
@@ -118,13 +117,13 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
     @Override
     public Content getConstructorDetailsTreeHeader(TypeElement typeElement,
             Content memberDetailsTree) {
-        memberDetailsTree.addContent(HtmlConstants.START_OF_CONSTRUCTOR_DETAILS);
+        memberDetailsTree.add(MarkerComments.START_OF_CONSTRUCTOR_DETAILS);
         Content constructorDetailsTree = writer.getMemberTreeHeader();
-        constructorDetailsTree.addContent(links.createAnchor(
+        constructorDetailsTree.add(links.createAnchor(
                 SectionName.CONSTRUCTOR_DETAIL));
-        Content heading = HtmlTree.HEADING(HtmlConstants.DETAILS_HEADING,
+        Content heading = HtmlTree.HEADING(Headings.TypeDeclaration.DETAILS_HEADING,
                 contents.constructorDetailsLabel);
-        constructorDetailsTree.addContent(heading);
+        constructorDetailsTree.add(heading);
         return constructorDetailsTree;
     }
 
@@ -136,13 +135,13 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
             Content constructorDetailsTree) {
         String erasureAnchor;
         if ((erasureAnchor = getErasureAnchor(constructor)) != null) {
-            constructorDetailsTree.addContent(links.createAnchor((erasureAnchor)));
+            constructorDetailsTree.add(links.createAnchor((erasureAnchor)));
         }
-        constructorDetailsTree.addContent(links.createAnchor(writer.getAnchor(constructor)));
+        constructorDetailsTree.add(links.createAnchor(writer.getAnchor(constructor)));
         Content constructorDocTree = writer.getMemberTreeHeader();
-        Content heading = new HtmlTree(HtmlConstants.MEMBER_HEADING);
-        heading.addContent(name(constructor));
-        constructorDocTree.addContent(heading);
+        Content heading = new HtmlTree(Headings.TypeDeclaration.MEMBER_HEADING);
+        heading.add(name(constructor));
+        constructorDocTree.add(heading);
         return constructorDocTree;
     }
 
@@ -196,11 +195,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
      */
     @Override
     public Content getConstructorDetails(Content constructorDetailsTree) {
-        if (configuration.allowTag(HtmlTag.SECTION)) {
-            HtmlTree htmlTree = HtmlTree.SECTION(getMemberTree(constructorDetailsTree));
-            return htmlTree;
-        }
-        return getMemberTree(constructorDetailsTree);
+        return HtmlTree.SECTION(getMemberTree(constructorDetailsTree));
     }
 
     /**
@@ -227,9 +222,9 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
      */
     @Override
     public void addSummaryLabel(Content memberTree) {
-        Content label = HtmlTree.HEADING(HtmlConstants.SUMMARY_HEADING,
+        Content label = HtmlTree.HEADING(Headings.TypeDeclaration.SUMMARY_HEADING,
                 contents.constructorSummaryLabel);
-        memberTree.addContent(label);
+        memberTree.add(label);
     }
 
     /**
@@ -259,12 +254,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
             rowScopeColumn = 0;
         }
 
-        String summary =  resources.getText("doclet.Member_Table_Summary",
-                resources.getText("doclet.Constructor_Summary"),
-                resources.getText("doclet.constructors"));
-
-        return new Table(configuration.htmlVersion, HtmlStyle.memberSummary)
-                .setSummary(summary)
+        return new Table(HtmlStyle.memberSummary)
                 .setCaption(contents.constructors)
                 .setHeader(getSummaryTableHeader(typeElement))
                 .setRowScopeColumn(rowScopeColumn)
@@ -276,7 +266,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
      */
     @Override
     public void addSummaryAnchor(TypeElement typeElement, Content memberTree) {
-        memberTree.addContent(links.createAnchor(SectionName.CONSTRUCTOR_SUMMARY));
+        memberTree.add(links.createAnchor(SectionName.CONSTRUCTOR_SUMMARY));
     }
 
     /**
@@ -301,16 +291,16 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
         if (foundNonPubConstructor) {
             Content code = new HtmlTree(HtmlTag.CODE);
             if (utils.isProtected(member)) {
-                code.addContent("protected ");
+                code.add("protected ");
             } else if (utils.isPrivate(member)) {
-                code.addContent("private ");
+                code.add("private ");
             } else if (utils.isPublic(member)) {
-                code.addContent(Contents.SPACE);
+                code.add(Contents.SPACE);
             } else {
-                code.addContent(
+                code.add(
                         resources.getText("doclet.Package_private"));
             }
-            tdSummaryType.addContent(code);
+            tdSummaryType.add(code);
         }
     }
 }

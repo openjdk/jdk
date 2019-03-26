@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,7 @@ import org.netbeans.jemmy.drivers.FrameDriver;
 import org.netbeans.jemmy.drivers.InternalFrameDriver;
 import org.netbeans.jemmy.drivers.WindowDriver;
 import org.netbeans.jemmy.util.EmptyVisualizer;
+import org.netbeans.jemmy.util.LookAndFeel;
 import org.netbeans.jemmy.util.Platform;
 
 /**
@@ -1419,7 +1420,7 @@ public class JInternalFrameOperator extends JComponentOperator
                         return "JInternalFrameOperator.initOperators.ComponentChooser{description = " + getDescription() + '}';
                     }
                 }) != null) {
-                    if("Motif".equals(UIManager.getLookAndFeel().getID())) {
+                    if(LookAndFeel.isMotif()) {
                         popupButtonOper = new JButtonOperator(titleOperator, 0);
                     } else {
                         minOper = new JButtonOperator(titleOperator,
@@ -1436,7 +1437,7 @@ public class JInternalFrameOperator extends JComponentOperator
                     maxOper = null;
                 }
                 if (isClosable()) {
-                    if(!"Motif".equals(UIManager.getLookAndFeel().getID())) {
+                    if(!LookAndFeel.isMotif()) {
                         closeOper = new JButtonOperator(titleOperator,
                             new JComponentByTipFinder(CLOSE_BUTTON_TOOLTIP));
                     }

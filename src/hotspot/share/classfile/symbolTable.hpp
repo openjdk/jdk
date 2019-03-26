@@ -123,18 +123,19 @@ private:
   volatile bool _needs_rehashing;
 
   volatile size_t _items_count;
-  volatile size_t _uncleaned_items_count;
+  volatile bool   _has_items_to_clean;
 
   double get_load_factor() const;
-  double get_dead_factor() const;
 
   void check_concurrent_work();
-  void trigger_concurrent_work();
 
   static void item_added();
   static void item_removed();
-  static void set_item_clean_count(size_t ncl);
-  static void mark_item_clean_count();
+
+  // For cleaning
+  void reset_has_items_to_clean();
+  void mark_has_items_to_clean();
+  bool has_items_to_clean() const;
 
   SymbolTable();
 
@@ -143,18 +144,11 @@ private:
   Symbol* do_add_if_needed(const char* name, int len, uintx hash, bool heap, TRAPS);
 
   // Adding elements
-  static void add(ClassLoaderData* loader_data,
-                  const constantPoolHandle& cp, int names_count,
-                  const char** names, int* lengths, int* cp_indices,
-                  unsigned int* hashValues, TRAPS);
-
   static void new_symbols(ClassLoaderData* loader_data,
                           const constantPoolHandle& cp, int names_count,
                           const char** name, int* lengths,
                           int* cp_indices, unsigned int* hashValues,
-                          TRAPS) {
-    add(loader_data, cp, names_count, name, lengths, cp_indices, hashValues, THREAD);
-  }
+                          TRAPS);
 
   static Symbol* lookup_shared(const char* name, int len, unsigned int hash);
   Symbol* lookup_dynamic(const char* name, int len, unsigned int hash);
@@ -190,12 +184,9 @@ public:
     initialize_symbols(symbol_alloc_arena_size);
   }
 
-  static void unlink() {
-    do_check_concurrent_work();
-  }
-  static void do_check_concurrent_work();
   static void do_concurrent_work(JavaThread* jt);
   static bool has_work() { return the_table()->_has_work; }
+  static void trigger_cleanup();
 
   // Probing
   static Symbol* lookup(const char* name, int len, TRAPS);

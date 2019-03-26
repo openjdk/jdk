@@ -140,8 +140,8 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
 // notproduct flags are settable / visible only during development and are not declared in the PRODUCT version
 
 // A flag must be declared with one of the following types:
-// bool, int, uint, intx, uintx, size_t, ccstr, double, or uint64_t.
-// The type "ccstr" is an alias for "const char*" and is used
+// bool, int, uint, intx, uintx, size_t, ccstr, ccstrlist, double, or uint64_t.
+// The type "ccstr" and "ccstrlist" are an alias for "const char*" and is used
 // only in this file, because the macrology requires single-token type names.
 
 // Note: Diagnostic options not meant for VM tuning or for product modes.
@@ -367,7 +367,7 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
           "Print out every time compilation is longer than "                \
           "a given threshold")                                              \
                                                                             \
-  develop(bool, SafepointALot, false,                                       \
+  diagnostic(bool, SafepointALot, false,                                    \
           "Generate a lot of safepoints. This works with "                  \
           "GuaranteedSafepointInterval")                                    \
                                                                             \
@@ -651,9 +651,6 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
   develop(bool, BreakAtWarning, false,                                      \
           "Execute breakpoint upon encountering VM warning")                \
                                                                             \
-  develop(bool, UseFakeTimers, false,                                       \
-          "Tell whether the VM should use system time or a fake timer")     \
-                                                                            \
   product(ccstr, NativeMemoryTracking, "off",                               \
           "Native memory tracking options")                                 \
                                                                             \
@@ -748,22 +745,6 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
                                                                             \
   product(bool, OmitStackTraceInFastThrow, true,                            \
           "Omit backtraces for some 'hot' exceptions in optimized code")    \
-                                                                            \
-  product(bool, ProfilerPrintByteCodeStatistics, false,                     \
-          "Print bytecode statistics when dumping profiler output")         \
-                                                                            \
-  product(bool, ProfilerRecordPC, false,                                    \
-          "Collect ticks for each 16 byte interval of compiled code")       \
-                                                                            \
-  product(bool, ProfileVM, false,                                           \
-          "Profile ticks that fall within VM (either in the VM Thread "     \
-          "or VM code called through stubs)")                               \
-                                                                            \
-  product(bool, ProfileIntervals, false,                                    \
-          "Print profiles for each interval (see ProfileIntervalsTicks)")   \
-                                                                            \
-  notproduct(bool, ProfilerCheckIntervals, false,                           \
-          "Collect and print information on spacing of profiler ticks")     \
                                                                             \
   product(bool, PrintWarnings, true,                                        \
           "Print JVM warnings to output stream")                            \
@@ -880,7 +861,7 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
           "by the application (Solaris & Linux only)")                      \
                                                                             \
   product(bool, AllowJNIEnvProxy, false,                                    \
-          "Allow JNIEnv proxies for jdbx")                                  \
+          "(Deprecated) Allow JNIEnv proxies for jdbx")                     \
                                                                             \
   product(bool, RestoreMXCSROnJNICalls, false,                              \
           "Restore MXCSR when returning from JNI calls")                    \
@@ -1253,7 +1234,7 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
           "exit")                                                           \
                                                                             \
   product(bool, PrintFlagsRanges, false,                                    \
-          "Print VM flags and their ranges and exit VM")                    \
+          "Print VM flags and their ranges")                                \
                                                                             \
   diagnostic(bool, SerializeVMOutput, true,                                 \
           "Use a mutex to serialize output to tty and LogFile")             \
@@ -1649,23 +1630,6 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
                                                                             \
   develop(intx, MethodHistogramCutoff, 100,                                 \
           "The cutoff value for method invocation histogram (+CountCalls)") \
-                                                                            \
-  diagnostic(intx, ProfilerNumberOfInterpretedMethods, 25,                  \
-          "Number of interpreted methods to show in profile")               \
-                                                                            \
-  diagnostic(intx, ProfilerNumberOfCompiledMethods, 25,                     \
-          "Number of compiled methods to show in profile")                  \
-                                                                            \
-  diagnostic(intx, ProfilerNumberOfStubMethods, 25,                         \
-          "Number of stub methods to show in profile")                      \
-                                                                            \
-  diagnostic(intx, ProfilerNumberOfRuntimeStubNodes, 25,                    \
-          "Number of runtime stub nodes to show in profile")                \
-                                                                            \
-  product(intx, ProfileIntervalsTicks, 100,                                 \
-          "Number of ticks between printing of interval profile "           \
-          "(+ProfileIntervals)")                                            \
-          range(0, max_intx)                                                \
                                                                             \
   develop(intx, DontYieldALotInterval,    10,                               \
           "Interval between which yields will be dropped (milliseconds)")   \
@@ -2558,8 +2522,9 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
           "File of size Xmx is pre-allocated for performance reason, so"    \
           "we need that much space available")                              \
                                                                             \
-  develop(bool, VerifyMetaspace, false,                                     \
-          "Verify metaspace on chunk movements.")                           \
+  develop(int, VerifyMetaspaceInterval, DEBUG_ONLY(500) NOT_DEBUG(0),       \
+               "Run periodic metaspace verifications (0 - none, "           \
+               "1 - always, >1 every nth interval)")                        \
                                                                             \
   diagnostic(bool, ShowRegistersOnAssert, true,                             \
           "On internal errors, include registers in error report.")         \

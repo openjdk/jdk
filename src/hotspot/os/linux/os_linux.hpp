@@ -38,8 +38,6 @@ class Linux {
   static bool libjsig_is_loaded;        // libjsig that interposes sigaction(),
                                         // __sigaction(), signal() is loaded
   static struct sigaction *(*get_signal_action)(int);
-  static struct sigaction *get_preinstalled_handler(int);
-  static void save_preinstalled_handler(int, struct sigaction&);
 
   static void check_signal_handler(int sig);
 
@@ -110,6 +108,7 @@ class Linux {
 
   static void print_full_memory_info(outputStream* st);
   static void print_container_info(outputStream* st);
+  static void print_virtualization_info(outputStream* st);
   static void print_distro_info(outputStream* st);
   static void print_libversion_info(outputStream* st);
   static void print_proc_sys_info(outputStream* st);

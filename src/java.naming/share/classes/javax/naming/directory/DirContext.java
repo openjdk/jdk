@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import javax.naming.*;
  * methods for examining and updating attributes
  * associated with objects, and for searching the directory.
  *
- * <h1>Names</h1>
+ * <h2>Names</h2>
  * Each name passed as an argument to a {@code DirContext} method is relative
  * to that context.  The empty name is used to name the context itself.
  * The name parameter may never be null.
@@ -51,7 +51,7 @@ import javax.naming.*;
  * name argument to the {@code Context} methods. These same rules
  * apply to the name argument to the {@code DirContext} methods.
  *
- * <h1>Attribute Models</h1>
+ * <h2>Attribute Models</h2>
  * There are two basic models of what attributes should be
  * associated with.  First, attributes may be directly associated with a
  * DirContext object.
@@ -81,7 +81,7 @@ import javax.naming.*;
  * whether an object's attributes are stored as part of the object, or stored
  * within the parent object and associated with the object's name.
  *
- * <h1>Attribute Type Names</h1>
+ * <h2>Attribute Type Names</h2>
  * In the {@code getAttributes()} and {@code search()} methods,
  * you can supply the attributes to return by supplying a list of
  * attribute names (strings).
@@ -113,7 +113,7 @@ import javax.naming.*;
  * </ul>
  *
  *
- *<h1>Operational Attributes</h1>
+ *<h2>Operational Attributes</h2>
  *<p>
  * Some directories have the notion of "operational attributes" which are
  * attributes associated with a directory object for administrative
@@ -127,7 +127,7 @@ import javax.naming.*;
  * In order to retrieve operational attributes, you must name them explicitly.
  *
  *
- * <h1>Named Context</h1>
+ * <h2>Named Context</h2>
  * <p>
  * There are certain methods in which the name must resolve to a context
  * (for example, when searching a single level context). The documentation
@@ -138,7 +138,7 @@ import javax.naming.*;
  * Aside from these methods, there is no requirement that the
  * <em>named object</em> be a DirContext.
  *
- *<h1>Parameters</h1>
+ *<h2>Parameters</h2>
  *<p>
  * An {@code Attributes}, {@code SearchControls}, or array object
  * passed as a parameter to any method will not be modified by the
@@ -150,7 +150,7 @@ import javax.naming.*;
  * the caller.  The caller may subsequently modify it; the service
  * provider will not.
  *
- *<h1>Exceptions</h1>
+ *<h2>Exceptions</h2>
  *<p>
  * All the methods in this interface can throw a NamingException or
  * any of its subclasses. See NamingException and their subclasses

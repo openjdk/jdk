@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -342,15 +342,8 @@ public final class SSLSocketImpl
 
     @Override
     public synchronized SSLSession getHandshakeSession() {
-        if (conContext.handshakeContext != null) {
-            synchronized (this) {
-                if (conContext.handshakeContext != null) {
-                    return conContext.handshakeContext.handshakeSession;
-                }
-            }
-        }
-
-        return null;
+        return conContext.handshakeContext == null ?
+                null : conContext.handshakeContext.handshakeSession;
     }
 
     @Override

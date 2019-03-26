@@ -276,6 +276,20 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETERMINE_TOOLCHAIN_TYPE],
   fi
   AC_SUBST(TOOLCHAIN_TYPE)
 
+  # on AIX, check for xlclang++ on the PATH and TOOLCHAIN_PATH and use it if it is available
+  if test "x$OPENJDK_TARGET_OS" = xaix; then
+    if test "x$TOOLCHAIN_PATH" != x; then
+      XLC_TEST_PATH=${TOOLCHAIN_PATH}/
+    fi
+
+    XLCLANG_VERSION_OUTPUT=`${XLC_TEST_PATH}xlclang++ -qversion 2>&1 | $HEAD -n 1`
+    $ECHO "$XLCLANG_VERSION_OUTPUT" | $GREP "IBM XL C/C++ for AIX" > /dev/null
+    if test $? -eq 0; then
+      AC_MSG_NOTICE([xlclang++ output: $XLCLANG_VERSION_OUTPUT])
+      XLC_USES_CLANG=true
+    fi
+  fi
+
   TOOLCHAIN_CC_BINARY_clang="clang"
   TOOLCHAIN_CC_BINARY_gcc="gcc"
   TOOLCHAIN_CC_BINARY_microsoft="cl$EXE_SUFFIX"
@@ -287,6 +301,14 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETERMINE_TOOLCHAIN_TYPE],
   TOOLCHAIN_CXX_BINARY_microsoft="cl$EXE_SUFFIX"
   TOOLCHAIN_CXX_BINARY_solstudio="CC"
   TOOLCHAIN_CXX_BINARY_xlc="xlC_r"
+
+  if test "x$OPENJDK_TARGET_OS" = xaix; then
+    if test "x$XLC_USES_CLANG" = xtrue; then
+      AC_MSG_NOTICE([xlclang++ detected, using it])
+      TOOLCHAIN_CC_BINARY_xlc="xlclang"
+      TOOLCHAIN_CXX_BINARY_xlc="xlclang++"
+    fi
+  fi
 
   # Use indirect variable referencing
   toolchain_var_name=TOOLCHAIN_DESCRIPTION_$TOOLCHAIN_TYPE
@@ -595,7 +617,7 @@ AC_DEFUN([TOOLCHAIN_FIND_COMPILER],
 AC_DEFUN([TOOLCHAIN_EXTRACT_LD_VERSION],
 [
   LINKER=[$]$1
-  LINKER_NAME=$2
+  LINKER_NAME="$2"
 
   if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     # cc -Wl,-V output typically looks like
@@ -621,14 +643,21 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_LD_VERSION],
     [ LINKER_VERSION_NUMBER=`$ECHO $LINKER_VERSION_STRING | \
         $SED -e 's/.* \([0-9][0-9]*\(\.[0-9][0-9]*\)*\).*/\1/'` ]
   elif test  "x$TOOLCHAIN_TYPE" = xgcc; then
-    # gcc -Wl,-version output typically looks like
+    # gcc -Wl,-version output typically looks like:
     #   GNU ld (GNU Binutils for Ubuntu) 2.26.1
     #   Copyright (C) 2015 Free Software Foundation, Inc.
     #   This program is free software; [...]
-    LINKER_VERSION_STRING=`$LD -Wl,-version 2>&1 | $HEAD -n 1`
+    # If using gold it will look like:
+    #   GNU gold (GNU Binutils 2.30) 1.15
+    LINKER_VERSION_STRING=`$LD -Wl,--version 2> /dev/null | $HEAD -n 1`
     # Extract version number
-    [ LINKER_VERSION_NUMBER=`$ECHO $LINKER_VERSION_STRING | \
-        $SED -e 's/.* \([0-9][0-9]*\(\.[0-9][0-9]*\)*\).*/\1/'` ]
+    if [ [[ "$LINKER_VERSION_STRING" == *gold* ]] ]; then
+      [ LINKER_VERSION_NUMBER=`$ECHO $LINKER_VERSION_STRING | \
+          $SED -e 's/.* \([0-9][0-9]*\(\.[0-9][0-9]*\)*\).*) .*/\1/'` ]
+    else
+      [ LINKER_VERSION_NUMBER=`$ECHO $LINKER_VERSION_STRING | \
+          $SED -e 's/.* \([0-9][0-9]*\(\.[0-9][0-9]*\)*\).*/\1/'` ]
+    fi
   elif test  "x$TOOLCHAIN_TYPE" = xclang; then
     # clang -Wl,-v output typically looks like
     #   @(#)PROGRAM:ld  PROJECT:ld64-305
@@ -715,12 +744,18 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
       AC_MSG_RESULT([yes])
     fi
     LDCXX="$LD"
+    # jaotc being a windows program expects the linker to be supplied with exe suffix.
+    LD_JAOTC="$LD$EXE_SUFFIX"
   else
     # All other toolchains use the compiler to link.
     LD="$CC"
     LDCXX="$CXX"
+    # jaotc expects 'ld' as the linker rather than the compiler.
+    BASIC_CHECK_TOOLS([LD_JAOTC], ld)
+    BASIC_FIXUP_EXECUTABLE(LD_JAOTC)
   fi
   AC_SUBST(LD)
+  AC_SUBST(LD_JAOTC)
   # FIXME: it should be CXXLD, according to standard (cf CXXCPP)
   AC_SUBST(LDCXX)
 

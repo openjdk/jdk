@@ -54,11 +54,6 @@ class PtrQueue {
   // Whether updates should be logged.
   bool _active;
 
-  // If true, the queue is permanent, and doesn't need to deallocate
-  // its buffer in the destructor (since that obtains a lock which may not
-  // be legally locked by then.
-  const bool _permanent;
-
   // The (byte) index at which an object was last enqueued.  Starts at
   // capacity_in_bytes (indicating an empty buffer) and goes towards zero.
   // Value is always pointer-size aligned.
@@ -111,26 +106,19 @@ protected:
     return byte_index_to_index(capacity_in_bytes());
   }
 
-  // If there is a lock associated with this buffer, this is that lock.
-  Mutex* _lock;
-
   PtrQueueSet* qset() { return _qset; }
-  bool is_permanent() const { return _permanent; }
 
   // Process queue entries and release resources.
   void flush_impl();
 
   // Initialize this queue to contain a null buffer, and be part of the
   // given PtrQueueSet.
-  PtrQueue(PtrQueueSet* qset, bool permanent = false, bool active = false);
+  PtrQueue(PtrQueueSet* qset, bool active = false);
 
-  // Requires queue flushed or permanent.
+  // Requires queue flushed.
   ~PtrQueue();
 
 public:
-
-  // Associate a lock with a ptr queue.
-  void set_lock(Mutex* lock) { _lock = lock; }
 
   // Forcibly set empty.
   void reset() {

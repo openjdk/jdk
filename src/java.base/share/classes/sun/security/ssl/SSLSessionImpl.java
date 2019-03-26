@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import javax.crypto.SecretKey;
@@ -286,18 +285,20 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         return masterSecret;
     }
 
-    Optional<SecretKey> getResumptionMasterSecret() {
-        return Optional.ofNullable(resumptionMasterSecret);
+    SecretKey getResumptionMasterSecret() {
+        return resumptionMasterSecret;
     }
 
-    synchronized Optional<SecretKey> getPreSharedKey() {
-        return Optional.ofNullable(preSharedKey);
+    synchronized SecretKey getPreSharedKey() {
+        return preSharedKey;
     }
 
-    synchronized Optional<SecretKey> consumePreSharedKey() {
-        Optional<SecretKey> result = Optional.ofNullable(preSharedKey);
-        preSharedKey = null;
-        return result;
+    synchronized SecretKey consumePreSharedKey() {
+        try {
+            return preSharedKey;
+        } finally {
+            preSharedKey = null;
+        }
     }
 
     int getTicketAgeAdd() {
@@ -312,10 +313,12 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      * be used once. This method will return the identity and then clear it
      * so it cannot be used again.
      */
-    synchronized Optional<byte[]> consumePskIdentity() {
-        Optional<byte[]> result = Optional.ofNullable(pskIdentity);
-        pskIdentity = null;
-        return result;
+    synchronized byte[] consumePskIdentity() {
+        try {
+            return pskIdentity;
+        } finally {
+            pskIdentity = null;
+        }
     }
 
     void setPeerCertificates(X509Certificate[] peer) {
@@ -597,7 +600,8 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      *  Use {@code getPeerCertificates()} instead.
      */
     @Override
-    @Deprecated
+    @SuppressWarnings("removal")
+    @Deprecated(since="9", forRemoval=true)
     public javax.security.cert.X509Certificate[] getPeerCertificateChain()
             throws SSLPeerUnverifiedException {
         //

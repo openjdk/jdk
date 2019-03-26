@@ -22,42 +22,33 @@
  */
 
 /*
-  test
+  @test
+  @key headful
   @bug 6267983
   @summary PIT: MouseClicked is triggered when the mouse is released outside the tray icon, Win32
-  @author dmitry.cherepanov@... area=awt.event
-  @run applet MouseClickTest.html
+  @library    ../../../regtesthelpers
+  @build      Util
+  @run main MouseClickTest
 */
 
-import java.applet.Applet;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import test.java.awt.regtesthelpers.Util;
 
-public class MouseClickTest extends Applet
+public class MouseClickTest
 {
     private static final int TIMEOUT = 3000;
 
-    public void init()
-    {
-        setLayout (new BorderLayout ());
-    }
-
     public void start ()
     {
-        setSize (200,200);
-        setVisible(true);
-        validate();
-
         runTests();
     }
 
     public static final void main(String args[])
     {
         MouseClickTest test = new MouseClickTest();
-        test.init();
         test.start();
     }
 

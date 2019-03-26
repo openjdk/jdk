@@ -49,7 +49,7 @@ class Verifier : AllStatic {
 
   // Return false if the class is loaded by the bootstrap loader,
   // or if defineClass was called requesting skipping verification
-  // -Xverify:all/none override this value
+  // -Xverify:all overrides this value
   static bool should_verify_for(oop class_loader, bool should_verify_class);
 
   // Relax certain access checks to enable some broken 1.1 apps to run on 1.2.
@@ -250,6 +250,8 @@ class ErrorContext {
 class ClassVerifier : public StackObj {
  private:
   Thread* _thread;
+
+  Symbol* _previous_symbol;          // cache of the previously looked up symbol
   GrowableArray<Symbol*>* _symbols;  // keep a list of symbols created
 
   Symbol* _exception_type;
@@ -411,12 +413,18 @@ class ClassVerifier : public StackObj {
   // created, we can't use a TempNewSymbol.
   Symbol* create_temporary_symbol(const Symbol* s, int begin, int end, TRAPS);
   Symbol* create_temporary_symbol(const char *s, int length, TRAPS);
-
   Symbol* create_temporary_symbol(Symbol* s) {
-    // This version just updates the reference count and saves the symbol to be
-    // dereferenced later.
-    s->increment_refcount();
-    _symbols->push(s);
+    if (s == _previous_symbol) {
+      return s;
+    }
+    if (!s->is_permanent()) {
+      s->increment_refcount();
+      if (_symbols == NULL) {
+        _symbols = new GrowableArray<Symbol*>(50, 0, NULL);
+      }
+      _symbols->push(s);
+    }
+    _previous_symbol = s;
     return s;
   }
 

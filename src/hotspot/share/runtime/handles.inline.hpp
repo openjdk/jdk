@@ -26,7 +26,9 @@
 #define SHARE_RUNTIME_HANDLES_INLINE_HPP
 
 #include "runtime/handles.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/thread.hpp"
+#include "oops/metadata.hpp"
+#include "oops/oop.hpp"
 
 // these inline functions are in a separate file to break an include cycle
 // between Thread and Handle
@@ -77,7 +79,6 @@ inline HandleMark::HandleMark() {
   initialize(Thread::current());
 }
 
-
 inline void HandleMark::push() {
   // This is intentionally a NOP. pop_and_restore will reset
   // values to the HandleMark further down the stack, typically
@@ -86,22 +87,18 @@ inline void HandleMark::push() {
 }
 
 inline void HandleMark::pop_and_restore() {
-  HandleArea* area = _area;   // help compilers with poor alias analysis
   // Delete later chunks
-  if( _chunk->next() ) {
-    // reset arena size before delete chunks. Otherwise, the total
-    // arena size could exceed total chunk size
-    assert(area->size_in_bytes() > size_in_bytes(), "Sanity check");
-    area->set_size_in_bytes(size_in_bytes());
-    _chunk->next_chop();
+  if(_chunk->next() != NULL) {
+    assert(_area->size_in_bytes() > size_in_bytes(), "Sanity check");
+    chop_later_chunks();
   } else {
-    assert(area->size_in_bytes() == size_in_bytes(), "Sanity check");
+    assert(_area->size_in_bytes() == size_in_bytes(), "Sanity check");
   }
   // Roll back arena to saved top markers
-  area->_chunk = _chunk;
-  area->_hwm = _hwm;
-  area->_max = _max;
-  debug_only(area->_handle_mark_nesting--);
+  _area->_chunk = _chunk;
+  _area->_hwm = _hwm;
+  _area->_max = _max;
+  debug_only(_area->_handle_mark_nesting--);
 }
 
 inline HandleMarkCleaner::HandleMarkCleaner(Thread* thread) {

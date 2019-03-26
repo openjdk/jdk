@@ -249,13 +249,13 @@ public:
   bool is_in_partial_collection(const void* p);
 #endif
 
-  virtual bool is_scavengable(oop obj) {
-    return is_in_young(obj);
-  }
-
   // Optimized nmethod scanning support routines
   virtual void register_nmethod(nmethod* nm);
-  virtual void verify_nmethod(nmethod* nmethod);
+  virtual void unregister_nmethod(nmethod* nm);
+  virtual void verify_nmethod(nmethod* nm);
+  virtual void flush_nmethod(nmethod* nm);
+
+  void prune_scavengable_nmethods();
 
   // Iteration functions.
   void oop_iterate(OopIterateClosure* cl);
@@ -277,13 +277,6 @@ public:
   // may not pack objects densely; a chunk may either be an object or a
   // non-object.
   virtual HeapWord* block_start(const void* addr) const;
-
-  // Requires "addr" to be the start of a chunk, and returns its size.
-  // "addr + size" is required to be the start of a new chunk, or the end
-  // of the active area of the heap. Assumes (and verifies in non-product
-  // builds) that addr is in the allocated part of the heap and is
-  // the start of a chunk.
-  virtual size_t block_size(const HeapWord* addr) const;
 
   // Requires "addr" to be the start of a block, and returns "TRUE" iff
   // the block is an object. Assumes (and verifies in non-product
@@ -400,10 +393,6 @@ public:
                      CLDClosure* weak_cld_closure,
                      CodeBlobToOopClosure* code_roots);
 
-  void process_string_table_roots(StrongRootsScope* scope,
-                                  OopClosure* root_closure,
-                                  OopStorage::ParState<false, false>* par_state_string);
-
   // Accessor for memory state verification support
   NOT_PRODUCT(
     virtual size_t skip_header_HeapWords() { return 0; }
@@ -416,16 +405,14 @@ public:
   void young_process_roots(StrongRootsScope* scope,
                            OopsInGenClosure* root_closure,
                            OopsInGenClosure* old_gen_closure,
-                           CLDClosure* cld_closure,
-                           OopStorage::ParState<false, false>* par_state_string = NULL);
+                           CLDClosure* cld_closure);
 
   void full_process_roots(StrongRootsScope* scope,
                           bool is_adjust_phase,
                           ScanningOption so,
                           bool only_strong_roots,
                           OopsInGenClosure* root_closure,
-                          CLDClosure* cld_closure,
-                          OopStorage::ParState<false, false>* par_state_string = NULL);
+                          CLDClosure* cld_closure);
 
   // Apply "root_closure" to all the weak roots of the system.
   // These include JNI weak roots, string table,
@@ -503,6 +490,10 @@ private:
 
   // Save the tops of the spaces in all generations
   void record_gen_tops_before_GC() PRODUCT_RETURN;
+
+  // Return true if we need to perform full collection.
+  bool should_do_full_collection(size_t size, bool full,
+                                 bool is_tlab, GenerationType max_gen) const;
 };
 
 #endif // SHARE_GC_SHARED_GENCOLLECTEDHEAP_HPP

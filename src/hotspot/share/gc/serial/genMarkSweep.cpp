@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,10 +75,6 @@ void GenMarkSweep::invoke_at_safepoint(ReferenceProcessor* rp, bool clear_all_so
 
   gch->trace_heap_before_gc(_gc_tracer);
 
-  // When collecting the permanent generation Method*s may be moving,
-  // so we either have to flush all bcp data or convert it into bci.
-  CodeCache::gc_prologue();
-
   // Increment the invocation count
   _total_invocations++;
 
@@ -128,7 +124,7 @@ void GenMarkSweep::invoke_at_safepoint(ReferenceProcessor* rp, bool clear_all_so
     rs->invalidate_or_clear(old_gen);
   }
 
-  CodeCache::gc_epilogue();
+  gch->prune_scavengable_nmethods();
   JvmtiExport::gc_epilogue();
 
   // refs processing: clean slate
@@ -237,18 +233,6 @@ void GenMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
 
     // Prune dead klasses from subklass/sibling/implementor lists.
     Klass::clean_weak_klass_links(purged_class);
-  }
-
-  {
-    GCTraceTime(Debug, gc, phases) t("Scrub String Table", gc_timer());
-    // Delete entries for dead interned strings.
-    StringTable::unlink(&is_alive);
-  }
-
-  {
-    GCTraceTime(Debug, gc, phases) t("Scrub Symbol Table", gc_timer());
-    // Clean up unreferenced symbols in symbol table.
-    SymbolTable::unlink();
   }
 
   gc_tracer()->report_object_count_after_gc(&is_alive);

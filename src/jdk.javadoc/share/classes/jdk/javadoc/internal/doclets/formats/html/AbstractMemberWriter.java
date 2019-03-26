@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,12 +40,10 @@ import javax.lang.model.type.TypeMirror;
 
 import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Links;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
@@ -220,7 +218,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
      * @param htmltree the content tree to which the name will be added.
      */
     protected void addName(String name, Content htmltree) {
-        htmltree.addContent(name);
+        htmltree.add(name);
     }
 
     /**
@@ -257,8 +255,8 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
         }
         if (!set.isEmpty()) {
             String mods = set.stream().map(Modifier::toString).collect(Collectors.joining(" "));
-            htmltree.addContent(mods);
-            htmltree.addContent(Contents.SPACE);
+            htmltree.add(mods);
+            htmltree.add(Contents.SPACE);
         }
     }
 
@@ -285,8 +283,8 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
         HtmlTree code = new HtmlTree(HtmlTag.CODE);
         addModifier(member, code);
         if (type == null) {
-            code.addContent(utils.isClass(member) ? "class" : "interface");
-            code.addContent(Contents.SPACE);
+            code.add(utils.isClass(member) ? "class" : "interface");
+            code.add(Contents.SPACE);
         } else {
             List<? extends TypeParameterElement> list = utils.isExecutableElement(member)
                     ? ((ExecutableElement)member).getTypeParameters()
@@ -294,24 +292,24 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
             if (list != null && !list.isEmpty()) {
                 Content typeParameters = ((AbstractExecutableMemberWriter) this)
                         .getTypeParameters((ExecutableElement)member);
-                    code.addContent(typeParameters);
+                    code.add(typeParameters);
                 //Code to avoid ugly wrapping in member summary table.
                 if (typeParameters.charCount() > 10) {
-                    code.addContent(new HtmlTree(HtmlTag.BR));
+                    code.add(new HtmlTree(HtmlTag.BR));
                 } else {
-                    code.addContent(Contents.SPACE);
+                    code.add(Contents.SPACE);
                 }
-                code.addContent(
+                code.add(
                         writer.getLink(new LinkInfoImpl(configuration,
                         LinkInfoImpl.Kind.SUMMARY_RETURN_TYPE, type)));
             } else {
-                code.addContent(
+                code.add(
                         writer.getLink(new LinkInfoImpl(configuration,
                         LinkInfoImpl.Kind.SUMMARY_RETURN_TYPE, type)));
             }
 
         }
-        tdSummaryType.addContent(code);
+        tdSummaryType.add(code);
     }
 
     /**
@@ -322,24 +320,24 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
      */
     private void addModifier(Element member, Content code) {
         if (utils.isProtected(member)) {
-            code.addContent("protected ");
+            code.add("protected ");
         } else if (utils.isPrivate(member)) {
-            code.addContent("private ");
+            code.add("private ");
         } else if (!utils.isPublic(member)) { // Package private
-            code.addContent(resources.getText("doclet.Package_private"));
-            code.addContent(" ");
+            code.add(resources.getText("doclet.Package_private"));
+            code.add(" ");
         }
         boolean isAnnotatedTypeElement = utils.isAnnotationType(member.getEnclosingElement());
         if (!isAnnotatedTypeElement && utils.isMethod(member)) {
             if (!utils.isInterface(member.getEnclosingElement()) && utils.isAbstract(member)) {
-                code.addContent("abstract ");
+                code.add("abstract ");
             }
             if (utils.isDefault(member)) {
-                code.addContent("default ");
+                code.add("default ");
             }
         }
         if (utils.isStatic(member)) {
-            code.addContent("static ");
+            code.add("static ");
         }
     }
 
@@ -355,7 +353,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
         if (!output.isEmpty()) {
             Content deprecatedContent = output;
             Content div = HtmlTree.DIV(HtmlStyle.deprecationBlock, deprecatedContent);
-            contentTree.addContent(div);
+            contentTree.add(div);
         }
     }
 
@@ -373,18 +371,6 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
 
     protected String name(Element member) {
         return utils.getSimpleName(member);
-    }
-
-    /**
-     * Get the header for the section.
-     *
-     * @param member the member being documented.
-     * @return a header content for the section.
-     */
-    protected Content getHead(Element member) {
-        Content memberContent = new StringContent(name(member));
-        Content heading = HtmlTree.HEADING(HtmlConstants.MEMBER_HEADING, memberContent);
-        return heading;
     }
 
     /**
@@ -407,19 +393,16 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
      *
      * @param mems list of program elements for which the use information will be added
      * @param heading the section heading
-     * @param tableSummary the summary for the use table
      * @param contentTree the content tree to which the use information will be added
      */
-    protected void addUseInfo(List<? extends Element> mems,
-            Content heading, String tableSummary, Content contentTree) {
+    protected void addUseInfo(List<? extends Element> mems, Content heading, Content contentTree) {
         if (mems == null || mems.isEmpty()) {
             return;
         }
         List<? extends Element> members = mems;
         boolean printedUseTableHeader = false;
         if (members.size() > 0) {
-            Table useTable = new Table(configuration.htmlVersion, HtmlStyle.useSummary)
-                    .setSummary(tableSummary)
+            Table useTable = new Table(HtmlStyle.useSummary)
                     .setCaption(heading)
                     .setRowScopeColumn(1)
                     .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast);
@@ -441,8 +424,8 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
                         && !utils.isAnnotationType(element)) {
                     HtmlTree name = new HtmlTree(HtmlTag.SPAN);
                     name.setStyle(HtmlStyle.typeNameLabel);
-                    name.addContent(name(te) + ".");
-                    typeContent.addContent(name);
+                    name.add(name(te) + ".");
+                    typeContent.add(name);
                 }
                 addSummaryLink(utils.isClass(element) || utils.isInterface(element)
                         ? LinkInfoImpl.Kind.CLASS_USE
@@ -452,7 +435,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
                 writer.addSummaryLinkComment(this, element, desc);
                 useTable.addRow(summaryType, typeContent, desc);
             }
-            contentTree.addContent(useTable.toContent());
+            contentTree.add(useTable.toContent());
         }
     }
 

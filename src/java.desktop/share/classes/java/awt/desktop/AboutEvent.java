@@ -33,11 +33,13 @@ import java.awt.HeadlessException;
  * Event sent when the application is asked to open its about window.
  *
  * @see AboutHandler#handleAbout
- *
  * @since 9
  */
 public final class AboutEvent extends AppEvent {
 
+    /**
+     * Use serialVersionUID from JDK 9 for interoperability.
+     */
     private static final long serialVersionUID = -5987180734802756477L;
 
     /**

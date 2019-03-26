@@ -29,7 +29,7 @@
 #define HB_STRING_ARRAY_HH
 #endif
 
-#include "hb-private.hh"
+#include "hb.hh"
 
 /* Based on Bruno Haible's code in Appendix B of Ulrich Drepper's dsohowto.pdf:
  * https://software.intel.com/sites/default/files/m/a/1/e/dsohowto.pdf */

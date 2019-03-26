@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,8 @@ package java.awt.desktop;
 import java.util.EventListener;
 
 /**
- * Common interface for all event listener sub-types.
- *
- * Implementors may implement multiple sub-types, but only need to call
+ * Common interface for all event listener sub-types. Implementors may implement
+ * multiple sub-types, but only need to call
  * {@link java.awt.Desktop#addAppEventListener(SystemEventListener)} once to
  * receive all notifications.
  *

@@ -103,7 +103,7 @@ class klassVtable {
   // printed the klass name so that other routines in the adjust_*
   // group don't print the klass name.
   bool adjust_default_method(int vtable_index, Method* old_method, Method* new_method);
-  void adjust_method_entries(InstanceKlass* holder, bool * trace_name_printed);
+  void adjust_method_entries(bool* trace_name_printed);
   bool check_no_old_or_obsolete_entries();
   void dump_vtable();
 #endif // INCLUDE_JVMTI
@@ -322,7 +322,7 @@ class klassItable {
   // trace_name_printed is set to true if the current call has
   // printed the klass name so that other routines in the adjust_*
   // group don't print the klass name.
-  void adjust_method_entries(InstanceKlass* holder, bool * trace_name_printed);
+  void adjust_method_entries(bool* trace_name_printed);
   bool check_no_old_or_obsolete_entries();
   void dump_itable();
 #endif // INCLUDE_JVMTI

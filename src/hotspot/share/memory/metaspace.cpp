@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,7 +132,15 @@ size_t MetaspaceGC::capacity_until_GC() {
   return value;
 }
 
-bool MetaspaceGC::inc_capacity_until_GC(size_t v, size_t* new_cap_until_GC, size_t* old_cap_until_GC) {
+// Try to increase the _capacity_until_GC limit counter by v bytes.
+// Returns true if it succeeded. It may fail if either another thread
+// concurrently increased the limit or the new limit would be larger
+// than MaxMetaspaceSize.
+// On success, optionally returns new and old metaspace capacity in
+// new_cap_until_GC and old_cap_until_GC respectively.
+// On error, optionally sets can_retry to indicate whether if there is
+// actually enough space remaining to satisfy the request.
+bool MetaspaceGC::inc_capacity_until_GC(size_t v, size_t* new_cap_until_GC, size_t* old_cap_until_GC, bool* can_retry) {
   assert_is_aligned(v, Metaspace::commit_alignment());
 
   size_t old_capacity_until_GC = _capacity_until_GC;
@@ -143,6 +151,16 @@ bool MetaspaceGC::inc_capacity_until_GC(size_t v, size_t* new_cap_until_GC, size
     new_value = align_down(max_uintx, Metaspace::commit_alignment());
   }
 
+  if (new_value > MaxMetaspaceSize) {
+    if (can_retry != NULL) {
+      *can_retry = false;
+    }
+    return false;
+  }
+
+  if (can_retry != NULL) {
+    *can_retry = true;
+  }
   size_t prev_value = Atomic::cmpxchg(new_value, &_capacity_until_GC, old_capacity_until_GC);
 
   if (old_capacity_until_GC != prev_value) {
@@ -236,7 +254,7 @@ void MetaspaceGC::compute_new_size() {
 
   const double min_tmp = used_after_gc / maximum_used_percentage;
   size_t minimum_desired_capacity =
-    (size_t)MIN2(min_tmp, double(max_uintx));
+    (size_t)MIN2(min_tmp, double(MaxMetaspaceSize));
   // Don't shrink less than the initial generation size
   minimum_desired_capacity = MAX2(minimum_desired_capacity,
                                   MetaspaceSize);
@@ -283,7 +301,7 @@ void MetaspaceGC::compute_new_size() {
     const double maximum_free_percentage = MaxMetaspaceFreeRatio / 100.0;
     const double minimum_used_percentage = 1.0 - maximum_free_percentage;
     const double max_tmp = used_after_gc / minimum_used_percentage;
-    size_t maximum_desired_capacity = (size_t)MIN2(max_tmp, double(max_uintx));
+    size_t maximum_desired_capacity = (size_t)MIN2(max_tmp, double(MaxMetaspaceSize));
     maximum_desired_capacity = MAX2(maximum_desired_capacity,
                                     MetaspaceSize);
     log_trace(gc, metaspace)("    maximum_free_percentage: %6.2f  minimum_used_percentage: %6.2f",
@@ -422,7 +440,6 @@ size_t MetaspaceUtils::free_chunks_total_words(Metaspace::MetadataType mdtype) {
   if (chunk_manager == NULL) {
     return 0;
   }
-  chunk_manager->slow_verify();
   return chunk_manager->free_chunks_total_words();
 }
 
@@ -586,15 +603,15 @@ void MetaspaceUtils::print_basic_report(outputStream* out, size_t scale) {
   if (Metaspace::using_class_space()) {
     out->print("   Non-Class:  ");
   }
-  print_human_readable_size(out, Metaspace::chunk_manager_metadata()->free_chunks_total_words(), scale);
+  print_human_readable_size(out, Metaspace::chunk_manager_metadata()->free_chunks_total_bytes(), scale);
   out->cr();
   if (Metaspace::using_class_space()) {
     out->print("       Class:  ");
-    print_human_readable_size(out, Metaspace::chunk_manager_class()->free_chunks_total_words(), scale);
+    print_human_readable_size(out, Metaspace::chunk_manager_class()->free_chunks_total_bytes(), scale);
     out->cr();
     out->print("        Both:  ");
-    print_human_readable_size(out, Metaspace::chunk_manager_class()->free_chunks_total_words() +
-                              Metaspace::chunk_manager_metadata()->free_chunks_total_words(), scale);
+    print_human_readable_size(out, Metaspace::chunk_manager_class()->free_chunks_total_bytes() +
+                              Metaspace::chunk_manager_metadata()->free_chunks_total_bytes(), scale);
     out->cr();
   }
   out->cr();
@@ -775,6 +792,13 @@ void MetaspaceUtils::print_report(outputStream* out, size_t scale, int flags) {
   out->print_cr("Number of times virtual space nodes were expanded: " UINTX_FORMAT ".", g_internal_statistics.num_committed_space_expanded);
   out->print_cr("Number of deallocations: " UINTX_FORMAT " (" UINTX_FORMAT " external).", g_internal_statistics.num_deallocs, g_internal_statistics.num_external_deallocs);
   out->print_cr("Allocations from deallocated blocks: " UINTX_FORMAT ".", g_internal_statistics.num_allocs_from_deallocated_blocks);
+  out->print_cr("Number of chunks added to freelist: " UINTX_FORMAT ".",
+                g_internal_statistics.num_chunks_added_to_freelist);
+  out->print_cr("Number of chunks removed from freelist: " UINTX_FORMAT ".",
+                g_internal_statistics.num_chunks_removed_from_freelist);
+  out->print_cr("Number of chunk merges: " UINTX_FORMAT ", split-ups: " UINTX_FORMAT ".",
+                g_internal_statistics.num_chunk_merges, g_internal_statistics.num_chunk_splits);
+
   out->cr();
 #endif
 
@@ -826,10 +850,12 @@ void MetaspaceUtils::print_metaspace_map(outputStream* out, Metaspace::MetadataT
 }
 
 void MetaspaceUtils::verify_free_chunks() {
-  Metaspace::chunk_manager_metadata()->verify();
+#ifdef ASSERT
+  Metaspace::chunk_manager_metadata()->verify(false);
   if (Metaspace::using_class_space()) {
-    Metaspace::chunk_manager_class()->verify();
+    Metaspace::chunk_manager_class()->verify(false);
   }
+#endif
 }
 
 void MetaspaceUtils::verify_metrics() {
@@ -871,19 +897,6 @@ metaspace::VirtualSpaceNode* MetaspaceUtils::find_enclosing_virtual_space(const 
     vsn = Metaspace::class_space_list()->find_enclosing_space(p);
   }
   return vsn;
-}
-
-bool MetaspaceUtils::is_in_committed(const void* p) {
-#if INCLUDE_CDS
-  if (UseSharedSpaces) {
-    for (int idx = MetaspaceShared::ro; idx <= MetaspaceShared::mc; idx++) {
-      if (FileMapInfo::current_info()->is_in_shared_region(p, idx)) {
-        return true;
-      }
-    }
-  }
-#endif
-  return find_enclosing_virtual_space(p) != NULL;
 }
 
 bool MetaspaceUtils::is_range_in_committed(const void* from, const void* to) {
@@ -1483,6 +1496,7 @@ MetaWord* ClassLoaderMetaspace::expand_and_allocate(size_t word_size, Metaspace:
 
   size_t before = 0;
   size_t after = 0;
+  bool can_retry = true;
   MetaWord* res;
   bool incremented;
 
@@ -1490,9 +1504,9 @@ MetaWord* ClassLoaderMetaspace::expand_and_allocate(size_t word_size, Metaspace:
   // the HWM, an allocation is still attempted. This is because another thread must then
   // have incremented the HWM and therefore the allocation might still succeed.
   do {
-    incremented = MetaspaceGC::inc_capacity_until_GC(delta_bytes, &after, &before);
+    incremented = MetaspaceGC::inc_capacity_until_GC(delta_bytes, &after, &before, &can_retry);
     res = allocate(word_size, mdtype);
-  } while (!incremented && res == NULL);
+  } while (!incremented && res == NULL && can_retry);
 
   if (incremented) {
     Metaspace::tracer()->report_gc_threshold(before, after,

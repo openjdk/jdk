@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,7 @@ package java.awt.desktop;
  * An implementer receives notification when the app is asked to show its about
  * dialog.
  *
- * @see java.awt.Desktop#setAboutHandler(java.awt.desktop.AboutHandler)
- *
+ * @see java.awt.Desktop#setAboutHandler(AboutHandler)
  * @since 9
  */
 public interface AboutHandler {
@@ -38,7 +37,7 @@ public interface AboutHandler {
     /**
      * Called when the application is asked to show its about dialog.
      *
-     * @param e the request to show the about dialog.
+     * @param  e the request to show the about dialog
      */
-    public void handleAbout(final AboutEvent e);
+    public void handleAbout(AboutEvent e);
 }

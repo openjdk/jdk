@@ -105,10 +105,13 @@ private:
   // Specifies if _failure_reason is on the C heap.
   bool             _failure_reason_on_C_heap;
 
-  // Cache JVMTI state
-  bool  _jvmti_can_hotswap_or_post_breakpoint;
-  bool  _jvmti_can_access_local_variables;
-  bool  _jvmti_can_post_on_exceptions;
+  // Cache JVMTI state. Defined as bytes so that reading them from Java
+  // via Unsafe is well defined (the C++ type for bool is implementation
+  // defined and may not be the same as a Java boolean).
+  jbyte  _jvmti_can_hotswap_or_post_breakpoint;
+  jbyte  _jvmti_can_access_local_variables;
+  jbyte  _jvmti_can_post_on_exceptions;
+  jbyte  _jvmti_can_pop_frame;
 
   // Implementation methods for loading and constant pool access.
   static Klass* get_klass_by_name_impl(Klass* accessing_klass,
@@ -146,6 +149,12 @@ private:
 
 public:
   CompileTask* task() { return _task; }
+
+  bool  jvmti_state_changed() const;
+  bool  jvmti_can_hotswap_or_post_breakpoint() const { return  _jvmti_can_hotswap_or_post_breakpoint != 0; }
+  bool  jvmti_can_access_local_variables() const     { return  _jvmti_can_access_local_variables != 0; }
+  bool  jvmti_can_post_on_exceptions() const         { return  _jvmti_can_post_on_exceptions != 0; }
+  bool  jvmti_can_pop_frame() const                  { return  _jvmti_can_pop_frame != 0; }
 
   const char* failure_reason() { return _failure_reason; }
   bool failure_reason_on_C_heap() { return _failure_reason_on_C_heap; }

@@ -26,7 +26,6 @@
 #define CPU_ARM_MACROASSEMBLER_ARM_HPP
 
 #include "code/relocInfo.hpp"
-#include "code/relocInfo_ext.hpp"
 
 class BiasedLockingCounters;
 
@@ -513,15 +512,13 @@ public:
     }
   }
 
-  // Runtime address that may vary from one execution to another. The
-  // symbolic_reference describes what the address is, allowing
-  // the address to be resolved in a different execution context.
+  // Runtime address that may vary from one execution to another.
   // Warning: do not implement as a PC relative address.
-  void mov_address(Register rd, address addr, symbolic_Relocation::symbolic_reference t) {
+  void mov_address(Register rd, address addr) {
     mov_address(rd, addr, RelocationHolder::none);
   }
 
-  // rspec can be RelocationHolder::none (for ignored symbolic_Relocation).
+  // rspec can be RelocationHolder::none (for ignored symbolic Relocation).
   // In that case, the address is absolute and the generated code need
   // not be relocable.
   void mov_address(Register rd, address addr, RelocationHolder const& rspec) {

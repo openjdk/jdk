@@ -90,8 +90,7 @@ define SetupTestFilesCompilationBody
     $$(eval $$(call SetupNativeCompilation, BUILD_TEST_$$(name), \
         NAME := $$(unprefixed_name), \
         TYPE := $$($1_COMPILATION_TYPE), \
-        SRC := $$(patsubst %/,%,$$(dir $$(file))), \
-        INCLUDE_FILES := $$(notdir $$(file)), \
+        EXTRA_FILES := $$(file), \
         OBJECT_DIR := $$($1_OUTPUT_DIR)/support/$$(name), \
         OUTPUT_DIR := $$($1_OUTPUT_DIR)/$$($1_OUTPUT_SUBDIR), \
         CFLAGS := $$($1_BASE_CFLAGS) $$($1_CFLAGS) $$($1_CFLAGS_$$(name)), \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -288,7 +288,7 @@ class Example implements Comparable<Example> {
         opts.add("-d");
         opts.add(classesDir.getPath());
         if (options != null)
-            opts.addAll(options);
+            opts.addAll(evalProperties(options));
 
         if (procFiles.size() > 0) {
             List<String> pOpts = new ArrayList<>(Arrays.asList("-d", classesDir.getPath()));
@@ -352,6 +352,51 @@ class Example implements Comparable<Example> {
             if (out != null) {
                 out.println("Invalid value for run tag: " + runOpts);
             }
+        }
+    }
+
+    private static List<String> evalProperties(List<String> args) {
+        boolean fast = true;
+        for (String arg : args) {
+            fast = fast && (arg.indexOf("${") == -1);
+        }
+        if (fast) {
+            return args;
+        }
+        List<String> newArgs = new ArrayList<>();
+        for (String arg : args) {
+            newArgs.add(evalProperties(arg));
+        }
+        return newArgs;
+    }
+
+    private static final Pattern namePattern = Pattern.compile("\\$\\{([A-Za-z0-9._]+)\\}");
+    private static final String jdkVersion = Integer.toString(Runtime.version().feature());
+
+    private static String evalProperties(String arg) {
+        Matcher m = namePattern.matcher(arg);
+        StringBuilder sb = null;
+        while (m.find()) {
+            if (sb == null) {
+                sb = new StringBuilder();
+            }
+            String propName = m.group(1);
+            String propValue;
+            switch (propName) {
+                case "jdk.version":
+                    propValue = jdkVersion;
+                    break;
+                default:
+                    propValue = System.getProperty(propName);
+                    break;
+            }
+            m.appendReplacement(sb, propValue != null ? propValue : m.group(0).replace("$", "\\$"));
+        }
+        if (sb == null) {
+            return arg;
+        } else {
+            m.appendTail(sb);
+            return sb.toString();
         }
     }
 

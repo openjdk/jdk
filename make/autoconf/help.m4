@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 AC_DEFUN_ONCE([HELP_SETUP_DEPENDENCY_HELP],
 [
-  AC_CHECK_PROGS(PKGHANDLER, apt-get yum brew port pkgutil pkgadd)
+  AC_CHECK_PROGS(PKGHANDLER, zypper apt-get yum brew port pkgutil pkgadd)
 ])
 
 AC_DEFUN([HELP_MSG_MISSING_DEPENDENCY],
@@ -54,6 +54,8 @@ AC_DEFUN([HELP_MSG_MISSING_DEPENDENCY],
         pkgutil_help $MISSING_DEPENDENCY ;;
       pkgadd)
         pkgadd_help  $MISSING_DEPENDENCY ;;
+      zypper)
+        zypper_help  $MISSING_DEPENDENCY ;;
     esac
 
     if test "x$PKGHANDLER_COMMAND" != x; then
@@ -107,6 +109,25 @@ apt_help() {
       PKGHANDLER_COMMAND="sudo apt-get install ccache" ;;
     dtrace)
       PKGHANDLER_COMMAND="sudo apt-get install systemtap-sdt-dev" ;;
+  esac
+}
+
+zypper_help() {
+  case $1 in
+    devkit)
+      PKGHANDLER_COMMAND="sudo zypper install gcc gcc-c++" ;;
+    alsa)
+      PKGHANDLER_COMMAND="sudo zypper install alsa-devel" ;;
+    cups)
+      PKGHANDLER_COMMAND="sudo zypper install cups-devel" ;;
+    fontconfig)
+      PKGHANDLER_COMMAND="sudo zypper install fontconfig-devel" ;;
+    freetype)
+      PKGHANDLER_COMMAND="sudo zypper install freetype-devel" ;;
+    x11)
+      PKGHANDLER_COMMAND="sudo zypper install libX11-devel libXext-devel libXrender-devel libXrandr-devel libXtst-devel libXt-devel libXi-devel" ;;
+    ccache)
+      PKGHANDLER_COMMAND="sudo zypper install ccache" ;;
   esac
 }
 

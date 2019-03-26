@@ -65,7 +65,7 @@ class JfrCheckpointThreadClosure : public ThreadClosure {
  private:
   JfrCheckpointWriter& _writer;
   JfrCheckpointContext _ctx;
-  const intptr_t _count_position;
+  const int64_t _count_position;
   Thread* const _curthread;
   u4 _count;
 

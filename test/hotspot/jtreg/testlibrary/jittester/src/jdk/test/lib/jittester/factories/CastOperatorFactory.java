@@ -67,7 +67,7 @@ class CastOperatorFactory extends OperatorFactory<CastOperator> {
                     SymbolTable.merge();
                     return castOperator;
                 }
-                throw new ProductionFailedException();
+                SymbolTable.pop();
             } catch (ProductionFailedException e) {
                 SymbolTable.pop();
             }

@@ -135,7 +135,7 @@ import java.util.function.BiFunction;
  * applications should each close both sides of their respective connection.
  * For {@code SSLSocket} objects, for example, an application can call
  * {@link Socket#shutdownOutput()} or {@link java.io.OutputStream#close()}
- * for output strean close and call {@link Socket#shutdownInput()} or
+ * for output stream close and call {@link Socket#shutdownInput()} or
  * {@link java.io.InputStream#close()} for input stream close.  Note that
  * in some cases, closing the input stream may depend on the peer's output
  * stream being closed first.  If the connection is not closed in an orderly

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8158297
+ * @bug 8158297 8218939
  * @summary Constant pool utf8 entry for class name cannot have empty qualified name '//'
  * @compile p1/BadInterface1.jcod
  * @compile p1/BadInterface2.jcod
@@ -37,20 +37,32 @@ public class TestBadClassName {
 
         System.out.println("Regression test for bug 8042660");
 
-        // Test class name with p1//BadInterface2
+        // Test class name with p1//BadInterface1
+        String expected = "Illegal class name \"p1//BadInterface1\" in class file UseBadInterface1";
         try {
             Class newClass = Class.forName("UseBadInterface1");
             throw new RuntimeException("Expected ClassFormatError exception not thrown");
         } catch (java.lang.ClassFormatError e) {
+            check(e, expected);
             System.out.println("Test UseBadInterface1 passed test case with illegal class name");
         }
 
         // Test class name with p1/BadInterface2/
+        expected = "Illegal class name \"p1/BadInterface2/\" in class file UseBadInterface2";
         try {
             Class newClass = Class.forName("UseBadInterface2");
             throw new RuntimeException("Expected ClassFormatError exception not thrown");
         } catch (java.lang.ClassFormatError e) {
-            System.out.println("Test UseBadInterface1 passed test case with illegal class name");
+            check(e, expected);
+            System.out.println("Test UseBadInterface2 passed test case with illegal class name");
+        }
+    }
+
+    static void check(ClassFormatError c, String expected) {
+        if (!c.getMessage().equals(expected)) {
+            throw new RuntimeException("Wrong ClassFormatError - expected: \"" +
+                                       expected + "\", got \"" +
+                                       c.getMessage() + "\"");
         }
     }
 }

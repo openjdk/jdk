@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -772,6 +772,8 @@ final class P11KeyStore extends KeyStoreSpi {
             }
             if (debug != null) {
                 dumpTokenMap();
+                debug.println("P11KeyStore load. Entry count: " +
+                        aliasMap.size());
             }
         } catch (KeyStoreException | PKCS11Exception e) {
             throw new IOException("load failed", e);

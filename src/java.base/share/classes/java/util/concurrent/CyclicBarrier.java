@@ -98,12 +98,11 @@ import java.util.concurrent.locks.ReentrantLock;
  *   }
  * }}</pre>
  *
- * Here, each worker thread processes a row of the matrix then waits at the
- * barrier until all rows have been processed. When all rows are processed
- * the supplied {@link Runnable} barrier action is executed and merges the
- * rows. If the merger
- * determines that a solution has been found then {@code done()} will return
- * {@code true} and each worker will terminate.
+ * Here, each worker thread processes a row of the matrix, then waits at the
+ * barrier until all rows have been processed. When all rows are processed the
+ * supplied {@link Runnable} barrier action is executed and merges the rows.
+ * If the merger determines that a solution has been found then {@code done()}
+ * will return {@code true} and each worker will terminate.
  *
  * <p>If the barrier action does not rely on the parties being suspended when
  * it is executed, then any of the threads in the party could execute that
@@ -132,6 +131,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * corresponding {@code await()} in other threads.
  *
  * @see CountDownLatch
+ * @see Phaser
  *
  * @author Doug Lea
  * @since 1.5
@@ -214,18 +214,17 @@ public class CyclicBarrier {
 
             int index = --count;
             if (index == 0) {  // tripped
-                boolean ranAction = false;
-                try {
-                    final Runnable command = barrierCommand;
-                    if (command != null)
+                Runnable command = barrierCommand;
+                if (command != null) {
+                    try {
                         command.run();
-                    ranAction = true;
-                    nextGeneration();
-                    return 0;
-                } finally {
-                    if (!ranAction)
+                    } catch (Throwable ex) {
                         breakBarrier();
+                        throw ex;
+                    }
                 }
+                nextGeneration();
+                return 0;
             }
 
             // loop until tripped, broken, interrupted, or timed out

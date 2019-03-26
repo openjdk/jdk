@@ -49,7 +49,7 @@ class SafepointMechanism : public AllStatic {
   static inline bool local_poll(Thread* thread);
   static inline bool global_poll();
 
-  static inline void block_if_requested_local_poll(JavaThread *thread);
+  static void block_if_requested_slow(JavaThread *thread);
 
   static void default_initialize();
 
@@ -72,10 +72,10 @@ public:
 #endif
   }
 
-  // Call this method to see if this thread should block for a safepoint.
+  // Call this method to see if this thread should block for a safepoint or process handshake.
   static inline bool should_block(Thread* thread);
 
-  // Blocks a thread until safepoint is completed
+  // Blocks a thread until safepoint/handshake is completed.
   static inline void block_if_requested(JavaThread* thread);
 
   // Caller is responsible for using a memory barrier if needed.

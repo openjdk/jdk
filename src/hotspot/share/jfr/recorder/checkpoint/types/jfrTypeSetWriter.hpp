@@ -35,7 +35,7 @@ class JfrArtifactWriterHost : public StackObj {
   WriterImpl _impl;
   JfrCheckpointWriter* _writer;
   JfrCheckpointContext _ctx;
-  jlong _count_offset;
+  int64_t _count_offset;
   int _count;
   bool _skip_header;
  public:

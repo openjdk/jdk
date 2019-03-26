@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,10 +35,18 @@ class ZPageTableEntry {
     }
 
     ZPage page() {
-        return (ZPage)VMObjectFactory.newObject(ZPage.class, entry.andWithMask(~1L));
+        return (ZPage)VMObjectFactory.newObject(ZPage.class, zPageBits());
+    }
+
+    private Address zPageBits() {
+        return entry.andWithMask(~1L);
     }
 
     boolean relocating() {
         return (entry.asLongValue() & 1) == 1;
+    }
+
+    boolean isEmpty() {
+        return entry == null || zPageBits() == null;
     }
 }

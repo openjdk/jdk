@@ -33,6 +33,7 @@
  * @run main SymLinkArchiveTest
  */
 
+import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -69,7 +70,13 @@ public class SymLinkArchiveTest extends TestRunner {
         tb.writeFile(javaFile, "class T extends p.B {}");
 
         Path jar = base.resolve("lib.jar");
-        Files.createSymbolicLink(jar, classpath.getFileName());
+        try {
+            Files.createSymbolicLink(jar, classpath.getFileName());
+        } catch (FileSystemException fse) {
+            System.err.println("warning: test passes vacuously, sym-link could not be created");
+            System.err.println(fse.getMessage());
+            return;
+        }
 
         Result result = new JavacTask(tb).files(javaFile).classpath(jar).run(Expect.FAIL);
         String output = result.getOutput(OutputKind.DIRECT);

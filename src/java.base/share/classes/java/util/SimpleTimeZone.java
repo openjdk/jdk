@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -310,7 +310,7 @@ public class SimpleTimeZone extends TimeZone {
      *                        See the class description for the special cases of this parameter.
      * @param endDayOfWeek    The daylight saving time ending day-of-week.
      *                        See the class description for the special cases of this parameter.
-     * @param endTime         The daylight saving ending time in time time mode
+     * @param endTime         The daylight saving ending time in time mode
      *                        specified by <code>endTimeMode</code>.
      * @param endTimeMode     The mode of the end time specified by endTime
      * @param dstSavings      The amount of time in milliseconds saved during

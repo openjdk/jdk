@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,33 +22,28 @@
  */
 
 /*
-  test
+  @test
+  @key headful
   @bug 6887703
   @summary Unsigned applet can retrieve the dragged information before drop action occurs
-  @author : area=dnd
-  @run applet DragInterceptorAppletTest.html
+  @library ../../regtesthelpers
+  @library ../../regtesthelpers/process
+  @build Util
+  @build ProcessResults ProcessCommunicator
+  @run main/othervm DragInterceptorAppletTest main
 */
 
-/**
- * DragInterceptorAppletTest.java
- *
- * summary: Unsigned applet can retrieve the dragged information before drop action occurs
- */
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.event.InputEvent;
+
+import test.java.awt.regtesthelpers.Util;
+import test.java.awt.regtesthelpers.process.ProcessCommunicator;
+import test.java.awt.regtesthelpers.process.ProcessResults;
 
 import static java.lang.Thread.sleep;
 
-import test.java.awt.regtesthelpers.process.ProcessCommunicator;
-import test.java.awt.regtesthelpers.process.ProcessResults;
-import test.java.awt.regtesthelpers.Util;
-import java.applet.Applet;
-import java.awt.*;
-import java.awt.event.InputEvent;
-
-public class DragInterceptorAppletTest extends Applet {
-
-    public void init() {
-        setLayout(new BorderLayout());
-    }//End  init()
+public class DragInterceptorAppletTest {
 
     public void start() {
 
@@ -138,7 +133,11 @@ public class DragInterceptorAppletTest extends Applet {
         }
     }
 
-    public static void main (String [] args) {
+    public static void main(final String[] args) {
+        if (args.length > 0 && args[0].equals("main")) {
+            new DragInterceptorAppletTest().start();
+            return;
+        }
         Point dragSourcePoint = new Point(InterprocessArguments.DRAG_SOURCE_POINT_X_ARGUMENT.extract(args),
                 InterprocessArguments.DRAG_SOURCE_POINT_Y_ARGUMENT.extract(args));
         Point targetFrameLocation = new Point(InterprocessArguments.TARGET_FRAME_X_POSITION_ARGUMENT.extract(args),

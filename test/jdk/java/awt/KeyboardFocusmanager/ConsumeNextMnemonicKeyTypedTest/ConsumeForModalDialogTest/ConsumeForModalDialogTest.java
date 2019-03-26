@@ -20,22 +20,20 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
-  test
-  @bug       6391688
-  @summary   Tests that next mnemonic KeyTyped is consumed for a modal dialog.
-  @author    anton.tarasov@sun.com: area=awt.focus
-  @run       applet ConsumeForModalDialogTest.html
+  @test
+  @key headful
+  @bug        6391688
+  @summary    Tests that next mnemonic KeyTyped is consumed for a modal dialog.
+  @run        main ConsumeForModalDialogTest
 */
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.applet.Applet;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.lang.reflect.InvocationTargetException;
 
-public class ConsumeForModalDialogTest extends Applet {
+public class ConsumeForModalDialogTest {
     Robot robot;
     JFrame frame = new JFrame("Test Frame");
     JDialog dialog = new JDialog((Window)null, "Test Dialog", Dialog.ModalityType.DOCUMENT_MODAL);
@@ -55,10 +53,6 @@ public class ConsumeForModalDialogTest extends Applet {
         } catch (AWTException e) {
             throw new RuntimeException("Error: unable to create robot", e);
         }
-        // Create instructions for the user here, as well as set up
-        // the environment -- set the layout manager, add buttons,
-        // etc.
-        this.setLayout (new BorderLayout ());
     }
 
     public void start() {
@@ -93,6 +87,7 @@ public class ConsumeForModalDialogTest extends Applet {
 
         frame.setJMenuBar(menuBar);
         frame.setSize(100, 100);
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
 
         robot.waitForIdle();

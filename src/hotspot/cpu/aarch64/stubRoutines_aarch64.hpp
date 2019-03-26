@@ -186,6 +186,7 @@ class aarch64 {
 
 private:
   static juint    _crc_table[];
+  static jubyte   _adler_table[];
   // begin trigonometric tables block. See comments in .cpp file
   static juint    _npio2_hw[];
   static jdouble   _two_over_pi[];

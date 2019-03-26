@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ public final class CompileThresholdBootstrapTest {
 
     @Test
     public void testBootstrap() throws Throwable {
-        Assert.assertEquals(0, (int)MethodHandles.constant(int.class, (int)0).invokeExact());
+        Assert.assertEquals((int)MethodHandles.constant(int.class, (int)0).invokeExact(), 0);
     }
 
     public static void main(String ... args) {

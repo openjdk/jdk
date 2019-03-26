@@ -44,13 +44,13 @@ JfrCheckpointWriter::JfrCheckpointWriter(bool flushpoint, bool header, Thread* t
   }
 }
 
-static void write_checkpoint_header(u1* pos, jlong size, jlong time, bool flushpoint, juint type_count) {
+static void write_checkpoint_header(u1* pos, int64_t size, jlong time, bool flushpoint, u4 type_count) {
   assert(pos != NULL, "invariant");
   JfrBigEndianWriter be_writer(pos, sizeof(JfrCheckpointEntry));
   be_writer.write(size);
   be_writer.write(time);
   be_writer.write(JfrTicks::now().value() - time);
-  be_writer.write(flushpoint ? (juint)1 : (juint)0);
+  be_writer.write(flushpoint ? (u4)1 : (u4)0);
   be_writer.write(type_count);
   assert(be_writer.is_valid(), "invariant");
 }
@@ -71,7 +71,7 @@ JfrCheckpointWriter::~JfrCheckpointWriter() {
   assert(this->is_valid(), "invariant");
   assert(count() > 0, "invariant");
   assert(this->used_size() > sizeof(JfrCheckpointEntry), "invariant");
-  const jlong size = this->current_offset();
+  const int64_t size = this->current_offset();
   assert(size + this->start_pos() == this->current_pos(), "invariant");
   write_checkpoint_header(const_cast<u1*>(this->start_pos()), size, _time, is_flushpoint(), count());
   release();
@@ -85,11 +85,11 @@ bool JfrCheckpointWriter::is_flushpoint() const {
   return _flushpoint;
 }
 
-juint JfrCheckpointWriter::count() const {
+u4 JfrCheckpointWriter::count() const {
   return _count;
 }
 
-void JfrCheckpointWriter::set_count(juint count) {
+void JfrCheckpointWriter::set_count(u4 count) {
   _count = count;
 }
 
@@ -111,7 +111,7 @@ void JfrCheckpointWriter::write_type(JfrTypeId type_id) {
 }
 
 void JfrCheckpointWriter::write_key(u8 key) {
-  write<u8>(key);
+  write(key);
 }
 
 void JfrCheckpointWriter::increment() {
@@ -119,10 +119,10 @@ void JfrCheckpointWriter::increment() {
 }
 
 void JfrCheckpointWriter::write_count(u4 nof_entries) {
-  write<u4>((u4)nof_entries);
+  write(nof_entries);
 }
 
-void JfrCheckpointWriter::write_count(u4 nof_entries, jlong offset) {
+void JfrCheckpointWriter::write_count(u4 nof_entries, int64_t offset) {
   write_padded_at_offset(nof_entries, offset);
 }
 

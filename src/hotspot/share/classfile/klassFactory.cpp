@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -46,22 +46,22 @@ InstanceKlass* KlassFactory::check_shared_class_file_load_hook(
                                           InstanceKlass* ik,
                                           Symbol* class_name,
                                           Handle class_loader,
-                                          Handle protection_domain, TRAPS) {
+                                          Handle protection_domain,
+                                          const ClassFileStream *cfs,
+                                          TRAPS) {
 #if INCLUDE_CDS && INCLUDE_JVMTI
   assert(ik != NULL, "sanity");
   assert(ik->is_shared(), "expecting a shared class");
-
   if (JvmtiExport::should_post_class_file_load_hook()) {
     assert(THREAD->is_Java_thread(), "must be JavaThread");
 
     // Post the CFLH
     JvmtiCachedClassFileData* cached_class_file = NULL;
-    JvmtiCachedClassFileData* archived_class_data = ik->get_archived_class_data();
-    assert(archived_class_data != NULL, "shared class has no archived class data");
-    unsigned char* ptr =
-        VM_RedefineClasses::get_cached_class_file_bytes(archived_class_data);
-    unsigned char* end_ptr =
-        ptr + VM_RedefineClasses::get_cached_class_file_len(archived_class_data);
+    if (cfs == NULL) {
+      cfs = FileMapInfo::open_stream_for_jvmti(ik, CHECK_NULL);
+    }
+    unsigned char* ptr = (unsigned char*)cfs->buffer();
+    unsigned char* end_ptr = ptr + cfs->length();
     unsigned char* old_ptr = ptr;
     JvmtiExport::post_class_file_load_hook(class_name,
                                            class_loader,
@@ -75,25 +75,9 @@ InstanceKlass* KlassFactory::check_shared_class_file_load_hook(
       ClassLoaderData* loader_data =
         ClassLoaderData::class_loader_data(class_loader());
       int path_index = ik->shared_classpath_index();
-      const char* pathname;
-      if (path_index < 0) {
-        // shared classes loaded by user defined class loader
-        // do not have shared_classpath_index
-        ModuleEntry* mod_entry = ik->module();
-        if (mod_entry != NULL && (mod_entry->location() != NULL)) {
-          ResourceMark rm;
-          pathname = (const char*)(mod_entry->location()->as_C_string());
-        } else {
-          pathname = "";
-        }
-      } else {
-        SharedClassPathEntry* ent =
-          (SharedClassPathEntry*)FileMapInfo::shared_path(path_index);
-        pathname = ent == NULL ? NULL : ent->name();
-      }
       ClassFileStream* stream = new ClassFileStream(ptr,
                                                     end_ptr - ptr,
-                                                    pathname,
+                                                    cfs->source(),
                                                     ClassFileStream::verify);
       ClassFileParser parser(stream,
                              class_name,
@@ -236,24 +220,6 @@ InstanceKlass* KlassFactory::create_from_stream(ClassFileStream* stream,
 #if INCLUDE_CDS
   if (DumpSharedSpaces) {
     ClassLoader::record_result(result, stream, THREAD);
-#if INCLUDE_JVMTI
-    assert(cached_class_file == NULL, "Sanity");
-    // Archive the class stream data into the optional data section
-    JvmtiCachedClassFileData *p;
-    int len;
-    const unsigned char *bytes;
-    // event based tracing might set cached_class_file
-    if ((bytes = result->get_cached_class_file_bytes()) != NULL) {
-      len = result->get_cached_class_file_len();
-    } else {
-      len = stream->length();
-      bytes = stream->buffer();
-    }
-    p = (JvmtiCachedClassFileData*)os::malloc(offset_of(JvmtiCachedClassFileData, data) + len, mtInternal);
-    p->length = len;
-    memcpy(p->data, bytes, len);
-    result->set_archived_class_data(p);
-#endif // INCLUDE_JVMTI
   }
 #endif // INCLUDE_CDS
 

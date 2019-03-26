@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -203,11 +203,11 @@ public class newinstance008 {
             try {
                 retValue = testedClass.newInstance(thread, method, params, 0);
                 if ( ((PrimitiveValue )retValue).intValue() == Consts.TEST_FAILED ) {
-                    complain("VMDisconnectException is not thrown");
+                    complain("VMDisconnectedException is not thrown");
                     exitStatus = Consts.TEST_FAILED;
                 }
             } catch(VMDisconnectedException e) {
-                display("!!!expected VMDisconnectException");
+                display("!!!expected VMDisconnectedException");
                 notifyVMDisconnect();
             } catch(Exception e) {
                 complain("Unexpected " + e);

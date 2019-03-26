@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,7 +97,7 @@ import sun.util.spi.CalendarProvider;
  * concrete subclass, such as <code>ERA</code>.  See individual field
  * documentation and subclass documentation for details.
  *
- * <h3>Getting and Setting Calendar Field Values</h3>
+ * <h2>Getting and Setting Calendar Field Values</h2>
  *
  * <p>The calendar field values can be set by calling the <code>set</code>
  * methods. Any field values set in a <code>Calendar</code> will not be
@@ -106,7 +106,7 @@ import sun.util.spi.CalendarProvider;
  * <code>get</code>, <code>getTimeInMillis</code>, <code>getTime</code>,
  * <code>add</code> and <code>roll</code> involves such calculation.
  *
- * <h4>Leniency</h4>
+ * <h3>Leniency</h3>
  *
  * <p><code>Calendar</code> has two modes for interpreting the calendar
  * fields, <em>lenient</em> and <em>non-lenient</em>.  When a
@@ -125,7 +125,7 @@ import sun.util.spi.CalendarProvider;
  * calculating its time or calendar field values if any out-of-range field
  * value has been set.
  *
- * <h4><a id="first_week">First Week</a></h4>
+ * <h3><a id="first_week">First Week</a></h3>
  *
  * <code>Calendar</code> defines a locale-specific seven day week using two
  * parameters: the first day of the week and the minimal days in first week
@@ -150,7 +150,7 @@ import sun.util.spi.CalendarProvider;
  * designate the week before week 1 of a year as week <code><i>n</i></code> of
  * the previous year.
  *
- * <h4>Calendar Fields Resolution</h4>
+ * <h3>Calendar Fields Resolution</h3>
  *
  * When computing a date and time from the calendar fields, there
  * may be insufficient information for the computation (such as only
@@ -210,7 +210,7 @@ import sun.util.spi.CalendarProvider;
  * runtime. Use {@link DateFormat}
  * to format dates.
  *
- * <h4>Field Manipulation</h4>
+ * <h3>Field Manipulation</h3>
  *
  * The calendar fields can be changed using three methods:
  * <code>set()</code>, <code>add()</code>, and <code>roll()</code>.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,12 +58,6 @@ VectorSet::VectorSet(Arena *arena) : Set(arena) {
   data = (uint32_t *)_set_arena->Amalloc(size*sizeof(uint32_t));
   data[0] = 0;                  // No elements
   data[1] = 0;
-}
-
-//------------------------------Construct--------------------------------------
-Set &VectorSet_Construct(Arena *arena)
-{
-  return *(new VectorSet(arena));
 }
 
 //------------------------------operator=--------------------------------------
@@ -291,20 +285,6 @@ int VectorSet::operator[](uint elem) const
     return 0;                         // Then it's clear
   uint32_t mask = 1L << (elem & 31);  // Get bit mask
   return ((data[word] & mask))!=0;    // Return the sense of the bit
-}
-
-//------------------------------getelem----------------------------------------
-// Get any element from the set.
-uint VectorSet::getelem(void) const
-{
-  uint i;                       // Exit value of loop
-  for( i=0; i<size; i++ )
-    if( data[i] )
-      break;
-  uint32_t word = data[i];
-  int j;                        // Exit value of loop
-  for( j= -1; word; j++, word>>=1 );
-  return (i<<5)+j;
 }
 
 //------------------------------Clear------------------------------------------

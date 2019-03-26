@@ -21,14 +21,17 @@
  * questions.
  */
 
+package gc.nvdimm;
+
 /*
  * @test TestHumongousObjectsOnNvdimm
  * @summary Check that humongous objects reside in nv-dimm
  * @library /test/lib /
  * @requires vm.gc=="null" & os.family != "aix"
+ * @requires test.vm.gc.nvdimm
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- * @run main TestHumongousObjectsOnNvdimm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ * @run main gc.nvdimm.TestHumongousObjectsOnNvdimm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                                  -XX:+WhiteBoxAPI
  */
 
@@ -38,7 +41,6 @@ import jdk.test.lib.Asserts;
 import sun.hotspot.WhiteBox;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Collections;
 import gc.testlibrary.Helpers;
 
@@ -51,7 +53,7 @@ public class TestHumongousObjectsOnNvdimm {
     private static ArrayList<String> testOpts;
 
     public static void main(String args[]) throws Exception {
-        testOpts = new ArrayList();
+        testOpts = new ArrayList<>();
 
         String[] common_options = new String[] {
             "-Xbootclasspath/a:.",

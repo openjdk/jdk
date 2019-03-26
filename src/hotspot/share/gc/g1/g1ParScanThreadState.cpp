@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
     _closures(NULL),
     _plab_allocator(NULL),
     _age_table(false),
-    _tenuring_threshold(g1h->g1_policy()->tenuring_threshold()),
+    _tenuring_threshold(g1h->policy()->tenuring_threshold()),
     _scanner(g1h, this),
     _worker_id(worker_id),
     _stack_trim_upper_threshold(GCDrainStackTargetSize * 2 + 1),
@@ -91,7 +91,7 @@ void G1ParScanThreadState::flush(size_t* surviving_young_words) {
   _dcq.flush();
   // Update allocation statistics.
   _plab_allocator->flush_and_retire_stats();
-  _g1h->g1_policy()->record_age_table(&_age_table);
+  _g1h->policy()->record_age_table(&_age_table);
 
   uint length = _g1h->collection_set()->young_region_length();
   for (uint region_index = 0; region_index < length; region_index++) {
@@ -106,8 +106,12 @@ G1ParScanThreadState::~G1ParScanThreadState() {
   delete[] _oops_into_optional_regions;
 }
 
-void G1ParScanThreadState::waste(size_t& wasted, size_t& undo_wasted) {
-  _plab_allocator->waste(wasted, undo_wasted);
+size_t G1ParScanThreadState::lab_waste_words() const {
+  return _plab_allocator->waste();
+}
+
+size_t G1ParScanThreadState::lab_undo_waste_words() const {
+  return _plab_allocator->undo_waste();
 }
 
 #ifdef ASSERT
@@ -368,7 +372,7 @@ void G1ParScanThreadStateSet::record_unused_optional_region(HeapRegion* hr) {
     }
 
     size_t used_memory = pss->oops_into_optional_region(hr)->used_memory();
-    _g1h->g1_policy()->phase_times()->record_or_add_thread_work_item(G1GCPhaseTimes::OptScanRS, worker_index, used_memory, G1GCPhaseTimes::OptCSetUsedMemory);
+    _g1h->phase_times()->record_or_add_thread_work_item(G1GCPhaseTimes::OptScanRS, worker_index, used_memory, G1GCPhaseTimes::OptCSetUsedMemory);
   }
 }
 

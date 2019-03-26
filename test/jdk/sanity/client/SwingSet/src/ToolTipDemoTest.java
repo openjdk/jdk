@@ -34,6 +34,7 @@ import java.awt.Dimension;
 import java.awt.Point;
 
 import javax.swing.ToolTipManager;
+import javax.swing.UIManager;
 
 import org.jtregext.GuiTestListener;
 import org.netbeans.jemmy.ClassReference;
@@ -75,8 +76,9 @@ public class ToolTipDemoTest {
      *
      * @throws Exception
      */
-    @Test
-    public void test() throws Exception {
+    @Test(dataProvider = "availableLookAndFeels", dataProviderClass = TestHelpers.class)
+    public void test(String lookAndFeel) throws Exception {
+        UIManager.setLookAndFeel(lookAndFeel);
         new ClassReference(ToolTipDemo.class.getCanonicalName()).startApplication();
         JFrameOperator frameOperator = new JFrameOperator(DEMO_TITLE);
         frameOperator.setComparator(EXACT_STRING_COMPARATOR);

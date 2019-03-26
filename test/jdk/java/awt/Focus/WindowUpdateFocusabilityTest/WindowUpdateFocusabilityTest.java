@@ -22,19 +22,19 @@
  */
 
 /*
-  test
-  @bug       6253913
-  @summary   Tests that a Window shown before its owner is focusable.
-  @author    anton.tarasov@sun.com: area=awt-focus
-  @run       applet WindowUpdateFocusabilityTest.html
+  @test
+  @key headful
+  @bug        6253913
+  @summary    Tests that a Window shown before its owner is focusable.
+  @modules java.desktop/sun.awt
+  @run        main WindowUpdateFocusabilityTest
 */
 
 import java.awt.*;
 import java.awt.event.*;
-import java.applet.Applet;
 import java.lang.reflect.*;
 
-public class WindowUpdateFocusabilityTest extends Applet {
+public class WindowUpdateFocusabilityTest {
     Robot robot;
     boolean focusGained = false;
     final Object monitor = new Object();
@@ -60,10 +60,6 @@ public class WindowUpdateFocusabilityTest extends Applet {
         } catch (AWTException e) {
             throw new RuntimeException("Error: couldn't create robot");
         }
-        // Create instructions for the user here, as well as set up
-        // the environment -- set the layout manager, add buttons,
-        // etc.
-        this.setLayout (new BorderLayout ());
     }
 
     public void start() {

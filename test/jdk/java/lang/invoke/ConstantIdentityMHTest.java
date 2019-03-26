@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,9 @@ package test.java.lang.invoke;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
-import java.util.List;
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
-import static org.testng.AssertJUnit.*;
+import static org.testng.Assert.*;
 import org.testng.annotations.*;
 
 public class ConstantIdentityMHTest {
@@ -70,9 +68,9 @@ public class ConstantIdentityMHTest {
     @Test
     void testEmpty() throws Throwable {
         MethodHandle cat = lookup().findVirtual(String.class, "concat", methodType(String.class, String.class));
-        assertEquals("xy", (String)cat.invoke("x","y"));
+        assertEquals((String)cat.invoke("x","y"), "xy");
         MethodHandle mhEmpty = MethodHandles.empty(cat.type());
-        assertEquals(null, (String)mhEmpty.invoke("x","y"));
+        assertEquals((String)mhEmpty.invoke("x","y"), null);
     }
 
     @Test

@@ -509,14 +509,11 @@
   product(bool, EliminateAutoBox, true,                                     \
           "Control optimizations for autobox elimination")                  \
                                                                             \
-  diagnostic(bool, UseImplicitStableValues, true,                           \
-          "Mark well-known stable fields as such (e.g. String.value)")      \
-                                                                            \
   product(intx, AutoBoxCacheMax, 128,                                       \
           "Sets max value cached by the java.lang.Integer autobox cache")   \
           range(0, max_jint)                                                \
                                                                             \
-  experimental(bool, AggressiveUnboxing, false,                             \
+  experimental(bool, AggressiveUnboxing, true,                              \
           "Control optimizations for aggressive boxing elimination")        \
                                                                             \
   develop(bool, TracePostallocExpand, false, "Trace expanding nodes after"  \

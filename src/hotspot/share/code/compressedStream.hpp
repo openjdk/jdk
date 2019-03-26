@@ -43,11 +43,11 @@ class CompressedStream : public ResourceObj {
     MAX_i = 4                 // bytes are numbered in (0..4), max 5 bytes
   };
 
-  // these inlines are defined only in compressedStream.cpp
-  static inline juint encode_sign(jint  value);  // for Pack200 SIGNED5
-  static inline jint  decode_sign(juint value);  // for Pack200 SIGNED5
-  static inline juint reverse_int(juint bits);   // to trim trailing float 0's
-
+  // 32-bit one-to-one sign encoding taken from Pack200
+  // converts leading sign bits into leading zeroes with trailing sign bit
+  static juint encode_sign(jint  value) { return (value << 1) ^ (value >> 31); }
+  static jint  decode_sign(juint value) { return (value >> 1) ^ -(jint)(value & 1); }
+  static juint reverse_int(juint i);   // to trim trailing float 0's
  public:
   CompressedStream(u_char* buffer, int position = 0) {
     _buffer   = buffer;
@@ -134,7 +134,22 @@ class CompressedWriteStream : public CompressedStream {
   }
   void grow();
 
-  void write_int_mb(jint value);  // UNSIGNED5 coding, 1-5 byte cases
+  // UNSIGNED5 coding, 1-5 byte cases
+  void write_int_mb(jint value) {
+    juint sum = value;
+    for (int i = 0; ; ) {
+      if (sum < L || i == MAX_i) {
+        // remainder is either a "low code" or the 5th byte
+        assert(sum == (u_char)sum, "valid byte");
+        write((u_char)sum);
+        break;
+      }
+      sum -= L;
+      int b_i = L + (sum % H);  // this is a "high code"
+      sum >>= lg_H;             // extracted 6 bits
+      write(b_i); ++i;
+    }
+  }
 
  protected:
   int _size;
@@ -151,7 +166,7 @@ class CompressedWriteStream : public CompressedStream {
   void write_int(jint value)           { if ((juint)value < L && !full())
                                                store((u_char)value);
                                          else  write_int_mb(value);  }
-  void write_signed_int(jint value);   // write_int(encode_sign(value))
+  void write_signed_int(jint value)    { write_int(encode_sign(value)); }
   void write_float(jfloat value);      // write_int(reverse_int(jint_cast(v)))
   void write_double(jdouble value);    // write_int(reverse_int(<low,high>))
   void write_long(jlong value);        // write_signed_int(<low,high>)

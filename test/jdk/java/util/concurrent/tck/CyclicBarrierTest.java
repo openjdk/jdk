@@ -38,6 +38,9 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -485,5 +488,35 @@ public class CyclicBarrierTest extends JSR166TestCase {
             assertFalse(barrier.isBroken());
             assertEquals(0, barrier.getNumberWaiting());
         }
+    }
+
+    /**
+     * There can be more threads calling await() than parties, as long as each
+     * task only calls await once and the task count is a multiple of parties.
+     */
+    public void testMoreTasksThanParties() throws Exception {
+        final ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        final int parties = rnd.nextInt(1, 5);
+        final int nTasks = rnd.nextInt(1, 5) * parties;
+        final AtomicInteger tripCount = new AtomicInteger(0);
+        final AtomicInteger awaitCount = new AtomicInteger(0);
+        final CyclicBarrier barrier =
+            new CyclicBarrier(parties, () -> tripCount.getAndIncrement());
+        final ExecutorService e = Executors.newFixedThreadPool(nTasks);
+        final Runnable awaiter = () -> {
+            try {
+                if (ThreadLocalRandom.current().nextBoolean())
+                    barrier.await();
+                else
+                    barrier.await(LONG_DELAY_MS, MILLISECONDS);
+                awaitCount.getAndIncrement();
+            } catch (Throwable fail) { threadUnexpectedException(fail); }};
+        try (PoolCleaner cleaner = cleaner(e)) {
+            for (int i = nTasks; i--> 0; )
+                e.execute(awaiter);
+        }
+        assertEquals(nTasks / parties, tripCount.get());
+        assertEquals(nTasks, awaitCount.get());
+        assertEquals(0, barrier.getNumberWaiting());
     }
 }

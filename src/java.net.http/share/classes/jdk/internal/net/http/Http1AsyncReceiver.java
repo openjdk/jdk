@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -199,7 +200,11 @@ class Http1AsyncReceiver {
     private void flush() {
         ByteBuffer buf;
         try {
-            assert !client.isSelectorThread() :
+            // we should not be running in the selector here,
+            // except if the custom Executor supplied to the client is
+            // something like (r) -> r.run();
+           assert !client.isSelectorThread()
+                   || !(client.theExecutor().delegate() instanceof ExecutorService) :
                     "Http1AsyncReceiver::flush should not run in the selector: "
                     + Thread.currentThread().getName();
 

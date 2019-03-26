@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 #include "jfr/utilities/jfrTypes.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/handles.hpp"
+#include "runtime/handles.inline.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/thread.hpp"
@@ -80,10 +80,6 @@ static void prepare_for_emergency_dump(Thread* thread) {
 
   if (Heap_lock->owned_by_self()) {
     Heap_lock->unlock();
-  }
-
-  if (Safepoint_lock->owned_by_self()) {
-    Safepoint_lock->unlock();
   }
 
   if (VMOperationQueue_lock->owned_by_self()) {

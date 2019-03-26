@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -522,6 +522,9 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->print("%s", buf);
        st->print(" (0x%x)", _id);                // signal number
        st->print(" at pc=" PTR_FORMAT, p2i(_pc));
+       if (_siginfo != NULL && os::signal_sent_by_kill(_siginfo)) {
+         st->print(" (sent by kill)");
+       }
      } else {
        if (should_report_bug(_id)) {
          st->print("Internal Error");
@@ -1189,16 +1192,6 @@ void VMError::print_vm_info(outputStream* st) {
 
 volatile intptr_t VMError::first_error_tid = -1;
 
-// An error could happen before tty is initialized or after it has been
-// destroyed.
-// Please note: to prevent large stack allocations, the log- and
-// output-stream use a global scratch buffer for format printing.
-// (see VmError::report_and_die(). Access to those streams is synchronized
-// in  VmError::report_and_die() - there is only one reporting thread at
-// any given time.
-fdStream VMError::out(defaultStream::output_fd());
-fdStream VMError::log; // error log used by VMError::report_and_die()
-
 /** Expand a pattern into a buffer starting at pos and open a file using constructed path */
 static int expand_and_open(const char* pattern, char* buf, size_t buflen, size_t pos) {
   int fd = -1;
@@ -1303,9 +1296,25 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
                              Thread* thread, address pc, void* siginfo, void* context, const char* filename,
                              int lineno, size_t size)
 {
-  // Don't allocate large buffer on stack
+  // A single scratch buffer to be used from here on.
+  // Do not rely on it being preserved across function calls.
   static char buffer[O_BUFLEN];
+
+  // File descriptor to tty to print an error summary to.
+  // Hard wired to stdout; see JDK-8215004 (compatibility concerns).
+  static const int fd_out = 1; // stdout
+
+  // File descriptor to the error log file.
+  static int fd_log = -1;
+
+  // Use local fdStream objects only. Do not use global instances whose initialization
+  // relies on dynamic initialization (see JDK-8214975). Do not rely on these instances
+  // to carry over into recursions or invocations from other threads.
+  fdStream out(fd_out);
   out.set_scratch_buffer(buffer, sizeof(buffer));
+
+  // Depending on the re-entrance depth at this point, fd_log may be -1 or point to an open hs-err file.
+  fdStream log(fd_log);
   log.set_scratch_buffer(buffer, sizeof(buffer));
 
   // How many errors occurred in error handler when reporting first_error.
@@ -1451,15 +1460,15 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     // see if log file is already open
     if (!log.is_open()) {
       // open log file
-      int fd = prepare_log_file(ErrorFile, "hs_err_pid%p.log", buffer, sizeof(buffer));
-      if (fd != -1) {
+      fd_log = prepare_log_file(ErrorFile, "hs_err_pid%p.log", buffer, sizeof(buffer));
+      if (fd_log != -1) {
         out.print_raw("# An error report file with more information is saved as:\n# ");
         out.print_raw_cr(buffer);
 
-        log.set_fd(fd);
+        log.set_fd(fd_log);
       } else {
         out.print_raw_cr("# Can not save log file, dump to screen..");
-        log.set_fd(defaultStream::output_fd());
+        log.set_fd(fd_out);
       }
     }
 
@@ -1468,8 +1477,9 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     _current_step = 0;
     _current_step_info = "";
 
-    if (log.fd() != defaultStream::output_fd()) {
-      close(log.fd());
+    if (fd_log != -1) {
+      close(fd_log);
+      fd_log = -1;
     }
 
     log.set_fd(-1);

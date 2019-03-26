@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2013, 2019, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -22,7 +22,6 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/g1/g1BarrierSet.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
@@ -335,15 +334,9 @@ void ShenandoahBarrierSet::enqueue(oop obj) {
   // Filter marked objects before hitting the SATB queues. The same predicate would
   // be used by SATBMQ::filter to eliminate already marked objects downstream, but
   // filtering here helps to avoid wasteful SATB queueing work to begin with.
-  if (!_heap->requires_marking(obj)) return;
+  if (!_heap->requires_marking<false>(obj)) return;
 
-  Thread* thr = Thread::current();
-  if (thr->is_Java_thread()) {
-    ShenandoahThreadLocalData::satb_mark_queue(thr).enqueue(obj);
-  } else {
-    MutexLockerEx x(Shared_SATB_Q_lock, Mutex::_no_safepoint_check_flag);
-    _satb_mark_queue_set.shared_satb_queue()->enqueue(obj);
-  }
+  ShenandoahThreadLocalData::satb_mark_queue(Thread::current()).enqueue(obj);
 }
 
 void ShenandoahBarrierSet::on_thread_create(Thread* thread) {
@@ -356,21 +349,26 @@ void ShenandoahBarrierSet::on_thread_destroy(Thread* thread) {
   ShenandoahThreadLocalData::destroy(thread);
 }
 
-void ShenandoahBarrierSet::on_thread_attach(JavaThread* thread) {
-  assert(!SafepointSynchronize::is_at_safepoint(), "We should not be at a safepoint");
-  assert(!ShenandoahThreadLocalData::satb_mark_queue(thread).is_active(), "SATB queue should not be active");
-  assert(ShenandoahThreadLocalData::satb_mark_queue(thread).is_empty(), "SATB queue should be empty");
-  if (ShenandoahBarrierSet::satb_mark_queue_set().is_active()) {
-    ShenandoahThreadLocalData::satb_mark_queue(thread).set_active(true);
+void ShenandoahBarrierSet::on_thread_attach(Thread *thread) {
+  assert(!thread->is_Java_thread() || !SafepointSynchronize::is_at_safepoint(),
+         "We should not be at a safepoint");
+  SATBMarkQueue& queue = ShenandoahThreadLocalData::satb_mark_queue(thread);
+  assert(!queue.is_active(), "SATB queue should not be active");
+  assert( queue.is_empty(),  "SATB queue should be empty");
+  queue.set_active(_satb_mark_queue_set.is_active());
+  if (thread->is_Java_thread()) {
+    ShenandoahThreadLocalData::set_gc_state(thread, _heap->gc_state());
+    ShenandoahThreadLocalData::initialize_gclab(thread);
   }
-  ShenandoahThreadLocalData::set_gc_state(thread, _heap->gc_state());
-  ShenandoahThreadLocalData::initialize_gclab(thread);
 }
 
-void ShenandoahBarrierSet::on_thread_detach(JavaThread* thread) {
-  ShenandoahThreadLocalData::satb_mark_queue(thread).flush();
-  PLAB* gclab = ShenandoahThreadLocalData::gclab(thread);
-  if (gclab != NULL) {
-    gclab->retire();
+void ShenandoahBarrierSet::on_thread_detach(Thread *thread) {
+  SATBMarkQueue& queue = ShenandoahThreadLocalData::satb_mark_queue(thread);
+  queue.flush();
+  if (thread->is_Java_thread()) {
+    PLAB* gclab = ShenandoahThreadLocalData::gclab(thread);
+    if (gclab != NULL) {
+      gclab->retire();
+    }
   }
 }

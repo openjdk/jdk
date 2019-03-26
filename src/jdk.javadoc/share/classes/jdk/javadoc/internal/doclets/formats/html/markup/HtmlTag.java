@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,16 +44,13 @@ public enum HtmlTag {
     BODY(BlockType.OTHER, EndTag.END),
     BR(BlockType.INLINE, EndTag.NOEND),
     CAPTION,
-    CENTER(HtmlVersion.HTML4),
     CODE(BlockType.INLINE, EndTag.END),
     DD,
-    DIR(HtmlVersion.HTML4),
     DIV,
     DL,
     DT,
     EM(BlockType.INLINE, EndTag.END),
-    FONT(HtmlVersion.HTML4, BlockType.INLINE, EndTag.END),
-    FOOTER(HtmlVersion.HTML5),
+    FOOTER,
     H1,
     H2,
     H3,
@@ -61,7 +58,7 @@ public enum HtmlTag {
     H5,
     H6,
     HEAD(BlockType.OTHER, EndTag.END),
-    HEADER(HtmlVersion.HTML5),
+    HEADER,
     HR(BlockType.BLOCK, EndTag.NOEND),
     HTML(BlockType.OTHER, EndTag.END),
     I(BlockType.INLINE, EndTag.END),
@@ -72,33 +69,32 @@ public enum HtmlTag {
     LI,
     LISTING,
     LINK(BlockType.OTHER, EndTag.NOEND),
-    MAIN(HtmlVersion.HTML5),
+    MAIN,
     MENU,
     META(BlockType.OTHER, EndTag.NOEND),
-    NAV(HtmlVersion.HTML5),
+    NAV,
     NOSCRIPT(BlockType.OTHER, EndTag.END),
     OL,
     P,
     PRE,
     SCRIPT(BlockType.OTHER, EndTag.END),
-    SECTION(HtmlVersion.HTML5),
+    SECTION,
     SMALL(BlockType.INLINE, EndTag.END),
     SPAN(BlockType.INLINE, EndTag.END),
     STRONG(BlockType.INLINE, EndTag.END),
     SUB(BlockType.INLINE, EndTag.END),
     TABLE,
     TBODY,
+    THEAD,
     TD,
     TH,
     TITLE(BlockType.OTHER, EndTag.END),
     TR,
-    TT(HtmlVersion.HTML4, BlockType.INLINE, EndTag.END),
     UL;
 
     public final BlockType blockType;
     public final EndTag endTag;
     public final String value;
-    public final HtmlVersion htmlVersion;
 
     /**
      * Enum representing the type of HTML element.
@@ -118,19 +114,10 @@ public enum HtmlTag {
     }
 
     HtmlTag() {
-        this(HtmlVersion.ALL, BlockType.BLOCK, EndTag.END);
+        this(BlockType.BLOCK, EndTag.END);
     }
 
-    HtmlTag(HtmlVersion htmlVersion) {
-        this(htmlVersion, BlockType.BLOCK, EndTag.END);
-    }
-
-    HtmlTag(BlockType blockType, EndTag endTag ) {
-        this(HtmlVersion.ALL, blockType, endTag);
-    }
-
-    HtmlTag(HtmlVersion htmlVersion, BlockType blockType, EndTag endTag ) {
-        this.htmlVersion = htmlVersion;
+    HtmlTag(BlockType blockType, EndTag endTag) {
         this.blockType = blockType;
         this.endTag = endTag;
         this.value = Utils.toLowerCase(name());
@@ -144,16 +131,6 @@ public enum HtmlTag {
      */
     public boolean endTagRequired() {
         return (endTag == EndTag.END);
-    }
-
-    /**
-     * Returns true if the tag is allowed in the output HTML version of this javadoc run.
-     *
-     * @param htmlVer the output HTML version for this javadoc run
-     * @return true if the tag is allowed
-     */
-    public boolean allowTag(HtmlVersion htmlVer) {
-        return (this.htmlVersion == HtmlVersion.ALL || this.htmlVersion == htmlVer);
     }
 
     public String toString() {

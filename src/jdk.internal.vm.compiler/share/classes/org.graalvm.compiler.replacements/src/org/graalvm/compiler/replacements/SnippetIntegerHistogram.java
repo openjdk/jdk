@@ -29,6 +29,8 @@ package org.graalvm.compiler.replacements;
  * gathering snippet specific metrics.
  */
 public final class SnippetIntegerHistogram {
+    public static final SnippetIntegerHistogram DISABLED_COUNTER = new SnippetIntegerHistogram(null, 1, "Disabled", "Disabled");
+
     private final SnippetCounter.Group group;
     private final String name;
 

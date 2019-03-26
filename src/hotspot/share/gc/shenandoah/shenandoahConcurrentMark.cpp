@@ -46,8 +46,9 @@
 #include "memory/metaspace.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/handles.inline.hpp"
 
-template<UpdateRefsMode UPDATE_REFS, StringDedupMode STRING_DEDUP>
+template<UpdateRefsMode UPDATE_REFS>
 class ShenandoahInitMarkRootsClosure : public OopClosure {
 private:
   ShenandoahObjToScanQueue* _queue;
@@ -56,7 +57,7 @@ private:
 
   template <class T>
   inline void do_oop_work(T* p) {
-    ShenandoahConcurrentMark::mark_through_ref<T, UPDATE_REFS, STRING_DEDUP>(p, _heap, _queue, _mark_context);
+    ShenandoahConcurrentMark::mark_through_ref<T, UPDATE_REFS, NO_DEDUP>(p, _heap, _queue, _mark_context);
   }
 
 public:
@@ -98,13 +99,8 @@ public:
 
     ShenandoahObjToScanQueue* q = queues->queue(worker_id);
 
-    if (ShenandoahStringDedup::is_enabled()) {
-      ShenandoahInitMarkRootsClosure<UPDATE_REFS, ENQUEUE_DEDUP> mark_cl(q);
-      do_work(heap, &mark_cl, worker_id);
-    } else {
-      ShenandoahInitMarkRootsClosure<UPDATE_REFS, NO_DEDUP> mark_cl(q);
-      do_work(heap, &mark_cl, worker_id);
-    }
+    ShenandoahInitMarkRootsClosure<UPDATE_REFS> mark_cl(q);
+    do_work(heap, &mark_cl, worker_id);
   }
 
 private:
@@ -226,15 +222,8 @@ public:
     _thread_parity(Threads::thread_claim_parity()) {}
 
   void do_thread(Thread* thread) {
-    if (thread->is_Java_thread()) {
-      if (thread->claim_oops_do(true, _thread_parity)) {
-        JavaThread* jt = (JavaThread*)thread;
-        ShenandoahThreadLocalData::satb_mark_queue(jt).apply_closure_and_empty(_satb_cl);
-      }
-    } else if (thread->is_VM_thread()) {
-      if (thread->claim_oops_do(true, _thread_parity)) {
-        ShenandoahBarrierSet::satb_mark_queue_set().shared_satb_queue()->apply_closure_and_empty(_satb_cl);
-      }
+    if (thread->claim_oops_do(true, _thread_parity)) {
+      ShenandoahThreadLocalData::satb_mark_queue(thread).apply_closure_and_empty(_satb_cl);
     }
   }
 };

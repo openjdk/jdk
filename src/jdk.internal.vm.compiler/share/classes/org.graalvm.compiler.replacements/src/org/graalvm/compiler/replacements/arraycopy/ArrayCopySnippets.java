@@ -24,6 +24,7 @@
 
 package org.graalvm.compiler.replacements.arraycopy;
 
+import static jdk.vm.ci.services.Services.IS_BUILDING_NATIVE_IMAGE;
 import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.FREQUENT_PROBABILITY;
 import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.LIKELY_PROBABILITY;
 import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.NOT_FREQUENT_PROBABILITY;
@@ -34,7 +35,6 @@ import java.util.EnumMap;
 
 import jdk.internal.vm.compiler.collections.UnmodifiableEconomicMap;
 import org.graalvm.compiler.api.directives.GraalDirectives;
-import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.api.replacements.Fold.InjectedParameter;
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.api.replacements.Snippet.ConstantParameter;
@@ -120,8 +120,8 @@ public abstract class ArrayCopySnippets implements Snippets {
 
     @Snippet
     public void arraycopyExactSnippet(Object src, int srcPos, Object dest, int destPos, int length, @ConstantParameter ArrayCopyTypeCheck arrayTypeCheck,
-                    @ConstantParameter JavaKind elementKind, @ConstantParameter SnippetCounter elementKindCounter, @ConstantParameter SnippetCounter elementKindCopiedCounter,
-                    @ConstantParameter Counters counters) {
+                    @ConstantParameter JavaKind elementKind, @ConstantParameter LocationIdentity locationIdentity,
+                    @ConstantParameter SnippetCounter elementKindCounter, @ConstantParameter SnippetCounter elementKindCopiedCounter, @ConstantParameter Counters counters) {
         Object nonNullSrc = GraalDirectives.guardingNonNull(src);
         Object nonNullDest = GraalDirectives.guardingNonNull(dest);
         checkArrayTypes(nonNullSrc, nonNullDest, arrayTypeCheck);
@@ -130,19 +130,19 @@ public abstract class ArrayCopySnippets implements Snippets {
 
         elementKindCounter.inc();
         elementKindCopiedCounter.add(length);
-        ArrayCopyCallNode.arraycopy(nonNullSrc, srcPos, nonNullDest, destPos, length, elementKind, heapWordSize());
+        ArrayCopyCallNode.arraycopy(nonNullSrc, srcPos, nonNullDest, destPos, length, elementKind, locationIdentity, heapWordSize());
     }
 
     @Snippet
     public void arraycopyUnrolledSnippet(Object src, int srcPos, Object dest, int destPos, int length, @ConstantParameter ArrayCopyTypeCheck arrayTypeCheck,
-                    @ConstantParameter JavaKind elementKind, @ConstantParameter int unrolledLength, @ConstantParameter Counters counters) {
+                    @ConstantParameter JavaKind elementKind, @ConstantParameter LocationIdentity locationIdentity, @ConstantParameter int unrolledLength, @ConstantParameter Counters counters) {
         Object nonNullSrc = GraalDirectives.guardingNonNull(src);
         Object nonNullDest = GraalDirectives.guardingNonNull(dest);
         checkArrayTypes(nonNullSrc, nonNullDest, arrayTypeCheck);
         checkLimits(nonNullSrc, srcPos, nonNullDest, destPos, length, counters);
         incrementLengthCounter(length, counters);
 
-        unrolledArraycopyWork(nonNullSrc, srcPos, nonNullDest, destPos, unrolledLength, elementKind);
+        unrolledArraycopyWork(nonNullSrc, srcPos, nonNullDest, destPos, unrolledLength, elementKind, locationIdentity);
     }
 
     @Snippet
@@ -179,15 +179,9 @@ public abstract class ArrayCopySnippets implements Snippets {
         System.arraycopy(src, srcPos, dest, destPos, length);
     }
 
-    @Fold
-    static LocationIdentity getArrayLocation(JavaKind kind) {
-        return NamedLocationIdentity.getArrayLocation(kind);
-    }
-
-    private static void unrolledArraycopyWork(Object nonNullSrc, int srcPos, Object nonNullDest, int destPos, int length, JavaKind elementKind) {
+    private static void unrolledArraycopyWork(Object nonNullSrc, int srcPos, Object nonNullDest, int destPos, int length, JavaKind elementKind, LocationIdentity arrayLocation) {
         int scale = ReplacementsUtil.arrayIndexScale(INJECTED_META_ACCESS, elementKind);
         int arrayBaseOffset = ReplacementsUtil.getArrayBaseOffset(INJECTED_META_ACCESS, elementKind);
-        LocationIdentity arrayLocation = getArrayLocation(elementKind);
 
         long sourceOffset = arrayBaseOffset + (long) srcPos * scale;
         long destOffset = arrayBaseOffset + (long) destPos * scale;
@@ -258,7 +252,9 @@ public abstract class ArrayCopySnippets implements Snippets {
     }
 
     private static void incrementLengthCounter(int length, Counters counters) {
-        counters.lengthHistogram.inc(length);
+        if (!IS_BUILDING_NATIVE_IMAGE) {
+            counters.lengthHistogram.inc(length);
+        }
     }
 
     private static void checkLimits(Object src, int srcPos, Object dest, int destPos, int length, Counters counters) {
@@ -466,13 +462,16 @@ public abstract class ArrayCopySnippets implements Snippets {
                 assert arrayTypeCheck != ArrayCopyTypeCheck.UNDEFINED_ARRAY_TYPE_CHECK;
                 args.addConst("arrayTypeCheck", arrayTypeCheck);
             }
+            Object locationIdentity = arraycopy.killsAnyLocation() ? LocationIdentity.any() : NamedLocationIdentity.getArrayLocation(elementKind);
             if (snippetInfo == arraycopyUnrolledSnippet) {
                 args.addConst("elementKind", elementKind != null ? elementKind : JavaKind.Illegal);
+                args.addConst("locationIdentity", locationIdentity);
                 args.addConst("unrolledLength", arraycopy.getLength().asJavaConstant().asInt());
             }
             if (snippetInfo == arraycopyExactSnippet) {
                 assert elementKind != null;
                 args.addConst("elementKind", elementKind);
+                args.addConst("locationIdentity", locationIdentity);
                 args.addConst("elementKindCounter", counters.arraycopyCallCounters.get(elementKind));
                 args.addConst("elementKindCopiedCounter", counters.arraycopyCallCopiedCounters.get(elementKind));
             }

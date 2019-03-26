@@ -281,7 +281,7 @@ class Solaris {
 
 };
 
-class PlatformEvent : public CHeapObj<mtInternal> {
+class PlatformEvent : public CHeapObj<mtSynchronizer> {
  private:
   double CachePad[4];   // increase odds that _mutex is sole occupant of cache line
   volatile int _Event;
@@ -317,7 +317,7 @@ class PlatformEvent : public CHeapObj<mtInternal> {
   void unpark();
 };
 
-class PlatformParker : public CHeapObj<mtInternal> {
+class PlatformParker : public CHeapObj<mtSynchronizer> {
  protected:
   mutex_t _mutex[1];
   cond_t  _cond[1];
@@ -333,6 +333,23 @@ class PlatformParker : public CHeapObj<mtInternal> {
     status = os::Solaris::mutex_init(_mutex);
     assert_status(status == 0, status, "mutex_init");
   }
+};
+
+// Platform specific implementation that underpins VM Monitor/Mutex class
+class PlatformMonitor : public CHeapObj<mtSynchronizer> {
+ private:
+  mutex_t _mutex; // Native mutex for locking
+  cond_t  _cond;  // Native condition variable for blocking
+
+ public:
+  PlatformMonitor();
+  ~PlatformMonitor();
+  void lock();
+  void unlock();
+  bool try_lock();
+  int wait(jlong millis);
+  void notify();
+  void notify_all();
 };
 
 #endif // OS_SOLARIS_OS_SOLARIS_HPP

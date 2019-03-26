@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,9 @@
  * questions.
  */
 
+package gc;
+
 import static jdk.test.lib.Asserts.*;
-import gc.testlibrary.PerfCounter;
 import gc.testlibrary.PerfCounters;
 
 
@@ -35,9 +36,9 @@ import gc.testlibrary.PerfCounters;
  *          java.compiler
  *          java.management/sun.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run main/othervm -XX:+UsePerfData -XX:+UseSerialGC TestPolicyNamePerfCounter Copy:MSC
- * @run main/othervm -XX:+UsePerfData -XX:+UseParallelGC TestPolicyNamePerfCounter ParScav:MSC
- * @run main/othervm -XX:+UsePerfData -XX:+UseG1GC TestPolicyNamePerfCounter GarbageFirst
+ * @run main/othervm -XX:+UsePerfData -XX:+UseSerialGC gc.TestPolicyNamePerfCounter Copy:MSC
+ * @run main/othervm -XX:+UsePerfData -XX:+UseParallelGC gc.TestPolicyNamePerfCounter ParScav:MSC
+ * @run main/othervm -XX:+UsePerfData -XX:+UseG1GC gc.TestPolicyNamePerfCounter GarbageFirst
  */
 
 /* @test TestPolicyNamePerfCounterCMS
@@ -50,7 +51,7 @@ import gc.testlibrary.PerfCounters;
  *          java.compiler
  *          java.management/sun.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run main/othervm -XX:+UsePerfData -XX:+UseConcMarkSweepGC TestPolicyNamePerfCounter ParNew:CMS
+ * @run main/othervm -XX:+UsePerfData -XX:+UseConcMarkSweepGC gc.TestPolicyNamePerfCounter ParNew:CMS
  */
 
 public class TestPolicyNamePerfCounter {

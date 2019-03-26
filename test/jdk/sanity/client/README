@@ -8,7 +8,7 @@ How to run:
 1) Download/Install the JDK to be tested in the system.
    (For example C:/java/jdk1.9.0 in windows or 
     /export/jdk/jdk1.9.0 in linux/mac/solaris)
-2) Download/Install JTReg harness, minimum required version is 4.1 b13.    
+2) Download/Install JTReg harness.    
 3) Open terminal(cmd in windows, *not* cygwin) and go to the this directory.
 4) To run
     - see the notes below on how to prepare for the test run

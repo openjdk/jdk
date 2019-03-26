@@ -28,7 +28,7 @@
 #include "gc/shared/ptrQueue.hpp"
 #include "memory/allocation.hpp"
 
-class JavaThread;
+class Thread;
 class Monitor;
 class SATBMarkQueueSet;
 
@@ -55,7 +55,7 @@ private:
   inline void apply_filter(Filter filter_out);
 
 public:
-  SATBMarkQueue(SATBMarkQueueSet* qset, bool permanent = false);
+  SATBMarkQueue(SATBMarkQueueSet* qset);
 
   // Process queue entries and free resources.
   void flush();
@@ -92,7 +92,6 @@ public:
 };
 
 class SATBMarkQueueSet: public PtrQueueSet {
-  SATBMarkQueue _shared_satb_queue;
   size_t _buffer_enqueue_threshold;
 
 #ifdef ASSERT
@@ -112,11 +111,10 @@ protected:
   void initialize(Monitor* cbl_mon,
                   BufferNode::Allocator* allocator,
                   size_t process_completed_buffers_threshold,
-                  uint buffer_enqueue_threshold_percentage,
-                  Mutex* lock);
+                  uint buffer_enqueue_threshold_percentage);
 
 public:
-  virtual SATBMarkQueue& satb_queue_for_thread(JavaThread* const t) const = 0;
+  virtual SATBMarkQueue& satb_queue_for_thread(Thread* const t) const = 0;
 
   // Apply "set_active(active)" to all SATB queues in the set. It should be
   // called only with the world stopped. The method will assert that the
@@ -140,8 +138,6 @@ public:
   // Helpful for debugging
   void print_all(const char* msg);
 #endif // PRODUCT
-
-  SATBMarkQueue* shared_satb_queue() { return &_shared_satb_queue; }
 
   // If a marking is being abandoned, reset any unprocessed log buffers.
   void abandon_partial_marking();

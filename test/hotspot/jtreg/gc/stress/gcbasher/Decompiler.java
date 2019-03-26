@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  *
  */
+
+package gc.stress.gcbasher;
 
 class Decompiler {
     private ByteCursor cursor;
@@ -130,7 +132,7 @@ class Decompiler {
                             byteCodeIndex++;
                         }
 
-                        int def = cursor.readIntAt(byteCodeIndex);
+                        cursor.readIntAt(byteCodeIndex); // def
                         byteCodeIndex +=4;
 
                         int npairs = cursor.readIntAt(byteCodeIndex);
@@ -147,7 +149,7 @@ class Decompiler {
                             byteCodeIndex++;
                         }
 
-                        int def = cursor.readIntAt(byteCodeIndex);
+                        cursor.readIntAt(byteCodeIndex); // def
                         byteCodeIndex +=4;
 
                         int low = cursor.readIntAt(byteCodeIndex);
@@ -243,7 +245,7 @@ class Decompiler {
 
     private ConstantPoolEntry[] decodeConstantPool() {
         final int CONSTANT_Utf8 = 1;
-        final int CONSTANT_Unicode = 2;
+        // final int CONSTANT_Unicode = 2;
         final int CONSTANT_Integer = 3;
         final int CONSTANT_Float = 4;
         final int CONSTANT_Long = 5;

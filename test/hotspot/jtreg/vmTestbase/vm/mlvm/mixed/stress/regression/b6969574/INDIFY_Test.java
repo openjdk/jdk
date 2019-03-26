@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,7 @@
  * @bug 6969574
  *
  * @summary converted from VM Testbase vm/mlvm/mixed/stress/regression/b6969574.
- * VM Testbase keywords: [feature_mlvm, nonconcurrent, quarantine]
- * VM Testbase comments: 8079650
+ * VM Testbase keywords: [feature_mlvm, nonconcurrent]
  *
  * @library /vmTestbase
  *          /test/lib
@@ -313,10 +312,8 @@ public class INDIFY_Test extends MlvmTest {
     private final static int REFLECTION_CALL = 1;
     private final static int INVOKE_EXACT = 2;
     private final static int INVOKE = 3;
-    private final static int INVOKE_WITHARG = 4;
-    private final static int INVOKE_WITHARG_TYPECONV = 5;
-    private final static int INDY = 6;
-    private final static int BENCHMARK_COUNT = 7;
+    private final static int INDY = 4;
+    private final static int BENCHMARK_COUNT = 5;
 
     //
     // Test body
@@ -353,18 +350,6 @@ public class INDIFY_Test extends MlvmTest {
         benchmarks[INVOKE] = new Benchmark("MH.invoke()", new T() {
                     public void run() throws Throwable {
                         mhTestee.invokeExact(testData, TESTEE_ARG2, TESTEE_ARG3);
-                    }
-                });
-
-        benchmarks[INVOKE_WITHARG] = new Benchmark("MH.invokeWithArguments(), exact types", new T() {
-                    public void run() throws Throwable {
-                        mhTestee.invokeWithArguments(testData, TESTEE_ARG2, TESTEE_ARG3);
-                    }
-                });
-
-        benchmarks[INVOKE_WITHARG_TYPECONV] = new Benchmark("MH.invokeWithArguments() + type conv.", new T() {
-                    public void run() throws Throwable {
-                        mhTestee.invokeWithArguments((Object) testData, null, (Short) Short.MAX_VALUE);
                     }
                 });
 
@@ -412,11 +397,9 @@ public class INDIFY_Test extends MlvmTest {
         // TODO: exclude GC time, compilation time (optionally) from measurements
 
         print("Comparing invocation time orders");
-        verifyTimeOrder(results[REFLECTION_CALL],         results[INVOKE_EXACT]);
+        verifyTimeOrder(results[INDY],                    results[REFLECTION_CALL]);
         verifyTimeOrder(results[INVOKE_EXACT],            results[DIRECT_CALL]);
         verifyTimeOrder(results[INVOKE],                  results[DIRECT_CALL]);
-        verifyTimeOrder(results[INVOKE_WITHARG],          results[INVOKE_EXACT]);
-        verifyTimeOrder(results[INVOKE_WITHARG_TYPECONV], results[INVOKE_EXACT]);
         verifyTimeOrder(results[INVOKE_EXACT],            results[INDY]);
 
         return true;

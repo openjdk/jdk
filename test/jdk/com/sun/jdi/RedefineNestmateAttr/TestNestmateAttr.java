@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -212,6 +212,8 @@ public class TestNestmateAttr extends TestScaffold {
     protected void startUp(String targetName) {
         List<String> argList = new ArrayList<>(Arrays.asList(args));
         argList.add(0, targetName); // pre-pend so it becomes the first "app" arg
+        // We need the class path that contains the path to jdk.test.lib.Asserts.
+        argList.add(0, " -cp " + System.getProperty("test.class.path"));
         println("run args: " + argList);
         connect((String[]) argList.toArray(args));
         waitForVMStart();

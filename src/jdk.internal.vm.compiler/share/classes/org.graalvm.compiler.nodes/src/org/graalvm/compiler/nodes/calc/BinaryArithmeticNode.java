@@ -90,6 +90,26 @@ public abstract class BinaryArithmeticNode<OP> extends BinaryNode implements Ari
         if (result != null) {
             return result;
         }
+        if (forX instanceof ConditionalNode && forY.isConstant() && forX.hasExactlyOneUsage()) {
+            ConditionalNode conditionalNode = (ConditionalNode) forX;
+            BinaryOp<OP> arithmeticOp = getArithmeticOp();
+            ConstantNode trueConstant = tryConstantFold(arithmeticOp, conditionalNode.trueValue(), forY, this.stamp(view), view);
+            if (trueConstant != null) {
+                ConstantNode falseConstant = tryConstantFold(arithmeticOp, conditionalNode.falseValue(), forY, this.stamp(view), view);
+                if (falseConstant != null) {
+                    // @formatter:off
+                    /* The arithmetic is folded into a constant on both sides of the conditional.
+                     * Example:
+                     *            (cond ? -5 : 5) + 100
+                     * canonicalizes to:
+                     *            (cond ? 95 : 105)
+                     */
+                    // @formatter:on
+                    return ConditionalNode.create(conditionalNode.condition, trueConstant,
+                                    falseConstant, view);
+                }
+            }
+        }
         return this;
     }
 
@@ -118,6 +138,10 @@ public abstract class BinaryArithmeticNode<OP> extends BinaryNode implements Ari
         return AddNode.create(v1, v2, view);
     }
 
+    public static ValueNode add(ValueNode v1, ValueNode v2) {
+        return add(v1, v2, NodeView.DEFAULT);
+    }
+
     public static ValueNode mul(StructuredGraph graph, ValueNode v1, ValueNode v2, NodeView view) {
         return graph.addOrUniqueWithInputs(MulNode.create(v1, v2, view));
     }
@@ -126,12 +150,20 @@ public abstract class BinaryArithmeticNode<OP> extends BinaryNode implements Ari
         return MulNode.create(v1, v2, view);
     }
 
+    public static ValueNode mul(ValueNode v1, ValueNode v2) {
+        return mul(v1, v2, NodeView.DEFAULT);
+    }
+
     public static ValueNode sub(StructuredGraph graph, ValueNode v1, ValueNode v2, NodeView view) {
         return graph.addOrUniqueWithInputs(SubNode.create(v1, v2, view));
     }
 
     public static ValueNode sub(ValueNode v1, ValueNode v2, NodeView view) {
         return SubNode.create(v1, v2, view);
+    }
+
+    public static ValueNode sub(ValueNode v1, ValueNode v2) {
+        return sub(v1, v2, NodeView.DEFAULT);
     }
 
     public static ValueNode branchlessMin(ValueNode v1, ValueNode v2, NodeView view) {

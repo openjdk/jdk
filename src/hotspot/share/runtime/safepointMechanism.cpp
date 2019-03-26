@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,6 +80,19 @@ void SafepointMechanism::default_initialize() {
 
     log_info(os)("SafePoint Polling address: " INTPTR_FORMAT, p2i(polling_page));
     os::set_polling_page((address)(polling_page));
+  }
+}
+
+void SafepointMechanism::block_if_requested_slow(JavaThread *thread) {
+  // local poll already checked, if used.
+  if (global_poll()) {
+    // Any load in ::block must not pass the global poll load.
+    // Otherwise we might load an old safepoint counter (for example).
+    OrderAccess::loadload();
+    SafepointSynchronize::block(thread);
+  }
+  if (uses_thread_local_poll() && thread->has_handshake()) {
+      thread->handshake_process_by_self();
   }
 }
 

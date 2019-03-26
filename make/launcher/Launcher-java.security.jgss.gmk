@@ -25,7 +25,7 @@
 
 include LauncherCommon.gmk
 
-ifeq ($(OPENJDK_TARGET_OS), windows)
+ifeq ($(call isTargetOs, windows), true)
   $(eval $(call SetupBuildLauncher, kinit, \
       MAIN_CLASS := sun.security.krb5.internal.tools.Kinit, \
   ))

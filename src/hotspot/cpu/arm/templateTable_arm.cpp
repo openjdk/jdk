@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3645,7 +3645,6 @@ void TemplateTable::prepare_invoke(int byte_no,
     Label L_no_push;
     __ tbz(flags, ConstantPoolCacheEntry::has_appendix_shift, L_no_push);
     __ mov(temp, index);
-    assert(ConstantPoolCacheEntry::_indy_resolved_references_appendix_offset == 0, "appendix expected at index+0");
     __ load_resolved_reference_at_index(index, temp);
     __ verify_oop(index);
     __ push_ptr(index);  // push appendix (MethodType, CallSite, etc.)

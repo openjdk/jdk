@@ -194,7 +194,7 @@ inline void G1ConcurrentMark::update_top_at_rebuild_start(HeapRegion* r) {
   assert(_top_at_rebuild_starts[region] == NULL,
          "TARS for region %u has already been set to " PTR_FORMAT " should be NULL",
          region, p2i(_top_at_rebuild_starts[region]));
-  G1RemSetTrackingPolicy* tracker = _g1h->g1_policy()->remset_tracker();
+  G1RemSetTrackingPolicy* tracker = _g1h->policy()->remset_tracker();
   if (tracker->needs_scan_for_rebuild(r)) {
     _top_at_rebuild_starts[region] = r->top();
   } else {

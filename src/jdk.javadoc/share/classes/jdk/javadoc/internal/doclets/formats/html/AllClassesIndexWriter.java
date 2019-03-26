@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import javax.lang.model.element.TypeElement;
 
 import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -103,33 +102,21 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
     protected void buildAllClassesFile() throws DocFileIOException {
         String label = resources.getText("doclet.All_Classes");
         HtmlTree bodyTree = getBody(true, getWindowTitle(label));
-        HtmlTree htmlTree = (configuration.allowTag(HtmlTag.HEADER))
-                ? HtmlTree.HEADER()
-                : bodyTree;
-        addTop(htmlTree);
+        HtmlTree header = HtmlTree.HEADER();
+        addTop(header);
         navBar.setUserHeader(getUserHeaderFooter(true));
-        htmlTree.addContent(navBar.getContent(true));
-        if (configuration.allowTag(HtmlTag.HEADER)) {
-            bodyTree.addContent(htmlTree);
-        }
+        header.add(navBar.getContent(true));
+        bodyTree.add(header);
         Content allClassesContent = new ContentBuilder();
         addContents(allClassesContent);
-        if (configuration.allowTag(HtmlTag.MAIN)) {
-            mainTree.addContent(allClassesContent);
-            bodyTree.addContent(mainTree);
-        } else {
-            bodyTree.addContent(allClassesContent);
-        }
-        Content tree = (configuration.allowTag(HtmlTag.FOOTER))
-                ? HtmlTree.FOOTER()
-                : bodyTree;
+        mainTree.add(allClassesContent);
+        bodyTree.add(mainTree);
+        Content footer = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
-        tree.addContent(navBar.getContent(false));
-        addBottom(tree);
-        if (configuration.allowTag(HtmlTag.FOOTER)) {
-            bodyTree.addContent(tree);
-        }
-        printHtmlDocument(null, true, bodyTree);
+        footer.add(navBar.getContent(false));
+        addBottom(footer);
+        bodyTree.add(footer);
+        printHtmlDocument(null, "class index", bodyTree);
     }
 
     /**
@@ -138,8 +125,7 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
      * @param content HtmlTree content to which the links will be added
      */
     protected void addContents(Content content) {
-        Table table = new Table(configuration.htmlVersion, HtmlStyle.typeSummary)
-                .setSummary(resources.classTableSummary)
+        Table table = new Table(HtmlStyle.typeSummary)
                 .setHeader(new TableHeader(contents.classLabel, contents.descriptionLabel))
                 .setRowScopeColumn(1)
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
@@ -161,17 +147,17 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
             }
         }
         Content titleContent = contents.allClassesLabel;
-        Content pHeading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, true,
+        Content pHeading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, true,
                 HtmlStyle.title, titleContent);
         Content headerDiv = HtmlTree.DIV(HtmlStyle.header, pHeading);
-        content.addContent(headerDiv);
+        content.add(headerDiv);
         if (!table.isEmpty()) {
             HtmlTree li = HtmlTree.LI(HtmlStyle.blockList, table.toContent());
             HtmlTree ul = HtmlTree.UL(HtmlStyle.blockList, li);
             HtmlTree div = new HtmlTree(HtmlTag.DIV);
             div.setStyle(HtmlStyle.allClassesContainer);
-            div.addContent(ul);
-            content.addContent(div);
+            div.add(ul);
+            content.add(div);
             if (table.needsScript()) {
                 getMainBodyScript().append(table.getScript());
             }
@@ -190,7 +176,7 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
                 configuration, LinkInfoImpl.Kind.INDEX, klass));
         ContentBuilder description = new ContentBuilder();
         if (utils.isDeprecated(klass)) {
-            description.addContent(getDeprecatedPhrase(klass));
+            description.add(getDeprecatedPhrase(klass));
             List<? extends DocTree> tags = utils.getDeprecatedTrees(klass);
             if (!tags.isEmpty()) {
                 addSummaryDeprecatedComment(klass, tags.get(0), description);

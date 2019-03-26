@@ -27,7 +27,7 @@ include CopyCommon.gmk
 
 ################################################################################
 
-ifeq ($(OPENJDK_TARGET_OS), solaris)
+ifeq ($(call isTargetOs, solaris), true)
 
   SUNPKCS11_CFG_SRC := \
       $(TOPDIR)/src/jdk.crypto.cryptoki/solaris/conf/security/sunpkcs11-solaris.cfg

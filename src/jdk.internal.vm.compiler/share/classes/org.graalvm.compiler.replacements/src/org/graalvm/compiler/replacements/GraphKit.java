@@ -24,6 +24,7 @@
 
 package org.graalvm.compiler.replacements;
 
+import static jdk.vm.ci.services.Services.IS_IN_NATIVE_IMAGE;
 import static org.graalvm.compiler.nodes.graphbuilderconf.IntrinsicContext.CompilationContext.INLINE_AFTER_PARSING;
 
 import java.lang.reflect.Method;
@@ -358,13 +359,18 @@ public class GraphKit implements GraphBuilderTool {
         Plugins plugins = new Plugins(graphBuilderPlugins);
         GraphBuilderConfiguration config = GraphBuilderConfiguration.getSnippetDefault(plugins);
 
-        StructuredGraph calleeGraph = new StructuredGraph.Builder(invoke.getOptions(), invoke.getDebug()).method(method).trackNodeSourcePosition(
-                        invoke.graph().trackNodeSourcePosition()).setIsSubstitution(true).build();
-        IntrinsicContext initialReplacementContext = new IntrinsicContext(method, method, providers.getReplacements().getDefaultReplacementBytecodeProvider(), INLINE_AFTER_PARSING);
-        GraphBuilderPhase.Instance instance = createGraphBuilderInstance(metaAccess, providers.getStampProvider(), providers.getConstantReflection(), providers.getConstantFieldProvider(), config,
-                        OptimisticOptimizations.NONE,
-                        initialReplacementContext);
-        instance.apply(calleeGraph);
+        StructuredGraph calleeGraph;
+        if (IS_IN_NATIVE_IMAGE) {
+            calleeGraph = providers.getReplacements().getSnippet(method, null, false, null);
+        } else {
+            calleeGraph = new StructuredGraph.Builder(invoke.getOptions(), invoke.getDebug()).method(method).trackNodeSourcePosition(invoke.graph().trackNodeSourcePosition()).setIsSubstitution(
+                            true).build();
+            IntrinsicContext initialReplacementContext = new IntrinsicContext(method, method, providers.getReplacements().getDefaultReplacementBytecodeProvider(), INLINE_AFTER_PARSING);
+            GraphBuilderPhase.Instance instance = createGraphBuilderInstance(metaAccess, providers.getStampProvider(), providers.getConstantReflection(), providers.getConstantFieldProvider(), config,
+                            OptimisticOptimizations.NONE,
+                            initialReplacementContext);
+            instance.apply(calleeGraph);
+        }
 
         // Remove all frame states from inlinee
         calleeGraph.clearAllStateAfter();

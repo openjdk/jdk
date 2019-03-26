@@ -24,7 +24,7 @@
 #
 
 ifeq ($(call check-jvm-feature, dtrace), true)
-  ifeq ($(OPENJDK_TARGET_OS), solaris)
+  ifeq ($(call isTargetOs, solaris), true)
 
     ############################################################################
     # Integrate with libjvm. Here we generate two object files which are
@@ -131,7 +131,7 @@ ifeq ($(call check-jvm-feature, dtrace), true)
 	    > $(DTRACE_SUPPORT_DIR)/$(@F).d))
 	$(call ExecuteWithLog, $@, $(DTRACE) $(DTRACE_FLAGS) -o $@ \
 	    -s $(DTRACE_SUPPORT_DIR)/$(@F).d)
-        ifeq ($(OPENJDK_TARGET_CPU_ARCH), sparc)
+        ifeq ($(call isTargetCpuArch, sparc), true)
 	  $(call ExecuteWithLog, $@.elfedit, $(ELFEDIT) $(call GetElfeditCommands) $@)
         endif
 

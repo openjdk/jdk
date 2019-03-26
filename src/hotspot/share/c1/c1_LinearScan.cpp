@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,7 @@ LinearScan::LinearScan(IR* ir, LIRGenerator* gen, FrameMap* frame_map)
  , _max_spills(0)
  , _unused_spill_slot(-1)
  , _intervals(0)   // initialized later with correct length
- , _new_intervals_from_allocation(new IntervalList())
+ , _new_intervals_from_allocation(NULL)
  , _sorted_intervals(NULL)
  , _needs_full_resort(false)
  , _lir_ops(0)     // initialized later with correct length
@@ -287,7 +287,11 @@ Interval* LinearScan::create_interval(int reg_num) {
 void LinearScan::append_interval(Interval* it) {
   it->set_reg_num(_intervals.length());
   _intervals.append(it);
-  _new_intervals_from_allocation->append(it);
+  IntervalList* new_intervals = _new_intervals_from_allocation;
+  if (new_intervals == NULL) {
+    new_intervals = _new_intervals_from_allocation = new IntervalList();
+  }
+  new_intervals->append(it);
 }
 
 // copy the vreg-flags if an interval is split
@@ -1283,7 +1287,7 @@ void LinearScan::build_intervals() {
 
   // temp ranges for fpu registers are only created when the method has
   // virtual fpu operands. Otherwise no allocation for fpu registers is
-  // perfomed and so the temp ranges would be useless
+  // performed and so the temp ranges would be useless
   if (has_fpu_registers()) {
 #ifdef X86
     if (UseSSE < 2) {
@@ -1616,7 +1620,7 @@ void LinearScan::sort_intervals_after_allocation() {
   IntervalArray* old_list = _sorted_intervals;
   IntervalList* new_list = _new_intervals_from_allocation;
   int old_len = old_list->length();
-  int new_len = new_list->length();
+  int new_len = new_list == NULL ? 0 : new_list->length();
 
   if (new_len == 0) {
     // no intervals have been added during allocation, so sorted list is already up to date
@@ -1721,13 +1725,12 @@ Interval* LinearScan::interval_at_op_id(int reg_num, int op_id) {
 void LinearScan::resolve_collect_mappings(BlockBegin* from_block, BlockBegin* to_block, MoveResolver &move_resolver) {
   DEBUG_ONLY(move_resolver.check_empty());
 
-  const int num_regs = num_virtual_regs();
   const int size = live_set_size();
   const ResourceBitMap live_at_edge = to_block->live_in();
 
   // visit all registers where the live_at_edge bit is set
   for (int r = (int)live_at_edge.get_next_one_offset(0, size); r < size; r = (int)live_at_edge.get_next_one_offset(r + 1, size)) {
-    assert(r < num_regs, "live information set for not exisiting interval");
+    assert(r < num_virtual_regs(), "live information set for not exisiting interval");
     assert(from_block->live_out().at(r) && to_block->live_in().at(r), "interval not live at this edge");
 
     Interval* from_interval = interval_at_block_end(from_block, r);
@@ -4124,7 +4127,7 @@ Interval::Interval(int reg_num) :
   _cached_to(-1),
   _cached_opr(LIR_OprFact::illegalOpr),
   _cached_vm_reg(VMRegImpl::Bad()),
-  _split_children(0),
+  _split_children(NULL),
   _canonical_spill_slot(-1),
   _insert_move_when_activated(false),
   _spill_state(noDefinitionFound),
@@ -4149,18 +4152,18 @@ int Interval::calc_to() {
 #ifdef ASSERT
 // consistency check of split-children
 void Interval::check_split_children() {
-  if (_split_children.length() > 0) {
+  if (_split_children != NULL && _split_children->length() > 0) {
     assert(is_split_parent(), "only split parents can have children");
 
-    for (int i = 0; i < _split_children.length(); i++) {
-      Interval* i1 = _split_children.at(i);
+    for (int i = 0; i < _split_children->length(); i++) {
+      Interval* i1 = _split_children->at(i);
 
       assert(i1->split_parent() == this, "not a split child of this interval");
       assert(i1->type() == type(), "must be equal for all split children");
       assert(i1->canonical_spill_slot() == canonical_spill_slot(), "must be equal for all split children");
 
-      for (int j = i + 1; j < _split_children.length(); j++) {
-        Interval* i2 = _split_children.at(j);
+      for (int j = i + 1; j < _split_children->length(); j++) {
+        Interval* i2 = _split_children->at(j);
 
         assert(i1->reg_num() != i2->reg_num(), "same register number");
 
@@ -4187,11 +4190,11 @@ Interval* Interval::register_hint(bool search_split_child) const {
     if (_register_hint->assigned_reg() >= 0 && _register_hint->assigned_reg() < LinearScan::nof_regs) {
       return _register_hint;
 
-    } else if (_register_hint->_split_children.length() > 0) {
+    } else if (_register_hint->_split_children != NULL && _register_hint->_split_children->length() > 0) {
       // search the first split child that has a register assigned
-      int len = _register_hint->_split_children.length();
+      int len = _register_hint->_split_children->length();
       for (int i = 0; i < len; i++) {
-        Interval* cur = _register_hint->_split_children.at(i);
+        Interval* cur = _register_hint->_split_children->at(i);
 
         if (cur->assigned_reg() >= 0 && cur->assigned_reg() < LinearScan::nof_regs) {
           return cur;
@@ -4210,23 +4213,23 @@ Interval* Interval::split_child_at_op_id(int op_id, LIR_OpVisitState::OprMode mo
   assert(op_id >= 0, "invalid op_id (method can not be called for spill moves)");
 
   Interval* result;
-  if (_split_children.length() == 0) {
+  if (_split_children == NULL || _split_children->length() == 0) {
     result = this;
   } else {
     result = NULL;
-    int len = _split_children.length();
+    int len = _split_children->length();
 
     // in outputMode, the end of the interval (op_id == cur->to()) is not valid
     int to_offset = (mode == LIR_OpVisitState::outputMode ? 0 : 1);
 
     int i;
     for (i = 0; i < len; i++) {
-      Interval* cur = _split_children.at(i);
+      Interval* cur = _split_children->at(i);
       if (cur->from() <= op_id && op_id < cur->to() + to_offset) {
         if (i > 0) {
           // exchange current split child to start of list (faster access for next call)
-          _split_children.at_put(i, _split_children.at(0));
-          _split_children.at_put(0, cur);
+          _split_children->at_put(i, _split_children->at(0));
+          _split_children->at_put(0, cur);
         }
 
         // interval found
@@ -4237,7 +4240,7 @@ Interval* Interval::split_child_at_op_id(int op_id, LIR_OpVisitState::OprMode mo
 
 #ifdef ASSERT
     for (i = 0; i < len; i++) {
-      Interval* tmp = _split_children.at(i);
+      Interval* tmp = _split_children->at(i);
       if (tmp != result && tmp->from() <= op_id && op_id < tmp->to() + to_offset) {
         tty->print_cr("two valid result intervals found for op_id %d: %d and %d", op_id, result->reg_num(), tmp->reg_num());
         result->print();
@@ -4262,11 +4265,12 @@ Interval* Interval::split_child_before_op_id(int op_id) {
   Interval* parent = split_parent();
   Interval* result = NULL;
 
-  int len = parent->_split_children.length();
+  assert(parent->_split_children != NULL, "no split children available");
+  int len = parent->_split_children->length();
   assert(len > 0, "no split children available");
 
   for (int i = len - 1; i >= 0; i--) {
-    Interval* cur = parent->_split_children.at(i);
+    Interval* cur = parent->_split_children->at(i);
     if (cur->to() <= op_id && (result == NULL || result->to() < cur->to())) {
       result = cur;
     }
@@ -4274,29 +4278,6 @@ Interval* Interval::split_child_before_op_id(int op_id) {
 
   assert(result != NULL, "no split child found");
   return result;
-}
-
-
-// checks if op_id is covered by any split child
-bool Interval::split_child_covers(int op_id, LIR_OpVisitState::OprMode mode) {
-  assert(is_split_parent(), "can only be called for split parents");
-  assert(op_id >= 0, "invalid op_id (method can not be called for spill moves)");
-
-  if (_split_children.length() == 0) {
-    // simple case if interval was not split
-    return covers(op_id, mode);
-
-  } else {
-    // extended case: check all split children
-    int len = _split_children.length();
-    for (int i = 0; i < len; i++) {
-      Interval* cur = _split_children.at(i);
-      if (cur->covers(op_id, mode)) {
-        return true;
-      }
-    }
-    return false;
-  }
 }
 
 
@@ -4404,13 +4385,13 @@ Interval* Interval::new_split_child() {
   result->set_register_hint(parent);
 
   // insert new interval in children-list of parent
-  if (parent->_split_children.length() == 0) {
+  if (parent->_split_children == NULL) {
     assert(is_split_parent(), "list must be initialized at first split");
 
-    parent->_split_children = IntervalList(4);
-    parent->_split_children.append(this);
+    parent->_split_children = new IntervalList(4);
+    parent->_split_children->append(this);
   }
-  parent->_split_children.append(result);
+  parent->_split_children->append(result);
 
   return result;
 }
@@ -4652,12 +4633,6 @@ IntervalWalker::IntervalWalker(LinearScan* allocator, Interval* unhandled_fixed_
   _current_position = -1;
   _current = NULL;
   next_interval();
-}
-
-
-// append interval at top of list
-void IntervalWalker::append_unsorted(Interval** list, Interval* interval) {
-  interval->set_next(*list); *list = interval;
 }
 
 
@@ -4964,29 +4939,10 @@ void LinearScanWalker::free_collect_inactive_any(Interval* cur) {
   }
 }
 
-void LinearScanWalker::free_collect_unhandled(IntervalKind kind, Interval* cur) {
-  Interval* list = unhandled_first(kind);
-  while (list != Interval::end()) {
-    set_use_pos(list, list->intersects_at(cur), true);
-    if (kind == fixedKind && cur->to() <= list->from()) {
-      set_use_pos(list, list->from(), true);
-    }
-    list = list->next();
-  }
-}
-
 void LinearScanWalker::spill_exclude_active_fixed() {
   Interval* list = active_first(fixedKind);
   while (list != Interval::end()) {
     exclude_from_use(list);
-    list = list->next();
-  }
-}
-
-void LinearScanWalker::spill_block_unhandled_fixed(Interval* cur) {
-  Interval* list = unhandled_first(fixedKind);
-  while (list != Interval::end()) {
-    set_block_pos(list, list->intersects_at(cur));
     list = list->next();
   }
 }
@@ -5412,7 +5368,6 @@ bool LinearScanWalker::alloc_free_reg(Interval* cur) {
   free_exclude_active_any();
   free_collect_inactive_fixed(cur);
   free_collect_inactive_any(cur);
-//  free_collect_unhandled(fixedKind, cur);
   assert(unhandled_first(fixedKind) == Interval::end(), "must not have unhandled fixed intervals because all fixed intervals have a use at position 0");
 
   // _use_pos contains the start of the next interval that has this register assigned
@@ -5445,8 +5400,8 @@ bool LinearScanWalker::alloc_free_reg(Interval* cur) {
   int interval_to = cur->to();
 
   bool need_split = false;
-  int split_pos = -1;
-  int reg = any_reg;
+  int split_pos;
+  int reg;
   int regHi = any_reg;
 
   if (_adjacent_regs) {
@@ -5500,7 +5455,7 @@ bool LinearScanWalker::alloc_free_reg(Interval* cur) {
 }
 
 
-int LinearScanWalker::find_locked_reg(int reg_needed_until, int interval_to, int hint_reg, int ignore_reg, bool* need_split) {
+int LinearScanWalker::find_locked_reg(int reg_needed_until, int interval_to, int ignore_reg, bool* need_split) {
   int max_reg = any_reg;
 
   for (int i = _first_reg; i <= _last_reg; i++) {
@@ -5508,7 +5463,7 @@ int LinearScanWalker::find_locked_reg(int reg_needed_until, int interval_to, int
       // this register must be ignored
 
     } else if (_use_pos[i] > reg_needed_until) {
-      if (max_reg == any_reg || i == hint_reg || (_use_pos[i] > _use_pos[max_reg] && max_reg != hint_reg)) {
+      if (max_reg == any_reg || _use_pos[i] > _use_pos[max_reg]) {
         max_reg = i;
       }
     }
@@ -5521,7 +5476,7 @@ int LinearScanWalker::find_locked_reg(int reg_needed_until, int interval_to, int
   return max_reg;
 }
 
-int LinearScanWalker::find_locked_double_reg(int reg_needed_until, int interval_to, int hint_reg, bool* need_split) {
+int LinearScanWalker::find_locked_double_reg(int reg_needed_until, int interval_to, bool* need_split) {
   assert((_last_reg - _first_reg + 1) % 2 == 0, "adjust algorithm");
 
   int max_reg = any_reg;
@@ -5571,7 +5526,6 @@ void LinearScanWalker::alloc_locked_reg(Interval* cur) {
   // collect current usage of registers
   init_use_lists(false);
   spill_exclude_active_fixed();
-//  spill_block_unhandled_fixed(cur);
   assert(unhandled_first(fixedKind) == Interval::end(), "must not have unhandled fixed intervals because all fixed intervals have a use at position 0");
   spill_block_inactive_fixed(cur);
   spill_collect_active_any();
@@ -5601,7 +5555,7 @@ void LinearScanWalker::alloc_locked_reg(Interval* cur) {
   int reg, regHi;
 
   if (_adjacent_regs) {
-    reg = find_locked_double_reg(reg_needed_until, interval_to, any_reg, &need_split);
+    reg = find_locked_double_reg(reg_needed_until, interval_to, &need_split);
     regHi = reg + 1;
 
     if (reg != any_reg) {
@@ -5609,7 +5563,7 @@ void LinearScanWalker::alloc_locked_reg(Interval* cur) {
       split_pos = MIN2(_block_pos[reg], _block_pos[regHi]);
     }
   } else {
-    reg = find_locked_reg(reg_needed_until, interval_to, any_reg, cur->assigned_reg(), &need_split);
+    reg = find_locked_reg(reg_needed_until, interval_to, cur->assigned_reg(), &need_split);
     regHi = any_reg;
 
     if (reg != any_reg) {
@@ -5621,7 +5575,7 @@ void LinearScanWalker::alloc_locked_reg(Interval* cur) {
           regHi = reg;
           reg = cur->assigned_reg();
         } else {
-          regHi = find_locked_reg(reg_needed_until, interval_to, any_reg, reg, &need_split);
+          regHi = find_locked_reg(reg_needed_until, interval_to, reg, &need_split);
           if (regHi != any_reg) {
             use_pos = MIN2(use_pos, _use_pos[regHi]);
             split_pos = MIN2(split_pos, _block_pos[regHi]);

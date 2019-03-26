@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,16 +33,12 @@ class ZLoadBarrierStubC1;
 #endif // COMPILER1
 
 class ZBarrierSetAssembler : public ZBarrierSetAssemblerBase {
+private:
   address _load_barrier_slow_stub[RegisterImpl::number_of_registers];
   address _load_barrier_weak_slow_stub[RegisterImpl::number_of_registers];
 
 public:
-  ZBarrierSetAssembler() :
-    _load_barrier_slow_stub(),
-    _load_barrier_weak_slow_stub() {}
-
-  address load_barrier_slow_stub(Register reg) { return _load_barrier_slow_stub[reg->encoding()]; }
-  address load_barrier_weak_slow_stub(Register reg) { return _load_barrier_weak_slow_stub[reg->encoding()]; }
+  ZBarrierSetAssembler();
 
   virtual void load_at(MacroAssembler* masm,
                        DecoratorSet decorators,
@@ -87,6 +83,9 @@ public:
 #endif // COMPILER1
 
   virtual void barrier_stubs_init();
+
+  address load_barrier_slow_stub(Register reg);
+  address load_barrier_weak_slow_stub(Register reg);
 };
 
 #endif // CPU_X86_GC_Z_ZBARRIERSETASSEMBLER_X86_HPP

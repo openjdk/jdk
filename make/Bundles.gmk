@@ -35,7 +35,7 @@ DOCS_TARGETS :=
 # On Windows tar frequently complains that "file changed as we read it" for
 # some random source files. This seems to be cause by anti virus scanners and
 # is most likely safe to ignore. When it happens, tar returns '1'.
-ifeq ($(OPENJDK_BUILD_OS), windows)
+ifeq ($(call isBuildOs, windows), true)
   TAR_IGNORE_EXIT_VALUE := || test "$$$$?" = "1"
 endif
 
@@ -144,7 +144,7 @@ endef
 
 # On Macosx, we bundle up the macosx specific images which already have the
 # correct base directories.
-ifeq ($(OPENJDK_TARGET_OS)-$(DEBUG_LEVEL), macosx-release)
+ifeq ($(call isTargetOs, macosx)+$(DEBUG_LEVEL), true+release)
   JDK_IMAGE_DIR := $(JDK_MACOSX_BUNDLE_DIR)
   JDK_IMAGE_HOMEDIR := $(JDK_MACOSX_CONTENTS_DIR)/Home
   JDK_BUNDLE_SUBDIR :=
@@ -167,7 +167,7 @@ ifneq ($(filter product-bundles, $(MAKECMDGOALS)), )
 
   # Create special filter rules when dealing with unzipped .dSYM directories on
   # macosx
-  ifeq ($(OPENJDK_TARGET_OS), macosx)
+  ifeq ($(call isTargetOs, macosx), true)
     ifeq ($(ZIP_EXTERNAL_DEBUG_SYMBOLS), false)
       JDK_SYMBOLS_EXCLUDE_PATTERN := $(addprefix %, \
           $(call containing, .dSYM/, $(patsubst $(JDK_IMAGE_DIR)/%, %, $(ALL_JDK_FILES))))

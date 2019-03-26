@@ -37,8 +37,8 @@
 #include "gc/z/zThreadLocalData.hpp"
 #include "gc/z/zBarrierSetRuntime.hpp"
 
-ZBarrierSetC2State::ZBarrierSetC2State(Arena* comp_arena)
-  : _load_barrier_nodes(new (comp_arena) GrowableArray<LoadBarrierNode*>(comp_arena, 8,  0, NULL)) {}
+ZBarrierSetC2State::ZBarrierSetC2State(Arena* comp_arena) :
+    _load_barrier_nodes(new (comp_arena) GrowableArray<LoadBarrierNode*>(comp_arena, 8,  0, NULL)) {}
 
 int ZBarrierSetC2State::load_barrier_count() const {
   return _load_barrier_nodes->length();
@@ -123,14 +123,14 @@ void ZBarrierSetC2::enqueue_useful_gc_barrier(PhaseIterGVN* igvn, Node* node) co
 
 void ZBarrierSetC2::find_dominating_barriers(PhaseIterGVN& igvn) {
   // Look for dominating barriers on the same address only once all
-  // other loop opts are over: loop opts may cause a safepoint to be
+  // other loop opts are over. Loop opts may cause a safepoint to be
   // inserted between a barrier and its dominating barrier.
   Compile* C = Compile::current();
   ZBarrierSetC2* bs = (ZBarrierSetC2*)BarrierSet::barrier_set()->barrier_set_c2();
   ZBarrierSetC2State* s = bs->state();
   if (s->load_barrier_count() >= 2) {
     Compile::TracePhase tp("idealLoop", &C->timers[Phase::_t_idealLoop]);
-    PhaseIdealLoop ideal_loop(igvn, LoopOptsLastRound);
+    PhaseIdealLoop::optimize(igvn, LoopOptsLastRound);
     if (C->major_progress()) C->print_method(PHASE_PHASEIDEALLOOP_ITERATIONS, 2);
   }
 }
@@ -1010,8 +1010,6 @@ void ZBarrierSetC2::expand_loadbarrier_optimized(PhaseMacroExpand* phase, LoadBa
 
   assert(is_gc_barrier_node(result_phi), "sanity");
   assert(step_over_gc_barrier(result_phi) == in_val, "sanity");
-
-  return;
 }
 
 bool ZBarrierSetC2::expand_barriers(Compile* C, PhaseIterGVN& igvn) const {
@@ -1036,7 +1034,9 @@ bool ZBarrierSetC2::expand_barriers(Compile* C, PhaseIterGVN& igvn) const {
       }
       expand_loadbarrier_node(&macro, n);
       assert(s->load_barrier_count() < load_barrier_count, "must have deleted a node from load barrier list");
-      if (C->failing())  return true;
+      if (C->failing()) {
+        return true;
+      }
     }
     while (s->load_barrier_count() > 0) {
       int load_barrier_count = s->load_barrier_count();
@@ -1045,12 +1045,17 @@ bool ZBarrierSetC2::expand_barriers(Compile* C, PhaseIterGVN& igvn) const {
       assert(!n->can_be_eliminated(), "should have been processed already");
       expand_loadbarrier_node(&macro, n);
       assert(s->load_barrier_count() < load_barrier_count, "must have deleted a node from load barrier list");
-      if (C->failing())  return true;
+      if (C->failing()) {
+        return true;
+      }
     }
     igvn.set_delay_transform(false);
     igvn.optimize();
-    if (C->failing())  return true;
+    if (C->failing()) {
+      return true;
+    }
   }
+
   return false;
 }
 
@@ -1061,31 +1066,33 @@ static bool replace_with_dominating_barrier(PhaseIdealLoop* phase, LoadBarrierNo
   Compile* C = Compile::current();
 
   LoadBarrierNode* lb2 = lb->has_dominating_barrier(phase, false, last_round);
-  if (lb2 != NULL) {
-    if (lb->in(LoadBarrierNode::Oop) != lb2->in(LoadBarrierNode::Oop)) {
-      assert(lb->in(LoadBarrierNode::Address) == lb2->in(LoadBarrierNode::Address), "");
-      igvn.replace_input_of(lb, LoadBarrierNode::Similar, lb2->proj_out(LoadBarrierNode::Oop));
-      C->set_major_progress();
-    } else  {
-      // That transformation may cause the Similar edge on dominated load barriers to be invalid
-      lb->fix_similar_in_uses(&igvn);
-
-      Node* val = lb->proj_out(LoadBarrierNode::Oop);
-      assert(lb2->has_true_uses(), "");
-      assert(lb2->in(LoadBarrierNode::Oop) == lb->in(LoadBarrierNode::Oop), "");
-
-      phase->lazy_update(lb, lb->in(LoadBarrierNode::Control));
-      phase->lazy_replace(lb->proj_out(LoadBarrierNode::Control), lb->in(LoadBarrierNode::Control));
-      igvn.replace_node(val, lb2->proj_out(LoadBarrierNode::Oop));
-
-      return true;
-    }
+  if (lb2 == NULL) {
+    return false;
   }
-  return false;
+
+  if (lb->in(LoadBarrierNode::Oop) != lb2->in(LoadBarrierNode::Oop)) {
+    assert(lb->in(LoadBarrierNode::Address) == lb2->in(LoadBarrierNode::Address), "Invalid address");
+    igvn.replace_input_of(lb, LoadBarrierNode::Similar, lb2->proj_out(LoadBarrierNode::Oop));
+    C->set_major_progress();
+    return false;
+  }
+
+  // That transformation may cause the Similar edge on dominated load barriers to be invalid
+  lb->fix_similar_in_uses(&igvn);
+
+  Node* val = lb->proj_out(LoadBarrierNode::Oop);
+  assert(lb2->has_true_uses(), "Invalid uses");
+  assert(lb2->in(LoadBarrierNode::Oop) == lb->in(LoadBarrierNode::Oop), "Invalid oop");
+  phase->lazy_update(lb, lb->in(LoadBarrierNode::Control));
+  phase->lazy_replace(lb->proj_out(LoadBarrierNode::Control), lb->in(LoadBarrierNode::Control));
+  igvn.replace_node(val, lb2->proj_out(LoadBarrierNode::Oop));
+
+  return true;
 }
 
 static Node* find_dominating_memory(PhaseIdealLoop* phase, Node* mem, Node* dom, int i) {
   assert(dom->is_Region() || i == -1, "");
+
   Node* m = mem;
   while(phase->is_dominator(dom, phase->has_ctrl(m) ? phase->get_ctrl(m) : m->in(0))) {
     if (m->is_Mem()) {
@@ -1111,6 +1118,7 @@ static Node* find_dominating_memory(PhaseIdealLoop* phase, Node* mem, Node* dom,
       ShouldNotReachHere();
     }
   }
+
   return m;
 }
 
@@ -1390,35 +1398,33 @@ static bool common_barriers(PhaseIdealLoop* phase, LoadBarrierNode* lb) {
   return false;
 }
 
-static void optimize_load_barrier(PhaseIdealLoop* phase, LoadBarrierNode* lb, bool last_round) {
-  Compile* C = Compile::current();
-
-  if (!C->directive()->ZOptimizeLoadBarriersOption) {
+void ZBarrierSetC2::loop_optimize_gc_barrier(PhaseIdealLoop* phase, Node* node, bool last_round) {
+  if (!Compile::current()->directive()->ZOptimizeLoadBarriersOption) {
     return;
   }
 
-  if (lb->has_true_uses()) {
-    if (replace_with_dominating_barrier(phase, lb, last_round)) {
-      return;
-    }
-
-    if (split_barrier_thru_phi(phase, lb)) {
-      return;
-    }
-
-    if (move_out_of_loop(phase, lb)) {
-      return;
-    }
-
-    if (common_barriers(phase, lb)) {
-      return;
-    }
+  if (!node->is_LoadBarrier()) {
+    return;
   }
-}
 
-void ZBarrierSetC2::loop_optimize_gc_barrier(PhaseIdealLoop* phase, Node* node, bool last_round) {
-  if (node->is_LoadBarrier()) {
-    optimize_load_barrier(phase, node->as_LoadBarrier(), last_round);
+  if (!node->as_LoadBarrier()->has_true_uses()) {
+    return;
+  }
+
+  if (replace_with_dominating_barrier(phase, node->as_LoadBarrier(), last_round)) {
+    return;
+  }
+
+  if (split_barrier_thru_phi(phase, node->as_LoadBarrier())) {
+    return;
+  }
+
+  if (move_out_of_loop(phase, node->as_LoadBarrier())) {
+    return;
+  }
+
+  if (common_barriers(phase, node->as_LoadBarrier())) {
+    return;
   }
 }
 
@@ -1453,26 +1459,23 @@ bool ZBarrierSetC2::array_copy_requires_gc_barriers(bool tightly_coupled_alloc, 
 }
 
 bool ZBarrierSetC2::final_graph_reshaping(Compile* compile, Node* n, uint opcode) const {
-  bool handled;
-  switch (opcode) {
-    case Op_LoadBarrierSlowReg:
-    case Op_LoadBarrierWeakSlowReg:
-#ifdef ASSERT
-      if (VerifyOptoOopOffsets) {
-        MemNode* mem  = n->as_Mem();
-        // Check to see if address types have grounded out somehow.
-        const TypeInstPtr* tp = mem->in(MemNode::Address)->bottom_type()->isa_instptr();
-        ciInstanceKlass* k = tp->klass()->as_instance_klass();
-        bool oop_offset_is_sane = k->contains_field_offset(tp->offset());
-        assert(!tp || oop_offset_is_sane, "");
-      }
-#endif
-      handled = true;
-      break;
-    default:
-      handled = false;
+  if (opcode != Op_LoadBarrierSlowReg &&
+      opcode != Op_LoadBarrierWeakSlowReg) {
+    return false;
   }
-  return handled;
+
+#ifdef ASSERT
+  if (VerifyOptoOopOffsets) {
+    MemNode* mem  = n->as_Mem();
+    // Check to see if address types have grounded out somehow.
+    const TypeInstPtr* tp = mem->in(MemNode::Address)->bottom_type()->isa_instptr();
+    ciInstanceKlass* k = tp->klass()->as_instance_klass();
+    bool oop_offset_is_sane = k->contains_field_offset(tp->offset());
+    assert(!tp || oop_offset_is_sane, "");
+  }
+#endif
+
+  return true;
 }
 
 bool ZBarrierSetC2::matcher_find_shared_visit(Matcher* matcher, Matcher::MStack& mstack, Node* n, uint opcode, bool& mem_op, int& mem_addr_idx) const {
@@ -1483,6 +1486,7 @@ bool ZBarrierSetC2::matcher_find_shared_visit(Matcher* matcher, Matcher::MStack&
     mem_addr_idx = TypeFunc::Parms + 1;
     return true;
   }
+
   return false;
 }
 
@@ -1606,37 +1610,35 @@ bool ZBarrierSetC2::escape_add_to_con_graph(ConnectionGraph* conn_graph, PhaseGV
     case Op_LoadBarrierWeakSlowReg:
       conn_graph->add_objload_to_connection_graph(n, delayed_worklist);
       return true;
+
     case Op_Proj:
-      if (n->as_Proj()->_con == LoadBarrierNode::Oop && n->in(0)->is_LoadBarrier()) {
-        conn_graph->add_local_var_and_edge(n, PointsToNode::NoEscape, n->in(0)->in(LoadBarrierNode::Oop),
-                                           delayed_worklist);
-        return true;
+      if (n->as_Proj()->_con != LoadBarrierNode::Oop || !n->in(0)->is_LoadBarrier()) {
+        return false;
       }
-    default:
-      break;
+      conn_graph->add_local_var_and_edge(n, PointsToNode::NoEscape, n->in(0)->in(LoadBarrierNode::Oop), delayed_worklist);
+      return true;
   }
+
   return false;
 }
 
 bool ZBarrierSetC2::escape_add_final_edges(ConnectionGraph* conn_graph, PhaseGVN* gvn, Node* n, uint opcode) const {
   switch (opcode) {
     case Op_LoadBarrierSlowReg:
-    case Op_LoadBarrierWeakSlowReg: {
-      const Type *t = gvn->type(n);
-      if (t->make_ptr() != NULL) {
-        Node *adr = n->in(MemNode::Address);
-        conn_graph->add_local_var_and_edge(n, PointsToNode::NoEscape, adr, NULL);
-        return true;
+    case Op_LoadBarrierWeakSlowReg:
+      if (gvn->type(n)->make_ptr() == NULL) {
+        return false;
       }
-    }
-    case Op_Proj: {
-      if (n->as_Proj()->_con == LoadBarrierNode::Oop && n->in(0)->is_LoadBarrier()) {
-        conn_graph->add_local_var_and_edge(n, PointsToNode::NoEscape, n->in(0)->in(LoadBarrierNode::Oop), NULL);
-        return true;
+      conn_graph->add_local_var_and_edge(n, PointsToNode::NoEscape, n->in(MemNode::Address), NULL);
+      return true;
+
+    case Op_Proj:
+      if (n->as_Proj()->_con != LoadBarrierNode::Oop || !n->in(0)->is_LoadBarrier()) {
+        return false;
       }
-    }
-    default:
-      break;
+      conn_graph->add_local_var_and_edge(n, PointsToNode::NoEscape, n->in(0)->in(LoadBarrierNode::Oop), NULL);
+      return true;
   }
+
   return false;
 }

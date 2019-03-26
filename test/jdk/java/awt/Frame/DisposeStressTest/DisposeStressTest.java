@@ -21,67 +21,23 @@
  * questions.
  */
 
-
 /*
-  test
-  @bug 4051487 4145670 8062021
+  @test
+  @key headful
+  @bug 4051487 4145670
   @summary Tests that disposing of an empty Frame or a Frame with a MenuBar
            while it is being created does not crash the VM.
-  @author dpm area=Threads
-  @run applet/timeout=7200 DisposeStressTest.html
+  @run main/timeout=7200 DisposeStressTest
 */
 
-// Note there is no @ in front of test above.  This is so that the
-//  harness will not mistake this file as a test file.  It should
-//  only see the html file as a test file. (the harness runs all
-//  valid test files, so it would run this test twice if this file
-//  were valid as well as the html file.)
-// Also, note the area= after Your Name in the author tag.  Here, you
-//  should put which functional area the test falls in.  See the
-//  AWT-core home page -> test areas and/or -> AWT team  for a list of
-//  areas.
-// Note also the 'DisposeStressTest.html' in the run tag.  This should
-//  be changed to the name of the test.
+import java.awt.Frame;
+import java.awt.Menu;
+import java.awt.MenuBar;
+import java.awt.MenuItem;
 
+public class DisposeStressTest {
 
-/**
- * DisposeStressTest.java
- *
- * summary:
- */
-
-import java.applet.Applet;
-import java.awt.*;
-
-
-//Automated tests should run as applet tests if possible because they
-// get their environments cleaned up, including AWT threads, any
-// test created threads, and any system resources used by the test
-// such as file descriptors.  (This is normally not a problem as
-// main tests usually run in a separate VM, however on some platforms
-// such as the Mac, separate VMs are not possible and non-applet
-// tests will cause problems).  Also, you don't have to worry about
-// synchronisation stuff in Applet tests they way you do in main
-// tests...
-
-
-public class DisposeStressTest extends Applet
- {
-   //Declare things used in the test, like buttons and labels here
-
-   public void init()
-    {
-      //Create instructions for the user here, as well as set up
-      // the environment -- set the layout manager, add buttons,
-      // etc.
-
-      this.setLayout (new BorderLayout ());
-
-
-    }//End  init()
-
-   public void start ()
-    {
+    public static void main(final String[] args) {
         for (int i = 0; i < 1000; i++) {
             Frame f = new Frame();
             f.setBounds(10, 10, 10, 10);
@@ -98,6 +54,5 @@ public class DisposeStressTest extends Applet
             f2.show();
             f2.dispose();
         }
-    }// start()
-
- }// class DisposeStressTest
+    }
+}

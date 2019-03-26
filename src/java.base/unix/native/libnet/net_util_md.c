@@ -123,12 +123,10 @@ int getDefaultScopeID(JNIEnv *env) {
     } while((_result == -1) && (errno == EINTR)); \
 } while(0)
 
-int NET_SocketAvailable(int s, jint *pbytes) {
+int NET_SocketAvailable(int s, int *pbytes) {
     int result;
     RESTARTABLE(ioctl(s, FIONREAD, pbytes), result);
-    // note: ioctl can return 0 when successful, NET_SocketAvailable
-    // is expected to return 0 on failure and 1 on success.
-    return (result == -1) ? 0 : 1;
+    return result;
 }
 
 #ifdef __solaris__

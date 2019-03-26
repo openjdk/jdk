@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,7 +134,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
             ExecutableElement member = (ExecutableElement) holder;
             Content output = getTagletOutput(false, member, writer,
                 member.getTypeParameters(), utils.getTypeParamTrees(member));
-            output.addContent(getTagletOutput(true, member, writer,
+            output.add(getTagletOutput(true, member, writer,
                 member.getParameters(), utils.getParamTrees(member)));
             return output;
         } else {
@@ -160,7 +160,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
         Content result = writer.getOutputInstance();
         Set<String> alreadyDocumented = new HashSet<>();
         if (!paramTags.isEmpty()) {
-            result.addContent(
+            result.add(
                 processParamTags(holder, isParameters, paramTags,
                 getRankMap(writer.configuration().utils, formalParameters), writer, alreadyDocumented)
             );
@@ -168,7 +168,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
         if (alreadyDocumented.size() != formalParameters.size()) {
             //Some parameters are missing corresponding @param tags.
             //Try to inherit them.
-            result.addContent(getInheritedTagletOutput(isParameters, holder,
+            result.add(getInheritedTagletOutput(isParameters, holder,
                 writer, formalParameters, alreadyDocumented));
         }
         return result;
@@ -204,7 +204,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
                             inheritedDoc.holderTag,
                             lname,
                             alreadyDocumented.isEmpty());
-                    result.addContent(content);
+                    result.add(content);
                 }
                 alreadyDocumented.add(String.valueOf(i));
             }
@@ -256,7 +256,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
                                     : "doclet.Type_Parameters_dup_warn",
                             paramName);
                 }
-                result.addContent(processParamTag(e, isParams, writer, dt,
+                result.add(processParamTag(e, isParams, writer, dt,
                         ch.getParameterName(dt), alreadyDocumented.isEmpty()));
                 alreadyDocumented.add(rank);
             }
@@ -285,9 +285,9 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
         String header = writer.configuration().getResources().getText(
             isParams ? "doclet.Parameters" : "doclet.TypeParameters");
         if (isFirstParam) {
-            result.addContent(writer.getParamHeader(header));
+            result.add(writer.getParamHeader(header));
         }
-        result.addContent(writer.paramTagOutput(e, paramTag, name));
+        result.add(writer.paramTagOutput(e, paramTag, name));
         return result;
     }
 }

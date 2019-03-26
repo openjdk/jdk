@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,7 @@ import org.netbeans.jemmy.operators.JFileChooserOperator;
 import org.netbeans.jemmy.operators.JDialogOperator;
 import org.netbeans.jemmy.operators.JComponentOperator.JComponentByTipFinder;
 import org.netbeans.jemmy.util.Platform;
+import org.netbeans.jemmy.util.LookAndFeel;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Listeners;
 import org.jemmy2ext.JemmyExt.ByToolTipChooser;
@@ -141,9 +142,7 @@ public class FileChooserDemoTest {
         fileChooser = new JFileChooserOperator(JFileChooserOperator.findJFileChooser((Container) frame.getSource()));
         // In Aqua, GTK and Motif L&Fs, JFileChooser does not have
         // "Go Home", "Up One Level", "Get Details", "Get List" buttons.
-        if (!UIManager.getLookAndFeel().getID().equals("Aqua")
-                && !UIManager.getLookAndFeel().getID().equals("Motif")
-                && !UIManager.getLookAndFeel().getID().equals("GTK")) {
+        if (!LookAndFeel.isAqua() && !LookAndFeel.isMotif() && !LookAndFeel.isGTK()) {
             File previousDirectory = fileChooser.getCurrentDirectory();
             fileChooser.goHome();
             // In Windows, pressing goHome navigates to Desktop inside the home directory.
@@ -157,7 +156,7 @@ public class FileChooserDemoTest {
             fileChooser.rescanCurrentDirectory();
             // In Windows and Windows Classic L&F, List and Details views are
             // implemented as a popup menu item
-            if(UIManager.getLookAndFeel().getID().equals("Windows")) {
+            if(LookAndFeel.isWindows() || LookAndFeel.isWindowsClassic()) {
                 JButtonOperator popupButton = new JButtonOperator(fileChooser, new JComponentByTipFinder(
                         UIManager.getString("FileChooser.viewMenuButtonToolTipText", fileChooser.getLocale())));
                 popupButton.push();
@@ -274,8 +273,7 @@ public class FileChooserDemoTest {
         fileChooserDialog = new JDialogOperator(OPEN);
         String openButtonText = OPEN;
         // In GTK and Motif L&F, open button text is 'OK'
-        if (UIManager.getLookAndFeel().getID().equals("Motif")
-                || UIManager.getLookAndFeel().getID().equals("GTK")) {
+        if (LookAndFeel.isMotif() || LookAndFeel.isGTK()) {
             openButtonText = OK;
         }
         openButton = new JButtonOperator(fileChooser, openButtonText);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,12 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package sun.font;
 
 import java.awt.Font;
 import java.awt.FontFormatException;
 import java.io.File;
-import java.util.Locale;
-import java.util.TreeMap;
-
-import javax.swing.plaf.FontUIResource;
-
 
 /**
  * Interface between Java Fonts (java.awt.Font) and the underlying
@@ -91,13 +87,6 @@ public interface FontManager {
     public Font2D[] createFont2D(File fontFile, int fontFormat, boolean all,
                                  boolean isCopy, CreatedFontTracker tracker)
         throws FontFormatException;
-
-    /**
-     * If usingPerAppContextComposites is true, we are in "applet"
-     * (eg browser) environment and at least one context has selected
-     * an alternate composite font behaviour.
-     */
-    public boolean usingPerAppContextComposites();
 
     /**
      * Creates a derived composite font from the specified font (handle).

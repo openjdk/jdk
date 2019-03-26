@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,17 @@
 
 package org.graalvm.compiler.lir.alloc.lsra.ssa;
 
+import java.util.BitSet;
 import java.util.EnumSet;
 
+import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.debug.DebugContext;
+import org.graalvm.compiler.lir.LIR;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LIRInstruction.OperandFlag;
 import org.graalvm.compiler.lir.LIRInstruction.OperandMode;
+import org.graalvm.compiler.lir.StandardOp;
 import org.graalvm.compiler.lir.StandardOp.LabelOp;
-import org.graalvm.compiler.lir.ValueConsumer;
 import org.graalvm.compiler.lir.alloc.lsra.Interval;
 import org.graalvm.compiler.lir.alloc.lsra.Interval.RegisterPriority;
 import org.graalvm.compiler.lir.alloc.lsra.LinearScan;
@@ -53,17 +56,39 @@ public class SSALinearScanLifetimeAnalysisPhase extends LinearScanLifetimeAnalys
 
         if (hintAtDef && op instanceof LabelOp) {
             LabelOp label = (LabelOp) op;
+            if (!label.isPhiIn()) {
+                return;
+            }
 
             Interval to = allocator.getOrCreateInterval((AllocatableValue) targetValue);
 
-            SSAUtil.forEachPhiRegisterHint(allocator.getLIR(), allocator.blockForId(label.id()), label, targetValue, mode, (ValueConsumer) (registerHint, valueMode, valueFlags) -> {
-                if (LinearScan.isVariableOrRegister(registerHint)) {
-                    Interval from = allocator.getOrCreateInterval((AllocatableValue) registerHint);
+            LIR lir = allocator.getLIR();
+            AbstractBlockBase<?> block = allocator.blockForId(label.id());
+            assert mode == OperandMode.DEF : "Wrong operand mode: " + mode;
+            assert lir.getLIRforBlock(block).get(0).equals(label) : String.format("Block %s and Label %s do not match!", block, label);
 
-                    setHint(debug, op, to, from);
-                    setHint(debug, op, from, to);
+            int idx = SSAUtil.indexOfValue(label, targetValue);
+            assert idx >= 0 : String.format("Value %s not in label %s", targetValue, label);
+
+            BitSet blockLiveIn = allocator.getBlockData(block).liveIn;
+
+            AbstractBlockBase<?> selectedPredecessor = null;
+            AllocatableValue selectedSource = null;
+            for (AbstractBlockBase<?> pred : block.getPredecessors()) {
+                if (selectedPredecessor == null || pred.getRelativeFrequency() > selectedPredecessor.getRelativeFrequency()) {
+                    StandardOp.JumpOp jump = SSAUtil.phiOut(lir, pred);
+                    Value sourceValue = jump.getOutgoingValue(idx);
+                    if (LinearScan.isVariableOrRegister(sourceValue) && !blockLiveIn.get(getOperandNumber(sourceValue))) {
+                        selectedSource = (AllocatableValue) sourceValue;
+                        selectedPredecessor = pred;
+                    }
                 }
-            });
+            }
+            if (selectedSource != null) {
+                Interval from = allocator.getOrCreateInterval(selectedSource);
+                setHint(debug, op, to, from);
+                setHint(debug, op, from, to);
+            }
         }
     }
 

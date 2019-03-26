@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,28 +39,24 @@
                    constraint,                                              \
                    writeable)                                               \
                                                                             \
-  product(ccstr, ZPath, NULL,                                               \
+  experimental(ccstr, ZPath, NULL,                                          \
           "Filesystem path for Java heap backing storage "                  \
           "(must be a tmpfs or a hugetlbfs filesystem)")                    \
                                                                             \
-  product(double, ZAllocationSpikeTolerance, 2.0,                           \
+  experimental(double, ZAllocationSpikeTolerance, 2.0,                      \
           "Allocation spike tolerance factor")                              \
                                                                             \
-  product(double, ZFragmentationLimit, 25.0,                                \
+  experimental(double, ZFragmentationLimit, 25.0,                           \
           "Maximum allowed heap fragmentation")                             \
                                                                             \
-  product(bool, ZStallOnOutOfMemory, true,                                  \
-          "Allow Java threads to stall and wait for GC to complete "        \
-          "instead of immediately throwing an OutOfMemoryError")            \
-                                                                            \
-  product(size_t, ZMarkStackSpaceLimit, 8*G,                                \
+  experimental(size_t, ZMarkStackSpaceLimit, 8*G,                           \
           "Maximum number of bytes allocated for mark stacks")              \
           range(32*M, 1024*G)                                               \
                                                                             \
-  product(uint, ZCollectionInterval, 0,                                     \
+  experimental(uint, ZCollectionInterval, 0,                                \
           "Force GC at a fixed time interval (in seconds)")                 \
                                                                             \
-  product(uint, ZStatisticsInterval, 10,                                    \
+  diagnostic(uint, ZStatisticsInterval, 10,                                 \
           "Time between statistics print outs (in seconds)")                \
           range(1, (uint)-1)                                                \
                                                                             \
@@ -70,8 +66,8 @@
   diagnostic(bool, ZProactive, true,                                        \
           "Enable proactive GC cycles")                                     \
                                                                             \
-  diagnostic(bool, ZUnmapBadViews, false,                                   \
-          "Unmap bad (inactive) heap views")                                \
+  diagnostic(bool, ZVerifyViews, false,                                     \
+          "Verify heap view accesses")                                      \
                                                                             \
   diagnostic(bool, ZVerifyMarking, false,                                   \
           "Verify marking stacks")                                          \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc.arguments;
+
 /*
  * @test TestDisableDefaultGC
  * @summary Test that the VM complains when the default GC is disabled and no other GC is specified
@@ -30,7 +32,7 @@
  * @requires vm.gc=="null"
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run driver TestDisableDefaultGC
+ * @run driver gc.arguments.TestDisableDefaultGC
  */
 
 import jdk.test.lib.process.ProcessTools;
