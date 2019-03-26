@@ -284,10 +284,10 @@ Java_java_io_UnixFileSystem_createFileExclusively(JNIEnv *env, jclass cls,
             fd = handleOpen(path, O_RDWR | O_CREAT | O_EXCL, 0666);
             if (fd < 0) {
                 if (errno != EEXIST)
-                    JNU_ThrowIOExceptionWithLastError(env, path);
+                    JNU_ThrowIOExceptionWithLastError(env, "Could not open file");
             } else {
                 if (close(fd) == -1)
-                    JNU_ThrowIOExceptionWithLastError(env, path);
+                    JNU_ThrowIOExceptionWithLastError(env, "Could not close file");
                 rv = JNI_TRUE;
             }
         }

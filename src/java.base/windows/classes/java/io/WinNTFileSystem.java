@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -328,7 +328,6 @@ class WinNTFileSystem extends FileSystem {
                 return up + slashify(path.substring(2));
             char drive = path.charAt(0);
             String dir = getDriveDirectory(drive);
-            String np;
             if (dir != null) {
                 /* When resolving a directory-relative path that refers to a
                    drive other than the current drive, insist that the caller
@@ -641,6 +640,7 @@ class WinNTFileSystem extends FileSystem {
     // expects the path to be null or a root component ending in a backslash
     private native int getNameMax0(String path);
 
+    @Override
     public int getNameMax(String path) {
         String s = null;
         if (path != null) {
