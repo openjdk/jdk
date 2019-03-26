@@ -381,8 +381,13 @@ gov.bm
 net.bm
 org.bm
 
-// bn : https://en.wikipedia.org/wiki/.bn
-*.bn
+// bn : http://www.bnnic.bn/faqs
+bn
+com.bn
+edu.bn
+gov.bn
+net.bn
+org.bn
 
 // bo : https://nic.bo/delegacion2015.php#h-1.10
 bo
@@ -546,6 +551,7 @@ niteroi.br
 not.br
 ntr.br
 odo.br
+ong.br
 org.br
 osasco.br
 palmas.br
@@ -1239,7 +1245,7 @@ tozsde.hu
 utazas.hu
 video.hu
 
-// id : https://register.pandi.or.id/
+// id : https://pandi.id/en/domain/registration-requirements/
 id
 ac.id
 biz.id
@@ -1250,6 +1256,7 @@ mil.id
 my.id
 net.id
 or.id
+ponpes.id
 sch.id
 web.id
 
@@ -1407,9 +1414,9 @@ taa.it
 tos.it
 toscana.it
 trentin-sud-tirol.it
-trentin-süd-tirol.it
+trentin-süd-tirol.it
 trentin-sudtirol.it
-trentin-südtirol.it
+trentin-südtirol.it
 trentin-sued-tirol.it
 trentin-suedtirol.it
 trentino-a-adige.it
@@ -1419,9 +1426,9 @@ trentino-altoadige.it
 trentino-s-tirol.it
 trentino-stirol.it
 trentino-sud-tirol.it
-trentino-süd-tirol.it
+trentino-süd-tirol.it
 trentino-sudtirol.it
-trentino-südtirol.it
+trentino-südtirol.it
 trentino-sued-tirol.it
 trentino-suedtirol.it
 trentino.it
@@ -1432,15 +1439,15 @@ trentinoaltoadige.it
 trentinos-tirol.it
 trentinostirol.it
 trentinosud-tirol.it
-trentinosüd-tirol.it
+trentinosüd-tirol.it
 trentinosudtirol.it
-trentinosüdtirol.it
+trentinosüdtirol.it
 trentinosued-tirol.it
 trentinosuedtirol.it
 trentinsud-tirol.it
-trentinsüd-tirol.it
+trentinsüd-tirol.it
 trentinsudtirol.it
-trentinsüdtirol.it
+trentinsüdtirol.it
 trentinsued-tirol.it
 trentinsuedtirol.it
 tuscany.it
@@ -1457,13 +1464,13 @@ valleaosta.it
 valled-aosta.it
 valledaosta.it
 vallee-aoste.it
-vallée-aoste.it
+vallée-aoste.it
 vallee-d-aoste.it
-vallée-d-aoste.it
+vallée-d-aoste.it
 valleeaoste.it
-valléeaoste.it
+valléeaoste.it
 valleedaoste.it
-valléedaoste.it
+valléedaoste.it
 vao.it
 vda.it
 ven.it
@@ -1497,7 +1504,7 @@ av.it
 avellino.it
 ba.it
 balsan-sudtirol.it
-balsan-südtirol.it
+balsan-südtirol.it
 balsan-suedtirol.it
 balsan.it
 bari.it
@@ -1516,7 +1523,7 @@ bologna.it
 bolzano-altoadige.it
 bolzano.it
 bozen-sudtirol.it
-bozen-südtirol.it
+bozen-südtirol.it
 bozen-suedtirol.it
 bozen.it
 br.it
@@ -1525,7 +1532,7 @@ brindisi.it
 bs.it
 bt.it
 bulsan-sudtirol.it
-bulsan-südtirol.it
+bulsan-südtirol.it
 bulsan-suedtirol.it
 bulsan.it
 bz.it
@@ -1545,9 +1552,9 @@ catanzaro.it
 cb.it
 ce.it
 cesena-forli.it
-cesena-forlì.it
+cesena-forlì.it
 cesenaforli.it
-cesenaforlì.it
+cesenaforlì.it
 ch.it
 chieti.it
 ci.it
@@ -1578,9 +1585,9 @@ florence.it
 fm.it
 foggia.it
 forli-cesena.it
-forlì-cesena.it
+forlì-cesena.it
 forlicesena.it
-forlìcesena.it
+forlìcesena.it
 fr.it
 frosinone.it
 ge.it
@@ -1711,7 +1718,7 @@ sp.it
 sr.it
 ss.it
 suedtirol.it
-südtirol.it
+südtirol.it
 sv.it
 ta.it
 taranto.it
@@ -3692,8 +3699,16 @@ jeonnam.kr
 seoul.kr
 ulsan.kr
 
-// kw : https://en.wikipedia.org/wiki/.kw
-*.kw
+// kw : https://www.nic.kw/policies/
+// Confirmed by registry <nic.tech@citra.gov.kw>
+kw
+com.kw
+edu.kw
+emb.kw
+gov.kw
+ind.kw
+net.kw
+org.kw
 
 // ky : http://www.icta.ky/da_ky_reg_dom.php
 // Confirmed by registry <kysupport@perimeterusa.com> 2008-06-17
@@ -3775,10 +3790,18 @@ gov.lr
 org.lr
 net.lr
 
-// ls : https://en.wikipedia.org/wiki/.ls
+// ls : http://www.nic.ls/
+// Confirmed by registry <lsadmin@nic.ls>
 ls
+ac.ls
+biz.ls
 co.ls
+edu.ls
+gov.ls
+info.ls
+net.ls
 org.ls
+sc.ls
 
 // lt : https://en.wikipedia.org/wiki/.lt
 lt
@@ -4635,9 +4658,6 @@ web.ni
 //      https://www.sidn.nl/
 //      ccTLD for the Netherlands
 nl
-
-// BV.nl will be a registry for dutch BV's (besloten vennootschap)
-bv.nl
 
 // no : http://www.norid.no/regelverk/index.en.html
 // The Norwegian registry has declined to notify us of updates. The web pages
@@ -8329,9 +8349,6 @@ golf
 // goo : 2014-12-18 NTT Resonant Inc.
 goo
 
-// goodhands : 2015-07-31 Allstate Fire and Casualty Insurance Company
-goodhands
-
 // goodyear : 2015-07-02 The Goodyear Tire & Rubber Company
 goodyear
 
@@ -8608,9 +8625,6 @@ itv
 // iveco : 2015-09-03 CNH Industrial N.V.
 iveco
 
-// iwc : 2014-06-23 Richemont DNS Inc.
-iwc
-
 // jaguar : 2014-11-13 Jaguar Land Rover Ltd
 jaguar
 
@@ -8634,9 +8648,6 @@ jewelry
 
 // jio : 2015-04-02 Reliance Industries Limited
 jio
-
-// jlc : 2014-12-04 Richemont DNS Inc.
-jlc
 
 // jll : 2015-04-02 Jones Lang LaSalle Incorporated
 jll
@@ -8989,9 +9000,6 @@ men
 // menu : 2013-09-11 Wedding TLD2, LLC
 menu
 
-// meo : 2014-11-07 MEO Servicos de Comunicacoes e Multimedia, S.A.
-meo
-
 // merckmsd : 2016-07-14 MSD Registry Holdings, Inc.
 merckmsd
 
@@ -9282,9 +9290,6 @@ page
 
 // panasonic : 2015-07-30 Panasonic Corporation
 panasonic
-
-// panerai : 2014-11-07 Richemont DNS Inc.
-panerai
 
 // paris : 2014-01-30 City of Paris
 paris
@@ -9634,9 +9639,6 @@ sanofi
 // sap : 2014-03-27 SAP AG
 sap
 
-// sapo : 2014-11-07 MEO Servicos de Comunicacoes e Multimedia, S.A.
-sapo
-
 // sarl : 2014-07-03 Binky Moon, LLC
 sarl
 
@@ -9877,9 +9879,6 @@ statebank
 // statefarm : 2015-07-30 State Farm Mutual Automobile Insurance Company
 statefarm
 
-// statoil : 2014-12-04 Statoil ASA
-statoil
-
 // stc : 2014-10-09 Saudi Telecom Company
 stc
 
@@ -9990,9 +9989,6 @@ tech
 
 // technology : 2013-09-13 Binky Moon, LLC
 technology
-
-// telecity : 2015-02-19 TelecityGroup International Limited
-telecity
 
 // telefonica : 2014-10-16 Telefónica S.A.
 telefonica
@@ -10200,9 +10196,6 @@ visa
 
 // vision : 2013-12-05 Binky Moon, LLC
 vision
-
-// vista : 2014-09-18 Vistaprint Limited
-vista
 
 // vistaprint : 2014-09-18 Vistaprint Limited
 vistaprint
@@ -10642,9 +10635,6 @@ vermögensberatung
 // xn--zfr164b : 2013-11-08 China Organizational Name Administration Center
 政务
 
-// xperia : 2015-05-14 Sony Mobile Communications AB
-xperia
-
 // xyz : 2013-12-05 XYZ.COM LLC
 xyz
 
@@ -10737,6 +10727,7 @@ us-east-1.amazonaws.com
 // Amazon Elastic Beanstalk : https://aws.amazon.com/elasticbeanstalk/
 // Submitted by Luke Wells <psl-maintainers@amazon.com>
 cn-north-1.eb.amazonaws.com.cn
+cn-northwest-1.eb.amazonaws.com.cn
 elasticbeanstalk.com
 ap-northeast-1.elasticbeanstalk.com
 ap-northeast-2.elasticbeanstalk.com
@@ -10823,6 +10814,10 @@ s3-website.us-east-2.amazonaws.com
 t3l3p0rt.net
 tele.amune.org
 
+// Apigee : https://apigee.com/
+// Submitted by Apigee Security Team <security@apigee.com>
+apigee.io
+
 // Aptible : https://www.aptible.com/
 // Submitted by Thomas Orozco <thomas@aptible.com>
 on-aptible.com
@@ -10841,6 +10836,11 @@ sweetpepper.org
 // ASUSTOR Inc. : http://www.asustor.com
 // Submitted by Vincent Tseng <vincenttseng@asustor.com>
 myasustor.com
+
+// Automattic Inc. : https://automattic.com/
+// Submitted by Alex Concha <alex.concha@automattic.com>
+go-vip.co
+wpcomstaging.com
 
 // AVM : https://avm.de
 // Submitted by Andreas Weise <a.weise@avm.de>
@@ -10887,6 +10887,11 @@ square7.net
 // BrowserSafetyMark
 // Submitted by Dave Tharp <browsersafetymark.io@quicinc.com>
 browsersafetymark.io
+
+// Bytemark Hosting : https://www.bytemark.co.uk
+// Submitted by Paul Cammish <paul.cammish@bytemark.co.uk>
+dh.bytemark.co.uk
+vm.bytemark.co.uk
 
 // callidomus : https://www.callidomus.com/
 // Submitted by Marcus Popp <admin@callidomus.com>
@@ -11080,6 +11085,11 @@ firm.dk
 reg.dk
 store.dk
 
+// dapps.earth : https://dapps.earth/
+// Submitted by Daniil Burdakov <icqkill@gmail.com>
+*.dapps.earth
+*.bzz.dapps.earth
+
 // Debian : https://www.debian.org/
 // Submitted by Peter Palfrader / Debian Sysadmin Team <dsa-publicsuffixlist@debian.org>
 debian.net
@@ -11091,6 +11101,11 @@ dedyn.io
 // DNShome : https://www.dnshome.de/
 // Submitted by Norbert Auler <mail@dnshome.de>
 dnshome.de
+
+// DotArai : https://www.dotarai.com/
+// Submitted by Atsadawat Netcharadsang <atsadawat@dotarai.co.th>
+online.th
+shop.th
 
 // DrayTek Corp. : https://www.draytek.com/
 // Submitted by Paul Fang <mis@draytek.com>
@@ -11648,6 +11663,10 @@ cloud.fedoraproject.org
 app.os.fedoraproject.org
 app.os.stg.fedoraproject.org
 
+// Fermax : https://fermax.com/
+// submitted by Koen Van Isterdael <k.vanisterdael@fermax.be>
+mydobiss.com
+
 // Filegear Inc. : https://www.filegear.com
 // Submitted by Jason Zhu <jason@owtware.com>
 filegear.me
@@ -11713,6 +11732,8 @@ goip.de
 
 // Google, Inc.
 // Submitted by Eduardo Vela <evn@google.com>
+run.app
+a.run.app
 *.0emm.com
 appspot.com
 blogspot.ae
@@ -11918,6 +11939,12 @@ git-repos.de
 lcube-server.de
 svn-repos.de
 
+// Leadpages : https://www.leadpages.net
+// Submitted by Greg Dallavalle <domains@leadpages.net>
+leadpages.co
+lpages.co
+lpusercontent.com
+
 // Lightmaker Property Manager, Inc. : https://app.lmpm.com/
 // Submitted by Greg Holland <greg.holland@lmpm.com>
 app.lmpm.com
@@ -11934,6 +11961,15 @@ linkyard-cloud.ch
 // LiquidNet Ltd : http://www.liquidnetlimited.com/
 // Submitted by Victor Velchev <admin@liquidnetlimited.com>
 we.bs
+
+// LubMAN UMCS Sp. z o.o : https://lubman.pl/
+// Submitted by Ireneusz Maliszewski <ireneusz.maliszewski@lubman.pl>
+krasnik.pl
+leczna.pl
+lubartow.pl
+lublin.pl
+poniatowa.pl
+swidnik.pl
 
 // Lug.org.uk : https://lug.org.uk
 // Submitted by Jon Spriggs <admin@lug.org.uk>
@@ -12322,6 +12358,10 @@ protonet.io
 chirurgiens-dentistes-en-france.fr
 byen.site
 
+// Redstar Consultants : https://www.redstarconsultants.com/
+// Submitted by Jons Slemmer <jons@redstarconsultants.com>
+instantcloud.cn
+
 // Russian Academy of Sciences
 // Submitted by Tech Support <support@rasnet.ru>
 ras.ru
@@ -12349,6 +12389,10 @@ vaporcloud.io
 // Submitted by Kirill Pertsev <kika@rackmaze.com>
 rackmaze.com
 rackmaze.net
+
+// Read The Docs, Inc : https://www.readthedocs.org
+// Submitted by David Fischer <team@readthedocs.org>
+readthedocs.io
 
 // Red Hat, Inc. OpenShift : https://openshift.redhat.com/
 // Submitted by Tim Kramer <tkramer@rhcloud.com>
@@ -12426,6 +12470,10 @@ applinzi.com
 sinaapp.com
 vipsinaapp.com
 
+// Siteleaf : https://www.siteleaf.com/
+// Submitted by Skylar Challand <support@siteleaf.com>
+siteleaf.net
+
 // Skyhat : http://www.skyhat.io
 // Submitted by Shante Adam <shante@skyhat.io>
 bounty-full.com
@@ -12450,10 +12498,6 @@ spacekit.io
 // SpeedPartner GmbH: https://www.speedpartner.de/
 // Submitted by Stefan Neufeind <info@speedpartner.de>
 customer.speedpartner.de
-
-// Stackspace : https://www.stackspace.io/
-// Submitted by Lina He <info@stackspace.io>
-stackspace.space
 
 // Storj Labs Inc. : https://storj.io/
 // Submitted by Philip Hutchins <hostmaster@storj.io>
@@ -12495,6 +12539,12 @@ gdynia.pl
 med.pl
 sopot.pl
 
+// Telebit : https://telebit.cloud
+// Submitted by AJ ONeal <aj@telebit.cloud>
+telebit.app
+telebit.io
+*.telebit.xyz
+
 // The Gwiddle Foundation : https://gwiddlefoundation.org.uk
 // Submitted by Joshua Bayfield <joshua.bayfield@gwiddlefoundation.org.uk>
 gwiddle.co.uk
@@ -12533,7 +12583,7 @@ lima-city.rocks
 webspace.rocks
 lima.zone
 
-// TransIP : htts://www.transip.nl
+// TransIP : https://www.transip.nl
 // Submitted by Rory Breuk <rbreuk@transip.nl>
 *.transurl.be
 *.transurl.eu
