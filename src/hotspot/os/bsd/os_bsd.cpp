@@ -1598,6 +1598,8 @@ void os::get_summary_cpu_info(char* buf, size_t buflen) {
 }
 
 void os::print_memory_info(outputStream* st) {
+  xsw_usage swap_usage;
+  size_t size = sizeof(swap_usage);
 
   st->print("Memory:");
   st->print(" %dk page", os::vm_page_size()>>10);
@@ -1606,6 +1608,16 @@ void os::print_memory_info(outputStream* st) {
             os::physical_memory() >> 10);
   st->print("(" UINT64_FORMAT "k free)",
             os::available_memory() >> 10);
+
+  if((sysctlbyname("vm.swapusage", &swap_usage, &size, NULL, 0) == 0) || (errno == ENOMEM)) {
+    if (size >= offset_of(xsw_usage, xsu_used)) {
+      st->print(", swap " UINT64_FORMAT "k",
+                ((julong) swap_usage.xsu_total) >> 10);
+      st->print("(" UINT64_FORMAT "k free)",
+                ((julong) swap_usage.xsu_avail) >> 10);
+    }
+  }
+
   st->cr();
 }
 
