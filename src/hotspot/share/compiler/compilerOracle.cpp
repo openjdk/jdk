@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -737,30 +737,6 @@ void CompilerOracle::parse_from_string(const char* str, void (*parse_line)(char*
   token[pos++] = '\0';
   parse_line(token);
 }
-
-void CompilerOracle::append_comment_to_file(const char* message) {
-  assert(has_command_file(), "command file must be specified");
-  fileStream stream(fopen(cc_file(), "at"));
-  stream.print("# ");
-  for (int index = 0; message[index] != '\0'; index++) {
-    stream.put(message[index]);
-    if (message[index] == '\n') stream.print("# ");
-  }
-  stream.cr();
-}
-
-void CompilerOracle::append_exclude_to_file(const methodHandle& method) {
-  assert(has_command_file(), "command file must be specified");
-  fileStream stream(fopen(cc_file(), "at"));
-  stream.print("exclude ");
-  method->method_holder()->name()->print_symbol_on(&stream);
-  stream.print(".");
-  method->name()->print_symbol_on(&stream);
-  method->signature()->print_symbol_on(&stream);
-  stream.cr();
-  stream.cr();
-}
-
 
 void compilerOracle_init() {
   CompilerOracle::parse_from_string(CompileCommand, CompilerOracle::parse_from_line);
