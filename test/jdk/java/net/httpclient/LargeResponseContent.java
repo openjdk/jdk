@@ -39,10 +39,12 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
+import jdk.test.lib.net.URIBuilder;
 
 /**
  * @test
  * @bug 8212926
+ * @library /test/lib
  * @summary Basic tests for response timeouts
  * @run main/othervm LargeResponseContent
  */
@@ -60,7 +62,13 @@ public class LargeResponseContent {
     }
 
     void runClient() throws IOException, InterruptedException {
-        URI uri = URI.create("http://127.0.0.1:" + Integer.toString(port) + "/foo");
+        URI uri = URIBuilder.newBuilder()
+            .scheme("http")
+            .loopback()
+            .port(port)
+            .path("/foo")
+            .buildUnchecked();
+        System.out.println("URI: " + uri);
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder(uri)
                 .GET()

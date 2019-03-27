@@ -23,24 +23,26 @@
 
 /*
  * @test
+ * @library /test/lib
  * @bug 4701299
  * @summary Keep-Alive-Timer thread management in KeepAliveCache causes memory leak
  */
+
 import java.net.*;
 import java.io.*;
+import jdk.test.lib.net.URIBuilder;
 
 public class KeepAliveTimerThread {
     static class Fetcher implements Runnable {
-        String url;
+        URL url;
 
-        Fetcher(String url) {
+        Fetcher(URL url) {
             this.url = url;
         }
 
         public void run() {
             try {
-                InputStream in =
-                    (new URL(url)).openConnection().getInputStream();
+                InputStream in = url.openConnection().getInputStream();
                 byte b[] = new byte[128];
                 int n;
                 do {
@@ -105,7 +107,12 @@ public class KeepAliveTimerThread {
         Server s = new Server (ss);
         s.start();
 
-        String url = "http://127.0.0.1:"+ss.getLocalPort();
+        URL url = URIBuilder.newBuilder()
+            .scheme("http")
+            .loopback()
+            .port(ss.getLocalPort())
+            .toURL();
+        System.out.println("URL: " + url);
 
         // start fetch in its own thread group
         ThreadGroup grp = new ThreadGroup("MyGroup");

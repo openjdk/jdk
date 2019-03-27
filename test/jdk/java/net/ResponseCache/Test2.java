@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 8042622
+ * @library /test/lib
  * @summary Check for CRL results in IllegalArgumentException "white space not allowed"
  * @modules jdk.httpserver
  * @run main/othervm Test2
@@ -38,6 +39,7 @@ import java.net.*;
 import java.security.*;
 import javax.security.auth.callback.*;
 import javax.net.ssl.*;
+import jdk.test.lib.net.URIBuilder;
 
 public class Test2 {
 
@@ -63,7 +65,7 @@ public class Test2 {
 
     static int port;
 
-    static String urlstring, redirstring;
+    static URL url, redir;
 
     public static void main (String[] args) throws Exception {
         Handler handler = new Handler();
@@ -78,10 +80,21 @@ public class Test2 {
         server.setExecutor (executor);
         server.start ();
 
-        urlstring = "http://127.0.0.1:" + Integer.toString(port)+"/test/foo";
-        redirstring = urlstring + "/redirect/bar";
+        url = URIBuilder.newBuilder()
+            .scheme("http")
+            .loopback()
+            .port(port)
+            .path("/test/foo")
+            .toURLUnchecked();
+        System.out.println("URL: " + url);
+        redir = URIBuilder.newBuilder()
+            .scheme("http")
+            .loopback()
+            .port(port)
+            .path("/test/foo/redirect/bar")
+            .toURLUnchecked();
+        System.out.println("Redir URL: " + redir);
 
-        URL url = new URL (urlstring);
         HttpURLConnection urlc = (HttpURLConnection)url.openConnection();
         urlc.addRequestProperty("X-Foo", "bar");
         urlc.setInstanceFollowRedirects(true);
@@ -114,7 +127,7 @@ public class Test2 {
             Headers rmap = t.getResponseHeaders();
             invocation ++;
             if (invocation == 1) {
-                rmap.add("Location", redirstring);
+                rmap.add("Location", redir.toString());
                 while (is.read () != -1) ;
                 is.close();
                 System.out.println ("sending response");

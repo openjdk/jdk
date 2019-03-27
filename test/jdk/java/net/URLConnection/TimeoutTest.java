@@ -24,12 +24,14 @@
 /*
  * @test
  * @bug 4389976
+ * @library /test/lib
  * @summary    can't unblock read() of InputStream from URL connection
  * @run main/timeout=40/othervm -Dsun.net.client.defaultReadTimeout=2000 TimeoutTest
  */
 
 import java.io.*;
 import java.net.*;
+import jdk.test.lib.net.URIBuilder;
 
 public class TimeoutTest {
 
@@ -68,7 +70,12 @@ public class TimeoutTest {
         ServerSocket ss = new ServerSocket(0);
         Server s = new Server (ss);
         try{
-            URL url = new URL ("http://127.0.0.1:"+ss.getLocalPort());
+            URL url = URIBuilder.newBuilder()
+                .scheme("http")
+                .loopback()
+                .port(ss.getLocalPort())
+                .toURL();
+            System.out.println("URL: " + url);
             URLConnection urlc = url.openConnection ();
             InputStream is = urlc.getInputStream ();
             throw new RuntimeException("Should have received timeout");

@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 6550798
+ * @library /test/lib
  * @summary Using InputStream.skip with ResponseCache will cause partial data to be cached
  * @modules jdk.httpserver
  * @run main/othervm test
@@ -32,6 +33,8 @@
 import java.net.*;
 import com.sun.net.httpserver.*;
 import java.io.*;
+
+import jdk.test.lib.net.URIBuilder;
 
 public class test {
 
@@ -58,7 +61,13 @@ public class test {
         s.start();
 
         System.out.println("http request with cache hander");
-        URL u = new URL("http://127.0.0.1:"+s.getAddress().getPort()+"/f");
+        URL u = URIBuilder.newBuilder()
+            .scheme("http")
+            .loopback()
+            .port(s.getAddress().getPort())
+            .path("/f")
+            .toURL();
+        System.out.println("URL: " + u);
         URLConnection conn = u.openConnection();
 
         InputStream is = null;

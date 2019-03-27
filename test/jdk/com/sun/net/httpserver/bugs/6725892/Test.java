@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 6725892
+ * @library /test/lib
  * @run main/othervm -Dsun.net.httpserver.maxReqTime=2 Test
  * @summary
  */
@@ -35,6 +36,8 @@ import java.util.logging.*;
 import java.io.*;
 import java.net.*;
 import javax.net.ssl.*;
+
+import jdk.test.lib.net.URIBuilder;
 
 public class Test {
 
@@ -76,7 +79,13 @@ public class Test {
 
             port = s1.getAddress().getPort();
             System.out.println ("Server on port " + port);
-            url = new URL ("http://127.0.0.1:"+port+"/foo");
+            url = URIBuilder.newBuilder()
+                .scheme("http")
+                .loopback()
+                .port(port)
+                .path("/foo")
+                .toURLUnchecked();
+            System.out.println("URL: " + url);
             test1();
             test2();
             test3();

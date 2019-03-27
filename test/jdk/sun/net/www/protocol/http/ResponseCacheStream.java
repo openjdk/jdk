@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 6262486
+ * @library /test/lib
  * @modules java.base/sun.net.www
  * @library ../../httptest/
  * @build HttpCallback TestHttpServer ClosedChannelList HttpTransaction
@@ -34,6 +35,7 @@
 import java.net.*;
 import java.io.*;
 import java.util.*;
+import jdk.test.lib.net.URIBuilder;
 
 public class ResponseCacheStream implements HttpCallback {
 
@@ -100,7 +102,12 @@ public class ResponseCacheStream implements HttpCallback {
             ResponseCache.setDefault(cache);
             server = new TestHttpServer (new ResponseCacheStream());
             System.out.println ("Server: listening on port: " + server.getLocalPort());
-            URL url = new URL ("http://127.0.0.1:"+server.getLocalPort()+"/");
+            URL url = URIBuilder.newBuilder()
+                .scheme("http")
+                .loopback()
+                .port(server.getLocalPort())
+                .path("/")
+                .toURL();
             System.out.println ("Client: connecting to " + url);
             HttpURLConnection urlc = (HttpURLConnection)url.openConnection();
             InputStream is = urlc.getInputStream();

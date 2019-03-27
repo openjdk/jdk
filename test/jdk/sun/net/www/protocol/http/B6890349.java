@@ -39,7 +39,11 @@ public class B6890349 extends Thread {
             System.out.println ("listening on "  + port);
             B6890349 t = new B6890349 (server);
             t.start();
-            URL u = new URL ("http://127.0.0.1:"+port+"/foo\nbar");
+            URL u = new URL("http",
+                InetAddress.getLoopbackAddress().getHostAddress(),
+                port,
+                "/foo\nbar");
+            System.out.println("URL: " + u);
             HttpURLConnection urlc = (HttpURLConnection)u.openConnection ();
             InputStream is = urlc.getInputStream();
             throw new RuntimeException ("Test failed");

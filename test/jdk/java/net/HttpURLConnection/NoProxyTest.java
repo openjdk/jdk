@@ -24,11 +24,13 @@
  /*
  * @test
  * @bug 8144008
+ * @library /test/lib
  * @summary Setting NO_PROXY on HTTP URL connections does not stop proxying
  * @run main/othervm NoProxyTest
  */
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.Proxy;
 import java.net.ProxySelector;
@@ -37,6 +39,7 @@ import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.List;
+import jdk.test.lib.net.URIBuilder;
 
 public class NoProxyTest {
 
@@ -52,7 +55,12 @@ public class NoProxyTest {
     public static void main(String args[]) throws MalformedURLException {
         ProxySelector.setDefault(new NoProxyTestSelector());
 
-        URL url = URI.create("http://127.0.0.1/").toURL();
+        URL url = URIBuilder.newBuilder()
+            .scheme("http")
+            .loopback()
+            .path("/")
+            .toURLUnchecked();
+        System.out.println("URL: " + url);
         URLConnection connection;
         try {
             connection = url.openConnection(Proxy.NO_PROXY);

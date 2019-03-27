@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 6373555
+ * @library /test/lib
  * @summary HTTP Server failing to answer client requests
  */
 
@@ -32,6 +33,7 @@ import java.io.*;
 import java.util.*;
 import com.sun.net.httpserver.*;
 import java.util.concurrent.*;
+import jdk.test.lib.net.URIBuilder;
 
 public class B6373555 {
 
@@ -96,7 +98,13 @@ public class B6373555 {
             try {
                 Thread.sleep(10);
                 byte[] buf = getBuf();
-                URL url = new URL("http://127.0.0.1:"+port+"/test");
+                URL url = URIBuilder.newBuilder()
+                    .scheme("http")
+                    .loopback()
+                    .port(port)
+                    .path("/test")
+                    .toURLUnchecked();
+                System.out.println("URL: " + url);
                 HttpURLConnection con = (HttpURLConnection)url.openConnection();
                 con.setDoOutput(true);
                 con.setDoInput(true);

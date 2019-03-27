@@ -28,6 +28,7 @@
 
 /* @test
  * @summary X509 certificate hostname checking is broken in JDK1.6.0_10
+ * @library /test/lib
  * @bug 6766775
  * @run main/othervm IPAddressIPIdentities
  * @author Xuelei Fan
@@ -45,6 +46,7 @@ import java.security.cert.CertificateFactory;
 import java.security.spec.*;
 import java.security.interfaces.*;
 import java.math.BigInteger;
+import jdk.test.lib.net.URIBuilder;
 
 /*
  * Certificates and key used in the test.
@@ -714,7 +716,12 @@ public class IPAddressIPIdentities {
             HttpsURLConnection http = null;
 
             /* establish http connection to server */
-            URL url = new URL("https://127.0.0.1:" + serverPort+"/");
+            URL url = URIBuilder.newBuilder()
+                .scheme("https")
+                .loopback()
+                .port(serverPort)
+                .path("/")
+                .toURL();
             System.out.println("url is "+url.toString());
 
             try {

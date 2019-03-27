@@ -24,12 +24,14 @@
 /*
  * @test
  * @bug 8000525
+ * @library /test/lib
  */
 
 import java.net.*;
 import java.util.*;
 import java.io.*;
 import java.text.*;
+import jdk.test.lib.net.URIBuilder;
 
 public class ExpiredCookieTest {
     // lifted from HttpCookie.java
@@ -81,7 +83,13 @@ public class ExpiredCookieTest {
                 "TEST4=TEST4; Path=/; Expires=" + datestring.toString());
 
             header.put("Set-Cookie", values);
-            cm.put(new URI("http://127.0.0.1/"), header);
+            URI uri = URIBuilder.newBuilder()
+                .scheme("http")
+                .loopback()
+                .path("/")
+                .buildUnchecked();
+            System.out.println("URI: " + uri);
+            cm.put(uri, header);
 
             CookieStore cookieJar =  cm.getCookieStore();
             List <HttpCookie> cookies = cookieJar.getCookies();

@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 6422914
+ * @library /test/lib
  * @summary change httpserver exception printouts
  */
 
@@ -37,6 +38,7 @@ import java.net.*;
 import java.security.*;
 import java.security.cert.*;
 import javax.net.ssl.*;
+import jdk.test.lib.net.URIBuilder;
 
 public class TestLogging extends Test {
 
@@ -63,13 +65,25 @@ public class TestLogging extends Test {
 
             int p1 = s1.getAddress().getPort();
 
-            URL url = new URL ("http://127.0.0.1:"+p1+"/test1/smallfile.txt");
+            URL url = URIBuilder.newBuilder()
+                .scheme("http")
+                .loopback()
+                .port(p1)
+                .path("/test1/smallfile.txt")
+                .toURLUnchecked();
+            System.out.println("URL: " + url);
             HttpURLConnection urlc = (HttpURLConnection)url.openConnection();
             InputStream is = urlc.getInputStream();
             while (is.read() != -1) ;
             is.close();
 
-            url = new URL ("http://127.0.0.1:"+p1+"/test1/doesntexist.txt");
+            url = URIBuilder.newBuilder()
+                .scheme("http")
+                .loopback()
+                .port(p1)
+                .path("/test1/doesntexist.txt")
+                .toURLUnchecked();
+            System.out.println("URL: " + url);
             urlc = (HttpURLConnection)url.openConnection();
             try {
                 is = urlc.getInputStream();
