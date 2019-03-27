@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
  * @build HelloDocker
  * @run driver DockerBasicTest
  */
+import jdk.test.lib.containers.docker.Common;
 import jdk.test.lib.containers.docker.DockerRunOptions;
 import jdk.test.lib.containers.docker.DockerTestUtils;
 import jdk.test.lib.Platform;
@@ -40,7 +41,7 @@ import jdk.test.lib.Utils;
 
 
 public class DockerBasicTest {
-    private static final String imageNameAndTag = "jdk10-internal:test";
+    private static final String imageNameAndTag = Common.imageName("basic");
     // Diganostics: set to false to examine image after the test
     private static final boolean removeImageAfterTest = true;
 
