@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,13 +54,6 @@ void ConcurrentGCThread::initialize_in_thread() {
   assert(this == Thread::current(), "just checking");
 }
 
-void ConcurrentGCThread::wait_for_universe_init() {
-  MutexLockerEx x(CGC_lock, Mutex::_no_safepoint_check_flag);
-  while (!is_init_completed() && !_should_terminate) {
-    CGC_lock->wait(Mutex::_no_safepoint_check_flag, 1);
-  }
-}
-
 void ConcurrentGCThread::terminate() {
   assert(_should_terminate, "Should only be called on terminate request.");
   // Signal that it is terminated
@@ -74,7 +67,7 @@ void ConcurrentGCThread::terminate() {
 
 void ConcurrentGCThread::run() {
   initialize_in_thread();
-  wait_for_universe_init();
+  wait_init_completed();
 
   run_service();
 

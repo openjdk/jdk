@@ -97,6 +97,7 @@ Mutex*   CompileStatistics_lock       = NULL;
 Mutex*   DirectivesStack_lock         = NULL;
 Mutex*   MultiArray_lock              = NULL;
 Monitor* Terminator_lock              = NULL;
+Monitor* InitCompleted_lock           = NULL;
 Monitor* BeforeExit_lock              = NULL;
 Monitor* Notify_lock                  = NULL;
 Mutex*   ProfilePrint_lock            = NULL;
@@ -283,6 +284,7 @@ void mutex_init() {
   def(VMOperationRequest_lock      , PaddedMonitor, nonleaf,     true,  Monitor::_safepoint_check_sometimes);
   def(RetData_lock                 , PaddedMutex  , nonleaf,     false, Monitor::_safepoint_check_always);
   def(Terminator_lock              , PaddedMonitor, nonleaf,     true,  Monitor::_safepoint_check_sometimes);
+  def(InitCompleted_lock           , PaddedMonitor, leaf,        true,  Monitor::_safepoint_check_never);
   def(VtableStubs_lock             , PaddedMutex  , nonleaf,     true,  Monitor::_safepoint_check_never);
   def(Notify_lock                  , PaddedMonitor, nonleaf,     true,  Monitor::_safepoint_check_always);
   def(JNIGlobalAlloc_lock          , PaddedMutex  , nonleaf,     true,  Monitor::_safepoint_check_never);
