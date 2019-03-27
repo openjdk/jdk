@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -317,7 +317,10 @@ class DataOutputStream extends FilterOutputStream implements DataOutput {
      * thrice the length of <code>str</code>.
      *
      * @param      str   a string to be written.
-     * @exception  IOException  if an I/O error occurs.
+     * @throws     UTFDataFormatException  if the modified UTF-8 encoding of
+     *             {@code str} would exceed 65535 bytes in length
+     * @throws     IOException  if some other I/O error occurs.
+     * @see        #writeChars(String)
      */
     public final void writeUTF(String str) throws IOException {
         writeUTF(str, this);
@@ -341,55 +344,49 @@ class DataOutputStream extends FilterOutputStream implements DataOutput {
      * @param      str   a string to be written.
      * @param      out   destination to write to
      * @return     The number of bytes written out.
-     * @exception  IOException  if an I/O error occurs.
+     * @throws     UTFDataFormatException  if the modified UTF-8 encoding of
+     *             {@code str} would exceed 65535 bytes in length
+     * @throws     IOException  if some other I/O error occurs.
      */
     static int writeUTF(String str, DataOutput out) throws IOException {
-        int strlen = str.length();
-        int utflen = 0;
-        int c, count = 0;
+        final int strlen = str.length();
+        int utflen = strlen; // optimized for ASCII
 
-        /* use charAt instead of copying String to char array */
         for (int i = 0; i < strlen; i++) {
-            c = str.charAt(i);
-            if ((c >= 0x0001) && (c <= 0x007F)) {
-                utflen++;
-            } else if (c > 0x07FF) {
-                utflen += 3;
-            } else {
-                utflen += 2;
-            }
+            int c = str.charAt(i);
+            if (c >= 0x80 || c == 0)
+                utflen += (c >= 0x800) ? 2 : 1;
         }
 
-        if (utflen > 65535)
-            throw new UTFDataFormatException(
-                "encoded string too long: " + utflen + " bytes");
+        if (utflen > 65535 || /* overflow */ utflen < strlen)
+            throw new UTFDataFormatException(tooLongMsg(str, utflen));
 
-        byte[] bytearr = null;
+        final byte[] bytearr;
         if (out instanceof DataOutputStream) {
             DataOutputStream dos = (DataOutputStream)out;
-            if(dos.bytearr == null || (dos.bytearr.length < (utflen+2)))
+            if (dos.bytearr == null || (dos.bytearr.length < (utflen + 2)))
                 dos.bytearr = new byte[(utflen*2) + 2];
             bytearr = dos.bytearr;
         } else {
-            bytearr = new byte[utflen+2];
+            bytearr = new byte[utflen + 2];
         }
 
+        int count = 0;
         bytearr[count++] = (byte) ((utflen >>> 8) & 0xFF);
         bytearr[count++] = (byte) ((utflen >>> 0) & 0xFF);
 
-        int i=0;
-        for (i=0; i<strlen; i++) {
-           c = str.charAt(i);
-           if (!((c >= 0x0001) && (c <= 0x007F))) break;
-           bytearr[count++] = (byte) c;
+        int i = 0;
+        for (i = 0; i < strlen; i++) { // optimized for initial run of ASCII
+            int c = str.charAt(i);
+            if (c >= 0x80 || c == 0) break;
+            bytearr[count++] = (byte) c;
         }
 
-        for (;i < strlen; i++){
-            c = str.charAt(i);
-            if ((c >= 0x0001) && (c <= 0x007F)) {
+        for (; i < strlen; i++) {
+            int c = str.charAt(i);
+            if (c < 0x80 && c != 0) {
                 bytearr[count++] = (byte) c;
-
-            } else if (c > 0x07FF) {
+            } else if (c >= 0x800) {
                 bytearr[count++] = (byte) (0xE0 | ((c >> 12) & 0x0F));
                 bytearr[count++] = (byte) (0x80 | ((c >>  6) & 0x3F));
                 bytearr[count++] = (byte) (0x80 | ((c >>  0) & 0x3F));
@@ -398,8 +395,18 @@ class DataOutputStream extends FilterOutputStream implements DataOutput {
                 bytearr[count++] = (byte) (0x80 | ((c >>  0) & 0x3F));
             }
         }
-        out.write(bytearr, 0, utflen+2);
+        out.write(bytearr, 0, utflen + 2);
         return utflen + 2;
+    }
+
+    private static String tooLongMsg(String s, int bits32) {
+        int slen = s.length();
+        String head = s.substring(0, 8);
+        String tail = s.substring(slen - 8, slen);
+        // handle int overflow with max 3x expansion
+        long actualLength = (long)slen + Integer.toUnsignedLong(bits32 - slen);
+        return "encoded string (" + head + "..." + tail + ") too long: "
+            + actualLength + " bytes";
     }
 
     /**
