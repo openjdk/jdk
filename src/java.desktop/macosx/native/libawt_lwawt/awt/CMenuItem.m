@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@
     AWT_ASSERT_APPKIT_THREAD;
     JNIEnv *env = [ThreadUtilities getJNIEnv];
     JNF_COCOA_ENTER(env);
-    
+
     // If we are called as a result of user pressing a shortcut, do nothing,
     // because AVTView has already sent corresponding key event to the Java
     // layer from performKeyEquivalent.
@@ -81,45 +81,26 @@
     // from this "frameless" menu, because there are no active windows. This
     // means we have to handle it here.
     NSEvent *currEvent = [[NSApplication sharedApplication] currentEvent];
+
+    if ([currEvent type] == NSKeyDown) {
+        // The action event can be ignored only if the key window is an AWT window.
+        // Otherwise, the action event is the only notification and must be processed.
+        NSWindow *keyWindow = [NSApp keyWindow];
+        if (keyWindow != nil && [AWTWindow isAWTWindow: keyWindow]) {
+            return;
+        }
+    }
+
     if (fIsCheckbox) {
         static JNF_CLASS_CACHE(jc_CCheckboxMenuItem, "sun/lwawt/macosx/CCheckboxMenuItem");
         static JNF_MEMBER_CACHE(jm_ckHandleAction, jc_CCheckboxMenuItem, "handleAction", "(Z)V");
-        
+
         // Send the opposite of what's currently checked -- the action
         // indicates what state we're going to.
         NSInteger state = [sender state];
         jboolean newState = (state == NSOnState ? JNI_FALSE : JNI_TRUE);
         JNFCallVoidMethod(env, fPeer, jm_ckHandleAction, newState);
-    }
-    else {
-        if ([currEvent type] == NSKeyDown) {
-            // Event available through sender variable hence NSApplication
-            // not needed for checking the keyboard input sans the modifier keys
-            // Also, the method used to fetch eventKey earlier would be locale dependent
-            // With earlier implementation, if MenuKey: e EventKey: ा ; if input method
-            // is not U.S. (Devanagari in this case)
-            // With current implementation, EventKey = MenuKey = e irrespective of
-            // input method
-            NSString *eventKey = [sender keyEquivalent];
-            // Apple uses characters from private Unicode range for some of the
-            // keys, so we need to do the same translation here that we do
-            // for the regular key down events
-            if ([eventKey length] == 1) {
-                unichar origChar = [eventKey characterAtIndex:0];
-                unichar newChar =  NsCharToJavaChar(origChar, 0);
-                if (newChar == java_awt_event_KeyEvent_CHAR_UNDEFINED) {
-                    newChar = origChar;
-                }
-                eventKey = [NSString stringWithCharacters: &newChar length: 1];
-            }
-            // The action event can be ignored only if the key window is an AWT window.
-            // Otherwise, the action event is the only notification and must be processed.
-            NSWindow *keyWindow = [NSApp keyWindow];
-            if (keyWindow != nil && [AWTWindow isAWTWindow: keyWindow]) {
-                return;
-            }
-        }
-        
+    } else {
         static JNF_CLASS_CACHE(jc_CMenuItem, "sun/lwawt/macosx/CMenuItem");
         static JNF_MEMBER_CACHE(jm_handleAction, jc_CMenuItem, "handleAction", "(JI)V"); // AWT_THREADING Safe (event)
 
@@ -129,7 +110,6 @@
         JNFCallVoidMethod(env, fPeer, jm_handleAction, UTC(currEvent), javaModifiers); // AWT_THREADING Safe (event)
     }
     JNF_COCOA_EXIT(env);
-    
 }
 
 - (void) setJavaLabel:(NSString *)theLabel shortcut:(NSString *)theKeyEquivalent modifierMask:(jint)modifiers {
