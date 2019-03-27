@@ -258,12 +258,19 @@ class MetaspaceObj {
   static void* _shared_metaspace_top;  // (exclusive) high address
 
  public:
-  bool is_metaspace_object() const;
-  bool is_shared() const {
+
+  // Returns true if the pointer points to a valid MetaspaceObj. A valid
+  // MetaspaceObj is MetaWord-aligned and contained within either
+  // non-shared or shared metaspace.
+  static bool is_valid(const MetaspaceObj* p);
+
+  static bool is_shared(const MetaspaceObj* p) {
     // If no shared metaspace regions are mapped, _shared_metaspace_{base,top} will
     // both be NULL and all values of p will be rejected quickly.
-    return (((void*)this) < _shared_metaspace_top && ((void*)this) >= _shared_metaspace_base);
+    return (((void*)p) < _shared_metaspace_top && ((void*)p) >= _shared_metaspace_base);
   }
+  bool is_shared() const { return MetaspaceObj::is_shared(this); }
+
   void print_address_on(outputStream* st) const;  // nonvirtual address printing
 
   static void set_shared_metaspace_range(void* base, void* top) {

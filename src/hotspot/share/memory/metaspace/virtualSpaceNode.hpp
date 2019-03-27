@@ -60,6 +60,8 @@ class VirtualSpaceNode : public CHeapObj<mtClass> {
   // Convenience functions to access the _virtual_space
   char* low()  const { return virtual_space()->low(); }
   char* high() const { return virtual_space()->high(); }
+  char* low_boundary()  const { return virtual_space()->low_boundary(); }
+  char* high_boundary() const { return virtual_space()->high_boundary(); }
 
   // The first Metachunk will be allocated at the bottom of the
   // VirtualSpace

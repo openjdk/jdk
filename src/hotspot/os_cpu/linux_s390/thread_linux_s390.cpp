@@ -63,7 +63,8 @@ bool JavaThread::pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, 
 
     if (ret_frame.is_interpreted_frame()) {
       frame::z_ijava_state* istate = ret_frame.ijava_state_unchecked();
-       if ((stack_base() >= (address)istate && (address)istate > stack_end()) || !((Method*)(istate->method))->is_metaspace_object()) {
+       if ((stack_base() >= (address)istate && (address)istate > stack_end()) ||
+           MetaspaceObj::is_valid((Method*)(istate->method)) == false) {
          return false;
        }
        uint64_t reg_bcp = uc->uc_mcontext.gregs[13/*Z_BCP*/];
