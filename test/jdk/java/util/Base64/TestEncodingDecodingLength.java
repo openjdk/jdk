@@ -30,7 +30,7 @@ import java.util.Base64;
  * @bug 8210583 8217969 8218265
  * @summary Tests Base64.Encoder.encode and Base64.Decoder.decode
  *          with the large size of input array/buffer
- * @requires os.maxMemory >= 10g
+ * @requires (sun.arch.data.model == "64" & os.maxMemory >= 10g)
  * @run main/othervm -Xms6g -Xmx8g TestEncodingDecodingLength
  *
  */
