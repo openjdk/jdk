@@ -163,7 +163,7 @@ import sun.java2d.SunCompositeContext;
  * </tbody>
  * </table>
  *
- * <h3>Preparing Inputs</h3>
+ * <h2>Preparing Inputs</h2>
  *
  * <p>
  * The {@code AlphaComposite} class defines an additional alpha
@@ -204,7 +204,7 @@ import sun.java2d.SunCompositeContext;
  *      <em>C<sub>d</sub></em> = <em>C<sub>dr</sub></em> * <em>A<sub>d</sub></em>    (if destination is not premultiplied)
  *      <em>C<sub>d</sub></em> = <em>C<sub>dr</sub></em>         (if destination is premultiplied) </pre>
  *
- * <h3>Applying the Blending Equation</h3>
+ * <h2>Applying the Blending Equation</h2>
  *
  * <p>
  * The adjusted <em>A<sub>s</sub></em>, <em>A<sub>d</sub></em>,
@@ -213,7 +213,7 @@ import sun.java2d.SunCompositeContext;
  * <em>F<sub>s</sub></em> and <em>F<sub>d</sub></em> and then the resulting
  * premultiplied components <em>A<sub>r</sub></em> and <em>C<sub>r</sub></em>.
  *
- * <h3>Preparing Results</h3>
+ * <h2>Preparing Results</h2>
  *
  * <p>
  * The results only need to be adjusted if they are to be stored
@@ -230,7 +230,7 @@ import sun.java2d.SunCompositeContext;
  * by zero" and the color components are left as
  * all zeros.
  *
- * <h3>Performance Considerations</h3>
+ * <h2>Performance Considerations</h2>
  *
  * <p>
  * For performance reasons, it is preferable that
@@ -243,7 +243,7 @@ import sun.java2d.SunCompositeContext;
  * appropriate conversions are performed before and after the compositing
  * operation.
  *
- * <h3><a id="caveats">Implementation Caveats</a></h3>
+ * <h2><a id="caveats">Implementation Caveats</a></h2>
  *
  * <ul>
  * <li>

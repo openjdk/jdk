@@ -34,7 +34,7 @@
  *   printed.
  * </ul>
  *
- * <h3>Print Service Discovery</h3>
+ * <h2>Print Service Discovery</h2>
  * An application invokes the static methods of the abstract class
  * {@link javax.print.PrintServiceLookup PrintServiceLookup} to locate print
  * services that have the capabilities to satisfy the application's print
@@ -48,7 +48,7 @@
  * dynamically install these {@code PrintServiceLookup} implementations using
  * the {@link java.util.ServiceLoader} facility.
  *
- * <h3>Attribute Definitions</h3>
+ * <h2>Attribute Definitions</h2>
  * The {@link javax.print.attribute} and {@link javax.print.attribute.standard}
  * packages define print attributes, which describe the capabilities of a print
  * service, specify the requirements of a print job, and track the progress of a
@@ -65,7 +65,7 @@
  * capabilities, such as: resolution, copies, media sizes, job priority, and
  * page ranges.
  *
- * <h3>Document Type Specification</h3>
+ * <h2>Document Type Specification</h2>
  * The {@link javax.print.DocFlavor DocFlavor} class represents the print data
  * format, such as JPEG or PostScript. A {@code DocFlavor} object consists of a
  * MIME type, which describes the format, and a document representation class
@@ -74,7 +74,7 @@
  * find printers that can print the document type specified by the
  * {@code DocFlavor} and have the capabilities specified by the attribute set.
  *
- * <h3>Using the API</h3>
+ * <h2>Using the API</h2>
  * A typical application using the Java Print Service API performs these steps
  * to process a print request:
  * <ol>

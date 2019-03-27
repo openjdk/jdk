@@ -135,7 +135,7 @@ import static sun.java2d.pipe.hw.ExtendedBufferCapabilities.VSyncType.VSYNC_ON;
  * validated afterwards by means of the {@link Container#validate()} method
  * invoked on the top-most invalid container of the hierarchy.
  *
- * <h3>Serialization</h3>
+ * <h2>Serialization</h2>
  * It is important to note that only AWT listeners which conform
  * to the {@code Serializable} protocol will be saved when
  * the object is stored.  If an AWT object has listeners that

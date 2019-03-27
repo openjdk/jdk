@@ -37,8 +37,8 @@
  * interfaces, and 6 Java programming language classes. These are described
  * below.
  *
- * <h3><a id="Accessible"></a><a href="Accessible.html">Interface
- * Accessible</a></h3>
+ * <h2><a id="Accessible"></a><a href="Accessible.html">Interface
+ * Accessible</a></h2>
  * <a href="Accessible.html">Interface Accessible</a> is the main interface of
  * the Java Accessibility API. All components that support the Java
  * Accessibility API must implement this interface. It contains a single method,
@@ -48,8 +48,8 @@
  * object that is part of the user interface of a Java application, if that
  * program is to be compatible with assistive technologies.
  *
- * <h3><a id="AccessibleContext"></a><a href="AccessibleContext.html">Class
- * AccessibleContext</a></h3>
+ * <h2><a id="AccessibleContext"></a><a href="AccessibleContext.html">Class
+ * AccessibleContext</a></h2>
  * <a href="AccessibleContext.html">AccessibleContext</a> represents the minimum
  * information all accessible objects return and is obtained by calling the
  * {@code getAccessibleContext} method on an object that implements the
@@ -108,8 +108,8 @@
  *     called on an AccessibleContext.</li>
  * </ul>
  *
- * <h3><a id="AccessibleRole"></a><a href="AccessibleRole.html">Class
- * AccessibleRole</a></h3>
+ * <h2><a id="AccessibleRole"></a><a href="AccessibleRole.html">Class
+ * AccessibleRole</a></h2>
  * This class encapsulates the Accessible object's role in the user interface
  * and is obtained by calling the {@code getAccessibleRole} method on an
  * <a href="#AccessibleContext">AccessibleContext</a>. Accessible roles include
@@ -123,8 +123,8 @@
  * programmer-defined roles can be added in the future without needing to modify
  * the base class.
  *
- * <h3><a id="AccessibleState"></a><a href="AccessibleState.html">Class
- * AccessibleState</a></h3>
+ * <h2><a id="AccessibleState"></a><a href="AccessibleState.html">Class
+ * AccessibleState</a></h2>
  * This class encapsulates a particular state of the Accessible object.
  * Accessible states include things like "Armed", "Busy", "Checked", "Focused",
  * etc. These roles are identified by the constants in this class such as
@@ -142,8 +142,8 @@
  * additional, programmer-defined roles can be added in the future without
  * needing to modify the base class.
  *
- * <h3><a id="AccessibleStateSet"></a><a href="AccessibleStateSet.html">Class
- * AccessibleStateSet</a></h3>
+ * <h2><a id="AccessibleStateSet"></a><a href="AccessibleStateSet.html">Class
+ * AccessibleStateSet</a></h2>
  * This class encapsulates a collection of states of the Accessible object and
  * is obtained by calling the {@code getAccessibleStateSet} method on an
  * <a href="#AccessibleContext">AccessibleContext</a>. Since an object might
@@ -152,8 +152,8 @@
  * class provide for retrieving the individual
  * <a href="#AccessibleState">AccessibleStates</a> on the state set.
  *
- * <h3><a id="AccessibleBundle"></a><a href="AccessibleBundle.html">Class
- * AccessibleBundle</a></h3>
+ * <h2><a id="AccessibleBundle"></a><a href="AccessibleBundle.html">Class
+ * AccessibleBundle</a></h2>
  * This class is used to maintain a strongly typed enumeration. It is the super
  * class of both the <a href="#AccessibleRole">AccessibleRole</a> and
  * <a href="#AccessibleState">AccessibleState</a> classes. Programmers normally
@@ -161,8 +161,8 @@
  * <a href="#AccessibleRole">AccessibleRole</a> and
  * <a href="#AccessibleState">AccessibleState</a> classes.
  *
- * <h3><a id="AccessibleAction"></a><a href="AccessibleAction.html">Interface
- * AccessibleAction</a></h3>
+ * <h2><a id="AccessibleAction"></a><a href="AccessibleAction.html">Interface
+ * AccessibleAction</a></h2>
  * The <a href="AccessibleAction.html">AccessibleAction</a> interface should be
  * supported by any object that can perform one or more actions. This interface
  * provides the standard mechanism for an assistive technology to determine what
@@ -177,8 +177,8 @@
  * <a href="#AccessibleContext">AccessibleContext</a>. If the return value is
  * not {@code null}, the object supports this interface.
  *
- * <h3> <a id="AccessibleComponent"></a><a href="AccessibleComponent.html">
- * Interface AccessibleComponent</a></h3>
+ * <h2> <a id="AccessibleComponent"></a><a href="AccessibleComponent.html">
+ * Interface AccessibleComponent</a></h2>
  * The <a href="AccessibleComponent.html">AccessibleComponent</a> interface
  * should be supported by any object that is rendered on the screen. This
  * interface provides the standard mechanism for an assistive technology to
@@ -190,8 +190,8 @@
  * <a href="#AccessibleContext">AccessibleContext</a>. If the return value is
  * not {@code null}, the object supports this interface.
  *
- * <h3><a id="AccessibleSelection"></a><a href="AccessibleSelection.html">
- * Interface AccessibleSelection</a></h3>
+ * <h2><a id="AccessibleSelection"></a><a href="AccessibleSelection.html">
+ * Interface AccessibleSelection</a></h2>
  * The <a href="AccessibleSelection.html">AccessibleSelection</a> interface
  * provides the standard mechanism for an assistive technology to determine what
  * the current selected children are, as well as modify the selection set. Any
@@ -206,8 +206,8 @@
  * <a href="#AccessibleContext">AccessibleContext</a>. If the return value is
  * not {@code null}, the object supports this interface.
  *
- * <h3><a id="AccessibleText"></a><a href="AccessibleText.html">Interface
- * AccessibleText</a></h3>
+ * <h2><a id="AccessibleText"></a><a href="AccessibleText.html">Interface
+ * AccessibleText</a></h2>
  * Interface <a href="AccessibleText.html">AccessibleText</a> is the contract
  * for making rich, editable text Accessible. Not all text displayed on the
  * screen is rich and editable (e.g. text contained in buttons, labels, menus,
@@ -230,8 +230,8 @@
  * <a href="#AccessibleContext">AccessibleContext</a>. If the return value is
  * not {@code null}, the object supports this interface.
  *
- * <h3><a id="AccessibleHypertext"></a> <a href="AccessibleHypertext.html">
- * Interface AccessibleHypertext</a></h3>
+ * <h2><a id="AccessibleHypertext"></a> <a href="AccessibleHypertext.html">
+ * Interface AccessibleHypertext</a></h2>
  * The <a href="AccessibleHypertext.html">AccessibleHypertext</a> interface
  * should be supported by any object that presents hypertext information on the
  * display. This interface provides the standard mechanism for an assistive
@@ -246,16 +246,16 @@
  * class which extends AccessibleHypertext, then that object supports
  * AccessibleHypertext.
  *
- * <h3><a id="AccessibleHyperlink"></a><a href="AccessibleHyperlink.html">
- * Interface AccessibleHyperlink</a></h3>
+ * <h2><a id="AccessibleHyperlink"></a><a href="AccessibleHyperlink.html">
+ * Interface AccessibleHyperlink</a></h2>
  * An object that is a hyperlink should support the
  * <a href="AccessibleHyperlink.html">AccessibleHyperlink</a> interface.&nbsp;
  * An object that implements this interface will be returned by calling the
  * getLink method on an <a href="#AccessibleHypertext">AccessibleHypertext</a>
  * object.
  *
- * <h3><a id="AccessibleValue"></a><a href="AccessibleValue.html">Interface
- * AccessibleValue</a></h3>
+ * <h2><a id="AccessibleValue"></a><a href="AccessibleValue.html">Interface
+ * AccessibleValue</a></h2>
  * The <a href="AccessibleValue.html">AccessibleValue</a> interface should be
  * supported by any object that supports a numerical value (e.g., a scroll bar).
  * This interface provides the standard mechanism for an assistive technology to

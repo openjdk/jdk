@@ -3050,9 +3050,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      *   of elements with a size, preferred size, maximum size and minimum size
      *   to have its elements manipulated by the algorithm.
      *
-     * <H3> Distributing the delta </H3>
+     * <H4> Distributing the delta </H4>
      *
-     * <H4> Overview </H4>
+     * <H5> Overview </H5>
      * <P>
      * Call "DELTA" the difference between the target size and the
      * sum of the preferred sizes of the elements in r. The individual
@@ -3061,7 +3061,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * how far each preferred size is from its limiting bound (minimum or
      * maximum).
      *
-     * <H4>Definition</H4>
+     * <H5>Definition</H5>
      * <P>
      * Call the individual constraints min[i], max[i], and pref[i].
      * <p>
@@ -3093,7 +3093,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * k, towards the total minimum or maximum and that percentage guarantees
      * accommodation of the required space, DELTA.
      *
-     * <H4>Details</H4>
+     * <H5>Details</H5>
      * <P>
      * Naive evaluation of the formulae presented here would be subject to
      * the aggregated rounding errors caused by doing this operation in finite
@@ -3104,7 +3104,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * <code>targetSize</code>, and does so by spreading the rounding
      * errors evenly over the given elements.
      *
-     * <H4>When the MAX and MIN bounds are hit</H4>
+     * <H5>When the MAX and MIN bounds are hit</H5>
      * <P>
      * When <code>targetSize</code> is outside the [MIN, MAX] range,
      * the algorithm sets all sizes to their appropriate limiting value

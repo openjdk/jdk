@@ -27,7 +27,7 @@
  * Provides classes and interfaces that describe the types of Java&trade; Print
  * Service attributes and how they can be collected into attribute sets.
  *
- * <h3>What is an Attribute?</h3>
+ * <h2>What is an Attribute?</h2>
  * When setting up a print job, a client specifies two things: <b>print data</b>
  * and <b>processing instructions.</b> The print data is the actual content to
  * be printed. The processing instructions tell the printer how to print the
@@ -60,7 +60,7 @@
  * instructions as descriptive items provides more flexibility for implementing
  * print jobs.
  *
- * <h4>Attribute Categories and Values</h4>
+ * <h3>Attribute Categories and Values</h3>
  * Each printer has a set of capabilities, such as the ability to print on
  * different paper sizes or the ability to print more than one copy. Each of the
  * capabilities has a range of values. For example, a printer's orientation
@@ -80,7 +80,7 @@
  * attribute category, and the {@code Copies} instance represents the attribute
  * value.
  *
- * <h4><a id="role"></a>Attribute Roles</h4>
+ * <h3><a id="role"></a>Attribute Roles</h3>
  * When submitting a print job to a printer, the client provides the attributes
  * describing the characteristics of the print data, such as the document name,
  * and how the print data should be printed, such as double-sided, five copies.
@@ -128,7 +128,7 @@
  * conceptually separate from the generic apparatus defined in package
  * {@code javax.print.attribute}.
  *
- * <h3>Attribute Sets</h3>
+ * <h2>Attribute Sets</h2>
  * A client usually needs to provide more than one processing instruction when
  * submitting a print job. For example, the client might need to specify a media
  * size of A4 and a landscape orientation. To send more than one processing
@@ -201,7 +201,7 @@
  * restriction that the attribute set is only allowed to contain the
  * corresponding kind of attribute.
  *
- * <h3>Attribute Class Design</h3>
+ * <h2>Attribute Class Design</h2>
  * An attribute value is a small, atomic data item, such as an integer or an
  * enumerated value. The Java Print Service API does not use primitive data
  * types, such as int, to represent attribute values for these reasons:
@@ -295,7 +295,7 @@
  * references can be passed around freely. To get a different attribute value,
  * construct a different attribute object.
  *
- * <h3>Attribute Vendors</h3>
+ * <h2>Attribute Vendors</h2>
  * The Java Print Service API is designed so that vendors can:
  * <ul>
  *   <li>define new vendor-specific values for any standard attribute defined in
@@ -321,7 +321,7 @@
  * a new one. The new vendor-defined attribute can be used wherever an
  * {@code Attribute} is used, such as in an {@code AttributeSet}.
  *
- * <h3>Using Attributes</h3>
+ * <h2>Using Attributes</h2>
  * A typical printing application uses the {@code PrintRequestAttributeSet}
  * because print-request attributes are the types of attributes that client
  * usually specifies. This example demonstrates creating an attribute set of

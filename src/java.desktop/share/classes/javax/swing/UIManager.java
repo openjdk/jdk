@@ -70,7 +70,7 @@ import sun.awt.AWTAccessor;
  * are notified when the look and feel changes, look and feel defaults, and
  * convenience methods for obtaining various default values.
  *
- * <h3>Specifying the look and feel</h3>
+ * <h2>Specifying the look and feel</h2>
  *
  * The look and feel can be specified in two distinct ways: by
  * specifying the fully qualified name of the class for the look and
@@ -94,7 +94,7 @@ import sun.awt.AWTAccessor;
  * unspecified. It is very possible to receive unexpected exceptions,
  * painting problems, or worse.
  *
- * <h3>Default look and feel</h3>
+ * <h2>Default look and feel</h2>
  *
  * The class used for the default look and feel is chosen in the following
  * manner:
@@ -114,7 +114,7 @@ import sun.awt.AWTAccessor;
  *   <li>Otherwise use the cross platform look and feel.
  * </ol>
  *
- * <h3>Defaults</h3>
+ * <h2>Defaults</h2>
  *
  * {@code UIManager} manages three sets of {@code UIDefaults}. In order, they
  * are:

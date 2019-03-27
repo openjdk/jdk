@@ -82,19 +82,19 @@
  * from the above documents. The above authors' contribution to the API is
  * gratefully acknowledged.
  *
- * <h3>Attribute Organization</h3>
+ * <h2>Attribute Organization</h2>
  * There are five kinds of printing attributes: doc attributes, print request
  * attributes, print job attributes, print service attributes, and
  * supported-values attributes.
  *
- * <h4>Doc Attributes</h4>
+ * <h3>Doc Attributes</h3>
  * Doc attributes specify the characteristics of an individual doc and the print
  * job settings to be applied to an individual doc. A doc attribute class
  * implements interface <a href="../DocAttribute.html">DocAttribute</a>. A doc
  * attribute can appear in a <a href="../DocAttributeSet.html">
  * DocAttributeSet</a>.
  *
- * <h4>Print Request Attributes</h4>
+ * <h3>Print Request Attributes</h3>
  * Print request attributes specify the settings to be applied to a whole print
  * job and to all the docs in the print job. A print request attribute class
  * implements interface <a href="../PrintRequestAttribute.html">
@@ -114,7 +114,7 @@
  * the doc level overrides an attribute in the same category specified at the
  * Print Request level.
  *
- * <h4>Print Job Attributes</h4>
+ * <h3>Print Job Attributes</h3>
  * Print job attributes report the status of a Print Job. A print job attribute
  * class implements interface <a href="../PrintJobAttribute.html">
  * PrintJobAttribute</a>. A print job attribute can appear in a
@@ -127,14 +127,14 @@
  * attributes but not print request attributes; the print service itself adds
  * these attributes to the Print Job's attribute set.
  *
- * <h4>Print Service Attributes</h4>
+ * <h3>Print Service Attributes</h3>
  * Print service attributes report the status of a print service. A print
  * service attribute class implements interface
  * <a href="../PrintServiceAttribute.html">PrintServiceAttribute</a>. A print
  * service attribute can appear in a <a href="../PrintServiceAttributeSet.html">
  * PrintServiceAttributeSet</a>.
  *
- * <h4>Supported-Values Attributes</h4>
+ * <h3>Supported-Values Attributes</h3>
  * A supported-value attribute indicates the legal values for another attribute
  * that a print service supports. A supported-values attribute class implements
  * interface <a href="../SupportedValuesAttribute.html">
@@ -142,7 +142,7 @@
  * appear in attribute sets, so there is no restricted
  * <a href="../AttributeSet.html">AttributeSet</a> subinterface for them.
  *
- * <h4>Attribute Table</h4>
+ * <h3>Attribute Table</h3>
  * The table below lists all the printing attributes. The table shows the
  * tagging interfaces each attribute class implements in addition to interface
  * <a href="../Attribute.html"> Attribute</a>, thus indicating how each

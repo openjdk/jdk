@@ -69,7 +69,7 @@ import java.beans.*;
  * are desired, and use simple <code>ActionListener</code>s elsewhere.
  * <br>
  *
- * <h3><a id="buttonActions"></a>Swing Components Supporting <code>Action</code></h3>
+ * <h2><a id="buttonActions"></a>Swing Components Supporting <code>Action</code></h2>
  * <p>
  * Many of Swing's components have an <code>Action</code> property.  When
  * an <code>Action</code> is set on a component, the following things

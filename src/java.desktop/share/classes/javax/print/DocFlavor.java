@@ -60,7 +60,7 @@ import java.io.Serializable;
  * class, from which the {@code DocPrintJob} then obtains the actual print data.
  *
  * <hr>
- * <h3>Client Formatted Print Data</h3>
+ * <h2>Client Formatted Print Data</h2>
  * There are two broad categories of print data, client formatted print data and
  * service formatted print data.
  * <p>
@@ -120,7 +120,7 @@ import java.io.Serializable;
  * </ul>
  *
  * <hr>
- * <h3>Default and Platform Encodings</h3>
+ * <h2>Default and Platform Encodings</h2>
  * For byte print data where the doc flavor's MIME type does not include a
  * {@code charset} parameter, the Java Print Service instance assumes the
  * US-ASCII character set by default. This is in accordance with
@@ -161,7 +161,7 @@ import java.io.Serializable;
  * the Java platform.
  *
  * <hr>
- * <h3>Recommended DocFlavors</h3>
+ * <h2>Recommended DocFlavors</h2>
  * The Java Print Service API does not define any mandatorily supported
  * {@code DocFlavors}. However, here are some examples of MIME types that a Java
  * Print Service instance might support for client formatted print data. Nested
@@ -261,7 +261,7 @@ import java.io.Serializable;
  * </ul>
  *
  * <hr>
- * <h3>Service Formatted Print Data</h3>
+ * <h2>Service Formatted Print Data</h2>
  * For <b>service formatted print data</b>, the Java Print Service instance
  * determines the print data format. The doc flavor's representation class
  * denotes an interface whose methods the {@code DocPrintJob} invokes to
@@ -296,7 +296,7 @@ import java.io.Serializable;
  * </ul>
  *
  * <hr>
- * <h3>Pre-defined Doc Flavors</h3>
+ * <h2>Pre-defined Doc Flavors</h2>
  * A Java Print Service instance is not <b><i>required</i></b> to support the
  * following print data formats and print data representation classes. In fact,
  * a developer using this class should <b>never</b> assume that a particular
@@ -342,7 +342,7 @@ import java.io.Serializable;
  * The client must itself perform all plain text print data formatting not
  * addressed by the above requirements.
  *
- * <h3>Design Rationale</h3>
+ * <h2>Design Rationale</h2>
  * Class {@code DocFlavor} in package {@code javax.print} is similar to class
  * {@link java.awt.datatransfer.DataFlavor}. Class {@code DataFlavor} is not
  * used in the Java Print Service (JPS) API for three reasons which are all

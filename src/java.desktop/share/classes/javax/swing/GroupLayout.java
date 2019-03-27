@@ -2377,7 +2377,7 @@ public class GroupLayout implements LayoutManager2 {
      * {@code ParallelGroup} aligns its children in
      * four possible ways: along the baseline, centered, anchored to the
      * leading edge, or anchored to the trailing edge.
-     * <h3>Baseline</h3>
+     * <h2>Baseline</h2>
      * A {@code ParallelGroup} that aligns its children along the
      * baseline must first decide where the baseline is
      * anchored. The baseline can either be anchored to the top, or
@@ -2427,7 +2427,7 @@ public class GroupLayout implements LayoutManager2 {
      * ways: centered, anchored to the leading edge, or anchored to the
      * trailing edge.
      *
-     * <h3>Non-baseline {@code ParallelGroup}</h3>
+     * <h2>Non-baseline {@code ParallelGroup}</h2>
      * {@code ParallelGroup}s created with an alignment other than
      * {@code BASELINE} align elements that are smaller than the size
      * of the group in one of three ways: centered, anchored to the

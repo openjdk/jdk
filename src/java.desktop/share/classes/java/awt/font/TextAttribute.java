@@ -67,7 +67,7 @@ import jdk.internal.access.SharedSecrets;
  *   <LI>a description of the effect.
  * </UL>
  *
- * <H3>Values</H3>
+ * <H2>Values</H2>
  * <UL>
  *   <LI>The values of attributes must always be immutable.
  *   <LI>Where value limitations are given, any value outside of that
@@ -95,7 +95,7 @@ import jdk.internal.access.SharedSecrets;
  *
  * </UL>
  *
- * <h4>Summary of attributes</h4>
+ * <h3>Summary of attributes</h3>
  *
  * <table style="width:95%;margin: 0px auto" class="striped">
  * <caption>Key, value type, principal constants, and default value behavior of

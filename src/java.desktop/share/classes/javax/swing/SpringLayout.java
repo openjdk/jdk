@@ -128,9 +128,9 @@ import java.util.*;
  * the edges of components from different containers (either internal or
  * external) is undefined.
  *
- * <h3>
+ * <h2>
  * SpringLayout vs. Other Layout Managers
- * </h3>
+ * </h2>
  *
  * <blockquote>
  * <hr>

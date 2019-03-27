@@ -46,7 +46,7 @@ import java.beans.ConstructorProperties;
  *      [ y'] = [  m10  m11  m12  ] [ y ] = [ m10x + m11y + m12 ]
  *      [ 1 ]   [   0    0    1   ] [ 1 ]   [         1         ]
  * </pre>
- * <h3><a id="quadrantapproximation">Handling 90-Degree Rotations</a></h3>
+ * <h2><a id="quadrantapproximation">Handling 90-Degree Rotations</a></h2>
  * <p>
  * In some variations of the {@code rotate} methods in the
  * {@code AffineTransform} class, a double-precision argument

@@ -76,7 +76,7 @@ package javax.swing;
  * could be just as valid.
  *
  *
- * <h3>Implementation Notes</h3>
+ * <h2>Implementation Notes</h2>
  *
  * Normally when storing the size and position of entries,
  * one would choose between

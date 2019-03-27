@@ -42,7 +42,7 @@ import sun.swing.SwingUtilities2;
  * All colors returned by {@code DefaultMetalTheme} are completely
  * opaque.
  *
- * <h3><a id="fontStyle"></a>Font Style</h3>
+ * <h2><a id="fontStyle"></a>Font Style</h2>
  *
  * {@code DefaultMetalTheme} uses bold fonts for many controls.  To make all
  * controls (with the exception of the internal frame title bars and
