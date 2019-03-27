@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary This exercises String#repeat patterns and limits.
- * @run main/othervm -Xmx4G StringRepeat
+ * @run main/othervm -Xmx2g StringRepeat
  */
 
 import java.nio.CharBuffer;
