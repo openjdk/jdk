@@ -72,10 +72,12 @@ public final class PropertyInfo {
     }
 
     private boolean initialize() {
+        boolean isInitedToIsGetter = false;
         if (this.read != null) {
             this.type = this.read.type;
+            isInitedToIsGetter = isPrefix(this.read.method.getName(), "is");
         }
-        if (this.readList != null) {
+        if (!isInitedToIsGetter && this.readList != null) {
             for (MethodInfo info : this.readList) {
                 if ((this.read == null) || this.read.type.isAssignableFrom(info.type)) {
                     this.read = info;
