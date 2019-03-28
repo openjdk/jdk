@@ -48,4 +48,6 @@ inline void OrderAccess::fence() {
   __asm__ volatile ("membar  #StoreLoad" : : : "memory");
 }
 
+inline void OrderAccess::cross_modify_fence() { }
+
 #endif // OS_CPU_LINUX_SPARC_ORDERACCESS_LINUX_SPARC_HPP

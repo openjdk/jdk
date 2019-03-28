@@ -281,7 +281,7 @@ void HandshakeState::set_operation(JavaThread* target, HandshakeOperation* op) {
 
 void HandshakeState::clear_handshake(JavaThread* target) {
   _operation = NULL;
-  SafepointMechanism::disarm_local_poll_release(target);
+  SafepointMechanism::disarm_if_needed(target, true /* release */);
 }
 
 void HandshakeState::process_self_inner(JavaThread* thread) {

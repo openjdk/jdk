@@ -477,7 +477,8 @@ void SafepointSynchronize::disarm_safepoint() {
       assert(!cur_state->is_running(), "Thread not suspended at safepoint");
       cur_state->restart(); // TSS _running
       assert(cur_state->is_running(), "safepoint state has not been reset");
-      SafepointMechanism::disarm_local_poll(current);
+
+      SafepointMechanism::disarm_if_needed(current, false /* NO release */);
     }
   } // ~JavaThreadIteratorWithHandle
 
@@ -716,8 +717,6 @@ static bool safepoint_safe_with(JavaThread *thread, JavaThreadState state) {
 }
 
 bool SafepointSynchronize::handshake_safe(JavaThread *thread) {
-  // The polls must be armed otherwise the safe state can change to unsafe at any time.
-  assert(SafepointMechanism::should_block(thread), "Must be armed");
   // This function must be called with the Threads_lock held so an externally
   // suspended thread cannot be resumed thus it is safe.
   assert(Threads_lock->owned_by_self() && Thread::current()->is_VM_thread(),
@@ -851,6 +850,9 @@ void SafepointSynchronize::block(JavaThread *thread) {
     thread->handle_special_runtime_exit_condition(
       !thread->is_at_poll_safepoint() && (state != _thread_in_native_trans));
   }
+
+  // cross_modify_fence is done by SafepointMechanism::block_if_requested_slow
+  // which is the only caller here.
 }
 
 // ------------------------------------------------------------------------------------------------------

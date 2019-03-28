@@ -82,5 +82,6 @@ inline void OrderAccess::acquire()    { LIGHT_MEM_BARRIER; }
 inline void OrderAccess::release()    { LIGHT_MEM_BARRIER; }
 
 inline void OrderAccess::fence()      { FULL_MEM_BARRIER;  }
+inline void OrderAccess::cross_modify_fence()            { }
 
 #endif // OS_CPU_LINUX_ZERO_ORDERACCESS_LINUX_ZERO_HPP

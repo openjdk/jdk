@@ -54,4 +54,9 @@ inline void OrderAccess::fence() {
   compiler_barrier();
 }
 
+inline void OrderAccess::cross_modify_fence() {
+  int idx = 0;
+  __asm__ volatile ("cpuid " : "+a" (idx) : : "ebx", "ecx", "edx", "memory");
+}
+
 #endif // OS_CPU_SOLARIS_X86_ORDERACCESS_SOLARIS_X86_HPP
