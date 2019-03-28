@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,13 @@
 #include <jni.h>
 
 JNIEXPORT void JNICALL
-Java_NoClassDefFoundMsg_callDefineClass(JNIEnv *env, jclass klass, jstring className) {
+Java_NoClassDefFoundErrorTest_callDefineClass(JNIEnv *env, jclass klass, jstring className) {
     const char *c_name = (*env)->GetStringUTFChars(env, className, NULL);
     (*env)->DefineClass(env, c_name, NULL, NULL, 0);
 }
 
 JNIEXPORT void JNICALL
-Java_NoClassDefFoundMsg_callFindClass(JNIEnv *env, jclass klass, jstring className) {
+Java_NoClassDefFoundErrorTest_callFindClass(JNIEnv *env, jclass klass, jstring className) {
     const char *c_name;
     jclass cls;
     if (className == NULL) {

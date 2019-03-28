@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,18 +28,18 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.compiler
- * @run main/native NoClassDefFoundMsg
+ * @run main/native NoClassDefFoundErrorTest
  */
 
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
 import jdk.internal.misc.Unsafe;
 
-public class NoClassDefFoundMsg {
+public class NoClassDefFoundErrorTest {
 
     static native void callDefineClass(String className);
     static native void callFindClass(String className);
     static {
-        System.loadLibrary("NoClassDefFoundMsg");
+        System.loadLibrary("NoClassDefFoundErrorTest");
     }
 
 
