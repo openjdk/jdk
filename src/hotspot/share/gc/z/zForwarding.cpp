@@ -58,7 +58,7 @@ void ZForwarding::verify() const {
 
   for (ZForwardingCursor i = 0; i < _entries.length(); i++) {
     const ZForwardingEntry entry = at(&i);
-    if (entry.is_empty()) {
+    if (!entry.populated()) {
       // Skip empty entries
       continue;
     }
