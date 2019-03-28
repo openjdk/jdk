@@ -1506,7 +1506,7 @@ void WatcherThread::run() {
   {
     MutexLockerEx mu(Terminator_lock, Mutex::_no_safepoint_check_flag);
     _watcher_thread = NULL;
-    Terminator_lock->notify();
+    Terminator_lock->notify_all();
   }
 }
 
