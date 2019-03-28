@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ static int methodUnloadCount = 0;
 
 #define NAME_LENGTH 50
 const void *plist = NULL;
+static volatile int callbacksEnabled = NSK_TRUE;
 
 typedef struct nsk_jvmti_CompiledMethodIDStruct {
     jmethodID method;
@@ -63,8 +64,15 @@ cbCompiledMethodLoad(jvmtiEnv *jvmti_env, jmethodID method, jint code_size,
     char *sign;
     char *genc;
 
+    jvmti->RawMonitorEnter(syncLock);
+    if (!callbacksEnabled) {
+        jvmti->RawMonitorExit(syncLock);
+        return;
+    }
+
     if (!NSK_JVMTI_VERIFY(jvmti_env->GetMethodName(method, &name, &sign, &genc))) {
         nsk_jvmti_setFailStatus();
+        jvmti->RawMonitorExit(syncLock);
         return;
     }
 
@@ -105,6 +113,9 @@ cbCompiledMethodLoad(jvmtiEnv *jvmti_env, jmethodID method, jint code_size,
         if (!NSK_JVMTI_VERIFY(jvmti_env->Deallocate((unsigned char*)genc))) {
             nsk_jvmti_setFailStatus();
         }
+
+    jvmti->RawMonitorExit(syncLock);
+
 }
 
 void JNICALL
@@ -113,7 +124,13 @@ cbCompiledMethodUnload(jvmtiEnv *jvmti_env, jmethodID method,
 
     nsk_jvmti_CompiledMethod *rec;
 
+    jvmti->RawMonitorEnter(syncLock);
+    if (!callbacksEnabled) {
+        jvmti->RawMonitorExit(syncLock);
+        return;
+    }
     int count = nsk_list_getCount(plist);
+
     int i;
 
     for (i = 0; i < count; i ++) {
@@ -122,21 +139,16 @@ cbCompiledMethodUnload(jvmtiEnv *jvmti_env, jmethodID method,
             NSK_DISPLAY0(">>>JVMTI_EVENT_COMPILED_METHOD_UNLOAD received for\n");
             NSK_DISPLAY1("\t\tmethod: %s\n", rec->name);
 
-            if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorEnter(syncLock)))
-                nsk_jvmti_setFailStatus();
-
             methodUnloadCount++;
-
-            if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorExit(syncLock)))
-                nsk_jvmti_setFailStatus();
 
             free(rec);
             nsk_list_remove(plist, i);
+            jvmti->RawMonitorExit(syncLock);
             return;
         }
 
     }
-
+    jvmti->RawMonitorExit(syncLock);
 }
 
 /* ============================================================================= */
@@ -210,6 +222,9 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* agentJNI, void* arg) {
             return;
     }
 
+    jvmti->RawMonitorEnter(syncLock);
+    callbacksEnabled = NSK_FALSE;
+
     {
         int count = nsk_list_getCount(plist);
 
@@ -220,6 +235,8 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* agentJNI, void* arg) {
         }
 
     }
+
+    jvmti->RawMonitorExit(syncLock);
 
     if (!NSK_JVMTI_VERIFY(jvmti->DestroyRawMonitor(syncLock)))
         nsk_jvmti_setFailStatus();

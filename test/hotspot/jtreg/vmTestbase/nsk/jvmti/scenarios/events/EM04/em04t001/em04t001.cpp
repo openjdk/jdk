@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@
 #include "jvmti_tools.h"
 #include "JVMTITools.h"
 #include "nsk_list.h"
-#include "nsk_mutex.h"
 
 extern "C" {
 
@@ -49,8 +48,8 @@ typedef struct nsk_jvmti_DCG_paramsStruct {
     int sign;
 } nsk_jvmti_DCG_params;
 
-static MUTEX* mutex = NULL;
-
+static jrawMonitorID syncLock = NULL;
+static volatile int callbacksEnabled = NSK_TRUE;
 /* ============================================================================= */
 
 /* callbacks */
@@ -59,6 +58,12 @@ cbDynamicCodeGenerated1(jvmtiEnv *jvmti_env, const char *name,
                             const void *address, jint length) {
     nsk_jvmti_DCG_params *rec;
     int b;
+
+    jvmti->RawMonitorEnter(syncLock);
+    if (!callbacksEnabled) {
+        jvmti->RawMonitorExit(syncLock);
+        return;
+    }
 
     rec = (nsk_jvmti_DCG_params *)malloc(sizeof(nsk_jvmti_DCG_params));
     strncpy(rec->name, name, NAME_LENGTH);
@@ -69,16 +74,13 @@ cbDynamicCodeGenerated1(jvmtiEnv *jvmti_env, const char *name,
 
     NSK_DISPLAY3("received: 0x%p %7d %s\n", rec->address, rec->length, rec->name);
 
-    MUTEX_acquire(mutex);
-
     b = NSK_VERIFY(nsk_list_add(plist, rec));
-
-    MUTEX_release(mutex);
 
     if (!b) {
         nsk_jvmti_setFailStatus();
         free((void *)rec);
     }
+    jvmti->RawMonitorExit(syncLock);
 }
 
 void JNICALL
@@ -87,6 +89,13 @@ cbDynamicCodeGenerated2(jvmtiEnv *jvmti_env, const char *name,
 
     int i;
     nsk_jvmti_DCG_params *rec;
+
+    jvmti->RawMonitorEnter(syncLock);
+    if (!callbacksEnabled) {
+        jvmti->RawMonitorExit(syncLock);
+        return;
+    }
+
     int count = nsk_list_getCount(plist);
     int compLength = NAME_LENGTH - 1;
 
@@ -99,11 +108,13 @@ cbDynamicCodeGenerated2(jvmtiEnv *jvmti_env, const char *name,
             if (strncmp(rec->name, name, compLength) != 0) {
                 NSK_DISPLAY2("\t<%s> was renamed to <%s>\n", rec->name, name);
             }
+            jvmti->RawMonitorExit(syncLock);
             return;
         }
 
     }
     NSK_DISPLAY3("NOT FOUND: 0x%p %7d %s\n", address, length, name);
+    jvmti->RawMonitorExit(syncLock);
 
 }
 
@@ -151,6 +162,9 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* agentJNI, void* arg) {
     if (!NSK_JVMTI_VERIFY(jvmti->GenerateEvents(JVMTI_EVENT_DYNAMIC_CODE_GENERATED)))
         nsk_jvmti_setFailStatus();
 
+    jvmti->RawMonitorEnter(syncLock);
+    callbacksEnabled = NSK_FALSE;
+
     {
         int i;
         const nsk_jvmti_DCG_params *rec;
@@ -167,6 +181,8 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* agentJNI, void* arg) {
         }
 
     }
+
+    jvmti->RawMonitorExit(syncLock);
 
     NSK_DISPLAY0("Let debuggee to finish\n");
     if (!nsk_jvmti_resumeSync())
@@ -190,10 +206,6 @@ JNIEXPORT jint JNI_OnLoad_em04t001(JavaVM *jvm, char *options, void *reserved) {
 #endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
-    mutex = MUTEX_create();
-    if (!mutex)
-        return JNI_ERR;
-
     if (!NSK_VERIFY(nsk_jvmti_parseOptions(options)))
         return JNI_ERR;
 
@@ -202,6 +214,11 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jvmti = nsk_jvmti_createJVMTIEnv(jvm, reserved);
     if (!NSK_VERIFY(jvmti != NULL))
         return JNI_ERR;
+
+    if (!NSK_JVMTI_VERIFY(jvmti->CreateRawMonitor("_syncLock", &syncLock))) {
+        nsk_jvmti_setFailStatus();
+        return JNI_ERR;
+    }
 
     plist = (const void *)nsk_list_create();
     if (!NSK_VERIFY(plist != NULL))
@@ -239,9 +256,8 @@ Agent_OnUnload(JavaVM *jvm)
         nsk_jvmti_setFailStatus();
     }
 
-    if (mutex) {
-        MUTEX_destroy(mutex);
-        mutex = NULL;
+    if (!NSK_JVMTI_VERIFY(jvmti->DestroyRawMonitor(syncLock))) {
+        nsk_jvmti_setFailStatus();
     }
 }
 
