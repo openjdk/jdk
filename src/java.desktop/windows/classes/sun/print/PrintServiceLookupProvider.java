@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,8 @@
 
 package sun.print;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.IOException;
-import java.util.ArrayList;
 import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
+import java.util.ArrayList;
 import javax.print.DocFlavor;
 import javax.print.MultiDocPrintService;
 import javax.print.PrintService;
@@ -81,8 +75,9 @@ public class PrintServiceLookupProvider extends PrintServiceLookup {
 
         if (refreshTimeStr != null) {
             try {
-                minRefreshTime = (Integer.valueOf(refreshTimeStr)).intValue();
+                minRefreshTime = Integer.parseInt(refreshTimeStr);
             } catch (NumberFormatException e) {
+                // ignore
             }
             if (minRefreshTime < DEFAULT_MINREFRESH) {
                 minRefreshTime = DEFAULT_MINREFRESH;
@@ -139,7 +134,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup {
             if (pollServices) {
                 // start the remote printer listener thread
                 Thread remThr = new Thread(null, new RemotePrinterChangeListener(),
-                                        "RemotePrinterListener", 0, false);
+                                           "RemotePrinterListener", 0, false);
                 remThr.setDaemon(true);
                 remThr.start();
             }
@@ -358,6 +353,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup {
         }
         return defaultPrintService;
     }
+
     class PrinterChangeListener implements Runnable {
         long chgObj;
         PrinterChangeListener() {
@@ -387,10 +383,10 @@ public class PrintServiceLookupProvider extends PrintServiceLookup {
     /* Windows provides *PrinterChangeNotification* functions that provides
        information about printer status changes of the local printers but not
        network printers.
-       Alternatively, Windows provides a way thro' which one can get the
+       Alternatively, Windows provides a way through which one can get the
        network printer status changes by using WMI, RegistryKeyChange combination,
        which is a slightly complex mechanism.
-       The Windows WMI offers an async and sync method to read thro' registry
+       The Windows WMI offers an async and sync method to read through registry
        via the WQL query. The async method is considered dangerous as it leaves
        open a channel until we close it. But the async method has the advantage of
        being notified of a change in registry by calling callback without polling for it.
@@ -398,18 +394,17 @@ public class PrintServiceLookupProvider extends PrintServiceLookup {
        RegistryValueChange cannot be used in combination with WMI to get registry
        value change notification because of an error that may be generated because the
        scope of the query would be too big to handle(at times).
-       Hence an alternative mechanism is choosen via the EnumPrinters by polling for the
+       Hence an alternative mechanism is chosen via the EnumPrinters by polling for the
        count of printer status changes(add\remove) and based on it update the printers
        list.
     */
     class RemotePrinterChangeListener implements Runnable {
-        private String[] prevRemotePrinters = null;
+        private String[] prevRemotePrinters;
 
         RemotePrinterChangeListener() {
-            prevRemotePrinters = getRemotePrintersNames();
         }
 
-        boolean doCompare(String[] str1, String[] str2) {
+        private boolean doCompare(String[] str1, String[] str2) {
             if (str1 == null && str2 == null) {
                 return false;
             } else if (str1 == null || str2 == null) {
@@ -419,8 +414,8 @@ public class PrintServiceLookupProvider extends PrintServiceLookup {
             if (str1.length != str2.length) {
                 return true;
             } else {
-                for (int i = 0;i < str1.length;i++) {
-                    for (int j = 0;j < str2.length;j++) {
+                for (int i = 0; i < str1.length; i++) {
+                    for (int j = 0; j < str2.length; j++) {
                         // skip if both are nulls
                         if (str1[i] == null && str2[j] == null) {
                             continue;
@@ -445,26 +440,25 @@ public class PrintServiceLookupProvider extends PrintServiceLookup {
 
         @Override
         public void run() {
+            // Init the list of remote printers
+            prevRemotePrinters = getRemotePrintersNames();
+
             while (true) {
-                if (prevRemotePrinters != null && prevRemotePrinters.length > 0) {
-                    String[] currentRemotePrinters = getRemotePrintersNames();
-                    if (doCompare(prevRemotePrinters, currentRemotePrinters)) {
-
-                        // updated the printers data
-                        // printers list now contains both local and network printer data
-                        refreshServices();
-
-                        // store the current data for next comparison
-                        prevRemotePrinters = currentRemotePrinters;
-                    }
-                } else {
-                    prevRemotePrinters = getRemotePrintersNames();
-                }
-
                 try {
                     Thread.sleep(minRefreshTime * 1000);
                 } catch (InterruptedException e) {
                     break;
+                }
+
+                String[] currentRemotePrinters = getRemotePrintersNames();
+                if (doCompare(prevRemotePrinters, currentRemotePrinters)) {
+                    // The list of remote printers got updated,
+                    // so update the cached list printers which
+                    // includes both local and network printers
+                    refreshServices();
+
+                    // store the current data for next comparison
+                    prevRemotePrinters = currentRemotePrinters;
                 }
             }
         }
