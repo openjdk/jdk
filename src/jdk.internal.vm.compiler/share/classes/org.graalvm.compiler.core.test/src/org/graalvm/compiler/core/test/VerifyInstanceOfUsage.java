@@ -53,7 +53,7 @@ public class VerifyInstanceOfUsage extends VerifyPhase<PhaseContext> {
     }
 
     @Override
-    protected boolean verify(StructuredGraph graph, PhaseContext context) {
+    protected void verify(StructuredGraph graph, PhaseContext context) {
         final ResolvedJavaType[] bailoutType = new ResolvedJavaType[FORBIDDEN_INSTANCE_OF_CHECKS.length];
         for (int i = 0; i < FORBIDDEN_INSTANCE_OF_CHECKS.length; i++) {
             bailoutType[i] = context.getMetaAccess().lookupJavaType(FORBIDDEN_INSTANCE_OF_CHECKS[i]);
@@ -77,7 +77,6 @@ public class VerifyInstanceOfUsage extends VerifyPhase<PhaseContext> {
                 }
             }
         }
-        return true;
     }
 
     private static boolean isTrustedInterface(ResolvedJavaType declaringClass, MetaAccessProvider metaAccess) {

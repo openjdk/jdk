@@ -64,4 +64,6 @@ public @interface MatchableNode {
      * Can a node with multiple uses be safely matched by a rule.
      */
     boolean shareable() default false;
+
+    boolean ignoresSideEffects() default false;
 }

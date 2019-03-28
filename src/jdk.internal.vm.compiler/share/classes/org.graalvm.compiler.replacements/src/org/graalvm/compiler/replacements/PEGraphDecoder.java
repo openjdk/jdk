@@ -106,6 +106,8 @@ import org.graalvm.compiler.nodes.java.NewInstanceNode;
 import org.graalvm.compiler.nodes.java.NewMultiArrayNode;
 import org.graalvm.compiler.nodes.java.StoreFieldNode;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
+import org.graalvm.compiler.nodes.spi.CoreProviders;
+import org.graalvm.compiler.nodes.spi.Replacements;
 import org.graalvm.compiler.nodes.spi.StampProvider;
 import org.graalvm.compiler.nodes.type.StampTool;
 import org.graalvm.compiler.nodes.util.GraphUtil;
@@ -309,22 +311,27 @@ public abstract class PEGraphDecoder extends SimplifyingGraphDecoder {
 
         @Override
         public StampProvider getStampProvider() {
-            return stampProvider;
+            return providers.getStampProvider();
         }
 
         @Override
         public MetaAccessProvider getMetaAccess() {
-            return metaAccess;
+            return providers.getMetaAccess();
         }
 
         @Override
         public ConstantReflectionProvider getConstantReflection() {
-            return constantReflection;
+            return providers.getConstantReflection();
         }
 
         @Override
         public ConstantFieldProvider getConstantFieldProvider() {
-            return constantFieldProvider;
+            return providers.getConstantFieldProvider();
+        }
+
+        @Override
+        public Replacements getReplacements() {
+            return providers.getReplacements();
         }
 
         @Override
@@ -565,11 +572,11 @@ public abstract class PEGraphDecoder extends SimplifyingGraphDecoder {
     private final ResolvedJavaMethod callInlinedMethod;
     protected final SourceLanguagePositionProvider sourceLanguagePositionProvider;
 
-    public PEGraphDecoder(Architecture architecture, StructuredGraph graph, MetaAccessProvider metaAccess, ConstantReflectionProvider constantReflection, ConstantFieldProvider constantFieldProvider,
-                    StampProvider stampProvider, LoopExplosionPlugin loopExplosionPlugin, InvocationPlugins invocationPlugins, InlineInvokePlugin[] inlineInvokePlugins,
+    public PEGraphDecoder(Architecture architecture, StructuredGraph graph, CoreProviders providers, LoopExplosionPlugin loopExplosionPlugin, InvocationPlugins invocationPlugins,
+                    InlineInvokePlugin[] inlineInvokePlugins,
                     ParameterPlugin parameterPlugin,
                     NodePlugin[] nodePlugins, ResolvedJavaMethod callInlinedMethod, SourceLanguagePositionProvider sourceLanguagePositionProvider) {
-        super(architecture, graph, metaAccess, constantReflection, constantFieldProvider, stampProvider, true);
+        super(architecture, graph, providers, true);
         this.loopExplosionPlugin = loopExplosionPlugin;
         this.invocationPlugins = invocationPlugins;
         this.inlineInvokePlugins = inlineInvokePlugins;

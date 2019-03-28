@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,32 +22,25 @@
  */
 
 
-package org.graalvm.compiler.core.common.util;
+package org.graalvm.compiler.hotspot;
 
-import java.lang.reflect.Field;
-
-import sun.misc.Unsafe;
+import jdk.vm.ci.hotspot.HotSpotJVMCICompilerFactory;
+import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 
 /**
- * Package private access to the {@link Unsafe} capability.
+ * Determines if a given class is a JVMCI or Graal class for the purpose of
+ * {@link HotSpotGraalCompilerFactory.Options#CompileGraalWithC1Only}.
  */
-class UnsafeAccess {
+abstract class IsGraalPredicateBase {
 
-    static final Unsafe UNSAFE = initUnsafe();
+    @SuppressWarnings("unused")
+    void onCompilerConfigurationFactorySelection(HotSpotJVMCIRuntime runtime, CompilerConfigurationFactory factory) {
+    }
 
-    private static Unsafe initUnsafe() {
-        try {
-            // Fast path when we are trusted.
-            return Unsafe.getUnsafe();
-        } catch (SecurityException se) {
-            // Slow path when we are not trusted.
-            try {
-                Field theUnsafe = Unsafe.class.getDeclaredField("theUnsafe");
-                theUnsafe.setAccessible(true);
-                return (Unsafe) theUnsafe.get(Unsafe.class);
-            } catch (Exception e) {
-                throw new RuntimeException("exception while trying to get Unsafe", e);
-            }
-        }
+    abstract boolean apply(Class<?> declaringClass);
+
+    HotSpotJVMCICompilerFactory.CompilationLevelAdjustment getCompilationLevelAdjustment() {
+        return HotSpotJVMCICompilerFactory.CompilationLevelAdjustment.ByHolder;
     }
 }
+

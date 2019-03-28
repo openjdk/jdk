@@ -48,7 +48,6 @@ import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.api.runtime.GraalJVMCICompiler;
 import org.graalvm.compiler.api.runtime.GraalRuntime;
 import org.graalvm.compiler.bytecode.BytecodeProvider;
-import org.graalvm.compiler.core.common.spi.ConstantFieldProvider;
 import org.graalvm.compiler.core.common.type.AbstractObjectStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampPair;
@@ -88,7 +87,6 @@ import org.graalvm.compiler.nodes.graphbuilderconf.ParameterPlugin;
 import org.graalvm.compiler.nodes.java.AccessFieldNode;
 import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
 import org.graalvm.compiler.nodes.spi.DelegatingReplacements;
-import org.graalvm.compiler.nodes.spi.StampProvider;
 import org.graalvm.compiler.nodes.virtual.VirtualObjectNode;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.OptimisticOptimizations;
@@ -112,7 +110,6 @@ import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.MemoryAccessProvider;
-import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.MethodHandleAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -311,10 +308,7 @@ public class SymbolicSnippetEncoder extends DelegatingReplacements {
                 PEGraphDecoder graphDecoder = new PEGraphDecoder(
                                 providers.getCodeCache().getTarget().arch,
                                 result,
-                                providers.getMetaAccess(),
-                                providers.getConstantReflection(),
-                                providers.getConstantFieldProvider(),
-                                providers.getStampProvider(),
+                                providers,
                                 null, // loopExplosionPlugin
                                 replacements.getGraphBuilderPlugins().getInvocationPlugins(),
                                 new InlineInvokePlugin[0],
@@ -407,10 +401,7 @@ public class SymbolicSnippetEncoder extends DelegatingReplacements {
                 PEGraphDecoder graphDecoder = new PEGraphDecoder(
                                 architecture,
                                 result,
-                                providers.getMetaAccess(),
-                                providers.getConstantReflection(),
-                                providers.getConstantFieldProvider(),
-                                providers.getStampProvider(),
+                                providers,
                                 null,
                                 replacements.getGraphBuilderPlugins().getInvocationPlugins(),
                                 new InlineInvokePlugin[0],
@@ -993,17 +984,15 @@ public class SymbolicSnippetEncoder extends DelegatingReplacements {
         }
 
         @Override
-        protected GraphBuilderPhase.Instance createGraphBuilder(MetaAccessProvider metaAccess, StampProvider stampProvider, ConstantReflectionProvider constantReflection,
-                        ConstantFieldProvider constantFieldProvider, GraphBuilderConfiguration graphBuilderConfig, OptimisticOptimizations optimisticOpts, IntrinsicContext initialIntrinsicContext) {
-            return new HotSpotSnippetGraphBuilderPhase(metaAccess, stampProvider, constantReflection, constantFieldProvider, graphBuilderConfig, optimisticOpts,
-                            initialIntrinsicContext);
+        protected GraphBuilderPhase.Instance createGraphBuilder(Providers providers, GraphBuilderConfiguration graphBuilderConfig, OptimisticOptimizations optimisticOpts,
+                        IntrinsicContext initialIntrinsicContext) {
+            return new HotSpotSnippetGraphBuilderPhase(providers, graphBuilderConfig, optimisticOpts, initialIntrinsicContext);
         }
     }
 
     static class HotSpotSnippetGraphBuilderPhase extends GraphBuilderPhase.Instance {
-        HotSpotSnippetGraphBuilderPhase(MetaAccessProvider metaAccess, StampProvider stampProvider, ConstantReflectionProvider constantReflection, ConstantFieldProvider constantFieldProvider,
-                        GraphBuilderConfiguration graphBuilderConfig, OptimisticOptimizations optimisticOpts, IntrinsicContext initialIntrinsicContext) {
-            super(metaAccess, stampProvider, constantReflection, constantFieldProvider, graphBuilderConfig, optimisticOpts, initialIntrinsicContext);
+        HotSpotSnippetGraphBuilderPhase(Providers theProviders, GraphBuilderConfiguration graphBuilderConfig, OptimisticOptimizations optimisticOpts, IntrinsicContext initialIntrinsicContext) {
+            super(theProviders, graphBuilderConfig, optimisticOpts, initialIntrinsicContext);
         }
 
         @Override

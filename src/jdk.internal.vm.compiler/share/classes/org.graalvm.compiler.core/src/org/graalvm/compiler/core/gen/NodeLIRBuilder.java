@@ -48,6 +48,7 @@ import org.graalvm.compiler.core.match.ComplexMatchValue;
 import org.graalvm.compiler.core.match.MatchPattern;
 import org.graalvm.compiler.core.match.MatchRuleRegistry;
 import org.graalvm.compiler.core.match.MatchStatement;
+import org.graalvm.compiler.debug.DebugCloseable;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.debug.TTY;
@@ -255,7 +256,7 @@ public abstract class NodeLIRBuilder implements NodeLIRBuilderTool, LIRGeneratio
 
             // get ValueKind for input
             final LIRKind valueKind;
-            if (value != null) {
+            if (value != null && !(value instanceof ComplexMatchValue)) {
                 valueKind = value.getValueKind(LIRKind.class);
             } else {
                 assert isPhiInputFromBackedge(phi, i) : String.format("Input %s to phi node %s is not yet available although it is not coming from a loop back edge", node, phi);
@@ -358,10 +359,6 @@ public abstract class NodeLIRBuilder implements NodeLIRBuilderTool, LIRGeneratio
 
             List<Node> nodes = blockMap.get(block);
 
-            // Allow NodeLIRBuilder subclass to specialize code generation of any interesting groups
-            // of instructions
-            matchComplexExpressions(nodes);
-
             boolean trace = traceLIRGeneratorLevel >= 3;
             for (int i = 0; i < nodes.size(); i++) {
                 Node node = nodes.get(i);
@@ -419,11 +416,23 @@ public abstract class NodeLIRBuilder implements NodeLIRBuilderTool, LIRGeneratio
         }
     }
 
+    @Override
     @SuppressWarnings("try")
-    protected void matchComplexExpressions(List<Node> nodes) {
+    public void matchBlock(Block block, StructuredGraph graph, StructuredGraph.ScheduleResult schedule) {
+        try (DebugCloseable matchScope = gen.getMatchScope(block)) {
+            // Allow NodeLIRBuilder subclass to specialize code generation of any interesting groups
+            // of instructions
+            matchComplexExpressions(block, schedule);
+        }
+    }
+
+    @SuppressWarnings("try")
+    protected void matchComplexExpressions(Block block, StructuredGraph.ScheduleResult schedule) {
+
         if (matchRules != null) {
             DebugContext debug = gen.getResult().getLIR().getDebug();
             try (DebugContext.Scope s = debug.scope("MatchComplexExpressions")) {
+                List<Node> nodes = schedule.getBlockToNodesMap().get(block);
                 if (LogVerbose.getValue(nodeOperands.graph().getOptions())) {
                     int i = 0;
                     for (Node node : nodes) {
@@ -441,7 +450,7 @@ public abstract class NodeLIRBuilder implements NodeLIRBuilderTool, LIRGeneratio
                     List<MatchStatement> statements = matchRules.get(node.getClass());
                     if (statements != null) {
                         for (MatchStatement statement : statements) {
-                            if (statement.generate(this, index, node, nodes)) {
+                            if (statement.generate(this, index, node, block, schedule)) {
                                 // Found a match so skip to the next
                                 break;
                             }

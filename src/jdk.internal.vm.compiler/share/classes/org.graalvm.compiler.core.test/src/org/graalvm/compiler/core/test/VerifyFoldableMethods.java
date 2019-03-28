@@ -52,7 +52,7 @@ public class VerifyFoldableMethods extends VerifyPhase<PhaseContext> {
     ResolvedJavaType generatedInvocationPluginType;
 
     @Override
-    protected boolean verify(StructuredGraph graph, PhaseContext context) {
+    protected void verify(StructuredGraph graph, PhaseContext context) {
         ResolvedJavaMethod method = graph.method();
         if (method.getAnnotation(Fold.class) != null) {
             foldables.putIfAbsent(method, false);
@@ -69,7 +69,6 @@ public class VerifyFoldableMethods extends VerifyPhase<PhaseContext> {
                 }
             }
         }
-        return true;
     }
 
     public void finish() {

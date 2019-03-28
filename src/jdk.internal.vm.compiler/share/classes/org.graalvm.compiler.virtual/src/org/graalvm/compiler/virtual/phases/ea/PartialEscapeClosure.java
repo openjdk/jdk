@@ -59,6 +59,7 @@ import org.graalvm.compiler.nodes.PhiNode;
 import org.graalvm.compiler.nodes.ProxyNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.ScheduleResult;
+import org.graalvm.compiler.nodes.UnwindNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.ValuePhiNode;
 import org.graalvm.compiler.nodes.ValueProxyNode;
@@ -105,7 +106,6 @@ public abstract class PartialEscapeClosure<BlockT extends PartialEscapeBlockStat
      * The indexes into this array correspond to {@link VirtualObjectNode#getObjectId()}.
      */
     public final ArrayList<VirtualObjectNode> virtualObjects = new ArrayList<>();
-    public final DebugContext debug;
 
     @Override
     public boolean needsApplyEffects() {
@@ -189,7 +189,6 @@ public abstract class PartialEscapeClosure<BlockT extends PartialEscapeBlockStat
         super(schedule, schedule.getCFG());
         StructuredGraph graph = schedule.getCFG().graph;
         this.hasVirtualInputs = graph.createNodeBitMap();
-        this.debug = graph.getDebug();
         this.tool = new VirtualizerToolImpl(metaAccess, constantReflection, constantFieldProvider, this, graph.getAssumptions(), graph.getOptions(), debug, loweringProvider);
     }
 
@@ -687,16 +686,44 @@ public abstract class PartialEscapeClosure<BlockT extends PartialEscapeBlockStat
             // calculate the set of virtual objects that exist in all predecessors
             int[] virtualObjTemp = intersectVirtualObjects(states);
 
+            boolean forceMaterialization = false;
+            ValueNode forcedMaterializationValue = null;
+            FrameState frameState = merge.stateAfter();
+            if (frameState != null && frameState.isExceptionHandlingBCI()) {
+                // We can not go below merges with an exception handling bci
+                // it could create allocations whose slow-path has an invalid framestate
+                forceMaterialization = true;
+                // check if we can reduce the scope of forced materialization to one phi node
+                if (frameState.stackSize() == 1 && merge.next() instanceof UnwindNode) {
+                    assert frameState.outerFrameState() == null;
+                    UnwindNode unwind = (UnwindNode) merge.next();
+                    if (unwind.exception() == frameState.stackAt(0)) {
+                        boolean nullLocals = true;
+                        for (int i = 0; i < frameState.localsSize(); i++) {
+                            if (frameState.localAt(i) != null) {
+                                nullLocals = false;
+                                break;
+                            }
+                        }
+                        if (nullLocals) {
+                            // We found that the merge is directly followed by an unwind
+                            // the Framestate only has the thrown value on the stack and no locals
+                            forcedMaterializationValue = unwind.exception();
+                        }
+                    }
+                }
+            }
+
             boolean materialized;
             do {
                 materialized = false;
 
-                if (PartialEscapeBlockState.identicalObjectStates(states)) {
+                if (!forceMaterialization && PartialEscapeBlockState.identicalObjectStates(states)) {
                     newState.adoptAddObjectStates(states[0]);
                 } else {
 
                     for (int object : virtualObjTemp) {
-                        if (PartialEscapeBlockState.identicalObjectStates(states, object)) {
+                        if (!forceMaterialization && PartialEscapeBlockState.identicalObjectStates(states, object)) {
                             newState.addObject(object, states[0].getObjectState(object).share());
                             continue;
                         }
@@ -710,6 +737,22 @@ public abstract class PartialEscapeClosure<BlockT extends PartialEscapeBlockStat
                         for (int i = 0; i < states.length; i++) {
                             ObjectState obj = states[i].getObjectState(object);
                             ensureVirtual &= obj.getEnsureVirtualized();
+                            if (forceMaterialization) {
+                                if (forcedMaterializationValue == null) {
+                                    uniqueMaterializedValue = null;
+                                    continue;
+                                } else {
+                                    ValueNode value = forcedMaterializationValue;
+                                    if (merge.isPhiAtMerge(value)) {
+                                        value = ((ValuePhiNode) value).valueAt(i);
+                                    }
+                                    ValueNode alias = getAlias(value);
+                                    if (alias instanceof VirtualObjectNode && ((VirtualObjectNode) alias).getObjectId() == object) {
+                                        uniqueMaterializedValue = null;
+                                        continue;
+                                    }
+                                }
+                            }
                             if (obj.isVirtual()) {
                                 virtualCount++;
                                 uniqueMaterializedValue = null;
@@ -1029,6 +1072,7 @@ public abstract class PartialEscapeClosure<BlockT extends PartialEscapeBlockStat
                              */
                             if (virtual.hasIdentity() && !isSingleUsageAllocation(getPhiValueAt(phi, i), virtualObjs, states[i])) {
                                 compatible = false;
+                                break;
                             }
                         }
                     }

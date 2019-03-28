@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
@@ -266,9 +267,11 @@ public class CheckGraalInvariants extends GraalCompilerTest {
         verifiers.add(new VerifyVirtualizableUsage());
         verifiers.add(new VerifyUpdateUsages());
         verifiers.add(new VerifyBailoutUsage());
+        verifiers.add(new VerifySystemPropertyUsage());
         verifiers.add(new VerifyInstanceOfUsage());
         verifiers.add(new VerifyGraphAddUsage());
         verifiers.add(new VerifyGetOptionsUsage());
+        verifiers.add(new VerifyUnsafeAccess());
 
         VerifyFoldableMethods foldableMethodsVerifier = new VerifyFoldableMethods();
         if (tool.shouldVerifyFoldableMethods()) {
@@ -301,21 +304,29 @@ public class CheckGraalInvariants extends GraalCompilerTest {
                 String className = c.getName();
                 executor.execute(() -> {
                     try {
-                        checkClass(c, metaAccess);
+                        checkClass(c, metaAccess, verifiers);
                     } catch (Throwable e) {
                         errors.add(String.format("Error while checking %s:%n%s", className, printStackTraceToString(e)));
                     }
                 });
 
-                for (Method m : c.getDeclaredMethods()) {
-                    if (Modifier.isNative(m.getModifiers()) || Modifier.isAbstract(m.getModifiers())) {
+                ResolvedJavaType type = metaAccess.lookupJavaType(c);
+                List<ResolvedJavaMethod> methods = new ArrayList<>();
+                methods.addAll(Arrays.asList(type.getDeclaredMethods()));
+                methods.addAll(Arrays.asList(type.getDeclaredConstructors()));
+                ResolvedJavaMethod clinit = type.getClassInitializer();
+                if (clinit != null) {
+                    methods.add(clinit);
+                }
+
+                for (ResolvedJavaMethod method : methods) {
+                    if (Modifier.isNative(method.getModifiers()) || Modifier.isAbstract(method.getModifiers())) {
                         // ignore
                     } else {
-                        String methodName = className + "." + m.getName();
+                        String methodName = className + "." + method.getName();
                         if (matches(filters, methodName)) {
                             executor.execute(() -> {
                                 try (DebugContext debug = DebugContext.create(options, DebugHandlersFactory.LOADER)) {
-                                    ResolvedJavaMethod method = metaAccess.lookupJavaMethod(m);
                                     boolean isSubstitution = method.getAnnotation(Snippet.class) != null || method.getAnnotation(MethodSubstitution.class) != null;
                                     StructuredGraph graph = new StructuredGraph.Builder(options, debug).method(method).setIsSubstitution(isSubstitution).build();
                                     try (DebugCloseable s = debug.disableIntercept(); DebugContext.Scope ds = debug.scope("CheckingGraph", graph, method)) {
@@ -400,13 +411,17 @@ public class CheckGraalInvariants extends GraalCompilerTest {
 
     /**
      * @param metaAccess
+     * @param verifiers
      */
-    private static void checkClass(Class<?> c, MetaAccessProvider metaAccess) {
+    private static void checkClass(Class<?> c, MetaAccessProvider metaAccess, List<VerifyPhase<PhaseContext>> verifiers) {
         if (Node.class.isAssignableFrom(c)) {
             if (c.getAnnotation(NodeInfo.class) == null) {
                 throw new AssertionError(String.format("Node subclass %s requires %s annotation", c.getName(), NodeClass.class.getSimpleName()));
             }
             VerifyNodeCosts.verifyNodeClass(c);
+        }
+        for (VerifyPhase<PhaseContext> verifier : verifiers) {
+            verifier.verifyClass(c, metaAccess);
         }
     }
 

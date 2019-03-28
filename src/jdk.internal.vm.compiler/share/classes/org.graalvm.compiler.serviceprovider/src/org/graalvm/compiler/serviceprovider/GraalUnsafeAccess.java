@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,20 +22,20 @@
  */
 
 
-package org.graalvm.compiler.replacements;
+package org.graalvm.compiler.serviceprovider;
 
 import java.lang.reflect.Field;
 
 import sun.misc.Unsafe;
 
 /**
- * Package private access to the {@link Unsafe} capability.
+ * Access to the {@link Unsafe} capability. Care must be taken not to leak the {@link #UNSAFE} value
+ * of out code loaded by the JVMCI class loader or encapsulated in the JVMCI or Graal modules into
+ * other code (e.g. via the Polyglot API).
  */
-class UnsafeAccess {
+public class GraalUnsafeAccess {
 
-    private static final Unsafe THE_UNSAFE = initUnsafe();
-
-    static final UnsafeAccess UNSAFE = new UnsafeAccess();
+    private static final Unsafe UNSAFE = initUnsafe();
 
     private static Unsafe initUnsafe() {
         try {
@@ -53,11 +53,18 @@ class UnsafeAccess {
         }
     }
 
-    public char getChar(Object target, long l) {
-        return THE_UNSAFE.getChar(target, l);
-    }
-
-    public byte getByte(Object target, long l) {
-        return THE_UNSAFE.getByte(target, l);
+    /**
+     * Gets the {@link Unsafe} singleton.
+     *
+     * @throws SecurityException if a security manager is present and it denies
+     *             {@link RuntimePermission}("accessUnsafe")
+     */
+    public static Unsafe getUnsafe() {
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(new RuntimePermission("accessUnsafe"));
+        }
+        return UNSAFE;
     }
 }
+

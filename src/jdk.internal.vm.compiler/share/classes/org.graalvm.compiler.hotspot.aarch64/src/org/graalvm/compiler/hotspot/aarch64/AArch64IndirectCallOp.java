@@ -73,7 +73,9 @@ final class AArch64IndirectCallOp extends IndirectCallOp {
         crb.recordMark(config.MARKID_INLINE_INVOKE);
         Register callReg = asRegister(targetAddress);
         assert !callReg.equals(METHOD);
+        int pcOffset = masm.position();
         AArch64Call.indirectCall(crb, masm, callReg, callTarget, state);
+        crb.recordInlineInvokeCallOp(pcOffset, getPosition());
     }
 
     @Override

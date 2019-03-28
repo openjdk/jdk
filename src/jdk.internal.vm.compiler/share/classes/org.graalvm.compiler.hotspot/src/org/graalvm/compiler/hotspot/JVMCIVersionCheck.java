@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,9 @@
 package org.graalvm.compiler.hotspot;
 
 import java.util.Formatter;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
 
 /**
  * Mechanism for checking that the current Java runtime environment supports the minimum JVMCI API
@@ -38,20 +41,22 @@ import java.util.Formatter;
  */
 class JVMCIVersionCheck {
 
-    // 0.55 introduces new HotSpotSpeculationLog API
+    // 0.57 introduces HotSpotJVMCIRuntime.excludeFromJVMCICompilation
     private static final int JVMCI8_MIN_MAJOR_VERSION = 0;
-    private static final int JVMCI8_MIN_MINOR_VERSION = 55;
+    private static final int JVMCI8_MIN_MINOR_VERSION = 57;
 
-    private static void failVersionCheck(boolean exit, String reason, Object... args) {
+    private static void failVersionCheck(Map<String, String> props, boolean exit, String reason, Object... args) {
         Formatter errorMessage = new Formatter().format(reason, args);
-        String javaHome = System.getProperty("java.home");
-        String vmName = System.getProperty("java.vm.name");
+        String javaHome = props.get("java.home");
+        String vmName = props.get("java.vm.name");
         errorMessage.format("Set the JVMCI_VERSION_CHECK environment variable to \"ignore\" to suppress ");
         errorMessage.format("this error or to \"warn\" to emit a warning and continue execution.%n");
         errorMessage.format("Currently used Java home directory is %s.%n", javaHome);
         errorMessage.format("Currently used VM configuration is: %s%n", vmName);
-        if (System.getProperty("java.specification.version").compareTo("1.9") < 0) {
-            errorMessage.format("Download the latest JVMCI JDK 8 from http://www.oracle.com/technetwork/oracle-labs/program-languages/downloads/index.html");
+        if (props.get("java.specification.version").compareTo("1.9") < 0) {
+            errorMessage.format("Download the latest JVMCI JDK 8 from " +
+                            "http://www.oracle.com/technetwork/oracle-labs/program-languages/downloads/index.html or " +
+                            "https://github.com/graalvm/openjdk8-jvmci-builder/releases");
         } else {
             errorMessage.format("Download JDK 11 or later.");
         }
@@ -68,10 +73,10 @@ class JVMCIVersionCheck {
         }
     }
 
-    static void check(boolean exitOnFailure) {
+    static void check(Map<String, String> props, boolean exitOnFailure) {
         // Don't use regular expressions to minimize Graal startup time
-        String javaSpecVersion = System.getProperty("java.specification.version");
-        String vmVersion = System.getProperty("java.vm.version");
+        String javaSpecVersion = props.get("java.specification.version");
+        String vmVersion = props.get("java.vm.version");
         if (javaSpecVersion.compareTo("1.9") < 0) {
             int start = vmVersion.indexOf("-jvmci-");
             if (start >= 0) {
@@ -82,7 +87,7 @@ class JVMCIVersionCheck {
                     try {
                         major = Integer.parseInt(vmVersion.substring(start, end));
                     } catch (NumberFormatException e) {
-                        failVersionCheck(exitOnFailure, "The VM does not support the minimum JVMCI API version required by Graal.%n" +
+                        failVersionCheck(props, exitOnFailure, "The VM does not support the minimum JVMCI API version required by Graal.%n" +
                                         "Cannot read JVMCI major version from java.vm.version property: %s.%n", vmVersion);
                         return;
                     }
@@ -95,22 +100,22 @@ class JVMCIVersionCheck {
                     try {
                         minor = Integer.parseInt(vmVersion.substring(start, end));
                     } catch (NumberFormatException e) {
-                        failVersionCheck(exitOnFailure, "The VM does not support the minimum JVMCI API version required by Graal.%n" +
+                        failVersionCheck(props, exitOnFailure, "The VM does not support the minimum JVMCI API version required by Graal.%n" +
                                         "Cannot read JVMCI minor version from java.vm.version property: %s.%n", vmVersion);
                         return;
                     }
                     if (major >= JVMCI8_MIN_MAJOR_VERSION && minor >= JVMCI8_MIN_MINOR_VERSION) {
                         return;
                     }
-                    failVersionCheck(exitOnFailure, "The VM does not support the minimum JVMCI API version required by Graal: %d.%d < %d.%d.%n",
+                    failVersionCheck(props, exitOnFailure, "The VM does not support the minimum JVMCI API version required by Graal: %d.%d < %d.%d.%n",
                                     major, minor, JVMCI8_MIN_MAJOR_VERSION, JVMCI8_MIN_MINOR_VERSION);
                     return;
                 }
             }
-            failVersionCheck(exitOnFailure, "The VM does not support the minimum JVMCI API version required by Graal.%n" +
+            failVersionCheck(props, exitOnFailure, "The VM does not support the minimum JVMCI API version required by Graal.%n" +
                             "Cannot read JVMCI version from java.vm.version property: %s.%n", vmVersion);
         } else if (javaSpecVersion.compareTo("11") < 0) {
-            failVersionCheck(exitOnFailure, "Graal is not compatible with the JVMCI API in JDK 9 and 10.%n");
+            failVersionCheck(props, exitOnFailure, "Graal is not compatible with the JVMCI API in JDK 9 and 10.%n");
         } else {
             if (vmVersion.contains("SNAPSHOT")) {
                 return;
@@ -124,11 +129,11 @@ class JVMCIVersionCheck {
                 try {
                     int build = Integer.parseInt(buildString);
                     if (build < 20) {
-                        failVersionCheck(exitOnFailure, "Graal requires build 20 or later of JDK 11 early access binary, got build %d.%n", build);
+                        failVersionCheck(props, exitOnFailure, "Graal requires build 20 or later of JDK 11 early access binary, got build %d.%n", build);
                         return;
                     }
                 } catch (NumberFormatException e) {
-                    failVersionCheck(exitOnFailure, "Could not parse the JDK 11 early access build number from java.vm.version property: %s.%n", vmVersion);
+                    failVersionCheck(props, exitOnFailure, "Could not parse the JDK 11 early access build number from java.vm.version property: %s.%n", vmVersion);
                     return;
                 }
             } else {
@@ -141,6 +146,11 @@ class JVMCIVersionCheck {
      * Command line interface for performing the check.
      */
     public static void main(String[] args) {
-        check(true);
+        Properties sprops = System.getProperties();
+        Map<String, String> props = new HashMap<>(sprops.size());
+        for (String name : sprops.stringPropertyNames()) {
+            props.put(name, sprops.getProperty(name));
+        }
+        check(props, true);
     }
 }

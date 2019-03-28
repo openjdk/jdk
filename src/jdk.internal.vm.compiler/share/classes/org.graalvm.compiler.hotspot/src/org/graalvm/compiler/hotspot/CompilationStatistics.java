@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ import org.graalvm.compiler.serviceprovider.GraalServices;
 
 import jdk.vm.ci.hotspot.HotSpotInstalledCode;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
+import jdk.vm.ci.services.Services;
 
 @SuppressWarnings("unused")
 public final class CompilationStatistics {
@@ -189,7 +190,7 @@ public final class CompilationStatistics {
                         timeLeft = RESOLUTION;
                     }
                 }
-                String timelineName = System.getProperty("stats.timeline.name");
+                String timelineName = Services.getSavedProperties().get("stats.timeline.name");
                 if (timelineName != null && !timelineName.isEmpty()) {
                     out.printf("%s%c", CSVUtil.Escape.escape(timelineName), CSVUtil.SEPARATOR);
                 }

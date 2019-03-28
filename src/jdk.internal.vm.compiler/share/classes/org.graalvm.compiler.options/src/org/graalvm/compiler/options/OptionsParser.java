@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,8 @@ import java.util.ServiceLoader;
 import jdk.internal.vm.compiler.collections.EconomicMap;
 import jdk.internal.vm.compiler.collections.MapCursor;
 
+import jdk.vm.ci.services.Services;
+
 /**
  * This class contains methods for parsing Graal options and matching them against a set of
  * {@link OptionDescriptors}. The {@link OptionDescriptors} are loaded via a {@link ServiceLoader}.
@@ -51,7 +53,7 @@ public class OptionsParser {
         if (IS_IN_NATIVE_IMAGE || cachedOptionDescriptors != null) {
             return cachedOptionDescriptors;
         }
-        boolean java8OrEarlier = System.getProperty("java.specification.version").compareTo("1.9") < 0;
+        boolean java8OrEarlier = Services.getSavedProperties().get("java.specification.version").compareTo("1.9") < 0;
         ClassLoader loader;
         if (java8OrEarlier) {
             // On JDK 8, Graal and its extensions are loaded by same class loader.

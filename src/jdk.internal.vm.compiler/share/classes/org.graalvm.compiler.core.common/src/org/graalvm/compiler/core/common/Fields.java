@@ -24,7 +24,7 @@
 
 package org.graalvm.compiler.core.common;
 
-import static org.graalvm.compiler.core.common.UnsafeAccess.UNSAFE;
+import static org.graalvm.compiler.serviceprovider.GraalUnsafeAccess.getUnsafe;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -37,6 +37,8 @@ import sun.misc.Unsafe;
  * Describes fields in a class, primarily for access via {@link Unsafe}.
  */
 public class Fields {
+
+    private static final Unsafe UNSAFE = getUnsafe();
 
     /**
      * Offsets used with {@link Unsafe} to access the fields.

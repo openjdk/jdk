@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.util.Collection;
 import java.util.List;
 
 import org.graalvm.compiler.core.common.cfg.BlockMap;
+import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeSourcePosition;
@@ -96,4 +97,11 @@ public interface NodeLIRBuilderTool extends NodeValueMap {
     }
 
     void emitReadExceptionObject(ValueNode node);
+
+    @SuppressWarnings("unused")
+    default ForeignCallLinkage lookupGraalStub(ValueNode valueNode) {
+        return null;
+    }
+
+    void matchBlock(Block b, StructuredGraph graph, StructuredGraph.ScheduleResult blockMap);
 }

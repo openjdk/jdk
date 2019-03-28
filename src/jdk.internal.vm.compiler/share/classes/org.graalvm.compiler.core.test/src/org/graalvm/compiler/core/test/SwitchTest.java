@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,32 +22,34 @@
  */
 
 
-package org.graalvm.compiler.graph;
+package org.graalvm.compiler.core.test;
 
-import java.lang.reflect.Field;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import org.junit.Test;
 
-import sun.misc.Unsafe;
-
-/**
- * Package private access to the {@link Unsafe} capability.
- */
-class UnsafeAccess {
-
-    static final Unsafe UNSAFE = initUnsafe();
-
-    private static Unsafe initUnsafe() {
-        try {
-            // Fast path when we are trusted.
-            return Unsafe.getUnsafe();
-        } catch (SecurityException se) {
-            // Slow path when we are not trusted.
-            try {
-                Field theUnsafe = Unsafe.class.getDeclaredField("theUnsafe");
-                theUnsafe.setAccessible(true);
-                return (Unsafe) theUnsafe.get(Unsafe.class);
-            } catch (Exception e) {
-                throw new RuntimeException("exception while trying to get Unsafe", e);
-            }
+// Regression test for JDK-8220643 (GR-14583)
+public class SwitchTest extends GraalCompilerTest {
+    public static boolean test1(int arg) {
+        switch (arg) {
+            case -2139290527:
+            case -1466249004:
+            case -1063407861:
+            case 125135499:
+            case 425995464:
+            case 786490581:
+            case 1180611932:
+            case 1790655921:
+            case 1970660086:
+                return true;
+            default:
+                return false;
         }
+    }
+
+    @Test
+    public void run1() throws Throwable {
+        ResolvedJavaMethod method = getResolvedJavaMethod("test1");
+        Result compiled = executeActual(method, null, -2139290527);
+        assertEquals(new Result(true, null), compiled);
     }
 }

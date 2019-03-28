@@ -25,6 +25,7 @@
 package org.graalvm.compiler.replacements;
 
 import static org.graalvm.compiler.replacements.SnippetTemplate.DEFAULT_REPLACER;
+import static org.graalvm.compiler.serviceprovider.GraalUnsafeAccess.getUnsafe;
 
 import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.api.replacements.Fold.InjectedParameter;
@@ -44,8 +45,11 @@ import org.graalvm.compiler.replacements.nodes.ExplodeLoopNode;
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.MetaAccessProvider;
+import sun.misc.Unsafe;
 
 public class ConstantStringIndexOfSnippets implements Snippets {
+    private static final Unsafe UNSAFE = getUnsafe();
+
     public static class Templates extends AbstractTemplates {
 
         private final SnippetInfo indexOfConstant = snippet(ConstantStringIndexOfSnippets.class, "indexOfConstant");
@@ -157,10 +161,10 @@ public class ConstantStringIndexOfSnippets implements Snippets {
             return 0;
         }
         long base = metaAccess.getArrayBaseOffset(JavaKind.Byte);
-        char lastChar = UnsafeAccess.UNSAFE.getChar(target, base + (c - 1) * 2);
+        char lastChar = UNSAFE.getChar(target, base + (c - 1) * 2);
         int md2 = c;
         for (int i = 0; i < c - 1; i++) {
-            char currChar = UnsafeAccess.UNSAFE.getChar(target, base + i * 2);
+            char currChar = UNSAFE.getChar(target, base + i * 2);
             if (currChar == lastChar) {
                 md2 = (c - 1) - i;
             }
@@ -174,7 +178,7 @@ public class ConstantStringIndexOfSnippets implements Snippets {
         int i;
         long base = metaAccess.getArrayBaseOffset(JavaKind.Byte);
         for (i = 0; i < c - 1; i++) {
-            char currChar = UnsafeAccess.UNSAFE.getChar(s, base + i * 2);
+            char currChar = UNSAFE.getChar(s, base + i * 2);
             cache |= (1 << (currChar & 63));
         }
         return cache;
@@ -212,10 +216,10 @@ public class ConstantStringIndexOfSnippets implements Snippets {
         int sourceEnd = sourceCount - targetCountLess1;
 
         long base = charArrayBaseOffset(INJECTED);
-        int lastChar = UnsafeAccess.UNSAFE.getChar(target, base + targetCountLess1 * 2);
+        int lastChar = UNSAFE.getChar(target, base + targetCountLess1 * 2);
 
         outer_loop: for (long i = sourceOffset + fromIndex; i < sourceEnd;) {
-            int src = UnsafeAccess.UNSAFE.getChar(source, base + (i + targetCountLess1) * 2);
+            int src = UNSAFE.getChar(source, base + (i + targetCountLess1) * 2);
             if (src == lastChar) {
                 // With random strings and a 4-character alphabet,
                 // reverse matching at this point sets up 0.8% fewer
@@ -229,8 +233,8 @@ public class ConstantStringIndexOfSnippets implements Snippets {
                     ExplodeLoopNode.explodeLoop();
                 }
                 for (long j = 0; j < targetCountLess1; j++) {
-                    char sourceChar = UnsafeAccess.UNSAFE.getChar(source, base + (i + j) * 2);
-                    if (UnsafeAccess.UNSAFE.getChar(target, base + (targetOffset + j) * 2) != sourceChar) {
+                    char sourceChar = UNSAFE.getChar(source, base + (i + j) * 2);
+                    if (UNSAFE.getChar(target, base + (targetOffset + j) * 2) != sourceChar) {
                         if ((cache & (1 << sourceChar)) == 0) {
                             if (md2 < j + 1) {
                                 i += j + 1;
@@ -270,10 +274,10 @@ public class ConstantStringIndexOfSnippets implements Snippets {
         int sourceEnd = sourceCount - targetCountLess1;
 
         long base = byteArrayBaseOffset(INJECTED);
-        int lastChar = UnsafeAccess.UNSAFE.getChar(target, base + targetCountLess1 * 2);
+        int lastChar = UNSAFE.getChar(target, base + targetCountLess1 * 2);
 
         outer_loop: for (long i = fromIndex; i < sourceEnd;) {
-            int src = UnsafeAccess.UNSAFE.getChar(source, base + (i + targetCountLess1) * 2);
+            int src = UNSAFE.getChar(source, base + (i + targetCountLess1) * 2);
             if (src == lastChar) {
                 // With random strings and a 4-character alphabet,
                 // reverse matching at this point sets up 0.8% fewer
@@ -287,8 +291,8 @@ public class ConstantStringIndexOfSnippets implements Snippets {
                     ExplodeLoopNode.explodeLoop();
                 }
                 for (long j = 0; j < targetCountLess1; j++) {
-                    char sourceChar = UnsafeAccess.UNSAFE.getChar(source, base + (i + j) * 2);
-                    if (UnsafeAccess.UNSAFE.getChar(target, base + j * 2) != sourceChar) {
+                    char sourceChar = UNSAFE.getChar(source, base + (i + j) * 2);
+                    if (UNSAFE.getChar(target, base + j * 2) != sourceChar) {
                         if ((cache & (1 << sourceChar)) == 0) {
                             if (md2 < j + 1) {
                                 i += j + 1;
@@ -328,10 +332,10 @@ public class ConstantStringIndexOfSnippets implements Snippets {
         int sourceEnd = sourceCount - targetCountLess1;
 
         long base = byteArrayBaseOffset(INJECTED);
-        int lastByte = UnsafeAccess.UNSAFE.getByte(target, base + targetCountLess1);
+        int lastByte = UNSAFE.getByte(target, base + targetCountLess1);
 
         outer_loop: for (long i = fromIndex; i < sourceEnd;) {
-            int src = UnsafeAccess.UNSAFE.getByte(source, base + i + targetCountLess1);
+            int src = UNSAFE.getByte(source, base + i + targetCountLess1);
             if (src == lastByte) {
                 // With random strings and a 4-character alphabet,
                 // reverse matching at this point sets up 0.8% fewer
@@ -345,8 +349,8 @@ public class ConstantStringIndexOfSnippets implements Snippets {
                     ExplodeLoopNode.explodeLoop();
                 }
                 for (long j = 0; j < targetCountLess1; j++) {
-                    byte sourceByte = UnsafeAccess.UNSAFE.getByte(source, base + i + j);
-                    if (UnsafeAccess.UNSAFE.getByte(target, base + j) != sourceByte) {
+                    byte sourceByte = UNSAFE.getByte(source, base + i + j);
+                    if (UNSAFE.getByte(target, base + j) != sourceByte) {
                         if ((cache & (1 << sourceByte)) == 0) {
                             if (md2 < j + 1) {
                                 i += j + 1;

@@ -52,6 +52,8 @@ import org.graalvm.compiler.options.OptionDescriptors;
 import org.graalvm.compiler.options.OptionsParser;
 import org.graalvm.compiler.serviceprovider.GraalServices;
 
+import jdk.vm.ci.services.Services;
+
 /**
  * MBean used to access properties and operations of a {@link HotSpotGraalRuntime} instance.
  */
@@ -84,7 +86,7 @@ final class HotSpotGraalRuntimeMBean implements DynamicMBean {
 
     private static boolean initDebug() {
         try {
-            return Boolean.getBoolean(HotSpotGraalRuntimeMBean.class.getSimpleName() + ".debug");
+            return Boolean.parseBoolean(Services.getSavedProperties().get(HotSpotGraalRuntimeMBean.class.getSimpleName() + ".debug"));
         } catch (SecurityException e) {
             // Swallow the exception
             return false;

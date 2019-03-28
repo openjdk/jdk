@@ -56,6 +56,6 @@ public interface MemUseTrackerKey extends MetricKey {
     MemUseTrackerKey doc(String string);
 
     static long getCurrentThreadAllocatedBytes() {
-        return GraalServices.getCurrentThreadAllocatedBytes();
+        return GraalServices.isThreadAllocatedMemorySupported() ? GraalServices.getCurrentThreadAllocatedBytes() : 0;
     }
 }

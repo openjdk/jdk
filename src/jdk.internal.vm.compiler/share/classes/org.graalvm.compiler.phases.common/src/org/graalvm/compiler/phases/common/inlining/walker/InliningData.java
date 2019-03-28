@@ -154,6 +154,8 @@ public class InliningData {
             return "it is marked non-inlinable";
         } else if (countRecursiveInlining(method) > MaximumRecursiveInlining.getValue(options)) {
             return "it exceeds the maximum recursive inlining depth";
+        } else if (!method.hasBytecodes()) {
+            return "it has no bytecodes to inline";
         } else {
             if (new OptimisticOptimizations(rootGraph.getProfilingInfo(method), options).lessOptimisticThan(context.getOptimisticOptimizations())) {
                 return "the callee uses less optimistic optimizations than caller";

@@ -24,13 +24,15 @@
 
 package org.graalvm.compiler.serviceprovider;
 
+import jdk.vm.ci.services.Services;
+
 /**
  * Interface to query which JDK version Graal is running on.
  */
 public final class JavaVersionUtil {
 
     private static int getJavaSpecificationVersion() {
-        String value = System.getProperty("java.specification.version");
+        String value = Services.getSavedProperties().get("java.specification.version");
         if (value.startsWith("1.")) {
             value = value.substring(2);
         }

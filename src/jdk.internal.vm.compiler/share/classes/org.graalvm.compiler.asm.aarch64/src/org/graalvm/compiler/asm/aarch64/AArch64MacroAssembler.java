@@ -266,7 +266,8 @@ public class AArch64MacroAssembler extends AArch64Assembler {
      * @return AArch64Address pointing to memory at {@code base + displacement}.
      */
     public AArch64Address makeAddress(Register base, long displacement, int transferSize) {
-        return makeAddress(base, displacement, zr, /* signExtend */false, transferSize, zr, /* allowOverwrite */false);
+        return makeAddress(base, displacement, zr, /* signExtend */false, //
+                        transferSize, zr, /* allowOverwrite */false);
     }
 
     /**
@@ -365,7 +366,19 @@ public class AArch64MacroAssembler extends AArch64Assembler {
      * @param imm immediate loaded into register.
      */
     public void mov(Register dst, long imm) {
+        mov(dst, imm, false);
+    }
+
+    /**
+     * Loads immediate into register.
+     *
+     * @param dst general purpose register. May not be null, zero-register or stackpointer.
+     * @param imm immediate loaded into register.
+     * @param annotateImm Flag to signal of the immediate value should be annotated.
+     */
+    public void mov(Register dst, long imm, boolean annotateImm) {
         assert dst.getRegisterCategory().equals(CPU);
+        int pos = position();
         if (imm == 0L) {
             movx(dst, zr);
         } else if (LogicalImmediateTable.isRepresentable(true, imm) != LogicalImmediateTable.Representable.NO) {
@@ -379,6 +392,9 @@ public class AArch64MacroAssembler extends AArch64Assembler {
             sxt(64, 32, dst, dst);
         } else {
             mov64(dst, imm);
+            if (annotateImm) {
+                annotatePatchingImmediateNativeAddress(pos, 64, 4);
+            }
         }
     }
 
@@ -403,9 +419,25 @@ public class AArch64MacroAssembler extends AArch64Assembler {
      * @param imm
      */
     public void movNativeAddress(Register dst, long imm) {
+        movNativeAddress(dst, imm, false);
+    }
+
+    /**
+     * Generates a 48-bit immediate move code sequence. The immediate may later be updated by
+     * HotSpot.
+     *
+     * In AArch64 mode the virtual address space is 48-bits in size, so we only need three
+     * instructions to create a patchable instruction sequence that can reach anywhere.
+     *
+     * @param dst general purpose register. May not be null, stackpointer or zero-register.
+     * @param imm The immediate address
+     * @param annotateImm Flag to signal of the immediate value should be annotated.
+     */
+    public void movNativeAddress(Register dst, long imm, boolean annotateImm) {
         assert (imm & 0xFFFF_0000_0000_0000L) == 0;
         // We have to move all non zero parts of the immediate in 16-bit chunks
         boolean firstMove = true;
+        int pos = position();
         for (int offset = 0; offset < 48; offset += 16) {
             int chunk = (int) (imm >> offset) & NumUtil.getNbitNumberInt(16);
             if (firstMove) {
@@ -414,6 +446,9 @@ public class AArch64MacroAssembler extends AArch64Assembler {
             } else {
                 movk(64, dst, chunk, offset);
             }
+        }
+        if (annotateImm) {
+            annotatePatchingImmediateNativeAddress(pos, 48, 3);
         }
         assert !firstMove;
     }
@@ -1597,7 +1632,7 @@ public class AArch64MacroAssembler extends AArch64Assembler {
     }
 
     public void pause() {
-        throw GraalError.unimplemented();
+        super.hint(SystemHint.YIELD);
     }
 
     /**
@@ -1721,7 +1756,8 @@ public class AArch64MacroAssembler extends AArch64Assembler {
      */
     @Override
     public AArch64Address makeAddress(Register base, int displacement) {
-        return makeAddress(base, displacement, zr, /* signExtend */false, /* transferSize */0, zr, /* allowOverwrite */false);
+        return makeAddress(base, displacement, zr, /* signExtend */false, /* transferSize */0, //
+                        zr, /* allowOverwrite */false);
     }
 
     @Override
@@ -1730,7 +1766,9 @@ public class AArch64MacroAssembler extends AArch64Assembler {
     }
 
     public void addressOf(Register dst) {
-        // This will be fixed up later.
+        if (codePatchingAnnotationConsumer != null) {
+            codePatchingAnnotationConsumer.accept(new AdrpAddMacroInstruction(position()));
+        }
         super.adrp(dst);
         super.add(64, dst, dst, 0);
     }
@@ -1743,5 +1781,52 @@ public class AArch64MacroAssembler extends AArch64Assembler {
      */
     public void lea(Register d, AArch64Address a) {
         a.lea(this, d);
+    }
+
+    public interface MacroInstruction {
+        void patch(int codePos, int relative, byte[] code);
+    }
+
+    /**
+     * Emits elf patchable adrp add sequence.
+     */
+    public void adrAddRel(int srcSize, Register result, AArch64Address a) {
+        if (codePatchingAnnotationConsumer != null) {
+            codePatchingAnnotationConsumer.accept(new ADRADDPRELMacroInstruction(position()));
+        }
+        super.adrp(a.getBase());
+        this.ldr(srcSize, result, a);
+    }
+
+    public static class ADRADDPRELMacroInstruction extends CodeAnnotation implements MacroInstruction {
+        public ADRADDPRELMacroInstruction(int position) {
+            super(position);
+        }
+
+        @Override
+        public String toString() {
+            return "ADR_PREL_PG";
+        }
+
+        @Override
+        public void patch(int codePos, int relative, byte[] code) {
+            throw GraalError.unimplemented();
+        }
+    }
+
+    public static class AdrpAddMacroInstruction extends CodeAnnotation implements MacroInstruction {
+        public AdrpAddMacroInstruction(int position) {
+            super(position);
+        }
+
+        @Override
+        public String toString() {
+            return "ADRP_ADD";
+        }
+
+        @Override
+        public void patch(int codePos, int relative, byte[] code) {
+            throw GraalError.unimplemented();
+        }
     }
 }

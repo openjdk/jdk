@@ -24,16 +24,15 @@
 
 package org.graalvm.compiler.replacements.nodes;
 
+import static org.graalvm.compiler.core.common.GraalOptions.UseGraalStubs;
 import static org.graalvm.compiler.nodeinfo.InputType.Memory;
 
-import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.Canonicalizable;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
-import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeCycles;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodeinfo.NodeSize;
@@ -51,14 +50,11 @@ import org.graalvm.compiler.nodes.spi.Virtualizable;
 import org.graalvm.compiler.nodes.spi.VirtualizerTool;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.nodes.virtual.VirtualObjectNode;
-import org.graalvm.compiler.options.Option;
-import org.graalvm.compiler.options.OptionKey;
 import jdk.internal.vm.compiler.word.LocationIdentity;
 
 import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.Value;
 
 // JaCoCo Exclude
@@ -68,13 +64,6 @@ import jdk.vm.ci.meta.Value;
  */
 @NodeInfo(cycles = NodeCycles.CYCLES_UNKNOWN, size = NodeSize.SIZE_128)
 public final class ArrayEqualsNode extends FixedWithNextNode implements LIRLowerable, Canonicalizable, Virtualizable, MemoryAccess {
-
-    public static class Options {
-        // @formatter:off
-        @Option(help = "Use Array equals stubs instead of embedding all the emitted code.")
-        public static final OptionKey<Boolean> ArrayEqualsStubs = new OptionKey<>(true);
-        // @formatter:on
-    }
 
     public static final NodeClass<ArrayEqualsNode> TYPE = NodeClass.create(ArrayEqualsNode.class);
     /** {@link JavaKind} of the arrays to compare. */
@@ -225,27 +214,30 @@ public final class ArrayEqualsNode extends FixedWithNextNode implements LIRLower
         return equals(array1, array2, length, JavaKind.Double);
     }
 
+    public ValueNode getLength() {
+        return length;
+    }
+
+    public JavaKind getKind() {
+        return kind;
+    }
+
     @Override
     public void generate(NodeLIRBuilderTool gen) {
-        LIRGeneratorTool tool = gen.getLIRGeneratorTool();
+        if (UseGraalStubs.getValue(graph().getOptions())) {
+            ForeignCallLinkage linkage = gen.lookupGraalStub(this);
+            if (linkage != null) {
+                Value result = gen.getLIRGeneratorTool().emitForeignCall(linkage, null, gen.operand(array1), gen.operand(array2), gen.operand(length));
+                gen.setResult(this, result);
+                return;
+            }
+        }
+
         int constantLength = -1;
         if (length.isConstant()) {
             constantLength = length.asJavaConstant().asInt();
         }
-
-        if (Options.ArrayEqualsStubs.getValue(graph().getOptions())) {
-            ResolvedJavaMethod method = graph().method();
-            if (method != null && method.getAnnotation(Snippet.class) == null) {
-                ForeignCallLinkage linkage = tool.lookupArrayEqualsStub(kind, constantLength);
-                if (linkage != null) {
-                    Value result = tool.emitForeignCall(linkage, null, gen.operand(array1), gen.operand(array2), gen.operand(length));
-                    gen.setResult(this, result);
-                    return;
-                }
-            }
-        }
-
-        Value result = tool.emitArrayEquals(kind, gen.operand(array1), gen.operand(array2), gen.operand(length), constantLength, false);
+        Value result = gen.getLIRGeneratorTool().emitArrayEquals(kind, gen.operand(array1), gen.operand(array2), gen.operand(length), constantLength, false);
         gen.setResult(this, result);
     }
 

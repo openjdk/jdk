@@ -143,7 +143,7 @@ public class VerifyUsageWithEquals extends VerifyPhase<PhaseContext> {
     }
 
     @Override
-    protected boolean verify(StructuredGraph graph, PhaseContext context) {
+    protected void verify(StructuredGraph graph, PhaseContext context) {
         for (ObjectEqualsNode cn : graph.getNodes().filter(ObjectEqualsNode.class)) {
             // bail out if we compare an object of type klass with == or != (except null checks)
             ResolvedJavaMethod method = graph.method();
@@ -156,6 +156,5 @@ public class VerifyUsageWithEquals extends VerifyPhase<PhaseContext> {
                                 " must use .equals() for object equality, not '==' or '!='");
             }
         }
-        return true;
     }
 }

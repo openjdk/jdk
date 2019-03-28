@@ -53,7 +53,7 @@ public class VerifyVirtualizableUsage extends VerifyPhase<PhaseContext> {
     }
 
     @Override
-    protected boolean verify(StructuredGraph graph, PhaseContext context) {
+    protected void verify(StructuredGraph graph, PhaseContext context) {
         final ResolvedJavaType graphType = context.getMetaAccess().lookupJavaType(Graph.class);
         final ResolvedJavaType virtualizableType = context.getMetaAccess().lookupJavaType(Virtualizable.class);
         final ResolvedJavaType constantNodeType = context.getMetaAccess().lookupJavaType(ConstantNode.class);
@@ -70,7 +70,6 @@ public class VerifyVirtualizableUsage extends VerifyPhase<PhaseContext> {
                 }
             }
         }
-        return true;
     }
 
     private static void verifyVirtualizableEffectArguments(ResolvedJavaType constantNodeType, ResolvedJavaMethod caller, ResolvedJavaMethod callee, int bciCaller,

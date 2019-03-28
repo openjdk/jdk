@@ -428,7 +428,7 @@ public abstract class EffectsClosure<BlockT extends EffectsBlockState<BlockT>> e
     protected abstract class MergeProcessor {
 
         private final Block mergeBlock;
-        private final AbstractMergeNode merge;
+        protected final AbstractMergeNode merge;
 
         protected final GraphEffectList mergeEffects;
         protected final GraphEffectList afterMergeEffects;

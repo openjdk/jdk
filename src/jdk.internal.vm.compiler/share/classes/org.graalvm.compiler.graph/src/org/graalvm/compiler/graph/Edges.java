@@ -26,7 +26,6 @@ package org.graalvm.compiler.graph;
 
 import static org.graalvm.compiler.graph.Graph.isModificationCountsEnabled;
 import static org.graalvm.compiler.graph.Node.NOT_ITERABLE;
-import static org.graalvm.compiler.graph.UnsafeAccess.UNSAFE;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -34,12 +33,17 @@ import java.util.Iterator;
 import org.graalvm.compiler.core.common.Fields;
 import org.graalvm.compiler.core.common.FieldsScanner;
 import org.graalvm.compiler.graph.NodeClass.EdgeInfo;
+import org.graalvm.compiler.serviceprovider.GraalUnsafeAccess;
+
+import sun.misc.Unsafe;
 
 /**
  * Describes {@link Node} fields representing the set of inputs for the node or the set of the
  * node's successors.
  */
 public abstract class Edges extends Fields {
+
+    private static final Unsafe UNSAFE = GraalUnsafeAccess.getUnsafe();
 
     /**
      * Constants denoting whether a set of edges are inputs or successors.

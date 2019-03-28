@@ -416,7 +416,9 @@ public class BenchmarkCounters {
                         if (waitingForEnd) {
                             waitingForEnd = false;
                             running = false;
-                            BenchmarkCounters.dump(options, getPrintStream(options), (System.nanoTime() - startTime) / 1000000000d, jvmciRuntime.collectCounters(), 100);
+                            try (PrintStreamScope scope = getPrintStream(options)) {
+                                BenchmarkCounters.dump(options, scope.out, (System.nanoTime() - startTime) / 1000000000d, jvmciRuntime.collectCounters(), 100);
+                            }
                         }
                         break;
                 }
@@ -445,18 +447,19 @@ public class BenchmarkCounters {
         if (Options.TimedDynamicCounters.getValue(options) > 0) {
             Thread thread = new Thread() {
                 long lastTime = System.nanoTime();
-                PrintStream out = getPrintStream(options);
 
                 @Override
                 public void run() {
-                    while (true) {
-                        try {
-                            Thread.sleep(Options.TimedDynamicCounters.getValue(options));
-                        } catch (InterruptedException e) {
+                    try (PrintStreamScope scope = getPrintStream(options)) {
+                        while (true) {
+                            try {
+                                Thread.sleep(Options.TimedDynamicCounters.getValue(options));
+                            } catch (InterruptedException e) {
+                            }
+                            long time = System.nanoTime();
+                            dump(options, scope.out, (time - lastTime) / 1000000000d, jvmciRuntime.collectCounters(), 10);
+                            lastTime = time;
                         }
-                        long time = System.nanoTime();
-                        dump(options, out, (time - lastTime) / 1000000000d, jvmciRuntime.collectCounters(), 10);
-                        lastTime = time;
                     }
                 }
             };
@@ -472,22 +475,39 @@ public class BenchmarkCounters {
 
     public static void shutdown(HotSpotJVMCIRuntime jvmciRuntime, OptionValues options, long compilerStartTime) {
         if (Options.GenericDynamicCounters.getValue(options)) {
-            dump(options, getPrintStream(options), (System.nanoTime() - compilerStartTime) / 1000000000d, jvmciRuntime.collectCounters(), 100);
+            try (PrintStreamScope scope = getPrintStream(options)) {
+                dump(options, scope.out, (System.nanoTime() - compilerStartTime) / 1000000000d, jvmciRuntime.collectCounters(), 100);
+            }
         }
     }
 
-    private static PrintStream getPrintStream(OptionValues options) {
-        if (Options.BenchmarkCountersFile.getValue(options) != null) {
-            try {
+    static class PrintStreamScope implements AutoCloseable {
+        final PrintStream out;
 
-                File file = new File(Options.BenchmarkCountersFile.getValue(options));
-                TTY.println("Writing benchmark counters to '%s'", file.getAbsolutePath());
-                return new PrintStream(file);
-            } catch (IOException e) {
-                TTY.out().println(e.getMessage());
-                TTY.out().println("Fallback to default");
+        PrintStreamScope(OptionValues options) {
+            PrintStream ps = TTY.out;
+            if (Options.BenchmarkCountersFile.getValue(options) != null) {
+                try {
+                    File file = new File(Options.BenchmarkCountersFile.getValue(options));
+                    TTY.println("Writing benchmark counters to '%s'", file.getAbsolutePath());
+                    ps = new PrintStream(file);
+                } catch (IOException e) {
+                    TTY.out().println(e.getMessage());
+                    TTY.out().println("Fallback to default");
+                }
+            }
+            this.out = ps;
+        }
+
+        @Override
+        public void close() {
+            if (out != TTY.out) {
+                this.out.close();
             }
         }
-        return TTY.out;
+    }
+
+    private static PrintStreamScope getPrintStream(OptionValues options) {
+        return new PrintStreamScope(options);
     }
 }

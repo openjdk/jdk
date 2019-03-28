@@ -49,7 +49,7 @@ public abstract class HashFunction {
      * @param min {@code value} is guaranteed to be greater or equal to this minimum
      * @return the hash value within int range
      */
-    public abstract int apply(long value, long min);
+    public abstract int apply(int value, int min);
 
     /**
      * Generates LIR that implements the hash function in terms of value and min.
@@ -109,25 +109,25 @@ public abstract class HashFunction {
                       (gen, prime) -> (val, min) -> gen.emitShr(gen.emitMul(val, prime, false), min));
 
         addWithPrimes("rotateRight(val, prime)", 3,
-                      prime -> (val, min) -> Long.rotateRight(val, prime),
+                      prime -> (val, min) -> Integer.rotateRight(val, prime),
                       (gen, prime) -> (val, min) -> gen.emitRor(val, prime));
 
         addWithPrimes("rotateRight(val, prime) + val", 4,
-                      prime -> (val, min) -> Long.rotateRight(val, prime) + val,
+                      prime -> (val, min) -> Integer.rotateRight(val, prime) + val,
                       (gen, prime) -> (val, min) -> gen.emitAdd(gen.emitRor(val, prime), val, false));
 
         addWithPrimes("rotateRight(val, prime) ^ val", 4,
-                      prime -> (val, min) -> Long.rotateRight(val, prime) ^ val,
+                      prime -> (val, min) -> Integer.rotateRight(val, prime) ^ val,
                       (gen, prime) -> (val, min) -> gen.emitXor(gen.emitRor(val, prime), val));
       //@formatter:on
     }
 
-    private static void add(String toString, int effort, BiFunction<Long, Long, Long> f, Function<ArithmeticLIRGenerator, BiFunction<Value, Value, Value>> gen) {
+    private static void add(String toString, int effort, BiFunction<Integer, Integer, Integer> f, Function<ArithmeticLIRGenerator, BiFunction<Value, Value, Value>> gen) {
         instances.add(new HashFunction() {
 
             @Override
-            public int apply(long value, long min) {
-                return f.apply(value, min).intValue();
+            public int apply(int value, int min) {
+                return f.apply(value, min);
             }
 
             @Override
@@ -147,7 +147,7 @@ public abstract class HashFunction {
         });
     }
 
-    private static void addWithPrimes(String toString, int effort, Function<Integer, BiFunction<Long, Long, Long>> f,
+    private static void addWithPrimes(String toString, int effort, Function<Integer, BiFunction<Integer, Integer, Integer>> f,
                     BiFunction<ArithmeticLIRGenerator, Value, BiFunction<Value, Value, Value>> gen) {
         for (int p : mersennePrimes) {
             add(toString, effort, f.apply(p), g -> gen.apply(g, g.getLIRGen().emitJavaConstant(JavaConstant.forInt(p))));

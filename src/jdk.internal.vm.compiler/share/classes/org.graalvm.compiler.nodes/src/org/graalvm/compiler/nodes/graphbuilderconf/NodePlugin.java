@@ -243,3 +243,4 @@ public interface NodePlugin extends GraphBuilderPlugin {
         return false;
     }
 }
+

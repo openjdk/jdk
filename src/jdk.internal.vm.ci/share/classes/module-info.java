@@ -24,7 +24,9 @@
  */
 
 module jdk.internal.vm.ci {
-    exports jdk.vm.ci.services to jdk.internal.vm.compiler;
+    exports jdk.vm.ci.services to
+        jdk.internal.vm.compiler,
+        jdk.internal.vm.compiler.management;
     exports jdk.vm.ci.runtime to
         jdk.internal.vm.compiler,
         jdk.internal.vm.compiler.management;

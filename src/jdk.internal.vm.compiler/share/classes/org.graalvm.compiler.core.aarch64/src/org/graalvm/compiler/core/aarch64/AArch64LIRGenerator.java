@@ -164,7 +164,7 @@ public abstract class AArch64LIRGenerator extends LIRGenerator {
     public Variable emitValueCompareAndSwap(LIRKind accessKind, Value address, Value expectedValue, Value newValue) {
         Variable result = newVariable(newValue.getValueKind());
         Variable scratch = newVariable(LIRKind.value(AArch64Kind.WORD));
-        append(new CompareAndSwapOp(result, loadNonCompareConst(expectedValue), loadReg(newValue), asAllocatable(address), scratch));
+        append(new CompareAndSwapOp(result, loadReg(expectedValue), loadReg(newValue), asAllocatable(address), scratch));
         return result;
     }
 
@@ -238,8 +238,13 @@ public abstract class AArch64LIRGenerator extends LIRGenerator {
      *         null.
      */
     @Override
-    public Variable emitConditionalMove(PlatformKind cmpKind, Value left, Value right, Condition cond, boolean unorderedIsTrue, Value trueValue, Value falseValue) {
-        boolean mirrored = emitCompare(cmpKind, left, right, cond, unorderedIsTrue);
+    public Variable emitConditionalMove(PlatformKind cmpKind, Value left, final Value right, Condition cond, boolean unorderedIsTrue, Value trueValue, Value falseValue) {
+        AArch64ArithmeticLIRGenerator arithLir = ((AArch64ArithmeticLIRGenerator) arithmeticLIRGen);
+        Value actualRight = right;
+        if (isJavaConstant(actualRight) && arithLir.mustReplaceNullWithNullRegister((asJavaConstant(actualRight)))) {
+            actualRight = arithLir.getNullRegisterValue();
+        }
+        boolean mirrored = emitCompare(cmpKind, left, actualRight, cond, unorderedIsTrue);
         Condition finalCondition = mirrored ? cond.mirror() : cond;
         boolean finalUnorderedIsTrue = mirrored ? !unorderedIsTrue : unorderedIsTrue;
         ConditionFlag cmpCondition = toConditionFlag(((AArch64Kind) cmpKind).isInteger(), finalCondition, finalUnorderedIsTrue);
@@ -256,30 +261,38 @@ public abstract class AArch64LIRGenerator extends LIRGenerator {
     }
 
     @Override
-    public void emitCompareBranch(PlatformKind cmpKind, Value left, Value right, Condition cond, boolean unorderedIsTrue, LabelRef trueDestination, LabelRef falseDestination,
+    public void emitCompareBranch(PlatformKind cmpKind, Value left, final Value right, Condition cond, boolean unorderedIsTrue, LabelRef trueDestination, LabelRef falseDestination,
                     double trueDestinationProbability) {
+        Value actualRight = right;
         if (cond == Condition.EQ) {
             // emit cbz instruction for IsNullNode.
             assert !LIRValueUtil.isNullConstant(left) : "emitNullCheckBranch()'s null input should be in right.";
-            if (LIRValueUtil.isNullConstant(right)) {
-                append(new CompareBranchZeroOp(asAllocatable(left), trueDestination, falseDestination, trueDestinationProbability));
-                return;
+            AArch64ArithmeticLIRGenerator arithLir = ((AArch64ArithmeticLIRGenerator) arithmeticLIRGen);
+            if (LIRValueUtil.isNullConstant(actualRight)) {
+                JavaConstant rightConstant = asJavaConstant(actualRight);
+                if (arithLir.mustReplaceNullWithNullRegister(rightConstant)) {
+                    actualRight = arithLir.getNullRegisterValue();
+                } else {
+                    append(new CompareBranchZeroOp(asAllocatable(left), trueDestination, falseDestination,
+                                    trueDestinationProbability));
+                    return;
+                }
             }
 
             // emit cbz instruction for IntegerEquals when any of the inputs is zero.
             AArch64Kind kind = (AArch64Kind) cmpKind;
             if (kind.isInteger()) {
                 if (isIntConstant(left, 0)) {
-                    append(new CompareBranchZeroOp(asAllocatable(right), trueDestination, falseDestination, trueDestinationProbability));
+                    append(new CompareBranchZeroOp(asAllocatable(actualRight), trueDestination, falseDestination, trueDestinationProbability));
                     return;
-                } else if (isIntConstant(right, 0)) {
+                } else if (isIntConstant(actualRight, 0)) {
                     append(new CompareBranchZeroOp(asAllocatable(left), trueDestination, falseDestination, trueDestinationProbability));
                     return;
                 }
             }
         }
 
-        boolean mirrored = emitCompare(cmpKind, left, right, cond, unorderedIsTrue);
+        boolean mirrored = emitCompare(cmpKind, left, actualRight, cond, unorderedIsTrue);
         Condition finalCondition = mirrored ? cond.mirror() : cond;
         boolean finalUnorderedIsTrue = mirrored ? !unorderedIsTrue : unorderedIsTrue;
         ConditionFlag cmpCondition = toConditionFlag(((AArch64Kind) cmpKind).isInteger(), finalCondition, finalUnorderedIsTrue);

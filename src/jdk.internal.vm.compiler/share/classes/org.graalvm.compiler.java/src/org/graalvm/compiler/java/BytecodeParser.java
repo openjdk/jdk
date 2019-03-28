@@ -420,6 +420,8 @@ import org.graalvm.compiler.nodes.java.NewMultiArrayNode;
 import org.graalvm.compiler.nodes.java.RegisterFinalizerNode;
 import org.graalvm.compiler.nodes.java.StoreFieldNode;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
+import org.graalvm.compiler.nodes.spi.CoreProviders;
+import org.graalvm.compiler.nodes.spi.Replacements;
 import org.graalvm.compiler.nodes.spi.StampProvider;
 import org.graalvm.compiler.nodes.type.StampTool;
 import org.graalvm.compiler.nodes.util.GraphUtil;
@@ -714,10 +716,7 @@ public class BytecodeParser implements GraphBuilderContext {
         this.debug = graph.getDebug();
         this.graphBuilderConfig = graphBuilderInstance.graphBuilderConfig;
         this.optimisticOpts = graphBuilderInstance.optimisticOpts;
-        this.metaAccess = graphBuilderInstance.metaAccess;
-        this.stampProvider = graphBuilderInstance.stampProvider;
-        this.constantReflection = graphBuilderInstance.constantReflection;
-        this.constantFieldProvider = graphBuilderInstance.constantFieldProvider;
+        this.providers = graphBuilderInstance.providers;
         this.stream = new BytecodeStream(code.getCode());
         this.profilingInfo = graph.useProfilingInfo() ? code.getProfilingInfo() : null;
         this.constantPool = code.getConstantPool();
@@ -778,7 +777,7 @@ public class BytecodeParser implements GraphBuilderContext {
 
     @SuppressWarnings("try")
     protected void buildRootMethod() {
-        FrameStateBuilder startFrameState = new FrameStateBuilder(this, code, graph);
+        FrameStateBuilder startFrameState = new FrameStateBuilder(this, code, graph, graphBuilderConfig.retainLocalVariables());
         startFrameState.initializeForMethodStart(graph.getAssumptions(), graphBuilderConfig.eagerResolving() || intrinsicContext != null, graphBuilderConfig.getPlugins());
 
         try (IntrinsicScope s = intrinsicContext != null ? new IntrinsicScope(this) : null) {
@@ -1121,7 +1120,7 @@ public class BytecodeParser implements GraphBuilderContext {
 
         AbstractBeginNode dispatchBegin;
         if (exceptionObject == null) {
-            ExceptionObjectNode newExceptionObject = graph.add(new ExceptionObjectNode(metaAccess));
+            ExceptionObjectNode newExceptionObject = graph.add(new ExceptionObjectNode(getMetaAccess()));
             dispatchBegin = newExceptionObject;
             dispatchState.push(JavaKind.Object, dispatchBegin);
             dispatchState.setRethrowException(true);
@@ -1166,7 +1165,7 @@ public class BytecodeParser implements GraphBuilderContext {
     }
 
     protected ValueNode genLoadIndexed(ValueNode array, ValueNode index, GuardingNode boundsCheck, JavaKind kind) {
-        return LoadIndexedNode.create(graph.getAssumptions(), array, index, boundsCheck, kind, metaAccess, constantReflection);
+        return LoadIndexedNode.create(graph.getAssumptions(), array, index, boundsCheck, kind, getMetaAccess(), getConstantReflection());
     }
 
     protected void genStoreIndexed(ValueNode array, ValueNode index, GuardingNode boundsCheck, GuardingNode storeCheck, JavaKind kind, ValueNode value) {
@@ -1242,7 +1241,7 @@ public class BytecodeParser implements GraphBuilderContext {
     }
 
     protected ValueNode genNormalizeCompare(ValueNode x, ValueNode y, boolean isUnorderedLess) {
-        return NormalizeCompareNode.create(x, y, isUnorderedLess, JavaKind.Int, constantReflection);
+        return NormalizeCompareNode.create(x, y, isUnorderedLess, JavaKind.Int, getConstantReflection());
     }
 
     protected ValueNode genFloatConvert(FloatConvert op, ValueNode input) {
@@ -1273,15 +1272,15 @@ public class BytecodeParser implements GraphBuilderContext {
     }
 
     protected LogicNode genObjectEquals(ValueNode x, ValueNode y) {
-        return ObjectEqualsNode.create(constantReflection, metaAccess, options, x, y, NodeView.DEFAULT);
+        return ObjectEqualsNode.create(getConstantReflection(), getMetaAccess(), options, x, y, NodeView.DEFAULT);
     }
 
     protected LogicNode genIntegerEquals(ValueNode x, ValueNode y) {
-        return IntegerEqualsNode.create(constantReflection, metaAccess, options, null, x, y, NodeView.DEFAULT);
+        return IntegerEqualsNode.create(getConstantReflection(), getMetaAccess(), options, null, x, y, NodeView.DEFAULT);
     }
 
     protected LogicNode genIntegerLessThan(ValueNode x, ValueNode y) {
-        return IntegerLessThanNode.create(constantReflection, metaAccess, options, null, x, y, NodeView.DEFAULT);
+        return IntegerLessThanNode.create(getConstantReflection(), getMetaAccess(), options, null, x, y, NodeView.DEFAULT);
     }
 
     protected ValueNode genUnique(ValueNode x) {
@@ -1372,7 +1371,7 @@ public class BytecodeParser implements GraphBuilderContext {
             return null;
         }
         ValueNode length = append(genArrayLength(receiver));
-        LogicNode condition = genUnique(IntegerBelowNode.create(constantReflection, metaAccess, options, null, index, length, NodeView.DEFAULT));
+        LogicNode condition = genUnique(IntegerBelowNode.create(getConstantReflection(), getMetaAccess(), options, null, index, length, NodeView.DEFAULT));
         return emitBytecodeExceptionCheck(condition, true, BytecodeExceptionKind.OUT_OF_BOUNDS, index, length);
     }
 
@@ -1380,8 +1379,8 @@ public class BytecodeParser implements GraphBuilderContext {
         if (elementKind != JavaKind.Object || StampTool.isPointerAlwaysNull(value) || !needsExplicitStoreCheckException(array, value)) {
             return null;
         }
-        ValueNode arrayClass = genUnique(LoadHubNode.create(array, stampProvider, metaAccess, constantReflection));
-        ValueNode componentHub = append(LoadArrayComponentHubNode.create(arrayClass, stampProvider, metaAccess, constantReflection));
+        ValueNode arrayClass = genUnique(LoadHubNode.create(array, getStampProvider(), getMetaAccess(), getConstantReflection()));
+        ValueNode componentHub = append(LoadArrayComponentHubNode.create(arrayClass, getStampProvider(), getMetaAccess(), getConstantReflection()));
         LogicNode condition = genUnique(InstanceOfDynamicNode.create(graph.getAssumptions(), getConstantReflection(), componentHub, value, true));
         return emitBytecodeExceptionCheck(condition, true, BytecodeExceptionKind.ARRAY_STORE, value);
     }
@@ -1391,7 +1390,7 @@ public class BytecodeParser implements GraphBuilderContext {
             return null;
         }
         ConstantNode zero = ConstantNode.defaultForKind(y.getStackKind(), graph);
-        LogicNode condition = genUnique(IntegerEqualsNode.create(constantReflection, metaAccess, options, null, y, zero, NodeView.DEFAULT));
+        LogicNode condition = genUnique(IntegerEqualsNode.create(getConstantReflection(), getMetaAccess(), options, null, y, zero, NodeView.DEFAULT));
         return emitBytecodeExceptionCheck(condition, false, BytecodeExceptionKind.DIVISION_BY_ZERO);
     }
 
@@ -1400,7 +1399,7 @@ public class BytecodeParser implements GraphBuilderContext {
             return null;
         }
 
-        BytecodeExceptionNode exception = graph.add(new BytecodeExceptionNode(metaAccess, exceptionKind, arguments));
+        BytecodeExceptionNode exception = graph.add(new BytecodeExceptionNode(getMetaAccess(), exceptionKind, arguments));
         AbstractBeginNode passingSuccessor = graph.add(new BeginNode());
 
         FixedNode trueSuccessor = passingOnTrue ? passingSuccessor : exception;
@@ -1416,7 +1415,7 @@ public class BytecodeParser implements GraphBuilderContext {
     }
 
     protected ValueNode genArrayLength(ValueNode x) {
-        return ArrayLengthNode.create(x, constantReflection);
+        return ArrayLengthNode.create(x, getConstantReflection());
     }
 
     protected void genStoreField(ValueNode receiver, ResolvedJavaField field, ValueNode value) {
@@ -1567,7 +1566,7 @@ public class BytecodeParser implements GraphBuilderContext {
                 FrameState stateBefore = createCurrentFrameState();
                 appendixNode = invokeDynamicPlugin.genAppendixNode(this, cpi, opcode, appendix, stateBefore);
             } else {
-                appendixNode = ConstantNode.forConstant(appendix, metaAccess, graph);
+                appendixNode = ConstantNode.forConstant(appendix, getMetaAccess(), graph);
             }
 
             frameState.push(JavaKind.Object, appendixNode);
@@ -1629,10 +1628,7 @@ public class BytecodeParser implements GraphBuilderContext {
     protected final ProfilingInfo profilingInfo;
     protected final OptimisticOptimizations optimisticOpts;
     protected final ConstantPool constantPool;
-    protected final MetaAccessProvider metaAccess;
-    private final ConstantReflectionProvider constantReflection;
-    private final ConstantFieldProvider constantFieldProvider;
-    private final StampProvider stampProvider;
+    protected final CoreProviders providers;
     protected final IntrinsicContext intrinsicContext;
 
     @Override
@@ -1954,7 +1950,7 @@ public class BytecodeParser implements GraphBuilderContext {
         }
 
         String error(String format, Object... a) {
-            return String.format(format, a) + String.format("%n\tplugin at %s", plugin.getApplySourceLocation(metaAccess));
+            return String.format(format, a) + String.format("%n\tplugin at %s", plugin.getApplySourceLocation(getMetaAccess()));
         }
 
         boolean check(boolean pluginResult) {
@@ -2039,11 +2035,12 @@ public class BytecodeParser implements GraphBuilderContext {
             Mark mark = graph.getMark();
             FixedWithNextNode currentLastInstr = lastInstr;
             ValueNode nonNullReceiver = pluginReceiver.get();
-            Stamp methodStamp = stampProvider.createMethodStamp();
-            LoadHubNode hub = graph.unique(new LoadHubNode(stampProvider, nonNullReceiver));
+            Stamp methodStamp = getStampProvider().createMethodStamp();
+            LoadHubNode hub = graph.unique(new LoadHubNode(getStampProvider(), nonNullReceiver));
             LoadMethodNode actual = append(new LoadMethodNode(methodStamp, targetMethod, receiverType, method.getDeclaringClass(), hub));
             ConstantNode expected = graph.unique(ConstantNode.forConstant(methodStamp, targetMethod.getEncoding(), getMetaAccess()));
-            LogicNode compare = graph.addOrUniqueWithInputs(CompareNode.createCompareNode(constantReflection, metaAccess, options, null, CanonicalCondition.EQ, actual, expected, NodeView.DEFAULT));
+            LogicNode compare = graph.addOrUniqueWithInputs(
+                            CompareNode.createCompareNode(getConstantReflection(), getMetaAccess(), options, null, CanonicalCondition.EQ, actual, expected, NodeView.DEFAULT));
 
             JavaTypeProfile profile = null;
             if (profilingInfo != null && this.optimisticOpts.useTypeCheckHints(getOptions())) {
@@ -2321,7 +2318,7 @@ public class BytecodeParser implements GraphBuilderContext {
                         }
                         return false;
                     }
-                    if (canInlinePartialIntrinsicExit() && InlinePartialIntrinsicExitDuringParsing.getValue(options) && !IS_BUILDING_NATIVE_IMAGE) {
+                    if (canInlinePartialIntrinsicExit()) {
                         // Otherwise inline the original method. Any frame state created
                         // during the inlining will exclude frame(s) in the
                         // intrinsic method (see FrameStateBuilder.create(int bci)).
@@ -2384,7 +2381,7 @@ public class BytecodeParser implements GraphBuilderContext {
      * intrinsic) can be inlined.
      */
     protected boolean canInlinePartialIntrinsicExit() {
-        return true;
+        return InlinePartialIntrinsicExitDuringParsing.getValue(options) && !IS_BUILDING_NATIVE_IMAGE && method.getAnnotation(Snippet.class) == null;
     }
 
     private void printInlining(ResolvedJavaMethod targetMethod, ResolvedJavaMethod inlinedMethod, boolean success, String msg) {
@@ -2446,7 +2443,7 @@ public class BytecodeParser implements GraphBuilderContext {
 
         try (IntrinsicScope s = calleeIntrinsicContext != null && !parsingIntrinsic() ? new IntrinsicScope(this, targetMethod.getSignature().toParameterKinds(!targetMethod.isStatic()), args) : null) {
             BytecodeParser parser = graphBuilderInstance.createBytecodeParser(graph, this, targetMethod, INVOCATION_ENTRY_BCI, calleeIntrinsicContext);
-            FrameStateBuilder startFrameState = new FrameStateBuilder(parser, parser.code, graph);
+            FrameStateBuilder startFrameState = new FrameStateBuilder(parser, parser.code, graph, graphBuilderConfig.retainLocalVariables());
             if (!targetMethod.isStatic()) {
                 args[0] = nullCheckedValue(args[0]);
             }
@@ -2679,7 +2676,7 @@ public class BytecodeParser implements GraphBuilderContext {
         JsrScope scope = currentBlock.getJsrScope();
         int retAddress = scope.nextReturnAddress();
         ConstantNode returnBciNode = getJsrConstant(retAddress);
-        LogicNode guard = IntegerEqualsNode.create(constantReflection, metaAccess, options, null, local, returnBciNode, NodeView.DEFAULT);
+        LogicNode guard = IntegerEqualsNode.create(getConstantReflection(), getMetaAccess(), options, null, local, returnBciNode, NodeView.DEFAULT);
         guard = graph.addOrUniqueWithInputs(guard);
         append(new FixedGuardNode(guard, JavaSubroutineMismatch, InvalidateReprofile));
         if (!successor.getJsrScope().equals(scope.pop())) {
@@ -2731,7 +2728,7 @@ public class BytecodeParser implements GraphBuilderContext {
 
     protected ConstantNode appendConstant(JavaConstant constant) {
         assert constant != null;
-        return ConstantNode.forConstant(constant, metaAccess, graph);
+        return ConstantNode.forConstant(constant, getMetaAccess(), graph);
     }
 
     @Override
@@ -3602,12 +3599,17 @@ public class BytecodeParser implements GraphBuilderContext {
 
     @Override
     public StampProvider getStampProvider() {
-        return stampProvider;
+        return providers.getStampProvider();
     }
 
     @Override
     public MetaAccessProvider getMetaAccess() {
-        return metaAccess;
+        return providers.getMetaAccess();
+    }
+
+    @Override
+    public Replacements getReplacements() {
+        return providers.getReplacements();
     }
 
     @Override
@@ -3623,12 +3625,12 @@ public class BytecodeParser implements GraphBuilderContext {
 
     @Override
     public ConstantReflectionProvider getConstantReflection() {
-        return constantReflection;
+        return providers.getConstantReflection();
     }
 
     @Override
     public ConstantFieldProvider getConstantFieldProvider() {
-        return constantFieldProvider;
+        return providers.getConstantFieldProvider();
     }
 
     /**
@@ -3753,7 +3755,7 @@ public class BytecodeParser implements GraphBuilderContext {
 
     private JavaKind refineComponentType(ValueNode array, JavaKind kind) {
         if (kind == JavaKind.Byte) {
-            JavaType type = array.stamp(NodeView.DEFAULT).javaType(metaAccess);
+            JavaType type = array.stamp(NodeView.DEFAULT).javaType(getMetaAccess());
             if (type.isArray()) {
                 JavaType componentType = type.getComponentType();
                 if (componentType != null) {
@@ -4308,7 +4310,7 @@ public class BytecodeParser implements GraphBuilderContext {
     }
 
     private void genNewPrimitiveArray(int typeCode) {
-        ResolvedJavaType elementType = metaAccess.lookupJavaType(arrayTypeCodeToClass(typeCode));
+        ResolvedJavaType elementType = getMetaAccess().lookupJavaType(arrayTypeCodeToClass(typeCode));
         ValueNode length = frameState.pop(JavaKind.Int);
 
         for (NodePlugin plugin : graphBuilderConfig.getPlugins().getNodePlugins()) {
@@ -4492,7 +4494,7 @@ public class BytecodeParser implements GraphBuilderContext {
 
     @Override
     public AbstractBeginNode genExplicitExceptionEdge(BytecodeExceptionKind exceptionKind) {
-        BytecodeExceptionNode exceptionNode = graph.add(new BytecodeExceptionNode(metaAccess, exceptionKind));
+        BytecodeExceptionNode exceptionNode = graph.add(new BytecodeExceptionNode(getMetaAccess(), exceptionKind));
         exceptionNode.setStateAfter(createFrameState(bci(), exceptionNode));
         AbstractBeginNode exceptionDispatch = handleException(exceptionNode, bci(), false);
         exceptionNode.setNext(exceptionDispatch);
@@ -5113,3 +5115,4 @@ public class BytecodeParser implements GraphBuilderContext {
         return n == 0 ? "" : format("%" + n + "s", "");
     }
 }
+

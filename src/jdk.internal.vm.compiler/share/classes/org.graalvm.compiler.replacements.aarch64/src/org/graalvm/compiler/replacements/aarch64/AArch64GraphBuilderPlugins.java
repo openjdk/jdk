@@ -59,14 +59,16 @@ import sun.misc.Unsafe;
 
 public class AArch64GraphBuilderPlugins {
 
-    public static void register(Plugins plugins, BytecodeProvider bytecodeProvider, boolean explicitUnsafeNullChecks) {
+    public static void register(Plugins plugins, BytecodeProvider bytecodeProvider, boolean explicitUnsafeNullChecks, boolean registerMathPlugins) {
         InvocationPlugins invocationPlugins = plugins.getInvocationPlugins();
         invocationPlugins.defer(new Runnable() {
             @Override
             public void run() {
                 registerIntegerLongPlugins(invocationPlugins, AArch64IntegerSubstitutions.class, JavaKind.Int, bytecodeProvider);
                 registerIntegerLongPlugins(invocationPlugins, AArch64LongSubstitutions.class, JavaKind.Long, bytecodeProvider);
-                registerMathPlugins(invocationPlugins);
+                if (registerMathPlugins) {
+                    registerMathPlugins(invocationPlugins);
+                }
                 registerStringLatin1Plugins(invocationPlugins, bytecodeProvider);
                 registerStringUTF16Plugins(invocationPlugins, bytecodeProvider);
                 registerUnsafePlugins(invocationPlugins, bytecodeProvider);
