@@ -749,6 +749,11 @@ void ZStatCriticalPhase::register_end(const Ticks& start, const Ticks& end) cons
 }
 
 //
+// Stat timer
+//
+__thread uint32_t ZStatTimerDisable::_active = 0;
+
+//
 // Stat sample/inc
 //
 void ZStatSample(const ZStatSampler& sampler, uint64_t value, bool trace) {

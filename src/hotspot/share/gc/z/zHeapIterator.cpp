@@ -28,6 +28,7 @@
 #include "gc/z/zHeapIterator.hpp"
 #include "gc/z/zOop.inline.hpp"
 #include "gc/z/zRootsIterator.hpp"
+#include "gc/z/zStat.hpp"
 #include "memory/iterator.inline.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/stack.inline.hpp"
@@ -170,6 +171,7 @@ void ZHeapIterator::objects_do(ObjectClosure* cl) {
   // If we didn't do this the application would have expected to see
   // ObjectFree events for phantom reachable objects in the tag map.
 
+  ZStatTimerDisable disable;
   ZHeapIteratorRootOopClosure root_cl(this);
 
   // Push strong roots onto stack

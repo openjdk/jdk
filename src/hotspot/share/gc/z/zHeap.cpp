@@ -540,16 +540,19 @@ void ZHeap::print_extended_on(outputStream* st) const {
 
 class ZVerifyRootsTask : public ZTask {
 private:
+  ZStatTimerDisable  _disable;
   ZRootsIterator     _strong_roots;
   ZWeakRootsIterator _weak_roots;
 
 public:
   ZVerifyRootsTask() :
       ZTask("ZVerifyRootsTask"),
+      _disable(),
       _strong_roots(),
       _weak_roots() {}
 
   virtual void work() {
+    ZStatTimerDisable disable;
     ZVerifyOopClosure cl;
     _strong_roots.oops_do(&cl);
     _weak_roots.oops_do(&cl);
