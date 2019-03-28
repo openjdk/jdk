@@ -89,7 +89,6 @@ public:
   // for the particular GC cycles.
   void process_strong_roots(OopClosure* oops,
                             CLDClosure* clds,
-                            CLDClosure* weak_clds,
                             CodeBlobClosure* blobs,
                             ThreadClosure* thread_cl,
                             uint worker_id);
@@ -102,21 +101,12 @@ public:
                          uint worker_id);
 
   // Apply oops, clds and blobs to strongly and weakly reachable roots in the system
+  template <typename IsAlive>
   void update_all_roots(OopClosure* oops,
                         CLDClosure* clds,
                         CodeBlobClosure* blobs,
                         ThreadClosure* thread_cl,
                         uint worker_id);
-
-
-  // Apply oops, clds and blobs to strongly and weakly reachable roots in the system
-  // during traversal GC.
-  // It cleans up and updates weak roots in one iteration.
-  void traversal_update_all_roots(OopClosure* oops,
-                                  CLDClosure* clds,
-                                  CodeBlobClosure* blobs,
-                                  ThreadClosure* thread_cl,
-                                  uint worker_id);
 
   // For slow debug/verification code
   void process_all_roots_slow(OopClosure* oops);
