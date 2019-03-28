@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,7 +117,7 @@ Java_sun_awt_image_GifImageDecoder_parseImage(JNIEnv *env,
                                               jobject this,
                                               jint relx, jint rely,
                                               jint width, jint height,
-                                              jint interlace,
+                                              jboolean interlace,
                                               jint initCodeSize,
                                               jbyteArray blockh,
                                               jbyteArray raslineh,
