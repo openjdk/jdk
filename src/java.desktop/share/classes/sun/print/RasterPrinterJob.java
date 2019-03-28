@@ -1275,10 +1275,12 @@ public abstract class RasterPrinterJob extends PrinterJob {
                printerResAttr = (PrinterResolution)
                    service.getDefaultAttributeValue(PrinterResolution.class);
             }
-            double xr =
-               printerResAttr.getCrossFeedResolution(ResolutionSyntax.DPI);
-            double yr = printerResAttr.getFeedResolution(ResolutionSyntax.DPI);
-            setXYRes(xr, yr);
+            if (printerResAttr != null) {
+                double xr =
+                        printerResAttr.getCrossFeedResolution(ResolutionSyntax.DPI);
+                double yr = printerResAttr.getFeedResolution(ResolutionSyntax.DPI);
+                setXYRes(xr, yr);
+            }
         }
 
         pageRangesAttr =  (PageRanges)attributes.get(PageRanges.class);
