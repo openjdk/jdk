@@ -33,7 +33,7 @@
 // Stops value-numbering, Ideal calls or Identity functions.
 class Opaque1Node : public Node {
   virtual uint hash() const ;                  // { return NO_HASH; }
-  virtual uint cmp( const Node &n ) const;
+  virtual bool cmp( const Node &n ) const;
   public:
   Opaque1Node(Compile* C, Node *n) : Node(NULL, n) {
     // Put it on the Macro nodes list to removed during macro nodes expansion.
@@ -64,7 +64,7 @@ class Opaque1Node : public Node {
 // it's OK to be slightly sloppy on optimizations here.
 class Opaque2Node : public Node {
   virtual uint hash() const ;                  // { return NO_HASH; }
-  virtual uint cmp( const Node &n ) const;
+  virtual bool cmp( const Node &n ) const;
   public:
   Opaque2Node( Compile* C, Node *n ) : Node(0,n) {
     // Put it on the Macro nodes list to removed during macro nodes expansion.
@@ -117,7 +117,7 @@ class ProfileBooleanNode : public Node {
   bool _consumed;
   bool _delay_removal;
   virtual uint hash() const ;                  // { return NO_HASH; }
-  virtual uint cmp( const Node &n ) const;
+  virtual bool cmp( const Node &n ) const;
   public:
   ProfileBooleanNode(Node *n, uint false_cnt, uint true_cnt) : Node(0, n),
           _false_cnt(false_cnt), _true_cnt(true_cnt), _consumed(false), _delay_removal(true) {}

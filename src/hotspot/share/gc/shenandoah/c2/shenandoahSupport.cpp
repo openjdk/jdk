@@ -682,7 +682,7 @@ uint ShenandoahBarrierNode::hash() const {
   return TypeNode::hash() + _allow_fromspace;
 }
 
-uint ShenandoahBarrierNode::cmp(const Node& n) const {
+bool ShenandoahBarrierNode::cmp(const Node& n) const {
   return _allow_fromspace == ((ShenandoahBarrierNode&) n)._allow_fromspace
     && TypeNode::cmp(n);
 }

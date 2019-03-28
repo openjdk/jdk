@@ -300,7 +300,7 @@ struct BoolTest {
 // A Node to convert a Condition Codes to a Logical result.
 class BoolNode : public Node {
   virtual uint hash() const;
-  virtual uint cmp( const Node &n ) const;
+  virtual bool cmp( const Node &n ) const;
   virtual uint size_of() const;
 
   // Try to optimize signed integer comparison

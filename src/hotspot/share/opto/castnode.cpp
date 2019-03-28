@@ -81,7 +81,7 @@ Node *ConstraintCastNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return (in(0) && remove_dead_region(phase, can_reshape)) ? this : NULL;
 }
 
-uint ConstraintCastNode::cmp(const Node &n) const {
+bool ConstraintCastNode::cmp(const Node &n) const {
   return TypeNode::cmp(n) && ((ConstraintCastNode&)n)._carry_dependency == _carry_dependency;
 }
 
@@ -262,7 +262,7 @@ Node *CastIINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return NULL;
 }
 
-uint CastIINode::cmp(const Node &n) const {
+bool CastIINode::cmp(const Node &n) const {
   return ConstraintCastNode::cmp(n) && ((CastIINode&)n)._range_check_dependency == _range_check_dependency;
 }
 

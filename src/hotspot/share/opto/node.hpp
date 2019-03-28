@@ -1003,7 +1003,7 @@ public:
   // won't go into the table and we'll lose a little optimization.
   enum { NO_HASH = 0 };
   virtual uint hash() const;
-  virtual uint cmp( const Node &n ) const;
+  virtual bool cmp( const Node &n ) const;
 
   // Operation appears to be iteratively computed (such as an induction variable)
   // It is possible for this operation to return false for a loop-varying
@@ -1718,7 +1718,7 @@ Compile::set_node_notes_at(int idx, Node_Notes* value) {
 class TypeNode : public Node {
 protected:
   virtual uint hash() const;    // Check the type
-  virtual uint cmp( const Node &n ) const;
+  virtual bool cmp( const Node &n ) const;
   virtual uint size_of() const; // Size is bigger
   const Type* const _type;
 public:

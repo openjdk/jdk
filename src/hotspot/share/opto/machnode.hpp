@@ -161,7 +161,7 @@ public:
 
   // Hash and compare over operands are currently identical
   virtual uint  hash() const;
-  virtual uint  cmp( const MachOper &oper ) const;
+  virtual bool  cmp( const MachOper &oper ) const;
 
   // Virtual clone, since I do not know how big the MachOper is.
   virtual MachOper *clone() const = 0;
@@ -292,7 +292,7 @@ public:
 
   // Hash and compare over operands.  Used to do GVN on machine Nodes.
   virtual uint  hash() const;
-  virtual uint  cmp( const Node &n ) const;
+  virtual bool  cmp( const Node &n ) const;
 
   // Expand method for MachNode, replaces nodes representing pseudo
   // instructions with a set of nodes which represent real machine
@@ -861,7 +861,7 @@ public:
 class MachCallNode : public MachSafePointNode {
 protected:
   virtual uint hash() const { return NO_HASH; }  // CFG nodes do not hash
-  virtual uint cmp( const Node &n ) const;
+  virtual bool cmp( const Node &n ) const;
   virtual uint size_of() const = 0; // Size is bigger
 public:
   const TypeFunc *_tf;        // Function type
@@ -904,7 +904,7 @@ public:
 // "Base" class for machine-specific versions of subroutine calls
 class MachCallJavaNode : public MachCallNode {
 protected:
-  virtual uint cmp( const Node &n ) const;
+  virtual bool cmp( const Node &n ) const;
   virtual uint size_of() const; // Size is bigger
 public:
   ciMethod* _method;                 // Method being direct called
@@ -937,7 +937,7 @@ public:
 //------------------------------MachCallStaticJavaNode------------------------
 // Machine-specific versions of monomorphic subroutine calls
 class MachCallStaticJavaNode : public MachCallJavaNode {
-  virtual uint cmp( const Node &n ) const;
+  virtual bool cmp( const Node &n ) const;
   virtual uint size_of() const; // Size is bigger
 public:
   const char *_name;            // Runtime wrapper name
@@ -973,7 +973,7 @@ public:
 //------------------------------MachCallRuntimeNode----------------------------
 // Machine-specific versions of subroutine calls
 class MachCallRuntimeNode : public MachCallNode {
-  virtual uint cmp( const Node &n ) const;
+  virtual bool cmp( const Node &n ) const;
   virtual uint size_of() const; // Size is bigger
 public:
   const char *_name;            // Printable name, if _method is NULL
@@ -1066,7 +1066,7 @@ public:
   virtual uint           opcode() const;
 
   virtual uint           hash()   const;
-  virtual uint           cmp( const MachOper &oper ) const;
+  virtual bool           cmp( const MachOper &oper ) const;
 #ifndef PRODUCT
   virtual const char    *Name()   const { return "Label";}
 
@@ -1093,7 +1093,7 @@ public:
   virtual uint           opcode() const;
 
   virtual uint           hash()   const;
-  virtual uint           cmp( const MachOper &oper ) const;
+  virtual bool           cmp( const MachOper &oper ) const;
 #ifndef PRODUCT
   virtual const char    *Name()   const { return "Method";}
 

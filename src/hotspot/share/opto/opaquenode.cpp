@@ -29,7 +29,7 @@
 //=============================================================================
 // Do not allow value-numbering
 uint Opaque1Node::hash() const { return NO_HASH; }
-uint Opaque1Node::cmp( const Node &n ) const {
+bool Opaque1Node::cmp( const Node &n ) const {
   return (&n == this);          // Always fail except on self
 }
 
@@ -56,7 +56,7 @@ Node* Opaque1Node::Identity(PhaseGVN* phase) {
 
 // Do not allow value-numbering
 uint Opaque2Node::hash() const { return NO_HASH; }
-uint Opaque2Node::cmp( const Node &n ) const {
+bool Opaque2Node::cmp( const Node &n ) const {
   return (&n == this);          // Always fail except on self
 }
 
@@ -67,7 +67,7 @@ const Type* Opaque4Node::Value(PhaseGVN* phase) const {
 //=============================================================================
 
 uint ProfileBooleanNode::hash() const { return NO_HASH; }
-uint ProfileBooleanNode::cmp( const Node &n ) const {
+bool ProfileBooleanNode::cmp( const Node &n ) const {
   return (&n == this);
 }
 

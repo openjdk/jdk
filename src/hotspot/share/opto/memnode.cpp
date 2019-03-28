@@ -758,7 +758,7 @@ bool LoadNode::can_remove_control() const {
   return true;
 }
 uint LoadNode::size_of() const { return sizeof(*this); }
-uint LoadNode::cmp( const Node &n ) const
+bool LoadNode::cmp( const Node &n ) const
 { return !Type::cmp( _type, ((LoadNode&)n)._type ); }
 const Type *LoadNode::bottom_type() const { return _type; }
 uint LoadNode::ideal_reg() const {
@@ -2627,7 +2627,7 @@ uint StoreNode::match_edge(uint idx) const {
 //------------------------------cmp--------------------------------------------
 // Do not common stores up together.  They generally have to be split
 // back up anyways, so do not bother.
-uint StoreNode::cmp( const Node &n ) const {
+bool StoreNode::cmp( const Node &n ) const {
   return (&n == this);          // Always fail except on self
 }
 
@@ -3057,7 +3057,7 @@ MemBarNode::MemBarNode(Compile* C, int alias_idx, Node* precedent)
 
 //------------------------------cmp--------------------------------------------
 uint MemBarNode::hash() const { return NO_HASH; }
-uint MemBarNode::cmp( const Node &n ) const {
+bool MemBarNode::cmp( const Node &n ) const {
   return (&n == this);          // Always fail except on self
 }
 
@@ -4438,7 +4438,7 @@ MergeMemNode* MergeMemNode::make(Node* mem) {
 
 //------------------------------cmp--------------------------------------------
 uint MergeMemNode::hash() const { return NO_HASH; }
-uint MergeMemNode::cmp( const Node &n ) const {
+bool MergeMemNode::cmp( const Node &n ) const {
   return (&n == this);          // Always fail except on self
 }
 

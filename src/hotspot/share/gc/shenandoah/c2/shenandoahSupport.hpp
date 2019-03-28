@@ -120,7 +120,7 @@ public:
 
 protected:
   uint hash() const;
-  uint cmp(const Node& n) const;
+  bool cmp(const Node& n) const;
   uint size_of() const;
 
 private:

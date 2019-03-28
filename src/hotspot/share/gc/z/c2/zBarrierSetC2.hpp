@@ -63,7 +63,7 @@ public:
 
   virtual int Opcode() const;
   virtual uint size_of() const;
-  virtual uint cmp(const Node& n) const;
+  virtual bool cmp(const Node& n) const;
   virtual const Type *bottom_type() const;
   virtual const TypePtr* adr_type() const;
   virtual const Type *Value(PhaseGVN *phase) const;

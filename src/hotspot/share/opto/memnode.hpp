@@ -183,7 +183,7 @@ private:
   const MemOrd _mo;
 
 protected:
-  virtual uint cmp(const Node &n) const;
+  virtual bool cmp(const Node &n) const;
   virtual uint size_of() const; // Size is bigger
   // Should LoadNode::Ideal() attempt to remove control edges?
   virtual bool can_remove_control() const;
@@ -373,7 +373,7 @@ public:
 // Load a long from memory
 class LoadLNode : public LoadNode {
   virtual uint hash() const { return LoadNode::hash() + _require_atomic_access; }
-  virtual uint cmp( const Node &n ) const {
+  virtual bool cmp( const Node &n ) const {
     return _require_atomic_access == ((LoadLNode&)n)._require_atomic_access
       && LoadNode::cmp(n);
   }
@@ -425,7 +425,7 @@ public:
 // Load a double (64 bits) from memory
 class LoadDNode : public LoadNode {
   virtual uint hash() const { return LoadNode::hash() + _require_atomic_access; }
-  virtual uint cmp( const Node &n ) const {
+  virtual bool cmp( const Node &n ) const {
     return _require_atomic_access == ((LoadDNode&)n)._require_atomic_access
       && LoadNode::cmp(n);
   }
@@ -535,7 +535,7 @@ private:
   // Needed for proper cloning.
   virtual uint size_of() const { return sizeof(*this); }
 protected:
-  virtual uint cmp( const Node &n ) const;
+  virtual bool cmp( const Node &n ) const;
   virtual bool depends_only_on_test() const { return false; }
 
   Node *Ideal_masked_input       (PhaseGVN *phase, uint mask);
@@ -650,7 +650,7 @@ public:
 // Store long to memory
 class StoreLNode : public StoreNode {
   virtual uint hash() const { return StoreNode::hash() + _require_atomic_access; }
-  virtual uint cmp( const Node &n ) const {
+  virtual bool cmp( const Node &n ) const {
     return _require_atomic_access == ((StoreLNode&)n)._require_atomic_access
       && StoreNode::cmp(n);
   }
@@ -686,7 +686,7 @@ public:
 // Store double to memory
 class StoreDNode : public StoreNode {
   virtual uint hash() const { return StoreNode::hash() + _require_atomic_access; }
-  virtual uint cmp( const Node &n ) const {
+  virtual bool cmp( const Node &n ) const {
     return _require_atomic_access == ((StoreDNode&)n)._require_atomic_access
       && StoreNode::cmp(n);
   }
@@ -746,7 +746,7 @@ public:
 class StoreCMNode : public StoreNode {
  private:
   virtual uint hash() const { return StoreNode::hash() + _oop_alias_idx; }
-  virtual uint cmp( const Node &n ) const {
+  virtual bool cmp( const Node &n ) const {
     return _oop_alias_idx == ((StoreCMNode&)n)._oop_alias_idx
       && StoreNode::cmp(n);
   }
@@ -1142,7 +1142,7 @@ public:
 // separate it from any following volatile-load.
 class MemBarNode: public MultiNode {
   virtual uint hash() const ;                  // { return NO_HASH; }
-  virtual uint cmp( const Node &n ) const ;    // Always fail, except on self
+  virtual bool cmp( const Node &n ) const ;    // Always fail, except on self
 
   virtual uint size_of() const { return sizeof(*this); }
   // Memory type this node is serializing.  Usually either rawptr or bottom.
@@ -1399,7 +1399,7 @@ public:
 // (See comment in memnode.cpp near MergeMemNode::MergeMemNode for semantics.)
 class MergeMemNode: public Node {
   virtual uint hash() const ;                  // { return NO_HASH; }
-  virtual uint cmp( const Node &n ) const ;    // Always fail, except on self
+  virtual bool cmp( const Node &n ) const ;    // Always fail, except on self
   friend class MergeMemStream;
   MergeMemNode(Node* def);  // clients use MergeMemNode::make
 

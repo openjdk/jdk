@@ -194,9 +194,9 @@ uint LoadBarrierNode::size_of() const {
   return sizeof(*this);
 }
 
-uint LoadBarrierNode::cmp(const Node& n) const {
+bool LoadBarrierNode::cmp(const Node& n) const {
   ShouldNotReachHere();
-  return 0;
+  return false;
 }
 
 const Type *LoadBarrierNode::bottom_type() const {

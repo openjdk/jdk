@@ -131,7 +131,7 @@ class PhiNode : public TypeNode {
   const int _inst_offset; // Offset of the instance memory slice.
   // Size is bigger to hold the _adr_type field.
   virtual uint hash() const;    // Check the type
-  virtual uint cmp( const Node &n ) const;
+  virtual bool cmp( const Node &n ) const;
   virtual uint size_of() const { return sizeof(*this); }
 
   // Determine if CMoveNode::is_cmove_id can be used at this join point.
@@ -465,7 +465,7 @@ protected:
 // Undefined behavior if passed-in index is not inside the table.
 class PCTableNode : public MultiBranchNode {
   virtual uint hash() const;    // Target count; table size
-  virtual uint cmp( const Node &n ) const;
+  virtual bool cmp( const Node &n ) const;
   virtual uint size_of() const { return sizeof(*this); }
 
 public:
@@ -507,7 +507,7 @@ public:
 
 class JumpProjNode : public JProjNode {
   virtual uint hash() const;
-  virtual uint cmp( const Node &n ) const;
+  virtual bool cmp( const Node &n ) const;
   virtual uint size_of() const { return sizeof(*this); }
 
  private:
@@ -550,7 +550,7 @@ public:
 // the projection doesn't lead to an exception handler.
 class CatchProjNode : public CProjNode {
   virtual uint hash() const;
-  virtual uint cmp( const Node &n ) const;
+  virtual bool cmp( const Node &n ) const;
   virtual uint size_of() const { return sizeof(*this); }
 
 private:
