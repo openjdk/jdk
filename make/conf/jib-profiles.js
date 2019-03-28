@@ -755,7 +755,11 @@ var getJibProfilesProfiles = function (input, common, data) {
             profiles[cmpBaselineName] = clone(profiles[name + suffix]);
             // Only compare the images target. This should pressumably be expanded
             // to include more build targets when possible.
-            profiles[cmpBaselineName].default_make_targets = [ "images" ];
+            profiles[cmpBaselineName].default_make_targets = [ "images", "test-image" ];
+            if (name == "linux-x64") {
+                profiles[cmpBaselineName].default_make_targets
+                    = concat(profiles[cmpBaselineName].default_make_targets, "docs");
+            }
             profiles[cmpBaselineName].make_args = [ "COMPARE_BUILD=CONF=" ];
             // Do not inherit artifact definitions from base profile
             delete profiles[cmpBaselineName].artifacts;
