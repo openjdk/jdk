@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,29 +30,29 @@
 #include "splashscreen_gfx.h"
 #include "jni.h"
 
-JNIEXPORT int JNICALL
+JNIEXPORT int
 SplashLoadMemory(void *pdata, int size); /* requires preloading the file */
 
-JNIEXPORT int JNICALL
+JNIEXPORT int
 SplashLoadFile(const char *filename);  // FIXME: range checking for SplashLoadMemory
 
-JNIEXPORT void JNICALL
+JNIEXPORT void
 SplashInit(void);
 
-JNIEXPORT void JNICALL
+JNIEXPORT void
 SplashClose(void);
 
-JNIEXPORT void JNICALL
+JNIEXPORT void
 SplashSetScaleFactor(float);
 
-JNIEXPORT jboolean JNICALL
+JNIEXPORT jboolean
 SplashGetScaledImageName(const char*, const char*,
                               float*, char*, const size_t scaledImageNameLength);
 
-JNIEXPORT void JNICALL
+JNIEXPORT void
 SplashSetFileJarName(const char* fileName, const char* jarName);
 
-JNIEXPORT int JNICALL
+JNIEXPORT int
 SplashGetScaledImgNameMaxPstfixLen(const char*);
 typedef struct SplashImage
 {
