@@ -206,7 +206,7 @@ public abstract class SchemaFactory {
      *
      * <p>If everything fails, {@link IllegalArgumentException} will be thrown.
      *
-     * <p><strong>Tip for Trouble-shooting:</strong>
+     * <h4>Tip for Trouble-shooting:</h4>
      * <p>See {@link java.util.Properties#load(java.io.InputStream)} for
      * exactly how a property file is parsed. In particular, colons ':'
      * need to be escaped in a property file, so make sure schema language
@@ -259,7 +259,7 @@ public abstract class SchemaFactory {
      * It gives more control to the application as it can specify which provider
      * should be loaded.
      *
-     * <h2>Tip for Trouble-shooting</h2>
+     * <h4>Tip for Trouble-shooting</h4>
      * <p>Setting the {@code jaxp.debug} system property will cause
      * this method to print a lot of debug messages
      * to {@code System.err} about what it is doing and where it is looking at.
@@ -717,7 +717,7 @@ public abstract class SchemaFactory {
      * to abort the further processing by throwing it. If an error handler is not set,
      * the callee will throw the first error it finds in the sources.
      *
-     * <h2>W3C XML Schema 1.0</h2>
+     * <h4>W3C XML Schema 1.0</h4>
      * <p>
      * The resulting schema contains components from the specified sources.
      * The same result would be achieved if all these sources were
@@ -737,7 +737,7 @@ public abstract class SchemaFactory {
      * specified in the section 5.1 of the XML Schema spec, then
      * the error must be reported to the {@link ErrorHandler}.
      *
-     * <h2>RELAX NG</h2>
+     * <h4>RELAX NG</h4>
      *
      * <p>For RELAX NG, this method must throw {@link UnsupportedOperationException}
      * if {@code schemas.length!=1}.
@@ -797,7 +797,7 @@ public abstract class SchemaFactory {
      * make sure that features, such as secure processing, are explicitly
      * set in both places.
      *
-     * <h2>W3C XML Schema 1.0</h2>
+     * <h4>W3C XML Schema 1.0</h4>
      * <p>
      * For XML Schema, this method creates a {@link Schema} object that
      * performs validation by using location hints specified in documents.
@@ -815,7 +815,7 @@ public abstract class SchemaFactory {
      * vulnerability to denial-of-service attacks.
      *
      *
-     * <h2>RELAX NG</h2>
+     * <h4>RELAX NG</h4>
      * <p>
      * RELAX NG does not support this operation.
      *
