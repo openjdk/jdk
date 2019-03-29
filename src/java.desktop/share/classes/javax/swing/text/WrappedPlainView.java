@@ -360,7 +360,8 @@ public class WrappedPlainView extends BoxView implements TabExpander {
         int currentWidth = getWidth();
         if (wordWrap) {
             p = p0 + Utilities.getBreakLocation(segment, metrics,
-                                                tabBase, tabBase + currentWidth,
+                                                (float)tabBase,
+                                                (float)(tabBase + currentWidth),
                                                 this, p0);
         } else {
             p = p0 + Utilities.getTabbedTextOffset(segment, metrics,

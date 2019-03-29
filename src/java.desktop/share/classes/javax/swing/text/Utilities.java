@@ -657,7 +657,7 @@ public class Utilities {
     public static final int getBreakLocation(Segment s, FontMetrics metrics,
                                              float x0, float x, TabExpander e,
                                              int startOffset) {
-        return getBreakLocation(s, metrics, x0, x, e, startOffset, false);
+        return getBreakLocation(s, metrics, x0, x, e, startOffset, true);
     }
 
     /**
