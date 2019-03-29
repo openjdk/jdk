@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,10 +96,13 @@ public class TestHeapDumpForLargeArray {
         }
 
         try {
+            // Need to add the default arguments first to have explicit
+            // -Xmx8g last, otherwise test will fail if default
+            // arguments contain a smaller -Xmx.
             List<String> vmArgs = new ArrayList<String>();
+            vmArgs.addAll(Utils.getVmOptions());
             vmArgs.add("-XX:+UsePerfData");
             vmArgs.add("-Xmx8g");
-            vmArgs.addAll(Utils.getVmOptions());
 
             theApp = new LingeredAppWithLargeArray();
             LingeredApp.startApp(vmArgs, theApp);
