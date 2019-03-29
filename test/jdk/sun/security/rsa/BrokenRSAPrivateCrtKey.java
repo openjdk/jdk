@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,11 @@
 
 /*
  * @test
- * @bug 4503229
+ * @bug 4503229 8220016
  * @summary default RSA KeyFactory can return broken RSAPrivateCrtKey objects
  *      This test was taken directly from the bug report, which
  *      was fixed in the crippled JSAFE provider, and needed
- *      to be brought forward into JSSE.
+ *      to be brought forward into SunRsaSign (was JSSE).
  * @author Brad Wetmore
  */
 
@@ -39,7 +39,7 @@ import java.math.BigInteger;
 public class BrokenRSAPrivateCrtKey {
     public static void main(String[] args) throws Exception {
         KeyPairGenerator generator =
-                KeyPairGenerator.getInstance("RSA", "SunJSSE");
+                KeyPairGenerator.getInstance("RSA", "SunRsaSign");
         generator.initialize(512);
 
         KeyPair pair = generator.generateKeyPair();
@@ -55,7 +55,7 @@ public class BrokenRSAPrivateCrtKey {
                 privatekey.getPrimeExponentQ(),
                 privatekey.getCrtCoefficient());
 
-        KeyFactory factory = KeyFactory.getInstance("RSA", "SunJSSE");
+        KeyFactory factory = KeyFactory.getInstance("RSA", "SunRsaSign");
 
         PrivateKey privatekey2 = factory.generatePrivate(spec);
 
