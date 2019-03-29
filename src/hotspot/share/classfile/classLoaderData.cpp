@@ -1,5 +1,5 @@
  /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -288,7 +288,7 @@ bool ClassLoaderData::try_claim(int claim) {
 // it is being defined, therefore _keep_alive is not volatile or atomic.
 void ClassLoaderData::inc_keep_alive() {
   if (is_unsafe_anonymous()) {
-    assert(_keep_alive >= 0, "Invalid keep alive increment count");
+    assert(_keep_alive > 0, "Invalid keep alive increment count");
     _keep_alive++;
   }
 }
