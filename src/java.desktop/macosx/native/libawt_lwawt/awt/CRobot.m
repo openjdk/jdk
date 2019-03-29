@@ -300,7 +300,7 @@ Java_sun_lwawt_macosx_CRobot_nativeGetScreenPixels
 
     // create a graphics context around the Java int array
     CGColorSpaceRef picColorSpace = CGColorSpaceCreateWithName(
-                                            kCGColorSpaceGenericRGB);
+                                            kCGColorSpaceSRGB);
     CGContextRef jPicContextRef = CGBitmapContextCreate(
                                             jPixelData,
                                             picWidth, picHeight,
