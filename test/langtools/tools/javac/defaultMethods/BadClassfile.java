@@ -79,7 +79,7 @@ public class BadClassfile {
 
             clazz.complete();
         } catch (BadClassFile f) {
-            JCDiagnostic embeddedDiag = (JCDiagnostic) f.diag.getArgs()[1];
+            JCDiagnostic embeddedDiag = (JCDiagnostic) f.getDiagnostic().getArgs()[1];
             assertEquals(expected, embeddedDiag.getCode());
             assertEquals(Integer.toString(Target.JDK1_7.majorVersion), embeddedDiag.getArgs()[0]);
             assertEquals(Integer.toString(Target.JDK1_7.minorVersion), embeddedDiag.getArgs()[1]);

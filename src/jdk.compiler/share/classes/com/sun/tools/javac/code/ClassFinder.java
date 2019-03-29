@@ -33,6 +33,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import javax.lang.model.SourceVersion;
 import javax.tools.JavaFileManager;
@@ -222,7 +223,7 @@ public class ClassFinder {
         jrtIndex = useCtProps && JRTIndex.isAvailable() ? JRTIndex.getSharedInstance() : null;
 
         profile = Profile.instance(context);
-        cachedCompletionFailure = new CompletionFailure(null, (JCDiagnostic) null, dcfh);
+        cachedCompletionFailure = new CompletionFailure(null, () -> null, dcfh);
         cachedCompletionFailure.setStackTrace(new StackTraceElement[0]);
     }
 
@@ -298,9 +299,12 @@ public class ClassFinder {
             try {
                 fillIn(p);
             } catch (IOException ex) {
-                JCDiagnostic msg =
-                        diagFactory.fragment(Fragments.ExceptionMessage(ex.getLocalizedMessage()));
-                throw new CompletionFailure(sym, msg, dcfh).initCause(ex);
+                throw new CompletionFailure(
+                        sym,
+                        () -> diagFactory.fragment(
+                            Fragments.ExceptionMessage(ex.getLocalizedMessage())),
+                        dcfh)
+                    .initCause(ex);
             }
         }
         if (!reader.filling)
@@ -337,9 +341,8 @@ public class ClassFinder {
      */
     void fillIn(ClassSymbol c) {
         if (completionFailureName == c.fullname) {
-            JCDiagnostic msg =
-                    diagFactory.fragment(Fragments.UserSelectedCompletionFailure);
-            throw new CompletionFailure(c, msg, dcfh);
+            throw new CompletionFailure(
+                c, () -> diagFactory.fragment(Fragments.UserSelectedCompletionFailure), dcfh);
         }
         currentOwner = c;
         JavaFileObject classfile = c.classfile;
@@ -390,16 +393,15 @@ public class ClassFinder {
     }
     // where
         private CompletionFailure classFileNotFound(ClassSymbol c) {
-            JCDiagnostic diag =
-                diagFactory.fragment(Fragments.ClassFileNotFound(c.flatname));
-            return newCompletionFailure(c, diag);
+            return newCompletionFailure(
+                c, () -> diagFactory.fragment(Fragments.ClassFileNotFound(c.flatname)));
         }
         /** Static factory for CompletionFailure objects.
          *  In practice, only one can be used at a time, so we share one
          *  to reduce the expense of allocating new exception objects.
          */
         private CompletionFailure newCompletionFailure(TypeSymbol c,
-                                                       JCDiagnostic diag) {
+                                                       Supplier<JCDiagnostic> diag) {
             if (!cacheCompletionFailure) {
                 // log.warning("proc.messager",
                 //             Log.getLocalizedString("class.file.not.found", c.flatname));
@@ -408,7 +410,7 @@ public class ClassFinder {
             } else {
                 CompletionFailure result = cachedCompletionFailure;
                 result.sym = c;
-                result.diag = diag;
+                result.resetDiagnostic(diag);
                 return result;
             }
         }
@@ -782,7 +784,7 @@ public class ClassFinder {
 
         public BadClassFile(TypeSymbol sym, JavaFileObject file, JCDiagnostic diag,
                 JCDiagnostic.Factory diagFactory, DeferredCompletionFailureHandler dcfh) {
-            super(sym, createBadClassFileDiagnostic(file, diag, diagFactory), dcfh);
+            super(sym, () -> createBadClassFileDiagnostic(file, diag, diagFactory), dcfh);
         }
         // where
         private static JCDiagnostic createBadClassFileDiagnostic(
