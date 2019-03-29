@@ -138,22 +138,14 @@ class markOopDesc: public oopDesc {
          epoch_mask_in_place      = epoch_mask << epoch_shift,
          cms_mask                 = right_n_bits(cms_bits),
          cms_mask_in_place        = cms_mask << cms_shift
-#ifndef _WIN64
-         ,hash_mask               = right_n_bits(hash_bits),
-         hash_mask_in_place       = (address_word)hash_mask << hash_shift
-#endif
   };
+
+  const static uintptr_t hash_mask = right_n_bits(hash_bits);
+  const static uintptr_t hash_mask_in_place = hash_mask << hash_shift;
 
   // Alignment of JavaThread pointers encoded in object header required by biased locking
   enum { biased_lock_alignment    = 2 << (epoch_shift + epoch_bits)
   };
-
-#ifdef _WIN64
-    // These values are too big for Win64
-    const static uintptr_t hash_mask = right_n_bits(hash_bits);
-    const static uintptr_t hash_mask_in_place  =
-                            (address_word)hash_mask << hash_shift;
-#endif
 
   enum { locked_value             = 0,
          unlocked_value           = 1,
