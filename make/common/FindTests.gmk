@@ -53,6 +53,7 @@ define FindJtregGroupsBody
         -e 's/^groups\w*=//p' $1/TEST.ROOT)
     $1_JTREG_GROUP_FILES := $$(addprefix $1/, $$($1_JTREG_GROUP_FILENAMES))
     $1_JTREG_TEST_GROUPS := $$(strip $$(shell $$(SED) -n \
+        -e 's/^\#.*//g' \
         -e 's/\([^ ]*\)\w*=.*/\1/gp' $$(wildcard $$($1_JTREG_GROUP_FILES)) \
         | $$(SORT) -u))
   endif
