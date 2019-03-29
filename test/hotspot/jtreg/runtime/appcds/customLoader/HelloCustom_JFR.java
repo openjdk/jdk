@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,10 @@
 
 /*
  * @test
- * @summary Hello World test for AppCDS custom loader support
+ * @summary Same as HelloCustom, but add -XX:StartFlightRecording=dumponexit=true to the runtime
+ *          options. This makes sure that the shared classes are compatible with both
+ *          JFR and JVMTI ClassFileLoadHook.
+ * @requires vm.hasJFR
  * @requires vm.cds
  * @requires vm.cds.custom.loaders
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds
@@ -33,43 +36,15 @@
  * @run driver ClassFileInstaller -jar hello.jar Hello
  * @run driver ClassFileInstaller -jar hello_custom.jar CustomLoadee
  * @run driver ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
- * @run driver HelloCustom
+ * @run driver HelloCustom_JFR
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
 import sun.hotspot.WhiteBox;
 
-public class HelloCustom {
+public class HelloCustom_JFR {
     public static void main(String[] args) throws Exception {
-        run();
-    }
-    public static void run(String... extra_runtime_args) throws Exception {
-        String wbJar = ClassFileInstaller.getJarPath("WhiteBox.jar");
-        String use_whitebox_jar = "-Xbootclasspath/a:" + wbJar;
-
-        String appJar = ClassFileInstaller.getJarPath("hello.jar");
-        String customJarPath = ClassFileInstaller.getJarPath("hello_custom.jar");
-
-        // Dump the archive
-        String classlist[] = new String[] {
-            "Hello",
-            "java/lang/Object id: 1",
-            "CustomLoadee id: 2 super: 1 source: " + customJarPath
-        };
-
-        OutputAnalyzer output;
-        TestCommon.testDump(appJar, classlist,
-                            // command-line arguments ...
-                            use_whitebox_jar);
-
-        output = TestCommon.exec(appJar,
-                                 TestCommon.concat(extra_runtime_args,
-                                     // command-line arguments ...
-                                     use_whitebox_jar,
-                                     "-XX:+UnlockDiagnosticVMOptions",
-                                     "-XX:+WhiteBoxAPI",
-                                     "Hello", customJarPath));
-        TestCommon.checkExec(output);
+        HelloCustom.run("-XX:StartFlightRecording=dumponexit=true", "-Xlog:cds+jvmti=debug");
     }
 }
 

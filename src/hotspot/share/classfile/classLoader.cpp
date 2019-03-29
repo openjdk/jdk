@@ -396,6 +396,10 @@ ClassPathImageEntry::~ClassPathImageEntry() {
   }
 }
 
+ClassFileStream* ClassPathImageEntry::open_stream(const char* name, TRAPS) {
+  return open_stream_for_loader(name, ClassLoaderData::the_null_class_loader_data(), THREAD);
+}
+
 // For a class in a named module, look it up in the jimage file using this syntax:
 //    /<module-name>/<package-name>/<base-class>
 //
@@ -403,7 +407,7 @@ ClassPathImageEntry::~ClassPathImageEntry() {
 //     1. There are no unnamed modules in the jimage file.
 //     2. A package is in at most one module in the jimage file.
 //
-ClassFileStream* ClassPathImageEntry::open_stream(const char* name, TRAPS) {
+ClassFileStream* ClassPathImageEntry::open_stream_for_loader(const char* name, ClassLoaderData* loader_data, TRAPS) {
   jlong size;
   JImageLocationRef location = (*JImageFindResource)(_jimage, "", get_jimage_version_string(), name, &size);
 
@@ -414,20 +418,8 @@ ClassFileStream* ClassPathImageEntry::open_stream(const char* name, TRAPS) {
     if (pkg_name != NULL) {
       if (!Universe::is_module_initialized()) {
         location = (*JImageFindResource)(_jimage, JAVA_BASE_NAME, get_jimage_version_string(), name, &size);
-#if INCLUDE_CDS
-        // CDS uses the boot class loader to load classes whose packages are in
-        // modules defined for other class loaders.  So, for now, get their module
-        // names from the "modules" jimage file.
-        if (DumpSharedSpaces && location == 0) {
-          const char* module_name = (*JImagePackageToModule)(_jimage, pkg_name);
-          if (module_name != NULL) {
-            location = (*JImageFindResource)(_jimage, module_name, get_jimage_version_string(), name, &size);
-          }
-        }
-#endif
-
       } else {
-        PackageEntry* package_entry = ClassLoader::get_package_entry(name, ClassLoaderData::the_null_class_loader_data(), CHECK_NULL);
+        PackageEntry* package_entry = ClassLoader::get_package_entry(name, loader_data, CHECK_NULL);
         if (package_entry != NULL) {
           ResourceMark rm;
           // Get the module name

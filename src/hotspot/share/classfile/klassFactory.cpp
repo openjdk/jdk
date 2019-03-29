@@ -58,7 +58,7 @@ InstanceKlass* KlassFactory::check_shared_class_file_load_hook(
     // Post the CFLH
     JvmtiCachedClassFileData* cached_class_file = NULL;
     if (cfs == NULL) {
-      cfs = FileMapInfo::open_stream_for_jvmti(ik, CHECK_NULL);
+      cfs = FileMapInfo::open_stream_for_jvmti(ik, class_loader, CHECK_NULL);
     }
     unsigned char* ptr = (unsigned char*)cfs->buffer();
     unsigned char* end_ptr = ptr + cfs->length();

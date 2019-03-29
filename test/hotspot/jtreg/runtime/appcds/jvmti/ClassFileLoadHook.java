@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,14 @@ public class ClassFileLoadHook {
         SHARING_ON_CFLH_ON
     }
 
-    public static void main(String args[]) {
+    public static void main(String args[]) throws Exception {
         TestCaseId testCase = TestCaseId.valueOf(args[0]);
+        test1(testCase);
+        test2(testCase);
+    }
+
+    // Test rewriting the classfile data using CFLH
+    static void test1(TestCaseId testCase) {
         WhiteBox wb = WhiteBox.getWhiteBox();
 
         System.out.println("====== ClassFileLoadHook.main():testCase = " + testCase);
@@ -78,6 +84,20 @@ public class ClassFileLoadHook {
              default:
                  throw new RuntimeException("Invalid testcase");
 
+        }
+    }
+
+    // Test the loading of classfile data for non-boot shared classes from jrt:/xxx.
+    // See JDK-8221351.
+    static void test2(TestCaseId testCase) throws Exception {
+        WhiteBox wb = WhiteBox.getWhiteBox();
+        Class c = Class.forName("java.sql.SQLException"); // defined by platform class loader.
+
+        switch (testCase) {
+        case SHARING_ON_CFLH_OFF:
+        case SHARING_AUTO_CFLH_ON:
+        case SHARING_ON_CFLH_ON:
+            assertTrue(wb.isSharedClass(c), "must be shared");
         }
     }
 

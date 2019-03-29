@@ -321,6 +321,21 @@ tier1_runtime_appcds_exclude = \
   runtime/appcds/ \
   -:tier1_runtime_appcds
 
+# This group should be executed with "jtreg -Dtest.cds.run.with.jfr=true ..."
+# to test interaction between AppCDS and JFR. It also has the side effect of
+# testing JVMTI ClassFileLoadHook.
+#
+# The excluded tests disallow the jdk.jfr module, which is required to
+# run with JFR.
+hotspot_appcds_with_jfr = \
+  runtime/appcds/ \
+ -runtime/appcds/cacheObject/ArchivedModuleCompareTest.java \
+ -runtime/appcds/jigsaw/classpathtests/BootAppendTests.java \
+ -runtime/appcds/jigsaw/classpathtests/ClassPathTests.java \
+ -runtime/appcds/jigsaw/classpathtests/EmptyClassInBootClassPath.java \
+ -runtime/appcds/jigsaw/JigsawOptionsCombo.java \
+ -runtime/appcds/jigsaw/modulepath/MainModuleOnly.java
+
 tier1_serviceability = \
   serviceability/dcmd/compiler \
   -serviceability/dcmd/compiler/CompilerQueueTest.java \

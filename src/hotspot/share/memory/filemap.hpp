@@ -303,7 +303,7 @@ public:
   static void update_shared_classpath(ClassPathEntry *cpe, SharedClassPathEntry* ent, TRAPS);
 
 #if INCLUDE_JVMTI
-  static ClassFileStream* open_stream_for_jvmti(InstanceKlass* ik, TRAPS);
+  static ClassFileStream* open_stream_for_jvmti(InstanceKlass* ik, Handle class_loader, TRAPS);
 #endif
 
   static SharedClassPathEntry* shared_path(int index) {
