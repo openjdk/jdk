@@ -703,9 +703,12 @@ public class Attributes implements Map<Object,Object>, Cloneable {
                 addName(names, SEALED);
                 addName(names, EXTENSION_LIST);
                 addName(names, EXTENSION_NAME);
+                addName(names, EXTENSION_INSTALLATION);
                 addName(names, IMPLEMENTATION_TITLE);
                 addName(names, IMPLEMENTATION_VERSION);
                 addName(names, IMPLEMENTATION_VENDOR);
+                addName(names, IMPLEMENTATION_VENDOR_ID);
+                addName(names, IMPLEMENTATION_URL);
                 addName(names, SPECIFICATION_TITLE);
                 addName(names, SPECIFICATION_VERSION);
                 addName(names, SPECIFICATION_VENDOR);
