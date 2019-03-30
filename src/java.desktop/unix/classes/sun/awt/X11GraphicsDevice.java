@@ -69,12 +69,6 @@ public final class X11GraphicsDevice extends GraphicsDevice
         this.scale = initScaleFactor();
     }
 
-    /*
-     * Initialize JNI field and method IDs for fields that may be
-     * accessed from C.
-     */
-    private static native void initIDs();
-
     /**
      * Returns the X11 screen of the device.
      */

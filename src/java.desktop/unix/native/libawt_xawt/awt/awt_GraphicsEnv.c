@@ -54,11 +54,6 @@
 #include <dlfcn.h>
 #include "Trace.h"
 
-#ifdef NETSCAPE
-#include <signal.h>
-extern int awt_init_xt;
-#endif
-
 #ifndef HEADLESS
 
 int awt_numScreens;     /* Xinerama-aware number of screens */
@@ -152,13 +147,6 @@ Java_sun_awt_X11GraphicsConfig_initIDs (JNIEnv *env, jclass cls)
     CHECK_NULL(x11GraphicsConfigIDs.aData);
     x11GraphicsConfigIDs.bitsPerPixel = (*env)->GetFieldID (env, cls, "bitsPerPixel", "I");
     CHECK_NULL(x11GraphicsConfigIDs.bitsPerPixel);
-
-    if (x11GraphicsConfigIDs.aData == NULL ||
-            x11GraphicsConfigIDs.bitsPerPixel == NULL) {
-
-            JNU_ThrowNoSuchFieldError(env, "Can't find a field");
-            return;
-        }
 }
 
 #ifndef HEADLESS
@@ -704,25 +692,10 @@ awt_init_Display(JNIEnv *env, jobject this)
     Display *dpy;
     char errmsg[128];
     int i;
-#ifdef NETSCAPE
-    sigset_t alarm_set, oldset;
-#endif
 
     if (awt_display) {
         return awt_display;
     }
-
-#ifdef NETSCAPE
-    /* Disable interrupts during XtOpenDisplay to avoid bugs in unix os select
-       code: some unix systems don't implement SA_RESTART properly and
-       because of this, select returns with EINTR. Most implementations of
-       gethostbyname don't cope with EINTR properly and as a result we get
-       stuck (forever) in the gethostbyname code
-    */
-    sigemptyset(&alarm_set);
-    sigaddset(&alarm_set, SIGALRM);
-    sigprocmask(SIG_BLOCK, &alarm_set, &oldset);
-#endif
 
     /* Load AWT lock-related methods in SunToolkit */
     klass = (*env)->FindClass(env, "sun/awt/SunToolkit");
@@ -743,9 +716,6 @@ awt_init_Display(JNIEnv *env, jobject this)
     }
 
     dpy = awt_display = XOpenDisplay(NULL);
-#ifdef NETSCAPE
-    sigprocmask(SIG_SETMASK, &oldset, NULL);
-#endif
     if (!dpy) {
         jio_snprintf(errmsg,
                      sizeof(errmsg),
