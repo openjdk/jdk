@@ -581,6 +581,9 @@ ALL_TARGETS += test exploded-test jcov-test
 product-bundles:
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f Bundles.gmk product-bundles)
 
+legacy-bundles:
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f Bundles.gmk legacy-bundles)
+
 test-bundles:
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f Bundles.gmk test-bundles)
 
@@ -592,7 +595,7 @@ ifeq ($(JCOV_ENABLED), true)
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f Bundles.gmk jcov-bundles)
 endif
 
-ALL_TARGETS += product-bundles test-bundles docs-bundles jcov-bundles
+ALL_TARGETS += product-bundles legacy-bundles test-bundles docs-bundles jcov-bundles
 
 ################################################################################
 # Install targets
@@ -918,6 +921,8 @@ else
 
   product-bundles: product-images
 
+  legacy-bundles: legacy-images
+
   test-bundles: test-image
 
   docs-bundles: docs-image
@@ -1020,6 +1025,9 @@ mac-bundles: mac-jdk-bundle
 # (and possibly other, more specific versions)
 product-images: jdk-image symbols-image exploded-image
 
+# This target builds the legacy images, e.g. the legacy JRE image
+legacy-images: legacy-jre-image
+
 # zip-security is actually a bundle, but for now it needs to be considered
 # an image until this can be cleaned up properly.
 product-images: zip-security
@@ -1036,6 +1044,8 @@ endif
 
 ifeq ($(call isTargetOs, macosx), true)
   product-images: mac-jdk-bundle
+
+  legacy-images: mac-legacy-jre-bundle
 endif
 
 # This target builds the documentation image
@@ -1070,7 +1080,7 @@ ALL_TARGETS += buildtools hotspot hotspot-libs hotspot-gensrc gensrc gendata \
     jdk.jdwp.agent-gensrc $(ALL_MODULES) demos \
     exploded-image-base exploded-image \
     create-buildjdk docs-jdk-api docs-javase-api docs-reference-api docs-jdk \
-    docs-javase docs-reference docs-javadoc mac-bundles product-images \
+    docs-javase docs-reference docs-javadoc mac-bundles product-images legacy-images \
     docs-image test-image all-images \
     all-bundles
 
