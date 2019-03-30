@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
 import java.util.Enumeration;
+import java.util.Random;
 
 import sun.security.util.*;
 
@@ -178,5 +179,17 @@ public class CertificateSerialNumber implements CertAttrSet<String> {
      */
     public String getName() {
         return (NAME);
+    }
+
+    /**
+     * Generates a new random serial number.
+     */
+    public static CertificateSerialNumber newRandom64bit(Random rand) {
+        while (true) {
+            BigInteger b = new BigInteger(64, rand);
+            if (b.signum() != 0) {
+                return new CertificateSerialNumber(b);
+            }
+        }
     }
 }
