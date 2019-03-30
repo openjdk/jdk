@@ -32,6 +32,7 @@
 #include "classfile/dictionary.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
+#include "classfile/packageEntry.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/verificationType.hpp"
@@ -77,6 +78,8 @@
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/resourceHash.hpp"
+#include "utilities/utf8.hpp"
+
 #if INCLUDE_CDS
 #include "classfile/systemDictionaryShared.hpp"
 #endif

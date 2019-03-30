@@ -65,6 +65,7 @@
 #include "runtime/vframe.inline.hpp"
 #include "utilities/align.hpp"
 #include "utilities/preserveException.hpp"
+#include "utilities/utf8.hpp"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmciJavaClasses.hpp"
 #endif

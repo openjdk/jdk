@@ -74,6 +74,7 @@
 #include "services/threadService.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/preserveException.hpp"
+#include "utilities/utf8.hpp"
 
 
 #define FIXLATER 0 // REMOVE this when completed.

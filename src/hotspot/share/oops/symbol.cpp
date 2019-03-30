@@ -34,6 +34,7 @@
 #include "oops/symbol.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
+#include "utilities/utf8.hpp"
 
 uint32_t Symbol::pack_length_and_refcount(int length, int refcount) {
   STATIC_ASSERT(max_symbol_length == ((1 << 16) - 1));

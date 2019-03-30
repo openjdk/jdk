@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "classfile/classFileStream.hpp"
+#include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/stackMapTable.hpp"
 #include "classfile/stackMapFrame.hpp"
