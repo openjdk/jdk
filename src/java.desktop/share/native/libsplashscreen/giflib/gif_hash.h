@@ -31,6 +31,11 @@ gif_hash.h - magfic constants and declarations for GIF LZW
 #ifndef _GIF_HASH_H_
 #define _GIF_HASH_H_
 
+/** Begin JDK modifications to support building on Windows **/
+#ifndef _WIN32
+#include <unistd.h>
+#endif
+/** End JDK modifications to support building on Windows **/
 #include <stdint.h>
 
 #define HT_SIZE         8192    /* 12bits = 4096 or twice as big! */

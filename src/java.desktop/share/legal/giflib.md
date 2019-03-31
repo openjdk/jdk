@@ -1,4 +1,4 @@
-## GIFLIB v5.1.4
+## GIFLIB v5.1.8
 
 ### GIFLIB License
 <pre>
