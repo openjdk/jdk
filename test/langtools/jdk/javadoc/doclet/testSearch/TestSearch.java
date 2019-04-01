@@ -625,7 +625,7 @@ public class TestSearch extends JavadocTester {
                 "function concatResults(a1, a2) {",
                 "if (exactMatcher.test(item.l)) {\n"
                 + "                        presult.push(item);",
-                "$(\"#search\").on('click keydown', function() {\n"
+                "$(\"#search\").on('click keydown paste', function() {\n"
                 + "        if ($(this).val() == watermark) {\n"
                 + "            $(this).val('').removeClass('watermark');\n"
                 + "        }\n"
