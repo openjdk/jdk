@@ -1322,6 +1322,12 @@ public:
   // Unregister the given nmethod from the G1 heap.
   virtual void unregister_nmethod(nmethod* nm);
 
+  // No nmethod flushing needed.
+  virtual void flush_nmethod(nmethod* nm) {}
+
+  // No nmethod verification implemented.
+  virtual void verify_nmethod(nmethod* nm) {}
+
   // Free up superfluous code root memory.
   void purge_code_root_memory();
 

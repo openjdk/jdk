@@ -584,6 +584,8 @@ public:
 public:
   void register_nmethod(nmethod* nm);
   void unregister_nmethod(nmethod* nm);
+  void flush_nmethod(nmethod* nm) {}
+  void verify_nmethod(nmethod* nm) {}
 
 // ---------- Pinning hooks
 //
