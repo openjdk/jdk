@@ -1575,7 +1575,10 @@ static size_t actual_reserved_page_size(ReservedSpace rs) {
     //    And ReservedSpace calls it 'special'. If we failed to set 'special',
     //    we reserved memory without large page.
     if (os::can_commit_large_page_memory() || rs.special()) {
-      page_size = rs.alignment();
+      // An alignment at ReservedSpace comes from preferred page size or
+      // heap alignment, and if the alignment came from heap alignment, it could be
+      // larger than large pages size. So need to cap with the large page size.
+      page_size = MIN2(rs.alignment(), os::large_page_size());
     }
   }
 
