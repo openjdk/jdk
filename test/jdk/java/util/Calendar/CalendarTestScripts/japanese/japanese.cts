@@ -57,7 +57,7 @@ test Default dates
 	check millisecond 0
 
 	clear all
-	set era NewEra
+	set era Reiwa
 	check era Heisei
 	check datetime 31 Jan 1 0 0 0
 	check millisecond 0

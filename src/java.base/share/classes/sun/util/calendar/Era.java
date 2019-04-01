@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ import java.util.TimeZone;
  *                           Taisho           1912-07-30T00:00:00 local time
  *                           Showa            1926-12-25T00:00:00 local time
  *                           Heisei           1989-01-08T00:00:00 local time
- *                           NewEra           2019-05-01T00:00:00 local time
+ *                           Reiwa            2019-05-01T00:00:00 local time
  *   -----------------------------------------------------------------------
  * }</pre>
  *

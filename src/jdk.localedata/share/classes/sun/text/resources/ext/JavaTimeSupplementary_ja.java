@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,7 +154,7 @@ public class JavaTimeSupplementary_ja extends OpenListResourceBundle {
             "\u5927\u6b63",
             "\u662d\u548c",
             "\u5e73\u6210",
-            "\u5143\u53f7", // NewEra
+            "\u4ee4\u548c",
         };
 
         final String[] sharedJavaTimeShortEras = {

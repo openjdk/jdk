@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,9 +137,9 @@ public class WeekDateTest {
         Calendar jcal = Calendar.getInstance(TimeZone.getTimeZone("GMT"),
                                              new Locale("ja", "JP", "JP"));
 
-        String format = "2-W01-2"; // 2019-12-31 == N1-12-31
+        String format = "2-W01-2"; // 2019-12-31 == R1-12-31
         int expectedYear = 2019;
-        // Check the current era, Heisei or NewEra
+        // Check the current era, Heisei or Reiwa
         if (System.currentTimeMillis() < 1556668800000L) {
             format = "21-W01-3"; // 2008-12-31 == H20-12-31
             expectedYear = 2008;

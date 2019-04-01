@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -322,7 +322,7 @@ public class Symbol {
         put("taisho", new Symbol(Type.ERA, 2));
         put("showa", new Symbol(Type.ERA, 3));
         put("heisei", new Symbol(Type.ERA, 4));
-        put("newera", new Symbol(Type.ERA, 5));
+        put("reiwa", new Symbol(Type.ERA, 5));
 
     }
 }

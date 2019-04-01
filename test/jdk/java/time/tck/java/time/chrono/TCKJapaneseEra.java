@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ public class TCKJapaneseEra {
     @DataProvider(name = "JapaneseEras")
     Object[][] data_of_eras() {
         return new Object[][] {
-                    {JapaneseEra.of(3), "NewEra", 3}, // NEWERA
+                    {JapaneseEra.of(3), "Reiwa", 3},
                     {JapaneseEra.HEISEI, "Heisei", 2},
                     {JapaneseEra.SHOWA, "Showa", 1},
                     {JapaneseEra.TAISHO, "Taisho", 0},
