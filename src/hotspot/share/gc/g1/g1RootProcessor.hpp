@@ -25,7 +25,6 @@
 #ifndef SHARE_GC_G1_G1ROOTPROCESSOR_HPP
 #define SHARE_GC_G1_G1ROOTPROCESSOR_HPP
 
-#include "gc/shared/oopStorageParState.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/mutex.hpp"
@@ -50,7 +49,6 @@ class G1RootProcessor : public StackObj {
   G1CollectedHeap* _g1h;
   SubTasksDone _process_strong_tasks;
   StrongRootsScope _srs;
-  OopStorage::ParState<false, false> _par_state_string;
 
   // Used to implement the Thread work barrier.
   Monitor _lock;

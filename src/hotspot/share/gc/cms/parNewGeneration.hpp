@@ -235,7 +235,6 @@ class ParNewGenTask: public AbstractGangTask {
   HeapWord*                    _young_old_boundary;
   class ParScanThreadStateSet* _state_set;
   StrongRootsScope*            _strong_roots_scope;
-  OopStorage::ParState<false, false> _par_state_string;
 
 public:
   ParNewGenTask(ParNewGeneration*      young_gen,
