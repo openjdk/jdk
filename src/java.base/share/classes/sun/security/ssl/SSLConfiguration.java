@@ -126,7 +126,7 @@ final class SSLConfiguration implements Cloneable {
         this.identificationProtocol = null;
         this.serverNames = Collections.<SNIServerName>emptyList();
         this.sniMatchers = Collections.<SNIMatcher>emptyList();
-        this.preferLocalCipherSuites = false;
+        this.preferLocalCipherSuites = true;
 
         this.applicationProtocols = new String[0];
         this.enableRetransmissions = sslContext.isDTLS();
