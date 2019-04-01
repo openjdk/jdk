@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,26 +69,32 @@ public class TestEraDisplayName {
             { JapaneseEra.TAISHO,   TextStyle.FULL,     Locale.US,      "Taisho" },
             { JapaneseEra.SHOWA,    TextStyle.FULL,     Locale.US,      "Showa" },
             { JapaneseEra.HEISEI,   TextStyle.FULL,     Locale.US,      "Heisei" },
+            { JapaneseEra.REIWA,    TextStyle.FULL,     Locale.US,      "Reiwa" },
             { JapaneseEra.MEIJI,    TextStyle.FULL,     Locale.JAPAN,   "\u660e\u6cbb" },
             { JapaneseEra.TAISHO,   TextStyle.FULL,     Locale.JAPAN,   "\u5927\u6b63" },
             { JapaneseEra.SHOWA,    TextStyle.FULL,     Locale.JAPAN,   "\u662d\u548c" },
             { JapaneseEra.HEISEI,   TextStyle.FULL,     Locale.JAPAN,   "\u5e73\u6210" },
+            { JapaneseEra.REIWA,    TextStyle.FULL,     Locale.JAPAN,   "\u4ee4\u548c" },
             { JapaneseEra.MEIJI,    TextStyle.SHORT,    Locale.US,      "Meiji" },
             { JapaneseEra.TAISHO,   TextStyle.SHORT,    Locale.US,      "Taisho" },
             { JapaneseEra.SHOWA,    TextStyle.SHORT,    Locale.US,      "Showa" },
             { JapaneseEra.HEISEI,   TextStyle.SHORT,    Locale.US,      "Heisei" },
+            { JapaneseEra.REIWA,    TextStyle.SHORT,    Locale.US,      "Reiwa" },
             { JapaneseEra.MEIJI,    TextStyle.SHORT,    Locale.JAPAN,   "\u660e\u6cbb" },
             { JapaneseEra.TAISHO,   TextStyle.SHORT,    Locale.JAPAN,   "\u5927\u6b63" },
             { JapaneseEra.SHOWA,    TextStyle.SHORT,    Locale.JAPAN,   "\u662d\u548c" },
             { JapaneseEra.HEISEI,   TextStyle.SHORT,    Locale.JAPAN,   "\u5e73\u6210" },
+            { JapaneseEra.REIWA,    TextStyle.SHORT,    Locale.JAPAN,   "\u4ee4\u548c" },
             { JapaneseEra.MEIJI,    TextStyle.NARROW,   Locale.US,      "M" },
             { JapaneseEra.TAISHO,   TextStyle.NARROW,   Locale.US,      "T" },
             { JapaneseEra.SHOWA,    TextStyle.NARROW,   Locale.US,      "S" },
             { JapaneseEra.HEISEI,   TextStyle.NARROW,   Locale.US,      "H" },
+            { JapaneseEra.REIWA,    TextStyle.NARROW,   Locale.US,      "R" },
             { JapaneseEra.MEIJI,    TextStyle.NARROW,   Locale.JAPAN,   "M" },
             { JapaneseEra.TAISHO,   TextStyle.NARROW,   Locale.JAPAN,   "T" },
             { JapaneseEra.SHOWA,    TextStyle.NARROW,   Locale.JAPAN,   "S" },
             { JapaneseEra.HEISEI,   TextStyle.NARROW,   Locale.JAPAN,   "H" },
+            { JapaneseEra.REIWA,    TextStyle.NARROW,   Locale.JAPAN,   "R" },
 
             // ThaiBuddhistEra
             { ThaiBuddhistEra.BEFORE_BE,    TextStyle.FULL, Locale.US,      "BC" },

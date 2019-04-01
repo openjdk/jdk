@@ -79,7 +79,7 @@ public class TCKJapaneseEra {
     @DataProvider(name = "JapaneseEras")
     Object[][] data_of_eras() {
         return new Object[][] {
-                    {JapaneseEra.of(3), "Reiwa", 3},
+                    {JapaneseEra.REIWA, "Reiwa", 3},
                     {JapaneseEra.HEISEI, "Heisei", 2},
                     {JapaneseEra.SHOWA, "Showa", 1},
                     {JapaneseEra.TAISHO, "Taisho", 0},

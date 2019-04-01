@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ public class TestJapaneseChronology {
             { JapaneseEra.SHOWA,     64,  1,  7, 1989 },
             { JapaneseEra.HEISEI,     1,  1,  8, 1989 },
             { JapaneseEra.HEISEI,    31,  4, 30, 2019 },
-            { JapaneseEra.of(3),      1,  5,  1, 2019 },
+            { JapaneseEra.REIWA,      1,  5,  1, 2019 },
         };
     }
 
@@ -78,7 +78,7 @@ public class TestJapaneseChronology {
             { JapaneseEra.HEISEI,  1,    1,  1,  8 },
             { JapaneseEra.HEISEI,  2,    8,  1,  8 },
             { JapaneseEra.HEISEI, 31,  120,  4, 30 },
-            { JapaneseEra.of(3),   1,    1,  5,  1 },
+            { JapaneseEra.REIWA,   1,    1,  5,  1 },
         };
     }
 
@@ -111,8 +111,8 @@ public class TestJapaneseChronology {
             { JapaneseEra.HEISEI,     1,  1,  7 },
             { JapaneseEra.HEISEI,     1,  2, 29 },
             { JapaneseEra.HEISEI,    31,  5,  1 },
-            { JapaneseEra.of(3),      1,  4, 30 },
-            { JapaneseEra.of(3), Year.MAX_VALUE,  12, 31 },
+            { JapaneseEra.REIWA,      1,  4, 30 },
+            { JapaneseEra.REIWA, Year.MAX_VALUE,  12, 31 },
         };
     }
 
@@ -132,9 +132,9 @@ public class TestJapaneseChronology {
             { JapaneseEra.HEISEI,    -1 },
             { JapaneseEra.HEISEI,     0 },
             { JapaneseEra.HEISEI,    32 },
-            { JapaneseEra.of(3),     -1 },
-            { JapaneseEra.of(3),      0 },
-            { JapaneseEra.of(3), Year.MAX_VALUE },
+            { JapaneseEra.REIWA,     -1 },
+            { JapaneseEra.REIWA,      0 },
+            { JapaneseEra.REIWA, Year.MAX_VALUE },
         };
     }
 
@@ -152,8 +152,8 @@ public class TestJapaneseChronology {
             { JapaneseEra.HEISEI,  1, 360 },
             { JapaneseEra.HEISEI,  2, 366 },
             { JapaneseEra.HEISEI, 31, 121 },
-            { JapaneseEra.of(3),   1, 246 },
-            { JapaneseEra.of(3),   2, 367 },
+            { JapaneseEra.REIWA,   1, 246 },
+            { JapaneseEra.REIWA,   2, 367 },
         };
     }
 
@@ -165,7 +165,7 @@ public class TestJapaneseChronology {
             { "Taisho", JapaneseEra.TAISHO,     null },
             { "Showa",  JapaneseEra.SHOWA,      null },
             { "Heisei", JapaneseEra.HEISEI,     null },
-            { "Reiwa", JapaneseEra.of(3),       null },
+            { "Reiwa", JapaneseEra.REIWA,       null },
             { "NewEra", null,                   IllegalArgumentException.class},
         };
     }

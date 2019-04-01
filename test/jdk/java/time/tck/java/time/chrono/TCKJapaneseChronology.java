@@ -176,7 +176,7 @@ public class TCKJapaneseChronology {
     @DataProvider(name="createByEra")
     Object[][] data_createByEra() {
         return new Object[][] {
-                {JapaneseEra.of(3), 2020 - YDIFF_REIWA, 2, 29, 60, LocalDate.of(2020, 2, 29)},
+                {JapaneseEra.REIWA, 2020 - YDIFF_REIWA, 2, 29, 60, LocalDate.of(2020, 2, 29)},
                 {JapaneseEra.HEISEI, 1996 - YDIFF_HEISEI, 2, 29, 60, LocalDate.of(1996, 2, 29)},
                 {JapaneseEra.HEISEI, 2000 - YDIFF_HEISEI, 2, 29, 60, LocalDate.of(2000, 2, 29)},
                 {JapaneseEra.MEIJI, 1874 - YDIFF_MEIJI, 2, 28, 59, LocalDate.of(1874, 2, 28)},
@@ -369,8 +369,8 @@ public class TCKJapaneseChronology {
     @DataProvider(name="prolepticYear")
     Object[][] data_prolepticYear() {
         return new Object[][] {
-                {3, JapaneseEra.of(3), 1, 1 + YDIFF_REIWA, false},
-                {3, JapaneseEra.of(3), 102, 102 + YDIFF_REIWA, true},
+                {3, JapaneseEra.REIWA, 1, 1 + YDIFF_REIWA, false},
+                {3, JapaneseEra.REIWA, 102, 102 + YDIFF_REIWA, true},
 
                 {2, JapaneseEra.HEISEI, 1, 1 + YDIFF_HEISEI, false},
                 {2, JapaneseEra.HEISEI, 4, 4 + YDIFF_HEISEI, true},
@@ -555,7 +555,7 @@ public class TCKJapaneseChronology {
             { JapaneseEra.TAISHO, 0, "Taisho"},
             { JapaneseEra.SHOWA, 1, "Showa"},
             { JapaneseEra.HEISEI, 2, "Heisei"},
-            { JapaneseEra.of(3), 3, "Reiwa"},
+            { JapaneseEra.REIWA, 3, "Reiwa"},
         };
     }
 
