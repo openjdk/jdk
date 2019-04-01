@@ -30,6 +30,7 @@
 #include "oops/objArrayOop.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/java.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "runtime/reflectionUtils.hpp"
 #include "runtime/signature.hpp"
 #include "utilities/hashtable.hpp"
