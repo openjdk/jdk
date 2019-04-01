@@ -103,6 +103,7 @@ void ZRelocationSetSelectorGroup::select() {
   const size_t npages = _registered_pages.size();
   size_t selected_from = 0;
   size_t selected_to = 0;
+  size_t selected_from_size = 0;
   size_t from_size = 0;
 
   semi_sort();
@@ -127,6 +128,7 @@ void ZRelocationSetSelectorGroup::select() {
     if (diff_reclaimable > ZFragmentationLimit) {
       selected_from = from;
       selected_to = to;
+      selected_from_size = from_size;
     }
 
     log_trace(gc, reloc)("Candidate Relocation Set (%s Pages): "
@@ -138,7 +140,7 @@ void ZRelocationSetSelectorGroup::select() {
   _nselected = selected_from;
 
   // Update statistics
-  _relocating = from_size;
+  _relocating = selected_from_size;
   for (size_t i = _nselected; i < npages; i++) {
     ZPage* const page = _sorted_pages[i];
     _fragmentation += page->size() - page->live_bytes();
