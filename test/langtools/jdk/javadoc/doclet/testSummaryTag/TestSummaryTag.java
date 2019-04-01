@@ -113,13 +113,12 @@ public class TestSummaryTag extends JavadocTester {
     @Test
     public void test3() {
         javadoc("-d", "out3",
-                "--frames",
                 "-sourcepath", testSrc,
                 "-overview", testSrc("p3/overview.html"),
                 "p3");
         checkExit(Exit.OK);
 
-        checkOutput("overview-summary.html", true,
+        checkOutput("index.html", true,
                 "<div class=\"block\">The first... line second from ...</div>");
     }
 }

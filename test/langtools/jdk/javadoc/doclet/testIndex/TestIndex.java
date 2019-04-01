@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,14 +46,9 @@ public class TestIndex extends JavadocTester {
     @Test
     public void test() {
         javadoc("-d", "out",
-                "--frames",
                 "-sourcepath", testSrc,
                 "pkg", testSrc("NoPackage.java"));
         checkExit(Exit.OK);
-
-        checkOutput("index.html", true,
-                "<iframe src=\"overview-summary.html\" name=\"classFrame\" title=\""
-                + "Package, class and interface descriptions\" class=\"rightIframe\">");
 
         //Test index-all.html
         checkOutput("index-all.html", true,

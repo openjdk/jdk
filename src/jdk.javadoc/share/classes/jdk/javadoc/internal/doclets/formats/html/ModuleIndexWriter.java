@@ -44,8 +44,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 
 /**
- * Generate the module index page "overview-summary.html" for the right-hand
- * frame.
+ * Generate the module index page "index.html".
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
@@ -66,15 +65,15 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
     }
 
     /**
-     * Generate the module index page for the right-hand frame.
+     * Generate the module index page.
      *
      * @param configuration the current configuration of the doclet.
      * @throws DocFileIOException if there is a problem generating the module index page
      */
     public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
-        DocPath filename = DocPaths.overviewSummary(configuration.frames);
+        DocPath filename = DocPaths.INDEX;
         ModuleIndexWriter mdlgen = new ModuleIndexWriter(configuration, filename);
-        mdlgen.buildModuleIndexFile("doclet.Window_Overview_Summary", "module index", true);
+        mdlgen.buildModuleIndexFile("doclet.Window_Overview_Summary", "module index");
     }
 
     /**
@@ -95,15 +94,6 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
      * @param main the document tree to which the modules list will be added
      */
     protected void addIndexContents(Content header, Content main) {
-        HtmlTree htmltree = HtmlTree.NAV();
-        htmltree.setStyle(HtmlStyle.indexNav);
-        HtmlTree ul = new HtmlTree(HtmlTag.UL);
-        addAllClassesLink(ul);
-        if (configuration.showModules) {
-            addAllModulesLink(ul);
-        }
-        htmltree.add(ul);
-        header.add(htmltree);
         addModulesList(main);
     }
 

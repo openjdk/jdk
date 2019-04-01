@@ -175,7 +175,7 @@ public class TreeWriter extends AbstractTreeWriter {
      */
     protected HtmlTree getTreeHeader() {
         String title = resources.getText("doclet.Window_Class_Hierarchy");
-        HtmlTree bodyTree = getBody(true, getWindowTitle(title));
+        HtmlTree bodyTree = getBody(getWindowTitle(title));
         HtmlTree htmlTree = HtmlTree.HEADER();
         addTop(htmlTree);
         navBar.setUserHeader(getUserHeaderFooter(true));

@@ -57,7 +57,6 @@ public class TestMetadata extends JavadocTester {
         tester.runTests();
     }
 
-    enum Frames { NO_FRAMES, FRAMES };
     enum Index  { SINGLE, SPLIT };
     enum Source { PACKAGES, MODULES };
 
@@ -68,16 +67,14 @@ public class TestMetadata extends JavadocTester {
     public void runTests() throws Exception {
         for (Source s : Source.values()) {
             Path src = genSource(s);
-            for (Frames f : Frames.values()) {
                  for (Index i : Index.values()) {
                      List<String> args = new ArrayList<>();
                      args.add("-d");
-                     args.add(String.format("out-%s-%s-%s", s, f, i));
+                     args.add(String.format("out-%s-%s", s, i));
                      args.add("-use");
                      if (s != Source.MODULES) {
                          args.add("-linksource"); // broken, with modules: JDK-8219060
                      }
-                     args.add(f == Frames.NO_FRAMES ? "--no-frames" : "--frames");
                      if (i == Index.SPLIT) {
                          args.add("-splitIndex");
                      }
@@ -116,7 +113,6 @@ public class TestMetadata extends JavadocTester {
                              break;
                      }
                  }
-            }
         }
 
         checking ("all generators");
@@ -143,7 +139,6 @@ public class TestMetadata extends JavadocTester {
     final Pattern nl = Pattern.compile("[\\r\\n]+");
     final Pattern bodyPattern = Pattern.compile("<body [^>]*class=\"([^\"]+)\"");
     final Set<String> allBodyClasses = Set.of(
-        "all-classes-frame",
         "all-classes-index",
         "all-packages-index",
         "class-declaration",
@@ -151,18 +146,12 @@ public class TestMetadata extends JavadocTester {
         "constants-summary",
         "deprecated-list",
         "doc-file",
-        "frames",
         "help",
         "index-redirect",
         "module-declaration",
-        "module-frame",
         "module-index",
-        "module-index-frame",
-        "module-package-index-frame",
         "package-declaration",
-        "package-frame",
         "package-index",
-        "package-index-frame",
         "package-tree",
         "package-use",
         "serialized-form",
@@ -216,7 +205,6 @@ public class TestMetadata extends JavadocTester {
     final Pattern contentPattern = Pattern.compile("content=\"([^\"]+)\">");
     final Pattern generatorPattern = Pattern.compile("content=\"javadoc/([^\"]+)\">");
     final Set<String> allGenerators = Set.of(
-            "AllClassesFrameWriter",
             "AllClassesIndexWriter",
             "AllPackagesIndexWriter",
             "AnnotationTypeWriterImpl",
@@ -225,16 +213,10 @@ public class TestMetadata extends JavadocTester {
             "ConstantsSummaryWriterImpl",
             "DeprecatedListWriter",
             "DocFileWriter",
-            "FrameOutputWriter",
             "HelpWriter",
             "IndexRedirectWriter",
-            "ModuleFrameWriter",
-            "ModuleIndexFrameWriter",
             "ModuleIndexWriter",
-            "ModulePackageIndexFrameWriter",
             "ModuleWriterImpl",
-            "PackageFrameWriter",
-            "PackageIndexFrameWriter",
             "PackageIndexWriter",
             "PackageTreeWriter",
             "PackageUseWriter",
@@ -323,16 +305,6 @@ public class TestMetadata extends JavadocTester {
         }
 
         switch (generator) {
-            case "AllClassesFrameWriter":
-            case "FrameOutputWriter":
-            case "ModuleFrameWriter":
-            case "ModuleIndexFrameWriter":
-            case "ModulePackageIndexFrameWriter":
-            case "PackageFrameWriter":
-            case "PackageIndexFrameWriter":
-                check(generator, content, content.contains("frame"));
-                break;
-
             case "AllClassesIndexWriter":
             case "AllPackagesIndexWriter":
             case "ModuleIndexWriter":

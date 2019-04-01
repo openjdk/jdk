@@ -197,12 +197,6 @@ public class HtmlConfiguration extends BaseConfiguration {
     public boolean createoverview = false;
 
     /**
-     * Specifies whether or not frames should be generated.
-     * Defaults to false; can be set to true by --frames; can be set to false by --no-frames; last one wins.
-     */
-    public boolean frames = false;
-
-    /**
      * Collected set of doclint options
      */
     public Map<Doclet.Option, String> doclintOpts = new LinkedHashMap<>();
@@ -375,7 +369,7 @@ public class HtmlConfiguration extends BaseConfiguration {
             return;
         }
         if (createoverview) {
-            topFile = DocPaths.overviewSummary(frames);
+            topFile = DocPaths.INDEX;
         } else {
             if (showModules) {
                 topFile = DocPath.empty.resolve(docPaths.moduleSummary(modules.first()));
@@ -640,21 +634,6 @@ public class HtmlConfiguration extends BaseConfiguration {
                     return true;
                 }
             },
-            new Option(resources, "--frames") {
-                @Override
-                public boolean process(String opt,  List<String> args) {
-                    reporter.print(WARNING, resources.getText("doclet.Frames_specified", helpfile));
-                    frames = true;
-                    return true;
-                }
-            },
-            new Option(resources, "--no-frames") {
-                @Override
-                public boolean process(String opt,  List<String> args) {
-                    frames = false;
-                    return true;
-                }
-            },
             new Hidden(resources, "-packagesheader", 1) {
                 @Override
                 public boolean process(String opt,  List<String> args) {
@@ -747,6 +726,13 @@ public class HtmlConfiguration extends BaseConfiguration {
                         reporter.print(ERROR, resources.getText("doclet.Option_doclint_package_invalid_arg"));
                         return false;
                     }
+                    return true;
+                }
+            },
+            new XOption(resources, "--no-frames") {
+                @Override
+                public boolean process(String opt, List<String> args) {
+                    reporter.print(WARNING, resources.getText("doclet.NoFrames_specified"));
                     return true;
                 }
             }

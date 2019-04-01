@@ -49,7 +49,6 @@ public class TestNewLanguageFeatures extends JavadocTester {
         javadoc("-Xdoclint:none",
                 "-d", "out",
                 "-use",
-                "--frames",
                 "-sourcepath", testSrc,
                 "pkg", "pkg1", "pkg2");
         checkExit(Exit.OK);
@@ -463,13 +462,6 @@ public class TestNewLanguageFeatures extends JavadocTester {
         checkOutput("index-all.html", true,
                 "<span class=\"memberNameLink\"><a href=\"pkg2/Foo.html#method(java.util.Vector)\">"
                 + "method(Vector&lt;Object&gt;)</a></span>"
-        );
-
-        // No type parameters in class frame.
-        checkOutput("allclasses-frame.html", false,
-                "<a href=\"../pkg/TypeParameters.html\" title=\"class in pkg\">"
-                + "TypeParameters</a>&lt;<a href=\"../pkg/TypeParameters.html\" "
-                + "title=\"type parameter in TypeParameters\">E</a>&gt;"
         );
 
     }

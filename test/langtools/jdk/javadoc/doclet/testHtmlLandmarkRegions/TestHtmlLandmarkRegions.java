@@ -69,32 +69,12 @@ public class TestHtmlLandmarkRegions extends JavadocTester {
         javadoc("-d", outDir.toString(),
                 "-doctitle", "Document Title",
                 "-header", "Test Header",
-                "--frames",
                 "--module-source-path", srcDir.toString(),
                 "--module", "m1,m2");
 
         checkExit(Exit.OK);
 
-        checkOrder("module-overview-frame.html",
-                "<header role=\"banner\">\n"
-                + "<h1 title=\"Test Header\" class=\"bar\">Test Header</h1>\n"
-                + "<nav role=\"navigation\" class=\"indexNav\">",
-                "<main role=\"main\">\n"
-                + "<div class=\"indexContainer\">\n"
-                + "<h2 title=\"Modules\">Modules</h2>\n"
-                + "<ul title=\"Modules\">",
-                "<footer role=\"contentinfo\">");
-
-        checkOrder("m1/module-frame.html",
-                "<header role=\"banner\">\n"
-                + "<h1 title=\"Test Header\" class=\"bar\">Test Header</h1>\n"
-                + "<nav role=\"navigation\" class=\"indexNav\">",
-                "<main role=\"main\">\n"
-                + "<div class=\"indexContainer\">\n"
-                + "<h2 title=\"m1\"><a href=\"module-summary.html\" target=\"classFrame\">m1</a>&nbsp;Packages</h2>",
-                "<footer role=\"contentinfo\">");
-
-        checkOrder("overview-summary.html",
+        checkOrder("index.html",
                 "<header role=\"banner\">\n"
                 + "<nav role=\"navigation\">",
                 "<main role=\"main\">\n"
@@ -113,13 +93,12 @@ public class TestHtmlLandmarkRegions extends JavadocTester {
         javadoc("-d", outDir.toString(),
                 "-doctitle", "Document Title",
                 "-header", "Test Header",
-                "--frames",
                 "-sourcepath", srcDir.toString(),
                 "pkg1", "pkg2");
 
         checkExit(Exit.OK);
 
-        checkOrder("overview-summary.html",
+        checkOrder("index.html",
                 "<header role=\"banner\">\n"
                 + "<nav role=\"navigation\">",
                 "<main role=\"main\">\n"
@@ -127,15 +106,6 @@ public class TestHtmlLandmarkRegions extends JavadocTester {
                 + "<h1 class=\"title\">Document Title</h1>",
                 "<footer role=\"contentinfo\">\n" +
                         "<nav role=\"navigation\">");
-
-        checkOrder("overview-frame.html",
-                "<header role=\"banner\">\n"
-                + "<h1 title=\"Test Header\" class=\"bar\">Test Header</h1>\n"
-                + "<nav role=\"navigation\" class=\"indexNav\">",
-                "<main role=\"main\">\n"
-                + "<div class=\"indexContainer\">\n"
-                + "<h2 title=\"Packages\">Packages</h2>",
-                "<footer role=\"contentinfo\">");
     }
 
     @Test

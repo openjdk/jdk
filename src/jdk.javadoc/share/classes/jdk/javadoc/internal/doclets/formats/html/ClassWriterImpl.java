@@ -105,7 +105,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
      */
     @Override
     public Content getHeader(String header) {
-        HtmlTree bodyTree = getBody(true, getWindowTitle(utils.getSimpleName(typeElement)));
+        HtmlTree bodyTree = getBody(getWindowTitle(utils.getSimpleName(typeElement)));
         HtmlTree htmlTree = HtmlTree.HEADER();
         addTop(htmlTree);
         Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(typeElement),

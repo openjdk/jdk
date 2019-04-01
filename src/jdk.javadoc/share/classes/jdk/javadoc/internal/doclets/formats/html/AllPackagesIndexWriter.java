@@ -83,7 +83,7 @@ public class AllPackagesIndexWriter extends HtmlDocletWriter {
      */
     protected void buildAllPackagesFile() throws DocFileIOException {
         String label = resources.getText("doclet.All_Packages");
-        HtmlTree bodyTree = getBody(true, getWindowTitle(label));
+        HtmlTree bodyTree = getBody(getWindowTitle(label));
         HtmlTree header = HtmlTree.HEADER();
         addTop(header);
         navBar.setUserHeader(getUserHeaderFooter(true));

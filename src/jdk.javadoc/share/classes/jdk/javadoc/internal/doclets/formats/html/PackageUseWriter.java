@@ -237,7 +237,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
         String packageText = resources.getText("doclet.Package");
         String name = packageElement.isUnnamed() ? "" : utils.getPackageName(packageElement);
         String title = resources.getText("doclet.Window_ClassUse_Header", packageText, name);
-        HtmlTree bodyTree = getBody(true, getWindowTitle(title));
+        HtmlTree bodyTree = getBody(getWindowTitle(title));
         HtmlTree htmlTree = HtmlTree.HEADER();
         addTop(htmlTree);
         Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(packageElement),

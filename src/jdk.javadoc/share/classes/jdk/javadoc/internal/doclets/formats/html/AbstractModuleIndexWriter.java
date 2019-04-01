@@ -44,9 +44,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 
 /**
- * Abstract class to generate the module overview files in
- * Frame and Non-Frame format. This will be sub-classed to
- * generate module-overview-frame.html as well as module-overview-summary.html.
+ * Abstract class to generate the module overview files.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
@@ -118,19 +116,16 @@ public abstract class AbstractModuleIndexWriter extends HtmlDocletWriter {
             String tableSummary, Content main, ModuleElement mdle);
 
     /**
-     * Generate and prints the contents in the module index file. Call appropriate
-     * methods from the sub-class in order to generate Frame or Non
-     * Frame format.
+     * Generate and prints the contents in the module index file.
      *
      * @param title the title of the window
      * @param description the content for the description META tag
-     * @param includeScript boolean set true if windowtitle script is to be included
      * @throws DocFileIOException if there is a problem building the module index file
      */
-    protected void buildModuleIndexFile(String title, String description, boolean includeScript)
+    protected void buildModuleIndexFile(String title, String description)
             throws DocFileIOException {
         String windowOverview = resources.getText(title);
-        Content body = getBody(includeScript, getWindowTitle(windowOverview));
+        Content body = getBody(getWindowTitle(windowOverview));
         Content header = HtmlTree.HEADER();
         addNavigationBarHeader(header);
         Content main = HtmlTree.MAIN();
@@ -149,20 +144,17 @@ public abstract class AbstractModuleIndexWriter extends HtmlDocletWriter {
     }
 
     /**
-     * Generate and prints the contents in the module packages index file. Call appropriate
-     * methods from the sub-class in order to generate Frame or Non
-     * Frame format.
+     * Generate and prints the contents in the module packages index file.
      *
      * @param title the title of the window.
      * @param description the content for the description META tag
-     * @param includeScript boolean set true if windowtitle script is to be included
      * @param mdle the name of the module being documented
      * @throws DocFileIOException if there is an exception building the module packages index file
      */
     protected void buildModulePackagesIndexFile(String title, String description,
-            boolean includeScript, ModuleElement mdle) throws DocFileIOException {
+             ModuleElement mdle) throws DocFileIOException {
         String windowOverview = resources.getText(title);
-        Content body = getBody(includeScript, getWindowTitle(windowOverview));
+        Content body = getBody(getWindowTitle(windowOverview));
         Content header = HtmlTree.HEADER();
         addNavigationBarHeader(header);
         Content main = HtmlTree.MAIN();
@@ -188,7 +180,7 @@ public abstract class AbstractModuleIndexWriter extends HtmlDocletWriter {
     protected void addOverview(Content main) { }
 
     /**
-     * Adds the frame or non-frame module index to the documentation tree.
+     * Adds the module index to the documentation tree.
      *
      * @param header the document tree to which the navigational links will be added
      * @param main the document tree to which the modules list will be added
@@ -201,7 +193,7 @@ public abstract class AbstractModuleIndexWriter extends HtmlDocletWriter {
     }
 
     /**
-     * Adds the frame or non-frame module packages index to the documentation tree.
+     * Adds the module packages index to the documentation tree.
      *
      * @param header the document tree to which the navigational links will be added
      * @param main the document tree to which the module packages list will be added
@@ -226,13 +218,6 @@ public abstract class AbstractModuleIndexWriter extends HtmlDocletWriter {
      */
     protected void addIndexContents(Collection<ModuleElement> modules, String text,
             String tableSummary, Content header, Content main) {
-        HtmlTree htmlTree = HtmlTree.NAV();
-        htmlTree.setStyle(HtmlStyle.indexNav);
-        HtmlTree ul = new HtmlTree(HtmlTag.UL);
-        addAllClassesLink(ul);
-        addAllPackagesLink(ul);
-        htmlTree.add(ul);
-        header.add(htmlTree);
         addModulesList(main);
     }
 
@@ -248,14 +233,6 @@ public abstract class AbstractModuleIndexWriter extends HtmlDocletWriter {
      */
     protected void addModulePackagesIndexContents(String text,
             String tableSummary, Content header, Content main, ModuleElement mdle) {
-        HtmlTree htmlTree = HtmlTree.NAV();
-        htmlTree.setStyle(HtmlStyle.indexNav);
-        HtmlTree ul = new HtmlTree(HtmlTag.UL);
-        addAllClassesLink(ul);
-        addAllPackagesLink(ul);
-        addAllModulesLink(ul);
-        htmlTree.add(ul);
-        header.add(htmlTree);
         addModulePackagesList(modules, text, tableSummary, main, mdle);
     }
 
@@ -273,25 +250,4 @@ public abstract class AbstractModuleIndexWriter extends HtmlDocletWriter {
             body.add(div);
         }
     }
-
-    /**
-     * Do nothing. This will be overridden in ModuleIndexFrameWriter.
-     *
-     * @param div the document tree to which the all classes link will be added
-     */
-    protected void addAllClassesLink(Content div) { }
-
-    /**
-     * Do nothing. This will be overridden in ModuleIndexFrameWriter.
-     *
-     * @param div the document tree to which the all packages link will be added
-     */
-    protected void addAllPackagesLink(Content div) { }
-
-    /**
-     * Do nothing. This will be overridden in ModulePackageIndexFrameWriter.
-     *
-     * @param div the document tree to which the all modules link will be added
-     */
-    protected void addAllModulesLink(Content div) { }
 }

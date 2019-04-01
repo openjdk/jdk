@@ -46,7 +46,6 @@ public class TestHiddenTag extends JavadocTester {
     @Test
     public void test1() {
         javadoc("-d", "out1",
-                "--frames",
                 "-sourcepath", testSrc,
                 "-package",
                 "pkg1");
@@ -90,8 +89,6 @@ public class TestHiddenTag extends JavadocTester {
                 "invisibleField",
                 "invisibleMethod",
                 "A.InvisibleInner");
-
-        checkOutput("pkg1/package-frame.html", false, "A.InvisibleInner");
 
         checkOutput("pkg1/package-summary.html", false, "A.InvisibleInner");
 

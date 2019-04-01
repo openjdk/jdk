@@ -202,6 +202,7 @@ public class HtmlDocletWriter {
         this.pathToRoot = path.parent().invert();
         this.filename = path.basename();
         this.docPaths = configuration.docPaths;
+        this.mainBodyScript = new Script();
 
         messages.notice("doclet.Generating_0",
             DocFile.createFileForOutput(configuration, path).getPath());
@@ -372,47 +373,6 @@ public class HtmlDocletWriter {
      */
     public TagletWriter getTagletWriterInstance(boolean isFirstSentence, boolean inSummary) {
         return new TagletWriterImpl(this, isFirstSentence, inSummary);
-    }
-
-    /**
-     * Get Package link, with target frame.
-     *
-     * @param pkg The link will be to the "package-summary.html" page for this package
-     * @param target name of the target frame
-     * @param label tag for the link
-     * @return a content for the target package link
-     */
-    public Content getTargetPackageLink(PackageElement pkg, String target,
-            Content label) {
-        return links.createLink(pathString(pkg, DocPaths.PACKAGE_SUMMARY), label, "", target);
-    }
-
-    /**
-     * Get Module Package link, with target frame.
-     *
-     * @param pkg the PackageElement
-     * @param target name of the target frame
-     * @param label tag for the link
-     * @param mdle the module being documented
-     * @return a content for the target module packages link
-     */
-    public Content getTargetModulePackageLink(PackageElement pkg, String target,
-            Content label, ModuleElement mdle) {
-        return links.createLink(pathString(pkg, DocPaths.PACKAGE_SUMMARY),
-                label, "", target);
-    }
-
-    /**
-     * Get Module link, with target frame.
-     *
-     * @param target name of the target frame
-     * @param label tag for the link
-     * @param mdle the module being documented
-     * @return a content for the target module link
-     */
-    public Content getTargetModuleLink(String target, Content label, ModuleElement mdle) {
-        return links.createLink(pathToRoot.resolve(
-                docPaths.moduleSummary(mdle)), label, "", target);
     }
 
     /**
@@ -2190,24 +2150,19 @@ public class HtmlDocletWriter {
     /**
      * Returns an HtmlTree for the BODY tag.
      *
-     * @param includeScript  set true if printing windowtitle script
      * @param title title for the window
      * @return an HtmlTree for the BODY tag
      */
-    public HtmlTree getBody(boolean includeScript, String title) {
+    public HtmlTree getBody(String title) {
         HtmlTree body = new HtmlTree(HtmlTag.BODY);
         body.put(HtmlAttr.CLASS, getBodyClass());
 
-        // Set window title string which is later printed
         this.winTitle = title;
         // Don't print windowtitle script for overview-frame, allclasses-frame
         // and package-frame
-        if (includeScript) {
-            this.mainBodyScript = getWinTitleScript();
-            body.add(mainBodyScript.asContent());
-            Content noScript = HtmlTree.NOSCRIPT(HtmlTree.DIV(contents.noScriptMessage));
-            body.add(noScript);
-        }
+        body.add(mainBodyScript.asContent());
+        Content noScript = HtmlTree.NOSCRIPT(HtmlTree.DIV(contents.noScriptMessage));
+        body.add(noScript);
         return body;
     }
 

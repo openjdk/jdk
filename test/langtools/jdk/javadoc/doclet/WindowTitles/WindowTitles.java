@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,21 +49,17 @@ public class WindowTitles extends JavadocTester {
         // Test for all cases except the split index page
         javadoc("-d", "out-1",
                 "-use",
-                "--frames",
                 "-sourcepath", testSrc,
                 "p1", "p2");
         checkExit(Exit.OK);
         checkFiles(false, "allclasses-noframe.html");
 
-        checkTitle("overview-summary.html",     "Overview");
+        checkTitle("index.html",                "Overview");
         checkTitle("overview-tree.html",        "Class Hierarchy");
-        checkTitle("overview-frame.html",       "Overview List");
         checkTitle("p1/package-summary.html",   "p1");
-        checkTitle("p1/package-frame.html",     "p1");
         checkTitle("p1/package-tree.html",      "p1 Class Hierarchy");
         checkTitle("p1/package-use.html",       "Uses of Package p1");
         checkTitle("p1/C1.html",                "C1");
-        checkTitle("allclasses-frame.html",     "All Classes");
         checkTitle("constant-values.html",      "Constant Field Values");
         checkTitle("deprecated-list.html",      "Deprecated List");
         checkTitle("serialized-form.html",      "Serialized Form");

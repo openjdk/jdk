@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,39 +23,42 @@
 
 /*
  * @test
- * @bug 4636655 8196202
- * @summary  Add title attribute to <FRAME> tags for accessibility
- * @author dkramer
+ * @bug 8215599
+ * @summary Remove support for javadoc "frames" mode
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build javadoc.tester.*
- * @run main AccessFrameTitle
+ * @run main TestNoFrames
  */
 
 import javadoc.tester.JavadocTester;
 
-public class AccessFrameTitle extends JavadocTester {
+public class TestNoFrames extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        AccessFrameTitle tester = new AccessFrameTitle();
+        TestNoFrames tester = new TestNoFrames();
         tester.runTests();
     }
 
     @Test
-    public void test() {
-        javadoc("-d", "out",
+    public void testFrames() {
+        javadoc("-d", "out-1",
                 "--frames",
-                "-sourcepath", testSrc,
-                "p1", "p2");
+                "-sourcepath",testSrc,
+                testSrc("TestNoFrames.java"));
+        checkExit(Exit.ERROR);
+    }
+
+    @Test
+    public void testDefault() {
+        javadoc("-d", "out-2",
+                "--no-frames",
+                "-sourcepath",testSrc,
+                testSrc("TestNoFrames.java"));
         checkExit(Exit.OK);
 
-        // Testing only for the presence of the title attributes.
-        // To make this test more robust, only
-        // the initial part of each title string is tested for,
-        // in case the ending part of the string later changes
-        checkOutput("index.html", true,
-                "title=\"All classes and interfaces (except non-static nested types)\"",
-                "title=\"All Packages\"",
-                "title=\"Package, class and interface descriptions\"");
+        checkOutput(Output.OUT, true,
+                "javadoc: warning - The --no-frames option is no longer required and may be removed\n"
+                + "in a future release.");
     }
 }

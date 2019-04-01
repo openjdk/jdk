@@ -46,7 +46,6 @@ public class TestHtmlTableStyles extends JavadocTester {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
                 "-use",
-                "--frames",
                 "pkg1", "pkg2");
         checkExit(Exit.ERROR);
         checkOutput(Output.OUT, true,
@@ -68,7 +67,7 @@ public class TestHtmlTableStyles extends JavadocTester {
         checkOutput("pkg1/class-use/TestTable.html", true,
                 "<div class=\"useSummary\">\n<table>");
 
-        checkOutput("overview-summary.html", true,
+        checkOutput("index.html", true,
                 "<div class=\"overviewSummary\">\n<table>");
 
         checkOutput("deprecated-list.html", true,

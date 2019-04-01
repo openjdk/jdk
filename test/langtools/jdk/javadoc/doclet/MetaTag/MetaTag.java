@@ -55,7 +55,6 @@ public class MetaTag extends JavadocTester {
         javadoc("-d", "out-1",
                 "-sourcepath", testSrc,
                 "-keywords",
-                "--frames",
                 "-doctitle", "Sample Packages",
                 "p1", "p2");
 
@@ -69,7 +68,6 @@ public class MetaTag extends JavadocTester {
         javadoc("-d", "out-2",
                 "-sourcepath", testSrc,
                 "-notimestamp",
-                "--frames",
                 "-doctitle", "Sample Packages",
                 "p1", "p2");
         checkExit(Exit.OK);
@@ -89,7 +87,7 @@ public class MetaTag extends JavadocTester {
         checkOutput("p1/package-summary.html", found,
                 "<meta name=\"keywords\" content=\"p1 package\">");
 
-        checkOutput("overview-summary.html", found,
+        checkOutput("index.html", found,
                 "<meta name=\"keywords\" content=\"Overview, Sample Packages\">");
 
         // NOTE: Hopefully, this regression test is not run at midnight.  If the output
@@ -97,7 +95,7 @@ public class MetaTag extends JavadocTester {
         // so make sure the date has not changed since the test started
         String date = date();
         if (date.equals(startDate)) {
-            checkOutput("overview-summary.html", found,
+            checkOutput("index.html", found,
                     "<meta name=\"" + metaNameDate + "\" content=\"" + date + "\">");
         }
     }

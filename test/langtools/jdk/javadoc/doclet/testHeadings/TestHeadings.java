@@ -47,7 +47,6 @@ public class TestHeadings extends JavadocTester {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
                 "-use",
-                "--frames",
                 "-header", "Test Files",
                 "pkg1", "pkg2");
         checkExit(Exit.OK);
@@ -93,13 +92,8 @@ public class TestHeadings extends JavadocTester {
                 + "pkg1.C1</a> extends java.lang.Object implements Serializable</h3>",
                 "<h4>Serialized Fields</h4>");
 
-        // Overview Frame
-        checkOutput("overview-frame.html", true,
-                "<h1 title=\"Test Files\" class=\"bar\">Test Files</h1>",
-                "<title>Overview List</title>");
-
         // Overview Summary
-        checkOutput("overview-summary.html", true,
+        checkOutput("index.html", true,
                 "<title>Overview</title>");
     }
 }

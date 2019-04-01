@@ -87,14 +87,13 @@ public class TestIndexWithModules extends JavadocTester {
         Path out = base.resolve("out");
         javadoc("-d", out.toString(),
                 "--module-source-path", src.toString(),
-                "--module", "m1,m3,m4",
-                "--frames");
+                "--module", "m1,m3,m4");
 
         checkExit(Exit.OK);
 
-        checkOutput("index.html", true,
-                "window.location.replace('overview-summary.html')");
-        checkOrder("overview-summary.html",
+        checkOutput("overview-summary.html", true,
+                "window.location.replace('index.html')");
+        checkOrder("index.html",
                 "Modules",
                 "<a href=\"m1/module-summary.html\">m1</a>",
                 "<a href=\"m3/module-summary.html\">m3</a>",

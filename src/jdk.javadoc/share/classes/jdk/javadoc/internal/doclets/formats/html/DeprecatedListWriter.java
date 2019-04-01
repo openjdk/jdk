@@ -369,7 +369,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
      */
     public HtmlTree getHeader() {
         String title = resources.getText("doclet.Window_Deprecated_List");
-        HtmlTree bodyTree = getBody(true, getWindowTitle(title));
+        HtmlTree bodyTree = getBody(getWindowTitle(title));
         HtmlTree htmlTree = HtmlTree.HEADER();
         addTop(htmlTree);
         navBar.setUserHeader(getUserHeaderFooter(true));

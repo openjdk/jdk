@@ -144,13 +144,6 @@ public class HtmlDoclet extends AbstractDoclet {
             DeprecatedListWriter.generate(configuration);
         }
 
-        AllClassesFrameWriter.generate(configuration,
-            new IndexBuilder(configuration, nodeprecated, true));
-
-        if (configuration.frames) {
-            FrameOutputWriter.generate(configuration);
-        }
-
         if (configuration.createoverview) {
             if (configuration.showModules) {
                 ModuleIndexWriter.generate(configuration);
@@ -173,12 +166,10 @@ public class HtmlDoclet extends AbstractDoclet {
             }
         }
 
-        if (!configuration.frames) {
-            if (configuration.createoverview) {
-                IndexRedirectWriter.generate(configuration, DocPaths.OVERVIEW_SUMMARY, DocPaths.INDEX);
-            } else {
-                IndexRedirectWriter.generate(configuration);
-            }
+        if (configuration.createoverview) {
+            IndexRedirectWriter.generate(configuration, DocPaths.OVERVIEW_SUMMARY, DocPaths.INDEX);
+        } else {
+            IndexRedirectWriter.generate(configuration);
         }
 
         if (configuration.helpfile.isEmpty() && !configuration.nohelp) {
@@ -273,15 +264,8 @@ public class HtmlDoclet extends AbstractDoclet {
     @Override // defined by AbstractDoclet
     protected void generateModuleFiles() throws DocletException {
         if (configuration.showModules) {
-            if (configuration.frames  && configuration.modules.size() > 1) {
-                ModuleIndexFrameWriter.generate(configuration);
-            }
             List<ModuleElement> mdles = new ArrayList<>(configuration.modulePackages.keySet());
             for (ModuleElement mdle : mdles) {
-                if (configuration.frames && configuration.modules.size() > 1) {
-                    ModulePackageIndexFrameWriter.generate(configuration, mdle);
-                    ModuleFrameWriter.generate(configuration, mdle);
-                }
                 AbstractBuilder moduleSummaryBuilder =
                         configuration.getBuilderFactory().getModuleSummaryBuilder(mdle);
                 moduleSummaryBuilder.build();
@@ -295,18 +279,12 @@ public class HtmlDoclet extends AbstractDoclet {
     @Override // defined by AbstractDoclet
     protected void generatePackageFiles(ClassTree classtree) throws DocletException {
         Set<PackageElement> packages = configuration.packages;
-        if (packages.size() > 1 && configuration.frames) {
-            PackageIndexFrameWriter.generate(configuration);
-        }
         List<PackageElement> pList = new ArrayList<>(packages);
         for (PackageElement pkg : pList) {
             // if -nodeprecated option is set and the package is marked as
             // deprecated, do not generate the package-summary.html, package-frame.html
             // and package-tree.html pages for that package.
             if (!(configuration.nodeprecated && utils.isDeprecated(pkg))) {
-                if (configuration.frames) {
-                    PackageFrameWriter.generate(configuration, pkg);
-                }
                 AbstractBuilder packageSummaryBuilder =
                         configuration.getBuilderFactory().getPackageSummaryBuilder(pkg);
                 packageSummaryBuilder.build();
