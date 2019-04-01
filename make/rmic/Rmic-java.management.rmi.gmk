@@ -40,23 +40,14 @@ JMX_RMI_CLASSES := javax.management.remote.rmi.RMIConnectionImpl \
 $(eval $(call SetupRMICompilation,RMI_GEN, \
     CLASSES := $(JMX_RMI_CLASSES), \
     CLASSES_DIR := $(CLASSES_DIR)/java.management.rmi, \
-    STUB_CLASSES_DIR := $(RMIC_GENSRC_DIR)/java.management.rmi, \
+    STUB_CLASSES_DIR := $(STUB_CLASSES_DIR)/java.management.rmi, \
     RUN_V12 := true, \
     KEEP_GENERATED := true, \
+    STUB_SOURCES_DIR := $(RMIC_GENSRC_DIR)/java.management.rmi, \
 ))
-
-# Find all classes generated and move them from the gensrc dir to the stub classes dir
-$(RMIC_GENSRC_DIR)/_classes.moved: $(RMI_GEN)
-	$(eval classfiles := $(shell $(FIND) $(RMIC_GENSRC_DIR) -name "*.class"))
-	$(foreach src, $(classfiles), \
-	    $(eval target := $(patsubst $(RMIC_GENSRC_DIR)/%, \
-	        $(STUB_CLASSES_DIR)/%, $(src))) \
-	    $(call MakeDir, $(dir $(target))) \
-	    $(MV) $(src) $(target) $(NEWLINE))
-	$(TOUCH) $@
 
 ##########################################################################################
 
-all: $(RMIC_GENSRC_DIR)/_classes.moved $(RMI_GEN)
+all: $(RMI_GEN)
 
 .PHONY: all

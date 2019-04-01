@@ -35,6 +35,7 @@
 #   RUN_V11:=Set to run rmic with -v1.1
 #   RUN_V12:=Set to run rmic with -v1.2
 #   KEEP_GENERATED:=Set to keep generated sources around
+#   STUB_SOURCES_DIR:=Directory to put generated sources in
 SetupRMICompilation = $(NamedParamsMacroTemplate)
 define SetupRMICompilationBody
 
@@ -58,9 +59,16 @@ define SetupRMICompilationBody
   $1_TIE_FILES := $$(addprefix $$($1_STUB_CLASSES_DIR)/org/omg/stub/,$$(addsuffix _Tie.class,$$($1_TIE_BASE_FILES)))
   $1_TIE_STDPKG_FILES := $$(addprefix $$($1_STUB_CLASSES_DIR)/,$$(addsuffix _Tie.class,$$($1_TIE_BASE_FILES)))
 
-  ifneq (,$$($1_KEEP_GENERATED))
+  ifneq ($$($1_KEEP_GENERATED), )
     $1_ARGS += -keepgenerated
-    $1_TARGETS += $$(subst .class,.java,$$($1_TARGETS))
+    $1_JAVA_TARGETS := $$(subst .class,.java,$$($1_TARGETS))
+    ifneq ($$($1_STUB_SOURCES_DIR), )
+      # This is where the java files are created by rmic
+      $1_JAVA_TARGETS_REL := $$(subst $$($1_STUB_CLASSES_DIR),, $$($1_JAVA_TARGETS))
+      # This is where the caller wants the java files
+      $1_JAVA_TARGETS := $$(addprefix $$($1_STUB_SOURCES_DIR), $$($1_JAVA_TARGETS_REL))
+    endif
+    $1_TARGETS += $$($1_JAVA_TARGETS)
   endif
 
   $1_DOLLAR_SAFE_CLASSES := $$(subst $$$$,\$$$$,$$($1_CLASSES))
@@ -72,11 +80,12 @@ define SetupRMICompilationBody
 	$$(call MakeDir, $$($1_STUB_CLASSES_DIR))
 	$(RMIC) $$($1_ARGS) -classpath "$$($1_CLASSES_DIR)" \
 	    -d $$($1_STUB_CLASSES_DIR) $$($1_DOLLAR_SAFE_CLASSES); \
-	if [ "x$$($1_ARGS2)" != "x" ]; then \
-	  $(ECHO) $(LOG_INFO) Running rmic $$($1_ARGS2) for $$($1_DOLLAR_SAFE_CLASSES) && \
-	  $(RMIC) $$($1_ARGS2) -classpath "$$($1_CLASSES_DIR)" \
-	      -d $$($1_STUB_CLASSES_DIR) $$($1_DOLLAR_SAFE_CLASSES); \
-	fi; \
+	$$(if $$($1_STUB_SOURCES_DIR), \
+	  $$(foreach f, $$($1_JAVA_TARGETS_REL), \
+	    $(MKDIR) -p $$(dir $$($1_STUB_SOURCES_DIR)/$$f) ; \
+	    $(MV) $$($1_STUB_CLASSES_DIR)/$$f $$($1_STUB_SOURCES_DIR)/$$f ; \
+	  ) \
+	) \
 	$(TOUCH) $$@
 
 
