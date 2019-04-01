@@ -170,7 +170,11 @@ void SATBMarkQueueSet::set_active_all_threads(bool active, bool expected_active)
 #ifdef ASSERT
   verify_active_states(expected_active);
 #endif // ASSERT
-  _all_active = active;
+  // Update the global state, synchronized with threads list management.
+  {
+    MutexLockerEx ml(NonJavaThreadsList_lock, Mutex::_no_safepoint_check_flag);
+    _all_active = active;
+  }
 
   class SetThreadActiveClosure : public ThreadClosure {
     SATBMarkQueueSet* _qset;

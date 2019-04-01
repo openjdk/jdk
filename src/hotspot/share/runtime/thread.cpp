@@ -1291,29 +1291,35 @@ NonJavaThread::NonJavaThread() : Thread(), _next(NULL) {
 NonJavaThread::~NonJavaThread() { }
 
 void NonJavaThread::add_to_the_list() {
-  MutexLockerEx lock(NonJavaThreadsList_lock, Mutex::_no_safepoint_check_flag);
-  _next = _the_list._head;
+  MutexLockerEx ml(NonJavaThreadsList_lock, Mutex::_no_safepoint_check_flag);
+  // Initialize BarrierSet-related data before adding to list.
+  BarrierSet::barrier_set()->on_thread_attach(this);
+  OrderAccess::release_store(&_next, _the_list._head);
   OrderAccess::release_store(&_the_list._head, this);
 }
 
 void NonJavaThread::remove_from_the_list() {
-  MutexLockerEx lock(NonJavaThreadsList_lock, Mutex::_no_safepoint_check_flag);
-  NonJavaThread* volatile* p = &_the_list._head;
-  for (NonJavaThread* t = *p; t != NULL; p = &t->_next, t = *p) {
-    if (t == this) {
-      *p = this->_next;
-      // Wait for any in-progress iterators.  Concurrent synchronize is
-      // not allowed, so do it while holding the list lock.
-      _the_list._protect.synchronize();
-      break;
+  {
+    MutexLockerEx ml(NonJavaThreadsList_lock, Mutex::_no_safepoint_check_flag);
+    // Cleanup BarrierSet-related data before removing from list.
+    BarrierSet::barrier_set()->on_thread_detach(this);
+    NonJavaThread* volatile* p = &_the_list._head;
+    for (NonJavaThread* t = *p; t != NULL; p = &t->_next, t = *p) {
+      if (t == this) {
+        *p = _next;
+        break;
+      }
     }
   }
+  // Wait for any in-progress iterators.  Concurrent synchronize is not
+  // allowed, so do it while holding a dedicated lock.  Outside and distinct
+  // from NJTList_lock in case an iteration attempts to lock it.
+  MutexLockerEx ml(NonJavaThreadsListSync_lock, Mutex::_no_safepoint_check_flag);
+  _the_list._protect.synchronize();
+  _next = NULL;                 // Safe to drop the link now.
 }
 
 void NonJavaThread::pre_run() {
-  // Initialize BarrierSet-related data before adding to list.
-  assert(BarrierSet::barrier_set() != NULL, "invariant");
-  BarrierSet::barrier_set()->on_thread_attach(this);
   add_to_the_list();
 
   // This is slightly odd in that NamedThread is a subclass, but
@@ -1324,8 +1330,6 @@ void NonJavaThread::pre_run() {
 
 void NonJavaThread::post_run() {
   JFR_ONLY(Jfr::on_thread_exit(this);)
-  // Clean up BarrierSet data before removing from list.
-  BarrierSet::barrier_set()->on_thread_detach(this);
   remove_from_the_list();
   // Ensure thread-local-storage is cleared before termination.
   Thread::clear_thread_current();

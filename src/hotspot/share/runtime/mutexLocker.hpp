@@ -72,6 +72,7 @@ extern Monitor* VMOperationRequest_lock;         // a lock on Threads waiting fo
 extern Monitor* Threads_lock;                    // a lock on the Threads table of active Java threads
                                                  // (also used by Safepoints too to block threads creation/destruction)
 extern Mutex*   NonJavaThreadsList_lock;         // a lock on the NonJavaThreads list
+extern Mutex*   NonJavaThreadsListSync_lock;     // a lock for NonJavaThreads list synchronization
 extern Monitor* CGC_lock;                        // used for coordination between
                                                  // fore- & background GC threads.
 extern Monitor* STS_lock;                        // used for joining/leaving SuspendibleThreadSet.
