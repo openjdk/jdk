@@ -3400,6 +3400,7 @@ const Type* ShenandoahEnqueueBarrierNode::Value(PhaseGVN* phase) const {
 int ShenandoahEnqueueBarrierNode::needed(Node* n) {
   if (n == NULL ||
       n->is_Allocate() ||
+      n->Opcode() == Op_ShenandoahEnqueueBarrier ||
       n->bottom_type() == TypePtr::NULL_PTR ||
       (n->bottom_type()->make_oopptr() != NULL && n->bottom_type()->make_oopptr()->const_oop() != NULL)) {
     return NotNeeded;
