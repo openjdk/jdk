@@ -368,7 +368,6 @@ public:
   int  verify_icholder_relocations();
   void verify_oop_relocations();
 
-  virtual bool is_evol_dependent() = 0;
   bool has_evol_metadata();
 
   // Fast breakpoint support. Tells if this compiled method is

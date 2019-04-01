@@ -565,11 +565,6 @@ public:
   // and the changes have invalidated it
   bool check_dependency_on(DepChange& changes);
 
-  // Evolution support. Tells if this compiled method is dependent on any of
-  // redefined methods, such that if m() is replaced,
-  // this compiled method will have to be deoptimized.
-  bool is_evol_dependent();
-
   // Fast breakpoint support. Tells if this compiled method is
   // dependent on the given method. Returns true if this nmethod
   // corresponds to the given method as well.

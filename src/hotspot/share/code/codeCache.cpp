@@ -1032,43 +1032,77 @@ bool CodeCache::is_far_target(address target) {
 #endif
 }
 
-// Just marks the methods in this class as needing deoptimization
-void CodeCache::mark_for_evol_deoptimization(InstanceKlass* dependee) {
-  MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+#ifdef INCLUDE_JVMTI
+// RedefineClasses support for unloading nmethods that are dependent on "old" methods.
+// We don't really expect this table to grow very large.  If it does, it can become a hashtable.
+static GrowableArray<CompiledMethod*>* old_compiled_method_table = NULL;
 
-  // Deoptimize all methods of the evolving class itself
-  Array<Method*>* old_methods = dependee->methods();
-  for (int i = 0; i < old_methods->length(); i++) {
-    ResourceMark rm;
-    Method* old_method = old_methods->at(i);
-    CompiledMethod* nm = old_method->code();
-    if (nm != NULL) {
-      nm->mark_for_deoptimization();
+static void add_to_old_table(CompiledMethod* c) {
+  if (old_compiled_method_table == NULL) {
+    old_compiled_method_table = new (ResourceObj::C_HEAP, mtCode) GrowableArray<CompiledMethod*>(100, true);
+  }
+  old_compiled_method_table->push(c);
+}
+
+static void reset_old_method_table() {
+  if (old_compiled_method_table != NULL) {
+    delete old_compiled_method_table;
+    old_compiled_method_table = NULL;
+  }
+}
+
+// Remove this method when zombied or unloaded.
+void CodeCache::unregister_old_nmethod(CompiledMethod* c) {
+  assert_locked_or_safepoint(CodeCache_lock);
+  if (old_compiled_method_table != NULL) {
+    int index = old_compiled_method_table->find(c);
+    if (index != -1) {
+      old_compiled_method_table->delete_at(index);
     }
   }
+}
+
+void CodeCache::old_nmethods_do(MetadataClosure* f) {
+  // Walk old method table and mark those on stack.
+  int length = 0;
+  if (old_compiled_method_table != NULL) {
+    length = old_compiled_method_table->length();
+    for (int i = 0; i < length; i++) {
+      old_compiled_method_table->at(i)->metadata_do(f);
+    }
+  }
+  log_debug(redefine, class, nmethod)("Walked %d nmethods for mark_on_stack", length);
+}
+
+// Just marks the methods in this class as needing deoptimization
+void CodeCache::mark_for_evol_deoptimization(InstanceKlass* dependee) {
+  assert(SafepointSynchronize::is_at_safepoint(), "Can only do this at a safepoint!");
 
   // Mark dependent AOT nmethods, which are only found via the class redefined.
+  // TODO: add dependencies to aotCompiledMethod's metadata section so this isn't
+  // needed.
   AOTLoader::mark_evol_dependent_methods(dependee);
 }
 
+
 // Walk compiled methods and mark dependent methods for deoptimization.
 int CodeCache::mark_dependents_for_evol_deoptimization() {
+  assert(SafepointSynchronize::is_at_safepoint(), "Can only do this at a safepoint!");
+  // Each redefinition creates a new set of nmethods that have references to "old" Methods
+  // So delete old method table and create a new one.
+  reset_old_method_table();
+
   int number_of_marked_CodeBlobs = 0;
   CompiledMethodIterator iter(CompiledMethodIterator::only_alive_and_not_unloading);
   while(iter.next()) {
     CompiledMethod* nm = iter.method();
-    if (nm->is_marked_for_deoptimization()) {
-      // ...Already marked in the previous pass; count it here.
-      // Also counts AOT compiled methods, already marked.
-      number_of_marked_CodeBlobs++;
-    } else if (nm->has_evol_metadata()) {
-      ResourceMark rm;
+    // Walk all alive nmethods to check for old Methods.
+    // This includes methods whose inline caches point to old methods, so
+    // inline cache clearing is unnecessary.
+    if (nm->has_evol_metadata()) {
       nm->mark_for_deoptimization();
+      add_to_old_table(nm);
       number_of_marked_CodeBlobs++;
-    } else {
-      // Inline caches that refer to an nmethod are deoptimized already, because
-      // the Method* is walked in the metadata section of the nmethod.
-      assert(!nm->is_evol_dependent(), "should no longer be necessary");
     }
   }
 
@@ -1076,6 +1110,46 @@ int CodeCache::mark_dependents_for_evol_deoptimization() {
   // can skip deoptimization
   return number_of_marked_CodeBlobs;
 }
+
+void CodeCache::mark_all_nmethods_for_evol_deoptimization() {
+  assert(SafepointSynchronize::is_at_safepoint(), "Can only do this at a safepoint!");
+  CompiledMethodIterator iter(CompiledMethodIterator::only_alive_and_not_unloading);
+  while(iter.next()) {
+    CompiledMethod* nm = iter.method();
+    if (!nm->method()->is_method_handle_intrinsic()) {
+      nm->mark_for_deoptimization();
+      if (nm->has_evol_metadata()) {
+        add_to_old_table(nm);
+      }
+    }
+  }
+}
+
+// Flushes compiled methods dependent on redefined classes, that have already been
+// marked for deoptimization.
+void CodeCache::flush_evol_dependents() {
+  assert(SafepointSynchronize::is_at_safepoint(), "Can only do this at a safepoint!");
+
+  // CodeCache can only be updated by a thread_in_VM and they will all be
+  // stopped during the safepoint so CodeCache will be safe to update without
+  // holding the CodeCache_lock.
+
+  // At least one nmethod has been marked for deoptimization
+
+  // All this already happens inside a VM_Operation, so we'll do all the work here.
+  // Stuff copied from VM_Deoptimize and modified slightly.
+
+  // We do not want any GCs to happen while we are in the middle of this VM operation
+  ResourceMark rm;
+  DeoptimizationMarker dm;
+
+  // Deoptimize all activations depending on marked nmethods
+  Deoptimization::deoptimize_dependents();
+
+  // Make the dependent methods not entrant
+  make_marked_nmethods_not_entrant();
+}
+#endif // INCLUDE_JVMTI
 
 // Deoptimize all methods
 void CodeCache::mark_all_nmethods_for_deoptimization() {
@@ -1135,32 +1209,6 @@ void CodeCache::flush_dependents_on(InstanceKlass* dependee) {
     VM_Deoptimize op;
     VMThread::execute(&op);
   }
-}
-
-// Flushes compiled methods dependent on redefined classes, that have already been
-// marked for deoptimization.
-void CodeCache::flush_evol_dependents() {
-  // --- Compile_lock is not held. However we are at a safepoint.
-  assert_locked_or_safepoint(Compile_lock);
-
-  // CodeCache can only be updated by a thread_in_VM and they will all be
-  // stopped during the safepoint so CodeCache will be safe to update without
-  // holding the CodeCache_lock.
-
-  // At least one nmethod has been marked for deoptimization
-
-  // All this already happens inside a VM_Operation, so we'll do all the work here.
-  // Stuff copied from VM_Deoptimize and modified slightly.
-
-  // We do not want any GCs to happen while we are in the middle of this VM operation
-  ResourceMark rm;
-  DeoptimizationMarker dm;
-
-  // Deoptimize all activations depending on marked nmethods
-  Deoptimization::deoptimize_dependents();
-
-  // Make the dependent methods not entrant
-  make_marked_nmethods_not_entrant();
 }
 
 // Flushes compiled methods dependent on dependee

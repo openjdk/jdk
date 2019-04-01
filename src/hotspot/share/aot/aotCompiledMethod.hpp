@@ -206,8 +206,6 @@ private:
   // AOT compiled methods do not get into zombie state
   virtual bool can_convert_to_zombie() { return false; }
 
-  // Evol dependent methods already marked.
-  virtual bool is_evol_dependent() { return false; }
   virtual bool is_dependent_on_method(Method* dependee) { return true; }
 
   virtual void clear_inline_caches();

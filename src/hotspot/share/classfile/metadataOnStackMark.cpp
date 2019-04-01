@@ -50,18 +50,25 @@ class MetadataOnStackClosure : public MetadataClosure {
 // it.  Class unloading only deletes in-error class files, methods created by
 // the relocator and dummy constant pools.  None of these appear anywhere except
 // in metadata Handles.
-MetadataOnStackMark::MetadataOnStackMark(bool redefinition_walk) {
+MetadataOnStackMark::MetadataOnStackMark(bool walk_all_metadata, bool redefinition_walk) {
   assert(SafepointSynchronize::is_at_safepoint(), "sanity check");
   assert(_used_buffers == NULL, "sanity check");
   assert(!_is_active, "MetadataOnStackMarks do not nest");
+  assert(!redefinition_walk || walk_all_metadata,
+         "walk_all_metadata must be true for redefinition_walk");
   NOT_PRODUCT(_is_active = true;)
 
   Threads::metadata_handles_do(Metadata::mark_on_stack);
 
-  if (redefinition_walk) {
+  if (walk_all_metadata) {
     MetadataOnStackClosure md_on_stack;
     Threads::metadata_do(&md_on_stack);
-    CodeCache::metadata_do(&md_on_stack);
+    if (redefinition_walk) {
+      // We have to walk the whole code cache during redefinition.
+      CodeCache::metadata_do(&md_on_stack);
+    } else {
+      CodeCache::old_nmethods_do(&md_on_stack);
+    }
     CompileBroker::mark_on_stack();
     JvmtiCurrentBreakpoints::metadata_do(Metadata::mark_on_stack);
     ThreadService::metadata_do(Metadata::mark_on_stack);
