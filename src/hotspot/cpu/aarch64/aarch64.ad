@@ -3445,7 +3445,7 @@ encode %{
     // markOop of object (disp_hdr) with the stack pointer.
     __ mov(rscratch1, sp);
     __ sub(disp_hdr, disp_hdr, rscratch1);
-    __ mov(tmp, (address) (~(os::vm_page_size()-1) | markOopDesc::lock_mask_in_place));
+    __ mov(tmp, (address) (~(os::vm_page_size()-1) | (uintptr_t)markOopDesc::lock_mask_in_place));
     // If condition is true we are cont and hence we can store 0 as the
     // displaced header in the box, which indicates that it is a recursive lock.
     __ ands(tmp/*==0?*/, disp_hdr, tmp);   // Sets flags for result
