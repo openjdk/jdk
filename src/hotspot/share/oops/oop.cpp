@@ -122,12 +122,6 @@ bool oopDesc::is_oop_or_null(oop obj, bool ignore_mark_word) {
 }
 
 #ifndef PRODUCT
-// used only for asserts
-bool oopDesc::is_unlocked_oop() const {
-  if (!Universe::heap()->is_in_reserved(this)) return false;
-  return mark()->is_unlocked();
-}
-
 #if INCLUDE_CDS_JAVA_HEAP
 bool oopDesc::is_archived_object(oop p) {
   return HeapShared::is_archived_object(p);
