@@ -79,7 +79,7 @@ java.datatransfer_COPY += flavormap.properties
 
 ################################################################################
 
-java.desktop_ADD_JAVAC_FLAGS += -Xdoclint:all/protected,-reference,-accessibility \
+java.desktop_ADD_JAVAC_FLAGS += -Xdoclint:all/protected,-reference \
     '-Xdoclint/package:java.*,javax.*' -Xlint:exports \
     --doclint-format html4
 java.desktop_COPY += .gif .png .wav .txt .xml .css .pf
