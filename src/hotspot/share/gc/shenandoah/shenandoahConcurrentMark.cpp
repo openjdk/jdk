@@ -213,15 +213,15 @@ public:
 class ShenandoahSATBThreadsClosure : public ThreadClosure {
 private:
   ShenandoahSATBBufferClosure* _satb_cl;
-  int _thread_parity;
+  uintx _claim_token;
 
 public:
   ShenandoahSATBThreadsClosure(ShenandoahSATBBufferClosure* satb_cl) :
     _satb_cl(satb_cl),
-    _thread_parity(Threads::thread_claim_parity()) {}
+    _claim_token(Threads::thread_claim_token()) {}
 
   void do_thread(Thread* thread) {
-    if (thread->claim_oops_do(true, _thread_parity)) {
+    if (thread->claim_threads_do(true, _claim_token)) {
       ShenandoahThreadLocalData::satb_mark_queue(thread).apply_closure_and_empty(_satb_cl);
     }
   }

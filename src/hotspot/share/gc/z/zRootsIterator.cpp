@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,7 +179,7 @@ ZRootsIterator::ZRootsIterator() :
     _code_cache(this) {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
   ZStatTimer timer(ZSubPhasePauseRootsSetup);
-  Threads::change_thread_claim_parity();
+  Threads::change_thread_claim_token();
   COMPILER2_PRESENT(DerivedPointerTable::clear());
   if (ClassUnloading) {
     nmethod::oops_do_marking_prologue();
@@ -404,7 +404,7 @@ ZThreadRootsIterator::ZThreadRootsIterator() :
     _threads(this) {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
   ZStatTimer timer(ZSubPhasePauseRootsSetup);
-  Threads::change_thread_claim_parity();
+  Threads::change_thread_claim_token();
 }
 
 ZThreadRootsIterator::~ZThreadRootsIterator() {
