@@ -70,10 +70,8 @@ public:
     for (uint32_t i = 0; i < entries_to_check; i++) {
       uintptr_t from_index = SequenceToFromIndex::one_to_one(i);
 
-      EXPECT_TRUE(forwarding->find(from_index).is_empty()) << CAPTURE2(from_index, size);
+      EXPECT_FALSE(forwarding->find(from_index).populated()) << CAPTURE2(from_index, size);
     }
-
-    EXPECT_TRUE(forwarding->find(uintptr_t(-1)).is_empty()) << CAPTURE(size);
   }
 
   static void find_full(ZForwarding* forwarding) {
@@ -86,7 +84,7 @@ public:
 
       ZForwardingCursor cursor;
       ZForwardingEntry entry = forwarding->find(from_index, &cursor);
-      ASSERT_TRUE(entry.is_empty()) << CAPTURE2(from_index, size);
+      ASSERT_FALSE(entry.populated()) << CAPTURE2(from_index, size);
 
       forwarding->insert(from_index, from_index, &cursor);
     }
@@ -96,7 +94,7 @@ public:
       uintptr_t from_index = SequenceToFromIndex::one_to_one(i);
 
       ZForwardingEntry entry = forwarding->find(from_index);
-      ASSERT_FALSE(entry.is_empty()) << CAPTURE2(from_index, size);
+      ASSERT_TRUE(entry.populated()) << CAPTURE2(from_index, size);
 
       ASSERT_EQ(entry.from_index(), from_index) << CAPTURE(size);
       ASSERT_EQ(entry.to_offset(), from_index) << CAPTURE(size);
@@ -113,7 +111,7 @@ public:
 
       ZForwardingCursor cursor;
       ZForwardingEntry entry = forwarding->find(from_index, &cursor);
-      ASSERT_TRUE(entry.is_empty()) << CAPTURE2(from_index, size);
+      ASSERT_FALSE(entry.populated()) << CAPTURE2(from_index, size);
 
       forwarding->insert(from_index, from_index, &cursor);
     }
@@ -124,7 +122,7 @@ public:
 
       ZForwardingCursor cursor;
       ZForwardingEntry entry = forwarding->find(from_index, &cursor);
-      ASSERT_FALSE(entry.is_empty()) << CAPTURE2(from_index, size);
+      ASSERT_TRUE(entry.populated()) << CAPTURE2(from_index, size);
 
       ASSERT_EQ(entry.from_index(), from_index) << CAPTURE(size);
       ASSERT_EQ(entry.to_offset(), from_index) << CAPTURE(size);
@@ -139,7 +137,7 @@ public:
 
       ZForwardingEntry entry = forwarding->find(from_index);
 
-      ASSERT_TRUE(entry.is_empty()) << CAPTURE2(from_index, size);
+      ASSERT_FALSE(entry.populated()) << CAPTURE2(from_index, size);
     }
   }
 

@@ -35,7 +35,7 @@ class ConstraintCastNode: public TypeNode {
   protected:
   // Can this node be removed post CCP or does it carry a required dependency?
   const bool _carry_dependency;
-  virtual uint cmp( const Node &n ) const;
+  virtual bool cmp( const Node &n ) const;
   virtual uint size_of() const;
 
   public:
@@ -65,7 +65,7 @@ class CastIINode: public ConstraintCastNode {
   protected:
   // Is this node dependent on a range check?
   const bool _range_check_dependency;
-  virtual uint cmp(const Node &n) const;
+  virtual bool cmp(const Node &n) const;
   virtual uint size_of() const;
 
   public:

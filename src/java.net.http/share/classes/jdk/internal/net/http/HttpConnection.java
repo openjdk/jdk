@@ -317,14 +317,13 @@ abstract class HttpConnection implements Closeable {
     void closeOrReturnToCache(HttpHeaders hdrs) {
         if (hdrs == null) {
             // the connection was closed by server, eof
+            Log.logTrace("Cannot return connection to pool: closing {0}", this);
             close();
-            return;
-        }
-        if (!isOpen()) {
             return;
         }
         HttpClientImpl client = client();
         if (client == null) {
+            Log.logTrace("Client released: closing {0}", this);
             close();
             return;
         }
@@ -333,10 +332,12 @@ abstract class HttpConnection implements Closeable {
                 .map((s) -> !s.equalsIgnoreCase("close"))
                 .orElse(true);
 
-        if (keepAlive) {
+        if (keepAlive && isOpen()) {
             Log.logTrace("Returning connection to the pool: {0}", this);
             pool.returnToPool(this);
         } else {
+            Log.logTrace("Closing connection (keepAlive={0}, isOpen={1}): {2}",
+                    keepAlive, isOpen(), this);
             close();
         }
     }

@@ -34,6 +34,7 @@
 #include "runtime/thread.hpp"
 #include "runtime/vmOperations.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/histogram.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/preserveException.hpp"
 
@@ -282,6 +283,7 @@ class ThreadBlockInVM : public ThreadStateTransition {
   }
   ~ThreadBlockInVM() {
     trans_and_fence(_thread_blocked, _thread_in_vm);
+    OrderAccess::cross_modify_fence();
     // We don't need to clear_walkable because it will happen automagically when we return to java
   }
 };
@@ -336,6 +338,8 @@ class ThreadBlockInVMWithDeadlockCheck : public ThreadStateTransition {
 
     _thread->set_thread_state(_thread_in_vm);
     CHECK_UNHANDLED_OOPS_ONLY(_thread->clear_unhandled_oops();)
+
+    OrderAccess::cross_modify_fence();
   }
 };
 

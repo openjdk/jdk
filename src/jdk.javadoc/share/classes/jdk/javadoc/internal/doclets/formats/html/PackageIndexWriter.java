@@ -42,9 +42,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.Group;
 
 /**
- * Generate the package index page "overview-summary.html" for the right-hand
- * frame. A click on the package name on this page will update the same frame
- * with the "package-summary.html" file for the clicked package.
+ * Generate the package index page "index.html".
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
@@ -70,15 +68,15 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
     }
 
     /**
-     * Generate the package index page for the right-hand frame.
+     * Generate the package index page.
      *
      * @param configuration the current configuration of the doclet.
      * @throws DocFileIOException if there is a problem generating the package index page
      */
     public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
-        DocPath filename = DocPaths.overviewSummary(configuration.frames);
+        DocPath filename = DocPaths.INDEX;
         PackageIndexWriter packgen = new PackageIndexWriter(configuration, filename);
-        packgen.buildPackageIndexFile("doclet.Window_Overview_Summary", "package index", true);
+        packgen.buildPackageIndexFile("doclet.Window_Overview_Summary", "package index");
     }
 
     /**

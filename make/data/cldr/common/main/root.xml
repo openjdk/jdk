@@ -2030,7 +2030,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<era type="233">Taishō</era>
 						<era type="234">Shōwa</era>
 						<era type="235">Heisei</era>
-						<era type="236">NewEra</era> <!-- NewEra -->
+						<era type="236">Reiwa</era>
 					</eraAbbr>
 					<eraNarrow>
 						<era type="0">Taika (645–650)</era>
@@ -2269,7 +2269,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<era type="233">T</era>
 						<era type="234">S</era>
 						<era type="235">H</era>
-						<era type="236">N</era> <!-- NewEra -->
+						<era type="236">R</era>
 					</eraNarrow>
 				</eras>
 				<dateFormats>

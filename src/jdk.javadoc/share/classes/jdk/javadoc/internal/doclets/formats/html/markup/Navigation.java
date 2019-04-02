@@ -824,7 +824,7 @@ public class Navigation {
 
     private void addOverviewLink(Content tree) {
         if (configuration.createoverview) {
-            tree.add(HtmlTree.LI(links.createLink(pathToRoot.resolve(DocPaths.overviewSummary(configuration.frames)),
+            tree.add(HtmlTree.LI(links.createLink(pathToRoot.resolve(DocPaths.INDEX),
                     contents.overviewLabel, "", "")));
         }
     }
@@ -930,27 +930,6 @@ public class Navigation {
         }
     }
 
-    /**
-     * Add "FRAMES" link, to switch to the frame version of the output.
-     *
-     * @param tree the content tree to which the link will be added
-     */
-    private void addNavShowLists(Content tree) {
-        DocLink dl = new DocLink(pathToRoot.resolve(DocPaths.INDEX), path.getPath(), null);
-        Content framesContent = links.createLink(dl, contents.framesLabel, "", "_top");
-        tree.add(HtmlTree.LI(framesContent));
-    }
-
-    /**
-     * Add "NO FRAMES" link, to switch to the non-frame version of the output.
-     *
-     * @param tree the content tree to which the link will be added
-     */
-    private void addNavHideLists(Content tree) {
-        Content noFramesContent = links.createLink(path.basename(), contents.noFramesLabel, "", "_top");
-        tree.add(HtmlTree.LI(noFramesContent));
-    }
-
     private void addSearch(Content tree) {
         String searchValueId = "search";
         String reset = "reset";
@@ -1018,15 +997,6 @@ public class Navigation {
             ulNavDetail.setStyle(HtmlStyle.subNavList);
             addDetailLinks(ulNavDetail);
             div.add(ulNavDetail);
-            HtmlTree ulFrames = new HtmlTree(HtmlTag.UL);
-            ulFrames.setStyle(HtmlStyle.navList);
-            if (!configuration.nonavbar) {
-                if (configuration.frames) {
-                    addNavShowLists(ulFrames);
-                    addNavHideLists(ulFrames);
-                }
-            }
-            div.add(ulFrames);
             subDiv.add(div);
             if (top && configuration.createindex) {
                 addSearch(subDiv);

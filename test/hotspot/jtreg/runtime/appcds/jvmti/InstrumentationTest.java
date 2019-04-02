@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,6 @@
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds /test/hotspot/jtreg/runtime/appcds/test-classes
  * @requires vm.cds
  * @requires vm.flavor != "minimal"
- * @modules java.base/jdk.internal.misc
- *          jdk.jartool/sun.tools.jar
- *          java.management
  * @build sun.hotspot.WhiteBox
  *        InstrumentationApp
  *        InstrumentationClassFileTransformer
@@ -43,10 +40,9 @@
 // Note: Util       is from /test/hotspot/jtreg/runtime/appcds/test-classes/TestCommon.java
 
 import com.sun.tools.attach.VirtualMachine;
-import com.sun.tools.attach.VirtualMachineDescriptor;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.util.List;
+import java.io.FileInputStream;
+import java.util.Scanner;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -179,24 +175,28 @@ public class InstrumentationTest {
             return null;
         }
 
-        // We use the flagFile to prevent the child process to make progress, until we have
-        // attached to it.
+        // Hand-shake protocol with the child process
+        // [1] Parent process (this process) launches child process (InstrumentationApp)
+        //     and then waits until child process writes its pid into the flagFile.
+        // [2] Child process process starts up, writes its pid into the flagFile,
+        //     and waits for the flagFile to be deleted.
+        // [3] When parent process gets the pid, it attaches to the child process
+        //     (if we attempt to attach to a process too early, the SIGQUIT
+        //     may cause the child to die) and deletes the flagFile.
+        // [4] Child process resumes execution.
+
         File f = new File(flagFile);
-        try (FileOutputStream o = new FileOutputStream(f)) {
-            o.write(1);
-        }
-        if (!f.exists()) {
-            throw new RuntimeException("Failed to create " + f);
+        f.delete();
+        if (f.exists()) {
+            throw new RuntimeException("Flag file should not exist: " + f);
         }
 
         // At this point, the child process is not yet launched. Note that
         // TestCommon.exec() and OutputAnalyzer.OutputAnalyzer() both block
         // until the child process has finished.
         //
-        // So, we will launch a AgentAttachThread which will poll the system
-        // until the child process is launched, and then do the attachment.
-        // The child process is uniquely identified by having flagFile in its
-        // command-line -- see AgentAttachThread.getPid().
+        // So, we will launch a AgentAttachThread which will poll the flagFile
+        // until the child process is launched.
         AgentAttachThread t = new AgentAttachThread(flagFile, agentJar);
         t.start();
         return t;
@@ -225,13 +225,17 @@ public class InstrumentationTest {
                 // reason the child process fails to launch, this test will be terminated
                 // by JTREG's time-out mechanism.
                 Thread.sleep(100);
-                List<VirtualMachineDescriptor> vmds = VirtualMachine.list();
-                for (VirtualMachineDescriptor vmd : vmds) {
-                    if (vmd.displayName().contains(flagFile) && vmd.displayName().contains("InstrumentationApp")) {
-                        // We use flagFile (which has the PID of this process) as a unique identifier
-                        // to ident the child process, which we want to attach to.
-                        System.out.println("Process found: " + vmd.id() + " " + vmd.displayName());
-                        return vmd.id();
+                File f = new File(flagFile);
+                if (f.exists() && f.length() > 100) {
+                    try (FileInputStream in = new FileInputStream(f)) {
+                        Scanner scanner = new Scanner(in);
+                        return Long.toString(scanner.nextLong());
+                    } catch (Throwable t) {
+                        // This may happen on Windows if the child process has not
+                        // fully closed the output stream to the flagFile
+                        System.out.println("Ignored: " + t);
+                        t.printStackTrace(System.out);
+                        continue;
                     }
                 }
             }
@@ -240,6 +244,7 @@ public class InstrumentationTest {
         public void run() {
             try {
                 String pid = getPid(flagFile);
+                System.out.println("child pid = " + pid);
                 VirtualMachine vm = VirtualMachine.attach(pid);
                 System.out.println(agentJar);
                 vm.loadAgent(agentJar);

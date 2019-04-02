@@ -24,7 +24,9 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.inline.hpp"
+#include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderExt.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionaryShared.hpp"
@@ -1489,7 +1491,7 @@ ClassPathEntry* FileMapInfo::get_classpath_entry_for_jvmti(int i, TRAPS) {
   return ent;
 }
 
-ClassFileStream* FileMapInfo::open_stream_for_jvmti(InstanceKlass* ik, TRAPS) {
+ClassFileStream* FileMapInfo::open_stream_for_jvmti(InstanceKlass* ik, Handle class_loader, TRAPS) {
   int path_index = ik->shared_classpath_index();
   assert(path_index >= 0, "should be called for shared built-in classes only");
   assert(path_index < (int)_shared_path_table_size, "sanity");
@@ -1501,7 +1503,12 @@ ClassFileStream* FileMapInfo::open_stream_for_jvmti(InstanceKlass* ik, TRAPS) {
   const char* const class_name = name->as_C_string();
   const char* const file_name = ClassLoader::file_name_for_class_name(class_name,
                                                                       name->utf8_length());
-  return cpe->open_stream(file_name, THREAD);
+  ClassLoaderData* loader_data = ClassLoaderData::class_loader_data(class_loader());
+  ClassFileStream* cfs = cpe->open_stream_for_loader(file_name, loader_data, THREAD);
+  assert(cfs != NULL, "must be able to read the classfile data of shared classes for built-in loaders.");
+  log_debug(cds, jvmti)("classfile data for %s [%d: %s] = %d bytes", class_name, path_index,
+                        cfs->source(), cfs->length());
+  return cfs;
 }
 
 #endif

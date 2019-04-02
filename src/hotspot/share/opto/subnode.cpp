@@ -1279,7 +1279,7 @@ uint BoolNode::hash() const { return (Node::hash() << 3)|(_test._test+1); }
 uint BoolNode::size_of() const { return sizeof(BoolNode); }
 
 //------------------------------operator==-------------------------------------
-uint BoolNode::cmp( const Node &n ) const {
+bool BoolNode::cmp( const Node &n ) const {
   const BoolNode *b = (const BoolNode *)&n; // Cast up
   return (_test._test == b->_test._test);
 }

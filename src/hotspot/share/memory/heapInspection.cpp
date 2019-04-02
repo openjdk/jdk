@@ -121,6 +121,11 @@ void KlassInfoEntry::print_on(outputStream* st) const {
 }
 
 KlassInfoEntry* KlassInfoBucket::lookup(Klass* const k) {
+  // Can happen if k is an archived class that we haven't loaded yet.
+  if (k->java_mirror() == NULL) {
+    return NULL;
+  }
+
   KlassInfoEntry* elt = _list;
   while (elt != NULL) {
     if (elt->is_equal(k)) {
@@ -202,7 +207,8 @@ KlassInfoEntry* KlassInfoTable::lookup(Klass* k) {
   assert(_buckets != NULL, "Allocation failure should have been caught");
   KlassInfoEntry*  e   = _buckets[idx].lookup(k);
   // Lookup may fail if this is a new klass for which we
-  // could not allocate space for an new entry.
+  // could not allocate space for an new entry, or if it's
+  // an archived class that we haven't loaded yet.
   assert(e == NULL || k == e->klass(), "must be equal");
   return e;
 }

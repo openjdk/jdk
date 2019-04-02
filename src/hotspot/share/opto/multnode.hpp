@@ -58,7 +58,7 @@ public:
 class ProjNode : public Node {
 protected:
   virtual uint hash() const;
-  virtual uint cmp( const Node &n ) const;
+  virtual bool cmp( const Node &n ) const;
   virtual uint size_of() const;
   void check_con() const;       // Called from constructor.
   const Type* proj_type(const Type* t) const;

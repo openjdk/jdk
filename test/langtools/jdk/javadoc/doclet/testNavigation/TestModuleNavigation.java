@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,12 +76,11 @@ public class TestModuleNavigation extends JavadocTester {
 
         javadoc("-d", base.resolve("out").toString(), "-use",
                 "-quiet",
-                "--frames",
                 "--module-source-path", src.toString(),
                 "--module", "m,m2");
         checkExit(Exit.OK);
 
-        checkOutput("overview-summary.html", false,
+        checkOutput("index.html", false,
                 "Prev",
                 "Next",
                 "All&nbsp;Classes",

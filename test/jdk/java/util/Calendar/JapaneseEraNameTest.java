@@ -51,12 +51,12 @@ public class JapaneseEraNameTest {
     Object[][] names() {
         return new Object[][] {
             // type,    locale,  name
-            { LONG,     JAPAN,   "\u5143\u53f7" }, // NewEra
-            { LONG,     US,      "NewEra" },
-            { LONG,     CHINA,   "NewEra" },
-            { SHORT,    JAPAN,   "\u5143\u53f7" },
-            { SHORT,    US,      "NewEra" },
-            { SHORT,    CHINA,   "N" },
+            { LONG,     JAPAN,   "\u4ee4\u548c" },
+            { LONG,     US,      "Reiwa" },
+            { LONG,     CHINA,   "Reiwa" },
+            { SHORT,    JAPAN,   "\u4ee4\u548c" },
+            { SHORT,    US,      "Reiwa" },
+            { SHORT,    CHINA,   "R" },
         };
     }
 

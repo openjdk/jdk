@@ -87,6 +87,7 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.runtime.JVMCI;
 import jdk.vm.ci.runtime.JVMCIBackend;
+import jdk.vm.ci.services.Services;
 
 //JaCoCo Exclude
 
@@ -95,7 +96,7 @@ import jdk.vm.ci.runtime.JVMCIBackend;
  */
 public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
 
-    private static final boolean IS_AOT = Boolean.getBoolean("com.oracle.graalvm.isaot");
+    private static final boolean IS_AOT = Boolean.parseBoolean(Services.getSavedProperties().get("com.oracle.graalvm.isaot"));
 
     private static boolean checkArrayIndexScaleInvariants(MetaAccessProvider metaAccess) {
         assert metaAccess.getArrayIndexScale(JavaKind.Byte) == 1;

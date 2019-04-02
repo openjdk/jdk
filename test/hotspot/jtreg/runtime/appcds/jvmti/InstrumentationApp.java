@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.lang.instrument.UnmodifiableClassException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.io.File;
+import java.io.FileWriter;
 import java.security.CodeSigner;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
@@ -140,8 +141,22 @@ public class InstrumentationApp {
     }
 
     static void waitAttach(String flagFile) throws Throwable {
+        // See InstrumentationTest.java for the hand-shake protocol.
         if (!flagFile.equals("noattach")) {
             File f = new File(flagFile);
+            try (FileWriter fw = new FileWriter(f)) {
+                long pid = ProcessHandle.current().pid();
+                System.out.println("my pid = " + pid);
+                fw.write(Long.toString(pid));
+                fw.write("\n");
+                for (int i=0; i<10; i++) {
+                  // Parent process waits until we have written more than 100 bytes, so it won't
+                  // read a partial pid
+                  fw.write("==========");
+                }
+                fw.close();
+            }
+
             long start = System.currentTimeMillis();
             while (f.exists()) {
                 long elapsed = System.currentTimeMillis() - start;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,8 +205,10 @@ G1RegionToHeteroSpaceMapper::G1RegionToHeteroSpaceMapper(ReservedSpace rs,
                                                          MemoryType type) :
   G1RegionToSpaceMapper(rs, actual_size, page_size, alloc_granularity, commit_factor, type),
   _rs(rs),
+  _dram_mapper(NULL),
   _num_committed_dram(0),
   _num_committed_nvdimm(0),
+  _start_index_of_dram(0),
   _page_size(page_size),
   _commit_factor(commit_factor),
   _type(type) {
@@ -248,7 +250,6 @@ bool G1RegionToHeteroSpaceMapper::initialize() {
     _dram_mapper = new G1RegionsSmallerThanCommitSizeMapper(rs_dram, rs_dram.size(), _page_size, _region_granularity, _commit_factor, _type);
   }
 
-  _start_index_of_nvdimm = 0;
   _start_index_of_dram = (uint)(rs_nvdimm.size() / _region_granularity);
   return true;
 }

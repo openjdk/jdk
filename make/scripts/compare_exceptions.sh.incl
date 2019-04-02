@@ -38,6 +38,7 @@ fi
 if [ "$OPENJDK_TARGET_OS" = "linux" ]; then
   ACCEPTED_BIN_DIFF="
       ./lib/server/libjvm.so
+      ./hotspot/gtest/server/libjvm.so
       "
 elif [ "$OPENJDK_TARGET_OS" = "solaris" ]; then
   SKIP_BIN_DIFF="true"
@@ -49,6 +50,7 @@ elif [ "$OPENJDK_TARGET_OS" = "solaris" ]; then
       ./lib/libunpack.so
       ./lib/server/libjvm.so
       ./bin/unpack200
+      ./hotspot/gtest/server/libjvm.so
       "
   KNOWN_DIS_DIFF="
       ./lib/libfontmanager.so
@@ -68,5 +70,6 @@ elif [ "$OPENJDK_TARGET_OS" = "macosx" ]; then
       ./lib/libosxapp.dylib
       ./lib/libosxui.dylib
       ./lib/server/libjvm.dylib
+      ./hotspot/gtest/server/libjvm.dylib
       "
 fi

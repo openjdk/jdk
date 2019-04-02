@@ -56,9 +56,9 @@ public class VerifyUpdateUsages extends VerifyPhase<PhaseContext> {
     }
 
     @Override
-    protected boolean verify(StructuredGraph graph, PhaseContext context) {
+    protected void verify(StructuredGraph graph, PhaseContext context) {
         if (graph.method().isConstructor()) {
-            return true;
+            return;
         }
         /*
          * There are only two acceptable patterns for methods which update Node inputs, either a
@@ -78,35 +78,51 @@ public class VerifyUpdateUsages extends VerifyPhase<PhaseContext> {
                 } else if (storeField2 == null) {
                     storeField2 = store;
                 } else {
-                    return false;
+                    throw new VerificationError("More than 2 stores to %s or %s fields found in %s",
+                                    Input.class.getSimpleName(),
+                                    OptionalInput.class.getSimpleName(),
+                                    graph.method().format("%H.%n(%p)"));
                 }
             }
         }
         if (storeField1 == null) {
-            return true;
+            return;
         }
         if (storeField2 == null) {
-            // Single input field update so just check for updateUsages or updateUsagesInterface
-            // call
-            ResolvedJavaType node = context.getMetaAccess().lookupJavaType(Node.class);
+            // Single input field update so just check for updateUsages
+            // or updateUsagesInterface call
+            ResolvedJavaType nodeType = context.getMetaAccess().lookupJavaType(Node.class);
             for (MethodCallTargetNode call : graph.getNodes().filter(MethodCallTargetNode.class)) {
                 ResolvedJavaMethod callee = call.targetMethod();
-                if (callee.getDeclaringClass().equals(node) && (callee.getName().equals("updateUsages") || callee.getName().equals("updateUsagesInterface"))) {
-                    return true;
+                if (callee.getDeclaringClass().equals(nodeType) && (callee.getName().equals("updateUsages") || callee.getName().equals("updateUsagesInterface"))) {
+                    return;
                 }
             }
+            throw new VerificationError("%s updates field '%s' without calling %s.updateUsages() or %s.updateUsagesInterface()",
+                            graph.method().format("%H.%n(%p)"),
+                            storeField1.field().getName(),
+                            Node.class.getName(),
+                            Node.class.getName());
         } else {
             if (storeField1.value() instanceof LoadFieldNode && storeField2.value() instanceof LoadFieldNode) {
                 LoadFieldNode load1 = (LoadFieldNode) storeField1.value();
                 LoadFieldNode load2 = (LoadFieldNode) storeField2.value();
                 // Check for swapping values within the same object
-                if (load1.object() == storeField1.object() && load2.object() == storeField2.object() && storeField1.object() == storeField2.object() &&
-                                load1.field().equals(storeField2.field()) && load2.field().equals(storeField1.field())) {
-                    return true;
+                if (load1.object() == storeField1.object() &&
+                                load2.object() == storeField2.object() &&
+                                storeField1.object() == storeField2.object() &&
+                                load1.field().equals(storeField2.field()) &&
+                                load2.field().equals(storeField1.field())) {
+                    return;
                 }
             }
+            throw new VerificationError("%s performs non-swap update to fields '%s' and '%s' without calling %s.updateUsages() or %s.updateUsagesInterface()",
+                            graph.method().format("%H.%n(%p)"),
+                            storeField1.field().getName(),
+                            storeField2.field().getName(),
+                            Node.class.getName(),
+                            Node.class.getName());
         }
-        return false;
     }
 
     boolean isNodeInput(ResolvedJavaField field, ResolvedJavaType declaringClass, ResolvedJavaType nodeInputList) {

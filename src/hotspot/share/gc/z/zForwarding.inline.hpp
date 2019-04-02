@@ -119,9 +119,9 @@ inline ZForwardingEntry ZForwarding::find(uintptr_t from_index) const {
 inline ZForwardingEntry ZForwarding::find(uintptr_t from_index, ZForwardingCursor* cursor) const {
   // Reading entries in the table races with the atomic CAS done for
   // insertion into the table. This is safe because each entry is at
-  // most updated once (from -1 to something else).
+  // most updated once (from zero to something else).
   ZForwardingEntry entry = first(from_index, cursor);
-  while (!entry.is_empty()) {
+  while (entry.populated()) {
     if (entry.from_index() == from_index) {
       // Match found, return matching entry
       return entry;
@@ -140,14 +140,14 @@ inline uintptr_t ZForwarding::insert(uintptr_t from_index, uintptr_t to_offset, 
 
   for (;;) {
     const ZForwardingEntry prev_entry = Atomic::cmpxchg(new_entry, entries() + *cursor, old_entry);
-    if (prev_entry.is_empty()) {
+    if (!prev_entry.populated()) {
       // Success
       return to_offset;
     }
 
     // Find next empty or matching entry
     ZForwardingEntry entry = at(cursor);
-    while (!entry.is_empty()) {
+    while (entry.populated()) {
       if (entry.from_index() == from_index) {
         // Match found, return already inserted address
         return entry.to_offset();

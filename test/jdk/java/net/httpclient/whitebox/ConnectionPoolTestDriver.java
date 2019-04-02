@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8187044 8187111
+ * @bug 8187044 8187111 8221395
  * @summary Verifies that the ConnectionPool correctly handle
  *          connection deadlines and purges the right connections
  *          from the cache.
@@ -35,4 +35,8 @@
  * @run main/othervm
  *       --add-reads java.net.http=java.management
  *       java.net.http/jdk.internal.net.http.ConnectionPoolTest testPoolSize
+ * @run main/othervm
+ *       --add-reads java.net.http=java.management
+ *       -Djdk.httpclient.HttpClient.log=errors,requests,headers,content,ssl,trace,channel
+ *       java.net.http/jdk.internal.net.http.ConnectionPoolTest testCloseOrReturnToPool
  */

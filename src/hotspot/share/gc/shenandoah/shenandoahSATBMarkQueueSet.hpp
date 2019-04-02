@@ -31,7 +31,7 @@
 
 class ShenandoahSATBMarkQueue: public SATBMarkQueue {
 public:
-  ShenandoahSATBMarkQueue(SATBMarkQueueSet* qset) : SATBMarkQueue(qset, /* permanent = */ false) {}
+  ShenandoahSATBMarkQueue(SATBMarkQueueSet* qset) : SATBMarkQueue(qset) {}
   virtual bool should_enqueue_buffer();
 };
 

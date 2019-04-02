@@ -29,21 +29,18 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collection;
 
-import jdk.vm.ci.meta.MetaAccessProvider;
-import jdk.vm.ci.meta.ResolvedJavaField;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.ResolvedJavaType;
-
-import org.junit.Assert;
-import org.junit.Test;
-
 import org.graalvm.compiler.api.test.Graal;
 import org.graalvm.compiler.core.target.Backend;
 import org.graalvm.compiler.core.test.tutorial.StaticAnalysis.MethodState;
 import org.graalvm.compiler.core.test.tutorial.StaticAnalysis.TypeFlow;
-import org.graalvm.compiler.nodes.spi.StampProvider;
-import org.graalvm.compiler.phases.util.Providers;
+import org.graalvm.compiler.nodes.spi.CoreProviders;
 import org.graalvm.compiler.runtime.RuntimeProvider;
+import org.junit.Assert;
+import org.junit.Test;
+
+import jdk.vm.ci.meta.ResolvedJavaField;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaType;
 
 public class StaticAnalysisTests {
 
@@ -68,14 +65,11 @@ public class StaticAnalysisTests {
         Object f;
     }
 
-    private final MetaAccessProvider metaAccess;
-    private final StampProvider stampProvider;
+    private final CoreProviders providers;
 
     public StaticAnalysisTests() {
         Backend backend = Graal.getRequiredCapability(RuntimeProvider.class).getHostBackend();
-        Providers providers = backend.getProviders();
-        this.metaAccess = providers.getMetaAccess();
-        this.stampProvider = providers.getStampProvider();
+        providers = backend.getProviders();
     }
 
     static void test01Entry() {
@@ -85,7 +79,7 @@ public class StaticAnalysisTests {
 
     @Test
     public void test01() {
-        StaticAnalysis sa = new StaticAnalysis(metaAccess, stampProvider);
+        StaticAnalysis sa = new StaticAnalysis(providers);
         sa.addMethod(findMethod(StaticAnalysisTests.class, "test01Entry"));
         sa.finish();
 
@@ -106,7 +100,7 @@ public class StaticAnalysisTests {
 
     @Test
     public void test02() {
-        StaticAnalysis sa = new StaticAnalysis(metaAccess, stampProvider);
+        StaticAnalysis sa = new StaticAnalysis(providers);
         sa.addMethod(findMethod(StaticAnalysisTests.class, "test02Entry"));
         sa.finish();
 
@@ -134,7 +128,7 @@ public class StaticAnalysisTests {
 
     @Test
     public void test03() {
-        StaticAnalysis sa = new StaticAnalysis(metaAccess, stampProvider);
+        StaticAnalysis sa = new StaticAnalysis(providers);
         sa.addMethod(findMethod(StaticAnalysisTests.class, "test03Entry"));
         sa.finish();
 
@@ -165,7 +159,7 @@ public class StaticAnalysisTests {
 
     @Test
     public void test04() {
-        StaticAnalysis sa = new StaticAnalysis(metaAccess, stampProvider);
+        StaticAnalysis sa = new StaticAnalysis(providers);
         sa.addMethod(findMethod(StaticAnalysisTests.class, "test04Entry"));
         sa.finish();
 
@@ -192,7 +186,7 @@ public class StaticAnalysisTests {
     }
 
     private ResolvedJavaType t(Class<?> clazz) {
-        return metaAccess.lookupJavaType(clazz);
+        return providers.getMetaAccess().lookupJavaType(clazz);
     }
 
     private ResolvedJavaMethod findMethod(Class<?> declaringClass, String name) {
@@ -204,7 +198,7 @@ public class StaticAnalysisTests {
             }
         }
         assert reflectionMethod != null : "No method with name " + name + " in class " + declaringClass.getName();
-        return metaAccess.lookupJavaMethod(reflectionMethod);
+        return providers.getMetaAccess().lookupJavaMethod(reflectionMethod);
     }
 
     private ResolvedJavaField findField(Class<?> declaringClass, String name) {
@@ -214,6 +208,6 @@ public class StaticAnalysisTests {
         } catch (NoSuchFieldException | SecurityException ex) {
             throw new AssertionError(ex);
         }
-        return metaAccess.lookupJavaField(reflectionField);
+        return providers.getMetaAccess().lookupJavaField(reflectionField);
     }
 }

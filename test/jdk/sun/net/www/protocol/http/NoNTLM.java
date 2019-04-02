@@ -23,6 +23,7 @@
 
 /* @test
  * @bug 8004502
+ * @library /test/lib
  * @summary Sanity check that NTLM will not be selected by the http protocol
  *    handler when running on a profile that does not support NTLM
  * @modules java.base/sun.net.www
@@ -34,11 +35,13 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.Authenticator;
 import java.net.HttpURLConnection;
+import java.net.InetAddress;
 import java.net.PasswordAuthentication;
 import java.net.Proxy;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URL;
+import jdk.test.lib.net.URIBuilder;
 import sun.net.www.MessageHeader;
 
 public class NoNTLM {
@@ -57,7 +60,13 @@ public class NoNTLM {
         private volatile int respCode;
 
         Client(int port) throws IOException {
-            this.url = new URL("http://127.0.0.1:" + port + "/foo.html");
+            this.url = URIBuilder.newBuilder()
+                .scheme("http")
+                .loopback()
+                .port(port)
+                .path("/foo.html")
+                .toURLUnchecked();
+            System.out.println("Client URL: " + this.url);
         }
 
         public void run() {

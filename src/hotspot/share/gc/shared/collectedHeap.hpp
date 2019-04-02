@@ -510,11 +510,11 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   void print_heap_after_gc();
 
   // Registering and unregistering an nmethod (compiled code) with the heap.
-  // Override with specific mechanism for each specialized heap type.
-  virtual void register_nmethod(nmethod* nm) {}
-  virtual void unregister_nmethod(nmethod* nm) {}
-  virtual void flush_nmethod(nmethod* nm) {}
-  virtual void verify_nmethod(nmethod* nmethod) {}
+  virtual void register_nmethod(nmethod* nm) = 0;
+  virtual void unregister_nmethod(nmethod* nm) = 0;
+  // Callback for when nmethod is about to be deleted.
+  virtual void flush_nmethod(nmethod* nm) = 0;
+  virtual void verify_nmethod(nmethod* nm) = 0;
 
   void trace_heap_before_gc(const GCTracer* gc_tracer);
   void trace_heap_after_gc(const GCTracer* gc_tracer);

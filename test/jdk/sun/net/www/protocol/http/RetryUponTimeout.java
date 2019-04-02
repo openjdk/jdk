@@ -24,12 +24,14 @@
 /**
  * @test
  * @bug 4772077
+ * @library /test/lib
  * @summary  using defaultReadTimeout appear to retry request upon timeout
  * @modules java.base/sun.net.www
  */
 
 import java.net.*;
 import java.io.*;
+import jdk.test.lib.net.URIBuilder;
 import sun.net.www.*;
 
 public class RetryUponTimeout implements Runnable {
@@ -63,7 +65,12 @@ public class RetryUponTimeout implements Runnable {
             int port = server.getLocalPort ();
             new Thread(new RetryUponTimeout()).start ();
 
-            URL url = new URL("http://127.0.0.1:"+port);
+            URL url = URIBuilder.newBuilder()
+                .scheme("http")
+                .loopback()
+                .port(port)
+                .toURL();
+            System.out.println("URL: " + url);
             java.net.URLConnection uc = url.openConnection();
             uc.setReadTimeout(1000);
             uc.getInputStream();

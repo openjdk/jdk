@@ -32,6 +32,7 @@ import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -2131,32 +2132,42 @@ public abstract class Symbol extends AnnoConstruct implements Element {
 
         /** A diagnostic object describing the failure
          */
-        public JCDiagnostic diag;
+        private JCDiagnostic diag;
 
-        public CompletionFailure(Symbol sym, JCDiagnostic diag, DeferredCompletionFailureHandler dcfh) {
+        private Supplier<JCDiagnostic> diagSupplier;
+
+        public CompletionFailure(Symbol sym, Supplier<JCDiagnostic> diagSupplier, DeferredCompletionFailureHandler dcfh) {
             this.dcfh = dcfh;
             this.sym = sym;
-            this.diag = diag;
+            this.diagSupplier = diagSupplier;
 //          this.printStackTrace();//DEBUG
         }
 
         public JCDiagnostic getDiagnostic() {
+            if (diag == null && diagSupplier != null) {
+                diag = diagSupplier.get();
+            }
             return diag;
         }
 
         @Override
         public String getMessage() {
-            return diag.getMessage(null);
+            return getDiagnostic().getMessage(null);
         }
 
         public JCDiagnostic getDetailValue() {
-            return diag;
+            return getDiagnostic();
         }
 
         @Override
         public CompletionFailure initCause(Throwable cause) {
             super.initCause(cause);
             return this;
+        }
+
+        public void resetDiagnostic(Supplier<JCDiagnostic> diagSupplier) {
+            this.diagSupplier = diagSupplier;
+            this.diag = null;
         }
 
     }

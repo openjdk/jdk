@@ -55,7 +55,7 @@ private:
   inline void apply_filter(Filter filter_out);
 
 public:
-  SATBMarkQueue(SATBMarkQueueSet* qset, bool permanent = false);
+  SATBMarkQueue(SATBMarkQueueSet* qset);
 
   // Process queue entries and free resources.
   void flush();

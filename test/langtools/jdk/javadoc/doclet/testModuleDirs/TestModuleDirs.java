@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,26 +83,17 @@ public class TestModuleDirs extends JavadocTester {
 
         javadoc("-d", base.resolve("api").toString(),
                 "-quiet",
-                "--frames",
                 "--module-source-path", src.toString(),
                 "--no-module-directories",
                 "--module", "ma,mb");
 
         checkExit(Exit.OK);
         checkFiles(true,
-                "ma-frame.html",
                 "ma-summary.html",
                 "pa/package-summary.html");
         checkFiles(false,
-                "ma/module-frame.html",
                 "ma/module-summary.html",
                 "ma/pa/package-summary.html");
-        checkOutput("ma-frame.html", true,
-                "<ul>\n"
-                + "<li><a href=\"allclasses-frame.html\" target=\"packageFrame\">All&nbsp;Classes</a></li>\n"
-                + "<li><a href=\"overview-frame.html\" target=\"packageListFrame\">All&nbsp;Packages</a></li>\n"
-                + "<li><a href=\"module-overview-frame.html\" target=\"packageListFrame\">All&nbsp;Modules</a></li>\n"
-                + "</ul>\n");
         checkOutput("ma-summary.html", false,
                 "<ul class=\"navList\" id=\"allclasses_navbar_top\">\n"
                 + "<li><a href=\"allclasses-noframe.html\">All&nbsp;Classes</a></li>\n"
@@ -127,25 +118,16 @@ public class TestModuleDirs extends JavadocTester {
 
         javadoc("-d", base.resolve("api").toString(),
                 "-quiet",
-                "--frames",
                 "--module-source-path", src.toString(),
                 "--module", "ma,mb");
 
         checkExit(Exit.OK);
         checkFiles(false,
-                "ma-frame.html",
                 "ma-summary.html",
                 "pa/package-summary.html");
         checkFiles(true,
-                "ma/module-frame.html",
                 "ma/module-summary.html",
                 "ma/pa/package-summary.html");
-        checkOutput("ma/module-frame.html", true,
-                "<ul>\n"
-                + "<li><a href=\"../allclasses-frame.html\" target=\"packageFrame\">All&nbsp;Classes</a></li>\n"
-                + "<li><a href=\"../overview-frame.html\" target=\"packageListFrame\">All&nbsp;Packages</a></li>\n"
-                + "<li><a href=\"../module-overview-frame.html\" target=\"packageListFrame\">All&nbsp;Modules</a></li>\n"
-                + "</ul>\n");
         checkOutput("ma/module-summary.html", false,
                 "<ul class=\"navList\" id=\"allclasses_navbar_top\">\n"
                 + "<li><a href=\"../allclasses-noframe.html\">All&nbsp;Classes</a></li>\n"

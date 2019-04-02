@@ -3633,7 +3633,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<era type="233">大正</era>
 						<era type="234">昭和</era>
 						<era type="235">平成</era>
-						<era type="236">元号</era> <!-- NewEra -->
+						<era type="236">令和</era>
 					</eraAbbr>
 					<eraNarrow>
 						<era type="0">大化</era>
@@ -3872,7 +3872,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<era type="233">T</era>
 						<era type="234">S</era>
 						<era type="235">H</era>
-						<era type="236">N</era> <!-- NewEra -->
+						<era type="236">R</era>
 					</eraNarrow>
 				</eras>
 				<dateFormats>

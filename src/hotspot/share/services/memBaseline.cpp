@@ -156,6 +156,11 @@ bool MemBaseline::baseline_allocation_sites() {
     return false;
   }
 
+  // Walk simple thread stacks
+  if (!ThreadStackTracker::walk_simple_thread_stack_site(&malloc_walker)) {
+    return false;
+  }
+
   _malloc_sites.move(malloc_walker.malloc_sites());
   // The malloc sites are collected in size order
   _malloc_sites_order = by_size;

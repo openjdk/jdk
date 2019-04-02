@@ -316,14 +316,16 @@ public class GraalHotSpotVMConfig extends GraalHotSpotVMConfigBase {
     public final int jvmAccWrittenFlags = getConstant("JVM_ACC_WRITTEN_FLAGS", Integer.class);
     public final int jvmAccSynthetic = getConstant("JVM_ACC_SYNTHETIC", Integer.class);
 
-    public final int jvmciCompileStateCanPostOnExceptionsOffset = getJvmciCompileStateCanPostOnExceptionsOffset();
+    public final int jvmciCompileStateCanPostOnExceptionsOffset = getJvmciJvmtiCapabilityOffset("_jvmti_can_post_on_exceptions");
+    public final int jvmciCompileStateCanPopFrameOffset = getJvmciJvmtiCapabilityOffset("_jvmti_can_pop_frame");
+    public final int jvmciCompileStateCanAccessLocalVariablesOffset = getJvmciJvmtiCapabilityOffset("_jvmti_can_access_local_variables");
 
     // Integer.MIN_VALUE if not available
-    private int getJvmciCompileStateCanPostOnExceptionsOffset() {
-        int offset = getFieldOffset("JVMCICompileState::_jvmti_can_post_on_exceptions", Integer.class, "jbyte", Integer.MIN_VALUE);
+    private int getJvmciJvmtiCapabilityOffset(String name) {
+        int offset = getFieldOffset("JVMCICompileState::" + name, Integer.class, "jbyte", Integer.MIN_VALUE);
         if (offset == Integer.MIN_VALUE) {
             // JDK 12
-            offset = getFieldOffset("JVMCIEnv::_jvmti_can_post_on_exceptions", Integer.class, "jbyte", Integer.MIN_VALUE);
+            offset = getFieldOffset("JVMCIEnv::" + name, Integer.class, "jbyte", Integer.MIN_VALUE);
         }
         return offset;
     }

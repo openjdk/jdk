@@ -75,7 +75,7 @@ public class IndexRedirectWriter extends HtmlDocletWriter {
     private void generateIndexFile() throws DocFileIOException {
         Content htmlComment = contents.newPage;
         Head head = new Head(path, configuration.docletVersion)
-                .setTimestamp(true)
+                .setTimestamp(!configuration.notimestamp)
                 .setDescription("index redirect")
                 .setGenerator(getGenerator(getClass()))
                 .setStylesheets(configuration.getMainStylesheet(), Collections.emptyList()) // avoid reference to default stylesheet

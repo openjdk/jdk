@@ -689,10 +689,9 @@ public class AMD64ArithmeticLIRGenerator extends ArithmeticLIRGenerator implemen
                 getLIRGen().append(new AMD64Unary.MOp(op.m1Op, size, result, input));
             } else {
                 /*
-                 * c is implicitly masked to 5 or 6 bits by the CPU, so casting it to (int) is
-                 * always correct, even without the NumUtil.is32bit() test.
+                 * c needs to be masked here, because shifts with immediate expect a byte.
                  */
-                getLIRGen().append(new AMD64Binary.ConstOp(op.miOp, size, result, input, (int) c.asLong()));
+                getLIRGen().append(new AMD64Binary.ConstOp(op.miOp, size, result, input, (byte) c.asLong()));
             }
         } else {
             getLIRGen().emitMove(RCX_I, b);

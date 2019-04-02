@@ -33,10 +33,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeSet;
+import java.util.Set;
 
 import com.sun.jdi.BooleanType;
 import com.sun.jdi.BooleanValue;
@@ -110,7 +111,7 @@ class VirtualMachineImpl extends MirrorImpl
     // tested unsynchronized (since once true, it stays true), but must
     // be set synchronously
     private Map<Long, ReferenceType> typesByID;
-    private TreeSet<ReferenceType> typesBySignature;
+    private Set<ReferenceType> typesBySignature;
     private boolean retrievedAllTypes = false;
 
     private Map<Long, ModuleReference> modulesByID;
@@ -843,14 +844,9 @@ class VirtualMachineImpl extends MirrorImpl
                 throw new InternalException("Invalid reference type tag");
         }
 
-        /*
-         * If a signature was specified, make sure to set it ASAP, to
-         * prevent any needless JDWP command to retrieve it. (for example,
-         * typesBySignature.add needs the signature, to maintain proper
-         * ordering.
-         */
-        if (signature != null) {
-            type.setSignature(signature);
+        if (signature == null && retrievedAllTypes) {
+            // do not cache if signature is not provided
+            return type;
         }
 
         typesByID.put(id, type);
@@ -920,7 +916,7 @@ class VirtualMachineImpl extends MirrorImpl
 
     private void initReferenceTypes() {
         typesByID = new HashMap<>(300);
-        typesBySignature = new TreeSet<>();
+        typesBySignature = new HashSet<>();
     }
 
     ReferenceTypeImpl referenceType(long ref, byte tag) {
@@ -968,6 +964,9 @@ class VirtualMachineImpl extends MirrorImpl
                 }
                 if (retType == null) {
                     retType = addReferenceType(id, tag, signature);
+                }
+                if (signature != null) {
+                    retType.setSignature(signature);
                 }
             }
             return retType;

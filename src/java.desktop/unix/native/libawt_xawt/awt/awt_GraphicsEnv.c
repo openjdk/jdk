@@ -117,7 +117,11 @@ static char *x11GraphicsConfigClassName = "sun/awt/X11GraphicsConfig";
  */
 
 #define MAXFRAMEBUFFERS 16
-#if defined(__linux__) || defined(MACOSX)
+#if defined(__solaris__)
+typedef Status XineramaGetInfoFunc(Display* display, int screen_number,
+         XRectangle* framebuffer_rects, unsigned char* framebuffer_hints,
+         int* num_framebuffers);
+#else /* Linux, Mac, AIX */
 typedef struct {
    int   screen_number;
    short x_org;
@@ -127,11 +131,6 @@ typedef struct {
 } XineramaScreenInfo;
 
 typedef XineramaScreenInfo* XineramaQueryScreensFunc(Display*, int*);
-
-#else /* SOLARIS */
-typedef Status XineramaGetInfoFunc(Display* display, int screen_number,
-         XRectangle* framebuffer_rects, unsigned char* framebuffer_hints,
-         int* num_framebuffers);
 #endif
 
 Bool usingXinerama = False;
@@ -413,6 +412,7 @@ getAllConfigs (JNIEnv *env, int screen, AwtScreenDataPtr screenDataPtr) {
     if (XQueryExtension(awt_display, "RENDER",
                         &major_opcode, &first_event, &first_error))
     {
+        DTRACE_PRINTLN("RENDER extension available");
         xrenderLibHandle = dlopen("libXrender.so.1", RTLD_LAZY | RTLD_GLOBAL);
 
 #ifdef MACOSX
@@ -426,18 +426,30 @@ getAllConfigs (JNIEnv *env, int screen, AwtScreenDataPtr screenDataPtr) {
                                       RTLD_LAZY | RTLD_GLOBAL);
         }
 
-#ifndef __linux__ /* SOLARIS */
+#if defined(__solaris__)
         if (xrenderLibHandle == NULL) {
             xrenderLibHandle = dlopen("/usr/lib/libXrender.so.1",
                                       RTLD_LAZY | RTLD_GLOBAL);
         }
+#elif defined(_AIX)
+        if (xrenderLibHandle == NULL) {
+            xrenderLibHandle = dlopen("libXrender.a(libXrender.so.0)",
+                                      RTLD_MEMBER | RTLD_LAZY | RTLD_GLOBAL);
+        }
 #endif
-
         if (xrenderLibHandle != NULL) {
+            DTRACE_PRINTLN("Loaded libXrender");
             xrenderFindVisualFormat =
                 (XRenderFindVisualFormatFunc*)dlsym(xrenderLibHandle,
                                                     "XRenderFindVisualFormat");
+            if (xrenderFindVisualFormat == NULL) {
+                DTRACE_PRINTLN1("Can't find 'XRenderFindVisualFormat' in libXrender (%s)", dlerror());
+            }
+        } else {
+            DTRACE_PRINTLN1("Can't load libXrender (%s)", dlerror());
         }
+    } else {
+        DTRACE_PRINTLN("RENDER extension NOT available");
     }
 
     for (i = 0; i < nTrue; i++) {
@@ -453,18 +465,23 @@ getAllConfigs (JNIEnv *env, int screen, AwtScreenDataPtr screenDataPtr) {
         graphicsConfigs [ind]->awt_depth = pVITrue [i].depth;
         memcpy (&graphicsConfigs [ind]->awt_visInfo, &pVITrue [i],
                 sizeof (XVisualInfo));
-       if (xrenderFindVisualFormat != NULL) {
+        if (xrenderFindVisualFormat != NULL) {
             XRenderPictFormat *format = xrenderFindVisualFormat (awt_display,
-                    pVITrue [i].visual);
+                                                                 pVITrue [i].visual);
             if (format &&
                 format->type == PictTypeDirect &&
                 format->direct.alphaMask)
             {
+                DTRACE_PRINTLN1("GraphicsConfig[%d] supports Translucency", ind);
                 graphicsConfigs [ind]->isTranslucencySupported = 1;
                 memcpy(&graphicsConfigs [ind]->renderPictFormat, format,
                         sizeof(*format));
+            } else {
+                DTRACE_PRINTLN1(format ?
+                                "GraphicsConfig[%d] has no Translucency support" :
+                                "Error calling 'XRenderFindVisualFormat'", ind);
             }
-        }
+       }
     }
 
     if (xrenderLibHandle != NULL) {
@@ -570,7 +587,7 @@ getAllConfigs (JNIEnv *env, int screen, AwtScreenDataPtr screenDataPtr) {
 }
 
 #ifndef HEADLESS
-#if defined(__linux__) || defined(MACOSX)
+#if defined(__linux__) || defined(MACOSX) || defined(_AIX)
 static void xinerama_init_linux()
 {
     void* libHandle = NULL;
@@ -583,14 +600,18 @@ static void xinerama_init_linux()
     libHandle = dlopen(VERSIONED_JNI_LIB_NAME("Xinerama", "1"),
                        RTLD_LAZY | RTLD_GLOBAL);
     if (libHandle == NULL) {
+#if defined(_AIX)
+        libHandle = dlopen("libXext.a(shr_64.o)", RTLD_MEMBER | RTLD_LAZY | RTLD_GLOBAL);
+#else
         libHandle = dlopen(JNI_LIB_NAME("Xinerama"), RTLD_LAZY | RTLD_GLOBAL);
+#endif
     }
     if (libHandle != NULL) {
         XineramaQueryScreens = (XineramaQueryScreensFunc*)
             dlsym(libHandle, XineramaQueryScreensName);
 
         if (XineramaQueryScreens != NULL) {
-            DTRACE_PRINTLN("calling XineramaQueryScreens func on Linux");
+            DTRACE_PRINTLN("calling XineramaQueryScreens func");
             xinInfo = (*XineramaQueryScreens)(awt_display, &locNumScr);
             if (xinInfo != NULL && locNumScr > XScreenCount(awt_display)) {
                 int32_t idx;
@@ -610,7 +631,10 @@ static void xinerama_init_linux()
                     fbrects[idx].y = xinInfo[idx].y_org;
                 }
             } else {
-                DTRACE_PRINTLN("calling XineramaQueryScreens didn't work");
+                DTRACE_PRINTLN((xinInfo == NULL) ?
+                               "calling XineramaQueryScreens didn't work" :
+                               "XineramaQueryScreens <= XScreenCount"
+                               );
             }
         } else {
             DTRACE_PRINTLN("couldn't load XineramaQueryScreens symbol");
@@ -620,8 +644,7 @@ static void xinerama_init_linux()
         DTRACE_PRINTLN1("\ncouldn't open shared library: %s\n", dlerror());
     }
 }
-#endif
-#if !defined(__linux__) && !defined(MACOSX) /* Solaris */
+#elif defined(__solaris__)
 static void xinerama_init_solaris()
 {
     void* libHandle = NULL;
@@ -677,11 +700,11 @@ static void xineramaInit(void) {
     }
 
     DTRACE_PRINTLN("Xinerama extension is available");
-#if defined(__linux__) || defined(MACOSX)
-    xinerama_init_linux();
-#else /* Solaris */
+#if defined(__solaris__)
     xinerama_init_solaris();
-#endif /* __linux__ || MACOSX */
+#else /* Linux, Mac, AIX */
+    xinerama_init_linux();
+#endif
 }
 #endif /* HEADLESS */
 

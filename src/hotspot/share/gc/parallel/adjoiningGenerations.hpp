@@ -50,6 +50,7 @@ class AdjoiningGenerations : public CHeapObj<mtGC> {
   bool request_young_gen_expansion(size_t desired_change_in_bytes);
 
  protected:
+   AdjoiningGenerations();
    // The young generation and old generation, respectively
    PSYoungGen* _young_gen;
    PSOldGen* _old_gen;
@@ -59,7 +60,6 @@ class AdjoiningGenerations : public CHeapObj<mtGC> {
 
  public:
   AdjoiningGenerations(ReservedSpace rs, GenerationSizer* policy, size_t alignment);
-  AdjoiningGenerations();
 
   // Accessors
   PSYoungGen* young_gen() { return _young_gen; }

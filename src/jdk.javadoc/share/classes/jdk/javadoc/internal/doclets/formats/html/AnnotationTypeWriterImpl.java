@@ -84,7 +84,7 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
      */
     @Override
     public Content getHeader(String header) {
-        HtmlTree bodyTree = getBody(true, getWindowTitle(utils.getSimpleName(annotationType)));
+        HtmlTree bodyTree = getBody(getWindowTitle(utils.getSimpleName(annotationType)));
         HtmlTree htmlTree = HtmlTree.HEADER();
         addTop(htmlTree);
         Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(annotationType),

@@ -88,7 +88,7 @@ uintptr_t ZRelocate::relocate_object_inner(ZForwarding* forwarding, uintptr_t fr
 
   // Lookup forwarding entry
   const ZForwardingEntry entry = forwarding->find(from_index, &cursor);
-  if (entry.from_index() == from_index) {
+  if (entry.populated() && entry.from_index() == from_index) {
     // Already relocated, return new address
     return entry.to_offset();
   }
@@ -150,7 +150,9 @@ uintptr_t ZRelocate::forward_object(ZForwarding* forwarding, uintptr_t from_addr
   const uintptr_t from_index = (from_offset - forwarding->start()) >> forwarding->object_alignment_shift();
   const ZForwardingEntry entry = forwarding->find(from_index);
 
+  assert(entry.populated(), "Should be forwarded");
   assert(entry.from_index() == from_index, "Should be forwarded");
+
   return ZAddress::good(entry.to_offset());
 }
 

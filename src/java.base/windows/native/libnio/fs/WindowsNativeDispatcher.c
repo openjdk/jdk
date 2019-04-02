@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1063,8 +1063,14 @@ Java_sun_nio_fs_WindowsNativeDispatcher_CreateSymbolicLink0(JNIEnv* env,
     LPCWSTR link = jlong_to_ptr(linkAddress);
     LPCWSTR target = jlong_to_ptr(targetAddress);
 
-    /* On Windows 64-bit this appears to succeed even when there is insufficient privileges */
-    if (CreateSymbolicLinkW(link, target, (DWORD)flags) == 0)
+    // Allow creation of symbolic links when the process is not elevated.
+    // Developer Mode must be enabled for this option to function, otherwise
+    // it will be ignored.
+    DWORD dwFlags = (DWORD)flags | SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE;
+
+    // On Windows 64-bit this appears to succeed even when there are
+    // insufficient privileges
+    if (CreateSymbolicLinkW(link, target, dwFlags) == 0)
         throwWindowsException(env, GetLastError());
 }
 

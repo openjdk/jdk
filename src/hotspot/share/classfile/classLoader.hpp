@@ -61,6 +61,10 @@ public:
   // Attempt to locate file_name through this class path entry.
   // Returns a class file parsing stream if successfull.
   virtual ClassFileStream* open_stream(const char* name, TRAPS) = 0;
+  // Open the stream for a specific class loader
+  virtual ClassFileStream* open_stream_for_loader(const char* name, ClassLoaderData* loader_data, TRAPS) {
+    return open_stream(name, THREAD);
+  }
 };
 
 class ClassPathDirEntry: public ClassPathEntry {
@@ -114,6 +118,7 @@ class ClassPathImageEntry: public ClassPathEntry {
 private:
   JImageFile* _jimage;
   const char* _name;
+  DEBUG_ONLY(static ClassPathImageEntry* _singleton;)
 public:
   bool is_modules_image() const;
   bool is_jar_file() const { return false; }
@@ -124,6 +129,7 @@ public:
   ClassPathImageEntry(JImageFile* jimage, const char* name);
   virtual ~ClassPathImageEntry();
   ClassFileStream* open_stream(const char* name, TRAPS);
+  ClassFileStream* open_stream_for_loader(const char* name, ClassLoaderData* loader_data, TRAPS);
 };
 
 // ModuleClassPathList contains a linked list of ClassPathEntry's
@@ -438,8 +444,6 @@ class ClassLoader: AllStatic {
   // *bad_class_name is set to true if there's a problem with parsing class_name, to
   // distinguish from a class_name with no package name, as both cases have a NULL return value
   static const char* package_from_name(const char* const class_name, bool* bad_class_name = NULL);
-
-  static bool is_modules_image(const char* name) { return string_ends_with(name, MODULES_IMAGE_NAME); }
 
   // Debugging
   static void verify()              PRODUCT_RETURN;

@@ -105,7 +105,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
     @Override
     public Content getHeader() {
         String label = resources.getText("doclet.Constants_Summary");
-        HtmlTree bodyTree = getBody(true, getWindowTitle(label));
+        HtmlTree bodyTree = getBody(getWindowTitle(label));
         HtmlTree htmlTree = HtmlTree.HEADER();
         addTop(htmlTree);
         navBar.setUserHeader(getUserHeaderFooter(true));

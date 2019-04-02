@@ -655,3 +655,4 @@ public final class AMD64ArrayIndexOfOp extends AMD64LIRInstruction {
         return ((AMD64) tool.target().arch).getFeatures().contains(cpuFeature);
     }
 }
+

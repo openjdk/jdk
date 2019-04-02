@@ -40,7 +40,7 @@ public final class Helper {
     public static final Random RNG = Utils.getRandomInstance();
 
     private static final long THRESHOLD = WHITE_BOX.getIntxVMFlag("CompileThreshold");
-    private static final String TEST_CASE_IMPL_CLASS_NAME = "compiler.codecache.stress.Helper$TestCaseImpl";
+    private static final String TEST_CASE_IMPL_CLASS_NAME = "compiler.codecache.stress.TestCaseImpl";
     private static byte[] CLASS_DATA;
     static {
         try {
@@ -109,34 +109,4 @@ public final class Helper {
         int method();
         int expectedValue();
     }
-
-    public static class TestCaseImpl implements TestCase {
-        private static final int RETURN_VALUE = 42;
-        private static final int RECURSION_DEPTH = 10;
-        private volatile int i;
-
-        @Override
-        public Callable<Integer> getCallable() {
-            return () -> {
-                i = 0;
-                return method();
-            };
-        }
-
-        @Override
-        public int method() {
-            ++i;
-            int result = RETURN_VALUE;
-            if (i < RECURSION_DEPTH) {
-                return result + method();
-            }
-            return result;
-        }
-
-        @Override
-        public int expectedValue() {
-            return RETURN_VALUE * RECURSION_DEPTH;
-        }
-    }
-
 }

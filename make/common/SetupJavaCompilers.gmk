@@ -33,6 +33,9 @@ include JavaCompilation.gmk
 
 DISABLE_WARNINGS ?= -Xlint:all,-deprecation,-removal,-unchecked,-rawtypes,-cast,-serial,-dep-ann,-static,-fallthrough,-try,-varargs,-empty,-finally
 
+JDK_SOURCE_TARGET_FLAGS := -source $(JDK_SOURCE_TARGET_VERSION) \
+    -target $(JDK_SOURCE_TARGET_VERSION)
+
 # If warnings needs to be non-fatal for testing purposes use a command like:
 # make JAVAC_WARNINGS="-Xlint:all -Xmaxwarns 10000"
 JAVAC_WARNINGS ?= -Xlint:all -Werror
@@ -72,7 +75,7 @@ $(eval $(call SetupJavaCompiler,GENERATE_OLDBYTECODE, \
 $(eval $(call SetupJavaCompiler,GENERATE_JDKBYTECODE, \
     JVM := $(JAVA_JAVAC), \
     JAVAC := $(NEW_JAVAC), \
-    FLAGS := -source 13 -target 13 --doclint-format html5 \
+    FLAGS := $(JDK_SOURCE_TARGET_FLAGS) --doclint-format html5 \
         -encoding ascii -XDignore.symbol.file=true $(JAVAC_WARNINGS), \
     SERVER_DIR := $(SJAVAC_SERVER_DIR), \
     SERVER_JVM := $(SJAVAC_SERVER_JAVA)))
@@ -82,7 +85,7 @@ $(eval $(call SetupJavaCompiler,GENERATE_JDKBYTECODE, \
 $(eval $(call SetupJavaCompiler,GENERATE_JDKBYTECODE_NOWARNINGS, \
     JVM := $(JAVA_JAVAC), \
     JAVAC := $(NEW_JAVAC), \
-    FLAGS := -source 13 -target 13 \
+    FLAGS := $(JDK_SOURCE_TARGET_FLAGS) \
         -encoding ascii -XDignore.symbol.file=true $(DISABLE_WARNINGS), \
     SERVER_DIR := $(SJAVAC_SERVER_DIR), \
     SERVER_JVM := $(SJAVAC_SERVER_JAVA)))

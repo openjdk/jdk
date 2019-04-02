@@ -73,8 +73,6 @@ class ShenandoahRootProcessor : public StackObj {
                           uint worker_i);
 
   void process_vm_roots(OopClosure* scan_non_heap_roots,
-                        OopClosure* scan_non_heap_weak_roots,
-                        OopClosure* weak_jni_roots,
                         uint worker_i);
 
   void weak_processor_timing_to_shenandoah_timing(const WeakProcessorPhases::Phase wpp,
@@ -86,20 +84,29 @@ public:
                           ShenandoahPhaseTimings::Phase phase);
   ~ShenandoahRootProcessor();
 
-  // Apply oops, clds and blobs to all strongly reachable roots in the system
-  void process_strong_roots(OopClosure* oops, OopClosure* weak_oops,
+  // Apply oops, clds and blobs to all strongly reachable roots in the system.
+  // Optionally, apply class loader closure to weak clds, depending on class unloading
+  // for the particular GC cycles.
+  void process_strong_roots(OopClosure* oops,
                             CLDClosure* clds,
-                            CLDClosure* weak_clds,
                             CodeBlobClosure* blobs,
                             ThreadClosure* thread_cl,
                             uint worker_id);
 
-  // Apply oops, clds and blobs to strongly and weakly reachable roots in the system
-  void process_all_roots(OopClosure* oops, OopClosure* weak_oops,
+  // Apply oops, clds and blobs to strongly reachable roots in the system
+  void process_all_roots(OopClosure* oops,
                          CLDClosure* clds,
                          CodeBlobClosure* blobs,
                          ThreadClosure* thread_cl,
                          uint worker_id);
+
+  // Apply oops, clds and blobs to strongly and weakly reachable roots in the system
+  template <typename IsAlive>
+  void update_all_roots(OopClosure* oops,
+                        CLDClosure* clds,
+                        CodeBlobClosure* blobs,
+                        ThreadClosure* thread_cl,
+                        uint worker_id);
 
   // For slow debug/verification code
   void process_all_roots_slow(OopClosure* oops);

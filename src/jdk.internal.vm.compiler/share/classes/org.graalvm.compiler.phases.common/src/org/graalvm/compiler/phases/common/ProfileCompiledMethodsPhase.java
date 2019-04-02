@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,8 @@ import org.graalvm.compiler.nodes.virtual.VirtualObjectNode;
 import org.graalvm.compiler.phases.Phase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
 
+import jdk.vm.ci.services.Services;
+
 /**
  * This phase add counters for the dynamically executed number of nodes. Incrementing the counter
  * for each node would be too costly, so this phase takes the compromise that it trusts split
@@ -87,9 +89,17 @@ public class ProfileCompiledMethodsPhase extends Phase {
     private static final String GROUP_NAME_WITHOUT = "~profiled weight (invoke-free sections)";
     private static final String GROUP_NAME_INVOKES = "~profiled invokes";
 
-    private static final boolean WITH_SECTION_HEADER = Boolean.parseBoolean(System.getProperty("ProfileCompiledMethodsPhase.WITH_SECTION_HEADER", "false"));
-    private static final boolean WITH_INVOKE_FREE_SECTIONS = Boolean.parseBoolean(System.getProperty("ProfileCompiledMethodsPhase.WITH_FREE_SECTIONS", "false"));
-    private static final boolean WITH_INVOKES = Boolean.parseBoolean(System.getProperty("ProfileCompiledMethodsPhase.WITH_INVOKES", "true"));
+    private static String getProperty(String name, String def) {
+        String value = Services.getSavedProperties().get(name);
+        if (value == null) {
+            return def;
+        }
+        return value;
+    }
+
+    private static final boolean WITH_SECTION_HEADER = Boolean.parseBoolean(getProperty("ProfileCompiledMethodsPhase.WITH_SECTION_HEADER", "false"));
+    private static final boolean WITH_INVOKE_FREE_SECTIONS = Boolean.parseBoolean(getProperty("ProfileCompiledMethodsPhase.WITH_FREE_SECTIONS", "false"));
+    private static final boolean WITH_INVOKES = Boolean.parseBoolean(getProperty("ProfileCompiledMethodsPhase.WITH_INVOKES", "true"));
 
     @Override
     protected void run(StructuredGraph graph) {

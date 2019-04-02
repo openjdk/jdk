@@ -38,11 +38,11 @@ public:
   // Deduplicate a string, the call is lock-free
   static void deduplicate(oop java_string);
 
-  static void parallel_oops_do(OopClosure* cl, uint worker_id);
+  static void parallel_oops_do(BoolObjectClosure* is_alive, OopClosure* cl, uint worker_id);
   static void oops_do_slow(OopClosure* cl);
 
   static inline bool is_candidate(oop obj);
-private:
+
   static void unlink_or_oops_do(BoolObjectClosure* is_alive,
                                 OopClosure* keep_alive,
                                 bool allow_resize_and_rehash);

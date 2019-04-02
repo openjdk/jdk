@@ -1,0 +1,5 @@
+MaxDiagsRecompile.java:28:3: compiler.err.cant.resolve.location: kindname.class, NoSuchSymbol1, , , (compiler.misc.location: kindname.class, MaxDiagsRecompile, null)
+MaxDiagsRecompile.java:29:3: compiler.err.cant.resolve.location: kindname.class, NoSuchSymbol2, , , (compiler.misc.location: kindname.class, MaxDiagsRecompile, null)
+MaxDiagsRecompile.java:30:3: compiler.err.cant.resolve.location: kindname.class, NoSuchSymbol3, , , (compiler.misc.location: kindname.class, MaxDiagsRecompile, null)
+MaxDiagsRecompile.java:31:3: compiler.err.cant.resolve.location: kindname.class, NoSuchSymbol4, , , (compiler.misc.location: kindname.class, MaxDiagsRecompile, null)
+4 errors

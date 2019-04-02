@@ -31,7 +31,7 @@ import com.sun.org.apache.xerces.internal.util.IntStack;
  * This engine does not conform to the POSIX regular expression.
  *
  * <hr width="50%">
- * <h3>How to use</h3>
+ * <h2>How to use</h2>
  *
  * <dl>
  *   <dt>A. Standard way

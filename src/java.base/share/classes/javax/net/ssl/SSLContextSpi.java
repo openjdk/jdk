@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,10 +194,9 @@ public abstract class SSLContextSpi {
      */
     protected SSLParameters engineGetSupportedSSLParameters() {
         SSLSocket socket = getDefaultSocket();
-        SSLParameters params = new SSLParameters();
+        SSLParameters params = socket.getSSLParameters();
         params.setCipherSuites(socket.getSupportedCipherSuites());
         params.setProtocols(socket.getSupportedProtocols());
         return params;
     }
-
 }

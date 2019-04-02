@@ -67,7 +67,7 @@ public class PrintMetaspaceDcmd {
         }
         output.shouldContain("Virtual space:");
         output.shouldContain("Chunk freelists:");
-
+        output.shouldMatch("MaxMetaspaceSize:.*201.00.*MB");
 
         pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.metaspace"});
         output = new OutputAnalyzer(pb.start());

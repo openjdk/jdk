@@ -52,7 +52,11 @@ class PSMarkSweepDecorator: public CHeapObj<mtGC> {
  public:
   PSMarkSweepDecorator(MutableSpace* space, ObjectStartArray* start_array,
                        size_t allowed_dead_ratio) :
-    _space(space), _start_array(start_array),
+    _space(space),
+    _start_array(start_array),
+    _first_dead(NULL),
+    _end_of_live(NULL),
+    _compaction_top(NULL),
     _allowed_dead_ratio(allowed_dead_ratio) { }
 
   // During a compacting collection, we need to collapse objects into

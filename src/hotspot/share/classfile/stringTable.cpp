@@ -52,6 +52,7 @@
 #include "utilities/concurrentHashTable.inline.hpp"
 #include "utilities/concurrentHashTableTasks.inline.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/utf8.hpp"
 
 // We prefer short chains of avg 2
 const double PREF_AVG_LIST_LEN = 2.0;

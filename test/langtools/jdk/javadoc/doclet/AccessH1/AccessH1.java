@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,6 @@ public class AccessH1 extends JavadocTester {
     public void test() {
         javadoc("-d", "out",
                 "-doctitle", "Document Title",
-                "--frames",
                 "-sourcepath", testSrc,
                 "p1", "p2");
         checkExit(Exit.OK);
@@ -58,7 +57,7 @@ public class AccessH1 extends JavadocTester {
                 + "}");
 
         // Test the doc title in the overview page
-        checkOutput("overview-summary.html", true,
+        checkOutput("index.html", true,
                 "<h1 class=\"title\">Document Title</h1>");
     }
 }

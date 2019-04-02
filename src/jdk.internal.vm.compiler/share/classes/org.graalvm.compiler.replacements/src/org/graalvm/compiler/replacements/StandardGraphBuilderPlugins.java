@@ -212,6 +212,20 @@ public class StandardGraphBuilderPlugins {
                 return false;
             }
         });
+        r.register1("intern", Receiver.class, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                if (receiver.isConstant()) {
+                    String s = snippetReflection.asObject(String.class, (JavaConstant) receiver.get().asConstant());
+                    if (s != null) {
+                        JavaConstant interned = snippetReflection.forObject(s.intern());
+                        b.addPush(JavaKind.Object, b.add(ConstantNode.forConstant(interned, b.getMetaAccess(), b.getGraph())));
+                        return true;
+                    }
+                }
+                return false;
+            }
+        });
 
         if (Java8OrEarlier) {
             r.registerMethodSubstitution(StringSubstitutions.class, "equals", Receiver.class, Object.class);

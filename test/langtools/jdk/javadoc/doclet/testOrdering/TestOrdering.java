@@ -121,10 +121,8 @@ public class TestOrdering extends JavadocTester {
             javadoc("-d", "out-1",
                     "-sourcepath", testSrc,
                     "-use",
-                    "--frames",
                     "pkg1");
             checkExit(Exit.OK);
-            checkFiles(false, "allclasses-noframe.html");
 
             checkClassUseOrdering("pkg1/class-use/UsedClass.html");
 
@@ -174,20 +172,6 @@ public class TestOrdering extends JavadocTester {
             checkOrder("pkg1/OverrideOrdering.html",
                     "<dd><code>iterator</code>&nbsp;in interface&nbsp;<code>java.util.Collection&lt;",
                     "<dd><code>iterator</code>&nbsp;in interface&nbsp;<code>java.lang.Iterable&lt;");
-
-            checkOrder("allclasses-frame.html",
-                    "pkg1/A.html\" title=\"class in pkg1",
-                    "pkg1/A.C.html\" title=\"class in pkg1",
-                    "pkg1/B.html\" title=\"class in pkg1",
-                    "pkg1/B.A.html\" title=\"class in pkg1",
-                    "pkg1/C1.html\" title=\"class in pkg1",
-                    "pkg1/C2.html\" title=\"class in pkg1",
-                    "pkg1/C3.html\" title=\"class in pkg1",
-                    "pkg1/C4.html\" title=\"class in pkg1",
-                    "pkg1/ImplementsOrdering.html\" title=\"interface in pkg1",
-                    "pkg1/MethodOrder.html\" title=\"class in pkg1",
-                    "pkg1/OverrideOrdering.html\" title=\"class in pkg1",
-                    "pkg1/UsedClass.html\" title=\"class in pkg1");
         }
 
         void checkClassUseOrdering(String usePage) {
@@ -359,7 +343,6 @@ public class TestOrdering extends JavadocTester {
             List<String> cmdArgs = new ArrayList();
             cmdArgs.add("-d");
             cmdArgs.add("out-2");
-            cmdArgs.add("--frames");
             cmdArgs.add("-sourcepath");
             cmdArgs.add("src");
             cmdArgs.add("-package");
@@ -419,25 +402,6 @@ public class TestOrdering extends JavadocTester {
                     "<a href=\"add3/add/Add.ADD.html\" title=\"enum in add3.add\">",
                     "<a href=\"add3/add/add/Add.ADD.html\" title=\"enum in add3.add.add\">",
                     "<a href=\"add3/add/add/add/Add.ADD.html\" title=\"enum in add3.add.add.add\">");
-
-            checkOrder("overview-frame.html",
-                    "<a href=\"package-frame.html\" target=\"packageFrame\">&lt;unnamed package&gt;</a>",
-                    "<a href=\"add0/package-frame.html\" target=\"packageFrame\">add0</a>",
-                    "<a href=\"add0/add/package-frame.html\" target=\"packageFrame\">add0.add</a>",
-                    "<a href=\"add0/add/add/package-frame.html\" target=\"packageFrame\">add0.add.add</a>",
-                    "<a href=\"add0/add/add/add/package-frame.html\" target=\"packageFrame\">add0.add.add.add</a>",
-                    "<a href=\"add1/package-frame.html\" target=\"packageFrame\">add1</a>",
-                    "<a href=\"add1/add/package-frame.html\" target=\"packageFrame\">add1.add</a>",
-                    "<a href=\"add1/add/add/package-frame.html\" target=\"packageFrame\">add1.add.add</a>",
-                    "<a href=\"add1/add/add/add/package-frame.html\" target=\"packageFrame\">add1.add.add.add</a>",
-                    "<a href=\"add2/package-frame.html\" target=\"packageFrame\">add2</a>",
-                    "<a href=\"add2/add/package-frame.html\" target=\"packageFrame\">add2.add</a>",
-                    "<a href=\"add2/add/add/package-frame.html\" target=\"packageFrame\">add2.add.add</a>",
-                    "<a href=\"add2/add/add/add/package-frame.html\" target=\"packageFrame\">add2.add.add.add</a>",
-                    "<a href=\"add3/package-frame.html\" target=\"packageFrame\">add3</a>",
-                    "<a href=\"add3/add/package-frame.html\" target=\"packageFrame\">add3.add</a>",
-                    "<a href=\"add3/add/add/package-frame.html\" target=\"packageFrame\">add3.add.add</a>",
-                    "<a href=\"add3/add/add/add/package-frame.html\" target=\"packageFrame\">add3.add.add.add</a></li>");
         }
 
         void emitFile(String pkgname, String clsname, ListOrder order) throws IOException {

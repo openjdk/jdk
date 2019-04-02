@@ -901,11 +901,15 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseSHA256Intrinsics, false);
   }
 
+#ifdef _LP64
+  // These are only supported on 64-bit
   if (UseSHA && supports_avx2() && supports_bmi2()) {
     if (FLAG_IS_DEFAULT(UseSHA512Intrinsics)) {
       FLAG_SET_DEFAULT(UseSHA512Intrinsics, true);
     }
-  } else if (UseSHA512Intrinsics) {
+  } else
+#endif
+  if (UseSHA512Intrinsics) {
     warning("Intrinsics for SHA-384 and SHA-512 crypto hash functions not available on this CPU.");
     FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
   }

@@ -93,7 +93,7 @@ uint MachOper::hash() const {
 
 //------------------------------cmp--------------------------------------------
 // Print any per-operand special info
-uint MachOper::cmp( const MachOper &oper ) const {
+bool MachOper::cmp( const MachOper &oper ) const {
   ShouldNotCallThis();
   return opcode() == oper.opcode();
 }
@@ -106,7 +106,7 @@ uint labelOper::hash() const {
 
 //------------------------------cmp--------------------------------------------
 // Print any per-operand special info
-uint labelOper::cmp( const MachOper &oper ) const {
+bool labelOper::cmp( const MachOper &oper ) const {
   return (opcode() == oper.opcode()) && (_label == oper.label());
 }
 
@@ -118,7 +118,7 @@ uint methodOper::hash() const {
 
 //------------------------------cmp--------------------------------------------
 // Print any per-operand special info
-uint methodOper::cmp( const MachOper &oper ) const {
+bool methodOper::cmp( const MachOper &oper ) const {
   return (opcode() == oper.opcode()) && (_method == oper.method());
 }
 
@@ -167,15 +167,15 @@ uint MachNode::hash() const {
 }
 
 //-----------------------------cmp---------------------------------------------
-uint MachNode::cmp( const Node &node ) const {
+bool MachNode::cmp( const Node &node ) const {
   MachNode& n = *((Node&)node).as_Mach();
   uint no = num_opnds();
-  if( no != n.num_opnds() ) return 0;
-  if( rule() != n.rule() ) return 0;
+  if( no != n.num_opnds() ) return false;
+  if( rule() != n.rule() ) return false;
   for( uint i=0; i<no; i++ )    // All operands must match
     if( !_opnds[i]->cmp( *n._opnds[i] ) )
-      return 0;                 // mis-matched operands
-  return 1;                     // match
+      return false;             // mis-matched operands
+  return true;                  // match
 }
 
 // Return an equivalent instruction using memory for cisc_operand position
@@ -651,7 +651,7 @@ const RegMask &MachSafePointNode::in_RegMask( uint idx ) const {
 
 //=============================================================================
 
-uint MachCallNode::cmp( const Node &n ) const
+bool MachCallNode::cmp( const Node &n ) const
 { return _tf == ((MachCallNode&)n)._tf; }
 const Type *MachCallNode::bottom_type() const { return tf()->range(); }
 const Type* MachCallNode::Value(PhaseGVN* phase) const { return tf()->range(); }
@@ -707,7 +707,7 @@ const RegMask &MachCallNode::in_RegMask(uint idx) const {
 
 //=============================================================================
 uint MachCallJavaNode::size_of() const { return sizeof(*this); }
-uint MachCallJavaNode::cmp( const Node &n ) const {
+bool MachCallJavaNode::cmp( const Node &n ) const {
   MachCallJavaNode &call = (MachCallJavaNode&)n;
   return MachCallNode::cmp(call) && _method->equals(call._method) &&
          _override_symbolic_info == call._override_symbolic_info;
@@ -745,7 +745,7 @@ const RegMask &MachCallJavaNode::in_RegMask(uint idx) const {
 
 //=============================================================================
 uint MachCallStaticJavaNode::size_of() const { return sizeof(*this); }
-uint MachCallStaticJavaNode::cmp( const Node &n ) const {
+bool MachCallStaticJavaNode::cmp( const Node &n ) const {
   MachCallStaticJavaNode &call = (MachCallStaticJavaNode&)n;
   return MachCallJavaNode::cmp(call) && _name == call._name;
 }
@@ -791,7 +791,7 @@ void MachCallDynamicJavaNode::dump_spec(outputStream *st) const {
 #endif
 //=============================================================================
 uint MachCallRuntimeNode::size_of() const { return sizeof(*this); }
-uint MachCallRuntimeNode::cmp( const Node &n ) const {
+bool MachCallRuntimeNode::cmp( const Node &n ) const {
   MachCallRuntimeNode &call = (MachCallRuntimeNode&)n;
   return MachCallNode::cmp(call) && !strcmp(_name,call._name);
 }

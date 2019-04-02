@@ -1,5 +1,5 @@
 /*
- o Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ o Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,7 +111,9 @@ import org.testng.annotations.Test;
  */
 @Test
 public class TCKJapaneseChronology {
-    private static final int YDIFF_NEWERA = 2018;
+
+    // Year differences from Gregorian years.
+    private static final int YDIFF_REIWA = 2018;
     private static final int YDIFF_HEISEI = 1988;
     private static final int YDIFF_MEIJI = 1867;
     private static final int YDIFF_SHOWA = 1925;
@@ -174,7 +176,7 @@ public class TCKJapaneseChronology {
     @DataProvider(name="createByEra")
     Object[][] data_createByEra() {
         return new Object[][] {
-                {JapaneseEra.of(3), 2020 - YDIFF_NEWERA, 2, 29, 60, LocalDate.of(2020, 2, 29)}, // NEWERA
+                {JapaneseEra.REIWA, 2020 - YDIFF_REIWA, 2, 29, 60, LocalDate.of(2020, 2, 29)},
                 {JapaneseEra.HEISEI, 1996 - YDIFF_HEISEI, 2, 29, 60, LocalDate.of(1996, 2, 29)},
                 {JapaneseEra.HEISEI, 2000 - YDIFF_HEISEI, 2, 29, 60, LocalDate.of(2000, 2, 29)},
                 {JapaneseEra.MEIJI, 1874 - YDIFF_MEIJI, 2, 28, 59, LocalDate.of(1874, 2, 28)},
@@ -367,8 +369,8 @@ public class TCKJapaneseChronology {
     @DataProvider(name="prolepticYear")
     Object[][] data_prolepticYear() {
         return new Object[][] {
-                {3, JapaneseEra.of(3), 1, 1 + YDIFF_NEWERA, false}, // NEWERA
-                {3, JapaneseEra.of(3), 102, 102 + YDIFF_NEWERA, true}, // NEWERA
+                {3, JapaneseEra.REIWA, 1, 1 + YDIFF_REIWA, false},
+                {3, JapaneseEra.REIWA, 102, 102 + YDIFF_REIWA, true},
 
                 {2, JapaneseEra.HEISEI, 1, 1 + YDIFF_HEISEI, false},
                 {2, JapaneseEra.HEISEI, 4, 4 + YDIFF_HEISEI, true},
@@ -553,7 +555,7 @@ public class TCKJapaneseChronology {
             { JapaneseEra.TAISHO, 0, "Taisho"},
             { JapaneseEra.SHOWA, 1, "Showa"},
             { JapaneseEra.HEISEI, 2, "Heisei"},
-            { JapaneseEra.of(3), 3, "NewEra"}, // NEWERA
+            { JapaneseEra.REIWA, 3, "Reiwa"},
         };
     }
 
@@ -689,7 +691,7 @@ public class TCKJapaneseChronology {
             {JapaneseChronology.INSTANCE.date(1989,  1,  7), "Japanese Showa 64-01-07"},
             {JapaneseChronology.INSTANCE.date(1989,  1,  8), "Japanese Heisei 1-01-08"},
             {JapaneseChronology.INSTANCE.date(2012, 12,  6), "Japanese Heisei 24-12-06"},
-            {JapaneseChronology.INSTANCE.date(2020,  1,  6), "Japanese NewEra 2-01-06"},
+            {JapaneseChronology.INSTANCE.date(2020,  1,  6), "Japanese Reiwa 2-01-06"},
         };
     }
 

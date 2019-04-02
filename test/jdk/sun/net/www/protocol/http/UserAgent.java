@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 4512200
+ * @library /test/lib
  * @modules java.base/sun.net.www
  * @run main/othervm -Dhttp.agent=foo UserAgent
  * @summary  HTTP header "User-Agent" format incorrect
@@ -32,6 +33,7 @@
 import java.io.*;
 import java.util.*;
 import java.net.*;
+import jdk.test.lib.net.URIBuilder;
 import sun.net.www.MessageHeader;
 
 class Server extends Thread {
@@ -89,7 +91,12 @@ public class UserAgent {
         Server s = new Server (server);
         s.start ();
         int port = server.getLocalPort ();
-        URL url = new URL ("http://127.0.0.1:"+port);
+        URL url = URIBuilder.newBuilder()
+            .scheme("http")
+            .loopback()
+            .port(port)
+            .toURL();
+        System.out.println("URL: " + url);
         URLConnection urlc = url.openConnection ();
         urlc.getInputStream ();
         s.join ();

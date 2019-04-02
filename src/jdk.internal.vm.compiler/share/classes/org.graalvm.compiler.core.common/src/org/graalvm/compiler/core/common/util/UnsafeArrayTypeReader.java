@@ -24,7 +24,8 @@
 
 package org.graalvm.compiler.core.common.util;
 
-import static org.graalvm.compiler.core.common.util.UnsafeAccess.UNSAFE;
+import static org.graalvm.compiler.serviceprovider.GraalUnsafeAccess.getUnsafe;
+
 import sun.misc.Unsafe;
 
 /**
@@ -40,6 +41,8 @@ import sun.misc.Unsafe;
  * fallback that works on every hardware.
  */
 public abstract class UnsafeArrayTypeReader implements TypeReader {
+
+    private static final Unsafe UNSAFE = getUnsafe();
 
     public static int getS1(byte[] data, long byteIndex) {
         return UNSAFE.getByte(data, readOffset(data, byteIndex, Byte.BYTES));
@@ -142,6 +145,8 @@ public abstract class UnsafeArrayTypeReader implements TypeReader {
 }
 
 final class UnalignedUnsafeArrayTypeReader extends UnsafeArrayTypeReader {
+    private static final Unsafe UNSAFE = getUnsafe();
+
     protected static int getS2(byte[] data, long byteIndex) {
         return UNSAFE.getShort(data, readOffset(data, byteIndex, Short.BYTES));
     }
@@ -181,6 +186,8 @@ final class UnalignedUnsafeArrayTypeReader extends UnsafeArrayTypeReader {
 }
 
 class AlignedUnsafeArrayTypeReader extends UnsafeArrayTypeReader {
+    private static final Unsafe UNSAFE = getUnsafe();
+
     protected static int getS2(byte[] data, long byteIndex) {
         long offset = readOffset(data, byteIndex, Short.BYTES);
         return ((UNSAFE.getByte(data, offset + 0) & 0xFF) << 0) | //

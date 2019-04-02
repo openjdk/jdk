@@ -437,6 +437,18 @@ public class ClientCodeWrapper {
         }
 
         @Override @DefinedBy(Api.COMPILER)
+        public Iterable<? extends JavaFileObject> getJavaFileObjectsFromPaths(Collection<? extends Path> paths) {
+            try {
+                return ((StandardJavaFileManager)clientJavaFileManager).getJavaFileObjectsFromPaths(paths);
+            } catch (ClientCodeException e) {
+                throw e;
+            } catch (RuntimeException | Error e) {
+                throw new ClientCodeException(e);
+            }
+        }
+
+        @Deprecated(since = "13")
+        @Override @DefinedBy(Api.COMPILER)
         public Iterable<? extends JavaFileObject> getJavaFileObjectsFromPaths(Iterable<? extends Path> paths) {
             try {
                 return ((StandardJavaFileManager)clientJavaFileManager).getJavaFileObjectsFromPaths(paths);

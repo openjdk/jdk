@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,19 +22,48 @@
  */
 
 /* @test
-   @bug 4260284
-   @summary Test if DataOutputStream will overcount written field.
-*/
+ * @bug 4260284 8219196
+ * @summary Test if DataOutputStream will overcount written field.
+ * @requires (sun.arch.data.model == "64" & os.maxMemory >= 3g)
+ * @run testng/othervm -Xmx3g WriteUTF
+ */
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.UTFDataFormatException;
+
+import org.testng.annotations.Test;
 
 public class WriteUTF {
-    public static void main(String[] args) throws Exception {
+    @Test
+    public static void overcountWrittenField() throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(baos);
         dos.writeUTF("Hello, World!");  // 15
         dos.flush();
         if  (baos.size() != dos.size())
             throw new RuntimeException("Miscounted bytes in DataOutputStream.");
+    }
+
+    private static void writeUTF(int size) throws IOException {
+        // this character gives 3 bytes when encoded using UTF-8
+        String s = "\u0800".repeat(size);
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        DataOutputStream dos = new DataOutputStream(bos);
+        dos.writeUTF(s);
+    }
+
+    @Test(expectedExceptions = UTFDataFormatException.class)
+    public void utfDataFormatException() throws IOException {
+        writeUTF(1 << 16);
+    }
+
+    // Without 8219196 fix, throws ArrayIndexOutOfBoundsException instead of
+    // expected UTFDataFormatException. Requires 3GB of heap (-Xmx3g) to run
+    // without throwing an OutOfMemoryError.
+    @Test(expectedExceptions = UTFDataFormatException.class)
+    public void arrayIndexOutOfBoundsException() throws IOException {
+        writeUTF(Integer.MAX_VALUE / 3 + 1);
     }
 }

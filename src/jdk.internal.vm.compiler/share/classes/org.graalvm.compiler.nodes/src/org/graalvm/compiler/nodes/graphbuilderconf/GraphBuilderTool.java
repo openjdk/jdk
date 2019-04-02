@@ -28,6 +28,7 @@ import org.graalvm.compiler.core.common.spi.ConstantFieldProvider;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.spi.Replacements;
 import org.graalvm.compiler.nodes.spi.StampProvider;
 import org.graalvm.compiler.options.OptionValues;
 
@@ -51,6 +52,8 @@ public interface GraphBuilderTool {
     StampProvider getStampProvider();
 
     MetaAccessProvider getMetaAccess();
+
+    Replacements getReplacements();
 
     default Assumptions getAssumptions() {
         return getGraph().getAssumptions();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,6 @@ public class TestGeneratedBy extends JavadocTester {
     @Test
     public void testTimestamp() {
         javadoc("-d", "out-timestamp",
-                "--frames",
             "-sourcepath", testSrc,
             "pkg");
         checkExit(Exit.OK);
@@ -56,7 +55,6 @@ public class TestGeneratedBy extends JavadocTester {
     public void testNoTimestamp() {
         javadoc("-d", "out-notimestamp",
             "-notimestamp",
-                "--frames",
             "-sourcepath", testSrc,
             "pkg");
         checkExit(Exit.OK);
@@ -69,10 +67,8 @@ public class TestGeneratedBy extends JavadocTester {
         checkTimestamps(timestamp,
         "pkg/MyClass.html",
         "pkg/package-summary.html",
-        "pkg/package-frame.html",
         "pkg/package-tree.html",
         "constant-values.html",
-        "allclasses-frame.html",
         "overview-tree.html",
         "deprecated-list.html",
         "serialized-form.html",

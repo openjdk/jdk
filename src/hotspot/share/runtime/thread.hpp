@@ -1348,10 +1348,16 @@ class JavaThread: public Thread {
   inline void clear_ext_suspended();
 
  public:
-  void java_suspend();
-  void java_resume();
-  int  java_suspend_self();
+  void java_suspend(); // higher-level suspension logic called by the public APIs
+  void java_resume();  // higher-level resume logic called by the public APIs
+  int  java_suspend_self(); // low-level self-suspension mechanics
 
+ private:
+  // mid-level wrapper around java_suspend_self to set up correct state and
+  // check for a pending safepoint at the end
+  void java_suspend_self_with_safepoint_check();
+
+ public:
   void check_and_wait_while_suspended() {
     assert(JavaThread::current() == this, "sanity check");
 
@@ -1867,6 +1873,9 @@ class JavaThread: public Thread {
 
   // RedefineClasses Support
   void metadata_do(MetadataClosure* f);
+
+  // Debug method asserting thread states are correct during a handshake operation.
+  DEBUG_ONLY(void verify_states_for_handshake();)
 
   // Misc. operations
   char* name() const { return (char*)get_thread_name(); }

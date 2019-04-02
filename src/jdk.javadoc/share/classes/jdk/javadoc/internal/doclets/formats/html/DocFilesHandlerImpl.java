@@ -179,7 +179,7 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
         Content localTagsContent = docletWriter.commentTagsToContent(null, dfElement, localTags, false);
 
         String title = getWindowTitle(docletWriter, dfElement).trim();
-        HtmlTree htmlContent = docletWriter.getBody(true, title);
+        HtmlTree htmlContent = docletWriter.getBody(title);
         docletWriter.addTop(htmlContent);
         PackageElement pkg = (PackageElement) element;
         this.navBar = new Navigation(pkg, configuration, docletWriter.fixedNavDiv,

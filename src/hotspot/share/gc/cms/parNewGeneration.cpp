@@ -582,8 +582,7 @@ ParNewGenTask::ParNewGenTask(ParNewGeneration* young_gen,
     _young_gen(young_gen), _old_gen(old_gen),
     _young_old_boundary(young_old_boundary),
     _state_set(state_set),
-    _strong_roots_scope(strong_roots_scope),
-    _par_state_string(StringTable::weak_storage())
+    _strong_roots_scope(strong_roots_scope)
 {}
 
 void ParNewGenTask::work(uint worker_id) {

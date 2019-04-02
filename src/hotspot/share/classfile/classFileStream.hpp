@@ -44,7 +44,7 @@ class ClassFileStream: public ResourceObj {
   mutable const u1* _current;    // Current buffer position
   const char* const _source;     // Source of stream (directory name, ZIP/JAR archive name)
   bool _need_verify;             // True if verification is on for the class file
-
+  bool _from_boot_loader_modules_image;  // True if this was created by ClassPathImageEntry.
   void truncated_file_error(TRAPS) const ;
 
  protected:
@@ -57,7 +57,8 @@ class ClassFileStream: public ResourceObj {
   ClassFileStream(const u1* buffer,
                   int length,
                   const char* source,
-                  bool verify_stream = verify); // to be verified by default
+                  bool verify_stream = verify,  // to be verified by default
+                  bool from_boot_loader_modules_image = false);
 
   virtual const ClassFileStream* clone() const;
 
@@ -77,6 +78,7 @@ class ClassFileStream: public ResourceObj {
   const char* source() const { return _source; }
   bool need_verify() const { return _need_verify; }
   void set_verify(bool flag) { _need_verify = flag; }
+  bool from_boot_loader_modules_image() const { return _from_boot_loader_modules_image; }
 
   void check_truncated_file(bool b, TRAPS) const {
     if (b) {

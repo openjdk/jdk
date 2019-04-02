@@ -34,8 +34,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.debug.DebugContext;
+import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeMap;
@@ -58,7 +58,7 @@ import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
 import org.graalvm.compiler.nodes.java.NewArrayNode;
 import org.graalvm.compiler.nodes.java.NewInstanceNode;
 import org.graalvm.compiler.nodes.java.StoreFieldNode;
-import org.graalvm.compiler.nodes.spi.StampProvider;
+import org.graalvm.compiler.nodes.spi.CoreProviders;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.OptimisticOptimizations;
@@ -66,7 +66,6 @@ import org.graalvm.compiler.phases.graph.StatelessPostOrderNodeIterator;
 
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
@@ -89,18 +88,21 @@ import jdk.vm.ci.meta.ResolvedJavaType;
  * {@link MethodState#formalReturn return value}.
  */
 public class StaticAnalysis {
-    /** Access to type, method, and fields using the Graal API. */
-    private final MetaAccessProvider metaAccess;
-    /** Access to platform dependent stamps. */
-    private final StampProvider stampProvider;
-    /** The results of the static analysis. */
+    /**
+     * Access to various builtin providers.
+     */
+    private final CoreProviders providers;
+    /**
+     * The results of the static analysis.
+     */
     private final Results results;
-    /** Worklist for fixpoint iteration. */
+    /**
+     * Worklist for fixpoint iteration.
+     */
     private final Deque<WorklistEntry> worklist;
 
-    public StaticAnalysis(MetaAccessProvider metaAccess, StampProvider stampProvider) {
-        this.metaAccess = metaAccess;
-        this.stampProvider = stampProvider;
+    public StaticAnalysis(CoreProviders providers) {
+        this.providers = providers;
         this.results = new Results();
         this.worklist = new ArrayDeque<>();
     }
@@ -273,7 +275,7 @@ public class StaticAnalysis {
                      */
                     OptimisticOptimizations optimisticOpts = OptimisticOptimizations.NONE;
 
-                    GraphBuilderPhase.Instance graphBuilder = new GraphBuilderPhase.Instance(metaAccess, stampProvider, null, null, graphBuilderConfig, optimisticOpts, null);
+                    GraphBuilderPhase.Instance graphBuilder = new GraphBuilderPhase.Instance(providers, graphBuilderConfig, optimisticOpts, null);
                     graphBuilder.apply(graph);
                 } catch (Throwable ex) {
                     debug.handle(ex);
@@ -304,7 +306,9 @@ public class StaticAnalysis {
             uses = new HashSet<>();
         }
 
-        /** Returns the types of this element. */
+        /**
+         * Returns the types of this element.
+         */
         public Set<ResolvedJavaType> getTypes() {
             return types;
         }
@@ -349,7 +353,7 @@ public class StaticAnalysis {
      * Adding a new callee means linking the type flow of the actual parameters with the formal
      * parameters of the callee, and linking the return value of the callee with the return value
      * state of the invocation.
-     *
+     * <p>
      * Statically bindable methods calls ({@link InvokeKind#Static static} and
      * {@link InvokeKind#Special special} calls) have only one callee, but use the same code for
      * simplicity.

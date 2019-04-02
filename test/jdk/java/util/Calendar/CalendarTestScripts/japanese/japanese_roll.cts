@@ -147,13 +147,13 @@ test roll YEAR
 	roll year -1
 	check date Heisei 31 Apr 30
 
-	set date NewEra 2 Apr 30
+	set date Reiwa 2 Apr 30
 	get max year
 	assign $result $hmax
 	roll year -1
-	check date NewEra $hmax Apr 30
+	check date Reiwa $hmax Apr 30
 	roll year 1
-	check date NewEra 2 Apr 30
+	check date Reiwa 2 Apr 30
 
 test roll MONTH
 	set date BeforeMeiji 1867 Dec 1
@@ -276,16 +276,16 @@ test roll MONTH
 	check date BeforeMeiji $minyear May 18
 	check timeofday 1 47 4 191
 
-	set date NewEra 17 Jan 1
+	set date Reiwa 17 Jan 1
 	get max year
 	assign $result $max
-	set date NewEra $max Jul 28
+	set date Reiwa $max Jul 28
 	roll month 1
-	check date NewEra $max Aug 17
-	set date NewEra $max Jul 28
+	check date Reiwa $max Aug 17
+	set date Reiwa $max Jul 28
 	set timeofday 23 59 59 999
 	roll month 1
-	check date NewEra $max Aug 16
+	check date Reiwa $max Aug 16
 	check timeofday 23 59 59 999
 
 test roll WEEK_OF_YEAR

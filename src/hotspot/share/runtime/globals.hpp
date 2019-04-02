@@ -371,6 +371,10 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
           "Generate a lot of safepoints. This works with "                  \
           "GuaranteedSafepointInterval")                                    \
                                                                             \
+  diagnostic(bool, HandshakeALot, false,                                    \
+          "Generate a lot of handshakes. This works with "                  \
+          "GuaranteedSafepointInterval")                                    \
+                                                                            \
   product_pd(bool, BackgroundCompilation,                                   \
           "A thread requesting compilation is not blocked during "          \
           "compilation")                                                    \
@@ -1262,6 +1266,12 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
                                                                             \
   product(bool, DisplayVMOutputToStdout, false,                             \
           "If DisplayVMOutput is true, display all VM output to stdout")    \
+                                                                            \
+  product(bool, ErrorFileToStderr, false,                                   \
+          "If true, error data is printed to stderr instead of a file")     \
+                                                                            \
+  product(bool, ErrorFileToStdout, false,                                   \
+          "If true, error data is printed to stdout instead of a file")     \
                                                                             \
   product(bool, UseHeavyMonitors, false,                                    \
           "use heavyweight instead of lightweight Java monitors")           \

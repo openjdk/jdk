@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,9 @@ endif
 ifeq ($(call check-jvm-feature, zero), true)
   JVM_CFLAGS_FEATURES += -DZERO -DCC_INTERP -DZERO_LIBARCH='"$(OPENJDK_TARGET_CPU_LEGACY_LIB)"' $(LIBFFI_CFLAGS)
   JVM_LIBS_FEATURES += $(LIBFFI_LIBS)
+  ifeq ($(ENABLE_LIBFFI_BUNDLING), true)
+    JVM_LDFLAGS_FEATURES += $(call SET_EXECUTABLE_ORIGIN,/..)
+  endif
   ifeq ($(call isTargetCpu, sparcv9), true)
     BUILD_LIBJVM_EXTRA_FILES := $(TOPDIR)/src/hotspot/cpu/sparc/memset_with_concurrent_readers_sparc.cpp
   endif
@@ -123,7 +126,7 @@ ifneq ($(call check-jvm-feature, nmt), true)
   JVM_CFLAGS_FEATURES += -DINCLUDE_NMT=0
   JVM_EXCLUDE_FILES += \
       memBaseline.cpp memReporter.cpp mallocTracker.cpp virtualMemoryTracker.cpp nmtCommon.cpp \
-      memTracker.cpp nmtDCmd.cpp mallocSiteTable.cpp
+      memTracker.cpp nmtDCmd.cpp mallocSiteTable.cpp threadStackTracker.cpp
 endif
 
 ifneq ($(call check-jvm-feature, aot), true)

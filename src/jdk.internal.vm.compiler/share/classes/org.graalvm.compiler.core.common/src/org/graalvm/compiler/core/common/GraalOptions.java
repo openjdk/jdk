@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -278,4 +278,8 @@ public final class GraalOptions {
 
     @Option(help = "Enable inlining decision tracing in stubs and snippets.", type = OptionType.Debug)
     public static final OptionKey<Boolean> TraceInliningForStubsAndSnippets = new OptionKey<>(false);
+
+    @Option(help = "Use Graal-generated stubs for complicated LIR operations instead of embedding all the emitted code.")
+    public static final OptionKey<Boolean> UseGraalStubs = new OptionKey<>(true);
+
 }

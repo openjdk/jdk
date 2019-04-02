@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,6 @@
  * @requires vm.cds
  * @requires vm.cds.custom.loaders
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds
- * @modules java.base/jdk.internal.misc
- *          java.management
  * @compile test-classes/Hello.java test-classes/CustomLoadee.java
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller -jar hello.jar Hello
@@ -43,6 +41,9 @@ import sun.hotspot.WhiteBox;
 
 public class HelloCustom {
     public static void main(String[] args) throws Exception {
+        run();
+    }
+    public static void run(String... extra_runtime_args) throws Exception {
         String wbJar = ClassFileInstaller.getJarPath("WhiteBox.jar");
         String use_whitebox_jar = "-Xbootclasspath/a:" + wbJar;
 
@@ -62,11 +63,12 @@ public class HelloCustom {
                             use_whitebox_jar);
 
         output = TestCommon.exec(appJar,
-                                 // command-line arguments ...
-                                 use_whitebox_jar,
-                                 "-XX:+UnlockDiagnosticVMOptions",
-                                 "-XX:+WhiteBoxAPI",
-                                 "Hello", customJarPath);
+                                 TestCommon.concat(extra_runtime_args,
+                                     // command-line arguments ...
+                                     use_whitebox_jar,
+                                     "-XX:+UnlockDiagnosticVMOptions",
+                                     "-XX:+WhiteBoxAPI",
+                                     "Hello", customJarPath));
         TestCommon.checkExec(output);
     }
 }

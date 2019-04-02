@@ -67,7 +67,7 @@ public class VerifyCallerSensitiveMethods extends VerifyPhase<PhaseContext> {
     }
 
     @Override
-    protected boolean verify(StructuredGraph graph, PhaseContext context) {
+    protected void verify(StructuredGraph graph, PhaseContext context) {
         Invoke invoke = callsReflectionGetCallerClass(graph, context);
         Annotation annotation = graph.method().getAnnotation(callerSensitiveClass);
         if (invoke != null) {
@@ -79,7 +79,6 @@ public class VerifyCallerSensitiveMethods extends VerifyPhase<PhaseContext> {
         } else if (annotation != null) {
             throw new VerificationError(String.format("%s: method annotated with @CallerSensitive does not call Reflection.getCallerClass()", graph.method().format("%H.%n(%p)")));
         }
-        return true;
     }
 
     private Invoke callsReflectionGetCallerClass(StructuredGraph graph, PhaseContext context) {

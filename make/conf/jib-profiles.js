@@ -365,7 +365,8 @@ var getJibProfilesCommon = function (input, data) {
         };
     };
 
-    common.boot_jdk_version = "11";
+    common.boot_jdk_version = "12";
+    common.boot_jdk_build_number = "33";
     common.boot_jdk_home = input.get("boot_jdk", "install_path") + "/jdk-"
         + common.boot_jdk_version
         + (input.build_os == "macosx" ? ".jdk/Contents/Home" : "");
@@ -754,7 +755,11 @@ var getJibProfilesProfiles = function (input, common, data) {
             profiles[cmpBaselineName] = clone(profiles[name + suffix]);
             // Only compare the images target. This should pressumably be expanded
             // to include more build targets when possible.
-            profiles[cmpBaselineName].default_make_targets = [ "images" ];
+            profiles[cmpBaselineName].default_make_targets = [ "images", "test-image" ];
+            if (name == "linux-x64") {
+                profiles[cmpBaselineName].default_make_targets
+                    = concat(profiles[cmpBaselineName].default_make_targets, "docs");
+            }
             profiles[cmpBaselineName].make_args = [ "COMPARE_BUILD=CONF=" ];
             // Do not inherit artifact definitions from base profile
             delete profiles[cmpBaselineName].artifacts;
@@ -980,7 +985,7 @@ var getJibProfilesDependencies = function (input, common) {
             server: "jpg",
             product: "jdk",
             version: common.boot_jdk_version,
-            build_number: "28",
+            build_number: common.boot_jdk_build_number,
             file: "bundles/" + boot_jdk_platform + "/jdk-" + common.boot_jdk_version + "_"
                 + boot_jdk_platform + "_bin" + boot_jdk_ext,
             configure_args: "--with-boot-jdk=" + common.boot_jdk_home,

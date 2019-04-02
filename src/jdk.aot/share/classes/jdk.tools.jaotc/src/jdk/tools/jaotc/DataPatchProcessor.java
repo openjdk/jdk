@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ import jdk.vm.ci.hotspot.HotSpotMetaspaceConstant;
 import jdk.vm.ci.hotspot.HotSpotObjectConstant;
 import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
 import jdk.vm.ci.hotspot.HotSpotSentinelConstant;
+import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.VMConstant;
 
 final class DataPatchProcessor {
@@ -95,21 +96,24 @@ final class DataPatchProcessor {
                 gotName = "got." + targetSymbol;
                 binaryContainer.addCountersSymbol(targetSymbol);
             }
-        } else if (constant instanceof HotSpotObjectConstant) {
-            HotSpotObjectConstant oopConstant = (HotSpotObjectConstant) constant;
-            if (oopConstant instanceof HotSpotConstantPoolObject) {
-                HotSpotConstantPoolObject cpo = (HotSpotConstantPoolObject) oopConstant;
+        } else if (constant instanceof JavaConstant) {
+            JavaConstant jConstant = (JavaConstant) constant;
+            if (jConstant instanceof HotSpotConstantPoolObject) {
+                HotSpotConstantPoolObject cpo = (HotSpotConstantPoolObject) jConstant;
                 // Even if two locations use the same object, resolve separately
-                targetSymbol = "ldc." + cpo.getCpType().getName() + cpo.getCpi();
-            } else {
+                targetSymbol = "ldc." + cpo.toValueString();
+                Integer offset = binaryContainer.addOopSymbol(targetSymbol);
+                gotName = "got.ldc." + offset;
+            } else if (jConstant instanceof HotSpotObjectConstant) {
+                HotSpotObjectConstant oopConstant = (HotSpotObjectConstant) jConstant;
                 // String constant.
                 targetSymbol = "ldc." + oopConstant.toValueString();
+                Integer offset = binaryContainer.addOopSymbol(targetSymbol);
+                gotName = "got.ldc." + offset;
+            } else if (jConstant instanceof HotSpotSentinelConstant) {
+                targetSymbol = "state.M" + methodInfo.getCodeId();
+                gotName = "got." + targetSymbol;
             }
-            Integer offset = binaryContainer.addOopSymbol(targetSymbol);
-            gotName = "got.ldc." + offset;
-        } else if (constant instanceof HotSpotSentinelConstant) {
-            targetSymbol = "state.M" + methodInfo.getCodeId();
-            gotName = "got." + targetSymbol;
         }
 
         assert gotName != null : "Unknown constant type: " + constant;

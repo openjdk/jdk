@@ -105,7 +105,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
      */
     @Override
     public Content getPackageHeader(String heading) {
-        HtmlTree bodyTree = getBody(true, getWindowTitle(utils.getPackageName(packageElement)));
+        HtmlTree bodyTree = getBody(getWindowTitle(utils.getPackageName(packageElement)));
         HtmlTree htmlTree = HtmlTree.HEADER();
         addTop(htmlTree);
         Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(packageElement),

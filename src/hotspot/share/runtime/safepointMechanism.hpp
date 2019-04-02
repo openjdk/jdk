@@ -46,9 +46,13 @@ class SafepointMechanism : public AllStatic {
 
   static inline bool local_poll_armed(JavaThread* thread);
 
+  static inline void disarm_local_poll(JavaThread* thread);
+  static inline void disarm_local_poll_release(JavaThread* thread);
+
   static inline bool local_poll(Thread* thread);
   static inline bool global_poll();
 
+  static void block_or_handshake(JavaThread *thread);
   static void block_if_requested_slow(JavaThread *thread);
 
   static void default_initialize();
@@ -80,10 +84,10 @@ public:
 
   // Caller is responsible for using a memory barrier if needed.
   static inline void arm_local_poll(JavaThread* thread);
-  static inline void disarm_local_poll(JavaThread* thread);
-
+  // Release semantics
   static inline void arm_local_poll_release(JavaThread* thread);
-  static inline void disarm_local_poll_release(JavaThread* thread);
+  // Optional release
+  static inline void disarm_if_needed(JavaThread* thread, bool memory_order_release);
 
   // Setup the selected safepoint mechanism
   static void initialize();

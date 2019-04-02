@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -240,11 +240,11 @@ public class ZoneOffsets {
     }
 
     private static void adjustJapaneseEra(Calendar cal) {
-        // In case of Japanese calendar, explicitly set the last era; NEWERA so that
+        // In case of Japanese calendar, explicitly set the last era; REIWA so that
         // year 2005 won't throw exception
         if (!cal.isLenient() &&
                 cal.getCalendarType().equals("japanese") &&
-                System.currentTimeMillis() < 1556668800000L) { // Current time not in NEWERA
+                System.currentTimeMillis() < 1556668800000L) { // Current time not in REIWA
             cal.set(Calendar.ERA, 5);
             cal.add(Calendar.YEAR, -30); // -30: Subtract year-length of HEISEI era
         }

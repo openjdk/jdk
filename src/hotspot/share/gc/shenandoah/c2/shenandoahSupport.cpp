@@ -682,7 +682,7 @@ uint ShenandoahBarrierNode::hash() const {
   return TypeNode::hash() + _allow_fromspace;
 }
 
-uint ShenandoahBarrierNode::cmp(const Node& n) const {
+bool ShenandoahBarrierNode::cmp(const Node& n) const {
   return _allow_fromspace == ((ShenandoahBarrierNode&) n)._allow_fromspace
     && TypeNode::cmp(n);
 }
@@ -3400,6 +3400,7 @@ const Type* ShenandoahEnqueueBarrierNode::Value(PhaseGVN* phase) const {
 int ShenandoahEnqueueBarrierNode::needed(Node* n) {
   if (n == NULL ||
       n->is_Allocate() ||
+      n->Opcode() == Op_ShenandoahEnqueueBarrier ||
       n->bottom_type() == TypePtr::NULL_PTR ||
       (n->bottom_type()->make_oopptr() != NULL && n->bottom_type()->make_oopptr()->const_oop() != NULL)) {
     return NotNeeded;

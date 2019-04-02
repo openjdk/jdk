@@ -123,8 +123,13 @@ public class Offsets {
             throw new RuntimeException("Test doesn't support this signature "
                     + "algorithm: " + algorithm);
         }
-
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance(keyAlgo, provider);
+        KeyPairGenerator kpg = null;
+        // first try matching provider, fallback to most preferred if none available
+        try {
+            kpg = KeyPairGenerator.getInstance(keyAlgo, provider);
+        } catch (NoSuchAlgorithmException nsae) {
+            kpg = KeyPairGenerator.getInstance(keyAlgo);
+        }
         kpg.initialize(keySize);
         KeyPair kp = kpg.generateKeyPair();
         PublicKey pubkey = kp.getPublic();

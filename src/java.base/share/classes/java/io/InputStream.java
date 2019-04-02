@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -237,7 +237,7 @@ public abstract class InputStream implements Closeable {
      * <code>b[off+len-1]</code> unaffected.
      *
      * <p> In every case, elements <code>b[0]</code> through
-     * <code>b[off]</code> and elements <code>b[off+len]</code> through
+     * <code>b[off-1]</code> and elements <code>b[off+len]</code> through
      * <code>b[b.length-1]</code> are unaffected.
      *
      * <p> The <code>read(b,</code> <code>off,</code> <code>len)</code> method

@@ -50,7 +50,7 @@ import sun.util.calendar.ZoneInfo;
  *     2       Taisho      1912-07-30T00:00:00 local time
  *     3       Showa       1926-12-25T00:00:00 local time
  *     4       Heisei      1989-01-08T00:00:00 local time
- *     5       NewEra      2019-05-01T00:00:00 local time
+ *     5       Reiwa       2019-05-01T00:00:00 local time
  * ------------------------------------------------------
  * }</pre>
  *
@@ -129,9 +129,9 @@ class JapaneseImperialCalendar extends Calendar {
     public static final int HEISEI = 4;
 
     /**
-     * The ERA constant designating the NewEra era.
+     * The ERA constant designating the Reiwa era.
      */
-    private static final int NEWERA = 5;
+    private static final int REIWA = 5;
 
     private static final int EPOCH_OFFSET   = 719163; // Fixed date of January 1, 1970 (Gregorian)
 
@@ -1761,12 +1761,12 @@ class JapaneseImperialCalendar extends Calendar {
                     }
                 } else if (transitionYear) {
                     if (jdate.getYear() == 1) {
-                        // As of NewEra (since Meiji) there's no case
+                        // As of Reiwa (since Meiji) there's no case
                         // that there are multiple transitions in a
                         // year.  Historically there was such
                         // case. There might be such case again in the
                         // future.
-                        if (era > NEWERA) {
+                        if (era > REIWA) {
                             CalendarDate pd = eras[era - 1].getSinceDate();
                             if (normalizedYear == pd.getYear()) {
                                 d.setMonth(pd.getMonth()).setDayOfMonth(pd.getDayOfMonth());

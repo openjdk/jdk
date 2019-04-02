@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @library /test/lib
  * @bug 6401598
  * @summary  new HttpServer cannot serve binary stream data
  */
@@ -31,8 +32,11 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.concurrent.*;
+
+import jdk.test.lib.net.URIBuilder;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -90,7 +94,14 @@ public class B6401598 {
                         short counter;
 
                         for (counter = 0; counter < 1000; counter++) {
-                                HttpURLConnection connection = getHttpURLConnection(new URL("http://127.0.0.1:"+port+"/server/"), 10000);
+                                URL url = URIBuilder.newBuilder()
+                                    .scheme("http")
+                                    .loopback()
+                                    .port(port)
+                                    .path("/server/")
+                                    .toURLUnchecked();
+                                System.out.println("URL: " + url);
+                                HttpURLConnection connection = getHttpURLConnection(url, 10000);
 
                                 OutputStream os = connection.getOutputStream();
 

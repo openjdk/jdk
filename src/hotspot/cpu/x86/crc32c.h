@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
 * questions.
 *
 */
+
+#ifndef CPU_X86_CRC32C_H
+#define CPU_X86_CRC32C_H
 
 enum {
   // S. Gueron / Information Processing Letters 112 (2012) 184
@@ -64,3 +67,5 @@ enum {
 // a) constants table generation (hotspot/src/cpu/x86/vm/stubRoutines_x86.cpp)
 // b) constant fetch from that table (macroAssembler_x86.cpp)
 // c) unrolled for loop (macroAssembler_x86.cpp)
+
+#endif /* !CPU_X86_CRC32C_H */

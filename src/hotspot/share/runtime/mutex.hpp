@@ -27,8 +27,6 @@
 
 #include "memory/allocation.hpp"
 #include "runtime/os.hpp"
-#include "utilities/histogram.hpp"
-
 
 // A Mutex/Monitor is a simple wrapper around a native lock plus condition
 // variable that supports lock ownership tracking, lock ranking for deadlock

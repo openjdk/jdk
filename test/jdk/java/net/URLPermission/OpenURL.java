@@ -24,11 +24,13 @@
 /*
  * @test
  * @bug 8029354
+ * @library /test/lib
  * @run main/othervm OpenURL
  */
 
 import java.net.*;
 import java.io.*;
+import jdk.test.lib.net.URIBuilder;
 
 public class OpenURL {
 
@@ -37,7 +39,13 @@ public class OpenURL {
         System.setSecurityManager(new SecurityManager());
 
         try {
-            URL url = new URL ("http://joe@127.0.0.1/a/b");
+            URL url = URIBuilder.newBuilder()
+                .scheme("http")
+                .userInfo("joe")
+                .loopback()
+                .path("/a/b")
+                .toURL();
+            System.out.println("URL: " + url);
             HttpURLConnection urlc = (HttpURLConnection)url.openConnection();
             InputStream is = urlc.getInputStream();
             // error will throw exception other than SecurityException

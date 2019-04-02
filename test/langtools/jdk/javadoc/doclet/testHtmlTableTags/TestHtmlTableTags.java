@@ -52,7 +52,6 @@ public class TestHtmlTableTags extends JavadocTester {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
                 "-use",
-                "--frames",
                 "pkg1", "pkg2");
         checkExit(Exit.OK);
 
@@ -129,7 +128,7 @@ public class TestHtmlTableTags extends JavadocTester {
                 "<div class=\"constantsSummary\">\n<table>");
 
         // Overview Summary
-        checkOutput("overview-summary.html", true,
+        checkOutput("index.html", true,
                 "<div class=\"overviewSummary\">\n<table>");
     }
 
@@ -240,7 +239,7 @@ public class TestHtmlTableTags extends JavadocTester {
                 + "constant fields, and values\">");
 
         // Overview Summary
-        checkOutput("overview-summary.html", true,
+        checkOutput("index.html", true,
                 "<div class=\"overviewSummary\">\n"
                 + "<table summary=\"Package Summary table, listing packages, and an explanation\">");
     }
@@ -353,7 +352,7 @@ public class TestHtmlTableTags extends JavadocTester {
                 + "C1</a></span><span class=\"tabEnd\">&nbsp;</span></caption>");
 
         // Overview Summary
-        checkOutput("overview-summary.html", true,
+        checkOutput("index.html", true,
                 "<caption><span>Packages</span><span class=\"tabEnd\">&nbsp;</span></caption>");
     }
 
@@ -469,7 +468,7 @@ public class TestHtmlTableTags extends JavadocTester {
                 + "<th class=\"colLast\" scope=\"col\">Value</th>");
 
         // Overview Summary
-        checkOutput("overview-summary.html", true,
+        checkOutput("index.html", true,
                 "<th class=\"colFirst\" scope=\"col\">"
                 + "Package</th>\n"
                 + "<th class=\"colLast\" scope=\"col\""

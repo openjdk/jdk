@@ -26,6 +26,7 @@
 #include "memory/allocation.hpp"
 #include "services/mallocTracker.hpp"
 #include "services/memReporter.hpp"
+#include "services/threadStackTracker.hpp"
 #include "services/virtualMemoryTracker.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -46,11 +47,13 @@ void MemReporterBase::print_total(size_t reserved, size_t committed) const {
 void MemReporterBase::print_malloc(size_t amount, size_t count, MEMFLAGS flag) const {
   const char* scale = current_scale();
   outputStream* out = output();
+  const char* alloc_type = (flag == mtThreadStack) ? "" : "malloc=";
+
   if (flag != mtNone) {
-    out->print("(malloc=" SIZE_FORMAT "%s type=%s",
+    out->print("(%s" SIZE_FORMAT "%s type=%s", alloc_type,
       amount_in_current_scale(amount), scale, NMTUtil::flag_to_name(flag));
   } else {
-    out->print("(malloc=" SIZE_FORMAT "%s",
+    out->print("(%s" SIZE_FORMAT "%s", alloc_type,
       amount_in_current_scale(amount), scale);
   }
 
@@ -126,10 +129,17 @@ void MemSummaryReporter::report_summary_of_type(MEMFLAGS flag,
 
   // Count thread's native stack in "Thread" category
   if (flag == mtThread) {
-    const VirtualMemory* thread_stack_usage =
-      (const VirtualMemory*)_vm_snapshot->by_type(mtThreadStack);
-    reserved_amount  += thread_stack_usage->reserved();
-    committed_amount += thread_stack_usage->committed();
+    if (ThreadStackTracker::track_as_vm()) {
+      const VirtualMemory* thread_stack_usage =
+        (const VirtualMemory*)_vm_snapshot->by_type(mtThreadStack);
+      reserved_amount  += thread_stack_usage->reserved();
+      committed_amount += thread_stack_usage->committed();
+    } else {
+      const MallocMemory* thread_stack_usage =
+        (const MallocMemory*)_malloc_snapshot->by_type(mtThreadStack);
+      reserved_amount += thread_stack_usage->malloc_size();
+      committed_amount += thread_stack_usage->malloc_size();
+    }
   } else if (flag == mtNMT) {
     // Count malloc headers in "NMT" category
     reserved_amount  += _malloc_snapshot->malloc_overhead()->size();
@@ -150,12 +160,22 @@ void MemSummaryReporter::report_summary_of_type(MEMFLAGS flag,
       out->print_cr("%27s (  instance classes #" SIZE_FORMAT ", array classes #" SIZE_FORMAT ")",
         " ", _instance_class_count, _array_class_count);
     } else if (flag == mtThread) {
-      // report thread count
-      out->print_cr("%27s (thread #" SIZE_FORMAT ")", " ", _malloc_snapshot->thread_count());
-      const VirtualMemory* thread_stack_usage =
-       _vm_snapshot->by_type(mtThreadStack);
-      out->print("%27s (stack: ", " ");
-      print_total(thread_stack_usage->reserved(), thread_stack_usage->committed());
+      if (ThreadStackTracker::track_as_vm()) {
+        const VirtualMemory* thread_stack_usage =
+         _vm_snapshot->by_type(mtThreadStack);
+        // report thread count
+        out->print_cr("%27s (thread #" SIZE_FORMAT ")", " ", ThreadStackTracker::thread_count());
+        out->print("%27s (stack: ", " ");
+        print_total(thread_stack_usage->reserved(), thread_stack_usage->committed());
+      } else {
+        MallocMemory* thread_stack_memory = _malloc_snapshot->by_type(mtThreadStack);
+        const char* scale = current_scale();
+        // report thread count
+        assert(ThreadStackTracker::thread_count() == 0, "Not used");
+        out->print_cr("%27s (thread #" SIZE_FORMAT ")", " ", thread_stack_memory->malloc_count());
+        out->print("%27s (Stack: " SIZE_FORMAT "%s", " ",
+          amount_in_current_scale(thread_stack_memory->malloc_size()), scale);
+      }
       out->print_cr(")");
     }
 
@@ -368,10 +388,11 @@ void MemSummaryDiffReporter::print_malloc_diff(size_t current_amount, size_t cur
     size_t early_amount, size_t early_count, MEMFLAGS flags) const {
   const char* scale = current_scale();
   outputStream* out = output();
+  const char* alloc_type = (flags == mtThread) ? "" : "malloc=";
 
-  out->print("malloc=" SIZE_FORMAT "%s", amount_in_current_scale(current_amount), scale);
-  // Report type only if it is valid
-  if (flags != mtNone) {
+  out->print("%s" SIZE_FORMAT "%s", alloc_type, amount_in_current_scale(current_amount), scale);
+  // Report type only if it is valid and not under "thread" category
+  if (flags != mtNone && flags != mtThread) {
     out->print(" type=%s", NMTUtil::flag_to_name(flags));
   }
 
@@ -497,15 +518,25 @@ void MemSummaryDiffReporter::diff_summary_of_type(MEMFLAGS flag,
       }
       out->print_cr(")");
 
-      // report thread stack
-      const VirtualMemory* current_thread_stack =
-          _current_baseline.virtual_memory(mtThreadStack);
-      const VirtualMemory* early_thread_stack =
-        _early_baseline.virtual_memory(mtThreadStack);
-
       out->print("%27s (stack: ", " ");
-      print_virtual_memory_diff(current_thread_stack->reserved(), current_thread_stack->committed(),
-        early_thread_stack->reserved(), early_thread_stack->committed());
+      if (ThreadStackTracker::track_as_vm()) {
+        // report thread stack
+        const VirtualMemory* current_thread_stack =
+          _current_baseline.virtual_memory(mtThreadStack);
+        const VirtualMemory* early_thread_stack =
+          _early_baseline.virtual_memory(mtThreadStack);
+
+        print_virtual_memory_diff(current_thread_stack->reserved(), current_thread_stack->committed(),
+          early_thread_stack->reserved(), early_thread_stack->committed());
+      } else {
+        const MallocMemory* current_thread_stack =
+          _current_baseline.malloc_memory(mtThreadStack);
+        const MallocMemory* early_thread_stack =
+          _early_baseline.malloc_memory(mtThreadStack);
+
+        print_malloc_diff(current_thread_stack->malloc_size(), current_thread_stack->malloc_count(),
+          early_thread_stack->malloc_size(), early_thread_stack->malloc_count(), flag);
+      }
       out->print_cr(")");
     }
 

@@ -93,7 +93,15 @@ class ParallelScavengeHeap : public CollectedHeap {
 
  public:
   ParallelScavengeHeap(GenerationSizer* policy) :
-    CollectedHeap(), _collector_policy(policy), _death_march_count(0) { }
+    CollectedHeap(),
+    _collector_policy(policy),
+    _gens(NULL),
+    _death_march_count(0),
+    _young_manager(NULL),
+    _old_manager(NULL),
+    _eden_pool(NULL),
+    _survivor_pool(NULL),
+    _old_pool(NULL) { }
 
   // For use by VM operations
   enum CollectionType {

@@ -40,9 +40,8 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 
 /**
- * Abstract class to generate the overview files in
- * Frame and Non-Frame format. This will be sub-classed by to
- * generate overview-frame.html as well as overview-summary.html.
+ * Abstract class to generate the overview files. This will be sub-classed to
+ * generate overview-summary.html.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
@@ -103,19 +102,16 @@ public abstract class AbstractPackageIndexWriter extends HtmlDocletWriter {
     protected abstract void addPackagesList(Content main);
 
     /**
-     * Generate and prints the contents in the package index file. Call appropriate
-     * methods from the sub-class in order to generate Frame or Non
-     * Frame format.
+     * Generate and prints the contents in the package index file.
      *
      * @param title the title of the window
      * @param description the content for the description META tag
-     * @param includeScript boolean set true if windowtitle script is to be included
      * @throws DocFileIOException if there is a problem building the package index file
      */
-    protected void buildPackageIndexFile(String title, String description, boolean includeScript)
+    protected void buildPackageIndexFile(String title, String description)
             throws DocFileIOException {
         String windowOverview = resources.getText(title);
-        Content body = getBody(includeScript, getWindowTitle(windowOverview));
+        Content body = getBody(getWindowTitle(windowOverview));
         Content header = HtmlTree.HEADER();
         addNavigationBarHeader(header);
         Content main = HtmlTree.MAIN();
@@ -140,7 +136,7 @@ public abstract class AbstractPackageIndexWriter extends HtmlDocletWriter {
     protected void addOverview(Content main) { }
 
     /**
-     * Adds the frame or non-frame package index to the documentation tree.
+     * Adds the package index to the documentation tree.
      *
      * @param header the document tree to which the navigation links will be added
      * @param main the document tree to which the packages list will be added

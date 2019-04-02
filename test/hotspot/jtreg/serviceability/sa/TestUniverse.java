@@ -29,99 +29,107 @@ import java.util.Map;
 import java.util.HashMap;
 import jdk.test.lib.apps.LingeredApp;
 import jtreg.SkippedException;
+import sun.hotspot.gc.GC;
 
 /**
  * @test
  * @summary Test the 'universe' command of jhsdb clhsdb.
- * @requires vm.hasSAandCanAttach & vm.gc != "Z"
+ * @requires vm.hasSAandCanAttach
  * @bug 8190307
  * @library /test/lib
  * @build jdk.test.lib.apps.*
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. TestUniverse withoutZ
- */
-
-/**
- * @test
- * @summary Test the 'universe' command of jhsdb clhsdb.
- * @requires vm.hasSAandCanAttach & vm.gc == "Z"
- * @bug 8190307
- * @library /test/lib
- * @build jdk.test.lib.apps.*
- * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. TestUniverse withZ
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. TestUniverse
  */
 
 public class TestUniverse {
 
-    private static void testClhsdbForUniverse(long lingeredAppPid,
-                                              String gc) throws Exception {
-
+    private static void testClhsdbForUniverse(long lingeredAppPid, GC gc) throws Exception {
         ClhsdbLauncher launcher = new ClhsdbLauncher();
         List<String> cmds = List.of("universe");
         Map<String, List<String>> expStrMap = new HashMap<>();
         List<String> expStrings = new ArrayList<String>();
         expStrings.add("Heap Parameters");
 
-        if (gc.contains("UseZGC")) {
-            expStrings.add("ZHeap");
-        }
-        if (gc.contains("G1GC")) {
+        switch (gc) {
+        case Serial:
+            expStrings.add("Gen 1:   old");
+            break;
+
+        case Parallel:
+            expStrings.add("ParallelScavengeHeap");
+            expStrings.add("PSYoungGen");
+            expStrings.add("eden");
+            break;
+
+        case ConcMarkSweep:
+            expStrings.add("Gen 1: concurrent mark-sweep generation");
+            break;
+
+        case G1:
             expStrings.add("garbage-first heap");
             expStrings.add("region size");
             expStrings.add("G1 Young Generation:");
             expStrings.add("regions  =");
-        }
-        if (gc.contains("UseConcMarkSweepGC")) {
-            expStrings.add("Gen 1: concurrent mark-sweep generation");
-        }
-        if (gc.contains("UseSerialGC")) {
-            expStrings.add("Gen 1:   old");
-        }
-        if (gc.contains("UseParallelGC")) {
-            expStrings.add("ParallelScavengeHeap");
-            expStrings.add("PSYoungGen");
-            expStrings.add("eden");
-        }
-        if (gc.contains("UseEpsilonGC")) {
+            break;
+
+        case Epsilon:
             expStrings.add("Epsilon heap");
             expStrings.add("reserved");
             expStrings.add("committed");
             expStrings.add("used");
+            break;
+
+        case Z:
+            expStrings.add("ZHeap");
+            break;
+
+        case Shenandoah:
+            expStrings.add("Shenandoah Heap");
+            break;
         }
+
         expStrMap.put("universe", expStrings);
         launcher.run(lingeredAppPid, cmds, expStrMap, null);
     }
 
-    public static void test(String gc) throws Exception {
+    private static void test(GC gc) throws Exception {
         LingeredApp app = null;
         try {
-            List<String> vmArgs = new ArrayList<String>();
-            vmArgs.add("-XX:+UnlockExperimentalVMOptions"); // unlock experimental GCs
-            vmArgs.add(gc);
-            app = LingeredApp.startApp(vmArgs);
-            System.out.println ("Started LingeredApp with the GC option " + gc +
-                                " and pid " + app.getPid());
+            app = LingeredApp.startApp(List.of("-XX:+UnlockExperimentalVMOptions", "-XX:+Use" + gc + "GC"));
+            System.out.println ("Started LingeredApp with " + gc + "GC and pid " + app.getPid());
             testClhsdbForUniverse(app.getPid(), gc);
         } finally {
             LingeredApp.stopApp(app);
         }
     }
 
+    private static boolean isSelectedAndSupported(GC gc) {
+        if (!gc.isSelected()) {
+            // Not selected
+            return false;
+        }
+
+        if (Compiler.isGraalEnabled()) {
+            if (gc == GC.ConcMarkSweep || gc == GC.Epsilon || gc == GC.Z || gc == GC.Shenandoah) {
+                // Not supported
+                System.out.println ("Skipped testing of " + gc + "GC, not supported by Graal");
+                return false;
+            }
+        }
+
+        // Selected and supported
+        return true;
+    }
+
     public static void main (String... args) throws Exception {
-        System.out.println("Starting TestUniverse test");
+        System.out.println("Starting TestUniverse");
         try {
-            test("-XX:+UseG1GC");
-            test("-XX:+UseParallelGC");
-            test("-XX:+UseSerialGC");
-            if (!Compiler.isGraalEnabled()) { // Graal does not support all GCs
-                test("-XX:+UseConcMarkSweepGC");
-                if (args[0].equals("withZ")) {
-                    test("-XX:+UseZGC");
+            for (GC gc: GC.values()) {
+                if (isSelectedAndSupported(gc)) {
+                    test(gc);
                 }
-                test("-XX:+UseEpsilonGC");
             }
         } catch (SkippedException se) {
             throw se;

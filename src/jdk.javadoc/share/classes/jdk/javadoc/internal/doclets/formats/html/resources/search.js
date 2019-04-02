@@ -77,7 +77,7 @@ $(function() {
             $(this).val(watermark).addClass('watermark');
         }
     });
-    $("#search").on('click keydown', function() {
+    $("#search").on('click keydown paste', function() {
         if ($(this).val() == watermark) {
             $(this).val('').removeClass('watermark');
         }

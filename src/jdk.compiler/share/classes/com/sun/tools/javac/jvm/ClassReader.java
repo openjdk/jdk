@@ -3079,7 +3079,7 @@ public class ClassReader {
                 }
             } catch (Exception e) {
                 throw new CompletionFailure(sym,
-                                            ClassReader.this.diagFactory.fragment(Fragments.ExceptionMessage(e.getMessage())),
+                                            () -> ClassReader.this.diagFactory.fragment(Fragments.ExceptionMessage(e.getMessage())),
                                             dcfh);
             }
 

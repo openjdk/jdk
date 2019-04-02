@@ -40,6 +40,8 @@ import jdk.vm.ci.meta.SpeculationLog.Speculation;
 
 public interface LoweringTool {
 
+    CoreProviders getProviders();
+
     MetaAccessProvider getMetaAccess();
 
     LoweringProvider getLowerer();

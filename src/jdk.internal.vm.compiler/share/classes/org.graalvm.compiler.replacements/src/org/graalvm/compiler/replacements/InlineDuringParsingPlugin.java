@@ -35,17 +35,26 @@ import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.nodes.graphbuilderconf.InlineInvokePlugin;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.services.Services;
 
 public final class InlineDuringParsingPlugin implements InlineInvokePlugin {
+
+    private static int getInteger(String name, int def) {
+        String value = Services.getSavedProperties().get(name);
+        if (value != null) {
+            return Integer.parseInt(value);
+        }
+        return def;
+    }
 
     /**
      * Budget which when exceeded reduces the effective value of
      * {@link BytecodeParserOptions#InlineDuringParsingMaxDepth} to
      * {@link #MaxDepthAfterBudgetExceeded}.
      */
-    private static final int NodeBudget = Integer.getInteger("InlineDuringParsingPlugin.NodeBudget", 2000);
+    private static final int NodeBudget = getInteger("InlineDuringParsingPlugin.NodeBudget", 2000);
 
-    private static final int MaxDepthAfterBudgetExceeded = Integer.getInteger("InlineDuringParsingPlugin.MaxDepthAfterBudgetExceeded", 3);
+    private static final int MaxDepthAfterBudgetExceeded = getInteger("InlineDuringParsingPlugin.MaxDepthAfterBudgetExceeded", 3);
 
     @Override
     public InlineInfo shouldInlineInvoke(GraphBuilderContext b, ResolvedJavaMethod method, ValueNode[] args) {

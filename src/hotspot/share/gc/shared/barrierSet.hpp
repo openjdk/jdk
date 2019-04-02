@@ -130,8 +130,18 @@ public:
   virtual void on_slowpath_allocation_exit(JavaThread* thread, oop new_obj) {}
   virtual void on_thread_create(Thread* thread) {}
   virtual void on_thread_destroy(Thread* thread) {}
+
+  // These perform BarrierSet-related initialization/cleanup before the thread
+  // is added to or removed from the corresponding set of threads. The
+  // argument thread is the current thread. These are called either holding
+  // the Threads_lock (for a JavaThread) and so not at a safepoint, or holding
+  // the NonJavaThreadsList_lock (for a NonJavaThread) locked by the
+  // caller. That locking ensures the operation is "atomic" with the list
+  // modification wrto operations that hold the NJTList_lock and either also
+  // hold the Threads_lock or are at a safepoint.
   virtual void on_thread_attach(Thread* thread) {}
   virtual void on_thread_detach(Thread* thread) {}
+
   virtual void make_parsable(JavaThread* thread) {}
 
 #ifdef CHECK_UNHANDLED_OOPS

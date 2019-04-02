@@ -434,7 +434,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         String clname = utils.getFullyQualifiedName(typeElement);
         String title = resources.getText("doclet.Window_ClassUse_Header",
                 cltype, clname);
-        HtmlTree bodyTree = getBody(true, getWindowTitle(title));
+        HtmlTree bodyTree = getBody(getWindowTitle(title));
         HtmlTree htmlTree = HtmlTree.HEADER();
         addTop(htmlTree);
         Content mdleLinkContent = getModuleLink(utils.elementUtils.getModuleOf(typeElement),

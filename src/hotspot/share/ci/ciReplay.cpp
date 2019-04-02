@@ -40,6 +40,7 @@
 #include "runtime/handles.inline.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/utf8.hpp"
 
 #ifndef PRODUCT
 

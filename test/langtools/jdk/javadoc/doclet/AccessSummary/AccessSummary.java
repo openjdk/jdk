@@ -48,7 +48,6 @@ public class AccessSummary extends JavadocTester {
     @Test
     public void testAccessSummary() {
         javadoc("-d", "out",
-                "--frames",
                 "-sourcepath", testSrc,
                 "p1", "p2");
         checkExit(Exit.OK);
@@ -56,7 +55,7 @@ public class AccessSummary extends JavadocTester {
     }
 
     void checkSummary(boolean found) {
-        checkOutput("overview-summary.html", found,
+        checkOutput("index.html", found,
                  "summary=\"Package Summary table, listing packages, and an explanation\"");
 
         // Test that the summary attribute appears or not

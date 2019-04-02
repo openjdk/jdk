@@ -207,7 +207,7 @@ void VM_RedefineClasses::doit() {
 
   // Mark methods seen on stack and everywhere else so old methods are not
   // cleaned up if they're on the stack.
-  MetadataOnStackMark md_on_stack(true);
+  MetadataOnStackMark md_on_stack(/*walk_all_metadata*/true, /*redefinition_walk*/true);
   HandleMark hm(thread);   // make sure any handles created are deleted
                            // before the stack walk again.
 
@@ -3842,7 +3842,7 @@ void VM_RedefineClasses::flush_dependent_code() {
   // This is the first redefinition, mark all the nmethods for deoptimization
   if (!JvmtiExport::all_dependencies_are_recorded()) {
     log_debug(redefine, class, nmethod)("Marked all nmethods for deopt");
-    CodeCache::mark_all_nmethods_for_deoptimization();
+    CodeCache::mark_all_nmethods_for_evol_deoptimization();
     deopt_needed = true;
   } else {
     int deopt = CodeCache::mark_dependents_for_evol_deoptimization();

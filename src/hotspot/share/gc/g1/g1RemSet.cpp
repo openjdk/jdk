@@ -35,6 +35,7 @@
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1RootClosures.hpp"
 #include "gc/g1/g1RemSet.hpp"
+#include "gc/g1/g1SharedDirtyCardQueue.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionManager.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
@@ -519,9 +520,7 @@ void G1RemSet::oops_into_collection_set_do(G1ParScanThreadState* pss, uint worke
 }
 
 void G1RemSet::prepare_for_oops_into_collection_set_do() {
-  G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
-  dcqs.concatenate_logs();
-
+  G1BarrierSet::dirty_card_queue_set().concatenate_logs();
   _scan_state->reset();
 }
 
@@ -660,29 +659,30 @@ void G1RemSet::refine_card_concurrently(CardValue* card_ptr,
   assert(!dirty_region.is_empty(), "sanity");
 
   G1ConcurrentRefineOopClosure conc_refine_cl(_g1h, worker_i);
-
-  bool card_processed =
-    r->oops_on_card_seq_iterate_careful<false>(dirty_region, &conc_refine_cl);
+  if (r->oops_on_card_seq_iterate_careful<false>(dirty_region, &conc_refine_cl)) {
+    _num_conc_refined_cards++; // Unsynchronized update, only used for logging.
+    return;
+  }
 
   // If unable to process the card then we encountered an unparsable
-  // part of the heap (e.g. a partially allocated object) while
-  // processing a stale card.  Despite the card being stale, redirty
-  // and re-enqueue, because we've already cleaned the card.  Without
-  // this we could incorrectly discard a non-stale card.
-  if (!card_processed) {
-    // The card might have gotten re-dirtied and re-enqueued while we
-    // worked.  (In fact, it's pretty likely.)
-    if (*card_ptr != G1CardTable::dirty_card_val()) {
-      *card_ptr = G1CardTable::dirty_card_val();
-      MutexLockerEx x(Shared_DirtyCardQ_lock,
-                      Mutex::_no_safepoint_check_flag);
-      G1DirtyCardQueue* sdcq =
-        G1BarrierSet::dirty_card_queue_set().shared_dirty_card_queue();
-      sdcq->enqueue(card_ptr);
-    }
-  } else {
-    _num_conc_refined_cards++; // Unsynchronized update, only used for logging.
+  // part of the heap (e.g. a partially allocated object, so only
+  // temporarily a problem) while processing a stale card.  Despite
+  // the card being stale, we can't simply ignore it, because we've
+  // already marked the card cleaned, so taken responsibility for
+  // ensuring the card gets scanned.
+  //
+  // However, the card might have gotten re-dirtied and re-enqueued
+  // while we worked.  (In fact, it's pretty likely.)
+  if (*card_ptr == G1CardTable::dirty_card_val()) {
+    return;
   }
+
+  // Re-dirty the card and enqueue in the *shared* queue.  Can't use
+  // the thread-local queue, because that might be the queue that is
+  // being processed by us; we could be a Java thread conscripted to
+  // perform refinement on our queue's current buffer.
+  *card_ptr = G1CardTable::dirty_card_val();
+  G1BarrierSet::shared_dirty_card_queue().enqueue(card_ptr);
 }
 
 bool G1RemSet::refine_card_during_gc(CardValue* card_ptr,

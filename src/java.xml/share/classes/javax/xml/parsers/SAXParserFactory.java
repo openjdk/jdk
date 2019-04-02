@@ -123,7 +123,7 @@ public abstract class SAXParserFactory {
      *
      *
      *
-     * <h2>Tip for Trouble-shooting</h2>
+     * <h4>Tip for Trouble-shooting</h4>
      * <p>
      * Setting the {@code jaxp.debug} system property will cause
      * this method to print a lot of debug messages
@@ -161,7 +161,7 @@ public abstract class SAXParserFactory {
      * it can use the factory to configure and obtain parser instances.
      *
      *
-     * <h2>Tip for Trouble-shooting</h2>
+     * <h4>Tip for Trouble-shooting</h4>
      * <p>Setting the {@code jaxp.debug} system property will cause
      * this method to print a lot of debug messages
      * to {@code System.err} about what it is doing and where it is looking at.
@@ -389,7 +389,7 @@ public abstract class SAXParserFactory {
      * Such configuration will cause a {@link SAXException}
      * exception when those properties are set on a {@link SAXParser}.
      *
-     * <h3>Note for implementors</h3>
+     * <h4>Note for implementors</h4>
      * <p>
      * A parser must be able to work with any {@link Schema}
      * implementation. However, parsers and schemas are allowed

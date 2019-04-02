@@ -47,7 +47,6 @@ public class TestHtmlVersion extends JavadocTester {
         javadoc("-d", "out-1",
                 "-private",
                 "-linksource",
-                "--frames",
                 "-sourcepath", testSrc,
                 "-use",
                 "pkg", "pkg1", "pkg2", "pkg3");
@@ -69,29 +68,8 @@ public class TestHtmlVersion extends JavadocTester {
     }
 
     void html5Output() {
-        // Test for overview-frame page
-        checkOutput("overview-frame.html", true,
-                "<!DOCTYPE HTML>",
-                "<meta name=\"dc.created\"",
-                "<nav role=\"navigation\" class=\"indexNav\">\n"
-                + "<ul>\n"
-                + "<li><a href=\"allclasses-frame.html\" target=\"packageFrame\">All&nbsp;Classes</a></li>",
-                "<main role=\"main\">\n"
-                + "<div class=\"indexContainer\">\n"
-                + "<h1 title=\"Packages\">Packages</h1>");
-
-        // Test for allclasses-frame page
-        checkOutput("allclasses-frame.html", true,
-                "<!DOCTYPE HTML>",
-                "<meta name=\"dc.created\"",
-                "<main role=\"main\">\n"
-                + "<h1 class=\"bar\">All&nbsp;Classes</h1>\n"
-                + "<div class=\"indexContainer\">\n"
-                + "<ul>\n"
-                + "<li>");
-
         // Test for overview-summary page
-        checkOutput("overview-summary.html", true,
+        checkOutput("index.html", true,
                 "<!DOCTYPE HTML>",
                 "<meta name=\"dc.created\"",
                 "<a id=\"navbar.top.firstrow\">\n"
@@ -107,25 +85,6 @@ public class TestHtmlVersion extends JavadocTester {
                 "<footer role=\"contentinfo\">\n"
                 + "<nav role=\"navigation\">\n"
                 + "<!-- ======= START OF BOTTOM NAVBAR ====== -->");
-
-        // Test for package-frame page
-        checkOutput("pkg/package-frame.html", true,
-                "<!DOCTYPE HTML>",
-                "<meta name=\"dc.created\"",
-                "<main role=\"main\">\n"
-                + "<h1 class=\"bar\"><a href=\"package-summary.html\" target=\"classFrame\">pkg</a></h1>",
-                "<section role=\"region\">\n"
-                + "<h2 title=\"Interfaces\">Interfaces</h2>",
-                "<section role=\"region\">\n"
-                + "<h2 title=\"Classes\">Classes</h2>",
-                "<section role=\"region\">\n"
-                + "<h2 title=\"Enums\">Enums</h2>",
-                "<section role=\"region\">\n"
-                + "<h2 title=\"Exceptions\">Exceptions</h2>",
-                "<section role=\"region\">\n"
-                + "<h2 title=\"Errors\">Errors</h2>",
-                "<section role=\"region\">\n"
-                + "<h2 title=\"Annotation Types\">Annotation Types</h2>");
 
         // Test for package-summary page
         checkOutput("pkg/package-summary.html", true,
@@ -586,44 +545,9 @@ public class TestHtmlVersion extends JavadocTester {
                 "<footer role=\"contentinfo\">\n"
                 + "<nav role=\"navigation\">\n"
                 + "<!-- ======= START OF BOTTOM NAVBAR ====== -->");
-
-        // Test for main index page
-        checkOutput("index.html", true,
-                "<!DOCTYPE HTML>",
-                "<link rel=\"stylesheet\" type=\"text/css\" href=\"stylesheet.css\" title=\"Style\">",
-                "<body class=\"frames\" onload=\"loadFrames()\">\n"
-                + "<script type=\"text/javascript\">\n"
-                + "if (targetPage == \"\" || targetPage == \"undefined\")\n"
-                + "     window.location.replace('overview-summary.html');\n"
-                + "</script>\n"
-                + "<noscript>JavaScript is disabled on your browser.</noscript>\n"
-                + "<main role=\"main\">\n"
-                + "<div class=\"mainContainer\">\n"
-                + "<div class=\"leftContainer\">\n"
-                + "<div class=\"leftTop\">\n"
-                + "<iframe src=\"overview-frame.html\" name=\"packageListFrame\" title=\"All Packages\"></iframe>\n"
-                + "</div>");
     }
 
     void html5NegatedOutput() {
-        // Negated test for overview-frame page
-        checkOutput("overview-frame.html", false,
-                "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">",
-                "<meta name=\"date\"",
-                "<div class=\"indexNav\">\n"
-                + "<ul>\n"
-                + "<li><a href=\"allclasses-frame.html\" target=\"packageFrame\">All&nbsp;Classes</a></li>",
-                "<main class=\"indexContainer\">\n"
-                + "<h2 title=\"Packages\">Packages</h2>");
-
-        // Negated test for allclasses-frame page
-        checkOutput("allclasses-frame.html", false,
-                "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">",
-                "<meta name=\"date\"",
-                "<main class=\"indexContainer\">\n"
-                + "<ul>\n"
-                + "<li>");
-
         // Negated test for overview-summary page
         checkOutput("overview-summary.html", false,
                 "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">",
@@ -636,13 +560,6 @@ public class TestHtmlVersion extends JavadocTester {
                 "</noscript>\n"
                 + "<div class=\"fixedNav\">\n"
                 + "<!-- ========= START OF TOP NAVBAR ======= -->");
-
-        // Negated test for package-frame page
-        checkOutput("pkg/package-frame.html", false,
-                "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">",
-                "<meta name=\"date\"",
-                "<body>\n"
-                + "<h1 class=\"bar\"><a href=\"package-summary.html\" target=\"classFrame\">pkg</a></h1>");
 
         // Negated test for package-summary page
         checkOutput("pkg/package-summary.html", false,

@@ -28,7 +28,6 @@ import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_IGNORED;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_IGNORED;
 import static org.graalvm.compiler.replacements.SnippetTemplate.DEFAULT_REPLACER;
 
-import java.lang.reflect.Field;
 import java.util.Arrays;
 
 import org.graalvm.compiler.api.replacements.Fold;
@@ -51,6 +50,7 @@ import org.graalvm.compiler.phases.util.Providers;
 import org.graalvm.compiler.replacements.SnippetTemplate.AbstractTemplates;
 import org.graalvm.compiler.replacements.SnippetTemplate.Arguments;
 import org.graalvm.compiler.replacements.SnippetTemplate.SnippetInfo;
+import org.graalvm.compiler.serviceprovider.GraalUnsafeAccess;
 import org.graalvm.compiler.word.ObjectAccess;
 import jdk.internal.vm.compiler.word.LocationIdentity;
 
@@ -129,6 +129,8 @@ public class SnippetCounterNode extends FixedWithNextNode implements Lowerable {
 
     static class SnippetCounterSnippets implements Snippets {
 
+        private static final Unsafe UNSAFE = GraalUnsafeAccess.getUnsafe();
+
         @Fold
         static int countOffset() {
             try {
@@ -159,22 +161,6 @@ public class SnippetCounterNode extends FixedWithNextNode implements Lowerable {
                 args.add("increment", counter.getIncrement());
 
                 template(counter, args).instantiate(providers.getMetaAccess(), counter, DEFAULT_REPLACER, args);
-            }
-        }
-    }
-
-    private static final Unsafe UNSAFE = initUnsafe();
-
-    private static Unsafe initUnsafe() {
-        try {
-            return Unsafe.getUnsafe();
-        } catch (SecurityException se) {
-            try {
-                Field theUnsafe = Unsafe.class.getDeclaredField("theUnsafe");
-                theUnsafe.setAccessible(true);
-                return (Unsafe) theUnsafe.get(Unsafe.class);
-            } catch (Exception e) {
-                throw new RuntimeException("exception while trying to get Unsafe", e);
             }
         }
     }

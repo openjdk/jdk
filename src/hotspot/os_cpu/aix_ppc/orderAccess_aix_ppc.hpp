@@ -77,6 +77,8 @@ inline void OrderAccess::storeload()  { inlasm_sync();   }
 inline void OrderAccess::acquire()    { inlasm_lwsync(); }
 inline void OrderAccess::release()    { inlasm_lwsync(); }
 inline void OrderAccess::fence()      { inlasm_sync();   }
+inline void OrderAccess::cross_modify_fence()
+                                      { inlasm_isync();  }
 
 template<size_t byte_size>
 struct OrderAccess::PlatformOrderedLoad<byte_size, X_ACQUIRE>

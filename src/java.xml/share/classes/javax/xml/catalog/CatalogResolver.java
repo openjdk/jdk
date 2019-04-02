@@ -54,7 +54,7 @@ import org.xml.sax.InputSource;
  * no further attempt will be made. Only if there is no match in the current
  * catalog, will alternate catalogs including delegate and next catalogs be considered.
  *
- * <h3>Search Order</h3>
+ * <h2>Search Order</h2>
  * The resolver will first search the system-type of entries with the specified
  * {@code systemId}. The system entries include {@code system},
  * {@code rewriteSystem} and {@code systemSuffix} entries.
@@ -75,7 +75,7 @@ import org.xml.sax.InputSource;
  * with the specified {@code systemId} or {@code href}. The {@code uri} entries
  * include {@code uri}, {@code rewriteURI}, and {@code uriSuffix} entries.
  *
- * <h3>Error Handling</h3>
+ * <h2>Error Handling</h2>
  * The interfaces that the CatalogResolver extend specified checked exceptions, including:
  * <ul>
  * <li>

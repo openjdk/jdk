@@ -269,21 +269,45 @@ public:
 //
 // Stat timer
 //
+class ZStatTimerDisable : public StackObj {
+private:
+  static __thread uint32_t _active;
+
+public:
+  ZStatTimerDisable() {
+    _active++;
+  }
+
+  ~ZStatTimerDisable() {
+    _active--;
+  }
+
+  static bool is_active() {
+    return _active > 0;
+  }
+};
+
 class ZStatTimer : public StackObj {
 private:
+  const bool        _enabled;
   const ZStatPhase& _phase;
   const Ticks       _start;
 
 public:
   ZStatTimer(const ZStatPhase& phase) :
+      _enabled(!ZStatTimerDisable::is_active()),
       _phase(phase),
       _start(Ticks::now()) {
-    _phase.register_start(_start);
+    if (_enabled) {
+      _phase.register_start(_start);
+    }
   }
 
   ~ZStatTimer() {
-    const Ticks end = Ticks::now();
-    _phase.register_end(_start, end);
+    if (_enabled) {
+      const Ticks end = Ticks::now();
+      _phase.register_end(_start, end);
+    }
   }
 };
 

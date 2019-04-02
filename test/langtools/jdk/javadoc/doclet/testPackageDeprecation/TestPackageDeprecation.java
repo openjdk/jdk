@@ -46,7 +46,6 @@ public class TestPackageDeprecation extends JavadocTester {
         javadoc("-d", "out-default",
                 "-sourcepath", testSrc,
                 "-use",
-                "--frames",
                 "pkg", "pkg1", testSrc("C2.java"), testSrc("FooDepr.java"));
         checkExit(Exit.OK);
 
@@ -66,14 +65,11 @@ public class TestPackageDeprecation extends JavadocTester {
                 "-sourcepath", testSrc,
                 "-use",
                 "-nodeprecated",
-                "--frames",
                 "pkg", "pkg1", testSrc("C2.java"), testSrc("FooDepr.java"));
         checkExit(Exit.OK);
 
-        checkOutput("overview-summary.html", false,
+        checkOutput("index.html", false,
                 "pkg1");
-        checkOutput("allclasses-frame.html", false,
-                "FooDepr");
         checkOutput("class-use/C2.ModalExclusionType.html", true,
                 "<th class=\"colFirst\" scope=\"row\"><a href=\"#unnamed.package\">&lt;Unnamed&gt;</a></th>");
 

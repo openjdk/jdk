@@ -27,6 +27,7 @@ package org.graalvm.compiler.nodes.memory;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_2;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_1;
 
+import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
@@ -90,4 +91,6 @@ public abstract class AbstractWriteNode extends FixedAccessNode implements State
         updateUsages(lastLocationAccess, newLla);
         lastLocationAccess = newLla;
     }
+
+    public abstract Stamp getAccessStamp();
 }

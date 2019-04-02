@@ -77,22 +77,25 @@ public class TestDumpOnCrash {
     }
 
     public static void main(String[] args) throws Exception {
-        verify(runProcess(CrasherIllegalAccess.class.getName(), ""));
-        verify(runProcess(CrasherHalt.class.getName(), ""));
+        verify(runProcess(CrasherIllegalAccess.class.getName(), "", true));
+        verify(runProcess(CrasherIllegalAccess.class.getName(), "", false));
+        verify(runProcess(CrasherHalt.class.getName(), "", true));
+        verify(runProcess(CrasherHalt.class.getName(), "", false));
 
         // Verification is excluded for the test case below until 8219680 is fixed
-        long pid = runProcess(CrasherSig.class.getName(), "FPE");
+        long pid = runProcess(CrasherSig.class.getName(), "FPE", true);
         // @ignore 8219680
         // verify(pid);
     }
 
-    private static long runProcess(String crasher, String signal) throws Exception {
+    private static long runProcess(String crasher, String signal, boolean disk) throws Exception {
         System.out.println("Test case for crasher " + crasher);
+        final String flightRecordingOptions = "dumponexit=true,disk=" + Boolean.toString(disk);
         Process p = ProcessTools.createJavaProcessBuilder(true,
                 "-Xmx64m",
                 "-XX:-CreateCoredumpOnCrash",
                 "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
-                "-XX:StartFlightRecording",
+                "-XX:StartFlightRecording=" + flightRecordingOptions,
                 crasher,
                 signal)
             .start();

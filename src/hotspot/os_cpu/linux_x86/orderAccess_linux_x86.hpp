@@ -55,6 +55,11 @@ inline void OrderAccess::fence() {
   compiler_barrier();
 }
 
+inline void OrderAccess::cross_modify_fence() {
+  int idx = 0;
+  __asm__ volatile ("cpuid " : "+a" (idx) : : "ebx", "ecx", "edx", "memory");
+}
+
 template<>
 struct OrderAccess::PlatformOrderedStore<1, RELEASE_X_FENCE>
 {

@@ -152,11 +152,15 @@ public class EATestBase extends GraalCompilerTest {
                 Assert.assertEquals(expectedConstantResult, returnNode.result().asConstant());
             }
         }
-        int newInstanceCount = graph.getNodes().filter(isA(NewInstanceNode.class).or(NewArrayNode.class).or(AllocatedObjectNode.class)).count();
+        int newInstanceCount = getAllocationCount();
         Assert.assertEquals("Expected allocation count does not match", expectedAllocationCount, newInstanceCount);
         if (expectedAllocationCount == 0) {
             Assert.assertTrue("Unexpected CommitAllocationNode", graph.getNodes().filter(CommitAllocationNode.class).isEmpty());
         }
+    }
+
+    protected int getAllocationCount() {
+        return graph.getNodes().filter(isA(NewInstanceNode.class).or(NewArrayNode.class).or(AllocatedObjectNode.class)).count();
     }
 
     @SuppressWarnings("try")

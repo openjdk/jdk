@@ -1089,7 +1089,6 @@ void nmethod::make_unloaded() {
     if (_method->code() == this) {
       _method->clear_code(); // Break a cycle
     }
-    _method = NULL;            // Clear the method of this dead nmethod
   }
 
   // Make the class unloaded - i.e., change state and notify sweeper
@@ -1107,7 +1106,11 @@ void nmethod::make_unloaded() {
     MutexLockerEx ml(SafepointSynchronize::is_at_safepoint() ? NULL : CodeCache_lock,
                      Mutex::_no_safepoint_check_flag);
     Universe::heap()->unregister_nmethod(this);
+    CodeCache::unregister_old_nmethod(this);
   }
+
+  // Clear the method of this dead nmethod
+  set_method(NULL);
 
   // Log the unloading.
   log_state_change();
@@ -1289,6 +1292,7 @@ bool nmethod::make_not_entrant_or_zombie(int state) {
       MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
       if (nmethod_needs_unregister) {
         Universe::heap()->unregister_nmethod(this);
+        CodeCache::unregister_old_nmethod(this);
       }
       flush_dependencies(/*delete_immediately*/true);
     }
@@ -1984,32 +1988,6 @@ bool nmethod::check_dependency_on(DepChange& changes) {
     }
   }
   return found_check;
-}
-
-bool nmethod::is_evol_dependent() {
-  for (Dependencies::DepStream deps(this); deps.next(); ) {
-    if (deps.type() == Dependencies::evol_method) {
-      Method* method = deps.method_argument(0);
-      if (method->is_old()) {
-        if (log_is_enabled(Debug, redefine, class, nmethod)) {
-          ResourceMark rm;
-          log_debug(redefine, class, nmethod)
-            ("Found evol dependency of nmethod %s.%s(%s) compile_id=%d on method %s.%s(%s)",
-             _method->method_holder()->external_name(),
-             _method->name()->as_C_string(),
-             _method->signature()->as_C_string(),
-             compile_id(),
-             method->method_holder()->external_name(),
-             method->name()->as_C_string(),
-             method->signature()->as_C_string());
-        }
-        if (TraceDependencies || LogCompilation)
-          deps.log_dependency(method->method_holder());
-        return true;
-      }
-    }
-  }
-  return false;
 }
 
 // Called from mark_for_deoptimization, when dependee is invalidated.

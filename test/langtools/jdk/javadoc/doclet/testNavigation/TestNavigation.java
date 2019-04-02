@@ -57,7 +57,6 @@ public class TestNavigation extends JavadocTester {
     public void test(Path ignore) {
         javadoc("-d", "out",
                 "-overview", testSrc("overview.html"),
-                "--frames",
                 "-sourcepath", testSrc,
                 "pkg");
         checkExit(Exit.OK);
@@ -65,15 +64,15 @@ public class TestNavigation extends JavadocTester {
 
         checkOutput("pkg/A.html", true,
                 "<ul class=\"navList\" title=\"Navigation\">\n" +
-                "<li><a href=\"../overview-summary.html\">Overview</a></li>");
+                "<li><a href=\"../index.html\">Overview</a></li>");
 
         checkOutput("pkg/C.html", true,
                 "<ul class=\"navList\" title=\"Navigation\">\n" +
-                "<li><a href=\"../overview-summary.html\">Overview</a></li>");
+                "<li><a href=\"../index.html\">Overview</a></li>");
 
         checkOutput("pkg/E.html", true,
                 "<ul class=\"navList\" title=\"Navigation\">\n" +
-                "<li><a href=\"../overview-summary.html\">Overview</a></li>");
+                "<li><a href=\"../index.html\">Overview</a></li>");
 
         checkOutput("pkg/I.html", true,
                 // Test for 4664607
@@ -81,7 +80,7 @@ public class TestNavigation extends JavadocTester {
                 + "<a id=\"navbar.top.firstrow\">\n"
                 + "<!--   -->\n"
                 + "</a>",
-                "<li><a href=\"../overview-summary.html\">Overview</a></li>");
+                "<li><a href=\"../index.html\">Overview</a></li>");
 
         // Remaining tests check for additional padding to offset the fixed navigation bar.
         checkOutput("pkg/A.html", true,
@@ -115,7 +114,6 @@ public class TestNavigation extends JavadocTester {
     public void test1(Path ignore) {
         javadoc("-d", "out-1",
                 "-html5",
-                "--frames",
                 "-sourcepath", testSrc,
                 "pkg");
         checkExit(Exit.OK);
@@ -149,7 +147,6 @@ public class TestNavigation extends JavadocTester {
     public void test2(Path ignore) {
         javadoc("-d", "out-2",
                 "-nonavbar",
-                "--frames",
                 "-sourcepath", testSrc,
                 "pkg");
         checkExit(Exit.OK);

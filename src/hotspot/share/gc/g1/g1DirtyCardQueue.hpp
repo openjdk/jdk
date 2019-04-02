@@ -48,7 +48,7 @@ public:
 // A ptrQueue whose elements are "oops", pointers to object heads.
 class G1DirtyCardQueue: public PtrQueue {
 public:
-  G1DirtyCardQueue(G1DirtyCardQueueSet* qset, bool permanent = false);
+  G1DirtyCardQueue(G1DirtyCardQueueSet* qset);
 
   // Flush before destroying; queue may be used to capture pending work while
   // doing something else, with auto-flush on completion.
@@ -70,11 +70,7 @@ public:
 
 };
 
-
-
 class G1DirtyCardQueueSet: public PtrQueueSet {
-  G1DirtyCardQueue _shared_dirty_card_queue;
-
   // Apply the closure to the elements of "node" from it's index to
   // buffer_size.  If all closure applications return true, then
   // returns true.  Stops processing after the first closure
@@ -116,15 +112,12 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
   // Current buffer node used for parallel iteration.
   BufferNode* volatile _cur_par_buffer_node;
 
-  void concatenate_log(G1DirtyCardQueue& dcq);
-
 public:
   G1DirtyCardQueueSet(bool notify_when_complete = true);
   ~G1DirtyCardQueueSet();
 
   void initialize(Monitor* cbl_mon,
                   BufferNode::Allocator* allocator,
-                  Mutex* lock,
                   bool init_free_ids = false);
 
   // The number of parallel ids that can be claimed to allow collector or
@@ -146,10 +139,6 @@ public:
   // Can be used in parallel, all callers using the iteration state initialized
   // by reset_for_par_iteration.
   void par_apply_closure_to_all_completed_buffers(G1CardTableEntryClosure* cl);
-
-  G1DirtyCardQueue* shared_dirty_card_queue() {
-    return &_shared_dirty_card_queue;
-  }
 
   // If a full collection is happening, reset partial logs, and ignore
   // completed ones: the full collection will make them all irrelevant.

@@ -164,7 +164,7 @@ import jdk.xml.internal.SecuritySupport;
  * set the property {@code javax.xml.catalog.defer} to false to allow the entire
  * catalog to be pre-loaded.
  *
- * <h3>Scope and Order</h3>
+ * <h2>Scope and Order</h2>
  * Features and properties can be set through the catalog file, the Catalog API,
  * system properties, and {@code jaxp.properties}, with a preference in the same order.
  * <p>
@@ -202,7 +202,7 @@ import jdk.xml.internal.SecuritySupport;
                         .build();
  * }</pre>
  *
- * <h3>JAXP XML Processor Support</h3>
+ * <h2>JAXP XML Processor Support</h2>
  * The Catalog Features are supported throughout the JAXP processors, including
  * SAX and DOM ({@link javax.xml.parsers}), and StAX parsers ({@link javax.xml.stream}),
  * Schema Validation ({@link javax.xml.validation}), and XML Transformation
@@ -246,7 +246,7 @@ import jdk.xml.internal.SecuritySupport;
  * The Catalog support is available for any process in the JAXP library that
  * supports a resolver. The following table lists all such processes.
  *
- * <h3><a id="ProcessesWithCatalogSupport">Processes with Catalog Support</a></h3>
+ * <h2><a id="ProcessesWithCatalogSupport">Processes with Catalog Support</a></h2>
  *
  * <table class="striped">
  * <caption>Processes with Catalog Support</caption>

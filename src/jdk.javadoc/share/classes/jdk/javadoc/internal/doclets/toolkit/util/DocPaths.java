@@ -51,24 +51,11 @@ public class DocPaths {
 
     public static final DocPath DOT_DOT = DocPath.create("..");
 
-    /** The name of the file for all classes, without using frames, when --no-frames is specified. */
-    public static final DocPath ALLCLASSES = DocPath.create("allclasses.html");
-
-    /** The name of the file for all classes, using frames. */
-    public static final DocPath ALLCLASSES_FRAME = DocPath.create("allclasses-frame.html");
-
     /** The name of the file for all classes index. */
     public static final DocPath ALLCLASSES_INDEX = DocPath.create("allclasses-index.html");
 
     /** The name of the file for all packages index. */
     public static final DocPath ALLPACKAGES_INDEX = DocPath.create("allpackages-index.html");
-
-    /** The name of the file for all classes, without using frames. */
-    public static final DocPath ALLCLASSES_NOFRAME = DocPath.create("allclasses-noframe.html");
-
-    public static DocPath AllClasses(boolean frames) {
-        return frames ? ALLCLASSES_NOFRAME : ALLCLASSES;
-    }
 
     /** The name of the sub-directory for storing class usage info. */
     public static final DocPath CLASS_USE = DocPath.create("class-use");
@@ -163,21 +150,11 @@ public class DocPaths {
     /** The name of the module search index js file. */
     public static final DocPath MODULE_SEARCH_INDEX_JS = DocPath.create("module-search-index.js");
 
-    /** The name of the file for the overview frame. */
-    public static final DocPath OVERVIEW_FRAME = DocPath.create("overview-frame.html");
-
     /** The name of the file for the overview summary. */
     public static final DocPath OVERVIEW_SUMMARY = DocPath.create("overview-summary.html");
 
-    public static DocPath overviewSummary(boolean frames) {
-        return frames ? OVERVIEW_SUMMARY : INDEX;
-    }
-
     /** The name of the file for the overview tree. */
     public static final DocPath OVERVIEW_TREE = DocPath.create("overview-tree.html");
-
-    /** The name of the file for the package frame. */
-    public static final DocPath PACKAGE_FRAME = DocPath.create("package-frame.html");
 
     /** The name of the file for the package list. This is to support the legacy mode. */
     public static final DocPath PACKAGE_LIST = DocPath.create("package-list");
@@ -306,15 +283,6 @@ public class DocPaths {
     }
 
     /**
-     * The path for the file for a module's frame page.
-     * @param mdle the module
-     * @return the path
-     */
-    public DocPath moduleFrame(ModuleElement mdle) {
-        return createModulePath(mdle, "frame.html");
-    }
-
-    /**
      * The path for the file for a module's summary page.
      * @param mdle the module
      * @return the path
@@ -332,15 +300,6 @@ public class DocPaths {
         return createModulePath(mdleName, "summary.html");
     }
 
-    /**
-     * The path for the file for a module's type frame page.
-     * @param mdle the module
-     * @return the path
-     */
-    public DocPath moduleTypeFrame(ModuleElement mdle) {
-        return createModulePath(mdle, "type-frame.html");
-    }
-
     private DocPath createModulePath(ModuleElement mdle, String path) {
         return DocPath.create(mdle.getQualifiedName() + moduleSeparator + path);
     }
@@ -348,9 +307,6 @@ public class DocPaths {
     private DocPath createModulePath(String moduleName, String path) {
         return DocPath.create(moduleName + moduleSeparator + path);
     }
-
-    /** The name of the file for the module overview frame. */
-    public static final DocPath MODULE_OVERVIEW_FRAME = DocPath.create("module-overview-frame.html");
 
     /** The name of the sub-package from which resources are read. */
     public static final DocPath RESOURCES = DocPath.create("resources");

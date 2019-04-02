@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8059977
+ * @bug 8059977 8220687
  * @summary StandardJavaFileManager should support java.nio.file.Path.
  *          Test getFileObject methods.
  * @modules java.compiler
@@ -105,6 +105,40 @@ public class SJFM_GetFileObjects extends SJFM_TestBase {
         boolean expectException = !isGetFileObjectsSupported(fm, paths);
         try {
             compile(fm.getJavaFileObjectsFromPaths(paths));
+            if (expectException)
+                error("expected exception not thrown: " + IllegalArgumentException.class.getName());
+        } catch (RuntimeException e) {
+            if (expectException && e instanceof IllegalArgumentException)
+                return;
+            error("unexpected exception thrown: " + e);
+        }
+    }
+
+
+    //----------------------------------------------------------------------------------------------
+
+    @Test
+    void test_getJavaFileObjectsFromPaths_Iterable(StandardJavaFileManager fm) throws IOException {
+        test_getJavaFileObjectsFromPaths_Iterable(fm, getTestFilePaths());
+        test_getJavaFileObjectsFromPaths_Iterable(fm, getTestZipPaths());
+    }
+
+    /**
+     * Tests the {@code getJavaFileObjectsFromPaths(Iterable)} method for a specific file
+     * manager and a series of paths.
+     *
+     * Note: instances of MyStandardJavaFileManager only support
+     * encapsulating paths for files in the default file system.
+     *
+     * @param fm  the file manager to be tested
+     * @param paths  the paths to be tested
+     * @throws IOException
+     */
+    void test_getJavaFileObjectsFromPaths_Iterable(StandardJavaFileManager fm, List<Path> paths)
+            throws IOException {
+        boolean expectException = !isGetFileObjectsSupported(fm, paths);
+        try {
+            compile(fm.getJavaFileObjectsFromPaths((Iterable<Path>) paths));
             if (expectException)
                 error("expected exception not thrown: " + IllegalArgumentException.class.getName());
         } catch (RuntimeException e) {

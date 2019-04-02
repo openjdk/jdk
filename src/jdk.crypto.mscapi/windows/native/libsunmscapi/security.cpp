@@ -502,7 +502,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
                 else
                 {
                     if ((dwKeySpec & CERT_NCRYPT_KEY_SPEC) == CERT_NCRYPT_KEY_SPEC) {
-                        PP("CNG %I64d", hCryptProv);
+                        PP("CNG %I64d", (__int64)hCryptProv);
                     } else {
                         // Private key is available
                         BOOL bGetUserKey = ::CryptGetUserKey(hCryptProv, dwKeySpec, &hUserKey); //deprecated
@@ -517,7 +517,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
                         // Set cipher mode to ECB
                         DWORD dwCipherMode = CRYPT_MODE_ECB;
                         ::CryptSetKeyParam(hUserKey, KP_MODE, (BYTE*)&dwCipherMode, NULL); //deprecated
-                        PP("CAPI %I64d %I64d", hCryptProv, hUserKey);
+                        PP("CAPI %I64d %I64d", (__int64)hCryptProv, (__int64)hUserKey);
                     }
                     // If the private key is present in smart card, we may not be able to
                     // determine the key length by using the private key handle. However,
@@ -863,8 +863,8 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_CSignature_signCngHash
             SS_CHECK(::NCryptTranslateHandle(
                 NULL,
                 &hk,
-                hCryptProv,
-                hCryptKey,
+                (HCRYPTPROV)hCryptProv,
+                (HCRYPTKEY)hCryptKey,
                 NULL,
                 0));
         }
@@ -1087,8 +1087,8 @@ JNIEXPORT jboolean JNICALL Java_sun_security_mscapi_CSignature_verifyCngSignedHa
             SS_CHECK(::NCryptTranslateHandle(
                 NULL,
                 &hk,
-                hCryptProv,
-                hCryptKey,
+                (HCRYPTPROV)hCryptProv,
+                (HCRYPTKEY)hCryptKey,
                 NULL,
                 0));
         }
@@ -1920,7 +1920,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_CPublicKey_getPublicKeyBlo
         // Determine the size of the blob
         if (hCryptKey == 0) {
             SS_CHECK(::NCryptExportKey(
-                hCryptProv, NULL, BCRYPT_ECCPUBLIC_BLOB,
+                (NCRYPT_KEY_HANDLE)hCryptProv, NULL, BCRYPT_ECCPUBLIC_BLOB,
                 NULL, NULL, 0, &dwBlobLen, NCRYPT_SILENT_FLAG));
         } else {
             if (! ::CryptExportKey((HCRYPTKEY) hCryptKey, 0, PUBLICKEYBLOB, 0, NULL, //deprecated
@@ -1939,7 +1939,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_CPublicKey_getPublicKeyBlo
         // Generate key blob
         if (hCryptKey == 0) {
             SS_CHECK(::NCryptExportKey(
-                hCryptProv, NULL, BCRYPT_ECCPUBLIC_BLOB,
+                (NCRYPT_KEY_HANDLE)hCryptProv, NULL, BCRYPT_ECCPUBLIC_BLOB,
                 NULL, pbKeyBlob, dwBlobLen, &dwBlobLen, NCRYPT_SILENT_FLAG));
         } else {
             if (! ::CryptExportKey((HCRYPTKEY) hCryptKey, 0, PUBLICKEYBLOB, 0, //deprecated

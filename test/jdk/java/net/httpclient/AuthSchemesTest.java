@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 8217237
+ * @library /test/lib
  * @modules java.net.http
  * @run main/othervm AuthSchemesTest
  * @summary HttpClient does not deal well with multi-valued WWW-Authenticate challenge headers
@@ -37,6 +38,7 @@ import java.net.Authenticator;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import jdk.test.lib.net.URIBuilder;
 
 public class AuthSchemesTest {
     static class BasicServer extends Thread {
@@ -142,7 +144,13 @@ public class AuthSchemesTest {
                 .authenticator(authenticator)
                 .build();
         server.start();
-        URI uri = URI.create("http://127.0.0.1:" + port + "/foo");
+        URI uri = URIBuilder.newBuilder()
+            .scheme("http")
+            .loopback()
+            .port(port)
+            .path("/foo")
+            .build();
+        System.out.println("URI: " + uri);
         HttpRequest request = HttpRequest.newBuilder(uri)
                 .GET()
                 .build();

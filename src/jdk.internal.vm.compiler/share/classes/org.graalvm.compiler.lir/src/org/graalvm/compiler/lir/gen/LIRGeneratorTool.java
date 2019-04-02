@@ -269,11 +269,6 @@ public interface LIRGeneratorTool extends DiagnosticLIRGeneratorTool, ValueKindF
     Variable emitArrayEquals(JavaKind kind, Value array1, Value array2, Value length, int constantLength, boolean directPointers);
 
     @SuppressWarnings("unused")
-    default ForeignCallLinkage lookupArrayEqualsStub(JavaKind kind, int constantLength) {
-        return null;
-    }
-
-    @SuppressWarnings("unused")
     default Variable emitArrayEquals(JavaKind kind1, JavaKind kind2, Value array1, Value array2, Value length, int constantLength, boolean directPointers) {
         throw GraalError.unimplemented("Array.equals with different types substitution is not implemented on this architecture");
     }

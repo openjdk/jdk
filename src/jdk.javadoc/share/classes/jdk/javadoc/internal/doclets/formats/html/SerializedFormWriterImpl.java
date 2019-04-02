@@ -78,7 +78,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
      * @return the body content tree
      */
     public Content getHeader(String header) {
-        HtmlTree bodyTree = getBody(true, getWindowTitle(header));
+        HtmlTree bodyTree = getBody(getWindowTitle(header));
         HtmlTree htmlTree = HtmlTree.HEADER();
         addTop(htmlTree);
         navBar.setUserHeader(getUserHeaderFooter(true));

@@ -131,6 +131,10 @@ public class AMD64BinaryConsumer {
         protected boolean shouldAnnotate() {
             return false;
         }
+
+        public AMD64MIOp getOpcode() {
+            return opcode;
+        }
     }
 
     /**

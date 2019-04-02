@@ -85,8 +85,7 @@ public class Timeouts {
     }
 
     /**
-     * Test connect with a negative timeout. This case is not currently specified
-     * but the long standing behavior is to throw IllegalArgumentException.
+     * Test connect with a negative timeout.
      */
     public void testTimedConnect4() throws IOException {
         try (ServerSocket ss = new ServerSocket(0)) {
@@ -393,8 +392,7 @@ public class Timeouts {
     }
 
     /**
-     * Test Socket setSoTimeout with a negative timeout. This case is not currently
-     * specified but the long standing behavior is to throw IllegalArgumentException.
+     * Test Socket setSoTimeout with a negative timeout.
      */
     @Test(expectedExceptions = { IllegalArgumentException.class })
     public void testBadTimeout1() throws IOException {
@@ -404,9 +402,7 @@ public class Timeouts {
     }
 
     /**
-     * Test ServerSocket setSoTimeout with a negative timeout. This case is not
-     * currently specified but the long standing behavior is to throw
-     * IllegalArgumentException.
+     * Test ServerSocket setSoTimeout with a negative timeout.
      */
     @Test(expectedExceptions = { IllegalArgumentException.class })
     public void testBadTimeout2() throws IOException {

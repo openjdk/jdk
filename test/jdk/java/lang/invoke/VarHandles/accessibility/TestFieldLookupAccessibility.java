@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 8152645
+ * @bug 8152645 8216558
  * @summary test field lookup accessibility of MethodHandles and VarHandles
  * @compile TestFieldLookupAccessibility.java
  *          pkg/A.java pkg/B_extends_A.java pkg/C.java
@@ -96,6 +96,12 @@ public class TestFieldLookupAccessibility {
             Object lookup(MethodHandles.Lookup l, Field f) throws Exception {
                 return l.unreflectGetter(cloneAndSetAccessible(f));
             }
+
+            // Setting the accessibility bit of a Field grants access under
+            // all conditions for MethodHandle getters.
+            Set<String> inaccessibleFields(Set<String> inaccessibleFields) {
+                return new HashSet<>();
+            }
         },
         MH_UNREFLECT_SETTER() {
             Object lookup(MethodHandles.Lookup l, Field f) throws Exception {
@@ -103,12 +109,26 @@ public class TestFieldLookupAccessibility {
             }
 
             boolean isAccessible(Field f) {
-                return f.isAccessible() || !Modifier.isFinal(f.getModifiers());
+                return f.isAccessible() && !Modifier.isStatic(f.getModifiers()) || !Modifier.isFinal(f.getModifiers());
             }
         },
         MH_UNREFLECT_SETTER_ACCESSIBLE() {
             Object lookup(MethodHandles.Lookup l, Field f) throws Exception {
                 return l.unreflectSetter(cloneAndSetAccessible(f));
+            }
+
+            boolean isAccessible(Field f) {
+                return !(Modifier.isStatic(f.getModifiers()) && Modifier.isFinal(f.getModifiers()));
+            }
+
+            // Setting the accessibility bit of a Field grants access to non-static
+            // final fields for MethodHandle setters.
+            Set<String> inaccessibleFields(Set<String>inaccessibleFields) {
+                Set<String> result = new HashSet<>();
+                inaccessibleFields.stream()
+                                  .filter(f -> (f.contains("static") && f.contains("final")))
+                                  .forEach(result::add);
+                return result;
             }
         },
         VH() {
@@ -140,6 +160,10 @@ public class TestFieldLookupAccessibility {
 
         boolean isAccessible(Field f) {
             return true;
+        }
+
+        Set<String> inaccessibleFields(Set<String> inaccessibleFields) {
+            return new HashSet<>(inaccessibleFields);
         }
 
         static Field cloneAndSetAccessible(Field f) throws Exception {
@@ -180,7 +204,7 @@ public class TestFieldLookupAccessibility {
     @Test(dataProvider = "lookupProvider")
     public void test(FieldLookup fl, Class<?> src, MethodHandles.Lookup l, Set<String> inaccessibleFields) {
         // Add to the expected failures all inaccessible fields due to accessibility modifiers
-        Set<String> expected = new HashSet<>(inaccessibleFields);
+        Set<String> expected = fl.inaccessibleFields(inaccessibleFields);
         Map<Field, Throwable> actual = new HashMap<>();
 
         for (Field f : fields(src)) {
@@ -202,12 +226,7 @@ public class TestFieldLookupAccessibility {
                 collect(Collectors.toSet());
         if (!actualFieldNames.equals(expected)) {
             if (actualFieldNames.isEmpty()) {
-                // Setting the accessibility bit of a Field grants access under
-                // all conditions for MethodHander getters and setters
-                if (fl != FieldLookup.MH_UNREFLECT_GETTER_ACCESSIBLE &&
-                    fl != FieldLookup.MH_UNREFLECT_SETTER_ACCESSIBLE) {
-                    Assert.assertEquals(actualFieldNames, expected, "No accessibility failures:");
-                }
+                Assert.assertEquals(actualFieldNames, expected, "No accessibility failures:");
             }
             else {
                 Assert.assertEquals(actualFieldNames, expected, "Accessibility failures differ:");

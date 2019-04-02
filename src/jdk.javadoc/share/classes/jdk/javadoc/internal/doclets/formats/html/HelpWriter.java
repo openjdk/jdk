@@ -87,7 +87,7 @@ public class HelpWriter extends HtmlDocletWriter {
      */
     protected void generateHelpFile() throws DocFileIOException {
         String title = resources.getText("doclet.Window_Help_title");
-        HtmlTree body = getBody(true, getWindowTitle(title));
+        HtmlTree body = getBody(getWindowTitle(title));
         HtmlTree htmlTree = HtmlTree.HEADER();
         addTop(htmlTree);
         navBar.setUserHeader(getUserHeaderFooter(true));
@@ -132,8 +132,7 @@ public class HelpWriter extends HtmlDocletWriter {
                     ? "doclet.help.overview.modules.body"
                     : "doclet.help.overview.packages.body";
             Content overviewLink = links.createLink(
-                    DocPaths.overviewSummary(configuration.frames),
-                    resources.getText("doclet.Overview"));
+                    DocPaths.INDEX, resources.getText("doclet.Overview"));
             Content overviewBody = contents.getContent(overviewKey, overviewLink);
             Content overviewPara = HtmlTree.P(overviewBody);
             htmlTree.add(overviewPara);
@@ -296,18 +295,6 @@ public class HelpWriter extends HtmlDocletWriter {
             Content indexBody = contents.getContent("doclet.help.index.body", indexlink);
             Content indexPara = HtmlTree.P(indexBody);
             htmlTree.add(indexPara);
-            ul.add(HtmlTree.LI(HtmlStyle.blockList, htmlTree));
-        }
-
-        // Frames
-        if (configuration.frames) {
-            Content frameHead = HtmlTree.HEADING(Headings.CONTENT_HEADING,
-                    contents.getContent("doclet.help.frames.head"));
-            htmlTree = HtmlTree.SECTION(frameHead);
-            Content framesBody = contents.getContent("doclet.help.frames.body");
-            Content framePara = HtmlTree.P(framesBody);
-            htmlTree.add(framePara);
-
             ul.add(HtmlTree.LI(HtmlStyle.blockList, htmlTree));
         }
 

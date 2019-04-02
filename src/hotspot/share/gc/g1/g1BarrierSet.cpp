@@ -58,7 +58,8 @@ G1BarrierSet::G1BarrierSet(G1CardTable* card_table) :
   _satb_mark_queue_buffer_allocator("SATB Buffer Allocator", G1SATBBufferSize),
   _dirty_card_queue_buffer_allocator("DC Buffer Allocator", G1UpdateBufferSize),
   _satb_mark_queue_set(),
-  _dirty_card_queue_set()
+  _dirty_card_queue_set(),
+  _shared_dirty_card_queue(&_dirty_card_queue_set)
 {}
 
 void G1BarrierSet::enqueue(oop pre_val) {
@@ -147,24 +148,7 @@ void G1BarrierSet::on_thread_attach(Thread* thread) {
 
   // If we are creating the thread during a marking cycle, we should
   // set the active field of the SATB queue to true.  That involves
-  // copying the global is_active value to this thread's queue, which
-  // is done without any direct synchronization here.
-  //
-  // The activation and deactivation of the SATB queues occurs at the
-  // beginning / end of a marking cycle, and is done during
-  // safepoints.  This function is called just before a thread is
-  // added to its corresponding threads list (for Java or non-Java
-  // threads, respectively).
-  //
-  // For Java threads, that's done while holding the Threads_lock,
-  // which ensures we're not at a safepoint, so reading the global
-  // is_active state is synchronized against update.
-  assert(!thread->is_Java_thread() || !SafepointSynchronize::is_at_safepoint(),
-         "Should not be at a safepoint");
-  // For non-Java threads, thread creation (and list addition) may,
-  // and indeed usually does, occur during a safepoint.  But such
-  // creation isn't concurrent with updating the global SATB active
-  // state.
+  // copying the global is_active value to this thread's queue.
   bool is_satb_active = _satb_mark_queue_set.is_active();
   G1ThreadLocalData::satb_mark_queue(thread).set_active(is_satb_active);
 }

@@ -26,6 +26,7 @@
  * @bug 8167108
  * @summary Stress test java.lang.Thread.suspend() at thread exit.
  * @run main/othervm -Xlog:thread+smr=debug SuspendAtExit
+ * @run main/othervm -Xlog:thread+smr=debug -XX:+UnlockDiagnosticVMOptions -XX:GuaranteedSafepointInterval=1 -XX:+HandshakeALot SuspendAtExit
  */
 
 import java.util.concurrent.CountDownLatch;

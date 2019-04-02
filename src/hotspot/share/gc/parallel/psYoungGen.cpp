@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,12 +35,22 @@
 #include "runtime/java.hpp"
 #include "utilities/align.hpp"
 
-PSYoungGen::PSYoungGen(size_t        initial_size,
-                       size_t        min_size,
-                       size_t        max_size) :
+PSYoungGen::PSYoungGen(size_t initial_size, size_t min_size, size_t max_size) :
+  _reserved(),
+  _virtual_space(NULL),
+  _eden_space(NULL),
+  _from_space(NULL),
+  _to_space(NULL),
+  _eden_mark_sweep(NULL),
+  _from_mark_sweep(NULL),
+  _to_mark_sweep(NULL),
   _init_gen_size(initial_size),
   _min_gen_size(min_size),
-  _max_gen_size(max_size)
+  _max_gen_size(max_size),
+  _gen_counters(NULL),
+  _eden_counters(NULL),
+  _from_counters(NULL),
+  _to_counters(NULL)
 {}
 
 void PSYoungGen::initialize_virtual_space(ReservedSpace rs, size_t alignment) {

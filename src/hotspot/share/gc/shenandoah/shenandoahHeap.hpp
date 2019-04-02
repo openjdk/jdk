@@ -584,6 +584,8 @@ public:
 public:
   void register_nmethod(nmethod* nm);
   void unregister_nmethod(nmethod* nm);
+  void flush_nmethod(nmethod* nm) {}
+  void verify_nmethod(nmethod* nm) {}
 
 // ---------- Pinning hooks
 //
@@ -741,8 +743,6 @@ public:
   void deduplicate_string(oop str);
 
   void stop_concurrent_marking();
-
-  void roots_iterate(OopClosure* cl);
 
 private:
   void trash_cset_regions();

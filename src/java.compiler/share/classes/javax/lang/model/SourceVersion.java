@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ public enum SourceVersion {
      *   9: modules, small cleanups to 1.7 and 1.8 changes
      *  10: local-variable type inference (var)
      *  11: local-variable syntax for lambda parameters
-     *  12: TBD
+     *  12: no changes (switch expressions in preview)
      *  13: TBD
      */
 
@@ -208,37 +208,39 @@ public enum SourceVersion {
 
     private static final SourceVersion latestSupported = getLatestSupported();
 
+    /*
+     * The integer version to enum constant mapping implemented by
+     * this method assumes the JEP 322: "Time-Based Release
+     * Versioning" scheme is in effect. This scheme began in JDK
+     * 10. If the JDK versioning scheme is revised, this method may
+     * need to be updated accordingly.
+     */
     private static SourceVersion getLatestSupported() {
-        try {
-            String specVersion = System.getProperty("java.specification.version");
-
-            switch (specVersion) {
-                case "13":
-                    return RELEASE_13;
-                case "12":
-                    return RELEASE_12;
-                case "11":
-                    return RELEASE_11;
-                case "10":
-                    return RELEASE_10;
-                case "9":
-                    return RELEASE_9;
-                case "1.8":
-                    return RELEASE_8;
-                case "1.7":
-                    return RELEASE_7;
-                case "1.6":
-                    return RELEASE_6;
-            }
-        } catch (SecurityException se) {}
-
-        return RELEASE_5;
+        int intVersion = Runtime.version().feature();
+        return (intVersion >= 11) ?
+            valueOf("RELEASE_" + Math.min(13, intVersion)):
+            RELEASE_10;
     }
 
     /**
      * Returns the latest source version fully supported by the
-     * current execution environment.  {@code RELEASE_5} or later must
+     * current execution environment.  {@code RELEASE_9} or later must
      * be returned.
+     *
+     * @apiNote This method is included alongside {@link latest} to
+     * allow identification of situations where the language model API
+     * is running on a platform version different than the latest
+     * version modeled by the API. One way that sort of situation can
+     * occur is if an IDE or similar tool is using the API to model
+     * source version <i>N</i> while running on platform version
+     * (<i>N</i>&nbsp;-&nbsp;1). Running in this configuration is
+     * supported by the API. Running an API on platform versions
+     * earlier than (<i>N</i>&nbsp;-&nbsp;1) or later than <i>N</i>
+     * may or may not work as an implementation detail. If an
+     * annotation processor was generating code to run under the
+     * current execution environment, the processor should only use
+     * platform features up to the {@code latestSupported} release,
+     * which may be earlier than the {@code latest} release.
      *
      * @return the latest source version that is fully supported
      */

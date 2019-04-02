@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @bug 8216558
  * @summary unit tests for java.lang.invoke.MethodHandles
  * @library /test/lib /java/lang/invoke/common
  * @compile MethodHandlesTest.java MethodHandlesGeneralTest.java remote/RemoteExample.java
@@ -664,6 +665,7 @@ public class MethodHandlesGeneralTest extends MethodHandlesTest {
         boolean testNPE  = ((testMode0 & TEST_NPE) != 0);
         int testMode = testMode0 & ~(TEST_SETTER | TEST_BOUND | TEST_NPE);
         boolean positive = positive0 && !testNPE;
+        boolean isFinal;
         boolean isStatic;
         Class<?> fclass;
         String   fname;
@@ -671,12 +673,14 @@ public class MethodHandlesGeneralTest extends MethodHandlesTest {
         Field f = (fieldRef instanceof Field ? (Field)fieldRef : null);
         if (f != null) {
             isStatic = Modifier.isStatic(f.getModifiers());
+            isFinal  = Modifier.isFinal(f.getModifiers());
             fclass   = f.getDeclaringClass();
             fname    = f.getName();
             ftype    = f.getType();
         } else {
             Object[] scnt = (Object[]) fieldRef;
             isStatic = (Boolean)  scnt[0];
+            isFinal  = false;
             fclass   = (Class<?>) scnt[1];
             fname    = (String)   scnt[2];
             ftype    = (Class<?>) scnt[3];
@@ -720,18 +724,21 @@ public class MethodHandlesGeneralTest extends MethodHandlesTest {
                 ?   NoSuchFieldException.class
                 :   IllegalAccessException.class,
                 noAccess);
+            if (((testMode0 & TEST_SETTER) != 0) && (isFinal && isStatic)) return; // Final static field setter test failed as intended.
             if (verbosity >= 5)  ex.printStackTrace(System.out);
         }
         if (verbosity >= 3)
-            System.out.println("find"+(isStatic?"Static":"")+(isGetter?"Getter":"Setter")+" "+fclass.getName()+"."+fname+"/"+ftype
-                               +" => "+mh
-                               +(noAccess == null ? "" : " !! "+noAccess));
+            System.out.println((((testMode0 & TEST_UNREFLECT) != 0)?"unreflect":"find")
+                              +(((testMode0 & TEST_FIND_STATIC) != 0)?"Static":"")
+                              +(isGetter?"Getter":"Setter")
+                              +" "+fclass.getName()+"."+fname+"/"+ftype
+                              +" => "+mh
+                              +(noAccess == null ? "" : " !! "+noAccess));
         if (positive && !testNPE && noAccess != null)  throw new RuntimeException(noAccess);
         assertEquals(positive0 ? "positive test" : "negative test erroneously passed", positive0, mh != null);
+        assertFalse("Setter methods should throw an exception if passed a final static field.", ((testMode0 & TEST_SETTER) != 0) && (isFinal && isStatic));
         if (!positive && !testNPE)  return; // negative access test failed as expected
         assertEquals((isStatic ? 0 : 1)+(isGetter ? 0 : 1), mh.type().parameterCount());
-
-
         assertSame(mh.type(), expType);
         //assertNameStringContains(mh, fname);  // This does not hold anymore with LFs
         HasFields fields = new HasFields();
@@ -778,8 +785,7 @@ public class MethodHandlesGeneralTest extends MethodHandlesTest {
                     }
                 }
                 assertEquals(sawValue, expValue);
-                if (f != null && f.getDeclaringClass() == HasFields.class
-                    && !Modifier.isFinal(f.getModifiers())) {
+                if (f != null && f.getDeclaringClass() == HasFields.class && !isFinal) {
                     Object random = randomArg(ftype);
                     f.set(fields, random);
                     expValue = random;
@@ -813,8 +819,8 @@ public class MethodHandlesGeneralTest extends MethodHandlesTest {
                 }
             }
         }
-        if (f != null && f.getDeclaringClass() == HasFields.class) {
-            f.set(fields, value);  // put it back
+        if ((f != null) && (f.getDeclaringClass() == HasFields.class) && !isFinal) {
+            f.set(fields, value);  // put it back if we changed it.
         }
         if (testNPE) {
             if (caughtEx == null || !(caughtEx instanceof NullPointerException))
@@ -862,7 +868,6 @@ public class MethodHandlesGeneralTest extends MethodHandlesTest {
 
     public void testSetter(int testMode) throws Throwable {
         Lookup lookup = PRIVATE;  // FIXME: test more lookups than this one
-        startTest("unreflectSetter");
         for (Object[] c : HasFields.CASES) {
             boolean positive = (c[1] != Error.class);
             testSetter(positive, lookup, c[0], c[1], testMode);

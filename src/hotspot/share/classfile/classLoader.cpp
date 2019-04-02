@@ -361,6 +361,8 @@ void ClassPathZipEntry::contents_do(void f(const char* name, void* context), voi
   }
 }
 
+DEBUG_ONLY(ClassPathImageEntry* ClassPathImageEntry::_singleton = NULL;)
+
 void ClassPathImageEntry::close_jimage() {
   if (_jimage != NULL) {
     (*JImageClose)(_jimage);
@@ -373,12 +375,17 @@ ClassPathImageEntry::ClassPathImageEntry(JImageFile* jimage, const char* name) :
   _jimage(jimage) {
   guarantee(jimage != NULL, "jimage file is null");
   guarantee(name != NULL, "jimage file name is null");
+  assert(_singleton == NULL, "VM supports only one jimage");
+  DEBUG_ONLY(_singleton = this);
   size_t len = strlen(name) + 1;
   _name = NEW_C_HEAP_ARRAY(const char, len, mtClass);
   strncpy((char *)_name, name, len);
 }
 
 ClassPathImageEntry::~ClassPathImageEntry() {
+  assert(_singleton == this, "must be");
+  DEBUG_ONLY(_singleton = NULL);
+
   if (_name != NULL) {
     FREE_C_HEAP_ARRAY(const char, _name);
     _name = NULL;
@@ -389,6 +396,10 @@ ClassPathImageEntry::~ClassPathImageEntry() {
   }
 }
 
+ClassFileStream* ClassPathImageEntry::open_stream(const char* name, TRAPS) {
+  return open_stream_for_loader(name, ClassLoaderData::the_null_class_loader_data(), THREAD);
+}
+
 // For a class in a named module, look it up in the jimage file using this syntax:
 //    /<module-name>/<package-name>/<base-class>
 //
@@ -396,7 +407,7 @@ ClassPathImageEntry::~ClassPathImageEntry() {
 //     1. There are no unnamed modules in the jimage file.
 //     2. A package is in at most one module in the jimage file.
 //
-ClassFileStream* ClassPathImageEntry::open_stream(const char* name, TRAPS) {
+ClassFileStream* ClassPathImageEntry::open_stream_for_loader(const char* name, ClassLoaderData* loader_data, TRAPS) {
   jlong size;
   JImageLocationRef location = (*JImageFindResource)(_jimage, "", get_jimage_version_string(), name, &size);
 
@@ -407,20 +418,8 @@ ClassFileStream* ClassPathImageEntry::open_stream(const char* name, TRAPS) {
     if (pkg_name != NULL) {
       if (!Universe::is_module_initialized()) {
         location = (*JImageFindResource)(_jimage, JAVA_BASE_NAME, get_jimage_version_string(), name, &size);
-#if INCLUDE_CDS
-        // CDS uses the boot class loader to load classes whose packages are in
-        // modules defined for other class loaders.  So, for now, get their module
-        // names from the "modules" jimage file.
-        if (DumpSharedSpaces && location == 0) {
-          const char* module_name = (*JImagePackageToModule)(_jimage, pkg_name);
-          if (module_name != NULL) {
-            location = (*JImageFindResource)(_jimage, module_name, get_jimage_version_string(), name, &size);
-          }
-        }
-#endif
-
       } else {
-        PackageEntry* package_entry = ClassLoader::get_package_entry(name, ClassLoaderData::the_null_class_loader_data(), CHECK_NULL);
+        PackageEntry* package_entry = ClassLoader::get_package_entry(name, loader_data, CHECK_NULL);
         if (package_entry != NULL) {
           ResourceMark rm;
           // Get the module name
@@ -442,10 +441,12 @@ ClassFileStream* ClassPathImageEntry::open_stream(const char* name, TRAPS) {
     char* data = NEW_RESOURCE_ARRAY(char, size);
     (*JImageGetResource)(_jimage, location, data, size);
     // Resource allocated
+    assert(this == (ClassPathImageEntry*)ClassLoader::get_jrt_entry(), "must be");
     return new ClassFileStream((u1*)data,
                                (int)size,
                                _name,
-                               ClassFileStream::verify);
+                               ClassFileStream::verify,
+                               true); // from_boot_loader_modules_image
   }
 
   return NULL;
@@ -459,7 +460,9 @@ JImageLocationRef ClassLoader::jimage_find_resource(JImageFile* jf,
 }
 
 bool ClassPathImageEntry::is_modules_image() const {
-  return ClassLoader::is_modules_image(name());
+  assert(this == _singleton, "VM supports a single jimage");
+  assert(this == (ClassPathImageEntry*)ClassLoader::get_jrt_entry(), "must be used for jrt entry");
+  return true;
 }
 
 #if INCLUDE_CDS
@@ -737,8 +740,8 @@ void ClassLoader::setup_boot_search_path(const char *class_path) {
         // Check for a jimage
         if (Arguments::has_jimage()) {
           assert(_jrt_entry == NULL, "should not setup bootstrap class search path twice");
-          assert(new_entry != NULL && new_entry->is_modules_image(), "No java runtime image present");
           _jrt_entry = new_entry;
+          assert(new_entry != NULL && new_entry->is_modules_image(), "No java runtime image present");
           assert(_jrt_entry->jimage() != NULL, "No java runtime image");
         }
       } else {
@@ -1499,7 +1502,7 @@ void ClassLoader::record_result(InstanceKlass* ik, const ClassFileStream* stream
       }
       // for index 0 and the stream->source() is the modules image or has the jrt: protocol.
       // The class must be from the runtime modules image.
-      if (i == 0 && (is_modules_image(src) || string_starts_with(src, "jrt:"))) {
+      if (i == 0 && (stream->from_boot_loader_modules_image() || string_starts_with(src, "jrt:"))) {
         classpath_index = i;
         break;
       }
@@ -1515,7 +1518,7 @@ void ClassLoader::record_result(InstanceKlass* ik, const ClassFileStream* stream
     // The shared path table is set up after module system initialization.
     // The path table contains no entry before that. Any classes loaded prior
     // to the setup of the shared path table must be from the modules image.
-    assert(is_modules_image(src), "stream must be from modules image");
+    assert(stream->from_boot_loader_modules_image(), "stream must be loaded by boot loader from modules image");
     assert(FileMapInfo::get_number_of_shared_paths() == 0, "shared path table must not have been setup");
     classpath_index = 0;
   }

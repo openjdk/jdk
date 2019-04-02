@@ -734,7 +734,9 @@ public:
 };
 
 void G1ConcurrentMark::pre_initial_mark() {
-  // Initialize marking structures. This has to be done in a STW phase.
+  assert_at_safepoint_on_vm_thread();
+
+  // Reset marking state.
   reset();
 
   // For each region note start of marking.
@@ -1944,7 +1946,7 @@ public:
   }
 };
 
-void G1ConcurrentMark::verify_no_cset_oops() {
+void G1ConcurrentMark::verify_no_collection_set_oops() {
   assert(SafepointSynchronize::is_at_safepoint(), "should be at a safepoint");
   if (!_g1h->collector_state()->mark_or_rebuild_in_progress()) {
     return;

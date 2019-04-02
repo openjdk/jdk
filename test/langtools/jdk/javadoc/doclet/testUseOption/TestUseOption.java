@@ -47,7 +47,6 @@ public class TestUseOption extends JavadocTester {
         javadoc("-d", "out-1",
                 "-sourcepath", testSrc,
                 "-use",
-                "--frames",
                 "pkg1", "pkg2");
         checkExit(Exit.OK);
 
@@ -80,10 +79,6 @@ public class TestUseOption extends JavadocTester {
                 "Method in C8."
         );
 
-        checkOutput("pkg2/class-use/C3.html", true,
-                "<a href=\"../../index.html?pkg2/class-use/C3.html\" target=\"_top\">"
-                + "Frames</a></li>"
-        );
         checkOutput("pkg1/class-use/UsedClass.html", true,
           "that return types with arguments of type"
         );

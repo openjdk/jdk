@@ -201,6 +201,7 @@ public final class GraphBuilderConfiguration {
     private final List<ResolvedJavaType> skippedExceptionTypes;
     private final boolean insertFullInfopoints;
     private final boolean trackNodeSourcePosition;
+    private final boolean retainLocalVariables;
     private final Plugins plugins;
 
     public enum BytecodeExceptionMode {
@@ -229,6 +230,7 @@ public final class GraphBuilderConfiguration {
                     boolean omitAssertions,
                     boolean insertFullInfopoints,
                     boolean trackNodeSourcePosition,
+                    boolean retainLocalVariables,
                     List<ResolvedJavaType> skippedExceptionTypes,
                     Plugins plugins) {
         this.eagerResolving = eagerResolving;
@@ -237,6 +239,7 @@ public final class GraphBuilderConfiguration {
         this.omitAssertions = omitAssertions;
         this.insertFullInfopoints = insertFullInfopoints;
         this.trackNodeSourcePosition = trackNodeSourcePosition;
+        this.retainLocalVariables = retainLocalVariables;
         this.skippedExceptionTypes = skippedExceptionTypes;
         this.plugins = plugins;
     }
@@ -255,6 +258,7 @@ public final class GraphBuilderConfiguration {
                         omitAssertions,
                         insertFullInfopoints,
                         trackNodeSourcePosition,
+                        retainLocalVariables,
                         skippedExceptionTypes,
                         newPlugins);
         return result;
@@ -274,6 +278,7 @@ public final class GraphBuilderConfiguration {
                         omitAssertions,
                         insertFullInfopoints,
                         trackNodeSourcePosition,
+                        retainLocalVariables,
                         skippedExceptionTypes,
                         plugins);
     }
@@ -286,6 +291,7 @@ public final class GraphBuilderConfiguration {
                         omitAssertions,
                         insertFullInfopoints,
                         trackNodeSourcePosition,
+                        retainLocalVariables,
                         skippedExceptionTypes,
                         plugins);
     }
@@ -298,6 +304,7 @@ public final class GraphBuilderConfiguration {
                         omitAssertions,
                         insertFullInfopoints,
                         trackNodeSourcePosition,
+                        retainLocalVariables,
                         Collections.unmodifiableList(Arrays.asList(newSkippedExceptionTypes)),
                         plugins);
     }
@@ -309,6 +316,7 @@ public final class GraphBuilderConfiguration {
                         omitAssertions,
                         insertFullInfopoints,
                         trackNodeSourcePosition,
+                        retainLocalVariables,
                         skippedExceptionTypes,
                         plugins);
     }
@@ -321,6 +329,7 @@ public final class GraphBuilderConfiguration {
                         newOmitAssertions,
                         insertFullInfopoints,
                         trackNodeSourcePosition,
+                        retainLocalVariables,
                         skippedExceptionTypes,
                         plugins);
     }
@@ -333,6 +342,7 @@ public final class GraphBuilderConfiguration {
                         omitAssertions,
                         newInsertFullInfopoints,
                         trackNodeSourcePosition,
+                        retainLocalVariables,
                         skippedExceptionTypes,
                         plugins);
     }
@@ -345,6 +355,20 @@ public final class GraphBuilderConfiguration {
                         omitAssertions,
                         insertFullInfopoints,
                         newTrackNodeSourcePosition,
+                        retainLocalVariables,
+                        skippedExceptionTypes,
+                        plugins);
+    }
+
+    public GraphBuilderConfiguration withRetainLocalVariables(boolean newRetainLocalVariables) {
+        return new GraphBuilderConfiguration(
+                        eagerResolving,
+                        unresolvedIsError,
+                        bytecodeExceptionMode,
+                        omitAssertions,
+                        insertFullInfopoints,
+                        trackNodeSourcePosition,
+                        newRetainLocalVariables,
                         skippedExceptionTypes,
                         plugins);
     }
@@ -369,6 +393,10 @@ public final class GraphBuilderConfiguration {
         return trackNodeSourcePosition;
     }
 
+    public boolean retainLocalVariables() {
+        return retainLocalVariables;
+    }
+
     public boolean insertFullInfopoints() {
         return insertFullInfopoints;
     }
@@ -381,6 +409,7 @@ public final class GraphBuilderConfiguration {
                         /* omitAssertions: */ false,
                         /* insertFullInfopoints: */ false,
                         /* trackNodeSourcePosition: */ false,
+                        /* retainLocalVariables */ false,
                         Collections.emptyList(),
                         plugins);
     }
@@ -393,6 +422,7 @@ public final class GraphBuilderConfiguration {
                         /* omitAssertions: */ false,
                         /* insertFullInfopoints: */ false,
                         /* trackNodeSourcePosition: */ false,
+                        /* retainLocalVariables */ false,
                         Collections.emptyList(),
                         plugins);
     }

@@ -39,7 +39,7 @@
 <h2 id="using-make-test-the-run-test-framework">Using &quot;make test&quot; (the run-test framework)</h2>
 <p>This new way of running tests is developer-centric. It assumes that you have built a JDK locally and want to test it. Running common test targets is simple, and more complex ad-hoc combination of tests is possible. The user interface is forgiving, and clearly report errors it cannot resolve.</p>
 <p>The main target <code>test</code> uses the jdk-image as the tested product. There is also an alternate target <code>exploded-test</code> that uses the exploded image instead. Not all tests will run successfully on the exploded image, but using this target can greatly improve rebuild times for certain workflows.</p>
-<p>Previously, <code>make test</code> was used invoke an old system for running test, and <code>make run-test</code> was used for the new test framework. For backward compatibility with scripts and muscle memory, <code>run-test</code> (and variants like <code>exploded-run-test</code> or <code>run-test-tier1</code>) are kept as aliases. The old system can still be accessed for some time using <code>cd test &amp;&amp; make</code>.</p>
+<p>Previously, <code>make test</code> was used to invoke an old system for running tests, and <code>make run-test</code> was used for the new test framework. For backward compatibility with scripts and muscle memory, <code>run-test</code> (and variants like <code>exploded-run-test</code> or <code>run-test-tier1</code>) are kept as aliases.</p>
 <p>Some example command-lines:</p>
 <pre><code>$ make test-tier1
 $ make test-jdk_lang JTREG=&quot;JOBS=8&quot;

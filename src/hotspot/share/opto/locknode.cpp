@@ -55,7 +55,7 @@ uint BoxLockNode::hash() const {
 }
 
 //------------------------------cmp--------------------------------------------
-uint BoxLockNode::cmp( const Node &n ) const {
+bool BoxLockNode::cmp( const Node &n ) const {
   if (EliminateNestedLocks)
     return (&n == this); // Always fail except on self
   const BoxLockNode &bn = (const BoxLockNode &)n;
@@ -139,7 +139,7 @@ uint FastLockNode::hash() const { return NO_HASH; }
 uint FastLockNode::size_of() const { return sizeof(*this); }
 
 //------------------------------cmp--------------------------------------------
-uint FastLockNode::cmp( const Node &n ) const {
+bool FastLockNode::cmp( const Node &n ) const {
   return (&n == this);                // Always fail except on self
 }
 
@@ -148,7 +148,7 @@ uint FastLockNode::cmp( const Node &n ) const {
 uint FastUnlockNode::hash() const { return NO_HASH; }
 
 //------------------------------cmp--------------------------------------------
-uint FastUnlockNode::cmp( const Node &n ) const {
+bool FastUnlockNode::cmp( const Node &n ) const {
   return (&n == this);                // Always fail except on self
 }
 

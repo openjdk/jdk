@@ -69,6 +69,11 @@ inline void OrderAccess::fence() {
   compiler_barrier();
 }
 
+inline void OrderAccess::cross_modify_fence() {
+  int regs[4];
+  __cpuid(regs, 0);
+}
+
 #ifndef AMD64
 template<>
 struct OrderAccess::PlatformOrderedStore<1, RELEASE_X_FENCE>

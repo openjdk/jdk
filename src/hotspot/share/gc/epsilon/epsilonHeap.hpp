@@ -129,6 +129,12 @@ public:
   virtual void print_gc_threads_on(outputStream* st) const {}
   virtual void gc_threads_do(ThreadClosure* tc) const {}
 
+  // No nmethod handling
+  virtual void register_nmethod(nmethod* nm) {}
+  virtual void unregister_nmethod(nmethod* nm) {}
+  virtual void flush_nmethod(nmethod* nm) {}
+  virtual void verify_nmethod(nmethod* nm) {}
+
   // No heap verification
   virtual void prepare_for_verify() {}
   virtual void verify(VerifyOption option) {}

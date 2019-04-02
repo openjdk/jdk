@@ -66,7 +66,7 @@ public class VerifyGraphAddUsage extends VerifyPhase<PhaseContext> {
     }
 
     @Override
-    protected boolean verify(StructuredGraph graph, PhaseContext context) {
+    protected void verify(StructuredGraph graph, PhaseContext context) {
         boolean allowed = false;
         for (Class<?> cls : ALLOWED_CLASSES) {
             ResolvedJavaType declaringClass = graph.method().getDeclaringClass();
@@ -85,8 +85,6 @@ public class VerifyGraphAddUsage extends VerifyPhase<PhaseContext> {
                 }
             }
         }
-
-        return true;
     }
 
     private void checkNonFactory(StructuredGraph graph, EconomicSet<Node> seen, PhaseContext context, ValueNode node) {

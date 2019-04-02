@@ -59,7 +59,6 @@ h2 {
 }
 h3 {
     font-size:16px;
-    font-style:italic;
 }
 h4 {
     font-size:13px;
@@ -296,31 +295,20 @@ ul.subNavList li {
 /*
  * Styles for headings.
  */
-div.details ul.blockList ul.blockList ul.blockList li.blockList h3,
-div.details ul.blockList ul.blockList ul.blockListLast li.blockList h3,
-div.serializedFormContainer ul.blockList ul.blockList ul.blockList li.blockList h4 {
-    background-color:#dee3e9;
-    border:1px solid #d0d9e0;
-    margin:0 0 6px -8px;
-    padding:7px 5px;
-}
-div.details h2,
-div.summary h2 {
+body.class-declaration .summary h2,
+body.class-declaration .details h2,
+body.class-use h2,
+body.module-declaration .blockList h2 {
     font-style: italic;
-}
-div.details h3,
-div.summary h3 {
-    font-style: normal;
-}
-ul.blockList ul.blockList ul.blockList li.blockList h2 {
-    background-color:#dee3e9;
-    border:1px solid #d0d9e0;
-    margin:0 0 6px -8px;
-    padding:7px 5px;
-}
-ul.blockList ul.blockList li.blockList h2 {
     padding:0;
     margin:15px 0;
+}
+body.class-declaration .summary h3,
+body.class-declaration .details h3 {
+    background-color:#dee3e9;
+    border:1px solid #d0d9e0;
+    margin:0 0 6px -8px;
+    padding:7px 5px;
 }
 /*
  * Styles for page layout containers.
@@ -604,10 +592,6 @@ th.colDeprecatedItemName a:link, th.colDeprecatedItemName a:visited,
 .docSummary {
     padding:0;
 }
-ul.blockList ul.blockList ul.blockList li.blockList h3,
-ul.blockList ul.blockList ul.blockListLast li.blockList h3 {
-    font-style:normal;
-}
 div.block {
     font-size:14px;
     font-family:'DejaVu Serif', Georgia, "Times New Roman", Times, serif;
@@ -658,9 +642,6 @@ h1.hidden {
 div.block div.deprecationComment, div.block div.block span.emphasizedPhrase,
 div.block div.block span.interfaceName {
     font-style:normal;
-}
-div.contentContainer ul.blockList li.blockList h2 {
-    padding-bottom:0px;
 }
 /*
  * Styles for IFRAME.

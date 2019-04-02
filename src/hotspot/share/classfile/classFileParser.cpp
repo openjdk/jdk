@@ -32,6 +32,7 @@
 #include "classfile/dictionary.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
+#include "classfile/packageEntry.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/verificationType.hpp"
@@ -77,6 +78,8 @@
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/resourceHash.hpp"
+#include "utilities/utf8.hpp"
+
 #if INCLUDE_CDS
 #include "classfile/systemDictionaryShared.hpp"
 #endif
@@ -312,7 +315,7 @@ void ClassFileParser::parse_constant_pool_entries(const ClassFileStream* const s
           const char* const str = java_lang_String::as_utf8_string(patch());
           // (could use java_lang_String::as_symbol instead, but might as well batch them)
           utf8_buffer = (const u1*) str;
-          utf8_length = (int) strlen(str);
+          utf8_length = (u2) strlen(str);
         }
 
         unsigned int hash;
@@ -6113,7 +6116,7 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
           // For the boot and platform class loaders, skip classes that are not found in the
           // java runtime image, such as those found in the --patch-module entries.
           // These classes can't be loaded from the archive during runtime.
-          if (!ClassLoader::is_modules_image(stream->source()) && strncmp(stream->source(), "jrt:", 4) != 0) {
+          if (!stream->from_boot_loader_modules_image() && strncmp(stream->source(), "jrt:", 4) != 0) {
             skip = true;
           }
 

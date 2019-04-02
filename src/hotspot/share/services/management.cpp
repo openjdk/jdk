@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jmm.h"
+#include "classfile/classLoader.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "compiler/compileBroker.hpp"
 #include "memory/allocation.inline.hpp"

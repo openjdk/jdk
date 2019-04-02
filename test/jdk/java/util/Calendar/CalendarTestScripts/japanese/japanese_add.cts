@@ -16,10 +16,10 @@ set non-lenient
 test add ERA
     use jcal
 	clear all
-	set date NewEra 17 Mar 8
+	set date Reiwa 17 Mar 8
 	add era 10
-	# as of NewEra 17 March 8
-	check era NewEra
+	# as of Reiwa 17 March 8
+	check era Reiwa
 	add era -100
 	check era BeforeMeiji
 
@@ -342,12 +342,12 @@ test add MONTH
 	check date BeforeMeiji $minyear May 18
 	check timeofday 1 47 4 191
 
-	set date NewEra 17 Jan 1
+	set date Reiwa 17 Jan 1
 	get max year
 	assign $result $max
-	set date NewEra $max Jul 17
+	set date Reiwa $max Jul 17
 	add month 1
-	check date NewEra $max Aug 17
+	check date Reiwa $max Aug 17
 #	set date Heisei $max Jul 28
 #	set timeofday 23 59 59 999
 #	add month 1

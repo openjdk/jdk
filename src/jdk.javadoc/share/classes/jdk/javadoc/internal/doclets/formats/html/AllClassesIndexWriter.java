@@ -63,7 +63,7 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
     private final Navigation navBar;
 
     /**
-     * Construct AllClassesFrameWriter object. Also initializes the indexbuilder variable in this
+     * Construct AllClassesIndexWriter object. Also initializes the indexbuilder variable in this
      * class.
      *
      * @param configuration The current configuration
@@ -101,7 +101,7 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
      */
     protected void buildAllClassesFile() throws DocFileIOException {
         String label = resources.getText("doclet.All_Classes");
-        HtmlTree bodyTree = getBody(true, getWindowTitle(label));
+        HtmlTree bodyTree = getBody(getWindowTitle(label));
         HtmlTree header = HtmlTree.HEADER();
         addTop(header);
         navBar.setUserHeader(getUserHeaderFooter(true));

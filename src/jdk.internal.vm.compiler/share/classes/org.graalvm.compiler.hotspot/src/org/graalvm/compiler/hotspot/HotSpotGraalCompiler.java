@@ -25,6 +25,7 @@
 package org.graalvm.compiler.hotspot;
 
 import static org.graalvm.compiler.core.common.GraalOptions.OptAssumptions;
+import org.graalvm.compiler.serviceprovider.GraalUnsafeAccess;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -71,9 +72,11 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.SpeculationLog;
 import jdk.vm.ci.meta.TriState;
 import jdk.vm.ci.runtime.JVMCICompiler;
+import sun.misc.Unsafe;
 
 public class HotSpotGraalCompiler implements GraalJVMCICompiler {
 
+    private static final Unsafe UNSAFE = GraalUnsafeAccess.getUnsafe();
     private final HotSpotJVMCIRuntime jvmciRuntime;
     private final HotSpotGraalRuntimeProvider graalRuntime;
     private final CompilationCounters compilationCounters;
@@ -131,7 +134,7 @@ public class HotSpotGraalCompiler implements GraalJVMCICompiler {
             if (compilationCounters != null) {
                 compilationCounters.countCompilation(method);
             }
-            CompilationTask task = new CompilationTask(jvmciRuntime, this, hsRequest, true, installAsDefault, options);
+            CompilationTask task = new CompilationTask(jvmciRuntime, this, hsRequest, true, shouldRetainLocalVariables(hsRequest.getJvmciEnv()), installAsDefault, options);
             CompilationRequestResult r = null;
             try (DebugContext debug = graalRuntime.openDebugContext(options, task.getCompilationIdentifier(), method, getDebugHandlersFactories(), DebugContext.DEFAULT_LOG_STREAM);
                             Activation a = debug.activate()) {
@@ -140,6 +143,24 @@ public class HotSpotGraalCompiler implements GraalJVMCICompiler {
             assert r != null;
             return r;
         }
+    }
+
+    private boolean shouldRetainLocalVariables(long envAddress) {
+        GraalHotSpotVMConfig config = graalRuntime.getVMConfig();
+        if (envAddress == 0) {
+            return false;
+        }
+        if (config.jvmciCompileStateCanPopFrameOffset != Integer.MIN_VALUE) {
+            if ((UNSAFE.getByte(envAddress + config.jvmciCompileStateCanPopFrameOffset) & 0xFF) != 0) {
+                return true;
+            }
+        }
+        if (config.jvmciCompileStateCanAccessLocalVariablesOffset != Integer.MIN_VALUE) {
+            if ((UNSAFE.getByte(envAddress + config.jvmciCompileStateCanAccessLocalVariablesOffset) & 0xFF) != 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public StructuredGraph createGraph(ResolvedJavaMethod method, int entryBCI, boolean useProfilingInfo, CompilationIdentifier compilationId, OptionValues options, DebugContext debug) {
@@ -161,6 +182,11 @@ public class HotSpotGraalCompiler implements GraalJVMCICompiler {
 
     public CompilationResult compileHelper(CompilationResultBuilderFactory crbf, CompilationResult result, StructuredGraph graph, ResolvedJavaMethod method, int entryBCI, boolean useProfilingInfo,
                     OptionValues options) {
+        return compileHelper(crbf, result, graph, method, entryBCI, useProfilingInfo, false, options);
+    }
+
+    public CompilationResult compileHelper(CompilationResultBuilderFactory crbf, CompilationResult result, StructuredGraph graph, ResolvedJavaMethod method, int entryBCI, boolean useProfilingInfo,
+                    boolean shouldRetainLocalVariables, OptionValues options) {
 
         HotSpotBackend backend = graalRuntime.getHostBackend();
         HotSpotProviders providers = backend.getProviders();
@@ -181,7 +207,7 @@ public class HotSpotGraalCompiler implements GraalJVMCICompiler {
 
         result.setEntryBCI(entryBCI);
         boolean shouldDebugNonSafepoints = providers.getCodeCache().shouldDebugNonSafepoints();
-        PhaseSuite<HighTierContext> graphBuilderSuite = configGraphBuilderSuite(providers.getSuites().getDefaultGraphBuilderSuite(), shouldDebugNonSafepoints, isOSR);
+        PhaseSuite<HighTierContext> graphBuilderSuite = configGraphBuilderSuite(providers.getSuites().getDefaultGraphBuilderSuite(), shouldDebugNonSafepoints, shouldRetainLocalVariables, isOSR);
         GraalCompiler.compileGraph(graph, method, providers, backend, graphBuilderSuite, optimisticOpts, profilingInfo, suites, lirSuites, result, crbf, true);
 
         if (!isOSR && useProfilingInfo) {
@@ -193,9 +219,14 @@ public class HotSpotGraalCompiler implements GraalJVMCICompiler {
     }
 
     public CompilationResult compile(ResolvedJavaMethod method, int entryBCI, boolean useProfilingInfo, CompilationIdentifier compilationId, OptionValues options, DebugContext debug) {
+        return compile(method, entryBCI, useProfilingInfo, false, compilationId, options, debug);
+    }
+
+    public CompilationResult compile(ResolvedJavaMethod method, int entryBCI, boolean useProfilingInfo, boolean shouldRetainLocalVariables, CompilationIdentifier compilationId, OptionValues options,
+                    DebugContext debug) {
         StructuredGraph graph = createGraph(method, entryBCI, useProfilingInfo, compilationId, options, debug);
         CompilationResult result = new CompilationResult(compilationId);
-        return compileHelper(CompilationResultBuilderFactory.Default, result, graph, method, entryBCI, useProfilingInfo, options);
+        return compileHelper(CompilationResultBuilderFactory.Default, result, graph, method, entryBCI, useProfilingInfo, shouldRetainLocalVariables, options);
     }
 
     protected OptimisticOptimizations getOptimisticOpts(ProfilingInfo profilingInfo, OptionValues options) {
@@ -217,27 +248,26 @@ public class HotSpotGraalCompiler implements GraalJVMCICompiler {
      * @param suite the graph builder suite
      * @param shouldDebugNonSafepoints specifies if extra debug info should be generated (default is
      *            false)
+     * @param shouldRetainLocalVariables specifies if local variables should be retained for
+     *            debugging purposes (default is false)
      * @param isOSR specifies if extra OSR-specific post-processing is required (default is false)
      * @return a new suite derived from {@code suite} if any of the GBS parameters did not have a
      *         default value otherwise {@code suite}
      */
-    protected PhaseSuite<HighTierContext> configGraphBuilderSuite(PhaseSuite<HighTierContext> suite, boolean shouldDebugNonSafepoints, boolean isOSR) {
-        if (shouldDebugNonSafepoints || isOSR) {
+    protected PhaseSuite<HighTierContext> configGraphBuilderSuite(PhaseSuite<HighTierContext> suite, boolean shouldDebugNonSafepoints, boolean shouldRetainLocalVariables, boolean isOSR) {
+        if (shouldDebugNonSafepoints || shouldRetainLocalVariables || isOSR) {
             PhaseSuite<HighTierContext> newGbs = suite.copy();
-
+            GraphBuilderPhase graphBuilderPhase = (GraphBuilderPhase) newGbs.findPhase(GraphBuilderPhase.class).previous();
+            GraphBuilderConfiguration graphBuilderConfig = graphBuilderPhase.getGraphBuilderConfig();
             if (shouldDebugNonSafepoints) {
-                GraphBuilderPhase graphBuilderPhase = (GraphBuilderPhase) newGbs.findPhase(GraphBuilderPhase.class).previous();
-                GraphBuilderConfiguration graphBuilderConfig = graphBuilderPhase.getGraphBuilderConfig();
                 graphBuilderConfig = graphBuilderConfig.withNodeSourcePosition(true);
-                GraphBuilderPhase newGraphBuilderPhase = new GraphBuilderPhase(graphBuilderConfig);
-                newGbs.findPhase(GraphBuilderPhase.class).set(newGraphBuilderPhase);
             }
+            if (shouldRetainLocalVariables) {
+                graphBuilderConfig = graphBuilderConfig.withRetainLocalVariables(true);
+            }
+            GraphBuilderPhase newGraphBuilderPhase = new GraphBuilderPhase(graphBuilderConfig);
+            newGbs.findPhase(GraphBuilderPhase.class).set(newGraphBuilderPhase);
             if (isOSR) {
-                // We must not clear non liveness for OSR compilations.
-                GraphBuilderPhase graphBuilderPhase = (GraphBuilderPhase) newGbs.findPhase(GraphBuilderPhase.class).previous();
-                GraphBuilderConfiguration graphBuilderConfig = graphBuilderPhase.getGraphBuilderConfig();
-                GraphBuilderPhase newGraphBuilderPhase = new GraphBuilderPhase(graphBuilderConfig);
-                newGbs.findPhase(GraphBuilderPhase.class).set(newGraphBuilderPhase);
                 newGbs.appendPhase(new OnStackReplacementPhase());
             }
             return newGbs;

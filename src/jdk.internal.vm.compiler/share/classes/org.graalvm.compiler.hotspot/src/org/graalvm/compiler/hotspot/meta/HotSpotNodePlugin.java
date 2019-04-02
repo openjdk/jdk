@@ -28,8 +28,6 @@ import static jdk.vm.ci.meta.DeoptimizationAction.None;
 import static jdk.vm.ci.meta.DeoptimizationReason.TransferToInterpreter;
 import static org.graalvm.compiler.core.common.GraalOptions.ImmutableCode;
 
-import java.lang.reflect.Field;
-
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.StampPair;
@@ -56,6 +54,7 @@ import org.graalvm.compiler.nodes.memory.ReadNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import org.graalvm.compiler.nodes.util.ConstantFoldUtil;
+import org.graalvm.compiler.serviceprovider.GraalUnsafeAccess;
 import org.graalvm.compiler.word.Word;
 import org.graalvm.compiler.word.WordOperationPlugin;
 import jdk.internal.vm.compiler.word.LocationIdentity;
@@ -83,6 +82,7 @@ import sun.misc.Unsafe;
  * </ul>
  */
 public final class HotSpotNodePlugin implements NodePlugin, TypePlugin {
+    private static final Unsafe UNSAFE = GraalUnsafeAccess.getUnsafe();
     protected final WordOperationPlugin wordOperationPlugin;
     private final GraalHotSpotVMConfig config;
     private final HotSpotWordTypes wordTypes;
@@ -243,21 +243,5 @@ public final class HotSpotNodePlugin implements NodePlugin, TypePlugin {
     }
 
     private static final LocationIdentity JAVA_THREAD_SHOULD_POST_ON_EXCEPTIONS_FLAG_LOCATION = NamedLocationIdentity.mutable("JavaThread::_should_post_on_exceptions_flag");
-    static final Unsafe UNSAFE = initUnsafe();
-
-    static Unsafe initUnsafe() {
-        try {
-            // Fast path when we are trusted.
-            return Unsafe.getUnsafe();
-        } catch (SecurityException se) {
-            // Slow path when we are not trusted.
-            try {
-                Field theUnsafe = Unsafe.class.getDeclaredField("theUnsafe");
-                theUnsafe.setAccessible(true);
-                return (Unsafe) theUnsafe.get(Unsafe.class);
-            } catch (Exception e) {
-                throw new RuntimeException("exception while trying to get Unsafe", e);
-            }
-        }
-    }
 }
+

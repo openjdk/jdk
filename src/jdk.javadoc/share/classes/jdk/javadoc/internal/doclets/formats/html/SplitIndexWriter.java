@@ -120,7 +120,7 @@ public class SplitIndexWriter extends AbstractIndexWriter {
     protected void generateIndexFile(Character unicode) throws DocFileIOException {
         String title = resources.getText("doclet.Window_Split_Index",
                 unicode.toString());
-        HtmlTree body = getBody(true, getWindowTitle(title));
+        HtmlTree body = getBody(getWindowTitle(title));
         HtmlTree header = HtmlTree.HEADER();
         addTop(header);
         navBar.setUserHeader(getUserHeaderFooter(true));

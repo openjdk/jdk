@@ -266,6 +266,8 @@ class OrderAccess : private Atomic {
   static void     release();
   static void     fence();
 
+  static void     cross_modify_fence();
+
   template <typename T>
   static T        load_acquire(const volatile T* p);
 

@@ -137,6 +137,11 @@ public class AMD64Binary {
                 opcode.emit(masm, size, asRegister(result), (AMD64Address) crb.asAddress(input));
             }
         }
+
+        public AMD64RMOp getOpcode() {
+            return opcode;
+        }
+
     }
 
     /**
@@ -263,6 +268,11 @@ public class AMD64Binary {
             }
             return false;
         }
+
+        public AMD64RMOp getOpcode() {
+            return opcode;
+        }
+
     }
 
     /**

@@ -32,40 +32,40 @@
 // Forwarding entry layout
 // -----------------------
 //
-//   6                      4 4                                             0
-//   3                      2 1                                             0
-//  +------------------------+-----------------------------------------------+
-//  |11111111 11111111 111111|11 11111111 11111111 11111111 11111111 11111111|
-//  +------------------------+-----------------------------------------------+
-//  |                        |
-//  |                        * 41-0 To Object Offset (42-bits)
+//   6                  4 4
+//   3                  6 5                                                1 0
+//  +--------------------+--------------------------------------------------+-+
+//  |11111111 11111111 11|111111 11111111 11111111 11111111 11111111 1111111|1|
+//  +--------------------+--------------------------------------------------+-+
+//  |                    |                                                  |
+//  |                    |                      0-0 Populated Flag (1-bits) *
+//  |                    |
+//  |                    * 45-1 To Object Offset (45-bits)
 //  |
-//  * 63-42 From Object Index (22-bits)
+//  * 63-46 From Object Index (18-bits)
 //
 
 class ZForwardingEntry {
   friend struct PrimitiveConversions;
 
 private:
-  typedef ZBitField<uint64_t, size_t, 0,  42> field_to_offset;
-  typedef ZBitField<uint64_t, size_t, 42, 22> field_from_index;
+  typedef ZBitField<uint64_t, bool,   0,   1> field_populated;
+  typedef ZBitField<uint64_t, size_t, 1,  45> field_to_offset;
+  typedef ZBitField<uint64_t, size_t, 46, 18> field_from_index;
 
   uint64_t _entry;
 
-  static uintptr_t empty() {
-    return (uintptr_t)-1;
-  }
-
 public:
   ZForwardingEntry() :
-      _entry(empty()) {}
+      _entry(0) {}
 
   ZForwardingEntry(size_t from_index, size_t to_offset) :
-      _entry(field_from_index::encode(from_index) |
-             field_to_offset::encode(to_offset)) {}
+      _entry(field_populated::encode(true) |
+             field_to_offset::encode(to_offset) |
+             field_from_index::encode(from_index)) {}
 
-  bool is_empty() const {
-    return _entry == empty();
+  bool populated() const {
+    return field_populated::decode(_entry);
   }
 
   size_t to_offset() const {

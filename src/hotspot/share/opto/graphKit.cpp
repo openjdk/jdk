@@ -2450,6 +2450,8 @@ Node* GraphKit::make_runtime_call(int flags,
                                   Node* parm2, Node* parm3,
                                   Node* parm4, Node* parm5,
                                   Node* parm6, Node* parm7) {
+  assert(call_addr != NULL, "must not call NULL targets");
+
   // Slow-path call
   bool is_leaf = !(flags & RC_NO_LEAF);
   bool has_io  = (!is_leaf && !(flags & RC_NO_IO));

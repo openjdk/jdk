@@ -660,7 +660,7 @@ Java_sun_nio_ch_Net_poll(JNIEnv* env, jclass this, jobject fdo, jint events, jlo
     return rv;
 }
 
-JNIEXPORT jint JNICALL
+JNIEXPORT jboolean JNICALL
 Java_sun_nio_ch_Net_pollConnect(JNIEnv* env, jclass this, jobject fdo, jlong timeout)
 {
     int optError = 0;
@@ -684,13 +684,13 @@ Java_sun_nio_ch_Net_pollConnect(JNIEnv* env, jclass this, jobject fdo, jlong tim
 
     if (result == SOCKET_ERROR) {
         handleSocketError(env, WSAGetLastError());
-        return IOS_THROWN;
+        return JNI_FALSE;
     } else if (result == 0) {
-        return 0;
+        return JNI_FALSE;
     } else {
         // connection established if writable and no error to check
         if (FD_ISSET(fd, &wr) && !FD_ISSET(fd, &ex)) {
-            return 1;
+            return JNI_TRUE;
         }
         result = getsockopt((SOCKET)fd,
                             SOL_SOCKET,
@@ -699,17 +699,13 @@ Java_sun_nio_ch_Net_pollConnect(JNIEnv* env, jclass this, jobject fdo, jlong tim
                             &n);
         if (result == SOCKET_ERROR) {
             int lastError = WSAGetLastError();
-            if (lastError == WSAEINPROGRESS) {
-                return IOS_UNAVAILABLE;
+            if (lastError != WSAEINPROGRESS) {
+                NET_ThrowNew(env, lastError, "getsockopt");
             }
-            NET_ThrowNew(env, lastError, "getsockopt");
-            return IOS_THROWN;
-        }
-        if (optError != NO_ERROR) {
+        } else if (optError != NO_ERROR) {
             handleSocketError(env, optError);
-            return IOS_THROWN;
         }
-        return 0;
+        return JNI_FALSE;
     }
 }
 

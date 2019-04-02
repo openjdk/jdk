@@ -14,10 +14,10 @@ new instance tokyocal
 
 test Make sure that the maximum year value doesn't depent on era
     use jcal
-	# Note: the max year value is as of NewEra
+	# Note: the max year value is as of Reiwa
 	assign 292276976 $max
 	clear all
-	set date NewEra 1 May 1
+	set date Reiwa 1 May 1
 	get millis
 	check max year $max
 	assign $max $maxyear
@@ -39,9 +39,9 @@ test Make sure that the maximum year value doesn't depent on era
 
 test Max of ERA
     use jcal
-	# Assumption: NewEra is the current era
-	check maximum era NewEra
-	check leastmax era NewEra
+	# Assumption: Reiwa is the current era
+	check maximum era Reiwa
+	check leastmax era Reiwa
 
 test Actual max MONTH
     use jcal
@@ -78,7 +78,7 @@ test Actual max MONTH
 	check actualmax month Apr
 
 	clear all
-	set date NewEra 2 Jan 1
+	set date Reiwa 2 Jan 1
 	set year $maxyear
 	check actualmax month Aug
 	get millis
@@ -133,8 +133,8 @@ test Actual max DAY_OF_YEAR
    # time zone dependent
    use tokyocal
 	clear all
-	set date NewEra $maxyear Jan 1
-	# the last date of NewEra is N292276976.08.17T16:12:55.807+0900
+	set date Reiwa $maxyear Jan 1
+	# the last date of Reiwa is R292276976.08.17T16:12:55.807+0900
 	check actualmax day_of_year 229 # 31+28+31+30+31+30+31+17
 
 test Actual max WEEK_OF_YEAR
@@ -165,12 +165,12 @@ test Actual max WEEK_OF_YEAR
 	clear all
 	set date Heisei 31 Apr 28
 	check actualmax week_of_year 17
-	set date NewEra 1 Aug 9
+	set date Reiwa 1 Aug 9
 	check actualmax week_of_year 35
 
     use tokyocal
-	set date NewEra $maxyear Jan 1
-	# the last date of NewEra is N292276976.08.17T16:12:55.807+0900 (Sunday)	
+	set date Reiwa $maxyear Jan 1
+	# the last date of Reiwa is R292276976.08.17T16:12:55.807+0900 (Sunday)	
 	# The year is equivalent to 2003 (Gregorian).
 	check actualmax week_of_year 34
 
@@ -197,12 +197,12 @@ test Actual max WEEK_OF_MONTH
 	clear all
 	set date Heisei 31 Apr 30
 	check actualmax week_of_month 5
-	set date NewEra 1 May 1
+	set date Reiwa 1 May 1
 	check actualmax week_of_month 5
 
     use tokyocal
-	set date NewEra $maxyear Jan 1
-	# the last date of NewEra is N292276976.08.17T16:12:55.807+0900 (Sunday)	
+	set date Reiwa $maxyear Jan 1
+	# the last date of Reiwa is R292276976.08.17T16:12:55.807+0900 (Sunday)	
 	# The year is equivalent to 2003 (Gregorian).
 	check actualmax week_of_month 4
 	
@@ -229,13 +229,13 @@ test Actual max DAY_OF_WEEK_IN_MONTH
 	clear all
 	set date Heisei 31 Apr 30
 	check actualmax week_of_month 5
-	set date NewEra 1 May 1
+	set date Reiwa 1 May 1
 	check actualmax week_of_month 5
 
     use tokyocal
 	clear all
-	set date NewEra $maxyear Jan 1
-	# the last date of NewEra is N292276976.08.17T16:12:55.807+0900 (Sunday)	
+	set date Reiwa $maxyear Jan 1
+	# the last date of Reiwa is R292276976.08.17T16:12:55.807+0900 (Sunday)	
 	# The year is equivalent to 2003 (Gregorian).
 	check actualmax week_of_month 4
 
@@ -269,11 +269,11 @@ test Actual max YEAR
 	set date Heisei 1 Aug 18
 	check actualmax year 30
 
-	set date NewEra 1 Apr 30
+	set date Reiwa 1 Apr 30
 	check actualmax year 31
 
 	# Date/time beyond the last date in the max year.
-	set date NewEra 1 Aug 18
+	set date Reiwa 1 Aug 18
 	check actualmax year 292276975
 	
 test Least max YEAR

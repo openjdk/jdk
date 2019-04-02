@@ -131,7 +131,7 @@ public class PackageTreeWriter extends AbstractTreeWriter {
     protected HtmlTree getPackageTreeHeader() {
         String packageName = packageElement.isUnnamed() ? "" : utils.getPackageName(packageElement);
         String title = packageName + " " + resources.getText("doclet.Window_Class_Hierarchy");
-        HtmlTree bodyTree = getBody(true, getWindowTitle(title));
+        HtmlTree bodyTree = getBody(getWindowTitle(title));
         HtmlTree htmlTree = HtmlTree.HEADER();
         addTop(htmlTree);
         Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(packageElement),

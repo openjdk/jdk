@@ -581,7 +581,8 @@ class Socket implements java.io.Closeable {
      *          if this socket has an associated channel,
      *          and the channel is in non-blocking mode
      * @throws  IllegalArgumentException if endpoint is null or is a
-     *          SocketAddress subclass not supported by this socket
+     *          SocketAddress subclass not supported by this socket, or
+     *          if {@code timeout} is negative
      * @since 1.4
      * @spec JSR-51
      */
@@ -1212,8 +1213,9 @@ class Socket implements java.io.Closeable {
      *  A timeout of zero is interpreted as an infinite timeout.
      *
      * @param timeout the specified timeout, in milliseconds.
-     * @exception SocketException if there is an error
-     * in the underlying protocol, such as a TCP error.
+     * @throws  SocketException if there is an error in the underlying protocol,
+     *          such as a TCP error
+     * @throws  IllegalArgumentException if {@code timeout} is negative
      * @since   1.1
      * @see #getSoTimeout()
      */

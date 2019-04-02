@@ -37,6 +37,7 @@ import java.security.MessageDigest;
 import java.security.Key;
 import java.security.PublicKey;
 import java.security.PrivateKey;
+import java.security.SecureRandom;
 import java.security.Signature;
 import java.security.Timestamp;
 import java.security.UnrecoverableEntryException;
@@ -1436,8 +1437,8 @@ public final class Main {
                 .getDefaultAlgorithmParameterSpec(sigAlgName, privateKey);
         AlgorithmId algID = AlgorithmId.getWithParameterSpec(sigAlgName, params);
         info.set(X509CertInfo.VALIDITY, interval);
-        info.set(X509CertInfo.SERIAL_NUMBER, new CertificateSerialNumber(
-                    new java.util.Random().nextInt() & 0x7fffffff));
+        info.set(X509CertInfo.SERIAL_NUMBER,
+                CertificateSerialNumber.newRandom64bit(new SecureRandom()));
         info.set(X509CertInfo.VERSION,
                     new CertificateVersion(CertificateVersion.V3));
         info.set(X509CertInfo.ALGORITHM_ID,
@@ -2947,8 +2948,8 @@ public final class Main {
         certInfo.set(X509CertInfo.VALIDITY, interval);
 
         // Make new serial number
-        certInfo.set(X509CertInfo.SERIAL_NUMBER, new CertificateSerialNumber(
-                    new java.util.Random().nextInt() & 0x7fffffff));
+        certInfo.set(X509CertInfo.SERIAL_NUMBER,
+                CertificateSerialNumber.newRandom64bit(new SecureRandom()));
 
         // Set owner and issuer fields
         X500Name owner;

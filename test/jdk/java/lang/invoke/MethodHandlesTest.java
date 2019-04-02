@@ -545,14 +545,14 @@ public abstract class MethodHandlesTest {
     }
 
     public static class HasFields {
-        boolean fZ = false;
-        byte fB = (byte)'B';
-        short fS = (short)'S';
-        char fC = 'C';
-        int fI = 'I';
-        long fJ = 'J';
-        float fF = 'F';
-        double fD = 'D';
+        boolean iZ = false;
+        byte iB = (byte)'B';
+        short iS = (short)'S';
+        char iC = 'C';
+        int iI = 'I';
+        long iJ = 'J';
+        float iF = 'F';
+        double iD = 'D';
         static boolean sZ = true;
         static byte sB = 1+(byte)'B';
         static short sS = 1+(short)'S';
@@ -561,11 +561,21 @@ public abstract class MethodHandlesTest {
         static long sJ = 1+'J';
         static float sF = 1+'F';
         static double sD = 1+'D';
+        final static boolean fsZ = false;
+        final static byte fsB = 2+(byte)'B';
+        final static short fsS = 2+(short)'S';
+        final static char fsC = 2+'C';
+        final static int fsI = 2+'I';
+        final static long fsJ = 2+'J';
+        final static float fsF = 2+'F';
+        final static double fsD = 2+'D';
 
-        Object fL = 'L';
-        String fR = "R";
+        Object iL = 'L';
+        String iR = "R";
         static Object sL = 'M';
         static String sR = "S";
+        final static Object fsL = 'N';
+        final static String fsR = "T";
 
         static final Object[][] CASES;
         static {
@@ -579,14 +589,16 @@ public abstract class MethodHandlesTest {
             };
             HasFields fields = new HasFields();
             for (Object[] t : types) {
-                for (int kind = 0; kind <= 1; kind++) {
+                for (int kind = 0; kind <= 2; kind++) {
                     boolean isStatic = (kind != 0);
+                    boolean isFinal  = (kind == 2);
                     char btc = (Character)t[0];
-                    String name = (isStatic ? "s" : "f") + btc;
+                    String name = (isStatic ? "s" : "i") + btc;
+                    if (isFinal) name = "f" + name;
                     Class<?> type = (Class<?>) t[1];
                     Object value;
                     Field field;
-                        try {
+                    try {
                         field = HasFields.class.getDeclaredField(name);
                     } catch (NoSuchFieldException | SecurityException ex) {
                         throw new InternalError("no field HasFields."+name);
@@ -599,11 +611,14 @@ public abstract class MethodHandlesTest {
                     if (type == float.class) {
                         float v = 'F';
                         if (isStatic)  v++;
+                        if (isFinal)   v++;
                         assertTrue(value.equals(v));
                     }
+                    if (isFinal && isStatic) field.setAccessible(true);
                     assertTrue(name.equals(field.getName()));
                     assertTrue(type.equals(field.getType()));
                     assertTrue(isStatic == (Modifier.isStatic(field.getModifiers())));
+                    assertTrue(isFinal  == (Modifier.isFinal(field.getModifiers())));
                     cases.add(new Object[]{ field, value });
                 }
             }

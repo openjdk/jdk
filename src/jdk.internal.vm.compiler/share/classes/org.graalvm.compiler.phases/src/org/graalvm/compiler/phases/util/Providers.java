@@ -27,6 +27,7 @@ package org.graalvm.compiler.phases.util;
 import org.graalvm.compiler.core.common.spi.CodeGenProviders;
 import org.graalvm.compiler.core.common.spi.ConstantFieldProvider;
 import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
+import org.graalvm.compiler.nodes.spi.CoreProvidersImpl;
 import org.graalvm.compiler.nodes.spi.LoweringProvider;
 import org.graalvm.compiler.nodes.spi.Replacements;
 import org.graalvm.compiler.nodes.spi.StampProvider;
@@ -39,27 +40,14 @@ import jdk.vm.ci.meta.MetaAccessProvider;
 /**
  * A set of providers, some of which may not be present (i.e., null).
  */
-public class Providers implements CodeGenProviders {
+public class Providers extends CoreProvidersImpl implements CodeGenProviders {
 
-    private final MetaAccessProvider metaAccess;
     private final CodeCacheProvider codeCache;
-    private final LoweringProvider lowerer;
-    private final ConstantReflectionProvider constantReflection;
-    private final ConstantFieldProvider constantFieldProvider;
-    private final ForeignCallsProvider foreignCalls;
-    private final Replacements replacements;
-    private final StampProvider stampProvider;
 
     public Providers(MetaAccessProvider metaAccess, CodeCacheProvider codeCache, ConstantReflectionProvider constantReflection, ConstantFieldProvider constantFieldProvider,
                     ForeignCallsProvider foreignCalls, LoweringProvider lowerer, Replacements replacements, StampProvider stampProvider) {
-        this.metaAccess = metaAccess;
+        super(metaAccess, constantReflection, constantFieldProvider, lowerer, replacements, stampProvider, foreignCalls);
         this.codeCache = codeCache;
-        this.constantReflection = constantReflection;
-        this.constantFieldProvider = constantFieldProvider;
-        this.foreignCalls = foreignCalls;
-        this.lowerer = lowerer;
-        this.replacements = replacements;
-        this.stampProvider = stampProvider;
     }
 
     public Providers(Providers copyFrom) {
@@ -73,39 +61,8 @@ public class Providers implements CodeGenProviders {
     }
 
     @Override
-    public MetaAccessProvider getMetaAccess() {
-        return metaAccess;
-    }
-
-    @Override
     public CodeCacheProvider getCodeCache() {
         return codeCache;
-    }
-
-    @Override
-    public ForeignCallsProvider getForeignCalls() {
-        return foreignCalls;
-    }
-
-    public LoweringProvider getLowerer() {
-        return lowerer;
-    }
-
-    @Override
-    public ConstantReflectionProvider getConstantReflection() {
-        return constantReflection;
-    }
-
-    public ConstantFieldProvider getConstantFieldProvider() {
-        return constantFieldProvider;
-    }
-
-    public Replacements getReplacements() {
-        return replacements;
-    }
-
-    public StampProvider getStampProvider() {
-        return stampProvider;
     }
 
     public Providers copyWith(MetaAccessProvider substitution) {

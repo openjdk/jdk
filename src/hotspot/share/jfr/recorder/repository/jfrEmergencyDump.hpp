@@ -33,6 +33,8 @@
 class JfrEmergencyDump : AllStatic {
  public:
   static void on_vm_shutdown(bool exception_handler);
+  static void on_vm_error(const char* repository_path);
+  static const char* build_dump_path(const char* repository_path);
 };
 
 #endif // SHARE_JFR_RECORDER_REPOSITORY_JFREMERGENCYDUMP_HPP

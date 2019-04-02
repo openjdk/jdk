@@ -73,7 +73,7 @@ public class VerifyBailoutUsage extends VerifyPhase<PhaseContext> {
     }
 
     @Override
-    protected boolean verify(StructuredGraph graph, PhaseContext context) {
+    protected void verify(StructuredGraph graph, PhaseContext context) {
         final ResolvedJavaType bailoutType = context.getMetaAccess().lookupJavaType(BailoutException.class);
         ResolvedJavaMethod caller = graph.method();
         String holderQualified = caller.format("%H");
@@ -92,7 +92,6 @@ public class VerifyBailoutUsage extends VerifyPhase<PhaseContext> {
                 }
             }
         }
-        return true;
     }
 
 }

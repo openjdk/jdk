@@ -76,7 +76,7 @@ uint ProjNode::hash() const {
   // only one input
   return (uintptr_t)in(TypeFunc::Control) + (_con << 1) + (_is_io_use ? 1 : 0);
 }
-uint ProjNode::cmp( const Node &n ) const { return _con == ((ProjNode&)n)._con && ((ProjNode&)n)._is_io_use == _is_io_use; }
+bool ProjNode::cmp( const Node &n ) const { return _con == ((ProjNode&)n)._con && ((ProjNode&)n)._is_io_use == _is_io_use; }
 uint ProjNode::size_of() const { return sizeof(ProjNode); }
 
 // Test if we propagate interesting control along this projection

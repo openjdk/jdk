@@ -74,6 +74,7 @@ inline void OrderAccess::storeload()  { inlasm_zarch_sync(); }
 inline void OrderAccess::acquire()    { inlasm_zarch_acquire(); }
 inline void OrderAccess::release()    { inlasm_zarch_release(); }
 inline void OrderAccess::fence()      { inlasm_zarch_sync(); }
+inline void OrderAccess::cross_modify_fence() { inlasm_zarch_sync(); }
 
 template<size_t byte_size>
 struct OrderAccess::PlatformOrderedLoad<byte_size, X_ACQUIRE>

@@ -36,6 +36,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/init.hpp"
+#include "runtime/orderAccess.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "services/memTracker.hpp"
@@ -186,11 +187,19 @@ void exit_globals() {
 static volatile bool _init_completed = false;
 
 bool is_init_completed() {
-  return _init_completed;
+  return OrderAccess::load_acquire(&_init_completed);
 }
 
+void wait_init_completed() {
+  MonitorLockerEx ml(InitCompleted_lock, Monitor::_no_safepoint_check_flag);
+  while (!_init_completed) {
+    ml.wait(Monitor::_no_safepoint_check_flag);
+  }
+}
 
 void set_init_completed() {
   assert(Universe::is_fully_initialized(), "Should have completed initialization");
-  _init_completed = true;
+  MonitorLockerEx ml(InitCompleted_lock, Monitor::_no_safepoint_check_flag);
+  OrderAccess::release_store(&_init_completed, true);
+  ml.notify_all();
 }

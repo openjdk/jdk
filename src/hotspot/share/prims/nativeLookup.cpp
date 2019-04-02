@@ -43,6 +43,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/utf8.hpp"
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif

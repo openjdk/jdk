@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 8012625
+ * @library /test/lib
  * @modules jdk.httpserver
  * @run main B8012625
  */
@@ -34,6 +35,9 @@ import java.io.*;
 import java.net.*;
 import java.io.*;
 import java.util.concurrent.*;
+
+import jdk.test.lib.net.URIBuilder;
+
 import com.sun.net.httpserver.*;
 
 public class B8012625 implements HttpHandler {
@@ -44,8 +48,13 @@ public class B8012625 implements HttpHandler {
     }
 
     public void run() throws Exception {
-        String u = "http://127.0.0.1:" + port + "/foo";
-        URL url = new URL(u);
+        URL url = URIBuilder.newBuilder()
+            .scheme("http")
+            .loopback()
+            .port(port)
+            .path("/foo")
+            .toURL();
+        System.out.println("URL: " + url);
         HttpURLConnection uc = (HttpURLConnection)url.openConnection();
         uc.setDoOutput(true);
         uc.setRequestMethod("POST");

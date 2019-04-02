@@ -23,15 +23,22 @@
 
 /* @test
  * @bug 6215885
+ * @library /test/lib
  * @summary URLConnection.openConnection NPE if ProxySelector.setDefault is set to null
  */
 
 import java.net.*;
 import java.io.*;
+import jdk.test.lib.net.URIBuilder;
 
 public class NullSelector {
     public static void main(String[] args) throws Exception {
-        URL url = new URL("http://127.0.0.1/");
+        URL url = URIBuilder.newBuilder()
+            .scheme("http")
+            .loopback()
+            .path("/")
+            .toURLUnchecked();
+        System.out.println("URL: " + url);
         ProxySelector.setDefault(null);
         URLConnection con = url.openConnection();
         con.setConnectTimeout(500);

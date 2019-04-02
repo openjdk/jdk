@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,7 @@
  * questions.
  */
 
-import java.security.Signature;
-import java.security.SignedObject;
-import java.security.KeyPairGenerator;
-import java.security.KeyPair;
-import java.security.NoSuchProviderException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
+import java.security.*;
 import java.security.spec.*;
 import java.util.*;
 import jdk.test.lib.SigTestUtil;
@@ -197,8 +191,15 @@ public class Chain {
             if (test.provider != Provider.Default) {
                 signature = Signature.getInstance(test.sigAlg.name,
                         test.provider.name);
-                kpg = KeyPairGenerator.getInstance(
-                    test.keyAlg.name, test.provider.name);
+                // try using the same provider first, if not, fallback
+                // to the first available impl
+                try {
+                    kpg = KeyPairGenerator.getInstance(
+                        test.keyAlg.name, test.provider.name);
+                } catch (NoSuchAlgorithmException nsae) {
+                    kpg = KeyPairGenerator.getInstance(
+                        test.keyAlg.name);
+                }
             } else {
                 signature = Signature.getInstance(test.sigAlg.name);
                 kpg = KeyPairGenerator.getInstance(test.keyAlg.name);

@@ -50,7 +50,6 @@ public class TestRelativeLinks extends JavadocTester {
     public void test() {
         javadoc("-d", "out",
                 "-use",
-                "--frames",
                 "-sourcepath", testSrc,
                 "pkg", "pkg2");
         checkExit(Exit.ERROR);
@@ -98,7 +97,7 @@ public class TestRelativeLinks extends JavadocTester {
             " <a href=\"../../pkg/relative-multi-line-link.html\">relative-multi-line-link</a>.");
 
         // PACKAGE OVERVIEW
-        checkOutput("overview-summary.html", true,
+        checkOutput("index.html", true,
             "<a href=\"./pkg/relative-package-link.html\">relative package link</a>");
     }
 

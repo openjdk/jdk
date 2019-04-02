@@ -140,7 +140,7 @@ public abstract class TransformerFactory {
      * {@code TransformerFactory} it can use the factory to configure
      * and obtain transformer instances.
      *
-     * <h2>Tip for Trouble-shooting</h2>
+     * <h4>Tip for Trouble-shooting</h4>
      * <p>Setting the {@code jaxp.debug} system property will cause
      * this method to print a lot of debug messages
      * to {@code System.err} about what it is doing and where it is looking at.

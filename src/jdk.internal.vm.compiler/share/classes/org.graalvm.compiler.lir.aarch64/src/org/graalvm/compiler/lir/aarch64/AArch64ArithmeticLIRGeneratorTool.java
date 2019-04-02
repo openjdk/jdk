@@ -24,10 +24,8 @@
 
 package org.graalvm.compiler.lir.aarch64;
 
-import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGeneratorTool;
 
-import jdk.vm.ci.aarch64.AArch64Kind;
 import jdk.vm.ci.meta.Value;
 
 /**
@@ -53,6 +51,4 @@ public interface AArch64ArithmeticLIRGeneratorTool extends ArithmeticLIRGenerato
     }
 
     Value emitRound(Value value, RoundingMode mode);
-
-    void emitCompareOp(AArch64Kind cmpKind, Variable left, Value right);
 }

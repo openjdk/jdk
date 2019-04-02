@@ -35,7 +35,7 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
-#include "gc/shenandoah/shenandoahRootProcessor.hpp"
+#include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahTraversalGC.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
@@ -572,9 +572,9 @@ public:
     MarkingCodeBlobClosure adjust_code_closure(&cl,
                                              CodeBlobToOopClosure::FixRelocations);
 
-    _rp->process_all_roots(&cl, &cl,
-                           &adjust_cld_closure,
-                           &adjust_code_closure, NULL, worker_id);
+    _rp->update_all_roots<AlwaysTrueClosure>(&cl,
+                                             &adjust_cld_closure,
+                                             &adjust_code_closure, NULL, worker_id);
   }
 };
 

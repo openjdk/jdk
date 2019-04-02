@@ -56,21 +56,18 @@ public:
   }
 };
 
-G1DirtyCardQueue::G1DirtyCardQueue(G1DirtyCardQueueSet* qset, bool permanent) :
+G1DirtyCardQueue::G1DirtyCardQueue(G1DirtyCardQueueSet* qset) :
   // Dirty card queues are always active, so we create them with their
   // active field set to true.
-  PtrQueue(qset, permanent, true /* active */)
+  PtrQueue(qset, true /* active */)
 { }
 
 G1DirtyCardQueue::~G1DirtyCardQueue() {
-  if (!is_permanent()) {
-    flush();
-  }
+  flush();
 }
 
 G1DirtyCardQueueSet::G1DirtyCardQueueSet(bool notify_when_complete) :
   PtrQueueSet(notify_when_complete),
-  _shared_dirty_card_queue(this, true /* permanent */),
   _free_ids(NULL),
   _processed_buffers_mut(0),
   _processed_buffers_rs_thread(0),
@@ -90,10 +87,8 @@ uint G1DirtyCardQueueSet::num_par_ids() {
 
 void G1DirtyCardQueueSet::initialize(Monitor* cbl_mon,
                                      BufferNode::Allocator* allocator,
-                                     Mutex* lock,
                                      bool init_free_ids) {
   PtrQueueSet::initialize(cbl_mon, allocator);
-  _shared_dirty_card_queue.set_lock(lock);
   if (init_free_ids) {
     _free_ids = new G1FreeIdSet(0, num_par_ids());
   }
@@ -217,13 +212,7 @@ void G1DirtyCardQueueSet::abandon_logs() {
   } closure;
   Threads::threads_do(&closure);
 
-  shared_dirty_card_queue()->reset();
-}
-
-void G1DirtyCardQueueSet::concatenate_log(G1DirtyCardQueue& dcq) {
-  if (!dcq.is_empty()) {
-    dcq.flush();
-  }
+  G1BarrierSet::shared_dirty_card_queue().reset();
 }
 
 void G1DirtyCardQueueSet::concatenate_logs() {
@@ -234,16 +223,16 @@ void G1DirtyCardQueueSet::concatenate_logs() {
   size_t old_limit = max_completed_buffers();
   set_max_completed_buffers(MaxCompletedBuffersUnlimited);
 
-  class ConcatenateThreadLogClosure : public ThreadClosure {
-    G1DirtyCardQueueSet* _qset;
-  public:
-    ConcatenateThreadLogClosure(G1DirtyCardQueueSet* qset) : _qset(qset) {}
+  struct ConcatenateThreadLogClosure : public ThreadClosure {
     virtual void do_thread(Thread* t) {
-      _qset->concatenate_log(G1ThreadLocalData::dirty_card_queue(t));
+      G1DirtyCardQueue& dcq = G1ThreadLocalData::dirty_card_queue(t);
+      if (!dcq.is_empty()) {
+        dcq.flush();
+      }
     }
-  } closure(this);
+  } closure;
   Threads::threads_do(&closure);
 
-  concatenate_log(_shared_dirty_card_queue);
+  G1BarrierSet::shared_dirty_card_queue().flush();
   set_max_completed_buffers(old_limit);
 }

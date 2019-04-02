@@ -199,11 +199,11 @@ class ObjectSynchronizer : AllStatic {
   static u_char* get_gvars_stwRandom_addr();
 };
 
-// ObjectLocker enforced balanced locking and can never thrown an
+// ObjectLocker enforces balanced locking and can never throw an
 // IllegalMonitorStateException. However, a pending exception may
 // have to pass through, and we must also be able to deal with
 // asynchronous exceptions. The caller is responsible for checking
-// the threads pending exception if needed.
+// the thread's pending exception if needed.
 class ObjectLocker : public StackObj {
  private:
   Thread*   _thread;

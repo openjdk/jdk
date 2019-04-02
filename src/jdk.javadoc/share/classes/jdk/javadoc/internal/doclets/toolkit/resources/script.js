@@ -150,10 +150,6 @@ function updateTabs(type) {
     }
 }
 
-function updateModuleFrame(pFrame, cFrame) {
-    top.packageFrame.location = pFrame;
-    top.classFrame.location = cFrame;
-}
 function switchTab(e) {
     if (e.keyCode == 37 || e.keyCode == 38) {
         $("[aria-selected=true]").prev().click().focus();

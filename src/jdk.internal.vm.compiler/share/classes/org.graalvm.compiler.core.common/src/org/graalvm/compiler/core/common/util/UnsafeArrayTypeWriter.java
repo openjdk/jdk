@@ -30,6 +30,8 @@ import static org.graalvm.compiler.core.common.util.TypeConversion.asS4;
 import static org.graalvm.compiler.core.common.util.TypeConversion.asU1;
 import static org.graalvm.compiler.core.common.util.TypeConversion.asU2;
 import static org.graalvm.compiler.core.common.util.TypeConversion.asU4;
+import static org.graalvm.compiler.serviceprovider.GraalUnsafeAccess.getUnsafe;
+
 import sun.misc.Unsafe;
 
 /**
@@ -44,6 +46,7 @@ import sun.misc.Unsafe;
  */
 public abstract class UnsafeArrayTypeWriter implements TypeWriter {
 
+    private static final Unsafe UNSAFE = getUnsafe();
     private static final int MIN_CHUNK_LENGTH = 200;
     private static final int MAX_CHUNK_LENGTH = 16000;
 
@@ -96,13 +99,13 @@ public abstract class UnsafeArrayTypeWriter implements TypeWriter {
     @Override
     public final void putS1(long value) {
         long offset = writeOffset(Byte.BYTES);
-        UnsafeAccess.UNSAFE.putByte(writeChunk.data, offset, asS1(value));
+        UNSAFE.putByte(writeChunk.data, offset, asS1(value));
     }
 
     @Override
     public final void putU1(long value) {
         long offset = writeOffset(Byte.BYTES);
-        UnsafeAccess.UNSAFE.putByte(writeChunk.data, offset, asU1(value));
+        UNSAFE.putByte(writeChunk.data, offset, asU1(value));
     }
 
     @Override
@@ -134,52 +137,56 @@ public abstract class UnsafeArrayTypeWriter implements TypeWriter {
 }
 
 final class UnalignedUnsafeArrayTypeWriter extends UnsafeArrayTypeWriter {
+    private static final Unsafe UNSAFE = getUnsafe();
+
     @Override
     public void putS2(long value) {
         long offset = writeOffset(Short.BYTES);
-        UnsafeAccess.UNSAFE.putShort(writeChunk.data, offset, asS2(value));
+        UNSAFE.putShort(writeChunk.data, offset, asS2(value));
     }
 
     @Override
     public void putS4(long value) {
         long offset = writeOffset(Integer.BYTES);
-        UnsafeAccess.UNSAFE.putInt(writeChunk.data, offset, asS4(value));
+        UNSAFE.putInt(writeChunk.data, offset, asS4(value));
     }
 
     @Override
     public void putS8(long value) {
         long offset = writeOffset(Long.BYTES);
-        UnsafeAccess.UNSAFE.putLong(writeChunk.data, offset, value);
+        UNSAFE.putLong(writeChunk.data, offset, value);
     }
 }
 
 final class AlignedUnsafeArrayTypeWriter extends UnsafeArrayTypeWriter {
+    private static final Unsafe UNSAFE = getUnsafe();
+
     @Override
     public void putS2(long value) {
         long offset = writeOffset(Short.BYTES);
-        UnsafeAccess.UNSAFE.putByte(writeChunk.data, offset + 0, (byte) (value >> 0));
-        UnsafeAccess.UNSAFE.putByte(writeChunk.data, offset + 1, (byte) (value >> 8));
+        UNSAFE.putByte(writeChunk.data, offset + 0, (byte) (value >> 0));
+        UNSAFE.putByte(writeChunk.data, offset + 1, (byte) (value >> 8));
     }
 
     @Override
     public void putS4(long value) {
         long offset = writeOffset(Integer.BYTES);
-        UnsafeAccess.UNSAFE.putByte(writeChunk.data, offset + 0, (byte) (value >> 0));
-        UnsafeAccess.UNSAFE.putByte(writeChunk.data, offset + 1, (byte) (value >> 8));
-        UnsafeAccess.UNSAFE.putByte(writeChunk.data, offset + 2, (byte) (value >> 16));
-        UnsafeAccess.UNSAFE.putByte(writeChunk.data, offset + 3, (byte) (value >> 24));
+        UNSAFE.putByte(writeChunk.data, offset + 0, (byte) (value >> 0));
+        UNSAFE.putByte(writeChunk.data, offset + 1, (byte) (value >> 8));
+        UNSAFE.putByte(writeChunk.data, offset + 2, (byte) (value >> 16));
+        UNSAFE.putByte(writeChunk.data, offset + 3, (byte) (value >> 24));
     }
 
     @Override
     public void putS8(long value) {
         long offset = writeOffset(Long.BYTES);
-        UnsafeAccess.UNSAFE.putByte(writeChunk.data, offset + 0, (byte) (value >> 0));
-        UnsafeAccess.UNSAFE.putByte(writeChunk.data, offset + 1, (byte) (value >> 8));
-        UnsafeAccess.UNSAFE.putByte(writeChunk.data, offset + 2, (byte) (value >> 16));
-        UnsafeAccess.UNSAFE.putByte(writeChunk.data, offset + 3, (byte) (value >> 24));
-        UnsafeAccess.UNSAFE.putByte(writeChunk.data, offset + 4, (byte) (value >> 32));
-        UnsafeAccess.UNSAFE.putByte(writeChunk.data, offset + 5, (byte) (value >> 40));
-        UnsafeAccess.UNSAFE.putByte(writeChunk.data, offset + 6, (byte) (value >> 48));
-        UnsafeAccess.UNSAFE.putByte(writeChunk.data, offset + 7, (byte) (value >> 56));
+        UNSAFE.putByte(writeChunk.data, offset + 0, (byte) (value >> 0));
+        UNSAFE.putByte(writeChunk.data, offset + 1, (byte) (value >> 8));
+        UNSAFE.putByte(writeChunk.data, offset + 2, (byte) (value >> 16));
+        UNSAFE.putByte(writeChunk.data, offset + 3, (byte) (value >> 24));
+        UNSAFE.putByte(writeChunk.data, offset + 4, (byte) (value >> 32));
+        UNSAFE.putByte(writeChunk.data, offset + 5, (byte) (value >> 40));
+        UNSAFE.putByte(writeChunk.data, offset + 6, (byte) (value >> 48));
+        UNSAFE.putByte(writeChunk.data, offset + 7, (byte) (value >> 56));
     }
 }

@@ -38,6 +38,7 @@
 #include "services/diagnosticCommand.hpp"
 #include "utilities/concurrentHashTable.inline.hpp"
 #include "utilities/concurrentHashTableTasks.inline.hpp"
+#include "utilities/utf8.hpp"
 
 // We used to not resize at all, so let's be conservative
 // and not set it too short before we decide to resize,

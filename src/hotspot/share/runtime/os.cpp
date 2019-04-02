@@ -704,12 +704,15 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
   // Wrap memory with guard
   GuardedMemory guarded(ptr, size + nmt_header_size);
   ptr = guarded.get_user_ptr();
-#endif
+
   if ((intptr_t)ptr == (intptr_t)MallocCatchPtr) {
     log_warning(malloc, free)("os::malloc caught, " SIZE_FORMAT " bytes --> " PTR_FORMAT, size, p2i(ptr));
     breakpoint();
   }
-  debug_only(if (paranoid) verify_memory(ptr));
+  if (paranoid) {
+    verify_memory(ptr);
+  }
+#endif
 
   // we do not track guard memory
   return MemTracker::record_malloc((address)ptr, size, memflags, stack, level);
@@ -760,10 +763,8 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
     // Guard's user data contains NMT header
     size_t memblock_size = guarded.get_user_size() - MemTracker::malloc_header_size(memblock);
     memcpy(ptr, memblock, MIN2(size, memblock_size));
-    if (paranoid) verify_memory(MemTracker::malloc_base(ptr));
-    if ((intptr_t)ptr == (intptr_t)MallocCatchPtr) {
-      log_warning(malloc, free)("os::realloc caught, " SIZE_FORMAT " bytes --> " PTR_FORMAT, size, p2i(ptr));
-      breakpoint();
+    if (paranoid) {
+      verify_memory(MemTracker::malloc_base(ptr));
     }
     os::free(memblock);
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,16 @@
 
 package sun.nio.ch;
 
-import java.io.*;
+import java.io.FileDescriptor;
+import java.io.IOException;
 
 /**
  * Allows different platforms to call different native methods
  * for read and write operations.
  */
 
-class SocketDispatcher extends NativeDispatcher
-{
-
-    static {
-        IOUtil.load();
-    }
+class SocketDispatcher extends NativeDispatcher {
+    SocketDispatcher() { }
 
     int read(FileDescriptor fd, long address, int len) throws IOException {
         return read0(fd, address, len);
@@ -63,7 +60,8 @@ class SocketDispatcher extends NativeDispatcher
         close0(fd);
     }
 
-    //-- Native methods
+    // -- Native methods --
+
     static native int read0(FileDescriptor fd, long address, int len)
         throws IOException;
 
@@ -79,4 +77,8 @@ class SocketDispatcher extends NativeDispatcher
     static native void preClose0(FileDescriptor fd) throws IOException;
 
     static native void close0(FileDescriptor fd) throws IOException;
+
+    static {
+        IOUtil.load();
+    }
 }

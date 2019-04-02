@@ -47,7 +47,6 @@ public class TestOverview extends JavadocTester {
                     "-doctitle", "Document Title",
                     "-windowtitle", "Window Title",
                     "-overview", testSrc("overview.html"),
-                    "--frames",
                     "-sourcepath", testSrc("src"),
                     "p1", "p2");
         checkExit(Exit.OK);
@@ -60,7 +59,6 @@ public class TestOverview extends JavadocTester {
                     "-doctitle", "Document Title",
                     "-windowtitle", "Window Title",
                     "-overview", testSrc("overview.html"),
-                    "--frames",
                     "-sourcepath", testSrc("msrc"),
                     "p1", "p2");
         checkExit(Exit.OK);
@@ -68,7 +66,7 @@ public class TestOverview extends JavadocTester {
     }
 
     void checkOverview() {
-        checkOutput("overview-summary.html", true,
+        checkOutput("index.html", true,
                 "<main role=\"main\">\n"
                 + "<div class=\"header\">\n"
                 + "<h1 class=\"title\">Document Title</h1>\n"
