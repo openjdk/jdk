@@ -141,7 +141,7 @@ private:
   bool arraycopy_loop(T* src, T* dst, size_t length, Klass* bound, bool disjoint);
 
   template <typename T, bool CHECKCAST, bool SATB, ShenandoahBarrierSet::ArrayCopyStoreValMode STOREVAL_MODE>
-  bool arraycopy_element(T* cur_src, T* cur_dst, Klass* bound, Thread* thread);
+  bool arraycopy_element(T* cur_src, T* cur_dst, Klass* bound, Thread* const thread, ShenandoahMarkingContext* const ctx);
 
 public:
   // Callbacks for runtime accesses.

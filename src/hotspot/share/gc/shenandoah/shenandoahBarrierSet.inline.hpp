@@ -28,6 +28,9 @@
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahBrooksPointer.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.hpp"
+#include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
+#include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 
 bool ShenandoahBarrierSet::need_update_refs_barrier() {
   return _heap->is_update_refs_in_progress() ||
@@ -59,7 +62,8 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_ato
   } while ((! oopDesc::equals_raw(compare_value, expected)) && oopDesc::equals_raw(resolve_forwarded(compare_value), resolve_forwarded(expected)));
   if (oopDesc::equals_raw(expected, compare_value)) {
     const bool keep_alive = (decorators & AS_NO_KEEPALIVE) == 0;
-    if (keep_alive && ShenandoahSATBBarrier && !CompressedOops::is_null(compare_value)) {
+    if (keep_alive && ShenandoahSATBBarrier && !CompressedOops::is_null(compare_value) &&
+        ShenandoahHeap::heap()->is_concurrent_mark_in_progress()) {
       ShenandoahBarrierSet::barrier_set()->enqueue(compare_value);
     }
   }
@@ -72,7 +76,8 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_ato
   oop previous = Raw::oop_atomic_xchg(new_value, addr);
   if (ShenandoahSATBBarrier) {
     const bool keep_alive = (decorators & AS_NO_KEEPALIVE) == 0;
-    if (keep_alive && !CompressedOops::is_null(previous)) {
+    if (keep_alive && !CompressedOops::is_null(previous) &&
+        ShenandoahHeap::heap()->is_concurrent_mark_in_progress()) {
       ShenandoahBarrierSet::barrier_set()->enqueue(previous);
     }
   }
@@ -134,7 +139,7 @@ bool ShenandoahBarrierSet::arraycopy_loop_3(T* src, T* dst, size_t length, Klass
 template <typename T, bool CHECKCAST, bool SATB, ShenandoahBarrierSet::ArrayCopyStoreValMode STOREVAL_MODE>
 bool ShenandoahBarrierSet::arraycopy_loop(T* src, T* dst, size_t length, Klass* bound, bool disjoint) {
   Thread* thread = Thread::current();
-
+  ShenandoahMarkingContext* ctx = _heap->marking_context();
   ShenandoahEvacOOMScope oom_evac_scope;
 
   // We need to handle four cases:
@@ -161,7 +166,7 @@ bool ShenandoahBarrierSet::arraycopy_loop(T* src, T* dst, size_t length, Klass* 
     T* cur_dst = dst;
     T* src_end = src + length;
     for (; cur_src < src_end; cur_src++, cur_dst++) {
-      if (!arraycopy_element<T, CHECKCAST, SATB, STOREVAL_MODE>(cur_src, cur_dst, bound, thread)) {
+      if (!arraycopy_element<T, CHECKCAST, SATB, STOREVAL_MODE>(cur_src, cur_dst, bound, thread, ctx)) {
         return false;
       }
     }
@@ -170,7 +175,7 @@ bool ShenandoahBarrierSet::arraycopy_loop(T* src, T* dst, size_t length, Klass* 
     T* cur_src = src + length - 1;
     T* cur_dst = dst + length - 1;
     for (; cur_src >= src; cur_src--, cur_dst--) {
-      if (!arraycopy_element<T, CHECKCAST, SATB, STOREVAL_MODE>(cur_src, cur_dst, bound, thread)) {
+      if (!arraycopy_element<T, CHECKCAST, SATB, STOREVAL_MODE>(cur_src, cur_dst, bound, thread, ctx)) {
         return false;
       }
     }
@@ -179,14 +184,26 @@ bool ShenandoahBarrierSet::arraycopy_loop(T* src, T* dst, size_t length, Klass* 
 }
 
 template <typename T, bool CHECKCAST, bool SATB, ShenandoahBarrierSet::ArrayCopyStoreValMode STOREVAL_MODE>
-bool ShenandoahBarrierSet::arraycopy_element(T* cur_src, T* cur_dst, Klass* bound, Thread* thread) {
+bool ShenandoahBarrierSet::arraycopy_element(T* cur_src, T* cur_dst, Klass* bound, Thread* const thread, ShenandoahMarkingContext* const ctx) {
   T o = RawAccess<>::oop_load(cur_src);
 
   if (SATB) {
+    assert(ShenandoahThreadLocalData::satb_mark_queue(thread).is_active(), "Shouldn't be here otherwise");
     T prev = RawAccess<>::oop_load(cur_dst);
     if (!CompressedOops::is_null(prev)) {
       oop prev_obj = CompressedOops::decode_not_null(prev);
-      enqueue(prev_obj);
+      switch (STOREVAL_MODE) {
+      case NONE:
+        break;
+      case READ_BARRIER:
+      case WRITE_BARRIER:
+        // The write-barrier case cannot really happen. It's traversal-only and traversal
+        // doesn't currently use SATB. And even if it did, it would not be fatal to just do the normal RB here.
+        prev_obj = ShenandoahBarrierSet::resolve_forwarded_not_null(prev_obj);
+      }
+      if (!ctx->is_marked(prev_obj)) {
+        ShenandoahThreadLocalData::satb_mark_queue(thread).enqueue_known_active(prev_obj);
+      }
     }
   }
 
