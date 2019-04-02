@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,11 +42,13 @@ public class StringHashCode {
 
     private String hashcode;
     private String hashcode0;
+    private String empty;
 
     @Setup
     public void setup() {
         hashcode = "abcdefghijkl";
         hashcode0 = new String(new char[]{72, 90, 100, 89, 105, 2, 72, 90, 100, 89, 105, 2});
+        empty = new String();
     }
 
     /**
@@ -65,5 +67,14 @@ public class StringHashCode {
     @Benchmark
     public int notCached() {
         return hashcode0.hashCode();
+    }
+
+    /**
+     * Benchmark testing String.hashCode() with the empty string. Since the
+     * empty String has hashCode = 0, this value is always recalculated.
+     */
+    @Benchmark
+    public int empty() {
+        return empty.hashCode();
     }
 }

@@ -1510,8 +1510,14 @@ public final class String
     public int hashCode() {
         int h = hash;
         if (h == 0 && value.length > 0) {
-            hash = h = isLatin1() ? StringLatin1.hashCode(value)
-                                  : StringUTF16.hashCode(value);
+            h = isLatin1() ? StringLatin1.hashCode(value)
+                           : StringUTF16.hashCode(value);
+            // Avoid issuing a store if the calculated value is also zero:
+            // in addition to a minor performance benefit, this allows storing
+            // Strings with zero hash code in read-only memory.
+            if (h != 0) {
+                hash = h;
+            }
         }
         return h;
     }
