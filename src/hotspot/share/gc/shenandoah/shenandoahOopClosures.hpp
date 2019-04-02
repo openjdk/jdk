@@ -34,7 +34,7 @@
 
 enum UpdateRefsMode {
   NONE,       // No reference updating
-  RESOLVE,    // Only a read-barrier (no reference updating)
+  RESOLVE,    // Only a resolve (no reference updating)
   SIMPLE,     // Reference updating using simple store
   CONCURRENT  // Reference updating using CAS
 };

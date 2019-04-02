@@ -99,6 +99,7 @@ LIR_Opr ShenandoahBarrierSetC1::atomic_xchg_at_resolved(LIRAccess& access, LIRIt
   __ xchg(access.resolved_addr(), value_opr, result, tmp);
 
   if (access.is_oop()) {
+    result = load_reference_barrier(access.gen(), result, access.access_emit_info(), true);
     if (ShenandoahSATBBarrier) {
       pre_barrier(access.gen(), access.access_emit_info(), access.decorators(), LIR_OprFact::illegalOpr,
                   result /* pre_val */);

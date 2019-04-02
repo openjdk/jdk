@@ -389,10 +389,6 @@ void ShenandoahHeap::initialize_heuristics() {
               err_msg("Heuristics \"%s\" is experimental, and must be enabled via -XX:+UnlockExperimentalVMOptions.",
                       _heuristics->name()));
     }
-
-    if (ShenandoahStoreValEnqueueBarrier && ShenandoahStoreValReadBarrier) {
-      vm_exit_during_initialization("Cannot use both ShenandoahStoreValEnqueueBarrier and ShenandoahStoreValReadBarrier");
-    }
     log_info(gc, init)("Shenandoah heuristics: %s",
                        _heuristics->name());
   } else {
@@ -791,7 +787,7 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
     assert(req.is_gc_alloc(), "Can only accept GC allocs here");
     result = allocate_memory_under_lock(req, in_new_region);
     // Do not call handle_alloc_failure() here, because we cannot block.
-    // The allocation failure would be handled by the WB slowpath with handle_alloc_failure_evac().
+    // The allocation failure would be handled by the LRB slowpath with handle_alloc_failure_evac().
   }
 
   if (in_new_region) {
@@ -1105,7 +1101,6 @@ public:
     ShenandoahParallelWorkerSession worker_session(worker_id);
     ShenandoahEvacOOMScope oom_evac_scope;
     ShenandoahEvacuateUpdateRootsClosure cl;
-
     MarkingCodeBlobClosure blobsCl(&cl, CodeBlobToOopClosure::FixRelocations);
     _rp->process_evacuate_roots(&cl, &blobsCl, worker_id);
   }
@@ -2062,14 +2057,12 @@ void ShenandoahHeap::unregister_nmethod(nmethod* nm) {
 }
 
 oop ShenandoahHeap::pin_object(JavaThread* thr, oop o) {
-  o = ShenandoahBarrierSet::barrier_set()->write_barrier(o);
   ShenandoahHeapLocker locker(lock());
   heap_region_containing(o)->make_pinned();
   return o;
 }
 
 void ShenandoahHeap::unpin_object(JavaThread* thr, oop o) {
-  o = ShenandoahBarrierSet::barrier_set()->read_barrier(o);
   ShenandoahHeapLocker locker(lock());
   heap_region_containing(o)->make_unpinned();
 }

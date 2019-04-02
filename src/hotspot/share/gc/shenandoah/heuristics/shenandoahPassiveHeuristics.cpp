@@ -43,14 +43,11 @@ ShenandoahPassiveHeuristics::ShenandoahPassiveHeuristics() : ShenandoahHeuristic
   }
 
   // Disable known barriers by default.
+  SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahLoadRefBarrier);
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahSATBBarrier);
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahKeepAliveBarrier);
-  SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahWriteBarrier);
-  SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahReadBarrier);
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahStoreValEnqueueBarrier);
-  SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahStoreValReadBarrier);
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahCASBarrier);
-  SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahAcmpBarrier);
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahCloneBarrier);
 
   // Final configuration checks

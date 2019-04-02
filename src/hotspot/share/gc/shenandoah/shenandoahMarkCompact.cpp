@@ -129,7 +129,7 @@ void ShenandoahMarkCompact::do_it(GCCause::Cause gc_cause) {
 
   // Once marking is done, which may have fixed up forwarded objects, we can drop it.
   // Coming out of Full GC, we would not have any forwarded objects.
-  // This also prevents read barrier from kicking in while adjusting pointers in phase3.
+  // This also prevents resolves with fwdptr from kicking in while adjusting pointers in phase3.
   heap->set_has_forwarded_objects(false);
 
   heap->set_full_gc_move_in_progress(true);

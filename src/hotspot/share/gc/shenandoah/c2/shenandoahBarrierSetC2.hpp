@@ -30,14 +30,21 @@
 
 class ShenandoahBarrierSetC2State : public ResourceObj {
 private:
-  GrowableArray<ShenandoahWriteBarrierNode*>* _shenandoah_barriers;
+  GrowableArray<ShenandoahEnqueueBarrierNode*>* _enqueue_barriers;
+  GrowableArray<ShenandoahLoadReferenceBarrierNode*>* _load_reference_barriers;
 
 public:
   ShenandoahBarrierSetC2State(Arena* comp_arena);
-  int shenandoah_barriers_count() const;
-  ShenandoahWriteBarrierNode* shenandoah_barrier(int idx) const;
-  void add_shenandoah_barrier(ShenandoahWriteBarrierNode * n);
-  void remove_shenandoah_barrier(ShenandoahWriteBarrierNode * n);
+
+  int enqueue_barriers_count() const;
+  ShenandoahEnqueueBarrierNode* enqueue_barrier(int idx) const;
+  void add_enqueue_barrier(ShenandoahEnqueueBarrierNode* n);
+  void remove_enqueue_barrier(ShenandoahEnqueueBarrierNode * n);
+
+  int load_reference_barriers_count() const;
+  ShenandoahLoadReferenceBarrierNode* load_reference_barrier(int idx) const;
+  void add_load_reference_barrier(ShenandoahLoadReferenceBarrierNode* n);
+  void remove_load_reference_barrier(ShenandoahLoadReferenceBarrierNode * n);
 };
 
 class ShenandoahBarrierSetC2 : public BarrierSetC2 {
@@ -66,12 +73,7 @@ private:
                                     BasicType bt) const;
 
   Node* shenandoah_enqueue_barrier(GraphKit* kit, Node* val) const;
-  Node* shenandoah_read_barrier(GraphKit* kit, Node* obj) const;
   Node* shenandoah_storeval_barrier(GraphKit* kit, Node* obj) const;
-  Node* shenandoah_write_barrier(GraphKit* kit, Node* obj) const;
-  Node* shenandoah_read_barrier_impl(GraphKit* kit, Node* obj, bool use_ctrl, bool use_mem, bool allow_fromspace) const;
-  Node* shenandoah_write_barrier_impl(GraphKit* kit, Node* obj) const;
-  Node* shenandoah_write_barrier_helper(GraphKit* kit, Node* obj, const TypePtr* adr_type) const;
 
   void insert_pre_barrier(GraphKit* kit, Node* base_oop, Node* offset,
                           Node* pre_val, bool need_mem_bar) const;
@@ -79,7 +81,6 @@ private:
   static bool clone_needs_postbarrier(ArrayCopyNode *ac, PhaseIterGVN& igvn);
 
 protected:
-  virtual void resolve_address(C2Access& access) const;
   virtual Node* load_at_resolved(C2Access& access, const Type* val_type) const;
   virtual Node* store_at_resolved(C2Access& access, C2AccessValue& val) const;
   virtual Node* atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess& access, Node* expected_val,
@@ -102,11 +103,10 @@ public:
   static const TypeFunc* write_ref_field_pre_entry_Type();
   static const TypeFunc* shenandoah_clone_barrier_Type();
   static const TypeFunc* shenandoah_write_barrier_Type();
+  virtual bool has_load_barriers() const { return true; }
 
   // This is the entry-point for the backend to perform accesses through the Access API.
   virtual void clone(GraphKit* kit, Node* src, Node* dst, Node* size, bool is_array) const;
-
-  virtual Node* resolve(GraphKit* kit, Node* n, DecoratorSet decorators) const;
 
   virtual Node* obj_allocate(PhaseMacroExpand* macro, Node* ctrl, Node* mem, Node* toobig_false, Node* size_in_bytes,
                              Node*& i_o, Node*& needgc_ctrl,
@@ -144,13 +144,7 @@ public:
   virtual void verify_gc_barriers(Compile* compile, CompilePhase phase) const;
 #endif
 
-  virtual bool flatten_gc_alias_type(const TypePtr*& adr_type) const;
-#ifdef ASSERT
-  virtual bool verify_gc_alias_type(const TypePtr* adr_type, int offset) const;
-#endif
-
   virtual Node* ideal_node(PhaseGVN* phase, Node* n, bool can_reshape) const;
-  virtual Node* identity_node(PhaseGVN* phase, Node* n) const;
   virtual bool final_graph_reshaping(Compile* compile, Node* n, uint opcode) const;
 
   virtual bool escape_add_to_con_graph(ConnectionGraph* conn_graph, PhaseGVN* gvn, Unique_Node_List* delayed_worklist, Node* n, uint opcode) const;
@@ -158,17 +152,8 @@ public:
   virtual bool escape_has_out_with_unsafe_object(Node* n) const;
   virtual bool escape_is_barrier_node(Node* n) const;
 
-  virtual bool matcher_find_shared_visit(Matcher* matcher, Matcher::MStack& mstack, Node* n, uint opcode, bool& mem_op, int& mem_addr_idx) const;
   virtual bool matcher_find_shared_post_visit(Matcher* matcher, Node* n, uint opcode) const;
   virtual bool matcher_is_store_load_barrier(Node* x, uint xop) const;
-
-  virtual void igvn_add_users_to_worklist(PhaseIterGVN* igvn, Node* use) const;
-  virtual void ccp_analyze(PhaseCCP* ccp, Unique_Node_List& worklist, Node* use) const;
-
-  virtual bool has_special_unique_user(const Node* node) const;
-  virtual Node* split_if_pre(PhaseIdealLoop* phase, Node* n) const;
-  virtual bool build_loop_late_post(PhaseIdealLoop* phase, Node* n) const;
-  virtual bool sink_node(PhaseIdealLoop* phase, Node* n, Node* x, Node* x_ctrl, Node* n_ctrl) const;
 };
 
 #endif // SHARE_GC_SHENANDOAH_C2_SHENANDOAHBARRIERSETC2_HPP

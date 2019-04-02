@@ -85,7 +85,7 @@ public:
 #endif // PRODUCT
 };
 
-class ShenandoahWriteBarrierStub: public CodeStub {
+class ShenandoahLoadReferenceBarrierStub: public CodeStub {
   friend class ShenandoahBarrierSetC1;
 private:
   LIR_Opr _obj;
@@ -94,7 +94,7 @@ private:
   bool _needs_null_check;
 
 public:
-  ShenandoahWriteBarrierStub(LIR_Opr obj, LIR_Opr result, CodeEmitInfo* info, bool needs_null_check) :
+  ShenandoahLoadReferenceBarrierStub(LIR_Opr obj, LIR_Opr result, CodeEmitInfo* info, bool needs_null_check) :
     _obj(obj), _result(result), _info(info), _needs_null_check(needs_null_check)
   {
     assert(_obj->is_register(), "should be register");
@@ -113,7 +113,7 @@ public:
     visitor->do_temp(_result);
   }
 #ifndef PRODUCT
-  virtual void print_name(outputStream* out) const { out->print("ShenandoahWritePreBarrierStub"); }
+  virtual void print_name(outputStream* out) const { out->print("ShenandoahLoadReferenceBarrierStub"); }
 #endif // PRODUCT
 };
 
@@ -181,12 +181,10 @@ private:
 
   void pre_barrier(LIRGenerator* gen, CodeEmitInfo* info, DecoratorSet decorators, LIR_Opr addr_opr, LIR_Opr pre_val);
 
-  LIR_Opr read_barrier(LIRGenerator* gen, LIR_Opr obj, CodeEmitInfo* info, bool need_null_check);
-  LIR_Opr write_barrier(LIRGenerator* gen, LIR_Opr obj, CodeEmitInfo* info, bool need_null_check);
+  LIR_Opr load_reference_barrier(LIRGenerator* gen, LIR_Opr obj, CodeEmitInfo* info, bool need_null_check);
   LIR_Opr storeval_barrier(LIRGenerator* gen, LIR_Opr obj, CodeEmitInfo* info, DecoratorSet decorators);
 
-  LIR_Opr read_barrier_impl(LIRGenerator* gen, LIR_Opr obj, CodeEmitInfo* info, bool need_null_check);
-  LIR_Opr write_barrier_impl(LIRGenerator* gen, LIR_Opr obj, CodeEmitInfo* info, bool need_null_check);
+  LIR_Opr load_reference_barrier_impl(LIRGenerator* gen, LIR_Opr obj, CodeEmitInfo* info, bool need_null_check);
 
   LIR_Opr ensure_in_register(LIRGenerator* gen, LIR_Opr obj);
 
@@ -194,7 +192,6 @@ public:
   CodeBlob* pre_barrier_c1_runtime_code_blob() { return _pre_barrier_c1_runtime_code_blob; }
 
 protected:
-  virtual LIR_Opr resolve_address(LIRAccess& access, bool resolve_in_register);
 
   virtual void store_at_resolved(LIRAccess& access, LIR_Opr value);
   virtual void load_at_resolved(LIRAccess& access, LIR_Opr result);
@@ -202,10 +199,8 @@ protected:
   virtual LIR_Opr atomic_cmpxchg_at_resolved(LIRAccess& access, LIRItem& cmp_value, LIRItem& new_value);
 
   virtual LIR_Opr atomic_xchg_at_resolved(LIRAccess& access, LIRItem& value);
-  virtual LIR_Opr atomic_add_at_resolved(LIRAccess& access, LIRItem& value);
 
 public:
-  virtual LIR_Opr resolve(LIRGenerator* gen, DecoratorSet decorators, LIR_Opr obj);
 
   virtual void generate_c1_runtime_stubs(BufferBlob* buffer_blob);
 };

@@ -1082,11 +1082,6 @@ static bool merge_point_safe(Node* region) {
         Node* m = n->fast_out(j);
         if (m->is_FastLock())
           return false;
-#if INCLUDE_SHENANDOAHGC
-        if (m->is_ShenandoahBarrier() && m->has_out_with(Op_FastLock)) {
-          return false;
-        }
-#endif
 #ifdef _LP64
         if (m->Opcode() == Op_ConvI2L)
           return false;
@@ -3210,7 +3205,7 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
 
           // if not pinned and not a load (which maybe anti-dependent on a store)
           // and not a CMove (Matcher expects only bool->cmove).
-          if (n->in(0) == NULL && !n->is_Load() && !n->is_CMove() && n->Opcode() != Op_ShenandoahWBMemProj) {
+          if (n->in(0) == NULL && !n->is_Load() && !n->is_CMove()) {
             cloned_for_outside_use += clone_for_use_outside_loop( loop, n, worklist );
             sink_list.push(n);
             peel     >>= n->_idx; // delete n from peel set.

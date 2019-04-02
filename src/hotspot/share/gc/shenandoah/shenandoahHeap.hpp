@@ -270,16 +270,16 @@ public:
 //
 public:
   enum GCStateBitPos {
-    // Heap has forwarded objects: need RB, ACMP, CAS barriers.
+    // Heap has forwarded objects: needs LRB barriers.
     HAS_FORWARDED_BITPOS   = 0,
 
     // Heap is under marking: needs SATB barriers.
     MARKING_BITPOS    = 1,
 
-    // Heap is under evacuation: needs WB barriers. (Set together with UNSTABLE)
+    // Heap is under evacuation: needs LRB barriers. (Set together with HAS_FORWARDED)
     EVACUATION_BITPOS = 2,
 
-    // Heap is under updating: needs SVRB/SVWB barriers.
+    // Heap is under updating: needs no additional barriers.
     UPDATEREFS_BITPOS = 3,
 
     // Heap is under traversal collection
