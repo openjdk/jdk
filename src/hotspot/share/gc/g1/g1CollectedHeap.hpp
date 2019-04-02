@@ -1119,8 +1119,6 @@ public:
     return _hrm->reserved();
   }
 
-  virtual bool is_in_closed_subset(const void* p) const;
-
   G1HotCardCache* g1_hot_card_cache() const { return _hot_card_cache; }
 
   G1CardTable* card_table() const {

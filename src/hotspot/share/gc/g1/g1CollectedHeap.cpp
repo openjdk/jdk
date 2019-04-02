@@ -2731,7 +2731,7 @@ class RegisterHumongousWithInCSetFastTestClosure : public HeapRegionClosure {
           // The remembered set might contain references to already freed
           // regions. Filter out such entries to avoid failing card table
           // verification.
-          if (g1h->is_in_closed_subset(ct->addr_for(card_ptr))) {
+          if (g1h->is_in(ct->addr_for(card_ptr))) {
             if (*card_ptr != G1CardTable::dirty_card_val()) {
               *card_ptr = G1CardTable::dirty_card_val();
               _dcq.enqueue(card_ptr);
@@ -4606,11 +4606,6 @@ void G1CollectedHeap::rebuild_region_sets(bool free_list_only) {
   assert(used() == recalculate_used(),
          "inconsistent used(), value: " SIZE_FORMAT " recalculated: " SIZE_FORMAT,
          used(), recalculate_used());
-}
-
-bool G1CollectedHeap::is_in_closed_subset(const void* p) const {
-  HeapRegion* hr = heap_region_containing(p);
-  return hr->is_in(p);
 }
 
 // Methods for the mutator alloc region

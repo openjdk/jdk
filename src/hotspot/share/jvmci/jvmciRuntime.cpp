@@ -565,12 +565,12 @@ JRT_END
 
 JRT_LEAF(jboolean, JVMCIRuntime::validate_object(JavaThread* thread, oopDesc* parent, oopDesc* child))
   bool ret = true;
-  if(!Universe::heap()->is_in_closed_subset(parent)) {
+  if(!Universe::heap()->is_in(parent)) {
     tty->print_cr("Parent Object " INTPTR_FORMAT " not in heap", p2i(parent));
     parent->print();
     ret=false;
   }
-  if(!Universe::heap()->is_in_closed_subset(child)) {
+  if(!Universe::heap()->is_in(child)) {
     tty->print_cr("Child Object " INTPTR_FORMAT " not in heap", p2i(child));
     child->print();
     ret=false;

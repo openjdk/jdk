@@ -61,7 +61,7 @@ template <class T> void G1VerifyOopClosure::do_oop_work(T* p) {
     _cc++;
     oop obj = CompressedOops::decode_not_null(heap_oop);
     bool failed = false;
-    if (!_g1h->is_in_closed_subset(obj) || _g1h->is_obj_dead_cond(obj, _verify_option)) {
+    if (!_g1h->is_in(obj) || _g1h->is_obj_dead_cond(obj, _verify_option)) {
       MutexLockerEx x(ParGCRareEvent_lock,
           Mutex::_no_safepoint_check_flag);
       LogStreamHandle(Error, gc, verify) yy;
@@ -69,7 +69,7 @@ template <class T> void G1VerifyOopClosure::do_oop_work(T* p) {
         yy.cr();
         yy.print_cr("----------");
       }
-      if (!_g1h->is_in_closed_subset(obj)) {
+      if (!_g1h->is_in(obj)) {
         HeapRegion* from = _g1h->heap_region_containing((HeapWord*)p);
         yy.print_cr("Field " PTR_FORMAT " of live obj " PTR_FORMAT " in region " HR_FORMAT,
                     p2i(p), p2i(_containing_obj), HR_FORMAT_PARAMS(from));

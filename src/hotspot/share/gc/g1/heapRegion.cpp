@@ -514,7 +514,7 @@ public:
     if (!CompressedOops::is_null(heap_oop)) {
       oop obj = CompressedOops::decode_not_null(heap_oop);
       bool failed = false;
-      if (!_g1h->is_in_closed_subset(obj) || _g1h->is_obj_dead_cond(obj, _vo)) {
+      if (!_g1h->is_in(obj) || _g1h->is_obj_dead_cond(obj, _vo)) {
         MutexLockerEx x(ParGCRareEvent_lock,
           Mutex::_no_safepoint_check_flag);
 
@@ -522,7 +522,7 @@ public:
           log.error("----------");
         }
         ResourceMark rm;
-        if (!_g1h->is_in_closed_subset(obj)) {
+        if (!_g1h->is_in(obj)) {
           HeapRegion* from = _g1h->heap_region_containing((HeapWord*)p);
           log.error("Field " PTR_FORMAT " of live obj " PTR_FORMAT " in region " HR_FORMAT,
                     p2i(p), p2i(_containing_obj), HR_FORMAT_PARAMS(from));
