@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,9 @@ package sun.security.util;
 
 import java.io.InputStream;
 import java.io.IOException;
-import java.io.EOFException;
 import java.util.Date;
 import java.util.Vector;
 import java.math.BigInteger;
-import java.io.DataInputStream;
 
 /**
  * A DER input stream, used for parsing ASN.1 DER-encoded data such as
@@ -130,7 +128,12 @@ public class DerInputStream {
                 System.arraycopy(data, offset, inData, 0, len);
 
                 DerIndefLenConverter derIn = new DerIndefLenConverter();
-                buffer = new DerInputBuffer(derIn.convert(inData), allowBER);
+                byte[] result = derIn.convertBytes(inData);
+                if (result == null) {
+                    throw new IOException("not all indef len BER resolved");
+                } else {
+                    buffer = new DerInputBuffer(result, allowBER);
+                }
             }
         } else {
             buffer = new DerInputBuffer(data, offset, len, allowBER);
@@ -389,16 +392,9 @@ public class DerInputStream {
 
         if (len == -1) {
            // indefinite length encoding found
-           int readLen = buffer.available();
-           int offset = 2;     // for tag and length bytes
-           byte[] indefData = new byte[readLen + offset];
-           indefData[0] = tag;
-           indefData[1] = lenByte;
-           DataInputStream dis = new DataInputStream(buffer);
-           dis.readFully(indefData, offset, readLen);
-           dis.close();
-           DerIndefLenConverter derIn = new DerIndefLenConverter();
-           buffer = new DerInputBuffer(derIn.convert(indefData), buffer.allowBER);
+           buffer = new DerInputBuffer(
+                   DerIndefLenConverter.convertStream(buffer, lenByte, tag),
+                   buffer.allowBER);
 
            if (tag != buffer.read())
                 throw new IOException("Indefinite length encoding" +

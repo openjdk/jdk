@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -257,16 +257,9 @@ public class DerValue {
         length = DerInputStream.getLength(lenByte, in);
         if (length == -1) {  // indefinite length encoding found
             DerInputBuffer inbuf = in.dup();
-            int readLen = inbuf.available();
-            int offset = 2;     // for tag and length bytes
-            byte[] indefData = new byte[readLen + offset];
-            indefData[0] = tag;
-            indefData[1] = lenByte;
-            DataInputStream dis = new DataInputStream(inbuf);
-            dis.readFully(indefData, offset, readLen);
-            dis.close();
-            DerIndefLenConverter derIn = new DerIndefLenConverter();
-            inbuf = new DerInputBuffer(derIn.convert(indefData), in.allowBER);
+            inbuf = new DerInputBuffer(
+                    DerIndefLenConverter.convertStream(inbuf, lenByte, tag),
+                    in.allowBER);
             if (tag != inbuf.read())
                 throw new IOException
                         ("Indefinite length encoding not supported");
@@ -277,7 +270,7 @@ public class DerValue {
             // indefinite form is encoded by sending a length field with a
             // length of 0. - i.e. [1000|0000].
             // the object is ended by sending two zero bytes.
-            in.skip(length + offset);
+            in.skip(length + 2);
         } else {
 
             buffer = in.dup();
@@ -389,16 +382,8 @@ public class DerValue {
         byte lenByte = (byte)in.read();
         length = DerInputStream.getLength(lenByte, in);
         if (length == -1) { // indefinite length encoding found
-            int readLen = in.available();
-            int offset = 2;     // for tag and length bytes
-            byte[] indefData = new byte[readLen + offset];
-            indefData[0] = tag;
-            indefData[1] = lenByte;
-            DataInputStream dis = new DataInputStream(in);
-            dis.readFully(indefData, offset, readLen);
-            dis.close();
-            DerIndefLenConverter derIn = new DerIndefLenConverter();
-            in = new ByteArrayInputStream(derIn.convert(indefData));
+            in = new ByteArrayInputStream(
+                    DerIndefLenConverter.convertStream(in, lenByte, tag));
             if (tag != in.read())
                 throw new IOException
                         ("Indefinite length encoding not supported");
