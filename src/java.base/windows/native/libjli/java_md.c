@@ -41,8 +41,6 @@
 #define JVM_DLL "jvm.dll"
 #define JAVA_DLL "java.dll"
 
-#define ELP_PREFIX L"\\\\?\\"
-
 /*
  * Prototypes.
  */
@@ -497,56 +495,66 @@ JLI_Snprintf(char* buffer, size_t size, const char* format, ...) {
     return rc;
 }
 
-/* On Windows, if _open fails, retry again with CreateFileW and
- *  "\\?\" prefix ( extended-length paths) - this allows to open paths with larger file names;
- * otherwise we run into the MAX_PATH limitation */
-int JLI_Open(const char* name, int flags) {
-    int fd = _open(name, flags);
-    if (fd == -1 && errno == ENOENT) {
-        wchar_t* wname = NULL;
-        wchar_t* wfullname = NULL;
-        wchar_t* wfullname_w_prefix = NULL;
-        size_t wnamelen, wfullnamelen, elplen;
-        HANDLE h;
-
-        wnamelen = strlen(name) + 1;
-        wname = (wchar_t*) malloc(wnamelen*sizeof(wchar_t));
-        if (wname == NULL) {
-            goto end;
-        }
-        if (mbstowcs(wname, name, wnamelen - 1) == -1) {
-            goto end;
-        }
-        wname[wnamelen - 1] = L'\0';
-        wfullname = _wfullpath(wfullname, wname, 0);
-        if (wfullname == NULL) {
-            goto end;
-        }
-
-        wfullnamelen = wcslen(wfullname);
-        if (wfullnamelen > 247) {
-            elplen = wcslen(ELP_PREFIX);
-            wfullname_w_prefix = (wchar_t*) malloc((elplen+wfullnamelen+1)*sizeof(wchar_t));
-            wcscpy(wfullname_w_prefix, ELP_PREFIX);
-            wcscpy(wfullname_w_prefix+elplen, wfullname);
-
-            h = CreateFileW(wfullname_w_prefix, GENERIC_READ, FILE_SHARE_READ, NULL,
-                            OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-            if (h == INVALID_HANDLE_VALUE) {
-                goto end;
+/* taken from hotspot and slightly adjusted for jli lib;
+ * creates a UNC/ELP path from input 'path'
+ * the return buffer is allocated in C heap and needs to be freed using
+ * JLI_MemFree by the caller.
+ */
+static wchar_t* create_unc_path(const char* path, errno_t* err) {
+    wchar_t* wpath = NULL;
+    size_t converted_chars = 0;
+    size_t path_len = strlen(path) + 1; /* includes the terminating NULL */
+    if (path[0] == '\\' && path[1] == '\\') {
+        if (path[2] == '?' && path[3] == '\\') {
+            /* if it already has a \\?\ don't do the prefix */
+            wpath = (wchar_t*) JLI_MemAlloc(path_len * sizeof(wchar_t));
+            if (wpath != NULL) {
+                *err = mbstowcs_s(&converted_chars, wpath, path_len, path, path_len);
+            } else {
+                *err = ENOMEM;
             }
-            /* associates fd with handle */
-            fd = _open_osfhandle((intptr_t)h, _O_RDONLY);
+        } else {
+            /* only UNC pathname includes double slashes here */
+            wpath = (wchar_t*) JLI_MemAlloc((path_len + 7) * sizeof(wchar_t));
+            if (wpath != NULL) {
+                wcscpy(wpath, L"\\\\?\\UNC\0");
+                *err = mbstowcs_s(&converted_chars, &wpath[7], path_len, path, path_len);
+            } else {
+                *err = ENOMEM;
+            }
         }
-end:
-        free(wname);
-        free(wfullname);
-        free(wfullname_w_prefix);
+    } else {
+        wpath = (wchar_t*) JLI_MemAlloc((path_len + 4) * sizeof(wchar_t));
+        if (wpath != NULL) {
+            wcscpy(wpath, L"\\\\?\\\0");
+            *err = mbstowcs_s(&converted_chars, &wpath[4], path_len, path, path_len);
+        } else {
+            *err = ENOMEM;
+        }
+    }
+    return wpath;
+}
+
+int JLI_Open(const char* name, int flags) {
+    int fd;
+    if (strlen(name) < MAX_PATH) {
+        fd = _open(name, flags);
+    } else {
+        errno_t err = ERROR_SUCCESS;
+        wchar_t* wpath = create_unc_path(name, &err);
+        if (err != ERROR_SUCCESS) {
+            if (wpath != NULL) JLI_MemFree(wpath);
+            errno = err;
+            return -1;
+        }
+        fd = _wopen(wpath, flags);
+        if (fd == -1) {
+            errno = GetLastError();
+        }
+        JLI_MemFree(wpath);
     }
     return fd;
 }
-
-
 
 JNIEXPORT void JNICALL
 JLI_ReportErrorMessage(const char* fmt, ...) {
