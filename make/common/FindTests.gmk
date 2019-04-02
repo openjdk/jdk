@@ -26,6 +26,16 @@
 ifndef _FIND_TESTS_GMK
 _FIND_TESTS_GMK := 1
 
+# This makefile can be called directly to just trigger generation of the cache
+# makefile. If so, SPEC and MakeBase.gmk need to be included.
+ifeq ($(FINDTESTS_STAND_ALONE), true)
+  include $(SPEC)
+  include MakeBase.gmk
+endif
+
+# Make sure this variable is not lazy evaled.
+ALL_NAMED_TESTS :=
+
 # Hook to include the corresponding custom file, if present.
 $(eval $(call IncludeCustomExtension, common/FindTests.gmk))
 
@@ -35,32 +45,40 @@ TEST_BASEDIRS += $(TOPDIR)/test $(TOPDIR)
 # JTREG_TESTROOTS might have been set by a custom extension
 JTREG_TESTROOTS += $(addprefix $(TOPDIR)/test/, hotspot/jtreg jdk langtools nashorn jaxp)
 
-################################################################################
-# Find the Jtreg test groups for the given component.
-#
-# Parameter 1 is the jtreg root dir. This name is used as variable prefix.
-#
-# After this macro has been evaluated, the following variables are defined for
-# the component:
-#   JTREG_TESTROOT - The path to the root of the test directory
-#   JTREG_GROUP_FILES - The file(s) containing the group definitions
-#   JTREG_TEST_GROUPS - The name of the test groups that the component defines
-#
-FindJtregGroups = $(NamedParamsMacroTemplate)
-define FindJtregGroupsBody
-  ifneq ($$(wildcard $1), )
-    $1_JTREG_GROUP_FILENAMES := $$(shell $$(SED) -n -e 's/\[\(.*\)\]/\1/g' \
-        -e 's/^groups\w*=//p' $1/TEST.ROOT)
-    $1_JTREG_GROUP_FILES := $$(addprefix $1/, $$($1_JTREG_GROUP_FILENAMES))
-    $1_JTREG_TEST_GROUPS := $$(strip $$(shell $$(SED) -n \
-        -e 's/^\#.*//g' \
-        -e 's/\([^ ]*\)\w*=.*/\1/gp' $$(wildcard $$($1_JTREG_GROUP_FILES)) \
-        | $$(SORT) -u))
-  endif
-endef
+# Extract the names of the Jtreg group files from the TEST.ROOT files. The
+# TEST.ROOT files being properties files can be interpreted as makefiles so
+# use include to get at the contents instead of expensive shell calls. We are
+# looking for the "groups" property in each file.
+JTREG_ROOT_FILES := $(addsuffix /TEST.ROOT, $(JTREG_TESTROOTS))
+JTREG_GROUP_FILES :=
+$(foreach root, $(JTREG_TESTROOTS), \
+  $(eval include $(root)/TEST.ROOT) \
+  $(eval $(root)_JTREG_GROUP_FILES := $$(addprefix $(root)/, $$(groups))) \
+  $(eval JTREG_GROUP_FILES += $$($(root)_JTREG_GROUP_FILES)) \
+)
 
-# Configure definitions for all available test components
-$(foreach root, $(JTREG_TESTROOTS), $(eval $(call FindJtregGroups, $(root))))
+# Cache the expensive to calculate test names in a generated makefile.
+FIND_TESTS_CACHE_FILE := $(MAKESUPPORT_OUTPUTDIR)/find-tests.gmk
+
+# If this file is deemed outdated, it will automatically get regenerated
+# by this rule before being included below.
+#
+# When calling TestMake.gmk, override the log level to avoid any kind of debug
+# output being captured into the generated makefile.
+$(FIND_TESTS_CACHE_FILE): $(JTREG_ROOT_FILES) $(JTREG_GROUP_FILES)
+	$(call MakeTargetDir)
+	( $(foreach root, $(JTREG_TESTROOTS), \
+	    $(PRINTF) "\n$(root)_JTREG_TEST_GROUPS := " ; \
+	    $(SED) -n -e 's/^\#.*//g' -e 's/\([^ ]*\)\w*=.*/\1/gp' \
+	      $($(root)_JTREG_GROUP_FILES) \
+	      | $(SORT) -u | $(TR) '\n' ' ' ; \
+	  ) \
+	  $(PRINTF) "\nMAKE_TEST_TARGETS := " ; \
+	  $(MAKE) -s --no-print-directory $(MAKE_ARGS) LOG_LEVEL=warn \
+	      SPEC=$(SPEC) -f $(TOPDIR)/test/make/TestMake.gmk print-targets \
+	) > $@
+
+-include $(FIND_TESTS_CACHE_FILE)
 
 # Create a list of all available Jtreg test groups in all components
 JTREG_TEST_GROUPS += $(sort $(foreach root, $(JTREG_TESTROOTS), \
@@ -70,17 +88,14 @@ JTREG_TEST_GROUPS += $(sort $(foreach root, $(JTREG_TESTROOTS), \
 # ALL_NAMED_TESTS might have been set by a custom extension
 ALL_NAMED_TESTS += $(JTREG_TEST_GROUPS)
 
+# Add the make test targets
+ALL_NAMED_TESTS += $(addprefix make-, $(MAKE_TEST_TARGETS))
+
 # Add Gtest
 ALL_NAMED_TESTS += gtest
 
 # Add microbenchmarks
 ALL_NAMED_TESTS += micro
-
-# Find make test targets
-MAKE_TEST_TARGETS := $(shell $(MAKE) -s --no-print-directory $(MAKE_ARGS) \
-    SPEC=$(SPEC) -f $(TOPDIR)/test/make/TestMake.gmk print-targets)
-
-ALL_NAMED_TESTS += $(addprefix make-, $(MAKE_TEST_TARGETS))
 
 # Add special tests
 ALL_NAMED_TESTS += failure-handler make

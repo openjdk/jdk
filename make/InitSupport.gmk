@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -264,13 +264,9 @@ ifeq ($(HAS_SPEC),)
       endif
     endif
 
-    # The --no-print-directory is needed to make the call from
-    # FindTest.gmk to Test.gmk work with LOG=debug/trace. See
-    # JDK-8213736
     $$(main_targets_file):
 	@( cd $$(topdir) && \
-	$$(MAKE) $$(MAKE_LOG_FLAGS) -r -R --no-print-directory \
-	    -f $$(topdir)/make/Main.gmk \
+	$$(MAKE) $$(MAKE_LOG_FLAGS) -r -R -f $$(topdir)/make/Main.gmk \
 	    -I $$(topdir)/make/common SPEC=$(strip $2) NO_RECIPES=true \
 	    $$(MAKE_LOG_VARS) \
 	    create-main-targets-include )
