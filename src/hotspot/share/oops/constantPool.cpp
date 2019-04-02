@@ -280,9 +280,7 @@ void ConstantPool::archive_resolved_references(Thread* THREAD) {
       rr->obj_at_put(i, NULL);
       if (p != NULL && i < ref_map_len) {
         int index = object_to_cp_index(i);
-        // Skip the entry if the string hash code is 0 since the string
-        // is not included in the shared string_table, see StringTable::copy_shared_string.
-        if (tag_at(index).is_string() && java_lang_String::hash_code(p) != 0) {
+        if (tag_at(index).is_string()) {
           oop op = StringTable::create_archived_string(p, THREAD);
           // If the String object is not archived (possibly too large),
           // NULL is returned. Also set it in the array, so we won't

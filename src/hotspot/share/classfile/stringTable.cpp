@@ -761,10 +761,6 @@ struct CopyToArchive : StackObj {
       return true;
     }
     unsigned int hash = java_lang_String::hash_code(s);
-    if (hash == 0) {
-      // We do not archive Strings with a 0 hashcode because ......
-      return true;
-    }
 
     java_lang_String::set_hash(s, hash);
     oop new_s = StringTable::create_archived_string(s, Thread::current());
