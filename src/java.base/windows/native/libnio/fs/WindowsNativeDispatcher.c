@@ -1065,8 +1065,11 @@ Java_sun_nio_fs_WindowsNativeDispatcher_CreateSymbolicLink0(JNIEnv* env,
 
     // Allow creation of symbolic links when the process is not elevated.
     // Developer Mode must be enabled for this option to function, otherwise
-    // it will be ignored.
-    DWORD dwFlags = (DWORD)flags | SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE;
+    // it will be ignored. Check that symbol is available in current build SDK.
+    DWORD dwFlags = (DWORD)flags;
+#ifdef SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE
+    dwFlags |= SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE;
+#endif
 
     // On Windows 64-bit this appears to succeed even when there are
     // insufficient privileges
