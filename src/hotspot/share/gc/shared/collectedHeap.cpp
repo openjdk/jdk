@@ -575,3 +575,8 @@ void CollectedHeap::deduplicate_string(oop str) {
 size_t CollectedHeap::obj_size(oop obj) const {
   return obj->size();
 }
+
+uint32_t CollectedHeap::hash_oop(oop obj) const {
+  const uintptr_t addr = cast_from_oop<uintptr_t>(obj);
+  return static_cast<uint32_t>(addr >> LogMinObjAlignment);
+}

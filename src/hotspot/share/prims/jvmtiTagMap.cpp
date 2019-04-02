@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,17 +181,9 @@ class JvmtiTagHashmap : public CHeapObj<mtInternal> {
 
   // hash a given key (oop) with the specified size
   static unsigned int hash(oop key, int size) {
-    ZGC_ONLY(assert(ZAddressMetadataShift >= sizeof(unsigned int) * BitsPerByte, "cast removes the metadata bits");)
-
-    // shift right to get better distribution (as these bits will be zero
-    // with aligned addresses)
-    key = Access<>::resolve(key);
-    unsigned int addr = (unsigned int)(cast_from_oop<intptr_t>(key));
-#ifdef _LP64
-    return (addr >> 3) % size;
-#else
-    return (addr >> 2) % size;
-#endif
+    const oop obj = Access<>::resolve(key);
+    const unsigned int hash = Universe::heap()->hash_oop(obj);
+    return hash % size;
   }
 
   // hash a given key (oop)

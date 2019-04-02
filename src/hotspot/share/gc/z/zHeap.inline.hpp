@@ -27,6 +27,7 @@
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zForwarding.inline.hpp"
 #include "gc/z/zForwardingTable.inline.hpp"
+#include "gc/z/zHash.inline.hpp"
 #include "gc/z/zHeap.hpp"
 #include "gc/z/zMark.inline.hpp"
 #include "gc/z/zOop.inline.hpp"
@@ -42,6 +43,11 @@ inline ZHeap* ZHeap::heap() {
 
 inline ReferenceDiscoverer* ZHeap::reference_discoverer() {
   return &_reference_processor;
+}
+
+inline uint32_t ZHeap::hash_oop(oop obj) const {
+  const uintptr_t offset = ZAddress::offset(ZOop::to_address(obj));
+  return ZHash::address_to_uint32(offset);
 }
 
 inline bool ZHeap::is_object_live(uintptr_t addr) const {

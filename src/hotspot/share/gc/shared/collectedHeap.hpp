@@ -239,6 +239,8 @@ class CollectedHeap : public CHeapObj<mtInternal> {
 
   DEBUG_ONLY(bool is_in_or_null(const void* p) const { return p == NULL || is_in(p); })
 
+  virtual uint32_t hash_oop(oop obj) const;
+
   void set_gc_cause(GCCause::Cause v) {
      if (UsePerfData) {
        _gc_lastcause = _gc_cause;
