@@ -229,7 +229,6 @@ public abstract class View implements SwingConstants {
      *           Typically the view is told to render into the span
      *           that is returned, although there is no guarantee.
      *           The parent may choose to resize or break the view
-     * @see View#getPreferredSpan
      */
     public abstract float getPreferredSpan(int axis);
 
