@@ -491,8 +491,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
      */
     private static class AvailableJRELocales {
         private static final Locale[] localeList = createAvailableLocales();
-        private AvailableJRELocales() {
-        }
+        private AvailableJRELocales() {}
     }
 
     private static Locale[] createAvailableLocales() {
@@ -535,7 +534,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
     public boolean isSupportedProviderLocale(Locale locale,  Set<String> langtags) {
         if (Locale.ROOT.equals(locale)) {
             return true;
-}
+        }
 
         locale = locale.stripExtensions();
         if (langtags.contains(locale.toLanguageTag())) {

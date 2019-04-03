@@ -484,63 +484,111 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  */
 public final class Locale implements Cloneable, Serializable {
 
-    private static final  Cache LOCALECACHE = new Cache();
+    /** Useful constant for language.
+     */
+    public static final Locale ENGLISH;
 
     /** Useful constant for language.
      */
-    public static final Locale ENGLISH = createConstant("en", "");
+    public static final Locale FRENCH;
 
     /** Useful constant for language.
      */
-    public static final Locale FRENCH = createConstant("fr", "");
+    public static final Locale GERMAN;
 
     /** Useful constant for language.
      */
-    public static final Locale GERMAN = createConstant("de", "");
+    public static final Locale ITALIAN;
 
     /** Useful constant for language.
      */
-    public static final Locale ITALIAN = createConstant("it", "");
+    public static final Locale JAPANESE;
 
     /** Useful constant for language.
      */
-    public static final Locale JAPANESE = createConstant("ja", "");
+    public static final Locale KOREAN;
 
     /** Useful constant for language.
      */
-    public static final Locale KOREAN = createConstant("ko", "");
+    public static final Locale CHINESE;
 
     /** Useful constant for language.
      */
-    public static final Locale CHINESE = createConstant("zh", "");
+    public static final Locale SIMPLIFIED_CHINESE;
 
     /** Useful constant for language.
      */
-    public static final Locale SIMPLIFIED_CHINESE = createConstant("zh", "CN");
-
-    /** Useful constant for language.
-     */
-    public static final Locale TRADITIONAL_CHINESE = createConstant("zh", "TW");
+    public static final Locale TRADITIONAL_CHINESE;
 
     /** Useful constant for country.
      */
-    public static final Locale FRANCE = createConstant("fr", "FR");
+    public static final Locale FRANCE;
 
     /** Useful constant for country.
      */
-    public static final Locale GERMANY = createConstant("de", "DE");
+    public static final Locale GERMANY;
 
     /** Useful constant for country.
      */
-    public static final Locale ITALY = createConstant("it", "IT");
+    public static final Locale ITALY;
 
     /** Useful constant for country.
      */
-    public static final Locale JAPAN = createConstant("ja", "JP");
+    public static final Locale JAPAN;
 
     /** Useful constant for country.
      */
-    public static final Locale KOREA = createConstant("ko", "KR");
+    public static final Locale KOREA;
+
+    /** Useful constant for country.
+     */
+    public static final Locale UK;
+
+    /** Useful constant for country.
+     */
+    public static final Locale US;
+
+    /** Useful constant for country.
+     */
+    public static final Locale CANADA;
+
+    /** Useful constant for country.
+     */
+    public static final Locale CANADA_FRENCH;
+
+    /**
+     * Useful constant for the root locale.  The root locale is the locale whose
+     * language, country, and variant are empty ("") strings.  This is regarded
+     * as the base locale of all locales, and is used as the language/country
+     * neutral locale for the locale sensitive operations.
+     *
+     * @since 1.6
+     */
+    public static final Locale ROOT;
+
+    private static final Map<BaseLocale, Locale> CONSTANT_LOCALES = new HashMap<>();
+
+    static {
+        ENGLISH = createConstant(BaseLocale.ENGLISH);
+        FRENCH = createConstant(BaseLocale.FRENCH);
+        GERMAN = createConstant(BaseLocale.GERMAN);
+        ITALIAN = createConstant(BaseLocale.ITALIAN);
+        JAPANESE = createConstant(BaseLocale.JAPANESE);
+        KOREAN = createConstant(BaseLocale.KOREAN);
+        CHINESE = createConstant(BaseLocale.CHINESE);
+        SIMPLIFIED_CHINESE = createConstant(BaseLocale.SIMPLIFIED_CHINESE);
+        TRADITIONAL_CHINESE = createConstant(BaseLocale.TRADITIONAL_CHINESE);
+        FRANCE = createConstant(BaseLocale.FRANCE);
+        GERMANY = createConstant(BaseLocale.GERMANY);
+        ITALY = createConstant(BaseLocale.ITALY);
+        JAPAN = createConstant(BaseLocale.JAPAN);
+        KOREA = createConstant(BaseLocale.KOREA);
+        UK = createConstant(BaseLocale.UK);
+        US = createConstant(BaseLocale.US);
+        CANADA = createConstant(BaseLocale.CANADA);
+        CANADA_FRENCH = createConstant(BaseLocale.CANADA_FRENCH);
+        ROOT = createConstant(BaseLocale.ROOT);
+    }
 
     /** Useful constant for country.
      */
@@ -554,31 +602,16 @@ public final class Locale implements Cloneable, Serializable {
      */
     public static final Locale TAIWAN = TRADITIONAL_CHINESE;
 
-    /** Useful constant for country.
-     */
-    public static final Locale UK = createConstant("en", "GB");
-
-    /** Useful constant for country.
-     */
-    public static final Locale US = createConstant("en", "US");
-
-    /** Useful constant for country.
-     */
-    public static final Locale CANADA = createConstant("en", "CA");
-
-    /** Useful constant for country.
-     */
-    public static final Locale CANADA_FRENCH = createConstant("fr", "CA");
-
     /**
-     * Useful constant for the root locale.  The root locale is the locale whose
-     * language, country, and variant are empty ("") strings.  This is regarded
-     * as the base locale of all locales, and is used as the language/country
-     * neutral locale for the locale sensitive operations.
-     *
-     * @since 1.6
+     * This method must be called only for creating the Locale.*
+     * constants due to making shortcuts.
      */
-    public static final Locale ROOT = createConstant("", "");
+    private static Locale createConstant(byte baseType) {
+        BaseLocale base = BaseLocale.constantBaseLocales[baseType];
+        Locale locale = new Locale(base, null);
+        CONSTANT_LOCALES.put(base, locale);
+        return locale;
+    }
 
     /**
      * The key for the private use extension ('x').
@@ -709,7 +742,7 @@ public final class Locale implements Cloneable, Serializable {
      * @exception NullPointerException thrown if any argument is null.
      */
     public Locale(String language, String country, String variant) {
-        if (language== null || country == null || variant == null) {
+        if (language == null || country == null || variant == null) {
             throw new NullPointerException();
         }
         baseLocale = BaseLocale.getInstance(convertOldISOCodes(language), "", country, variant);
@@ -767,15 +800,6 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
-     * This method must be called only for creating the Locale.*
-     * constants due to making shortcuts.
-     */
-    private static Locale createConstant(String lang, String country) {
-        BaseLocale base = BaseLocale.createInstance(lang, country);
-        return getInstance(base, null);
-    }
-
-    /**
      * Returns a <code>Locale</code> constructed from the given
      * <code>language</code>, <code>country</code> and
      * <code>variant</code>. If the same <code>Locale</code> instance
@@ -803,20 +827,27 @@ public final class Locale implements Cloneable, Serializable {
             extensions = getCompatibilityExtensions(language, script, country, variant);
         }
 
-        BaseLocale baseloc = BaseLocale.getInstance(language, script, country, variant);
+        BaseLocale baseloc = BaseLocale.getInstance(convertOldISOCodes(language), script, country, variant);
         return getInstance(baseloc, extensions);
     }
 
     static Locale getInstance(BaseLocale baseloc, LocaleExtensions extensions) {
         if (extensions == null) {
-            return LOCALECACHE.get(baseloc);
+            Locale locale = CONSTANT_LOCALES.get(baseloc);
+            if (locale != null) {
+                return locale;
+            }
+            return Cache.LOCALECACHE.get(baseloc);
         } else {
             LocaleKey key = new LocaleKey(baseloc, extensions);
-            return LOCALECACHE.get(key);
+            return Cache.LOCALECACHE.get(key);
         }
     }
 
     private static class Cache extends LocaleObjectCache<Object, Locale> {
+
+        private static final Cache LOCALECACHE = new Cache();
+
         private Cache() {
         }
 
@@ -977,8 +1008,11 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     private static Optional<LocaleExtensions> getDefaultExtensions(String extensionsProp) {
-        LocaleExtensions exts = null;
+        if (LocaleUtils.isEmpty(extensionsProp)) {
+            return Optional.empty();
+        }
 
+        LocaleExtensions exts = null;
         try {
             exts = new InternalLocaleBuilder()
                 .setExtensions(extensionsProp)
@@ -2308,6 +2342,7 @@ public final class Locale implements Cloneable, Serializable {
         String country = (String)fields.get("country", "");
         String variant = (String)fields.get("variant", "");
         String extStr = (String)fields.get("extensions", "");
+
         baseLocale = BaseLocale.getInstance(convertOldISOCodes(language), script, country, variant);
         if (!extStr.isEmpty()) {
             try {

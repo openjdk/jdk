@@ -44,6 +44,7 @@ import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.text.MessageFormat;
 import java.text.NumberFormat;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -325,7 +326,7 @@ public class LocaleResources {
         Set<String> keyset = getZoneIDs();
         // Use a LinkedHashSet to preseve the order
         Set<String[]> value = new LinkedHashSet<>();
-        Set<String> tzIds = new HashSet<>(Set.of(TimeZone.getAvailableIDs()));
+        Set<String> tzIds = new HashSet<>(Arrays.asList(TimeZone.getAvailableIDs()));
         for (String key : keyset) {
             if (!key.startsWith(TZNB_EXCITY_PREFIX)) {
                 value.add(rb.getStringArray(key));

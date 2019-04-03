@@ -69,6 +69,7 @@ static ArchivableStaticFieldInfo closed_archive_subgraph_entry_fields[] = {
   {"java/lang/Short$ShortCache",               "archivedCache"},
   {"java/lang/Character$CharacterCache",       "archivedCache"},
   {"java/util/jar/Attributes$Name",            "KNOWN_NAMES"},
+  {"sun/util/locale/BaseLocale",               "constantBaseLocales"},
 };
 // Entry fields for subgraphs archived in the open archive heap region.
 static ArchivableStaticFieldInfo open_archive_subgraph_entry_fields[] = {
