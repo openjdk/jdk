@@ -27,6 +27,7 @@ package com.sun.tools.javac.file;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleFinder;
 import java.net.MalformedURLException;
@@ -71,6 +72,7 @@ import javax.tools.StandardJavaFileManager;
 
 import com.sun.tools.javac.file.RelativePath.RelativeDirectory;
 import com.sun.tools.javac.file.RelativePath.RelativeFile;
+import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
@@ -127,6 +129,19 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
     }
 
     protected SortFiles sortFiles;
+
+    /**
+     * We use a two-layered map instead of a map with a complex key because we don't want to reindex
+     * the values for every Location+RelativeDirectory pair. Once the PathsAndContainers are needed
+     * for a single Location, we should know all valid RelativeDirectory mappings. Because the
+     * indexing is costly for very large classpaths, this can result in a significant savings.
+     */
+    private Map<Location, Map<RelativeDirectory, java.util.List<PathAndContainer>>>
+        pathsAndContainersByLocationAndRelativeDirectory = new HashMap<>();
+
+    /** Containers that have no indexing by {@link RelativeDirectory}, keyed by {@link Location}. */
+    private Map<Location, java.util.List<PathAndContainer>> nonIndexingContainersByLocation =
+        new HashMap<>();
 
     /**
      * Register a Context.Factory to create a JavacFileManager.
@@ -338,6 +353,13 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
                                   ListBuffer<JavaFileObject> resultList) throws IOException;
         public abstract JavaFileObject getFileObject(Path userPath, RelativeFile name) throws IOException;
         public abstract void close() throws IOException;
+        public abstract boolean maintainsDirectoryIndex();
+
+        /**
+         * The directories this container indexes if {@link #maintainsDirectoryIndex()}, otherwise
+         * an empty iterable.
+         */
+        public abstract Iterable<RelativeDirectory> indexedDirectories();
     }
 
     private static final Container MISSING_CONTAINER =  new Container() {
@@ -354,6 +376,14 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         }
         @Override
         public void close() throws IOException {}
+        @Override
+        public boolean maintainsDirectoryIndex() {
+            return false;
+        }
+        @Override
+        public Iterable<RelativeDirectory> indexedDirectories() {
+            return List.nil();
+        }
     };
 
     private final class JRTImageContainer implements Container {
@@ -406,6 +436,16 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
 
         @Override
         public void close() throws IOException {
+        }
+
+        @Override
+        public boolean maintainsDirectoryIndex() {
+            return false;
+        }
+
+        @Override
+        public Iterable<RelativeDirectory> indexedDirectories() {
+            return List.nil();
         }
     }
 
@@ -498,6 +538,16 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         @Override
         public void close() throws IOException {
         }
+
+        @Override
+        public boolean maintainsDirectoryIndex() {
+            return false;
+        }
+
+        @Override
+        public Iterable<RelativeDirectory> indexedDirectories() {
+            return List.nil();
+        }
     }
 
     private static final Set<FileVisitOption> NO_FILE_VISIT_OPTIONS = Set.of();
@@ -506,7 +556,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
     private final class ArchiveContainer implements Container {
         private final Path archivePath;
         private final FileSystem fileSystem;
-        private final Map<RelativePath, Path> packages;
+        private final Map<RelativeDirectory, Path> packages;
 
         public ArchiveContainer(Path archivePath) throws IOException, ProviderNotFoundException, SecurityException {
             this.archivePath = archivePath;
@@ -604,6 +654,16 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         public void close() throws IOException {
             fileSystem.close();
         }
+
+        @Override
+        public boolean maintainsDirectoryIndex() {
+            return true;
+        }
+
+        @Override
+        public Iterable<RelativeDirectory> indexedDirectories() {
+            return packages.keySet();
+        }
     }
 
     /**
@@ -654,6 +714,8 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
     @Override @DefinedBy(Api.COMPILER)
     public void flush() {
         contentCache.clear();
+        pathsAndContainersByLocationAndRelativeDirectory.clear();
+        nonIndexingContainersByLocation.clear();
     }
 
     /**
@@ -704,15 +766,12 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         nullCheck(packageName);
         nullCheck(kinds);
 
-        Iterable<? extends Path> path = getLocationAsPaths(location);
-        if (path == null)
-            return List.nil();
         RelativeDirectory subdirectory = RelativeDirectory.forPackage(packageName);
         ListBuffer<JavaFileObject> results = new ListBuffer<>();
 
-        for (Path directory : path) {
-            Container container = getContainer(directory);
-
+        for (PathAndContainer pathAndContainer : pathsAndContainers(location, subdirectory)) {
+            Path directory = pathAndContainer.path;
+            Container container = pathAndContainer.container;
             container.list(directory, subdirectory, kinds, recurse, results);
         }
 
@@ -927,6 +986,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
     {
         nullCheck(location);
         locations.setLocation(location, asPaths(searchpath));
+        clearCachesForLocation(location);
     }
 
     @Override @DefinedBy(Api.COMPILER)
@@ -936,6 +996,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
     {
         nullCheck(location);
         locations.setLocation(location, nullCheck(searchpath));
+        clearCachesForLocation(location);
     }
 
     @Override @DefinedBy(Api.COMPILER)
@@ -945,9 +1006,111 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
     }
 
     @Override @DefinedBy(Api.COMPILER)
-    public Iterable<? extends Path> getLocationAsPaths(Location location) {
+    public Collection<? extends Path> getLocationAsPaths(Location location) {
         nullCheck(location);
         return locations.getLocation(location);
+    }
+
+    private java.util.List<PathAndContainer> pathsAndContainers(
+            Location location, RelativeDirectory relativeDirectory) throws IOException {
+        try {
+            return pathsAndContainersByLocationAndRelativeDirectory.computeIfAbsent(
+                    location, this::indexPathsAndContainersByRelativeDirectory)
+                .computeIfAbsent(
+                    relativeDirectory, d -> nonIndexingContainersByLocation.get(location));
+        } catch (UncheckedIOException e) {
+            throw e.getCause();
+        }
+    }
+
+    private Map<RelativeDirectory, java.util.List<PathAndContainer>> indexPathsAndContainersByRelativeDirectory(
+            Location location) {
+        Map<RelativeDirectory, java.util.List<PathAndContainer>> result = new HashMap<>();
+        java.util.List<PathAndContainer> allPathsAndContainers = pathsAndContainers(location);
+
+        // First collect all of the containers that don't maintain their own index on
+        // RelativeDirectory. These need to always be included for all mappings
+        java.util.List<PathAndContainer> nonIndexingContainers = new ArrayList<>();
+        for (PathAndContainer pathAndContainer : allPathsAndContainers) {
+            if (!pathAndContainer.container.maintainsDirectoryIndex()) {
+                nonIndexingContainers.add(pathAndContainer);
+            }
+        }
+
+        // Next, use the container that do maintain their own RelativeDirectory index to create a
+        // single master index.
+        for (PathAndContainer pathAndContainer : allPathsAndContainers) {
+            Container container = pathAndContainer.container;
+            if (container.maintainsDirectoryIndex()) {
+                for (RelativeDirectory directory : container.indexedDirectories()) {
+                    result.computeIfAbsent(directory, d -> new ArrayList<>(nonIndexingContainers))
+                          .add(pathAndContainer);
+                }
+            }
+        }
+        nonIndexingContainersByLocation.put(location, nonIndexingContainers);
+
+        // Sorting preserves the search order used in the uncached Location path, which has
+        // maintains consistency with the classpath order
+        result.values().forEach(pathAndContainerList -> Collections.sort(pathAndContainerList));
+
+        return result;
+    }
+
+    /**
+     * For each {@linkplain #getLocationAsPaths(Location) path of the location}, compute the
+     * corresponding {@link Container}.
+     */
+    private java.util.List<PathAndContainer> pathsAndContainers(Location location) {
+        Collection<? extends Path> paths = getLocationAsPaths(location);
+        if (paths == null) {
+            return List.nil();
+        }
+        java.util.List<PathAndContainer> pathsAndContainers =
+            new ArrayList<>(paths.size());
+        for (Path path : paths) {
+            Container container;
+            try {
+                container = getContainer(path);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+            pathsAndContainers.add(new PathAndContainer(path, container, pathsAndContainers.size()));
+        }
+        return pathsAndContainers;
+    }
+
+    private static class PathAndContainer implements Comparable<PathAndContainer> {
+        private final Path path;
+        private final Container container;
+        private final int index;
+
+        PathAndContainer(Path path, Container container, int index) {
+            this.path = path;
+            this.container = container;
+            this.index = index;
+        }
+
+        @Override
+        public int compareTo(PathAndContainer other) {
+            return index - other.index;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+          if (o == null || !(o instanceof PathAndContainer)) {
+            return false;
+          }
+          PathAndContainer that = (PathAndContainer) o;
+          return path.equals(that.path)
+              && container.equals(that.container)
+              && index == this.index;
+        }
+
+        @Override
+        public int hashCode() {
+          return Objects.hash(path, container, index);
+        }
     }
 
     @Override @DefinedBy(Api.COMPILER)
@@ -1008,6 +1171,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         nullCheck(location);
         checkModuleOrientedOrOutputLocation(location);
         locations.setLocationForModule(location, nullCheck(moduleName), nullCheck(paths));
+        clearCachesForLocation(location);
     }
 
     @Override @DefinedBy(Api.COMPILER)
@@ -1162,5 +1326,20 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
                 }
             }
         };
+    }
+
+    @Override
+    public boolean handleOption(Option option, String value) {
+        if (javacFileManagerOptions.contains(option)) {
+            pathsAndContainersByLocationAndRelativeDirectory.clear();
+            nonIndexingContainersByLocation.clear();
+        }
+        return super.handleOption(option, value);
+    }
+
+    private void clearCachesForLocation(Location location) {
+        nullCheck(location);
+        pathsAndContainersByLocationAndRelativeDirectory.remove(location);
+        nonIndexingContainersByLocation.remove(location);
     }
 }
