@@ -238,11 +238,13 @@ else # HAS_SPEC=true
   ifeq ($(LOG_NOFILE), true)
     # Disable build log if LOG=[level,]nofile was given
     override BUILD_LOG_PIPE :=
+    override BUILD_LOG_PIPE_SIMPLE :=
   endif
 
   ifeq ($(filter dist-clean, $(SEQUENTIAL_TARGETS)), dist-clean)
     # We can't have a log file if we're about to remove it.
     override BUILD_LOG_PIPE :=
+    override BUILD_LOG_PIPE_SIMPLE :=
   endif
 
   ifeq ($(OUTPUT_SYNC_SUPPORTED), true)
@@ -303,7 +305,7 @@ else # HAS_SPEC=true
   main: $(INIT_TARGETS)
         ifneq ($(SEQUENTIAL_TARGETS)$(PARALLEL_TARGETS), )
 	  $(call RotateLogFiles)
-	  $(PRINTF) "Building $(TARGET_DESCRIPTION)\n" $(BUILD_LOG_PIPE)
+	  $(PRINTF) "Building $(TARGET_DESCRIPTION)\n" $(BUILD_LOG_PIPE_SIMPLE)
           ifneq ($(SEQUENTIAL_TARGETS), )
             # Don't touch build output dir since we might be cleaning. That
             # means no log pipe.
@@ -325,7 +327,7 @@ else # HAS_SPEC=true
 	            $(PARALLEL_TARGETS) $(COMPARE_BUILD_MAKE) $(BUILD_LOG_PIPE) || \
 	        ( exitcode=$$? && \
 	        $(PRINTF) "\nERROR: Build failed for $(TARGET_DESCRIPTION) (exit code $$exitcode) \n" \
-	            $(BUILD_LOG_PIPE) && \
+	            $(BUILD_LOG_PIPE_SIMPLE) && \
 	        cd $(TOPDIR) && $(MAKE) $(MAKE_ARGS) -j 1 -f make/Init.gmk \
 	            HAS_SPEC=true on-failure ; \
 	        exit $$exitcode ) )
@@ -336,7 +338,7 @@ else # HAS_SPEC=true
 	  if test -f $(MAKESUPPORT_OUTPUTDIR)/exit-with-error ; then \
 	    exit 1 ; \
 	  fi
-	  $(PRINTF) "Finished building $(TARGET_DESCRIPTION)\n" $(BUILD_LOG_PIPE)
+	  $(PRINTF) "Finished building $(TARGET_DESCRIPTION)\n" $(BUILD_LOG_PIPE_SIMPLE)
 	  $(call ReportProfileTimes)
         endif
 
