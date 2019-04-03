@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,65 +25,58 @@
 
 package javax.swing.text;
 
-import java.util.Stack;
 import java.util.Enumeration;
+import java.util.Stack;
 
 /**
+ * {@code ElementIterator}, as the name suggests, iterates over the
+ * {@code Element} tree. The constructor can be invoked with either
+ * {@code Document} or an {@code Element} as an argument. If the constructor is
+ * invoked with a {@code Document} as an argument then the root of the iteration
+ * is the return value of {@code document.getDefaultRootElement()}.
  * <p>
- * ElementIterator, as the name suggests, iterates over the Element
- * tree.  The constructor can be invoked with either Document or an Element
- * as an argument.  If the constructor is invoked with a Document as an
- * argument then the root of the iteration is the return value of
- * document.getDefaultRootElement().
- *
- * The iteration happens in a depth-first manner.  In terms of how
- * boundary conditions are handled:
- * a) if next() is called before first() or current(), the
- *    root will be returned.
- * b) next() returns null to indicate the end of the list.
- * c) previous() returns null when the current element is the root
- *    or next() has returned null.
- *
- * The ElementIterator does no locking of the Element tree. This means
- * that it does not track any changes.  It is the responsibility of the
+ * The iteration happens in a depth-first manner. In terms of how boundary
+ * conditions are handled:
+ * <ul>
+ *   <li>if {@link #next} is called before {@link #first} or {@link #current},
+ *   the root will be returned
+ *   <li>{@link #next} returns {@code null} to indicate the end of the list
+ *   <li>{@link #previous} returns {@code null} when the current element is the
+ *   root or {@link #next} has returned {@code null}
+ * </ul>
+ * <p>
+ * The {@code ElementIterator} does no locking of the {@code Element} tree. This
+ * means that it does not track any changes. It is the responsibility of the
  * user of this class, to ensure that no changes happen during element
  * iteration.
- *
+ * <p>
  * Simple usage example:
- *
- *    public void iterate() {
- *        ElementIterator it = new ElementIterator(root);
- *        Element elem;
- *        while (true) {
- *           if ((elem = next()) != null) {
- *               // process element
- *               System.out.println("elem: " + elem.getName());
- *           } else {
- *               break;
- *           }
- *        }
- *    }
+ * <pre>{@code public void iterate() {
+ *      ElementIterator it = new ElementIterator(root);
+ *      Element elem;
+ *      while (true) {
+ *          if ((elem = it.next()) != null) {
+ *              // process element
+ *              System.out.println("elem: " + elem.getName());
+ *          } else {
+ *              break;
+ *          }
+ *      }
+ * }}</pre>
  *
  * @author Sunita Mani
- *
  */
-
 public class ElementIterator implements Cloneable {
-
 
     private Element root;
     private Stack<StackItem> elementStack = null;
 
     /**
-     * The StackItem class stores the element
-     * as well as a child index.  If the
-     * index is -1, then the element represented
-     * on the stack is the element itself.
-     * Otherwise, the index functions as an index
-     * into the vector of children of the element.
-     * In this case, the item on the stack
-     * represents the "index"th child of the element
-     *
+     * The {@code StackItem} class stores the element as well as a child index.
+     * If the index is -1, then the element represented on the stack is the
+     * element itself. Otherwise, the index functions as an index into the
+     * vector of children of the element. In this case, the item on the stack
+     * represents the "index"th child of the element.
      */
     private class StackItem implements Cloneable {
         Element item;
@@ -117,31 +110,28 @@ public class ElementIterator implements Cloneable {
     }
 
     /**
-     * Creates a new ElementIterator. The
-     * root element is taken to get the
-     * default root element of the document.
+     * Creates a new {@code ElementIterator}. The root element is taken to get
+     * the default root element of the document.
      *
-     * @param document a Document.
+     * @param  document a {@code Document}
      */
     public ElementIterator(Document document) {
         root = document.getDefaultRootElement();
     }
 
-
     /**
-     * Creates a new ElementIterator.
+     * Creates a new {@code ElementIterator}.
      *
-     * @param root the root Element.
+     * @param  root the root {@code Element}
      */
     public ElementIterator(Element root) {
         this.root = root;
     }
 
-
     /**
-     * Clones the ElementIterator.
+     * Clones the {@code ElementIterator}.
      *
-     * @return a cloned ElementIterator Object.
+     * @return a cloned {@code ElementIterator} Object
      */
     public synchronized Object clone() {
 
@@ -161,11 +151,10 @@ public class ElementIterator implements Cloneable {
         }
     }
 
-
     /**
      * Fetches the first element.
      *
-     * @return an Element.
+     * @return an {@code Element}
      */
     public Element first() {
         // just in case...
@@ -183,7 +172,7 @@ public class ElementIterator implements Cloneable {
     /**
      * Fetches the current depth of element tree.
      *
-     * @return the depth.
+     * @return the depth
      */
     public int depth() {
         if (elementStack == null) {
@@ -192,12 +181,11 @@ public class ElementIterator implements Cloneable {
         return elementStack.size();
     }
 
-
     /**
-     * Fetches the current Element.
+     * Fetches the current {@code Element}.
      *
-     * @return element on top of the stack or
-     *          <code>null</code> if the root element is <code>null</code>
+     * @return element on top of the stack or {@code null} if the root element
+     *         is {@code null}
      */
     public Element current() {
 
@@ -222,14 +210,11 @@ public class ElementIterator implements Cloneable {
         return null;
     }
 
-
     /**
-     * Fetches the next Element. The strategy
-     * used to locate the next element is
-     * a depth-first search.
+     * Fetches the next {@code Element}. The strategy used to locate the next
+     * element is a depth-first search.
      *
-     * @return the next element or <code>null</code>
-     *          at the end of the list.
+     * @return the next element or {@code null} at the end of the list
      */
     public Element next() {
 
@@ -282,14 +267,12 @@ public class ElementIterator implements Cloneable {
         return null;
     }
 
-
     /**
-     * Fetches the previous Element. If however the current
-     * element is the last element, or the current element
-     * is null, then null is returned.
+     * Fetches the previous {@code Element}. If however the current element is
+     * the last element, or the current element is {@code null}, then
+     * {@code null} is returned.
      *
-     * @return previous <code>Element</code> if available
-     *
+     * @return previous {@code Element} if available
      */
     public Element previous() {
 
@@ -335,8 +318,8 @@ public class ElementIterator implements Cloneable {
     }
 
     /**
-     * Returns the last child of <code>parent</code> that is a leaf. If the
-     * last child is a not a leaf, this method is called with the last child.
+     * Returns the last child of {@code parent} that is a leaf. If the last
+     * child is a not a leaf, this method is called with the last child.
      */
     private Element getDeepestLeaf(Element parent) {
         if (parent.isLeaf()) {
@@ -349,10 +332,10 @@ public class ElementIterator implements Cloneable {
         return getDeepestLeaf(parent.getElement(childCount - 1));
     }
 
-    /*
-      Iterates through the element tree and prints
-      out each element and its attributes.
-    */
+    /**
+     * Iterates through the element tree and prints out each element and its
+     * attributes.
+     */
     private void dumpTree() {
 
         Element elem;
