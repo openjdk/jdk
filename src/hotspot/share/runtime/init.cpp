@@ -122,6 +122,7 @@ jint init_globals() {
   accessFlags_init();
   templateTable_init();
   InterfaceSupport_init();
+  VMRegImpl::set_regName();  // need this before generate_stubs (for printing oop maps).
   SharedRuntime::generate_stubs();
   universe2_init();  // dependent on codeCache_init and stubRoutines_init1
   javaClasses_init();// must happen after vtable initialization, before referenceProcessor_init
@@ -139,7 +140,6 @@ jint init_globals() {
   if (!compileBroker_init()) {
     return JNI_EINVAL;
   }
-  VMRegImpl::set_regName();
 
   if (!universe_post_init()) {
     return JNI_ERR;
