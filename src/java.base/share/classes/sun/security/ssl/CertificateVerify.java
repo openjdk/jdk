@@ -565,7 +565,7 @@ final class CertificateVerify {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
             this.signatureScheme = SignatureScheme.getPreferableAlgorithm(
                     chc.peerRequestedSignatureSchemes,
-                    x509Possession.popPrivateKey,
+                    x509Possession,
                     chc.negotiatedProtocol);
             if (signatureScheme == null) {
                 // Unlikely, the credentials generator should have
@@ -866,7 +866,7 @@ final class CertificateVerify {
 
             this.signatureScheme = SignatureScheme.getPreferableAlgorithm(
                     context.peerRequestedSignatureSchemes,
-                    x509Possession.popPrivateKey,
+                    x509Possession,
                     context.negotiatedProtocol);
             if (signatureScheme == null) {
                 // Unlikely, the credentials generator should have

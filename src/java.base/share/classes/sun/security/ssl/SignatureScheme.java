@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Set;
 import sun.security.ssl.SupportedGroupsExtension.NamedGroup;
 import sun.security.ssl.SupportedGroupsExtension.NamedGroupType;
+import sun.security.ssl.X509Authentication.X509Possession;
 import sun.security.util.KeyUtil;
 
 enum SignatureScheme {
@@ -415,9 +416,10 @@ enum SignatureScheme {
 
     static SignatureScheme getPreferableAlgorithm(
             List<SignatureScheme> schemes,
-            PrivateKey signingKey,
+            X509Possession x509Possession,
             ProtocolVersion version) {
 
+        PrivateKey signingKey = x509Possession.popPrivateKey;
         String keyAlgorithm = signingKey.getAlgorithm();
         int keySize;
         // Only need to check RSA algorithm at present.
@@ -434,8 +436,9 @@ enum SignatureScheme {
                 if (ss.namedGroup != null &&
                     ss.namedGroup.type == NamedGroupType.NAMED_GROUP_ECDHE) {
                     ECParameterSpec params =
-                                ((ECPrivateKey)signingKey).getParams();
-                    if (ss.namedGroup == NamedGroup.valueOf(params)) {
+                            x509Possession.getECParameterSpec();
+                    if (params != null &&
+                            ss.namedGroup == NamedGroup.valueOf(params)) {
                         return ss;
                     }
                 } else {

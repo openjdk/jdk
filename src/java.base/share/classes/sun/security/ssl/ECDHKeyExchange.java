@@ -35,7 +35,6 @@ import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
-import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.ECGenParameterSpec;
@@ -265,12 +264,12 @@ final class ECDHKeyExchange {
                     continue;
                 }
 
-                PrivateKey privateKey = ((X509Possession)poss).popPrivateKey;
-                if (!privateKey.getAlgorithm().equals("EC")) {
+                ECParameterSpec params =
+                        ((X509Possession)poss).getECParameterSpec();
+                if (params == null) {
                     continue;
                 }
 
-                ECParameterSpec params = ((ECPrivateKey)privateKey).getParams();
                 NamedGroup ng = NamedGroup.valueOf(params);
                 if (ng == null) {
                     // unlikely, have been checked during cipher suite negotiation.
