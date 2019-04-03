@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,17 @@
 
 /*
  * @test
- * @summary run CTW for all classes from jdk.incubator.httpclient module
+ * @summary run CTW for all classes from java.net.http module
  *
  * @library /test/lib / /testlibrary/ctw/src
  * @modules java.base/jdk.internal.access
  *          java.base/jdk.internal.jimage
  *          java.base/jdk.internal.misc
  *          java.base/jdk.internal.reflect
- * @modules jdk.incubator.httpclient
+ * @modules java.net.http
  *
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/timeout=7200 sun.hotspot.tools.ctw.CtwRunner modules:jdk.incubator.httpclient
+ * @run driver/timeout=7200 sun.hotspot.tools.ctw.CtwRunner modules:java.net.http
  */

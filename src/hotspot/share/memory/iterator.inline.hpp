@@ -56,7 +56,7 @@ void OopIterateClosure::verify(T* p) {
     T heap_oop = RawAccess<>::oop_load(p);
     if (!CompressedOops::is_null(heap_oop)) {
       oop o = CompressedOops::decode_not_null(heap_oop);
-      assert(Universe::heap()->is_in_closed_subset(o),
+      assert(Universe::heap()->is_in(o),
              "should be in closed *p " PTR_FORMAT " " PTR_FORMAT, p2i(p), p2i(o));
     }
   }

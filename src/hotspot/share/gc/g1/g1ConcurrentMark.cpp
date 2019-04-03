@@ -1766,17 +1766,17 @@ class G1RemarkThreadsClosure : public ThreadClosure {
   G1CMSATBBufferClosure _cm_satb_cl;
   G1CMOopClosure _cm_cl;
   MarkingCodeBlobClosure _code_cl;
-  int _thread_parity;
+  uintx _claim_token;
 
  public:
   G1RemarkThreadsClosure(G1CollectedHeap* g1h, G1CMTask* task) :
     _cm_satb_cl(task, g1h),
     _cm_cl(g1h, task),
     _code_cl(&_cm_cl, !CodeBlobToOopClosure::FixRelocations),
-    _thread_parity(Threads::thread_claim_parity()) {}
+    _claim_token(Threads::thread_claim_token()) {}
 
   void do_thread(Thread* thread) {
-    if (thread->claim_oops_do(true, _thread_parity)) {
+    if (thread->claim_threads_do(true, _claim_token)) {
       SATBMarkQueue& queue = G1ThreadLocalData::satb_mark_queue(thread);
       queue.apply_closure_and_empty(&_cm_satb_cl);
       if (thread->is_Java_thread()) {

@@ -824,7 +824,6 @@ void GenCollectedHeap::process_roots(StrongRootsScope* scope,
                                      CLDClosure* weak_cld_closure,
                                      CodeBlobToOopClosure* code_roots) {
   // General roots.
-  assert(Threads::thread_claim_parity() != 0, "must have called prologue code");
   assert(code_roots != NULL, "code root closure should always be set");
   // _n_termination for _process_strong_tasks should be set up stream
   // in a method not running in a GC worker.  Otherwise the GC worker

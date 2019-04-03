@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ ifneq ($(wildcard $(INCLUDE_SOURCE_DIR)/*), )
   $(eval $(call SetupCopyFiles, COPY_EXPORTED_INCLUDE, \
       SRC := $(INCLUDE_SOURCE_DIR), \
       DEST := $(INCLUDE_TARGET_DIR), \
-      FILES := $(filter %.h, $(call CacheFind, $(INCLUDE_SOURCE_DIR))), \
+      FILES := $(filter %.h, $(call FindFiles, $(INCLUDE_SOURCE_DIR))), \
   ))
 
   TARGETS += $(COPY_EXPORTED_INCLUDE)
@@ -56,7 +56,7 @@ ifneq ($(wildcard $(INCLUDE_SOURCE_OS_DIR)/*), )
   $(eval $(call SetupCopyFiles, COPY_EXPORTED_INCLUDE_OS, \
       SRC := $(INCLUDE_SOURCE_OS_DIR), \
       DEST := $(INCLUDE_TARGET_DIR)/$(OPENJDK_TARGET_OS_INCLUDE_SUBDIR), \
-      FILES := $(filter %.h, $(call CacheFind, $(INCLUDE_SOURCE_OS_DIR))), \
+      FILES := $(filter %.h, $(call FindFiles, $(INCLUDE_SOURCE_OS_DIR))), \
   ))
 
   TARGETS += $(COPY_EXPORTED_INCLUDE_OS)

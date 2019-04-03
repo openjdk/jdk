@@ -139,13 +139,6 @@ serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorStatIntervalTest.java 8214
 
 #############################################################################
 
-# :hotspot_gc_shenandoah
-
-gc/shenandoah/TestStringDedup.java                            8220671,8221102 generic-all
-gc/shenandoah/TestStringDedupStress.java                      8220671,8221102 generic-all
-
-#############################################################################
-
 # :hotspot_misc
 
 #############################################################################

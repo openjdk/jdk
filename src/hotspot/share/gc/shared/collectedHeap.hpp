@@ -239,37 +239,7 @@ class CollectedHeap : public CHeapObj<mtInternal> {
 
   DEBUG_ONLY(bool is_in_or_null(const void* p) const { return p == NULL || is_in(p); })
 
-  // Let's define some terms: a "closed" subset of a heap is one that
-  //
-  // 1) contains all currently-allocated objects, and
-  //
-  // 2) is closed under reference: no object in the closed subset
-  //    references one outside the closed subset.
-  //
-  // Membership in a heap's closed subset is useful for assertions.
-  // Clearly, the entire heap is a closed subset, so the default
-  // implementation is to use "is_in_reserved".  But this may not be too
-  // liberal to perform useful checking.  Also, the "is_in" predicate
-  // defines a closed subset, but may be too expensive, since "is_in"
-  // verifies that its argument points to an object head.  The
-  // "closed_subset" method allows a heap to define an intermediate
-  // predicate, allowing more precise checking than "is_in_reserved" at
-  // lower cost than "is_in."
-
-  // One important case is a heap composed of disjoint contiguous spaces,
-  // such as the Garbage-First collector.  Such heaps have a convenient
-  // closed subset consisting of the allocated portions of those
-  // contiguous spaces.
-
-  // Return "TRUE" iff the given pointer points into the heap's defined
-  // closed subset (which defaults to the entire heap).
-  virtual bool is_in_closed_subset(const void* p) const {
-    return is_in_reserved(p);
-  }
-
-  bool is_in_closed_subset_or_null(const void* p) const {
-    return p == NULL || is_in_closed_subset(p);
-  }
+  virtual uint32_t hash_oop(oop obj) const;
 
   void set_gc_cause(GCCause::Cause v) {
      if (UsePerfData) {

@@ -72,7 +72,7 @@ define SetupBundleFileBody
 
   $(BUNDLES_OUTPUTDIR)/$$($1_BUNDLE_NAME): $$($1_FILES)
 	$$(call MakeTargetDir)
-        # If any of the files contain a space in the file name, CacheFind
+        # If any of the files contain a space in the file name, FindFiles
         # will have replaced it with ?. Tar does not accept that so need to
         # switch it back.
 	$$(foreach d, $$($1_BASE_DIRS), \
@@ -166,11 +166,12 @@ endif
 ################################################################################
 
 ifneq ($(filter product-bundles legacy-bundles, $(MAKECMDGOALS)), )
-  $(eval $(call FillCacheFind, $(IMAGES_OUTPUTDIR)))
 
   SYMBOLS_EXCLUDE_PATTERN := %.debuginfo %.diz %.pdb %.map
 
-  ALL_JDK_FILES := $(call CacheFind, $(JDK_IMAGE_DIR))
+  # There may be files with spaces in the names, so use ShellFindFiles
+  # explicitly.
+  ALL_JDK_FILES := $(call ShellFindFiles, $(JDK_IMAGE_DIR))
 
   # Create special filter rules when dealing with unzipped .dSYM directories on
   # macosx
@@ -201,11 +202,11 @@ ifneq ($(filter product-bundles legacy-bundles, $(MAKECMDGOALS)), )
               $(ALL_JDK_FILES) \
           ) \
       ) \
-      $(call CacheFind, $(SYMBOLS_IMAGE_DIR))
+      $(call FindFiles, $(SYMBOLS_IMAGE_DIR))
 
   TEST_DEMOS_BUNDLE_FILES := $(filter $(JDK_IMAGE_HOMEDIR)/demo/%, $(ALL_JDK_FILES))
 
-  ALL_JRE_FILES := $(call CacheFind, $(JRE_IMAGE_DIR))
+  ALL_JRE_FILES := $(call ShellFindFiles, $(JRE_IMAGE_DIR))
 
   # Create special filter rules when dealing with unzipped .dSYM directories on
   # macosx
@@ -266,7 +267,7 @@ endif
 ################################################################################
 
 ifneq ($(filter test-bundles, $(MAKECMDGOALS)), )
-  TEST_BUNDLE_FILES := $(call CacheFind, $(TEST_IMAGE_DIR))
+  TEST_BUNDLE_FILES := $(call FindFiles, $(TEST_IMAGE_DIR))
 
   $(eval $(call SetupBundleFile, BUILD_TEST_BUNDLE, \
       BUNDLE_NAME := $(TEST_BUNDLE_NAME), \
@@ -280,7 +281,7 @@ endif
 ################################################################################
 
 ifneq ($(filter docs-bundles, $(MAKECMDGOALS)), )
-  DOCS_BUNDLE_FILES := $(call CacheFind, $(DOCS_IMAGE_DIR))
+  DOCS_BUNDLE_FILES := $(call FindFiles, $(DOCS_IMAGE_DIR))
 
   $(eval $(call SetupBundleFile, BUILD_DOCS_BUNDLE, \
       BUNDLE_NAME := $(DOCS_BUNDLE_NAME), \
@@ -295,7 +296,7 @@ endif
 ################################################################################
 
 ifneq ($(filter jcov-bundles, $(MAKECMDGOALS)), )
-  JCOV_BUNDLE_FILES := $(call CacheFind, $(JCOV_IMAGE_DIR))
+  JCOV_BUNDLE_FILES := $(call FindFiles, $(JCOV_IMAGE_DIR))
 
   $(eval $(call SetupBundleFile, BUILD_JCOV_BUNDLE, \
       BUNDLE_NAME := $(JCOV_BUNDLE_NAME), \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,49 @@
 import sun.hotspot.WhiteBox;
 
 public class LockStringTest extends Thread {
-    static String lock = "StringLock";
-    static boolean done = false;
+    static String lock;
+    static boolean done;
+    static WhiteBox wb = WhiteBox.getWhiteBox();
 
     public static void main(String[] args) throws Exception {
-        WhiteBox wb = WhiteBox.getWhiteBox();
+
         if (wb.areSharedStringsIgnored()) {
             System.out.println("The shared strings are ignored");
             System.out.println("LockStringTest: PASS");
             return;
         }
 
+        if (!wb.isShared(LockStringTest.class)) {
+            throw new RuntimeException("Failed: LockStringTest class is not shared.");
+        }
+
+        // Note: This class is archived. All string literals (including the ones used in this class)
+        // in all archived classes are interned into the CDS shared string table.
+
+        doTest("StringLock", false);
+        doTest("", true);
+
+        // The following string has a 0 hashCode. Calling String.hashCode() could cause
+        // the String.hash field to be written into, if so make sure we don't functionally
+        // break.
+        doTest("\u0121\u0151\u00a2\u0001\u0001\udbb2", true);
+    }
+
+    private static void doTest(String s, boolean hasZeroHashCode) throws Exception {
+        lock = s;
+        done = false;
+
         if (!wb.isShared(lock)) {
-            throw new RuntimeException("Failed: String is not shared.");
+            throw new RuntimeException("Failed: String \"" + lock + "\" is not shared.");
+        }
+
+        if (hasZeroHashCode && lock.hashCode() != 0) {
+            throw new RuntimeException("Shared string \"" + lock + "\" should have 0 hashCode, but is instead " + lock.hashCode());
+        }
+
+        String copy = new String(lock);
+        if (lock.hashCode() != copy.hashCode()) {
+            throw new RuntimeException("Shared string \"" + lock + "\" does not have the same hashCode as its non-shared copy");
         }
 
         new LockStringTest().start();

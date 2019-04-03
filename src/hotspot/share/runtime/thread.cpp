@@ -238,8 +238,8 @@ Thread::Thread() {
   set_last_handle_mark(NULL);
   DEBUG_ONLY(_missed_ic_stub_refill_verifier = NULL);
 
-  // This initial value ==> never claimed.
-  _oops_do_parity = 0;
+  // Initial value of zero ==> never claimed.
+  _threads_do_token = 0;
   _threads_hazard_ptr = NULL;
   _threads_list_ptr = NULL;
   _nested_threads_hazard_ptr_cnt = 0;
@@ -885,16 +885,14 @@ bool Thread::is_interrupted(Thread* thread, bool clear_interrupted) {
 
 
 // GC Support
-bool Thread::claim_oops_do_par_case(int strong_roots_parity) {
-  int thread_parity = _oops_do_parity;
-  if (thread_parity != strong_roots_parity) {
-    jint res = Atomic::cmpxchg(strong_roots_parity, &_oops_do_parity, thread_parity);
-    if (res == thread_parity) {
+bool Thread::claim_par_threads_do(uintx claim_token) {
+  uintx token = _threads_do_token;
+  if (token != claim_token) {
+    uintx res = Atomic::cmpxchg(claim_token, &_threads_do_token, token);
+    if (res == token) {
       return true;
-    } else {
-      guarantee(res == strong_roots_parity, "Or else what?");
-      return false;
     }
+    guarantee(res == claim_token, "invariant");
   }
   return false;
 }
@@ -3472,7 +3470,7 @@ JavaThread* Threads::_thread_list = NULL;
 int         Threads::_number_of_threads = 0;
 int         Threads::_number_of_non_daemon_threads = 0;
 int         Threads::_return_code = 0;
-int         Threads::_thread_claim_parity = 0;
+uintx       Threads::_thread_claim_token = 1; // Never zero.
 size_t      JavaThread::_stack_size_at_create = 0;
 
 #ifdef ASSERT
@@ -3532,14 +3530,14 @@ void Threads::threads_do(ThreadClosure* tc) {
 }
 
 void Threads::possibly_parallel_threads_do(bool is_par, ThreadClosure* tc) {
-  int cp = Threads::thread_claim_parity();
+  uintx claim_token = Threads::thread_claim_token();
   ALL_JAVA_THREADS(p) {
-    if (p->claim_oops_do(is_par, cp)) {
+    if (p->claim_threads_do(is_par, claim_token)) {
       tc->do_thread(p);
     }
   }
   VMThread* vmt = VMThread::vm_thread();
-  if (vmt->claim_oops_do(is_par, cp)) {
+  if (vmt->claim_threads_do(is_par, claim_token)) {
     tc->do_thread(vmt);
   }
 }
@@ -4525,27 +4523,39 @@ void Threads::oops_do(OopClosure* f, CodeBlobClosure* cf) {
   VMThread::vm_thread()->oops_do(f, cf);
 }
 
-void Threads::change_thread_claim_parity() {
-  // Set the new claim parity.
-  assert(_thread_claim_parity >= 0 && _thread_claim_parity <= 2,
-         "Not in range.");
-  _thread_claim_parity++;
-  if (_thread_claim_parity == 3) _thread_claim_parity = 1;
-  assert(_thread_claim_parity >= 1 && _thread_claim_parity <= 2,
-         "Not in range.");
+void Threads::change_thread_claim_token() {
+  if (++_thread_claim_token == 0) {
+    // On overflow of the token counter, there is a risk of future
+    // collisions between a new global token value and a stale token
+    // for a thread, because not all iterations visit all threads.
+    // (Though it's pretty much a theoretical concern for non-trivial
+    // token counter sizes.)  To deal with the possibility, reset all
+    // the thread tokens to zero on global token overflow.
+    struct ResetClaims : public ThreadClosure {
+      virtual void do_thread(Thread* t) {
+        t->claim_threads_do(false, 0);
+      }
+    } reset_claims;
+    Threads::threads_do(&reset_claims);
+    // On overflow, update the global token to non-zero, to
+    // avoid the special "never claimed" initial thread value.
+    _thread_claim_token = 1;
+  }
 }
 
 #ifdef ASSERT
+void assert_thread_claimed(const char* kind, Thread* t, uintx expected) {
+  const uintx token = t->threads_do_token();
+  assert(token == expected,
+         "%s " PTR_FORMAT " has incorrect value " UINTX_FORMAT " != "
+         UINTX_FORMAT, kind, p2i(t), token, expected);
+}
+
 void Threads::assert_all_threads_claimed() {
   ALL_JAVA_THREADS(p) {
-    const int thread_parity = p->oops_do_parity();
-    assert((thread_parity == _thread_claim_parity),
-           "Thread " PTR_FORMAT " has incorrect parity %d != %d", p2i(p), thread_parity, _thread_claim_parity);
+    assert_thread_claimed("Thread", p, _thread_claim_token);
   }
-  VMThread* vmt = VMThread::vm_thread();
-  const int thread_parity = vmt->oops_do_parity();
-  assert((thread_parity == _thread_claim_parity),
-         "VMThread " PTR_FORMAT " has incorrect parity %d != %d", p2i(vmt), thread_parity, _thread_claim_parity);
+  assert_thread_claimed("VMThread", VMThread::vm_thread(), _thread_claim_token);
 }
 #endif // ASSERT
 

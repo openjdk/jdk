@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -52,13 +52,13 @@ ifeq ($(call isTargetOs, macosx), true)
   $(eval $(call SetupCopyFiles, COPY_JDK_IMAGE, \
       SRC := $(JDK_IMAGE_DIR), \
       DEST := $(JDK_MACOSX_CONTENTS_DIR)/Home, \
-      FILES := $(call CacheFind, $(JDK_IMAGE_DIR)), \
+      FILES := $(call FindFiles, $(JDK_IMAGE_DIR)), \
   ))
 
   $(eval $(call SetupCopyFiles, COPY_JRE_IMAGE, \
       SRC := $(JRE_IMAGE_DIR), \
       DEST := $(JRE_MACOSX_CONTENTS_DIR)/Home, \
-      FILES := $(call CacheFind, $(JRE_IMAGE_DIR)), \
+      FILES := $(call FindFiles, $(JRE_IMAGE_DIR)), \
   ))
 
   $(JDK_MACOSX_CONTENTS_DIR)/MacOS/libjli.dylib:

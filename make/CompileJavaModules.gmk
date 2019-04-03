@@ -653,7 +653,7 @@ endif
 
 ifneq ($(wildcard $(IMPORT_MODULE_DIR)), )
   $(JDK_OUTPUTDIR)/modules/$(MODULE)/_imported.marker: \
-      $(call CacheFind, $(IMPORT_MODULE_DIR))
+      $(call FindFiles, $(IMPORT_MODULE_DIR))
 	$(call MakeDir, $(@D))
         # Do not delete marker and build meta data files
 	$(RM) -r $(filter-out $(@D)/_%, $(wildcard $(@D)/*))

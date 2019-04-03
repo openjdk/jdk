@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -140,13 +140,13 @@ $(eval $(call assert-equals, $(call Or,    ), false))
 ################################################################################
 # Test remove-prefixes
 
-$(eval $(call assert-equals, \
+$(call AssertEquals, \
     $(call remove-prefixes, pre, prefix postfix), fix postfix, \
-    Prefixes not properly removed))
+    Prefixes not properly removed)
 
-$(eval $(call assert-equals, \
+$(call AssertEquals, \
     $(call remove-prefixes, pre post, prefix postfix), fix fix, \
-    Prefixes not properly removed))
+    Prefixes not properly removed)
 
 ################################################################################
 # Test ShellQuote
@@ -239,19 +239,19 @@ VARDEP_VALUE_FILE := $(VARDEP_DIR)/value-file
 VARDEP_TEST_VAR2 := value3
 
 VARDEP_RETURN_VALUE := $(call DependOnVariable, VARDEP_TEST_VAR2, $(VARDEP_VALUE_FILE))
-$(eval $(call assert-equals, $(VARDEP_RETURN_VALUE), $(VARDEP_VALUE_FILE), \
-    Wrong filename returned))
+$(call AssertEquals, $(VARDEP_RETURN_VALUE), $(VARDEP_VALUE_FILE), \
+    Wrong filename returned)
 -include $(VARDEP_VALUE_FILE)
-$(eval $(call assert-equals, $(VARDEP_TEST_VAR2_old), $(VARDEP_TEST_VAR2), \
-    Wrong contents in vardeps file))
+$(call AssertEquals, $(VARDEP_TEST_VAR2_old), $(VARDEP_TEST_VAR2), \
+    Wrong contents in vardeps file)
 
 # Test with a variable value containing some problematic characters
 VARDEP_TEST_VAR3 := foo '""' "''" bar \$$ORIGIN &\#x00a9
 VARDEP_VALUE_FILE := $(call DependOnVariable, VARDEP_TEST_VAR3)
 -include $(VARDEP_VALUE_FILE)
-$(eval $(call assert-equals, $(call EscapeHash,$(VARDEP_TEST_VAR3_old)), \
+$(call AssertEquals, $(call EscapeHash,$(VARDEP_TEST_VAR3_old)), \
     $(call EscapeHash,$(VARDEP_TEST_VAR3)), \
-    Wrong contents in vardep file))
+    Wrong contents in vardep file)
 
 TEST_TARGETS += test-vardep
 
@@ -280,85 +280,86 @@ endif
 
 PATHLIST_INPUT := foo bar baz
 
-$(eval $(call assert-equals, \
+$(call AssertEquals, \
     $(call PathList, $(call PathList, $(PATHLIST_INPUT))), \
     $(call PathList, $(PATHLIST_INPUT)), \
-    PathList call not safe for calling twice))
+    PathList call not safe for calling twice, \
+)
 
 ################################################################################
 # Test FindCommonPathPrefix
 
-$(eval $(call assert-equals, \
+$(call AssertEquals, \
     $(call FindCommonPathPrefix, /foo/bar/baz, /foo/bar/banan), \
     /foo/bar, \
     FindCommonPathPrefix, \
-))
+)
 
-$(eval $(call assert-equals, \
+$(call AssertEquals, \
     $(call FindCommonPathPrefix, /foo/bar/baz, /foo/bar), \
     /foo/bar, \
     FindCommonPathPrefix, \
-))
+)
 
-$(eval $(call assert-equals, \
+$(call AssertEquals, \
     $(call FindCommonPathPrefix, /foo/bar/baz, /foo/bar/), \
     /foo/bar, \
     FindCommonPathPrefix, \
-))
+)
 
-$(eval $(call assert-equals, \
+$(call AssertEquals, \
     $(call FindCommonPathPrefix, foo/bar/baz, foo/bar/banan), \
     foo/bar, \
     FindCommonPathPrefix, \
-))
+)
 
-$(eval $(call assert-equals, \
+$(call AssertEquals, \
     $(call FindCommonPathPrefix, foo/bar/baz, /foo/bar/banan), \
     , \
     FindCommonPathPrefix, \
-))
+)
 
 ################################################################################
 # DirToDotDot
 
-$(eval $(call assert-equals, \
+$(call AssertEquals, \
     $(call DirToDotDot, foo/bar/baz/), \
     ../../.., \
     DirToDotDot, \
-))
+)
 
-$(eval $(call assert-equals, \
+$(call AssertEquals, \
     $(call DirToDotDot, foo/bar), \
     ../.., \
     DirToDotDot, \
-))
+)
 
-$(eval $(call assert-equals, \
+$(call AssertEquals, \
     $(call DirToDotDot, /foo), \
     .., \
     DirToDotDot, \
-))
+)
 
 ################################################################################
 # RelativePath
 
-$(eval $(call assert-equals, \
+$(call AssertEquals, \
     $(call RelativePath, foo/bar/baz, foo/bar/banan), \
     ../baz, \
     RelativePath, \
-))
+)
 
-$(eval $(call assert-equals, \
+$(call AssertEquals, \
     $(call RelativePath, foo/bar/baz/banan/kung, foo/bar/banan/kung), \
     ../../baz/banan/kung, \
     RelativePath, \
-))
+)
 
-$(eval $(call assert-equals, \
+$(call AssertEquals, \
     $(call RelativePath, /foo/bar/baz/banan/kung, /foo/bar/banan/kung/), \
     ../../baz/banan/kung, \
     RelativePath, \
-))
+)
 
 ################################################################################
 # Test ParseKeywordVariable
@@ -370,29 +371,29 @@ $(eval $(call ParseKeywordVariable, KWBASE, \
     STRING_KEYWORDS := COUNT MANY_WORDS, \
 ))
 
-$(eval $(call assert-equals, \
+$(call AssertEquals, \
     $(KWBASE_APA), \
     banan, \
     ParseKeywordVariable failed to parse APA, \
-))
+)
 
-$(eval $(call assert-equals, \
+$(call AssertEquals, \
     $(KWBASE_COUNT), \
     1 2 3 4 5, \
     ParseKeywordVariable failed to parse COUNT, \
-))
+)
 
-$(eval $(call assert-equals, \
+$(call AssertEquals, \
     $(KWBASE_SUM), \
     1+2+3+4+5, \
     ParseKeywordVariable failed to parse SUM, \
-))
+)
 
-$(eval $(call assert-equals, \
+$(call AssertEquals, \
     $(KWBASE_MANY_WORDS), \
     I have the best words., \
     ParseKeywordVariable failed to parse MANY_WORDS, \
-))
+)
 
 # Simulate variable set from command line by using "override"
 override KWBASE_WEIRD_GURKA := paprika
@@ -403,17 +404,211 @@ $(eval $(call ParseKeywordVariable, KWBASE_WEIRD, \
     STRING_KEYWORDS := COUNT, \
 ))
 
-$(eval $(call assert-equals, \
+$(call AssertEquals, \
     $(KWBASE_WEIRD_APA), \
     skansen, \
     ParseKeywordVariable failed to overwrite APA, \
-))
+)
 
-$(eval $(call assert-equals, \
+$(call AssertEquals, \
     $(KWBASE_WEIRD_GURKA), \
     paprika, \
     ParseKeywordVariable failed to preserve GURKA, \
-))
+)
+
+################################################################################
+# Test recursive wildcard
+
+A_FOOBAR := $(OUTPUT_DIR)/wildcard/a/foo.bar
+A_B_DOOBAR := $(OUTPUT_DIR)/wildcard/a/b/doo.bar
+A_B_FOOBAR := $(OUTPUT_DIR)/wildcard/a/b/foo.bar
+A_B_FOOBAZ := $(OUTPUT_DIR)/wildcard/a/b/foo.baz
+X_Y_FOOBAR := $(OUTPUT_DIR)/wildcard/x/y/foo.bar
+X_Y_FOOBAZ := $(OUTPUT_DIR)/wildcard/x/y/foo.baz
+X_Y_FOODOLLAR := $(OUTPUT_DIR)/wildcard/x/y/foo$$foo
+
+$(call MakeDir, $(OUTPUT_DIR)/wildcard/a/b)
+$(call MakeDir, $(OUTPUT_DIR)/wildcard/x/y)
+$(shell $(TOUCH) $(A_FOOBAR) $(A_B_FOOBAR) $(A_B_DOOBAR) $(A_B_FOOBAZ) \
+    $(X_Y_FOOBAR) $(X_Y_FOOBAZ) $(call ShellQuote, $(X_Y_FOODOLLAR)))
+
+ifeq ($(RWILDCARD_WORKS), true)
+  $(call AssertEquals, \
+      $(sort $(call rwildcard, $(OUTPUT_DIR)/wildcard, *.bar)), \
+      $(sort $(A_B_DOOBAR) $(A_B_FOOBAR) $(A_FOOBAR) $(X_Y_FOOBAR)), \
+      Wrong files returned from rwildcard, \
+  )
+
+  $(call AssertEquals, \
+      $(sort $(call rwildcard, $(OUTPUT_DIR)/wildcard, doo.*)), \
+      $(A_B_DOOBAR), \
+      Wrong files returned from rwildcard, \
+  )
+
+  $(call AssertEquals, \
+      $(sort $(call rwildcard, $(OUTPUT_DIR)/wildcard, *.bar *.baz)), \
+      $(sort $(A_B_DOOBAR) $(A_FOOBAR) $(A_B_FOOBAR) $(A_B_FOOBAZ) \
+      $(X_Y_FOOBAR) $(X_Y_FOOBAZ)), \
+      Wrong files returned from rwildcard, \
+  )
+
+  $(call AssertEquals, \
+      $(sort $(call WildcardFindFiles, $(OUTPUT_DIR)/wildcard)), \
+      $(sort $(A_B_DOOBAR) $(A_FOOBAR) $(A_B_FOOBAR) $(A_B_FOOBAZ) \
+      $(X_Y_FOOBAR) $(X_Y_FOOBAZ) $(X_Y_FOODOLLAR)), \
+      Wrong files returned from WildcardFindFiles, \
+  )
+
+  $(call AssertEquals, \
+      $(sort $(call WildcardFindFiles, $(OUTPUT_DIR)/wildcard/x/y)), \
+      $(sort $(X_Y_FOOBAR) $(X_Y_FOOBAZ) $(X_Y_FOODOLLAR)), \
+      Wrong files returned from WildcardFindFiles, \
+  )
+
+  $(call AssertEquals, \
+      $(sort $(call WildcardFindFiles, $(OUTPUT_DIR)/wildcard/a/b $(OUTPUT_DIR)/wildcard/x)), \
+      $(sort $(A_B_DOOBAR) $(A_B_FOOBAR) $(A_B_FOOBAZ) \
+      $(X_Y_FOOBAR) $(X_Y_FOOBAZ) $(X_Y_FOODOLLAR)), \
+      Wrong files returned from WildcardFindFiles, \
+  )
+endif
+
+$(call AssertEquals, \
+    $(sort $(call ShellFindFiles, $(OUTPUT_DIR)/wildcard)), \
+    $(sort $(A_B_DOOBAR) $(A_FOOBAR) $(A_B_FOOBAR) $(A_B_FOOBAZ) \
+    $(X_Y_FOOBAR) $(X_Y_FOOBAZ) $(X_Y_FOODOLLAR)), \
+    Wrong files returned from ShellFindFiles, \
+)
+
+$(call AssertEquals, \
+    $(sort $(call ShellFindFiles, $(OUTPUT_DIR)/wildcard/x/y)), \
+    $(sort $(X_Y_FOOBAR) $(X_Y_FOOBAZ) $(X_Y_FOODOLLAR)), \
+    Wrong files returned from ShellFindFiles, \
+)
+
+$(call AssertEquals, \
+    $(sort $(call ShellFindFiles, $(OUTPUT_DIR)/wildcard/a/b $(OUTPUT_DIR)/wildcard/x)), \
+    $(sort $(A_B_DOOBAR) $(A_B_FOOBAR) $(A_B_FOOBAZ) \
+    $(X_Y_FOOBAR) $(X_Y_FOOBAZ) $(X_Y_FOODOLLAR)), \
+    Wrong files returned from ShellFindFiles, \
+)
+
+$(call AssertEquals, \
+    $(sort $(call ShellFindFiles, $(OUTPUT_DIR)/wildcard, *.bar)), \
+    $(sort $(A_B_DOOBAR) $(A_B_FOOBAR) $(A_FOOBAR) $(X_Y_FOOBAR)), \
+    Wrong files returned from ShellFindFiles, \
+)
+
+$(call AssertEquals, \
+    $(sort $(call ShellFindFiles, $(OUTPUT_DIR)/wildcard, doo.*)), \
+    $(A_B_DOOBAR), \
+    Wrong files returned from ShellFindFiles, \
+)
+
+$(call AssertEquals, \
+    $(sort $(call ShellFindFiles, $(OUTPUT_DIR)/wildcard, *.bar *.baz)), \
+    $(sort $(A_B_DOOBAR) $(A_FOOBAR) $(A_B_FOOBAR) $(A_B_FOOBAZ) \
+    $(X_Y_FOOBAR) $(X_Y_FOOBAZ)), \
+    Wrong files returned from ShellFindFiles, \
+)
+
+################################################################################
+
+$(call AssertEquals, \
+    $(sort $(call CacheFindFiles, $(OUTPUT_DIR)/wildcard/a/b)), \
+    $(sort $(A_B_DOOBAR) $(A_B_FOOBAR) $(A_B_FOOBAZ)), \
+    CacheFindFiles test 1, \
+)
+$(call FillFindCache, $(OUTPUT_DIR)/wildcard/a/b)
+$(call AssertEquals, \
+    $(CacheFindFiles_CACHED_DIRS), $(OUTPUT_DIR)/wildcard/a/b, \
+    Wrong files in find cache dirs, \
+)
+$(call AssertEquals, \
+    $(sort $(CacheFindFiles_CACHED_FILES)), \
+    $(sort $(A_B_DOOBAR) $(A_B_FOOBAR) $(A_B_FOOBAZ)), \
+    Wrong files in find cache files, \
+)
+$(call AssertEquals, \
+    $(sort $(call CacheFindFiles, $(OUTPUT_DIR)/wildcard/a/b)), \
+    $(sort $(A_B_DOOBAR) $(A_B_FOOBAR) $(A_B_FOOBAZ)), \
+    CacheFindFiles test 1, \
+)
+
+$(call AssertEquals, \
+    $(sort $(call CacheFindFiles, $(OUTPUT_DIR)/wildcard/a)), \
+    $(sort $(A_B_DOOBAR) $(A_B_FOOBAR) $(A_B_FOOBAZ) $(A_FOOBAR)), \
+    CacheFindFiles test 2, \
+)
+$(call FillFindCache, $(OUTPUT_DIR)/wildcard/a)
+$(call AssertEquals, \
+    $(CacheFindFiles_CACHED_DIRS), \
+    $(OUTPUT_DIR)/wildcard/a/b $(OUTPUT_DIR)/wildcard/a, \
+    Wrong files in find cache dirs, \
+)
+$(call AssertEquals, \
+    $(sort $(CacheFindFiles_CACHED_FILES)), \
+    $(sort $(A_B_DOOBAR) $(A_B_FOOBAR) $(A_B_FOOBAZ) $(A_FOOBAR)), \
+    Wrong files in find cache files, \
+)
+$(call AssertEquals, \
+    $(words $(CacheFindFiles_CACHED_FILES)), 4, \
+    Wrong files in find cache files >$(CacheFindFiles_CACHED_FILES)<, \
+)
+$(call AssertEquals, \
+    $(sort $(call CacheFindFiles, $(OUTPUT_DIR)/wildcard/a)), \
+    $(sort $(A_B_DOOBAR) $(A_B_FOOBAR) $(A_B_FOOBAZ) $(A_FOOBAR)), \
+    CacheFindFiles test 2, \
+)
+
+$(call AssertEquals, \
+    $(sort $(call CacheFindFiles, $(OUTPUT_DIR)/wildcard/x)), \
+    $(sort $(X_Y_FOOBAR) $(X_Y_FOOBAZ) $(X_Y_FOODOLLAR)), \
+    CacheFindFiles test 3, \
+)
+$(call FillFindCache, $(OUTPUT_DIR)/wildcard/x)
+$(call AssertEquals, \
+    $(CacheFindFiles_CACHED_DIRS), \
+    $(OUTPUT_DIR)/wildcard/a/b $(OUTPUT_DIR)/wildcard/a $(OUTPUT_DIR)/wildcard/x, \
+    Wrong files in find cache dirs, \
+)
+$(call AssertEquals, \
+    $(sort $(CacheFindFiles_CACHED_FILES)), \
+    $(sort $(A_B_DOOBAR) $(A_B_FOOBAR) $(A_B_FOOBAZ) $(A_FOOBAR) \
+        $(X_Y_FOOBAR) $(X_Y_FOOBAZ) $(X_Y_FOODOLLAR)), \
+    Wrong files in find cache files, \
+)
+$(call AssertEquals, \
+    $(words $(CacheFindFiles_CACHED_FILES)), 7, \
+    Wrong files in find cache files, \
+)
+$(call AssertEquals, \
+    $(sort $(call CacheFindFiles, $(OUTPUT_DIR)/wildcard/x)), \
+    $(sort $(X_Y_FOOBAR) $(X_Y_FOOBAZ) $(X_Y_FOODOLLAR)), \
+    CacheFindFiles test 3, \
+)
+
+$(call AssertEquals, \
+    $(sort $(call CacheFindFiles, $(OUTPUT_DIR)/wildcard/x/y)), \
+    $(sort $(X_Y_FOOBAR) $(X_Y_FOOBAZ) $(X_Y_FOODOLLAR)), \
+    CacheFindFiles test 4, \
+)
+$(call FillFindCache, $(OUTPUT_DIR)/wildcard/x/y)
+$(call AssertEquals, \
+    $(CacheFindFiles_CACHED_DIRS), \
+    $(OUTPUT_DIR)/wildcard/a/b $(OUTPUT_DIR)/wildcard/a $(OUTPUT_DIR)/wildcard/x, \
+    Wrong files in find cache dirs, \
+)
+$(call AssertEquals, \
+    $(sort $(CacheFindFiles_CACHED_FILES)), \
+    $(sort $(A_B_DOOBAR) $(A_B_FOOBAR) $(A_B_FOOBAZ) $(A_FOOBAR) \
+        $(X_Y_FOOBAR) $(X_Y_FOOBAZ) $(X_Y_FOODOLLAR)), \
+    Wrong files in find cache files, \
+)
+$(call AssertEquals, \
+    $(words $(CacheFindFiles_CACHED_FILES)), 7, \
+    Wrong files in find cache files, \
+)
 
 ################################################################################
 

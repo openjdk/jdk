@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,8 @@ endif
 #                           src dir
 #   SUFFIXES
 #   EXTRA_DEPS
+#   FOLLOW_SYMLINKS - Set to explicitly follow symlinks. Affects performance of
+#                     finding files.
 #   ZIP_OPTIONS extra options to pass to zip
 SetupZipArchive = $(NamedParamsMacroTemplate)
 define SetupZipArchiveBody
@@ -62,9 +64,14 @@ define SetupZipArchiveBody
     $1_FIND_LIST := $$($1_SRC)
   endif
 
-  # Find all files in the source tree. Follow symlinks in this find since that is
-  # what zip does.
-  $1_ALL_SRCS := $$(call not-containing,_the.,$$(call CacheFind,$$($1_FIND_LIST), , -L))
+  # Find all files in the source tree.
+  # If asked to, follow symlinks in this find since that is what zip does. To do
+  # this, we need to call ShellFindFiles directly.
+  ifeq ($$($1_FOLLOW_SYMLINKS), true)
+    $1_ALL_SRCS := $$(call not-containing,_the.,$$(call ShellFindFiles,$$($1_FIND_LIST), , -L))
+  else
+    $1_ALL_SRCS := $$(call not-containing,_the.,$$(call FindFiles,$$($1_FIND_LIST)))
+  endif
 
   # Filter on suffixes if set
   ifneq ($$($1_SUFFIXES),)

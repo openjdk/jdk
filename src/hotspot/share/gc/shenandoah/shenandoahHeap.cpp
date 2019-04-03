@@ -436,6 +436,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _cycle_memory_manager("Shenandoah Cycles", "end of GC cycle"),
   _gc_timer(new (ResourceObj::C_HEAP, mtGC) ConcurrentGCTimer()),
   _soft_ref_policy(),
+  _log_min_obj_alignment_in_bytes(LogMinObjAlignmentInBytes),
   _ref_processor(NULL),
   _marking_context(NULL),
   _bitmap_size(0),

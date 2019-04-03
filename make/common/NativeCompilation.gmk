@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -505,7 +505,7 @@ define SetupNativeCompilationBody
   $$(foreach d, $$($1_SRC), $$(if $$(wildcard $$d), , \
       $$(error SRC specified to SetupNativeCompilation $1 contains missing directory $$d)))
 
-  $1_SRCS_RAW = $$(call CacheFind, $$($1_SRC))
+  $1_SRCS_RAW := $$(call FindFiles, $$($1_SRC))
   # Order src files according to the order of the src dirs
   $1_SRCS := $$(foreach d, $$($1_SRC), $$(filter $$d%, $$($1_SRCS_RAW)))
   $1_SRCS := $$(filter $$(NATIVE_SOURCE_EXTENSIONS), $$($1_SRCS))

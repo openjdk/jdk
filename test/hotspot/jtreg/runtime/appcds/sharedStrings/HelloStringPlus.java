@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,8 +66,8 @@ public class HelloStringPlus {
         // Check intern() method for "" string
         String empty = "";
         String empty_interned = empty.intern();
-        if (wb.isShared(empty)) {
-           throw new RuntimeException("Empty string should not be shared");
+        if (!wb.isShared(empty)) {
+           throw new RuntimeException("Empty string should be shared");
         }
         if (empty_interned != empty) {
             throw new RuntimeException("Different string is returned from intern() for empty string");

@@ -66,26 +66,22 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, Dec
     }
 #endif
 
-    if (!dest_uninitialized && !ShenandoahHeap::heap()->heuristics()->can_do_traversal_gc()) {
+    if (ShenandoahSATBBarrier && !dest_uninitialized && !ShenandoahHeap::heap()->heuristics()->can_do_traversal_gc()) {
       Register thread = NOT_LP64(rax) LP64_ONLY(r15_thread);
 #ifndef _LP64
       __ push(thread);
       __ get_thread(thread);
 #endif
 
-      Label filtered;
-      Address in_progress(thread, in_bytes(ShenandoahThreadLocalData::satb_mark_queue_active_offset()));
-      // Is marking active?
-      if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
-        __ cmpl(in_progress, 0);
-      } else {
-        assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
-        __ cmpb(in_progress, 0);
-      }
+      Label done;
+      // Short-circuit if count == 0.
+      __ testptr(count, count);
+      __ jcc(Assembler::zero, done);
 
-      NOT_LP64(__ pop(thread);)
-
-        __ jcc(Assembler::equal, filtered);
+      // Avoid runtime call when not marking.
+      Address gc_state(thread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
+      __ testb(gc_state, ShenandoahHeap::MARKING);
+      __ jcc(Assembler::zero, done);
 
       __ pusha();                      // push registers
 #ifdef _LP64
@@ -111,7 +107,8 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, Dec
                       dst, count);
 #endif
       __ popa();
-      __ bind(filtered);
+      __ bind(done);
+      NOT_LP64(__ pop(thread);)
     }
   }
 

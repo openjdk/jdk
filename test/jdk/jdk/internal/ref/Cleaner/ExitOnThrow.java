@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
  * @bug 4954921 8009259
  * @library /test/lib
  * @modules java.base/jdk.internal.ref
- *          java.base/jdk.internal.misc
  * @build jdk.test.lib.Utils
  *        jdk.test.lib.Asserts
  *        jdk.test.lib.JDKToolFinder
@@ -36,38 +35,22 @@
  * @run main ExitOnThrow
  * @summary Ensure that if a cleaner throws an exception then the VM exits
  */
-import java.util.Arrays;
 
 import jdk.internal.ref.Cleaner;
-import jdk.test.lib.JDKToolLauncher;
-import jdk.test.lib.process.OutputAnalyzer;
+
 import jdk.test.lib.process.ProcessTools;
 
 public class ExitOnThrow {
 
-    static final String cp = System.getProperty("test.classes", ".");
-
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
-            String[] cmd = JDKToolLauncher.createUsingTestJDK("java")
-                                          .addToolArg("-cp")
-                                          .addToolArg(cp)
-                                          .addToolArg("ExitOnThrow")
-                                          .addToolArg("-executeCleaner")
-                                          .getCommand();
-            ProcessBuilder pb = new ProcessBuilder(cmd);
-            OutputAnalyzer out = ProcessTools.executeProcess(pb);
-            System.out.println("======================");
-            System.out.println(Arrays.toString(cmd));
-            String msg = " stdout: [" + out.getStdout() + "]\n" +
-                         " stderr: [" + out.getStderr() + "]\n" +
-                         " exitValue = " + out.getExitValue() + "\n";
-            System.out.println(msg);
-
-            if (out.getExitValue() != 1)
-                throw new RuntimeException("Unexpected exit code: " +
-                                           out.getExitValue());
-
+            ProcessTools.executeTestJvm("--add-exports", "java.base/jdk.internal.ref=ALL-UNNAMED",
+                                        "ExitOnThrow",
+                                        "-executeCleaner")
+                        .outputTo(System.out)
+                        .errorTo(System.out)
+                        .shouldHaveExitValue(1)
+                        .shouldContain("java.lang.RuntimeException: Foo!");
         } else {
             Cleaner.create(new Object(),
                            () -> { throw new RuntimeException("Foo!"); } );

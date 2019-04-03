@@ -338,6 +338,12 @@ default: all
 
 run-test-prebuilt:
 	@$(RM) -f $(MAKESUPPORT_OUTPUTDIR)/exit-with-error
+        # The lazy initialization of the cache file in FindTests.gmk does not
+        # always work with RunTests.gmk. To guarantee that the jtreg test groups
+        # are always found and parsed, call FindTests.gmk stand alone once
+        # before calling RunTests.gmk.
+	@cd $(TOPDIR) && $(MAKE) $(MAKE_ARGS) -f make/common/FindTests.gmk \
+	    SPEC=$(SPEC) FINDTESTS_STAND_ALONE=true
 	@cd $(TOPDIR) && $(MAKE) $(MAKE_ARGS) -f make/RunTests.gmk run-test \
 	    TEST="$(TEST)"
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2017, 2019, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -28,10 +28,14 @@ import sun.jvm.hotspot.gc.shared.CollectedHeapName;
 import sun.jvm.hotspot.gc.shared.LiveRegionsClosure;
 import sun.jvm.hotspot.debugger.Address;
 import sun.jvm.hotspot.runtime.VM;
+import sun.jvm.hotspot.runtime.VMObjectFactory;
+import sun.jvm.hotspot.types.AddressField;
 import sun.jvm.hotspot.types.Type;
 import sun.jvm.hotspot.types.TypeDataBase;
 import sun.jvm.hotspot.memory.MemRegion;
 import sun.jvm.hotspot.types.CIntegerField;
+import sun.jvm.hotspot.utilities.BitMapInterface;
+
 import java.io.PrintStream;
 import java.util.Observable;
 import java.util.Observer;
@@ -40,6 +44,11 @@ public class ShenandoahHeap extends CollectedHeap {
     static private CIntegerField numRegions;
     static private CIntegerField used;
     static private CIntegerField committed;
+    static private AddressField  regions;
+    static private CIntegerField logMinObjAlignmentInBytes;
+
+    static private long regionPtrFieldSize;
+    static private long brookPtrSize;
     static {
         VM.registerVMInitializedObserver(new Observer() {
             public void update(Observable o, Object data) {
@@ -53,6 +62,21 @@ public class ShenandoahHeap extends CollectedHeap {
         numRegions = type.getCIntegerField("_num_regions");
         used = type.getCIntegerField("_used");
         committed = type.getCIntegerField("_committed");
+        regions = type.getAddressField("_regions");
+        logMinObjAlignmentInBytes = type.getCIntegerField("_log_min_obj_alignment_in_bytes");
+
+        brookPtrSize = db.lookupIntConstant("HeapWordSize").longValue();
+        Type regionPtrType = db.lookupType("ShenandoahHeapRegion*");
+        regionPtrFieldSize = regionPtrType.getSize();
+    }
+
+    public ShenandoahHeap(Address addr) {
+        super(addr);
+    }
+
+    @Override
+    public long oopOffset() {
+        return brookPtrSize;
     }
 
     @Override
@@ -78,10 +102,35 @@ public class ShenandoahHeap extends CollectedHeap {
         return committed.getValue(addr);
     }
 
+    public int getLogMinObjAlignmentInBytes() {
+        return logMinObjAlignmentInBytes.getJInt(addr);
+    }
+
+    public ShenandoahHeapRegion getRegion(long index) {
+        if (index < numOfRegions()) {
+            Address arrayAddr = regions.getValue(addr);
+            Address regAddr = arrayAddr.getAddressAt(index * regionPtrFieldSize);
+            ShenandoahHeapRegion region = VMObjectFactory.newObject(ShenandoahHeapRegion.class, regAddr);
+            region.setHeap(this);
+            return region;
+        }
+        return null;
+    }
+
+    public ShenandoahHeapRegion regionAtOffset(long offset) {
+        long index = offset >>> ShenandoahHeapRegion.regionSizeBytesShift();
+        if (index < 0 || index >= numOfRegions()) {
+            throw new RuntimeException("Invalid offset: " + offset);
+        }
+        return getRegion(index);
+    }
+
     @Override
     public void liveRegionsIterate(LiveRegionsClosure closure) {
-        // Operation (currently) not supported with Shenandoah GC.
-        System.err.println("Warning: Operation not supported with Shenandoah GC");
+        for (long index = 0; index < numOfRegions(); index ++) {
+            ShenandoahHeapRegion region = getRegion(index);
+            closure.doLiveRegions(region);
+        }
     }
 
     @Override
@@ -92,7 +141,9 @@ public class ShenandoahHeap extends CollectedHeap {
         tty.println(" region size " + ShenandoahHeapRegion.regionSizeBytes() / 1024 + " K");
     }
 
-    public ShenandoahHeap(Address addr) {
-        super(addr);
+    @Override
+    public BitMapInterface createBitMap(long bits) {
+        return new ShenandoahBitMap(this);
     }
+
 }

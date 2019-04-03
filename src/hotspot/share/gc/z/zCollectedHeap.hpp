@@ -72,7 +72,8 @@ public:
 
   virtual bool is_maximal_no_gc() const;
   virtual bool is_in(const void* p) const;
-  virtual bool is_in_closed_subset(const void* p) const;
+
+  virtual uint32_t hash_oop(oop obj) const;
 
   virtual HeapWord* mem_allocate(size_t size, bool* gc_overhead_limit_was_exceeded);
   virtual MetaWord* satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,

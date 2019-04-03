@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ PROC_SRC_SUBDIRS := \
 
 PROC_SRC_DIRS := $(patsubst %, $(SRC_DIR)/%/src, $(PROC_SRC_SUBDIRS))
 
-PROC_SRCS := $(filter %.java, $(call CacheFind, $(PROC_SRC_DIRS)))
+PROC_SRCS := $(filter %.java, $(call FindFiles, $(PROC_SRC_DIRS)))
 
 ALL_SRC_DIRS := $(SRC_DIR) $(wildcard $(SRC_DIR)/*/src)
 SOURCEPATH := $(call PathList, $(ALL_SRC_DIRS))

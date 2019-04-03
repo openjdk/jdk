@@ -237,7 +237,7 @@ public abstract class BaseFileManager implements JavaFileManager {
         return true;
     }
     // where
-        private static final Set<Option> javacFileManagerOptions =
+        protected static final Set<Option> javacFileManagerOptions =
             Option.getJavacFileManagerOptions();
 
     @Override @DefinedBy(Api.COMPILER)

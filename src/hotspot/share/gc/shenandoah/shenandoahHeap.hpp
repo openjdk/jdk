@@ -505,6 +505,8 @@ private:
   ConcurrentGCTimer*           _gc_timer;
   SoftRefPolicy                _soft_ref_policy;
 
+  // For exporting to SA
+  int                          _log_min_obj_alignment_in_bytes;
 public:
   ShenandoahMonitoringSupport* monitoring_support() { return _monitoring_support;    }
   GCMemoryManager* cycle_memory_manager()           { return &_cycle_memory_manager; }

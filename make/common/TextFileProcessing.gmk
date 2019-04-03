@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,7 @@ define SetupTextFileProcessingBody
           $$(error SOURCE_DIRS contains directory $$(src) outside \
               SOURCE_BASE_DIR $$($1_SOURCE_BASE_DIR) (in $1))))
     endif
-    $1_SOURCE_FILES := $$(sort $$(call CacheFind,$$($1_SOURCE_DIRS)))
+    $1_SOURCE_FILES := $$(sort $$(call FindFiles,$$($1_SOURCE_DIRS)))
     $1_EXCLUDE_FILES:=$$(foreach i,$$($1_SOURCE_DIRS),$$(addprefix $$i/,$$($1_EXCLUDE_FILES)))
     $1_INCLUDE_FILES:=$$(foreach i,$$($1_SOURCE_DIRS),$$(addprefix $$i/,$$($1_INCLUDE_FILES)))
     $1_SOURCE_FILES := $$(filter-out $$($1_EXCLUDE_FILES),$$($1_SOURCE_FILES))

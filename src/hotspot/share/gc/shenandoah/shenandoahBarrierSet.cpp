@@ -132,12 +132,23 @@ void ShenandoahBarrierSet::write_ref_array(HeapWord* start, size_t count) {
 template <class T>
 void ShenandoahBarrierSet::write_ref_array_pre_work(T* dst, size_t count) {
   shenandoah_assert_not_in_cset_loc_except(dst, _heap->cancelled_gc());
-  if (ShenandoahSATBBarrier && _heap->is_concurrent_mark_in_progress()) {
-    T* elem_ptr = dst;
-    for (size_t i = 0; i < count; i++, elem_ptr++) {
-      T heap_oop = RawAccess<>::oop_load(elem_ptr);
-      if (!CompressedOops::is_null(heap_oop)) {
-        enqueue(CompressedOops::decode_not_null(heap_oop));
+  assert(ShenandoahThreadLocalData::satb_mark_queue(Thread::current()).is_active(), "Shouldn't be here otherwise");
+  assert(ShenandoahSATBBarrier, "Shouldn't be here otherwise");
+  assert(count > 0, "Should have been filtered before");
+
+  Thread* thread = Thread::current();
+  ShenandoahMarkingContext* ctx = _heap->marking_context();
+  bool has_forwarded = _heap->has_forwarded_objects();
+  T* elem_ptr = dst;
+  for (size_t i = 0; i < count; i++, elem_ptr++) {
+    T heap_oop = RawAccess<>::oop_load(elem_ptr);
+    if (!CompressedOops::is_null(heap_oop)) {
+      oop obj = CompressedOops::decode_not_null(heap_oop);
+      if (has_forwarded) {
+        obj = resolve_forwarded_not_null(obj);
+      }
+      if (!ctx->is_marked(obj)) {
+        ShenandoahThreadLocalData::satb_mark_queue(thread).enqueue_known_active(obj);
       }
     }
   }
@@ -309,11 +320,9 @@ oop ShenandoahBarrierSet::write_barrier(oop obj) {
 }
 
 oop ShenandoahBarrierSet::storeval_barrier(oop obj) {
-  if (ShenandoahStoreValEnqueueBarrier) {
-    if (!CompressedOops::is_null(obj)) {
-      obj = write_barrier(obj);
-      enqueue(obj);
-    }
+  if (ShenandoahStoreValEnqueueBarrier && !CompressedOops::is_null(obj) && _heap->is_concurrent_traversal_in_progress()) {
+    obj = write_barrier(obj);
+    enqueue(obj);
   }
   if (ShenandoahStoreValReadBarrier) {
     obj = resolve_forwarded(obj);
@@ -329,14 +338,14 @@ void ShenandoahBarrierSet::keep_alive_barrier(oop obj) {
 
 void ShenandoahBarrierSet::enqueue(oop obj) {
   shenandoah_assert_not_forwarded_if(NULL, obj, _heap->is_concurrent_traversal_in_progress());
-  if (!_satb_mark_queue_set.is_active()) return;
+  assert(_satb_mark_queue_set.is_active(), "only get here when SATB active");
 
   // Filter marked objects before hitting the SATB queues. The same predicate would
   // be used by SATBMQ::filter to eliminate already marked objects downstream, but
   // filtering here helps to avoid wasteful SATB queueing work to begin with.
   if (!_heap->requires_marking<false>(obj)) return;
 
-  ShenandoahThreadLocalData::satb_mark_queue(Thread::current()).enqueue(obj);
+  ShenandoahThreadLocalData::satb_mark_queue(Thread::current()).enqueue_known_active(obj);
 }
 
 void ShenandoahBarrierSet::on_thread_create(Thread* thread) {

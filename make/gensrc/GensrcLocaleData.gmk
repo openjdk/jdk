@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -28,16 +28,16 @@
 # into LocaleDataMetaInfo.java
 
 # First go look for all locale files
-LOCALE_FILES := $(shell $(FIND) \
+LOCALE_FILES := $(call FindFiles, \
     $(TOPDIR)/src/$(MODULE)/share/classes/sun/text/resources \
-    $(TOPDIR)/src/$(MODULE)/share/classes/sun/util/resources \
-    -name "FormatData_*.java" -o -name "FormatData_*.properties" -o \
-    -name "CollationData_*.java" -o -name "CollationData_*.properties" -o \
-    -name "TimeZoneNames_*.java" -o -name "TimeZoneNames_*.properties" -o \
-    -name "LocaleNames_*.java" -o -name "LocaleNames_*.properties" -o \
-    -name "CurrencyNames_*.java" -o -name "CurrencyNames_*.properties" -o \
-    -name "CalendarData_*.java" -o -name "CalendarData_*.properties" -o \
-    -name "BreakIteratorInfo_*.java" -o -name "BreakIteratorRules_*.java")
+    $(TOPDIR)/src/$(MODULE)/share/classes/sun/util/resources, \
+    FormatData_*.java FormatData_*.properties \
+    CollationData_*.java CollationData_*.properties \
+    TimeZoneNames_*.java TimeZoneNames_*.properties \
+    LocaleNames_*.java LocaleNames_*.properties \
+    CurrencyNames_*.java CurrencyNames_*.properties \
+    CalendarData_*.java CalendarData_*.properties \
+    BreakIteratorInfo_*.java BreakIteratorRules_*.java)
 
 # Then translate the locale files into for example: FormatData_sv
 LOCALE_RESOURCES := $(sort $(subst .properties,,$(subst .java,,$(notdir $(LOCALE_FILES)))))

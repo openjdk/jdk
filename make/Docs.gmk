@@ -337,7 +337,7 @@ define SetupApiDocsGenerationBody
       $$(SUPPORT_OUTPUTDIR)/docs/$1.vardeps)
 
   # Get a list of all files in all the source dirs for all included modules
-  $1_SOURCE_DEPS := $$(call CacheFind, $$(wildcard $$(foreach module, \
+  $1_SOURCE_DEPS := $$(call FindFiles, $$(wildcard $$(foreach module, \
       $$($1_ALL_MODULES), $$(call FindModuleSrcDirs, $$(module)))))
 
   $$(eval $$(call SetupExecute, javadoc_$1, \
@@ -484,7 +484,7 @@ $(eval $(call SetupApiDocsGeneration, REFERENCE_API, \
 GLOBAL_SPECS_RESOURCES_DIR := $(TOPDIR)/make/data/docs-resources/
 $(eval $(call SetupCopyFiles, COPY_GLOBAL_RESOURCES, \
     SRC := $(GLOBAL_SPECS_RESOURCES_DIR), \
-    FILES := $(call CacheFind, $(GLOBAL_SPECS_RESOURCES_DIR)), \
+    FILES := $(call FindFiles, $(GLOBAL_SPECS_RESOURCES_DIR)), \
     DEST := $(DOCS_OUTPUTDIR), \
 ))
 JDK_INDEX_TARGETS += $(COPY_GLOBAL_RESOURCES)
@@ -509,10 +509,10 @@ COPY_SPEC_FILTER := %.html %.gif %.jpg %.mib %.css
 $(foreach m, $(ALL_MODULES), \
   $(eval SPECS_$m := $(call FindModuleSpecsDirs, $m)) \
   $(foreach d, $(SPECS_$m), \
-    $(if $(filter $(COPY_SPEC_FILTER), $(call CacheFind, $d)), \
+    $(if $(filter $(COPY_SPEC_FILTER), $(call FindFiles, $d)), \
       $(eval $(call SetupCopyFiles, COPY_$m, \
           SRC := $d, \
-          FILES := $(filter $(COPY_SPEC_FILTER), $(call CacheFind, $d)), \
+          FILES := $(filter $(COPY_SPEC_FILTER), $(call FindFiles, $d)), \
           DEST := $(DOCS_OUTPUTDIR)/specs/, \
       )) \
       $(eval JDK_SPECS_TARGETS += $(COPY_$m)) \
@@ -529,11 +529,11 @@ ifeq ($(ENABLE_PANDOC), true)
   $(foreach m, $(ALL_MODULES), \
     $(eval SPECS_$m := $(call FindModuleSpecsDirs, $m)) \
     $(foreach d, $(SPECS_$m), \
-      $(if $(filter %.md, $(call CacheFind, $d)), \
+      $(if $(filter %.md, $(call FindFiles, $d)), \
         $(eval $m_$d_NAME := SPECS_TO_HTML_$m_$(strip $(call RelativePath, $d, $(TOPDIR)))) \
         $(eval $(call SetupProcessMarkdown, $($m_$d_NAME), \
             SRC := $d, \
-            FILES := $(filter %.md, $(call CacheFind, $d)), \
+            FILES := $(filter %.md, $(call FindFiles, $d)), \
             DEST := $(DOCS_OUTPUTDIR)/specs/, \
             CSS := $(GLOBAL_SPECS_DEFAULT_CSS_FILE), \
         )) \
@@ -556,11 +556,11 @@ ifeq ($(ENABLE_PANDOC), true)
   $(foreach m, $(ALL_MODULES), \
     $(eval MAN_$m := $(call FindModuleManDirs, $m)) \
     $(foreach d, $(MAN_$m), \
-      $(if $(filter %.md, $(call CacheFind, $d)), \
+      $(if $(filter %.md, $(call FindFiles, $d)), \
         $(eval $m_$d_NAME := MAN_TO_HTML_$m_$(strip $(call RelativePath, $d, $(TOPDIR)))) \
         $(eval $(call SetupProcessMarkdown, $($m_$d_NAME), \
             SRC := $d, \
-            FILES := $(filter %.md, $(call CacheFind, $d)), \
+            FILES := $(filter %.md, $(call FindFiles, $d)), \
             DEST := $(DOCS_OUTPUTDIR)/specs/man, \
             FILTER := $(PANDOC_HTML_MANPAGE_FILTER), \
             CSS := $(GLOBAL_SPECS_DEFAULT_CSS_FILE), \
