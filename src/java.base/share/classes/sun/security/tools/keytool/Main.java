@@ -175,6 +175,8 @@ public final class Main {
     private Set<char[]> passwords = new HashSet<>();
     private String startDate = null;
 
+    private boolean tlsInfo = false;
+
     private List<String> ids = new ArrayList<>();   // used in GENCRL
     private List<String> v3ext = new ArrayList<>();
 
@@ -260,6 +262,8 @@ public final class Main {
         STOREPASSWD("Changes.the.store.password.of.a.keystore",
             NEW, KEYSTORE, CACERTS, STOREPASS, STORETYPE, PROVIDERNAME,
             ADDPROVIDER, PROVIDERCLASS, PROVIDERPATH, V),
+        SHOWINFO("showinfo.command.help",
+            TLS, V),
 
         // Undocumented start here, KEYCLONE is used a marker in -help;
 
@@ -365,6 +369,7 @@ public final class Main {
         STARTDATE("startdate", "<date>", "certificate.validity.start.date.time"),
         STOREPASS("storepass", "<arg>", "keystore.password"),
         STORETYPE("storetype", "<type>", "keystore.type"),
+        TLS("tls", null, "tls.option.help"),
         TRUSTCACERTS("trustcacerts", null, "trust.certificates.from.cacerts"),
         V("v", null, "verbose.output"),
         VALIDITY("validity", "<days>", "validity.number.of.days");
@@ -678,6 +683,8 @@ public final class Main {
                 protectedPath = true;
             } else if (collator.compare(flags, "-srcprotected") == 0) {
                 srcprotectedPath = true;
+            } else if (collator.compare(flags, "-tls") == 0) {
+                tlsInfo = true;
             } else  {
                 System.err.println(rb.getString("Illegal.option.") + flags);
                 tinyHelp();
@@ -705,7 +712,7 @@ public final class Main {
     }
 
     boolean isKeyStoreRelated(Command cmd) {
-        return cmd != PRINTCERT && cmd != PRINTCERTREQ;
+        return cmd != PRINTCERT && cmd != PRINTCERTREQ && cmd != SHOWINFO;
     }
 
     /**
@@ -874,8 +881,7 @@ public final class Main {
         // Check if keystore exists.
         // If no keystore has been specified at the command line, try to use
         // the default, which is located in $HOME/.keystore.
-        // If the command is "genkey", "identitydb", "import", or "printcert",
-        // it is OK not to have a keystore.
+        // No need to check if isKeyStoreRelated(command) is false.
 
         // DO NOT open the existing keystore if this is an in-place import.
         // The keystore should be created as brand new.
@@ -889,6 +895,9 @@ public final class Main {
                 }
                 ksStream = new FileInputStream(ksfile);
             } catch (FileNotFoundException e) {
+                // These commands do not need the keystore to be existing.
+                // Either it will create a new one or the keystore is
+                // optional (i.e. PRINTCRL).
                 if (command != GENKEYPAIR &&
                         command != GENSECKEY &&
                         command != IDENTITYDB &&
@@ -1311,6 +1320,8 @@ public final class Main {
             }
         } else if (command == PRINTCRL) {
             doPrintCRL(filename, out);
+        } else if (command == SHOWINFO) {
+            doShowInfo();
         }
 
         // If we need to save the keystore, do so.
@@ -2704,6 +2715,14 @@ public final class Main {
                 out.println();
             }
             checkWeak(oneInMany(rb.getString("the.certificate"), i, certs.length), x509Cert);
+        }
+    }
+
+    private void doShowInfo() throws Exception {
+        if (tlsInfo) {
+            ShowInfo.tls(verbose);
+        } else {
+            System.out.println(rb.getString("showinfo.no.option"));
         }
     }
 

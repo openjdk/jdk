@@ -96,6 +96,8 @@ public class Resources extends java.util.ListResourceBundle {
                 "Generates a self-signed certificate"}, //-selfcert
         {"Changes.the.store.password.of.a.keystore",
                 "Changes the store password of a keystore"}, //-storepasswd
+        {"showinfo.command.help", "Displays security-related information"},
+
         // keytool: help: options
         {"alias.name.of.the.entry.to.process",
                 "alias name of the entry to process"}, //-alias
@@ -141,6 +143,7 @@ public class Resources extends java.util.ListResourceBundle {
                 "do not prompt"}, //-noprompt
         {"password.through.protected.mechanism",
                 "password through protected mechanism"}, //-protected
+        {"tls.option.help", "Displays TLS configuration information"},
 
         // The following 2 values should span 2 lines, the first for the
         // option itself, the second for its -providerArg value.
@@ -472,6 +475,8 @@ public class Resources extends java.util.ListResourceBundle {
         {"backup.keystore.warning", "The original keystore \"%1$s\" is backed up as \"%3$s\"..."},
         {"importing.keystore.status", "Importing keystore %1$s to %2$s..."},
         {"keyalg.option.1.missing.warning", "No -keyalg option. The default key algorithm (%s) is a legacy algorithm and is no longer recommended. In a subsequent release of the JDK, the default will be removed and the -keyalg option must be specified."},
+
+        {"showinfo.no.option", "Missing option for -showinfo. Try \"keytool -showinfo -tls\"."},
     };
 
 
