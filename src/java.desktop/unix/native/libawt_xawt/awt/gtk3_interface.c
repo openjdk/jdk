@@ -1777,9 +1777,18 @@ static void gtk3_paint_flat_box(WidgetType widget_type, GtkStateType state_type,
         (widget_type == CHECK_BOX || widget_type == RADIO_BUTTON)) {
         return;
     }
-    GtkStyleContext* context = get_style(widget_type, detail);
+
+    GtkStyleContext* context = NULL;
     if (widget_type == TOOL_TIP) {
+        context = get_style(widget_type, detail);
         fp_gtk_style_context_add_class(context, "background");
+    } else {
+        gtk3_widget = gtk3_get_widget(widget_type);
+        context = fp_gtk_widget_get_style_context (gtk3_widget);
+        fp_gtk_style_context_save (context);
+        if (detail != 0) {
+            transform_detail_string(detail, context);
+        }
     }
 
     GtkStateFlags flags = get_gtk_flags(state_type);
@@ -1795,8 +1804,11 @@ static void gtk3_paint_flat_box(WidgetType widget_type, GtkStateType state_type,
     }
 
     fp_gtk_render_background (context, cr, x, y, width, height);
-
-    disposeOrRestoreContext(context);
+    if (widget_type == TOOL_TIP) {
+        disposeOrRestoreContext(context);
+    } else {
+        fp_gtk_style_context_restore (context);
+    }
 }
 
 static void gtk3_paint_focus(WidgetType widget_type, GtkStateType state_type,
