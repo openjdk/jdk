@@ -95,11 +95,6 @@ class ImmutableCollections {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    static <E> List<E> emptyList() {
-        return (List<E>) ListN.EMPTY_LIST;
-    }
-
     static abstract class AbstractImmutableList<E> extends AbstractImmutableCollection<E>
             implements List<E>, RandomAccess {
 
@@ -556,11 +551,6 @@ class ImmutableCollections {
         public abstract int hashCode();
     }
 
-    @SuppressWarnings("unchecked")
-    static <E> Set<E> emptySet() {
-        return (Set<E>) SetN.EMPTY_SET;
-    }
-
     static final class Set12<E> extends AbstractImmutableSet<E>
             implements Serializable {
 
@@ -843,11 +833,6 @@ class ImmutableCollections {
     }
 
     // ---------- Map Implementations ----------
-
-    @SuppressWarnings("unchecked")
-    static <K,V> Map<K,V> emptyMap() {
-        return (Map<K,V>) MapN.EMPTY_MAP;
-    }
 
     abstract static class AbstractImmutableMap<K,V> extends AbstractMap<K,V> implements Serializable {
         @Override public void clear() { throw uoe(); }
@@ -1248,7 +1233,7 @@ final class CollSer implements Serializable {
                     return Set.of(array);
                 case IMM_MAP:
                     if (array.length == 0) {
-                        return ImmutableCollections.emptyMap();
+                        return ImmutableCollections.MapN.EMPTY_MAP;
                     } else if (array.length == 2) {
                         return new ImmutableCollections.Map1<>(array[0], array[1]);
                     } else {
