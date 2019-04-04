@@ -126,17 +126,14 @@ oop ResolvedMethodTable::add_method(const methodHandle& m, Handle resolved_metho
 
   Method* method = m();
   // Check if method has been redefined while taking out ResolvedMethodTable_lock, if so
-  // use new method.  The old method won't be deallocated because it's passed in as a Handle.
+  // use new method in the ResolvedMethodName.  The old method won't be deallocated
+  // yet because it's passed in as a Handle.
   if (method->is_old()) {
-    // Replace method with redefined version
-    InstanceKlass* holder = method->method_holder();
-    method = holder->method_with_idnum(method->method_idnum());
-    if (method == NULL) {
-      // Replace deleted method with NSME.
-      method = Universe::throw_no_such_method_error();
-    }
+    method = (method->is_deleted()) ? Universe::throw_no_such_method_error() :
+                                      method->get_new_method();
     java_lang_invoke_ResolvedMethodName::set_vmtarget(resolved_method_name(), method);
   }
+
   // Set flag in class to indicate this InstanceKlass has entries in the table
   // to avoid walking table during redefinition if none of the redefined classes
   // have any membernames in the table.
