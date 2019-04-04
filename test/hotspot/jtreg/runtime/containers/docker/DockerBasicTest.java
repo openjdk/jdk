@@ -42,8 +42,6 @@ import jdk.test.lib.Utils;
 
 public class DockerBasicTest {
     private static final String imageNameAndTag = Common.imageName("basic");
-    // Diganostics: set to false to examine image after the test
-    private static final boolean removeImageAfterTest = true;
 
     public static void main(String[] args) throws Exception {
         if (!DockerTestUtils.canTestDocker()) {
@@ -56,8 +54,9 @@ public class DockerBasicTest {
             testJavaVersion();
             testHelloDocker();
         } finally {
-            if (removeImageAfterTest)
+            if (!DockerTestUtils.RETAIN_IMAGE_AFTER_TEST) {
                 DockerTestUtils.removeDockerImage(imageNameAndTag);
+            }
         }
     }
 
