@@ -650,7 +650,6 @@ else
 
   # Declare dependencies between hotspot-<variant>* targets
   $(foreach v, $(JVM_VARIANTS), \
-      $(eval hotspot-$v: hotspot-$v-gensrc hotspot-$v-libs) \
       $(eval hotspot-$v-gensrc: java.base-copy) \
       $(eval hotspot-$v-libs: hotspot-$v-gensrc java.base-copy) \
   )
@@ -943,6 +942,10 @@ JVM_TOOLS_TARGETS ?= buildtools-hotspot
 buildtools: buildtools-langtools interim-langtools interim-rmic \
     buildtools-jdk $(JVM_TOOLS_TARGETS)
 
+# Declare dependencies from hotspot-<variant> targets
+$(foreach v, $(JVM_VARIANTS), \
+  $(eval hotspot-$v: hotspot-$v-gensrc hotspot-$v-libs) \
+)
 hotspot: $(HOTSPOT_VARIANT_TARGETS)
 
 # Create targets hotspot-libs and hotspot-gensrc.
