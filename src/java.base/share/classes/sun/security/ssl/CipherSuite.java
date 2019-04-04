@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,20 +56,22 @@ enum CipherSuite {
     // the following criteria:
     // 1. Prefer Suite B compliant cipher suites, see RFC6460 (To be
     //    changed later, see below).
-    // 2. Prefer the stronger bulk cipher, in the order of AES_256(GCM),
+    // 2. Prefer forward secrecy cipher suites.
+    // 3. Prefer the stronger bulk cipher, in the order of AES_256(GCM),
     //    AES_128(GCM), AES_256, AES_128, 3DES-EDE.
-    // 3. Prefer the stronger MAC algorithm, in the order of SHA384,
+    // 4. Prefer the stronger MAC algorithm, in the order of SHA384,
     //    SHA256, SHA, MD5.
-    // 4. Prefer the better performance of key exchange and digital
+    // 5. Prefer the better performance of key exchange and digital
     //    signature algorithm, in the order of ECDHE-ECDSA, ECDHE-RSA,
-    //    RSA, ECDH-ECDSA, ECDH-RSA, DHE-RSA, DHE-DSS.
+    //    DHE-RSA, DHE-DSS, ECDH-ECDSA, ECDH-RSA, RSA.
 
-    TLS_AES_128_GCM_SHA256(
-            0x1301, true, "TLS_AES_128_GCM_SHA256",
-            ProtocolVersion.PROTOCOLS_OF_13, B_AES_128_GCM_IV, H_SHA256),
+    // TLS 1.3 cipher suites.
     TLS_AES_256_GCM_SHA384(
             0x1302, true, "TLS_AES_256_GCM_SHA384",
             ProtocolVersion.PROTOCOLS_OF_13, B_AES_256_GCM_IV, H_SHA384),
+    TLS_AES_128_GCM_SHA256(
+            0x1301, true, "TLS_AES_128_GCM_SHA256",
+            ProtocolVersion.PROTOCOLS_OF_13, B_AES_128_GCM_IV, H_SHA256),
     TLS_CHACHA20_POLY1305_SHA256(
             0x1303, true, "TLS_CHACHA20_POLY1305_SHA256",
             ProtocolVersion.PROTOCOLS_OF_13, B_CC20_P1305, H_SHA256),
@@ -97,7 +99,11 @@ enum CipherSuite {
             ProtocolVersion.PROTOCOLS_OF_12,
             K_ECDHE_ECDSA, B_CC20_P1305, M_NULL, H_SHA256),
 
-    // AES_256(GCM)
+    //
+    // Forward screcy cipher suites.
+    //
+
+    // AES_256(GCM) - ECDHE
     TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384(
             0xC030, true, "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384", "",
             ProtocolVersion.PROTOCOLS_OF_12,
@@ -106,18 +112,14 @@ enum CipherSuite {
             0xCCA8, true, "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256", "",
             ProtocolVersion.PROTOCOLS_OF_12,
             K_ECDHE_RSA, B_CC20_P1305, M_NULL, H_SHA256),
-    TLS_RSA_WITH_AES_256_GCM_SHA384(
-            0x009D, true, "TLS_RSA_WITH_AES_256_GCM_SHA384", "",
+
+    // AES_128(GCM) - ECDHE
+    TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256(
+            0xC02F, true, "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256", "",
             ProtocolVersion.PROTOCOLS_OF_12,
-            K_RSA, B_AES_256_GCM, M_NULL, H_SHA384),
-    TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384(
-            0xC02E, true, "TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384", "",
-            ProtocolVersion.PROTOCOLS_OF_12,
-            K_ECDH_ECDSA, B_AES_256_GCM, M_NULL, H_SHA384),
-    TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384(
-            0xC032, true, "TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384", "",
-            ProtocolVersion.PROTOCOLS_OF_12,
-            K_ECDH_RSA, B_AES_256_GCM, M_NULL, H_SHA384),
+            K_ECDHE_RSA, B_AES_128_GCM, M_NULL, H_SHA256),
+
+    // AES_256(GCM) - DHE
     TLS_DHE_RSA_WITH_AES_256_GCM_SHA384(
             0x009F, true, "TLS_DHE_RSA_WITH_AES_256_GCM_SHA384", "",
             ProtocolVersion.PROTOCOLS_OF_12,
@@ -131,23 +133,7 @@ enum CipherSuite {
             ProtocolVersion.PROTOCOLS_OF_12,
             K_DHE_DSS, B_AES_256_GCM, M_NULL, H_SHA384),
 
-    // AES_128(GCM)
-    TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256(
-            0xC02F, true, "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256", "",
-            ProtocolVersion.PROTOCOLS_OF_12,
-            K_ECDHE_RSA, B_AES_128_GCM, M_NULL, H_SHA256),
-    TLS_RSA_WITH_AES_128_GCM_SHA256(
-            0x009C, true, "TLS_RSA_WITH_AES_128_GCM_SHA256", "",
-            ProtocolVersion.PROTOCOLS_OF_12,
-            K_RSA, B_AES_128_GCM, M_NULL, H_SHA256),
-    TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256(
-            0xC02D, true, "TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256", "",
-            ProtocolVersion.PROTOCOLS_OF_12,
-            K_ECDH_ECDSA, B_AES_128_GCM, M_NULL, H_SHA256),
-    TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256(
-            0xC031, true, "TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256", "",
-            ProtocolVersion.PROTOCOLS_OF_12,
-            K_ECDH_RSA, B_AES_128_GCM, M_NULL, H_SHA256),
+    // AES_128(GCM) - DHE
     TLS_DHE_RSA_WITH_AES_128_GCM_SHA256(
             0x009E, true, "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256", "",
             ProtocolVersion.PROTOCOLS_OF_12,
@@ -157,7 +143,7 @@ enum CipherSuite {
             ProtocolVersion.PROTOCOLS_OF_12,
             K_DHE_DSS, B_AES_128_GCM, M_NULL, H_SHA256),
 
-    // AES_256(CBC)
+    // AES_256(CBC) - ECDHE
     TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384(
             0xC024, true, "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384", "",
             ProtocolVersion.PROTOCOLS_OF_12,
@@ -166,18 +152,18 @@ enum CipherSuite {
             0xC028, true, "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384", "",
             ProtocolVersion.PROTOCOLS_OF_12,
             K_ECDHE_RSA, B_AES_256, M_SHA384, H_SHA384),
-    TLS_RSA_WITH_AES_256_CBC_SHA256(
-            0x003D, true, "TLS_RSA_WITH_AES_256_CBC_SHA256", "",
+
+    // AES_128(CBC) - ECDHE
+    TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256(
+            0xC023, true, "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256", "",
             ProtocolVersion.PROTOCOLS_OF_12,
-            K_RSA, B_AES_256, M_SHA256, H_SHA256),
-    TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384(
-            0xC026, true, "TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384", "",
+            K_ECDHE_ECDSA, B_AES_128, M_SHA256, H_SHA256),
+    TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256(
+            0xC027, true, "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256", "",
             ProtocolVersion.PROTOCOLS_OF_12,
-            K_ECDH_ECDSA, B_AES_256, M_SHA384, H_SHA384),
-    TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384(
-            0xC02A, true, "TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384", "",
-            ProtocolVersion.PROTOCOLS_OF_12,
-            K_ECDH_RSA, B_AES_256, M_SHA384, H_SHA384),
+            K_ECDHE_RSA, B_AES_128, M_SHA256, H_SHA256),
+
+    // AES_256(CBC) - DHE
     TLS_DHE_RSA_WITH_AES_256_CBC_SHA256(
             0x006B, true, "TLS_DHE_RSA_WITH_AES_256_CBC_SHA256", "",
             ProtocolVersion.PROTOCOLS_OF_12,
@@ -187,56 +173,7 @@ enum CipherSuite {
             ProtocolVersion.PROTOCOLS_OF_12,
             K_DHE_DSS, B_AES_256, M_SHA256, H_SHA256),
 
-    TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA(
-            0xC00A, true, "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA", "",
-            ProtocolVersion.PROTOCOLS_TO_12,
-            K_ECDHE_ECDSA, B_AES_256, M_SHA, H_SHA256),
-    TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA(
-            0xC014, true, "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA", "",
-            ProtocolVersion.PROTOCOLS_TO_12,
-            K_ECDHE_RSA, B_AES_256, M_SHA, H_SHA256),
-    TLS_RSA_WITH_AES_256_CBC_SHA(
-            0x0035, true, "TLS_RSA_WITH_AES_256_CBC_SHA", "",
-            ProtocolVersion.PROTOCOLS_TO_12,
-            K_RSA, B_AES_256, M_SHA, H_SHA256),
-    TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA(
-            0xC005, true, "TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA", "",
-            ProtocolVersion.PROTOCOLS_TO_12,
-            K_ECDH_ECDSA, B_AES_256, M_SHA, H_SHA256),
-    TLS_ECDH_RSA_WITH_AES_256_CBC_SHA(
-            0xC00F, true, "TLS_ECDH_RSA_WITH_AES_256_CBC_SHA", "",
-            ProtocolVersion.PROTOCOLS_TO_12,
-            K_ECDH_RSA, B_AES_256, M_SHA, H_SHA256),
-    TLS_DHE_RSA_WITH_AES_256_CBC_SHA(
-            0x0039, true, "TLS_DHE_RSA_WITH_AES_256_CBC_SHA", "",
-            ProtocolVersion.PROTOCOLS_TO_12,
-            K_DHE_RSA, B_AES_256, M_SHA, H_SHA256),
-    TLS_DHE_DSS_WITH_AES_256_CBC_SHA(
-            0x0038, true, "TLS_DHE_DSS_WITH_AES_256_CBC_SHA", "",
-            ProtocolVersion.PROTOCOLS_TO_12,
-            K_DHE_DSS, B_AES_256, M_SHA, H_SHA256),
-
-    // AES_128(CBC)
-    TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256(
-            0xC023, true, "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256", "",
-            ProtocolVersion.PROTOCOLS_OF_12,
-            K_ECDHE_ECDSA, B_AES_128, M_SHA256, H_SHA256),
-    TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256(
-            0xC027, true, "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256", "",
-            ProtocolVersion.PROTOCOLS_OF_12,
-            K_ECDHE_RSA, B_AES_128, M_SHA256, H_SHA256),
-    TLS_RSA_WITH_AES_128_CBC_SHA256(
-            0x003C, true, "TLS_RSA_WITH_AES_128_CBC_SHA256", "",
-            ProtocolVersion.PROTOCOLS_OF_12,
-            K_RSA, B_AES_128, M_SHA256, H_SHA256),
-    TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256(
-            0xC025, true, "TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256", "",
-            ProtocolVersion.PROTOCOLS_OF_12,
-            K_ECDH_ECDSA, B_AES_128, M_SHA256, H_SHA256),
-    TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256(
-            0xC029, true, "TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256", "",
-            ProtocolVersion.PROTOCOLS_OF_12,
-            K_ECDH_RSA, B_AES_128, M_SHA256, H_SHA256),
+    // AES_128(CBC) - DHE
     TLS_DHE_RSA_WITH_AES_128_CBC_SHA256(
             0x0067, true, "TLS_DHE_RSA_WITH_AES_128_CBC_SHA256", "",
             ProtocolVersion.PROTOCOLS_OF_12,
@@ -246,6 +183,65 @@ enum CipherSuite {
             ProtocolVersion.PROTOCOLS_OF_12,
             K_DHE_DSS, B_AES_128, M_SHA256, H_SHA256),
 
+    //
+    // not forward screcy cipher suites.
+    //
+
+    // AES_256(GCM)
+    TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384(
+            0xC02E, true, "TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384", "",
+            ProtocolVersion.PROTOCOLS_OF_12,
+            K_ECDH_ECDSA, B_AES_256_GCM, M_NULL, H_SHA384),
+    TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384(
+            0xC032, true, "TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384", "",
+            ProtocolVersion.PROTOCOLS_OF_12,
+            K_ECDH_RSA, B_AES_256_GCM, M_NULL, H_SHA384),
+
+    // AES_128(GCM)
+    TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256(
+            0xC02D, true, "TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256", "",
+            ProtocolVersion.PROTOCOLS_OF_12,
+            K_ECDH_ECDSA, B_AES_128_GCM, M_NULL, H_SHA256),
+    TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256(
+            0xC031, true, "TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256", "",
+            ProtocolVersion.PROTOCOLS_OF_12,
+            K_ECDH_RSA, B_AES_128_GCM, M_NULL, H_SHA256),
+
+    // AES_256(CBC)
+    TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384(
+            0xC026, true, "TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384", "",
+            ProtocolVersion.PROTOCOLS_OF_12,
+            K_ECDH_ECDSA, B_AES_256, M_SHA384, H_SHA384),
+    TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384(
+            0xC02A, true, "TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384", "",
+            ProtocolVersion.PROTOCOLS_OF_12,
+            K_ECDH_RSA, B_AES_256, M_SHA384, H_SHA384),
+
+    // AES_128(CBC)
+    TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256(
+            0xC025, true, "TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256", "",
+            ProtocolVersion.PROTOCOLS_OF_12,
+            K_ECDH_ECDSA, B_AES_128, M_SHA256, H_SHA256),
+    TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256(
+            0xC029, true, "TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256", "",
+            ProtocolVersion.PROTOCOLS_OF_12,
+            K_ECDH_RSA, B_AES_128, M_SHA256, H_SHA256),
+
+    //
+    // Legacy, used for compatibility
+    //
+
+    // AES_256(CBC) - ECDHE - Using SHA
+    TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA(
+            0xC00A, true, "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA", "",
+            ProtocolVersion.PROTOCOLS_TO_12,
+            K_ECDHE_ECDSA, B_AES_256, M_SHA, H_SHA256),
+    TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA(
+            0xC014, true, "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA", "",
+            ProtocolVersion.PROTOCOLS_TO_12,
+            K_ECDHE_RSA, B_AES_256, M_SHA, H_SHA256),
+
+    // AES_128(CBC) - ECDHE - using SHA
     TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA(
             0xC009, true, "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA", "",
             ProtocolVersion.PROTOCOLS_TO_12,
@@ -254,18 +250,18 @@ enum CipherSuite {
             0xC013, true, "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA", "",
             ProtocolVersion.PROTOCOLS_TO_12,
             K_ECDHE_RSA, B_AES_128, M_SHA, H_SHA256),
-    TLS_RSA_WITH_AES_128_CBC_SHA(
-            0x002F, true, "TLS_RSA_WITH_AES_128_CBC_SHA", "",
+
+    // AES_256(CBC) - DHE - Using SHA
+    TLS_DHE_RSA_WITH_AES_256_CBC_SHA(
+            0x0039, true, "TLS_DHE_RSA_WITH_AES_256_CBC_SHA", "",
             ProtocolVersion.PROTOCOLS_TO_12,
-            K_RSA, B_AES_128, M_SHA, H_SHA256),
-    TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA(
-            0xC004, true, "TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA", "",
+            K_DHE_RSA, B_AES_256, M_SHA, H_SHA256),
+    TLS_DHE_DSS_WITH_AES_256_CBC_SHA(
+            0x0038, true, "TLS_DHE_DSS_WITH_AES_256_CBC_SHA", "",
             ProtocolVersion.PROTOCOLS_TO_12,
-            K_ECDH_ECDSA, B_AES_128, M_SHA, H_SHA256),
-    TLS_ECDH_RSA_WITH_AES_128_CBC_SHA(
-            0xC00E, true, "TLS_ECDH_RSA_WITH_AES_128_CBC_SHA", "",
-            ProtocolVersion.PROTOCOLS_TO_12,
-            K_ECDH_RSA, B_AES_128, M_SHA, H_SHA256),
+            K_DHE_DSS, B_AES_256, M_SHA, H_SHA256),
+
+    // AES_128(CBC) - DHE - using SHA
     TLS_DHE_RSA_WITH_AES_128_CBC_SHA(
             0x0033, true, "TLS_DHE_RSA_WITH_AES_128_CBC_SHA", "",
             ProtocolVersion.PROTOCOLS_TO_12,
@@ -275,7 +271,67 @@ enum CipherSuite {
             ProtocolVersion.PROTOCOLS_TO_12,
             K_DHE_DSS, B_AES_128, M_SHA, H_SHA256),
 
-    // 3DES_EDE
+    // AES_256(CBC) - using SHA, not forward screcy
+    TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA(
+            0xC005, true, "TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA", "",
+            ProtocolVersion.PROTOCOLS_TO_12,
+            K_ECDH_ECDSA, B_AES_256, M_SHA, H_SHA256),
+    TLS_ECDH_RSA_WITH_AES_256_CBC_SHA(
+            0xC00F, true, "TLS_ECDH_RSA_WITH_AES_256_CBC_SHA", "",
+            ProtocolVersion.PROTOCOLS_TO_12,
+            K_ECDH_RSA, B_AES_256, M_SHA, H_SHA256),
+
+    // AES_128(CBC) - using SHA, not forward screcy
+    TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA(
+            0xC004, true, "TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA", "",
+            ProtocolVersion.PROTOCOLS_TO_12,
+            K_ECDH_ECDSA, B_AES_128, M_SHA, H_SHA256),
+    TLS_ECDH_RSA_WITH_AES_128_CBC_SHA(
+            0xC00E, true, "TLS_ECDH_RSA_WITH_AES_128_CBC_SHA", "",
+            ProtocolVersion.PROTOCOLS_TO_12,
+            K_ECDH_RSA, B_AES_128, M_SHA, H_SHA256),
+
+    //
+    // deprecated, used for compatibility
+    //
+
+    // RSA, AES_256(GCM)
+    TLS_RSA_WITH_AES_256_GCM_SHA384(
+            0x009D, true, "TLS_RSA_WITH_AES_256_GCM_SHA384", "",
+            ProtocolVersion.PROTOCOLS_OF_12,
+            K_RSA, B_AES_256_GCM, M_NULL, H_SHA384),
+
+    // RSA, AES_128(GCM)
+    TLS_RSA_WITH_AES_128_GCM_SHA256(
+            0x009C, true, "TLS_RSA_WITH_AES_128_GCM_SHA256", "",
+            ProtocolVersion.PROTOCOLS_OF_12,
+            K_RSA, B_AES_128_GCM, M_NULL, H_SHA256),
+
+    // RSA, AES_256(CBC)
+    TLS_RSA_WITH_AES_256_CBC_SHA256(
+            0x003D, true, "TLS_RSA_WITH_AES_256_CBC_SHA256", "",
+            ProtocolVersion.PROTOCOLS_OF_12,
+            K_RSA, B_AES_256, M_SHA256, H_SHA256),
+
+    // RSA, AES_128(CBC)
+    TLS_RSA_WITH_AES_128_CBC_SHA256(
+            0x003C, true, "TLS_RSA_WITH_AES_128_CBC_SHA256", "",
+            ProtocolVersion.PROTOCOLS_OF_12,
+            K_RSA, B_AES_128, M_SHA256, H_SHA256),
+
+    // RSA, AES_256(CBC) - using SHA, not forward screcy
+    TLS_RSA_WITH_AES_256_CBC_SHA(
+            0x0035, true, "TLS_RSA_WITH_AES_256_CBC_SHA", "",
+            ProtocolVersion.PROTOCOLS_TO_12,
+            K_RSA, B_AES_256, M_SHA, H_SHA256),
+
+    // RSA, AES_128(CBC) - using SHA, not forward screcy
+    TLS_RSA_WITH_AES_128_CBC_SHA(
+            0x002F, true, "TLS_RSA_WITH_AES_128_CBC_SHA", "",
+            ProtocolVersion.PROTOCOLS_TO_12,
+            K_RSA, B_AES_128, M_SHA, H_SHA256),
+
+    // 3DES_EDE, forward secrecy.
     TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA(
             0xC008, true, "TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA", "",
             ProtocolVersion.PROTOCOLS_TO_12,
@@ -284,19 +340,6 @@ enum CipherSuite {
             0xC012, true, "TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA", "",
             ProtocolVersion.PROTOCOLS_TO_12,
             K_ECDHE_RSA, B_3DES, M_SHA, H_SHA256),
-    SSL_RSA_WITH_3DES_EDE_CBC_SHA(
-            0x000A, true, "SSL_RSA_WITH_3DES_EDE_CBC_SHA",
-                          "TLS_RSA_WITH_3DES_EDE_CBC_SHA",
-            ProtocolVersion.PROTOCOLS_TO_12,
-            K_RSA, B_3DES, M_SHA, H_SHA256),
-    TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA(
-            0xC003, true, "TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA", "",
-            ProtocolVersion.PROTOCOLS_TO_12,
-            K_ECDH_ECDSA, B_3DES, M_SHA, H_SHA256),
-    TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA(
-            0xC00D, true, "TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA", "",
-            ProtocolVersion.PROTOCOLS_TO_12,
-            K_ECDH_RSA, B_3DES, M_SHA, H_SHA256),
     SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA(
             0x0016, true, "SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA",
                           "TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA",
@@ -307,6 +350,21 @@ enum CipherSuite {
                           "TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA",
             ProtocolVersion.PROTOCOLS_TO_12,
             K_DHE_DSS, B_3DES, M_SHA, H_SHA256),
+
+    // 3DES_EDE, not forward secrecy.
+    TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA(
+            0xC003, true, "TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA", "",
+            ProtocolVersion.PROTOCOLS_TO_12,
+            K_ECDH_ECDSA, B_3DES, M_SHA, H_SHA256),
+    TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA(
+            0xC00D, true, "TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA", "",
+            ProtocolVersion.PROTOCOLS_TO_12,
+            K_ECDH_RSA, B_3DES, M_SHA, H_SHA256),
+    SSL_RSA_WITH_3DES_EDE_CBC_SHA(
+            0x000A, true, "SSL_RSA_WITH_3DES_EDE_CBC_SHA",
+                          "TLS_RSA_WITH_3DES_EDE_CBC_SHA",
+            ProtocolVersion.PROTOCOLS_TO_12,
+            K_RSA, B_3DES, M_SHA, H_SHA256),
 
     // Renegotiation protection request Signalling Cipher Suite Value (SCSV).
     TLS_EMPTY_RENEGOTIATION_INFO_SCSV(        //  RFC 5746, TLS 1.2 and prior
