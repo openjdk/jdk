@@ -2955,8 +2955,9 @@ static bool register_native(Klass* k, Symbol* name, Symbol* signature, address e
   if (method == NULL) {
     ResourceMark rm;
     stringStream st;
-    st.print("Method %s name or signature does not match",
-             Method::name_and_sig_as_C_string(k, name, signature));
+    st.print("Method '");
+    Method::print_external_name(&st, k, name, signature);
+    st.print("' name or signature does not match");
     THROW_MSG_(vmSymbols::java_lang_NoSuchMethodError(), st.as_string(), false);
   }
   if (!method->is_native()) {
@@ -2965,8 +2966,9 @@ static bool register_native(Klass* k, Symbol* name, Symbol* signature, address e
     if (method == NULL) {
       ResourceMark rm;
       stringStream st;
-      st.print("Method %s is not declared as native",
-               Method::name_and_sig_as_C_string(k, name, signature));
+      st.print("Method '");
+      Method::print_external_name(&st, k, name, signature);
+      st.print("' is not declared as native");
       THROW_MSG_(vmSymbols::java_lang_NoSuchMethodError(), st.as_string(), false);
     }
   }

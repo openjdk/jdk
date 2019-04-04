@@ -38,19 +38,19 @@ public class Test {
     // Break expected error messages into 3 parts since the loader name includes its identity
     // hash which is unique and can't be compared against.
     static String expectedErrorMessage1_part1 = "loader constraint violation in interface itable initialization for " +
-                                                "class test.C: when selecting method test.I.m()Ltest/Foo; the class loader " +
+                                                "class test.C: when selecting method 'test.Foo test.I.m()' the class loader " +
                                                 "PreemptingClassLoader @";
     static String expectedErrorMessage1_part2 = " for super interface test.I, and the class loader 'app' of the " +
-                                                "selected method's type, test.J have different Class objects for the " +
+                                                "selected method's interface, test.J have different Class objects for the " +
                                                 "type test.Foo used in the signature (test.I is in unnamed module of loader " +
                                                 "PreemptingClassLoader @";
     static String expectedErrorMessage1_part3 = ", parent loader 'app'; test.J is in unnamed module of loader 'app')";
 
     static String expectedErrorMessage2_part1 = "loader constraint violation in interface itable initialization for " +
-                                                "class test.C: when selecting method test.I.m()Ltest/Foo; the class loader " +
+                                                "class test.C: when selecting method 'test.Foo test.I.m()' the class loader " +
                                                 "'ItableLdrCnstrnt_Test_Loader' @";
     static String expectedErrorMessage2_part2 = " for super interface test.I, and the class loader 'app' of the " +
-                                                "selected method's type, test.J have different Class objects for the " +
+                                                "selected method's interface, test.J have different Class objects for the " +
                                                 "type test.Foo used in the signature (test.I is in unnamed module of loader " +
                                                 "'ItableLdrCnstrnt_Test_Loader' @";
     static String expectedErrorMessage2_part3 = ", parent loader 'app'; test.J is in unnamed module of loader 'app')";
@@ -79,7 +79,9 @@ public class Test {
             if (!errorMsg.contains(expectedErrorMessage_part1) ||
                 !errorMsg.contains(expectedErrorMessage_part2) ||
                 !errorMsg.contains(expectedErrorMessage_part3)) {
-                System.out.println("Expected: " + expectedErrorMessage_part1 + "<id>" + expectedErrorMessage_part2 + "\n" +
+                System.out.println("Expected: " + expectedErrorMessage_part1 + "<id>" +
+                                                  expectedErrorMessage_part2 + "<id>" +
+                                                  expectedErrorMessage_part3 + "\n" +
                                    "but got:  " + errorMsg);
                 throw new RuntimeException("Wrong LinkageError exception thrown: " + errorMsg);
             }

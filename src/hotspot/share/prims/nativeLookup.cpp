@@ -380,8 +380,11 @@ address NativeLookup::lookup_base(const methodHandle& method, bool& in_base_libr
   if (entry != NULL) return entry;
 
   // Native function not found, throw UnsatisfiedLinkError
-  THROW_MSG_0(vmSymbols::java_lang_UnsatisfiedLinkError(),
-              method->name_and_sig_as_C_string());
+  stringStream ss;
+  ss.print("'");
+  method->print_external_name(&ss);
+  ss.print("'");
+  THROW_MSG_0(vmSymbols::java_lang_UnsatisfiedLinkError(), ss.as_string());
 }
 
 

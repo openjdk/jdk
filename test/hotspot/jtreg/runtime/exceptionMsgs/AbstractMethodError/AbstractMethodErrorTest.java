@@ -99,11 +99,11 @@ public class AbstractMethodErrorTest {
     }
 
     private static String expectedErrorMessageAME1_1 =
-        "Missing implementation of resolved method abstract " +
-        "anAbstractMethod()Ljava/lang/String; of abstract class AME1_B.";
+        "Missing implementation of resolved method 'abstract " +
+        "java.lang.String anAbstractMethod()' of abstract class AME1_B.";
     private static String expectedErrorMessageAME1_2 =
         "Receiver class AME1_E does not define or inherit an implementation of the " +
-        "resolved method abstract aFunctionOfMyInterface()Ljava/lang/String; of " +
+        "resolved method 'abstract java.lang.String aFunctionOfMyInterface()' of " +
         "interface AME1_C.";
 
     public static void test_ame1() {
@@ -158,11 +158,11 @@ public class AbstractMethodErrorTest {
     }
 
     private static String expectedErrorMessageAME2_Interpreted =
-        "Missing implementation of resolved method abstract " +
-        "aFunctionOfMyInterface()V of interface AME2_A.";
+        "Missing implementation of resolved method 'abstract " +
+        "void aFunctionOfMyInterface()' of interface AME2_A.";
     private static String expectedErrorMessageAME2_Compiled =
         "Receiver class AME2_C does not define or inherit an implementation of the resolved method " +
-        "abstract aFunctionOfMyInterface()V of interface AME2_A.";
+        "'abstract void aFunctionOfMyInterface()' of interface AME2_A.";
 
     public AbstractMethodErrorTest() throws InstantiationException, IllegalAccessException {
         try {
@@ -228,7 +228,7 @@ public class AbstractMethodErrorTest {
 
     private static String expectedErrorMessageAME3_1 =
         "Receiver class AME3_C does not define or inherit an implementation of the resolved method " +
-        "ma()V of class AME3_A. Selected method is abstract AME3_B.ma()V.";
+        "'void ma()' of class AME3_A. Selected method is 'abstract void AME3_B.ma()'.";
 
     // Testing abstract class that extends a class that has an implementation.
     // Loop so that method gets eventually compiled/osred.
@@ -259,7 +259,7 @@ public class AbstractMethodErrorTest {
 
     private static String expectedErrorMessageAME3_2 =
         "Receiver class AME3_C does not define or inherit an implementation of " +
-        "the resolved method abstract ma()V of abstract class AME3_B.";
+        "the resolved method 'abstract void ma()' of abstract class AME3_B.";
 
     // Testing abstract class that extends a class that has an implementation.
     // Loop so that method gets eventually compiled/osred.
@@ -289,7 +289,7 @@ public class AbstractMethodErrorTest {
     }
 
     private static String expectedErrorMessageAME4 =
-        "Missing implementation of resolved method abstract ma()V of " +
+        "Missing implementation of resolved method 'abstract void ma()' of " +
         "abstract class AME4_B.";
 
     // Testing abstract class that extends a class that has an implementation.
@@ -336,7 +336,7 @@ public class AbstractMethodErrorTest {
     }
 
     private static String expectedErrorMessageAME5_VtableStub =
-        "Receiver class AME5_B does not define or inherit an implementation of the resolved method abstract mc()V " +
+        "Receiver class AME5_B does not define or inherit an implementation of the resolved method 'abstract void mc()' " +
         "of abstract class AME5_A.";
 
     // AbstractMethodErrors detected in vtable stubs.
@@ -409,7 +409,7 @@ public class AbstractMethodErrorTest {
 
     private static String expectedErrorMessageAME6_ItableStub =
         "Receiver class AME6_B does not define or inherit an implementation of the resolved" +
-        " method abstract mc()V of interface AME6_A.";
+        " method 'abstract void mc()' of interface AME6_A.";
 
     // -------------------------------------------------------------------------
     // AbstractMethodErrors detected in itable stubs.

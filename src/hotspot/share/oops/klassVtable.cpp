@@ -500,11 +500,11 @@ bool klassVtable::update_inherited_vtable(InstanceKlass* klass, const methodHand
             if (failed_type_symbol != NULL) {
               stringStream ss;
               ss.print("loader constraint violation for class %s: when selecting "
-                       "overriding method %s the class loader %s of the "
+                       "overriding method '", klass->external_name());
+              target_method()->print_external_name(&ss),
+              ss.print("' the class loader %s of the "
                        "selected method's type %s, and the class loader %s for its super "
                        "type %s have different Class objects for the type %s used in the signature (%s; %s)",
-                       klass->external_name(),
-                       target_method()->name_and_sig_as_C_string(),
                        target_klass->class_loader_data()->loader_name_and_id(),
                        target_klass->external_name(),
                        super_klass->class_loader_data()->loader_name_and_id(),
@@ -1227,15 +1227,16 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Insta
           if (failed_type_symbol != NULL) {
             stringStream ss;
             ss.print("loader constraint violation in interface itable"
-                     " initialization for class %s: when selecting method %s the"
-                     " class loader %s for super interface %s, and the class"
-                     " loader %s of the selected method's type, %s have"
+                     " initialization for class %s: when selecting method '",
+                     _klass->external_name());
+            m->print_external_name(&ss),
+            ss.print("' the class loader %s for super interface %s, and the class"
+                     " loader %s of the selected method's %s, %s have"
                      " different Class objects for the type %s used in the signature (%s; %s)",
-                     _klass->external_name(),
-                     m->name_and_sig_as_C_string(),
                      interf->class_loader_data()->loader_name_and_id(),
                      interf->external_name(),
                      target()->method_holder()->class_loader_data()->loader_name_and_id(),
+                     target()->method_holder()->external_kind(),
                      target()->method_holder()->external_name(),
                      failed_type_symbol->as_klass_external_name(),
                      interf->class_in_module_of_loader(false, true),

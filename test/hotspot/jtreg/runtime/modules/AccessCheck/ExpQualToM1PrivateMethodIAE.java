@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,7 @@ public class ExpQualToM1PrivateMethodIAE {
             // java.lang.IllegalAccessError:
             //   tried to access private method p2.c2.method2()V from class p1.c1 (p2.c2 is in module m2x of loader
             //   myloaders.MySameClassLoader @<id>; p1.c1 is in module m1x of loader myloaders.MySameClassLoader @<id>)
-            if (!message.contains("class p1.c1 tried to access private method p2.c2.method2()V " +
+            if (!message.contains("class p1.c1 tried to access private method 'void p2.c2.method2()' " +
                                   "(p1.c1 is in module m1x of loader myloaders.MySameClassLoader @") ||
                 !message.contains("; p2.c2 is in module m2x of loader myloaders.MySameClassLoader @")) {
               throw new RuntimeException("Test Failed, an IAE was thrown with the wrong message: " + e.toString());

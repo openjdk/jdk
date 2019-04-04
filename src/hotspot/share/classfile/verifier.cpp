@@ -2060,7 +2060,9 @@ void ClassVerifier::class_format_error(const char* msg, ...) {
   ss.vprint(msg, va);
   va_end(va);
   if (!_method.is_null()) {
-    ss.print(" in method %s", _method->name_and_sig_as_C_string());
+    ss.print(" in method '");
+    _method->print_external_name(&ss);
+    ss.print("'");
   }
   _message = ss.as_string();
 }

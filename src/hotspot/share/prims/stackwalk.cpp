@@ -151,8 +151,8 @@ int StackWalk::fill_in_frames(jlong mode, BaseFrameStream& stream,
           index == start_index && method->caller_sensitive()) {
       ResourceMark rm(THREAD);
       THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(),
-        err_msg("StackWalker::getCallerClass called from @CallerSensitive %s method",
-                method->name_and_sig_as_C_string()));
+        err_msg("StackWalker::getCallerClass called from @CallerSensitive '%s' method",
+                method->external_name()));
     }
     // fill in StackFrameInfo and initialize MemberName
     stream.fill_frame(index, frames_array, method, CHECK_0);
