@@ -107,11 +107,8 @@ void ShenandoahBarrierSet::write_ref_array_loop(HeapWord* start, size_t count) {
 }
 
 void ShenandoahBarrierSet::write_ref_array(HeapWord* start, size_t count) {
-  assert(UseShenandoahGC, "should be enabled");
-  if (count == 0) return;
-  if (!ShenandoahCloneBarrier) return;
-
-  if (!need_update_refs_barrier()) return;
+  assert(_heap->is_update_refs_in_progress(), "should not be here otherwise");
+  assert(count > 0, "Should have been filtered before");
 
   if (_heap->is_concurrent_traversal_in_progress()) {
     ShenandoahEvacOOMScope oom_evac_scope;
@@ -197,9 +194,8 @@ void ShenandoahBarrierSet::write_ref_field_work(void* v, oop o, bool release) {
 }
 
 void ShenandoahBarrierSet::write_region(MemRegion mr) {
-  assert(UseShenandoahGC, "should be enabled");
   if (!ShenandoahCloneBarrier) return;
-  if (! need_update_refs_barrier()) return;
+  if (!_heap->is_update_refs_in_progress()) return;
 
   // This is called for cloning an object (see jvm.cpp) after the clone
   // has been made. We are not interested in any 'previous value' because

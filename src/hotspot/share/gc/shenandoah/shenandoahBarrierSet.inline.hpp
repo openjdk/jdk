@@ -32,12 +32,6 @@
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 
-bool ShenandoahBarrierSet::need_update_refs_barrier() {
-  return _heap->is_update_refs_in_progress() ||
-         _heap->is_concurrent_traversal_in_progress() ||
-         (_heap->is_concurrent_mark_in_progress() && _heap->has_forwarded_objects());
-}
-
 inline oop ShenandoahBarrierSet::resolve_forwarded_not_null(oop p) {
   return ShenandoahBrooksPointer::forwardee(p);
 }
@@ -344,7 +338,7 @@ bool ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_arraycopy
   if (heap->has_forwarded_objects()) {
     if (heap->is_concurrent_traversal_in_progress()) {
       storeval_mode = WRITE_BARRIER;
-    } else if (heap->is_concurrent_mark_in_progress() || heap->is_update_refs_in_progress()) {
+    } else if (heap->is_update_refs_in_progress()) {
       storeval_mode = READ_BARRIER;
     } else {
       assert(heap->is_idle() || heap->is_evacuation_in_progress(), "must not have anything in progress");

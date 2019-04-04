@@ -138,6 +138,22 @@ void ShenandoahBarrierSetAssembler::arraycopy_epilogue(MacroAssembler* masm, Dec
     }
 #endif
 
+    Register thread = NOT_LP64(rax) LP64_ONLY(r15_thread);
+#ifndef _LP64
+    __ push(thread);
+    __ get_thread(thread);
+#endif
+
+    // Short-circuit if count == 0.
+    Label done;
+    __ testptr(count, count);
+    __ jcc(Assembler::zero, done);
+
+    // Skip runtime call if no forwarded objects.
+    Address gc_state(thread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
+    __ testb(gc_state, ShenandoahHeap::UPDATEREFS);
+    __ jcc(Assembler::zero, done);
+
     __ pusha();             // push registers (overkill)
 #ifdef _LP64
     if (c_rarg0 == count) { // On win64 c_rarg0 == rcx
@@ -155,6 +171,9 @@ void ShenandoahBarrierSetAssembler::arraycopy_epilogue(MacroAssembler* masm, Dec
                     dst, count);
 #endif
     __ popa();
+
+    __ bind(done);
+    NOT_LP64(__ pop(thread);)
   }
 }
 
