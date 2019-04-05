@@ -62,7 +62,7 @@
  * <p>
  *
  * <a id="terminology"></a>
- * <h3>Terminology</h3>
+ * <h2>Terminology</h2>
  *
  * <dl>
  *   <dt><a id="selected"></a>Selected</dt>
@@ -88,7 +88,7 @@
  * </dl>
  * <p>
  * <a id="options"></a>
- * <h3>Options</h3>
+ * <h2>Options</h2>
  * Javadoc <em>selection control</em> can be specified with these options
  * as follows:
  * <ul>
@@ -132,7 +132,7 @@
  * </ul>
  * <p>
  * <a id="legacy-interactions"></a>
- * <h4>Interactions with older options.</h4>
+ * <h3>Interactions with older options.</h3>
  *
  * The new {@code --show-*} options provide a more detailed replacement
  * for the older options {@code -public}, {@code -protected}, {@code -package}, {@code -private}.
@@ -181,7 +181,7 @@
  * <p>
  *
  * <a id="example"></a>
- * <h3>Example</h3>
+ * <h2>Example</h2>
  *
  * The following is an example doclet that displays information of a class
  * and its members, supporting an option.
@@ -300,7 +300,7 @@
  *       source-location/Example.java
  * </pre>
  *
- * <h3><a id="migration">Migration Guide</a></h3>
+ * <h2><a id="migration">Migration Guide</a></h2>
  *
  * <p>Many of the types in the old {@code com.sun.javadoc} API do not have equivalents in this
  * package. Instead, types in the {@code javax.lang.model} and {@code com.sun.source} APIs
