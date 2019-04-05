@@ -30,6 +30,7 @@ import java.lang.ref.WeakReference;
 import java.security.*;
 import java.security.cert.*;
 import java.util.*;
+import java.util.concurrent.locks.ReentrantLock;
 import sun.security.action.*;
 import sun.security.validator.TrustStoreUtil;
 
@@ -244,6 +245,8 @@ final class TrustStoreManager {
         // objects can be atomically cleared, and reloaded if needed.
         private WeakReference<Set<X509Certificate>> csRef;
 
+        private final ReentrantLock tamLock = new ReentrantLock();
+
         private TrustAnchorManager() {
             this.descriptor = null;
             this.ksRef = new WeakReference<>(null);
@@ -255,7 +258,7 @@ final class TrustStoreManager {
          *
          * @return null if the underlying KeyStore is not available.
          */
-        synchronized KeyStore getKeyStore(
+        KeyStore getKeyStore(
                 TrustStoreDescriptor descriptor) throws Exception {
 
             TrustStoreDescriptor temporaryDesc = this.descriptor;
@@ -264,14 +267,25 @@ final class TrustStoreManager {
                 return ks;
             }
 
-            // Reload a new key store.
-            if (SSLLogger.isOn && SSLLogger.isOn("trustmanager")) {
-                SSLLogger.fine("Reload the trust store");
-            }
+            tamLock.lock();
+            try {
+                // double check
+                ks = ksRef.get();
+                if ((ks != null) && descriptor.equals(temporaryDesc)) {
+                    return ks;
+                }
 
-            ks = loadKeyStore(descriptor);
-            this.descriptor = descriptor;
-            this.ksRef = new WeakReference<>(ks);
+                // Reload a new key store.
+                if (SSLLogger.isOn && SSLLogger.isOn("trustmanager")) {
+                    SSLLogger.fine("Reload the trust store");
+                }
+
+                ks = loadKeyStore(descriptor);
+                this.descriptor = descriptor;
+                this.ksRef = new WeakReference<>(ks);
+            } finally {
+                tamLock.unlock();
+            }
 
             return ks;
         }
@@ -282,50 +296,61 @@ final class TrustStoreManager {
          *
          * @return empty collection if the underlying KeyStore is not available.
          */
-        synchronized Set<X509Certificate> getTrustedCerts(
+        Set<X509Certificate> getTrustedCerts(
                 TrustStoreDescriptor descriptor) throws Exception {
 
             KeyStore ks = null;
             TrustStoreDescriptor temporaryDesc = this.descriptor;
             Set<X509Certificate> certs = csRef.get();
-            if (certs != null) {
-                if (descriptor.equals(temporaryDesc)) {
-                    return certs;
-                } else {
-                    // Use the new descriptor.
-                    this.descriptor = descriptor;
-                }
-            } else {
-                // Try to use the cached store at first.
-                if (descriptor.equals(temporaryDesc)) {
-                    ks = ksRef.get();
-                } else {
-                    // Use the new descriptor.
-                    this.descriptor = descriptor;
-                }
+            if ((certs != null) && descriptor.equals(temporaryDesc)) {
+                return certs;
             }
 
-            // Reload the trust store if needed.
-            if (ks == null) {
+            tamLock.lock();
+            try {
+                // double check
+                temporaryDesc = this.descriptor;
+                certs = csRef.get();
+                if (certs != null) {
+                    if (descriptor.equals(temporaryDesc)) {
+                        return certs;
+                    } else {
+                        // Use the new descriptor.
+                        this.descriptor = descriptor;
+                    }
+                } else {
+                    // Try to use the cached store at first.
+                    if (descriptor.equals(temporaryDesc)) {
+                        ks = ksRef.get();
+                    } else {
+                        // Use the new descriptor.
+                        this.descriptor = descriptor;
+                    }
+                }
+
+                // Reload the trust store if needed.
+                if (ks == null) {
+                    if (SSLLogger.isOn && SSLLogger.isOn("trustmanager")) {
+                        SSLLogger.fine("Reload the trust store");
+                    }
+                    ks = loadKeyStore(descriptor);
+                    this.ksRef = new WeakReference<>(ks);
+                }
+
+                // Reload trust certs from the key store.
                 if (SSLLogger.isOn && SSLLogger.isOn("trustmanager")) {
-                    SSLLogger.fine("Reload the trust store");
+                    SSLLogger.fine("Reload trust certs");
                 }
-                ks = loadKeyStore(descriptor);
-            }
 
-            // Reload trust certs from the key store.
-            if (SSLLogger.isOn && SSLLogger.isOn("trustmanager")) {
-                SSLLogger.fine("Reload trust certs");
-            }
+                certs = loadTrustedCerts(ks);
+                if (SSLLogger.isOn && SSLLogger.isOn("trustmanager")) {
+                    SSLLogger.fine("Reloaded " + certs.size() + " trust certs");
+                }
 
-            certs = loadTrustedCerts(ks);
-            if (SSLLogger.isOn && SSLLogger.isOn("trustmanager")) {
-                SSLLogger.fine("Reloaded " + certs.size() + " trust certs");
+                this.csRef = new WeakReference<>(certs);
+            } finally {
+                tamLock.unlock();
             }
-
-            // Note that as ks is a local variable, it is not
-            // necessary to add it to the ksRef weak reference.
-            this.csRef = new WeakReference<>(certs);
 
             return certs;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,17 +42,7 @@ import java.security.*;
  * @see SSLServerSocket
  * @author David Brownell
  */
-public abstract class SSLServerSocketFactory extends ServerSocketFactory
-{
-    private static SSLServerSocketFactory theFactory;
-
-    private static boolean propertyChecked;
-
-    private static void log(String msg) {
-        if (SSLSocketFactory.DEBUG) {
-            System.out.println(msg);
-        }
-    }
+public abstract class SSLServerSocketFactory extends ServerSocketFactory {
 
     /**
      * Constructor is used only by subclasses.
@@ -75,39 +65,9 @@ public abstract class SSLServerSocketFactory extends ServerSocketFactory
      * @return the default <code>ServerSocketFactory</code>
      * @see SSLContext#getDefault
      */
-    public static synchronized ServerSocketFactory getDefault() {
-        if (theFactory != null) {
-            return theFactory;
-        }
-
-        if (propertyChecked == false) {
-            propertyChecked = true;
-            String clsName = SSLSocketFactory.getSecurityProperty
-                                        ("ssl.ServerSocketFactory.provider");
-            if (clsName != null) {
-                log("setting up default SSLServerSocketFactory");
-                try {
-                    Class<?> cls = null;
-                    try {
-                        cls = Class.forName(clsName);
-                    } catch (ClassNotFoundException e) {
-                        ClassLoader cl = ClassLoader.getSystemClassLoader();
-                        if (cl != null) {
-                            cls = cl.loadClass(clsName);
-                        }
-                    }
-                    log("class " + clsName + " is loaded");
-                    @SuppressWarnings("deprecation")
-                    SSLServerSocketFactory fac = (SSLServerSocketFactory)cls.newInstance();
-                    log("instantiated an instance of class " + clsName);
-                    theFactory = fac;
-                    return fac;
-                } catch (Exception e) {
-                    log("SSLServerSocketFactory instantiation failed: " + e);
-                    theFactory = new DefaultSSLServerSocketFactory(e);
-                    return theFactory;
-                }
-            }
+    public static ServerSocketFactory getDefault() {
+        if (DefaultFactoryHolder.defaultFactory != null) {
+            return DefaultFactoryHolder.defaultFactory;
         }
 
         try {
@@ -156,8 +116,50 @@ public abstract class SSLServerSocketFactory extends ServerSocketFactory
      * @see #getDefaultCipherSuites()
      */
     public abstract String [] getSupportedCipherSuites();
-}
 
+    // lazy initialization holder class idiom for static default factory
+    //
+    // See Effective Java Second Edition: Item 71.
+    private static final class DefaultFactoryHolder {
+        private static final SSLServerSocketFactory defaultFactory;
+
+        static {
+            SSLServerSocketFactory mediator = null;
+            String clsName = SSLSocketFactory.getSecurityProperty(
+                    "ssl.ServerSocketFactory.provider");
+            if (clsName != null) {
+                log("setting up default SSLServerSocketFactory");
+                try {
+                    Class<?> cls = null;
+                    try {
+                        cls = Class.forName(clsName);
+                    } catch (ClassNotFoundException e) {
+                        ClassLoader cl = ClassLoader.getSystemClassLoader();
+                        if (cl != null) {
+                            cls = cl.loadClass(clsName);
+                        }
+                    }
+                    log("class " + clsName + " is loaded");
+
+                    mediator = (SSLServerSocketFactory)cls
+                            .getDeclaredConstructor().newInstance();
+                    log("instantiated an instance of class " + clsName);
+                } catch (Exception e) {
+                    log("SSLServerSocketFactory instantiation failed: " + e);
+                    mediator = new DefaultSSLServerSocketFactory(e);
+                }
+            }
+
+            defaultFactory = mediator;
+        }
+
+        private static void log(String msg) {
+            if (SSLSocketFactory.DEBUG) {
+                System.out.println(msg);
+            }
+        }
+    }
+}
 
 //
 // The default factory does NOTHING.

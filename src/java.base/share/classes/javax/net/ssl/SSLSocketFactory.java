@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,31 +42,20 @@ import sun.security.action.GetPropertyAction;
  * @see SSLSocket
  * @author David Brownell
  */
-public abstract class SSLSocketFactory extends SocketFactory
-{
-    private static SSLSocketFactory theFactory;
-
-    private static boolean propertyChecked;
-
+public abstract class SSLSocketFactory extends SocketFactory {
     static final boolean DEBUG;
 
     static {
-        String s = GetPropertyAction.privilegedGetProperty("javax.net.debug", "")
-                .toLowerCase(Locale.ENGLISH);
-
+        String s = GetPropertyAction.privilegedGetProperty(
+                "javax.net.debug", "").toLowerCase(Locale.ENGLISH);
         DEBUG = s.contains("all") || s.contains("ssl");
-    }
-
-    private static void log(String msg) {
-        if (DEBUG) {
-            System.out.println(msg);
-        }
     }
 
     /**
      * Constructor is used only by subclasses.
      */
     public SSLSocketFactory() {
+        // blank
     }
 
     /**
@@ -85,38 +74,9 @@ public abstract class SSLSocketFactory extends SocketFactory
      * @return the default <code>SocketFactory</code>
      * @see SSLContext#getDefault
      */
-    public static synchronized SocketFactory getDefault() {
-        if (theFactory != null) {
-            return theFactory;
-        }
-
-        if (propertyChecked == false) {
-            propertyChecked = true;
-            String clsName = getSecurityProperty("ssl.SocketFactory.provider");
-            if (clsName != null) {
-                log("setting up default SSLSocketFactory");
-                try {
-                    Class<?> cls = null;
-                    try {
-                        cls = Class.forName(clsName);
-                    } catch (ClassNotFoundException e) {
-                        ClassLoader cl = ClassLoader.getSystemClassLoader();
-                        if (cl != null) {
-                            cls = cl.loadClass(clsName);
-                        }
-                    }
-                    log("class " + clsName + " is loaded");
-                    @SuppressWarnings("deprecation")
-                    SSLSocketFactory fac = (SSLSocketFactory)cls.newInstance();
-                    log("instantiated an instance of class " + clsName);
-                    theFactory = fac;
-                    return fac;
-                } catch (Exception e) {
-                    log("SSLSocketFactory instantiation failed: " + e.toString());
-                    theFactory = new DefaultSSLSocketFactory(e);
-                    return theFactory;
-                }
-            }
+    public static SocketFactory getDefault() {
+        if (DefaultFactoryHolder.defaultFactory != null) {
+            return DefaultFactoryHolder.defaultFactory;
         }
 
         try {
@@ -245,6 +205,49 @@ public abstract class SSLSocketFactory extends SocketFactory
     public Socket createSocket(Socket s, InputStream consumed,
             boolean autoClose) throws IOException {
         throw new UnsupportedOperationException();
+    }
+
+    // lazy initialization holder class idiom for static default factory
+    //
+    // See Effective Java Second Edition: Item 71.
+    private static final class DefaultFactoryHolder {
+        private static final SSLSocketFactory defaultFactory;
+
+        static {
+            SSLSocketFactory mediator = null;
+            String clsName = getSecurityProperty("ssl.SocketFactory.provider");
+            if (clsName != null) {
+                log("setting up default SSLSocketFactory");
+                try {
+                    Class<?> cls = null;
+                    try {
+                        cls = Class.forName(clsName);
+                    } catch (ClassNotFoundException e) {
+                        ClassLoader cl = ClassLoader.getSystemClassLoader();
+                        if (cl != null) {
+                            cls = cl.loadClass(clsName);
+                        }
+                    }
+                    log("class " + clsName + " is loaded");
+
+                    mediator = (SSLSocketFactory)cls
+                            .getDeclaredConstructor().newInstance();
+
+                    log("instantiated an instance of class " + clsName);
+                } catch (Exception e) {
+                    log("SSLSocketFactory instantiation failed: " + e);
+                    mediator = new DefaultSSLSocketFactory(e);
+                }
+            }
+
+            defaultFactory = mediator;
+        }
+
+        private static void log(String msg) {
+            if (DEBUG) {
+                System.out.println(msg);
+            }
+        }
     }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,123 +51,206 @@ final class SSLSocketOutputRecord extends OutputRecord implements SSLRecord {
     }
 
     @Override
-    synchronized void encodeAlert(
-            byte level, byte description) throws IOException {
-        if (isClosed()) {
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
-                SSLLogger.warning("outbound has closed, ignore outbound " +
-                    "alert message: " + Alert.nameOf(description));
+    void encodeAlert(byte level, byte description) throws IOException {
+        recordLock.lock();
+        try {
+            if (isClosed()) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                    SSLLogger.warning("outbound has closed, ignore outbound " +
+                        "alert message: " + Alert.nameOf(description));
+                }
+                return;
             }
-            return;
+
+            // use the buf of ByteArrayOutputStream
+            int position = headerSize + writeCipher.getExplicitNonceSize();
+            count = position;
+
+            write(level);
+            write(description);
+            if (SSLLogger.isOn && SSLLogger.isOn("record")) {
+                SSLLogger.fine("WRITE: " + protocolVersion +
+                        " " + ContentType.ALERT.name +
+                        "(" + Alert.nameOf(description) + ")" +
+                        ", length = " + (count - headerSize));
+            }
+
+            // Encrypt the fragment and wrap up a record.
+            encrypt(writeCipher, ContentType.ALERT.id, headerSize);
+
+            // deliver this message
+            deliverStream.write(buf, 0, count);    // may throw IOException
+            deliverStream.flush();                 // may throw IOException
+
+            if (SSLLogger.isOn && SSLLogger.isOn("packet")) {
+                SSLLogger.fine("Raw write",
+                        (new ByteArrayInputStream(buf, 0, count)));
+            }
+
+            // reset the internal buffer
+            count = 0;
+        } finally {
+            recordLock.unlock();
         }
-
-        // use the buf of ByteArrayOutputStream
-        int position = headerSize + writeCipher.getExplicitNonceSize();
-        count = position;
-
-        write(level);
-        write(description);
-        if (SSLLogger.isOn && SSLLogger.isOn("record")) {
-            SSLLogger.fine("WRITE: " + protocolVersion +
-                    " " + ContentType.ALERT.name +
-                    "(" + Alert.nameOf(description) + ")" +
-                    ", length = " + (count - headerSize));
-        }
-
-        // Encrypt the fragment and wrap up a record.
-        encrypt(writeCipher, ContentType.ALERT.id, headerSize);
-
-        // deliver this message
-        deliverStream.write(buf, 0, count);    // may throw IOException
-        deliverStream.flush();                 // may throw IOException
-
-        if (SSLLogger.isOn && SSLLogger.isOn("packet")) {
-            SSLLogger.fine("Raw write",
-                    (new ByteArrayInputStream(buf, 0, count)));
-        }
-
-        // reset the internal buffer
-        count = 0;
     }
 
     @Override
-    synchronized void encodeHandshake(byte[] source,
+    void encodeHandshake(byte[] source,
             int offset, int length) throws IOException {
-        if (isClosed()) {
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
-                SSLLogger.warning("outbound has closed, ignore outbound " +
-                        "handshake message",
-                        ByteBuffer.wrap(source, offset, length));
+        recordLock.lock();
+        try {
+            if (isClosed()) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                    SSLLogger.warning("outbound has closed, ignore outbound " +
+                            "handshake message",
+                            ByteBuffer.wrap(source, offset, length));
+                }
+                return;
             }
-            return;
-        }
 
-        if (firstMessage) {
-            firstMessage = false;
+            if (firstMessage) {
+                firstMessage = false;
 
-            if ((helloVersion == ProtocolVersion.SSL20Hello) &&
-                (source[offset] == SSLHandshake.CLIENT_HELLO.id) &&
+                if ((helloVersion == ProtocolVersion.SSL20Hello) &&
+                    (source[offset] == SSLHandshake.CLIENT_HELLO.id) &&
                                             //  5: recode header size
-                (source[offset + 4 + 2 + 32] == 0)) {
+                    (source[offset + 4 + 2 + 32] == 0)) {
                                             // V3 session ID is empty
                                             //  4: handshake header size
                                             //  2: client_version in ClientHello
                                             // 32: random in ClientHello
 
-                ByteBuffer v2ClientHello = encodeV2ClientHello(
-                        source, (offset + 4), (length - 4));
+                    ByteBuffer v2ClientHello = encodeV2ClientHello(
+                            source, (offset + 4), (length - 4));
 
-                byte[] record = v2ClientHello.array();  // array offset is zero
-                int limit = v2ClientHello.limit();
-                handshakeHash.deliver(record, 2, (limit - 2));
+                    // array offset is zero
+                    byte[] record = v2ClientHello.array();
+                    int limit = v2ClientHello.limit();
+                    handshakeHash.deliver(record, 2, (limit - 2));
+
+                    if (SSLLogger.isOn && SSLLogger.isOn("record")) {
+                        SSLLogger.fine(
+                                "WRITE: SSLv2 ClientHello message" +
+                                ", length = " + limit);
+                    }
+
+                    // deliver this message
+                    //
+                    // Version 2 ClientHello message should be plaintext.
+                    //
+                    // No max fragment length negotiation.
+                    deliverStream.write(record, 0, limit);
+                    deliverStream.flush();
+
+                    if (SSLLogger.isOn && SSLLogger.isOn("packet")) {
+                        SSLLogger.fine("Raw write",
+                                (new ByteArrayInputStream(record, 0, limit)));
+                    }
+
+                    return;
+                }
+            }
+
+            byte handshakeType = source[0];
+            if (handshakeHash.isHashable(handshakeType)) {
+                handshakeHash.deliver(source, offset, length);
+            }
+
+            int fragLimit = getFragLimit();
+            int position = headerSize + writeCipher.getExplicitNonceSize();
+            if (count == 0) {
+                count = position;
+            }
+
+            if ((count - position) < (fragLimit - length)) {
+                write(source, offset, length);
+                return;
+            }
+
+            for (int limit = (offset + length); offset < limit;) {
+
+                int remains = (limit - offset) + (count - position);
+                int fragLen = Math.min(fragLimit, remains);
+
+                // use the buf of ByteArrayOutputStream
+                write(source, offset, fragLen);
+                if (remains < fragLimit) {
+                    return;
+                }
 
                 if (SSLLogger.isOn && SSLLogger.isOn("record")) {
                     SSLLogger.fine(
-                            "WRITE: SSLv2 ClientHello message" +
-                            ", length = " + limit);
+                            "WRITE: " + protocolVersion +
+                            " " + ContentType.HANDSHAKE.name +
+                            ", length = " + (count - headerSize));
                 }
 
+                // Encrypt the fragment and wrap up a record.
+                encrypt(writeCipher, ContentType.HANDSHAKE.id, headerSize);
+
                 // deliver this message
-                //
-                // Version 2 ClientHello message should be plaintext.
-                //
-                // No max fragment length negotiation.
-                deliverStream.write(record, 0, limit);
-                deliverStream.flush();
+                deliverStream.write(buf, 0, count);    // may throw IOException
+                deliverStream.flush();                 // may throw IOException
 
                 if (SSLLogger.isOn && SSLLogger.isOn("packet")) {
                     SSLLogger.fine("Raw write",
-                            (new ByteArrayInputStream(record, 0, limit)));
+                            (new ByteArrayInputStream(buf, 0, count)));
                 }
 
+                // reset the offset
+                offset += fragLen;
+
+                // reset the internal buffer
+                count = position;
+            }
+        } finally {
+            recordLock.unlock();
+        }
+    }
+
+    @Override
+    void encodeChangeCipherSpec() throws IOException {
+        recordLock.lock();
+        try {
+            if (isClosed()) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                    SSLLogger.warning("outbound has closed, ignore outbound " +
+                        "change_cipher_spec message");
+                }
                 return;
             }
-        }
-
-        byte handshakeType = source[0];
-        if (handshakeHash.isHashable(handshakeType)) {
-            handshakeHash.deliver(source, offset, length);
-        }
-
-        int fragLimit = getFragLimit();
-        int position = headerSize + writeCipher.getExplicitNonceSize();
-        if (count == 0) {
-            count = position;
-        }
-
-        if ((count - position) < (fragLimit - length)) {
-            write(source, offset, length);
-            return;
-        }
-
-        for (int limit = (offset + length); offset < limit;) {
-
-            int remains = (limit - offset) + (count - position);
-            int fragLen = Math.min(fragLimit, remains);
 
             // use the buf of ByteArrayOutputStream
-            write(source, offset, fragLen);
-            if (remains < fragLimit) {
+            int position = headerSize + writeCipher.getExplicitNonceSize();
+            count = position;
+
+            write((byte)1);         // byte 1: change_cipher_spec(
+
+            // Encrypt the fragment and wrap up a record.
+            encrypt(writeCipher, ContentType.CHANGE_CIPHER_SPEC.id, headerSize);
+
+            // deliver this message
+            deliverStream.write(buf, 0, count);        // may throw IOException
+            // deliverStream.flush();                  // flush in Finished
+
+            if (SSLLogger.isOn && SSLLogger.isOn("packet")) {
+                SSLLogger.fine("Raw write",
+                        (new ByteArrayInputStream(buf, 0, count)));
+            }
+
+            // reset the internal buffer
+            count = 0;
+        } finally {
+            recordLock.unlock();
+        }
+    }
+
+    @Override
+    public void flush() throws IOException {
+        recordLock.lock();
+        try {
+            int position = headerSize + writeCipher.getExplicitNonceSize();
+            if (count <= position) {
                 return;
             }
 
@@ -190,155 +273,103 @@ final class SSLSocketOutputRecord extends OutputRecord implements SSLRecord {
                         (new ByteArrayInputStream(buf, 0, count)));
             }
 
-            // reset the offset
-            offset += fragLen;
-
             // reset the internal buffer
-            count = position;
+            count = 0;      // DON'T use position
+        } finally {
+            recordLock.unlock();
         }
     }
 
     @Override
-    synchronized void encodeChangeCipherSpec() throws IOException {
-        if (isClosed()) {
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
-                SSLLogger.warning("outbound has closed, ignore outbound " +
-                    "change_cipher_spec message");
-            }
-            return;
-        }
-
-        // use the buf of ByteArrayOutputStream
-        int position = headerSize + writeCipher.getExplicitNonceSize();
-        count = position;
-
-        write((byte)1);         // byte 1: change_cipher_spec(
-
-        // Encrypt the fragment and wrap up a record.
-        encrypt(writeCipher, ContentType.CHANGE_CIPHER_SPEC.id, headerSize);
-
-        // deliver this message
-        deliverStream.write(buf, 0, count);        // may throw IOException
-        // deliverStream.flush();                  // flush in Finished
-
-        if (SSLLogger.isOn && SSLLogger.isOn("packet")) {
-            SSLLogger.fine("Raw write",
-                    (new ByteArrayInputStream(buf, 0, count)));
-        }
-
-        // reset the internal buffer
-        count = 0;
-    }
-
-    @Override
-    public synchronized void flush() throws IOException {
-        int position = headerSize + writeCipher.getExplicitNonceSize();
-        if (count <= position) {
-            return;
-        }
-
-        if (SSLLogger.isOn && SSLLogger.isOn("record")) {
-            SSLLogger.fine(
-                    "WRITE: " + protocolVersion +
-                    " " + ContentType.HANDSHAKE.name +
-                    ", length = " + (count - headerSize));
-        }
-
-        // Encrypt the fragment and wrap up a record.
-        encrypt(writeCipher, ContentType.HANDSHAKE.id, headerSize);
-
-        // deliver this message
-        deliverStream.write(buf, 0, count);    // may throw IOException
-        deliverStream.flush();                 // may throw IOException
-
-        if (SSLLogger.isOn && SSLLogger.isOn("packet")) {
-            SSLLogger.fine("Raw write",
-                    (new ByteArrayInputStream(buf, 0, count)));
-        }
-
-        // reset the internal buffer
-        count = 0;      // DON'T use position
-    }
-
-    @Override
-    synchronized void deliver(
-            byte[] source, int offset, int length) throws IOException {
-        if (isClosed()) {
-            throw new SocketException("Connection or outbound has been closed");
-        }
-
-        if (writeCipher.authenticator.seqNumOverflow()) {
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
-                SSLLogger.fine(
-                    "sequence number extremely close to overflow " +
-                    "(2^64-1 packets). Closing connection.");
+    void deliver(byte[] source, int offset, int length) throws IOException {
+        recordLock.lock();
+        try {
+            if (isClosed()) {
+                throw new SocketException(
+                        "Connection or outbound has been closed");
             }
 
-            throw new SSLHandshakeException("sequence number overflow");
-        }
+            if (writeCipher.authenticator.seqNumOverflow()) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                    SSLLogger.fine(
+                        "sequence number extremely close to overflow " +
+                        "(2^64-1 packets). Closing connection.");
+                }
 
-        boolean isFirstRecordOfThePayload = true;
-        for (int limit = (offset + length); offset < limit;) {
-            int fragLen;
-            if (packetSize > 0) {
-                fragLen = Math.min(maxRecordSize, packetSize);
-                fragLen =
-                        writeCipher.calculateFragmentSize(fragLen, headerSize);
-
-                fragLen = Math.min(fragLen, Record.maxDataSize);
-            } else {
-                fragLen = Record.maxDataSize;
+                throw new SSLHandshakeException("sequence number overflow");
             }
 
-            if (fragmentSize > 0) {
-                fragLen = Math.min(fragLen, fragmentSize);
+            boolean isFirstRecordOfThePayload = true;
+            for (int limit = (offset + length); offset < limit;) {
+                int fragLen;
+                if (packetSize > 0) {
+                    fragLen = Math.min(maxRecordSize, packetSize);
+                    fragLen = writeCipher.calculateFragmentSize(
+                            fragLen, headerSize);
+
+                    fragLen = Math.min(fragLen, Record.maxDataSize);
+                } else {
+                    fragLen = Record.maxDataSize;
+                }
+
+                if (fragmentSize > 0) {
+                    fragLen = Math.min(fragLen, fragmentSize);
+                }
+
+                if (isFirstRecordOfThePayload && needToSplitPayload()) {
+                    fragLen = 1;
+                    isFirstRecordOfThePayload = false;
+                } else {
+                    fragLen = Math.min(fragLen, (limit - offset));
+                }
+
+                // use the buf of ByteArrayOutputStream
+                int position = headerSize + writeCipher.getExplicitNonceSize();
+                count = position;
+                write(source, offset, fragLen);
+
+                if (SSLLogger.isOn && SSLLogger.isOn("record")) {
+                    SSLLogger.fine(
+                            "WRITE: " + protocolVersion +
+                            " " + ContentType.APPLICATION_DATA.name +
+                            ", length = " + (count - position));
+                }
+
+                // Encrypt the fragment and wrap up a record.
+                encrypt(writeCipher,
+                        ContentType.APPLICATION_DATA.id, headerSize);
+
+                // deliver this message
+                deliverStream.write(buf, 0, count);    // may throw IOException
+                deliverStream.flush();                 // may throw IOException
+
+                if (SSLLogger.isOn && SSLLogger.isOn("packet")) {
+                    SSLLogger.fine("Raw write",
+                            (new ByteArrayInputStream(buf, 0, count)));
+                }
+
+                // reset the internal buffer
+                count = 0;
+
+                if (isFirstAppOutputRecord) {
+                    isFirstAppOutputRecord = false;
+                }
+
+                offset += fragLen;
             }
-
-            if (isFirstRecordOfThePayload && needToSplitPayload()) {
-                fragLen = 1;
-                isFirstRecordOfThePayload = false;
-            } else {
-                fragLen = Math.min(fragLen, (limit - offset));
-            }
-
-            // use the buf of ByteArrayOutputStream
-            int position = headerSize + writeCipher.getExplicitNonceSize();
-            count = position;
-            write(source, offset, fragLen);
-
-            if (SSLLogger.isOn && SSLLogger.isOn("record")) {
-                SSLLogger.fine(
-                        "WRITE: " + protocolVersion +
-                        " " + ContentType.APPLICATION_DATA.name +
-                        ", length = " + (count - position));
-            }
-
-            // Encrypt the fragment and wrap up a record.
-            encrypt(writeCipher, ContentType.APPLICATION_DATA.id, headerSize);
-
-            // deliver this message
-            deliverStream.write(buf, 0, count);    // may throw IOException
-            deliverStream.flush();                 // may throw IOException
-
-            if (SSLLogger.isOn && SSLLogger.isOn("packet")) {
-                SSLLogger.fine("Raw write",
-                        (new ByteArrayInputStream(buf, 0, count)));
-            }
-
-            // reset the internal buffer
-            count = 0;
-
-            if (isFirstAppOutputRecord) {
-                isFirstAppOutputRecord = false;
-            }
-
-            offset += fragLen;
+        } finally {
+            recordLock.unlock();
         }
     }
 
     @Override
-    synchronized void setDeliverStream(OutputStream outputStream) {
-        this.deliverStream = outputStream;
+    void setDeliverStream(OutputStream outputStream) {
+        recordLock.lock();
+        try {
+            this.deliverStream = outputStream;
+        } finally {
+            recordLock.unlock();
+        }
     }
 
     /*

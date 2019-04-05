@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
+import java.util.concurrent.locks.ReentrantLock;
 import javax.crypto.BadPaddingException;
 import sun.security.ssl.SSLCipher.SSLReadCipher;
 
@@ -43,10 +44,10 @@ import sun.security.ssl.SSLCipher.SSLReadCipher;
 abstract class InputRecord implements Record, Closeable {
     SSLReadCipher       readCipher;
     // Needed for KeyUpdate, used after Handshake.Finished
-    TransportContext            tc;
+    TransportContext    tc;
 
     final HandshakeHash handshakeHash;
-    boolean             isClosed;
+    volatile boolean    isClosed;
 
     // The ClientHello version to accept. If set to ProtocolVersion.SSL20Hello
     // and the first message we read is a ClientHello in V2 format, we convert
@@ -55,6 +56,8 @@ abstract class InputRecord implements Record, Closeable {
 
     // fragment size
     int                 fragmentSize;
+
+    final ReentrantLock recordLock = new ReentrantLock();
 
     InputRecord(HandshakeHash handshakeHash, SSLReadCipher readCipher) {
         this.readCipher = readCipher;
@@ -92,14 +95,19 @@ abstract class InputRecord implements Record, Closeable {
      * and flag the record as holding no data.
      */
     @Override
-    public synchronized void close() throws IOException {
-        if (!isClosed) {
-            isClosed = true;
-            readCipher.dispose();
+    public void close() throws IOException {
+        recordLock.lock();
+        try {
+            if (!isClosed) {
+                isClosed = true;
+                readCipher.dispose();
+            }
+        } finally {
+            recordLock.unlock();
         }
     }
 
-    synchronized boolean isClosed() {
+    boolean isClosed() {
         return isClosed;
     }
 

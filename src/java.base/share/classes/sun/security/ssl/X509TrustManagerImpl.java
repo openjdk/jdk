@@ -29,6 +29,7 @@ import java.net.Socket;
 import java.security.*;
 import java.security.cert.*;
 import java.util.*;
+import java.util.concurrent.locks.ReentrantLock;
 import javax.net.ssl.*;
 import sun.security.util.AnchorCertificates;
 import sun.security.util.HostnameChecker;
@@ -62,6 +63,8 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
     // note that we need separate validator for client and server due to
     // the different extension checks. They are initialized lazily on demand.
     private volatile Validator clientValidator, serverValidator;
+
+    private final ReentrantLock validatorLock = new ReentrantLock();
 
     X509TrustManagerImpl(String validatorType,
             Collection<X509Certificate> trustedCerts) {
@@ -157,12 +160,15 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
         if (isClient) {
             v = clientValidator;
             if (v == null) {
-                synchronized (this) {
+                validatorLock.lock();
+                try {
                     v = clientValidator;
                     if (v == null) {
                         v = getValidator(Validator.VAR_TLS_CLIENT);
                         clientValidator = v;
                     }
+                } finally {
+                    validatorLock.unlock();
                 }
             }
         } else {
@@ -170,12 +176,15 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
             // (guaranteed under the new Tiger memory model)
             v = serverValidator;
             if (v == null) {
-                synchronized (this) {
+                validatorLock.lock();
+                try {
                     v = serverValidator;
                     if (v == null) {
                         v = getValidator(Validator.VAR_TLS_SERVER);
                         serverValidator = v;
                     }
+                } finally {
+                    validatorLock.unlock();
                 }
             }
         }

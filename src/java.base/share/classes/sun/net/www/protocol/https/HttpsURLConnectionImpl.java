@@ -57,8 +57,7 @@ import sun.net.www.http.HttpClient;
 public class HttpsURLConnectionImpl
         extends javax.net.ssl.HttpsURLConnection {
 
-    // NOTE: made protected for plugin so that subclass can set it.
-    protected DelegateHttpsURLConnection delegate;
+    private final DelegateHttpsURLConnection delegate;
 
     HttpsURLConnectionImpl(URL u, Handler handler) throws IOException {
         this(u, null, handler);
@@ -76,13 +75,6 @@ public class HttpsURLConnectionImpl
     HttpsURLConnectionImpl(URL u, Proxy p, Handler handler) throws IOException {
         super(checkURL(u));
         delegate = new DelegateHttpsURLConnection(url, p, handler, this);
-    }
-
-    // NOTE: introduced for plugin
-    // subclass needs to overwrite this to set delegate to
-    // the appropriate delegatee
-    protected HttpsURLConnectionImpl(URL u) throws IOException {
-        super(u);
     }
 
     /**
@@ -219,11 +211,11 @@ public class HttpsURLConnectionImpl
      * - get input, [read input,] get output, [write output]
      */
 
-    public synchronized OutputStream getOutputStream() throws IOException {
+    public OutputStream getOutputStream() throws IOException {
         return delegate.getOutputStream();
     }
 
-    public synchronized InputStream getInputStream() throws IOException {
+    public InputStream getInputStream() throws IOException {
         return delegate.getInputStream();
     }
 
