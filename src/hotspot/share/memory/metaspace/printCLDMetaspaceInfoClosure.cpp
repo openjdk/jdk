@@ -26,6 +26,7 @@
 #include "classfile/javaClasses.hpp"
 #include "memory/metaspace/printCLDMetaspaceInfoClosure.hpp"
 #include "memory/metaspace/printMetaspaceInfoKlassClosure.hpp"
+#include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -39,13 +40,29 @@ PrintCLDMetaspaceInfoClosure::PrintCLDMetaspaceInfoClosure(outputStream* out, si
 : _out(out), _scale(scale), _do_print(do_print), _do_print_classes(do_print_classes)
 , _break_down_by_chunktype(break_down_by_chunktype)
 , _num_loaders(0), _num_loaders_without_metaspace(0), _num_loaders_unloading(0)
+,  _num_classes(0), _num_classes_shared(0)
 {
   memset(_num_loaders_by_spacetype, 0, sizeof(_num_loaders_by_spacetype));
+  memset(_num_classes_by_spacetype, 0, sizeof(_num_classes_by_spacetype));
+  memset(_num_classes_shared_by_spacetype, 0, sizeof(_num_classes_shared_by_spacetype));
 }
 
-static const char* classes_plural(uintx num) {
-  return num == 1 ? "" : "es";
-}
+// A closure just to count classes
+class CountKlassClosure : public KlassClosure {
+public:
+
+  uintx _num_classes;
+  uintx _num_classes_shared;
+
+  CountKlassClosure() : _num_classes(0), _num_classes_shared(0) {}
+  void do_klass(Klass* k) {
+    _num_classes ++;
+    if (k->is_shared()) {
+      _num_classes_shared ++;
+    }
+  }
+
+}; // end: PrintKlassInfoClosure
 
 void PrintCLDMetaspaceInfoClosure::do_cld(ClassLoaderData* cld) {
 
@@ -72,7 +89,16 @@ void PrintCLDMetaspaceInfoClosure::do_cld(ClassLoaderData* cld) {
   _stats_by_spacetype[msp->space_type()].add(this_cld_stat);
   _num_loaders_by_spacetype[msp->space_type()] ++;
 
-  // Optionally, print.
+  // Count classes loaded by this CLD.
+  CountKlassClosure ckc;
+  cld->classes_do(&ckc);
+  // accumulate.
+  _num_classes += ckc._num_classes;
+  _num_classes_by_spacetype[msp->space_type()] += ckc._num_classes;
+  _num_classes_shared += ckc._num_classes_shared;
+  _num_classes_shared_by_spacetype[msp->space_type()] += ckc._num_classes_shared;
+
+  // Optionally, print
   if (_do_print) {
 
     _out->print(UINTX_FORMAT_W(4) ": ", _num_loaders);
@@ -113,35 +139,24 @@ void PrintCLDMetaspaceInfoClosure::do_cld(ClassLoaderData* cld) {
     }
 
     if (_do_print_classes) {
+      // Print a detailed description of all loaded classes.
       streamIndentor sti(_out, 6);
       _out->cr_indent();
-      _out->print("Loaded classes: ");
+      _out->print("Loaded classes");
+      if (ckc._num_classes_shared > 0) {
+        _out->print("('s' = shared)");
+      }
+      _out->print(":");
       PrintMetaspaceInfoKlassClosure pkic(_out, true);
       cld->classes_do(&pkic);
       _out->cr_indent();
       _out->print("-total-: ");
-      _out->print(UINTX_FORMAT " class%s", pkic._num_classes, classes_plural(pkic._num_classes));
-      if (pkic._num_instance_classes > 0 || pkic._num_array_classes > 0) {
-        _out->print(" (");
-        if (pkic._num_instance_classes > 0) {
-          _out->print(UINTX_FORMAT " instance class%s", pkic._num_instance_classes,
-              classes_plural(pkic._num_instance_classes));
-        }
-        if (pkic._num_array_classes > 0) {
-          if (pkic._num_instance_classes > 0) {
-            _out->print(", ");
-          }
-          _out->print(UINTX_FORMAT " array class%s", pkic._num_array_classes,
-              classes_plural(pkic._num_array_classes));
-        }
-        _out->print(").");
-      }
+      print_number_of_classes(_out, ckc._num_classes, ckc._num_classes_shared);
+    } else {
+      // Just print a summary about how many classes have been loaded.
+      _out->print(", ");
+      print_number_of_classes(_out, ckc._num_classes, ckc._num_classes_shared);
     }
-
-    _out->cr();
-
-
-    _out->cr();
 
     // Print statistics
     this_cld_stat.print_on(_out, _scale, _break_down_by_chunktype);

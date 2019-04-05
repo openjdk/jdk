@@ -194,6 +194,20 @@ ChunkIndex prev_chunk_index(ChunkIndex i) {
   return (ChunkIndex) (i-1);
 }
 
+const char* loaders_plural(uintx num) {
+  return num == 1 ? "loader" : "loaders";
+}
+
+const char* classes_plural(uintx num) {
+  return num == 1 ? "class" : "classes";
+}
+
+void print_number_of_classes(outputStream* out, uintx classes, uintx classes_shared) {
+  out->print(UINTX_FORMAT " %s", classes, classes_plural(classes));
+  if (classes_shared > 0) {
+    out->print(" (" UINTX_FORMAT " shared)", classes_shared);
+  }
+}
 
 } // namespace metaspace
 

@@ -38,15 +38,11 @@ namespace metaspace {
 class PrintMetaspaceInfoKlassClosure : public KlassClosure {
 private:
   outputStream* const _out;
-  const bool          _do_print;
+  uintx _cnt;
 
   bool print_reflection_invocation_target(outputStream* out, InstanceKlass* magic_accessor_impl_class);
 
 public:
-
-  uintx _num_classes;
-  uintx _num_instance_classes;
-  uintx _num_array_classes;
 
   PrintMetaspaceInfoKlassClosure(outputStream* out, bool do_print);
   void do_klass(Klass* k);

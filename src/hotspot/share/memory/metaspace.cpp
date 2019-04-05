@@ -667,12 +667,19 @@ void MetaspaceUtils::print_report(outputStream* out, size_t scale, int flags) {
     for (int space_type = (int)Metaspace::ZeroMetaspaceType;
          space_type < (int)Metaspace::MetaspaceTypeCount; space_type ++)
     {
-      uintx num = cl._num_loaders_by_spacetype[space_type];
-      out->print("%s (" UINTX_FORMAT " loader%s)%c",
+      uintx num_loaders = cl._num_loaders_by_spacetype[space_type];
+      uintx num_classes = cl._num_classes_by_spacetype[space_type];
+      out->print("%s - " UINTX_FORMAT " %s",
         space_type_name((Metaspace::MetaspaceType)space_type),
-        num, (num == 1 ? "" : "s"), (num > 0 ? ':' : '.'));
-      if (num > 0) {
+        num_loaders, loaders_plural(num_loaders));
+      if (num_classes > 0) {
+        out->print(", ");
+        print_number_of_classes(out, num_classes, cl._num_classes_shared_by_spacetype[space_type]);
+        out->print(":");
         cl._stats_by_spacetype[space_type].print_on(out, scale, print_by_chunktype);
+      } else {
+        out->print(".");
+        out->cr();
       }
       out->cr();
     }
@@ -680,10 +687,15 @@ void MetaspaceUtils::print_report(outputStream* out, size_t scale, int flags) {
 
   // Print totals for in-use data:
   out->cr();
-  out->print_cr("Total Usage ( " UINTX_FORMAT " loader%s)%c",
-      cl._num_loaders, (cl._num_loaders == 1 ? "" : "s"), (cl._num_loaders > 0 ? ':' : '.'));
-
-  cl._stats_total.print_on(out, scale, print_by_chunktype);
+  {
+    uintx num_loaders = cl._num_loaders;
+    out->print("Total Usage - " UINTX_FORMAT " %s, ",
+      num_loaders, loaders_plural(num_loaders));
+    print_number_of_classes(out, cl._num_classes, cl._num_classes_shared);
+    out->print(":");
+    cl._stats_total.print_on(out, scale, print_by_chunktype);
+    out->cr();
+  }
 
   // -- Print Virtual space.
   out->cr();

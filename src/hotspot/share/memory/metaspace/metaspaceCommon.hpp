@@ -140,6 +140,11 @@ inline bool is_valid_nonhumongous_chunktype(ChunkIndex index) {
   return is_valid_chunktype(index) && index != HumongousIndex;
 }
 
+// Pretty printing helpers
+const char* classes_plural(uintx num);
+const char* loaders_plural(uintx num);
+void print_number_of_classes(outputStream* out, uintx classes, uintx classes_shared);
+
 } // namespace metaspace
 
 #endif // SHARE_MEMORY_METASPACE_METASPACECOMMON_HPP
