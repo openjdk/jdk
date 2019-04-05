@@ -151,7 +151,7 @@ public class TestUseOption extends JavadocTester {
         );
         checkOutput("class-use/UsedInC.html", true,
                 "<li class=\"blockList\">\n"
-                + "<section role=\"region\"><a id=\"unnamed.package\">"
+                + "<section><a id=\"unnamed.package\">"
         );
         checkOutput("package-use.html", true,
                 "<th class=\"colFirst\" scope=\"row\">"

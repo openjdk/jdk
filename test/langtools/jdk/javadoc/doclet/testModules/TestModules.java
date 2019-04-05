@@ -478,7 +478,7 @@ public class TestModules extends JavadocTester {
 
     void checkHtml5Description(boolean found) {
         checkOutput("moduleA/module-summary.html", found,
-                "<section role=\"region\">\n"
+                "<section>\n"
                 + "<div class=\"deprecationBlock\"><span class=\"deprecatedLabel\">Deprecated, for removal:"
                 + " This API element is subject to removal in a future version.</span>\n"
                 + "<div class=\"deprecationComment\">This module is deprecated.</div>\n"
@@ -490,7 +490,7 @@ public class TestModules extends JavadocTester {
                 + "<div class=\"block\">This is a test description for the moduleA module with a Search "
                 + "phrase <a id=\"searchphrase\" class=\"searchTagResult\">search phrase</a>.</div>");
         checkOutput("moduleB/module-summary.html", found,
-                "<section role=\"region\">\n"
+                "<section>\n"
                 + "<!-- ============ MODULE DESCRIPTION =========== -->\n"
                 + "<a id=\"module.description\">\n"
                 + "<!--   -->\n"
