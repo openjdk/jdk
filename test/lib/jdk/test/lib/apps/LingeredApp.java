@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -492,18 +492,22 @@ public class LingeredApp {
         }
 
         String theLockFileName = args[0];
+        Path path = Paths.get(theLockFileName);
 
         try {
-            Path path = Paths.get(theLockFileName);
-
             while (Files.exists(path)) {
                 // Touch the lock to indicate our readiness
                 setLastModified(theLockFileName, epoch());
                 Thread.sleep(spinDelay);
             }
-        } catch (NoSuchFileException ex) {
+        } catch (IOException ex) {
             // Lock deleted while we are setting last modified time.
-            // Ignore error and lets the app exits
+            // Ignore the error and let the app exit.
+            if (Files.exists(path)) {
+                // If the lock file was not removed, return an error.
+                System.err.println("LingeredApp IOException: lock file still exists");
+                System.exit(4);
+            }
         } catch (Exception ex) {
             System.err.println("LingeredApp ERROR: " + ex);
             // Leave exit_code = 1 to Java launcher
