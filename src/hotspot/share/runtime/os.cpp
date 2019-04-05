@@ -1024,8 +1024,9 @@ bool os::is_readable_pointer(const void* p) {
 }
 
 bool os::is_readable_range(const void* from, const void* to) {
-  for (address p = align_down((address)from, min_page_size()); p < to; p += min_page_size()) {
-    if (!is_readable_pointer(p)) {
+  if ((uintptr_t)from >= (uintptr_t)to) return false;
+  for (uintptr_t p = align_down((uintptr_t)from, min_page_size()); p < (uintptr_t)to; p += min_page_size()) {
+    if (!is_readable_pointer((const void*)p)) {
       return false;
     }
   }
