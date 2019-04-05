@@ -627,7 +627,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
 AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
 [
   # Save the current directory this script was started from
-  CURDIR="$PWD"
+  CONFIGURE_START_DIR="$PWD"
 
   # We might need to rewrite ORIGINAL_PATH, if it includes "#", to quote them
   # for make. We couldn't do this when we retrieved ORIGINAL_PATH, since SED
@@ -653,9 +653,10 @@ AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
   AC_MSG_CHECKING([for top-level directory])
   AC_MSG_RESULT([$TOPDIR])
   AC_SUBST(TOPDIR)
+  AC_SUBST(CONFIGURE_START_DIR)
 
   # We can only call BASIC_FIXUP_PATH after BASIC_CHECK_PATHS_WINDOWS.
-  BASIC_FIXUP_PATH(CURDIR)
+  BASIC_FIXUP_PATH(CONFIGURE_START_DIR)
   BASIC_FIXUP_PATH(TOPDIR)
 
   # Locate the directory of this script.
@@ -868,9 +869,10 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
 
   # Test from where we are running configure, in or outside of src root.
   AC_MSG_CHECKING([where to store configuration])
-  if test "x$CURDIR" = "x$TOPDIR" || test "x$CURDIR" = "x$CUSTOM_ROOT" \
-      || test "x$CURDIR" = "x$TOPDIR/make/autoconf" \
-      || test "x$CURDIR" = "x$TOPDIR/make" ; then
+  if test "x$CONFIGURE_START_DIR" = "x$TOPDIR" \
+      || test "x$CONFIGURE_START_DIR" = "x$CUSTOM_ROOT" \
+      || test "x$CONFIGURE_START_DIR" = "x$TOPDIR/make/autoconf" \
+      || test "x$CONFIGURE_START_DIR" = "x$TOPDIR/make" ; then
     # We are running configure from the src root.
     # Create a default ./build/target-variant-debuglevel output root.
     if test "x${CONF_NAME}" = x; then
@@ -895,9 +897,9 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
     # If configuration is situated in normal build directory, just use the build
     # directory name as configuration name, otherwise use the complete path.
     if test "x${CONF_NAME}" = x; then
-      CONF_NAME=`$ECHO $CURDIR | $SED -e "s!^${TOPDIR}/build/!!"`
+      CONF_NAME=`$ECHO $CONFIGURE_START_DIR | $SED -e "s!^${TOPDIR}/build/!!"`
     fi
-    OUTPUTDIR="$CURDIR"
+    OUTPUTDIR="$CONFIGURE_START_DIR"
     AC_MSG_RESULT([in current directory])
 
     # WARNING: This might be a bad thing to do. You need to be sure you want to
@@ -917,14 +919,14 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
               -e 's/ //g' \
           | $TR -d '\n'`
       if test "x$filtered_files" != x; then
-        AC_MSG_NOTICE([Current directory is $CURDIR.])
+        AC_MSG_NOTICE([Current directory is $CONFIGURE_START_DIR.])
         AC_MSG_NOTICE([Since this is not the source root, configure will output the configuration here])
         AC_MSG_NOTICE([(as opposed to creating a configuration in <src_root>/build/<conf-name>).])
         AC_MSG_NOTICE([However, this directory is not empty. This is not allowed, since it could])
         AC_MSG_NOTICE([seriously mess up just about everything.])
         AC_MSG_NOTICE([Try 'cd $TOPDIR' and restart configure])
         AC_MSG_NOTICE([(or create a new empty directory and cd to it).])
-        AC_MSG_ERROR([Will not continue creating configuration in $CURDIR])
+        AC_MSG_ERROR([Will not continue creating configuration in $CONFIGURE_START_DIR])
       fi
     fi
   fi

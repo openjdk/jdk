@@ -32,6 +32,8 @@
 
 # The command line given to configure.
 CONFIGURE_COMMAND_LINE:=@CONFIGURE_COMMAND_LINE@
+# The current directory when configure was run
+CONFIGURE_START_DIR:=@CONFIGURE_START_DIR@
 
 # A self-referential reference to this file.
 SPEC:=@SPEC@
@@ -138,7 +140,6 @@ SYSROOT_LDFLAGS := @SYSROOT_LDFLAGS@
 
 # The top-level directory of the source repository
 TOPDIR:=@TOPDIR@
-
 
 IMPORT_MODULES_CLASSES:=@IMPORT_MODULES_CLASSES@
 IMPORT_MODULES_CMDS:=@IMPORT_MODULES_CMDS@

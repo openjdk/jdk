@@ -472,7 +472,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
       # Change directory so we don't need to mess with Windows paths in redirects.
       cd $VS_ENV_TMP_DIR
       $CMD /c extract-vs-env.bat | $CAT
-      cd $CURDIR
+      cd $CONFIGURE_START_DIR
 
       if test ! -s $VS_ENV_TMP_DIR/set-vs-env.sh; then
         AC_MSG_NOTICE([Could not succesfully extract the environment variables needed for the VS setup.])

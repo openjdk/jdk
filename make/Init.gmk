@@ -279,7 +279,7 @@ else # HAS_SPEC=true
         else
 	  $(ECHO) "Re-running configure using default settings"
         endif
-	( cd $(OUTPUTDIR) && PATH="$(ORIGINAL_PATH)" AUTOCONF="$(AUTOCONF)" \
+	( cd $(CONFIGURE_START_DIR) && PATH="$(ORIGINAL_PATH)" AUTOCONF="$(AUTOCONF)" \
 	    CUSTOM_ROOT="$(CUSTOM_ROOT)" \
 	    CUSTOM_CONFIG_DIR="$(CUSTOM_CONFIG_DIR)" \
 	    $(BASH) $(TOPDIR)/configure $(CONFIGURE_COMMAND_LINE) )
