@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,6 +122,9 @@ public class Reflection {
                                              Class<?> targetClass,
                                              int modifiers)
     {
+        Objects.requireNonNull(currentClass);
+        Objects.requireNonNull(memberClass);
+
         if (currentClass == memberClass) {
             // Always succeeds
             return true;
@@ -199,6 +202,22 @@ public class Reflection {
         }
 
         return true;
+    }
+
+    /*
+     * Verify if a member is public and memberClass is a public type
+     * in a package that is unconditionally exported and
+     * return {@code true}if it is granted.
+     *
+     * @param memberClass the declaring class of the member being accessed
+     * @param modifiers the member's access modifiers
+     * @return {@code true} if the member is public and in a publicly accessible type
+     */
+    public static boolean verifyPublicMemberAccess(Class<?> memberClass, int modifiers) {
+        Module m = memberClass.getModule();
+        return Modifier.isPublic(modifiers)
+            && m.isExported(memberClass.getPackageName())
+            && Modifier.isPublic(Reflection.getClassAccessFlags(memberClass));
     }
 
     /**
@@ -325,8 +344,10 @@ public class Reflection {
                                                                    Class<?> memberClass,
                                                                    Class<?> targetClass,
                                                                    int modifiers)
-        throws IllegalAccessException
     {
+        if (currentClass == null)
+            return newIllegalAccessException(memberClass, modifiers);
+
         String currentSuffix = "";
         String memberSuffix = "";
         Module m1 = currentClass.getModule();
@@ -350,6 +371,36 @@ public class Reflection {
             msg += memberClass + memberSuffix+ " because "
                    + m2 + " does not export " + memberPackageName;
             if (m2.isNamed()) msg += " to " + m1;
+        }
+
+        return new IllegalAccessException(msg);
+    }
+
+    /**
+     * Returns an IllegalAccessException with an exception message where
+     * there is no caller frame.
+     */
+    private static IllegalAccessException newIllegalAccessException(Class<?> memberClass,
+                                                                    int modifiers)
+    {
+        String memberSuffix = "";
+        Module m2 = memberClass.getModule();
+        if (m2.isNamed())
+            memberSuffix = " (in " + m2 + ")";
+
+        String memberPackageName = memberClass.getPackageName();
+
+        String msg = "JNI attached native thread (null caller frame) cannot access ";
+        if (m2.isExported(memberPackageName)) {
+
+            // module access okay so include the modifiers in the message
+            msg += "a member of " + memberClass + memberSuffix +
+                " with modifiers \"" + Modifier.toString(modifiers) + "\"";
+
+        } else {
+            // module access failed
+            msg += memberClass + memberSuffix+ " because "
+                + m2 + " does not export " + memberPackageName;
         }
 
         return new IllegalAccessException(msg);
