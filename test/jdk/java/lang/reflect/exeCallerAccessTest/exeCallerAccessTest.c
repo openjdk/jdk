@@ -34,6 +34,7 @@ static jmethodID mid_Class_getField;
 static jmethodID mid_Field_get;
 
 int getField(JNIEnv *env, char* declaringClass_name, char* field_name);
+int checkAndClearIllegalAccessExceptionThrown(JNIEnv *env);
 
 int main(int argc, char** args) {
     JavaVM *jvm;
