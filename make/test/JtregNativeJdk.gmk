@@ -61,6 +61,7 @@ ifeq ($(call isTargetOs, windows), true)
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libstringPlatformChars := $(WIN_LIB_JAVA)
   WIN_LIB_JLI := $(SUPPORT_OUTPUTDIR)/native/java.base/libjli/jli.lib
   BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeJliLaunchTest := $(WIN_LIB_JLI)
+  BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeCallerAccessTest := jvm.lib
 else
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libstringPlatformChars := -ljava
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libDirectIO := -ljava
@@ -70,9 +71,8 @@ else
     BUILD_JDK_JTREG_LIBRARIES_LIBS_libInheritedChannel := -ljava -lsocket -lnsl
   endif
   BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeJliLaunchTest := -ljli
+  BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeCallerAccessTest := -ljvm
 endif
-
-BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeCallerAccessTest := -ljvm
 
 ifeq ($(call isTargetOs, macosx), true)
   BUILD_JDK_JTREG_LIBRARIES_CFLAGS_libTestMainKeyWindow := -ObjC
