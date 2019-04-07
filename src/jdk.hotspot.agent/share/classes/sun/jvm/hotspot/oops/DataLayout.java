@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,7 +172,7 @@ public class DataLayout {
     return 2;
   }
   public static int cellOffset(int index) {
-    return MethodData.cellSize + index * MethodData.cellSize;
+    return (headerSizeInCells() + index) * MethodData.cellSize;
   }
   // // Return a value which, when or-ed as a byte into _flags, sets the flag.
   // static int flagNumberToByteConstant(int flagNumber) {
