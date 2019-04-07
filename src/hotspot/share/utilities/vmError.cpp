@@ -1198,8 +1198,7 @@ volatile intptr_t VMError::first_error_tid = -1;
 static int expand_and_open(const char* pattern, char* buf, size_t buflen, size_t pos) {
   int fd = -1;
   if (Arguments::copy_expand_pid(pattern, strlen(pattern), &buf[pos], buflen - pos)) {
-    // the O_EXCL flag will cause the open to fail if the file exists
-    fd = open(buf, O_RDWR | O_CREAT | O_EXCL, 0666);
+    fd = open(buf, O_RDWR | O_CREAT, 0666);
   }
   return fd;
 }
