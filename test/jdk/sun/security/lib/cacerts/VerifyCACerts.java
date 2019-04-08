@@ -25,7 +25,7 @@
 /**
  * @test
  * @bug 8189131 8198240 8191844 8189949 8191031 8196141 8204923 8195774 8199779
- *      8209452 8209506 8210432 8195793 8222089
+ *      8209452 8209506 8210432 8195793 8222089 8222133
  * @summary Check root CA entries in cacerts file
  */
 import java.io.File;
@@ -239,8 +239,18 @@ public class VerifyCACerts {
     // No error will be reported if certificate in this list expires
     private static final HashSet<String> EXPIRY_EXC_ENTRIES = new HashSet<>() {
         {
+            // Valid until: Sat Jul 06 19:59:59 EDT 2019
             add("certplusclass2primaryca [jdk]");
+            // Valid until: Sat Jul 06 19:59:59 EDT 2019
             add("certplusclass3pprimaryca [jdk]");
+            // Valid until: Tue Jul 09 14:40:36 EDT 2019
+            add("utnuserfirstobjectca [jdk]");
+            // Valid until: Tue Jul 09 19:59:00 EDT 2019
+            add("deutschetelekomrootca2 [jdk]");
+            // Valid until: Tue Jul 09 13:36:58 EDT 2019
+            add("utnuserfirstclientauthemailca [jdk]");
+            // Valid until: Tue Jul 09 14:19:22 EDT 2019
+            add("utnuserfirsthardwareca [jdk]");
         }
     };
 
