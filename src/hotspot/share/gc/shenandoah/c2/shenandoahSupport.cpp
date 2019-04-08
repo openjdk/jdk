@@ -3133,6 +3133,8 @@ ShenandoahLoadReferenceBarrierNode::Strength ShenandoahLoadReferenceBarrierNode:
       case Op_CompareAndSwapI:
       case Op_CompareAndSwapB:
       case Op_CompareAndSwapS:
+      case Op_CompareAndSwapN:
+      case Op_CompareAndSwapP:
       case Op_ShenandoahCompareAndSwapN:
       case Op_ShenandoahCompareAndSwapP:
       case Op_ShenandoahWeakCompareAndSwapN:
