@@ -53,8 +53,16 @@ compiler/whitebox/MakeMethodNotCompilableTest.java              8181831   generi
 
 gc/arguments/TestNewSizeFlags.java                              8196611   generic-all
 gc/arguments/TestVerifyBeforeAndAfterGCFlags.java               8196611   generic-all
+gc/g1/mixedgc/TestOldGenCollectionUsage.java                    8196611   generic-all
 gc/g1/TestConcurrentSystemGC.java                               8196611   generic-all
+gc/g1/TestPeriodicCollection.java                               8196611   generic-all
+gc/parallel/TestPrintGCDetailsVerbose.java                      8196611   generic-all
 vmTestbase/gc/lock/malloc/malloclock03/TestDescription.java     8196611   macosx-all
+vmTestbase/nsk/stress/except/except004.java                     8196611   generic-all
+vmTestbase/nsk/stress/except/except007.java                     8196611   generic-all
+vmTestbase/nsk/stress/except/except008.java                     8196611   generic-all
+vmTestbase/nsk/stress/except/except011.java                     8196611   generic-all
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorMultiArrayTest.java 8196611   generic-all
 
 gc/g1/ihop/TestIHOPErgo.java                                    8191048   generic-all
 gc/g1/plab/TestPLABEvacuationFailure.java                       8191048   generic-all
@@ -64,8 +72,6 @@ gc/g1/plab/TestPLABResize.java                                  8191048   generi
 gc/stress/TestStressG1Humongous.java                            8218176   generic-all
 
 compiler/compilercontrol/directives/LogTest.java                8181753   generic-all
-
-gc/parallel/TestPrintGCDetailsVerbose.java                      8196611   macosx-all
 
 compiler/jvmci/compilerToVM/ReprofileTest.java                  8201333   generic-all
 

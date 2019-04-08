@@ -29,6 +29,8 @@
 
 java/lang/Class/getDeclaredField/ClassDeclaredFieldsTest.java           8185139   generic-all
 java/lang/Class/getDeclaredField/FieldSetAccessibleTest.java            8185139   generic-all
+java/lang/ProcessBuilder/Basic.java#id0                                 8185139   generic-all
+java/lang/ProcessBuilder/Basic.java#id1                                 8185139   generic-all
 java/lang/ProcessBuilder/SecurityManagerClinit.java                     8185139   generic-all
 java/lang/reflect/Proxy/nonPublicProxy/NonPublicProxyClass.java         8185139   generic-all
 java/lang/StackWalker/CallerSensitiveMethod/Main.java                   8185139   generic-all
@@ -68,6 +70,7 @@ java/util/concurrent/tck/JSR166TestCase.java                            8187486 
 java/lang/ref/OOMEInReferenceHandler.java                               8196611   generic-all
 java/lang/Runtime/exec/LotsOfOutput.java                                8196611   generic-all
 java/util/concurrent/ScheduledThreadPoolExecutor/BasicCancelTest.java   8196611   generic-all
+vm/gc/InfiniteList.java                                                 8196611   generic-all
 
 # tests require pop_frame and force_early_return capabilities
 com/sun/jdi/RedefineTTYLineNumber.java                                  8195635   generic-all

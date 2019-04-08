@@ -30,8 +30,8 @@ JttHotpath    org.graalvm.compiler.jtt.hotpath
 JttHotspot    org.graalvm.compiler.jtt.hotspot
 JttJdk        org.graalvm.compiler.jtt.jdk
 JttLangAL     org.graalvm.compiler.jtt.lang.[a-lA-L]
-JttLangMathAL org.graalvm.compiler.jtt.lang.Math_[a-lA-L]
-JttLangMathMZ org.graalvm.compiler.jtt.lang.Math_[m-zM-Z]
+JttLangMathAL org.graalvm.compiler.jtt.lang.Math_[a-lA-L] timeout=300
+JttLangMathMZ org.graalvm.compiler.jtt.lang.Math_[m-zM-Z] timeout=300
 JttLangNZ     org.graalvm.compiler.jtt.lang.[n-zN-Z]
 JttLoop       org.graalvm.compiler.jtt.loop
 Jtt.Micro     org.graalvm.compiler.jtt.micro
