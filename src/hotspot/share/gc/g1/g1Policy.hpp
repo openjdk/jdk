@@ -399,7 +399,7 @@ public:
     return _young_list_max_length;
   }
 
-  bool adaptive_young_list_length() const;
+  bool use_adaptive_young_list_length() const;
 
   void transfer_survivors_to_cset(const G1SurvivorRegions* survivors);
 

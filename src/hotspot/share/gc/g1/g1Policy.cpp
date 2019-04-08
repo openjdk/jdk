@@ -105,7 +105,7 @@ void G1Policy::init(G1CollectedHeap* g1h, G1CollectionSet* collection_set) {
 
   assert(Heap_lock->owned_by_self(), "Locking discipline.");
 
-  if (!adaptive_young_list_length()) {
+  if (!use_adaptive_young_list_length()) {
     _young_list_fixed_length = _young_gen_sizer->min_desired_young_length();
   }
   _young_gen_sizer->adjust_max_new_size(_g1h->max_expandable_regions());
@@ -195,7 +195,7 @@ void G1Policy::record_new_heap_size(uint new_number_of_regions) {
 
 uint G1Policy::calculate_young_list_desired_min_length(uint base_min_length) const {
   uint desired_min_length = 0;
-  if (adaptive_young_list_length()) {
+  if (use_adaptive_young_list_length()) {
     if (_analytics->num_alloc_rate_ms() > 3) {
       double now_sec = os::elapsedTime();
       double when_ms = _mmu_tracker->when_max_gc_sec(now_sec) * 1000.0;
@@ -252,7 +252,7 @@ G1Policy::YoungTargetLengths G1Policy::young_list_target_lengths(size_t rs_lengt
   uint desired_max_length = calculate_young_list_desired_max_length();
 
   uint young_list_target_length = 0;
-  if (adaptive_young_list_length()) {
+  if (use_adaptive_young_list_length()) {
     if (collector_state()->in_young_only_phase()) {
       young_list_target_length =
                         calculate_young_list_target_length(rs_lengths,
@@ -304,7 +304,7 @@ G1Policy::calculate_young_list_target_length(size_t rs_lengths,
                                                     uint base_min_length,
                                                     uint desired_min_length,
                                                     uint desired_max_length) const {
-  assert(adaptive_young_list_length(), "pre-condition");
+  assert(use_adaptive_young_list_length(), "pre-condition");
   assert(collector_state()->in_young_only_phase(), "only call this for young GCs");
 
   // In case some edge-condition makes the desired max length too small...
@@ -414,7 +414,7 @@ double G1Policy::predict_survivor_regions_evac_time() const {
 }
 
 void G1Policy::revise_young_list_target_length_if_necessary(size_t rs_lengths) {
-  guarantee( adaptive_young_list_length(), "should not call this otherwise" );
+  guarantee(use_adaptive_young_list_length(), "should not call this otherwise" );
 
   if (rs_lengths > _rs_lengths_prediction) {
     // add 10% to avoid having to recalculate often
@@ -430,7 +430,7 @@ void G1Policy::update_rs_lengths_prediction() {
 }
 
 void G1Policy::update_rs_lengths_prediction(size_t prediction) {
-  if (collector_state()->in_young_only_phase() && adaptive_young_list_length()) {
+  if (collector_state()->in_young_only_phase() && use_adaptive_young_list_length()) {
     _rs_lengths_prediction = prediction;
   }
 }
@@ -910,8 +910,8 @@ bool G1Policy::can_expand_young_list() const {
   return young_list_length < young_list_max_length;
 }
 
-bool G1Policy::adaptive_young_list_length() const {
-  return _young_gen_sizer->adaptive_young_list_length();
+bool G1Policy::use_adaptive_young_list_length() const {
+  return _young_gen_sizer->use_adaptive_young_list_length();
 }
 
 size_t G1Policy::desired_survivor_size(uint max_regions) const {
@@ -1211,7 +1211,7 @@ void G1Policy::calculate_old_collection_set_regions(G1CollectionSetCandidates* c
   const uint min_old_cset_length = calc_min_old_cset_length();
   const uint max_old_cset_length = MAX2(min_old_cset_length, calc_max_old_cset_length());
   const uint max_optional_regions = max_old_cset_length - min_old_cset_length;
-  bool check_time_remaining = adaptive_young_list_length();
+  bool check_time_remaining = use_adaptive_young_list_length();
 
   uint candidate_idx = candidates->cur_idx();
 

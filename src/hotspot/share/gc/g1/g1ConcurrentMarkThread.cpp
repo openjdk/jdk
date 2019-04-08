@@ -127,7 +127,7 @@ double G1ConcurrentMarkThread::mmu_sleep_time(G1Policy* g1_policy, bool remark) 
 }
 
 void G1ConcurrentMarkThread::delay_to_keep_mmu(G1Policy* g1_policy, bool remark) {
-  if (g1_policy->adaptive_young_list_length()) {
+  if (g1_policy->use_adaptive_young_list_length()) {
     jlong sleep_time_ms = mmu_sleep_time(g1_policy, remark);
     if (!_cm->has_aborted() && sleep_time_ms > 0) {
       os::sleep(this, sleep_time_ms, false);

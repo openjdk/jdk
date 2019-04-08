@@ -165,7 +165,7 @@ void G1YoungRemSetSamplingThread::sample_young_list_rs_lengths() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   G1Policy* policy = g1h->policy();
 
-  if (policy->adaptive_young_list_length()) {
+  if (policy->use_adaptive_young_list_length()) {
     G1YoungRemSetSamplingClosure cl(&sts);
 
     G1CollectionSet* g1cs = g1h->collection_set();
