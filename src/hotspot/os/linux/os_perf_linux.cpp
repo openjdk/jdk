@@ -206,13 +206,6 @@ format:       %d %s %c %d %d %d %d %d %lu %lu %lu %lu %lu %lu %lu %ld %ld %ld %l
 #  define _SCANFMT_
 #endif
 
-
-struct CPUPerfTicks {
-  uint64_t  used;
-  uint64_t  usedKernel;
-  uint64_t  total;
-};
-
 typedef enum {
   CPU_LOAD_VM_ONLY,
   CPU_LOAD_GLOBAL,
@@ -227,8 +220,8 @@ enum {
 
 struct CPUPerfCounters {
   int   nProcs;
-  CPUPerfTicks jvmTicks;
-  CPUPerfTicks* cpus;
+  os::Linux::CPUPerfTicks jvmTicks;
+  os::Linux::CPUPerfTicks* cpus;
 };
 
 static double get_cpu_load(int which_logical_cpu, CPUPerfCounters* counters, double* pkernelLoad, CpuLoadTarget target);
@@ -287,80 +280,6 @@ static FILE* open_statfile(void) {
   return f;
 }
 
-static void
-next_line(FILE *f) {
-  int c;
-  do {
-    c = fgetc(f);
-  } while (c != '\n' && c != EOF);
-}
-
-/**
- * Return the total number of ticks since the system was booted.
- * If the usedTicks parameter is not NULL, it will be filled with
- * the number of ticks spent on actual processes (user, system or
- * nice processes) since system boot. Note that this is the total number
- * of "executed" ticks on _all_ CPU:s, that is on a n-way system it is
- * n times the number of ticks that has passed in clock time.
- *
- * Returns a negative value if the reading of the ticks failed.
- */
-static OSReturn get_total_ticks(int which_logical_cpu, CPUPerfTicks* pticks) {
-  FILE*         fh;
-  uint64_t      userTicks, niceTicks, systemTicks, idleTicks;
-  uint64_t      iowTicks = 0, irqTicks = 0, sirqTicks= 0;
-  int           logical_cpu = -1;
-  const int     expected_assign_count = (-1 == which_logical_cpu) ? 4 : 5;
-  int           n;
-
-  if ((fh = open_statfile()) == NULL) {
-    return OS_ERR;
-  }
-  if (-1 == which_logical_cpu) {
-    n = fscanf(fh, "cpu " UINT64_FORMAT " " UINT64_FORMAT " " UINT64_FORMAT " "
-            UINT64_FORMAT " " UINT64_FORMAT " " UINT64_FORMAT " " UINT64_FORMAT,
-            &userTicks, &niceTicks, &systemTicks, &idleTicks,
-            &iowTicks, &irqTicks, &sirqTicks);
-  } else {
-    // Move to next line
-    next_line(fh);
-
-    // find the line for requested cpu faster to just iterate linefeeds?
-    for (int i = 0; i < which_logical_cpu; i++) {
-      next_line(fh);
-    }
-
-    n = fscanf(fh, "cpu%u " UINT64_FORMAT " " UINT64_FORMAT " " UINT64_FORMAT " "
-               UINT64_FORMAT " " UINT64_FORMAT " " UINT64_FORMAT " " UINT64_FORMAT,
-               &logical_cpu, &userTicks, &niceTicks,
-               &systemTicks, &idleTicks, &iowTicks, &irqTicks, &sirqTicks);
-  }
-
-  fclose(fh);
-  if (n < expected_assign_count || logical_cpu != which_logical_cpu) {
-#ifdef DEBUG_LINUX_PROC_STAT
-    vm_fprintf(stderr, "[stat] read failed");
-#endif
-    return OS_ERR;
-  }
-
-#ifdef DEBUG_LINUX_PROC_STAT
-  vm_fprintf(stderr, "[stat] read "
-          UINT64_FORMAT " " UINT64_FORMAT " " UINT64_FORMAT " " UINT64_FORMAT " "
-          UINT64_FORMAT " " UINT64_FORMAT " " UINT64_FORMAT " \n",
-          userTicks, niceTicks, systemTicks, idleTicks,
-          iowTicks, irqTicks, sirqTicks);
-#endif
-
-  pticks->used       = userTicks + niceTicks;
-  pticks->usedKernel = systemTicks + irqTicks + sirqTicks;
-  pticks->total      = userTicks + niceTicks + systemTicks + idleTicks +
-                       iowTicks + irqTicks + sirqTicks;
-
-  return OS_OK;
-}
-
-
 static int get_systemtype(void) {
   static int procEntriesType = UNDETECTED;
   DIR *taskDir;
@@ -391,7 +310,7 @@ static int read_ticks(const char* procfile, uint64_t* userTicks, uint64_t* syste
  * Return the number of ticks spent in any of the processes belonging
  * to the JVM on any CPU.
  */
-static OSReturn get_jvm_ticks(CPUPerfTicks* pticks) {
+static OSReturn get_jvm_ticks(os::Linux::CPUPerfTicks* pticks) {
   uint64_t userTicks;
   uint64_t systemTicks;
 
@@ -404,7 +323,7 @@ static OSReturn get_jvm_ticks(CPUPerfTicks* pticks) {
   }
 
   // get the total
-  if (get_total_ticks(-1, pticks) != OS_OK) {
+  if (! os::Linux::get_tick_information(pticks, -1)) {
     return OS_ERR;
   }
 
@@ -423,8 +342,8 @@ static OSReturn get_jvm_ticks(CPUPerfTicks* pticks) {
  */
 static double get_cpu_load(int which_logical_cpu, CPUPerfCounters* counters, double* pkernelLoad, CpuLoadTarget target) {
   uint64_t udiff, kdiff, tdiff;
-  CPUPerfTicks* pticks;
-  CPUPerfTicks  tmp;
+  os::Linux::CPUPerfTicks* pticks;
+  os::Linux::CPUPerfTicks  tmp;
   double user_load;
 
   *pkernelLoad = 0.0;
@@ -443,7 +362,7 @@ static double get_cpu_load(int which_logical_cpu, CPUPerfCounters* counters, dou
     if (get_jvm_ticks(pticks) != OS_OK) {
       return -1.0;
     }
-  } else if (get_total_ticks(which_logical_cpu, pticks) != OS_OK) {
+  } else if (! os::Linux::get_tick_information(pticks, which_logical_cpu)) {
     return -1.0;
   }
 
@@ -584,19 +503,19 @@ CPUPerformanceInterface::CPUPerformance::CPUPerformance() {
 }
 
 bool CPUPerformanceInterface::CPUPerformance::initialize() {
-  size_t tick_array_size = (_counters.nProcs +1) * sizeof(CPUPerfTicks);
-  _counters.cpus = (CPUPerfTicks*)NEW_C_HEAP_ARRAY(char, tick_array_size, mtInternal);
+  size_t tick_array_size = (_counters.nProcs +1) * sizeof(os::Linux::CPUPerfTicks);
+  _counters.cpus = (os::Linux::CPUPerfTicks*)NEW_C_HEAP_ARRAY(char, tick_array_size, mtInternal);
   if (NULL == _counters.cpus) {
     return false;
   }
   memset(_counters.cpus, 0, tick_array_size);
 
   // For the CPU load total
-  get_total_ticks(-1, &_counters.cpus[_counters.nProcs]);
+  os::Linux::get_tick_information(&_counters.cpus[_counters.nProcs], -1);
 
   // For each CPU
   for (int i = 0; i < _counters.nProcs; i++) {
-    get_total_ticks(i, &_counters.cpus[i]);
+    os::Linux::get_tick_information(&_counters.cpus[i], i);
   }
   // For JVM load
   get_jvm_ticks(&_counters.jvmTicks);
