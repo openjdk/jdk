@@ -250,6 +250,8 @@ class HeapRegion: public G1ContiguousSpace {
   // The calculated GC efficiency of the region.
   double _gc_efficiency;
 
+  static const uint InvalidCSetIndex = UINT_MAX;
+
   // The index in the optional regions array, if this region
   // is considered optional during a mixed collections.
   uint _index_in_opt_cset;
@@ -549,8 +551,13 @@ class HeapRegion: public G1ContiguousSpace {
   void calc_gc_efficiency(void);
   double gc_efficiency() const { return _gc_efficiency;}
 
-  uint index_in_opt_cset() const { return _index_in_opt_cset; }
+  uint index_in_opt_cset() const {
+    assert(has_index_in_opt_cset(), "Opt cset index not set.");
+    return _index_in_opt_cset;
+  }
+  bool has_index_in_opt_cset() const { return _index_in_opt_cset != InvalidCSetIndex; }
   void set_index_in_opt_cset(uint index) { _index_in_opt_cset = index; }
+  void clear_index_in_opt_cset() { _index_in_opt_cset = InvalidCSetIndex; }
 
   int  young_index_in_cset() const { return _young_index_in_cset; }
   void set_young_index_in_cset(int index) {

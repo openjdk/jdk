@@ -34,7 +34,7 @@ template <class T>
 class WorkerDataArray  : public CHeapObj<mtGC> {
   friend class WDAPrinter;
 public:
-  static const uint MaxThreadWorkItems = 4;
+  static const uint MaxThreadWorkItems = 5;
 private:
   T*          _data;
   uint        _length;
@@ -50,6 +50,7 @@ private:
   void set_thread_work_item(uint worker_i, size_t value, uint index = 0);
   void add_thread_work_item(uint worker_i, size_t value, uint index = 0);
   void set_or_add_thread_work_item(uint worker_i, size_t value, uint index = 0);
+  size_t get_thread_work_item(uint worker_i, uint index = 0);
 
   WorkerDataArray<size_t>* thread_work_items(uint index = 0) const {
     assert(index < MaxThreadWorkItems, "Tried to access thread work item %u max %u", index, MaxThreadWorkItems);

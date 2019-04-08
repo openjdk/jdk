@@ -72,13 +72,16 @@ void G1OopStarChunkedList::delete_list(ChunkedList<T*, mtGC>* c) {
 }
 
 template <typename T>
-void G1OopStarChunkedList::chunks_do(ChunkedList<T*, mtGC>* head, OopClosure* cl) {
+size_t G1OopStarChunkedList::chunks_do(ChunkedList<T*, mtGC>* head, OopClosure* cl) {
+  size_t result = 0;
   for (ChunkedList<T*, mtGC>* c = head; c != NULL; c = c->next_used()) {
+    result += c->size();
     for (size_t i = 0; i < c->size(); i++) {
       T* p = c->at(i);
       cl->do_oop(p);
     }
   }
+  return result;
 }
 
 #endif // SHARE_GC_G1_G1OOPSTARCHUNKEDLIST_INLINE_HPP

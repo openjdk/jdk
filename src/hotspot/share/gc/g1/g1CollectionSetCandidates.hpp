@@ -63,22 +63,18 @@ public:
   // Returns the total number of collection set candidate old regions added.
   uint num_regions() { return _num_regions; }
 
-  // Return the candidate region at the cursor position to be considered for collection without
-  // removing it.
-  HeapRegion* peek_front() {
+  uint cur_idx() const { return _front_idx; }
+
+  HeapRegion* at(uint idx) const {
     HeapRegion* res = NULL;
-    if (_front_idx < _num_regions) {
-      res = _regions[_front_idx];
-      assert(res != NULL, "Unexpected NULL HeapRegion at index %u", _front_idx);
+    if (idx < _num_regions) {
+      res = _regions[idx];
+      assert(res != NULL, "Unexpected NULL HeapRegion at index %u", idx);
     }
     return res;
   }
 
-  // Remove the given region from the candidates set and move the cursor to the next one.
-  HeapRegion* pop_front();
-
-  // Add the given HeapRegion to the front of the collection set candidate set again.
-  void push_front(HeapRegion* hr);
+  void remove(uint num_regions);
 
   // Iterate over all remaining collection set candidate regions.
   void iterate(HeapRegionClosure* cl);

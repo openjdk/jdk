@@ -143,9 +143,8 @@ class G1CollectedHeap : public CollectedHeap {
   // Closures used in implementation.
   friend class G1ParScanThreadState;
   friend class G1ParScanThreadStateSet;
-  friend class G1ParTask;
+  friend class G1EvacuateRegionsTask;
   friend class G1PLABAllocator;
-  friend class G1PrepareCompactClosure;
 
   // Other related classes.
   friend class HeapRegionClaimer;
@@ -519,6 +518,10 @@ public:
 
   WorkGang* workers() const { return _workers; }
 
+  // Runs the given AbstractGangTask with the current active workers, returning the
+  // total time taken.
+  Tickspan run_task(AbstractGangTask* task);
+
   G1Allocator* allocator() {
     return _allocator;
   }
@@ -738,11 +741,14 @@ private:
 
   void calculate_collection_set(G1EvacuationInfo& evacuation_info, double target_pause_time_ms);
 
-  // Actually do the work of evacuating the collection set.
-  void evacuate_collection_set(G1ParScanThreadStateSet* per_thread_states);
+  // Actually do the work of evacuating the parts of the collection set.
+  void evacuate_initial_collection_set(G1ParScanThreadStateSet* per_thread_states);
   void evacuate_optional_collection_set(G1ParScanThreadStateSet* per_thread_states);
-  void evacuate_optional_regions(G1ParScanThreadStateSet* per_thread_states, G1OptionalCSet* ocset);
+private:
+  // Evacuate the next set of optional regions.
+  void evacuate_next_optional_regions(G1ParScanThreadStateSet* per_thread_states);
 
+public:
   void pre_evacuate_collection_set(G1EvacuationInfo& evacuation_info);
   void post_evacuate_collection_set(G1EvacuationInfo& evacuation_info, G1ParScanThreadStateSet* pss);
 
@@ -1165,14 +1171,14 @@ public:
   void heap_region_par_iterate_from_start(HeapRegionClosure* cl,
                                           HeapRegionClaimer* hrclaimer) const;
 
-  // Iterate over the regions (if any) in the current collection set.
-  void collection_set_iterate(HeapRegionClosure* blk);
+  // Iterate over all regions currently in the current collection set.
+  void collection_set_iterate_all(HeapRegionClosure* blk);
 
-  // Iterate over the regions (if any) in the current collection set. Starts the
-  // iteration over the entire collection set so that the start regions of a given
-  // worker id over the set active_workers are evenly spread across the set of
-  // collection set regions.
-  void collection_set_iterate_from(HeapRegionClosure *blk, uint worker_id);
+  // Iterate over the regions in the current increment of the collection set.
+  // Starts the iteration so that the start regions of a given worker id over the
+  // set active_workers are evenly spread across the set of collection set regions
+  // to be iterated.
+  void collection_set_iterate_increment_from(HeapRegionClosure *blk, uint worker_id);
 
   // Returns the HeapRegion that contains addr. addr must not be NULL.
   template <class T>
@@ -1420,7 +1426,7 @@ private:
   size_t _term_attempts;
 
   void start_term_time() { _term_attempts++; _start_term = os::elapsedTime(); }
-  void end_term_time() { _term_time += os::elapsedTime() - _start_term; }
+  void end_term_time() { _term_time += (os::elapsedTime() - _start_term); }
 protected:
   G1CollectedHeap*              _g1h;
   G1ParScanThreadState*         _par_scan_state;

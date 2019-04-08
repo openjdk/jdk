@@ -372,7 +372,7 @@ void G1ParScanThreadStateSet::record_unused_optional_region(HeapRegion* hr) {
     }
 
     size_t used_memory = pss->oops_into_optional_region(hr)->used_memory();
-    _g1h->phase_times()->record_or_add_thread_work_item(G1GCPhaseTimes::OptScanRS, worker_index, used_memory, G1GCPhaseTimes::OptCSetUsedMemory);
+    _g1h->phase_times()->record_or_add_thread_work_item(G1GCPhaseTimes::OptScanRS, worker_index, used_memory, G1GCPhaseTimes::ScanRSUsedMemory);
   }
 }
 
