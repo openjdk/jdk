@@ -133,7 +133,8 @@ public class TestLoggerNames {
 
 
     public static void main(String[] args) throws InterruptedException {
-        LogManager.getLogManager().addLogger(new TestLogger("com.foo.bar.zzz", null));
+        TestLogger test = new TestLogger("com.foo.bar.zzz", null);
+        LogManager.getLogManager().addLogger(test);
         try {
             Logger.getLogger(null);
             throw new RuntimeException("Logger.getLogger(null) didn't throw expected NPE");
@@ -144,7 +145,9 @@ public class TestLoggerNames {
         loggers.add(Logger.getLogger("one.two.addMeAChild"));
         loggers.add(Logger.getLogger("aaa.bbb.replaceMe"));
         loggers.add(Logger.getLogger("bbb.aaa.addMeAChild"));
-        TestLogger test = (TestLogger)Logger.getLogger("com.foo.bar.zzz");
+        if (test != Logger.getLogger("com.foo.bar.zzz")) {
+            throw new AssertionError("wrong logger returned");
+        }
         loggers.add(Logger.getLogger("ddd.aaa.addMeAChild"));
 
         checkLoggerNames(loggers);
