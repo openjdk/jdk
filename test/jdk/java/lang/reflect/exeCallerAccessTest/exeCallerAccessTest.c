@@ -93,6 +93,7 @@ int main(int argc, char** args) {
     }
 
     (*jvm)->DestroyJavaVM(jvm);
+    return 0;
 }
 
 int checkAndClearIllegalAccessExceptionThrown(JNIEnv *env) {
