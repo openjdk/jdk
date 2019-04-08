@@ -67,8 +67,6 @@ applications/ctw/modules/jdk_jconsole.java   8205016 windows-all
 
 gc/epsilon/TestMemoryMXBeans.java 8206434 generic-all
 gc/g1/humongousObjects/objectGraphTest/TestObjectGraphAfterGC.java 8156755 generic-all
-gc/survivorAlignment/TestPromotionToSurvivor.java 8218049 generic-all
-gc/survivorAlignment/TestPromotionFromSurvivorToTenuredAfterMinorGC.java 8218049 generic-all
 gc/g1/logging/TestG1LoggingFailure.java 8169634 generic-all
 gc/g1/humongousObjects/TestHeapCounters.java 8178918 generic-all
 gc/stress/gclocker/TestGCLockerWithParallel.java 8180622 generic-all

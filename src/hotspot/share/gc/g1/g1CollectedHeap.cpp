@@ -2500,8 +2500,8 @@ void G1CollectedHeap::print_all_rsets() {
 
 G1HeapSummary G1CollectedHeap::create_g1_heap_summary() {
 
-  size_t eden_used_bytes = heap()->eden_regions_count() * HeapRegion::GrainBytes;
-  size_t survivor_used_bytes = heap()->survivor_regions_count() * HeapRegion::GrainBytes;
+  size_t eden_used_bytes = _eden.used_bytes();
+  size_t survivor_used_bytes = _survivor.used_bytes();
   size_t heap_used = Heap_lock->owned_by_self() ? used() : used_unlocked();
 
   size_t eden_capacity_bytes =
@@ -4585,7 +4585,9 @@ void G1CollectedHeap::retire_mutator_alloc_region(HeapRegion* alloc_region,
 
   collection_set()->add_eden_region(alloc_region);
   increase_used(allocated_bytes);
+  _eden.add_used_bytes(allocated_bytes);
   _hr_printer.retire(alloc_region);
+
   // We update the eden sizes here, when the region is retired,
   // instead of when it's allocated, since this is the point that its
   // used space has been recorded in _summary_bytes_used.
@@ -4642,6 +4644,9 @@ void G1CollectedHeap::retire_gc_alloc_region(HeapRegion* alloc_region,
   policy()->record_bytes_copied_during_gc(allocated_bytes);
   if (dest.is_old()) {
     old_set_add(alloc_region);
+  } else {
+    assert(dest.is_young(), "Retiring alloc region should be young(%d)", dest.value());
+    _survivor.add_used_bytes(allocated_bytes);
   }
 
   bool const during_im = collector_state()->in_initial_mark_gc();

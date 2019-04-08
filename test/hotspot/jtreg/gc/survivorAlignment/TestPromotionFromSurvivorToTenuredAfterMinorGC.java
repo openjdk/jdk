@@ -24,13 +24,14 @@
 package gc.survivorAlignment;
 
 /**
- * @test
+ * @test gc.survivorAlignment.TestPromotionFromSurvivorToTenuredAfterMinorGC
  * @bug 8031323
  * @summary Verify that objects promoted from survivor space to tenured space
  *          when their age exceeded tenuring threshold are not aligned to
  *          SurvivorAlignmentInBytes value.
  * @requires vm.gc != "Z" & vm.gc != "Shenandoah"
  * @library /test/lib
+ * @library /
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build sun.hotspot.WhiteBox

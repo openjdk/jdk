@@ -228,23 +228,25 @@ void G1MonitoringSupport::recalculate_sizes() {
   MutexLockerEx x(MonitoringSupport_lock, Mutex::_no_safepoint_check_flag);
   // Recalculate all the sizes from scratch.
 
-  uint young_list_length = _g1h->young_regions_count();
+  // This never includes used bytes of current allocating heap region.
+  _overall_used = _g1h->used_unlocked();
+  _eden_space_used = _g1h->eden_regions_used_bytes();
+  _survivor_space_used = _g1h->survivor_regions_used_bytes();
+
+  // _overall_used and _eden_space_used are obtained concurrently so
+  // may be inconsistent with each other. To prevent _old_gen_used going negative,
+  // use smaller value to substract.
+  _old_gen_used = _overall_used - MIN2(_overall_used, _eden_space_used + _survivor_space_used);
+
   uint survivor_list_length = _g1h->survivor_regions_count();
-  assert(young_list_length >= survivor_list_length, "invariant");
-  uint eden_list_length = young_list_length - survivor_list_length;
   // Max length includes any potential extensions to the young gen
   // we'll do when the GC locker is active.
   uint young_list_max_length = _g1h->policy()->young_list_max_length();
   assert(young_list_max_length >= survivor_list_length, "invariant");
   uint eden_list_max_length = young_list_max_length - survivor_list_length;
 
-  _overall_used = _g1h->used_unlocked();
-  _eden_space_used = (size_t) eden_list_length * HeapRegion::GrainBytes;
-  _survivor_space_used = (size_t) survivor_list_length * HeapRegion::GrainBytes;
-  _old_gen_used = subtract_up_to_zero(_overall_used, _eden_space_used + _survivor_space_used);
-
   // First calculate the committed sizes that can be calculated independently.
-  _survivor_space_committed = _survivor_space_used;
+  _survivor_space_committed = survivor_list_length * HeapRegion::GrainBytes;
   _old_gen_committed = HeapRegion::align_up_to_region_byte_size(_old_gen_used);
 
   // Next, start with the overall committed size.
@@ -274,11 +276,15 @@ void G1MonitoringSupport::recalculate_sizes() {
   // Somewhat defensive: cap the eden used size to make sure it
   // never exceeds the committed size.
   _eden_space_used = MIN2(_eden_space_used, _eden_space_committed);
-  // _survivor_committed and _old_committed are calculated in terms of
-  // the corresponding _*_used value, so the next two conditions
-  // should hold.
-  assert(_survivor_space_used <= _survivor_space_committed, "post-condition");
-  assert(_old_gen_used <= _old_gen_committed, "post-condition");
+  // _survivor_space_used is calculated during a safepoint and _survivor_space_committed
+  // is calculated from survivor region count * heap region size.
+  assert(_survivor_space_used <= _survivor_space_committed, "Survivor used bytes(" SIZE_FORMAT
+         ") should be less than or equal to survivor committed(" SIZE_FORMAT ")",
+         _survivor_space_used, _survivor_space_committed);
+  // _old_gen_committed is calculated in terms of _old_gen_used value.
+  assert(_old_gen_used <= _old_gen_committed, "Old gen used bytes(" SIZE_FORMAT
+         ") should be less than or equal to old gen committed(" SIZE_FORMAT ")",
+         _old_gen_used, _old_gen_committed);
 }
 
 void G1MonitoringSupport::update_sizes() {

@@ -24,7 +24,7 @@
 package gc.survivorAlignment;
 
 /**
- * @test
+ * @test gc.survivorAlignment.TestAllocationInEden
  * @bug 8031323
  * @summary Verify that object's alignment in eden space is not affected by
  *          SurvivorAlignmentInBytes option.

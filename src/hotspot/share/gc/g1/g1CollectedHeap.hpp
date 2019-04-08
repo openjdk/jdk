@@ -205,7 +205,7 @@ private:
 
   // Outside of GC pauses, the number of bytes used in all regions other
   // than the current allocation region(s).
-  size_t _summary_bytes_used;
+  volatile size_t _summary_bytes_used;
 
   void increase_used(size_t bytes);
   void decrease_used(size_t bytes);
@@ -1258,6 +1258,8 @@ public:
 
   uint eden_regions_count() const { return _eden.length(); }
   uint survivor_regions_count() const { return _survivor.length(); }
+  size_t eden_regions_used_bytes() const { return _eden.used_bytes(); }
+  size_t survivor_regions_used_bytes() const { return _survivor.used_bytes(); }
   uint young_regions_count() const { return _eden.length() + _survivor.length(); }
   uint old_regions_count() const { return _old_set.length(); }
   uint archive_regions_count() const { return _archive_set.length(); }
