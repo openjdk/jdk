@@ -108,7 +108,7 @@ public class TestProcessHelper {
                     for (String a : arg) {
                         cmd.add(a);
                     }
-                    testProcessHelper(cmd);
+                    testProcessHelper(cmd, TEST_PROCESS_MAIN_CLASS);
                 }
             }
         }
@@ -130,7 +130,7 @@ public class TestProcessHelper {
                 for (String a : arg) {
                     cmd.add(a);
                 }
-                testProcessHelper(cmd);
+                testProcessHelper(cmd, jarFile.getAbsolutePath());
             }
         }
 
@@ -156,7 +156,7 @@ public class TestProcessHelper {
                         for (String a : arg) {
                             cmd.add(a);
                         }
-                        testProcessHelper(cmd);
+                        testProcessHelper(cmd, MODULE_NAME + "/" + TEST_PROCESS_MAIN_CLASS);
                     }
                 }
             }
@@ -171,7 +171,7 @@ public class TestProcessHelper {
         }
     }
 
-    private void testProcessHelper(List<String> args) throws Exception {
+    private void testProcessHelper(List<String> args, String expectedValue) throws Exception {
         ProcessBuilder pb = new ProcessBuilder(args);
         String cmd = pb.command().stream().collect(Collectors.joining(" "));
         System.out.println("Starting the process:" + cmd);
@@ -179,7 +179,7 @@ public class TestProcessHelper {
         if (!p.isAlive()) {
             throw new RuntimeException("Cannot start the process: " + cmd);
         }
-        checkMainClass(p, TEST_PROCESS_MAIN_CLASS);
+        checkMainClass(p, expectedValue);
     }
 
     private File prepareJar() throws Exception {
