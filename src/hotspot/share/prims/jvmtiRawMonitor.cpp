@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,7 +167,12 @@ int JvmtiRawMonitor::SimpleExit (Thread * Self) {
   RawMonitor_lock->unlock() ;
   if (w != NULL) {
       guarantee (w ->TState == ObjectWaiter::TS_ENTER, "invariant") ;
+      // Once we set TState to TS_RUN the waiting thread can complete
+      // SimpleEnter and 'w' is pointing into random stack space. So we have
+      // to ensure we extract the ParkEvent (which is in type-stable memory)
+      // before we set the state, and then don't access 'w'.
       ParkEvent * ev = w->_event ;
+      OrderAccess::loadstore();
       w->TState = ObjectWaiter::TS_RUN ;
       OrderAccess::fence() ;
       ev->unpark() ;
@@ -200,7 +205,7 @@ int JvmtiRawMonitor::SimpleWait (Thread * Self, jlong millis) {
 
   // If thread still resides on the waitset then unlink it.
   // Double-checked locking -- the usage is safe in this context
-  // as we TState is volatile and the lock-unlock operators are
+  // as TState is volatile and the lock-unlock operators are
   // serializing (barrier-equivalent).
 
   if (Node.TState == ObjectWaiter::TS_WAIT) {
