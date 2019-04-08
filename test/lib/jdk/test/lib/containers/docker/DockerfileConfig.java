@@ -46,7 +46,7 @@ public class DockerfileConfig {
 
         switch (Platform.getOsArch()) {
             case "aarch64":
-                return "aarch64/ubuntu";
+                return "arm64v8/ubuntu";
             case "ppc64le":
                 return "ppc64le/ubuntu";
             case "s390x":
