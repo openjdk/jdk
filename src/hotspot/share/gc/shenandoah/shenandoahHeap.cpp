@@ -1204,7 +1204,9 @@ void ShenandoahHeap::print_gc_threads_on(outputStream* st) const {
 
 void ShenandoahHeap::gc_threads_do(ThreadClosure* tcl) const {
   workers()->threads_do(tcl);
-  _safepoint_workers->threads_do(tcl);
+  if (_safepoint_workers != NULL) {
+    _safepoint_workers->threads_do(tcl);
+  }
   if (ShenandoahStringDedup::is_enabled()) {
     ShenandoahStringDedup::threads_do(tcl);
   }
