@@ -23,6 +23,7 @@
 
  /*
  * @test
+ * @bug 8133747 8218458
  * @key nmt
  * @summary Running with NMT detail should produce expected stack traces.
  * @library /test/lib
@@ -36,26 +37,50 @@ import jdk.test.lib.process.OutputAnalyzer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * We are checking for details that should be seen with NMT detail enabled.
+ * In particular the stack traces from os::malloc call sites should have 4
+ * (based on NMT detail stack depth setting) 'interesting' frames and skip
+ * the higher-level allocation frames and frames specific to the NMT logic.
+ * The actual stack trace is affected by the native compiler's inlining ability
+ * and the type of build, so we need to check for a number of possible stacks.
+ * This information does not change often enough that we are concerned about the
+ * stability of this test - rather we prefer to detect changes in compiler behaviour
+ * through this test and update it accordingly.
+ */
 public class CheckForProperDetailStackTrace {
+
     /* The stack trace we look for by default. Note that :: has been replaced by .*
-       to make sure it maches even if the symbol is not unmangled. */
-    public static String stackTraceDefault =
+       to make sure it matches even if the symbol is not unmangled.
+    */
+    private static String stackTraceDefault =
         ".*Hashtable.*allocate_new_entry.*\n" +
         ".*ModuleEntryTable.*new_entry.*\n" +
         ".*ModuleEntryTable.*locked_create_entry.*\n" +
         ".*Modules.*define_module.*\n";
 
-    /* The stack trace we look for on Solaris and Windows slowdebug builds. For some
-       reason ALWAYSINLINE for AllocateHeap is ignored, so it appears in the stack strace. */
-    public static String stackTraceAllocateHeap =
+    /* Alternate stacktrace that we check if the default fails, because
+       new_entry may be inlined.
+    */
+    private static String stackTraceAlternate =
+        ".*Hashtable.*allocate_new_entry.*\n" +
+        ".*ModuleEntryTable.*locked_create_entry.*\n" +
+        ".*Modules.*define_module.*\n" +
+        ".*JVM_DefineModule.*\n";
+
+    /* The stack trace we look for on AIX, Solaris and Windows slowdebug builds.
+       ALWAYSINLINE is only a hint and is ignored for AllocateHeap on the
+       aforementioned platforms. When that happens allocate_new_entry is
+       inlined instead.
+    */
+    private static String stackTraceAllocateHeap =
         ".*AllocateHeap.*\n" +
         ".*ModuleEntryTable.*new_entry.*\n" +
         ".*ModuleEntryTable.*locked_create_entry.*\n" +
         ".*Modules.*define_module.*\n";
 
     /* A symbol that should always be present in NMT detail output. */
-    private static String expectedSymbol =
-        "locked_create_entry";
+    private static String expectedSymbol = "locked_create_entry";
 
     public static void main(String args[]) throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
@@ -67,23 +92,22 @@ public class CheckForProperDetailStackTrace {
 
         output.shouldHaveExitValue(0);
 
-        // We should never see either of these frames because they are supposed to be skipped. */
+        // We should never see either of these frames because they are supposed to be skipped.
         output.shouldNotContain("NativeCallStack::NativeCallStack");
         output.shouldNotContain("os::get_native_stack");
 
         // AllocateHeap shouldn't be in the output because it is supposed to always be inlined.
         // We check for that here, but allow it for Aix, Solaris and Windows slowdebug builds
         // because the compiler ends up not inlining AllocateHeap.
-        Boolean okToHaveAllocateHeap =
-            Platform.isSlowDebugBuild() &&
-            (Platform.isAix() || Platform.isSolaris() || Platform.isWindows());
+        Boolean okToHaveAllocateHeap = Platform.isSlowDebugBuild() &&
+                                       (Platform.isAix() || Platform.isSolaris() || Platform.isWindows());
         if (!okToHaveAllocateHeap) {
             output.shouldNotContain("AllocateHeap");
         }
 
         // See if we have any stack trace symbols in the output
-        boolean hasSymbols =
-            output.getStdout().contains(expectedSymbol) || output.getStderr().contains(expectedSymbol);
+        boolean hasSymbols = output.getStdout().contains(expectedSymbol) ||
+                             output.getStderr().contains(expectedSymbol);
         if (!hasSymbols) {
             // It's ok for ARM not to have symbols, because it does not support NMT detail
             // when targeting thumb2. It's also ok for Windows not to have symbols, because
@@ -92,21 +116,37 @@ public class CheckForProperDetailStackTrace {
                 return; // we are done
             }
             output.reportDiagnosticSummary();
-            throw new RuntimeException("Expected symbol missing missing from output: " + expectedSymbol);
+            throw new RuntimeException("Expected symbol missing from output: " + expectedSymbol);
         }
 
-        /* Make sure the expected NMT detail stack trace is found. */
-        String expectedStackTrace =
-            (okToHaveAllocateHeap ? stackTraceAllocateHeap : stackTraceDefault);
-        if (!stackTraceMatches(expectedStackTrace, output)) {
-            output.reportDiagnosticSummary();
-            throw new RuntimeException("Expected stack trace missing missing from output: " + expectedStackTrace);
+        // Make sure the expected NMT detail stack trace is found
+        System.out.println("Looking for a stack matching:");
+        if (okToHaveAllocateHeap) {
+            System.out.print(stackTraceAllocateHeap);
+            if (stackTraceMatches(stackTraceAllocateHeap, output)) {
+                return;
+            }
+        } else {
+            System.out.print(stackTraceDefault);
+            if (!stackTraceMatches(stackTraceDefault, output)) {
+                System.out.println("Looking for alternate stack matching:");
+                System.out.print(stackTraceAlternate);
+                if (stackTraceMatches(stackTraceAlternate, output)) {
+                    return;
+                }
+            } else {
+                return;
+            }
         }
+        // Failed to match so dump all the output
+        output.reportDiagnosticSummary();
+        throw new RuntimeException("Expected stack trace missing from output");
     }
 
     public static boolean stackTraceMatches(String stackTrace, OutputAnalyzer output) {
-        Matcher stdoutMatcher = Pattern.compile(stackTrace, Pattern.MULTILINE).matcher(output.getStdout());
-        Matcher stderrMatcher = Pattern.compile(stackTrace, Pattern.MULTILINE).matcher(output.getStderr());
+        Pattern p = Pattern.compile(stackTrace, Pattern.MULTILINE);
+        Matcher stdoutMatcher = p.matcher(output.getStdout());
+        Matcher stderrMatcher = p.matcher(output.getStderr());
         return (stdoutMatcher.find() || stderrMatcher.find());
     }
 }
