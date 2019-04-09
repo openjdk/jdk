@@ -52,7 +52,7 @@ ShenandoahStaticHeuristics::~ShenandoahStaticHeuristics() {}
 bool ShenandoahStaticHeuristics::should_start_normal_gc() const {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
-  size_t capacity = heap->capacity();
+  size_t capacity = heap->max_capacity();
   size_t available = heap->free_set()->available();
   size_t threshold_available = (capacity * ShenandoahFreeThreshold) / 100;
 

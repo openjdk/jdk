@@ -430,7 +430,7 @@ void ShenandoahFreeSet::rebuild() {
   }
 
   // Evac reserve: reserve trailing space for evacuations
-  size_t to_reserve = ShenandoahEvacReserve * _heap->capacity() / 100;
+  size_t to_reserve = ShenandoahEvacReserve * _heap->max_capacity() / 100;
   size_t reserved = 0;
 
   for (size_t idx = _heap->num_regions() - 1; idx > 0; idx--) {

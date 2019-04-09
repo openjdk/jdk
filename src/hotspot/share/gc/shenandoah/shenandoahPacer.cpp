@@ -153,7 +153,7 @@ void ShenandoahPacer::setup_for_traversal() {
 void ShenandoahPacer::setup_for_idle() {
   assert(ShenandoahPacing, "Only be here when pacing is enabled");
 
-  size_t initial = _heap->capacity() * ShenandoahPacingIdleSlack / 100;
+  size_t initial = _heap->max_capacity() * ShenandoahPacingIdleSlack / 100;
   double tax = 1;
 
   restart_with(initial, tax);
@@ -166,7 +166,7 @@ size_t ShenandoahPacer::update_and_get_progress_history() {
   if (_progress == -1) {
     // First initialization, report some prior
     Atomic::store((intptr_t)PACING_PROGRESS_ZERO, &_progress);
-    return (size_t) (_heap->capacity() * 0.1);
+    return (size_t) (_heap->max_capacity() * 0.1);
   } else {
     // Record history, and reply historical data
     _progress_history->add(_progress);
