@@ -1,19 +1,24 @@
 <!DOCTYPE html>
-<html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
 <head>
-  <meta charset="utf-8">
-  <meta name="generator" content="pandoc">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>Testing the JDK</title>
-  <style type="text/css">code{white-space: pre;}</style>
-  <link rel="stylesheet" href="../make/data/docs-resources/resources/jdk-default.css">
+  <style type="text/css">
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <link rel="stylesheet" href="../make/data/docs-resources/resources/jdk-default.css" />
   <!--[if lt IE 9]>
     <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
   <![endif]-->
   <style type="text/css">pre, code, tt { color: #1d6ae5; }</style>
 </head>
 <body>
-<header>
+<header id="title-block-header">
 <h1 class="title">Testing the JDK</h1>
 </header>
 <nav id="TOC">
@@ -33,6 +38,9 @@
 <li><a href="#jtreg-keywords">JTReg keywords</a></li>
 <li><a href="#gtest-keywords">Gtest keywords</a></li>
 <li><a href="#microbenchmark-keywords">Microbenchmark keywords</a></li>
+</ul></li>
+<li><a href="#notes-for-specific-tests">Notes for Specific Tests</a><ul>
+<li><a href="#docker-tests">Docker Tests</a></li>
 </ul></li>
 </ul>
 </nav>
@@ -180,5 +188,11 @@ TEST FAILURE</code></pre>
 <p>Additional VM arguments to provide to forked off VMs. Same as <code>-jvmArgs &lt;args&gt;</code></p>
 <h4 id="options-2">OPTIONS</h4>
 <p>Additional arguments to send to JMH.</p>
+<h2 id="notes-for-specific-tests">Notes for Specific Tests</h2>
+<h3 id="docker-tests">Docker Tests</h3>
+<p>Docker tests with default parameters may fail on systems with glibc versions not compatible with the one used in the default docker image (e.g., Oracle Linux 7.6 for x86). For example, they pass on Ubuntu 16.04 but fail on Ubuntu 18.04 if run like this on x86:</p>
+<pre><code>$ make test TEST=&quot;jtreg:test/hotspot/jtreg/runtime/containers/docker&quot;</code></pre>
+<p>To run these tests correctly, additional parameters for the correct docker image are required on Ubuntu 18.04 by using <code>JAVA_OPTIONS</code>.</p>
+<pre><code>$ make test TEST=&quot;jtreg:test/hotspot/jtreg/runtime/containers/docker&quot; JTREG=&quot;JAVA_OPTIONS=-Djdk.test.docker.image.name=ubuntu -Djdk.test.docker.image.version=latest&quot;</code></pre>
 </body>
 </html>

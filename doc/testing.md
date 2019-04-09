@@ -373,6 +373,21 @@ Additional VM arguments to provide to forked off VMs. Same as `-jvmArgs <args>`
 #### OPTIONS
 Additional arguments to send to JMH.
 
+## Notes for Specific Tests
+
+### Docker Tests
+
+Docker tests with default parameters may fail on systems with glibc versions not
+compatible with the one used in the default docker image (e.g., Oracle Linux 7.6 for x86).
+For example, they pass on Ubuntu 16.04 but fail on Ubuntu 18.04 if run like this on x86:
+
+    $ make test TEST="jtreg:test/hotspot/jtreg/runtime/containers/docker"
+
+To run these tests correctly, additional parameters for the correct docker image are
+required on Ubuntu 18.04 by using `JAVA_OPTIONS`.
+
+    $ make test TEST="jtreg:test/hotspot/jtreg/runtime/containers/docker" JTREG="JAVA_OPTIONS=-Djdk.test.docker.image.name=ubuntu -Djdk.test.docker.image.version=latest"
+
 ---
 # Override some definitions in the global css file that are not optimal for
 # this document.
