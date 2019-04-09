@@ -139,6 +139,11 @@ void ShenandoahArguments::initialize() {
     FLAG_SET_DEFAULT(ShenandoahUncommit, false);
   }
 
+  if ((InitialHeapSize == MaxHeapSize) && ShenandoahUncommit) {
+    log_info(gc)("Min heap equals to max heap, disabling ShenandoahUncommit");
+    FLAG_SET_DEFAULT(ShenandoahUncommit, false);
+  }
+
   // If class unloading is disabled, no unloading for concurrent cycles as well.
   // If class unloading is enabled, users should opt-in for unloading during
   // concurrent cycles.

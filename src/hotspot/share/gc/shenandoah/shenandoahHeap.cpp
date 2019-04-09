@@ -141,6 +141,7 @@ jint ShenandoahHeap::initialize() {
   //
 
   size_t init_byte_size = collector_policy()->initial_heap_byte_size();
+  size_t min_byte_size  = collector_policy()->min_heap_byte_size();
   size_t max_byte_size  = collector_policy()->max_heap_byte_size();
   size_t heap_alignment = collector_policy()->heap_alignment();
 
@@ -159,8 +160,13 @@ jint ShenandoahHeap::initialize() {
   size_t num_committed_regions = init_byte_size / reg_size_bytes;
   num_committed_regions = MIN2(num_committed_regions, _num_regions);
   assert(num_committed_regions <= _num_regions, "sanity");
-
   _initial_size = num_committed_regions * reg_size_bytes;
+
+  size_t num_min_regions = min_byte_size / reg_size_bytes;
+  num_min_regions = MIN2(num_min_regions, _num_regions);
+  assert(num_min_regions <= _num_regions, "sanity");
+  _minimum_size = num_min_regions * reg_size_bytes;
+
   _committed = _initial_size;
 
   size_t heap_page_size   = UseLargePages ? (size_t)os::large_page_size() : (size_t)os::vm_page_size();
@@ -351,8 +357,11 @@ jint ShenandoahHeap::initialize() {
 
   _control_thread = new ShenandoahControlThread();
 
-  log_info(gc, init)("Initialize Shenandoah heap with initial size " SIZE_FORMAT "%s",
-                     byte_size_in_proper_unit(_initial_size), proper_unit_for_byte_size(_initial_size));
+  log_info(gc, init)("Initialize Shenandoah heap: " SIZE_FORMAT "%s initial, " SIZE_FORMAT "%s min, " SIZE_FORMAT "%s max",
+                     byte_size_in_proper_unit(_initial_size),  proper_unit_for_byte_size(_initial_size),
+                     byte_size_in_proper_unit(_minimum_size),  proper_unit_for_byte_size(_minimum_size),
+                     byte_size_in_proper_unit(max_capacity()), proper_unit_for_byte_size(max_capacity())
+  );
 
   log_info(gc, init)("Safepointing mechanism: %s",
                      SafepointMechanism::uses_thread_local_poll() ? "thread-local poll" :
@@ -622,6 +631,10 @@ size_t ShenandoahHeap::max_capacity() const {
   return _num_regions * ShenandoahHeapRegion::region_size_bytes();
 }
 
+size_t ShenandoahHeap::min_capacity() const {
+  return _minimum_size;
+}
+
 size_t ShenandoahHeap::initial_capacity() const {
   return _initial_size;
 }
@@ -635,12 +648,22 @@ bool ShenandoahHeap::is_in(const void* p) const {
 void ShenandoahHeap::op_uncommit(double shrink_before) {
   assert (ShenandoahUncommit, "should be enabled");
 
+  // Application allocates from the beginning of the heap, and GC allocates at
+  // the end of it. It is more efficient to uncommit from the end, so that applications
+  // could enjoy the near committed regions. GC allocations are much less frequent,
+  // and therefore can accept the committing costs.
+
   size_t count = 0;
-  for (size_t i = 0; i < num_regions(); i++) {
-    ShenandoahHeapRegion* r = get_region(i);
+  for (size_t i = num_regions(); i > 0; i--) { // care about size_t underflow
+    ShenandoahHeapRegion* r = get_region(i - 1);
     if (r->is_empty_committed() && (r->empty_time() < shrink_before)) {
       ShenandoahHeapLocker locker(lock());
       if (r->is_empty_committed()) {
+        // Do not uncommit below minimal capacity
+        if (committed() < min_capacity() + ShenandoahHeapRegion::region_size_bytes()) {
+          break;
+        }
+
         r->make_uncommitted();
         count++;
       }
