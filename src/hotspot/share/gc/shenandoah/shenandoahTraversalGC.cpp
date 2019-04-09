@@ -595,11 +595,10 @@ void ShenandoahTraversalGC::final_traversal_collection() {
   }
 
   if (!_heap->cancelled_gc()) {
+    fixup_roots();
     if (_heap->unload_classes()) {
       _heap->unload_classes_and_cleanup_tables(false);
     }
-
-    fixup_roots();
   }
 
   if (!_heap->cancelled_gc()) {
@@ -764,29 +763,6 @@ public:
     _queue(q), _thread(Thread::current()),
     _traversal_gc(ShenandoahHeap::heap()->traversal_gc()),
     _mark_context(ShenandoahHeap::heap()->marking_context()) {}
-
-  void do_oop(narrowOop* p) { do_oop_work(p); }
-  void do_oop(oop* p)       { do_oop_work(p); }
-};
-
-class ShenandoahTraversalWeakUpdateClosure : public OopClosure {
-private:
-  template <class T>
-  inline void do_oop_work(T* p) {
-    // Cannot call maybe_update_with_forwarded, because on traversal-degen
-    // path the collection set is already dropped. Instead, do the unguarded store.
-    // TODO: This can be fixed after degen-traversal stops dropping cset.
-    T o = RawAccess<>::oop_load(p);
-    if (!CompressedOops::is_null(o)) {
-      oop obj = CompressedOops::decode_not_null(o);
-      obj = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
-      shenandoah_assert_marked(p, obj);
-      RawAccess<IS_NOT_NULL>::oop_store(p, obj);
-    }
-  }
-
-public:
-  ShenandoahTraversalWeakUpdateClosure() {}
 
   void do_oop(narrowOop* p) { do_oop_work(p); }
   void do_oop(oop* p)       { do_oop_work(p); }
@@ -1104,16 +1080,6 @@ void ShenandoahTraversalGC::weak_refs_work_doit() {
                                       &pt);
   }
 
-  {
-    ShenandoahGCPhase phase(phase_process);
-    ShenandoahTerminationTracker termination(ShenandoahPhaseTimings::weakrefs_termination);
-
-    // Process leftover weak oops (using parallel version)
-    ShenandoahTraversalWeakUpdateClosure cl;
-    WeakProcessor::weak_oops_do(workers, &is_alive, &cl, 1);
-
-    pt.print_all_references();
-
-    assert(task_queues()->is_empty() || _heap->cancelled_gc(), "Should be empty");
-  }
+  pt.print_all_references();
+  assert(task_queues()->is_empty() || _heap->cancelled_gc(), "Should be empty");
 }
