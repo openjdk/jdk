@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package javax.sound.midi;
+
+import com.sun.media.sound.MidiUtils;
 
 /**
  * A {@code SysexMessage} object represents a MIDI system exclusive message.
@@ -183,10 +185,7 @@ public class SysexMessage extends MidiMessage {
      */
     @Override
     public void setMessage(byte[] data, int length) throws InvalidMidiDataException {
-        int status = (data[0] & 0xFF);
-        if ((status != 0xF0) && (status != 0xF7)) {
-            throw new InvalidMidiDataException("Invalid status byte for sysex message: 0x" + Integer.toHexString(status));
-        }
+        MidiUtils.checkSysexStatus(data, length);
         super.setMessage(data, length);
     }
 
@@ -200,9 +199,7 @@ public class SysexMessage extends MidiMessage {
      *         system exclusive message
      */
     public void setMessage(int status, byte[] data, int length) throws InvalidMidiDataException {
-        if ( (status != 0xF0) && (status != 0xF7) ) {
-            throw new InvalidMidiDataException("Invalid status byte for sysex message: 0x" + Integer.toHexString(status));
-        }
+        MidiUtils.checkSysexStatus(status);
         if (length < 0 || length > data.length) {
             throw new IndexOutOfBoundsException("length out of bounds: "+length);
         }

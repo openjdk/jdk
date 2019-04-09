@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,16 @@ package com.sun.media.sound;
 
 import java.util.ArrayList;
 
+import javax.sound.midi.InvalidMidiDataException;
 import javax.sound.midi.MetaMessage;
 import javax.sound.midi.MidiDevice;
 import javax.sound.midi.MidiEvent;
 import javax.sound.midi.MidiMessage;
 import javax.sound.midi.Sequence;
 import javax.sound.midi.Track;
+
+import static javax.sound.midi.SysexMessage.SPECIAL_SYSTEM_EXCLUSIVE;
+import static javax.sound.midi.SysexMessage.SYSTEM_EXCLUSIVE;
 
 // TODO:
 // - define and use a global symbolic constant for 60000000 (see convertTempo)
@@ -63,6 +67,37 @@ public final class MidiUtils {
     static RuntimeException unsupportedDevice(final MidiDevice.Info info) {
         return new IllegalArgumentException(String.format(
                 "MidiDevice %s not supported by this provider", info));
+    }
+
+    /**
+     * Checks the status byte for the system exclusive message.
+     *
+     * @param  data the system exclusive message data
+     * @param  length the length of the valid message data in the array
+     * @throws InvalidMidiDataException if the status byte is invalid for a
+     *         system exclusive message
+     */
+    public static void checkSysexStatus(final byte[] data, final int length)
+            throws InvalidMidiDataException {
+        if (data.length == 0 || length == 0) {
+            throw new InvalidMidiDataException("Status byte is missing");
+        }
+        checkSysexStatus(data[0] & 0xFF);
+    }
+
+    /**
+     * Checks the status byte for the system exclusive message.
+     *
+     * @param  status the status byte for the message (0xF0 or 0xF7)
+     * @throws InvalidMidiDataException if the status byte is invalid for a
+     *         system exclusive message
+     */
+    public static void checkSysexStatus(final int status)
+            throws InvalidMidiDataException {
+        if (status != SYSTEM_EXCLUSIVE && status != SPECIAL_SYSTEM_EXCLUSIVE) {
+            throw new InvalidMidiDataException(String.format(
+                    "Invalid status byte for sysex message: 0x%X", status));
+        }
     }
 
     /** return true if the passed message is Meta End Of Track */

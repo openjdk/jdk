@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,9 +37,7 @@ final class FastSysexMessage extends SysexMessage {
 
     FastSysexMessage(byte[] data) throws InvalidMidiDataException {
         super(data);
-        if (data.length==0 || (((data[0] & 0xFF) != 0xF0) && ((data[0] & 0xFF) != 0xF7))) {
-            super.setMessage(data, data.length); // will throw Exception
-        }
+        MidiUtils.checkSysexStatus(data, data.length);
     }
 
     /**
@@ -54,9 +52,7 @@ final class FastSysexMessage extends SysexMessage {
     // which is shared among all transmitters, cannot be modified
     @Override
     public void setMessage(byte[] data, int length) throws InvalidMidiDataException {
-        if ((data.length == 0) || (((data[0] & 0xFF) != 0xF0) && ((data[0] & 0xFF) != 0xF7))) {
-            super.setMessage(data, data.length); // will throw Exception
-        }
+        MidiUtils.checkSysexStatus(data, length);
         this.length = length;
         this.data = new byte[this.length];
         System.arraycopy(data, 0, this.data, 0, length);
