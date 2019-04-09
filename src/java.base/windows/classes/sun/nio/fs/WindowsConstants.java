@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,7 @@ class WindowsConstants {
     public static final int IO_REPARSE_TAG_SYMLINK              = 0xA000000C;
     public static final int MAXIMUM_REPARSE_DATA_BUFFER_SIZE    = 16 * 1024;
     public static final int SYMBOLIC_LINK_FLAG_DIRECTORY        = 0x1;
+    public static final int SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE = 0x2;
 
     // volume flags
     public static final int FILE_CASE_SENSITIVE_SEARCH      = 0x00000001;
@@ -104,6 +105,7 @@ class WindowsConstants {
     public static final int ERROR_MORE_DATA             = 234;
     public static final int ERROR_DIRECTORY             = 267;
     public static final int ERROR_NOTIFY_ENUM_DIR       = 1022;
+    public static final int ERROR_PRIVILEGE_NOT_HELD    = 1314;
     public static final int ERROR_NONE_MAPPED           = 1332;
     public static final int ERROR_NOT_A_REPARSE_POINT   = 4390;
     public static final int ERROR_INVALID_REPARSE_DATA  = 4392;
