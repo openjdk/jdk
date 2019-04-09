@@ -64,6 +64,7 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
 import jdk.internal.module.ModulePatcher.PatchedModuleReader;
 import jdk.internal.module.Resources;
+import jdk.internal.vm.annotation.Stable;
 
 
 /**
@@ -117,14 +118,18 @@ public class BuiltinClassLoader
     private static class LoadedModule {
         private final BuiltinClassLoader loader;
         private final ModuleReference mref;
-        private final URL codeSourceURL;          // may be null
+        private final URI uri;                      // may be null
+        private @Stable URL codeSourceURL;          // may be null
 
         LoadedModule(BuiltinClassLoader loader, ModuleReference mref) {
             URL url = null;
-            if (mref.location().isPresent()) {
-                try {
-                    url = mref.location().get().toURL();
-                } catch (MalformedURLException | IllegalArgumentException e) { }
+            this.uri = mref.location().orElse(null);
+
+            // for non-jrt schemes we need to resolve the codeSourceURL
+            // eagerly during bootstrap since the handler might be
+            // overridden
+            if (uri != null && !"jrt".equals(uri.getScheme())) {
+                url = createURL(uri);
             }
             this.loader = loader;
             this.mref = mref;
@@ -134,7 +139,23 @@ public class BuiltinClassLoader
         BuiltinClassLoader loader() { return loader; }
         ModuleReference mref() { return mref; }
         String name() { return mref.descriptor().name(); }
-        URL codeSourceURL() { return codeSourceURL; }
+
+        URL codeSourceURL() {
+            URL url = codeSourceURL;
+            if (url == null && uri != null) {
+                codeSourceURL = url = createURL(uri);
+            }
+            return url;
+        }
+
+        private URL createURL(URI uri) {
+            URL url = null;
+            try {
+                url = uri.toURL();
+            } catch (MalformedURLException | IllegalArgumentException e) {
+            }
+            return url;
+        }
     }
 
 
