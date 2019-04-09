@@ -882,6 +882,11 @@ class ImmutableCollections {
         }
 
         @Override
+        public V get(Object o) {
+            return o.equals(k0) ? v0 : null; // implicit nullcheck of o
+        }
+
+        @Override
         public boolean containsKey(Object o) {
             return o.equals(k0); // implicit nullcheck of o
         }
