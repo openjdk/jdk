@@ -25,89 +25,78 @@
 #ifndef SHARE_PRIMS_RESOLVEDMETHODTABLE_HPP
 #define SHARE_PRIMS_RESOLVEDMETHODTABLE_HPP
 
+#include "gc/shared/oopStorage.hpp"
+#include "gc/shared/oopStorageParState.hpp"
+#include "memory/allocation.hpp"
 #include "oops/symbol.hpp"
 #include "oops/weakHandle.hpp"
+#include "utilities/concurrentHashTable.hpp"
 #include "utilities/hashtable.hpp"
 
-// Hashtable to record Method* used in ResolvedMethods, via. ResolvedMethod oops.
-// This is needed for redefinition to replace Method* with redefined versions.
+class ResolvedMethodTable;
+class ResolvedMethodTableConfig;
+typedef ConcurrentHashTable<WeakHandle<vm_resolved_method_table_data>, ResolvedMethodTableConfig, mtClass> ResolvedMethodTableHash;
 
-// Entry in a ResolvedMethodTable, mapping a ClassLoaderWeakHandle for a single oop of
-// java_lang_invoke_ResolvedMethodName which holds JVM Method* in vmtarget.
+class ResolvedMethodTable : public AllStatic {
+  static ResolvedMethodTableHash* _local_table;
+  static size_t                   _current_size;
 
-class ResolvedMethodEntry : public HashtableEntry<ClassLoaderWeakHandle, mtClass> {
- public:
-  ResolvedMethodEntry* next() const {
-    return (ResolvedMethodEntry*)HashtableEntry<ClassLoaderWeakHandle, mtClass>::next();
-  }
+  static OopStorage*              _weak_handles;
 
-  ResolvedMethodEntry** next_addr() {
-    return (ResolvedMethodEntry**)HashtableEntry<ClassLoaderWeakHandle, mtClass>::next_addr();
-  }
+  static volatile bool            _has_work;
 
-  oop object();
-  oop object_no_keepalive();
-
-  void print_on(outputStream* st) const;
-};
-
-class ResolvedMethodTable : public Hashtable<ClassLoaderWeakHandle, mtClass> {
-  enum Constants {
-    _table_size  = 1007
-  };
-
-  static int _total_oops_removed;
-
-  static bool _dead_entries;
-
-  static ResolvedMethodTable* _the_table;
-private:
-  ResolvedMethodEntry* bucket(int i) {
-    return (ResolvedMethodEntry*) Hashtable<ClassLoaderWeakHandle, mtClass>::bucket(i);
-  }
-
-  ResolvedMethodEntry** bucket_addr(int i) {
-    return (ResolvedMethodEntry**) Hashtable<ClassLoaderWeakHandle, mtClass>::bucket_addr(i);
-  }
-
-  unsigned int compute_hash(Method* method);
-
-  // need not be locked; no state change
-  oop lookup(int index, unsigned int hash, Method* method);
-  oop lookup(Method* method);
-
-  // must be done under ResolvedMethodTable_lock
-  oop basic_add(Method* method, Handle rmethod_name);
+  static volatile size_t          _items_count;
+  static volatile size_t          _uncleaned_items_count;
 
 public:
-  ResolvedMethodTable();
+  // Initialization
+  static void create_table();
 
-  static void create_table() {
-    assert(_the_table == NULL, "One symbol table allowed.");
-    _the_table = new ResolvedMethodTable();
-  }
+  static size_t table_size();
 
-  // Called from java_lang_invoke_ResolvedMethodName
-  static oop find_method(Method* method);
-  static oop add_method(const methodHandle& method, Handle rmethod_name);
+  // Lookup and inserts
+  static oop find_method(const Method* method);
+  static oop add_method(const Method* method, Handle rmethod_name);
 
-  static bool has_work() { return _dead_entries; }
-  static void trigger_cleanup();
+  // Callbacks
+  static void item_added();
+  static void item_removed();
 
-  static int removed_entries_count() { return _total_oops_removed; };
+  // Cleaning
+  static bool has_work();
 
-#if INCLUDE_JVMTI
-  // It is called at safepoint only for RedefineClasses
-  static void adjust_method_entries(bool * trace_name_printed);
-#endif // INCLUDE_JVMTI
+  // GC Support - Backing storage for the oop*s
+  static OopStorage* weak_storage();
 
-  // Cleanup cleared entries
-  static void unlink();
+  // Cleaning and table management
 
-#ifndef PRODUCT
-  void print();
-#endif
-  void verify();
+  static double get_load_factor();
+  static double get_dead_factor();
+
+  static void check_concurrent_work();
+  static void trigger_concurrent_work();
+  static void do_concurrent_work(JavaThread* jt);
+
+  static void grow(JavaThread* jt);
+  static void clean_dead_entries(JavaThread* jt);
+
+  // GC Notification
+
+  // Must be called before a parallel walk where objects might die.
+  static void reset_dead_counter();
+  // After the parallel walk this method must be called to trigger
+  // cleaning. Note it might trigger a resize instead.
+  static void finish_dead_counter();
+  // If GC uses ParState directly it should add the number of cleared
+  // entries to this method.
+  static void inc_dead_counter(size_t ndead);
+
+  // JVMTI Support - It is called at safepoint only for RedefineClasses
+  JVMTI_ONLY(static void adjust_method_entries(bool * trace_name_printed);)
+
+  // Debugging
+  static size_t items_count();
+  static size_t verify_and_compare_entries();
 };
 
 #endif // SHARE_PRIMS_RESOLVEDMETHODTABLE_HPP

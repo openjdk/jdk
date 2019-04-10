@@ -149,14 +149,17 @@ private:
   ZOopStorageIterator _vm_weak_handles_iter;
   ZOopStorageIterator _jni_weak_handles_iter;
   ZOopStorageIterator _string_table_iter;
+  ZOopStorageIterator _resolved_method_table_iter;
 
   void do_vm_weak_handles(ZRootsIteratorClosure* cl);
   void do_jni_weak_handles(ZRootsIteratorClosure* cl);
   void do_string_table(ZRootsIteratorClosure* cl);
+  void do_resolved_method_table(ZRootsIteratorClosure* cl);
 
-  ZParallelOopsDo<ZConcurrentWeakRootsIterator, &ZConcurrentWeakRootsIterator::do_vm_weak_handles>  _vm_weak_handles;
-  ZParallelOopsDo<ZConcurrentWeakRootsIterator, &ZConcurrentWeakRootsIterator::do_jni_weak_handles> _jni_weak_handles;
-  ZParallelOopsDo<ZConcurrentWeakRootsIterator, &ZConcurrentWeakRootsIterator::do_string_table>     _string_table;
+  ZParallelOopsDo<ZConcurrentWeakRootsIterator, &ZConcurrentWeakRootsIterator::do_vm_weak_handles>       _vm_weak_handles;
+  ZParallelOopsDo<ZConcurrentWeakRootsIterator, &ZConcurrentWeakRootsIterator::do_jni_weak_handles>      _jni_weak_handles;
+  ZParallelOopsDo<ZConcurrentWeakRootsIterator, &ZConcurrentWeakRootsIterator::do_string_table>          _string_table;
+  ZParallelOopsDo<ZConcurrentWeakRootsIterator, &ZConcurrentWeakRootsIterator::do_resolved_method_table> _resolved_method_table;
 
 public:
   ZConcurrentWeakRootsIterator();

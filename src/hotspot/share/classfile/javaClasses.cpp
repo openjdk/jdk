@@ -3635,23 +3635,48 @@ void java_lang_invoke_ResolvedMethodName::set_vmtarget(oop resolved_method, Meth
   resolved_method->address_field_put(_vmtarget_offset, (address)m);
 }
 
+void java_lang_invoke_ResolvedMethodName::set_vmholder(oop resolved_method, oop holder) {
+  assert(is_instance(resolved_method), "wrong type");
+  resolved_method->obj_field_put(_vmholder_offset, holder);
+}
+
 oop java_lang_invoke_ResolvedMethodName::find_resolved_method(const methodHandle& m, TRAPS) {
+  const Method* method = m();
+
   // lookup ResolvedMethod oop in the table, or create a new one and intern it
-  oop resolved_method = ResolvedMethodTable::find_method(m());
-  if (resolved_method == NULL) {
-    InstanceKlass* k = SystemDictionary::ResolvedMethodName_klass();
-    if (!k->is_initialized()) {
-      k->initialize(CHECK_NULL);
-    }
-    oop new_resolved_method = k->allocate_instance(CHECK_NULL);
-    new_resolved_method->address_field_put(_vmtarget_offset, (address)m());
-    // Add a reference to the loader (actually mirror because unsafe anonymous classes will not have
-    // distinct loaders) to ensure the metadata is kept alive.
-    // This mirror may be different than the one in clazz field.
-    new_resolved_method->obj_field_put(_vmholder_offset, m->method_holder()->java_mirror());
-    resolved_method = ResolvedMethodTable::add_method(m, Handle(THREAD, new_resolved_method));
+  oop resolved_method = ResolvedMethodTable::find_method(method);
+  if (resolved_method != NULL) {
+    return resolved_method;
   }
-  return resolved_method;
+
+  InstanceKlass* k = SystemDictionary::ResolvedMethodName_klass();
+  if (!k->is_initialized()) {
+    k->initialize(CHECK_NULL);
+  }
+
+  oop new_resolved_method = k->allocate_instance(CHECK_NULL);
+
+  NoSafepointVerifier nsv;
+
+  if (method->is_old()) {
+    method = (method->is_deleted()) ? Universe::throw_no_such_method_error() :
+                                      method->get_new_method();
+  }
+
+  InstanceKlass* holder = method->method_holder();
+
+  set_vmtarget(new_resolved_method, const_cast<Method*>(method));
+  // Add a reference to the loader (actually mirror because unsafe anonymous classes will not have
+  // distinct loaders) to ensure the metadata is kept alive.
+  // This mirror may be different than the one in clazz field.
+  set_vmholder(new_resolved_method, holder->java_mirror());
+
+  // Set flag in class to indicate this InstanceKlass has entries in the table
+  // to avoid walking table during redefinition if none of the redefined classes
+  // have any membernames in the table.
+  holder->set_has_resolved_methods();
+
+  return ResolvedMethodTable::add_method(method, Handle(THREAD, new_resolved_method));
 }
 
 oop java_lang_invoke_LambdaForm::vmentry(oop lform) {

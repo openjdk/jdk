@@ -2092,8 +2092,8 @@ WB_ENTRY(void, WB_DisableElfSectionCache(JNIEnv* env))
 #endif
 WB_END
 
-WB_ENTRY(jint, WB_ResolvedMethodRemovedCount(JNIEnv* env, jobject o))
-  return (jint) ResolvedMethodTable::removed_entries_count();
+WB_ENTRY(jlong, WB_ResolvedMethodItemsCount(JNIEnv* env, jobject o))
+  return (jlong) ResolvedMethodTable::items_count();
 WB_END
 
 WB_ENTRY(jint, WB_ProtectionDomainRemovedCount(JNIEnv* env, jobject o))
@@ -2337,7 +2337,7 @@ static JNINativeMethod methods[] = {
   {CC"isContainerized",           CC"()Z",            (void*)&WB_IsContainerized },
   {CC"printOsInfo",               CC"()V",            (void*)&WB_PrintOsInfo },
   {CC"disableElfSectionCache",    CC"()V",            (void*)&WB_DisableElfSectionCache },
-  {CC"resolvedMethodRemovedCount",     CC"()I",       (void*)&WB_ResolvedMethodRemovedCount },
+  {CC"resolvedMethodItemsCount",  CC"()J",            (void*)&WB_ResolvedMethodItemsCount },
   {CC"protectionDomainRemovedCount",   CC"()I",       (void*)&WB_ProtectionDomainRemovedCount },
   {CC"aotLibrariesCount", CC"()I",                    (void*)&WB_AotLibrariesCount },
 };

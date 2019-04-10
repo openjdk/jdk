@@ -26,6 +26,7 @@
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "gc/shared/weakProcessorPhases.hpp"
+#include "prims/resolvedMethodTable.hpp"
 #include "runtime/jniHandles.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
@@ -80,6 +81,7 @@ const char* WeakProcessorPhases::description(Phase phase) {
   JFR_ONLY(case jfr: return "JFR weak processing";)
   case jni: return "JNI weak processing";
   case stringtable: return "StringTable weak processing";
+  case resolved_method_table: return "ResolvedMethodTable weak processing";
   case vm: return "VM weak processing";
   default:
     ShouldNotReachHere();
@@ -101,6 +103,7 @@ OopStorage* WeakProcessorPhases::oop_storage(Phase phase) {
   switch (phase) {
   case jni: return JNIHandles::weak_global_handles();
   case stringtable: return StringTable::weak_storage();
+  case resolved_method_table: return ResolvedMethodTable::weak_storage();
   case vm: return SystemDictionary::vm_weak_oop_storage();
   default:
     ShouldNotReachHere();
@@ -110,4 +113,8 @@ OopStorage* WeakProcessorPhases::oop_storage(Phase phase) {
 
 bool WeakProcessorPhases::is_stringtable(Phase phase) {
   return phase == stringtable;
+}
+
+bool WeakProcessorPhases::is_resolved_method_table(Phase phase) {
+  return phase == resolved_method_table;
 }

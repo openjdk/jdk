@@ -32,6 +32,7 @@
 #include "gc/shared/weakProcessorPhases.hpp"
 #include "gc/shared/weakProcessorPhaseTimes.hpp"
 #include "gc/shared/workgroup.hpp"
+#include "prims/resolvedMethodTable.hpp"
 #include "utilities/debug.hpp"
 
 class BoolObjectClosure;
@@ -114,6 +115,9 @@ void WeakProcessor::Task::work(uint worker_id,
       }
       if (WeakProcessorPhases::is_stringtable(phase)) {
         StringTable::inc_dead_counter(cl.num_dead() + cl.num_skipped());
+      }
+      if (WeakProcessorPhases::is_resolved_method_table(phase)) {
+        ResolvedMethodTable::inc_dead_counter(cl.num_dead() + cl.num_skipped());
       }
     }
   }
