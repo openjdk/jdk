@@ -91,6 +91,10 @@ public class DivModTests {
         testIntFloorDivMod(Integer.MIN_VALUE, 3, -715827883, 1);
         testIntFloorDivMod(Integer.MIN_VALUE + 1, 3, -715827883, 2);
         testIntFloorDivMod(Integer.MIN_VALUE + 1, -1, Integer.MAX_VALUE, 0);
+        testIntFloorDivMod(Integer.MAX_VALUE, Integer.MAX_VALUE, 1, 0);
+        testIntFloorDivMod(Integer.MAX_VALUE, Integer.MIN_VALUE, -1, -1);
+        testIntFloorDivMod(Integer.MIN_VALUE, Integer.MIN_VALUE, 1, 0);
+        testIntFloorDivMod(Integer.MIN_VALUE, Integer.MAX_VALUE, -2, 2147483646);
         // Special case of integer overflow
         testIntFloorDivMod(Integer.MIN_VALUE, -1, Integer.MIN_VALUE, 0);
     }
@@ -179,6 +183,10 @@ public class DivModTests {
         testLongFloorDivMod(Long.MIN_VALUE, 3L, Long.MIN_VALUE / 3L - 1L, 1L);
         testLongFloorDivMod(Long.MIN_VALUE + 1L, 3L, Long.MIN_VALUE / 3L - 1L, 2L);
         testLongFloorDivMod(Long.MIN_VALUE + 1, -1, Long.MAX_VALUE, 0L);
+        testLongFloorDivMod(Long.MAX_VALUE, Long.MAX_VALUE, 1L, 0L);
+        testLongFloorDivMod(Long.MAX_VALUE, Long.MIN_VALUE, -1L, -1L);
+        testLongFloorDivMod(Long.MIN_VALUE, Long.MIN_VALUE, 1L, 0L);
+        testLongFloorDivMod(Long.MIN_VALUE, Long.MAX_VALUE, -2L, 9223372036854775806L);
         // Special case of integer overflow
         testLongFloorDivMod(Long.MIN_VALUE, -1, Long.MIN_VALUE, 0L);
     }
@@ -283,6 +291,10 @@ public class DivModTests {
         testLongIntFloorDivMod(Long.MIN_VALUE, 3, Long.MIN_VALUE / 3L - 1L, 1L);
         testLongIntFloorDivMod(Long.MIN_VALUE + 1L, 3, Long.MIN_VALUE / 3L - 1L, 2L);
         testLongIntFloorDivMod(Long.MIN_VALUE + 1, -1, Long.MAX_VALUE, 0L);
+        testLongIntFloorDivMod(Long.MAX_VALUE, Integer.MAX_VALUE, 4294967298L, 1);
+        testLongIntFloorDivMod(Long.MAX_VALUE, Integer.MIN_VALUE, -4294967296L, -1);
+        testLongIntFloorDivMod(Long.MIN_VALUE, Integer.MIN_VALUE, 4294967296L, 0);
+        testLongIntFloorDivMod(Long.MIN_VALUE, Integer.MAX_VALUE, -4294967299L, 2147483645);
         // Special case of integer overflow
         testLongIntFloorDivMod(Long.MIN_VALUE, -1, Long.MIN_VALUE, 0L);
     }
