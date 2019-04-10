@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,8 @@ bool Abstract_VM_Version::_supports_atomic_getadd4 = false;
 bool Abstract_VM_Version::_supports_atomic_getadd8 = false;
 unsigned int Abstract_VM_Version::_logical_processors_per_package = 1U;
 unsigned int Abstract_VM_Version::_L1_data_cache_line_size = 0;
+
+VirtualizationType Abstract_VM_Version::_detected_virtualization = NoDetectedVirtualization;
 
 #ifndef HOTSPOT_VERSION_STRING
   #error HOTSPOT_VERSION_STRING must be defined
@@ -295,7 +297,6 @@ unsigned int Abstract_VM_Version::jvm_version() {
          (Abstract_VM_Version::vm_build_number() & 0xFF);
 }
 
-
 void VM_Version_init() {
   VM_Version::initialize();
 
@@ -306,3 +307,27 @@ void VM_Version_init() {
     os::print_cpu_info(&ls, buf, sizeof(buf));
   }
 }
+
+bool Abstract_VM_Version::print_matching_lines_from_file(const char* filename, outputStream* st, const char* keywords_to_match[]) {
+  char line[500];
+  FILE* fp = fopen(filename, "r");
+  if (fp == NULL) {
+    return false;
+  }
+
+  st->print_cr("Virtualization information:");
+  while (fgets(line, sizeof(line), fp) != NULL) {
+    int i = 0;
+    while (keywords_to_match[i] != NULL) {
+      if (strncmp(line, keywords_to_match[i], strlen(keywords_to_match[i])) == 0) {
+        st->print("%s", line);
+        break;
+      }
+      i++;
+    }
+  }
+  fclose(fp);
+  return true;
+}
+
+

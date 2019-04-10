@@ -89,6 +89,9 @@ public:
   static void initialize();
 
   // Override Abstract_VM_Version implementation
+  static void print_platform_virtualization_info(outputStream*);
+
+  // Override Abstract_VM_Version implementation
   static bool use_biased_locking();
 
   static bool is_determine_features_test_running() { return _is_determine_features_test_running; }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1573,6 +1573,65 @@ void VM_Version::get_processor_features() {
 #endif // !PRODUCT
 }
 
+void VM_Version::print_platform_virtualization_info(outputStream* st) {
+  VirtualizationType vrt = VM_Version::get_detected_virtualization();
+  if (vrt == XenHVM) {
+    st->print_cr("Xen hardware-assisted virtualization detected");
+  } else if (vrt == KVM) {
+    st->print_cr("KVM virtualization detected");
+  } else if (vrt == VMWare) {
+    st->print_cr("VMWare virtualization detected");
+  } else if (vrt == HyperV) {
+    st->print_cr("HyperV virtualization detected");
+  }
+}
+
+void VM_Version::check_virt_cpuid(uint32_t idx, uint32_t *regs) {
+// TODO support 32 bit
+#if defined(_LP64)
+#if defined(_MSC_VER)
+  // Allocate space for the code
+  const int code_size = 100;
+  ResourceMark rm;
+  CodeBuffer cb("detect_virt", code_size, 0);
+  MacroAssembler* a = new MacroAssembler(&cb);
+  address code = a->pc();
+  void (*test)(uint32_t idx, uint32_t *regs) = (void(*)(uint32_t idx, uint32_t *regs))code;
+
+  a->movq(r9, rbx); // save nonvolatile register
+
+  // next line would not work on 32-bit
+  a->movq(rax, c_rarg0 /* rcx */);
+  a->movq(r8, c_rarg1 /* rdx */);
+  a->cpuid();
+  a->movl(Address(r8,  0), rax);
+  a->movl(Address(r8,  4), rbx);
+  a->movl(Address(r8,  8), rcx);
+  a->movl(Address(r8, 12), rdx);
+
+  a->movq(rbx, r9); // restore nonvolatile register
+  a->ret(0);
+
+  uint32_t *code_end = (uint32_t *)a->pc();
+  a->flush();
+
+  // execute code
+  (*test)(idx, regs);
+#elif defined(__GNUC__)
+  __asm__ volatile (
+     "        cpuid;"
+     "        mov %%eax,(%1);"
+     "        mov %%ebx,4(%1);"
+     "        mov %%ecx,8(%1);"
+     "        mov %%edx,12(%1);"
+     : "+a" (idx)
+     : "S" (regs)
+     : "ebx", "ecx", "edx", "memory" );
+#endif
+#endif
+}
+
+
 bool VM_Version::use_biased_locking() {
 #if INCLUDE_RTM_OPT
   // RTM locking is most useful when there is high lock contention and
@@ -1594,6 +1653,54 @@ bool VM_Version::use_biased_locking() {
   return UseBiasedLocking;
 }
 
+// On Xen, the cpuid instruction returns
+//  eax / registers[0]: Version of Xen
+//  ebx / registers[1]: chars 'XenV'
+//  ecx / registers[2]: chars 'MMXe'
+//  edx / registers[3]: chars 'nVMM'
+//
+// On KVM / VMWare / MS Hyper-V, the cpuid instruction returns
+//  ebx / registers[1]: chars 'KVMK' / 'VMwa' / 'Micr'
+//  ecx / registers[2]: chars 'VMKV' / 'reVM' / 'osof'
+//  edx / registers[3]: chars 'M'    / 'ware' / 't Hv'
+//
+// more information :
+// https://kb.vmware.com/s/article/1009458
+//
+void VM_Version::check_virtualizations() {
+#if defined(_LP64)
+  uint32_t registers[4];
+  char signature[13];
+  uint32_t base;
+  signature[12] = '\0';
+  memset((void*)registers, 0, 4*sizeof(uint32_t));
+
+  for (base = 0x40000000; base < 0x40010000; base += 0x100) {
+    check_virt_cpuid(base, registers);
+
+    *(uint32_t *)(signature + 0) = registers[1];
+    *(uint32_t *)(signature + 4) = registers[2];
+    *(uint32_t *)(signature + 8) = registers[3];
+
+    if (strncmp("VMwareVMware", signature, 12) == 0) {
+      Abstract_VM_Version::_detected_virtualization = VMWare;
+    }
+
+    if (strncmp("Microsoft Hv", signature, 12) == 0) {
+      Abstract_VM_Version::_detected_virtualization = HyperV;
+    }
+
+    if (strncmp("KVMKVMKVM", signature, 9) == 0) {
+      Abstract_VM_Version::_detected_virtualization = KVM;
+    }
+
+    if (strncmp("XenVMMXenVMM", signature, 12) == 0) {
+      Abstract_VM_Version::_detected_virtualization = XenHVM;
+    }
+  }
+#endif
+}
+
 void VM_Version::initialize() {
   ResourceMark rm;
   // Making this stub must be FIRST use of assembler
@@ -1608,4 +1715,7 @@ void VM_Version::initialize() {
                                      g.generate_get_cpu_info());
 
   get_processor_features();
+  if (cpu_family() > 4) { // it supports CPUID
+    check_virtualizations();
+  }
 }

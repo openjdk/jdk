@@ -346,6 +346,9 @@ class VM_Version: public Abstract_VM_Version {
   static void print_features();
   static bool is_determine_features_test_running() { return _is_determine_features_test_running; }
 
+  // Override Abstract_VM_Version implementation
+  static void print_platform_virtualization_info(outputStream*);
+
   // CPU feature query functions
   static const char* get_model_string()       { return _model_string; }
   static bool has_StoreFacilityListExtended() { return  (_features[0] & StoreFacilityListExtendedMask) == StoreFacilityListExtendedMask; }

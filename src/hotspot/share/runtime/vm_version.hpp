@@ -29,6 +29,14 @@
 #include "utilities/ostream.hpp"
 #include "utilities/macros.hpp"
 
+typedef enum {
+  NoDetectedVirtualization,
+  XenHVM,
+  KVM,
+  VMWare,
+  HyperV
+} VirtualizationType;
+
 // VM_Version provides information about the VM.
 
 class Abstract_VM_Version: AllStatic {
@@ -56,6 +64,8 @@ class Abstract_VM_Version: AllStatic {
   static int          _vm_security_version;
   static int          _vm_patch_version;
   static int          _vm_build_number;
+
+  static VirtualizationType _detected_virtualization;
 
  public:
   // Called as part of the runtime services initialization which is
@@ -111,6 +121,14 @@ class Abstract_VM_Version: AllStatic {
     return _features_string;
   }
 
+  static VirtualizationType get_detected_virtualization() {
+    return _detected_virtualization;
+  }
+
+  // platforms that need to specialize this
+  // define VM_Version::print_platform_virtualization_info()
+  static void print_platform_virtualization_info(outputStream*) { }
+
   // does HW support an 8-byte compare-exchange operation?
   static bool supports_cx8()  {
 #ifdef SUPPORTS_NATIVE_CX8
@@ -149,6 +167,8 @@ class Abstract_VM_Version: AllStatic {
 
   // Does this CPU support spin wait instruction?
   static bool supports_on_spin_wait() { return false; }
+
+  static bool print_matching_lines_from_file(const char* filename, outputStream* st, const char* keywords_to_match[]);
 };
 
 #include CPU_HEADER(vm_version)
