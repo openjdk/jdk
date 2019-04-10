@@ -761,8 +761,6 @@ struct CopyToArchive : StackObj {
       return true;
     }
     unsigned int hash = java_lang_String::hash_code(s);
-
-    java_lang_String::set_hash(s, hash);
     oop new_s = StringTable::create_archived_string(s, Thread::current());
     if (new_s == NULL) {
       return true;

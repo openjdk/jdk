@@ -45,9 +45,9 @@ void java_lang_String::set_value(oop string, typeArrayOop buffer) {
   string->obj_field_put(value_offset, (oop)buffer);
 }
 
-void java_lang_String::set_hash(oop string, unsigned int hash) {
-  assert(initialized && (hash_offset > 0), "Must be initialized");
-  string->int_field_put(hash_offset, hash);
+bool java_lang_String::hash_is_set(oop java_string) {
+  assert(initialized && (hash_offset > 0) && (hashIsZero_offset > 0), "Must be initialized");
+  return java_string->int_field(hash_offset) != 0 || java_string->bool_field(hashIsZero_offset) != 0;
 }
 
 // Accessors
@@ -69,12 +69,6 @@ typeArrayOop java_lang_String::value_no_keepalive(oop java_string) {
   assert(initialized && (value_offset > 0), "Must be initialized");
   assert(is_instance(java_string), "must be java_string");
   return (typeArrayOop) java_string->obj_field_access<AS_NO_KEEPALIVE>(value_offset);
-}
-
-unsigned int java_lang_String::hash(oop java_string) {
-  assert(initialized && (hash_offset > 0), "Must be initialized");
-  assert(is_instance(java_string), "must be java_string");
-  return java_string->int_field(hash_offset);
 }
 
 bool java_lang_String::is_latin1(oop java_string) {
