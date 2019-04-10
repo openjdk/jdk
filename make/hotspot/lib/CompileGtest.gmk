@@ -92,6 +92,7 @@ $(eval $(call SetupNativeCompilation, BUILD_GTEST_LIBJVM, \
     STRIP_SYMBOLS := false, \
     PRECOMPILED_HEADER := $(JVM_PRECOMPILED_HEADER), \
     PRECOMPILED_HEADER_EXCLUDE := gtest-all.cc gtestMain.cpp, \
+    DEFINE_THIS_FILE := false, \
 ))
 
 TARGETS += $(BUILD_GTEST_LIBJVM)
@@ -115,6 +116,7 @@ $(eval $(call SetupNativeCompilation, BUILD_GTEST_LAUNCHER, \
     LIBS_windows := $(JVM_OUTPUTDIR)/gtest/objs/jvm.lib, \
     COPY_DEBUG_SYMBOLS := $(GTEST_COPY_DEBUG_SYMBOLS), \
     ZIP_EXTERNAL_DEBUG_SYMBOLS := false, \
+    DEFINE_THIS_FILE := false, \
 ))
 
 $(BUILD_GTEST_LAUNCHER): $(BUILD_GTEST_LIBJVM)

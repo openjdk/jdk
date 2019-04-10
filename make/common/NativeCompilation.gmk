@@ -236,8 +236,10 @@ define SetupCompileNativeFileBody
     # This is the definite source file to use for $1_FILENAME.
     $1_SRC_FILE := $$($1_FILE)
 
-    ifneq ($$($1_DISABLE_THIS_FILE_DEFINE), true)
-      $1_THIS_FILE = -DTHIS_FILE='"$$($1_FILENAME)"'
+    ifneq ($$($1_DEFINE_THIS_FILE), false)
+      ifneq ($$($$($1_BASE)_DEFINE_THIS_FILE), false)
+        $1_THIS_FILE = -DTHIS_FILE='"$$($1_FILENAME)"'
+      endif
     endif
 
     ifeq ($$($1_OPTIMIZATION), )
@@ -426,6 +428,7 @@ endef
 #   STRIPFLAGS Optionally change the flags given to the strip command
 #   PRECOMPILED_HEADER Header file to use as precompiled header
 #   PRECOMPILED_HEADER_EXCLUDE List of source files that should not use PCH
+#   DEFINE_THIS_FILE Set to false to not set the THIS_FILE preprocessor macro
 #
 # After being called, some variables are exported from this macro, all prefixed
 # with parameter 1 followed by a '_':
@@ -703,7 +706,7 @@ define SetupNativeCompilationBody
             FILE := $$($1_GENERATED_PCH_SRC), \
             BASE := $1, \
             EXTRA_CXXFLAGS := -Fp$$($1_PCH_FILE) -Yc$$(notdir $$($1_PRECOMPILED_HEADER)), \
-            DISABLE_THIS_FILE_DEFINE := true, \
+            DEFINE_THIS_FILE := false, \
         ))
 
         $1_USE_PCH_FLAGS := \

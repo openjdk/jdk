@@ -42,6 +42,7 @@ ifeq ($(call check-jvm-feature, dtrace), true)
         LDFLAGS := -m64 -mt -xnolib $(SHARED_LIBRARY_FLAGS), \
         LIBS := $(LIBDL) -lthread -ldoor, \
         OBJECT_DIR := $(LIBJVM_DTRACE_OUTPUTDIR)/objs, \
+        DEFINE_THIS_FILE := false, \
     ))
 
     # Note that libjvm_db.c has tests for COMPILER2, but this was never set by
@@ -54,6 +55,7 @@ ifeq ($(call check-jvm-feature, dtrace), true)
         CFLAGS := -I$(DTRACE_GENSRC_DIR) $(JNI_INCLUDE_FLAGS) -m64 -G -mt -KPIC -xldscope=hidden, \
         LDFLAGS := -m64 -mt -xnolib $(SHARED_LIBRARY_FLAGS), \
         OBJECT_DIR := $(LIBJVM_DB_OUTPUTDIR)/objs, \
+        DEFINE_THIS_FILE := false, \
     ))
 
     TARGETS += $(BUILD_LIBJVM_DTRACE) $(BUILD_LIBJVM_DB)

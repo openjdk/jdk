@@ -883,10 +883,11 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
     fi
 
     if test "x$CUSTOM_ROOT" != x; then
-      OUTPUTDIR="${CUSTOM_ROOT}/build/${CONF_NAME}"
+      WORKSPACE_ROOT="${CUSTOM_ROOT}"
     else
-      OUTPUTDIR="${TOPDIR}/build/${CONF_NAME}"
+      WORKSPACE_ROOT="${TOPDIR}"
     fi
+    OUTPUTDIR="${WORKSPACE_ROOT}/build/${CONF_NAME}"
     $MKDIR -p "$OUTPUTDIR"
     if test ! -d "$OUTPUTDIR"; then
       AC_MSG_ERROR([Could not create build directory $OUTPUTDIR])
@@ -942,6 +943,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
   AC_SUBST(SPEC)
   AC_SUBST(CONF_NAME)
   AC_SUBST(OUTPUTDIR)
+  AC_SUBST(WORKSPACE_ROOT)
   AC_SUBST(CONFIGURESUPPORT_OUTPUTDIR)
 
   # The spec.gmk file contains all variables for the make system.

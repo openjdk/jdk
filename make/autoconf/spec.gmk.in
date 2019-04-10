@@ -140,7 +140,9 @@ SYSROOT_LDFLAGS := @SYSROOT_LDFLAGS@
 
 # The top-level directory of the source repository
 TOPDIR:=@TOPDIR@
-
+# Usually the top level directory, but could be something else if a custom
+# root is defined.
+WORKSPACE_ROOT:=@WORKSPACE_ROOT@
 IMPORT_MODULES_CLASSES:=@IMPORT_MODULES_CLASSES@
 IMPORT_MODULES_CMDS:=@IMPORT_MODULES_CMDS@
 IMPORT_MODULES_LIBS:=@IMPORT_MODULES_LIBS@
