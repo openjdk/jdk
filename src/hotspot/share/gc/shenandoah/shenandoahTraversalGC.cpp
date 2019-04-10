@@ -196,6 +196,10 @@ public:
       } else {
         _rp->process_all_roots(&roots_cl, &cld_cl, &code_cl, NULL, worker_id);
       }
+      if (ShenandoahStringDedup::is_enabled()) {
+        AlwaysTrueClosure is_alive;
+        ShenandoahStringDedup::parallel_oops_do(&is_alive, &roots_cl, worker_id);
+      }
     }
   }
 };
