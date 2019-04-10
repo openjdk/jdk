@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -370,18 +370,16 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
             throw new CRLException("Uninitialized CRL");
         }
         Signature   sigVerf = null;
+        String sigName = sigAlgId.getName();
         if (sigProvider.isEmpty()) {
-            sigVerf = Signature.getInstance(sigAlgId.getName());
+            sigVerf = Signature.getInstance(sigName);
         } else {
-            sigVerf = Signature.getInstance(sigAlgId.getName(), sigProvider);
+            sigVerf = Signature.getInstance(sigName, sigProvider);
         }
 
-        sigVerf.initVerify(key);
-
-        // set parameters after Signature.initSign/initVerify call,
-        // so the deferred provider selection happens when key is set
         try {
-            SignatureUtil.specialSetParameter(sigVerf, getSigAlgParams());
+            SignatureUtil.initVerifyWithParam(sigVerf, key,
+                SignatureUtil.getParamSpec(sigName, getSigAlgParams()));
         } catch (ProviderException e) {
             throw new CRLException(e.getMessage(), e.getCause());
         } catch (InvalidAlgorithmParameterException e) {
@@ -425,18 +423,16 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
             throw new CRLException("Uninitialized CRL");
         }
         Signature sigVerf = null;
+        String sigName = sigAlgId.getName();
         if (sigProvider == null) {
-            sigVerf = Signature.getInstance(sigAlgId.getName());
+            sigVerf = Signature.getInstance(sigName);
         } else {
-            sigVerf = Signature.getInstance(sigAlgId.getName(), sigProvider);
+            sigVerf = Signature.getInstance(sigName, sigProvider);
         }
 
-        sigVerf.initVerify(key);
-
-        // set parameters after Signature.initSign/initVerify call,
-        // so the deferred provider selection happens when key is set
         try {
-            SignatureUtil.specialSetParameter(sigVerf, getSigAlgParams());
+            SignatureUtil.initVerifyWithParam(sigVerf, key,
+                SignatureUtil.getParamSpec(sigName, getSigAlgParams()));
         } catch (ProviderException e) {
             throw new CRLException(e.getMessage(), e.getCause());
         } catch (InvalidAlgorithmParameterException e) {
@@ -502,7 +498,7 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
 
             sigEngine.initSign(key);
 
-                                // in case the name is reset
+            // in case the name is reset
             sigAlgId = AlgorithmId.get(sigEngine.getAlgorithm());
             infoSigAlgId = sigAlgId;
 

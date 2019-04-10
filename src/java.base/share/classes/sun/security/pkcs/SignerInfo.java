@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -447,15 +447,13 @@ public class SignerInfo implements DerEncoder {
 
             Signature sig = Signature.getInstance(algname);
 
-            sig.initVerify(key);
-
-            // set parameters after Signature.initSign/initVerify call,
-            // so the deferred provider selections occur when key is set
             AlgorithmParameters ap =
                 digestEncryptionAlgorithmId.getParameters();
             try {
-                SignatureUtil.specialSetParameter(sig, ap);
-            } catch (ProviderException | InvalidAlgorithmParameterException e) {
+                SignatureUtil.initVerifyWithParam(sig, key,
+                    SignatureUtil.getParamSpec(algname, ap));
+            } catch (ProviderException | InvalidAlgorithmParameterException |
+                     InvalidKeyException e) {
                 throw new SignatureException(e.getMessage(), e);
             }
 
@@ -466,8 +464,6 @@ public class SignerInfo implements DerEncoder {
         } catch (IOException e) {
             throw new SignatureException("IO error verifying signature:\n" +
                                          e.getMessage());
-        } catch (InvalidKeyException e) {
-            throw new SignatureException("InvalidKey: " + e.getMessage());
         }
         return null;
     }

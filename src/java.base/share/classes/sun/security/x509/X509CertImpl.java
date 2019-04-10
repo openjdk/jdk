@@ -422,18 +422,16 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
         }
         // Verify the signature ...
         Signature sigVerf = null;
+        String sigName = algId.getName();
         if (sigProvider.isEmpty()) {
-            sigVerf = Signature.getInstance(algId.getName());
+            sigVerf = Signature.getInstance(sigName);
         } else {
-            sigVerf = Signature.getInstance(algId.getName(), sigProvider);
+            sigVerf = Signature.getInstance(sigName, sigProvider);
         }
 
-        sigVerf.initVerify(key);
-
-        // set parameters after Signature.initSign/initVerify call,
-        // so the deferred provider selection happens when key is set
         try {
-            SignatureUtil.specialSetParameter(sigVerf, getSigAlgParams());
+            SignatureUtil.initVerifyWithParam(sigVerf, key,
+                SignatureUtil.getParamSpec(sigName, getSigAlgParams()));
         } catch (ProviderException e) {
             throw new CertificateException(e.getMessage(), e.getCause());
         } catch (InvalidAlgorithmParameterException e) {
@@ -478,18 +476,16 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
         }
         // Verify the signature ...
         Signature sigVerf = null;
+        String sigName = algId.getName();
         if (sigProvider == null) {
-            sigVerf = Signature.getInstance(algId.getName());
+            sigVerf = Signature.getInstance(sigName);
         } else {
-            sigVerf = Signature.getInstance(algId.getName(), sigProvider);
+            sigVerf = Signature.getInstance(sigName, sigProvider);
         }
 
-        sigVerf.initVerify(key);
-
-        // set parameters after Signature.initSign/initVerify call,
-        // so the deferred provider selection happens when key is set
         try {
-            SignatureUtil.specialSetParameter(sigVerf, getSigAlgParams());
+            SignatureUtil.initVerifyWithParam(sigVerf, key,
+                SignatureUtil.getParamSpec(sigName, getSigAlgParams()));
         } catch (ProviderException e) {
             throw new CertificateException(e.getMessage(), e.getCause());
         } catch (InvalidAlgorithmParameterException e) {
@@ -587,22 +583,19 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
             InvalidKeyException, InvalidAlgorithmParameterException,
             NoSuchProviderException, SignatureException {
         try {
-            if (readOnly)
+            if (readOnly) {
                 throw new CertificateEncodingException(
-                              "cannot over-write existing certificate");
-            Signature sigEngine = null;
-            if (provider == null || provider.isEmpty())
-                sigEngine = Signature.getInstance(algorithm);
-            else
-                sigEngine = Signature.getInstance(algorithm, provider);
-
-            sigEngine.initSign(key);
-
-            if (signingParams != null) {
-                // set parameters after Signature.initSign/initVerify call, so
-                // the deferred provider selection happens when the key is set
-                sigEngine.setParameter(signingParams);
+                        "cannot over-write existing certificate");
             }
+            Signature sigEngine = null;
+            if (provider == null || provider.isEmpty()) {
+                sigEngine = Signature.getInstance(algorithm);
+            } else {
+                sigEngine = Signature.getInstance(algorithm, provider);
+            }
+
+            SignatureUtil.initSignWithParam(sigEngine, key, signingParams,
+                    null);
 
             // in case the name is reset
             if (signingParams != null) {

@@ -43,6 +43,7 @@ import sun.security.ssl.SupportedGroupsExtension.NamedGroup;
 import sun.security.ssl.SupportedGroupsExtension.NamedGroupType;
 import sun.security.ssl.X509Authentication.X509Possession;
 import sun.security.util.KeyUtil;
+import sun.security.util.SignatureUtil;
 
 enum SignatureScheme {
     // EdDSA algorithms
@@ -471,16 +472,11 @@ enum SignatureScheme {
 
         Signature signer = Signature.getInstance(algorithm);
         if (key instanceof PublicKey) {
-            signer.initVerify((PublicKey)(key));
+            SignatureUtil.initVerifyWithParam(signer, (PublicKey)key,
+                    signAlgParameter);
         } else {
-            signer.initSign((PrivateKey)key);
-        }
-
-        // Important note:  Please don't set the parameters before signature
-        // or verification initialization, so that the crypto provider can
-        // be selected properly.
-        if (signAlgParameter != null) {
-            signer.setParameter(signAlgParameter);
+            SignatureUtil.initSignWithParam(signer, (PrivateKey)key,
+                    signAlgParameter, null);
         }
 
         return signer;

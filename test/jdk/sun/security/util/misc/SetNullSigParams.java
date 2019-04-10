@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @bug 8214096
- * @summary Make sure SignatureUtil can accept null algorithm parameters
+ * @bug 8214096 8216039
+ * @summary Make sure SignatureUtil works with null algorithm parameters
  * @modules java.base/sun.security.util
  */
 import java.security.*;
@@ -35,8 +35,8 @@ public class SetNullSigParams {
 
     public static void main(String[] args) throws Exception {
         Signature sig = new SpecialSigImpl();
-        SignatureUtil.specialSetParameter(sig, (byte[]) null);
-        SignatureUtil.specialSetParameter(sig, (AlgorithmParameters) null);
+        SignatureUtil.initVerifyWithParam(sig, (PublicKey) null, null);
+        SignatureUtil.initSignWithParam(sig, null, null, null);
     }
 
     // Sample Signature impl class which simulates 3rd party provider behavior
