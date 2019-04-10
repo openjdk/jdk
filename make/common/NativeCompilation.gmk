@@ -372,6 +372,7 @@ define SetupCompileNativeFileBody
 	  $(ECHO) $$@: \\ > $$($1_DEPS_FILE) ; \
 	  $(SED) $(WINDOWS_SHOWINCLUDE_SED_PATTERN) $$($1_OBJ).log \
 	      | $(SORT) -u >> $$($1_DEPS_FILE) ; \
+	  $(ECHO) >> $$($1_DEPS_FILE) ; \
 	  $(SED) $(DEPENDENCY_TARGET_SED_PATTERN) $$($1_DEPS_FILE) > $$($1_DEPS_TARGETS_FILE)
         endif
   endif
@@ -843,6 +844,7 @@ define SetupNativeCompilationBody
 		$(ECHO) $$($1_RES): \\ > $$($1_RES_DEPS_FILE) ; \
 		$(SED) $(WINDOWS_SHOWINCLUDE_SED_PATTERN) $$($1_RES_DEPS_FILE).obj.log \
 		    >> $$($1_RES_DEPS_FILE) ; \
+		$(ECHO) >> $$($1_RES_DEPS_FILE) ;\
 		$(SED) $(DEPENDENCY_TARGET_SED_PATTERN) $$($1_RES_DEPS_FILE) \
 		    > $$($1_RES_DEPS_TARGETS_FILE)
     endif
