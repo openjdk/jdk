@@ -159,7 +159,7 @@ bool Monitor::wait(bool no_safepoint_check, long timeout,
   // !no_safepoint_check logically implies java_thread
   guarantee(no_safepoint_check || self->is_Java_thread(), "invariant");
 
-  #ifdef ASSERT
+#ifdef ASSERT
   Monitor * least = get_least_ranked_lock_besides_this(self->owned_locks());
   assert(least != this, "Specification of get_least_... call above");
   if (least != NULL && least->rank() <= special) {
@@ -168,7 +168,14 @@ bool Monitor::wait(bool no_safepoint_check, long timeout,
                name(), rank(), least->name(), least->rank());
     assert(false, "Shouldn't block(wait) while holding a lock of rank special");
   }
-  #endif // ASSERT
+#endif // ASSERT
+
+#ifdef CHECK_UNHANDLED_OOPS
+  // Clear unhandled oops in JavaThreads so we get a crash right away.
+  if (self->is_Java_thread() && !no_safepoint_check) {
+    self->clear_unhandled_oops();
+  }
+#endif // CHECK_UNHANDLED_OOPS
 
   int wait_status;
   // conceptually set the owner to NULL in anticipation of

@@ -1837,7 +1837,7 @@ void JavaThread::run() {
 
   // Thread is now sufficiently initialized to be handled by the safepoint code as being
   // in the VM. Change thread state from _thread_new to _thread_in_vm
-  ThreadStateTransition::transition_and_fence(this, _thread_new, _thread_in_vm);
+  ThreadStateTransition::transition(this, _thread_new, _thread_in_vm);
   // Before a thread is on the threads list it is always safe, so after leaving the
   // _thread_new we should emit a instruction barrier. The distance to modified code
   // from here is probably far enough, but this is consistent and safe.
@@ -2475,11 +2475,10 @@ void JavaThread::java_suspend_self_with_safepoint_check() {
   JavaThreadState state = thread_state();
   set_thread_state(_thread_blocked);
   java_suspend_self();
-  set_thread_state(state);
+  set_thread_state_fence(state);
   // Since we are not using a regular thread-state transition helper here,
   // we must manually emit the instruction barrier after leaving a safe state.
   OrderAccess::cross_modify_fence();
-  InterfaceSupport::serialize_thread_state_with_handler(this);
   if (state != _thread_in_native) {
     SafepointMechanism::block_if_requested(this);
   }
