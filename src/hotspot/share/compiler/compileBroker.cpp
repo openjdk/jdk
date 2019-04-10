@@ -135,11 +135,6 @@ CompileLog** CompileBroker::_compiler2_logs = NULL;
 volatile jint CompileBroker::_compilation_id     = 0;
 volatile jint CompileBroker::_osr_compilation_id = 0;
 
-// Debugging information
-int  CompileBroker::_last_compile_type     = no_compile;
-int  CompileBroker::_last_compile_level    = CompLevel_none;
-char CompileBroker::_last_method_compiled[CompileBroker::name_buffer_length];
-
 // Performance counters
 PerfCounter* CompileBroker::_perf_total_compilation = NULL;
 PerfCounter* CompileBroker::_perf_osr_compilation = NULL;
@@ -577,8 +572,6 @@ CompilerCounters::CompilerCounters() {
 //
 // Initialize the Compilation object
 void CompileBroker::compilation_init_phase1(TRAPS) {
-  _last_method_compiled[0] = '\0';
-
   // No need to initialize compilation system if we do not use it.
   if (!UseCompiler) {
     return;
@@ -2032,8 +2025,10 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     // Look up matching directives
     directive = DirectivesStack::getMatchingDirective(method, comp);
 
-    // Save information about this method in case of failure.
-    set_last_compile(thread, method, is_osr, task_level);
+    // Update compile information when using perfdata.
+    if (UsePerfData) {
+      update_compile_perf_data(thread, method, is_osr);
+    }
 
     DTRACE_METHOD_COMPILE_BEGIN_PROBE(method, compiler_name(task_level));
   }
@@ -2264,57 +2259,48 @@ void CompileBroker::handle_full_code_cache(int code_blob_type) {
 }
 
 // ------------------------------------------------------------------
-// CompileBroker::set_last_compile
+// CompileBroker::update_compile_perf_data
 //
 // Record this compilation for debugging purposes.
-void CompileBroker::set_last_compile(CompilerThread* thread, const methodHandle& method, bool is_osr, int comp_level) {
+void CompileBroker::update_compile_perf_data(CompilerThread* thread, const methodHandle& method, bool is_osr) {
   ResourceMark rm;
   char* method_name = method->name()->as_C_string();
-  strncpy(_last_method_compiled, method_name, CompileBroker::name_buffer_length);
-  _last_method_compiled[CompileBroker::name_buffer_length - 1] = '\0'; // ensure null terminated
   char current_method[CompilerCounters::cmname_buffer_length];
   size_t maxLen = CompilerCounters::cmname_buffer_length;
 
-  if (UsePerfData) {
-    const char* class_name = method->method_holder()->name()->as_C_string();
+  const char* class_name = method->method_holder()->name()->as_C_string();
 
-    size_t s1len = strlen(class_name);
-    size_t s2len = strlen(method_name);
+  size_t s1len = strlen(class_name);
+  size_t s2len = strlen(method_name);
 
-    // check if we need to truncate the string
-    if (s1len + s2len + 2 > maxLen) {
+  // check if we need to truncate the string
+  if (s1len + s2len + 2 > maxLen) {
 
-      // the strategy is to lop off the leading characters of the
-      // class name and the trailing characters of the method name.
+    // the strategy is to lop off the leading characters of the
+    // class name and the trailing characters of the method name.
 
-      if (s2len + 2 > maxLen) {
-        // lop of the entire class name string, let snprintf handle
-        // truncation of the method name.
-        class_name += s1len; // null string
-      }
-      else {
-        // lop off the extra characters from the front of the class name
-        class_name += ((s1len + s2len + 2) - maxLen);
-      }
+    if (s2len + 2 > maxLen) {
+      // lop of the entire class name string, let snprintf handle
+      // truncation of the method name.
+      class_name += s1len; // null string
     }
-
-    jio_snprintf(current_method, maxLen, "%s %s", class_name, method_name);
+    else {
+      // lop off the extra characters from the front of the class name
+      class_name += ((s1len + s2len + 2) - maxLen);
+    }
   }
 
+  jio_snprintf(current_method, maxLen, "%s %s", class_name, method_name);
+
+  int last_compile_type = normal_compile;
   if (CICountOSR && is_osr) {
-    _last_compile_type = osr_compile;
-  } else {
-    _last_compile_type = normal_compile;
+    last_compile_type = osr_compile;
   }
-  _last_compile_level = comp_level;
 
-  if (UsePerfData) {
-    CompilerCounters* counters = thread->counters();
-    counters->set_current_method(current_method);
-    counters->set_compile_type((jlong)_last_compile_type);
-  }
+  CompilerCounters* counters = thread->counters();
+  counters->set_current_method(current_method);
+  counters->set_compile_type((jlong) last_compile_type);
 }
-
 
 // ------------------------------------------------------------------
 // CompileBroker::push_jni_handle_block
@@ -2616,21 +2602,6 @@ void CompileBroker::print_times(bool per_compiler, bool aggregate) {
   tty->cr();
   tty->print_cr("  nmethod code size         : %8d bytes", nmethods_code_size);
   tty->print_cr("  nmethod total size        : %8d bytes", nmethods_size);
-}
-
-// Debugging output for failure
-void CompileBroker::print_last_compile() {
-  if (_last_compile_level != CompLevel_none &&
-      compiler(_last_compile_level) != NULL &&
-      _last_compile_type != no_compile) {
-    if (_last_compile_type == osr_compile) {
-      tty->print_cr("Last parse:  [osr]%d+++(%d) %s",
-                    _osr_compilation_id, _last_compile_level, _last_method_compiled);
-    } else {
-      tty->print_cr("Last parse:  %d+++(%d) %s",
-                    _compilation_id, _last_compile_level, _last_method_compiled);
-    }
-  }
 }
 
 // Print general/accumulated JIT information.
