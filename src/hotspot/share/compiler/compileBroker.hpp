@@ -173,10 +173,6 @@ class CompileBroker: AllStatic {
   static volatile jint _compilation_id;
   static volatile jint _osr_compilation_id;
 
-  static int  _last_compile_type;
-  static int  _last_compile_level;
-  static char _last_method_compiled[name_buffer_length];
-
   static CompileQueue* _c2_compile_queue;
   static CompileQueue* _c1_compile_queue;
 
@@ -254,7 +250,8 @@ class CompileBroker: AllStatic {
   static void invoke_compiler_on_method(CompileTask* task);
   static void post_compile(CompilerThread* thread, CompileTask* task, bool success, ciEnv* ci_env,
                            int compilable, const char* failure_reason);
-  static void set_last_compile(CompilerThread *thread, const methodHandle& method, bool is_osr, int comp_level);
+  static void update_compile_perf_data(CompilerThread *thread, const methodHandle& method, bool is_osr);
+
   static void push_jni_handle_block();
   static void pop_jni_handle_block();
   static void collect_statistics(CompilerThread* thread, elapsedTimer time, CompileTask* task);
@@ -381,9 +378,6 @@ public:
 
   // Print a detailed accounting of compilation time
   static void print_times(bool per_compiler = true, bool aggregate = true);
-
-  // Debugging output for failure
-  static void print_last_compile();
 
   // compiler name for debugging
   static const char* compiler_name(int comp_level);
