@@ -158,12 +158,39 @@ java/awt/Mixing/AWT_Mixing/JInternalFrameMoveOverlapping.java 6986109 windows-al
 java/awt/Mixing/AWT_Mixing/MixingPanelsResizing.java 8049405 generic-all
 java/awt/Mixing/AWT_Mixing/JComboBoxOverlapping.java 8049405 macosx-all
 java/awt/Mixing/AWT_Mixing/JPopupMenuOverlapping.java 8049405 macosx-all
+java/awt/Mixing/AWT_Mixing/JButtonInGlassPaneOverlapping.java 8158801 windows-all
+java/awt/Mixing/AWT_Mixing/JButtonOverlapping.java 8158801 windows-all
+java/awt/Mixing/AWT_Mixing/JColorChooserOverlapping.java 8158801 windows-all
+java/awt/Mixing/AWT_Mixing/JEditorPaneInGlassPaneOverlapping.java 8158801 windows-all
+java/awt/Mixing/AWT_Mixing/JEditorPaneOverlapping.java 8158801 windows-all
+java/awt/Mixing/AWT_Mixing/JLabelInGlassPaneOverlapping.java 8158801 windows-all
+java/awt/Mixing/AWT_Mixing/JLabelOverlapping.java 8158801 windows-all
+java/awt/Mixing/AWT_Mixing/JListInGlassPaneOverlapping.java 8158801 windows-all
+java/awt/Mixing/AWT_Mixing/JListOverlapping.java 8158801 windows-all
+java/awt/Mixing/AWT_Mixing/JPanelInGlassPaneOverlapping.java 8158801 windows-all
+java/awt/Mixing/AWT_Mixing/JPanelOverlapping.java 8158801 windows-all
+java/awt/Mixing/AWT_Mixing/JProgressBarInGlassPaneOverlapping.java 8158801 windows-all
+java/awt/Mixing/AWT_Mixing/JProgressBarOverlapping.java 8158801 windows-all
+java/awt/Mixing/AWT_Mixing/JScrollBarInGlassPaneOverlapping.java 8158801 windows-all
+java/awt/Mixing/AWT_Mixing/JScrollBarOverlapping.java 8158801 windows-all
+java/awt/Mixing/AWT_Mixing/JSliderInGlassPaneOverlapping.java 8158801 windows-all
+java/awt/Mixing/AWT_Mixing/JSliderOverlapping.java 8158801 windows-all
+java/awt/Mixing/AWT_Mixing/JSpinnerInGlassPaneOverlapping.java 8158801 windows-all
+java/awt/Mixing/AWT_Mixing/JSpinnerOverlapping.java 8158801 windows-all
+java/awt/Mixing/AWT_Mixing/JTableInGlassPaneOverlapping.java 8158801 windows-all
+java/awt/Mixing/AWT_Mixing/JTableOverlapping.java 8158801 windows-all
+java/awt/Mixing/AWT_Mixing/JTextAreaInGlassPaneOverlapping.java 8158801 windows-all
+java/awt/Mixing/AWT_Mixing/JTextAreaOverlapping.java 8158801 windows-all
+java/awt/Mixing/AWT_Mixing/JTextFieldInGlassPaneOverlapping.java 8158801 windows-all
+java/awt/Mixing/AWT_Mixing/JTextFieldOverlapping.java 8158801 windows-all
+java/awt/Mixing/AWT_Mixing/JToggleButtonInGlassPaneOverlapping.java 8158801 windows-all
+java/awt/Mixing/AWT_Mixing/JToggleButtonOverlapping.java 8158801 windows-all	
 java/awt/Mixing/NonOpaqueInternalFrame.java 7124549 macosx-all
 java/awt/Focus/ActualFocusedWindowTest/ActualFocusedWindowRetaining.java 6829264 generic-all
 java/awt/datatransfer/DragImage/MultiResolutionDragImageTest.java 8080982 generic-all
 java/awt/datatransfer/SystemFlavorMap/AddFlavorTest.java 8079268 linux-all
 java/awt/Toolkit/ScreenInsetsTest/ScreenInsetsTest.java 6829250 windows-all
-java/awt/Toolkit/RealSync/Test.java 6849383 macosx-all
+java/awt/Toolkit/RealSync/Test.java 6849383 macosx-all,linux-all
 java/awt/LightweightComponent/LightweightEventTest/LightweightEventTest.java 8159252 windows-all
 java/awt/EventDispatchThread/HandleExceptionOnEDT/HandleExceptionOnEDT.java 8203047 macosx-all
 java/awt/EventDispatchThread/LoopRobustness/LoopRobustness.java 8073636 macosx-all
@@ -212,6 +239,7 @@ java/awt/Window/ShapedAndTranslucentWindows/ShapedByAPI.java 8078999 macosx-all
 java/awt/Window/ShapedAndTranslucentWindows/ShapedTranslucent.java 8078999 macosx-all
 java/awt/Window/ShapedAndTranslucentWindows/ShapedTranslucentWindowClick.java 8013450 macosx-all
 java/awt/Window/ShapedAndTranslucentWindows/StaticallyShaped.java 8165218 macosx-all,linux-all
+java/awt/Window/ShapedAndTranslucentWindows/TranslucentChoice.java 8221901 linux-all
 java/awt/Window/AlwaysOnTop/AutoTestOnTop.java 6847593 macosx-all
 java/awt/Window/GrabSequence/GrabSequence.java 6848409 macosx-all,linux-all
 java/awt/Window/LocationAtScreenCorner/LocationAtScreenCorner.java 8203371 linux-all,solaris-all
@@ -242,6 +270,7 @@ sun/java2d/SunGraphics2D/PolyVertTest.java 6986565 generic-all
 sun/java2d/SunGraphics2D/SimplePrimQuality.java 6992007 generic-all
 sun/java2d/SunGraphics2D/SourceClippingBlitTest/SourceClippingBlitTest.java 8196185 generic-all
 sun/java2d/pipe/InterpolationQualityTest.java 8171303 windows-all,linux-all,macosx-all
+sun/java2d/X11SurfaceData/SharedMemoryPixmapsTest/SharedMemoryPixmapsTest.sh 8221451 linux-all
 java/awt/FullScreen/DisplayChangeVITest/DisplayChangeVITest.java 8169469 windows-all
 java/awt/Graphics2D/DrawString/DrawRotatedStringUsingRotatedFont.java 8197796 generic-all
 java/awt/TextArea/TextAreaScrolling/TextAreaScrolling.java 8196300 windows-all
@@ -249,6 +278,7 @@ java/awt/print/PrinterJob/PSQuestionMark.java 7003378 generic-all
 java/awt/print/PrinterJob/GlyphPositions.java 7003378 generic-all
 java/awt/Choice/PopupPosTest/PopupPosTest.java  8197811 windows-all
 java/awt/Choice/ChoiceMouseWheelTest/ChoiceMouseWheelTest.java 7100044 macosx-all,linux-all
+java/awt/Choice/ChoiceKeyEventReaction/ChoiceKeyEventReaction.java 8214469 macosx-all
 java/awt/Component/CreateImage/CreateImage.java 8198334  windows-all
 java/awt/Component/GetScreenLocTest/GetScreenLocTest.java 4753654 generic-all
 java/awt/Clipboard/HTMLTransferTest/HTMLTransferTest.java 8017454 macosx-all
@@ -395,6 +425,7 @@ java/awt/Mouse/EnterExitEvents/FullscreenEnterEventTest.java 8051455 macosx-all
 java/awt/Mouse/MouseModifiersUnitTest/MouseModifiersUnitTest_Standard.java 7124407 macosx-all
 java/awt/Mouse/RemovedComponentMouseListener/RemovedComponentMouseListener.java 8157170 macosx-all
 java/awt/Modal/ToFront/DialogToFrontModeless1Test.java 8213530 linux-all
+java/awt/Modal/ToFront/DialogToFrontNonModalTest.java 8221899 linux-all
 java/awt/Modal/ToBack/ToBackAppModal1Test.java 8196441 linux-all,macosx-all
 java/awt/Modal/ToBack/ToBackAppModal2Test.java 8196441 linux-all,macosx-all
 java/awt/Modal/ToBack/ToBackAppModal3Test.java 8196441 linux-all,macosx-all
@@ -811,6 +842,8 @@ javax/swing/JEditorPane/6917744/bug6917744.java 8213124 macosx-all
 javax/swing/JTable/6263446/bug6263446.java 8169959 macosx-all
 javax/swing/JTree/6263446/bug6263446.java 8213125 macosx-all
 javax/swing/JTree/8003400/Test8003400.java 8197560 macosx-all,linux-all
+javax/swing/RepaintManager/IconifyTest/IconifyTest.java 8221903 linux-all
+javax/swing/JRadioButton/FocusTraversal/FocusTraversal.java 8221902 linux-all
 
 ############################################################################
 
