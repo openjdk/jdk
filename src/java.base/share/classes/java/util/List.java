@@ -787,8 +787,9 @@ public interface List<E> extends Collection<E> {
      *
      * @since 9
      */
+    @SuppressWarnings("unchecked")
     static <E> List<E> of() {
-        return ImmutableCollections.emptyList();
+        return (List<E>) ImmutableCollections.ListN.EMPTY_LIST;
     }
 
     /**
@@ -1031,7 +1032,9 @@ public interface List<E> extends Collection<E> {
     static <E> List<E> of(E... elements) {
         switch (elements.length) { // implicit null check of elements
             case 0:
-                return ImmutableCollections.emptyList();
+                @SuppressWarnings("unchecked")
+                var list = (List<E>) ImmutableCollections.ListN.EMPTY_LIST;
+                return list;
             case 1:
                 return new ImmutableCollections.List12<>(elements[0]);
             case 2:

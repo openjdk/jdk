@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,23 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   AC_SUBST(HOTSPOT_VM_DISTRO)
   AC_SUBST(MACOSX_BUNDLE_NAME_BASE)
   AC_SUBST(MACOSX_BUNDLE_ID_BASE)
+
+  # Set the JDK RC name
+  AC_ARG_WITH(jdk-rc-name, [AS_HELP_STRING([--with-jdk-rc-name],
+      [Set JDK RC name. This is used for FileDescription and ProductName properties
+       of MS Windows binaries. @<:@not specified@:>@])])
+  if test "x$with_jdk_rc_name" = xyes; then
+    AC_MSG_ERROR([--with-jdk-rc-name must have a value])
+  elif [ ! [[ $with_jdk_rc_name =~ ^[[:print:]]*$ ]] ]; then
+    AC_MSG_ERROR([--with-jdk-rc-name contains non-printing characters: $with_jdk_rc_name])
+  elif test "x$with_jdk_rc_name" != x; then
+    # Set JDK_RC_NAME to a custom value if '--with-jdk-rc-name' was used and is not empty.
+    JDK_RC_NAME="$with_jdk_rc_name"
+  else
+    # Otherwise calculate from "version-numbers" included above.
+    JDK_RC_NAME="$PRODUCT_NAME $JDK_RC_PLATFORM_NAME"
+  fi
+  AC_SUBST(JDK_RC_NAME)
 
   # The vendor name, if any
   AC_ARG_WITH(vendor-name, [AS_HELP_STRING([--with-vendor-name],

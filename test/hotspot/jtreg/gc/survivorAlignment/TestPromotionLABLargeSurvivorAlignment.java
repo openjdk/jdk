@@ -24,7 +24,7 @@
 package gc.survivorAlignment;
 
 /**
- * @test
+ * @test gc.survivorAlignment.TestPromotionLABLargeSurvivorAlignment
  * @bug 8060463
  * @summary Verify that objects promoted from eden space to survivor space
  *          with large values for SurvivorAlignmentInBytes succeed.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,8 @@ class G1OopStarChunkedList : public CHeapObj<mtGC> {
   template <typename T> void delete_list(ChunkedList<T*, mtGC>* c);
 
   template <typename T>
-  void chunks_do(ChunkedList<T*, mtGC>* head,
-                 OopClosure* cl);
+  size_t chunks_do(ChunkedList<T*, mtGC>* head,
+                   OopClosure* cl);
 
   template <typename T>
   inline void push(ChunkedList<T*, mtGC>** field, T* p);
@@ -53,7 +53,7 @@ class G1OopStarChunkedList : public CHeapObj<mtGC> {
 
   size_t used_memory() { return _used_memory; }
 
-  void oops_do(OopClosure* obj_cl, OopClosure* root_cl);
+  size_t oops_do(OopClosure* obj_cl, OopClosure* root_cl);
 
   inline void push_oop(oop* p);
   inline void push_oop(narrowOop* p);

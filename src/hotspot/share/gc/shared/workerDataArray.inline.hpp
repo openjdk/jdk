@@ -92,6 +92,13 @@ void WorkerDataArray<T>::set_or_add_thread_work_item(uint worker_i, size_t value
 }
 
 template <typename T>
+size_t WorkerDataArray<T>::get_thread_work_item(uint worker_i, uint index) {
+  assert(index < MaxThreadWorkItems, "Tried to access thread work item %u (max %u)", index, MaxThreadWorkItems);
+  assert(_thread_work_items[index] != NULL, "No sub count");
+  return _thread_work_items[index]->get(worker_i);
+}
+
+template <typename T>
 void WorkerDataArray<T>::add(uint worker_i, T value) {
   assert(worker_i < _length, "Worker %d is greater than max: %d", worker_i, _length);
   assert(_data[worker_i] != uninitialized(), "No data to add to for worker %d", worker_i);

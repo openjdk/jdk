@@ -24,7 +24,7 @@
 package gc.survivorAlignment;
 
 /**
- * @test
+ * @test gc.survivorAlignment.TestPromotionFromEdenToTenured
  * @bug 8031323
  * @summary Verify that objects promoted from eden space to tenured space during
  *          full GC are not aligned to SurvivorAlignmentInBytes value.

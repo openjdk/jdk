@@ -142,7 +142,7 @@ final class ECDHServerKeyExchange {
                 if (useExplicitSigAlgorithm) {
                     signatureScheme = SignatureScheme.getPreferableAlgorithm(
                             shc.peerRequestedSignatureSchemes,
-                            x509Possession.popPrivateKey,
+                            x509Possession,
                             shc.negotiatedProtocol);
                     if (signatureScheme == null) {
                         // Unlikely, the credentials generator should have

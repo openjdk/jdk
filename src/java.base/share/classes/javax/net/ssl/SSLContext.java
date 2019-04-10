@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,9 @@
 package javax.net.ssl;
 
 import java.security.*;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.util.Objects;
-
 import sun.security.jca.GetInstance;
 
 /**
@@ -58,6 +59,20 @@ public class SSLContext {
 
     private final String protocol;
 
+    private static volatile SSLContext defaultContext;
+
+    private static final VarHandle VH_DEFAULT_CONTEXT;
+
+    static {
+        try {
+            VH_DEFAULT_CONTEXT = MethodHandles.lookup()
+                .findStaticVarHandle(
+                    SSLContext.class, "defaultContext", SSLContext.class);
+        } catch (Exception e) {
+            throw new ExceptionInInitializerError(e);
+        }
+    }
+
     /**
      * Creates an SSLContext object.
      *
@@ -71,8 +86,6 @@ public class SSLContext {
         this.provider = provider;
         this.protocol = protocol;
     }
-
-    private static SSLContext defaultContext;
 
     /**
      * Returns the default SSL context.
@@ -91,12 +104,16 @@ public class SSLContext {
      *   {@link SSLContext#getInstance SSLContext.getInstance()} call fails
      * @since 1.6
      */
-    public static synchronized SSLContext getDefault()
-            throws NoSuchAlgorithmException {
-        if (defaultContext == null) {
-            defaultContext = SSLContext.getInstance("Default");
+    public static SSLContext getDefault() throws NoSuchAlgorithmException {
+        SSLContext temporaryContext = defaultContext;
+        if (temporaryContext == null) {
+            temporaryContext = SSLContext.getInstance("Default");
+            if (!VH_DEFAULT_CONTEXT.compareAndSet(null, temporaryContext)) {
+                temporaryContext = defaultContext;
+            }
         }
-        return defaultContext;
+
+        return temporaryContext;
     }
 
     /**
@@ -111,7 +128,7 @@ public class SSLContext {
      *          {@code SSLPermission("setDefaultSSLContext")}
      * @since 1.6
      */
-    public static synchronized void setDefault(SSLContext context) {
+    public static void setDefault(SSLContext context) {
         if (context == null) {
             throw new NullPointerException();
         }
@@ -119,6 +136,7 @@ public class SSLContext {
         if (sm != null) {
             sm.checkPermission(new SSLPermission("setDefaultSSLContext"));
         }
+
         defaultContext = context;
     }
 

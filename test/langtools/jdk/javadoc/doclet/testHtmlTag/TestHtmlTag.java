@@ -109,7 +109,7 @@ public class TestHtmlTag extends JavadocTester {
 
         checkOutput("pkg3/package-summary.html", true,
                 "<div class=\"contentContainer\">\n"
-                + "<section role=\"region\"><a id=\"package.description\">\n"
+                + "<section><a id=\"package.description\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
                 + "<div class=\"block\"><p>This is the first line. Note the newlines before the &lt;p&gt; is relevant.</div>\n"

@@ -30,6 +30,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Arrays;
+import java.util.concurrent.locks.ReentrantLock;
 import static sun.security.ssl.ClientHello.ClientHelloMessage;
 
 /**
@@ -45,6 +46,8 @@ abstract class HelloCookieManager {
         private volatile D13HelloCookieManager d13HelloCookieManager;
         private volatile T13HelloCookieManager t13HelloCookieManager;
 
+        private final ReentrantLock managerLock = new ReentrantLock();
+
         Builder(SecureRandom secureRandom) {
             this.secureRandom = secureRandom;
         }
@@ -56,11 +59,14 @@ abstract class HelloCookieManager {
                         return d13HelloCookieManager;
                     }
 
-                    synchronized (this) {
+                    managerLock.lock();
+                    try {
                         if (d13HelloCookieManager == null) {
                             d13HelloCookieManager =
                                     new D13HelloCookieManager(secureRandom);
                         }
+                    } finally {
+                        managerLock.unlock();
                     }
 
                     return d13HelloCookieManager;
@@ -69,11 +75,14 @@ abstract class HelloCookieManager {
                         return d10HelloCookieManager;
                     }
 
-                    synchronized (this) {
+                    managerLock.lock();
+                    try {
                         if (d10HelloCookieManager == null) {
                             d10HelloCookieManager =
                                     new D10HelloCookieManager(secureRandom);
                         }
+                    } finally {
+                        managerLock.unlock();
                     }
 
                     return d10HelloCookieManager;
@@ -84,11 +93,14 @@ abstract class HelloCookieManager {
                         return t13HelloCookieManager;
                     }
 
-                    synchronized (this) {
+                    managerLock.lock();
+                    try {
                         if (t13HelloCookieManager == null) {
                             t13HelloCookieManager =
                                     new T13HelloCookieManager(secureRandom);
                         }
+                    } finally {
+                        managerLock.unlock();
                     }
 
                     return t13HelloCookieManager;
@@ -114,6 +126,8 @@ abstract class HelloCookieManager {
         private byte[]      cookieSecret;
         private byte[]      legacySecret;
 
+        private final ReentrantLock d10ManagerLock = new ReentrantLock();
+
         D10HelloCookieManager(SecureRandom secureRandom) {
             this.secureRandom = secureRandom;
 
@@ -131,7 +145,8 @@ abstract class HelloCookieManager {
             int version;
             byte[] secret;
 
-            synchronized (this) {
+            d10ManagerLock.lock();
+            try {
                 version = cookieVersion;
                 secret = cookieSecret;
 
@@ -142,6 +157,8 @@ abstract class HelloCookieManager {
                 }
 
                 cookieVersion++;
+            } finally {
+                d10ManagerLock.unlock();
             }
 
             MessageDigest md;
@@ -168,12 +185,15 @@ abstract class HelloCookieManager {
             }
 
             byte[] secret;
-            synchronized (this) {
+            d10ManagerLock.lock();
+            try {
                 if (((cookieVersion >> 24) & 0xFF) == cookie[0]) {
                     secret = cookieSecret;
                 } else {
                     secret = legacySecret;  // including out of window cookies
                 }
+            } finally {
+                d10ManagerLock.unlock();
             }
 
             MessageDigest md;
@@ -218,6 +238,8 @@ abstract class HelloCookieManager {
         private final byte[]    cookieSecret;
         private final byte[]    legacySecret;
 
+        private final ReentrantLock t13ManagerLock = new ReentrantLock();
+
         T13HelloCookieManager(SecureRandom secureRandom) {
             this.secureRandom = secureRandom;
             this.cookieVersion = secureRandom.nextInt();
@@ -234,7 +256,8 @@ abstract class HelloCookieManager {
             int version;
             byte[] secret;
 
-            synchronized (this) {
+            t13ManagerLock.lock();
+            try {
                 version = cookieVersion;
                 secret = cookieSecret;
 
@@ -245,6 +268,8 @@ abstract class HelloCookieManager {
                 }
 
                 cookieVersion++;        // allow wrapped version number
+            } finally {
+                t13ManagerLock.unlock();
             }
 
             MessageDigest md;
@@ -313,12 +338,15 @@ abstract class HelloCookieManager {
                     Arrays.copyOfRange(cookie, 3 + hashLen, cookie.length);
 
             byte[] secret;
-            synchronized (this) {
+            t13ManagerLock.lock();
+            try {
                 if ((byte)((cookieVersion >> 24) & 0xFF) == cookie[2]) {
                     secret = cookieSecret;
                 } else {
                     secret = legacySecret;  // including out of window cookies
                 }
+            } finally {
+                t13ManagerLock.unlock();
             }
 
             MessageDigest md;

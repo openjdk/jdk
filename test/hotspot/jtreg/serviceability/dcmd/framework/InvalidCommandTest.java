@@ -73,6 +73,6 @@ public class InvalidCommandTest {
         run(new JMXExecutor());
     }
 
-    private static class Process extends TestJavaProcess {
+    private static class Process extends process.TestJavaProcess {
     }
 }

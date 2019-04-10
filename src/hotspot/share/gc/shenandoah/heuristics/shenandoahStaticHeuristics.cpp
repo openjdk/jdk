@@ -40,13 +40,10 @@ ShenandoahStaticHeuristics::ShenandoahStaticHeuristics() : ShenandoahHeuristics(
   SHENANDOAH_ERGO_ENABLE_FLAG(ShenandoahImplicitGCInvokesConcurrent);
 
   // Final configuration checks
+  SHENANDOAH_CHECK_FLAG_SET(ShenandoahLoadRefBarrier);
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahSATBBarrier);
-  SHENANDOAH_CHECK_FLAG_SET(ShenandoahReadBarrier);
-  SHENANDOAH_CHECK_FLAG_SET(ShenandoahWriteBarrier);
-  SHENANDOAH_CHECK_FLAG_SET(ShenandoahStoreValReadBarrier);
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahKeepAliveBarrier);
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahCASBarrier);
-  SHENANDOAH_CHECK_FLAG_SET(ShenandoahAcmpBarrier);
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahCloneBarrier);
 }
 
@@ -55,7 +52,7 @@ ShenandoahStaticHeuristics::~ShenandoahStaticHeuristics() {}
 bool ShenandoahStaticHeuristics::should_start_normal_gc() const {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
-  size_t capacity = heap->capacity();
+  size_t capacity = heap->max_capacity();
   size_t available = heap->free_set()->available();
   size_t threshold_available = (capacity * ShenandoahFreeThreshold) / 100;
 

@@ -117,6 +117,7 @@ void HeapRegion::hr_clear(bool keep_remset, bool clear_space, bool locked) {
          "Should not clear heap region %u in the collection set", hrm_index());
 
   set_young_index_in_cset(-1);
+  clear_index_in_opt_cset();
   uninstall_surv_rate_group();
   set_free();
   reset_pre_dummy_top();
@@ -241,7 +242,7 @@ HeapRegion::HeapRegion(uint hrm_index,
     _containing_set(NULL),
 #endif
     _prev_marked_bytes(0), _next_marked_bytes(0), _gc_efficiency(0.0),
-    _index_in_opt_cset(G1OptionalCSet::InvalidCSetIndex), _young_index_in_cset(-1),
+    _index_in_opt_cset(InvalidCSetIndex), _young_index_in_cset(-1),
     _surv_rate_group(NULL), _age_index(-1),
     _prev_top_at_mark_start(NULL), _next_top_at_mark_start(NULL),
     _recorded_rs_length(0), _predicted_elapsed_time_ms(0)

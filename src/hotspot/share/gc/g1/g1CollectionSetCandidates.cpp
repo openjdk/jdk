@@ -27,26 +27,12 @@
 #include "gc/g1/g1CollectionSetChooser.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 
-HeapRegion* G1CollectionSetCandidates::pop_front() {
-  assert(_front_idx < _num_regions, "pre-condition");
-  HeapRegion* hr = _regions[_front_idx];
-  assert(hr != NULL, "pre-condition");
-  _regions[_front_idx] = NULL;
-  assert(hr->reclaimable_bytes() <= _remaining_reclaimable_bytes,
-         "Remaining reclaimable bytes inconsistent "
-         "from region: " SIZE_FORMAT " remaining: " SIZE_FORMAT,
-         hr->reclaimable_bytes(), _remaining_reclaimable_bytes);
-  _remaining_reclaimable_bytes -= hr->reclaimable_bytes();
-  _front_idx++;
-  return hr;
-}
-
-void G1CollectionSetCandidates::push_front(HeapRegion* hr) {
-  assert(hr != NULL, "Can't put back a NULL region");
-  assert(_front_idx >= 1, "Too many regions have been put back.");
-  _front_idx--;
-  _regions[_front_idx] = hr;
-  _remaining_reclaimable_bytes += hr->reclaimable_bytes();
+void G1CollectionSetCandidates::remove(uint num_regions) {
+  assert(num_regions <= num_remaining(), "Trying to remove more regions (%u) than available (%u)", num_regions, num_remaining());
+  for (uint i = 0; i < num_regions; i++) {
+    _remaining_reclaimable_bytes -= at(_front_idx)->reclaimable_bytes();
+    _front_idx++;
+  }
 }
 
 void G1CollectionSetCandidates::iterate(HeapRegionClosure* cl) {
@@ -62,13 +48,8 @@ void G1CollectionSetCandidates::iterate(HeapRegionClosure* cl) {
 #ifndef PRODUCT
 void G1CollectionSetCandidates::verify() const {
   guarantee(_front_idx <= _num_regions, "Index: %u Num_regions: %u", _front_idx, _num_regions);
-  uint idx = 0;
+  uint idx = _front_idx;
   size_t sum_of_reclaimable_bytes = 0;
-  while (idx < _front_idx) {
-    guarantee(_regions[idx] == NULL, "All entries before _front_idx %u should be NULL, but %u is not",
-              _front_idx, idx);
-    idx++;
-  }
   HeapRegion *prev = NULL;
   for (; idx < _num_regions; idx++) {
     HeapRegion *cur = _regions[idx];

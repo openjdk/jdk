@@ -722,9 +722,7 @@ public class HtmlTree extends Content {
      * @return an HtmlTree object for the SECTION tag
      */
     public static HtmlTree SECTION() {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.SECTION);
-        htmltree.setRole(Role.REGION);
-        return htmltree;
+        return new HtmlTree(HtmlTag.SECTION);
     }
 
     /**
@@ -734,9 +732,7 @@ public class HtmlTree extends Content {
      * @return an HtmlTree object for the SECTION tag
      */
     public static HtmlTree SECTION(Content body) {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.SECTION, nullCheck(body));
-        htmltree.setRole(Role.REGION);
-        return htmltree;
+        return new HtmlTree(HtmlTag.SECTION, nullCheck(body));
     }
 
     /**

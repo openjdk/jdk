@@ -1063,17 +1063,7 @@ Java_sun_nio_fs_WindowsNativeDispatcher_CreateSymbolicLink0(JNIEnv* env,
     LPCWSTR link = jlong_to_ptr(linkAddress);
     LPCWSTR target = jlong_to_ptr(targetAddress);
 
-    // Allow creation of symbolic links when the process is not elevated.
-    // Developer Mode must be enabled for this option to function, otherwise
-    // it will be ignored. Check that symbol is available in current build SDK.
-    DWORD dwFlags = (DWORD)flags;
-#ifdef SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE
-    dwFlags |= SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE;
-#endif
-
-    // On Windows 64-bit this appears to succeed even when there are
-    // insufficient privileges
-    if (CreateSymbolicLinkW(link, target, dwFlags) == 0)
+    if (CreateSymbolicLinkW(link, target, (DWORD)flags) == 0)
         throwWindowsException(env, GetLastError());
 }
 

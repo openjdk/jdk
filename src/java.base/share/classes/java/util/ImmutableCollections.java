@@ -95,11 +95,6 @@ class ImmutableCollections {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    static <E> List<E> emptyList() {
-        return (List<E>) ListN.EMPTY_LIST;
-    }
-
     static abstract class AbstractImmutableList<E> extends AbstractImmutableCollection<E>
             implements List<E>, RandomAccess {
 
@@ -409,6 +404,11 @@ class ImmutableCollections {
         }
 
         @Override
+        public boolean isEmpty() {
+            return false;
+        }
+
+        @Override
         public E get(int index) {
             if (index == 0) {
                 return e0;
@@ -485,7 +485,7 @@ class ImmutableCollections {
 
         @Override
         public boolean isEmpty() {
-            return size() == 0;
+            return elements.length == 0;
         }
 
         @Override
@@ -556,11 +556,6 @@ class ImmutableCollections {
         public abstract int hashCode();
     }
 
-    @SuppressWarnings("unchecked")
-    static <E> Set<E> emptySet() {
-        return (Set<E>) SetN.EMPTY_SET;
-    }
-
     static final class Set12<E> extends AbstractImmutableSet<E>
             implements Serializable {
 
@@ -586,6 +581,11 @@ class ImmutableCollections {
         @Override
         public int size() {
             return (e1 == null) ? 1 : 2;
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return false;
         }
 
         @Override
@@ -713,6 +713,11 @@ class ImmutableCollections {
         @Override
         public int size() {
             return size;
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return size == 0;
         }
 
         @Override
@@ -844,11 +849,6 @@ class ImmutableCollections {
 
     // ---------- Map Implementations ----------
 
-    @SuppressWarnings("unchecked")
-    static <K,V> Map<K,V> emptyMap() {
-        return (Map<K,V>) MapN.EMPTY_MAP;
-    }
-
     abstract static class AbstractImmutableMap<K,V> extends AbstractMap<K,V> implements Serializable {
         @Override public void clear() { throw uoe(); }
         @Override public V compute(K key, BiFunction<? super K,? super V,? extends V> rf) { throw uoe(); }
@@ -882,6 +882,11 @@ class ImmutableCollections {
         }
 
         @Override
+        public V get(Object o) {
+            return o.equals(k0) ? v0 : null; // implicit nullcheck of o
+        }
+
+        @Override
         public boolean containsKey(Object o) {
             return o.equals(k0); // implicit nullcheck of o
         }
@@ -889,6 +894,16 @@ class ImmutableCollections {
         @Override
         public boolean containsValue(Object o) {
             return o.equals(v0); // implicit nullcheck of o
+        }
+
+        @Override
+        public int size() {
+            return 1;
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return false;
         }
 
         private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
@@ -1006,6 +1021,11 @@ class ImmutableCollections {
         @Override
         public int size() {
             return size;
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return size == 0;
         }
 
         class MapNIterator implements Iterator<Map.Entry<K,V>> {
@@ -1248,7 +1268,7 @@ final class CollSer implements Serializable {
                     return Set.of(array);
                 case IMM_MAP:
                     if (array.length == 0) {
-                        return ImmutableCollections.emptyMap();
+                        return ImmutableCollections.MapN.EMPTY_MAP;
                     } else if (array.length == 2) {
                         return new ImmutableCollections.Map1<>(array[0], array[1]);
                     } else {

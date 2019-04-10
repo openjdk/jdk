@@ -28,6 +28,7 @@ package sun.security.ssl;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
+import java.security.interfaces.ECKey;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECParameterSpec;
 import java.util.AbstractMap.SimpleImmutableEntry;
@@ -126,6 +127,26 @@ enum X509Authentication implements SSLAuthentication {
                 X509Certificate[] popCerts) {
             this.popCerts = popCerts;
             this.popPrivateKey = popPrivateKey;
+        }
+
+        ECParameterSpec getECParameterSpec() {
+            if (popPrivateKey == null ||
+                    !"EC".equals(popPrivateKey.getAlgorithm())) {
+                return null;
+            }
+
+            if (popPrivateKey instanceof ECKey) {
+                return ((ECKey)popPrivateKey).getParams();
+            } else if (popCerts != null && popCerts.length != 0) {
+                // The private key not extractable, get the parameters from
+                // the X.509 certificate.
+                PublicKey publicKey = popCerts[0].getPublicKey();
+                if (publicKey instanceof ECKey) {
+                    return ((ECKey)publicKey).getParams();
+                }
+            }
+
+            return null;
         }
     }
 

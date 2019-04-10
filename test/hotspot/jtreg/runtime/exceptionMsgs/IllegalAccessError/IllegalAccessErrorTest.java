@@ -141,7 +141,7 @@ abstract public class IllegalAccessErrorTest {
     private static void iae4_m() { }
 
     private static String expectedErrorMessage4 =
-        "class test.Runner4 tried to access private method test.IllegalAccessErrorTest.iae4_m()V " +
+        "class test.Runner4 tried to access private method 'void test.IllegalAccessErrorTest.iae4_m()' " +
         "(test.Runner4 and test.IllegalAccessErrorTest are in unnamed module of loader 'app')";
 
     // Test according to java/lang/invoke/DefineClassTest.java
@@ -264,7 +264,7 @@ abstract public class IllegalAccessErrorTest {
     }
 
     private static String expectedErrorMessage7_1 =
-        "class test.IAE78_B tried to access method test.IAE78_A.<init>()V " +
+        "class test.IAE78_B tried to access method 'void test.IAE78_A.<init>()' " +
         "(test.IAE78_B is in unnamed module of loader 'test7_method_CL' @";
     private static String expectedErrorMessage7_2 =
         "; test.IAE78_A is in unnamed module of loader 'app')";

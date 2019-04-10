@@ -31,6 +31,8 @@
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC          -Xmx1g TestMemoryMXBeans   -1 1024
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xms1g   -Xmx1g TestMemoryMXBeans 1024 1024
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xms128m -Xmx1g TestMemoryMXBeans  128 1024
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xms1g   -Xmx1g -XX:ShenandoahUncommitDelay=0 TestMemoryMXBeans 1024 1024
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xms128m -Xmx1g -XX:ShenandoahUncommitDelay=0 TestMemoryMXBeans  128 1024
  */
 
 import java.lang.management.*;
@@ -45,6 +47,9 @@ public class TestMemoryMXBeans {
 
         long initSize = 1L * Integer.parseInt(args[0]) * 1024 * 1024;
         long maxSize  = 1L * Integer.parseInt(args[1]) * 1024 * 1024;
+
+        // wait for GC to uncommit
+        Thread.sleep(1000);
 
         testMemoryBean(initSize, maxSize);
     }
@@ -65,7 +70,15 @@ public class TestMemoryMXBeans {
             throw new IllegalStateException("Max heap size is wrong: " + heapMax + " vs " + maxSize);
         }
         if (initSize > 0 && maxSize > 0 && initSize != maxSize && heapCommitted == heapMax) {
-            throw new IllegalStateException("Init committed heap size is wrong: " + heapCommitted +
+            throw new IllegalStateException("Committed heap size is max: " + heapCommitted +
+                                            " (init: " + initSize + ", max: " + maxSize + ")");
+        }
+        if (initSize > 0 && maxSize > 0 && initSize == maxSize && heapCommitted != heapMax) {
+            throw new IllegalStateException("Committed heap size is not max: " + heapCommitted +
+                                            " (init: " + initSize + ", max: " + maxSize + ")");
+        }
+        if (initSize > 0 && heapCommitted < initSize) {
+            throw new IllegalStateException("Committed heap size is below min: " + heapCommitted +
                                             " (init: " + initSize + ", max: " + maxSize + ")");
         }
     }

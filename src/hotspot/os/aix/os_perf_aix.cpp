@@ -336,20 +336,8 @@ static OSReturn get_total_ticks(int which_logical_cpu, CPUPerfTicks* pticks) {
 
   fclose(fh);
   if (n < expected_assign_count || logical_cpu != which_logical_cpu) {
-#ifdef DEBUG_LINUX_PROC_STAT
-    vm_fprintf(stderr, "[stat] read failed");
-#endif
     return OS_ERR;
   }
-
-#ifdef DEBUG_LINUX_PROC_STAT
-  vm_fprintf(stderr, "[stat] read "
-          UINT64_FORMAT " " UINT64_FORMAT " " UINT64_FORMAT " " UINT64_FORMAT " "
-          UINT64_FORMAT " " UINT64_FORMAT " " UINT64_FORMAT " \n",
-          userTicks, niceTicks, systemTicks, idleTicks,
-          iowTicks, irqTicks, sirqTicks);
-#endif
-
   pticks->used       = userTicks + niceTicks;
   pticks->usedKernel = systemTicks + irqTicks + sirqTicks;
   pticks->total      = userTicks + niceTicks + systemTicks + idleTicks +

@@ -170,6 +170,7 @@ class CodeCache : AllStatic {
   // "unloading_occurred" controls whether metadata should be cleaned because of class unloading.
   class UnloadingScope: StackObj {
     ClosureIsUnloadingBehaviour _is_unloading_behaviour;
+    IsUnloadingBehaviour*       _saved_behaviour;
 
   public:
     UnloadingScope(BoolObjectClosure* is_alive);

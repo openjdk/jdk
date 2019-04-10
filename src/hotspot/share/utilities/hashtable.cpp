@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,7 +129,7 @@ static int literal_size(oop obj) {
   }
 }
 
-static int literal_size(ClassLoaderWeakHandle v) {
+static int literal_size(WeakHandle<vm_class_loader_data> v) {
   return literal_size(v.peek());
 }
 
@@ -244,7 +244,7 @@ template <class T> void print_literal(T l) {
   l->print();
 }
 
-static void print_literal(ClassLoaderWeakHandle l) {
+static void print_literal(WeakHandle<vm_class_loader_data> l) {
   l.print();
 }
 
@@ -308,15 +308,14 @@ template class Hashtable<ConstantPool*, mtClass>;
 template class Hashtable<Symbol*, mtSymbol>;
 template class Hashtable<Klass*, mtClass>;
 template class Hashtable<InstanceKlass*, mtClass>;
-template class Hashtable<ClassLoaderWeakHandle, mtClass>;
+template class Hashtable<WeakHandle<vm_class_loader_data>, mtClass>;
 template class Hashtable<Symbol*, mtModule>;
 template class Hashtable<oop, mtSymbol>;
-template class Hashtable<ClassLoaderWeakHandle, mtSymbol>;
 template class Hashtable<Symbol*, mtClass>;
 template class HashtableEntry<Symbol*, mtSymbol>;
 template class HashtableEntry<Symbol*, mtClass>;
 template class HashtableEntry<oop, mtSymbol>;
-template class HashtableEntry<ClassLoaderWeakHandle, mtSymbol>;
+template class HashtableEntry<WeakHandle<vm_class_loader_data>, mtClass>;
 template class HashtableBucket<mtClass>;
 template class BasicHashtableEntry<mtSymbol>;
 template class BasicHashtableEntry<mtCode>;

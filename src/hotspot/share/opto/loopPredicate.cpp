@@ -536,9 +536,6 @@ class Invariance : public StackObj {
     if (_lpt->is_invariant(n)) { // known invariant
       _invariant.set(n->_idx);
     } else if (!n->is_CFG()) {
-      if (n->Opcode() == Op_ShenandoahWriteBarrier) {
-        return;
-      }
       Node *n_ctrl = _phase->ctrl_or_self(n);
       Node *u_ctrl = _phase->ctrl_or_self(use); // self if use is a CFG
       if (_phase->is_dominator(n_ctrl, u_ctrl)) {

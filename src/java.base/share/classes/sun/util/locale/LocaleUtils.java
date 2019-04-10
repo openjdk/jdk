@@ -206,19 +206,19 @@ public final class LocaleUtils {
         return true;
     }
 
-    static boolean isEmpty(String str) {
+    public static boolean isEmpty(String str) {
         return str == null || str.isEmpty();
     }
 
-    static boolean isEmpty(Set<?> set) {
+    public static boolean isEmpty(Set<?> set) {
         return set == null || set.isEmpty();
     }
 
-    static boolean isEmpty(Map<?, ?> map) {
+    public static boolean isEmpty(Map<?, ?> map) {
         return map == null || map.isEmpty();
     }
 
-    static boolean isEmpty(List<?> list) {
+    public static boolean isEmpty(List<?> list) {
         return list == null || list.isEmpty();
     }
 }

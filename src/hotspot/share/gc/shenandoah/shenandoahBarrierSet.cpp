@@ -107,11 +107,8 @@ void ShenandoahBarrierSet::write_ref_array_loop(HeapWord* start, size_t count) {
 }
 
 void ShenandoahBarrierSet::write_ref_array(HeapWord* start, size_t count) {
-  assert(UseShenandoahGC, "should be enabled");
-  if (count == 0) return;
-  if (!ShenandoahCloneBarrier) return;
-
-  if (!need_update_refs_barrier()) return;
+  assert(_heap->is_update_refs_in_progress(), "should not be here otherwise");
+  assert(count > 0, "Should have been filtered before");
 
   if (_heap->is_concurrent_traversal_in_progress()) {
     ShenandoahEvacOOMScope oom_evac_scope;
@@ -197,9 +194,8 @@ void ShenandoahBarrierSet::write_ref_field_work(void* v, oop o, bool release) {
 }
 
 void ShenandoahBarrierSet::write_region(MemRegion mr) {
-  assert(UseShenandoahGC, "should be enabled");
   if (!ShenandoahCloneBarrier) return;
-  if (! need_update_refs_barrier()) return;
+  if (!_heap->is_update_refs_in_progress()) return;
 
   // This is called for cloning an object (see jvm.cpp) after the clone
   // has been made. We are not interested in any 'previous value' because
@@ -218,31 +214,25 @@ void ShenandoahBarrierSet::write_region(MemRegion mr) {
   }
 }
 
-oop ShenandoahBarrierSet::read_barrier(oop src) {
-  // Check for forwarded objects, because on Full GC path we might deal with
-  // non-trivial fwdptrs that contain Full GC specific metadata. We could check
-  // for is_full_gc_in_progress(), but this also covers the case of stable heap,
-  // which provides a bit of performance improvement.
-  if (ShenandoahReadBarrier && _heap->has_forwarded_objects()) {
-    return ShenandoahBarrierSet::resolve_forwarded(src);
+oop ShenandoahBarrierSet::load_reference_barrier_not_null(oop obj) {
+  if (ShenandoahLoadRefBarrier && _heap->has_forwarded_objects()) {
+    return load_reference_barrier_impl(obj);
   } else {
-    return src;
+    return obj;
   }
 }
 
-bool ShenandoahBarrierSet::obj_equals(oop obj1, oop obj2) {
-  bool eq = oopDesc::equals_raw(obj1, obj2);
-  if (! eq && ShenandoahAcmpBarrier) {
-    OrderAccess::loadload();
-    obj1 = resolve_forwarded(obj1);
-    obj2 = resolve_forwarded(obj2);
-    eq = oopDesc::equals_raw(obj1, obj2);
+oop ShenandoahBarrierSet::load_reference_barrier(oop obj) {
+  if (obj != NULL) {
+    return load_reference_barrier_not_null(obj);
+  } else {
+    return obj;
   }
-  return eq;
 }
 
-oop ShenandoahBarrierSet::write_barrier_mutator(oop obj) {
-  assert(UseShenandoahGC && ShenandoahWriteBarrier, "should be enabled");
+
+oop ShenandoahBarrierSet::load_reference_barrier_mutator(oop obj) {
+  assert(ShenandoahLoadRefBarrier, "should be enabled");
   assert(_heap->is_gc_in_progress_mask(ShenandoahHeap::EVACUATION | ShenandoahHeap::TRAVERSAL), "evac should be in progress");
   shenandoah_assert_in_cset(NULL, obj);
 
@@ -288,8 +278,8 @@ oop ShenandoahBarrierSet::write_barrier_mutator(oop obj) {
   return fwd;
 }
 
-oop ShenandoahBarrierSet::write_barrier_impl(oop obj) {
-  assert(UseShenandoahGC && ShenandoahWriteBarrier, "should be enabled");
+oop ShenandoahBarrierSet::load_reference_barrier_impl(oop obj) {
+  assert(ShenandoahLoadRefBarrier, "should be enabled");
   if (!CompressedOops::is_null(obj)) {
     bool evac_in_progress = _heap->is_gc_in_progress_mask(ShenandoahHeap::EVACUATION | ShenandoahHeap::TRAVERSAL);
     oop fwd = resolve_forwarded_not_null(obj);
@@ -311,23 +301,10 @@ oop ShenandoahBarrierSet::write_barrier_impl(oop obj) {
   }
 }
 
-oop ShenandoahBarrierSet::write_barrier(oop obj) {
-  if (ShenandoahWriteBarrier && _heap->has_forwarded_objects()) {
-    return write_barrier_impl(obj);
-  } else {
-    return obj;
-  }
-}
-
-oop ShenandoahBarrierSet::storeval_barrier(oop obj) {
+void ShenandoahBarrierSet::storeval_barrier(oop obj) {
   if (ShenandoahStoreValEnqueueBarrier && !CompressedOops::is_null(obj) && _heap->is_concurrent_traversal_in_progress()) {
-    obj = write_barrier(obj);
     enqueue(obj);
   }
-  if (ShenandoahStoreValReadBarrier) {
-    obj = resolve_forwarded(obj);
-  }
-  return obj;
 }
 
 void ShenandoahBarrierSet::keep_alive_barrier(oop obj) {

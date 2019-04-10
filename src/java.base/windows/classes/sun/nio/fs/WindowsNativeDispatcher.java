@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ package sun.nio.fs;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import jdk.internal.misc.Unsafe;
+
+import static sun.nio.fs.WindowsConstants.*;
 
 /**
  * Win32 and library calls.
@@ -920,6 +922,12 @@ class WindowsNativeDispatcher {
      *   LPCWSTR lpTargetFileName,
      *   DWORD dwFlags
      * )
+     *
+     * Creates a symbolic link, conditionally retrying with the addition of
+     * the flag SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE if the initial
+     * attempt fails with ERROR_PRIVILEGE_NOT_HELD. If the retry fails, throw
+     * the original exception due to ERROR_PRIVILEGE_NOT_HELD. The retry will
+     * succeed only on Windows build 14972 or later if Developer Mode is on.
      */
     static void CreateSymbolicLink(String link, String target, int flags)
         throws WindowsException
@@ -929,6 +937,19 @@ class WindowsNativeDispatcher {
         try {
             CreateSymbolicLink0(linkBuffer.address(), targetBuffer.address(),
                                 flags);
+        } catch (WindowsException x) {
+            if (x.lastError() == ERROR_PRIVILEGE_NOT_HELD) {
+                flags |= SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE;
+                try {
+                    CreateSymbolicLink0(linkBuffer.address(),
+                                        targetBuffer.address(), flags);
+                    return;
+                } catch (WindowsException ignored) {
+                    // Will fail with ERROR_INVALID_PARAMETER for Windows
+                    // builds older than 14972.
+                }
+            }
+            throw x;
         } finally {
             targetBuffer.release();
             linkBuffer.release();

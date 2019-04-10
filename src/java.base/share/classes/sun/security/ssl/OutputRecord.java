@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.util.concurrent.locks.ReentrantLock;
 import sun.security.ssl.SSLCipher.SSLWriteCipher;
 
 /**
@@ -68,6 +69,8 @@ abstract class OutputRecord
     // closed or not?
     volatile boolean            isClosed;
 
+    final ReentrantLock recordLock = new ReentrantLock();
+
     /*
      * Mappings from V3 cipher suite encodings to their pure V2 equivalents.
      * This is taken from the SSL V3 specification, Appendix E.
@@ -89,15 +92,25 @@ abstract class OutputRecord
         // Please set packetSize and protocolVersion in the implementation.
     }
 
-    synchronized void setVersion(ProtocolVersion protocolVersion) {
-        this.protocolVersion = protocolVersion;
+    void setVersion(ProtocolVersion protocolVersion) {
+        recordLock.lock();
+        try {
+            this.protocolVersion = protocolVersion;
+        } finally {
+            recordLock.unlock();
+        }
     }
 
     /*
      * Updates helloVersion of this record.
      */
-    synchronized void setHelloVersion(ProtocolVersion helloVersion) {
-        this.helloVersion = helloVersion;
+    void setHelloVersion(ProtocolVersion helloVersion) {
+        recordLock.lock();
+        try {
+            this.helloVersion = helloVersion;
+        } finally {
+            recordLock.unlock();
+        }
     }
 
     /*
@@ -108,9 +121,14 @@ abstract class OutputRecord
         return false;
     }
 
-    synchronized boolean seqNumIsHuge() {
-        return (writeCipher.authenticator != null) &&
+    boolean seqNumIsHuge() {
+        recordLock.lock();
+        try {
+            return (writeCipher.authenticator != null) &&
                         writeCipher.authenticator.seqNumIsHuge();
+        } finally {
+            recordLock.unlock();
+        }
     }
 
     // SSLEngine and SSLSocket
@@ -148,68 +166,93 @@ abstract class OutputRecord
     }
 
     // Change write ciphers, may use change_cipher_spec record.
-    synchronized void changeWriteCiphers(SSLWriteCipher writeCipher,
+    void changeWriteCiphers(SSLWriteCipher writeCipher,
             boolean useChangeCipherSpec) throws IOException {
-        if (isClosed()) {
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
-                SSLLogger.warning("outbound has closed, ignore outbound " +
-                    "change_cipher_spec message");
+        recordLock.lock();
+        try {
+            if (isClosed()) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                    SSLLogger.warning("outbound has closed, ignore outbound " +
+                        "change_cipher_spec message");
+                }
+                return;
             }
-            return;
+
+            if (useChangeCipherSpec) {
+                encodeChangeCipherSpec();
+            }
+
+            /*
+             * Dispose of any intermediate state in the underlying cipher.
+             * For PKCS11 ciphers, this will release any attached sessions,
+             * and thus make finalization faster.
+             *
+             * Since MAC's doFinal() is called for every SSL/TLS packet, it's
+             * not necessary to do the same with MAC's.
+             */
+            writeCipher.dispose();
+
+            this.writeCipher = writeCipher;
+            this.isFirstAppOutputRecord = true;
+        } finally {
+            recordLock.unlock();
         }
-
-        if (useChangeCipherSpec) {
-            encodeChangeCipherSpec();
-        }
-
-        /*
-         * Dispose of any intermediate state in the underlying cipher.
-         * For PKCS11 ciphers, this will release any attached sessions,
-         * and thus make finalization faster.
-         *
-         * Since MAC's doFinal() is called for every SSL/TLS packet, it's
-         * not necessary to do the same with MAC's.
-         */
-        writeCipher.dispose();
-
-        this.writeCipher = writeCipher;
-        this.isFirstAppOutputRecord = true;
     }
 
     // Change write ciphers using key_update handshake message.
-    synchronized void changeWriteCiphers(SSLWriteCipher writeCipher,
+    void changeWriteCiphers(SSLWriteCipher writeCipher,
             byte keyUpdateRequest) throws IOException {
-        if (isClosed()) {
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
-                SSLLogger.warning("outbound has closed, ignore outbound " +
-                    "key_update handshake message");
+        recordLock.lock();
+        try {
+            if (isClosed()) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                    SSLLogger.warning("outbound has closed, ignore outbound " +
+                        "key_update handshake message");
+                }
+                return;
             }
-            return;
+
+            // encode the handshake message, KeyUpdate
+            byte[] hm = HANDSHAKE_MESSAGE_KEY_UPDATE.clone();
+            hm[hm.length - 1] = keyUpdateRequest;
+            encodeHandshake(hm, 0, hm.length);
+            flush();
+
+            // Dispose of any intermediate state in the underlying cipher.
+            writeCipher.dispose();
+
+            this.writeCipher = writeCipher;
+            this.isFirstAppOutputRecord = true;
+        } finally {
+            recordLock.unlock();
         }
-
-        // encode the handshake message, KeyUpdate
-        byte[] hm = HANDSHAKE_MESSAGE_KEY_UPDATE.clone();
-        hm[hm.length - 1] = keyUpdateRequest;
-        encodeHandshake(hm, 0, hm.length);
-        flush();
-
-        // Dispose of any intermediate state in the underlying cipher.
-        writeCipher.dispose();
-
-        this.writeCipher = writeCipher;
-        this.isFirstAppOutputRecord = true;
     }
 
-    synchronized void changePacketSize(int packetSize) {
-        this.packetSize = packetSize;
+    void changePacketSize(int packetSize) {
+        recordLock.lock();
+        try {
+            this.packetSize = packetSize;
+        } finally {
+            recordLock.unlock();
+        }
     }
 
-    synchronized void changeFragmentSize(int fragmentSize) {
-        this.fragmentSize = fragmentSize;
+    void changeFragmentSize(int fragmentSize) {
+        recordLock.lock();
+        try {
+            this.fragmentSize = fragmentSize;
+        } finally {
+            recordLock.unlock();
+        }
     }
 
-    synchronized int getMaxPacketSize() {
-        return packetSize;
+    int getMaxPacketSize() {
+        recordLock.lock();
+        try {
+            return packetSize;
+        } finally {
+            recordLock.unlock();
+        }
     }
 
     // apply to DTLS SSLEngine
@@ -228,13 +271,18 @@ abstract class OutputRecord
     }
 
     @Override
-    public synchronized void close() throws IOException {
-        if (isClosed) {
-            return;
-        }
+    public void close() throws IOException {
+        recordLock.lock();
+        try {
+            if (isClosed) {
+                return;
+            }
 
-        isClosed = true;
-        writeCipher.dispose();
+            isClosed = true;
+            writeCipher.dispose();
+        } finally {
+            recordLock.unlock();
+        }
     }
 
     boolean isClosed() {

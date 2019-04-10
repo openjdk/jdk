@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package sun.security.ssl;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.util.concurrent.locks.ReentrantLock;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLServerSocket;
 
@@ -56,6 +57,7 @@ import javax.net.ssl.SSLServerSocket;
 final class SSLServerSocketImpl extends SSLServerSocket {
     private final SSLContextImpl        sslContext;
     private final SSLConfiguration      sslConfig;
+    private final ReentrantLock         serverSocketLock = new ReentrantLock();
 
     SSLServerSocketImpl(SSLContextImpl sslContext) throws IOException {
 
@@ -84,14 +86,24 @@ final class SSLServerSocketImpl extends SSLServerSocket {
     }
 
     @Override
-    public synchronized String[] getEnabledCipherSuites() {
-        return CipherSuite.namesOf(sslConfig.enabledCipherSuites);
+    public String[] getEnabledCipherSuites() {
+        serverSocketLock.lock();
+        try {
+            return CipherSuite.namesOf(sslConfig.enabledCipherSuites);
+        } finally {
+            serverSocketLock.unlock();
+        }
     }
 
     @Override
-    public synchronized void setEnabledCipherSuites(String[] suites) {
-        sslConfig.enabledCipherSuites =
-                CipherSuite.validValuesOf(suites);
+    public void setEnabledCipherSuites(String[] suites) {
+        serverSocketLock.lock();
+        try {
+            sslConfig.enabledCipherSuites =
+                    CipherSuite.validValuesOf(suites);
+        } finally {
+            serverSocketLock.unlock();
+        }
     }
 
     @Override
@@ -106,93 +118,153 @@ final class SSLServerSocketImpl extends SSLServerSocket {
     }
 
     @Override
-    public synchronized String[] getEnabledProtocols() {
-        return ProtocolVersion.toStringArray(sslConfig.enabledProtocols);
-    }
-
-    @Override
-    public synchronized void setEnabledProtocols(String[] protocols) {
-        if (protocols == null) {
-            throw new IllegalArgumentException("Protocols cannot be null");
+    public String[] getEnabledProtocols() {
+        serverSocketLock.lock();
+        try {
+            return ProtocolVersion.toStringArray(sslConfig.enabledProtocols);
+        } finally {
+            serverSocketLock.unlock();
         }
-
-        sslConfig.enabledProtocols = ProtocolVersion.namesOf(protocols);
     }
 
     @Override
-    public synchronized void setNeedClientAuth(boolean need) {
-        sslConfig.clientAuthType =
-                (need ? ClientAuthType.CLIENT_AUTH_REQUIRED :
-                        ClientAuthType.CLIENT_AUTH_NONE);
+    public void setEnabledProtocols(String[] protocols) {
+        serverSocketLock.lock();
+        try {
+            if (protocols == null) {
+                throw new IllegalArgumentException("Protocols cannot be null");
+            }
+
+            sslConfig.enabledProtocols = ProtocolVersion.namesOf(protocols);
+        } finally {
+            serverSocketLock.unlock();
+        }
     }
 
     @Override
-    public synchronized boolean getNeedClientAuth() {
-        return (sslConfig.clientAuthType ==
+    public void setNeedClientAuth(boolean need) {
+        serverSocketLock.lock();
+        try {
+            sslConfig.clientAuthType =
+                    (need ? ClientAuthType.CLIENT_AUTH_REQUIRED :
+                            ClientAuthType.CLIENT_AUTH_NONE);
+        } finally {
+            serverSocketLock.unlock();
+        }
+    }
+
+    @Override
+    public boolean getNeedClientAuth() {
+        serverSocketLock.lock();
+        try {
+            return (sslConfig.clientAuthType ==
                         ClientAuthType.CLIENT_AUTH_REQUIRED);
-    }
-
-    @Override
-    public synchronized void setWantClientAuth(boolean want) {
-        sslConfig.clientAuthType =
-                (want ? ClientAuthType.CLIENT_AUTH_REQUESTED :
-                        ClientAuthType.CLIENT_AUTH_NONE);
-    }
-
-    @Override
-    public synchronized boolean getWantClientAuth() {
-        return (sslConfig.clientAuthType ==
-                        ClientAuthType.CLIENT_AUTH_REQUESTED);
-    }
-
-    @Override
-    public synchronized void setUseClientMode(boolean useClientMode) {
-        /*
-         * If we need to change the client mode and the enabled
-         * protocols and cipher suites haven't specifically been
-         * set by the user, change them to the corresponding
-         * default ones.
-         */
-        if (sslConfig.isClientMode != useClientMode) {
-            if (sslContext.isDefaultProtocolVesions(
-                    sslConfig.enabledProtocols)) {
-                sslConfig.enabledProtocols =
-                        sslContext.getDefaultProtocolVersions(!useClientMode);
-            }
-
-            if (sslContext.isDefaultCipherSuiteList(
-                    sslConfig.enabledCipherSuites)) {
-                sslConfig.enabledCipherSuites =
-                        sslContext.getDefaultCipherSuites(!useClientMode);
-            }
-
-            sslConfig.isClientMode = useClientMode;
+        } finally {
+            serverSocketLock.unlock();
         }
     }
 
     @Override
-    public synchronized boolean getUseClientMode() {
-        return sslConfig.isClientMode;
+    public void setWantClientAuth(boolean want) {
+        serverSocketLock.lock();
+        try {
+            sslConfig.clientAuthType =
+                    (want ? ClientAuthType.CLIENT_AUTH_REQUESTED :
+                            ClientAuthType.CLIENT_AUTH_NONE);
+        } finally {
+            serverSocketLock.unlock();
+        }
     }
 
     @Override
-    public synchronized void setEnableSessionCreation(boolean flag) {
-        sslConfig.enableSessionCreation = flag;
+    public boolean getWantClientAuth() {
+        serverSocketLock.lock();
+        try {
+            return (sslConfig.clientAuthType ==
+                        ClientAuthType.CLIENT_AUTH_REQUESTED);
+        } finally {
+            serverSocketLock.unlock();
+        }
     }
 
     @Override
-    public synchronized boolean getEnableSessionCreation() {
-        return sslConfig.enableSessionCreation;
+    public void setUseClientMode(boolean useClientMode) {
+        serverSocketLock.lock();
+        try {
+            /*
+             * If we need to change the client mode and the enabled
+             * protocols and cipher suites haven't specifically been
+             * set by the user, change them to the corresponding
+             * default ones.
+             */
+            if (sslConfig.isClientMode != useClientMode) {
+                if (sslContext.isDefaultProtocolVesions(
+                        sslConfig.enabledProtocols)) {
+                    sslConfig.enabledProtocols =
+                        sslContext.getDefaultProtocolVersions(!useClientMode);
+                }
+
+                if (sslContext.isDefaultCipherSuiteList(
+                        sslConfig.enabledCipherSuites)) {
+                    sslConfig.enabledCipherSuites =
+                        sslContext.getDefaultCipherSuites(!useClientMode);
+                }
+
+                sslConfig.isClientMode = useClientMode;
+            }
+        } finally {
+            serverSocketLock.unlock();
+        }
     }
 
     @Override
-    public synchronized SSLParameters getSSLParameters() {
-        return sslConfig.getSSLParameters();
+    public boolean getUseClientMode() {
+        serverSocketLock.lock();
+        try {
+            return sslConfig.isClientMode;
+        } finally {
+            serverSocketLock.unlock();
+        }
     }
 
     @Override
-    public synchronized void setSSLParameters(SSLParameters params) {
-        sslConfig.setSSLParameters(params);
+    public void setEnableSessionCreation(boolean flag) {
+        serverSocketLock.lock();
+        try {
+            sslConfig.enableSessionCreation = flag;
+        } finally {
+            serverSocketLock.unlock();
+        }
+    }
+
+    @Override
+    public boolean getEnableSessionCreation() {
+        serverSocketLock.lock();
+        try {
+            return sslConfig.enableSessionCreation;
+        } finally {
+            serverSocketLock.unlock();
+        }
+    }
+
+    @Override
+    public SSLParameters getSSLParameters() {
+        serverSocketLock.lock();
+        try {
+            return sslConfig.getSSLParameters();
+        } finally {
+            serverSocketLock.unlock();
+        }
+    }
+
+    @Override
+    public void setSSLParameters(SSLParameters params) {
+        serverSocketLock.lock();
+        try {
+            sslConfig.setSSLParameters(params);
+        } finally {
+            serverSocketLock.unlock();
+        }
     }
 
     @Override

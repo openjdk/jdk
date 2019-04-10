@@ -3932,7 +3932,8 @@ operand immL_4294967295()
 
 operand immL_bitmask()
 %{
-  predicate(((n->get_long() & 0xc000000000000000l) == 0)
+  predicate((n->get_long() != 0)
+            && ((n->get_long() & 0xc000000000000000l) == 0)
             && is_power_of_2(n->get_long() + 1));
   match(ConL);
 
@@ -3943,7 +3944,8 @@ operand immL_bitmask()
 
 operand immI_bitmask()
 %{
-  predicate(((n->get_int() & 0xc0000000) == 0)
+  predicate((n->get_int() != 0)
+            && ((n->get_int() & 0xc0000000) == 0)
             && is_power_of_2(n->get_int() + 1));
   match(ConI);
 
@@ -11432,11 +11434,13 @@ instruct ubfmwI(iRegINoSp dst, iRegIorL2I src, immI lshift_count, immI rshift_co
 instruct ubfxwI(iRegINoSp dst, iRegIorL2I src, immI rshift, immI_bitmask mask)
 %{
   match(Set dst (AndI (URShiftI src rshift) mask));
+  // Make sure we are not going to exceed what ubfxw can do.
+  predicate((exact_log2(n->in(2)->get_int() + 1) + (n->in(1)->in(2)->get_int() & 31)) <= (31 + 1));
 
   ins_cost(INSN_COST);
   format %{ "ubfxw $dst, $src, $rshift, $mask" %}
   ins_encode %{
-    int rshift = $rshift$$constant;
+    int rshift = $rshift$$constant & 31;
     long mask = $mask$$constant;
     int width = exact_log2(mask+1);
     __ ubfxw(as_Register($dst$$reg),
@@ -11447,13 +11451,15 @@ instruct ubfxwI(iRegINoSp dst, iRegIorL2I src, immI rshift, immI_bitmask mask)
 instruct ubfxL(iRegLNoSp dst, iRegL src, immI rshift, immL_bitmask mask)
 %{
   match(Set dst (AndL (URShiftL src rshift) mask));
+  // Make sure we are not going to exceed what ubfx can do.
+  predicate((exact_log2_long(n->in(2)->get_long() + 1) + (n->in(1)->in(2)->get_int() & 63)) <= (63 + 1));
 
   ins_cost(INSN_COST);
   format %{ "ubfx $dst, $src, $rshift, $mask" %}
   ins_encode %{
-    int rshift = $rshift$$constant;
+    int rshift = $rshift$$constant & 63;
     long mask = $mask$$constant;
-    int width = exact_log2(mask+1);
+    int width = exact_log2_long(mask+1);
     __ ubfx(as_Register($dst$$reg),
             as_Register($src$$reg), rshift, width);
   %}
@@ -11465,11 +11471,13 @@ instruct ubfxL(iRegLNoSp dst, iRegL src, immI rshift, immL_bitmask mask)
 instruct ubfxIConvI2L(iRegLNoSp dst, iRegIorL2I src, immI rshift, immI_bitmask mask)
 %{
   match(Set dst (ConvI2L (AndI (URShiftI src rshift) mask)));
+  // Make sure we are not going to exceed what ubfxw can do.
+  predicate((exact_log2(n->in(1)->in(2)->get_int() + 1) + (n->in(1)->in(1)->in(2)->get_int() & 31)) <= (31 + 1));
 
   ins_cost(INSN_COST * 2);
   format %{ "ubfx $dst, $src, $rshift, $mask" %}
   ins_encode %{
-    int rshift = $rshift$$constant;
+    int rshift = $rshift$$constant & 31;
     long mask = $mask$$constant;
     int width = exact_log2(mask+1);
     __ ubfx(as_Register($dst$$reg),
@@ -11510,7 +11518,7 @@ instruct ubfizL(iRegLNoSp dst, iRegL src, immI lshift, immL_bitmask mask)
   ins_encode %{
     int lshift = $lshift$$constant;
     long mask = $mask$$constant;
-    int width = exact_log2(mask+1);
+    int width = exact_log2_long(mask+1);
     __ ubfiz(as_Register($dst$$reg),
           as_Register($src$$reg), lshift, width);
   %}

@@ -84,8 +84,14 @@ void* MetaspaceObj::operator new(size_t size, ClassLoaderData* loader_data,
   return Metaspace::allocate(loader_data, word_size, type, THREAD);
 }
 
-bool MetaspaceObj::is_metaspace_object() const {
-  return Metaspace::contains((void*)this);
+bool MetaspaceObj::is_valid(const MetaspaceObj* p) {
+  // Weed out obvious bogus values first without traversing metaspace
+  if ((size_t)p < os::min_page_size()) {
+    return false;
+  } else if (!is_aligned((address)p, sizeof(MetaWord))) {
+    return false;
+  }
+  return Metaspace::contains((void*)p);
 }
 
 void MetaspaceObj::print_address_on(outputStream* st) const {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 5030233 6214916 6356475 6571029 6684582 6742159 4459600 6758881 6753938
- *      6894719 6968053 7151434 7146424 8007333 8077822 8143640 8132379
+ *      6894719 6968053 7151434 7146424 8007333 8077822 8143640 8132379 8218547
  * @summary Argument parsing validation.
  * @modules jdk.compiler
  *          jdk.zipfs
@@ -36,6 +36,9 @@
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -54,20 +57,6 @@ public class Arrrghs extends TestHelper {
      * in Java is not only portable but also robust.
      *
      */
-
-    /*
-     * SIGH, On Windows all strings are quoted, we need to unwrap it
-     */
-    private static String removeExtraQuotes(String in) {
-        if (isWindows) {
-            // Trim the string and remove the enclosed quotes if any.
-            in = in.trim();
-            if (in.startsWith("\"") && in.endsWith("\"")) {
-                return in.substring(1, in.length()-1);
-            }
-        }
-        return in;
-    }
 
     // the pattern we hope to see in the output
     static final Pattern ArgPattern = Pattern.compile("\\s*argv\\[[0-9]*\\].*=.*");
@@ -487,6 +476,27 @@ public class Arrrghs extends TestHelper {
         tr.contains("Unrecognized option: -W");
         if (!tr.testStatus)
             System.out.println(tr);
+    }
+
+    /*
+     * Tests -jar command on a jar file with "long" (> 260 chars) full path on Windows
+     */
+    @Test
+    void testLongPathJarFile() throws IOException {
+        if (!isWindows) {
+            return;
+        }
+        // put the jar file to a location with long path
+        String longPathPart = "longpathtest_longpathtest/";
+        String longPathStr = longPathPart.repeat(15);
+        Path longPath = Paths.get(longPathStr);
+        Path jarPath = Files.createDirectories(longPath).resolve("elp.jar");
+        File elp = jarPath.toFile();
+        createJar(elp, new File("Foo"), "public static void main(String[] args){ System.out.println(\"Hello from ELP\"); }");
+        System.out.println("execute " + elp.getAbsolutePath());
+        TestResult tr = doExec(javaCmd, "-jar", elp.getAbsolutePath());
+        tr.checkPositive();
+        tr.contains("Hello from ELP");
     }
 
     /*

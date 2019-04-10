@@ -77,7 +77,7 @@ private:
 
   // False when using a fixed young generation size due to command-line options,
   // true otherwise.
-  bool _adaptive_size;
+  bool _use_adaptive_sizing;
 
   uint calculate_default_min_length(uint new_number_of_heap_regions);
   uint calculate_default_max_length(uint new_number_of_heap_regions);
@@ -104,8 +104,8 @@ public:
     return _max_desired_young_length;
   }
 
-  bool adaptive_young_list_length() const {
-    return _adaptive_size;
+  bool use_adaptive_young_list_length() const {
+    return _use_adaptive_sizing;
   }
 
   static G1YoungGenSizer* create_gen_sizer(G1CollectorPolicy* policy);

@@ -180,8 +180,8 @@ class Method : public Metadata {
   }
 
   // Helper routine: get klass name + "." + method name + signature as
-  // C string, for the purpose of providing more useful NoSuchMethodErrors
-  // and fatal error handling. The string is allocated in resource
+  // C string, for the purpose of providing more useful
+  // fatal error handling. The string is allocated in resource
   // area if a buffer is not provided by the caller.
   char* name_and_sig_as_C_string() const;
   char* name_and_sig_as_C_string(char* buf, int size) const;
@@ -189,6 +189,18 @@ class Method : public Metadata {
   // Static routine in the situations we don't have a Method*
   static char* name_and_sig_as_C_string(Klass* klass, Symbol* method_name, Symbol* signature);
   static char* name_and_sig_as_C_string(Klass* klass, Symbol* method_name, Symbol* signature, char* buf, int size);
+
+  // Get return type + klass name + "." + method name + ( parameters types )
+  // as a C string or print it to an outputStream.
+  // This is to be used to assemble strings passed to Java, so that
+  // the text more resembles Java code. Used in exception messages.
+  // Memory is allocated in the resource area; the caller needs
+  // a ResourceMark.
+  const char* external_name() const;
+  void  print_external_name(outputStream *os) const;
+
+  static const char* external_name(                  Klass* klass, Symbol* method_name, Symbol* signature);
+  static void  print_external_name(outputStream *os, Klass* klass, Symbol* method_name, Symbol* signature);
 
   Bytecodes::Code java_code_at(int bci) const {
     return Bytecodes::java_code_at(this, bcp_from(bci));

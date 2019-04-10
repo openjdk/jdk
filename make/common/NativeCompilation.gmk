@@ -231,8 +231,8 @@ define SetupCompileNativeFileBody
 
   # Only continue if this object file hasn't been processed already. This lets
   # the first found source file override any other with the same name.
-  ifeq ($$(findstring $$($1_OBJ), $$($$($1_BASE)_OBJS_SO_FAR)), )
-    $$($1_BASE)_OBJS_SO_FAR += $$($1_OBJ)
+  ifeq ($$($1_OBJ_PROCESSED), )
+    $1_OBJ_PROCESSED := true
     # This is the definite source file to use for $1_FILENAME.
     $1_SRC_FILE := $$($1_FILE)
 
@@ -308,14 +308,18 @@ define SetupCompileNativeFileBody
 
     ifeq ($$(filter %.s %.S, $$($1_FILENAME)), )
       # And this is the dependency file for this obj file.
-      $1_DEP := $$(patsubst %$(OBJ_SUFFIX),%.d,$$($1_OBJ))
+      $1_DEPS_FILE := $$(patsubst %$(OBJ_SUFFIX),%.d,$$($1_OBJ))
       # The dependency target file lists all dependencies as empty targets to
       # avoid make error "No rule to make target" for removed files
-      $1_DEP_TARGETS := $$(patsubst %$(OBJ_SUFFIX),%.d.targets,$$($1_OBJ))
+      $1_DEPS_TARGETS_FILE := $$(patsubst %$(OBJ_SUFFIX),%.d.targets,$$($1_OBJ))
 
-      # Include previously generated dependency information. (if it exists)
-      -include $$($1_DEP)
-      -include $$($1_DEP_TARGETS)
+      # Only try to load individual dependency information files if the global
+      # file hasn't been loaded (could happen if make was interrupted).
+      ifneq ($$($$($1_BASE)_DEPS_FILE_LOADED), true)
+        # Include previously generated dependency information. (if it exists)
+        -include $$($1_DEPS_FILE)
+        -include $$($1_DEPS_TARGETS_FILE)
+      endif
     endif
 
     ifneq ($$(strip $$($1_CFLAGS) $$($1_CXXFLAGS) $$($1_OPTIMIZATION)), )
@@ -340,16 +344,16 @@ define SetupCompileNativeFileBody
             # object file in the generated deps files. Fixing it with sed. If
             # compiling assembly, don't try this.
 	    $$(call ExecuteWithLog, $$@, \
-	        $$($1_COMPILER) $$($1_DEP_FLAG) $$($1_DEP).tmp $$($1_COMPILE_OPTIONS))
-	    $(SED) 's|^$$(@F):|$$@:|' $$($1_DEP).tmp > $$($1_DEP)
+	        $$($1_COMPILER) $$($1_DEP_FLAG) $$($1_DEPS_FILE).tmp $$($1_COMPILE_OPTIONS))
+	    $(SED) 's|^$$(@F):|$$@:|' $$($1_DEPS_FILE).tmp > $$($1_DEPS_FILE)
           else
 	    $$(call ExecuteWithLog, $$@, \
-	        $$($1_COMPILER) $$($1_DEP_FLAG) $$($1_DEP) $$($1_COMPILE_OPTIONS))
+	        $$($1_COMPILER) $$($1_DEP_FLAG) $$($1_DEPS_FILE) $$($1_COMPILE_OPTIONS))
           endif
           # Create a dependency target file from the dependency file.
           # Solution suggested by http://make.mad-scientist.net/papers/advanced-auto-dependency-generation/
-          ifneq ($$($1_DEP), )
-	    $(SED) $(DEPENDENCY_TARGET_SED_PATTERN) $$($1_DEP) > $$($1_DEP_TARGETS)
+          ifneq ($$($1_DEPS_FILE), )
+	    $(SED) $(DEPENDENCY_TARGET_SED_PATTERN) $$($1_DEPS_FILE) > $$($1_DEPS_TARGETS_FILE)
           endif
         else
           # The Visual Studio compiler lacks a feature for generating make
@@ -363,10 +367,10 @@ define SetupCompileNativeFileBody
 	      $$($1_COMPILER) -showIncludes $$($1_COMPILE_OPTIONS)) \
 	      | $(TR) -d '\r' | $(GREP) -v -e "^Note: including file:" \
 	          -e "^$$($1_FILENAME)$$$$" || test "$$$$?" = "1" ; \
-	  $(ECHO) $$@: \\ > $$($1_DEP) ; \
+	  $(ECHO) $$@: \\ > $$($1_DEPS_FILE) ; \
 	  $(SED) $(WINDOWS_SHOWINCLUDE_SED_PATTERN) $$($1_OBJ).log \
-	      | $(SORT) -u >> $$($1_DEP) ; \
-	  $(SED) $(DEPENDENCY_TARGET_SED_PATTERN) $$($1_DEP) > $$($1_DEP_TARGETS)
+	      | $(SORT) -u >> $$($1_DEPS_FILE) ; \
+	  $(SED) $(DEPENDENCY_TARGET_SED_PATTERN) $$($1_DEPS_FILE) > $$($1_DEPS_TARGETS_FILE)
         endif
   endif
 endef
@@ -485,6 +489,9 @@ define SetupNativeCompilationBody
   $1_TARGET := $$($1_OUTPUT_DIR)/$$($1_BASENAME)
   $1_NOSUFFIX := $$($1_PREFIX)$$($1_NAME)
   $1_SAFE_NAME := $$(strip $$(subst /,_, $1))
+
+# Need to make sure TARGET is first on list
+  $1 := $$($1_TARGET)
 
   # Setup the toolchain to be used
   $$(call SetIfEmpty, $1_TOOLCHAIN, TOOLCHAIN_DEFAULT)
@@ -719,20 +726,21 @@ define SetupNativeCompilationBody
           $1_PCH_FILE := $$($1_OBJECT_DIR)/precompiled/$$(notdir $$($1_PRECOMPILED_HEADER)).pch
           $1_USE_PCH_FLAGS := -include-pch $$($1_PCH_FILE)
         endif
-        $1_PCH_DEP := $$($1_PCH_FILE).d
-        $1_PCH_DEP_TARGETS := $$($1_PCH_FILE).d.targets
+        $1_PCH_DEPS_FILE := $$($1_PCH_FILE).d
+        $1_PCH_DEPS_TARGETS_FILE := $$($1_PCH_FILE).d.targets
 
-        -include $$($1_PCH_DEP)
-        -include $$($1_PCH_DEP_TARGETS)
+        -include $$($1_PCH_DEPS_FILE)
+        -include $$($1_PCH_DEPS_TARGETS_FILE)
 
         $1_PCH_COMMAND := $$($1_CC) $$($1_CFLAGS) $$($1_EXTRA_CFLAGS) $$($1_SYSROOT_CFLAGS) \
-            $$($1_OPT_CFLAGS) -x c++-header -c $(C_FLAG_DEPS) $$($1_PCH_DEP)
+            $$($1_OPT_CFLAGS) -x c++-header -c $(C_FLAG_DEPS) $$($1_PCH_DEPS_FILE)
 
         $$($1_PCH_FILE): $$($1_PRECOMPILED_HEADER) $$($1_COMPILE_VARDEPS_FILE)
 		$$(call LogInfo, Generating precompiled header)
 		$$(call MakeDir, $$(@D))
 		$$(call ExecuteWithLog, $$@, $$($1_PCH_COMMAND) $$< -o $$@)
-		$(SED) $(DEPENDENCY_TARGET_SED_PATTERN) $$($1_PCH_DEP) > $$($1_PCH_DEP_TARGETS)
+		$(SED) $(DEPENDENCY_TARGET_SED_PATTERN) $$($1_PCH_DEPS_FILE) \
+		    > $$($1_PCH_DEPS_TARGETS_FILE)
 
         $$($1_ALL_OBJS): $$($1_PCH_FILE)
 
@@ -746,6 +754,34 @@ define SetupNativeCompilationBody
 		    $$($1_PCH_COMMAND) $$< -o $$($1_PCH_FILE))
       endif
     endif
+  endif
+
+  # Create a rule to collect all the individual make dependency files into a
+  # single makefile.
+  $1_DEPS_FILE := $$($1_OBJECT_DIR)/$1.d
+
+  $$($1_DEPS_FILE): $$($1_ALL_OBJS)
+	$(RM) $$@
+        # CD into dir to reduce risk of hitting command length limits, which
+        # could otherwise happen if TOPDIR is a very long path.
+	$(CD) $$($1_OBJECT_DIR) && $(CAT) *.d > $$@.tmp
+	$(CD) $$($1_OBJECT_DIR) && $(CAT) *.d.targets | $(SORT) -u >> $$@.tmp
+        # After generating the file, which happens after all objects have been
+        # compiled, copy it to .old extension. On the next make invocation, this
+        # .old file will be included by make.
+	$(CP) $$@.tmp $$@.old
+	$(MV) $$@.tmp $$@
+
+  $1 += $$($1_DEPS_FILE)
+
+  # The include must be on the .old file, which represents the state from the
+  # previous invocation of make. The file being included must not have a rule
+  # defined for it as otherwise make will think it has to run the rule before
+  # being able to include the file, which would be wrong since we specifically
+  # need the file as it was generated by a previous make invocation.
+  ifneq ($$(wildcard $$($1_DEPS_FILE).old), )
+    $1_DEPS_FILE_LOADED := true
+    -include $$($1_DEPS_FILE).old
   endif
 
   # Now call SetupCompileNativeFile for each source file we are going to compile.
@@ -774,10 +810,10 @@ define SetupNativeCompilationBody
   ifeq ($(call isTargetOs, windows), true)
     ifneq ($$($1_VERSIONINFO_RESOURCE), )
       $1_RES := $$($1_OBJECT_DIR)/$$($1_BASENAME).res
-      $1_RES_DEP := $$($1_RES).d
-      $1_RES_DEP_TARGETS := $$($1_RES).d.targets
-      -include $$($1_RES_DEP)
-      -include $$($1_RES_DEP_TARGETS)
+      $1_RES_DEPS_FILE := $$($1_RES).d
+      $1_RES_DEPS_TARGETS_FILE := $$($1_RES).d.targets
+      -include $$($1_RES_DEPS_FILE)
+      -include $$($1_RES_DEPS_TARGETS_FILE)
 
       $1_RES_VARDEPS := $$($1_RC) $$($1_RC_FLAGS)
       $1_RES_VARDEPS_FILE := $$(call DependOnVariable, $1_RES_VARDEPS, \
@@ -794,16 +830,18 @@ define SetupNativeCompilationBody
                 # For some unknown reason, in this case CL actually outputs the show
                 # includes to stderr so need to redirect it to hide the output from the
                 # main log.
-		$$(call ExecuteWithLog, $$($1_RES_DEP).obj, \
+		$$(call ExecuteWithLog, $$($1_RES_DEPS_FILE).obj, \
 		    $$($1_CC) $$(filter-out -l%, $$($1_RC_FLAGS)) \
 		        $$($1_SYSROOT_CFLAGS) -showIncludes -nologo -TC \
-		        $(CC_OUT_OPTION)$$($1_RES_DEP).obj -P -Fi$$($1_RES_DEP).pp \
+		        $(CC_OUT_OPTION)$$($1_RES_DEPS_FILE).obj -P -Fi$$($1_RES_DEPS_FILE).pp \
 		        $$($1_VERSIONINFO_RESOURCE)) 2>&1 \
 		    | $(TR) -d '\r' | $(GREP) -v -e "^Note: including file:" \
 		        -e "^$$(notdir $$($1_VERSIONINFO_RESOURCE))$$$$" || test "$$$$?" = "1" ; \
-		$(ECHO) $$($1_RES): \\ > $$($1_RES_DEP) ; \
-		$(SED) $(WINDOWS_SHOWINCLUDE_SED_PATTERN) $$($1_RES_DEP).obj.log >> $$($1_RES_DEP) ; \
-		$(SED) $(DEPENDENCY_TARGET_SED_PATTERN) $$($1_RES_DEP) > $$($1_RES_DEP_TARGETS)
+		$(ECHO) $$($1_RES): \\ > $$($1_RES_DEPS_FILE) ; \
+		$(SED) $(WINDOWS_SHOWINCLUDE_SED_PATTERN) $$($1_RES_DEPS_FILE).obj.log \
+		    >> $$($1_RES_DEPS_FILE) ; \
+		$(SED) $(DEPENDENCY_TARGET_SED_PATTERN) $$($1_RES_DEPS_FILE) \
+		    > $$($1_RES_DEPS_TARGETS_FILE)
     endif
   endif
 
@@ -829,9 +867,6 @@ define SetupNativeCompilationBody
   ifneq ($$($1_REAL_MAPFILE), )
     $1_EXTRA_LDFLAGS += $(call SET_SHARED_LIBRARY_MAPFILE,$$($1_REAL_MAPFILE))
   endif
-
-  # Need to make sure TARGET is first on list
-  $1 := $$($1_TARGET)
 
   ifneq ($$($1_COPY_DEBUG_SYMBOLS), false)
     $1_COPY_DEBUG_SYMBOLS := $(COPY_DEBUG_SYMBOLS)

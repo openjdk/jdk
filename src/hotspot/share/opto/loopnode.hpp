@@ -38,8 +38,6 @@ class IdealLoopTree;
 class LoopNode;
 class Node;
 class OuterStripMinedLoopEndNode;
-class ShenandoahBarrierNode;
-class ShenandoahWriteBarrierNode;
 class PathFrequency;
 class PhaseIdealLoop;
 class CountedLoopReserveKit;
@@ -638,8 +636,7 @@ class PhaseIdealLoop : public PhaseTransform {
   friend class IdealLoopTree;
   friend class SuperWord;
   friend class CountedLoopReserveKit;
-  friend class ShenandoahBarrierNode;
-  friend class ShenandoahWriteBarrierNode;
+  friend class ShenandoahBarrierC2Support;
 
   // Pre-computed def-use info
   PhaseIterGVN &_igvn;

@@ -33,6 +33,7 @@ import sun.nio.ch.DirectBuffer;
 import java.lang.reflect.Field;
 import java.security.ProtectionDomain;
 
+import static jdk.internal.misc.UnsafeConstants.*;
 
 /**
  * A collection of methods for performing low-level, unsafe operations.
@@ -1166,14 +1167,13 @@ public final class Unsafe {
     }
 
     /** The value of {@code addressSize()} */
-    public static final int ADDRESS_SIZE = theUnsafe.addressSize0();
+    public static final int ADDRESS_SIZE = ADDRESS_SIZE0;
 
     /**
      * Reports the size in bytes of a native memory page (whatever that is).
      * This value will always be a power of two.
      */
-    public native int pageSize();
-
+    public int pageSize() { return PAGE_SIZE; }
 
     /// random trusted operations from JNI:
 
@@ -1417,7 +1417,7 @@ public final class Unsafe {
                                              byte x) {
         long wordOffset = offset & ~3;
         int shift = (int) (offset & 3) << 3;
-        if (BE) {
+        if (BIG_ENDIAN) {
             shift = 24 - shift;
         }
         int mask           = 0xFF << shift;
@@ -1491,7 +1491,7 @@ public final class Unsafe {
         }
         long wordOffset = offset & ~3;
         int shift = (int) (offset & 3) << 3;
-        if (BE) {
+        if (BIG_ENDIAN) {
             shift = 16 - shift;
         }
         int mask           = 0xFFFF << shift;
@@ -3354,14 +3354,14 @@ public final class Unsafe {
      * @return Returns true if the native byte ordering of this
      * platform is big-endian, false if it is little-endian.
      */
-    public final boolean isBigEndian() { return BE; }
+    public final boolean isBigEndian() { return BIG_ENDIAN; }
 
     /**
      * @return Returns true if this platform is capable of performing
      * accesses at addresses which are not aligned for the type of the
      * primitive type being accessed, false otherwise.
      */
-    public final boolean unalignedAccess() { return unalignedAccess; }
+    public final boolean unalignedAccess() { return UNALIGNED_ACCESS; }
 
     /**
      * Fetches a value at some byte offset into a given Java object.
@@ -3603,14 +3603,7 @@ public final class Unsafe {
         putCharUnaligned(o, offset, convEndian(bigEndian, x));
     }
 
-    // JVM interface methods
-    // BE is true iff the native endianness of this platform is big.
-    private static final boolean BE = theUnsafe.isBigEndian0();
-
-    // unalignedAccess is true iff this platform can perform unaligned accesses.
-    private static final boolean unalignedAccess = theUnsafe.unalignedAccess0();
-
-    private static int pickPos(int top, int pos) { return BE ? top - pos : pos; }
+    private static int pickPos(int top, int pos) { return BIG_ENDIAN ? top - pos : pos; }
 
     // These methods construct integers from bytes.  The byte ordering
     // is the native endianness of this platform.
@@ -3649,9 +3642,9 @@ public final class Unsafe {
                      | (toUnsignedInt(i1) << pickPos(8, 8)));
     }
 
-    private static byte  pick(byte  le, byte  be) { return BE ? be : le; }
-    private static short pick(short le, short be) { return BE ? be : le; }
-    private static int   pick(int   le, int   be) { return BE ? be : le; }
+    private static byte  pick(byte  le, byte  be) { return BIG_ENDIAN ? be : le; }
+    private static short pick(short le, short be) { return BIG_ENDIAN ? be : le; }
+    private static int   pick(int   le, int   be) { return BIG_ENDIAN ? be : le; }
 
     // These methods write integers to memory from smaller parts
     // provided by their caller.  The ordering in which these parts
@@ -3699,10 +3692,10 @@ public final class Unsafe {
     private static long toUnsignedLong(int n)   { return n & 0xffffffffl; }
 
     // Maybe byte-reverse an integer
-    private static char convEndian(boolean big, char n)   { return big == BE ? n : Character.reverseBytes(n); }
-    private static short convEndian(boolean big, short n) { return big == BE ? n : Short.reverseBytes(n)    ; }
-    private static int convEndian(boolean big, int n)     { return big == BE ? n : Integer.reverseBytes(n)  ; }
-    private static long convEndian(boolean big, long n)   { return big == BE ? n : Long.reverseBytes(n)     ; }
+    private static char convEndian(boolean big, char n)   { return big == BIG_ENDIAN ? n : Character.reverseBytes(n); }
+    private static short convEndian(boolean big, short n) { return big == BIG_ENDIAN ? n : Short.reverseBytes(n)    ; }
+    private static int convEndian(boolean big, int n)     { return big == BIG_ENDIAN ? n : Integer.reverseBytes(n)  ; }
+    private static long convEndian(boolean big, long n)   { return big == BIG_ENDIAN ? n : Long.reverseBytes(n)     ; }
 
 
 
@@ -3721,11 +3714,8 @@ public final class Unsafe {
     private native void ensureClassInitialized0(Class<?> c);
     private native int arrayBaseOffset0(Class<?> arrayClass);
     private native int arrayIndexScale0(Class<?> arrayClass);
-    private native int addressSize0();
     private native Class<?> defineAnonymousClass0(Class<?> hostClass, byte[] data, Object[] cpPatches);
     private native int getLoadAverage0(double[] loadavg, int nelems);
-    private native boolean unalignedAccess0();
-    private native boolean isBigEndian0();
 
 
     /**

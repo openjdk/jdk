@@ -121,8 +121,7 @@ public final class StringBuilder
      */
     @HotSpotIntrinsicCandidate
     public StringBuilder(String str) {
-        super(str.coder(), str.length(), 16);
-        append(str);
+        super(str);
     }
 
     /**
@@ -134,8 +133,7 @@ public final class StringBuilder
      * @param      seq   the sequence to copy.
      */
     public StringBuilder(CharSequence seq) {
-        super(String.LATIN1, seq.length(), 16);
-        append(seq);
+        super(seq);
     }
 
     /**

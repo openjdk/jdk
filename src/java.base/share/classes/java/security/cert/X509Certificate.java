@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -676,16 +676,14 @@ implements X509Extension {
     public void verify(PublicKey key, Provider sigProvider)
         throws CertificateException, NoSuchAlgorithmException,
         InvalidKeyException, SignatureException {
+        String sigName = getSigAlgName();
         Signature sig = (sigProvider == null)
-            ? Signature.getInstance(getSigAlgName())
-            : Signature.getInstance(getSigAlgName(), sigProvider);
+            ? Signature.getInstance(sigName)
+            : Signature.getInstance(sigName, sigProvider);
 
-        sig.initVerify(key);
-
-        // set parameters after Signature.initSign/initVerify call,
-        // so the deferred provider selections occur when key is set
         try {
-            SignatureUtil.specialSetParameter(sig, getSigAlgParams());
+            SignatureUtil.initVerifyWithParam(sig, key,
+                SignatureUtil.getParamSpec(sigName, getSigAlgParams()));
         } catch (ProviderException e) {
             throw new CertificateException(e.getMessage(), e.getCause());
         } catch (InvalidAlgorithmParameterException e) {

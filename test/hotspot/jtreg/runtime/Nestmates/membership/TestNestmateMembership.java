@@ -671,7 +671,7 @@ public class TestNestmateMembership {
     static void test_NoHostInvoke() throws Throwable {
         System.out.println("Testing for missing nest-host attribute");
         String msg = "class TestNestmateMembership$Caller tried to access " +
-            "private method TestNestmateMembership$TargetNoHost.m()V";
+            "private method 'void TestNestmateMembership$TargetNoHost.m()'";
         try {
             Caller.invokeTargetNoHost();
             throw new Error("Missing IllegalAccessError: " + msg);
@@ -698,7 +698,7 @@ public class TestNestmateMembership {
         }
 
         msg = "class TestNestmateMembership$CallerNoHost tried to access " +
-            "private method TestNestmateMembership$Target.m()V";
+            "private method 'void TestNestmateMembership$Target.m()'";
         try {
             CallerNoHost.invokeTarget();
             throw new Error("Missing IllegalAccessError: " + msg);
@@ -707,7 +707,7 @@ public class TestNestmateMembership {
             check_expected(expected, msg);
         }
         msg = "class TestNestmateMembership$CallerNoHost tried to access private " +
-            "method TestNestmateMembership$TargetNoHost.m()V";
+            "method 'void TestNestmateMembership$TargetNoHost.m()'";
         try {
             CallerNoHost.invokeTargetNoHost();
             throw new Error("Missing IllegalAccessError: " + msg);
@@ -950,7 +950,7 @@ public class TestNestmateMembership {
     static void test_NoHostConstruct() throws Throwable {
         System.out.println("Testing for missing nest-host attribute");
         String msg = "class TestNestmateMembership$Caller tried to access private " +
-            "method TestNestmateMembership$TargetNoHost.<init>()V";
+            "method 'void TestNestmateMembership$TargetNoHost.<init>()'";
         try {
             Caller.newTargetNoHost();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -977,7 +977,7 @@ public class TestNestmateMembership {
         }
 
         msg = "class TestNestmateMembership$CallerNoHost tried to access private " +
-            "method TestNestmateMembership$Target.<init>()V";
+            "method 'void TestNestmateMembership$Target.<init>()'";
         try {
             CallerNoHost.newTarget();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -986,7 +986,7 @@ public class TestNestmateMembership {
             check_expected(expected, msg);
         }
         msg = "class TestNestmateMembership$CallerNoHost tried to access private " +
-            "method TestNestmateMembership$TargetNoHost.<init>()V";
+            "method 'void TestNestmateMembership$TargetNoHost.<init>()'";
         try {
             CallerNoHost.newTargetNoHost();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);

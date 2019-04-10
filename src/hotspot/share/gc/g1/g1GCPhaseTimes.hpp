@@ -67,9 +67,11 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     ScanRS,
     OptScanRS,
     CodeRoots,
+    OptCodeRoots,
     ObjCopy,
     OptObjCopy,
     Termination,
+    OptTermination,
     Other,
     GCWorkerTotal,
     GCWorkerEnd,
@@ -87,7 +89,9 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   enum GCScanRSWorkItems {
     ScanRSScannedCards,
     ScanRSClaimedCards,
-    ScanRSSkippedCards
+    ScanRSSkippedCards,
+    ScanRSScannedOptRefs,
+    ScanRSUsedMemory
   };
 
   enum GCUpdateRSWorkItems {
@@ -99,13 +103,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   enum GCObjCopyWorkItems {
     ObjCopyLABWaste,
     ObjCopyLABUndoWaste
-  };
-
-  enum GCOptCSetWorkItems {
-      OptCSetScannedCards,
-      OptCSetClaimedCards,
-      OptCSetSkippedCards,
-      OptCSetUsedMemory
   };
 
  private:
@@ -122,19 +119,25 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   WorkerDataArray<size_t>* _scan_rs_claimed_cards;
   WorkerDataArray<size_t>* _scan_rs_skipped_cards;
 
+  WorkerDataArray<size_t>* _opt_scan_rs_scanned_cards;
+  WorkerDataArray<size_t>* _opt_scan_rs_claimed_cards;
+  WorkerDataArray<size_t>* _opt_scan_rs_skipped_cards;
+  WorkerDataArray<size_t>* _opt_scan_rs_scanned_opt_refs;
+  WorkerDataArray<size_t>* _opt_scan_rs_used_memory;
+
   WorkerDataArray<size_t>* _obj_copy_lab_waste;
   WorkerDataArray<size_t>* _obj_copy_lab_undo_waste;
 
-  WorkerDataArray<size_t>* _opt_cset_scanned_cards;
-  WorkerDataArray<size_t>* _opt_cset_claimed_cards;
-  WorkerDataArray<size_t>* _opt_cset_skipped_cards;
-  WorkerDataArray<size_t>* _opt_cset_used_memory;
+  WorkerDataArray<size_t>* _opt_obj_copy_lab_waste;
+  WorkerDataArray<size_t>* _opt_obj_copy_lab_undo_waste;
 
   WorkerDataArray<size_t>* _termination_attempts;
 
+  WorkerDataArray<size_t>* _opt_termination_attempts;
+
   WorkerDataArray<size_t>* _redirtied_cards;
 
-  double _cur_collection_par_time_ms;
+  double _cur_collection_initial_evac_time_ms;
   double _cur_optional_evac_ms;
   double _cur_collection_code_root_fixup_time_ms;
   double _cur_strong_code_root_purge_time_ms;
@@ -225,9 +228,13 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   void record_or_add_time_secs(GCParPhases phase, uint worker_i, double secs);
 
+  double get_time_secs(GCParPhases phase, uint worker_i);
+
   void record_thread_work_item(GCParPhases phase, uint worker_i, size_t count, uint index = 0);
 
   void record_or_add_thread_work_item(GCParPhases phase, uint worker_i, size_t count, uint index = 0);
+
+  size_t get_thread_work_item(GCParPhases phase, uint worker_i, uint index = 0);
 
   // return the average time for a phase in milliseconds
   double average_time_ms(GCParPhases phase);
@@ -256,16 +263,16 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     _cur_expand_heap_time_ms = ms;
   }
 
-  void record_par_time(double ms) {
-    _cur_collection_par_time_ms = ms;
+  void record_initial_evac_time(double ms) {
+    _cur_collection_initial_evac_time_ms = ms;
   }
 
-  void record_optional_evacuation(double ms) {
-    _cur_optional_evac_ms = ms;
+  void record_or_add_optional_evac_time(double ms) {
+    _cur_optional_evac_ms += ms;
   }
 
-  void record_code_root_fixup_time(double ms) {
-    _cur_collection_code_root_fixup_time_ms = ms;
+  void record_or_add_code_root_fixup_time(double ms) {
+    _cur_collection_code_root_fixup_time_ms += ms;
   }
 
   void record_strong_code_root_purge_time(double ms) {
@@ -360,7 +367,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   }
 
   double cur_collection_par_time_ms() {
-    return _cur_collection_par_time_ms;
+    return _cur_collection_initial_evac_time_ms;
   }
 
   double cur_clear_ct_time_ms() {

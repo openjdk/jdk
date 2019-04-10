@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ public:
   // Override as JavaThread::post_run() calls JavaThread::exit which
   // expects a valid thread object oop.
   virtual void post_run() {
-    Threads::remove(this);
+    Threads::remove(this, false);
     this->smr_delete();
   }
 
@@ -118,7 +118,7 @@ public:
   // Override as JavaThread::post_run() calls JavaThread::exit which
   // expects a valid thread object oop. And we need to call signal.
   void post_run() {
-    Threads::remove(this);
+    Threads::remove(this, false);
     _post->signal();
     this->smr_delete();
   }

@@ -148,8 +148,7 @@ import jdk.internal.HotSpotIntrinsicCandidate;
      */
     @HotSpotIntrinsicCandidate
     public StringBuffer(String str) {
-        super(str.coder(), str.length(), 16);
-        append(str);
+        super(str);
     }
 
     /**
@@ -162,8 +161,7 @@ import jdk.internal.HotSpotIntrinsicCandidate;
      * @since 1.5
      */
     public StringBuffer(CharSequence seq) {
-        super(String.LATIN1, seq.length(), 16);
-        append(seq);
+        super(seq);
     }
 
     /**

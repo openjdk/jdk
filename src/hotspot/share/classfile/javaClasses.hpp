@@ -81,6 +81,7 @@
   f(java_lang_StackFrameInfo) \
   f(java_lang_LiveStackFrameInfo) \
   f(java_util_concurrent_locks_AbstractOwnableSynchronizer) \
+  f(jdk_internal_misc_UnsafeConstants) \
   //end
 
 #define BASIC_JAVA_CLASSES_DO(f) \
@@ -1481,6 +1482,15 @@ class java_util_concurrent_locks_AbstractOwnableSynchronizer : AllStatic {
   static void compute_offsets();
   static oop  get_owner_threadObj(oop obj);
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
+};
+
+ // Interface to jdk.internal.misc.UnsafeConsants
+
+class jdk_internal_misc_UnsafeConstants : AllStatic {
+ public:
+  static void set_unsafe_constants();
+  static void compute_offsets() { }
+  static void serialize_offsets(SerializeClosure* f) { }
 };
 
 // Use to declare fields that need to be injected into Java classes

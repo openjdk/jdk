@@ -607,6 +607,7 @@ public:
   static int patch_narrow_klass(address insn_addr, narrowKlass n);
 
   address emit_trampoline_stub(int insts_call_instruction_offset, address target);
+  void emit_static_call_stub();
 
   // The following 4 methods return the offset of the appropriate move instruction
 

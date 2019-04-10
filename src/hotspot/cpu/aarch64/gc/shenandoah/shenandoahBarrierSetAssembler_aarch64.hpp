@@ -29,7 +29,7 @@
 #ifdef COMPILER1
 class LIR_Assembler;
 class ShenandoahPreBarrierStub;
-class ShenandoahWriteBarrierStub;
+class ShenandoahLoadReferenceBarrierStub;
 class StubAssembler;
 class StubCodeGenerator;
 #endif
@@ -37,7 +37,7 @@ class StubCodeGenerator;
 class ShenandoahBarrierSetAssembler: public BarrierSetAssembler {
 private:
 
-  static address _shenandoah_wb;
+  static address _shenandoah_lrb;
 
   void satb_write_barrier_pre(MacroAssembler* masm,
                               Register obj,
@@ -54,24 +54,21 @@ private:
                                     bool tosca_live,
                                     bool expand_call);
 
-  void read_barrier(MacroAssembler* masm, Register dst);
-  void read_barrier_impl(MacroAssembler* masm, Register dst);
-  void read_barrier_not_null(MacroAssembler* masm, Register dst);
-  void read_barrier_not_null_impl(MacroAssembler* masm, Register dst);
-  void write_barrier(MacroAssembler* masm, Register dst);
-  void write_barrier_impl(MacroAssembler* masm, Register dst);
-  void asm_acmp_barrier(MacroAssembler* masm, Register op1, Register op2);
+  void resolve_forward_pointer(MacroAssembler* masm, Register dst);
+  void resolve_forward_pointer_not_null(MacroAssembler* masm, Register dst);
+  void load_reference_barrier(MacroAssembler* masm, Register dst, Register tmp);
+  void load_reference_barrier_not_null(MacroAssembler* masm, Register dst, Register tmp);
 
-  address generate_shenandoah_wb(StubCodeGenerator* cgen);
+  address generate_shenandoah_lrb(StubCodeGenerator* cgen);
 
 public:
-  static address shenandoah_wb();
+  static address shenandoah_lrb();
 
   void storeval_barrier(MacroAssembler* masm, Register dst, Register tmp);
 
 #ifdef COMPILER1
   void gen_pre_barrier_stub(LIR_Assembler* ce, ShenandoahPreBarrierStub* stub);
-  void gen_write_barrier_stub(LIR_Assembler* ce, ShenandoahWriteBarrierStub* stub);
+  void gen_load_reference_barrier_stub(LIR_Assembler* ce, ShenandoahLoadReferenceBarrierStub* stub);
   void generate_c1_pre_barrier_runtime_stub(StubAssembler* sasm);
 #endif
 
@@ -83,8 +80,6 @@ public:
                        Register dst, Address src, Register tmp1, Register tmp_thread);
   virtual void store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                         Address dst, Register val, Register tmp1, Register tmp2);
-  virtual void obj_equals(MacroAssembler* masm, Register src1, Register src2);
-  virtual void resolve(MacroAssembler* masm, DecoratorSet decorators, Register obj);
   virtual void tlab_allocate(MacroAssembler* masm, Register obj,
                              Register var_size_in_bytes,
                              int con_size_in_bytes,

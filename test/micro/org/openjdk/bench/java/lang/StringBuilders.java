@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,8 @@ public class StringBuilders {
     private String[] str16p8p7;
     private String[] str3p9p8;
     private String[] str22p40p31;
+    private StringBuilder sbLatin1;
+    private StringBuilder sbUtf16;
 
     @Setup
     public void setup() {
@@ -53,6 +55,8 @@ public class StringBuilders {
         str16p8p7 = new String[]{"1234567890123456", "12345678", "1234567"};
         str3p9p8 = new String[]{"123", "123456789", "12345678"};
         str22p40p31 = new String[]{"1234567890123456789012", "1234567890123456789012345678901234567890", "1234567890123456789012345678901"};
+        sbLatin1 = new StringBuilder("Latin1 string");
+        sbUtf16 = new StringBuilder("UTF-\uFF11\uFF16 string");
     }
 
     /** StringBuilder wins over StringMaker. */
@@ -255,5 +259,25 @@ public class StringBuilders {
         result.append('p');
         result.append("stringelinglinglinglong");
         return result.toString();
+    }
+
+    @Benchmark
+    public StringBuilder fromLatin1String() {
+        return new StringBuilder("Latin1 string");
+    }
+
+    @Benchmark
+    public StringBuilder fromUtf16String() {
+        return new StringBuilder("UTF-\uFF11\uFF16 string");
+    }
+
+    @Benchmark
+    public StringBuilder fromLatin1StringBuilder() {
+        return new StringBuilder(sbLatin1);
+    }
+
+    @Benchmark
+    public StringBuilder fromUtf16StringBuilder() {
+        return new StringBuilder(sbUtf16);
     }
 }

@@ -43,14 +43,11 @@ ShenandoahPassiveHeuristics::ShenandoahPassiveHeuristics() : ShenandoahHeuristic
   }
 
   // Disable known barriers by default.
+  SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahLoadRefBarrier);
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahSATBBarrier);
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahKeepAliveBarrier);
-  SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahWriteBarrier);
-  SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahReadBarrier);
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahStoreValEnqueueBarrier);
-  SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahStoreValReadBarrier);
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahCASBarrier);
-  SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahAcmpBarrier);
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahCloneBarrier);
 
   // Final configuration checks
@@ -84,7 +81,7 @@ void ShenandoahPassiveHeuristics::choose_collection_set_from_regiondata(Shenando
 
   // Do not select too large CSet that would overflow the available free space.
   // Take at least the entire evacuation reserve, and be free to overflow to free space.
-  size_t capacity  = ShenandoahHeap::heap()->capacity();
+  size_t capacity  = ShenandoahHeap::heap()->max_capacity();
   size_t available = MAX2(ShenandoahEvacReserve * capacity / 100, actual_free);
   size_t max_cset  = (size_t)(available / ShenandoahEvacWaste);
 

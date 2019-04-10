@@ -26,6 +26,9 @@ import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
+
 /**
  * Launches a new Java process that uses a communication pipe to interact
  * with the test.
@@ -33,7 +36,10 @@ import nsk.share.jdi.*;
 
 public class TestProcessLauncher {
 
-    private final String className;
+    protected static final Path USER_DIR = FileSystems.getDefault().getPath(System.getProperty("user.dir", "."));
+    protected static final Path TEST_CLASSES_DIR = FileSystems.getDefault().getPath(System.getProperty("test.classes"));
+
+    protected final String className;
     private final ArgumentHandler argHandler;
 
     private IOPipe pipe;
@@ -55,7 +61,7 @@ public class TestProcessLauncher {
         Binder binder = new Binder(argHandler, log);
         binder.prepareForPipeConnection(argHandler);
 
-        String cmd = java + " " + className + " -pipe.port=" + argHandler.getPipePort();
+        String cmd = prepareLaunch(java, argHandler.getPipePort());
 
         Debugee debuggee = binder.startLocalDebugee(cmd);
         debuggee.redirectOutput(log);
@@ -73,6 +79,10 @@ public class TestProcessLauncher {
         if (pipe != null) {
             pipe.println("quit");
         }
+    }
+
+    protected String prepareLaunch(String javaExec, String pipePort) {
+        return  javaExec + " " + className + " -pipe.port=" + pipePort;
     }
 
 }

@@ -59,12 +59,11 @@ G1CollectionSet::G1CollectionSet(G1CollectedHeap* g1h, G1Policy* policy) :
   _collection_set_regions(NULL),
   _collection_set_cur_length(0),
   _collection_set_max_length(0),
-  _optional_regions(NULL),
-  _optional_region_length(0),
-  _optional_region_max_length(0),
+  _num_optional_regions(0),
   _bytes_used_before(0),
   _recorded_rs_lengths(0),
   _inc_build_state(Inactive),
+  _inc_part_start(0),
   _inc_bytes_used_before(0),
   _inc_recorded_rs_lengths(0),
   _inc_recorded_rs_lengths_diffs(0),
@@ -90,8 +89,8 @@ void G1CollectionSet::init_region_lengths(uint eden_cset_region_length,
   assert((size_t) young_region_length() == _collection_set_cur_length,
          "Young region length %u should match collection set length " SIZE_FORMAT, young_region_length(), _collection_set_cur_length);
 
-  _old_region_length      = 0;
-  _optional_region_length = 0;
+  _old_region_length = 0;
+  free_optional_regions();
 }
 
 void G1CollectionSet::initialize(uint max_region_length) {
@@ -100,21 +99,8 @@ void G1CollectionSet::initialize(uint max_region_length) {
   _collection_set_regions = NEW_C_HEAP_ARRAY(uint, max_region_length, mtGC);
 }
 
-void G1CollectionSet::initialize_optional(uint max_length) {
-  assert(_optional_regions == NULL, "Already initialized");
-  assert(_optional_region_length == 0, "Already initialized");
-  assert(_optional_region_max_length == 0, "Already initialized");
-  _optional_region_max_length = max_length;
-  _optional_regions = NEW_C_HEAP_ARRAY(HeapRegion*, _optional_region_max_length, mtGC);
-}
-
 void G1CollectionSet::free_optional_regions() {
-  _optional_region_length = 0;
-  _optional_region_max_length = 0;
-  if (_optional_regions != NULL) {
-    FREE_C_HEAP_ARRAY(HeapRegion*, _optional_regions);
-    _optional_regions = NULL;
-  }
+  _num_optional_regions = 0;
 }
 
 void G1CollectionSet::clear_candidates() {
@@ -130,39 +116,32 @@ void G1CollectionSet::set_recorded_rs_lengths(size_t rs_lengths) {
 void G1CollectionSet::add_old_region(HeapRegion* hr) {
   assert_at_safepoint_on_vm_thread();
 
-  assert(_inc_build_state == Active || hr->index_in_opt_cset() != G1OptionalCSet::InvalidCSetIndex,
+  assert(_inc_build_state == Active,
          "Precondition, actively building cset or adding optional later on");
   assert(hr->is_old(), "the region should be old");
 
-  assert(!hr->in_collection_set(), "should not already be in the CSet");
+  assert(!hr->in_collection_set(), "should not already be in the collection set");
   _g1h->register_old_region_with_cset(hr);
 
   _collection_set_regions[_collection_set_cur_length++] = hr->hrm_index();
   assert(_collection_set_cur_length <= _collection_set_max_length, "Collection set now larger than maximum size.");
 
   _bytes_used_before += hr->used();
-  size_t rs_length = hr->rem_set()->occupied();
-  _recorded_rs_lengths += rs_length;
-  _old_region_length += 1;
+  _recorded_rs_lengths += hr->rem_set()->occupied();
+  _old_region_length++;
 
-  log_trace(gc, cset)("Added old region %d to collection set", hr->hrm_index());
+  _g1h->old_set_remove(hr);
 }
 
 void G1CollectionSet::add_optional_region(HeapRegion* hr) {
-  assert(!optional_is_full(), "Precondition, must have room left for this region");
   assert(hr->is_old(), "the region should be old");
   assert(!hr->in_collection_set(), "should not already be in the CSet");
 
   _g1h->register_optional_region_with_cset(hr);
 
-  _optional_regions[_optional_region_length] = hr;
-  uint index = _optional_region_length++;
-  hr->set_index_in_opt_cset(index);
-
-  log_trace(gc, cset)("Added region %d to optional collection set (%u)", hr->hrm_index(), _optional_region_length);
+  hr->set_index_in_opt_cset(_num_optional_regions++);
 }
 
-// Initialize the per-collection-set information
 void G1CollectionSet::start_incremental_building() {
   assert(_collection_set_cur_length == 0, "Collection set must be empty before starting a new collection set.");
   assert(_inc_build_state == Inactive, "Precondition");
@@ -173,7 +152,8 @@ void G1CollectionSet::start_incremental_building() {
   _inc_recorded_rs_lengths_diffs = 0;
   _inc_predicted_elapsed_time_ms = 0.0;
   _inc_predicted_elapsed_time_ms_diffs = 0.0;
-  _inc_build_state = Active;
+
+  update_incremental_marker();
 }
 
 void G1CollectionSet::finalize_incremental_building() {
@@ -211,29 +191,48 @@ void G1CollectionSet::finalize_incremental_building() {
 void G1CollectionSet::clear() {
   assert_at_safepoint_on_vm_thread();
   _collection_set_cur_length = 0;
-  _optional_region_length = 0;
 }
 
 void G1CollectionSet::iterate(HeapRegionClosure* cl) const {
-  iterate_from(cl, 0, 1);
-}
-
-void G1CollectionSet::iterate_from(HeapRegionClosure* cl, uint worker_id, uint total_workers) const {
   size_t len = _collection_set_cur_length;
   OrderAccess::loadload();
-  if (len == 0) {
-    return;
-  }
-  size_t start_pos = (worker_id * len) / total_workers;
-  size_t cur_pos = start_pos;
 
-  do {
-    HeapRegion* r = _g1h->region_at(_collection_set_regions[cur_pos]);
+  for (uint i = 0; i < len; i++) {
+    HeapRegion* r = _g1h->region_at(_collection_set_regions[i]);
     bool result = cl->do_heap_region(r);
     if (result) {
       cl->set_incomplete();
       return;
     }
+  }
+}
+
+void G1CollectionSet::iterate_optional(HeapRegionClosure* cl) const {
+  assert_at_safepoint();
+
+  for (uint i = 0; i < _num_optional_regions; i++) {
+    HeapRegion* r = _candidates->at(i);
+    bool result = cl->do_heap_region(r);
+    guarantee(!result, "Must not cancel iteration");
+  }
+}
+
+void G1CollectionSet::iterate_incremental_part_from(HeapRegionClosure* cl, uint worker_id, uint total_workers) const {
+  assert_at_safepoint();
+
+  size_t len = _collection_set_cur_length - _inc_part_start;
+  if (len == 0) {
+    return;
+  }
+
+  size_t start_pos = (worker_id * len) / total_workers;
+  size_t cur_pos = start_pos;
+
+  do {
+    HeapRegion* r = _g1h->region_at(_collection_set_regions[cur_pos + _inc_part_start]);
+    bool result = cl->do_heap_region(r);
+    guarantee(!result, "Must not cancel iteration");
+
     cur_pos++;
     if (cur_pos == len) {
       cur_pos = 0;
@@ -440,30 +439,6 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
   return time_remaining_ms;
 }
 
-void G1CollectionSet::add_as_old(HeapRegion* hr) {
-  candidates()->pop_front(); // already have region via peek()
-  _g1h->old_set_remove(hr);
-  add_old_region(hr);
-}
-
-void G1CollectionSet::add_as_optional(HeapRegion* hr) {
-  assert(_optional_regions != NULL, "Must not be called before array is allocated");
-  candidates()->pop_front(); // already have region via peek()
-  _g1h->old_set_remove(hr);
-  add_optional_region(hr);
-}
-
-bool G1CollectionSet::optional_is_full() {
-  assert(_optional_region_length <= _optional_region_max_length, "Invariant");
-  return _optional_region_length == _optional_region_max_length;
-}
-
-void G1CollectionSet::clear_optional_region(const HeapRegion* hr) {
-  assert(_optional_regions != NULL, "Must not be called before array is allocated");
-  uint index = hr->index_in_opt_cset();
-  _optional_regions[index] = NULL;
-}
-
 static int compare_region_idx(const uint a, const uint b) {
   if (a > b) {
     return 1;
@@ -476,87 +451,25 @@ static int compare_region_idx(const uint a, const uint b) {
 
 void G1CollectionSet::finalize_old_part(double time_remaining_ms) {
   double non_young_start_time_sec = os::elapsedTime();
-  double predicted_old_time_ms = 0.0;
-  double predicted_optional_time_ms = 0.0;
-  double optional_threshold_ms = time_remaining_ms * _policy->optional_prediction_fraction();
-  uint expensive_region_num = 0;
 
   if (collector_state()->in_mixed_phase()) {
     candidates()->verify();
-    const uint min_old_cset_length = _policy->calc_min_old_cset_length();
-    const uint max_old_cset_length = MAX2(min_old_cset_length, _policy->calc_max_old_cset_length());
-    bool check_time_remaining = _policy->adaptive_young_list_length();
 
-    initialize_optional(max_old_cset_length - min_old_cset_length);
-    log_debug(gc, ergo, cset)("Start adding old regions for mixed gc. min %u regions, max %u regions, "
-                              "time remaining %1.2fms, optional threshold %1.2fms",
-                              min_old_cset_length, max_old_cset_length, time_remaining_ms, optional_threshold_ms);
+    uint num_initial_old_regions;
+    uint num_optional_old_regions;
 
-    HeapRegion* hr = candidates()->peek_front();
-    while (hr != NULL) {
-      if (old_region_length() + optional_region_length() >= max_old_cset_length) {
-        // Added maximum number of old regions to the CSet.
-        log_debug(gc, ergo, cset)("Finish adding old regions to CSet (old CSet region num reached max). "
-                                  "old %u regions, optional %u regions",
-                                  old_region_length(), optional_region_length());
-        break;
-      }
+    _policy->calculate_old_collection_set_regions(candidates(),
+                                                  time_remaining_ms,
+                                                  num_initial_old_regions,
+                                                  num_optional_old_regions);
 
-      // Stop adding regions if the remaining reclaimable space is
-      // not above G1HeapWastePercent.
-      size_t reclaimable_bytes = candidates()->remaining_reclaimable_bytes();
-      double reclaimable_percent = _policy->reclaimable_bytes_percent(reclaimable_bytes);
-      double threshold = (double) G1HeapWastePercent;
-      if (reclaimable_percent <= threshold) {
-        // We've added enough old regions that the amount of uncollected
-        // reclaimable space is at or below the waste threshold. Stop
-        // adding old regions to the CSet.
-        log_debug(gc, ergo, cset)("Finish adding old regions to CSet (reclaimable percentage not over threshold). "
-                                  "reclaimable: " SIZE_FORMAT "%s (%1.2f%%) threshold: " UINTX_FORMAT "%%",
-                                  byte_size_in_proper_unit(reclaimable_bytes), proper_unit_for_byte_size(reclaimable_bytes),
-                                  reclaimable_percent, G1HeapWastePercent);
-        break;
-      }
+    // Prepare initial old regions.
+    move_candidates_to_collection_set(num_initial_old_regions);
 
-      double predicted_time_ms = predict_region_elapsed_time_ms(hr);
-      time_remaining_ms = MAX2(time_remaining_ms - predicted_time_ms, 0.0);
-      // Add regions to old set until we reach minimum amount
-      if (old_region_length() < min_old_cset_length) {
-        predicted_old_time_ms += predicted_time_ms;
-        add_as_old(hr);
-        // Record the number of regions added when no time remaining
-        if (time_remaining_ms == 0.0) {
-          expensive_region_num++;
-        }
-      } else {
-        // In the non-auto-tuning case, we'll finish adding regions
-        // to the CSet if we reach the minimum.
-        if (!check_time_remaining) {
-          log_debug(gc, ergo, cset)("Finish adding old regions to CSet (old CSet region num reached min).");
-          break;
-        }
-        // Keep adding regions to old set until we reach optional threshold
-        if (time_remaining_ms > optional_threshold_ms) {
-          predicted_old_time_ms += predicted_time_ms;
-          add_as_old(hr);
-        } else if (time_remaining_ms > 0) {
-          // Keep adding optional regions until time is up
-          if (!optional_is_full()) {
-            predicted_optional_time_ms += predicted_time_ms;
-            add_as_optional(hr);
-          } else {
-            log_debug(gc, ergo, cset)("Finish adding old regions to CSet (optional set full).");
-            break;
-          }
-        } else {
-          log_debug(gc, ergo, cset)("Finish adding old regions to CSet (predicted time is too high).");
-          break;
-        }
-      }
-      hr = candidates()->peek_front();
-    }
-    if (hr == NULL) {
-      log_debug(gc, ergo, cset)("Finish adding old regions to CSet (candidate old regions not available)");
+    // Prepare optional old regions for evacuation.
+    uint candidate_idx = candidates()->cur_idx();
+    for (uint i = 0; i < num_optional_old_regions; i++) {
+      add_optional_region(candidates()->at(candidate_idx + i));
     }
 
     candidates()->verify();
@@ -564,99 +477,59 @@ void G1CollectionSet::finalize_old_part(double time_remaining_ms) {
 
   stop_incremental_building();
 
-  log_debug(gc, ergo, cset)("Finish choosing CSet regions old: %u, optional: %u, "
-                            "predicted old time: %1.2fms, predicted optional time: %1.2fms, time remaining: %1.2f",
-                            old_region_length(), optional_region_length(),
-                            predicted_old_time_ms, predicted_optional_time_ms, time_remaining_ms);
-  if (expensive_region_num > 0) {
-    log_debug(gc, ergo, cset)("CSet contains %u old regions that were added although the predicted time was too high.",
-                              expensive_region_num);
-  }
-
   double non_young_end_time_sec = os::elapsedTime();
   phase_times()->record_non_young_cset_choice_time_ms((non_young_end_time_sec - non_young_start_time_sec) * 1000.0);
 
   QuickSort::sort(_collection_set_regions, _collection_set_cur_length, compare_region_idx, true);
 }
 
-HeapRegion* G1OptionalCSet::region_at(uint index) {
-  return _cset->optional_region_at(index);
-}
-
-void G1OptionalCSet::prepare_evacuation(double time_limit) {
-  assert(_current_index == _current_limit, "Before prepare no regions should be ready for evac");
-
-  uint prepared_regions = 0;
-  double prediction_ms = 0;
-
-  _prepare_failed = true;
-  for (uint i = _current_index; i < _cset->optional_region_length(); i++) {
-    HeapRegion* hr = region_at(i);
-    prediction_ms += _cset->predict_region_elapsed_time_ms(hr);
-    if (prediction_ms > time_limit) {
-      log_debug(gc, cset)("Prepared %u regions for optional evacuation. Predicted time: %.3fms", prepared_regions, prediction_ms);
-      return;
-    }
-
-    // This region will be included in the next optional evacuation.
-    prepare_to_evacuate_optional_region(hr);
-    prepared_regions++;
-    _current_limit++;
-    _prepare_failed = false;
+void G1CollectionSet::move_candidates_to_collection_set(uint num_old_candidate_regions) {
+  if (num_old_candidate_regions == 0) {
+    return;
   }
-
-  log_debug(gc, cset)("Prepared all %u regions for optional evacuation. Predicted time: %.3fms",
-                      prepared_regions, prediction_ms);
-}
-
-bool G1OptionalCSet::prepare_failed() {
-  return _prepare_failed;
-}
-
-void G1OptionalCSet::complete_evacuation() {
-  _evacuation_failed = false;
-  for (uint i = _current_index; i < _current_limit; i++) {
-    HeapRegion* hr = region_at(i);
-    _cset->clear_optional_region(hr);
-    if (hr->evacuation_failed()){
-      _evacuation_failed = true;
-    }
+  uint candidate_idx = candidates()->cur_idx();
+  for (uint i = 0; i < num_old_candidate_regions; i++) {
+    HeapRegion* r = candidates()->at(candidate_idx + i);
+    // This potentially optional candidate region is going to be an actual collection
+    // set region. Clear cset marker.
+    _g1h->clear_in_cset(r);
+    add_old_region(r);
   }
-  _current_index = _current_limit;
+  candidates()->remove(num_old_candidate_regions);
+
+  candidates()->verify();
 }
 
-bool G1OptionalCSet::evacuation_failed() {
-  return _evacuation_failed;
+void G1CollectionSet::finalize_initial_collection_set(double target_pause_time_ms, G1SurvivorRegions* survivor) {
+  double time_remaining_ms = finalize_young_part(target_pause_time_ms, survivor);
+  finalize_old_part(time_remaining_ms);
 }
 
-G1OptionalCSet::~G1OptionalCSet() {
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  while (!is_empty()) {
-    // We want to return regions not evacuated to the collection set candidates
-    // in reverse order to maintain the old order.
-    HeapRegion* hr = _cset->remove_last_optional_region();
-    assert(hr != NULL, "Should be valid region left");
-    _pset->record_unused_optional_region(hr);
-    g1h->old_set_add(hr);
-    g1h->clear_in_cset(hr);
-    hr->set_index_in_opt_cset(InvalidCSetIndex);
-    _cset->candidates()->push_front(hr);
+bool G1CollectionSet::finalize_optional_for_evacuation(double remaining_pause_time) {
+  update_incremental_marker();
+
+  uint num_selected_regions;
+  _policy->calculate_optional_collection_set_regions(candidates(),
+                                                     _num_optional_regions,
+                                                     remaining_pause_time,
+                                                     num_selected_regions);
+
+  move_candidates_to_collection_set(num_selected_regions);
+
+  _num_optional_regions -= num_selected_regions;
+
+  stop_incremental_building();
+  return num_selected_regions > 0;
+}
+
+void G1CollectionSet::abandon_optional_collection_set(G1ParScanThreadStateSet* pss) {
+  for (uint i = 0; i < _num_optional_regions; i++) {
+    HeapRegion* r = candidates()->at(candidates()->cur_idx() + i);
+    pss->record_unused_optional_region(r);
+    _g1h->clear_in_cset(r);
+    r->clear_index_in_opt_cset();
   }
-  _cset->free_optional_regions();
-}
-
-uint G1OptionalCSet::size() {
-  return _cset->optional_region_length() - _current_index;
-}
-
-bool G1OptionalCSet::is_empty() {
-  return size() == 0;
-}
-
-void G1OptionalCSet::prepare_to_evacuate_optional_region(HeapRegion* hr) {
-  log_trace(gc, cset)("Adding region %u for optional evacuation", hr->hrm_index());
-  G1CollectedHeap::heap()->clear_in_cset(hr);
-  _cset->add_old_region(hr);
+  free_optional_regions();
 }
 
 #ifdef ASSERT

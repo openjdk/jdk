@@ -1085,11 +1085,12 @@ static oop invoke(InstanceKlass* klass,
           if (method->is_abstract()) {
             // new default: 6531596
             ResourceMark rm(THREAD);
+            stringStream ss;
+            ss.print("'");
+            Method::print_external_name(&ss, target_klass, method->name(), method->signature());
+            ss.print("'");
             Handle h_origexception = Exceptions::new_exception(THREAD,
-              vmSymbols::java_lang_AbstractMethodError(),
-              Method::name_and_sig_as_C_string(target_klass,
-              method->name(),
-              method->signature()));
+              vmSymbols::java_lang_AbstractMethodError(), ss.as_string());
             JavaCallArguments args(h_origexception);
             THROW_ARG_0(vmSymbols::java_lang_reflect_InvocationTargetException(),
               vmSymbols::throwable_void_signature(),
@@ -1104,10 +1105,13 @@ static oop invoke(InstanceKlass* klass,
   // an internal vtable bug. If you ever get this please let Karen know.
   if (method.is_null()) {
     ResourceMark rm(THREAD);
-    THROW_MSG_0(vmSymbols::java_lang_NoSuchMethodError(),
-                Method::name_and_sig_as_C_string(klass,
-                reflected_method->name(),
-                reflected_method->signature()));
+    stringStream ss;
+    ss.print("'");
+    Method::print_external_name(&ss, klass,
+                                     reflected_method->name(),
+                                     reflected_method->signature());
+    ss.print("'");
+    THROW_MSG_0(vmSymbols::java_lang_NoSuchMethodError(), ss.as_string());
   }
 
   assert(ptypes->is_objArray(), "just checking");

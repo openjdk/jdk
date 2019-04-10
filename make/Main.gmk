@@ -335,6 +335,7 @@ BOOTCYCLE_TARGET := product-images
 bootcycle-images:
         ifneq ($(COMPILE_TYPE), cross)
 	  $(call LogWarn, Boot cycle build step 2: Building a new JDK image using previously built image)
+	  $(call MakeDir, $(OUTPUTDIR)/bootcycle-build)
 	  +$(MAKE) $(MAKE_ARGS) -f $(TOPDIR)/make/Init.gmk PARALLEL_TARGETS=$(BOOTCYCLE_TARGET) \
 	      JOBS= SPEC=$(dir $(SPEC))bootcycle-spec.gmk main
         else
@@ -650,7 +651,6 @@ else
 
   # Declare dependencies between hotspot-<variant>* targets
   $(foreach v, $(JVM_VARIANTS), \
-      $(eval hotspot-$v: hotspot-$v-gensrc hotspot-$v-libs) \
       $(eval hotspot-$v-gensrc: java.base-copy) \
       $(eval hotspot-$v-libs: hotspot-$v-gensrc java.base-copy) \
   )
@@ -943,6 +943,10 @@ JVM_TOOLS_TARGETS ?= buildtools-hotspot
 buildtools: buildtools-langtools interim-langtools interim-rmic \
     buildtools-jdk $(JVM_TOOLS_TARGETS)
 
+# Declare dependencies from hotspot-<variant> targets
+$(foreach v, $(JVM_VARIANTS), \
+  $(eval hotspot-$v: hotspot-$v-gensrc hotspot-$v-libs) \
+)
 hotspot: $(HOTSPOT_VARIANT_TARGETS)
 
 # Create targets hotspot-libs and hotspot-gensrc.

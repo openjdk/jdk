@@ -40,6 +40,8 @@ import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.BadPaddingException;
 import javax.crypto.NoSuchPaddingException;
+import jdk.internal.access.JavaSecuritySignatureAccess;
+import jdk.internal.access.SharedSecrets;
 
 import sun.security.util.Debug;
 import sun.security.jca.*;
@@ -117,6 +119,34 @@ import sun.security.jca.GetInstance.Instance;
  */
 
 public abstract class Signature extends SignatureSpi {
+
+    static {
+        SharedSecrets.setJavaSecuritySignatureAccess(
+            new JavaSecuritySignatureAccess() {
+                @Override
+                public void initVerify(Signature s, PublicKey publicKey,
+                        AlgorithmParameterSpec params)
+                        throws InvalidKeyException,
+                        InvalidAlgorithmParameterException {
+                    s.initVerify(publicKey, params);
+                }
+                @Override
+                public void initVerify(Signature s,
+                        java.security.cert.Certificate certificate,
+                        AlgorithmParameterSpec params)
+                        throws InvalidKeyException,
+                        InvalidAlgorithmParameterException {
+                    s.initVerify(certificate, params);
+                }
+                @Override
+                public void initSign(Signature s, PrivateKey privateKey,
+                        AlgorithmParameterSpec params, SecureRandom random)
+                        throws InvalidKeyException,
+                        InvalidAlgorithmParameterException {
+                    s.initSign(privateKey, params, random);
+                }
+        });
+    }
 
     private static final Debug debug =
                         Debug.getInstance("jca", "Signature");
@@ -482,6 +512,53 @@ public abstract class Signature extends SignatureSpi {
     }
 
     /**
+     * Initialize this object for verification. If this method is called
+     * again with different arguments, it negates the effect
+     * of this call.
+     *
+     * @param publicKey the public key of the identity whose signature is
+     * going to be verified.
+     * @param params the parameters used for verifying this signature.
+     *
+     * @exception InvalidKeyException if the key is invalid.
+     * @exception InvalidAlgorithmParameterException if the params is invalid.
+     */
+    final void initVerify(PublicKey publicKey, AlgorithmParameterSpec params)
+            throws InvalidKeyException, InvalidAlgorithmParameterException {
+        engineInitVerify(publicKey, params);
+        state = VERIFY;
+
+        if (!skipDebug && pdebug != null) {
+            pdebug.println("Signature." + algorithm +
+                " verification algorithm from: " + getProviderName());
+        }
+    }
+
+    private static PublicKey getPublicKeyFromCert(Certificate cert)
+            throws InvalidKeyException {
+        // If the certificate is of type X509Certificate,
+        // we should check whether it has a Key Usage
+        // extension marked as critical.
+        //if (cert instanceof java.security.cert.X509Certificate) {
+        if (cert instanceof X509Certificate) {
+            // Check whether the cert has a key usage extension
+            // marked as a critical extension.
+            // The OID for KeyUsage extension is 2.5.29.15.
+            X509Certificate c = (X509Certificate)cert;
+            Set<String> critSet = c.getCriticalExtensionOIDs();
+
+            if (critSet != null && !critSet.isEmpty()
+                && critSet.contains("2.5.29.15")) {
+                boolean[] keyUsageInfo = c.getKeyUsage();
+                // keyUsageInfo[0] is for digitalSignature.
+                if ((keyUsageInfo != null) && (keyUsageInfo[0] == false))
+                    throw new InvalidKeyException("Wrong key usage");
+            }
+        }
+        return cert.getPublicKey();
+    }
+
+    /**
      * Initializes this object for verification, using the public key from
      * the given certificate.
      * <p>If the certificate is of type X.509 and has a <i>key usage</i>
@@ -501,27 +578,40 @@ public abstract class Signature extends SignatureSpi {
      */
     public final void initVerify(Certificate certificate)
             throws InvalidKeyException {
-        // If the certificate is of type X509Certificate,
-        // we should check whether it has a Key Usage
-        // extension marked as critical.
-        if (certificate instanceof java.security.cert.X509Certificate) {
-            // Check whether the cert has a key usage extension
-            // marked as a critical extension.
-            // The OID for KeyUsage extension is 2.5.29.15.
-            X509Certificate cert = (X509Certificate)certificate;
-            Set<String> critSet = cert.getCriticalExtensionOIDs();
+        engineInitVerify(getPublicKeyFromCert(certificate));
+        state = VERIFY;
 
-            if (critSet != null && !critSet.isEmpty()
-                && critSet.contains("2.5.29.15")) {
-                boolean[] keyUsageInfo = cert.getKeyUsage();
-                // keyUsageInfo[0] is for digitalSignature.
-                if ((keyUsageInfo != null) && (keyUsageInfo[0] == false))
-                    throw new InvalidKeyException("Wrong key usage");
-            }
+        if (!skipDebug && pdebug != null) {
+            pdebug.println("Signature." + algorithm +
+                " verification algorithm from: " + getProviderName());
         }
+    }
 
-        PublicKey publicKey = certificate.getPublicKey();
-        engineInitVerify(publicKey);
+    /**
+     * Initializes this object for verification, using the public key from
+     * the given certificate.
+     * <p>If the certificate is of type X.509 and has a <i>key usage</i>
+     * extension field marked as critical, and the value of the <i>key usage</i>
+     * extension field implies that the public key in
+     * the certificate and its corresponding private key are not
+     * supposed to be used for digital signatures, an
+     * {@code InvalidKeyException} is thrown.
+     *
+     * @param certificate the certificate of the identity whose signature is
+     * going to be verified.
+     * @param params the parameters used for verifying this signature.
+     *
+     * @exception InvalidKeyException  if the public key in the certificate
+     * is not encoded properly or does not include required  parameter
+     * information or cannot be used for digital signature purposes.
+     * @exception InvalidAlgorithmParameterException if the params is invalid.
+     *
+     * @since 13
+     */
+    final void initVerify(Certificate certificate,
+            AlgorithmParameterSpec params)
+            throws InvalidKeyException, InvalidAlgorithmParameterException {
+        engineInitVerify(getPublicKeyFromCert(certificate), params);
         state = VERIFY;
 
         if (!skipDebug && pdebug != null) {
@@ -566,6 +656,31 @@ public abstract class Signature extends SignatureSpi {
     public final void initSign(PrivateKey privateKey, SecureRandom random)
             throws InvalidKeyException {
         engineInitSign(privateKey, random);
+        state = SIGN;
+
+        if (!skipDebug && pdebug != null) {
+            pdebug.println("Signature." + algorithm +
+                " signing algorithm from: " + getProviderName());
+        }
+    }
+
+    /**
+     * Initialize this object for signing. If this method is called
+     * again with different arguments, it negates the effect
+     * of this call.
+     *
+     * @param privateKey the private key of the identity whose signature
+     * is going to be generated.
+     * @param params the parameters used for generating signature.
+     * @param random the source of randomness for this signature.
+     *
+     * @exception InvalidKeyException if the key is invalid.
+     * @exception InvalidAlgorithmParameterException if the params is invalid
+     */
+    final void initSign(PrivateKey privateKey,
+            AlgorithmParameterSpec params, SecureRandom random)
+            throws InvalidKeyException, InvalidAlgorithmParameterException {
+        engineInitSign(privateKey, params, random);
         state = SIGN;
 
         if (!skipDebug && pdebug != null) {
@@ -1110,11 +1225,13 @@ public abstract class Signature extends SignatureSpi {
             }
         }
 
-        private void chooseProvider(int type, Key key, SecureRandom random)
-                throws InvalidKeyException {
+        // Used by engineSetParameter/engineInitSign/engineInitVerify() to
+        // find the right provider with the supplied key, parameters, random source
+        private void chooseProvider(int type, Key key,
+                AlgorithmParameterSpec params, SecureRandom random)
+                throws InvalidKeyException, InvalidAlgorithmParameterException {
             synchronized (lock) {
                 if (sigSpi != null) {
-                    init(sigSpi, type, key, random);
                     return;
                 }
                 Exception lastException = null;
@@ -1127,7 +1244,7 @@ public abstract class Signature extends SignatureSpi {
                         s = serviceIterator.next();
                     }
                     // if provider says it does not support this key, ignore it
-                    if (s.supportsParameter(key) == false) {
+                    if (key != null && s.supportsParameter(key) == false) {
                         continue;
                     }
                     // if instance is not a SignatureSpi, ignore it
@@ -1136,7 +1253,7 @@ public abstract class Signature extends SignatureSpi {
                     }
                     try {
                         SignatureSpi spi = newInstance(s);
-                        init(spi, type, key, random);
+                        tryOperation(spi, type, key, params, random);
                         provider = s.getProvider();
                         sigSpi = spi;
                         firstService = null;
@@ -1158,6 +1275,10 @@ public abstract class Signature extends SignatureSpi {
                 if (lastException instanceof RuntimeException) {
                     throw (RuntimeException)lastException;
                 }
+                if (lastException instanceof InvalidAlgorithmParameterException) {
+                    throw (InvalidAlgorithmParameterException)lastException;
+                }
+
                 String k = (key != null) ? key.getClass().getName() : "(null)";
                 throw new InvalidKeyException
                     ("No installed provider supports this key: "
@@ -1165,21 +1286,34 @@ public abstract class Signature extends SignatureSpi {
             }
         }
 
-        private static final int I_PUB     = 1;
-        private static final int I_PRIV    = 2;
-        private static final int I_PRIV_SR = 3;
+        private static final int I_PUB           = 1;
+        private static final int I_PRIV          = 2;
+        private static final int I_PRIV_SR       = 3;
+        private static final int I_PUB_PARAM     = 4;
+        private static final int I_PRIV_PARAM_SR = 5;
+        private static final int S_PARAM         = 6;
 
-        private void init(SignatureSpi spi, int type, Key  key,
-                SecureRandom random) throws InvalidKeyException {
+        private void tryOperation(SignatureSpi spi, int type, Key  key,
+                AlgorithmParameterSpec params, SecureRandom random)
+                throws InvalidKeyException, InvalidAlgorithmParameterException {
             switch (type) {
             case I_PUB:
                 spi.engineInitVerify((PublicKey)key);
+                break;
+            case I_PUB_PARAM:
+                spi.engineInitVerify((PublicKey)key, params);
                 break;
             case I_PRIV:
                 spi.engineInitSign((PrivateKey)key);
                 break;
             case I_PRIV_SR:
                 spi.engineInitSign((PrivateKey)key, random);
+                break;
+            case I_PRIV_PARAM_SR:
+                spi.engineInitSign((PrivateKey)key, params, random);
+                break;
+            case S_PARAM:
+                spi.engineSetParameter(params);
                 break;
             default:
                 throw new AssertionError("Internal error: " + type);
@@ -1191,7 +1325,22 @@ public abstract class Signature extends SignatureSpi {
             if (sigSpi != null) {
                 sigSpi.engineInitVerify(publicKey);
             } else {
-                chooseProvider(I_PUB, publicKey, null);
+                try {
+                    chooseProvider(I_PUB, publicKey, null, null);
+                } catch (InvalidAlgorithmParameterException iape) {
+                    // should not happen, re-throw as IKE just in case
+                    throw new InvalidKeyException(iape);
+                }
+            }
+        }
+
+        void engineInitVerify(PublicKey publicKey,
+                AlgorithmParameterSpec params)
+                throws InvalidKeyException, InvalidAlgorithmParameterException {
+            if (sigSpi != null) {
+                sigSpi.engineInitVerify(publicKey, params);
+            } else {
+                chooseProvider(I_PUB_PARAM, publicKey, params, null);
             }
         }
 
@@ -1200,7 +1349,12 @@ public abstract class Signature extends SignatureSpi {
             if (sigSpi != null) {
                 sigSpi.engineInitSign(privateKey);
             } else {
-                chooseProvider(I_PRIV, privateKey, null);
+                try {
+                    chooseProvider(I_PRIV, privateKey, null, null);
+                } catch (InvalidAlgorithmParameterException iape) {
+                    // should not happen, re-throw as IKE just in case
+                    throw new InvalidKeyException(iape);
+                }
             }
         }
 
@@ -1209,7 +1363,22 @@ public abstract class Signature extends SignatureSpi {
             if (sigSpi != null) {
                 sigSpi.engineInitSign(privateKey, sr);
             } else {
-                chooseProvider(I_PRIV_SR, privateKey, sr);
+                try {
+                    chooseProvider(I_PRIV_SR, privateKey, null, sr);
+                } catch (InvalidAlgorithmParameterException iape) {
+                    // should not happen, re-throw as IKE just in case
+                    throw new InvalidKeyException(iape);
+                }
+            }
+        }
+
+        void engineInitSign(PrivateKey privateKey,
+                AlgorithmParameterSpec params, SecureRandom sr)
+                throws InvalidKeyException, InvalidAlgorithmParameterException {
+            if (sigSpi != null) {
+                sigSpi.engineInitSign(privateKey, params, sr);
+            } else {
+                chooseProvider(I_PRIV_PARAM_SR, privateKey, params, sr);
             }
         }
 
@@ -1260,8 +1429,16 @@ public abstract class Signature extends SignatureSpi {
 
         protected void engineSetParameter(AlgorithmParameterSpec params)
                 throws InvalidAlgorithmParameterException {
-            chooseFirstProvider();
-            sigSpi.engineSetParameter(params);
+            if (sigSpi != null) {
+                sigSpi.engineSetParameter(params);
+            } else {
+                try {
+                    chooseProvider(S_PARAM, null, params, null);
+                } catch (InvalidKeyException ike) {
+                    // should never happen, rethrow just in case
+                    throw new InvalidAlgorithmParameterException(ike);
+                }
+            }
         }
 
         protected Object engineGetParameter(String param)

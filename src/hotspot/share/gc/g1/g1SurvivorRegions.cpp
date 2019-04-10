@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,9 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/debug.hpp"
 
-G1SurvivorRegions::G1SurvivorRegions() : _regions(new (ResourceObj::C_HEAP, mtGC) GrowableArray<HeapRegion*>(8, true, mtGC)) {}
+G1SurvivorRegions::G1SurvivorRegions() :
+  _regions(new (ResourceObj::C_HEAP, mtGC) GrowableArray<HeapRegion*>(8, true, mtGC)),
+  _used_bytes(0) {}
 
 void G1SurvivorRegions::add(HeapRegion* hr) {
   assert(hr->is_survivor(), "should be flagged as survivor region");
@@ -51,5 +53,9 @@ void G1SurvivorRegions::convert_to_eden() {
 
 void G1SurvivorRegions::clear() {
   _regions->clear();
+  _used_bytes = 0;
 }
 
+void G1SurvivorRegions::add_used_bytes(size_t used_bytes) {
+  _used_bytes += used_bytes;
+}

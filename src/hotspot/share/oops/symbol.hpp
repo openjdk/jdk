@@ -229,6 +229,15 @@ class Symbol : public MetaspaceObj {
   const char* as_klass_external_name() const;
   const char* as_klass_external_name(char* buf, int size) const;
 
+  // Treating the symbol as a signature, print the return
+  // type to the outputStream. Prints external names as 'double' or
+  // 'java.lang.Object[][]'.
+  void print_as_signature_external_return_type(outputStream *os);
+  // Treating the symbol as a signature, print the parameter types
+  // seperated by ', ' to the outputStream.  Prints external names as
+  //  'double' or 'java.lang.Object[][]'.
+  void print_as_signature_external_parameters(outputStream *os);
+
   void metaspace_pointers_do(MetaspaceClosure* it);
   MetaspaceObj::Type type() const { return SymbolType; }
 

@@ -30,6 +30,7 @@ import java.net.Socket;
 import java.security.*;
 import java.security.cert.*;
 import java.util.*;
+import java.util.concurrent.locks.ReentrantLock;
 import javax.net.ssl.*;
 import sun.security.action.GetPropertyAction;
 import sun.security.provider.certpath.AlgorithmChecker;
@@ -68,6 +69,8 @@ public abstract class SSLContextImpl extends SSLContextSpi {
             getCustomizedCipherSuites("jdk.tls.server.cipherSuites");
 
     private volatile StatusResponseManager statusResponseManager;
+
+    private final ReentrantLock contextLock = new ReentrantLock();
 
     SSLContextImpl() {
         ephemeralKeyManager = new EphemeralKeyManager();
@@ -230,11 +233,14 @@ public abstract class SSLContextImpl extends SSLContextSpi {
     // Used for DTLS in server mode only.
     HelloCookieManager getHelloCookieManager(ProtocolVersion protocolVersion) {
         if (helloCookieManagerBuilder == null) {
-            synchronized (this) {
+            contextLock.lock();
+            try {
                 if (helloCookieManagerBuilder == null) {
                     helloCookieManagerBuilder =
                             new HelloCookieManager.Builder(secureRandom);
                 }
+            } finally {
+                contextLock.unlock();
             }
         }
 
@@ -243,7 +249,8 @@ public abstract class SSLContextImpl extends SSLContextSpi {
 
     StatusResponseManager getStatusResponseManager() {
         if (serverEnableStapling && statusResponseManager == null) {
-            synchronized (this) {
+            contextLock.lock();
+            try {
                 if (statusResponseManager == null) {
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl,sslctx")) {
                         SSLLogger.finest(
@@ -251,6 +258,8 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                     }
                     statusResponseManager = new StatusResponseManager();
                 }
+            } finally {
+                contextLock.unlock();
             }
         }
 

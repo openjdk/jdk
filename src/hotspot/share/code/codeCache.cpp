@@ -780,13 +780,14 @@ void CodeCache::increment_unloading_cycle() {
 CodeCache::UnloadingScope::UnloadingScope(BoolObjectClosure* is_alive)
   : _is_unloading_behaviour(is_alive)
 {
+  _saved_behaviour = IsUnloadingBehaviour::current();
   IsUnloadingBehaviour::set_current(&_is_unloading_behaviour);
   increment_unloading_cycle();
   DependencyContext::cleaning_start();
 }
 
 CodeCache::UnloadingScope::~UnloadingScope() {
-  IsUnloadingBehaviour::set_current(NULL);
+  IsUnloadingBehaviour::set_current(_saved_behaviour);
   DependencyContext::cleaning_end();
 }
 

@@ -24,12 +24,13 @@
 package gc.survivorAlignment;
 
 /**
- * @test
+ * @test gc.survivorAlignment.TestPromotionToSurvivor
  * @bug 8031323
  * @summary Verify that objects promoted from eden space to survivor space after
  *          minor GC are aligned to SurvivorAlignmentInBytes.
  * @requires vm.gc != "Z" & vm.gc != "Shenandoah"
  * @library /test/lib
+ * @library /
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build sun.hotspot.WhiteBox

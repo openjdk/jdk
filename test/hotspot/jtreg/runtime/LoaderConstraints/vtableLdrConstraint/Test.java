@@ -38,7 +38,7 @@ public class Test {
     // Break expected error messages into 3 parts since the loader name includes its identity
     // hash which is unique and can't be compared against.
     static String expectedErrorMessage1_part1 = "loader constraint violation for class test.Task: when " +
-                                                "selecting overriding method test.Task.m()Ltest/Foo; the " +
+                                                "selecting overriding method 'test.Foo test.Task.m()' the " +
                                                 "class loader PreemptingClassLoader @";
     static String expectedErrorMessage1_part2 = " of the selected method's type test.Task, and the class " +
                                                 "loader 'app' for its super type test.J have different Class objects " +
@@ -47,7 +47,7 @@ public class Test {
     static String expectedErrorMessage1_part3 = ", parent loader 'app'; test.J is in unnamed module of loader 'app')";
 
     static String expectedErrorMessage2_part1 = "loader constraint violation for class test.Task: when " +
-                                                "selecting overriding method test.Task.m()Ltest/Foo; the " +
+                                                "selecting overriding method 'test.Foo test.Task.m()' the " +
                                                 "class loader 'VtableLdrCnstrnt_Test_Loader' @";
     static String expectedErrorMessage2_part2 = " of the selected method's type test.Task, and the class " +
                                                 "loader 'app' for its super type test.J have different Class objects " +

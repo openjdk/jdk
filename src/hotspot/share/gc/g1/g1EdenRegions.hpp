@@ -31,19 +31,28 @@
 
 class G1EdenRegions {
 private:
-  int _length;
+  int    _length;
+  // Sum of used bytes from all retired eden regions.
+  // I.e. updated when mutator regions are retired.
+  volatile size_t _used_bytes;
 
 public:
-  G1EdenRegions() : _length(0) {}
+  G1EdenRegions() : _length(0), _used_bytes(0) { }
 
   void add(HeapRegion* hr) {
     assert(!hr->is_eden(), "should not already be set");
     _length++;
   }
 
-  void clear() { _length = 0; }
+  void clear() { _length = 0; _used_bytes = 0; }
 
   uint length() const { return _length; }
+
+  size_t used_bytes() const { return _used_bytes; }
+
+  void add_used_bytes(size_t used_bytes) {
+    _used_bytes += used_bytes;
+  }
 };
 
 #endif // SHARE_GC_G1_G1EDENREGIONS_HPP

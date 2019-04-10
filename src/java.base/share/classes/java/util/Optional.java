@@ -61,22 +61,12 @@ public final class Optional<T> {
     /**
      * Common instance for {@code empty()}.
      */
-    private static final Optional<?> EMPTY = new Optional<>();
+    private static final Optional<?> EMPTY = new Optional<>(null);
 
     /**
      * If non-null, the value; if null, indicates no value is present
      */
     private final T value;
-
-    /**
-     * Constructs an empty instance.
-     *
-     * @implNote Generally only one empty instance, {@link Optional#EMPTY},
-     * should exist per VM.
-     */
-    private Optional() {
-        this.value = null;
-    }
 
     /**
      * Returns an empty {@code Optional} instance.  No value is present for this
@@ -100,11 +90,12 @@ public final class Optional<T> {
     /**
      * Constructs an instance with the described value.
      *
-     * @param value the non-{@code null} value to describe
-     * @throws NullPointerException if value is {@code null}
+     * @param value the value to describe; it's the caller's responsibility to
+     *        ensure the value is non-{@code null} unless creating the singleton
+     *        instance returned by {@code empty()}.
      */
     private Optional(T value) {
-        this.value = Objects.requireNonNull(value);
+        this.value = value;
     }
 
     /**
@@ -117,7 +108,7 @@ public final class Optional<T> {
      * @throws NullPointerException if value is {@code null}
      */
     public static <T> Optional<T> of(T value) {
-        return new Optional<>(value);
+        return new Optional<>(Objects.requireNonNull(value));
     }
 
     /**
@@ -129,8 +120,10 @@ public final class Optional<T> {
      * @return an {@code Optional} with a present value if the specified value
      *         is non-{@code null}, otherwise an empty {@code Optional}
      */
+    @SuppressWarnings("unchecked")
     public static <T> Optional<T> ofNullable(T value) {
-        return value == null ? empty() : of(value);
+        return value == null ? (Optional<T>) EMPTY
+                             : new Optional<>(value);
     }
 
     /**

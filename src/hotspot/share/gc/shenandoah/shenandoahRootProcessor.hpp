@@ -58,7 +58,7 @@ class ShenandoahRootProcessor : public StackObj {
   StrongRootsScope _srs;
   OopStorage::ParState<false, false> _par_state_string;
   ShenandoahPhaseTimings::Phase _phase;
-  ParallelCLDRootIterator   _cld_iterator;
+  ParallelCLDRootIterator _cld_iterator;
   ShenandoahAllCodeRootsIterator _coderoots_all_iterator;
   CodeBlobClosure* _threads_nmethods_cl;
   WeakProcessorPhaseTimes _weak_processor_timings;
@@ -120,11 +120,16 @@ class ShenandoahRootEvacuator : public StackObj {
   StrongRootsScope _srs;
   ShenandoahPhaseTimings::Phase _phase;
   ShenandoahCsetCodeRootsIterator _coderoots_cset_iterator;
+  OopStorage::ParState<false, false> _par_state_string;
 
   enum Shenandoah_evacuate_roots_tasks {
-      SHENANDOAH_EVAC_jvmti_oops_do,
-      // Leave this one last.
-      SHENANDOAH_EVAC_NumElements
+    SHENANDOAH_EVAC_Universe_oops_do,
+    SHENANDOAH_EVAC_ObjectSynchronizer_oops_do,
+    SHENANDOAH_EVAC_Management_oops_do,
+    SHENANDOAH_EVAC_SystemDictionary_oops_do,
+    SHENANDOAH_EVAC_jvmti_oops_do,
+    // Leave this one last.
+    SHENANDOAH_EVAC_NumElements
   };
 public:
   ShenandoahRootEvacuator(ShenandoahHeap* heap, uint n_workers,

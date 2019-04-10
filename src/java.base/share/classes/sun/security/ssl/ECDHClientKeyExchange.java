@@ -31,9 +31,7 @@ import java.security.AlgorithmConstraints;
 import java.security.CryptoPrimitive;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
-import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPoint;
@@ -285,14 +283,13 @@ final class ECDHClientKeyExchange {
                     "No expected EC server cert for ECDH client key exchange");
             }
 
-            PrivateKey privateKey = x509Possession.popPrivateKey;
-            if (!privateKey.getAlgorithm().equals("EC")) {
+            ECParameterSpec params = x509Possession.getECParameterSpec();
+            if (params == null) {
                 // unlikely, have been checked during cipher suite negotiation.
                 throw shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                     "Not EC server cert for ECDH client key exchange");
             }
 
-            ECParameterSpec params = ((ECPrivateKey)privateKey).getParams();
             NamedGroup namedGroup = NamedGroup.valueOf(params);
             if (namedGroup == null) {
                 // unlikely, have been checked during cipher suite negotiation.

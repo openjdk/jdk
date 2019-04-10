@@ -296,6 +296,9 @@ else # $(HAS_SPEC)=true
   BUILD_PROFILE_LOG := $(OUTPUTDIR)/build-profile.log
 
   BUILD_LOG_PIPE := > >($(TEE) -a $(BUILD_LOG)) 2> >($(TEE) -a $(BUILD_LOG) >&2) && wait
+  # Use this for simple echo/printf commands that are never expected to print
+  # to stderr.
+  BUILD_LOG_PIPE_SIMPLE := | $(TEE) -a $(BUILD_LOG)
 
   ifneq ($(CUSTOM_ROOT), )
     topdir=$(CUSTOM_ROOT)
@@ -514,7 +517,7 @@ else # $(HAS_SPEC)=true
 	    "`$(LS) $(BUILDTIMESDIR)/build_time_diff_* | $(GREP) -v _TOTAL | \
 	    $(XARGS) $(CAT) | $(SORT) -k 2`" \
 	    "`$(CAT) $(BUILDTIMESDIR)/build_time_diff_TOTAL`" \
-	    $(BUILD_LOG_PIPE)
+	    $(BUILD_LOG_PIPE_SIMPLE)
   endef
 
   define ReportProfileTimes
@@ -524,7 +527,7 @@ else # $(HAS_SPEC)=true
         $(CAT) $(BUILD_PROFILE_LOG) && \
         $(ECHO) End $(notdir $(BUILD_PROFILE_LOG)); \
       } \
-      $(BUILD_LOG_PIPE)
+      $(BUILD_LOG_PIPE_SIMPLE)
     )
   endef
 

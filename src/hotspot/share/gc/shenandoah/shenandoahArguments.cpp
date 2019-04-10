@@ -46,12 +46,8 @@ void ShenandoahArguments::initialize() {
 
   FLAG_SET_DEFAULT(ShenandoahSATBBarrier,            false);
   FLAG_SET_DEFAULT(ShenandoahKeepAliveBarrier,       false);
-  FLAG_SET_DEFAULT(ShenandoahWriteBarrier,           false);
-  FLAG_SET_DEFAULT(ShenandoahReadBarrier,            false);
   FLAG_SET_DEFAULT(ShenandoahStoreValEnqueueBarrier, false);
-  FLAG_SET_DEFAULT(ShenandoahStoreValReadBarrier,    false);
   FLAG_SET_DEFAULT(ShenandoahCASBarrier,             false);
-  FLAG_SET_DEFAULT(ShenandoahAcmpBarrier,            false);
   FLAG_SET_DEFAULT(ShenandoahCloneBarrier,           false);
 #endif
 
@@ -111,12 +107,8 @@ void ShenandoahArguments::initialize() {
   if (ShenandoahVerifyOptoBarriers &&
           (!FLAG_IS_DEFAULT(ShenandoahSATBBarrier)            ||
            !FLAG_IS_DEFAULT(ShenandoahKeepAliveBarrier)       ||
-           !FLAG_IS_DEFAULT(ShenandoahWriteBarrier)           ||
-           !FLAG_IS_DEFAULT(ShenandoahReadBarrier)            ||
            !FLAG_IS_DEFAULT(ShenandoahStoreValEnqueueBarrier) ||
-           !FLAG_IS_DEFAULT(ShenandoahStoreValReadBarrier)    ||
            !FLAG_IS_DEFAULT(ShenandoahCASBarrier)             ||
-           !FLAG_IS_DEFAULT(ShenandoahAcmpBarrier)            ||
            !FLAG_IS_DEFAULT(ShenandoahCloneBarrier)
           )) {
     warning("Unusual barrier configuration, disabling C2 barrier verification");
@@ -147,6 +139,11 @@ void ShenandoahArguments::initialize() {
     FLAG_SET_DEFAULT(ShenandoahUncommit, false);
   }
 
+  if ((InitialHeapSize == MaxHeapSize) && ShenandoahUncommit) {
+    log_info(gc)("Min heap equals to max heap, disabling ShenandoahUncommit");
+    FLAG_SET_DEFAULT(ShenandoahUncommit, false);
+  }
+
   // If class unloading is disabled, no unloading for concurrent cycles as well.
   // If class unloading is enabled, users should opt-in for unloading during
   // concurrent cycles.
@@ -163,13 +160,6 @@ void ShenandoahArguments::initialize() {
     }
     FLAG_SET_DEFAULT(UseAOT, false);
   }
-
-  // JNI fast get field stuff is not currently supported by Shenandoah.
-  // It would introduce another heap memory access for reading the forwarding
-  // pointer, which would have to be guarded by the signal handler machinery.
-  // See:
-  // http://mail.openjdk.java.net/pipermail/hotspot-dev/2018-June/032763.html
-  FLAG_SET_DEFAULT(UseFastJNIAccessors, false);
 
   // TLAB sizing policy makes resizing decisions before each GC cycle. It averages
   // historical data, assigning more recent data the weight according to TLABAllocationWeight.

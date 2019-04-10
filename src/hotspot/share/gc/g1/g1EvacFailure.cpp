@@ -228,6 +228,8 @@ public:
 
     if (_hrclaimer->claim_region(hr->hrm_index())) {
       if (hr->evacuation_failed()) {
+        hr->clear_index_in_opt_cset();
+
         bool during_initial_mark = _g1h->collector_state()->in_initial_mark_gc();
         bool during_conc_mark = _g1h->collector_state()->mark_or_rebuild_in_progress();
 
@@ -257,5 +259,5 @@ G1ParRemoveSelfForwardPtrsTask::G1ParRemoveSelfForwardPtrsTask() :
 void G1ParRemoveSelfForwardPtrsTask::work(uint worker_id) {
   RemoveSelfForwardPtrHRClosure rsfp_cl(worker_id, &_hrclaimer);
 
-  _g1h->collection_set_iterate_from(&rsfp_cl, worker_id);
+  _g1h->collection_set_iterate_increment_from(&rsfp_cl, worker_id);
 }

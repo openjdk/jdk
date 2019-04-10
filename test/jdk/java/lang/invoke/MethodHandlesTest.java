@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.junit.Assert.*;
 
@@ -561,25 +562,37 @@ public abstract class MethodHandlesTest {
         static long sJ = 1+'J';
         static float sF = 1+'F';
         static double sD = 1+'D';
+
+        // final fields
+        final boolean fiZ = false;
+        final byte fiB = 2+(byte)'B';
+        final short fiS = 2+(short)'S';
+        final char fiC = 2+'C';
+        final int fiI = 2+'I';
+        final long fiJ = 2+'J';
+        final float fiF = 2+'F';
+        final double fiD = 2+'D';
         final static boolean fsZ = false;
-        final static byte fsB = 2+(byte)'B';
-        final static short fsS = 2+(short)'S';
-        final static char fsC = 2+'C';
-        final static int fsI = 2+'I';
-        final static long fsJ = 2+'J';
-        final static float fsF = 2+'F';
-        final static double fsD = 2+'D';
+        final static byte fsB = 3+(byte)'B';
+        final static short fsS = 3+(short)'S';
+        final static char fsC = 3+'C';
+        final static int fsI = 3+'I';
+        final static long fsJ = 3+'J';
+        final static float fsF = 3+'F';
+        final static double fsD = 3+'D';
 
         Object iL = 'L';
-        String iR = "R";
-        static Object sL = 'M';
-        static String sR = "S";
-        final static Object fsL = 'N';
-        final static String fsR = "T";
+        String iR = "iR";
+        static Object sL = 1+'L';
+        static String sR = "sR";
+        final Object fiL = 2+'L';
+        final String fiR = "fiR";
+        final static Object fsL = 3+'L';
+        final static String fsR = "fsR";
 
-        static final Object[][] CASES;
+        static final ArrayList<Object[]> STATIC_FIELD_CASES = new ArrayList<>();
+        static final ArrayList<Object[]> INSTANCE_FIELD_CASES = new ArrayList<>();
         static {
-            ArrayList<Object[]> cases = new ArrayList<>();
             Object types[][] = {
                 {'L',Object.class}, {'R',String.class},
                 {'I',int.class}, {'J',long.class},
@@ -589,42 +602,91 @@ public abstract class MethodHandlesTest {
             };
             HasFields fields = new HasFields();
             for (Object[] t : types) {
-                for (int kind = 0; kind <= 2; kind++) {
+                for (int kind = 0; kind <= 1; kind++) {
                     boolean isStatic = (kind != 0);
-                    boolean isFinal  = (kind == 2);
+                    ArrayList<Object[]> cases = isStatic ? STATIC_FIELD_CASES : INSTANCE_FIELD_CASES;
                     char btc = (Character)t[0];
-                    String name = (isStatic ? "s" : "i") + btc;
-                    if (isFinal) name = "f" + name;
+                    String fname = (isStatic ? "s" : "i") + btc;
+                    String finalFname = (isStatic ? "fs" : "fi") + btc;
                     Class<?> type = (Class<?>) t[1];
-                    Object value;
-                    Field field;
-                    try {
-                        field = HasFields.class.getDeclaredField(name);
-                    } catch (NoSuchFieldException | SecurityException ex) {
-                        throw new InternalError("no field HasFields."+name);
-                    }
-                    try {
-                        value = field.get(fields);
-                    } catch (IllegalArgumentException | IllegalAccessException ex) {
-                        throw new InternalError("cannot fetch field HasFields."+name);
-                    }
+                    // non-final field
+                    Field nonFinalField = getField(fname, type);
+                    Object value = getValue(fields, nonFinalField);
                     if (type == float.class) {
                         float v = 'F';
                         if (isStatic)  v++;
-                        if (isFinal)   v++;
                         assertTrue(value.equals(v));
                     }
-                    if (isFinal && isStatic) field.setAccessible(true);
-                    assertTrue(name.equals(field.getName()));
-                    assertTrue(type.equals(field.getType()));
-                    assertTrue(isStatic == (Modifier.isStatic(field.getModifiers())));
-                    assertTrue(isFinal  == (Modifier.isFinal(field.getModifiers())));
-                    cases.add(new Object[]{ field, value });
+                    assertTrue(isStatic == (Modifier.isStatic(nonFinalField.getModifiers())));
+                    cases.add(new Object[]{ nonFinalField, value });
+
+                    // setAccessible(true) on final field but static final field only has read access
+                    Field finalField = getField(finalFname, type);
+                    Object fvalue = getValue(fields, finalField);
+                    finalField.setAccessible(true);
+                    assertTrue(isStatic == (Modifier.isStatic(finalField.getModifiers())));
+                    cases.add(new Object[]{ finalField, fvalue, Error.class});
                 }
             }
-            cases.add(new Object[]{ new Object[]{ false, HasFields.class, "bogus_fD", double.class }, Error.class });
-            cases.add(new Object[]{ new Object[]{ true,  HasFields.class, "bogus_sL", Object.class }, Error.class });
-            CASES = cases.toArray(new Object[0][]);
+            INSTANCE_FIELD_CASES.add(new Object[]{ new Object[]{ false, HasFields.class, "bogus_fD", double.class }, Error.class });
+            STATIC_FIELD_CASES.add(new Object[]{ new Object[]{ true,  HasFields.class, "bogus_sL", Object.class }, Error.class });
+        }
+
+        private static Field getField(String name, Class<?> type) {
+            try {
+                Field field = HasFields.class.getDeclaredField(name);
+                assertTrue(name.equals(field.getName()));
+                assertTrue(type.equals(field.getType()));
+                return field;
+            } catch (NoSuchFieldException | SecurityException ex) {
+                throw new InternalError("no field HasFields."+name);
+            }
+        }
+
+        private static Object getValue(Object o, Field field) {
+            try {
+                return field.get(o);
+            } catch (IllegalArgumentException | IllegalAccessException ex) {
+                throw new InternalError("cannot fetch field HasFields."+field.getName());
+            }
+        }
+
+        static Object[][] testCasesFor(int testMode) {
+            Stream<Object[]> cases;
+            if ((testMode & TEST_UNREFLECT) != 0) {
+                cases = Stream.concat(STATIC_FIELD_CASES.stream(), INSTANCE_FIELD_CASES.stream());
+            } else if ((testMode & TEST_FIND_STATIC) != 0) {
+                cases = STATIC_FIELD_CASES.stream();
+            } else if ((testMode & TEST_FIND_FIELD) != 0) {
+                cases = INSTANCE_FIELD_CASES.stream();
+            } else {
+                throw new InternalError("unexpected test mode: " + testMode);
+            }
+            return cases.map(c -> mapTestCase(testMode, c)).toArray(Object[][]::new);
+
+        }
+
+        private static Object[] mapTestCase(int testMode, Object[] c) {
+            // non-final fields (2-element) and final fields (3-element) if not TEST_SETTER
+            if (c.length == 2 || (testMode & TEST_SETTER) == 0)
+                return c;
+
+            // final fields (3-element)
+            assertTrue((testMode & TEST_SETTER) != 0 && c[0] instanceof Field && c[2] == Error.class);
+            if ((testMode & TEST_UNREFLECT) == 0)
+                return new Object[]{ c[0], c[2]};   // negative test case; can't set on final fields
+
+            // unreflectSetter grants write access on instance final field if accessible flag is true
+            // hence promote the negative test case to positive test case
+            Field f = (Field) c[0];
+            int mods = f.getModifiers();
+            if (!Modifier.isFinal(mods) || (!Modifier.isStatic(mods) && f.isAccessible())) {
+                // positive test case
+                return new Object[]{ c[0], c[1] };
+            } else {
+                // otherwise, negative test case
+                return new Object[]{ c[0], c[2]};
+            }
         }
     }
 

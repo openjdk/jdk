@@ -37,27 +37,17 @@ ShenandoahTraversalHeuristics::ShenandoahTraversalHeuristics() : ShenandoahHeuri
   _last_cset_select(0)
  {
   FLAG_SET_DEFAULT(ShenandoahSATBBarrier,            false);
-  FLAG_SET_DEFAULT(ShenandoahStoreValReadBarrier,    false);
   FLAG_SET_DEFAULT(ShenandoahStoreValEnqueueBarrier, true);
   FLAG_SET_DEFAULT(ShenandoahKeepAliveBarrier,       false);
   FLAG_SET_DEFAULT(ShenandoahAllowMixedAllocs,       false);
-
-  SHENANDOAH_ERGO_OVERRIDE_DEFAULT(ShenandoahRefProcFrequency, 1);
-
-  // Adjust class unloading settings only if globally enabled.
-  if (ClassUnloadingWithConcurrentMark) {
-    SHENANDOAH_ERGO_OVERRIDE_DEFAULT(ShenandoahUnloadClassesFrequency, 1);
-  }
 
   SHENANDOAH_ERGO_ENABLE_FLAG(ExplicitGCInvokesConcurrent);
   SHENANDOAH_ERGO_ENABLE_FLAG(ShenandoahImplicitGCInvokesConcurrent);
 
   // Final configuration checks
-  SHENANDOAH_CHECK_FLAG_SET(ShenandoahReadBarrier);
-  SHENANDOAH_CHECK_FLAG_SET(ShenandoahWriteBarrier);
+  SHENANDOAH_CHECK_FLAG_SET(ShenandoahLoadRefBarrier);
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahStoreValEnqueueBarrier);
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahCASBarrier);
-  SHENANDOAH_CHECK_FLAG_SET(ShenandoahAcmpBarrier);
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahCloneBarrier);
 }
 
@@ -127,7 +117,7 @@ void ShenandoahTraversalHeuristics::choose_collection_set(ShenandoahCollectionSe
   // The significant complication is that liveness data was collected at the previous cycle, and only
   // for those regions that were allocated before previous cycle started.
 
-  size_t capacity    = heap->capacity();
+  size_t capacity    = heap->max_capacity();
   size_t actual_free = heap->free_set()->available();
   size_t free_target = ShenandoahMinFreeThreshold * capacity / 100;
   size_t min_garbage = free_target > actual_free ? (free_target - actual_free) : 0;
@@ -216,12 +206,12 @@ bool ShenandoahTraversalHeuristics::should_start_traversal_gc() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   assert(!heap->has_forwarded_objects(), "no forwarded objects here");
 
-  size_t capacity = heap->capacity();
+  size_t capacity = heap->max_capacity();
   size_t available = heap->free_set()->available();
 
   // Check if we are falling below the worst limit, time to trigger the GC, regardless of
   // anything else.
-  size_t min_threshold = ShenandoahMinFreeThreshold * heap->capacity() / 100;
+  size_t min_threshold = ShenandoahMinFreeThreshold * heap->max_capacity() / 100;
   if (available < min_threshold) {
     log_info(gc)("Trigger: Free (" SIZE_FORMAT "M) is below minimum threshold (" SIZE_FORMAT "M)",
                  available / M, min_threshold / M);
@@ -231,7 +221,7 @@ bool ShenandoahTraversalHeuristics::should_start_traversal_gc() {
   // Check if are need to learn a bit about the application
   const size_t max_learn = ShenandoahLearningSteps;
   if (_gc_times_learned < max_learn) {
-    size_t init_threshold = ShenandoahInitFreeThreshold * heap->capacity() / 100;
+    size_t init_threshold = ShenandoahInitFreeThreshold * heap->max_capacity() / 100;
     if (available < init_threshold) {
       log_info(gc)("Trigger: Learning " SIZE_FORMAT " of " SIZE_FORMAT ". Free (" SIZE_FORMAT "M) is below initial threshold (" SIZE_FORMAT "M)",
                    _gc_times_learned + 1, max_learn, available / M, init_threshold / M);

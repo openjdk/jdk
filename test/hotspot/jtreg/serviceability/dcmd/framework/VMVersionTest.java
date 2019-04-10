@@ -33,17 +33,21 @@ import org.testng.annotations.Test;
 
 /*
  * @test
+ * @bug 8221730
  * @summary Test of diagnostic command VM.version (tests all DCMD executors)
  * @library /test/lib
  *          /vmTestbase
- * @build   TestJavaProcess
  * @modules java.base/jdk.internal.misc
+ *          java.base/jdk.internal.module
  *          java.compiler
  *          java.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @run testng/othervm -XX:+UsePerfData VMVersionTest
  */
 public class VMVersionTest {
+
+    private static final String TEST_PROCESS_CLASS_NAME = process.TestJavaProcess.class.getName();
+
     public void run(CommandExecutor executor) {
         OutputAnalyzer output = executor.execute("VM.version");
         output.shouldMatch(".*(?:HotSpot|OpenJDK).*VM.*");
@@ -56,10 +60,34 @@ public class VMVersionTest {
 
     @Test
     public void mainClass() {
-        TestProcessLauncher t = new TestProcessLauncher(Process.class.getName());
+        TestProcessLauncher t = new TestProcessLauncher(TEST_PROCESS_CLASS_NAME);
         try {
             t.launch();
-            run(new MainClassJcmdExecutor(Process.class.getName()));
+            run(new MainClassJcmdExecutor(TEST_PROCESS_CLASS_NAME));
+        } finally {
+            t.quit();
+        }
+    }
+
+    @Test
+    public void mainClassForJar() {
+        TestProcessJarLauncher t = new TestProcessJarLauncher(TEST_PROCESS_CLASS_NAME);
+        try {
+            t.launch();
+            String jarFile = t.getJarFile();
+            run(new MainClassJcmdExecutor(jarFile));
+        } finally {
+            t.quit();
+        }
+    }
+
+    @Test
+    public void mainClassForModule() {
+        TestProcessModuleLauncher t = new TestProcessModuleLauncher(TEST_PROCESS_CLASS_NAME);
+        try {
+            t.launch();
+            String moduleName = t.getModuleName();
+            run(new MainClassJcmdExecutor(moduleName));
         } finally {
             t.quit();
         }
@@ -75,5 +103,4 @@ public class VMVersionTest {
         run(new JMXExecutor());
     }
 
-    private static class Process extends TestJavaProcess{}
 }

@@ -551,7 +551,7 @@ AC_DEFUN_ONCE([BASIC_COMPILE_FIXPATH],
     $MKDIR -p $FIXPATH_DIR $CONFIGURESUPPORT_OUTPUTDIR/bin
     cd $FIXPATH_DIR
     $CC $FIXPATH_SRC_W -Fe$FIXPATH_BIN_W > $FIXPATH_DIR/fixpath1.log 2>&1
-    cd $CURDIR
+    cd $CONFIGURE_START_DIR
 
     if test ! -x $FIXPATH_BIN; then
       AC_MSG_RESULT([no])
@@ -574,7 +574,7 @@ AC_DEFUN_ONCE([BASIC_COMPILE_FIXPATH],
     cd $FIXPATH_DIR
     $FIXPATH $CC $FIXPATH_SRC -Fe$FIXPATH_DIR/fixpath2.exe \
         > $FIXPATH_DIR/fixpath2.log 2>&1
-    cd $CURDIR
+    cd $CONFIGURE_START_DIR
     if test ! -x $FIXPATH_DIR/fixpath2.exe; then
       AC_MSG_RESULT([no])
       cat $FIXPATH_DIR/fixpath2.log

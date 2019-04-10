@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,41 +22,16 @@
  * questions.
  */
 
-import nsk.share.jpda.*;
-import nsk.share.jdi.*;
+package test;
 
-/**
- * A simple process that connects to a pipe and waits for command "quit" to
- * be received.
- *
- * Usage: java TestJavaProcess -pipe.port <PIPE_PORT_NUMBER>
- */
+/* Method ma() is missing in this implementation to cause error. */
 
-public class TestJavaProcess {
-
-    static final int PASSED = 0;
-    static final int FAILED = 2;
-
-    public static void main(String argv[]) {
-
-        log("Test Java process started!");
-
-        ArgumentHandler argHandler = new ArgumentHandler(argv);
-        IOPipe pipe = argHandler.createDebugeeIOPipe();
-        pipe.println("ready");
-        log("Waiting for the quit command from the test ...");
-        String cmd = pipe.readln();
-        int exitCode = PASSED;
-        if (cmd.equals("quit")) {
-            log("'quit' received");
-        } else {
-            log("Invalid command received " + cmd);
-            exitCode = FAILED;
-        }
-        System.exit(exitCode);
-    }
-
-    private static void log(String message) {
-        System.out.println(message);
+class TeMe3_C extends TeMe3_B {
+    public Method "<init>":"()V"
+        stack 1 locals 1
+    {
+        aload_0;
+        invokespecial Method TeMe3_B."<init>":()V;
+        return;
     }
 }

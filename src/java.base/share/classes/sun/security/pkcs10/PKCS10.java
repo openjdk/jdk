@@ -167,12 +167,8 @@ public class PKCS10 {
         try {
             sigAlg = id.getName();
             sig = Signature.getInstance(sigAlg);
-
-            sig.initVerify(subjectPublicKeyInfo);
-
-            // set parameters after Signature.initSign/initVerify call,
-            // so the deferred provider selections occur when key is set
-            SignatureUtil.specialSetParameter(sig, id.getParameters());
+            SignatureUtil.initVerifyWithParam(sig, subjectPublicKeyInfo,
+                SignatureUtil.getParamSpec(sigAlg, id.getParameters()));
 
             sig.update(data);
             if (!sig.verify(sigData)) {

@@ -34,6 +34,7 @@
 #include "c1/c1_ValueStack.hpp"
 #include "ci/ciArrayKlass.hpp"
 #include "ci/ciInstance.hpp"
+#include "code/compiledIC.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -2063,11 +2064,10 @@ void LIR_Assembler::emit_static_call_stub() {
   int start = __ offset();
 
   __ relocate(static_stub_Relocation::spec(call_pc));
-  __ mov_metadata(rmethod, (Metadata*)NULL);
-  __ movptr(rscratch1, 0);
-  __ br(rscratch1);
+  __ emit_static_call_stub();
 
-  assert(__ offset() - start <= call_stub_size(), "stub too big");
+  assert(__ offset() - start + CompiledStaticCall::to_trampoline_stub_size()
+        <= call_stub_size(), "stub too big");
   __ end_a_stub();
 }
 

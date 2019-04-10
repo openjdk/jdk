@@ -178,6 +178,27 @@ char* Method::name_and_sig_as_C_string(Klass* klass, Symbol* method_name, Symbol
   return buf;
 }
 
+const char* Method::external_name() const {
+  return external_name(constants()->pool_holder(), name(), signature());
+}
+
+void Method::print_external_name(outputStream *os) const {
+  print_external_name(os, constants()->pool_holder(), name(), signature());
+}
+
+const char* Method::external_name(Klass* klass, Symbol* method_name, Symbol* signature) {
+  stringStream ss;
+  print_external_name(&ss, klass, method_name, signature);
+  return ss.as_string();
+}
+
+void Method::print_external_name(outputStream *os, Klass* klass, Symbol* method_name, Symbol* signature) {
+  signature->print_as_signature_external_return_type(os);
+  os->print(" %s.%s(", klass->external_name(), method_name->as_C_string());
+  signature->print_as_signature_external_parameters(os);
+  os->print(")");
+}
+
 int Method::fast_exception_handler_bci_for(const methodHandle& mh, Klass* ex_klass, int throw_bci, TRAPS) {
   // exception table holds quadruple entries of the form (beg_bci, end_bci, handler_bci, klass_index)
   // access exception table

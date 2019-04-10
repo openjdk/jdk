@@ -109,12 +109,23 @@ class Linux {
   static void print_full_memory_info(outputStream* st);
   static void print_container_info(outputStream* st);
   static void print_virtualization_info(outputStream* st);
+  static void print_steal_info(outputStream* st);
   static void print_distro_info(outputStream* st);
   static void print_libversion_info(outputStream* st);
   static void print_proc_sys_info(outputStream* st);
   static void print_ld_preload_file(outputStream* st);
 
  public:
+  struct CPUPerfTicks {
+    uint64_t used;
+    uint64_t usedKernel;
+    uint64_t total;
+    uint64_t steal;
+    bool     has_steal_ticks;
+  };
+
+  // which_logical_cpu=-1 returns accumulated ticks for all cpus.
+  static bool get_tick_information(CPUPerfTicks* pticks, int which_logical_cpu);
   static bool _stack_is_executable;
   static void *dlopen_helper(const char *name, char *ebuf, int ebuflen);
   static void *dll_load_in_vmthread(const char *name, char *ebuf, int ebuflen);

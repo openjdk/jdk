@@ -45,18 +45,6 @@ encode %{
   %}
 %}
 
-instruct shenandoahRB(iRegPNoSp dst, iRegP src, rFlagsReg cr) %{
-  match(Set dst (ShenandoahReadBarrier src));
-  format %{ "shenandoah_rb $dst,$src" %}
-  ins_encode %{
-    Register s = $src$$Register;
-    Register d = $dst$$Register;
-    __ ldr(d, Address(s, ShenandoahBrooksPointer::byte_offset()));
-  %}
-  ins_pipe(pipe_class_memory);
-%}
-
-
 instruct compareAndSwapP_shenandoah(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval, iRegPNoSp tmp, rFlagsReg cr) %{
 
   match(Set res (ShenandoahCompareAndSwapP mem (Binary oldval newval)));

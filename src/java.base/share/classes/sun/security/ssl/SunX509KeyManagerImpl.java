@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,25 +102,21 @@ final class SunX509KeyManagerImpl extends X509ExtendedKeyManager {
      * Basic container for credentials implemented as an inner class.
      */
     private static class X509Credentials {
-        PrivateKey privateKey;
-        X509Certificate[] certificates;
-        private Set<X500Principal> issuerX500Principals;
+        final PrivateKey privateKey;
+        final X509Certificate[] certificates;
+        private final Set<X500Principal> issuerX500Principals;
 
         X509Credentials(PrivateKey privateKey, X509Certificate[] certificates) {
             // assert privateKey and certificates != null
             this.privateKey = privateKey;
             this.certificates = certificates;
+            this.issuerX500Principals = new HashSet<>(certificates.length);
+            for (X509Certificate certificate : certificates) {
+                issuerX500Principals.add(certificate.getIssuerX500Principal());
+            }
         }
 
-        synchronized Set<X500Principal> getIssuerX500Principals() {
-            // lazy initialization
-            if (issuerX500Principals == null) {
-                issuerX500Principals = new HashSet<X500Principal>();
-                for (int i = 0; i < certificates.length; i++) {
-                    issuerX500Principals.add(
-                                certificates[i].getIssuerX500Principal());
-                }
-            }
+        Set<X500Principal> getIssuerX500Principals() {
             return issuerX500Principals;
         }
     }

@@ -87,34 +87,23 @@ public:
   virtual void on_thread_attach(Thread* thread);
   virtual void on_thread_detach(Thread* thread);
 
-  virtual oop read_barrier(oop src);
-
   static inline oop resolve_forwarded_not_null(oop p);
   static inline oop resolve_forwarded(oop p);
 
-  virtual oop write_barrier(oop obj);
+  void storeval_barrier(oop obj);
+  void keep_alive_barrier(oop obj);
 
-  oop write_barrier_mutator(oop obj);
-
-  virtual oop storeval_barrier(oop obj);
-
-  virtual void keep_alive_barrier(oop obj);
-
-  bool obj_equals(oop obj1, oop obj2);
-
-#ifdef CHECK_UNHANDLED_OOPS
-  bool oop_equals_operator_allowed() { return !ShenandoahVerifyObjectEquals; }
-#endif
+  oop load_reference_barrier(oop obj);
+  oop load_reference_barrier_mutator(oop obj);
+  oop load_reference_barrier_not_null(oop obj);
 
   void enqueue(oop obj);
 
 private:
-  inline bool need_update_refs_barrier();
-
   template <class T, bool STOREVAL_WRITE_BARRIER>
   void write_ref_array_loop(HeapWord* start, size_t count);
 
-  oop write_barrier_impl(oop obj);
+  oop load_reference_barrier_impl(oop obj);
 
   static void keep_alive_if_weak(DecoratorSet decorators, oop value) {
     assert((decorators & ON_UNKNOWN_OOP_REF) == 0, "Reference strength must be known");
@@ -149,114 +138,31 @@ public:
   class AccessBarrier: public BarrierSet::AccessBarrier<decorators, BarrierSetT> {
     typedef BarrierSet::AccessBarrier<decorators, BarrierSetT> Raw;
 
+    template <typename T>
+    static oop oop_atomic_cmpxchg_in_heap_impl(oop new_value, T* addr, oop compare_value);
+
+    template <typename T>
+    static oop oop_atomic_xchg_in_heap_impl(oop new_value, T* addr);
+
   public:
-    // Primitive heap accesses. These accessors get resolved when
-    // IN_HEAP is set (e.g. when using the HeapAccess API), it is
-    // not an oop_* overload, and the barrier strength is AS_NORMAL.
-    template <typename T>
-    static T load_in_heap(T* addr) {
-      ShouldNotReachHere();
-      return Raw::template load<T>(addr);
-    }
-
-    template <typename T>
-    static T load_in_heap_at(oop base, ptrdiff_t offset) {
-      base = ShenandoahBarrierSet::resolve_forwarded(base);
-      return Raw::template load_at<T>(base, offset);
-    }
-
-    template <typename T>
-    static void store_in_heap(T* addr, T value) {
-      ShouldNotReachHere();
-      Raw::store(addr, value);
-    }
-
-    template <typename T>
-    static void store_in_heap_at(oop base, ptrdiff_t offset, T value) {
-      base = ShenandoahBarrierSet::barrier_set()->write_barrier(base);
-      Raw::store_at(base, offset, value);
-    }
-
-    template <typename T>
-    static T atomic_cmpxchg_in_heap(T new_value, T* addr, T compare_value) {
-      ShouldNotReachHere();
-      return Raw::atomic_cmpxchg(new_value, addr, compare_value);
-    }
-
-    template <typename T>
-    static T atomic_cmpxchg_in_heap_at(T new_value, oop base, ptrdiff_t offset, T compare_value) {
-      base = ShenandoahBarrierSet::barrier_set()->write_barrier(base);
-      return Raw::atomic_cmpxchg_at(new_value, base, offset, compare_value);
-    }
-
-    template <typename T>
-    static T atomic_xchg_in_heap(T new_value, T* addr) {
-      ShouldNotReachHere();
-      return Raw::atomic_xchg(new_value, addr);
-    }
-
-    template <typename T>
-    static T atomic_xchg_in_heap_at(T new_value, oop base, ptrdiff_t offset) {
-      base = ShenandoahBarrierSet::barrier_set()->write_barrier(base);
-      return Raw::atomic_xchg_at(new_value, base, offset);
-    }
-
-    template <typename T>
-    static void arraycopy_in_heap(arrayOop src_obj, size_t src_offset_in_bytes, T* src_raw,
-                                  arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
-                                  size_t length);
-
     // Heap oop accesses. These accessors get resolved when
     // IN_HEAP is set (e.g. when using the HeapAccess API), it is
     // an oop_* overload, and the barrier strength is AS_NORMAL.
     template <typename T>
-    static oop oop_load_in_heap(T* addr) {
-      // ShouldNotReachHere();
-      oop value = Raw::template oop_load<oop>(addr);
-      keep_alive_if_weak(decorators, value);
-      return value;
-    }
-
-    static oop oop_load_in_heap_at(oop base, ptrdiff_t offset) {
-      base = ShenandoahBarrierSet::resolve_forwarded(base);
-      oop value = Raw::template oop_load_at<oop>(base, offset);
-      keep_alive_if_weak(AccessBarrierSupport::resolve_possibly_unknown_oop_ref_strength<decorators>(base, offset), value);
-      return value;
-    }
+    static oop oop_load_in_heap(T* addr);
+    static oop oop_load_in_heap_at(oop base, ptrdiff_t offset);
 
     template <typename T>
-    static void oop_store_in_heap(T* addr, oop value) {
-      const bool keep_alive = (decorators & AS_NO_KEEPALIVE) == 0;
-      if (keep_alive) {
-        ShenandoahBarrierSet::barrier_set()->write_ref_field_pre_work(addr, value);
-      }
-      Raw::oop_store(addr, value);
-    }
-
-    static void oop_store_in_heap_at(oop base, ptrdiff_t offset, oop value) {
-      base = ShenandoahBarrierSet::barrier_set()->write_barrier(base);
-      value = ShenandoahBarrierSet::barrier_set()->storeval_barrier(value);
-
-      oop_store_in_heap(AccessInternal::oop_field_addr<decorators>(base, offset), value);
-    }
+    static void oop_store_in_heap(T* addr, oop value);
+    static void oop_store_in_heap_at(oop base, ptrdiff_t offset, oop value);
 
     template <typename T>
     static oop oop_atomic_cmpxchg_in_heap(oop new_value, T* addr, oop compare_value);
-
-    static oop oop_atomic_cmpxchg_in_heap_at(oop new_value, oop base, ptrdiff_t offset, oop compare_value) {
-      base = ShenandoahBarrierSet::barrier_set()->write_barrier(base);
-      new_value = ShenandoahBarrierSet::barrier_set()->storeval_barrier(new_value);
-      return oop_atomic_cmpxchg_in_heap(new_value, AccessInternal::oop_field_addr<decorators>(base, offset), compare_value);
-    }
+    static oop oop_atomic_cmpxchg_in_heap_at(oop new_value, oop base, ptrdiff_t offset, oop compare_value);
 
     template <typename T>
     static oop oop_atomic_xchg_in_heap(oop new_value, T* addr);
-
-    static oop oop_atomic_xchg_in_heap_at(oop new_value, oop base, ptrdiff_t offset) {
-      base = ShenandoahBarrierSet::barrier_set()->write_barrier(base);
-      new_value = ShenandoahBarrierSet::barrier_set()->storeval_barrier(new_value);
-      return oop_atomic_xchg_in_heap(new_value, AccessInternal::oop_field_addr<decorators>(base, offset));
-    }
+    static oop oop_atomic_xchg_in_heap_at(oop new_value, oop base, ptrdiff_t offset);
 
     template <typename T>
     static bool oop_arraycopy_in_heap(arrayOop src_obj, size_t src_offset_in_bytes, T* src_raw,
@@ -268,19 +174,13 @@ public:
 
     // Needed for loads on non-heap weak references
     template <typename T>
-    static oop oop_load_not_in_heap(T* addr) {
-      oop value = Raw::oop_load_not_in_heap(addr);
-      keep_alive_if_weak(decorators, value);
-      return value;
-    }
+    static oop oop_load_not_in_heap(T* addr);
 
-    static oop resolve(oop obj) {
-      return ShenandoahBarrierSet::barrier_set()->write_barrier(obj);
-    }
+    template <typename T>
+    static oop oop_atomic_cmpxchg_not_in_heap(oop new_value, T* addr, oop compare_value);
 
-    static bool equals(oop o1, oop o2) {
-      return ShenandoahBarrierSet::barrier_set()->obj_equals(o1, o2);
-    }
+    template <typename T>
+    static oop oop_atomic_xchg_not_in_heap(oop new_value, T* addr);
 
   };
 

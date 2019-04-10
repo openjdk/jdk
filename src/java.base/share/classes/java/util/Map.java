@@ -1286,8 +1286,9 @@ public interface Map<K, V> {
      *
      * @since 9
      */
+    @SuppressWarnings("unchecked")
     static <K, V> Map<K, V> of() {
-        return ImmutableCollections.emptyMap();
+        return (Map<K,V>) ImmutableCollections.MapN.EMPTY_MAP;
     }
 
     /**
@@ -1604,7 +1605,9 @@ public interface Map<K, V> {
     @SuppressWarnings("varargs")
     static <K, V> Map<K, V> ofEntries(Entry<? extends K, ? extends V>... entries) {
         if (entries.length == 0) { // implicit null check of entries array
-            return ImmutableCollections.emptyMap();
+            @SuppressWarnings("unchecked")
+            var map = (Map<K,V>) ImmutableCollections.MapN.EMPTY_MAP;
+            return map;
         } else if (entries.length == 1) {
             // implicit null check of the array slot
             return new ImmutableCollections.Map1<>(entries[0].getKey(),

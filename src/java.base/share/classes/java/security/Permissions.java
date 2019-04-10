@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,21 +25,20 @@
 
 package java.security;
 
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.NoSuchElementException;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Iterator;
-import java.util.Collections;
-import java.util.concurrent.ConcurrentHashMap;
-import java.io.Serializable;
-import java.io.ObjectStreamField;
-import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
+import java.io.InvalidObjectException;
 import java.io.IOException;
-
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.ObjectStreamField;
+import java.io.Serializable;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * This class represents a heterogeneous collection of Permissions. That is,
@@ -392,6 +391,22 @@ implements Serializable
         permsMap = new ConcurrentHashMap<>(perms.size()*2);
         permsMap.putAll(perms);
 
+        // Check that Class is mapped to PermissionCollection containing
+        // Permissions of the same class
+        for (Map.Entry<Class<?>, PermissionCollection> e : perms.entrySet()) {
+            Class<?> k = e.getKey();
+            PermissionCollection v = e.getValue();
+            Enumeration<Permission> en = v.elements();
+            while (en.hasMoreElements()) {
+                Permission p = en.nextElement();
+                if (!k.equals(p.getClass())) {
+                    throw new InvalidObjectException("Permission with class " +
+                        k + " incorrectly mapped to PermissionCollection " +
+                        "containing Permission with " + p.getClass());
+                }
+            }
+        }
+
         // Set hasUnresolved
         UnresolvedPermissionCollection uc =
         (UnresolvedPermissionCollection) permsMap.get(UnresolvedPermission.class);
@@ -584,5 +599,15 @@ implements Serializable
                 (Hashtable<Permission, Permission>)gfields.get("perms", null);
         permsMap = new ConcurrentHashMap<>(perms.size()*2);
         permsMap.putAll(perms);
+
+        // check that the Permission key and value are the same object
+        for (Map.Entry<Permission, Permission> e : perms.entrySet()) {
+            Permission k = e.getKey();
+            Permission v = e.getValue();
+            if (k != v) {
+                throw new InvalidObjectException("Permission (" + k +
+                    ") incorrectly mapped to Permission (" + v + ")");
+            }
+        }
     }
 }

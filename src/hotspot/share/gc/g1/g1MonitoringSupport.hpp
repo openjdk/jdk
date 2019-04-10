@@ -174,21 +174,6 @@ class G1MonitoringSupport : public CHeapObj<mtGC> {
 
   size_t _old_gen_used;
 
-  // It returns x - y if x > y, 0 otherwise.
-  // As described in the comment above, some of the inputs to the
-  // calculations we have to do are obtained concurrently and hence
-  // may be inconsistent with each other. So, this provides a
-  // defensive way of performing the subtraction and avoids the value
-  // going negative (which would mean a very large result, given that
-  // the parameter are size_t).
-  static size_t subtract_up_to_zero(size_t x, size_t y) {
-    if (x > y) {
-      return x - y;
-    } else {
-      return 0;
-    }
-  }
-
   // Recalculate all the sizes.
   void recalculate_sizes();
 

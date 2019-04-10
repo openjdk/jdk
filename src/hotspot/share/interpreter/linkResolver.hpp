@@ -182,7 +182,6 @@ class LinkInfo : public StackObj {
   methodHandle current_method() const { return _current_method; }
   constantTag tag() const            { return _tag; }
   bool check_access() const          { return _check_access; }
-  char* method_string() const;
 
   void         print()  PRODUCT_RETURN;
 };

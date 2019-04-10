@@ -105,7 +105,7 @@ void G1Policy::init(G1CollectedHeap* g1h, G1CollectionSet* collection_set) {
 
   assert(Heap_lock->owned_by_self(), "Locking discipline.");
 
-  if (!adaptive_young_list_length()) {
+  if (!use_adaptive_young_list_length()) {
     _young_list_fixed_length = _young_gen_sizer->min_desired_young_length();
   }
   _young_gen_sizer->adjust_max_new_size(_g1h->max_expandable_regions());
@@ -195,7 +195,7 @@ void G1Policy::record_new_heap_size(uint new_number_of_regions) {
 
 uint G1Policy::calculate_young_list_desired_min_length(uint base_min_length) const {
   uint desired_min_length = 0;
-  if (adaptive_young_list_length()) {
+  if (use_adaptive_young_list_length()) {
     if (_analytics->num_alloc_rate_ms() > 3) {
       double now_sec = os::elapsedTime();
       double when_ms = _mmu_tracker->when_max_gc_sec(now_sec) * 1000.0;
@@ -252,7 +252,7 @@ G1Policy::YoungTargetLengths G1Policy::young_list_target_lengths(size_t rs_lengt
   uint desired_max_length = calculate_young_list_desired_max_length();
 
   uint young_list_target_length = 0;
-  if (adaptive_young_list_length()) {
+  if (use_adaptive_young_list_length()) {
     if (collector_state()->in_young_only_phase()) {
       young_list_target_length =
                         calculate_young_list_target_length(rs_lengths,
@@ -304,7 +304,7 @@ G1Policy::calculate_young_list_target_length(size_t rs_lengths,
                                                     uint base_min_length,
                                                     uint desired_min_length,
                                                     uint desired_max_length) const {
-  assert(adaptive_young_list_length(), "pre-condition");
+  assert(use_adaptive_young_list_length(), "pre-condition");
   assert(collector_state()->in_young_only_phase(), "only call this for young GCs");
 
   // In case some edge-condition makes the desired max length too small...
@@ -414,7 +414,7 @@ double G1Policy::predict_survivor_regions_evac_time() const {
 }
 
 void G1Policy::revise_young_list_target_length_if_necessary(size_t rs_lengths) {
-  guarantee( adaptive_young_list_length(), "should not call this otherwise" );
+  guarantee(use_adaptive_young_list_length(), "should not call this otherwise" );
 
   if (rs_lengths > _rs_lengths_prediction) {
     // add 10% to avoid having to recalculate often
@@ -430,7 +430,7 @@ void G1Policy::update_rs_lengths_prediction() {
 }
 
 void G1Policy::update_rs_lengths_prediction(size_t prediction) {
-  if (collector_state()->in_young_only_phase() && adaptive_young_list_length()) {
+  if (collector_state()->in_young_only_phase() && use_adaptive_young_list_length()) {
     _rs_lengths_prediction = prediction;
   }
 }
@@ -659,7 +659,11 @@ void G1Policy::record_collection_pause_end(double pause_time_ms, size_t cards_sc
 
     double cost_per_entry_ms = 0.0;
     if (cards_scanned > 10) {
-      cost_per_entry_ms = average_time_ms(G1GCPhaseTimes::ScanRS) / (double) cards_scanned;
+      double avg_time_scan_rs = average_time_ms(G1GCPhaseTimes::ScanRS);
+      if (this_pause_was_young_only) {
+        avg_time_scan_rs += average_time_ms(G1GCPhaseTimes::OptScanRS);
+      }
+      cost_per_entry_ms = avg_time_scan_rs / cards_scanned;
       _analytics->report_cost_per_entry_ms(cost_per_entry_ms, this_pause_was_young_only);
     }
 
@@ -694,7 +698,7 @@ void G1Policy::record_collection_pause_end(double pause_time_ms, size_t cards_sc
     double cost_per_byte_ms = 0.0;
 
     if (copied_bytes > 0) {
-      cost_per_byte_ms = average_time_ms(G1GCPhaseTimes::ObjCopy) / (double) copied_bytes;
+      cost_per_byte_ms = (average_time_ms(G1GCPhaseTimes::ObjCopy) + average_time_ms(G1GCPhaseTimes::OptObjCopy)) / (double) copied_bytes;
       _analytics->report_cost_per_byte_ms(cost_per_byte_ms, collector_state()->mark_or_rebuild_in_progress());
     }
 
@@ -906,8 +910,8 @@ bool G1Policy::can_expand_young_list() const {
   return young_list_length < young_list_max_length;
 }
 
-bool G1Policy::adaptive_young_list_length() const {
-  return _young_gen_sizer->adaptive_young_list_length();
+bool G1Policy::use_adaptive_young_list_length() const {
+  return _young_gen_sizer->use_adaptive_young_list_length();
 }
 
 size_t G1Policy::desired_survivor_size(uint max_regions) const {
@@ -1188,11 +1192,135 @@ uint G1Policy::calc_max_old_cset_length() const {
   return (uint) result;
 }
 
-uint G1Policy::finalize_collection_set(double target_pause_time_ms, G1SurvivorRegions* survivor) {
-  double time_remaining_ms = _collection_set->finalize_young_part(target_pause_time_ms, survivor);
-  _collection_set->finalize_old_part(time_remaining_ms);
+void G1Policy::calculate_old_collection_set_regions(G1CollectionSetCandidates* candidates,
+                                                    double time_remaining_ms,
+                                                    uint& num_initial_regions,
+                                                    uint& num_optional_regions) {
+  assert(candidates != NULL, "Must be");
 
-  return _collection_set->region_length();
+  num_initial_regions = 0;
+  num_optional_regions = 0;
+  uint num_expensive_regions = 0;
+
+  double predicted_old_time_ms = 0.0;
+  double predicted_initial_time_ms = 0.0;
+  double predicted_optional_time_ms = 0.0;
+
+  double optional_threshold_ms = time_remaining_ms * optional_prediction_fraction();
+
+  const uint min_old_cset_length = calc_min_old_cset_length();
+  const uint max_old_cset_length = MAX2(min_old_cset_length, calc_max_old_cset_length());
+  const uint max_optional_regions = max_old_cset_length - min_old_cset_length;
+  bool check_time_remaining = use_adaptive_young_list_length();
+
+  uint candidate_idx = candidates->cur_idx();
+
+  log_debug(gc, ergo, cset)("Start adding old regions to collection set. Min %u regions, max %u regions, "
+                            "time remaining %1.2fms, optional threshold %1.2fms",
+                            min_old_cset_length, max_old_cset_length, time_remaining_ms, optional_threshold_ms);
+
+  HeapRegion* hr = candidates->at(candidate_idx);
+  while (hr != NULL) {
+    if (num_initial_regions + num_optional_regions >= max_old_cset_length) {
+      // Added maximum number of old regions to the CSet.
+      log_debug(gc, ergo, cset)("Finish adding old regions to collection set (Maximum number of regions). "
+                                "Initial %u regions, optional %u regions",
+                                num_initial_regions, num_optional_regions);
+      break;
+    }
+
+    // Stop adding regions if the remaining reclaimable space is
+    // not above G1HeapWastePercent.
+    size_t reclaimable_bytes = candidates->remaining_reclaimable_bytes();
+    double reclaimable_percent = reclaimable_bytes_percent(reclaimable_bytes);
+    double threshold = (double) G1HeapWastePercent;
+    if (reclaimable_percent <= threshold) {
+      // We've added enough old regions that the amount of uncollected
+      // reclaimable space is at or below the waste threshold. Stop
+      // adding old regions to the CSet.
+      log_debug(gc, ergo, cset)("Finish adding old regions to collection set (Reclaimable percentage below threshold). "
+                                "Reclaimable: " SIZE_FORMAT "%s (%1.2f%%) threshold: " UINTX_FORMAT "%%",
+                                byte_size_in_proper_unit(reclaimable_bytes), proper_unit_for_byte_size(reclaimable_bytes),
+                                reclaimable_percent, G1HeapWastePercent);
+      break;
+    }
+
+    double predicted_time_ms = predict_region_elapsed_time_ms(hr, false);
+    time_remaining_ms = MAX2(time_remaining_ms - predicted_time_ms, 0.0);
+    // Add regions to old set until we reach the minimum amount
+    if (num_initial_regions < min_old_cset_length) {
+      predicted_old_time_ms += predicted_time_ms;
+      num_initial_regions++;
+      // Record the number of regions added with no time remaining
+      if (time_remaining_ms == 0.0) {
+        num_expensive_regions++;
+      }
+    } else if (!check_time_remaining) {
+      // In the non-auto-tuning case, we'll finish adding regions
+      // to the CSet if we reach the minimum.
+      log_debug(gc, ergo, cset)("Finish adding old regions to collection set (Region amount reached min).");
+      break;
+    } else {
+      // Keep adding regions to old set until we reach the optional threshold
+      if (time_remaining_ms > optional_threshold_ms) {
+        predicted_old_time_ms += predicted_time_ms;
+        num_initial_regions++;
+      } else if (time_remaining_ms > 0) {
+        // Keep adding optional regions until time is up.
+        assert(num_optional_regions < max_optional_regions, "Should not be possible.");
+        predicted_optional_time_ms += predicted_time_ms;
+        num_optional_regions++;
+      } else {
+        log_debug(gc, ergo, cset)("Finish adding old regions to collection set (Predicted time too high).");
+        break;
+      }
+    }
+    hr = candidates->at(++candidate_idx);
+  }
+  if (hr == NULL) {
+    log_debug(gc, ergo, cset)("Old candidate collection set empty.");
+  }
+
+  if (num_expensive_regions > 0) {
+    log_debug(gc, ergo, cset)("Added %u initial old regions to collection set although the predicted time was too high.",
+                              num_expensive_regions);
+  }
+
+  log_debug(gc, ergo, cset)("Finish choosing collection set old regions. Initial: %u, optional: %u, "
+                            "predicted old time: %1.2fms, predicted optional time: %1.2fms, time remaining: %1.2f",
+                            num_initial_regions, num_optional_regions,
+                            predicted_initial_time_ms, predicted_optional_time_ms, time_remaining_ms);
+}
+
+void G1Policy::calculate_optional_collection_set_regions(G1CollectionSetCandidates* candidates,
+                                                         uint const max_optional_regions,
+                                                         double time_remaining_ms,
+                                                         uint& num_optional_regions) {
+  assert(_g1h->collector_state()->in_mixed_phase(), "Should only be called in mixed phase");
+
+  num_optional_regions = 0;
+  double prediction_ms = 0;
+  uint candidate_idx = candidates->cur_idx();
+
+  HeapRegion* r = candidates->at(candidate_idx);
+  while (num_optional_regions < max_optional_regions) {
+    assert(r != NULL, "Region must exist");
+    prediction_ms += predict_region_elapsed_time_ms(r, false);
+
+    if (prediction_ms > time_remaining_ms) {
+      log_debug(gc, ergo, cset)("Prediction %.3fms for region %u does not fit remaining time: %.3fms.",
+                                prediction_ms, r->hrm_index(), time_remaining_ms);
+      break;
+    }
+    // This region will be included in the next optional evacuation.
+
+    time_remaining_ms -= prediction_ms;
+    num_optional_regions++;
+    r = candidates->at(++candidate_idx);
+  }
+
+  log_debug(gc, ergo, cset)("Prepared %u regions out of %u for optional evacuation. Predicted time: %.3fms",
+                            num_optional_regions, max_optional_regions, prediction_ms);
 }
 
 void G1Policy::transfer_survivors_to_cset(const G1SurvivorRegions* survivors) {

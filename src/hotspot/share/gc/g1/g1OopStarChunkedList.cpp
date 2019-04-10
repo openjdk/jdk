@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,11 @@ G1OopStarChunkedList::~G1OopStarChunkedList() {
   delete_list(_coops);
 }
 
-void G1OopStarChunkedList::oops_do(OopClosure* obj_cl, OopClosure* root_cl) {
-  chunks_do(_roots, root_cl);
-  chunks_do(_croots, root_cl);
-  chunks_do(_oops, obj_cl);
-  chunks_do(_coops, obj_cl);
+size_t G1OopStarChunkedList::oops_do(OopClosure* obj_cl, OopClosure* root_cl) {
+  size_t result = 0;
+  result += chunks_do(_roots, root_cl);
+  result += chunks_do(_croots, root_cl);
+  result += chunks_do(_oops, obj_cl);
+  result += chunks_do(_coops, obj_cl);
+  return result;
 }

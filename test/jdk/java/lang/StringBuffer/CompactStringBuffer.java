@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import static org.testng.Assert.assertTrue;
 
 /*
  * @test
- * @bug 8077559
+ * @bug 8077559 8221430
  * @summary Tests Compact String. This test is testing StringBuffer
  *          behavior related to Compact String.
  * @run testng/othervm -XX:+CompactStrings CompactStringBuffer
@@ -440,6 +440,12 @@ public class CompactStringBuffer {
               "abcdefgh1.23456");
         check(new StringBuffer().append(bmp).append(1.23456).toString(),
               "\u4e00\u4e01\u4e02\u4e03\u4e04\u4e05\u4e06\u4e07\u4e081.23456");
+
+        ////////////////////////////////////////////////////////////////////
+        check(new StringBuffer((CharSequence)new StringBuffer(ascii)).toString(),
+              ascii);
+        check(new StringBuffer((CharSequence)new StringBuffer(asciiMixed)).toString(),
+              asciiMixed);
     }
 
     private void checkGetChars(StringBuffer sb, int srcBegin, int srcEnd,

@@ -60,14 +60,6 @@ private:
 
   G1RemSetSummary _prev_period_summary;
 
-  // Scan all remembered sets of the collection set for references into the collection
-  // set.
-  void scan_rem_set(G1ParScanThreadState* pss, uint worker_i);
-
-  // Flush remaining refinement buffers for cross-region references to either evacuate references
-  // into the collection set or update the remembered set.
-  void update_rem_set(G1ParScanThreadState* pss, uint worker_i);
-
   G1CollectedHeap* _g1h;
   size_t _num_conc_refined_cards; // Number of cards refined concurrently to the mutator.
 
@@ -93,12 +85,19 @@ public:
            G1HotCardCache* hot_card_cache);
   ~G1RemSet();
 
-  // Process all oops in the collection set from the cards in the refinement buffers and
-  // remembered sets using pss.
-  //
+  // Scan all remembered sets of the collection set for references into the collection
+  // set.
   // Further applies heap_region_codeblobs on the oops of the unmarked nmethods on the strong code
   // roots list for each region in the collection set.
-  void oops_into_collection_set_do(G1ParScanThreadState* pss, uint worker_i);
+  void scan_rem_set(G1ParScanThreadState* pss,
+                    uint worker_i,
+                    G1GCPhaseTimes::GCParPhases scan_phase,
+                    G1GCPhaseTimes::GCParPhases objcopy_phase,
+                    G1GCPhaseTimes::GCParPhases coderoots_phase);
+
+  // Flush remaining refinement buffers for cross-region references to either evacuate references
+  // into the collection set or update the remembered set.
+  void update_rem_set(G1ParScanThreadState* pss, uint worker_i);
 
   // Prepare for and cleanup after an oops_into_collection_set_do
   // call.  Must call each of these once before and after (in sequential
@@ -144,6 +143,9 @@ class G1ScanRSForRegionClosure : public HeapRegionClosure {
 
   uint   _worker_i;
 
+  size_t _opt_refs_scanned;
+  size_t _opt_refs_memory_used;
+
   size_t _cards_scanned;
   size_t _cards_claimed;
   size_t _cards_skipped;
@@ -157,6 +159,7 @@ class G1ScanRSForRegionClosure : public HeapRegionClosure {
   void claim_card(size_t card_index, const uint region_idx_for_card);
   void scan_card(MemRegion mr, uint region_idx_for_card);
 
+  void scan_opt_rem_set_roots(HeapRegion* r);
   void scan_rem_set_roots(HeapRegion* r);
   void scan_strong_code_roots(HeapRegion* r);
 public:
@@ -177,6 +180,9 @@ public:
   size_t cards_scanned() const { return _cards_scanned; }
   size_t cards_claimed() const { return _cards_claimed; }
   size_t cards_skipped() const { return _cards_skipped; }
+
+  size_t opt_refs_scanned() const { return _opt_refs_scanned; }
+  size_t opt_refs_memory_used() const { return _opt_refs_memory_used; }
 };
 
 #endif // SHARE_GC_G1_G1REMSET_HPP

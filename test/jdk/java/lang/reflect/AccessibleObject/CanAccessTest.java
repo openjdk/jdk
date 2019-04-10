@@ -94,7 +94,7 @@ public class CanAccessTest {
      * for instance members
      */
     public void testInstanceMethod() throws Exception {
-        Method m = Unsafe.class.getDeclaredMethod("addressSize0");
+        Method m = Unsafe.class.getDeclaredMethod("allocateMemory0", long.class);
         assertFalse(m.canAccess(INSTANCE));
 
         try {

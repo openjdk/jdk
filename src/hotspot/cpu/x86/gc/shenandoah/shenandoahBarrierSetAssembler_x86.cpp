@@ -41,7 +41,7 @@
 
 #define __ masm->
 
-address ShenandoahBarrierSetAssembler::_shenandoah_wb = NULL;
+address ShenandoahBarrierSetAssembler::_shenandoah_lrb = NULL;
 
 void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                                        Register src, Register dst, Register count) {
@@ -138,6 +138,22 @@ void ShenandoahBarrierSetAssembler::arraycopy_epilogue(MacroAssembler* masm, Dec
     }
 #endif
 
+    Register thread = NOT_LP64(rax) LP64_ONLY(r15_thread);
+#ifndef _LP64
+    __ push(thread);
+    __ get_thread(thread);
+#endif
+
+    // Short-circuit if count == 0.
+    Label done;
+    __ testptr(count, count);
+    __ jcc(Assembler::zero, done);
+
+    // Skip runtime call if no forwarded objects.
+    Address gc_state(thread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
+    __ testb(gc_state, ShenandoahHeap::UPDATEREFS);
+    __ jcc(Assembler::zero, done);
+
     __ pusha();             // push registers (overkill)
 #ifdef _LP64
     if (c_rarg0 == count) { // On win64 c_rarg0 == rcx
@@ -155,6 +171,9 @@ void ShenandoahBarrierSetAssembler::arraycopy_epilogue(MacroAssembler* masm, Dec
                     dst, count);
 #endif
     __ popa();
+
+    __ bind(done);
+    NOT_LP64(__ pop(thread);)
   }
 }
 
@@ -293,41 +312,23 @@ void ShenandoahBarrierSetAssembler::satb_write_barrier_pre(MacroAssembler* masm,
   __ bind(done);
 }
 
-void ShenandoahBarrierSetAssembler::read_barrier(MacroAssembler* masm, Register dst) {
-  if (ShenandoahReadBarrier) {
-    read_barrier_impl(masm, dst);
-  }
-}
-
-void ShenandoahBarrierSetAssembler::read_barrier_impl(MacroAssembler* masm, Register dst) {
-  assert(UseShenandoahGC && (ShenandoahReadBarrier || ShenandoahStoreValReadBarrier || ShenandoahCASBarrier), "should be enabled");
+void ShenandoahBarrierSetAssembler::resolve_forward_pointer(MacroAssembler* masm, Register dst) {
+  assert(ShenandoahCASBarrier, "should be enabled");
   Label is_null;
   __ testptr(dst, dst);
   __ jcc(Assembler::zero, is_null);
-  read_barrier_not_null_impl(masm, dst);
+  resolve_forward_pointer_not_null(masm, dst);
   __ bind(is_null);
 }
 
-void ShenandoahBarrierSetAssembler::read_barrier_not_null(MacroAssembler* masm, Register dst) {
-  if (ShenandoahReadBarrier) {
-    read_barrier_not_null_impl(masm, dst);
-  }
-}
-
-void ShenandoahBarrierSetAssembler::read_barrier_not_null_impl(MacroAssembler* masm, Register dst) {
-  assert(UseShenandoahGC && (ShenandoahReadBarrier || ShenandoahStoreValReadBarrier || ShenandoahCASBarrier), "should be enabled");
+void ShenandoahBarrierSetAssembler::resolve_forward_pointer_not_null(MacroAssembler* masm, Register dst) {
+  assert(ShenandoahCASBarrier || ShenandoahLoadRefBarrier, "should be enabled");
   __ movptr(dst, Address(dst, ShenandoahBrooksPointer::byte_offset()));
 }
 
 
-void ShenandoahBarrierSetAssembler::write_barrier(MacroAssembler* masm, Register dst) {
-  if (ShenandoahWriteBarrier) {
-    write_barrier_impl(masm, dst);
-  }
-}
-
-void ShenandoahBarrierSetAssembler::write_barrier_impl(MacroAssembler* masm, Register dst) {
-  assert(UseShenandoahGC && (ShenandoahWriteBarrier || ShenandoahStoreValEnqueueBarrier), "Should be enabled");
+void ShenandoahBarrierSetAssembler::load_reference_barrier_not_null(MacroAssembler* masm, Register dst) {
+  assert(ShenandoahLoadRefBarrier, "Should be enabled");
 #ifdef _LP64
   Label done;
 
@@ -335,8 +336,8 @@ void ShenandoahBarrierSetAssembler::write_barrier_impl(MacroAssembler* masm, Reg
   __ testb(gc_state, ShenandoahHeap::HAS_FORWARDED | ShenandoahHeap::EVACUATION | ShenandoahHeap::TRAVERSAL);
   __ jccb(Assembler::zero, done);
 
-  // Heap is unstable, need to perform the read-barrier even if WB is inactive
-  read_barrier_not_null(masm, dst);
+  // Heap is unstable, need to perform the resolve even if LRB is inactive
+  resolve_forward_pointer_not_null(masm, dst);
 
   __ testb(gc_state, ShenandoahHeap::EVACUATION | ShenandoahHeap::TRAVERSAL);
   __ jccb(Assembler::zero, done);
@@ -345,7 +346,7 @@ void ShenandoahBarrierSetAssembler::write_barrier_impl(MacroAssembler* masm, Reg
      __ xchgptr(dst, rax); // Move obj into rax and save rax into obj.
    }
 
-   __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, ShenandoahBarrierSetAssembler::shenandoah_wb())));
+   __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, ShenandoahBarrierSetAssembler::shenandoah_lrb())));
 
    if (dst != rax) {
      __ xchgptr(rax, dst); // Swap back obj with rax.
@@ -358,24 +359,18 @@ void ShenandoahBarrierSetAssembler::write_barrier_impl(MacroAssembler* masm, Reg
 }
 
 void ShenandoahBarrierSetAssembler::storeval_barrier(MacroAssembler* masm, Register dst, Register tmp) {
-  if (ShenandoahStoreValReadBarrier || ShenandoahStoreValEnqueueBarrier) {
+  if (ShenandoahStoreValEnqueueBarrier) {
     storeval_barrier_impl(masm, dst, tmp);
   }
 }
 
 void ShenandoahBarrierSetAssembler::storeval_barrier_impl(MacroAssembler* masm, Register dst, Register tmp) {
-  assert(UseShenandoahGC && (ShenandoahStoreValReadBarrier || ShenandoahStoreValEnqueueBarrier), "should be enabled");
+  assert(ShenandoahStoreValEnqueueBarrier, "should be enabled");
 
   if (dst == noreg) return;
 
 #ifdef _LP64
   if (ShenandoahStoreValEnqueueBarrier) {
-    Label is_null;
-    __ testptr(dst, dst);
-    __ jcc(Assembler::zero, is_null);
-    write_barrier_impl(masm, dst);
-    __ bind(is_null);
-
     // The set of registers to be saved+restored is the same as in the write-barrier above.
     // Those are the commonly used registers in the interpreter.
     __ pusha();
@@ -389,50 +384,54 @@ void ShenandoahBarrierSetAssembler::storeval_barrier_impl(MacroAssembler* masm, 
     //__ pop_callee_saved_registers();
     __ popa();
   }
-  if (ShenandoahStoreValReadBarrier) {
-    read_barrier_impl(masm, dst);
-  }
 #else
   Unimplemented();
 #endif
 }
 
+void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm, Register dst) {
+  if (ShenandoahLoadRefBarrier) {
+    Label done;
+    __ testptr(dst, dst);
+    __ jcc(Assembler::zero, done);
+    load_reference_barrier_not_null(masm, dst);
+    __ bind(done);
+  }
+}
+
 void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
              Register dst, Address src, Register tmp1, Register tmp_thread) {
   bool on_oop = type == T_OBJECT || type == T_ARRAY;
-  bool in_heap = (decorators & IN_HEAP) != 0;
   bool on_weak = (decorators & ON_WEAK_OOP_REF) != 0;
   bool on_phantom = (decorators & ON_PHANTOM_OOP_REF) != 0;
   bool on_reference = on_weak || on_phantom;
-  if (in_heap) {
-    read_barrier_not_null(masm, src.base());
-  }
-  BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp_thread);
-  if (ShenandoahKeepAliveBarrier && on_oop && on_reference) {
-    const Register thread = NOT_LP64(tmp_thread) LP64_ONLY(r15_thread);
-    NOT_LP64(__ get_thread(thread));
+   BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp_thread);
+  if (on_oop) {
+    load_reference_barrier(masm, dst);
 
-    // Generate the SATB pre-barrier code to log the value of
-    // the referent field in an SATB buffer.
-    shenandoah_write_barrier_pre(masm /* masm */,
-                                 noreg /* obj */,
-                                 dst /* pre_val */,
-                                 thread /* thread */,
-                                 tmp1 /* tmp */,
-                                 true /* tosca_live */,
-                                 true /* expand_call */);
+    if (ShenandoahKeepAliveBarrier && on_reference) {
+      const Register thread = NOT_LP64(tmp_thread) LP64_ONLY(r15_thread);
+      NOT_LP64(__ get_thread(thread));
+      // Generate the SATB pre-barrier code to log the value of
+      // the referent field in an SATB buffer.
+      shenandoah_write_barrier_pre(masm /* masm */,
+                                   noreg /* obj */,
+                                   dst /* pre_val */,
+                                   thread /* thread */,
+                                   tmp1 /* tmp */,
+                                   true /* tosca_live */,
+                                   true /* expand_call */);
+    }
   }
 }
 
 void ShenandoahBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
               Address dst, Register val, Register tmp1, Register tmp2) {
 
+  bool on_oop = type == T_OBJECT || type == T_ARRAY;
   bool in_heap = (decorators & IN_HEAP) != 0;
   bool as_normal = (decorators & AS_NORMAL) != 0;
-  if (in_heap) {
-    write_barrier(masm, dst.base());
-  }
-  if (type == T_OBJECT || type == T_ARRAY) {
+  if (on_oop && in_heap) {
     bool needs_pre_barrier = as_normal;
 
     Register tmp3 = LP64_ONLY(r8) NOT_LP64(rsi);
@@ -472,44 +471,6 @@ void ShenandoahBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet 
     NOT_LP64(imasm->restore_bcp());
   } else {
     BarrierSetAssembler::store_at(masm, decorators, type, dst, val, tmp1, tmp2);
-  }
-}
-
-#ifndef _LP64
-void ShenandoahBarrierSetAssembler::obj_equals(MacroAssembler* masm,
-                                               Address obj1, jobject obj2) {
-  Unimplemented();
-}
-
-void ShenandoahBarrierSetAssembler::obj_equals(MacroAssembler* masm,
-                                               Register obj1, jobject obj2) {
-  Unimplemented();
-}
-#endif
-
-
-void ShenandoahBarrierSetAssembler::obj_equals(MacroAssembler* masm, Register op1, Register op2) {
-  __ cmpptr(op1, op2);
-  if (ShenandoahAcmpBarrier) {
-    Label done;
-    __ jccb(Assembler::equal, done);
-    read_barrier(masm, op1);
-    read_barrier(masm, op2);
-    __ cmpptr(op1, op2);
-    __ bind(done);
-  }
-}
-
-void ShenandoahBarrierSetAssembler::obj_equals(MacroAssembler* masm, Register src1, Address src2) {
-  __ cmpptr(src1, src2);
-  if (ShenandoahAcmpBarrier) {
-    Label done;
-    __ jccb(Assembler::equal, done);
-    __ movptr(rscratch2, src2);
-    read_barrier(masm, src1);
-    read_barrier(masm, rscratch2);
-    __ cmpptr(src1, rscratch2);
-    __ bind(done);
   }
 }
 
@@ -562,28 +523,6 @@ void ShenandoahBarrierSetAssembler::tlab_allocate(MacroAssembler* masm,
   __ verify_tlab();
 }
 
-void ShenandoahBarrierSetAssembler::resolve(MacroAssembler* masm, DecoratorSet decorators, Register obj) {
-  bool oop_not_null = (decorators & IS_NOT_NULL) != 0;
-  bool is_write = (decorators & ACCESS_WRITE) != 0;
-  if (is_write) {
-    if (oop_not_null) {
-      write_barrier(masm, obj);
-    } else {
-      Label done;
-      __ testptr(obj, obj);
-      __ jcc(Assembler::zero, done);
-      write_barrier(masm, obj);
-      __ bind(done);
-    }
-  } else {
-    if (oop_not_null) {
-      read_barrier_not_null(masm, obj);
-    } else {
-      read_barrier(masm, obj);
-    }
-  }
-}
-
 // Special Shenandoah CAS implementation that handles false negatives
 // due to concurrent evacuation.
 #ifndef _LP64
@@ -622,14 +561,14 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm,
   // Step 2. CAS had failed. This may be a false negative.
   //
   // The trouble comes when we compare the to-space pointer with the from-space
-  // pointer to the same object. To resolve this, it will suffice to read both
-  // oldval and the value from memory through the read barriers -- this will give
-  // both to-space pointers. If they mismatch, then it was a legitimate failure.
+  // pointer to the same object. To resolve this, it will suffice to resolve both
+  // oldval and the value from memory -- this will give both to-space pointers.
+  // If they mismatch, then it was a legitimate failure.
   //
   if (UseCompressedOops) {
     __ decode_heap_oop(tmp1);
   }
-  read_barrier_impl(masm, tmp1);
+  resolve_forward_pointer(masm, tmp1);
 
   if (UseCompressedOops) {
     __ movl(tmp2, oldval);
@@ -637,7 +576,7 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm,
   } else {
     __ movptr(tmp2, oldval);
   }
-  read_barrier_impl(masm, tmp2);
+  resolve_forward_pointer(masm, tmp2);
 
   __ cmpptr(tmp1, tmp2);
   __ jcc(Assembler::notEqual, done, true);
@@ -646,8 +585,8 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm,
   //
   // Corner case: it may happen that somebody stored the from-space pointer
   // to memory while we were preparing for retry. Therefore, we can fail again
-  // on retry, and so need to do this in loop, always re-reading the failure
-  // witness through the read barrier.
+  // on retry, and so need to do this in loop, always resolving the failure
+  // witness.
   __ bind(retry);
   if (os::is_MP()) __ lock();
   if (UseCompressedOops) {
@@ -663,7 +602,7 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm,
   } else {
     __ movptr(tmp2, oldval);
   }
-  read_barrier_impl(masm, tmp2);
+  resolve_forward_pointer(masm, tmp2);
 
   __ cmpptr(tmp1, tmp2);
   __ jcc(Assembler::equal, retry, true);
@@ -811,7 +750,7 @@ void ShenandoahBarrierSetAssembler::gen_pre_barrier_stub(LIR_Assembler* ce, Shen
 
 }
 
-void ShenandoahBarrierSetAssembler::gen_write_barrier_stub(LIR_Assembler* ce, ShenandoahWriteBarrierStub* stub) {
+void ShenandoahBarrierSetAssembler::gen_load_reference_barrier_stub(LIR_Assembler* ce, ShenandoahLoadReferenceBarrierStub* stub) {
   __ bind(*stub->entry());
 
   Label done;
@@ -828,7 +767,7 @@ void ShenandoahBarrierSetAssembler::gen_write_barrier_stub(LIR_Assembler* ce, Sh
     __ jcc(Assembler::zero, done);
   }
 
-  write_barrier(ce->masm(), res);
+  load_reference_barrier_not_null(ce->masm(), res);
 
   __ bind(done);
   __ jmp(*stub->continuation());
@@ -898,16 +837,16 @@ void ShenandoahBarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAss
 
 #endif // COMPILER1
 
-address ShenandoahBarrierSetAssembler::shenandoah_wb() {
-  assert(_shenandoah_wb != NULL, "need write barrier stub");
-  return _shenandoah_wb;
+address ShenandoahBarrierSetAssembler::shenandoah_lrb() {
+  assert(_shenandoah_lrb != NULL, "need load reference barrier stub");
+  return _shenandoah_lrb;
 }
 
 #define __ cgen->assembler()->
 
-address ShenandoahBarrierSetAssembler::generate_shenandoah_wb(StubCodeGenerator* cgen) {
+address ShenandoahBarrierSetAssembler::generate_shenandoah_lrb(StubCodeGenerator* cgen) {
   __ align(CodeEntryAlignment);
-  StubCodeMark mark(cgen, "StubRoutines", "shenandoah_wb");
+  StubCodeMark mark(cgen, "StubRoutines", "shenandoah_lrb");
   address start = __ pc();
 
 #ifdef _LP64
@@ -955,7 +894,7 @@ address ShenandoahBarrierSetAssembler::generate_shenandoah_wb(StubCodeGenerator*
   __ push(r15);
   save_vector_registers(cgen->assembler());
   __ movptr(rdi, rax);
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_barrier_JRT), rdi);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_JRT), rdi);
   restore_vector_registers(cgen->assembler());
   __ pop(r15);
   __ pop(r14);
@@ -982,12 +921,12 @@ address ShenandoahBarrierSetAssembler::generate_shenandoah_wb(StubCodeGenerator*
 #undef __
 
 void ShenandoahBarrierSetAssembler::barrier_stubs_init() {
-  if (ShenandoahWriteBarrier || ShenandoahStoreValEnqueueBarrier) {
+  if (ShenandoahLoadRefBarrier) {
     int stub_code_size = 4096;
     ResourceMark rm;
     BufferBlob* bb = BufferBlob::create("shenandoah_barrier_stubs", stub_code_size);
     CodeBuffer buf(bb);
     StubCodeGenerator cgen(&buf);
-    _shenandoah_wb = generate_shenandoah_wb(&cgen);
+    _shenandoah_lrb = generate_shenandoah_lrb(&cgen);
   }
 }

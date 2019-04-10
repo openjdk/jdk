@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -239,16 +239,15 @@ public abstract class X509CRL extends CRL implements X509Extension {
     public void verify(PublicKey key, Provider sigProvider)
         throws CRLException, NoSuchAlgorithmException,
         InvalidKeyException, SignatureException {
+        String sigAlgName = getSigAlgName();
         Signature sig = (sigProvider == null)
-            ? Signature.getInstance(getSigAlgName())
-            : Signature.getInstance(getSigAlgName(), sigProvider);
+            ? Signature.getInstance(sigAlgName)
+            : Signature.getInstance(sigAlgName, sigProvider);
 
-        sig.initVerify(key);
-
-        // set parameters after Signature.initSign/initVerify call,
-        // so the deferred provider selections occur when key is set
         try {
-            SignatureUtil.specialSetParameter(sig, getSigAlgParams());
+            byte[] paramBytes = getSigAlgParams();
+            SignatureUtil.initVerifyWithParam(sig, key,
+                SignatureUtil.getParamSpec(sigAlgName, paramBytes));
         } catch (ProviderException e) {
             throw new CRLException(e.getMessage(), e.getCause());
         } catch (InvalidAlgorithmParameterException e) {
