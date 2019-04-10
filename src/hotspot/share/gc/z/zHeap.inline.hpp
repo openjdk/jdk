@@ -135,7 +135,7 @@ inline void ZHeap::check_out_of_memory() {
 }
 
 inline bool ZHeap::is_oop(oop object) const {
-  return ZOop::is_good(object);
+  return ZAddress::is_good(ZOop::to_address(object));
 }
 
 #endif // SHARE_GC_Z_ZHEAP_INLINE_HPP

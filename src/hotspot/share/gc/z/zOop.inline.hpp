@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,28 +24,14 @@
 #ifndef SHARE_GC_Z_ZOOP_INLINE_HPP
 #define SHARE_GC_Z_ZOOP_INLINE_HPP
 
-#include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zOop.hpp"
-#include "oops/oopsHierarchy.hpp"
 
-inline oop ZOop::to_oop(uintptr_t value) {
-  return cast_to_oop(value);
+inline oop ZOop::from_address(uintptr_t addr) {
+  return cast_to_oop(addr);
 }
 
 inline uintptr_t ZOop::to_address(oop o) {
   return cast_from_oop<uintptr_t>(o);
-}
-
-inline bool ZOop::is_good(oop o) {
-  return ZAddress::is_good(to_address(o));
-}
-
-inline bool ZOop::is_finalizable_good(oop o) {
-  return ZAddress::is_finalizable_good(to_address(o));
-}
-
-inline oop ZOop::good(oop o) {
-  return to_oop(ZAddress::good(to_address(o)));
 }
 
 #endif // SHARE_GC_Z_ZOOP_INLINE_HPP

@@ -37,7 +37,7 @@ inline oop ZBarrier::barrier(volatile oop* p, oop o) {
 retry:
   // Fast path
   if (fast_path(addr)) {
-    return ZOop::to_oop(addr);
+    return ZOop::from_address(addr);
   }
 
   // Slow path
@@ -56,7 +56,7 @@ retry:
     }
   }
 
-  return ZOop::to_oop(good_addr);
+  return ZOop::from_address(good_addr);
 }
 
 template <ZBarrierFastPath fast_path, ZBarrierSlowPath slow_path>
@@ -67,7 +67,7 @@ inline oop ZBarrier::weak_barrier(volatile oop* p, oop o) {
   if (fast_path(addr)) {
     // Return the good address instead of the weak good address
     // to ensure that the currently active heap view is used.
-    return ZOop::to_oop(ZAddress::good_or_null(addr));
+    return ZOop::from_address(ZAddress::good_or_null(addr));
   }
 
   // Slow path
@@ -95,7 +95,7 @@ inline oop ZBarrier::weak_barrier(volatile oop* p, oop o) {
     }
   }
 
-  return ZOop::to_oop(good_addr);
+  return ZOop::from_address(good_addr);
 }
 
 template <ZBarrierFastPath fast_path, ZBarrierSlowPath slow_path>
@@ -117,7 +117,7 @@ inline void ZBarrier::root_barrier(oop* p, oop o) {
   // to heal the same root if it is aligned, since they would always heal
   // the root in the same way and it does not matter in which order it
   // happens. For misaligned oops, there needs to be mutual exclusion.
-  *p = ZOop::to_oop(good_addr);
+  *p = ZOop::from_address(good_addr);
 }
 
 inline bool ZBarrier::is_null_fast_path(uintptr_t addr) {

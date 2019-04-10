@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,13 +29,8 @@
 
 class ZOop : public AllStatic {
 public:
-  static oop to_oop(uintptr_t value);
+  static oop from_address(uintptr_t addr);
   static uintptr_t to_address(oop o);
-
-  static bool is_good(oop o);
-  static bool is_finalizable_good(oop o);
-
-  static oop good(oop);
 };
 
 #endif // SHARE_GC_Z_ZOOP_HPP
