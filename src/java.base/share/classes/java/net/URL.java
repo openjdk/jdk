@@ -45,6 +45,7 @@ import java.util.ServiceLoader;
 
 import jdk.internal.access.JavaNetURLAccess;
 import jdk.internal.access.SharedSecrets;
+import sun.net.util.IPAddressUtil;
 import sun.security.util.SecurityConstants;
 import sun.security.action.GetPropertyAction;
 
@@ -466,13 +467,19 @@ public final class URL implements java.io.Serializable {
             this.file = path;
         }
 
-        // Note: we don't do validation of the URL here. Too risky to change
+        // Note: we don't do full validation of the URL here. Too risky to change
         // right now, but worth considering for future reference. -br
         if (handler == null &&
             (handler = getURLStreamHandler(protocol)) == null) {
             throw new MalformedURLException("unknown protocol: " + protocol);
         }
         this.handler = handler;
+        if (host != null && isBuiltinStreamHandler(handler)) {
+            String s = IPAddressUtil.checkExternalForm(this);
+            if (s != null) {
+                throw new MalformedURLException(s);
+            }
+        }
     }
 
     /**
@@ -1038,7 +1045,12 @@ public final class URL implements java.io.Serializable {
      * @since 1.5
      */
     public URI toURI() throws URISyntaxException {
-        return new URI (toString());
+        URI uri = new URI(toString());
+        if (authority != null && isBuiltinStreamHandler(handler)) {
+            String s = IPAddressUtil.checkAuthority(this);
+            if (s != null) throw new URISyntaxException(authority, s);
+        }
+        return uri;
     }
 
     /**
@@ -1633,6 +1645,10 @@ public final class URL implements java.io.Serializable {
         replacementURL.setSerializedHashCode(tempState.getHashCode());
         resetState();
         return replacementURL;
+    }
+
+    boolean isBuiltinStreamHandler(URLStreamHandler handler) {
+       return isBuiltinStreamHandler(handler.getClass().getName());
     }
 
     private boolean isBuiltinStreamHandler(String handlerClassName) {

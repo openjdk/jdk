@@ -37,6 +37,7 @@ import java.security.Principal;
 import java.util.Map;
 import java.util.List;
 import java.util.Optional;
+import sun.net.util.IPAddressUtil;
 import sun.net.www.http.HttpClient;
 
 /**
@@ -68,6 +69,10 @@ public class HttpsURLConnectionImpl
             if (u.toExternalForm().indexOf('\n') > -1) {
                 throw new MalformedURLException("Illegal character in URL");
             }
+        }
+        String s = IPAddressUtil.checkAuthority(u);
+        if (s != null) {
+            throw new MalformedURLException(s);
         }
         return u;
     }
@@ -289,7 +294,7 @@ public class HttpsURLConnectionImpl
      * @param   key     the keyword by which the request is known
      *                  (e.g., "<code>accept</code>").
      * @param   value  the value associated with it.
-     * @see #getRequestProperties(java.lang.String)
+     * @see #getRequestProperty(java.lang.String)
      * @since 1.4
      */
     public void addRequestProperty(String key, String value) {
