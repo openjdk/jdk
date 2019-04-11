@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,6 +122,13 @@ class BinaryClass extends ClassDefinition implements Constants {
                            sun.tools.javac.Main.getText(
                                "javac.err.version.too.old",
                                String.valueOf(version)));
+        } else if ((version >= JAVA_MIN_PREVIEW_MAJOR_VERSION)
+                     && (minor_version == JAVA_PREVIEW_MINOR_VERSION)) {
+            // reject all class files that have preview features enabled
+            throw new ClassFormatError(
+                           sun.tools.javac.Main.getText(
+                               "javac.err.version.preview",
+                               version+"."+minor_version));
         } else if ((version > JAVA_MAX_SUPPORTED_VERSION)
                      || (version == JAVA_MAX_SUPPORTED_VERSION
                   && minor_version > JAVA_MAX_SUPPORTED_MINOR_VERSION)) {

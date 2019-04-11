@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,8 @@ public interface RuntimeConstants {
     int JAVA_MIN_SUPPORTED_VERSION   = 45;
     int JAVA_MAX_SUPPORTED_VERSION   = 57;
     int JAVA_MAX_SUPPORTED_MINOR_VERSION = 0;
+    int JAVA_MIN_PREVIEW_MAJOR_VERSION = 55; // preview intro'd in JDK 11
+    int JAVA_PREVIEW_MINOR_VERSION   = 0xffff;
 
     /* Generate class file version for 1.1  by default */
     int JAVA_DEFAULT_VERSION         = 45;
