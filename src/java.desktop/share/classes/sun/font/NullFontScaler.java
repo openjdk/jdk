@@ -64,8 +64,6 @@ class NullFontScaler extends FontScaler {
         return new GeneralPath();
     }
 
-    long getLayoutTableCache() {return 0L;}
-
     long createScalerContext(double[] matrix, int aa,
         int fm, float boldness, float italic, boolean disableHinting) {
         return getNullScalerContext();

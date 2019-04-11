@@ -23,6 +23,9 @@
  * questions.
  */
 
+#include "jlong.h"
+#include "sun_font_SunLayoutEngine.h"
+
 #include "hb.h"
 #include "hb-jdk.h"
 #ifdef MACOSX
@@ -304,79 +307,113 @@ static void _do_nothing(void) {
 static void _free_nothing(void*) {
 }
 
+struct Font2DPtr {
+    JavaVM* vmPtr;
+    jweak font2DRef;
+};
+
+static void cleanupFontInfo(void* data) {
+  Font2DPtr* fontInfo;
+  JNIEnv* env;
+
+  fontInfo = (Font2DPtr*) data;
+  fontInfo->vmPtr->GetEnv((void**)&env, JNI_VERSION_1_1);
+  env->DeleteWeakGlobalRef(fontInfo->font2DRef);
+  free(data);
+}
+
 static hb_blob_t *
 reference_table(hb_face_t *face HB_UNUSED, hb_tag_t tag, void *user_data) {
 
-  JDKFontInfo *jdkFontInfo = (JDKFontInfo*)user_data;
-  JNIEnv* env = jdkFontInfo->env;
-  jobject font2D = jdkFontInfo->font2D;
-  jsize length = 0;
-  void* buffer = NULL;
-  int cacheIdx = 0;
+  Font2DPtr *fontInfo;
+  JNIEnv* env;
+  jobject font2D;
+  jsize length;
+  void* buffer;
 
   // HB_TAG_NONE is 0 and is used to get the whole font file.
   // It is not expected to be needed for JDK.
-  if (tag == 0 || jdkFontInfo->layoutTables == NULL) {
+  if (tag == 0) {
       return NULL;
   }
 
-  for (cacheIdx=0; cacheIdx<LAYOUTCACHE_ENTRIES; cacheIdx++) {
-    if (tag == jdkFontInfo->layoutTables->entries[cacheIdx].tag) break;
+  fontInfo = (Font2DPtr*)user_data;
+  fontInfo->vmPtr->GetEnv((void**)&env, JNI_VERSION_1_1);
+  if (env == NULL) {
+    return NULL;
   }
+  font2D = fontInfo->font2DRef;
 
-  if (cacheIdx < LAYOUTCACHE_ENTRIES) { // if found
-      if (jdkFontInfo->layoutTables->entries[cacheIdx].len != -1) {
-          length = jdkFontInfo->layoutTables->entries[cacheIdx].len;
-          buffer = (void*)jdkFontInfo->layoutTables->entries[cacheIdx].ptr;
-      }
+  jbyteArray tableBytes = (jbyteArray)
+     env->CallObjectMethod(font2D, sunFontIDs.getTableBytesMID, tag);
+  if (tableBytes == NULL) {
+      return NULL;
   }
-
-  if (buffer == NULL) {
-      jbyteArray tableBytes = (jbyteArray)
-         env->CallObjectMethod(font2D, sunFontIDs.getTableBytesMID, tag);
-      if (tableBytes == NULL) {
-          return NULL;
-      }
-      length = env->GetArrayLength(tableBytes);
-      buffer = calloc(length, sizeof(jbyte));
-      env->GetByteArrayRegion(tableBytes, 0, length, (jbyte*)buffer);
-
-     if (cacheIdx >= LAYOUTCACHE_ENTRIES) { // not a cacheable table
-          return hb_blob_create((const char *)buffer, length,
-                                 HB_MEMORY_MODE_WRITABLE,
-                                 buffer, free);
-      } else {
-        jdkFontInfo->layoutTables->entries[cacheIdx].len = length;
-        jdkFontInfo->layoutTables->entries[cacheIdx].ptr = buffer;
-      }
-  }
+  length = env->GetArrayLength(tableBytes);
+  buffer = calloc(length, sizeof(jbyte));
+  env->GetByteArrayRegion(tableBytes, 0, length, (jbyte*)buffer);
 
   return hb_blob_create((const char *)buffer, length,
-                         HB_MEMORY_MODE_READONLY,
-                         NULL, _free_nothing);
+                         HB_MEMORY_MODE_WRITABLE,
+                         buffer, free);
 }
 
+extern "C" {
 
-
-hb_face_t*
-hb_jdk_face_create(JDKFontInfo *jdkFontInfo,
-                   hb_destroy_func_t destroy) {
-
-    hb_face_t *face =
-         hb_face_create_for_tables(reference_table, jdkFontInfo, destroy);
-
-    return face;
+/*
+ * Class:     sun_font_SunLayoutEngine
+ * Method:    createFace
+ * Signature: (Lsun/font/Font2D;ZJJ)J
+ */
+JNIEXPORT jlong JNICALL Java_sun_font_SunLayoutEngine_createFace(JNIEnv *env,
+                         jclass cls,
+                         jobject font2D,
+                         jboolean aat,
+                         jlong platformFontPtr) {
+#ifdef MACOSX
+    if (aat && platformFontPtr) {
+        hb_face_t *face = hb_coretext_face_create((CGFontRef)platformFontPtr);
+        return ptr_to_jlong(face);
+    }
+#endif
+    Font2DPtr *fi = (Font2DPtr*)malloc(sizeof(Font2DPtr));
+    if (!fi) {
+        return 0;
+    }
+    JavaVM* vmPtr;
+    env->GetJavaVM(&vmPtr);
+    fi->vmPtr = vmPtr;
+    fi->font2DRef = env->NewWeakGlobalRef(font2D);
+    if (!fi->font2DRef) {
+        free(fi);
+        return 0;
+    }
+    hb_face_t *face = hb_face_create_for_tables(reference_table, fi,
+                                                cleanupFontInfo);
+    return ptr_to_jlong(face);
 }
 
-static hb_font_t* _hb_jdk_font_create(JDKFontInfo *jdkFontInfo,
+/*
+ * Class:     sun_font_SunLayoutEngine
+ * Method:    disposeFace
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_sun_font_SunLayoutEngine_disposeFace(JNIEnv *env,
+                        jclass cls,
+                        jlong ptr) {
+    hb_face_t* face = (hb_face_t*) jlong_to_ptr(ptr);
+    hb_face_destroy(face);
+}
+
+} // extern "C"
+
+static hb_font_t* _hb_jdk_font_create(hb_face_t* face,
+                                      JDKFontInfo *jdkFontInfo,
                                       hb_destroy_func_t destroy) {
 
     hb_font_t *font;
-    hb_face_t *face;
 
-    face = hb_jdk_face_create(jdkFontInfo, destroy);
     font = hb_font_create(face);
-    hb_face_destroy (face);
     hb_font_set_funcs (font,
                        _hb_jdk_get_font_funcs (),
                        jdkFontInfo, (hb_destroy_func_t) _do_nothing);
@@ -387,17 +424,11 @@ static hb_font_t* _hb_jdk_font_create(JDKFontInfo *jdkFontInfo,
 }
 
 #ifdef MACOSX
-static hb_font_t* _hb_jdk_ct_font_create(JDKFontInfo *jdkFontInfo) {
+static hb_font_t* _hb_jdk_ct_font_create(hb_face_t* face,
+                   JDKFontInfo *jdkFontInfo) {
 
     hb_font_t *font = NULL;
-    hb_face_t *face = NULL;
-    if (jdkFontInfo->nativeFont == 0) {
-        return NULL;
-    }
-    face = hb_coretext_face_create((CGFontRef)(jdkFontInfo->nativeFont));
     font = hb_font_create(face);
-    hb_face_destroy(face);
-
     hb_font_set_scale(font,
                      HBFloatToFixed(jdkFontInfo->ptSize),
                      HBFloatToFixed(jdkFontInfo->ptSize));
@@ -405,18 +436,13 @@ static hb_font_t* _hb_jdk_ct_font_create(JDKFontInfo *jdkFontInfo) {
 }
 #endif
 
-hb_font_t* hb_jdk_font_create(JDKFontInfo *jdkFontInfo,
+hb_font_t* hb_jdk_font_create(hb_face_t* hbFace,
+                             JDKFontInfo *jdkFontInfo,
                              hb_destroy_func_t destroy) {
-
-   hb_font_t* font = NULL;
-
 #ifdef MACOSX
-     if (jdkFontInfo->aat) {
-         font = _hb_jdk_ct_font_create(jdkFontInfo);
+     if (jdkFontInfo->aat && jdkFontInfo->nativeFont) {
+         return _hb_jdk_ct_font_create(hbFace, jdkFontInfo);
      }
 #endif
-    if (font == NULL) {
-        font = _hb_jdk_font_create(jdkFontInfo, destroy);
-    }
-    return font;
+    return _hb_jdk_font_create(hbFace, jdkFontInfo, destroy);
 }

@@ -181,25 +181,6 @@ public abstract class FontScaler implements DisposerRecord {
     abstract int getMissingGlyphCode() throws FontScalerException;
     abstract int getGlyphCode(char charCode) throws FontScalerException;
 
-    /* This method returns table cache used by native layout engine.
-     * This cache is essentially just small collection of
-     * pointers to various truetype tables. See definition of TTLayoutTableCache
-     * in the fontscalerdefs.h for more details.
-     *
-     * Note that tables themselves have same format as defined in the truetype
-     * specification, i.e. font scaler do not need to perform any preprocessing.
-     *
-     * Probably it is better to have API to request pointers to each table
-     * separately instead of requesting pointer to some native structure.
-     * (then there is not need to share its definition by different
-     * implementations of scaler).
-     * However, this means multiple JNI calls and potential impact on performance.
-     *
-     * Note: return value 0 is legal.
-     *   This means tables are not available (e.g. type1 font).
-     */
-    abstract long getLayoutTableCache() throws FontScalerException;
-
     /* Used by the OpenType engine for mark positioning. */
     abstract Point2D.Float getGlyphPoint(long pScalerContext,
                                 int glyphCode, int ptNumber)

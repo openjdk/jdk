@@ -465,13 +465,6 @@ public abstract class Font2D {
         return null;
     }
 
-    /* implemented for fonts backed by an sfnt that has
-     * OpenType or AAT layout tables.
-     */
-    protected long getLayoutTableCache() {
-        return 0L;
-    }
-
     /* Used only on OS X.
      */
     protected long getPlatformNativeFontPtr() {

@@ -69,7 +69,6 @@ typedef struct {
     unsigned fontDataOffset;
     unsigned fontDataLength;
     unsigned fileSize;
-    TTLayoutTableCache* layoutTables;
 } FTScalerInfo;
 
 typedef struct FTScalerContext {
@@ -251,7 +250,6 @@ Java_sun_font_FreetypeFontScaler_initNativeScaler(
     if (type == TYPE1_FROM_JAVA) { /* TYPE1 */
         scalerInfo->fontData = (unsigned char*) malloc(filesize);
         scalerInfo->directBuffer = NULL;
-        scalerInfo->layoutTables = NULL;
         scalerInfo->fontDataLength = filesize;
 
         if (scalerInfo->fontData != NULL) {
@@ -864,32 +862,6 @@ Java_sun_font_FreetypeFontScaler_getGlyphImageNative(
     }
 
     return ptr_to_jlong(glyphInfo);
-}
-
-
-/*
- * Class:     sun_font_FreetypeFontScaler
- * Method:    getLayoutTableCacheNative
- * Signature: (J)J
- */
-JNIEXPORT jlong JNICALL
-Java_sun_font_FreetypeFontScaler_getLayoutTableCacheNative(
-        JNIEnv *env, jobject scaler, jlong pScaler) {
-    FTScalerInfo *scalerInfo = (FTScalerInfo*) jlong_to_ptr(pScaler);
-
-    if (scalerInfo == NULL) {
-        invalidateJavaScaler(env, scaler, scalerInfo);
-        return 0L;
-    }
-
-    // init layout table cache in font
-    // we're assuming the font is a file font and moreover it is Truetype font
-    // otherwise we shouldn't be able to get here...
-    if (scalerInfo->layoutTables == NULL) {
-        scalerInfo->layoutTables = newLayoutTableCache();
-    }
-
-    return ptr_to_jlong(scalerInfo->layoutTables);
 }
 
 /*
