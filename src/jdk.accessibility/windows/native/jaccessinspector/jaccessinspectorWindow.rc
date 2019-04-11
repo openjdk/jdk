@@ -199,15 +199,15 @@ BEGIN
     BEGIN
         BLOCK "000004b0"
         BEGIN
-            VALUE "CompanyName",      XSTR(JDK_COMPANY)       "\0"
-            VALUE "FileDescription",  XSTR(JDK_COMPONENT)     "\0"
-            VALUE "FileVersion",      XSTR(JDK_VER)           "\0"
+            VALUE "CompanyName",      XSTR(JDK_COMPANY)        "\0"
+            VALUE "FileDescription",  XSTR(JDK_FILEDESC)       "\0"
+            VALUE "FileVersion",      XSTR(JDK_VER)            "\0"
             VALUE "Full Version",     XSTR(JDK_VERSION_STRING) "\0"
-            VALUE "InternalName",     XSTR(JDK_INTERNAL_NAME) "\0"
-            VALUE "LegalCopyright",   XSTR(JDK_COPYRIGHT)     "\0"
-            VALUE "OriginalFilename", XSTR(JDK_FNAME)         "\0"
-            VALUE "ProductName",      XSTR(JDK_NAME)          "\0"
-            VALUE "ProductVersion",   XSTR(JDK_VER)           "\0"
+            VALUE "InternalName",     XSTR(JDK_INTERNAL_NAME)  "\0"
+            VALUE "LegalCopyright",   XSTR(JDK_COPYRIGHT)      "\0"
+            VALUE "OriginalFilename", XSTR(JDK_FNAME)          "\0"
+            VALUE "ProductName",      XSTR(JDK_NAME)           "\0"
+            VALUE "ProductVersion",   XSTR(JDK_VER)            "\0"
         END
     END
     BLOCK "VarFileInfo"

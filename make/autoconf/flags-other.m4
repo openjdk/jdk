@@ -81,21 +81,21 @@ AC_DEFUN([FLAGS_SETUP_RCFLAGS],
     RC_FLAGS="$RC_FLAGS \
         -D\"JDK_VERSION_STRING=\$(VERSION_STRING)\" \
         -D\"JDK_COMPANY=\$(COMPANY_NAME)\" \
-        -D\"JDK_COMPONENT=\$(JDK_RC_NAME) binary\" \
+        -D\"JDK_FILEDESC=\$(JDK_RC_NAME) binary\" \
         -D\"JDK_VER=\$(VERSION_NUMBER)\" \
         -D\"JDK_COPYRIGHT=Copyright \xA9 $COPYRIGHT_YEAR\" \
         -D\"JDK_NAME=\$(JDK_RC_NAME) \$(VERSION_FEATURE)\" \
         -D\"JDK_FVER=\$(subst .,\$(COMMA),\$(VERSION_NUMBER_FOUR_POSITIONS))\""
 
     JVM_RCFLAGS="$JVM_RCFLAGS \
-        -D\"HS_BUILD_ID=\$(VERSION_STRING)\" \
+        -D\"HS_VERSION_STRING=\$(VERSION_STRING)\" \
         -D\"HS_COMPANY=\$(COMPANY_NAME)\" \
-        -D\"JDK_DOTVER=\$(VERSION_NUMBER_FOUR_POSITIONS)\" \
+        -D\"HS_VER=\$(VERSION_NUMBER_FOUR_POSITIONS)\" \
+        -D\"HS_INTERNAL_NAME=jvm\" \
         -D\"HS_COPYRIGHT=Copyright $COPYRIGHT_YEAR\" \
-        -D\"HS_NAME=\$(PRODUCT_NAME) \$(VERSION_SHORT)\" \
-        -D\"JDK_VER=\$(subst .,\$(COMMA),\$(VERSION_NUMBER_FOUR_POSITIONS))\" \
         -D\"HS_FNAME=jvm.dll\" \
-        -D\"HS_INTERNAL_NAME=jvm\""
+        -D\"HS_NAME=\$(PRODUCT_NAME) \$(VERSION_SHORT)\" \
+        -D\"HS_FVER=\$(subst .,\$(COMMA),\$(VERSION_NUMBER_FOUR_POSITIONS))\""
   fi
   AC_SUBST(RC_FLAGS)
   AC_SUBST(JVM_RCFLAGS)
