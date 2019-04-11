@@ -236,7 +236,7 @@ jvmtiError JvmtiCodeBlobEvents::generate_compiled_method_load_events(JvmtiEnv* e
     // Don't hold the lock over the notify or jmethodID creation
     MutexUnlockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     current->get_and_cache_jmethod_id();
-    JvmtiExport::post_compiled_method_load(current);
+    JvmtiExport::post_compiled_method_load(env, current);
   }
   return JVMTI_ERROR_NONE;
 }
