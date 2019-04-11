@@ -49,6 +49,7 @@ $(JCOV_IMAGE_DIR)/release: $(JCOV_INPUT_IMAGE_DIR)/release
 	    -exclude 'java.lang.Object' \
 	    -exclude 'jdk.internal.org.objectweb.**' \
 	    -exclude jdk.test.Main -exclude '**\$Proxy*' \
+	    $(JCOV_FILTERS) \
 	    $(JCOV_TEMP)/$(JCOV_IMAGE_SUBDIR)
 	$(MV) $(JCOV_TEMP)/$(JCOV_IMAGE_SUBDIR) $(JCOV_IMAGE_DIR)
 	$(RMDIR) $(JCOV_TEMP)

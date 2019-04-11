@@ -404,9 +404,12 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_CODE_COVERAGE],
       [jcov library location])])
   AC_ARG_WITH(jcov-input-jdk, [AS_HELP_STRING([--with-jcov-input-jdk],
       [jdk image to instrument])])
+  AC_ARG_WITH(jcov-filters, [AS_HELP_STRING([--with-jcov-filters],
+      [filters to limit code for jcov instrumentation and report generation])])
   JCOV_HOME=
   JCOV_INPUT_JDK=
   JCOV_ENABLED=
+  JCOV_FILTERS=
   if test "x$with_jcov" = "x" ; then
     JCOV_ENABLED="false"
   else
@@ -425,10 +428,14 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_CODE_COVERAGE],
       fi
       BASIC_FIXUP_PATH(JCOV_INPUT_JDK)
     fi
+    if test "x$with_jcov_filters" != "x" ; then
+      JCOV_FILTERS="$with_jcov_filters"
+    fi
   fi
   AC_SUBST(JCOV_ENABLED)
   AC_SUBST(JCOV_HOME)
   AC_SUBST(JCOV_INPUT_JDK)
+  AC_SUBST(JCOV_FILTERS)
 ])
 
 ###############################################################################
