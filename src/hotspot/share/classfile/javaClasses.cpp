@@ -160,6 +160,7 @@ static void compute_offset(int& dest_offset, InstanceKlass* ik,
 
 int java_lang_String::value_offset  = 0;
 int java_lang_String::hash_offset   = 0;
+int java_lang_String::hashIsZero_offset = 0;
 int java_lang_String::coder_offset  = 0;
 
 bool java_lang_String::initialized  = false;
@@ -179,7 +180,8 @@ bool java_lang_String::is_instance(oop obj) {
 #define STRING_FIELDS_DO(macro) \
   macro(value_offset, k, vmSymbols::value_name(), byte_array_signature, false); \
   macro(hash_offset,  k, "hash",                  int_signature,        false); \
-  macro(coder_offset, k, "coder",                 byte_signature,       false)
+  macro(hashIsZero_offset, k, "hashIsZero",       bool_signature,       false); \
+  macro(coder_offset, k, "coder",                 byte_signature,       false);
 
 void java_lang_String::compute_offsets() {
   if (initialized) {
@@ -507,18 +509,38 @@ jchar* java_lang_String::as_unicode_string(oop java_string, int& length, TRAPS) 
 }
 
 unsigned int java_lang_String::hash_code(oop java_string) {
-  typeArrayOop value  = java_lang_String::value(java_string);
-  int          length = java_lang_String::length(java_string, value);
-  // Zero length string will hash to zero with String.hashCode() function.
-  if (length == 0) return 0;
-
-  bool      is_latin1 = java_lang_String::is_latin1(java_string);
-
-  if (is_latin1) {
-    return java_lang_String::hash_code(value->byte_at_addr(0), length);
-  } else {
-    return java_lang_String::hash_code(value->char_at_addr(0), length);
+  // The hash and hashIsZero fields are subject to a benign data race,
+  // making it crucial to ensure that any observable result of the
+  // calculation in this method stays correct under any possible read of
+  // these fields. Necessary restrictions to allow this to be correct
+  // without explicit memory fences or similar concurrency primitives is
+  // that we can ever only write to one of these two fields for a given
+  // String instance, and that the computation is idempotent and derived
+  // from immutable state
+  assert(initialized && (hash_offset > 0) && (hashIsZero_offset > 0), "Must be initialized");
+  if (java_lang_String::hash_is_set(java_string)) {
+    return java_string->int_field(hash_offset);
   }
+
+  typeArrayOop value = java_lang_String::value(java_string);
+  int         length = java_lang_String::length(java_string, value);
+  bool     is_latin1 = java_lang_String::is_latin1(java_string);
+
+  unsigned int hash = 0;
+  if (length > 0) {
+    if (is_latin1) {
+      hash = java_lang_String::hash_code(value->byte_at_addr(0), length);
+    } else {
+      hash = java_lang_String::hash_code(value->char_at_addr(0), length);
+    }
+  }
+
+  if (hash != 0) {
+    java_string->int_field_put(hash_offset, hash);
+  } else {
+    java_string->bool_field_put(hashIsZero_offset, true);
+  }
+  return hash;
 }
 
 char* java_lang_String::as_quoted_ascii(oop java_string) {

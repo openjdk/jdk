@@ -57,7 +57,7 @@ inline size_t ZUtils::words_to_bytes(size_t size_in_words) {
 }
 
 inline size_t ZUtils::object_size(uintptr_t addr) {
-  return words_to_bytes(ZOop::to_oop(addr)->size());
+  return words_to_bytes(ZOop::from_address(addr)->size());
 }
 
 inline void ZUtils::object_copy(uintptr_t from, uintptr_t to, size_t size) {

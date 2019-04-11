@@ -516,6 +516,19 @@ void VM_Version::print_features_internal(const char* text, bool print_anyway) {
   }
 }
 
+void VM_Version::print_platform_virtualization_info(outputStream* st) {
+  // /proc/sysinfo contains interesting information about
+  // - LPAR
+  // - whole "Box" (CPUs )
+  // - z/VM / KVM (VM<nn>); this is not available in an LPAR-only setup
+  const char* kw[] = { "LPAR", "CPUs", "VM", NULL };
+  const char* info_file = "/proc/sysinfo";
+
+  if (!print_matching_lines_from_file(info_file, st, kw)) {
+    st->print_cr("  <%s Not Available>", info_file);
+  }
+}
+
 void VM_Version::print_features() {
   print_features_internal("Version:");
 }

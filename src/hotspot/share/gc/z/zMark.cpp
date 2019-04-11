@@ -200,7 +200,7 @@ void ZMark::finish_work() {
 }
 
 bool ZMark::is_array(uintptr_t addr) const {
-  return ZOop::to_oop(addr)->is_objArray();
+  return ZOop::from_address(addr)->is_objArray();
 }
 
 void ZMark::push_partial_array(uintptr_t addr, size_t size, bool finalizable) {
@@ -347,9 +347,9 @@ void ZMark::mark_and_follow(ZMarkCache* cache, ZMarkStackEntry entry) {
   }
 
   if (is_array(addr)) {
-    follow_array_object(objArrayOop(ZOop::to_oop(addr)), finalizable);
+    follow_array_object(objArrayOop(ZOop::from_address(addr)), finalizable);
   } else {
-    follow_object(ZOop::to_oop(addr), finalizable);
+    follow_object(ZOop::from_address(addr), finalizable);
   }
 }
 

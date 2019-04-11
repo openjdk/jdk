@@ -1274,7 +1274,12 @@ public final class Math {
      * @since 1.8
      */
     public static int floorMod(int x, int y) {
-        return x - floorDiv(x, y) * y;
+        int mod = x % y;
+        // if the signs are different and modulo not zero, adjust result
+        if ((mod ^ y) < 0 && mod != 0) {
+            mod += y;
+        }
+        return mod;
     }
 
     /**
@@ -1301,7 +1306,7 @@ public final class Math {
      */
     public static int floorMod(long x, int y) {
         // Result cannot overflow the range of int.
-        return (int)(x - floorDiv(x, y) * y);
+        return (int)floorMod(x, (long)y);
     }
 
     /**
@@ -1327,7 +1332,12 @@ public final class Math {
      * @since 1.8
      */
     public static long floorMod(long x, long y) {
-        return x - floorDiv(x, y) * y;
+        long mod = x % y;
+        // if the signs are different and modulo not zero, adjust result
+        if ((x ^ y) < 0 && mod != 0) {
+            mod += y;
+        }
+        return mod;
     }
 
     /**

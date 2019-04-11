@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Google LLC. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,33 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZOOP_HPP
-#define SHARE_GC_Z_ZOOP_HPP
+/*
+ * @test
+ * @bug 8222035
+ * @summary minimal inference context optimization is forcing resolution with incomplete constraints
+ * @compile/fail/ref=MinContextOpTest.out -XDrawDiagnostics MinContextOpTest.java
+ */
 
-#include "memory/allocation.hpp"
-#include "oops/oopsHierarchy.hpp"
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collector;
+import java.util.stream.Stream;
 
-class ZOop : public AllStatic {
-public:
-  static oop from_address(uintptr_t addr);
-  static uintptr_t to_address(oop o);
-};
+public class MinContextOpTest {
+    abstract class A {
+        abstract static class T<K> {
+            abstract String f();
+        }
 
-#endif // SHARE_GC_Z_ZOOP_HPP
+        abstract <E> Function<E, E> id();
+
+        abstract static class ImmutableMap<K, V> implements Map<K, V> {}
+
+        abstract <T, K, V> Collector<T, ?, ImmutableMap<K, V>> toImmutableMap(
+                Function<? super T, ? extends K> k, Function<? super T, ? extends V> v);
+
+        ImmutableMap<String, T<?>> test(Stream<T> stream) {
+            return stream.collect(toImmutableMap(T::f, id()));
+        }
+    }
+}

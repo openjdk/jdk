@@ -123,7 +123,7 @@ uintptr_t ZBarrier::load_barrier_on_oop_slow_path(uintptr_t addr) {
 }
 
 void ZBarrier::load_barrier_on_oop_fields(oop o) {
-  assert(ZOop::is_good(o), "Should be good");
+  assert(ZAddress::is_good(ZOop::to_address(o)), "Should be good");
   ZLoadBarrierOopClosure cl;
   o->oop_iterate(&cl);
 }

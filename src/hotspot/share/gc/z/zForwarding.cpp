@@ -69,6 +69,11 @@ void ZForwarding::verify() const {
     // Check for duplicates
     for (ZForwardingCursor j = i + 1; j < _entries.length(); j++) {
       const ZForwardingEntry other = at(&j);
+      if (!other.populated()) {
+        // Skip empty entries
+        continue;
+      }
+
       guarantee(entry.from_index() != other.from_index(), "Duplicate from");
       guarantee(entry.to_offset() != other.to_offset(), "Duplicate to");
     }

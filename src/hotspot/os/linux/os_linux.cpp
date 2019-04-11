@@ -63,6 +63,7 @@
 #include "runtime/threadCritical.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/timer.hpp"
+#include "runtime/vm_version.hpp"
 #include "semaphore_posix.hpp"
 #include "services/attachListener.hpp"
 #include "services/memTracker.hpp"
@@ -1939,35 +1940,6 @@ static bool _print_ascii_file(const char* filename, outputStream* st, const char
   return true;
 }
 
-#if defined(S390) || defined(PPC64)
-// keywords_to_match - NULL terminated array of keywords
-static bool print_matching_lines_from_file(const char* filename, outputStream* st, const char* keywords_to_match[]) {
-  char* line = NULL;
-  size_t length = 0;
-  FILE* fp = fopen(filename, "r");
-  if (fp == NULL) {
-    return false;
-  }
-
-  st->print_cr("Virtualization information:");
-  while (getline(&line, &length, fp) != -1) {
-    int i = 0;
-    while (keywords_to_match[i] != NULL) {
-      if (strncmp(line, keywords_to_match[i], strlen(keywords_to_match[i])) == 0) {
-        st->print("%s", line);
-        break;
-      }
-      i++;
-    }
-  }
-
-  free(line);
-  fclose(fp);
-
-  return true;
-}
-#endif
-
 void os::print_dll_info(outputStream *st) {
   st->print_cr("Dynamic libraries:");
 
@@ -2052,7 +2024,7 @@ void os::print_os_info(outputStream* st) {
 
   os::Linux::print_container_info(st);
 
-  os::Linux::print_virtualization_info(st);
+  VM_Version::print_platform_virtualization_info(st);
 
   os::Linux::print_steal_info(st);
 }
@@ -2307,40 +2279,6 @@ void os::Linux::print_container_info(outputStream* st) {
     st->print("%s\n", j == OSCONTAINER_ERROR ? "not supported" : "unlimited");
   }
   st->cr();
-}
-
-void os::Linux::print_virtualization_info(outputStream* st) {
-#if defined(S390)
-  // /proc/sysinfo contains interesting information about
-  // - LPAR
-  // - whole "Box" (CPUs )
-  // - z/VM / KVM (VM<nn>); this is not available in an LPAR-only setup
-  const char* kw[] = { "LPAR", "CPUs", "VM", NULL };
-  const char* info_file = "/proc/sysinfo";
-
-  if (!print_matching_lines_from_file(info_file, st, kw)) {
-    st->print_cr("  <%s Not Available>", info_file);
-  }
-#elif defined(PPC64)
-  const char* info_file = "/proc/ppc64/lparcfg";
-  const char* kw[] = { "system_type=", // qemu indicates PowerKVM
-                       "partition_entitled_capacity=", // entitled processor capacity percentage
-                       "partition_max_entitled_capacity=",
-                       "capacity_weight=", // partition CPU weight
-                       "partition_active_processors=",
-                       "partition_potential_processors=",
-                       "entitled_proc_capacity_available=",
-                       "capped=", // 0 - uncapped, 1 - vcpus capped at entitled processor capacity percentage
-                       "shared_processor_mode=", // (non)dedicated partition
-                       "system_potential_processors=",
-                       "pool=", // CPU-pool number
-                       "pool_capacity=",
-                       "NumLpars=", // on non-KVM machines, NumLpars is not found for full partition mode machines
-                       NULL };
-  if (!print_matching_lines_from_file(info_file, st, kw)) {
-    st->print_cr("  <%s Not Available>", info_file);
-  }
-#endif
 }
 
 void os::Linux::print_steal_info(outputStream* st) {

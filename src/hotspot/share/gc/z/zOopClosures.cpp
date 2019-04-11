@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,12 +39,14 @@ void ZVerifyOopClosure::do_oop(oop* p) {
 
   const oop o = RawAccess<>::oop_load(p);
   if (o != NULL) {
-    guarantee(ZOop::is_good(o) || ZOop::is_finalizable_good(o),
+    const uintptr_t addr = ZOop::to_address(o);
+    const uintptr_t good_addr = ZAddress::good(addr);
+    guarantee(ZAddress::is_good(addr) || ZAddress::is_finalizable_good(addr),
               "Bad oop " PTR_FORMAT " found at " PTR_FORMAT ", expected " PTR_FORMAT,
-              p2i(o), p2i(p), p2i(ZOop::good(o)));
-    guarantee(oopDesc::is_oop(ZOop::good(o)),
+              addr, p2i(p), good_addr);
+    guarantee(oopDesc::is_oop(ZOop::from_address(good_addr)),
               "Bad object " PTR_FORMAT " found at " PTR_FORMAT,
-              p2i(o), p2i(p));
+              addr, p2i(p));
   }
 }
 

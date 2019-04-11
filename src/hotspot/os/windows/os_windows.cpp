@@ -1601,6 +1601,10 @@ void os::print_os_info(outputStream* st) {
 #endif
   st->print("OS:");
   os::win32::print_windows_version(st);
+
+#ifdef _LP64
+  VM_Version::print_platform_virtualization_info(st);
+#endif
 }
 
 void os::win32::print_windows_version(outputStream* st) {

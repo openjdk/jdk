@@ -2170,61 +2170,37 @@ void JvmtiExport::post_compiled_method_load(nmethod *nm) {
 
   JvmtiEnvIterator it;
   for (JvmtiEnv* env = it.first(); env != NULL; env = it.next(env)) {
-    if (env->is_enabled(JVMTI_EVENT_COMPILED_METHOD_LOAD)) {
-      if (env->phase() == JVMTI_PHASE_PRIMORDIAL) {
-        continue;
-      }
-      EVT_TRACE(JVMTI_EVENT_COMPILED_METHOD_LOAD,
-                ("[%s] class compile method load event sent %s.%s  ",
-                JvmtiTrace::safe_get_thread_name(thread),
-                (nm->method() == NULL) ? "NULL" : nm->method()->klass_name()->as_C_string(),
-                (nm->method() == NULL) ? "NULL" : nm->method()->name()->as_C_string()));
-      ResourceMark rm(thread);
-      HandleMark hm(thread);
-
-      // Add inlining information
-      jvmtiCompiledMethodLoadInlineRecord* inlinerecord = create_inline_record(nm);
-      // Pass inlining information through the void pointer
-      JvmtiCompiledMethodLoadEventMark jem(thread, nm, inlinerecord);
-      JvmtiJavaThreadEventTransition jet(thread);
-      jvmtiEventCompiledMethodLoad callback = env->callbacks()->CompiledMethodLoad;
-      if (callback != NULL) {
-        (*callback)(env->jvmti_external(), jem.jni_methodID(),
-                    jem.code_size(), jem.code_data(), jem.map_length(),
-                    jem.map(), jem.compile_info());
-      }
-    }
+    post_compiled_method_load(env, nm);
   }
 }
 
-
 // post a COMPILED_METHOD_LOAD event for a given environment
-void JvmtiExport::post_compiled_method_load(JvmtiEnv* env, const jmethodID method, const jint length,
-                                            const void *code_begin, const jint map_length,
-                                            const jvmtiAddrLocationMap* map)
-{
-  if (env->phase() <= JVMTI_PHASE_PRIMORDIAL) {
+void JvmtiExport::post_compiled_method_load(JvmtiEnv* env, nmethod *nm) {
+  if (env->phase() == JVMTI_PHASE_PRIMORDIAL || !env->is_enabled(JVMTI_EVENT_COMPILED_METHOD_LOAD)) {
+    return;
+  }
+  jvmtiEventCompiledMethodLoad callback = env->callbacks()->CompiledMethodLoad;
+  if (callback == NULL) {
     return;
   }
   JavaThread* thread = JavaThread::current();
-  EVT_TRIG_TRACE(JVMTI_EVENT_COMPILED_METHOD_LOAD,
-                 ("[%s] method compile load event triggered (by GenerateEvents)",
-                 JvmtiTrace::safe_get_thread_name(thread)));
-  if (env->is_enabled(JVMTI_EVENT_COMPILED_METHOD_LOAD)) {
 
-    EVT_TRACE(JVMTI_EVENT_COMPILED_METHOD_LOAD,
-              ("[%s] class compile method load event sent (by GenerateEvents), jmethodID=" PTR_FORMAT,
-               JvmtiTrace::safe_get_thread_name(thread), p2i(method)));
+  EVT_TRACE(JVMTI_EVENT_COMPILED_METHOD_LOAD,
+           ("[%s] method compile load event sent %s.%s  ",
+            JvmtiTrace::safe_get_thread_name(thread),
+            (nm->method() == NULL) ? "NULL" : nm->method()->klass_name()->as_C_string(),
+            (nm->method() == NULL) ? "NULL" : nm->method()->name()->as_C_string()));
+  ResourceMark rm(thread);
+  HandleMark hm(thread);
 
-    JvmtiEventMark jem(thread);
-    JvmtiJavaThreadEventTransition jet(thread);
-    jvmtiEventCompiledMethodLoad callback = env->callbacks()->CompiledMethodLoad;
-    if (callback != NULL) {
-      (*callback)(env->jvmti_external(), method,
-                  length, code_begin, map_length,
-                  map, NULL);
-    }
-  }
+  // Add inlining information
+  jvmtiCompiledMethodLoadInlineRecord* inlinerecord = create_inline_record(nm);
+  // Pass inlining information through the void pointer
+  JvmtiCompiledMethodLoadEventMark jem(thread, nm, inlinerecord);
+  JvmtiJavaThreadEventTransition jet(thread);
+  (*callback)(env->jvmti_external(), jem.jni_methodID(),
+              jem.code_size(), jem.code_data(), jem.map_length(),
+              jem.map(), jem.compile_info());
 }
 
 void JvmtiExport::post_dynamic_code_generated_internal(const char *name, const void *code_begin, const void *code_end) {

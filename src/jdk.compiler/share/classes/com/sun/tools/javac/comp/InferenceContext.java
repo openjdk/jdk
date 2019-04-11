@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -366,9 +367,11 @@ public class InferenceContext {
         for (Type t : minContext.inferencevars) {
             //add listener that forwards notifications to original context
             minContext.addFreeTypeListener(List.of(t), (inferenceContext) -> {
-                ((UndetVar)asUndetVar(t)).setInst(inferenceContext.asInstType(t));
-                infer.doIncorporation(inferenceContext, warn);
-                solve(List.from(rv.minMap.get(t)), warn);
+                Type instType = inferenceContext.asInstType(t);
+                for (Type eq : rv.minMap.get(t)) {
+                    ((UndetVar)asUndetVar(eq)).setInst(instType);
+                }
+                infer.doIncorporation(this, warn);
                 notifyChange();
             });
         }
@@ -385,9 +388,9 @@ public class InferenceContext {
 
     class ReachabilityVisitor extends Types.UnaryVisitor<Void> {
 
-        Set<Type> equiv = new HashSet<>();
-        Set<Type> min = new HashSet<>();
-        Map<Type, Set<Type>> minMap = new HashMap<>();
+        Set<Type> equiv = new LinkedHashSet<>();
+        Set<Type> min = new LinkedHashSet<>();
+        Map<Type, Set<Type>> minMap = new LinkedHashMap<>();
 
         void scan(List<Type> roots) {
             roots.stream().forEach(this::visit);
@@ -401,7 +404,7 @@ public class InferenceContext {
         @Override
         public Void visitUndetVar(UndetVar t, Void _unused) {
             if (min.add(t.qtype)) {
-                Set<Type> deps = minMap.getOrDefault(t.qtype, new HashSet<>(Collections.singleton(t.qtype)));
+                Set<Type> deps = minMap.getOrDefault(t.qtype, new LinkedHashSet<>(Collections.singleton(t.qtype)));
                 for (InferenceBound boundKind : InferenceBound.values()) {
                     for (Type b : t.getBounds(boundKind)) {
                         Type undet = asUndetVar(b);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,28 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZOOP_HPP
-#define SHARE_GC_Z_ZOOP_HPP
+/**
+ * @test
+ * @bug 8222072
+ * @summary Send CompiledMethodLoad events only to the environment requested it with GenerateEvents
+ * @compile GenerateEventsTest.java
+ * @run main/othervm/native -agentlib:GenerateEvents1 -agentlib:GenerateEvents2 MyPackage.GenerateEventsTest
+ */
 
-#include "memory/allocation.hpp"
-#include "oops/oopsHierarchy.hpp"
+package MyPackage;
 
-class ZOop : public AllStatic {
-public:
-  static oop from_address(uintptr_t addr);
-  static uintptr_t to_address(oop o);
-};
+public class GenerateEventsTest {
+  static native void agent1GenerateEvents();
+  static native void agent2SetThread(Thread thread);
+  static native boolean agent1FailStatus();
+  static native boolean agent2FailStatus();
 
-#endif // SHARE_GC_Z_ZOOP_HPP
+  public static void main(String[] args) {
+      agent2SetThread(Thread.currentThread());
+      agent1GenerateEvents(); // Re-generate CompiledMethodLoad events
+      if (agent1FailStatus()|| agent2FailStatus()) {
+         throw new RuntimeException("GenerateEventsTest failed!");
+      }
+      System.out.println("GenerateEventsTest passed!");
+  }
+}

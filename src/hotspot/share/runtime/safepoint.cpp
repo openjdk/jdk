@@ -805,9 +805,9 @@ void SafepointSynchronize::block(JavaThread *thread) {
 
       // This part we can skip if we notice we miss or are in a future safepoint.
       OrderAccess::storestore();
-      thread->set_thread_state(_thread_blocked);
+      // Load in wait barrier should not float up
+      thread->set_thread_state_fence(_thread_blocked);
 
-      OrderAccess::fence(); // Load in wait barrier should not float up
       _wait_barrier->wait(static_cast<int>(safepoint_id));
       assert(_state != _synchronized, "Can't be");
 

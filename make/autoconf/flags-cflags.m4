@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -799,15 +799,29 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
     $1_WARNING_CFLAGS_JVM="-Wno-format-zero-length -Wtype-limits -Wuninitialized"
   fi
 
+  if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
+    # Check if compiler supports -fmacro-prefix-map. If so, use that to make
+    # the __FILE__ macro resolve to paths relative to the workspace root.
+    workspace_root_trailing_slash="${WORKSPACE_ROOT%/}/"
+    FILE_MACRO_CFLAGS="-fmacro-prefix-map=${workspace_root_trailing_slash}="
+    FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${FILE_MACRO_CFLAGS}],
+        PREFIX: $3,
+        IF_FALSE: [
+            FILE_MACRO_CFLAGS=
+        ]
+    )
+  fi
+
   # EXPORT to API
   CFLAGS_JVM_COMMON="$ALWAYS_CFLAGS_JVM $ALWAYS_DEFINES_JVM \
       $TOOLCHAIN_CFLAGS_JVM ${$1_TOOLCHAIN_CFLAGS_JVM} \
       $OS_CFLAGS $OS_CFLAGS_JVM $CFLAGS_OS_DEF_JVM $DEBUG_CFLAGS_JVM \
-      $WARNING_CFLAGS $WARNING_CFLAGS_JVM $JVM_PICFLAG"
+      $WARNING_CFLAGS $WARNING_CFLAGS_JVM $JVM_PICFLAG $FILE_MACRO_CFLAGS"
 
   CFLAGS_JDK_COMMON="$ALWAYS_CFLAGS_JDK $ALWAYS_DEFINES_JDK $TOOLCHAIN_CFLAGS_JDK \
       $OS_CFLAGS $CFLAGS_OS_DEF_JDK $DEBUG_CFLAGS_JDK $DEBUG_OPTIONS_FLAGS_JDK \
-      $WARNING_CFLAGS $WARNING_CFLAGS_JDK $DEBUG_SYMBOLS_CFLAGS_JDK"
+      $WARNING_CFLAGS $WARNING_CFLAGS_JDK $DEBUG_SYMBOLS_CFLAGS_JDK \
+      $FILE_MACRO_CFLAGS"
 
   # Use ${$2EXTRA_CFLAGS} to block EXTRA_CFLAGS to be added to build flags.
   # (Currently we don't have any OPENJDK_BUILD_EXTRA_CFLAGS, but that might

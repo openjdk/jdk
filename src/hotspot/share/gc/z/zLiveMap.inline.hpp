@@ -144,7 +144,7 @@ inline void ZLiveMap::iterate_segment(ObjectClosure* cl, BitMap::idx_t segment, 
     const uintptr_t addr = page_start + ((index / 2) << page_object_alignment_shift);
 
     // Apply closure
-    cl->do_object(ZOop::to_oop(addr));
+    cl->do_object(ZOop::from_address(addr));
 
     // Find next bit after this object
     const size_t size = ZUtils::object_size(addr);

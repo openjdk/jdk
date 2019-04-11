@@ -351,19 +351,14 @@ void StringDedupTable::deduplicate(oop java_string, StringDedupStat* stat) {
   unsigned int hash = 0;
 
   if (use_java_hash()) {
-    // Get hash code from cache
-    hash = java_lang_String::hash(java_string);
-  }
-
-  if (hash == 0) {
+    if (!java_lang_String::hash_is_set(java_string)) {
+      stat->inc_hashed();
+    }
+    hash = java_lang_String::hash_code(java_string);
+  } else {
     // Compute hash
     hash = hash_code(value, latin1);
     stat->inc_hashed();
-
-    if (use_java_hash() && hash != 0) {
-      // Store hash code in cache
-      java_lang_String::set_hash(java_string, hash);
-    }
   }
 
   typeArrayOop existing_value = lookup_or_add(value, latin1, hash);

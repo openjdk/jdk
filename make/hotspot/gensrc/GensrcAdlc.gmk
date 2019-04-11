@@ -76,6 +76,7 @@ ifeq ($(call check-jvm-feature, compiler2), true)
       DEBUG_SYMBOLS := false, \
       DISABLED_WARNINGS_clang := tautological-compare, \
       DISABLED_WARNINGS_solstudio := notemsource, \
+      DEFINE_THIS_FILE := false, \
   ))
 
   ADLC_TOOL := $(BUILD_ADLC_TARGET)

@@ -1,0 +1,4 @@
+MinContextOpTest.java:38:25: compiler.err.mod.not.allowed.here: static
+MinContextOpTest.java:44:25: compiler.err.mod.not.allowed.here: static
+MinContextOpTest.java:50:34: compiler.err.prob.found.req: (compiler.misc.infer.no.conforming.assignment.exists: T,K,V,E, (compiler.misc.inconvertible.types: java.util.function.Function<MinContextOpTest.A.T,MinContextOpTest.A.T>, java.util.function.Function<? super MinContextOpTest.A.T,? extends MinContextOpTest.A.T<?>>))
+3 errors

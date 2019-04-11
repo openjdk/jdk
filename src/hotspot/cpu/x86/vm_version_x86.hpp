@@ -686,6 +686,9 @@ public:
   static void initialize();
 
   // Override Abstract_VM_Version implementation
+  static void print_platform_virtualization_info(outputStream*);
+
+  // Override Abstract_VM_Version implementation
   static bool use_biased_locking();
 
   // Asserts
@@ -930,6 +933,11 @@ public:
   // that can be used for efficient implementation of
   // the intrinsic for java.lang.Thread.onSpinWait()
   static bool supports_on_spin_wait() { return supports_sse2(); }
+
+  // support functions for virtualization detection
+ private:
+  static void check_virt_cpuid(uint32_t idx, uint32_t *regs);
+  static void check_virtualizations();
 };
 
 #endif // CPU_X86_VM_VERSION_X86_HPP

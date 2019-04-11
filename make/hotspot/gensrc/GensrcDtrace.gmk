@@ -80,6 +80,7 @@ ifeq ($(call check-jvm-feature, dtrace), true)
         EXTRA_DEPS := $(JVMTI_H) $(JFR_FILES), \
         OBJECT_DIR := $(JVM_VARIANT_OUTPUTDIR)/tools/dtrace-gen-offsets/objs, \
         OUTPUT_DIR := $(JVM_VARIANT_OUTPUTDIR)/tools/dtrace-gen-offsets, \
+        DEFINE_THIS_FILE := false, \
     ))
 
     DTRACE_GEN_OFFSETS_TOOL := $(BUILD_DTRACE_GEN_OFFSETS_TARGET)

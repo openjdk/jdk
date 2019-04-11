@@ -164,6 +164,12 @@ public final class String
     /** Cache the hash code for the string */
     private int hash; // Default to 0
 
+    /**
+     * Cache if the hash has been calculated as actually being zero, enabling
+     * us to avoid recalculating this.
+     */
+    private boolean hashIsZero; // Default to false;
+
     /** use serialVersionUID from JDK 1.0.2 for interoperability */
     private static final long serialVersionUID = -6849794470754667710L;
 
@@ -1508,14 +1514,21 @@ public final class String
      * @return  a hash code value for this object.
      */
     public int hashCode() {
+        // The hash or hashIsZero fields are subject to a benign data race,
+        // making it crucial to ensure that any observable result of the
+        // calculation in this method stays correct under any possible read of
+        // these fields. Necessary restrictions to allow this to be correct
+        // without explicit memory fences or similar concurrency primitives is
+        // that we can ever only write to one of these two fields for a given
+        // String instance, and that the computation is idempotent and derived
+        // from immutable state
         int h = hash;
-        if (h == 0 && value.length > 0) {
+        if (h == 0 && !hashIsZero) {
             h = isLatin1() ? StringLatin1.hashCode(value)
                            : StringUTF16.hashCode(value);
-            // Avoid issuing a store if the calculated value is also zero:
-            // in addition to a minor performance benefit, this allows storing
-            // Strings with zero hash code in read-only memory.
-            if (h != 0) {
+            if (h == 0) {
+                hashIsZero = true;
+            } else {
                 hash = h;
             }
         }
