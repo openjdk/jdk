@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8210047 8199892
+ * @bug 8210047 8199892 8215599
  * @summary some pages contains content outside of landmark region
  * @library /tools/lib ../../lib
  * @modules
@@ -57,7 +57,6 @@ public class TestHtmlLandmarkRegions extends JavadocTester {
 
     TestHtmlLandmarkRegions() {
         tb = new ToolBox();
-        setAutomaticCheckLinks(false); // @ignore 8217013
     }
 
     @Test
