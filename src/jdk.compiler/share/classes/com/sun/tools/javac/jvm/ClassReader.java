@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2557,14 +2557,12 @@ public class ClassReader {
                 firstParam += skip;
             }
         }
-        List<Name> paramNames = List.nil();
+        Set<Name> paramNames = new HashSet<>();
         ListBuffer<VarSymbol> params = new ListBuffer<>();
         int nameIndex = firstParam;
         int annotationIndex = 0;
         for (Type t: sym.type.getParameterTypes()) {
-            Name name = parameterName(nameIndex, paramNames);
-            paramNames = paramNames.prepend(name);
-            VarSymbol param = new VarSymbol(PARAMETER, name, t, sym);
+            VarSymbol param = parameter(nameIndex, t, sym, paramNames);
             params.append(param);
             if (parameterAnnotations != null) {
                 ParameterAnnotations annotations = parameterAnnotations[annotationIndex];
@@ -2589,18 +2587,24 @@ public class ClassReader {
     // Returns the name for the parameter at position 'index', either using
     // names read from the MethodParameters, or by synthesizing a name that
     // is not on the 'exclude' list.
-    private Name parameterName(int index, List<Name> exclude) {
+    private VarSymbol parameter(int index, Type t, MethodSymbol owner, Set<Name> exclude) {
+        long flags = PARAMETER;
+        Name argName;
         if (parameterNameIndices != null && index < parameterNameIndices.length
                 && parameterNameIndices[index] != 0) {
-            return readName(parameterNameIndices[index]);
+            argName = readName(parameterNameIndices[index]);
+            flags |= NAME_FILLED;
+        } else {
+            String prefix = "arg";
+            while (true) {
+                argName = names.fromString(prefix + exclude.size());
+                if (!exclude.contains(argName))
+                    break;
+                prefix += "$";
+            }
         }
-        String prefix = "arg";
-        while (true) {
-            Name argName = names.fromString(prefix + exclude.size());
-            if (!exclude.contains(argName))
-                return argName;
-            prefix += "$";
-        }
+        exclude.add(argName);
+        return new ParamSymbol(flags, argName, t, owner);
     }
 
     /**

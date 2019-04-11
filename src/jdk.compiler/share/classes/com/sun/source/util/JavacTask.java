@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.IOException;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
@@ -135,6 +136,27 @@ public abstract class JavacTask implements CompilationTask {
      * @since 1.8
      */
     public abstract void removeTaskListener(TaskListener taskListener);
+
+    /**
+     * Sets the specified {@link ParameterNameProvider}. It may be used when
+     * {@link VariableElement#getSimpleName()} is called for a method parameter
+     * for which an authoritative name is not found. The given
+     * {@code ParameterNameProvider} may infer a user-friendly name
+     * for the method parameter.
+     *
+     * Setting a new {@code ParameterNameProvider} will clear any previously set
+     * {@code ParameterNameProvider}, which won't be queried any more.
+     *
+     * When no {@code ParameterNameProvider} is set, or when it returns null from
+     * {@link ParameterNameProvider#getParameterName(javax.lang.model.element.VariableElement)},
+     * an automatically synthesized name is returned from {@code VariableElement.getSimpleName()}.
+     *
+     * @implSpec The default implementation of this method does nothing.
+     *
+     * @param provider the provider.
+     * @since 13
+     */
+    public void setParameterNameProvider(ParameterNameProvider provider) {}
 
     /**
      * Returns a type mirror of the tree node determined by the specified path.
