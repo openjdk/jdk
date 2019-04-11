@@ -1502,6 +1502,10 @@ public class ClassReader {
 
     // See java.lang.Class
     private Name simpleBinaryName(Name self, Name enclosing) {
+        if (!self.startsWith(enclosing)) {
+            throw badClassFile("bad.enclosing.method", self);
+        }
+
         String simpleBinaryName = self.toString().substring(enclosing.toString().length());
         if (simpleBinaryName.length() < 1 || simpleBinaryName.charAt(0) != '$')
             throw badClassFile("bad.enclosing.method", self);
