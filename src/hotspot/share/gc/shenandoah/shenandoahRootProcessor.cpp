@@ -48,14 +48,15 @@ struct PhaseMap {
 
 static const struct PhaseMap phase_mapping[] = {
 #if INCLUDE_JVMTI
-  {WeakProcessorPhases::jvmti,       ShenandoahPhaseTimings::JVMTIWeakRoots},
+  {WeakProcessorPhases::jvmti,                 ShenandoahPhaseTimings::JVMTIWeakRoots},
 #endif
 #if INCLUDE_JFR
-  {WeakProcessorPhases::jfr,         ShenandoahPhaseTimings::JFRWeakRoots},
+  {WeakProcessorPhases::jfr,                   ShenandoahPhaseTimings::JFRWeakRoots},
 #endif
-  {WeakProcessorPhases::jni,         ShenandoahPhaseTimings::JNIWeakRoots},
-  {WeakProcessorPhases::stringtable, ShenandoahPhaseTimings::StringTableRoots},
-  {WeakProcessorPhases::vm,          ShenandoahPhaseTimings::VMWeakRoots}
+  {WeakProcessorPhases::jni,                   ShenandoahPhaseTimings::JNIWeakRoots},
+  {WeakProcessorPhases::stringtable,           ShenandoahPhaseTimings::StringTableRoots},
+  {WeakProcessorPhases::resolved_method_table, ShenandoahPhaseTimings::ResolvedMethodTableRoots},
+  {WeakProcessorPhases::vm,                    ShenandoahPhaseTimings::VMWeakRoots}
 };
 
 STATIC_ASSERT(sizeof(phase_mapping) / sizeof(PhaseMap) == WeakProcessorPhases::phase_count);
