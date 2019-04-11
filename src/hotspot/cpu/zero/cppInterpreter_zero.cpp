@@ -371,14 +371,12 @@ int CppInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
   intptr_t result[4 - LogBytesPerWord];
   ffi_call(handler->cif(), (void (*)()) function, result, arguments);
 
-  // Change the thread state back to _thread_in_Java.
+  // Change the thread state back to _thread_in_Java and ensure it
+  // is seen by the GC thread.
   // ThreadStateTransition::transition_from_native() cannot be used
   // here because it does not check for asynchronous exceptions.
   // We have to manage the transition ourself.
-  thread->set_thread_state(_thread_in_native_trans);
-
-  // Make sure new state is visible in the GC thread
-  InterfaceSupport::serialize_thread_state(thread);
+  thread->set_thread_state_fence(_thread_in_native_trans);
 
   // Handle safepoint operations, pending suspend requests,
   // and pending asynchronous exceptions.
