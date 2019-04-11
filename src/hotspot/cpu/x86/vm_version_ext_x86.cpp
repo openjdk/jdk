@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -340,6 +340,10 @@ bool VM_Version_Ext::supports_tscinv_ext(void) {
     return !is_amd_Barcelona();
   }
 
+  if (is_hygon()) {
+    return true;
+  }
+
   return false;
 }
 
@@ -407,6 +411,10 @@ const char* VM_Version_Ext::cpu_family_description(void) {
     }
     return _family_id_intel[cpu_family_id];
   }
+  if (is_hygon()) {
+    return "Dhyana";
+  }
+
   return "Unknown x86";
 }
 
@@ -422,6 +430,9 @@ int VM_Version_Ext::cpu_type_description(char* const buf, size_t buf_len) {
     x64 = cpu_is_em64t() ? " Intel64" : "";
   } else if (is_amd()) {
     cpu_type = "AMD";
+    x64 = cpu_is_em64t() ? " AMD64" : "";
+  } else if (is_hygon()) {
+    cpu_type = "Hygon";
     x64 = cpu_is_em64t() ? " AMD64" : "";
   } else {
     cpu_type = "Unknown x86";
