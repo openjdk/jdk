@@ -115,11 +115,6 @@ public:
 };
 #endif
 
-class ShenandoahAlwaysTrueClosure : public BoolObjectClosure {
-public:
-  bool do_object_b(oop p) { return true; }
-};
-
 class ShenandoahForwardedIsAliveClosure: public BoolObjectClosure {
 private:
   ShenandoahMarkingContext* const _mark_context;
