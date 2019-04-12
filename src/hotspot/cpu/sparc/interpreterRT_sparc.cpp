@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -191,7 +191,7 @@ class SlowSignatureHandler: public NativeSignatureIterator {
 };
 
 
-IRT_ENTRY(address, InterpreterRuntime::slow_signature_handler(
+JRT_ENTRY(address, InterpreterRuntime::slow_signature_handler(
                                                     JavaThread* thread,
                                                     Method* method,
                                                     intptr_t* from,
@@ -204,4 +204,4 @@ IRT_ENTRY(address, InterpreterRuntime::slow_signature_handler(
   SlowSignatureHandler(m, (address)from, m->is_static() ? to+2 : to+1, to).iterate((uint64_t)CONST64(-1));
   // return result handler
   return Interpreter::result_handler(m->result_type());
-IRT_END
+JRT_END

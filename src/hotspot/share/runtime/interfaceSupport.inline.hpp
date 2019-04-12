@@ -422,30 +422,6 @@ class RuntimeHistogramElement : public HistogramElement {
   /* begin of body */
 
 
-// Definitions for IRT (Interpreter Runtime)
-// (thread is an argument passed in to all these routines)
-
-#define IRT_ENTRY(result_type, header)                               \
-  result_type header {                                               \
-    ThreadInVMfromJava __tiv(thread);                                \
-    VM_ENTRY_BASE(result_type, header, thread)                       \
-    debug_only(VMEntryWrapper __vew;)
-
-
-#define IRT_LEAF(result_type, header)                                \
-  result_type header {                                               \
-    VM_LEAF_BASE(result_type, header)                                \
-    debug_only(NoSafepointVerifier __nspv(true);)
-
-
-#define IRT_ENTRY_NO_ASYNC(result_type, header)                      \
-  result_type header {                                               \
-    ThreadInVMfromJavaNoAsyncException __tiv(thread);                \
-    VM_ENTRY_BASE(result_type, header, thread)                       \
-    debug_only(VMEntryWrapper __vew;)
-
-#define IRT_END }
-
 #define JRT_ENTRY(result_type, header)                               \
   result_type header {                                               \
     ThreadInVMfromJava __tiv(thread);                                \

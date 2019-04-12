@@ -699,11 +699,11 @@ intptr_t* CppInterpreter::calculate_unwind_sp(ZeroStack* stack,
   return stack->sp() + argument_slots;
 }
 
-IRT_ENTRY(void, CppInterpreter::throw_exception(JavaThread* thread,
+JRT_ENTRY(void, CppInterpreter::throw_exception(JavaThread* thread,
                                                 Symbol*     name,
                                                 char*       message))
   THROW_MSG(name, message);
-IRT_END
+JRT_END
 
 InterpreterFrame *InterpreterFrame::build(Method* const method, TRAPS) {
   JavaThread *thread = (JavaThread *) THREAD;
