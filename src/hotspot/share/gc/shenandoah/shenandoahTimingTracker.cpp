@@ -76,8 +76,11 @@ ShenandoahTerminationTracker::ShenandoahTerminationTracker(ShenandoahPhaseTiming
          phase == ShenandoahPhaseTimings::full_gc_weakrefs_termination,
          "Only these phases");
 
-  assert(Thread::current()->is_VM_thread() || Thread::current()->is_ConcurrentGC_thread(),
-    "Called from wrong thread");
+  assert(!Thread::current()->is_Worker_thread() &&
+             (Thread::current()->is_VM_thread() ||
+              Thread::current()->is_ConcurrentGC_thread()),
+        "Called from wrong thread");
+
   _current_termination_phase = phase;
   ShenandoahHeap::heap()->phase_timings()->termination_times()->reset();
 }

@@ -100,9 +100,10 @@ ShenandoahGCPauseMark::~ShenandoahGCPauseMark() {
 
 ShenandoahGCPhase::ShenandoahGCPhase(const ShenandoahPhaseTimings::Phase phase) :
   _heap(ShenandoahHeap::heap()), _phase(phase) {
-  assert(Thread::current()->is_VM_thread() ||
-         Thread::current()->is_ConcurrentGC_thread(),
-        "Must be set by these threads");
+   assert(!Thread::current()->is_Worker_thread() &&
+              (Thread::current()->is_VM_thread() ||
+               Thread::current()->is_ConcurrentGC_thread()),
+          "Must be set by these threads");
   _parent_phase = _current_phase;
   _current_phase = phase;
 
