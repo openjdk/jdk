@@ -56,7 +56,6 @@ enum Shenandoah_process_roots_tasks {
 class ShenandoahRootProcessor : public StackObj {
   SubTasksDone* _process_strong_tasks;
   StrongRootsScope _srs;
-  OopStorage::ParState<false, false> _par_state_string;
   ShenandoahPhaseTimings::Phase _phase;
   ParallelCLDRootIterator _cld_iterator;
   ShenandoahAllCodeRootsIterator _coderoots_all_iterator;

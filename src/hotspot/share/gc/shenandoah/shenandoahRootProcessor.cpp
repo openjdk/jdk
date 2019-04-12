@@ -65,7 +65,6 @@ ShenandoahRootProcessor::ShenandoahRootProcessor(ShenandoahHeap* heap, uint n_wo
                                                  ShenandoahPhaseTimings::Phase phase) :
   _process_strong_tasks(new SubTasksDone(SHENANDOAH_RP_PS_NumElements)),
   _srs(n_workers),
-  _par_state_string(StringTable::weak_storage()),
   _phase(phase),
   _coderoots_all_iterator(ShenandoahCodeRoots::iterator()),
   _weak_processor_timings(n_workers),
