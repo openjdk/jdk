@@ -38,6 +38,9 @@
 #include "vm_version_ppc.hpp"
 
 #include <sys/sysinfo.h>
+#if defined(_AIX)
+#include <libperfstat.h>
+#endif
 
 #if defined(LINUX) && defined(VM_LITTLE_ENDIAN)
 #include <sys/auxv.h>
@@ -382,6 +385,58 @@ void VM_Version::initialize() {
 }
 
 void VM_Version::print_platform_virtualization_info(outputStream* st) {
+#if defined(_AIX)
+  // more info about perfstat API see
+  // https://www.ibm.com/support/knowledgecenter/en/ssw_aix_72/com.ibm.aix.prftools/idprftools_perfstat_glob_partition.htm
+  int rc = 0;
+  perfstat_partition_total_t pinfo;
+  memset(&pinfo, 0, sizeof(perfstat_partition_total_t));
+  rc = perfstat_partition_total(NULL, &pinfo, sizeof(perfstat_partition_total_t), 1);
+  if (rc != 1) {
+    return;
+  } else {
+    st->print_cr("Virtualization type   : PowerVM");
+  }
+  // CPU information
+  perfstat_cpu_total_t cpuinfo;
+  memset(&cpuinfo, 0, sizeof(perfstat_cpu_total_t));
+  rc = perfstat_cpu_total(NULL, &cpuinfo, sizeof(perfstat_cpu_total_t), 1);
+  if (rc != 1) {
+    return;
+  }
+
+  st->print_cr("Processor description : %s", cpuinfo.description);
+  st->print_cr("Processor speed       : %llu Hz", cpuinfo.processorHZ);
+
+  st->print_cr("LPAR partition name           : %s", pinfo.name);
+  st->print_cr("LPAR partition number         : %u", pinfo.lpar_id);
+  st->print_cr("LPAR partition type           : %s", pinfo.type.b.shared_enabled ? "shared" : "dedicated");
+  st->print_cr("LPAR mode                     : %s", pinfo.type.b.donate_enabled ? "donating" : pinfo.type.b.capped ? "capped" : "uncapped");
+  st->print_cr("LPAR partition group ID       : %u", pinfo.group_id);
+  st->print_cr("LPAR shared pool ID           : %u", pinfo.pool_id);
+
+  st->print_cr("AMS (active memory sharing)   : %s", pinfo.type.b.ams_capable ? "capable" : "not capable");
+  st->print_cr("AMS (active memory sharing)   : %s", pinfo.type.b.ams_enabled ? "on" : "off");
+  st->print_cr("AME (active memory expansion) : %s", pinfo.type.b.ame_enabled ? "on" : "off");
+
+  if (pinfo.type.b.ame_enabled) {
+    st->print_cr("AME true memory in bytes      : %llu", pinfo.true_memory);
+    st->print_cr("AME expanded memory in bytes  : %llu", pinfo.expanded_memory);
+  }
+
+  st->print_cr("SMT : %s", pinfo.type.b.smt_capable ? "capable" : "not capable");
+  st->print_cr("SMT : %s", pinfo.type.b.smt_enabled ? "on" : "off");
+  int ocpus = pinfo.online_cpus > 0 ?  pinfo.online_cpus : 1;
+  st->print_cr("LPAR threads              : %d", cpuinfo.ncpus/ocpus);
+  st->print_cr("LPAR online virtual cpus  : %d", pinfo.online_cpus);
+  st->print_cr("LPAR logical cpus         : %d", cpuinfo.ncpus);
+  st->print_cr("LPAR maximum virtual cpus : %u", pinfo.max_cpus);
+  st->print_cr("LPAR minimum virtual cpus : %u", pinfo.min_cpus);
+  st->print_cr("LPAR entitled capacity    : %4.2f", (double) (pinfo.entitled_proc_capacity/100.0));
+  st->print_cr("LPAR online memory        : %llu MB", pinfo.online_memory);
+  st->print_cr("LPAR maximum memory       : %llu MB", pinfo.max_memory);
+  st->print_cr("LPAR minimum memory       : %llu MB", pinfo.min_memory);
+#else
   const char* info_file = "/proc/ppc64/lparcfg";
   const char* kw[] = { "system_type=", // qemu indicates PowerKVM
                        "partition_entitled_capacity=", // entitled processor capacity percentage
@@ -400,6 +455,7 @@ void VM_Version::print_platform_virtualization_info(outputStream* st) {
   if (!print_matching_lines_from_file(info_file, st, kw)) {
     st->print_cr("  <%s Not Available>", info_file);
   }
+#endif
 }
 
 bool VM_Version::use_biased_locking() {
