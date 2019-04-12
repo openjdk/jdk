@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,21 @@
 
 /*
  * @test
- * @bug 4348369 8076069
- * @summary keytool not i18n compliant
- * @author charlie lai
- * @run main/manual i18n
+ * @bug 4694076
+ * @summary KeyTool throws ArrayIndexOutOfBoundsException for listing
+ *          SecretKey entries in non-verbose mode.
+ * @author Valerie Peng
+ * @library /test/lib
  */
+
+import jdk.test.lib.SecurityTools;
 
 import java.nio.file.Path;
 
-public class i18n{
+public class SecretKeyKS {
     public static void main(String[] args) throws Exception {
-        System.out.println("see i18n.html");
-        System.out.println(Path.of(System.getProperty("test.jdk"), "bin", "keytool"));
+        SecurityTools.keytool("-list -keystore " +
+                Path.of(System.getProperty("test.src"), "SecretKeyKS.jks") +
+                " -storepass password").shouldHaveExitValue(0);
     }
 }

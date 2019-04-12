@@ -64,9 +64,9 @@ public class EntriesOrder {
         // directory ignored), we can get 2 signed ones (inf, a).
 
         // Prepares raw files
-        Files.write(Paths.get("a"), "a".getBytes());
+        Files.write(Paths.get("a"), List.of("a"));
         Files.createDirectory(Paths.get("META-INF/"));
-        Files.write(Paths.get("META-INF/inf"), "inf".getBytes());
+        Files.write(Paths.get("META-INF/inf"), List.of("inf"));
 
         // Pack, sign, and extract to get all files
         sun.tools.jar.Main m =

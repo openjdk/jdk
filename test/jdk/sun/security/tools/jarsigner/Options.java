@@ -58,7 +58,7 @@ public class Options {
     public static void main(String[] args) throws Exception {
 
         // Prepares raw file
-        Files.write(Paths.get("a"), "a".getBytes());
+        Files.write(Paths.get("a"), List.of("a"));
 
         // Pack
         JarUtils.createJar("a.jar", "a");

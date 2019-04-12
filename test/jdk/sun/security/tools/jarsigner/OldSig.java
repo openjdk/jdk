@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,29 @@
 
 /*
  * @test
- * @bug 4348369 8076069
- * @summary keytool not i18n compliant
- * @author charlie lai
- * @run main/manual i18n
+ * @bug 6543940 6868865
+ * @summary Exception thrown when signing a jarfile in java 1.5
+ * @library /test/lib
  */
 
+import jdk.test.lib.SecurityTools;
+import jdk.test.lib.util.JarUtils;
+
+import java.nio.file.Files;
 import java.nio.file.Path;
 
-public class i18n{
+public class OldSig {
     public static void main(String[] args) throws Exception {
-        System.out.println("see i18n.html");
-        System.out.println(Path.of(System.getProperty("test.jdk"), "bin", "keytool"));
+        Path src = Path.of(System.getProperty("test.src"));
+        // copy jar file into writeable location
+        Files.copy(src.resolve("oldsig/A.jar"), Path.of("B.jar"));
+        Files.copy(src.resolve("oldsig/A.class"), Path.of("B.class"));
+
+        JarUtils.updateJarFile(Path.of("B.jar"), Path.of("."),
+                Path.of("B.class"));
+
+        SecurityTools.jarsigner("-keystore " + src.resolve("JarSigning.keystore")
+                + " -storepass bbbbbb -digestalg SHA1 B.jar c");
+        SecurityTools.jarsigner("-verify B.jar");
     }
 }

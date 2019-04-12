@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -52,7 +53,7 @@ public class SecurityTools {
 
     private SecurityTools() {}
 
-    private static ProcessBuilder getProcessBuilder(String tool, List<String> args) {
+    public static ProcessBuilder getProcessBuilder(String tool, List<String> args) {
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK(tool)
                 .addVMArg("-Duser.language=en")
                 .addVMArg("-Duser.country=US");
@@ -62,6 +63,9 @@ public class SecurityTools {
         for (String arg : args) {
             if (arg.startsWith("-J")) {
                 launcher.addVMArg(arg.substring(2));
+            } else if (Platform.isWindows() && arg.isEmpty()) {
+                // JDK-6518827: special handling for empty argument on Windows
+                launcher.addToolArg("\"\"");
             } else {
                 launcher.addToolArg(arg);
             }
@@ -97,14 +101,13 @@ public class SecurityTools {
     /**
      * Runs keytool.
      *
-     * @param args arguments to keytool in a single string. Only call this if
-     *             there is no white space inside an argument. This string will
-     *             be split with {@code \s+}.
+     * @param args arguments to keytool in a single string. The string is
+     *             converted to be List with makeList.
      * @return an {@link OutputAnalyzer} object
      * @throws Exception if there is an error
      */
     public static OutputAnalyzer keytool(String args) throws Exception {
-        return keytool(args.split("\\s+"));
+        return keytool(makeList(args));
     }
 
     /**
@@ -174,15 +177,14 @@ public class SecurityTools {
     /**
      * Runs jarsigner.
      *
-     * @param args arguments to jarsigner in a single string. Only call this if
-     *             there is no white space inside an argument. This string will
-     *             be split with {@code \s+}.
+     * @param args arguments to jarsigner in a single string. The string is
+     *             converted to be List with makeList.
      * @return an {@link OutputAnalyzer} object
      * @throws Exception if there is an error
      */
     public static OutputAnalyzer jarsigner(String args) throws Exception {
 
-        return jarsigner(args.split("\\s+"));
+        return jarsigner(makeList(args));
     }
 
     /**
@@ -199,29 +201,79 @@ public class SecurityTools {
     /**
      * Runs ktab.
      *
-     * @param args arguments to ktab in a single string. Only call this if
-     *             there is no white space inside an argument. This string will
-     *             be split with {@code \s+}.
+     * @param args arguments to ktab in a single string. The string is
+     *             converted to be List with makeList.
      * @return an {@link OutputAnalyzer} object
      * @throws Exception if there is an error
      */
     public static OutputAnalyzer ktab(String args) throws Exception {
-        return execute(getProcessBuilder(
-                "ktab", List.of(args.trim().split("\\s+"))));
+        return execute(getProcessBuilder("ktab", makeList(args)));
     }
 
     /**
      * Runs klist.
      *
-     * @param args arguments to klist in a single string. Only call this if
-     *             there is no white space inside an argument. This string will
-     *             be split with {@code \s+}.
+     * @param args arguments to klist in a single string. The string is
+     *             converted to be List with makeList.
      * @return an {@link OutputAnalyzer} object
      * @throws Exception if there is an error
      */
     public static OutputAnalyzer klist(String args) throws Exception {
-        return execute(getProcessBuilder(
-                "klist", List.of(args.trim().split("\\s+"))));
+        return execute(getProcessBuilder("klist", makeList(args)));
+    }
+
+    /**
+     * Runs jar.
+     *
+     * @param args arguments to jar in a single string. The string is
+     *             converted to be List with makeList.
+     * @return an {@link OutputAnalyzer} object
+     * @throws Exception if there is an error
+     */
+    public static OutputAnalyzer jar(String args) throws Exception {
+        return execute(getProcessBuilder("jar", makeList(args)));
+    }
+
+    /**
+     * Split a line to a list of string. All whitespaces are treated as
+     * delimiters unless quoted between ` and `.
+     *
+     * @param line the input
+     * @return the list
+     */
+    public static List<String> makeList(String line) {
+        List<String> result = new ArrayList<>();
+        StringBuilder sb = new StringBuilder();
+        boolean inBackTick = false;
+        for (char c : line.toCharArray()) {
+            if (inBackTick) {
+                if (c == '`') {
+                    result.add(sb.toString());
+                    sb.setLength(0);
+                    inBackTick = false;
+                } else {
+                    sb.append(c);
+                }
+            } else {
+                if (sb.length() == 0 && c == '`') {
+                    // Allow ` inside a string
+                    inBackTick = true;
+                } else {
+                    if (Character.isWhitespace(c)) {
+                        if (sb.length() != 0) {
+                            result.add(sb.toString());
+                            sb.setLength(0);
+                        }
+                    } else {
+                        sb.append(c);
+                    }
+                }
+            }
+        }
+        if (sb.length() != 0) {
+            result.add(sb.toString());
+        }
+        return result;
     }
 }
 

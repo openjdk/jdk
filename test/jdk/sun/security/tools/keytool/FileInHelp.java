@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,20 @@
 
 /*
  * @test
- * @bug 4348369 8076069
- * @summary keytool not i18n compliant
- * @author charlie lai
- * @run main/manual i18n
+ * @bug 6922482
+ * @summary keytool's help on -file always shows 'output file'
+ * @library /test/lib
  */
 
-import java.nio.file.Path;
+import jdk.test.lib.SecurityTools;
 
-public class i18n{
+public class FileInHelp {
     public static void main(String[] args) throws Exception {
-        System.out.println("see i18n.html");
-        System.out.println(Path.of(System.getProperty("test.jdk"), "bin", "keytool"));
+        SecurityTools.keytool("-printcertreq -help")
+                .shouldHaveExitValue(0)
+                .shouldContain("input file");
+        SecurityTools.keytool("-exportcert -help")
+                .shouldHaveExitValue(0)
+                .shouldContain("output file");
     }
 }

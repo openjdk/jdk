@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,31 @@
 
 /*
  * @test
- * @bug 4348369 8076069
- * @summary keytool not i18n compliant
- * @author charlie lai
- * @run main/manual i18n
+ * @bug 7047200
+ * @summary keytool can try save to a byte array before overwrite the file
+ * @library /test/lib
  */
 
-import java.nio.file.Path;
+import jdk.test.lib.SecurityTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
-public class i18n{
+public class TryStore {
     public static void main(String[] args) throws Exception {
-        System.out.println("see i18n.html");
-        System.out.println(Path.of(System.getProperty("test.jdk"), "bin", "keytool"));
+        keytool("-genkeypair -alias a -dname CN=A -storepass changeit -keypass changeit");
+        keytool("-genkeypair -alias b -dname CN=B -storepass changeit -keypass changeit");
+
+        // We use -protected for JKS keystore. This is illegal so the command should
+        // fail. Then we can check if the keystore is damaged.
+
+        keytool("-genkeypair -protected -alias b -delete -debug")
+                .shouldNotHaveExitValue(0);
+
+        keytool("-list -storepass changeit")
+                .shouldHaveExitValue(0);
+    }
+
+    static OutputAnalyzer keytool(String s) throws Exception {
+        return SecurityTools.keytool(
+                "-storetype jks -keystore trystore.jks -keyalg rsa " + s);
     }
 }
