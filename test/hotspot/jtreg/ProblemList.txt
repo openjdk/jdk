@@ -79,7 +79,7 @@ gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java 8193639 solaris-all
 # :hotspot_runtime
 
 runtime/SharedArchiveFile/SASymbolTableTest.java 8193639 solaris-all
-runtime/containers/docker/TestCPUSets.java 8220672 generic-all
+containers/docker/TestCPUSets.java 8220672 generic-all
 runtime/jni/terminatedThread/TestTerminatedThread.java 8219652 aix-ppc64
 
 #############################################################################

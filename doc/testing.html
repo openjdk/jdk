@@ -191,8 +191,8 @@ TEST FAILURE</code></pre>
 <h2 id="notes-for-specific-tests">Notes for Specific Tests</h2>
 <h3 id="docker-tests">Docker Tests</h3>
 <p>Docker tests with default parameters may fail on systems with glibc versions not compatible with the one used in the default docker image (e.g., Oracle Linux 7.6 for x86). For example, they pass on Ubuntu 16.04 but fail on Ubuntu 18.04 if run like this on x86:</p>
-<pre><code>$ make test TEST=&quot;jtreg:test/hotspot/jtreg/runtime/containers/docker&quot;</code></pre>
+<pre><code>$ make test TEST=&quot;jtreg:test/hotspot/jtreg/containers/docker&quot;</code></pre>
 <p>To run these tests correctly, additional parameters for the correct docker image are required on Ubuntu 18.04 by using <code>JAVA_OPTIONS</code>.</p>
-<pre><code>$ make test TEST=&quot;jtreg:test/hotspot/jtreg/runtime/containers/docker&quot; JTREG=&quot;JAVA_OPTIONS=-Djdk.test.docker.image.name=ubuntu -Djdk.test.docker.image.version=latest&quot;</code></pre>
+<pre><code>$ make test TEST=&quot;jtreg:test/hotspot/jtreg/containers/docker&quot; JTREG=&quot;JAVA_OPTIONS=-Djdk.test.docker.image.name=ubuntu -Djdk.test.docker.image.version=latest&quot;</code></pre>
 </body>
 </html>

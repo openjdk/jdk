@@ -169,11 +169,17 @@ public class DockerTestUtils {
         generateDockerFile(buildDir.resolve("Dockerfile"),
                            DockerfileConfig.getBaseImageName(),
                            DockerfileConfig.getBaseImageVersion());
-
-        // Build the docker
-        execute(DOCKER_COMMAND, "build", "--no-cache", "--tag", imageName, buildDir.toString())
-            .shouldHaveExitValue(0)
-            .shouldContain("Successfully built");
+        try {
+            // Build the docker
+            execute(DOCKER_COMMAND, "build", "--no-cache", "--tag", imageName, buildDir.toString())
+                .shouldHaveExitValue(0)
+                .shouldContain("Successfully built");
+        } catch (Exception e) {
+            // If docker image building fails there is a good chance it happens due to environment and/or
+            // configuration other than product failure. Throw jtreg skipped exception in such case
+            // instead of failing the test.
+            throw new SkippedException("Building docker image failed. Details: \n" + e.getMessage());
+        }
     }
 
 

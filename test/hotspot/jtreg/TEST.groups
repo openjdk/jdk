@@ -43,6 +43,7 @@ hotspot_gc = \
   gc \
   -gc/nvdimm
 
+# By design this group should include ALL tests under runtime sub-directory
 hotspot_runtime = \
   runtime
 
@@ -64,6 +65,9 @@ hotspot_misc = \
 
 hotspot_native_sanity = \
   native_sanity
+
+hotspot_containers = \
+  containers
 
 tier1_common = \
   sanity/BasicVMTest.java \
@@ -296,7 +300,6 @@ tier1_runtime = \
  -runtime/Thread/CancellableThreadTest.java \
  -runtime/Thread/TestThreadDumpMonitorContention.java \
  -runtime/Unsafe/RangeCheck.java \
- -runtime/containers/ \
   sanity/ \
   testlibrary_tests/TestMutuallyExclusivePlatformPredicates.java \
  -:tier1_runtime_appcds_exclude \
@@ -365,7 +368,6 @@ hotspot_tier2_runtime = \
  -runtime/CommandLine/OptionsValidation/TestOptionsWithRanges.java \
  -runtime/CompressedOops/UseCompressedOops.java \
  -runtime/Thread/TestThreadDumpMonitorContention.java \
- -runtime/containers/ \
  -:tier1_runtime \
  -:tier1_serviceability \
  -:hotspot_tier2_runtime_platform_agnostic \
@@ -379,7 +381,6 @@ hotspot_tier2_runtime_platform_agnostic = \
 hotspot_tier3_runtime = \
   runtime/ \
   serviceability/ \
- -runtime/containers/ \
  -:tier1_runtime \
  -:tier1_serviceability \
  -:hotspot_tier2_runtime_platform_agnostic \
