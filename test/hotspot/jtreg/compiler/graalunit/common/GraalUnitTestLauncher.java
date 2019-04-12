@@ -241,7 +241,8 @@ public class GraalUnitTestLauncher {
         javaFlags.add("-ea");
         // Make sure exception message is never null
         javaFlags.add("-XX:-OmitStackTraceInFastThrow");
-
+        // set timeout factor based on jtreg harness settings
+        javaFlags.add("-Dgraaltest.timeout.factor=" + System.getProperty("test.timeout.factor", "1.0"));
 
         // generate class path
         ArrayList<String> graalJars = new ArrayList<String>(Arrays.asList(GRAAL_EXTRA_JARS));
