@@ -43,10 +43,10 @@ typedef enum {
    CPU_FAMILY_PENTIUM_4  = 0xF
 } FamilyFlag;
 
- typedef enum {
-    RDTSCP_FLAG  = 0x08000000, // bit 27
-    INTEL64_FLAG = 0x20000000  // bit 29
-  } _featureExtendedEdxFlag;
+typedef enum {
+  RDTSCP_FLAG  = 0x08000000, // bit 27
+  INTEL64_FLAG = 0x20000000  // bit 29
+} _featureExtendedEdxFlag;
 
 #define CPUID_STANDARD_FN   0x0
 #define CPUID_STANDARD_FN_1 0x1
@@ -403,18 +403,21 @@ int VM_Version_Ext::number_of_sockets(void) {
 const char* VM_Version_Ext::cpu_family_description(void) {
   int cpu_family_id = extended_cpu_family();
   if (is_amd()) {
-    return _family_id_amd[cpu_family_id];
+    if (cpu_family_id < ExtendedFamilyIdLength_AMD) {
+      return _family_id_amd[cpu_family_id];
+    }
   }
   if (is_intel()) {
     if (cpu_family_id == CPU_FAMILY_PENTIUMPRO) {
       return cpu_model_description();
     }
-    return _family_id_intel[cpu_family_id];
+    if (cpu_family_id < ExtendedFamilyIdLength_INTEL) {
+      return _family_id_intel[cpu_family_id];
+    }
   }
   if (is_hygon()) {
     return "Dhyana";
   }
-
   return "Unknown x86";
 }
 
@@ -705,7 +708,7 @@ jlong VM_Version_Ext::maximum_qualified_cpu_frequency(void) {
   return _max_qualified_cpu_frequency;
 }
 
-const char* const VM_Version_Ext::_family_id_intel[] = {
+const char* const VM_Version_Ext::_family_id_intel[ExtendedFamilyIdLength_INTEL] = {
   "8086/8088",
   "",
   "286",
@@ -724,7 +727,7 @@ const char* const VM_Version_Ext::_family_id_intel[] = {
   "Pentium 4"
 };
 
-const char* const VM_Version_Ext::_family_id_amd[] = {
+const char* const VM_Version_Ext::_family_id_amd[ExtendedFamilyIdLength_AMD] = {
   "",
   "",
   "",
@@ -742,6 +745,13 @@ const char* const VM_Version_Ext::_family_id_amd[] = {
   "",
   "Opteron/Athlon64",
   "Opteron QC/Phenom"  // Barcelona et.al.
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "Zen"
 };
 // Partially from Intel 64 and IA-32 Architecture Software Developer's Manual,
 // September 2013, Vol 3C Table 35-1
