@@ -37,6 +37,7 @@ class GenerationSpec : public CHeapObj<mtGC> {
 private:
   Generation::Name _name;
   size_t           _init_size;
+  size_t           _min_size;
   size_t           _max_size;
 
 public:
@@ -48,12 +49,10 @@ public:
 
   Generation* init(ReservedSpace rs, CardTableRS* remset);
 
-  // Accessors
-  Generation::Name name()        const { return _name; }
-  size_t init_size()             const { return _init_size; }
-  void set_init_size(size_t size)      { _init_size = size; }
-  size_t max_size()              const { return _max_size; }
-  void set_max_size(size_t size)       { _max_size = size; }
+  Generation::Name name() const { return _name; }
+  size_t init_size()      const { return _init_size; }
+  size_t min_size()       const { return _min_size; }
+  size_t max_size()       const { return _max_size; }
 };
 
 typedef GenerationSpec* GenerationSpecPtr;

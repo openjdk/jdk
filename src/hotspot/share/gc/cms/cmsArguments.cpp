@@ -25,20 +25,16 @@
 
 #include "precompiled.hpp"
 #include "gc/cms/cmsArguments.hpp"
-#include "gc/cms/cmsCollectorPolicy.hpp"
 #include "gc/cms/cmsHeap.hpp"
 #include "gc/cms/compactibleFreeListSpace.hpp"
-#include "gc/shared/gcArguments.inline.hpp"
+#include "gc/shared/cardTableRS.hpp"
+#include "gc/shared/gcArguments.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/workerPolicy.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "utilities/defaultStream.hpp"
-
-size_t CMSArguments::conservative_max_heap_alignment() {
-  return GenCollectedHeap::conservative_max_heap_alignment();
-}
 
 void CMSArguments::set_parnew_gc_flags() {
   assert(!UseSerialGC && !UseParallelOldGC && !UseParallelGC && !UseG1GC,
@@ -154,12 +150,12 @@ void CMSArguments::initialize() {
 
     // Code along this path potentially sets NewSize and OldSize
     log_trace(gc, heap)("CMS set min_heap_size: " SIZE_FORMAT " initial_heap_size:  " SIZE_FORMAT " max_heap: " SIZE_FORMAT,
-                        Arguments::min_heap_size(), InitialHeapSize, max_heap);
+                        MinHeapSize, InitialHeapSize, max_heap);
     size_t min_new = preferred_max_new_size;
     if (FLAG_IS_CMDLINE(NewSize)) {
       min_new = NewSize;
     }
-    if (max_heap > min_new && Arguments::min_heap_size() > min_new) {
+    if (max_heap > min_new && MinHeapSize > min_new) {
       // Unless explicitly requested otherwise, make young gen
       // at least min_new, and at most preferred_max_new_size.
       if (FLAG_IS_DEFAULT(NewSize)) {
@@ -225,5 +221,5 @@ void CMSArguments::disable_adaptive_size_policy(const char* collector_name) {
 }
 
 CollectedHeap* CMSArguments::create_heap() {
-  return create_heap_with_policy<CMSHeap, ConcurrentMarkSweepPolicy>();
+  return new CMSHeap();
 }

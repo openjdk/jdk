@@ -28,8 +28,8 @@
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/heterogeneousHeapRegionManager.hpp"
 
-G1HeterogeneousHeapPolicy::G1HeterogeneousHeapPolicy(G1CollectorPolicy* policy, STWGCTimer* gc_timer) :
-  G1Policy(policy, gc_timer), _manager(NULL) {}
+G1HeterogeneousHeapPolicy::G1HeterogeneousHeapPolicy(STWGCTimer* gc_timer) :
+  G1Policy(gc_timer), _manager(NULL) {}
 
 // We call the super class init(), after which we provision young_list_target_length() regions in dram.
 void G1HeterogeneousHeapPolicy::init(G1CollectedHeap* g1h, G1CollectionSet* collection_set) {

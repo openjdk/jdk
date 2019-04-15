@@ -65,9 +65,8 @@ public:
   }
 };
 
-CMSHeap::CMSHeap(GenCollectorPolicy *policy) :
-    GenCollectedHeap(policy,
-                     Generation::ParNew,
+CMSHeap::CMSHeap() :
+    GenCollectedHeap(Generation::ParNew,
                      Generation::ConcurrentMarkSweep,
                      "ParNew:CMS"),
     _workers(NULL),
@@ -162,9 +161,7 @@ bool CMSHeap::create_cms_collector() {
   assert(old_gen()->kind() == Generation::ConcurrentMarkSweep,
          "Unexpected generation kinds");
   CMSCollector* collector =
-    new CMSCollector((ConcurrentMarkSweepGeneration*) old_gen(),
-                     rem_set(),
-                     (ConcurrentMarkSweepPolicy*) gen_policy());
+    new CMSCollector((ConcurrentMarkSweepGeneration*) old_gen(), rem_set());
 
   if (collector == NULL || !collector->completed_initialization()) {
     if (collector) {

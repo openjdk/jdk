@@ -28,7 +28,6 @@
 #include "gc/parallel/adjoiningVirtualSpaces.hpp"
 #include "gc/parallel/asPSOldGen.hpp"
 #include "gc/parallel/asPSYoungGen.hpp"
-#include "gc/parallel/generationSizer.hpp"
 
 
 // Contains two generations that both use an AdjoiningVirtualSpaces.
@@ -59,7 +58,7 @@ class AdjoiningGenerations : public CHeapObj<mtGC> {
    AdjoiningVirtualSpaces* _virtual_spaces;
 
  public:
-  AdjoiningGenerations(ReservedSpace rs, GenerationSizer* policy, size_t alignment);
+  AdjoiningGenerations(ReservedSpace rs);
 
   // Accessors
   PSYoungGen* young_gen() { return _young_gen; }
@@ -78,7 +77,7 @@ class AdjoiningGenerations : public CHeapObj<mtGC> {
   // for the adjoining generations.
   virtual size_t reserved_byte_size();
 
-  // Return new AdjoiningGenerations instance based on collector policy (specifically - whether heap is heterogeneous).
-  static AdjoiningGenerations* create_adjoining_generations(ReservedSpace rs, GenerationSizer* policy, size_t alignment);
+  // Return new AdjoiningGenerations instance based on arguments (specifically - whether heap is heterogeneous).
+  static AdjoiningGenerations* create_adjoining_generations(ReservedSpace rs);
 };
 #endif // SHARE_GC_PARALLEL_ADJOININGGENERATIONS_HPP

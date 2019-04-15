@@ -44,7 +44,6 @@
 
 class AdaptiveSizePolicy;
 class BarrierSet;
-class CollectorPolicy;
 class GCHeapSummary;
 class GCTimer;
 class GCTracer;
@@ -387,9 +386,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   }
 
   void increment_total_full_collections() { _total_full_collections++; }
-
-  // Return the CollectorPolicy for the heap
-  virtual CollectorPolicy* collector_policy() const = 0;
 
   // Return the SoftRefPolicy for the heap;
   virtual SoftRefPolicy* soft_ref_policy() = 0;

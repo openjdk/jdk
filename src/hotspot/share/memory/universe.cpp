@@ -663,10 +663,15 @@ jint universe_init() {
 
   initialize_global_behaviours();
 
+  GCConfig::arguments()->initialize_heap_sizes();
+
   jint status = Universe::initialize_heap();
   if (status != JNI_OK) {
     return status;
   }
+
+  Universe::initialize_compressed_oops();
+  Universe::initialize_tlab();
 
   SystemDictionary::initialize_oop_storage();
 
@@ -725,9 +730,16 @@ jint universe_init() {
   return JNI_OK;
 }
 
-CollectedHeap* Universe::create_heap() {
+jint Universe::initialize_heap() {
   assert(_collectedHeap == NULL, "Heap already created");
-  return GCConfig::arguments()->create_heap();
+  _collectedHeap = GCConfig::arguments()->create_heap();
+  jint status = _collectedHeap->initialize();
+
+  if (status == JNI_OK) {
+    log_info(gc)("Using %s", _collectedHeap->name());
+  }
+
+  return status;
 }
 
 // Choose the heap base address and oop encoding mode
@@ -737,17 +749,7 @@ CollectedHeap* Universe::create_heap() {
 // ZeroBased - Use zero based compressed oops with encoding when
 //     NarrowOopHeapBaseMin + heap_size < 32Gb
 // HeapBased - Use compressed oops with heap base + encoding.
-
-jint Universe::initialize_heap() {
-  _collectedHeap = create_heap();
-  jint status = _collectedHeap->initialize();
-  if (status != JNI_OK) {
-    return status;
-  }
-  log_info(gc)("Using %s", _collectedHeap->name());
-
-  ThreadLocalAllocBuffer::set_max_size(Universe::heap()->max_tlab_size());
-
+void Universe::initialize_compressed_oops() {
 #ifdef _LP64
   if (UseCompressedOops) {
     // Subtract a page because something can get allocated at heap base.
@@ -787,16 +789,15 @@ jint Universe::initialize_heap() {
   assert(Universe::narrow_oop_shift() == LogMinObjAlignmentInBytes ||
          Universe::narrow_oop_shift() == 0, "invalid value");
 #endif
+}
 
-  // We will never reach the CATCH below since Exceptions::_throw will cause
-  // the VM to exit if an exception is thrown during initialization
-
+void Universe::initialize_tlab() {
+  ThreadLocalAllocBuffer::set_max_size(Universe::heap()->max_tlab_size());
   if (UseTLAB) {
     assert(Universe::heap()->supports_tlab_allocation(),
            "Should support thread-local allocation buffers");
     ThreadLocalAllocBuffer::startup_initialization();
   }
-  return JNI_OK;
 }
 
 void Universe::print_compressed_oops_mode(outputStream* st) {

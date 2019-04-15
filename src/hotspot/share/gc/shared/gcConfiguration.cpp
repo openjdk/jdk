@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/gcArguments.hpp"
 #include "gc/shared/gcConfiguration.hpp"
 #include "memory/universe.hpp"
 #include "runtime/arguments.hpp"
@@ -131,7 +132,7 @@ size_t GCHeapConfiguration::max_size() const {
 }
 
 size_t GCHeapConfiguration::min_size() const {
-  return Arguments::min_heap_size();
+  return MinHeapSize;
 }
 
 size_t GCHeapConfiguration::initial_size() const {

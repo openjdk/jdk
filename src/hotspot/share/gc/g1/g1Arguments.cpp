@@ -26,14 +26,36 @@
 #include "precompiled.hpp"
 #include "gc/g1/g1Arguments.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1CollectorPolicy.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
-#include "gc/g1/g1HeterogeneousCollectorPolicy.hpp"
 #include "gc/g1/heapRegion.hpp"
-#include "gc/shared/gcArguments.inline.hpp"
+#include "gc/g1/heapRegionRemSet.hpp"
+#include "gc/shared/cardTableRS.hpp"
+#include "gc/shared/gcArguments.hpp"
 #include "gc/shared/workerPolicy.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
+
+static const double MaxRamFractionForYoung = 0.8;
+size_t G1Arguments::MaxMemoryForYoung;
+
+static size_t calculate_heap_alignment(size_t space_alignment) {
+  size_t card_table_alignment = CardTableRS::ct_max_alignment_constraint();
+  size_t page_size = UseLargePages ? os::large_page_size() : os::vm_page_size();
+  return MAX3(card_table_alignment, space_alignment, page_size);
+}
+
+void G1Arguments::initialize_alignments() {
+  // Set up the region size and associated fields.
+  //
+  // There is a circular dependency here. We base the region size on the heap
+  // size, but the heap size should be aligned with the region size. To get
+  // around this we use the unaligned values for the heap.
+  HeapRegion::setup_heap_region_size(InitialHeapSize, MaxHeapSize);
+  HeapRegionRemSet::setup_remset_size();
+
+  SpaceAlignment = HeapRegion::GrainBytes;
+  HeapAlignment = calculate_heap_alignment(SpaceAlignment);
+}
 
 size_t G1Arguments::conservative_max_heap_alignment() {
   return HeapRegion::max_region_size();
@@ -156,10 +178,81 @@ void G1Arguments::initialize() {
   initialize_verification_types();
 }
 
-CollectedHeap* G1Arguments::create_heap() {
-  if (AllocateOldGenAt != NULL) {
-    return create_heap_with_policy<G1CollectedHeap, G1HeterogeneousCollectorPolicy>();
+static size_t calculate_reasonable_max_memory_for_young(FormatBuffer<100> &calc_str, double max_ram_fraction_for_young) {
+  julong phys_mem;
+  // If MaxRam is specified, we use that as maximum physical memory available.
+  if (FLAG_IS_DEFAULT(MaxRAM)) {
+    phys_mem = os::physical_memory();
+    calc_str.append("Physical_Memory");
   } else {
-    return create_heap_with_policy<G1CollectedHeap, G1CollectorPolicy>();
+    phys_mem = (julong)MaxRAM;
+    calc_str.append("MaxRAM");
   }
+
+  julong reasonable_max = phys_mem;
+
+  // If either MaxRAMFraction or MaxRAMPercentage is specified, we use them to calculate
+  // reasonable max size of young generation.
+  if (!FLAG_IS_DEFAULT(MaxRAMFraction)) {
+    reasonable_max = (julong)(phys_mem / MaxRAMFraction);
+    calc_str.append(" / MaxRAMFraction");
+  }  else if (!FLAG_IS_DEFAULT(MaxRAMPercentage)) {
+    reasonable_max = (julong)((phys_mem * MaxRAMPercentage) / 100);
+    calc_str.append(" * MaxRAMPercentage / 100");
+  }  else {
+    // We use our own fraction to calculate max size of young generation.
+    reasonable_max = phys_mem * max_ram_fraction_for_young;
+    calc_str.append(" * %0.2f", max_ram_fraction_for_young);
+  }
+
+  return (size_t)reasonable_max;
+}
+
+void G1Arguments::initialize_heap_flags_and_sizes() {
+  if (AllocateOldGenAt != NULL) {
+    initialize_heterogeneous();
+  }
+
+  GCArguments::initialize_heap_flags_and_sizes();
+}
+
+void G1Arguments::initialize_heterogeneous() {
+  FormatBuffer<100> calc_str("");
+
+  MaxMemoryForYoung = calculate_reasonable_max_memory_for_young(calc_str, MaxRamFractionForYoung);
+
+  if (MaxNewSize > MaxMemoryForYoung) {
+    if (FLAG_IS_CMDLINE(MaxNewSize)) {
+      log_warning(gc, ergo)("Setting MaxNewSize to " SIZE_FORMAT " based on dram available (calculation = align(%s))",
+                            MaxMemoryForYoung, calc_str.buffer());
+    } else {
+      log_info(gc, ergo)("Setting MaxNewSize to " SIZE_FORMAT " based on dram available (calculation = align(%s)). "
+                         "Dram usage can be lowered by setting MaxNewSize to a lower value", MaxMemoryForYoung, calc_str.buffer());
+    }
+    MaxNewSize = MaxMemoryForYoung;
+  }
+  if (NewSize > MaxMemoryForYoung) {
+    if (FLAG_IS_CMDLINE(NewSize)) {
+      log_warning(gc, ergo)("Setting NewSize to " SIZE_FORMAT " based on dram available (calculation = align(%s))",
+                            MaxMemoryForYoung, calc_str.buffer());
+    }
+    NewSize = MaxMemoryForYoung;
+  }
+
+}
+
+CollectedHeap* G1Arguments::create_heap() {
+  return new G1CollectedHeap();
+}
+
+bool G1Arguments::is_heterogeneous_heap() {
+  return AllocateOldGenAt != NULL;
+}
+
+size_t G1Arguments::reasonable_max_memory_for_young() {
+  return MaxMemoryForYoung;
+}
+
+size_t G1Arguments::heap_reserved_size_bytes() {
+  return (is_heterogeneous_heap() ? 2 : 1) * MaxHeapSize;
 }

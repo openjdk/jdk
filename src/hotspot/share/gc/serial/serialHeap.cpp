@@ -36,9 +36,8 @@ SerialHeap* SerialHeap::heap() {
   return static_cast<SerialHeap*>(heap);
 }
 
-SerialHeap::SerialHeap(GenCollectorPolicy* policy) :
-    GenCollectedHeap(policy,
-                     Generation::DefNew,
+SerialHeap::SerialHeap() :
+    GenCollectedHeap(Generation::DefNew,
                      Generation::MarkSweepCompact,
                      "Copy:MSC"),
     _eden_pool(NULL),

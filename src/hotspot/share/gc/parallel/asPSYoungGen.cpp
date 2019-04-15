@@ -29,6 +29,7 @@
 #include "gc/parallel/psScavenge.inline.hpp"
 #include "gc/parallel/psYoungGen.hpp"
 #include "gc/shared/gcUtil.hpp"
+#include "gc/shared/genArguments.hpp"
 #include "gc/shared/spaceDecorator.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
@@ -74,9 +75,9 @@ size_t ASPSYoungGen::available_for_expansion() {
   size_t current_committed_size = virtual_space()->committed_size();
   assert((gen_size_limit() >= current_committed_size),
     "generation size limit is wrong");
-  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
+
   size_t result =  gen_size_limit() - current_committed_size;
-  size_t result_aligned = align_down(result, heap->generation_alignment());
+  size_t result_aligned = align_down(result, GenAlignment);
   return result_aligned;
 }
 
@@ -93,13 +94,12 @@ size_t ASPSYoungGen::available_for_contraction() {
   if (eden_space()->is_empty()) {
     // Respect the minimum size for eden and for the young gen as a whole.
     ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-    const size_t eden_alignment = heap->space_alignment();
-    const size_t gen_alignment = heap->generation_alignment();
+    const size_t eden_alignment = SpaceAlignment;
 
     assert(eden_space()->capacity_in_bytes() >= eden_alignment,
       "Alignment is wrong");
     size_t eden_avail = eden_space()->capacity_in_bytes() - eden_alignment;
-    eden_avail = align_down(eden_avail, gen_alignment);
+    eden_avail = align_down(eden_avail, GenAlignment);
 
     assert(virtual_space()->committed_size() >= min_gen_size(),
       "minimum gen size is wrong");
@@ -111,7 +111,7 @@ size_t ASPSYoungGen::available_for_contraction() {
     // for reasons the "increment" fraction is used.
     PSAdaptiveSizePolicy* policy = heap->size_policy();
     size_t result = policy->eden_increment_aligned_down(max_contraction);
-    size_t result_aligned = align_down(result, gen_alignment);
+    size_t result_aligned = align_down(result, GenAlignment);
 
     log_trace(gc, ergo)("ASPSYoungGen::available_for_contraction: " SIZE_FORMAT " K", result_aligned/K);
     log_trace(gc, ergo)("  max_contraction " SIZE_FORMAT " K", max_contraction/K);
@@ -128,8 +128,7 @@ size_t ASPSYoungGen::available_for_contraction() {
 // If to_space is below from_space, to_space is not considered.
 // to_space can be.
 size_t ASPSYoungGen::available_to_live() {
-  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-  const size_t alignment = heap->space_alignment();
+  const size_t alignment = SpaceAlignment;
 
   // Include any space that is committed but is not in eden.
   size_t available = pointer_delta(eden_space()->bottom(),
@@ -275,7 +274,6 @@ void ASPSYoungGen::resize_spaces(size_t requested_eden_size,
   assert(eden_start < from_start, "Cannot push into from_space");
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-  const size_t alignment = heap->space_alignment();
   const bool maintain_minimum =
     (requested_eden_size + 2 * requested_survivor_size) <= min_gen_size();
 
@@ -331,9 +329,9 @@ void ASPSYoungGen::resize_spaces(size_t requested_eden_size,
 
       // Should we be in this method if from_space is empty? Why not the set_space method? FIX ME!
       if (from_size == 0) {
-        from_size = alignment;
+        from_size = SpaceAlignment;
       } else {
-        from_size = align_up(from_size, alignment);
+        from_size = align_up(from_size, SpaceAlignment);
       }
 
       from_end = from_start + from_size;
@@ -380,7 +378,7 @@ void ASPSYoungGen::resize_spaces(size_t requested_eden_size,
     // if the space sizes are to be increased by several times then
     // 'to_start' will point beyond the young generation. In this case
     // 'to_start' should be adjusted.
-    to_start = MAX2(to_start, eden_start + alignment);
+    to_start = MAX2(to_start, eden_start + SpaceAlignment);
 
     // Compute how big eden can be, then adjust end.
     // See  comments above on calculating eden_end.
@@ -395,7 +393,7 @@ void ASPSYoungGen::resize_spaces(size_t requested_eden_size,
     assert(eden_end >= eden_start, "addition overflowed");
 
     // Don't let eden shrink down to 0 or less.
-    eden_end = MAX2(eden_end, eden_start + alignment);
+    eden_end = MAX2(eden_end, eden_start + SpaceAlignment);
     to_start = MAX2(to_start, eden_end);
 
     log_trace(gc, ergo)("    [eden_start .. eden_end): "

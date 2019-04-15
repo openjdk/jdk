@@ -109,7 +109,7 @@ public:
   // - this must be the current top of manager stack
   void deactivate();
 
-  // Used to implement CollectorPolicy::request_concurrent_phase().
+  // Used to implement CollectedHeap::request_concurrent_phase().
   // Updates request to the new phase, and notifies threads blocked on
   // the old request of the change.  Returns true if the phase is
   // UNCONSTRAINED_PHASE.  Otherwise, waits until an active phase is

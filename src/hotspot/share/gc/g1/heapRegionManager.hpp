@@ -26,10 +26,8 @@
 #define SHARE_GC_G1_HEAPREGIONMANAGER_HPP
 
 #include "gc/g1/g1BiasedArray.hpp"
-#include "gc/g1/g1CollectorPolicy.hpp"
 #include "gc/g1/g1RegionToSpaceMapper.hpp"
 #include "gc/g1/heapRegionSet.hpp"
-#include "gc/shared/collectorPolicy.hpp"
 #include "services/memoryUsage.hpp"
 
 class HeapRegion;
@@ -129,7 +127,7 @@ public:
   // Empty constructor, we'll initialize it with the initialize() method.
   HeapRegionManager();
 
-  static HeapRegionManager* create_manager(G1CollectedHeap* heap, G1CollectorPolicy* policy);
+  static HeapRegionManager* create_manager(G1CollectedHeap* heap);
 
   virtual void initialize(G1RegionToSpaceMapper* heap_storage,
                           G1RegionToSpaceMapper* prev_bitmap,

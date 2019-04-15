@@ -27,7 +27,6 @@
 #include "gc/shared/ageTable.inline.hpp"
 #include "gc/shared/ageTableTracer.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/collectorPolicy.hpp"
 #include "memory/resourceArea.hpp"
 #include "logging/log.hpp"
 #include "oops/oop.inline.hpp"

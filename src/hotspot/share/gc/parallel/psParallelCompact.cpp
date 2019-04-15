@@ -31,6 +31,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "gc/parallel/gcTaskManager.hpp"
+#include "gc/parallel/parallelArguments.hpp"
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
 #include "gc/parallel/parMarkBitMap.inline.hpp"
 #include "gc/parallel/pcTasks.hpp"
@@ -1712,7 +1713,7 @@ void PSParallelCompact::summary_phase(ParCompactionManager* cm,
 // Note that this method should only be called from the vm_thread while at a
 // safepoint.
 //
-// Note that the all_soft_refs_clear flag in the collector policy
+// Note that the all_soft_refs_clear flag in the soft ref policy
 // may be true because this method can be called without intervening
 // activity.  For example when the heap space is tight and full measure
 // are being taken to free space.
@@ -1765,7 +1766,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
   PSAdaptiveSizePolicy* size_policy = heap->size_policy();
 
   // The scope of casr should end after code that can change
-  // CollectorPolicy::_should_clear_all_soft_refs.
+  // SoftRefPolicy::_should_clear_all_soft_refs.
   ClearedAllSoftRefs casr(maximum_heap_compaction,
                           heap->soft_ref_policy());
 
@@ -1995,7 +1996,7 @@ bool PSParallelCompact::absorb_live_data_from_eden(PSAdaptiveSizePolicy* size_po
   // We also return false when it's a heterogenous heap because old generation cannot absorb data from eden
   // when it is allocated on different memory (example, nv-dimm) than young.
   if (!(UseAdaptiveSizePolicy && UseAdaptiveGCBoundary) ||
-      ParallelScavengeHeap::heap()->ps_collector_policy()->is_hetero_heap()) {
+      ParallelArguments::is_heterogeneous_heap()) {
     return false;
   }
 

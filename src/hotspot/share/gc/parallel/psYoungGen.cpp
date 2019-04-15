@@ -29,6 +29,7 @@
 #include "gc/parallel/psScavenge.hpp"
 #include "gc/parallel/psYoungGen.hpp"
 #include "gc/shared/gcUtil.hpp"
+#include "gc/shared/genArguments.hpp"
 #include "gc/shared/spaceDecorator.hpp"
 #include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
@@ -115,8 +116,7 @@ void PSYoungGen::initialize_work() {
                                            _max_gen_size, _virtual_space);
 
   // Compute maximum space sizes for performance counters
-  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-  size_t alignment = heap->space_alignment();
+  size_t alignment = SpaceAlignment;
   size_t size = virtual_space()->reserved_size();
 
   size_t max_survivor_size;
@@ -165,17 +165,14 @@ void PSYoungGen::initialize_work() {
 }
 
 void PSYoungGen::compute_initial_space_boundaries() {
-  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-
   // Compute sizes
-  size_t alignment = heap->space_alignment();
   size_t size = virtual_space()->committed_size();
-  assert(size >= 3 * alignment, "Young space is not large enough for eden + 2 survivors");
+  assert(size >= 3 * SpaceAlignment, "Young space is not large enough for eden + 2 survivors");
 
   size_t survivor_size = size / InitialSurvivorRatio;
-  survivor_size = align_down(survivor_size, alignment);
+  survivor_size = align_down(survivor_size, SpaceAlignment);
   // ... but never less than an alignment
-  survivor_size = MAX2(survivor_size, alignment);
+  survivor_size = MAX2(survivor_size, SpaceAlignment);
 
   // Young generation is eden + 2 survivor spaces
   size_t eden_size = size - (2 * survivor_size);
@@ -219,13 +216,10 @@ void PSYoungGen::set_space_boundaries(size_t eden_size, size_t survivor_size) {
 
 #ifndef PRODUCT
 void PSYoungGen::space_invariants() {
-  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-  const size_t alignment = heap->space_alignment();
-
   // Currently, our eden size cannot shrink to zero
-  guarantee(eden_space()->capacity_in_bytes() >= alignment, "eden too small");
-  guarantee(from_space()->capacity_in_bytes() >= alignment, "from too small");
-  guarantee(to_space()->capacity_in_bytes() >= alignment, "to too small");
+  guarantee(eden_space()->capacity_in_bytes() >= SpaceAlignment, "eden too small");
+  guarantee(from_space()->capacity_in_bytes() >= SpaceAlignment, "from too small");
+  guarantee(to_space()->capacity_in_bytes() >= SpaceAlignment, "to too small");
 
   // Relationship of spaces to each other
   char* eden_start = (char*)eden_space()->bottom();
@@ -482,8 +476,6 @@ void PSYoungGen::resize_spaces(size_t requested_eden_size,
   char* to_start   = (char*)to_space()->bottom();
   char* to_end     = (char*)to_space()->end();
 
-  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-  const size_t alignment = heap->space_alignment();
   const bool maintain_minimum =
     (requested_eden_size + 2 * requested_survivor_size) <= min_gen_size();
 
@@ -537,9 +529,9 @@ void PSYoungGen::resize_spaces(size_t requested_eden_size,
 
       // Should we be in this method if from_space is empty? Why not the set_space method? FIX ME!
       if (from_size == 0) {
-        from_size = alignment;
+        from_size = SpaceAlignment;
       } else {
-        from_size = align_up(from_size, alignment);
+        from_size = align_up(from_size, SpaceAlignment);
       }
 
       from_end = from_start + from_size;
@@ -582,7 +574,7 @@ void PSYoungGen::resize_spaces(size_t requested_eden_size,
     // if the space sizes are to be increased by several times then
     // 'to_start' will point beyond the young generation. In this case
     // 'to_start' should be adjusted.
-    to_start = MAX2(to_start, eden_start + alignment);
+    to_start = MAX2(to_start, eden_start + SpaceAlignment);
 
     // Compute how big eden can be, then adjust end.
     // See  comments above on calculating eden_end.
@@ -600,7 +592,7 @@ void PSYoungGen::resize_spaces(size_t requested_eden_size,
     // to_start = MAX2(to_start, eden_end);
 
     // Don't let eden shrink down to 0 or less.
-    eden_end = MAX2(eden_end, eden_start + alignment);
+    eden_end = MAX2(eden_end, eden_start + SpaceAlignment);
     to_start = MAX2(to_start, eden_end);
 
     log_trace(gc, ergo)("    [eden_start .. eden_end): [" PTR_FORMAT " .. " PTR_FORMAT ") " SIZE_FORMAT,
@@ -800,10 +792,6 @@ size_t PSYoungGen::available_to_min_gen() {
 // from-space.
 size_t PSYoungGen::available_to_live() {
   size_t delta_in_survivor = 0;
-  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-  const size_t space_alignment = heap->space_alignment();
-  const size_t gen_alignment = heap->generation_alignment();
-
   MutableSpace* space_shrinking = NULL;
   if (from_space()->end() > to_space()->end()) {
     space_shrinking = from_space();
@@ -820,9 +808,9 @@ size_t PSYoungGen::available_to_live() {
 
   if (space_shrinking->is_empty()) {
     // Don't let the space shrink to 0
-    assert(space_shrinking->capacity_in_bytes() >= space_alignment,
+    assert(space_shrinking->capacity_in_bytes() >= SpaceAlignment,
       "Space is too small");
-    delta_in_survivor = space_shrinking->capacity_in_bytes() - space_alignment;
+    delta_in_survivor = space_shrinking->capacity_in_bytes() - SpaceAlignment;
   } else {
     delta_in_survivor = pointer_delta(space_shrinking->end(),
                                       space_shrinking->top(),
@@ -830,7 +818,7 @@ size_t PSYoungGen::available_to_live() {
   }
 
   size_t delta_in_bytes = unused_committed + delta_in_survivor;
-  delta_in_bytes = align_down(delta_in_bytes, gen_alignment);
+  delta_in_bytes = align_down(delta_in_bytes, GenAlignment);
   return delta_in_bytes;
 }
 

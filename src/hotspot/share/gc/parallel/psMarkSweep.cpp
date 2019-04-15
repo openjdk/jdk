@@ -88,7 +88,7 @@ void PSMarkSweep::initialize() {
 // Note that this method should only be called from the vm_thread while
 // at a safepoint!
 //
-// Note that the all_soft_refs_clear flag in the collector policy
+// Note that the all_soft_refs_clear flag in the soft ref policy
 // may be true because this method can be called without intervening
 // activity.  For example when the heap space is tight and full measure
 // are being taken to free space.
@@ -135,7 +135,7 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
   PSAdaptiveSizePolicy* size_policy = heap->size_policy();
 
   // The scope of casr should end after code that can change
-  // CollectorPolicy::_should_clear_all_soft_refs.
+  // SoftRefolicy::_should_clear_all_soft_refs.
   ClearedAllSoftRefs casr(clear_all_softrefs, heap->soft_ref_policy());
 
   PSYoungGen* young_gen = heap->young_gen();

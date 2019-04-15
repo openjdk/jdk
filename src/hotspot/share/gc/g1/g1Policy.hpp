@@ -25,7 +25,6 @@
 #ifndef SHARE_GC_G1_G1POLICY_HPP
 #define SHARE_GC_G1_G1POLICY_HPP
 
-#include "gc/g1/g1CollectorPolicy.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1InCSetState.hpp"
@@ -284,11 +283,11 @@ private:
   void abort_time_to_mixed_tracking();
 public:
 
-  G1Policy(G1CollectorPolicy* policy, STWGCTimer* gc_timer);
+  G1Policy(STWGCTimer* gc_timer);
 
   virtual ~G1Policy();
 
-  static G1Policy* create_policy(G1CollectorPolicy* policy, STWGCTimer* gc_timer_stw);
+  static G1Policy* create_policy(STWGCTimer* gc_timer_stw);
 
   G1CollectorState* collector_state() const;
 

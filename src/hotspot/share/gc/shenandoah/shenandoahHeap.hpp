@@ -479,7 +479,6 @@ public:
   MemoryUsage memory_usage();
   GCTracer* tracer();
   GCTimer* gc_timer() const;
-  CollectorPolicy* collector_policy() const;
 
 // ---------- Reference processing
 //

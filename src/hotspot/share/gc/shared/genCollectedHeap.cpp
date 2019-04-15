@@ -42,6 +42,7 @@
 #include "gc/shared/gcPolicyCounters.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
+#include "gc/shared/genArguments.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/genOopClosures.inline.hpp"
@@ -73,21 +74,19 @@
 #include "jvmci/jvmci.hpp"
 #endif
 
-GenCollectedHeap::GenCollectedHeap(GenCollectorPolicy *policy,
-                                   Generation::Name young,
+GenCollectedHeap::GenCollectedHeap(Generation::Name young,
                                    Generation::Name old,
                                    const char* policy_counters_name) :
   CollectedHeap(),
   _young_gen_spec(new GenerationSpec(young,
-                                     policy->initial_young_size(),
-                                     policy->max_young_size(),
-                                     policy->gen_alignment())),
+                                     NewSize,
+                                     MaxNewSize,
+                                     GenAlignment)),
   _old_gen_spec(new GenerationSpec(old,
-                                   policy->initial_old_size(),
-                                   policy->max_old_size(),
-                                   policy->gen_alignment())),
+                                   OldSize,
+                                   MaxOldSize,
+                                   GenAlignment)),
   _rem_set(NULL),
-  _gen_policy(policy),
   _soft_ref_gen_policy(),
   _gc_policy_counters(new GCPolicyCounters(policy_counters_name, 2, 2)),
   _full_collections_completed(0),
@@ -107,9 +106,7 @@ jint GenCollectedHeap::initialize() {
   char* heap_address;
   ReservedSpace heap_rs;
 
-  size_t heap_alignment = collector_policy()->heap_alignment();
-
-  heap_address = allocate(heap_alignment, &heap_rs);
+  heap_address = allocate(HeapAlignment, &heap_rs);
 
   if (!heap_rs.is_reserved()) {
     vm_shutdown_during_initialization(
@@ -170,7 +167,7 @@ char* GenCollectedHeap::allocate(size_t alignment,
   *heap_rs = Universe::reserve_heap(total_reserved, alignment);
 
   os::trace_page_sizes("Heap",
-                       collector_policy()->min_heap_byte_size(),
+                       MinHeapSize,
                        total_reserved,
                        alignment,
                        heap_rs->base(),

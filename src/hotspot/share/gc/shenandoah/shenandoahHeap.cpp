@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
 
+#include "gc/shared/gcArguments.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/memAllocator.hpp"
@@ -66,6 +67,7 @@
 #include "gc/shenandoah/heuristics/shenandoahTraversalHeuristics.hpp"
 
 #include "memory/metaspace.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/vmThread.hpp"
@@ -139,10 +141,10 @@ jint ShenandoahHeap::initialize() {
   // Figure out heap sizing
   //
 
-  size_t init_byte_size = collector_policy()->initial_heap_byte_size();
-  size_t min_byte_size  = collector_policy()->min_heap_byte_size();
-  size_t max_byte_size  = collector_policy()->max_heap_byte_size();
-  size_t heap_alignment = collector_policy()->heap_alignment();
+  size_t init_byte_size = InitialHeapSize;
+  size_t min_byte_size  = MinHeapSize;
+  size_t max_byte_size  = MaxHeapSize;
+  size_t heap_alignment = HeapAlignment;
 
   size_t reg_size_bytes = ShenandoahHeapRegion::region_size_bytes();
 
@@ -1157,10 +1159,6 @@ void ShenandoahHeap::collect(GCCause::Cause cause) {
 
 void ShenandoahHeap::do_full_collection(bool clear_all_soft_refs) {
   //assert(false, "Shouldn't need to do full collections");
-}
-
-CollectorPolicy* ShenandoahHeap::collector_policy() const {
-  return _shenandoah_policy;
 }
 
 HeapWord* ShenandoahHeap::block_start(const void* addr) const {

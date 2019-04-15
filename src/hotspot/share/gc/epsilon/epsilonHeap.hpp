@@ -28,7 +28,6 @@
 #include "gc/shared/softRefPolicy.hpp"
 #include "gc/shared/space.hpp"
 #include "services/memoryManager.hpp"
-#include "gc/epsilon/epsilonCollectorPolicy.hpp"
 #include "gc/epsilon/epsilonMonitoringSupport.hpp"
 #include "gc/epsilon/epsilonBarrierSet.hpp"
 #include "gc/epsilon/epsilon_globals.hpp"
@@ -36,7 +35,6 @@
 class EpsilonHeap : public CollectedHeap {
   friend class VMStructs;
 private:
-  EpsilonCollectorPolicy* _policy;
   SoftRefPolicy _soft_ref_policy;
   EpsilonMonitoringSupport* _monitoring_support;
   MemoryPool* _pool;
@@ -53,8 +51,7 @@ private:
 public:
   static EpsilonHeap* heap();
 
-  EpsilonHeap(EpsilonCollectorPolicy* p) :
-          _policy(p),
+  EpsilonHeap() :
           _memory_manager("Epsilon Heap", "") {};
 
   virtual Name kind() const {
@@ -63,10 +60,6 @@ public:
 
   virtual const char* name() const {
     return "Epsilon";
-  }
-
-  virtual CollectorPolicy* collector_policy() const {
-    return _policy;
   }
 
   virtual SoftRefPolicy* soft_ref_policy() {

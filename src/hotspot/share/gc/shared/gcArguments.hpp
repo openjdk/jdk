@@ -30,15 +30,30 @@
 
 class CollectedHeap;
 
+extern size_t MinHeapSize;
+
+extern size_t HeapAlignment;
+extern size_t SpaceAlignment;
+
 class GCArguments {
 protected:
-  template <class Heap, class Policy>
-  CollectedHeap* create_heap_with_policy();
+  // Initialize HeapAlignment, SpaceAlignment, and extra alignments (E.g. GenAlignment)
+  virtual void initialize_alignments() = 0;
+  virtual void initialize_heap_flags_and_sizes();
+  virtual void initialize_size_info();
+
+  DEBUG_ONLY(void assert_flags();)
+  DEBUG_ONLY(void assert_size_info();)
 
 public:
   virtual void initialize();
   virtual size_t conservative_max_heap_alignment() = 0;
   virtual CollectedHeap* create_heap() = 0;
+
+  void initialize_heap_sizes();
+
+  static size_t compute_heap_alignment();
+
   static bool check_args_consistency();
 };
 

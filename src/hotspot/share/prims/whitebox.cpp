@@ -34,6 +34,7 @@
 #include "compiler/methodMatcher.hpp"
 #include "compiler/directivesParser.hpp"
 #include "gc/shared/gcConfig.hpp"
+#include "gc/shared/genArguments.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "memory/heapShared.inline.hpp"
@@ -79,6 +80,7 @@
 #include "prims/cdsoffsets.hpp"
 #endif // INCLUDE_CDS
 #if INCLUDE_G1GC
+#include "gc/g1/g1Arguments.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.hpp"
@@ -222,11 +224,13 @@ WB_ENTRY(jlong, WB_GetCompressedOopsMaxHeapSize(JNIEnv* env, jobject o)) {
 WB_END
 
 WB_ENTRY(void, WB_PrintHeapSizes(JNIEnv* env, jobject o)) {
-  CollectorPolicy * p = Universe::heap()->collector_policy();
-  tty->print_cr("Minimum heap " SIZE_FORMAT " Initial heap "
-    SIZE_FORMAT " Maximum heap " SIZE_FORMAT " Space alignment " SIZE_FORMAT " Heap alignment " SIZE_FORMAT,
-    p->min_heap_byte_size(), p->initial_heap_byte_size(), p->max_heap_byte_size(),
-    p->space_alignment(), p->heap_alignment());
+  tty->print_cr("Minimum heap " SIZE_FORMAT " Initial heap " SIZE_FORMAT " "
+                "Maximum heap " SIZE_FORMAT " Space alignment " SIZE_FORMAT " Heap alignment " SIZE_FORMAT,
+                MinHeapSize,
+                InitialHeapSize,
+                MaxHeapSize,
+                SpaceAlignment,
+                HeapAlignment);
 }
 WB_END
 
@@ -381,13 +385,11 @@ WB_ENTRY(jlong, WB_GetObjectSize(JNIEnv* env, jobject o, jobject obj))
 WB_END
 
 WB_ENTRY(jlong, WB_GetHeapSpaceAlignment(JNIEnv* env, jobject o))
-  size_t alignment = Universe::heap()->collector_policy()->space_alignment();
-  return (jlong)alignment;
+  return (jlong)SpaceAlignment;
 WB_END
 
 WB_ENTRY(jlong, WB_GetHeapAlignment(JNIEnv* env, jobject o))
-  size_t alignment = Universe::heap()->collector_policy()->heap_alignment();
-  return (jlong)alignment;
+  return (jlong)HeapAlignment;
 WB_END
 
 WB_ENTRY(jboolean, WB_SupportsConcurrentGCPhaseControl(JNIEnv* env, jobject o))
@@ -513,7 +515,7 @@ WB_ENTRY(jlong, WB_DramReservedEnd(JNIEnv* env, jobject o))
       uint end_region = HeterogeneousHeapRegionManager::manager()->end_index_of_dram();
       return (jlong)(g1h->base() + (end_region + 1) * HeapRegion::GrainBytes - 1);
     } else {
-      return (jlong)g1h->base() + g1h->collector_policy()->max_heap_byte_size();
+      return (jlong)g1h->base() + G1Arguments::heap_reserved_size_bytes();
     }
   }
 #endif // INCLUDE_G1GC
@@ -596,7 +598,7 @@ WB_END
 
 WB_ENTRY(jlong, WB_PSHeapGenerationAlignment(JNIEnv* env, jobject o))
   if (UseParallelGC) {
-    return ParallelScavengeHeap::heap()->generation_alignment();
+    return GenAlignment;
   }
   THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_PSHeapGenerationAlignment: Parallel GC is not enabled");
 WB_END

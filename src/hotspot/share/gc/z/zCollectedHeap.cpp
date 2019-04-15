@@ -40,8 +40,7 @@ ZCollectedHeap* ZCollectedHeap::heap() {
   return (ZCollectedHeap*)heap;
 }
 
-ZCollectedHeap::ZCollectedHeap(ZCollectorPolicy* policy) :
-    _collector_policy(policy),
+ZCollectedHeap::ZCollectedHeap() :
     _soft_ref_policy(),
     _barrier_set(),
     _initialize(&_barrier_set),
@@ -78,10 +77,6 @@ void ZCollectedHeap::stop() {
   _director->stop();
   _driver->stop();
   _stat->stop();
-}
-
-CollectorPolicy* ZCollectedHeap::collector_policy() const {
-  return _collector_policy;
 }
 
 SoftRefPolicy* ZCollectedHeap::soft_ref_policy() {

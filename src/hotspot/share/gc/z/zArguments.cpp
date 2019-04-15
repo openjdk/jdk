@@ -24,11 +24,15 @@
 #include "precompiled.hpp"
 #include "gc/z/zArguments.hpp"
 #include "gc/z/zCollectedHeap.hpp"
-#include "gc/z/zCollectorPolicy.hpp"
 #include "gc/z/zWorkers.hpp"
-#include "gc/shared/gcArguments.inline.hpp"
+#include "gc/shared/gcArguments.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
+
+void ZArguments::initialize_alignments() {
+  SpaceAlignment = ZGranuleSize;
+  HeapAlignment = SpaceAlignment;
+}
 
 void ZArguments::initialize() {
   GCArguments::initialize();
@@ -101,5 +105,5 @@ size_t ZArguments::conservative_max_heap_alignment() {
 }
 
 CollectedHeap* ZArguments::create_heap() {
-  return create_heap_with_policy<ZCollectedHeap, ZCollectorPolicy>();
+  return new ZCollectedHeap();
 }

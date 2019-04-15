@@ -42,22 +42,8 @@ ShenandoahCollectorPolicy::ShenandoahCollectorPolicy() :
 
   Copy::zero_to_bytes(_degen_points, sizeof(size_t) * ShenandoahHeap::_DEGENERATED_LIMIT);
 
-  ShenandoahHeapRegion::setup_sizes(initial_heap_byte_size(), max_heap_byte_size());
-
-  initialize_all();
-
   _tracer = new (ResourceObj::C_HEAP, mtGC) ShenandoahTracer();
 
-}
-
-void ShenandoahCollectorPolicy::initialize_alignments() {
-  // This is expected by our algorithm for ShenandoahHeap::heap_region_containing().
-  size_t align = ShenandoahHeapRegion::region_size_bytes();
-  if (UseLargePages) {
-    align = MAX2(align, os::large_page_size());
-  }
-  _space_alignment = align;
-  _heap_alignment = align;
 }
 
 void ShenandoahCollectorPolicy::record_explicit_to_concurrent() {

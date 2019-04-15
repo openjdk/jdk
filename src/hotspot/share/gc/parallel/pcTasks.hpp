@@ -28,6 +28,7 @@
 #include "gc/parallel/gcTaskManager.hpp"
 #include "gc/parallel/psParallelCompact.hpp"
 #include "gc/parallel/psTasks.hpp"
+#include "gc/shared/referenceProcessor.hpp"
 
 
 // Tasks for parallel compaction of the old generation

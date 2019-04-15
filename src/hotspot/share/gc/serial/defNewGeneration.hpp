@@ -191,7 +191,10 @@ protected:
   };
 
  public:
-  DefNewGeneration(ReservedSpace rs, size_t initial_byte_size,
+  DefNewGeneration(ReservedSpace rs,
+                   size_t initial_byte_size,
+                   size_t min_byte_size,
+                   size_t max_byte_size,
                    const char* policy="Serial young collection pauses");
 
   virtual void ref_processor_init();

@@ -34,7 +34,6 @@
 #include "utilities/growableArray.hpp"
 
 class CLDClosure;
-class GenCollectorPolicy;
 class GCMemoryManager;
 class MemoryPool;
 class OopsInGenClosure;
@@ -45,7 +44,7 @@ class WorkGang;
 
 class CMSHeap : public GenCollectedHeap {
 public:
-  CMSHeap(GenCollectorPolicy *policy);
+  CMSHeap();
 
   // Returns JNI_OK on success
   virtual jint initialize();

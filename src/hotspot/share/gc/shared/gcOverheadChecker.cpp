@@ -68,7 +68,7 @@ void GCOverheadChecker::check_gc_overhead_limit(GCOverheadTester* time_overhead,
           // GC time limit may or may not have been reached. We
           // are approaching that condition and so as not to
           // throw an out-of-memory before all SoftRef's have been
-          // cleared, set _should_clear_all_soft_refs in CollectorPolicy.
+          // cleared, set _should_clear_all_soft_refs in SoftRefPolicy.
           // The clearing will be done on the next GC.
           bool near_limit = gc_overhead_limit_near();
           if (near_limit) {

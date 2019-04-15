@@ -74,7 +74,6 @@ class SpaceClosure;
 class CompactibleSpaceClosure;
 class Space;
 class G1CollectionSet;
-class G1CollectorPolicy;
 class G1Policy;
 class G1HotCardCache;
 class G1RemSet;
@@ -156,7 +155,6 @@ private:
   G1YoungRemSetSamplingThread* _young_gen_sampling_thread;
 
   WorkGang* _workers;
-  G1CollectorPolicy* _collector_policy;
   G1CardTable* _card_table;
 
   SoftRefPolicy      _soft_ref_policy;
@@ -926,10 +924,10 @@ public:
   // A set of cards where updates happened during the GC
   G1DirtyCardQueueSet& dirty_card_queue_set() { return _dirty_card_queue_set; }
 
-  // Create a G1CollectedHeap with the specified policy.
+  // Create a G1CollectedHeap.
   // Must call the initialize method afterwards.
   // May not return if something goes wrong.
-  G1CollectedHeap(G1CollectorPolicy* policy);
+  G1CollectedHeap();
 
 private:
   jint initialize_concurrent_refinement();
@@ -943,9 +941,6 @@ public:
   virtual void stop();
   virtual void safepoint_synchronize_begin();
   virtual void safepoint_synchronize_end();
-
-  // Return the (conservative) maximum heap alignment for any G1 heap
-  static size_t conservative_max_heap_alignment();
 
   // Does operations required after initialization has been done.
   void post_initialize();
@@ -975,8 +970,6 @@ public:
 
   const G1CollectionSet* collection_set() const { return &_collection_set; }
   G1CollectionSet* collection_set() { return &_collection_set; }
-
-  virtual CollectorPolicy* collector_policy() const;
 
   virtual SoftRefPolicy* soft_ref_policy();
 
@@ -1008,6 +1001,7 @@ public:
   ReferenceProcessor* ref_processor_cm() const { return _ref_processor_cm; }
 
   size_t unused_committed_regions_in_bytes() const;
+
   virtual size_t capacity() const;
   virtual size_t used() const;
   // This should be called when we're not holding the heap lock. The
