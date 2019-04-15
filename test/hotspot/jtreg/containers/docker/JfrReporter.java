@@ -22,53 +22,30 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import jdk.jfr.Recording;
+import jdk.jfr.ValueDescriptor;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordingFile;
 
-
 // This class is intended to run inside a container
 public class JfrReporter {
-    public static final String TEST_REPORTED_CORES="TEST_REPORTED_CORES";
-    public static final String TEST_REPORTED_MEMORY="TEST_REPORTED_MEMORY";
-    public static final String TEST_REPORTED_PID="TEST_REPORTED_PID";
-    public static final String TESTCASE_CPU="cpu";
-    public static final String TESTCASE_MEMORY="memory";
-    public static final String TESTCASE_PROCESS="process";
-
     public static void main(String[] args) throws Exception {
-        String testCase = args[0];
-        System.out.println("Testcase: " + testCase);
-        switch (testCase) {
-        case TESTCASE_CPU:
-            RecordedEvent event = testEvent("jdk.CPUInformation", "cpu.jfr");
-            System.out.println(TEST_REPORTED_CORES + "=" + event.getInt("cores"));
-            break;
-        case TESTCASE_MEMORY:
-            event = testEvent("jdk.PhysicalMemory", "memory.jfr");
-            System.out.println(TEST_REPORTED_MEMORY + "=" + event.getLong("totalSize"));
-            break;
-        case TESTCASE_PROCESS:
-            event = testEvent("jdk.SystemProcess", "process.jfr");
-            System.out.println(TEST_REPORTED_PID + "=" + event.getString("pid"));
-            break;
-        default:
-            throw new IllegalArgumentException("Invalid test case");
+        String eventName = args[0];
+        try(Recording r = new Recording()) {
+            r.enable(eventName);
+            r.start();
+            r.stop();
+            Path p = Paths.get("/", "tmp", eventName + ".jfr");
+            r.dump(p);
+            for (RecordedEvent e : RecordingFile.readAllEvents(p)) {
+                System.out.println("===== EventType: " + e.getEventType().getName());
+                for (ValueDescriptor v : e.getEventType().getFields()) {
+                    System.out.println(v.getName() + " = " + e.getValue(v.getName()));
+                }
+            }
         }
     }
-
-    private static RecordedEvent testEvent(String event, String recordingPath) throws Exception {
-        System.out.println("========= Testing event: " + event);
-        Recording r = new Recording();
-        r.enable(event);
-        r.setDestination(Paths.get("tmp", recordingPath));
-        r.start();
-        r.stop();
-
-        RecordedEvent recordedEvent = RecordingFile.readAllEvents(r.getDestination()).get(0);
-        System.out.println("RecordedEvent: " + recordedEvent);
-        return recordedEvent;
-    }
 }
+  

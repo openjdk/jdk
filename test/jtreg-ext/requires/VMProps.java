@@ -425,7 +425,7 @@ public class VMProps implements Callable<Map<String, String>> {
      * @return true if docker is supported in a given environment
      */
     protected String dockerSupport() {
-        boolean isSupported = false;
+        boolean isSupported = true;
         if (Platform.isLinux()) {
            // currently docker testing is only supported for Linux,
            // on certain platforms

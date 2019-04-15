@@ -39,6 +39,8 @@
 import jdk.test.lib.containers.docker.Common;
 import jdk.test.lib.containers.docker.DockerRunOptions;
 import jdk.test.lib.containers.docker.DockerTestUtils;
+import jdk.test.lib.Asserts;
+import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Utils;
 
 
@@ -68,6 +70,7 @@ public class TestJFREvents {
 
             testProcessInfo();
 
+            testEnvironmentVariables();
         } finally {
             DockerTestUtils.removeDockerImage(imageName);
         }
@@ -79,14 +82,12 @@ public class TestJFREvents {
         DockerTestUtils.dockerRunJava(
                                       commonDockerOpts()
                                       .addDockerOpts("--cpus=" + valueToSet)
-                                      .addClassOptions(JfrReporter.TESTCASE_CPU))
-            .shouldHaveExitValue(0)
-            .shouldContain(JfrReporter.TEST_REPORTED_CORES);
-
+                                      .addClassOptions("jdk.CPUInformation"))
+            .shouldHaveExitValue(0);
         // The following assertion is currently disabled due to JFR reporting incorrect values.
         // JFR reports values for the host system as opposed to values for the container.
         // @ignore 8219999
-        // .shouldContain(JfrReporter.TEST_REPORTED_CORES + "=" + expectedValue);
+        // .shouldContain("cores = " + expectedValue");
     }
 
 
@@ -95,9 +96,9 @@ public class TestJFREvents {
         DockerTestUtils.dockerRunJava(
                                       commonDockerOpts()
                                       .addDockerOpts("--memory=" + valueToSet)
-                                      .addClassOptions(JfrReporter.TESTCASE_MEMORY))
+                                      .addClassOptions("jdk.PhysicalMemory"))
             .shouldHaveExitValue(0)
-            .shouldContain(JfrReporter.TEST_REPORTED_MEMORY + "=" + expectedValue);
+            .shouldContain("totalSize = " + expectedValue);
     }
 
 
@@ -105,10 +106,9 @@ public class TestJFREvents {
         Common.logNewTestCase("ProcessInfo");
         DockerTestUtils.dockerRunJava(
                                       commonDockerOpts()
-                                      .addClassOptions(JfrReporter.TESTCASE_PROCESS))
+                                      .addClassOptions("jdk.SystemProcess"))
             .shouldHaveExitValue(0)
-            .shouldContain(JfrReporter.TEST_REPORTED_PID + "=1");
-
+            .shouldContain("pid = 1");
     }
 
 
@@ -116,5 +116,29 @@ public class TestJFREvents {
         return new DockerRunOptions(imageName, "/jdk/bin/java", "JfrReporter")
             .addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/")
             .addJavaOpts("-cp", "/test-classes/");
+    }
+
+
+    // JTReg always defines the environment variable JAVA_MAIN_CLASS_<SOME_NUMBER>.
+    // This variable fits well for use in this test, since it is rather unique.
+    private static String getTestEnvironmentVariable() throws Exception {
+        for (String key : System.getenv().keySet()) {
+            if (key.startsWith("JAVA_MAIN_CLASS")) {
+                return key;
+            }
+        }
+        throw new RuntimeException("JAVA_MAIN_CLASS_* is not defined");
+    }
+
+
+    private static void testEnvironmentVariables() throws Exception {
+        Common.logNewTestCase("EnvironmentVariables");
+
+        DockerTestUtils.dockerRunJava(
+                                      commonDockerOpts()
+                                      .addClassOptions("jdk.InitialEnvironmentVariable"))
+            .shouldHaveExitValue(0)
+            .shouldContain("key = JAVA_HOME")
+            .shouldNotContain(getTestEnvironmentVariable());
     }
 }
