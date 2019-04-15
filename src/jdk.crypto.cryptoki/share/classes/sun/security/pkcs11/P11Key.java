@@ -1137,19 +1137,78 @@ final class NativeKeyHolder {
 
     private static long nativeKeyWrapperKeyID = 0;
     private static CK_MECHANISM nativeKeyWrapperMechanism = null;
+    private static long nativeKeyWrapperRefCount = 0;
+    private static Session nativeKeyWrapperSession = null;
 
     private final P11Key p11Key;
     private final byte[] nativeKeyInfo;
+    private boolean wrapperKeyUsed;
 
     // destroyed and recreated when refCount toggles to 1
     private long keyID;
-
-    private boolean isTokenObject;
 
     // phantom reference notification clean up for session keys
     private SessionKeyRef ref;
 
     private int refCount;
+
+    private static void createNativeKeyWrapper(Token token)
+            throws PKCS11Exception {
+        assert(nativeKeyWrapperKeyID == 0);
+        assert(nativeKeyWrapperRefCount == 0);
+        assert(nativeKeyWrapperSession == null);
+        // Create a global wrapping/unwrapping key
+        CK_ATTRIBUTE[] wrappingAttributes = token.getAttributes(O_GENERATE,
+                        CKO_SECRET_KEY, CKK_AES, new CK_ATTRIBUTE[] {
+                                new CK_ATTRIBUTE(CKA_CLASS, CKO_SECRET_KEY),
+                                new CK_ATTRIBUTE(CKA_VALUE_LEN, 256 >> 3)});
+        Session s = null;
+        try {
+            s = token.getObjSession();
+            nativeKeyWrapperKeyID = token.p11.C_GenerateKey(
+                    s.id(), new CK_MECHANISM(CKM_AES_KEY_GEN),
+                    wrappingAttributes);
+            nativeKeyWrapperSession = s;
+            nativeKeyWrapperSession.addObject();
+            byte[] iv = new byte[16];
+            JCAUtil.getSecureRandom().nextBytes(iv);
+            nativeKeyWrapperMechanism = new CK_MECHANISM(CKM_AES_CBC_PAD, iv);
+        } catch (PKCS11Exception e) {
+            // best effort
+        } finally {
+            token.releaseSession(s);
+        }
+    }
+
+    private static void deleteNativeKeyWrapper() {
+        Token token = nativeKeyWrapperSession.token;
+        if (token.isValid()) {
+            Session s = null;
+            try {
+                s = token.getOpSession();
+                token.p11.C_DestroyObject(s.id(), nativeKeyWrapperKeyID);
+                nativeKeyWrapperSession.removeObject();
+            } catch (PKCS11Exception e) {
+                // best effort
+            } finally {
+                token.releaseSession(s);
+            }
+        }
+        nativeKeyWrapperKeyID = 0;
+        nativeKeyWrapperMechanism = null;
+        nativeKeyWrapperSession = null;
+    }
+
+    static void decWrapperKeyRef() {
+        synchronized(NativeKeyHolder.class) {
+            assert(nativeKeyWrapperKeyID != 0);
+            assert(nativeKeyWrapperRefCount > 0);
+            nativeKeyWrapperRefCount--;
+            if (nativeKeyWrapperRefCount == 0) {
+                deleteNativeKeyWrapper();
+            }
+        }
+    }
 
     NativeKeyHolder(P11Key p11Key, long keyID, Session keySession,
             boolean extractKeyInfo, boolean isTokenObject) {
@@ -1160,35 +1219,23 @@ final class NativeKeyHolder {
         if (isTokenObject) {
             this.ref = null;
         } else {
-            this.ref = new SessionKeyRef(p11Key, keyID, keySession);
-
             // Try extracting key info, if any error, disable it
             Token token = p11Key.token;
             if (extractKeyInfo) {
                 try {
-                    if (p11Key.sensitive && nativeKeyWrapperKeyID == 0) {
+                    if (p11Key.sensitive) {
+                        // p11Key native key information has to be wrapped
                         synchronized(NativeKeyHolder.class) {
-                            // Create a global wrapping/unwrapping key
-                            CK_ATTRIBUTE[] wrappingAttributes = token.getAttributes
-                                (O_GENERATE, CKO_SECRET_KEY, CKK_AES, new CK_ATTRIBUTE[] {
-                                    new CK_ATTRIBUTE(CKA_CLASS, CKO_SECRET_KEY),
-                                    new CK_ATTRIBUTE(CKA_VALUE_LEN, 256 >> 3),
-                                });
-                            Session wrappingSession = null;
-                            try {
-                                wrappingSession = token.getObjSession();
-                                nativeKeyWrapperKeyID = token.p11.C_GenerateKey
-                                    (wrappingSession.id(),
-                                    new CK_MECHANISM(CKM_AES_KEY_GEN),
-                                    wrappingAttributes);
-                                byte[] iv = new byte[16];
-                                JCAUtil.getSecureRandom().nextBytes(iv);
-                                nativeKeyWrapperMechanism = new CK_MECHANISM
-                                    (CKM_AES_CBC_PAD, iv);
-                            } catch (PKCS11Exception e) {
-                                // best effort
-                            } finally {
-                                token.releaseSession(wrappingSession);
+                            if (nativeKeyWrapperKeyID == 0) {
+                                createNativeKeyWrapper(token);
+                            }
+                            // If a wrapper-key was successfully created or
+                            // already exists, increment its reference
+                            // counter to keep it alive while native key
+                            // information is being held.
+                            if (nativeKeyWrapperKeyID != 0) {
+                                nativeKeyWrapperRefCount++;
+                                wrapperKeyUsed = true;
                             }
                         }
                     }
@@ -1196,7 +1243,8 @@ final class NativeKeyHolder {
                     try {
                         opSession = token.getOpSession();
                         ki = p11Key.token.p11.getNativeKeyInfo(opSession.id(),
-                            keyID, nativeKeyWrapperKeyID, nativeKeyWrapperMechanism);
+                                keyID, nativeKeyWrapperKeyID,
+                                nativeKeyWrapperMechanism);
                     } catch (PKCS11Exception e) {
                         // best effort
                     } finally {
@@ -1206,6 +1254,8 @@ final class NativeKeyHolder {
                     // best effort
                 }
             }
+            this.ref = new SessionKeyRef(p11Key, keyID, wrapperKeyUsed,
+                    keySession);
         }
         this.nativeKeyInfo = ((ki == null || ki.length == 0)? null : ki);
     }
@@ -1222,18 +1272,15 @@ final class NativeKeyHolder {
                         throw new RuntimeException(
                                 "Error: null keyID with non-zero refCount " + cnt);
                     }
-                    if (this.ref != null)  {
-                        throw new RuntimeException(
-                                "Error: null keyID with non-null session ref");
-                    }
                     Token token = p11Key.token;
                     // Create keyID using nativeKeyInfo
                     Session session = null;
                     try {
                         session = token.getObjSession();
                         this.keyID = token.p11.createNativeKey(session.id(),
-                                nativeKeyInfo, nativeKeyWrapperKeyID, nativeKeyWrapperMechanism);
-                        this.ref = new SessionKeyRef(p11Key, this.keyID, session);
+                                nativeKeyInfo, nativeKeyWrapperKeyID,
+                                nativeKeyWrapperMechanism);
+                        this.ref.registerNativeKey(this.keyID, session);
                     } catch (PKCS11Exception e) {
                         this.refCount--;
                         throw new ProviderException("Error recreating native key", e);
@@ -1263,12 +1310,9 @@ final class NativeKeyHolder {
                         throw new RuntimeException("ERROR: null keyID can't be destroyed");
                     }
 
-                    if (this.ref == null) {
-                        throw new RuntimeException("ERROR: null session ref can't be disposed");
-                    }
                     // destroy
                     this.keyID = 0;
-                    this.ref = this.ref.dispose();
+                    this.ref.removeNativeKey();
                 } else {
                     if (cnt < 0) {
                         // should never happen as we start count at 1 and pair get/release calls
@@ -1285,12 +1329,11 @@ final class NativeKeyHolder {
  * otherwise the key maybe cleared before other objects which
  * still use these keys during finalization such as SSLSocket.
  */
-final class SessionKeyRef extends PhantomReference<P11Key>
-    implements Comparable<SessionKeyRef> {
+final class SessionKeyRef extends PhantomReference<P11Key> {
     private static ReferenceQueue<P11Key> refQueue =
         new ReferenceQueue<P11Key>();
-    private static Set<SessionKeyRef> refList =
-        Collections.synchronizedSortedSet(new TreeSet<SessionKeyRef>());
+    private static Set<SessionKeyRef> refSet =
+        Collections.synchronizedSet(new HashSet<SessionKeyRef>());
 
     static ReferenceQueue<P11Key> referenceQueue() {
         return refQueue;
@@ -1307,47 +1350,69 @@ final class SessionKeyRef extends PhantomReference<P11Key>
     }
 
     // handle to the native key and the session it is generated under
-    private final long keyID;
-    private final Session session;
+    private long keyID;
+    private Session session;
+    private boolean wrapperKeyUsed;
 
-    SessionKeyRef(P11Key p11Key, long keyID, Session session) {
+    SessionKeyRef(P11Key p11Key, long keyID, boolean wrapperKeyUsed,
+            Session session) {
         super(p11Key, refQueue);
         if (session == null) {
             throw new ProviderException("key must be associated with a session");
         }
-        this.keyID = keyID;
-        this.session = session;
-        this.session.addObject();
+        registerNativeKey(keyID, session);
+        this.wrapperKeyUsed = wrapperKeyUsed;
 
-        refList.add(this);
+        refSet.add(this);
         drainRefQueueBounded();
     }
 
-    SessionKeyRef dispose() {
-        Token token = session.token;
-        // If the token is still valid, try to remove the key object
-        if (token.isValid()) {
-            Session s = null;
-            try {
-                s = token.getOpSession();
-                token.p11.C_DestroyObject(s.id(), keyID);
-            } catch (PKCS11Exception e) {
-                // best effort
-            } finally {
-                token.releaseSession(s);
-            }
-        }
-        refList.remove(this);
-        this.clear();
-        session.removeObject();
-        return null;
+    void registerNativeKey(long newKeyID, Session newSession) {
+        assert(newKeyID != 0);
+        assert(newSession != null);
+        updateNativeKey(newKeyID, newSession);
     }
 
-    public int compareTo(SessionKeyRef other) {
-        if (this.keyID == other.keyID) {
-            return 0;
+    void removeNativeKey() {
+        assert(session != null);
+        updateNativeKey(0, null);
+    }
+
+    private void updateNativeKey(long newKeyID, Session newSession) {
+        if (newKeyID == 0) {
+            assert(newSession == null);
+            Token token = session.token;
+            // If the token is still valid, try to remove the key object
+            if (token.isValid()) {
+                Session s = null;
+                try {
+                    s = token.getOpSession();
+                    token.p11.C_DestroyObject(s.id(), this.keyID);
+                } catch (PKCS11Exception e) {
+                    // best effort
+                } finally {
+                    token.releaseSession(s);
+                }
+            }
+            session.removeObject();
         } else {
-            return (this.keyID < other.keyID) ? -1 : 1;
+            newSession.addObject();
         }
+        keyID = newKeyID;
+        session = newSession;
+    }
+
+    // Called when the GC disposes a p11Key
+    void dispose() {
+        if (wrapperKeyUsed) {
+            // Wrapper-key no longer needed for
+            // p11Key native key information
+            NativeKeyHolder.decWrapperKeyRef();
+        }
+        if (keyID != 0) {
+            removeNativeKey();
+        }
+        refSet.remove(this);
+        this.clear();
     }
 }

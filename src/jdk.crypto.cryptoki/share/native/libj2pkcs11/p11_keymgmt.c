@@ -308,7 +308,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_getNativeKeyInfo
         *(CK_BBOOL*)(((CK_ATTRIBUTE_PTR)(((CK_ATTRIBUTE_PTR)nativeKeyInfoArrayRawCkAttributes)
                 +sensitiveAttributePosition))->pValue) == CK_TRUE) {
         // Key is sensitive. Need to extract it wrapped.
-        if (jWrappingKeyHandle != -1) {
+        if (jWrappingKeyHandle != 0) {
 
             jMechanismToCKMechanism(env, jWrappingMech, &ckMechanism);
             rv = (*ckpFunctions->C_WrapKey)(ckSessionHandle, &ckMechanism,
@@ -351,6 +351,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_getNativeKeyInfo
                 goto cleanup;
             }
         } else {
+            ckAssertReturnValueOK(env, CKR_KEY_HANDLE_INVALID);
             goto cleanup;
         }
         returnValue = nativeKeyInfoWrappedKeyArray;
