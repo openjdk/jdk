@@ -2968,9 +2968,8 @@ class StubGenerator: public StubCodeGenerator {
 
     __ enter();
     __ subptr(rsp, 8 * wordSize);
-    if (multi_block) {
-      __ push(limit);
-    }
+    handleSOERegisters(true /*saving*/);
+
     __ movptr(buf, buf_param);
     __ movptr(state, state_param);
     if (multi_block) {
@@ -2981,9 +2980,7 @@ class StubGenerator: public StubCodeGenerator {
     __ fast_sha1(abcd, e0, e1, msg0, msg1, msg2, msg3, shuf_mask,
       buf, state, ofs, limit, rsp, multi_block);
 
-    if (multi_block) {
-      __ pop(limit);
-    }
+    handleSOERegisters(false /*restoring*/);
     __ addptr(rsp, 8 * wordSize);
     __ leave();
     __ ret(0);
