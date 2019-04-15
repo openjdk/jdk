@@ -119,7 +119,6 @@ class ShenandoahRootEvacuator : public StackObj {
   StrongRootsScope _srs;
   ShenandoahPhaseTimings::Phase _phase;
   ShenandoahCsetCodeRootsIterator _coderoots_cset_iterator;
-  OopStorage::ParState<false, false> _par_state_string;
 
   enum Shenandoah_evacuate_roots_tasks {
     SHENANDOAH_EVAC_Universe_oops_do,
