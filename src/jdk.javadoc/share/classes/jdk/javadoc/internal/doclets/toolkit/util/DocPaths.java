@@ -100,7 +100,7 @@ public class DocPaths {
     public static final DocPath JAVASCRIPT = DocPath.create("script.js");
 
     /** The name of the directory for the jQuery. */
-    public static final DocPath JQUERY_FILES = DocPath.create("jquery");
+    public static final DocPath JQUERY_FILES = DocPath.create("script-dir");
 
     /** The name of the default jQuery stylesheet file. */
     public static final DocPath JQUERY_STYLESHEET_FILE = DocPath.create("jquery-ui.css");
