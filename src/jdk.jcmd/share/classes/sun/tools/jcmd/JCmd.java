@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package sun.tools.jcmd;
 
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
@@ -121,15 +122,16 @@ public class JCmd {
             if (line.trim().equals("stop")) {
                 break;
             }
-            try (InputStream in = hvm.executeJCmd(line);) {
+            try (InputStream in = hvm.executeJCmd(line);
+                 InputStreamReader isr = new InputStreamReader(in, "UTF-8")) {
                 // read to EOF and just print output
-                byte b[] = new byte[256];
+                char c[] = new char[256];
                 int n;
                 boolean messagePrinted = false;
                 do {
-                    n = in.read(b);
+                    n = isr.read(c);
                     if (n > 0) {
-                        String s = new String(b, 0, n, "UTF-8");
+                        String s = new String(c, 0, n);
                         System.out.print(s);
                         messagePrinted = true;
                     }
