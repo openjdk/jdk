@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 4681556
+ * @library /test/lib
  * @summary Wrong text if a read is performed on a socket after it
  *      has been closed
  * @run main SocketClosedException
@@ -32,6 +33,7 @@
 
 import java.io.*;
 import java.net.*;
+import jdk.test.lib.net.IPSupport;
 
 public class SocketClosedException {
     static void doServerSide() throws Exception {
@@ -61,6 +63,7 @@ public class SocketClosedException {
     static Exception serverException = null;
 
     public static void main(String[] args) throws Exception {
+        IPSupport.skipIfCurrentConfigurationIsInvalid();
         serverSocket = new ServerSocket(0);
         startServer();
         try {

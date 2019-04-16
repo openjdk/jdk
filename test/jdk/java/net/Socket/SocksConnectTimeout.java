@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 6223635
+ * @library /test/lib
  * @summary Code hangs at connect call even when Timeout is specified
  * @run main SocksConnectTimeout
  * @run main/othervm -Djava.net.preferIPv4Stack=true SocksConnectTimeout
@@ -39,6 +40,7 @@ import java.io.IOException;
 import java.io.Closeable;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.TimeUnit;
+import jdk.test.lib.net.IPSupport;
 
 public class SocksConnectTimeout {
     static ServerSocket serverSocket;
@@ -48,6 +50,8 @@ public class SocksConnectTimeout {
     static int failed, passed;
 
     public static void main(String[] args) {
+        IPSupport.skipIfCurrentConfigurationIsInvalid();
+
         try {
             serverSocket = new ServerSocket(0);
 

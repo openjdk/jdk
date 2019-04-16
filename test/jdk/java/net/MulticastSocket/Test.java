@@ -29,6 +29,7 @@ import java.net.MulticastSocket;
 import java.net.SocketTimeoutException;
 
 import jdk.test.lib.NetworkConfiguration;
+import jdk.test.lib.net.IPSupport;
 
 /**
  * @test
@@ -158,6 +159,8 @@ public class Test {
     }
 
     public static void main(String args[]) throws Exception {
+        IPSupport.skipIfCurrentConfigurationIsInvalid();
+
         Test t = new Test();
 
         if (args.length == 0) {

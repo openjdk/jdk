@@ -23,6 +23,7 @@
 
 /* @test
  * @bug 8014499
+ * @library /test/lib
  * @summary Test for interference when two sockets are bound to the same
  *          port but joined to different multicast groups
  * @run main Promiscuous
@@ -32,6 +33,7 @@
 import java.io.IOException;
 import static java.lang.System.out;
 import java.net.*;
+import jdk.test.lib.net.IPSupport;
 
 public class Promiscuous {
 
@@ -113,6 +115,8 @@ public class Promiscuous {
     }
 
     public static void main(String args[]) throws IOException {
+        IPSupport.skipIfCurrentConfigurationIsInvalid();
+
         String os = System.getProperty("os.name");
 
         // Requires IP_MULTICAST_ALL on Linux (new since 2.6.31) so skip

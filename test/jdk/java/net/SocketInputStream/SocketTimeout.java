@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 4158021
+ * @library /test/lib
  * @summary cannot distinguish Thread.interrupt and Socket.setSoTimeout exceptions
  * @run main SocketTimeout
  * @run main/othervm -Djava.net.preferIPv4Stack=true SocketTimeout
@@ -31,11 +32,13 @@
 
 import java.net.*;
 import java.io.*;
+import jdk.test.lib.net.IPSupport;
 
 public class SocketTimeout  {
     static final int TIMEOUT = 1000;
 
     public static void main(String args[]) throws Exception {
+    IPSupport.skipIfCurrentConfigurationIsInvalid();
     InetAddress  sin = InetAddress.getLocalHost();
     Socket       soc = null,soc1 = null;
     InputStream  is = null;

@@ -24,6 +24,7 @@
  /*
  * @test
  * @bug 8148609
+ * @library /test/lib
  * @summary Assert that the set of socket options are immutable
  * @run testng/othervm ImmutableOptions
  * @run testng/othervm -Djava.net.preferIPv4Stack=true ImmutableOptions
@@ -34,6 +35,8 @@ import java.io.OutputStream;
 import java.net.*;
 import java.util.Set;
 
+import jdk.test.lib.net.IPSupport;
+
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
@@ -41,6 +44,7 @@ public class ImmutableOptions {
 
     @BeforeTest
     void setupServerSocketFactory() throws IOException {
+        IPSupport.skipIfCurrentConfigurationIsInvalid();
         ServerSocket.setSocketFactory(new ServerSocketImplFactory());
     }
 

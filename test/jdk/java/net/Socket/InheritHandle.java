@@ -23,6 +23,7 @@
 
 /* @test
  * @bug  6598160
+ * @library /test/lib
  * @summary Windows IPv6 Socket implementation doesn't set the handle to not inherit
  * @author Chris Hegarty
  * @run main InheritHandle
@@ -33,6 +34,7 @@ import java.net.BindException;
 import java.net.ServerSocket;
 import java.io.File;
 import java.io.IOException;
+import jdk.test.lib.net.IPSupport;
 
 /**
  * This test is only really applicable to Windows machines that are running IPv6, but
@@ -45,6 +47,8 @@ public class InheritHandle
                          "bin" + File.separator + "java";
 
     public static void main(String[] args) {
+        IPSupport.skipIfCurrentConfigurationIsInvalid();
+
         if (args.length == 1) {
             doWait();
         } else {

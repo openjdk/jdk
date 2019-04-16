@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 6404388
+ * @library /test/lib
  * @summary VISTA: Socket setTcpNoDelay & setKeepAlive working incorrectly
  * @run main TestTcpNoDelay
  * @run main/othervm -Djava.net.preferIPv4Stack=true TestTcpNoDelay
@@ -31,10 +32,13 @@
 
 import java.net.*;
 import java.io.IOException;
+import jdk.test.lib.net.IPSupport;
 
 public class TestTcpNoDelay
 {
     public static void main(String[] args) {
+        IPSupport.skipIfCurrentConfigurationIsInvalid();
+
         try {
             Socket socket = new Socket();
             boolean on = socket.getTcpNoDelay();

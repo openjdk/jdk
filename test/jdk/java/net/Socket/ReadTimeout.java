@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 4169831
+ * @library /test/lib
  * @summary test timeout on a socket read
  * @run main/timeout=15 ReadTimeout
  * @run main/othervm/timeout=15 -Djava.net.preferIPv4Stack=true ReadTimeout
@@ -31,9 +32,12 @@
 
 import java.net.*;
 import java.io.*;
+import jdk.test.lib.net.IPSupport;
 
 public class ReadTimeout  {
     public static void main(String args[]) throws Exception {
+    IPSupport.skipIfCurrentConfigurationIsInvalid();
+
     InetAddress  sin = null;
     Socket       soc = null,soc1 = null;
     InputStream  is = null;

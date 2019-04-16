@@ -28,6 +28,7 @@ import java.net.MulticastSocket;
 import java.net.NetworkInterface;
 
 import jdk.test.lib.NetworkConfiguration;
+import jdk.test.lib.net.IPSupport;
 
 /**
  * @test
@@ -42,6 +43,7 @@ import jdk.test.lib.NetworkConfiguration;
 public class JoinLeave {
 
     public static void main(String args[]) throws IOException {
+        IPSupport.skipIfCurrentConfigurationIsInvalid();
         InetAddress ip4Group = InetAddress.getByName("224.80.80.80");
         InetAddress ip6Group = InetAddress.getByName("ff02::a");
 

@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8201510
+ * @library /test/lib
  * @summary Make sure IPv6 addresses are rejected when the System option
  *          java.net.preferIPv4Stack is set to true
  * @run main/othervm -Djava.net.preferIPv4Stack=true RejectIPv6
@@ -33,10 +34,13 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import jdk.test.lib.net.IPSupport;
 
 public class RejectIPv6 {
 
     public static void main(String [] argv) throws Throwable {
+        IPSupport.skipIfCurrentConfigurationIsInvalid();
+
         ServerSocket serverSocket = new ServerSocket(0);
         serverSocket.setSoTimeout(1000);
         int serverPort = serverSocket.getLocalPort();

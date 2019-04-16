@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 4091859 8189366
+ * @library /test/lib
  * @summary Test Socket.available()
  * @run main CloseAvailable
  * @run main/othervm -Djava.net.preferIPv4Stack=true CloseAvailable
@@ -31,11 +32,14 @@
 
 import java.net.*;
 import java.io.*;
+import jdk.test.lib.net.IPSupport;
 
 
 public class CloseAvailable {
 
     public static void main(String[] args) throws Exception {
+        IPSupport.skipIfCurrentConfigurationIsInvalid();
+
         testClose();
 
         testEOF(true);

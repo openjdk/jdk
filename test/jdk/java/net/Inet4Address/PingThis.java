@@ -27,6 +27,7 @@
 
 /* @test
  * @bug 7163874 8133015
+ * @library /test/lib
  * @summary InetAddress.isReachable is returning false
  *          for InetAdress 0.0.0.0 and ::0
  * @run main PingThis
@@ -40,41 +41,26 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import jdk.test.lib.net.IPSupport;
 
 public class PingThis {
-    private static boolean hasIPv6() throws Exception {
-        List<NetworkInterface> nics = Collections.list(NetworkInterface
-                .getNetworkInterfaces());
-        for (NetworkInterface nic : nics) {
-            List<InetAddress> addrs = Collections.list(nic.getInetAddresses());
-            for (InetAddress addr : addrs) {
-                if (addr instanceof Inet6Address)
-                    return true;
-            }
-        }
-
-        return false;
-    }
-
     public static void main(String args[]) throws Exception {
         if (System.getProperty("os.name").startsWith("Windows")) {
             return;
         }
+        IPSupport.skipIfCurrentConfigurationIsInvalid();
 
-        boolean preferIPv4Stack = "true".equals(System
-                .getProperty("java.net.preferIPv4Stack"));
         List<String> addrs = new ArrayList<String>();
-        InetAddress inetAddress = null;
 
-        addrs.add("0.0.0.0");
-        if (!preferIPv4Stack) {
-            if (hasIPv6()) {
-                addrs.add("::0");
-            }
+        if (IPSupport.hasIPv4()) {
+            addrs.add("0.0.0.0");
+        }
+        if (IPSupport.hasIPv6()) {
+            addrs.add("::0");
         }
 
         for (String addr : addrs) {
-            inetAddress = InetAddress.getByName(addr);
+            InetAddress inetAddress = InetAddress.getByName(addr);
             System.out.println("The target ip is "
                     + inetAddress.getHostAddress());
             boolean isReachable = inetAddress.isReachable(3000);

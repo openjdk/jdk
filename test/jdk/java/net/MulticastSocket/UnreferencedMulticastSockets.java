@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @library /test/lib
  * @modules java.management java.base/java.io:+open java.base/java.net:+open
  * @run main/othervm -Djava.net.preferIPv4Stack=true UnreferencedMulticastSockets
  * @run main/othervm UnreferencedMulticastSockets
@@ -49,6 +50,8 @@ import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+
+import jdk.test.lib.net.IPSupport;
 
 import com.sun.management.UnixOperatingSystemMXBean;
 
@@ -104,6 +107,7 @@ public class UnreferencedMulticastSockets {
     }
 
     public static void main(String args[]) throws Exception {
+        IPSupport.skipIfCurrentConfigurationIsInvalid();
 
         // Create and close a MulticastSocket to warm up the FD count for side effects.
         try (MulticastSocket s = new MulticastSocket(0)) {

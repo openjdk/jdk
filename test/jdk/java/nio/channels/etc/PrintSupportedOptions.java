@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @library /test/lib
  * @requires (os.family == "linux" | os.family == "mac" | os.family == "windows")
  * @bug 8209152
  * @run main PrintSupportedOptions
@@ -33,6 +34,8 @@ import java.io.IOException;
 import java.net.SocketOption;
 import java.nio.channels.*;
 
+import jdk.test.lib.net.IPSupport;
+
 public class PrintSupportedOptions {
 
     @FunctionalInterface
@@ -41,6 +44,8 @@ public class PrintSupportedOptions {
     }
 
     public static void main(String[] args) throws IOException {
+        IPSupport.skipIfCurrentConfigurationIsInvalid();
+
         test(() -> SocketChannel.open());
         test(() -> ServerSocketChannel.open());
         test(() -> DatagramChannel.open());

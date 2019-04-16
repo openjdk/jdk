@@ -43,6 +43,7 @@ import java.io.IOException;
 import java.util.stream.Collectors;
 
 import jdk.test.lib.NetworkConfiguration;
+import jdk.test.lib.net.IPSupport;
 
 public class Promiscuous {
 
@@ -192,6 +193,8 @@ public class Promiscuous {
     }
 
     public static void main(String[] args) throws IOException {
+        IPSupport.skipIfCurrentConfigurationIsInvalid();
+
         String os = System.getProperty("os.name");
 
         // Requires IP_MULTICAST_ALL on Linux (new since 2.6.31) so skip

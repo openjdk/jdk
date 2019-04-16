@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 4508149
+ * @library /test/lib
  * @summary Setting ServerSocket.setSoTimeout shouldn't cause
  *          the timeout to be inherited by accepted connections
  * @run main InheritTimeout
@@ -32,6 +33,7 @@
 
 import java.net.*;
 import java.io.InputStream;
+import jdk.test.lib.net.IPSupport;
 
 public class InheritTimeout {
 
@@ -92,6 +94,7 @@ public class InheritTimeout {
    }
 
    public static void main(String args[]) throws Exception {
+        IPSupport.skipIfCurrentConfigurationIsInvalid();
         new InheritTimeout();
    }
 }

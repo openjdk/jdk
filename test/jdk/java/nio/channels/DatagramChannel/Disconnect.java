@@ -23,6 +23,7 @@
 
 /* @test
  * @bug 7132924
+ * @library /test/lib
  * @key intermittent
  * @summary Test DatagramChannel.disconnect when DatagramChannel is connected to an IPv4 socket
  * @run main Disconnect
@@ -33,19 +34,32 @@ import java.net.*;
 import java.nio.*;
 import java.nio.channels.*;
 import java.io.IOException;
+import jdk.test.lib.net.IPSupport;
 
 public class Disconnect {
     public static void main(String[] args) throws IOException {
+        IPSupport.skipIfCurrentConfigurationIsInvalid();
+
         // test with default protocol family
         try (DatagramChannel dc = DatagramChannel.open()) {
             test(dc);
             test(dc);
         }
 
-        // test with IPv4 only
-        try (DatagramChannel dc = DatagramChannel.open(StandardProtocolFamily.INET)) {
-            test(dc);
-            test(dc);
+        if (IPSupport.hasIPv4()) {
+            // test with IPv4 only
+            try (DatagramChannel dc = DatagramChannel.open(StandardProtocolFamily.INET)) {
+                test(dc);
+                test(dc);
+            }
+        }
+
+        if (IPSupport.hasIPv6()) {
+            // test with IPv6 only
+            try (DatagramChannel dc = DatagramChannel.open(StandardProtocolFamily.INET6)) {
+                test(dc);
+                test(dc);
+            }
         }
     }
 

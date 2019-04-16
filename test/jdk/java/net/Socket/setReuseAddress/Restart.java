@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 4476378
+ * @library /test/lib
  * @summary Check that SO_REUSEADDR allows a server to restart
  *          after a crash.
  * @run main Restart
@@ -36,6 +37,7 @@
  *                   -Djava.net.preferIPv4Stack=true Restart
  */
 import java.net.*;
+import jdk.test.lib.net.IPSupport;
 
 public class Restart {
 
@@ -47,6 +49,8 @@ public class Restart {
      */
 
     public static void main(String args[]) throws Exception {
+        IPSupport.skipIfCurrentConfigurationIsInvalid();
+
         ServerSocket ss = new ServerSocket(0);
         Socket s1 = null, s2 = null;
         try {

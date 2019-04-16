@@ -42,6 +42,7 @@ import java.io.IOException;
 import java.util.stream.Collectors;
 
 import jdk.test.lib.NetworkConfiguration;
+import jdk.test.lib.net.IPSupport;
 
 public class MulticastSendReceiveTests {
 
@@ -239,6 +240,8 @@ public class MulticastSendReceiveTests {
     }
 
     public static void main(String[] args) throws IOException {
+        IPSupport.skipIfCurrentConfigurationIsInvalid();
+
         NetworkConfiguration config = NetworkConfiguration.probe();
 
         // multicast groups used for the test

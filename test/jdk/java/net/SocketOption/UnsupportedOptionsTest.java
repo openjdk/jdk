@@ -27,9 +27,12 @@ import java.net.*;
 import java.util.ArrayList;
 import java.util.List;
 
+import jdk.test.lib.net.IPSupport;
+
 /*
  * @test
  * @bug 8143554 8044773
+ * @library /test/lib
  * @summary Test checks that UnsupportedOperationException for unsupported
  *          SOCKET_OPTIONS is thrown by both getOption() and setOption() methods.
  * @requires !vm.graal.enabled
@@ -69,6 +72,8 @@ public class UnsupportedOptionsTest {
     }
 
     public static void main(String[] args) throws IOException {
+        IPSupport.skipIfCurrentConfigurationIsInvalid();
+
         Socket s = new Socket();
         ServerSocket ss = new ServerSocket();
         DatagramSocket ds = new DatagramSocket();

@@ -27,6 +27,7 @@ import java.net.MulticastSocket;
 import java.net.NetworkInterface;
 
 import jdk.test.lib.NetworkConfiguration;
+import jdk.test.lib.net.IPSupport;
 
 /**
  * @test
@@ -41,6 +42,7 @@ import jdk.test.lib.NetworkConfiguration;
 public class SetGetNetworkInterfaceTest {
 
     public static void main(String[] args) throws Exception {
+        IPSupport.skipIfCurrentConfigurationIsInvalid();
         NetworkConfiguration nc = NetworkConfiguration.probe();
         try (MulticastSocket ms = new MulticastSocket()) {
             nc.multicastInterfaces(true).forEach(nif -> setGetNetworkInterface(ms, nif));

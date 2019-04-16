@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,31 +23,18 @@
 
 /**
  * @test
- * @bug 4163126
+ * @bug 8220673
  * @library /test/lib
- * @summary  test to see if timeout hangs
- * @run main/timeout=15 Timeout
- * @run main/othervm/timeout=15 -Djava.net.preferIPv4Stack=true Timeout
+ * @build jdk.test.lib.net.IPSupport
+ * @summary Ensure IPSupport works under a security manager.
+ * @run main/othervm/policy=MinimumPermissions.policy MinimumPermissions
  */
-import java.net.*;
-import java.io.*;
+
 import jdk.test.lib.net.IPSupport;
 
-public class Timeout {
-    public static void main(String[] args) throws Exception {
+public class MinimumPermissions {
+    public static void main(String[] args) {
         IPSupport.skipIfCurrentConfigurationIsInvalid();
-
-        boolean success = false;
-        ServerSocket sock = new ServerSocket(0);
-        try {
-            sock.setSoTimeout(2);
-            sock.accept();
-        } catch (InterruptedIOException e) {
-            success = true;
-        } finally {
-            sock.close();
-        }
-        if (!success)
-            throw new RuntimeException("Socket timeout failure.");
     }
 }
+

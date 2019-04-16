@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 4476378
+ * @library /test/lib
  * @summary Check the specific behaviour of the setReuseAddress(boolean)
  *          method.
  * @run main Basic
@@ -36,6 +37,7 @@
  *                   -Djava.net.preferIPv4Stack=true Basic
  */
 import java.net.*;
+import jdk.test.lib.net.IPSupport;
 
 public class Basic {
 
@@ -226,6 +228,7 @@ public class Basic {
     }
 
     public static void main(String args[]) throws Exception {
+        IPSupport.skipIfCurrentConfigurationIsInvalid();
         new Basic();
     }
 

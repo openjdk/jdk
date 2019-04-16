@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8036979 8072384 8044773
+ * @library /test/lib
  * @requires !vm.graal.enabled
  * @run main/othervm -Xcheck:jni OptionsTest
  * @run main/othervm -Xcheck:jni -Djava.net.preferIPv4Stack=true OptionsTest
@@ -33,6 +34,7 @@
 import java.lang.reflect.Method;
 import java.net.*;
 import java.util.*;
+import jdk.test.lib.net.IPSupport;
 
 public class OptionsTest {
 
@@ -278,6 +280,7 @@ public class OptionsTest {
     }
 
     public static void main(String args[]) throws Exception {
+        IPSupport.skipIfCurrentConfigurationIsInvalid();
         doSocketTests();
         doServerSocketTests();
         doDgSocketTests();

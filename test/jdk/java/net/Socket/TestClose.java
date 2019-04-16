@@ -23,6 +23,7 @@
 /*
  * @test
  * @bug 4408755
+ * @library /test/lib
  * @summary This tests whether it's possible to get some informations
  *          out of a closed socket. This is for backward compatibility
  *          purposes.
@@ -31,10 +32,13 @@
  */
 
 import java.net.*;
+import jdk.test.lib.net.IPSupport;
 
 public class TestClose {
 
     public static void main(String[] args) throws Exception {
+        IPSupport.skipIfCurrentConfigurationIsInvalid();
+
         ServerSocket ss;
         Socket s;
         InetAddress ad1, ad2;

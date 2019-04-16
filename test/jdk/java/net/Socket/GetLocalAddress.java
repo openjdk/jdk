@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 4106601 8026245 8071424
+ * @library /test/lib
  * @run main/othervm GetLocalAddress
  * @run main/othervm -Djava.net.preferIPv4Stack=true GetLocalAddress
  * @run main/othervm -Djava.net.preferIPv6Addresses=true GetLocalAddress
@@ -32,6 +33,7 @@
  */
 
 import java.net.*;
+import jdk.test.lib.net.IPSupport;
 
 public class GetLocalAddress implements Runnable {
     static ServerSocket ss;
@@ -39,6 +41,8 @@ public class GetLocalAddress implements Runnable {
     static int port;
 
     public static void main(String args[]) throws Exception {
+        IPSupport.skipIfCurrentConfigurationIsInvalid();
+
         testBindNull();
 
         boolean      error = true;
