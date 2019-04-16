@@ -240,6 +240,14 @@ java/awt/Window/ShapedAndTranslucentWindows/ShapedTranslucent.java 8078999 macos
 java/awt/Window/ShapedAndTranslucentWindows/ShapedTranslucentWindowClick.java 8013450 macosx-all
 java/awt/Window/ShapedAndTranslucentWindows/StaticallyShaped.java 8165218 macosx-all,linux-all
 java/awt/Window/ShapedAndTranslucentWindows/TranslucentChoice.java 8221901 linux-all
+java/awt/Window/MultiWindowApp/ChildAlwaysOnTopTest.java 8222323 windows-all
+java/awt/Window/AlwaysOnTop/AutoTestOnTop.java 6847593 windows-all,linux-all
+java/awt/Window/ShapedAndTranslucentWindows/FocusAWTTest.java 8222328 windows-all,linux-all
+java/awt/Window/ShapedAndTranslucentWindows/Shaped.java  8222328 windows-all,linux-all
+java/awt/Window/ShapedAndTranslucentWindows/ShapedByAPI.java 8222328 windows-all,linux-all
+java/awt/Window/ShapedAndTranslucentWindows/ShapedTranslucent.java 8222328 windows-all,linux-all
+java/awt/Window/ShapedAndTranslucentWindows/StaticallyShaped.java 8222328 windows-all
+java/awt/Window/ShapedAndTranslucentWindows/Translucent.java 8222328 windows-all,linux-all,macosx-all
 java/awt/Window/AlwaysOnTop/AutoTestOnTop.java 6847593 macosx-all
 java/awt/Window/GrabSequence/GrabSequence.java 6848409 macosx-all,linux-all
 java/awt/Window/LocationAtScreenCorner/LocationAtScreenCorner.java 8203371 linux-all,solaris-all
@@ -264,7 +272,7 @@ sun/java2d/DirectX/OverriddenInsetsTest/OverriddenInsetsTest.java 8196102 generi
 sun/java2d/DirectX/RenderingToCachedGraphicsTest/RenderingToCachedGraphicsTest.java 8196180 windows-all,macosx-all
 sun/java2d/GdiRendering/InsetClipping.java 8196181 windows-all
 java/awt/Graphics2D/CopyAreaOOB.java 7001973 windows-all,macosx-all
-sun/java2d/SunGraphics2D/EmptyClipRenderingTest.java 8144029 macosx-all
+sun/java2d/SunGraphics2D/EmptyClipRenderingTest.java 8144029 macosx-all,linux-all
 sun/java2d/SunGraphics2D/DrawImageBilinear.java 8191406 generic-all
 sun/java2d/SunGraphics2D/PolyVertTest.java 6986565 generic-all
 sun/java2d/SunGraphics2D/SimplePrimQuality.java 6992007 generic-all
