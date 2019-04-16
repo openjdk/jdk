@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import java.rmi.ServerError;
 import java.rmi.ServerException;
 import java.rmi.UnmarshalException;
 import java.rmi.server.ExportException;
+import java.rmi.server.Operation;
 import java.rmi.server.RemoteCall;
 import java.rmi.server.RemoteRef;
 import java.rmi.server.RemoteStub;
@@ -292,15 +293,14 @@ public class UnicastServerRef extends UnicastRef
                 throw new UnmarshalException("error unmarshalling call header",
                                              readEx);
             }
-            if (num >= 0) {
-                if (skel != null) {
+            if (skel != null) {
+                // If there is a skeleton, use it
                     oldDispatch(obj, call, num);
                     return;
-                } else {
-                    throw new UnmarshalException(
-                        "skeleton class not found but required " +
-                        "for client version");
-                }
+
+            } else if (num >= 0){
+                throw new UnmarshalException(
+                        "skeleton class not found but required for client version");
             }
             try {
                 op = in.readLong();
@@ -428,8 +428,8 @@ public class UnicastServerRef extends UnicastRef
 
     /**
      * Handle server-side dispatch using the RMI 1.1 stub/skeleton
-     * protocol, given a non-negative operation number that has
-     * already been read from the call stream.
+     * protocol, given a non-negative operation number or negative method hash
+     * that has already been read from the call stream.
      * Exceptions are handled by the caller to be sent to the remote client.
      *
      * @param obj the target remote object for the call
@@ -461,7 +461,8 @@ public class UnicastServerRef extends UnicastRef
         }
 
         // if calls are being logged, write out object id and operation
-        logCall(obj, skel.getOperations()[op]);
+        Operation[] operations = skel.getOperations();
+        logCall(obj, op >= 0 && op < operations.length ?  operations[op] : "op: " + op);
         unmarshalCustomCallData(in);
         // dispatch to skeleton for remote object
         skel.dispatch(obj, call, op, hash);

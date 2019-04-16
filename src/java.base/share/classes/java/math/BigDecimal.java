@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3414,9 +3414,32 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      */
     @Override
     public long longValue(){
-        return (intCompact != INFLATED && scale == 0) ?
-            intCompact:
-            toBigInteger().longValue();
+        if (intCompact != INFLATED && scale == 0) {
+            return intCompact;
+        } else {
+            // Fastpath zero and small values
+            if (this.signum() == 0 || fractionOnly() ||
+                // Fastpath very large-scale values that will result
+                // in a truncated value of zero. If the scale is -64
+                // or less, there are at least 64 powers of 10 in the
+                // value of the numerical result. Since 10 = 2*5, in
+                // that case there would also be 64 powers of 2 in the
+                // result, meaning all 64 bits of a long will be zero.
+                scale <= -64) {
+                return 0;
+            } else {
+                return toBigInteger().longValue();
+            }
+        }
+    }
+
+    /**
+     * Return true if a nonzero BigDecimal has an absolute value less
+     * than one; i.e. only has fraction digits.
+     */
+    private boolean fractionOnly() {
+        assert this.signum() != 0;
+        return (this.precision() - this.scale) <= 0;
     }
 
     /**
@@ -3434,15 +3457,20 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     public long longValueExact() {
         if (intCompact != INFLATED && scale == 0)
             return intCompact;
+
+        // Fastpath zero
+        if (this.signum() == 0)
+            return 0;
+
+        // Fastpath numbers less than 1.0 (the latter can be very slow
+        // to round if very small)
+        if (fractionOnly())
+            throw new ArithmeticException("Rounding necessary");
+
         // If more than 19 digits in integer part it cannot possibly fit
         if ((precision() - scale) > 19) // [OK for negative scale too]
             throw new java.lang.ArithmeticException("Overflow");
-        // Fastpath zero and < 1.0 numbers (the latter can be very slow
-        // to round if very small)
-        if (this.signum() == 0)
-            return 0;
-        if ((this.precision() - this.scale) <= 0)
-            throw new ArithmeticException("Rounding necessary");
+
         // round to an integer, with Exception if decimal part non-0
         BigDecimal num = this.setScale(0, ROUND_UNNECESSARY);
         if (num.precision() >= 19) // need to check carefully
@@ -3486,7 +3514,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     public int intValue() {
         return  (intCompact != INFLATED && scale == 0) ?
             (int)intCompact :
-            toBigInteger().intValue();
+            (int)longValue();
     }
 
     /**
