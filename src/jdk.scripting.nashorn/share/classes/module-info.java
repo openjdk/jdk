@@ -30,7 +30,7 @@
  * Nashorn is a runtime environment for programs written in ECMAScript 5.1.
  * </p>
  *
- * <h1>Usage</h1>
+ * <h2>Usage</h2>
  *
  * The recommended way to use Nashorn is through the
  * <a href="http://jcp.org/en/jsr/detail?id=223" target="_top">JSR-223
@@ -45,7 +45,7 @@ ScriptEngine nashornEngine = new ScriptEngineManager().getEngineByName("nashorn"
  *
  * and then use it just as you would any other JSR-223 script engine. See
  * {@link jdk.nashorn.api.scripting} package for details.
- * <h1>Compatibility</h1>
+ * <h2>Compatibility</h2>
  * Nashorn is 100% compliant with the
  * <a href="http://www.ecma-international.org/publications/standards/Ecma-262.htm"
  * target="_top">ECMA-262 Standard, Edition 5.1</a>.
@@ -55,7 +55,7 @@ ScriptEngine nashornEngine = new ScriptEngineManager().getEngineByName("nashorn"
  * specification (often referred to as "invokedynamic"), as well as
  * the already mentioned JSR-223.
  *
- * <h1>Interoperability with the Java platform</h1>
+ * <h2>Interoperability with the Java platform</h2>
  *
  * In addition to being a 100% ECMAScript 5.1 runtime, Nashorn provides features
  * for interoperability of the ECMAScript programs with the Java platform.
@@ -68,7 +68,7 @@ ScriptEngine nashornEngine = new ScriptEngineManager().getEngineByName("nashorn"
  * their properties. In most cases, though, you can't add arbitrary properties
  * to them, nor can you remove existing properties.
  *
- * <h2>Java collection handling</h2>
+ * <h3>Java collection handling</h3>
  *
  * Native Java arrays and {@link java.util.List}s support indexed access to
  * their elements through the property accessors, and {@link java.util.Map}s
@@ -79,7 +79,7 @@ ScriptEngine nashornEngine = new ScriptEngineManager().getEngineByName("nashorn"
  * operator gives precedence to map elements. Native Java arrays expose
  * the {@code length} property.
  *
- * <h2>ECMAScript primitive types</h2>
+ * <h3>ECMAScript primitive types</h3>
  *
  * ECMAScript primitive types for number, string, and boolean are represented
  * with {@link java.lang.Number}, {@link java.lang.CharSequence}, and
@@ -89,7 +89,7 @@ ScriptEngine nashornEngine = new ScriptEngineManager().getEngineByName("nashorn"
  * cause other subclasses of {@code Number} and internal implementations of
  * {@code CharSequence} to be used.
  *
- * <h2>Type conversions</h2>
+ * <h3>Type conversions</h3>
  *
  * When a method on a Java object is invoked, the arguments are converted to
  * the formal parameter types of the Java method using all allowed ECMAScript
@@ -106,7 +106,7 @@ ScriptEngine nashornEngine = new ScriptEngineManager().getEngineByName("nashorn"
  * {@code java.lang.Double}), then Nashorn will of course ensure
  * the required type is passed.
  *
- * <h2>SAM types</h2>
+ * <h3>SAM types</h3>
  *
  * As a special extension when invoking Java methods, ECMAScript function
  * objects can be passed in place of an argument whose Java type is so-called
@@ -122,14 +122,14 @@ ScriptEngine nashornEngine = new ScriptEngineManager().getEngineByName("nashorn"
  * the same name</em>. This is done to be consistent with the fact that
  * ECMAScript does not have the concept of overloaded methods.
  *
- * <h2>The {@code Java} object</h2>
+ * <h3>The {@code Java} object</h3>
  *
  * Nashorn exposes a non-standard global object named {@code Java} that is
  * the primary API entry point into Java platform-specific functionality.
  * You can use it to create instances of Java classes, convert from Java arrays
  * to native arrays and back, and so on.
  *
- * <h2>Other non-standard built-in objects</h2>
+ * <h3>Other non-standard built-in objects</h3>
  *
  * In addition to {@code Java}, Nashorn also exposes some other
  * non-standard built-in objects:
