@@ -27,11 +27,18 @@
 
 #include "java_net_InetAddress.h"
 
+int IPv4_supported();
 int IPv6_supported();
 int reuseport_supported();
 
+static int IPv4_available;
 static int IPv6_available;
 static int REUSEPORT_available;
+
+JNIEXPORT jint JNICALL ipv4_available()
+{
+    return IPv4_available;
+}
 
 JNIEXPORT jint JNICALL ipv6_available()
 {
@@ -68,6 +75,7 @@ DEF_JNI_OnLoad(JavaVM *vm, void *reserved)
      * check now whether we have IPv6 on this platform and if the
      * supporting socket APIs are available
      */
+    IPv4_available = IPv4_supported();
     IPv6_available = IPv6_supported() & (!preferIPv4Stack);
 
     /* check if SO_REUSEPORT is supported on this platform */
