@@ -388,6 +388,17 @@ required on Ubuntu 18.04 by using `JAVA_OPTIONS`.
 
     $ make test TEST="jtreg:test/hotspot/jtreg/containers/docker" JTREG="JAVA_OPTIONS=-Djdk.test.docker.image.name=ubuntu -Djdk.test.docker.image.version=latest"
 
+### Non-US locale
+
+If your locale is non-US, some tests are likely to fail. To work around this you can
+set the locale to US. On Unix platforms simply setting `LANG="en_US"` in the
+environment before running tests should work. On Windows, setting
+`JTREG="VM_OPTIONS=-Duser.language=en -Duser.country=US"` helps for most, but not all test cases.
+For example:
+
+    $ export LANG="en_US" && make test TEST=...
+    $ make test JTREG="VM_OPTIONS=-Duser.language=en -Duser.country=US" TEST=...
+
 ---
 # Override some definitions in the global css file that are not optimal for
 # this document.
