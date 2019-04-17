@@ -1151,6 +1151,8 @@ void Universe::initialize_verify_flags() {
       verify_flags |= Verify_JNIHandles;
     } else if (strcmp(token, "codecache_oops") == 0) {
       verify_flags |= Verify_CodeCacheOops;
+    } else if (strcmp(token, "resolved_method_table") == 0) {
+      verify_flags |= Verify_ResolvedMethodTable;
     } else {
       vm_exit_during_initialization(err_msg("VerifySubSet: \'%s\' memory sub-system is unknown, please correct it", token));
     }
@@ -1229,6 +1231,10 @@ void Universe::verify(VerifyOption option, const char* prefix) {
   if (should_verify_subset(Verify_CodeCacheOops)) {
     log_debug(gc, verify)("CodeCache Oops");
     CodeCache::verify_oops();
+  }
+  if (should_verify_subset(Verify_ResolvedMethodTable)) {
+    log_debug(gc, verify)("ResolvedMethodTable Oops");
+    ResolvedMethodTable::verify();
   }
 
   _verify_in_progress = false;

@@ -96,7 +96,7 @@ public:
 
   // Debugging
   static size_t items_count();
-  static size_t verify_and_compare_entries();
+  static void verify();
 };
 
 #endif // SHARE_PRIMS_RESOLVEDMETHODTABLE_HPP

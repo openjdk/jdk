@@ -346,16 +346,6 @@ void ResolvedMethodTable::inc_dead_counter(size_t ndead) {
 // cleaning. Note it might trigger a resize instead.
 void ResolvedMethodTable::finish_dead_counter() {
   check_concurrent_work();
-
-#ifdef ASSERT
-  if (SafepointSynchronize::is_at_safepoint()) {
-    size_t fail_cnt = verify_and_compare_entries();
-    if (fail_cnt != 0) {
-      tty->print_cr("ERROR: fail_cnt=" SIZE_FORMAT, fail_cnt);
-      guarantee(fail_cnt == 0, "unexpected ResolvedMethodTable verification failures");
-    }
-  }
-#endif // ASSERT
 }
 
 #if INCLUDE_JVMTI
@@ -402,26 +392,16 @@ void ResolvedMethodTable::adjust_method_entries(bool * trace_name_printed) {
 }
 #endif // INCLUDE_JVMTI
 
-// Verification and comp
-class VerifyCompResolvedMethod : StackObj {
-  GrowableArray<oop>* _oops;
+// Verification
+class VerifyResolvedMethod : StackObj {
  public:
-  size_t _errors;
-  VerifyCompResolvedMethod(GrowableArray<oop>* oops) : _oops(oops), _errors(0) {}
   bool operator()(WeakHandle<vm_resolved_method_table_data>* val) {
-    oop s = val->peek();
-    if (s == NULL) {
-      return true;
+    oop obj = val->peek();
+    if (obj != NULL) {
+      Method* method = (Method*)java_lang_invoke_ResolvedMethodName::vmtarget(obj);
+      guarantee(method->is_method(), "Must be");
+      guarantee(!method->is_old(), "Must be");
     }
-    int len = _oops->length();
-    for (int i = 0; i < len; i++) {
-      bool eq = s == _oops->at(i);
-      assert(!eq, "Duplicate entries");
-      if (eq) {
-        _errors++;
-      }
-    }
-    _oops->push(s);
     return true;
   };
 };
@@ -430,16 +410,9 @@ size_t ResolvedMethodTable::items_count() {
   return _items_count;
 }
 
-size_t ResolvedMethodTable::verify_and_compare_entries() {
-  Thread* thr = Thread::current();
-  GrowableArray<oop>* oops =
-    new (ResourceObj::C_HEAP, mtInternal)
-      GrowableArray<oop>((int)_current_size, true);
-
-  VerifyCompResolvedMethod vcs(oops);
-  if (!_local_table->try_scan(thr, vcs)) {
+void ResolvedMethodTable::verify() {
+  VerifyResolvedMethod vcs;
+  if (!_local_table->try_scan(Thread::current(), vcs)) {
     log_info(membername, table)("verify unavailable at this moment");
   }
-  delete oops;
-  return vcs._errors;
 }

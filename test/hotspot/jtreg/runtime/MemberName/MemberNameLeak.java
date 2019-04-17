@@ -103,11 +103,13 @@ public class MemberNameLeak {
         System.err.println("test(" + gc + ", " + doConcurrent + ")");
         // Run this Leak class with logging
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                                      "-Xlog:membername+table=trace",
+                                      "-Xlog:membername+table=trace,gc+verify=debug",
                                       "-XX:+UnlockExperimentalVMOptions",
                                       "-XX:+UnlockDiagnosticVMOptions",
                                       "-XX:+WhiteBoxAPI",
                                       "-Xbootclasspath/a:.",
+                                      "-XX:+VerifyBeforeGC",
+                                      "-XX:+VerifyAfterGC",
                                       doConcurrent ? "-XX:+ExplicitGCInvokesConcurrent" : "-XX:-ExplicitGCInvokesConcurrent",
                                       "-XX:+ClassUnloading",
                                       "-XX:+ClassUnloadingWithConcurrentMark",
