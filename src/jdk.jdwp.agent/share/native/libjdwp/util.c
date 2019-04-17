@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1673,7 +1673,7 @@ setAgentPropertyValue(JNIEnv *env, char *propertyName, char* propertyValue)
     /* Create jstrings for property name and value */
     nameString = JNI_FUNC_PTR(env,NewStringUTF)(env, propertyName);
     if (nameString != NULL) {
-        valueString = JNI_FUNC_PTR(env,NewStringUTF)(env, propertyValue);
+        valueString = JNU_NewStringPlatform(env, propertyValue);
         if (valueString != NULL) {
             /* invoke Properties.setProperty */
             JNI_FUNC_PTR(env,CallObjectMethod)
