@@ -2949,7 +2949,7 @@ void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
       if (!is_counted || !lpt->is_inner()) continue;
 
       // check for vectorized loops, any reassociation of invariants was already done
-      if (is_counted && lpt->_head->as_CountedLoop()->do_unroll_only()) continue;
+      if (is_counted && lpt->_head->as_CountedLoop()->is_unroll_only()) continue;
 
       lpt->reassociate_invariants(this);
 

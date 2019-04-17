@@ -63,7 +63,7 @@ bool IdealLoopTree::policy_unswitching( PhaseIdealLoop *phase ) const {
   }
 
   // check for vectorized loops, any unswitching was already applied
-  if (_head->is_CountedLoop() && _head->as_CountedLoop()->do_unroll_only()) {
+  if (_head->is_CountedLoop() && _head->as_CountedLoop()->is_unroll_only()) {
     return false;
   }
 

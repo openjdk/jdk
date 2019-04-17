@@ -352,10 +352,11 @@ bool IdealLoopTree::policy_peeling( PhaseIdealLoop *phase ) const {
   }
 
   // check for vectorized loops, any peeling done was already applied
-  if (_head->is_CountedLoop() && _head->as_CountedLoop()->do_unroll_only()) return false;
-
-  if (_head->is_CountedLoop() && _head->as_CountedLoop()->trip_count() == 1) {
-    return false;
+  if (_head->is_CountedLoop()) {
+    CountedLoopNode* cl = _head->as_CountedLoop();
+    if (cl->is_unroll_only() || cl->trip_count() == 1) {
+      return false;
+    }
   }
 
   while( test != _head ) {      // Scan till run off top of loop
@@ -873,7 +874,7 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
     return false;
   }
 
-  if (cl->do_unroll_only()) {
+  if (cl->is_unroll_only()) {
     if (TraceSuperWordLoopUnrollAnalysis) {
       tty->print_cr("policy_unroll passed vector loop(vlen=%d,factor = %d)\n", slp_max_unroll_factor, future_unroll_ct);
     }
@@ -935,7 +936,7 @@ bool IdealLoopTree::policy_range_check( PhaseIdealLoop *phase ) const {
   Node *trip_counter = cl->phi();
 
   // check for vectorized loops, some opts are no longer needed
-  if (cl->do_unroll_only()) return false;
+  if (cl->is_unroll_only()) return false;
 
   // Check loop body for tests of trip-counter plus loop-invariant vs
   // loop-invariant.
@@ -989,7 +990,9 @@ bool IdealLoopTree::policy_range_check( PhaseIdealLoop *phase ) const {
 // for unrolling loops with NO array accesses.
 bool IdealLoopTree::policy_peel_only( PhaseIdealLoop *phase ) const {
   // check for vectorized loops, any peeling done was already applied
-  if (_head->is_CountedLoop() && _head->as_CountedLoop()->do_unroll_only()) return false;
+  if (_head->is_CountedLoop() && _head->as_CountedLoop()->is_unroll_only()) {
+    return false;
+  }
 
   for( uint i = 0; i < _body.size(); i++ )
     if( _body[i]->is_Mem() )
