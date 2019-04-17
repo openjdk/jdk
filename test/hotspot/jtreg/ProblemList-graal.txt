@@ -218,6 +218,8 @@ vmTestbase/nsk/jdb/clear/clear003/clear003.java                               82
 
 compiler/jsr292/InvokerSignatureMismatch.java           8221577   generic-all
 
+compiler/loopopts/TestOverunrolling.java                8207267   generic-all
+
 # Graal unit tests
 org.graalvm.compiler.core.test.CheckGraalInvariants                              8205081
 org.graalvm.compiler.core.test.OptionsVerifierTest                               8205081
