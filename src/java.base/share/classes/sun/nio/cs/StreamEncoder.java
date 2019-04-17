@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,21 @@
  * questions.
  */
 
-/*
- */
-
 package sun.nio.cs;
 
-import java.io.*;
-import java.nio.*;
-import java.nio.channels.*;
-import java.nio.charset.*;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.io.Writer;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.channels.WritableByteChannel;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
+import java.nio.charset.CoderResult;
+import java.nio.charset.CodingErrorAction;
+import java.nio.charset.IllegalCharsetNameException;
 
 public class StreamEncoder extends Writer
 {
@@ -158,8 +164,11 @@ public class StreamEncoder extends Writer
         synchronized (lock) {
             if (closed)
                 return;
-            implClose();
-            closed = true;
+            try {
+                implClose();
+            } finally {
+                closed = true;
+            }
         }
     }
 
@@ -337,8 +346,13 @@ public class StreamEncoder extends Writer
                 writeBytes();
             if (ch != null)
                 ch.close();
-            else
-                out.close();
+            else {
+                try {
+                    out.flush();
+                } finally {
+                    out.close();
+                }
+            }
         } catch (IOException x) {
             encoder.reset();
             throw x;

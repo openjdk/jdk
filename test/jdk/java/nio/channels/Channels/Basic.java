@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4417152 4481572 6248930 6725399 6884800
+ * @bug 4417152 4481572 6248930 6725399 6884800 8220477
  * @summary Test Channels basic functionality
  */
 
@@ -30,7 +30,6 @@ import java.io.*;
 import java.nio.*;
 import java.nio.charset.*;
 import java.nio.channels.*;
-
 
 public class Basic {
 
@@ -204,6 +203,8 @@ public class Basic {
             writeOut(blah, ITERATIONS);
             testNewReader(blah);
 
+            testNewWriterClose();
+            testNewReaderClose();
         } finally {
             blah.delete();
         }
@@ -398,6 +399,98 @@ public class Basic {
         }
         r.close();
         fis.close();
+    }
+
+    private static void testNewWriterClose() throws Exception {
+        Writer writer = null;
+        try {
+            WritableByteChannel channel = new WritableByteChannel() {
+                @Override
+                public int write(ByteBuffer src) throws IOException {
+                    return 0;
+                }
+
+                @Override
+                public boolean isOpen() {
+                    return true;
+                }
+
+                @Override
+                public void close() throws IOException {
+                    throw new IOException();
+                }
+            };
+            writer = Channels.newWriter(channel,
+                StandardCharsets.UTF_8.newEncoder(), -1);
+            writer.close();
+        } catch (IOException ioe) {
+            Exception theException = null;
+            try {
+                writer.write(1);
+                writer.flush();
+            } catch (Exception e) {
+                theException = e;
+            } finally {
+                if (theException == null) {
+                    throw new RuntimeException("IOException not thrown");
+                } else if (!(theException instanceof IOException)) {
+                    throw new RuntimeException("Exception not an IOException: "
+                        + theException);
+                } else {
+                    String message = theException.getMessage();
+                    if (!message.equals("Stream closed")) {
+                        throw new RuntimeException("Unexpected message "
+                            + message);
+                    }
+                }
+            }
+        }
+    }
+
+    private static void testNewReaderClose() throws Exception {
+        Reader reader = null;
+        try {
+            ReadableByteChannel channel = new ReadableByteChannel() {
+                @Override
+                public int read(ByteBuffer dst) throws IOException {
+                    dst.put((byte)7);
+                    return 1;
+                }
+
+                @Override
+                public boolean isOpen() {
+                    return true;
+                }
+
+                @Override
+                public void close() throws IOException {
+                    throw new IOException();
+                }
+            };
+            reader = Channels.newReader(channel,
+                StandardCharsets.UTF_8.newDecoder(), -1);
+            reader.close();
+        } catch (IOException ioe) {
+            Exception theException = null;
+            try {
+                reader.read();
+            } catch (Exception e) {
+                theException = e;
+            } finally {
+                if (theException == null) {
+                    throw new RuntimeException("IOException not thrown");
+                } else if (!(theException instanceof IOException)) {
+                    throw new RuntimeException("Exception not an IOException: "
+                        + theException);
+                } else {
+                    String message = theException.getMessage();
+                    if (!message.equals("Stream closed")) {
+                        throw new RuntimeException("Unexpected message "
+                            + message);
+                    }
+                }
+            }
+        }
     }
 }
 
