@@ -370,26 +370,49 @@ public:
 };
 
 
-inline CountedLoopEndNode *CountedLoopNode::loopexit_or_null() const {
-  Node *bc = back_control();
-  if( bc == NULL ) return NULL;
-  Node *le = bc->in(0);
-  if( le->Opcode() != Op_CountedLoopEnd )
-    return NULL;
-  return (CountedLoopEndNode*)le;
+inline CountedLoopEndNode* CountedLoopNode::loopexit_or_null() const {
+  Node* bctrl = back_control();
+  if (bctrl == NULL) return NULL;
+
+  Node* lexit = bctrl->in(0);
+  return (CountedLoopEndNode*)
+      (lexit->Opcode() == Op_CountedLoopEnd ? lexit : NULL);
 }
-inline CountedLoopEndNode *CountedLoopNode::loopexit() const {
+
+inline CountedLoopEndNode* CountedLoopNode::loopexit() const {
   CountedLoopEndNode* cle = loopexit_or_null();
   assert(cle != NULL, "loopexit is NULL");
   return cle;
 }
-inline Node *CountedLoopNode::init_trip() const { return loopexit_or_null() ? loopexit()->init_trip() : NULL; }
-inline Node *CountedLoopNode::stride() const { return loopexit_or_null() ? loopexit()->stride() : NULL; }
-inline int CountedLoopNode::stride_con() const { return loopexit_or_null() ? loopexit()->stride_con() : 0; }
-inline bool CountedLoopNode::stride_is_con() const { return loopexit_or_null() && loopexit()->stride_is_con(); }
-inline Node *CountedLoopNode::limit() const { return loopexit_or_null() ? loopexit()->limit() : NULL; }
-inline Node *CountedLoopNode::incr() const { return loopexit_or_null() ? loopexit()->incr() : NULL; }
-inline Node *CountedLoopNode::phi() const { return loopexit_or_null() ? loopexit()->phi() : NULL; }
+
+inline Node* CountedLoopNode::init_trip() const {
+  CountedLoopEndNode* cle = loopexit_or_null();
+  return cle != NULL ? cle->init_trip() : NULL;
+}
+inline Node* CountedLoopNode::stride() const {
+  CountedLoopEndNode* cle = loopexit_or_null();
+  return cle != NULL ? cle->stride() : NULL;
+}
+inline int CountedLoopNode::stride_con() const {
+  CountedLoopEndNode* cle = loopexit_or_null();
+  return cle != NULL ? cle->stride_con() : 0;
+}
+inline bool CountedLoopNode::stride_is_con() const {
+  CountedLoopEndNode* cle = loopexit_or_null();
+  return cle != NULL && cle->stride_is_con();
+}
+inline Node* CountedLoopNode::limit() const {
+  CountedLoopEndNode* cle = loopexit_or_null();
+  return cle != NULL ? cle->limit() : NULL;
+}
+inline Node* CountedLoopNode::incr() const {
+  CountedLoopEndNode* cle = loopexit_or_null();
+  return cle != NULL ? cle->incr() : NULL;
+}
+inline Node* CountedLoopNode::phi() const {
+  CountedLoopEndNode* cle = loopexit_or_null();
+  return cle != NULL ? cle->phi() : NULL;
+}
 
 //------------------------------LoopLimitNode-----------------------------
 // Counted Loop limit node which represents exact final iterator value:
@@ -632,8 +655,8 @@ public:
 };
 
 // -----------------------------PhaseIdealLoop---------------------------------
-// Computes the mapping from Nodes to IdealLoopTrees.  Organizes IdealLoopTrees into a
-// loop tree.  Drives the loop-based transformations on the ideal graph.
+// Computes the mapping from Nodes to IdealLoopTrees. Organizes IdealLoopTrees
+// into a loop tree. Drives the loop-based transformations on the ideal graph.
 class PhaseIdealLoop : public PhaseTransform {
   friend class IdealLoopTree;
   friend class SuperWord;
@@ -733,8 +756,7 @@ private:
   }
   Node *dom_lca_for_get_late_ctrl_internal( Node *lca, Node *n, Node *tag );
 
-  // Helper function for directing control inputs away from CFG split
-  // points.
+  // Helper function for directing control inputs away from CFG split points.
   Node *find_non_split_ctrl( Node *ctrl ) const {
     if (ctrl != NULL) {
       if (ctrl->is_MultiBranch()) {
