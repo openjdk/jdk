@@ -55,27 +55,31 @@
 // Return TRUE or FALSE if the loop should be unswitched
 // (ie. clone loop with an invariant test that does not exit the loop)
 bool IdealLoopTree::policy_unswitching( PhaseIdealLoop *phase ) const {
-  if( !LoopUnswitching ) {
+  if (!LoopUnswitching) {
     return false;
   }
   if (!_head->is_Loop()) {
     return false;
   }
 
+  // If nodes are depleted, some transform has miscalculated its needs.
+  assert(!phase->exceeding_node_budget(), "sanity");
+
   // check for vectorized loops, any unswitching was already applied
   if (_head->is_CountedLoop() && _head->as_CountedLoop()->is_unroll_only()) {
     return false;
   }
 
-  int nodes_left = phase->C->max_node_limit() - phase->C->live_nodes();
-  if ((int)(2 * _body.size()) > nodes_left) {
-    return false; // Too speculative if running low on nodes.
-  }
   LoopNode* head = _head->as_Loop();
   if (head->unswitch_count() + 1 > head->unswitch_max()) {
     return false;
   }
-  return phase->find_unswitching_candidate(this) != NULL;
+  if (phase->find_unswitching_candidate(this) == NULL) {
+    return false;
+  }
+
+  // Too speculative if running low on nodes.
+  return phase->may_require_nodes(est_loop_clone_sz(3, _body.size()));
 }
 
 //------------------------------find_unswitching_candidate-----------------------------
