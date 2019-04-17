@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,19 +22,22 @@
  */
 package parsers;
 
+import java.io.ByteArrayInputStream;
 import java.io.StringReader;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
+import static org.testng.Assert.assertEquals;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
+import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 
 /**
  * @test
- * @bug 8169450
+ * @bug 8169450 8222415
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @run testng/othervm -DrunSecMngr=true parsers.BaseParsingTest
  * @run testng/othervm parsers.BaseParsingTest
@@ -143,7 +146,7 @@ public class BaseParsingTest {
      * @bug 8169450
      * This particular issue does not appear in DOM parsing since the spaces are
      * normalized during version detection. This test case then serves as a guard
-     * against such an issue from occuring in the version detection.
+     * against such an issue from occurring in the version detection.
      *
      * @param xml the test xml
      * @throws Exception if the parser fails to parse the xml
@@ -151,8 +154,24 @@ public class BaseParsingTest {
     @Test(dataProvider = "xmlDeclarations")
     public void testWithDOM(String xml) throws Exception {
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        dbf.setValidating(true);
         DocumentBuilder db = dbf.newDocumentBuilder();
         db.parse(new InputSource(new StringReader(xml)));
+    }
+
+    /**
+     * @bug 8222415
+     * Verifies that the parser is configured properly for UTF-16BE or LE.
+     * @throws Exception
+     */
+    @Test
+    public void testEncoding() throws Exception {
+        ByteArrayInputStream bis = new ByteArrayInputStream(
+                "<?xml version=\"1.0\" encoding=\"UTF-16\"?> <a/>".getBytes("UnicodeLittle"));
+        InputSource is = new InputSource(bis);
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        DocumentBuilder db = dbf.newDocumentBuilder();
+
+        Document doc = db.parse(is);
+        assertEquals("UTF-16LE", doc.getInputEncoding());
     }
 }

@@ -940,14 +940,15 @@ public class FileChannelImpl
         if (size > Integer.MAX_VALUE)
             throw new IllegalArgumentException("Size exceeds Integer.MAX_VALUE");
 
-        int imode = -1;
+        int imode;
         if (mode == MapMode.READ_ONLY)
             imode = MAP_RO;
         else if (mode == MapMode.READ_WRITE)
             imode = MAP_RW;
         else if (mode == MapMode.PRIVATE)
             imode = MAP_PV;
-        assert (imode >= 0);
+        else
+            throw new UnsupportedOperationException();
         if ((mode != MapMode.READ_ONLY) && !writable)
             throw new NonWritableChannelException();
         if (!readable)

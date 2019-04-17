@@ -1965,20 +1965,7 @@ public final class String
         if (str.isEmpty()) {
             return this;
         }
-        if (coder() == str.coder()) {
-            byte[] val = this.value;
-            byte[] oval = str.value;
-            int len = val.length + oval.length;
-            byte[] buf = Arrays.copyOf(val, len);
-            System.arraycopy(oval, 0, buf, val.length, oval.length);
-            return new String(buf, coder);
-        }
-        int len = length();
-        int olen = str.length();
-        byte[] buf = StringUTF16.newBytesFor(len + olen);
-        getBytes(buf, 0, UTF16);
-        str.getBytes(buf, len, UTF16);
-        return new String(buf, UTF16);
+        return StringConcatHelper.simpleConcat(this, str);
     }
 
     /**

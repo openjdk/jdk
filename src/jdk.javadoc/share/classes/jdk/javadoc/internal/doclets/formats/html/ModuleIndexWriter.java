@@ -53,15 +53,22 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
  *
  * @author Bhavesh Patel
  */
-public class ModuleIndexWriter extends AbstractModuleIndexWriter {
+public class ModuleIndexWriter extends AbstractOverviewIndexWriter {
+
+    /**
+     * Modules to be documented.
+     */
+    protected SortedSet<ModuleElement> modules;
 
     /**
      * Construct the ModuleIndexWriter.
+     *
      * @param configuration the configuration object
      * @param filename the name of the generated file
      */
     public ModuleIndexWriter(HtmlConfiguration configuration, DocPath filename) {
         super(configuration, filename);
+        modules = configuration.modules;
     }
 
     /**
@@ -73,46 +80,23 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
     public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
         DocPath filename = DocPaths.INDEX;
         ModuleIndexWriter mdlgen = new ModuleIndexWriter(configuration, filename);
-        mdlgen.buildModuleIndexFile("doclet.Window_Overview_Summary", "module index");
+        mdlgen.buildOverviewIndexFile("doclet.Window_Overview_Summary", "module index");
     }
 
     /**
-     * Add the module index.
+     * Adds the list of modules.
      *
-     * @param header the documentation tree to which the navigational links will be added
      * @param main the documentation tree to which the modules list will be added
      */
     @Override
-    protected void addIndex(Content header, Content main) {
-        addIndexContents(header, main);
-    }
-
-    /**
-     * Adds module index contents.
-     *
-     * @param header the document tree to which the navigational links will be added
-     * @param main the document tree to which the modules list will be added
-     */
-    protected void addIndexContents(Content header, Content main) {
-        addModulesList(main);
-    }
-
-    /**
-     * Add the list of modules.
-     *
-     * @param main the content tree to which the module list will be added
-     */
-    @Override
-    protected void addModulesList(Content main) {
+    protected void addIndex(Content main) {
         Map<String, SortedSet<ModuleElement>> groupModuleMap
-                = configuration.group.groupModules(configuration.modules);
+                = configuration.group.groupModules(modules);
 
         if (!groupModuleMap.keySet().isEmpty()) {
-            String tableSummary = resources.getText("doclet.Member_Table_Summary",
-                    resources.getText("doclet.Module_Summary"), resources.getText("doclet.modules"));
-            TableHeader header = new TableHeader(contents.moduleLabel, contents.descriptionLabel);
+            TableHeader tableHeader = new TableHeader(contents.moduleLabel, contents.descriptionLabel);
             Table table =  new Table(HtmlStyle.overviewSummary)
-                    .setHeader(header)
+                    .setHeader(tableHeader)
                     .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
                     .setDefaultTab(resources.getText("doclet.All_Modules"))
                     .setTabScript(i -> "show(" + i + ");")
@@ -126,7 +110,7 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
                 }
             }
 
-            for (ModuleElement mdle : configuration.modules) {
+            for (ModuleElement mdle : modules) {
                 if (!mdle.isUnnamed()) {
                     if (!(configuration.nodeprecated && utils.isDeprecated(mdle))) {
                         Content moduleLinkContent = getModuleLink(mdle, new StringContent(mdle.getQualifiedName().toString()));
@@ -144,68 +128,5 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
                 mainBodyScript.append(table.getScript());
             }
         }
-    }
-
-    /**
-     * Adds the overview summary comment for this documentation. Add one line
-     * summary at the top of the page and generate a link to the description,
-     * which is added at the end of this page.
-     *
-     * @param main the documentation tree to which the overview header will be added
-     */
-    @Override
-    protected void addOverviewHeader(Content main) {
-        addConfigurationTitle(main);
-        if (!utils.getFullBody(configuration.overviewElement).isEmpty()) {
-            HtmlTree div = new HtmlTree(HtmlTag.DIV);
-            div.setStyle(HtmlStyle.contentContainer);
-            addOverviewComment(div);
-            main.add(div);
-        }
-    }
-
-    /**
-     * Adds the overview comment as provided in the file specified by the
-     * "-overview" option on the command line.
-     *
-     * @param htmltree the documentation tree to which the overview comment will
-     *                 be added
-     */
-    protected void addOverviewComment(Content htmltree) {
-        if (!utils.getFullBody(configuration.overviewElement).isEmpty()) {
-            addInlineComment(configuration.overviewElement, htmltree);
-        }
-    }
-
-    /**
-     * Adds the top text (from the -top option), the upper
-     * navigation bar, and then the title (from the"-title"
-     * option), at the top of page.
-     *
-     * @param header the documentation tree to which the navigation bar header will be added
-     */
-    @Override
-    protected void addNavigationBarHeader(Content header) {
-        addTop(header);
-        navBar.setUserHeader(getUserHeaderFooter(true));
-        header.add(navBar.getContent(true));
-    }
-
-    /**
-     * Adds the lower navigation bar and the bottom text
-     * (from the -bottom option) at the bottom of page.
-     *
-     * @param footer the documentation tree to which the navigation bar footer will be added
-     */
-    @Override
-    protected void addNavigationBarFooter(Content footer) {
-        navBar.setUserFooter(getUserHeaderFooter(false));
-        footer.add(navBar.getContent(false));
-        addBottom(footer);
-    }
-
-    @Override
-    protected void addModulePackagesList(Map<ModuleElement, Set<PackageElement>> modules, String text,
-            String tableSummary, Content main, ModuleElement mdle) {
     }
 }

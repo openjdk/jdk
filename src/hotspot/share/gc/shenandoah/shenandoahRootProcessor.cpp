@@ -27,6 +27,7 @@
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
+#include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
@@ -242,10 +243,7 @@ ShenandoahRootEvacuator::ShenandoahRootEvacuator(ShenandoahHeap* heap, uint n_wo
   _evacuation_tasks(new SubTasksDone(SHENANDOAH_EVAC_NumElements)),
   _srs(n_workers),
   _phase(phase),
-  _coderoots_cset_iterator(ShenandoahCodeRoots::cset_iterator()),
-  _par_state_string(StringTable::weak_storage())
-
-{
+  _coderoots_cset_iterator(ShenandoahCodeRoots::cset_iterator()) {
   heap->phase_timings()->record_workers_start(_phase);
   if (ShenandoahStringDedup::is_enabled()) {
     StringDedup::gc_prologue(false);

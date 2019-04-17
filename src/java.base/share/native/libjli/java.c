@@ -204,11 +204,14 @@ static jboolean IsWildCardEnabled();
  */
 static jlong threadStackSize    = 0;  /* stack size of the new thread */
 static jlong maxHeapSize        = 0;  /* max heap size */
-static jlong initialHeapSize    = 0;  /* inital heap size */
+static jlong initialHeapSize    = 0;  /* initial heap size */
 
 /*
- * A minimum -Xss stack size suitable for all platforms.
- */
+ * A minimum initial-thread stack size suitable for most platforms.
+ * This is the minimum amount of stack needed to load the JVM such
+ * that it can reject a too small -Xss value. If this is too small
+ * JVM initialization would cause a StackOverflowError.
+  */
 #ifndef STACK_SIZE_MINIMUM
 #define STACK_SIZE_MINIMUM (64 * KB)
 #endif
@@ -934,16 +937,18 @@ AddOption(char *str, void *info)
     options[numOptions].optionString = str;
     options[numOptions++].extraInfo = info;
 
+    /*
+     * -Xss is used both by the JVM and here to establish the stack size of the thread
+     * created to launch the JVM. In the latter case we need to ensure we don't go
+     * below the minimum stack size allowed. If -Xss is zero that tells the JVM to use
+     * 'default' sizes (either from JVM or system configuration, e.g. 'ulimit -s' on linux),
+     * and is not itself a small stack size that will be rejected. So we ignore -Xss0 here.
+     */
     if (JLI_StrCCmp(str, "-Xss") == 0) {
         jlong tmp;
         if (parse_size(str + 4, &tmp)) {
             threadStackSize = tmp;
-            /*
-             * Make sure the thread stack size is big enough that we won't get a stack
-             * overflow before the JVM startup code can check to make sure the stack
-             * is big enough.
-             */
-            if (threadStackSize < (jlong)STACK_SIZE_MINIMUM) {
+            if (threadStackSize > 0 && threadStackSize < (jlong)STACK_SIZE_MINIMUM) {
                 threadStackSize = STACK_SIZE_MINIMUM;
             }
         }
@@ -2322,38 +2327,38 @@ ContinueInNewThread(InvocationFunctions* ifn, jlong threadStackSize,
                     int argc, char **argv,
                     int mode, char *what, int ret)
 {
-
-    /*
-     * If user doesn't specify stack size, check if VM has a preference.
-     * Note that HotSpot no longer supports JNI_VERSION_1_1 but it will
-     * return its default stack size through the init args structure.
-     */
     if (threadStackSize == 0) {
-      struct JDK1_1InitArgs args1_1;
-      memset((void*)&args1_1, 0, sizeof(args1_1));
-      args1_1.version = JNI_VERSION_1_1;
-      ifn->GetDefaultJavaVMInitArgs(&args1_1);  /* ignore return value */
-      if (args1_1.javaStackSize > 0) {
-         threadStackSize = args1_1.javaStackSize;
-      }
+        /*
+         * If the user hasn't specified a non-zero stack size ask the JVM for its default.
+         * A returned 0 means 'use the system default' for a platform, e.g., Windows.
+         * Note that HotSpot no longer supports JNI_VERSION_1_1 but it will
+         * return its default stack size through the init args structure.
+         */
+        struct JDK1_1InitArgs args1_1;
+        memset((void*)&args1_1, 0, sizeof(args1_1));
+        args1_1.version = JNI_VERSION_1_1;
+        ifn->GetDefaultJavaVMInitArgs(&args1_1);  /* ignore return value */
+        if (args1_1.javaStackSize > 0) {
+            threadStackSize = args1_1.javaStackSize;
+        }
     }
 
     { /* Create a new thread to create JVM and invoke main method */
-      JavaMainArgs args;
-      int rslt;
+        JavaMainArgs args;
+        int rslt;
 
-      args.argc = argc;
-      args.argv = argv;
-      args.mode = mode;
-      args.what = what;
-      args.ifn = *ifn;
+        args.argc = argc;
+        args.argv = argv;
+        args.mode = mode;
+        args.what = what;
+        args.ifn = *ifn;
 
-      rslt = CallJavaMainInNewThread(threadStackSize, (void*)&args);
-      /* If the caller has deemed there is an error we
-       * simply return that, otherwise we return the value of
-       * the callee
-       */
-      return (ret != 0) ? ret : rslt;
+        rslt = CallJavaMainInNewThread(threadStackSize, (void*)&args);
+        /* If the caller has deemed there is an error we
+         * simply return that, otherwise we return the value of
+         * the callee
+         */
+        return (ret != 0) ? ret : rslt;
     }
 }
 

@@ -828,9 +828,9 @@ class MacroAssembler: public Assembler {
   //--------------------------
   //---  Operations on arrays.
   //--------------------------
-  unsigned int Clear_Array(Register cnt_arg, Register base_pointer_arg, Register src_addr, Register src_len);
+  unsigned int Clear_Array(Register cnt_arg, Register base_pointer_arg, Register odd_tmp_reg);
   unsigned int Clear_Array_Const(long cnt, Register base);
-  unsigned int Clear_Array_Const_Big(long cnt, Register base_pointer_arg, Register src_addr, Register src_len);
+  unsigned int Clear_Array_Const_Big(long cnt, Register base_pointer_arg, Register odd_tmp_reg);
   unsigned int CopyRawMemory_AlignedDisjoint(Register src_reg, Register dst_reg,
                                              Register cnt_reg,
                                              Register tmp1_reg, Register tmp2_reg);

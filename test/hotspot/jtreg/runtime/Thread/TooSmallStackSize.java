@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -187,12 +187,18 @@ public class TooSmallStackSize {
         checkMinStackAllowed("-XX:ThreadStackSize=", ThreadStackSizeString, "513");
 
         /*
+         * Try with 0k which indicates that the default thread stack size from JVM will be used.
+         */
+        checkMinStackAllowed("-XX:ThreadStackSize=", ThreadStackSizeString, "0");
+
+        /*
          * Now redo the same tests with the compiler thread stack size:
          */
         checkStack("-XX:CompilerThreadStackSize=", CompilerThreadStackSizeString, "16");
         min_stack_allowed = checkStack("-XX:CompilerThreadStackSize=", CompilerThreadStackSizeString, "64");
         checkMinStackAllowed("-XX:CompilerThreadStackSize=", CompilerThreadStackSizeString, min_stack_allowed);
         checkMinStackAllowed("-XX:CompilerThreadStackSize=", CompilerThreadStackSizeString, "513");
+        checkMinStackAllowed("-XX:CompilerThreadStackSize=", CompilerThreadStackSizeString, "0");
 
         /*
          * Now redo the same tests with the VM thread stack size:
@@ -201,5 +207,6 @@ public class TooSmallStackSize {
         min_stack_allowed = checkStack("-XX:VMThreadStackSize=", VMThreadStackSizeString, "64");
         checkMinStackAllowed("-XX:VMThreadStackSize=", VMThreadStackSizeString, min_stack_allowed);
         checkMinStackAllowed("-XX:VMThreadStackSize=", VMThreadStackSizeString, "513");
+        checkMinStackAllowed("-XX:VMThreadStackSize=", VMThreadStackSizeString, "0");
     }
 }

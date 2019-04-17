@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package java.lang.invoke;
 
 import jdk.internal.misc.Unsafe;
+import jdk.internal.misc.VM;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.Label;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
@@ -191,6 +192,8 @@ public final class StringConcatFactory {
      */
     private static final ProxyClassesDumper DUMPER;
 
+    private static final Class<?> STRING_HELPER;
+
     static {
         // In case we need to double-back onto the StringConcatFactory during this
         // static initialization, make sure we have the reasonable defaults to complete
@@ -202,15 +205,20 @@ public final class StringConcatFactory {
         // DEBUG = false;        // implied
         // DUMPER = null;        // implied
 
-        Properties props = GetPropertyAction.privilegedGetProperties();
+        try {
+            STRING_HELPER = Class.forName("java.lang.StringConcatHelper");
+        } catch (Throwable e) {
+            throw new AssertionError(e);
+        }
+
         final String strategy =
-                props.getProperty("java.lang.invoke.stringConcat");
+                VM.getSavedProperty("java.lang.invoke.stringConcat");
         CACHE_ENABLE = Boolean.parseBoolean(
-                props.getProperty("java.lang.invoke.stringConcat.cache"));
+                VM.getSavedProperty("java.lang.invoke.stringConcat.cache"));
         DEBUG = Boolean.parseBoolean(
-                props.getProperty("java.lang.invoke.stringConcat.debug"));
+                VM.getSavedProperty("java.lang.invoke.stringConcat.debug"));
         final String dumpPath =
-                props.getProperty("java.lang.invoke.stringConcat.dumpClasses");
+                VM.getSavedProperty("java.lang.invoke.stringConcat.dumpClasses");
 
         STRATEGY = (strategy == null) ? DEFAULT_STRATEGY : Strategy.valueOf(strategy);
         CACHE = CACHE_ENABLE ? new ConcurrentHashMap<>() : null;
@@ -1519,6 +1527,33 @@ public final class StringConcatFactory {
 
         static MethodHandle generate(MethodType mt, Recipe recipe) throws Throwable {
 
+            // Fast-path two-argument Object + Object concatenations
+            if (recipe.getElements().size() == 2) {
+                // Two object arguments
+                if (mt.parameterCount() == 2 &&
+                        !mt.parameterType(0).isPrimitive() &&
+                        !mt.parameterType(1).isPrimitive()) {
+                    return SIMPLE;
+                }
+                // One element is a constant
+                if (mt.parameterCount() == 1 && !mt.parameterType(0).isPrimitive()) {
+                    MethodHandle mh = SIMPLE;
+                    // Insert constant element
+
+                    // First recipe element is a constant
+                    if (recipe.getElements().get(0).getTag() == TAG_CONST &&
+                        recipe.getElements().get(1).getTag() != TAG_CONST) {
+                        return MethodHandles.insertArguments(mh, 0,
+                                recipe.getElements().get(0).getValue());
+                    } else if (recipe.getElements().get(1).getTag() == TAG_CONST &&
+                               recipe.getElements().get(0).getTag() != TAG_CONST) {
+                        return MethodHandles.insertArguments(mh, 1,
+                                recipe.getElements().get(1).getValue());
+                    }
+                    // else... fall-through to slow-path
+                }
+            }
+
             // Create filters and obtain filtered parameter types. Filters would be used in the beginning
             // to convert the incoming arguments into the arguments we can process (e.g. Objects -> Strings).
             // The filtered argument type list is used all over in the combinators below.
@@ -1626,13 +1661,6 @@ public final class StringConcatFactory {
             return mh;
         }
 
-        @ForceInline
-        private static byte[] newArray(long indexCoder) {
-            byte coder = (byte)(indexCoder >> 32);
-            int index = (int)indexCoder;
-            return (byte[]) UNSAFE.allocateUninitializedArray(byte.class, index << coder);
-        }
-
         private static MethodHandle prepender(Class<?> cl) {
             return PREPENDERS.computeIfAbsent(cl, PREPEND);
         }
@@ -1659,16 +1687,15 @@ public final class StringConcatFactory {
             }
         };
 
+        private static final MethodHandle SIMPLE;
         private static final MethodHandle NEW_STRING;
         private static final MethodHandle NEW_ARRAY;
         private static final ConcurrentMap<Class<?>, MethodHandle> PREPENDERS;
         private static final ConcurrentMap<Class<?>, MethodHandle> MIXERS;
         private static final long INITIAL_CODER;
-        static final Class<?> STRING_HELPER;
 
         static {
             try {
-                STRING_HELPER = Class.forName("java.lang.StringConcatHelper");
                 MethodHandle initCoder = lookupStatic(Lookup.IMPL_LOOKUP, STRING_HELPER, "initialCoder", long.class);
                 INITIAL_CODER = (long) initCoder.invoke();
             } catch (Throwable e) {
@@ -1678,8 +1705,9 @@ public final class StringConcatFactory {
             PREPENDERS = new ConcurrentHashMap<>();
             MIXERS = new ConcurrentHashMap<>();
 
+            SIMPLE     = lookupStatic(Lookup.IMPL_LOOKUP, STRING_HELPER, "simpleConcat", String.class, Object.class, Object.class);
             NEW_STRING = lookupStatic(Lookup.IMPL_LOOKUP, STRING_HELPER, "newString", String.class, byte[].class, long.class);
-            NEW_ARRAY  = lookupStatic(Lookup.IMPL_LOOKUP, MethodHandleInlineCopyStrategy.class, "newArray", byte[].class, long.class);
+            NEW_ARRAY  = lookupStatic(Lookup.IMPL_LOOKUP, STRING_HELPER, "newArray", byte[].class, long.class);
         }
     }
 
@@ -1692,22 +1720,8 @@ public final class StringConcatFactory {
             // no instantiation
         }
 
-        private static class ObjectStringifier {
-
-            // We need some additional conversion for Objects in general, because String.valueOf(Object)
-            // may return null. String conversion rules in Java state we need to produce "null" String
-            // in this case, so we provide a customized version that deals with this problematic corner case.
-            private static String valueOf(Object value) {
-                String s;
-                return (value == null || (s = value.toString()) == null) ? "null" : s;
-            }
-
-            // Could have used MethodHandles.lookup() instead of Lookup.IMPL_LOOKUP, if not for the fact
-            // java.lang.invoke Lookups are explicitly forbidden to be retrieved using that API.
-            private static final MethodHandle INSTANCE =
-                    lookupStatic(Lookup.IMPL_LOOKUP, ObjectStringifier.class, "valueOf", String.class, Object.class);
-
-        }
+        private static final MethodHandle OBJECT_INSTANCE =
+            lookupStatic(Lookup.IMPL_LOOKUP, STRING_HELPER, "stringOf", String.class, Object.class);
 
         private static class FloatStringifiers {
             private static final MethodHandle FLOAT_INSTANCE =
@@ -1751,7 +1765,7 @@ public final class StringConcatFactory {
          */
         static MethodHandle forMost(Class<?> t) {
             if (!t.isPrimitive()) {
-                return ObjectStringifier.INSTANCE;
+                return OBJECT_INSTANCE;
             } else if (t == float.class) {
                 return FloatStringifiers.FLOAT_INSTANCE;
             } else if (t == double.class) {
