@@ -63,6 +63,9 @@ do {                                                                           \
 // For backward compatibility.
 #define assert(p, ...) vmassert(p, __VA_ARGS__)
 
+#define precond(p)   assert(p, "precond")
+#define postcond(p)  assert(p, "postcond")
+
 #ifndef ASSERT
 #define vmassert_status(p, status, msg)
 #else

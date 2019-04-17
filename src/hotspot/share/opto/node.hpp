@@ -1007,9 +1007,9 @@ public:
   // value, if it appears (by local graph inspection) to be computed by a simple conditional.
   bool is_iteratively_computed();
 
-  // Determine if a node is Counted loop induction variable.
-  // The method is defined in loopnode.cpp.
-  const Node* is_loop_iv() const;
+  // Determine if a node is a counted loop induction variable.
+  // NOTE: The method is defined in "loopnode.cpp".
+  bool is_cloop_ind_var() const;
 
   // Return a node with opcode "opc" and same inputs as "this" if one can
   // be found; Otherwise return NULL;
