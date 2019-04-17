@@ -1415,7 +1415,7 @@ class JavaThread: public Thread {
   // Whenever a thread transitions from native to vm/java it must suspend
   // if external|deopt suspend is present.
   bool is_suspend_after_native() const {
-    return (_suspend_flags & (_external_suspend | _deopt_suspend)) != 0;
+    return (_suspend_flags & (_external_suspend | _deopt_suspend JFR_ONLY(| _trace_flag))) != 0;
   }
 
   // external suspend request is completed
