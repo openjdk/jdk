@@ -46,6 +46,7 @@ compiler.err.unsupported.cross.fp.lit                   # Scanner: host system d
 compiler.misc.bad.class.signature                       # bad class file
 compiler.misc.bad.const.pool.tag                        # bad class file
 compiler.misc.bad.const.pool.tag.at                     # bad class file
+compiler.misc.bad.const.pool.index                      # bad class file
 compiler.misc.bad.constant.range                        # bad class file
 compiler.misc.bad.constant.value                        # bad class file
 compiler.misc.bad.enclosing.class                       # bad class file

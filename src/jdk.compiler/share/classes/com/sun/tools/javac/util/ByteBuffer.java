@@ -147,6 +147,90 @@ public class ByteBuffer {
         appendBytes(name.getByteArray(), name.getByteOffset(), name.getByteLength());
     }
 
+     /** Append the content of a given input stream.
+     */
+    public void appendStream(InputStream is) throws IOException {
+        try {
+            int start = length;
+            int initialSize = is.available();
+            elems = ArrayUtils.ensureCapacity(elems, length + initialSize);
+            int r = is.read(elems, start, initialSize);
+            int bp = start;
+            while (r != -1) {
+                bp += r;
+                elems = ArrayUtils.ensureCapacity(elems, bp);
+                r = is.read(elems, bp, elems.length - bp);
+            }
+        } finally {
+            try {
+                is.close();
+            } catch (IOException e) {
+                /* Ignore any errors, as this stream may have already
+                 * thrown a related exception which is the one that
+                 * should be reported.
+                 */
+            }
+        }
+    }
+
+    /** Extract an integer at position bp from elems.
+     */
+    public int getInt(int bp) {
+        return
+            ((elems[bp] & 0xFF) << 24) +
+            ((elems[bp+1] & 0xFF) << 16) +
+            ((elems[bp+2] & 0xFF) << 8) +
+            (elems[bp+3] & 0xFF);
+    }
+
+
+    /** Extract a long integer at position bp from elems.
+     */
+    public long getLong(int bp) {
+        DataInputStream elemsin =
+            new DataInputStream(new ByteArrayInputStream(elems, bp, 8));
+        try {
+            return elemsin.readLong();
+        } catch (IOException e) {
+            throw new AssertionError(e);
+        }
+    }
+
+    /** Extract a float at position bp from elems.
+     */
+    public float getFloat(int bp) {
+        DataInputStream elemsin =
+            new DataInputStream(new ByteArrayInputStream(elems, bp, 4));
+        try {
+            return elemsin.readFloat();
+        } catch (IOException e) {
+            throw new AssertionError(e);
+        }
+    }
+
+    /** Extract a double at position bp from elems.
+     */
+    public double getDouble(int bp) {
+        DataInputStream elemsin =
+            new DataInputStream(new ByteArrayInputStream(elems, bp, 8));
+        try {
+            return elemsin.readDouble();
+        } catch (IOException e) {
+            throw new AssertionError(e);
+        }
+    }
+
+    /** Extract a character at position bp from elems.
+     */
+    public char getChar(int bp) {
+        return
+            (char)(((elems[bp] & 0xFF) << 8) + (elems[bp+1] & 0xFF));
+    }
+
+    public byte getByte(int bp) {
+        return elems[bp];
+    }
+
     /** Reset to zero length.
      */
     public void reset() {

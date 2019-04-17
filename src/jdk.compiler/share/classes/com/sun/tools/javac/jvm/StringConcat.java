@@ -26,7 +26,9 @@
 package com.sun.tools.javac.jvm;
 
 import com.sun.tools.javac.code.*;
+import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.comp.Resolve;
+import com.sun.tools.javac.jvm.PoolConstant.LoadableConstant;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeMaker;
@@ -222,7 +224,7 @@ public abstract class StringConcat {
 
         private JCDiagnostic.DiagnosticPosition newStringBuilder(JCTree tree) {
             JCDiagnostic.DiagnosticPosition pos = tree.pos();
-            gen.getCode().emitop2(new_, gen.makeRef(pos, syms.stringBuilderType));
+            gen.getCode().emitop2(new_, gen.makeRef(pos, syms.stringBuilderType), syms.stringBuilderType);
             gen.getCode().emitop0(dup);
             gen.callMethod(pos, syms.stringBuilderType, names.init, List.nil(), false);
             return pos;
@@ -378,10 +380,9 @@ public abstract class StringConcat {
 
                 Symbol.DynamicMethodSymbol dynSym = new Symbol.DynamicMethodSymbol(names.makeConcat,
                         syms.noSymbol,
-                        ClassFile.REF_invokeStatic,
-                        (Symbol.MethodSymbol)bsm,
+                        ((MethodSymbol)bsm).asHandle(),
                         indyType,
-                        List.nil().toArray());
+                        List.nil().toArray(new LoadableConstant[0]));
 
                 Items.Item item = gen.getItems().makeDynamicItem(dynSym);
                 item.invoke();
@@ -416,7 +417,7 @@ public abstract class StringConcat {
 
                 StringBuilder recipe = new StringBuilder(t.size());
                 ListBuffer<Type> dynamicArgs = new ListBuffer<>();
-                ListBuffer<Object> staticArgs = new ListBuffer<>();
+                ListBuffer<LoadableConstant> staticArgs = new ListBuffer<>();
 
                 for (JCTree arg : t) {
                     Object constVal = arg.type.constValue();
@@ -431,7 +432,7 @@ public abstract class StringConcat {
                         String a = arg.type.stringValue();
                         if (a.indexOf(TAG_CONST) != -1 || a.indexOf(TAG_ARG) != -1) {
                             recipe.append(TAG_CONST);
-                            staticArgs.add(a);
+                            staticArgs.add(LoadableConstant.String(a));
                         } else {
                             recipe.append(a);
                         }
@@ -463,7 +464,7 @@ public abstract class StringConcat {
         }
 
         /** Produce the actual invokedynamic call to StringConcatFactory */
-        private void doCall(Type type, JCDiagnostic.DiagnosticPosition pos, String recipe, List<Object> staticArgs, List<Type> dynamicArgTypes) {
+        private void doCall(Type type, JCDiagnostic.DiagnosticPosition pos, String recipe, List<LoadableConstant> staticArgs, List<Type> dynamicArgTypes) {
             Type.MethodType indyType = new Type.MethodType(dynamicArgTypes,
                     type,
                     List.nil(),
@@ -474,8 +475,8 @@ public abstract class StringConcat {
                 make.at(pos);
 
                 ListBuffer<Type> constTypes = new ListBuffer<>();
-                ListBuffer<Object> constants = new ListBuffer<>();
-                for (Object t : staticArgs) {
+                ListBuffer<LoadableConstant> constants = new ListBuffer<>();
+                for (LoadableConstant t : staticArgs) {
                     constants.add(t);
                     constTypes.add(syms.stringType);
                 }
@@ -495,10 +496,10 @@ public abstract class StringConcat {
 
                 Symbol.DynamicMethodSymbol dynSym = new Symbol.DynamicMethodSymbol(names.makeConcatWithConstants,
                         syms.noSymbol,
-                        ClassFile.REF_invokeStatic,
-                        (Symbol.MethodSymbol)bsm,
+                        ((MethodSymbol)bsm).asHandle(),
                         indyType,
-                        List.<Object>of(recipe).appendList(constants).toArray());
+                        List.of(LoadableConstant.String(recipe))
+                                .appendList(constants).toArray(new LoadableConstant[constants.size()]));
 
                 Items.Item item = gen.getItems().makeDynamicItem(dynSym);
                 item.invoke();

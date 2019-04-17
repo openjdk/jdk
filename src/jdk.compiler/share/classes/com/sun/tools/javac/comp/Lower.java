@@ -93,7 +93,6 @@ public class Lower extends TreeTranslator {
     private final Attr attr;
     private TreeMaker make;
     private DiagnosticPosition make_pos;
-    private final ClassWriter writer;
     private final ConstFold cfolder;
     private final Target target;
     private final Source source;
@@ -116,7 +115,6 @@ public class Lower extends TreeTranslator {
         chk = Check.instance(context);
         attr = Attr.instance(context);
         make = TreeMaker.instance(context);
-        writer = ClassWriter.instance(context);
         cfolder = ConstFold.instance(context);
         target = Target.instance(context);
         source = Source.instance(context);
@@ -475,7 +473,7 @@ public class Lower extends TreeTranslator {
                 .fromString(target.syntheticNameChar() +
                             "SwitchMap" +
                             target.syntheticNameChar() +
-                            writer.xClassName(forEnum.type).toString()
+                            names.fromUtf(ClassWriter.externalize(forEnum.type.tsym.flatName())).toString()
                             .replace('/', '.')
                             .replace('.', target.syntheticNameChar()));
             ClassSymbol outerCacheClass = outerCacheClass();

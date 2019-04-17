@@ -24,6 +24,9 @@
  */
 package com.sun.tools.javac.jvm;
 
+import com.sun.tools.javac.util.ByteBuffer;
+import com.sun.tools.javac.util.Name.NameMapper;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -55,16 +58,15 @@ public class ModuleNameReader {
 
     /** The buffer containing the currently read class file.
      */
-    private byte[] buf = new byte[INITIAL_BUFFER_SIZE];
+    private ByteBuffer buf = new ByteBuffer(INITIAL_BUFFER_SIZE);
 
     /** The current input pointer.
      */
     private int bp;
 
-    /** For every constant pool entry, an index into buf where the
-     *  defining section of the entry is found.
+    /** The constant pool reader.
      */
-    private int[] poolIdx;
+    private PoolReader reader;
 
     public ModuleNameReader() {
     }
@@ -83,7 +85,8 @@ public class ModuleNameReader {
 
     public String readModuleName(InputStream in) throws IOException, BadClassFile {
         bp = 0;
-        buf = readInputStream(buf, in);
+        buf.reset();
+        buf.appendStream(in);
 
         int magic = nextInt();
         if (magic != JAVA_MAGIC)
@@ -94,7 +97,8 @@ public class ModuleNameReader {
         if (majorVersion < 53)
             throw new BadClassFile("bad major version number for module: " + majorVersion);
 
-        indexPool();
+        reader = new PoolReader(buf);
+        bp = reader.readPool(buf, bp);
 
         int access_flags = nextChar();
         if (access_flags != 0x8000)
@@ -110,8 +114,8 @@ public class ModuleNameReader {
         for (int i = 0; i < attributes_count; i++) {
             int attr_name = nextChar();
             int attr_length = nextInt();
-            if (getUtf8Value(attr_name, false).equals("Module") && attr_length > 2) {
-                return getModuleName(nextChar());
+            if (reader.peekName(attr_name, utf8Mapper(false)).equals("Module") && attr_length > 2) {
+                return reader.peekModuleName(nextChar(), utf8Mapper(true));
             } else {
                 // skip over unknown attributes
                 bp += attr_length;
@@ -125,132 +129,26 @@ public class ModuleNameReader {
             throw new BadClassFile("invalid " + name + " for module: " + count);
     }
 
-    /** Extract a character at position bp from buf.
-     */
-    char getChar(int bp) {
-        return
-            (char)(((buf[bp] & 0xFF) << 8) + (buf[bp+1] & 0xFF));
-    }
-
     /** Read a character.
      */
     char nextChar() {
-        return (char)(((buf[bp++] & 0xFF) << 8) + (buf[bp++] & 0xFF));
+        char res = buf.getChar(bp);
+        bp += 2;
+        return res;
     }
 
     /** Read an integer.
      */
     int nextInt() {
-        return
-            ((buf[bp++] & 0xFF) << 24) +
-            ((buf[bp++] & 0xFF) << 16) +
-            ((buf[bp++] & 0xFF) << 8) +
-            (buf[bp++] & 0xFF);
+        int res = buf.getInt(bp);
+        bp += 4;
+        return res;
     }
 
-    /** Index all constant pool entries, writing their start addresses into
-     *  poolIdx.
-     */
-    void indexPool() throws BadClassFile {
-        poolIdx = new int[nextChar()];
-        int i = 1;
-        while (i < poolIdx.length) {
-            poolIdx[i++] = bp;
-            byte tag = buf[bp++];
-            switch (tag) {
-            case CONSTANT_Utf8: case CONSTANT_Unicode: {
-                int len = nextChar();
-                bp = bp + len;
-                break;
-            }
-            case CONSTANT_Class:
-            case CONSTANT_String:
-            case CONSTANT_MethodType:
-            case CONSTANT_Module:
-            case CONSTANT_Package:
-                bp = bp + 2;
-                break;
-            case CONSTANT_MethodHandle:
-                bp = bp + 3;
-                break;
-            case CONSTANT_Fieldref:
-            case CONSTANT_Methodref:
-            case CONSTANT_InterfaceMethodref:
-            case CONSTANT_NameandType:
-            case CONSTANT_Integer:
-            case CONSTANT_Float:
-            case CONSTANT_InvokeDynamic:
-                bp = bp + 4;
-                break;
-            case CONSTANT_Long:
-            case CONSTANT_Double:
-                bp = bp + 8;
-                i++;
-                break;
-            default:
-                throw new BadClassFile("malformed constant pool");
-            }
-        }
+    NameMapper<String> utf8Mapper(boolean internalize) {
+        return internalize ?
+                (buf, offset, len) -> new String(ClassFile.internalize(buf, offset, len)) :
+                String::new;
     }
 
-    String getUtf8Value(int index, boolean internalize) throws BadClassFile {
-        int utf8Index = poolIdx[index];
-        if (buf[utf8Index] == CONSTANT_Utf8) {
-            int len = getChar(utf8Index + 1);
-            int start = utf8Index + 3;
-            if (internalize) {
-                return new String(ClassFile.internalize(buf, start, len));
-            } else {
-                return new String(buf, start, len);
-            }
-        }
-        throw new BadClassFile("bad name at index " + index);
-    }
-
-    String getModuleName(int index) throws BadClassFile {
-        int infoIndex = poolIdx[index];
-        if (buf[infoIndex] == CONSTANT_Module) {
-            return getUtf8Value(getChar(infoIndex + 1), true);
-        } else {
-            throw new BadClassFile("bad module name at index " + index);
-        }
-    }
-
-    private static byte[] readInputStream(byte[] buf, InputStream s) throws IOException {
-        try {
-            buf = ensureCapacity(buf, s.available());
-            int r = s.read(buf);
-            int bp = 0;
-            while (r != -1) {
-                bp += r;
-                buf = ensureCapacity(buf, bp);
-                r = s.read(buf, bp, buf.length - bp);
-            }
-            return buf;
-        } finally {
-            try {
-                s.close();
-            } catch (IOException e) {
-                /* Ignore any errors, as this stream may have already
-                 * thrown a related exception which is the one that
-                 * should be reported.
-                 */
-            }
-        }
-    }
-
-    /*
-     * ensureCapacity will increase the buffer as needed, taking note that
-     * the new buffer will always be greater than the needed and never
-     * exactly equal to the needed size or bp. If equal then the read (above)
-     * will infinitely loop as buf.length - bp == 0.
-     */
-    private static byte[] ensureCapacity(byte[] buf, int needed) {
-        if (buf.length <= needed) {
-            byte[] old = buf;
-            buf = new byte[Integer.highestOneBit(needed) << 1];
-            System.arraycopy(old, 0, buf, 0, old.length);
-        }
-        return buf;
-    }
 }

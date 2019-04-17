@@ -60,25 +60,22 @@ import com.sun.tools.classfile.Instruction;
 import com.sun.tools.classfile.LineNumberTable_attribute;
 import com.sun.tools.classfile.Method;
 
-import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.code.Symbol;
-import com.sun.tools.javac.code.Symbol.MethodSymbol;
+import com.sun.tools.javac.code.Symbol.MethodHandleSymbol;
 import com.sun.tools.javac.code.Symtab;
+import com.sun.tools.javac.code.Type.ClassType;
+import com.sun.tools.javac.code.Type.MethodType;
 import com.sun.tools.javac.code.Types;
-import com.sun.tools.javac.jvm.Pool;
+import com.sun.tools.javac.jvm.PoolConstant.LoadableConstant;
 import com.sun.tools.javac.tree.JCTree.JCMethodInvocation;
 import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
 import com.sun.tools.javac.tree.JCTree.JCIdent;
-import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Names;
 
 import combo.ComboParameter;
-import combo.ComboTask;
 import combo.ComboTestHelper;
 import combo.ComboInstance;
 import combo.ComboTask.Result;
-
-import static com.sun.tools.javac.jvm.ClassFile.*;
 
 public class TestInvokeDynamic extends ComboInstance<TestInvokeDynamic> {
 
@@ -168,21 +165,24 @@ public class TestInvokeDynamic extends ComboInstance<TestInvokeDynamic> {
 
         abstract boolean check(CPInfo cpInfo) throws Exception;
 
-        Object getValue(Symtab syms, Names names, Types types) {
+        LoadableConstant getValue(Symtab syms) {
             switch (this) {
                 case STRING:
+                    return LoadableConstant.String((String)value);
                 case INTEGER:
+                    return LoadableConstant.Int((Integer)value);
                 case LONG:
+                    return LoadableConstant.Long((Long)value);
                 case FLOAT:
+                    return LoadableConstant.Float((Float)value);
                 case DOUBLE:
-                    return value;
+                    return LoadableConstant.Double((Double)value);
                 case CLASS:
-                    return syms.stringType.tsym;
+                    return (ClassType)syms.stringType;
                 case METHOD_HANDLE:
-                    return new Pool.MethodHandle(REF_invokeVirtual,
-                            syms.arrayCloneMethod, types);
+                    return syms.arrayCloneMethod.asHandle();
                 case METHOD_TYPE:
-                    return syms.arrayCloneMethod.type;
+                    return ((MethodType)syms.arrayCloneMethod.type);
                 default:
                     throw new AssertionError();
             }
@@ -394,7 +394,7 @@ public class TestInvokeDynamic extends ComboInstance<TestInvokeDynamic> {
 
     class Indifier extends TreeScanner<Void, Void> implements TaskListener {
 
-        MethodSymbol bsm;
+        MethodHandleSymbol bsm;
         Symtab syms;
         Names names;
         Types types;
@@ -424,12 +424,12 @@ public class TestInvokeDynamic extends ComboInstance<TestInvokeDynamic> {
             JCIdent ident = (JCIdent)apply.meth;
             Symbol oldSym = ident.sym;
             if (!oldSym.isConstructor()) {
-                Object[] staticArgs = new Object[arity.arity];
+                LoadableConstant[] staticArgs = new LoadableConstant[arity.arity];
                 for (int i = 0; i < arity.arity ; i++) {
-                    staticArgs[i] = saks[i].getValue(syms, names, types);
+                    staticArgs[i] = saks[i].getValue(syms);
                 }
                 ident.sym = new Symbol.DynamicMethodSymbol(oldSym.name,
-                        oldSym.owner, REF_invokeStatic, bsm, oldSym.type, staticArgs);
+                        oldSym.owner, bsm, oldSym.type, staticArgs);
             }
             return null;
         }
@@ -438,7 +438,7 @@ public class TestInvokeDynamic extends ComboInstance<TestInvokeDynamic> {
         public Void visitMethod(MethodTree node, Void p) {
             super.visitMethod(node, p);
             if (node.getName().toString().equals("bsm")) {
-                bsm = ((JCMethodDecl)node).sym;
+                bsm = ((JCMethodDecl)node).sym.asHandle();
             }
             return null;
         }

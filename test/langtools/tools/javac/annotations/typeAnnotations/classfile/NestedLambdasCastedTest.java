@@ -53,10 +53,10 @@ public class NestedLambdasCastedTest {
                       "private static strictfp void lambda$main$2();",
                       "private static strictfp void lambda$main$1();",
                       "private static strictfp void lambda$main$0();",
-                      "0: #62(#63=s#64): CAST, offset=5, type_index=0",
-                      "0: #62(#63=s#69): CAST, offset=5, type_index=0",
-                      "0: #62(#63=s#72): CAST, offset=5, type_index=0",
-                      "0: #62(#63=s#75): CAST, offset=5, type_index=0"
+                      "0: #111(#112=s#113): CAST, offset=5, type_index=0",
+                      "0: #111(#112=s#119): CAST, offset=5, type_index=0",
+                      "0: #111(#112=s#122): CAST, offset=5, type_index=0",
+                      "0: #111(#112=s#125): CAST, offset=5, type_index=0"
         };
     }
 
