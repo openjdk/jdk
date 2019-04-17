@@ -55,11 +55,7 @@ bool ZBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
 
   // Heal oops and disarm
   ZNMethodOopClosure cl;
-  nm->oops_do(&cl);
-  nm->fix_oop_relocations();
-
-  OrderAccess::release();
-
+  ZNMethod::nmethod_oops_do(nm, &cl);
   disarm(nm);
 
   return true;
