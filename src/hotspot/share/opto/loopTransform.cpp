@@ -2952,11 +2952,11 @@ void IdealLoopTree::remove_main_post_loops(CountedLoopNode *cl, PhaseIdealLoop *
   phase->_igvn.replace_input_of(main_cmp, 2, main_cmp->in(2)->in(1));
 }
 
-//------------------------------policy_do_remove_empty_loop--------------------
-// Micro-benchmark spamming.  Policy is to always remove empty loops.
-// The 'DO' part is to replace the trip counter with the value it will
-// have on the last iteration.  This will break the loop.
-bool IdealLoopTree::policy_do_remove_empty_loop( PhaseIdealLoop *phase ) {
+//------------------------------do_remove_empty_loop---------------------------
+// We always attempt remove empty loops.   The approach is to replace the trip
+// counter with the value it will have on the last iteration.  This will break
+// the loop.
+bool IdealLoopTree::do_remove_empty_loop(PhaseIdealLoop *phase) {
   // Minimum size must be empty loop
   if (_body.size() > EMPTY_LOOP_SIZE)
     return false;
@@ -3066,12 +3066,12 @@ bool IdealLoopTree::policy_do_remove_empty_loop( PhaseIdealLoop *phase ) {
   return true;
 }
 
-//------------------------------policy_do_one_iteration_loop-------------------
+//------------------------------do_one_iteration_loop--------------------------
 // Convert one iteration loop into normal code.
-bool IdealLoopTree::policy_do_one_iteration_loop( PhaseIdealLoop *phase ) {
-  if (!_head->as_Loop()->is_valid_counted_loop())
+bool IdealLoopTree::do_one_iteration_loop(PhaseIdealLoop *phase) {
+  if (!_head->as_Loop()->is_valid_counted_loop()) {
     return false; // Only for counted loop
-
+  }
   CountedLoopNode *cl = _head->as_CountedLoop();
   if (!cl->has_exact_trip_count() || cl->trip_count() != 1) {
     return false;
@@ -3104,13 +3104,13 @@ bool IdealLoopTree::iteration_split_impl( PhaseIdealLoop *phase, Node_List &old_
   compute_trip_count(phase);
 
   // Convert one iteration loop into normal code.
-  if (policy_do_one_iteration_loop(phase))
+  if (do_one_iteration_loop(phase)) {
     return true;
-
+  }
   // Check and remove empty loops (spam micro-benchmarks)
-  if (policy_do_remove_empty_loop(phase))
+  if (do_remove_empty_loop(phase)) {
     return true;  // Here we removed an empty loop
-
+  }
   bool should_peel = policy_peeling(phase); // Should we peel?
 
   bool should_unswitch = policy_unswitching(phase);
