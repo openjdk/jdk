@@ -736,17 +736,17 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
 
   _local_loop_unroll_limit = LoopUnrollLimit;
   _local_loop_unroll_factor = 4;
-  int future_unroll_ct = cl->unrolled_count() * 2;
+  int future_unroll_cnt = cl->unrolled_count() * 2;
   if (!cl->is_vectorized_loop()) {
-    if (future_unroll_ct > LoopMaxUnroll) return false;
+    if (future_unroll_cnt > LoopMaxUnroll) return false;
   } else {
     // obey user constraints on vector mapped loops with additional unrolling applied
     int unroll_constraint = (cl->slp_max_unroll()) ? cl->slp_max_unroll() : 1;
-    if ((future_unroll_ct / unroll_constraint) > LoopMaxUnroll) return false;
+    if ((future_unroll_cnt / unroll_constraint) > LoopMaxUnroll) return false;
   }
 
   // Check for initial stride being a small enough constant
-  if (abs(cl->stride_con()) > (1<<2)*future_unroll_ct) return false;
+  if (abs(cl->stride_con()) > (1<<2)*future_unroll_cnt) return false;
 
   // Don't unroll if the next round of unrolling would push us
   // over the expected trip count of the loop.  One is subtracted
@@ -754,8 +754,8 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
   // executes 1 iteration.
   if (UnrollLimitForProfileCheck > 0 &&
       cl->profile_trip_cnt() != COUNT_UNKNOWN &&
-      future_unroll_ct        > UnrollLimitForProfileCheck &&
-      (float)future_unroll_ct > cl->profile_trip_cnt() - 1.0) {
+      future_unroll_cnt        > UnrollLimitForProfileCheck &&
+      (float)future_unroll_cnt > cl->profile_trip_cnt() - 1.0) {
     return false;
   }
 
@@ -764,8 +764,8 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
   //   and rounds of "unroll,optimize" are not making significant progress
   //   Progress defined as current size less than 20% larger than previous size.
   if (UseSuperWord && cl->node_count_before_unroll() > 0 &&
-      future_unroll_ct > LoopUnrollMin &&
-      (future_unroll_ct - 1) * (100 / LoopPercentProfileLimit) > cl->profile_trip_cnt() &&
+      future_unroll_cnt > LoopUnrollMin &&
+      (future_unroll_cnt - 1) * (100 / LoopPercentProfileLimit) > cl->profile_trip_cnt() &&
       1.2 * cl->node_count_before_unroll() < (double)_body.size()) {
     return false;
   }
@@ -849,8 +849,8 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
     if (LoopMaxUnroll > _local_loop_unroll_factor) {
       // Once policy_slp_analysis succeeds, mark the loop with the
       // maximal unroll factor so that we minimize analysis passes
-      if (future_unroll_ct >= _local_loop_unroll_factor) {
-        policy_unroll_slp_analysis(cl, phase, future_unroll_ct);
+      if (future_unroll_cnt >= _local_loop_unroll_factor) {
+        policy_unroll_slp_analysis(cl, phase, future_unroll_cnt);
       }
     }
   }
@@ -860,7 +860,7 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
     LoopMaxUnroll = slp_max_unroll_factor;
   }
   if (cl->has_passed_slp()) {
-    if (slp_max_unroll_factor >= future_unroll_ct) return true;
+    if (slp_max_unroll_factor >= future_unroll_cnt) return true;
     // Normal case: loop too big
     return false;
   }
@@ -876,7 +876,7 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
 
   if (cl->is_unroll_only()) {
     if (TraceSuperWordLoopUnrollAnalysis) {
-      tty->print_cr("policy_unroll passed vector loop(vlen=%d,factor = %d)\n", slp_max_unroll_factor, future_unroll_ct);
+      tty->print_cr("policy_unroll passed vector loop(vlen=%d,factor = %d)\n", slp_max_unroll_factor, future_unroll_cnt);
     }
   }
 
@@ -884,7 +884,7 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
   return true;
 }
 
-void IdealLoopTree::policy_unroll_slp_analysis(CountedLoopNode *cl, PhaseIdealLoop *phase, int future_unroll_ct) {
+void IdealLoopTree::policy_unroll_slp_analysis(CountedLoopNode *cl, PhaseIdealLoop *phase, int future_unroll_cnt) {
   // Enable this functionality target by target as needed
   if (SuperWordLoopUnrollAnalysis) {
     if (!cl->was_slp_analyzed()) {
@@ -899,7 +899,7 @@ void IdealLoopTree::policy_unroll_slp_analysis(CountedLoopNode *cl, PhaseIdealLo
 
     if (cl->has_passed_slp()) {
       int slp_max_unroll_factor = cl->slp_max_unroll();
-      if (slp_max_unroll_factor >= future_unroll_ct) {
+      if (slp_max_unroll_factor >= future_unroll_cnt) {
         int new_limit = cl->node_count_before_unroll() * slp_max_unroll_factor;
         if (new_limit > LoopUnrollLimit) {
           if (TraceSuperWordLoopUnrollAnalysis) {
