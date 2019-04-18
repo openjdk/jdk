@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8087112
+ * @bug 8087112 8222527
  * @summary this test verifies that a client may provides authorization
  *          headers directly when connecting with a server over SSL, and
  *          it verifies that the client honor the jdk.http.auth.*.disabledSchemes
@@ -45,10 +45,12 @@
  * @run main/othervm/timeout=300
  *          -Djdk.http.auth.proxying.disabledSchemes=Basic
  *          -Djdk.http.auth.tunneling.disabledSchemes=Basic
+ *          -Dtest.requiresHost=true
  *          ProxyAuthDisabledSchemesSSL SSL PROXY
  * @run main/othervm/timeout=300
  *          -Djdk.http.auth.proxying.disabledSchemes=Digest
  *          -Djdk.http.auth.tunneling.disabledSchemes=Digest
+ *          -Dtest.requiresHost=true
  *          ProxyAuthDisabledSchemesSSL SSL PROXY
  */
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,8 @@ class Http1Request {
         HttpClient client = http1Exchange.client();
 
         // Filter overridable headers from userHeaders
-        userHeaders = HttpHeaders.of(userHeaders.map(), Utils.CONTEXT_RESTRICTED(client));
+        userHeaders = HttpHeaders.of(userHeaders.map(),
+                      connection.contextRestricted(request, client));
 
         final HttpHeaders uh = userHeaders;
 

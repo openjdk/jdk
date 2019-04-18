@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,8 +47,9 @@ import static java.lang.System.out;
  *          proxy P is downgraded to HTTP/1.1, then a new h2 request
  *          going to a different host through the same proxy will not
  *          be preemptively downgraded. That, is the stack should attempt
- *          a new h2 connection to the new host.
- * @bug 8196967
+ *          a new h2 connection to the new host. It also verifies that
+ *          the stack sends the appropriate "host" header to the proxy.
+ * @bug 8196967 8222527
  * @library /test/lib http2/server
  * @build jdk.test.lib.net.SimpleSSLContext HttpServerAdapters DigestEchoServer HttpsTunnelTest
  * @modules java.net.http/jdk.internal.net.http.common
@@ -58,7 +59,14 @@ import static java.lang.System.out;
  *          java.base/sun.net.www.http
  *          java.base/sun.net.www
  *          java.base/sun.net
- * @run main/othervm -Djdk.internal.httpclient.debug=true HttpsTunnelTest
+ * @run main/othervm -Dtest.requiresHost=true
+ *                   -Djdk.httpclient.HttpClient.log=headers
+ *                   -Djdk.internal.httpclient.debug=true HttpsTunnelTest
+ * @run main/othervm -Dtest.requiresHost=true
+ *                   -Djdk.httpclient.allowRestrictedHeaders=host
+ *                   -Djdk.httpclient.HttpClient.log=headers
+ *                   -Djdk.internal.httpclient.debug=true HttpsTunnelTest
+ *
  */
 
 public class HttpsTunnelTest implements HttpServerAdapters {
@@ -116,6 +124,18 @@ public class HttpsTunnelTest implements HttpServerAdapters {
         try {
             URI uri1 = new URI("https://" + http1Server.serverAuthority() + "/foo/https1");
             URI uri2 = new URI("https://" + http2Server.serverAuthority() + "/foo/https2");
+
+            boolean provideCustomHost = "host".equalsIgnoreCase(
+                    System.getProperty("jdk.httpclient.allowRestrictedHeaders",""));
+
+            String customHttp1Host = null, customHttp2Host = null;
+            if (provideCustomHost) {
+                customHttp1Host = makeCustomHostString(http1Server, uri1);
+                out.println("HTTP/1.1: <" + uri1 + "> [custom host: " + customHttp1Host + "]");
+                customHttp2Host = makeCustomHostString(http2Server, uri2);
+                out.println("HTTP/2:   <" + uri2 + "> [custom host: " + customHttp2Host + "]");
+            }
+
             ProxySelector ps = ProxySelector.of(proxy.getProxyAddress());
                     //HttpClient.Builder.NO_PROXY;
             HttpsTunnelTest test = new HttpsTunnelTest();
@@ -126,11 +146,12 @@ public class HttpsTunnelTest implements HttpServerAdapters {
             assert lines.size() == data.length;
             String body = lines.stream().collect(Collectors.joining("\r\n"));
             HttpRequest.BodyPublisher reqBody = HttpRequest.BodyPublishers.ofString(body);
-            HttpRequest req1 = HttpRequest
+            HttpRequest.Builder req1Builder = HttpRequest
                     .newBuilder(uri1)
                     .version(Version.HTTP_2)
-                    .POST(reqBody)
-                    .build();
+                    .POST(reqBody);
+            if (provideCustomHost) req1Builder.header("host", customHttp1Host);
+            HttpRequest req1 = req1Builder.build();
             out.println("\nPosting to HTTP/1.1 server at: " + req1);
             HttpResponse<Stream<String>> response = client.send(req1, BodyHandlers.ofLines());
             out.println("Checking response...");
@@ -145,12 +166,14 @@ public class HttpsTunnelTest implements HttpServerAdapters {
             if (!lines.equals(respLines)) {
                 throw new RuntimeException("Unexpected response 1: " + respLines);
             }
+
             HttpRequest.BodyPublisher reqBody2 = HttpRequest.BodyPublishers.ofString(body);
-            HttpRequest req2 = HttpRequest
+            HttpRequest.Builder req2Builder = HttpRequest
                     .newBuilder(uri2)
                     .version(Version.HTTP_2)
-                    .POST(reqBody2)
-                    .build();
+                    .POST(reqBody2);
+            if (provideCustomHost) req2Builder.header("host", customHttp2Host);
+            HttpRequest req2 = req2Builder.build();
             out.println("\nPosting to HTTP/2 server at: " + req2);
             response = client.send(req2, BodyHandlers.ofLines());
             out.println("Checking response...");
@@ -174,6 +197,28 @@ public class HttpsTunnelTest implements HttpServerAdapters {
             http1Server.stop();
             http2Server.stop();
         }
+    }
+
+    /**
+     * Builds a custom host string that is different to what is in the URI
+     * authority, that is textually different than what the stack would
+     * send. For CONNECT we should ignore any custom host settings.
+     * The tunnelling proxy will fail with badRequest 400 if it receives
+     * the custom host instead of the expected URI authority string.
+     * @param  server The target server.
+     * @param  uri    The URI to the target server
+     * @return a host value for the custom host header.
+     */
+    static final String makeCustomHostString(HttpTestServer server, URI uri) {
+        String customHttpHost;
+        if (server.serverAuthority().contains("localhost")) {
+            customHttpHost = InetAddress.getLoopbackAddress().getHostAddress();
+        } else {
+            customHttpHost = InetAddress.getLoopbackAddress().getHostName();
+        }
+        if (customHttpHost.contains(":")) customHttpHost = "[" + customHttpHost + "]";
+        if (uri.getPort() != -1) customHttpHost = customHttpHost + ":" + uri.getPort();
+        return customHttpHost;
     }
 
 }
