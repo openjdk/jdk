@@ -649,6 +649,8 @@ class Arguments : AllStatic {
   static bool check_unsupported_cds_runtime_properties() NOT_CDS_RETURN0;
 
   static bool atojulong(const char *s, julong* result);
+
+  static bool has_jfr_option() NOT_JFR_RETURN_(false);
 };
 
 // Disable options not supported in this release, with a warning if they

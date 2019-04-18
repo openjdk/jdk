@@ -806,13 +806,14 @@ bool FileMapInfo::remap_shared_readonly_as_readwrite() {
                                 addr, size, false /* !read_only */,
                                 si->_allow_exec);
   close();
+  // These have to be errors because the shared region is now unmapped.
   if (base == NULL) {
-    fail_continue("Unable to remap shared readonly space (errno=%d).", errno);
-    return false;
+    log_error(cds)("Unable to remap shared readonly space (errno=%d).", errno);
+    vm_exit(1);
   }
   if (base != addr) {
-    fail_continue("Unable to remap shared readonly space at required address.");
-    return false;
+    log_error(cds)("Unable to remap shared readonly space (errno=%d).", errno);
+    vm_exit(1);
   }
   si->_read_only = false;
   return true;
@@ -849,10 +850,17 @@ char* FileMapInfo::map_region(int i, char** top_ret) {
   size_t size = align_up(used, alignment);
   char *requested_addr = region_addr(i);
 
-  // If a tool agent is in use (debugging enabled), we must map the address space RW
-  if (JvmtiExport::can_modify_any_class() || JvmtiExport::can_walk_any_space()) {
+#ifdef _WINDOWS
+  // Windows cannot remap read-only shared memory to read-write when required for
+  // RedefineClasses, which is also used by JFR.  Always map windows regions as RW.
+  si->_read_only = false;
+#else
+  // If a tool agent is in use (debugging enabled), or JFR, we must map the address space RW
+  if (JvmtiExport::can_modify_any_class() || JvmtiExport::can_walk_any_space() ||
+      Arguments::has_jfr_option()) {
     si->_read_only = false;
   }
+#endif // _WINDOWS
 
   // map the contents of the CDS archive in this memory
   char *base = os::map_memory(_fd, _full_path, si->_file_offset,
@@ -867,7 +875,6 @@ char* FileMapInfo::map_region(int i, char** top_ret) {
   // in method FileMapInfo::reserve_shared_memory(), which is not called on Windows.
   MemTracker::record_virtual_memory_type((address)base, mtClassShared);
 #endif
-
 
   if (!verify_region_checksum(i)) {
     return NULL;

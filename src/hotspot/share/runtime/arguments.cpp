@@ -271,16 +271,24 @@ static bool match_option(const JavaVMOption* option, const char** names, const c
 }
 
 #if INCLUDE_JFR
+static bool _has_jfr_option = false;  // is using JFR
+
 // return true on failure
 static bool match_jfr_option(const JavaVMOption** option) {
   assert((*option)->optionString != NULL, "invariant");
   char* tail = NULL;
   if (match_option(*option, "-XX:StartFlightRecording", (const char**)&tail)) {
+    _has_jfr_option = true;
     return Jfr::on_start_flight_recording_option(option, tail);
   } else if (match_option(*option, "-XX:FlightRecorderOptions", (const char**)&tail)) {
+    _has_jfr_option = true;
     return Jfr::on_flight_recorder_option(option, tail);
   }
   return false;
+}
+
+bool Arguments::has_jfr_option() {
+  return _has_jfr_option;
 }
 #endif
 
