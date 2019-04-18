@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ import jdk.test.lib.Asserts;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -54,6 +56,15 @@ public final class OutputAnalyzer {
      */
     public OutputAnalyzer(String buf) {
         buffer = OutputBuffer.of(buf, buf);
+    }
+
+    /**
+     * Create an OutputAnalyzer, a utility class for verifying output
+     *
+     * @param file File to analyze
+     */
+    public OutputAnalyzer(Path file) throws IOException {
+        this(Files.readString(file));
     }
 
     /**
