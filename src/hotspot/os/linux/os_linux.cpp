@@ -5158,13 +5158,16 @@ jint os::init_2(void) {
     return JNI_ERR;
   }
 
+#if defined(IA32)
+  // Need to ensure we've determined the process's initial stack to
+  // perform the workaround
+  Linux::capture_initial_stack(JavaThread::stack_size_at_create());
+  workaround_expand_exec_shield_cs_limit();
+#else
   suppress_primordial_thread_resolution = Arguments::created_by_java_launcher();
   if (!suppress_primordial_thread_resolution) {
     Linux::capture_initial_stack(JavaThread::stack_size_at_create());
   }
-
-#if defined(IA32)
-  workaround_expand_exec_shield_cs_limit();
 #endif
 
   Linux::libpthread_init();

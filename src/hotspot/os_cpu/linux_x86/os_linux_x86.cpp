@@ -827,6 +827,7 @@ void os::verify_stack_alignment() {
  */
 void os::workaround_expand_exec_shield_cs_limit() {
 #if defined(IA32)
+  assert(Linux::initial_thread_stack_bottom() != NULL, "sanity");
   size_t page_size = os::vm_page_size();
 
   /*
