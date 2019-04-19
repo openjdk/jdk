@@ -1213,3 +1213,32 @@ jdk.sasl.disabledMechanisms=
 # if this property is not enabled.
 #
 jdk.security.caDistrustPolicies=SYMANTEC_TLS
+
+#
+# Policies for the proxy_impersonator Kerberos ccache configuration entry
+#
+# The proxy_impersonator ccache configuration entry indicates that the ccache
+# is a synthetic delegated credential for use with S4U2Proxy by an intermediate
+# server. The ccache file should also contain the TGT of this server and
+# an evidence ticket from the default principal of the ccache to this server.
+#
+# This security property determines how Java uses this configuration entry.
+# There are 3 possible values:
+#
+#  no-impersonate     - Ignore this configuration entry, and always act as
+#                       the owner of the TGT (if it exists).
+#
+#  try-impersonate    - Try impersonation when this configuration entry exists.
+#                       If no matching TGT or evidence ticket is found,
+#                       fallback to no-impersonate.
+#
+#  always-impersonate - Always impersonate when this configuration entry exists.
+#                       If no matching TGT or evidence ticket is found,
+#                       no initial credential is read from the ccache.
+#
+# The default value is "always-impersonate".
+#
+# If a system property of the same name is also specified, it supersedes the
+# security property value defined here.
+#
+#jdk.security.krb5.default.initiate.credential=always-impersonate

@@ -55,6 +55,7 @@ public class Krb5InitCredential
 
     private Krb5NameElement name;
     private Credentials krb5Credentials;
+    public KerberosTicket proxyTicket;
 
     private Krb5InitCredential(Krb5NameElement name,
                                byte[] asn1Encoding,
@@ -173,7 +174,7 @@ public class Krb5InitCredential
         KerberosPrincipal serverAlias = KerberosSecrets
                 .getJavaxSecurityAuthKerberosAccess()
                 .kerberosTicketGetServerAlias(tgt);
-        return new Krb5InitCredential(name,
+        Krb5InitCredential result = new Krb5InitCredential(name,
                                       tgt.getEncoded(),
                                       tgt.getClient(),
                                       clientAlias,
@@ -187,6 +188,9 @@ public class Krb5InitCredential
                                       tgt.getEndTime(),
                                       tgt.getRenewTill(),
                                       tgt.getClientAddresses());
+        result.proxyTicket = KerberosSecrets.getJavaxSecurityAuthKerberosAccess().
+            kerberosTicketGetProxy(tgt);
+        return result;
     }
 
     static Krb5InitCredential getInstance(Krb5NameElement name,
@@ -369,9 +373,9 @@ public class Krb5InitCredential
                 public KerberosTicket run() throws Exception {
                     // It's OK to use null as serverPrincipal. TGT is almost
                     // the first ticket for a principal and we use list.
-                    return Krb5Util.getTicket(
+                    return Krb5Util.getInitialTicket(
                         realCaller,
-                        clientPrincipal, null, acc);
+                        clientPrincipal, acc);
                         }});
         } catch (PrivilegedActionException e) {
             GSSException ge =

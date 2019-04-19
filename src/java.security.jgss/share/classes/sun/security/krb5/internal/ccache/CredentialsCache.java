@@ -32,14 +32,9 @@ package sun.security.krb5.internal.ccache;
 
 import sun.security.krb5.*;
 import sun.security.krb5.internal.*;
-import java.util.StringTokenizer;
-import java.util.Vector;
+
+import java.util.List;
 import java.io.IOException;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 
 /**
  * CredentialsCache stores credentials(tickets, session keys, etc) in a semi-permanent store
@@ -120,6 +115,62 @@ public abstract class CredentialsCache {
     public abstract void save() throws IOException, KrbException;
     public abstract Credentials[] getCredsList();
     public abstract Credentials getDefaultCreds();
+    public abstract sun.security.krb5.Credentials getInitialCreds();
     public abstract Credentials getCreds(PrincipalName sname);
     public abstract Credentials getCreds(LoginOptions options, PrincipalName sname);
+    public abstract void addConfigEntry(ConfigEntry e);
+    public abstract List<ConfigEntry> getConfigEntries();
+
+    public ConfigEntry getConfigEntry(String name) {
+        List<ConfigEntry> entries = getConfigEntries();
+        if (entries != null) {
+            for (ConfigEntry e : entries) {
+                if (e.getName().equals(name)) {
+                    return e;
+                }
+            }
+        }
+        return null;
+    }
+
+    public static class ConfigEntry {
+
+        public ConfigEntry(String name, PrincipalName princ, byte[] data) {
+            this.name = name;
+            this.princ = princ;
+            this.data = data;
+        }
+
+        private final String name;
+        private final PrincipalName princ;
+        private final byte[] data; // not worth cloning
+
+        public String getName() {
+            return name;
+        }
+
+        public PrincipalName getPrinc() {
+            return princ;
+        }
+
+        public byte[] getData() {
+            return data;
+        }
+
+        @Override
+        public String toString() {
+            return name + (princ != null ? ("." + princ) : "")
+                    + ": " + new String(data);
+        }
+
+        public PrincipalName getSName() {
+            try {
+                return new PrincipalName("krb5_ccache_conf_data/" + name
+                        + (princ != null ? ("/" + princ) : "")
+                        + "@X-CACHECONF:");
+            } catch (RealmException e) {
+                throw new AssertionError(e);
+            }
+        }
+    }
 }

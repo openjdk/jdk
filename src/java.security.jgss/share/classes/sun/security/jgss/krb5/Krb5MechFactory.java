@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,6 +124,8 @@ public final class Krb5MechFactory implements MechanismFactory {
                 usage == GSSCredential.INITIATE_AND_ACCEPT) {
                 credElement = Krb5InitCredential.getInstance
                     (caller, (Krb5NameElement) name, initLifetime);
+                credElement = Krb5ProxyCredential.tryImpersonation(
+                        caller, (Krb5InitCredential)credElement);
                 checkInitCredPermission
                     ((Krb5NameElement) credElement.getName());
             } else if (usage == GSSCredential.ACCEPT_ONLY) {

@@ -325,16 +325,13 @@ public class CCacheInputStream extends KrbDataInputStream implements FileCCacheC
     }
 
     /**
-     * Reads the next cred in stream.
-     * @return the next cred, null if ticket or second_ticket unparseable.
+     * Reads the next cred or config entry in stream.
+     * @return the next cred or config entry, null if data unparseable.
      *
-     * Note: MIT krb5 1.8.1 might generate a config entry with server principal
-     * X-CACHECONF:/krb5_ccache_conf_data/fast_avail/krbtgt/REALM@REALM. The
-     * entry is used by KDC to inform the client that it support certain
-     * features. Its ticket is not a valid krb5 ticket and thus this method
-     * returns null.
+     * When data is unparseable, this method makes sure the correct number of
+     * bytes are consumed so it's safe to start reading the next element.
      */
-    Credentials readCred(int version) throws IOException,RealmException, KrbApErrException, Asn1Exception {
+    Object readCred(int version) throws IOException,RealmException, KrbApErrException, Asn1Exception {
         PrincipalName cpname = null;
         try {
             cpname = readPrincipal(version);
@@ -396,12 +393,23 @@ public class CCacheInputStream extends KrbDataInputStream implements FileCCacheC
         }
 
         try {
+            if (spname.getRealmString().equals("X-CACHECONF:")) {
+                String[] nameParts = spname.getNameStrings();
+                if (nameParts[0].equals("krb5_ccache_conf_data")) {
+                    return new CredentialsCache.ConfigEntry(nameParts[1],
+                            nameParts.length > 2 ? new PrincipalName(nameParts[2]) : null,
+                            ticketData);
+                }
+            }
             return new Credentials(cpname, spname, key, authtime, starttime,
-                endtime, renewTill, skey, tFlags,
-                addrs, auData,
-                ticketData != null ? new Ticket(ticketData) : null,
-                ticketData2 != null ? new Ticket(ticketData2) : null);
+                    endtime, renewTill, skey, tFlags,
+                    addrs, auData,
+                    ticketData != null ? new Ticket(ticketData) : null,
+                    ticketData2 != null ? new Ticket(ticketData2) : null);
         } catch (Exception e) {     // If any of new Ticket(*) fails.
+            if (DEBUG) {
+                e.printStackTrace(System.out);
+            }
             return null;
         }
     }

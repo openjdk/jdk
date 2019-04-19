@@ -31,7 +31,6 @@
 package sun.security.krb5.internal.ccache;
 
 import java.io.IOException;
-import java.io.FileOutputStream;
 import java.io.OutputStream;
 import sun.security.krb5.internal.util.KrbDataOutputStream;
 import sun.security.krb5.*;
@@ -96,6 +95,21 @@ public class CCacheOutputStream extends KrbDataOutputStream implements FileCCach
             creds.authorizationData.writeAuth(this);
         writeTicket(creds.ticket);
         writeTicket(creds.secondTicket);
+    }
+
+    public void addConfigEntry(PrincipalName cname, CredentialsCache.ConfigEntry e)
+            throws IOException {
+        cname.writePrincipal(this);
+        e.getSName().writePrincipal(this);
+        write16(0); write16(0); write32(0);
+        write32(0); write32(0); write32(0); write32(0);
+        write8(0);
+        write32(0);
+        write32(0);
+        write32(0);
+        write32(e.getData().length);
+        write(e.getData());
+        write32(0);
     }
 
     void writeTicket(Ticket t) throws IOException, Asn1Exception {
