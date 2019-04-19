@@ -154,6 +154,8 @@ public final class JapaneseEra
      * The singleton instance for the 'Reiwa' era (2019-05-01 - )
      * which has the value 3. The end date of this era is not specified, unless
      * the Japanese Government defines it.
+     *
+     * @since 13
      */
     public static final JapaneseEra REIWA = new JapaneseEra(3, LocalDate.of(2019, 5, 1));
 
