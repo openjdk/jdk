@@ -263,13 +263,13 @@ public final class RSACipher extends CipherSpi {
             throw new InvalidKeyException("Unknown mode: " + opmode);
         }
         RSAKey rsaKey = RSAKeyFactory.toRSAKey(key);
-        if (key instanceof RSAPublicKey) {
+        if (rsaKey instanceof RSAPublicKey) {
             mode = encrypt ? MODE_ENCRYPT : MODE_VERIFY;
-            publicKey = (RSAPublicKey)key;
+            publicKey = (RSAPublicKey)rsaKey;
             privateKey = null;
         } else { // must be RSAPrivateKey per check in toRSAKey
             mode = encrypt ? MODE_SIGN : MODE_DECRYPT;
-            privateKey = (RSAPrivateKey)key;
+            privateKey = (RSAPrivateKey)rsaKey;
             publicKey = null;
         }
         int n = RSACore.getByteLength(rsaKey.getModulus());
