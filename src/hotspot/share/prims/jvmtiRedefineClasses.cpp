@@ -787,6 +787,12 @@ static jvmtiError check_nest_attributes(InstanceKlass* the_class,
   return JVMTI_ERROR_NONE;
 }
 
+static bool can_add_or_delete(Method* m) {
+      // Compatibility mode
+  return (AllowRedefinitionToAddDeleteMethods &&
+          (m->is_private() && (m->is_static() || m->is_final())));
+}
+
 jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
              InstanceKlass* the_class,
              InstanceKlass* scratch_class) {
@@ -992,12 +998,7 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
       break;
     case added:
       // method added, see if it is OK
-      new_flags = (jushort) k_new_method->access_flags().get_flags();
-      if ((new_flags & JVM_ACC_PRIVATE) == 0
-           // hack: private should be treated as final, but alas
-          || (new_flags & (JVM_ACC_FINAL|JVM_ACC_STATIC)) == 0
-         ) {
-        // new methods must be private
+      if (!can_add_or_delete(k_new_method)) {
         return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_METHOD_ADDED;
       }
       {
@@ -1026,12 +1027,7 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
       break;
     case deleted:
       // method deleted, see if it is OK
-      old_flags = (jushort) k_old_method->access_flags().get_flags();
-      if ((old_flags & JVM_ACC_PRIVATE) == 0
-           // hack: private should be treated as final, but alas
-          || (old_flags & (JVM_ACC_FINAL|JVM_ACC_STATIC)) == 0
-         ) {
-        // deleted methods must be private
+      if (!can_add_or_delete(k_old_method)) {
         return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_METHOD_DELETED;
       }
       log_trace(redefine, class, normalize)

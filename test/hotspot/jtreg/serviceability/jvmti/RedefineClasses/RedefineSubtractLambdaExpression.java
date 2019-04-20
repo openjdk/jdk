@@ -31,7 +31,7 @@
  *          java.instrument
  *          jdk.jartool/sun.tools.jar
  * @run main RedefineClassHelper
- * @run main/othervm -javaagent:redefineagent.jar -Xlog:redefine+class*=trace RedefineSubtractLambdaExpression
+ * @run main/othervm -javaagent:redefineagent.jar -XX:+AllowRedefinitionToAddDeleteMethods -Xlog:redefine+class*=trace RedefineSubtractLambdaExpression
  */
 
 interface MathOperation {

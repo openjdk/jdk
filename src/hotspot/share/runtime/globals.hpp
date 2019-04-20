@@ -978,6 +978,10 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
   product(bool, VerifyMergedCPBytecodes, true,                              \
           "Verify bytecodes after RedefineClasses constant pool merging")   \
                                                                             \
+  product(bool, AllowRedefinitionToAddDeleteMethods, false,                 \
+          "Allow redefinition to add and delete private static or "         \
+          "final methods for compatibility with old releases")              \
+                                                                            \
   develop(bool, TraceBytecodes, false,                                      \
           "Trace bytecode execution")                                       \
                                                                             \

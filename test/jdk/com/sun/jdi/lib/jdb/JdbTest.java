@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ public abstract class JdbTest {
         public final String debuggeeClass;
         public final List<String> debuggeeOptions = new LinkedList<>();
         public String sourceFilename;
+        public String vmOptions = null;
 
         public LaunchOptions(String debuggeeClass) {
             this.debuggeeClass = debuggeeClass;
@@ -54,6 +55,10 @@ public abstract class JdbTest {
         }
         public LaunchOptions setSourceFilename(String name) {
             sourceFilename = name;
+            return this;
+        }
+        public LaunchOptions addVMOptions(String vmOptions) {
+            this.vmOptions = vmOptions;
             return this;
         }
     }
@@ -72,7 +77,7 @@ public abstract class JdbTest {
 
     protected Jdb jdb;
     protected Debuggee debuggee;
-    private final LaunchOptions launchOptions;
+    protected LaunchOptions launchOptions;
 
     // returns the whole jdb output as a string
     public String getJdbOutput() {
@@ -108,6 +113,7 @@ public abstract class JdbTest {
         // launch debuggee
         debuggee = Debuggee.launcher(launchOptions.debuggeeClass)
                 .addOptions(launchOptions.debuggeeOptions)
+                .addVMOptions(launchOptions.vmOptions)
                 .launch();
 
         // launch jdb
