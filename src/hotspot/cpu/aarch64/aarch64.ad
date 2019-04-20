@@ -11343,14 +11343,11 @@ instruct SubL_reg_LShift_reg(iRegLNoSp dst,
 instruct sbfmL(iRegLNoSp dst, iRegL src, immI lshift_count, immI rshift_count)
 %{
   match(Set dst (RShiftL (LShiftL src lshift_count) rshift_count));
-  // Make sure we are not going to exceed what sbfm can do.
-  predicate((unsigned int)n->in(2)->get_int() <= 63
-            && (unsigned int)n->in(1)->in(2)->get_int() <= 63);
-
   ins_cost(INSN_COST * 2);
   format %{ "sbfm  $dst, $src, $rshift_count - $lshift_count, #63 - $lshift_count" %}
   ins_encode %{
-    int lshift = $lshift_count$$constant, rshift = $rshift_count$$constant;
+    int lshift = $lshift_count$$constant & 63;
+    int rshift = $rshift_count$$constant & 63;
     int s = 63 - lshift;
     int r = (rshift - lshift) & 63;
     __ sbfm(as_Register($dst$$reg),
@@ -11366,14 +11363,11 @@ instruct sbfmL(iRegLNoSp dst, iRegL src, immI lshift_count, immI rshift_count)
 instruct sbfmwI(iRegINoSp dst, iRegIorL2I src, immI lshift_count, immI rshift_count)
 %{
   match(Set dst (RShiftI (LShiftI src lshift_count) rshift_count));
-  // Make sure we are not going to exceed what sbfmw can do.
-  predicate((unsigned int)n->in(2)->get_int() <= 31
-            && (unsigned int)n->in(1)->in(2)->get_int() <= 31);
-
   ins_cost(INSN_COST * 2);
   format %{ "sbfmw  $dst, $src, $rshift_count - $lshift_count, #31 - $lshift_count" %}
   ins_encode %{
-    int lshift = $lshift_count$$constant, rshift = $rshift_count$$constant;
+    int lshift = $lshift_count$$constant & 31;
+    int rshift = $rshift_count$$constant & 31;
     int s = 31 - lshift;
     int r = (rshift - lshift) & 31;
     __ sbfmw(as_Register($dst$$reg),
@@ -11389,14 +11383,11 @@ instruct sbfmwI(iRegINoSp dst, iRegIorL2I src, immI lshift_count, immI rshift_co
 instruct ubfmL(iRegLNoSp dst, iRegL src, immI lshift_count, immI rshift_count)
 %{
   match(Set dst (URShiftL (LShiftL src lshift_count) rshift_count));
-  // Make sure we are not going to exceed what ubfm can do.
-  predicate((unsigned int)n->in(2)->get_int() <= 63
-            && (unsigned int)n->in(1)->in(2)->get_int() <= 63);
-
   ins_cost(INSN_COST * 2);
   format %{ "ubfm  $dst, $src, $rshift_count - $lshift_count, #63 - $lshift_count" %}
   ins_encode %{
-    int lshift = $lshift_count$$constant, rshift = $rshift_count$$constant;
+    int lshift = $lshift_count$$constant & 63;
+    int rshift = $rshift_count$$constant & 63;
     int s = 63 - lshift;
     int r = (rshift - lshift) & 63;
     __ ubfm(as_Register($dst$$reg),
@@ -11412,14 +11403,11 @@ instruct ubfmL(iRegLNoSp dst, iRegL src, immI lshift_count, immI rshift_count)
 instruct ubfmwI(iRegINoSp dst, iRegIorL2I src, immI lshift_count, immI rshift_count)
 %{
   match(Set dst (URShiftI (LShiftI src lshift_count) rshift_count));
-  // Make sure we are not going to exceed what ubfmw can do.
-  predicate((unsigned int)n->in(2)->get_int() <= 31
-            && (unsigned int)n->in(1)->in(2)->get_int() <= 31);
-
   ins_cost(INSN_COST * 2);
   format %{ "ubfmw  $dst, $src, $rshift_count - $lshift_count, #31 - $lshift_count" %}
   ins_encode %{
-    int lshift = $lshift_count$$constant, rshift = $rshift_count$$constant;
+    int lshift = $lshift_count$$constant & 31;
+    int rshift = $rshift_count$$constant & 31;
     int s = 31 - lshift;
     int r = (rshift - lshift) & 31;
     __ ubfmw(as_Register($dst$$reg),
@@ -11491,13 +11479,12 @@ instruct ubfxIConvI2L(iRegLNoSp dst, iRegIorL2I src, immI rshift, immI_bitmask m
 instruct ubfizwI(iRegINoSp dst, iRegIorL2I src, immI lshift, immI_bitmask mask)
 %{
   match(Set dst (LShiftI (AndI src mask) lshift));
-  predicate((unsigned int)n->in(2)->get_int() <= 31 &&
-    (exact_log2(n->in(1)->in(2)->get_int()+1) + (unsigned int)n->in(2)->get_int()) <= (31+1));
+  predicate((exact_log2(n->in(1)->in(2)->get_int() + 1) + (n->in(2)->get_int() & 31)) <= (31 + 1));
 
   ins_cost(INSN_COST);
   format %{ "ubfizw $dst, $src, $lshift, $mask" %}
   ins_encode %{
-    int lshift = $lshift$$constant;
+    int lshift = $lshift$$constant & 31;
     long mask = $mask$$constant;
     int width = exact_log2(mask+1);
     __ ubfizw(as_Register($dst$$reg),
@@ -11510,13 +11497,12 @@ instruct ubfizwI(iRegINoSp dst, iRegIorL2I src, immI lshift, immI_bitmask mask)
 instruct ubfizL(iRegLNoSp dst, iRegL src, immI lshift, immL_bitmask mask)
 %{
   match(Set dst (LShiftL (AndL src mask) lshift));
-  predicate((unsigned int)n->in(2)->get_int() <= 63 &&
-    (exact_log2_long(n->in(1)->in(2)->get_long()+1) + (unsigned int)n->in(2)->get_int()) <= (63+1));
+  predicate((exact_log2_long(n->in(1)->in(2)->get_long() + 1) + (n->in(2)->get_int() & 63)) <= (63 + 1));
 
   ins_cost(INSN_COST);
   format %{ "ubfiz $dst, $src, $lshift, $mask" %}
   ins_encode %{
-    int lshift = $lshift$$constant;
+    int lshift = $lshift$$constant & 63;
     long mask = $mask$$constant;
     int width = exact_log2_long(mask+1);
     __ ubfiz(as_Register($dst$$reg),
@@ -11528,14 +11514,13 @@ instruct ubfizL(iRegLNoSp dst, iRegL src, immI lshift, immL_bitmask mask)
 // If there is a convert I to L block between and AndI and a LShiftL, we can also match ubfiz
 instruct ubfizIConvI2L(iRegLNoSp dst, iRegIorL2I src, immI lshift, immI_bitmask mask)
 %{
-  match(Set dst (LShiftL (ConvI2L(AndI src mask)) lshift));
-  predicate((unsigned int)n->in(2)->get_int() <= 31 &&
-    (exact_log2((unsigned int)n->in(1)->in(1)->in(2)->get_int()+1) + (unsigned int)n->in(2)->get_int()) <= 32);
+  match(Set dst (LShiftL (ConvI2L (AndI src mask)) lshift));
+  predicate((exact_log2(n->in(1)->in(1)->in(2)->get_int() + 1) + (n->in(2)->get_int() & 63)) <= (63 + 1));
 
   ins_cost(INSN_COST);
   format %{ "ubfiz $dst, $src, $lshift, $mask" %}
   ins_encode %{
-    int lshift = $lshift$$constant;
+    int lshift = $lshift$$constant & 63;
     long mask = $mask$$constant;
     int width = exact_log2(mask+1);
     __ ubfiz(as_Register($dst$$reg),
@@ -11549,7 +11534,7 @@ instruct ubfizIConvI2L(iRegLNoSp dst, iRegIorL2I src, immI lshift, immI_bitmask 
 instruct extrOrL(iRegLNoSp dst, iRegL src1, iRegL src2, immI lshift, immI rshift, rFlagsReg cr)
 %{
   match(Set dst (OrL (LShiftL src1 lshift) (URShiftL src2 rshift)));
-  predicate(0 == ((n->in(1)->in(2)->get_int() + n->in(2)->in(2)->get_int()) & 63));
+  predicate(0 == (((n->in(1)->in(2)->get_int() & 63) + (n->in(2)->in(2)->get_int() & 63)) & 63));
 
   ins_cost(INSN_COST);
   format %{ "extr $dst, $src1, $src2, #$rshift" %}
@@ -11564,7 +11549,7 @@ instruct extrOrL(iRegLNoSp dst, iRegL src1, iRegL src2, immI lshift, immI rshift
 instruct extrOrI(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2, immI lshift, immI rshift, rFlagsReg cr)
 %{
   match(Set dst (OrI (LShiftI src1 lshift) (URShiftI src2 rshift)));
-  predicate(0 == ((n->in(1)->in(2)->get_int() + n->in(2)->in(2)->get_int()) & 31));
+  predicate(0 == (((n->in(1)->in(2)->get_int() & 31) + (n->in(2)->in(2)->get_int() & 31)) & 31));
 
   ins_cost(INSN_COST);
   format %{ "extr $dst, $src1, $src2, #$rshift" %}
@@ -11579,7 +11564,7 @@ instruct extrOrI(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2, immI lshift, i
 instruct extrAddL(iRegLNoSp dst, iRegL src1, iRegL src2, immI lshift, immI rshift, rFlagsReg cr)
 %{
   match(Set dst (AddL (LShiftL src1 lshift) (URShiftL src2 rshift)));
-  predicate(0 == ((n->in(1)->in(2)->get_int() + n->in(2)->in(2)->get_int()) & 63));
+  predicate(0 == (((n->in(1)->in(2)->get_int() & 63) + (n->in(2)->in(2)->get_int() & 63)) & 63));
 
   ins_cost(INSN_COST);
   format %{ "extr $dst, $src1, $src2, #$rshift" %}
@@ -11594,7 +11579,7 @@ instruct extrAddL(iRegLNoSp dst, iRegL src1, iRegL src2, immI lshift, immI rshif
 instruct extrAddI(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2, immI lshift, immI rshift, rFlagsReg cr)
 %{
   match(Set dst (AddI (LShiftI src1 lshift) (URShiftI src2 rshift)));
-  predicate(0 == ((n->in(1)->in(2)->get_int() + n->in(2)->in(2)->get_int()) & 31));
+  predicate(0 == (((n->in(1)->in(2)->get_int() & 31) + (n->in(2)->in(2)->get_int() & 31)) & 31));
 
   ins_cost(INSN_COST);
   format %{ "extr $dst, $src1, $src2, #$rshift" %}
