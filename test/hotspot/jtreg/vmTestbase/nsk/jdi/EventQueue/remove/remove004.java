@@ -308,10 +308,10 @@ public class remove004 {
     //------------------------------------------------------  testing section
 
         log1("     TESTING BEGINS");
+        vm.resume();
 
         for (int i = 0; ; i++) {
 
-            vm.resume();
             breakpointForCommunication();
 
             int instruction = ((IntegerValue)
