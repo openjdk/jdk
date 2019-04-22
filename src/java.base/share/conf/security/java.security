@@ -1215,6 +1215,25 @@ jdk.sasl.disabledMechanisms=
 jdk.security.caDistrustPolicies=SYMANTEC_TLS
 
 #
+# FilePermission path canonicalization
+#
+# This security property dictates how the path argument is processed and stored
+# while constructing a FilePermission object. If the value is set to true, the
+# path argument is canonicalized and FilePermission methods (such as implies,
+# equals, and hashCode) are implemented based on this canonicalized result.
+# Otherwise, the path argument is not canonicalized and FilePermission methods are
+# implemented based on the original input. See the implementation note of the
+# FilePermission class for more details.
+#
+# If a system property of the same name is also specified, it supersedes the
+# security property value defined here.
+#
+# The default value for this property is false.
+#
+jdk.io.permissionsUseCanonicalPath=false
+
+
+#
 # Policies for the proxy_impersonator Kerberos ccache configuration entry
 #
 # The proxy_impersonator ccache configuration entry indicates that the ccache

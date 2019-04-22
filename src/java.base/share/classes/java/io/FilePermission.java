@@ -463,6 +463,9 @@ public final class FilePermission extends Permission implements Serializable {
      * <P>
      * The default value of the {@code jdk.io.permissionsUseCanonicalPath}
      * system property is {@code false} in this implementation.
+     * <p>
+     * The value can also be set with a security property using the same name,
+     * but setting a system property will override the security property value.
      *
      * @param path the pathname of the file/directory.
      * @param actions the action string.
