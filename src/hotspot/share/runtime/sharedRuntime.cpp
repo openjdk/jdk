@@ -1918,7 +1918,7 @@ bool SharedRuntime::should_fixup_call_destination(address destination, address e
 // where we went int -> i2c -> c2i and so the caller could in fact be
 // interpreted. If the caller is compiled we attempt to patch the caller
 // so he no longer calls into the interpreter.
-IRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address caller_pc))
+JRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address caller_pc))
   Method* moop(method);
 
   address entry_point = moop->from_compiled_entry_no_trampoline();
@@ -1987,7 +1987,7 @@ IRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address cal
       }
     }
   }
-IRT_END
+JRT_END
 
 
 // same as JVM_Arraycopy, but called directly from compiled code

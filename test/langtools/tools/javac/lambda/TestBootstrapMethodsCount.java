@@ -61,6 +61,7 @@ import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Types;
+import com.sun.tools.javac.jvm.PoolConstant.LoadableConstant;
 import com.sun.tools.javac.tree.JCTree.JCMethodInvocation;
 import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
 import com.sun.tools.javac.tree.JCTree.JCIdent;
@@ -190,7 +191,7 @@ public class TestBootstrapMethodsCount {
             Symbol oldSym = ident.sym;
             if (!oldSym.isConstructor()) {
                 ident.sym = new Symbol.DynamicMethodSymbol(oldSym.name,
-                        oldSym.owner, REF_invokeStatic, bsm, oldSym.type, new Object[0]);
+                        oldSym.owner, bsm.asHandle(), oldSym.type, new LoadableConstant[0]);
             }
             return null;
         }

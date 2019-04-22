@@ -36,7 +36,10 @@ import javax.lang.model.type.*;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.TypeMetadata.Entry;
 import com.sun.tools.javac.code.Types.TypeMapping;
+import com.sun.tools.javac.code.Types.UniqueType;
 import com.sun.tools.javac.comp.Infer.IncorporationAction;
+import com.sun.tools.javac.jvm.ClassFile;
+import com.sun.tools.javac.jvm.PoolConstant;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.DefinedBy.Api;
 
@@ -73,7 +76,7 @@ import static com.sun.tools.javac.code.TypeTag.*;
  *
  *  @see TypeTag
  */
-public abstract class Type extends AnnoConstruct implements TypeMirror {
+public abstract class Type extends AnnoConstruct implements TypeMirror, PoolConstant {
 
     /**
      * Type metadata,  Should be {@code null} for the default value.
@@ -124,6 +127,16 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
     /** The defining class / interface / package / type variable.
      */
     public TypeSymbol tsym;
+
+    @Override
+    public int poolTag() {
+        throw new AssertionError("Invalid pool entry");
+    }
+
+    @Override
+    public Object poolKey(Types types) {
+        return new UniqueType(this, types);
+    }
 
     /**
      * Checks if the current type tag is equal to the given tag.
@@ -930,7 +943,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         }
     }
 
-    public static class ClassType extends Type implements DeclaredType,
+    public static class ClassType extends Type implements DeclaredType, LoadableConstant,
                                                           javax.lang.model.type.ErrorType {
 
         /** The enclosing type of this type. If this is the type of an inner
@@ -973,6 +986,10 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             this.allparams_field = null;
             this.supertype_field = null;
             this.interfaces_field = null;
+        }
+
+        public int poolTag() {
+            return ClassFile.CONSTANT_Class;
         }
 
         @Override
@@ -1277,7 +1294,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
     }
 
     public static class ArrayType extends Type
-            implements javax.lang.model.type.ArrayType {
+            implements LoadableConstant, javax.lang.model.type.ArrayType {
 
         public Type elemtype;
 
@@ -1295,6 +1312,10 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             //note: type metadata is deliberately shared here, as we want side-effects from annotation
             //processing to flow from original array to the cloned array.
             this(that.elemtype, that.tsym, that.getMetadata());
+        }
+
+        public int poolTag() {
+            return ClassFile.CONSTANT_Class;
         }
 
         @Override
@@ -1412,7 +1433,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         }
     }
 
-    public static class MethodType extends Type implements ExecutableType {
+    public static class MethodType extends Type implements ExecutableType, LoadableConstant {
 
         public List<Type> argtypes;
         public Type restype;
@@ -1477,6 +1498,11 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             return
                 isErroneous(argtypes) ||
                 restype != null && restype.isErroneous();
+        }
+
+        @Override
+        public int poolTag() {
+            return ClassFile.CONSTANT_MethodType;
         }
 
         public boolean contains(Type elem) {

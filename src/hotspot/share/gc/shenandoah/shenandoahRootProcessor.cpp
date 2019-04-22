@@ -27,6 +27,7 @@
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
+#include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
@@ -48,14 +49,15 @@ struct PhaseMap {
 
 static const struct PhaseMap phase_mapping[] = {
 #if INCLUDE_JVMTI
-  {WeakProcessorPhases::jvmti,       ShenandoahPhaseTimings::JVMTIWeakRoots},
+  {WeakProcessorPhases::jvmti,                 ShenandoahPhaseTimings::JVMTIWeakRoots},
 #endif
 #if INCLUDE_JFR
-  {WeakProcessorPhases::jfr,         ShenandoahPhaseTimings::JFRWeakRoots},
+  {WeakProcessorPhases::jfr,                   ShenandoahPhaseTimings::JFRWeakRoots},
 #endif
-  {WeakProcessorPhases::jni,         ShenandoahPhaseTimings::JNIWeakRoots},
-  {WeakProcessorPhases::stringtable, ShenandoahPhaseTimings::StringTableRoots},
-  {WeakProcessorPhases::vm,          ShenandoahPhaseTimings::VMWeakRoots}
+  {WeakProcessorPhases::jni,                   ShenandoahPhaseTimings::JNIWeakRoots},
+  {WeakProcessorPhases::stringtable,           ShenandoahPhaseTimings::StringTableRoots},
+  {WeakProcessorPhases::resolved_method_table, ShenandoahPhaseTimings::ResolvedMethodTableRoots},
+  {WeakProcessorPhases::vm,                    ShenandoahPhaseTimings::VMWeakRoots}
 };
 
 STATIC_ASSERT(sizeof(phase_mapping) / sizeof(PhaseMap) == WeakProcessorPhases::phase_count);
@@ -64,7 +66,6 @@ ShenandoahRootProcessor::ShenandoahRootProcessor(ShenandoahHeap* heap, uint n_wo
                                                  ShenandoahPhaseTimings::Phase phase) :
   _process_strong_tasks(new SubTasksDone(SHENANDOAH_RP_PS_NumElements)),
   _srs(n_workers),
-  _par_state_string(StringTable::weak_storage()),
   _phase(phase),
   _coderoots_all_iterator(ShenandoahCodeRoots::iterator()),
   _weak_processor_timings(n_workers),
@@ -242,10 +243,7 @@ ShenandoahRootEvacuator::ShenandoahRootEvacuator(ShenandoahHeap* heap, uint n_wo
   _evacuation_tasks(new SubTasksDone(SHENANDOAH_EVAC_NumElements)),
   _srs(n_workers),
   _phase(phase),
-  _coderoots_cset_iterator(ShenandoahCodeRoots::cset_iterator()),
-  _par_state_string(StringTable::weak_storage())
-
-{
+  _coderoots_cset_iterator(ShenandoahCodeRoots::cset_iterator()) {
   heap->phase_timings()->record_workers_start(_phase);
   if (ShenandoahStringDedup::is_enabled()) {
     StringDedup::gc_prologue(false);

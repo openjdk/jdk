@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6762191
+ * @bug 6762191 8222334
  * @summary Setting stack size to 16K causes segmentation fault
  * @compile TooSmallStackSize.java
  * @run main TooSmallStackSize
@@ -171,5 +171,11 @@ public class TooSmallStackSize extends TestHelper {
          * asserts added for 8176768 are not triggered.
          */
         checkMinStackAllowed("513k");
+
+        /*
+         * Try with 0k which indicates that the default thread stack size either from JVM or system
+         * will be used, this should always succeed.
+         */
+        checkMinStackAllowed("0k");
     }
 }

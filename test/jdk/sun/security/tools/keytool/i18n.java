@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,19 @@
  * questions.
  */
 
-// This trivial file is only necessary to display instructions and "pass/fail"
-// buttons for a manual test.
-public class i18n extends java.applet.Applet
-{
+/*
+ * @test
+ * @bug 4348369 8076069
+ * @summary keytool not i18n compliant
+ * @author charlie lai
+ * @run main/manual i18n
+ */
+
+import java.nio.file.Path;
+
+public class i18n{
+    public static void main(String[] args) throws Exception {
+        System.out.println("see i18n.html");
+        System.out.println(Path.of(System.getProperty("test.jdk"), "bin", "keytool"));
+    }
 }

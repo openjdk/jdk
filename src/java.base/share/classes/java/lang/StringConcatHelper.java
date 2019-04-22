@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,9 @@
 
 package java.lang;
 
+import jdk.internal.misc.Unsafe;
+import jdk.internal.vm.annotation.ForceInline;
+
 /**
  * Helper for string concatenation. These methods are mostly looked up with private lookups
  * from {@link java.lang.invoke.StringConcatFactory}, and used in {@link java.lang.invoke.MethodHandle}
@@ -38,8 +41,10 @@ final class StringConcatHelper {
 
     /**
      * Check for overflow, throw exception on overflow.
-     * @param lengthCoder String length and coder
-     * @return lengthCoder
+     *
+     * @param lengthCoder String length with coder packed into higher bits
+     *                    the upper word.
+     * @return            the given parameter value, if valid
      */
     private static long checkOverflow(long lengthCoder) {
         if ((int)lengthCoder >= 0) {
@@ -50,76 +55,83 @@ final class StringConcatHelper {
 
     /**
      * Mix value length and coder into current length and coder.
-     * @param current current length
-     * @param value   value to mix in
-     * @return new length and coder
+     * @param lengthCoder String length with coder packed into higher bits
+     *                    the upper word.
+     * @param value       value to mix in
+     * @return            new length and coder
      */
-    static long mix(long current, boolean value) {
-        return checkOverflow(current + (value ? 4 : 5));
+    static long mix(long lengthCoder, boolean value) {
+        return checkOverflow(lengthCoder + (value ? 4 : 5));
     }
 
     /**
      * Mix value length and coder into current length and coder.
-     * @param current current length
-     * @param value   value to mix in
-     * @return new length and coder
+     * @param lengthCoder String length with coder packed into higher bits
+     *                    the upper word.
+     * @param value       value to mix in
+     * @return            new length and coder
      */
-    static long mix(long current, byte value) {
-        return mix(current, (int)value);
+    static long mix(long lengthCoder, byte value) {
+        return mix(lengthCoder, (int)value);
     }
 
     /**
      * Mix value length and coder into current length and coder.
-     * @param current current length
-     * @param value   value to mix in
-     * @return new length and coder
+     * @param lengthCoder String length with coder packed into higher bits
+     *                    the upper word.
+     * @param value       value to mix in
+     * @return            new length and coder
      */
-    static long mix(long current, char value) {
-        return checkOverflow(current + 1) | (StringLatin1.canEncode(value) ? 0 : UTF16);
+    static long mix(long lengthCoder, char value) {
+        return checkOverflow(lengthCoder + 1) | (StringLatin1.canEncode(value) ? 0 : UTF16);
     }
 
     /**
      * Mix value length and coder into current length and coder.
-     * @param current current length
-     * @param value   value to mix in
-     * @return new length and coder
+     * @param lengthCoder String length with coder packed into higher bits
+     *                    the upper word.
+     * @param value       value to mix in
+     * @return            new length and coder
      */
-    static long mix(long current, short value) {
-        return mix(current, (int)value);
+    static long mix(long lengthCoder, short value) {
+        return mix(lengthCoder, (int)value);
     }
 
     /**
      * Mix value length and coder into current length and coder.
-     * @param current current length
-     * @param value   value to mix in
-     * @return new length and coder
+     * @param lengthCoder String length with coder packed into higher bits
+     *                    the upper word.
+     * @param value       value to mix in
+     * @return            new length and coder
      */
-    static long mix(long current, int value) {
-        return checkOverflow(current + Integer.stringSize(value));
+    static long mix(long lengthCoder, int value) {
+        return checkOverflow(lengthCoder + Integer.stringSize(value));
     }
 
     /**
      * Mix value length and coder into current length and coder.
-     * @param current current length
-     * @param value   value to mix in
-     * @return new length and coder
+     * @param lengthCoder String length with coder packed into higher bits
+     *                    the upper word.
+     * @param value       value to mix in
+     * @return            new length and coder
      */
-    static long mix(long current, long value) {
-        return checkOverflow(current + Long.stringSize(value));
+    static long mix(long lengthCoder, long value) {
+        return checkOverflow(lengthCoder + Long.stringSize(value));
     }
 
     /**
      * Mix value length and coder into current length and coder.
-     * @param current current length
-     * @param value   value to mix in
-     * @return new length and coder
+     * @param lengthCoder String length with coder packed into higher bits
+     *                    the upper word.
+     * @param value       value to mix in
+     * @return            new length and coder
      */
-    static long mix(long current, String value) {
-        current += value.length();
+    static long mix(long lengthCoder, String value) {
+        lengthCoder += value.length();
         if (value.coder() == String.UTF16) {
-            current |= UTF16;
+            lengthCoder |= UTF16;
         }
-        return checkOverflow(current);
+        return checkOverflow(lengthCoder);
     }
 
     /**
@@ -285,9 +297,61 @@ final class StringConcatHelper {
         }
     }
 
+    /**
+     * Perform a simple concatenation between two objects. Added for startup
+     * performance, but also demonstrates the code that would be emitted by
+     * {@code java.lang.invoke.StringConcatFactory$MethodHandleInlineCopyStrategy}
+     * for two Object arguments.
+     *
+     * @param first         first argument
+     * @param second        second argument
+     * @return String       resulting string
+     */
+    @ForceInline
+    static String simpleConcat(Object first, Object second) {
+        String s1 = stringOf(first);
+        String s2 = stringOf(second);
+        // start "mixing" in length and coder or arguments, order is not
+        // important
+        long indexCoder = mix(initialCoder(), s2);
+        indexCoder = mix(indexCoder, s1);
+        byte[] buf = newArray(indexCoder);
+        // prepend each argument in reverse order, since we prepending
+        // from the end of the byte array
+        indexCoder = prepend(indexCoder, buf, s2);
+        indexCoder = prepend(indexCoder, buf, s1);
+        return newString(buf, indexCoder);
+    }
+
+    /**
+     * We need some additional conversion for Objects in general, because
+     * {@code String.valueOf(Object)} may return null. String conversion rules
+     * in Java state we need to produce "null" String in this case, so we
+     * provide a customized version that deals with this problematic corner case.
+     */
+    static String stringOf(Object value) {
+        String s;
+        return (value == null || (s = value.toString()) == null) ? "null" : s;
+    }
+
     private static final long LATIN1 = (long)String.LATIN1 << 32;
 
     private static final long UTF16 = (long)String.UTF16 << 32;
+
+    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
+
+    /**
+     * Allocates an uninitialized byte array based on the length and coder information
+     * in indexCoder
+     * @param indexCoder
+     * @return the newly allocated byte array
+     */
+    @ForceInline
+    static byte[] newArray(long indexCoder) {
+        byte coder = (byte)(indexCoder >> 32);
+        int index = (int)indexCoder;
+        return (byte[]) UNSAFE.allocateUninitializedArray(byte.class, index << coder);
+    }
 
     /**
      * Provides the initial coder for the String.

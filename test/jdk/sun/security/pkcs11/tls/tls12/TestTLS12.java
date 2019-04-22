@@ -29,7 +29,7 @@
  *          java.base/sun.security.util
  *          java.base/com.sun.crypto.provider
  * @library /test/lib ../..
- * @run main/othervm/timeout=120 TestTLS12
+ * @run main/othervm/timeout=120 -Djdk.tls.useExtendedMasterSecret=false TestTLS12
  */
 
 import java.io.File;
@@ -37,8 +37,8 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 
-import java.security.interfaces.RSAPrivateKey;
-import java.security.interfaces.RSAPublicKey;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
@@ -76,8 +76,8 @@ public final class TestTLS12 extends SecmodTest {
     private static KeyStore ks;
     private static KeyStore ts;
     private static char[] passphrase = "JAHshj131@@".toCharArray();
-    private static RSAPrivateKey privateKey;
-    private static RSAPublicKey publicKey;
+    private static PrivateKey privateKey;
+    private static PublicKey publicKey;
 
     public static void main(String[] args) throws Exception {
         try {
@@ -444,14 +444,11 @@ public final class TestTLS12 extends SecmodTest {
         ts = ks;
 
         KeyStore ksPlain = readTestKeyStore();
-        privateKey = (RSAPrivateKey)ksPlain.getKey("rh_rsa_sha256",
+        privateKey = (PrivateKey)ksPlain.getKey("rh_rsa_sha256",
                 passphrase);
-        publicKey = (RSAPublicKey)ksPlain.getCertificate(
+        publicKey = (PublicKey)ksPlain.getCertificate(
                 "rh_rsa_sha256").getPublicKey();
 
-        // Extended Master Secret is not currently supported in SunPKCS11
-        // cryptographic provider
-        System.setProperty("jdk.tls.useExtendedMasterSecret", "false");
         String disabledAlgorithms =
                 Security.getProperty("jdk.tls.disabledAlgorithms");
         if (disabledAlgorithms.length() > 0) {

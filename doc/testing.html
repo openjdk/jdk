@@ -41,6 +41,7 @@
 </ul></li>
 <li><a href="#notes-for-specific-tests">Notes for Specific Tests</a><ul>
 <li><a href="#docker-tests">Docker Tests</a></li>
+<li><a href="#non-us-locale">Non-US locale</a></li>
 </ul></li>
 </ul>
 </nav>
@@ -191,8 +192,12 @@ TEST FAILURE</code></pre>
 <h2 id="notes-for-specific-tests">Notes for Specific Tests</h2>
 <h3 id="docker-tests">Docker Tests</h3>
 <p>Docker tests with default parameters may fail on systems with glibc versions not compatible with the one used in the default docker image (e.g., Oracle Linux 7.6 for x86). For example, they pass on Ubuntu 16.04 but fail on Ubuntu 18.04 if run like this on x86:</p>
-<pre><code>$ make test TEST=&quot;jtreg:test/hotspot/jtreg/runtime/containers/docker&quot;</code></pre>
+<pre><code>$ make test TEST=&quot;jtreg:test/hotspot/jtreg/containers/docker&quot;</code></pre>
 <p>To run these tests correctly, additional parameters for the correct docker image are required on Ubuntu 18.04 by using <code>JAVA_OPTIONS</code>.</p>
-<pre><code>$ make test TEST=&quot;jtreg:test/hotspot/jtreg/runtime/containers/docker&quot; JTREG=&quot;JAVA_OPTIONS=-Djdk.test.docker.image.name=ubuntu -Djdk.test.docker.image.version=latest&quot;</code></pre>
+<pre><code>$ make test TEST=&quot;jtreg:test/hotspot/jtreg/containers/docker&quot; JTREG=&quot;JAVA_OPTIONS=-Djdk.test.docker.image.name=ubuntu -Djdk.test.docker.image.version=latest&quot;</code></pre>
+<h3 id="non-us-locale">Non-US locale</h3>
+<p>If your locale is non-US, some tests are likely to fail. To work around this you can set the locale to US. On Unix platforms simply setting <code>LANG=&quot;en_US&quot;</code> in the environment before running tests should work. On Windows, setting <code>JTREG=&quot;VM_OPTIONS=-Duser.language=en -Duser.country=US&quot;</code> helps for most, but not all test cases. For example:</p>
+<pre><code>$ export LANG=&quot;en_US&quot; &amp;&amp; make test TEST=...
+$ make test JTREG=&quot;VM_OPTIONS=-Duser.language=en -Duser.country=US&quot; TEST=...</code></pre>
 </body>
 </html>

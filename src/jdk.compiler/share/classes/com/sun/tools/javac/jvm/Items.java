@@ -29,6 +29,8 @@ import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.jvm.Code.*;
+import com.sun.tools.javac.jvm.PoolConstant.LoadableConstant;
+import com.sun.tools.javac.jvm.PoolConstant.LoadableConstant.BasicConstant;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.Assert;
 
@@ -50,9 +52,9 @@ import static com.sun.tools.javac.jvm.ByteCodes.*;
  */
 public class Items {
 
-    /** The current constant pool.
+    /** The current constant pool writer.
      */
-    Pool pool;
+    PoolWriter poolWriter;
 
     /** The current code buffer.
      */
@@ -72,9 +74,9 @@ public class Items {
     private final Item superItem;
     private final Item[] stackItem = new Item[TypeCodeCount];
 
-    public Items(Pool pool, Code code, Symtab syms, Types types) {
+    public Items(PoolWriter poolWriter, Code code, Symtab syms, Types types) {
         this.code = code;
-        this.pool = pool;
+        this.poolWriter = poolWriter;
         this.types = types;
         voidItem = new Item(VOIDcode) {
                 public String toString() { return "void"; }
@@ -444,18 +446,18 @@ public class Items {
         }
 
         Item load() {
-            code.emitop2(getstatic, pool.put(member));
+            code.emitop2(getstatic, member, PoolWriter::putMember);
             return stackItem[typecode];
         }
 
         void store() {
-            code.emitop2(putstatic, pool.put(member));
+            code.emitop2(putstatic, member, PoolWriter::putMember);
         }
 
         Item invoke() {
             MethodType mtype = (MethodType)member.erasure(types);
             int rescode = Code.typecode(mtype.restype);
-            code.emitInvokestatic(pool.put(member), mtype);
+            code.emitInvokestatic(member, mtype);
             return stackItem[rescode];
         }
 
@@ -484,7 +486,7 @@ public class Items {
             // assert target.hasNativeInvokeDynamic();
             MethodType mtype = (MethodType)member.erasure(types);
             int rescode = Code.typecode(mtype.restype);
-            code.emitInvokedynamic(pool.put(member), mtype);
+            code.emitInvokedynamic((DynamicMethodSymbol)member, mtype);
             return stackItem[rescode];
         }
 
@@ -512,23 +514,23 @@ public class Items {
         }
 
         Item load() {
-            code.emitop2(getfield, pool.put(member));
+            code.emitop2(getfield, member, PoolWriter::putMember);
             return stackItem[typecode];
         }
 
         void store() {
-            code.emitop2(putfield, pool.put(member));
+            code.emitop2(putfield, member, PoolWriter::putMember);
         }
 
         Item invoke() {
             MethodType mtype = (MethodType)member.externalType(types);
             int rescode = Code.typecode(mtype.restype);
             if ((member.owner.flags() & Flags.INTERFACE) != 0 && !nonvirtual) {
-                code.emitInvokeinterface(pool.put(member), mtype);
+                code.emitInvokeinterface(member, mtype);
             } else if (nonvirtual) {
-                code.emitInvokespecial(pool.put(member), mtype);
+                code.emitInvokespecial(member, mtype);
             } else {
-                code.emitInvokevirtual(pool.put(member), mtype);
+                code.emitInvokevirtual(member, mtype);
             }
             return stackItem[rescode];
         }
@@ -560,26 +562,50 @@ public class Items {
 
         /** The literal's value.
          */
-        Object value;
+        final LoadableConstant value;
 
         ImmediateItem(Type type, Object value) {
             super(Code.typecode(type));
-            this.value = value;
+            switch (typecode) {
+                case BYTEcode:
+                case SHORTcode:
+                case CHARcode:
+                case INTcode:
+                    this.value = LoadableConstant.Int((int)value);
+                    break;
+                case LONGcode:
+                    this.value = LoadableConstant.Long((long)value);
+                    break;
+                case FLOATcode:
+                    this.value = LoadableConstant.Float((float)value);
+                    break;
+                case DOUBLEcode:
+                    this.value = LoadableConstant.Double((double)value);
+                    break;
+                case OBJECTcode:
+                    this.value = LoadableConstant.String((String)value);
+                    break;
+                default:
+                    throw new UnsupportedOperationException("unsupported tag: " + typecode);
+            }
         }
 
         private void ldc() {
-            int idx = pool.put(value);
             if (typecode == LONGcode || typecode == DOUBLEcode) {
-                code.emitop2(ldc2w, idx);
+                code.emitop2(ldc2w, value, PoolWriter::putConstant);
             } else {
-                code.emitLdc(idx);
+                code.emitLdc(value);
             }
+        }
+
+        private Number numericValue() {
+            return (Number)((BasicConstant)value).data;
         }
 
         Item load() {
             switch (typecode) {
             case INTcode: case BYTEcode: case SHORTcode: case CHARcode:
-                int ival = ((Number)value).intValue();
+                int ival = numericValue().intValue();
                 if (-1 <= ival && ival <= 5)
                     code.emitop0(iconst_0 + ival);
                 else if (Byte.MIN_VALUE <= ival && ival <= Byte.MAX_VALUE)
@@ -590,14 +616,14 @@ public class Items {
                     ldc();
                 break;
             case LONGcode:
-                long lval = ((Number)value).longValue();
+                long lval = numericValue().longValue();
                 if (lval == 0 || lval == 1)
                     code.emitop0(lconst_0 + (int)lval);
                 else
                     ldc();
                 break;
             case FLOATcode:
-                float fval = ((Number)value).floatValue();
+                float fval = numericValue().floatValue();
                 if (isPosZero(fval) || fval == 1.0 || fval == 2.0)
                     code.emitop0(fconst_0 + (int)fval);
                 else {
@@ -605,7 +631,7 @@ public class Items {
                 }
                 break;
             case DOUBLEcode:
-                double dval = ((Number)value).doubleValue();
+                double dval = numericValue().doubleValue();
                 if (isPosZero(dval) || dval == 1.0)
                     code.emitop0(dconst_0 + (int)dval);
                 else
@@ -632,7 +658,7 @@ public class Items {
             }
 
         CondItem mkCond() {
-            int ival = ((Number)value).intValue();
+            int ival = numericValue().intValue();
             return makeCondItem(ival != 0 ? goto_ : dontgoto);
         }
 
@@ -647,31 +673,31 @@ public class Items {
                     else
                         return new ImmediateItem(
                             syms.intType,
-                            ((Number)value).intValue());
+                            numericValue().intValue());
                 case LONGcode:
                     return new ImmediateItem(
                         syms.longType,
-                        ((Number)value).longValue());
+                            numericValue().longValue());
                 case FLOATcode:
                     return new ImmediateItem(
                         syms.floatType,
-                        ((Number)value).floatValue());
+                        numericValue().floatValue());
                 case DOUBLEcode:
                     return new ImmediateItem(
                         syms.doubleType,
-                        ((Number)value).doubleValue());
+                        numericValue().doubleValue());
                 case BYTEcode:
                     return new ImmediateItem(
                         syms.byteType,
-                        (int)(byte)((Number)value).intValue());
+                        (int)(byte)numericValue().intValue());
                 case CHARcode:
                     return new ImmediateItem(
                         syms.charType,
-                        (int)(char)((Number)value).intValue());
+                        (int)(char)numericValue().intValue());
                 case SHORTcode:
                     return new ImmediateItem(
                         syms.shortType,
-                        (int)(short)((Number)value).intValue());
+                        (int)(short)numericValue().intValue());
                 default:
                     return super.coerce(targetcode);
                 }

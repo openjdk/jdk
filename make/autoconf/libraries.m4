@@ -130,6 +130,11 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBRARIES],
     BASIC_JVM_LIBS="$BASIC_JVM_LIBS -lthread"
   fi
 
+  # perfstat lib
+  if test "x$OPENJDK_TARGET_OS" = xaix; then
+    BASIC_JVM_LIBS="$BASIC_JVM_LIBS -lperfstat"
+  fi
+
   if test "x$OPENJDK_TARGET_OS" = xsolaris; then
     BASIC_JVM_LIBS="$BASIC_JVM_LIBS -lsocket -lsched -ldoor -ldemangle -lnsl \
         -lrt -lkstat"

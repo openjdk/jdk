@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -496,7 +496,7 @@ class SlowSignatureHandler
 #endif
 
 
-IRT_ENTRY(address,
+JRT_ENTRY(address,
           InterpreterRuntime::slow_signature_handler(JavaThread* thread,
                                                      Method* method,
                                                      intptr_t* from,
@@ -509,4 +509,4 @@ IRT_ENTRY(address,
 
   // return result handler
   return Interpreter::result_handler(m->result_type());
-IRT_END
+JRT_END

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -590,12 +590,9 @@ ThreadsList *ThreadsList::add_thread(ThreadsList *list, JavaThread *java_thread)
 }
 
 void ThreadsList::dec_nested_handle_cnt() {
-  // The decrement needs to be MO_ACQ_REL. At the moment, the Atomic::dec
-  // backend on PPC does not yet conform to these requirements. Therefore
-  // the decrement is simulated with an Atomic::sub(1, &addr).
-  // Without this MO_ACQ_REL Atomic::dec simulation, the nested SMR mechanism
-  // is not generally safe to use.
-  Atomic::sub(1, &_nested_handle_cnt);
+  // The decrement only needs to be MO_ACQ_REL since the reference
+  // counter is volatile (and the hazard ptr is already NULL).
+  Atomic::dec(&_nested_handle_cnt);
 }
 
 int ThreadsList::find_index_of_JavaThread(JavaThread *target) {
@@ -626,19 +623,9 @@ JavaThread* ThreadsList::find_JavaThread_from_java_tid(jlong java_tid) const {
 }
 
 void ThreadsList::inc_nested_handle_cnt() {
-  // The increment needs to be MO_SEQ_CST. At the moment, the Atomic::inc
-  // backend on PPC does not yet conform to these requirements. Therefore
-  // the increment is simulated with a load phi; cas phi + 1; loop.
-  // Without this MO_SEQ_CST Atomic::inc simulation, the nested SMR mechanism
-  // is not generally safe to use.
-  intx sample = OrderAccess::load_acquire(&_nested_handle_cnt);
-  for (;;) {
-    if (Atomic::cmpxchg(sample + 1, &_nested_handle_cnt, sample) == sample) {
-      return;
-    } else {
-      sample = OrderAccess::load_acquire(&_nested_handle_cnt);
-    }
-  }
+  // The increment needs to be MO_SEQ_CST so that the reference counter
+  // update is seen before the subsequent hazard ptr update.
+  Atomic::inc(&_nested_handle_cnt);
 }
 
 bool ThreadsList::includes(const JavaThread * const p) const {

@@ -29,6 +29,7 @@
 #include "oops/access.inline.hpp"
 #include "oops/oop.hpp"
 #include "oops/weakHandle.inline.hpp"
+#include "prims/resolvedMethodTable.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
 
@@ -38,6 +39,10 @@ template <> OopStorage* WeakHandle<vm_class_loader_data>::get_storage() {
 
 template <> OopStorage* WeakHandle<vm_string_table_data>::get_storage() {
   return StringTable::weak_storage();
+}
+
+template <> OopStorage* WeakHandle<vm_resolved_method_table_data>::get_storage() {
+  return ResolvedMethodTable::weak_storage();
 }
 
 template <WeakHandleType T>
@@ -74,4 +79,4 @@ void WeakHandle<T>::print_on(outputStream* st) const {
 // Provide instantiation.
 template class WeakHandle<vm_class_loader_data>;
 template class WeakHandle<vm_string_table_data>;
-
+template class WeakHandle<vm_resolved_method_table_data>;

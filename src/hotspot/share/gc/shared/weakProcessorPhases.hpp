@@ -45,6 +45,7 @@ public:
     // OopStorage phases.
     jni,
     stringtable,
+    resolved_method_table,
     vm
   };
 
@@ -68,6 +69,7 @@ public:
   static OopStorage* oop_storage(Phase phase); // Precondition: is_oop_storage(phase)
 
   static bool is_stringtable(Phase phase);
+  static bool is_resolved_method_table(Phase phase);
 };
 
 typedef WeakProcessorPhases::Phase WeakProcessorPhase;

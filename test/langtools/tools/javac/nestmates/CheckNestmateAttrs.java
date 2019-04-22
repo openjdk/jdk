@@ -90,8 +90,8 @@ public class CheckNestmateAttrs {
                         "NestHost: class CheckNestmateAttrs",
                         "0: aload_0",
                         "1: getfield      #1                  // Field this$1:LCheckNestmateAttrs$Inner;",
-                        "4: getfield      #3                  // Field CheckNestmateAttrs$Inner.this$0:LCheckNestmateAttrs;",
-                        "7: invokevirtual #4                  // Method CheckNestmateAttrs.test:()V",
+                        "4: getfield      #13                 // Field CheckNestmateAttrs$Inner.this$0:LCheckNestmateAttrs;",
+                        "7: invokevirtual #19                 // Method CheckNestmateAttrs.test:()V",
                         "10: return"
         });
 

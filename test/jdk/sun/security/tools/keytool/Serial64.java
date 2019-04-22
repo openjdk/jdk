@@ -23,15 +23,13 @@
 
 /*
  * @test
- * @bug 8221257
+ * @bug 8221257 8222275
  * @summary Improve serial number generation mechanism for keytool -gencert
  * @library /test/lib
  * @key randomness
  */
 
-import jdk.test.lib.Asserts;
 import jdk.test.lib.SecurityTools;
-import jdk.test.lib.process.OutputAnalyzer;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -39,57 +37,59 @@ import java.math.BigInteger;
 import java.security.KeyStore;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.List;
 
 public class Serial64 {
 
-    static List<BigInteger> numbers = new ArrayList<>();
-
     public static void main(String[] args) throws Exception {
 
-        // 10 Self-signed certs and issued certs
-        genkeypair("ca");
-        genkeypair("user");
-        for (int i = 0; i < 8; i++) {
-            gencert("ca", "user");
+        boolean see64 = false;
+
+        see64 |= see64(genkeypair("ca"));
+        see64 |= see64(genkeypair("user"));
+
+        keytool("-certreq -alias user -file req");
+
+        for (int i = 3; i <= 30; i++) {
+            see64 |= see64(gencert());
+            if (i >= 10 && see64) {
+                // As long as we have generated >=10 (non-negative) SNs and
+                // at least one is 64 bit it's good to go.
+                return;
+            }
         }
 
-        numbers.forEach(b -> System.out.println(b.toString(16)));
-
-        // Must be positive, therefore never zero.
-        Asserts.assertTrue(numbers.stream()
-                .allMatch(b -> b.signum() == 1));
-
-        // At least one should be 64 bit. There is a chance of
-        // 2^-10 this would fail.
-        Asserts.assertTrue(numbers.stream()
-                .anyMatch(b -> b.bitLength() == 64));
+        // None is 64 bit. There is a chance of 2^-30 we reach here.
+        // Or, maybe we do have a bug?
+        throw new RuntimeException("No 64-bit serial number");
     }
 
-    static OutputAnalyzer keytool(String s) throws Exception {
-        return SecurityTools.keytool(
-                "-storepass changeit -keypass changeit "
-                        + "-keystore ks -keyalg rsa " + s);
+    static boolean see64(BigInteger sn) {
+        System.out.println(sn.toString(16));
+
+        if (sn.signum() != 1) {
+            throw new RuntimeException("Must be positive");
+        }
+        return sn.bitLength() == 64;
     }
 
-    static void genkeypair(String a) throws Exception {
-        keytool("-genkeypair -alias " + a + " -dname CN=" + a)
+    static void keytool(String s) throws Exception {
+        SecurityTools.keytool("-storepass changeit -keypass changeit "
+                + "-keystore ks -keyalg rsa " + s)
                 .shouldHaveExitValue(0);
-        numbers.add(((X509Certificate)KeyStore.getInstance(
+    }
+
+    static BigInteger genkeypair(String a) throws Exception {
+        keytool("-genkeypair -alias " + a + " -dname CN=" + a);
+        return ((X509Certificate)KeyStore.getInstance(
                 new File("ks"), "changeit".toCharArray())
-                    .getCertificate(a)).getSerialNumber());
+                    .getCertificate(a)).getSerialNumber();
     }
 
-    static void gencert(String signer, String owner)
-            throws Exception {
-        keytool("-certreq -alias " + owner + " -file req")
-                .shouldHaveExitValue(0);
-        keytool("-gencert -alias " + signer + " -infile req -outfile cert")
-                .shouldHaveExitValue(0);
+    static BigInteger gencert() throws Exception {
+        keytool("-gencert -alias ca -infile req -outfile cert");
         try (FileInputStream fis = new FileInputStream("cert")) {
-            numbers.add(((X509Certificate)CertificateFactory.getInstance("X.509")
-                    .generateCertificate(fis)).getSerialNumber());
+            return ((X509Certificate)CertificateFactory.getInstance("X.509")
+                    .generateCertificate(fis)).getSerialNumber();
         }
     }
 }

@@ -5000,17 +5000,13 @@ char* os::pd_remap_memory(int fd, const char* file_name, size_t file_offset,
                           char *addr, size_t bytes, bool read_only,
                           bool allow_exec) {
   // This OS does not allow existing memory maps to be remapped so we
-  // have to unmap the memory before we remap it.
-  if (!os::unmap_memory(addr, bytes)) {
-    return NULL;
-  }
+  // would have to unmap the memory before we remap it.
 
-  // There is a very small theoretical window between the unmap_memory()
-  // call above and the map_memory() call below where a thread in native
-  // code may be able to access an address that is no longer mapped.
-
-  return os::map_memory(fd, file_name, file_offset, addr, bytes,
-                        read_only, allow_exec);
+  // Because there is a small window between unmapping memory and mapping
+  // it in again with different protections, CDS archives are mapped RW
+  // on windows, so this function isn't called.
+  ShouldNotReachHere();
+  return NULL;
 }
 
 

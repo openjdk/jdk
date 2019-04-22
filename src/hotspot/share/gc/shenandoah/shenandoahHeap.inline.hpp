@@ -46,17 +46,6 @@
 #include "utilities/copy.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-template <class T>
-void ShenandoahUpdateRefsClosure::do_oop_work(T* p) {
-  T o = RawAccess<>::oop_load(p);
-  if (!CompressedOops::is_null(o)) {
-    oop obj = CompressedOops::decode_not_null(o);
-    _heap->update_with_forwarded_not_null(p, obj);
-  }
-}
-
-void ShenandoahUpdateRefsClosure::do_oop(oop* p)       { do_oop_work(p); }
-void ShenandoahUpdateRefsClosure::do_oop(narrowOop* p) { do_oop_work(p); }
 
 inline ShenandoahHeapRegion* ShenandoahRegionIterator::next() {
   size_t new_index = Atomic::add((size_t) 1, &_index);

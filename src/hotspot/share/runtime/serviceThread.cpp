@@ -190,7 +190,7 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
     }
 
     if (resolved_method_table_work) {
-      ResolvedMethodTable::unlink();
+      ResolvedMethodTable::do_concurrent_work(jt);
     }
 
     if (protection_domain_table_work) {

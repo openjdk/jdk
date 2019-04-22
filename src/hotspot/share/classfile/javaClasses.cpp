@@ -1714,20 +1714,13 @@ oop java_lang_Thread::inherited_access_control_context(oop java_thread) {
 
 
 jlong java_lang_Thread::stackSize(oop java_thread) {
-  if (_stackSize_offset > 0) {
-    return java_thread->long_field(_stackSize_offset);
-  } else {
-    return 0;
-  }
+  return java_thread->long_field(_stackSize_offset);
 }
 
 // Write the thread status value to threadStatus field in java.lang.Thread java class.
 void java_lang_Thread::set_thread_status(oop java_thread,
                                          java_lang_Thread::ThreadStatus status) {
-  // The threadStatus is only present starting in 1.5
-  if (_thread_status_offset > 0) {
-    java_thread->int_field_put(_thread_status_offset, status);
-  }
+  java_thread->int_field_put(_thread_status_offset, status);
 }
 
 // Read thread status value from threadStatus field in java.lang.Thread java class.
@@ -1737,62 +1730,31 @@ java_lang_Thread::ThreadStatus java_lang_Thread::get_thread_status(oop java_thre
   assert(Threads_lock->owned_by_self() || Thread::current()->is_VM_thread() ||
          JavaThread::current()->thread_state() == _thread_in_vm,
          "Java Thread is not running in vm");
-  // The threadStatus is only present starting in 1.5
-  if (_thread_status_offset > 0) {
-    return (java_lang_Thread::ThreadStatus)java_thread->int_field(_thread_status_offset);
-  } else {
-    // All we can easily figure out is if it is alive, but that is
-    // enough info for a valid unknown status.
-    // These aren't restricted to valid set ThreadStatus values, so
-    // use JVMTI values and cast.
-    JavaThread* thr = java_lang_Thread::thread(java_thread);
-    if (thr == NULL) {
-      // the thread hasn't run yet or is in the process of exiting
-      return NEW;
-    }
-    return (java_lang_Thread::ThreadStatus)JVMTI_THREAD_STATE_ALIVE;
-  }
+  return (java_lang_Thread::ThreadStatus)java_thread->int_field(_thread_status_offset);
 }
 
 
 jlong java_lang_Thread::thread_id(oop java_thread) {
-  // The thread ID field is only present starting in 1.5
-  if (_tid_offset > 0) {
-    return java_thread->long_field(_tid_offset);
-  } else {
-    return 0;
-  }
+  return java_thread->long_field(_tid_offset);
 }
 
 oop java_lang_Thread::park_blocker(oop java_thread) {
-  assert(JDK_Version::current().supports_thread_park_blocker() &&
-         _park_blocker_offset != 0, "Must support parkBlocker field");
+  assert(JDK_Version::current().supports_thread_park_blocker(),
+         "Must support parkBlocker field");
 
-  if (_park_blocker_offset > 0) {
-    return java_thread->obj_field(_park_blocker_offset);
-  }
-
-  return NULL;
+  return java_thread->obj_field(_park_blocker_offset);
 }
 
 jlong java_lang_Thread::park_event(oop java_thread) {
-  if (_park_event_offset > 0) {
-    return java_thread->long_field(_park_event_offset);
-  }
-  return 0;
+  return java_thread->long_field(_park_event_offset);
 }
 
 bool java_lang_Thread::set_park_event(oop java_thread, jlong ptr) {
-  if (_park_event_offset > 0) {
-    java_thread->long_field_put(_park_event_offset, ptr);
-    return true;
-  }
-  return false;
+  java_thread->long_field_put(_park_event_offset, ptr);
+  return true;
 }
 
-
 const char* java_lang_Thread::thread_status_name(oop java_thread) {
-  assert(_thread_status_offset != 0, "Must have thread status");
   ThreadStatus status = (java_lang_Thread::ThreadStatus)java_thread->int_field(_thread_status_offset);
   switch (status) {
     case NEW                      : return "NEW";
@@ -3635,23 +3597,48 @@ void java_lang_invoke_ResolvedMethodName::set_vmtarget(oop resolved_method, Meth
   resolved_method->address_field_put(_vmtarget_offset, (address)m);
 }
 
+void java_lang_invoke_ResolvedMethodName::set_vmholder(oop resolved_method, oop holder) {
+  assert(is_instance(resolved_method), "wrong type");
+  resolved_method->obj_field_put(_vmholder_offset, holder);
+}
+
 oop java_lang_invoke_ResolvedMethodName::find_resolved_method(const methodHandle& m, TRAPS) {
+  const Method* method = m();
+
   // lookup ResolvedMethod oop in the table, or create a new one and intern it
-  oop resolved_method = ResolvedMethodTable::find_method(m());
-  if (resolved_method == NULL) {
-    InstanceKlass* k = SystemDictionary::ResolvedMethodName_klass();
-    if (!k->is_initialized()) {
-      k->initialize(CHECK_NULL);
-    }
-    oop new_resolved_method = k->allocate_instance(CHECK_NULL);
-    new_resolved_method->address_field_put(_vmtarget_offset, (address)m());
-    // Add a reference to the loader (actually mirror because unsafe anonymous classes will not have
-    // distinct loaders) to ensure the metadata is kept alive.
-    // This mirror may be different than the one in clazz field.
-    new_resolved_method->obj_field_put(_vmholder_offset, m->method_holder()->java_mirror());
-    resolved_method = ResolvedMethodTable::add_method(m, Handle(THREAD, new_resolved_method));
+  oop resolved_method = ResolvedMethodTable::find_method(method);
+  if (resolved_method != NULL) {
+    return resolved_method;
   }
-  return resolved_method;
+
+  InstanceKlass* k = SystemDictionary::ResolvedMethodName_klass();
+  if (!k->is_initialized()) {
+    k->initialize(CHECK_NULL);
+  }
+
+  oop new_resolved_method = k->allocate_instance(CHECK_NULL);
+
+  NoSafepointVerifier nsv;
+
+  if (method->is_old()) {
+    method = (method->is_deleted()) ? Universe::throw_no_such_method_error() :
+                                      method->get_new_method();
+  }
+
+  InstanceKlass* holder = method->method_holder();
+
+  set_vmtarget(new_resolved_method, const_cast<Method*>(method));
+  // Add a reference to the loader (actually mirror because unsafe anonymous classes will not have
+  // distinct loaders) to ensure the metadata is kept alive.
+  // This mirror may be different than the one in clazz field.
+  set_vmholder(new_resolved_method, holder->java_mirror());
+
+  // Set flag in class to indicate this InstanceKlass has entries in the table
+  // to avoid walking table during redefinition if none of the redefined classes
+  // have any membernames in the table.
+  holder->set_has_resolved_methods();
+
+  return ResolvedMethodTable::add_method(method, Handle(THREAD, new_resolved_method));
 }
 
 oop java_lang_invoke_LambdaForm::vmentry(oop lform) {

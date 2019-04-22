@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,13 +67,24 @@ public class HelloClasslist {
               .forEach(System.out::println);
 
         // Common concatenation patterns
-        String const_I = "string" + args.length;
-        String const_S = "string" + String.valueOf(args.length);
-        String S_const = String.valueOf(args.length) + "string";
-        String S_S     = String.valueOf(args.length) + String.valueOf(args.length);
-        String const_J = "string" + System.currentTimeMillis();
-        String I_const = args.length + "string";
-        String J_const = System.currentTimeMillis() + "string";
+        String SS     = String.valueOf(args.length) + String.valueOf(args.length);
+        String CS     = "string" + String.valueOf(args.length);
+        String SC     = String.valueOf(args.length) + "string";
+        String SCS    = String.valueOf(args.length) + "string" + String.valueOf(args.length);
+        String CSS    = "string" + String.valueOf(args.length) + String.valueOf(args.length);
+        String CSCS   = "string" + String.valueOf(args.length) + "string" + String.valueOf(args.length);
+        String SCSC   = String.valueOf(args.length) + "string" + String.valueOf(args.length) + "string";
+        String CSCSC  = "string" + String.valueOf(args.length) + "string" + String.valueOf(args.length) + "string";
+        String SCSCS  = String.valueOf(args.length) + "string" + String.valueOf(args.length) + "string" + String.valueOf(args.length);
+        String CI     = "string" + args.length;
+        String IC     = args.length + "string";
+        String CIC    = "string" + args.length + "string";
+        String CICI   = "string" + args.length + "string" + args.length;
+        String CJ     = "string" + System.currentTimeMillis();
+        String JC     = System.currentTimeMillis() + "string";
+        String CJC    = "string" + System.currentTimeMillis() + "string";
+        String CJCJ   = "string" + System.currentTimeMillis() + "string" + System.currentTimeMillis();
+        String CJCJC  = "string" + System.currentTimeMillis() + "string" + System.currentTimeMillis() + "string";
 
         String newDate = DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(
                 LocalDateTime.now(ZoneId.of("GMT")));

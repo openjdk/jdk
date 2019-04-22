@@ -150,14 +150,14 @@ time of writing.
 
  Operating system   Vendor/version used
  -----------------  -------------------------------------------------------
- Linux              Oracle Enterprise Linux 6.4 / 7.1 (using kernel 3.8.13)
- Solaris            Solaris 11.1 SRU 21.4.1 / 11.2 SRU 5.5
- macOS              Mac OS X 10.9 (Mavericks) / 10.10 (Yosemite)
+ Linux              Oracle Enterprise Linux 6.4 / 7.6
+ Solaris            Solaris 11.3 SRU 20
+ macOS              Mac OS X 10.13 (High Sierra)
  Windows            Windows Server 2012 R2
 
-The double version numbers for Linux, Solaris and macOS is due to the hybrid
-model used at Oracle, where header files and external libraries from an older
-version are used when building on a more modern version of the OS.
+The double version numbers for Linux and Solaris are due to the hybrid model
+used at Oracle, where header files and external libraries from an older version
+are used when building on a more modern version of the OS.
 
 The Build Group has a wiki page with [Supported Build Platforms](
 https://wiki.openjdk.java.net/display/Build/Supported+Build+Platforms). From
@@ -323,10 +323,10 @@ issues.
 
  Operating system   Toolchain version
  ------------------ -------------------------------------------------------
- Linux              gcc 7.3.0
- macOS              Apple Xcode 9.4 (using clang 9.1.0)
- Solaris            Oracle Solaris Studio 12.4 (with compiler version 5.13)
- Windows            Microsoft Visual Studio 2017 update 15.5.5
+ Linux              gcc 8.2.0
+ macOS              Apple Xcode 10.1 (using clang 10.0.0)
+ Solaris            Oracle Solaris Studio 12.6 (with compiler version 5.15)
+ Windows            Microsoft Visual Studio 2017 update 15.9.6
 
 ### gcc
 

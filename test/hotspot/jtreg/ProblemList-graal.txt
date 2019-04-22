@@ -38,8 +38,6 @@ compiler/compilercontrol/jcmd/AddLogTest.java                   8181753   generi
 compiler/compilercontrol/mixed/RandomValidCommandsTest.java     8181753   generic-all
 compiler/compilercontrol/mixed/RandomCommandsTest.java          8181753   generic-all
 
-compiler/graalunit/JttThreadsTest.java                          8208066   generic-all
-
 compiler/jvmci/SecurityRestrictionsTest.java                    8181837   generic-all
 
 compiler/unsafe/UnsafeGetConstantField.java                     8181833   generic-all
@@ -219,6 +217,9 @@ vmTestbase/nsk/jdb/unmonitor/unmonitor001/unmonitor001.java                   82
 vmTestbase/nsk/jdb/clear/clear003/clear003.java                               8218701 generic-all
 
 compiler/jsr292/InvokerSignatureMismatch.java           8221577   generic-all
+
+compiler/arguments/TestScavengeRootsInCode.java         8207267   generic-all
+compiler/loopopts/TestOverunrolling.java                8207267   generic-all
 
 # Graal unit tests
 org.graalvm.compiler.core.test.CheckGraalInvariants                              8205081

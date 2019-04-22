@@ -31,7 +31,7 @@
  *          java.instrument
  *          jdk.jartool/sun.tools.jar
  * @run main RedefineClassHelper
- * @run main/native/othervm -javaagent:redefineagent.jar -Xlog:redefine+class*=trace RedefineDeleteJmethod
+ * @run main/native/othervm -javaagent:redefineagent.jar -XX:+AllowRedefinitionToAddDeleteMethods -Xlog:redefine+class*=trace RedefineDeleteJmethod
  */
 
 class B {

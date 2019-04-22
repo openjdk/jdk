@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @summary classes with major version < JDK_1.5 (48) should not be included in CDS
+ * @summary classes with major version < JDK_6 (50) should not be included in CDS
  * @requires vm.cds
  * @library /test/lib
  * @modules java.base/jdk.internal.org.objectweb.asm
@@ -61,9 +61,9 @@ public class OldClassTest implements Opcodes {
 
     String appClasses[] = TestCommon.list("Hello");
 
-    // CASE 1: pre-JDK 1.5 compiled classes should be excluded from the dump
+    // CASE 1: pre-JDK 6 compiled classes should be excluded from the dump
     OutputAnalyzer output = TestCommon.dump(jar, appClasses);
-    TestCommon.checkExecReturn(output, 0, true, "Pre JDK 1.5 class not supported by CDS");
+    TestCommon.checkExecReturn(output, 0, true, "Pre JDK 6 class not supported by CDS");
 
     TestCommon.run(
         "-cp", jar,
@@ -74,7 +74,7 @@ public class OldClassTest implements Opcodes {
     //         the newer version of this class in a subsequent classpath element.
     String classpath = jar + File.pathSeparator + jarSrcFile.getPath();
     output = TestCommon.dump(classpath, appClasses);
-    TestCommon.checkExecReturn(output, 0, true, "Pre JDK 1.5 class not supported by CDS");
+    TestCommon.checkExecReturn(output, 0, true, "Pre JDK 6 class not supported by CDS");
 
     TestCommon.run(
         "-cp", classpath,
@@ -127,8 +127,7 @@ java jdk.internal.org.objectweb.asm.util.ASMifier Hello.class
     MethodVisitor mv;
     AnnotationVisitor av0;
 
-//WAS cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, "Hello", null, "java/lang/Object", null);
-      cw.visit(V1_4, ACC_PUBLIC + ACC_SUPER, "Hello", null, "java/lang/Object", null);
+      cw.visit(V1_5, ACC_PUBLIC + ACC_SUPER, "Hello", null, "java/lang/Object", null);
 
     {
       mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);

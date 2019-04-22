@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,6 +65,7 @@ public class Debuggee implements Closeable {
     public static class Launcher {
         private final String mainClass;
         private final List<String> options = new LinkedList<>();
+        private String vmOptions = null;
         private String transport = "dt_socket";
         private String address = null;
         private boolean suspended = true;
@@ -79,6 +80,10 @@ public class Debuggee implements Closeable {
         }
         public Launcher addOptions(List<String> options) {
             this.options.addAll(options);
+            return this;
+        }
+        public Launcher addVMOptions(String vmOptions) {
+            this.vmOptions = vmOptions;
             return this;
         }
         // default is "dt_socket"
@@ -104,6 +109,9 @@ public class Debuggee implements Closeable {
 
         public ProcessBuilder prepare() {
             List<String> debuggeeArgs = new LinkedList<>();
+            if (vmOptions != null) {
+                debuggeeArgs.add(vmOptions);
+            }
             debuggeeArgs.add("-agentlib:jdwp=transport=" + transport
                     + (address == null ? "" : ",address=" + address)
                     + ",server=y,suspend=" + (suspended ? "y" : "n"));

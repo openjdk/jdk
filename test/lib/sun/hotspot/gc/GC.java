@@ -70,4 +70,16 @@ public enum GC {
     public static boolean isSelectedErgonomically() {
         return WB.isGCSelectedErgonomically();
     }
+
+    /**
+     * @return the selected GC.
+     */
+    public static GC selected() {
+      for (GC gc : values()) {
+        if (gc.isSelected()) {
+          return gc;
+        }
+      }
+      throw new IllegalStateException("No selected GC found");
+    }
 }

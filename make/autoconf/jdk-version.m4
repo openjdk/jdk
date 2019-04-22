@@ -66,7 +66,33 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   AC_SUBST(PRODUCT_SUFFIX)
   AC_SUBST(JDK_RC_PLATFORM_NAME)
   AC_SUBST(HOTSPOT_VM_DISTRO)
+
+  # Set the MACOSX Bundle Name base
+  AC_ARG_WITH(macosx-bundle-name-base, [AS_HELP_STRING([--with-macosx-bundle-name-base],
+      [Set the MacOSX Bundle Name base. This is the base name for calculating MacOSX Bundle Names.
+      @<:@not specified@:>@])])
+  if test "x$with_macosx_bundle_name_base" = xyes; then
+    AC_MSG_ERROR([--with-macosx-bundle-name-base must have a value])
+  elif [ ! [[ $with_macosx_bundle_name_base =~ ^[[:print:]]*$ ]] ]; then
+    AC_MSG_ERROR([--with-macosx-bundle-name-base contains non-printing characters: $with_macosx_bundle_name_base])
+  elif test "x$with_macosx_bundle_name_base" != x; then
+    # Set MACOSX_BUNDLE_NAME_BASE to the configured value.
+    MACOSX_BUNDLE_NAME_BASE="$with_macosx_bundle_name_base"
+  fi
   AC_SUBST(MACOSX_BUNDLE_NAME_BASE)
+
+  # Set the MACOSX Bundle ID base
+  AC_ARG_WITH(macosx-bundle-id-base, [AS_HELP_STRING([--with-macosx-bundle-id-base],
+      [Set the MacOSX Bundle ID base. This is the base ID for calculating MacOSX Bundle IDs.
+      @<:@not specified@:>@])])
+  if test "x$with_macosx_bundle_id_base" = xyes; then
+    AC_MSG_ERROR([--with-macosx-bundle-id-base must have a value])
+  elif [ ! [[ $with_macosx_bundle_id_base =~ ^[[:print:]]*$ ]] ]; then
+    AC_MSG_ERROR([--with-macosx-bundle-id-base contains non-printing characters: $with_macosx_bundle_id_base])
+  elif test "x$with_macosx_bundle_id_base" != x; then
+    # Set MACOSX_BUNDLE_ID_BASE to the configured value.
+    MACOSX_BUNDLE_ID_BASE="$with_macosx_bundle_id_base"
+  fi
   AC_SUBST(MACOSX_BUNDLE_ID_BASE)
 
   # Set the JDK RC name

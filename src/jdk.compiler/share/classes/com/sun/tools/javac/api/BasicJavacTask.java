@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,9 +43,11 @@ import javax.tools.JavaFileObject;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.util.JavacTask;
+import com.sun.source.util.ParameterNameProvider;
 import com.sun.source.util.Plugin;
 import com.sun.source.util.TaskListener;
 import com.sun.tools.doclint.DocLint;
+import com.sun.tools.javac.code.MissingInfoHandler;
 import com.sun.tools.javac.main.JavaCompiler;
 import com.sun.tools.javac.model.JavacElements;
 import com.sun.tools.javac.model.JavacTypes;
@@ -121,6 +123,11 @@ public class BasicJavacTask extends JavacTask {
     public void removeTaskListener(TaskListener taskListener) {
         MultiTaskListener mtl = MultiTaskListener.instance(context);
         mtl.remove(taskListener);
+    }
+
+    @Override
+    public void setParameterNameProvider(ParameterNameProvider handler) {
+        MissingInfoHandler.instance(context).setDelegate(handler);
     }
 
     public Collection<TaskListener> getTaskListeners() {

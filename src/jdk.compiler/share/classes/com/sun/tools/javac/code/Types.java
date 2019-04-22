@@ -48,6 +48,8 @@ import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Check;
 import com.sun.tools.javac.comp.Enter;
 import com.sun.tools.javac.comp.Env;
+import com.sun.tools.javac.comp.LambdaToMethod;
+import com.sun.tools.javac.jvm.ClassFile;
 import com.sun.tools.javac.util.*;
 
 import static com.sun.tools.javac.code.BoundKind.*;
@@ -5179,6 +5181,29 @@ public class Types {
             for (List<Type> ts = types; ts.nonEmpty(); ts = ts.tail) {
                 assembleSig(ts.head);
             }
+        }
+    }
+
+    public Type constantType(LoadableConstant c) {
+        switch (c.poolTag()) {
+            case ClassFile.CONSTANT_Class:
+                return syms.classType;
+            case ClassFile.CONSTANT_String:
+                return syms.stringType;
+            case ClassFile.CONSTANT_Integer:
+                return syms.intType;
+            case ClassFile.CONSTANT_Float:
+                return syms.floatType;
+            case ClassFile.CONSTANT_Long:
+                return syms.longType;
+            case ClassFile.CONSTANT_Double:
+                return syms.doubleType;
+            case ClassFile.CONSTANT_MethodHandle:
+                return syms.methodHandleType;
+            case ClassFile.CONSTANT_MethodType:
+                return syms.methodTypeType;
+            default:
+                throw new AssertionError("Not a loadable constant: " + c.poolTag());
         }
     }
     // </editor-fold>

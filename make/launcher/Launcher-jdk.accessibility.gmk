@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ ifeq ($(call isTargetOs, windows), true)
       DISABLED_WARNINGS_microsoft := 4267 4996, \
       LDFLAGS := $(LDFLAGS_JDKEXE), \
       LIBS := advapi32.lib version.lib user32.lib, \
-      VERSIONINFO_RESOURCE := $(ACCESSBRIDGE_SRC)/AccessBridgeStatusWindow.RC, \
+      VERSIONINFO_RESOURCE := $(ACCESSBRIDGE_SRC)/AccessBridgeStatusWindow.rc, \
       MANIFEST := $(JABSWITCH_SRC)/jabswitch.manifest, \
       MANIFEST_VERSION := $(VERSION_NUMBER_FOUR_POSITIONS), \
   ))

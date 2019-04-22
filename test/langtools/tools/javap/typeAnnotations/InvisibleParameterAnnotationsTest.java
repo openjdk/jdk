@@ -62,11 +62,11 @@ public class InvisibleParameterAnnotationsTest {
             "    RuntimeVisibleParameterAnnotations:\n" +
             "      parameter 0:\n" +
             "      parameter 1:\n" +
-            "        0: #16()\n" +
+            "        0: #14()\n" +
             "          Sample$VisAnno\n" +
             "    RuntimeInvisibleParameterAnnotations:\n" +
             "      parameter 0:\n" +
-            "        0: #18()\n" +
+            "        0: #16()\n" +
             "          Sample$InvisAnno\n" +
             "      parameter 1:";
 

@@ -774,10 +774,16 @@ bool InstructForm::captures_bottom_type(FormDict &globals) const {
        !strcmp(_matrule->_rChild->_opType,"CheckCastPP")  ||
        !strcmp(_matrule->_rChild->_opType,"GetAndSetP")   ||
        !strcmp(_matrule->_rChild->_opType,"GetAndSetN")   ||
-       !strcmp(_matrule->_rChild->_opType,"CompareAndExchangeP") ||
-       !strcmp(_matrule->_rChild->_opType,"CompareAndExchangeN") ||
+#if INCLUDE_ZGC
+       !strcmp(_matrule->_rChild->_opType,"LoadBarrierSlowReg") ||
+       !strcmp(_matrule->_rChild->_opType,"LoadBarrierWeakSlowReg") ||
+#endif
+#if INCLUDE_SHENANDOAHGC
        !strcmp(_matrule->_rChild->_opType,"ShenandoahCompareAndExchangeP") ||
-       !strcmp(_matrule->_rChild->_opType,"ShenandoahCompareAndExchangeN"))) return true;
+       !strcmp(_matrule->_rChild->_opType,"ShenandoahCompareAndExchangeN") ||
+#endif
+       !strcmp(_matrule->_rChild->_opType,"CompareAndExchangeP") ||
+       !strcmp(_matrule->_rChild->_opType,"CompareAndExchangeN"))) return true;
   else if ( is_ideal_load() == Form::idealP )                return true;
   else if ( is_ideal_store() != Form::none  )                return true;
 

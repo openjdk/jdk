@@ -1405,13 +1405,7 @@ void os::print_os_info(outputStream* st) {
     st->print_cr("type: %s", (wi.app_wpar ? "application" : "system"));
   }
 
-  // print partition info
-  libperfstat::partitioninfo_t pi;
-  if (libperfstat::get_partitioninfo(&pi)) {
-    st->print_cr("partition info");
-    st->print_cr(" name: %s", pi.name);
-  }
-
+  VM_Version::print_platform_virtualization_info(st);
 }
 
 void os::print_memory_info(outputStream* st) {

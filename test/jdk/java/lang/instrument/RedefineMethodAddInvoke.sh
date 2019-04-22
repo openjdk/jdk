@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,7 @@ mv RedefineMethodAddInvokeTarget.java RedefineMethodAddInvokeTarget_2.java
 mv RedefineMethodAddInvokeTarget.class RedefineMethodAddInvokeTarget_2.class
 
 "${JAVA}" ${TESTVMOPTS} -javaagent:RedefineMethodAddInvokeAgent.jar \
+    -XX:+AllowRedefinitionToAddDeleteMethods \
     -classpath "${TESTCLASSES}" RedefineMethodAddInvokeApp > output.log 2>&1
 cat output.log
 

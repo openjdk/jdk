@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,8 @@ LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION    JDK_VER
- PRODUCTVERSION JDK_VER
+ FILEVERSION    HS_FVER
+ PRODUCTVERSION HS_FVER
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -54,15 +54,15 @@ BEGIN
     BEGIN
         BLOCK "000004b0"
         BEGIN
-            VALUE "CompanyName",      XSTR(HS_COMPANY)       "\0"
-            VALUE "FileDescription",  XSTR(HS_FILEDESC)      "\0"
-            VALUE "FileVersion",      XSTR(JDK_DOTVER)        "\0"
-            VALUE "Full Version",     XSTR(HS_BUILD_ID)      "\0"
-	    VALUE "InternalName",     XSTR(HS_INTERNAL_NAME) "\0"
-            VALUE "LegalCopyright",   XSTR(HS_COPYRIGHT)     "\0"
-            VALUE "OriginalFilename", XSTR(HS_FNAME)         "\0"
-            VALUE "ProductName",      XSTR(HS_NAME)          "\0"
-            VALUE "ProductVersion",   XSTR(JDK_DOTVER)       "\0"
+            VALUE "CompanyName",      XSTR(HS_COMPANY)        "\0"
+            VALUE "FileDescription",  XSTR(HS_FILEDESC)       "\0"
+            VALUE "FileVersion",      XSTR(HS_VER)            "\0"
+            VALUE "Full Version",     XSTR(HS_VERSION_STRING) "\0"
+            VALUE "InternalName",     XSTR(HS_INTERNAL_NAME)  "\0"
+            VALUE "LegalCopyright",   XSTR(HS_COPYRIGHT)      "\0"
+            VALUE "OriginalFilename", XSTR(HS_FNAME)          "\0"
+            VALUE "ProductName",      XSTR(HS_NAME)           "\0"
+            VALUE "ProductVersion",   XSTR(HS_VER)            "\0"
         END
     END
     BLOCK "VarFileInfo"

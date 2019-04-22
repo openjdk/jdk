@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,7 @@ import com.sun.tools.javac.comp.Attr;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.jvm.*;
+import com.sun.tools.javac.jvm.PoolConstant;
 import com.sun.tools.javac.tree.JCTree.JCFieldAccess;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.tree.JCTree.Tag;
@@ -65,9 +66,12 @@ import com.sun.tools.javac.util.Name;
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
+import com.sun.tools.javac.code.MissingInfoHandler;
 import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 import com.sun.tools.javac.code.Scope.WriteableScope;
+import com.sun.tools.javac.code.Symbol;
 import static com.sun.tools.javac.code.Symbol.OperatorSymbol.AccessCode.FIRSTASGOP;
+import com.sun.tools.javac.code.Type;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.code.TypeTag.FORALL;
 import static com.sun.tools.javac.code.TypeTag.TYPEVAR;
@@ -76,6 +80,7 @@ import static com.sun.tools.javac.jvm.ByteCodes.ishll;
 import static com.sun.tools.javac.jvm.ByteCodes.lushrl;
 import static com.sun.tools.javac.jvm.ByteCodes.lxor;
 import static com.sun.tools.javac.jvm.ByteCodes.string_add;
+import com.sun.tools.javac.util.Name;
 
 /** Root class for Java symbols. It contains subclasses
  *  for specific sorts of symbols, such as variables, methods and operators,
@@ -87,7 +92,7 @@ import static com.sun.tools.javac.jvm.ByteCodes.string_add;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-public abstract class Symbol extends AnnoConstruct implements Element {
+public abstract class Symbol extends AnnoConstruct implements PoolConstant, Element {
 
     /** The kind of this symbol.
      *  @see Kinds
@@ -280,6 +285,11 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         this.completer = Completer.NULL_COMPLETER;
         this.erasure_field = null;
         this.name = name;
+    }
+
+    @Override
+    public int poolTag() {
+        throw new AssertionError("Invalid pool entry");
     }
 
     /** Clone this symbol with new owner.
@@ -967,6 +977,11 @@ public abstract class Symbol extends AnnoConstruct implements Element {
             this.type = new ModuleType(this);
         }
 
+        @Override
+        public int poolTag() {
+            return ClassFile.CONSTANT_Module;
+        }
+
         @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public Name getSimpleName() {
             return Convert.shortName(name);
@@ -1133,6 +1148,11 @@ public abstract class Symbol extends AnnoConstruct implements Element {
             return members_field;
         }
 
+        @Override
+        public int poolTag() {
+            return ClassFile.CONSTANT_Package;
+        }
+
         public long flags() {
             complete();
             return flags_field;
@@ -1189,6 +1209,16 @@ public abstract class Symbol extends AnnoConstruct implements Element {
 
     }
 
+    public static class RootPackageSymbol extends PackageSymbol {
+        public final MissingInfoHandler missingInfoHandler;
+
+        public RootPackageSymbol(Name name, Symbol owner, MissingInfoHandler missingInfoHandler) {
+            super(name, owner);
+            this.missingInfoHandler = missingInfoHandler;
+        }
+
+    }
+
     /** A class for class symbols
      */
     public static class ClassSymbol extends TypeSymbol implements TypeElement {
@@ -1223,10 +1253,6 @@ public abstract class Symbol extends AnnoConstruct implements Element {
          */
         public List<ClassSymbol> trans_local;
 
-        /** the constant pool of the class
-         */
-        public Pool pool;
-
         /** the annotation metadata attached to this class */
         private AnnotationTypeMetadata annotationTypeMetadata;
 
@@ -1237,7 +1263,6 @@ public abstract class Symbol extends AnnoConstruct implements Element {
             this.flatname = formFlatName(name, owner);
             this.sourcefile = null;
             this.classfile = null;
-            this.pool = null;
             this.annotationTypeMetadata = AnnotationTypeMetadata.notAnAnnotationType();
         }
 
@@ -1529,6 +1554,11 @@ public abstract class Symbol extends AnnoConstruct implements Element {
             super(VAR, flags, name, type, owner);
         }
 
+        @Override
+        public int poolTag() {
+            return ClassFile.CONSTANT_Fieldref;
+        }
+
         /** Clone this symbol with new owner.
          */
         public VarSymbol clone(Symbol newOwner) {
@@ -1536,6 +1566,11 @@ public abstract class Symbol extends AnnoConstruct implements Element {
                 @Override
                 public Symbol baseSymbol() {
                     return VarSymbol.this;
+                }
+
+                @Override
+                public Object poolKey(Types types) {
+                    return new Pair<>(newOwner, baseSymbol());
                 }
             };
             v.pos = pos;
@@ -1634,6 +1669,32 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         }
     }
 
+    public static class ParamSymbol extends VarSymbol {
+        public ParamSymbol(long flags, Name name, Type type, Symbol owner) {
+            super(flags, name, type, owner);
+        }
+
+        @Override
+        public Name getSimpleName() {
+            if ((flags_field & NAME_FILLED) == 0) {
+                flags_field |= NAME_FILLED;
+                Symbol rootPack = this;
+                while (rootPack != null && !(rootPack instanceof RootPackageSymbol)) {
+                    rootPack = rootPack.owner;
+                }
+                if (rootPack != null) {
+                    Name inferredName =
+                            ((RootPackageSymbol) rootPack).missingInfoHandler.getParameterName(this);
+                    if (inferredName != null) {
+                        this.name = inferredName;
+                    }
+                }
+            }
+            return super.getSimpleName();
+        }
+
+    }
+
     /** A class for method symbols.
      */
     public static class MethodSymbol extends Symbol implements ExecutableElement {
@@ -1671,6 +1732,11 @@ public abstract class Symbol extends AnnoConstruct implements Element {
                 public Symbol baseSymbol() {
                     return MethodSymbol.this;
                 }
+
+                @Override
+                public Object poolKey(Types types) {
+                    return new Pair<>(newOwner, baseSymbol());
+                }
             };
             m.code = code;
             return m;
@@ -1700,8 +1766,23 @@ public abstract class Symbol extends AnnoConstruct implements Element {
             }
         }
 
+        @Override
+        public int poolTag() {
+            return owner.isInterface() ?
+                    ClassFile.CONSTANT_InterfaceMethodref : ClassFile.CONSTANT_Methodref;
+        }
+
         public boolean isDynamic() {
             return false;
+        }
+
+        public boolean isHandle() {
+            return false;
+        }
+
+
+        public MethodHandleSymbol asHandle() {
+            return new MethodHandleSymbol(this);
         }
 
         /** find a symbol that this (proxy method) symbol implements.
@@ -1987,21 +2068,96 @@ public abstract class Symbol extends AnnoConstruct implements Element {
 
     /** A class for invokedynamic method calls.
      */
-    public static class DynamicMethodSymbol extends MethodSymbol {
+    public static class DynamicMethodSymbol extends MethodSymbol implements Dynamic {
 
-        public Object[] staticArgs;
-        public Symbol bsm;
-        public int bsmKind;
+        public LoadableConstant[] staticArgs;
+        public MethodHandleSymbol bsm;
 
-        public DynamicMethodSymbol(Name name, Symbol owner, int bsmKind, MethodSymbol bsm, Type type, Object[] staticArgs) {
+        public DynamicMethodSymbol(Name name, Symbol owner, MethodHandleSymbol bsm, Type type, LoadableConstant[] staticArgs) {
             super(0, name, type, owner);
             this.bsm = bsm;
-            this.bsmKind = bsmKind;
             this.staticArgs = staticArgs;
         }
 
         @Override
         public boolean isDynamic() {
+            return true;
+        }
+
+        @Override
+        public LoadableConstant[] staticArgs() {
+            return staticArgs;
+        }
+
+        @Override
+        public MethodHandleSymbol bootstrapMethod() {
+            return bsm;
+        }
+
+        @Override
+        public int poolTag() {
+            return ClassFile.CONSTANT_InvokeDynamic;
+        }
+
+        @Override
+        public Type dynamicType() {
+            return type;
+        }
+    }
+
+    /** A class for method handles.
+     */
+    public static class MethodHandleSymbol extends MethodSymbol implements LoadableConstant {
+
+        private Symbol refSym;
+
+        public MethodHandleSymbol(Symbol msym) {
+            super(msym.flags_field, msym.name, msym.type, msym.owner);
+            this.refSym = msym;
+        }
+
+        /**
+         * Returns the kind associated with this method handle.
+         */
+        public int referenceKind() {
+            if (refSym.isConstructor()) {
+                return ClassFile.REF_newInvokeSpecial;
+            } else {
+                if (refSym.isStatic()) {
+                    return ClassFile.REF_invokeStatic;
+                } else if ((refSym.flags() & PRIVATE) != 0) {
+                    return ClassFile.REF_invokeSpecial;
+                } else if (refSym.enclClass().isInterface()) {
+                    return ClassFile.REF_invokeInterface;
+                } else {
+                    return ClassFile.REF_invokeVirtual;
+                }
+            }
+        }
+
+        @Override
+        public int poolTag() {
+            return ClassFile.CONSTANT_MethodHandle;
+        }
+
+        @Override
+        public Object poolKey(Types types) {
+            return new Pair<>(baseSymbol(), referenceKind());
+        }
+
+        @Override
+        public MethodHandleSymbol asHandle() {
+            return this;
+        }
+
+        @Override
+        public Symbol baseSymbol() {
+            return refSym;
+        }
+
+
+        @Override
+        public boolean isHandle() {
             return true;
         }
     }

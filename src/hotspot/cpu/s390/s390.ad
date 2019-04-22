@@ -474,6 +474,19 @@ reg_class z_long_reg(
 /*Z_R15_H,Z_R15*/   // SP
 );
 
+// z_long_reg without even registers
+reg_class z_long_odd_reg(
+/*Z_R0_H,Z_R0*/     // R0
+/*Z_R1_H,Z_R1*/
+  Z_R3_H,Z_R3,
+  Z_R5_H,Z_R5,
+  Z_R7_H,Z_R7,
+  Z_R9_H,Z_R9,
+  Z_R11_H,Z_R11,
+  Z_R13_H,Z_R13
+/*Z_R14_H,Z_R14,*/  // return_pc
+/*Z_R15_H,Z_R15*/   // SP
+);
 
 // Special Class for Condition Code Flags Register
 
@@ -3378,6 +3391,7 @@ operand iRegL() %{
   match(RegL);
   match(revenRegL);
   match(roddRegL);
+  match(allRoddRegL);
   match(rarg1RegL);
   match(rarg5RegL);
   format %{ %}
@@ -3395,6 +3409,14 @@ operand revenRegL() %{
 // revenRegL and roddRegL constitute and even-odd-pair.
 operand roddRegL() %{
   constraint(ALLOC_IN_RC(z_rarg4_long_reg));
+  match(iRegL);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+// available odd registers for iRegL
+operand allRoddRegL() %{
+  constraint(ALLOC_IN_RC(z_long_odd_reg));
   match(iRegL);
   format %{ %}
   interface(REG_INTER);
@@ -9899,23 +9921,23 @@ instruct inlineCallClearArrayConst(SSlenDW cnt, iRegP_N2P base, Universe dummy, 
   ins_pipe(pipe_class_dummy);
 %}
 
-instruct inlineCallClearArrayConstBig(immL cnt, iRegP_N2P base, Universe dummy, revenRegL srcA, roddRegL srcL, flagsReg cr) %{
+instruct inlineCallClearArrayConstBig(immL cnt, iRegP_N2P base, Universe dummy, allRoddRegL tmpL, flagsReg cr) %{
   match(Set dummy (ClearArray cnt base));
-  effect(TEMP srcA, TEMP srcL, KILL cr); // R0, R1 are killed, too.
+  effect(TEMP tmpL, KILL cr); // R0, R1 are killed, too.
   ins_cost(200);
   // TODO: s390 port size(VARIABLE_SIZE);       // Variable in size due to optimized constant loader.
   format %{ "ClearArrayConstBig $cnt,$base" %}
-  ins_encode %{ __ Clear_Array_Const_Big($cnt$$constant, $base$$Register, $srcA$$Register, $srcL$$Register); %}
+  ins_encode %{ __ Clear_Array_Const_Big($cnt$$constant, $base$$Register, $tmpL$$Register); %}
   ins_pipe(pipe_class_dummy);
 %}
 
-instruct inlineCallClearArray(iRegL cnt, iRegP_N2P base, Universe dummy, revenRegL srcA, roddRegL srcL, flagsReg cr) %{
+instruct inlineCallClearArray(iRegL cnt, iRegP_N2P base, Universe dummy, allRoddRegL tmpL, flagsReg cr) %{
   match(Set dummy (ClearArray cnt base));
-  effect(TEMP srcA, TEMP srcL, KILL cr); // R0, R1 are killed, too.
+  effect(TEMP tmpL, KILL cr); // R0, R1 are killed, too.
   ins_cost(300);
   // TODO: s390 port size(FIXED_SIZE);  // z/Architecture: emitted code depends on PreferLAoverADD being on/off.
   format %{ "ClearArrayVar $cnt,$base" %}
-  ins_encode %{ __ Clear_Array($cnt$$Register, $base$$Register, $srcA$$Register, $srcL$$Register); %}
+  ins_encode %{ __ Clear_Array($cnt$$Register, $base$$Register, $tmpL$$Register); %}
   ins_pipe(pipe_class_dummy);
 %}
 

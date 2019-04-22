@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,8 +58,24 @@ public final class RegistryImpl_Skel
 
     public void dispatch(java.rmi.Remote obj, java.rmi.server.RemoteCall call, int opnum, long hash)
             throws java.lang.Exception {
-        if (hash != interfaceHash)
-            throw new java.rmi.server.SkeletonMismatchException("interface hash mismatch");
+        if (opnum < 0) {
+            if (hash == 7583982177005850366L) {
+                opnum = 0;
+            } else if (hash == 2571371476350237748L) {
+                opnum = 1;
+            } else if (hash == -7538657168040752697L) {
+                opnum = 2;
+            } else if (hash == -8381844669958460146L) {
+                opnum = 3;
+            } else if (hash == 7305022919901907578L) {
+                opnum = 4;
+            } else {
+                throw new java.rmi.UnmarshalException("invalid method hash");
+            }
+        } else {
+            if (hash != interfaceHash)
+                throw new java.rmi.server.SkeletonMismatchException("interface hash mismatch");
+        }
 
         sun.rmi.registry.RegistryImpl server = (sun.rmi.registry.RegistryImpl) obj;
         switch (opnum) {

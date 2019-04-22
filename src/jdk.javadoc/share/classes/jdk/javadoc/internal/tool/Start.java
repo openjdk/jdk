@@ -374,7 +374,7 @@ public class Start extends ToolOption.Helper {
 
         // locale, doclet and maybe taglet, needs to be determined first
         try {
-            docletClass = preprocess(fileManager, options);
+            doclet = preprocess(fileManager, options);
         } catch (ToolException te) {
             if (!te.result.isOK()) {
                 if (te.message != null) {
@@ -392,24 +392,6 @@ public class Start extends ToolOption.Helper {
             Throwable t = oe.getCause();
             dumpStack(t == null ? oe : t);
             return oe.result;
-        }
-        if (jdk.javadoc.doclet.Doclet.class.isAssignableFrom(docletClass)) {
-            // no need to dispatch to old, safe to init now
-            initMessager();
-            messager.setLocale(locale);
-            try {
-                Object o = docletClass.getConstructor().newInstance();
-                doclet = (Doclet) o;
-            } catch (ReflectiveOperationException exc) {
-                if (apiMode) {
-                    throw new ClientCodeException(exc);
-                }
-                error("main.could_not_instantiate_class", docletClass.getName());
-                return ERROR;
-            }
-        } else {
-            error("main.not_a_doclet", docletClass.getName());
-            return ERROR;
         }
 
         Result result = OK;
@@ -649,7 +631,7 @@ public class Start extends ToolOption.Helper {
         return idx;
     }
 
-    private Class<?> preprocess(JavaFileManager jfm,
+    private Doclet preprocess(JavaFileManager jfm,
             List<String> argv) throws ToolException, OptionException {
         // doclet specifying arguments
         String userDocletPath = null;
@@ -706,71 +688,77 @@ public class Start extends ToolOption.Helper {
             }
         }
 
-        // Step 2: a doclet is provided, nothing more to do.
-        if (docletClass != null) {
-            return docletClass;
-        }
 
         // Step 3: doclet name specified ? if so find a ClassLoader,
         // and load it.
-        if (userDocletName != null) {
-            ClassLoader cl = classLoader;
-            if (cl == null) {
-                if (!fileManager.hasLocation(DOCLET_PATH)) {
-                    List<File> paths = new ArrayList<>();
-                    if (userDocletPath != null) {
-                        for (String pathname : userDocletPath.split(File.pathSeparator)) {
-                            paths.add(new File(pathname));
-                        }
-                    }
-                    try {
-                        ((StandardJavaFileManager)fileManager).setLocation(DOCLET_PATH, paths);
-                    } catch (IOException ioe) {
-                        if (apiMode) {
-                            throw new IllegalArgumentException("Could not set location for " +
-                                    userDocletPath, ioe);
-                        }
-                        String text = messager.getText("main.doclet_could_not_set_location",
-                                userDocletPath);
-                        throw new ToolException(CMDERR, text, ioe);
-                    }
-                }
-                cl = fileManager.getClassLoader(DOCLET_PATH);
+        if(docletClass == null) {
+            if (userDocletName != null) {
+                ClassLoader cl = classLoader;
                 if (cl == null) {
-                    // despite doclet specified on cmdline no classloader found!
-                    if (apiMode) {
-                        throw new IllegalArgumentException("Could not obtain classloader to load "
-                                + userDocletPath);
+                    if (!fileManager.hasLocation(DOCLET_PATH)) {
+                        List<File> paths = new ArrayList<>();
+                        if (userDocletPath != null) {
+                            for (String pathname : userDocletPath.split(File.pathSeparator)) {
+                                paths.add(new File(pathname));
+                            }
+                        }
+                        try {
+                            ((StandardJavaFileManager)fileManager).setLocation(DOCLET_PATH, paths);
+                        } catch (IOException ioe) {
+                            if (apiMode) {
+                                throw new IllegalArgumentException("Could not set location for " +
+                                        userDocletPath, ioe);
+                            }
+                            String text = messager.getText("main.doclet_could_not_set_location",
+                                    userDocletPath);
+                            throw new ToolException(CMDERR, text, ioe);
+                        }
                     }
-                    String text = messager.getText("main.doclet_no_classloader_found",
-                            userDocletName);
-                    throw new ToolException(CMDERR, text);
+                    cl = fileManager.getClassLoader(DOCLET_PATH);
+                    if (cl == null) {
+                        // despite doclet specified on cmdline no classloader found!
+                        if (apiMode) {
+                            throw new IllegalArgumentException("Could not obtain classloader to load "
+
+                                    + userDocletPath);
+                        }
+                        String text = messager.getText("main.doclet_no_classloader_found",
+                                userDocletName);
+                        throw new ToolException(CMDERR, text);
+                    }
                 }
+                docletClass = loadDocletClass(userDocletName, cl);
+            } else if (docletName != null){
+                docletClass = loadDocletClass(docletName, getClass().getClassLoader());
+            } else {
+                docletClass = StdDoclet;
             }
+        }
+
+        if (jdk.javadoc.doclet.Doclet.class.isAssignableFrom(docletClass)) {
+            // no need to dispatch to old, safe to init now
+            initMessager();
+            messager.setLocale(locale);
             try {
-                return cl.loadClass(userDocletName);
-            } catch (ClassNotFoundException cnfe) {
+                Object o = docletClass.getConstructor().newInstance();
+                doclet = (Doclet) o;
+            } catch (ReflectiveOperationException exc) {
                 if (apiMode) {
-                    throw new IllegalArgumentException("Cannot find doclet class " + userDocletName,
-                            cnfe);
+                    throw new ClientCodeException(exc);
                 }
-                String text = messager.getText("main.doclet_class_not_found", userDocletName);
-                throw new ToolException(CMDERR, text, cnfe);
+                String text = messager.getText("main.could_not_instantiate_class", docletClass.getName());
+                throw new ToolException(ERROR, text);
             }
+        } else {
+            String text = messager.getText("main.not_a_doclet", docletClass.getName());
+            throw new ToolException(ERROR, text);
         }
-
-        // Step 4: we have a doclet, try loading it
-        if (docletName != null) {
-            return loadDocletClass(docletName);
-        }
-
-        // finally
-        return StdDoclet;
+        return doclet;
     }
 
-    private Class<?> loadDocletClass(String docletName) throws ToolException {
+    private Class<?> loadDocletClass(String docletName, ClassLoader classLoader) throws ToolException {
         try {
-            return Class.forName(docletName, true, getClass().getClassLoader());
+            return classLoader == null ? Class.forName(docletName) : classLoader.loadClass(docletName);
         } catch (ClassNotFoundException cnfe) {
             if (apiMode) {
                 throw new IllegalArgumentException("Cannot find doclet class " + docletName);

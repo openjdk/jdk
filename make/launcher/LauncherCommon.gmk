@@ -73,8 +73,7 @@ JAVA_MANIFEST := $(TOPDIR)/src/java.base/windows/native/launcher/java.manifest
 #     compile time defines exceeding Visual Studio 2013 limitations.
 # CFLAGS   Additional CFLAGS
 # CFLAGS_windows   Additional CFLAGS_windows
-# LDFLAGS_solaris Additional LDFLAGS_solaris
-# RC_FLAGS   Additional RC_FLAGS
+# EXTRA_RC_FLAGS   Additional EXTRA_RC_FLAGS
 # MACOSX_SIGNED   On macosx, sign this binary
 # OPTIMIZATION   Override default optimization level (LOW)
 # OUTPUT_DIR   Override default output directory
@@ -139,7 +138,7 @@ define SetupBuildLauncherBody
       NAME := $1, \
       EXTRA_FILES := $(LAUNCHER_SRC)/main.c, \
       OPTIMIZATION := $$($1_OPTIMIZATION), \
-      CFLAGS := $$(CFLAGS_JDKEXE) $$($1_CFLAGS) \
+      CFLAGS := $$(CFLAGS_JDKEXE) \
           $(LAUNCHER_CFLAGS) \
           $(VERSION_CFLAGS) \
           -DLAUNCHER_NAME='"$(LAUNCHER_NAME)"' \

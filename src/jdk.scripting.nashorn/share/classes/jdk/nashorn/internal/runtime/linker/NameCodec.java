@@ -39,11 +39,11 @@ package jdk.nashorn.internal.runtime.linker;
  * to nashorn module.
  * </p>
  *
- * <h3>Comment from BytecodeName class reproduced here:</h3>
+ * <h2>Comment from BytecodeName class reproduced here:</h2>
  *
  * Includes universal mangling rules for the JVM.
  *
- * <h3>Avoiding Dangerous Characters </h3>
+ * <h2>Avoiding Dangerous Characters </h2>
  *
  * <p>
  * The JVM defines a very small set of characters which are illegal
@@ -74,7 +74,7 @@ package jdk.nashorn.internal.runtime.linker;
  * but traditional in the proposed role.
  *
  * </p>
- * <h3> Replacement Characters </h3>
+ * <h2> Replacement Characters </h2>
  *
  *
  * <p>
@@ -159,7 +159,7 @@ package jdk.nashorn.internal.runtime.linker;
  * to check for dangerous characters.
  *
  * </p>
- * <h3> Nice Properties </h3>
+ * <h2> Nice Properties </h2>
  *
  * <p>
  * If a bytecode name does not contain any escape sequence,
@@ -222,7 +222,7 @@ package jdk.nashorn.internal.runtime.linker;
  * </ul>
  *
  *
- * <h3> Suggestions for Human Readable Presentations </h3>
+ * <h2> Suggestions for Human Readable Presentations </h2>
  *
  *
  * <p>

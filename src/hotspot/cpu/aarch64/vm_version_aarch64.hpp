@@ -67,7 +67,11 @@ public:
     return false;
   }
 
+  // The CPU implementer codes can be found in
+  // ARM Architecture Reference Manual ARMv8, for ARMv8-A architecture profile
+  // https://developer.arm.com/docs/ddi0487/latest
   enum Family {
+    CPU_AMPERE    = 0xC0,
     CPU_ARM       = 'A',
     CPU_BROADCOM  = 'B',
     CPU_CAVIUM    = 'C',

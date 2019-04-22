@@ -61,6 +61,14 @@ public class UnixSocketFile {
             return;
         }
 
+        // Verify that 'nc' accepts '-U' for Unix domain sockets.
+        // Skip the test if it is not.
+        Process procHelp = Runtime.getRuntime().exec(CMD_BASE + " -h");
+        if (procHelp.waitFor() != 0) {
+            System.err.println("Netcat does not accept required options; skipping test.");
+            return;
+        }
+
         // Create a new sub-directory of the nominal test directory in which
         // 'nc' will create the socket file.
         String testSubDir = System.getProperty("test.dir", ".")

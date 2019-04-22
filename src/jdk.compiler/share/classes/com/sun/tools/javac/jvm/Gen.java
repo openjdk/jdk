@@ -25,6 +25,7 @@
 
 package com.sun.tools.javac.jvm;
 
+import com.sun.tools.javac.jvm.PoolConstant.LoadableConstant;
 import com.sun.tools.javac.tree.TreeInfo.PosKind;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
@@ -88,9 +89,9 @@ public class Gen extends JCTree.Visitor {
         return instance;
     }
 
-    /** Constant pool, reset by genClass.
+    /** Constant pool writer, set by genClass.
      */
-    private final Pool pool;
+    final PoolWriter poolWriter;
 
     protected Gen(Context context) {
         context.put(genKey, this);
@@ -121,7 +122,7 @@ public class Gen extends JCTree.Visitor {
         genCrt = options.isSet(XJCOV);
         debugCode = options.isSet("debug.code");
         disableVirtualizedPrivateInvoke = options.isSet("disableVirtualizedPrivateInvoke");
-        pool = new Pool(types);
+        poolWriter = new PoolWriter(types, names);
 
         // ignore cldc because we cannot have both stackmap formats
         this.stackMap = StackMapFormat.JSR202;
@@ -252,17 +253,17 @@ public class Gen extends JCTree.Visitor {
      *  @param type   The type for which a reference is inserted.
      */
     int makeRef(DiagnosticPosition pos, Type type) {
-        checkDimension(pos, type);
-        if (type.isAnnotated()) {
-            return pool.put((Object)type);
-        } else {
-            return pool.put(type.hasTag(CLASS) ? (Object)type.tsym : (Object)type);
-        }
+        return poolWriter.putClass(checkDimension(pos, type));
     }
 
     /** Check if the given type is an array with too many dimensions.
      */
-    private void checkDimension(DiagnosticPosition pos, Type t) {
+    private Type checkDimension(DiagnosticPosition pos, Type t) {
+        checkDimensionInternal(pos, t);
+        return t;
+    }
+
+    private void checkDimensionInternal(DiagnosticPosition pos, Type t) {
         switch (t.getTag()) {
         case METHOD:
             checkDimension(pos, t.getReturnType());
@@ -516,7 +517,7 @@ public class Gen extends JCTree.Visitor {
         if (nerrs != 0 || // only complain about a long string once
             constValue == null ||
             !(constValue instanceof String) ||
-            ((String)constValue).length() < Pool.MAX_STRING_LENGTH)
+            ((String)constValue).length() < PoolWriter.MAX_STRING_LENGTH)
             return;
         log.error(pos, Errors.LimitString);
         nerrs++;
@@ -806,7 +807,7 @@ public class Gen extends JCTree.Visitor {
         @Override
         public void visitIdent(JCIdent tree) {
             if (tree.sym.owner instanceof ClassSymbol) {
-                pool.put(tree.sym.owner);
+                poolWriter.putClass((ClassSymbol)tree.sym.owner);
             }
         }
 
@@ -1007,8 +1008,8 @@ public class Gen extends JCTree.Visitor {
                                                : null,
                                         syms,
                                         types,
-                                        pool);
-            items = new Items(pool, code, syms, types);
+                                        poolWriter);
+            items = new Items(poolWriter, code, syms, types);
             if (code.debugCode) {
                 System.err.println(meth + " for body " + tree);
             }
@@ -1886,7 +1887,7 @@ public class Gen extends JCTree.Visitor {
         Assert.check(tree.encl == null && tree.def == null);
         setTypeAnnotationPositions(tree.pos);
 
-        code.emitop2(new_, makeRef(tree.pos(), tree.type));
+        code.emitop2(new_, checkDimension(tree.pos(), tree.type), PoolWriter::putClass);
         code.emitop0(dup);
 
         // Generate code for all arguments, where the expected types are
@@ -2162,7 +2163,7 @@ public class Gen extends JCTree.Visitor {
         if (!tree.clazz.type.isPrimitive() &&
            !types.isSameType(tree.expr.type, tree.clazz.type) &&
            types.asSuper(tree.expr.type, tree.clazz.type.tsym) == null) {
-            code.emitop2(checkcast, makeRef(tree.pos(), tree.clazz.type));
+            code.emitop2(checkcast, checkDimension(tree.pos(), tree.clazz.type), PoolWriter::putClass);
         }
     }
 
@@ -2221,7 +2222,7 @@ public class Gen extends JCTree.Visitor {
         Symbol sym = tree.sym;
 
         if (tree.name == names._class) {
-            code.emitLdc(makeRef(tree.pos(), tree.selected.type));
+            code.emitLdc((LoadableConstant)checkDimension(tree.pos(), tree.selected.type));
             result = items.makeStackItem(pt);
             return;
        }
@@ -2305,7 +2306,7 @@ public class Gen extends JCTree.Visitor {
         code.endScopes(limit);
     }
 
-    private void generateReferencesToPrunedTree(ClassSymbol classSymbol, Pool pool) {
+    private void generateReferencesToPrunedTree(ClassSymbol classSymbol) {
         List<JCTree> prunedInfo = lower.prunedTree.get(classSymbol);
         if (prunedInfo != null) {
             for (JCTree prunedTree: prunedInfo) {
@@ -2331,12 +2332,10 @@ public class Gen extends JCTree.Visitor {
             ClassSymbol c = cdef.sym;
             this.toplevel = env.toplevel;
             this.endPosTable = toplevel.endPositions;
-            c.pool = pool;
-            pool.reset();
             /* method normalizeDefs() can add references to external classes into the constant pool
              */
             cdef.defs = normalizeDefs(cdef.defs, c);
-            generateReferencesToPrunedTree(c, pool);
+            generateReferencesToPrunedTree(c);
             Env<GenContext> localEnv = new Env<>(cdef, new GenContext());
             localEnv.toplevel = env.toplevel;
             localEnv.enclClass = cdef;
@@ -2344,7 +2343,7 @@ public class Gen extends JCTree.Visitor {
             for (List<JCTree> l = cdef.defs; l.nonEmpty(); l = l.tail) {
                 genDef(l.head, localEnv);
             }
-            if (pool.numEntries() > Pool.MAX_ENTRIES) {
+            if (poolWriter.size() > PoolWriter.MAX_ENTRIES) {
                 log.error(cdef.pos(), Errors.LimitPool);
                 nerrs++;
             }

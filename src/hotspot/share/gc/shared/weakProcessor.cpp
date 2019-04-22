@@ -31,8 +31,23 @@
 #include "gc/shared/weakProcessorPhaseTimes.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/iterator.hpp"
+#include "prims/resolvedMethodTable.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/macros.hpp"
+
+template <typename Container>
+class OopsDoAndReportCounts {
+public:
+  void operator()(BoolObjectClosure* is_alive, OopClosure* keep_alive, WeakProcessorPhase phase) {
+    Container::reset_dead_counter();
+
+    CountingSkippedIsAliveClosure<BoolObjectClosure, OopClosure> cl(is_alive, keep_alive);
+    WeakProcessorPhases::oop_storage(phase)->oops_do(&cl);
+
+    Container::inc_dead_counter(cl.num_dead() + cl.num_skipped());
+    Container::finish_dead_counter();
+  }
+};
 
 void WeakProcessor::weak_oops_do(BoolObjectClosure* is_alive, OopClosure* keep_alive) {
   FOR_EACH_WEAK_PROCESSOR_PHASE(phase) {
@@ -40,13 +55,9 @@ void WeakProcessor::weak_oops_do(BoolObjectClosure* is_alive, OopClosure* keep_a
       WeakProcessorPhases::processor(phase)(is_alive, keep_alive);
     } else {
       if (WeakProcessorPhases::is_stringtable(phase)) {
-        StringTable::reset_dead_counter();
-
-        CountingSkippedIsAliveClosure<BoolObjectClosure, OopClosure> cl(is_alive, keep_alive);
-        WeakProcessorPhases::oop_storage(phase)->oops_do(&cl);
-
-        StringTable::inc_dead_counter(cl.num_dead() + cl.num_skipped());
-        StringTable::finish_dead_counter();
+        OopsDoAndReportCounts<StringTable>()(is_alive, keep_alive, phase);
+      } else if (WeakProcessorPhases::is_resolved_method_table(phase)){
+        OopsDoAndReportCounts<ResolvedMethodTable>()(is_alive, keep_alive, phase);
       } else {
         WeakProcessorPhases::oop_storage(phase)->weak_oops_do(is_alive, keep_alive);
       }
@@ -104,6 +115,7 @@ void WeakProcessor::Task::initialize() {
     new (states++) StorageState(storage, _nworkers);
   }
   StringTable::reset_dead_counter();
+  ResolvedMethodTable::reset_dead_counter();
 }
 
 WeakProcessor::Task::Task(uint nworkers) :
@@ -134,6 +146,7 @@ WeakProcessor::Task::~Task() {
     FREE_C_HEAP_ARRAY(StorageState, _storage_states);
   }
   StringTable::finish_dead_counter();
+  ResolvedMethodTable::finish_dead_counter();
 }
 
 void WeakProcessor::GangTask::work(uint worker_id) {

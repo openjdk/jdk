@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,11 @@
  * @test
  * @bug 8008296
  * @summary Store and retrieve user passwords using PKCS#12 keystore
+ * @library /test/lib
  */
+
+import jdk.test.lib.SecurityTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
 import java.io.*;
 import java.security.*;
@@ -77,6 +81,18 @@ public class StorePasswords {
         }
         System.out.println("\nStored " + storeCount + " user passwords, " +
             "recovered " + recoverCount + " user passwords");
+
+        new File(KEYSTORE).delete();
+
+        storeCount = storeByShell();
+        recoverCount = recoverByShell();
+
+        if (recoverCount != storeCount || storeCount < 11) {
+            throw new Exception("Stored " + storeCount + " user passwords, " +
+                    "recovered " + recoverCount + " user passwords");
+        }
+        System.out.println("\nStored " + storeCount + " user passwords, " +
+                "recovered " + recoverCount + " user passwords");
 
         new File(KEYSTORE).delete();
     }
@@ -188,5 +204,36 @@ public class StorePasswords {
         }
 
         return count;
+    }
+
+    private static int storeByShell() throws Exception {
+        int count = 0;
+        for (String algorithm : PBE_ALGORITHMS) {
+            System.out.println("Storing user password (protected by " + algorithm + " )");
+            String importCmd = count < 5 ? "-importpassword" : "-importpass";
+            String keyAlg = algorithm.equals("default PBE algorithm")
+                    ? "" : (" -keyalg " + algorithm);
+            SecurityTools.setResponse("hello1");
+            OutputAnalyzer oa = SecurityTools.keytool(importCmd
+                    + " -storetype pkcs12 -keystore mykeystore.p12"
+                    + " -storepass changeit -alias `this entry is protected by "
+                    + algorithm + "`" + keyAlg);
+            if (oa.getExitValue() == 0) {
+                System.out.println("OK");
+                count++;
+            } else {
+                System.out.println("ERROR");
+            }
+        }
+        return count;
+    }
+
+    private static int recoverByShell() throws Exception {
+        return (int)SecurityTools.keytool("-list -storetype pkcs12"
+                + " -keystore mykeystore.p12 -storepass changeit")
+                .shouldHaveExitValue(0)
+                .asLines().stream()
+                .filter(s -> s.contains("this entry is protected by"))
+                .count();
     }
 }

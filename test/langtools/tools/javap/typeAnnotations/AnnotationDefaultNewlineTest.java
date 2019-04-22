@@ -51,7 +51,7 @@ public class AnnotationDefaultNewlineTest {
 
     private static final String ExpectedSubstring =
             "    AnnotationDefault:\n" +
-            "      default_value: I#7\n";
+            "      default_value: I#9\n";
 
     public static void main(String[] args) throws Exception {
         ToolBox tb = new ToolBox();
