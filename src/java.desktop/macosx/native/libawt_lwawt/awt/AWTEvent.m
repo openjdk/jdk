@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -319,7 +319,6 @@ const nsKeyToJavaModifierTable[] =
 };
 
 static BOOL leftAltKeyPressed;
-static BOOL altGRPressed = NO;
 
 /*
  * Almost all unicode characters just go from NS to Java with no translation.
@@ -567,19 +566,13 @@ jint NsKeyModifiersToJavaModifiers(NSUInteger nsFlags, BOOL isExtMods)
 
     for (cur = nsKeyToJavaModifierTable; cur->nsMask != 0; ++cur) {
         if ((cur->nsMask & nsFlags) != 0) {
-
-            if (cur->nsMask == NSAlternateKeyMask) {
-                if (leftAltKeyPressed == YES) {
-                    javaModifiers |= isExtMods? cur->javaExtMask : cur->javaMask;
-                    if (altGRPressed == NO)
-                        break;
-                    } else {
-                        leftAltKeyPressed = YES;
-                        altGRPressed = YES;
-                        continue;
-                    }
-                }
+            //This code will consider the mask value for left alt as well as
+            //right alt, but that should be ok, since right alt contains left alt
+            //mask value.
             javaModifiers |= isExtMods ? cur->javaExtMask : cur->javaMask;
+            if (cur->nsMask == NSAlternateKeyMask && leftAltKeyPressed) {
+                    break; //since right alt key struct is defined last, break out of the loop                }
+            }
         }
     }
 
