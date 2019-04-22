@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -503,11 +503,15 @@ public abstract class Toolkit {
      * implementations of the AccessibilityProvider interface, not by the order
      * of provider names in the property list.  When a provider is found its
      * accessibility implementation will be started by calling the provider's
-     * activate method.  All errors are handled via an AWTError exception.
+     * activate method. If the list of assistive technology providers is the
+     * empty string or contains only
+     * {@linkplain Character#isWhitespace(int) white space} characters or
+     * {@code null} it is ignored. All other errors are handled via an AWTError
+     * exception.
      */
     private static void loadAssistiveTechnologies() {
         // Load any assistive technologies
-        if (atNames != null) {
+        if (atNames != null && !atNames.isBlank()) {
             ClassLoader cl = ClassLoader.getSystemClassLoader();
             Set<String> names = Arrays.stream(atNames.split(","))
                                       .map(String::trim)
@@ -551,7 +555,13 @@ public abstract class Toolkit {
      * {@code -Djavax.accessibility.assistive_technologies=MyServiceProvider}.
      * In addition to MyServiceProvider other service providers can be specified
      * using a comma separated list.  Service providers are loaded after the AWT
-     * toolkit is created. All errors are handled via an AWTError exception.
+     * toolkit is created.
+     * <p>
+     * If the list of assistive technology providers as provided through system
+     * property "{@systemProperty javax.accessibility.assistive_technologies}"
+     * is the empty string or contains only
+     * {@linkplain Character#isWhitespace(int) white space} characters it is
+     * ignored. All other errors are handled via an AWTError exception.
      * <p>
      * The names specified in the assistive_technologies property are used to query
      * each service provider implementation.  If the requested name matches the

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
 #
 # @test
 # @key headful
-# @bug 8055160
+# @bug 8055160 8216008
 # @summary Unit test for javax.accessibility.AccessibilitySPI
 #
 # @build Load FooProvider BarProvider UnusedProvider
@@ -88,6 +88,13 @@ SECURITY_MANAGER=
 # fail if no provider found
 PROVIDER1="NoProvider"
 go fail $PROVIDER1
+
+# pass if none provider found
+PROVIDER1=
+go pass $PROVIDER1
+
+PROVIDER1=" "
+go pass $PROVIDER1
 
 # setup for two providers
 COMMA=","
