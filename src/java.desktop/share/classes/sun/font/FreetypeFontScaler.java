@@ -163,10 +163,28 @@ class FreetypeFontScaler extends FontScaler {
             .getNullScaler().getGlyphVectorOutline(0L, glyphs, numGlyphs, x, y);
     }
 
+    /* This method should not be called directly, in case
+     * it is being invoked from a thread with a native context.
+     */
     public synchronized void dispose() {
         if (nativeScaler != 0L) {
             disposeNativeScaler(font.get(), nativeScaler);
             nativeScaler = 0L;
+        }
+    }
+
+    public synchronized void disposeScaler() {
+        if (nativeScaler != 0L) {
+           /*
+            * The current thread may be calling this method from the context
+            * of a JNI up-call. It will hold the native lock from the
+            * original down-call so can directly enter dispose and free
+            * the resources. So we need to schedule the disposal to happen
+            * only once we've returned from native. So by running the dispose
+            * on another thread which does nothing except that disposal we
+            * are sure that this is safe.
+            */
+            new Thread(null, () -> dispose(), "free scaler", 0, false).start();
         }
     }
 
@@ -206,7 +224,7 @@ class FreetypeFontScaler extends FontScaler {
         return getUnitsPerEMNative(nativeScaler);
     }
 
-    long createScalerContext(double[] matrix,
+    synchronized long createScalerContext(double[] matrix,
             int aa, int fm, float boldness, float italic,
             boolean disableHinting) {
         if (nativeScaler != 0L) {
@@ -236,7 +254,7 @@ class FreetypeFontScaler extends FontScaler {
     private native GeneralPath getGlyphVectorOutlineNative(Font2D font,
             long pScalerContext, long pScaler,
             int[] glyphs, int numGlyphs, float x, float y);
-    native Point2D.Float getGlyphPointNative(Font2D font,
+    private native Point2D.Float getGlyphPointNative(Font2D font,
             long pScalerContext, long pScaler, int glyphCode, int ptNumber);
 
     private native void disposeNativeScaler(Font2D font2D, long pScaler);
@@ -247,7 +265,7 @@ class FreetypeFontScaler extends FontScaler {
 
     private native long getUnitsPerEMNative(long pScaler);
 
-    native long createScalerContextNative(long pScaler, double[] matrix,
+    private native long createScalerContextNative(long pScaler, double[] matrix,
             int aa, int fm, float boldness, float italic);
 
     /* Freetype scaler context does not contain any pointers that
