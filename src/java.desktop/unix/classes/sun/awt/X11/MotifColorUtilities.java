@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.awt.*;
 import java.io.*;
 import sun.security.action.GetPropertyAction;
 import java.security.AccessController;
+import sun.awt.OSInfo;
 
 /**
   *
@@ -434,6 +435,31 @@ class MotifColorUtilities {
             //  System.out.println("color["+i+"]="+Integer.toHexString(colors[i]) + "r = " +r + "g="+g+"b="+b);
         }
 
+        // Solaris's default color is MEDIUM_COLOR (4)
+        // AIX's default color is HIGH_COLOR (8)
+        int numOfColor = OSInfo.getOSType() == OSInfo.OSType.AIX ? 8 : 4;
+
+        int idx = resourceString.indexOf("ColorUse:");
+        if (idx > -1) {
+            while ( (idx < len) && (resourceString.charAt(idx) != ':')) idx++;
+            idx++; // skip :
+            if (resourceString.charAt(idx) == '\t') idx++; // skip \t
+            String colorUse = resourceString.substring(idx,resourceString.indexOf("\n",idx));
+            if ("HIGH_COLOR".equalsIgnoreCase(colorUse)) {
+                numOfColor = 8;
+            } else if ("MEDIUM_COLOR".equalsIgnoreCase(colorUse)) {
+                numOfColor = 4;
+            }
+        }
+
+        if (4 == numOfColor)
+            loadSystemColorsForCDE4(systemColors, colors);
+        else
+            loadSystemColorsForCDE8(systemColors, colors);
+   }
+
+   private static void loadSystemColorsForCDE4(int[] systemColors, int[] colors) throws Exception {
+        int r,g,b;
         systemColors[SystemColor.ACTIVE_CAPTION] = colors[0];
         systemColors[SystemColor.ACTIVE_CAPTION_BORDER] = colors[0];
 
@@ -493,6 +519,84 @@ class MotifColorUtilities {
         tmp = new Color(bottom_shadow);
         systemColors[SystemColor.CONTROL_SHADOW] =  bottom_shadow;
         systemColors[SystemColor.CONTROL_DK_SHADOW] = tmp.darker().getRGB();
+
+    }
+
+    private static void loadSystemColorsForCDE8(int[] systemColors, int[] colors) throws Exception {
+        int r,g,b;
+        systemColors[SystemColor.ACTIVE_CAPTION] = colors[0];
+        systemColors[SystemColor.ACTIVE_CAPTION_BORDER] = colors[0];
+
+        systemColors[SystemColor.INACTIVE_CAPTION] = colors[1];
+        systemColors[SystemColor.INACTIVE_CAPTION_BORDER] = colors[1];
+
+        systemColors[SystemColor.WINDOW] = colors[4];
+
+        systemColors[SystemColor.MENU] = colors[5];
+
+        systemColors[SystemColor.TEXT] = colors[3];
+        systemColors[SystemColor.TEXT_HIGHLIGHT_TEXT] = colors[3];
+
+        systemColors[SystemColor.SCROLLBAR] = colors[4];
+        systemColors[SystemColor.CONTROL] = colors[4];
+        systemColors[SystemColor.INFO] =  colors[4];
+
+        int activeFore;
+        int inactiveFore;
+        int textFore;
+
+
+        r = (colors[0] & 0x00FF0000) >> 16;
+        g = (colors[0] & 0x0000FF00) >> 8;
+        b = (colors[0] & 0x000000FF);
+
+        activeFore = MotifColorUtilities.calculateForegroundFromBackground(r,g,b);
+
+        r = (colors[1] & 0x00FF0000) >> 16;
+        g = (colors[1] & 0x0000FF00) >> 8;
+        b = (colors[1] & 0x000000FF);
+
+        inactiveFore = MotifColorUtilities.calculateForegroundFromBackground(r,g,b);
+
+        r = (colors[3] & 0x00FF0000) >> 16;
+        g = (colors[3] & 0x0000FF00) >> 8;
+        b = (colors[3] & 0x000000FF);
+
+        textFore = MotifColorUtilities.calculateForegroundFromBackground(r,g,b);
+
+        r = (colors[4] & 0x00FF0000) >> 16;
+        g = (colors[4] & 0x0000FF00) >> 8;
+        b = (colors[4] & 0x000000FF);
+
+        int windowFore = MotifColorUtilities.calculateForegroundFromBackground(r,g,b);
+
+        int top_shadow = MotifColorUtilities.calculateTopShadowFromBackground(r,g,b);
+        int bottom_shadow = MotifColorUtilities.calculateBottomShadowFromBackground(r,g,b);
+
+
+        r = (colors[5] & 0x00FF0000) >> 16;
+        g = (colors[5] & 0x0000FF00) >> 8;
+        b = (colors[5] & 0x000000FF);
+
+        int menuFore = MotifColorUtilities.calculateForegroundFromBackground(r,g,b);
+
+        systemColors[SystemColor.ACTIVE_CAPTION_TEXT] = activeFore;
+        systemColors[SystemColor.INACTIVE_CAPTION_TEXT] = inactiveFore;
+        systemColors[SystemColor.WINDOW_BORDER] = MotifColorUtilities.BLACK;
+        systemColors[SystemColor.WINDOW_TEXT] = windowFore;
+        systemColors[SystemColor.MENU_TEXT] = menuFore;
+        systemColors[SystemColor.TEXT_TEXT] = textFore;
+        systemColors[SystemColor.TEXT_HIGHLIGHT] = textFore;
+        systemColors[SystemColor.CONTROL_TEXT] = windowFore;
+        Color tmp = new Color(top_shadow);
+        systemColors[SystemColor.CONTROL_HIGHLIGHT] =  top_shadow;
+        systemColors[SystemColor.CONTROL_LT_HIGHLIGHT] =  tmp.brighter().getRGB();
+
+        tmp = new Color(bottom_shadow);
+        systemColors[SystemColor.CONTROL_SHADOW] =  bottom_shadow;
+        systemColors[SystemColor.CONTROL_DK_SHADOW] = tmp.darker().getRGB();
+
+        systemColors[SystemColor.INFO_TEXT] = windowFore;
 
     }
 
