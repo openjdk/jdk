@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8195795 8201396 8196202
+ * @bug 8195795 8201396 8196202 8215582
  * @summary test the use of module directories in output,
  *          and the --no-module-directories option
  * @modules jdk.javadoc/jdk.javadoc.internal.api
@@ -76,32 +76,12 @@ public class TestModuleDirs extends JavadocTester {
                 .classes("package pa; public class A {}")
                 .exports("pa")
                 .write(src);
-        new ModuleBuilder(tb, "mb")
-                .classes("package pb; public class B {}")
-                .exports("pb")
-                .write(src);
 
         javadoc("-d", base.resolve("api").toString(),
-                "-quiet",
                 "--module-source-path", src.toString(),
                 "--no-module-directories",
                 "--module", "ma,mb");
-
-        checkExit(Exit.OK);
-        checkFiles(true,
-                "ma-summary.html",
-                "pa/package-summary.html");
-        checkFiles(false,
-                "ma/module-summary.html",
-                "ma/pa/package-summary.html");
-        checkOutput("ma-summary.html", false,
-                "<ul class=\"navList\" id=\"allclasses_navbar_top\">\n"
-                + "<li><a href=\"allclasses-noframe.html\">All&nbsp;Classes</a></li>\n"
-                + "</ul>\n");
-        checkOutput("pa/package-summary.html", true,
-                "<li><a href=\"../deprecated-list.html\">Deprecated</a></li>\n"
-                + "<li><a href=\"../index-all.html\">Index</a></li>");
-
+        checkExit(Exit.ERROR);
     }
 
     @Test
