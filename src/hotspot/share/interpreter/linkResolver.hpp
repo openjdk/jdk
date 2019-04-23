@@ -25,6 +25,7 @@
 #ifndef SHARE_INTERPRETER_LINKRESOLVER_HPP
 #define SHARE_INTERPRETER_LINKRESOLVER_HPP
 
+#include "interpreter/bootstrapInfo.hpp"
 #include "oops/method.hpp"
 
 // All the necessary definitions for run-time link resolution.
@@ -77,6 +78,7 @@ class CallInfo : public StackObj {
                   CallKind kind,
                   int index, TRAPS);
 
+  friend class BootstrapInfo;
   friend class LinkResolver;
 
  public:
@@ -311,9 +313,8 @@ class LinkResolver: AllStatic {
                                      bool check_null_and_abstract, TRAPS);
   static void resolve_handle_call   (CallInfo& result,
                                      const LinkInfo& link_info, TRAPS);
-  static void resolve_dynamic_call  (CallInfo& result, int pool_index, Handle bootstrap_specifier,
-                                     Symbol* method_name, Symbol* method_signature,
-                                     Klass* current_klass, TRAPS);
+  static void resolve_dynamic_call  (CallInfo& result,
+                                     BootstrapInfo& bootstrap_specifier, TRAPS);
 
   // same as above for compile-time resolution; but returns null handle instead of throwing
   // an exception on error also, does not initialize klass (i.e., no side effects)
