@@ -39,14 +39,12 @@ import javax.lang.model.element.TypeElement;
  *
  */
 public class DocPaths {
-    private final boolean useModuleDirectories;
     private final String moduleSeparator;
     private final Utils utils;
 
-    public DocPaths(Utils utils, boolean useModuleDirectories) {
+    public DocPaths(Utils utils) {
         this.utils = utils;
-        this.useModuleDirectories = useModuleDirectories;
-        moduleSeparator = useModuleDirectories ? "/module-" : "-";
+        moduleSeparator = "/module-";
     }
 
     public static final DocPath DOT_DOT = DocPath.create("..");
@@ -239,12 +237,8 @@ public class DocPaths {
         }
 
         DocPath pkgPath = DocPath.create(pkgElement.getQualifiedName().toString().replace('.', '/'));
-        if (useModuleDirectories) {
-            ModuleElement mdle = (ModuleElement) pkgElement.getEnclosingElement();
-            return forModule(mdle).resolve(pkgPath);
-        } else {
-            return pkgPath;
-        }
+        ModuleElement mdle = (ModuleElement) pkgElement.getEnclosingElement();
+        return forModule(mdle).resolve(pkgPath);
     }
 
     /**

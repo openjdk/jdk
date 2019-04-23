@@ -295,12 +295,6 @@ public abstract class BaseConfiguration {
      // A list of pairs containing urls and package list
     private final List<Pair<String, String>> linkOfflineList = new ArrayList<>();
 
-    /**
-     * Flag to enable/disable use of module directories when generating docs for modules
-     * Default: on (module directories are enabled).
-     */
-    public boolean useModuleDirectories = true;
-
     public boolean dumpOnError = false;
 
     private List<Pair<String, String>> groupPairs;
@@ -746,13 +740,6 @@ public abstract class BaseConfiguration {
                     @Override
                     public boolean process(String opt, List<String> args) {
                         showTaglets = true;
-                        return true;
-                    }
-                },
-                new XOption(resources, "--no-module-directories") {
-                    @Override
-                    public boolean process(String option, List<String> args) {
-                        useModuleDirectories = false;
                         return true;
                     }
                 }

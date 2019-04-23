@@ -291,22 +291,8 @@ public class TestSearch extends JavadocTester {
     }
 
     @Test
-    public void testNoModuleDirectories() {
-        javadoc("-d", "out-noMdlDir",
-                "--no-module-directories",
-                "-Xdoclint:none",
-                "-sourcepath", testSrc,
-                "-use",
-                "pkg", "pkg1", "pkg2", "pkg3");
-        checkExit(Exit.OK);
-        checkSearchOutput(true, false);
-        checkSearchJS();
-    }
-
-    @Test
     public void testURLEncoding() {
         javadoc("-d", "out-encode-html5",
-                "--no-module-directories",
                 "-Xdoclint:none",
                 "-sourcepath", testSrc,
                 "-use",
@@ -320,7 +306,6 @@ public class TestSearch extends JavadocTester {
     public void testJapaneseLocale() {
         javadoc("-locale", "ja_JP",
                 "-d", "out-jp",
-                "--no-module-directories",
                 "-Xdoclint:none",
                 "-sourcepath", testSrc,
                 "-use",
@@ -339,7 +324,6 @@ public class TestSearch extends JavadocTester {
     public void testChineseLocale() {
         javadoc("-locale", "zh_CN",
                 "-d", "out-cn",
-                "--no-module-directories",
                 "-Xdoclint:none",
                 "-sourcepath", testSrc,
                 "-use",
@@ -396,7 +380,6 @@ public class TestSearch extends JavadocTester {
                 "<script type=\"text/javascript\" src=\"script-dir/jquery-migrate-3.0.1.js\"></script>\n",
                 "<script type=\"text/javascript\" src=\"script-dir/jquery-ui.js\"></script>",
                 "var pathtoroot = \"./\";\n"
-                + "var useModuleDirectories = " + moduleDirectoriesVar + ";\n"
                 + "loadScripts(document, 'script');",
                 "<ul class=\"navListSearch\">\n",
                 "<li><label for=\"search\">SEARCH:</label>\n"
@@ -632,22 +615,20 @@ public class TestSearch extends JavadocTester {
                 + "    });",
                 "function getURLPrefix(ui) {\n"
                 + "    var urlPrefix=\"\";\n"
-                + "    if (useModuleDirectories) {\n"
-                + "        var slash = \"/\";\n"
-                + "        if (ui.item.category === catModules) {\n"
-                + "            return ui.item.l + slash;\n"
-                + "        } else if (ui.item.category === catPackages && ui.item.m) {\n"
-                + "            return ui.item.m + slash;\n"
-                + "        } else if ((ui.item.category === catTypes && ui.item.p) || ui.item.category === catMembers) {\n"
-                + "            $.each(packageSearchIndex, function(index, item) {\n"
-                + "                if (item.m && ui.item.p == item.l) {\n"
-                + "                    urlPrefix = item.m + slash;\n"
-                + "                }\n"
-                + "            });\n"
-                + "            return urlPrefix;\n"
-                + "        } else {\n"
-                + "            return urlPrefix;\n"
-                + "        }\n"
+                + "    var slash = \"/\";\n"
+                + "    if (ui.item.category === catModules) {\n"
+                + "        return ui.item.l + slash;\n"
+                + "    } else if (ui.item.category === catPackages && ui.item.m) {\n"
+                + "        return ui.item.m + slash;\n"
+                + "    } else if ((ui.item.category === catTypes && ui.item.p) || ui.item.category === catMembers) {\n"
+                + "        $.each(packageSearchIndex, function(index, item) {\n"
+                + "            if (item.m && ui.item.p == item.l) {\n"
+                + "                urlPrefix = item.m + slash;\n"
+                + "            }\n"
+                + "        });\n"
+                + "        return urlPrefix;\n"
+                + "    } else {\n"
+                + "        return urlPrefix;\n"
                 + "    }\n"
                 + "    return urlPrefix;\n"
                 + "}",
