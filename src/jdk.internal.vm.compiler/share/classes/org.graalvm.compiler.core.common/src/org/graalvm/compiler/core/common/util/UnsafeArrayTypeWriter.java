@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@ import static org.graalvm.compiler.core.common.util.TypeConversion.asU2;
 import static org.graalvm.compiler.core.common.util.TypeConversion.asU4;
 import static org.graalvm.compiler.serviceprovider.GraalUnsafeAccess.getUnsafe;
 
+import org.graalvm.compiler.core.common.calc.UnsignedMath;
+
 import sun.misc.Unsafe;
 
 /**
@@ -45,10 +47,15 @@ import sun.misc.Unsafe;
  * fallback that works on every hardware.
  */
 public abstract class UnsafeArrayTypeWriter implements TypeWriter {
-
     private static final Unsafe UNSAFE = getUnsafe();
     private static final int MIN_CHUNK_LENGTH = 200;
     private static final int MAX_CHUNK_LENGTH = 16000;
+
+    // Constants for UNSIGNED5 coding of Pack200
+    public static final long HIGH_WORD_SHIFT = 6;
+    public static final long NUM_HIGH_CODES = 1 << HIGH_WORD_SHIFT; // number of high codes (64)
+    public static final long NUM_LOW_CODES = (1 << Byte.SIZE) - NUM_HIGH_CODES;
+    public static final long MAX_BYTES = 11;
 
     static class Chunk {
         protected final byte[] data;
@@ -118,6 +125,30 @@ public abstract class UnsafeArrayTypeWriter implements TypeWriter {
         putS4(asU4(value));
     }
 
+    @Override
+    public void putS2(long value) {
+        long offset = writeOffset(Short.BYTES);
+        putS2(value, writeChunk, offset);
+    }
+
+    @Override
+    public void putS4(long value) {
+        long offset = writeOffset(Integer.BYTES);
+        putS4(value, writeChunk, offset);
+    }
+
+    @Override
+    public void putS8(long value) {
+        long offset = writeOffset(Long.BYTES);
+        putS8(value, writeChunk, offset);
+    }
+
+    protected abstract void putS2(long value, Chunk chunk, long offset);
+
+    protected abstract void putS4(long value, Chunk chunk, long offset);
+
+    protected abstract void putS8(long value, Chunk chunk, long offset);
+
     protected long writeOffset(int writeBytes) {
         if (writeChunk.size + writeBytes >= writeChunk.data.length) {
             Chunk newChunk = new Chunk(Math.min(writeChunk.data.length * 2, MAX_CHUNK_LENGTH));
@@ -134,27 +165,76 @@ public abstract class UnsafeArrayTypeWriter implements TypeWriter {
 
         return result;
     }
+
+    @Override
+    public void patchS4(long value, long offset) {
+        long chunkStartOffset = 0;
+        Chunk chunk = firstChunk;
+        while (chunkStartOffset + chunk.size <= offset) {
+            chunkStartOffset += chunk.size;
+            chunk = chunk.next;
+        }
+
+        long targetOffset = offset - chunkStartOffset;
+        assert targetOffset + Integer.BYTES <= chunk.size : "out of bounds";
+        putS4(value, chunk, Unsafe.ARRAY_BYTE_BASE_OFFSET + targetOffset);
+    }
+
+    @Override
+    public void putSV(long value) {
+        // this is a modified version of the SIGNED5 encoding from Pack200
+        write(encodeSign(value));
+    }
+
+    @Override
+    public void putUV(long value) {
+        // this is a modified version of the UNSIGNED5 encoding from Pack200
+        write(value);
+    }
+
+    private static long encodeSign(long value) {
+        return (value << 1) ^ (value >> 63);
+    }
+
+    private void write(long value) {
+        if (UnsignedMath.belowThan(value, NUM_LOW_CODES)) {
+            putU1(value);
+        } else {
+            writePacked(value);
+        }
+    }
+
+    private void writePacked(long value) {
+        long sum = value;
+        for (int i = 1; UnsignedMath.aboveOrEqual(sum, NUM_LOW_CODES) && i < MAX_BYTES; i++) {
+            sum -= NUM_LOW_CODES;
+            long u1 = NUM_LOW_CODES + (sum & (NUM_HIGH_CODES - 1)); // this is a "high code"
+            sum >>>= HIGH_WORD_SHIFT; // extracted 6 bits
+            putU1(u1);
+        }
+
+        // remainder is either a "low code" or the last byte
+        assert sum == (sum & 0xFF) : "not a byte";
+        putU1(sum & 0xFF);
+    }
 }
 
 final class UnalignedUnsafeArrayTypeWriter extends UnsafeArrayTypeWriter {
     private static final Unsafe UNSAFE = getUnsafe();
 
     @Override
-    public void putS2(long value) {
-        long offset = writeOffset(Short.BYTES);
-        UNSAFE.putShort(writeChunk.data, offset, asS2(value));
+    protected void putS2(long value, Chunk chunk, long offset) {
+        UNSAFE.putShort(chunk.data, offset, asS2(value));
     }
 
     @Override
-    public void putS4(long value) {
-        long offset = writeOffset(Integer.BYTES);
-        UNSAFE.putInt(writeChunk.data, offset, asS4(value));
+    protected void putS4(long value, Chunk chunk, long offset) {
+        UNSAFE.putInt(chunk.data, offset, asS4(value));
     }
 
     @Override
-    public void putS8(long value) {
-        long offset = writeOffset(Long.BYTES);
-        UNSAFE.putLong(writeChunk.data, offset, value);
+    protected void putS8(long value, Chunk chunk, long offset) {
+        UNSAFE.putLong(chunk.data, offset, value);
     }
 }
 
@@ -162,31 +242,28 @@ final class AlignedUnsafeArrayTypeWriter extends UnsafeArrayTypeWriter {
     private static final Unsafe UNSAFE = getUnsafe();
 
     @Override
-    public void putS2(long value) {
-        long offset = writeOffset(Short.BYTES);
-        UNSAFE.putByte(writeChunk.data, offset + 0, (byte) (value >> 0));
-        UNSAFE.putByte(writeChunk.data, offset + 1, (byte) (value >> 8));
+    protected void putS2(long value, Chunk chunk, long offset) {
+        UNSAFE.putByte(chunk.data, offset + 0, (byte) (value >> 0));
+        UNSAFE.putByte(chunk.data, offset + 1, (byte) (value >> 8));
     }
 
     @Override
-    public void putS4(long value) {
-        long offset = writeOffset(Integer.BYTES);
-        UNSAFE.putByte(writeChunk.data, offset + 0, (byte) (value >> 0));
-        UNSAFE.putByte(writeChunk.data, offset + 1, (byte) (value >> 8));
-        UNSAFE.putByte(writeChunk.data, offset + 2, (byte) (value >> 16));
-        UNSAFE.putByte(writeChunk.data, offset + 3, (byte) (value >> 24));
+    protected void putS4(long value, Chunk chunk, long offset) {
+        UNSAFE.putByte(chunk.data, offset + 0, (byte) (value >> 0));
+        UNSAFE.putByte(chunk.data, offset + 1, (byte) (value >> 8));
+        UNSAFE.putByte(chunk.data, offset + 2, (byte) (value >> 16));
+        UNSAFE.putByte(chunk.data, offset + 3, (byte) (value >> 24));
     }
 
     @Override
-    public void putS8(long value) {
-        long offset = writeOffset(Long.BYTES);
-        UNSAFE.putByte(writeChunk.data, offset + 0, (byte) (value >> 0));
-        UNSAFE.putByte(writeChunk.data, offset + 1, (byte) (value >> 8));
-        UNSAFE.putByte(writeChunk.data, offset + 2, (byte) (value >> 16));
-        UNSAFE.putByte(writeChunk.data, offset + 3, (byte) (value >> 24));
-        UNSAFE.putByte(writeChunk.data, offset + 4, (byte) (value >> 32));
-        UNSAFE.putByte(writeChunk.data, offset + 5, (byte) (value >> 40));
-        UNSAFE.putByte(writeChunk.data, offset + 6, (byte) (value >> 48));
-        UNSAFE.putByte(writeChunk.data, offset + 7, (byte) (value >> 56));
+    protected void putS8(long value, Chunk chunk, long offset) {
+        UNSAFE.putByte(chunk.data, offset + 0, (byte) (value >> 0));
+        UNSAFE.putByte(chunk.data, offset + 1, (byte) (value >> 8));
+        UNSAFE.putByte(chunk.data, offset + 2, (byte) (value >> 16));
+        UNSAFE.putByte(chunk.data, offset + 3, (byte) (value >> 24));
+        UNSAFE.putByte(chunk.data, offset + 4, (byte) (value >> 32));
+        UNSAFE.putByte(chunk.data, offset + 5, (byte) (value >> 40));
+        UNSAFE.putByte(chunk.data, offset + 6, (byte) (value >> 48));
+        UNSAFE.putByte(chunk.data, offset + 7, (byte) (value >> 56));
     }
 }

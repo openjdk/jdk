@@ -966,7 +966,7 @@ public final class StructuredGraph extends Graph implements JavaMethodContext {
      */
     public List<ResolvedJavaMethod> getMethods() {
         if (methods != null) {
-            assert checkFrameStatesAgainstInlinedMethods();
+            assert isSubstitution || checkFrameStatesAgainstInlinedMethods();
             return Collections.unmodifiableList(methods);
         }
         return Collections.emptyList();

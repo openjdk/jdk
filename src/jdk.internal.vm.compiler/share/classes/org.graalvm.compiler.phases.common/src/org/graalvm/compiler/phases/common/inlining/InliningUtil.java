@@ -72,7 +72,6 @@ import org.graalvm.compiler.nodes.InliningLog;
 import org.graalvm.compiler.nodes.Invoke;
 import org.graalvm.compiler.nodes.InvokeNode;
 import org.graalvm.compiler.nodes.InvokeWithExceptionNode;
-import org.graalvm.compiler.nodes.KillingBeginNode;
 import org.graalvm.compiler.nodes.LogicNode;
 import org.graalvm.compiler.nodes.MergeNode;
 import org.graalvm.compiler.nodes.NodeView;
@@ -93,7 +92,6 @@ import org.graalvm.compiler.nodes.java.ExceptionObjectNode;
 import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
 import org.graalvm.compiler.nodes.java.MonitorExitNode;
 import org.graalvm.compiler.nodes.java.MonitorIdNode;
-import org.graalvm.compiler.nodes.spi.Replacements;
 import org.graalvm.compiler.nodes.type.StampTool;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.phases.common.inlining.info.InlineInfo;
@@ -466,11 +464,7 @@ public class InliningUtil extends ValueMergeUtil {
             // A partial intrinsic exit must be replaced with a call to
             // the intrinsified method.
             Invoke dup = (Invoke) duplicates.get(exit.asNode());
-            if (dup instanceof InvokeNode) {
-                ((InvokeNode) dup).replaceWithNewBci(invoke.bci());
-            } else {
-                ((InvokeWithExceptionNode) dup).replaceWithNewBci(invoke.bci());
-            }
+            dup.replaceBci(invoke.bci());
         }
         if (unwindNode != null) {
             unwindNode = (UnwindNode) duplicates.get(unwindNode);
@@ -544,15 +538,7 @@ public class InliningUtil extends ValueMergeUtil {
             }
 
             // get rid of memory kill
-            AbstractBeginNode begin = invokeWithException.next();
-            if (begin instanceof KillingBeginNode) {
-                try (DebugCloseable position = begin.withNodeSourcePosition()) {
-                    AbstractBeginNode newBegin = new BeginNode();
-                    graph.addAfterFixed(begin, graph.add(newBegin));
-                    begin.replaceAtUsages(newBegin);
-                    graph.removeFixed(begin);
-                }
-            }
+            invokeWithException.killKillingBegin();
         } else {
             if (unwindNode != null && unwindNode.isAlive()) {
                 try (DebugCloseable position = unwindNode.withNodeSourcePosition()) {
@@ -836,7 +822,7 @@ public class InliningUtil extends ValueMergeUtil {
 
         // Return value does no longer need to be limited by the monitor exit.
         for (MonitorExitNode n : frameState.usages().filter(MonitorExitNode.class)) {
-            n.clearEscapedReturnValue();
+            n.clearEscapedValue();
         }
 
         frameState.replaceAndDelete(stateAfterReturn);
@@ -1003,14 +989,6 @@ public class InliningUtil extends ValueMergeUtil {
             }
             return newReceiver;
         }
-    }
-
-    public static boolean canIntrinsify(Replacements replacements, ResolvedJavaMethod target, int invokeBci) {
-        return replacements.hasSubstitution(target, invokeBci);
-    }
-
-    public static StructuredGraph getIntrinsicGraph(Replacements replacements, ResolvedJavaMethod target, int invokeBci, boolean trackNodeSourcePosition, NodeSourcePosition replaceePosition) {
-        return replacements.getSubstitution(target, invokeBci, trackNodeSourcePosition, replaceePosition);
     }
 
     /**

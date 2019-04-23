@@ -283,7 +283,7 @@ public class HotSpotForeignCallLinkageImpl extends HotSpotForeignCallTarget impl
 
     @Override
     public boolean mayContainFP() {
-        return transition != Transition.LEAF_NOFP;
+        return transition != Transition.LEAF_NO_VZERO;
     }
 
     @Override

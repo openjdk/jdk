@@ -61,4 +61,9 @@ public interface ForeignCallsProvider extends ValueKindFactory<LIRKind> {
      * Gets the linkage for a foreign call.
      */
     ForeignCallLinkage lookupForeignCall(ForeignCallDescriptor descriptor);
+
+    /**
+     * Return true if the foreign call has a binding.
+     */
+    boolean isAvailable(ForeignCallDescriptor descriptor);
 }

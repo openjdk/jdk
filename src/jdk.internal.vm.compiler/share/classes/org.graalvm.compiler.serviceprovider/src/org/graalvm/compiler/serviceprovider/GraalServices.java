@@ -41,7 +41,7 @@ import jdk.vm.ci.services.JVMCIPermission;
 import jdk.vm.ci.services.Services;
 
 /**
- * Interface to functionality that abstracts over which JDK version Graal is running on.
+ * JDK 9+ version of {@link GraalServices}.
  */
 public final class GraalServices {
 

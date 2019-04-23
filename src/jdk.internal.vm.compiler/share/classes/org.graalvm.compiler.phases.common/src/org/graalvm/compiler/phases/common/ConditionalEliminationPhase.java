@@ -511,6 +511,8 @@ public class ConditionalEliminationPhase extends BasePhase<PhaseContext> {
                                 allow = true;
                             }
                         } else {
+                            // Fortify: Suppress Null Dereference false positive
+                            assert bestPossibleStamp != null;
                             allow = (bestPossibleStamp.asConstant() != null);
                         }
 

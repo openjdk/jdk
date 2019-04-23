@@ -79,6 +79,13 @@ public class ForeignCallNode extends AbstractMemoryCheckpoint implements LIRLowe
 
     public static boolean intrinsify(GraphBuilderContext b, ResolvedJavaMethod targetMethod, @InjectedNodeParameter Stamp returnStamp, @InjectedNodeParameter ForeignCallsProvider foreignCalls,
                     ForeignCallDescriptor descriptor, ValueNode... arguments) {
+        if (!foreignCalls.isAvailable(descriptor)) {
+            // When using encoded snippets a graph main contain a reference to a foreign call that's
+            // not actually available in the current configuration. It's assumed that further
+            // simplification of the graph will eliminate this call completely.
+            return false;
+        }
+
         ForeignCallNode node = new ForeignCallNode(foreignCalls, descriptor, arguments);
         node.setStamp(returnStamp);
 

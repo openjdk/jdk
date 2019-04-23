@@ -183,7 +183,7 @@ public abstract class Stub {
             Description description = new Description(linkage, "Stub_" + nextStubId.incrementAndGet());
             return DebugContext.create(options, description, outer.getGlobalMetrics(), DEFAULT_LOG_STREAM, singletonList(new GraalDebugHandlersFactory(providers.getSnippetReflection())));
         }
-        return DebugContext.DISABLED;
+        return DebugContext.disabled(options);
     }
 
     /**

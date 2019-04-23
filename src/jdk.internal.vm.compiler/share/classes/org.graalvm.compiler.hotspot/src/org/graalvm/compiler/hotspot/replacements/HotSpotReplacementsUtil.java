@@ -160,7 +160,7 @@ public class HotSpotReplacementsUtil {
                 return field.getOffset();
             }
         }
-        throw new GraalError("missing field " + fieldName);
+        throw new GraalError("missing field " + fieldName + " in type " + type);
     }
 
     public static HotSpotJVMCIRuntime runtime() {

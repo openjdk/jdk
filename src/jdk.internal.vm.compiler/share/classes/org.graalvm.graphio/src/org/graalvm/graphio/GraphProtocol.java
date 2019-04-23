@@ -634,7 +634,7 @@ abstract class GraphProtocol<Graph, Node, NodeClass, Edges, Block, ResolvedJavaM
         switch (type) {
             case POOL_FIELD: {
                 ResolvedJavaField field = (ResolvedJavaField) found[0];
-                Objects.nonNull(field);
+                Objects.requireNonNull(field);
                 writePoolObject(findFieldDeclaringClass(field));
                 writePoolObject(findFieldName(field));
                 writePoolObject(findFieldTypeName(field));
@@ -653,7 +653,7 @@ abstract class GraphProtocol<Graph, Node, NodeClass, Edges, Block, ResolvedJavaM
             }
             case POOL_NODE_SOURCE_POSITION: {
                 NodeSourcePosition pos = (NodeSourcePosition) found[0];
-                Objects.nonNull(pos);
+                Objects.requireNonNull(pos);
                 ResolvedJavaMethod method = findNodeSourcePositionMethod(pos);
                 writePoolObject(method);
                 final int bci = findNodeSourcePositionBCI(pos);
@@ -697,7 +697,7 @@ abstract class GraphProtocol<Graph, Node, NodeClass, Edges, Block, ResolvedJavaM
             }
             case POOL_NODE: {
                 Node node = (Node) found[0];
-                Objects.nonNull(node);
+                Objects.requireNonNull(node);
                 writeInt(findNodeId(node));
                 writePoolObject(classForNode(node));
                 break;
@@ -719,7 +719,7 @@ abstract class GraphProtocol<Graph, Node, NodeClass, Edges, Block, ResolvedJavaM
             }
             case POOL_CLASS: {
                 String typeName = (String) found[0];
-                Objects.nonNull(typeName);
+                Objects.requireNonNull(typeName);
                 writeString(typeName);
                 String[] enumValueNames = findEnumTypeValues(object);
                 if (enumValueNames != null) {
@@ -735,7 +735,7 @@ abstract class GraphProtocol<Graph, Node, NodeClass, Edges, Block, ResolvedJavaM
             }
             case POOL_METHOD: {
                 ResolvedJavaMethod method = (ResolvedJavaMethod) found[0];
-                Objects.nonNull(method);
+                Objects.requireNonNull(method);
                 writePoolObject(findMethodDeclaringClass(method));
                 writePoolObject(findMethodName(method));
                 final Signature methodSignature = findMethodSignature(method);

@@ -35,10 +35,15 @@ public final class Label {
     private int blockId = -1;
 
     /**
-     * References to instructions that jump to this unresolved label. These instructions need to be
-     * patched when the label is bound using the {@link #patchInstructions(Assembler)} method.
+     * Positions of instructions that jump to this unresolved label. These instructions are patched
+     * when the label is bound.
      */
-    private ArrayList<Integer> patchPositions = null;
+    ArrayList<Integer> patchPositions;
+
+    /**
+     * Link in list of labels with instructions to be patched.
+     */
+    Label nextWithPatches;
 
     /**
      * Returns the position of this label in the code buffer.
@@ -62,36 +67,33 @@ public final class Label {
     }
 
     /**
-     * Binds the label to the specified position.
-     *
-     * @param pos the position
+     * Binds the label to {@code pos} and patches all instructions added by
+     * {@link #addPatchAt(int, Assembler)}.
      */
-    protected void bind(int pos) {
+    protected void bind(int pos, Assembler asm) {
+        assert pos >= 0;
         this.position = pos;
-        assert isBound();
+        if (patchPositions != null) {
+            for (int i = 0; i < patchPositions.size(); ++i) {
+                asm.patchJumpTarget(patchPositions.get(i), position);
+            }
+            patchPositions = null;
+        }
     }
 
     public boolean isBound() {
         return position >= 0;
     }
 
-    public void addPatchAt(int branchLocation) {
+    public void addPatchAt(int branchLocation, Assembler asm) {
         assert !isBound() : "Label is already bound " + this + " " + branchLocation + " at position " + position;
         if (patchPositions == null) {
             patchPositions = new ArrayList<>(2);
+            nextWithPatches = asm.labelsWithPatches;
+            asm.labelsWithPatches = this;
         }
         patchPositions.add(branchLocation);
-    }
 
-    protected void patchInstructions(Assembler masm) {
-        assert isBound() : "Label should be bound";
-        if (patchPositions != null) {
-            int target = position;
-            for (int i = 0; i < patchPositions.size(); ++i) {
-                int pos = patchPositions.get(i);
-                masm.patchJumpTarget(pos, target);
-            }
-        }
     }
 
     public void reset() {

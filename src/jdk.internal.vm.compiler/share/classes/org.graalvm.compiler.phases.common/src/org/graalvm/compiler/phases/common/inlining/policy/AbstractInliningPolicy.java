@@ -31,7 +31,6 @@ import java.util.Map;
 import org.graalvm.compiler.nodes.Invoke;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.spi.Replacements;
-import org.graalvm.compiler.phases.common.inlining.InliningUtil;
 import org.graalvm.compiler.phases.common.inlining.info.InlineInfo;
 import org.graalvm.compiler.phases.common.inlining.info.elem.Inlineable;
 
@@ -69,7 +68,7 @@ public abstract class AbstractInliningPolicy implements InliningPolicy {
 
     private static boolean onlyIntrinsics(Replacements replacements, InlineInfo info) {
         for (int i = 0; i < info.numberOfMethods(); i++) {
-            if (!InliningUtil.canIntrinsify(replacements, info.methodAt(i), info.invoke().bci())) {
+            if (!replacements.hasSubstitution(info.methodAt(i), info.invoke().bci())) {
                 return false;
             }
         }

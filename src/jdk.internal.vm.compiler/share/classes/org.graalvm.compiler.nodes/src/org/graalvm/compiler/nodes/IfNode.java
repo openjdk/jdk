@@ -768,6 +768,9 @@ public final class IfNode extends ControlSplitNode implements Simplifiable, LIRL
                     removeThroughFalseBranch(tool, merge);
                     return true;
                 } else if (distinct == 1) {
+                    // Fortify: Suppress Null Dereference false positive
+                    assert singlePhi != null;
+
                     ValueNode trueValue = singlePhi.valueAt(trueEnd);
                     ValueNode falseValue = singlePhi.valueAt(falseEnd);
                     ValueNode conditional = canonicalizeConditionalCascade(tool, trueValue, falseValue);

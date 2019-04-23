@@ -252,7 +252,7 @@ public class DebugInfoBuilder {
 
             if (!state.canProduceBytecodeFrame()) {
                 // This typically means a snippet or intrinsic frame state made it to the backend
-                StackTraceElement ste = state.getCode().asStackTraceElement(state.bci);
+                String ste = state.getCode() != null ? state.getCode().asStackTraceElement(state.bci).toString() : state.toString();
                 throw new GraalError("Frame state for %s cannot be converted to a BytecodeFrame since the frame state's code is " +
                                 "not the same as the frame state method's code", ste);
             }

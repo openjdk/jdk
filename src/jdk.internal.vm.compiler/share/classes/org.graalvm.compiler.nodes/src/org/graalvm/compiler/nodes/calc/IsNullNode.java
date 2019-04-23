@@ -41,6 +41,7 @@ import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.nodes.spi.Virtualizable;
 import org.graalvm.compiler.nodes.spi.VirtualizerTool;
+import org.graalvm.compiler.nodes.type.NarrowOopStamp;
 import org.graalvm.compiler.nodes.type.StampTool;
 
 import jdk.vm.ci.meta.JavaConstant;
@@ -67,6 +68,7 @@ public final class IsNullNode extends UnaryOpLogicNode implements LIRLowerable, 
 
     public IsNullNode(ValueNode object) {
         this(object, JavaConstant.NULL_POINTER);
+        assertNonNarrow(object);
     }
 
     public JavaConstant nullConstant() {
@@ -74,7 +76,17 @@ public final class IsNullNode extends UnaryOpLogicNode implements LIRLowerable, 
     }
 
     public static LogicNode create(ValueNode forValue) {
+        assertNonNarrow(forValue);
         return canonicalized(null, forValue, JavaConstant.NULL_POINTER);
+    }
+
+    public static LogicNode create(ValueNode forValue, JavaConstant nullConstant) {
+        assert nullConstant.isNull() : "Null constant is not null: " + nullConstant;
+        return canonicalized(null, forValue, nullConstant);
+    }
+
+    private static void assertNonNarrow(ValueNode object) {
+        assert !(object.stamp(NodeView.DEFAULT) instanceof NarrowOopStamp) : "Value to compare against null is a NarrowOop" + object;
     }
 
     @Override

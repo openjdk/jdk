@@ -1851,7 +1851,7 @@ public abstract class SPARCAssembler extends Assembler {
     }
 
     protected int patchUnbound(Label label) {
-        label.addPatchAt(position());
+        label.addPatchAt(position(), this);
         return 0;
     }
 

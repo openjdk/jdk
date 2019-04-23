@@ -65,8 +65,9 @@ public class AOTInliningPolicy extends GreedyInliningPolicy {
     }
 
     @Override
-    public Decision isWorthInlining(Replacements replacements, MethodInvocation invocation, int inliningDepth, boolean fullyProcessed) {
-        final boolean isTracing = GraalOptions.TraceInlining.getValue(replacements.getOptions());
+    public Decision isWorthInlining(Replacements replacements, MethodInvocation invocation, InlineInfo calleeInfo, int inliningDepth, boolean fullyProcessed) {
+        OptionValues options = calleeInfo.graph().getOptions();
+        final boolean isTracing = GraalOptions.TraceInlining.getValue(options);
         final InlineInfo info = invocation.callee();
 
         for (int i = 0; i < info.numberOfMethods(); ++i) {
@@ -79,7 +80,6 @@ public class AOTInliningPolicy extends GreedyInliningPolicy {
         final double probability = invocation.probability();
         final double relevance = invocation.relevance();
 
-        OptionValues options = info.graph().getOptions();
         if (InlineEverything.getValue(options)) {
             InliningUtil.traceInlinedMethod(info, inliningDepth, fullyProcessed, "inline everything");
             return InliningPolicy.Decision.YES.withReason(isTracing, "inline everything");

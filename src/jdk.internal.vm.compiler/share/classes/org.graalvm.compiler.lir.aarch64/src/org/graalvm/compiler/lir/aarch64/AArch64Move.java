@@ -497,7 +497,12 @@ public class AArch64Move {
                         masm.fmov(32, dst, scratch);
                     }
                 } else {
-                    masm.fldr(32, dst, (AArch64Address) crb.asFloatConstRef(input));
+                    try (ScratchRegister scr = masm.getScratchRegister()) {
+                        Register scratch = scr.getRegister();
+                        crb.asFloatConstRef(input);
+                        masm.addressOf(scratch);
+                        masm.fldr(32, dst, AArch64Address.createBaseRegisterOnlyAddress(scratch));
+                    }
                 }
                 break;
             case Double:
@@ -510,7 +515,12 @@ public class AArch64Move {
                         masm.fmov(64, dst, scratch);
                     }
                 } else {
-                    masm.fldr(64, dst, (AArch64Address) crb.asDoubleConstRef(input));
+                    try (ScratchRegister scr = masm.getScratchRegister()) {
+                        Register scratch = scr.getRegister();
+                        crb.asDoubleConstRef(input);
+                        masm.addressOf(scratch);
+                        masm.fldr(64, dst, AArch64Address.createBaseRegisterOnlyAddress(scratch));
+                    }
                 }
                 break;
             case Object:

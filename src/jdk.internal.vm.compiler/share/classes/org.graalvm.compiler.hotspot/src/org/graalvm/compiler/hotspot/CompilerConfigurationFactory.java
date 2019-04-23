@@ -219,6 +219,8 @@ public abstract class CompilerConfigurationFactory implements Comparable<Compile
                 factory = candidates.get(0);
             }
         }
+        assert factory != null;
+
         ShowConfigurationLevel level = Options.ShowConfiguration.getValue(options);
         if (level != ShowConfigurationLevel.none) {
             switch (level) {

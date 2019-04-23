@@ -63,4 +63,9 @@ class IsGraalPredicate extends IsGraalPredicateBase {
         Module module = declaringClass.getModule();
         return jvmciModule == module || graalModule == module || compilerConfigurationModule == module;
     }
+
+    @Override
+    HotSpotJVMCICompilerFactory.CompilationLevelAdjustment getCompilationLevelAdjustment() {
+        return HotSpotJVMCICompilerFactory.CompilationLevelAdjustment.ByHolder;
+    }
 }

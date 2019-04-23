@@ -598,8 +598,8 @@ public class CompilationResultBuilder {
                         if (label != null) {
                             labelBindLirPositions.put(label, instructionPosition);
                         }
-                        lirPositions.put(op, instructionPosition);
                     }
+                    lirPositions.put(op, instructionPosition);
                     instructionPosition++;
                 }
             }

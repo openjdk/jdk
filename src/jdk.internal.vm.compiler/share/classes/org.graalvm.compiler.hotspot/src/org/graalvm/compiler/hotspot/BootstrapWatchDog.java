@@ -178,6 +178,10 @@ final class BootstrapWatchDog extends Thread {
                                 StackTraceElement[] stackTraceNow = t.getStackTrace();
                                 TTY.printf("Printing stack trace for current compilation of %s lasting more than %d seconds:%n%s",
                                                 fmt(request1.getMethod()), EPOCH, fmt(stackTraceNow));
+
+                                // Fortify: Null Dereference false positive
+                                assert stacksAtTimeout != null;
+
                                 if (Arrays.equals(stacksAtTimeout.get(t), stackTraceNow)) {
                                     TTY.printf("\t** Identical stack trace %d seconds ago, implying a hung compilation **%n",
                                                     EPOCH);

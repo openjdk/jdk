@@ -47,6 +47,7 @@ import org.graalvm.compiler.nodes.LogicNode;
 import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.StateSplit;
+import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.IsNullNode;
 import org.graalvm.compiler.nodes.calc.NarrowNode;
@@ -163,6 +164,19 @@ public interface GraphBuilderContext extends GraphBuilderTool {
      * @return whether the intrinsification was successful
      */
     boolean intrinsify(BytecodeProvider bytecodeProvider, ResolvedJavaMethod targetMethod, ResolvedJavaMethod substitute, InvocationPlugin.Receiver receiver, ValueNode[] argsIncludingReceiver);
+
+    /**
+     * Intrinsifies an invocation of a given method by inlining the graph of a given substitution
+     * method.
+     *
+     * @param targetMethod the method being intrinsified
+     * @param substituteGraph the intrinsic implementation
+     * @param receiver the receiver, or null for static methods
+     * @param argsIncludingReceiver the arguments with which to inline the invocation
+     *
+     * @return whether the intrinsification was successful
+     */
+    boolean intrinsify(ResolvedJavaMethod targetMethod, StructuredGraph substituteGraph, InvocationPlugin.Receiver receiver, ValueNode[] argsIncludingReceiver);
 
     /**
      * Creates a snap shot of the current frame state with the BCI of the instruction after the one

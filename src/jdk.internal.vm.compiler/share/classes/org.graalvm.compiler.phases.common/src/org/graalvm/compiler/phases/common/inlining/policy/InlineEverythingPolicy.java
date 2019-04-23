@@ -31,6 +31,7 @@ import org.graalvm.compiler.core.common.PermanentBailoutException;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.spi.Replacements;
 import org.graalvm.compiler.phases.common.inlining.InliningUtil;
+import org.graalvm.compiler.phases.common.inlining.info.InlineInfo;
 import org.graalvm.compiler.phases.common.inlining.walker.MethodInvocation;
 
 public class InlineEverythingPolicy implements InliningPolicy {
@@ -44,7 +45,7 @@ public class InlineEverythingPolicy implements InliningPolicy {
     }
 
     @Override
-    public Decision isWorthInlining(Replacements replacements, MethodInvocation invocation, int inliningDepth, boolean fullyProcessed) {
-        return Decision.YES.withReason(GraalOptions.TraceInlining.getValue(replacements.getOptions()), "inline everything");
+    public Decision isWorthInlining(Replacements replacements, MethodInvocation invocation, InlineInfo calleeInfo, int inliningDepth, boolean fullyProcessed) {
+        return Decision.YES.withReason(GraalOptions.TraceInlining.getValue(calleeInfo.graph().getOptions()), "inline everything");
     }
 }

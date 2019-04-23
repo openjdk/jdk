@@ -48,6 +48,7 @@ import org.graalvm.compiler.core.common.PermanentBailoutException;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.StampPair;
 import org.graalvm.compiler.debug.DebugContext;
+import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.NodeSourcePosition;
 import org.graalvm.compiler.java.BciBlockMapping.BciBlock;
 import org.graalvm.compiler.nodeinfo.Verbosity;
@@ -390,6 +391,10 @@ public final class FrameStateBuilder implements SideEffectsState {
         assert code.equals(other.code) && graph == other.graph && localsSize() == other.localsSize() : "Can only compare frame states of the same method";
         assert lockedObjects.length == monitorIds.length && other.lockedObjects.length == other.monitorIds.length : "mismatch between lockedObjects and monitorIds";
 
+        if (rethrowException != other.rethrowException) {
+            return false;
+        }
+
         if (stackSize() != other.stackSize()) {
             return false;
         }
@@ -413,7 +418,7 @@ public final class FrameStateBuilder implements SideEffectsState {
     }
 
     public void merge(AbstractMergeNode block, FrameStateBuilder other) {
-        assert isCompatibleWith(other);
+        GraalError.guarantee(isCompatibleWith(other), "stacks do not match on merge; bytecodes would not verify:%nexpect: %s%nactual: %s", block, other);
 
         for (int i = 0; i < localsSize(); i++) {
             locals[i] = merge(locals[i], other.locals[i], block);
@@ -801,6 +806,12 @@ public final class FrameStateBuilder implements SideEffectsState {
         ValueNode result = stack[stackSize - 1];
         assert result != null;
         return result;
+    }
+
+    public ValueNode peekObject() {
+        ValueNode x = xpeek();
+        assert verifyKind(JavaKind.Object, x);
+        return x;
     }
 
     /**

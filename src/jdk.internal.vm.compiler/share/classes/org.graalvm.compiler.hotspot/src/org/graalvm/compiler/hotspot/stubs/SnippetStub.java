@@ -84,7 +84,7 @@ public abstract class SnippetStub extends Stub implements Snippets {
     }
 
     protected void registerSnippet() {
-        providers.getReplacements().registerSnippet(method, null, null, false);
+        providers.getReplacements().registerSnippet(method, null, null, false, options);
     }
 
     @Override
@@ -115,7 +115,7 @@ public abstract class SnippetStub extends Stub implements Snippets {
     }
 
     protected StructuredGraph buildInitialGraph(DebugContext debug, CompilationIdentifier compilationId, Object[] args) {
-        return providers.getReplacements().getSnippet(method, args, false, null).copyWithIdentifier(compilationId, debug);
+        return providers.getReplacements().getSnippet(method, null, args, false, null, options).copyWithIdentifier(compilationId, debug);
     }
 
     protected boolean checkConstArg(int index, String expectedName) {

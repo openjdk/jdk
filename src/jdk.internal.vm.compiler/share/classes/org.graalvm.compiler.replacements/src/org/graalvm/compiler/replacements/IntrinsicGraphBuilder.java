@@ -281,6 +281,11 @@ public class IntrinsicGraphBuilder implements GraphBuilderContext, Receiver {
     }
 
     @Override
+    public boolean intrinsify(ResolvedJavaMethod targetMethod, StructuredGraph substituteGraph, Receiver receiver, ValueNode[] argsIncludingReceiver) {
+        throw GraalError.shouldNotReachHere();
+    }
+
+    @Override
     public String toString() {
         return String.format("%s:intrinsic", method.format("%H.%n(%p)"));
     }

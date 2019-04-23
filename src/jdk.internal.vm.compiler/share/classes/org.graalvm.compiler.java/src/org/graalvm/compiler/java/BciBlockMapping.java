@@ -900,8 +900,7 @@ public final class BciBlockMapping {
         assert next == newBlocks.length - 1;
 
         // Add unwind block.
-        int deoptBci = code.getMethod().isSynchronized() ? BytecodeFrame.UNWIND_BCI : BytecodeFrame.AFTER_EXCEPTION_BCI;
-        ExceptionDispatchBlock unwindBlock = new ExceptionDispatchBlock(deoptBci);
+        ExceptionDispatchBlock unwindBlock = new ExceptionDispatchBlock(BytecodeFrame.AFTER_EXCEPTION_BCI);
         unwindBlock.setId(newBlocks.length - 1);
         newBlocks[newBlocks.length - 1] = unwindBlock;
 

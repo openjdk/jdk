@@ -118,4 +118,6 @@ public interface Invoke extends StateSplit, Lowerable, MemoryCheckpoint.Single, 
     default InvokeKind getInvokeKind() {
         return callTarget().invokeKind();
     }
+
+    void replaceBci(int newBci);
 }

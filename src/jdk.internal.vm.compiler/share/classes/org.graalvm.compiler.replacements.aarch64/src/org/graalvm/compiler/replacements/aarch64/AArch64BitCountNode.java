@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,28 +25,20 @@
 
 package org.graalvm.compiler.replacements.aarch64;
 
-import org.graalvm.compiler.api.replacements.ClassSubstitution;
-import org.graalvm.compiler.api.replacements.MethodSubstitution;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_4;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_4;
 
-/**
- * AArch64 ISA offers a count leading zeros instruction which can be used to implement
- * numberOfLeadingZeros more efficiently than using BitScanReverse.
- */
-@ClassSubstitution(Integer.class)
-public class AArch64IntegerSubstitutions {
+import org.graalvm.compiler.graph.NodeClass;
+import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.replacements.nodes.BitCountNode;
 
-    @MethodSubstitution
-    public static int bitCount(int value) {
-        // Based on Warren, Hacker's Delight, slightly adapted to profit from Aarch64 add + shift
-        // instruction.
-        // Assuming the peephole optimizer optimizes all x - y >>> z into a single instruction
-        // this takes 10 instructions.
-        int x = value;
-        x = x - ((x & 0xaaaaaaaa) >>> 1);
-        x = (x & 0x33333333) + ((x & 0xcccccccc) >>> 2);
-        x = (x + (x >>> 4)) & 0x0f0f0f0f;
-        x = x + (x >>> 8);
-        x = x + (x >>> 16);
-        return x & 0x3f;
+@NodeInfo(cycles = CYCLES_4, size = SIZE_4)
+public final class AArch64BitCountNode extends BitCountNode {
+
+    public static final NodeClass<AArch64BitCountNode> TYPE = NodeClass.create(AArch64BitCountNode.class);
+
+    public AArch64BitCountNode(ValueNode value) {
+        super(TYPE, value);
     }
 }

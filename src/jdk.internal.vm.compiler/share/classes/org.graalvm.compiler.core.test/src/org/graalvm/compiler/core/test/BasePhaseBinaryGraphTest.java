@@ -24,11 +24,12 @@
 
 package org.graalvm.compiler.core.test;
 
+import static org.junit.Assert.assertEquals;
+
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.printer.BinaryGraphPrinter;
-import static org.junit.Assert.assertEquals;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -43,7 +44,7 @@ public class BasePhaseBinaryGraphTest {
 
     @Before
     public void createPrinter() throws Exception {
-        printer = new BinaryGraphPrinter(DebugContext.DISABLED, null);
+        printer = new BinaryGraphPrinter(DebugContext.disabled(null), null);
     }
 
     @Test

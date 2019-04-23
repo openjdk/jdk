@@ -40,7 +40,7 @@ import sun.misc.Unsafe;
  * architectures that support unaligned memory accesses; the value {@code false} is the safe
  * fallback that works on every hardware.
  */
-public abstract class UnsafeArrayTypeReader implements TypeReader {
+public abstract class UnsafeArrayTypeReader extends AbstractTypeReader {
 
     private static final Unsafe UNSAFE = getUnsafe();
 

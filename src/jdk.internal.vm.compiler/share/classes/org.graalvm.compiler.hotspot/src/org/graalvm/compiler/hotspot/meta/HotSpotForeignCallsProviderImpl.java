@@ -35,6 +35,7 @@ import java.util.List;
 import jdk.internal.vm.compiler.collections.EconomicMap;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
+import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage;
 import org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.Reexecutability;
 import org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.RegisterEffect;
@@ -207,8 +208,16 @@ public abstract class HotSpotForeignCallsProviderImpl implements HotSpotForeignC
     public HotSpotForeignCallLinkage lookupForeignCall(ForeignCallDescriptor descriptor) {
         assert foreignCalls != null : descriptor;
         HotSpotForeignCallLinkage callTarget = foreignCalls.get(descriptor);
+        if (callTarget == null) {
+            throw GraalError.shouldNotReachHere("missing implementation for runtime call: " + descriptor);
+        }
         callTarget.finalizeAddress(runtime.getHostBackend());
         return callTarget;
+    }
+
+    @Override
+    public boolean isAvailable(ForeignCallDescriptor descriptor) {
+        return foreignCalls.containsKey(descriptor);
     }
 
     @Override

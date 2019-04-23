@@ -137,4 +137,8 @@ public abstract class CallTargetNode extends ValueNode implements LIRLowerable {
     public void setInvokeKind(InvokeKind kind) {
         this.invokeKind = kind;
     }
+
+    public Invoke invoke() {
+        return (Invoke) this.usages().first();
+    }
 }

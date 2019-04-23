@@ -254,6 +254,8 @@ public class FloatingReadPhase extends Phase {
             for (MemoryMap state : states) {
                 MemoryNode last = state.getLastLocationAccess(key);
                 if (isPhi) {
+                    // Fortify: Suppress Null Deference false positive (`isPhi == true` implies
+                    // `merged != null`)
                     ((MemoryPhiNode) merged).addInput(ValueNodeUtil.asNode(last));
                 } else {
                     if (merged == last) {

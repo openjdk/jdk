@@ -299,7 +299,7 @@ public class AMD64ControlFlow {
                     int imm32 = label.position() - jumpTablePos;
                     masm.emitInt(imm32);
                 } else {
-                    label.addPatchAt(masm.position());
+                    label.addPatchAt(masm.position(), masm);
 
                     masm.emitByte(0); // pseudo-opcode for jump table entry
                     masm.emitShort(offsetToJumpTableBase);
@@ -393,7 +393,7 @@ public class AMD64ControlFlow {
                     masm.emitInt(imm32);
                 } else {
                     int offsetToJumpTableBase = masm.position() - jumpTablePos;
-                    label.addPatchAt(masm.position());
+                    label.addPatchAt(masm.position(), masm);
                     masm.emitByte(0); // pseudo-opcode for jump table entry
                     masm.emitShort(offsetToJumpTableBase);
                     masm.emitByte(0); // padding to make jump table entry 4 bytes wide
