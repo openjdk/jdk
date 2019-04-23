@@ -478,7 +478,7 @@ public class TestModules extends JavadocTester {
 
     void checkHtml5Description(boolean found) {
         checkOutput("moduleA/module-summary.html", found,
-                "<section>\n"
+                "<section class=\"moduleDescription\">\n"
                 + "<div class=\"deprecationBlock\"><span class=\"deprecatedLabel\">Deprecated, for removal:"
                 + " This API element is subject to removal in a future version.</span>\n"
                 + "<div class=\"deprecationComment\">This module is deprecated.</div>\n"
@@ -490,7 +490,7 @@ public class TestModules extends JavadocTester {
                 + "<div class=\"block\">This is a test description for the moduleA module with a Search "
                 + "phrase <a id=\"searchphrase\" class=\"searchTagResult\">search phrase</a>.</div>");
         checkOutput("moduleB/module-summary.html", found,
-                "<section>\n"
+                "<section class=\"moduleDescription\">\n"
                 + "<!-- ============ MODULE DESCRIPTION =========== -->\n"
                 + "<a id=\"module.description\">\n"
                 + "<!--   -->\n"
@@ -523,17 +523,17 @@ public class TestModules extends JavadocTester {
     void checkHtml5NoDescription(boolean found) {
         checkOutput("moduleA/module-summary.html", found,
                 "<div class=\"contentContainer\">\n"
+                + "<section class=\"summary\">\n"
                 + "<ul class=\"blockList\">\n"
                 + "<li class=\"blockList\">\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\">\n"
+                + "<section class=\"packagesSummary\">\n"
                 + "<!-- ============ PACKAGES SUMMARY =========== -->");
         checkOutput("moduleB/module-summary.html", found,
                 "<div class=\"contentContainer\">\n"
+                + "<section class=\"summary\">\n"
                 + "<ul class=\"blockList\">\n"
                 + "<li class=\"blockList\">\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\">\n"
+                + "<section class=\"packagesSummary\">\n"
                 + "<!-- ============ PACKAGES SUMMARY =========== -->");
     }
 

@@ -77,7 +77,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
     /**
      * The HTML tree for section tag.
      */
-    protected HtmlTree sectionTree = HtmlTree.SECTION();
+    protected HtmlTree sectionTree = HtmlTree.SECTION(HtmlStyle.packageDescription, new ContentBuilder());
 
     private final Navigation navBar;
 
@@ -319,5 +319,13 @@ public class PackageWriterImpl extends HtmlDocletWriter
         Content stylesheetContent = getLocalStylesheetContent(packageElement);
         printHtmlDocument(configuration.metakeywords.getMetaKeywords(packageElement),
                 description, stylesheetContent, contentTree);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Content getPackageSummary(Content summaryContentTree) {
+        return HtmlTree.SECTION(HtmlStyle.summary, summaryContentTree);
     }
 }

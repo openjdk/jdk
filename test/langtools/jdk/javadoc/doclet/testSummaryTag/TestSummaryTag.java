@@ -85,11 +85,14 @@ public class TestSummaryTag extends JavadocTester {
 
         // make sure the second @summary's content is displayed correctly
         checkOutput("p1/A.html", true,
-             "<li class=\"blockList\">\n"
+             "<section class=\"detail\">\n"
              + "<h3>m3</h3>\n"
+             + "<a id=\"m3()\">\n"
+             + "<!--   -->\n"
+             + "</a>\n"
              + "<pre class=\"methodSignature\">public&nbsp;void&nbsp;m3()</pre>\n"
              + "<div class=\"block\">First sentence  some text maybe second sentence.</div>\n"
-             + "</li>\n"
+             + "</section>\n"
         );
 
         checkOutput("p1/package-summary.html", true,

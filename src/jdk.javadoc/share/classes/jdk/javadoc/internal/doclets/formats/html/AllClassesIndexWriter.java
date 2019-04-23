@@ -152,11 +152,8 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
         Content headerDiv = HtmlTree.DIV(HtmlStyle.header, pHeading);
         content.add(headerDiv);
         if (!table.isEmpty()) {
-            HtmlTree li = HtmlTree.LI(HtmlStyle.blockList, table.toContent());
-            HtmlTree ul = HtmlTree.UL(HtmlStyle.blockList, li);
-            HtmlTree div = new HtmlTree(HtmlTag.DIV);
+            HtmlTree div = new HtmlTree(HtmlTag.DIV, table.toContent());
             div.setStyle(HtmlStyle.allClassesContainer);
-            div.add(ul);
             content.add(div);
             if (table.needsScript()) {
                 getMainBodyScript().append(table.getScript());

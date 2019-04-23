@@ -95,9 +95,9 @@ public class HtmlSerialMethodWriter extends MethodWriterImpl implements
     public Content getSerializableMethods(String heading, Content serializableMethodContent) {
         Content headingContent = new StringContent(heading);
         Content serialHeading = HtmlTree.HEADING(Headings.SerializedForm.CLASS_SUBHEADING, headingContent);
-        Content li = HtmlTree.LI(HtmlStyle.blockList, serialHeading);
-        li.add(serializableMethodContent);
-        return li;
+        Content section = HtmlTree.SECTION(HtmlStyle.detail, serialHeading);
+        section.add(serializableMethodContent);
+        return HtmlTree.LI(HtmlStyle.blockList, section);
     }
 
     /**

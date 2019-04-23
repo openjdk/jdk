@@ -90,8 +90,8 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
      */
     public void addInheritedSummaryHeader(AbstractMemberWriter mw, TypeElement typeElement,
             Content inheritedTree) {
-        mw.addInheritedSummaryAnchor(typeElement, inheritedTree);
         mw.addInheritedSummaryLabel(typeElement, inheritedTree);
+        mw.addInheritedSummaryAnchor(typeElement, inheritedTree);
     }
 
     /**
@@ -212,23 +212,29 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
     /**
      * Get the member header tree
      *
-     * @return a content tree the member header
+     * @return a content tree for the member header
      */
     public Content getMemberTreeHeader() {
-        HtmlTree li = new HtmlTree(HtmlTag.LI);
-        li.setStyle(HtmlStyle.blockList);
-        return li;
+        HtmlTree ul = new HtmlTree(HtmlTag.UL);
+        ul.setStyle(HtmlStyle.blockList);
+        return ul;
+    }
+
+    public Content getMemberInheritedTree() {
+        HtmlTree div = new HtmlTree(HtmlTag.DIV);
+        div.setStyle(HtmlStyle.inheritedList);
+        return div;
     }
 
     /**
-     * Add the member tree.
-     *
+     * Adds the member tree with css style.
+     * @param style the css style to be applied to member tree
      * @param memberSummaryTree the content tree representing the member summary
      * @param memberTree the content tree representing the member
      */
-    public void addMemberTree(Content memberSummaryTree, Content memberTree) {
-        HtmlTree htmlTree = HtmlTree.SECTION(getMemberTree(memberTree));
-        memberSummaryTree.add(htmlTree);
+    public void addMemberTree(HtmlStyle style, Content memberSummaryTree, Content memberTree) {
+        HtmlTree htmlTree = HtmlTree.SECTION(style, memberTree);
+        memberSummaryTree.add(getMemberTree(htmlTree));
     }
 
     /**
@@ -238,8 +244,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
      * @return a content tree for the member
      */
     public Content getMemberTree(Content contentTree) {
-        Content ul = HtmlTree.UL(HtmlStyle.blockList, contentTree);
-        return ul;
+        return HtmlTree.LI(HtmlStyle.blockList, contentTree);
     }
 
     /**
@@ -249,7 +254,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
      * @return a content tree for the member summary
      */
     public Content getMemberSummaryTree(Content contentTree) {
-        return getMemberTree(HtmlStyle.summary, contentTree);
+        return HtmlTree.SECTION(HtmlStyle.summary, contentTree);
     }
 
     /**
@@ -259,7 +264,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
      * @return a content tree for the member details
      */
     public Content getMemberDetailsTree(Content contentTree) {
-        return getMemberTree(HtmlStyle.details, contentTree);
+        return HtmlTree.SECTION(HtmlStyle.details, contentTree);
     }
 
     /**
@@ -270,7 +275,6 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
      * @return the member tree
      */
     public Content getMemberTree(HtmlStyle style, Content contentTree) {
-        Content div = HtmlTree.DIV(style, getMemberTree(contentTree));
-        return div;
+        return HtmlTree.SECTION(style, contentTree);
     }
 }

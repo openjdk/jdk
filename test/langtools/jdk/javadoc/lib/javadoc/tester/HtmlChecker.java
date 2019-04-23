@@ -43,15 +43,15 @@ public abstract class HtmlChecker extends HtmlParser {
     protected int files;
     protected int errors;
 
-    HtmlChecker(PrintStream out, Function<Path,String> fileReader) {
+    protected HtmlChecker(PrintStream out, Function<Path,String> fileReader) {
         super(out, fileReader);
     }
 
-    void checkDirectory(Path dir) throws IOException {
+    public void checkDirectory(Path dir) throws IOException {
         checkFiles(List.of(dir), false, Collections.emptySet());
     }
 
-    void checkFiles(List<Path> files, boolean skipSubdirs, Set<Path> excludeFiles) throws IOException {
+    public void checkFiles(List<Path> files, boolean skipSubdirs, Set<Path> excludeFiles) throws IOException {
         for (Path file : files) {
             Files.walkFileTree(file, new SimpleFileVisitor<Path>() {
                 int depth = 0;
@@ -86,7 +86,7 @@ public abstract class HtmlChecker extends HtmlParser {
         }
     }
 
-    void checkFile(Path file) {
+    protected void checkFile(Path file) {
         try {
             currFile = file.toAbsolutePath().normalize();
             read(file);
@@ -96,9 +96,9 @@ public abstract class HtmlChecker extends HtmlParser {
         }
     }
 
-    abstract void report();
+    protected abstract void report();
 
-    int getErrorCount() {
+    protected int getErrorCount() {
         return errors;
     }
 

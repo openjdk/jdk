@@ -151,13 +151,12 @@ public class PackageUseWriter extends SubWriterHolderWriter {
      * @param contentTree the content tree to which the package use information will be added
      */
     protected void addPackageUse(Content contentTree) {
-        HtmlTree ul = new HtmlTree(HtmlTag.UL);
-        ul.setStyle(HtmlStyle.blockList);
+        Content content = new ContentBuilder();
         if (configuration.packages.size() > 1) {
-            addPackageList(ul);
+            addPackageList(content);
         }
-        addClassList(ul);
-        contentTree.add(ul);
+        addClassList(content);
+        contentTree.add(content);
     }
 
     /**
@@ -185,8 +184,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
             }
             table.addRow(packageLink, summary);
         }
-        Content li = HtmlTree.LI(HtmlStyle.blockList, table.toContent());
-        contentTree.add(li);
+        contentTree.add(table.toContent());
     }
 
     /**
@@ -197,11 +195,12 @@ public class PackageUseWriter extends SubWriterHolderWriter {
     protected void addClassList(Content contentTree) {
         TableHeader classTableHeader = new TableHeader(
                 contents.classLabel, contents.descriptionLabel);
+        HtmlTree ul = new HtmlTree(HtmlTag.UL);
+        ul.setStyle(HtmlStyle.blockList);
         for (String packageName : usingPackageToUsedClasses.keySet()) {
             PackageElement usingPackage = utils.elementUtils.getPackageElement(packageName);
-            HtmlTree li = new HtmlTree(HtmlTag.LI);
-            li.setStyle(HtmlStyle.blockList);
-            li.add(links.createAnchor(getPackageAnchorName(usingPackage)));
+            HtmlTree section = HtmlTree.SECTION(HtmlStyle.detail);
+            section.add(links.createAnchor(getPackageAnchorName(usingPackage)));
             String tableSummary = resources.getText("doclet.Use_Table_Summary",
                                                         resources.getText("doclet.classes"));
             Content caption = contents.getContent(
@@ -223,9 +222,11 @@ public class PackageUseWriter extends SubWriterHolderWriter {
 
                 table.addRow(typeContent, summary);
             }
-            li.add(table.toContent());
-            contentTree.add(li);
+            section.add(table.toContent());
+            ul.add(HtmlTree.LI(HtmlStyle.blockList, section));
         }
+        Content li = HtmlTree.SECTION(HtmlStyle.packageUses, ul);
+        contentTree.add(li);
     }
 
     /**

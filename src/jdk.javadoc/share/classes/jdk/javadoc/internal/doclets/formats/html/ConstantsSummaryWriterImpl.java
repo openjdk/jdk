@@ -157,7 +157,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         Content headingContent = contents.contentsHeading;
         Content heading = HtmlTree.HEADING(Headings.CONTENT_HEADING, true,
                 headingContent);
-        HtmlTree section = HtmlTree.SECTION(heading);
+        HtmlTree section = HtmlTree.SECTION(HtmlStyle.packages, heading);
         section.add(contentListTree);
         div.add(section);
         mainTree.add(div);
@@ -194,7 +194,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         Content heading = HtmlTree.HEADING(Headings.ConstantsSummary.PACKAGE_HEADING, true,
                 pkgNameContent);
         heading.add(headingContent);
-        summaryTree = HtmlTree.SECTION(heading);
+        summaryTree = HtmlTree.SECTION(HtmlStyle.constantsSummary, heading);
     }
 
     /**

@@ -28,6 +28,7 @@ package jdk.javadoc.internal.doclets.toolkit.builders;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
+import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocFilesHandler;
@@ -149,8 +150,7 @@ public class AnnotationTypeBuilder extends AbstractBuilder {
      */
     protected void buildAnnotationTypeInfo(Content annotationContentTree)
             throws DocletException {
-        Content annotationInfoTree = writer.getAnnotationInfoTreeHeader();
-
+        Content annotationInfoTree = new ContentBuilder();
         buildAnnotationTypeSignature(annotationInfoTree);
         buildDeprecationInfo(annotationInfoTree);
         buildAnnotationTypeDescription(annotationInfoTree);

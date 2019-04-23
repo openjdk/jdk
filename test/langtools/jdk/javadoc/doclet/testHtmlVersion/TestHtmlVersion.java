@@ -100,7 +100,7 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<!-- ========= START OF TOP NAVBAR ======= -->",
                 "<main role=\"main\">\n"
                 + "<div class=\"header\">",
-                "<section><a id=\"package.description\">\n"
+                "<section class=\"packageDescription\"><a id=\"package.description\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
                 + "<div class=\"block\">Test package.</div>",
@@ -110,6 +110,7 @@ public class TestHtmlVersion extends JavadocTester {
         // No package description
         checkOutput("pkg1/package-summary.html", true,
                 "<div class=\"contentContainer\">\n"
+                + "<section class=\"summary\">\n"
                 + "<ul class=\"blockList\">\n"
                 + "<li class=\"blockList\">\n"
                 + "<div class=\"typeSummary\">\n<table>\n"
@@ -129,13 +130,13 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<!-- ========= START OF TOP NAVBAR ======= -->",
                 "<main role=\"main\">\n"
                 + "<div class=\"header\">",
-                "<section>\n"
+                "<section class=\"hierarchy\">\n"
                 + "<h2 title=\"Class Hierarchy\">Class Hierarchy</h2>",
-                "<section>\n"
+                "<section class=\"hierarchy\">\n"
                 + "<h2 title=\"Interface Hierarchy\">Interface Hierarchy</h2>",
-                "<section>\n"
+                "<section class=\"hierarchy\">\n"
                 + "<h2 title=\"Annotation Type Hierarchy\">Annotation Type Hierarchy</h2>",
-                "<section>\n"
+                "<section class=\"hierarchy\">\n"
                 + "<h2 title=\"Enum Hierarchy\">Enum Hierarchy</h2>",
                 "<footer role=\"contentinfo\">\n"
                 + "<nav role=\"navigation\">\n"
@@ -173,9 +174,9 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<!-- ========= START OF TOP NAVBAR ======= -->",
                 "<main role=\"main\">\n"
                 + "<div class=\"header\">",
-                "<section>\n"
+                "<section class=\"packages\">\n"
                 + "<h2 title=\"Contents\">Contents</h2>\n",
-                "<section>\n"
+                "<section class=\"constantsSummary\">\n"
                 + "<h2 title=\"pkg\">pkg.*</h2>\n",
                 "<footer role=\"contentinfo\">\n"
                 + "<nav role=\"navigation\">\n"
@@ -212,7 +213,7 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<!-- ========= START OF TOP NAVBAR ======= -->",
                 "<main role=\"main\">\n"
                 + "<div class=\"header\">",
-                "<section>\n"
+                "<section class=\"serializedPackageContainer\">\n"
                 + "<h2 title=\"Package\">Package&nbsp;pkg</h2>\n",
                 "<footer role=\"contentinfo\">\n"
                 + "<nav role=\"navigation\">\n"
@@ -232,13 +233,13 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<!-- ========= START OF TOP NAVBAR ======= -->",
                 "<main role=\"main\">\n"
                 + "<div class=\"header\">",
-                "<section>\n"
+                "<section class=\"hierarchy\">\n"
                 + "<h2 title=\"Class Hierarchy\">Class Hierarchy</h2>\n",
-                "<section>\n"
+                "<section class=\"hierarchy\">\n"
                 + "<h2 title=\"Interface Hierarchy\">Interface Hierarchy</h2>\n",
-                "<section>\n"
+                "<section class=\"hierarchy\">\n"
                 + "<h2 title=\"Annotation Type Hierarchy\">Annotation Type Hierarchy</h2>\n",
-                "<section>\n"
+                "<section class=\"hierarchy\">\n"
                 + "<h2 title=\"Enum Hierarchy\">Enum Hierarchy</h2>\n",
                 "<footer role=\"contentinfo\">\n"
                 + "<nav role=\"navigation\">\n"
@@ -280,11 +281,11 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<!-- ========= START OF TOP NAVBAR ======= -->",
                 "<main role=\"main\">\n"
                 + "<div class=\"header\">",
-                "<section>\n"
+                "<section class=\"helpSection\">\n"
                 + "<h2>Overview</h2>\n",
-                "<section>\n"
+                "<section class=\"helpSection\">\n"
                 + "<h2>Package</h2>\n",
-                "<section>\n"
+                "<section class=\"helpSection\">\n"
                 + "<h2>Class or Interface</h2>\n",
                 "<footer role=\"contentinfo\">\n"
                 + "<nav role=\"navigation\">\n"
@@ -303,51 +304,40 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<!-- ========= START OF TOP NAVBAR ======= -->",
                 "<main role=\"main\">\n"
                 + "<div class=\"header\">",
-                "<section>\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a id=\"nested.class.summary\">\n"
+                "<section class=\"nestedClassSummary\"><a id=\"nested.class.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
                 + "<h2>Nested Class Summary</h2>\n"
                 + "<div class=\"memberSummary\">\n<table>",
-                "<section>\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a id=\"field.summary\">\n"
+                "<section class=\"fieldSummary\"><a id=\"field.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
                 + "<h2>Field Summary</h2>\n"
                 + "<div class=\"memberSummary\">\n<table>",
-                "<section>\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a id=\"constructor.summary\">\n"
+                "<section class=\"constructorSummary\"><a id=\"constructor.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
                 + "<h2>Constructor Summary</h2>\n"
                 + "<div class=\"memberSummary\">\n<table>",
-                "<section>\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a id=\"method.summary\">\n"
+                "<section class=\"methodSummary\"><a id=\"method.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
                 + "<h2>Method Summary</h2>",
-                "<section>\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a id=\"field.detail\">\n"
+                "<section class=\"fieldDetails\">\n"
+                + "<h2>Field Detail</h2>\n"
+                + "<a id=\"field.detail\">\n"
                 + "<!--   -->\n"
-                + "</a>\n"
-                + "<h2>Field Detail</h2>",
-                "<section>\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a id=\"constructor.detail\">\n"
+                + "</a>",
+                "<section class=\"constructorDetails\">\n"
+                + "<h2>Constructor Detail</h2>\n"
+                + "<a id=\"constructor.detail\">\n"
                 + "<!--   -->\n"
-                + "</a>\n"
-                + "<h2>Constructor Detail</h2>",
-                "<section>\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a id=\"method.detail\">\n"
+                + "</a>",
+                "<section class=\"methodDetails\">\n"
+                + "<h2>Method Detail</h2>\n"
+                + "<a id=\"method.detail\">\n"
                 + "<!--   -->\n"
-                + "</a>\n"
-                + "<h2>Method Detail</h2>",
+                + "</a>",
                 "<footer role=\"contentinfo\">\n"
                 + "<nav role=\"navigation\">\n"
                 + "<!-- ======= START OF BOTTOM NAVBAR ====== -->");
@@ -365,34 +355,28 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<!-- ========= START OF TOP NAVBAR ======= -->",
                 "<main role=\"main\">\n"
                 + "<div class=\"header\">",
-                "<section>\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a id=\"enum.constant.summary\">\n"
+                "<section class=\"constantsSummary\"><a id=\"enum.constant.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
                 + "<h2>Enum Constant Summary</h2>\n"
                 + "<div class=\"memberSummary\">\n",
                 "<table aria-labelledby=\"t0\">\n",
-                "<section>\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a id=\"method.summary\">\n"
+                "<section class=\"methodSummary\"><a id=\"method.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
                 + "<h2>Method Summary</h2>\n"
                 + "<div class=\"memberSummary\">\n",
                 "<table aria-labelledby=\"t0\">",
-                "<section>\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a id=\"enum.constant.detail\">\n"
+                "<section class=\"constantDetails\">\n"
+                + "<h2>Enum Constant Detail</h2>\n"
+                + "<a id=\"enum.constant.detail\">\n"
                 + "<!--   -->\n"
-                + "</a>\n"
-                + "<h2>Enum Constant Detail</h2>",
-                "<section>\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a id=\"method.detail\">\n"
+                + "</a>\n",
+                "<section class=\"methodDetails\">\n"
+                + "<h2>Method Detail</h2>\n"
+                + "<a id=\"method.detail\">\n"
                 + "<!--   -->\n"
-                + "</a>\n"
-                + "<h2>Method Detail</h2>",
+                + "</a>\n",
                 "<footer role=\"contentinfo\">\n"
                 + "<nav role=\"navigation\">\n"
                 + "<!-- ======= START OF BOTTOM NAVBAR ====== -->");
@@ -410,20 +394,17 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<!-- ========= START OF TOP NAVBAR ======= -->",
                 "<main role=\"main\">\n"
                 + "<div class=\"header\">",
-                "<section>\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a id=\"method.summary\">\n"
+                "<section class=\"methodSummary\"><a id=\"method.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
                 + "<h2>Method Summary</h2>\n"
                 + "<div class=\"memberSummary\">\n",
                 "<table aria-labelledby=\"t0\">\n",
-                "<section>\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a id=\"method.detail\">\n"
+                "<section class=\"methodDetails\">\n"
+                + "<h2>Method Detail</h2>\n"
+                + "<a id=\"method.detail\">\n"
                 + "<!--   -->\n"
-                + "</a>\n"
-                + "<h2>Method Detail</h2>",
+                + "</a>\n",
                 "<footer role=\"contentinfo\">\n"
                 + "<nav role=\"navigation\">\n"
                 + "<!-- ======= START OF BOTTOM NAVBAR ====== -->");
@@ -441,18 +422,15 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<!-- ========= START OF TOP NAVBAR ======= -->",
                 "<main role=\"main\">\n"
                 + "<div class=\"header\">",
-                "<section>\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a id=\"constructor.summary\">\n"
+                "<section class=\"constructorSummary\"><a id=\"constructor.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
                 + "<h2>Constructor Summary</h2>",
-                "<section>\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a id=\"constructor.detail\">\n"
+                "<section class=\"constructorDetails\">\n"
+                + "<h2>Constructor Detail</h2>\n"
+                + "<a id=\"constructor.detail\">\n"
                 + "<!--   -->\n"
-                + "</a>\n"
-                + "<h2>Constructor Detail</h2>",
+                + "</a>\n",
                 "<footer role=\"contentinfo\">\n"
                 + "<nav role=\"navigation\">\n"
                 + "<!-- ======= START OF BOTTOM NAVBAR ====== -->");
@@ -470,18 +448,15 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<!-- ========= START OF TOP NAVBAR ======= -->",
                 "<main role=\"main\">\n"
                 + "<div class=\"header\">",
-                "<section>\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a id=\"constructor.summary\">\n"
+                "<section class=\"constructorSummary\"><a id=\"constructor.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
                 + "<h2>Constructor Summary</h2>",
-                "<section>\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a id=\"constructor.detail\">\n"
+                "<section class=\"constructorDetails\">\n"
+                + "<h2>Constructor Detail</h2>\n"
+                + "<a id=\"constructor.detail\">\n"
                 + "<!--   -->\n"
-                + "</a>\n"
-                + "<h2>Constructor Detail</h2>",
+                + "</a>\n",
                 "<footer role=\"contentinfo\">\n"
                 + "<nav role=\"navigation\">\n"
                 + "<!-- ======= START OF BOTTOM NAVBAR ====== -->");
@@ -499,26 +474,21 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<!-- ========= START OF TOP NAVBAR ======= -->",
                 "<main role=\"main\">\n"
                 + "<div class=\"header\">",
-                "<section>\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a id=\"annotation.type.required.element.summary\">\n"
+                "<section class=\"memberSummary\"><a id=\"annotation.type.required.element.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
                 + "<h2>Required Element Summary</h2>\n"
                 + "<div class=\"memberSummary\">\n<table>",
-                "<section>\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a id=\"annotation.type.optional.element.summary\">\n"
+                "<section class=\"memberSummary\"><a id=\"annotation.type.optional.element.summary\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
                 + "<h2>Optional Element Summary</h2>\n"
                 + "<div class=\"memberSummary\">\n<table>",
-                "<section>\n"
-                + "<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\"><a id=\"annotation.type.element.detail\">\n"
+                "<section class=\"memberDetails\">\n"
+                + "<h2>Element Detail</h2>\n"
+                + "<a id=\"annotation.type.element.detail\">\n"
                 + "<!--   -->\n"
-                + "</a>\n"
-                + "<h2>Element Detail</h2>",
+                + "</a>\n",
                 "<footer role=\"contentinfo\">\n"
                 + "<nav role=\"navigation\">\n"
                 + "<!-- ======= START OF BOTTOM NAVBAR ====== -->");
@@ -537,7 +507,7 @@ public class TestHtmlVersion extends JavadocTester {
                 "<main role=\"main\">\n"
                 + "<div class=\"header\">",
                 "<div class=\"useSummary\">\n<table>",
-                "<section><a id=\"pkg\">\n"
+                "<section class=\"detail\"><a id=\"pkg\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
                 + "<h2>Uses of <a href=\"../RegClass.html\" title=\"class in pkg1\">RegClass</a> in <a href=\"../../pkg/package-summary.html\">pkg</a></h2>\n"
@@ -569,7 +539,7 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<!--   -->\n"
                 + "</a>",
                 "<section>\n"
-                + "<h2 title=\"Package pkg Description\">Package pkg Description</h2>\n",
+                + "<h2 title=\"PackagAnotherClass.ModalExclusionType.htmle pkg Description\">Package pkg Description</h2>\n",
                 "<div class=\"typeSummary\">\n<table summary=\"Interface Summary table, listing interfaces, and an explanation\">",
                 "<div class=\"typeSummary\">\n<table summary=\"Class Summary table, listing classes, and an explanation\">",
                 "<div class=\"typeSummary\">\n<table summary=\"Enum Summary table, listing enums, and an explanation\">",

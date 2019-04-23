@@ -125,7 +125,8 @@ public class FieldBuilder extends AbstractMemberBuilder {
             return;
         }
         if (!fields.isEmpty()) {
-            Content fieldDetailsTree = writer.getFieldDetailsTreeHeader(typeElement, memberDetailsTree);
+            Content fieldDetailsTreeHeader = writer.getFieldDetailsTreeHeader(typeElement, memberDetailsTree);
+            Content fieldDetailsTree = writer.getMemberTreeHeader();
 
             Element lastElement = fields.get(fields.size() - 1);
             for (Element element : fields) {
@@ -141,7 +142,7 @@ public class FieldBuilder extends AbstractMemberBuilder {
                         fieldDocTree, currentElement == lastElement));
             }
             memberDetailsTree.add(
-                    writer.getFieldDetails(fieldDetailsTree));
+                    writer.getFieldDetails(fieldDetailsTreeHeader, fieldDetailsTree));
         }
     }
 

@@ -717,22 +717,30 @@ public class HtmlTree extends Content {
     }
 
     /**
-     * Generates a SECTION tag with role attribute.
+     * Generates a SECTION tag with style class attribute.
      *
+     * @param styleClass the style class for the tag
      * @return an HtmlTree object for the SECTION tag
      */
-    public static HtmlTree SECTION() {
-        return new HtmlTree(HtmlTag.SECTION);
+    public static HtmlTree SECTION(HtmlStyle styleClass) {
+        HtmlTree htmlTree = new HtmlTree(HtmlTag.SECTION);
+        htmlTree.setStyle(styleClass);
+        return htmlTree;
     }
 
     /**
-     * Generates a SECTION tag with role attribute and some content.
+     * Generates a SECTION tag with style class attribute and some content.
      *
+     * @param styleClass the style class for the tag
      * @param body content of the section tag
      * @return an HtmlTree object for the SECTION tag
      */
-    public static HtmlTree SECTION(Content body) {
-        return new HtmlTree(HtmlTag.SECTION, nullCheck(body));
+    public static HtmlTree SECTION(HtmlStyle styleClass, Content body) {
+        HtmlTree htmlTree = new HtmlTree(HtmlTag.SECTION, nullCheck(body));
+        if (styleClass != null) {
+            htmlTree.setStyle(styleClass);
+        }
+        return htmlTree;
     }
 
     /**

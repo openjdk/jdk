@@ -25,18 +25,18 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.Table;
-
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
+import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.Table;
+import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
 import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeRequiredMemberWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
@@ -74,7 +74,7 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
             Content memberSummaryTree) {
         memberSummaryTree.add(
                 MarkerComments.START_OF_ANNOTATION_TYPE_REQUIRED_MEMBER_SUMMARY);
-        Content memberTree = writer.getMemberTreeHeader();
+        Content memberTree = new ContentBuilder();
         writer.addSummaryHeader(this, typeElement, memberTree);
         return memberTree;
     }
@@ -90,7 +90,7 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
      * {@inheritDoc}
      */
     public void addMemberTree(Content memberSummaryTree, Content memberTree) {
-        writer.addMemberTree(memberSummaryTree, memberTree);
+        writer.addMemberTree(HtmlStyle.memberSummary, memberSummaryTree, memberTree);
     }
 
     /**
@@ -103,16 +103,17 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
     /**
      * {@inheritDoc}
      */
-    public void addAnnotationDetailsTreeHeader(TypeElement te,
-            Content memberDetailsTree) {
+    public Content getAnnotationDetailsTreeHeader(TypeElement te) {
+        Content memberDetailsTree = new ContentBuilder();
         if (!writer.printedAnnotationHeading) {
-            memberDetailsTree.add(links.createAnchor(
-                    SectionName.ANNOTATION_TYPE_ELEMENT_DETAIL));
             Content heading = HtmlTree.HEADING(Headings.TypeDeclaration.DETAILS_HEADING,
                     contents.annotationTypeDetailsLabel);
             memberDetailsTree.add(heading);
+            memberDetailsTree.add(links.createAnchor(
+                    SectionName.ANNOTATION_TYPE_ELEMENT_DETAIL));
             writer.printedAnnotationHeading = true;
         }
+        return memberDetailsTree;
     }
 
     /**
@@ -121,13 +122,13 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
     @Override
     public Content getAnnotationDocTreeHeader(Element member, Content annotationDetailsTree) {
         String simpleName = name(member);
-        annotationDetailsTree.add(links.createAnchor(
-                simpleName + utils.signature((ExecutableElement) member)));
-        Content annotationDocTree = writer.getMemberTreeHeader();
+        Content annotationDocTree = new ContentBuilder();
         Content heading = new HtmlTree(Headings.TypeDeclaration.MEMBER_HEADING);
         heading.add(simpleName);
         annotationDocTree.add(heading);
-        return annotationDocTree;
+        annotationDocTree.add(links.createAnchor(
+                simpleName + utils.signature((ExecutableElement) member)));
+        return HtmlTree.SECTION(HtmlStyle.detail, annotationDocTree);
     }
 
     /**
@@ -175,8 +176,9 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
     /**
      * {@inheritDoc}
      */
-    public Content getAnnotationDetails(Content annotationDetailsTree) {
-        return HtmlTree.SECTION(getMemberTree(annotationDetailsTree));
+    public Content getAnnotationDetails(Content annotationDetailsTreeHeader, Content annotationDetailsTree) {
+        Content annotationDetails = new ContentBuilder(annotationDetailsTreeHeader, annotationDetailsTree);
+        return getMemberTree(HtmlTree.SECTION(HtmlStyle.memberDetails, annotationDetails));
     }
 
     /**

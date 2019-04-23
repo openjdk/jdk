@@ -935,11 +935,10 @@ public class Navigation {
         String reset = "reset";
         HtmlTree inputText = HtmlTree.INPUT("text", searchValueId, searchValueId);
         HtmlTree inputReset = HtmlTree.INPUT(reset, reset, reset);
-        HtmlTree liInput = HtmlTree.LI(HtmlTree.LABEL(searchValueId, searchLabel));
-        liInput.add(inputText);
-        liInput.add(inputReset);
-        HtmlTree ulSearch = HtmlTree.UL(HtmlStyle.navListSearch, liInput);
-        tree.add(ulSearch);
+        HtmlTree searchDiv = HtmlTree.DIV(HtmlStyle.navListSearch, HtmlTree.LABEL(searchValueId, searchLabel));
+        searchDiv.add(inputText);
+        searchDiv.add(inputReset);
+        tree.add(searchDiv);
     }
 
     private void addFixedNavScript(Content tree) {

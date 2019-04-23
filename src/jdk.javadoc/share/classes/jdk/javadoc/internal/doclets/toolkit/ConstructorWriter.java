@@ -99,10 +99,11 @@ public interface ConstructorWriter {
     /**
      * Get the constructor details tree.
      *
+     * memberDetailsTreeHeader the content tree representing member details header
      * @param memberDetailsTree the content tree representing member details
      * @return content tree for the constructor details
      */
-    public Content getConstructorDetails(Content memberDetailsTree);
+    public Content getConstructorDetails(Content memberDetailsTreeHeader, Content memberDetailsTree);
 
     /**
      * Get the constructor documentation.
@@ -119,4 +120,11 @@ public interface ConstructorWriter {
      * @param foundNonPubConstructor true if we found a non public constructor.
      */
     public void setFoundNonPubConstructor(boolean foundNonPubConstructor);
+
+    /**
+     * Gets the member header tree.
+     *
+     * @return a content tree for the member header
+     */
+    public Content getMemberTreeHeader();
 }

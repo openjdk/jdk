@@ -498,7 +498,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
      */
     @Override
     public Content getInheritedSummaryHeader(TypeElement tElement) {
-        Content inheritedTree = writer.getMemberTreeHeader();
+        Content inheritedTree = writer.getMemberInheritedTree();
         writer.addInheritedSummaryHeader(this, tElement, inheritedTree);
         return inheritedTree;
     }
@@ -551,8 +551,8 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
      */
     public Content getMemberTree(Content memberTree, boolean isLastContent) {
         if (isLastContent)
-            return HtmlTree.UL(HtmlStyle.blockListLast, memberTree);
+            return HtmlTree.LI(HtmlStyle.blockListLast, memberTree);
         else
-            return HtmlTree.UL(HtmlStyle.blockList, memberTree);
+            return HtmlTree.LI(HtmlStyle.blockList, memberTree);
     }
 }

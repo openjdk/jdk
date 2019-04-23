@@ -249,14 +249,13 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      * @param contentTree the content tree to which the class use information will be added
      */
     protected void addClassUse(Content contentTree) {
-        HtmlTree ul = new HtmlTree(HtmlTag.UL);
-        ul.setStyle(HtmlStyle.blockList);
+        Content content = new ContentBuilder();
         if (configuration.packages.size() > 1) {
-            addPackageList(ul);
-            addPackageAnnotationList(ul);
+            addPackageList(content);
+            addPackageAnnotationList(content);
         }
-        addClassList(ul);
-        contentTree.add(ul);
+        addClassList(content);
+        contentTree.add(content);
     }
 
     /**
@@ -276,8 +275,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         for (PackageElement pkg : pkgSet) {
             addPackageUse(pkg, table);
         }
-        Content li = HtmlTree.LI(HtmlStyle.blockList, table.toContent());
-        contentTree.add(li);
+        contentTree.add(table.toContent());
     }
 
     /**
@@ -305,8 +303,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
             addSummaryComment(pkg, summary);
             table.addRow(getPackageLink(pkg), summary);
         }
-        Content li = HtmlTree.LI(HtmlStyle.blockList, table.toContent());
-        contentTree.add(li);
+        contentTree.add(table.toContent());
     }
 
     /**
@@ -319,7 +316,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         ul.setStyle(HtmlStyle.blockList);
         for (PackageElement pkg : pkgSet) {
             Content markerAnchor = links.createAnchor(getPackageAnchorName(pkg));
-            HtmlTree htmlTree = HtmlTree.SECTION(markerAnchor);
+            HtmlTree htmlTree = HtmlTree.SECTION(HtmlStyle.detail, markerAnchor);
             Content link = contents.getContent("doclet.ClassUse_Uses.of.0.in.1",
                     getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.CLASS_USE_HEADER,
                             typeElement)),
@@ -329,7 +326,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
             addClassUse(pkg, htmlTree);
             ul.add(HtmlTree.LI(HtmlStyle.blockList, htmlTree));
         }
-        Content li = HtmlTree.LI(HtmlStyle.blockList, ul);
+        Content li = HtmlTree.SECTION(HtmlStyle.classUses, ul);
         contentTree.add(li);
     }
 

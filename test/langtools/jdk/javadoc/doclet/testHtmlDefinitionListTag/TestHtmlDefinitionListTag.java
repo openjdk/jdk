@@ -375,10 +375,12 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
         checkOutput("pkg1/C1.html", expectFound,
                 "<pre class=\"methodSignature\">public&nbsp;void&nbsp;readObject()\n" +
                 "                throws java.io.IOException</pre>\n" +
+                "</section>\n" +
                 "</li>");
 
         checkOutput("pkg1/C2.html", expectFound,
                 "<pre>public&nbsp;C2()</pre>\n" +
+                "</section>\n" +
                 "</li>");
 
         checkOutput("pkg1/C1.ModalExclusionType.html", expectFound,
@@ -386,6 +388,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                 "static final&nbsp;<a href=\"C1.ModalExclusionType.html\" " +
                 "title=\"enum in pkg1\">C1.ModalExclusionType</a> " +
                 "APPLICATION_EXCLUDE</pre>\n" +
+                "</section>\n" +
                 "</li>");
 
         checkOutput("serialized-form.html", expectFound,

@@ -100,10 +100,11 @@ public interface FieldWriter {
     /**
      * Get the field details tree.
      *
+     * @param memberDetailsTreeHeader the content tree representing member details tree header
      * @param memberDetailsTree the content tree representing member details
      * @return content tree for the field details
      */
-    public Content getFieldDetails(Content memberDetailsTree);
+    public Content getFieldDetails(Content memberDetailsTreeHeader, Content memberDetailsTree);
 
     /**
      * Get the field documentation.
@@ -113,4 +114,11 @@ public interface FieldWriter {
      * @return content tree for the field documentation
      */
     public Content getFieldDoc(Content fieldDocTree, boolean isLastContent);
+
+    /**
+     * Gets the member header tree.
+     *
+     * @return a content tree for the member header
+     */
+    public Content getMemberTreeHeader();
 }

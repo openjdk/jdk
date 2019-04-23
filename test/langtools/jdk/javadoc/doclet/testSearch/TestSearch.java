@@ -381,8 +381,8 @@ public class TestSearch extends JavadocTester {
                 "<script type=\"text/javascript\" src=\"script-dir/jquery-ui.js\"></script>",
                 "var pathtoroot = \"./\";\n"
                 + "loadScripts(document, 'script');",
-                "<ul class=\"navListSearch\">\n",
-                "<li><label for=\"search\">SEARCH:</label>\n"
+                "<div class=\"navListSearch\">",
+                "<label for=\"search\">SEARCH:</label>\n"
                 + "<input type=\"text\" id=\"search\" value=\"search\" disabled=\"disabled\">\n"
                 + "<input type=\"reset\" id=\"reset\" value=\"reset\" disabled=\"disabled\">\n");
         checkOutput(fileName, true,

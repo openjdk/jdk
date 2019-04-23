@@ -48,7 +48,7 @@ public class A11yChecker extends HtmlChecker {
         super(out, fileReader);
     }
 
-    int getErrorCount() {
+    protected int getErrorCount() {
         return errors;
     }
 

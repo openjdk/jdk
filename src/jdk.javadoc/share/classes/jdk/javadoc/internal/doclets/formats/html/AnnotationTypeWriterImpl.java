@@ -171,7 +171,7 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
      */
     @Override
     public Content getAnnotationInfo(Content annotationInfoTree) {
-        return getMemberTree(HtmlStyle.description, annotationInfoTree);
+        return HtmlTree.SECTION(HtmlStyle.description, annotationInfoTree);
     }
 
     /**

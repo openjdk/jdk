@@ -125,8 +125,9 @@ public class PropertyBuilder extends AbstractMemberBuilder {
             return;
         }
         if (hasMembersToDocument()) {
-            Content propertyDetailsTree = writer.getPropertyDetailsTreeHeader(typeElement,
+            Content propertyDetailsTreeHeader = writer.getPropertyDetailsTreeHeader(typeElement,
                     memberDetailsTree);
+            Content propertyDetailsTree = writer.getMemberTreeHeader();
             Element lastElement = properties.get(properties.size() - 1);
             for (Element property : properties) {
                 currentProperty = (ExecutableElement)property;
@@ -141,7 +142,7 @@ public class PropertyBuilder extends AbstractMemberBuilder {
                         propertyDocTree, currentProperty == lastElement));
             }
             memberDetailsTree.add(
-                    writer.getPropertyDetails(propertyDetailsTree));
+                    writer.getPropertyDetails(propertyDetailsTreeHeader, propertyDetailsTree));
         }
     }
 

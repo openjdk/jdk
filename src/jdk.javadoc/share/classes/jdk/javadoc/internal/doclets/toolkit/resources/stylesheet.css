@@ -207,18 +207,13 @@ ul.navList li{
     padding: 5px 6px;
     text-transform:uppercase;
 }
-ul.navListSearch {
+.subNav .navListSearch {
     float:right;
     margin:0 0 0 0;
-    padding:0;
+    padding:5px 6px;
+    clear:none;
 }
-ul.navListSearch li {
-    list-style:none;
-    float:right;
-    padding: 5px 6px;
-    text-transform:uppercase;
-}
-ul.navListSearch li label {
+.navListSearch label {
     position:relative;
     right:-16px;
 }
@@ -304,7 +299,8 @@ body.module-declaration .blockList h2 {
     margin:15px 0;
 }
 body.class-declaration .summary h3,
-body.class-declaration .details h3 {
+body.class-declaration .details h3,
+body.class-declaration .summary .inheritedList h2 {
     background-color:#dee3e9;
     border:1px solid #d0d9e0;
     margin:0 0 6px -8px;
@@ -385,31 +381,10 @@ ul.blockList, ul.blockListLast {
     margin:10px 0 10px 0;
     padding:0;
 }
-ul.blockList li.blockList, ul.blockListLast li.blockList {
+ul.blockList li.blockList, ul.blockList li.blockListLast {
     list-style:none;
     margin-bottom:15px;
     line-height:1.4;
-}
-ul.blockList ul.blockList li.blockList, ul.blockList ul.blockListLast li.blockList {
-    padding:0px 20px 5px 10px;
-    border:1px solid #ededed; 
-    background-color:#f8f8f8;
-}
-ul.blockList ul.blockList ul.blockList li.blockList, ul.blockList ul.blockList ul.blockListLast li.blockList {
-    padding:0 0 5px 8px;
-    background-color:#ffffff;
-    border:none;
-}
-ul.blockList ul.blockList ul.blockList ul.blockList li.blockList {
-    margin-left:0;
-    padding-left:0;
-    padding-bottom:15px;
-    border:none;
-}
-ul.blockList ul.blockList ul.blockList ul.blockList li.blockListLast {
-    list-style:none;
-    border-bottom:none;
-    padding-bottom:0;
 }
 table tr td dl, table tr td dl dt, table tr td dl dd {
     margin-top:0;
@@ -786,6 +761,23 @@ ul.ui-autocomplete  li {
 }
 .methodSignature {
     white-space:normal;
+}
+.inheritedList {
+    margin: 10px 0 10px 0;
+}
+section.description {
+    line-height: 1.4;
+}
+.summary section[class$="Summary"], .details section[class$="Details"],
+.classUses .detail, .serializedClassDetails {
+    padding: 0px 20px 5px 10px;
+    border: 1px solid #ededed;
+    background-color: #f8f8f8;
+}
+.inheritedList, section[class$="Details"] .detail {
+    padding:0 0 5px 8px;
+    background-color:#ffffff;
+    border:none;
 }
 
 /*

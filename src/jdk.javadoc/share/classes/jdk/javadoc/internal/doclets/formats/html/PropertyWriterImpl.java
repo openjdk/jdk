@@ -26,17 +26,17 @@
 package jdk.javadoc.internal.doclets.formats.html;
 
 
-import jdk.javadoc.internal.doclets.formats.html.markup.Table;
-import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
-
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 
+import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.Table;
+import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.PropertyWriter;
@@ -68,7 +68,7 @@ public class PropertyWriterImpl extends AbstractMemberWriter
     @Override
     public Content getMemberSummaryHeader(TypeElement typeElement, Content memberSummaryTree) {
         memberSummaryTree.add(MarkerComments.START_OF_PROPERTY_SUMMARY);
-        Content memberTree = writer.getMemberTreeHeader();
+        Content memberTree = new ContentBuilder();
         writer.addSummaryHeader(this, typeElement, memberTree);
         return memberTree;
     }
@@ -78,7 +78,7 @@ public class PropertyWriterImpl extends AbstractMemberWriter
      */
     @Override
     public void addMemberTree(Content memberSummaryTree, Content memberTree) {
-        writer.addMemberTree(memberSummaryTree, memberTree);
+        writer.addMemberTree(HtmlStyle.propertySummary, memberSummaryTree, memberTree);
     }
 
     /**
@@ -88,11 +88,11 @@ public class PropertyWriterImpl extends AbstractMemberWriter
     public Content getPropertyDetailsTreeHeader(TypeElement typeElement,
             Content memberDetailsTree) {
         memberDetailsTree.add(MarkerComments.START_OF_PROPERTY_DETAILS);
-        Content propertyDetailsTree = writer.getMemberTreeHeader();
-        propertyDetailsTree.add(links.createAnchor(SectionName.PROPERTY_DETAIL));
+        Content propertyDetailsTree = new ContentBuilder();
         Content heading = HtmlTree.HEADING(Headings.TypeDeclaration.DETAILS_HEADING,
                 contents.propertyDetailsLabel);
         propertyDetailsTree.add(heading);
+        propertyDetailsTree.add(links.createAnchor(SectionName.PROPERTY_DETAIL));
         return propertyDetailsTree;
     }
 
@@ -102,12 +102,12 @@ public class PropertyWriterImpl extends AbstractMemberWriter
     @Override
     public Content getPropertyDocTreeHeader(ExecutableElement property,
             Content propertyDetailsTree) {
-        propertyDetailsTree.add(links.createAnchor(name(property)));
-        Content propertyDocTree = writer.getMemberTreeHeader();
+        Content propertyDocTree = new ContentBuilder();
         Content heading = new HtmlTree(Headings.TypeDeclaration.MEMBER_HEADING);
         heading.add(utils.getPropertyLabel(name(property)));
         propertyDocTree.add(heading);
-        return propertyDocTree;
+        propertyDocTree.add(links.createAnchor(name(property)));
+        return HtmlTree.SECTION(HtmlStyle.detail, propertyDocTree);
     }
 
     /**
@@ -181,8 +181,9 @@ public class PropertyWriterImpl extends AbstractMemberWriter
      * {@inheritDoc}
      */
     @Override
-    public Content getPropertyDetails(Content propertyDetailsTree) {
-        return HtmlTree.SECTION(getMemberTree(propertyDetailsTree));
+    public Content getPropertyDetails(Content propertyDetailsTreeHeader, Content propertyDetailsTree) {
+        Content propertyDetails = new ContentBuilder(propertyDetailsTreeHeader, propertyDetailsTree);
+        return getMemberTree(HtmlTree.SECTION(HtmlStyle.propertyDetails, propertyDetails));
     }
 
     /**
@@ -311,5 +312,10 @@ public class PropertyWriterImpl extends AbstractMemberWriter
     protected Content getDeprecatedLink(Element member) {
         return writer.getDocLink(LinkInfoImpl.Kind.MEMBER, member,
                 utils.getFullyQualifiedName(member));
+    }
+
+    @Override
+    public Content getMemberTreeHeader(){
+        return writer.getMemberTreeHeader();
     }
 }

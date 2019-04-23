@@ -142,11 +142,11 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
         }
         if (hasMembersToDocument()) {
             writer.addAnnotationDetailsMarker(memberDetailsTree);
+            Content annotationDetailsTreeHeader = writer.getAnnotationDetailsTreeHeader(typeElement);
+            Content detailsTree = writer.getMemberTreeHeader();
             Element lastMember = members.get((members.size() - 1));
             for (Element member : members) {
                 currentMember = member;
-                Content detailsTree = writer.getMemberTreeHeader();
-                writer.addAnnotationDetailsTreeHeader(typeElement, detailsTree);
                 Content annotationDocTree = writer.getAnnotationDocTreeHeader(
                         currentMember, detailsTree);
 
@@ -154,8 +154,8 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
 
                 detailsTree.add(writer.getAnnotationDoc(
                         annotationDocTree, currentMember == lastMember));
-                memberDetailsTree.add(writer.getAnnotationDetails(detailsTree));
             }
+            memberDetailsTree.add(writer.getAnnotationDetails(annotationDetailsTreeHeader, detailsTree));
         }
     }
 
