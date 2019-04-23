@@ -2095,6 +2095,8 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   declare_constant(JVM_CONSTANT_MethodType)                               \
   declare_constant(JVM_CONSTANT_Dynamic)                                  \
   declare_constant(JVM_CONSTANT_InvokeDynamic)                            \
+  declare_constant(JVM_CONSTANT_Module)                                   \
+  declare_constant(JVM_CONSTANT_Package)                                  \
   declare_constant(JVM_CONSTANT_ExternalMax)                              \
                                                                           \
   declare_constant(JVM_CONSTANT_Invalid)                                  \
