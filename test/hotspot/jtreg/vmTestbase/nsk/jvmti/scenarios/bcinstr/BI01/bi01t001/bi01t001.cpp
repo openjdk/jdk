@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 #include <string.h>
 #include "jvmti.h"
 #include "agent_common.h"
+#include "ExceptionCheckingJniEnv.hpp"
 #include "jni_tools.h"
 #include "jvmti_tools.h"
 
@@ -47,23 +48,20 @@ static jvmtiClassDefinition oldClassDef;
  */
 JNIEXPORT jboolean JNICALL
 Java_nsk_jvmti_scenarios_bcinstr_BI01_bi01t001_setNewByteCode(JNIEnv *jni_env,
-                        jobject o, jbyteArray byteCode) {
-
+                                                              jobject o,
+                                                              jbyteArray byteCode) {
+    ExceptionCheckingJniEnvPtr jni(jni_env);
     jbyte* elements;
     jboolean isCopy;
 
-    newClassSize = jni_env->GetArrayLength(byteCode);
-    if (!NSK_JNI_VERIFY(jni_env, newClassSize > 0)) {
+    newClassSize = jni->GetArrayLength(byteCode, TRACE_JNI_CALL);
+    if (newClassSize <= 0) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
     NSK_DISPLAY1("\t... got array size: %d\n", newClassSize);
 
-    elements = jni_env->GetByteArrayElements(byteCode, &isCopy);
-    if (!NSK_JNI_VERIFY(jni_env, elements != NULL)) {
-        nsk_jvmti_setFailStatus();
-        return NSK_FALSE;
-    }
+    elements = jni->GetByteArrayElements(byteCode, &isCopy, TRACE_JNI_CALL);
     NSK_DISPLAY1("\t... got elements list: 0x%p\n", (void*)elements);
 
     if (!NSK_JVMTI_VERIFY(jvmti->Allocate(newClassSize, &newClassBytes))) {
@@ -80,7 +78,7 @@ Java_nsk_jvmti_scenarios_bcinstr_BI01_bi01t001_setNewByteCode(JNIEnv *jni_env,
     NSK_DISPLAY1("\t... copied bytecode: %d bytes\n", (int)newClassSize);
 
     NSK_DISPLAY1("\t... release elements list: 0x%p\n", (void*)elements);
-    NSK_TRACE(jni_env->ReleaseByteArrayElements(byteCode, elements, JNI_ABORT));
+    jni->ReleaseByteArrayElements(byteCode, elements, JNI_ABORT, TRACE_JNI_CALL);
     NSK_DISPLAY0("\t... released\n");
     return NSK_TRUE;
 }
@@ -94,11 +92,8 @@ Java_nsk_jvmti_scenarios_bcinstr_BI01_bi01t001_setNewByteCode(JNIEnv *jni_env,
 JNIEXPORT void JNICALL
 Java_nsk_jvmti_scenarios_bcinstr_BI01_bi01t001_setClass(JNIEnv *jni_env,
                         jobject o, jclass cls) {
-
-    oldClassDef.klass = (jclass) jni_env->NewGlobalRef(cls);
-    if (!NSK_JNI_VERIFY(jni_env, oldClassDef.klass != NULL)) {
-        nsk_jvmti_setFailStatus();
-    }
+    ExceptionCheckingJniEnvPtr jni(jni_env);
+    oldClassDef.klass = (jclass) jni->NewGlobalRef(cls, TRACE_JNI_CALL);
 }
 
 /* ============================================================================= */
@@ -154,6 +149,7 @@ cbClassFileLoadHook(jvmtiEnv *jvmti_env, JNIEnv* jni_env,
 /** Agent algorithm. */
 static void JNICALL
 agentProc(jvmtiEnv* jvmti, JNIEnv* agentJNI, void* arg) {
+    ExceptionCheckingJniEnvPtr jni(agentJNI);
 
     /*Wait for debuggee to read new byte codes nsk_jvmti_waitForSync#1*/
     NSK_DISPLAY0("Wait for debuggee to read new byte codes nsk_jvmti_waitForSync#1\n");
@@ -214,7 +210,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* agentJNI, void* arg) {
     if (!nsk_jvmti_waitForSync(timeout))
         return;
 
-    agentJNI->DeleteGlobalRef(oldClassDef.klass);
+    jni->DeleteGlobalRef(oldClassDef.klass, TRACE_JNI_CALL);
 
     NSK_DISPLAY0("Let debuggee to finish\n");
     if (!nsk_jvmti_resumeSync())

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018, Google and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,40 +46,65 @@
  *
  *  Can be simplified to:
  * ... ExceptionCheckingJniEnv* env ...
- *  jclass klass = env->GetObjectClass(o);
+ *  jclass klass = env->GetObjectClass(o, TRACE_JNI_CALL);
  *
  *  Where now the JNI Exception checking and the NULL return checking are done
  *  internally and will perform whatever action the ErrorHandler requires.
  *
+ *  Note the TRACE_JNI_CALL parameter that allows to trace where the call is
+ *  happening from for debugging.
+ *
  *  By default, the error handler describes the exception via the JNI
  *  ExceptionDescribe method and calls FatalError.
- *
- *  Note: at a future date, this will also include the tracing mechanism done in
- *  NSK_VERIFY, which will thus embed its logic into the ExceptionCheckingJniEnv
- *  and clearing that up for the code readers and writers.
  */
+
+#define TRACE_JNI_CALL __LINE__, __FILE__
+
 class ExceptionCheckingJniEnv {
  public:
   // JNIEnv API redefinitions.
-  jfieldID GetFieldID(jclass klass, const char *name, const char* type);
-  jclass GetObjectClass(jobject obj);
-  jobject GetObjectField(jobject obj, jfieldID field);
-  void SetObjectField(jobject obj, jfieldID field, jobject value);
+  jclass FindClass(const char *name, int line, const char* file_name);
 
-  jsize GetArrayLength(jarray array);
-  jsize GetStringLength(jstring str);
+  jfieldID GetStaticFieldID(jclass klass, const char* name, const char* type,
+                            int line, const char* file_name);
+  jfieldID GetFieldID(jclass klass, const char* name, const char* type,
+                      int line, const char* file_name);
+  jmethodID GetMethodID(jclass klass, const char* name, const char* sig,
+                        int line, const char* file_name);
 
-  void* GetPrimitiveArrayCritical(jarray array, jboolean* isCopy);
-  void ReleasePrimitiveArrayCritical(jarray array, void* carray, jint mode);
-  const jchar* GetStringCritical(jstring str, jboolean* isCopy);
-  void ReleaseStringCritical(jstring str, const jchar* carray);
+  jclass GetObjectClass(jobject obj, int line, const char* file_name);
+  jobject GetObjectField(jobject obj, jfieldID field, int line, const char* file_name);
+  jobject GetStaticObjectField(jclass kls, jfieldID field, int line, const char* file_name);
+  void SetObjectField(jobject obj, jfieldID field, jobject value,
+                      int line, const char* file_name);
 
-  jobject NewGlobalRef(jobject obj);
-  void DeleteGlobalRef(jobject obj);
-  jobject NewLocalRef(jobject ref);
-  void DeleteLocalRef(jobject ref);
-  jweak NewWeakGlobalRef(jobject obj);
-  void DeleteWeakGlobalRef(jweak obj);
+  jsize GetArrayLength(jarray array, int line, const char* file_name);
+  jsize GetStringLength(jstring str, int line, const char* file_name);
+
+  void* GetPrimitiveArrayCritical(jarray array, jboolean* isCopy,
+                                  int line, const char* file_name);
+  void ReleasePrimitiveArrayCritical(jarray array, void* carray, jint mode,
+                                     int line, const char* file_name);
+  const jchar* GetStringCritical(jstring str, jboolean* isCopy,
+                                 int line, const char* file_name);
+  void ReleaseStringCritical(jstring str, const jchar* carray,
+                             int line, const char* file_name);
+
+  jbyte* GetByteArrayElements(jbyteArray array, jboolean* isCopy,
+                              int line, const char* file_name);
+  void ReleaseByteArrayElements(jbyteArray array, jbyte* byte_array, jint mode,
+                                int line, const char* file_name);
+  jint RegisterNatives(jclass clazz, const JNINativeMethod *methods, jint nMethods,
+                       int line, const char* file_name);
+
+  jobject NewObject(jclass kls, jmethodID methodID,
+                    int line, const char* file_name, ...);
+  jobject NewGlobalRef(jobject obj, int line, const char* file_name);
+  void DeleteGlobalRef(jobject obj, int line, const char* file_name);
+  jobject NewLocalRef(jobject ref, int line, const char* file_name);
+  void DeleteLocalRef(jobject ref, int line, const char* file_name);
+  jweak NewWeakGlobalRef(jobject obj, int line, const char* file_name);
+  void DeleteWeakGlobalRef(jweak obj, int line, const char* file_name);
 
   // ExceptionCheckingJniEnv methods.
   JNIEnv* GetJNIEnv() {
