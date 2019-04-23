@@ -103,12 +103,12 @@ public class Server {
         String protocol = System.getProperty(Utils.PROP_PROTOCOL);
         String cipherSuite = System.getProperty(Utils.PROP_CIPHER_SUITE);
         boolean clientAuth
-                = Utils.getBoolProperty(Utils.PROP_CLIENT_AUTH);
+                = Boolean.getBoolean(Utils.PROP_CLIENT_AUTH);
         String appProtocols = System.getProperty(Utils.PROP_APP_PROTOCOLS);
         boolean supportsALPN
-                = Utils.getBoolProperty(Utils.PROP_SUPPORTS_ALPN_ON_SERVER);
+                = Boolean.getBoolean(Utils.PROP_SUPPORTS_ALPN_ON_SERVER);
         boolean negativeCase
-                = Utils.getBoolProperty(Utils.PROP_NEGATIVE_CASE_ON_SERVER);
+                = Boolean.getBoolean(Utils.PROP_NEGATIVE_CASE_ON_SERVER);
 
         System.out.println(Utils.join(Utils.PARAM_DELIMITER,
                 "ServerJDK=" + System.getProperty(Utils.PROP_SERVER_JDK),

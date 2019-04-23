@@ -36,7 +36,7 @@ public class JdkInfo {
     public final boolean supportsSNI;
     public final boolean supportsALPN;
 
-    public JdkInfo(String jdkPath) throws Throwable {
+    public JdkInfo(String jdkPath) {
         this.jdkPath = jdkPath;
 
         String output = jdkAttributes(jdkPath);
@@ -54,7 +54,7 @@ public class JdkInfo {
     }
 
     // Determines the specific attributes for the specified JDK.
-    private static String jdkAttributes(String jdkPath) throws Throwable {
+    private static String jdkAttributes(String jdkPath) {
         return ProcessUtils.java(jdkPath, null, JdkUtils.class).getOutput();
     }
 

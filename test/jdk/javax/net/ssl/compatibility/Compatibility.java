@@ -57,19 +57,32 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class Compatibility {
 
-    public static void main(String[] args) throws Throwable {
-        String javaSecurityFile
-                = System.getProperty("test.src") + "/java.security";
-        boolean debug = Utils.getBoolProperty("debug");
+    protected List<UseCase> getUseCases() {
+        return UseCase.getAllUseCases();
+    }
 
-        Set<JdkInfo> jdkInfos = jdkInfoList();
+    protected Set<JdkInfo> getJdkInfos() {
+        return jdkInfoList();
+    }
 
-        System.out.println("Test start");
+    protected List<TestCase> runTest() throws Exception {
+        Set<JdkInfo> jdkInfos = getJdkInfos();
 
         List<TestCase> testCases = new ArrayList<>();
         ExecutorService executor = Executors.newCachedThreadPool();
         PrintStream origStdOut = System.out;
         PrintStream origStdErr = System.err;
+
+        boolean debug = Boolean.getBoolean("debug");
+
+        String securityPropertiesFile = System.getProperty(
+                "test.security.properties",
+                System.getProperty("test.src") + "/java.security");
+        System.out.println("security properties: " + securityPropertiesFile);
+
+        // If true, server and client CANNOT be a same JDK
+        boolean disallowSameEndpoint = Boolean.getBoolean("disallowSameEndpoint");
+        System.out.println("disallowSameEndpoint: " + disallowSameEndpoint);
 
         try (PrintStream printStream = new PrintStream(
                 new FileOutputStream(Utils.TEST_LOG, true))) {
@@ -79,13 +92,13 @@ public class Compatibility {
             System.out.println(Utils.startHtml());
             System.out.println(Utils.startPre());
 
-            for (UseCase useCase : UseCase.getAllUseCases()) {
+            for (UseCase useCase : getUseCases()) {
                 for (JdkInfo serverJdk : jdkInfos) {
                     Map<String, String> props = new LinkedHashMap<>();
                     if (debug) {
                         props.put("javax.net.debug", "all");
                     }
-                    props.put("java.security.properties", javaSecurityFile);
+                    props.put("java.security.properties", securityPropertiesFile);
 
                     props.put(Utils.PROP_PROTOCOL, useCase.protocol.name);
                     props.put(Utils.PROP_CIPHER_SUITE, useCase.cipherSuite.name());
@@ -105,6 +118,10 @@ public class Compatibility {
                             serverJdk.supportsALPN + "");
 
                     for (JdkInfo clientJdk : jdkInfos) {
+                        if (disallowSameEndpoint && clientJdk == serverJdk) {
+                            continue;
+                        }
+
                         TestCase testCase = new TestCase(serverJdk, clientJdk,
                                 useCase);
                         System.out.println(Utils.anchorName(testCase.toString(),
@@ -162,119 +179,11 @@ public class Compatibility {
         System.setErr(origStdErr);
         executor.shutdown();
 
-        System.out.println("Test end");
-        System.out.println("Report is being generated...");
-        boolean failed = generateReport(testCases);
-        System.out.println("Report is generated.");
-        if (failed) {
-            throw new RuntimeException("At least one case failed. "
-                    + "Please check logs for more details.");
-        }
-    }
-
-    private static Status getStatus(String log) {
-        if (log.contains(Status.UNEXPECTED_SUCCESS.name())) {
-            return Status.UNEXPECTED_SUCCESS;
-        } else if (log.contains(Status.SUCCESS.name())) {
-            return Status.SUCCESS;
-        } else if (log.contains(Status.EXPECTED_FAIL.name())) {
-            return Status.EXPECTED_FAIL;
-        } else if (log.contains(Status.TIMEOUT.name())) {
-            return Status.TIMEOUT;
-        } else {
-            return Status.FAIL;
-        }
-    }
-
-    private static Status caseStatus(Status serverStatus, Status clientStatus) {
-        if (clientStatus == null || clientStatus == Status.TIMEOUT) {
-            return serverStatus == Status.EXPECTED_FAIL
-                   ? Status.EXPECTED_FAIL
-                   : Status.FAIL;
-        } else if (serverStatus == Status.TIMEOUT) {
-            return clientStatus == Status.EXPECTED_FAIL
-                   ? Status.EXPECTED_FAIL
-                   : Status.FAIL;
-        } else {
-            return serverStatus == clientStatus
-                   ? serverStatus
-                   : Status.FAIL;
-        }
-    }
-
-    // Retrieves JDK info from the file which is specified by jdkListFile.
-    // If no such file or no JDK is specified by the file, the current testing
-    // JDK will be used.
-    private static Set<JdkInfo> jdkInfoList() throws Throwable {
-        List<String> jdkList = jdkList("jdkListFile");
-        if (jdkList.size() == 0) {
-            jdkList.add(System.getProperty("test.jdk"));
-        }
-
-        Set<JdkInfo> jdkInfoList = new LinkedHashSet<>();
-        for (String jdkPath : jdkList) {
-            JdkInfo jdkInfo = new JdkInfo(jdkPath);
-            // JDK version must be unique.
-            if (!jdkInfoList.add(jdkInfo)) {
-                System.out.println("The JDK version is duplicate: " + jdkPath);
-            }
-        }
-        return jdkInfoList;
-    }
-
-    private static List<String> jdkList(String listFileProp) throws IOException {
-        String listFile = System.getProperty(listFileProp);
-        System.out.println(listFileProp + "=" + listFile);
-        if (listFile != null && Files.exists(Paths.get(listFile))) {
-            try (Stream<String> lines = Files.lines(Paths.get(listFile))) {
-                return lines.filter(line -> {
-                    return !line.trim().isEmpty();
-                }).collect(Collectors.toList());
-            }
-        } else {
-            return new ArrayList<>();
-        }
-    }
-
-    // Checks if server is already launched, and returns server port.
-    private static int waitForServerStarted()
-            throws IOException, InterruptedException {
-        System.out.print("Waiting for server");
-        long deadline = System.currentTimeMillis() + Utils.TIMEOUT;
-        int port;
-        while ((port = getServerPort()) == -1
-                && System.currentTimeMillis() < deadline) {
-            System.out.print(".");
-            TimeUnit.SECONDS.sleep(1);
-        }
-        System.out.println();
-
-        return port;
-    }
-
-    // Retrieves the latest server port from port.log.
-    private static int getServerPort() throws IOException {
-        if (!Files.exists(Paths.get(Utils.PORT_LOG))) {
-            return -1;
-        }
-
-        try (Stream<String> lines = Files.lines(Paths.get(Utils.PORT_LOG))) {
-            return Integer.valueOf(lines.findFirst().get());
-        }
-    }
-
-    private static OutputAnalyzer runServer(String jdkPath,
-            Map<String, String> props) {
-        return ProcessUtils.java(jdkPath, props, Server.class);
-    }
-
-    private static OutputAnalyzer runClient(String jdkPath,
-            Map<String, String> props) {
-        return ProcessUtils.java(jdkPath, props, Client.class);
+        return testCases;
     }
 
     // Generates the test result report.
-    private static boolean generateReport(List<TestCase> testCases)
+    protected boolean generateReport(List<TestCase> testCases)
             throws IOException {
         boolean failed = false;
         StringBuilder report = new StringBuilder();
@@ -319,6 +228,124 @@ public class Compatibility {
 
         generateFile("report.html", report.toString());
         return failed;
+    }
+
+    protected void run() throws Exception {
+        System.out.println("Test start");
+        List<TestCase> testCases= runTest();
+        System.out.println("Test end");
+
+        boolean failed = generateReport(testCases);
+        System.out.println("Report was generated.");
+
+        if (failed) {
+            throw new RuntimeException("At least one case failed. "
+                    + "Please check logs for more details.");
+        }
+    }
+
+    public static void main(String[] args) throws Throwable {
+        new Compatibility().run();;
+    }
+
+    private static Status getStatus(String log) {
+        if (log.contains(Status.UNEXPECTED_SUCCESS.name())) {
+            return Status.UNEXPECTED_SUCCESS;
+        } else if (log.contains(Status.SUCCESS.name())) {
+            return Status.SUCCESS;
+        } else if (log.contains(Status.EXPECTED_FAIL.name())) {
+            return Status.EXPECTED_FAIL;
+        } else if (log.contains(Status.TIMEOUT.name())) {
+            return Status.TIMEOUT;
+        } else {
+            return Status.FAIL;
+        }
+    }
+
+    private static Status caseStatus(Status serverStatus, Status clientStatus) {
+        if (clientStatus == null || clientStatus == Status.TIMEOUT) {
+            return serverStatus == Status.EXPECTED_FAIL
+                   ? Status.EXPECTED_FAIL
+                   : Status.FAIL;
+        } else if (serverStatus == Status.TIMEOUT) {
+            return clientStatus == Status.EXPECTED_FAIL
+                   ? Status.EXPECTED_FAIL
+                   : Status.FAIL;
+        } else {
+            return serverStatus == clientStatus
+                   ? serverStatus
+                   : Status.FAIL;
+        }
+    }
+
+    // Retrieves JDK info from the file which is specified by jdkListFile.
+    // And the current testing JDK, which is specified by test.jdk, always be used.
+    private static Set<JdkInfo> jdkInfoList() {
+        List<String> jdkList = jdkList();
+        jdkList.add(System.getProperty("test.jdk"));
+
+        Set<JdkInfo> jdkInfoList = new LinkedHashSet<>();
+        for (String jdkPath : jdkList) {
+            JdkInfo jdkInfo = new JdkInfo(jdkPath);
+            // JDK version must be unique.
+            if (!jdkInfoList.add(jdkInfo)) {
+                System.out.println("The JDK version is duplicate: " + jdkPath);
+            }
+        }
+        return jdkInfoList;
+    }
+
+    private static List<String> jdkList() {
+        String listFile = System.getProperty("jdkListFile");
+        System.out.println("jdk list file: " + listFile);
+        if (listFile != null && Files.exists(Paths.get(listFile))) {
+            try (Stream<String> lines = Files.lines(Paths.get(listFile))) {
+                return lines.filter(line -> {
+                    return !line.trim().isEmpty();
+                }).collect(Collectors.toList());
+            } catch (IOException e) {
+                throw new RuntimeException("Cannot get jdk list", e);
+            }
+        } else {
+            return new ArrayList<>();
+        }
+    }
+
+    // Checks if server is already launched, and returns server port.
+    private static int waitForServerStarted()
+            throws IOException, InterruptedException {
+        System.out.print("Waiting for server");
+        long deadline = System.currentTimeMillis() + Utils.TIMEOUT;
+        int port;
+        while ((port = getServerPort()) == -1
+                && System.currentTimeMillis() < deadline) {
+            System.out.print(".");
+            TimeUnit.SECONDS.sleep(1);
+        }
+        System.out.println();
+
+        return port;
+    }
+
+    // Retrieves the latest server port from port.log.
+    private static int getServerPort() throws IOException {
+        if (!Files.exists(Paths.get(Utils.PORT_LOG))) {
+            return -1;
+        }
+
+        try (Stream<String> lines = Files.lines(Paths.get(Utils.PORT_LOG))) {
+            return Integer.valueOf(lines.findFirst().get());
+        }
+    }
+
+    private static OutputAnalyzer runServer(String jdkPath,
+            Map<String, String> props) {
+        return ProcessUtils.java(jdkPath, props, Server.class);
+    }
+
+    private static OutputAnalyzer runClient(String jdkPath,
+            Map<String, String> props) {
+        return ProcessUtils.java(jdkPath, props, Client.class);
     }
 
     private static void generateFile(String path, String content)

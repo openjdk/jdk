@@ -118,15 +118,15 @@ public class Client {
         String serverName = System.getProperty(Utils.PROP_SERVER_NAME);
         String appProtocols = System.getProperty(Utils.PROP_APP_PROTOCOLS);
         boolean supportsSNIOnServer
-                = Utils.getBoolProperty(Utils.PROP_SUPPORTS_SNI_ON_SERVER);
+                = Boolean.getBoolean(Utils.PROP_SUPPORTS_SNI_ON_SERVER);
         boolean supportsSNIOnClient
-                = Utils.getBoolProperty(Utils.PROP_SUPPORTS_SNI_ON_CLIENT);
+                = Boolean.getBoolean(Utils.PROP_SUPPORTS_SNI_ON_CLIENT);
         boolean supportsALPNOnServer
-                = Utils.getBoolProperty(Utils.PROP_SUPPORTS_ALPN_ON_SERVER);
+                = Boolean.getBoolean(Utils.PROP_SUPPORTS_ALPN_ON_SERVER);
         boolean supportsALPNOnClient
-                = Utils.getBoolProperty(Utils.PROP_SUPPORTS_ALPN_ON_CLIENT);
+                = Boolean.getBoolean(Utils.PROP_SUPPORTS_ALPN_ON_CLIENT);
         boolean negativeCase
-                = Utils.getBoolProperty(Utils.PROP_NEGATIVE_CASE_ON_CLIENT);
+                = Boolean.getBoolean(Utils.PROP_NEGATIVE_CASE_ON_CLIENT);
         System.out.println(Utils.join(Utils.PARAM_DELIMITER,
                 "ClientJDK=" + System.getProperty(Utils.PROP_CLIENT_JDK),
                 "Protocol=" + protocol,
