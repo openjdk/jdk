@@ -417,7 +417,6 @@ public class HtmlDocletWriter {
                 .setCharset(configuration.charset)
                 .addKeywords(metakeywords)
                 .setStylesheets(configuration.getMainStylesheet(), configuration.getAdditionalStylesheets())
-                .setUseModuleDirectories(configuration.useModuleDirectories)
                 .setIndex(configuration.createindex, mainBodyScript)
                 .addContent(extraHeadContent);
 

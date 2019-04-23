@@ -166,10 +166,6 @@ public class Utils {
         return bool ? "Y" : "N";
     }
 
-    public static boolean getBoolProperty(String prop) {
-        return Boolean.valueOf(System.getProperty(prop));
-    }
-
     public static Status handleException(Exception exception,
             boolean negativeCase) {
         Status status;

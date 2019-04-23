@@ -347,7 +347,7 @@ public class HtmlConfiguration extends BaseConfiguration {
                 }
             }
         }
-        docPaths = new DocPaths(utils, useModuleDirectories);
+        docPaths = new DocPaths(utils);
         setCreateOverview();
         setTopFile(docEnv);
         workArounds.initDocLint(doclintOpts.values(), tagletManager.getAllTagletNames());

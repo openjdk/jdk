@@ -30,10 +30,10 @@ import java.util.List;
 public class UseCase {
 
     private static final boolean FULL_CASES
-            = Utils.getBoolProperty("fullCases");
+            = Boolean.getBoolean("fullCases");
 
     public static final boolean FULL_CIPHER_SUITES
-            = Utils.getBoolProperty("fullCipherSuites");
+            = Boolean.getBoolean("fullCipherSuites");
 
     public static final Protocol[] PROTOCOLS = new Protocol[] {
             Protocol.TLSV1,
@@ -129,7 +129,7 @@ public class UseCase {
     }
 
     private static final Object[][] PARAMS = new Object[][] {
-            FULL_CASES ? PROTOCOLS : PROTOCOLS,
+            PROTOCOLS,
             FULL_CASES ? CIPHER_SUITES : MANDATORY_CIPHER_SUITES,
             FULL_CASES ? new Boolean[] { false, true } : new Boolean[] { true },
             FULL_CASES
