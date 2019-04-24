@@ -1126,9 +1126,6 @@ class JavaThread: public Thread {
   // Specifies if the DeoptReason for the last uncommon trap was Reason_transfer_to_interpreter
   bool      _pending_transfer_to_interpreter;
 
-  // Guard for re-entrant call to JVMCIRuntime::adjust_comp_level
-  bool      _adjusting_comp_level;
-
   // True if in a runtime call from compiled code that will deoptimize
   // and re-execute a failed heap allocation in the interpreter.
   bool      _in_retryable_allocation;
@@ -1536,8 +1533,6 @@ class JavaThread: public Thread {
 #if INCLUDE_JVMCI
   int  pending_deoptimization() const             { return _pending_deoptimization; }
   long pending_failed_speculation() const         { return _pending_failed_speculation; }
-  bool adjusting_comp_level() const               { return _adjusting_comp_level; }
-  void set_adjusting_comp_level(bool b)           { _adjusting_comp_level = b; }
   bool has_pending_monitorenter() const           { return _pending_monitorenter; }
   void set_pending_monitorenter(bool b)           { _pending_monitorenter = b; }
   void set_pending_deoptimization(int reason)     { _pending_deoptimization = reason; }

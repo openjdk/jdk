@@ -53,18 +53,13 @@ class JVMCIRuntime: public AllStatic {
 
  private:
   static jobject _HotSpotJVMCIRuntime_instance;
-  static bool _HotSpotJVMCIRuntime_initialized;
   static bool _well_known_classes_initialized;
-
-  static CompLevelAdjustment _comp_level_adjustment;
 
   static bool _shutdown_called;
 
-  static CompLevel adjust_comp_level_inner(const methodHandle& method, bool is_osr, CompLevel level, JavaThread* thread);
-
  public:
   static bool is_HotSpotJVMCIRuntime_initialized() {
-    return _HotSpotJVMCIRuntime_initialized;
+    return _HotSpotJVMCIRuntime_instance != NULL;
   }
 
   /**
@@ -74,7 +69,7 @@ class JVMCIRuntime: public AllStatic {
 
   static jobject get_HotSpotJVMCIRuntime_jobject(TRAPS) {
     initialize_JVMCI(CHECK_NULL);
-    assert(_HotSpotJVMCIRuntime_initialized, "must be");
+    assert(_HotSpotJVMCIRuntime_instance != NULL, "must be");
     return _HotSpotJVMCIRuntime_instance;
   }
 
@@ -106,18 +101,6 @@ class JVMCIRuntime: public AllStatic {
   static bool shutdown_called() {
     return _shutdown_called;
   }
-
-  /**
-   * Lets JVMCI modify the compilation level currently selected for a method by
-   * the VM compilation policy.
-   *
-   * @param method the method being scheduled for compilation
-   * @param is_osr specifies if the compilation is an OSR compilation
-   * @param level the compilation level currently selected by the VM compilation policy
-   * @param thread the current thread
-   * @return the compilation level to use for the compilation
-   */
-  static CompLevel adjust_comp_level(const methodHandle& method, bool is_osr, CompLevel level, JavaThread* thread);
 
   static BasicType kindToBasicType(Handle kind, TRAPS);
 

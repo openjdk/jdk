@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import jdk.vm.ci.code.CompiledCode;
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.common.InitTimer;
 import jdk.vm.ci.common.JVMCIError;
-import jdk.vm.ci.hotspot.HotSpotJVMCICompilerFactory.CompilationLevel;
+import jdk.vm.ci.common.NativeImageReinitialize;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaType;
@@ -57,6 +57,8 @@ import jdk.vm.ci.runtime.JVMCICompiler;
 import jdk.vm.ci.runtime.JVMCICompilerFactory;
 import jdk.vm.ci.runtime.JVMCIRuntime;
 import jdk.vm.ci.services.JVMCIServiceLocator;
+
+import static jdk.vm.ci.hotspot.HotSpotJVMCICompilerFactory.CompilationLevelAdjustment.None;
 
 /**
  * HotSpot implementation of a JVMCI runtime.
@@ -251,10 +253,11 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
     final HotSpotJVMCIMetaAccessContext metaAccessContext;
 
     /**
-     * Stores the result of {@link HotSpotJVMCICompilerFactory#getCompilationLevelAdjustment} so
-     * that it can be read from the VM.
+     * Stores the value set by {@link #excludeFromJVMCICompilation(Module...)} so that it can
+     * be read from the VM.
      */
-    @SuppressWarnings("unused") private final int compilationLevelAdjustment;
+    @SuppressWarnings("unused") @NativeImageReinitialize private Module[] excludeFromJVMCICompilation;
+
 
     private final Map<Class<? extends Architecture>, JVMCIBackend> backends = new HashMap<>();
 
@@ -296,23 +299,14 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         compilerFactory = HotSpotJVMCICompilerConfig.getCompilerFactory();
         if (compilerFactory instanceof HotSpotJVMCICompilerFactory) {
             hsCompilerFactory = (HotSpotJVMCICompilerFactory) compilerFactory;
-            switch (hsCompilerFactory.getCompilationLevelAdjustment()) {
-                case None:
-                    compilationLevelAdjustment = config.compLevelAdjustmentNone;
-                    break;
-                case ByHolder:
-                    compilationLevelAdjustment = config.compLevelAdjustmentByHolder;
-                    break;
-                case ByFullSignature:
-                    compilationLevelAdjustment = config.compLevelAdjustmentByFullSignature;
-                    break;
-                default:
-                    compilationLevelAdjustment = config.compLevelAdjustmentNone;
-                    break;
+            if (hsCompilerFactory.getCompilationLevelAdjustment() != None) {
+                String name = HotSpotJVMCICompilerFactory.class.getName();
+                String msg = String.format("%s.getCompilationLevelAdjustment() is no longer supported. " +
+                                "Use %s.excludeFromJVMCICompilation() instead.", name, name);
+                throw new UnsupportedOperationException(msg);
             }
         } else {
             hsCompilerFactory = null;
-            compilationLevelAdjustment = config.compLevelAdjustmentNone;
         }
 
         if (config.getFlag("JVMCIPrintProperties", Boolean.class)) {
@@ -478,42 +472,6 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
 
     public Map<Class<? extends Architecture>, JVMCIBackend> getJVMCIBackends() {
         return Collections.unmodifiableMap(backends);
-    }
-
-    /**
-     * Called from the VM.
-     */
-    @SuppressWarnings({"unused"})
-    private int adjustCompilationLevel(Class<?> declaringClass, String name, String signature, boolean isOsr, int level) {
-        CompilationLevel curLevel;
-        if (level == config.compilationLevelNone) {
-            curLevel = CompilationLevel.None;
-        } else if (level == config.compilationLevelSimple) {
-            curLevel = CompilationLevel.Simple;
-        } else if (level == config.compilationLevelLimitedProfile) {
-            curLevel = CompilationLevel.LimitedProfile;
-        } else if (level == config.compilationLevelFullProfile) {
-            curLevel = CompilationLevel.FullProfile;
-        } else if (level == config.compilationLevelFullOptimization) {
-            curLevel = CompilationLevel.FullOptimization;
-        } else {
-            throw JVMCIError.shouldNotReachHere();
-        }
-
-        switch (hsCompilerFactory.adjustCompilationLevel(declaringClass, name, signature, isOsr, curLevel)) {
-            case None:
-                return config.compilationLevelNone;
-            case Simple:
-                return config.compilationLevelSimple;
-            case LimitedProfile:
-                return config.compilationLevelLimitedProfile;
-            case FullProfile:
-                return config.compilationLevelFullProfile;
-            case FullOptimization:
-                return config.compilationLevelFullOptimization;
-            default:
-                return level;
-        }
     }
 
     /**
@@ -729,5 +687,15 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
     @SuppressWarnings({"static-method", "unused"})
     public void registerNativeMethods(Class<?> clazz) {
         throw new UnsatisfiedLinkError("SVM library is not available");
+    }
+
+    /**
+     * Informs HotSpot that no method whose module is in {@code modules} is to be compiled
+     * with {@link #compileMethod}.
+     *
+     * @param modules the set of modules containing JVMCI compiler classes
+     */
+    public void excludeFromJVMCICompilation(Module...modules) {
+        this.excludeFromJVMCICompilation = modules.clone();
     }
 }

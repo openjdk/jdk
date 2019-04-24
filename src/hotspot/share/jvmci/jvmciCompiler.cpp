@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "classfile/moduleEntry.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
@@ -190,15 +191,6 @@ void JVMCICompiler::compile_method(const methodHandle& method, int entry_bci, JV
   }
 }
 
-CompLevel JVMCIRuntime::adjust_comp_level(const methodHandle& method, bool is_osr, CompLevel level, JavaThread* thread) {
-  if (!thread->adjusting_comp_level()) {
-    thread->set_adjusting_comp_level(true);
-    level = adjust_comp_level_inner(method, is_osr, level, thread);
-    thread->set_adjusting_comp_level(false);
-  }
-  return level;
-}
-
 void JVMCICompiler::exit_on_pending_exception(oop exception, const char* message) {
   JavaThread* THREAD = JavaThread::current();
   CLEAR_PENDING_EXCEPTION;
@@ -234,4 +226,34 @@ void JVMCICompiler::print_timers() {
 void JVMCICompiler::print_compilation_timers() {
   TRACE_jvmci_1("JVMCICompiler::print_timers");
   tty->print_cr("       JVMCI code install time:        %6.3f s",    _codeInstallTimer.seconds());
+}
+
+bool JVMCICompiler::force_comp_at_level_simple(Method *method) {
+  JVMCI_EXCEPTION_CONTEXT
+
+  if (_bootstrapping) {
+    // When bootstrapping, the JVMCI compiler can compile its own methods.
+    return false;
+  }
+
+  if (!JVMCIRuntime::is_HotSpotJVMCIRuntime_initialized()) {
+    // JVMCI cannot participate in compilation scheduling until
+    // JVMCI is initialized and indicates it wants to participate.
+    return false;
+  }
+  // Support for graal.CompileGraalWithC1Only
+  HandleMark hm(thread);
+  jobject runtime = JVMCIRuntime::get_HotSpotJVMCIRuntime_jobject(CATCH);
+  objArrayHandle excludeFromJVMCICompilation(thread, HotSpotJVMCIRuntime::excludeFromJVMCICompilation(runtime));
+  if (excludeFromJVMCICompilation.is_null()) {
+    return false;
+  }
+  ModuleEntry *module = method->method_holder()->module();
+  for (int i = 0; i < excludeFromJVMCICompilation->length(); ++i) {
+    if (module->module() == excludeFromJVMCICompilation->obj_at(i)) {
+      return true;
+    }
+  }
+
+  return false;
 }

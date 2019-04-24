@@ -25,6 +25,7 @@
 #include "jvm.h"
 #include "asm/codeBuffer.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/moduleEntry.hpp"
 #include "code/codeCache.hpp"
 #include "code/compiledMethod.inline.hpp"
 #include "compiler/compileBroker.hpp"
@@ -60,9 +61,7 @@
 #endif
 
 jobject JVMCIRuntime::_HotSpotJVMCIRuntime_instance = NULL;
-bool JVMCIRuntime::_HotSpotJVMCIRuntime_initialized = false;
 bool JVMCIRuntime::_well_known_classes_initialized = false;
-JVMCIRuntime::CompLevelAdjustment JVMCIRuntime::_comp_level_adjustment = JVMCIRuntime::none;
 bool JVMCIRuntime::_shutdown_called = false;
 
 BasicType JVMCIRuntime::kindToBasicType(Handle kind, TRAPS) {
@@ -740,7 +739,7 @@ Handle JVMCIRuntime::get_HotSpotJVMCIRuntime(TRAPS) {
 }
 
 void JVMCIRuntime::initialize_HotSpotJVMCIRuntime(TRAPS) {
-  guarantee(!_HotSpotJVMCIRuntime_initialized, "cannot reinitialize HotSpotJVMCIRuntime");
+  guarantee(!is_HotSpotJVMCIRuntime_initialized(), "cannot reinitialize HotSpotJVMCIRuntime");
   JVMCIRuntime::initialize_well_known_classes(CHECK);
   // This should only be called in the context of the JVMCI class being initialized
   InstanceKlass* klass = SystemDictionary::JVMCI_klass();
@@ -750,12 +749,6 @@ void JVMCIRuntime::initialize_HotSpotJVMCIRuntime(TRAPS) {
   Handle result = callStatic("jdk/vm/ci/hotspot/HotSpotJVMCIRuntime",
                              "runtime",
                              "()Ljdk/vm/ci/hotspot/HotSpotJVMCIRuntime;", NULL, CHECK);
-  int adjustment = HotSpotJVMCIRuntime::compilationLevelAdjustment(result);
-  assert(adjustment >= JVMCIRuntime::none &&
-         adjustment <= JVMCIRuntime::by_full_signature,
-         "compilation level adjustment out of bounds");
-  _comp_level_adjustment = (CompLevelAdjustment) adjustment;
-  _HotSpotJVMCIRuntime_initialized = true;
   _HotSpotJVMCIRuntime_instance = JNIHandles::make_global(result);
 }
 
@@ -765,7 +758,7 @@ void JVMCIRuntime::initialize_JVMCI(TRAPS) {
                "getRuntime",
                "()Ljdk/vm/ci/runtime/JVMCIRuntime;", NULL, CHECK);
   }
-  assert(_HotSpotJVMCIRuntime_initialized == true, "what?");
+  assert(is_HotSpotJVMCIRuntime_initialized(), "what?");
 }
 
 bool JVMCIRuntime::can_initialize_JVMCI() {
@@ -892,73 +885,6 @@ void JVMCIRuntime::shutdown(TRAPS) {
     args.push_oop(receiver);
     JavaCalls::call_special(&result, receiver->klass(), vmSymbols::shutdown_method_name(), vmSymbols::void_method_signature(), &args, CHECK);
   }
-}
-
-CompLevel JVMCIRuntime::adjust_comp_level_inner(const methodHandle& method, bool is_osr, CompLevel level, JavaThread* thread) {
-  JVMCICompiler* compiler = JVMCICompiler::instance(false, thread);
-  if (compiler != NULL && compiler->is_bootstrapping()) {
-    return level;
-  }
-  if (!is_HotSpotJVMCIRuntime_initialized() || _comp_level_adjustment == JVMCIRuntime::none) {
-    // JVMCI cannot participate in compilation scheduling until
-    // JVMCI is initialized and indicates it wants to participate.
-    return level;
-  }
-
-#define CHECK_RETURN THREAD); \
-  if (HAS_PENDING_EXCEPTION) { \
-    Handle exception(THREAD, PENDING_EXCEPTION); \
-    CLEAR_PENDING_EXCEPTION; \
-  \
-    if (exception->is_a(SystemDictionary::ThreadDeath_klass())) { \
-      /* In the special case of ThreadDeath, we need to reset the */ \
-      /* pending async exception so that it is propagated.        */ \
-      thread->set_pending_async_exception(exception()); \
-      return level; \
-    } \
-    tty->print("Uncaught exception while adjusting compilation level: "); \
-    java_lang_Throwable::print(exception(), tty); \
-    tty->cr(); \
-    java_lang_Throwable::print_stack_trace(exception, tty); \
-    if (HAS_PENDING_EXCEPTION) { \
-      CLEAR_PENDING_EXCEPTION; \
-    } \
-    return level; \
-  } \
-  (void)(0
-
-
-  Thread* THREAD = thread;
-  HandleMark hm;
-  Handle receiver = JVMCIRuntime::get_HotSpotJVMCIRuntime(CHECK_RETURN);
-  Handle name;
-  Handle sig;
-  if (_comp_level_adjustment == JVMCIRuntime::by_full_signature) {
-    name = java_lang_String::create_from_symbol(method->name(), CHECK_RETURN);
-    sig = java_lang_String::create_from_symbol(method->signature(), CHECK_RETURN);
-  } else {
-    name = Handle();
-    sig = Handle();
-  }
-
-  JavaValue result(T_INT);
-  JavaCallArguments args;
-  args.push_oop(receiver);
-  args.push_oop(Handle(THREAD, method->method_holder()->java_mirror()));
-  args.push_oop(name);
-  args.push_oop(sig);
-  args.push_int(is_osr);
-  args.push_int(level);
-  JavaCalls::call_special(&result, receiver->klass(), vmSymbols::adjustCompilationLevel_name(),
-                          vmSymbols::adjustCompilationLevel_signature(), &args, CHECK_RETURN);
-
-  int comp_level = result.get_jint();
-  if (comp_level < CompLevel_none || comp_level > CompLevel_full_optimization) {
-    assert(false, "compilation level out of bounds");
-    return level;
-  }
-  return (CompLevel) comp_level;
-#undef CHECK_RETURN
 }
 
 void JVMCIRuntime::bootstrap_finished(TRAPS) {

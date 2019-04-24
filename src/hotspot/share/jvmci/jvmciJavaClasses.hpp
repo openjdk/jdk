@@ -312,7 +312,7 @@ class JVMCIJavaClasses : AllStatic {
     long_field(HotSpotConstantPool, metaspaceConstantPool)                                                                                                     \
   end_class                                                                                                                                                    \
   start_class(HotSpotJVMCIRuntime)                                                                                                                             \
-    int_field(HotSpotJVMCIRuntime, compilationLevelAdjustment)                                                                                                 \
+    objArrayOop_field(HotSpotJVMCIRuntime, excludeFromJVMCICompilation, "[Ljava/lang/Module;")                                                                 \
   end_class                                                                                                                                                    \
   /* end*/
 

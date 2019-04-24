@@ -91,6 +91,21 @@ bool TieredThresholdPolicy::is_trivial(Method* method) {
   return false;
 }
 
+bool TieredThresholdPolicy::should_compile_at_level_simple(Method* method) {
+  if (TieredThresholdPolicy::is_trivial(method)) {
+    return true;
+  }
+#if INCLUDE_JVMCI
+  if (UseJVMCICompiler) {
+    AbstractCompiler* comp = CompileBroker::compiler(CompLevel_full_optimization);
+    if (comp != NULL && comp->is_jvmci() && ((JVMCICompiler*) comp)->force_comp_at_level_simple(method)) {
+      return true;
+    }
+  }
+#endif
+  return false;
+}
+
 CompLevel TieredThresholdPolicy::comp_level(Method* method) {
   CompiledMethod *nm = method->code();
   if (nm != NULL && nm->is_in_use()) {
@@ -613,7 +628,7 @@ bool TieredThresholdPolicy::call_predicate(int i, int b, CompLevel cur_level, Me
 
 // Determine is a method is mature.
 bool TieredThresholdPolicy::is_mature(Method* method) {
-  if (is_trivial(method)) return true;
+  if (should_compile_at_level_simple(method)) return true;
   MethodData* mdo = method->method_data();
   if (mdo != NULL) {
     int i = mdo->invocation_count();
@@ -709,7 +724,7 @@ CompLevel TieredThresholdPolicy::common(Predicate p, Method* method, CompLevel c
   int i = method->invocation_count();
   int b = method->backedge_count();
 
-  if (is_trivial(method)) {
+  if (should_compile_at_level_simple(method)) {
     next_level = CompLevel_simple;
   } else {
     switch(cur_level) {
@@ -825,11 +840,6 @@ CompLevel TieredThresholdPolicy::call_event(Method* method, CompLevel cur_level,
   } else {
     next_level = MAX2(osr_level, next_level);
   }
-#if INCLUDE_JVMCI
-  if (UseJVMCICompiler) {
-    next_level = JVMCIRuntime::adjust_comp_level(method, false, next_level, thread);
-  }
-#endif
   return next_level;
 }
 
@@ -844,11 +854,6 @@ CompLevel TieredThresholdPolicy::loop_event(Method* method, CompLevel cur_level,
       return osr_level;
     }
   }
-#if INCLUDE_JVMCI
-  if (UseJVMCICompiler) {
-    next_level = JVMCIRuntime::adjust_comp_level(method, true, next_level, thread);
-  }
-#endif
   return next_level;
 }
 

@@ -221,6 +221,18 @@ compiler/jsr292/InvokerSignatureMismatch.java           8221577   generic-all
 compiler/arguments/TestScavengeRootsInCode.java         8207267   generic-all
 compiler/loopopts/TestOverunrolling.java                8207267   generic-all
 
+runtime/exceptionMsgs/AbstractMethodError/AbstractMethodErrorTest.java        8222582 generic-all
+
+vmTestbase/nsk/jdi/ObjectReference/referringObjects/referringObjects002/referringObjects002.java 8220032 generic-all
+vmTestbase/nsk/jdi/VirtualMachine/instanceCounts/instancecounts003/instancecounts003.java        8220032 generic-all
+
+vmTestbase/nsk/jdi/ClassLoaderReference/definedClasses/definedclasses003/TestDescription.java 8222422 generic-all
+vmTestbase/nsk/jdi/ClassLoaderReference/definedClasses/definedclasses005/TestDescription.java 8222422 generic-all
+
+runtime/exceptionMsgs/ArrayIndexOutOfBoundsException/ArrayIndexOutOfBoundsExceptionTest.java 8222292 generic-all
+
+serviceability/dcmd/compiler/CodelistTest.java 8220449 generic-all
+
 # Graal unit tests
 org.graalvm.compiler.core.test.CheckGraalInvariants                              8205081
 org.graalvm.compiler.core.test.OptionsVerifierTest                               8205081
