@@ -186,16 +186,14 @@ static void assert_list_is_valid(const ThreadSafepointState* tss_head, int still
 }
 #endif // ASSERT
 
-static void back_off(int iteration) {
-  // iteration will be 1 the first time we enter this spin back-off.
-  // naked_short_nanosleep takes tenths of micros which means that
-  // number of nanoseconds is irrelevant if it's below that. We do
-  // 20 1 ns sleeps with a total cost of ~1 ms, then we do 1 ms sleeps.
-  jlong sleep_ns = 1;
-  if (iteration > 20) {
-    sleep_ns = NANOUNITS / MILLIUNITS;  // 1 ms
+static void back_off(int64_t start_time) {
+  // We start with fine-grained nanosleeping until a millisecond has
+  // passed, at which point we resort to plain naked_short_sleep.
+  if (os::javaTimeNanos() - start_time < NANOSECS_PER_MILLISEC) {
+    os::naked_short_nanosleep(10 * (NANOUNITS / MICROUNITS));
+  } else {
+    os::naked_short_sleep(1);
   }
-  os::naked_short_nanosleep(sleep_ns);
 }
 
 int SafepointSynchronize::synchronize_threads(jlong safepoint_limit_time, int nof_threads, int* initial_running)
@@ -229,9 +227,16 @@ int SafepointSynchronize::synchronize_threads(jlong safepoint_limit_time, int no
 
   *initial_running = still_running;
 
-  int iterations = 1; // The first iteration is above.
+  // If there is no thread still running, we are already done.
+  if (still_running <= 0) {
+    assert(tss_head == NULL, "Must be empty");
+    return 1;
+  }
 
-  while (still_running > 0) {
+  int iterations = 1; // The first iteration is above.
+  int64_t start_time = os::javaTimeNanos();
+
+  do {
     // Check if this has taken too long:
     if (SafepointTimeout && safepoint_limit_time < os::javaTimeNanos()) {
       print_safepoint_timeout();
@@ -264,11 +269,11 @@ int SafepointSynchronize::synchronize_threads(jlong safepoint_limit_time, int no
     DEBUG_ONLY(assert_list_is_valid(tss_head, still_running);)
 
     if (still_running > 0) {
-      back_off(iterations);
+      back_off(start_time);
     }
 
     iterations++;
-  }
+  } while (still_running > 0);
 
   assert(tss_head == NULL, "Must be empty");
 
