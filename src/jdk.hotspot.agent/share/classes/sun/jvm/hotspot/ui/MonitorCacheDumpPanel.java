@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,7 @@ public class MonitorCacheDumpPanel extends JPanel {
         }
       }
     }
-    tty.println("  _count: " + mon.count());
+    tty.println("  _contentions: " + mon.contentions());
     tty.println("  _waiters: " + mon.waiters());
     tty.println("  _recursions: " + mon.recursions());
   }
@@ -98,7 +98,7 @@ public class MonitorCacheDumpPanel extends JPanel {
     ObjectMonitor mon;
     while (i.hasNext()) {
       mon = (ObjectMonitor)i.next();
-      if (mon.count() != 0 || mon.waiters() != 0 || mon.owner() != null) {
+      if (mon.contentions() != 0 || mon.waiters() != 0 || mon.owner() != null) {
         OopHandle object = mon.object();
         if (object == null) {
           dumpMonitor(tty, mon, true);

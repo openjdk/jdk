@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,9 +37,9 @@ void markOopDesc::print_on(outputStream* st) const {
     if (mon == NULL) {
       st->print("NULL (this should never be seen!)");
     } else {
-      st->print("{count=0x%08x,waiters=0x%08x"
+      st->print("{contentions=0x%08x,waiters=0x%08x"
                 ",recursions=" INTPTR_FORMAT ",owner=" INTPTR_FORMAT "}",
-                mon->count(), mon->waiters(), mon->recursions(),
+                mon->contentions(), mon->waiters(), mon->recursions(),
                 p2i(mon->owner()));
     }
   } else if (is_locked()) {

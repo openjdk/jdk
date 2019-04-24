@@ -896,7 +896,7 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   volatile_nonstatic_field(ObjectMonitor,      _header,                                       markOop)                               \
   unchecked_nonstatic_field(ObjectMonitor,     _object,                                       sizeof(void *)) /* NOTE: no type */    \
   unchecked_nonstatic_field(ObjectMonitor,     _owner,                                        sizeof(void *)) /* NOTE: no type */    \
-  volatile_nonstatic_field(ObjectMonitor,      _count,                                        jint)                                  \
+  volatile_nonstatic_field(ObjectMonitor,      _contentions,                                  jint)                                  \
   volatile_nonstatic_field(ObjectMonitor,      _waiters,                                      jint)                                  \
   volatile_nonstatic_field(ObjectMonitor,      _recursions,                                   intptr_t)                              \
   nonstatic_field(ObjectMonitor,               FreeNext,                                      ObjectMonitor*)                        \
