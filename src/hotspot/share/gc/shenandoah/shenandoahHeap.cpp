@@ -259,7 +259,7 @@ jint ShenandoahHeap::initialize() {
 
   _regions = NEW_C_HEAP_ARRAY(ShenandoahHeapRegion*, _num_regions, mtGC);
   _free_set = new ShenandoahFreeSet(this, _num_regions);
-  _collection_set = new ShenandoahCollectionSet(this, (HeapWord*)sh_rs.base());
+  _collection_set = new ShenandoahCollectionSet(this, sh_rs.base(), sh_rs.size());
 
   {
     ShenandoahHeapLocker locker(lock());
