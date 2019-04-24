@@ -69,8 +69,8 @@ void vframeStreamSamples::samples_next() {
   }
 
   // handle general case
-  int loop_count = 0;
-  int loop_max = MaxJavaStackTraceDepth * 2;
+  u4 loop_count = 0;
+  u4 loop_max = MAX_STACK_DEPTH * 2;
   do {
     loop_count++;
     // By the time we get here we should never see unsafe but better safe then segv'd
