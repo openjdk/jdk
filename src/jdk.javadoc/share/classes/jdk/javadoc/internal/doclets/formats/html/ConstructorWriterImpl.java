@@ -33,6 +33,7 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
+import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -297,7 +298,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
             } else if (utils.isPrivate(member)) {
                 code.add("private ");
             } else if (utils.isPublic(member)) {
-                code.add(Contents.SPACE);
+                code.add(Entity.NO_BREAK_SPACE);
             } else {
                 code.add(
                         resources.getText("doclet.Package_private"));

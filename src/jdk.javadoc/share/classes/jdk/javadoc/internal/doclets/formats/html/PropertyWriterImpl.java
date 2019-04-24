@@ -25,12 +25,12 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
+import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -40,7 +40,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.PropertyWriter;
-
 
 /**
  * Writes property documentation in HTML format.
@@ -161,7 +160,7 @@ public class PropertyWriterImpl extends AbstractMemberWriter
                         utils.isClass(holder)
                                 ? contents.descfrmClassLabel
                                 : contents.descfrmInterfaceLabel);
-                descfrmLabel.add(Contents.SPACE);
+                descfrmLabel.add(Entity.NO_BREAK_SPACE);
                 descfrmLabel.add(codeLink);
                 propertyDocTree.add(HtmlTree.DIV(HtmlStyle.block, descfrmLabel));
                 writer.addInlineComment(property, propertyDocTree);
@@ -263,7 +262,7 @@ public class PropertyWriterImpl extends AbstractMemberWriter
         }
         Content labelHeading = HtmlTree.HEADING(Headings.TypeDeclaration.INHERITED_SUMMARY_HEADING,
                 label);
-        labelHeading.add(Contents.SPACE);
+        labelHeading.add(Entity.NO_BREAK_SPACE);
         labelHeading.add(classLink);
         inheritedTree.add(labelHeading);
     }

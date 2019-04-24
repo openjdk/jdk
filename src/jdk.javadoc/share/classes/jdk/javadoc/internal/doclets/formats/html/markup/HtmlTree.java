@@ -100,7 +100,7 @@ public class HtmlTree extends Content {
     public HtmlTree put(HtmlAttr attrName, String attrValue) {
         if (attrs.isEmpty())
             attrs = new LinkedHashMap<>(3);
-        attrs.put(nullCheck(attrName), escapeHtmlChars(attrValue));
+        attrs.put(nullCheck(attrName), Entity.escapeHtmlChars(attrValue));
         return this;
     }
 
@@ -186,35 +186,6 @@ public class HtmlTree extends Content {
         for (Content c : content)
             n += c.charCount();
         return n;
-    }
-
-    /**
-     * Given a string, escape all special HTML characters and
-     * return the result.
-     *
-     * @param s The string to check.
-     * @return the original string with all of the HTML characters escaped.
-     */
-    private static String escapeHtmlChars(String s) {
-        for (int i = 0; i < s.length(); i++) {
-            char ch = s.charAt(i);
-            switch (ch) {
-                // only start building a new string if we need to
-                case '<': case '>': case '&':
-                    StringBuilder sb = new StringBuilder(s.substring(0, i));
-                    for ( ; i < s.length(); i++) {
-                        ch = s.charAt(i);
-                        switch (ch) {
-                            case '<': sb.append("&lt;");  break;
-                            case '>': sb.append("&gt;");  break;
-                            case '&': sb.append("&amp;"); break;
-                            default:  sb.append(ch);      break;
-                        }
-                    }
-                    return sb.toString();
-            }
-        }
-        return s;
     }
 
     /*

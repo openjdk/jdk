@@ -59,7 +59,7 @@ public class StringContent extends Content {
      */
     public StringContent(CharSequence initialContent) {
         stringContent = new StringBuilder();
-        appendChars(initialContent);
+        Entity.escapeHtmlChars(initialContent, stringContent);
     }
 
     /**
@@ -81,7 +81,7 @@ public class StringContent extends Content {
      */
     @Override
     public void add(CharSequence strContent) {
-        appendChars(strContent);
+        Entity.escapeHtmlChars(strContent, stringContent);
     }
 
     /**
@@ -113,17 +113,5 @@ public class StringContent extends Content {
         String s = stringContent.toString();
         out.write(s);
         return s.endsWith(DocletConstants.NL);
-    }
-
-    private void appendChars(CharSequence s) {
-        for (int i = 0; i < s.length(); i++) {
-            char ch = s.charAt(i);
-            switch (ch) {
-                case '<': stringContent.append("&lt;");  break;
-                case '>': stringContent.append("&gt;");  break;
-                case '&': stringContent.append("&amp;"); break;
-                default:  stringContent.append(ch);      break;
-            }
-        }
     }
 }

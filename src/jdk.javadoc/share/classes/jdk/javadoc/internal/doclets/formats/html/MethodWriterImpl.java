@@ -34,6 +34,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
+import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -190,7 +191,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
                         utils.isClass(holder)
                                 ? contents.descfrmClassLabel
                                 : contents.descfrmInterfaceLabel);
-                descfrmLabel.add(Contents.SPACE);
+                descfrmLabel.add(Entity.NO_BREAK_SPACE);
                 descfrmLabel.add(codelLink);
                 methodDocTree.add(HtmlTree.DIV(HtmlStyle.block, descfrmLabel));
                 writer.addInlineComment(method, methodDocTree);
@@ -297,7 +298,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
         }
         Content labelHeading = HtmlTree.HEADING(Headings.TypeDeclaration.INHERITED_SUMMARY_HEADING,
                 label);
-        labelHeading.add(Contents.SPACE);
+        labelHeading.add(Entity.NO_BREAK_SPACE);
         labelHeading.add(classLink);
         inheritedTree.add(labelHeading);
     }
@@ -353,9 +354,9 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
                     .where(writer.links.getName(writer.getAnchor(method))).label(method.getSimpleName()));
             Content codeMethLink = HtmlTree.CODE(methlink);
             Content dd = HtmlTree.DD(codeMethLink);
-            dd.add(Contents.SPACE);
+            dd.add(Entity.NO_BREAK_SPACE);
             dd.add(writer.contents.inClass);
-            dd.add(Contents.SPACE);
+            dd.add(Entity.NO_BREAK_SPACE);
             dd.add(codeOverridenTypeLink);
             dl.add(dd);
         }
@@ -389,9 +390,9 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
                     implementedMeth.getSimpleName(), false);
             Content codeMethLink = HtmlTree.CODE(methlink);
             Content dd = HtmlTree.DD(codeMethLink);
-            dd.add(Contents.SPACE);
+            dd.add(Entity.NO_BREAK_SPACE);
             dd.add(contents.inInterface);
-            dd.add(Contents.SPACE);
+            dd.add(Entity.NO_BREAK_SPACE);
             dd.add(codeIntfacLink);
             dl.add(dd);
         }
@@ -409,7 +410,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
             Content linkContent = writer.getLink(
                     new LinkInfoImpl(configuration, LinkInfoImpl.Kind.RETURN_TYPE, type));
             htmltree.add(linkContent);
-            htmltree.add(Contents.SPACE);
+            htmltree.add(Entity.NO_BREAK_SPACE);
         }
     }
 

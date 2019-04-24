@@ -531,6 +531,6 @@ public class Table {
     private HtmlTree getCaption(Content title) {
         return new HtmlTree(HtmlTag.CAPTION,
                 HtmlTree.SPAN(title),
-                HtmlTree.SPAN(tabEnd, Contents.SPACE));
+                HtmlTree.SPAN(tabEnd, Entity.NO_BREAK_SPACE));
     }
 }

@@ -25,9 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.Table;
-import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -46,6 +43,7 @@ import javax.lang.model.util.ElementFilter;
 import com.sun.source.doctree.DocTree;
 import jdk.javadoc.doclet.DocletEnvironment.ModuleMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
+import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -53,6 +51,8 @@ import jdk.javadoc.internal.doclets.formats.html.markup.Navigation;
 import jdk.javadoc.internal.doclets.formats.html.markup.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.Table;
+import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.ModuleSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
@@ -209,7 +209,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                 ? contents.openModuleLabel : contents.moduleLabel;
         Content tHeading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, true,
                 HtmlStyle.title, label);
-        tHeading.add(Contents.SPACE);
+        tHeading.add(Entity.NO_BREAK_SPACE);
         Content moduleHead = new RawHtml(heading);
         tHeading.add(moduleHead);
         div.add(tHeading);
@@ -534,7 +534,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      * Add the list of modules.
      *
      * @param mdleMap map of modules and modifiers
-     * @param tbody the content tree to which the list will be added
+     * @param table the table to which the list will be added
      */
     private void addModulesList(Map<ModuleElement, Content> mdleMap, Table table) {
         for (ModuleElement m : mdleMap.keySet()) {
@@ -776,7 +776,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                     addSummaryComment(t, summary);
                 }
             } else {
-                summary.add(Contents.SPACE);
+                summary.add(Entity.NO_BREAK_SPACE);
             }
             table.addRow(typeLinkContent, summary);
         }
@@ -802,9 +802,9 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                 description = providesTrees.get(srv);
                 desc.add((description != null && !description.isEmpty())
                         ? HtmlTree.DIV(HtmlStyle.block, description)
-                        : Contents.SPACE);
+                        : Entity.NO_BREAK_SPACE);
             } else {
-                desc.add(Contents.SPACE);
+                desc.add(Entity.NO_BREAK_SPACE);
                 }
             // Only display the implementation details in the "all" mode.
             if (moduleMode == ModuleMode.ALL && !implSet.isEmpty()) {
@@ -812,7 +812,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                 desc.add("(");
                 HtmlTree implSpan = HtmlTree.SPAN(HtmlStyle.implementationLabel, contents.implementation);
                 desc.add(implSpan);
-                desc.add(Contents.SPACE);
+                desc.add(Entity.NO_BREAK_SPACE);
                 String sep = "";
                 for (TypeElement impl : implSet) {
                     desc.add(sep);

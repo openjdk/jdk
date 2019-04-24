@@ -25,10 +25,11 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.util.*;
+import java.util.Set;
 
 import javax.lang.model.element.TypeElement;
 
+import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -121,7 +122,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
     public Content getPackageHeader(String packageName) {
         Content heading = HtmlTree.HEADING(Headings.SerializedForm.PACKAGE_HEADING, true,
                 contents.packageLabel);
-        heading.add(Contents.SPACE);
+        heading.add(Entity.NO_BREAK_SPACE);
         heading.add(packageName);
         return heading;
     }

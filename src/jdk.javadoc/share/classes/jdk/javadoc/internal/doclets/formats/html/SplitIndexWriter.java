@@ -32,6 +32,7 @@ import java.util.ListIterator;
 import java.util.Set;
 import java.util.TreeSet;
 
+import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -163,13 +164,13 @@ public class SplitIndexWriter extends AbstractIndexWriter {
             int j = i + 1;
             contentTree.add(links.createLink(DocPaths.indexN(j),
                     new StringContent(indexElements.get(i).toString())));
-            contentTree.add(Contents.SPACE);
+            contentTree.add(Entity.NO_BREAK_SPACE);
         }
         contentTree.add(new HtmlTree(HtmlTag.BR));
         contentTree.add(links.createLink(pathToRoot.resolve(DocPaths.ALLCLASSES_INDEX),
                 contents.allClassesLabel));
         if (!configuration.packages.isEmpty()) {
-            contentTree.add(Contents.SPACE);
+            contentTree.add(Entity.NO_BREAK_SPACE);
             contentTree.add(links.createLink(pathToRoot.resolve(DocPaths.ALLPACKAGES_INDEX),
                     contents.allPackagesLabel));
     }

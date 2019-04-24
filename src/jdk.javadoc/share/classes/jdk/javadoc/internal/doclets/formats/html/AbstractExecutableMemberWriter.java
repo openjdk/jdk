@@ -40,12 +40,16 @@ import javax.lang.model.type.TypeVariable;
 import javax.lang.model.util.SimpleTypeVisitor9;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
+import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 
-import static jdk.javadoc.internal.doclets.formats.html.LinkInfoImpl.Kind.*;
+import static jdk.javadoc.internal.doclets.formats.html.LinkInfoImpl.Kind.EXECUTABLE_MEMBER_PARAM;
+import static jdk.javadoc.internal.doclets.formats.html.LinkInfoImpl.Kind.MEMBER;
+import static jdk.javadoc.internal.doclets.formats.html.LinkInfoImpl.Kind.MEMBER_TYPE_PARAMS;
+import static jdk.javadoc.internal.doclets.formats.html.LinkInfoImpl.Kind.RECEIVER_TYPE;
 
 /**
  * Print method and constructor info.
@@ -79,7 +83,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
         Content typeParameters = getTypeParameters(member);
         if (!typeParameters.isEmpty()) {
             htmltree.add(typeParameters);
-            htmltree.add(Contents.SPACE);
+            htmltree.add(Entity.NO_BREAK_SPACE);
         }
     }
 
@@ -107,7 +111,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
         }
         String signature = utils.flatSignature((ExecutableElement) member);
         if (signature.length() > 2) {
-            deprecatedLinkContent.add(Contents.ZERO_WIDTH_SPACE);
+            deprecatedLinkContent.add(Entity.ZERO_WIDTH_SPACE);
         }
         deprecatedLinkContent.add(signature);
 
@@ -160,7 +164,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
                 param.asType()).varargs(isVarArg));
         tree.add(link);
         if(name(param).length() > 0) {
-            tree.add(Contents.SPACE);
+            tree.add(Entity.NO_BREAK_SPACE);
             tree.add(name(param));
         }
     }
@@ -176,11 +180,11 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
     protected void addReceiverAnnotations(ExecutableElement member, TypeMirror rcvrType,
             List<? extends AnnotationMirror> annotationMirrors, Content tree) {
         writer.addReceiverAnnotationInfo(member, rcvrType, annotationMirrors, tree);
-        tree.add(Contents.SPACE);
+        tree.add(Entity.NO_BREAK_SPACE);
         tree.add(utils.getTypeName(rcvrType, false));
         LinkInfoImpl linkInfo = new LinkInfoImpl(configuration, RECEIVER_TYPE, rcvrType);
         tree.add(writer.getTypeParameterLinks(linkInfo));
-        tree.add(Contents.SPACE);
+        tree.add(Entity.NO_BREAK_SPACE);
         tree.add("this");
     }
 
@@ -254,7 +258,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
         if (paramTree.isEmpty()) {
             htmltree.add("()");
         } else {
-            htmltree.add(Contents.ZERO_WIDTH_SPACE);
+            htmltree.add(Entity.ZERO_WIDTH_SPACE);
             htmltree.add("(");
             htmltree.add(paramTree);
             paramTree.add(")");

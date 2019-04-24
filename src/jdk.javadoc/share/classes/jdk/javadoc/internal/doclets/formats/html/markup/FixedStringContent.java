@@ -47,9 +47,7 @@ public class FixedStringContent extends Content {
      * @param content content for the object
      */
     public FixedStringContent(CharSequence content) {
-        string = needEscape(content)
-                ? escape(content)
-                : content.toString();
+        string = Entity.escapeHtmlChars(content);
     }
 
     /**
@@ -103,31 +101,6 @@ public class FixedStringContent extends Content {
     public boolean write(Writer out, boolean atNewline) throws IOException {
         out.write(string);
         return string.endsWith(DocletConstants.NL);
-    }
-
-    private boolean needEscape(CharSequence cs) {
-        for (int i = 0; i < cs.length(); i++) {
-            switch (cs.charAt(i)) {
-                case '<':
-                case '>':
-                case '&':
-                    return true;
-            }
-        }
-        return false;
-    }
-    private String escape(CharSequence s) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < s.length(); i++) {
-            char ch = s.charAt(i);
-            switch (ch) {
-                case '<': sb.append("&lt;");  break;
-                case '>': sb.append("&gt;");  break;
-                case '&': sb.append("&amp;"); break;
-                default:  sb.append(ch);      break;
-            }
-        }
-        return sb.toString();
     }
 
 }
