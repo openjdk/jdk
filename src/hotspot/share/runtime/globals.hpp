@@ -545,10 +545,10 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
           "Number of ring buffer event logs")                               \
           range(1, NOT_LP64(1*K) LP64_ONLY(1*M))                            \
                                                                             \
-  product(bool, BytecodeVerificationRemote, true,                           \
+  diagnostic(bool, BytecodeVerificationRemote, true,                        \
           "Enable the Java bytecode verifier for remote classes")           \
                                                                             \
-  product(bool, BytecodeVerificationLocal, false,                           \
+  diagnostic(bool, BytecodeVerificationLocal, false,                        \
           "Enable the Java bytecode verifier for local classes")            \
                                                                             \
   develop(bool, ForceFloatExceptions, trueInDebug,                          \

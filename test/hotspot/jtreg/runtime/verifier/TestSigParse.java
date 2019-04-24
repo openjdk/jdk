@@ -27,7 +27,7 @@
  * @summary Test that signatures are properly parsed when verification of local
  *          classes is requested but verification of remote classes is not.
  * @compile BadSignatures.jcod
- * @run main/othervm -XX:+BytecodeVerificationLocal -XX:-BytecodeVerificationRemote TestSigParse
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+BytecodeVerificationLocal -XX:-BytecodeVerificationRemote TestSigParse
  */
 
 public class TestSigParse {

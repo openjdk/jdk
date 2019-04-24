@@ -28,7 +28,7 @@
  * @summary Check that invokevirtual of clone() calls java.lang.Object.clone()
  *          even if a superinterface has an abstract method named clone().
  * @compile DefMethClone.jasm SuperClass.jasm I1Abstr.java NoLocalCloneAbstr.jasm
- * @run main/othervm -XX:-BytecodeVerificationRemote -XX:-BytecodeVerificationLocal NoLocalCloneAbstr
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-BytecodeVerificationRemote -XX:-BytecodeVerificationLocal NoLocalCloneAbstr
  */
 
 // The below .jasm code implements the following java code:
