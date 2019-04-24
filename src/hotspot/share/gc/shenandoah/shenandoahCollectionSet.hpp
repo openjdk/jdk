@@ -88,6 +88,9 @@ public:
   void clear();
 
 private:
+  jbyte* map_address() const {
+    return _cset_map;
+  }
   jbyte* biased_map_address() const {
     return _biased_cset_map;
   }

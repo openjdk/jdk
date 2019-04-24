@@ -537,6 +537,15 @@ void ShenandoahHeap::print_on(outputStream* st) const {
                p2i(reserved_region().start()),
                p2i(reserved_region().end()));
 
+  ShenandoahCollectionSet* cset = collection_set();
+  st->print_cr("Collection set:");
+  if (cset != NULL) {
+    st->print_cr(" - map (vanilla): " PTR_FORMAT, p2i(cset->map_address()));
+    st->print_cr(" - map (biased):  " PTR_FORMAT, p2i(cset->biased_map_address()));
+  } else {
+    st->print_cr(" (NULL)");
+  }
+
   st->cr();
   MetaspaceUtils::print_on(st);
 
