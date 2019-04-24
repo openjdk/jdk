@@ -29,7 +29,7 @@
  *          java.base/sun.security.util
  *          java.base/com.sun.crypto.provider
  * @library /test/lib ../..
- * @run main/othervm/timeout=120 -Djdk.tls.useExtendedMasterSecret=false TestTLS12
+ * @run main/othervm/timeout=120 -Djdk.tls.useExtendedMasterSecret=false FipsModeTLS12
  */
 
 import java.io.File;
@@ -67,7 +67,7 @@ import sun.security.internal.spec.TlsMasterSecretParameterSpec;
 import sun.security.internal.spec.TlsPrfParameterSpec;
 import sun.security.internal.spec.TlsRsaPremasterSecretParameterSpec;
 
-public final class TestTLS12 extends SecmodTest {
+public final class FipsModeTLS12 extends SecmodTest {
 
     private static final boolean enableDebug = true;
 
@@ -414,6 +414,36 @@ public final class TestTLS12 extends SecmodTest {
     }
 
     private static void initialize() throws Exception {
+        //
+        // For a successful FIPS-mode TLS connection, the following
+        // cryptographic providers will be installed:
+        //
+        //  1. SunPKCS11 (with an NSS FIPS mode backend)
+        //  2. SUN (to handle X.509 certificates)
+        //  3. SunJSSE (for a TLS engine)
+        //
+        // RSASSA-PSS algorithm is not currently supported in SunPKCS11
+        // but in SUN provider. As a result, it can be negotiated by the
+        // TLS engine. The problem is that SunPKCS11 keys are sensitive
+        // in FIPS mode and cannot be used in a SUN algorithm (conversion
+        // fails as plain values cannot be extracted).
+        //
+        // To workaround this issue, we disable RSASSA-PSS algorithm for
+        // TLS connections. Once JDK-8222937 is fixed, this workaround can
+        // (and should) be removed.
+        //
+        // On a final note, the list of disabled TLS algorithms
+        // (jdk.tls.disabledAlgorithms) has to be updated at this point,
+        // before it is read in sun.security.ssl.SSLAlgorithmConstraints
+        // class initialization.
+        String disabledAlgorithms =
+                Security.getProperty("jdk.tls.disabledAlgorithms");
+        if (disabledAlgorithms.length() > 0) {
+            disabledAlgorithms += ", ";
+        }
+        disabledAlgorithms += "RSASSA-PSS";
+        Security.setProperty("jdk.tls.disabledAlgorithms", disabledAlgorithms);
+
         if (initSecmod() == false) {
             return;
         }
@@ -448,16 +478,6 @@ public final class TestTLS12 extends SecmodTest {
                 passphrase);
         publicKey = (PublicKey)ksPlain.getCertificate(
                 "rh_rsa_sha256").getPublicKey();
-
-        String disabledAlgorithms =
-                Security.getProperty("jdk.tls.disabledAlgorithms");
-        if (disabledAlgorithms.length() > 0) {
-            disabledAlgorithms += ", ";
-        }
-        // RSASSA-PSS is not currently supported in SunPKCS11
-        // cryptographic provider
-        disabledAlgorithms += "RSASSA-PSS";
-        Security.setProperty("jdk.tls.disabledAlgorithms", disabledAlgorithms);
     }
 
     private static KeyStore readTestKeyStore() throws Exception {
