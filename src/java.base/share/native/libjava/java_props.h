@@ -82,8 +82,6 @@ typedef struct {
 
     char *patch_level;          /* patches/service packs installed */
 
-    char *desktop;              /* Desktop name. */
-
 #ifdef MACOSX
     // These are for proxy-related information.
     // Note that if these platform-specific extensions get out of hand we should make a new

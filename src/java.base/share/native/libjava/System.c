@@ -221,11 +221,6 @@ Java_jdk_internal_util_SystemProps_00024Raw_platformProperties(JNIEnv *env, jcla
      */
     PUTPROP(propArray, _java_awt_graphicsenv_NDX, sprops->graphics_env);
 
-    /*
-     * The sun.desktop property is currently only set for Gnome and Windows desktops.
-     */
-    PUTPROP(propArray, _sun_desktop_NDX, sprops->desktop);
-
     PUTPROP_PlatformString(propArray, _java_io_tmpdir_NDX, sprops->tmp_dir);
 
     PUTPROP_PlatformString(propArray, _user_name_NDX, sprops->user_name);

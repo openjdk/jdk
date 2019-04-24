@@ -1223,8 +1223,6 @@ public class XMLHTMLReporter {
                       sysProps.get("os.version") + "</td></tr>");
         buffer.append("<tr><td bgcolor=\"#f0f0f0\">os.arch</td><td>" +
                       sysProps.get("os.arch") + "</td></tr>");
-        buffer.append("<tr><td bgcolor=\"#f0f0f0\">sun.desktop</td><td>" +
-                      sysProps.get("sun.desktop") + "</td></tr>");
 
         buffer.append("</table>");
 

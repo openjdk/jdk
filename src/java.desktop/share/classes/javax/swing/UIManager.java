@@ -657,13 +657,14 @@ public class UIManager implements Serializable
         if (osType == OSInfo.OSType.WINDOWS) {
             return "com.sun.java.swing.plaf.windows.WindowsLookAndFeel";
         } else {
-            String desktop = AccessController.doPrivileged(new GetPropertyAction("sun.desktop"));
             Toolkit toolkit = Toolkit.getDefaultToolkit();
-            if ("gnome".equals(desktop) &&
-                    toolkit instanceof SunToolkit &&
-                    ((SunToolkit) toolkit).isNativeGTKAvailable()) {
-                // May be set on Linux and Solaris boxs.
-                return "com.sun.java.swing.plaf.gtk.GTKLookAndFeel";
+            if (toolkit instanceof SunToolkit) {
+                SunToolkit suntk = (SunToolkit)toolkit;
+                String desktop = suntk.getDesktop();
+                boolean gtkAvailable = suntk.isNativeGTKAvailable();
+                if ("gnome".equals(desktop) && gtkAvailable) {
+                    return "com.sun.java.swing.plaf.gtk.GTKLookAndFeel";
+                }
             }
             if (osType == OSInfo.OSType.MACOSX) {
                 if (toolkit.getClass() .getName()

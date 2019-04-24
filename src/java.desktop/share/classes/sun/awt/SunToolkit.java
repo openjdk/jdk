@@ -1823,6 +1823,10 @@ public abstract class SunToolkit extends Toolkit
         return sunAwtDisableMixing.booleanValue();
     }
 
+    public String getDesktop() {
+        return null;
+    }
+
     /**
      * Returns true if the native GTK libraries are available.  The
      * default implementation returns false, but UNIXToolkit overrides this

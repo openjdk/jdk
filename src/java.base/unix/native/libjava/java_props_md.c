@@ -452,13 +452,6 @@ GetJavaProperties(JNIEnv *env)
 #endif /* MACOSX */
 
         sprops.os_arch = ARCHPROPNAME;
-
-        if (getenv("GNOME_DESKTOP_SESSION_ID") != NULL) {
-            sprops.desktop = "gnome";
-        }
-        else {
-            sprops.desktop = NULL;
-        }
     }
 
     /* ABI property (optional) */

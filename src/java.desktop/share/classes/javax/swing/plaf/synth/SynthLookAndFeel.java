@@ -803,8 +803,9 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
      */
     private static boolean useLAFConditions() {
         String language = Locale.getDefault().getLanguage();
+        Toolkit tk = Toolkit.getDefaultToolkit();
         String desktop =
-            AccessController.doPrivileged(new GetPropertyAction("sun.desktop"));
+            (tk instanceof SunToolkit) ? ((SunToolkit)tk).getDesktop() : null;
 
         boolean isCjkLocale = (Locale.CHINESE.getLanguage().equals(language) ||
                 Locale.JAPANESE.getLanguage().equals(language) ||

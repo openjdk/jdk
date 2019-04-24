@@ -577,7 +577,6 @@ GetJavaProperties(JNIEnv* env)
 #else
         sprops.os_arch = "unknown";
 #endif
-        sprops.desktop = "windows";
     }
 
     /* Endianness of platform */
