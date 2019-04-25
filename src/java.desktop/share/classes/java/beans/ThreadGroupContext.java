@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,26 +88,26 @@ final class ThreadGroupContext {
     }
 
 
-    BeanInfo getBeanInfo(Class<?> type) {
+    synchronized BeanInfo getBeanInfo(Class<?> type) {
         return (this.beanInfoCache != null)
                 ? this.beanInfoCache.get(type)
                 : null;
     }
 
-    BeanInfo putBeanInfo(Class<?> type, BeanInfo info) {
+    synchronized BeanInfo putBeanInfo(Class<?> type, BeanInfo info) {
         if (this.beanInfoCache == null) {
             this.beanInfoCache = new WeakHashMap<>();
         }
         return this.beanInfoCache.put(type, info);
     }
 
-    void removeBeanInfo(Class<?> type) {
+    synchronized void removeBeanInfo(Class<?> type) {
         if (this.beanInfoCache != null) {
             this.beanInfoCache.remove(type);
         }
     }
 
-    void clearBeanInfoCache() {
+    synchronized void clearBeanInfoCache() {
         if (this.beanInfoCache != null) {
             this.beanInfoCache.clear();
         }

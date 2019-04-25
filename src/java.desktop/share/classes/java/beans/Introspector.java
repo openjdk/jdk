@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,32 +22,29 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package java.beans;
 
-import com.sun.beans.TypeResolver;
-import com.sun.beans.WeakCache;
-import com.sun.beans.finder.ClassFinder;
-import com.sun.beans.introspect.ClassInfo;
-import com.sun.beans.introspect.EventSetInfo;
-import com.sun.beans.introspect.PropertyInfo;
-
 import java.awt.Component;
-
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
-
-import java.util.Map;
 import java.util.ArrayList;
+import java.util.EventObject;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.EventObject;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeMap;
 
+import com.sun.beans.TypeResolver;
+import com.sun.beans.finder.ClassFinder;
+import com.sun.beans.introspect.ClassInfo;
+import com.sun.beans.introspect.EventSetInfo;
+import com.sun.beans.introspect.PropertyInfo;
 import jdk.internal.access.JavaBeansAccess;
 import jdk.internal.access.SharedSecrets;
 import sun.reflect.misc.ReflectUtil;
@@ -113,9 +110,6 @@ public class Introspector {
      * @since 1.2
      */
     public static final int IGNORE_ALL_BEANINFO        = 3;
-
-    // Static Caches to speed up introspection.
-    private static final WeakCache<Class<?>, Method[]> declaredMethodCache = new WeakCache<>();
 
     private Class<?> beanClass;
     private BeanInfo explicitBeanInfo;
@@ -196,15 +190,10 @@ public class Introspector {
             return (new Introspector(beanClass, null, USE_ALL_BEANINFO)).getBeanInfo();
         }
         ThreadGroupContext context = ThreadGroupContext.getContext();
-        BeanInfo beanInfo;
-        synchronized (declaredMethodCache) {
-            beanInfo = context.getBeanInfo(beanClass);
-        }
+        BeanInfo beanInfo = context.getBeanInfo(beanClass);
         if (beanInfo == null) {
             beanInfo = new Introspector(beanClass, null, USE_ALL_BEANINFO).getBeanInfo();
-            synchronized (declaredMethodCache) {
-                context.putBeanInfo(beanClass, beanInfo);
-            }
+            context.putBeanInfo(beanClass, beanInfo);
         }
         return beanInfo;
     }
@@ -373,12 +362,8 @@ public class Introspector {
      *
      * @since 1.2
      */
-
     public static void flushCaches() {
-        synchronized (declaredMethodCache) {
-            ThreadGroupContext.getContext().clearBeanInfoCache();
-            declaredMethodCache.clear();
-        }
+        ThreadGroupContext.getContext().clearBeanInfoCache();
     }
 
     /**
@@ -401,10 +386,7 @@ public class Introspector {
         if (clz == null) {
             throw new NullPointerException();
         }
-        synchronized (declaredMethodCache) {
-            ThreadGroupContext.getContext().removeBeanInfo(clz);
-            declaredMethodCache.put(clz, null);
-        }
+        ThreadGroupContext.getContext().removeBeanInfo(clz);
     }
 
     //======================================================================
