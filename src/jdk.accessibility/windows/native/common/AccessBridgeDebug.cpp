@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,34 +41,24 @@ extern "C" {
 
 static FILE* logFP = nullptr;
 
-void initializeFileLogger(char * suffix) {
-    auto var = "JAVA_ACCESSBRIDGE_LOGFILE";
+void initializeFileLogger(char * fileName) {
+    auto var = "JAVA_ACCESSBRIDGE_LOGDIR";
     const auto envfilePath = getenv(var);
-    if (envfilePath != nullptr) {
-        auto ext = const_cast<char*>(strrchr(envfilePath, '.'));
-        auto filePath = static_cast<char*>(nullptr);
-        auto len = strlen(envfilePath);
-        auto suffixlen = suffix != nullptr ? strlen(suffix) : (decltype(strlen(nullptr)))0;
-
-        if (ext == nullptr) {
-            filePath = new char[len + suffixlen + 5];
-            memset(filePath, 0, len + suffixlen + 5);
-            memcpy(filePath, envfilePath, len);
-            memcpy(filePath + len, suffix, suffixlen);
-            memcpy(filePath + len + suffixlen, ".log", 4);
-        } else {
-            auto extLen = strlen(ext);
-
-            filePath = new char[len + suffixlen + 1];
-            memset(filePath, 0, len + suffixlen + 1);
-            memcpy(filePath, envfilePath, len - extLen);
-            memcpy(filePath + len - extLen, suffix, suffixlen);
-            memcpy(filePath + len + suffixlen - extLen, ext, extLen);
-        }
+    if (envfilePath != nullptr && fileName != nullptr) {
+        auto envFilePathLength = strlen(envfilePath);
+        auto fileNameLength = strlen(fileName);
+        auto filePathSize = envFilePathLength + 1 + fileNameLength + 5; //1 for "/", 5 for ".log" and 0;
+        auto filePath = new char[filePathSize];
+        memset(filePath, 0, filePathSize*sizeof(char));
+        memcpy(filePath, envfilePath, envFilePathLength*sizeof(char));
+        filePath[envFilePathLength] = '/';
+        memcpy(filePath + envFilePathLength + 1, fileName, fileNameLength*sizeof(char));
+        memcpy(filePath + envFilePathLength + 1 + fileNameLength, ".log", 4*sizeof(char));
 
         logFP = fopen(filePath, "w");
         if (logFP == nullptr) {
-            PrintDebugString("couldnot open file %s", filePath);
+            printf("\n%s\n", filePath);
+            PrintDebugString("Could not open file %s", filePath);
         }
 
         delete [] filePath;
@@ -144,7 +134,7 @@ char *printError(char *msg) {
 #endif
 #endif
         if (logFP) {
-            fprintf(logFP, "[%lldu] ", getTimeStamp());
+            fprintf(logFP, "[%llu] ", getTimeStamp());
             va_list args;
             va_start(args, msg);
             vfprintf(logFP, msg, args);

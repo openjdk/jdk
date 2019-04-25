@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -165,7 +165,7 @@ extern "C" {
 JavaAccessBridge::JavaAccessBridge(HINSTANCE hInstance) {
     windowsInstance = hInstance;
     ATs = (AccessBridgeATInstance *) 0;
-    initializeFileLogger("_java_access_bridge");
+    initializeFileLogger("java_access_bridge");
     initBroadcastMessageIDs();          // get the unique to us broadcast msg. IDs
 }
 
