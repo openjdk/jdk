@@ -180,7 +180,8 @@ class JNIVerifier {
       strcat(full_message, strs[i]);
     }
 
-    DecimalToAscii(full_message, _line);
+    // Add line number to end of the string.
+    DecimalToAscii(full_message + strlen(full_message), _line);
 
     if (strlen(full_message) >= len) {
       _env->GetJNIEnv()->FatalError("Final length of message is not what was expected");
