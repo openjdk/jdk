@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,15 +101,11 @@ abstract class AbstractDataLine extends AbstractLine implements DataLine {
     public final void open(AudioFormat format, int bufferSize) throws LineUnavailableException {
         //$$fb 2001-10-09: Bug #4517739: avoiding deadlock by synchronizing to mixer !
         synchronized (mixer) {
-            if (Printer.trace) Printer.trace("> AbstractDataLine.open(format, bufferSize) (class: "+getClass().getName());
-
             // if the line is not currently open, try to open it with this format and buffer size
             if (!isOpen()) {
                 // make sure that the format is specified correctly
                 // $$fb part of fix for 4679187: Clip.open() throws unexpected Exceptions
                 Toolkit.isFullySpecifiedAudioFormat(format);
-
-                if (Printer.debug) Printer.debug("  need to open the mixer...");
                 // reserve mixer resources for this line
                 //mixer.open(this, format, bufferSize);
                 mixer.open(this);
@@ -127,8 +123,6 @@ abstract class AbstractDataLine extends AbstractLine implements DataLine {
                     throw e;
                 }
             } else {
-                if (Printer.debug) Printer.debug("  dataline already open");
-
                 // if the line is already open and the requested format differs from the
                 // current settings, throw an IllegalStateException
                 //$$fb 2002-04-02: fix for 4661602: Buffersize is checked when re-opening line
@@ -141,8 +135,6 @@ abstract class AbstractDataLine extends AbstractLine implements DataLine {
                     setBufferSize(bufferSize);
                 }
             }
-
-            if (Printer.trace) Printer.trace("< AbstractDataLine.open(format, bufferSize) completed");
         }
     }
 
@@ -163,7 +155,6 @@ abstract class AbstractDataLine extends AbstractLine implements DataLine {
      */
     @Override
     public void drain() {
-        if (Printer.trace) Printer.trace("AbstractDataLine: drain");
     }
 
     /**
@@ -171,14 +162,12 @@ abstract class AbstractDataLine extends AbstractLine implements DataLine {
      */
     @Override
     public void flush() {
-        if (Printer.trace) Printer.trace("AbstractDataLine: flush");
     }
 
     @Override
     public final void start() {
         //$$fb 2001-10-09: Bug #4517739: avoiding deadlock by synchronizing to mixer !
         synchronized(mixer) {
-            if (Printer.trace) Printer.trace("> "+getClass().getName()+".start() - AbstractDataLine");
 
             // $$kk: 06.06.99: if not open, this doesn't work....???
             if (isOpen()) {
@@ -194,8 +183,6 @@ abstract class AbstractDataLine extends AbstractLine implements DataLine {
         synchronized(lock) {
             lock.notifyAll();
         }
-
-        if (Printer.trace) Printer.trace("< "+getClass().getName()+".start() - AbstractDataLine");
     }
 
     @Override
@@ -203,8 +190,6 @@ abstract class AbstractDataLine extends AbstractLine implements DataLine {
 
         //$$fb 2001-10-09: Bug #4517739: avoiding deadlock by synchronizing to mixer !
         synchronized(mixer) {
-            if (Printer.trace) Printer.trace("> "+getClass().getName()+".stop() - AbstractDataLine");
-
             // $$kk: 06.06.99: if not open, this doesn't work.
             if (isOpen()) {
 
@@ -226,8 +211,6 @@ abstract class AbstractDataLine extends AbstractLine implements DataLine {
         synchronized(lock) {
             lock.notifyAll();
         }
-
-        if (Printer.trace) Printer.trace("< "+getClass().getName()+".stop() - AbstractDataLine");
     }
 
     // $$jb: 12.10.99: The official API for this is isRunning().
@@ -309,9 +292,6 @@ abstract class AbstractDataLine extends AbstractLine implements DataLine {
      * events if it changes.
      */
     final void setActive(boolean active) {
-
-        if (Printer.trace) Printer.trace("> AbstractDataLine: setActive(" + active + ")");
-
         //boolean sendEvents = false;
         //long position = getLongFramePosition();
 
@@ -341,9 +321,6 @@ abstract class AbstractDataLine extends AbstractLine implements DataLine {
      * events if it changes.
      */
     final void setStarted(boolean started) {
-
-        if (Printer.trace) Printer.trace("> AbstractDataLine: setStarted(" + started + ")");
-
         boolean sendEvents = false;
         long position = getLongFramePosition();
 
@@ -363,7 +340,6 @@ abstract class AbstractDataLine extends AbstractLine implements DataLine {
                 sendEvents(new LineEvent(this, LineEvent.Type.STOP, position));
             }
         }
-        if (Printer.trace) Printer.trace("< AbstractDataLine: setStarted completed");
     }
 
     /**
@@ -371,12 +347,9 @@ abstract class AbstractDataLine extends AbstractLine implements DataLine {
      * It is here for historic reasons when an EOM event existed.
      */
     final void setEOM() {
-
-        if (Printer.trace) Printer.trace("> AbstractDataLine: setEOM()");
         //$$fb 2002-04-21: sometimes, 2 STOP events are generated.
         // better use setStarted() to send STOP event.
         setStarted(false);
-        if (Printer.trace) Printer.trace("< AbstractDataLine: setEOM() completed");
     }
 
     // OVERRIDES OF ABSTRACT LINE METHODS
@@ -389,12 +362,8 @@ abstract class AbstractDataLine extends AbstractLine implements DataLine {
      */
     @Override
     public final void open() throws LineUnavailableException {
-
-        if (Printer.trace) Printer.trace("> "+getClass().getName()+".open() - AbstractDataLine");
-
         // this may throw a LineUnavailableException.
         open(format, bufferSize);
-        if (Printer.trace) Printer.trace("< "+getClass().getName()+".open() - AbstractDataLine");
     }
 
     /**
@@ -405,8 +374,6 @@ abstract class AbstractDataLine extends AbstractLine implements DataLine {
     public final void close() {
         //$$fb 2001-10-09: Bug #4517739: avoiding deadlock by synchronizing to mixer !
         synchronized (mixer) {
-            if (Printer.trace) Printer.trace("> "+getClass().getName()+".close() - in AbstractDataLine.");
-
             if (isOpen()) {
 
                 // stop
@@ -426,7 +393,6 @@ abstract class AbstractDataLine extends AbstractLine implements DataLine {
                 bufferSize = defaultBufferSize;
             }
         }
-        if (Printer.trace) Printer.trace("< "+getClass().getName()+".close() - in AbstractDataLine");
     }
 
     abstract void implOpen(AudioFormat format, int bufferSize) throws LineUnavailableException;

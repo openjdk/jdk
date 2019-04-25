@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,6 @@ import javax.sound.sampled.SourceDataLine;
 public final class DataPusher implements Runnable {
 
     private static final int AUTO_CLOSE_TIME = 5000;
-    private static final boolean DEBUG = false;
 
     private final SourceDataLine source;
     private final AudioFormat format;
@@ -94,26 +93,20 @@ public final class DataPusher implements Runnable {
     }
 
     public synchronized void start(boolean loop) {
-        if (DEBUG || Printer.debug) Printer.debug("> DataPusher.start(loop="+loop+")");
         try {
             if (threadState == STATE_STOPPING) {
                 // wait that the thread has finished stopping
-                if (DEBUG || Printer.trace)Printer.trace("DataPusher.start(): calling stop()");
                 stop();
             }
             looping = loop;
             newPos = 0;
             wantedState = STATE_PLAYING;
             if (!source.isOpen()) {
-                if (DEBUG || Printer.trace)Printer.trace("DataPusher: source.open()");
                 source.open(format);
             }
-            if (DEBUG || Printer.trace)Printer.trace("DataPusher: source.flush()");
             source.flush();
-            if (DEBUG || Printer.trace)Printer.trace("DataPusher: source.start()");
             source.start();
             if (pushThread == null) {
-                if (DEBUG || Printer.debug) Printer.debug("DataPusher.start(): Starting push");
                 pushThread = JSSecurityManager.createThread(this,
                                                             null,   // name
                                                             false,  // daemon
@@ -122,24 +115,18 @@ public final class DataPusher implements Runnable {
             }
             notifyAll();
         } catch (Exception e) {
-            if (DEBUG || Printer.err) e.printStackTrace();
+            if (Printer.err) e.printStackTrace();
         }
-        if (DEBUG || Printer.debug) Printer.debug("< DataPusher.start(loop="+loop+")");
     }
 
     public synchronized void stop() {
-        if (DEBUG || Printer.debug) Printer.debug("> DataPusher.stop()");
         if (threadState == STATE_STOPPING
             || threadState == STATE_STOPPED
             || pushThread == null) {
-            if (DEBUG || Printer.debug) Printer.debug("DataPusher.stop(): nothing to do");
             return;
         }
-        if (DEBUG || Printer.debug) Printer.debug("DataPusher.stop(): Stopping push");
-
         wantedState = STATE_WAITING;
         if (source != null) {
-            if (DEBUG || Printer.trace)Printer.trace("DataPusher: source.flush()");
             source.flush();
         }
         notifyAll();
@@ -149,12 +136,10 @@ public final class DataPusher implements Runnable {
                 wait(100);
             } catch (InterruptedException e) {  }
         }
-        if (DEBUG || Printer.debug) Printer.debug("< DataPusher.stop()");
     }
 
     synchronized void close() {
         if (source != null) {
-                if (DEBUG || Printer.trace)Printer.trace("DataPusher.close(): source.close()");
                 source.close();
         }
     }
@@ -175,7 +160,6 @@ public final class DataPusher implements Runnable {
             //try {
                 if (wantedState == STATE_WAITING) {
                     // wait for 5 seconds - maybe the clip is to be played again
-                    if (DEBUG || Printer.debug)Printer.debug("DataPusher.run(): waiting 5 seconds");
                     try {
                         synchronized(this) {
                                 threadState = STATE_WAITING;
@@ -183,7 +167,6 @@ public final class DataPusher implements Runnable {
                                 wait(AUTO_CLOSE_TIME);
                         }
                     } catch (InterruptedException ie) {}
-                    if (DEBUG || Printer.debug)Printer.debug("DataPusher.run(): waiting finished");
                     continue;
                 }
                 if (newPos >= 0) {
@@ -211,37 +194,26 @@ public final class DataPusher implements Runnable {
                     }
                 }
                 if (toWrite < 0) {
-                    if (DEBUG || Printer.debug) Printer.debug("DataPusher.run(): Found end of stream");
                         if (!useStream && looping) {
-                            if (DEBUG || Printer.debug)Printer.debug("DataPusher.run(): setting pos back to 0");
                             pos = 0;
                             continue;
                         }
-                    if (DEBUG || Printer.debug)Printer.debug("DataPusher.run(): calling drain()");
                     wantedState = STATE_WAITING;
                     source.drain();
                     continue;
                 }
-                if (DEBUG || Printer.debug) Printer.debug("> DataPusher.run(): Writing " + toWrite + " bytes");
-                    int bytesWritten = source.write(buffer, pos, toWrite);
-                    pos += bytesWritten;
-                if (DEBUG || Printer.debug) Printer.debug("< DataPusher.run(): Wrote " + bytesWritten + " bytes");
+                int bytesWritten = source.write(buffer, pos, toWrite);
+                pos += bytesWritten;
         }
         threadState = STATE_STOPPING;
-        if (DEBUG || Printer.debug)Printer.debug("DataPusher: closing device");
-        if (Printer.trace)Printer.trace("DataPusher: source.flush()");
         source.flush();
-        if (DEBUG || Printer.trace)Printer.trace("DataPusher: source.stop()");
         source.stop();
-        if (DEBUG || Printer.trace)Printer.trace("DataPusher: source.flush()");
         source.flush();
-        if (DEBUG || Printer.trace)Printer.trace("DataPusher: source.close()");
         source.close();
         threadState = STATE_STOPPED;
         synchronized (this) {
                 pushThread = null;
                 notifyAll();
         }
-        if (DEBUG || Printer.debug)Printer.debug("DataPusher:end of thread");
     }
 } // class DataPusher

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,15 +41,12 @@ final class MidiInDevice extends AbstractMidiDevice implements Runnable {
 
     MidiInDevice(AbstractMidiDeviceProvider.Info info) {
         super(info);
-        if(Printer.trace) Printer.trace("MidiInDevice CONSTRUCTOR");
     }
 
     // $$kk: 06.24.99: i have this both opening and starting the midi in device.
     // may want to separate these??
     @Override
     protected synchronized void implOpen() throws MidiUnavailableException {
-        if (Printer.trace) Printer.trace("> MidiInDevice: implOpen()");
-
         int index = ((MidiInDeviceProvider.MidiInDeviceInfo)getDeviceInfo()).getIndex();
         id = nOpen(index); // can throw MidiUnavailableException
 
@@ -67,14 +64,12 @@ final class MidiInDevice extends AbstractMidiDevice implements Runnable {
         }
 
         nStart(id); // can throw MidiUnavailableException
-        if (Printer.trace) Printer.trace("< MidiInDevice: implOpen() completed");
     }
 
     // $$kk: 06.24.99: i have this both stopping and closing the midi in device.
     // may want to separate these??
     @Override
     protected synchronized void implClose() {
-        if (Printer.trace) Printer.trace("> MidiInDevice: implClose()");
         long oldId = id;
         id = 0;
 
@@ -90,7 +85,6 @@ final class MidiInDevice extends AbstractMidiDevice implements Runnable {
             }
         }
         nClose(oldId);
-        if (Printer.trace) Printer.trace("< MidiInDevice: implClose() completed");
     }
 
     @Override
@@ -137,7 +131,6 @@ final class MidiInDevice extends AbstractMidiDevice implements Runnable {
                 } catch (InterruptedException e) {}
             }
         }
-        if(Printer.verbose) Printer.verbose("MidiInDevice Thread exit");
         // let the thread exit
         midiInThread = null;
     }

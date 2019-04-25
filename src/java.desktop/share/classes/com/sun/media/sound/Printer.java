@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,10 @@
 
 package com.sun.media.sound;
 
+import java.security.AccessController;
+
+import sun.security.action.GetPropertyAction;
+
 /**
  * Printer allows you to set up global debugging status and print
  * messages accordingly.
@@ -34,39 +38,10 @@ package com.sun.media.sound;
  */
 final class Printer {
 
-    static final boolean err = false;
-    static final boolean debug = false;
-    static final boolean trace = false;
-    static final boolean verbose = false;
-    static final boolean release = false;
+    static final boolean err = isBuildInternal();
 
-    static final boolean SHOW_THREADID = false;
-    static final boolean SHOW_TIMESTAMP = false;
-
-    /*static void setErrorPrint(boolean on) {
-
-      err = on;
-      }
-
-      static void setDebugPrint(boolean on) {
-
-      debug = on;
-      }
-
-      static void setTracePrint(boolean on) {
-
-      trace = on;
-      }
-
-      static void setVerbosePrint(boolean on) {
-
-      verbose = on;
-      }
-
-      static void setReleasePrint(boolean on) {
-
-      release = on;
-      }*/
+    private static final boolean SHOW_THREADID = true;
+    private static final boolean SHOW_TIMESTAMP = true;
 
     /**
      * Suppresses default constructor, ensuring non-instantiability.
@@ -74,39 +49,31 @@ final class Printer {
     private Printer() {
     }
 
+    /**
+     * This method is used in the special cases which "should never happen...".
+     * And in fact if should be implemented as an assertion, but for
+     * compatibility reason it just print an error only in case of "internal"
+     * build. In time its usage should be replaced by some kind of assertion or
+     * dropped completly.
+     */
     public static void err(String str) {
-
-        if (err)
+        if (err) {
             println(str);
+        }
     }
 
-    public static void debug(String str) {
-
-        if (debug)
-            println(str);
-    }
-
-    public static void trace(String str) {
-
-        if (trace)
-            println(str);
-    }
-
-    public static void verbose(String str) {
-
-        if (verbose)
-            println(str);
-    }
-
-    public static void release(String str) {
-
-        if (release)
-            println(str);
+    /**
+     * Returns {@code true} if the build of the current jdk is "internal".
+     */
+    private static boolean isBuildInternal() {
+        String javaVersion = AccessController.doPrivileged(
+                new GetPropertyAction("java.version"));
+        return javaVersion != null && javaVersion.contains("internal");
     }
 
     private static long startTime = 0;
 
-    public static void println(String s) {
+    private static void println(String s) {
         String prepend = "";
         if (SHOW_THREADID) {
             prepend = "thread "  + Thread.currentThread().getId() + " " + prepend;
@@ -119,9 +86,4 @@ final class Printer {
         }
         System.out.println(prepend + s);
     }
-
-    public static void println() {
-        System.out.println();
-    }
-
 }

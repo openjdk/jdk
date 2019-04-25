@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,6 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 @SuppressWarnings("deprecation")
 public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, LineListener {
 
-    private static final boolean DEBUG = false;
     private static final int BUFFER_SIZE = 16384; // number of bytes written each time to the source data line
 
     private long lastPlayCall = 0;
@@ -115,8 +114,6 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
     }
 
     private void init(InputStream in) throws IOException {
-        if (DEBUG || Printer.debug)Printer.debug("JavaSoundAudioClip.<init>");
-
         BufferedInputStream bis = new BufferedInputStream(in, STREAM_BUFFER_SIZE);
         bis.mark(STREAM_BUFFER_SIZE);
         try {
@@ -165,12 +162,9 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
         long currentTime = System.currentTimeMillis();
         long diff = currentTime - lastPlayCall;
         if (diff < MINIMUM_PLAY_DELAY) {
-            if (DEBUG || Printer.debug) Printer.debug("JavaSoundAudioClip.startImpl(loop="+loop+"): abort - too rapdly");
             return;
         }
         lastPlayCall = currentTime;
-
-        if (DEBUG || Printer.debug) Printer.debug("JavaSoundAudioClip.startImpl(loop="+loop+")");
         try {
             if (clip != null) {
                 // We need to disable autoclosing mechanism otherwise the clip
@@ -200,7 +194,6 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
                 }
             } else if (datapusher != null ) {
                 datapusher.start(loop);
-                if (DEBUG || Printer.debug)Printer.debug("Stream should be playing/looping");
 
             } else if (sequencer != null) {
                 sequencerloop = loop;
@@ -213,21 +206,20 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
                         sequencer.setSequence(sequence);
 
                     } catch (InvalidMidiDataException e1) {
-                        if (DEBUG || Printer.err)e1.printStackTrace();
+                        if (Printer.err) e1.printStackTrace();
                     } catch (MidiUnavailableException e2) {
-                        if (DEBUG || Printer.err)e2.printStackTrace();
+                        if (Printer.err) e2.printStackTrace();
                     }
                 }
                 sequencer.addMetaEventListener(this);
                 try {
                     sequencer.start();
                 } catch (Exception e) {
-                    if (DEBUG || Printer.err) e.printStackTrace();
+                    if (Printer.err) e.printStackTrace();
                 }
-                if (DEBUG || Printer.debug)Printer.debug("Sequencer should be playing/looping");
             }
         } catch (Exception e) {
-            if (DEBUG || Printer.err)e.printStackTrace();
+            if (Printer.err) e.printStackTrace();
         }
     }
 
@@ -236,29 +228,21 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
         if (!success) {
             return;
         }
-
-        if (DEBUG || Printer.debug)Printer.debug("JavaSoundAudioClip->stop()");
         lastPlayCall = 0;
 
         if (clip != null) {
             try {
-                if (DEBUG || Printer.trace)Printer.trace("JavaSoundAudioClip: clip.flush()");
                 clip.flush();
             } catch (Exception e1) {
                 if (Printer.err) e1.printStackTrace();
             }
             try {
-                if (DEBUG || Printer.trace)Printer.trace("JavaSoundAudioClip: clip.stop()");
                 clip.stop();
             } catch (Exception e2) {
                 if (Printer.err) e2.printStackTrace();
             }
-            if (DEBUG || Printer.debug)Printer.debug("Clip should be stopped");
-
         } else if (datapusher != null) {
             datapusher.stop();
-            if (DEBUG || Printer.debug)Printer.debug("Stream should be stopped");
-
         } else if (sequencer != null) {
             try {
                 sequencerloop = false;
@@ -272,7 +256,6 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
             } catch (Exception e4) {
                 if (Printer.err) e4.printStackTrace();
             }
-            if (DEBUG || Printer.debug)Printer.debug("Sequencer should be stopped");
         }
     }
 
@@ -280,16 +263,12 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
 
     @Override
     public synchronized void update(LineEvent event) {
-        if (DEBUG || Printer.debug) Printer.debug("line event received: "+event);
     }
 
     // handle MIDI track end meta events for looping
 
     @Override
     public synchronized void meta(MetaMessage message) {
-
-        if (DEBUG || Printer.debug)Printer.debug("META EVENT RECEIVED!!!!! ");
-
         if( message.getType() == 47 ) {
             if (sequencerloop){
                 //notifyAll();
@@ -310,7 +289,6 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
     protected void finalize() {
 
         if (clip != null) {
-            if (DEBUG || Printer.trace)Printer.trace("JavaSoundAudioClip.finalize: clip.close()");
             clip.close();
         }
 
@@ -327,8 +305,6 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
     // FILE LOADING METHODS
 
     private boolean loadAudioData(AudioInputStream as)  throws IOException, UnsupportedAudioFileException {
-        if (DEBUG || Printer.debug)Printer.debug("JavaSoundAudioClip->openAsClip()");
-
         // first possibly convert this stream to PCM
         as = Toolkit.getPCMConvertedAudioInputStream(as);
         if (as == null) {
@@ -404,27 +380,23 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
     // METHODS FOR CREATING THE DEVICE
 
     private boolean createClip() {
-
-        if (DEBUG || Printer.debug)Printer.debug("JavaSoundAudioClip.createClip()");
-
         try {
             DataLine.Info info = new DataLine.Info(Clip.class, loadedAudioFormat);
             if (!(AudioSystem.isLineSupported(info)) ) {
-                if (DEBUG || Printer.err)Printer.err("Clip not supported: "+loadedAudioFormat);
+                if (Printer.err) Printer.err("Clip not supported: "+loadedAudioFormat);
                 // fail silently
                 return false;
             }
             Object line = AudioSystem.getLine(info);
             if (!(line instanceof AutoClosingClip)) {
-                if (DEBUG || Printer.err)Printer.err("Clip is not auto closing!"+clip);
+                if (Printer.err) Printer.err("Clip is not auto closing!"+clip);
                 // fail -> will try with SourceDataLine
                 return false;
             }
             clip = (AutoClosingClip) line;
             clip.setAutoClosing(true);
-            if (DEBUG || Printer.debug) clip.addLineListener(this);
         } catch (Exception e) {
-            if (DEBUG || Printer.err)e.printStackTrace();
+            if (Printer.err) e.printStackTrace();
             // fail silently
             return false;
         }
@@ -433,24 +405,21 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
             // fail silently
             return false;
         }
-
-        if (DEBUG || Printer.debug)Printer.debug("Loaded clip.");
         return true;
     }
 
     private boolean createSourceDataLine() {
-        if (DEBUG || Printer.debug)Printer.debug("JavaSoundAudioClip.createSourceDataLine()");
         try {
             DataLine.Info info = new DataLine.Info(SourceDataLine.class, loadedAudioFormat);
             if (!(AudioSystem.isLineSupported(info)) ) {
-                if (DEBUG || Printer.err)Printer.err("Line not supported: "+loadedAudioFormat);
+                if (Printer.err) Printer.err("Line not supported: "+loadedAudioFormat);
                 // fail silently
                 return false;
             }
             SourceDataLine source = (SourceDataLine) AudioSystem.getLine(info);
             datapusher = new DataPusher(source, loadedAudioFormat, loadedAudio, loadedAudioByteLength);
         } catch (Exception e) {
-            if (DEBUG || Printer.err)e.printStackTrace();
+            if (Printer.err) e.printStackTrace();
             // fail silently
             return false;
         }
@@ -459,20 +428,15 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
             // fail silently
             return false;
         }
-
-        if (DEBUG || Printer.debug)Printer.debug("Created SourceDataLine.");
         return true;
     }
 
     private boolean createSequencer(BufferedInputStream in) throws IOException {
-
-        if (DEBUG || Printer.debug)Printer.debug("JavaSoundAudioClip.createSequencer()");
-
         // get the sequencer
         try {
             sequencer = MidiSystem.getSequencer( );
         } catch(MidiUnavailableException me) {
-            if (DEBUG || Printer.err)me.printStackTrace();
+            if (Printer.err) me.printStackTrace();
             return false;
         }
         if (sequencer==null) {
@@ -485,11 +449,9 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
                 return false;
             }
         } catch (InvalidMidiDataException e) {
-            if (DEBUG || Printer.err)e.printStackTrace();
+            if (Printer.err) e.printStackTrace();
             return false;
         }
-
-        if (DEBUG || Printer.debug)Printer.debug("Created Sequencer.");
         return true;
     }
 

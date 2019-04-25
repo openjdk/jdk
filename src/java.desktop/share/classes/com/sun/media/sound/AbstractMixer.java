@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -282,7 +282,6 @@ abstract class AbstractMixer extends AbstractLine implements Mixer {
      * This implementation tries to open the mixer with its current format and buffer size settings.
      */
     final synchronized void open(boolean manual) throws LineUnavailableException {
-        if (Printer.trace) Printer.trace(">> AbstractMixer: open()");
         if (!isOpen()) {
             implOpen();
             // if the mixer is not currently open, set open to true and send event
@@ -291,8 +290,6 @@ abstract class AbstractMixer extends AbstractLine implements Mixer {
                 manuallyOpened = true;
             }
         }
-
-        if (Printer.trace) Printer.trace("<< AbstractMixer: open() succeeded");
     }
 
     // METHOD FOR INTERNAL IMPLEMENTATION USE
@@ -305,12 +302,8 @@ abstract class AbstractMixer extends AbstractLine implements Mixer {
      * format if it is a DataLine.
      */
     final synchronized void open(Line line) throws LineUnavailableException {
-
-        if (Printer.trace) Printer.trace(">> AbstractMixer: open(line = " + line + ")");
-
         // $$kk: 06.11.99: ignore ourselves for now
         if (this.equals(line)) {
-            if (Printer.trace) Printer.trace("<< AbstractMixer: open(" + line + ") nothing done");
             return;
         }
 
@@ -339,8 +332,6 @@ abstract class AbstractMixer extends AbstractLine implements Mixer {
                 if (Printer.err) Printer.err("Unknown line received for AbstractMixer.open(Line): " + line);
             }
         }
-
-        if (Printer.trace) Printer.trace("<< AbstractMixer: open(" + line + ") completed");
     }
 
     /**
@@ -349,28 +340,17 @@ abstract class AbstractMixer extends AbstractLine implements Mixer {
      * If the list is now empty, closes the mixer.
      */
     final synchronized void close(Line line) {
-
-        if (Printer.trace) Printer.trace(">> AbstractMixer: close(" + line + ")");
-
         // $$kk: 06.11.99: ignore ourselves for now
         if (this.equals(line)) {
-            if (Printer.trace) Printer.trace("<< AbstractMixer: close(" + line + ") nothing done");
             return;
         }
 
         sourceLines.removeElement(line);
         targetLines.removeElement(line);
 
-        if (Printer.debug) Printer.debug("AbstractMixer: close(line): sourceLines.size() now: " + sourceLines.size());
-        if (Printer.debug) Printer.debug("AbstractMixer: close(line): targetLines.size() now: " + targetLines.size());
-
-
         if (sourceLines.isEmpty() && targetLines.isEmpty() && !manuallyOpened) {
-            if (Printer.trace) Printer.trace("AbstractMixer: close(" + line + "): need to close the mixer");
             close();
         }
-
-        if (Printer.trace) Printer.trace("<< AbstractMixer: close(" + line + ") succeeded");
     }
 
     /**
@@ -378,7 +358,6 @@ abstract class AbstractMixer extends AbstractLine implements Mixer {
      */
     @Override
     public final synchronized void close() {
-        if (Printer.trace) Printer.trace(">> AbstractMixer: close()");
         if (isOpen()) {
             // close all source lines
             Line[] localLines = getSourceLines();
@@ -398,42 +377,30 @@ abstract class AbstractMixer extends AbstractLine implements Mixer {
             setOpen(false);
         }
         manuallyOpened = false;
-        if (Printer.trace) Printer.trace("<< AbstractMixer: close() succeeded");
     }
 
     /**
      * Starts the mixer.
      */
     final synchronized void start(Line line) {
-
-        if (Printer.trace) Printer.trace(">> AbstractMixer: start(" + line + ")");
-
         // $$kk: 06.11.99: ignore ourselves for now
         if (this.equals(line)) {
-            if (Printer.trace) Printer.trace("<< AbstractMixer: start(" + line + ") nothing done");
             return;
         }
 
         // we just start the mixer regardless of anything else here.
         if (!started) {
-            if (Printer.debug) Printer.debug("AbstractMixer: start(line): starting the mixer");
             implStart();
             started = true;
         }
-
-        if (Printer.trace) Printer.trace("<< AbstractMixer: start(" + line + ") succeeded");
     }
 
     /**
      * Stops the mixer if this was the last running line.
      */
     final synchronized void stop(Line line) {
-
-        if (Printer.trace) Printer.trace(">> AbstractMixer: stop(" + line + ")");
-
         // $$kk: 06.11.99: ignore ourselves for now
         if (this.equals(line)) {
-            if (Printer.trace) Printer.trace("<< AbstractMixer: stop(" + line + ") nothing done");
             return;
         }
 
@@ -447,7 +414,6 @@ abstract class AbstractMixer extends AbstractLine implements Mixer {
             if (localSourceLines.elementAt(i) instanceof AbstractDataLine) {
                 AbstractDataLine sourceLine = (AbstractDataLine)localSourceLines.elementAt(i);
                 if ( sourceLine.isStartedRunning() && (!sourceLine.equals(line)) ) {
-                    if (Printer.trace) Printer.trace("<< AbstractMixer: stop(" + line + ") found running sourceLine: " + sourceLine);
                     return;
                 }
             }
@@ -462,18 +428,14 @@ abstract class AbstractMixer extends AbstractLine implements Mixer {
             if (localTargetLines.elementAt(i) instanceof AbstractDataLine) {
                 AbstractDataLine targetLine = (AbstractDataLine)localTargetLines.elementAt(i);
                 if ( targetLine.isStartedRunning() && (!targetLine.equals(line)) ) {
-                    if (Printer.trace) Printer.trace("<< AbstractMixer: stop(" + line + ") found running targetLine: " + targetLine);
                     return;
                 }
             }
         }
 
         // otherwise, stop
-        if (Printer.debug) Printer.debug("AbstractMixer: stop(line): stopping the mixer");
         started = false;
         implStop();
-
-        if (Printer.trace) Printer.trace("<< AbstractMixer: stop(" + line + ") succeeded");
     }
 
     /**

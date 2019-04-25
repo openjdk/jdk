@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,11 +43,8 @@ public abstract class AbstractMidiDeviceProvider extends MidiDeviceProvider {
      * Create objects representing all MIDI output devices on the system.
      */
     static {
-        if (Printer.trace) Printer.trace("AbstractMidiDeviceProvider: static");
         Platform.initialize();
         enabled = Platform.isMidiIOEnabled();
-        if (Printer.trace) Printer.trace("AbstractMidiDeviceProvider: enabled: " + enabled);
-
         // $$fb number of MIDI devices may change with time
         // also for memory's sake, do not initialize the arrays here
     }
@@ -68,10 +65,6 @@ public abstract class AbstractMidiDeviceProvider extends MidiDeviceProvider {
         int oldNumDevices = (infos==null)?-1:infos.length;
         int newNumDevices = getNumDevices();
         if (oldNumDevices != newNumDevices) {
-            if (Printer.trace) Printer.trace(getClass().toString()
-                                             +": readDeviceInfos: old numDevices: "+oldNumDevices
-                                             +"  newNumDevices: "+ newNumDevices);
-
             // initialize the arrays
             Info[] newInfos = new Info[newNumDevices];
             MidiDevice[] newDevices = new MidiDevice[newNumDevices];

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,8 +50,6 @@ import javax.sound.midi.Transmitter;
  */
 abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice {
 
-    private static final boolean TRACE_TRANSMITTER = false;
-
     private ArrayList<Receiver> receiverList;
 
     private TransmitterList transmitterList;
@@ -88,13 +86,8 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
      * The initial mode and only supported mode default to OMNI_ON_POLY.
      */
     protected AbstractMidiDevice(MidiDevice.Info info) {
-
-        if(Printer.trace) Printer.trace(">> AbstractMidiDevice CONSTRUCTOR");
-
         this.info = info;
         openRefCount = 0;
-
-        if(Printer.trace) Printer.trace("<< AbstractMidiDevice CONSTRUCTOR completed");
     }
 
     // MIDI DEVICE METHODS
@@ -111,12 +104,10 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
      */
     @Override
     public final void open() throws MidiUnavailableException {
-        if (Printer.trace) Printer.trace("> AbstractMidiDevice: open()");
         synchronized(this) {
             openRefCount = -1;
             doOpen();
         }
-        if (Printer.trace) Printer.trace("< AbstractMidiDevice: open() completed");
     }
 
     /** Open the device implicitly.
@@ -131,7 +122,6 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
      * @object The Receiver or Transmitter instance that triggered this implicit open.
      */
     private void openInternal(Object object) throws MidiUnavailableException {
-        if (Printer.trace) Printer.trace("> AbstractMidiDevice: openInternal()");
         synchronized(this) {
             if (openRefCount != -1) {
                 openRefCount++;
@@ -140,28 +130,23 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
             // double calls to doOpens() will be catched by the open flag.
             doOpen();
         }
-        if (Printer.trace) Printer.trace("< AbstractMidiDevice: openInternal() completed");
     }
 
     private void doOpen() throws MidiUnavailableException {
-        if (Printer.trace) Printer.trace("> AbstractMidiDevice: doOpen()");
         synchronized(this) {
             if (! isOpen()) {
                 implOpen();
                 open = true;
             }
         }
-        if (Printer.trace) Printer.trace("< AbstractMidiDevice: doOpen() completed");
     }
 
     @Override
     public final void close() {
-        if (Printer.trace) Printer.trace("> AbstractMidiDevice: close()");
         synchronized (this) {
             doClose();
             openRefCount = 0;
         }
-        if (Printer.trace) Printer.trace("< AbstractMidiDevice: close() completed");
     }
 
     /** Close the device for an object that implicitely opened it.
@@ -177,7 +162,6 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
      * this may be a Transmitter or receiver).
      */
     public final void closeInternal(Object object) {
-        if (Printer.trace) Printer.trace("> AbstractMidiDevice: closeInternal()");
         synchronized(this) {
             if (getOpenKeepingObjects().remove(object)) {
                 if (openRefCount > 0) {
@@ -188,18 +172,15 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
                 }
             }
         }
-        if (Printer.trace) Printer.trace("< AbstractMidiDevice: closeInternal() completed");
     }
 
     public final void doClose() {
-        if (Printer.trace) Printer.trace("> AbstractMidiDevice: doClose()");
         synchronized(this) {
             if (isOpen()) {
                 implClose();
                 open = false;
             }
         }
-        if (Printer.trace) Printer.trace("< AbstractMidiDevice: doClose() completed");
     }
 
     @Override
@@ -530,7 +511,6 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
         @Override
         public final void setReceiver(Receiver receiver) {
             if (tlist != null && this.receiver != receiver) {
-                if (Printer.debug) Printer.debug("Transmitter "+toString()+": set receiver "+receiver);
                 tlist.receiverChanged(this, this.receiver, receiver);
                 this.receiver = receiver;
             }
@@ -583,7 +563,6 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
             if (t instanceof BasicTransmitter) {
                 ((BasicTransmitter) t).setTransmitterList(this);
             }
-            if (Printer.debug) Printer.debug("--added transmitter "+t);
         }
 
         private void remove(Transmitter t) {
@@ -591,7 +570,6 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
                 int index = transmitters.indexOf(t);
                 if (index >= 0) {
                     transmitters.remove(index);
-                    if (Printer.debug) Printer.debug("--removed transmitter "+t);
                 }
             }
         }
@@ -625,7 +603,6 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
                 }
                 transmitters.clear();
             }
-            if (Printer.trace) Printer.trace("TransmitterList.close() succeeded");
         }
 
 
@@ -642,11 +619,9 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
                     int size = transmitters.size();
                     if (optimizedReceiverCount == size) {
                         if (midiOutReceiver != null) {
-                            if (TRACE_TRANSMITTER) Printer.println("Sending packed message to MidiOutReceiver");
                             midiOutReceiver.sendPackedMidiMessage(packedMessage, timeStamp);
                         }
                     } else {
-                        if (TRACE_TRANSMITTER) Printer.println("Sending packed message to "+size+" transmitter's receivers");
                         for (int i = 0; i < size; i++) {
                             Receiver receiver = transmitters.get(i).getReceiver();
                             if (receiver != null) {
@@ -672,7 +647,6 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
             try {
                 synchronized(transmitters) {
                     int size = transmitters.size();
-                    if (TRACE_TRANSMITTER) Printer.println("Sending long message to "+size+" transmitter's receivers");
                     for (int i = 0; i < size; i++) {
                         Receiver receiver = transmitters.get(i).getReceiver();
                         if (receiver != null) {
@@ -703,11 +677,9 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
                 int size = transmitters.size();
                 if (optimizedReceiverCount == size) {
                     if (midiOutReceiver != null) {
-                        if (TRACE_TRANSMITTER) Printer.println("Sending MIDI message to MidiOutReceiver");
                         midiOutReceiver.send(message, timeStamp);
                     }
                 } else {
-                    if (TRACE_TRANSMITTER) Printer.println("Sending MIDI message to "+size+" transmitter's receivers");
                     for (int i = 0; i < size; i++) {
                         Receiver receiver = transmitters.get(i).getReceiver();
                         if (receiver != null) {

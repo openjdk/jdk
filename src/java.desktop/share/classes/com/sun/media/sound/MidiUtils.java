@@ -269,8 +269,6 @@ public final class MidiUtils {
                 i++;
             }
             tick = ticks[i - 1] + microsec2ticks(micros - us, tempos[i - 1], resolution);
-            if (Printer.debug) Printer.debug("microsecond2tick(" + (micros / 1000)+") = "+tick+" ticks.");
-            //if (Printer.debug) Printer.debug("   -> convert back = " + (tick2microsecond(seq, tick, null) / 1000)+" microseconds");
         }
         cache.currTempo = tempos[i - 1];
         return tick;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,24 +40,20 @@ import javax.sound.midi.ShortMessage;
 final class MidiOutDevice extends AbstractMidiDevice {
 
     MidiOutDevice(AbstractMidiDeviceProvider.Info info) {
-                super(info);
-                if(Printer.trace) Printer.trace("MidiOutDevice CONSTRUCTOR");
+        super(info);
     }
 
     @Override
     protected synchronized void implOpen() throws MidiUnavailableException {
-        if (Printer.trace) Printer.trace("> MidiOutDevice: implOpen()");
         int index = ((AbstractMidiDeviceProvider.Info)getDeviceInfo()).getIndex();
         id = nOpen(index); // can throw MidiUnavailableException
         if (id == 0) {
             throw new MidiUnavailableException("Unable to open native device");
         }
-        if (Printer.trace) Printer.trace("< MidiOutDevice: implOpen(): completed.");
     }
 
     @Override
     protected synchronized void implClose() {
-        if (Printer.trace) Printer.trace("> MidiOutDevice: implClose()");
         // prevent further action
         long oldId = id;
         id = 0;
@@ -66,7 +62,6 @@ final class MidiOutDevice extends AbstractMidiDevice {
 
         // close the device
         nClose(oldId);
-        if (Printer.trace) Printer.trace("< MidiOutDevice: implClose(): completed");
     }
 
     @Override

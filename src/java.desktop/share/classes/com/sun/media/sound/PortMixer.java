@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,9 +67,6 @@ final class PortMixer extends AbstractMixer {
               null,                       // Control[]
               null,                       // Line.Info[] sourceLineInfo
               null);                      // Line.Info[] targetLineInfo
-
-        if (Printer.trace) Printer.trace(">> PortMixer: constructor");
-
         int count = 0;
         int srcLineCount = 0;
         int dstLineCount = 0;
@@ -80,7 +77,6 @@ final class PortMixer extends AbstractMixer {
                 if (id != 0) {
                     count = nGetPortCount(id);
                     if (count < 0) {
-                        if (Printer.trace) Printer.trace("nGetPortCount() returned error code: " + count);
                         count = 0;
                     }
                 }
@@ -113,8 +109,6 @@ final class PortMixer extends AbstractMixer {
                 targetLineInfo[dstLineCount++] = portInfos[i];
             }
         }
-
-        if (Printer.trace) Printer.trace("<< PortMixer: constructor completed");
     }
 
     @Override
@@ -149,18 +143,12 @@ final class PortMixer extends AbstractMixer {
 
     @Override
     protected void implOpen() throws LineUnavailableException {
-        if (Printer.trace) Printer.trace(">> PortMixer: implOpen (id="+id+")");
-
         // open the mixer device
         id = nOpen(getMixerIndex());
-
-        if (Printer.trace) Printer.trace("<< PortMixer: implOpen succeeded.");
     }
 
     @Override
     protected void implClose() {
-        if (Printer.trace) Printer.trace(">> PortMixer: implClose");
-
         // close the mixer device
         long thisID = id;
         id = 0;
@@ -172,8 +160,6 @@ final class PortMixer extends AbstractMixer {
                 }
             }
         }
-
-        if (Printer.trace) Printer.trace("<< PortMixer: implClose succeeded");
     }
 
     @Override
@@ -194,7 +180,7 @@ final class PortMixer extends AbstractMixer {
         case DST_LINE_OUT:     return Port.Info.LINE_OUT;
         }
         // should never happen...
-        if (Printer.debug) Printer.debug("unknown port type: "+type);
+        if (Printer.err) Printer.err("unknown port type: "+type);
         return null;
     }
 
@@ -231,12 +217,10 @@ final class PortMixer extends AbstractMixer {
                               PortMixer mixer,
                               int portIndex) {
             super(info, mixer, null);
-            if (Printer.trace) Printer.trace("PortMixerPort CONSTRUCTOR: info: " + info);
             this.portIndex = portIndex;
         }
 
         void implOpen() throws LineUnavailableException {
-            if (Printer.trace) Printer.trace(">> PortMixerPort: implOpen().");
             long newID = ((PortMixer) mixer).getID();
             if ((id == 0) || (newID != id) || (controls.length == 0)) {
                 id = newID;
@@ -251,7 +235,6 @@ final class PortMixer extends AbstractMixer {
             } else {
                 enableControls(controls, true);
             }
-            if (Printer.trace) Printer.trace("<< PortMixerPort: implOpen() succeeded");
         }
 
         private void enableControls(Control[] controls, boolean enable) {
@@ -274,10 +257,8 @@ final class PortMixer extends AbstractMixer {
         }
 
         void implClose() {
-            if (Printer.trace) Printer.trace(">> PortMixerPort: implClose()");
             // get rid of controls
             enableControls(controls, false);
-            if (Printer.trace) Printer.trace("<< PortMixerPort: implClose() succeeded");
         }
 
         // this is very similar to open(AudioFormat, int) in AbstractDataLine...
@@ -286,7 +267,6 @@ final class PortMixer extends AbstractMixer {
             synchronized (mixer) {
                 // if the line is not currently open, try to open it with this format and buffer size
                 if (!isOpen()) {
-                    if (Printer.trace) Printer.trace("> PortMixerPort: open");
                     // reserve mixer resources for this line
                     mixer.open(this);
                     try {
@@ -300,7 +280,6 @@ final class PortMixer extends AbstractMixer {
                         mixer.close(this);
                         throw e;
                     }
-                    if (Printer.trace) Printer.trace("< PortMixerPort: open succeeded");
                 }
             }
         }
@@ -310,8 +289,6 @@ final class PortMixer extends AbstractMixer {
         public void close() {
             synchronized (mixer) {
                 if (isOpen()) {
-                    if (Printer.trace) Printer.trace("> PortMixerPort.close()");
-
                     // set the open state to false and send events
                     setOpen(false);
 
@@ -320,7 +297,6 @@ final class PortMixer extends AbstractMixer {
 
                     // release mixer resources for this line
                     mixer.close(this);
-                    if (Printer.trace) Printer.trace("< PortMixerPort.close() succeeded");
                 }
             }
         }

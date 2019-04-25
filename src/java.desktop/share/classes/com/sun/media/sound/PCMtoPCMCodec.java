@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -374,45 +374,31 @@ public final class PCMtoPCMCodec extends FormatConversionProvider {
                 if( AudioFormat.Encoding.PCM_UNSIGNED.equals(inputEncoding) &&
                     AudioFormat.Encoding.PCM_SIGNED.equals(outputEncoding) ) {
                     conversionType = PCM_SWITCH_SIGNED_8BIT;
-                    if(Printer.debug) Printer.debug("PCMtoPCMCodecStream: conversionType = PCM_SWITCH_SIGNED_8BIT");
-
                 } else if( AudioFormat.Encoding.PCM_SIGNED.equals(inputEncoding) &&
                            AudioFormat.Encoding.PCM_UNSIGNED.equals(outputEncoding) ) {
                     conversionType = PCM_SWITCH_SIGNED_8BIT;
-                    if(Printer.debug) Printer.debug("PCMtoPCMCodecStream: conversionType = PCM_SWITCH_SIGNED_8BIT");
                 }
             } else {
 
                 if( inputEncoding.equals(outputEncoding) && (inputIsBigEndian != outputIsBigEndian) ) {
 
                     conversionType = PCM_SWITCH_ENDIAN;
-                    if(Printer.debug) Printer.debug("PCMtoPCMCodecStream: conversionType = PCM_SWITCH_ENDIAN");
-
-
                 } else if (AudioFormat.Encoding.PCM_UNSIGNED.equals(inputEncoding) && !inputIsBigEndian &&
                             AudioFormat.Encoding.PCM_SIGNED.equals(outputEncoding) && outputIsBigEndian) {
 
                     conversionType = PCM_UNSIGNED_LE2SIGNED_BE;
-                    if(Printer.debug) Printer.debug("PCMtoPCMCodecStream: conversionType = PCM_UNSIGNED_LE2SIGNED_BE");
-
                 } else if (AudioFormat.Encoding.PCM_SIGNED.equals(inputEncoding) && !inputIsBigEndian &&
                            AudioFormat.Encoding.PCM_UNSIGNED.equals(outputEncoding) && outputIsBigEndian) {
 
                     conversionType = PCM_SIGNED_LE2UNSIGNED_BE;
-                    if(Printer.debug) Printer.debug("PCMtoPCMCodecStream: conversionType = PCM_SIGNED_LE2UNSIGNED_BE");
-
                 } else if (AudioFormat.Encoding.PCM_UNSIGNED.equals(inputEncoding) && inputIsBigEndian &&
                            AudioFormat.Encoding.PCM_SIGNED.equals(outputEncoding) && !outputIsBigEndian) {
 
                     conversionType = PCM_UNSIGNED_BE2SIGNED_LE;
-                    if(Printer.debug) Printer.debug("PCMtoPCMCodecStream: conversionType = PCM_UNSIGNED_BE2SIGNED_LE");
-
                 } else if (AudioFormat.Encoding.PCM_SIGNED.equals(inputEncoding) && inputIsBigEndian &&
                            AudioFormat.Encoding.PCM_UNSIGNED.equals(outputEncoding) && !outputIsBigEndian) {
 
                     conversionType = PCM_SIGNED_BE2UNSIGNED_LE;
-                    if(Printer.debug) Printer.debug("PCMtoPCMCodecStream: conversionType = PCM_SIGNED_BE2UNSIGNED_LE");
-
                 }
             }
 

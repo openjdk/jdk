@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,7 +100,6 @@ final class EventDispatcher implements Runnable {
         // process an LineEvent
         if (eventInfo.getEvent() instanceof LineEvent) {
             LineEvent event = (LineEvent) eventInfo.getEvent();
-            if (Printer.debug) Printer.debug("Sending "+event+" to "+count+" listeners");
             for (int i = 0; i < count; i++) {
                 try {
                     ((LineListener) eventInfo.getListener(i)).update(event);
@@ -241,7 +240,6 @@ final class EventDispatcher implements Runnable {
      */
     private void closeAutoClosingClips() {
         synchronized(autoClosingClips) {
-            if (Printer.debug)Printer.debug("> EventDispatcher.closeAutoClosingClips ("+autoClosingClips.size()+" clips)");
             long currTime = System.currentTimeMillis();
             for (int i = autoClosingClips.size()-1; i >= 0 ; i--) {
                 ClipInfo info = autoClosingClips.get(i);
@@ -249,23 +247,15 @@ final class EventDispatcher implements Runnable {
                     AutoClosingClip clip = info.getClip();
                     // sanity check
                     if (!clip.isOpen() || !clip.isAutoClosing()) {
-                        if (Printer.debug)Printer.debug("EventDispatcher: removing clip "+clip+"  isOpen:"+clip.isOpen());
                         autoClosingClips.remove(i);
                     }
                     else if (!clip.isRunning() && !clip.isActive() && clip.isAutoClosing()) {
-                        if (Printer.debug)Printer.debug("EventDispatcher: closing clip "+clip);
                         clip.close();
                     } else {
-                        if (Printer.debug)Printer.debug("Doing nothing with clip "+clip+":");
-                        if (Printer.debug)Printer.debug("  open="+clip.isOpen()+", autoclosing="+clip.isAutoClosing());
-                        if (Printer.debug)Printer.debug("  isRunning="+clip.isRunning()+", isActive="+clip.isActive());
                     }
-                } else {
-                    if (Printer.debug)Printer.debug("EventDispatcher: clip "+info.getClip()+" not yet expired");
                 }
             }
         }
-        if (Printer.debug)Printer.debug("< EventDispatcher.closeAutoClosingClips ("+autoClosingClips.size()+" clips)");
     }
 
     private int getAutoClosingClipIndex(AutoClosingClip clip) {
@@ -283,12 +273,10 @@ final class EventDispatcher implements Runnable {
      * called from auto-closing clips when one of their open() method is called.
      */
     void autoClosingClipOpened(AutoClosingClip clip) {
-        if (Printer.debug)Printer.debug("> EventDispatcher.autoClosingClipOpened ");
         int index = 0;
         synchronized(autoClosingClips) {
             index = getAutoClosingClipIndex(clip);
             if (index == -1) {
-                if (Printer.debug)Printer.debug("EventDispatcher: adding auto-closing clip "+clip);
                 autoClosingClips.add(new ClipInfo(clip));
             }
         }
@@ -301,7 +289,6 @@ final class EventDispatcher implements Runnable {
                 notifyAll();
             }
         }
-        if (Printer.debug)Printer.debug("< EventDispatcher.autoClosingClipOpened finished("+autoClosingClips.size()+" clips)");
     }
 
     /**
@@ -326,48 +313,38 @@ final class EventDispatcher implements Runnable {
      */
     private void monitorLines() {
         synchronized(lineMonitors) {
-            if (Printer.debug)Printer.debug("> EventDispatcher.monitorLines ("+lineMonitors.size()+" monitors)");
             for (int i = 0; i < lineMonitors.size(); i++) {
                 lineMonitors.get(i).checkLine();
             }
         }
-        if (Printer.debug)Printer.debug("< EventDispatcher.monitorLines("+lineMonitors.size()+" monitors)");
     }
 
     /**
      * Add this LineMonitor instance to the list of monitors.
      */
     void addLineMonitor(LineMonitor lm) {
-        if (Printer.trace)Printer.trace("> EventDispatcher.addLineMonitor("+lm+")");
         synchronized(lineMonitors) {
             if (lineMonitors.indexOf(lm) >= 0) {
-                if (Printer.trace)Printer.trace("< EventDispatcher.addLineMonitor finished -- this monitor already exists!");
                 return;
             }
-            if (Printer.debug)Printer.debug("EventDispatcher: adding line monitor "+lm);
             lineMonitors.add(lm);
         }
         synchronized (this) {
             // need to interrupt the infinite wait()
             notifyAll();
         }
-        if (Printer.debug)Printer.debug("< EventDispatcher.addLineMonitor finished -- now ("+lineMonitors.size()+" monitors)");
     }
 
     /**
      * Remove this LineMonitor instance from the list of monitors.
      */
     void removeLineMonitor(LineMonitor lm) {
-        if (Printer.trace)Printer.trace("> EventDispatcher.removeLineMonitor("+lm+")");
         synchronized(lineMonitors) {
             if (lineMonitors.indexOf(lm) < 0) {
-                if (Printer.trace)Printer.trace("< EventDispatcher.removeLineMonitor finished -- this monitor does not exist!");
                 return;
             }
-            if (Printer.debug)Printer.debug("EventDispatcher: removing line monitor "+lm);
             lineMonitors.remove(lm);
         }
-        if (Printer.debug)Printer.debug("< EventDispatcher.removeLineMonitor finished -- now ("+lineMonitors.size()+" monitors)");
     }
 
     /**

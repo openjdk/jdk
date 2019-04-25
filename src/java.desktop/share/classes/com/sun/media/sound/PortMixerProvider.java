@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,6 @@ public final class PortMixerProvider extends MixerProvider {
         int numDevices = nGetNumDevices();
 
         if (infos == null || infos.length != numDevices) {
-            if (Printer.trace) Printer.trace("PortMixerProvider: init()");
             // initialize the arrays
             infos = new PortMixerInfo[numDevices];
             devices = new PortMixer[numDevices];
@@ -79,7 +78,6 @@ public final class PortMixerProvider extends MixerProvider {
             for (int i = 0; i < infos.length; i++) {
                 infos[i] = nNewPortMixerInfo(i);
             }
-            if (Printer.trace) Printer.trace("PortMixerProvider: init(): found numDevices: " + numDevices);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,8 +49,6 @@ final class Platform {
     private static boolean bigEndian;
 
     static {
-        if(Printer.trace)Printer.trace(">> Platform.java: static");
-
         loadLibraries();
     }
 
@@ -64,7 +62,6 @@ final class Platform {
      * Dummy method for forcing initialization.
      */
     static void initialize() {
-        if(Printer.trace)Printer.trace("Platform: initialize()");
     }
 
     /**
@@ -78,8 +75,6 @@ final class Platform {
      * Load the native library or libraries.
      */
     private static void loadLibraries() {
-        if(Printer.trace)Printer.trace(">>Platform.loadLibraries");
-
         // load the native library
         isNativeLibLoaded = true;
         try {
@@ -97,17 +92,14 @@ final class Platform {
     }
 
     static boolean isMidiIOEnabled() {
-        if (Printer.debug) Printer.debug("Platform: Checking for MidiIO; library is loaded=" + isNativeLibLoaded);
         return isNativeLibLoaded;
     }
 
     static boolean isPortsEnabled() {
-        if (Printer.debug) Printer.debug("Platform: Checking for Ports; library is loaded=" + isNativeLibLoaded);
         return isNativeLibLoaded;
     }
 
     static boolean isDirectAudioEnabled() {
-        if (Printer.debug) Printer.debug("Platform: Checking for DirectAudio; library is loaded=" + isNativeLibLoaded);
         return isNativeLibLoaded;
     }
 
