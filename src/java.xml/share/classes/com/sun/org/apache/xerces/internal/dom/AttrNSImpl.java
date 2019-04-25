@@ -147,30 +147,6 @@ public class AttrNSImpl
         setName(namespaceURI, qualifiedName);
     }
 
-    /**
-     * NON-DOM: resets this node and sets specified values for the node
-     *
-     * @param ownerDocument
-     * @param namespaceURI
-     * @param qualifiedName
-     * @param localName
-     */
-    public void setValues (CoreDocumentImpl ownerDocument,
-                         String namespaceURI,
-                         String qualifiedName,
-                         String localName){
-
-        super.textNode = null;
-        super.flags = 0;
-        isSpecified(true);
-        hasStringValue(true);
-        super.setOwnerDocument(ownerDocument);
-        this.localName = localName;
-        this.namespaceURI = namespaceURI;
-        super.name = qualifiedName;
-        super.value = null;
-    }
-
     //
     // DOM2: Namespace methods
     //
@@ -314,14 +290,14 @@ public class AttrNSImpl
      * Checks if a type is derived from another by restriction. See:
      * http://www.w3.org/TR/DOM-Level-3-Core/core.html#TypeInfo-isDerivedFrom
      *
-     * @param ancestorNS
+     * @param typeNamespaceArg
      *        The namspace of the ancestor type declaration
-     * @param ancestorName
+     * @param typeNameArg
      *        The name of the ancestor type declaration
-     * @param type
-     *        The reference type definition
+     * @param derivationMethod
+     *        The derivation method
      *
-     * @return boolean True if the type is derived by restriciton for the
+     * @return boolean True if the type is derived by restriction for the
      *         reference type
      */
     public boolean isDerivedFrom(String typeNamespaceArg,

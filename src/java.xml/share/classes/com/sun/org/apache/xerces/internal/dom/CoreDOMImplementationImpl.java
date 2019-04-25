@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,11 +20,18 @@
 package com.sun.org.apache.xerces.internal.dom;
 
 import com.sun.org.apache.xerces.internal.impl.RevalidationHandler;
+import com.sun.org.apache.xerces.internal.impl.dtd.XML11DTDProcessor;
+import com.sun.org.apache.xerces.internal.impl.dtd.XML11DTDValidator;
+import com.sun.org.apache.xerces.internal.impl.dtd.XMLDTDLoader;
+import com.sun.org.apache.xerces.internal.impl.dtd.XMLDTDValidator;
+import com.sun.org.apache.xerces.internal.impl.xs.XMLSchemaValidator;
 import com.sun.org.apache.xerces.internal.parsers.DOMParserImpl;
 import com.sun.org.apache.xerces.internal.parsers.DTDConfiguration;
 import com.sun.org.apache.xerces.internal.parsers.XIncludeAwareParserConfiguration;
+import com.sun.org.apache.xerces.internal.parsers.XML11DTDConfiguration;
 import com.sun.org.apache.xerces.internal.util.XMLChar;
 import com.sun.org.apache.xerces.internal.xni.grammars.XMLGrammarDescription;
+import java.lang.ref.SoftReference;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
@@ -51,21 +58,39 @@ import org.w3c.dom.ls.LSSerializer;
  * @xerces.internal
  *
  * @since PR-DOM-Level-1-19980818.
+ * @LastModified: Apr 2019
  */
+@SuppressWarnings({"rawtypes", "unchecked"}) //SoftReference array
 public class CoreDOMImplementationImpl
         implements DOMImplementation, DOMImplementationLS {
-        //
-        // Data
-        //
 
-    // validators pool
+    //
+    // Data
+    //
+
+    // validator pools
     private static final int SIZE = 2;
-    private RevalidationHandler validators[] = new RevalidationHandler[SIZE];
 
-    private RevalidationHandler dtdValidators[] = new RevalidationHandler[SIZE];
-    private int freeValidatorIndex = -1;
-    private int freeDTDValidatorIndex = -1;
-    private int currentSize = SIZE;
+    private SoftReference schemaValidators[] = new SoftReference[SIZE];
+    private SoftReference xml10DTDValidators[] = new SoftReference[SIZE];
+    private SoftReference xml11DTDValidators[] = new SoftReference[SIZE];
+
+    private int freeSchemaValidatorIndex = -1;
+    private int freeXML10DTDValidatorIndex = -1;
+    private int freeXML11DTDValidatorIndex = -1;
+
+    private int schemaValidatorsCurrentSize = SIZE;
+    private int xml10DTDValidatorsCurrentSize = SIZE;
+    private int xml11DTDValidatorsCurrentSize = SIZE;
+
+    private SoftReference xml10DTDLoaders[] = new SoftReference[SIZE];
+    private SoftReference xml11DTDLoaders[] = new SoftReference[SIZE];
+
+    private int freeXML10DTDLoaderIndex = -1;
+    private int freeXML11DTDLoaderIndex = -1;
+
+    private int xml10DTDLoaderCurrentSize = SIZE;
+    private int xml11DTDLoaderCurrentSize = SIZE;
 
     // Document and doctype counter.  Used to assign order to documents and
     // doctypes without owners, on an demand basis.   Used for
@@ -74,8 +99,8 @@ public class CoreDOMImplementationImpl
 
         // static
         /** Dom implementation singleton. */
-        static CoreDOMImplementationImpl singleton =
-                new CoreDOMImplementationImpl();
+        static final CoreDOMImplementationImpl singleton = new CoreDOMImplementationImpl();
+
         //
         // Public methods
         //
@@ -109,21 +134,25 @@ public class CoreDOMImplementationImpl
                 feature = feature.substring(1);
             }
             return (feature.equalsIgnoreCase("Core")
-                        && (anyVersion
-                            || version.equals("1.0")
-                            || version.equals("2.0")
-                            || version.equals("3.0")))
-                    || (feature.equalsIgnoreCase("XML")
-                        && (anyVersion
-                            || version.equals("1.0")
-                            || version.equals("2.0")
-                            || version.equals("3.0")))
-                    || (feature.equalsIgnoreCase("LS")
-                        && (anyVersion
-                            || version.equals("3.0")))
-                    || (feature.equalsIgnoreCase("ElementTraversal")
-                        && (anyVersion
-                            || version.equals("1.0")));
+                    && (anyVersion
+                        || version.equals("1.0")
+                        || version.equals("2.0")
+                        || version.equals("3.0")))
+                        || (feature.equalsIgnoreCase("XML")
+                    && (anyVersion
+                        || version.equals("1.0")
+                        || version.equals("2.0")
+                        || version.equals("3.0")))
+                        || (feature.equalsIgnoreCase("XMLVersion")
+                    && (anyVersion
+                        || version.equals("1.0")
+                        || version.equals("1.1")))
+                        || (feature.equalsIgnoreCase("LS")
+                    && (anyVersion
+                        || version.equals("3.0")))
+                        || (feature.equalsIgnoreCase("ElementTraversal")
+                    && (anyVersion
+                        || version.equals("1.0")));
         } // hasFeature(String,String):boolean
 
 
@@ -244,10 +273,17 @@ public class CoreDOMImplementationImpl
                                         null);
                         throw new DOMException(DOMException.WRONG_DOCUMENT_ERR, msg);
                 }
-                CoreDocumentImpl doc = new CoreDocumentImpl(doctype);
-                Element e = doc.createElementNS(namespaceURI, qualifiedName);
-                doc.appendChild(e);
+                CoreDocumentImpl doc = createDocument(doctype);
+                // If namespaceURI and qualifiedName are null return a Document with no document element.
+                if (qualifiedName != null || namespaceURI != null) {
+                    Element e = doc.createElementNS(namespaceURI, qualifiedName);
+                    doc.appendChild(e);
+                }
                 return doc;
+        }
+
+        protected CoreDocumentImpl createDocument(DocumentType doctype) {
+            return new CoreDocumentImpl(doctype);
         }
 
         /**
@@ -255,8 +291,8 @@ public class CoreDOMImplementationImpl
          */
         public Object getFeature(String feature, String version) {
             if (singleton.hasFeature(feature, version)) {
-                return singleton;
-            }
+                    return singleton;
+                }
             return null;
         }
 
@@ -304,7 +340,7 @@ public class CoreDOMImplementationImpl
      *    NOT_SUPPORTED_ERR: Raised if the requested mode or schema type is
      *   not supported.
          */
-        public LSParser createLSParser(short mode, String schemaType)
+    public LSParser createLSParser(short mode, String schemaType)
                 throws DOMException {
                 if (mode != DOMImplementationLS.MODE_SYNCHRONOUS || (schemaType !=null &&
                    !"http://www.w3.org/2001/XMLSchema".equals(schemaType) &&
@@ -318,7 +354,7 @@ public class CoreDOMImplementationImpl
                 }
                 if (schemaType != null
                         && schemaType.equals("http://www.w3.org/TR/REC-xml")) {
-                        return new DOMParserImpl(new DTDConfiguration(),
+                        return new DOMParserImpl(new XML11DTDConfiguration(),
                                 schemaType);
                 }
                 else {
@@ -328,20 +364,20 @@ public class CoreDOMImplementationImpl
                 }
         }
 
-        /**
-         * DOM Level 3 LS CR - Experimental.
-         * Create a new <code>LSSerializer</code> object.
-         * @return The newly created <code>LSSerializer</code> object.
-         * <p ><b>Note:</b>    By default, the newly created
-         * <code>LSSerializer</code> has no <code>DOMErrorHandler</code>,
-         * i.e. the value of the <code>"error-handler"</code> configuration
-         * parameter is <code>null</code>. However, implementations may
-         * provide a default error handler at creation time. In that case, the
-         * initial value of the <code>"error-handler"</code> configuration
-         * parameter on the new created <code>LSSerializer</code> contains a
-         * reference to the default error handler.
-         */
-        public LSSerializer createLSSerializer() {
+    /**
+     * DOM Level 3 LS CR - Experimental.
+     * Create a new <code>LSSerializer</code> object.
+     * @return The newly created <code>LSSerializer</code> object.
+     * <p ><b>Note:</b>    By default, the newly created
+     * <code>LSSerializer</code> has no <code>DOMErrorHandler</code>,
+     * i.e. the value of the <code>"error-handler"</code> configuration
+     * parameter is <code>null</code>. However, implementations may
+     * provide a default error handler at creation time. In that case, the
+     * initial value of the <code>"error-handler"</code> configuration
+     * parameter on the new created <code>LSSerializer</code> contains a
+     * reference to the default error handler.
+     */
+    public LSSerializer createLSSerializer() {
             return new com.sun.org.apache.xml.internal.serializer.dom3.LSSerializerImpl();
         }
 
@@ -358,68 +394,217 @@ public class CoreDOMImplementationImpl
         // Protected methods
         //
         /** NON-DOM: retrieve validator. */
-        synchronized RevalidationHandler getValidator(String schemaType) {
-                // REVISIT: implement retrieving DTD validator
+        synchronized RevalidationHandler getValidator(String schemaType, String xmlVersion) {
         if (schemaType == XMLGrammarDescription.XML_SCHEMA) {
             // create new validator - we should not attempt
             // to restrict the number of validation handlers being
             // requested
-            if(freeValidatorIndex < 0) {
-                return new com.sun.org.apache.xerces.internal.impl.xs.XMLSchemaValidator();
+            while (freeSchemaValidatorIndex >= 0) {
+                // return first available validator
+                SoftReference ref = schemaValidators[freeSchemaValidatorIndex];
+                RevalidationHandlerHolder holder = (RevalidationHandlerHolder) ref.get();
+                if (holder != null && holder.handler != null) {
+                    RevalidationHandler val = holder.handler;
+                    holder.handler = null;
+                    --freeSchemaValidatorIndex;
+                    return val;
+                }
+                schemaValidators[freeSchemaValidatorIndex--] = null;
             }
-            // return first available validator
-            RevalidationHandler val = validators[freeValidatorIndex];
-            validators[freeValidatorIndex--] = null;
-            return val;
+            return new XMLSchemaValidator();
         }
         else if(schemaType == XMLGrammarDescription.XML_DTD) {
-            if(freeDTDValidatorIndex < 0) {
-                return new com.sun.org.apache.xerces.internal.impl.dtd.XMLDTDValidator();
+            // return an instance of XML11DTDValidator
+            if ("1.1".equals(xmlVersion)) {
+                while (freeXML11DTDValidatorIndex >= 0) {
+                    // return first available validator
+                    SoftReference ref = xml11DTDValidators[freeXML11DTDValidatorIndex];
+                    RevalidationHandlerHolder holder = (RevalidationHandlerHolder) ref.get();
+                    if (holder != null && holder.handler != null) {
+                        RevalidationHandler val = holder.handler;
+                        holder.handler = null;
+                        --freeXML11DTDValidatorIndex;
+                        return val;
+                    }
+                    xml11DTDValidators[freeXML11DTDValidatorIndex--] = null;
+                }
+                return new XML11DTDValidator();
             }
-            // return first available validator
-            RevalidationHandler val = dtdValidators[freeDTDValidatorIndex];
-            dtdValidators[freeDTDValidatorIndex--] = null;
-            return val;
+            // return an instance of XMLDTDValidator
+            else {
+                while (freeXML10DTDValidatorIndex >= 0) {
+                    // return first available validator
+                    SoftReference ref = xml10DTDValidators[freeXML10DTDValidatorIndex];
+                    RevalidationHandlerHolder holder = (RevalidationHandlerHolder) ref.get();
+                    if (holder != null && holder.handler != null) {
+                        RevalidationHandler val = holder.handler;
+                        holder.handler = null;
+                        --freeXML10DTDValidatorIndex;
+                        return val;
+                    }
+                    xml10DTDValidators[freeXML10DTDValidatorIndex--] = null;
+                }
+                return new XMLDTDValidator();
+            }
         }
         return null;
         }
 
         /** NON-DOM: release validator */
-        synchronized void releaseValidator(String schemaType,
-                                         RevalidationHandler validator) {
-       // REVISIT: implement support for DTD validators as well
-       if(schemaType == XMLGrammarDescription.XML_SCHEMA) {
-           ++freeValidatorIndex;
-           if (validators.length == freeValidatorIndex ){
-                // resize size of the validators
-                currentSize+=SIZE;
-                RevalidationHandler newarray[] =  new RevalidationHandler[currentSize];
-                System.arraycopy(validators, 0, newarray, 0, validators.length);
-                validators = newarray;
-           }
-           validators[freeValidatorIndex]=validator;
-       }
-       else if(schemaType == XMLGrammarDescription.XML_DTD) {
-           ++freeDTDValidatorIndex;
-           if (dtdValidators.length == freeDTDValidatorIndex ){
-                // resize size of the validators
-                currentSize+=SIZE;
-                RevalidationHandler newarray[] =  new RevalidationHandler[currentSize];
-                System.arraycopy(dtdValidators, 0, newarray, 0, dtdValidators.length);
-                dtdValidators = newarray;
-           }
-           dtdValidators[freeDTDValidatorIndex]=validator;
-       }
+        synchronized void releaseValidator(String schemaType, String xmlVersion,
+                RevalidationHandler validator) {
+            if (schemaType == XMLGrammarDescription.XML_SCHEMA) {
+                ++freeSchemaValidatorIndex;
+                if (schemaValidators.length == freeSchemaValidatorIndex) {
+                    // resize size of the validators
+                    schemaValidatorsCurrentSize += SIZE;
+                    SoftReference newarray[] =  new SoftReference[schemaValidatorsCurrentSize];
+                    System.arraycopy(schemaValidators, 0, newarray, 0, schemaValidators.length);
+                    schemaValidators = newarray;
+                }
+                SoftReference ref = schemaValidators[freeSchemaValidatorIndex];
+                if (ref != null) {
+                    RevalidationHandlerHolder holder = (RevalidationHandlerHolder) ref.get();
+                    if (holder != null) {
+                        holder.handler = validator;
+                        return;
+                    }
+                }
+                schemaValidators[freeSchemaValidatorIndex] = new SoftReference(new RevalidationHandlerHolder(validator));
+            }
+            else if (schemaType == XMLGrammarDescription.XML_DTD) {
+                // release an instance of XML11DTDValidator
+                if ("1.1".equals(xmlVersion)) {
+                    ++freeXML11DTDValidatorIndex;
+                    if (xml11DTDValidators.length == freeXML11DTDValidatorIndex) {
+                        // resize size of the validators
+                        xml11DTDValidatorsCurrentSize += SIZE;
+                        SoftReference [] newarray = new SoftReference[xml11DTDValidatorsCurrentSize];
+                        System.arraycopy(xml11DTDValidators, 0, newarray, 0, xml11DTDValidators.length);
+                        xml11DTDValidators = newarray;
+                    }
+                    SoftReference ref = xml11DTDValidators[freeXML11DTDValidatorIndex];
+                    if (ref != null) {
+                        RevalidationHandlerHolder holder = (RevalidationHandlerHolder) ref.get();
+                        if (holder != null) {
+                            holder.handler = validator;
+                            return;
+                        }
+                    }
+                    xml11DTDValidators[freeXML11DTDValidatorIndex] = new SoftReference(new RevalidationHandlerHolder(validator));
+                }
+                // release an instance of XMLDTDValidator
+                else {
+                    ++freeXML10DTDValidatorIndex;
+                    if (xml10DTDValidators.length == freeXML10DTDValidatorIndex) {
+                        // resize size of the validators
+                        xml10DTDValidatorsCurrentSize += SIZE;
+                        SoftReference [] newarray = new SoftReference[xml10DTDValidatorsCurrentSize];
+                        System.arraycopy(xml10DTDValidators, 0, newarray, 0, xml10DTDValidators.length);
+                        xml10DTDValidators = newarray;
+                    }
+                    SoftReference ref = xml10DTDValidators[freeXML10DTDValidatorIndex];
+                    if (ref != null) {
+                        RevalidationHandlerHolder holder = (RevalidationHandlerHolder) ref.get();
+                        if (holder != null) {
+                            holder.handler = validator;
+                            return;
+                        }
+                    }
+                    xml10DTDValidators[freeXML10DTDValidatorIndex] = new SoftReference(new RevalidationHandlerHolder(validator));
+                }
+            }
         }
 
-       /** NON-DOM:  increment document/doctype counter */
-       protected synchronized int assignDocumentNumber() {
-            return ++docAndDoctypeCounter;
-       }
-       /** NON-DOM:  increment document/doctype counter */
-       protected synchronized int assignDocTypeNumber() {
-            return ++docAndDoctypeCounter;
-       }
+    /** NON-DOM: retrieve DTD loader */
+    synchronized final XMLDTDLoader getDTDLoader(String xmlVersion) {
+        // return an instance of XML11DTDProcessor
+        if ("1.1".equals(xmlVersion)) {
+            while (freeXML11DTDLoaderIndex >= 0) {
+                // return first available DTD loader
+                SoftReference ref = xml11DTDLoaders[freeXML11DTDLoaderIndex];
+                XMLDTDLoaderHolder holder = (XMLDTDLoaderHolder) ref.get();
+                if (holder != null && holder.loader != null) {
+                    XMLDTDLoader val = holder.loader;
+                    holder.loader = null;
+                    --freeXML11DTDLoaderIndex;
+                    return val;
+                }
+                xml11DTDLoaders[freeXML11DTDLoaderIndex--] = null;
+            }
+            return new XML11DTDProcessor();
+        }
+        // return an instance of XMLDTDLoader
+        else {
+            while (freeXML10DTDLoaderIndex >= 0) {
+                // return first available DTD loader
+                SoftReference ref = xml10DTDLoaders[freeXML10DTDLoaderIndex];
+                XMLDTDLoaderHolder holder = (XMLDTDLoaderHolder) ref.get();
+                if (holder != null && holder.loader != null) {
+                    XMLDTDLoader val = holder.loader;
+                    holder.loader = null;
+                    --freeXML10DTDLoaderIndex;
+                    return val;
+                }
+                xml10DTDLoaders[freeXML10DTDLoaderIndex--] = null;
+            }
+            return new XMLDTDLoader();
+        }
+    }
+
+    /** NON-DOM: release DTD loader */
+    synchronized final void releaseDTDLoader(String xmlVersion, XMLDTDLoader loader) {
+        // release an instance of XMLDTDLoader
+        if ("1.1".equals(xmlVersion)) {
+            ++freeXML11DTDLoaderIndex;
+            if (xml11DTDLoaders.length == freeXML11DTDLoaderIndex) {
+                // resize size of the DTD loaders
+                xml11DTDLoaderCurrentSize += SIZE;
+                SoftReference [] newarray = new SoftReference[xml11DTDLoaderCurrentSize];
+                System.arraycopy(xml11DTDLoaders, 0, newarray, 0, xml11DTDLoaders.length);
+                xml11DTDLoaders = newarray;
+            }
+            SoftReference ref = xml11DTDLoaders[freeXML11DTDLoaderIndex];
+            if (ref != null) {
+                XMLDTDLoaderHolder holder = (XMLDTDLoaderHolder) ref.get();
+                if (holder != null) {
+                    holder.loader = loader;
+                    return;
+                }
+            }
+            xml11DTDLoaders[freeXML11DTDLoaderIndex] = new SoftReference(new XMLDTDLoaderHolder(loader));
+        }
+        // release an instance of XMLDTDLoader
+        else {
+            ++freeXML10DTDLoaderIndex;
+            if (xml10DTDLoaders.length == freeXML10DTDLoaderIndex) {
+                // resize size of the DTD loaders
+                xml10DTDLoaderCurrentSize += SIZE;
+                SoftReference [] newarray = new SoftReference[xml10DTDLoaderCurrentSize];
+                System.arraycopy(xml10DTDLoaders, 0, newarray, 0, xml10DTDLoaders.length);
+                xml10DTDLoaders = newarray;
+            }
+            SoftReference ref = xml10DTDLoaders[freeXML10DTDLoaderIndex];
+            if (ref != null) {
+                XMLDTDLoaderHolder holder = (XMLDTDLoaderHolder) ref.get();
+                if (holder != null) {
+                    holder.loader = loader;
+                    return;
+                }
+            }
+            xml10DTDLoaders[freeXML10DTDLoaderIndex] = new SoftReference(new XMLDTDLoaderHolder(loader));
+        }
+    }
+
+    /** NON-DOM:  increment document/doctype counter */
+    protected synchronized int assignDocumentNumber() {
+        return ++docAndDoctypeCounter;
+    }
+
+    /** NON-DOM:  increment document/doctype counter */
+    protected synchronized int assignDocTypeNumber() {
+        return ++docAndDoctypeCounter;
+    }
 
     /* DOM Level 3 LS CR - Experimental.
      *
@@ -427,11 +612,33 @@ public class CoreDOMImplementationImpl
      * <code>LSOutput.characterStream</code>,
      * <code>LSOutput.byteStream</code>, <code>LSOutput.systemId</code>,
      * <code>LSOutput.encoding</code> are null.
-
      * @return  The newly created output object.
+    */
+    public LSOutput createLSOutput() {
+        return new DOMOutputImpl();
+    }
+
+    /**
+     * A holder for RevalidationHandlers. This allows us to reuse
+     * SoftReferences which haven't yet been cleared by the garbage
+     * collector.
      */
-       public LSOutput createLSOutput() {
-           return new DOMOutputImpl();
-       }
+    static final class RevalidationHandlerHolder {
+        RevalidationHandlerHolder(RevalidationHandler handler) {
+            this.handler = handler;
+        }
+        RevalidationHandler handler;
+    }
+
+    /**
+     * A holder for XMLDTDLoaders. This allows us to reuse SoftReferences
+     * which haven't yet been cleared by the garbage collector.
+     */
+    static final class XMLDTDLoaderHolder {
+        XMLDTDLoaderHolder(XMLDTDLoader loader) {
+            this.loader = loader;
+        }
+        XMLDTDLoader loader;
+    }
 
 } // class DOMImplementationImpl

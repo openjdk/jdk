@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019 Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -56,6 +56,7 @@ import org.w3c.dom.UserDataHandler;
  * @author Joe Kesselman, IBM
  * @author Andy Clark, IBM
  * @since  PR-DOM-Level-1-19980818.
+ * @LastModified: Apr 2019
  */
 public class DocumentTypeImpl
     extends ParentNode
@@ -324,7 +325,7 @@ public class DocumentTypeImpl
                 Node entNode2 =
                     argEntities.getNamedItem(entNode1.getNodeName());
 
-                if (!((NodeImpl) entNode1).isEqualNode((NodeImpl) entNode2))
+                if (!((NodeImpl) entNode1).isEqualNode(entNode2))
                     return false;
             }
         }
@@ -344,7 +345,7 @@ public class DocumentTypeImpl
                 Node noteNode2 =
                     argNotations.getNamedItem(noteNode1.getNodeName());
 
-                if (!((NodeImpl) noteNode1).isEqualNode((NodeImpl) noteNode2))
+                if (!((NodeImpl) noteNode1).isEqualNode(noteNode2))
                     return false;
             }
         }
@@ -357,7 +358,7 @@ public class DocumentTypeImpl
      * NON-DOM
      * set the ownerDocument of this node and its children
      */
-    void setOwnerDocument(CoreDocumentImpl doc) {
+    protected void setOwnerDocument(CoreDocumentImpl doc) {
         super.setOwnerDocument(doc);
         entities.setOwnerDocument(doc);
         notations.setOwnerDocument(doc);

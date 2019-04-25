@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -23,11 +23,11 @@ package com.sun.org.apache.xerces.internal.util;
 import com.sun.org.apache.xerces.internal.impl.Constants;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLComponentManager;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLConfigurationException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * This class implements the basic operations for managing parser
@@ -42,6 +42,7 @@ import java.util.Set;
  *
  * @author Andy Clark, IBM
  *
+ * @LastModified: Apr 2019
  */
 public class ParserConfigurationSettings
     implements XMLComponentManager {
@@ -56,13 +57,13 @@ public class ParserConfigurationSettings
     // data
 
     /** Recognized properties. */
-    protected Set<String> fRecognizedProperties;
+    protected List<String> fRecognizedProperties;
 
     /** Properties. */
     protected Map<String, Object> fProperties;
 
     /** Recognized features. */
-    protected Set<String> fRecognizedFeatures;
+    protected List<String> fRecognizedFeatures;
 
     /** Features. */
     protected Map<String, Boolean> fFeatures;
@@ -86,8 +87,8 @@ public class ParserConfigurationSettings
     public ParserConfigurationSettings(XMLComponentManager parent) {
 
         // create storage for recognized features and properties
-        fRecognizedFeatures = new HashSet<>();
-        fRecognizedProperties = new HashSet<>();
+        fRecognizedFeatures = new ArrayList<>();
+        fRecognizedProperties = new ArrayList<>();
 
         // create table for features and properties
         fFeatures = new HashMap<>();
@@ -195,7 +196,7 @@ public class ParserConfigurationSettings
      *                                   a critical error.
      */
     @Override
-    public final boolean getFeature(String featureId)
+    public boolean getFeature(String featureId)
         throws XMLConfigurationException {
 
         FeatureState state = getFeatureState(featureId);
@@ -222,7 +223,7 @@ public class ParserConfigurationSettings
             FeatureState checkState = checkFeature(featureId);
             if (checkState.isExceptional()) {
                 return checkState;
-            }
+        }
             return FeatureState.is(false);
         }
         return FeatureState.is(state);
@@ -241,7 +242,7 @@ public class ParserConfigurationSettings
      *                                   a critical error.
      */
     @Override
-    public final Object getProperty(String propertyId)
+    public Object getProperty(String propertyId)
         throws XMLConfigurationException {
 
         PropertyState state = getPropertyState(propertyId);
@@ -270,7 +271,7 @@ public class ParserConfigurationSettings
             PropertyState state = checkProperty(propertyId);
             if (state.isExceptional()) {
                 return state;
-            }
+        }
         }
 
         return PropertyState.is(propertyValue);
@@ -325,7 +326,7 @@ public class ParserConfigurationSettings
                 PropertyState state = fParentSettings.getPropertyState(propertyId);
                 if (state.isExceptional()) {
                     return state;
-                }
+            }
             }
             else {
                 return PropertyState.NOT_RECOGNIZED;
