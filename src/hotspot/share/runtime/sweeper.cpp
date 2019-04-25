@@ -322,7 +322,7 @@ void NMethodSweeper::do_stack_scanning() {
     if (ThreadLocalHandshakes) {
       CodeBlobClosure* code_cl;
       {
-        MutexLockerEx ccl(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+        MutexLocker ccl(CodeCache_lock, Mutex::_no_safepoint_check_flag);
         code_cl = prepare_mark_active_nmethods();
       }
       if (code_cl != NULL) {
@@ -341,9 +341,9 @@ void NMethodSweeper::sweeper_loop() {
   while (true) {
     {
       ThreadBlockInVM tbivm(JavaThread::current());
-      MutexLockerEx waiter(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+      MutexLocker waiter(CodeCache_lock, Mutex::_no_safepoint_check_flag);
       const long wait_time = 60*60*24 * 1000;
-      timeout = CodeCache_lock->wait(Mutex::_no_safepoint_check_flag, wait_time);
+      timeout = CodeCache_lock->wait_without_safepoint_check(wait_time);
     }
     if (!timeout) {
       possibly_sweep();
@@ -369,7 +369,7 @@ void NMethodSweeper::notify(int code_blob_type) {
   */
 void NMethodSweeper::force_sweep() {
   ThreadBlockInVM tbivm(JavaThread::current());
-  MutexLockerEx waiter(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker waiter(CodeCache_lock, Mutex::_no_safepoint_check_flag);
   // Request forced sweep
   _force_sweep = true;
   while (_force_sweep) {
@@ -377,7 +377,7 @@ void NMethodSweeper::force_sweep() {
     // In case a sweep currently takes place we timeout and try again because
     // we want to enforce a full sweep.
     CodeCache_lock->notify();
-    CodeCache_lock->wait(Mutex::_no_safepoint_check_flag, 1000);
+    CodeCache_lock->wait_without_safepoint_check(1000);
   }
 }
 
@@ -390,7 +390,7 @@ void NMethodSweeper::handle_safepoint_request() {
     if (PrintMethodFlushing && Verbose) {
       tty->print_cr("### Sweep at %d out of %d, yielding to safepoint", _seen, CodeCache::nmethod_count());
     }
-    MutexUnlockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    MutexUnlocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
     ThreadBlockInVM tbivm(thread);
     thread->java_suspend_self();
@@ -475,7 +475,7 @@ void NMethodSweeper::possibly_sweep() {
   if (forced) {
     // Notify requester that forced sweep finished
     assert(_force_sweep, "Should be a forced sweep");
-    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     _force_sweep = false;
     CodeCache_lock->notify();
   }
@@ -519,7 +519,7 @@ void NMethodSweeper::sweep_code_cache() {
 
   int freed_memory = 0;
   {
-    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
     while (!_current.end()) {
       swept_count++;
@@ -531,7 +531,7 @@ void NMethodSweeper::sweep_code_cache() {
 
       // Now ready to process nmethod and give up CodeCache_lock
       {
-        MutexUnlockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+        MutexUnlocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
         // Save information before potentially flushing the nmethod
         // Only flushing nmethods so size only matters for them.
         int size = nm->is_nmethod() ? ((nmethod*)nm)->total_size() : 0;
@@ -576,7 +576,7 @@ void NMethodSweeper::sweep_code_cache() {
   const Ticks sweep_end_counter = Ticks::now();
   const Tickspan sweep_time = sweep_end_counter - sweep_start_counter;
   {
-    MutexLockerEx mu(NMethodSweeperStats_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker mu(NMethodSweeperStats_lock, Mutex::_no_safepoint_check_flag);
     _total_time_sweeping  += sweep_time;
     _total_time_this_sweep += sweep_time;
     _peak_sweep_fraction_time = MAX2(sweep_time, _peak_sweep_fraction_time);

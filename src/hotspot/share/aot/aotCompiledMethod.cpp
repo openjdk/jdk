@@ -167,7 +167,7 @@ bool AOTCompiledMethod::make_not_entrant_helper(int new_state) {
 
   {
     // Enter critical section.  Does not block for safepoint.
-    MutexLockerEx pl(Patching_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker pl(Patching_lock, Mutex::_no_safepoint_check_flag);
 
     if (*_state_adr == new_state) {
       // another thread already performed this transition so nothing
@@ -218,7 +218,7 @@ bool AOTCompiledMethod::make_entrant() {
 
   {
     // Enter critical section.  Does not block for safepoint.
-    MutexLockerEx pl(Patching_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker pl(Patching_lock, Mutex::_no_safepoint_check_flag);
 
     if (*_state_adr == in_use) {
       // another thread already performed this transition so nothing

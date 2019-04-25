@@ -446,7 +446,7 @@ nmethod* nmethod::new_native_nmethod(const methodHandle& method,
   // create nmethod
   nmethod* nm = NULL;
   {
-    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     int native_nmethod_size = CodeBlob::allocation_size(code_buffer, sizeof(nmethod));
     CodeOffsets offsets;
     offsets.set_value(CodeOffsets::Verified_Entry, vep_offset);
@@ -492,7 +492,7 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
   code_buffer->finalize_oop_references(method);
   // create nmethod
   nmethod* nm = NULL;
-  { MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+  { MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     int nmethod_size =
       CodeBlob::allocation_size(code_buffer, sizeof(nmethod))
       + adjust_pcs_size(debug_info->pcs_size())
@@ -1103,7 +1103,7 @@ void nmethod::make_unloaded() {
 
   // Unregister must be done before the state change
   {
-    MutexLockerEx ml(SafepointSynchronize::is_at_safepoint() ? NULL : CodeCache_lock,
+    MutexLocker ml(SafepointSynchronize::is_at_safepoint() ? NULL : CodeCache_lock,
                      Mutex::_no_safepoint_check_flag);
     Universe::heap()->unregister_nmethod(this);
     CodeCache::unregister_old_nmethod(this);
@@ -1222,7 +1222,7 @@ bool nmethod::make_not_entrant_or_zombie(int state) {
     }
 
     // Enter critical section.  Does not block for safepoint.
-    MutexLockerEx pl(Patching_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker pl(Patching_lock, Mutex::_no_safepoint_check_flag);
 
     if (_state == state) {
       // another thread already performed this transition so nothing
@@ -1289,7 +1289,7 @@ bool nmethod::make_not_entrant_or_zombie(int state) {
       // Flushing dependencies must be done before any possible
       // safepoint can sneak in, otherwise the oops used by the
       // dependency logic could have become stale.
-      MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+      MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
       if (nmethod_needs_unregister) {
         Universe::heap()->unregister_nmethod(this);
         CodeCache::unregister_old_nmethod(this);
@@ -1334,7 +1334,7 @@ bool nmethod::make_not_entrant_or_zombie(int state) {
 }
 
 void nmethod::flush() {
-  MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
   // Note that there are no valid oops in the nmethod anymore.
   assert(!is_osr_method() || is_unloaded() || is_zombie(),
          "osr nmethod must be unloaded or zombie before flushing");
@@ -1452,7 +1452,7 @@ void nmethod::post_compiled_method_load_event() {
 
   if (JvmtiExport::should_post_compiled_method_load()) {
     // Let the Service thread (which is a real Java thread) post the event
-    MutexLockerEx ml(Service_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
     JvmtiDeferredEventQueue::enqueue(
       JvmtiDeferredEvent::compiled_method_load_event(this));
   }
@@ -1490,7 +1490,7 @@ void nmethod::post_compiled_method_unload() {
     JvmtiDeferredEvent event =
       JvmtiDeferredEvent::compiled_method_unload_event(this,
           _jmethod_id, insts_begin());
-    MutexLockerEx ml(Service_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
     JvmtiDeferredEventQueue::enqueue(event);
   }
 
@@ -2922,7 +2922,7 @@ void nmethod::invalidate_installed_code(Handle installedCode, TRAPS) {
   nmethodLocker nml(nm);
 #ifdef ASSERT
   {
-    MutexLockerEx pl(Patching_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker pl(Patching_lock, Mutex::_no_safepoint_check_flag);
     // This relationship can only be checked safely under a lock
     assert(!nm->is_alive() || nm->is_unloading() || nm->jvmci_installed_code() == installedCode(), "sanity check");
   }
@@ -2939,7 +2939,7 @@ void nmethod::invalidate_installed_code(Handle installedCode, TRAPS) {
   // Multiple threads could reach this point so we now need to
   // lock and re-check the link to the nmethod so that only one
   // thread clears it.
-  MutexLockerEx pl(Patching_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker pl(Patching_lock, Mutex::_no_safepoint_check_flag);
   if (InstalledCode::address(installedCode) == nativeMethod) {
       InstalledCode::set_address(installedCode, 0);
   }

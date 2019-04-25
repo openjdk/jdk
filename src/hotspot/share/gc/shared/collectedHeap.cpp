@@ -65,7 +65,7 @@ void GCHeapLog::log_heap(CollectedHeap* heap, bool before) {
   }
 
   double timestamp = fetch_timestamp();
-  MutexLockerEx ml(&_mutex, Mutex::_no_safepoint_check_flag);
+  MutexLocker ml(&_mutex, Mutex::_no_safepoint_check_flag);
   int index = compute_log_index();
   _records[index].thread = NULL; // Its the GC thread so it's not that interesting.
   _records[index].timestamp = timestamp;

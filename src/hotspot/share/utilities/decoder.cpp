@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,9 +83,9 @@ inline bool DecoderLocker::is_first_error_thread() {
 }
 
 DecoderLocker::DecoderLocker() :
-  MutexLockerEx(DecoderLocker::is_first_error_thread() ?
-                NULL : Decoder::shared_decoder_lock(),
-                Mutex::_no_safepoint_check_flag) {
+  MutexLocker(DecoderLocker::is_first_error_thread() ?
+              NULL : Decoder::shared_decoder_lock(),
+              Mutex::_no_safepoint_check_flag) {
   _decoder = is_first_error_thread() ?
     Decoder::get_error_handler_instance() : Decoder::get_shared_instance();
   assert(_decoder != NULL, "null decoder");
@@ -98,8 +98,8 @@ Mutex* Decoder::shared_decoder_lock() {
 
 bool Decoder::decode(address addr, char* buf, int buflen, int* offset, const char* modulepath, bool demangle) {
   bool error_handling_thread = os::current_thread_id() == VMError::first_error_tid;
-  MutexLockerEx locker(error_handling_thread ? NULL : shared_decoder_lock(),
-                       Mutex::_no_safepoint_check_flag);
+  MutexLocker locker(error_handling_thread ? NULL : shared_decoder_lock(),
+                     Mutex::_no_safepoint_check_flag);
   AbstractDecoder* decoder = error_handling_thread ?
     get_error_handler_instance(): get_shared_instance();
   assert(decoder != NULL, "null decoder");
@@ -109,8 +109,8 @@ bool Decoder::decode(address addr, char* buf, int buflen, int* offset, const cha
 
 bool Decoder::decode(address addr, char* buf, int buflen, int* offset, const void* base) {
   bool error_handling_thread = os::current_thread_id() == VMError::first_error_tid;
-  MutexLockerEx locker(error_handling_thread ? NULL : shared_decoder_lock(),
-                       Mutex::_no_safepoint_check_flag);
+  MutexLocker locker(error_handling_thread ? NULL : shared_decoder_lock(),
+                     Mutex::_no_safepoint_check_flag);
   AbstractDecoder* decoder = error_handling_thread ?
     get_error_handler_instance(): get_shared_instance();
   assert(decoder != NULL, "null decoder");
@@ -121,8 +121,8 @@ bool Decoder::decode(address addr, char* buf, int buflen, int* offset, const voi
 
 bool Decoder::demangle(const char* symbol, char* buf, int buflen) {
   bool error_handling_thread = os::current_thread_id() == VMError::first_error_tid;
-  MutexLockerEx locker(error_handling_thread ? NULL : shared_decoder_lock(),
-                       Mutex::_no_safepoint_check_flag);
+  MutexLocker locker(error_handling_thread ? NULL : shared_decoder_lock(),
+                     Mutex::_no_safepoint_check_flag);
   AbstractDecoder* decoder = error_handling_thread ?
     get_error_handler_instance(): get_shared_instance();
   assert(decoder != NULL, "null decoder");

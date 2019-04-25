@@ -135,7 +135,7 @@ void JfrRepository::set_chunk_path(jstring path, JavaThread* jt) {
   ResourceMark rm(jt);
   const char* const canonical_chunk_path = JfrJavaSupport::c_str(path, jt);
   {
-    MutexLockerEx stream_lock(JfrStream_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker stream_lock(JfrStream_lock, Mutex::_no_safepoint_check_flag);
     if (NULL == canonical_chunk_path && !_chunkwriter->is_valid()) {
       // new output is NULL and current output is NULL
       return;

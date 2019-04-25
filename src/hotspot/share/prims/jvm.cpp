@@ -2863,7 +2863,7 @@ JVM_ENTRY(void, JVM_SuspendThread(JNIEnv* env, jobject jthread))
   if (is_alive) {
     // jthread refers to a live JavaThread.
     {
-      MutexLockerEx ml(receiver->SR_lock(), Mutex::_no_safepoint_check_flag);
+      MutexLocker ml(receiver->SR_lock(), Mutex::_no_safepoint_check_flag);
       if (receiver->is_external_suspend()) {
         // Don't allow nested external suspend requests. We can't return
         // an error from this interface so just ignore the problem.
@@ -3168,7 +3168,7 @@ JVM_END
 JVM_ENTRY(jobject, JVM_GetAndClearReferencePendingList(JNIEnv* env))
   JVMWrapper("JVM_GetAndClearReferencePendingList");
 
-  MonitorLockerEx ml(Heap_lock);
+  MonitorLocker ml(Heap_lock);
   oop ref = Universe::reference_pending_list();
   if (ref != NULL) {
     Universe::set_reference_pending_list(NULL);
@@ -3178,13 +3178,13 @@ JVM_END
 
 JVM_ENTRY(jboolean, JVM_HasReferencePendingList(JNIEnv* env))
   JVMWrapper("JVM_HasReferencePendingList");
-  MonitorLockerEx ml(Heap_lock);
+  MonitorLocker ml(Heap_lock);
   return Universe::has_reference_pending_list();
 JVM_END
 
 JVM_ENTRY(void, JVM_WaitForReferencePendingList(JNIEnv* env))
   JVMWrapper("JVM_WaitForReferencePendingList");
-  MonitorLockerEx ml(Heap_lock);
+  MonitorLocker ml(Heap_lock);
   while (!Universe::has_reference_pending_list()) {
     ml.wait();
   }

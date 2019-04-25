@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1340,7 +1340,7 @@ size_t CompactibleFreeListSpace::totalSizeInIndexedFreeLists() const {
 }
 
 HeapWord* CompactibleFreeListSpace::par_allocate(size_t size) {
-  MutexLockerEx x(freelistLock(), Mutex::_no_safepoint_check_flag);
+  MutexLocker x(freelistLock(), Mutex::_no_safepoint_check_flag);
   return allocate(size);
 }
 
@@ -1524,8 +1524,8 @@ FreeChunk* CompactibleFreeListSpace::allocateScratch(size_t size) {
     // If GC is parallel, this might be called by several threads.
     // This should be rare enough that the locking overhead won't affect
     // the sequential code.
-    MutexLockerEx x(parDictionaryAllocLock(),
-                    Mutex::_no_safepoint_check_flag);
+    MutexLocker x(parDictionaryAllocLock(),
+                  Mutex::_no_safepoint_check_flag);
     fc = getChunkFromDictionary(size);
   }
   if (fc != NULL) {
@@ -1868,7 +1868,7 @@ CompactibleFreeListSpace::addChunkToFreeListsAtEndRecordingStats(
   Mutex* lock = &_parDictionaryAllocLock;
   FreeChunk* ec;
   {
-    MutexLockerEx x(lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker x(lock, Mutex::_no_safepoint_check_flag);
     ec = dictionary()->find_largest_dict();  // get largest block
     if (ec != NULL && ec->end() == (uintptr_t*) chunk) {
       // It's a coterminal block - we can coalesce.
@@ -1885,7 +1885,7 @@ CompactibleFreeListSpace::addChunkToFreeListsAtEndRecordingStats(
   if (size < SmallForDictionary) {
     lock = _indexedFreeListParLocks[size];
   }
-  MutexLockerEx x(lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker x(lock, Mutex::_no_safepoint_check_flag);
   addChunkAndRepairOffsetTable((HeapWord*)ec, size, true);
   // record the birth under the lock since the recording involves
   // manipulation of the list on which the chunk lives and
@@ -2682,8 +2682,8 @@ HeapWord* CompactibleFreeListSpaceLAB::alloc(size_t word_sz) {
   assert(word_sz == _cfls->adjustObjectSize(word_sz), "Error");
   if (word_sz >=  CompactibleFreeListSpace::IndexSetSize) {
     // This locking manages sync with other large object allocations.
-    MutexLockerEx x(_cfls->parDictionaryAllocLock(),
-                    Mutex::_no_safepoint_check_flag);
+    MutexLocker x(_cfls->parDictionaryAllocLock(),
+                  Mutex::_no_safepoint_check_flag);
     res = _cfls->getChunkFromDictionaryExact(word_sz);
     if (res == NULL) return NULL;
   } else {
@@ -2781,8 +2781,8 @@ void CompactibleFreeListSpaceLAB::retire(int tid) {
       size_t num_retire =  _indexedFreeList[i].count();
       assert(_num_blocks[i] > num_retire, "Should have used at least one");
       {
-        // MutexLockerEx x(_cfls->_indexedFreeListParLocks[i],
-        //                Mutex::_no_safepoint_check_flag);
+        // MutexLocker x(_cfls->_indexedFreeListParLocks[i],
+        //               Mutex::_no_safepoint_check_flag);
 
         // Update globals stats for num_blocks used
         _global_num_blocks[i] += (_num_blocks[i] - num_retire);
@@ -2824,8 +2824,8 @@ bool CompactibleFreeListSpace:: par_get_chunk_of_blocks_IFL(size_t word_sz, size
       AdaptiveFreeList<FreeChunk> fl_for_cur_sz;  // Empty.
       fl_for_cur_sz.set_size(cur_sz);
       {
-        MutexLockerEx x(_indexedFreeListParLocks[cur_sz],
-                        Mutex::_no_safepoint_check_flag);
+        MutexLocker x(_indexedFreeListParLocks[cur_sz],
+                      Mutex::_no_safepoint_check_flag);
         AdaptiveFreeList<FreeChunk>* gfl = &_indexedFreeList[cur_sz];
         if (gfl->count() != 0) {
           // nn is the number of chunks of size cur_sz that
@@ -2885,8 +2885,8 @@ bool CompactibleFreeListSpace:: par_get_chunk_of_blocks_IFL(size_t word_sz, size
         }
         // Update birth stats for this block size.
         size_t num = fl->count();
-        MutexLockerEx x(_indexedFreeListParLocks[word_sz],
-                        Mutex::_no_safepoint_check_flag);
+        MutexLocker x(_indexedFreeListParLocks[word_sz],
+                      Mutex::_no_safepoint_check_flag);
         ssize_t births = _indexedFreeList[word_sz].split_births() + num;
         _indexedFreeList[word_sz].set_split_births(births);
         return true;
@@ -2902,8 +2902,8 @@ FreeChunk* CompactibleFreeListSpace::get_n_way_chunk_to_split(size_t word_sz, si
   FreeChunk* rem_fc = NULL;
   size_t rem;
   {
-    MutexLockerEx x(parDictionaryAllocLock(),
-                    Mutex::_no_safepoint_check_flag);
+    MutexLocker x(parDictionaryAllocLock(),
+                  Mutex::_no_safepoint_check_flag);
     while (n > 0) {
       fc = dictionary()->get_chunk(MAX2(n * word_sz, _dictionary->min_size()));
       if (fc != NULL) {
@@ -2968,8 +2968,8 @@ FreeChunk* CompactibleFreeListSpace::get_n_way_chunk_to_split(size_t word_sz, si
     }
   }
   if (rem_fc != NULL) {
-    MutexLockerEx x(_indexedFreeListParLocks[rem],
-                    Mutex::_no_safepoint_check_flag);
+    MutexLocker x(_indexedFreeListParLocks[rem],
+                  Mutex::_no_safepoint_check_flag);
     _bt.verify_not_unallocated((HeapWord*)rem_fc, rem_fc->size());
     _indexedFreeList[rem].return_chunk_at_head(rem_fc);
     smallSplitBirth(rem);
@@ -3027,8 +3027,8 @@ void CompactibleFreeListSpace:: par_get_chunk_of_blocks_dictionary(size_t word_s
   assert((ssize_t)n > 0 && (ssize_t)n == fl->count(), "Incorrect number of blocks");
   {
     // Update the stats for this block size.
-    MutexLockerEx x(_indexedFreeListParLocks[word_sz],
-                    Mutex::_no_safepoint_check_flag);
+    MutexLocker x(_indexedFreeListParLocks[word_sz],
+                  Mutex::_no_safepoint_check_flag);
     const ssize_t births = _indexedFreeList[word_sz].split_births() + n;
     _indexedFreeList[word_sz].set_split_births(births);
     // ssize_t new_surplus = _indexedFreeList[word_sz].surplus() + n;

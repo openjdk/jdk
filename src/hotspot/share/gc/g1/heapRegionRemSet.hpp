@@ -194,7 +194,7 @@ public:
   }
 
   size_t occupied() {
-    MutexLockerEx x(&_m, Mutex::_no_safepoint_check_flag);
+    MutexLocker x(&_m, Mutex::_no_safepoint_check_flag);
     return occupied_locked();
   }
   size_t occupied_locked() {
@@ -274,7 +274,7 @@ public:
   // The actual # of bytes this hr_remset takes up.
   // Note also includes the strong code root set.
   size_t mem_size() {
-    MutexLockerEx x(&_m, Mutex::_no_safepoint_check_flag);
+    MutexLocker x(&_m, Mutex::_no_safepoint_check_flag);
     return _other_regions.mem_size()
       // This correction is necessary because the above includes the second
       // part.

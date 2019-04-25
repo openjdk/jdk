@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -361,7 +361,7 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, uint tid) {
   size_t ind = from_hrm_ind & _mod_max_fine_entries_mask;
   PerRegionTable* prt = find_region_table(ind, from_hr);
   if (prt == NULL) {
-    MutexLockerEx x(_m, Mutex::_no_safepoint_check_flag);
+    MutexLocker x(_m, Mutex::_no_safepoint_check_flag);
     // Confirm that it's really not there...
     prt = find_region_table(ind, from_hr);
     if (prt == NULL) {
@@ -577,7 +577,7 @@ void OtherRegionsTable::clear() {
 
 bool OtherRegionsTable::contains_reference(OopOrNarrowOopStar from) const {
   // Cast away const in this case.
-  MutexLockerEx x((Mutex*)_m, Mutex::_no_safepoint_check_flag);
+  MutexLocker x((Mutex*)_m, Mutex::_no_safepoint_check_flag);
   return contains_reference_locked(from);
 }
 
@@ -628,7 +628,7 @@ void HeapRegionRemSet::setup_remset_size() {
 }
 
 void HeapRegionRemSet::clear(bool only_cardset) {
-  MutexLockerEx x(&_m, Mutex::_no_safepoint_check_flag);
+  MutexLocker x(&_m, Mutex::_no_safepoint_check_flag);
   clear_locked(only_cardset);
 }
 
@@ -658,7 +658,7 @@ void HeapRegionRemSet::add_strong_code_root(nmethod* nm) {
           BOOL_TO_STR(CodeCache_lock->owned_by_self()), BOOL_TO_STR(SafepointSynchronize::is_at_safepoint()));
   // Optimistic unlocked contains-check
   if (!_code_roots.contains(nm)) {
-    MutexLockerEx ml(&_m, Mutex::_no_safepoint_check_flag);
+    MutexLocker ml(&_m, Mutex::_no_safepoint_check_flag);
     add_strong_code_root_locked(nm);
   }
 }
@@ -678,7 +678,7 @@ void HeapRegionRemSet::remove_strong_code_root(nmethod* nm) {
   assert(nm != NULL, "sanity");
   assert_locked_or_safepoint(CodeCache_lock);
 
-  MutexLockerEx ml(CodeCache_lock->owned_by_self() ? NULL : &_m, Mutex::_no_safepoint_check_flag);
+  MutexLocker ml(CodeCache_lock->owned_by_self() ? NULL : &_m, Mutex::_no_safepoint_check_flag);
   _code_roots.remove(nm);
 
   // Check that there were no duplicates

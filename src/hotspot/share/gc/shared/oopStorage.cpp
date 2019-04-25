@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -412,7 +412,7 @@ OopStorage::Block::block_for_ptr(const OopStorage* owner, const oop* ptr) {
 // is empty, for ease of empty block deletion processing.
 
 oop* OopStorage::allocate() {
-  MutexLockerEx ml(_allocation_mutex, Mutex::_no_safepoint_check_flag);
+  MutexLocker ml(_allocation_mutex, Mutex::_no_safepoint_check_flag);
 
   // Note: Without this we might never perform cleanup.  As it is,
   // cleanup is only requested here, when completing a concurrent
@@ -447,7 +447,7 @@ bool OopStorage::try_add_block() {
   assert_lock_strong(_allocation_mutex);
   Block* block;
   {
-    MutexUnlockerEx ul(_allocation_mutex, Mutex::_no_safepoint_check_flag);
+    MutexUnlocker ul(_allocation_mutex, Mutex::_no_safepoint_check_flag);
     block = Block::new_block(this);
   }
   if (block == NULL) return false;
@@ -481,14 +481,14 @@ OopStorage::Block* OopStorage::block_for_allocation() {
     if (block != NULL) {
       return block;
     } else if (reduce_deferred_updates()) {
-      MutexUnlockerEx ul(_allocation_mutex, Mutex::_no_safepoint_check_flag);
+      MutexUnlocker ul(_allocation_mutex, Mutex::_no_safepoint_check_flag);
       notify_needs_cleanup();
     } else if (try_add_block()) {
       block = _allocation_list.head();
       assert(block != NULL, "invariant");
       return block;
     } else if (reduce_deferred_updates()) { // Once more before failure.
-      MutexUnlockerEx ul(_allocation_mutex, Mutex::_no_safepoint_check_flag);
+      MutexUnlocker ul(_allocation_mutex, Mutex::_no_safepoint_check_flag);
       notify_needs_cleanup();
     } else {
       // Attempt to add a block failed, no other thread added a block,
@@ -812,13 +812,13 @@ void OopStorage::notify_needs_cleanup() {
   // Avoid re-notification if already notified.
   const uint notified = needs_cleanup_notified;
   if (Atomic::xchg(notified, &_needs_cleanup) != notified) {
-    MonitorLockerEx ml(Service_lock, Monitor::_no_safepoint_check_flag);
+    MonitorLocker ml(Service_lock, Monitor::_no_safepoint_check_flag);
     ml.notify_all();
   }
 }
 
 bool OopStorage::delete_empty_blocks() {
-  MutexLockerEx ml(_allocation_mutex, Mutex::_no_safepoint_check_flag);
+  MutexLocker ml(_allocation_mutex, Mutex::_no_safepoint_check_flag);
 
   // Clear the request before processing.
   Atomic::store(needs_cleanup_none, &_needs_cleanup);
@@ -837,7 +837,7 @@ bool OopStorage::delete_empty_blocks() {
     // might become available while we're working.
     if (reduce_deferred_updates()) {
       // Be safepoint-polite while looping.
-      MutexUnlockerEx ul(_allocation_mutex, Mutex::_no_safepoint_check_flag);
+      MutexUnlocker ul(_allocation_mutex, Mutex::_no_safepoint_check_flag);
       ThreadBlockInVM tbiv(JavaThread::current());
     } else {
       Block* block = _allocation_list.tail();
@@ -850,7 +850,7 @@ bool OopStorage::delete_empty_blocks() {
 
       // Try to delete the block.  First, try to remove from _active_array.
       {
-        MutexLockerEx aml(_active_mutex, Mutex::_no_safepoint_check_flag);
+        MutexLocker aml(_active_mutex, Mutex::_no_safepoint_check_flag);
         // Don't interfere with an active concurrent iteration.
         // Instead, give up immediately.  There is more work to do,
         // but don't re-notify, to avoid useless spinning of the
@@ -861,7 +861,7 @@ bool OopStorage::delete_empty_blocks() {
       // Remove block from _allocation_list and delete it.
       _allocation_list.unlink(*block);
       // Be safepoint-polite while deleting and looping.
-      MutexUnlockerEx ul(_allocation_mutex, Mutex::_no_safepoint_check_flag);
+      MutexUnlocker ul(_allocation_mutex, Mutex::_no_safepoint_check_flag);
       delete_empty_block(*block);
       ThreadBlockInVM tbiv(JavaThread::current());
     }
@@ -878,7 +878,7 @@ OopStorage::EntryStatus OopStorage::allocation_status(const oop* ptr) const {
   const Block* block = find_block_or_null(ptr);
   if (block != NULL) {
     // Prevent block deletion and _active_array modification.
-    MutexLockerEx ml(_allocation_mutex, Mutex::_no_safepoint_check_flag);
+    MutexLocker ml(_allocation_mutex, Mutex::_no_safepoint_check_flag);
     // Block could be a false positive, so get index carefully.
     size_t index = Block::active_index_safe(block);
     if ((index < _active_array->block_count()) &&
@@ -953,7 +953,7 @@ OopStorage::BasicParState::~BasicParState() {
 
 void OopStorage::BasicParState::update_concurrent_iteration_count(int value) {
   if (_concurrent) {
-    MutexLockerEx ml(_storage->_active_mutex, Mutex::_no_safepoint_check_flag);
+    MutexLocker ml(_storage->_active_mutex, Mutex::_no_safepoint_check_flag);
     _storage->_concurrent_iteration_count += value;
     assert(_storage->_concurrent_iteration_count >= 0, "invariant");
   }

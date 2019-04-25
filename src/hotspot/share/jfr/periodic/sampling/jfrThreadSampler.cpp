@@ -347,7 +347,7 @@ static void clear_transition_block(JavaThread* jt) {
   jt->clear_trace_flag();
   JfrThreadLocal* const tl = jt->jfr_thread_local();
   if (tl->is_trace_block()) {
-    MutexLockerEx ml(JfrThreadSampler::transition_block(), Mutex::_no_safepoint_check_flag);
+    MutexLocker ml(JfrThreadSampler::transition_block(), Mutex::_no_safepoint_check_flag);
     JfrThreadSampler::transition_block()->notify_all();
   }
 }
@@ -395,9 +395,9 @@ void JfrThreadSampler::on_javathread_suspend(JavaThread* thread) {
   JfrThreadLocal* const tl = thread->jfr_thread_local();
   tl->set_trace_block();
   {
-    MutexLockerEx ml(transition_block(), Mutex::_no_safepoint_check_flag);
+    MutexLocker ml(transition_block(), Mutex::_no_safepoint_check_flag);
     while (thread->is_trace_suspend()) {
-      transition_block()->wait(true);
+      transition_block()->wait_without_safepoint_check();
     }
     tl->clear_trace_block();
   }
@@ -516,7 +516,7 @@ void JfrThreadSampler::task_stacktrace(JfrSampleType type, JavaThread** last_thr
     elapsedTimer sample_time;
     sample_time.start();
     {
-      MonitorLockerEx tlock(Threads_lock, Mutex::_allow_vm_block_flag);
+      MutexLocker tlock(Threads_lock, Mutex::_no_safepoint_check_flag);
       ThreadsListHandle tlh;
       // Resolve a sample session relative start position index into the thread list array.
       // In cases where the last sampled thread is NULL or not-NULL but stale, find_index() returns -1.

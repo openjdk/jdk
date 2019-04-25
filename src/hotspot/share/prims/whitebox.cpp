@@ -817,7 +817,7 @@ WB_ENTRY(jint, WB_DeoptimizeFrames(JNIEnv* env, jobject o, jboolean make_not_ent
 WB_END
 
 WB_ENTRY(void, WB_DeoptimizeAll(JNIEnv* env, jobject o))
-  MutexLockerEx mu(Compile_lock);
+  MutexLocker mu(Compile_lock);
   CodeCache::mark_all_nmethods_for_deoptimization();
   VM_Deoptimize op;
   VMThread::execute(&op);
@@ -827,7 +827,7 @@ WB_ENTRY(jint, WB_DeoptimizeMethod(JNIEnv* env, jobject o, jobject method, jbool
   jmethodID jmid = reflected_method_to_jmid(thread, env, method);
   int result = 0;
   CHECK_JNI_EXCEPTION_(env, result);
-  MutexLockerEx mu(Compile_lock);
+  MutexLocker mu(Compile_lock);
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
   if (is_osr) {
     result += mh->mark_osr_nmethods();
@@ -846,7 +846,7 @@ WB_END
 WB_ENTRY(jboolean, WB_IsMethodCompiled(JNIEnv* env, jobject o, jobject method, jboolean is_osr))
   jmethodID jmid = reflected_method_to_jmid(thread, env, method);
   CHECK_JNI_EXCEPTION_(env, JNI_FALSE);
-  MutexLockerEx mu(Compile_lock);
+  MutexLocker mu(Compile_lock);
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
   CompiledMethod* code = is_osr ? mh->lookup_osr_nmethod_for(InvocationEntryBci, CompLevel_none, false) : mh->code();
   if (code == NULL) {
@@ -861,7 +861,7 @@ WB_ENTRY(jboolean, WB_IsMethodCompilable(JNIEnv* env, jobject o, jobject method,
   }
   jmethodID jmid = reflected_method_to_jmid(thread, env, method);
   CHECK_JNI_EXCEPTION_(env, JNI_FALSE);
-  MutexLockerEx mu(Compile_lock);
+  MutexLocker mu(Compile_lock);
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
   if (is_osr) {
     return CompilationPolicy::can_be_osr_compiled(mh, comp_level);
@@ -873,7 +873,7 @@ WB_END
 WB_ENTRY(jboolean, WB_IsMethodQueuedForCompilation(JNIEnv* env, jobject o, jobject method))
   jmethodID jmid = reflected_method_to_jmid(thread, env, method);
   CHECK_JNI_EXCEPTION_(env, JNI_FALSE);
-  MutexLockerEx mu(Compile_lock);
+  MutexLocker mu(Compile_lock);
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
   return mh->queued_for_compilation();
 WB_END
@@ -982,7 +982,7 @@ bool WhiteBox::compile_method(Method* method, int comp_level, int bci, Thread* T
 
   // Compile method and check result
   nmethod* nm = CompileBroker::compile_method(mh, bci, comp_level, mh, mh->invocation_count(), CompileTask::Reason_Whitebox, THREAD);
-  MutexLockerEx mu(Compile_lock);
+  MutexLocker mu(Compile_lock);
   bool is_queued = mh->queued_for_compilation();
   if ((!is_blocking && is_queued) || nm != NULL) {
     return true;
@@ -1082,7 +1082,7 @@ WB_ENTRY(void, WB_ClearMethodState(JNIEnv* env, jobject o, jobject method))
   jmethodID jmid = reflected_method_to_jmid(thread, env, method);
   CHECK_JNI_EXCEPTION(env);
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
-  MutexLockerEx mu(Compile_lock);
+  MutexLocker mu(Compile_lock);
   MethodData* mdo = mh->method_data();
   MethodCounters* mcs = mh->method_counters();
 
@@ -1093,7 +1093,7 @@ WB_ENTRY(void, WB_ClearMethodState(JNIEnv* env, jobject o, jobject method))
     for (int i = 0; i < arg_count; i++) {
       mdo->set_arg_modified(i, 0);
     }
-    MutexLockerEx mu(mdo->extra_data_lock());
+    MutexLocker mu(mdo->extra_data_lock());
     mdo->clean_method_data(/*always_clean*/true);
   }
 
@@ -1342,7 +1342,7 @@ WB_ENTRY(void, WB_LockCompilation(JNIEnv* env, jobject o, jlong timeout))
 WB_END
 
 WB_ENTRY(void, WB_UnlockCompilation(JNIEnv* env, jobject o))
-  MonitorLockerEx mo(Compilation_lock, Mutex::_no_safepoint_check_flag);
+  MonitorLocker mo(Compilation_lock, Mutex::_no_safepoint_check_flag);
   WhiteBox::compilation_locked = false;
   mo.notify_all();
 WB_END
@@ -1502,7 +1502,7 @@ CodeBlob* WhiteBox::allocate_code_blob(int size, int blob_type) {
     full_size += align_up(size - full_size, oopSize);
   }
   {
-    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     blob = (BufferBlob*) CodeCache::allocate(full_size, blob_type);
     if (blob != NULL) {
       ::new (blob) BufferBlob("WB::DummyBlob", full_size);
@@ -1532,7 +1532,7 @@ WB_ENTRY(jobjectArray, WB_GetCodeHeapEntries(JNIEnv* env, jobject o, jint blob_t
   ResourceMark rm;
   GrowableArray<CodeBlobStub*> blobs;
   {
-    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     CodeHeap* heap = WhiteBox::get_code_heap(blob_type);
     if (heap == NULL) {
       return NULL;
@@ -1718,8 +1718,11 @@ WB_ENTRY(void, WB_AssertMatchingSafepointCalls(JNIEnv* env, jobject o, jboolean 
   Monitor::SafepointCheckRequired sfpt_check_required = mutexSafepointValue ?
                                            Monitor::_safepoint_check_always :
                                            Monitor::_safepoint_check_never;
-  MutexLockerEx ml(new Mutex(Mutex::leaf, "SFPT_Test_lock", true, sfpt_check_required),
-                   attemptedNoSafepointValue == JNI_TRUE);
+  Monitor::SafepointCheckFlag sfpt_check_attempted = attemptedNoSafepointValue ?
+                                           Monitor::_no_safepoint_check_flag :
+                                           Monitor::_safepoint_check_flag;
+  MutexLocker ml(new Mutex(Mutex::leaf, "SFPT_Test_lock", true, sfpt_check_required),
+                 sfpt_check_attempted);
 WB_END
 
 WB_ENTRY(jboolean, WB_IsMonitorInflated(JNIEnv* env, jobject wb, jobject obj))

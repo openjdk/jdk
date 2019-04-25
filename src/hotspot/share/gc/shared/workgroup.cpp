@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -200,7 +200,7 @@ class MutexGangTaskDispatcher : public GangTaskDispatcher {
   }
 
   void coordinator_execute_on_workers(AbstractGangTask* task, uint num_workers) {
-    MutexLockerEx ml(_monitor, Mutex::_no_safepoint_check_flag);
+    MutexLocker ml(_monitor, Mutex::_no_safepoint_check_flag);
 
     _task        = task;
     _num_workers = num_workers;
@@ -210,7 +210,7 @@ class MutexGangTaskDispatcher : public GangTaskDispatcher {
 
     // Wait for them to finish.
     while (_finished < _num_workers) {
-      _monitor->wait(/* no_safepoint_check */ true);
+      _monitor->wait_without_safepoint_check();
     }
 
     _task        = NULL;
@@ -220,10 +220,10 @@ class MutexGangTaskDispatcher : public GangTaskDispatcher {
   }
 
   WorkData worker_wait_for_task() {
-    MonitorLockerEx ml(_monitor, Mutex::_no_safepoint_check_flag);
+    MonitorLocker ml(_monitor, Mutex::_no_safepoint_check_flag);
 
     while (_num_workers == 0 || _started == _num_workers) {
-      _monitor->wait(/* no_safepoint_check */ true);
+      _monitor->wait();
     }
 
     _started++;
@@ -235,7 +235,7 @@ class MutexGangTaskDispatcher : public GangTaskDispatcher {
   }
 
   void worker_done_with_task() {
-    MonitorLockerEx ml(_monitor, Mutex::_no_safepoint_check_flag);
+    MonitorLocker ml(_monitor, Mutex::_no_safepoint_check_flag);
 
     _finished++;
 
@@ -300,8 +300,6 @@ void AbstractGangWorker::initialize() {
   assert(_gang != NULL, "No gang to run in");
   os::set_priority(this, NearMaxPriority);
   log_develop_trace(gc, workgang)("Running gang worker for gang %s id %u", gang()->name(), id());
-  // The VM thread should not execute here because MutexLocker's are used
-  // as (opposed to MutexLockerEx's).
   assert(!Thread::current()->is_VM_thread(), "VM thread should not be part"
          " of a work gang");
 }
@@ -369,7 +367,7 @@ void WorkGangBarrierSync::set_n_workers(uint n_workers) {
 }
 
 bool WorkGangBarrierSync::enter() {
-  MutexLockerEx x(monitor(), Mutex::_no_safepoint_check_flag);
+  MutexLocker x(monitor(), Mutex::_no_safepoint_check_flag);
   if (should_reset()) {
     // The should_reset() was set and we are the first worker to enter
     // the sync barrier. We will zero the n_completed() count which
@@ -392,14 +390,14 @@ bool WorkGangBarrierSync::enter() {
     monitor()->notify_all();
   } else {
     while (n_completed() != n_workers() && !aborted()) {
-      monitor()->wait(/* no_safepoint_check */ true);
+      monitor()->wait_without_safepoint_check();
     }
   }
   return !aborted();
 }
 
 void WorkGangBarrierSync::abort() {
-  MutexLockerEx x(monitor(), Mutex::_no_safepoint_check_flag);
+  MutexLocker x(monitor(), Mutex::_no_safepoint_check_flag);
   set_aborted();
   monitor()->notify_all();
 }

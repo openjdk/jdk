@@ -844,7 +844,7 @@ void VmThreadCountClosure::do_thread(Thread* thread) {
 static jint get_vm_thread_count() {
   VmThreadCountClosure vmtcc;
   {
-    MutexLockerEx ml(Threads_lock);
+    MutexLocker ml(Threads_lock);
     Threads::threads_do(&vmtcc);
   }
 
@@ -1704,7 +1704,7 @@ JVM_ENTRY(jint, jmm_GetInternalThreadTimes(JNIEnv *env,
 
   ThreadTimesClosure ttc(names_ah, times_ah);
   {
-    MutexLockerEx ml(Threads_lock);
+    MutexLocker ml(Threads_lock);
     Threads::threads_do(&ttc);
   }
   ttc.do_unlocked();

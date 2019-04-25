@@ -423,7 +423,7 @@ CompileTask* CompileQueue::get() {
     // We need a timed wait here, since compiler threads can exit if compilation
     // is disabled forever. We use 5 seconds wait time; the exiting of compiler threads
     // is not critical and we do not want idle compiler threads to wake up too often.
-    MethodCompileQueue_lock->wait(!Mutex::_no_safepoint_check_flag, 5*1000);
+    MethodCompileQueue_lock->wait(5*1000);
 
     if (UseDynamicNumberOfCompilerThreads && _first == NULL) {
       // Still nothing to compile. Give caller a chance to stop this thread.
@@ -1500,7 +1500,7 @@ bool CompileBroker::wait_for_jvmci_completion(JVMCICompiler* jvmci, CompileTask*
   int progress_wait_attempts = 0;
   int methods_compiled = jvmci->methods_compiled();
   while (!task->is_complete() && !is_compilation_disabled_forever() &&
-         task->lock()->wait(!Mutex::_no_safepoint_check_flag, JVMCI_COMPILATION_PROGRESS_WAIT_TIMESLICE)) {
+         task->lock()->wait(JVMCI_COMPILATION_PROGRESS_WAIT_TIMESLICE)) {
     CompilerThread* jvmci_compiler_thread = task->jvmci_compiler_thread();
 
     bool progress;
@@ -1644,7 +1644,7 @@ bool CompileBroker::init_compiler_runtime() {
 void CompileBroker::shutdown_compiler_runtime(AbstractCompiler* comp, CompilerThread* thread) {
   // Free buffer blob, if allocated
   if (thread->get_buffer_blob() != NULL) {
-    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     CodeCache::free(thread->get_buffer_blob());
   }
 
@@ -1780,7 +1780,7 @@ void CompileBroker::compiler_thread_loop() {
           }
           // Free buffer blob, if allocated
           if (thread->get_buffer_blob() != NULL) {
-            MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+            MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
             CodeCache::free(thread->get_buffer_blob());
           }
           return; // Stop this thread.
@@ -1910,7 +1910,7 @@ static void codecache_print(bool detailed)
   stringStream s;
   // Dump code cache  into a buffer before locking the tty,
   {
-    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     CodeCache::print_summary(&s, detailed);
   }
   ttyLocker ttyl;
@@ -1924,7 +1924,7 @@ static void codecache_print(outputStream* out, bool detailed) {
 
   // Dump code cache into a buffer
   {
-    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     CodeCache::print_summary(&s, detailed);
   }
 
@@ -2112,9 +2112,9 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
       ci_env.record_method_not_compilable("no compiler", !TieredCompilation);
     } else {
       if (WhiteBoxAPI && WhiteBox::compilation_locked) {
-        MonitorLockerEx locker(Compilation_lock, Mutex::_no_safepoint_check_flag);
+        MonitorLocker locker(Compilation_lock, Mutex::_no_safepoint_check_flag);
         while (WhiteBox::compilation_locked) {
-          locker.wait(Mutex::_no_safepoint_check_flag);
+          locker.wait();
         }
       }
       comp->compile_method(&ci_env, target, osr_bci, directive);
@@ -2678,7 +2678,7 @@ void CompileBroker::print_heapinfo(outputStream* out, const char* function, cons
   // CodeHeapStateAnalytics_lock could be held by a concurrent thread for a long time,
   // leading to an unnecessarily long hold time of the CodeCache_lock.
   ts.update(); // record starting point
-  MutexLockerEx mu1(CodeHeapStateAnalytics_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker mu1(CodeHeapStateAnalytics_lock, Mutex::_no_safepoint_check_flag);
   out->print_cr("\n__ CodeHeapStateAnalytics lock wait took %10.3f seconds _________\n", ts.seconds());
 
   // If we serve an "allFun" call, it is beneficial to hold the CodeCache_lock
@@ -2688,7 +2688,7 @@ void CompileBroker::print_heapinfo(outputStream* out, const char* function, cons
   Monitor* global_lock   = allFun ? CodeCache_lock : NULL;
   Monitor* function_lock = allFun ? NULL : CodeCache_lock;
   ts_global.update(); // record starting point
-  MutexLockerEx mu2(global_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker mu2(global_lock, Mutex::_no_safepoint_check_flag);
   if (global_lock != NULL) {
     out->print_cr("\n__ CodeCache (global) lock wait took %10.3f seconds _________\n", ts_global.seconds());
     ts_global.update(); // record starting point
@@ -2696,7 +2696,7 @@ void CompileBroker::print_heapinfo(outputStream* out, const char* function, cons
 
   if (aggregate) {
     ts.update(); // record starting point
-    MutexLockerEx mu3(function_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker mu3(function_lock, Mutex::_no_safepoint_check_flag);
     if (function_lock != NULL) {
       out->print_cr("\n__ CodeCache (function) lock wait took %10.3f seconds _________\n", ts.seconds());
     }
@@ -2716,7 +2716,7 @@ void CompileBroker::print_heapinfo(outputStream* out, const char* function, cons
   if (methodNames) {
     // print_names() has shown to be sensitive to concurrent CodeHeap modifications.
     // Therefore, request  the CodeCache_lock before calling...
-    MutexLockerEx mu3(function_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker mu3(function_lock, Mutex::_no_safepoint_check_flag);
     CodeCache::print_names(out);
   }
   if (discard) CodeCache::discard(out);

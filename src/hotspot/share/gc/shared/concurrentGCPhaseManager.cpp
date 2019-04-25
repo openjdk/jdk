@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ ConcurrentGCPhaseManager::ConcurrentGCPhaseManager(int phase, Stack* stack) :
   assert_ConcurrentGC_thread();
   assert_not_enter_unconstrained(phase);
   assert(stack != NULL, "precondition");
-  MonitorLockerEx ml(CGCPhaseManager_lock, Mutex::_no_safepoint_check_flag);
+  MonitorLocker ml(CGCPhaseManager_lock, Mutex::_no_safepoint_check_flag);
   if (stack->_top != NULL) {
     assert(stack->_top->_active, "precondition");
     _prev = stack->_top;
@@ -61,7 +61,7 @@ ConcurrentGCPhaseManager::ConcurrentGCPhaseManager(int phase, Stack* stack) :
 
 ConcurrentGCPhaseManager::~ConcurrentGCPhaseManager() {
   assert_ConcurrentGC_thread();
-  MonitorLockerEx ml(CGCPhaseManager_lock, Mutex::_no_safepoint_check_flag);
+  MonitorLocker ml(CGCPhaseManager_lock, Mutex::_no_safepoint_check_flag);
   assert_manager_is_tos(this, _stack, "This");
   wait_when_requested_impl();
   _stack->_top = _prev;
@@ -70,7 +70,7 @@ ConcurrentGCPhaseManager::~ConcurrentGCPhaseManager() {
 
 bool ConcurrentGCPhaseManager::is_requested() const {
   assert_ConcurrentGC_thread();
-  MonitorLockerEx ml(CGCPhaseManager_lock, Mutex::_no_safepoint_check_flag);
+  MonitorLocker ml(CGCPhaseManager_lock, Mutex::_no_safepoint_check_flag);
   assert_manager_is_tos(this, _stack, "This");
   return _active && (_stack->_requested_phase == _phase);
 }
@@ -81,14 +81,14 @@ bool ConcurrentGCPhaseManager::wait_when_requested_impl() const {
   bool waited = false;
   while (_active && (_stack->_requested_phase == _phase)) {
     waited = true;
-    CGCPhaseManager_lock->wait(Mutex::_no_safepoint_check_flag);
+    CGCPhaseManager_lock->wait_without_safepoint_check();
   }
   return waited;
 }
 
 bool ConcurrentGCPhaseManager::wait_when_requested() const {
   assert_ConcurrentGC_thread();
-  MonitorLockerEx ml(CGCPhaseManager_lock, Mutex::_no_safepoint_check_flag);
+  MonitorLocker ml(CGCPhaseManager_lock, Mutex::_no_safepoint_check_flag);
   assert_manager_is_tos(this, _stack, "This");
   return wait_when_requested_impl();
 }
@@ -96,7 +96,7 @@ bool ConcurrentGCPhaseManager::wait_when_requested() const {
 void ConcurrentGCPhaseManager::set_phase(int phase, bool force) {
   assert_ConcurrentGC_thread();
   assert_not_enter_unconstrained(phase);
-  MonitorLockerEx ml(CGCPhaseManager_lock, Mutex::_no_safepoint_check_flag);
+  MonitorLocker ml(CGCPhaseManager_lock, Mutex::_no_safepoint_check_flag);
   assert_manager_is_tos(this, _stack, "This");
   if (!force) wait_when_requested_impl();
   _phase = phase;
@@ -105,7 +105,7 @@ void ConcurrentGCPhaseManager::set_phase(int phase, bool force) {
 
 void ConcurrentGCPhaseManager::deactivate() {
   assert_ConcurrentGC_thread();
-  MonitorLockerEx ml(CGCPhaseManager_lock, Mutex::_no_safepoint_check_flag);
+  MonitorLocker ml(CGCPhaseManager_lock, Mutex::_no_safepoint_check_flag);
   assert_manager_is_tos(this, _stack, "This");
   _active = false;
   ml.notify_all();
@@ -114,7 +114,7 @@ void ConcurrentGCPhaseManager::deactivate() {
 bool ConcurrentGCPhaseManager::wait_for_phase(int phase, Stack* stack) {
   assert(Thread::current()->is_Java_thread(), "precondition");
   assert(stack != NULL, "precondition");
-  MonitorLockerEx ml(CGCPhaseManager_lock);
+  MonitorLocker ml(CGCPhaseManager_lock);
   // Update request and notify service of change.
   if (stack->_requested_phase != phase) {
     stack->_requested_phase = phase;

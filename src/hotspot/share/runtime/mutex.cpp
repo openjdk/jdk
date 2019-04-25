@@ -140,27 +140,9 @@ void Monitor::notify_all() {
   _lock.notify_all();
 }
 
-bool Monitor::wait(bool no_safepoint_check, long timeout,
-                   bool as_suspend_equivalent) {
-  // Make sure safepoint checking is used properly.
-  assert(!(_safepoint_check_required == Monitor::_safepoint_check_never && no_safepoint_check == false),
-         "This lock should never have a safepoint check: %s", name());
-  assert(!(_safepoint_check_required == Monitor::_safepoint_check_always && no_safepoint_check == true),
-         "This lock should always have a safepoint check: %s", name());
-
-  // timeout is in milliseconds - with zero meaning never timeout
-  assert(timeout >= 0, "negative timeout");
-
-  Thread * const self = Thread::current();
-  assert_owner(self);
-
-  // as_suspend_equivalent logically implies !no_safepoint_check
-  guarantee(!as_suspend_equivalent || !no_safepoint_check, "invariant");
-  // !no_safepoint_check logically implies java_thread
-  guarantee(no_safepoint_check || self->is_Java_thread(), "invariant");
-
 #ifdef ASSERT
-  Monitor * least = get_least_ranked_lock_besides_this(self->owned_locks());
+void Monitor::assert_wait_lock_state(Thread* self) {
+  Monitor* least = get_least_ranked_lock_besides_this(self->owned_locks());
   assert(least != this, "Specification of get_least_... call above");
   if (least != NULL && least->rank() <= special) {
     ::tty->print("Attempting to wait on monitor %s/%d while holding"
@@ -168,60 +150,89 @@ bool Monitor::wait(bool no_safepoint_check, long timeout,
                name(), rank(), least->name(), least->rank());
     assert(false, "Shouldn't block(wait) while holding a lock of rank special");
   }
+}
 #endif // ASSERT
+
+bool Monitor::wait_without_safepoint_check(long timeout) {
+  // Make sure safepoint checking is used properly.
+  assert(_safepoint_check_required != Monitor::_safepoint_check_always,
+         "This lock should always have a safepoint check: %s", name());
+
+  // timeout is in milliseconds - with zero meaning never timeout
+  assert(timeout >= 0, "negative timeout");
+
+  Thread * const self = Thread::current();
+  assert_owner(self);
+  assert_wait_lock_state(self);
+
+  // conceptually set the owner to NULL in anticipation of
+  // abdicating the lock in wait
+  set_owner(NULL);
+  int wait_status = _lock.wait(timeout);
+  set_owner(self);
+  return wait_status != 0;          // return true IFF timeout
+}
+
+bool Monitor::wait(long timeout, bool as_suspend_equivalent) {
+  // Make sure safepoint checking is used properly.
+  assert(_safepoint_check_required != Monitor::_safepoint_check_never,
+         "This lock should never have a safepoint check: %s", name());
+
+  // timeout is in milliseconds - with zero meaning never timeout
+  assert(timeout >= 0, "negative timeout");
+
+  Thread* const self = Thread::current();
+  assert_owner(self);
+
+  // Safepoint checking logically implies java_thread
+  guarantee(self->is_Java_thread(), "invariant");
+  assert_wait_lock_state(self);
 
 #ifdef CHECK_UNHANDLED_OOPS
   // Clear unhandled oops in JavaThreads so we get a crash right away.
-  if (self->is_Java_thread() && !no_safepoint_check) {
-    self->clear_unhandled_oops();
-  }
+  self->clear_unhandled_oops();
 #endif // CHECK_UNHANDLED_OOPS
 
   int wait_status;
   // conceptually set the owner to NULL in anticipation of
   // abdicating the lock in wait
   set_owner(NULL);
-  if (no_safepoint_check) {
-    wait_status = _lock.wait(timeout);
-    set_owner(self);
-  } else {
-    assert(self->is_Java_thread(), "invariant");
-    JavaThread *jt = (JavaThread *)self;
-    Monitor* in_flight_monitor = NULL;
+  JavaThread *jt = (JavaThread *)self;
+  Monitor* in_flight_monitor = NULL;
 
-    {
-      ThreadBlockInVMWithDeadlockCheck tbivmdc(jt, &in_flight_monitor);
-      OSThreadWaitState osts(self->osthread(), false /* not Object.wait() */);
-      if (as_suspend_equivalent) {
-        jt->set_suspend_equivalent();
-        // cleared by handle_special_suspend_equivalent_condition() or
-        // java_suspend_self()
-      }
-
-      wait_status = _lock.wait(timeout);
-      in_flight_monitor = this;  // save for ~ThreadBlockInVMWithDeadlockCheck
-
-      // were we externally suspended while we were waiting?
-      if (as_suspend_equivalent && jt->handle_special_suspend_equivalent_condition()) {
-        // Our event wait has finished and we own the lock, but
-        // while we were waiting another thread suspended us. We don't
-        // want to hold the lock while suspended because that
-        // would surprise the thread that suspended us.
-        _lock.unlock();
-        jt->java_suspend_self();
-        _lock.lock();
-      }
+  {
+    ThreadBlockInVMWithDeadlockCheck tbivmdc(jt, &in_flight_monitor);
+    OSThreadWaitState osts(self->osthread(), false /* not Object.wait() */);
+    if (as_suspend_equivalent) {
+      jt->set_suspend_equivalent();
+      // cleared by handle_special_suspend_equivalent_condition() or
+      // java_suspend_self()
     }
 
-    if (in_flight_monitor != NULL) {
-      // Not unlocked by ~ThreadBlockInVMWithDeadlockCheck
-      assert_owner(NULL);
-      // Conceptually reestablish ownership of the lock.
-      set_owner(self);
-    } else {
-      lock(self);
+    wait_status = _lock.wait(timeout);
+    in_flight_monitor = this;  // save for ~ThreadBlockInVMWithDeadlockCheck
+
+    // were we externally suspended while we were waiting?
+    if (as_suspend_equivalent && jt->handle_special_suspend_equivalent_condition()) {
+      // Our event wait has finished and we own the lock, but
+      // while we were waiting another thread suspended us. We don't
+      // want to hold the lock while suspended because that
+      // would surprise the thread that suspended us.
+      _lock.unlock();
+      jt->java_suspend_self();
+      _lock.lock();
     }
   }
+
+  if (in_flight_monitor != NULL) {
+    // Not unlocked by ~ThreadBlockInVMWithDeadlockCheck
+    assert_owner(NULL);
+    // Conceptually reestablish ownership of the lock.
+    set_owner(self);
+  } else {
+    lock(self);
+  }
+
   return wait_status != 0;          // return true IFF timeout
 }
 

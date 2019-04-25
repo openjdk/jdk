@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -321,7 +321,7 @@ static bool full_buffer_registration(BufferPtr buffer, JfrStorageAgeMspace* age_
   assert(buffer != NULL, "invariant");
   assert(buffer->retired(), "invariant");
   assert(age_mspace != NULL, "invariant");
-  MutexLockerEx lock(JfrBuffer_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker lock(JfrBuffer_lock, Mutex::_no_safepoint_check_flag);
   JfrAgeNode* age_node = get_free_age_node(age_mspace, thread);
   if (age_node == NULL) {
     age_node = new_age_node(buffer, age_mspace, thread);
@@ -623,7 +623,7 @@ static void insert_free_age_nodes(JfrStorageAgeMspace* age_mspace, JfrAgeNode* h
     assert(tail->next() == NULL, "invariant");
     assert(head != NULL, "invariant");
     assert(head->prev() == NULL, "invariant");
-    MutexLockerEx buffer_lock(JfrBuffer_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker buffer_lock(JfrBuffer_lock, Mutex::_no_safepoint_check_flag);
     age_mspace->insert_free_tail(head, tail, count);
   }
 }
@@ -674,7 +674,7 @@ static size_t process_full(Processor& processor, JfrStorageControl& control, Jfr
   JfrAgeNode* head;
   {
     // fetch age list
-    MutexLockerEx buffer_lock(JfrBuffer_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker buffer_lock(JfrBuffer_lock, Mutex::_no_safepoint_check_flag);
     count = age_mspace->full_count();
     head = age_mspace->clear_full();
     control.reset_full();

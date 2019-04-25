@@ -858,7 +858,7 @@ int os::random() {
 
 void os::start_thread(Thread* thread) {
   // guard suspend/resume
-  MutexLockerEx ml(thread->SR_lock(), Mutex::_no_safepoint_check_flag);
+  MutexLocker ml(thread->SR_lock(), Mutex::_no_safepoint_check_flag);
   OSThread* osthread = thread->osthread();
   osthread->set_state(RUNNABLE);
   pd_start_thread(thread);

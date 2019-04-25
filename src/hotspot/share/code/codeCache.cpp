@@ -531,7 +531,7 @@ CodeBlob* CodeCache::allocate(int size, int code_blob_type, int orig_code_blob_t
           return allocate(size, type, orig_code_blob_type);
         }
       }
-      MutexUnlockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+      MutexUnlocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
       CompileBroker::handle_full_code_cache(orig_code_blob_type);
       return NULL;
     }
@@ -792,7 +792,7 @@ CodeCache::UnloadingScope::~UnloadingScope() {
 }
 
 void CodeCache::verify_oops() {
-  MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
   VerifyOopClosure voc;
   NMethodIterator iter(NMethodIterator::only_alive_and_not_unloading);
   while(iter.next()) {
@@ -989,7 +989,7 @@ void CodeCache::cleanup_inline_caches() {
 NOT_PRODUCT(static elapsedTimer dependentCheckTime;)
 
 int CodeCache::mark_for_deoptimization(KlassDepChange& changes) {
-  MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
   int number_of_marked_CodeBlobs = 0;
 
   // search the hierarchy looking for nmethods which are affected by the loading of this class
@@ -1154,7 +1154,7 @@ void CodeCache::flush_evol_dependents() {
 
 // Deoptimize all methods
 void CodeCache::mark_all_nmethods_for_deoptimization() {
-  MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
   CompiledMethodIterator iter(CompiledMethodIterator::only_alive_and_not_unloading);
   while(iter.next()) {
     CompiledMethod* nm = iter.method();
@@ -1165,7 +1165,7 @@ void CodeCache::mark_all_nmethods_for_deoptimization() {
 }
 
 int CodeCache::mark_for_deoptimization(Method* dependee) {
-  MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
   int number_of_marked_CodeBlobs = 0;
 
   CompiledMethodIterator iter(CompiledMethodIterator::only_alive_and_not_unloading);
@@ -1289,7 +1289,7 @@ void CodeCache::report_codemem_full(int code_blob_type, bool print) {
     stringStream s;
     // Dump code cache into a buffer before locking the tty.
     {
-      MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+      MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
       print_summary(&s);
     }
     {
@@ -1557,7 +1557,7 @@ void CodeCache::print_summary(outputStream* st, bool detailed) {
 }
 
 void CodeCache::print_codelist(outputStream* st) {
-  MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
   CompiledMethodIterator iter(CompiledMethodIterator::only_alive_and_not_unloading);
   while (iter.next()) {
@@ -1572,7 +1572,7 @@ void CodeCache::print_codelist(outputStream* st) {
 }
 
 void CodeCache::print_layout(outputStream* st) {
-  MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
   ResourceMark rm;
   print_summary(st, true);
 }

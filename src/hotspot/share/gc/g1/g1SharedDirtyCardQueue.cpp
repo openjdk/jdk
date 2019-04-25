@@ -40,7 +40,7 @@ G1SharedDirtyCardQueue::~G1SharedDirtyCardQueue() {
 }
 
 void G1SharedDirtyCardQueue::enqueue(void* card_ptr) {
-  MutexLockerEx ml(Shared_DirtyCardQ_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker ml(Shared_DirtyCardQ_lock, Mutex::_no_safepoint_check_flag);
   if (_index == 0) {
     flush();
     _buffer = _qset->allocate_buffer();

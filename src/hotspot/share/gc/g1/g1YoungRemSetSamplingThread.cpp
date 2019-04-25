@@ -47,10 +47,10 @@ G1YoungRemSetSamplingThread::G1YoungRemSetSamplingThread() :
 }
 
 void G1YoungRemSetSamplingThread::sleep_before_next_cycle() {
-  MutexLockerEx x(&_monitor, Mutex::_no_safepoint_check_flag);
+  MutexLocker x(&_monitor, Mutex::_no_safepoint_check_flag);
   if (!should_terminate()) {
     uintx waitms = G1ConcRefinementServiceIntervalMillis;
-    _monitor.wait(Mutex::_no_safepoint_check_flag, waitms);
+    _monitor.wait_without_safepoint_check(waitms);
   }
 }
 
@@ -124,7 +124,7 @@ void G1YoungRemSetSamplingThread::run_service() {
 }
 
 void G1YoungRemSetSamplingThread::stop_service() {
-  MutexLockerEx x(&_monitor, Mutex::_no_safepoint_check_flag);
+  MutexLocker x(&_monitor, Mutex::_no_safepoint_check_flag);
   _monitor.notify();
 }
 

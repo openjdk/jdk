@@ -342,7 +342,7 @@ void VMThread::run() {
     // but before it actually drops the lock and waits, the notification below
     // may get lost and we will have a hang. To avoid this, we need to use
     // Mutex::lock_without_safepoint_check().
-    MutexLockerEx ml(_terminate_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker ml(_terminate_lock, Mutex::_no_safepoint_check_flag);
     _terminated = true;
     _terminate_lock->notify();
   }
@@ -359,7 +359,7 @@ void VMThread::run() {
 void VMThread::wait_for_vm_thread_exit() {
   assert(Thread::current()->is_Java_thread(), "Should be a JavaThread");
   assert(((JavaThread*)Thread::current())->is_terminated(), "Should be terminated");
-  { MutexLockerEx mu(VMOperationQueue_lock, Mutex::_no_safepoint_check_flag);
+  { MutexLocker mu(VMOperationQueue_lock, Mutex::_no_safepoint_check_flag);
     _should_terminate = true;
     VMOperationQueue_lock->notify();
   }
@@ -373,9 +373,9 @@ void VMThread::wait_for_vm_thread_exit() {
   // Note: it should be OK to use Terminator_lock here. But this is called
   // at a very delicate time (VM shutdown) and we are operating in non- VM
   // thread at Safepoint. It's safer to not share lock with other threads.
-  { MutexLockerEx ml(_terminate_lock, Mutex::_no_safepoint_check_flag);
+  { MutexLocker ml(_terminate_lock, Mutex::_no_safepoint_check_flag);
     while(!VMThread::is_terminated()) {
-        _terminate_lock->wait(Mutex::_no_safepoint_check_flag);
+        _terminate_lock->wait_without_safepoint_check();
     }
   }
 }
@@ -476,8 +476,8 @@ void VMThread::loop() {
     // Wait for VM operation
     //
     // use no_safepoint_check to get lock without attempting to "sneak"
-    { MutexLockerEx mu_queue(VMOperationQueue_lock,
-                             Mutex::_no_safepoint_check_flag);
+    { MutexLocker mu_queue(VMOperationQueue_lock,
+                           Mutex::_no_safepoint_check_flag);
 
       // Look for new operation
       assert(_cur_vm_operation == NULL, "no current one should be executing");
@@ -494,8 +494,7 @@ void VMThread::loop() {
       while (!should_terminate() && _cur_vm_operation == NULL) {
         // wait with a timeout to guarantee safepoints at regular intervals
         bool timedout =
-          VMOperationQueue_lock->wait(Mutex::_no_safepoint_check_flag,
-                                      GuaranteedSafepointInterval);
+          VMOperationQueue_lock->wait_without_safepoint_check(GuaranteedSafepointInterval);
 
         // Support for self destruction
         if ((SelfDestructTimer != 0) && !VMError::is_error_reported() &&
@@ -507,7 +506,7 @@ void VMThread::loop() {
         if (timedout) {
           // Have to unlock VMOperationQueue_lock just in case no_op_safepoint()
           // has to do a handshake.
-          MutexUnlockerEx mul(VMOperationQueue_lock, Mutex::_no_safepoint_check_flag);
+          MutexUnlocker mul(VMOperationQueue_lock, Mutex::_no_safepoint_check_flag);
           if ((_cur_vm_operation = VMThread::no_op_safepoint()) != NULL) {
             // Force a safepoint since we have not had one for at least
             // 'GuaranteedSafepointInterval' milliseconds and we need to clean
@@ -584,8 +583,8 @@ void VMThread::loop() {
           // the lock.
           if (_vm_queue->peek_at_safepoint_priority()) {
             // must hold lock while draining queue
-            MutexLockerEx mu_queue(VMOperationQueue_lock,
-                                     Mutex::_no_safepoint_check_flag);
+            MutexLocker mu_queue(VMOperationQueue_lock,
+                                 Mutex::_no_safepoint_check_flag);
             safepoint_ops = _vm_queue->drain_at_safepoint_priority();
           } else {
             safepoint_ops = NULL;
@@ -626,8 +625,8 @@ void VMThread::loop() {
     //
     //  Notify (potential) waiting Java thread(s) - lock without safepoint
     //  check so that sneaking is not possible
-    { MutexLockerEx mu(VMOperationRequest_lock,
-                       Mutex::_no_safepoint_check_flag);
+    { MutexLocker mu(VMOperationRequest_lock,
+                     Mutex::_no_safepoint_check_flag);
       VMOperationRequest_lock->notify_all();
     }
 
@@ -721,7 +720,11 @@ void VMThread::execute(VM_Operation* op) {
       // Note: only a JavaThread triggers the safepoint check when locking
       MutexLocker mu(VMOperationRequest_lock);
       while(t->vm_operation_completed_count() < ticket) {
-        VMOperationRequest_lock->wait(!t->is_Java_thread());
+        if (t->is_Java_thread()) {
+          VMOperationRequest_lock->wait();
+        } else {
+          VMOperationRequest_lock->wait_without_safepoint_check();
+        }
       }
     }
 

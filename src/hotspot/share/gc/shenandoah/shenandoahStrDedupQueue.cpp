@@ -48,7 +48,7 @@ ShenandoahStrDedupQueue::ShenandoahStrDedupQueue() :
 }
 
 ShenandoahStrDedupQueue::~ShenandoahStrDedupQueue() {
-  MonitorLockerEx ml(StringDedupQueue_lock, Mutex::_no_safepoint_check_flag);
+  MonitorLocker ml(StringDedupQueue_lock, Mutex::_no_safepoint_check_flag);
   for (size_t index = 0; index < num_queues(); index ++) {
     release_buffers(queue_at(index));
   }
@@ -58,9 +58,9 @@ ShenandoahStrDedupQueue::~ShenandoahStrDedupQueue() {
 }
 
 void ShenandoahStrDedupQueue::wait_impl() {
-  MonitorLockerEx ml(StringDedupQueue_lock, Mutex::_no_safepoint_check_flag);
+  MonitorLocker ml(StringDedupQueue_lock, Mutex::_no_safepoint_check_flag);
   while (_consumer_queue == NULL && !_cancel) {
-    ml.wait(Mutex::_no_safepoint_check_flag);
+    ml.wait_without_safepoint_check();
     assert(_consumer_queue == NULL, "Why wait?");
     _consumer_queue = _published_queues;
     _published_queues = NULL;
@@ -68,7 +68,7 @@ void ShenandoahStrDedupQueue::wait_impl() {
 }
 
 void ShenandoahStrDedupQueue::cancel_wait_impl() {
-  MonitorLockerEx ml(StringDedupQueue_lock, Mutex::_no_safepoint_check_flag);
+  MonitorLocker ml(StringDedupQueue_lock, Mutex::_no_safepoint_check_flag);
   _cancel = true;
   ml.notify();
 }
@@ -105,11 +105,11 @@ void ShenandoahStrDedupQueue::push_impl(uint worker_id, oop string_oop) {
   ShenandoahQueueBuffer* buf = queue_at((size_t)worker_id);
 
   if (buf == NULL) {
-    MonitorLockerEx ml(StringDedupQueue_lock, Mutex::_no_safepoint_check_flag);
+    MonitorLocker ml(StringDedupQueue_lock, Mutex::_no_safepoint_check_flag);
     buf = new_buffer();
     set_producer_buffer(buf, worker_id);
   } else if (buf->is_full()) {
-    MonitorLockerEx ml(StringDedupQueue_lock, Mutex::_no_safepoint_check_flag);
+    MonitorLocker ml(StringDedupQueue_lock, Mutex::_no_safepoint_check_flag);
     buf->set_next(_published_queues);
     _published_queues = buf;
     buf = new_buffer();
@@ -125,7 +125,7 @@ oop ShenandoahStrDedupQueue::pop_impl() {
   assert(Thread::current() == StringDedupThread::thread(), "Must be dedup thread");
   while (true) {
     if (_consumer_queue == NULL) {
-      MonitorLockerEx ml(StringDedupQueue_lock, Mutex::_no_safepoint_check_flag);
+      MonitorLocker ml(StringDedupQueue_lock, Mutex::_no_safepoint_check_flag);
       _consumer_queue = _published_queues;
       _published_queues = NULL;
     }
@@ -163,7 +163,7 @@ bool ShenandoahStrDedupQueue::pop_candidate(oop& obj) {
   } while (obj == NULL);
 
   if (to_release != NULL) {
-    MonitorLockerEx ml(StringDedupQueue_lock, Mutex::_no_safepoint_check_flag);
+    MonitorLocker ml(StringDedupQueue_lock, Mutex::_no_safepoint_check_flag);
     release_buffers(to_release);
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ void PeriodicTask::real_time_tick(int delay_time) {
 
   // The WatcherThread does not participate in the safepoint protocol
   // for the PeriodicTask_lock because it is not a JavaThread.
-  MutexLockerEx ml(PeriodicTask_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker ml(PeriodicTask_lock, Mutex::_no_safepoint_check_flag);
   int orig_num_tasks = _num_tasks;
 
   for(int index = 0; index < _num_tasks; index++) {
@@ -84,8 +84,7 @@ void PeriodicTask::enroll() {
   // not already own the PeriodicTask_lock. Otherwise, we don't try to
   // enter it again because VM internal Mutexes do not support recursion.
   //
-  MutexLockerEx ml(PeriodicTask_lock->owned_by_self() ? NULL
-                                                      : PeriodicTask_lock);
+  MutexLocker ml(PeriodicTask_lock->owned_by_self() ? NULL : PeriodicTask_lock);
 
   if (_num_tasks == PeriodicTask::max_tasks) {
     fatal("Overflow in PeriodicTask table");
@@ -107,8 +106,7 @@ void PeriodicTask::disenroll() {
   // not already own the PeriodicTask_lock. Otherwise, we don't try to
   // enter it again because VM internal Mutexes do not support recursion.
   //
-  MutexLockerEx ml(PeriodicTask_lock->owned_by_self() ? NULL
-                                                      : PeriodicTask_lock);
+  MutexLocker ml(PeriodicTask_lock->owned_by_self() ? NULL : PeriodicTask_lock);
 
   int index;
   for(index = 0; index < _num_tasks && _tasks[index] != this; index++)

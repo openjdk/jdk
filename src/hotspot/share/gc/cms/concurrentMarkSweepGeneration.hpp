@@ -225,13 +225,13 @@ class CMSMarkStack: public CHeapObj<mtGC>  {
   // "Parallel versions" of some of the above
   oop par_pop() {
     // lock and pop
-    MutexLockerEx x(&_par_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker x(&_par_lock, Mutex::_no_safepoint_check_flag);
     return pop();
   }
 
   bool par_push(oop ptr) {
     // lock and push
-    MutexLockerEx x(&_par_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker x(&_par_lock, Mutex::_no_safepoint_check_flag);
     return push(ptr);
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -524,7 +524,7 @@ void GCTaskManager::task_idle_workers() {
       // and get the count for additional IdleGCTask's under
       // the GCTaskManager's monitor so that the "more_inactive_workers"
       // count is correct.
-      MutexLockerEx ml(monitor(), Mutex::_no_safepoint_check_flag);
+      MutexLocker ml(monitor(), Mutex::_no_safepoint_check_flag);
       _wait_helper.set_should_wait(true);
       // active_workers are a number being requested.  idle_workers
       // are the number currently idle.  If all the workers are being
@@ -563,7 +563,7 @@ void GCTaskManager::task_idle_workers() {
 
 void  GCTaskManager::release_idle_workers() {
   {
-    MutexLockerEx ml(monitor(),
+    MutexLocker ml(monitor(),
       Mutex::_no_safepoint_check_flag);
     _wait_helper.set_should_wait(false);
     monitor()->notify_all();
@@ -613,7 +613,7 @@ void GCTaskManager::set_thread(uint which, GCTaskThread* value) {
 
 void GCTaskManager::add_task(GCTask* task) {
   assert(task != NULL, "shouldn't have null task");
-  MutexLockerEx ml(monitor(), Mutex::_no_safepoint_check_flag);
+  MutexLocker ml(monitor(), Mutex::_no_safepoint_check_flag);
   if (TraceGCTaskManager) {
     tty->print_cr("GCTaskManager::add_task(" INTPTR_FORMAT " [%s])",
                   p2i(task), GCTask::Kind::to_string(task->kind()));
@@ -630,7 +630,7 @@ void GCTaskManager::add_task(GCTask* task) {
 
 void GCTaskManager::add_list(GCTaskQueue* list) {
   assert(list != NULL, "shouldn't have null task");
-  MutexLockerEx ml(monitor(), Mutex::_no_safepoint_check_flag);
+  MutexLocker ml(monitor(), Mutex::_no_safepoint_check_flag);
   if (TraceGCTaskManager) {
     tty->print_cr("GCTaskManager::add_list(%u)", list->length());
   }
@@ -654,7 +654,7 @@ void GCTaskManager::add_list(GCTaskQueue* list) {
 GCTask* GCTaskManager::get_task(uint which) {
   GCTask* result = NULL;
   // Grab the queue lock.
-  MutexLockerEx ml(monitor(), Mutex::_no_safepoint_check_flag);
+  MutexLocker ml(monitor(), Mutex::_no_safepoint_check_flag);
   // Wait while the queue is block or
   // there is nothing to do, except maybe release resources.
   while (is_blocked() ||
@@ -671,7 +671,7 @@ GCTask* GCTaskManager::get_task(uint which) {
       tty->print_cr("    => (%s)->wait()",
                     monitor()->name());
     }
-    monitor()->wait(Mutex::_no_safepoint_check_flag, 0);
+    monitor()->wait_without_safepoint_check(0);
   }
   // We've reacquired the queue lock here.
   // Figure out which condition caused us to exit the loop above.
@@ -707,7 +707,7 @@ GCTask* GCTaskManager::get_task(uint which) {
 }
 
 void GCTaskManager::note_completion(uint which) {
-  MutexLockerEx ml(monitor(), Mutex::_no_safepoint_check_flag);
+  MutexLocker ml(monitor(), Mutex::_no_safepoint_check_flag);
   if (TraceGCTaskManager) {
     tty->print_cr("GCTaskManager::note_completion(%u)", which);
   }
@@ -872,7 +872,7 @@ void IdleGCTask::do_it(GCTaskManager* manager, uint which) {
   log_trace(gc, task)("[" INTPTR_FORMAT "] IdleGCTask:::do_it() should_wait: %s",
       p2i(this), wait_helper->should_wait() ? "true" : "false");
 
-  MutexLockerEx ml(manager->monitor(), Mutex::_no_safepoint_check_flag);
+  MutexLocker ml(manager->monitor(), Mutex::_no_safepoint_check_flag);
   log_trace(gc, task)("--- idle %d", which);
   // Increment has to be done when the idle tasks are created.
   // manager->increment_idle_workers();
@@ -880,7 +880,7 @@ void IdleGCTask::do_it(GCTaskManager* manager, uint which) {
   while (wait_helper->should_wait()) {
     log_trace(gc, task)("[" INTPTR_FORMAT "] IdleGCTask::do_it()  [" INTPTR_FORMAT "] (%s)->wait()",
       p2i(this), p2i(manager->monitor()), manager->monitor()->name());
-    manager->monitor()->wait(Mutex::_no_safepoint_check_flag, 0);
+    manager->monitor()->wait_without_safepoint_check(0);
   }
   manager->decrement_idle_workers();
 
@@ -943,7 +943,7 @@ void WaitForBarrierGCTask::do_it_internal(GCTaskManager* manager, uint which) {
       tty->print_cr("WaitForBarrierGCTask::do_it(%u) waiting on %u workers",
                     which, manager->busy_workers());
     }
-    manager->monitor()->wait(Mutex::_no_safepoint_check_flag, 0);
+    manager->monitor()->wait_without_safepoint_check(0);
   }
 }
 
@@ -955,7 +955,7 @@ void WaitForBarrierGCTask::do_it(GCTaskManager* manager, uint which) {
   }
   {
     // First, wait for the barrier to arrive.
-    MutexLockerEx ml(manager->lock(), Mutex::_no_safepoint_check_flag);
+    MutexLocker ml(manager->lock(), Mutex::_no_safepoint_check_flag);
     do_it_internal(manager, which);
     // Release manager->lock().
   }
@@ -991,7 +991,7 @@ void WaitHelper::wait_for(bool reset) {
   }
   {
     // Grab the lock and check again.
-    MutexLockerEx ml(monitor(), Mutex::_no_safepoint_check_flag);
+    MutexLocker ml(monitor(), Mutex::_no_safepoint_check_flag);
     while (should_wait()) {
       if (TraceGCTaskManager) {
         tty->print_cr("[" INTPTR_FORMAT "]"
@@ -999,7 +999,7 @@ void WaitHelper::wait_for(bool reset) {
           "  [" INTPTR_FORMAT "] (%s)->wait()",
           p2i(this), p2i(monitor()), monitor()->name());
       }
-      monitor()->wait(Mutex::_no_safepoint_check_flag, 0);
+      monitor()->wait_without_safepoint_check(0);
     }
     // Reset the flag in case someone reuses this task.
     if (reset) {
@@ -1016,7 +1016,7 @@ void WaitHelper::wait_for(bool reset) {
 }
 
 void WaitHelper::notify() {
-  MutexLockerEx ml(monitor(), Mutex::_no_safepoint_check_flag);
+  MutexLocker ml(monitor(), Mutex::_no_safepoint_check_flag);
   set_should_wait(false);
   // Waiter doesn't miss the notify in the wait_for method
   // since it checks the flag after grabbing the monitor.
@@ -1041,7 +1041,7 @@ Monitor* MonitorSupply::reserve() {
                       Mutex::_allow_vm_block_flag);    // allow_vm_block
   }
   {
-    MutexLockerEx ml(lock());
+    MutexLocker ml(lock());
     // Lazy initialization.
     if (freelist() == NULL) {
       _freelist =
@@ -1067,7 +1067,7 @@ void MonitorSupply::release(Monitor* instance) {
   assert(instance != NULL, "shouldn't release NULL");
   assert(!instance->is_locked(), "shouldn't be locked");
   {
-    MutexLockerEx ml(lock());
+    MutexLocker ml(lock());
     freelist()->push(instance);
     // release lock().
   }

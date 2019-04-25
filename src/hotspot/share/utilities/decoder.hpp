@@ -136,7 +136,7 @@ protected:
   friend class DecoderLocker;
 };
 
-class DecoderLocker : public MutexLockerEx {
+class DecoderLocker : public MutexLocker {
   AbstractDecoder* _decoder;
   inline bool is_first_error_thread();
 public:

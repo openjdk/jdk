@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,7 +110,7 @@ void JfrPostBox::asynchronous_post(int msg) {
 void JfrPostBox::synchronous_post(int msg) {
   assert(is_synchronous(msg), "invariant");
   assert(!JfrMsg_lock->owned_by_self(), "should not hold JfrMsg_lock here!");
-  MutexLockerEx msg_lock(JfrMsg_lock);
+  MutexLocker msg_lock(JfrMsg_lock);
   deposit(msg);
   // serial_id is used to check when what we send in has been processed.
   // _msg_read_serial is read under JfrMsg_lock protection.
@@ -168,6 +168,6 @@ void JfrPostBox::notify_waiters() {
 
 // safeguard to ensure no threads are left waiting
 void JfrPostBox::notify_collection_stop() {
-  MutexLockerEx msg_lock(JfrMsg_lock);
+  MutexLocker msg_lock(JfrMsg_lock);
   JfrMsg_lock->notify_all();
 }

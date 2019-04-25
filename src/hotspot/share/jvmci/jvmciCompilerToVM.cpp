@@ -691,7 +691,7 @@ C2V_VMENTRY(jint, installCode, (JNIEnv *jniEnv, jobject, jobject target, jobject
     stringStream s;
     // Dump code cache  into a buffer before locking the tty,
     {
-      MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+      MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
       CodeCache::print_summary(&s, false);
     }
     ttyLocker ttyl;
@@ -706,7 +706,7 @@ C2V_VMENTRY(jint, installCode, (JNIEnv *jniEnv, jobject, jobject target, jobject
       nmethod::invalidate_installed_code(installed_code_handle, CHECK_0);
       {
         // Ensure that all updates to the InstalledCode fields are consistent.
-        MutexLockerEx pl(Patching_lock, Mutex::_no_safepoint_check_flag);
+        MutexLocker pl(Patching_lock, Mutex::_no_safepoint_check_flag);
         InstalledCode::set_address(installed_code_handle, (jlong) cb);
         InstalledCode::set_version(installed_code_handle, InstalledCode::version(installed_code_handle) + 1);
         if (cb->is_nmethod()) {

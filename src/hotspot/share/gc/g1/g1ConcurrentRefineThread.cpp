@@ -59,9 +59,9 @@ G1ConcurrentRefineThread::G1ConcurrentRefineThread(G1ConcurrentRefine* cr, uint 
 }
 
 void G1ConcurrentRefineThread::wait_for_completed_buffers() {
-  MutexLockerEx x(_monitor, Mutex::_no_safepoint_check_flag);
+  MutexLocker x(_monitor, Mutex::_no_safepoint_check_flag);
   while (!should_terminate() && !is_active()) {
-    _monitor->wait(Mutex::_no_safepoint_check_flag);
+    _monitor->wait_without_safepoint_check();
   }
 }
 
@@ -71,7 +71,7 @@ bool G1ConcurrentRefineThread::is_active() {
 }
 
 void G1ConcurrentRefineThread::activate() {
-  MutexLockerEx x(_monitor, Mutex::_no_safepoint_check_flag);
+  MutexLocker x(_monitor, Mutex::_no_safepoint_check_flag);
   if (!is_primary()) {
     set_active(true);
   } else {
@@ -82,7 +82,7 @@ void G1ConcurrentRefineThread::activate() {
 }
 
 void G1ConcurrentRefineThread::deactivate() {
-  MutexLockerEx x(_monitor, Mutex::_no_safepoint_check_flag);
+  MutexLocker x(_monitor, Mutex::_no_safepoint_check_flag);
   if (!is_primary()) {
     set_active(false);
   } else {
@@ -140,6 +140,6 @@ void G1ConcurrentRefineThread::run_service() {
 }
 
 void G1ConcurrentRefineThread::stop_service() {
-  MutexLockerEx x(_monitor, Mutex::_no_safepoint_check_flag);
+  MutexLocker x(_monitor, Mutex::_no_safepoint_check_flag);
   _monitor->notify();
 }

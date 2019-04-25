@@ -325,7 +325,7 @@ const char* JfrEmergencyDump::build_dump_path(const char* repository_path) {
 void JfrEmergencyDump::on_vm_error(const char* repository_path) {
   assert(repository_path != NULL, "invariant");
   ResourceMark rm;
-  MutexLockerEx stream_lock(JfrStream_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker stream_lock(JfrStream_lock, Mutex::_no_safepoint_check_flag);
   const fio_fd emergency_fd = emergency_dump_file_descriptor();
   if (emergency_fd != invalid_fd) {
     RepositoryIterator iterator(repository_path, strlen(repository_path));

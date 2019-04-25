@@ -124,7 +124,7 @@ HeapWord* EpsilonHeap::allocate_work(size_t size) {
 
   while (res == NULL) {
     // Allocation failed, attempt expansion, and retry:
-    MutexLockerEx ml(Heap_lock);
+    MutexLocker ml(Heap_lock);
 
     size_t space_left = max_capacity() - capacity();
     size_t want_space = MAX2(size, EpsilonMinHeapExpand);

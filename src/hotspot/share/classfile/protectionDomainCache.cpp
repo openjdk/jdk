@@ -51,7 +51,7 @@ ProtectionDomainCacheTable::ProtectionDomainCacheTable(int table_size)
 }
 
 void ProtectionDomainCacheTable::trigger_cleanup() {
-  MutexLockerEx ml(Service_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
   _dead_entries = true;
   Service_lock->notify_all();
 }

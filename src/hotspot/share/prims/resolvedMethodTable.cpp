@@ -251,7 +251,7 @@ void ResolvedMethodTable::check_concurrent_work() {
 }
 
 void ResolvedMethodTable::trigger_concurrent_work() {
-  MutexLockerEx ml(Service_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
   _has_work = true;
   Service_lock->notify_all();
 }

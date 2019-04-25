@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,7 +137,7 @@ NOTE: we can always create a new gang per each iteration
  */
 /////////////////////
 void YieldingFlexibleWorkGang::start_task(YieldingFlexibleGangTask* new_task) {
-  MutexLockerEx ml(monitor(), Mutex::_no_safepoint_check_flag);
+  MutexLocker ml(monitor(), Mutex::_no_safepoint_check_flag);
   assert(task() == NULL, "Gang currently tied to a task");
   assert(new_task != NULL, "Null task");
   // Bind task to gang
@@ -175,7 +175,7 @@ void YieldingFlexibleWorkGang::wait_for_gang() {
     assert(started_workers() <= active_workers(), "invariant");
     assert(finished_workers() <= active_workers(), "invariant");
     assert(yielded_workers() <= active_workers(), "invariant");
-    monitor()->wait(Mutex::_no_safepoint_check_flag);
+    monitor()->wait_without_safepoint_check();
   }
   switch (yielding_task()->status()) {
     case COMPLETED:
@@ -204,7 +204,7 @@ void YieldingFlexibleWorkGang::wait_for_gang() {
 void YieldingFlexibleWorkGang::continue_task(
   YieldingFlexibleGangTask* gang_task) {
 
-  MutexLockerEx ml(monitor(), Mutex::_no_safepoint_check_flag);
+  MutexLocker ml(monitor(), Mutex::_no_safepoint_check_flag);
   assert(task() != NULL && task() == gang_task, "Incorrect usage");
   assert(_started_workers == _active_workers, "Precondition");
   assert(_yielded_workers > 0 && yielding_task()->status() == YIELDED,
@@ -224,7 +224,7 @@ void YieldingFlexibleWorkGang::reset() {
 
 void YieldingFlexibleWorkGang::yield() {
   assert(task() != NULL, "Inconsistency; should have task binding");
-  MutexLockerEx ml(monitor(), Mutex::_no_safepoint_check_flag);
+  MutexLocker ml(monitor(), Mutex::_no_safepoint_check_flag);
   assert(yielded_workers() < active_workers(), "Consistency check");
   if (yielding_task()->status() == ABORTING) {
     // Do not yield; we need to abort as soon as possible
@@ -247,7 +247,7 @@ void YieldingFlexibleWorkGang::yield() {
     switch (yielding_task()->status()) {
       case YIELDING:
       case YIELDED: {
-        monitor()->wait(Mutex::_no_safepoint_check_flag);
+        monitor()->wait_without_safepoint_check();
         break;  // from switch
       }
       case ACTIVE:
@@ -271,7 +271,7 @@ void YieldingFlexibleWorkGang::yield() {
 
 void YieldingFlexibleWorkGang::abort() {
   assert(task() != NULL, "Inconsistency; should have task binding");
-  MutexLockerEx ml(monitor(), Mutex::_no_safepoint_check_flag);
+  MutexLocker ml(monitor(), Mutex::_no_safepoint_check_flag);
   assert(yielded_workers() < active_workers(), "Consistency check");
   #ifndef PRODUCT
     switch (yielding_task()->status()) {
@@ -319,7 +319,7 @@ void YieldingFlexibleGangTask::abort() {
 void YieldingFlexibleGangWorker::loop() {
   int previous_sequence_number = 0;
   Monitor* gang_monitor = yf_gang()->monitor();
-  MutexLockerEx ml(gang_monitor, Mutex::_no_safepoint_check_flag);
+  MutexLocker ml(gang_monitor, Mutex::_no_safepoint_check_flag);
   YieldingWorkData data;
   int id;
   while (true) {
@@ -340,7 +340,7 @@ void YieldingFlexibleGangWorker::loop() {
         yf_gang()->internal_note_start();
         // Now, release the gang mutex and do the work.
         {
-          MutexUnlockerEx mul(gang_monitor, Mutex::_no_safepoint_check_flag);
+          MutexUnlocker mul(gang_monitor, Mutex::_no_safepoint_check_flag);
           GCIdMark gc_id_mark(data.task()->gc_id());
           data.task()->work(id);   // This might include yielding
         }
@@ -394,6 +394,6 @@ void YieldingFlexibleGangWorker::loop() {
     // Remember the sequence number
     previous_sequence_number = data.sequence_number();
     // Wait for more work
-    gang_monitor->wait(Mutex::_no_safepoint_check_flag);
+    gang_monitor->wait_without_safepoint_check();
   }
 }

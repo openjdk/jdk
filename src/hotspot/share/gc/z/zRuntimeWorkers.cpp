@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,13 +48,13 @@ public:
     ZThread::set_runtime_worker();
 
     // Wait for all threads to start
-    MonitorLockerEx ml(&_monitor, Monitor::_no_safepoint_check_flag);
+    MonitorLocker ml(&_monitor, Monitor::_no_safepoint_check_flag);
     if (++_started == _nworkers) {
       // All threads started
       ml.notify_all();
     } else {
       while (_started != _nworkers) {
-        ml.wait(Monitor::_no_safepoint_check_flag);
+        ml.wait();
       }
     }
   }

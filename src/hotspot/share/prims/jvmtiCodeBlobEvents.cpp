@@ -203,7 +203,7 @@ jvmtiError JvmtiCodeBlobEvents::generate_dynamic_code_events(JvmtiEnv* env) {
   // there isn't any safe way to iterate over regular CodeBlobs since
   // they can be freed at any point.
   {
-    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     collector.collect();
   }
 
@@ -225,7 +225,7 @@ jvmtiError JvmtiCodeBlobEvents::generate_compiled_method_load_events(JvmtiEnv* e
   // may be changing while this is happening which is ok since newly
   // created nmethod will notify normally and nmethods which are freed
   // can be safely skipped.
-  MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
   // Iterate over non-profiled and profiled nmethods
   NMethodIterator iter(NMethodIterator::only_alive_and_not_unloading);
   while(iter.next()) {
@@ -234,7 +234,7 @@ jvmtiError JvmtiCodeBlobEvents::generate_compiled_method_load_events(JvmtiEnv* e
     nmethodLocker nml(current);
 
     // Don't hold the lock over the notify or jmethodID creation
-    MutexUnlockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    MutexUnlocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     current->get_and_cache_jmethod_id();
     JvmtiExport::post_compiled_method_load(env, current);
   }

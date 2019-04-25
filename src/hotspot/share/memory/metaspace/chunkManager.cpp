@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -227,7 +227,7 @@ size_t ChunkManager::size_by_index(ChunkIndex index) const {
 
 #ifdef ASSERT
 void ChunkManager::verify(bool slow) const {
-  MutexLockerEx cl(MetaspaceExpand_lock,
+  MutexLocker cl(MetaspaceExpand_lock,
                      Mutex::_no_safepoint_check_flag);
   locked_verify(slow);
 }
@@ -630,7 +630,7 @@ void ChunkManager::return_chunk_list(Metachunk* chunks) {
 }
 
 void ChunkManager::collect_statistics(ChunkManagerStatistics* out) const {
-  MutexLockerEx cl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker cl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
   for (ChunkIndex i = ZeroIndex; i < NumberOfInUseLists; i = next_chunk_index(i)) {
     out->chunk_stats(i).add(num_free_chunks(i), size_free_chunks_in_bytes(i) / sizeof(MetaWord));
   }

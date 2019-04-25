@@ -360,7 +360,7 @@ void ShenandoahConcurrentMark::concurrent_scan_code_roots(uint worker_id, Refere
   if (ShenandoahConcurrentScanCodeRoots && claim_codecache()) {
     ShenandoahObjToScanQueue* q = task_queues()->queue(worker_id);
     if (!_heap->unload_classes()) {
-      MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+      MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
       // TODO: We can not honor StringDeduplication here, due to lock ranking
       // inversion. So, we may miss some deduplication candidates.
       if (_heap->has_forwarded_objects()) {

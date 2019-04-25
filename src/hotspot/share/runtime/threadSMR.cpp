@@ -899,7 +899,7 @@ void ThreadsSMRSupport::release_stable_list_wake_up(bool is_nested) {
   // safepoint which means this thread can't take too long to get to
   // a safepoint because of being blocked on delete_lock.
   //
-  MonitorLockerEx ml(ThreadsSMRSupport::delete_lock(), Monitor::_no_safepoint_check_flag);
+  MonitorLocker ml(ThreadsSMRSupport::delete_lock(), Monitor::_no_safepoint_check_flag);
   if (ThreadsSMRSupport::delete_notify()) {
     // Notify any exiting JavaThreads that are waiting in smr_delete()
     // that we've released a ThreadsList.
@@ -944,8 +944,8 @@ void ThreadsSMRSupport::smr_delete(JavaThread *thread) {
     {
       // No safepoint check because this JavaThread is not on the
       // Threads list.
-      MutexLockerEx ml(Threads_lock, Mutex::_no_safepoint_check_flag);
-      // Cannot use a MonitorLockerEx helper here because we have
+      MutexLocker ml(Threads_lock, Mutex::_no_safepoint_check_flag);
+      // Cannot use a MonitorLocker helper here because we have
       // to drop the Threads_lock first if we wait.
       ThreadsSMRSupport::delete_lock()->lock_without_safepoint_check();
       // Set the delete_notify flag after we grab delete_lock
@@ -985,8 +985,7 @@ void ThreadsSMRSupport::smr_delete(JavaThread *thread) {
     // Wait for a release_stable_list() call before we check again. No
     // safepoint check, no timeout, and not as suspend equivalent flag
     // because this JavaThread is not on the Threads list.
-    ThreadsSMRSupport::delete_lock()->wait(Mutex::_no_safepoint_check_flag, 0,
-                                     !Mutex::_as_suspend_equivalent_flag);
+    ThreadsSMRSupport::delete_lock()->wait_without_safepoint_check();
     if (EnableThreadSMRStatistics) {
       _delete_lock_wait_cnt--;
     }
@@ -1078,7 +1077,7 @@ void ThreadsSMRSupport::print_info_on(outputStream* st) {
   // block during error reporting or a nested error could leave the
   // Threads_lock held. The classic no win scenario.
   //
-  MutexLockerEx ml((Threads_lock->owned_by_self() || VMError::is_error_reported()) ? NULL : Threads_lock);
+  MutexLocker ml((Threads_lock->owned_by_self() || VMError::is_error_reported()) ? NULL : Threads_lock);
 
   st->print_cr("Threads class SMR info:");
   st->print_cr("_java_thread_list=" INTPTR_FORMAT ", length=%u, "

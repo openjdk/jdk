@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ void GCNotifier::pushNotification(GCMemoryManager *mgr, const char *action, cons
  }
 
 void GCNotifier::addRequest(GCNotificationRequest *request) {
-  MutexLockerEx ml(Service_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
   if(first_request == NULL) {
     first_request = request;
   } else {
@@ -65,7 +65,7 @@ void GCNotifier::addRequest(GCNotificationRequest *request) {
 }
 
 GCNotificationRequest *GCNotifier::getRequest() {
-  MutexLockerEx ml(Service_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
   GCNotificationRequest *request = first_request;
   if(first_request != NULL) {
     first_request = first_request->next;

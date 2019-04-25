@@ -123,7 +123,7 @@ bool JfrStackTraceRepository::initialize() {
 }
 
 size_t JfrStackTraceRepository::clear() {
-  MutexLockerEx lock(JfrStacktrace_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker lock(JfrStacktrace_lock, Mutex::_no_safepoint_check_flag);
   if (_entries == 0) {
     return 0;
   }
@@ -142,7 +142,7 @@ size_t JfrStackTraceRepository::clear() {
 }
 
 traceid JfrStackTraceRepository::add_trace(const JfrStackTrace& stacktrace) {
-  MutexLockerEx lock(JfrStacktrace_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker lock(JfrStacktrace_lock, Mutex::_no_safepoint_check_flag);
   const size_t index = stacktrace._hash % TABLE_SIZE;
   const StackTrace* table_entry = _table[index];
 
@@ -238,7 +238,7 @@ traceid JfrStackTraceRepository::record_for(JavaThread* thread, int skip, JfrSta
 }
 
 size_t JfrStackTraceRepository::write_impl(JfrChunkWriter& sw, bool clear) {
-  MutexLockerEx lock(JfrStacktrace_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker lock(JfrStacktrace_lock, Mutex::_no_safepoint_check_flag);
   assert(_entries > 0, "invariant");
   int count = 0;
   for (u4 i = 0; i < TABLE_SIZE; ++i) {

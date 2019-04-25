@@ -200,7 +200,7 @@ void AOTLoader::universe_init() {
       if ((*lib)->is_valid()) {
         AOTCodeHeap* heap = new AOTCodeHeap(*lib);
         {
-          MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+          MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
           add_heap(heap);
           CodeCache::add_heap(heap);
         }

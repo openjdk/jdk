@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,8 +149,8 @@ void JfrTypeManager::write_safepoint_types(JfrCheckpointWriter& writer) {
 
 void JfrTypeManager::write_type_set() {
   // can safepoint here because of Module_lock
-  MutexLockerEx cld_lock(SafepointSynchronize::is_at_safepoint() ? NULL : ClassLoaderDataGraph_lock);
-  MutexLockerEx lock(SafepointSynchronize::is_at_safepoint() ? NULL : Module_lock);
+  MutexLocker cld_lock(SafepointSynchronize::is_at_safepoint() ? NULL : ClassLoaderDataGraph_lock);
+  MutexLocker lock(SafepointSynchronize::is_at_safepoint() ? NULL : Module_lock);
 
   JfrCheckpointWriter writer(true, true, Thread::current());
   TypeSet set;

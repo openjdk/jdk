@@ -93,12 +93,17 @@ class Monitor : public CHeapObj<mtSynchronizer> {
   void check_prelock_state     (Thread* thread, bool safepoint_check) PRODUCT_RETURN;
   void check_block_state       (Thread* thread)                       PRODUCT_RETURN;
   void assert_owner            (Thread* expected)                     NOT_DEBUG_RETURN;
+  void assert_wait_lock_state  (Thread* self)                         NOT_DEBUG_RETURN;
 
  public:
   enum {
-    _no_safepoint_check_flag    = true,
     _allow_vm_block_flag        = true,
     _as_suspend_equivalent_flag = true
+  };
+
+  enum SafepointCheckFlag {
+    _safepoint_check_flag,
+    _no_safepoint_check_flag
   };
 
   // Locks can be acquired with or without safepoint check.
@@ -135,9 +140,9 @@ class Monitor : public CHeapObj<mtSynchronizer> {
   // Defaults are to make safepoint checks, wait time is forever (i.e.,
   // zero), and not a suspend-equivalent condition. Returns true if wait
   // times out; otherwise returns false.
-  bool wait(bool no_safepoint_check = !_no_safepoint_check_flag,
-            long timeout = 0,
+  bool wait(long timeout = 0,
             bool as_suspend_equivalent = !_as_suspend_equivalent_flag);
+  bool wait_without_safepoint_check(long timeout = 0);
   void notify();
   void notify_all();
 
@@ -220,21 +225,19 @@ class PaddedMonitor : public Monitor {
 // An even better alternative is to simply eliminate Mutex:: and use Monitor:: instead.
 // After all, monitors are sufficient for Java-level synchronization.   At one point in time
 // there may have been some benefit to having distinct mutexes and monitors, but that time
-// has past.
+// has passed.
 //
 
 class Mutex : public Monitor {      // degenerate Monitor
  public:
    Mutex(int rank, const char *name, bool allow_vm_block = false,
          SafepointCheckRequired safepoint_check_required = _safepoint_check_always);
-  // default destructor
+   // default destructor
  private:
-   void notify ()    { ShouldNotReachHere(); }
-   void notify_all() { ShouldNotReachHere(); }
-   bool wait (bool no_safepoint_check, long timeout, bool as_suspend_equivalent) {
-     ShouldNotReachHere() ;
-     return false ;
-   }
+   void notify();
+   void notify_all();
+   bool wait(long timeout, bool as_suspend_equivalent);
+   bool wait_without_safepoint_check(long timeout);
 };
 
 class PaddedMutex : public Mutex {

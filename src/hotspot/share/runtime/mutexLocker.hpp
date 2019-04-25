@@ -62,7 +62,7 @@ extern Mutex*   VtableStubs_lock;                // a lock on the VtableStubs
 extern Mutex*   SymbolArena_lock;                // a lock on the symbol table arena
 extern Monitor* StringDedupQueue_lock;           // a lock on the string deduplication queue
 extern Mutex*   StringDedupTable_lock;           // a lock on the string deduplication table
-extern Monitor* CodeCache_lock;                  // a lock on the CodeCache, rank is special, use MutexLockerEx
+extern Monitor* CodeCache_lock;                  // a lock on the CodeCache, rank is special
 extern Mutex*   MethodData_lock;                 // a lock on installation of method data
 extern Mutex*   TouchedMethodLog_lock;           // a lock on allocation of LogExecutedMethods info
 extern Mutex*   RetData_lock;                    // a lock on installation of RetData inside method data
@@ -175,31 +175,6 @@ void print_owned_locks_on_error(outputStream* st);
 
 char *lock_name(Mutex *mutex);
 
-class MutexLocker: StackObj {
- private:
-  Monitor * _mutex;
- public:
-  MutexLocker(Monitor * mutex) {
-    assert(mutex->rank() != Mutex::special,
-      "Special ranked mutex should only use MutexLockerEx");
-    _mutex = mutex;
-    _mutex->lock();
-  }
-
-  // Overloaded constructor passing current thread
-  MutexLocker(Monitor * mutex, Thread *thread) {
-    assert(mutex->rank() != Mutex::special,
-      "Special ranked mutex should only use MutexLockerEx");
-    _mutex = mutex;
-    _mutex->lock(thread);
-  }
-
-  ~MutexLocker() {
-    _mutex->unlock();
-  }
-
-};
-
 // for debugging: check that we're already owning this lock (or are at a safepoint)
 #ifdef ASSERT
 void assert_locked_or_safepoint(const Monitor * lock);
@@ -211,82 +186,87 @@ void assert_lock_strong(const Monitor * lock);
 #define assert_lock_strong(lock)
 #endif
 
-// A MutexLockerEx behaves like a MutexLocker when its constructor is
-// called with a Mutex.  Unlike a MutexLocker, its constructor can also be
-// called with NULL, in which case the MutexLockerEx is a no-op.  There
-// is also a corresponding MutexUnlockerEx.  We want to keep the
-// basic MutexLocker as fast as possible.  MutexLockerEx can also lock
-// without safepoint check.
-
-class MutexLockerEx: public StackObj {
+class MutexLocker: public StackObj {
+ protected:
+  Monitor* _mutex;
  private:
-  Monitor * _mutex;
  public:
-  MutexLockerEx(Monitor * mutex, bool no_safepoint_check = !Mutex::_no_safepoint_check_flag) {
-    _mutex = mutex;
+  MutexLocker(Monitor* mutex, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
+    _mutex(mutex) {
+    bool no_safepoint_check = flag == Mutex::_no_safepoint_check_flag;
     if (_mutex != NULL) {
-      assert(mutex->rank() > Mutex::special || no_safepoint_check,
-        "Mutexes with rank special or lower should not do safepoint checks");
-      if (no_safepoint_check)
+      assert(_mutex->rank() > Mutex::special || no_safepoint_check,
+             "Mutexes with rank special or lower should not do safepoint checks");
+      if (no_safepoint_check) {
         _mutex->lock_without_safepoint_check();
-      else
+      } else {
         _mutex->lock();
+      }
     }
   }
 
-  ~MutexLockerEx() {
+  MutexLocker(Monitor* mutex, Thread* thread, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
+    _mutex(mutex) {
+    bool no_safepoint_check = flag == Mutex::_no_safepoint_check_flag;
     if (_mutex != NULL) {
+      assert(_mutex->rank() > Mutex::special || no_safepoint_check,
+             "Mutexes with rank special or lower should not do safepoint checks");
+      if (no_safepoint_check) {
+        _mutex->lock_without_safepoint_check(thread);
+      } else {
+        _mutex->lock(thread);
+      }
+    }
+  }
+
+  ~MutexLocker() {
+    if (_mutex != NULL) {
+      assert_lock_strong(_mutex);
       _mutex->unlock();
     }
   }
 };
 
-// A MonitorLockerEx is like a MutexLockerEx above, except it takes
-// a possibly null Monitor, and allows wait/notify as well which are
-// delegated to the underlying Monitor.
+// A MonitorLocker is like a MutexLocker above, except it allows
+// wait/notify as well which are delegated to the underlying Monitor.
 
-class MonitorLockerEx: public MutexLockerEx {
- private:
-  Monitor * _monitor;
+class MonitorLocker: public MutexLocker {
+  Mutex::SafepointCheckFlag _flag;
  public:
-  MonitorLockerEx(Monitor* monitor,
-                  bool no_safepoint_check = !Mutex::_no_safepoint_check_flag):
-    MutexLockerEx(monitor, no_safepoint_check),
-    _monitor(monitor) {
+  MonitorLocker(Monitor* monitor, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
+    MutexLocker(monitor, flag), _flag(flag) {
     // Superclass constructor did locking
   }
 
-  ~MonitorLockerEx() {
-    #ifdef ASSERT
-      if (_monitor != NULL) {
-        assert_lock_strong(_monitor);
-      }
-    #endif  // ASSERT
-    // Superclass destructor will do unlocking
+  MonitorLocker(Monitor* monitor, Thread* thread, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
+    MutexLocker(monitor, thread, flag), _flag(flag)  {
+    // Superclass constructor did locking
   }
 
-  bool wait(bool no_safepoint_check = !Mutex::_no_safepoint_check_flag,
-            long timeout = 0,
+  bool wait(long timeout = 0,
             bool as_suspend_equivalent = !Mutex::_as_suspend_equivalent_flag) {
-    if (_monitor != NULL) {
-      return _monitor->wait(no_safepoint_check, timeout, as_suspend_equivalent);
+    if (_mutex != NULL) {
+      if (_flag == Mutex::_safepoint_check_flag) {
+        return _mutex->wait(timeout, as_suspend_equivalent);
+      } else {
+        return _mutex->wait_without_safepoint_check(timeout);
+      }
     }
     return false;
   }
 
   void notify_all() {
-    if (_monitor != NULL) {
-      _monitor->notify_all();
+    if (_mutex != NULL) {
+      _mutex->notify_all();
     }
   }
 
   void notify() {
-    if (_monitor != NULL) {
-      _monitor->notify();
+    if (_mutex != NULL) {
+      _mutex->notify();
     }
   }
 };
-
 
 
 // A GCMutexLocker is usually initialized with a mutex that is
@@ -297,50 +277,30 @@ class MonitorLockerEx: public MutexLockerEx {
 
 class GCMutexLocker: public StackObj {
 private:
-  Monitor * _mutex;
+  Monitor* _mutex;
   bool _locked;
 public:
-  GCMutexLocker(Monitor * mutex);
+  GCMutexLocker(Monitor* mutex);
   ~GCMutexLocker() { if (_locked) _mutex->unlock(); }
 };
-
-
 
 // A MutexUnlocker temporarily exits a previously
 // entered mutex for the scope which contains the unlocker.
 
 class MutexUnlocker: StackObj {
  private:
-  Monitor * _mutex;
+  Monitor* _mutex;
+  bool _no_safepoint_check;
 
  public:
-  MutexUnlocker(Monitor * mutex) {
-    _mutex = mutex;
+  MutexUnlocker(Monitor* mutex, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
+    _mutex(mutex),
+    _no_safepoint_check(flag) {
     _mutex->unlock();
   }
 
   ~MutexUnlocker() {
-    _mutex->lock();
-  }
-};
-
-// A MutexUnlockerEx temporarily exits a previously
-// entered mutex for the scope which contains the unlocker.
-
-class MutexUnlockerEx: StackObj {
- private:
-  Monitor * _mutex;
-  bool _no_safepoint_check;
-
- public:
-  MutexUnlockerEx(Monitor * mutex, bool no_safepoint_check = !Mutex::_no_safepoint_check_flag) {
-    _mutex = mutex;
-    _no_safepoint_check = no_safepoint_check;
-    _mutex->unlock();
-  }
-
-  ~MutexUnlockerEx() {
-    if (_no_safepoint_check == Mutex::_no_safepoint_check_flag) {
+    if (_no_safepoint_check) {
       _mutex->lock_without_safepoint_check();
     } else {
       _mutex->lock();

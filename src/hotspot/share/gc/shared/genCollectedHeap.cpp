@@ -233,7 +233,7 @@ size_t GenCollectedHeap::max_capacity() const {
 // Update the _full_collections_completed counter
 // at the end of a stop-world full GC.
 unsigned int GenCollectedHeap::update_full_collections_completed() {
-  MonitorLockerEx ml(FullGCCount_lock, Mutex::_no_safepoint_check_flag);
+  MonitorLocker ml(FullGCCount_lock, Mutex::_no_safepoint_check_flag);
   assert(_full_collections_completed <= _total_full_collections,
          "Can't complete more collections than were started");
   _full_collections_completed = _total_full_collections;
@@ -247,7 +247,7 @@ unsigned int GenCollectedHeap::update_full_collections_completed() {
 // without synchronizing in any manner with the VM thread (which
 // may already have initiated a STW full collection "concurrently").
 unsigned int GenCollectedHeap::update_full_collections_completed(unsigned int count) {
-  MonitorLockerEx ml(FullGCCount_lock, Mutex::_no_safepoint_check_flag);
+  MonitorLocker ml(FullGCCount_lock, Mutex::_no_safepoint_check_flag);
   assert((_full_collections_completed <= _total_full_collections) &&
          (count <= _total_full_collections),
          "Can't complete more collections than were started");

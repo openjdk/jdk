@@ -302,7 +302,7 @@ void print_statistics() {
   }
 
   if (PrintCodeCache) {
-    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     CodeCache::print();
   }
 
@@ -315,7 +315,7 @@ void print_statistics() {
   }
 
   if (PrintCodeCache2) {
-    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     CodeCache::print_internals();
   }
 
@@ -370,7 +370,7 @@ void print_statistics() {
   }
 
   if (PrintCodeCache) {
-    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     CodeCache::print();
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -258,7 +258,7 @@ void InlineCacheBuffer::release_pending_icholders() {
 // not safe to free them until them since they might be visible to
 // another thread.
 void InlineCacheBuffer::queue_for_release(CompiledICHolder* icholder) {
-  MutexLockerEx mex(InlineCacheBuffer_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker mex(InlineCacheBuffer_lock, Mutex::_no_safepoint_check_flag);
   icholder->set_next(_pending_released);
   _pending_released = icholder;
   _pending_count++;

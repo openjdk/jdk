@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,14 +54,14 @@ G1StringDedupQueue::~G1StringDedupQueue() {
 }
 
 void G1StringDedupQueue::wait_impl() {
-  MonitorLockerEx ml(StringDedupQueue_lock, Mutex::_no_safepoint_check_flag);
+  MonitorLocker ml(StringDedupQueue_lock, Mutex::_no_safepoint_check_flag);
   while (_empty && !_cancel) {
-    ml.wait(Mutex::_no_safepoint_check_flag);
+    ml.wait();
   }
 }
 
 void G1StringDedupQueue::cancel_wait_impl() {
-  MonitorLockerEx ml(StringDedupQueue_lock, Mutex::_no_safepoint_check_flag);
+  MonitorLocker ml(StringDedupQueue_lock, Mutex::_no_safepoint_check_flag);
   _cancel = true;
   ml.notify();
 }
@@ -75,7 +75,7 @@ void G1StringDedupQueue::push_impl(uint worker_id, oop java_string) {
   if (!worker_queue.is_full()) {
     worker_queue.push(java_string);
     if (_empty) {
-      MonitorLockerEx ml(StringDedupQueue_lock, Mutex::_no_safepoint_check_flag);
+      MonitorLocker ml(StringDedupQueue_lock, Mutex::_no_safepoint_check_flag);
       if (_empty) {
         // Mark non-empty and notify waiter
         _empty = false;

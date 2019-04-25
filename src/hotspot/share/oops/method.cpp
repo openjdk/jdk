@@ -928,7 +928,7 @@ void Method::set_not_osr_compilable(int comp_level, bool report, const char* rea
 
 // Revert to using the interpreter and clear out the nmethod
 void Method::clear_code(bool acquire_lock /* = true */) {
-  MutexLockerEx pl(acquire_lock ? Patching_lock : NULL, Mutex::_no_safepoint_check_flag);
+  MutexLocker pl(acquire_lock ? Patching_lock : NULL, Mutex::_no_safepoint_check_flag);
   // this may be NULL if c2i adapters have not been made yet
   // Only should happen at allocate time.
   if (adapter() == NULL) {
@@ -1161,7 +1161,7 @@ bool Method::check_code() const {
 
 // Install compiled code.  Instantly it can execute.
 void Method::set_code(const methodHandle& mh, CompiledMethod *code) {
-  MutexLockerEx pl(Patching_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker pl(Patching_lock, Mutex::_no_safepoint_check_flag);
   assert( code, "use clear_code to remove code" );
   assert( mh->check_code(), "" );
 
@@ -2064,7 +2064,7 @@ void Method::ensure_jmethod_ids(ClassLoaderData* loader_data, int capacity) {
     // Have to add jmethod_ids() to class loader data thread-safely.
     // Also have to add the method to the list safely, which the cld lock
     // protects as well.
-    MutexLockerEx ml(cld->metaspace_lock(),  Mutex::_no_safepoint_check_flag);
+    MutexLocker ml(cld->metaspace_lock(),  Mutex::_no_safepoint_check_flag);
     if (cld->jmethod_ids() == NULL) {
       cld->set_jmethod_ids(new JNIMethodBlock(capacity));
     } else {
@@ -2088,7 +2088,7 @@ jmethodID Method::make_jmethod_id(ClassLoaderData* loader_data, Method* m) {
     // Have to add jmethod_ids() to class loader data thread-safely.
     // Also have to add the method to the list safely, which the cld lock
     // protects as well.
-    MutexLockerEx ml(cld->metaspace_lock(),  Mutex::_no_safepoint_check_flag);
+    MutexLocker ml(cld->metaspace_lock(),  Mutex::_no_safepoint_check_flag);
     if (cld->jmethod_ids() == NULL) {
       cld->set_jmethod_ids(new JNIMethodBlock());
     }
@@ -2382,7 +2382,7 @@ void Method::log_touched(TRAPS) {
 }
 
 void Method::print_touched_methods(outputStream* out) {
-  MutexLockerEx ml(Thread::current()->is_VM_thread() ? NULL : TouchedMethodLog_lock);
+  MutexLocker ml(Thread::current()->is_VM_thread() ? NULL : TouchedMethodLog_lock);
   out->print_cr("# Method::print_touched_methods version 1");
   if (_touched_method_table) {
     for (int i = 0; i < TOUCHED_METHOD_TABLE_SIZE; i++) {

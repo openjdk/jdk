@@ -436,7 +436,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
     uint gc_count_before;
 
     {
-      MutexLockerEx x(Heap_lock);
+      MutexLocker x(Heap_lock);
       result = _allocator->attempt_allocation_locked(word_size);
       if (result != NULL) {
         return result;
@@ -575,7 +575,7 @@ bool G1CollectedHeap::alloc_archive_regions(MemRegion* ranges,
   assert(!is_init_completed(), "Expect to be called at JVM init time");
   assert(ranges != NULL, "MemRegion array NULL");
   assert(count != 0, "No MemRegions provided");
-  MutexLockerEx x(Heap_lock);
+  MutexLocker x(Heap_lock);
 
   MemRegion reserved = _hrm->reserved();
   HeapWord* prev_last_addr = NULL;
@@ -685,7 +685,7 @@ void G1CollectedHeap::fill_archive_regions(MemRegion* ranges, size_t count) {
   // that contain the address range. The address range actually within the
   // MemRegion will not be modified. That is assumed to have been initialized
   // elsewhere, probably via an mmap of archived heap data.
-  MutexLockerEx x(Heap_lock);
+  MutexLocker x(Heap_lock);
   for (size_t i = 0; i < count; i++) {
     HeapWord* start_address = ranges[i].start();
     HeapWord* last_address = ranges[i].last();
@@ -771,7 +771,7 @@ void G1CollectedHeap::dealloc_archive_regions(MemRegion* ranges, size_t count, b
 
   // For each Memregion, free the G1 regions that constitute it, and
   // notify mark-sweep that the range is no longer to be considered 'archive.'
-  MutexLockerEx x(Heap_lock);
+  MutexLocker x(Heap_lock);
   for (size_t i = 0; i < count; i++) {
     HeapWord* start_address = ranges[i].start();
     HeapWord* last_address = ranges[i].last();
@@ -882,7 +882,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size) {
 
 
     {
-      MutexLockerEx x(Heap_lock);
+      MutexLocker x(Heap_lock);
 
       // Given that humongous objects are not allocated in young
       // regions, we'll first try to do the allocation without doing a
@@ -2066,7 +2066,7 @@ void G1CollectedHeap::increment_old_marking_cycles_started() {
 }
 
 void G1CollectedHeap::increment_old_marking_cycles_completed(bool concurrent) {
-  MonitorLockerEx x(FullGCCount_lock, Mutex::_no_safepoint_check_flag);
+  MonitorLocker x(FullGCCount_lock, Mutex::_no_safepoint_check_flag);
 
   // We assume that if concurrent == true, then the caller is a
   // concurrent thread that was joined the Suspendible Thread
@@ -2604,7 +2604,7 @@ HeapWord* G1CollectedHeap::do_collection_pause(size_t word_size,
 }
 
 void G1CollectedHeap::do_concurrent_mark() {
-  MutexLockerEx x(CGC_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker x(CGC_lock, Mutex::_no_safepoint_check_flag);
   if (!_cm_thread->in_progress()) {
     _cm_thread->set_started();
     CGC_lock->notify();
@@ -3925,7 +3925,7 @@ void G1CollectedHeap::free_humongous_region(HeapRegion* hr,
 void G1CollectedHeap::remove_from_old_sets(const uint old_regions_removed,
                                            const uint humongous_regions_removed) {
   if (old_regions_removed > 0 || humongous_regions_removed > 0) {
-    MutexLockerEx x(OldSets_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker x(OldSets_lock, Mutex::_no_safepoint_check_flag);
     _old_set.bulk_remove(old_regions_removed);
     _humongous_set.bulk_remove(humongous_regions_removed);
   }
@@ -3935,7 +3935,7 @@ void G1CollectedHeap::remove_from_old_sets(const uint old_regions_removed,
 void G1CollectedHeap::prepend_to_freelist(FreeRegionList* list) {
   assert(list != NULL, "list can't be null");
   if (!list->is_empty()) {
-    MutexLockerEx x(FreeList_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker x(FreeList_lock, Mutex::_no_safepoint_check_flag);
     _hrm->insert_list_into_free_list(list);
   }
 }
@@ -4073,7 +4073,7 @@ private:
 
   void do_serial_work() {
     // Need to grab the lock to be allowed to modify the old region list.
-    MutexLockerEx x(OldSets_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker x(OldSets_lock, Mutex::_no_safepoint_check_flag);
     _collection_set->iterate(&_cl);
   }
 

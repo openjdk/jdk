@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,7 +179,7 @@ MetaWord* SpaceManager::grow_and_allocate(size_t word_size) {
   assert(current_chunk() == NULL ||
          current_chunk()->allocate(word_size) == NULL,
          "Don't need to expand");
-  MutexLockerEx cl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker cl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
 
   if (log_is_enabled(Trace, gc, metaspace, freelist)) {
     size_t words_left = 0;
@@ -284,8 +284,7 @@ SpaceManager::~SpaceManager() {
   // This call this->_lock which can't be done while holding MetaspaceExpand_lock
   DEBUG_ONLY(verify_metrics());
 
-  MutexLockerEx fcl(MetaspaceExpand_lock,
-                    Mutex::_no_safepoint_check_flag);
+  MutexLocker fcl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
 
   account_for_spacemanager_death();
 
@@ -402,7 +401,7 @@ Metachunk* SpaceManager::get_new_chunk(size_t chunk_word_size) {
 }
 
 MetaWord* SpaceManager::allocate(size_t word_size) {
-  MutexLockerEx cl(lock(), Mutex::_no_safepoint_check_flag);
+  MutexLocker cl(lock(), Mutex::_no_safepoint_check_flag);
   size_t raw_word_size = get_allocation_word_size(word_size);
   BlockFreelist* fl =  block_freelists();
   MetaWord* p = NULL;
@@ -498,7 +497,7 @@ void SpaceManager::add_to_statistics_locked(SpaceManagerStatistics* out) const {
 }
 
 void SpaceManager::add_to_statistics(SpaceManagerStatistics* out) const {
-  MutexLockerEx cl(lock(), Mutex::_no_safepoint_check_flag);
+  MutexLocker cl(lock(), Mutex::_no_safepoint_check_flag);
   add_to_statistics_locked(out);
 }
 
@@ -519,7 +518,7 @@ void SpaceManager::verify_metrics_locked() const {
 }
 
 void SpaceManager::verify_metrics() const {
-  MutexLockerEx cl(lock(), Mutex::_no_safepoint_check_flag);
+  MutexLocker cl(lock(), Mutex::_no_safepoint_check_flag);
   verify_metrics_locked();
 }
 #endif // ASSERT
