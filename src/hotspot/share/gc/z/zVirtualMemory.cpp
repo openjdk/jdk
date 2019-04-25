@@ -24,11 +24,16 @@
 #include "precompiled.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zVirtualMemory.inline.hpp"
+#include "logging/log.hpp"
 #include "services/memTracker.hpp"
 
 ZVirtualMemoryManager::ZVirtualMemoryManager() :
     _manager(),
     _initialized(false) {
+
+  log_info(gc, init)("Address Space: " PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "T)",
+                     ZAddressSpaceStart, ZAddressSpaceEnd, ZAddressSpaceSize / K / G);
+
   // Reserve address space
   if (!reserve(ZAddressSpaceStart, ZAddressSpaceSize)) {
     return;

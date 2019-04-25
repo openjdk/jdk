@@ -35,56 +35,17 @@
 //  Large         X*M           > 4M                  2M
 //  ------------------------------------------------------------------
 //
-//
-// Address Space & Pointer Layout
-// ------------------------------
-//
-//  +--------------------------------+ 0x00007FFFFFFFFFFF (127TB)
-//  .                                .
-//  .                                .
-//  .                                .
-//  +--------------------------------+ 0x0000140000000000 (20TB)
-//  |         Remapped View          |
-//  +--------------------------------+ 0x0000100000000000 (16TB)
-//  |     (Reserved, but unused)     |
-//  +--------------------------------+ 0x00000c0000000000 (12TB)
-//  |         Marked1 View           |
-//  +--------------------------------+ 0x0000080000000000 (8TB)
-//  |         Marked0 View           |
-//  +--------------------------------+ 0x0000040000000000 (4TB)
-//  .                                .
-//  +--------------------------------+ 0x0000000000000000
-//
-//
-//   6                 4 4 4  4 4                                             0
-//   3                 7 6 5  2 1                                             0
-//  +-------------------+-+----+-----------------------------------------------+
-//  |00000000 00000000 0|0|1111|11 11111111 11111111 11111111 11111111 11111111|
-//  +-------------------+-+----+-----------------------------------------------+
-//  |                   | |    |
-//  |                   | |    * 41-0 Object Offset (42-bits, 4TB address space)
-//  |                   | |
-//  |                   | * 45-42 Metadata Bits (4-bits)  0001 = Marked0      (Address view 4-8TB)
-//  |                   |                                 0010 = Marked1      (Address view 8-12TB)
-//  |                   |                                 0100 = Remapped     (Address view 16-20TB)
-//  |                   |                                 1000 = Finalizable  (Address view N/A)
-//  |                   |
-//  |                   * 46-46 Unused (1-bit, always zero)
-//  |
-//  * 63-47 Fixed (17-bits, always zero)
-//
+const size_t ZPlatformGranuleSizeShift      = 21; // 2MB
+const size_t ZPlatformMaxHeapSizeShift      = 46; // 16TB
+const size_t ZPlatformNMethodDisarmedOffset = 4;
+const size_t ZPlatformCacheLineSize         = 64;
 
-const size_t    ZPlatformGranuleSizeShift      = 21; // 2M
-
-const size_t    ZPlatformAddressOffsetBits     = 42; // 4TB
-
-const uintptr_t ZPlatformAddressMetadataShift  = ZPlatformAddressOffsetBits;
-
-const uintptr_t ZPlatformAddressSpaceStart     = (uintptr_t)1 << ZPlatformAddressOffsetBits;
-const uintptr_t ZPlatformAddressSpaceSize      = ((uintptr_t)1 << ZPlatformAddressOffsetBits) * 4;
-
-const size_t    ZPlatformNMethodDisarmedOffset = 4;
-
-const size_t    ZPlatformCacheLineSize         = 64;
+uintptr_t    ZPlatformAddressSpaceStart();
+uintptr_t    ZPlatformAddressSpaceEnd();
+uintptr_t    ZPlatformAddressReservedStart();
+uintptr_t    ZPlatformAddressReservedEnd();
+uintptr_t    ZPlatformAddressBase();
+size_t       ZPlatformAddressOffsetBits();
+size_t       ZPlatformAddressMetadataShift();
 
 #endif // OS_CPU_LINUX_X86_GC_Z_ZGLOBALS_LINUX_X86_HPP

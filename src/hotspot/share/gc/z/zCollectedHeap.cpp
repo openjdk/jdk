@@ -56,7 +56,7 @@ CollectedHeap::Name ZCollectedHeap::kind() const {
 }
 
 const char* ZCollectedHeap::name() const {
-  return ZGCName;
+  return ZName;
 }
 
 jint ZCollectedHeap::initialize() {
@@ -64,8 +64,8 @@ jint ZCollectedHeap::initialize() {
     return JNI_ENOMEM;
   }
 
-  initialize_reserved_region((HeapWord*)ZAddressReservedStart(),
-                             (HeapWord*)ZAddressReservedEnd());
+  initialize_reserved_region((HeapWord*)ZAddressReservedStart,
+                             (HeapWord*)ZAddressReservedEnd);
 
   return JNI_OK;
 }

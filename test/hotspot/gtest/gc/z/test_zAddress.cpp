@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,8 @@ class ZAddressTest : public ::testing::Test {
 protected:
   static void is_good_bit(uintptr_t bit_mask) {
     // Setup
-    uintptr_t mask_before = ZAddressGoodMask;
-
-    ZAddressMasks::set_good_mask(bit_mask);
+    ZAddress::initialize();
+    ZAddress::set_good_mask(bit_mask);
 
     // Test that a pointer with only the given bit is considered good.
     EXPECT_EQ(ZAddress::is_good(ZAddressMetadataMarked0),  (bit_mask == ZAddressMetadataMarked0));
@@ -46,16 +45,12 @@ protected:
 
     // Test that null is not considered good.
     EXPECT_FALSE(ZAddress::is_good(0));
-
-    // Teardown
-    ZAddressMasks::set_good_mask(mask_before);
   }
 
   static void is_good_or_null_bit(uintptr_t bit_mask) {
     // Setup
-    uintptr_t mask_before = ZAddressGoodMask;
-
-    ZAddressMasks::set_good_mask(bit_mask);
+    ZAddress::initialize();
+    ZAddress::set_good_mask(bit_mask);
 
     // Test that a pointer with only the given bit is considered good.
     EXPECT_EQ(ZAddress::is_good_or_null(ZAddressMetadataMarked0),  (bit_mask == ZAddressMetadataMarked0));
@@ -69,15 +64,12 @@ protected:
 
     // Test that null is considered good_or_null.
     EXPECT_TRUE(ZAddress::is_good_or_null(0));
-
-    // Teardown
-    ZAddressMasks::set_good_mask(mask_before);
   }
 
   static void finalizable() {
     // Setup
-    ZAddressMasks::initialize();
-    ZAddressMasks::flip_to_marked();
+    ZAddress::initialize();
+    ZAddress::flip_to_marked();
 
     // Test that a normal good pointer is good and weak good, but not finalizable
     const uintptr_t addr1 = ZAddress::good(1);
@@ -100,7 +92,7 @@ protected:
     EXPECT_FALSE(ZAddress::is_good_or_null(addr2));
 
     // Flip to remapped and test that it's no longer weak good
-    ZAddressMasks::flip_to_remapped();
+    ZAddress::flip_to_remapped();
     EXPECT_TRUE(ZAddress::is_finalizable(addr2));
     EXPECT_TRUE(ZAddress::is_marked(addr2));
     EXPECT_FALSE(ZAddress::is_remapped(addr2));

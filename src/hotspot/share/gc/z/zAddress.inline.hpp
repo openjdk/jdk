@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
 #include "gc/z/zAddress.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "utilities/macros.hpp"
-#include OS_CPU_HEADER_INLINE(gc/z/zAddress)
 
 inline bool ZAddress::is_null(uintptr_t value) {
   return value == 0;
@@ -80,6 +79,10 @@ inline bool ZAddress::is_finalizable_good(uintptr_t value) {
 
 inline bool ZAddress::is_remapped(uintptr_t value) {
   return value & ZAddressMetadataRemapped;
+}
+
+inline uintptr_t ZAddress::address(uintptr_t value) {
+  return value | ZAddressBase;
 }
 
 inline uintptr_t ZAddress::offset(uintptr_t value) {

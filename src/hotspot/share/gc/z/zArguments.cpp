@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,13 @@
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 
-size_t ZArguments::conservative_max_heap_alignment() {
-  return 0;
-}
-
 void ZArguments::initialize() {
   GCArguments::initialize();
+
+  // Check max heap size
+  if (MaxHeapSize > ZMaxHeapSize) {
+    vm_exit_during_initialization("Java heap too large");
+  }
 
   // Enable NUMA by default
   if (FLAG_IS_DEFAULT(UseNUMA)) {
@@ -93,6 +94,10 @@ void ZArguments::initialize() {
 
   // Initialize platform specific arguments
   initialize_platform();
+}
+
+size_t ZArguments::conservative_max_heap_alignment() {
+  return 0;
 }
 
 CollectedHeap* ZArguments::create_heap() {
