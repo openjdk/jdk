@@ -439,7 +439,7 @@ vmTestbase_vm_metaspace = \
 # JVMTI tests
 vmTestbase_nsk_jvmti = \
   vmTestbase/nsk/jvmti \
-  vmTestbase/nsk/share/ExceptionCheckingJniEnv
+  vmTestbase/nsk/share/jni/ExceptionCheckingJniEnv
 
 # JDWP tests
 vmTestbase_nsk_jdwp = \
