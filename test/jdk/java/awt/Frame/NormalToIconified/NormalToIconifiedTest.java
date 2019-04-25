@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /**
  * @test
  * @key headful
- * @bug 8171949
+ * @bug 8171949 8214046
  * @summary Tests that bitwise mask is set and state listener is notified during state transition.
  * @author Dmitry Markov
  * @library ../../regtesthelpers
@@ -41,12 +41,18 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import test.java.awt.regtesthelpers.Util;
 
 public class NormalToIconifiedTest {
-    private static final AtomicBoolean listenerNotified = new AtomicBoolean(false);
 
     public static void main(String[] args) {
-        Robot robot = Util.createRobot();
+        test(false);
+        test(true);
+    }
 
+    private static void test(final boolean undecorated) {
+        AtomicBoolean listenerNotified = new AtomicBoolean(false);
+
+        Robot robot = Util.createRobot();
         Frame testFrame = new Frame("Test Frame");
+        testFrame.setUndecorated(undecorated);
         testFrame.setSize(200, 200);
         testFrame.addWindowStateListener(new WindowStateListener() {
             @Override
@@ -58,14 +64,11 @@ public class NormalToIconifiedTest {
             }
         });
         testFrame.setVisible(true);
-
         Frame mainFrame = new Frame("Main Frame");
         mainFrame.setSize(200, 200);
         mainFrame.setLocationRelativeTo(null);
         mainFrame.setVisible(true);
-
         Util.waitForIdle(robot);
-
         try {
             Util.clickOnComp(mainFrame, robot);
             Util.waitForIdle(robot);
