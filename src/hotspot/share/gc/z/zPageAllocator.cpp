@@ -37,6 +37,7 @@
 #include "runtime/init.hpp"
 
 static const ZStatCounter       ZCounterAllocationRate("Memory", "Allocation Rate", ZStatUnitBytesPerSecond);
+static const ZStatCounter       ZCounterPageCacheEvict("Memory", "Page Cache Evict", ZStatUnitBytesPerSecond);
 static const ZStatCriticalPhase ZCriticalPhaseAllocationStall("Allocation Stall");
 
 class ZPageAllocRequest : public StackObj {
@@ -271,16 +272,6 @@ void ZPageAllocator::unmap_all_pages() {
   pmem.clear();
 }
 
-void ZPageAllocator::flush_cache(size_t size) {
-  ZList<ZPage> list;
-
-  _cache.flush(&list, size);
-
-  for (ZPage* page = list.remove_first(); page != NULL; page = list.remove_first()) {
-    destroy_page(page);
-  }
-}
-
 void ZPageAllocator::check_out_of_memory_during_initialization() {
   if (!is_init_completed()) {
     vm_exit_during_initialization("java.lang.OutOfMemoryError", "Java heap too small");
@@ -313,8 +304,11 @@ ZPage* ZPageAllocator::alloc_page_common_inner(uint8_t type, size_t size, ZAlloc
   // Try ensure that physical memory is available
   const size_t unused = try_ensure_unused(size, flags.no_reserve());
   if (unused < size) {
-    // Flush cache to free up more physical memory
-    flush_cache(size - unused);
+    // Try evict pages from the cache
+    const size_t needed = size - unused;
+    if (_cache.available() >= needed) {
+      evict_cache(needed);
+    }
   }
 
   // Create new page and allocate physical memory
@@ -466,6 +460,61 @@ void ZPageAllocator::free_page(ZPage* page, bool reclaimed) {
 
   // Try satisfy blocked allocations
   satisfy_alloc_queue();
+}
+
+void ZPageAllocator::flush_cache(ZPageCacheFlushClosure* cl) {
+  ZList<ZPage> list;
+
+  _cache.flush(cl, &list);
+
+  for (ZPage* page = list.remove_first(); page != NULL; page = list.remove_first()) {
+    destroy_page(page);
+  }
+}
+
+class ZPageCacheEvictClosure : public ZPageCacheFlushClosure {
+private:
+  const size_t _requested;
+  size_t       _evicted;
+
+public:
+  ZPageCacheEvictClosure(size_t requested) :
+      _requested(requested),
+      _evicted(0) {}
+
+  virtual bool do_page(const ZPage* page) {
+    if (_evicted < _requested) {
+      // Evict page
+      _evicted += page->size();
+      return true;
+    }
+
+    // Don't evict page
+    return false;
+  }
+
+  size_t evicted() const {
+    return _evicted;
+  }
+};
+
+void ZPageAllocator::evict_cache(size_t requested) {
+  // Evict pages
+  ZPageCacheEvictClosure cl(requested);
+  flush_cache(&cl);
+
+  const size_t evicted = cl.evicted();
+  const size_t cached_after = _cache.available();
+  const size_t cached_before = cached_after + evicted;
+
+  log_info(gc, heap)("Page Cache: " SIZE_FORMAT "M(%.0lf%%)->" SIZE_FORMAT "M(%.0lf%%), "
+                     "Evicted: " SIZE_FORMAT "M, Requested: " SIZE_FORMAT "M",
+                     cached_before / M, percent_of(cached_before, max_capacity()),
+                     cached_after / M, percent_of(cached_after, max_capacity()),
+                     evicted / M, requested / M);
+
+  // Update statistics
+  ZStatInc(ZCounterPageCacheEvict, evicted);
 }
 
 void ZPageAllocator::enable_deferred_delete() const {

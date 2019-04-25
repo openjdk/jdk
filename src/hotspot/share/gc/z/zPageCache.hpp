@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,14 @@
 #include "gc/z/zValue.hpp"
 #include "memory/allocation.hpp"
 
+class ZPageCacheFlushClosure : public StackObj {
+public:
+  virtual bool do_page(const ZPage* page) = 0;
+};
+
 class ZPageCache {
 private:
   size_t                  _available;
-
   ZPerNUMA<ZList<ZPage> > _small;
   ZList<ZPage>            _medium;
   ZList<ZPage>            _large;
@@ -41,8 +45,9 @@ private:
   ZPage* alloc_medium_page();
   ZPage* alloc_large_page(size_t size);
 
-  void flush_list(ZList<ZPage>* from, size_t requested, ZList<ZPage>* to, size_t* flushed);
-  void flush_per_numa_lists(ZPerNUMA<ZList<ZPage> >* from, size_t requested, ZList<ZPage>* to, size_t* flushed);
+  bool flush_list_inner(ZPageCacheFlushClosure* cl, ZList<ZPage>* from, ZList<ZPage>* to);
+  void flush_list(ZPageCacheFlushClosure* cl, ZList<ZPage>* from, ZList<ZPage>* to);
+  void flush_per_numa_lists(ZPageCacheFlushClosure* cl, ZPerNUMA<ZList<ZPage> >* from, ZList<ZPage>* to);
 
 public:
   ZPageCache();
@@ -52,7 +57,7 @@ public:
   ZPage* alloc_page(uint8_t type, size_t size);
   void free_page(ZPage* page);
 
-  void flush(ZList<ZPage>* to, size_t requested);
+  void flush(ZPageCacheFlushClosure* cl, ZList<ZPage>* to);
 };
 
 #endif // SHARE_GC_Z_ZPAGECACHE_HPP
