@@ -60,7 +60,7 @@ ShenandoahStrDedupQueue::~ShenandoahStrDedupQueue() {
 void ShenandoahStrDedupQueue::wait_impl() {
   MonitorLocker ml(StringDedupQueue_lock, Mutex::_no_safepoint_check_flag);
   while (_consumer_queue == NULL && !_cancel) {
-    ml.wait_without_safepoint_check();
+    ml.wait();
     assert(_consumer_queue == NULL, "Why wait?");
     _consumer_queue = _published_queues;
     _published_queues = NULL;
