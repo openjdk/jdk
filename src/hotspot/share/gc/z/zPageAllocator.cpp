@@ -133,6 +133,11 @@ size_t ZPageAllocator::used() const {
   return _used;
 }
 
+size_t ZPageAllocator::unused() const {
+  const ssize_t unused = (ssize_t)_physical.capacity() - (ssize_t)_used - (ssize_t)_max_reserve;
+  return unused > 0 ? (size_t)unused : 0;
+}
+
 size_t ZPageAllocator::allocated() const {
   return _allocated;
 }

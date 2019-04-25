@@ -92,6 +92,7 @@ public:
   size_t used_high() const;
   size_t used_low() const;
   size_t used() const;
+  size_t unused() const;
   size_t allocated() const;
   size_t reclaimed() const;
 

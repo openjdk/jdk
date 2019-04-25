@@ -100,6 +100,10 @@ size_t ZCollectedHeap::used() const {
   return _heap.used();
 }
 
+size_t ZCollectedHeap::unused() const {
+  return _heap.unused();
+}
+
 bool ZCollectedHeap::is_maximal_no_gc() const {
   // Not supported
   ShouldNotReachHere();

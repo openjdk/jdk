@@ -133,6 +133,10 @@ size_t ZHeap::used() const {
   return _page_allocator.used();
 }
 
+size_t ZHeap::unused() const {
+  return _page_allocator.unused();
+}
+
 size_t ZHeap::allocated() const {
   return _page_allocator.allocated();
 }

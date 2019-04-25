@@ -508,12 +508,7 @@ JVM_END
 
 JVM_ENTRY_NO_ENV(jlong, JVM_FreeMemory(void))
   JVMWrapper("JVM_FreeMemory");
-  CollectedHeap* ch = Universe::heap();
-  size_t n;
-  {
-     MutexLocker x(Heap_lock);
-     n = ch->capacity() - ch->used();
-  }
+  size_t n = Universe::heap()->unused();
   return convert_size_t_to_jlong(n);
 JVM_END
 
