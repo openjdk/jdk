@@ -600,14 +600,7 @@ public class TestSearch extends JavadocTester {
 
     void checkSearchJS() {
         checkOutput("search.js", true,
-                "camelCaseRegexp = ($.ui.autocomplete.escapeRegex(request.term)).split(/(?=[A-Z])/).join(\"([a-z0-9_$]*?)\");",
-                "var camelCaseMatcher = new RegExp(\"^\" + camelCaseRegexp);",
-                "camelCaseMatcher.test(item.l)",
-                "var secondaryresult = new Array();",
-                "function nestedName(e) {",
                 "function concatResults(a1, a2) {",
-                "if (exactMatcher.test(item.l)) {\n"
-                + "                        presult.push(item);",
                 "$(\"#search\").on('click keydown paste', function() {\n"
                 + "        if ($(this).val() == watermark) {\n"
                 + "            $(this).val('').removeClass('watermark');\n"
