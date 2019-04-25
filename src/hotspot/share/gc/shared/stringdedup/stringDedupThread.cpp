@@ -66,10 +66,10 @@ class StringDedupSharedClosure: public OopClosure {
   }
 };
 
-// The CDS archive does not include the string dedupication table. Only the string
+// The CDS archive does not include the string deduplication table. Only the string
 // table is saved in the archive. The shared strings from CDS archive need to be
-// added to the string dedupication table before deduplication occurs. That is
-// done in the begining of the StringDedupThread (see StringDedupThread::do_deduplication()).
+// added to the string deduplication table before deduplication occurs. That is
+// done in the beginning of the StringDedupThread (see StringDedupThread::do_deduplication()).
 void StringDedupThread::deduplicate_shared_strings(StringDedupStat* stat) {
   StringDedupSharedClosure sharedStringDedup(stat);
   StringTable::shared_oops_do(&sharedStringDedup);
