@@ -383,7 +383,25 @@ assert factories != null : "sanity";
     /**
      * Cache for speeding up {@link #fromClass(Class)}.
      */
-    @NativeImageReinitialize private volatile ClassValue<WeakReference<HotSpotResolvedJavaType>> resolvedJavaType;
+    @NativeImageReinitialize private volatile ClassValue<WeakReferenceHolder<HotSpotResolvedJavaType>> resolvedJavaType;
+
+    /**
+     * To avoid calling ClassValue.remove to refresh the weak reference, which
+     * under certain circumstances can lead to an infinite loop, we use a
+     * permanent holder with a mutable field that we refresh.
+     */
+    private static class WeakReferenceHolder<T> {
+        private volatile WeakReference<T> ref;
+        WeakReferenceHolder(T value) {
+            set(value);
+        }
+        void set(T value) {
+            ref = new WeakReference<T>(value);
+        }
+        T get() {
+            return ref.get();
+        }
+    };
 
     @NativeImageReinitialize private HashMap<Long, WeakReference<ResolvedJavaType>> resolvedJavaTypes;
 
@@ -485,27 +503,25 @@ assert factories != null : "sanity";
         if (resolvedJavaType == null) {
             synchronized (this) {
                 if (resolvedJavaType == null) {
-                    resolvedJavaType = new ClassValue<WeakReference<HotSpotResolvedJavaType>>() {
+                    resolvedJavaType = new ClassValue<WeakReferenceHolder<HotSpotResolvedJavaType>>() {
                         @Override
-                        protected WeakReference<HotSpotResolvedJavaType> computeValue(Class<?> type) {
-                            return new WeakReference<>(createClass(type));
+                        protected WeakReferenceHolder<HotSpotResolvedJavaType> computeValue(Class<?> type) {
+                            return new WeakReferenceHolder<>(createClass(type));
                         }
                     };
                 }
             }
         }
-        HotSpotResolvedJavaType javaType = null;
-        while (javaType == null) {
-            WeakReference<HotSpotResolvedJavaType> type = resolvedJavaType.get(javaClass);
-            javaType = type.get();
-            if (javaType == null) {
-                /*
-                 * If the referent has become null, clear out the current value and let computeValue
-                 * above create a new value. Reload the value in a loop because in theory the
-                 * WeakReference referent can be reclaimed at any point.
-                 */
-                resolvedJavaType.remove(javaClass);
-            }
+
+        WeakReferenceHolder<HotSpotResolvedJavaType> ref = resolvedJavaType.get(javaClass);
+        HotSpotResolvedJavaType javaType = ref.get();
+        if (javaType == null) {
+            /*
+             * If the referent has become null, create a new value and
+             * update cached weak reference.
+             */
+            javaType = createClass(javaClass);
+            ref.set(javaType);
         }
         return javaType;
     }

@@ -210,8 +210,6 @@ serviceability/tmtools/jstat/GcTest02.java                                    81
 serviceability/tmtools/jstat/GcCapacityTest.java                              8196611 generic-all
 serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorMultiArrayTest.java     8196611 generic-all
 
-vmTestbase/gc/lock/jvmti/alloc/jvmtialloclock02/TestDescription.java          8218700 generic-all
-
 vmTestbase/nsk/jdb/unmonitor/unmonitor001/unmonitor001.java                   8218701 generic-all
 
 vmTestbase/nsk/jdb/clear/clear003/clear003.java                               8218701 generic-all
