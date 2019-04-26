@@ -884,7 +884,7 @@ class ZipFileSystem extends FileSystem {
     }
 
     private static byte[] ROOTPATH = new byte[] { '/' };
-    private static byte[] getParent(byte[] path) {
+    static byte[] getParent(byte[] path) {
         int off = getParentOff(path);
         if (off <= 1)
             return ROOTPATH;
@@ -899,11 +899,11 @@ class ZipFileSystem extends FileSystem {
         return off;
     }
 
-    private final void beginWrite() {
+    final void beginWrite() {
         rwlock.writeLock().lock();
     }
 
-    private final void endWrite() {
+    final void endWrite() {
         rwlock.writeLock().unlock();
     }
 
@@ -926,7 +926,7 @@ class ZipFileSystem extends FileSystem {
     private final ReadWriteLock rwlock = new ReentrantReadWriteLock();
 
     // name -> pos (in cen), IndexNode itself can be used as a "key"
-    private LinkedHashMap<IndexNode, IndexNode> inodes;
+    LinkedHashMap<IndexNode, IndexNode> inodes;
 
     final byte[] getBytes(String name) {
         return zc.getBytes(name);
