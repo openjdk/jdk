@@ -271,63 +271,10 @@ bool frame::can_be_deoptimized() const {
 }
 
 void frame::deoptimize(JavaThread* thread) {
+  assert(thread->frame_anchor()->has_last_Java_frame() &&
+         thread->frame_anchor()->walkable(), "must be");
   // Schedule deoptimization of an nmethod activation with this frame.
   assert(_cb != NULL && _cb->is_compiled(), "must be");
-
-  // This is a fix for register window patching race
-  if (NeedsDeoptSuspend && Thread::current() != thread) {
-    assert(SafepointSynchronize::is_at_safepoint(),
-           "patching other threads for deopt may only occur at a safepoint");
-
-    // It is possible especially with DeoptimizeALot/DeoptimizeRandom that
-    // we could see the frame again and ask for it to be deoptimized since
-    // it might move for a long time. That is harmless and we just ignore it.
-    if (id() == thread->must_deopt_id()) {
-      assert(thread->is_deopt_suspend(), "lost suspension");
-      return;
-    }
-
-    // We are at a safepoint so the target thread can only be
-    // in 4 states:
-    //     blocked - no problem
-    //     blocked_trans - no problem (i.e. could have woken up from blocked
-    //                                 during a safepoint).
-    //     native - register window pc patching race
-    //     native_trans - momentary state
-    //
-    // We could just wait out a thread in native_trans to block.
-    // Then we'd have all the issues that the safepoint code has as to
-    // whether to spin or block. It isn't worth it. Just treat it like
-    // native and be done with it.
-    //
-    // Examine the state of the thread at the start of safepoint since
-    // threads that were in native at the start of the safepoint could
-    // come to a halt during the safepoint, changing the current value
-    // of the safepoint_state.
-    JavaThreadState state = thread->safepoint_state()->orig_thread_state();
-    if (state == _thread_in_native || state == _thread_in_native_trans) {
-      // Since we are at a safepoint the target thread will stop itself
-      // before it can return to java as long as we remain at the safepoint.
-      // Therefore we can put an additional request for the thread to stop
-      // no matter what no (like a suspend). This will cause the thread
-      // to notice it needs to do the deopt on its own once it leaves native.
-      //
-      // The only reason we must do this is because on machine with register
-      // windows we have a race with patching the return address and the
-      // window coming live as the thread returns to the Java code (but still
-      // in native mode) and then blocks. It is only this top most frame
-      // that is at risk. So in truth we could add an additional check to
-      // see if this frame is one that is at risk.
-      RegisterMap map(thread, false);
-      frame at_risk =  thread->last_frame().sender(&map);
-      if (id() == at_risk.id()) {
-        thread->set_must_deopt_id(id());
-        thread->set_deopt_suspend();
-        return;
-      }
-    }
-  } // NeedsDeoptSuspend
-
 
   // If the call site is a MethodHandle call site use the MH deopt
   // handler.

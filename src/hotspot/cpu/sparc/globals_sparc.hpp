@@ -38,7 +38,6 @@
 // according to the prior table. So, we let the thread continue and let it block by itself.
 define_pd_global(bool, DontYieldALot,               true);  // yield no more than 100 times per second
 define_pd_global(bool, ShareVtableStubs,            false); // improves performance markedly for mtrt and compress
-define_pd_global(bool, NeedsDeoptSuspend,           true); // register window machines need this
 
 define_pd_global(bool, ImplicitNullChecks,          true);  // Generate code for implicit null checks
 define_pd_global(bool, TrapBasedNullChecks,         false); // Not needed on sparc.

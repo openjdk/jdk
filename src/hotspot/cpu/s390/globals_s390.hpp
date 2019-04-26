@@ -35,7 +35,6 @@
 
 // z/Architecture remembers branch targets, so don't share vtables.
 define_pd_global(bool,  ShareVtableStubs,            true);
-define_pd_global(bool,  NeedsDeoptSuspend,           false); // Only register window machines need this.
 
 define_pd_global(bool,  ImplicitNullChecks,          true);  // Generate code for implicit null checks.
 define_pd_global(bool,  TrapBasedNullChecks,         true);

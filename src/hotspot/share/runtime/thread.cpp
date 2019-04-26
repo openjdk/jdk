@@ -2526,21 +2526,6 @@ void JavaThread::check_safepoint_and_suspend_for_native_trans(JavaThread *thread
     SafepointMechanism::block_if_requested(curJT);
   }
 
-  if (thread->is_deopt_suspend()) {
-    thread->clear_deopt_suspend();
-    RegisterMap map(thread, false);
-    frame f = thread->last_frame();
-    while (f.id() != thread->must_deopt_id() && ! f.is_first_frame()) {
-      f = f.sender(&map);
-    }
-    if (f.id() == thread->must_deopt_id()) {
-      thread->clear_must_deopt_id();
-      f.deoptimize(thread);
-    } else {
-      fatal("missed deoptimization!");
-    }
-  }
-
   JFR_ONLY(SUSPEND_THREAD_CONDITIONAL(thread);)
 }
 

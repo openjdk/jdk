@@ -565,6 +565,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "ProfilerNumberOfStubMethods",   JDK_Version::undefined(), JDK_Version::jdk(13), JDK_Version::jdk(14) },
   { "ProfilerNumberOfRuntimeStubNodes", JDK_Version::undefined(), JDK_Version::jdk(13), JDK_Version::jdk(14) },
   { "UseImplicitStableValues",       JDK_Version::undefined(), JDK_Version::jdk(13), JDK_Version::jdk(14) },
+  { "NeedsDeoptSuspend",             JDK_Version::undefined(), JDK_Version::jdk(13), JDK_Version::jdk(14) },
 
 #ifdef TEST_VERIFY_SPECIAL_JVM_FLAGS
   // These entries will generate build errors.  Their purpose is to test the macros.
