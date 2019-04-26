@@ -14046,55 +14046,63 @@ instruct cmpLTMask_reg_zero(iRegINoSp dst, iRegIorL2I src, immI0 zero, rFlagsReg
 // ============================================================================
 // Max and Min
 
-instruct minI_rReg(iRegINoSp dst, iRegI src1, iRegI src2, rFlagsReg cr)
+instruct cmovI_reg_reg_lt(iRegINoSp dst, iRegI src1, iRegI src2, rFlagsReg cr)
 %{
-  match(Set dst (MinI src1 src2));
+  effect( DEF dst, USE src1, USE src2, USE cr );
 
-  effect(DEF dst, USE src1, USE src2, KILL cr);
-  size(8);
-
-  ins_cost(INSN_COST * 3);
-  format %{
-    "cmpw $src1 $src2\t signed int\n\t"
-    "cselw $dst, $src1, $src2 lt\t"
-  %}
+  ins_cost(INSN_COST * 2);
+  format %{ "cselw $dst, $src1, $src2 lt\t"  %}
 
   ins_encode %{
-    __ cmpw(as_Register($src1$$reg),
-            as_Register($src2$$reg));
     __ cselw(as_Register($dst$$reg),
              as_Register($src1$$reg),
              as_Register($src2$$reg),
              Assembler::LT);
   %}
 
-  ins_pipe(ialu_reg_reg);
+  ins_pipe(icond_reg_reg);
+%}
+
+instruct minI_rReg(iRegINoSp dst, iRegI src1, iRegI src2)
+%{
+  match(Set dst (MinI src1 src2));
+  ins_cost(INSN_COST * 3);
+
+  expand %{
+    rFlagsReg cr;
+    compI_reg_reg(cr, src1, src2);
+    cmovI_reg_reg_lt(dst, src1, src2, cr);
+  %}
+
 %}
 // FROM HERE
 
-instruct maxI_rReg(iRegINoSp dst, iRegI src1, iRegI src2, rFlagsReg cr)
+instruct cmovI_reg_reg_gt(iRegINoSp dst, iRegI src1, iRegI src2, rFlagsReg cr)
 %{
-  match(Set dst (MaxI src1 src2));
+  effect( DEF dst, USE src1, USE src2, USE cr );
 
-  effect(DEF dst, USE src1, USE src2, KILL cr);
-  size(8);
-
-  ins_cost(INSN_COST * 3);
-  format %{
-    "cmpw $src1 $src2\t signed int\n\t"
-    "cselw $dst, $src1, $src2 gt\t"
-  %}
+  ins_cost(INSN_COST * 2);
+  format %{ "cselw $dst, $src1, $src2 gt\t"  %}
 
   ins_encode %{
-    __ cmpw(as_Register($src1$$reg),
-            as_Register($src2$$reg));
     __ cselw(as_Register($dst$$reg),
              as_Register($src1$$reg),
              as_Register($src2$$reg),
              Assembler::GT);
   %}
 
-  ins_pipe(ialu_reg_reg);
+  ins_pipe(icond_reg_reg);
+%}
+
+instruct maxI_rReg(iRegINoSp dst, iRegI src1, iRegI src2)
+%{
+  match(Set dst (MaxI src1 src2));
+  ins_cost(INSN_COST * 3);
+  expand %{
+    rFlagsReg cr;
+    compI_reg_reg(cr, src1, src2);
+    cmovI_reg_reg_gt(dst, src1, src2, cr);
+  %}
 %}
 
 // ============================================================================
