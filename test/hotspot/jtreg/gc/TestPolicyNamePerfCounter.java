@@ -27,9 +27,9 @@ import static jdk.test.lib.Asserts.*;
 import gc.testlibrary.PerfCounters;
 
 
-/* @test TestPolicyNamePerfCounter
+/* @test TestPolicyNamePerfCounterSerial
  * @bug 8210192
- * @requires vm.gc=="null"
+ * @requires vm.gc.Serial
  * @library /test/lib /
  * @summary Tests that sun.gc.policy.name returns expected values for different GCs.
  * @modules java.base/jdk.internal.misc
@@ -37,14 +37,36 @@ import gc.testlibrary.PerfCounters;
  *          java.management/sun.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @run main/othervm -XX:+UsePerfData -XX:+UseSerialGC gc.TestPolicyNamePerfCounter Copy:MSC
+ */
+
+/* @test TestPolicyNamePerfCounterParallel
+ * @bug 8210192
+ * @requires vm.gc.Parallel
+ * @library /test/lib /
+ * @summary Tests that sun.gc.policy.name returns expected values for different GCs.
+ * @modules java.base/jdk.internal.misc
+ *          java.compiler
+ *          java.management/sun.management
+ *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @run main/othervm -XX:+UsePerfData -XX:+UseParallelGC gc.TestPolicyNamePerfCounter ParScav:MSC
+ */
+
+/* @test TestPolicyNamePerfCounterG1
+ * @bug 8210192
+ * @requires vm.gc.G1
+ * @library /test/lib /
+ * @summary Tests that sun.gc.policy.name returns expected values for different GCs.
+ * @modules java.base/jdk.internal.misc
+ *          java.compiler
+ *          java.management/sun.management
+ *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @run main/othervm -XX:+UsePerfData -XX:+UseG1GC gc.TestPolicyNamePerfCounter GarbageFirst
  */
 
 /* @test TestPolicyNamePerfCounterCMS
  * @bug 8210192
  * @comment Graal does not support CMS
- * @requires vm.gc=="null" & !vm.graal.enabled
+ * @requires vm.gc.ConcMarkSweep & !vm.graal.enabled
  * @library /test/lib /
  * @summary Tests that sun.gc.policy.name returns expected values for different GCs.
  * @modules java.base/jdk.internal.misc

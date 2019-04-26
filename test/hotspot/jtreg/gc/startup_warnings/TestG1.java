@@ -27,6 +27,7 @@ package gc.startup_warnings;
 * @test TestG1
 * @key gc
 * @bug 8006398
+* @requires vm.gc.G1
 * @summary Test that the G1 collector does not print a warning message
 * @library /test/lib
 * @modules java.base/jdk.internal.misc

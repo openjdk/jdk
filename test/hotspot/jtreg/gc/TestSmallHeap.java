@@ -26,7 +26,6 @@ package gc;
 /**
  * @test TestSmallHeap
  * @bug 8067438 8152239
- * @requires vm.gc=="null"
  * @summary Verify that starting the VM with a small heap works
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -64,7 +63,9 @@ import jdk.test.lib.process.ProcessTools;
 
 import java.util.LinkedList;
 
+import jtreg.SkippedException;
 import sun.hotspot.WhiteBox;
+import sun.hotspot.gc.GC;
 
 public class TestSmallHeap {
 
@@ -76,11 +77,27 @@ public class TestSmallHeap {
         int pageSize = wb.getVMPageSize();
         int heapBytesPerCard = 512;
         long expectedMaxHeap = pageSize * heapBytesPerCard;
+        boolean noneGCSupported = true;
 
-        verifySmallHeapSize("-XX:+UseParallelGC", expectedMaxHeap);
-        verifySmallHeapSize("-XX:+UseSerialGC", expectedMaxHeap);
-        verifySmallHeapSize("-XX:+UseG1GC", expectedMaxHeap);
-        verifySmallHeapSize("-XX:+UseConcMarkSweepGC", expectedMaxHeap);
+        if (GC.Parallel.isSupported()) {
+            noneGCSupported = false;
+            verifySmallHeapSize("-XX:+UseParallelGC", expectedMaxHeap);
+        }
+        if (GC.Serial.isSupported()) {
+            noneGCSupported = false;
+            verifySmallHeapSize("-XX:+UseSerialGC", expectedMaxHeap);
+        }
+        if (GC.G1.isSupported()) {
+            noneGCSupported = false;
+            verifySmallHeapSize("-XX:+UseG1GC", expectedMaxHeap);
+        }
+        if (GC.ConcMarkSweep.isSupported()) {
+            noneGCSupported = false;
+            verifySmallHeapSize("-XX:+UseConcMarkSweepGC", expectedMaxHeap);
+        }
+        if (noneGCSupported) {
+            throw new SkippedException("Skipping test because none of Parallel/Serial/G1/ConcMarkSweep is supported.");
+        }
     }
 
     private static void verifySmallHeapSize(String gc, long expectedMaxHeap) throws Exception {

@@ -26,6 +26,7 @@ package gc.parallel;
 /**
  * @test AdaptiveGCBoundary
  * @key gc regression
+ * @requires vm.gc.Parallel
  * @summary UseAdaptiveGCBoundary is broken
  * @bug 8014546
  * @library /test/lib

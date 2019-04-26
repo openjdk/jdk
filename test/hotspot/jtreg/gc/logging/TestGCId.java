@@ -27,7 +27,6 @@ package gc.logging;
  * @test TestGCId
  * @bug 8043607
  * @summary Ensure that the GCId is logged
- * @requires vm.gc=="null"
  * @key gc
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -39,16 +38,36 @@ package gc.logging;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jtreg.SkippedException;
 import sun.hotspot.gc.GC;
 
 public class TestGCId {
   public static void main(String[] args) throws Exception {
-    testGCId("UseParallelGC");
-    testGCId("UseG1GC");
-    testGCId("UseConcMarkSweepGC");
-    testGCId("UseSerialGC");
+    boolean noneGCSupported = true;
+
+    if (GC.Parallel.isSupported()) {
+      noneGCSupported = false;
+      testGCId("UseParallelGC");
+    }
+    if (GC.G1.isSupported()) {
+      noneGCSupported = false;
+      testGCId("UseG1GC");
+    }
+    if (GC.ConcMarkSweep.isSupported()) {
+      noneGCSupported = false;
+      testGCId("UseConcMarkSweepGC");
+    }
+    if (GC.Serial.isSupported()) {
+      noneGCSupported = false;
+      testGCId("UseSerialGC");
+    }
     if (GC.Shenandoah.isSupported()) {
-        testGCId("UseShenandoahGC");
+      noneGCSupported = false;
+      testGCId("UseShenandoahGC");
+    }
+
+    if (noneGCSupported) {
+      throw new SkippedException("Skipping test because none of Parallel/G1/ConcMarkSweep/Serial/Shenandoah is supported.");
     }
   }
 

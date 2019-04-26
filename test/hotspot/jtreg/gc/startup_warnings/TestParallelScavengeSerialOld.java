@@ -27,6 +27,7 @@ package gc.startup_warnings;
 * @test TestParallelScavengeSerialOld
 * @key gc
 * @bug 8006398
+* @requires vm.gc.Parallel
 * @summary Test that the ParallelScavenge+SerialOld combination does not print a warning message
 * @library /test/lib
 * @modules java.base/jdk.internal.misc
