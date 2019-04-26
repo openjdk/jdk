@@ -949,27 +949,16 @@ UNSAFE_ENTRY(void, Unsafe_Unpark(JNIEnv *env, jobject unsafe, jobject jthread)) 
     (void) tlh.cv_internal_thread_to_JavaThread(jthread, &thr, &java_thread);
     if (java_thread != NULL) {
       // This is a valid oop.
-      jlong lp = java_lang_Thread::park_event(java_thread);
-      if (lp != 0) {
-        // This cast is OK even though the jlong might have been read
-        // non-atomically on 32bit systems, since there, one word will
-        // always be zero anyway and the value set is always the same
-        p = (Parker*)addr_from_java(lp);
-      } else {
-        // Not cached in the java.lang.Thread oop yet (could be an
-        // older version of library).
-        if (thr != NULL) {
-          // The JavaThread is alive.
-          p = thr->parker();
-          if (p != NULL) {
-            // Cache the Parker in the java.lang.Thread oop for next time.
-            java_lang_Thread::set_park_event(java_thread, addr_to_java(p));
-          }
-        }
+      if (thr != NULL) {
+        // The JavaThread is alive.
+        p = thr->parker();
       }
     }
   } // ThreadsListHandle is destroyed here.
 
+  // 'p' points to type-stable-memory if non-NULL. If the target
+  // thread terminates before we get here the new user of this
+  // Parker will get a 'spurious' unpark - which is perfectly valid.
   if (p != NULL) {
     HOTSPOT_THREAD_UNPARK((uintptr_t) p);
     p->unpark();

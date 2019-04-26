@@ -371,7 +371,6 @@ class java_lang_Thread : AllStatic {
   static int _tid_offset;
   static int _thread_status_offset;
   static int _park_blocker_offset;
-  static int _park_event_offset ;
 
   static void compute_offsets();
 
@@ -412,12 +411,6 @@ class java_lang_Thread : AllStatic {
 
   // Blocker object responsible for thread parking
   static oop park_blocker(oop java_thread);
-
-  // Pointer to type-stable park handler, encoded as jlong.
-  // Should be set when apparently null
-  // For details, see unsafe.cpp Unsafe_Unpark
-  static jlong park_event(oop java_thread);
-  static bool set_park_event(oop java_thread, jlong ptr);
 
   // Java Thread Status for JVMTI and M&M use.
   // This thread status info is saved in threadStatus field of
