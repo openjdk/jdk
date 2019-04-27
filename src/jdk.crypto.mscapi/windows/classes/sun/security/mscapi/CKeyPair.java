@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,9 +36,13 @@ class CKeyPair {
 
     private final CPublicKey publicKey;
 
+    /**
+     * This method is called by native codes in security.cpp.
+     */
     CKeyPair(String alg, long hCryptProv, long hCryptKey, int keyLength) {
-        privateKey = CPrivateKey.of(alg, hCryptProv, hCryptKey, keyLength);
-        publicKey = CPublicKey.of(alg, hCryptProv, hCryptKey, keyLength);
+        CKey.NativeHandles handles = new CKey.NativeHandles(hCryptProv, hCryptKey);
+        privateKey = CPrivateKey.of(alg, handles, keyLength);
+        publicKey = CPublicKey.of(alg, handles, keyLength);
     }
 
     public CPrivateKey getPrivate() {

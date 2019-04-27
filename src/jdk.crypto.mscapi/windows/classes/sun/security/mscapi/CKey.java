@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,9 +75,9 @@ abstract class CKey implements Key, Length {
 
     protected final String algorithm;
 
-    protected CKey(String algorithm, long hCryptProv, long hCryptKey, int keyLength) {
+    protected CKey(String algorithm, NativeHandles handles, int keyLength) {
         this.algorithm = algorithm;
-        this.handles = new NativeHandles(hCryptProv, hCryptKey);
+        this.handles = handles;
         this.keyLength = keyLength;
     }
 
