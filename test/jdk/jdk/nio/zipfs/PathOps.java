@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,13 +46,11 @@ public class PathOps {
     static final java.io.PrintStream out = System.out;
     static FileSystem fs;
 
-    private String input;
     private Path path;
     private Exception exc;
 
     private PathOps(String first, String... more) {
         out.println();
-        input = first;
         try {
             path = fs.getPath(first, more);
             out.format("%s -> %s", first, path);

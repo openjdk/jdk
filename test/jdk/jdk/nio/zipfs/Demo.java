@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ import java.nio.channels.*;
 import java.nio.file.*;
 import java.nio.file.spi.*;
 import java.nio.file.attribute.*;
-import java.net.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -98,8 +97,6 @@ public class Demo {
 
         mkdirs,          // <java Demo mkdirs zipfile dir>
 
-        rmdirs,          // <java Demo rmdirs zipfile dir>
-
         list,            // <java Demo list zipfile [dir]>
                          // recursively list all entries of dir
                          // via DirectoryStream
@@ -144,7 +141,7 @@ public class Demo {
         }
 
         Action action = Action.valueOf(args[0]);
-        Map<String, Object> env = env = new HashMap<>();
+        Map<String, Object> env = new HashMap<>();
         if (action == Action.create)
             env.put("create", "true");
         try (FileSystem fs = provider.newFileSystem(Paths.get(args[1]), env)) {
@@ -534,10 +531,10 @@ public class Demo {
         Files.createDirectory(path);
     }
 
-    @SuppressWarnings("unused")
     /**
      * Not used in demo, but included for demonstrational purposes.
      */
+    @SuppressWarnings("unused")
     private static void rmdirs(Path path) throws IOException {
         while (path != null && path.getNameCount() != 0) {
             Files.delete(path);
@@ -561,11 +558,11 @@ public class Demo {
         }
     }
 
-    @SuppressWarnings("unused")
     /**
      * Checks that the content of two paths are equal.
      * Not used in demo, but included for demonstrational purposes.
      */
+    @SuppressWarnings("unused")
     private static void checkEqual(Path src, Path dst) throws IOException
     {
         //System.out.printf("checking <%s> vs <%s>...%n",
@@ -638,8 +635,11 @@ public class Demo {
         }
     }
 
-    private static void fchCopy(Path src, Path dst) throws IOException
-    {
+    /**
+     * Not used in demo, but included for demonstrational purposes.
+     */
+    @SuppressWarnings("unused")
+    private static void fchCopy(Path src, Path dst) throws IOException {
         Set<OpenOption> read = new HashSet<>();
         read.add(READ);
         Set<OpenOption> openwrite = new HashSet<>();
@@ -658,8 +658,11 @@ public class Demo {
         }
     }
 
-    private static void chCopy(Path src, Path dst) throws IOException
-    {
+    /**
+     * Not used in demo, but included for demonstrational purposes.
+     */
+    @SuppressWarnings("unused")
+    private static void chCopy(Path src, Path dst) throws IOException {
         Set<OpenOption> read = new HashSet<>();
         read.add(READ);
         Set<OpenOption> openwrite = new HashSet<>();
@@ -678,8 +681,11 @@ public class Demo {
         }
     }
 
-    private static void streamCopy(Path src, Path dst) throws IOException
-    {
+    /**
+     * Not used in demo, but included for demonstrational purposes.
+     */
+    @SuppressWarnings("unused")
+    private static void streamCopy(Path src, Path dst) throws IOException {
         byte[] buf = new byte[8192];
         try (InputStream isSrc = Files.newInputStream(src);
              OutputStream osDst = Files.newOutputStream(dst))

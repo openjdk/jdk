@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ import org.testng.Assert;
 import org.testng.annotations.*;
 
 public class MultiReleaseJarTest {
-    final private int MAJOR_VERSION = Runtime.version().major();
+    final private int MAJOR_VERSION = Runtime.version().feature();
 
     final private String userdir = System.getProperty("user.dir",".");
     final private CreateMultiReleaseTestJars creator =  new CreateMultiReleaseTestJars();
@@ -101,13 +101,13 @@ public class MultiReleaseJarTest {
     @DataProvider(name="integers")
     public Object[][] createIntegers() {
         return new Object[][] {
-                {new Integer(-5), 8},
-                {new Integer(0), 8},
-                {new Integer(8), 8},
-                {new Integer(9), 9},
-                {new Integer(MAJOR_VERSION), MAJOR_VERSION},
-                {new Integer(MAJOR_VERSION + 1), MAJOR_VERSION},
-                {new Integer(100), MAJOR_VERSION}
+                {Integer.valueOf(-5), 8},
+                {Integer.valueOf(0), 8},
+                {Integer.valueOf(8), 8},
+                {Integer.valueOf(9), 9},
+                {Integer.valueOf(MAJOR_VERSION), MAJOR_VERSION},
+                {Integer.valueOf(MAJOR_VERSION + 1), MAJOR_VERSION},
+                {Integer.valueOf(100), MAJOR_VERSION}
         };
     }
 
@@ -184,7 +184,7 @@ public class MultiReleaseJarTest {
             byte [] bytes = Files.readAllBytes(version);
             Class<?> vcls = (new ByteArrayClassLoader(fs)).defineClass(className, bytes);
             MethodHandle mh = MethodHandles.lookup().findVirtual(vcls, "getVersion", mt);
-            Assert.assertEquals((int)mh.invoke(vcls.newInstance()), expected);
+            Assert.assertEquals((int)mh.invoke(vcls.getDeclaredConstructor().newInstance()), expected);
         }
     }
 
