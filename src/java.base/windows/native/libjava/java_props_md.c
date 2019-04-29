@@ -376,9 +376,6 @@ GetJavaProperties(JNIEnv* env)
         sprops.tmp_dir = _wcsdup(tmpdir);
     }
 
-    /* Java2D properties */
-    sprops.graphics_env = "sun.awt.Win32GraphicsEnvironment";
-
     /* OS properties */
     {
         char buf[100];

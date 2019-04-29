@@ -396,14 +396,12 @@ GetJavaProperties(JNIEnv *env)
 
     /* Java 2D/AWT properties */
 #ifdef MACOSX
-    // Always the same GraphicsEnvironment and Toolkit on Mac OS X
-    sprops.graphics_env = "sun.awt.CGraphicsEnvironment";
+    // Always the same Toolkit on Mac OS X
     sprops.awt_toolkit = "sun.lwawt.macosx.LWCToolkit";
 
     // check if we're in a GUI login session and set java.awt.headless=true if not
     sprops.awt_headless = isInAquaSession() ? NULL : "true";
 #else
-    sprops.graphics_env = "sun.awt.X11GraphicsEnvironment";
     sprops.awt_toolkit = "sun.awt.X11.XToolkit";
 #endif
 

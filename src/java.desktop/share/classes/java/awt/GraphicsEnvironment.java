@@ -31,6 +31,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Locale;
 
+import sun.awt.PlatformGraphicsInfo;
 import sun.font.FontManager;
 import sun.font.FontManagerFactory;
 import sun.java2d.HeadlessGraphicsEnvironment;
@@ -84,38 +85,14 @@ public abstract class GraphicsEnvironment {
 
         /**
          * Creates and returns the GraphicsEnvironment, according to the
-         * system property 'java.awt.graphicsenv'.
+         * platform-specific proxy class.
          *
          * @return the graphics environment
          */
         private static GraphicsEnvironment createGE() {
-            GraphicsEnvironment ge;
-            String nm = AccessController.doPrivileged(new GetPropertyAction("java.awt.graphicsenv", null));
-            try {
-//              long t0 = System.currentTimeMillis();
-                Class<?> geCls;
-                try {
-                    // First we try if the bootstrap class loader finds the
-                    // requested class. This way we can avoid to run in a privileged
-                    // block.
-                    geCls = Class.forName(nm);
-                } catch (ClassNotFoundException ex) {
-                    // If the bootstrap class loader fails, we try again with the
-                    // application class loader.
-                    ClassLoader cl = ClassLoader.getSystemClassLoader();
-                    geCls = Class.forName(nm, true, cl);
-                }
-                ge = (GraphicsEnvironment)geCls.getConstructor().newInstance();
-//              long t1 = System.currentTimeMillis();
-//              System.out.println("GE creation took " + (t1-t0)+ "ms.");
-                if (isHeadless()) {
-                    ge = new HeadlessGraphicsEnvironment(ge);
-                }
-            } catch (ClassNotFoundException e) {
-                throw new Error("Could not find class: "+nm);
-            } catch (ReflectiveOperationException | IllegalArgumentException e) {
-                throw new Error("Could not instantiate Graphics Environment: "
-                        + nm);
+            GraphicsEnvironment ge = PlatformGraphicsInfo.createGE();
+            if (isHeadless()) {
+                ge = new HeadlessGraphicsEnvironment(ge);
             }
             return ge;
         }
@@ -155,8 +132,7 @@ public abstract class GraphicsEnvironment {
             getHeadlessProperty(); // initialize the values
         }
         return defaultHeadless != Boolean.TRUE ? null :
-            "\nNo X11 DISPLAY variable was set, " +
-            "but this program performed an operation which requires it.";
+            PlatformGraphicsInfo.getDefaultHeadlessMessage();
     }
 
     /**
@@ -169,16 +145,8 @@ public abstract class GraphicsEnvironment {
                 String nm = System.getProperty("java.awt.headless");
 
                 if (nm == null) {
-                    final String osName = System.getProperty("os.name");
-                    final String display = System.getenv("DISPLAY");
                     headless = defaultHeadless =
-                                ("Linux".equals(osName) ||
-                                 "SunOS".equals(osName) ||
-                                 "FreeBSD".equals(osName) ||
-                                 "NetBSD".equals(osName) ||
-                                 "OpenBSD".equals(osName) ||
-                                 "AIX".equals(osName)) &&
-                                 (display == null || display.trim().isEmpty());
+                        PlatformGraphicsInfo.getDefaultHeadlessProperty();
                 } else {
                     headless = Boolean.valueOf(nm);
                 }

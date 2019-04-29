@@ -68,7 +68,6 @@ typedef struct {
     char *sun_stdout_encoding;
     char *sun_stderr_encoding;
 
-    char *graphics_env;
     char *awt_toolkit;
 
     char *unicode_encoding;     /* The default endianness of unicode

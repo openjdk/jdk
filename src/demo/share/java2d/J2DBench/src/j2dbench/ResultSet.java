@@ -81,7 +81,6 @@ public class ResultSet {
         "java.library.path",
         "java.io.tmpdir",
         "java.util.prefs.PreferencesFactory",
-        "sun.java2d.fontpath",
         "sun.boot.library.path",
     };
 
@@ -100,8 +99,6 @@ public class ResultSet {
      * java.vm.specification.vendor
      * java.vm.specification.version
      * java.vm.vendor
-     * java.awt.graphicsenv
-     * java.awt.printerjob
      * user.language
      * sun.os.patch.level
      * sun.arch.data.model

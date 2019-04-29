@@ -805,14 +805,14 @@ Java_sun_lwawt_macosx_LWCToolkit_isEmbedded
 }
 
 /*
- * Class:     sun_lwawt_macosx_LWCToolkit
+ * Class:     sun_awt_PlatformGraphicsInfo
  * Method:    isInAquaSession
  * Signature: ()Z
  */
 JNIEXPORT jboolean JNICALL
-Java_sun_lwawt_macosx_LWCToolkit_isInAquaSession
+Java_sun_awt_PlatformGraphicsInfo_isInAquaSession
 (JNIEnv *env, jclass klass) {
-    // copied from java.base/macosx/native/libjava/java_props_macosx.c
+    // originally from java.base/macosx/native/libjava/java_props_macosx.c
     // environment variable to bypass the aqua session check
     char *ev = getenv("AWT_FORCE_HEADFUL");
     if (ev && (strncasecmp(ev, "true", 4) == 0)) {

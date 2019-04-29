@@ -208,19 +208,6 @@ Java_jdk_internal_util_SystemProps_00024Raw_platformProperties(JNIEnv *env, jcla
 
     PUTPROP(propArray, _awt_toolkit_NDX, sprops->awt_toolkit);
 
-    /* Java2D properties */
-    /* Note: java.awt.graphicsenv is an implementation private property which
-     * just happens to have a java.* name because it is referenced in
-     * a java.awt class. It is the mechanism by which the implementation
-     * finds the appropriate class in the JRE for the platform.
-     * It is explicitly not designed to be overridden by clients as
-     * a way of replacing the implementation class, and in any case
-     * the mechanism by which the class is loaded is constrained to only
-     * find and load classes that are part of the JRE.
-     * This property may be removed if that mechanism is redesigned
-     */
-    PUTPROP(propArray, _java_awt_graphicsenv_NDX, sprops->graphics_env);
-
     PUTPROP_PlatformString(propArray, _java_io_tmpdir_NDX, sprops->tmp_dir);
 
     PUTPROP_PlatformString(propArray, _user_name_NDX, sprops->user_name);
