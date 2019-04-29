@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ package java.security;
  * </UL>
  *
  * Keys are generally obtained through key generators, certificates,
- * or various Identity classes used to manage keys.
+ * key stores or other classes used to manage keys.
  * Keys may also be obtained from key specifications (transparent
  * representations of the underlying key material) through the use of a key
  * factory (see {@link KeyFactory}).
@@ -119,10 +119,11 @@ public interface Key extends java.io.Serializable {
     /**
      * Returns the standard algorithm name for this key. For
      * example, "DSA" would indicate that this key is a DSA key.
-     * See the <a href=
+     * See the key related sections (KeyFactory, KeyGenerator,
+     * KeyPairGenerator, and SecretKeyFactory) in the <a href=
      * "{@docRoot}/../specs/security/standard-names.html">
-     * Java Security Standard Algorithm Names</a> document
-     * for more information.
+     * Java Security Standard Algorithm Names Specification</a>
+     * for information about standard key algorithm names.
      *
      * @return the name of the algorithm associated with this key.
      */
