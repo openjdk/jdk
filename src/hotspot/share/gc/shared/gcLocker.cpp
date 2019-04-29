@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,7 @@ bool GCLocker::check_active_before_gc() {
 
 void GCLocker::stall_until_clear() {
   assert(!JavaThread::current()->in_critical(), "Would deadlock");
-  MutexLocker   ml(JNICritical_lock);
+  MonitorLocker ml(JNICritical_lock);
 
   if (needs_gc()) {
     log_debug_jni("Allocation failed. Thread stalled by JNI critical section.");
@@ -110,20 +110,20 @@ void GCLocker::stall_until_clear() {
 
   // Wait for _needs_gc  to be cleared
   while (needs_gc()) {
-    JNICritical_lock->wait();
+    ml.wait();
   }
 }
 
 void GCLocker::jni_lock(JavaThread* thread) {
   assert(!thread->in_critical(), "shouldn't currently be in a critical region");
-  MutexLocker mu(JNICritical_lock);
+  MonitorLocker ml(JNICritical_lock);
   // Block entering threads if we know at least one thread is in a
   // JNI critical region and we need a GC.
   // We check that at least one thread is in a critical region before
   // blocking because blocked threads are woken up by a thread exiting
   // a JNI critical region.
   while (is_active_and_needs_gc() || _doing_gc) {
-    JNICritical_lock->wait();
+    ml.wait();
   }
   thread->enter_critical();
   _jni_lock_count++;

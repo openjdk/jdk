@@ -341,9 +341,9 @@ void NMethodSweeper::sweeper_loop() {
   while (true) {
     {
       ThreadBlockInVM tbivm(JavaThread::current());
-      MutexLocker waiter(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+      MonitorLocker waiter(CodeCache_lock, Mutex::_no_safepoint_check_flag);
       const long wait_time = 60*60*24 * 1000;
-      timeout = CodeCache_lock->wait_without_safepoint_check(wait_time);
+      timeout = waiter.wait(wait_time);
     }
     if (!timeout) {
       possibly_sweep();
@@ -369,7 +369,7 @@ void NMethodSweeper::notify(int code_blob_type) {
   */
 void NMethodSweeper::force_sweep() {
   ThreadBlockInVM tbivm(JavaThread::current());
-  MutexLocker waiter(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+  MonitorLocker waiter(CodeCache_lock, Mutex::_no_safepoint_check_flag);
   // Request forced sweep
   _force_sweep = true;
   while (_force_sweep) {
@@ -377,7 +377,7 @@ void NMethodSweeper::force_sweep() {
     // In case a sweep currently takes place we timeout and try again because
     // we want to enforce a full sweep.
     CodeCache_lock->notify();
-    CodeCache_lock->wait_without_safepoint_check(1000);
+    waiter.wait(1000);
   }
 }
 

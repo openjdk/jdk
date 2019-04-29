@@ -450,8 +450,8 @@ int VM_Exit::wait_for_threads_in_native_to_block() {
 
     attempts++;
 
-    MutexLocker ml(&timer, Mutex::_no_safepoint_check_flag);
-    timer.wait_without_safepoint_check(10);
+    MonitorLocker ml(&timer, Mutex::_no_safepoint_check_flag);
+    ml.wait(10);
   }
 }
 

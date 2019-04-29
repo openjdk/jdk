@@ -402,7 +402,7 @@ CompileTask* CompileQueue::get() {
   methodHandle save_method;
   methodHandle save_hot_method;
 
-  MutexLocker locker(MethodCompileQueue_lock);
+  MonitorLocker locker(MethodCompileQueue_lock);
   // If _first is NULL we have no more compile jobs. There are two reasons for
   // having no compile jobs: First, we compiled everything we wanted. Second,
   // we ran out of code cache so compilation has been disabled. In the latter
@@ -423,7 +423,7 @@ CompileTask* CompileQueue::get() {
     // We need a timed wait here, since compiler threads can exit if compilation
     // is disabled forever. We use 5 seconds wait time; the exiting of compiler threads
     // is not critical and we do not want idle compiler threads to wake up too often.
-    MethodCompileQueue_lock->wait(5*1000);
+    locker.wait(5*1000);
 
     if (UseDynamicNumberOfCompilerThreads && _first == NULL) {
       // Still nothing to compile. Give caller a chance to stop this thread.
@@ -1496,11 +1496,11 @@ static const int JVMCI_COMPILATION_PROGRESS_WAIT_ATTEMPTS = 10;
  * @return true if this thread needs to free/recycle the task
  */
 bool CompileBroker::wait_for_jvmci_completion(JVMCICompiler* jvmci, CompileTask* task, JavaThread* thread) {
-  MutexLocker waiter(task->lock(), thread);
+  MonitorLocker ml(task->lock(), thread);
   int progress_wait_attempts = 0;
   int methods_compiled = jvmci->methods_compiled();
   while (!task->is_complete() && !is_compilation_disabled_forever() &&
-         task->lock()->wait(JVMCI_COMPILATION_PROGRESS_WAIT_TIMESLICE)) {
+         ml.wait(JVMCI_COMPILATION_PROGRESS_WAIT_TIMESLICE)) {
     CompilerThread* jvmci_compiler_thread = task->jvmci_compiler_thread();
 
     bool progress;
@@ -1558,10 +1558,10 @@ void CompileBroker::wait_for_completion(CompileTask* task) {
   } else
 #endif
   {
-    MutexLocker waiter(task->lock(), thread);
+    MonitorLocker ml(task->lock(), thread);
     free_task = true;
     while (!task->is_complete() && !is_compilation_disabled_forever()) {
-      task->lock()->wait();
+      ml.wait();
     }
   }
 

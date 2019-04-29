@@ -191,10 +191,10 @@ void VM_G1CollectForAllocation::doit_epilogue() {
       JavaThread* jt = (JavaThread*)thr;
       ThreadToNativeFromVM native(jt);
 
-      MutexLocker x(FullGCCount_lock, Mutex::_no_safepoint_check_flag);
+      MonitorLocker ml(FullGCCount_lock, Mutex::_no_safepoint_check_flag);
       while (g1h->old_marking_cycles_completed() <=
                                           _old_marking_cycles_completed_before) {
-        FullGCCount_lock->wait_without_safepoint_check();
+        ml.wait();
       }
     }
   }

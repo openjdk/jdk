@@ -229,6 +229,7 @@ class MutexLocker: public StackObj {
 
 // A MonitorLocker is like a MutexLocker above, except it allows
 // wait/notify as well which are delegated to the underlying Monitor.
+// It also disallows NULL.
 
 class MonitorLocker: public MutexLocker {
   Mutex::SafepointCheckFlag _flag;
@@ -236,35 +237,31 @@ class MonitorLocker: public MutexLocker {
   MonitorLocker(Monitor* monitor, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
     MutexLocker(monitor, flag), _flag(flag) {
     // Superclass constructor did locking
+    assert(_mutex != NULL, "NULL monitor not allowed");
   }
 
   MonitorLocker(Monitor* monitor, Thread* thread, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
     MutexLocker(monitor, thread, flag), _flag(flag)  {
     // Superclass constructor did locking
+    assert(_mutex != NULL, "NULL monitor not allowed");
   }
 
   bool wait(long timeout = 0,
             bool as_suspend_equivalent = !Mutex::_as_suspend_equivalent_flag) {
-    if (_mutex != NULL) {
-      if (_flag == Mutex::_safepoint_check_flag) {
-        return _mutex->wait(timeout, as_suspend_equivalent);
-      } else {
-        return _mutex->wait_without_safepoint_check(timeout);
-      }
+    if (_flag == Mutex::_safepoint_check_flag) {
+      return _mutex->wait(timeout, as_suspend_equivalent);
+    } else {
+      return _mutex->wait_without_safepoint_check(timeout);
     }
     return false;
   }
 
   void notify_all() {
-    if (_mutex != NULL) {
-      _mutex->notify_all();
-    }
+    _mutex->notify_all();
   }
 
   void notify() {
-    if (_mutex != NULL) {
-      _mutex->notify();
-    }
+    _mutex->notify();
   }
 };
 

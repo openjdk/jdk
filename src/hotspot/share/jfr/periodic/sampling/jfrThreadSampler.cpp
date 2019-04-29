@@ -395,9 +395,9 @@ void JfrThreadSampler::on_javathread_suspend(JavaThread* thread) {
   JfrThreadLocal* const tl = thread->jfr_thread_local();
   tl->set_trace_block();
   {
-    MutexLocker ml(transition_block(), Mutex::_no_safepoint_check_flag);
+    MonitorLocker ml(transition_block(), Mutex::_no_safepoint_check_flag);
     while (thread->is_trace_suspend()) {
-      transition_block()->wait_without_safepoint_check();
+      ml.wait();
     }
     tl->clear_trace_block();
   }

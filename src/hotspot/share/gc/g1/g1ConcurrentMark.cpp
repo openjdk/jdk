@@ -338,9 +338,9 @@ bool G1CMRootRegions::wait_until_scan_finished() {
   }
 
   {
-    MutexLocker x(RootRegionScan_lock, Mutex::_no_safepoint_check_flag);
+    MonitorLocker ml(RootRegionScan_lock, Mutex::_no_safepoint_check_flag);
     while (scan_in_progress()) {
-      RootRegionScan_lock->wait_without_safepoint_check();
+      ml.wait();
     }
   }
   return true;

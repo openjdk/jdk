@@ -59,9 +59,9 @@ G1ConcurrentRefineThread::G1ConcurrentRefineThread(G1ConcurrentRefine* cr, uint 
 }
 
 void G1ConcurrentRefineThread::wait_for_completed_buffers() {
-  MutexLocker x(_monitor, Mutex::_no_safepoint_check_flag);
+  MonitorLocker ml(_monitor, Mutex::_no_safepoint_check_flag);
   while (!should_terminate() && !is_active()) {
-    _monitor->wait_without_safepoint_check();
+    ml.wait();
   }
 }
 

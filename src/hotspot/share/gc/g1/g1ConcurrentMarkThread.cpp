@@ -407,9 +407,9 @@ void G1ConcurrentMarkThread::sleep_before_next_cycle() {
   // below while the world is otherwise stopped.
   assert(!in_progress(), "should have been cleared");
 
-  MutexLocker x(CGC_lock, Mutex::_no_safepoint_check_flag);
+  MonitorLocker ml(CGC_lock, Mutex::_no_safepoint_check_flag);
   while (!started() && !should_terminate()) {
-    CGC_lock->wait_without_safepoint_check();
+    ml.wait();
   }
 
   if (started()) {

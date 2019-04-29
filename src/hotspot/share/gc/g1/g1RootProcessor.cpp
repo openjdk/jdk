@@ -61,7 +61,7 @@ void G1RootProcessor::wait_until_all_strong_classes_discovered() {
   if ((uint)_n_workers_discovered_strong_classes != n_workers()) {
     MonitorLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
     while ((uint)_n_workers_discovered_strong_classes != n_workers()) {
-      _lock.wait_without_safepoint_check(0);
+      ml.wait(0);
     }
   }
 }

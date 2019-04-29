@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -28,14 +28,14 @@
 
 bool AbstractCompiler::should_perform_init() {
   if (_compiler_state != initialized) {
-    MutexLocker only_one(CompileThread_lock);
+    MonitorLocker only_one(CompileThread_lock);
 
     if (_compiler_state == uninitialized) {
       _compiler_state = initializing;
       return true;
     } else {
       while (_compiler_state == initializing) {
-        CompileThread_lock->wait();
+        only_one.wait();
       }
     }
   }

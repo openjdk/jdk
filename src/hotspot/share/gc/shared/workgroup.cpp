@@ -200,7 +200,7 @@ class MutexGangTaskDispatcher : public GangTaskDispatcher {
   }
 
   void coordinator_execute_on_workers(AbstractGangTask* task, uint num_workers) {
-    MutexLocker ml(_monitor, Mutex::_no_safepoint_check_flag);
+    MonitorLocker ml(_monitor, Mutex::_no_safepoint_check_flag);
 
     _task        = task;
     _num_workers = num_workers;
@@ -210,7 +210,7 @@ class MutexGangTaskDispatcher : public GangTaskDispatcher {
 
     // Wait for them to finish.
     while (_finished < _num_workers) {
-      _monitor->wait_without_safepoint_check();
+      ml.wait();
     }
 
     _task        = NULL;
@@ -367,7 +367,7 @@ void WorkGangBarrierSync::set_n_workers(uint n_workers) {
 }
 
 bool WorkGangBarrierSync::enter() {
-  MutexLocker x(monitor(), Mutex::_no_safepoint_check_flag);
+  MonitorLocker ml(monitor(), Mutex::_no_safepoint_check_flag);
   if (should_reset()) {
     // The should_reset() was set and we are the first worker to enter
     // the sync barrier. We will zero the n_completed() count which
@@ -387,10 +387,10 @@ bool WorkGangBarrierSync::enter() {
     // should_reset() flag and the barrier will be reset the first
     // time a worker enters it again.
     set_should_reset(true);
-    monitor()->notify_all();
+    ml.notify_all();
   } else {
     while (n_completed() != n_workers() && !aborted()) {
-      monitor()->wait_without_safepoint_check();
+      ml.wait();
     }
   }
   return !aborted();

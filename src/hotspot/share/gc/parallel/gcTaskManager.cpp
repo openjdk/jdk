@@ -654,7 +654,7 @@ void GCTaskManager::add_list(GCTaskQueue* list) {
 GCTask* GCTaskManager::get_task(uint which) {
   GCTask* result = NULL;
   // Grab the queue lock.
-  MutexLocker ml(monitor(), Mutex::_no_safepoint_check_flag);
+  MonitorLocker ml(monitor(), Mutex::_no_safepoint_check_flag);
   // Wait while the queue is block or
   // there is nothing to do, except maybe release resources.
   while (is_blocked() ||
@@ -671,7 +671,7 @@ GCTask* GCTaskManager::get_task(uint which) {
       tty->print_cr("    => (%s)->wait()",
                     monitor()->name());
     }
-    monitor()->wait_without_safepoint_check(0);
+    ml.wait(0);
   }
   // We've reacquired the queue lock here.
   // Figure out which condition caused us to exit the loop above.
@@ -872,15 +872,15 @@ void IdleGCTask::do_it(GCTaskManager* manager, uint which) {
   log_trace(gc, task)("[" INTPTR_FORMAT "] IdleGCTask:::do_it() should_wait: %s",
       p2i(this), wait_helper->should_wait() ? "true" : "false");
 
-  MutexLocker ml(manager->monitor(), Mutex::_no_safepoint_check_flag);
+  MonitorLocker ml(manager->monitor(), Mutex::_no_safepoint_check_flag);
   log_trace(gc, task)("--- idle %d", which);
   // Increment has to be done when the idle tasks are created.
   // manager->increment_idle_workers();
-  manager->monitor()->notify_all();
+  ml.notify_all();
   while (wait_helper->should_wait()) {
     log_trace(gc, task)("[" INTPTR_FORMAT "] IdleGCTask::do_it()  [" INTPTR_FORMAT "] (%s)->wait()",
       p2i(this), p2i(manager->monitor()), manager->monitor()->name());
-    manager->monitor()->wait_without_safepoint_check(0);
+    ml.wait(0);
   }
   manager->decrement_idle_workers();
 
@@ -991,7 +991,7 @@ void WaitHelper::wait_for(bool reset) {
   }
   {
     // Grab the lock and check again.
-    MutexLocker ml(monitor(), Mutex::_no_safepoint_check_flag);
+    MonitorLocker ml(monitor(), Mutex::_no_safepoint_check_flag);
     while (should_wait()) {
       if (TraceGCTaskManager) {
         tty->print_cr("[" INTPTR_FORMAT "]"
@@ -999,7 +999,7 @@ void WaitHelper::wait_for(bool reset) {
           "  [" INTPTR_FORMAT "] (%s)->wait()",
           p2i(this), p2i(monitor()), monitor()->name());
       }
-      monitor()->wait_without_safepoint_check(0);
+      ml.wait(0);
     }
     // Reset the flag in case someone reuses this task.
     if (reset) {
