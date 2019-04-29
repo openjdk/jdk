@@ -1028,6 +1028,8 @@ void Parse::do_exits() {
     // transform each slice of the original memphi:
     mms.set_memory(_gvn.transform(mms.memory()));
   }
+  // Clean up input MergeMems created by transforming the slices
+  _gvn.transform(_exits.merged_memory());
 
   if (tf()->range()->cnt() > TypeFunc::Parms) {
     const Type* ret_type = tf()->range()->field_at(TypeFunc::Parms);
