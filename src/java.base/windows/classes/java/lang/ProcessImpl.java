@@ -38,6 +38,7 @@ import java.lang.ProcessBuilder.Redirect;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
+import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -46,6 +47,8 @@ import java.util.regex.Pattern;
 import jdk.internal.access.JavaIOFileDescriptorAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.ref.CleanerFactory;
+import sun.security.action.GetBooleanAction;
+import sun.security.action.GetPropertyAction;
 
 /* This class is for the exclusive use of ProcessBuilder.start() to
  * create new processes.
@@ -209,12 +212,15 @@ final class ProcessImpl extends Process {
 
     private static final int VERIFICATION_CMD_BAT = 0;
     private static final int VERIFICATION_WIN32 = 1;
-    private static final int VERIFICATION_LEGACY = 2;
+    private static final int VERIFICATION_WIN32_SAFE = 2; // inside quotes not allowed
+    private static final int VERIFICATION_LEGACY = 3;
+    // See Command shell overview for documentation of special characters.
+    // https://docs.microsoft.com/en-us/previous-versions/windows/it-pro/windows-xp/bb490954(v=technet.10)
     private static final char ESCAPE_VERIFICATION[][] = {
         // We guarantee the only command file execution for implicit [cmd.exe] run.
         //    http://technet.microsoft.com/en-us/library/bb490954.aspx
         {' ', '\t', '<', '>', '&', '|', '^'},
-
+        {' ', '\t', '<', '>'},
         {' ', '\t', '<', '>'},
         {' ', '\t'}
     };
@@ -231,8 +237,25 @@ final class ProcessImpl extends Process {
             cmdbuf.append(' ');
             String s = cmd[i];
             if (needsEscaping(verificationType, s)) {
-                cmdbuf.append('"').append(s);
+                cmdbuf.append('"');
 
+                if (verificationType == VERIFICATION_WIN32_SAFE) {
+                    // Insert the argument, adding '\' to quote any interior quotes
+                    int length = s.length();
+                    for (int j = 0; j < length; j++) {
+                        char c = s.charAt(j);
+                        if (c == DOUBLEQUOTE) {
+                            int count = countLeadingBackslash(verificationType, s, j);
+                            while (count-- > 0) {
+                                cmdbuf.append(BACKSLASH);   // double the number of backslashes
+                            }
+                            cmdbuf.append(BACKSLASH);       // backslash to quote the quote
+                        }
+                        cmdbuf.append(c);
+                    }
+                } else {
+                    cmdbuf.append(s);
+                }
                 // The code protects the [java.exe] and console command line
                 // parser, that interprets the [\"] combination as an escape
                 // sequence for the ["] char.
@@ -245,8 +268,9 @@ final class ProcessImpl extends Process {
                 // command line parser. The case of the [""] tail escape
                 // sequence could not be realized due to the argument validation
                 // procedure.
-                if ((verificationType != VERIFICATION_CMD_BAT) && s.endsWith("\\")) {
-                    cmdbuf.append('\\');
+                int count = countLeadingBackslash(verificationType, s, s.length());
+                while (count-- > 0) {
+                    cmdbuf.append(BACKSLASH);   // double the number of backslashes
                 }
                 cmdbuf.append('"');
             } else {
@@ -256,26 +280,16 @@ final class ProcessImpl extends Process {
         return cmdbuf.toString();
     }
 
-    private static boolean isQuoted(boolean noQuotesInside, String arg,
-            String errorMessage) {
-        int lastPos = arg.length() - 1;
-        if (lastPos >=1 && arg.charAt(0) == '"' && arg.charAt(lastPos) == '"') {
-            // The argument has already been quoted.
-            if (noQuotesInside) {
-                if (arg.indexOf('"', 1) != lastPos) {
-                    // There is ["] inside.
-                    throw new IllegalArgumentException(errorMessage);
-                }
-            }
-            return true;
-        }
-        if (noQuotesInside) {
-            if (arg.indexOf('"') >= 0) {
-                // There is ["] inside.
-                throw new IllegalArgumentException(errorMessage);
-            }
-        }
-        return false;
+    /**
+     * Return the argument without quotes (1st and last) if present, else the arg.
+     * @param str a string
+     * @return the string without 1st and last quotes
+     */
+    private static String unQuote(String str) {
+        int len = str.length();
+        return (len >= 2 && str.charAt(0) == DOUBLEQUOTE && str.charAt(len - 1) == DOUBLEQUOTE)
+                ? str.substring(1, len - 1)
+                : str;
     }
 
     private static boolean needsEscaping(int verificationType, String arg) {
@@ -286,9 +300,26 @@ final class ProcessImpl extends Process {
 
         // For [.exe] or [.com] file the unpaired/internal ["]
         // in the argument is not a problem.
-        boolean argIsQuoted = isQuoted(
-            (verificationType == VERIFICATION_CMD_BAT),
-            arg, "Argument has embedded quote, use the explicit CMD.EXE call.");
+        String unquotedArg = unQuote(arg);
+        boolean argIsQuoted = !arg.equals(unquotedArg);
+        boolean embeddedQuote = unquotedArg.indexOf(DOUBLEQUOTE) >= 0;
+
+        switch (verificationType) {
+            case VERIFICATION_CMD_BAT:
+                if (embeddedQuote) {
+                    throw new IllegalArgumentException("Argument has embedded quote, " +
+                            "use the explicit CMD.EXE call.");
+                }
+                break;  // break determine whether to quote
+            case VERIFICATION_WIN32_SAFE:
+                if (argIsQuoted && embeddedQuote)  {
+                    throw new IllegalArgumentException("Malformed argument has embedded quote: "
+                            + unquotedArg);
+                }
+                break;
+            default:
+                break;
+        }
 
         if (!argIsQuoted) {
             char testEscape[] = ESCAPE_VERIFICATION[verificationType];
@@ -304,13 +335,13 @@ final class ProcessImpl extends Process {
     private static String getExecutablePath(String path)
         throws IOException
     {
-        boolean pathIsQuoted = isQuoted(true, path,
-                "Executable name has embedded quote, split the arguments");
-
+        String name = unQuote(path);
+        if (name.indexOf(DOUBLEQUOTE) >= 0) {
+            throw new IllegalArgumentException("Executable name has embedded quote, " +
+                    "split the arguments: " + name);
+        }
         // Win32 CreateProcess requires path to be normalized
-        File fileToRun = new File(pathIsQuoted
-            ? path.substring(1, path.length() - 1)
-            : path);
+        File fileToRun = new File(name);
 
         // From the [CreateProcess] function documentation:
         //
@@ -325,13 +356,26 @@ final class ProcessImpl extends Process {
         // sequence:..."
         //
         // In practice ANY non-existent path is extended by [.exe] extension
-        // in the [CreateProcess] funcion with the only exception:
+        // in the [CreateProcess] function with the only exception:
         // the path ends by (.)
 
         return fileToRun.getPath();
     }
 
+    /**
+     * An executable is any program that is an EXE or does not have an extension
+     * and the Windows createProcess will be looking for .exe.
+     * The comparison is case insensitive based on the name.
+     * @param executablePath the executable file
+     * @return true if the path ends in .exe or does not have an extension.
+     */
+    private boolean isExe(String executablePath) {
+        File file = new File(executablePath);
+        String upName = file.getName().toUpperCase(Locale.ROOT);
+        return (upName.endsWith(".EXE") || upName.indexOf('.') < 0);
+    }
 
+    // Old version that can be bypassed
     private boolean isShellFile(String executablePath) {
         String upPath = executablePath.toUpperCase();
         return (upPath.endsWith(".CMD") || upPath.endsWith(".BAT"));
@@ -342,6 +386,21 @@ final class ProcessImpl extends Process {
         return argbuf.append('"').append(arg).append('"').toString();
     }
 
+    // Count backslashes before start index of string.
+    // .bat files don't include backslashes as part of the quote
+    private static int countLeadingBackslash(int verificationType,
+                                             CharSequence input, int start) {
+        if (verificationType == VERIFICATION_CMD_BAT)
+            return 0;
+        int j;
+        for (j = start - 1; j >= 0 && input.charAt(j) == BACKSLASH; j--) {
+            // just scanning backwards
+        }
+        return (start - 1) - j;  // number of BACKSLASHES
+    }
+
+    private static final char DOUBLEQUOTE = '\"';
+    private static final char BACKSLASH = '\\';
 
     private final long handle;
     private final ProcessHandle processHandle;
@@ -358,15 +417,13 @@ final class ProcessImpl extends Process {
         throws IOException
     {
         String cmdstr;
-        SecurityManager security = System.getSecurityManager();
-        boolean allowAmbiguousCommands = false;
-        if (security == null) {
-            allowAmbiguousCommands = true;
-            String value = System.getProperty("jdk.lang.Process.allowAmbiguousCommands");
-            if (value != null)
-                allowAmbiguousCommands = !"false".equalsIgnoreCase(value);
-        }
-        if (allowAmbiguousCommands) {
+        final SecurityManager security = System.getSecurityManager();
+        final String value = GetPropertyAction.
+                privilegedGetProperty("jdk.lang.Process.allowAmbiguousCommands",
+                        (security == null ? "true" : "false"));
+        final boolean allowAmbiguousCommands = !"false".equalsIgnoreCase(value);
+
+        if (allowAmbiguousCommands && security == null) {
             // Legacy mode.
 
             // Normalize path if possible.
@@ -413,11 +470,12 @@ final class ProcessImpl extends Process {
             // Quotation protects from interpretation of the [path] argument as
             // start of longer path with spaces. Quotation has no influence to
             // [.exe] extension heuristic.
+            boolean isShell = allowAmbiguousCommands ? isShellFile(executablePath)
+                    : !isExe(executablePath);
             cmdstr = createCommandLine(
-                    // We need the extended verification procedure for CMD files.
-                    isShellFile(executablePath)
-                        ? VERIFICATION_CMD_BAT
-                        : VERIFICATION_WIN32,
+                    // We need the extended verification procedures
+                    isShell ? VERIFICATION_CMD_BAT
+                            : (allowAmbiguousCommands ? VERIFICATION_WIN32 : VERIFICATION_WIN32_SAFE),
                     quoteString(executablePath),
                     cmd);
         }
