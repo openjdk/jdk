@@ -146,7 +146,7 @@ public final class ParseUtil {
 
     /**
      * Appends the URL escape sequence for the specified char to the
-     * specified StringBuffer.
+     * specified character array.
      */
     private static int escape(char[] cc, char c, int index) {
         cc[index++] = '%';
@@ -336,7 +336,7 @@ public final class ParseUtil {
                             String query,
                             String fragment)
     {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         if (scheme != null) {
             sb.append(scheme);
             sb.append(':');
@@ -348,7 +348,7 @@ public final class ParseUtil {
         return sb.toString();
     }
 
-    private static void appendSchemeSpecificPart(StringBuffer sb,
+    private static void appendSchemeSpecificPart(StringBuilder sb,
                                           String opaquePart,
                                           String authority,
                                           String userInfo,
@@ -389,7 +389,7 @@ public final class ParseUtil {
         }
     }
 
-    private static void appendAuthority(StringBuffer sb,
+    private static void appendAuthority(StringBuilder sb,
                                  String authority,
                                  String userInfo,
                                  String host,
@@ -437,7 +437,7 @@ public final class ParseUtil {
         }
     }
 
-    private static void appendFragment(StringBuffer sb, String fragment) {
+    private static void appendFragment(StringBuilder sb, String fragment) {
         if (fragment != null) {
             sb.append('#');
             sb.append(quote(fragment, L_URIC, H_URIC));
@@ -449,14 +449,14 @@ public final class ParseUtil {
     //
     private static String quote(String s, long lowMask, long highMask) {
         int n = s.length();
-        StringBuffer sb = null;
+        StringBuilder sb = null;
         boolean allowNonASCII = ((lowMask & L_ESCAPED) != 0);
         for (int i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
             if (c < '\u0080') {
                 if (!match(c, lowMask, highMask) && !isEscaped(s, i)) {
                     if (sb == null) {
-                        sb = new StringBuffer();
+                        sb = new StringBuilder();
                         sb.append(s, 0, i);
                     }
                     appendEscape(sb, (byte)c);
@@ -468,7 +468,7 @@ public final class ParseUtil {
                        && (Character.isSpaceChar(c)
                            || Character.isISOControl(c))) {
                 if (sb == null) {
-                    sb = new StringBuffer();
+                    sb = new StringBuilder();
                     sb.append(s, 0, i);
                 }
                 appendEncoded(sb, c);
@@ -493,7 +493,7 @@ public final class ParseUtil {
                && match(s.charAt(pos + 2), L_HEX, H_HEX);
     }
 
-    private static void appendEncoded(StringBuffer sb, char c) {
+    private static void appendEncoded(StringBuilder sb, char c) {
         ByteBuffer bb = null;
         try {
             bb = ThreadLocalCoders.encoderFor("UTF-8")
@@ -515,7 +515,7 @@ public final class ParseUtil {
         '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
     };
 
-    private static void appendEscape(StringBuffer sb, byte b) {
+    private static void appendEscape(StringBuilder sb, byte b) {
         sb.append('%');
         sb.append(hexDigits[(b >> 4) & 0x0f]);
         sb.append(hexDigits[(b >> 0) & 0x0f]);
