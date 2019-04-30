@@ -268,9 +268,9 @@ public class TestOptions extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg/Foo.html", true,
-                "<li>Foo</li>");
+                "<div class=\"inheritance\">Foo</div>");
         checkOutput("deprecated/Foo.html", true,
-                "<li>deprecated.Foo</li>");
+                "<div class=\"inheritance\">deprecated.Foo</div>");
 
         javadoc("-d", "out-10a",
                 "-noqualifier", "all",
@@ -279,8 +279,8 @@ public class TestOptions extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg/Foo.html", true,
-                "<li>Foo</li>");
+                "<div class=\"inheritance\">Foo</div>");
         checkOutput("deprecated/Foo.html", true,
-                "<li>Foo</li>");
+                "<div class=\"inheritance\">Foo</div>");
     }
 }

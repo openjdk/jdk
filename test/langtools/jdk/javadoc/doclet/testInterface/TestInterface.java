@@ -85,20 +85,11 @@ public class TestInterface extends JavadocTester {
                 + "Interface</a>&lt;CE&gt;</code></dd>\n"
                 + "</dl>",
                 //Make sure Class Tree has substituted type parameters.
-                "<ul class=\"inheritance\">\n"
-                + "<li>java.lang.Object</li>\n"
-                + "<li>\n"
-                + "<ul class=\"inheritance\">\n"
-                + "<li><a href=\"Parent.html\" title=\"class in pkg\">"
-                + "pkg.Parent</a>&lt;CE&gt;</li>\n"
-                + "<li>\n"
-                + "<ul class=\"inheritance\">\n"
-                + "<li>pkg.Child&lt;CE&gt;</li>\n"
-                + "</ul>\n"
-                + "</li>\n"
-                + "</ul>\n"
-                + "</li>\n"
-                + "</ul>",
+                "<div class=\"inheritance\" title=\"Inheritance Tree\">java.lang.Object\n"
+                + "<div class=\"inheritance\"><a href=\"Parent.html\""
+                + " title=\"class in pkg\">pkg.Parent</a>&lt;CE&gt;\n"
+                + "<div class=\"inheritance\">pkg.Child&lt;CE&gt;</div>\n"
+                + "</div>\n</div>",
                 //Make sure "Specified By" has substituted type parameters.
                 "<dt><span class=\"overrideSpecifyLabel\">Specified by:</span></dt>\n"
                 + "<dd><code><a href=\"Interface.html#method()\">method</a>"

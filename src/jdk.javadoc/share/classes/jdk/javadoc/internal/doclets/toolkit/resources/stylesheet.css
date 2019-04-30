@@ -364,18 +364,12 @@ ul.horizontal li {
     display:inline;
     font-size:0.9em;
 }
-ul.inheritance {
+div.inheritance {
     margin:0;
     padding:0;
 }
-ul.inheritance li {
-    display:inline;
-    list-style:none;
-}
-ul.inheritance li ul.inheritance {
-    margin-left:15px;
-    padding-left:15px;
-    padding-top:1px;
+div.inheritance div.inheritance {
+    margin-left:2em;
 }
 ul.blockList, ul.blockListLast {
     margin:10px 0 10px 0;

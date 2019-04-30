@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8219998
+ * @bug 8219998 8221991
  * @summary Eliminate inherently singleton lists
  * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -275,10 +275,6 @@ public class TestSingletonLists extends JavadocTester {
 
                 case "ul": case "ol": case "dl":
                     counts.push(new TreeMap<>());
-                    if (!attrs.isEmpty() && attrs.containsKey("class")
-                            && attrs.containsValue("inheritance")) {
-                        inheritanceClass = true;
-                    }
                     break;
 
                 case "li": case "dd": case "dt": {
@@ -297,11 +293,7 @@ public class TestSingletonLists extends JavadocTester {
                     if (c.get("li") == 0) {
                         error(currFile, getLineNumber(), "empty list");
                     } else if (c.get("li") == 1 && fileName != null && !excludeFiles.contains(fileName)) {
-                        if (!inheritanceClass) {
-                            error(currFile, getLineNumber(), "singleton list");
-                        } else {
-                            inheritanceClass = false;
-                        }
+                        error(currFile, getLineNumber(), "singleton list");
                     }
                     break;
                 }
@@ -319,5 +311,4 @@ public class TestSingletonLists extends JavadocTester {
             }
         }
     }
-
 }
