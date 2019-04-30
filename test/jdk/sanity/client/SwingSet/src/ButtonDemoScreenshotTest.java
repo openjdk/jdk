@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ import static org.jemmy2ext.JemmyExt.*;
  *          java.logging
  * @build org.jemmy2ext.JemmyExt
  * @build com.sun.swingset3.demos.button.ButtonDemo
- * @run testng/timeout=600 ButtonDemoScreenshotTest
+ * @run testng/othervm/timeout=600 -Dswing.disablevistaanimation=true ButtonDemoScreenshotTest
  */
 @Listeners(GuiTestListener.class)
 public class ButtonDemoScreenshotTest {
