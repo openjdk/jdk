@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018, Google and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -263,8 +263,13 @@ public class HeapMonitor {
   }
 
   public static boolean statsHaveExpectedNumberSamples(int expected, int acceptedErrorPercentage) {
-    double actual = getEventStorageElementCount();
-    double diffPercentage = Math.abs(actual - expected) / expected;
+    double actual = sampledEvents();
+    double diffPercentage = 100 * Math.abs(actual - expected) / expected;
+
+    if (diffPercentage >= acceptedErrorPercentage) {
+      System.err.println("Unexpected high difference percentage: " + diffPercentage
+          + " due to the count being " + actual + " instead of " + expected);
+    }
     return diffPercentage < acceptedErrorPercentage;
   }
 

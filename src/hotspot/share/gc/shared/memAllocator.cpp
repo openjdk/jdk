@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,20 +198,27 @@ void MemAllocator::Allocation::notify_allocation_jvmti_sampler() {
     return;
   }
 
-  if (JvmtiExport::should_post_sampled_object_alloc()) {
-    // If we want to be sampling, protect the allocated object with a Handle
-    // before doing the callback. The callback is done in the destructor of
-    // the JvmtiSampledObjectAllocEventCollector.
+  // If we want to be sampling, protect the allocated object with a Handle
+  // before doing the callback. The callback is done in the destructor of
+  // the JvmtiSampledObjectAllocEventCollector.
+  size_t bytes_since_last = 0;
+
+  {
     PreserveObj obj_h(_thread, _obj_ptr);
     JvmtiSampledObjectAllocEventCollector collector;
     size_t size_in_bytes = _allocator._word_size * HeapWordSize;
     ThreadLocalAllocBuffer& tlab = _thread->tlab();
-    size_t bytes_since_last = _allocated_outside_tlab ? 0 : tlab.bytes_since_last_sample_point();
+
+    if (!_allocated_outside_tlab) {
+      bytes_since_last = tlab.bytes_since_last_sample_point();
+    }
+
     _thread->heap_sampler().check_for_sampling(obj_h(), size_in_bytes, bytes_since_last);
   }
 
   if (_tlab_end_reset_for_sample || _allocated_tlab_size != 0) {
-    _thread->tlab().set_sample_end();
+    // Tell tlab to forget bytes_since_last if we passed it to the heap sampler.
+    _thread->tlab().set_sample_end(bytes_since_last != 0);
   }
 }
 
@@ -283,12 +290,14 @@ HeapWord* MemAllocator::allocate_inside_tlab_slow(Allocation& allocation) const 
   ThreadLocalAllocBuffer& tlab = _thread->tlab();
 
   if (JvmtiExport::should_post_sampled_object_alloc()) {
-    // Try to allocate the sampled object from TLAB, it is possible a sample
-    // point was put and the TLAB still has space.
     tlab.set_back_allocation_end();
     mem = tlab.allocate(_word_size);
+
+    // We set back the allocation sample point to try to allocate this, reset it
+    // when done.
+    allocation._tlab_end_reset_for_sample = true;
+
     if (mem != NULL) {
-      allocation._tlab_end_reset_for_sample = true;
       return mem;
     }
   }

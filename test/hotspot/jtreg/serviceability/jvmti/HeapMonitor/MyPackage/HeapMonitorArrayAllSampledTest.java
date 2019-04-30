@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018, Google and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,8 +47,7 @@ public class HeapMonitorArrayAllSampledTest {
   public static void main(String[] args) {
     int sizes[] = {1000, 10000, 100000, 1000000};
 
-    HeapMonitor.setSamplingInterval(0);
-    HeapMonitor.enableSamplingEvents();
+    HeapMonitor.sampleEverything();
 
     for (int currentSize : sizes) {
       System.out.println("Testing size " + currentSize);

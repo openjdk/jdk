@@ -171,7 +171,7 @@ public:
   void initialize();
 
   void set_back_allocation_end();
-  void set_sample_end();
+  void set_sample_end(bool reset_byte_accumulation);
 
   static size_t refill_waste_limit_increment()   { return TLABWasteIncrement; }
 
