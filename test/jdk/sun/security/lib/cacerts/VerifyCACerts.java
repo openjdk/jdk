@@ -25,7 +25,7 @@
 /**
  * @test
  * @bug 8189131 8198240 8191844 8189949 8191031 8196141 8204923 8195774 8199779
- *      8209452 8209506 8210432 8195793 8216577 8222089 8222133
+ *      8209452 8209506 8210432 8195793 8216577 8222089 8222133 8222137
  * @summary Check root CA entries in cacerts file
  */
 import java.io.File;
@@ -42,7 +42,7 @@ public class VerifyCACerts {
             + File.separator + "security" + File.separator + "cacerts";
 
     // The numbers of certs now.
-    private static final int COUNT = 93;
+    private static final int COUNT = 92;
 
     // map of cert alias to SHA-256 fingerprint
     private static final Map<String, String> FINGERPRINT_MAP
@@ -212,8 +212,6 @@ public class VerifyCACerts {
                     "03:76:AB:1D:54:C5:F9:80:3C:E4:B2:E2:01:A0:EE:7E:EF:7B:57:B6:36:E8:A9:3C:9B:8D:48:60:C9:6F:5F:A7");
             put("affirmtrustpremiumeccca [jdk]",
                     "BD:71:FD:F6:DA:97:E4:CF:62:D1:64:7A:DD:25:81:B0:7D:79:AD:F8:39:7E:B4:EC:BA:9C:5E:84:88:82:14:23");
-            put("deutschetelekomrootca2 [jdk]",
-                    "B6:19:1A:50:D0:C3:97:7F:7D:A9:9B:CD:AA:C8:6A:22:7D:AE:B9:67:9E:C7:0B:A3:B0:C9:D9:22:71:C1:70:D3");
             put("ttelesecglobalrootclass3ca [jdk]",
                     "FD:73:DA:D3:1C:64:4F:F1:B4:3B:EF:0C:CD:DA:96:71:0B:9C:D9:87:5E:CA:7E:31:70:7A:F3:E9:6D:52:2B:BD");
             put("ttelesecglobalrootclass2ca [jdk]",
@@ -247,8 +245,6 @@ public class VerifyCACerts {
             add("certplusclass3pprimaryca [jdk]");
             // Valid until: Tue Jul 09 14:40:36 EDT 2019
             add("utnuserfirstobjectca [jdk]");
-            // Valid until: Tue Jul 09 19:59:00 EDT 2019
-            add("deutschetelekomrootca2 [jdk]");
             // Valid until: Tue Jul 09 13:36:58 EDT 2019
             add("utnuserfirstclientauthemailca [jdk]");
             // Valid until: Tue Jul 09 14:19:22 EDT 2019
