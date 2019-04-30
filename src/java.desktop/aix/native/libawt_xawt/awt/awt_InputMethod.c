@@ -88,7 +88,7 @@ static void StatusDrawCallback(XIC, XPointer,
  * values above.
  */
 static XIMProc callback_funcs[NCALLBACKS] = {
-    (XIMProc)PreeditStartCallback,
+    (XIMProc)(void *)&PreeditStartCallback,
     (XIMProc)PreeditDoneCallback,
     (XIMProc)PreeditDrawCallback,
     (XIMProc)PreeditCaretCallback,

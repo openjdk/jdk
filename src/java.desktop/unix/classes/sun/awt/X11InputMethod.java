@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ public abstract class X11InputMethod extends X11InputMethodBase {
      * Reset the composition state to the current composition state.
      */
     protected void resetCompositionState() {
-        if (compositionEnableSupported) {
+        if (compositionEnableSupported && haveActiveClient()) {
             try {
                 /* Restore the composition mode to the last saved composition
                    mode. */

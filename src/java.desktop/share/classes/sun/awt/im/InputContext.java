@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -547,6 +547,8 @@ public class InputContext extends java.awt.im.InputContext
                 if (inputMethod instanceof InputMethodAdapter) {
                     ((InputMethodAdapter) inputMethod).setClientComponent(null);
                 }
+                if (null == currentClientComponent.getInputMethodRequests())
+                    wasCompositionEnabledSupported = false;
             }
             savedLocale = inputMethod.getLocale();
 
@@ -563,6 +565,7 @@ public class InputContext extends java.awt.im.InputContext
             enableClientWindowNotification(inputMethod, false);
             if (this == inputMethodWindowContext) {
                 inputMethod.hideWindows();
+                inputMethod.removeNotify();
                 inputMethodWindowContext = null;
             }
             inputMethodLocator = null;
