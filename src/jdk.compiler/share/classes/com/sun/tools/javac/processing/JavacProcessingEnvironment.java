@@ -444,7 +444,14 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             } catch(ServiceConfigurationError sce) {
                 log.error(Errors.ProcBadConfigFile(sce.getLocalizedMessage()));
                 throw new Abort(sce);
+            } catch (UnsupportedClassVersionError ucve) {
+                log.error(Errors.ProcCantLoadClass(ucve.getLocalizedMessage()));
+                throw new Abort(ucve);
+            } catch (ClassFormatError cfe) {
+                log.error(Errors.ProcCantLoadClass(cfe.getLocalizedMessage()));
+                throw new Abort(cfe);
             } catch (Throwable t) {
+                log.error(Errors.ProcBadConfigFile(t.getLocalizedMessage()));
                 throw new Abort(t);
             }
         }
@@ -461,6 +468,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                 log.error(Errors.ProcBadConfigFile(sce.getLocalizedMessage()));
                 throw new Abort(sce);
             } catch (Throwable t) {
+                log.error(Errors.ProcBadConfigFile(t.getLocalizedMessage()));
                 throw new Abort(t);
             }
         }
