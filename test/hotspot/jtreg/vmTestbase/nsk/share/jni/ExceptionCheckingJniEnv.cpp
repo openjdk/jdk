@@ -22,6 +22,7 @@
  * questions.
  */
 
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -97,7 +98,7 @@ class JNIVerifier {
     }
   }
 
-  int DecimalToAsciiRec(char *str, long line) {
+  int DecimalToAsciiRec(char *str, int line) {
     if (line == 0) {
       return 0;
     }
@@ -112,21 +113,27 @@ class JNIVerifier {
 
   // Implementing a simple version of sprintf for "%d"...
   void DecimalToAscii(char *str, int line) {
-    // Go to long so that the INT_MIN case can be handled seemlessly.
-    long internal_line = line;
-    if (internal_line == 0) {
+    if (line == 0) {
       str[0] = '0';
       str[1] = '\0';
       return;
     }
 
-    if (internal_line < 0) {
+    // Special case for INT32_MIN because otherwise the *1 below will overflow
+    // and it won't work. Let us just be simple here due to this being for
+    // tests.
+    if (line == INT32_MIN) {
+      strcat(str, "-2147483648");
+      return;
+    }
+
+    if (line < 0) {
       *str = '-';
-      internal_line *= -1;
+      line *= -1;
       str++;
     }
 
-    str[DecimalToAsciiRec(str, internal_line)] = '\0';
+    str[DecimalToAsciiRec(str, line)] = '\0';
   }
 
   void GenerateErrorMessage() {
