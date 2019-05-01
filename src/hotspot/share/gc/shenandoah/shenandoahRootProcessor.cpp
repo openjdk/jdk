@@ -123,6 +123,14 @@ void ShenandoahRootProcessor::process_all_roots_slow(OopClosure* oops) {
   ObjectSynchronizer::oops_do(oops);
   SystemDictionary::oops_do(oops);
 
+  AlwaysTrueClosure always_true;
+  WeakProcessor::weak_oops_do(&always_true, oops);
+  JvmtiExport::weak_oops_do(&always_true, oops);
+
+  if (ShenandoahStringDedup::is_enabled()) {
+    ShenandoahStringDedup::oops_do_slow(oops);
+  }
+
   // Do thread roots the last. This allows verification code to find
   // any broken objects from those special roots first, not the accidental
   // dangling reference from the thread root.
