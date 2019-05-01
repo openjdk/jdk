@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,13 @@
 package jdk.vm.ci.hotspot;
 
 import static java.util.Objects.requireNonNull;
+import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Array;
 import java.lang.reflect.Modifier;
 
 import jdk.vm.ci.common.JVMCIError;
+import jdk.vm.ci.common.NativeImageReinitialize;
 import jdk.vm.ci.meta.Assumptions.AssumptionResult;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
@@ -42,22 +43,38 @@ import jdk.vm.ci.meta.ResolvedJavaType;
  */
 public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType {
 
-    private final JavaKind kind;
+    @NativeImageReinitialize static HotSpotResolvedPrimitiveType[] primitives;
+
+    private JavaKind kind;
+    private HotSpotResolvedObjectType arrayClass;
+    HotSpotObjectConstantImpl mirror;
 
     /**
      * Creates the JVMCI mirror for a primitive {@link JavaKind}.
      *
-     * <p>
-     * <b>NOTE</b>: Creating an instance of this class does not install the mirror for the
-     * {@link Class} type. Use {@link HotSpotJVMCIRuntime#fromClass(Class)} instead.
-     * </p>
-     *
      * @param kind the Kind to create the mirror for
      */
-    HotSpotResolvedPrimitiveType(JavaKind kind) {
+    private HotSpotResolvedPrimitiveType(JavaKind kind, HotSpotObjectConstantImpl mirror) {
         super(String.valueOf(kind.getTypeChar()));
+        this.mirror = mirror;
         this.kind = kind;
-        assert mirror().isPrimitive() : mirror() + " not a primitive type";
+    }
+
+    static HotSpotResolvedPrimitiveType forKind(JavaKind kind) {
+        HotSpotResolvedPrimitiveType primitive = primitives[kind.getBasicType()];
+        assert primitive != null : kind;
+        return primitive;
+    }
+
+    @VMEntryPoint
+    static HotSpotResolvedPrimitiveType fromMetaspace(HotSpotObjectConstantImpl mirror, char typeChar) {
+        JavaKind kind = JavaKind.fromPrimitiveOrVoidTypeChar(typeChar);
+        if (primitives == null) {
+            primitives = new HotSpotResolvedPrimitiveType[JavaKind.Void.getBasicType() + 1];
+        }
+        HotSpotResolvedPrimitiveType result = new HotSpotResolvedPrimitiveType(kind, mirror);
+        primitives[kind.getBasicType()] = result;
+        return result;
     }
 
     @Override
@@ -70,8 +87,14 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
         if (kind == JavaKind.Void) {
             return null;
         }
-        Class<?> javaArrayMirror = Array.newInstance(mirror(), 0).getClass();
-        return HotSpotResolvedObjectTypeImpl.fromObjectClass(javaArrayMirror);
+        if (arrayClass == null) {
+            try {
+                arrayClass = (HotSpotResolvedObjectType) runtime().compilerToVm.lookupType("[" + kind.getTypeChar(), null, true);
+            } catch (ClassNotFoundException e) {
+                throw new JVMCIError(e);
+            }
+        }
+        return arrayClass;
     }
 
     @Override
@@ -241,11 +264,6 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
     }
 
     @Override
-    Class<?> mirror() {
-        return kind.toJavaClass();
-    }
-
-    @Override
     public boolean isLocal() {
         return false;
     }
@@ -278,5 +296,19 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
     @Override
     public boolean isCloneableWithAllocation() {
         return false;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof HotSpotResolvedPrimitiveType)) {
+            return false;
+        }
+        HotSpotResolvedPrimitiveType that = (HotSpotResolvedPrimitiveType) obj;
+        return that.kind == kind;
+    }
+
+    @Override
+    JavaConstant getJavaMirror() {
+        return runtime().reflection.getJavaMirror(this);
     }
 }

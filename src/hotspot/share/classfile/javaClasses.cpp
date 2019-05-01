@@ -2607,6 +2607,45 @@ void java_lang_StackTraceElement::fill_in(Handle element,
   }
 }
 
+#if INCLUDE_JVMCI
+void java_lang_StackTraceElement::decode(Handle mirror, methodHandle method, int bci, Symbol*& methodname, Symbol*& filename, int& line_number) {
+  int method_id = method->orig_method_idnum();
+  int cpref = method->name_index();
+  decode(mirror, method_id, method->constants()->version(), bci, cpref, methodname, filename, line_number);
+}
+
+void java_lang_StackTraceElement::decode(Handle mirror, int method_id, int version, int bci, int cpref, Symbol*& methodname, Symbol*& filename, int& line_number) {
+  // Fill in class name
+  InstanceKlass* holder = InstanceKlass::cast(java_lang_Class::as_Klass(mirror()));
+  Method* method = holder->method_with_orig_idnum(method_id, version);
+
+  // The method can be NULL if the requested class version is gone
+  Symbol* sym = (method != NULL) ? method->name() : holder->constants()->symbol_at(cpref);
+
+  // Fill in method name
+  methodname = sym;
+
+  if (!version_matches(method, version)) {
+    // If the method was redefined, accurate line number information isn't available
+    filename = NULL;
+    line_number = -1;
+  } else {
+    // Fill in source file name and line number.
+    // Use a specific ik version as a holder since the mirror might
+    // refer to a version that is now obsolete and no longer accessible
+    // via the previous versions list.
+    holder = holder->get_klass_version(version);
+    assert(holder != NULL, "sanity check");
+    Symbol* source = holder->source_file_name();
+    if (ShowHiddenFrames && source == NULL) {
+      source = vmSymbols::unknown_class_name();
+    }
+    filename = source;
+    line_number = Backtrace::get_line_number(method, bci);
+  }
+}
+#endif // INCLUDE_JVMCI
+
 Method* java_lang_StackFrameInfo::get_method(Handle stackFrame, InstanceKlass* holder, TRAPS) {
   HandleMark hm(THREAD);
   Handle mname(THREAD, stackFrame->obj_field(_memberName_offset));

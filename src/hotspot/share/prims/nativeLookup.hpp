@@ -33,11 +33,6 @@
 
 class NativeLookup : AllStatic {
  private:
-  // JNI name computation
-  static char* pure_jni_name(const methodHandle& method);
-  static char* long_jni_name(const methodHandle& method);
-  static char* critical_jni_name(const methodHandle& method);
-
   // Style specific lookup
   static address lookup_style(const methodHandle& method, char* pure_name, const char* long_name, int args_size, bool os_style, bool& in_base_library, TRAPS);
   static address lookup_critical_style(const methodHandle& method, char* pure_name, const char* long_name, int args_size, bool os_style);
@@ -45,6 +40,11 @@ class NativeLookup : AllStatic {
   static address lookup_entry(const methodHandle& method, bool& in_base_library, TRAPS);
   static address lookup_entry_prefixed(const methodHandle& method, bool& in_base_library, TRAPS);
  public:
+  // JNI name computation
+  static char* pure_jni_name(const methodHandle& method);
+  static char* long_jni_name(const methodHandle& method);
+  static char* critical_jni_name(const methodHandle& method);
+
   // Lookup native function. May throw UnsatisfiedLinkError.
   static address lookup(const methodHandle& method, bool& in_base_library, TRAPS);
   static address lookup_critical_entry(const methodHandle& method);

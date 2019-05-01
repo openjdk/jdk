@@ -32,8 +32,6 @@
 #include "compiler/compilerOracle.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "jvmci/compilerRuntime.hpp"
-#include "jvmci/jvmciRuntime.hpp"
 #include "oops/method.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"

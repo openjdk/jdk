@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  */
 package jdk.vm.ci.hotspot;
 
+import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.ResolvedJavaType;
 
 public abstract class HotSpotResolvedJavaType extends HotSpotJavaType implements ResolvedJavaType {
@@ -30,20 +31,13 @@ public abstract class HotSpotResolvedJavaType extends HotSpotJavaType implements
         super(name);
     }
 
-    abstract Class<?> mirror();
-
     @Override
-    public final boolean equals(Object obj) {
-        if (!(obj instanceof HotSpotResolvedJavaType)) {
-            return false;
-        }
-        HotSpotResolvedJavaType that = (HotSpotResolvedJavaType) obj;
-        return this.mirror().equals(that.mirror());
-    }
+    public abstract boolean equals(Object obj);
 
     @Override
     public final int hashCode() {
         return getName().hashCode();
     }
 
+    abstract JavaConstant getJavaMirror();
 }

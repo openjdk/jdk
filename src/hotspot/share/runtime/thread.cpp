@@ -117,9 +117,8 @@
 #include "utilities/singleWriterSynchronizer.hpp"
 #include "utilities/vmError.hpp"
 #if INCLUDE_JVMCI
-#include "jvmci/jvmciCompiler.hpp"
-#include "jvmci/jvmciRuntime.hpp"
-#include "logging/logHandle.hpp"
+#include "jvmci/jvmci.hpp"
+#include "jvmci/jvmciEnv.hpp"
 #endif
 #ifdef COMPILER1
 #include "c1/c1_Compiler.hpp"
@@ -1576,16 +1575,17 @@ bool jvmci_counters_include(JavaThread* thread) {
   return !JVMCICountersExcludeCompiler || !thread->is_Compiler_thread();
 }
 
-void JavaThread::collect_counters(typeArrayOop array) {
+void JavaThread::collect_counters(JVMCIEnv* jvmci_env, JVMCIPrimitiveArray array) {
   if (JVMCICounterSize > 0) {
     JavaThreadIteratorWithHandle jtiwh;
-    for (int i = 0; i < array->length(); i++) {
-      array->long_at_put(i, _jvmci_old_thread_counters[i]);
+    int len = jvmci_env->get_length(array);
+    for (int i = 0; i < len; i++) {
+      jvmci_env->put_long_at(array, i, _jvmci_old_thread_counters[i]);
     }
     for (; JavaThread *tp = jtiwh.next(); ) {
       if (jvmci_counters_include(tp)) {
-        for (int i = 0; i < array->length(); i++) {
-          array->long_at_put(i, array->long_at(i) + tp->_jvmci_counters[i]);
+        for (int i = 0; i < len; i++) {
+          jvmci_env->put_long_at(array, i, jvmci_env->get_long_at(array, i) + tp->_jvmci_counters[i]);
         }
       }
     }
@@ -3922,10 +3922,8 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   bool force_JVMCI_intialization = false;
   if (EnableJVMCI) {
     // Initialize JVMCI eagerly when it is explicitly requested.
-    // Or when JVMCIPrintProperties is enabled.
-    // The JVMCI Java initialization code will read this flag and
-    // do the printing if it's set.
-    force_JVMCI_intialization = EagerJVMCI || JVMCIPrintProperties;
+    // Or when JVMCILibDumpJNIConfig or JVMCIPrintProperties is enabled.
+    force_JVMCI_intialization = EagerJVMCI || JVMCIPrintProperties || JVMCILibDumpJNIConfig;
 
     if (!force_JVMCI_intialization) {
       // 8145270: Force initialization of JVMCI runtime otherwise requests for blocking
@@ -3974,7 +3972,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
 #if INCLUDE_JVMCI
   if (force_JVMCI_intialization) {
-    JVMCIRuntime::force_initialization(CHECK_JNI_ERR);
+    JVMCI::initialize_compiler(CHECK_JNI_ERR);
     CompileBroker::compilation_init_phase2();
   }
 #endif
@@ -4274,7 +4272,7 @@ void JavaThread::invoke_shutdown_hooks() {
     JavaValue result(T_VOID);
     JavaCalls::call_static(&result,
                            shutdown_klass,
-                           vmSymbols::shutdown_method_name(),
+                           vmSymbols::shutdown_name(),
                            vmSymbols::void_method_signature(),
                            THREAD);
   }

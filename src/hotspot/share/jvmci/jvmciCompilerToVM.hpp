@@ -24,40 +24,12 @@
 #ifndef SHARE_JVMCI_JVMCICOMPILERTOVM_HPP
 #define SHARE_JVMCI_JVMCICOMPILERTOVM_HPP
 
-#include "jni.h"
+#include "gc/shared/cardTable.hpp"
+#include "jvmci/jvmciExceptions.hpp"
 #include "runtime/javaCalls.hpp"
-#include "jvmci/jvmciJavaClasses.hpp"
+#include "runtime/signature.hpp"
 
-// Helper class to ensure that references to Klass* are kept alive for G1
-class JVMCIKlassHandle : public StackObj {
- private:
-  Klass*     _klass;
-  Handle     _holder;
-  Thread*    _thread;
-
-  Klass*        klass() const                     { return _klass; }
-  Klass*        non_null_klass() const            { assert(_klass != NULL, "resolving NULL _klass"); return _klass; }
-
- public:
-  /* Constructors */
-  JVMCIKlassHandle (Thread* thread) : _klass(NULL), _thread(thread) {}
-  JVMCIKlassHandle (Thread* thread, Klass* klass);
-
-  JVMCIKlassHandle (const JVMCIKlassHandle &h): _klass(h._klass), _holder(h._holder), _thread(h._thread) {}
-  JVMCIKlassHandle& operator=(const JVMCIKlassHandle &s);
-  JVMCIKlassHandle& operator=(Klass* klass);
-
-  /* Operators for ease of use */
-  Klass*        operator () () const            { return klass(); }
-  Klass*        operator -> () const            { return non_null_klass(); }
-
-  bool    operator == (Klass* o) const          { return klass() == o; }
-  bool    operator == (const JVMCIKlassHandle& h) const  { return klass() == h.klass(); }
-
-  /* Null checks */
-  bool    is_null() const                      { return _klass == NULL; }
-  bool    not_null() const                     { return _klass != NULL; }
-};
+class JVMCIObjectArray;
 
 class CompilerToVM {
  public:
@@ -118,7 +90,7 @@ class CompilerToVM {
     static address symbol_clinit;
 
    public:
-    static void initialize(TRAPS);
+     static void initialize(JVMCI_TRAPS);
 
     static int max_oop_map_stack_offset() {
       assert(_max_oop_map_stack_offset > 0, "must be initialized");
@@ -141,59 +113,14 @@ class CompilerToVM {
   }
 
   static JNINativeMethod methods[];
+  static JNINativeMethod jni_methods[];
 
-  static objArrayHandle initialize_intrinsics(TRAPS);
+  static JVMCIObjectArray initialize_intrinsics(JVMCI_TRAPS);
  public:
   static int methods_count();
 
-  static inline Method* asMethod(jobject jvmci_method) {
-    return (Method*) (address) HotSpotResolvedJavaMethodImpl::metaspaceMethod(jvmci_method);
-  }
-
-  static inline Method* asMethod(Handle jvmci_method) {
-    return (Method*) (address) HotSpotResolvedJavaMethodImpl::metaspaceMethod(jvmci_method);
-  }
-
-  static inline Method* asMethod(oop jvmci_method) {
-    return (Method*) (address) HotSpotResolvedJavaMethodImpl::metaspaceMethod(jvmci_method);
-  }
-
-  static inline ConstantPool* asConstantPool(jobject jvmci_constant_pool) {
-    return (ConstantPool*) (address) HotSpotConstantPool::metaspaceConstantPool(jvmci_constant_pool);
-  }
-
-  static inline ConstantPool* asConstantPool(Handle jvmci_constant_pool) {
-    return (ConstantPool*) (address) HotSpotConstantPool::metaspaceConstantPool(jvmci_constant_pool);
-  }
-
-  static inline ConstantPool* asConstantPool(oop jvmci_constant_pool) {
-    return (ConstantPool*) (address) HotSpotConstantPool::metaspaceConstantPool(jvmci_constant_pool);
-  }
-
-  static inline Klass* asKlass(jobject jvmci_type) {
-    return java_lang_Class::as_Klass(HotSpotResolvedObjectTypeImpl::javaClass(jvmci_type));
-  }
-
-  static inline Klass* asKlass(Handle jvmci_type) {
-    return java_lang_Class::as_Klass(HotSpotResolvedObjectTypeImpl::javaClass(jvmci_type));
-  }
-
-  static inline Klass* asKlass(oop jvmci_type) {
-    return java_lang_Class::as_Klass(HotSpotResolvedObjectTypeImpl::javaClass(jvmci_type));
-  }
-
-  static inline Klass* asKlass(jlong metaspaceKlass) {
-    return (Klass*) (address) metaspaceKlass;
-  }
-
-  static inline MethodData* asMethodData(jlong metaspaceMethodData) {
-    return (MethodData*) (address) metaspaceMethodData;
-  }
-
-  static oop get_jvmci_method(const methodHandle& method, TRAPS);
-
-  static oop get_jvmci_type(JVMCIKlassHandle& klass, TRAPS);
 };
+
 
 class JavaArgumentUnboxer : public SignatureIterator {
  protected:

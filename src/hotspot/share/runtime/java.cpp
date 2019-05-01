@@ -36,8 +36,7 @@
 #include "jfr/jfrEvents.hpp"
 #include "jfr/support/jfrThreadId.hpp"
 #if INCLUDE_JVMCI
-#include "jvmci/jvmciCompiler.hpp"
-#include "jvmci/jvmciRuntime.hpp"
+#include "jvmci/jvmci.hpp"
 #endif
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -439,15 +438,7 @@ void before_exit(JavaThread* thread) {
   }
 
 #if INCLUDE_JVMCI
-  // We are not using CATCH here because we want the exit to continue normally.
-  Thread* THREAD = thread;
-  JVMCIRuntime::shutdown(THREAD);
-  if (HAS_PENDING_EXCEPTION) {
-    HandleMark hm(THREAD);
-    Handle exception(THREAD, PENDING_EXCEPTION);
-    CLEAR_PENDING_EXCEPTION;
-    java_lang_Throwable::java_printStackTrace(exception, THREAD);
-  }
+  JVMCI::shutdown();
 #endif
 
   // Hang forever on exit if we're reporting an error.

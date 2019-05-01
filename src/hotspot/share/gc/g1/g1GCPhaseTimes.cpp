@@ -60,9 +60,8 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[SystemDictionaryRoots] = new WorkerDataArray<double>(max_gc_threads, "SystemDictionary Roots (ms):");
   _gc_par_phases[CLDGRoots] = new WorkerDataArray<double>(max_gc_threads, "CLDG Roots (ms):");
   _gc_par_phases[JVMTIRoots] = new WorkerDataArray<double>(max_gc_threads, "JVMTI Roots (ms):");
-#if INCLUDE_AOT
-  _gc_par_phases[AOTCodeRoots] = new WorkerDataArray<double>(max_gc_threads, "AOT Root Scan (ms):");
-#endif
+  AOT_ONLY(_gc_par_phases[AOTCodeRoots] = new WorkerDataArray<double>(max_gc_threads, "AOT Root Scan (ms):");)
+  JVMCI_ONLY(_gc_par_phases[JVMCIRoots] = new WorkerDataArray<double>(max_gc_threads, "JVMCI Root Scan (ms):");)
   _gc_par_phases[CMRefRoots] = new WorkerDataArray<double>(max_gc_threads, "CM RefProcessor Roots (ms):");
   _gc_par_phases[WaitForStrongCLD] = new WorkerDataArray<double>(max_gc_threads, "Wait For Strong CLD (ms):");
   _gc_par_phases[WeakCLDRoots] = new WorkerDataArray<double>(max_gc_threads, "Weak CLD Roots (ms):");
@@ -527,9 +526,8 @@ const char* G1GCPhaseTimes::phase_name(GCParPhases phase) {
       "SystemDictionaryRoots",
       "CLDGRoots",
       "JVMTIRoots",
-#if INCLUDE_AOT
-      "AOTCodeRoots",
-#endif
+      AOT_ONLY("AOTCodeRoots" COMMA)
+      JVMCI_ONLY("JVMCIRoots" COMMA)
       "CMRefRoots",
       "WaitForStrongCLD",
       "WeakCLDRoots",

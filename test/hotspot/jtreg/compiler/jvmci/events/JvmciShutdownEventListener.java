@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ public class JvmciShutdownEventListener extends JVMCIServiceLocator implements H
     public static void main(String args[]) {
         try {
             HotSpotJVMCIRuntime.runtime(); // let's trigger that lazy jvmci init
-        } catch (InternalError e) {
+        } catch (Error e) {
             System.out.println(GOT_INTERNAL_ERROR);
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@
 #include "code/vmreg.hpp"
 #include "vmreg_x86.inline.hpp"
 
-jint CodeInstaller::pd_next_offset(NativeInstruction* inst, jint pc_offset, Handle method, TRAPS) {
+jint CodeInstaller::pd_next_offset(NativeInstruction* inst, jint pc_offset, JVMCIObject method, JVMCI_TRAPS) {
   if (inst->is_call() || inst->is_jump()) {
     assert(NativeCall::instruction_size == (int)NativeJump::instruction_size, "unexpected size");
     return (pc_offset + NativeCall::instruction_size);
@@ -54,7 +54,7 @@ jint CodeInstaller::pd_next_offset(NativeInstruction* inst, jint pc_offset, Hand
     return (offset);
   } else if (inst->is_call_reg()) {
     // the inlined vtable stub contains a "call register" instruction
-    assert(method.not_null(), "only valid for virtual calls");
+    assert(method.is_non_null(), "only valid for virtual calls");
     return (pc_offset + ((NativeCallReg *) inst)->next_instruction_offset());
   } else if (inst->is_cond_jump()) {
     address pc = (address) (inst);
@@ -64,11 +64,12 @@ jint CodeInstaller::pd_next_offset(NativeInstruction* inst, jint pc_offset, Hand
   }
 }
 
-void CodeInstaller::pd_patch_OopConstant(int pc_offset, Handle constant, TRAPS) {
+void CodeInstaller::pd_patch_OopConstant(int pc_offset, JVMCIObject constant, JVMCI_TRAPS) {
   address pc = _instructions->start() + pc_offset;
-  Handle obj(THREAD, HotSpotObjectConstantImpl::object(constant));
+  Handle obj = jvmci_env()->asConstant(constant, JVMCI_CHECK);
+  Thread* THREAD = Thread::current();
   jobject value = JNIHandles::make_local(obj());
-  if (HotSpotObjectConstantImpl::compressed(constant)) {
+  if (jvmci_env()->get_HotSpotObjectConstantImpl_compressed(constant)) {
 #ifdef _LP64
     address operand = Assembler::locate_operand(pc, Assembler::narrow_oop_operand);
     int oop_index = _oop_recorder->find_index(value);
@@ -85,24 +86,24 @@ void CodeInstaller::pd_patch_OopConstant(int pc_offset, Handle constant, TRAPS) 
   }
 }
 
-void CodeInstaller::pd_patch_MetaspaceConstant(int pc_offset, Handle constant, TRAPS) {
+void CodeInstaller::pd_patch_MetaspaceConstant(int pc_offset, JVMCIObject constant, JVMCI_TRAPS) {
   address pc = _instructions->start() + pc_offset;
-  if (HotSpotMetaspaceConstantImpl::compressed(constant)) {
+  if (jvmci_env()->get_HotSpotMetaspaceConstantImpl_compressed(constant)) {
 #ifdef _LP64
     address operand = Assembler::locate_operand(pc, Assembler::narrow_oop_operand);
-    *((narrowKlass*) operand) = record_narrow_metadata_reference(_instructions, operand, constant, CHECK);
+    *((narrowKlass*) operand) = record_narrow_metadata_reference(_instructions, operand, constant, JVMCI_CHECK);
     TRACE_jvmci_3("relocating (narrow metaspace constant) at " PTR_FORMAT "/" PTR_FORMAT, p2i(pc), p2i(operand));
 #else
     JVMCI_ERROR("compressed Klass* on 32bit");
 #endif
   } else {
     address operand = Assembler::locate_operand(pc, Assembler::imm_operand);
-    *((void**) operand) = record_metadata_reference(_instructions, operand, constant, CHECK);
+    *((void**) operand) = record_metadata_reference(_instructions, operand, constant, JVMCI_CHECK);
     TRACE_jvmci_3("relocating (metaspace constant) at " PTR_FORMAT "/" PTR_FORMAT, p2i(pc), p2i(operand));
   }
 }
 
-void CodeInstaller::pd_patch_DataSectionReference(int pc_offset, int data_offset, TRAPS) {
+void CodeInstaller::pd_patch_DataSectionReference(int pc_offset, int data_offset, JVMCI_TRAPS) {
   address pc = _instructions->start() + pc_offset;
 
   address operand = Assembler::locate_operand(pc, Assembler::disp32_operand);
@@ -117,7 +118,7 @@ void CodeInstaller::pd_patch_DataSectionReference(int pc_offset, int data_offset
   TRACE_jvmci_3("relocating at " PTR_FORMAT "/" PTR_FORMAT " with destination at " PTR_FORMAT " (%d)", p2i(pc), p2i(operand), p2i(dest), data_offset);
 }
 
-void CodeInstaller::pd_relocate_ForeignCall(NativeInstruction* inst, jlong foreign_call_destination, TRAPS) {
+void CodeInstaller::pd_relocate_ForeignCall(NativeInstruction* inst, jlong foreign_call_destination, JVMCI_TRAPS) {
   address pc = (address) inst;
   if (inst->is_call()) {
     // NOTE: for call without a mov, the offset must fit a 32-bit immediate
@@ -145,12 +146,12 @@ void CodeInstaller::pd_relocate_ForeignCall(NativeInstruction* inst, jlong forei
   TRACE_jvmci_3("relocating (foreign call)  at " PTR_FORMAT, p2i(inst));
 }
 
-void CodeInstaller::pd_relocate_JavaMethod(CodeBuffer &, Handle hotspot_method, jint pc_offset, TRAPS) {
+void CodeInstaller::pd_relocate_JavaMethod(CodeBuffer &, JVMCIObject hotspot_method, jint pc_offset, JVMCI_TRAPS) {
 #ifdef ASSERT
   Method* method = NULL;
   // we need to check, this might also be an unresolved method
-  if (hotspot_method->is_a(HotSpotResolvedJavaMethodImpl::klass())) {
-    method = getMethodFromHotSpotMethod(hotspot_method());
+  if (JVMCIENV->isa_HotSpotResolvedJavaMethodImpl(hotspot_method)) {
+    method = JVMCIENV->asMethod(hotspot_method);
   }
 #endif
   switch (_next_call_type) {
@@ -199,7 +200,7 @@ static void relocate_poll_near(address pc) {
 }
 
 
-void CodeInstaller::pd_relocate_poll(address pc, jint mark, TRAPS) {
+void CodeInstaller::pd_relocate_poll(address pc, jint mark, JVMCI_TRAPS) {
   switch (mark) {
     case POLL_NEAR: {
       relocate_poll_near(pc);
@@ -229,7 +230,7 @@ void CodeInstaller::pd_relocate_poll(address pc, jint mark, TRAPS) {
 }
 
 // convert JVMCI register indices (as used in oop maps) to HotSpot registers
-VMReg CodeInstaller::get_hotspot_reg(jint jvmci_reg, TRAPS) {
+VMReg CodeInstaller::get_hotspot_reg(jint jvmci_reg, JVMCI_TRAPS) {
   if (jvmci_reg < RegisterImpl::number_of_registers) {
     return as_Register(jvmci_reg)->as_VMReg();
   } else {

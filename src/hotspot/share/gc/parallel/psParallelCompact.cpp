@@ -77,6 +77,9 @@
 #include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/stack.inline.hpp"
+#if INCLUDE_JVMCI
+#include "jvmci/jvmci.hpp"
+#endif
 
 #include <math.h>
 
@@ -2123,6 +2126,7 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
     q->enqueue(new MarkFromRootsTask(MarkFromRootsTask::class_loader_data));
     q->enqueue(new MarkFromRootsTask(MarkFromRootsTask::jvmti));
     q->enqueue(new MarkFromRootsTask(MarkFromRootsTask::code_cache));
+    JVMCI_ONLY(q->enqueue(new MarkFromRootsTask(MarkFromRootsTask::jvmci));)
 
     if (active_gc_threads > 1) {
       for (uint j = 0; j < active_gc_threads; j++) {
@@ -2176,6 +2180,9 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
 
     // Prune dead klasses from subklass/sibling/implementor lists.
     Klass::clean_weak_klass_links(purged_class);
+
+    // Clean JVMCI metadata handles.
+    JVMCI_ONLY(JVMCI::do_unloading(purged_class));
   }
 
   _gc_tracer.report_object_count_after_gc(is_alive_closure());
@@ -2207,7 +2214,10 @@ void PSParallelCompact::adjust_roots(ParCompactionManager* cm) {
 
   CodeBlobToOopClosure adjust_from_blobs(&oop_closure, CodeBlobToOopClosure::FixRelocations);
   CodeCache::blobs_do(&adjust_from_blobs);
-  AOTLoader::oops_do(&oop_closure);
+  AOT_ONLY(AOTLoader::oops_do(&oop_closure);)
+
+  JVMCI_ONLY(JVMCI::oops_do(&oop_closure);)
+
   ref_processor()->weak_oops_do(&oop_closure);
   // Roots were visited so references into the young gen in roots
   // may have been scanned.  Process them also.

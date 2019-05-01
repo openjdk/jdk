@@ -27,6 +27,9 @@
 #include "classfile/symbolTable.hpp"
 #include "code/icBuffer.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#if INCLUDE_JVMCI
+#include "jvmci/jvmci.hpp"
+#endif
 #include "interpreter/bytecodes.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
@@ -140,6 +143,11 @@ jint init_globals() {
   if (!compileBroker_init()) {
     return JNI_EINVAL;
   }
+#if INCLUDE_JVMCI
+  if (EnableJVMCI) {
+    JVMCI::initialize_globals();
+  }
+#endif
 
   if (!universe_post_init()) {
     return JNI_ERR;

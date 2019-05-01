@@ -629,7 +629,7 @@ void frame::print_on_error(outputStream* st, char* buf, int buflen, bool verbose
 #if INCLUDE_JVMCI
         if (cm->is_nmethod()) {
           nmethod* nm = cm->as_nmethod();
-          char* jvmciName = nm->jvmci_installed_code_name(buf, buflen);
+          const char* jvmciName = nm->jvmci_name();
           if (jvmciName != NULL) {
             st->print(" (%s)", jvmciName);
           }

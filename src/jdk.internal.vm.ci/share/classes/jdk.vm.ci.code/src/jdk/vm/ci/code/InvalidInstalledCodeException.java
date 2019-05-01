@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,13 @@ package jdk.vm.ci.code;
  * Exception thrown by the runtime in case an invalidated machine code is called.
  */
 public final class InvalidInstalledCodeException extends Exception {
+
+    public InvalidInstalledCodeException() {
+    }
+
+    public InvalidInstalledCodeException(String message) {
+        super(message);
+    }
 
     private static final long serialVersionUID = -3540232440794244844L;
 }

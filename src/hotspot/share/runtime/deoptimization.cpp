@@ -63,11 +63,6 @@
 #include "utilities/preserveException.hpp"
 #include "utilities/xmlstream.hpp"
 
-#if INCLUDE_JVMCI
-#include "jvmci/jvmciRuntime.hpp"
-#include "jvmci/jvmciJavaClasses.hpp"
-#endif
-
 
 bool DeoptimizationMarker::_is_active = false;
 
@@ -1520,33 +1515,11 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* thread, jint tra
     methodHandle    trap_method = trap_scope->method();
     int             trap_bci    = trap_scope->bci();
 #if INCLUDE_JVMCI
-    long speculation = thread->pending_failed_speculation();
-    if (nm->is_compiled_by_jvmci()) {
-      if (speculation != 0) {
-        oop speculation_log = nm->as_nmethod()->speculation_log();
-        if (speculation_log != NULL) {
-          if (TraceDeoptimization || TraceUncollectedSpeculations) {
-            if (HotSpotSpeculationLog::lastFailed(speculation_log) != 0) {
-              tty->print_cr("A speculation that was not collected by the compiler is being overwritten");
-            }
-          }
-          if (TraceDeoptimization) {
-            tty->print_cr("Saving speculation to speculation log");
-          }
-          HotSpotSpeculationLog::set_lastFailed(speculation_log, speculation);
-        } else {
-          if (TraceDeoptimization) {
-            tty->print_cr("Speculation present but no speculation log");
-          }
-        }
-        thread->set_pending_failed_speculation(0);
-      } else {
-        if (TraceDeoptimization) {
-          tty->print_cr("No speculation");
-        }
-      }
+    jlong           speculation = thread->pending_failed_speculation();
+    if (nm->is_compiled_by_jvmci() && nm->is_nmethod()) { // Exclude AOTed methods
+      nm->as_nmethod()->update_speculation(thread);
     } else {
-      assert(speculation == 0, "There should not be a speculation for method compiled by non-JVMCI compilers");
+      assert(speculation == 0, "There should not be a speculation for methods compiled by non-JVMCI compilers");
     }
 
     if (trap_bci == SynchronizationEntryBCI) {
@@ -1595,6 +1568,11 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* thread, jint tra
         xtty->begin_head("uncommon_trap thread='" UINTX_FORMAT "' %s",
                          os::current_thread_id(),
                          format_trap_request(buf, sizeof(buf), trap_request));
+#if INCLUDE_JVMCI
+        if (speculation != 0) {
+          xtty->print(" speculation='" JLONG_FORMAT "'", speculation);
+        }
+#endif
         nm->log_identity(xtty);
       }
       Symbol* class_name = NULL;
@@ -1640,7 +1618,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* thread, jint tra
         tty->print(" compiler=%s compile_id=%d", nm->compiler_name(), nm->compile_id());
 #if INCLUDE_JVMCI
         if (nm->is_nmethod()) {
-          char* installed_code_name = nm->as_nmethod()->jvmci_installed_code_name(buf, sizeof(buf));
+          const char* installed_code_name = nm->as_nmethod()->jvmci_name();
           if (installed_code_name != NULL) {
             tty->print(" (JVMCI: installed code name=%s) ", installed_code_name);
           }

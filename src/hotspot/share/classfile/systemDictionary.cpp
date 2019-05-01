@@ -86,9 +86,6 @@
 #if INCLUDE_CDS
 #include "classfile/systemDictionaryShared.hpp"
 #endif
-#if INCLUDE_JVMCI
-#include "jvmci/jvmciRuntime.hpp"
-#endif
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif
@@ -1922,13 +1919,6 @@ bool SystemDictionary::resolve_wk_klass(WKID id, TRAPS) {
   Symbol* symbol = vmSymbols::symbol_at((vmSymbols::SID)sid);
   InstanceKlass** klassp = &_well_known_klasses[id];
 
-
-#if INCLUDE_JVMCI
-  if (id >= FIRST_JVMCI_WKID) {
-    assert(EnableJVMCI, "resolve JVMCI classes only when EnableJVMCI is true");
-  }
-#endif
-
   if ((*klassp) == NULL) {
     Klass* k = resolve_or_fail(symbol, true, CHECK_0);
     (*klassp) = InstanceKlass::cast(k);
@@ -2017,7 +2007,7 @@ void SystemDictionary::resolve_well_known_classes(TRAPS) {
   WKID jsr292_group_end   = WK_KLASS_ENUM_NAME(VolatileCallSite_klass);
   resolve_wk_klasses_until(jsr292_group_start, scan, CHECK);
   resolve_wk_klasses_through(jsr292_group_end, scan, CHECK);
-  WKID last = NOT_JVMCI(WKID_LIMIT) JVMCI_ONLY(FIRST_JVMCI_WKID);
+  WKID last = WKID_LIMIT;
   resolve_wk_klasses_until(last, scan, CHECK);
 
   _box_klasses[T_BOOLEAN] = WK_KLASS(Boolean_klass);

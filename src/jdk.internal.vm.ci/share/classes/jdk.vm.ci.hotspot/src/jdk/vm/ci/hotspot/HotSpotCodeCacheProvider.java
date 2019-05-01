@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 package jdk.vm.ci.hotspot;
 
 import java.util.Map;
+import java.util.Objects;
 
 import jdk.vm.ci.code.BailoutException;
 import jdk.vm.ci.code.BytecodeFrame;
@@ -102,25 +103,42 @@ public class HotSpotCodeCacheProvider implements CodeCacheProvider {
     @Override
     public InstalledCode installCode(ResolvedJavaMethod method, CompiledCode compiledCode, InstalledCode installedCode, SpeculationLog log, boolean isDefault) {
         InstalledCode resultInstalledCode;
-        if (installedCode == null) {
-            if (method == null) {
-                // Must be a stub
-                resultInstalledCode = new HotSpotRuntimeStub(((HotSpotCompiledCode) compiledCode).getName());
-            } else {
-                resultInstalledCode = new HotSpotNmethod((HotSpotResolvedJavaMethod) method, ((HotSpotCompiledCode) compiledCode).getName(), isDefault);
-            }
+        if (installedCode != null) {
+            throw new IllegalArgumentException("InstalledCode argument must be null");
+        }
+        HotSpotCompiledCode hsCompiledCode = (HotSpotCompiledCode) compiledCode;
+        String name = hsCompiledCode.getName();
+        HotSpotCompiledNmethod hsCompiledNmethod = null;
+        if (method == null) {
+            // Must be a stub
+            resultInstalledCode = new HotSpotRuntimeStub(name);
         } else {
-            resultInstalledCode = installedCode;
+            hsCompiledNmethod = (HotSpotCompiledNmethod) hsCompiledCode;
+            HotSpotResolvedJavaMethodImpl hsMethod = (HotSpotResolvedJavaMethodImpl) method;
+            resultInstalledCode = new HotSpotNmethod(hsMethod, name, isDefault, hsCompiledNmethod.id);
         }
 
-        HotSpotSpeculationLog speculationLog = (log != null && log.hasSpeculations()) ? (HotSpotSpeculationLog) log : null;
+        HotSpotSpeculationLog speculationLog = null;
+        if (log != null) {
+            if (log.hasSpeculations()) {
+                speculationLog = (HotSpotSpeculationLog) log;
+            }
+        }
 
-        int result = runtime.getCompilerToVM().installCode(target, (HotSpotCompiledCode) compiledCode, resultInstalledCode, speculationLog);
+        byte[] speculations;
+        long failedSpeculationsAddress;
+        if (speculationLog != null) {
+            speculations = speculationLog.getFlattenedSpeculations(true);
+            failedSpeculationsAddress = speculationLog.getFailedSpeculationsAddress();
+        } else {
+            speculations = new byte[0];
+            failedSpeculationsAddress = 0L;
+        }
+        int result = runtime.getCompilerToVM().installCode(target, (HotSpotCompiledCode) compiledCode, resultInstalledCode, failedSpeculationsAddress, speculations);
         if (result != config.codeInstallResultOk) {
             String resultDesc = config.getCodeInstallResultDescription(result);
-            if (compiledCode instanceof HotSpotCompiledNmethod) {
-                HotSpotCompiledNmethod compiledNmethod = (HotSpotCompiledNmethod) compiledCode;
-                String msg = compiledNmethod.getInstallationFailureMessage();
+            if (hsCompiledNmethod != null) {
+                String msg = hsCompiledNmethod.getInstallationFailureMessage();
                 if (msg != null) {
                     msg = String.format("Code installation failed: %s%n%s", resultDesc, msg);
                 } else {
@@ -139,7 +157,11 @@ public class HotSpotCodeCacheProvider implements CodeCacheProvider {
 
     @Override
     public void invalidateInstalledCode(InstalledCode installedCode) {
-        runtime.getCompilerToVM().invalidateInstalledCode(installedCode);
+        if (installedCode instanceof HotSpotNmethod) {
+            runtime.getCompilerToVM().invalidateHotSpotNmethod((HotSpotNmethod) installedCode);
+        } else {
+            throw new IllegalArgumentException("Cannot invalidate a " + Objects.requireNonNull(installedCode).getClass().getName());
+        }
     }
 
     @Override

@@ -62,6 +62,9 @@
 #if INCLUDE_ZGC
 #include "gc/z/zGlobals.hpp"
 #endif
+#if INCLUDE_JVMCI
+#include "jvmci/jvmci.hpp"
+#endif
 
 // JvmtiTagHashmapEntry
 //
@@ -3034,6 +3037,17 @@ inline bool VM_HeapWalkOperation::collect_simple_roots() {
   // exceptions) will be visible.
   blk.set_kind(JVMTI_HEAP_REFERENCE_OTHER);
   Universe::oops_do(&blk);
+  if (blk.stopped()) {
+    return false;
+  }
+
+#if INCLUDE_JVMCI
+  blk.set_kind(JVMTI_HEAP_REFERENCE_OTHER);
+  JVMCI::oops_do(&blk);
+  if (blk.stopped()) {
+    return false;
+  }
+#endif
 
   return true;
 }

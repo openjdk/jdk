@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,13 +102,24 @@ public interface MetaAccessProvider {
      */
     JavaConstant encodeDeoptActionAndReason(DeoptimizationAction action, DeoptimizationReason reason, int debugId);
 
+    /**
+     * Gets a constant that denotes {@code speculation}. The constant can passed to the
+     * deoptimization handler (e.g., through a thread local) to indicate a failed speculation.
+     */
     JavaConstant encodeSpeculation(Speculation speculation);
+
+    /**
+     * Decodes {@code constant} back to a {@link Speculation} object.
+     *
+     * @throws IllegalArgumentException if {@code constant} can only be decoded through a
+     *             {@link SpeculationLog} and {@code speculationLog} does not contain the
+     *             speculation denoted by {@code constant}
+     */
+    Speculation decodeSpeculation(JavaConstant constant, SpeculationLog speculationLog);
 
     DeoptimizationReason decodeDeoptReason(JavaConstant constant);
 
     DeoptimizationAction decodeDeoptAction(JavaConstant constant);
-
-    Speculation decodeSpeculation(JavaConstant constant, SpeculationLog speculationLog);
 
     int decodeDebugId(JavaConstant constant);
 

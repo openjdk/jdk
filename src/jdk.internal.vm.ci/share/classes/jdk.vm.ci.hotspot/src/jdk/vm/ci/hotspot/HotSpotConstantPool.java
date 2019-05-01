@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,8 @@ import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
 import static jdk.vm.ci.hotspot.HotSpotVMConfig.config;
 import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
 
-import java.lang.invoke.MethodHandle;
-
 import jdk.vm.ci.common.JVMCIError;
+import jdk.vm.ci.common.NativeImageReinitialize;
 import jdk.vm.ci.meta.ConstantPool;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaField;
@@ -45,7 +44,7 @@ import jdk.vm.ci.meta.UnresolvedJavaType;
 /**
  * Implementation of {@link ConstantPool} for HotSpot.
  */
-public final class HotSpotConstantPool implements ConstantPool, MetaspaceWrapperObject {
+public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleObject {
 
     /**
      * Subset of JVM bytecode opcodes used by {@link HotSpotConstantPool}.
@@ -97,76 +96,86 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceWrapper
         }
     }
 
-    /**
-     * Enum of all {@code JVM_CONSTANT} constants used in the VM. This includes the public and
-     * internal ones.
-     */
-    private enum JVM_CONSTANT {
-        // @formatter:off
-        Utf8(config().jvmConstantUtf8),
-        Integer(config().jvmConstantInteger),
-        Long(config().jvmConstantLong),
-        Float(config().jvmConstantFloat),
-        Double(config().jvmConstantDouble),
-        Class(config().jvmConstantClass),
-        UnresolvedClass(config().jvmConstantUnresolvedClass),
-        UnresolvedClassInError(config().jvmConstantUnresolvedClassInError),
-        String(config().jvmConstantString),
-        Fieldref(config().jvmConstantFieldref),
-        MethodRef(config().jvmConstantMethodref),
-        InterfaceMethodref(config().jvmConstantInterfaceMethodref),
-        NameAndType(config().jvmConstantNameAndType),
-        MethodHandle(config().jvmConstantMethodHandle),
-        MethodHandleInError(config().jvmConstantMethodHandleInError),
-        MethodType(config().jvmConstantMethodType),
-        MethodTypeInError(config().jvmConstantMethodTypeInError),
-        InvokeDynamic(config().jvmConstantInvokeDynamic);
-        // @formatter:on
-
+    static final class JvmConstant {
         private final int tag;
+        private final String name;
 
-        private static final int ExternalMax = config().jvmConstantExternalMax;
-        private static final int InternalMin = config().jvmConstantInternalMin;
-        private static final int InternalMax = config().jvmConstantInternalMax;
-
-        JVM_CONSTANT(int tag) {
+        JvmConstant(int tag, String name) {
             this.tag = tag;
+            this.name = name;
         }
 
-        /**
-         * Maps JVM_CONSTANT tags to {@link JVM_CONSTANT} values. Using a separate class for lazy
-         * initialization.
-         */
-        static class TagValueMap {
-            private static final JVM_CONSTANT[] table = new JVM_CONSTANT[ExternalMax + 1 + (InternalMax - InternalMin) + 1];
+        @Override
+        public String toString() {
+            return name;
+        }
+    }
 
-            static {
-                assert InternalMin > ExternalMax;
-                for (JVM_CONSTANT e : values()) {
-                    table[indexOf(e.tag)] = e;
-                }
-            }
+    /**
+     * {@code JVM_CONSTANT} constants used in the VM including both public and internal ones.
+     */
+    static final class JvmConstants {
 
-            private static int indexOf(int tag) {
-                if (tag >= InternalMin) {
-                    return tag - InternalMin + ExternalMax + 1;
-                } else {
-                    assert tag <= ExternalMax;
-                }
-                return tag;
-            }
+        private final HotSpotVMConfig c = config();
+        private final int externalMax = c.jvmConstantExternalMax;
+        private final int internalMax = c.jvmConstantInternalMax;
+        private final int internalMin = c.jvmConstantInternalMin;
+        private final JvmConstant[] table = new JvmConstant[externalMax + 1 + (internalMax - internalMin) + 1];
 
-            static JVM_CONSTANT get(int tag) {
-                JVM_CONSTANT res = table[indexOf(tag)];
-                if (res != null) {
-                    return res;
-                }
-                throw new JVMCIError("Unknown JVM_CONSTANT tag %s", tag);
-            }
+        final JvmConstant jvmUtf8 = add(new JvmConstant(c.jvmConstantUtf8, "Utf8"));
+        final JvmConstant jvmInteger = add(new JvmConstant(c.jvmConstantInteger, "Integer"));
+        final JvmConstant jvmLong = add(new JvmConstant(c.jvmConstantLong, "Long"));
+        final JvmConstant jvmFloat = add(new JvmConstant(c.jvmConstantFloat, "Float"));
+        final JvmConstant jvmDouble = add(new JvmConstant(c.jvmConstantDouble, "Double"));
+        final JvmConstant jvmClass = add(new JvmConstant(c.jvmConstantClass, "Class"));
+        final JvmConstant jvmUnresolvedClass = add(new JvmConstant(c.jvmConstantUnresolvedClass, "UnresolvedClass"));
+        final JvmConstant jvmUnresolvedClassInError = add(new JvmConstant(c.jvmConstantUnresolvedClassInError, "UnresolvedClassInError"));
+        final JvmConstant jvmString = add(new JvmConstant(c.jvmConstantString, "String"));
+        final JvmConstant jvmFieldref = add(new JvmConstant(c.jvmConstantFieldref, "Fieldref"));
+        final JvmConstant jvmMethodref = add(new JvmConstant(c.jvmConstantMethodref, "Methodref"));
+        final JvmConstant jvmInterfaceMethodref = add(new JvmConstant(c.jvmConstantInterfaceMethodref, "InterfaceMethodref"));
+        final JvmConstant jvmNameAndType = add(new JvmConstant(c.jvmConstantNameAndType, "NameAndType"));
+        final JvmConstant jvmMethodHandle = add(new JvmConstant(c.jvmConstantMethodHandle, "MethodHandle"));
+        final JvmConstant jvmMethodHandleInError = add(new JvmConstant(c.jvmConstantMethodHandleInError, "MethodHandleInError"));
+        final JvmConstant jvmMethodType = add(new JvmConstant(c.jvmConstantMethodType, "MethodType"));
+        final JvmConstant jvmMethodTypeInError = add(new JvmConstant(c.jvmConstantMethodTypeInError, "MethodTypeInError"));
+        final JvmConstant jvmInvokeDynamic = add(new JvmConstant(c.jvmConstantInvokeDynamic, "InvokeDynamic"));
+
+        private JvmConstant add(JvmConstant constant) {
+            table[indexOf(constant.tag)] = constant;
+            return constant;
         }
 
-        public static JVM_CONSTANT getEnum(int tag) {
-            return TagValueMap.get(tag);
+        private int indexOf(int tag) {
+            if (tag >= internalMin) {
+                return tag - internalMin + externalMax + 1;
+            } else {
+                assert tag <= externalMax;
+            }
+            return tag;
+        }
+
+        JvmConstant get(int tag) {
+            JvmConstant res = table[indexOf(tag)];
+            if (res != null) {
+                return res;
+            }
+            throw new JVMCIError("Unknown JvmConstant tag %s", tag);
+        }
+
+        @NativeImageReinitialize private static volatile JvmConstants instance;
+
+        static JvmConstants instance() {
+            JvmConstants result = instance;
+            if (result == null) {
+                synchronized (JvmConstants.class) {
+                    result = instance;
+                    if (result == null) {
+                        instance = result = new JvmConstants();
+                    }
+                }
+            }
+            return result;
         }
     }
 
@@ -182,15 +191,18 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceWrapper
     }
 
     /**
-     * Reference to the C++ ConstantPool object.
+     * Handle to the {@code ConstantPool} VM object. The handle is in
+     * {@code JVMCI::_metadata_handles}.
      */
-    private final long metaspaceConstantPool;
+    private final long metadataHandle;
+
     private volatile LookupTypeCacheElement lastLookupType;
+    private final JvmConstants constants;
 
     /**
      * Gets the JVMCI mirror from a HotSpot constant pool.The VM is responsible for ensuring that
      * the ConstantPool is kept alive for the duration of this call and the
-     * {@link HotSpotJVMCIMetaAccessContext} keeps it alive after that.
+     * {@link HotSpotJVMCIRuntime} keeps it alive after that.
      *
      * Called from the VM.
      *
@@ -198,14 +210,15 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceWrapper
      * @return the {@link HotSpotConstantPool} corresponding to {@code metaspaceConstantPool}
      */
     @SuppressWarnings("unused")
+    @VMEntryPoint
     private static HotSpotConstantPool fromMetaspace(long metaspaceConstantPool) {
-        HotSpotConstantPool cp = new HotSpotConstantPool(metaspaceConstantPool);
-        runtime().metaAccessContext.add(cp);
-        return cp;
+        return new HotSpotConstantPool(metaspaceConstantPool);
     }
 
-    private HotSpotConstantPool(long metaspaceConstantPool) {
-        this.metaspaceConstantPool = metaspaceConstantPool;
+    private HotSpotConstantPool(long metadataHandle) {
+        this.metadataHandle = metadataHandle;
+        this.constants = JvmConstants.instance();
+        HandleCleaner.create(this, metadataHandle);
     }
 
     /**
@@ -271,12 +284,12 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceWrapper
     }
 
     long getMetaspaceConstantPool() {
-        return metaspaceConstantPool;
+        return getMetaspacePointer();
     }
 
     @Override
-    public long getMetaspacePointer() {
-        return getMetaspaceConstantPool();
+    public long getMetadataHandle() {
+        return metadataHandle;
     }
 
     /**
@@ -285,7 +298,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceWrapper
      * @param index constant pool index
      * @return constant pool tag
      */
-    private JVM_CONSTANT getTagAt(int index) {
+    private JvmConstant getTagAt(int index) {
         assert checkBounds(index);
         HotSpotVMConfig config = config();
         final long metaspaceConstantPoolTags = UNSAFE.getAddress(getMetaspaceConstantPool() + config.constantPoolTagsOffset);
@@ -293,7 +306,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceWrapper
         if (tag == 0) {
             return null;
         }
-        return JVM_CONSTANT.getEnum(tag);
+        return constants.get(tag);
     }
 
     /**
@@ -315,7 +328,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceWrapper
      * @return integer constant pool entry at index
      */
     private int getIntAt(int index) {
-        assert checkTag(index, JVM_CONSTANT.Integer);
+        assert checkTag(index, constants.jvmInteger);
         int offset = index * runtime().getHostJVMCIBackend().getTarget().wordSize;
         return UNSAFE.getInt(getMetaspaceConstantPool() + config().constantPoolSize + offset);
     }
@@ -327,7 +340,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceWrapper
      * @return long constant pool entry
      */
     private long getLongAt(int index) {
-        assert checkTag(index, JVM_CONSTANT.Long);
+        assert checkTag(index, constants.jvmLong);
         int offset = index * runtime().getHostJVMCIBackend().getTarget().wordSize;
         return UNSAFE.getLong(getMetaspaceConstantPool() + config().constantPoolSize + offset);
     }
@@ -339,7 +352,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceWrapper
      * @return float constant pool entry
      */
     private float getFloatAt(int index) {
-        assert checkTag(index, JVM_CONSTANT.Float);
+        assert checkTag(index, constants.jvmFloat);
         int offset = index * runtime().getHostJVMCIBackend().getTarget().wordSize;
         return UNSAFE.getFloat(getMetaspaceConstantPool() + config().constantPoolSize + offset);
     }
@@ -351,7 +364,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceWrapper
      * @return float constant pool entry
      */
     private double getDoubleAt(int index) {
-        assert checkTag(index, JVM_CONSTANT.Double);
+        assert checkTag(index, constants.jvmDouble);
         int offset = index * runtime().getHostJVMCIBackend().getTarget().wordSize;
         return UNSAFE.getDouble(getMetaspaceConstantPool() + config().constantPoolSize + offset);
     }
@@ -363,7 +376,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceWrapper
      * @return {@code JVM_CONSTANT_NameAndType} constant pool entry
      */
     private int getNameAndTypeAt(int index) {
-        assert checkTag(index, JVM_CONSTANT.NameAndType);
+        assert checkTag(index, constants.jvmNameAndType);
         int offset = index * runtime().getHostJVMCIBackend().getTarget().wordSize;
         return UNSAFE.getInt(getMetaspaceConstantPool() + config().constantPoolSize + offset);
     }
@@ -470,22 +483,23 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceWrapper
      * @param tag expected tag
      * @throws AssertionError if the check fails
      */
-    private boolean checkTag(int index, JVM_CONSTANT tag) {
-        final JVM_CONSTANT tagAt = getTagAt(index);
+    private boolean checkTag(int index, JvmConstant tag) {
+        final JvmConstant tagAt = getTagAt(index);
         assert tagAt == tag : "constant pool tag at index " + index + " is " + tagAt + " but expected " + tag;
         return true;
     }
 
     /**
-     * Asserts that the constant pool tag at index {@code index} is a {@link JVM_CONSTANT#Fieldref},
-     * or a {@link JVM_CONSTANT#MethodRef}, or a {@link JVM_CONSTANT#InterfaceMethodref}.
+     * Asserts that the constant pool tag at index {@code index} is a
+     * {@link JvmConstants#jvmFieldref}, or a {@link JvmConstants#jvmMethodref}, or a
+     * {@link JvmConstants#jvmInterfaceMethodref}.
      *
      * @param index constant pool index
      * @throws AssertionError if the check fails
      */
     private boolean checkTagIsFieldOrMethod(int index) {
-        final JVM_CONSTANT tagAt = getTagAt(index);
-        assert tagAt == JVM_CONSTANT.Fieldref || tagAt == JVM_CONSTANT.MethodRef || tagAt == JVM_CONSTANT.InterfaceMethodref : tagAt;
+        final JvmConstant tagAt = getTagAt(index);
+        assert tagAt == constants.jvmFieldref || tagAt == constants.jvmMethodref || tagAt == constants.jvmInterfaceMethodref : tagAt;
         return true;
     }
 
@@ -505,35 +519,33 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceWrapper
     @Override
     public Object lookupConstant(int cpi) {
         assert cpi != 0;
-        final JVM_CONSTANT tag = getTagAt(cpi);
-        switch (tag) {
-            case Integer:
+        final JvmConstant tag = getTagAt(cpi);
+        switch (tag.name) {
+            case "Integer":
                 return JavaConstant.forInt(getIntAt(cpi));
-            case Long:
+            case "Long":
                 return JavaConstant.forLong(getLongAt(cpi));
-            case Float:
+            case "Float":
                 return JavaConstant.forFloat(getFloatAt(cpi));
-            case Double:
+            case "Double":
                 return JavaConstant.forDouble(getDoubleAt(cpi));
-            case Class:
-            case UnresolvedClass:
-            case UnresolvedClassInError:
+            case "Class":
+            case "UnresolvedClass":
+            case "UnresolvedClassInError":
                 final int opcode = -1;  // opcode is not used
                 return lookupType(cpi, opcode);
-            case String:
+            case "String":
                 /*
                  * Normally, we would expect a String here, but unsafe anonymous classes can have
                  * "pseudo strings" (arbitrary live objects) patched into a String entry. Such
                  * entries do not have a symbol in the constant pool slot.
                  */
-                Object string = compilerToVM().resolvePossiblyCachedConstantInPool(this, cpi);
-                return HotSpotObjectConstantImpl.forObject(string);
-            case MethodHandle:
-            case MethodHandleInError:
-            case MethodType:
-            case MethodTypeInError:
-                Object obj = compilerToVM().resolveConstantInPool(this, cpi);
-                return HotSpotObjectConstantImpl.forObject(obj);
+                return compilerToVM().resolvePossiblyCachedConstantInPool(this, cpi);
+            case "MethodHandle":
+            case "MethodHandleInError":
+            case "MethodType":
+            case "MethodTypeInError":
+                return compilerToVM().resolveConstantInPool(this, cpi);
             default:
                 throw new JVMCIError("Unknown constant pool tag %s", tag);
         }
@@ -541,7 +553,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceWrapper
 
     @Override
     public String lookupUtf8(int cpi) {
-        assert checkTag(cpi, JVM_CONSTANT.Utf8);
+        assert checkTag(cpi, constants.jvmUtf8);
         return compilerToVM().getSymbol(getEntryAt(cpi));
     }
 
@@ -554,12 +566,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceWrapper
     public JavaConstant lookupAppendix(int cpi, int opcode) {
         assert Bytecodes.isInvoke(opcode);
         final int index = rawIndexToConstantPoolCacheIndex(cpi, opcode);
-        Object appendix = compilerToVM().lookupAppendixInPool(this, index);
-        if (appendix == null) {
-            return null;
-        } else {
-            return HotSpotObjectConstantImpl.forObject(appendix);
-        }
+        return compilerToVM().lookupAppendixInPool(this, index);
     }
 
     /**
@@ -587,7 +594,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceWrapper
             String name = getNameOf(index);
             HotSpotSignature signature = new HotSpotSignature(runtime(), getSignatureOf(index));
             if (opcode == Bytecodes.INVOKEDYNAMIC) {
-                HotSpotResolvedObjectType holder = HotSpotResolvedObjectTypeImpl.fromObjectClass(MethodHandle.class);
+                HotSpotResolvedObjectType holder = runtime().getMethodHandleClass();
                 return new UnresolvedJavaMethod(name, signature, holder);
             } else {
                 final int klassIndex = getKlassRefIndexAt(index);
@@ -709,40 +716,37 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceWrapper
                 throw JVMCIError.shouldNotReachHere("Unexpected opcode " + opcode);
         }
 
-        final JVM_CONSTANT tag = getTagAt(index);
+        final JvmConstant tag = getTagAt(index);
         if (tag == null) {
-            assert getTagAt(index - 1) == JVM_CONSTANT.Double || getTagAt(index - 1) == JVM_CONSTANT.Long;
+            assert getTagAt(index - 1) == constants.jvmDouble || getTagAt(index - 1) == constants.jvmLong;
             return;
         }
-        switch (tag) {
-            case MethodRef:
-            case Fieldref:
-            case InterfaceMethodref:
+        switch (tag.name) {
+            case "Methodref":
+            case "Fieldref":
+            case "InterfaceMethodref":
                 index = getUncachedKlassRefIndexAt(index);
                 // Read the tag only once because it could change between multiple reads.
-                final JVM_CONSTANT klassTag = getTagAt(index);
-                assert klassTag == JVM_CONSTANT.Class || klassTag == JVM_CONSTANT.UnresolvedClass || klassTag == JVM_CONSTANT.UnresolvedClassInError : klassTag;
+                final JvmConstant klassTag = getTagAt(index);
+                assert klassTag == constants.jvmClass || klassTag == constants.jvmUnresolvedClass || klassTag == constants.jvmUnresolvedClassInError : klassTag;
                 // fall through
-            case Class:
-            case UnresolvedClass:
-            case UnresolvedClassInError:
+            case "Class":
+            case "UnresolvedClass":
+            case "UnresolvedClassInError":
                 final HotSpotResolvedObjectTypeImpl type = compilerToVM().resolveTypeInPool(this, index);
-                if (initialize) {
-                    Class<?> klass = type.mirror();
-                    if (!klass.isPrimitive() && !klass.isArray()) {
-                        UNSAFE.ensureClassInitialized(klass);
-                    }
+                if (initialize && !type.isPrimitive() && !type.isArray()) {
+                    type.ensureInitialized();
                 }
-                if (tag == JVM_CONSTANT.MethodRef) {
+                if (tag == constants.jvmMethodref) {
                     if (Bytecodes.isInvokeHandleAlias(opcode) && isSignaturePolymorphicHolder(type)) {
                         final int methodRefCacheIndex = rawIndexToConstantPoolCacheIndex(cpi, opcode);
-                        assert checkTag(compilerToVM().constantPoolRemapInstructionOperandFromCache(this, methodRefCacheIndex), JVM_CONSTANT.MethodRef);
+                        assert checkTag(compilerToVM().constantPoolRemapInstructionOperandFromCache(this, methodRefCacheIndex), constants.jvmMethodref);
                         compilerToVM().resolveInvokeHandleInPool(this, methodRefCacheIndex);
                     }
                 }
 
                 break;
-            case InvokeDynamic:
+            case "InvokeDynamic":
                 if (isInvokedynamicIndex(cpi)) {
                     compilerToVM().resolveInvokeDynamicInPool(this, cpi);
                 }
@@ -788,7 +792,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceWrapper
     public boolean isResolvedDynamicInvoke(int cpi, int opcode) {
         if (Bytecodes.isInvokeHandleAlias(opcode)) {
             final int methodRefCacheIndex = rawIndexToConstantPoolCacheIndex(cpi, opcode);
-            assert checkTag(compilerToVM().constantPoolRemapInstructionOperandFromCache(this, methodRefCacheIndex), JVM_CONSTANT.MethodRef);
+            assert checkTag(compilerToVM().constantPoolRemapInstructionOperandFromCache(this, methodRefCacheIndex), constants.jvmMethodref);
             int op = compilerToVM().isResolvedInvokeHandleInPool(this, methodRefCacheIndex);
             return op == opcode;
         }

@@ -25,8 +25,6 @@
 #define SHARE_JVMCI_JVMCICOMPILER_HPP
 
 #include "compiler/abstractCompiler.hpp"
-#include "jvmci/jvmciEnv.hpp"
-#include "utilities/exceptions.hpp"
 
 class JVMCICompiler : public AbstractCompiler {
 private:
@@ -65,7 +63,7 @@ public:
     return _instance;
   }
 
-  virtual const char* name() { return "JVMCI"; }
+  virtual const char* name() { return UseJVMCINativeLibrary ? "JVMCI-native" : "JVMCI"; }
 
   virtual bool supports_native()                 { return true; }
   virtual bool supports_osr   ()                 { return true; }
@@ -90,10 +88,12 @@ public:
 
   bool is_bootstrapping() const { return _bootstrapping; }
 
+  void set_bootstrap_compilation_request_handled() {
+    _instance->_bootstrap_compilation_request_handled = true;
+  }
+
   // Compilation entry point for methods
   virtual void compile_method(ciEnv* env, ciMethod* target, int entry_bci, DirectiveSet* directive);
-
-  void compile_method(const methodHandle& target, int entry_bci, JVMCIEnv* env);
 
   // Print compilation timers and statistics
   virtual void print_timers();
@@ -103,6 +103,10 @@ public:
    * a call to JVMCICompiler::compile_method().
    */
   int methods_compiled() { return _methods_compiled; }
+
+  void inc_methods_compiled() {
+    Atomic::inc(&_methods_compiled);
+  }
 
   // Print compilation timers and statistics
   static void print_compilation_timers();

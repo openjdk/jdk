@@ -69,6 +69,9 @@
 #include "utilities/macros.hpp"
 #include "utilities/stack.inline.hpp"
 #include "utilities/vmError.hpp"
+#if INCLUDE_JVMCI
+#include "jvmci/jvmci.hpp"
+#endif
 
 GenCollectedHeap::GenCollectedHeap(GenCollectorPolicy *policy,
                                    Generation::Name young,
@@ -857,10 +860,16 @@ void GenCollectedHeap::process_roots(StrongRootsScope* scope,
   if (_process_strong_tasks->try_claim_task(GCH_PS_jvmti_oops_do)) {
     JvmtiExport::oops_do(strong_roots);
   }
+#if INCLUDE_AOT
   if (UseAOT && _process_strong_tasks->try_claim_task(GCH_PS_aot_oops_do)) {
     AOTLoader::oops_do(strong_roots);
   }
-
+#endif
+#if INCLUDE_JVMCI
+  if (EnableJVMCI && _process_strong_tasks->try_claim_task(GCH_PS_jvmci_oops_do)) {
+    JVMCI::oops_do(strong_roots);
+  }
+#endif
   if (_process_strong_tasks->try_claim_task(GCH_PS_SystemDictionary_oops_do)) {
     SystemDictionary::oops_do(strong_roots);
   }

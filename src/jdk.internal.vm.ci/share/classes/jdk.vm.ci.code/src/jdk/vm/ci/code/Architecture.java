@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -191,7 +191,9 @@ public abstract class Architecture {
     public abstract PlatformKind getLargestStorableKind(RegisterCategory category);
 
     /**
-     * Return the {@link PlatformKind} that is used to store values of a given {@link JavaKind}.
+     * Gets the {@link PlatformKind} that is used to store values of a given {@link JavaKind}.
+     *
+     * @return {@code null} if there no deterministic {@link PlatformKind} for {@code javaKind}
      */
     public abstract PlatformKind getPlatformKind(JavaKind javaKind);
 

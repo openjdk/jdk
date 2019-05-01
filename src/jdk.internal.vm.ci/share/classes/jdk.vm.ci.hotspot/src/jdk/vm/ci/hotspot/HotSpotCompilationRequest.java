@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,14 @@ import jdk.vm.ci.code.CompilationRequest;
  * the address of a {@code JVMCIEnv} object that provides native context for a compilation.
  */
 public class HotSpotCompilationRequest extends CompilationRequest {
-    private final long jvmciEnv;
+    /**
+     * Address of the native {@code JVMCICompileState} associated with the request.
+     */
+    private final long compileState;
+
+    /**
+     * An identifier for the request.
+     */
     private final int id;
 
     /**
@@ -39,10 +46,10 @@ public class HotSpotCompilationRequest extends CompilationRequest {
      * @param method the method to be compiled
      * @param entryBCI the bytecode index (BCI) at which to start compiling where -1 denotes the
      *            method's entry point
-     * @param jvmciEnv address of a native {@code JVMCIEnv} object or 0L
+     * @param compileState address of a native {@code JVMCICompileState} object or 0L
      */
-    public HotSpotCompilationRequest(HotSpotResolvedJavaMethod method, int entryBCI, long jvmciEnv) {
-        this(method, entryBCI, jvmciEnv, method.allocateCompileId(entryBCI));
+    public HotSpotCompilationRequest(HotSpotResolvedJavaMethod method, int entryBCI, long compileState) {
+        this(method, entryBCI, compileState, method.allocateCompileId(entryBCI));
     }
 
     /**
@@ -51,12 +58,12 @@ public class HotSpotCompilationRequest extends CompilationRequest {
      * @param method the method to be compiled
      * @param entryBCI the bytecode index (BCI) at which to start compiling where -1 denotes the
      *            method's entry point
-     * @param jvmciEnv address of a native {@code JVMCIEnv} object or 0L
+     * @param compileState address of a native {@code JVMCICompileState} object or 0L
      * @param id an identifier for the request
      */
-    public HotSpotCompilationRequest(HotSpotResolvedJavaMethod method, int entryBCI, long jvmciEnv, int id) {
+    public HotSpotCompilationRequest(HotSpotResolvedJavaMethod method, int entryBCI, long compileState, int id) {
         super(method, entryBCI);
-        this.jvmciEnv = jvmciEnv;
+        this.compileState = compileState;
         this.id = id;
     }
 
@@ -66,10 +73,12 @@ public class HotSpotCompilationRequest extends CompilationRequest {
     }
 
     /**
-     * Gets the address of the native {@code JVMCIEnv} object or 0L if no such object exists.
+     * Gets the address of the native {@code JVMCICompileState} or 0L if no such object exists. This
+     * method should really be named {@code getCompileState} but must remain as is for API
+     * stability.
      */
     public long getJvmciEnv() {
-        return jvmciEnv;
+        return compileState;
     }
 
     /**
@@ -78,5 +87,4 @@ public class HotSpotCompilationRequest extends CompilationRequest {
     public int getId() {
         return id;
     }
-
 }

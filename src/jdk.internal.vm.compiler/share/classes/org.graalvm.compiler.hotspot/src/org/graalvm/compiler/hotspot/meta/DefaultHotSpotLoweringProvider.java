@@ -26,6 +26,7 @@ package org.graalvm.compiler.hotspot.meta;
 
 import static jdk.vm.ci.services.Services.IS_IN_NATIVE_IMAGE;
 import static org.graalvm.compiler.core.common.GraalOptions.AlwaysInlineVTableStubs;
+import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
 import static org.graalvm.compiler.core.common.GraalOptions.InlineVTableStubs;
 import static org.graalvm.compiler.core.common.GraalOptions.OmitHotExceptionStacktrace;
 import static org.graalvm.compiler.hotspot.meta.HotSpotForeignCallsProviderImpl.OSR_MIGRATION_END;
@@ -227,7 +228,7 @@ public class DefaultHotSpotLoweringProvider extends DefaultJavaLoweringProvider 
         stringToBytesSnippets = new StringToBytesSnippets.Templates(options, factories, providers, target);
         hashCodeSnippets = new HashCodeSnippets.Templates(options, factories, providers, target);
         resolveConstantSnippets = new ResolveConstantSnippets.Templates(options, factories, providers, target);
-        if (!JavaVersionUtil.Java8OrEarlier) {
+        if (!JavaVersionUtil.Java8OrEarlier && GeneratePIC.getValue(options)) {
             profileSnippets = new ProfileSnippets.Templates(options, factories, providers, target);
         }
         objectCloneSnippets = new ObjectCloneSnippets.Templates(options, factories, providers, target);

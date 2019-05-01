@@ -157,6 +157,13 @@ Mutex*   NMTQuery_lock                = NULL;
 Mutex*   CDSClassFileStream_lock      = NULL;
 #endif
 
+#if INCLUDE_JVMCI
+Monitor* JVMCI_lock                   = NULL;
+Mutex*   JVMCIGlobalAlloc_lock        = NULL;
+Mutex*   JVMCIGlobalActive_lock       = NULL;
+#endif
+
+
 #define MAX_NUM_MUTEX 128
 static Monitor * _mutex_array[MAX_NUM_MUTEX];
 static int _num_mutex;
@@ -347,6 +354,12 @@ void mutex_init() {
 #endif
 #if INCLUDE_CDS && INCLUDE_JVMTI
   def(CDSClassFileStream_lock      , PaddedMutex  , max_nonleaf, false, Monitor::_safepoint_check_always);
+#endif
+
+#if INCLUDE_JVMCI
+  def(JVMCI_lock                   , PaddedMonitor, nonleaf+2,   true,  Monitor::_safepoint_check_always);
+  def(JVMCIGlobalAlloc_lock        , PaddedMutex  , nonleaf,     true,  Monitor::_safepoint_check_never);
+  def(JVMCIGlobalActive_lock       , PaddedMutex  , nonleaf-1,   true,  Monitor::_safepoint_check_never);
 #endif
 }
 

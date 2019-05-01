@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,9 @@
 #include "runtime/thread.hpp"
 #include "runtime/vmThread.hpp"
 #include "services/management.hpp"
+#if INCLUDE_JVMCI
+#include "jvmci/jvmci.hpp"
+#endif
 
 //
 // ScavengeRootsTask
@@ -95,7 +98,6 @@ void ScavengeRootsTask::do_it(GCTaskManager* manager, uint which) {
       JvmtiExport::oops_do(&roots_closure);
       break;
 
-
     case code_cache:
       {
         MarkingCodeBlobClosure code_closure(&roots_to_old_closure, CodeBlobToOopClosure::FixRelocations);
@@ -103,6 +105,12 @@ void ScavengeRootsTask::do_it(GCTaskManager* manager, uint which) {
         AOTLoader::oops_do(&roots_closure);
       }
       break;
+
+#if INCLUDE_JVMCI
+    case jvmci:
+      JVMCI::oops_do(&roots_closure);
+      break;
+#endif
 
     default:
       fatal("Unknown root type");

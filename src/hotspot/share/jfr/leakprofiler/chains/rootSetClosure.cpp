@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,9 @@
 #include "runtime/thread.hpp"
 #include "services/management.hpp"
 #include "utilities/align.hpp"
+#if INCLUDE_JVMCI
+#include "jvmci/jvmci.hpp"
+#endif
 
 RootSetClosure::RootSetClosure(EdgeQueue* edge_queue) :
   _edge_queue(edge_queue) {
@@ -104,4 +107,5 @@ void RootSetClosure::process_roots(OopClosure* closure) {
   Management::oops_do(closure);
   StringTable::oops_do(closure);
   AOTLoader::oops_do(closure);
+  JVMCI_ONLY(JVMCI::oops_do(closure);)
 }

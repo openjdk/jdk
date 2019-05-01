@@ -68,9 +68,8 @@
 #include "c1/c1_Compiler.hpp"
 #endif
 #if INCLUDE_JVMCI
-#include "jvmci/jvmciCompiler.hpp"
+#include "jvmci/jvmciEnv.hpp"
 #include "jvmci/jvmciRuntime.hpp"
-#include "jvmci/jvmciJavaClasses.hpp"
 #include "runtime/vframe.hpp"
 #endif
 #ifdef COMPILER2
@@ -1064,36 +1063,34 @@ void CompileBroker::compile_method_base(const methodHandle& method,
     }
 
 #if INCLUDE_JVMCI
-    if (UseJVMCICompiler) {
-      if (blocking) {
-        // Don't allow blocking compiles for requests triggered by JVMCI.
-        if (thread->is_Compiler_thread()) {
-          blocking = false;
-        }
+    if (UseJVMCICompiler && blocking && !UseJVMCINativeLibrary) {
+      // Don't allow blocking compiles for requests triggered by JVMCI.
+      if (thread->is_Compiler_thread()) {
+        blocking = false;
+      }
 
-        // Don't allow blocking compiles if inside a class initializer or while performing class loading
-        vframeStream vfst((JavaThread*) thread);
-        for (; !vfst.at_end(); vfst.next()) {
-          if (vfst.method()->is_static_initializer() ||
-              (vfst.method()->method_holder()->is_subclass_of(SystemDictionary::ClassLoader_klass()) &&
-                  vfst.method()->name() == vmSymbols::loadClass_name())) {
-            blocking = false;
-            break;
-          }
-        }
-
-        // Don't allow blocking compilation requests to JVMCI
-        // if JVMCI itself is not yet initialized
-        if (!JVMCIRuntime::is_HotSpotJVMCIRuntime_initialized() && compiler(comp_level)->is_jvmci()) {
+      // Don't allow blocking compiles if inside a class initializer or while performing class loading
+      vframeStream vfst((JavaThread*) thread);
+      for (; !vfst.at_end(); vfst.next()) {
+        if (vfst.method()->is_static_initializer() ||
+            (vfst.method()->method_holder()->is_subclass_of(SystemDictionary::ClassLoader_klass()) &&
+                vfst.method()->name() == vmSymbols::loadClass_name())) {
           blocking = false;
+          break;
         }
+      }
 
-        // Don't allow blocking compilation requests if we are in JVMCIRuntime::shutdown
-        // to avoid deadlock between compiler thread(s) and threads run at shutdown
-        // such as the DestroyJavaVM thread.
-        if (JVMCIRuntime::shutdown_called()) {
-          blocking = false;
-        }
+      // Don't allow blocking compilation requests to JVMCI
+      // if JVMCI itself is not yet initialized
+      if (!JVMCI::is_compiler_initialized() && compiler(comp_level)->is_jvmci()) {
+        blocking = false;
+      }
+
+      // Don't allow blocking compilation requests if we are in JVMCIRuntime::shutdown
+      // to avoid deadlock between compiler thread(s) and threads run at shutdown
+      // such as the DestroyJavaVM thread.
+      if (JVMCI::shutdown_called()) {
+        blocking = false;
       }
     }
 #endif // INCLUDE_JVMCI
@@ -1193,7 +1190,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   }
 
 #if INCLUDE_JVMCI
-  if (comp->is_jvmci() && !JVMCIRuntime::can_initialize_JVMCI()) {
+  if (comp->is_jvmci() && !JVMCI::can_initialize_JVMCI()) {
     return NULL;
   }
 #endif
@@ -2061,20 +2058,24 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
 
     // Skip redefined methods
     if (target_handle->is_old()) {
-        failure_reason = "redefined method";
-        retry_message = "not retryable";
-        compilable = ciEnv::MethodCompilable_never;
+      failure_reason = "redefined method";
+      retry_message = "not retryable";
+      compilable = ciEnv::MethodCompilable_never;
     } else {
-        JVMCIEnv env(task, system_dictionary_modification_counter);
-        methodHandle method(thread, target_handle);
-        jvmci->compile_method(method, osr_bci, &env);
+      JVMCICompileState compile_state(task, system_dictionary_modification_counter);
+      JVMCIEnv env(&compile_state, __FILE__, __LINE__);
+      methodHandle method(thread, target_handle);
+      env.runtime()->compile_method(&env, jvmci, method, osr_bci);
 
-        failure_reason = env.failure_reason();
-        failure_reason_on_C_heap = env.failure_reason_on_C_heap();
-        if (!env.retryable()) {
-          retry_message = "not retryable";
-          compilable = ciEnv::MethodCompilable_not_at_tier;
-        }
+      failure_reason = compile_state.failure_reason();
+      failure_reason_on_C_heap = compile_state.failure_reason_on_C_heap();
+      if (!compile_state.retryable()) {
+        retry_message = "not retryable";
+        compilable = ciEnv::MethodCompilable_not_at_tier;
+      }
+      if (task->code() == NULL) {
+        assert(failure_reason != NULL, "must specify failure_reason");
+      }
     }
     post_compile(thread, task, task->code() != NULL, NULL, compilable, failure_reason);
     if (event.should_commit()) {

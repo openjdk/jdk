@@ -24,23 +24,68 @@
 #ifndef SHARE_JVMCI_JVMCIRUNTIME_HPP
 #define SHARE_JVMCI_JVMCIRUNTIME_HPP
 
-#include "interpreter/interpreter.hpp"
-#include "memory/allocation.hpp"
-#include "runtime/arguments.hpp"
-#include "runtime/deoptimization.hpp"
+#include "code/nmethod.hpp"
+#include "jvmci/jvmci.hpp"
+#include "jvmci/jvmciExceptions.hpp"
+#include "jvmci/jvmciObject.hpp"
 
-#define JVMCI_ERROR(...)       \
-  { Exceptions::fthrow(THREAD_AND_LOCATION, vmSymbols::jdk_vm_ci_common_JVMCIError(), __VA_ARGS__); return; }
+class JVMCIEnv;
+class JVMCICompiler;
+class JVMCICompileState;
 
-#define JVMCI_ERROR_(ret, ...) \
-  { Exceptions::fthrow(THREAD_AND_LOCATION, vmSymbols::jdk_vm_ci_common_JVMCIError(), __VA_ARGS__); return ret; }
+// Encapsulates the JVMCI metadata for an nmethod.
+// JVMCINMethodData objects are inlined into nmethods
+// at nmethod::_jvmci_data_offset.
+class JVMCINMethodData {
+  // Index for the HotSpotNmethod mirror in the nmethod's oops table.
+  // This is -1 if there is no mirror in the oops table.
+  int _nmethod_mirror_index;
 
-#define JVMCI_ERROR_0(...)    JVMCI_ERROR_(0, __VA_ARGS__)
-#define JVMCI_ERROR_NULL(...) JVMCI_ERROR_(NULL, __VA_ARGS__)
-#define JVMCI_ERROR_OK(...)   JVMCI_ERROR_(JVMCIEnv::ok, __VA_ARGS__)
-#define CHECK_OK              CHECK_(JVMCIEnv::ok)
+  // Is HotSpotNmethod.name non-null? If so, the value is
+  // embedded in the end of this object.
+  bool _has_name;
 
-class JVMCIRuntime: public AllStatic {
+  // Address of the failed speculations list to which a speculation
+  // is appended when it causes a deoptimization.
+  FailedSpeculation** _failed_speculations;
+
+public:
+  // Computes the size of a JVMCINMethodData object
+  static int compute_size(const char* nmethod_mirror_name) {
+    int size = sizeof(JVMCINMethodData);
+    if (nmethod_mirror_name != NULL) {
+      size += (int) strlen(nmethod_mirror_name) + 1;
+    }
+    return size;
+  }
+
+  void initialize(int nmethod_mirror_index,
+             const char* name,
+             FailedSpeculation** failed_speculations);
+
+  // Adds `speculation` to the failed speculations list.
+  void add_failed_speculation(nmethod* nm, jlong speculation);
+
+  // Gets the JVMCI name of the nmethod (which may be NULL).
+  const char* name() { return _has_name ? (char*)(((address) this) + sizeof(JVMCINMethodData)) : NULL; }
+
+  // Clears the HotSpotNmethod.address field in the  mirror. If nm
+  // is dead, the HotSpotNmethod.entryPoint field is also cleared.
+  void invalidate_nmethod_mirror(nmethod* nm);
+
+  // Gets the mirror from nm's oops table.
+  oop get_nmethod_mirror(nmethod* nm);
+
+  // Sets the mirror in nm's oops table.
+  void set_nmethod_mirror(nmethod* nm, oop mirror);
+
+  // Clears the mirror in nm's oops table.
+  void clear_nmethod_mirror(nmethod* nm);
+};
+
+// A top level class that represents an initialized JVMCI runtime.
+// There is one instance of this class per HotSpotJVMCIRuntime object.
+class JVMCIRuntime: public CHeapObj<mtJVMCI> {
  public:
   // Constants describing whether JVMCI wants to be able to adjust the compilation
   // level selected for a method by the VM compilation policy and if so, based on
@@ -52,57 +97,187 @@ class JVMCIRuntime: public AllStatic {
   };
 
  private:
-  static jobject _HotSpotJVMCIRuntime_instance;
-  static bool _well_known_classes_initialized;
+  volatile bool _being_initialized;
+  volatile bool _initialized;
 
-  static bool _shutdown_called;
+  JVMCIObject _HotSpotJVMCIRuntime_instance;
+
+  bool _shutdown_called;
+
+  JVMCIObject create_jvmci_primitive_type(BasicType type, JVMCI_TRAPS);
+
+  // Implementation methods for loading and constant pool access.
+  static Klass* get_klass_by_name_impl(Klass*& accessing_klass,
+                                       const constantPoolHandle& cpool,
+                                       Symbol* klass_name,
+                                       bool require_local);
+  static Klass*   get_klass_by_index_impl(const constantPoolHandle& cpool,
+                                          int klass_index,
+                                          bool& is_accessible,
+                                          Klass* loading_klass);
+  static void   get_field_by_index_impl(InstanceKlass* loading_klass, fieldDescriptor& fd,
+                                        int field_index);
+  static methodHandle  get_method_by_index_impl(const constantPoolHandle& cpool,
+                                                int method_index, Bytecodes::Code bc,
+                                                InstanceKlass* loading_klass);
+
+  // Helper methods
+  static bool       check_klass_accessibility(Klass* accessing_klass, Klass* resolved_klass);
+  static methodHandle  lookup_method(InstanceKlass*  accessor,
+                                     Klass*  holder,
+                                     Symbol*         name,
+                                     Symbol*         sig,
+                                     Bytecodes::Code bc,
+                                     constantTag     tag);
 
  public:
-  static bool is_HotSpotJVMCIRuntime_initialized() {
-    return _HotSpotJVMCIRuntime_instance != NULL;
+  JVMCIRuntime() {
+    _initialized = false;
+    _being_initialized = false;
+    _shutdown_called = false;
   }
+
+  /**
+   * Compute offsets and construct any state required before executing JVMCI code.
+   */
+  void initialize(JVMCIEnv* jvmciEnv);
 
   /**
    * Gets the singleton HotSpotJVMCIRuntime instance, initializing it if necessary
    */
-  static Handle get_HotSpotJVMCIRuntime(TRAPS);
+  JVMCIObject get_HotSpotJVMCIRuntime(JVMCI_TRAPS);
 
-  static jobject get_HotSpotJVMCIRuntime_jobject(TRAPS) {
-    initialize_JVMCI(CHECK_NULL);
-    assert(_HotSpotJVMCIRuntime_instance != NULL, "must be");
-    return _HotSpotJVMCIRuntime_instance;
+  bool is_HotSpotJVMCIRuntime_initialized() {
+    return _HotSpotJVMCIRuntime_instance.is_non_null();
   }
-
-  static Handle callStatic(const char* className, const char* methodName, const char* returnType, JavaCallArguments* args, TRAPS);
-
-  /**
-   * Determines if the VM is sufficiently booted to initialize JVMCI.
-   */
-  static bool can_initialize_JVMCI();
 
   /**
    * Trigger initialization of HotSpotJVMCIRuntime through JVMCI.getRuntime()
    */
-  static void initialize_JVMCI(TRAPS);
+  void initialize_JVMCI(JVMCI_TRAPS);
 
   /**
    * Explicitly initialize HotSpotJVMCIRuntime itself
    */
-  static void initialize_HotSpotJVMCIRuntime(TRAPS);
+  void initialize_HotSpotJVMCIRuntime(JVMCI_TRAPS);
 
-  static void initialize_well_known_classes(TRAPS);
+  void call_getCompiler(TRAPS);
 
-  static void metadata_do(void f(Metadata*));
+  void shutdown();
 
-  static void shutdown(TRAPS);
-
-  static void bootstrap_finished(TRAPS);
-
-  static bool shutdown_called() {
+  bool shutdown_called() {
     return _shutdown_called;
   }
 
-  static BasicType kindToBasicType(Handle kind, TRAPS);
+  void bootstrap_finished(TRAPS);
+
+  // Look up a klass by name from a particular class loader (the accessor's).
+  // If require_local, result must be defined in that class loader, or NULL.
+  // If !require_local, a result from remote class loader may be reported,
+  // if sufficient class loader constraints exist such that initiating
+  // a class loading request from the given loader is bound to return
+  // the class defined in the remote loader (or throw an error).
+  //
+  // Return an unloaded klass if !require_local and no class at all is found.
+  //
+  // The CI treats a klass as loaded if it is consistently defined in
+  // another loader, even if it hasn't yet been loaded in all loaders
+  // that could potentially see it via delegation.
+  static Klass* get_klass_by_name(Klass* accessing_klass,
+                                  Symbol* klass_name,
+                                  bool require_local);
+
+  // Constant pool access.
+  static Klass*   get_klass_by_index(const constantPoolHandle& cpool,
+                                     int klass_index,
+                                     bool& is_accessible,
+                                     Klass* loading_klass);
+  static void   get_field_by_index(InstanceKlass* loading_klass, fieldDescriptor& fd,
+                                   int field_index);
+  static methodHandle  get_method_by_index(const constantPoolHandle& cpool,
+                                           int method_index, Bytecodes::Code bc,
+                                           InstanceKlass* loading_klass);
+
+  // converts the Klass* representing the holder of a method into a
+  // InstanceKlass*.  This is needed since the holder of a method in
+  // the bytecodes could be an array type.  Basically this converts
+  // array types into java/lang/Object and other types stay as they are.
+  static InstanceKlass* get_instance_klass_for_declared_method_holder(Klass* klass);
+
+  // Helper routine for determining the validity of a compilation
+  // with respect to concurrent class loading.
+  static JVMCI::CodeInstallResult validate_compile_task_dependencies(Dependencies* target, JVMCICompileState* task, char** failure_detail);
+
+  // Compiles `target` with the JVMCI compiler.
+  void compile_method(JVMCIEnv* JVMCIENV, JVMCICompiler* compiler, const methodHandle& target, int entry_bci);
+
+  // Register the result of a compilation.
+  JVMCI::CodeInstallResult register_method(JVMCIEnv* JVMCIENV,
+                       const methodHandle&       target,
+                       nmethod*&                 nm,
+                       int                       entry_bci,
+                       CodeOffsets*              offsets,
+                       int                       orig_pc_offset,
+                       CodeBuffer*               code_buffer,
+                       int                       frame_words,
+                       OopMapSet*                oop_map_set,
+                       ExceptionHandlerTable*    handler_table,
+                       AbstractCompiler*         compiler,
+                       DebugInformationRecorder* debug_info,
+                       Dependencies*             dependencies,
+                       int                       compile_id,
+                       bool                      has_unsafe_access,
+                       bool                      has_wide_vector,
+                       JVMCIObject               compiled_code,
+                       JVMCIObject               nmethod_mirror,
+                       FailedSpeculation**       failed_speculations,
+                       char*                     speculations,
+                       int                       speculations_len);
+
+  /**
+   * Exits the VM due to an unexpected exception.
+   */
+  static void exit_on_pending_exception(JVMCIEnv* JVMCIENV, const char* message);
+
+  static void describe_pending_hotspot_exception(JavaThread* THREAD, bool clear);
+
+#define CHECK_EXIT THREAD); \
+  if (HAS_PENDING_EXCEPTION) { \
+    char buf[256]; \
+    jio_snprintf(buf, 256, "Uncaught exception at %s:%d", __FILE__, __LINE__); \
+    JVMCIRuntime::exit_on_pending_exception(NULL, buf); \
+    return; \
+  } \
+  (void)(0
+
+#define CHECK_EXIT_(v) THREAD);                 \
+  if (HAS_PENDING_EXCEPTION) { \
+    char buf[256]; \
+    jio_snprintf(buf, 256, "Uncaught exception at %s:%d", __FILE__, __LINE__); \
+    JVMCIRuntime::exit_on_pending_exception(NULL, buf); \
+    return v; \
+  } \
+  (void)(0
+
+#define JVMCI_CHECK_EXIT JVMCIENV); \
+  if (JVMCIENV->has_pending_exception()) {      \
+    char buf[256]; \
+    jio_snprintf(buf, 256, "Uncaught exception at %s:%d", __FILE__, __LINE__); \
+    JVMCIRuntime::exit_on_pending_exception(JVMCIENV, buf); \
+    return; \
+  } \
+  (void)(0
+
+#define JVMCI_CHECK_EXIT_(result) JVMCIENV); \
+  if (JVMCIENV->has_pending_exception()) {      \
+    char buf[256]; \
+    jio_snprintf(buf, 256, "Uncaught exception at %s:%d", __FILE__, __LINE__); \
+    JVMCIRuntime::exit_on_pending_exception(JVMCIENV, buf); \
+    return result; \
+  } \
+  (void)(0
+
+  static BasicType kindToBasicType(const Handle& kind, TRAPS);
 
   static void new_instance_common(JavaThread* thread, Klass* klass, bool null_on_fail);
   static void new_array_common(JavaThread* thread, Klass* klass, jint length, bool null_on_fail);
@@ -162,11 +337,8 @@ class JVMCIRuntime: public AllStatic {
   static void throw_klass_external_name_exception(JavaThread* thread, const char* exception, Klass* klass);
   static void throw_class_cast_exception(JavaThread* thread, const char* exception, Klass* caster_klass, Klass* target_klass);
 
-  // Forces initialization of the JVMCI runtime.
-  static void force_initialization(TRAPS);
-
   // Test only function
-  static int test_deoptimize_call_int(JavaThread* thread, int value);
+  static jint test_deoptimize_call_int(JavaThread* thread, int value);
 };
 
 // Tracing macros.
@@ -177,10 +349,10 @@ class JVMCIRuntime: public AllStatic {
 #define IF_TRACE_jvmci_4 if (!(JVMCITraceLevel >= 4)) ; else
 #define IF_TRACE_jvmci_5 if (!(JVMCITraceLevel >= 5)) ; else
 
-#define TRACE_jvmci_1 if (!(JVMCITraceLevel >= 1 && (tty->print("JVMCITrace-1: "), true))) ; else tty->print_cr
-#define TRACE_jvmci_2 if (!(JVMCITraceLevel >= 2 && (tty->print("   JVMCITrace-2: "), true))) ; else tty->print_cr
-#define TRACE_jvmci_3 if (!(JVMCITraceLevel >= 3 && (tty->print("      JVMCITrace-3: "), true))) ; else tty->print_cr
-#define TRACE_jvmci_4 if (!(JVMCITraceLevel >= 4 && (tty->print("         JVMCITrace-4: "), true))) ; else tty->print_cr
-#define TRACE_jvmci_5 if (!(JVMCITraceLevel >= 5 && (tty->print("            JVMCITrace-5: "), true))) ; else tty->print_cr
+#define TRACE_jvmci_1 if (!(JVMCITraceLevel >= 1 && (tty->print(PTR_FORMAT " JVMCITrace-1: ", p2i(JavaThread::current())), true))) ; else tty->print_cr
+#define TRACE_jvmci_2 if (!(JVMCITraceLevel >= 2 && (tty->print(PTR_FORMAT "    JVMCITrace-2: ", p2i(JavaThread::current())), true))) ; else tty->print_cr
+#define TRACE_jvmci_3 if (!(JVMCITraceLevel >= 3 && (tty->print(PTR_FORMAT "       JVMCITrace-3: ", p2i(JavaThread::current())), true))) ; else tty->print_cr
+#define TRACE_jvmci_4 if (!(JVMCITraceLevel >= 4 && (tty->print(PTR_FORMAT "          JVMCITrace-4: ", p2i(JavaThread::current())), true))) ; else tty->print_cr
+#define TRACE_jvmci_5 if (!(JVMCITraceLevel >= 5 && (tty->print(PTR_FORMAT "             JVMCITrace-5: ", p2i(JavaThread::current())), true))) ; else tty->print_cr
 
 #endif // SHARE_JVMCI_JVMCIRUNTIME_HPP

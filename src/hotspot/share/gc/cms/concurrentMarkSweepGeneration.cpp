@@ -82,6 +82,9 @@
 #include "services/runtimeService.hpp"
 #include "utilities/align.hpp"
 #include "utilities/stack.inline.hpp"
+#if INCLUDE_JVMCI
+#include "jvmci/jvmci.hpp"
+#endif
 
 // statics
 CMSCollector* ConcurrentMarkSweepGeneration::_collector = NULL;
@@ -5258,6 +5261,9 @@ void CMSCollector::refProcessingWork() {
 
       // Prune dead klasses from subklass/sibling/implementor lists.
       Klass::clean_weak_klass_links(purged_class);
+
+      // Clean JVMCI metadata handles.
+      JVMCI_ONLY(JVMCI::do_unloading(purged_class));
     }
   }
 

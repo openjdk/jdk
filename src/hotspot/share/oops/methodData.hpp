@@ -1949,6 +1949,42 @@ public:
 };
 
 
+#if INCLUDE_JVMCI
+// Encapsulates an encoded speculation reason. These are linked together in
+// a list that is atomically appended to during deoptimization. Entries are
+// never removed from the list.
+// @see jdk.vm.ci.hotspot.HotSpotSpeculationLog.HotSpotSpeculationEncoding
+class FailedSpeculation: public CHeapObj<mtCompiler> {
+ private:
+  // The length of HotSpotSpeculationEncoding.toByteArray(). The data itself
+  // is an array embedded at the end of this object.
+  int   _data_len;
+
+  // Next entry in a linked list.
+  FailedSpeculation* _next;
+
+  FailedSpeculation(address data, int data_len);
+
+  FailedSpeculation** next_adr() { return &_next; }
+
+  // Placement new operator for inlining the speculation data into
+  // the FailedSpeculation object.
+  void* operator new(size_t size, size_t fs_size) throw();
+
+ public:
+  char* data()         { return (char*)(((address) this) + sizeof(FailedSpeculation)); }
+  int data_len() const { return _data_len; }
+  FailedSpeculation* next() const { return _next; }
+
+  // Atomically appends a speculation from nm to the list whose head is at (*failed_speculations_address).
+  // Returns false if the FailedSpeculation object could not be allocated.
+  static bool add_failed_speculation(nmethod* nm, FailedSpeculation** failed_speculations_address, address speculation, int speculation_len);
+
+  // Frees all entries in the linked list whose head is at (*failed_speculations_address).
+  static void free_failed_speculations(FailedSpeculation** failed_speculations_address);
+};
+#endif
+
 class MethodData : public Metadata {
   friend class VMStructs;
   friend class JVMCIVMStructs;
@@ -2030,7 +2066,8 @@ private:
 
 #if INCLUDE_JVMCI
   // Support for HotSpotMethodData.setCompiledIRSize(int)
-  int               _jvmci_ir_size;
+  int                _jvmci_ir_size;
+  FailedSpeculation* _failed_speculations;
 #endif
 
   // Size of _data array in bytes.  (Excludes header and extra_data fields.)
@@ -2190,6 +2227,12 @@ public:
 
   InvocationCounter* invocation_counter()     { return &_invocation_counter; }
   InvocationCounter* backedge_counter()       { return &_backedge_counter;   }
+
+#if INCLUDE_JVMCI
+  FailedSpeculation** get_failed_speculations_address() {
+    return &_failed_speculations;
+  }
+#endif
 
 #if INCLUDE_RTM_OPT
   int rtm_state() const {

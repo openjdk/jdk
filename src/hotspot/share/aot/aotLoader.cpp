@@ -26,8 +26,8 @@
 
 #include "aot/aotCodeHeap.hpp"
 #include "aot/aotLoader.inline.hpp"
-#include "jvmci/jvmciRuntime.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/method.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/os.inline.hpp"

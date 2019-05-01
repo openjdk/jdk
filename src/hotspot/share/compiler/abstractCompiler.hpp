@@ -154,9 +154,6 @@ class AbstractCompiler : public CHeapObj<mtCompiler> {
   const bool is_jvmci()                          { return _type == compiler_jvmci; }
   const CompilerType type()                      { return _type; }
 
-  // Extra tests to identify trivial methods for the tiered compilation policy.
-  virtual bool is_trivial(Method* method) { return false; }
-
   // Customization
   virtual void initialize () = 0;
 

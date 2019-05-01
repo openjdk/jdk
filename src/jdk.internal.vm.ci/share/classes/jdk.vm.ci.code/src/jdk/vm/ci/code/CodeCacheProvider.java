@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,8 @@ public interface CodeCacheProvider {
      *            created.
      * @return a reference to the ready-to-run code
      * @throws BailoutException if the code installation failed
+     * @throws IllegalArgumentException if {@code installedCode != null} and this object does not
+     *             support a predefined {@link InstalledCode} object
      */
     default InstalledCode addCode(ResolvedJavaMethod method, CompiledCode compiledCode, SpeculationLog log, InstalledCode installedCode) {
         return installCode(method, compiledCode, installedCode, log, false);
@@ -58,6 +60,8 @@ public interface CodeCacheProvider {
      * @param compiledCode the compiled code to be added
      * @return a reference to the ready-to-run code
      * @throws BailoutException if the code installation failed
+     * @throws IllegalArgumentException if {@code installedCode != null} and this object does not
+     *             support a predefined {@link InstalledCode} object
      */
     default InstalledCode setDefaultCode(ResolvedJavaMethod method, CompiledCode compiledCode) {
         return installCode(method, compiledCode, null, null, true);
