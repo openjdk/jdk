@@ -331,11 +331,11 @@ CompactibleFreeListSpace::CompactibleFreeListSpace(BlockOffsetSharedArray* bs, M
   // Note: this requires that CFLspace c'tors
   // are called serially in the order in which the locks are
   // are acquired in the program text. This is true today.
-  _freelistLock(_lockRank--, "CompactibleFreeListSpace._lock", true,
-                Monitor::_safepoint_check_sometimes),
+  _freelistLock(_lockRank--, "CompactibleFreeListSpace_lock", true,
+                Monitor::_safepoint_check_never),
   _preconsumptionDirtyCardClosure(NULL),
   _parDictionaryAllocLock(Mutex::leaf - 1,  // == rank(ExpandHeap_lock) - 1
-                          "CompactibleFreeListSpace._dict_par_lock", true,
+                          "CompactibleFreeListSpace_dict_par_lock", true,
                           Monitor::_safepoint_check_never)
 {
   assert(sizeof(FreeChunk) / BytesPerWord <= MinChunkSize,
@@ -366,7 +366,7 @@ CompactibleFreeListSpace::CompactibleFreeListSpace(BlockOffsetSharedArray* bs, M
   // Initialize locks for parallel case.
   for (size_t i = IndexSetStart; i < IndexSetSize; i += IndexSetStride) {
     _indexedFreeListParLocks[i] = new Mutex(Mutex::leaf - 1, // == ExpandHeap_lock - 1
-                                            "a freelist par lock", true, Mutex::_safepoint_check_sometimes);
+                                            "a freelist par lock", true, Mutex::_safepoint_check_never);
     DEBUG_ONLY(
       _indexedFreeList[i].set_protecting_lock(_indexedFreeListParLocks[i]);
     )
@@ -2042,7 +2042,7 @@ CompactibleFreeListSpace::splitChunkAndReturnRemainder(FreeChunk* chunk,
   if (rem_sz < SmallForDictionary) {
     // The freeList lock is held, but multiple GC task threads might be executing in parallel.
     bool is_par = Thread::current()->is_GC_task_thread();
-    if (is_par) _indexedFreeListParLocks[rem_sz]->lock();
+    if (is_par) _indexedFreeListParLocks[rem_sz]->lock_without_safepoint_check();
     returnChunkToFreeList(ffc);
     split(size, rem_sz);
     if (is_par) _indexedFreeListParLocks[rem_sz]->unlock();

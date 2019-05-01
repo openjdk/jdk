@@ -92,6 +92,7 @@ class Monitor : public CHeapObj<mtSynchronizer> {
   void set_owner_implementation(Thread* owner)                        PRODUCT_RETURN;
   void check_prelock_state     (Thread* thread, bool safepoint_check) PRODUCT_RETURN;
   void check_block_state       (Thread* thread)                       PRODUCT_RETURN;
+  void check_safepoint_state   (Thread* thread, bool safepoint_check) NOT_DEBUG_RETURN;
   void assert_owner            (Thread* expected)                     NOT_DEBUG_RETURN;
   void assert_wait_lock_state  (Thread* self)                         NOT_DEBUG_RETURN;
 
@@ -101,28 +102,39 @@ class Monitor : public CHeapObj<mtSynchronizer> {
     _as_suspend_equivalent_flag = true
   };
 
+  // Locks can be acquired with or without a safepoint check. NonJavaThreads do not follow
+  // the safepoint protocol when acquiring locks.
+
+  // Each lock can be acquired by only JavaThreads, only NonJavaThreads, or shared between
+  // Java and NonJavaThreads. When the lock is initialized with _safepoint_check_always,
+  // that means that whenever the lock is acquired by a JavaThread, it will verify that
+  // it is done with a safepoint check. In corollary, when the lock is initialized with
+  // _safepoint_check_never, that means that whenever the lock is acquired by a JavaThread
+  // it will verify that it is done without a safepoint check.
+
+
+  // There are a couple of existing locks that will sometimes have a safepoint check and
+  // sometimes not when acquired by a JavaThread, but these locks are set up carefully
+  // to avoid deadlocks. TODO: Fix these locks and remove _safepoint_check_sometimes.
+
+  // TODO: Locks that are shared between JavaThreads and NonJavaThreads
+  // should never encounter a safepoint check while they are held, or else a
+  // deadlock can occur. We should check this by noting which
+  // locks are shared, and walk held locks during safepoint checking.
+
   enum SafepointCheckFlag {
     _safepoint_check_flag,
     _no_safepoint_check_flag
   };
 
-  // Locks can be acquired with or without safepoint check.
-  // Monitor::lock and Monitor::lock_without_safepoint_check
-  // checks these flags when acquiring a lock to ensure
-  // consistent checking for each lock.
-  // A few existing locks will sometimes have a safepoint check and
-  // sometimes not, but these locks are set up in such a way to avoid deadlocks.
-  // Note: monitors that may be shared between JavaThreads and the VMThread
-  // should never encounter a safepoint check whilst they are held, else a
-  // deadlock with the VMThread can occur.
   enum SafepointCheckRequired {
     _safepoint_check_never,       // Monitors with this value will cause errors
-                                  // when acquired with a safepoint check.
-    _safepoint_check_sometimes,   // Certain locks are called sometimes with and
-                                  // sometimes without safepoint checks. These
+                                  // when acquired by a JavaThread with a safepoint check.
+    _safepoint_check_sometimes,   // A couple of special locks are acquired by JavaThreads sometimes
+                                  // with and sometimes without safepoint checks. These
                                   // locks will not produce errors when locked.
-    _safepoint_check_always       // Causes error if locked without a safepoint
-                                  // check.
+    _safepoint_check_always       // Monitors with this value will cause errors
+                                  // when acquired by a JavaThread without a safepoint check.
   };
 
   NOT_PRODUCT(SafepointCheckRequired _safepoint_check_required;)
@@ -159,7 +171,7 @@ class Monitor : public CHeapObj<mtSynchronizer> {
   // Lock without safepoint check. Should ONLY be used by safepoint code and other code
   // that is guaranteed not to block while running inside the VM.
   void lock_without_safepoint_check();
-  void lock_without_safepoint_check (Thread * Self) ;
+  void lock_without_safepoint_check(Thread* self);
 
   // Current owner - not not MT-safe. Can only be used to guarantee that
   // the current running thread owns the lock

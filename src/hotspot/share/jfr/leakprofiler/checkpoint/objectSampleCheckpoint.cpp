@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,7 +136,7 @@ class StackTraceWrite {
  public:
   StackTraceWrite(JfrStackTraceRepository& stack_trace_repo, JfrCheckpointWriter& writer) :
     _stack_trace_repo(stack_trace_repo), _writer(writer), _count(0) {
-    JfrStacktrace_lock->lock();
+    JfrStacktrace_lock->lock_without_safepoint_check();
   }
   ~StackTraceWrite() {
     assert(JfrStacktrace_lock->owned_by_self(), "invariant");

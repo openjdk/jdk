@@ -765,10 +765,10 @@ OopStorage::OopStorage(const char* name,
          "%s: active_mutex must have lower rank than allocation_mutex", _name);
   assert(Service_lock->rank() < _active_mutex->rank(),
          "%s: active_mutex must have higher rank than Service_lock", _name);
-  assert(_active_mutex->_safepoint_check_required != Mutex::_safepoint_check_always,
-         "%s: active mutex requires safepoint check", _name);
-  assert(_allocation_mutex->_safepoint_check_required != Mutex::_safepoint_check_always,
-         "%s: allocation mutex requires safepoint check", _name);
+  assert(_active_mutex->_safepoint_check_required == Mutex::_safepoint_check_never,
+         "%s: active mutex requires never safepoint check", _name);
+  assert(_allocation_mutex->_safepoint_check_required == Mutex::_safepoint_check_never,
+         "%s: allocation mutex requires never safepoint check", _name);
 }
 
 void OopStorage::delete_empty_block(const Block& block) {

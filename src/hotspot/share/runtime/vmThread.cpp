@@ -623,10 +623,8 @@ void VMThread::loop() {
     }
 
     //
-    //  Notify (potential) waiting Java thread(s) - lock without safepoint
-    //  check so that sneaking is not possible
-    { MutexLocker mu(VMOperationRequest_lock,
-                     Mutex::_no_safepoint_check_flag);
+    //  Notify (potential) waiting Java thread(s)
+    { MutexLocker mu(VMOperationRequest_lock, Mutex::_no_safepoint_check_flag);
       VMOperationRequest_lock->notify_all();
     }
 

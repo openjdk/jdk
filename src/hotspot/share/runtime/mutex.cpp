@@ -32,11 +32,23 @@
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
 
+#ifdef ASSERT
+void Monitor::check_safepoint_state(Thread* thread, bool do_safepoint_check) {
+  // If the JavaThread checks for safepoint, verify that the lock wasn't created with safepoint_check_never.
+  SafepointCheckRequired not_allowed = do_safepoint_check ?  Monitor::_safepoint_check_never :
+                                                             Monitor::_safepoint_check_always;
+  assert(!thread->is_Java_thread() || _safepoint_check_required != not_allowed,
+         "This lock should %s have a safepoint check for Java threads: %s",
+         _safepoint_check_required ? "always" : "never", name());
+
+  // If defined with safepoint_check_never, a NonJavaThread should never ask to safepoint check either.
+  assert(thread->is_Java_thread() || !do_safepoint_check || _safepoint_check_required != Monitor::_safepoint_check_never,
+         "NonJavaThread should not check for safepoint");
+}
+#endif // ASSERT
 
 void Monitor::lock(Thread * self) {
-  // Ensure that the Monitor requires/allows safepoint checks.
-  assert(_safepoint_check_required != Monitor::_safepoint_check_never,
-         "This lock should never have a safepoint check: %s", name());
+  check_safepoint_state(self, true);
 
 #ifdef CHECK_UNHANDLED_OOPS
   // Clear unhandled oops in JavaThreads so we get a crash right away.
@@ -91,9 +103,7 @@ void Monitor::lock() {
 // in the wrong way this can lead to a deadlock with the safepoint code.
 
 void Monitor::lock_without_safepoint_check(Thread * self) {
-  // Ensure that the Monitor does not require safepoint checks.
-  assert(_safepoint_check_required != Monitor::_safepoint_check_always,
-         "This lock should always have a safepoint check: %s", name());
+  check_safepoint_state(self, false);
   assert(_owner != self, "invariant");
   _lock.lock();
   assert_owner(NULL);
@@ -154,14 +164,12 @@ void Monitor::assert_wait_lock_state(Thread* self) {
 #endif // ASSERT
 
 bool Monitor::wait_without_safepoint_check(long timeout) {
-  // Make sure safepoint checking is used properly.
-  assert(_safepoint_check_required != Monitor::_safepoint_check_always,
-         "This lock should always have a safepoint check: %s", name());
+  Thread* const self = Thread::current();
+  check_safepoint_state(self, false);
 
   // timeout is in milliseconds - with zero meaning never timeout
   assert(timeout >= 0, "negative timeout");
 
-  Thread * const self = Thread::current();
   assert_owner(self);
   assert_wait_lock_state(self);
 
@@ -174,14 +182,12 @@ bool Monitor::wait_without_safepoint_check(long timeout) {
 }
 
 bool Monitor::wait(long timeout, bool as_suspend_equivalent) {
-  // Make sure safepoint checking is used properly.
-  assert(_safepoint_check_required != Monitor::_safepoint_check_never,
-         "This lock should never have a safepoint check: %s", name());
+  Thread* const self = Thread::current();
+  check_safepoint_state(self, true);
 
   // timeout is in milliseconds - with zero meaning never timeout
   assert(timeout >= 0, "negative timeout");
 
-  Thread* const self = Thread::current();
   assert_owner(self);
 
   // Safepoint checking logically implies java_thread
@@ -273,6 +279,12 @@ Monitor::Monitor() {
   ClearMonitor(this);
 }
 
+
+// Only Threads_lock, Heap_lock and SR_lock may be safepoint_check_sometimes.
+bool is_sometimes_ok(const char* name) {
+  return (strcmp(name, "Threads_lock") == 0 || strcmp(name, "Heap_lock") == 0 || strcmp(name, "SR_lock") == 0);
+}
+
 Monitor::Monitor(int Rank, const char * name, bool allow_vm_block,
                  SafepointCheckRequired safepoint_check_required) {
   assert(os::mutex_init_done(), "Too early!");
@@ -281,6 +293,9 @@ Monitor::Monitor(int Rank, const char * name, bool allow_vm_block,
   _allow_vm_block  = allow_vm_block;
   _rank            = Rank;
   NOT_PRODUCT(_safepoint_check_required = safepoint_check_required;)
+
+  assert(_safepoint_check_required != Monitor::_safepoint_check_sometimes || is_sometimes_ok(name),
+         "Lock has _safepoint_check_sometimes %s", name);
 #endif
 }
 
@@ -291,6 +306,9 @@ Mutex::Mutex(int Rank, const char * name, bool allow_vm_block,
   _allow_vm_block   = allow_vm_block;
   _rank             = Rank;
   NOT_PRODUCT(_safepoint_check_required = safepoint_check_required;)
+
+  assert(_safepoint_check_required != Monitor::_safepoint_check_sometimes || is_sometimes_ok(name),
+         "Lock has _safepoint_check_sometimes %s", name);
 #endif
 }
 

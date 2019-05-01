@@ -43,7 +43,7 @@ YieldingFlexibleWorkGang::YieldingFlexibleWorkGang(
   _monitor = new Monitor(/* priority */       Mutex::leaf,
                          /* name */           "WorkGroup monitor",
                          /* allow_vm_block */ are_GC_task_threads,
-                                              Monitor::_safepoint_check_sometimes);
+                                              Monitor::_safepoint_check_never);
 
   assert(monitor() != NULL, "Failed to allocate monitor");
 }
