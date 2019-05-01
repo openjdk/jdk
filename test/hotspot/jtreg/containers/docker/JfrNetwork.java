@@ -25,9 +25,11 @@
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
@@ -81,15 +83,33 @@ public class JfrNetwork {
         assertTrue(!events.isEmpty(), "No recorded network events");
         RecordedEvent e = events.get(0);
         log(JFR_REPORTED_CONTAINER_HOSTNAME_TAG + e.getString("host"));
-        verifyIpAddress(e.getString("address"));
+
+        // compare IP addresses
+        boolean matchFound = false;
+        InetAddress reportedByJfr = InetAddress.getByName(e.getString("address"));
+        for (InetAddress ip : getLocalIp()) {
+            if (ip.equals(reportedByJfr)) {
+                matchFound = true;
+                break;
+            }
+        }
+        assertTrue(matchFound, "IP address match not found");
     }
 
-    private static void verifyIpAddress(String eventIp) throws Exception {
-        ProcessBuilder pb = new ProcessBuilder("hostname", "--ip-address");
-        OutputAnalyzer out = new OutputAnalyzer(pb.start());
-        out.shouldHaveExitValue(0);
-        log("hostname --ip-address returned: " + out.getOutput());
-        out.shouldContain(eventIp);
+    private static List<InetAddress> getLocalIp() throws Exception {
+        List<InetAddress> addrs = new ArrayList<>();
+        InetAddress localHost = InetAddress.getLocalHost();
+        if (!localHost.isLoopbackAddress()) {
+            addrs.add(localHost);
+        }
+
+        log("getLocalIp() returning:");
+        for (InetAddress addr : addrs) {
+            log(addr.getHostName());
+            log(addr.getHostAddress());
+        }
+
+        return addrs;
     }
 
     private static void log(String msg) {
