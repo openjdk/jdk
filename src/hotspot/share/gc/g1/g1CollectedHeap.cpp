@@ -1092,7 +1092,7 @@ void G1CollectedHeap::verify_after_full_collection() {
   // the full GC has compacted objects and updated TAMS but not updated
   // the prev bitmap.
   if (G1VerifyBitmaps) {
-    GCTraceTime(Debug, gc)("Clear Prev Bitmap for Verification");
+    GCTraceTime(Debug, gc) tm("Clear Prev Bitmap for Verification");
     _cm->clear_prev_bitmap(workers());
   }
   // This call implicitly verifies that the next bitmap is clear after Full GC.
