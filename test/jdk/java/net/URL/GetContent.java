@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,13 @@
 /**
  * @test
  * @bug 4145315
+ * @library /test/lib
  * @summary Test a read from nonexistant URL
  */
 
 import java.net.*;
 import java.io.*;
+import jdk.test.lib.net.URIBuilder;
 
 public class GetContent implements Runnable {
 
@@ -71,10 +73,12 @@ public class GetContent implements Runnable {
 
          boolean error = true;
          try {
-             String name = "http://localhost:" + ss.getLocalPort() +
-                           "/no-such-name";
-             java.net.URL url = null;
-             url = new java.net.URL(name);
+             java.net.URL url = URIBuilder.newBuilder()
+                 .scheme("http")
+                 .host(ss.getInetAddress())
+                 .port(ss.getLocalPort())
+                 .path("/no-such-name")
+                 .toURL();
              Object obj = url.getContent();
              InputStream in = (InputStream) obj;
              byte buff[] = new byte[200];

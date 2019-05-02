@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/parallel/adjoiningGenerationsForHeteroHeap.hpp"
 #include "gc/parallel/adjoiningVirtualSpaces.hpp"
-#include "gc/parallel/generationSizer.hpp"
+#include "gc/parallel/parallelArguments.hpp"
 #include "gc/parallel/parallelScavengeHeap.hpp"
 #include "gc/parallel/psFileBackedVirtualspace.hpp"
 #include "logging/log.hpp"
@@ -37,17 +37,17 @@
 // Create two virtual spaces (HeteroVirtualSpaces), low() on nv-dimm memory, high() on dram.
 // create ASPSOldGen and ASPSYoungGen the same way as in base class
 
-AdjoiningGenerationsForHeteroHeap::AdjoiningGenerationsForHeteroHeap(ReservedSpace old_young_rs, GenerationSizer* policy, size_t alignment) :
-  _total_size_limit(policy->max_heap_byte_size()) {
-  size_t init_old_byte_size = policy->initial_old_size();
-  size_t min_old_byte_size = policy->min_old_size();
-  size_t max_old_byte_size = policy->max_old_size();
-  size_t init_young_byte_size = policy->initial_young_size();
-  size_t min_young_byte_size = policy->min_young_size();
-  size_t max_young_byte_size = policy->max_young_size();
+AdjoiningGenerationsForHeteroHeap::AdjoiningGenerationsForHeteroHeap(ReservedSpace old_young_rs) :
+  _total_size_limit(ParallelArguments::heap_reserved_size_bytes()) {
+  size_t init_old_byte_size = OldSize;
+  size_t min_old_byte_size = MinOldSize;
+  size_t max_old_byte_size = MaxOldSize;
+  size_t init_young_byte_size = NewSize;
+  size_t min_young_byte_size = MinNewSize;
+  size_t max_young_byte_size = MaxNewSize;
   // create HeteroVirtualSpaces which is composed of non-overlapping virtual spaces.
   HeteroVirtualSpaces* hetero_virtual_spaces = new HeteroVirtualSpaces(old_young_rs, min_old_byte_size,
-                                                                       min_young_byte_size, _total_size_limit, alignment);
+                                                                       min_young_byte_size, _total_size_limit);
 
   assert(min_old_byte_size <= init_old_byte_size &&
          init_old_byte_size <= max_old_byte_size, "Parameter check");
@@ -83,11 +83,11 @@ AdjoiningGenerationsForHeteroHeap::AdjoiningGenerationsForHeteroHeap(ReservedSpa
   _virtual_spaces = hetero_virtual_spaces;
 }
 
-size_t AdjoiningGenerationsForHeteroHeap::required_reserved_memory(GenerationSizer* policy) {
+size_t AdjoiningGenerationsForHeteroHeap::required_reserved_memory() {
   // This is the size that young gen can grow to, when AdaptiveGCBoundary is true.
-  size_t max_yg_size = policy->max_heap_byte_size() - policy->min_old_size();
+  size_t max_yg_size = ParallelArguments::heap_reserved_size_bytes() - MinOldSize;
   // This is the size that old gen can grow to, when AdaptiveGCBoundary is true.
-  size_t max_old_size = policy->max_heap_byte_size() - policy->min_young_size();
+  size_t max_old_size = ParallelArguments::heap_reserved_size_bytes() - MinNewSize;
 
   return max_yg_size + max_old_size;
 }
@@ -98,10 +98,11 @@ size_t AdjoiningGenerationsForHeteroHeap::reserved_byte_size() {
   return total_size_limit();
 }
 
-AdjoiningGenerationsForHeteroHeap::HeteroVirtualSpaces::HeteroVirtualSpaces(ReservedSpace rs, size_t min_old_byte_size, size_t min_yg_byte_size, size_t max_total_size, size_t alignment) :
-                                                                            AdjoiningVirtualSpaces(rs, min_old_byte_size, min_yg_byte_size, alignment),
+AdjoiningGenerationsForHeteroHeap::HeteroVirtualSpaces::HeteroVirtualSpaces(ReservedSpace rs, size_t min_old_byte_size, size_t min_yg_byte_size, size_t max_total_size) :
+                                                                            AdjoiningVirtualSpaces(rs, min_old_byte_size, min_yg_byte_size, GenAlignment),
                                                                             _max_total_size(max_total_size),
-                                                                            _min_old_byte_size(min_old_byte_size), _min_young_byte_size(min_yg_byte_size),
+                                                                            _min_old_byte_size(min_old_byte_size),
+                                                                            _min_young_byte_size(min_yg_byte_size),
                                                                             _max_old_byte_size(_max_total_size - _min_young_byte_size),
                                                                             _max_young_byte_size(_max_total_size - _min_old_byte_size) {
 }

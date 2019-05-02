@@ -53,8 +53,8 @@ public class StringIndexOfCharTest extends GraalCompilerTest {
                         "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
         String[] targets = new String[]{"foobar", "foo", "bar", "\u03bbfoobar", mediumString, mediumUTF16String, longString, longUTF16String};
         int[] targetChars = new int[]{'f', 'o', 'r', 'x', Character.MIN_SUPPLEMENTARY_CODE_POINT};
-        int[] targetOffsets = new int[18];
-        for (int i = 0; i < 18; i++) {
+        int[] targetOffsets = new int[12];
+        for (int i = 0; i < targetOffsets.length; i++) {
             targetOffsets[i] = i - 1;
         }
         for (String source : targets) {

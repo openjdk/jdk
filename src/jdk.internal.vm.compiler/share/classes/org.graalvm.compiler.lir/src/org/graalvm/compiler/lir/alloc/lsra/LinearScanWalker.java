@@ -878,6 +878,9 @@ class LinearScanWalker extends IntervalWalker {
                 break;
             }
 
+            // Fortify: Suppress Null Dereference false positive
+            assert reg != null;
+
             boolean needSplit = blockPos[reg.number] <= intervalTo;
 
             int splitPos = blockPos[reg.number];

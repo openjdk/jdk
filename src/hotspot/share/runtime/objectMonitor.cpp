@@ -276,9 +276,13 @@ void ObjectMonitor::enter(TRAPS) {
   // Note that if we acquire the monitor from an initial spin
   // we forgo posting JVMTI events and firing DTRACE probes.
   if (TrySpin(Self) > 0) {
-    assert(_owner == Self, "invariant");
-    assert(_recursions == 0, "invariant");
-    assert(((oop)(object()))->mark() == markOopDesc::encode(this), "invariant");
+    assert(_owner == Self, "must be Self: owner=" INTPTR_FORMAT, p2i(_owner));
+    assert(_recursions == 0, "must be 0: recursions=" INTPTR_FORMAT,
+           _recursions);
+    assert(((oop)object())->mark() == markOopDesc::encode(this),
+           "object mark must match encoded this: mark=" INTPTR_FORMAT
+           ", encoded this=" INTPTR_FORMAT, p2i(((oop)object())->mark()),
+           p2i(markOopDesc::encode(this)));
     Self->_Stalled = 0;
     return;
   }
@@ -290,11 +294,11 @@ void ObjectMonitor::enter(TRAPS) {
   assert(!SafepointSynchronize::is_at_safepoint(), "invariant");
   assert(jt->thread_state() != _thread_blocked, "invariant");
   assert(this->object() != NULL, "invariant");
-  assert(_count >= 0, "invariant");
+  assert(_contentions >= 0, "invariant");
 
   // Prevent deflation at STW-time.  See deflate_idle_monitors() and is_busy().
   // Ensure the object-monitor relationship remains stable while there's contention.
-  Atomic::inc(&_count);
+  Atomic::inc(&_contentions);
 
   JFR_ONLY(JfrConditionalFlushWithStacktrace<EventJavaMonitorEnter> flush(jt);)
   EventJavaMonitorEnter event;
@@ -355,8 +359,8 @@ void ObjectMonitor::enter(TRAPS) {
     // acquire it.
   }
 
-  Atomic::dec(&_count);
-  assert(_count >= 0, "invariant");
+  Atomic::dec(&_contentions);
+  assert(_contentions >= 0, "invariant");
   Self->_Stalled = 0;
 
   // Must either set _recursions = 0 or ASSERT _recursions == 0.
@@ -809,7 +813,7 @@ void ObjectMonitor::UnlinkAfterAcquire(Thread *Self, ObjectWaiter *SelfNode) {
 // There's one exception to the claim above, however.  EnterI() can call
 // exit() to drop a lock if the acquirer has been externally suspended.
 // In that case exit() is called with _thread_state as _thread_blocked,
-// but the monitor's _count field is > 0, which inhibits reclamation.
+// but the monitor's _contentions field is > 0, which inhibits reclamation.
 //
 // 1-0 exit
 // ~~~~~~~~

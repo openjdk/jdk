@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,9 +64,10 @@ public class B5052093 implements HttpCallback {
     }
 
     public static void main(String[] args) throws Exception {
-        server = new TestHttpServer(new B5052093(), 1, 10, 0);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        server = new TestHttpServer(new B5052093(), 1, 10, loopback, 0);
         try {
-            URL url = new URL("http://localhost:"+server.getLocalPort()+"/foo");
+            URL url = new URL("http://" + server.getAuthority() + "/foo");
             URLConnection conn = url.openConnection();
             int i = conn.getContentLength();
             long l = conn.getContentLengthLong();

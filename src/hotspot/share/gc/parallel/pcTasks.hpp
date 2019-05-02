@@ -28,6 +28,7 @@
 #include "gc/parallel/gcTaskManager.hpp"
 #include "gc/parallel/psParallelCompact.hpp"
 #include "gc/parallel/psTasks.hpp"
+#include "gc/shared/referenceProcessor.hpp"
 
 
 // Tasks for parallel compaction of the old generation
@@ -98,6 +99,7 @@ class MarkFromRootsTask : public GCTask {
     system_dictionary     = 7,
     class_loader_data     = 8,
     code_cache            = 9
+    JVMCI_ONLY(COMMA jvmci = 10)
   };
  private:
   RootType _root_type;

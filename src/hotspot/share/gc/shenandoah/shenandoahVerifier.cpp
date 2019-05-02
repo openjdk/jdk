@@ -919,3 +919,31 @@ void ShenandoahVerifier::verify_after_fullgc() {
           _verify_gcstate_stable       // full gc cleaned up everything
   );
 }
+
+class ShenandoahVerifyNoForwared : public OopClosure {
+private:
+  template <class T>
+  void do_oop_work(T* p) {
+    T o = RawAccess<>::oop_load(p);
+    if (!CompressedOops::is_null(o)) {
+      oop obj = CompressedOops::decode_not_null(o);
+      oop fwd = (oop) ShenandoahBrooksPointer::get_raw_unchecked(obj);
+      if (!oopDesc::equals_raw(obj, fwd)) {
+        ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, p, NULL,
+                                         "Verify Roots", "Should not be forwarded", __FILE__, __LINE__);
+      }
+    }
+  }
+
+public:
+  void do_oop(narrowOop* p) { do_oop_work(p); }
+  void do_oop(oop* p)       { do_oop_work(p); }
+};
+
+void ShenandoahVerifier::verify_roots_no_forwarded() {
+  guarantee(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "only when nothing else happens");
+  ShenandoahRootProcessor rp(_heap, 1, ShenandoahPhaseTimings::_num_phases); // no need for stats
+  ShenandoahVerifyNoForwared cl;
+  rp.process_all_roots_slow(&cl);
+}
+

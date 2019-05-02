@@ -34,13 +34,25 @@ class G1Arguments : public GCArguments {
   friend class G1HeapVerifierTest;
 
 private:
+  static size_t MaxMemoryForYoung;
+
   static void initialize_verification_types();
   static void parse_verification_type(const char* type);
 
-public:
+  virtual void initialize_alignments();
+  virtual void initialize_heap_flags_and_sizes();
+
+  void initialize_heterogeneous();
+
   virtual void initialize();
   virtual size_t conservative_max_heap_alignment();
   virtual CollectedHeap* create_heap();
+
+public:
+  // Heterogeneous heap support
+  static bool is_heterogeneous_heap();
+  static size_t reasonable_max_memory_for_young();
+  static size_t heap_reserved_size_bytes();
 };
 
 #endif // SHARE_GC_G1_G1ARGUMENTS_HPP

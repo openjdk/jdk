@@ -163,4 +163,11 @@ public interface PackageSummaryWriter {
      */
     public abstract void printDocument(Content contentTree) throws DocFileIOException;
 
+    /**
+     * Gets the package summary tree.
+     * @param summaryContentTree the content tree representing the package summary
+     * @return a content tree for the package summary
+     */
+    public abstract Content getPackageSummary(Content summaryContentTree);
+
 }

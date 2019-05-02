@@ -943,7 +943,7 @@ JvmtiEnv::SuspendThread(JavaThread* java_thread) {
   }
 
   {
-    MutexLockerEx ml(java_thread->SR_lock(), Mutex::_no_safepoint_check_flag);
+    MutexLocker ml(java_thread->SR_lock(), Mutex::_no_safepoint_check_flag);
     if (java_thread->is_external_suspend()) {
       // don't allow nested external suspend requests.
       return (JVMTI_ERROR_THREAD_SUSPENDED);
@@ -983,7 +983,7 @@ JvmtiEnv::SuspendThreadList(jint request_count, const jthread* request_list, jvm
     }
 
     {
-      MutexLockerEx ml(java_thread->SR_lock(), Mutex::_no_safepoint_check_flag);
+      MutexLocker ml(java_thread->SR_lock(), Mutex::_no_safepoint_check_flag);
       if (java_thread->is_external_suspend()) {
         // don't allow nested external suspend requests.
         results[i] = JVMTI_ERROR_THREAD_SUSPENDED;

@@ -23,13 +23,13 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/g1/g1HeterogeneousCollectorPolicy.hpp"
+#include "gc/g1/g1Arguments.hpp"
 #include "gc/g1/g1HeterogeneousHeapYoungGenSizer.hpp"
 #include "gc/g1/heapRegion.hpp"
 
 G1HeterogeneousHeapYoungGenSizer::G1HeterogeneousHeapYoungGenSizer() : G1YoungGenSizer() {
   // will be used later when min and max young size is calculated.
-  _max_young_length = (uint)(G1HeterogeneousCollectorPolicy::reasonable_max_memory_for_young() / HeapRegion::GrainBytes);
+  _max_young_length = (uint)(G1Arguments::reasonable_max_memory_for_young() / HeapRegion::GrainBytes);
 }
 
 // Since heap is sized potentially to larger value accounting for dram + nvdimm, we need to limit

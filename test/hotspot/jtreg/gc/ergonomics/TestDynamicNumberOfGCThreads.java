@@ -27,7 +27,6 @@ package gc.ergonomics;
  * @test TestDynamicNumberOfGCThreads
  * @bug 8017462
  * @summary Ensure that UseDynamicNumberOfGCThreads runs
- * @requires vm.gc=="null"
  * @key gc
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
@@ -38,19 +37,35 @@ package gc.ergonomics;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jtreg.SkippedException;
 import sun.hotspot.gc.GC;
 
 public class TestDynamicNumberOfGCThreads {
   public static void main(String[] args) throws Exception {
+    boolean noneGCSupported = true;
 
-    testDynamicNumberOfGCThreads("UseConcMarkSweepGC");
+    if (GC.ConcMarkSweep.isSupported()) {
+      noneGCSupported = false;
+      testDynamicNumberOfGCThreads("UseConcMarkSweepGC");
+    }
 
-    testDynamicNumberOfGCThreads("UseG1GC");
+    if (GC.G1.isSupported()) {
+      noneGCSupported = false;
+      testDynamicNumberOfGCThreads("UseG1GC");
+    }
 
-    testDynamicNumberOfGCThreads("UseParallelGC");
+    if (GC.Parallel.isSupported()) {
+      noneGCSupported = false;
+      testDynamicNumberOfGCThreads("UseParallelGC");
+    }
 
     if (GC.Shenandoah.isSupported()) {
-        testDynamicNumberOfGCThreads("UseShenandoahGC");
+      noneGCSupported = false;
+      testDynamicNumberOfGCThreads("UseShenandoahGC");
+    }
+
+    if (noneGCSupported) {
+      throw new SkippedException("Skipping test because none of ConcMarkSweep/G1/Parallel/Shenandoah is supported.");
     }
   }
 

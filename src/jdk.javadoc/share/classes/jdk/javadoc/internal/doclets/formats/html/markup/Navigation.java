@@ -429,7 +429,7 @@ public class Navigation {
                 }
                 if (!listContents.isEmpty()) {
                     Content li = HtmlTree.LI(contents.summaryLabel);
-                    li.add(Contents.SPACE);
+                    li.add(Entity.NO_BREAK_SPACE);
                     tree.add(li);
                     addListToNav(listContents, tree);
                 }
@@ -461,7 +461,7 @@ public class Navigation {
                 }
                 if (!listContents.isEmpty()) {
                     Content li = HtmlTree.LI(contents.moduleSubNavLabel);
-                    li.add(Contents.SPACE);
+                    li.add(Entity.NO_BREAK_SPACE);
                     tree.add(li);
                     addListToNav(listContents, tree);
                 }
@@ -665,7 +665,7 @@ public class Navigation {
                 }
                 if (!listContents.isEmpty()) {
                     Content li = HtmlTree.LI(contents.detailLabel);
-                    li.add(Contents.SPACE);
+                    li.add(Entity.NO_BREAK_SPACE);
                     tree.add(li);
                     addListToNav(listContents, tree);
                 }
@@ -801,9 +801,9 @@ public class Navigation {
         int count = 0;
         for (Content liContent : listContents) {
             if (count < listContents.size() - 1) {
-                liContent.add(Contents.SPACE);
+                liContent.add(Entity.NO_BREAK_SPACE);
                 liContent.add("|");
-                liContent.add(Contents.SPACE);
+                liContent.add(Entity.NO_BREAK_SPACE);
             }
             tree.add(liContent);
             count++;
@@ -935,11 +935,10 @@ public class Navigation {
         String reset = "reset";
         HtmlTree inputText = HtmlTree.INPUT("text", searchValueId, searchValueId);
         HtmlTree inputReset = HtmlTree.INPUT(reset, reset, reset);
-        HtmlTree liInput = HtmlTree.LI(HtmlTree.LABEL(searchValueId, searchLabel));
-        liInput.add(inputText);
-        liInput.add(inputReset);
-        HtmlTree ulSearch = HtmlTree.UL(HtmlStyle.navListSearch, liInput);
-        tree.add(ulSearch);
+        HtmlTree searchDiv = HtmlTree.DIV(HtmlStyle.navListSearch, HtmlTree.LABEL(searchValueId, searchLabel));
+        searchDiv.add(inputText);
+        searchDiv.add(inputReset);
+        tree.add(searchDiv);
     }
 
     private void addFixedNavScript(Content tree) {
@@ -1006,7 +1005,7 @@ public class Navigation {
                 fixedNavDiv.add(queue.poll());
                 fixedNavDiv.add(Position.TOP.endOfNav());
                 tree.add(fixedNavDiv);
-                HtmlTree paddingDiv = HtmlTree.DIV(HtmlStyle.navPadding, Contents.SPACE);
+                HtmlTree paddingDiv = HtmlTree.DIV(HtmlStyle.navPadding, Entity.NO_BREAK_SPACE);
                 tree.add(paddingDiv);
                 addFixedNavScript(tree);
             } else {

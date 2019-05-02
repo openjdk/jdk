@@ -242,7 +242,7 @@ size_t StringTable::table_size() {
 }
 
 void StringTable::trigger_concurrent_work() {
-  MutexLockerEx ml(Service_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
   the_table()->_has_work = true;
   Service_lock->notify_all();
 }

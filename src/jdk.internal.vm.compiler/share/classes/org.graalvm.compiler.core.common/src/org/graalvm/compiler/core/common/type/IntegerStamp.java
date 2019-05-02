@@ -643,7 +643,7 @@ public final class IntegerStamp extends PrimitiveStamp {
                             IntegerStamp b = (IntegerStamp) stamp2;
 
                             int bits = a.getBits();
-                            assert bits == b.getBits();
+                            assert bits == b.getBits() : String.format("stamp1.bits=%d, stamp2.bits=%d", bits, b.getBits());
 
                             if (a.lowerBound == a.upperBound && b.lowerBound == b.upperBound) {
                                 long value = CodeUtil.convert(a.lowerBound() + b.lowerBound(), a.getBits(), false);
@@ -1298,6 +1298,15 @@ public final class IntegerStamp extends PrimitiveStamp {
                             }
                         }
 
+                        private boolean testNoSignChangeAfterShifting(int bits, long value, int shiftAmount) {
+                            long removedBits = -1L << (bits - shiftAmount - 1);
+                            if (value < 0) {
+                                return (value & removedBits) == removedBits;
+                            } else {
+                                return (value & removedBits) == 0;
+                            }
+                        }
+
                         @Override
                         public Stamp foldStamp(Stamp stamp, IntegerStamp shift) {
                             IntegerStamp value = (IntegerStamp) stamp;
@@ -1318,13 +1327,15 @@ public final class IntegerStamp extends PrimitiveStamp {
                                     return value;
                                 }
                                 // the mask of bits that will be lost or shifted into the sign bit
-                                long removedBits = -1L << (bits - shiftAmount - 1);
-                                if ((value.lowerBound() & removedBits) == 0 && (value.upperBound() & removedBits) == 0) {
+                                if (testNoSignChangeAfterShifting(bits, value.lowerBound(), shiftAmount) && testNoSignChangeAfterShifting(bits, value.upperBound(), shiftAmount)) {
                                     /*
                                      * use a better stamp if neither lower nor upper bound can lose
                                      * bits
                                      */
-                                    return new IntegerStamp(bits, value.lowerBound() << shiftAmount, value.upperBound() << shiftAmount, value.downMask() << shiftAmount, value.upMask() << shiftAmount);
+                                    IntegerStamp result = new IntegerStamp(bits, value.lowerBound() << shiftAmount, value.upperBound() << shiftAmount,
+                                                    (value.downMask() << shiftAmount) & CodeUtil.mask(bits),
+                                                    (value.upMask() << shiftAmount) & CodeUtil.mask(bits));
+                                    return result;
                                 }
                             }
                             if ((shift.lowerBound() >>> shiftBits) == (shift.upperBound() >>> shiftBits)) {

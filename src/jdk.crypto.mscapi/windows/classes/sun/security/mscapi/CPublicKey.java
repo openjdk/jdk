@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,8 +59,8 @@ public abstract class CPublicKey extends CKey implements PublicKey {
         private ECPoint w = null;
         private static final long serialVersionUID = 12L;
 
-        CECPublicKey(long hCryptProv, int keyLength) {
-            super("EC", hCryptProv, 0, keyLength);
+        CECPublicKey(NativeHandles handles, int keyLength) {
+            super("EC", handles, keyLength);
         }
 
         @Override
@@ -121,8 +121,8 @@ public abstract class CPublicKey extends CKey implements PublicKey {
         private BigInteger exponent = null;
         private static final long serialVersionUID = 12L;
 
-        CRSAPublicKey(long hCryptProv, long hCryptKey, int keyLength) {
-            super("RSA", hCryptProv, hCryptKey, keyLength);
+        CRSAPublicKey(NativeHandles handles, int keyLength) {
+            super("RSA", handles, keyLength);
         }
 
         public String toString() {
@@ -181,21 +181,27 @@ public abstract class CPublicKey extends CKey implements PublicKey {
         private native byte[] getModulus(byte[] keyBlob) throws KeyException;
     }
 
-    public static CPublicKey of(
+    // Called by native code inside security.cpp
+    static CPublicKey of(
             String alg, long hCryptProv, long hCryptKey, int keyLength) {
+        return of(alg, new NativeHandles(hCryptProv, hCryptKey), keyLength);
+    }
+
+    public static CPublicKey of(
+            String alg, NativeHandles handles, int keyLength) {
         switch (alg) {
             case "RSA":
-                return new CRSAPublicKey(hCryptProv, hCryptKey, keyLength);
+                return new CRSAPublicKey(handles, keyLength);
             case "EC":
-                return new CECPublicKey(hCryptProv, keyLength);
+                return new CECPublicKey(handles, keyLength);
             default:
                 throw new AssertionError("Unsupported algorithm: " + alg);
         }
     }
 
     protected CPublicKey(
-            String alg, long hCryptProv, long hCryptKey, int keyLength) {
-        super(alg, hCryptProv, hCryptKey, keyLength);
+            String alg, NativeHandles handles, int keyLength) {
+        super(alg, handles, keyLength);
     }
 
     @Override

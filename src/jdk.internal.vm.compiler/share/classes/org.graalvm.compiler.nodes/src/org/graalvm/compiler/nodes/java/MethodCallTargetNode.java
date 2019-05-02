@@ -95,10 +95,6 @@ public class MethodCallTargetNode extends CallTargetNode implements IterableNode
         return targetMethod().getSignature().getReturnKind();
     }
 
-    public Invoke invoke() {
-        return (Invoke) this.usages().first();
-    }
-
     @Override
     public boolean verify() {
         assert getUsageCount() <= 1 : "call target may only be used by a single invoke";

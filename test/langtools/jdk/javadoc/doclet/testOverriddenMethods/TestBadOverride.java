@@ -52,10 +52,13 @@ public class TestBadOverride extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg4/Foo.html", true,
-                "<li class=\"blockList\">\n"
+                "<section class=\"detail\">\n"
                 + "<h3>toString</h3>\n"
+                + "<a id=\"toString()\">\n"
+                + "<!--   -->\n"
+                + "</a>\n"
                 + "<pre class=\"methodSignature\">public&nbsp;void&nbsp;toString()</pre>\n"
                 + "<div class=\"block\">Why can't I do this ?</div>\n"
-                + "</li>");
+                + "</section>");
     }
 }

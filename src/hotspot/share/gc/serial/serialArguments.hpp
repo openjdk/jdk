@@ -25,13 +25,12 @@
 #ifndef SHARE_GC_SERIAL_SERIALARGUMENTS_HPP
 #define SHARE_GC_SERIAL_SERIALARGUMENTS_HPP
 
-#include "gc/shared/gcArguments.hpp"
+#include "gc/shared/genArguments.hpp"
 
 class CollectedHeap;
 
-class SerialArguments : public GCArguments {
-public:
-  virtual size_t conservative_max_heap_alignment();
+class SerialArguments : public GenArguments {
+private:
   virtual CollectedHeap* create_heap();
 };
 

@@ -68,9 +68,8 @@
 #include "c1/c1_Compiler.hpp"
 #endif
 #if INCLUDE_JVMCI
-#include "jvmci/jvmciCompiler.hpp"
+#include "jvmci/jvmciEnv.hpp"
 #include "jvmci/jvmciRuntime.hpp"
-#include "jvmci/jvmciJavaClasses.hpp"
 #include "runtime/vframe.hpp"
 #endif
 #ifdef COMPILER2
@@ -402,7 +401,7 @@ CompileTask* CompileQueue::get() {
   methodHandle save_method;
   methodHandle save_hot_method;
 
-  MutexLocker locker(MethodCompileQueue_lock);
+  MonitorLocker locker(MethodCompileQueue_lock);
   // If _first is NULL we have no more compile jobs. There are two reasons for
   // having no compile jobs: First, we compiled everything we wanted. Second,
   // we ran out of code cache so compilation has been disabled. In the latter
@@ -423,7 +422,7 @@ CompileTask* CompileQueue::get() {
     // We need a timed wait here, since compiler threads can exit if compilation
     // is disabled forever. We use 5 seconds wait time; the exiting of compiler threads
     // is not critical and we do not want idle compiler threads to wake up too often.
-    MethodCompileQueue_lock->wait(!Mutex::_no_safepoint_check_flag, 5*1000);
+    locker.wait(5*1000);
 
     if (UseDynamicNumberOfCompilerThreads && _first == NULL) {
       // Still nothing to compile. Give caller a chance to stop this thread.
@@ -1064,36 +1063,34 @@ void CompileBroker::compile_method_base(const methodHandle& method,
     }
 
 #if INCLUDE_JVMCI
-    if (UseJVMCICompiler) {
-      if (blocking) {
-        // Don't allow blocking compiles for requests triggered by JVMCI.
-        if (thread->is_Compiler_thread()) {
-          blocking = false;
-        }
+    if (UseJVMCICompiler && blocking && !UseJVMCINativeLibrary) {
+      // Don't allow blocking compiles for requests triggered by JVMCI.
+      if (thread->is_Compiler_thread()) {
+        blocking = false;
+      }
 
-        // Don't allow blocking compiles if inside a class initializer or while performing class loading
-        vframeStream vfst((JavaThread*) thread);
-        for (; !vfst.at_end(); vfst.next()) {
-          if (vfst.method()->is_static_initializer() ||
-              (vfst.method()->method_holder()->is_subclass_of(SystemDictionary::ClassLoader_klass()) &&
-                  vfst.method()->name() == vmSymbols::loadClass_name())) {
-            blocking = false;
-            break;
-          }
-        }
-
-        // Don't allow blocking compilation requests to JVMCI
-        // if JVMCI itself is not yet initialized
-        if (!JVMCIRuntime::is_HotSpotJVMCIRuntime_initialized() && compiler(comp_level)->is_jvmci()) {
+      // Don't allow blocking compiles if inside a class initializer or while performing class loading
+      vframeStream vfst((JavaThread*) thread);
+      for (; !vfst.at_end(); vfst.next()) {
+        if (vfst.method()->is_static_initializer() ||
+            (vfst.method()->method_holder()->is_subclass_of(SystemDictionary::ClassLoader_klass()) &&
+                vfst.method()->name() == vmSymbols::loadClass_name())) {
           blocking = false;
+          break;
         }
+      }
 
-        // Don't allow blocking compilation requests if we are in JVMCIRuntime::shutdown
-        // to avoid deadlock between compiler thread(s) and threads run at shutdown
-        // such as the DestroyJavaVM thread.
-        if (JVMCIRuntime::shutdown_called()) {
-          blocking = false;
-        }
+      // Don't allow blocking compilation requests to JVMCI
+      // if JVMCI itself is not yet initialized
+      if (!JVMCI::is_compiler_initialized() && compiler(comp_level)->is_jvmci()) {
+        blocking = false;
+      }
+
+      // Don't allow blocking compilation requests if we are in JVMCIRuntime::shutdown
+      // to avoid deadlock between compiler thread(s) and threads run at shutdown
+      // such as the DestroyJavaVM thread.
+      if (JVMCI::shutdown_called()) {
+        blocking = false;
       }
     }
 #endif // INCLUDE_JVMCI
@@ -1193,7 +1190,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   }
 
 #if INCLUDE_JVMCI
-  if (comp->is_jvmci() && !JVMCIRuntime::can_initialize_JVMCI()) {
+  if (comp->is_jvmci() && !JVMCI::can_initialize_JVMCI()) {
     return NULL;
   }
 #endif
@@ -1496,11 +1493,11 @@ static const int JVMCI_COMPILATION_PROGRESS_WAIT_ATTEMPTS = 10;
  * @return true if this thread needs to free/recycle the task
  */
 bool CompileBroker::wait_for_jvmci_completion(JVMCICompiler* jvmci, CompileTask* task, JavaThread* thread) {
-  MutexLocker waiter(task->lock(), thread);
+  MonitorLocker ml(task->lock(), thread);
   int progress_wait_attempts = 0;
   int methods_compiled = jvmci->methods_compiled();
   while (!task->is_complete() && !is_compilation_disabled_forever() &&
-         task->lock()->wait(!Mutex::_no_safepoint_check_flag, JVMCI_COMPILATION_PROGRESS_WAIT_TIMESLICE)) {
+         ml.wait(JVMCI_COMPILATION_PROGRESS_WAIT_TIMESLICE)) {
     CompilerThread* jvmci_compiler_thread = task->jvmci_compiler_thread();
 
     bool progress;
@@ -1558,10 +1555,10 @@ void CompileBroker::wait_for_completion(CompileTask* task) {
   } else
 #endif
   {
-    MutexLocker waiter(task->lock(), thread);
+    MonitorLocker ml(task->lock(), thread);
     free_task = true;
     while (!task->is_complete() && !is_compilation_disabled_forever()) {
-      task->lock()->wait();
+      ml.wait();
     }
   }
 
@@ -1644,7 +1641,7 @@ bool CompileBroker::init_compiler_runtime() {
 void CompileBroker::shutdown_compiler_runtime(AbstractCompiler* comp, CompilerThread* thread) {
   // Free buffer blob, if allocated
   if (thread->get_buffer_blob() != NULL) {
-    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     CodeCache::free(thread->get_buffer_blob());
   }
 
@@ -1780,7 +1777,7 @@ void CompileBroker::compiler_thread_loop() {
           }
           // Free buffer blob, if allocated
           if (thread->get_buffer_blob() != NULL) {
-            MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+            MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
             CodeCache::free(thread->get_buffer_blob());
           }
           return; // Stop this thread.
@@ -1910,7 +1907,7 @@ static void codecache_print(bool detailed)
   stringStream s;
   // Dump code cache  into a buffer before locking the tty,
   {
-    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     CodeCache::print_summary(&s, detailed);
   }
   ttyLocker ttyl;
@@ -1924,7 +1921,7 @@ static void codecache_print(outputStream* out, bool detailed) {
 
   // Dump code cache into a buffer
   {
-    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     CodeCache::print_summary(&s, detailed);
   }
 
@@ -2061,20 +2058,24 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
 
     // Skip redefined methods
     if (target_handle->is_old()) {
-        failure_reason = "redefined method";
-        retry_message = "not retryable";
-        compilable = ciEnv::MethodCompilable_never;
+      failure_reason = "redefined method";
+      retry_message = "not retryable";
+      compilable = ciEnv::MethodCompilable_never;
     } else {
-        JVMCIEnv env(task, system_dictionary_modification_counter);
-        methodHandle method(thread, target_handle);
-        jvmci->compile_method(method, osr_bci, &env);
+      JVMCICompileState compile_state(task, system_dictionary_modification_counter);
+      JVMCIEnv env(&compile_state, __FILE__, __LINE__);
+      methodHandle method(thread, target_handle);
+      env.runtime()->compile_method(&env, jvmci, method, osr_bci);
 
-        failure_reason = env.failure_reason();
-        failure_reason_on_C_heap = env.failure_reason_on_C_heap();
-        if (!env.retryable()) {
-          retry_message = "not retryable";
-          compilable = ciEnv::MethodCompilable_not_at_tier;
-        }
+      failure_reason = compile_state.failure_reason();
+      failure_reason_on_C_heap = compile_state.failure_reason_on_C_heap();
+      if (!compile_state.retryable()) {
+        retry_message = "not retryable";
+        compilable = ciEnv::MethodCompilable_not_at_tier;
+      }
+      if (task->code() == NULL) {
+        assert(failure_reason != NULL, "must specify failure_reason");
+      }
     }
     post_compile(thread, task, task->code() != NULL, NULL, compilable, failure_reason);
     if (event.should_commit()) {
@@ -2112,9 +2113,9 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
       ci_env.record_method_not_compilable("no compiler", !TieredCompilation);
     } else {
       if (WhiteBoxAPI && WhiteBox::compilation_locked) {
-        MonitorLockerEx locker(Compilation_lock, Mutex::_no_safepoint_check_flag);
+        MonitorLocker locker(Compilation_lock, Mutex::_no_safepoint_check_flag);
         while (WhiteBox::compilation_locked) {
-          locker.wait(Mutex::_no_safepoint_check_flag);
+          locker.wait();
         }
       }
       comp->compile_method(&ci_env, target, osr_bci, directive);
@@ -2678,7 +2679,7 @@ void CompileBroker::print_heapinfo(outputStream* out, const char* function, cons
   // CodeHeapStateAnalytics_lock could be held by a concurrent thread for a long time,
   // leading to an unnecessarily long hold time of the CodeCache_lock.
   ts.update(); // record starting point
-  MutexLockerEx mu1(CodeHeapStateAnalytics_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker mu1(CodeHeapStateAnalytics_lock, Mutex::_no_safepoint_check_flag);
   out->print_cr("\n__ CodeHeapStateAnalytics lock wait took %10.3f seconds _________\n", ts.seconds());
 
   // If we serve an "allFun" call, it is beneficial to hold the CodeCache_lock
@@ -2688,7 +2689,7 @@ void CompileBroker::print_heapinfo(outputStream* out, const char* function, cons
   Monitor* global_lock   = allFun ? CodeCache_lock : NULL;
   Monitor* function_lock = allFun ? NULL : CodeCache_lock;
   ts_global.update(); // record starting point
-  MutexLockerEx mu2(global_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker mu2(global_lock, Mutex::_no_safepoint_check_flag);
   if (global_lock != NULL) {
     out->print_cr("\n__ CodeCache (global) lock wait took %10.3f seconds _________\n", ts_global.seconds());
     ts_global.update(); // record starting point
@@ -2696,7 +2697,7 @@ void CompileBroker::print_heapinfo(outputStream* out, const char* function, cons
 
   if (aggregate) {
     ts.update(); // record starting point
-    MutexLockerEx mu3(function_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker mu3(function_lock, Mutex::_no_safepoint_check_flag);
     if (function_lock != NULL) {
       out->print_cr("\n__ CodeCache (function) lock wait took %10.3f seconds _________\n", ts.seconds());
     }
@@ -2716,7 +2717,7 @@ void CompileBroker::print_heapinfo(outputStream* out, const char* function, cons
   if (methodNames) {
     // print_names() has shown to be sensitive to concurrent CodeHeap modifications.
     // Therefore, request  the CodeCache_lock before calling...
-    MutexLockerEx mu3(function_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker mu3(function_lock, Mutex::_no_safepoint_check_flag);
     CodeCache::print_names(out);
   }
   if (discard) CodeCache::discard(out);

@@ -28,6 +28,7 @@
 #include "gc/parallel/psAdaptiveSizePolicy.hpp"
 #include "gc/parallel/psMarkSweepDecorator.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
+#include "gc/shared/genArguments.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
 #include "utilities/align.hpp"
@@ -90,9 +91,8 @@ size_t ASPSOldGen::available_for_expansion() {
   assert(virtual_space()->is_aligned(gen_size_limit()), "not aligned");
   assert(gen_size_limit() >= virtual_space()->committed_size(), "bad gen size");
 
-  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   size_t result =  gen_size_limit() - virtual_space()->committed_size();
-  size_t result_aligned = align_down(result, heap->generation_alignment());
+  size_t result_aligned = align_down(result, GenAlignment);
   return result_aligned;
 }
 
@@ -103,11 +103,10 @@ size_t ASPSOldGen::available_for_contraction() {
   }
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-  const size_t gen_alignment = heap->generation_alignment();
   PSAdaptiveSizePolicy* policy = heap->size_policy();
   const size_t working_size =
     used_in_bytes() + (size_t) policy->avg_promoted()->padded_average();
-  const size_t working_aligned = align_up(working_size, gen_alignment);
+  const size_t working_aligned = align_up(working_size, GenAlignment);
   const size_t working_or_min = MAX2(working_aligned, min_gen_size());
   if (working_or_min > reserved().byte_size()) {
     // If the used or minimum gen size (aligned up) is greater
@@ -125,7 +124,7 @@ size_t ASPSOldGen::available_for_contraction() {
 
   size_t result = policy->promo_increment_aligned_down(max_contraction);
   // Also adjust for inter-generational alignment
-  size_t result_aligned = align_down(result, gen_alignment);
+  size_t result_aligned = align_down(result, GenAlignment);
 
   Log(gc, ergo) log;
   if (log.is_trace()) {
@@ -138,7 +137,7 @@ size_t ASPSOldGen::available_for_contraction() {
     log.trace(" min_gen_size() " SIZE_FORMAT " K / " SIZE_FORMAT_HEX, min_gen_size()/K, min_gen_size());
     log.trace(" max_contraction " SIZE_FORMAT " K / " SIZE_FORMAT_HEX, max_contraction/K, max_contraction);
     log.trace("    without alignment " SIZE_FORMAT " K / " SIZE_FORMAT_HEX, promo_increment/K, promo_increment);
-    log.trace(" alignment " SIZE_FORMAT_HEX, gen_alignment);
+    log.trace(" alignment " SIZE_FORMAT_HEX, GenAlignment);
   }
 
   assert(result_aligned <= max_contraction, "arithmetic is wrong");

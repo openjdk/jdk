@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,20 +49,17 @@ import java.util.jar.Manifest;
  * @author Steve Drach
  */
 class JarFileSystem extends ZipFileSystem {
-    private Function<byte[],byte[]> lookup;
+    // lookup needs to be initialized because isMultiReleaseJar is called before createVersionedLinks
+    private Function<byte[], byte[]> lookup = path -> path;
 
     @Override
     IndexNode getInode(byte[] path) {
         // check for an alias to a versioned entry
-        byte[] versionedPath = lookup.apply(path);
-        return versionedPath == null ? super.getInode(path) : super.getInode(versionedPath);
+        return super.getInode(lookup.apply(path));
     }
 
-    JarFileSystem(ZipFileSystemProvider provider, Path zfpath, Map<String,?> env)
-            throws IOException {
+    JarFileSystem(ZipFileSystemProvider provider, Path zfpath, Map<String,?> env) throws IOException {
         super(provider, zfpath, env);
-        lookup = path -> path;  // lookup needs to be set before isMultiReleaseJar is called
-                                // because it eventually calls getEntry
         if (isMultiReleaseJar()) {
             int version;
             Object o = env.get("multi-release");
@@ -81,7 +78,7 @@ class JarFileSystem extends ZipFileSystem {
                 throw new IllegalArgumentException("env parameter must be String, Integer, "
                         + "or Version");
             }
-            lookup = createVersionedLinks(version < 0 ? 0 : version);
+            createVersionedLinks(version < 0 ? 0 : version);
             setReadOnly();
         }
     }
@@ -89,7 +86,7 @@ class JarFileSystem extends ZipFileSystem {
     private boolean isMultiReleaseJar() throws IOException {
         try (InputStream is = newInputStream(getBytes("/META-INF/MANIFEST.MF"))) {
             String multiRelease = new Manifest(is).getMainAttributes()
-                    .getValue(Attributes.Name.MULTI_RELEASE);
+                .getValue(Attributes.Name.MULTI_RELEASE);
             return "true".equalsIgnoreCase(multiRelease);
         } catch (NoSuchFileException x) {
             return false;
@@ -106,27 +103,71 @@ class JarFileSystem extends ZipFileSystem {
      * then wrap the map in a function that getEntry can use to override root
      * entry lookup for entries that have corresponding versioned entries
      */
-    private Function<byte[],byte[]> createVersionedLinks(int version) {
-        HashMap<IndexNode,byte[]> aliasMap = new HashMap<>();
+    private void createVersionedLinks(int version) {
         IndexNode verdir = getInode(getBytes("/META-INF/versions"));
-        if (verdir != null) {
-            getVersionMap(version, verdir).values()
-                .forEach(versionNode -> {   // for each META-INF/versions/{n} directory
-                    // put all the leaf inodes, i.e. entries, into the alias map
-                    // possibly shadowing lower versioned entries
-                    walk(versionNode, entryNode -> {
-                        byte[] rootName = getRootName(versionNode, entryNode);
-                        if (rootName != null) {
-                            IndexNode rootNode = getInode(rootName);
-                            if (rootNode == null) { // no matching root node, make a virtual one
-                                rootNode = IndexNode.keyOf(rootName);
-                            }
-                            aliasMap.put(rootNode, entryNode.name);
-                        }
-                    });
-                });
+        // nothing to do, if no /META-INF/versions
+        if (verdir == null) {
+            return;
         }
-        return path -> aliasMap.get(IndexNode.keyOf(path));
+        // otherwise, create a map and for each META-INF/versions/{n} directory
+        // put all the leaf inodes, i.e. entries, into the alias map
+        // possibly shadowing lower versioned entries
+        HashMap<IndexNode, byte[]> aliasMap = new HashMap<>();
+        getVersionMap(version, verdir).values().forEach(versionNode ->
+            walk(versionNode.child, entryNode ->
+                aliasMap.put(
+                    getNodeInRootTree(getRootName(entryNode, versionNode), entryNode.isdir),
+                    entryNode.name))
+        );
+        lookup = path -> {
+            byte[] entry = aliasMap.get(IndexNode.keyOf(path));
+            return entry == null ? path : entry;
+        };
+    }
+
+    /**
+     * Return the node from the root tree. Create it, if it doesn't exist.
+     */
+    private IndexNode getNodeInRootTree(byte[] path, boolean isdir) {
+        IndexNode node = getInode(path);
+        if (node != null) {
+            return node;
+        }
+        IndexNode parent = getParentDir(path);
+        beginWrite();
+        try {
+            node = new IndexNode(path, isdir);
+            node.sibling = parent.child;
+            parent.child = node;
+            inodes.put(node, node);
+            return node;
+        } finally {
+            endWrite();
+        }
+    }
+
+    /**
+     * Return the parent directory node of a path. If the node doesn't exist,
+     * it will be created. Parent directories will be created recursively.
+     * Recursion fuse: We assume at latest the root path can be resolved to a node.
+     */
+    private IndexNode getParentDir(byte[] path) {
+        byte[] parentPath = getParent(path);
+        IndexNode node = inodes.get(IndexNode.keyOf(parentPath));
+        if (node != null) {
+            return node;
+        }
+        IndexNode parent = getParentDir(parentPath);
+        beginWrite();
+        try {
+            node = new IndexNode(parentPath, true);
+            node.sibling = parent.child;
+            parent.child = node;
+            inodes.put(node, node);
+            return node;
+        } finally {
+            endWrite();
+        }
     }
 
     /**
@@ -138,7 +179,7 @@ class JarFileSystem extends ZipFileSystem {
         TreeMap<Integer,IndexNode> map = new TreeMap<>();
         IndexNode child = metaInfVersions.child;
         while (child != null) {
-            Integer key = getVersion(child.name, metaInfVersions.name.length + 1);
+            Integer key = getVersion(child, metaInfVersions);
             if (key != null && key <= version) {
                 map.put(key, child);
             }
@@ -150,9 +191,11 @@ class JarFileSystem extends ZipFileSystem {
     /**
      * extract the integer version number -- META-INF/versions/9 returns 9
      */
-    private Integer getVersion(byte[] name, int offset) {
+    private Integer getVersion(IndexNode inode, IndexNode metaInfVersions) {
         try {
-            return Integer.parseInt(getString(Arrays.copyOfRange(name, offset, name.length)));
+            byte[] fullName = inode.name;
+            return Integer.parseInt(getString(Arrays
+                .copyOfRange(fullName, metaInfVersions.name.length + 1, fullName.length)));
         } catch (NumberFormatException x) {
             // ignore this even though it might indicate issues with the JAR structure
             return null;
@@ -162,14 +205,14 @@ class JarFileSystem extends ZipFileSystem {
     /**
      * walk the IndexNode tree processing all leaf nodes
      */
-    private void walk(IndexNode inode, Consumer<IndexNode> process) {
+    private void walk(IndexNode inode, Consumer<IndexNode> consumer) {
         if (inode == null) return;
         if (inode.isDir()) {
-            walk(inode.child, process);
+            walk(inode.child, consumer);
         } else {
-            process.accept(inode);
+            consumer.accept(inode);
         }
-        walk(inode.sibling, process);
+        walk(inode.sibling, consumer);
     }
 
     /**
@@ -178,9 +221,8 @@ class JarFileSystem extends ZipFileSystem {
      *   and prefix META-INF/versions/9/
      *   returns foo/bar.class
      */
-    private byte[] getRootName(IndexNode prefix, IndexNode inode) {
-        int offset = prefix.name.length;
+    private byte[] getRootName(IndexNode inode, IndexNode prefix) {
         byte[] fullName = inode.name;
-        return Arrays.copyOfRange(fullName, offset, fullName.length);
+        return Arrays.copyOfRange(fullName, prefix.name.length, fullName.length);
     }
 }

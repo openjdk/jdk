@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@ package jdk.vm.ci.hotspot.aarch64;
 
 import jdk.vm.ci.hotspot.HotSpotVMConfigAccess;
 import jdk.vm.ci.hotspot.HotSpotVMConfigStore;
+import jdk.vm.ci.services.Services;
 
 /**
  * Used to access native configuration details.
@@ -36,7 +37,7 @@ class AArch64HotSpotVMConfig extends HotSpotVMConfigAccess {
         super(config);
     }
 
-    final boolean linuxOs = System.getProperty("os.name", "").startsWith("Linux");
+    final boolean linuxOs = Services.getSavedProperty("os.name", "").startsWith("Linux");
 
     final boolean useCompressedOops = getFlag("UseCompressedOops", Boolean.class);
 

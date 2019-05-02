@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ TEST_VM(MetaspaceUtils, committed_compressed_class_pointers) {
 
 TEST_VM(MetaspaceUtils, virtual_space_list_large_chunk) {
   VirtualSpaceList* vs_list = new VirtualSpaceList(os::vm_allocation_granularity());
-  MutexLockerEx cl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker cl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
   // A size larger than VirtualSpaceSize (256k) and add one page to make it _not_ be
   // vm_allocation_granularity aligned on Windows.
   size_t large_size = (size_t)(2*256*K + (os::vm_page_size() / BytesPerWord));

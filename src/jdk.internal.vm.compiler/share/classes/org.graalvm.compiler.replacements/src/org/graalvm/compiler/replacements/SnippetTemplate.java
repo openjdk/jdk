@@ -675,7 +675,7 @@ public class SnippetTemplate {
             ResolvedJavaMethod javaMethod = findMethod(providers.getMetaAccess(), declaringClass, methodName);
             assert javaMethod != null : "did not find @" + Snippet.class.getSimpleName() + " method in " + declaringClass + " named " + methodName;
             assert javaMethod.getAnnotation(Snippet.class) != null : javaMethod + " must be annotated with @" + Snippet.class.getSimpleName();
-            providers.getReplacements().registerSnippet(javaMethod, original, receiver, GraalOptions.TrackNodeSourcePosition.getValue(options));
+            providers.getReplacements().registerSnippet(javaMethod, original, receiver, GraalOptions.TrackNodeSourcePosition.getValue(options), options);
             LocationIdentity[] privateLocations = GraalOptions.SnippetCounters.getValue(options) ? SnippetCounterNode.addSnippetCounters(initialPrivateLocations) : initialPrivateLocations;
             if (GraalOptions.EagerSnippets.getValue(options)) {
                 return new EagerSnippetInfo(javaMethod, original, privateLocations, receiver);
@@ -691,7 +691,7 @@ public class SnippetTemplate {
                 Description description = new Description(args.cacheKey.method, "SnippetTemplate_" + nextSnippetTemplateId.incrementAndGet());
                 return DebugContext.create(options, description, outer.getGlobalMetrics(), DEFAULT_LOG_STREAM, factories);
             }
-            return DebugContext.DISABLED;
+            return DebugContext.disabled(options);
         }
 
         /**
@@ -764,7 +764,8 @@ public class SnippetTemplate {
 
         Object[] constantArgs = getConstantArgs(args);
         boolean shouldTrackNodeSourcePosition1 = trackNodeSourcePosition || (providers.getCodeCache() != null && providers.getCodeCache().shouldDebugNonSafepoints());
-        StructuredGraph snippetGraph = providers.getReplacements().getSnippet(args.info.method, args.info.original, constantArgs, shouldTrackNodeSourcePosition1, replacee.getNodeSourcePosition());
+        StructuredGraph snippetGraph = providers.getReplacements().getSnippet(args.info.method, args.info.original, constantArgs, shouldTrackNodeSourcePosition1, replacee.getNodeSourcePosition(),
+                        options);
 
         ResolvedJavaMethod method = snippetGraph.method();
         Signature signature = method.getSignature();
@@ -965,7 +966,9 @@ public class SnippetTemplate {
                         }
                         retNode.setMemoryMap(null);
                     }
-                    memoryMap.safeDelete();
+                    if (memoryMap != null) {
+                        memoryMap.safeDelete();
+                    }
                 }
                 if (needsAnchor) {
                     snippetCopy.addAfterFixed(snippetCopy.start(), anchor);
@@ -1484,55 +1487,6 @@ public class SnippetTemplate {
 
             rewireFrameStates(replacee, duplicates);
 
-            if (replacee instanceof DeoptimizingNode) {
-                DeoptimizingNode replaceeDeopt = (DeoptimizingNode) replacee;
-
-                FrameState stateBefore = null;
-                FrameState stateDuring = null;
-                FrameState stateAfter = null;
-                if (replaceeDeopt.canDeoptimize()) {
-                    if (replaceeDeopt instanceof DeoptimizingNode.DeoptBefore) {
-                        stateBefore = ((DeoptimizingNode.DeoptBefore) replaceeDeopt).stateBefore();
-                    }
-                    if (replaceeDeopt instanceof DeoptimizingNode.DeoptDuring) {
-                        stateDuring = ((DeoptimizingNode.DeoptDuring) replaceeDeopt).stateDuring();
-                    }
-                    if (replaceeDeopt instanceof DeoptimizingNode.DeoptAfter) {
-                        stateAfter = ((DeoptimizingNode.DeoptAfter) replaceeDeopt).stateAfter();
-                    }
-                }
-
-                for (DeoptimizingNode deoptNode : deoptNodes) {
-                    DeoptimizingNode deoptDup = (DeoptimizingNode) duplicates.get(deoptNode.asNode());
-                    if (deoptDup.canDeoptimize()) {
-                        if (deoptDup instanceof DeoptimizingNode.DeoptBefore) {
-                            ((DeoptimizingNode.DeoptBefore) deoptDup).setStateBefore(stateBefore);
-                        }
-                        if (deoptDup instanceof DeoptimizingNode.DeoptDuring) {
-                            DeoptimizingNode.DeoptDuring deoptDupDuring = (DeoptimizingNode.DeoptDuring) deoptDup;
-                            if (stateDuring != null) {
-                                deoptDupDuring.setStateDuring(stateDuring);
-                            } else if (stateAfter != null) {
-                                deoptDupDuring.computeStateDuring(stateAfter);
-                            } else if (stateBefore != null) {
-                                assert !deoptDupDuring.hasSideEffect() : "can't use stateBefore as stateDuring for state split " + deoptDupDuring;
-                                deoptDupDuring.setStateDuring(stateBefore);
-                            }
-                        }
-                        if (deoptDup instanceof DeoptimizingNode.DeoptAfter) {
-                            DeoptimizingNode.DeoptAfter deoptDupAfter = (DeoptimizingNode.DeoptAfter) deoptDup;
-                            if (stateAfter != null) {
-                                deoptDupAfter.setStateAfter(stateAfter);
-                            } else {
-                                assert !deoptDupAfter.hasSideEffect() : "can't use stateBefore as stateAfter for state split " + deoptDupAfter;
-                                deoptDupAfter.setStateAfter(stateBefore);
-                            }
-
-                        }
-                    }
-                }
-            }
-
             updateStamps(replacee, duplicates);
 
             rewireMemoryGraph(replacee, duplicates);
@@ -1656,7 +1610,8 @@ public class SnippetTemplate {
             FixedNode firstCFGNodeDuplicate = (FixedNode) duplicates.get(firstCFGNode);
             replaceeGraph.addAfterFixed(lastFixedNode, firstCFGNodeDuplicate);
 
-            rewireFrameStates(replacee, duplicates);
+            // floating nodes are not state-splits not need to re-wire frame states
+            assert !(replacee instanceof StateSplit);
             updateStamps(replacee, duplicates);
 
             rewireMemoryGraph(replacee, duplicates);
@@ -1710,7 +1665,8 @@ public class SnippetTemplate {
             }
             UnmodifiableEconomicMap<Node, Node> duplicates = inlineSnippet(replacee, debug, replaceeGraph, replacements);
 
-            rewireFrameStates(replacee, duplicates);
+            // floating nodes are not state-splits not need to re-wire frame states
+            assert !(replacee instanceof StateSplit);
             updateStamps(replacee, duplicates);
 
             rewireMemoryGraph(replacee, duplicates);
@@ -1725,11 +1681,63 @@ public class SnippetTemplate {
     }
 
     protected void rewireFrameStates(ValueNode replacee, UnmodifiableEconomicMap<Node, Node> duplicates) {
-        if (replacee instanceof StateSplit) {
+        if (replacee.graph().getGuardsStage().areFrameStatesAtSideEffects() && replacee instanceof StateSplit) {
             for (StateSplit sideEffectNode : sideEffectNodes) {
                 assert ((StateSplit) replacee).hasSideEffect();
                 Node sideEffectDup = duplicates.get(sideEffectNode.asNode());
                 ((StateSplit) sideEffectDup).setStateAfter(((StateSplit) replacee).stateAfter());
+            }
+        } else if (replacee.graph().getGuardsStage().areFrameStatesAtDeopts() && replacee instanceof DeoptimizingNode) {
+            DeoptimizingNode replaceeDeopt = (DeoptimizingNode) replacee;
+
+            FrameState stateBefore = null;
+            FrameState stateDuring = null;
+            FrameState stateAfter = null;
+            if (replaceeDeopt.canDeoptimize()) {
+                if (replaceeDeopt instanceof DeoptimizingNode.DeoptBefore) {
+                    stateBefore = ((DeoptimizingNode.DeoptBefore) replaceeDeopt).stateBefore();
+                }
+                if (replaceeDeopt instanceof DeoptimizingNode.DeoptDuring) {
+                    stateDuring = ((DeoptimizingNode.DeoptDuring) replaceeDeopt).stateDuring();
+                }
+                if (replaceeDeopt instanceof DeoptimizingNode.DeoptAfter) {
+                    stateAfter = ((DeoptimizingNode.DeoptAfter) replaceeDeopt).stateAfter();
+                }
+            }
+
+            for (DeoptimizingNode deoptNode : deoptNodes) {
+                DeoptimizingNode deoptDup = (DeoptimizingNode) duplicates.get(deoptNode.asNode());
+                if (deoptDup.canDeoptimize()) {
+                    if (deoptDup instanceof DeoptimizingNode.DeoptBefore) {
+                        ((DeoptimizingNode.DeoptBefore) deoptDup).setStateBefore(stateBefore);
+                    }
+                    if (deoptDup instanceof DeoptimizingNode.DeoptDuring) {
+                        // compute a state "during" for a DeoptDuring inside the snippet depending
+                        // on what kind of states we had on the node we are replacing.
+                        // If the original node had a state "during" already, we just use that,
+                        // otherwise we need to find a strategy to compute a state during based on
+                        // some other state (before or after).
+                        DeoptimizingNode.DeoptDuring deoptDupDuring = (DeoptimizingNode.DeoptDuring) deoptDup;
+                        if (stateDuring != null) {
+                            deoptDupDuring.setStateDuring(stateDuring);
+                        } else if (stateAfter != null) {
+                            deoptDupDuring.computeStateDuring(stateAfter);
+                        } else if (stateBefore != null) {
+                            assert !deoptDupDuring.hasSideEffect() : "can't use stateBefore as stateDuring for state split " + deoptDupDuring;
+                            deoptDupDuring.setStateDuring(stateBefore);
+                        }
+                    }
+                    if (deoptDup instanceof DeoptimizingNode.DeoptAfter) {
+                        DeoptimizingNode.DeoptAfter deoptDupAfter = (DeoptimizingNode.DeoptAfter) deoptDup;
+                        if (stateAfter != null) {
+                            deoptDupAfter.setStateAfter(stateAfter);
+                        } else {
+                            assert !deoptDupAfter.hasSideEffect() : "can't use stateBefore as stateAfter for state split " + deoptDupAfter;
+                            deoptDupAfter.setStateAfter(stateBefore);
+                        }
+
+                    }
+                }
             }
         }
     }

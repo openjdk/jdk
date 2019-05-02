@@ -102,7 +102,7 @@ public interface EnumConstantWriter {
      * @param memberDetailsTree the content tree representing member details
      * @return content tree for the enum constant details
      */
-    public Content getEnumConstantsDetails(Content memberDetailsTree);
+    public Content getEnumConstantsDetails(Content memberDetailsTreeHeader, Content memberDetailsTree);
 
     /**
      * Get the enum constants documentation.
@@ -112,4 +112,11 @@ public interface EnumConstantWriter {
      * @return content tree for the enum constants documentation
      */
     public Content getEnumConstants(Content enumConstantsTree, boolean isLastContent);
+
+    /**
+     * Gets the member header tree.
+     *
+     * @return a content tree for the member header
+     */
+    public Content getMemberTreeHeader();
 }

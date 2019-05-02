@@ -42,7 +42,8 @@ public class TestLinkageErrorInGenerateOopMap {
     public static void main(String args[]) throws Exception {
         if (args.length == 0) {
             // Spawn new VM instance to execute test
-            String[] flags = {"-XX:-BytecodeVerificationRemote",
+            String[] flags = {"-XX:+UnlockDiagnosticVMOptions",
+                              "-XX:-BytecodeVerificationRemote",
                               "-XX:-BytecodeVerificationLocal",
                               "-XX:-TieredCompilation",
                               "-XX:CompileCommand=dontinline,compiler/linkage/OSRWithBadOperandStack.m*",

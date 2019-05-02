@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,10 @@
 #include "ci/ciUtilities.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/cardTable.hpp"
-#include "memory/oopFactory.hpp"
-#include "oops/objArrayOop.inline.hpp"
-#include "jvmci/jvmciRuntime.hpp"
+#include "gc/shared/collectedHeap.hpp"
+#include "jvmci/jvmciEnv.hpp"
 #include "jvmci/jvmciCompilerToVM.hpp"
 #include "jvmci/vmStructs_jvmci.hpp"
-#include "runtime/flags/jvmFlag.hpp"
-#include "runtime/handles.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/resourceHash.hpp"
 
@@ -88,7 +85,7 @@ address CompilerToVM::Data::dpow;
 address CompilerToVM::Data::symbol_init;
 address CompilerToVM::Data::symbol_clinit;
 
-void CompilerToVM::Data::initialize(TRAPS) {
+void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
   Klass_vtable_start_offset = in_bytes(Klass::vtable_start_offset());
   Klass_vtable_length_offset = in_bytes(Klass::vtable_length_offset());
 
@@ -157,29 +154,23 @@ void CompilerToVM::Data::initialize(TRAPS) {
 #undef SET_TRIGFUNC
 }
 
-objArrayHandle CompilerToVM::initialize_intrinsics(TRAPS) {
-  objArrayHandle vmIntrinsics = oopFactory::new_objArray_handle(VMIntrinsicMethod::klass(), (vmIntrinsics::ID_LIMIT - 1), CHECK_(objArrayHandle()));
+JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
+  JVMCIObjectArray vmIntrinsics = JVMCIENV->new_VMIntrinsicMethod_array(vmIntrinsics::ID_LIMIT - 1, JVMCI_CHECK_NULL);
   int index = 0;
-  // The intrinsics for a class are usually adjacent to each other.
-  // When they are, the string for the class name can be reused.
   vmSymbols::SID kls_sid = vmSymbols::NO_SID;
-  Handle kls_str;
+  JVMCIObject kls_str;
 #define VM_SYMBOL_TO_STRING(s) \
-  java_lang_String::create_from_symbol(vmSymbols::symbol_at(vmSymbols::VM_SYMBOL_ENUM_NAME(s)), CHECK_(objArrayHandle()))
+  JVMCIENV->create_string(vmSymbols::symbol_at(vmSymbols::VM_SYMBOL_ENUM_NAME(s)), JVMCI_CHECK_NULL)
 #define VM_INTRINSIC_INFO(id, kls, name, sig, ignore_fcode) {             \
-    instanceHandle vmIntrinsicMethod = InstanceKlass::cast(VMIntrinsicMethod::klass())->allocate_instance_handle(CHECK_(objArrayHandle())); \
     vmSymbols::SID sid = vmSymbols::VM_SYMBOL_ENUM_NAME(kls);             \
     if (kls_sid != sid) {                                                 \
       kls_str = VM_SYMBOL_TO_STRING(kls);                                 \
       kls_sid = sid;                                                      \
     }                                                                     \
-    Handle name_str = VM_SYMBOL_TO_STRING(name);                          \
-    Handle sig_str = VM_SYMBOL_TO_STRING(sig);                            \
-    VMIntrinsicMethod::set_declaringClass(vmIntrinsicMethod, kls_str());  \
-    VMIntrinsicMethod::set_name(vmIntrinsicMethod, name_str());           \
-    VMIntrinsicMethod::set_descriptor(vmIntrinsicMethod, sig_str());      \
-    VMIntrinsicMethod::set_id(vmIntrinsicMethod, vmIntrinsics::id);       \
-      vmIntrinsics->obj_at_put(index++, vmIntrinsicMethod());             \
+    JVMCIObject name_str = VM_SYMBOL_TO_STRING(name);                    \
+    JVMCIObject sig_str = VM_SYMBOL_TO_STRING(sig);                      \
+    JVMCIObject vmIntrinsicMethod = JVMCIENV->new_VMIntrinsicMethod(kls_str, name_str, sig_str, (jint) vmIntrinsics::id, JVMCI_CHECK_NULL); \
+    JVMCIENV->put_object_at(vmIntrinsics, index++, vmIntrinsicMethod);   \
   }
 
   VM_INTRINSICS_DO(VM_INTRINSIC_INFO, VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_ALIAS_IGNORE)
@@ -190,9 +181,6 @@ objArrayHandle CompilerToVM::initialize_intrinsics(TRAPS) {
   return vmIntrinsics;
 }
 
-/**
- * The set of VM flags known to be used.
- */
 #define PREDEFINED_CONFIG_FLAGS(do_bool_flag, do_intx_flag, do_uintx_flag) \
   do_intx_flag(AllocateInstancePrefetchLines)                              \
   do_intx_flag(AllocatePrefetchDistance)                                   \
@@ -258,30 +246,28 @@ objArrayHandle CompilerToVM::initialize_intrinsics(TRAPS) {
   do_bool_flag(UseTLAB)                                                    \
   do_bool_flag(VerifyOops)                                                 \
 
-#define BOXED_BOOLEAN(name, value) oop name = ((jboolean)(value) ? boxedTrue() : boxedFalse())
-#define BOXED_DOUBLE(name, value) oop name; do { jvalue p; p.d = (jdouble) (value); name = java_lang_boxing_object::create(T_DOUBLE, &p, CHECK_NULL);} while(0)
+#define BOXED_BOOLEAN(name, value) name = ((jboolean)(value) ? boxedTrue : boxedFalse)
+#define BOXED_DOUBLE(name, value) do { jvalue p; p.d = (jdouble) (value); name = JVMCIENV->create_box(T_DOUBLE, &p, JVMCI_CHECK_NULL);} while(0)
 #define BOXED_LONG(name, value) \
-  oop name; \
   do { \
     jvalue p; p.j = (jlong) (value); \
-    Handle* e = longs.get(p.j); \
+    JVMCIObject* e = longs.get(p.j); \
     if (e == NULL) { \
-      oop o = java_lang_boxing_object::create(T_LONG, &p, CHECK_NULL); \
-      Handle h(THREAD, o); \
+      JVMCIObject h = JVMCIENV->create_box(T_LONG, &p, JVMCI_CHECK_NULL); \
       longs.put(p.j, h); \
-      name = h(); \
+      name = h; \
     } else { \
-      name = (*e)(); \
+      name = (*e); \
     } \
   } while (0)
 
 #define CSTRING_TO_JSTRING(name, value) \
-  Handle name; \
+  JVMCIObject name; \
   do { \
     if (value != NULL) { \
-      Handle* e = strings.get(value); \
+      JVMCIObject* e = strings.get(value); \
       if (e == NULL) { \
-        Handle h = java_lang_String::create_from_str(value, CHECK_NULL); \
+        JVMCIObject h = JVMCIENV->create_string(value, JVMCI_CHECK_NULL); \
         strings.put(value, h); \
         name = h; \
       } else { \
@@ -290,51 +276,42 @@ objArrayHandle CompilerToVM::initialize_intrinsics(TRAPS) {
     } \
   } while (0)
 
-jobjectArray readConfiguration0(JNIEnv *env, TRAPS) {
-  ResourceMark rm;
-  HandleMark hm;
-
-  // Used to canonicalize Long and String values.
-  ResourceHashtable<jlong, Handle> longs;
-  ResourceHashtable<const char*, Handle, &CompilerToVM::cstring_hash, &CompilerToVM::cstring_equals> strings;
+jobjectArray readConfiguration0(JNIEnv *env, JVMCI_TRAPS) {
+  Thread* THREAD = Thread::current();
+  ResourceHashtable<jlong, JVMCIObject> longs;
+  ResourceHashtable<const char*, JVMCIObject, &CompilerToVM::cstring_hash, &CompilerToVM::cstring_equals> strings;
 
   jvalue prim;
-  prim.z = true;  oop boxedTrueOop =  java_lang_boxing_object::create(T_BOOLEAN, &prim, CHECK_NULL);
-  Handle boxedTrue(THREAD, boxedTrueOop);
-  prim.z = false; oop boxedFalseOop = java_lang_boxing_object::create(T_BOOLEAN, &prim, CHECK_NULL);
-  Handle boxedFalse(THREAD, boxedFalseOop);
+  prim.z = true;  JVMCIObject boxedTrue =  JVMCIENV->create_box(T_BOOLEAN, &prim, JVMCI_CHECK_NULL);
+  prim.z = false; JVMCIObject boxedFalse = JVMCIENV->create_box(T_BOOLEAN, &prim, JVMCI_CHECK_NULL);
 
-  CompilerToVM::Data::initialize(CHECK_NULL);
+  CompilerToVM::Data::initialize(JVMCI_CHECK_NULL);
 
-  VMField::klass()->initialize(CHECK_NULL);
-  VMFlag::klass()->initialize(CHECK_NULL);
-  VMIntrinsicMethod::klass()->initialize(CHECK_NULL);
+  JVMCIENV->VMField_initialize(JVMCI_CHECK_NULL);
+  JVMCIENV->VMFlag_initialize(JVMCI_CHECK_NULL);
+  JVMCIENV->VMIntrinsicMethod_initialize(JVMCI_CHECK_NULL);
 
   int len = JVMCIVMStructs::localHotSpotVMStructs_count();
-  objArrayHandle vmFields = oopFactory::new_objArray_handle(VMField::klass(), len, CHECK_NULL);
+  JVMCIObjectArray vmFields = JVMCIENV->new_VMField_array(len, JVMCI_CHECK_NULL);
   for (int i = 0; i < len ; i++) {
     VMStructEntry vmField = JVMCIVMStructs::localHotSpotVMStructs[i];
-    instanceHandle vmFieldObj = InstanceKlass::cast(VMField::klass())->allocate_instance_handle(CHECK_NULL);
     size_t name_buf_len = strlen(vmField.typeName) + strlen(vmField.fieldName) + 2 /* "::" */;
     char* name_buf = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, name_buf_len + 1);
     sprintf(name_buf, "%s::%s", vmField.typeName, vmField.fieldName);
     CSTRING_TO_JSTRING(name, name_buf);
     CSTRING_TO_JSTRING(type, vmField.typeString);
-    VMField::set_name(vmFieldObj, name());
-    VMField::set_type(vmFieldObj, type());
-    VMField::set_offset(vmFieldObj, vmField.offset);
-    VMField::set_address(vmFieldObj, (jlong) vmField.address);
+    JVMCIObject box;
     if (vmField.isStatic && vmField.typeString != NULL) {
       if (strcmp(vmField.typeString, "bool") == 0) {
         BOXED_BOOLEAN(box, *(jbyte*) vmField.address);
-        VMField::set_value(vmFieldObj, box);
+        assert(box.is_non_null(), "must have a box");
       } else if (strcmp(vmField.typeString, "int") == 0 ||
                  strcmp(vmField.typeString, "jint") == 0) {
         BOXED_LONG(box, *(jint*) vmField.address);
-        VMField::set_value(vmFieldObj, box);
+        assert(box.is_non_null(), "must have a box");
       } else if (strcmp(vmField.typeString, "uint64_t") == 0) {
         BOXED_LONG(box, *(uint64_t*) vmField.address);
-        VMField::set_value(vmFieldObj, box);
+        assert(box.is_non_null(), "must have a box");
       } else if (strcmp(vmField.typeString, "address") == 0 ||
                  strcmp(vmField.typeString, "intptr_t") == 0 ||
                  strcmp(vmField.typeString, "uintptr_t") == 0 ||
@@ -343,43 +320,47 @@ jobjectArray readConfiguration0(JNIEnv *env, TRAPS) {
                  // All foo* types are addresses.
                  vmField.typeString[strlen(vmField.typeString) - 1] == '*') {
         BOXED_LONG(box, *((address*) vmField.address));
-        VMField::set_value(vmFieldObj, box);
+        assert(box.is_non_null(), "must have a box");
       } else {
         JVMCI_ERROR_NULL("VM field %s has unsupported type %s", name_buf, vmField.typeString);
       }
     }
-    vmFields->obj_at_put(i, vmFieldObj());
+    JVMCIObject vmFieldObj = JVMCIENV->new_VMField(name, type, vmField.offset, (jlong) vmField.address, box, JVMCI_CHECK_NULL);
+    JVMCIENV->put_object_at(vmFields, i, vmFieldObj);
   }
 
   int ints_len = JVMCIVMStructs::localHotSpotVMIntConstants_count();
   int longs_len = JVMCIVMStructs::localHotSpotVMLongConstants_count();
   len = ints_len + longs_len;
-  objArrayHandle vmConstants = oopFactory::new_objArray_handle(SystemDictionary::Object_klass(), len * 2, CHECK_NULL);
+  JVMCIObjectArray vmConstants = JVMCIENV->new_Object_array(len * 2, JVMCI_CHECK_NULL);
   int insert = 0;
   for (int i = 0; i < ints_len ; i++) {
     VMIntConstantEntry c = JVMCIVMStructs::localHotSpotVMIntConstants[i];
     CSTRING_TO_JSTRING(name, c.name);
+    JVMCIObject value;
     BOXED_LONG(value, c.value);
-    vmConstants->obj_at_put(insert++, name());
-    vmConstants->obj_at_put(insert++, value);
+    JVMCIENV->put_object_at(vmConstants, insert++, name);
+    JVMCIENV->put_object_at(vmConstants, insert++, value);
   }
   for (int i = 0; i < longs_len ; i++) {
     VMLongConstantEntry c = JVMCIVMStructs::localHotSpotVMLongConstants[i];
     CSTRING_TO_JSTRING(name, c.name);
+    JVMCIObject value;
     BOXED_LONG(value, c.value);
-    vmConstants->obj_at_put(insert++, name());
-    vmConstants->obj_at_put(insert++, value);
+    JVMCIENV->put_object_at(vmConstants, insert++, name);
+    JVMCIENV->put_object_at(vmConstants, insert++, value);
   }
   assert(insert == len * 2, "must be");
 
   len = JVMCIVMStructs::localHotSpotVMAddresses_count();
-  objArrayHandle vmAddresses = oopFactory::new_objArray_handle(SystemDictionary::Object_klass(), len * 2, CHECK_NULL);
+  JVMCIObjectArray vmAddresses = JVMCIENV->new_Object_array(len * 2, JVMCI_CHECK_NULL);
   for (int i = 0; i < len ; i++) {
     VMAddressEntry a = JVMCIVMStructs::localHotSpotVMAddresses[i];
     CSTRING_TO_JSTRING(name, a.name);
+    JVMCIObject value;
     BOXED_LONG(value, a.value);
-    vmAddresses->obj_at_put(i * 2, name());
-    vmAddresses->obj_at_put(i * 2 + 1, value);
+    JVMCIENV->put_object_at(vmAddresses, i * 2, name);
+    JVMCIENV->put_object_at(vmAddresses, i * 2 + 1, value);
   }
 
 #define COUNT_FLAG(ignore) +1
@@ -393,40 +374,32 @@ jobjectArray readConfiguration0(JNIEnv *env, TRAPS) {
 #define CHECK_FLAG(type, name)
 #endif
 
-#define ADD_FLAG(type, name, convert) { \
-  CHECK_FLAG(type, name) \
-  instanceHandle vmFlagObj = InstanceKlass::cast(VMFlag::klass())->allocate_instance_handle(CHECK_NULL); \
-  CSTRING_TO_JSTRING(fname, #name); \
-  CSTRING_TO_JSTRING(ftype, #type); \
-  VMFlag::set_name(vmFlagObj, fname()); \
-  VMFlag::set_type(vmFlagObj, ftype()); \
-  convert(value, name); \
-  VMFlag::set_value(vmFlagObj, value); \
-  vmFlags->obj_at_put(i++, vmFlagObj()); \
+#define ADD_FLAG(type, name, convert) {                                                \
+  CHECK_FLAG(type, name)                                                               \
+  CSTRING_TO_JSTRING(fname, #name);                                                    \
+  CSTRING_TO_JSTRING(ftype, #type);                                                    \
+  convert(value, name);                                                                \
+  JVMCIObject vmFlagObj = JVMCIENV->new_VMFlag(fname, ftype, value, JVMCI_CHECK_NULL); \
+  JVMCIENV->put_object_at(vmFlags, i++, vmFlagObj);                                    \
 }
 #define ADD_BOOL_FLAG(name)  ADD_FLAG(bool, name, BOXED_BOOLEAN)
 #define ADD_INTX_FLAG(name)  ADD_FLAG(intx, name, BOXED_LONG)
 #define ADD_UINTX_FLAG(name) ADD_FLAG(uintx, name, BOXED_LONG)
 
   len = 0 + PREDEFINED_CONFIG_FLAGS(COUNT_FLAG, COUNT_FLAG, COUNT_FLAG);
-  objArrayHandle vmFlags = oopFactory::new_objArray_handle(VMFlag::klass(), len, CHECK_NULL);
+  JVMCIObjectArray vmFlags = JVMCIENV->new_VMFlag_array(len, JVMCI_CHECK_NULL);
   int i = 0;
+  JVMCIObject value;
   PREDEFINED_CONFIG_FLAGS(ADD_BOOL_FLAG, ADD_INTX_FLAG, ADD_UINTX_FLAG)
 
-  objArrayHandle vmIntrinsics = CompilerToVM::initialize_intrinsics(CHECK_NULL);
+  JVMCIObjectArray vmIntrinsics = CompilerToVM::initialize_intrinsics(JVMCI_CHECK_NULL);
 
-  objArrayOop data = oopFactory::new_objArray(SystemDictionary::Object_klass(), 5, CHECK_NULL);
-  data->obj_at_put(0, vmFields());
-  data->obj_at_put(1, vmConstants());
-  data->obj_at_put(2, vmAddresses());
-  data->obj_at_put(3, vmFlags());
-  data->obj_at_put(4, vmIntrinsics());
+  JVMCIObjectArray data = JVMCIENV->new_Object_array(5, JVMCI_CHECK_NULL);
+  JVMCIENV->put_object_at(data, 0, vmFields);
+  JVMCIENV->put_object_at(data, 1, vmConstants);
+  JVMCIENV->put_object_at(data, 2, vmAddresses);
+  JVMCIENV->put_object_at(data, 3, vmFlags);
+  JVMCIENV->put_object_at(data, 4, vmIntrinsics);
 
-  return (jobjectArray) JNIHandles::make_local(THREAD, data);
-#undef COUNT_FLAG
-#undef ADD_FLAG
-#undef ADD_BOOL_FLAG
-#undef ADD_INTX_FLAG
-#undef ADD_UINTX_FLAG
-#undef CHECK_FLAG
+  return JVMCIENV->get_jobjectArray(data);
 }

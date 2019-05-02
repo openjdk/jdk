@@ -424,7 +424,8 @@ public class PrintingProcessor extends AbstractProcessor {
         private void printModifiers(Element e) {
             ElementKind kind = e.getKind();
             if (kind == PARAMETER) {
-                printAnnotationsInline(e);
+                // Print annotation inline
+                writer.print(annotationsToString(e));
             } else {
                 printAnnotations(e);
                 indent();
@@ -460,39 +461,32 @@ public class PrintingProcessor extends AbstractProcessor {
                 break;
 
             }
-
-            for(Modifier m: modifiers) {
-                writer.print(m.toString() + " ");
+            if (!modifiers.isEmpty()) {
+                writer.print(modifiers.stream()
+                             .map(Modifier::toString)
+                             .collect(Collectors.joining(" ", "", " ")));
             }
         }
 
         private void printFormalTypeParameters(Parameterizable e,
                                                boolean pad) {
             List<? extends TypeParameterElement> typeParams = e.getTypeParameters();
-            if (typeParams.size() > 0) {
-                writer.print("<");
-
-                boolean first = true;
-                for(TypeParameterElement tpe: typeParams) {
-                    if (!first)
-                        writer.print(", ");
-                    printAnnotationsInline(tpe);
-                    writer.print(tpe.toString());
-                    first = false;
-                }
-
-                writer.print(">");
+            if (!typeParams.isEmpty()) {
+                writer.print(typeParams.stream()
+                             .map(tpe -> annotationsToString(tpe) + tpe.toString())
+                             .collect(Collectors.joining(", ", "<", ">")));
                 if (pad)
                     writer.print(" ");
             }
         }
 
-        private void printAnnotationsInline(Element e) {
-            List<? extends AnnotationMirror> annots = e.getAnnotationMirrors();
-            for(AnnotationMirror annotationMirror : annots) {
-                writer.print(annotationMirror);
-                writer.print(" ");
-            }
+        private String annotationsToString(Element e) {
+            List<? extends AnnotationMirror> annotations = e.getAnnotationMirrors();
+            return annotations.isEmpty() ?
+                "" :
+                annotations.stream()
+                .map(AnnotationMirror::toString)
+                .collect(Collectors.joining(" ", "", " "));
         }
 
         private void printAnnotations(Element e) {
@@ -569,17 +563,11 @@ public class PrintingProcessor extends AbstractProcessor {
 
             if(kind != ANNOTATION_TYPE) {
                 List<? extends TypeMirror> interfaces = e.getInterfaces();
-                if (interfaces.size() > 0) {
-                    writer.print((kind.isClass() ? " implements" : " extends"));
-
-                    boolean first = true;
-                    for(TypeMirror interf: interfaces) {
-                        if (!first)
-                            writer.print(",");
-                        writer.print(" ");
-                        writer.print(interf.toString());
-                        first = false;
-                    }
+                if (!interfaces.isEmpty()) {
+                    writer.print((kind.isClass() ? " implements " : " extends "));
+                    writer.print(interfaces.stream()
+                                 .map(TypeMirror::toString)
+                                 .collect(Collectors.joining(", ")));
                 }
             }
         }

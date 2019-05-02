@@ -29,7 +29,7 @@ package gc.arguments;
  * @bug 8068582
  * @key gc
  * @library /test/lib
- * @requires vm.gc=="null"
+ * @requires vm.gc.Serial & vm.gc.G1
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run driver gc.arguments.TestSelectDefaultGC

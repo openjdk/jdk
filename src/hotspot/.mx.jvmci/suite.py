@@ -56,6 +56,9 @@ suite = {
     "jdk.vm.ci.common" : {
       "subDir" : "../jdk.internal.vm.ci/share/classes",
       "sourceDirs" : ["src"],
+      "dependencies" : [
+        "jdk.vm.ci.services",
+      ],
       "checkstyle" : "jdk.vm.ci.services",
       "javaCompliance" : "9+",
       "workingSets" : "API,JVMCI",
@@ -258,9 +261,11 @@ suite = {
       "subDir" : "../../test/hotspot/jtreg/compiler/jvmci",
       "dependencies" : [
         "jdk.vm.ci.runtime.test",
+        "jdk.vm.ci.hotspot.test",
       ],
       "distDependencies" : [
         "JVMCI_API",
+        "JVMCI_HOTSPOT",
       ],
       "exclude" : ["mx:JUNIT"],
     },

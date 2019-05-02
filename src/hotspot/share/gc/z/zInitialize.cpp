@@ -36,13 +36,13 @@
 #include "runtime/vm_version.hpp"
 
 ZInitialize::ZInitialize(ZBarrierSet* barrier_set) {
-  log_info(gc, init)("Initializing %s", ZGCName);
+  log_info(gc, init)("Initializing %s", ZName);
   log_info(gc, init)("Version: %s (%s)",
                      VM_Version::vm_release(),
                      VM_Version::jdk_debug_level());
 
   // Early initialization
-  ZAddressMasks::initialize();
+  ZAddress::initialize();
   ZNUMA::initialize();
   ZCPU::initialize();
   ZStatValue::initialize();

@@ -53,11 +53,14 @@ public interface HotSpotForeignCallLinkage extends ForeignCallLinkage, InvokeTar
      */
     enum Transition {
         /**
-         * A call to a leaf function that is guaranteed to not use floating point registers and will
-         * never have its caller stack inspected by the VM. That is, {@code JavaFrameAnchor}
-         * management around the call can be omitted.
+         * A call to a leaf function that is guaranteed to not use floating point registers.
+         * Consequently, floating point registers cleanup will be waived. On AMD64, this means the
+         * compiler will no longer emit vzeroupper instruction around the foreign call, which it
+         * normally does for unknown foreign calls to avoid potential SSE-AVX transition penalty.
+         * Besides, this foreign call will never have its caller stack inspected by the VM. That is,
+         * {@code JavaFrameAnchor} management around the call can be omitted.
          */
-        LEAF_NOFP,
+        LEAF_NO_VZERO,
 
         /**
          * A call to a leaf function that might use floating point registers but will never have its

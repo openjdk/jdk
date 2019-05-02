@@ -163,7 +163,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
         buildErrorSummary(summaryContentTree);
         buildAnnotationTypeSummary(summaryContentTree);
 
-        packageContentTree.add(summaryContentTree);
+        packageContentTree.add(packageWriter.getPackageSummary(summaryContentTree));
     }
 
     /**

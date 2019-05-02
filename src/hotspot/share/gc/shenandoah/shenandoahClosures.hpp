@@ -79,4 +79,16 @@ private:
   inline void do_oop_work(T* p);
 };
 
+#ifdef ASSERT
+class ShenandoahAssertNotForwardedClosure : public OopClosure {
+private:
+  template <class T>
+  inline void do_oop_work(T* p);
+
+public:
+  inline void do_oop(narrowOop* p);
+  inline void do_oop(oop* p);
+};
+#endif // ASSERT
+
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHCLOSURES_HPP

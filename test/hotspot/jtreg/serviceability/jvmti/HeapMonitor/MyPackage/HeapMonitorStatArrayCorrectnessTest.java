@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018, Google and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,11 +55,11 @@ public class HeapMonitorStatArrayCorrectnessTest {
         throw new RuntimeException("Should not have any events stored yet.");
       }
 
-      HeapMonitor.enableSamplingEvents();
-
       // 111 is as good a number as any.
       final int samplingMultiplier = 111;
       HeapMonitor.setSamplingInterval(samplingMultiplier * currentSize);
+
+      HeapMonitor.enableSamplingEvents();
 
       allocate(currentSize);
 
@@ -84,7 +84,9 @@ public class HeapMonitorStatArrayCorrectnessTest {
       // statistical geometric variable around the sampling interval. This means that the test could be
       // unlucky and not achieve the mean average fast enough for the test case.
       if (!HeapMonitor.statsHaveExpectedNumberSamples((int) expected, 10)) {
-        throw new RuntimeException("Statistics should show about " + expected + " samples.");
+        throw new RuntimeException("Statistics should show about " + expected + " samples; "
+            + " but have " + HeapMonitor.sampledEvents() + " instead for the size "
+            + currentSize);
       }
     }
   }

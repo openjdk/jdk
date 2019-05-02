@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,9 @@
 #include "runtime/vmThread.hpp"
 #include "services/management.hpp"
 #include "utilities/stack.inline.hpp"
+#if INCLUDE_JVMCI
+#include "jvmci/jvmci.hpp"
+#endif
 
 //
 // ThreadRootsMarkingTask
@@ -120,6 +123,12 @@ void MarkFromRootsTask::do_it(GCTaskManager* manager, uint which) {
       //ScavengableNMethods::scavengable_nmethods_do(CodeBlobToOopClosure(&mark_and_push_closure));
       AOTLoader::oops_do(&mark_and_push_closure);
       break;
+
+#if INCLUDE_JVMCI
+    case jvmci:
+      JVMCI::oops_do(&mark_and_push_closure);
+      break;
+#endif
 
     default:
       fatal("Unknown root type");

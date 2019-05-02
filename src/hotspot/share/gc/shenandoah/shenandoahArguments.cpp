@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shared/gcArguments.inline.hpp"
+#include "gc/shared/gcArguments.hpp"
 #include "gc/shared/workerPolicy.hpp"
 #include "gc/shenandoah/shenandoahArguments.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
@@ -198,6 +198,19 @@ size_t ShenandoahArguments::conservative_max_heap_alignment() {
   return align;
 }
 
+void ShenandoahArguments::initialize_alignments() {
+  // Need to setup sizes early to get correct alignments.
+  ShenandoahHeapRegion::setup_sizes(InitialHeapSize, MaxHeapSize);
+
+  // This is expected by our algorithm for ShenandoahHeap::heap_region_containing().
+  size_t align = ShenandoahHeapRegion::region_size_bytes();
+  if (UseLargePages) {
+    align = MAX2(align, os::large_page_size());
+  }
+  SpaceAlignment = align;
+  HeapAlignment = align;
+}
+
 CollectedHeap* ShenandoahArguments::create_heap() {
-  return create_heap_with_policy<ShenandoahHeap, ShenandoahCollectorPolicy>();
+  return new ShenandoahHeap(new ShenandoahCollectorPolicy());
 }

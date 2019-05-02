@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,10 +59,10 @@ import java.io.*;
  * the debugger sets up the breakpoint with SUSPEND_EVENT_THREAD        <BR>
  * within debuggee's special methodForCommunication().                  <BR>
  * <BR>
- * In second phase to check the assetion,                               <BR>
+ * In second phase to check the assertion,                              <BR>
  * the debugger and the debuggee perform the following.                 <BR>
  * - The debugger creates three ThreadStartRequests with                <BR>
- *   addThreadFilter(debuggee's thread2) invoked only on third Request, <BR>
+ *   addThreadFilter(debuggee's thread2) invoked,                       <BR>
  *   resumes the debuggee and waits for the ThreadStartEvent.           <BR>
  * - Debuggee's main thread creates and starts new thread, thread2, and <BR>
  *   invokes the methodForCommunication                                 <BR>
@@ -330,14 +330,14 @@ public class addthreadfilter001 {
 
             log2("......setting up ThreadStartRequest");
             ThreadStartRequest tsr1 = eventRManager.createThreadStartRequest();
-//            tsr1.addThreadFilter(testThread);
+            tsr1.addThreadFilter(testThread);
             tsr1.addCountFilter(1);
             tsr1.setSuspendPolicy(EventRequest.SUSPEND_ALL);
             tsr1.putProperty("number", "ThreadStartRequest1");
             tsr1.enable();
 
             ThreadStartRequest tsr2 = eventRManager.createThreadStartRequest();
-//            tsr2.addThreadFilter(testThread);
+            tsr2.addThreadFilter(testThread);
             tsr2.addCountFilter(1);
             tsr2.setSuspendPolicy(EventRequest.SUSPEND_ALL);
             tsr2.putProperty("number", "ThreadStartRequest2");

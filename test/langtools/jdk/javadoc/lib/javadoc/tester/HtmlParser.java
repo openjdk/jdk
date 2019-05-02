@@ -101,7 +101,7 @@ public abstract class HtmlParser {
     }
 
 
-    int getLineNumber() {
+    protected int getLineNumber() {
         return lineNumber;
     }
 

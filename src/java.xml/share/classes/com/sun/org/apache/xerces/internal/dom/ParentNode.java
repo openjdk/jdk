@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -68,6 +68,7 @@ import org.w3c.dom.UserDataHandler;
  * @author Arnaud  Le Hors, IBM
  * @author Joe Kesselman, IBM
  * @author Andy Clark, IBM
+ * @LastModified: Apr 2019
  */
 public abstract class ParentNode
     extends ChildNode {
@@ -174,18 +175,16 @@ public abstract class ParentNode
      * NON-DOM
      * set the ownerDocument of this node and its children
      */
-    void setOwnerDocument(CoreDocumentImpl doc) {
+    protected void setOwnerDocument(CoreDocumentImpl doc) {
         if (needsSyncChildren()) {
             synchronizeChildren();
         }
-       for (ChildNode child = firstChild;
-             child != null; child = child.nextSibling) {
-             child.setOwnerDocument(doc);
-        }
-        /* setting the owner document of self, after it's children makes the
-           data of children available to the new document. */
         super.setOwnerDocument(doc);
         ownerDocument = doc;
+        for (ChildNode child = firstChild;
+        child != null; child = child.nextSibling) {
+            child.setOwnerDocument(doc);
+        }
     }
 
     /**
@@ -368,16 +367,14 @@ public abstract class ParentNode
             // Prevent cycles in the tree
             // newChild cannot be ancestor of this Node,
             // and actually cannot be this
-            if (ownerDocument.ancestorChecking) {
-                boolean treeSafe = true;
-                for (NodeImpl a = this; treeSafe && a != null; a = a.parentNode())
-                {
-                    treeSafe = newChild != a;
-                }
-                if(!treeSafe) {
-                    throw new DOMException(DOMException.HIERARCHY_REQUEST_ERR,
-                                DOMMessageFormatter.formatMessage(DOMMessageFormatter.DOM_DOMAIN, "HIERARCHY_REQUEST_ERR", null));
-                }
+            boolean treeSafe = true;
+            for (NodeImpl a = this; treeSafe && a != null; a = a.parentNode())
+            {
+                treeSafe = newChild != a;
+            }
+            if(!treeSafe) {
+                throw new DOMException(DOMException.HIERARCHY_REQUEST_ERR,
+                            DOMMessageFormatter.formatMessage(DOMMessageFormatter.DOM_DOMAIN, "HIERARCHY_REQUEST_ERR", null));
             }
         }
 
@@ -509,6 +506,9 @@ public abstract class ParentNode
         // notify document
         ownerDocument.removingNode(this, oldInternal, replace);
 
+        // Save previous sibling for normalization checking.
+        final ChildNode oldPreviousSibling = oldInternal.previousSibling();
+
         // update cached length if we have any
         if (fNodeListCache != null) {
             if (fNodeListCache.fLength != -1) {
@@ -519,7 +519,7 @@ public abstract class ParentNode
                 // move the cache to its (soon former) previous sibling
                 if (fNodeListCache.fChild == oldInternal) {
                     fNodeListCache.fChildIndex--;
-                    fNodeListCache.fChild = oldInternal.previousSibling();
+                    fNodeListCache.fChild = oldPreviousSibling;
                 } else {
                     // otherwise just invalidate the cache
                     fNodeListCache.fChildIndex = -1;
@@ -549,9 +549,6 @@ public abstract class ParentNode
                 next.previousSibling = prev;
             }
         }
-
-        // Save previous sibling for normalization checking.
-        ChildNode oldPreviousSibling = oldInternal.previousSibling();
 
         // Remove oldInternal's references to tree
         oldInternal.ownerNode       = ownerDocument;
@@ -624,20 +621,15 @@ public abstract class ParentNode
             if (next == null) {
                 return hasTextContent(child) ? ((NodeImpl) child).getTextContent() : "";
             }
-            if (fBufferStr == null){
-                fBufferStr = new StringBuffer();
-            }
-            else {
-                fBufferStr.setLength(0);
-            }
-            getTextContent(fBufferStr);
-            return fBufferStr.toString();
+            StringBuilder buf = new StringBuilder();
+            getTextContent(buf);
+            return buf.toString();
         }
         return "";
     }
 
-    // internal method taking a StringBuffer in parameter
-    void getTextContent(StringBuffer buf) throws DOMException {
+    // internal method taking a StringBuilder in parameter
+    void getTextContent(StringBuilder buf) throws DOMException {
         Node child = getFirstChild();
         while (child != null) {
             if (hasTextContent(child)) {
@@ -684,6 +676,9 @@ public abstract class ParentNode
     private int nodeListGetLength() {
 
         if (fNodeListCache == null) {
+            if (needsSyncChildren()) {
+                synchronizeChildren();
+            }
             // get rid of trivial cases
             if (firstChild == null) {
                 return 0;
@@ -733,6 +728,9 @@ public abstract class ParentNode
     private Node nodeListItem(int index) {
 
         if (fNodeListCache == null) {
+            if (needsSyncChildren()) {
+                synchronizeChildren();
+            }
             // get rid of trivial case
             if (firstChild == lastChild()) {
                 return index == 0 ? firstChild : null;
@@ -870,7 +868,7 @@ public abstract class ParentNode
         Node child1 = getFirstChild();
         Node child2 = arg.getFirstChild();
         while (child1 != null && child2 != null) {
-            if (!((NodeImpl) child1).isEqualNode(child2)) {
+            if (!child1.isEqualNode(child2)) {
                 return false;
             }
             child1 = child1.getNextSibling();
@@ -997,7 +995,7 @@ public abstract class ParentNode
     /** Serialize object. */
     private void writeObject(ObjectOutputStream out) throws IOException {
 
-        // synchronize chilren
+        // synchronize children
         if (needsSyncChildren()) {
             synchronizeChildren();
         }
@@ -1022,7 +1020,7 @@ public abstract class ParentNode
     /*
      * a class to store some user data along with its handler
      */
-    protected class UserDataRecord implements Serializable {
+    class UserDataRecord implements Serializable {
         /** Serialization version. */
         private static final long serialVersionUID = 3258126977134310455L;
 

@@ -25,6 +25,7 @@
 
 package javax.annotation.processing;
 
+import java.util.List;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Collections;
@@ -80,10 +81,9 @@ public abstract class AbstractProcessor implements Processor {
      */
     public Set<String> getSupportedOptions() {
         SupportedOptions so = this.getClass().getAnnotation(SupportedOptions.class);
-        if  (so == null)
-            return Collections.emptySet();
-        else
-            return arrayToSet(so.value(), false);
+        return (so == null) ?
+            Set.of() :
+            arrayToSet(so.value(), false, "option value", "@SupportedOptions");
     }
 
     /**
@@ -110,12 +110,13 @@ public abstract class AbstractProcessor implements Processor {
                                                              "No SupportedAnnotationTypes annotation " +
                                                              "found on " + this.getClass().getName() +
                                                              ", returning an empty set.");
-                return Collections.emptySet();
+                return Set.of();
             } else {
                 boolean stripModulePrefixes =
                         initialized &&
                         processingEnv.getSourceVersion().compareTo(SourceVersion.RELEASE_8) <= 0;
-                return arrayToSet(sat.value(), stripModulePrefixes);
+                return arrayToSet(sat.value(), stripModulePrefixes,
+                                  "annotation type", "@SupportedAnnotationTypes");
             }
         }
 
@@ -181,7 +182,7 @@ public abstract class AbstractProcessor implements Processor {
                                                          AnnotationMirror annotation,
                                                          ExecutableElement member,
                                                          String userText) {
-        return Collections.emptyList();
+        return List.of();
     }
 
     /**
@@ -195,17 +196,33 @@ public abstract class AbstractProcessor implements Processor {
         return initialized;
     }
 
-    private static Set<String> arrayToSet(String[] array,
-                                          boolean stripModulePrefixes) {
+    private Set<String> arrayToSet(String[] array,
+                                          boolean stripModulePrefixes,
+                                   String contentType,
+                                   String annotationName) {
         assert array != null;
-        Set<String> set = new HashSet<>(array.length);
+        Set<String> set = new HashSet<>();
         for (String s : array) {
+            boolean stripped = false;
             if (stripModulePrefixes) {
                 int index = s.indexOf('/');
-                if (index != -1)
+                if (index != -1) {
                     s = s.substring(index + 1);
+                    stripped = true;
+                }
             }
-            set.add(s);
+            boolean added = set.add(s);
+            // Don't issue a duplicate warning when the module name is
+            // stripped off to avoid spurious warnings in a case like
+            // "foo/a.B", "bar/a.B".
+            if (!added && !stripped && isInitialized() ) {
+                processingEnv.getMessager().printMessage(Diagnostic.Kind.WARNING,
+                                                         "Duplicate " + contentType  +
+                                                         " ``" + s  + "'' for processor " +
+                                                         this.getClass().getName() +
+                                                         " in its " + annotationName  +
+                                                         "annotation.");
+            }
         }
         return Collections.unmodifiableSet(set);
     }

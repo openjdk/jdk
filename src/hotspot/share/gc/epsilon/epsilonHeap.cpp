@@ -25,14 +25,16 @@
 #include "gc/epsilon/epsilonHeap.hpp"
 #include "gc/epsilon/epsilonMemoryPool.hpp"
 #include "gc/epsilon/epsilonThreadLocalData.hpp"
+#include "gc/shared/gcArguments.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/globals.hpp"
 
 jint EpsilonHeap::initialize() {
-  size_t align = _policy->heap_alignment();
-  size_t init_byte_size = align_up(_policy->initial_heap_byte_size(), align);
-  size_t max_byte_size  = align_up(_policy->max_heap_byte_size(), align);
+  size_t align = HeapAlignment;
+  size_t init_byte_size = align_up(InitialHeapSize, align);
+  size_t max_byte_size  = align_up(MaxHeapSize, align);
 
   // Initialize backing storage
   ReservedSpace heap_rs = Universe::reserve_heap(max_byte_size, align);
@@ -124,7 +126,7 @@ HeapWord* EpsilonHeap::allocate_work(size_t size) {
 
   while (res == NULL) {
     // Allocation failed, attempt expansion, and retry:
-    MutexLockerEx ml(Heap_lock);
+    MutexLocker ml(Heap_lock);
 
     size_t space_left = max_capacity() - capacity();
     size_t want_space = MAX2(size, EpsilonMinHeapExpand);

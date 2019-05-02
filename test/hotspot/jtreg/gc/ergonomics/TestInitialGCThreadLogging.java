@@ -27,7 +27,6 @@ package gc.ergonomics;
  * @test TestInitialGCThreadLogging
  * @bug 8157240
  * @summary Check trace logging of initial GC threads.
- * @requires vm.gc=="null"
  * @key gc
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
@@ -38,19 +37,35 @@ package gc.ergonomics;
 
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
+import jtreg.SkippedException;
 import sun.hotspot.gc.GC;
 
 public class TestInitialGCThreadLogging {
   public static void main(String[] args) throws Exception {
+    boolean noneGCSupported = true;
 
-    testInitialGCThreadLogging("UseConcMarkSweepGC", "GC Thread");
+    if (GC.ConcMarkSweep.isSupported()) {
+      noneGCSupported = false;
+      testInitialGCThreadLogging("UseConcMarkSweepGC", "GC Thread");
+    }
 
-    testInitialGCThreadLogging("UseG1GC", "GC Thread");
+    if (GC.G1.isSupported()) {
+      noneGCSupported = false;
+      testInitialGCThreadLogging("UseG1GC", "GC Thread");
+    }
 
-    testInitialGCThreadLogging("UseParallelGC", "ParGC Thread");
+    if (GC.Parallel.isSupported()) {
+      noneGCSupported = false;
+      testInitialGCThreadLogging("UseParallelGC", "ParGC Thread");
+    }
 
     if (GC.Shenandoah.isSupported()) {
-        testInitialGCThreadLogging("UseShenandoahGC", "Shenandoah GC Thread");
+      noneGCSupported = false;
+      testInitialGCThreadLogging("UseShenandoahGC", "Shenandoah GC Thread");
+    }
+
+    if (noneGCSupported) {
+      throw new SkippedException("Skipping test because none of ConcMarkSweep/G1/Parallel/Shenandoah is supported.");
     }
   }
 

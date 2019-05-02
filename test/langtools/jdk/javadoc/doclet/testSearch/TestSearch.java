@@ -381,8 +381,8 @@ public class TestSearch extends JavadocTester {
                 "<script type=\"text/javascript\" src=\"script-dir/jquery-ui.js\"></script>",
                 "var pathtoroot = \"./\";\n"
                 + "loadScripts(document, 'script');",
-                "<ul class=\"navListSearch\">\n",
-                "<li><label for=\"search\">SEARCH:</label>\n"
+                "<div class=\"navListSearch\">",
+                "<label for=\"search\">SEARCH:</label>\n"
                 + "<input type=\"text\" id=\"search\" value=\"search\" disabled=\"disabled\">\n"
                 + "<input type=\"reset\" id=\"reset\" value=\"reset\" disabled=\"disabled\">\n");
         checkOutput(fileName, true,
@@ -600,14 +600,7 @@ public class TestSearch extends JavadocTester {
 
     void checkSearchJS() {
         checkOutput("search.js", true,
-                "camelCaseRegexp = ($.ui.autocomplete.escapeRegex(request.term)).split(/(?=[A-Z])/).join(\"([a-z0-9_$]*?)\");",
-                "var camelCaseMatcher = new RegExp(\"^\" + camelCaseRegexp);",
-                "camelCaseMatcher.test(item.l)",
-                "var secondaryresult = new Array();",
-                "function nestedName(e) {",
                 "function concatResults(a1, a2) {",
-                "if (exactMatcher.test(item.l)) {\n"
-                + "                        presult.push(item);",
                 "$(\"#search\").on('click keydown paste', function() {\n"
                 + "        if ($(this).val() == watermark) {\n"
                 + "            $(this).val('').removeClass('watermark');\n"

@@ -62,6 +62,9 @@ public class TestAnnotationTypes extends JavadocTester {
                 + "</code></th>",
                 "<!-- ============ ANNOTATION TYPE FIELD DETAIL =========== -->",
                 "<h3>DEFAULT_NAME</h3>\n"
+                + "<a id=\"DEFAULT_NAME\">\n"
+                + "<!--   -->\n"
+                + "</a>\n"
                 + "<pre>static final&nbsp;java."
                 + "lang.String&nbsp;DEFAULT_NAME</pre>");
 
@@ -74,17 +77,20 @@ public class TestAnnotationTypes extends JavadocTester {
         checkOutput("pkg/AnnotationType.html", true,
                     "<!-- ============ ANNOTATION TYPE MEMBER DETAIL =========== -->",
                     "<ul class=\"blockList\">",
-                    "<li class=\"blockList\"><a id=\"annotation.type.element.detail\">",
+                    "<li class=\"blockList\">",
+                    "<section class=\"memberDetails\">",
+                    "<h2>Element Detail</h2>",
+                    "<a id=\"annotation.type.element.detail\">",
                     "<!--   -->",
                     "</a>",
-                    "<h2>Element Detail</h2>",
+                    "<ul class=\"blockList\">",
+                    "<li class=\"blockListLast\">",
+                    "<section class=\"detail\">",
+                    "<h3>value</h3>",
                     "<a id=\"value()\">",
                     "<!--   -->",
                     "</a>",
-                    "<ul class=\"blockListLast\">",
-                    "<li class=\"blockList\">",
-                    "<h3>value</h3>",
-                    "<pre>int&nbsp;value</pre>" );
+                    "<pre>int&nbsp;value</pre>");
 
         checkOutput("pkg/AnnotationType.html", false,
                 "<HR>\n\n"

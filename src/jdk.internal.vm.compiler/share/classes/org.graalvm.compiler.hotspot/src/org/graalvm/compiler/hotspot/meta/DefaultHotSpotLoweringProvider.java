@@ -26,6 +26,7 @@ package org.graalvm.compiler.hotspot.meta;
 
 import static jdk.vm.ci.services.Services.IS_IN_NATIVE_IMAGE;
 import static org.graalvm.compiler.core.common.GraalOptions.AlwaysInlineVTableStubs;
+import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
 import static org.graalvm.compiler.core.common.GraalOptions.InlineVTableStubs;
 import static org.graalvm.compiler.core.common.GraalOptions.OmitHotExceptionStacktrace;
 import static org.graalvm.compiler.hotspot.meta.HotSpotForeignCallsProviderImpl.OSR_MIGRATION_END;
@@ -161,7 +162,7 @@ import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.replacements.DefaultJavaLoweringProvider;
 import org.graalvm.compiler.replacements.arraycopy.ArrayCopyNode;
 import org.graalvm.compiler.replacements.arraycopy.ArrayCopySnippets;
-import org.graalvm.compiler.replacements.arraycopy.ArrayCopyWithSlowPathNode;
+import org.graalvm.compiler.replacements.arraycopy.ArrayCopyWithDelayedLoweringNode;
 import org.graalvm.compiler.replacements.nodes.AssertionNode;
 import org.graalvm.compiler.serviceprovider.JavaVersionUtil;
 import jdk.internal.vm.compiler.word.LocationIdentity;
@@ -227,11 +228,15 @@ public class DefaultHotSpotLoweringProvider extends DefaultJavaLoweringProvider 
         stringToBytesSnippets = new StringToBytesSnippets.Templates(options, factories, providers, target);
         hashCodeSnippets = new HashCodeSnippets.Templates(options, factories, providers, target);
         resolveConstantSnippets = new ResolveConstantSnippets.Templates(options, factories, providers, target);
-        if (!JavaVersionUtil.Java8OrEarlier) {
+        if (!JavaVersionUtil.Java8OrEarlier && GeneratePIC.getValue(options)) {
             profileSnippets = new ProfileSnippets.Templates(options, factories, providers, target);
         }
         objectCloneSnippets = new ObjectCloneSnippets.Templates(options, factories, providers, target);
         foreignCallSnippets = new ForeignCallSnippets.Templates(options, factories, providers, target);
+    }
+
+    public ArrayCopySnippets.Templates getArraycopySnippets() {
+        return arraycopySnippets;
     }
 
     public MonitorSnippets.Templates getMonitorSnippets() {
@@ -332,8 +337,8 @@ public class DefaultHotSpotLoweringProvider extends DefaultJavaLoweringProvider 
                 }
             } else if (n instanceof ArrayCopyNode) {
                 arraycopySnippets.lower((ArrayCopyNode) n, tool);
-            } else if (n instanceof ArrayCopyWithSlowPathNode) {
-                arraycopySnippets.lower((ArrayCopyWithSlowPathNode) n, tool);
+            } else if (n instanceof ArrayCopyWithDelayedLoweringNode) {
+                arraycopySnippets.lower((ArrayCopyWithDelayedLoweringNode) n, tool);
             } else if (n instanceof G1PreWriteBarrier) {
                 writeBarrierSnippets.lower((G1PreWriteBarrier) n, registers, tool);
             } else if (n instanceof G1PostWriteBarrier) {
@@ -468,11 +473,15 @@ public class DefaultHotSpotLoweringProvider extends DefaultJavaLoweringProvider 
         if (invoke.callTarget() instanceof MethodCallTargetNode) {
             MethodCallTargetNode callTarget = (MethodCallTargetNode) invoke.callTarget();
             NodeInputList<ValueNode> parameters = callTarget.arguments();
-            ValueNode receiver = parameters.size() <= 0 ? null : parameters.get(0);
-            if (!callTarget.isStatic() && receiver.stamp(NodeView.DEFAULT) instanceof ObjectStamp && !StampTool.isPointerNonNull(receiver)) {
-                ValueNode nonNullReceiver = createNullCheckedValue(receiver, invoke.asNode(), tool);
-                parameters.set(0, nonNullReceiver);
-                receiver = nonNullReceiver;
+            ValueNode receiver = parameters.isEmpty() ? null : parameters.get(0);
+
+            if (!callTarget.isStatic()) {
+                assert receiver != null : "non-static call must have a receiver";
+                if (receiver.stamp(NodeView.DEFAULT) instanceof ObjectStamp && !StampTool.isPointerNonNull(receiver)) {
+                    ValueNode nonNullReceiver = createNullCheckedValue(receiver, invoke.asNode(), tool);
+                    parameters.set(0, nonNullReceiver);
+                    receiver = nonNullReceiver;
+                }
             }
             JavaType[] signature = callTarget.targetMethod().getSignature().toParameterTypes(callTarget.isStatic() ? null : callTarget.targetMethod().getDeclaringClass());
 

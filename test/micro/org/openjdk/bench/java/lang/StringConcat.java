@@ -26,6 +26,7 @@ import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
@@ -42,7 +43,8 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Thread)
 public class StringConcat {
 
-    public int intValue = 4711;
+    @Param("4711")
+    public int intValue;
 
     public String stringValue = String.valueOf(intValue);
 
@@ -78,8 +80,23 @@ public class StringConcat {
     }
 
     @Benchmark
+    public String concatMix4String() {
+        // Investigate "profile pollution" between shared LFs that might eliminate some JIT optimizations
+        String s1 = "string" + stringValue + stringValue + stringValue + stringValue;
+        String s2 = "string" + stringValue + "string" + stringValue + stringValue + stringValue;
+        String s3 = stringValue + stringValue + "string" + stringValue + "string" + stringValue + "string";
+        String s4 = "string" + stringValue + "string" + stringValue + "string" + stringValue + "string" + stringValue + "string";
+        return s1 + s2 + s3 + s4;
+    }
+
+    @Benchmark
     public String concatConst4String() {
         return "string" + stringValue + stringValue + stringValue + stringValue;
+    }
+
+    @Benchmark
+    public String concat4String() {
+        return stringValue + stringValue + stringValue + stringValue;
     }
 
     @Benchmark
@@ -95,6 +112,11 @@ public class StringConcat {
     @Benchmark
     public String concatConst6String() {
         return "string" + stringValue + stringValue + stringValue + stringValue + stringValue + stringValue;
+    }
+
+    @Benchmark
+    public String concat6String() {
+        return stringValue + stringValue + stringValue + stringValue + stringValue + stringValue;
     }
 
     @Benchmark

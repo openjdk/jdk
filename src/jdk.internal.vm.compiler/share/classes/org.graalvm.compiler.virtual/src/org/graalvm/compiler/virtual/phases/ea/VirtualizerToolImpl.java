@@ -126,18 +126,14 @@ class VirtualizerToolImpl implements VirtualizerTool, CanonicalizerTool {
     public boolean setVirtualEntry(VirtualObjectNode virtual, int index, ValueNode value, JavaKind theAccessKind, long offset) {
         ObjectState obj = state.getObjectState(virtual);
         assert obj.isVirtual() : "not virtual: " + obj;
-        ValueNode newValue;
         JavaKind entryKind = virtual.entryKind(index);
         JavaKind accessKind = theAccessKind != null ? theAccessKind : entryKind;
-        if (value == null) {
-            newValue = null;
-        } else {
-            newValue = closure.getAliasAndResolve(state, value);
-        }
+        ValueNode newValue = closure.getAliasAndResolve(state, value);
         getDebug().log(DebugContext.DETAILED_LEVEL, "Setting entry %d in virtual object %s %s results in %s", index, virtual.getObjectId(), virtual, state.getObjectState(virtual.getObjectId()));
         ValueNode oldValue = getEntry(virtual, index);
         boolean canVirtualize = entryKind == accessKind || (entryKind == accessKind.getStackKind() && virtual instanceof VirtualInstanceNode);
         if (!canVirtualize) {
+            assert entryKind != JavaKind.Long || newValue != null;
             if (entryKind == JavaKind.Long && oldValue.getStackKind() == newValue.getStackKind() && oldValue.getStackKind().isPrimitive()) {
                 /*
                  * Special case: If the entryKind is long, allow arbitrary kinds as long as a value

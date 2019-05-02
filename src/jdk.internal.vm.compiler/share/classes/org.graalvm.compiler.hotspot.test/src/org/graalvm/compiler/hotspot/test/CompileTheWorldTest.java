@@ -27,11 +27,10 @@ package org.graalvm.compiler.hotspot.test;
 import static org.graalvm.compiler.core.GraalCompilerOptions.CompilationBailoutAsFailure;
 import static org.graalvm.compiler.core.GraalCompilerOptions.CompilationFailureAction;
 
-import jdk.internal.vm.compiler.collections.EconomicMap;
 import org.graalvm.compiler.core.CompilationWrapper.ExceptionAction;
+import org.graalvm.compiler.core.phases.HighTier;
 import org.graalvm.compiler.core.test.GraalCompilerTest;
 import org.graalvm.compiler.hotspot.HotSpotGraalCompiler;
-import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionValues;
 import org.junit.Test;
 
@@ -50,8 +49,25 @@ public class CompileTheWorldTest extends GraalCompilerTest {
         HotSpotJVMCIRuntime runtime = HotSpotJVMCIRuntime.runtime();
         System.setProperty("CompileTheWorld.LimitModules", "java.base");
         OptionValues initialOptions = getInitialOptions();
-        EconomicMap<OptionKey<?>, Object> compilationOptions = CompileTheWorld.parseOptions("Inline=false");
-        new CompileTheWorld(runtime, (HotSpotGraalCompiler) runtime.getCompiler(), CompileTheWorld.SUN_BOOT_CLASS_PATH, 1, 5, null, null, false, initialOptions, compilationOptions).compile();
+        OptionValues harnessOptions = new OptionValues(OptionValues.newOptionMap());
+        int startAt = 1;
+        int stopAt = 5;
+        int maxClasses = Integer.MAX_VALUE;
+        String methodFilters = null;
+        String excludeMethodFilters = null;
+        boolean verbose = false;
+        CompileTheWorld ctw = new CompileTheWorld(runtime,
+                        (HotSpotGraalCompiler) runtime.getCompiler(),
+                        CompileTheWorld.SUN_BOOT_CLASS_PATH,
+                        startAt,
+                        stopAt,
+                        maxClasses,
+                        methodFilters,
+                        excludeMethodFilters,
+                        verbose,
+                        harnessOptions,
+                        new OptionValues(initialOptions, HighTier.Options.Inline, false));
+        ctw.compile();
         assert CompilationBailoutAsFailure.getValue(initialOptions) == originalBailoutAction;
         assert CompilationFailureAction.getValue(initialOptions) == originalFailureAction;
     }

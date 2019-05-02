@@ -676,7 +676,7 @@ final class ZipPath implements Path {
 
     @Override
     public Iterator<Path> iterator() {
-        return new Iterator<Path>() {
+        return new Iterator<>() {
             private int i = 0;
 
             @Override
@@ -746,8 +746,8 @@ final class ZipPath implements Path {
     void setAttribute(String attribute, Object value, LinkOption... options)
         throws IOException
     {
-        String type = null;
-        String attr = null;
+        String type;
+        String attr;
         int colonPos = attribute.indexOf(':');
         if (colonPos == -1) {
             type = "basic";
@@ -772,8 +772,8 @@ final class ZipPath implements Path {
         throws IOException
 
     {
-        String view = null;
-        String attrs = null;
+        String view;
+        String attrs;
         int colonPos = attributes.indexOf(':');
         if (colonPos == -1) {
             view = "basic";

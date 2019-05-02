@@ -79,7 +79,7 @@ public abstract class GraalOSRTestBase extends GraalCompilerTest {
         long jvmciEnv = 0L;
         HotSpotCompilationRequest request = new HotSpotCompilationRequest((HotSpotResolvedJavaMethod) method, bci, jvmciEnv);
         HotSpotGraalCompiler compiler = (HotSpotGraalCompiler) runtime.getCompiler();
-        CompilationTask task = new CompilationTask(runtime, compiler, request, true, true, debug.getOptions());
+        CompilationTask task = new CompilationTask(runtime, compiler, request, true, true);
         if (method instanceof HotSpotResolvedJavaMethod) {
             HotSpotGraalRuntimeProvider graalRuntime = compiler.getGraalRuntime();
             GraalHotSpotVMConfig config = graalRuntime.getVMConfig();

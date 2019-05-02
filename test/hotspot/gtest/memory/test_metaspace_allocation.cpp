@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, SAP.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -108,7 +108,7 @@ protected:
     {
       // Pull lock during space creation, since this is what happens in the VM too
       // (see ClassLoaderData::metaspace_non_null(), which we mimick here).
-      MutexLockerEx ml(_spaces[i].lock,  Mutex::_no_safepoint_check_flag);
+      MutexLocker ml(_spaces[i].lock,  Mutex::_no_safepoint_check_flag);
       _spaces[i].space = new ClassLoaderMetaspace(_spaces[i].lock, msType);
     }
     _spaces[i].allocated = 0;

@@ -47,35 +47,43 @@ public interface InlineInvokePlugin extends GraphBuilderPlugin {
          * Denotes a call site that must not be inlined and should be implemented by a node that
          * does not speculate on the call not raising an exception.
          */
-        public static final InlineInfo DO_NOT_INLINE_WITH_EXCEPTION = new InlineInfo(null, null, null);
+        public static final InlineInfo DO_NOT_INLINE_WITH_EXCEPTION = new InlineInfo();
 
         /**
          * Denotes a call site must not be inlined and can be implemented by a node that speculates
          * the call will not throw an exception.
          */
-        public static final InlineInfo DO_NOT_INLINE_NO_EXCEPTION = new InlineInfo(null, null, null);
+        public static final InlineInfo DO_NOT_INLINE_NO_EXCEPTION = new InlineInfo();
 
         /**
          * Denotes a call site must not be inlined and the execution should be transferred to
          * interpreter in case of an exception.
          */
-        public static final InlineInfo DO_NOT_INLINE_DEOPTIMIZE_ON_EXCEPTION = new InlineInfo(null, null, null);
+        public static final InlineInfo DO_NOT_INLINE_DEOPTIMIZE_ON_EXCEPTION = new InlineInfo();
 
         private final ResolvedJavaMethod methodToInline;
-        private final ResolvedJavaMethod originalMethod;
+        private final MethodSubstitutionPlugin plugin;
         private final BytecodeProvider intrinsicBytecodeProvider;
 
         public static InlineInfo createStandardInlineInfo(ResolvedJavaMethod methodToInline) {
             return new InlineInfo(methodToInline, null, null);
         }
 
-        public static InlineInfo createIntrinsicInlineInfo(ResolvedJavaMethod methodToInline, ResolvedJavaMethod originalMethod, BytecodeProvider intrinsicBytecodeProvider) {
-            return new InlineInfo(methodToInline, originalMethod, intrinsicBytecodeProvider);
+        public static InlineInfo createIntrinsicInlineInfo(ResolvedJavaMethod methodToInline, BytecodeProvider intrinsicBytecodeProvider) {
+            return new InlineInfo(methodToInline, null, intrinsicBytecodeProvider);
         }
 
-        private InlineInfo(ResolvedJavaMethod methodToInline, ResolvedJavaMethod originalMethod, BytecodeProvider intrinsicBytecodeProvider) {
+        public static InlineInfo createMethodSubstitutionInlineInfo(ResolvedJavaMethod methodToInline, MethodSubstitutionPlugin plugin) {
+            return new InlineInfo(methodToInline, plugin, plugin.getBytecodeProvider());
+        }
+
+        private InlineInfo() {
+            this(null, null, null);
+        }
+
+        private InlineInfo(ResolvedJavaMethod methodToInline, MethodSubstitutionPlugin plugin, BytecodeProvider intrinsicBytecodeProvider) {
             this.methodToInline = methodToInline;
-            this.originalMethod = originalMethod;
+            this.plugin = plugin;
             this.intrinsicBytecodeProvider = intrinsicBytecodeProvider;
         }
 
@@ -91,14 +99,6 @@ public interface InlineInvokePlugin extends GraphBuilderPlugin {
         }
 
         /**
-         * Returns the original method if this is an inline of an intrinsic, or {@code null} if the
-         * call site must not be inlined.
-         */
-        public ResolvedJavaMethod getOriginalMethod() {
-            return originalMethod;
-        }
-
-        /**
          * Gets the provider of bytecode to be parsed for {@link #getMethodToInline()} if is is an
          * intrinsic for the original method (i.e., the {@code method} passed to
          * {@link InlineInvokePlugin#shouldInlineInvoke}). A {@code null} return value indicates
@@ -106,6 +106,14 @@ public interface InlineInvokePlugin extends GraphBuilderPlugin {
          */
         public BytecodeProvider getIntrinsicBytecodeProvider() {
             return intrinsicBytecodeProvider;
+        }
+
+        public boolean isSubstitution() {
+            return plugin != null;
+        }
+
+        public MethodSubstitutionPlugin getPlugin() {
+            return plugin;
         }
     }
 

@@ -101,10 +101,11 @@ public interface MethodWriter {
     /**
      * Get the method details tree.
      *
+     * @param methodDetailsTreeHeader the content tree representing method details header
      * @param methodDetailsTree the content tree representing method details
      * @return content tree for the method details
      */
-    public Content getMethodDetails(Content methodDetailsTree);
+    public Content getMethodDetails(Content methodDetailsTreeHeader, Content methodDetailsTree);
 
     /**
      * Get the method documentation.
@@ -114,4 +115,11 @@ public interface MethodWriter {
      * @return content tree for the method documentation
      */
     public Content getMethodDoc(Content methodDocTree, boolean isLastContent);
+
+    /**
+     * Gets the member header tree.
+     *
+     * @return a content tree for the member header
+     */
+    public Content getMemberTreeHeader();
 }

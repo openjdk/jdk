@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,8 +172,7 @@ VirtualSpaceList::VirtualSpaceList(size_t word_size) :
                                    _virtual_space_count(0),
                                    _envelope_lo((address)max_uintx),
                                    _envelope_hi(NULL) {
-  MutexLockerEx cl(MetaspaceExpand_lock,
-                   Mutex::_no_safepoint_check_flag);
+  MutexLocker cl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
   create_new_virtual_space(word_size);
 }
 
@@ -186,8 +185,7 @@ VirtualSpaceList::VirtualSpaceList(ReservedSpace rs) :
                                    _virtual_space_count(0),
                                    _envelope_lo((address)max_uintx),
                                    _envelope_hi(NULL) {
-  MutexLockerEx cl(MetaspaceExpand_lock,
-                   Mutex::_no_safepoint_check_flag);
+  MutexLocker cl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
   VirtualSpaceNode* class_entry = new VirtualSpaceNode(is_class(), rs);
   bool succeeded = class_entry->initialize();
   if (succeeded) {

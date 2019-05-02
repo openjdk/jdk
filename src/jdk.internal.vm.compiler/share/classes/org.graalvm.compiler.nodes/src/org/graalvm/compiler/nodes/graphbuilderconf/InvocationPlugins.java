@@ -1023,18 +1023,10 @@ public class InvocationPlugins {
         if (parent != null) {
             InvocationPlugin plugin = parent.lookupInvocation(method);
             if (plugin != null) {
-                if (IS_IN_NATIVE_IMAGE && plugin instanceof MethodSubstitutionPlugin) {
-                    // Disable method substitutions until GR-13607
-                    return null;
-                }
                 return plugin;
             }
         }
         InvocationPlugin invocationPlugin = get(method);
-        if (IS_IN_NATIVE_IMAGE && invocationPlugin instanceof MethodSubstitutionPlugin) {
-            // Disable method substitutions until GR-13607
-            return null;
-        }
         return invocationPlugin;
     }
 

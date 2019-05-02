@@ -188,11 +188,10 @@ public final class TypeSwitchNode extends SwitchNode implements LIRLowerable, Si
                         }
                     }
 
+                    ArrayList<AbstractBeginNode> oldSuccessors = new ArrayList<>();
                     for (int i = 0; i < blockSuccessorCount(); i++) {
                         AbstractBeginNode successor = blockSuccessor(i);
-                        if (!newSuccessors.contains(successor)) {
-                            tool.deleteBranch(successor);
-                        }
+                        oldSuccessors.add(successor);
                         setBlockSuccessor(i, null);
                     }
 
@@ -200,6 +199,13 @@ public final class TypeSwitchNode extends SwitchNode implements LIRLowerable, Si
                     TypeSwitchNode newSwitch = graph().add(new TypeSwitchNode(value(), successorsArray, newKeys, newKeyProbabilities, newKeySuccessors, tool.getConstantReflection()));
                     ((FixedWithNextNode) predecessor()).setNext(newSwitch);
                     GraphUtil.killWithUnusedFloatingInputs(this);
+
+                    for (int i = 0; i < oldSuccessors.size(); i++) {
+                        AbstractBeginNode successor = oldSuccessors.get(i);
+                        if (!newSuccessors.contains(successor)) {
+                            GraphUtil.killCFG(successor);
+                        }
+                    }
                 }
             }
         }

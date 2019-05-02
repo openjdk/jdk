@@ -74,7 +74,7 @@ bool OWSTTaskTerminator::offer_termination(TerminatorTerminator* terminator) {
         }
       }
     } else {
-      _blocker->wait(true, WorkStealingSleepMillis);
+      _blocker->wait_without_safepoint_check(WorkStealingSleepMillis);
 
       if (_offered_termination == _n_threads) {
         _blocker->unlock();
@@ -151,9 +151,9 @@ bool OWSTTaskTerminator::do_spin_master_work(TerminatorTerminator* terminator) {
                                   p2i(Thread::current()), yield_count);
       yield_count = 0;
 
-      MonitorLockerEx locker(_blocker, Mutex::_no_safepoint_check_flag);
+      MonitorLocker locker(_blocker, Mutex::_no_safepoint_check_flag);
       _spin_master = NULL;
-      locker.wait(Mutex::_no_safepoint_check_flag, WorkStealingSleepMillis);
+      locker.wait(WorkStealingSleepMillis);
       if (_spin_master == NULL) {
         _spin_master = Thread::current();
       } else {
@@ -167,7 +167,7 @@ bool OWSTTaskTerminator::do_spin_master_work(TerminatorTerminator* terminator) {
     size_t tasks = tasks_in_queue_set();
     bool exit = exit_termination(tasks, terminator);
     {
-      MonitorLockerEx locker(_blocker, Mutex::_no_safepoint_check_flag);
+      MonitorLocker locker(_blocker, Mutex::_no_safepoint_check_flag);
       // Termination condition reached
       if (_offered_termination == _n_threads) {
         _spin_master = NULL;

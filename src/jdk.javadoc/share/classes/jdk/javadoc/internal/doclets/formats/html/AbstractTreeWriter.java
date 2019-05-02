@@ -118,7 +118,7 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
             Content headingContent = contents.getContent(heading);
             Content sectionHeading = HtmlTree.HEADING(Headings.CONTENT_HEADING, true,
                     headingContent);
-            HtmlTree htmlTree = HtmlTree.SECTION(sectionHeading);
+            HtmlTree htmlTree = HtmlTree.SECTION(HtmlStyle.hierarchy, sectionHeading);
             addLevelInfo(!utils.isInterface(firstTypeElement) ? firstTypeElement : null,
                     sset, isEnums, htmlTree);
             div.add(htmlTree);

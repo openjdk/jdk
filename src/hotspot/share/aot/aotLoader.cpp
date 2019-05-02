@@ -26,8 +26,8 @@
 
 #include "aot/aotCodeHeap.hpp"
 #include "aot/aotLoader.inline.hpp"
-#include "jvmci/jvmciRuntime.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/method.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/os.inline.hpp"
@@ -200,7 +200,7 @@ void AOTLoader::universe_init() {
       if ((*lib)->is_valid()) {
         AOTCodeHeap* heap = new AOTCodeHeap(*lib);
         {
-          MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+          MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
           add_heap(heap);
           CodeCache::add_heap(heap);
         }

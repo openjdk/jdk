@@ -1020,9 +1020,8 @@ public final class String
         }
         if (anObject instanceof String) {
             String aString = (String)anObject;
-            if (coder() == aString.coder()) {
-                return isLatin1() ? StringLatin1.equals(value, aString.value)
-                                  : StringUTF16.equals(value, aString.value);
+            if (!COMPACT_STRINGS || this.coder == aString.coder) {
+                return StringLatin1.equals(value, aString.value);
             }
         }
         return false;
@@ -1057,7 +1056,8 @@ public final class String
         }
         byte v1[] = value;
         byte v2[] = sb.getValue();
-        if (coder() == sb.getCoder()) {
+        byte coder = coder();
+        if (coder == sb.getCoder()) {
             int n = v1.length;
             for (int i = 0; i < n; i++) {
                 if (v1[i] != v2[i]) {
@@ -1065,7 +1065,7 @@ public final class String
                 }
             }
         } else {
-            if (!isLatin1()) {  // utf16 str and latin1 abs can never be "equal"
+            if (coder != LATIN1) {  // utf16 str and latin1 abs can never be "equal"
                 return false;
             }
             return StringUTF16.contentEquals(v1, v2, len);
@@ -1209,12 +1209,13 @@ public final class String
     public int compareTo(String anotherString) {
         byte v1[] = value;
         byte v2[] = anotherString.value;
-        if (coder() == anotherString.coder()) {
-            return isLatin1() ? StringLatin1.compareTo(v1, v2)
-                              : StringUTF16.compareTo(v1, v2);
+        byte coder = coder();
+        if (coder == anotherString.coder()) {
+            return coder == LATIN1 ? StringLatin1.compareTo(v1, v2)
+                                   : StringUTF16.compareTo(v1, v2);
         }
-        return isLatin1() ? StringLatin1.compareToUTF16(v1, v2)
-                          : StringUTF16.compareToLatin1(v1, v2);
+        return coder == LATIN1 ? StringLatin1.compareToUTF16(v1, v2)
+                               : StringUTF16.compareToLatin1(v1, v2);
      }
 
     /**
@@ -1238,12 +1239,13 @@ public final class String
         public int compare(String s1, String s2) {
             byte v1[] = s1.value;
             byte v2[] = s2.value;
-            if (s1.coder() == s2.coder()) {
-                return s1.isLatin1() ? StringLatin1.compareToCI(v1, v2)
-                                     : StringUTF16.compareToCI(v1, v2);
+            byte coder = s1.coder();
+            if (coder == s2.coder()) {
+                return coder == LATIN1 ? StringLatin1.compareToCI(v1, v2)
+                                       : StringUTF16.compareToCI(v1, v2);
             }
-            return s1.isLatin1() ? StringLatin1.compareToCI_UTF16(v1, v2)
-                                 : StringUTF16.compareToCI_Latin1(v1, v2);
+            return coder == LATIN1 ? StringLatin1.compareToCI_UTF16(v1, v2)
+                                   : StringUTF16.compareToCI_Latin1(v1, v2);
         }
 
         /** Replaces the de-serialized object. */
@@ -1317,7 +1319,8 @@ public final class String
              (ooffset > (long)other.length() - len)) {
             return false;
         }
-        if (coder() == other.coder()) {
+        byte coder = coder();
+        if (coder == other.coder()) {
             if (!isLatin1() && (len > 0)) {
                 toffset = toffset << 1;
                 ooffset = ooffset << 1;
@@ -1329,7 +1332,7 @@ public final class String
                 }
             }
         } else {
-            if (coder() == LATIN1) {
+            if (coder == LATIN1) {
                 while (len-- > 0) {
                     if (StringLatin1.getChar(tv, toffset++) !=
                         StringUTF16.getChar(ov, ooffset++)) {
@@ -1411,12 +1414,13 @@ public final class String
         }
         byte tv[] = value;
         byte ov[] = other.value;
-        if (coder() == other.coder()) {
-            return isLatin1()
+        byte coder = coder();
+        if (coder == other.coder()) {
+            return coder == LATIN1
               ? StringLatin1.regionMatchesCI(tv, toffset, ov, ooffset, len)
               : StringUTF16.regionMatchesCI(tv, toffset, ov, ooffset, len);
         }
-        return isLatin1()
+        return coder == LATIN1
               ? StringLatin1.regionMatchesCI_UTF16(tv, toffset, ov, ooffset, len)
               : StringUTF16.regionMatchesCI_Latin1(tv, toffset, ov, ooffset, len);
     }
@@ -1447,15 +1451,16 @@ public final class String
         byte pa[] = prefix.value;
         int po = 0;
         int pc = pa.length;
-        if (coder() == prefix.coder()) {
-            int to = isLatin1() ? toffset : toffset << 1;
+        byte coder = coder();
+        if (coder == prefix.coder()) {
+            int to = (coder == LATIN1) ? toffset : toffset << 1;
             while (po < pc) {
                 if (ta[to++] != pa[po++]) {
                     return false;
                 }
             }
         } else {
-            if (isLatin1()) {  // && pcoder == UTF16
+            if (coder == LATIN1) {  // && pcoder == UTF16
                 return false;
             }
             // coder == UTF16 && pcoder == LATIN1)
@@ -1688,11 +1693,12 @@ public final class String
      *          or {@code -1} if there is no such occurrence.
      */
     public int indexOf(String str) {
-        if (coder() == str.coder()) {
+        byte coder = coder();
+        if (coder == str.coder()) {
             return isLatin1() ? StringLatin1.indexOf(value, str.value)
                               : StringUTF16.indexOf(value, str.value);
         }
-        if (coder() == LATIN1) {  // str.coder == UTF16
+        if (coder == LATIN1) {  // str.coder == UTF16
             return -1;
         }
         return StringUTF16.indexOfLatin1(value, str.value);

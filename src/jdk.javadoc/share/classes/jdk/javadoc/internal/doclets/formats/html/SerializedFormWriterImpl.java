@@ -25,10 +25,11 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.util.*;
+import java.util.Set;
 
 import javax.lang.model.element.TypeElement;
 
+import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -109,7 +110,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
      * @return the package serialized form header tree
      */
     public Content getPackageSerializedHeader() {
-        return HtmlTree.SECTION();
+        return HtmlTree.SECTION(HtmlStyle.serializedPackageContainer);
     }
 
     /**
@@ -121,7 +122,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
     public Content getPackageHeader(String packageName) {
         Content heading = HtmlTree.HEADING(Headings.SerializedForm.PACKAGE_HEADING, true,
                 contents.packageLabel);
-        heading.add(Contents.SPACE);
+        heading.add(Entity.NO_BREAK_SPACE);
         heading.add(packageName);
         return heading;
     }
@@ -158,7 +159,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
                 ? getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.DEFAULT, typeElement)
                         .label(configuration.getClassName(typeElement)))
                 : new StringContent(utils.getFullyQualifiedName(typeElement));
-        Content li = HtmlTree.LI(HtmlStyle.blockList, links.createAnchor(
+        Content section = HtmlTree.SECTION(HtmlStyle.serializedClassDetails, links.createAnchor(
                 utils.getFullyQualifiedName(typeElement)));
         Content superClassLink = typeElement.getSuperclass() != null
                 ? getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.SERIALIZED_FORM,
@@ -172,8 +173,8 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
             contents.getContent(
             "doclet.Class_0_extends_implements_serializable", classLink,
             superClassLink);
-        li.add(HtmlTree.HEADING(Headings.SerializedForm.CLASS_HEADING, className));
-        return li;
+        section.add(HtmlTree.HEADING(Headings.SerializedForm.CLASS_HEADING, className));
+        return section;
     }
 
     /**

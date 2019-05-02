@@ -633,7 +633,7 @@ Node* IfNode::up_one_dom(Node *curr, bool linear_only) {
     if( din4->is_Call() &&      // Handle a slow-path call on either arm
         (din4 = din4->in(0)) )
       din4 = din4->in(0);
-    if( din3 == din4 && din3->is_If() )
+    if (din3 != NULL && din3 == din4 && din3->is_If()) // Regions not degraded to a copy
       return din3;              // Skip around diamonds
   }
 

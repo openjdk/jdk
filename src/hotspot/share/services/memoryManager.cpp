@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -282,7 +282,7 @@ void GCMemoryManager::gc_end(bool recordPostGCUsage,
     _num_collections++;
     // alternately update two objects making one public when complete
     {
-      MutexLockerEx ml(_last_gc_lock, Mutex::_no_safepoint_check_flag);
+      MutexLocker ml(_last_gc_lock, Mutex::_no_safepoint_check_flag);
       GCStatInfo *tmp = _last_gc_stat;
       _last_gc_stat = _current_gc_stat;
       _current_gc_stat = tmp;
@@ -297,7 +297,7 @@ void GCMemoryManager::gc_end(bool recordPostGCUsage,
 }
 
 size_t GCMemoryManager::get_last_gc_stat(GCStatInfo* dest) {
-  MutexLockerEx ml(_last_gc_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker ml(_last_gc_lock, Mutex::_no_safepoint_check_flag);
   if (_last_gc_stat->gc_index() != 0) {
     dest->set_index(_last_gc_stat->gc_index());
     dest->set_start_time(_last_gc_stat->start_time());

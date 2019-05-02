@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/g1/g1CollectorPolicy.hpp"
+#include "gc/g1/g1Arguments.hpp"
 #include "gc/g1/g1HeterogeneousHeapYoungGenSizer.hpp"
 #include "gc/g1/g1YoungGenSizer.hpp"
 #include "gc/g1/heapRegion.hpp"
@@ -130,8 +130,8 @@ void G1YoungGenSizer::heap_size_changed(uint new_number_of_heap_regions) {
           &_max_desired_young_length);
 }
 
-G1YoungGenSizer* G1YoungGenSizer::create_gen_sizer(G1CollectorPolicy* policy) {
-  if (policy->is_heterogeneous_heap()) {
+G1YoungGenSizer* G1YoungGenSizer::create_gen_sizer() {
+  if (G1Arguments::is_heterogeneous_heap()) {
     return new G1HeterogeneousHeapYoungGenSizer();
   } else {
     return new G1YoungGenSizer();

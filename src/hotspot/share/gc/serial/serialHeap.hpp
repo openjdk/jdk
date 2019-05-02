@@ -30,7 +30,6 @@
 #include "gc/shared/genCollectedHeap.hpp"
 #include "utilities/growableArray.hpp"
 
-class GenCollectorPolicy;
 class GCMemoryManager;
 class MemoryPool;
 class TenuredGeneration;
@@ -46,7 +45,7 @@ private:
 public:
   static SerialHeap* heap();
 
-  SerialHeap(GenCollectorPolicy* policy);
+  SerialHeap();
 
   virtual Name kind() const {
     return CollectedHeap::Serial;

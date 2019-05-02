@@ -305,7 +305,7 @@ bool PtrQueueSet::process_or_enqueue_completed_buffer(BufferNode* node) {
 }
 
 void PtrQueueSet::enqueue_completed_buffer(BufferNode* cbn) {
-  MutexLockerEx x(_cbl_mon, Mutex::_no_safepoint_check_flag);
+  MutexLocker x(_cbl_mon, Mutex::_no_safepoint_check_flag);
   cbn->set_next(NULL);
   if (_completed_buffers_tail == NULL) {
     assert(_completed_buffers_head == NULL, "Well-formedness");
@@ -328,7 +328,7 @@ void PtrQueueSet::enqueue_completed_buffer(BufferNode* cbn) {
 }
 
 BufferNode* PtrQueueSet::get_completed_buffer(size_t stop_at) {
-  MutexLockerEx x(_cbl_mon, Mutex::_no_safepoint_check_flag);
+  MutexLocker x(_cbl_mon, Mutex::_no_safepoint_check_flag);
 
   if (_n_completed_buffers <= stop_at) {
     return NULL;
@@ -354,7 +354,7 @@ BufferNode* PtrQueueSet::get_completed_buffer(size_t stop_at) {
 void PtrQueueSet::abandon_completed_buffers() {
   BufferNode* buffers_to_delete = NULL;
   {
-    MutexLockerEx x(_cbl_mon, Mutex::_no_safepoint_check_flag);
+    MutexLocker x(_cbl_mon, Mutex::_no_safepoint_check_flag);
     buffers_to_delete = _completed_buffers_head;
     _completed_buffers_head = NULL;
     _completed_buffers_tail = NULL;
@@ -389,7 +389,7 @@ void PtrQueueSet::assert_completed_buffers_list_len_correct_locked() {
 // must share the monitor.
 void PtrQueueSet::merge_bufferlists(PtrQueueSet *src) {
   assert(_cbl_mon == src->_cbl_mon, "Should share the same lock");
-  MutexLockerEx x(_cbl_mon, Mutex::_no_safepoint_check_flag);
+  MutexLocker x(_cbl_mon, Mutex::_no_safepoint_check_flag);
   if (_completed_buffers_tail == NULL) {
     assert(_completed_buffers_head == NULL, "Well-formedness");
     _completed_buffers_head = src->_completed_buffers_head;
@@ -415,7 +415,7 @@ void PtrQueueSet::merge_bufferlists(PtrQueueSet *src) {
 }
 
 void PtrQueueSet::notify_if_necessary() {
-  MutexLockerEx x(_cbl_mon, Mutex::_no_safepoint_check_flag);
+  MutexLocker x(_cbl_mon, Mutex::_no_safepoint_check_flag);
   if (_n_completed_buffers > _process_completed_buffers_threshold) {
     _process_completed_buffers = true;
     if (_notify_when_complete)

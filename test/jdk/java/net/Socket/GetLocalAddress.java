@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,8 @@ public class GetLocalAddress implements Runnable {
         int          linger = 65546;
         int          value = 0;
         addr = InetAddress.getLocalHost();
-        ss = new ServerSocket(0);
+        ss = new ServerSocket();
+        ss.bind(new InetSocketAddress(addr, 0));
         port = ss.getLocalPort();
 
         Thread t = new Thread(new GetLocalAddress());

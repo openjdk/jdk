@@ -33,7 +33,11 @@ template <typename S>
 void StringDedupThreadImpl<S>::do_deduplication() {
   S total_stat;
 
-  deduplicate_shared_strings(&total_stat);
+  {
+    // Block safepoints while deduplicating shared strings
+    SuspendibleThreadSetJoiner sts_join;
+    deduplicate_shared_strings(&total_stat);
+  }
 
   // Main loop
   for (;;) {

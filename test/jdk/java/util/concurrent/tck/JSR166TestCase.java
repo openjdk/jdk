@@ -544,6 +544,7 @@ public class JSR166TestCase extends TestCase {
             ExecutorsTest.suite(),
             ExecutorCompletionServiceTest.suite(),
             FutureTaskTest.suite(),
+            HashtableTest.suite(),
             LinkedBlockingDequeTest.suite(),
             LinkedBlockingQueueTest.suite(),
             LinkedListTest.suite(),
@@ -1777,12 +1778,11 @@ public class JSR166TestCase extends TestCase {
         }
     }
 
-    void assertImmutable(final Object o) {
+    void assertImmutable(Object o) {
         if (o instanceof Collection) {
             assertThrows(
                 UnsupportedOperationException.class,
-                new Runnable() { public void run() {
-                        ((Collection) o).add(null);}});
+                () -> ((Collection) o).add(null));
         }
     }
 
@@ -1842,8 +1842,8 @@ public class JSR166TestCase extends TestCase {
     }
 
     public void assertThrows(Class<? extends Throwable> expectedExceptionClass,
-                             Runnable... throwingActions) {
-        for (Runnable throwingAction : throwingActions) {
+                             Action... throwingActions) {
+        for (Action throwingAction : throwingActions) {
             boolean threw = false;
             try { throwingAction.run(); }
             catch (Throwable t) {

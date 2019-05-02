@@ -121,11 +121,6 @@ void ThreadHeapSampler::pick_next_sample(size_t overflowed_bytes) {
   }
 
   pick_next_geometric_sample();
-
-  // Try to correct sample size by removing extra space from last allocation.
-  if (overflowed_bytes > 0 && _bytes_until_sample > overflowed_bytes) {
-    _bytes_until_sample -= overflowed_bytes;
-  }
 }
 
 void ThreadHeapSampler::check_for_sampling(oop obj, size_t allocation_size, size_t bytes_since_allocation) {

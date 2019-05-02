@@ -394,9 +394,14 @@ public abstract class LoopTransformations {
                         invariantValue = switchNode.value();
                         controls = new ArrayList<>();
                         controls.add(switchNode);
-                    } else if (switchNode.value() == invariantValue && firstSwitch.structureEquals(switchNode)) {
-                        // Only collect switches which test the same values in the same order
-                        controls.add(switchNode);
+                    } else if (switchNode.value() == invariantValue) {
+                        // Fortify: Suppress Null Dereference false positive
+                        assert firstSwitch != null;
+
+                        if (firstSwitch.structureEquals(switchNode)) {
+                            // Only collect switches which test the same values in the same order
+                            controls.add(switchNode);
+                        }
                     }
                 }
             }

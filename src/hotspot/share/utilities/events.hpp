@@ -156,7 +156,7 @@ class FormatStringEventLog : public EventLogBase< FormatStringLogMessage<bufsz> 
     if (!this->should_log()) return;
 
     double timestamp = this->fetch_timestamp();
-    MutexLockerEx ml(&this->_mutex, Mutex::_no_safepoint_check_flag);
+    MutexLocker ml(&this->_mutex, Mutex::_no_safepoint_check_flag);
     int index = this->compute_log_index();
     this->_records[index].thread = thread;
     this->_records[index].timestamp = timestamp;
@@ -291,7 +291,7 @@ inline void EventLogBase<T>::print_log_on(outputStream* out) {
     // Not yet attached? Don't try to use locking
     print_log_impl(out);
   } else {
-    MutexLockerEx ml(&_mutex, Mutex::_no_safepoint_check_flag);
+    MutexLocker ml(&_mutex, Mutex::_no_safepoint_check_flag);
     print_log_impl(out);
   }
 }

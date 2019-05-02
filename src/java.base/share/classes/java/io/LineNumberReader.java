@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -261,6 +261,11 @@ public class LineNumberReader extends BufferedReader {
      */
     public void mark(int readAheadLimit) throws IOException {
         synchronized (lock) {
+            // If the most recently read character is '\r', then increment the
+            // read ahead limit as in this case if the next character is '\n',
+            // two characters would actually be read by the next read().
+            if (skipLF)
+                readAheadLimit++;
             super.mark(readAheadLimit);
             markedLineNumber = lineNumber;
             markedSkipLF     = skipLF;

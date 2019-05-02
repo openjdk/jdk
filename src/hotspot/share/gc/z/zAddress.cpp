@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,27 +22,47 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/z/zAddress.inline.hpp"
+#include "gc/z/zAddress.hpp"
 #include "gc/z/zGlobals.hpp"
-#include "runtime/thread.hpp"
 
-void ZAddressMasks::set_good_mask(uintptr_t mask) {
-  uintptr_t old_bad_mask = ZAddressBadMask;
+void ZAddress::set_good_mask(uintptr_t mask) {
   ZAddressGoodMask = mask;
   ZAddressBadMask = ZAddressGoodMask ^ ZAddressMetadataMask;
   ZAddressWeakBadMask = (ZAddressGoodMask | ZAddressMetadataRemapped | ZAddressMetadataFinalizable) ^ ZAddressMetadataMask;
 }
 
-void ZAddressMasks::initialize() {
+void ZAddress::initialize() {
+  ZAddressSpaceStart = ZPlatformAddressSpaceStart();
+  ZAddressSpaceEnd = ZPlatformAddressSpaceEnd();
+  ZAddressSpaceSize = ZAddressSpaceEnd - ZAddressSpaceStart;
+
+  ZAddressReservedStart = ZPlatformAddressReservedStart();
+  ZAddressReservedEnd = ZPlatformAddressReservedEnd();
+  ZAddressReservedSize = ZAddressReservedEnd - ZAddressReservedStart;
+
+  ZAddressBase = ZPlatformAddressBase();
+
+  ZAddressOffsetBits = ZPlatformAddressOffsetBits();
+  ZAddressOffsetMask = (((uintptr_t)1 << ZAddressOffsetBits) - 1) << ZAddressOffsetShift;
+  ZAddressOffsetMax = (uintptr_t)1 << ZAddressOffsetBits;
+
+  ZAddressMetadataShift = ZPlatformAddressMetadataShift();
+  ZAddressMetadataMask = (((uintptr_t)1 << ZAddressMetadataBits) - 1) << ZAddressMetadataShift;
+
+  ZAddressMetadataMarked0 = (uintptr_t)1 << (ZAddressMetadataShift + 0);
+  ZAddressMetadataMarked1 = (uintptr_t)1 << (ZAddressMetadataShift + 1);
+  ZAddressMetadataRemapped = (uintptr_t)1 << (ZAddressMetadataShift + 2);
+  ZAddressMetadataFinalizable = (uintptr_t)1 << (ZAddressMetadataShift + 3);
+
   ZAddressMetadataMarked = ZAddressMetadataMarked0;
   set_good_mask(ZAddressMetadataRemapped);
 }
 
-void ZAddressMasks::flip_to_marked() {
+void ZAddress::flip_to_marked() {
   ZAddressMetadataMarked ^= (ZAddressMetadataMarked0 | ZAddressMetadataMarked1);
   set_good_mask(ZAddressMetadataMarked);
 }
 
-void ZAddressMasks::flip_to_remapped() {
+void ZAddress::flip_to_remapped() {
   set_good_mask(ZAddressMetadataRemapped);
 }

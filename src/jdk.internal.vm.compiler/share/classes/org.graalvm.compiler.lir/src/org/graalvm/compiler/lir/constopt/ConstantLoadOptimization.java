@@ -278,7 +278,8 @@ public final class ConstantLoadOptimization extends PreAllocationOptimizationPha
             }
 
             if (cost.getNumMaterializations() > 1 || cost.getBestCost() < tree.getBlock().getRelativeFrequency()) {
-                try (DebugContext.Scope s = debug.scope("CLOmodify", constTree); Indent i = debug.logAndIndent("Replacing %s = %s", tree.getVariable(), tree.getConstant().toValueString())) {
+                try (DebugContext.Scope s = debug.scope("CLOmodify", constTree);
+                                Indent i = debug.isLogEnabled() ? debug.logAndIndent("Replacing %s = %s", tree.getVariable(), tree.getConstant().toValueString()) : null) {
                     // mark original load for removal
                     deleteInstruction(tree);
                     constantsOptimized.increment(debug);

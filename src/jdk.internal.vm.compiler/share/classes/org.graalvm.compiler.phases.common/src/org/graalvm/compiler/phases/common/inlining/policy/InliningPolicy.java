@@ -26,6 +26,7 @@ package org.graalvm.compiler.phases.common.inlining.policy;
 
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.spi.Replacements;
+import org.graalvm.compiler.phases.common.inlining.info.InlineInfo;
 import org.graalvm.compiler.phases.common.inlining.walker.MethodInvocation;
 
 public interface InliningPolicy {
@@ -60,5 +61,5 @@ public interface InliningPolicy {
 
     boolean continueInlining(StructuredGraph graph);
 
-    Decision isWorthInlining(Replacements replacements, MethodInvocation invocation, int inliningDepth, boolean fullyProcessed);
+    Decision isWorthInlining(Replacements replacements, MethodInvocation invocation, InlineInfo calleeInfo, int inliningDepth, boolean fullyProcessed);
 }

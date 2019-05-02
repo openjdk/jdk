@@ -27,7 +27,8 @@ package gc.arguments;
  * @test TestMinInitialErgonomics
  * @key gc
  * @bug 8006088
- * @summary Test ergonomics decisions related to minimum and initial heap size.
+ * @requires vm.gc.Parallel
+ * @summary Test Parallel GC ergonomics decisions related to minimum and initial heap size.
  * @library /test/lib
  * @library /
  * @modules java.base/jdk.internal.misc

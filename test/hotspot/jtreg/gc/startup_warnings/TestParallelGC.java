@@ -27,6 +27,7 @@ package gc.startup_warnings;
 * @test TestParallelGC
 * @key gc
 * @bug 8006398
+* @requires vm.gc.Parallel
 * @summary Test that ParallelGC does not print a warning message
 * @library /test/lib
 * @modules java.base/jdk.internal.misc

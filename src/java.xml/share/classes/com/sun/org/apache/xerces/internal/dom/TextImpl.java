@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -42,6 +41,7 @@ import org.w3c.dom.Text;
  * @xerces.internal
  *
  * @since  PR-DOM-Level-1-19980818.
+ * @LastModified: Apr 2019
  */
 public class TextImpl
     extends CharacterDataImpl
@@ -146,37 +146,32 @@ public class TextImpl
             synchronizeData();
         }
 
-        if (fBufferStr == null){
-            fBufferStr = new StringBuffer();
-        }
-        else {
-            fBufferStr.setLength(0);
-        }
+        StringBuilder buffer = new StringBuilder();
         if (data != null && data.length() != 0) {
-            fBufferStr.append(data);
+            buffer.append(data);
         }
 
-        //concatenate text of logically adjacent text nodes to the left of this node in the tree
-        getWholeTextBackward(this.getPreviousSibling(), fBufferStr, this.getParentNode());
-        String temp = fBufferStr.toString();
+        // concatenate text of logically adjacent text nodes to the left of this node in the tree
+        getWholeTextBackward(this.getPreviousSibling(), buffer, this.getParentNode());
+        String temp = buffer.toString();
 
-        //clear buffer
-        fBufferStr.setLength(0);
+        // clear buffer
+        buffer.setLength(0);
 
-        //concatenate text of logically adjacent text nodes to the right of this node in the tree
-        getWholeTextForward(this.getNextSibling(), fBufferStr, this.getParentNode());
+        // concatenate text of logically adjacent text nodes to the right of this node in the tree
+        getWholeTextForward(this.getNextSibling(), buffer, this.getParentNode());
 
-        return temp + fBufferStr.toString();
+        return temp + buffer.toString();
 
     }
 
     /**
-     * internal method taking a StringBuffer in parameter and inserts the
+     * internal method taking a StringBuilder in parameter and inserts the
      * text content at the start of the buffer
      *
      * @param buf
      */
-    protected void insertTextContent(StringBuffer buf) throws DOMException {
+    protected void insertTextContent(StringBuilder buf) throws DOMException {
          String content = getNodeValue();
          if (content != null) {
              buf.insert(0, content);
@@ -193,7 +188,7 @@ public class TextImpl
      *         other than EntityRef, Text, CDATA is encountered, otherwise
      *         return false
      */
-    private boolean getWholeTextForward(Node node, StringBuffer buffer, Node parent){
+    private boolean getWholeTextForward(Node node, StringBuilder buffer, Node parent){
         // boolean to indicate whether node is a child of an entity reference
         boolean inEntRef = false;
 
@@ -240,7 +235,7 @@ public class TextImpl
      *         other than EntityRef, Text, CDATA is encountered, otherwise
      *         return false
      */
-    private boolean getWholeTextBackward(Node node, StringBuffer buffer, Node parent){
+    private boolean getWholeTextBackward(Node node, StringBuilder buffer, Node parent){
 
         // boolean to indicate whether node is a child of an entity reference
         boolean inEntRef = false;

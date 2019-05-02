@@ -1283,7 +1283,10 @@ var getVersion = function (feature, interim, update, patch) {
     var version = (feature != null ? feature : version_numbers.get("DEFAULT_VERSION_FEATURE"))
         + "." + (interim != null ? interim : version_numbers.get("DEFAULT_VERSION_INTERIM"))
         + "." + (update != null ? update :  version_numbers.get("DEFAULT_VERSION_UPDATE"))
-        + "." + (patch != null ? patch : version_numbers.get("DEFAULT_VERSION_PATCH"));
+        + "." + (patch != null ? patch : version_numbers.get("DEFAULT_VERSION_PATCH"))
+        + "." + version_numbers.get("DEFAULT_VERSION_EXTRA1")
+        + "." + version_numbers.get("DEFAULT_VERSION_EXTRA2")
+        + "." + version_numbers.get("DEFAULT_VERSION_EXTRA3");
     while (version.match(".*\\.0$")) {
         version = version.substring(0, version.length - 2);
     }

@@ -51,7 +51,8 @@ public class AtomicReferenceArray9Test extends JSR166TestCase {
         AtomicReferenceArray<Integer> aa = new AtomicReferenceArray<>(SIZE);
         for (int index : new int[] { -1, SIZE }) {
             final int j = index;
-            final Runnable[] tasks = {
+            assertThrows(
+                IndexOutOfBoundsException.class,
                 () -> aa.getPlain(j),
                 () -> aa.getOpaque(j),
                 () -> aa.getAcquire(j),
@@ -64,10 +65,7 @@ public class AtomicReferenceArray9Test extends JSR166TestCase {
                 () -> aa.weakCompareAndSetPlain(j, null, null),
                 () -> aa.weakCompareAndSetVolatile(j, null, null),
                 () -> aa.weakCompareAndSetAcquire(j, null, null),
-                () -> aa.weakCompareAndSetRelease(j, null, null),
-            };
-
-            assertThrows(IndexOutOfBoundsException.class, tasks);
+                () -> aa.weakCompareAndSetRelease(j, null, null));
         }
     }
 

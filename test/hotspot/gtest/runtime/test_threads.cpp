@@ -120,7 +120,7 @@ class Threads::Test::VM_TestClaimOverflow : public VM_GTestExecuteAtSafepoint {
 public:
   void doit() {
     // Prevent changes to the NJT list while we're conducting our test.
-    MutexLockerEx ml(NonJavaThreadsList_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker ml(NonJavaThreadsList_lock, Mutex::_no_safepoint_check_flag);
 
     _thread_claim_token = max_uintx - 1;
 

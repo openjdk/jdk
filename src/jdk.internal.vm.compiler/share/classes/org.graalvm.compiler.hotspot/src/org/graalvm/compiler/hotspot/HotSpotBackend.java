@@ -306,6 +306,11 @@ public abstract class HotSpotBackend extends Backend implements FrameMap.Referen
     public static final ForeignCallDescriptor GHASH_PROCESS_BLOCKS = new ForeignCallDescriptor("ghashProcessBlocks", void.class, Word.class, Word.class, Word.class, int.class);
 
     /**
+     * Descriptor for {@code StubRoutines::_base64_encodeBlock}.
+     */
+    public static final ForeignCallDescriptor BASE64_ENCODE_BLOCK = new ForeignCallDescriptor("base64EncodeBlock", void.class, Word.class, int.class, int.class, Word.class, int.class, boolean.class);
+
+    /**
      * Descriptor for {@code StubRoutines::_counterMode_AESCrypt}.
      */
     public static final ForeignCallDescriptor COUNTERMODE_IMPL_CRYPT = new ForeignCallDescriptor("counterModeAESCrypt", int.class, Word.class, Word.class, Word.class, Word.class, int.class,

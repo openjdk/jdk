@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.IllegalBlockingModeException;
 import java.util.Objects;
+import java.util.Set;
 
 
 // Make a datagram-socket channel look like a datagram socket.
@@ -51,7 +52,7 @@ import java.util.Objects;
 // class.
 //
 
-public class DatagramSocketAdaptor
+class DatagramSocketAdaptor
     extends DatagramSocket
 {
     // The channel being adapted
@@ -61,7 +62,7 @@ public class DatagramSocketAdaptor
     private volatile int timeout;
 
     // ## super will create a useless impl
-    private DatagramSocketAdaptor(DatagramChannelImpl dc) throws IOException {
+    private DatagramSocketAdaptor(DatagramChannelImpl dc) {
         // Invoke the DatagramSocketAdaptor(SocketAddress) constructor,
         // passing a dummy DatagramSocketImpl object to avoid any native
         // resource allocation in super class and invoking our bind method
@@ -70,12 +71,8 @@ public class DatagramSocketAdaptor
         this.dc = dc;
     }
 
-    public static DatagramSocket create(DatagramChannelImpl dc) {
-        try {
-            return new DatagramSocketAdaptor(dc);
-        } catch (IOException x) {
-            throw new Error(x);
-        }
+    static DatagramSocket create(DatagramChannelImpl dc) {
+        return new DatagramSocketAdaptor(dc);
     }
 
     private void connectInternal(SocketAddress remote)
@@ -96,6 +93,7 @@ public class DatagramSocketAdaptor
         }
     }
 
+    @Override
     public void bind(SocketAddress local) throws SocketException {
         try {
             if (local == null)
@@ -106,6 +104,7 @@ public class DatagramSocketAdaptor
         }
     }
 
+    @Override
     public void connect(InetAddress address, int port) {
         try {
             connectInternal(new InetSocketAddress(address, port));
@@ -114,11 +113,13 @@ public class DatagramSocketAdaptor
         }
     }
 
+    @Override
     public void connect(SocketAddress remote) throws SocketException {
         Objects.requireNonNull(remote, "Address can't be null");
         connectInternal(remote);
     }
 
+    @Override
     public void disconnect() {
         try {
             dc.disconnect();
@@ -127,24 +128,39 @@ public class DatagramSocketAdaptor
         }
     }
 
+    @Override
     public boolean isBound() {
         return dc.localAddress() != null;
     }
 
+    @Override
     public boolean isConnected() {
         return dc.remoteAddress() != null;
     }
 
+    @Override
     public InetAddress getInetAddress() {
         InetSocketAddress remote = dc.remoteAddress();
         return (remote != null) ? remote.getAddress() : null;
     }
 
+    @Override
     public int getPort() {
         InetSocketAddress remote = dc.remoteAddress();
         return (remote != null) ? remote.getPort() : -1;
     }
 
+    @Override
+    public SocketAddress getRemoteSocketAddress() {
+        return dc.remoteAddress();
+    }
+
+    @Override
+    public SocketAddress getLocalSocketAddress() {
+        return dc.localAddress();
+    }
+
+    @Override
     public void send(DatagramPacket p) throws IOException {
         synchronized (dc.blockingLock()) {
             if (!dc.isBlocking())
@@ -198,6 +214,7 @@ public class DatagramSocketAdaptor
         }
     }
 
+    @Override
     public void receive(DatagramPacket p) throws IOException {
         synchronized (dc.blockingLock()) {
             if (!dc.isBlocking())
@@ -217,6 +234,7 @@ public class DatagramSocketAdaptor
         }
     }
 
+    @Override
     public InetAddress getLocalAddress() {
         if (isClosed())
             return null;
@@ -235,6 +253,7 @@ public class DatagramSocketAdaptor
         return result;
     }
 
+    @Override
     public int getLocalPort() {
         if (isClosed())
             return -1;
@@ -248,11 +267,19 @@ public class DatagramSocketAdaptor
         return 0;
     }
 
+    @Override
     public void setSoTimeout(int timeout) throws SocketException {
+        if (!dc.isOpen())
+            throw new SocketException("Socket is closed");
+        if (timeout < 0)
+            throw new IllegalArgumentException("timeout < 0");
         this.timeout = timeout;
     }
 
+    @Override
     public int getSoTimeout() throws SocketException {
+        if (!dc.isOpen())
+            throw new SocketException("Socket is closed");
         return timeout;
     }
 
@@ -294,51 +321,62 @@ public class DatagramSocketAdaptor
         }
     }
 
+    @Override
     public void setSendBufferSize(int size) throws SocketException {
         if (size <= 0)
             throw new IllegalArgumentException("Invalid send size");
         setIntOption(StandardSocketOptions.SO_SNDBUF, size);
     }
 
+    @Override
     public int getSendBufferSize() throws SocketException {
         return getIntOption(StandardSocketOptions.SO_SNDBUF);
     }
 
+    @Override
     public void setReceiveBufferSize(int size) throws SocketException {
         if (size <= 0)
             throw new IllegalArgumentException("Invalid receive size");
         setIntOption(StandardSocketOptions.SO_RCVBUF, size);
     }
 
+    @Override
     public int getReceiveBufferSize() throws SocketException {
         return getIntOption(StandardSocketOptions.SO_RCVBUF);
     }
 
+    @Override
     public void setReuseAddress(boolean on) throws SocketException {
         setBooleanOption(StandardSocketOptions.SO_REUSEADDR, on);
     }
 
+    @Override
     public boolean getReuseAddress() throws SocketException {
         return getBooleanOption(StandardSocketOptions.SO_REUSEADDR);
 
     }
 
+    @Override
     public void setBroadcast(boolean on) throws SocketException {
         setBooleanOption(StandardSocketOptions.SO_BROADCAST, on);
     }
 
+    @Override
     public boolean getBroadcast() throws SocketException {
         return getBooleanOption(StandardSocketOptions.SO_BROADCAST);
     }
 
+    @Override
     public void setTrafficClass(int tc) throws SocketException {
         setIntOption(StandardSocketOptions.IP_TOS, tc);
     }
 
+    @Override
     public int getTrafficClass() throws SocketException {
         return getIntOption(StandardSocketOptions.IP_TOS);
     }
 
+    @Override
     public void close() {
         try {
             dc.close();
@@ -347,12 +385,30 @@ public class DatagramSocketAdaptor
         }
     }
 
+    @Override
     public boolean isClosed() {
         return !dc.isOpen();
     }
 
+    @Override
     public DatagramChannel getChannel() {
         return dc;
+    }
+
+    @Override
+    public <T> DatagramSocket setOption(SocketOption<T> name, T value) throws IOException {
+        dc.setOption(name, value);
+        return this;
+    }
+
+    @Override
+    public <T> T getOption(SocketOption<T> name) throws IOException {
+        return dc.getOption(name);
+    }
+
+    @Override
+    public Set<SocketOption<?>> supportedOptions() {
+        return dc.supportedOptions();
     }
 
    /*

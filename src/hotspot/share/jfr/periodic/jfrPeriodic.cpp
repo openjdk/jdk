@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -409,7 +409,7 @@ TRACE_REQUEST_FUNC(ThreadAllocationStatistics) {
   JfrTicks time_stamp = JfrTicks::now();
   {
     // Collect allocation statistics while holding threads lock
-    MutexLockerEx ml(Threads_lock);
+    MutexLocker ml(Threads_lock);
     for (JavaThreadIteratorWithHandle jtiwh; JavaThread *jt = jtiwh.next(); ) {
       allocated.append(jt->cooked_allocated_bytes());
       thread_ids.append(JFR_THREAD_ID(jt));

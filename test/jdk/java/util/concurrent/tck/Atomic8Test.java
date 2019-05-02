@@ -518,7 +518,8 @@ public class Atomic8Test extends JSR166TestCase {
      * null function argument
      */
     public void testGetAndUpdateNPE() {
-        Runnable[] throwingActions = {
+        assertThrows(
+            NullPointerException.class,
             () -> new AtomicLong().getAndUpdate(null),
             () -> new AtomicInteger().getAndUpdate(null),
             () -> new AtomicReference().getAndUpdate(null),
@@ -527,16 +528,15 @@ public class Atomic8Test extends JSR166TestCase {
             () -> new AtomicReferenceArray(1).getAndUpdate(0, null),
             () -> aLongFieldUpdater().getAndUpdate(this, null),
             () -> anIntFieldUpdater().getAndUpdate(this, null),
-            () -> anIntegerFieldUpdater().getAndUpdate(this, null),
-        };
-        assertThrows(NullPointerException.class, throwingActions);
+            () -> anIntegerFieldUpdater().getAndUpdate(this, null));
     }
 
     /**
      * All Atomic updateAndGet methods throw NullPointerException on null function argument
      */
     public void testUpdateAndGetNPE() {
-        Runnable[] throwingActions = {
+        assertThrows(
+            NullPointerException.class,
             () -> new AtomicLong().updateAndGet(null),
             () -> new AtomicInteger().updateAndGet(null),
             () -> new AtomicReference().updateAndGet(null),
@@ -545,9 +545,7 @@ public class Atomic8Test extends JSR166TestCase {
             () -> new AtomicReferenceArray(1).updateAndGet(0, null),
             () -> aLongFieldUpdater().updateAndGet(this, null),
             () -> anIntFieldUpdater().updateAndGet(this, null),
-            () -> anIntegerFieldUpdater().updateAndGet(this, null),
-        };
-        assertThrows(NullPointerException.class, throwingActions);
+            () -> anIntegerFieldUpdater().updateAndGet(this, null));
     }
 
     /**
@@ -555,7 +553,8 @@ public class Atomic8Test extends JSR166TestCase {
      * on null function argument
      */
     public void testGetAndAccumulateNPE() {
-        Runnable[] throwingActions = {
+        assertThrows(
+            NullPointerException.class,
             () -> new AtomicLong().getAndAccumulate(1L, null),
             () -> new AtomicInteger().getAndAccumulate(1, null),
             () -> new AtomicReference().getAndAccumulate(one, null),
@@ -564,9 +563,7 @@ public class Atomic8Test extends JSR166TestCase {
             () -> new AtomicReferenceArray(1).getAndAccumulate(0, one, null),
             () -> aLongFieldUpdater().getAndAccumulate(this, 1L, null),
             () -> anIntFieldUpdater().getAndAccumulate(this, 1, null),
-            () -> anIntegerFieldUpdater().getAndAccumulate(this, one, null),
-        };
-        assertThrows(NullPointerException.class, throwingActions);
+            () -> anIntegerFieldUpdater().getAndAccumulate(this, one, null));
     }
 
     /**
@@ -574,7 +571,8 @@ public class Atomic8Test extends JSR166TestCase {
      * on null function argument
      */
     public void testAccumulateAndGetNPE() {
-        Runnable[] throwingActions = {
+        assertThrows(
+            NullPointerException.class,
             () -> new AtomicLong().accumulateAndGet(1L, null),
             () -> new AtomicInteger().accumulateAndGet(1, null),
             () -> new AtomicReference().accumulateAndGet(one, null),
@@ -583,9 +581,7 @@ public class Atomic8Test extends JSR166TestCase {
             () -> new AtomicReferenceArray(1).accumulateAndGet(0, one, null),
             () -> aLongFieldUpdater().accumulateAndGet(this, 1L, null),
             () -> anIntFieldUpdater().accumulateAndGet(this, 1, null),
-            () -> anIntegerFieldUpdater().accumulateAndGet(this, one, null),
-        };
-        assertThrows(NullPointerException.class, throwingActions);
+            () -> anIntegerFieldUpdater().accumulateAndGet(this, one, null));
     }
 
     /**
@@ -598,9 +594,9 @@ public class Atomic8Test extends JSR166TestCase {
         final AtomicLongFieldUpdater longUpdater = aLongFieldUpdater();
         final AtomicIntegerFieldUpdater intUpdater = anIntFieldUpdater();
         final AtomicReferenceFieldUpdater refUpdater = anIntegerFieldUpdater();
-        final Object obj = new Object();
         for (Object x : new Object[]{ new Object(), null }) {
-            Runnable[] throwingActions = {
+            assertThrows(
+                ClassCastException.class,
                 () -> longUpdater.get(x),
                 () -> intUpdater.get(x),
                 () -> refUpdater.get(x),
@@ -618,9 +614,7 @@ public class Atomic8Test extends JSR166TestCase {
 
                 () -> longUpdater.compareAndSet(x, 17L, 42L),
                 () -> intUpdater.compareAndSet(x, 17, 42),
-                () -> refUpdater.compareAndSet(x, (Integer) 17, (Integer) 42),
-            };
-            assertThrows(ClassCastException.class, throwingActions);
+                () -> refUpdater.compareAndSet(x, (Integer) 17, (Integer) 42));
         }
     }
 

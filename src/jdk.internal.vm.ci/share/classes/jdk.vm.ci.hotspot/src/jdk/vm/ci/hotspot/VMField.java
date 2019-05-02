@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,19 +63,20 @@ public final class VMField {
     }
 
     /**
-     * Creates a description of a field.
+     * Creates a description of a non-static field.
      */
-    VMField(String name, String type, long address, Object value) {
+    @VMEntryPoint
+    VMField(String name, String type, long offset, long address, Object value) {
         this.name = name;
         this.type = type;
-        this.offset = 0;
+        this.offset = offset;
         this.address = address;
         this.value = value;
     }
 
     @Override
     public String toString() {
-        String val = value == null ? "null" : String.format("0x%x", value);
+        String val = value == null ? "null" : (type.contains("*") ? String.format("0x%x", value) : String.format("%s", value));
         return String.format("Field[name=%s, type=%s, offset=%d, address=0x%x, value=%s]", name, type, offset, address, val);
     }
 }

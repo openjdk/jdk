@@ -32,7 +32,7 @@
  *          MissingMethodWithSuper.jcod
  *          MissingNestHost.jcod
  * @run main TestInvokeErrors true
- * @run main/othervm -XX:-BytecodeVerificationRemote -XX:-BytecodeVerificationLocal TestInvokeErrors false
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-BytecodeVerificationRemote -XX:-BytecodeVerificationLocal TestInvokeErrors false
  */
 
 public class TestInvokeErrors {

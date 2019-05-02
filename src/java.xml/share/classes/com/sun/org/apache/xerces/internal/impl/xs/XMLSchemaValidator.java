@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -111,7 +111,7 @@ import jdk.xml.internal.JdkXmlUtils;
  * @author Elena Litani IBM
  * @author Andy Clark IBM
  * @author Neeraj Bajaj, Sun Microsystems, inc.
- * @LastModified: Nov 2017
+ * @LastModified: Apr 2019
  */
 public class XMLSchemaValidator
     implements XMLComponent, XMLDocumentFilter, FieldActivator, RevalidationHandler, XSElementDeclHelper {
@@ -2429,7 +2429,7 @@ public class XMLSchemaValidator
                             fValueStoreCache.getValueStoreFor(id, selMatcher.getInitialDepth());
                         // nothing to do if nothing matched, or if not all
                         // fields are present.
-                        if (values != null && values.fValuesCount == values.fFieldCount)
+                        if (values != null && values.fHasValue)
                             values.endDocumentFragment();
                     }
                 }
@@ -3718,6 +3718,7 @@ public class XMLSchemaValidator
 
         /** Current data value count. */
         protected int fValuesCount;
+        protected boolean fHasValue = false;
 
         /** global data */
         public final Vector<Object> fValues = new Vector<>();
@@ -3885,6 +3886,7 @@ public class XMLSchemaValidator
             }
             else {
                 fValuesCount++;
+                fHasValue = true;
             }
             fLocalValues[i] = actualValue;
             fLocalValueTypes[i] = valueType;

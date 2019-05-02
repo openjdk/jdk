@@ -32,8 +32,8 @@ import java.util.regex.Pattern;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.Comment;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
+import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.FixedStringContent;
-import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
@@ -52,8 +52,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
  * only created once per doclet-instance, instead of once per generated page.
  */
 public class Contents {
-    public static final Content SPACE = RawHtml.nbsp;
-    public static final Content ZERO_WIDTH_SPACE = RawHtml.zws;
 
     public final Content allClassesLabel;
     public final Content allImplementedInterfacesLabel;
@@ -400,7 +398,7 @@ public class Contents {
         int p;
         while ((p = text.indexOf(" ", start)) != -1) {
             c.add(text.substring(start, p));
-            c.add(RawHtml.nbsp);
+            c.add(Entity.NO_BREAK_SPACE);
             start = p + 1;
         }
         c.add(text.substring(start));

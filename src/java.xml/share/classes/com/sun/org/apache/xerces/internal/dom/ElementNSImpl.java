@@ -86,13 +86,13 @@ public class ElementNSImpl
 
         private void setName(String namespaceURI, String qname) {
 
-                String prefix;
-                // DOM Level 3: namespace URI is never empty string.
-                this.namespaceURI = namespaceURI;
-                if (namespaceURI != null) {
+            String prefix;
+            // DOM Level 3: namespace URI is never empty string.
+            this.namespaceURI = namespaceURI;
+            if (namespaceURI != null) {
             //convert the empty string to 'null'
-                        this.namespaceURI =     (namespaceURI.length() == 0) ? null : namespaceURI;
-                }
+            this.namespaceURI = (namespaceURI.length() == 0) ? null : namespaceURI;
+            }
 
         int colon1, colon2 ;
 
@@ -188,37 +188,6 @@ public class ElementNSImpl
                 this.name = qualifiedName;
         setName(namespaceURI, qualifiedName);
         reconcileDefaultAttributes();
-    }
-
-    /**
-     * NON-DOM: resets this node and sets specified values for the node
-     *
-     * @param ownerDocument
-     * @param namespaceURI
-     * @param qualifiedName
-     * @param localName
-     */
-    protected void setValues (CoreDocumentImpl ownerDocument,
-                            String namespaceURI, String qualifiedName,
-                            String localName){
-
-        // remove children first
-        firstChild = null;
-        previousSibling = null;
-        nextSibling = null;
-        fNodeListCache = null;
-
-        // set owner document
-        attributes = null;
-        super.flags = 0;
-        setOwnerDocument(ownerDocument);
-
-        // synchronizeData will initialize attributes
-        needsSyncData(true);
-        super.name = qualifiedName;
-        this.localName = localName;
-        this.namespaceURI = namespaceURI;
-
     }
 
     //
@@ -340,88 +309,13 @@ public class ElementNSImpl
         return localName;
     }
 
-
-   /**
-     * DOM Level 3 WD - Experimental.
-     * Retrieve baseURI
+    /**
+     * NON-DOM
+     * Returns the xml:base attribute.
      */
-    public String getBaseURI() {
-
-        if (needsSyncData()) {
-            synchronizeData();
-        }
-        // Absolute base URI is computed according to XML Base (http://www.w3.org/TR/xmlbase/#granularity)
-
-        // 1.  the base URI specified by an xml:base attribute on the element, if one exists
-
-        if (attributes != null) {
-            Attr attrNode = (Attr)attributes.getNamedItemNS("http://www.w3.org/XML/1998/namespace", "base");
-            if (attrNode != null) {
-                String uri =  attrNode.getNodeValue();
-                if (uri.length() != 0 ) {// attribute value is always empty string
-                    try {
-                        uri = new URI(uri).toString();
-                    }
-                    catch (com.sun.org.apache.xerces.internal.util.URI.MalformedURIException e) {
-                        // This may be a relative URI.
-
-                        // Start from the base URI of the parent, or if this node has no parent, the owner node.
-                        NodeImpl parentOrOwner = (parentNode() != null) ? parentNode() : ownerNode;
-
-                        // Make any parentURI into a URI object to use with the URI(URI, String) constructor.
-                        String parentBaseURI = (parentOrOwner != null) ? parentOrOwner.getBaseURI() : null;
-
-                        if (parentBaseURI != null) {
-                            try {
-                                uri = new URI(new URI(parentBaseURI), uri).toString();
-                            }
-                            catch (com.sun.org.apache.xerces.internal.util.URI.MalformedURIException ex){
-                                // This should never happen: parent should have checked the URI and returned null if invalid.
-                                return null;
-                            }
-                            return uri;
-                        }
-                        // REVISIT: what should happen in this case?
-                        return null;
-                    }
-                    return uri;
-                }
-            }
-        }
-
-        //2.the base URI of the element's parent element within the document or external entity,
-        //if one exists
-        String parentElementBaseURI = (this.parentNode() != null) ? this.parentNode().getBaseURI() : null ;
-        //base URI of parent element is not null
-        if(parentElementBaseURI != null){
-            try {
-                //return valid absolute base URI
-               return new URI(parentElementBaseURI).toString();
-            }
-            catch (com.sun.org.apache.xerces.internal.util.URI.MalformedURIException e){
-                // REVISIT: what should happen in this case?
-                return null;
-            }
-        }
-        //3. the base URI of the document entity or external entity containing the element
-
-        String baseURI = (this.ownerNode != null) ? this.ownerNode.getBaseURI() : null ;
-
-        if(baseURI != null){
-            try {
-                //return valid absolute base URI
-               return new URI(baseURI).toString();
-            }
-            catch (com.sun.org.apache.xerces.internal.util.URI.MalformedURIException e){
-                // REVISIT: what should happen in this case?
-                return null;
-            }
-        }
-
-        return null;
-
-    }
-
+    protected Attr getXMLBaseAttribute() {
+        return (Attr) attributes.getNamedItemNS("http://www.w3.org/XML/1998/namespace", "base");
+    } // getXMLBaseAttribute():Attr
 
     /**
      * @see org.w3c.dom.TypeInfo#getTypeName()
@@ -452,12 +346,12 @@ public class ElementNSImpl
      * Checks if a type is derived from another by restriction. See:
      * http://www.w3.org/TR/DOM-Level-3-Core/core.html#TypeInfo-isDerivedFrom
      *
-     * @param ancestorNS
+     * @param typeNamespaceArg
      *        The namspace of the ancestor type declaration
-     * @param ancestorName
+     * @param typeNameArg
      *        The name of the ancestor type declaration
-     * @param type
-     *        The reference type definition
+     * @param derivationMethod
+     *        The derivation method
      *
      * @return boolean True if the type is derived by restriciton for the
      *         reference type

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -692,18 +692,22 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
 
 
 /*
- * Class:     sun_security_mscapi_Key
+ * Class:     sun_security_mscapi_CKey
  * Method:    cleanUp
  * Signature: (JJ)V
  */
-JNIEXPORT void JNICALL Java_sun_security_mscapi_Key_cleanUp
+JNIEXPORT void JNICALL Java_sun_security_mscapi_CKey_cleanUp
   (JNIEnv *env, jclass clazz, jlong hCryptProv, jlong hCryptKey)
 {
-    if (hCryptKey != NULL)
-        ::CryptDestroyKey((HCRYPTKEY) hCryptKey); // deprecated
+    if (hCryptKey == NULL && hCryptProv != NULL) {
+        NCryptFreeObject((NCRYPT_HANDLE)hCryptProv);
+    } else {
+        if (hCryptKey != NULL)
+            ::CryptDestroyKey((HCRYPTKEY) hCryptKey); // deprecated
 
-    if (hCryptProv != NULL)
-        ::CryptReleaseContext((HCRYPTPROV) hCryptProv, NULL); // deprecated
+        if (hCryptProv != NULL)
+            ::CryptReleaseContext((HCRYPTPROV) hCryptProv, NULL); // deprecated
+    }
 }
 
 /*

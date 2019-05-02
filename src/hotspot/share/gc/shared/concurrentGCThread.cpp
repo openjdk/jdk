@@ -50,7 +50,7 @@ void ConcurrentGCThread::run() {
   run_service();
 
   // Signal thread has terminated
-  MonitorLockerEx ml(Terminator_lock);
+  MonitorLocker ml(Terminator_lock);
   OrderAccess::release_store(&_has_terminated, true);
   ml.notify_all();
 }
@@ -65,7 +65,7 @@ void ConcurrentGCThread::stop() {
   stop_service();
 
   // Wait for thread to terminate
-  MonitorLockerEx ml(Terminator_lock);
+  MonitorLocker ml(Terminator_lock);
   while (!_has_terminated) {
     ml.wait();
   }

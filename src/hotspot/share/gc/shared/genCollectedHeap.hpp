@@ -26,12 +26,12 @@
 #define SHARE_GC_SHARED_GENCOLLECTEDHEAP_HPP
 
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/collectorPolicy.hpp"
 #include "gc/shared/generation.hpp"
 #include "gc/shared/oopStorageParState.hpp"
 #include "gc/shared/softRefGenPolicy.hpp"
 
 class AdaptiveSizePolicy;
+class CardTableRS;
 class GCPolicyCounters;
 class GenerationSpec;
 class StrongRootsScope;
@@ -41,7 +41,6 @@ class WorkGang;
 // A "GenCollectedHeap" is a CollectedHeap that uses generational
 // collection.  It has two generations, young and old.
 class GenCollectedHeap : public CollectedHeap {
-  friend class GenCollectorPolicy;
   friend class Generation;
   friend class DefNewGeneration;
   friend class TenuredGeneration;
@@ -74,9 +73,6 @@ private:
 
   // The singleton CardTable Remembered Set.
   CardTableRS* _rem_set;
-
-  // The generational collector policy.
-  GenCollectorPolicy* _gen_policy;
 
   SoftRefGenPolicy _soft_ref_gen_policy;
 
@@ -117,7 +113,8 @@ protected:
     GCH_PS_ClassLoaderDataGraph_oops_do,
     GCH_PS_jvmti_oops_do,
     GCH_PS_CodeCache_oops_do,
-    GCH_PS_aot_oops_do,
+    AOT_ONLY(GCH_PS_aot_oops_do COMMA)
+    JVMCI_ONLY(GCH_PS_jvmci_oops_do COMMA)
     GCH_PS_younger_gens,
     // Leave this one last.
     GCH_PS_NumElements
@@ -158,8 +155,7 @@ protected:
   // we absolutely __must__ clear soft refs?
   bool must_clear_all_soft_refs();
 
-  GenCollectedHeap(GenCollectorPolicy *policy,
-                   Generation::Name young,
+  GenCollectedHeap(Generation::Name young,
                    Generation::Name old,
                    const char* policy_counters_name);
 
@@ -185,11 +181,6 @@ public:
   GenerationSpec* young_gen_spec() const;
   GenerationSpec* old_gen_spec() const;
 
-  // The generational collector policy.
-  GenCollectorPolicy* gen_policy() const { return _gen_policy; }
-
-  virtual CollectorPolicy* collector_policy() const { return gen_policy(); }
-
   virtual SoftRefPolicy* soft_ref_policy() { return &_soft_ref_gen_policy; }
 
   // Adaptive size policy
@@ -199,11 +190,6 @@ public:
 
   // Performance Counter support
   GCPolicyCounters* counters()     { return _gc_policy_counters; }
-
-  // Return the (conservative) maximum heap alignment
-  static size_t conservative_max_heap_alignment() {
-    return Generation::GenGrain;
-  }
 
   size_t capacity() const;
   size_t used() const;

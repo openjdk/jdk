@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -437,7 +437,7 @@ GrowableArray<DCmdArgumentInfo*>* DCmdWithParser::argument_info_array() const {
 }
 
 void DCmdFactory::push_jmx_notification_request() {
-  MutexLockerEx ml(Service_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
   _has_pending_jmx_notification = true;
   Service_lock->notify_all();
 }
@@ -455,7 +455,7 @@ void DCmdFactory::send_notification_internal(TRAPS) {
   HandleMark hm(THREAD);
   bool notif = false;
   {
-    MutexLockerEx ml(Service_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
     notif = _has_pending_jmx_notification;
     _has_pending_jmx_notification = false;
   }
@@ -494,7 +494,7 @@ void DCmdFactory::send_notification_internal(TRAPS) {
 bool DCmdFactory::_send_jmx_notification = false;
 
 DCmdFactory* DCmdFactory::factory(DCmdSource source, const char* name, size_t len) {
-  MutexLockerEx ml(DCmdFactory_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker ml(DCmdFactory_lock, Mutex::_no_safepoint_check_flag);
   DCmdFactory* factory = _DCmdFactoryList;
   while (factory != NULL) {
     if (strlen(factory->name()) == len &&
@@ -511,7 +511,7 @@ DCmdFactory* DCmdFactory::factory(DCmdSource source, const char* name, size_t le
 }
 
 int DCmdFactory::register_DCmdFactory(DCmdFactory* factory) {
-  MutexLockerEx ml(DCmdFactory_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker ml(DCmdFactory_lock, Mutex::_no_safepoint_check_flag);
   factory->_next = _DCmdFactoryList;
   _DCmdFactoryList = factory;
   if (_send_jmx_notification && !factory->_hidden
@@ -536,7 +536,7 @@ DCmd* DCmdFactory::create_local_DCmd(DCmdSource source, CmdLine &line,
 }
 
 GrowableArray<const char*>* DCmdFactory::DCmd_list(DCmdSource source) {
-  MutexLockerEx ml(DCmdFactory_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker ml(DCmdFactory_lock, Mutex::_no_safepoint_check_flag);
   GrowableArray<const char*>* array = new GrowableArray<const char*>();
   DCmdFactory* factory = _DCmdFactoryList;
   while (factory != NULL) {
@@ -549,7 +549,7 @@ GrowableArray<const char*>* DCmdFactory::DCmd_list(DCmdSource source) {
 }
 
 GrowableArray<DCmdInfo*>* DCmdFactory::DCmdInfo_list(DCmdSource source ) {
-  MutexLockerEx ml(DCmdFactory_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker ml(DCmdFactory_lock, Mutex::_no_safepoint_check_flag);
   GrowableArray<DCmdInfo*>* array = new GrowableArray<DCmdInfo*>();
   DCmdFactory* factory = _DCmdFactoryList;
   while (factory != NULL) {

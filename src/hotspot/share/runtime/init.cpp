@@ -27,6 +27,9 @@
 #include "classfile/symbolTable.hpp"
 #include "code/icBuffer.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#if INCLUDE_JVMCI
+#include "jvmci/jvmci.hpp"
+#endif
 #include "interpreter/bytecodes.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
@@ -140,6 +143,11 @@ jint init_globals() {
   if (!compileBroker_init()) {
     return JNI_EINVAL;
   }
+#if INCLUDE_JVMCI
+  if (EnableJVMCI) {
+    JVMCI::initialize_globals();
+  }
+#endif
 
   if (!universe_post_init()) {
     return JNI_ERR;
@@ -191,15 +199,15 @@ bool is_init_completed() {
 }
 
 void wait_init_completed() {
-  MonitorLockerEx ml(InitCompleted_lock, Monitor::_no_safepoint_check_flag);
+  MonitorLocker ml(InitCompleted_lock, Monitor::_no_safepoint_check_flag);
   while (!_init_completed) {
-    ml.wait(Monitor::_no_safepoint_check_flag);
+    ml.wait();
   }
 }
 
 void set_init_completed() {
   assert(Universe::is_fully_initialized(), "Should have completed initialization");
-  MonitorLockerEx ml(InitCompleted_lock, Monitor::_no_safepoint_check_flag);
+  MonitorLocker ml(InitCompleted_lock, Monitor::_no_safepoint_check_flag);
   OrderAccess::release_store(&_init_completed, true);
   ml.notify_all();
 }

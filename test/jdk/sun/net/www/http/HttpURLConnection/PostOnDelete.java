@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ public class PostOnDelete {
         try {
             s = new Server();
             s.startServer();
-            URL url = new URL("http://localhost:" + s.getPort());
+            URL url = new URL("http://" + s.getAuthority());
             HttpURLConnection urlConnection = (HttpURLConnection)url.openConnection();
             urlConnection.setRequestMethod("DELETE");
             urlConnection.setDoOutput(true);
@@ -70,7 +70,8 @@ public class PostOnDelete {
         HttpServer server;
 
         public void startServer() {
-            InetSocketAddress addr = new InetSocketAddress(0);
+            InetAddress loopback = InetAddress.getLoopbackAddress();
+            InetSocketAddress addr = new InetSocketAddress(loopback,0);
             try {
                 server = HttpServer.create(addr, 0);
             } catch (IOException ioe) {
@@ -79,6 +80,13 @@ public class PostOnDelete {
 
             server.createContext("/", new EmptyPathHandler());
             server.start();
+        }
+
+        public String getAuthority() {
+            InetAddress address = server.getAddress().getAddress();
+            String hostaddr = address.isAnyLocalAddress() ? "localhost" : address.getHostAddress();
+            hostaddr =  (hostaddr.indexOf(':') >= 0) ? ("[" + hostaddr + "]") : hostaddr;
+            return hostaddr + ":" + getPort();
         }
 
         public int getPort() {

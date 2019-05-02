@@ -194,8 +194,8 @@ public class LdapDnsProviderTest {
             // no SecurityManager
             runTest("ldap:///dc=example,dc=com", "localhost:389");
             runTest("ldap://localhost/dc=example,dc=com", "localhost:389");
-            runTest("ldap://localhost:111/dc=example,dc=com", "localhost:111");
-            runTest("ldaps://localhost:111/dc=example,dc=com", "localhost:111");
+            runTest("ldap://localhost:1111/dc=example,dc=com", "localhost:1111");
+            runTest("ldaps://localhost:1111/dc=example,dc=com", "localhost:1111");
             runTest("ldaps://localhost/dc=example,dc=com", "localhost:636");
             runTest(null, "localhost:389");
             runTest("", "ConfigurationException");

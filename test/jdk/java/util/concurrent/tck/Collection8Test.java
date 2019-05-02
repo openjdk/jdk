@@ -237,41 +237,17 @@ public class Collection8Test extends JSR166TestCase {
             BlockingQueue q = (BlockingQueue) c;
             assertThrows(
                 NullPointerException.class,
-                () -> {
-                    try { q.offer(null, 1L, HOURS); }
-                    catch (InterruptedException ex) {
-                        throw new AssertionError(ex);
-                    }},
-                () -> {
-                    try { q.put(null); }
-                    catch (InterruptedException ex) {
-                        throw new AssertionError(ex);
-                    }});
+                () -> q.offer(null, 1L, HOURS),
+                () -> q.put(null));
         }
         if (c instanceof BlockingDeque) {
             BlockingDeque q = (BlockingDeque) c;
             assertThrows(
                 NullPointerException.class,
-                () -> {
-                    try { q.offerFirst(null, 1L, HOURS); }
-                    catch (InterruptedException ex) {
-                        throw new AssertionError(ex);
-                    }},
-                () -> {
-                    try { q.offerLast(null, 1L, HOURS); }
-                    catch (InterruptedException ex) {
-                        throw new AssertionError(ex);
-                    }},
-                () -> {
-                    try { q.putFirst(null); }
-                    catch (InterruptedException ex) {
-                        throw new AssertionError(ex);
-                    }},
-                () -> {
-                    try { q.putLast(null); }
-                    catch (InterruptedException ex) {
-                        throw new AssertionError(ex);
-                    }});
+                () -> q.offerFirst(null, 1L, HOURS),
+                () -> q.offerLast(null, 1L, HOURS),
+                () -> q.putFirst(null),
+                () -> q.putLast(null));
         }
     }
 
@@ -979,6 +955,10 @@ public class Collection8Test extends JSR166TestCase {
         } catch (java.io.NotSerializableException acceptable) {}
     }
 
+    /**
+     * TODO: move out of limbo
+     * 8203662: remove increment of modCount from ArrayList and Vector replaceAll()
+     */
     public void DISABLED_testReplaceAllIsNotStructuralModification() {
         Collection c = impl.emptyCollection();
         if (!(c instanceof List))

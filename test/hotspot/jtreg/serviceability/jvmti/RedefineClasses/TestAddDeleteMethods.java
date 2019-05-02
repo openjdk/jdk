@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8192936
+ * @requires os.family != "solaris"
  * @summary RI does not follow the JVMTI RedefineClasses spec; need to disallow adding and deleting methods
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -31,108 +32,177 @@
  *          java.instrument
  *          jdk.jartool/sun.tools.jar
  * @run main RedefineClassHelper
- * @run main/othervm -javaagent:redefineagent.jar TestAddDeleteMethods
+ * @run main/othervm -javaagent:redefineagent.jar TestAddDeleteMethods AllowAddDelete=no
+ * @run main/othervm -javaagent:redefineagent.jar -XX:+AllowRedefinitionToAddDeleteMethods TestAddDeleteMethods AllowAddDelete=yes
  */
 
 import static jdk.test.lib.Asserts.assertEquals;
+import java.lang.Runnable;
 
 // package access top-level class to avoid problem with RedefineClassHelper
 // and nested types.
-class A {
-    private static void foo()       { System.out.println("OLD foo called"); }
-    private final  void finalFoo()  { System.out.println("OLD finalFoo called"); }
-    public         void publicFoo() { foo(); finalFoo(); }
+class A implements Runnable {
+    private        void foo()       { System.out.println(" OLD foo called"); }
+    public         void publicFoo() { System.out.println(" OLD publicFoo called"); }
+    private final  void finalFoo()  { System.out.println(" OLD finalFoo called");  }
+    private static void staticFoo() { System.out.println(" OLD staticFoo called"); }
+    public         void run()       { foo(); publicFoo(); finalFoo(); staticFoo(); }
+}
+
+class B implements Runnable {
+    public         void run() { }
 }
 
 public class TestAddDeleteMethods {
-    static A a;
+    static private boolean allowAddDeleteMethods = false;
 
+    static private A a;
+    static private B b;
+
+    // This redefinition is expected to always succeed.
     public static String newA =
-        "class A {" +
-            "private static void foo()       { System.out.println(\"NEW foo called\"); }" +
-            "private final  void finalFoo()  { System.out.println(\"NEW finalFoo called\"); }" +
-            "public         void publicFoo() { foo(); finalFoo(); }" +
+        "class A implements Runnable {" +
+            "private        void foo()       { System.out.println(\" NEW foo called\"); }" +
+            "public         void publicFoo() { System.out.println(\" NEW publicFoo called\"); }" +
+            "private final  void finalFoo()  { System.out.println(\" NEW finalFoo called\");  }" +
+            "private static void staticFoo() { System.out.println(\" NEW staticFoo called\"); }" +
+            "public         void run()       { foo(); publicFoo(); finalFoo(); staticFoo(); }" +
         "}";
 
-    public static String newAddBar =
-        "class A {" +
-            "private        void bar()       { System.out.println(\"NEW bar called\"); }" +
-            "private static void foo()       { System.out.println(\"NEW foo called\"); }" +
-            "private final  void finalFoo()  { System.out.println(\"NEW finalFoo called\"); }" +
-            "public         void publicFoo() { foo(); bar(); finalFoo(); }" +
+    // This redefinition is expected to always fail.
+    public static String ADeleteFoo =
+        "class A implements Runnable {" +
+            "public         void publicFoo() { System.out.println(\" NEW publicFoo called\"); }" +
+            "private final  void finalFoo()  { System.out.println(\" NEW finalFoo called\");  }" +
+            "private static void staticFoo() { System.out.println(\" NEW staticFoo called\"); }" +
+            "public         void run()       { publicFoo(); finalFoo(); staticFoo(); }" +
         "}";
 
-    public static String newAddFinalBar =
-        "class A {" +
-            "private final  void bar()       { System.out.println(\"NEW bar called\"); }" +
-            "private static void foo()       { System.out.println(\"NEW foo called\"); }" +
-            "private final  void finalFoo()  { System.out.println(\"NEW finalFoo called\"); }" +
-            "public         void publicFoo() { foo(); bar(); finalFoo(); }" +
+    // This redefinition is expected to always fail.
+    public static String ADeletePublicFoo =
+        "class A implements Runnable {" +
+            "private        void foo()       { System.out.println(\" NEW foo called\"); }" +
+            "private final  void finalFoo()  { System.out.println(\" NEW finalFoo called\");  }" +
+            "private static void staticFoo() { System.out.println(\" NEW staticFoo called\"); }" +
+            "public         void run()       { foo(); finalFoo(); staticFoo(); }" +
         "}";
 
-    public static String newAddPublicBar =
-        "class A {" +
-            "public         void bar()       { System.out.println(\"NEW public bar called\"); }" +
-            "private static void foo()       { System.out.println(\"NEW foo called\"); }" +
-            "private final  void finalFoo()  { System.out.println(\"NEW finalFoo called\"); }" +
-            "public         void publicFoo() { foo(); bar(); finalFoo(); }" +
+    // This redefinition is expected to succeed with option -XX:+AllowRedefinitionToAddDeleteMethods.
+    public static String ADeleteFinalFoo =
+        "class A implements Runnable {" +
+            "private        void foo()       { System.out.println(\" NEW foo called\"); }" +
+            "public         void publicFoo() { System.out.println(\" NEW publicFoo called\"); }" +
+            "private static void staticFoo() { System.out.println(\" NEW staticFoo called\"); }" +
+            "public         void run()       { foo(); publicFoo(); staticFoo(); }" +
         "}";
 
-    public static String newDeleteFoo =
-        "class A {" +
-            "private final  void finalFoo()  { System.out.println(\"NEW finalFoo called\"); }" +
-            "public         void publicFoo() { finalFoo(); }" +
+    // This redefinition is expected to succeed with option -XX:+AllowRedefinitionToAddDeleteMethods.
+    // With compatibility option redefinition ADeleteFinalFoo already deleted finalFoo method.
+    // So, this redefinition will add it back which is expected to work.
+    public static String ADeleteStaticFoo =
+        "class A implements Runnable {" +
+            "private        void foo()       { System.out.println(\" NEW foo called\"); }" +
+            "public         void publicFoo() { System.out.println(\" NEW publicFoo called\"); }" +
+            "private final  void finalFoo()  { System.out.println(\" NEW finalFoo called\");  }" +
+            "public         void run()       { foo(); publicFoo(); finalFoo(); }" +
         "}";
 
-    public static String newDeleteFinalFoo =
-        "class A {" +
-            "private static void foo()       { System.out.println(\"NEW foo called\"); }" +
-            "public         void publicFoo() { foo(); }" +
+    // This redefinition is expected to always fail.
+    public static String BAddBar =
+        "class B implements Runnable {" +
+            "private        void bar()       { System.out.println(\" bar called\"); }" +
+            "public         void run()       { bar(); }" +
         "}";
 
-    public static String newDeletePublicFoo =
-        "class A {" +
-            "private static void foo()       { System.out.println(\"NEW foo called\"); }" +
-            "private final  void finalFoo()  { System.out.println(\"NEW finalFoo called\"); }" +
+    // This redefinition is expected to always fail.
+    public static String BAddPublicBar =
+        "class B implements Runnable {" +
+            "public         void publicBar() { System.out.println(\" publicBar called\"); }" +
+            "public         void run()       { publicBar(); }" +
+        "}";
+
+    // This redefinition is expected to succeed with option -XX:+AllowRedefinitionToAddDeleteMethods.
+    public static String BAddFinalBar =
+        "class B implements Runnable {" +
+            "private final  void finalBar()  { System.out.println(\" finalBar called\"); }" +
+            "public         void run()       { finalBar(); }" +
+        "}";
+
+    // This redefinition is expected to succeed with option -XX:+AllowRedefinitionToAddDeleteMethods.
+    // With compatibility option redefinition BAddFinalBar added finalBar method.
+    // So, this redefinition will deleate it back which is expected to work.
+    public static String BAddStaticBar =
+        "class B implements Runnable {" +
+            "private static void staticBar() { System.out.println(\" staticBar called\"); }" +
+            "public         void run()       { staticBar(); }" +
         "}";
 
     static private final String ExpMsgPrefix = "attempted to ";
     static private final String ExpMsgPostfix = " a method";
 
-    public static void test(String newBytes, String expSuffix) throws Exception {
+    static private void log(String msg) { System.out.println(msg); }
+
+    public static void test(Runnable obj, String newBytes, String expSuffix, String methodName,
+                            boolean expectedRedefToPass) throws Exception {
         String expectedMessage = ExpMsgPrefix + expSuffix + ExpMsgPostfix;
+        Class klass = obj.getClass();
+        String className = klass.getName();
+        String expResult = expectedRedefToPass ? "PASS" : "FAIL";
+
+        log("");
+        log("## Test " + expSuffix + " method \'" + methodName + "\' in class " + className +
+            "; redefinition expected to " + expResult);
 
         try {
-            RedefineClassHelper.redefineClass(A.class, newBytes);
-            a.publicFoo();
-            throw new RuntimeException("Failed, expected UOE");
+            RedefineClassHelper.redefineClass(klass, newBytes);
+
+            if (expectedRedefToPass) {
+                log(" Did not get UOE at redefinition as expected");
+            } else {
+                throw new RuntimeException("Failed, expected UOE");
+            }
+            obj.run();
+            log("");
         } catch (UnsupportedOperationException uoe) {
             String message = uoe.getMessage();
-            System.out.println("Got expected UOE " + message);
-            if (!message.endsWith(expectedMessage)) {
-                throw new RuntimeException("Expected UOE error message to end with: " + expectedMessage);
+
+            if (expectedRedefToPass) {
+                throw new RuntimeException("Failed, unexpected UOE: " + message);
+            } else {
+                log(" Got expected UOE: " + message);
+                if (!message.endsWith(expectedMessage)) {
+                    throw new RuntimeException("Expected UOE error message to end with: " + expectedMessage);
+                }
             }
         }
     }
 
     static {
         a = new A();
+        b = new B();
     }
 
     public static void main(String[] args) throws Exception {
+        if (args.length > 0 && args[0].equals("AllowAddDelete=yes")) {
+            allowAddDeleteMethods = true;
+        }
 
-        a.publicFoo();
+        log("## Test original class A");
+        a.run();
+        log("");
 
-        // Should pass because this only changes bytes of methods.
+        log("## Test with modified method bodies in class A; redefinition expected to pass: true");
         RedefineClassHelper.redefineClass(A.class, newA);
-        a.publicFoo();
+        a.run();
 
-        // Add private static bar
-        test(newAddBar,          "add");
-        test(newAddFinalBar,     "add");
-        test(newAddPublicBar,    "add");
-        test(newDeleteFoo,       "delete");
-        test(newDeleteFinalFoo,  "delete");
-        test(newDeletePublicFoo, "delete");
+        test(a, ADeleteFoo,       "delete", "foo",       false);
+        test(a, ADeletePublicFoo, "delete", "publicFoo", false);
+        test(a, ADeleteFinalFoo,  "delete", "finalFoo",  allowAddDeleteMethods);
+        test(a, ADeleteStaticFoo, "delete", "staticFoo", allowAddDeleteMethods);
+
+        test(b, BAddBar,          "add", "bar",       false);
+        test(b, BAddPublicBar,    "add", "publicBar", false);
+        test(b, BAddFinalBar,     "add", "finalBar",  allowAddDeleteMethods);
+        test(b, BAddStaticBar,    "add", "staticBar", allowAddDeleteMethods);
     }
 }

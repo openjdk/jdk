@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,7 @@ public class CreateMultiReleaseTestJars {
             + "        return 9;\n"
             + "    }\n"
             + "}\n";
-    final int currentVersion = Runtime.version().major();
+    final int currentVersion = Runtime.version().feature();
     final String currentVersionStr = Integer.toString(currentVersion);
     final private String javaCurrent = java8.replace("8", currentVersionStr);
     final String readme8 = "This is the root readme file";

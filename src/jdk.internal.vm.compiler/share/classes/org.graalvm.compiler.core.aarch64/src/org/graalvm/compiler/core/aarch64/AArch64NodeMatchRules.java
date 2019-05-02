@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package org.graalvm.compiler.core.aarch64;
 
+import jdk.vm.ci.aarch64.AArch64Kind;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Value;
@@ -32,6 +33,7 @@ import jdk.internal.vm.compiler.collections.EconomicMap;
 import jdk.internal.vm.compiler.collections.Equivalence;
 import org.graalvm.compiler.asm.aarch64.AArch64MacroAssembler;
 import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.core.common.calc.CanonicalCondition;
 import org.graalvm.compiler.core.gen.NodeMatchRules;
 import org.graalvm.compiler.core.match.ComplexMatchResult;
 import org.graalvm.compiler.core.match.MatchRule;
@@ -44,12 +46,14 @@ import org.graalvm.compiler.lir.aarch64.AArch64ControlFlow;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.DeoptimizingNode;
+import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.AddNode;
 import org.graalvm.compiler.nodes.calc.AndNode;
 import org.graalvm.compiler.nodes.calc.BinaryNode;
+import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
 import org.graalvm.compiler.nodes.calc.LeftShiftNode;
 import org.graalvm.compiler.nodes.calc.NotNode;
 import org.graalvm.compiler.nodes.calc.OrNode;
@@ -58,8 +62,6 @@ import org.graalvm.compiler.nodes.calc.SubNode;
 import org.graalvm.compiler.nodes.calc.UnsignedRightShiftNode;
 import org.graalvm.compiler.nodes.calc.XorNode;
 import org.graalvm.compiler.nodes.memory.Access;
-
-import jdk.vm.ci.aarch64.AArch64Kind;
 
 public class AArch64NodeMatchRules extends NodeMatchRules {
     private static final EconomicMap<Class<? extends Node>, AArch64ArithmeticOp> nodeOpMap;
@@ -99,7 +101,8 @@ public class AArch64NodeMatchRules extends NodeMatchRules {
         return getLIRGeneratorTool().moveSp(value);
     }
 
-    private ComplexMatchResult emitBinaryShift(AArch64ArithmeticOp op, ValueNode value, BinaryNode shift, boolean isShiftNot) {
+    private ComplexMatchResult emitBinaryShift(AArch64ArithmeticOp op, ValueNode value, BinaryNode shift,
+                    boolean isShiftNot) {
         AArch64MacroAssembler.ShiftType shiftType = shiftTypeMap.get(shift.getClass());
         assert shiftType != null;
         assert value.getStackKind().isNumericInteger();
@@ -115,6 +118,18 @@ public class AArch64NodeMatchRules extends NodeMatchRules {
             int shiftAmount = shift.getY().asJavaConstant().asInt();
             gen.append(new AArch64ArithmeticOp.BinaryShiftOp(op, result, x, y, shiftType, shiftAmount, isShiftNot));
             return result;
+        };
+    }
+
+    private ComplexMatchResult emitBitTestAndBranch(FixedNode trueSuccessor, FixedNode falseSuccessor,
+                    ValueNode value, double trueProbability, int nbits) {
+        return builder -> {
+            LabelRef trueDestination = getLIRBlock(trueSuccessor);
+            LabelRef falseDestination = getLIRBlock(falseSuccessor);
+            AllocatableValue src = moveSp(gen.asAllocatable(operand(value)));
+            gen.append(new AArch64ControlFlow.BitTestAndBranchOp(trueDestination, falseDestination, src,
+                            trueProbability, nbits));
+            return null;
         };
     }
 
@@ -189,16 +204,23 @@ public class AArch64NodeMatchRules extends NodeMatchRules {
         if (value.getStackKind().isNumericInteger()) {
             long constant = a.asJavaConstant().asLong();
             if (Long.bitCount(constant) == 1) {
-                int bitToTest = Long.numberOfTrailingZeros(constant);
-                return builder -> {
-                    LabelRef trueDestination = getLIRBlock(root.trueSuccessor());
-                    LabelRef falseDestination = getLIRBlock(root.falseSuccessor());
-                    AllocatableValue src = moveSp(gen.asAllocatable(operand(value)));
-                    double trueDestinationProbability = root.getTrueSuccessorProbability();
-                    gen.append(new AArch64ControlFlow.BitTestAndBranchOp(trueDestination, falseDestination, src, trueDestinationProbability, bitToTest));
-                    return null;
-                };
+                return emitBitTestAndBranch(root.trueSuccessor(), root.falseSuccessor(), value,
+                                root.getTrueSuccessorProbability(), Long.numberOfTrailingZeros(constant));
             }
+        }
+        return null;
+    }
+
+    /**
+     * if x < 0 <=> tbz x, sizeOfBits(x) - 1, label.
+     */
+    @MatchRule("(If (IntegerLessThan=lessNode x Constant=y))")
+    public ComplexMatchResult checkNegativeAndBranch(IfNode root, IntegerLessThanNode lessNode, ValueNode x, ConstantNode y) {
+        JavaKind xKind = x.getStackKind();
+        assert xKind.isNumericInteger();
+        if (y.isJavaConstant() && (0 == y.asJavaConstant().asLong()) && lessNode.condition().equals(CanonicalCondition.LT)) {
+            return emitBitTestAndBranch(root.falseSuccessor(), root.trueSuccessor(), x,
+                            1.0 - root.getTrueSuccessorProbability(), xKind.getBitCount() - 1);
         }
         return null;
     }

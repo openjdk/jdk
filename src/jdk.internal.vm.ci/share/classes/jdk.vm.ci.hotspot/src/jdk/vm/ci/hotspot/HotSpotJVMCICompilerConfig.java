@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,20 @@
  */
 package jdk.vm.ci.hotspot;
 
+import java.util.List;
 import java.util.Set;
 
 import jdk.vm.ci.code.CompilationRequest;
 import jdk.vm.ci.common.JVMCIError;
+import jdk.vm.ci.common.NativeImageReinitialize;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.Option;
 import jdk.vm.ci.runtime.JVMCICompiler;
 import jdk.vm.ci.runtime.JVMCICompilerFactory;
 import jdk.vm.ci.runtime.JVMCIRuntime;
 import jdk.vm.ci.services.JVMCIPermission;
 import jdk.vm.ci.services.JVMCIServiceLocator;
+
+import static jdk.vm.ci.services.Services.IS_IN_NATIVE_IMAGE;
 
 final class HotSpotJVMCICompilerConfig {
 
@@ -61,7 +65,7 @@ final class HotSpotJVMCICompilerConfig {
     /**
      * Factory of the selected system compiler.
      */
-    private static JVMCICompilerFactory compilerFactory;
+    @NativeImageReinitialize private static JVMCICompilerFactory compilerFactory;
 
     /**
      * Gets the selected system compiler factory.
@@ -78,7 +82,7 @@ final class HotSpotJVMCICompilerConfig {
                 if (compilerName.isEmpty() || compilerName.equals("null")) {
                     factory = new DummyCompilerFactory();
                 } else {
-                    for (JVMCICompilerFactory f : JVMCIServiceLocator.getProviders(JVMCICompilerFactory.class)) {
+                    for (JVMCICompilerFactory f : getJVMCICompilerFactories()) {
                         if (f.getCompilerName().equals(compilerName)) {
                             factory = f;
                         }
@@ -89,7 +93,7 @@ final class HotSpotJVMCICompilerConfig {
                 }
             } else {
                 // Auto select a single available compiler
-                for (JVMCICompilerFactory f : JVMCIServiceLocator.getProviders(JVMCICompilerFactory.class)) {
+                for (JVMCICompilerFactory f : getJVMCICompilerFactories()) {
                     if (factory == null) {
                         openJVMCITo(f.getClass().getModule());
                         factory = f;
@@ -113,15 +117,21 @@ final class HotSpotJVMCICompilerConfig {
      * Opens all JVMCI packages to {@code otherModule}.
      */
     private static void openJVMCITo(Module otherModule) {
-        Module jvmci = HotSpotJVMCICompilerConfig.class.getModule();
-        if (jvmci != otherModule) {
-            Set<String> packages = jvmci.getPackages();
-            for (String pkg : packages) {
-                boolean opened = jvmci.isOpen(pkg, otherModule);
-                if (!opened) {
-                    jvmci.addOpens(pkg, otherModule);
+        if (!IS_IN_NATIVE_IMAGE) {
+            Module jvmci = HotSpotJVMCICompilerConfig.class.getModule();
+            if (jvmci != otherModule) {
+                Set<String> packages = jvmci.getPackages();
+                for (String pkg : packages) {
+                    boolean opened = jvmci.isOpen(pkg, otherModule);
+                    if (!opened) {
+                        jvmci.addOpens(pkg, otherModule);
+                    }
                 }
             }
         }
+    }
+
+    private static List<JVMCICompilerFactory> getJVMCICompilerFactories() {
+        return JVMCIServiceLocator.getProviders(JVMCICompilerFactory.class);
     }
 }

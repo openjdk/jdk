@@ -3465,7 +3465,9 @@ public class CompletableFutureTest extends JSR166TestCase {
         CompletableFuture<Integer> nullFuture = (CompletableFuture<Integer>)null;
         ThreadExecutor exec = new ThreadExecutor();
 
-        Runnable[] throwingActions = {
+        assertThrows(
+            NullPointerException.class,
+
             () -> CompletableFuture.supplyAsync(null),
             () -> CompletableFuture.supplyAsync(null, exec),
             () -> CompletableFuture.supplyAsync(new IntegerSupplier(ExecutionMode.SYNC, 42), null),
@@ -3568,10 +3570,8 @@ public class CompletableFutureTest extends JSR166TestCase {
             () -> f.completeOnTimeout(42, 1L, null),
 
             () -> CompletableFuture.failedFuture(null),
-            () -> CompletableFuture.failedStage(null),
-        };
+            () -> CompletableFuture.failedStage(null));
 
-        assertThrows(NullPointerException.class, throwingActions);
         assertEquals(0, exec.count.get());
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ inline void ZMessagePort<T>::send_sync(T message) {
 
   {
     // Enqueue message
-    MonitorLockerEx ml(&_monitor, Monitor::_no_safepoint_check_flag);
+    MonitorLocker ml(&_monitor, Monitor::_no_safepoint_check_flag);
     request.initialize(message, _seqnum);
     _queue.insert_last(&request);
     ml.notify();
@@ -96,13 +96,13 @@ inline void ZMessagePort<T>::send_sync(T message) {
     // thread have returned from sem_wait(). To avoid this race we are
     // forcing the waiting thread to acquire/release the lock held by the
     // posting thread. https://sourceware.org/bugzilla/show_bug.cgi?id=12674
-    MonitorLockerEx ml(&_monitor, Monitor::_no_safepoint_check_flag);
+    MonitorLocker ml(&_monitor, Monitor::_no_safepoint_check_flag);
   }
 }
 
 template <typename T>
 inline void ZMessagePort<T>::send_async(T message) {
-  MonitorLockerEx ml(&_monitor, Monitor::_no_safepoint_check_flag);
+  MonitorLocker ml(&_monitor, Monitor::_no_safepoint_check_flag);
   if (!_has_message) {
     // Post message
     _message = message;
@@ -113,11 +113,11 @@ inline void ZMessagePort<T>::send_async(T message) {
 
 template <typename T>
 inline T ZMessagePort<T>::receive() {
-  MonitorLockerEx ml(&_monitor, Monitor::_no_safepoint_check_flag);
+  MonitorLocker ml(&_monitor, Monitor::_no_safepoint_check_flag);
 
   // Wait for message
   while (!_has_message && _queue.is_empty()) {
-    ml.wait(Monitor::_no_safepoint_check_flag);
+    ml.wait();
   }
 
   // Increment request sequence number
@@ -134,7 +134,7 @@ inline T ZMessagePort<T>::receive() {
 
 template <typename T>
 inline void ZMessagePort<T>::ack() {
-  MonitorLockerEx ml(&_monitor, Monitor::_no_safepoint_check_flag);
+  MonitorLocker ml(&_monitor, Monitor::_no_safepoint_check_flag);
 
   if (!_has_message) {
     // Nothing to ack

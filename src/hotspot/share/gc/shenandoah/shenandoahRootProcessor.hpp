@@ -119,6 +119,9 @@ class ShenandoahRootEvacuator : public StackObj {
   StrongRootsScope _srs;
   ShenandoahPhaseTimings::Phase _phase;
   ShenandoahCsetCodeRootsIterator _coderoots_cset_iterator;
+  ParallelCLDRootIterator _cld_iterator;
+  WeakProcessorPhaseTimes _weak_processor_timings;
+  WeakProcessor::Task     _weak_processor_task;
 
   enum Shenandoah_evacuate_roots_tasks {
     SHENANDOAH_EVAC_Universe_oops_do,
@@ -126,6 +129,7 @@ class ShenandoahRootEvacuator : public StackObj {
     SHENANDOAH_EVAC_Management_oops_do,
     SHENANDOAH_EVAC_SystemDictionary_oops_do,
     SHENANDOAH_EVAC_jvmti_oops_do,
+    SHENANDOAH_EVAC_JNIHandles_oops_do,
     // Leave this one last.
     SHENANDOAH_EVAC_NumElements
   };

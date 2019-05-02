@@ -55,6 +55,7 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.nodes.spi.UncheckedInterfaceProvider;
 import jdk.internal.vm.compiler.word.LocationIdentity;
 
+import jdk.vm.ci.code.BytecodeFrame;
 import jdk.vm.ci.meta.JavaKind;
 
 /**
@@ -76,7 +77,7 @@ public final class InvokeNode extends AbstractMemoryCheckpoint implements Invoke
     @OptionalInput ValueNode classInit;
     @Input(Extension) CallTargetNode callTarget;
     @OptionalInput(State) FrameState stateDuring;
-    protected final int bci;
+    protected int bci;
     protected boolean polymorphic;
     protected boolean useForInlining;
     protected final LocationIdentity identity;
@@ -102,15 +103,19 @@ public final class InvokeNode extends AbstractMemoryCheckpoint implements Invoke
         this.identity = identity;
     }
 
-    public InvokeNode replaceWithNewBci(int newBci) {
-        InvokeNode newInvoke = graph().add(new InvokeNode(callTarget, newBci, stamp, identity));
-        newInvoke.setUseForInlining(useForInlining);
-        newInvoke.setPolymorphic(polymorphic);
-        newInvoke.setStateAfter(stateAfter);
-        newInvoke.setStateDuring(stateDuring);
-        newInvoke.setClassInit(classInit);
-        graph().replaceFixedWithFixed(this, newInvoke);
-        return newInvoke;
+    public InvokeNode(InvokeWithExceptionNode invoke) {
+        super(TYPE, invoke.stamp);
+        this.callTarget = invoke.callTarget;
+        this.bci = invoke.bci;
+        this.polymorphic = invoke.polymorphic;
+        this.useForInlining = invoke.useForInlining;
+        this.identity = invoke.getLocationIdentity();
+    }
+
+    @Override
+    public void replaceBci(int newBci) {
+        assert BytecodeFrame.isPlaceholderBci(bci) && !BytecodeFrame.isPlaceholderBci(newBci) : "can only replace placeholder with better bci";
+        bci = newBci;
     }
 
     @Override

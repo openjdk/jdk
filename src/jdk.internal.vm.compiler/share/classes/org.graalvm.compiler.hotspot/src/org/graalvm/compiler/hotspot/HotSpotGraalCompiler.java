@@ -25,7 +25,6 @@
 package org.graalvm.compiler.hotspot;
 
 import static org.graalvm.compiler.core.common.GraalOptions.OptAssumptions;
-import org.graalvm.compiler.serviceprovider.GraalUnsafeAccess;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -59,6 +58,7 @@ import org.graalvm.compiler.phases.PhaseSuite;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.phases.tiers.Suites;
 import org.graalvm.compiler.printer.GraalDebugHandlersFactory;
+import org.graalvm.compiler.serviceprovider.GraalUnsafeAccess;
 
 import jdk.vm.ci.code.CompilationRequest;
 import jdk.vm.ci.code.CompilationRequestResult;
@@ -109,7 +109,7 @@ public class HotSpotGraalCompiler implements GraalJVMCICompiler {
     }
 
     @SuppressWarnings("try")
-    CompilationRequestResult compileMethod(CompilationRequest request, boolean installAsDefault, OptionValues options) {
+    CompilationRequestResult compileMethod(CompilationRequest request, boolean installAsDefault, OptionValues initialOptions) {
         if (graalRuntime.isShutdown()) {
             return HotSpotCompilationRequestResult.failure(String.format("Shutdown entered"), false);
         }
@@ -117,7 +117,7 @@ public class HotSpotGraalCompiler implements GraalJVMCICompiler {
         ResolvedJavaMethod method = request.getMethod();
 
         if (graalRuntime.isBootstrapping()) {
-            if (DebugOptions.BootstrapInitializeOnly.getValue(options)) {
+            if (DebugOptions.BootstrapInitializeOnly.getValue(initialOptions)) {
                 return HotSpotCompilationRequestResult.failure(String.format("Skip compilation because %s is enabled", DebugOptions.BootstrapInitializeOnly.getName()), true);
             }
             if (bootstrapWatchDog != null) {
@@ -128,13 +128,14 @@ public class HotSpotGraalCompiler implements GraalJVMCICompiler {
             }
         }
         HotSpotCompilationRequest hsRequest = (HotSpotCompilationRequest) request;
+        CompilationTask task = new CompilationTask(jvmciRuntime, this, hsRequest, true, shouldRetainLocalVariables(hsRequest.getJvmciEnv()), installAsDefault);
+        OptionValues options = task.filterOptions(initialOptions);
         try (CompilationWatchDog w1 = CompilationWatchDog.watch(method, hsRequest.getId(), options);
                         BootstrapWatchDog.Watch w2 = bootstrapWatchDog == null ? null : bootstrapWatchDog.watch(request);
                         CompilationAlarm alarm = CompilationAlarm.trackCompilationPeriod(options);) {
             if (compilationCounters != null) {
                 compilationCounters.countCompilation(method);
             }
-            CompilationTask task = new CompilationTask(jvmciRuntime, this, hsRequest, true, shouldRetainLocalVariables(hsRequest.getJvmciEnv()), installAsDefault, options);
             CompilationRequestResult r = null;
             try (DebugContext debug = graalRuntime.openDebugContext(options, task.getCompilationIdentifier(), method, getDebugHandlersFactories(), DebugContext.DEFAULT_LOG_STREAM);
                             Activation a = debug.activate()) {
@@ -187,7 +188,7 @@ public class HotSpotGraalCompiler implements GraalJVMCICompiler {
 
     public CompilationResult compileHelper(CompilationResultBuilderFactory crbf, CompilationResult result, StructuredGraph graph, ResolvedJavaMethod method, int entryBCI, boolean useProfilingInfo,
                     boolean shouldRetainLocalVariables, OptionValues options) {
-
+        assert options == graph.getOptions();
         HotSpotBackend backend = graalRuntime.getHostBackend();
         HotSpotProviders providers = backend.getProviders();
         final boolean isOSR = entryBCI != JVMCICompiler.INVOCATION_ENTRY_BCI;
@@ -218,15 +219,11 @@ public class HotSpotGraalCompiler implements GraalJVMCICompiler {
         return result;
     }
 
-    public CompilationResult compile(ResolvedJavaMethod method, int entryBCI, boolean useProfilingInfo, CompilationIdentifier compilationId, OptionValues options, DebugContext debug) {
-        return compile(method, entryBCI, useProfilingInfo, false, compilationId, options, debug);
-    }
-
-    public CompilationResult compile(ResolvedJavaMethod method, int entryBCI, boolean useProfilingInfo, boolean shouldRetainLocalVariables, CompilationIdentifier compilationId, OptionValues options,
+    public CompilationResult compile(ResolvedJavaMethod method, int entryBCI, boolean useProfilingInfo, boolean shouldRetainLocalVariables, CompilationIdentifier compilationId,
                     DebugContext debug) {
-        StructuredGraph graph = createGraph(method, entryBCI, useProfilingInfo, compilationId, options, debug);
+        StructuredGraph graph = createGraph(method, entryBCI, useProfilingInfo, compilationId, debug.getOptions(), debug);
         CompilationResult result = new CompilationResult(compilationId);
-        return compileHelper(CompilationResultBuilderFactory.Default, result, graph, method, entryBCI, useProfilingInfo, shouldRetainLocalVariables, options);
+        return compileHelper(CompilationResultBuilderFactory.Default, result, graph, method, entryBCI, useProfilingInfo, shouldRetainLocalVariables, debug.getOptions());
     }
 
     protected OptimisticOptimizations getOptimisticOpts(ProfilingInfo profilingInfo, OptionValues options) {

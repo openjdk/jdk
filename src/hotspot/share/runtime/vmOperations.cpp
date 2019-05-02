@@ -435,7 +435,20 @@ int VM_Exit::wait_for_threads_in_native_to_block() {
       if (thr!=thr_cur && thr->thread_state() == _thread_in_native) {
         num_active++;
         if (thr->is_Compiler_thread()) {
+#if INCLUDE_JVMCI
+          CompilerThread* ct = (CompilerThread*) thr;
+          if (ct->compiler() == NULL || !ct->compiler()->is_jvmci() || !UseJVMCINativeLibrary) {
+            num_active_compiler_thread++;
+          } else {
+            // When using a compiler in a JVMCI shared library, it's possible
+            // for one compiler thread to grab a lock in the shared library,
+            // enter HotSpot and go to sleep on the shutdown safepoint. Another
+            // JVMCI shared library compiler thread can then attempt to grab the
+            // lock and thus never make progress.
+          }
+#else
           num_active_compiler_thread++;
+#endif
         }
       }
     }
@@ -450,8 +463,8 @@ int VM_Exit::wait_for_threads_in_native_to_block() {
 
     attempts++;
 
-    MutexLockerEx ml(&timer, Mutex::_no_safepoint_check_flag);
-    timer.wait(Mutex::_no_safepoint_check_flag, 10);
+    MonitorLocker ml(&timer, Mutex::_no_safepoint_check_flag);
+    ml.wait(10);
   }
 }
 

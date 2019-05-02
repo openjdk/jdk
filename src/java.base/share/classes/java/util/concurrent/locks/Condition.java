@@ -138,7 +138,7 @@ import java.util.concurrent.TimeUnit;
  * <p>Except where noted, passing a {@code null} value for any parameter
  * will result in a {@link NullPointerException} being thrown.
  *
- * <h3>Implementation Considerations</h3>
+ * <h2>Implementation Considerations</h2>
  *
  * <p>When waiting upon a {@code Condition}, a &quot;<em>spurious
  * wakeup</em>&quot; is permitted to occur, in

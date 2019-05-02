@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -227,7 +227,7 @@ BufferBlob* BufferBlob::create(const char* name, int buffer_size) {
   size += align_up(buffer_size, oopSize);
   assert(name != NULL, "must provide a name");
   {
-    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     blob = new (size) BufferBlob(name, size);
   }
   // Track memory usage statistic after releasing CodeCache_lock
@@ -248,7 +248,7 @@ BufferBlob* BufferBlob::create(const char* name, CodeBuffer* cb) {
   unsigned int size = CodeBlob::allocation_size(cb, sizeof(BufferBlob));
   assert(name != NULL, "must provide a name");
   {
-    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     blob = new (size) BufferBlob(name, size, cb);
   }
   // Track memory usage statistic after releasing CodeCache_lock
@@ -265,7 +265,7 @@ void BufferBlob::free(BufferBlob *blob) {
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
   blob->flush();
   {
-    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     CodeCache::free((RuntimeBlob*)blob);
   }
   // Track memory usage statistic after releasing CodeCache_lock
@@ -287,7 +287,7 @@ AdapterBlob* AdapterBlob::create(CodeBuffer* cb) {
   AdapterBlob* blob = NULL;
   unsigned int size = CodeBlob::allocation_size(cb, sizeof(AdapterBlob));
   {
-    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     blob = new (size) AdapterBlob(size, cb);
   }
   // Track memory usage statistic after releasing CodeCache_lock
@@ -310,7 +310,7 @@ VtableBlob* VtableBlob::create(const char* name, int buffer_size) {
   size += align_up(buffer_size, oopSize);
   assert(name != NULL, "must provide a name");
   {
-    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     blob = new (size) VtableBlob(name, size);
   }
   // Track memory usage statistic after releasing CodeCache_lock
@@ -331,7 +331,7 @@ MethodHandlesAdapterBlob* MethodHandlesAdapterBlob::create(int buffer_size) {
   size = CodeBlob::align_code_offset(size);
   size += align_up(buffer_size, oopSize);
   {
-    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     blob = new (size) MethodHandlesAdapterBlob(size);
     if (blob == NULL) {
       vm_exit_out_of_memory(size, OOM_MALLOC_ERROR, "CodeCache: no room for method handle adapter blob");
@@ -369,7 +369,7 @@ RuntimeStub* RuntimeStub::new_runtime_stub(const char* stub_name,
   RuntimeStub* stub = NULL;
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
   {
-    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     unsigned int size = CodeBlob::allocation_size(cb, sizeof(RuntimeStub));
     stub = new (size) RuntimeStub(stub_name, cb, size, frame_complete, frame_size, oop_maps, caller_must_gc_arguments);
   }
@@ -428,7 +428,7 @@ DeoptimizationBlob* DeoptimizationBlob::create(
   DeoptimizationBlob* blob = NULL;
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
   {
-    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     unsigned int size = CodeBlob::allocation_size(cb, sizeof(DeoptimizationBlob));
     blob = new (size) DeoptimizationBlob(cb,
                                          size,
@@ -467,7 +467,7 @@ UncommonTrapBlob* UncommonTrapBlob::create(
   UncommonTrapBlob* blob = NULL;
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
   {
-    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     unsigned int size = CodeBlob::allocation_size(cb, sizeof(UncommonTrapBlob));
     blob = new (size) UncommonTrapBlob(cb, size, oop_maps, frame_size);
   }
@@ -503,7 +503,7 @@ ExceptionBlob* ExceptionBlob::create(
   ExceptionBlob* blob = NULL;
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
   {
-    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     unsigned int size = CodeBlob::allocation_size(cb, sizeof(ExceptionBlob));
     blob = new (size) ExceptionBlob(cb, size, oop_maps, frame_size);
   }
@@ -538,7 +538,7 @@ SafepointBlob* SafepointBlob::create(
   SafepointBlob* blob = NULL;
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
   {
-    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     unsigned int size = CodeBlob::allocation_size(cb, sizeof(SafepointBlob));
     blob = new (size) SafepointBlob(cb, size, oop_maps, frame_size);
   }

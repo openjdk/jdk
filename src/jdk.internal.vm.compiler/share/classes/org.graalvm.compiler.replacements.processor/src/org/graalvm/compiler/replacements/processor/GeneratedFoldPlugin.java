@@ -84,7 +84,9 @@ public class GeneratedFoldPlugin extends GeneratedPlugin {
             if (processor.getAnnotation(param, processor.getType(INJECTED_PARAMETER_CLASS_NAME)) == null) {
                 constantArgument(processor, out, deps, argCount, param.asType(), argCount);
             } else {
-                out.printf("        assert checkInjectedArgument(b, args[%d], targetMethod);\n", argCount);
+                out.printf("        if (!checkInjectedArgument(b, args[%d], targetMethod)) {\n", argCount);
+                out.printf("            return false;\n");
+                out.printf("        }\n", argCount);
                 out.printf("        %s arg%d = %s;\n", param.asType(), argCount, deps.use(processor, (DeclaredType) param.asType()));
             }
             argCount++;

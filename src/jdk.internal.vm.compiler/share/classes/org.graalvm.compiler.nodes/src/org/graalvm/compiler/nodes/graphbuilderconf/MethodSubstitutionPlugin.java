@@ -25,6 +25,8 @@
 package org.graalvm.compiler.nodes.graphbuilderconf;
 
 import static jdk.vm.ci.services.Services.IS_IN_NATIVE_IMAGE;
+import static org.graalvm.compiler.core.common.GraalOptions.UseEncodedGraphs;
+import static org.graalvm.compiler.nodes.graphbuilderconf.IntrinsicContext.CompilationContext.INLINE_AFTER_PARSING;
 import static org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.resolveType;
 
 import java.lang.reflect.Method;
@@ -35,6 +37,7 @@ import java.util.stream.Collectors;
 
 import org.graalvm.compiler.bytecode.BytecodeProvider;
 import org.graalvm.compiler.debug.GraalError;
+import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 
 import jdk.vm.ci.meta.MetaAccessProvider;
@@ -116,9 +119,16 @@ public final class MethodSubstitutionPlugin implements InvocationPlugin {
     }
 
     /**
+     * Gets the class in which the substitute method is declared.
+     */
+    public Class<?> getDeclaringClass() {
+        return declaringClass;
+    }
+
+    /**
      * Gets the reflection API version of the substitution method.
      */
-    Method getJavaSubstitute() throws GraalError {
+    public Method getJavaSubstitute() throws GraalError {
         Method substituteMethod = lookupSubstitute();
         int modifiers = substituteMethod.getModifiers();
         if (Modifier.isAbstract(modifiers) || Modifier.isNative(modifiers)) {
@@ -178,12 +188,18 @@ public final class MethodSubstitutionPlugin implements InvocationPlugin {
 
     @Override
     public boolean execute(GraphBuilderContext b, ResolvedJavaMethod targetMethod, InvocationPlugin.Receiver receiver, ValueNode[] argsIncludingReceiver) {
-        if (IS_IN_NATIVE_IMAGE) {
-            // these are currently unimplemented
-            return false;
+        if (IS_IN_NATIVE_IMAGE || (UseEncodedGraphs.getValue(b.getOptions()) && !b.parsingIntrinsic())) {
+            if (!IS_IN_NATIVE_IMAGE && UseEncodedGraphs.getValue(b.getOptions())) {
+                b.getReplacements().registerMethodSubstitution(this, targetMethod, INLINE_AFTER_PARSING, b.getOptions());
+            }
+            StructuredGraph subst = b.getReplacements().getMethodSubstitution(this, targetMethod, INLINE_AFTER_PARSING, StructuredGraph.AllowAssumptions.ifNonNull(b.getAssumptions()), b.getOptions());
+            if (subst == null) {
+                throw new GraalError("No graphs found for substitution %s", this);
+            }
+            return b.intrinsify(targetMethod, subst, receiver, argsIncludingReceiver);
         }
-        ResolvedJavaMethod subst = getSubstitute(b.getMetaAccess());
-        return b.intrinsify(bytecodeProvider, targetMethod, subst, receiver, argsIncludingReceiver);
+        ResolvedJavaMethod substitute = getSubstitute(b.getMetaAccess());
+        return b.intrinsify(bytecodeProvider, targetMethod, substitute, receiver, argsIncludingReceiver);
     }
 
     @Override

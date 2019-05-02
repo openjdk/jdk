@@ -26,8 +26,9 @@
 #include "gc/parallel/adjoiningGenerations.hpp"
 #include "gc/parallel/adjoiningGenerationsForHeteroHeap.hpp"
 #include "gc/parallel/adjoiningVirtualSpaces.hpp"
-#include "gc/parallel/generationSizer.hpp"
 #include "gc/parallel/parallelScavengeHeap.hpp"
+#include "gc/parallel/parallelArguments.hpp"
+#include "gc/shared/genArguments.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
@@ -38,17 +39,15 @@
 // gen with ASPSYoungGen and ASPSOldGen, respectively.  Revert to
 // the old behavior otherwise (with PSYoungGen and PSOldGen).
 
-AdjoiningGenerations::AdjoiningGenerations(ReservedSpace old_young_rs,
-                                           GenerationSizer* policy,
-                                           size_t alignment) :
-  _virtual_spaces(new AdjoiningVirtualSpaces(old_young_rs, policy->min_old_size(),
-                                             policy->min_young_size(), alignment)) {
-  size_t init_low_byte_size = policy->initial_old_size();
-  size_t min_low_byte_size = policy->min_old_size();
-  size_t max_low_byte_size = policy->max_old_size();
-  size_t init_high_byte_size = policy->initial_young_size();
-  size_t min_high_byte_size = policy->min_young_size();
-  size_t max_high_byte_size = policy->max_young_size();
+AdjoiningGenerations::AdjoiningGenerations(ReservedSpace old_young_rs) :
+  _virtual_spaces(new AdjoiningVirtualSpaces(old_young_rs, MinOldSize,
+                                             MinNewSize, GenAlignment)) {
+  size_t init_low_byte_size = OldSize;
+  size_t min_low_byte_size = MinOldSize;
+  size_t max_low_byte_size = MaxOldSize;
+  size_t init_high_byte_size = NewSize;
+  size_t min_high_byte_size = MinNewSize;
+  size_t max_high_byte_size = MaxNewSize;
 
   assert(min_low_byte_size <= init_low_byte_size &&
          init_low_byte_size <= max_low_byte_size, "Parameter check");
@@ -95,7 +94,7 @@ AdjoiningGenerations::AdjoiningGenerations(ReservedSpace old_young_rs,
     // Layout the reserved space for the generations.
     // If OldGen is allocated on nv-dimm, we need to split the reservation (this is required for windows).
     ReservedSpace old_rs   =
-      virtual_spaces()->reserved_space().first_part(max_low_byte_size, policy->is_hetero_heap() /* split */);
+      virtual_spaces()->reserved_space().first_part(max_low_byte_size, ParallelArguments::is_heterogeneous_heap() /* split */);
     ReservedSpace heap_rs  =
       virtual_spaces()->reserved_space().last_part(max_low_byte_size);
     ReservedSpace young_rs = heap_rs.first_part(max_high_byte_size);
@@ -111,10 +110,10 @@ AdjoiningGenerations::AdjoiningGenerations(ReservedSpace old_young_rs,
                             "old", 1);
 
     // The virtual spaces are created by the initialization of the gens.
-    _young_gen->initialize(young_rs, alignment);
+    _young_gen->initialize(young_rs, GenAlignment);
     assert(young_gen()->gen_size_limit() == young_rs.size(),
       "Consistency check");
-    _old_gen->initialize(old_rs, alignment, "old", 1);
+    _old_gen->initialize(old_rs, GenAlignment, "old", 1);
     assert(old_gen()->gen_size_limit() == old_rs.size(), "Consistency check");
   }
 }
@@ -284,12 +283,10 @@ void AdjoiningGenerations::adjust_boundary_for_young_gen_needs(size_t eden_size,
   }
 }
 
-AdjoiningGenerations* AdjoiningGenerations::create_adjoining_generations(ReservedSpace old_young_rs,
-                                                                         GenerationSizer* policy,
-                                                                         size_t alignment) {
-  if (policy->is_hetero_heap() && UseAdaptiveGCBoundary) {
-    return new AdjoiningGenerationsForHeteroHeap(old_young_rs, policy, alignment);
+AdjoiningGenerations* AdjoiningGenerations::create_adjoining_generations(ReservedSpace old_young_rs) {
+  if (ParallelArguments::is_heterogeneous_heap() && UseAdaptiveGCBoundary) {
+    return new AdjoiningGenerationsForHeteroHeap(old_young_rs);
   } else {
-    return new AdjoiningGenerations(old_young_rs, policy, alignment);
+    return new AdjoiningGenerations(old_young_rs);
   }
 }

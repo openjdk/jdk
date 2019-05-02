@@ -62,6 +62,9 @@
 #if INCLUDE_ZGC
 #include "gc/z/zGlobals.hpp"
 #endif
+#if INCLUDE_JVMCI
+#include "jvmci/jvmci.hpp"
+#endif
 
 // JvmtiTagHashmapEntry
 //
@@ -442,7 +445,7 @@ JvmtiTagMap::JvmtiTagMap(JvmtiEnv* env) :
   _hashmap = new JvmtiTagHashmap();
 
   // finally add us to the environment
-  ((JvmtiEnvBase *)env)->set_tag_map(this);
+  ((JvmtiEnvBase *)env)->release_set_tag_map(this);
 }
 
 
@@ -511,7 +514,7 @@ void JvmtiTagMap::destroy_entry(JvmtiTagHashmapEntry* entry) {
 // returns the tag map for the given environments. If the tag map
 // doesn't exist then it is created.
 JvmtiTagMap* JvmtiTagMap::tag_map_for(JvmtiEnv* env) {
-  JvmtiTagMap* tag_map = ((JvmtiEnvBase*)env)->tag_map();
+  JvmtiTagMap* tag_map = ((JvmtiEnvBase*)env)->acquire_tag_map();
   if (tag_map == NULL) {
     MutexLocker mu(JvmtiThreadState_lock);
     tag_map = ((JvmtiEnvBase*)env)->tag_map();
@@ -3034,6 +3037,17 @@ inline bool VM_HeapWalkOperation::collect_simple_roots() {
   // exceptions) will be visible.
   blk.set_kind(JVMTI_HEAP_REFERENCE_OTHER);
   Universe::oops_do(&blk);
+  if (blk.stopped()) {
+    return false;
+  }
+
+#if INCLUDE_JVMCI
+  blk.set_kind(JVMTI_HEAP_REFERENCE_OTHER);
+  JVMCI::oops_do(&blk);
+  if (blk.stopped()) {
+    return false;
+  }
+#endif
 
   return true;
 }
@@ -3304,7 +3318,7 @@ void JvmtiTagMap::weak_oops_do(BoolObjectClosure* is_alive, OopClosure* f) {
   if (JvmtiEnv::environments_might_exist()) {
     JvmtiEnvIterator it;
     for (JvmtiEnvBase* env = it.first(); env != NULL; env = it.next(env)) {
-      JvmtiTagMap* tag_map = env->tag_map();
+      JvmtiTagMap* tag_map = env->acquire_tag_map();
       if (tag_map != NULL && !tag_map->is_empty()) {
         tag_map->do_weak_oops(is_alive, f);
       }

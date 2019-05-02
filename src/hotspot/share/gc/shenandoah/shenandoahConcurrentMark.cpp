@@ -360,7 +360,7 @@ void ShenandoahConcurrentMark::concurrent_scan_code_roots(uint worker_id, Refere
   if (ShenandoahConcurrentScanCodeRoots && claim_codecache()) {
     ShenandoahObjToScanQueue* q = task_queues()->queue(worker_id);
     if (!_heap->unload_classes()) {
-      MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+      MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
       // TODO: We can not honor StringDeduplication here, due to lock ranking
       // inversion. So, we may miss some deduplication candidates.
       if (_heap->has_forwarded_objects()) {
@@ -661,15 +661,13 @@ void ShenandoahConcurrentMark::weak_refs_work(bool full_gc) {
 // anything to them.
 void ShenandoahConcurrentMark::weak_roots_work() {
   WorkGang* workers = _heap->workers();
-  ShenandoahIsAliveSelector is_alive;
-
-  if (_heap->has_forwarded_objects()) {
-    ShenandoahWeakUpdateClosure cl;
-    WeakProcessor::weak_oops_do(workers, is_alive.is_alive_closure(), &cl, 1);
-  } else {
-    ShenandoahWeakAssertNotForwardedClosure cl;
-    WeakProcessor::weak_oops_do(workers, is_alive.is_alive_closure(), &cl, 1);
-  }
+  OopClosure* keep_alive = &do_nothing_cl;
+#ifdef ASSERT
+  ShenandoahWeakAssertNotForwardedClosure verify_cl;
+  keep_alive = &verify_cl;
+#endif
+  ShenandoahIsAliveClosure is_alive;
+  WeakProcessor::weak_oops_do(workers, &is_alive, keep_alive, 1);
 }
 
 void ShenandoahConcurrentMark::weak_refs_work_doit(bool full_gc) {

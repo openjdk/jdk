@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,14 +65,8 @@ class PlainSocketImpl extends AbstractPlainSocketImpl {
     /**
      * Constructs an empty instance.
      */
-    public PlainSocketImpl() {
-    }
-
-    /**
-     * Constructs an instance with the given file descriptor.
-     */
-    public PlainSocketImpl(FileDescriptor fd) {
-        this.fd = fd;
+    PlainSocketImpl(boolean isServer) {
+        super(isServer);
     }
 
     @Override
@@ -222,7 +216,7 @@ class PlainSocketImpl extends AbstractPlainSocketImpl {
             if (preferIPv4Stack) {
                 // Don't enable the socket option on ServerSocket as it's
                 // meaningless (we don't receive on a ServerSocket).
-                if (serverSocket == null) {
+                if (!isServer) {
                     setSoTimeout0(nativefd, ((Integer)value).intValue());
                 }
             } // else timeout is implemented through select.

@@ -28,6 +28,7 @@ import org.graalvm.compiler.core.common.GraalOptions;
 import org.graalvm.compiler.nodes.CallTargetNode;
 import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
 import org.graalvm.compiler.nodes.spi.Replacements;
+import org.graalvm.compiler.phases.common.inlining.info.InlineInfo;
 import org.graalvm.compiler.phases.common.inlining.walker.MethodInvocation;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -38,11 +39,11 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 public final class InlineMethodSubstitutionsPolicy extends InlineEverythingPolicy {
 
     @Override
-    public Decision isWorthInlining(Replacements replacements, MethodInvocation invocation, int inliningDepth, boolean fullyProcessed) {
-        final boolean isTracing = GraalOptions.TraceInlining.getValue(replacements.getOptions());
+    public Decision isWorthInlining(Replacements replacements, MethodInvocation invocation, InlineInfo calleeInfo, int inliningDepth, boolean fullyProcessed) {
+        final boolean isTracing = GraalOptions.TraceInlining.getValue(calleeInfo.graph().getOptions());
         CallTargetNode callTarget = invocation.callee().invoke().callTarget();
         if (callTarget instanceof MethodCallTargetNode) {
-            ResolvedJavaMethod calleeMethod = ((MethodCallTargetNode) callTarget).targetMethod();
+            ResolvedJavaMethod calleeMethod = callTarget.targetMethod();
             if (replacements.hasSubstitution(calleeMethod, invocation.callee().invoke().bci())) {
                 return Decision.YES.withReason(isTracing, "has a method subtitution");
             }

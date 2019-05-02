@@ -348,7 +348,10 @@ class ParNewGeneration: public DefNewGeneration {
   void restore_preserved_marks();
 
  public:
-  ParNewGeneration(ReservedSpace rs, size_t initial_byte_size);
+  ParNewGeneration(ReservedSpace rs,
+                   size_t initial_byte_size,
+                   size_t min_byte_size,
+                   size_t max_byte_size);
 
   ~ParNewGeneration() {
     for (uint i = 0; i < ParallelGCThreads; i++)

@@ -25,8 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/epsilon/epsilonArguments.hpp"
 #include "gc/epsilon/epsilonHeap.hpp"
-#include "gc/epsilon/epsilonCollectorPolicy.hpp"
-#include "gc/shared/gcArguments.inline.hpp"
+#include "gc/shared/gcArguments.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/vm_version.hpp"
@@ -67,6 +66,13 @@ void EpsilonArguments::initialize() {
 #endif
 }
 
+void EpsilonArguments::initialize_alignments() {
+  size_t page_size = UseLargePages ? os::large_page_size() : os::vm_page_size();
+  size_t align = MAX2((size_t)os::vm_allocation_granularity(), page_size);
+  SpaceAlignment = align;
+  HeapAlignment  = align;
+}
+
 CollectedHeap* EpsilonArguments::create_heap() {
-  return create_heap_with_policy<EpsilonHeap, EpsilonCollectorPolicy>();
+  return new EpsilonHeap();
 }

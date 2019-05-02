@@ -333,8 +333,6 @@ class Arguments : AllStatic {
   // Value of the conservative maximum heap alignment needed
   static size_t  _conservative_max_heap_alignment;
 
-  static size_t  _min_heap_size;
-
   // -Xrun arguments
   static AgentLibraryList _libraryList;
   static void add_init_library(const char* name, char* options);
@@ -547,10 +545,6 @@ class Arguments : AllStatic {
   static bool sun_java_launcher_is_altjvm();
   // -Dsun.java.launcher.pid
   static int sun_java_launcher_pid()        { return _sun_java_launcher_pid; }
-
-  // -Xms
-  static size_t min_heap_size()             { return _min_heap_size; }
-  static void  set_min_heap_size(size_t v)  { _min_heap_size = v;  }
 
   // -Xrun
   static AgentLibrary* libraries()          { return _libraryList.first(); }

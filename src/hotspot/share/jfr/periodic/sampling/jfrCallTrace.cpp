@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "code/nmethod.hpp"
 #include "code/pcDesc.hpp"
 #include "jfr/periodic/sampling/jfrCallTrace.hpp"
+#include "jfr/utilities/jfrTypes.hpp"
 #include "oops/method.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/frame.inline.hpp"
@@ -37,7 +38,7 @@ bool JfrGetCallTrace::find_top_frame(frame& top_frame, Method** method, frame& f
   assert(top_frame.cb() != NULL, "invariant");
   RegisterMap map(_thread, false);
   frame candidate = top_frame;
-  for (int i = 0; i < MaxJavaStackTraceDepth * 2; ++i) {
+  for (u4 i = 0; i < MAX_STACK_DEPTH * 2; ++i) {
     if (candidate.is_entry_frame()) {
       JavaCallWrapper *jcw = candidate.entry_frame_call_wrapper_if_safe(_thread);
       if (jcw == NULL || jcw->is_first_frame()) {

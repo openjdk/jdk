@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
 
 import java.util.Arrays;
 
+import jdk.vm.ci.common.NativeImageReinitialize;
 import jdk.internal.misc.Unsafe;
 import jdk.vm.ci.meta.DeoptimizationReason;
 import jdk.vm.ci.meta.JavaMethodProfile;
@@ -45,26 +46,139 @@ import jdk.vm.ci.meta.TriState;
  */
 final class HotSpotMethodData {
 
-    static final HotSpotVMConfig config = config();
-    static final HotSpotMethodDataAccessor NO_DATA_NO_EXCEPTION_ACCESSOR = new NoMethodData(config, config.dataLayoutNoTag, TriState.FALSE);
-    static final HotSpotMethodDataAccessor NO_DATA_EXCEPTION_POSSIBLY_NOT_RECORDED_ACCESSOR = new NoMethodData(config, config.dataLayoutNoTag, TriState.UNKNOWN);
+    /**
+     * VM state that can be reset when building an AOT image.
+     */
+    static final class VMState {
+        final HotSpotVMConfig config = config();
+        final HotSpotMethodDataAccessor noDataNoExceptionAccessor = new NoMethodData(this, config.dataLayoutNoTag, TriState.FALSE);
+        final HotSpotMethodDataAccessor noDataExceptionPossiblyNotRecordedAccessor = new NoMethodData(this, config.dataLayoutNoTag, TriState.UNKNOWN);
+        final int noDataSize = cellIndexToOffset(0);
+        final int bitDataSize = cellIndexToOffset(0);
+        final int bitDataNullSeenFlag = 1 << config.bitDataNullSeenFlag;
+        final int counterDataSize = cellIndexToOffset(1);
+        final int counterDataCountOffset = cellIndexToOffset(config.methodDataCountOffset);
+        final int jumpDataSize = cellIndexToOffset(2);
+        final int takenCountOffset = cellIndexToOffset(config.jumpDataTakenOffset);
+        final int takenDisplacementOffset = cellIndexToOffset(config.jumpDataDisplacementOffset);
+        final int typeDataRowSize = cellsToBytes(config.receiverTypeDataReceiverTypeRowCellCount);
+
+        final int nonprofiledCountOffset = cellIndexToOffset(config.receiverTypeDataNonprofiledCountOffset);
+        final int typeDataFirstTypeOffset = cellIndexToOffset(config.receiverTypeDataReceiver0Offset);
+        final int typeDataFirstTypeCountOffset = cellIndexToOffset(config.receiverTypeDataCount0Offset);
+
+        final int typeCheckDataSize = cellIndexToOffset(2) + typeDataRowSize * config.typeProfileWidth;
+        final int virtualCallDataSize = cellIndexToOffset(2) + typeDataRowSize * (config.typeProfileWidth + config.methodProfileWidth);
+        final int virtualCallDataFirstMethodOffset = typeDataFirstTypeOffset + typeDataRowSize * config.typeProfileWidth;
+        final int virtualCallDataFirstMethodCountOffset = typeDataFirstTypeCountOffset + typeDataRowSize * config.typeProfileWidth;
+
+        final int retDataRowSize = cellsToBytes(3);
+        final int retDataSize = cellIndexToOffset(1) + retDataRowSize * config.bciProfileWidth;
+
+        final int branchDataSize = cellIndexToOffset(3);
+        final int notTakenCountOffset = cellIndexToOffset(config.branchDataNotTakenOffset);
+
+        final int arrayDataLengthOffset = cellIndexToOffset(config.arrayDataArrayLenOffset);
+        final int arrayDataStartOffset = cellIndexToOffset(config.arrayDataArrayStartOffset);
+
+        final int multiBranchDataSize = cellIndexToOffset(1);
+        final int multiBranchDataRowSizeInCells = config.multiBranchDataPerCaseCellCount;
+        final int multiBranchDataRowSize = cellsToBytes(multiBranchDataRowSizeInCells);
+        final int multiBranchDataFirstCountOffset = arrayDataStartOffset + cellsToBytes(0);
+        final int multiBranchDataFirstDisplacementOffset = arrayDataStartOffset + cellsToBytes(1);
+
+        final int argInfoDataSize = cellIndexToOffset(1);
+
+        // sorted by tag
+        // @formatter:off
+        final HotSpotMethodDataAccessor[] profileDataAccessors = {
+            null,
+            new BitData(this, config.dataLayoutBitDataTag),
+            new CounterData(this, config.dataLayoutCounterDataTag),
+            new JumpData(this, config.dataLayoutJumpDataTag),
+            new ReceiverTypeData(this, config.dataLayoutReceiverTypeDataTag),
+            new VirtualCallData(this, config.dataLayoutVirtualCallDataTag),
+            new RetData(this, config.dataLayoutRetDataTag),
+            new BranchData(this, config.dataLayoutBranchDataTag),
+            new MultiBranchData(this, config.dataLayoutMultiBranchDataTag),
+            new ArgInfoData(this, config.dataLayoutArgInfoDataTag),
+            new UnknownProfileData(this, config.dataLayoutCallTypeDataTag),
+            new VirtualCallTypeData(this, config.dataLayoutVirtualCallTypeDataTag),
+            new UnknownProfileData(this, config.dataLayoutParametersTypeDataTag),
+            new UnknownProfileData(this, config.dataLayoutSpeculativeTrapDataTag),
+        };
+        // @formatter:on
+
+        private boolean checkAccessorTags() {
+            int expectedTag = 0;
+            for (HotSpotMethodDataAccessor accessor : profileDataAccessors) {
+                if (expectedTag == 0) {
+                    assert accessor == null;
+                } else {
+                    assert accessor.tag == expectedTag : expectedTag + " != " + accessor.tag + " " + accessor;
+                }
+                expectedTag++;
+            }
+            return true;
+        }
+
+        private VMState() {
+            assert checkAccessorTags();
+        }
+
+        private static int truncateLongToInt(long value) {
+            return value > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) value;
+        }
+
+        private int computeFullOffset(int position, int offsetInBytes) {
+            return config.methodDataOopDataOffset + position + offsetInBytes;
+        }
+
+        private int cellIndexToOffset(int cells) {
+            return config.dataLayoutHeaderSize + cellsToBytes(cells);
+        }
+
+        private int cellsToBytes(int cells) {
+            return cells * config.dataLayoutCellSize;
+        }
+
+        /**
+         * Singleton instance lazily initialized via double-checked locking.
+         */
+        @NativeImageReinitialize private static volatile VMState instance;
+
+        static VMState instance() {
+            VMState result = instance;
+            if (result == null) {
+                synchronized (VMState.class) {
+                    result = instance;
+                    if (result == null) {
+                        instance = result = new VMState();
+                    }
+                }
+            }
+            return result;
+        }
+    }
 
     /**
      * Reference to the C++ MethodData object.
      */
     final long metaspaceMethodData;
     private final HotSpotResolvedJavaMethodImpl method;
+    private final VMState state;
 
     HotSpotMethodData(long metaspaceMethodData, HotSpotResolvedJavaMethodImpl method) {
         this.metaspaceMethodData = metaspaceMethodData;
         this.method = method;
+        this.state = VMState.instance();
     }
 
     /**
      * @return value of the MethodData::_data_size field
      */
     private int normalDataSize() {
-        return UNSAFE.getInt(metaspaceMethodData + config.methodDataDataSize);
+        return UNSAFE.getInt(metaspaceMethodData + state.config.methodDataDataSize);
     }
 
     /**
@@ -74,8 +188,8 @@ final class HotSpotMethodData {
      * @return size of extra data records
      */
     private int extraDataSize() {
-        final int extraDataBase = config.methodDataOopDataOffset + normalDataSize();
-        final int extraDataLimit = UNSAFE.getInt(metaspaceMethodData + config.methodDataSize);
+        final int extraDataBase = state.config.methodDataOopDataOffset + normalDataSize();
+        final int extraDataLimit = UNSAFE.getInt(metaspaceMethodData + state.config.methodDataSize);
         return extraDataLimit - extraDataBase;
     }
 
@@ -98,25 +212,25 @@ final class HotSpotMethodData {
     public int getDeoptimizationCount(DeoptimizationReason reason) {
         HotSpotMetaAccessProvider metaAccess = (HotSpotMetaAccessProvider) runtime().getHostJVMCIBackend().getMetaAccess();
         int reasonIndex = metaAccess.convertDeoptReason(reason);
-        return UNSAFE.getByte(metaspaceMethodData + config.methodDataOopTrapHistoryOffset + reasonIndex) & 0xFF;
+        return UNSAFE.getByte(metaspaceMethodData + state.config.methodDataOopTrapHistoryOffset + reasonIndex) & 0xFF;
     }
 
     public int getOSRDeoptimizationCount(DeoptimizationReason reason) {
         HotSpotMetaAccessProvider metaAccess = (HotSpotMetaAccessProvider) runtime().getHostJVMCIBackend().getMetaAccess();
         int reasonIndex = metaAccess.convertDeoptReason(reason);
-        return UNSAFE.getByte(metaspaceMethodData + config.methodDataOopTrapHistoryOffset + config.deoptReasonOSROffset + reasonIndex) & 0xFF;
+        return UNSAFE.getByte(metaspaceMethodData + state.config.methodDataOopTrapHistoryOffset + state.config.deoptReasonOSROffset + reasonIndex) & 0xFF;
     }
 
     public int getDecompileCount() {
-        return UNSAFE.getInt(metaspaceMethodData + config.methodDataDecompiles);
+        return UNSAFE.getInt(metaspaceMethodData + state.config.methodDataDecompiles);
     }
 
     public int getOverflowRecompileCount() {
-        return UNSAFE.getInt(metaspaceMethodData + config.methodDataOverflowRecompiles);
+        return UNSAFE.getInt(metaspaceMethodData + state.config.methodDataOverflowRecompiles);
     }
 
     public int getOverflowTrapCount() {
-        return UNSAFE.getInt(metaspaceMethodData + config.methodDataOverflowTraps);
+        return UNSAFE.getInt(metaspaceMethodData + state.config.methodDataOverflowTraps);
     }
 
     public HotSpotMethodDataAccessor getNormalData(int position) {
@@ -140,27 +254,27 @@ final class HotSpotMethodData {
 
     public static HotSpotMethodDataAccessor getNoDataAccessor(boolean exceptionPossiblyNotRecorded) {
         if (exceptionPossiblyNotRecorded) {
-            return NO_DATA_EXCEPTION_POSSIBLY_NOT_RECORDED_ACCESSOR;
+            return VMState.instance().noDataExceptionPossiblyNotRecordedAccessor;
         } else {
-            return NO_DATA_NO_EXCEPTION_ACCESSOR;
+            return VMState.instance().noDataNoExceptionAccessor;
         }
     }
 
     private HotSpotMethodDataAccessor getData(int position) {
         assert position >= 0 : "out of bounds";
-        final int tag = HotSpotMethodDataAccessor.readTag(config, this, position);
-        HotSpotMethodDataAccessor accessor = PROFILE_DATA_ACCESSORS[tag];
+        final int tag = HotSpotMethodDataAccessor.readTag(state.config, this, position);
+        HotSpotMethodDataAccessor accessor = state.profileDataAccessors[tag];
         assert accessor == null || accessor.getTag() == tag : "wrong data accessor " + accessor + " for tag " + tag;
         return accessor;
     }
 
     int readUnsignedByte(int position, int offsetInBytes) {
-        long fullOffsetInBytes = computeFullOffset(position, offsetInBytes);
+        long fullOffsetInBytes = state.computeFullOffset(position, offsetInBytes);
         return UNSAFE.getByte(metaspaceMethodData + fullOffsetInBytes) & 0xFF;
     }
 
     int readUnsignedShort(int position, int offsetInBytes) {
-        long fullOffsetInBytes = computeFullOffset(position, offsetInBytes);
+        long fullOffsetInBytes = state.computeFullOffset(position, offsetInBytes);
         return UNSAFE.getShort(metaspaceMethodData + fullOffsetInBytes) & 0xFFFF;
     }
 
@@ -169,13 +283,13 @@ final class HotSpotMethodData {
      * {@link Unsafe#getAddress} to read the right value on both little and big endian machines.
      */
     private long readUnsignedInt(int position, int offsetInBytes) {
-        long fullOffsetInBytes = computeFullOffset(position, offsetInBytes);
+        long fullOffsetInBytes = state.computeFullOffset(position, offsetInBytes);
         return UNSAFE.getAddress(metaspaceMethodData + fullOffsetInBytes) & 0xFFFFFFFFL;
     }
 
     private int readUnsignedIntAsSignedInt(int position, int offsetInBytes) {
         long value = readUnsignedInt(position, offsetInBytes);
-        return truncateLongToInt(value);
+        return VMState.truncateLongToInt(value);
     }
 
     /**
@@ -183,34 +297,18 @@ final class HotSpotMethodData {
      * {@link Unsafe#getAddress} to read the right value on both little and big endian machines.
      */
     private int readInt(int position, int offsetInBytes) {
-        long fullOffsetInBytes = computeFullOffset(position, offsetInBytes);
+        long fullOffsetInBytes = state.computeFullOffset(position, offsetInBytes);
         return (int) UNSAFE.getAddress(metaspaceMethodData + fullOffsetInBytes);
     }
 
     private HotSpotResolvedJavaMethod readMethod(int position, int offsetInBytes) {
-        long fullOffsetInBytes = computeFullOffset(position, offsetInBytes);
+        long fullOffsetInBytes = state.computeFullOffset(position, offsetInBytes);
         return compilerToVM().getResolvedJavaMethod(null, metaspaceMethodData + fullOffsetInBytes);
     }
 
     private HotSpotResolvedObjectTypeImpl readKlass(int position, int offsetInBytes) {
-        long fullOffsetInBytes = computeFullOffset(position, offsetInBytes);
-        return compilerToVM().getResolvedJavaType(null, metaspaceMethodData + fullOffsetInBytes, false);
-    }
-
-    private static int truncateLongToInt(long value) {
-        return value > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) value;
-    }
-
-    private static int computeFullOffset(int position, int offsetInBytes) {
-        return config.methodDataOopDataOffset + position + offsetInBytes;
-    }
-
-    private static int cellIndexToOffset(int cells) {
-        return config.dataLayoutHeaderSize + cellsToBytes(cells);
-    }
-
-    private static int cellsToBytes(int cells) {
-        return cells * config.dataLayoutCellSize;
+        long fullOffsetInBytes = state.computeFullOffset(position, offsetInBytes);
+        return compilerToVM().getResolvedJavaType(metaspaceMethodData + fullOffsetInBytes, false);
     }
 
     /**
@@ -263,14 +361,12 @@ final class HotSpotMethodData {
         return sb.toString();
     }
 
-    static final int NO_DATA_SIZE = cellIndexToOffset(0);
-
     static class NoMethodData extends HotSpotMethodDataAccessor {
 
         private final TriState exceptionSeen;
 
-        protected NoMethodData(HotSpotVMConfig config, int tag, TriState exceptionSeen) {
-            super(config, tag, NO_DATA_SIZE);
+        protected NoMethodData(VMState state, int tag, TriState exceptionSeen) {
+            super(state, tag, state.noDataSize);
             this.exceptionSeen = exceptionSeen;
         }
 
@@ -290,22 +386,19 @@ final class HotSpotMethodData {
         }
     }
 
-    static final int BIT_DATA_SIZE = cellIndexToOffset(0);
-    static final int BIT_DATA_NULL_SEEN_FLAG = 1 << config.bitDataNullSeenFlag;
-
     static class BitData extends HotSpotMethodDataAccessor {
 
-        private BitData(HotSpotVMConfig config, int tag) {
-            super(config, tag, BIT_DATA_SIZE);
+        private BitData(VMState state, int tag) {
+            super(state, tag, state.bitDataSize);
         }
 
-        protected BitData(HotSpotVMConfig config, int tag, int staticSize) {
-            super(config, tag, staticSize);
+        protected BitData(VMState state, int tag, int staticSize) {
+            super(state, tag, staticSize);
         }
 
         @Override
         public TriState getNullSeen(HotSpotMethodData data, int position) {
-            return TriState.get((getFlags(data, position) & BIT_DATA_NULL_SEEN_FLAG) != 0);
+            return TriState.get((getFlags(data, position) & state.bitDataNullSeenFlag) != 0);
         }
 
         @Override
@@ -314,17 +407,14 @@ final class HotSpotMethodData {
         }
     }
 
-    static final int COUNTER_DATA_SIZE = cellIndexToOffset(1);
-    static final int COUNTER_DATA_COUNT_OFFSET = cellIndexToOffset(config.methodDataCountOffset);
-
     static class CounterData extends BitData {
 
-        CounterData(HotSpotVMConfig config, int tag) {
-            super(config, tag, COUNTER_DATA_SIZE);
+        CounterData(VMState state, int tag) {
+            super(state, tag, state.counterDataSize);
         }
 
-        protected CounterData(HotSpotVMConfig config, int tag, int staticSize) {
-            super(config, tag, staticSize);
+        protected CounterData(VMState state, int tag, int staticSize) {
+            super(state, tag, staticSize);
         }
 
         @Override
@@ -333,7 +423,7 @@ final class HotSpotMethodData {
         }
 
         protected int getCounterValue(HotSpotMethodData data, int position) {
-            return data.readUnsignedIntAsSignedInt(position, COUNTER_DATA_COUNT_OFFSET);
+            return data.readUnsignedIntAsSignedInt(position, state.counterDataCountOffset);
         }
 
         @Override
@@ -342,18 +432,14 @@ final class HotSpotMethodData {
         }
     }
 
-    static final int JUMP_DATA_SIZE = cellIndexToOffset(2);
-    static final int TAKEN_COUNT_OFFSET = cellIndexToOffset(config.jumpDataTakenOffset);
-    static final int TAKEN_DISPLACEMENT_OFFSET = cellIndexToOffset(config.jumpDataDisplacementOffset);
-
     static class JumpData extends HotSpotMethodDataAccessor {
 
-        JumpData(HotSpotVMConfig config, int tag) {
-            super(config, tag, JUMP_DATA_SIZE);
+        JumpData(VMState state, int tag) {
+            super(state, tag, state.jumpDataSize);
         }
 
-        protected JumpData(HotSpotVMConfig config, int tag, int staticSize) {
-            super(config, tag, staticSize);
+        protected JumpData(VMState state, int tag, int staticSize) {
+            super(state, tag, staticSize);
         }
 
         @Override
@@ -363,11 +449,11 @@ final class HotSpotMethodData {
 
         @Override
         public int getExecutionCount(HotSpotMethodData data, int position) {
-            return data.readUnsignedIntAsSignedInt(position, TAKEN_COUNT_OFFSET);
+            return data.readUnsignedIntAsSignedInt(position, state.takenCountOffset);
         }
 
         public int getTakenDisplacement(HotSpotMethodData data, int position) {
-            return data.readInt(position, TAKEN_DISPLACEMENT_OFFSET);
+            return data.readInt(position, state.takenDisplacementOffset);
         }
 
         @Override
@@ -390,16 +476,10 @@ final class HotSpotMethodData {
         }
     }
 
-    static final int TYPE_DATA_ROW_SIZE = cellsToBytes(config.receiverTypeDataReceiverTypeRowCellCount);
-
-    static final int NONPROFILED_COUNT_OFFSET = cellIndexToOffset(config.receiverTypeDataNonprofiledCountOffset);
-    static final int TYPE_DATA_FIRST_TYPE_OFFSET = cellIndexToOffset(config.receiverTypeDataReceiver0Offset);
-    static final int TYPE_DATA_FIRST_TYPE_COUNT_OFFSET = cellIndexToOffset(config.receiverTypeDataCount0Offset);
-
     abstract static class AbstractTypeData extends CounterData {
 
-        protected AbstractTypeData(HotSpotVMConfig config, int tag, int staticSize) {
-            super(config, tag, staticSize);
+        protected AbstractTypeData(VMState state, int tag, int staticSize) {
+            super(state, tag, staticSize);
         }
 
         @Override
@@ -446,7 +526,7 @@ final class HotSpotMethodData {
         protected abstract long getTypesNotRecordedExecutionCount(HotSpotMethodData data, int position);
 
         public int getNonprofiledCount(HotSpotMethodData data, int position) {
-            return data.readUnsignedIntAsSignedInt(position, NONPROFILED_COUNT_OFFSET);
+            return data.readUnsignedIntAsSignedInt(position, state.nonprofiledCountOffset);
         }
 
         private JavaTypeProfile createTypeProfile(TriState nullSeen, RawItemProfile<ResolvedJavaType> profile) {
@@ -470,12 +550,12 @@ final class HotSpotMethodData {
             return new JavaTypeProfile(nullSeen, notRecordedTypeProbability, ptypes);
         }
 
-        private static int getTypeOffset(int row) {
-            return TYPE_DATA_FIRST_TYPE_OFFSET + row * TYPE_DATA_ROW_SIZE;
+        private int getTypeOffset(int row) {
+            return state.typeDataFirstTypeOffset + row * state.typeDataRowSize;
         }
 
-        protected static int getTypeCountOffset(int row) {
-            return TYPE_DATA_FIRST_TYPE_COUNT_OFFSET + row * TYPE_DATA_ROW_SIZE;
+        protected int getTypeCountOffset(int row) {
+            return state.typeDataFirstTypeCountOffset + row * state.typeDataRowSize;
         }
 
         @Override
@@ -493,16 +573,14 @@ final class HotSpotMethodData {
         }
     }
 
-    static final int TYPE_CHECK_DATA_SIZE = cellIndexToOffset(2) + TYPE_DATA_ROW_SIZE * config.typeProfileWidth;
-
     static class ReceiverTypeData extends AbstractTypeData {
 
-        ReceiverTypeData(HotSpotVMConfig config, int tag) {
-            super(config, tag, TYPE_CHECK_DATA_SIZE);
+        ReceiverTypeData(VMState state, int tag) {
+            super(state, tag, state.typeCheckDataSize);
         }
 
-        protected ReceiverTypeData(HotSpotVMConfig config, int tag, int staticSize) {
-            super(config, tag, staticSize);
+        protected ReceiverTypeData(VMState state, int tag, int staticSize) {
+            super(state, tag, staticSize);
         }
 
         @Override
@@ -516,18 +594,14 @@ final class HotSpotMethodData {
         }
     }
 
-    static final int VIRTUAL_CALL_DATA_SIZE = cellIndexToOffset(2) + TYPE_DATA_ROW_SIZE * (config.typeProfileWidth + config.methodProfileWidth);
-    static final int VIRTUAL_CALL_DATA_FIRST_METHOD_OFFSET = TYPE_DATA_FIRST_TYPE_OFFSET + TYPE_DATA_ROW_SIZE * config.typeProfileWidth;
-    static final int VIRTUAL_CALL_DATA_FIRST_METHOD_COUNT_OFFSET = TYPE_DATA_FIRST_TYPE_COUNT_OFFSET + TYPE_DATA_ROW_SIZE * config.typeProfileWidth;
-
     static class VirtualCallData extends ReceiverTypeData {
 
-        VirtualCallData(HotSpotVMConfig config, int tag) {
-            super(config, tag, VIRTUAL_CALL_DATA_SIZE);
+        VirtualCallData(VMState state, int tag) {
+            super(state, tag, state.virtualCallDataSize);
         }
 
-        protected VirtualCallData(HotSpotVMConfig config, int tag, int staticSize) {
-            super(config, tag, staticSize);
+        protected VirtualCallData(VMState state, int tag, int staticSize) {
+            super(state, tag, staticSize);
         }
 
         @Override
@@ -540,7 +614,7 @@ final class HotSpotMethodData {
             }
 
             total += getCounterValue(data, position);
-            return truncateLongToInt(total);
+            return VMState.truncateLongToInt(total);
         }
 
         @Override
@@ -548,8 +622,8 @@ final class HotSpotMethodData {
             return getCounterValue(data, position);
         }
 
-        private static long getMethodsNotRecordedExecutionCount(HotSpotMethodData data, int position) {
-            return data.readUnsignedIntAsSignedInt(position, NONPROFILED_COUNT_OFFSET);
+        private long getMethodsNotRecordedExecutionCount(HotSpotMethodData data, int position) {
+            return data.readUnsignedIntAsSignedInt(position, state.nonprofiledCountOffset);
         }
 
         @Override
@@ -610,12 +684,12 @@ final class HotSpotMethodData {
             return new JavaMethodProfile(notRecordedMethodProbability, pmethods);
         }
 
-        private static int getMethodOffset(int row) {
-            return VIRTUAL_CALL_DATA_FIRST_METHOD_OFFSET + row * TYPE_DATA_ROW_SIZE;
+        private int getMethodOffset(int row) {
+            return state.virtualCallDataFirstMethodOffset + row * state.typeDataRowSize;
         }
 
-        private static int getMethodCountOffset(int row) {
-            return VIRTUAL_CALL_DATA_FIRST_METHOD_COUNT_OFFSET + row * TYPE_DATA_ROW_SIZE;
+        private int getMethodCountOffset(int row) {
+            return state.virtualCallDataFirstMethodCountOffset + row * state.typeDataRowSize;
         }
 
         @Override
@@ -632,8 +706,8 @@ final class HotSpotMethodData {
 
     static class VirtualCallTypeData extends VirtualCallData {
 
-        VirtualCallTypeData(HotSpotVMConfig config, int tag) {
-            super(config, tag, 0);
+        VirtualCallTypeData(VMState state, int tag) {
+            super(state, tag, 0);
         }
 
         @Override
@@ -643,29 +717,23 @@ final class HotSpotMethodData {
         }
     }
 
-    static final int RET_DATA_ROW_SIZE = cellsToBytes(3);
-    static final int RET_DATA_SIZE = cellIndexToOffset(1) + RET_DATA_ROW_SIZE * config.bciProfileWidth;
-
     static class RetData extends CounterData {
 
-        RetData(HotSpotVMConfig config, int tag) {
-            super(config, tag, RET_DATA_SIZE);
+        RetData(VMState state, int tag) {
+            super(state, tag, state.retDataSize);
         }
     }
 
-    static final int BRANCH_DATA_SIZE = cellIndexToOffset(3);
-    static final int NOT_TAKEN_COUNT_OFFSET = cellIndexToOffset(config.branchDataNotTakenOffset);
-
     static class BranchData extends JumpData {
 
-        BranchData(HotSpotVMConfig config, int tag) {
-            super(config, tag, BRANCH_DATA_SIZE);
+        BranchData(VMState state, int tag) {
+            super(state, tag, state.branchDataSize);
         }
 
         @Override
         public double getBranchTakenProbability(HotSpotMethodData data, int position) {
-            long takenCount = data.readUnsignedInt(position, TAKEN_COUNT_OFFSET);
-            long notTakenCount = data.readUnsignedInt(position, NOT_TAKEN_COUNT_OFFSET);
+            long takenCount = data.readUnsignedInt(position, state.takenCountOffset);
+            long notTakenCount = data.readUnsignedInt(position, state.notTakenCountOffset);
             long total = takenCount + notTakenCount;
 
             return total <= 0 ? -1 : takenCount / (double) total;
@@ -673,35 +741,32 @@ final class HotSpotMethodData {
 
         @Override
         public int getExecutionCount(HotSpotMethodData data, int position) {
-            long count = data.readUnsignedInt(position, TAKEN_COUNT_OFFSET) + data.readUnsignedInt(position, NOT_TAKEN_COUNT_OFFSET);
-            return truncateLongToInt(count);
+            long count = data.readUnsignedInt(position, state.takenCountOffset) + data.readUnsignedInt(position, state.notTakenCountOffset);
+            return VMState.truncateLongToInt(count);
         }
 
         @Override
         public StringBuilder appendTo(StringBuilder sb, HotSpotMethodData data, int pos) {
-            long taken = data.readUnsignedInt(pos, TAKEN_COUNT_OFFSET);
-            long notTaken = data.readUnsignedInt(pos, NOT_TAKEN_COUNT_OFFSET);
+            long taken = data.readUnsignedInt(pos, state.takenCountOffset);
+            long notTaken = data.readUnsignedInt(pos, state.notTakenCountOffset);
             double takenProbability = getBranchTakenProbability(data, pos);
             return sb.append(format("taken(%d, %4.2f) not_taken(%d, %4.2f) displacement(%d)", taken, takenProbability, notTaken, 1.0D - takenProbability, getTakenDisplacement(data, pos)));
         }
     }
 
-    static final int ARRAY_DATA_LENGTH_OFFSET = cellIndexToOffset(config.arrayDataArrayLenOffset);
-    static final int ARRAY_DATA_START_OFFSET = cellIndexToOffset(config.arrayDataArrayStartOffset);
-
     static class ArrayData extends HotSpotMethodDataAccessor {
 
-        ArrayData(HotSpotVMConfig config, int tag, int staticSize) {
-            super(config, tag, staticSize);
+        ArrayData(VMState state, int tag, int staticSize) {
+            super(state, tag, staticSize);
         }
 
         @Override
         protected int getDynamicSize(HotSpotMethodData data, int position) {
-            return cellsToBytes(getLength(data, position));
+            return state.cellsToBytes(getLength(data, position));
         }
 
-        protected static int getLength(HotSpotMethodData data, int position) {
-            return data.readInt(position, ARRAY_DATA_LENGTH_OFFSET);
+        protected int getLength(HotSpotMethodData data, int position) {
+            return data.readInt(position, state.arrayDataLengthOffset);
         }
 
         @Override
@@ -710,25 +775,19 @@ final class HotSpotMethodData {
         }
     }
 
-    static final int MULTI_BRANCH_DATA_SIZE = cellIndexToOffset(1);
-    static final int MULTI_BRANCH_DATA_ROW_SIZE_IN_CELLS = config.multiBranchDataPerCaseCellCount;
-    static final int MULTI_BRANCH_DATA_ROW_SIZE = cellsToBytes(MULTI_BRANCH_DATA_ROW_SIZE_IN_CELLS);
-    static final int MULTI_BRANCH_DATA_FIRST_COUNT_OFFSET = ARRAY_DATA_START_OFFSET + cellsToBytes(0);
-    static final int MULTI_BRANCH_DATA_FIRST_DISPLACEMENT_OFFSET = ARRAY_DATA_START_OFFSET + cellsToBytes(1);
-
     static class MultiBranchData extends ArrayData {
 
-        MultiBranchData(HotSpotVMConfig config, int tag) {
-            super(config, tag, MULTI_BRANCH_DATA_SIZE);
+        MultiBranchData(VMState state, int tag) {
+            super(state, tag, state.multiBranchDataSize);
         }
 
         @Override
         public double[] getSwitchProbabilities(HotSpotMethodData data, int position) {
             int arrayLength = getLength(data, position);
             assert arrayLength > 0 : "switch must have at least the default case";
-            assert arrayLength % MULTI_BRANCH_DATA_ROW_SIZE_IN_CELLS == 0 : "array must have full rows";
+            assert arrayLength % state.multiBranchDataRowSizeInCells == 0 : "array must have full rows";
 
-            int length = arrayLength / MULTI_BRANCH_DATA_ROW_SIZE_IN_CELLS;
+            int length = arrayLength / state.multiBranchDataRowSizeInCells;
             long totalCount = 0;
             double[] result = new double[length];
 
@@ -753,7 +812,7 @@ final class HotSpotMethodData {
             }
         }
 
-        private static long readCount(HotSpotMethodData data, int position, int i) {
+        private long readCount(HotSpotMethodData data, int position, int i) {
             int offset;
             long count;
             offset = getCountOffset(i);
@@ -765,29 +824,29 @@ final class HotSpotMethodData {
         public int getExecutionCount(HotSpotMethodData data, int position) {
             int arrayLength = getLength(data, position);
             assert arrayLength > 0 : "switch must have at least the default case";
-            assert arrayLength % MULTI_BRANCH_DATA_ROW_SIZE_IN_CELLS == 0 : "array must have full rows";
+            assert arrayLength % state.multiBranchDataRowSizeInCells == 0 : "array must have full rows";
 
-            int length = arrayLength / MULTI_BRANCH_DATA_ROW_SIZE_IN_CELLS;
+            int length = arrayLength / state.multiBranchDataRowSizeInCells;
             long totalCount = 0;
             for (int i = 0; i < length; i++) {
                 int offset = getCountOffset(i);
                 totalCount += data.readUnsignedInt(position, offset);
             }
 
-            return truncateLongToInt(totalCount);
+            return VMState.truncateLongToInt(totalCount);
         }
 
-        private static int getCountOffset(int index) {
-            return MULTI_BRANCH_DATA_FIRST_COUNT_OFFSET + index * MULTI_BRANCH_DATA_ROW_SIZE;
+        private int getCountOffset(int index) {
+            return state.multiBranchDataFirstCountOffset + index * state.multiBranchDataRowSize;
         }
 
-        private static int getDisplacementOffset(int index) {
-            return MULTI_BRANCH_DATA_FIRST_DISPLACEMENT_OFFSET + index * MULTI_BRANCH_DATA_ROW_SIZE;
+        private int getDisplacementOffset(int index) {
+            return state.multiBranchDataFirstDisplacementOffset + index * state.multiBranchDataRowSize;
         }
 
         @Override
         public StringBuilder appendTo(StringBuilder sb, HotSpotMethodData data, int pos) {
-            int entries = getLength(data, pos) / MULTI_BRANCH_DATA_ROW_SIZE_IN_CELLS;
+            int entries = getLength(data, pos) / state.multiBranchDataRowSizeInCells;
             sb.append(format("entries(%d)", entries));
             for (int i = 0; i < entries; i++) {
                 sb.append(format("%n  %d: count(%d) displacement(%d)", i, data.readUnsignedInt(pos, getCountOffset(i)), data.readUnsignedInt(pos, getDisplacementOffset(i))));
@@ -796,18 +855,16 @@ final class HotSpotMethodData {
         }
     }
 
-    static final int ARG_INFO_DATA_SIZE = cellIndexToOffset(1);
-
     static class ArgInfoData extends ArrayData {
 
-        ArgInfoData(HotSpotVMConfig config, int tag) {
-            super(config, tag, ARG_INFO_DATA_SIZE);
+        ArgInfoData(VMState state, int tag) {
+            super(state, tag, state.argInfoDataSize);
         }
     }
 
     static class UnknownProfileData extends HotSpotMethodDataAccessor {
-        UnknownProfileData(HotSpotVMConfig config, int tag) {
-            super(config, tag, 0);
+        UnknownProfileData(VMState state, int tag) {
+            super(state, tag, 0);
         }
 
         @Override
@@ -824,47 +881,10 @@ final class HotSpotMethodData {
     }
 
     public void setCompiledIRSize(int size) {
-        UNSAFE.putInt(metaspaceMethodData + config.methodDataIRSizeOffset, size);
+        UNSAFE.putInt(metaspaceMethodData + state.config.methodDataIRSizeOffset, size);
     }
 
     public int getCompiledIRSize() {
-        return UNSAFE.getInt(metaspaceMethodData + config.methodDataIRSizeOffset);
+        return UNSAFE.getInt(metaspaceMethodData + state.config.methodDataIRSizeOffset);
     }
-
-    // sorted by tag
-    // @formatter:off
-    static final HotSpotMethodDataAccessor[] PROFILE_DATA_ACCESSORS = {
-        null,
-        new BitData(config, config.dataLayoutBitDataTag),
-        new CounterData(config, config.dataLayoutCounterDataTag),
-        new JumpData(config, config.dataLayoutJumpDataTag),
-        new ReceiverTypeData(config, config.dataLayoutReceiverTypeDataTag),
-        new VirtualCallData(config, config.dataLayoutVirtualCallDataTag),
-        new RetData(config, config.dataLayoutRetDataTag),
-        new BranchData(config, config.dataLayoutBranchDataTag),
-        new MultiBranchData(config, config.dataLayoutMultiBranchDataTag),
-        new ArgInfoData(config, config.dataLayoutArgInfoDataTag),
-        new UnknownProfileData(config, config.dataLayoutCallTypeDataTag),
-        new VirtualCallTypeData(config, config.dataLayoutVirtualCallTypeDataTag),
-        new UnknownProfileData(config, config.dataLayoutParametersTypeDataTag),
-        new UnknownProfileData(config, config.dataLayoutSpeculativeTrapDataTag),
-    };
-
-    private static boolean checkAccessorTags() {
-        int expectedTag = 0;
-        for (HotSpotMethodDataAccessor accessor : PROFILE_DATA_ACCESSORS) {
-            if (expectedTag == 0) {
-                assert accessor == null;
-            } else {
-                assert accessor.tag == expectedTag : expectedTag + " != " + accessor.tag + " " + accessor;
-            }
-            expectedTag++;
-        }
-        return true;
-    }
-
-    static {
-        assert checkAccessorTags();
-    }
-    // @formatter:on
 }

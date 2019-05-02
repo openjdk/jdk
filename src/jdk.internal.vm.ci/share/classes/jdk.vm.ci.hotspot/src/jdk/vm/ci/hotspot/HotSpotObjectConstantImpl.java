@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,9 @@
  */
 package jdk.vm.ci.hotspot;
 
-import static jdk.vm.ci.hotspot.HotSpotResolvedObjectTypeImpl.fromObjectClass;
-
-import java.lang.invoke.CallSite;
-import java.lang.invoke.ConstantCallSite;
-import java.lang.invoke.MethodHandle;
+import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
 
 import jdk.vm.ci.meta.Assumptions;
-import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaType;
@@ -38,57 +33,17 @@ import jdk.vm.ci.meta.ResolvedJavaType;
  * Represents a constant non-{@code null} object reference, within the compiler and across the
  * compiler/runtime interface.
  */
-class HotSpotObjectConstantImpl implements HotSpotObjectConstant {
+abstract class HotSpotObjectConstantImpl implements HotSpotObjectConstant {
 
-    static JavaConstant forObject(Object object) {
-        return forObject(object, false);
-    }
+    protected final boolean compressed;
 
-    static JavaConstant forObject(Object object, boolean compressed) {
-        if (object == null) {
-            return compressed ? HotSpotCompressedNullConstant.COMPRESSED_NULL : JavaConstant.NULL_POINTER;
-        } else {
-            return new HotSpotObjectConstantImpl(object, compressed);
-        }
-    }
-
-    public static JavaConstant forBoxedValue(JavaKind kind, Object value) {
-        if (kind == JavaKind.Object) {
-            return HotSpotObjectConstantImpl.forObject(value);
-        } else {
-            return JavaConstant.forBoxedPrimitive(value);
-        }
-    }
-
-    static Object asBoxedValue(Constant constant) {
-        if (JavaConstant.isNull(constant)) {
-            return null;
-        } else if (constant instanceof HotSpotObjectConstantImpl) {
-            return ((HotSpotObjectConstantImpl) constant).object;
-        } else {
-            return ((JavaConstant) constant).asBoxedPrimitive();
-        }
-    }
-
-    private final Object object;
-    private final boolean compressed;
-
-    protected HotSpotObjectConstantImpl(Object object, boolean compressed) {
-        this.object = object;
+    HotSpotObjectConstantImpl(boolean compressed) {
         this.compressed = compressed;
-        assert object != null;
     }
 
     @Override
     public JavaKind getJavaKind() {
         return JavaKind.Object;
-    }
-
-    /**
-     * Package-private accessor for the object represented by this constant.
-     */
-    Object object() {
-        return object;
     }
 
     @Override
@@ -97,69 +52,48 @@ class HotSpotObjectConstantImpl implements HotSpotObjectConstant {
     }
 
     @Override
-    public JavaConstant compress() {
-        assert !compressed;
-        return new HotSpotObjectConstantImpl(object, true);
-    }
+    public abstract JavaConstant compress();
 
     @Override
-    public JavaConstant uncompress() {
-        assert compressed;
-        return new HotSpotObjectConstantImpl(object, false);
-    }
+    public abstract JavaConstant uncompress();
 
     @Override
     public HotSpotResolvedObjectType getType() {
-        return fromObjectClass(object.getClass());
+        return runtime().reflection.getType(this);
     }
 
     @Override
-    public int getIdentityHashCode() {
-        return System.identityHashCode(object);
-    }
+    public abstract int getIdentityHashCode();
 
     @Override
     public JavaConstant getCallSiteTarget(Assumptions assumptions) {
-        if (object instanceof CallSite) {
-            CallSite callSite = (CallSite) object;
-            MethodHandle target = callSite.getTarget();
-            JavaConstant targetConstant = HotSpotObjectConstantImpl.forObject(target);
-            if (!(callSite instanceof ConstantCallSite)) {
+        if (runtime().getCallSite().isInstance(this)) {
+            HotSpotObjectConstantImpl target = (HotSpotObjectConstantImpl) runtime().getHostJVMCIBackend().getConstantReflection().readFieldValue(
+                            HotSpotMethodHandleAccessProvider.Internals.instance().callSiteTargetField, this);
+            if (!runtime().getConstantCallSite().isInstance(this)) {
                 if (assumptions == null) {
                     return null;
                 }
-                assumptions.record(new Assumptions.CallSiteTargetValue(this, targetConstant));
+                assumptions.record(new Assumptions.CallSiteTargetValue(this, target));
             }
-
-            return targetConstant;
+            return target;
         }
         return null;
     }
 
     @Override
-    @SuppressFBWarnings(value = "ES_COMPARING_STRINGS_WITH_EQ", justification = "reference equality is what we want")
     public boolean isInternedString() {
-        if (object instanceof String) {
-            String s = (String) object;
-            return s.intern() == s;
-        }
-        return false;
+        return runtime().compilerToVm.isInternedString(this);
     }
 
     @Override
     public <T> T asObject(Class<T> type) {
-        if (type.isInstance(object)) {
-            return type.cast(object);
-        }
-        return null;
+        return runtime().reflection.asObject(this, type);
     }
 
     @Override
     public Object asObject(ResolvedJavaType type) {
-        if (type.isInstance(this)) {
-            return object;
-        }
-        return null;
+        return runtime().reflection.asObject(this, (HotSpotResolvedJavaType) type);
     }
 
     @Override
@@ -203,32 +137,40 @@ class HotSpotObjectConstantImpl implements HotSpotObjectConstant {
     }
 
     @Override
-    public int hashCode() {
-        return System.identityHashCode(object);
-    }
-
-    @Override
     public boolean equals(Object o) {
         if (o == this) {
             return true;
         } else if (o instanceof HotSpotObjectConstantImpl) {
             HotSpotObjectConstantImpl other = (HotSpotObjectConstantImpl) o;
-            return object == other.object && compressed == other.compressed;
+            return runtime().reflection.equals(this, other);
         }
         return false;
     }
 
     @Override
+    public int hashCode() {
+        return getIdentityHashCode();
+    }
+
+    @Override
     public String toValueString() {
-        if (object instanceof String) {
-            return "\"" + (String) object + "\"";
+        if (runtime().getJavaLangString().isInstance(this)) {
+            return "\"" + runtime().reflection.asString(this) + "\"";
         } else {
-            return JavaKind.Object.format(object);
+            return runtime().reflection.formatString(this);
         }
     }
 
     @Override
     public String toString() {
-        return (compressed ? "NarrowOop" : getJavaKind().getJavaName()) + "[" + JavaKind.Object.format(object) + "]";
+        return (compressed ? "NarrowOop" : getJavaKind().getJavaName()) + "[" + runtime().reflection.formatString(this) + "]";
+    }
+
+    public JavaConstant readFieldValue(HotSpotResolvedJavaField field, boolean isVolatile) {
+        return runtime().reflection.readFieldValue(this, field, isVolatile);
+    }
+
+    public ResolvedJavaType asJavaType() {
+        return runtime().reflection.asJavaType(this);
     }
 }

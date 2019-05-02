@@ -40,8 +40,7 @@ ZCollectedHeap* ZCollectedHeap::heap() {
   return (ZCollectedHeap*)heap;
 }
 
-ZCollectedHeap::ZCollectedHeap(ZCollectorPolicy* policy) :
-    _collector_policy(policy),
+ZCollectedHeap::ZCollectedHeap() :
     _soft_ref_policy(),
     _barrier_set(),
     _initialize(&_barrier_set),
@@ -56,7 +55,7 @@ CollectedHeap::Name ZCollectedHeap::kind() const {
 }
 
 const char* ZCollectedHeap::name() const {
-  return ZGCName;
+  return ZName;
 }
 
 jint ZCollectedHeap::initialize() {
@@ -64,8 +63,8 @@ jint ZCollectedHeap::initialize() {
     return JNI_ENOMEM;
   }
 
-  initialize_reserved_region((HeapWord*)ZAddressReservedStart(),
-                             (HeapWord*)ZAddressReservedEnd());
+  initialize_reserved_region((HeapWord*)ZAddressReservedStart,
+                             (HeapWord*)ZAddressReservedEnd);
 
   return JNI_OK;
 }
@@ -78,10 +77,6 @@ void ZCollectedHeap::stop() {
   _director->stop();
   _driver->stop();
   _stat->stop();
-}
-
-CollectorPolicy* ZCollectedHeap::collector_policy() const {
-  return _collector_policy;
 }
 
 SoftRefPolicy* ZCollectedHeap::soft_ref_policy() {
@@ -98,6 +93,10 @@ size_t ZCollectedHeap::capacity() const {
 
 size_t ZCollectedHeap::used() const {
   return _heap.used();
+}
+
+size_t ZCollectedHeap::unused() const {
+  return _heap.unused();
 }
 
 bool ZCollectedHeap::is_maximal_no_gc() const {

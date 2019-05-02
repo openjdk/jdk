@@ -231,7 +231,9 @@ protected:
   virtual void submit_compile(const methodHandle& mh, int bci, CompLevel level, JavaThread* thread);
   // Simple methods are as good being compiled with C1 as C2.
   // This function tells if it's such a function.
-  inline bool is_trivial(Method* method);
+  inline static bool is_trivial(Method* method);
+  // Force method to be compiled at CompLevel_simple?
+  inline static bool should_compile_at_level_simple(Method* method);
 
   // Predicate helpers are used by .*_predicate() methods as well as others.
   // They check the given counter values, multiplied by the scale against the thresholds.

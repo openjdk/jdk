@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include <jvmti.h>
 #include <aod.h>
 #include <jvmti_aod.h>
+#include "ExceptionCheckingJniEnv.hpp"
 
 extern "C" {
 
@@ -87,24 +88,16 @@ void JNICALL objectFreeHandler(jvmtiEnv *jvmti, jlong tag) {
      */
 }
 
-int registerNativeMethods(JNIEnv* jni) {
+void registerNativeMethods(JNIEnv* jni_env) {
+    ExceptionCheckingJniEnvPtr jni(jni_env);
     jclass appClass;
     JNINativeMethod nativeMethods[] = {
             { (char*) "setTagFor", (char*) "(Ljava/lang/Object;)Z", (void*) Java_nsk_jvmti_AttachOnDemand_attach021_attach021Target_setTagFor },
             { (char*) "shutdownAgent", (char*) "()V", (void*) Java_nsk_jvmti_AttachOnDemand_attach021_attach021Target_shutdownAgent } };
     jint nativeMethodsNumber = 2;
 
-    appClass = jni->FindClass(ATTACH021_TARGET_APP_CLASS_NAME);
-    if (!NSK_JNI_VERIFY(jni, appClass != NULL)) {
-        return NSK_FALSE;
-    }
-
-    if (!NSK_JNI_VERIFY(jni,
-            (jni->RegisterNatives(appClass, nativeMethods, nativeMethodsNumber) == 0))) {
-        return NSK_FALSE;
-    }
-
-    return NSK_TRUE;
+    appClass = jni->FindClass(ATTACH021_TARGET_APP_CLASS_NAME, TRACE_JNI_CALL);
+    jni->RegisterNatives(appClass, nativeMethods, nativeMethodsNumber, TRACE_JNI_CALL);
 }
 
 #ifdef STATIC_BUILD
@@ -138,9 +131,7 @@ Agent_OnAttach(JavaVM *vm, char *optionsString, void *reserved)
     if (!NSK_VERIFY(jvmti != NULL))
         return JNI_ERR;
 
-    if (!NSK_VERIFY(registerNativeMethods(jni))) {
-        return JNI_ERR;
-    }
+    registerNativeMethods(jni);
 
     memset(&caps, 0, sizeof(caps));
     caps.can_tag_objects = 1;

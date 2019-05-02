@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,17 @@
 #include "memory/allocation.hpp"
 
 class ZAddress : public AllStatic {
+  friend class ZAddressTest;
+
+private:
+  static void set_good_mask(uintptr_t mask);
+
 public:
+  static void initialize();
+
+  static void flip_to_marked();
+  static void flip_to_remapped();
+
   static bool is_null(uintptr_t value);
   static bool is_bad(uintptr_t value);
   static bool is_good(uintptr_t value);
@@ -50,18 +60,6 @@ public:
   static uintptr_t marked1(uintptr_t value);
   static uintptr_t remapped(uintptr_t value);
   static uintptr_t remapped_or_null(uintptr_t value);
-};
-
-class ZAddressMasks : public AllStatic {
-  friend class ZAddressTest;
-
-private:
-  static void set_good_mask(uintptr_t mask);
-
-public:
-  static void initialize();
-  static void flip_to_marked();
-  static void flip_to_remapped();
 };
 
 #endif // SHARE_GC_Z_ZADDRESS_HPP

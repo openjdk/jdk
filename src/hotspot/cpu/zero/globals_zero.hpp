@@ -33,7 +33,6 @@
 // runtime system.  See globals.hpp for details of what they do.
 
 define_pd_global(bool,  ShareVtableStubs,     true);
-define_pd_global(bool,  NeedsDeoptSuspend,    false);
 
 define_pd_global(bool,  ImplicitNullChecks,   true);
 define_pd_global(bool,  TrapBasedNullChecks,  false);

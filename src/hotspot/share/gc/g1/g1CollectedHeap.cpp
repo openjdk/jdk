@@ -29,10 +29,10 @@
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
 #include "gc/g1/g1Allocator.inline.hpp"
+#include "gc/g1/g1Arguments.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
-#include "gc/g1/g1CollectorPolicy.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1ConcurrentRefineThread.hpp"
@@ -436,7 +436,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
     uint gc_count_before;
 
     {
-      MutexLockerEx x(Heap_lock);
+      MutexLocker x(Heap_lock);
       result = _allocator->attempt_allocation_locked(word_size);
       if (result != NULL) {
         return result;
@@ -575,7 +575,7 @@ bool G1CollectedHeap::alloc_archive_regions(MemRegion* ranges,
   assert(!is_init_completed(), "Expect to be called at JVM init time");
   assert(ranges != NULL, "MemRegion array NULL");
   assert(count != 0, "No MemRegions provided");
-  MutexLockerEx x(Heap_lock);
+  MutexLocker x(Heap_lock);
 
   MemRegion reserved = _hrm->reserved();
   HeapWord* prev_last_addr = NULL;
@@ -685,7 +685,7 @@ void G1CollectedHeap::fill_archive_regions(MemRegion* ranges, size_t count) {
   // that contain the address range. The address range actually within the
   // MemRegion will not be modified. That is assumed to have been initialized
   // elsewhere, probably via an mmap of archived heap data.
-  MutexLockerEx x(Heap_lock);
+  MutexLocker x(Heap_lock);
   for (size_t i = 0; i < count; i++) {
     HeapWord* start_address = ranges[i].start();
     HeapWord* last_address = ranges[i].last();
@@ -771,7 +771,7 @@ void G1CollectedHeap::dealloc_archive_regions(MemRegion* ranges, size_t count, b
 
   // For each Memregion, free the G1 regions that constitute it, and
   // notify mark-sweep that the range is no longer to be considered 'archive.'
-  MutexLockerEx x(Heap_lock);
+  MutexLocker x(Heap_lock);
   for (size_t i = 0; i < count; i++) {
     HeapWord* start_address = ranges[i].start();
     HeapWord* last_address = ranges[i].last();
@@ -882,7 +882,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size) {
 
 
     {
-      MutexLockerEx x(Heap_lock);
+      MutexLocker x(Heap_lock);
 
       // Given that humongous objects are not allocated in young
       // regions, we'll first try to do the allocation without doing a
@@ -1177,9 +1177,6 @@ void G1CollectedHeap::resize_heap_if_necessary() {
   const double maximum_free_percentage = (double) MaxHeapFreeRatio / 100.0;
   const double minimum_used_percentage = 1.0 - maximum_free_percentage;
 
-  const size_t min_heap_size = collector_policy()->min_heap_byte_size();
-  const size_t max_heap_size = collector_policy()->max_heap_byte_size();
-
   // We have to be careful here as these two calculations can overflow
   // 32-bit size_t's.
   double used_after_gc_d = (double) used_after_gc;
@@ -1188,7 +1185,7 @@ void G1CollectedHeap::resize_heap_if_necessary() {
 
   // Let's make sure that they are both under the max heap size, which
   // by default will make them fit into a size_t.
-  double desired_capacity_upper_bound = (double) max_heap_size;
+  double desired_capacity_upper_bound = (double) MaxHeapSize;
   minimum_desired_capacity_d = MIN2(minimum_desired_capacity_d,
                                     desired_capacity_upper_bound);
   maximum_desired_capacity_d = MIN2(maximum_desired_capacity_d,
@@ -1208,11 +1205,11 @@ void G1CollectedHeap::resize_heap_if_necessary() {
   // Should not be greater than the heap max size. No need to adjust
   // it with respect to the heap min size as it's a lower bound (i.e.,
   // we'll try to make the capacity larger than it, not smaller).
-  minimum_desired_capacity = MIN2(minimum_desired_capacity, max_heap_size);
+  minimum_desired_capacity = MIN2(minimum_desired_capacity, MaxHeapSize);
   // Should not be less than the heap min size. No need to adjust it
   // with respect to the heap max size as it's an upper bound (i.e.,
   // we'll try to make the capacity smaller than it, not greater).
-  maximum_desired_capacity =  MAX2(maximum_desired_capacity, min_heap_size);
+  maximum_desired_capacity =  MAX2(maximum_desired_capacity, MinHeapSize);
 
   if (capacity_after_gc < minimum_desired_capacity) {
     // Don't expand unless it's significant
@@ -1484,11 +1481,10 @@ public:
   const char* get_description() { return "Humongous Regions"; }
 };
 
-G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* collector_policy) :
+G1CollectedHeap::G1CollectedHeap() :
   CollectedHeap(),
   _young_gen_sampling_thread(NULL),
   _workers(NULL),
-  _collector_policy(collector_policy),
   _card_table(NULL),
   _soft_ref_policy(),
   _old_set("Old Region Set", new OldRegionSetChecker()),
@@ -1515,7 +1511,7 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* collector_policy) :
   _survivor(),
   _gc_timer_stw(new (ResourceObj::C_HEAP, mtGC) STWGCTimer()),
   _gc_tracer_stw(new (ResourceObj::C_HEAP, mtGC) G1NewTracer()),
-  _policy(G1Policy::create_policy(collector_policy, _gc_timer_stw)),
+  _policy(G1Policy::create_policy(_gc_timer_stw)),
   _heap_sizing_policy(NULL),
   _collection_set(this, _policy),
   _hot_card_cache(NULL),
@@ -1644,14 +1640,13 @@ jint G1CollectedHeap::initialize() {
   // HeapWordSize).
   guarantee(HeapWordSize == wordSize, "HeapWordSize must equal wordSize");
 
-  size_t init_byte_size = collector_policy()->initial_heap_byte_size();
-  size_t max_byte_size = _collector_policy->heap_reserved_size_bytes();
-  size_t heap_alignment = collector_policy()->heap_alignment();
+  size_t init_byte_size = InitialHeapSize;
+  size_t reserved_byte_size = G1Arguments::heap_reserved_size_bytes();
 
   // Ensure that the sizes are properly aligned.
   Universe::check_alignment(init_byte_size, HeapRegion::GrainBytes, "g1 heap");
-  Universe::check_alignment(max_byte_size, HeapRegion::GrainBytes, "g1 heap");
-  Universe::check_alignment(max_byte_size, heap_alignment, "g1 heap");
+  Universe::check_alignment(reserved_byte_size, HeapRegion::GrainBytes, "g1 heap");
+  Universe::check_alignment(reserved_byte_size, HeapAlignment, "g1 heap");
 
   // Reserve the maximum.
 
@@ -1666,8 +1661,8 @@ jint G1CollectedHeap::initialize() {
   // If this happens then we could end up using a non-optimal
   // compressed oops mode.
 
-  ReservedSpace heap_rs = Universe::reserve_heap(max_byte_size,
-                                                 heap_alignment);
+  ReservedSpace heap_rs = Universe::reserve_heap(reserved_byte_size,
+                                                 HeapAlignment);
 
   initialize_reserved_region((HeapWord*)heap_rs.base(), (HeapWord*)(heap_rs.base() + heap_rs.size()));
 
@@ -1699,7 +1694,7 @@ jint G1CollectedHeap::initialize() {
   _hot_card_cache = new G1HotCardCache(this);
 
   // Carve out the G1 part of the heap.
-  ReservedSpace g1_rs = heap_rs.first_part(max_byte_size);
+  ReservedSpace g1_rs = heap_rs.first_part(reserved_byte_size);
   size_t page_size = actual_reserved_page_size(heap_rs);
   G1RegionToSpaceMapper* heap_storage =
     G1RegionToSpaceMapper::create_heap_mapper(g1_rs,
@@ -1714,8 +1709,8 @@ jint G1CollectedHeap::initialize() {
   }
 
   os::trace_page_sizes("Heap",
-                       collector_policy()->min_heap_byte_size(),
-                       max_byte_size,
+                       MinHeapSize,
+                       reserved_byte_size,
                        page_size,
                        heap_rs.base(),
                        heap_rs.size());
@@ -1743,7 +1738,7 @@ jint G1CollectedHeap::initialize() {
   G1RegionToSpaceMapper* next_bitmap_storage =
     create_aux_memory_mapper("Next Bitmap", bitmap_size, G1CMBitMap::heap_map_factor());
 
-  _hrm = HeapRegionManager::create_manager(this, _collector_policy);
+  _hrm = HeapRegionManager::create_manager(this);
 
   _hrm->initialize(heap_storage, prev_bitmap_storage, next_bitmap_storage, bot_storage, cardtable_storage, card_counts_storage);
   _card_table->initialize(cardtable_storage);
@@ -1870,10 +1865,6 @@ void G1CollectedHeap::safepoint_synchronize_end() {
   SuspendibleThreadSet::desynchronize();
 }
 
-size_t G1CollectedHeap::conservative_max_heap_alignment() {
-  return HeapRegion::max_region_size();
-}
-
 void G1CollectedHeap::post_initialize() {
   CollectedHeap::post_initialize();
   ref_processing_init();
@@ -1938,10 +1929,6 @@ void G1CollectedHeap::ref_processing_init() {
                            true,                                 // Reference discovery is atomic
                            &_is_alive_closure_stw,               // is alive closure
                            true);                                // allow changes to number of processing threads
-}
-
-CollectorPolicy* G1CollectedHeap::collector_policy() const {
-  return _collector_policy;
 }
 
 SoftRefPolicy* G1CollectedHeap::soft_ref_policy() {
@@ -2066,7 +2053,7 @@ void G1CollectedHeap::increment_old_marking_cycles_started() {
 }
 
 void G1CollectedHeap::increment_old_marking_cycles_completed(bool concurrent) {
-  MonitorLockerEx x(FullGCCount_lock, Mutex::_no_safepoint_check_flag);
+  MonitorLocker x(FullGCCount_lock, Mutex::_no_safepoint_check_flag);
 
   // We assume that if concurrent == true, then the caller is a
   // concurrent thread that was joined the Suspendible Thread
@@ -2333,7 +2320,7 @@ bool G1CollectedHeap::request_concurrent_phase(const char* phase) {
 }
 
 bool G1CollectedHeap::is_heterogeneous_heap() const {
-  return _collector_policy->is_heterogeneous_heap();
+  return G1Arguments::is_heterogeneous_heap();
 }
 
 class PrintRegionClosure: public HeapRegionClosure {
@@ -2604,7 +2591,7 @@ HeapWord* G1CollectedHeap::do_collection_pause(size_t word_size,
 }
 
 void G1CollectedHeap::do_concurrent_mark() {
-  MutexLockerEx x(CGC_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker x(CGC_lock, Mutex::_no_safepoint_check_flag);
   if (!_cm_thread->in_progress()) {
     _cm_thread->set_started();
     CGC_lock->notify();
@@ -3925,7 +3912,7 @@ void G1CollectedHeap::free_humongous_region(HeapRegion* hr,
 void G1CollectedHeap::remove_from_old_sets(const uint old_regions_removed,
                                            const uint humongous_regions_removed) {
   if (old_regions_removed > 0 || humongous_regions_removed > 0) {
-    MutexLockerEx x(OldSets_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker x(OldSets_lock, Mutex::_no_safepoint_check_flag);
     _old_set.bulk_remove(old_regions_removed);
     _humongous_set.bulk_remove(humongous_regions_removed);
   }
@@ -3935,7 +3922,7 @@ void G1CollectedHeap::remove_from_old_sets(const uint old_regions_removed,
 void G1CollectedHeap::prepend_to_freelist(FreeRegionList* list) {
   assert(list != NULL, "list can't be null");
   if (!list->is_empty()) {
-    MutexLockerEx x(FreeList_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker x(FreeList_lock, Mutex::_no_safepoint_check_flag);
     _hrm->insert_list_into_free_list(list);
   }
 }
@@ -4073,7 +4060,7 @@ private:
 
   void do_serial_work() {
     // Need to grab the lock to be allowed to modify the old region list.
-    MutexLockerEx x(OldSets_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker x(OldSets_lock, Mutex::_no_safepoint_check_flag);
     _collection_set->iterate(&_cl);
   }
 

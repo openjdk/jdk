@@ -97,7 +97,7 @@ void ThreadService::init() {
 void ThreadService::reset_peak_thread_count() {
   // Acquire the lock to update the peak thread count
   // to synchronize with thread addition and removal.
-  MutexLockerEx mu(Threads_lock);
+  MutexLocker mu(Threads_lock);
   _peak_threads_count->set_value(get_live_thread_count());
 }
 

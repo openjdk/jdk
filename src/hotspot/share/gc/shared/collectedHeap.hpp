@@ -44,7 +44,6 @@
 
 class AdaptiveSizePolicy;
 class BarrierSet;
-class CollectorPolicy;
 class GCHeapSummary;
 class GCTimer;
 class GCTracer;
@@ -209,6 +208,9 @@ class CollectedHeap : public CHeapObj<mtInternal> {
 
   virtual size_t capacity() const = 0;
   virtual size_t used() const = 0;
+
+  // Returns unused capacity.
+  virtual size_t unused() const;
 
   // Return "true" if the part of the heap that allocates Java
   // objects has reached the maximal committed limit that it can
@@ -384,9 +386,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   }
 
   void increment_total_full_collections() { _total_full_collections++; }
-
-  // Return the CollectorPolicy for the heap
-  virtual CollectorPolicy* collector_policy() const = 0;
 
   // Return the SoftRefPolicy for the heap;
   virtual SoftRefPolicy* soft_ref_policy() = 0;

@@ -56,8 +56,8 @@ private:
   public:
     HeteroVirtualSpaces(ReservedSpace rs,
                         size_t min_old_byte_size,
-                        size_t min_young_byte_size, size_t max_total_size,
-                        size_t alignment);
+                        size_t min_young_byte_size,
+                        size_t max_total_size);
 
     // Increase old generation size and decrease young generation size by same amount
     bool adjust_boundary_up(size_t size_in_bytes);
@@ -72,11 +72,11 @@ private:
   };
 
 public:
-  AdjoiningGenerationsForHeteroHeap(ReservedSpace rs, GenerationSizer* policy, size_t alignment);
+  AdjoiningGenerationsForHeteroHeap(ReservedSpace rs);
 
   // Given the size policy, calculate the total amount of memory that needs to be reserved.
   // We need to reserve more memory than Xmx, since we use non-overlapping virtual spaces for the young and old generations.
-  static size_t required_reserved_memory(GenerationSizer* policy);
+  static size_t required_reserved_memory();
 
   // Return the total byte size of the reserved space
   size_t reserved_byte_size();

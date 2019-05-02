@@ -50,10 +50,10 @@ public class AccessAsciiArt extends JavadocTester {
 
         checkOutput("p1/subpkg/SSC.html", true,
                 // Test the top line of the class tree
-                "<li><a href=\"../C.html\" title=\"class in p1\">p1.C</a></li>",
+                "<div class=\"inheritance\"><a href=\"../C.html\" title=\"class in p1\">p1.C</a>",
                 // Test the second line of the class tree
-                "<li><a href=\"../SC.html\" title=\"class in p1\">p1.SC</a></li>",
+                "<div class=\"inheritance\"><a href=\"../SC.html\" title=\"class in p1\">p1.SC</a>",
                 // Test the third line of the class tree
-                "<li>p1.subpkg.SSC</li>");
+                "<div class=\"inheritance\">p1.subpkg.SSC</div>\n</div>\n</div>");
     }
 }

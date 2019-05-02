@@ -1,4 +1,4 @@
-File-Date: 2018-11-30
+File-Date: 2019-04-03
 %%
 Type: language
 Subtag: aa
@@ -43008,6 +43008,7 @@ Subtag: lsg
 Description: Lyons Sign Language
 Added: 2009-07-29
 Deprecated: 2018-03-08
+Preferred-Value: lsg
 Prefix: sgn
 %%
 Type: extlang
@@ -43406,6 +43407,7 @@ Subtag: rsi
 Description: Rennellese Sign Language
 Added: 2009-07-29
 Deprecated: 2017-02-23
+Preferred-Value: rsi
 Prefix: sgn
 %%
 Type: extlang
@@ -43760,6 +43762,7 @@ Subtag: yds
 Description: Yiddish Sign Language
 Added: 2009-07-29
 Deprecated: 2015-02-12
+Preferred-Value: yds
 Prefix: sgn
 %%
 Type: extlang
@@ -46537,16 +46540,16 @@ Subtag: arevela
 Description: Eastern Armenian
 Added: 2006-09-18
 Deprecated: 2018-03-24
-Preferred-Value: hy
 Prefix: hy
+Comments: Preferred tag is hy
 %%
 Type: variant
 Subtag: arevmda
 Description: Western Armenian
 Added: 2006-09-18
 Deprecated: 2018-03-24
-Preferred-Value: hyw
 Prefix: hy
+Comments: Preferred tag is hyw
 %%
 Type: variant
 Subtag: asante
@@ -46640,6 +46643,12 @@ Description: Boontling
 Added: 2006-09-18
 Prefix: en
 Comments: Jargon embedded in American English
+%%
+Type: variant
+Subtag: bornholm
+Description: Bornholmsk
+Added: 2019-03-27
+Prefix: da
 %%
 Type: variant
 Subtag: cisaup

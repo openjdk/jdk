@@ -61,6 +61,12 @@ public class URIBuilder {
         return this;
     }
 
+    public URIBuilder host(InetAddress address) {
+        String hostaddr = address.isAnyLocalAddress()
+               ? "localhost" : address.getHostAddress();
+        return host(hostaddr);
+    }
+
     public URIBuilder loopback() {
         return host(InetAddress.getLoopbackAddress().getHostAddress());
     }

@@ -256,17 +256,6 @@ class SocksSocketImpl extends DelegatingSocketImpl implements SocksConsts {
         connect(new InetSocketAddress(address, port), 0);
     }
 
-    @Override
-    void setSocket(Socket soc) {
-        delegate.socket = soc;
-        super.setSocket(soc);
-    }
-
-    @Override
-    void setServerSocket(ServerSocket soc) {
-        throw new InternalError("should not get here");
-    }
-
     /**
      * Connects the Socks Socket to the specified endpoint. It will first
      * connect to the SOCKS proxy and negotiate the access. If the proxy

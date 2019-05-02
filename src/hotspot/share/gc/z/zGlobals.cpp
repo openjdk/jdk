@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,28 @@ const int& ZObjectAlignmentSmallShift = LogMinObjAlignmentInBytes;
 const int& ZObjectAlignmentSmall      = MinObjAlignmentInBytes;
 
 uintptr_t ZAddressGoodMask;
-uintptr_t ZAddressBadMask             = 0;
+uintptr_t ZAddressBadMask;
 uintptr_t ZAddressWeakBadMask;
 
+uintptr_t ZAddressBase;
+
+size_t    ZAddressOffsetBits;
+uintptr_t ZAddressOffsetMask;
+size_t    ZAddressOffsetMax;
+
+size_t    ZAddressMetadataShift;
+uintptr_t ZAddressMetadataMask;
+
 uintptr_t ZAddressMetadataMarked;
+uintptr_t ZAddressMetadataMarked0;
+uintptr_t ZAddressMetadataMarked1;
+uintptr_t ZAddressMetadataRemapped;
+uintptr_t ZAddressMetadataFinalizable;
+
+uintptr_t ZAddressSpaceStart;
+uintptr_t ZAddressSpaceEnd;
+size_t    ZAddressSpaceSize;
+
+uintptr_t ZAddressReservedStart;
+uintptr_t ZAddressReservedEnd;
+size_t    ZAddressReservedSize;

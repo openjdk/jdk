@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1437,7 +1437,7 @@ public class AArch64MacroAssembler extends AArch64Assembler {
             int offset = label.position() - position();
             super.adr(dst, offset);
         } else {
-            label.addPatchAt(position());
+            label.addPatchAt(position(), this);
             // Encode condition flag so that we know how to patch the instruction later
             emitInt(PatchLabelKind.ADR.encoding | dst.encoding << PatchLabelKind.INFORMATION_OFFSET);
         }
@@ -1456,7 +1456,7 @@ public class AArch64MacroAssembler extends AArch64Assembler {
             int offset = label.position() - position();
             super.cbnz(size, cmp, offset);
         } else {
-            label.addPatchAt(position());
+            label.addPatchAt(position(), this);
             int regEncoding = cmp.encoding << (PatchLabelKind.INFORMATION_OFFSET + 1);
             int sizeEncoding = (size == 64 ? 1 : 0) << PatchLabelKind.INFORMATION_OFFSET;
             // Encode condition flag so that we know how to patch the instruction later
@@ -1477,7 +1477,7 @@ public class AArch64MacroAssembler extends AArch64Assembler {
             int offset = label.position() - position();
             super.cbz(size, cmp, offset);
         } else {
-            label.addPatchAt(position());
+            label.addPatchAt(position(), this);
             int regEncoding = cmp.encoding << (PatchLabelKind.INFORMATION_OFFSET + 1);
             int sizeEncoding = (size == 64 ? 1 : 0) << PatchLabelKind.INFORMATION_OFFSET;
             // Encode condition flag so that we know how to patch the instruction later
@@ -1498,7 +1498,7 @@ public class AArch64MacroAssembler extends AArch64Assembler {
             int offset = label.position() - position();
             super.tbnz(cmp, uimm6, offset);
         } else {
-            label.addPatchAt(position());
+            label.addPatchAt(position(), this);
             int indexEncoding = uimm6 << PatchLabelKind.INFORMATION_OFFSET;
             int regEncoding = cmp.encoding << (PatchLabelKind.INFORMATION_OFFSET + 6);
             emitInt(PatchLabelKind.BRANCH_BIT_NONZERO.encoding | indexEncoding | regEncoding);
@@ -1518,7 +1518,7 @@ public class AArch64MacroAssembler extends AArch64Assembler {
             int offset = label.position() - position();
             super.tbz(cmp, uimm6, offset);
         } else {
-            label.addPatchAt(position());
+            label.addPatchAt(position(), this);
             int indexEncoding = uimm6 << PatchLabelKind.INFORMATION_OFFSET;
             int regEncoding = cmp.encoding << (PatchLabelKind.INFORMATION_OFFSET + 6);
             emitInt(PatchLabelKind.BRANCH_BIT_ZERO.encoding | indexEncoding | regEncoding);
@@ -1537,7 +1537,7 @@ public class AArch64MacroAssembler extends AArch64Assembler {
             int offset = label.position() - position();
             super.b(condition, offset);
         } else {
-            label.addPatchAt(position());
+            label.addPatchAt(position(), this);
             // Encode condition flag so that we know how to patch the instruction later
             emitInt(PatchLabelKind.BRANCH_CONDITIONALLY.encoding | condition.encoding << PatchLabelKind.INFORMATION_OFFSET);
         }
@@ -1565,7 +1565,7 @@ public class AArch64MacroAssembler extends AArch64Assembler {
             int offset = label.position() - position();
             super.b(offset);
         } else {
-            label.addPatchAt(position());
+            label.addPatchAt(position(), this);
             emitInt(PatchLabelKind.BRANCH_UNCONDITIONALLY.encoding);
         }
     }
@@ -1781,6 +1781,23 @@ public class AArch64MacroAssembler extends AArch64Assembler {
      */
     public void lea(Register d, AArch64Address a) {
         a.lea(this, d);
+    }
+
+    /**
+     * Count the set bits of src register.
+     *
+     * @param size src register size. Has to be 32 or 64.
+     * @param dst general purpose register. Should not be null or zero-register.
+     * @param src general purpose register. Should not be null.
+     * @param vreg SIMD register. Should not be null.
+     */
+    public void popcnt(int size, Register dst, Register src, Register vreg) {
+        assert 32 == size || 64 == size : "Invalid data size";
+        fmov(size, vreg, src);
+        final int fixedSize = 64;
+        cnt(fixedSize, vreg, vreg);
+        addv(fixedSize, SIMDElementSize.Byte, vreg, vreg);
+        umov(fixedSize, dst, 0, vreg);
     }
 
     public interface MacroInstruction {

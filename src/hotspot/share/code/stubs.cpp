@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,7 +207,7 @@ void StubQueue::remove_all(){
 void StubQueue::verify() {
   // verify only if initialized
   if (_stub_buffer == NULL) return;
-  MutexLockerEx lock(_mutex, Mutex::_no_safepoint_check_flag);
+  MutexLocker lock(_mutex, Mutex::_no_safepoint_check_flag);
   // verify index boundaries
   guarantee(0 <= _buffer_size, "buffer size must be positive");
   guarantee(0 <= _buffer_limit && _buffer_limit <= _buffer_size , "_buffer_limit out of bounds");
@@ -234,7 +234,7 @@ void StubQueue::verify() {
 
 
 void StubQueue::print() {
-  MutexLockerEx lock(_mutex, Mutex::_no_safepoint_check_flag);
+  MutexLocker lock(_mutex, Mutex::_no_safepoint_check_flag);
   for (Stub* s = first(); s != NULL; s = next(s)) {
     stub_print(s);
   }

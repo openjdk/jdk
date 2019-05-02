@@ -32,6 +32,7 @@ import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
 import com.sun.source.doctree.DocTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -101,7 +102,7 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
             ModuleElement mdle = configuration.docEnv.getElementUtils().getModuleOf(annotationType);
             Content typeModuleLabel = HtmlTree.SPAN(HtmlStyle.moduleLabelInType, contents.moduleLabel);
             Content moduleNameDiv = HtmlTree.DIV(HtmlStyle.subTitle, typeModuleLabel);
-            moduleNameDiv.add(Contents.SPACE);
+            moduleNameDiv.add(Entity.NO_BREAK_SPACE);
             moduleNameDiv.add(getModuleLink(mdle, new StringContent(mdle.getQualifiedName())));
             div.add(moduleNameDiv);
         }
@@ -109,7 +110,7 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
         if (!pkg.isUnnamed()) {
             Content typePackageLabel = HtmlTree.SPAN(HtmlStyle.packageLabelInType, contents.packageLabel);
             Content pkgNameDiv = HtmlTree.DIV(HtmlStyle.subTitle, typePackageLabel);
-            pkgNameDiv.add(Contents.SPACE);
+            pkgNameDiv.add(Entity.NO_BREAK_SPACE);
             Content pkgNameContent = getPackageLink(pkg, new StringContent(utils.getPackageName(pkg)));
             pkgNameDiv.add(pkgNameContent);
             div.add(pkgNameDiv);
@@ -171,7 +172,7 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
      */
     @Override
     public Content getAnnotationInfo(Content annotationInfoTree) {
-        return getMemberTree(HtmlStyle.description, annotationInfoTree);
+        return HtmlTree.SECTION(HtmlStyle.description, annotationInfoTree);
     }
 
     /**

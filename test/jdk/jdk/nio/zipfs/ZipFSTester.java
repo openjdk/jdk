@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -533,10 +533,7 @@ public class ZipFSTester {
             try (var zfs = newZipFileSystem(zpath, Collections.emptyMap())) {
                 for (Object[] e : entries) {
                     Path path = zfs.getPath((String)e[0]);
-                    int method = (int)e[1];
                     byte[] bytes = (byte[])e[2];
-                    // System.out.printf("checking read [%s, %d, %d]%n",
-                    //                   path.toString(), bytes.length, method);
                     checkRead(path, bytes);
                 }
             }

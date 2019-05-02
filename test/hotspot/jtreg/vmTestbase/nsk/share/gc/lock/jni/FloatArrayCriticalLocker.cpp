@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ static jfieldID objFieldId = NULL;
  */
 JNIEXPORT jfloat JNICALL Java_nsk_share_gc_lock_jni_FloatArrayCriticalLocker_criticalNative
 (JNIEnv *jni_env, jobject o, jlong enterTime, jlong sleepTime) {
-        ExceptionCheckingJniEnvPtr env(jni_env);
+        ExceptionCheckingJniEnvPtr jni(jni_env);
 
         jsize size, i;
         jfloatArray arr;
@@ -46,18 +46,18 @@ JNIEXPORT jfloat JNICALL Java_nsk_share_gc_lock_jni_FloatArrayCriticalLocker_cri
         time_t start_time, current_time;
 
         if (objFieldId == NULL) {
-                jclass klass = env->GetObjectClass(o);
-                objFieldId = env->GetFieldID(klass, "obj", "Ljava/lang/Object;");
+                jclass klass = jni->GetObjectClass(o, TRACE_JNI_CALL);
+                objFieldId = jni->GetFieldID(klass, "obj", "Ljava/lang/Object;", TRACE_JNI_CALL);
         }
-        arr = (jfloatArray) env->GetObjectField(o, objFieldId);
-        env->SetObjectField(o, objFieldId, NULL);
+        arr = (jfloatArray) jni->GetObjectField(o, objFieldId, TRACE_JNI_CALL);
+        jni->SetObjectField(o, objFieldId, NULL, TRACE_JNI_CALL);
 
-        size = env->GetArrayLength(arr);
+        size = jni->GetArrayLength(arr, TRACE_JNI_CALL);
         start_time = time(NULL);
         enterTime /= 1000;
         current_time = 0;
         while (current_time - start_time < enterTime) {
-                pa = (jfloat*) env->GetPrimitiveArrayCritical(arr, NULL);
+                pa = (jfloat*) jni->GetPrimitiveArrayCritical(arr, NULL, TRACE_JNI_CALL);
                 if (pa != NULL) {
                         for (i = 0; i < size; ++i)
                                 hash += pa[i];
@@ -65,11 +65,11 @@ JNIEXPORT jfloat JNICALL Java_nsk_share_gc_lock_jni_FloatArrayCriticalLocker_cri
                         hash = 0;
                 }
                 mssleep((long) sleepTime);
-                env->ReleasePrimitiveArrayCritical(arr, pa, 0);
+                jni->ReleasePrimitiveArrayCritical(arr, pa, 0, TRACE_JNI_CALL);
                 mssleep((long) sleepTime);
                 current_time = time(NULL);
         }
-        env->SetObjectField(o, objFieldId, arr);
+        jni->SetObjectField(o, objFieldId, arr, TRACE_JNI_CALL);
         return hash;
 }
 

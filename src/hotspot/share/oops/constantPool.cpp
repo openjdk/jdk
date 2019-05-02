@@ -30,6 +30,7 @@
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "interpreter/bootstrapInfo.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/heapInspection.hpp"
@@ -909,9 +910,8 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
 
   case JVM_CONSTANT_Dynamic:
     {
-      Klass* current_klass  = this_cp->pool_holder();
-      Symbol* constant_name = this_cp->uncached_name_ref_at(index);
-      Symbol* constant_type = this_cp->uncached_signature_ref_at(index);
+      // Resolve the Dynamically-Computed constant to invoke the BSM in order to obtain the resulting oop.
+      BootstrapInfo bootstrap_specifier(this_cp, index);
 
       // The initial step in resolving an unresolved symbolic reference to a
       // dynamically-computed constant is to resolve the symbolic reference to a
@@ -921,27 +921,18 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
       // bootstrap method's CP index for the CONSTANT_MethodHandle_info. No need to
       // set a DynamicConstantInError here since any subsequent use of this
       // bootstrap method will encounter the resolution of MethodHandleInError.
-      oop bsm_info = this_cp->resolve_bootstrap_specifier_at(index, THREAD);
-      Exceptions::wrap_dynamic_exception(CHECK_NULL);
-      assert(bsm_info != NULL, "");
-      // FIXME: Cache this once per BootstrapMethods entry, not once per CONSTANT_Dynamic.
-      Handle bootstrap_specifier = Handle(THREAD, bsm_info);
-
-      // Resolve the Dynamically-Computed constant to invoke the BSM in order to obtain the resulting oop.
-      Handle value = SystemDictionary::link_dynamic_constant(current_klass,
-                                                             index,
-                                                             bootstrap_specifier,
-                                                             constant_name,
-                                                             constant_type,
-                                                             THREAD);
-      result_oop = value();
+      // Both the first, (resolution of the BSM and its static arguments), and the second tasks,
+      // (invocation of the BSM), of JVMS Section 5.4.3.6 occur within invoke_bootstrap_method()
+      // for the bootstrap_specifier created above.
+      SystemDictionary::invoke_bootstrap_method(bootstrap_specifier, THREAD);
       Exceptions::wrap_dynamic_exception(THREAD);
       if (HAS_PENDING_EXCEPTION) {
         // Resolution failure of the dynamically-computed constant, save_and_throw_exception
         // will check for a LinkageError and store a DynamicConstantInError.
         save_and_throw_exception(this_cp, index, tag, CHECK_NULL);
       }
-      BasicType type = FieldType::basic_type(constant_type);
+      result_oop = bootstrap_specifier.resolved_value()();
+      BasicType type = FieldType::basic_type(bootstrap_specifier.signature());
       if (!is_reference_type(type)) {
         // Make sure the primitive value is properly boxed.
         // This is a JDK responsibility.
@@ -960,6 +951,10 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
           // See section 5.4.3 of the VM spec.
           THROW_MSG_NULL(vmSymbols::java_lang_InternalError(), fail);
         }
+      }
+
+      if (TraceMethodHandles) {
+        bootstrap_specifier.print_msg_on(tty, "resolve_constant_at_impl");
       }
       break;
     }
@@ -1100,119 +1095,6 @@ oop ConstantPool::uncached_string_at(int which, TRAPS) {
   oop str = StringTable::intern(sym, CHECK_(NULL));
   assert(java_lang_String::is_instance(str), "must be string");
   return str;
-}
-
-
-oop ConstantPool::resolve_bootstrap_specifier_at_impl(const constantPoolHandle& this_cp, int index, TRAPS) {
-  assert((this_cp->tag_at(index).is_invoke_dynamic() ||
-          this_cp->tag_at(index).is_dynamic_constant()), "Corrupted constant pool");
-  Handle bsm;
-  int argc;
-  {
-    // JVM_CONSTANT_InvokeDynamic is an ordered pair of [bootm, name&mtype], plus optional arguments
-    // JVM_CONSTANT_Dynamic is an ordered pair of [bootm, name&ftype], plus optional arguments
-    // In both cases, the bootm, being a JVM_CONSTANT_MethodHandle, has its own cache entry.
-    // It is accompanied by the optional arguments.
-    int bsm_index = this_cp->bootstrap_method_ref_index_at(index);
-    oop bsm_oop = this_cp->resolve_possibly_cached_constant_at(bsm_index, CHECK_NULL);
-    if (!java_lang_invoke_MethodHandle::is_instance(bsm_oop)) {
-      THROW_MSG_NULL(vmSymbols::java_lang_LinkageError(), "BSM not an MethodHandle");
-    }
-
-    // Extract the optional static arguments.
-    argc = this_cp->bootstrap_argument_count_at(index);
-
-    // if there are no static arguments, return the bsm by itself:
-    if (argc == 0 && UseBootstrapCallInfo < 2)  return bsm_oop;
-
-    bsm = Handle(THREAD, bsm_oop);
-  }
-
-  // We are going to return an ordered pair of {bsm, info}, using a 2-array.
-  objArrayHandle info;
-  {
-    objArrayOop info_oop = oopFactory::new_objArray(SystemDictionary::Object_klass(), 2, CHECK_NULL);
-    info = objArrayHandle(THREAD, info_oop);
-  }
-
-  info->obj_at_put(0, bsm());
-
-  bool use_BSCI;
-  switch (UseBootstrapCallInfo) {
-  default: use_BSCI = true;  break;  // stress mode
-  case 0:  use_BSCI = false; break;  // stress mode
-  case 1:                            // normal mode
-    // If we were to support an alternative mode of BSM invocation,
-    // we'd convert to pull mode here if the BSM could be a candidate
-    // for that alternative mode.  We can't easily test for things
-    // like varargs here, but we can get away with approximate testing,
-    // since the JDK runtime will make up the difference either way.
-    // For now, exercise the pull-mode path if the BSM is of arity 2,
-    // or if there is a potential condy loop (see below).
-    oop mt_oop = java_lang_invoke_MethodHandle::type(bsm());
-    use_BSCI = (java_lang_invoke_MethodType::ptype_count(mt_oop) == 2);
-    break;
-  }
-
-  // Here's a reason to use BSCI even if it wasn't requested:
-  // If a condy uses a condy argument, we want to avoid infinite
-  // recursion (condy loops) in the C code.  It's OK in Java,
-  // because Java has stack overflow checking, so we punt
-  // potentially cyclic cases from C to Java.
-  if (!use_BSCI && this_cp->tag_at(index).is_dynamic_constant()) {
-    bool found_unresolved_condy = false;
-    for (int i = 0; i < argc; i++) {
-      int arg_index = this_cp->bootstrap_argument_index_at(index, i);
-      if (this_cp->tag_at(arg_index).is_dynamic_constant()) {
-        // potential recursion point condy -> condy
-        bool found_it = false;
-        this_cp->find_cached_constant_at(arg_index, found_it, CHECK_NULL);
-        if (!found_it) { found_unresolved_condy = true; break; }
-      }
-    }
-    if (found_unresolved_condy)
-      use_BSCI = true;
-  }
-
-  const int SMALL_ARITY = 5;
-  if (use_BSCI && argc <= SMALL_ARITY && UseBootstrapCallInfo <= 2) {
-    // If there are only a few arguments, and none of them need linking,
-    // push them, instead of asking the JDK runtime to turn around and
-    // pull them, saving a JVM/JDK transition in some simple cases.
-    bool all_resolved = true;
-    for (int i = 0; i < argc; i++) {
-      bool found_it = false;
-      int arg_index = this_cp->bootstrap_argument_index_at(index, i);
-      this_cp->find_cached_constant_at(arg_index, found_it, CHECK_NULL);
-      if (!found_it) { all_resolved = false; break; }
-    }
-    if (all_resolved)
-      use_BSCI = false;
-  }
-
-  if (!use_BSCI) {
-    // return {bsm, {arg...}}; resolution of arguments is done immediately, before JDK code is called
-    objArrayOop args_oop = oopFactory::new_objArray(SystemDictionary::Object_klass(), argc, CHECK_NULL);
-    info->obj_at_put(1, args_oop);   // may overwrite with args[0] below
-    objArrayHandle args(THREAD, args_oop);
-    copy_bootstrap_arguments_at_impl(this_cp, index, 0, argc, args, 0, true, Handle(), CHECK_NULL);
-    if (argc == 1) {
-      // try to discard the singleton array
-      oop arg_oop = args->obj_at(0);
-      if (arg_oop != NULL && !arg_oop->is_array()) {
-        // JVM treats arrays and nulls specially in this position,
-        // but other things are just single arguments
-        info->obj_at_put(1, arg_oop);
-      }
-    }
-  } else {
-    // return {bsm, {arg_count, pool_index}}; JDK code must pull the arguments as needed
-    typeArrayOop ints_oop = oopFactory::new_typeArray(T_INT, 2, CHECK_NULL);
-    ints_oop->int_at_put(0, argc);
-    ints_oop->int_at_put(1, index);
-    info->obj_at_put(1, ints_oop);
-  }
-  return info();
 }
 
 void ConstantPool::copy_bootstrap_arguments_at_impl(const constantPoolHandle& this_cp, int index,
@@ -1848,8 +1730,8 @@ bool ConstantPool::compare_operand_to(int idx1, const constantPoolHandle& cp2, i
 } // end compare_operand_to()
 
 // Search constant pool search_cp for a bootstrap specifier that matches
-// this constant pool's bootstrap specifier at pattern_i index.
-// Return the index of a matching bootstrap specifier or (-1) if there is no match.
+// this constant pool's bootstrap specifier data at pattern_i index.
+// Return the index of a matching bootstrap attribute record or (-1) if there is no match.
 int ConstantPool::find_matching_operand(int pattern_i,
                     const constantPoolHandle& search_cp, int search_len, TRAPS) {
   for (int i = 0; i < search_len; i++) {
@@ -1858,7 +1740,7 @@ int ConstantPool::find_matching_operand(int pattern_i,
       return i;
     }
   }
-  return -1;  // bootstrap specifier not found; return unused index (-1)
+  return -1;  // bootstrap specifier data not found; return unused index (-1)
 } // end find_matching_operand()
 
 

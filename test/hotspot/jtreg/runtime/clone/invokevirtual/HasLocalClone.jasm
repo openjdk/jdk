@@ -28,7 +28,7 @@
  * @summary Check that invokevirtual of clone() finds the clone() method that
  *          is local to the calling class.
  * @compile DefMethClone.jasm SuperClass.jasm I1.java HasLocalClone.jasm
- * @run main/othervm -XX:-BytecodeVerificationRemote -XX:-BytecodeVerificationLocal HasLocalClone
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-BytecodeVerificationRemote -XX:-BytecodeVerificationLocal HasLocalClone
  */
 
 // The below .jasm code implements the following java code:

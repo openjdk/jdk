@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,7 +104,7 @@ public class ZipFileSystemProvider extends FileSystemProvider {
                 if (filesystems.containsKey(realPath))
                     throw new FileSystemAlreadyExistsException();
             }
-            ZipFileSystem zipfs = null;
+            ZipFileSystem zipfs;
             try {
                 if (env.containsKey("multi-release")) {
                     zipfs = new JarFileSystem(this, path, env);
@@ -131,13 +131,13 @@ public class ZipFileSystemProvider extends FileSystemProvider {
         throws IOException
     {
         ensureFile(path);
-         try {
-             ZipFileSystem zipfs;
-             if (env.containsKey("multi-release")) {
-                 zipfs = new JarFileSystem(this, path, env);
-             } else {
-                 zipfs = new ZipFileSystem(this, path, env);
-             }
+        try {
+            ZipFileSystem zipfs;
+            if (env.containsKey("multi-release")) {
+                zipfs = new JarFileSystem(this, path, env);
+            } else {
+                zipfs = new ZipFileSystem(this, path, env);
+            }
             return zipfs;
         } catch (ZipException ze) {
             String pname = path.toString();

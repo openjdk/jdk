@@ -26,7 +26,7 @@ import java.security.Permission;
 /**
  * @test
  * @summary String concatenation fails with a custom SecurityManager that uses concatenation
- * @bug 8155090 8158851
+ * @bug 8155090 8158851 8222895
  * @requires !vm.graal.enabled
  *
  * @compile WithSecurityManager.java
@@ -55,12 +55,17 @@ public class WithSecurityManager {
                 @Override
                 public void checkPermission(Permission perm) {
                     String abc = "abc";
-                    String full = abc + "def";
+                    int ival = perm.hashCode();
+                    String full = abc + "abc";
+                    // Contorted to avoid sweeping cases where we've
+                    // pre-generated commonly used species under the rug
+                    full = "abc" + ival + "def" + abc + "def" + abc + "def" +
+                           abc + "def" + ival + "def" + abc + "def" +
+                           abc + "def" + abc + "def" + abc + "def";
                 }
             };
             System.setSecurityManager(sm);
-            ClassLoader cl = new ClassLoader() {
-            };
+            ClassLoader cl = new ClassLoader() {};
         }
 
         // Second time should succeed to run after bootstrapping
@@ -69,12 +74,19 @@ public class WithSecurityManager {
                 @Override
                 public void checkPermission(Permission perm) {
                     String abc = "abc";
-                    String full = abc + "def";
+                    int ival = perm.hashCode();
+                    String full = abc + "abc";
+                    // Contorted variant to avoid sweeping cases where we've
+                    // pre-generated commonly used species under the rug
+                    full = "abc" + ival + "def" + abc + "def" + abc + "def" +
+                            abc + "def" + ival + "def" + abc + "def" +
+                            abc + "def" + abc + "def" + abc + "def";
                 }
             };
+
+            // Provoke checkPermission invocation
             System.setSecurityManager(sm);
-            ClassLoader cl = new ClassLoader() {
-            };
+            ClassLoader cl = new ClassLoader() {};
         }
     }
 }

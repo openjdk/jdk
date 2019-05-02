@@ -252,7 +252,7 @@ public interface Processor {
      * "/"} character. For example, if a processor supports {@code
      * "a.B"}, this can include multiple annotation types named {@code
      * a.B} which reside in different modules. To only support {@code
-     * a.B} in the {@code Foo} module, instead use {@code "Foo/a.B"}.
+     * a.B} in the {@code foo} module, instead use {@code "foo/a.B"}.
      *
      * If a module name is included, only an annotation in that module
      * is matched. In particular, if a module name is given in an

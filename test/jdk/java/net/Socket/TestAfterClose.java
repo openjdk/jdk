@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,9 @@ public class TestAfterClose
 
     public static void main(String[] args) {
         try {
-            ServerSocket ss = new ServerSocket(0, 0, null);
-            Socket socket = new Socket("localhost", ss.getLocalPort());
+            InetAddress loopback = InetAddress.getLoopbackAddress();
+            ServerSocket ss = new ServerSocket(0, 0, loopback);
+            Socket socket = new Socket(loopback, ss.getLocalPort());
             ss.accept();
             ss.close();
             test(socket);

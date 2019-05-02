@@ -25,7 +25,6 @@
 #ifndef SHARE_GC_G1_G1YOUNGGENSIZER_HPP
 #define SHARE_GC_G1_G1YOUNGGENSIZER_HPP
 
-#include "gc/g1/g1CollectorPolicy.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // There are three command line options related to the young gen size:
@@ -108,7 +107,7 @@ public:
     return _use_adaptive_sizing;
   }
 
-  static G1YoungGenSizer* create_gen_sizer(G1CollectorPolicy* policy);
+  static G1YoungGenSizer* create_gen_sizer();
 };
 
 #endif // SHARE_GC_G1_G1YOUNGGENSIZER_HPP

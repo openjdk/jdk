@@ -232,7 +232,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
                 buildSerialUIDInfo(classTree);
                 buildClassContent(classTree);
 
-                classSerializedTree.add(classTree);
+                classSerializedTree.add(writer.getMemberTree(classTree));
             }
         }
         packageSerializedTree.add(classSerializedTree);

@@ -182,7 +182,7 @@ public final class Math_log10 extends JTTTest {
         // Test for gross inaccuracy by comparing to log; should be
         // within a few ulps of log(x)/log(10)
         Random rand = new java.util.Random(0L);
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 500; i++) {
             double input = Double.longBitsToDouble(rand.nextLong());
             if (!Double.isFinite(input)) {
                 continue; // avoid testing NaN and infinite values

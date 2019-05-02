@@ -245,7 +245,7 @@ PackageEntry* PackageEntryTable::lookup(Symbol* name, ModuleEntry* module) {
 
 PackageEntry* PackageEntryTable::lookup_only(Symbol* name) {
   assert(!Module_lock->owned_by_self(), "should not have the Module_lock - use locked_lookup_only");
-  MutexLockerEx ml(Module_lock);
+  MutexLocker ml(Module_lock);
   return locked_lookup_only(name);
 }
 

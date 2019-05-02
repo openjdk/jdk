@@ -163,9 +163,9 @@ class ObjectMonitor {
   volatile int _Spinner;            // for exit->spinner handoff optimization
   volatile int _SpinDuration;
 
-  volatile jint  _count;            // reference count to prevent reclamation/deflation
-                                    // at stop-the-world time. See ObjectSynchronizer::deflate_monitor().
-                                    // _count is approximately |_WaitSet| + |_EntryList|
+  volatile jint  _contentions;      // Number of active contentions in enter(). It is used by is_busy()
+                                    // along with other fields to determine if an ObjectMonitor can be
+                                    // deflated. See ObjectSynchronizer::deflate_monitor().
  protected:
   ObjectWaiter * volatile _WaitSet; // LL of threads wait()ing on the monitor
   volatile jint  _waiters;          // number of waiting threads
@@ -207,7 +207,6 @@ class ObjectMonitor {
   static int header_offset_in_bytes()      { return offset_of(ObjectMonitor, _header); }
   static int object_offset_in_bytes()      { return offset_of(ObjectMonitor, _object); }
   static int owner_offset_in_bytes()       { return offset_of(ObjectMonitor, _owner); }
-  static int count_offset_in_bytes()       { return offset_of(ObjectMonitor, _count); }
   static int recursions_offset_in_bytes()  { return offset_of(ObjectMonitor, _recursions); }
   static int cxq_offset_in_bytes()         { return offset_of(ObjectMonitor, _cxq); }
   static int succ_offset_in_bytes()        { return offset_of(ObjectMonitor, _succ); }
@@ -232,10 +231,8 @@ class ObjectMonitor {
   void      set_header(markOop hdr);
 
   intptr_t is_busy() const {
-    // TODO-FIXME: merge _count and _waiters.
     // TODO-FIXME: assert _owner == null implies _recursions = 0
-    // TODO-FIXME: assert _WaitSet != null implies _count > 0
-    return _count|_waiters|intptr_t(_owner)|intptr_t(_cxq)|intptr_t(_EntryList);
+    return _contentions|_waiters|intptr_t(_owner)|intptr_t(_cxq)|intptr_t(_EntryList);
   }
 
   intptr_t  is_entered(Thread* current) const;
@@ -245,8 +242,6 @@ class ObjectMonitor {
 
   jint      waiters() const;
 
-  jint      count() const;
-  void      set_count(jint count);
   jint      contentions() const;
   intptr_t  recursions() const                                         { return _recursions; }
 
@@ -263,14 +258,14 @@ class ObjectMonitor {
   ~ObjectMonitor() {
     // TODO: Add asserts ...
     // _cxq == 0 _succ == NULL _owner == NULL _waiters == 0
-    // _count == 0 _EntryList  == NULL etc
+    // _contentions == 0 _EntryList  == NULL etc
   }
 
  private:
   void Recycle() {
     // TODO: add stronger asserts ...
     // _cxq == 0 _succ == NULL _owner == NULL _waiters == 0
-    // _count == 0 EntryList  == NULL
+    // _contentions == 0 EntryList  == NULL
     // _recursions == 0 _WaitSet == NULL
     assert(((is_busy()|_recursions) == 0), "freeing inuse monitor");
     _succ          = NULL;

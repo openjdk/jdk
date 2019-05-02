@@ -922,13 +922,13 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
 
                     if (isRunning(c) ||
                         (runStateLessThan(c, STOP) && firstTask == null)) {
-                        if (t.isAlive()) // precheck that t is startable
+                        if (t.getState() != Thread.State.NEW)
                             throw new IllegalThreadStateException();
                         workers.add(w);
+                        workerAdded = true;
                         int s = workers.size();
                         if (s > largestPoolSize)
                             largestPoolSize = s;
-                        workerAdded = true;
                     }
                 } finally {
                     mainLock.unlock();

@@ -42,26 +42,6 @@
 #include "runtime/thread.hpp"
 #include "services/management.hpp"
 
-struct PhaseMap {
-  WeakProcessorPhases::Phase            _weak_processor_phase;
-  ShenandoahPhaseTimings::GCParPhases   _shenandoah_phase;
-};
-
-static const struct PhaseMap phase_mapping[] = {
-#if INCLUDE_JVMTI
-  {WeakProcessorPhases::jvmti,                 ShenandoahPhaseTimings::JVMTIWeakRoots},
-#endif
-#if INCLUDE_JFR
-  {WeakProcessorPhases::jfr,                   ShenandoahPhaseTimings::JFRWeakRoots},
-#endif
-  {WeakProcessorPhases::jni,                   ShenandoahPhaseTimings::JNIWeakRoots},
-  {WeakProcessorPhases::stringtable,           ShenandoahPhaseTimings::StringTableRoots},
-  {WeakProcessorPhases::resolved_method_table, ShenandoahPhaseTimings::ResolvedMethodTableRoots},
-  {WeakProcessorPhases::vm,                    ShenandoahPhaseTimings::VMWeakRoots}
-};
-
-STATIC_ASSERT(sizeof(phase_mapping) / sizeof(PhaseMap) == WeakProcessorPhases::phase_count);
-
 ShenandoahRootProcessor::ShenandoahRootProcessor(ShenandoahHeap* heap, uint n_workers,
                                                  ShenandoahPhaseTimings::Phase phase) :
   _process_strong_tasks(new SubTasksDone(SHENANDOAH_RP_PS_NumElements)),
@@ -84,30 +64,14 @@ ShenandoahRootProcessor::~ShenandoahRootProcessor() {
     StringDedup::gc_epilogue();
   }
 
-  ShenandoahWorkerTimings* worker_times = ShenandoahHeap::heap()->phase_timings()->worker_times();
-
   if (_processed_weak_roots) {
     assert(_weak_processor_timings.max_threads() == n_workers(), "Must match");
-    for (uint index = 0; index < WeakProcessorPhases::phase_count; index ++) {
-      weak_processor_timing_to_shenandoah_timing(phase_mapping[index]._weak_processor_phase,
-                                                 phase_mapping[index]._shenandoah_phase,
-                                                 worker_times);
-    }
+    ShenandoahWorkerTimings* worker_times = ShenandoahHeap::heap()->phase_timings()->worker_times();
+    ShenandoahTimingConverter::weak_processing_timing_to_shenandoah_timing(&_weak_processor_timings,
+                                                                           worker_times);
   }
 
   ShenandoahHeap::heap()->phase_timings()->record_workers_end(_phase);
-}
-
-void ShenandoahRootProcessor::weak_processor_timing_to_shenandoah_timing(const WeakProcessorPhases::Phase wpp,
-                                                                         const ShenandoahPhaseTimings::GCParPhases spp,
-                                                                         ShenandoahWorkerTimings* worker_times) const {
-  if (WeakProcessorPhases::is_serial(wpp)) {
-    worker_times->record_time_secs(spp, 0, _weak_processor_timings.phase_time_sec(wpp));
-  } else {
-    for (uint index = 0; index < _weak_processor_timings.max_threads(); index ++) {
-      worker_times->record_time_secs(spp, index, _weak_processor_timings.worker_time_sec(index, wpp));
-    }
-  }
 }
 
 void ShenandoahRootProcessor::process_all_roots_slow(OopClosure* oops) {
@@ -122,6 +86,14 @@ void ShenandoahRootProcessor::process_all_roots_slow(OopClosure* oops) {
   JNIHandles::oops_do(oops);
   ObjectSynchronizer::oops_do(oops);
   SystemDictionary::oops_do(oops);
+
+  AlwaysTrueClosure always_true;
+  WeakProcessor::weak_oops_do(&always_true, oops);
+  JvmtiExport::weak_oops_do(&always_true, oops);
+
+  if (ShenandoahStringDedup::is_enabled()) {
+    ShenandoahStringDedup::oops_do_slow(oops);
+  }
 
   // Do thread roots the last. This allows verification code to find
   // any broken objects from those special roots first, not the accidental
@@ -243,7 +215,9 @@ ShenandoahRootEvacuator::ShenandoahRootEvacuator(ShenandoahHeap* heap, uint n_wo
   _evacuation_tasks(new SubTasksDone(SHENANDOAH_EVAC_NumElements)),
   _srs(n_workers),
   _phase(phase),
-  _coderoots_cset_iterator(ShenandoahCodeRoots::cset_iterator()) {
+  _coderoots_cset_iterator(ShenandoahCodeRoots::cset_iterator()),
+  _weak_processor_timings(n_workers),
+  _weak_processor_task(&_weak_processor_timings, n_workers) {
   heap->phase_timings()->record_workers_start(_phase);
   if (ShenandoahStringDedup::is_enabled()) {
     StringDedup::gc_prologue(false);
@@ -255,6 +229,12 @@ ShenandoahRootEvacuator::~ShenandoahRootEvacuator() {
   if (ShenandoahStringDedup::is_enabled()) {
     StringDedup::gc_epilogue();
   }
+
+  ShenandoahWorkerTimings* worker_times = ShenandoahHeap::heap()->phase_timings()->worker_times();
+  assert(_weak_processor_timings.max_threads() == n_workers(), "Must match");
+  ShenandoahTimingConverter::weak_processing_timing_to_shenandoah_timing(&_weak_processor_timings,
+                                                                         worker_times);
+
   ShenandoahHeap::heap()->phase_timings()->record_workers_end(_phase);
 }
 
@@ -262,13 +242,19 @@ void ShenandoahRootEvacuator::process_evacuate_roots(OopClosure* oops,
                                                      CodeBlobClosure* blobs,
                                                      uint worker_id) {
 
+  AlwaysTrueClosure always_true;
   ShenandoahWorkerTimings* worker_times = ShenandoahHeap::heap()->phase_timings()->worker_times();
   {
     bool is_par = n_workers() > 1;
     ResourceMark rm;
     ShenandoahWorkerTimingsTracker timer(worker_times, ShenandoahPhaseTimings::ThreadRoots, worker_id);
-
     Threads::possibly_parallel_oops_do(is_par, oops, NULL);
+  }
+
+  {
+    ShenandoahWorkerTimingsTracker timer(worker_times, ShenandoahPhaseTimings::CLDGRoots, worker_id);
+    CLDToOopClosure clds(oops, ClassLoaderData::_claim_strong);
+    _cld_iterator.root_cld_do(&clds, &clds);
   }
 
   if (blobs != NULL) {
@@ -277,8 +263,7 @@ void ShenandoahRootEvacuator::process_evacuate_roots(OopClosure* oops,
   }
 
   if (ShenandoahStringDedup::is_enabled()) {
-    ShenandoahForwardedIsAliveClosure is_alive;
-    ShenandoahStringDedup::parallel_oops_do(&is_alive, oops, worker_id);
+    ShenandoahStringDedup::parallel_oops_do(&always_true, oops, worker_id);
   }
 
   if (_evacuation_tasks->try_claim_task(SHENANDOAH_EVAC_Universe_oops_do)) {
@@ -298,6 +283,11 @@ void ShenandoahRootEvacuator::process_evacuate_roots(OopClosure* oops,
     JvmtiExport::weak_oops_do(&is_alive, oops);
   }
 
+  if (_evacuation_tasks->try_claim_task(SHENANDOAH_EVAC_JNIHandles_oops_do)) {
+    ShenandoahWorkerTimingsTracker timer(worker_times, ShenandoahPhaseTimings::JNIRoots, worker_id);
+    JNIHandles::oops_do(oops);
+  }
+
   if (_evacuation_tasks->try_claim_task(SHENANDOAH_EVAC_SystemDictionary_oops_do)) {
     ShenandoahWorkerTimingsTracker timer(worker_times, ShenandoahPhaseTimings::SystemDictionaryRoots, worker_id);
     SystemDictionary::oops_do(oops);
@@ -308,6 +298,7 @@ void ShenandoahRootEvacuator::process_evacuate_roots(OopClosure* oops,
     ObjectSynchronizer::oops_do(oops);
   }
 
+  _weak_processor_task.work<AlwaysTrueClosure, OopClosure>(worker_id, &always_true, oops);
 }
 
 uint ShenandoahRootEvacuator::n_workers() const {

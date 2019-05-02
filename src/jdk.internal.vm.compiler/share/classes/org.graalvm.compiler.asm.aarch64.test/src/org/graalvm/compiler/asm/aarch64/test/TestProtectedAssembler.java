@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -548,5 +548,20 @@ class TestProtectedAssembler extends AArch64Assembler {
     @Override
     public void ensureUniquePC() {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void cnt(int size, Register dst, Register src) {
+        super.cnt(size, dst, src);
+    }
+
+    @Override
+    public void addv(int size, SIMDElementSize laneWidth, Register dst, Register src) {
+        super.addv(size, laneWidth, dst, src);
+    }
+
+    @Override
+    public void umov(int size, Register dst, int srcIdx, Register src) {
+        super.umov(size, dst, srcIdx, src);
     }
 }

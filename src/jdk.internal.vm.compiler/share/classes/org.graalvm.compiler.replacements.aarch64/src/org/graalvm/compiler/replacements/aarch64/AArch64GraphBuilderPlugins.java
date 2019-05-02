@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,8 +64,8 @@ public class AArch64GraphBuilderPlugins {
         invocationPlugins.defer(new Runnable() {
             @Override
             public void run() {
-                registerIntegerLongPlugins(invocationPlugins, AArch64IntegerSubstitutions.class, JavaKind.Int, bytecodeProvider);
-                registerIntegerLongPlugins(invocationPlugins, AArch64LongSubstitutions.class, JavaKind.Long, bytecodeProvider);
+                registerIntegerLongPlugins(invocationPlugins, JavaKind.Int, bytecodeProvider);
+                registerIntegerLongPlugins(invocationPlugins, JavaKind.Long, bytecodeProvider);
                 if (registerMathPlugins) {
                     registerMathPlugins(invocationPlugins);
                 }
@@ -80,7 +80,7 @@ public class AArch64GraphBuilderPlugins {
         });
     }
 
-    private static void registerIntegerLongPlugins(InvocationPlugins plugins, Class<?> substituteDeclaringClass, JavaKind kind, BytecodeProvider bytecodeProvider) {
+    private static void registerIntegerLongPlugins(InvocationPlugins plugins, JavaKind kind, BytecodeProvider bytecodeProvider) {
         Class<?> declaringClass = kind.toBoxedJavaClass();
         Class<?> type = kind.toJavaClass();
         Registration r = new Registration(plugins, declaringClass, bytecodeProvider);
@@ -108,7 +108,13 @@ public class AArch64GraphBuilderPlugins {
                 return true;
             }
         });
-        r.registerMethodSubstitution(substituteDeclaringClass, "bitCount", type);
+        r.register1("bitCount", type, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
+                b.push(JavaKind.Int, b.append(new AArch64BitCountNode(value).canonical(null)));
+                return true;
+            }
+        });
     }
 
     private static void registerMathPlugins(InvocationPlugins plugins) {

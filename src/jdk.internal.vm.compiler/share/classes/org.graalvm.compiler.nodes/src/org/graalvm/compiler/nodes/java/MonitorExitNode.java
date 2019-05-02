@@ -56,15 +56,15 @@ public final class MonitorExitNode extends AccessMonitorNode implements Virtuali
      */
     @OptionalInput ValueNode escapedReturnValue;
 
-    public MonitorExitNode(ValueNode object, MonitorIdNode monitorId, ValueNode escapedReturnValue) {
+    public MonitorExitNode(ValueNode object, MonitorIdNode monitorId, ValueNode escapedValue) {
         super(TYPE, object, monitorId);
-        this.escapedReturnValue = escapedReturnValue;
+        this.escapedReturnValue = escapedValue;
     }
 
     /**
      * Return value is cleared when a synchronized method graph is inlined.
      */
-    public void clearEscapedReturnValue() {
+    public void clearEscapedValue() {
         updateUsages(escapedReturnValue, null);
         this.escapedReturnValue = null;
     }

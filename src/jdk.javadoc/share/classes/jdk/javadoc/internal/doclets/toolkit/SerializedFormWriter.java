@@ -163,6 +163,14 @@ public interface SerializedFormWriter {
     public abstract void printDocument(Content serializedTree) throws DocFileIOException;
 
     /**
+     * Gets the member tree.
+     *
+     * @param contentTree the tree used to generate the complete member tree
+     * @return a content tree for the member
+     */
+    public Content getMemberTree(Content contentTree);
+
+    /**
      * Write the serialized form for a given field.
      */
     public interface SerialFieldWriter {

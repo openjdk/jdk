@@ -54,10 +54,12 @@ public class UrgentDataTest {
         try {
             UrgentDataTest test = new UrgentDataTest ();
             if (args.length == 0) {
-                test.listener = new ServerSocket (0);
+                InetAddress loopback = InetAddress.getLoopbackAddress();
+                test.listener = new ServerSocket ();
+                test.listener.bind(new InetSocketAddress(loopback, 0));
                 test.isClient = true;
                 test.isServer = true;
-                test.clHost = InetAddress.getLoopbackAddress().getHostAddress();
+                test.clHost = loopback.getHostAddress();
                 test.clPort = test.listener.getLocalPort();
                 test.run();
             } else if (args[0].equals ("-server")) {

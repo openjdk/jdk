@@ -39,9 +39,9 @@ public class GuardedUnsafeLoadNode extends RawLoadNode implements GuardedNode {
 
     @OptionalInput(Guard) protected GuardingNode guard;
 
-    public GuardedUnsafeLoadNode(ValueNode object, ValueNode offset, JavaKind accessKind, LocationIdentity locationIdentity, GuardingNode guard) {
+    public GuardedUnsafeLoadNode(ValueNode object, ValueNode offset, JavaKind accessKind, LocationIdentity locationIdentity, ValueNode guard) {
         super(TYPE, object, offset, accessKind, locationIdentity);
-        this.guard = guard;
+        this.guard = (GuardingNode) guard;
     }
 
     @Override
@@ -54,4 +54,7 @@ public class GuardedUnsafeLoadNode extends RawLoadNode implements GuardedNode {
         updateUsagesInterface(this.guard, guard);
         this.guard = guard;
     }
+
+    @NodeIntrinsic
+    public static native Object guardedLoad(Object object, long offset, @ConstantNodeParameter JavaKind kind, @ConstantNodeParameter LocationIdentity locationIdentity, GuardingNode guard);
 }

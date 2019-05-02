@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1Analytics.hpp"
+#include "gc/g1/g1Arguments.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectionSetCandidates.hpp"
@@ -49,7 +50,7 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/pair.hpp"
 
-G1Policy::G1Policy(G1CollectorPolicy* policy, STWGCTimer* gc_timer) :
+G1Policy::G1Policy(STWGCTimer* gc_timer) :
   _predictor(G1ConfidencePercent / 100.0),
   _analytics(new G1Analytics(&_predictor)),
   _remset_tracker(),
@@ -65,7 +66,7 @@ G1Policy::G1Policy(G1CollectorPolicy* policy, STWGCTimer* gc_timer) :
   _survivor_surv_rate_group(new SurvRateGroup()),
   _reserve_factor((double) G1ReservePercent / 100.0),
   _reserve_regions(0),
-  _young_gen_sizer(G1YoungGenSizer::create_gen_sizer(policy)),
+  _young_gen_sizer(G1YoungGenSizer::create_gen_sizer()),
   _free_regions_at_end_of_collection(0),
   _max_rs_lengths(0),
   _rs_lengths_prediction(0),
@@ -89,11 +90,11 @@ G1Policy::~G1Policy() {
   delete _young_gen_sizer;
 }
 
-G1Policy* G1Policy::create_policy(G1CollectorPolicy* policy, STWGCTimer* gc_timer_stw) {
-  if (policy->is_heterogeneous_heap()) {
-    return new G1HeterogeneousHeapPolicy(policy, gc_timer_stw);
+G1Policy* G1Policy::create_policy(STWGCTimer* gc_timer_stw) {
+  if (G1Arguments::is_heterogeneous_heap()) {
+    return new G1HeterogeneousHeapPolicy(gc_timer_stw);
   } else {
-    return new G1Policy(policy, gc_timer_stw);
+    return new G1Policy(gc_timer_stw);
   }
 }
 

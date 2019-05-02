@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ package sun.nio.ch;
 import java.nio.channels.Channel;
 import java.io.FileDescriptor;
 import java.io.IOException;
+
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
  * An interface that allows translation (and more!).
@@ -67,5 +69,41 @@ public interface SelChImpl extends Channel {
     int translateInterestOps(int ops);
 
     void kill() throws IOException;
+
+    /**
+     * Disables the current thread for scheduling purposes until this
+     * channel is ready for I/O, or asynchronously closed, for up to the
+     * specified waiting time.
+     *
+     * <p> This method does <em>not</em> report which of these caused the
+     * method to return. Callers should re-check the conditions which caused
+     * the thread to park.
+     *
+     * @param event the event to poll
+     * @param nanos the timeout to wait; {@code <= 0} to wait indefinitely
+     */
+    default void park(int event, long nanos) throws IOException {
+        long millis;
+        if (nanos <= 0) {
+            millis = -1;
+        } else {
+            millis = NANOSECONDS.toMillis(nanos);
+        }
+        Net.poll(getFD(), event, millis);
+    }
+
+    /**
+     * Disables the current thread for scheduling purposes until this
+     * channel is ready for I/O, or asynchronously closed.
+     *
+     * <p> This method does <em>not</em> report which of these caused the
+     * method to return. Callers should re-check the conditions which caused
+     * the thread to park.
+     *
+     * @param event the event to poll
+     */
+    default void park(int event) throws IOException {
+        park(event, 0L);
+    }
 
 }

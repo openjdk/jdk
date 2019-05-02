@@ -460,6 +460,7 @@ jdk.internal.vm.compiler_EXCLUDES += \
     org.graalvm.compiler.core.test \
     org.graalvm.compiler.debug.test \
     org.graalvm.compiler.graph.test \
+    org.graalvm.compiler.hotspot.aarch64.test \
     org.graalvm.compiler.hotspot.amd64.test \
     org.graalvm.compiler.hotspot.jdk9.test \
     org.graalvm.compiler.hotspot.lir.test \

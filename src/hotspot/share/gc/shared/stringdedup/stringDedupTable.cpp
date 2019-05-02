@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -477,7 +477,7 @@ void StringDedupTable::unlink_or_oops_do(StringDedupUnlinkOrOopsDoClosure* cl, u
 
   // Delayed update to avoid contention on the table lock
   if (removed > 0) {
-    MutexLockerEx ml(StringDedupTable_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker ml(StringDedupTable_lock, Mutex::_no_safepoint_check_flag);
     _table->_entries -= removed;
     _entries_removed += removed;
   }

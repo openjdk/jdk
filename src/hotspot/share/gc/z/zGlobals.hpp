@@ -29,7 +29,7 @@
 #include OS_CPU_HEADER(gc/z/zGlobals)
 
 // Collector name
-const char* const ZGCName                       = "The Z Garbage Collector";
+const char* const ZName                         = "The Z Garbage Collector";
 
 // Global phase state
 extern uint32_t   ZGlobalPhase;
@@ -43,6 +43,10 @@ extern uint32_t   ZGlobalSeqNum;
 // Granule shift/size
 const size_t      ZGranuleSizeShift             = ZPlatformGranuleSizeShift;
 const size_t      ZGranuleSize                  = (size_t)1 << ZGranuleSizeShift;
+
+// Max heap size shift/size
+const size_t      ZMaxHeapSizeShift             = ZPlatformMaxHeapSizeShift;
+const size_t      ZMaxHeapSize                  = (size_t)1 << ZMaxHeapSizeShift;
 
 // Page types
 const uint8_t     ZPageTypeSmall                = 0;
@@ -71,38 +75,6 @@ extern const int& ZObjectAlignmentSmall;
 const int         ZObjectAlignmentMedium        = 1 << ZObjectAlignmentMediumShift;
 const int         ZObjectAlignmentLarge         = 1 << ZObjectAlignmentLargeShift;
 
-// Pointer part of address
-const uintptr_t   ZAddressOffsetShift           = 0;
-const uintptr_t   ZAddressOffsetBits            = ZPlatformAddressOffsetBits;
-const uintptr_t   ZAddressOffsetMask            = (((uintptr_t)1 << ZAddressOffsetBits) - 1) << ZAddressOffsetShift;
-const size_t      ZAddressOffsetMax             = (uintptr_t)1 << ZAddressOffsetBits;
-
-// Metadata part of address
-const uintptr_t   ZAddressMetadataShift         = ZPlatformAddressMetadataShift;
-const uintptr_t   ZAddressMetadataBits          = 4;
-const uintptr_t   ZAddressMetadataMask          = (((uintptr_t)1 << ZAddressMetadataBits) - 1) << ZAddressMetadataShift;
-
-// Metadata types
-const uintptr_t   ZAddressMetadataMarked0       = (uintptr_t)1 << (ZAddressMetadataShift + 0);
-const uintptr_t   ZAddressMetadataMarked1       = (uintptr_t)1 << (ZAddressMetadataShift + 1);
-const uintptr_t   ZAddressMetadataRemapped      = (uintptr_t)1 << (ZAddressMetadataShift + 2);
-const uintptr_t   ZAddressMetadataFinalizable   = (uintptr_t)1 << (ZAddressMetadataShift + 3);
-
-// Address space start/end/size
-const uintptr_t   ZAddressSpaceStart            = ZPlatformAddressSpaceStart;
-const uintptr_t   ZAddressSpaceSize             = ZPlatformAddressSpaceSize;
-const uintptr_t   ZAddressSpaceEnd              = ZAddressSpaceStart + ZAddressSpaceSize;
-
-// NMethod entry barrier
-const size_t      ZNMethodDisarmedOffset        = ZPlatformNMethodDisarmedOffset;
-
-// Cache line size
-const size_t      ZCacheLineSize                = ZPlatformCacheLineSize;
-
-// Reserved start/end
-uintptr_t ZAddressReservedStart();
-uintptr_t ZAddressReservedEnd();
-
 //
 // Good/Bad mask states
 // --------------------
@@ -119,8 +91,42 @@ extern uintptr_t  ZAddressGoodMask;
 extern uintptr_t  ZAddressBadMask;
 extern uintptr_t  ZAddressWeakBadMask;
 
-// Marked state
+// Pointer base address
+extern uintptr_t  ZAddressBase;
+
+// Pointer part of address
+extern size_t     ZAddressOffsetBits;
+const  size_t     ZAddressOffsetShift           = 0;
+extern uintptr_t  ZAddressOffsetMask;
+extern size_t     ZAddressOffsetMax;
+
+// Metadata part of address
+const size_t      ZAddressMetadataBits          = 4;
+extern size_t     ZAddressMetadataShift;
+extern uintptr_t  ZAddressMetadataMask;
+
+// Metadata types
 extern uintptr_t  ZAddressMetadataMarked;
+extern uintptr_t  ZAddressMetadataMarked0;
+extern uintptr_t  ZAddressMetadataMarked1;
+extern uintptr_t  ZAddressMetadataRemapped;
+extern uintptr_t  ZAddressMetadataFinalizable;
+
+// Address space start/end/size
+extern uintptr_t  ZAddressSpaceStart;
+extern uintptr_t  ZAddressSpaceEnd;
+extern size_t     ZAddressSpaceSize;
+
+// Reserved space start/end
+extern uintptr_t  ZAddressReservedStart;
+extern uintptr_t  ZAddressReservedEnd;
+extern size_t     ZAddressReservedSize;
+
+// NMethod entry barrier
+const size_t      ZNMethodDisarmedOffset        = ZPlatformNMethodDisarmedOffset;
+
+// Cache line size
+const size_t      ZCacheLineSize                = ZPlatformCacheLineSize;
 
 // Mark stack space
 extern uintptr_t  ZMarkStackSpaceStart;

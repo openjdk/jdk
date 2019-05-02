@@ -230,7 +230,7 @@ public:
 // Stat unit printers
 //
 void ZStatUnitTime(LogTargetHandle log, const ZStatSampler& sampler, const ZStatSamplerHistory& history) {
-  log.print(" %10s: %-40s  "
+  log.print(" %10s: %-41s "
             "%9.3f / %-9.3f "
             "%9.3f / %-9.3f "
             "%9.3f / %-9.3f "
@@ -248,7 +248,7 @@ void ZStatUnitTime(LogTargetHandle log, const ZStatSampler& sampler, const ZStat
 }
 
 void ZStatUnitBytes(LogTargetHandle log, const ZStatSampler& sampler, const ZStatSamplerHistory& history) {
-  log.print(" %10s: %-40s  "
+  log.print(" %10s: %-41s "
             UINT64_FORMAT_W(9) " / " UINT64_FORMAT_W(-9) " "
             UINT64_FORMAT_W(9) " / " UINT64_FORMAT_W(-9) " "
             UINT64_FORMAT_W(9) " / " UINT64_FORMAT_W(-9) " "
@@ -266,7 +266,7 @@ void ZStatUnitBytes(LogTargetHandle log, const ZStatSampler& sampler, const ZSta
 }
 
 void ZStatUnitThreads(LogTargetHandle log, const ZStatSampler& sampler, const ZStatSamplerHistory& history) {
-  log.print(" %10s: %-40s  "
+  log.print(" %10s: %-41s "
             UINT64_FORMAT_W(9) " / " UINT64_FORMAT_W(-9) " "
             UINT64_FORMAT_W(9) " / " UINT64_FORMAT_W(-9) " "
             UINT64_FORMAT_W(9) " / " UINT64_FORMAT_W(-9) " "
@@ -284,7 +284,7 @@ void ZStatUnitThreads(LogTargetHandle log, const ZStatSampler& sampler, const ZS
 }
 
 void ZStatUnitBytesPerSecond(LogTargetHandle log, const ZStatSampler& sampler, const ZStatSamplerHistory& history) {
-  log.print(" %10s: %-40s  "
+  log.print(" %10s: %-41s "
             UINT64_FORMAT_W(9) " / " UINT64_FORMAT_W(-9) " "
             UINT64_FORMAT_W(9) " / " UINT64_FORMAT_W(-9) " "
             UINT64_FORMAT_W(9) " / " UINT64_FORMAT_W(-9) " "
@@ -302,7 +302,7 @@ void ZStatUnitBytesPerSecond(LogTargetHandle log, const ZStatSampler& sampler, c
 }
 
 void ZStatUnitOpsPerSecond(LogTargetHandle log, const ZStatSampler& sampler, const ZStatSamplerHistory& history) {
-  log.print(" %10s: %-40s  "
+  log.print(" %10s: %-41s "
             UINT64_FORMAT_W(9) " / " UINT64_FORMAT_W(-9) " "
             UINT64_FORMAT_W(9) " / " UINT64_FORMAT_W(-9) " "
             UINT64_FORMAT_W(9) " / " UINT64_FORMAT_W(-9) " "

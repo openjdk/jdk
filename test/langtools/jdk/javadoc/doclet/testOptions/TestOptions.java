@@ -193,10 +193,18 @@ public class TestOptions extends JavadocTester {
                 "<pre>@Documented\npublic @interface <a href="
                 + "\"../src-html/linksource/AnnotationTypeField.html#line.31\">"
                 + "AnnotationTypeField</a></pre>",
-                "<h3>DEFAULT_NAME</h3>\n<pre>static final&nbsp;java.lang.String&nbsp;"
+                "<h3>DEFAULT_NAME</h3>\n"
+                + "<a id=\"DEFAULT_NAME\">\n"
+                + "<!--   -->\n"
+                + "</a>\n"
+                + "<pre>static final&nbsp;java.lang.String&nbsp;"
                 + "<a href=\"../src-html/linksource/AnnotationTypeField.html#line.32\">"
                 + "DEFAULT_NAME</a></pre>",
-                "<h3>name</h3>\n<pre>java.lang.String&nbsp;<a href="
+                "<h3>name</h3>\n"
+                + "<a id=\"name()\">\n"
+                + "<!--   -->\n"
+                + "</a>\n"
+                + "<pre>java.lang.String&nbsp;<a href="
                 + "\"../src-html/linksource/AnnotationTypeField.html#line.34\">name</a></pre>");
 
         checkOutput("src-html/linksource/AnnotationTypeField.html", true,
@@ -260,9 +268,9 @@ public class TestOptions extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg/Foo.html", true,
-                "<li>Foo</li>");
+                "<div class=\"inheritance\">Foo</div>");
         checkOutput("deprecated/Foo.html", true,
-                "<li>deprecated.Foo</li>");
+                "<div class=\"inheritance\">deprecated.Foo</div>");
 
         javadoc("-d", "out-10a",
                 "-noqualifier", "all",
@@ -271,8 +279,8 @@ public class TestOptions extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg/Foo.html", true,
-                "<li>Foo</li>");
+                "<div class=\"inheritance\">Foo</div>");
         checkOutput("deprecated/Foo.html", true,
-                "<li>Foo</li>");
+                "<div class=\"inheritance\">Foo</div>");
     }
 }

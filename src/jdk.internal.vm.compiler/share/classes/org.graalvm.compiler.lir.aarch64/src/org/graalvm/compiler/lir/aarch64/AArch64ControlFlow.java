@@ -175,7 +175,10 @@ public class AArch64ControlFlow {
             boolean isFarBranch;
 
             if (label.isBound()) {
-                isFarBranch = NumUtil.isSignedNbit(18, masm.position() - label.position());
+                // The label.position() is a byte based index. The TBZ instruction has 14 bits for
+                // the offset and AArch64 instruction is 4 bytes aligned. So TBZ can encode 16 bits
+                // signed offset.
+                isFarBranch = !NumUtil.isSignedNbit(16, masm.position() - label.position());
             } else {
                 // Max range of tbz is +-2^13 instructions. We estimate that each LIR instruction
                 // emits 2 AArch64 instructions on average. Thus we test for maximum 2^12 LIR

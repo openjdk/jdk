@@ -111,26 +111,26 @@ void BitMap::free(const Allocator& allocator, bm_word_t* map, idx_t  size_in_bit
 }
 
 template <class Allocator>
-void BitMap::resize(const Allocator& allocator, idx_t new_size_in_bits) {
-  bm_word_t* new_map = reallocate(allocator, map(), size(), new_size_in_bits);
+void BitMap::resize(const Allocator& allocator, idx_t new_size_in_bits, bool clear) {
+  bm_word_t* new_map = reallocate(allocator, map(), size(), new_size_in_bits, clear);
 
   update(new_map, new_size_in_bits);
 }
 
 template <class Allocator>
-void BitMap::initialize(const Allocator& allocator, idx_t size_in_bits) {
+void BitMap::initialize(const Allocator& allocator, idx_t size_in_bits, bool clear) {
   assert(map() == NULL, "precondition");
   assert(size() == 0,   "precondition");
 
-  resize(allocator, size_in_bits);
+  resize(allocator, size_in_bits, clear);
 }
 
 template <class Allocator>
-void BitMap::reinitialize(const Allocator& allocator, idx_t new_size_in_bits) {
-  // Remove previous bits.
-  resize(allocator, 0);
+void BitMap::reinitialize(const Allocator& allocator, idx_t new_size_in_bits, bool clear) {
+  // Remove previous bits - no need to clear
+  resize(allocator, 0, false /* clear */);
 
-  initialize(allocator, new_size_in_bits);
+  initialize(allocator, new_size_in_bits, clear);
 }
 
 ResourceBitMap::ResourceBitMap(idx_t size_in_bits)
@@ -138,15 +138,15 @@ ResourceBitMap::ResourceBitMap(idx_t size_in_bits)
 }
 
 void ResourceBitMap::resize(idx_t new_size_in_bits) {
-  BitMap::resize(ResourceBitMapAllocator(), new_size_in_bits);
+  BitMap::resize(ResourceBitMapAllocator(), new_size_in_bits, true /* clear */);
 }
 
 void ResourceBitMap::initialize(idx_t size_in_bits) {
-  BitMap::initialize(ResourceBitMapAllocator(), size_in_bits);
+  BitMap::initialize(ResourceBitMapAllocator(), size_in_bits, true /* clear */);
 }
 
 void ResourceBitMap::reinitialize(idx_t size_in_bits) {
-  BitMap::reinitialize(ResourceBitMapAllocator(), size_in_bits);
+  BitMap::reinitialize(ResourceBitMapAllocator(), size_in_bits, true /* clear */);
 }
 
 ArenaBitMap::ArenaBitMap(Arena* arena, idx_t size_in_bits)
@@ -161,16 +161,16 @@ CHeapBitMap::~CHeapBitMap() {
   free(CHeapBitMapAllocator(_flags), map(), size());
 }
 
-void CHeapBitMap::resize(idx_t new_size_in_bits) {
-  BitMap::resize(CHeapBitMapAllocator(_flags), new_size_in_bits);
+void CHeapBitMap::resize(idx_t new_size_in_bits, bool clear) {
+  BitMap::resize(CHeapBitMapAllocator(_flags), new_size_in_bits, clear);
 }
 
-void CHeapBitMap::initialize(idx_t size_in_bits) {
-  BitMap::initialize(CHeapBitMapAllocator(_flags), size_in_bits);
+void CHeapBitMap::initialize(idx_t size_in_bits, bool clear) {
+  BitMap::initialize(CHeapBitMapAllocator(_flags), size_in_bits, clear);
 }
 
-void CHeapBitMap::reinitialize(idx_t size_in_bits) {
-  BitMap::reinitialize(CHeapBitMapAllocator(_flags), size_in_bits);
+void CHeapBitMap::reinitialize(idx_t size_in_bits, bool clear) {
+  BitMap::reinitialize(CHeapBitMapAllocator(_flags), size_in_bits, clear);
 }
 
 #ifdef ASSERT

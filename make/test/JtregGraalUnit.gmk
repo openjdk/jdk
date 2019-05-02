@@ -91,6 +91,7 @@ ifeq ($(INCLUDE_GRAAL), true)
               $(SRC_DIR)/org.graalvm.compiler.core.test/src \
               $(SRC_DIR)/org.graalvm.compiler.debug.test/src \
               $(SRC_DIR)/org.graalvm.compiler.graph.test/src \
+              $(SRC_DIR)/org.graalvm.compiler.hotspot.aarch64.test/src \
               $(SRC_DIR)/org.graalvm.compiler.hotspot.amd64.test/src \
               $(SRC_DIR)/org.graalvm.compiler.hotspot.jdk9.test/src \
               $(SRC_DIR)/org.graalvm.compiler.hotspot.lir.test/src \

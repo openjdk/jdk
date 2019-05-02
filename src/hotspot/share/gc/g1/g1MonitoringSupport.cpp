@@ -203,7 +203,7 @@ void G1MonitoringSupport::initialize_serviceability() {
 }
 
 MemoryUsage G1MonitoringSupport::memory_usage() {
-  MutexLockerEx x(MonitoringSupport_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker x(MonitoringSupport_lock, Mutex::_no_safepoint_check_flag);
   return MemoryUsage(InitialHeapSize, _overall_used, _overall_committed, _g1h->max_capacity());
 }
 
@@ -225,7 +225,7 @@ GrowableArray<MemoryPool*> G1MonitoringSupport::memory_pools() {
 void G1MonitoringSupport::recalculate_sizes() {
   assert_heap_locked_or_at_safepoint(true);
 
-  MutexLockerEx x(MonitoringSupport_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker x(MonitoringSupport_lock, Mutex::_no_safepoint_check_flag);
   // Recalculate all the sizes from scratch.
 
   // This never includes used bytes of current allocating heap region.
@@ -317,7 +317,7 @@ void G1MonitoringSupport::update_eden_size() {
 }
 
 MemoryUsage G1MonitoringSupport::eden_space_memory_usage(size_t initial_size, size_t max_size) {
-  MutexLockerEx x(MonitoringSupport_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker x(MonitoringSupport_lock, Mutex::_no_safepoint_check_flag);
 
   return MemoryUsage(initial_size,
                      _eden_space_used,
@@ -326,7 +326,7 @@ MemoryUsage G1MonitoringSupport::eden_space_memory_usage(size_t initial_size, si
 }
 
 MemoryUsage G1MonitoringSupport::survivor_space_memory_usage(size_t initial_size, size_t max_size) {
-  MutexLockerEx x(MonitoringSupport_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker x(MonitoringSupport_lock, Mutex::_no_safepoint_check_flag);
 
   return MemoryUsage(initial_size,
                      _survivor_space_used,
@@ -335,7 +335,7 @@ MemoryUsage G1MonitoringSupport::survivor_space_memory_usage(size_t initial_size
 }
 
 MemoryUsage G1MonitoringSupport::old_gen_memory_usage(size_t initial_size, size_t max_size) {
-  MutexLockerEx x(MonitoringSupport_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker x(MonitoringSupport_lock, Mutex::_no_safepoint_check_flag);
 
   return MemoryUsage(initial_size,
                      _old_gen_used,

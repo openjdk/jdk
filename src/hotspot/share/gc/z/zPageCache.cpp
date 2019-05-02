@@ -32,7 +32,6 @@
 static const ZStatCounter ZCounterPageCacheHitL1("Memory", "Page Cache Hit L1", ZStatUnitOpsPerSecond);
 static const ZStatCounter ZCounterPageCacheHitL2("Memory", "Page Cache Hit L2", ZStatUnitOpsPerSecond);
 static const ZStatCounter ZCounterPageCacheMiss("Memory", "Page Cache Miss", ZStatUnitOpsPerSecond);
-static const ZStatCounter ZCounterPageCacheFlush("Memory", "Page Cache Flush", ZStatUnitBytesPerSecond);
 
 ZPageCache::ZPageCache() :
     _available(0),
@@ -130,64 +129,49 @@ void ZPageCache::free_page(ZPage* page) {
   _available += page->size();
 }
 
-void ZPageCache::flush_list(ZList<ZPage>* from, size_t requested, ZList<ZPage>* to, size_t* flushed) {
-  while (*flushed < requested) {
-    // Flush least recently used
-    ZPage* const page = from->remove_last();
-    if (page == NULL) {
-      break;
-    }
-
-    *flushed += page->size();
-    to->insert_last(page);
+bool ZPageCache::flush_list_inner(ZPageCacheFlushClosure* cl, ZList<ZPage>* from, ZList<ZPage>* to) {
+  ZPage* const page = from->last();
+  if (page == NULL || !cl->do_page(page)) {
+    // Don't flush page
+    return false;
   }
+
+  // Flush page
+  _available -= page->size();
+  from->remove(page);
+  to->insert_last(page);
+  return true;
 }
 
-void ZPageCache::flush_per_numa_lists(ZPerNUMA<ZList<ZPage> >* from, size_t requested, ZList<ZPage>* to, size_t* flushed) {
+void ZPageCache::flush_list(ZPageCacheFlushClosure* cl, ZList<ZPage>* from, ZList<ZPage>* to) {
+  while (flush_list_inner(cl, from, to));
+}
+
+void ZPageCache::flush_per_numa_lists(ZPageCacheFlushClosure* cl, ZPerNUMA<ZList<ZPage> >* from, ZList<ZPage>* to) {
   const uint32_t numa_count = ZNUMA::count();
-  uint32_t numa_empty = 0;
+  uint32_t numa_done = 0;
   uint32_t numa_next = 0;
 
   // Flush lists round-robin
-  while (*flushed < requested) {
-    ZPage* const page = from->get(numa_next).remove_last();
-
+  while (numa_done < numa_count) {
+    ZList<ZPage>* numa_list = from->addr(numa_next);
     if (++numa_next == numa_count) {
       numa_next = 0;
     }
 
-    if (page == NULL) {
-      // List is empty
-      if (++numa_empty == numa_count) {
-        // All lists are empty
-        break;
-      }
-
-      // Try next list
-      continue;
+    if (flush_list_inner(cl, numa_list, to)) {
+      // Not done
+      numa_done = 0;
+    } else {
+      // Done
+      numa_done++;
     }
-
-    // Flush page
-    numa_empty = 0;
-    *flushed += page->size();
-    to->insert_last(page);
   }
 }
 
-void ZPageCache::flush(ZList<ZPage>* to, size_t requested) {
-  size_t flushed = 0;
-
+void ZPageCache::flush(ZPageCacheFlushClosure* cl, ZList<ZPage>* to) {
   // Prefer flushing large, then medium and last small pages
-  flush_list(&_large, requested, to, &flushed);
-  flush_list(&_medium, requested, to, &flushed);
-  flush_per_numa_lists(&_small, requested, to, &flushed);
-
-  ZStatInc(ZCounterPageCacheFlush, flushed);
-
-  log_info(gc, heap)("Page Cache Flushed: "
-                     SIZE_FORMAT "M requested, "
-                     SIZE_FORMAT "M(" SIZE_FORMAT "M->" SIZE_FORMAT "M) flushed",
-                     requested / M, flushed / M , _available / M, (_available - flushed) / M);
-
-  _available -= flushed;
+  flush_list(cl, &_large, to);
+  flush_list(cl, &_medium, to);
+  flush_per_numa_lists(cl, &_small, to);
 }

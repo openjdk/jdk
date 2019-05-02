@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ void VM_CMS_Operation::verify_before_gc() {
     GCTraceTime(Info, gc, phases, verify) tm("Verify Before", _collector->_gc_timer_cm);
     HandleMark hm;
     FreelistLocker x(_collector);
-    MutexLockerEx  y(_collector->bitMapLock(), Mutex::_no_safepoint_check_flag);
+    MutexLocker  y(_collector->bitMapLock(), Mutex::_no_safepoint_check_flag);
     CMSHeap::heap()->prepare_for_verify();
     Universe::verify();
   }
@@ -57,7 +57,7 @@ void VM_CMS_Operation::verify_after_gc() {
     GCTraceTime(Info, gc, phases, verify) tm("Verify After", _collector->_gc_timer_cm);
     HandleMark hm;
     FreelistLocker x(_collector);
-    MutexLockerEx  y(_collector->bitMapLock(), Mutex::_no_safepoint_check_flag);
+    MutexLocker  y(_collector->bitMapLock(), Mutex::_no_safepoint_check_flag);
     Universe::verify();
   }
 }
@@ -183,7 +183,7 @@ void VM_GenCollectFullConcurrent::doit() {
           && (_gc_count_before == heap->total_collections())),
          "total_collections() should be monotonically increasing");
 
-  MutexLockerEx x(FullGCCount_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker x(FullGCCount_lock, Mutex::_no_safepoint_check_flag);
   assert(_full_gc_count_before <= heap->total_full_collections(), "Error");
   if (heap->total_full_collections() == _full_gc_count_before) {
     // Nudge the CMS thread to start a concurrent collection.
@@ -244,11 +244,11 @@ void VM_GenCollectFullConcurrent::doit_epilogue() {
     // or by the CMS thread, so we do not want to be suspended
     // while holding that lock.
     ThreadToNativeFromVM native(jt);
-    MutexLockerEx ml(FullGCCount_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker ml(FullGCCount_lock, Mutex::_no_safepoint_check_flag);
     // Either a concurrent or a stop-world full gc is sufficient
     // witness to our request.
     while (heap->total_full_collections_completed() <= _full_gc_count_before) {
-      FullGCCount_lock->wait(Mutex::_no_safepoint_check_flag);
+      FullGCCount_lock->wait_without_safepoint_check();
     }
   }
 }

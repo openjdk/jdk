@@ -45,10 +45,6 @@ public class RawHtml extends Content {
 
     private final String rawHtmlContent;
 
-    public static final Content nbsp = new RawHtml("&nbsp;");
-
-    public static final Content zws = new RawHtml("&#8203;");
-
     /**
      * Constructor to construct a RawHtml object.
      *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import static org.graalvm.compiler.lir.LIRValueUtil.isJavaConstant;
 import static org.graalvm.compiler.lir.aarch64.AArch64BitManipulationOp.BitManipulationOpCode.BSR;
 import static org.graalvm.compiler.lir.aarch64.AArch64BitManipulationOp.BitManipulationOpCode.CLZ;
 import static org.graalvm.compiler.lir.aarch64.AArch64BitManipulationOp.BitManipulationOpCode.CTZ;
+import static org.graalvm.compiler.lir.aarch64.AArch64BitManipulationOp.BitManipulationOpCode.POPCNT;
 
 import org.graalvm.compiler.asm.aarch64.AArch64MacroAssembler;
 import org.graalvm.compiler.core.common.LIRKind;
@@ -432,27 +433,30 @@ public class AArch64ArithmeticLIRGenerator extends ArithmeticLIRGenerator implem
 
     @Override
     public Value emitBitCount(Value operand) {
-        throw GraalError.unimplemented("AArch64 ISA does not offer way to implement this more efficiently than a simple Java algorithm.");
+        assert ((AArch64Kind) operand.getPlatformKind()).isInteger();
+        Variable result = getLIRGen().newVariable(LIRKind.combine(operand).changeType(AArch64Kind.DWORD));
+        getLIRGen().append(new AArch64BitManipulationOp(getLIRGen(), POPCNT, result, asAllocatable(operand)));
+        return result;
     }
 
     @Override
     public Value emitBitScanReverse(Value value) {
         Variable result = getLIRGen().newVariable(LIRKind.combine(value).changeType(AArch64Kind.DWORD));
-        getLIRGen().append(new AArch64BitManipulationOp(BSR, result, asAllocatable(value)));
+        getLIRGen().append(new AArch64BitManipulationOp(getLIRGen(), BSR, result, asAllocatable(value)));
         return result;
     }
 
     @Override
     public Value emitCountLeadingZeros(Value value) {
         Variable result = getLIRGen().newVariable(LIRKind.combine(value).changeType(AArch64Kind.DWORD));
-        getLIRGen().append(new AArch64BitManipulationOp(CLZ, result, asAllocatable(value)));
+        getLIRGen().append(new AArch64BitManipulationOp(getLIRGen(), CLZ, result, asAllocatable(value)));
         return result;
     }
 
     @Override
     public Value emitCountTrailingZeros(Value value) {
         Variable result = getLIRGen().newVariable(LIRKind.combine(value).changeType(AArch64Kind.DWORD));
-        getLIRGen().append(new AArch64BitManipulationOp(CTZ, result, asAllocatable(value)));
+        getLIRGen().append(new AArch64BitManipulationOp(getLIRGen(), CTZ, result, asAllocatable(value)));
         return result;
     }
 

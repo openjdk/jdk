@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,10 @@ import jdk.vm.ci.code.InvalidInstalledCodeException;
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.code.stack.InspectedFrameVisitor;
 import jdk.vm.ci.meta.ConstantPool;
+import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.MetaAccessProvider;
+import jdk.vm.ci.runtime.JVMCI;
 import java.lang.reflect.Executable;
 
 /**
@@ -36,6 +39,7 @@ import java.lang.reflect.Executable;
  */
 public class CompilerToVMHelper {
     public static final CompilerToVM CTVM = new CompilerToVM();
+    private static final MetaAccessProvider metaAccess = JVMCI.getRuntime().getHostJVMCIBackend().getMetaAccess();
 
     public static byte[] getBytecode(HotSpotResolvedJavaMethod method) {
         return CTVM.getBytecode((HotSpotResolvedJavaMethodImpl)method);
@@ -80,8 +84,12 @@ public class CompilerToVMHelper {
     }
 
     public static HotSpotResolvedObjectType lookupType(String name,
-            Class<?> accessingClass, boolean resolve) throws ClassNotFoundException {
-        return CTVM.lookupType(name, accessingClass, resolve);
+            Class<?> accessClass, boolean resolve) throws ClassNotFoundException {
+        if (accessClass == null) {
+            throw new NullPointerException();
+        }
+        HotSpotResolvedObjectTypeImpl accessingClass = (HotSpotResolvedObjectTypeImpl) metaAccess.lookupJavaType(accessClass);
+        return (HotSpotResolvedObjectType) CTVM.lookupType(name, accessingClass, resolve);
     }
 
     public static HotSpotResolvedObjectType lookupTypeHelper(String name,
@@ -94,11 +102,13 @@ public class CompilerToVMHelper {
     }
 
     public static Object resolveConstantInPool(ConstantPool constantPool, int cpi) {
-        return CTVM.resolveConstantInPool((HotSpotConstantPool) constantPool, cpi);
+        DirectHotSpotObjectConstantImpl obj = (DirectHotSpotObjectConstantImpl) CTVM.resolveConstantInPool((HotSpotConstantPool) constantPool, cpi);
+        return obj.object;
     }
 
     public static Object resolvePossiblyCachedConstantInPool(ConstantPool constantPool, int cpi) {
-        return CTVM.resolvePossiblyCachedConstantInPool((HotSpotConstantPool) constantPool, cpi);
+        DirectHotSpotObjectConstantImpl obj = (DirectHotSpotObjectConstantImpl) CTVM.resolvePossiblyCachedConstantInPool((HotSpotConstantPool) constantPool, cpi);
+        return obj.object;
     }
 
     public static int lookupNameAndTypeRefIndexInPool(ConstantPool constantPool, int cpi) {
@@ -158,7 +168,16 @@ public class CompilerToVMHelper {
 
     public static int installCode(TargetDescription target,
             HotSpotCompiledCode compiledCode, InstalledCode code, HotSpotSpeculationLog speculationLog) {
-        return CTVM.installCode(target, compiledCode, code, speculationLog);
+        byte[] speculations;
+        long failedSpeculationsAddress;
+        if (speculationLog != null) {
+            speculations = speculationLog.getFlattenedSpeculations(true);
+            failedSpeculationsAddress = speculationLog.getFailedSpeculationsAddress();
+        } else {
+            speculations = new byte[0];
+            failedSpeculationsAddress = 0L;
+        }
+        return CTVM.installCode(target, compiledCode, code, failedSpeculationsAddress, speculations);
     }
 
     public static int getMetadata(TargetDescription target,
@@ -208,9 +227,9 @@ public class CompilerToVMHelper {
         return CTVM.getStackTraceElement((HotSpotResolvedJavaMethodImpl)method, bci);
     }
 
-    public static Object executeInstalledCode(Object[] args,
-            InstalledCode installedCode) throws InvalidInstalledCodeException {
-        return CTVM.executeInstalledCode(args, installedCode);
+    public static Object executeHotSpotNmethod(Object[] args,
+            HotSpotNmethod nmethodMirror) throws InvalidInstalledCodeException {
+        return CTVM.executeHotSpotNmethod(args, nmethodMirror);
     }
 
     public static long[] getLineNumberTable(HotSpotResolvedJavaMethod method) {
@@ -233,8 +252,8 @@ public class CompilerToVMHelper {
         CTVM.reprofile((HotSpotResolvedJavaMethodImpl)method);
     }
 
-    public static void invalidateInstalledCode(InstalledCode installedCode) {
-        CTVM.invalidateInstalledCode(installedCode);
+    public static void invalidateHotSpotNmethod(HotSpotNmethod nmethodMirror) {
+        CTVM.invalidateHotSpotNmethod(nmethodMirror);
     }
 
     public static long[] collectCounters() {
@@ -289,33 +308,33 @@ public class CompilerToVMHelper {
         CTVM.flushDebugOutput();
     }
 
-    public static HotSpotResolvedJavaMethod getResolvedJavaMethod(Object base,
+    public static HotSpotResolvedJavaMethod getResolvedJavaMethod(HotSpotObjectConstantImpl base,
             long displacement) {
         return CTVM.getResolvedJavaMethod(base, displacement);
     }
 
-    public static HotSpotConstantPool getConstantPool(Object object) {
+    public static HotSpotConstantPool getConstantPool(MetaspaceObject object) {
         return CTVM.getConstantPool(object);
     }
 
-    public static HotSpotResolvedObjectType getResolvedJavaType(Object base,
+    public static HotSpotResolvedObjectType getResolvedJavaType(MetaspaceObject base,
             long displacement, boolean compressed) {
         return CTVM.getResolvedJavaType(base, displacement, compressed);
     }
 
     public static long getMetaspacePointer(Object o) {
-        return ((MetaspaceWrapperObject) o).getMetaspacePointer();
+        return ((MetaspaceObject) o).getMetaspacePointer();
     }
 
     public static Class<?> CompilerToVMClass() {
         return CompilerToVM.class;
     }
 
-    public static Class<?> getMirror(HotSpotResolvedObjectType type) {
-        return ((HotSpotResolvedJavaType) type).mirror();
+    public static JavaConstant getJavaMirror(HotSpotResolvedObjectType type) {
+        return ((HotSpotResolvedJavaType) type).getJavaMirror();
     }
 
     public static HotSpotResolvedObjectType fromObjectClass(Class<?> theClass) {
-        return HotSpotResolvedObjectTypeImpl.fromObjectClass(theClass);
+          return (HotSpotResolvedObjectType) metaAccess.lookupJavaType(theClass);
     }
 }

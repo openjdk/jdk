@@ -28,6 +28,7 @@ package jdk.javadoc.internal.doclets.toolkit.builders;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
+import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.toolkit.ClassWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocFilesHandler;
@@ -166,8 +167,7 @@ public class ClassBuilder extends AbstractBuilder {
      * @throws DocletException if there is a problem while building the documentation
      */
     protected void buildClassInfo(Content classContentTree) throws DocletException {
-        Content classInfoTree = writer.getClassInfoTreeHeader();
-
+        Content classInfoTree = new ContentBuilder();
         buildTypeParamInfo(classInfoTree);
         buildSuperInterfacesInfo(classInfoTree);
         buildImplementedInterfacesInfo(classInfoTree);

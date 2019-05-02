@@ -67,7 +67,8 @@ private:
   void destroy_page(ZPage* page);
 
   void flush_pre_mapped();
-  void flush_cache(size_t size);
+  void flush_cache(ZPageCacheFlushClosure* cl);
+  void evict_cache(size_t requested);
 
   void check_out_of_memory_during_initialization();
 
@@ -92,6 +93,7 @@ public:
   size_t used_high() const;
   size_t used_low() const;
   size_t used() const;
+  size_t unused() const;
   size_t allocated() const;
   size_t reclaimed() const;
 

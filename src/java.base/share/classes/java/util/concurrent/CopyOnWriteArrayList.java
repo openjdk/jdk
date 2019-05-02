@@ -413,8 +413,9 @@ public class CopyOnWriteArrayList<E>
             if (oldValue != element) {
                 es = es.clone();
                 es[index] = element;
-                setArray(es);
             }
+            // Ensure volatile write semantics even when oldvalue == element
+            setArray(es);
             return oldValue;
         }
     }

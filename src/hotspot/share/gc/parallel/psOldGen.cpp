@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/parallel/objectStartArray.inline.hpp"
+#include "gc/parallel/parallelArguments.hpp"
 #include "gc/parallel/parallelScavengeHeap.hpp"
 #include "gc/parallel/psAdaptiveSizePolicy.hpp"
 #include "gc/parallel/psCardTable.hpp"
@@ -72,7 +73,7 @@ void PSOldGen::initialize(ReservedSpace rs, size_t alignment,
 
 void PSOldGen::initialize_virtual_space(ReservedSpace rs, size_t alignment) {
 
-  if(ParallelScavengeHeap::heap()->ps_collector_policy()->is_hetero_heap()) {
+  if(ParallelArguments::is_heterogeneous_heap()) {
     _virtual_space = new PSFileBackedVirtualSpace(rs, alignment, AllocateOldGenAt);
     if (!(static_cast <PSFileBackedVirtualSpace*>(_virtual_space))->initialize()) {
       vm_exit_during_initialization("Could not map space for PSOldGen at given AllocateOldGenAt path");

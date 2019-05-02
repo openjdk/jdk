@@ -29,7 +29,6 @@ package org.graalvm.compiler.core.common.util;
  * bytes.
  */
 public interface TypeWriter {
-
     /**
      * Returns the number of bytes that have been written, i.e., the byte index of the next byte to
      * be written.
@@ -51,40 +50,18 @@ public interface TypeWriter {
     /** Writes a signed 4 byte value. */
     void putS4(long value);
 
+    /** Patches a previously written signed 4 byte value at a given offset. */
+    void patchS4(long value, long offset);
+
     /** Writes an unsigned 4 byte value. */
     void putU4(long value);
 
     /** Writes a signed 8 byte value. */
     void putS8(long value);
 
-    /**
-     * Writes a signed value in a variable byte size encoding.
-     */
-    default void putSV(long value) {
-        long cur = value;
-        while (true) {
-            if (cur >= -64 && cur < 64) {
-                putU1(cur & 0x7f);
-                return;
-            }
-            putU1(0x80 | (cur & 0x7f));
-            cur = cur >> 7;
-        }
-    }
+    /** Writes a signed value in a variable byte size encoding. */
+    void putSV(long value);
 
-    /**
-     * Writes an unsigned value in a variable byte size encoding.
-     */
-    default void putUV(long value) {
-        long cur = value;
-        while (true) {
-            assert cur >= 0;
-            if (cur < 128) {
-                putU1(cur & 0x7f);
-                return;
-            }
-            putU1(0x80 | (cur & 0x7f));
-            cur = cur >> 7;
-        }
-    }
+    /** Writes an unsigned value in a variable byte size encoding. */
+    void putUV(long value);
 }

@@ -133,6 +133,10 @@ size_t ZHeap::used() const {
   return _page_allocator.used();
 }
 
+size_t ZHeap::unused() const {
+  return _page_allocator.unused();
+}
+
 size_t ZHeap::allocated() const {
   return _page_allocator.allocated();
 }
@@ -169,7 +173,7 @@ size_t ZHeap::unsafe_max_tlab_alloc() const {
 }
 
 bool ZHeap::is_in(uintptr_t addr) const {
-  if (addr < ZAddressReservedStart() || addr >= ZAddressReservedEnd()) {
+  if (addr < ZAddressReservedStart || addr >= ZAddressReservedEnd) {
     return false;
   }
 
@@ -265,13 +269,13 @@ void ZHeap::after_flip() {
 
 void ZHeap::flip_to_marked() {
   before_flip();
-  ZAddressMasks::flip_to_marked();
+  ZAddress::flip_to_marked();
   after_flip();
 }
 
 void ZHeap::flip_to_remapped() {
   before_flip();
-  ZAddressMasks::flip_to_remapped();
+  ZAddress::flip_to_remapped();
   after_flip();
 }
 

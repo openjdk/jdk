@@ -33,13 +33,14 @@ import java.util.regex.Matcher;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jtreg.SkippedException;
+import sun.hotspot.gc.GC;
 import sun.hotspot.WhiteBox;
 
 /*
  * @test TestMetaSpaceLog
  * @bug 8211123
  * @summary Ensure that the Metaspace is updated in the log
- * @requires vm.gc=="null"
  * @key gc
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -47,7 +48,7 @@ import sun.hotspot.WhiteBox;
  *
  * @compile TestMetaSpaceLog.java
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- * @run main gc.logging.TestMetaSpaceLog
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI gc.logging.TestMetaSpaceLog
  */
 
 public class TestMetaSpaceLog {
@@ -59,10 +60,27 @@ public class TestMetaSpaceLog {
   }
 
   public static void main(String[] args) throws Exception {
-    testMetaSpaceUpdate("UseParallelGC");
-    testMetaSpaceUpdate("UseG1GC");
-    testMetaSpaceUpdate("UseConcMarkSweepGC");
-    testMetaSpaceUpdate("UseSerialGC");
+    boolean noneGCSupported = true;
+
+    if (GC.Parallel.isSupported()) {
+      noneGCSupported = false;
+      testMetaSpaceUpdate("UseParallelGC");
+    }
+    if (GC.G1.isSupported()) {
+      noneGCSupported = false;
+      testMetaSpaceUpdate("UseG1GC");
+    }
+    if (GC.ConcMarkSweep.isSupported()) {
+      noneGCSupported = false;
+      testMetaSpaceUpdate("UseConcMarkSweepGC");
+    }
+    if (GC.Serial.isSupported()) {
+      noneGCSupported = false;
+      testMetaSpaceUpdate("UseSerialGC");
+    }
+    if (noneGCSupported) {
+      throw new SkippedException("Skipping test because none of Parallel/G1/ConcMarkSweep/Serial is supported.");
+    }
   }
 
   private static void verifyContainsMetaSpaceUpdate(OutputAnalyzer output) {

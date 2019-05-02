@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,8 +80,11 @@ class XServer extends Thread {
 
 public class Finalizer {
     public static void main (String args[]) {
+        ServerSocket serversocket = null;
         try {
-            ServerSocket serversocket = new ServerSocket (0);
+            InetAddress loopback = InetAddress.getLoopbackAddress();
+            serversocket = new ServerSocket();
+            serversocket.bind(new InetSocketAddress(loopback, 0));
             int port = serversocket.getLocalPort ();
             XServer server = new XServer (serversocket);
             server.start ();
@@ -107,6 +110,10 @@ public class Finalizer {
         } catch (IOException e) {
             throw new RuntimeException("finalize method failure."+e);
         } catch (InterruptedException ie) {
+        } finally {
+            if (serversocket != null) {
+                try {serversocket.close();} catch (IOException io) {}
+            }
         }
     }
 

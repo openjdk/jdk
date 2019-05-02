@@ -450,7 +450,7 @@ void ZReferenceProcessor::enqueue_references() {
 
   {
     // Heap_lock protects external pending list
-    MonitorLockerEx ml(Heap_lock);
+    MonitorLocker ml(Heap_lock);
 
     // Prepend internal pending list to external pending list
     *_pending_list_tail = Universe::swap_reference_pending_list(_pending_list.get());

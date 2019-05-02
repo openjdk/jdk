@@ -35,6 +35,7 @@ import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
+import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
@@ -162,7 +163,7 @@ public class LinkFactoryImpl extends LinkFactory {
             for (TypeMirror t : vars) {
                 if (many) {
                     links.add(",");
-                    links.add(Contents.ZERO_WIDTH_SPACE);
+                    links.add(Entity.ZERO_WIDTH_SPACE);
                 }
                 links.add(getTypeParameterLink(linkInfo, t));
                 many = true;

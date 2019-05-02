@@ -225,13 +225,13 @@ class CMSMarkStack: public CHeapObj<mtGC>  {
   // "Parallel versions" of some of the above
   oop par_pop() {
     // lock and pop
-    MutexLockerEx x(&_par_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker x(&_par_lock, Mutex::_no_safepoint_check_flag);
     return pop();
   }
 
   bool par_push(oop ptr) {
     // lock and push
-    MutexLockerEx x(&_par_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker x(&_par_lock, Mutex::_no_safepoint_check_flag);
     return push(ptr);
   }
 
@@ -585,10 +585,6 @@ class CMSCollector: public CHeapObj<mtGC> {
   bool verifying() const { return _verifying; }
   void set_verifying(bool v) { _verifying = v; }
 
-  // Collector policy
-  ConcurrentMarkSweepPolicy* _collector_policy;
-  ConcurrentMarkSweepPolicy* collector_policy() { return _collector_policy; }
-
   void set_did_compact(bool v);
 
   // XXX Move these to CMSStats ??? FIX ME !!!
@@ -833,8 +829,7 @@ class CMSCollector: public CHeapObj<mtGC> {
   void setup_cms_unloading_and_verification_state();
  public:
   CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
-               CardTableRS*                   ct,
-               ConcurrentMarkSweepPolicy*     cp);
+               CardTableRS*                   ct);
   ConcurrentMarkSweepThread* cmsThread() { return _cmsThread; }
 
   MemRegion ref_processor_span() const { return _span_based_discoverer.span(); }
@@ -1075,7 +1070,11 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
   void assert_correct_size_change_locking();
 
  public:
-  ConcurrentMarkSweepGeneration(ReservedSpace rs, size_t initial_byte_size, CardTableRS* ct);
+  ConcurrentMarkSweepGeneration(ReservedSpace rs,
+                                size_t initial_byte_size,
+                                size_t min_byte_size,
+                                size_t max_byte_size,
+                                CardTableRS* ct);
 
   // Accessors
   CMSCollector* collector() const { return _collector; }
@@ -1212,7 +1211,7 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
   // Performance Counters support
   virtual void update_counters();
   virtual void update_counters(size_t used);
-  void initialize_performance_counters();
+  void initialize_performance_counters(size_t min_old_size, size_t max_old_size);
   CollectorCounters* counters()  { return collector()->counters(); }
 
   // Support for parallel remark of survivor space

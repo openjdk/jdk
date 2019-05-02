@@ -74,6 +74,12 @@ abstract class AbstractPlainSocketImpl extends SocketImpl implements PlatformSoc
     /* indicates connection reset state */
     private volatile boolean connectionReset;
 
+    /* indicates whether impl is bound  */
+    boolean isBound;
+
+    /* indicates whether impl is connected  */
+    volatile boolean isConnected;
+
    /* whether this Socket is a stream (TCP) socket or not (UDP)
     */
     protected boolean stream;
@@ -103,6 +109,10 @@ abstract class AbstractPlainSocketImpl extends SocketImpl implements PlatformSoc
             checkedReusePort = true;
         }
         return isReusePortAvailable;
+    }
+
+    AbstractPlainSocketImpl(boolean isServer) {
+        super(isServer);
     }
 
     /**
@@ -148,10 +158,6 @@ abstract class AbstractPlainSocketImpl extends SocketImpl implements PlatformSoc
             socketCreate(true);
             SocketCleanable.register(fd);
         }
-        if (socket != null)
-            socket.setCreated();
-        if (serverSocket != null)
-            serverSocket.setCreated();
     }
 
     /**
@@ -180,6 +186,7 @@ abstract class AbstractPlainSocketImpl extends SocketImpl implements PlatformSoc
                        it will be passed up the call stack */
                 }
             }
+            isConnected = connected;
         }
     }
 
@@ -195,6 +202,7 @@ abstract class AbstractPlainSocketImpl extends SocketImpl implements PlatformSoc
 
         try {
             connectToAddress(address, port, timeout);
+            isConnected = true;
             return;
         } catch (IOException e) {
             // everything failed
@@ -236,6 +244,7 @@ abstract class AbstractPlainSocketImpl extends SocketImpl implements PlatformSoc
                        it will be passed up the call stack */
                 }
             }
+            isConnected = connected;
         }
     }
 
@@ -393,7 +402,7 @@ abstract class AbstractPlainSocketImpl extends SocketImpl implements PlatformSoc
 
     synchronized void doConnect(InetAddress address, int port, int timeout) throws IOException {
         synchronized (fdLock) {
-            if (!closePending && (socket == null || !socket.isBound())) {
+            if (!closePending && !isBound) {
                 NetHooks.beforeTcpConnect(fd, address, port);
             }
         }
@@ -406,14 +415,6 @@ abstract class AbstractPlainSocketImpl extends SocketImpl implements PlatformSoc
                     if (closePending) {
                         throw new SocketException ("Socket closed");
                     }
-                }
-                // If we have a ref. to the Socket, then sets the flags
-                // created, bound & connected to true.
-                // This is normally done in Socket.connect() but some
-                // subclasses of Socket may call impl.connect() directly!
-                if (socket != null) {
-                    socket.setBound();
-                    socket.setConnected();
                 }
             } finally {
                 releaseFD();
@@ -433,15 +434,12 @@ abstract class AbstractPlainSocketImpl extends SocketImpl implements PlatformSoc
         throws IOException
     {
        synchronized (fdLock) {
-            if (!closePending && (socket == null || !socket.isBound())) {
+            if (!closePending && !isBound) {
                 NetHooks.beforeTcpBind(fd, address, lport);
             }
         }
         socketBind(address, lport);
-        if (socket != null)
-            socket.setBound();
-        if (serverSocket != null)
-            serverSocket.setBound();
+        isBound = true;
     }
 
     /**
@@ -727,7 +725,7 @@ abstract class AbstractPlainSocketImpl extends SocketImpl implements PlatformSoc
         socketClose0(false);
     }
 
-    abstract void socketCreate(boolean isServer) throws IOException;
+    abstract void socketCreate(boolean stream) throws IOException;
     abstract void socketConnect(InetAddress address, int port, int timeout)
         throws IOException;
     abstract void socketBind(InetAddress address, int port)

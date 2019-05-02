@@ -278,6 +278,16 @@ NET_GetFileDescriptorID(JNIEnv *env)
     return (*env)->GetFieldID(env, cls, "fd", "I");
 }
 
+jint  IPv4_supported()
+{
+    int fd = socket(AF_INET, SOCK_STREAM, 0) ;
+    if (fd < 0) {
+        return JNI_FALSE;
+    }
+    close(fd);
+    return JNI_TRUE;
+}
+
 #if defined(DONT_ENABLE_IPV6)
 jint  IPv6_supported()
 {

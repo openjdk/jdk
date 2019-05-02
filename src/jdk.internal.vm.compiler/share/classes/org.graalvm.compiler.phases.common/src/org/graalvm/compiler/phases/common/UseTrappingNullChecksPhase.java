@@ -137,7 +137,8 @@ public class UseTrappingNullChecksPhase extends BasePhase<LowTierContext> {
             int index = 0;
             for (AbstractEndNode end : merge.cfgPredecessors().snapshot()) {
                 ValueNode thisReason = reasons != null ? reasons.get(index) : reason;
-                ValueNode thisSpeculation = speculations != null ? speculations.get(index++) : speculation;
+                ValueNode thisSpeculation = speculations != null ? speculations.get(index) : speculation;
+                index++;
                 if (!thisReason.isConstant() || !thisSpeculation.isConstant()) {
                     continue;
                 }

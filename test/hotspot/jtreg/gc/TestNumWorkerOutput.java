@@ -24,11 +24,11 @@
 package gc;
 
 /*
- * @test TestNumWorkerOutput
+ * @test TestNumWorkerOutputG1
  * @bug 8165292
  * @summary Check that when PrintGCDetails is enabled, gc,task output is printed only once per collection.
  * @key gc
- * @requires vm.gc=="null"
+ * @requires vm.gc.G1
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
@@ -41,7 +41,7 @@ package gc;
  * @bug 8165292
  * @key gc
  * @comment Graal does not support CMS
- * @requires vm.gc=="null" & !vm.graal.enabled
+ * @requires vm.gc.ConcMarkSweep & !vm.graal.enabled
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @build sun.hotspot.WhiteBox

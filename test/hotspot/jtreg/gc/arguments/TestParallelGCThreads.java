@@ -32,12 +32,18 @@ package gc.arguments;
  * @library /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run driver gc.arguments.TestParallelGCThreads
+ * @build sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI gc.arguments.TestParallelGCThreads
  */
 
+import java.util.ArrayList;
+import java.util.List;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jtreg.SkippedException;
+import sun.hotspot.gc.GC;
 
 public class TestParallelGCThreads {
 
@@ -75,7 +81,23 @@ public class TestParallelGCThreads {
 
   public static void testFlags() throws Exception {
     // For each parallel collector (G1, Parallel, ParNew/CMS)
-    for (String gc : new String[] {"G1", "Parallel", "ConcMarkSweep"}) {
+    List<String> supportedGC = new ArrayList<String>();
+
+    if (GC.G1.isSupported()) {
+      supportedGC.add("G1");
+    }
+    if (GC.Parallel.isSupported()) {
+      supportedGC.add("Parallel");
+    }
+    if (GC.ConcMarkSweep.isSupported()) {
+      supportedGC.add("ConcMarkSweep");
+    }
+
+    if (supportedGC.isEmpty()) {
+      throw new SkippedException("Skipping test because none of G1/Parallel/ConcMarkSweep is supported.");
+    }
+
+    for (String gc : supportedGC) {
 
       // Make sure the VM does not allow ParallelGCThreads set to 0
       String[] flags = new String[] {"-XX:+Use" + gc + "GC", "-XX:ParallelGCThreads=0", "-XX:+PrintFlagsFinal", "-version"};

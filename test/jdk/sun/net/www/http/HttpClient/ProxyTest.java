@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,7 +126,9 @@ public class ProxyTest {
         }
 
         public HttpProxyServer() throws IOException {
-            server = new ServerSocket(0);
+            InetAddress loopback = InetAddress.getLoopbackAddress();
+            server = new ServerSocket();
+            server.bind(new InetSocketAddress(loopback, 0));
         }
 
         public int getPort() {
@@ -183,7 +185,8 @@ public class ProxyTest {
             server.start();
             int port = server.getPort();
 
-            Proxy ftpProxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("localhost", port));
+            InetAddress loopback = InetAddress.getLoopbackAddress();
+            Proxy ftpProxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(loopback, port));
             URL url = new URL(testURL);
             InputStream ins = (url.openConnection(ftpProxy)).getInputStream();
             in = new BufferedReader(new InputStreamReader(ins));

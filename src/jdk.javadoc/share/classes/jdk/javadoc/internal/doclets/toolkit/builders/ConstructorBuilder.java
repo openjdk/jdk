@@ -135,8 +135,9 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
             return;
         }
         if (hasMembersToDocument()) {
-            Content constructorDetailsTree = writer.getConstructorDetailsTreeHeader(typeElement,
+            Content constructorDetailsTreeHeader = writer.getConstructorDetailsTreeHeader(typeElement,
                     memberDetailsTree);
+            Content constructorDetailsTree = writer.getMemberTreeHeader();
 
             Element lastElement = constructors.get(constructors.size() - 1);
             for (Element contructor : constructors) {
@@ -152,7 +153,7 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
                         currentConstructor == lastElement));
             }
             memberDetailsTree.add(
-                    writer.getConstructorDetails(constructorDetailsTree));
+                    writer.getConstructorDetails(constructorDetailsTreeHeader, constructorDetailsTree));
         }
     }
 

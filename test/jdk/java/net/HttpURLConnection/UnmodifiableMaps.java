@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,13 @@
 /**
  * @test
  * @bug 7128648
+ * @library /test/lib
  * @modules jdk.httpserver
  * @summary HttpURLConnection.getHeaderFields should return an unmodifiable Map
  */
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.HttpURLConnection;
@@ -41,6 +43,7 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.Headers;
 import static java.net.Proxy.NO_PROXY;
+import jdk.test.lib.net.URIBuilder;
 
 public class UnmodifiableMaps {
 
@@ -48,7 +51,12 @@ public class UnmodifiableMaps {
         HttpServer server = startHttpServer();
         try {
             InetSocketAddress address = server.getAddress();
-            URI uri = new URI("http://localhost:" + address.getPort() + "/foo");
+            URI uri = URIBuilder.newBuilder()
+                .scheme("http")
+                .host(address.getAddress())
+                .port(address.getPort())
+                .path("/foo")
+                .build();
             doClient(uri);
         } finally {
             server.stop(0);
@@ -78,7 +86,8 @@ public class UnmodifiableMaps {
 
     // HTTP Server
     HttpServer startHttpServer() throws IOException {
-        HttpServer httpServer = HttpServer.create(new InetSocketAddress(0), 0);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        HttpServer httpServer = HttpServer.create(new InetSocketAddress(loopback, 0), 0);
         httpServer.createContext("/foo", new SimpleHandler());
         httpServer.start();
         return httpServer;
@@ -146,4 +155,3 @@ public class UnmodifiableMaps {
         System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
         if (failed > 0) throw new AssertionError("Some tests failed");}
 }
-

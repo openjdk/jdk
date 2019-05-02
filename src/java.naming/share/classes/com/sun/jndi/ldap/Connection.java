@@ -408,64 +408,28 @@ public final class Connection implements Runnable {
     /**
      * Reads a reply; waits until one is ready.
      */
-    BerDecoder readReply(LdapRequest ldr)
-            throws IOException, NamingException {
+    BerDecoder readReply(LdapRequest ldr) throws IOException, NamingException {
         BerDecoder rber;
 
-        // Track down elapsed time to workaround spurious wakeups
-        long elapsedMilli = 0;
-        long elapsedNano = 0;
-
-        while (((rber = ldr.getReplyBer()) == null) &&
-                (readTimeout <= 0 || elapsedMilli < readTimeout))
-        {
-            try {
-                // If socket closed, don't even try
-                synchronized (this) {
-                    if (sock == null) {
-                        throw new ServiceUnavailableException(host + ":" + port +
-                            "; socket closed");
-                    }
-                }
-                synchronized (ldr) {
-                    // check if condition has changed since our last check
-                    rber = ldr.getReplyBer();
-                    if (rber == null) {
-                        if (readTimeout > 0) {  // Socket read timeout is specified
-                            long beginNano = System.nanoTime();
-
-                            // will be woken up before readTimeout if reply is
-                            // available
-                            ldr.wait(readTimeout - elapsedMilli);
-                            elapsedNano += (System.nanoTime() - beginNano);
-                            elapsedMilli += elapsedNano / 1000_000;
-                            elapsedNano %= 1000_000;
-
-                        } else {
-                            // no timeout is set so we wait infinitely until
-                            // a response is received
-                            // http://docs.oracle.com/javase/8/docs/technotes/guides/jndi/jndi-ldap.html#PROP
-                            ldr.wait();
-                        }
-                    } else {
-                        break;
-                    }
-                }
-            } catch (InterruptedException ex) {
-                throw new InterruptedNamingException(
-                    "Interrupted during LDAP operation");
-            }
+        try {
+            // if no timeout is set so we wait infinitely until
+            // a response is received
+            // http://docs.oracle.com/javase/8/docs/technotes/guides/jndi/jndi-ldap.html#PROP
+            rber = ldr.getReplyBer(readTimeout);
+        } catch (InterruptedException ex) {
+            throw new InterruptedNamingException(
+                "Interrupted during LDAP operation");
         }
 
-        if ((rber == null) && (elapsedMilli >= readTimeout)) {
+        if (rber == null) {
             abandonRequest(ldr, null);
-            throw new NamingException("LDAP response read timed out, timeout used:"
+            throw new NamingException(
+                    "LDAP response read timed out, timeout used:"
                             + readTimeout + "ms." );
 
         }
         return rber;
     }
-
 
     ////////////////////////////////////////////////////////////////////////////
     //
@@ -660,14 +624,11 @@ public final class Connection implements Runnable {
             if (nparent) {
                 LdapRequest ldr = pendingRequests;
                 while (ldr != null) {
-
-                    synchronized (ldr) {
-                        ldr.notify();
+                    ldr.close();
                         ldr = ldr.next;
                     }
                 }
             }
-        }
         if (nparent) {
             parent.processConnectionClosure();
         }
@@ -755,7 +716,7 @@ public final class Connection implements Runnable {
      * the safest thing to do is to shut it down.
      */
 
-    private Object pauseLock = new Object();  // lock for reader to wait on while paused
+    private final Object pauseLock = new Object();  // lock for reader to wait on while paused
     private boolean paused = false;           // paused state of reader
 
     /*

@@ -118,6 +118,7 @@ class AllocatedObj {
   f(mtCode,          "Code")        /* generated code                            */ \
   f(mtGC,            "GC")                                                          \
   f(mtCompiler,      "Compiler")                                                    \
+  f(mtJVMCI,         "JVMCI")                                                       \
   f(mtInternal,      "Internal")    /* memory used by VM, but does not belong to */ \
                                     /* any of above categories, and not used by  */ \
                                     /* NMT                                       */ \

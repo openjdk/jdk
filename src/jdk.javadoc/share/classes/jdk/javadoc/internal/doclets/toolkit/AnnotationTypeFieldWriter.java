@@ -62,10 +62,8 @@ public interface AnnotationTypeFieldWriter {
      * Add the annotation type details tree header.
      *
      * @param typeElement the annotation type being documented
-     * @param memberDetailsTree the content tree representing member details
      */
-    public void addAnnotationDetailsTreeHeader(TypeElement typeElement,
-            Content memberDetailsTree);
+    public Content getAnnotationDetailsTreeHeader(TypeElement typeElement);
 
     /**
      * Get the annotation type documentation tree header.
@@ -79,10 +77,11 @@ public interface AnnotationTypeFieldWriter {
     /**
      * Get the annotation type details tree.
      *
+     * @param annotationDetailsTreeHeader the content tree representing annotation type details header
      * @param annotationDetailsTree the content tree representing annotation type details
      * @return content tree for the annotation type details
      */
-    public Content getAnnotationDetails(Content annotationDetailsTree);
+    public Content getAnnotationDetails(Content annotationDetailsTreeHeader, Content annotationDetailsTree);
 
     /**
      * Get the annotation type documentation.

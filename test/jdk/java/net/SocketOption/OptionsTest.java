@@ -99,7 +99,7 @@ public class OptionsTest {
 
     static void doSocketTests() throws Exception {
         try (
-            ServerSocket srv = new ServerSocket(0);
+            ServerSocket srv = new ServerSocket(0, 50, InetAddress.getLoopbackAddress());
             Socket c = new Socket(InetAddress.getLoopbackAddress(), srv.getLocalPort());
             Socket s = srv.accept();
         ) {

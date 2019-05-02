@@ -465,7 +465,7 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
                 Content linksTree = writer.getInheritedSummaryLinksTree();
                 addSummaryFootNote(inheritedClass, inheritedMembers, linksTree, writer);
                 inheritedTree.add(linksTree);
-                summaryTreeList.add(writer.getMemberTree(inheritedTree));
+                summaryTreeList.add(inheritedTree);
             }
         }
     }

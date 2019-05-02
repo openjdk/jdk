@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,10 +53,10 @@ bool ZMetronome::wait_for_tick() {
     const uint64_t next_ms = _start_ms + (_interval_ms * _nticks);
     const int64_t timeout_ms = next_ms - now_ms;
 
-    MonitorLockerEx ml(&_monitor, Monitor::_no_safepoint_check_flag);
+    MonitorLocker ml(&_monitor, Monitor::_no_safepoint_check_flag);
     if (!_stopped && timeout_ms > 0) {
       // Wait
-      ml.wait(Monitor::_no_safepoint_check_flag, timeout_ms);
+      ml.wait(timeout_ms);
     } else {
       // Tick
       return !_stopped;
@@ -65,7 +65,7 @@ bool ZMetronome::wait_for_tick() {
 }
 
 void ZMetronome::stop() {
-  MonitorLockerEx ml(&_monitor, Monitor::_no_safepoint_check_flag);
+  MonitorLocker ml(&_monitor, Monitor::_no_safepoint_check_flag);
   _stopped = true;
   ml.notify();
 }

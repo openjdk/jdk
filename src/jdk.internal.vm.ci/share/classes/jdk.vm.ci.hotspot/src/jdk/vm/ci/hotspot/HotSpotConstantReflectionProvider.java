@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  */
 package jdk.vm.ci.hotspot;
 
-import java.lang.reflect.Array;
 import java.util.Objects;
 
 import jdk.vm.ci.common.JVMCIError;
@@ -65,7 +64,7 @@ public class HotSpotConstantReflectionProvider implements ConstantReflectionProv
         if (x == y) {
             return true;
         } else if (x instanceof HotSpotObjectConstantImpl) {
-            return y instanceof HotSpotObjectConstantImpl && ((HotSpotObjectConstantImpl) x).object() == ((HotSpotObjectConstantImpl) y).object();
+            return y instanceof HotSpotObjectConstantImpl && x.equals(y);
         } else {
             return Objects.equals(x, y);
         }
@@ -77,11 +76,8 @@ public class HotSpotConstantReflectionProvider implements ConstantReflectionProv
             return null;
         }
 
-        Object arrayObject = ((HotSpotObjectConstantImpl) array).object();
-        if (!arrayObject.getClass().isArray()) {
-            return null;
-        }
-        return Array.getLength(arrayObject);
+        HotSpotObjectConstantImpl arrayObject = ((HotSpotObjectConstantImpl) array);
+        return runtime.getReflection().getLength(arrayObject);
     }
 
     @Override
@@ -89,18 +85,8 @@ public class HotSpotConstantReflectionProvider implements ConstantReflectionProv
         if (array == null || array.getJavaKind() != JavaKind.Object || array.isNull()) {
             return null;
         }
-        Object a = ((HotSpotObjectConstantImpl) array).object();
-
-        if (!a.getClass().isArray() || index < 0 || index >= Array.getLength(a)) {
-            return null;
-        }
-
-        if (a instanceof Object[]) {
-            Object element = ((Object[]) a)[index];
-            return HotSpotObjectConstantImpl.forObject(element);
-        } else {
-            return JavaConstant.forBoxedPrimitive(Array.get(a, index));
-        }
+        HotSpotObjectConstantImpl arrayObject = ((HotSpotObjectConstantImpl) array);
+        return runtime.getReflection().readArrayElement(arrayObject, index);
     }
 
     /**
@@ -135,7 +121,7 @@ public class HotSpotConstantReflectionProvider implements ConstantReflectionProv
         if (source == null || !source.getJavaKind().isPrimitive() || !isBoxCached(source)) {
             return null;
         }
-        return HotSpotObjectConstantImpl.forObject(source.asBoxedPrimitive());
+        return runtime.getReflection().boxPrimitive(source);
     }
 
     @Override
@@ -146,28 +132,25 @@ public class HotSpotConstantReflectionProvider implements ConstantReflectionProv
         if (source.isNull()) {
             return null;
         }
-        return JavaConstant.forBoxedPrimitive(((HotSpotObjectConstantImpl) source).object());
+        return runtime.getReflection().unboxPrimitive((HotSpotObjectConstantImpl) source);
     }
 
     @Override
     public JavaConstant forString(String value) {
-        return HotSpotObjectConstantImpl.forObject(value);
+        return runtime.getReflection().forObject(value);
     }
 
     public JavaConstant forObject(Object value) {
-        return HotSpotObjectConstantImpl.forObject(value);
+        return runtime.getReflection().forObject(value);
     }
 
     @Override
     public ResolvedJavaType asJavaType(Constant constant) {
-        if (constant instanceof HotSpotObjectConstant) {
-            Object obj = ((HotSpotObjectConstantImpl) constant).object();
-            if (obj instanceof Class) {
-                return runtime.getHostJVMCIBackend().getMetaAccess().lookupJavaType((Class<?>) obj);
-            }
+        if (constant instanceof HotSpotObjectConstantImpl) {
+            return ((HotSpotObjectConstantImpl) constant).asJavaType();
         }
         if (constant instanceof HotSpotMetaspaceConstant) {
-            MetaspaceWrapperObject obj = HotSpotMetaspaceConstantImpl.getMetaspaceObject(constant);
+            MetaspaceObject obj = HotSpotMetaspaceConstantImpl.getMetaspaceObject(constant);
             if (obj instanceof HotSpotResolvedObjectTypeImpl) {
                 return (ResolvedJavaType) obj;
             }
@@ -179,15 +162,15 @@ public class HotSpotConstantReflectionProvider implements ConstantReflectionProv
     public JavaConstant readFieldValue(ResolvedJavaField field, JavaConstant receiver) {
         HotSpotResolvedJavaField hotspotField = (HotSpotResolvedJavaField) field;
         if (hotspotField.isStatic()) {
-            HotSpotResolvedJavaType holder = (HotSpotResolvedJavaType) hotspotField.getDeclaringClass();
+            HotSpotResolvedObjectTypeImpl holder = (HotSpotResolvedObjectTypeImpl) hotspotField.getDeclaringClass();
             if (holder.isInitialized()) {
-                return memoryAccess.readFieldValue(hotspotField, holder.mirror(), field.isVolatile());
+                return holder.readFieldValue(hotspotField, field.isVolatile());
             }
         } else {
-            if (receiver.isNonNull()) {
-                Object object = ((HotSpotObjectConstantImpl) receiver).object();
+            if (receiver.isNonNull() && receiver instanceof HotSpotObjectConstantImpl) {
+                HotSpotObjectConstantImpl object = ((HotSpotObjectConstantImpl) receiver);
                 if (hotspotField.isInObject(receiver)) {
-                    return memoryAccess.readFieldValue(hotspotField, object, field.isVolatile());
+                    return object.readFieldValue(hotspotField, field.isVolatile());
                 }
             }
         }
@@ -196,7 +179,7 @@ public class HotSpotConstantReflectionProvider implements ConstantReflectionProv
 
     @Override
     public JavaConstant asJavaClass(ResolvedJavaType type) {
-        return HotSpotObjectConstantImpl.forObject(((HotSpotResolvedJavaType) type).mirror());
+        return ((HotSpotResolvedJavaType) type).getJavaMirror();
     }
 
     @Override

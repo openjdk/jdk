@@ -151,7 +151,7 @@ bool Dictionary::resize_if_needed() {
 bool DictionaryEntry::contains_protection_domain(oop protection_domain) const {
   // Lock the pd_set list.  This lock cannot safepoint since the caller holds
   // a Dictionary entry, which can be moved if the Dictionary is resized.
-  MutexLockerEx ml(ProtectionDomainSet_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker ml(ProtectionDomainSet_lock, Mutex::_no_safepoint_check_flag);
 #ifdef ASSERT
   if (oopDesc::equals(protection_domain, instance_klass()->protection_domain())) {
     // Ensure this doesn't show up in the pd_set (invariant)
@@ -191,7 +191,7 @@ void DictionaryEntry::add_protection_domain(Dictionary* dict, Handle protection_
     ProtectionDomainCacheEntry* entry = SystemDictionary::cache_get(protection_domain);
     // The pd_set in the dictionary entry is protected by a low level lock.
     // With concurrent PD table cleanup, these links could be broken.
-    MutexLockerEx ml(ProtectionDomainSet_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker ml(ProtectionDomainSet_lock, Mutex::_no_safepoint_check_flag);
     ProtectionDomainEntry* new_head =
                 new ProtectionDomainEntry(entry, pd_set());
     set_pd_set(new_head);
@@ -369,7 +369,7 @@ void Dictionary::clean_cached_protection_domains() {
                           probe = probe->next()) {
       Klass* e = probe->instance_klass();
 
-      MutexLockerEx ml(ProtectionDomainSet_lock, Mutex::_no_safepoint_check_flag);
+      MutexLocker ml(ProtectionDomainSet_lock, Mutex::_no_safepoint_check_flag);
       ProtectionDomainEntry* current = probe->pd_set();
       ProtectionDomainEntry* prev = NULL;
       while (current != NULL) {
@@ -460,7 +460,7 @@ void SymbolPropertyTable::methods_do(void f(Method*)) {
 }
 
 void DictionaryEntry::verify_protection_domain_set() {
-  MutexLockerEx ml(ProtectionDomainSet_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker ml(ProtectionDomainSet_lock, Mutex::_no_safepoint_check_flag);
   for (ProtectionDomainEntry* current = pd_set(); // accessed at a safepoint
                               current != NULL;
                               current = current->_next) {
@@ -469,7 +469,7 @@ void DictionaryEntry::verify_protection_domain_set() {
 }
 
 void DictionaryEntry::print_count(outputStream *st) {
-  MutexLockerEx ml(ProtectionDomainSet_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker ml(ProtectionDomainSet_lock, Mutex::_no_safepoint_check_flag);
   int count = 0;
   for (ProtectionDomainEntry* current = pd_set();  // accessed inside SD lock
                               current != NULL;

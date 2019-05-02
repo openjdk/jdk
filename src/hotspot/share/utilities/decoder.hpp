@@ -136,14 +136,4 @@ protected:
   friend class DecoderLocker;
 };
 
-class DecoderLocker : public MutexLockerEx {
-  AbstractDecoder* _decoder;
-  inline bool is_first_error_thread();
-public:
-  DecoderLocker();
-  AbstractDecoder* decoder() {
-    return _decoder;
-  }
-};
-
 #endif // SHARE_UTILITIES_DECODER_HPP

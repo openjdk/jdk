@@ -22,7 +22,7 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shared/collectorPolicy.hpp"
+#include "gc/serial/serialArguments.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/globals_extension.hpp"
@@ -54,32 +54,22 @@ class TestGenCollectorPolicy {
     BinaryExecutor(size_t val1, size_t val2) : param1(val1), param2(val2) { }
   };
 
-  class MinHeapSizeGuard {
-   private:
-    const size_t _stored_min_heap_size;
-   public:
-    MinHeapSizeGuard() : _stored_min_heap_size(Arguments::min_heap_size()) { }
-    ~MinHeapSizeGuard() {
-      Arguments::set_min_heap_size(_stored_min_heap_size);
-    }
-  };
-
   class TestWrapper {
    public:
     static void test(Executor* setter1, Executor* setter2, Executor* checker) {
+      FLAG_GUARD(MinHeapSize);
       FLAG_GUARD(InitialHeapSize);
       FLAG_GUARD(MaxHeapSize);
       FLAG_GUARD(MaxNewSize);
       FLAG_GUARD(MinHeapDeltaBytes);
       FLAG_GUARD(NewSize);
       FLAG_GUARD(OldSize);
-      MinHeapSizeGuard min_heap_size_guard;
 
+      MinHeapSize = 40 * M;
       FLAG_SET_ERGO(size_t, InitialHeapSize, 100 * M);
       FLAG_SET_ERGO(size_t, OldSize, 4 * M);
       FLAG_SET_ERGO(size_t, NewSize, 1 * M);
       FLAG_SET_ERGO(size_t, MaxNewSize, 80 * M);
-      Arguments::set_min_heap_size(40 * M);
 
       ASSERT_NO_FATAL_FAILURE(setter1->execute());
 
@@ -106,27 +96,31 @@ class TestGenCollectorPolicy {
    public:
     CheckYoungMin(size_t param) : UnaryExecutor(param) { }
     void execute() {
-      MarkSweepPolicy msp;
-      msp.initialize_all();
-      ASSERT_LE(msp.min_young_size(), param);
+      SerialArguments sa;
+      sa.initialize_heap_sizes();
+      ASSERT_LE(MinNewSize, param);
     }
   };
+
+  static size_t scale_by_NewRatio_aligned(size_t value, size_t alignment) {
+    // Accessible via friend declaration
+    return GenArguments::scale_by_NewRatio_aligned(value, alignment);
+  }
 
   class CheckScaledYoungInitial : public Executor {
    public:
     void execute() {
       size_t initial_heap_size = InitialHeapSize;
-      MarkSweepPolicy msp;
-      msp.initialize_all();
+      SerialArguments sa;
+      sa.initialize_heap_sizes();
 
       if (InitialHeapSize > initial_heap_size) {
-        // InitialHeapSize was adapted by msp.initialize_all, e.g. due to alignment
+        // InitialHeapSize was adapted by sa.initialize_heap_sizes, e.g. due to alignment
         // caused by 64K page size.
         initial_heap_size = InitialHeapSize;
       }
 
-      size_t expected = msp.scale_by_NewRatio_aligned(initial_heap_size);
-      ASSERT_EQ(expected, msp.initial_young_size());
+      size_t expected = scale_by_NewRatio_aligned(initial_heap_size, GenAlignment);
       ASSERT_EQ(expected, NewSize);
     }
   };
@@ -143,10 +137,10 @@ class TestGenCollectorPolicy {
    public:
     CheckYoungInitial(size_t param) : UnaryExecutor(param) { }
     void execute() {
-      MarkSweepPolicy msp;
-      msp.initialize_all();
+      SerialArguments sa;
+      sa.initialize_heap_sizes();
 
-      ASSERT_EQ(param, msp.initial_young_size());
+      ASSERT_EQ(param, NewSize);
     }
   };
 
@@ -162,7 +156,7 @@ class TestGenCollectorPolicy {
    public:
     SetMaxNewSizeCmd(size_t param1, size_t param2) : BinaryExecutor(param1, param2) { }
     void execute() {
-      size_t heap_alignment = CollectorPolicy::compute_heap_alignment();
+      size_t heap_alignment = GCArguments::compute_heap_alignment();
       size_t new_size_value = align_up(MaxHeapSize, heap_alignment)
               - param1 + param2;
       FLAG_SET_CMDLINE(size_t, MaxNewSize, new_size_value);
@@ -173,24 +167,24 @@ class TestGenCollectorPolicy {
    public:
     CheckOldMin(size_t param) : UnaryExecutor(param) { }
     void execute() {
-      MarkSweepPolicy msp;
-      msp.initialize_all();
-      ASSERT_LE(msp.min_old_size(), param);
+      SerialArguments sa;
+      sa.initialize_heap_sizes();
+      ASSERT_LE(MinOldSize, param);
     }
   };
 
   class CheckOldInitial : public Executor {
    public:
     void execute() {
-      size_t heap_alignment = CollectorPolicy::compute_heap_alignment();
+      size_t heap_alignment = GCArguments::compute_heap_alignment();
 
-      MarkSweepPolicy msp;
-      msp.initialize_all();
+      SerialArguments sa;
+      sa.initialize_heap_sizes();
 
       size_t expected_old_initial = align_up(InitialHeapSize, heap_alignment)
               - MaxNewSize;
 
-      ASSERT_EQ(expected_old_initial, msp.initial_old_size());
+      ASSERT_EQ(expected_old_initial, OldSize);
     }
   };
 
@@ -198,17 +192,17 @@ class TestGenCollectorPolicy {
    public:
     CheckOldInitialMaxNewSize(size_t param1, size_t param2) : BinaryExecutor(param1, param2) { }
     void execute() {
-      size_t heap_alignment = CollectorPolicy::compute_heap_alignment();
+      size_t heap_alignment = GCArguments::compute_heap_alignment();
       size_t new_size_value = align_up(MaxHeapSize, heap_alignment)
               - param1 + param2;
 
-      MarkSweepPolicy msp;
-      msp.initialize_all();
+      SerialArguments sa;
+      sa.initialize_heap_sizes();
 
       size_t expected_old_initial = align_up(MaxHeapSize, heap_alignment)
               - new_size_value;
 
-      ASSERT_EQ(expected_old_initial, msp.initial_old_size());
+      ASSERT_EQ(expected_old_initial, OldSize);
     }
   };
 };
