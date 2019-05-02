@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,20 +20,17 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.dom;
 
-import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
-import com.sun.org.apache.xalan.internal.xsltc.CollatorFactory;
 import com.sun.org.apache.xalan.internal.xsltc.DOM;
 import com.sun.org.apache.xalan.internal.xsltc.TransletException;
 import com.sun.org.apache.xalan.internal.xsltc.runtime.AbstractTranslet;
 import com.sun.org.apache.xml.internal.utils.StringComparable;
 import java.text.Collator;
 import java.util.Locale;
-import jdk.xml.internal.SecuritySupport;
 
 /**
  * Base class for sort records containing application specific sort keys
  *
- * @LastModified: Oct 2017
+ * @LastModified: May 2019
  */
 public abstract class NodeSortRecord {
     public static final int COMPARE_STRING     = 0;
@@ -67,8 +64,6 @@ public abstract class NodeSortRecord {
      */
     @Deprecated
     protected Locale _locale;
-
-    protected CollatorFactory _collatorFactory;
 
     protected SortSettings _settings;
 
@@ -109,33 +104,8 @@ public abstract class NodeSortRecord {
         int levels = settings.getSortOrders().length;
         _values = new Object[levels];
 
-        String colFactClassname = null;
-        try {
-            // -- W. Eliot Kimber (eliot@isogen.com)
-            colFactClassname =
-                SecuritySupport.getSystemProperty("com.sun.org.apache.xalan.internal.xsltc.COLLATOR_FACTORY");
-        }
-        catch (SecurityException e) {
-            // If we can't read the propery, just use default collator
-        }
-
-        if (colFactClassname != null) {
-            try {
-                Object candObj = ObjectFactory.findProviderClass(colFactClassname, true);
-                _collatorFactory = (CollatorFactory)candObj;
-            } catch (ClassNotFoundException e) {
-                throw new TransletException(e);
-            }
-            Locale[] locales = settings.getLocales();
-            _collators = new Collator[levels];
-            for (int i = 0; i < levels; i++){
-                _collators[i] = _collatorFactory.getCollator(locales[i]);
-            }
-            _collator = _collators[0];
-        } else {
-            _collators = settings.getCollators();
-            _collator = _collators[0];
-        }
+        _collators = settings.getCollators();
+        _collator = _collators[0];
     }
 
     /**
