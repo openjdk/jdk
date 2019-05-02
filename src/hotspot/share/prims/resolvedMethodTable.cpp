@@ -60,7 +60,6 @@ class ResolvedMethodTableConfig : public ResolvedMethodTableHash::BaseConfig {
  public:
   static uintx get_hash(WeakHandle<vm_resolved_method_table_data> const& value,
                         bool* is_dead) {
-    EXCEPTION_MARK;
     oop val_oop = value.peek();
     if (val_oop == NULL) {
       *is_dead = true;
@@ -176,8 +175,8 @@ static void log_insert(const Method* method) {
   LogTarget(Debug, membername, table) log;
   if (log.is_enabled()) {
     ResourceMark rm;
-    log_debug(membername, table) ("ResolvedMethod entry added for %s",
-                                  method->name_and_sig_as_C_string());
+    log.print("ResolvedMethod entry added for %s",
+              method->name_and_sig_as_C_string());
   }
 }
 
@@ -198,8 +197,6 @@ oop ResolvedMethodTable::add_method(const Method* method, Handle rmethod_name) {
       return wh.resolve();
     }
   }
-
-  return rmethod_name();
 }
 
 void ResolvedMethodTable::item_added() {
