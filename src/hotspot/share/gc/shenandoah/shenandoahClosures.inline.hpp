@@ -107,4 +107,18 @@ void ShenandoahEvacuateUpdateRootsClosure::do_oop(narrowOop* p) {
   do_oop_work(p);
 }
 
+#ifdef ASSERT
+template <class T>
+void ShenandoahAssertNotForwardedClosure::do_oop_work(T* p) {
+  T o = RawAccess<>::oop_load(p);
+  if (!CompressedOops::is_null(o)) {
+    oop obj = CompressedOops::decode_not_null(o);
+    shenandoah_assert_not_forwarded(p, obj);
+  }
+}
+
+void ShenandoahAssertNotForwardedClosure::do_oop(narrowOop* p) { do_oop_work(p); }
+void ShenandoahAssertNotForwardedClosure::do_oop(oop* p)       { do_oop_work(p); }
+#endif
+
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHCLOSURES_HPP
