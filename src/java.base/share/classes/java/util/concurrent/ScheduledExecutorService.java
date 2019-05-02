@@ -65,7 +65,7 @@ package java.util.concurrent;
  * <p>The {@link Executors} class provides convenient factory methods for
  * the ScheduledExecutorService implementations provided in this package.
  *
- * <h3>Usage Example</h3>
+ * <h2>Usage Example</h2>
  *
  * Here is a class with a method that sets up a ScheduledExecutorService
  * to beep every ten seconds for an hour:

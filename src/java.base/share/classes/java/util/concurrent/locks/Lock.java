@@ -117,7 +117,7 @@ import java.util.concurrent.TimeUnit;
  * parameter will result in a {@link NullPointerException} being
  * thrown.
  *
- * <h3>Memory Synchronization</h3>
+ * <h2>Memory Synchronization</h2>
  *
  * <p>All {@code Lock} implementations <em>must</em> enforce the same
  * memory synchronization semantics as provided by the built-in monitor
@@ -136,7 +136,7 @@ import java.util.concurrent.TimeUnit;
  * locking/unlocking operations, do not require any memory
  * synchronization effects.
  *
- * <h3>Implementation Considerations</h3>
+ * <h2>Implementation Considerations</h2>
  *
  * <p>The three forms of lock acquisition (interruptible,
  * non-interruptible, and timed) may differ in their performance

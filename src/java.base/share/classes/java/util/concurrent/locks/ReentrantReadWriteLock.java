@@ -204,7 +204,7 @@ import jdk.internal.vm.annotation.ReservedStackAccess;
  *   }
  * }}</pre>
  *
- * <h3>Implementation Notes</h3>
+ * <h2>Implementation Notes</h2>
  *
  * <p>This lock supports a maximum of 65535 recursive write locks
  * and 65535 read locks. Attempts to exceed these limits result in

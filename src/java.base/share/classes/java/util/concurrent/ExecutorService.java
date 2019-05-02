@@ -66,7 +66,7 @@ import java.util.List;
  * <p>The {@link Executors} class provides factory methods for the
  * executor services provided in this package.
  *
- * <h3>Usage Examples</h3>
+ * <h2>Usage Examples</h2>
  *
  * Here is a sketch of a network service in which threads in a thread
  * pool service incoming requests. It uses the preconfigured {@link
