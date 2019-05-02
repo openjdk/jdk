@@ -72,6 +72,8 @@ public class HelloClasslist {
         String SC     = String.valueOf(args.length) + "string";
         String SCS    = String.valueOf(args.length) + "string" + String.valueOf(args.length);
         String CSS    = "string" + String.valueOf(args.length) + String.valueOf(args.length);
+        String CSC    = "string" + String.valueOf(args.length) + "string";
+        String SSC    = String.valueOf(args.length) + String.valueOf(args.length) + "string";
         String CSCS   = "string" + String.valueOf(args.length) + "string" + String.valueOf(args.length);
         String SCSC   = String.valueOf(args.length) + "string" + String.valueOf(args.length) + "string";
         String CSCSC  = "string" + String.valueOf(args.length) + "string" + String.valueOf(args.length) + "string";
