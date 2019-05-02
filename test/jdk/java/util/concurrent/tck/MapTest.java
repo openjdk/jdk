@@ -200,6 +200,32 @@ public class MapTest extends JSR166TestCase {
         assertEquals(size1 + size2, m1.size());
     }
 
+    /**
+     * 8222930: ConcurrentSkipListMap.clone() shares size variable between original and clone
+     */
+    public void testClone() {
+        final ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        final int size = rnd.nextInt(4);
+        final Map map = impl.emptyMap();
+        for (int i = 0; i < size; i++)
+            map.put(impl.makeKey(i), impl.makeValue(i));
+        final Map clone = cloneableClone(map);
+        if (clone == null) return;      // not cloneable?
+
+        assertEquals(size, map.size());
+        assertEquals(size, clone.size());
+        assertEquals(map.isEmpty(), clone.isEmpty());
+
+        clone.put(impl.makeKey(-1), impl.makeValue(-1));
+        assertEquals(size, map.size());
+        assertEquals(size + 1, clone.size());
+
+        clone.clear();
+        assertEquals(size, map.size());
+        assertEquals(0, clone.size());
+        assertTrue(clone.isEmpty());
+    }
+
 //     public void testFailsIntentionallyForDebugging() {
 //         fail(impl.klazz().getSimpleName());
 //     }
