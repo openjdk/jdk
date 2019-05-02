@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,13 @@
  * @test
  * @bug 4392195
  * @summary Infinite loop in sun.net.www.http.KeepAliveStream [due to skip()]
+ * @library /test/lib
  * @run main/othervm/timeout=30 KeepAliveStreamClose
  */
 
 import java.net.*;
 import java.io.*;
+import jdk.test.lib.net.URIBuilder;
 
 public class KeepAliveStreamClose {
     static class XServer extends Thread {
@@ -78,11 +80,16 @@ public class KeepAliveStreamClose {
 
     public static void main (String[] args) {
         try {
-            ServerSocket serversocket = new ServerSocket (0);
+            InetAddress loopback = InetAddress.getLoopbackAddress();
+            ServerSocket serversocket = new ServerSocket (0, 50, loopback);
             int port = serversocket.getLocalPort ();
             XServer server = new XServer (serversocket);
             server.start ();
-            URL url = new URL ("http://localhost:"+port);
+            URL url = URIBuilder.newBuilder()
+                .scheme("http")
+                .loopback()
+                .port(port)
+                .toURL();
             URLConnection urlc = url.openConnection ();
             InputStream is = urlc.getInputStream ();
             int i=0, c;

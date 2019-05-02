@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,8 @@ public class SoTimeout implements Runnable {
 
     public static void main(String[] args) throws Exception {
         addr = InetAddress.getLocalHost();
-        serverSocket = new ServerSocket(0);
+        serverSocket = new ServerSocket();
+        serverSocket.bind(new InetSocketAddress(addr, 0));
         port = serverSocket.getLocalPort();
 
         byte[] b = new byte[12];

@@ -37,6 +37,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -52,7 +53,8 @@ public class TestFtpClientNameListWithNull {
              FtpClient client = FtpClient.create()) {
             (new Thread(server)).start();
             int port = server.getPort();
-            client.connect(new InetSocketAddress("localhost", port));
+            InetAddress loopback = InetAddress.getLoopbackAddress();
+            client.connect(new InetSocketAddress(loopback, port));
             client.nameList(null);
         } finally {
             if (commandHasArgs) {
@@ -66,7 +68,9 @@ public class TestFtpClientNameListWithNull {
         private final ServerSocket serverSocket;
 
         FtpServer() throws IOException {
-            serverSocket = new ServerSocket(0);
+            InetAddress loopback = InetAddress.getLoopbackAddress();
+            serverSocket = new ServerSocket();
+            serverSocket.bind(new InetSocketAddress(loopback, 0));
         }
 
         public void handleClient(Socket client) throws IOException {

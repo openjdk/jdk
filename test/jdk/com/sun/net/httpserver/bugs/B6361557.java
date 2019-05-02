@@ -69,7 +69,8 @@ public class B6361557 {
 
     public static void main (String[] args) throws Exception {
         Handler handler = new Handler();
-        InetSocketAddress addr = new InetSocketAddress (0);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        InetSocketAddress addr = new InetSocketAddress (loopback, 0);
         HttpServer server = HttpServer.create (addr, 0);
         HttpContext ctx = server.createContext ("/test", handler);
 
@@ -78,7 +79,7 @@ public class B6361557 {
         server.start ();
 
         InetSocketAddress destaddr = new InetSocketAddress (
-                InetAddress.getLoopbackAddress(), server.getAddress().getPort()
+                loopback, server.getAddress().getPort()
         );
         System.out.println ("destaddr " + destaddr);
 
@@ -86,7 +87,10 @@ public class B6361557 {
         int requests = 0;
         int responses = 0;
         while (true) {
-            int selres = selector.select (1);
+            // we need to read responses from time to time: slightly
+            // increase the timeout with the amount of pending responses
+            // to give a chance to the server to reply.
+            int selres = selector.select (requests - responses + 1);
             Set<SelectionKey> selkeys = selector.selectedKeys();
             for (SelectionKey key : selkeys) {
                 if (key.isReadable()) {
@@ -95,14 +99,18 @@ public class B6361557 {
                     try {
                         int x = chan.read(buf);
                         if (x == -1 || responseComplete(buf)) {
+                            System.out.print("_");
                             key.attach(null);
                             chan.close();
                             responses++;
                         }
-                    } catch (IOException e) {}
+                    } catch (IOException e) {
+                        System.out.println(e);
+                    }
                 }
             }
             if (requests < NUM) {
+                System.out.print(".");
                 SocketChannel schan = SocketChannel.open(destaddr);
                 requestBuf.rewind();
                 int c = 0;

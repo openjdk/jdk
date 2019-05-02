@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,8 @@ public class B8012625 implements HttpHandler {
     ExecutorService ex;
 
     public B8012625 () throws Exception {
-        server = HttpServer.create(new InetSocketAddress(0), 10);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        server = HttpServer.create(new InetSocketAddress(loopback, 0), 10);
         HttpContext ctx = server.createContext("/", this);
         ex = Executors.newFixedThreadPool(5);
         server.setExecutor(ex);

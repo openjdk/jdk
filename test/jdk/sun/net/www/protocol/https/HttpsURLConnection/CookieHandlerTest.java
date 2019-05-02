@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /* @test
  * @bug 4696506 4942650
  * @summary Unit test for java.net.CookieHandler
+ * @library /test/lib
  * @run main/othervm CookieHandlerTest
  *
  *     SunJSSE does not support dynamic system properties, no way to re-use
@@ -35,6 +36,7 @@ import java.net.*;
 import java.util.*;
 import java.io.*;
 import javax.net.ssl.*;
+import jdk.test.lib.net.URIBuilder;
 
 public class CookieHandlerTest {
     static Map<String,String> cookies;
@@ -78,10 +80,12 @@ public class CookieHandlerTest {
      * to avoid infinite hangs.
      */
     void doServerSide() throws Exception {
+        InetAddress loopback = InetAddress.getLoopbackAddress();
         SSLServerSocketFactory sslssf =
             (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
         SSLServerSocket sslServerSocket =
-            (SSLServerSocket) sslssf.createServerSocket(serverPort);
+            (SSLServerSocket) sslssf.createServerSocket();
+        sslServerSocket.bind(new InetSocketAddress(loopback, serverPort));
         serverPort = sslServerSocket.getLocalPort();
 
         /*
@@ -151,8 +155,11 @@ public class CookieHandlerTest {
         }
         HttpsURLConnection http = null;
         /* establish http connection to server */
-        String uri = "https://localhost:" + +serverPort ;
-        URL url = new URL(uri);
+        URL url = URIBuilder.newBuilder()
+                  .scheme("https")
+                  .loopback()
+                  .port(serverPort)
+                  .toURL();
         HttpsURLConnection.setDefaultHostnameVerifier(new NameVerifier());
         http = (HttpsURLConnection)url.openConnection();
 

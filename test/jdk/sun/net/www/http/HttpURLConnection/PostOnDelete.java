@@ -83,9 +83,10 @@ public class PostOnDelete {
         }
 
         public String getAuthority() {
-            String address = server.getAddress().getHostString();
-            address =  (address.indexOf(':') >= 0) ? ("[" + address + "]") : address;
-            return address + ":" + getPort();
+            InetAddress address = server.getAddress().getAddress();
+            String hostaddr = address.isAnyLocalAddress() ? "localhost" : address.getHostAddress();
+            hostaddr =  (hostaddr.indexOf(':') >= 0) ? ("[" + hostaddr + "]") : hostaddr;
+            return hostaddr + ":" + getPort();
         }
 
         public int getPort() {

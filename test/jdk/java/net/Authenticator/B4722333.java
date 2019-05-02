@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,13 +121,14 @@ public class B4722333 implements HttpCallback {
         MyAuthenticator auth = new MyAuthenticator ();
         Authenticator.setDefault (auth);
         try {
-            server = new TestHttpServer (new B4722333(), 1, 10, 0);
+            InetAddress loopback = InetAddress.getLoopbackAddress();
+            server = new TestHttpServer (new B4722333(), 1, 10, loopback, 0);
             System.out.println ("Server started: listening on port: " + server.getLocalPort());
-            client ("http://localhost:"+server.getLocalPort()+"/d1/d2/d3/foo.html");
-            client ("http://localhost:"+server.getLocalPort()+"/ASD/d3/x.html");
-            client ("http://localhost:"+server.getLocalPort()+"/biz/d3/x.html");
-            client ("http://localhost:"+server.getLocalPort()+"/bar/d3/x.html");
-            client ("http://localhost:"+server.getLocalPort()+"/fuzz/d3/x.html");
+            client ("http://" + server.getAuthority() + "/d1/d2/d3/foo.html");
+            client ("http://" + server.getAuthority() + "/ASD/d3/x.html");
+            client ("http://" + server.getAuthority() + "/biz/d3/x.html");
+            client ("http://" + server.getAuthority() + "/bar/d3/x.html");
+            client ("http://" + server.getAuthority() + "/fuzz/d3/x.html");
         } catch (Exception e) {
             if (server != null) {
                 server.terminate();

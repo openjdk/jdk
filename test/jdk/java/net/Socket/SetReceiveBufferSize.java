@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@
  *
  */
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.ServerSocket;
 
@@ -37,8 +39,10 @@ public class SetReceiveBufferSize {
     }
 
     public SetReceiveBufferSize() throws Exception {
-        ServerSocket ss = new ServerSocket(0);
-        Socket s = new Socket("localhost", ss.getLocalPort());
+        ServerSocket ss = new ServerSocket();
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        ss.bind(new InetSocketAddress(loopback, 0));
+        Socket s = new Socket(loopback, ss.getLocalPort());
         Socket accepted = ss.accept();
         try {
             s.setReceiveBufferSize(0);
