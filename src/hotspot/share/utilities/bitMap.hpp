@@ -157,20 +157,20 @@ class BitMap {
   // Old bits are transfered to the new memory
   // and the extended memory is cleared.
   template <class Allocator>
-  void resize(const Allocator& allocator, idx_t new_size_in_bits);
+  void resize(const Allocator& allocator, idx_t new_size_in_bits, bool clear);
 
   // Set up and clear the bitmap memory.
   //
   // Precondition: The bitmap was default constructed and has
   // not yet had memory allocated via resize or (re)initialize.
   template <class Allocator>
-  void initialize(const Allocator& allocator, idx_t size_in_bits);
+  void initialize(const Allocator& allocator, idx_t size_in_bits, bool clear);
 
   // Set up and clear the bitmap memory.
   //
   // Can be called on previously initialized bitmaps.
   template <class Allocator>
-  void reinitialize(const Allocator& allocator, idx_t new_size_in_bits);
+  void reinitialize(const Allocator& allocator, idx_t new_size_in_bits, bool clear);
 
   // Set the map and size.
   void update(bm_word_t* map, idx_t size) {
@@ -384,18 +384,18 @@ class CHeapBitMap : public BitMap {
   //
   // Old bits are transfered to the new memory
   // and the extended memory is cleared.
-  void resize(idx_t new_size_in_bits);
+  void resize(idx_t new_size_in_bits, bool clear = true);
 
   // Set up and clear the bitmap memory.
   //
   // Precondition: The bitmap was default constructed and has
   // not yet had memory allocated via resize or initialize.
-  void initialize(idx_t size_in_bits);
+  void initialize(idx_t size_in_bits, bool clear = true);
 
   // Set up and clear the bitmap memory.
   //
   // Can be called on previously initialized bitmaps.
-  void reinitialize(idx_t size_in_bits);
+  void reinitialize(idx_t size_in_bits, bool clear = true);
 };
 
 // Convenience class wrapping BitMap which provides multiple bits per slot.
