@@ -615,9 +615,11 @@ public:
   // Put loop body on igvn work list
   void record_for_igvn();
 
-  bool is_loop()    { return !_irreducible && _tail && !_tail->is_top(); }
-  bool is_inner()   { return is_loop() && _child == NULL; }
-  bool is_counted() { return is_loop() && _head != NULL && _head->is_CountedLoop(); }
+  bool is_root() { return _parent == NULL; }
+  // A proper/reducible loop w/o any (occasional) dead back-edge.
+  bool is_loop() { return !_irreducible && !tail()->is_top(); }
+  bool is_counted()   { return is_loop() && _head->is_CountedLoop(); }
+  bool is_innermost() { return is_loop() && _child == NULL; }
 
   void remove_main_post_loops(CountedLoopNode *cl, PhaseIdealLoop *phase);
 
@@ -1410,14 +1412,11 @@ class CountedLoopReserveKit {
 };// class CountedLoopReserveKit
 
 inline Node* IdealLoopTree::tail() {
-// Handle lazy update of _tail field
-  Node *n = _tail;
-  //while( !n->in(0) )  // Skip dead CFG nodes
-    //n = n->in(1);
-  if (n->in(0) == NULL)
-    n = _phase->get_ctrl(n);
-  _tail = n;
-  return n;
+  // Handle lazy update of _tail field.
+  if (_tail->in(0) == NULL) {
+    _tail = _phase->get_ctrl(_tail);
+  }
+  return _tail;
 }
 
 

@@ -2946,7 +2946,7 @@ void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
     for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
       IdealLoopTree* lpt = iter.current();
       bool is_counted = lpt->is_counted();
-      if (!is_counted || !lpt->is_inner()) continue;
+      if (!is_counted || !lpt->is_innermost()) continue;
 
       // check for vectorized loops, any reassociation of invariants was already done
       if (is_counted && lpt->_head->as_CountedLoop()->is_unroll_only()) continue;

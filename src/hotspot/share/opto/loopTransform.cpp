@@ -3249,25 +3249,18 @@ bool IdealLoopTree::iteration_split( PhaseIdealLoop *phase, Node_List &old_new )
   // Clean out prior deadwood
   DCE_loop_body();
 
-
   // Look for loop-exit tests with my 50/50 guesses from the Parsing stage.
   // Replace with a 1-in-10 exit guess.
-  if (_parent /*not the root loop*/ &&
-      !_irreducible &&
-      // Also ignore the occasional dead backedge
-      !tail()->is_top()) {
+  if (!is_root() && is_loop()) {
     adjust_loop_exit_prob(phase);
   }
 
-  // Gate unrolling, RCE and peeling efforts.
-  if (!_child &&                // If not an inner loop, do not split
-      !_irreducible &&
-      _allow_optimizations &&
-      !tail()->is_top()) {     // Also ignore the occasional dead backedge
+  // Unrolling, RCE and peeling efforts, iff innermost loop.
+  if (_allow_optimizations && is_innermost()) {
     if (!_has_call) {
-        if (!iteration_split_impl(phase, old_new)) {
-          return false;
-        }
+      if (!iteration_split_impl(phase, old_new)) {
+        return false;
+      }
     } else if (policy_unswitching(phase)) {
       phase->do_unswitching(this, old_new);
     }
@@ -3540,7 +3533,7 @@ bool PhaseIdealLoop::match_fill_loop(IdealLoopTree* lpt, Node*& store, Node*& st
 
 bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
   // Only for counted inner loops
-  if (!lpt->is_counted() || !lpt->is_inner()) {
+  if (!lpt->is_counted() || !lpt->is_innermost()) {
     return false;
   }
 
