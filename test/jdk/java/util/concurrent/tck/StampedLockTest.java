@@ -1009,106 +1009,117 @@ public class StampedLockTest extends JSR166TestCase {
      * IllegalMonitorStateException
      */
     public void testCannotUnlockOptimisticReadStamps() {
-        Runnable[] actions = {
-            () -> {
-                StampedLock sl = new StampedLock();
-                long stamp = assertValid(sl, sl.tryOptimisticRead());
-                sl.unlockRead(stamp);
-            },
-            () -> {
-                StampedLock sl = new StampedLock();
-                long stamp = sl.tryOptimisticRead();
-                sl.unlock(stamp);
-            },
+        {
+            StampedLock sl = new StampedLock();
+            long stamp = assertValid(sl, sl.tryOptimisticRead());
+            assertThrows(IllegalMonitorStateException.class,
+                () -> sl.unlockRead(stamp));
+        }
+        {
+            StampedLock sl = new StampedLock();
+            long stamp = sl.tryOptimisticRead();
+            assertThrows(IllegalMonitorStateException.class,
+                () -> sl.unlock(stamp));
+        }
 
-            () -> {
-                StampedLock sl = new StampedLock();
-                long stamp = sl.tryOptimisticRead();
-                sl.writeLock();
-                sl.unlock(stamp);
-            },
-            () -> {
-                StampedLock sl = new StampedLock();
-                sl.readLock();
-                long stamp = assertValid(sl, sl.tryOptimisticRead());
-                sl.unlockRead(stamp);
-            },
-            () -> {
-                StampedLock sl = new StampedLock();
-                sl.readLock();
-                long stamp = assertValid(sl, sl.tryOptimisticRead());
-                sl.unlock(stamp);
-            },
+        {
+            StampedLock sl = new StampedLock();
+            long stamp = sl.tryOptimisticRead();
+            sl.writeLock();
+            assertThrows(IllegalMonitorStateException.class,
+                () -> sl.unlock(stamp));
+        }
+        {
+            StampedLock sl = new StampedLock();
+            sl.readLock();
+            long stamp = assertValid(sl, sl.tryOptimisticRead());
+            assertThrows(IllegalMonitorStateException.class,
+                () -> sl.unlockRead(stamp));
+        }
+        {
+            StampedLock sl = new StampedLock();
+            sl.readLock();
+            long stamp = assertValid(sl, sl.tryOptimisticRead());
+            assertThrows(IllegalMonitorStateException.class,
+                () -> sl.unlock(stamp));
+        }
 
-            () -> {
-                StampedLock sl = new StampedLock();
-                long stamp = sl.tryConvertToOptimisticRead(sl.writeLock());
-                assertValid(sl, stamp);
-                sl.writeLock();
-                sl.unlockWrite(stamp);
-            },
-            () -> {
-                StampedLock sl = new StampedLock();
-                long stamp = sl.tryConvertToOptimisticRead(sl.writeLock());
-                sl.writeLock();
-                sl.unlock(stamp);
-            },
-            () -> {
-                StampedLock sl = new StampedLock();
-                long stamp = sl.tryConvertToOptimisticRead(sl.writeLock());
-                sl.readLock();
-                sl.unlockRead(stamp);
-            },
-            () -> {
-                StampedLock sl = new StampedLock();
-                long stamp = sl.tryConvertToOptimisticRead(sl.writeLock());
-                sl.readLock();
-                sl.unlock(stamp);
-            },
+        {
+            StampedLock sl = new StampedLock();
+            long stamp = sl.tryConvertToOptimisticRead(sl.writeLock());
+            assertValid(sl, stamp);
+            sl.writeLock();
+            assertThrows(IllegalMonitorStateException.class,
+                () -> sl.unlockWrite(stamp));
+        }
+        {
+            StampedLock sl = new StampedLock();
+            long stamp = sl.tryConvertToOptimisticRead(sl.writeLock());
+            sl.writeLock();
+            assertThrows(IllegalMonitorStateException.class,
+                () -> sl.unlock(stamp));
+        }
+        {
+            StampedLock sl = new StampedLock();
+            long stamp = sl.tryConvertToOptimisticRead(sl.writeLock());
+            sl.readLock();
+            assertThrows(IllegalMonitorStateException.class,
+                () -> sl.unlockRead(stamp));
+        }
+        {
+            StampedLock sl = new StampedLock();
+            long stamp = sl.tryConvertToOptimisticRead(sl.writeLock());
+            sl.readLock();
+            assertThrows(IllegalMonitorStateException.class,
+                () -> sl.unlock(stamp));
+        }
 
-            () -> {
-                StampedLock sl = new StampedLock();
-                long stamp = sl.tryConvertToOptimisticRead(sl.readLock());
-                assertValid(sl, stamp);
-                sl.writeLock();
-                sl.unlockWrite(stamp);
-            },
-            () -> {
-                StampedLock sl = new StampedLock();
-                long stamp = sl.tryConvertToOptimisticRead(sl.readLock());
-                sl.writeLock();
-                sl.unlock(stamp);
-            },
-            () -> {
-                StampedLock sl = new StampedLock();
-                long stamp = sl.tryConvertToOptimisticRead(sl.readLock());
-                sl.readLock();
-                sl.unlockRead(stamp);
-            },
-            () -> {
-                StampedLock sl = new StampedLock();
-                sl.readLock();
-                long stamp = sl.tryConvertToOptimisticRead(sl.readLock());
-                assertValid(sl, stamp);
-                sl.readLock();
-                sl.unlockRead(stamp);
-            },
-            () -> {
-                StampedLock sl = new StampedLock();
-                long stamp = sl.tryConvertToOptimisticRead(sl.readLock());
-                sl.readLock();
-                sl.unlock(stamp);
-            },
-            () -> {
-                StampedLock sl = new StampedLock();
-                sl.readLock();
-                long stamp = sl.tryConvertToOptimisticRead(sl.readLock());
-                sl.readLock();
-                sl.unlock(stamp);
-            },
-        };
-
-        assertThrows(IllegalMonitorStateException.class, actions);
+        {
+            StampedLock sl = new StampedLock();
+            long stamp = sl.tryConvertToOptimisticRead(sl.readLock());
+            assertValid(sl, stamp);
+            sl.writeLock();
+            assertThrows(IllegalMonitorStateException.class,
+                () -> sl.unlockWrite(stamp));
+            }
+        {
+            StampedLock sl = new StampedLock();
+            long stamp = sl.tryConvertToOptimisticRead(sl.readLock());
+            sl.writeLock();
+            assertThrows(IllegalMonitorStateException.class,
+                () -> sl.unlock(stamp));
+        }
+        {
+            StampedLock sl = new StampedLock();
+            long stamp = sl.tryConvertToOptimisticRead(sl.readLock());
+            sl.readLock();
+            assertThrows(IllegalMonitorStateException.class,
+                () -> sl.unlockRead(stamp));
+        }
+        {
+            StampedLock sl = new StampedLock();
+            sl.readLock();
+            long stamp = sl.tryConvertToOptimisticRead(sl.readLock());
+            assertValid(sl, stamp);
+            sl.readLock();
+            assertThrows(IllegalMonitorStateException.class,
+                () -> sl.unlockRead(stamp));
+        }
+        {
+            StampedLock sl = new StampedLock();
+            long stamp = sl.tryConvertToOptimisticRead(sl.readLock());
+            sl.readLock();
+            assertThrows(IllegalMonitorStateException.class,
+                () -> sl.unlock(stamp));
+        }
+        {
+            StampedLock sl = new StampedLock();
+            sl.readLock();
+            long stamp = sl.tryConvertToOptimisticRead(sl.readLock());
+            sl.readLock();
+            assertThrows(IllegalMonitorStateException.class,
+                () -> sl.unlock(stamp));
+        }
     }
 
     static long writeLockInterruptiblyUninterrupted(StampedLock sl) {

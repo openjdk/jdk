@@ -165,12 +165,11 @@ public class SplittableRandomTest extends JSR166TestCase {
      */
     public void testNextIntBoundNonPositive() {
         SplittableRandom sr = new SplittableRandom();
-        Runnable[] throwingActions = {
+        assertThrows(
+            IllegalArgumentException.class,
             () -> sr.nextInt(-17),
             () -> sr.nextInt(0),
-            () -> sr.nextInt(Integer.MIN_VALUE),
-        };
-        assertThrows(IllegalArgumentException.class, throwingActions);
+            () -> sr.nextInt(Integer.MIN_VALUE));
     }
 
     /**
@@ -178,12 +177,11 @@ public class SplittableRandomTest extends JSR166TestCase {
      */
     public void testNextIntBadBounds() {
         SplittableRandom sr = new SplittableRandom();
-        Runnable[] throwingActions = {
+        assertThrows(
+            IllegalArgumentException.class,
             () -> sr.nextInt(17, 2),
             () -> sr.nextInt(-42, -42),
-            () -> sr.nextInt(Integer.MAX_VALUE, Integer.MIN_VALUE),
-        };
-        assertThrows(IllegalArgumentException.class, throwingActions);
+            () -> sr.nextInt(Integer.MAX_VALUE, Integer.MIN_VALUE));
     }
 
     /**
@@ -235,12 +233,11 @@ public class SplittableRandomTest extends JSR166TestCase {
      */
     public void testNextLongBoundNonPositive() {
         SplittableRandom sr = new SplittableRandom();
-        Runnable[] throwingActions = {
+        assertThrows(
+            IllegalArgumentException.class,
             () -> sr.nextLong(-17L),
             () -> sr.nextLong(0L),
-            () -> sr.nextLong(Long.MIN_VALUE),
-        };
-        assertThrows(IllegalArgumentException.class, throwingActions);
+            () -> sr.nextLong(Long.MIN_VALUE));
     }
 
     /**
@@ -248,12 +245,11 @@ public class SplittableRandomTest extends JSR166TestCase {
      */
     public void testNextLongBadBounds() {
         SplittableRandom sr = new SplittableRandom();
-        Runnable[] throwingActions = {
+        assertThrows(
+            IllegalArgumentException.class,
             () -> sr.nextLong(17L, 2L),
             () -> sr.nextLong(-42L, -42L),
-            () -> sr.nextLong(Long.MAX_VALUE, Long.MIN_VALUE),
-        };
-        assertThrows(IllegalArgumentException.class, throwingActions);
+            () -> sr.nextLong(Long.MAX_VALUE, Long.MIN_VALUE));
     }
 
     /**
@@ -304,14 +300,13 @@ public class SplittableRandomTest extends JSR166TestCase {
      */
     public void testNextDoubleBoundNonPositive() {
         SplittableRandom sr = new SplittableRandom();
-        Runnable[] throwingActions = {
+        assertThrows(
+            IllegalArgumentException.class,
             () -> sr.nextDouble(-17.0d),
             () -> sr.nextDouble(0.0d),
             () -> sr.nextDouble(-Double.MIN_VALUE),
             () -> sr.nextDouble(Double.NEGATIVE_INFINITY),
-            () -> sr.nextDouble(Double.NaN),
-        };
-        assertThrows(IllegalArgumentException.class, throwingActions);
+            () -> sr.nextDouble(Double.NaN));
     }
 
     /**
@@ -319,14 +314,13 @@ public class SplittableRandomTest extends JSR166TestCase {
      */
     public void testNextDoubleBadBounds() {
         SplittableRandom sr = new SplittableRandom();
-        Runnable[] throwingActions = {
+        assertThrows(
+            IllegalArgumentException.class,
             () -> sr.nextDouble(17.0d, 2.0d),
             () -> sr.nextDouble(-42.0d, -42.0d),
             () -> sr.nextDouble(Double.MAX_VALUE, Double.MIN_VALUE),
             () -> sr.nextDouble(Double.NaN, 0.0d),
-            () -> sr.nextDouble(0.0d, Double.NaN),
-        };
-        assertThrows(IllegalArgumentException.class, throwingActions);
+            () -> sr.nextDouble(0.0d, Double.NaN));
     }
 
     // TODO: Test infinite bounds!
@@ -361,15 +355,14 @@ public class SplittableRandomTest extends JSR166TestCase {
      */
     public void testBadStreamSize() {
         SplittableRandom r = new SplittableRandom();
-        Runnable[] throwingActions = {
+        assertThrows(
+            IllegalArgumentException.class,
             () -> { java.util.stream.IntStream x = r.ints(-1L); },
             () -> { java.util.stream.IntStream x = r.ints(-1L, 2, 3); },
             () -> { java.util.stream.LongStream x = r.longs(-1L); },
             () -> { java.util.stream.LongStream x = r.longs(-1L, -1L, 1L); },
             () -> { java.util.stream.DoubleStream x = r.doubles(-1L); },
-            () -> { java.util.stream.DoubleStream x = r.doubles(-1L, .5, .6); },
-        };
-        assertThrows(IllegalArgumentException.class, throwingActions);
+            () -> { java.util.stream.DoubleStream x = r.doubles(-1L, .5, .6); });
     }
 
     /**
@@ -378,15 +371,14 @@ public class SplittableRandomTest extends JSR166TestCase {
      */
     public void testBadStreamBounds() {
         SplittableRandom r = new SplittableRandom();
-        Runnable[] throwingActions = {
+        assertThrows(
+            IllegalArgumentException.class,
             () -> { java.util.stream.IntStream x = r.ints(2, 1); },
             () -> { java.util.stream.IntStream x = r.ints(10, 42, 42); },
             () -> { java.util.stream.LongStream x = r.longs(-1L, -1L); },
             () -> { java.util.stream.LongStream x = r.longs(10, 1L, -2L); },
             () -> { java.util.stream.DoubleStream x = r.doubles(0.0, 0.0); },
-            () -> { java.util.stream.DoubleStream x = r.doubles(10, .5, .4); },
-        };
-        assertThrows(IllegalArgumentException.class, throwingActions);
+            () -> { java.util.stream.DoubleStream x = r.doubles(10, .5, .4); });
     }
 
     /**
