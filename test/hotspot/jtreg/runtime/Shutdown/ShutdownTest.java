@@ -78,8 +78,8 @@ public class ShutdownTest {
     public static void main(String[] args) throws Throwable {
         List<String> options = new ArrayList<>();
 
+        // To reproduce original bug you may need this option: "-Xmx2500k",
         Collections.addAll(options,
-                "-Xmx2500k",
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+VerifyBeforeExit");
         options.add(ShutdownTestThread.class.getName());
