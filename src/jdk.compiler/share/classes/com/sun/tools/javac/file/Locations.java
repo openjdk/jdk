@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -379,7 +379,7 @@ public class Locations {
                         /* Not a recognized extension; open it to see if
                          it looks like a valid zip file. */
                         try {
-                            FileSystems.newFileSystem(file, null).close();
+                            FileSystems.newFileSystem(file, (ClassLoader)null).close();
                             if (warn) {
                                 log.warning(Lint.LintCategory.PATH,
                                             Warnings.UnexpectedArchiveFile(file));

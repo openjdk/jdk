@@ -69,7 +69,7 @@ public class Basic {
 
         // Test: FileSystems#newFileSystem(Path)
         Map<String,?> env = Collections.emptyMap();
-        FileSystems.newFileSystem(jarFile, null).close();
+        FileSystems.newFileSystem(jarFile).close();
 
         // Test: FileSystems#newFileSystem(URI)
         URI uri = new URI("jar", jarFile.toUri().toString(), null);
