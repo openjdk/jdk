@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,31 +21,29 @@
  * questions.
  */
 
-import jdk.test.lib.process.ProcessTools;
-
-import java.nio.file.Path;
-import java.nio.file.Paths;
-
-/**
+/*
  * @test
- * @bug 6449565
- * @library /test/lib
- * @build jdk.test.lib.Utils
- *        jdk.test.lib.Asserts
- *        jdk.test.lib.JDKToolFinder
- *        jdk.test.lib.JDKToolLauncher
- *        jdk.test.lib.Platform
- *        jdk.test.lib.process.*
- * @run main OldSocketImplTestDriver
- * @summary Test driver for OdlSocketImpl
+ * @bug 8216978
+ * @summary Drop support for pre JDK 1.4 SocketImpl implementations
+ * @library OldSocketImpl.jar
+ * @run main/othervm OldSocketImplTest
  */
-public class OldSocketImplTestDriver {
-    public static void main(String[] args) throws Throwable {
-        Path jar = Paths.get(System.getProperty("test.src"),
-                "OldSocketImpl.jar");
-        ProcessTools.executeTestJava("-cp", jar.toString(), "OldSocketImpl")
-                    .outputTo(System.out)
-                    .errorTo(System.out)
-                    .shouldHaveExitValue(0);
+
+import java.net.*;
+
+public class OldSocketImplTest {
+    public static void main(String[] args) throws Exception {
+        Socket.setSocketImplFactory(new SocketImplFactory() {
+                public SocketImpl createSocketImpl() {
+                    return new OldSocketImpl();
+                }
+        });
+        try {
+            Socket socket = new Socket("localhost", 23);
+            throw new RuntimeException("error test failed");
+        } catch (AbstractMethodError error) {
+            error.printStackTrace();
+            System.out.println("Old impl no longer accepted: OK");
+        }
     }
 }

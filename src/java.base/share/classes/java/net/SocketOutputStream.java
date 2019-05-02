@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,6 @@ class SocketOutputStream extends FileOutputStream {
 
     private AbstractPlainSocketImpl impl = null;
     private byte temp[] = new byte[1];
-    private Socket socket = null;
 
     /**
      * Creates a new SocketOutputStream. Can only be called
@@ -56,7 +55,6 @@ class SocketOutputStream extends FileOutputStream {
     SocketOutputStream(AbstractPlainSocketImpl impl) throws IOException {
         super(impl.getFileDescriptor());
         this.impl = impl;
-        socket = impl.getSocket();
     }
 
     /**
@@ -150,21 +148,10 @@ class SocketOutputStream extends FileOutputStream {
         socketWrite(b, off, len);
     }
 
-    /**
-     * Closes the stream.
-     */
-    private boolean closing = false;
     public void close() throws IOException {
-        // Prevent recursion. See BugId 4484411
-        if (closing)
-            return;
-        closing = true;
-        if (socket != null) {
-            if (!socket.isClosed())
-                socket.close();
-        } else
-            impl.close();
-        closing = false;
+        // No longer used. Socket.getOutputStream returns an
+        // OutputStream which calls Socket.close directly
+        assert false;
     }
 
     /**

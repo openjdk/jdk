@@ -45,13 +45,8 @@ class PlainSocketImpl extends AbstractPlainSocketImpl
     /**
      * Constructs an empty instance.
      */
-    PlainSocketImpl() { }
-
-    /**
-     * Constructs an instance with the given file descriptor.
-     */
-    PlainSocketImpl(FileDescriptor fd) {
-        this.fd = fd;
+    PlainSocketImpl(boolean isServer) {
+        super(isServer);
     }
 
     static final ExtendedSocketOptions extendedOptions =
@@ -90,7 +85,7 @@ class PlainSocketImpl extends AbstractPlainSocketImpl
 
     protected Set<SocketOption<?>> supportedOptions() {
         HashSet<SocketOption<?>> options = new HashSet<>(super.supportedOptions());
-        if (getServerSocket() != null) {
+        if (isServer) {
             options.addAll(ExtendedSocketOptions.serverSocketOptions());
         } else {
             options.addAll(ExtendedSocketOptions.clientSocketOptions());
@@ -106,12 +101,16 @@ class PlainSocketImpl extends AbstractPlainSocketImpl
         try {
             socketSetOption0(opt, b, val);
         } catch (SocketException se) {
-            if (socket == null || !socket.isConnected())
+            if (!isConnected)
                 throw se;
         }
     }
 
-    native void socketCreate(boolean isServer) throws IOException;
+    void socketCreate(boolean stream) throws IOException {
+        socketCreate(stream, isServer);
+    }
+
+    native void socketCreate(boolean stream, boolean isServer) throws IOException;
 
     native void socketConnect(InetAddress address, int port, int timeout)
         throws IOException;

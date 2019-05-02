@@ -51,6 +51,7 @@ import java.util.Set;
     private static final Method doTunneling;
 
     private final String server;
+    private final Socket socket;
     private InetSocketAddress external_address;
     private HashMap<Integer, Object> optionsMap = new HashMap<>();
 
@@ -75,8 +76,9 @@ import java.util.Set;
         }
     }
 
-    HttpConnectSocketImpl(Proxy proxy, SocketImpl delegate) {
+    HttpConnectSocketImpl(Proxy proxy, SocketImpl delegate, Socket socket) {
         super(delegate);
+        this.socket = socket;
         SocketAddress a = proxy.address();
         if ( !(a instanceof InetSocketAddress) )
             throw new IllegalArgumentException("Unsupported address type");
@@ -94,17 +96,6 @@ import java.util.Set;
     @Override
     protected void connect(InetAddress address, int port) throws IOException {
         connect(new InetSocketAddress(address, port), 0);
-    }
-
-    @Override
-    void setSocket(Socket socket) {
-        delegate.socket = socket;
-        super.setSocket(socket);
-    }
-
-    @Override
-    void setServerSocket(ServerSocket socket) {
-        throw new InternalError("should not get here");
     }
 
     @Override
@@ -137,7 +128,7 @@ import java.util.Set;
 
         // update the Sockets impl to the impl from the http Socket
         SocketImpl si = httpSocket.impl;
-        getSocket().setImpl(si);
+        socket.setImpl(si);
 
         // best effort is made to try and reset options previously set
         Set<Map.Entry<Integer,Object>> options = optionsMap.entrySet();

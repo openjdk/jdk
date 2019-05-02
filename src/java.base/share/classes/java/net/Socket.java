@@ -72,11 +72,6 @@ class Socket implements java.io.Closeable {
     SocketImpl impl;
 
     /**
-     * Are we using an older SocketImpl?
-     */
-    private boolean oldImpl = false;
-
-    /**
      * Socket input/output streams
      */
     private volatile InputStream in;
@@ -158,8 +153,7 @@ class Socket implements java.io.Closeable {
             // create a SOCKS or HTTP SocketImpl that delegates to a platform SocketImpl
             SocketImpl delegate = SocketImpl.createPlatformSocketImpl(false);
             impl = (type == Proxy.Type.SOCKS) ? new SocksSocketImpl(p, delegate)
-                                              : new HttpConnectSocketImpl(p, delegate);
-            impl.setSocket(this);
+                                              : new HttpConnectSocketImpl(p, delegate, this);
         } else {
             if (p == Proxy.NO_PROXY) {
                 // create a platform or custom SocketImpl for the DIRECT case
@@ -169,7 +163,6 @@ class Socket implements java.io.Closeable {
                 } else {
                     impl = factory.createSocketImpl();
                 }
-                impl.setSocket(this);
             } else
                 throw new IllegalArgumentException("Invalid Proxy");
         }
@@ -188,10 +181,6 @@ class Socket implements java.io.Closeable {
      */
     protected Socket(SocketImpl impl) throws SocketException {
         this.impl = impl;
-        if (impl != null) {
-            checkOldImpl();
-            this.impl.setSocket(this);
-        }
     }
 
     /**
@@ -486,37 +475,8 @@ class Socket implements java.io.Closeable {
         }
     }
 
-    private void checkOldImpl() {
-        if (impl == null)
-            return;
-        // SocketImpl.connect() is a protected method, therefore we need to use
-        // getDeclaredMethod, therefore we need permission to access the member
-
-        oldImpl = AccessController.doPrivileged
-                                (new PrivilegedAction<>() {
-            public Boolean run() {
-                Class<?> clazz = impl.getClass();
-                while (true) {
-                    try {
-                        clazz.getDeclaredMethod("connect", SocketAddress.class, int.class);
-                        return Boolean.FALSE;
-                    } catch (NoSuchMethodException e) {
-                        clazz = clazz.getSuperclass();
-                        // java.net.SocketImpl class will always have this abstract method.
-                        // If we have not found it by now in the hierarchy then it does not
-                        // exist, we are an old style impl.
-                        if (clazz.equals(java.net.SocketImpl.class)) {
-                            return Boolean.TRUE;
-                        }
-                    }
-                }
-            }
-        });
-    }
-
     void setImpl(SocketImpl si) {
          impl = si;
-         impl.setSocket(this);
     }
 
     /**
@@ -527,14 +487,11 @@ class Socket implements java.io.Closeable {
         SocketImplFactory factory = Socket.factory;
         if (factory != null) {
             impl = factory.createSocketImpl();
-            checkOldImpl();
         } else {
             // create a SOCKS SocketImpl that delegates to a platform SocketImpl
             SocketImpl delegate = SocketImpl.createPlatformSocketImpl(false);
             impl = new SocksSocketImpl(delegate);
         }
-        if (impl != null)
-            impl.setSocket(this);
     }
 
     /**
@@ -596,7 +553,7 @@ class Socket implements java.io.Closeable {
         if (isClosed())
             throw new SocketException("Socket is closed");
 
-        if (!oldImpl && isConnected())
+        if (isConnected())
             throw new SocketException("already connected");
 
         if (!(endpoint instanceof InetSocketAddress))
@@ -616,15 +573,7 @@ class Socket implements java.io.Closeable {
         }
         if (!created)
             createImpl(true);
-        if (!oldImpl)
-            impl.connect(epoint, timeout);
-        else if (timeout == 0) {
-            if (epoint.isUnresolved())
-                impl.connect(addr.getHostName(), port);
-            else
-                impl.connect(addr, port);
-        } else
-            throw new UnsupportedOperationException("SocketImpl.connect(addr, timeout)");
+        impl.connect(epoint, timeout);
         connected = true;
         /*
          * If the socket was not bound before the connect, it is now because
@@ -654,7 +603,7 @@ class Socket implements java.io.Closeable {
     public void bind(SocketAddress bindpoint) throws IOException {
         if (isClosed())
             throw new SocketException("Socket is closed");
-        if (!oldImpl && isBound())
+        if (isBound())
             throw new SocketException("Already bound");
 
         if (bindpoint != null && (!(bindpoint instanceof InetSocketAddress)))
@@ -692,18 +641,6 @@ class Socket implements java.io.Closeable {
         connected = true;
         created = true;
         bound = true;
-    }
-
-    void setCreated() {
-        created = true;
-    }
-
-    void setBound() {
-        bound = true;
-    }
-
-    void setConnected() {
-        connected = true;
     }
 
     /**
@@ -957,6 +894,7 @@ class Socket implements java.io.Closeable {
     private static class SocketInputStream extends InputStream {
         private final Socket parent;
         private final InputStream in;
+
         SocketInputStream(Socket parent, InputStream in) {
             this.parent = parent;
             this.in = in;
@@ -975,6 +913,7 @@ class Socket implements java.io.Closeable {
         public int available() throws IOException {
             return in.available();
         }
+
         @Override
         public void close() throws IOException {
             parent.close();
@@ -1040,6 +979,7 @@ class Socket implements java.io.Closeable {
         public void write(byte b[], int off, int len) throws IOException {
             out.write(b, off, len);
         }
+
         @Override
         public void close() throws IOException {
             parent.close();
@@ -1672,8 +1612,7 @@ class Socket implements java.io.Closeable {
      * @since 1.4
      */
     public boolean isConnected() {
-        // Before 1.3 Sockets were always connected during creation
-        return connected || oldImpl;
+        return connected;
     }
 
     /**
@@ -1689,8 +1628,7 @@ class Socket implements java.io.Closeable {
      * @see #bind
      */
     public boolean isBound() {
-        // Before 1.3 Sockets were always bound during creation
-        return bound || oldImpl;
+        return bound;
     }
 
     /**

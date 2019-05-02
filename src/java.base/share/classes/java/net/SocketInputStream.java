@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,6 @@ class SocketInputStream extends FileInputStream {
     private boolean eof;
     private AbstractPlainSocketImpl impl = null;
     private byte temp[];
-    private Socket socket = null;
 
     /**
      * Creates a new SocketInputStream. Can only be called
@@ -59,7 +58,6 @@ class SocketInputStream extends FileInputStream {
     SocketInputStream(AbstractPlainSocketImpl impl) throws IOException {
         super(impl.getFileDescriptor());
         this.impl = impl;
-        socket = impl.getSocket();
     }
 
     /**
@@ -236,25 +234,14 @@ class SocketInputStream extends FileInputStream {
         return eof ? 0 : available;
     }
 
-    /**
-     * Closes the stream.
-     */
-    private boolean closing = false;
-    public void close() throws IOException {
-        // Prevent recursion. See BugId 4484411
-        if (closing)
-            return;
-        closing = true;
-        if (socket != null) {
-            if (!socket.isClosed())
-                socket.close();
-        } else
-            impl.close();
-        closing = false;
-    }
-
     void setEOF(boolean eof) {
         this.eof = eof;
+    }
+
+    public void close() throws IOException {
+        // No longer used. Socket.getInputStream returns an
+        // InputStream which calls Socket.close directly
+        assert false;
     }
 
     /**
