@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2014 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,9 +65,7 @@
 #define inlasm_eieio()    __asm__ __volatile__ ("eieio"  : : : "memory");
 #define inlasm_isync()    __asm__ __volatile__ ("isync"  : : : "memory");
 // Use twi-isync for load_acquire (faster than lwsync).
-// ATTENTION: seems like xlC 10.1 has problems with this inline assembler macro (VerifyMethodHandles found "bad vminfo in AMH.conv"):
-// #define inlasm_acquire_reg(X) __asm__ __volatile__ ("twi 0,%0,0\n isync\n" : : "r" (X) : "memory");
-#define inlasm_acquire_reg(X) inlasm_lwsync();
+#define inlasm_acquire_reg(X) __asm__ __volatile__ ("twi 0,%0,0\n isync\n" : : "r" (X) : "memory");
 
 inline void OrderAccess::loadload()   { inlasm_lwsync(); }
 inline void OrderAccess::storestore() { inlasm_lwsync(); }
