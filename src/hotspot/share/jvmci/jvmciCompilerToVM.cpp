@@ -557,7 +557,10 @@ C2V_VMENTRY(jobject, resolveTypeInPool, (JNIEnv* env, jobject, jobject jvmci_con
   Klass* klass = cp->klass_at(index, CHECK_NULL);
   JVMCIKlassHandle resolved_klass(THREAD, klass);
   if (resolved_klass->is_instance_klass()) {
-    InstanceKlass::cast(resolved_klass())->link_class_or_fail(THREAD);
+    bool linked = InstanceKlass::cast(resolved_klass())->link_class_or_fail(CHECK_NULL);
+    if (!linked) {
+      return NULL;
+    }
   }
   JVMCIObject klassObject = JVMCIENV->get_jvmci_type(resolved_klass, JVMCI_CHECK_NULL);
   return JVMCIENV->get_jobject(klassObject);
