@@ -76,7 +76,8 @@ $(eval $(call SetupNativeCompilation, BUILD_GTEST_LIBJVM, \
     DISABLED_WARNINGS_gcc := $(DISABLED_WARNINGS_gcc) \
         undef, \
     DISABLED_WARNINGS_clang := $(DISABLED_WARNINGS_clang) \
-        undef switch format-nonliteral tautological-undefined-compare, \
+        undef switch format-nonliteral tautological-undefined-compare \
+        self-assign-overloaded, \
     DISABLED_WARNINGS_solstudio := $(DISABLED_WARNINGS_solstudio) \
         identexpected, \
     DISABLED_WARNINGS_microsoft := $(DISABLED_WARNINGS_microsoft) \

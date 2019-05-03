@@ -219,7 +219,7 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
           -Wunused-function -Wundef -Wunused-value -Woverloaded-virtual"
       WARNINGS_ENABLE_ALL="-Wall -Wextra -Wformat=2 $WARNINGS_ENABLE_ADDITIONAL"
 
-      DISABLED_WARNINGS="unused-parameter unused"
+      DISABLED_WARNINGS="unknown-warning-option unused-parameter unused"
 
       if test "x$OPENJDK_TARGET_OS" = xmacosx; then
         # missing-method-return-type triggers in JavaNativeFoundation framework
