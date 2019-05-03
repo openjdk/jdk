@@ -37,6 +37,9 @@ import java.net.StandardSocketOptions;
 import java.nio.channels.IllegalBlockingModeException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.security.AccessController;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.Set;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -59,7 +62,12 @@ class ServerSocketAdaptor                        // package-private
     private volatile int timeout;
 
     static ServerSocket create(ServerSocketChannelImpl ssc) {
-        return new ServerSocketAdaptor(ssc);
+        PrivilegedExceptionAction<ServerSocket> pa = () -> new ServerSocketAdaptor(ssc);
+        try {
+            return AccessController.doPrivileged(pa);
+        } catch (PrivilegedActionException pae) {
+            throw new InternalError("Should not reach here", pae);
+        }
     }
 
     private ServerSocketAdaptor(ServerSocketChannelImpl ssc) {
