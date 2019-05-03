@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -499,6 +499,7 @@ protected:
   JavaThread* _requesting_thread;
   BiasedLocking::Condition _status_code;
   traceid _biased_locker_id;
+  uint64_t _safepoint_id;
 
 public:
   VM_RevokeBias(Handle* obj, JavaThread* requesting_thread)
@@ -506,14 +507,16 @@ public:
     , _objs(NULL)
     , _requesting_thread(requesting_thread)
     , _status_code(BiasedLocking::NOT_BIASED)
-    , _biased_locker_id(0) {}
+    , _biased_locker_id(0)
+    , _safepoint_id(0) {}
 
   VM_RevokeBias(GrowableArray<Handle>* objs, JavaThread* requesting_thread)
     : _obj(NULL)
     , _objs(objs)
     , _requesting_thread(requesting_thread)
     , _status_code(BiasedLocking::NOT_BIASED)
-    , _biased_locker_id(0) {}
+    , _biased_locker_id(0)
+    , _safepoint_id(0) {}
 
   virtual VMOp_Type type() const { return VMOp_RevokeBias; }
 
@@ -545,6 +548,7 @@ public:
       if (biased_locker != NULL) {
         _biased_locker_id = JFR_THREAD_ID(biased_locker);
       }
+      _safepoint_id = SafepointSynchronize::safepoint_counter();
       clean_up_cached_monitor_info();
       return;
     } else {
@@ -559,6 +563,10 @@ public:
 
   traceid biased_locker() const {
     return _biased_locker_id;
+  }
+
+  uint64_t safepoint_id() const {
+    return _safepoint_id;
   }
 };
 
@@ -581,16 +589,14 @@ public:
 
   virtual void doit() {
     _status_code = bulk_revoke_or_rebias_at_safepoint((*_obj)(), _bulk_rebias, _attempt_rebias_of_object, _requesting_thread);
+    _safepoint_id = SafepointSynchronize::safepoint_counter();
     clean_up_cached_monitor_info();
   }
-};
 
-template <typename E>
-static void set_safepoint_id(E* event) {
-  assert(event != NULL, "invariant");
-  // Subtract 1 to match the id of events committed inside the safepoint
-  event->set_safepointId(SafepointSynchronize::safepoint_counter() - 1);
-}
+  bool is_bulk_rebias() const {
+    return _bulk_rebias;
+  }
+};
 
 static void post_self_revocation_event(EventBiasedLockSelfRevocation* event, Klass* k) {
   assert(event != NULL, "invariant");
@@ -600,24 +606,25 @@ static void post_self_revocation_event(EventBiasedLockSelfRevocation* event, Kla
   event->commit();
 }
 
-static void post_revocation_event(EventBiasedLockRevocation* event, Klass* k, VM_RevokeBias* revoke) {
+static void post_revocation_event(EventBiasedLockRevocation* event, Klass* k, VM_RevokeBias* op) {
   assert(event != NULL, "invariant");
   assert(k != NULL, "invariant");
-  assert(revoke != NULL, "invariant");
+  assert(op != NULL, "invariant");
   assert(event->should_commit(), "invariant");
   event->set_lockClass(k);
-  set_safepoint_id(event);
-  event->set_previousOwner(revoke->biased_locker());
+  event->set_safepointId(op->safepoint_id());
+  event->set_previousOwner(op->biased_locker());
   event->commit();
 }
 
-static void post_class_revocation_event(EventBiasedLockClassRevocation* event, Klass* k, bool disabled_bias) {
+static void post_class_revocation_event(EventBiasedLockClassRevocation* event, Klass* k, VM_BulkRevokeBias* op) {
   assert(event != NULL, "invariant");
   assert(k != NULL, "invariant");
+  assert(op != NULL, "invariant");
   assert(event->should_commit(), "invariant");
   event->set_revokedClass(k);
-  event->set_disableBiasing(disabled_bias);
-  set_safepoint_id(event);
+  event->set_disableBiasing(!op->is_bulk_rebias());
+  event->set_safepointId(op->safepoint_id());
   event->commit();
 }
 
@@ -729,7 +736,7 @@ BiasedLocking::Condition BiasedLocking::revoke_and_rebias(Handle obj, bool attem
                                 attempt_rebias);
   VMThread::execute(&bulk_revoke);
   if (event.should_commit()) {
-    post_class_revocation_event(&event, obj->klass(), heuristics != HR_BULK_REBIAS);
+    post_class_revocation_event(&event, obj->klass(), &bulk_revoke);
   }
   return bulk_revoke.status_code();
 }
