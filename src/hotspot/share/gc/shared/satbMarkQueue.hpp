@@ -125,9 +125,6 @@ public:
   size_t buffer_enqueue_threshold() const { return _buffer_enqueue_threshold; }
   virtual void filter(SATBMarkQueue* queue) = 0;
 
-  // Filter all the currently-active SATB buffers.
-  void filter_thread_buffers();
-
   // If there exists some completed buffer, pop and process it, and
   // return true.  Otherwise return false.  Processing a buffer
   // consists of applying the closure to the active range of the

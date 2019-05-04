@@ -119,7 +119,6 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("SystemDictionary Roots", Level.TRACE),
         new LogMessageWithLevel("CLDG Roots", Level.TRACE),
         new LogMessageWithLevel("JVMTI Roots", Level.TRACE),
-        new LogMessageWithLevel("SATB Filtering", Level.TRACE),
         new LogMessageWithLevel("CM RefProcessor Roots", Level.TRACE),
         new LogMessageWithLevel("Wait For Strong CLD", Level.TRACE),
         new LogMessageWithLevel("Weak CLD Roots", Level.TRACE),

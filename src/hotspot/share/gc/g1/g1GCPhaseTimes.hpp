@@ -60,7 +60,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     CMRefRoots,
     WaitForStrongCLD,
     WeakCLDRoots,
-    SATBFiltering,
     UpdateRS,
     ScanHCC,
     ScanRS,
@@ -82,8 +81,8 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     GCParPhasesSentinel
   };
 
-  static const GCParPhases ExtRootScanSubPhasesStart = ThreadRoots;
-  static const GCParPhases ExtRootScanSubPhasesEnd = SATBFiltering;
+  static const GCParPhases ExtRootScanSubPhasesFirst = ThreadRoots;
+  static const GCParPhases ExtRootScanSubPhasesLast = WeakCLDRoots;
 
   enum GCScanRSWorkItems {
     ScanRSScannedCards,
