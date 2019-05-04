@@ -161,8 +161,6 @@ Java_jdk_internal_util_SystemProps_00024Raw_platformProperties(JNIEnv *env, jcla
     PUTPROP(propArray, _sun_cpu_isalist_NDX, sprops->cpu_isalist);
 
 #ifdef MACOSX
-    PUTPROP(propArray, _java_awt_headless_NDX, sprops->awt_headless);
-
     /* Proxy setting properties */
     if (sprops->httpProxyEnabled) {
         PUTPROP(propArray, _http_proxyHost_NDX, sprops->httpHost);

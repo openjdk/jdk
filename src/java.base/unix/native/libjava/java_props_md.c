@@ -398,9 +398,6 @@ GetJavaProperties(JNIEnv *env)
 #ifdef MACOSX
     // Always the same Toolkit on Mac OS X
     sprops.awt_toolkit = "sun.lwawt.macosx.LWCToolkit";
-
-    // check if we're in a GUI login session and set java.awt.headless=true if not
-    sprops.awt_headless = isInAquaSession() ? NULL : "true";
 #else
     sprops.awt_toolkit = "sun.awt.X11.XToolkit";
 #endif
