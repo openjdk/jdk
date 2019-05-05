@@ -100,7 +100,6 @@ public class TestG1ParallelPhases {
             "CMRefRoots",
             "WaitForStrongCLD",
             "WeakCLDRoots",
-            "SATBFiltering",
             "UpdateRS",
             "ScanHCC",
             "ScanRS",
