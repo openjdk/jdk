@@ -1950,6 +1950,9 @@ void ShenandoahBarrierC2Support::optimize_after_expansion(VectorSet &visited, No
               head->verify_strip_mined(0);
             }
             move_heap_stable_test_out_of_loop(iff, phase);
+
+            AutoNodeBudget node_budget(phase);
+
             if (loop->policy_unswitching(phase)) {
               if (head->is_strip_mined()) {
                 OuterStripMinedLoopNode* outer = head->as_CountedLoop()->outer_loop();
