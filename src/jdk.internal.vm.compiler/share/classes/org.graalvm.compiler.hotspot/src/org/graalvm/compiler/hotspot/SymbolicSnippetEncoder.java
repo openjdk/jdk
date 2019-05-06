@@ -571,7 +571,7 @@ public class SymbolicSnippetEncoder {
                     try {
                         replacement = ((SymbolicJVMCIReference<?>) o).resolve(type);
                         break;
-                    } catch (NoClassDefFoundError | AssertionError e) {
+                    } catch (NoClassDefFoundError e) {
                     }
                 }
             } else if (o instanceof UnresolvedJavaType) {
@@ -579,7 +579,7 @@ public class SymbolicSnippetEncoder {
                     try {
                         replacement = ((UnresolvedJavaType) o).resolve(type);
                         break;
-                    } catch (NoClassDefFoundError | AssertionError e) {
+                    } catch (NoClassDefFoundError e) {
                     }
                 }
             } else if (o instanceof UnresolvedJavaMethod) {
@@ -589,7 +589,7 @@ public class SymbolicSnippetEncoder {
                     try {
                         replacement = ((UnresolvedJavaField) o).resolve(type);
                         break;
-                    } catch (NoClassDefFoundError | AssertionError e) {
+                    } catch (NoClassDefFoundError e) {
                     }
                 }
             } else if (o instanceof GraalCapability) {

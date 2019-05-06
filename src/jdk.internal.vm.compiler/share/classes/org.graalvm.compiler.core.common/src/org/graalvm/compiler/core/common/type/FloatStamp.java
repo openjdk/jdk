@@ -318,8 +318,10 @@ public class FloatStamp extends PrimitiveStamp {
         /*
          * There are many forms of NaNs and any operations on them can silently convert them into
          * the canonical NaN.
+         *
+         * We need to exclude 0 here since it can contain -0.0 && 0.0 .
          */
-        return (Double.compare(lowerBound, upperBound) == 0 && nonNaN);
+        return (Double.compare(lowerBound, upperBound) == 0 && nonNaN) && lowerBound != 0;
     }
 
     private static FloatStamp stampForConstant(Constant constant) {

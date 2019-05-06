@@ -223,7 +223,7 @@ public final class GraphEffectList extends EffectList {
      */
     public void replaceAtUsages(ValueNode node, ValueNode replacement, FixedNode insertBefore) {
         assert node != null && replacement != null : node + " " + replacement;
-        assert node.stamp(NodeView.DEFAULT).isCompatible(replacement.stamp(NodeView.DEFAULT)) : "Replacement node stamp not compatible " + node.stamp(NodeView.DEFAULT) + " vs " +
+        assert !node.hasUsages() || node.stamp(NodeView.DEFAULT).isCompatible(replacement.stamp(NodeView.DEFAULT)) : "Replacement node stamp not compatible " + node.stamp(NodeView.DEFAULT) + " vs " +
                         replacement.stamp(NodeView.DEFAULT);
         add("replace at usages", (graph, obsoleteNodes) -> {
             assert node.isAlive();
@@ -240,7 +240,7 @@ public final class GraphEffectList extends EffectList {
              * to improve the stamp information of the read. Such a read might later be replaced
              * with a read with a less precise stamp.
              */
-            if (!node.stamp(NodeView.DEFAULT).equals(replacementNode.stamp(NodeView.DEFAULT))) {
+            if (node.hasUsages() && !node.stamp(NodeView.DEFAULT).equals(replacementNode.stamp(NodeView.DEFAULT))) {
                 replacementNode = graph.unique(new PiNode(replacementNode, node.stamp(NodeView.DEFAULT)));
             }
             node.replaceAtUsages(replacementNode);

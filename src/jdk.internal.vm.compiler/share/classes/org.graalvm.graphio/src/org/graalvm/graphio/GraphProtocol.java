@@ -75,6 +75,9 @@ abstract class GraphProtocol<Graph, Node, NodeClass, Edges, Block, ResolvedJavaM
 
     private static final byte[] MAGIC_BYTES = {'B', 'I', 'G', 'V'};
 
+    private static final int MAJOR_VERSION = 6;
+    private static final int MINOR_VERSION = 1;
+
     private final ConstantPool constantPool;
     private final ByteBuffer buffer;
     private final WritableByteChannel channel;
@@ -84,7 +87,7 @@ abstract class GraphProtocol<Graph, Node, NodeClass, Edges, Block, ResolvedJavaM
     private boolean printing;
 
     GraphProtocol(WritableByteChannel channel, int major, int minor, boolean embedded) throws IOException {
-        if (major > 6 || (major == 6 && minor > 0)) {
+        if (major > MAJOR_VERSION || (major == MAJOR_VERSION && minor > MINOR_VERSION)) {
             throw new IllegalArgumentException("Unrecognized version " + major + "." + minor);
         }
         this.versionMajor = major;

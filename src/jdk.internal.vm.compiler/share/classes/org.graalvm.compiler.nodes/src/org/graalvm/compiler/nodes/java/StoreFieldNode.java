@@ -27,10 +27,14 @@ package org.graalvm.compiler.nodes.java;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_8;
 
 import org.graalvm.compiler.core.common.type.StampFactory;
+import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
+import org.graalvm.compiler.graph.spi.Canonicalizable;
+import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.nodeinfo.InputType;
 import org.graalvm.compiler.nodeinfo.NodeCycles;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.DeoptimizeNode;
 import org.graalvm.compiler.nodes.FrameState;
 import org.graalvm.compiler.nodes.StateSplit;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -39,13 +43,15 @@ import org.graalvm.compiler.nodes.spi.VirtualizerTool;
 import org.graalvm.compiler.nodes.virtual.VirtualInstanceNode;
 import org.graalvm.compiler.nodes.virtual.VirtualObjectNode;
 
+import jdk.vm.ci.meta.DeoptimizationAction;
+import jdk.vm.ci.meta.DeoptimizationReason;
 import jdk.vm.ci.meta.ResolvedJavaField;
 
 /**
  * The {@code StoreFieldNode} represents a write to a static or instance field.
  */
 @NodeInfo(nameTemplate = "StoreField#{p#field/s}")
-public final class StoreFieldNode extends AccessFieldNode implements StateSplit, Virtualizable {
+public final class StoreFieldNode extends AccessFieldNode implements StateSplit, Virtualizable, Canonicalizable {
     public static final NodeClass<StoreFieldNode> TYPE = NodeClass.create(StoreFieldNode.class);
 
     @Input ValueNode value;
@@ -110,5 +116,13 @@ public final class StoreFieldNode extends AccessFieldNode implements StateSplit,
             return CYCLES_8;
         }
         return super.estimatedNodeCycles();
+    }
+
+    @Override
+    public Node canonical(CanonicalizerTool tool) {
+        if (!field.isStatic() && object.isNullConstant()) {
+            return new DeoptimizeNode(DeoptimizationAction.InvalidateReprofile, DeoptimizationReason.NullCheckException);
+        }
+        return this;
     }
 }

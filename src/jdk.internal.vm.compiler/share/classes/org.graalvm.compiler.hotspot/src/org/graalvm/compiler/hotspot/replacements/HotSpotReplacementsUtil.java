@@ -516,6 +516,11 @@ public class HotSpotReplacementsUtil {
         return config.objectMonitorEntryList;
     }
 
+    @Fold
+    public static int objectMonitorSuccOffset(@InjectedParameter GraalHotSpotVMConfig config) {
+        return config.objectMonitorSucc;
+    }
+
     /**
      * Mask for a biasable, locked or unlocked mark word.
      *
@@ -684,6 +689,8 @@ public class HotSpotReplacementsUtil {
     public static final LocationIdentity OBJECT_MONITOR_CXQ_LOCATION = NamedLocationIdentity.mutable("ObjectMonitor::_cxq");
 
     public static final LocationIdentity OBJECT_MONITOR_ENTRY_LIST_LOCATION = NamedLocationIdentity.mutable("ObjectMonitor::_EntryList");
+
+    public static final LocationIdentity OBJECT_MONITOR_SUCC_LOCATION = NamedLocationIdentity.mutable("ObjectMonitor::_succ");
 
     @Fold
     public static int lockDisplacedMarkOffset(@InjectedParameter GraalHotSpotVMConfig config) {

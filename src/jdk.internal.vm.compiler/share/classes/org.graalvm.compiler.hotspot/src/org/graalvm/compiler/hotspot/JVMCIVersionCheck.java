@@ -39,7 +39,7 @@ import java.util.Properties;
  *
  * This class only depends on the JDK so that it can be used without building Graal.
  */
-class JVMCIVersionCheck {
+public final class JVMCIVersionCheck {
 
     // 0.57 introduces HotSpotJVMCIRuntime.excludeFromJVMCICompilation
     private static final int JVMCI8_MIN_MAJOR_VERSION = 0;
@@ -73,42 +73,115 @@ class JVMCIVersionCheck {
         }
     }
 
+    private final String javaSpecVersion;
+    private final String vmVersion;
+    private int cursor;
+    private final Map<String, String> props;
+
+    private JVMCIVersionCheck(Map<String, String> props, String javaSpecVersion, String vmVersion) {
+        this.props = props;
+        this.javaSpecVersion = javaSpecVersion;
+        this.vmVersion = vmVersion;
+    }
+
     static void check(Map<String, String> props, boolean exitOnFailure) {
+        JVMCIVersionCheck checker = new JVMCIVersionCheck(props, props.get("java.specification.version"), props.get("java.vm.version"));
+        checker.run(exitOnFailure, JVMCI8_MIN_MAJOR_VERSION, JVMCI8_MIN_MINOR_VERSION);
+    }
+
+    /**
+     * Entry point for testing.
+     */
+    public static void check(Map<String, String> props,
+                    int jvmci8MinMajorVersion,
+                    int jvmci8MinMinorVersion,
+                    String javaSpecVersion,
+                    String javaVmVersion,
+                    boolean exitOnFailure) {
+        JVMCIVersionCheck checker = new JVMCIVersionCheck(props, javaSpecVersion, javaVmVersion);
+        checker.run(exitOnFailure, jvmci8MinMajorVersion, jvmci8MinMinorVersion);
+    }
+
+    /**
+     * Parses a positive decimal number at {@link #cursor}.
+     *
+     * @return -1 if there is no positive decimal number at {@link #cursor}
+     */
+    private int parseNumber() {
+        int result = -1;
+        while (cursor < vmVersion.length()) {
+            int digit = vmVersion.charAt(cursor) - '0';
+            if (digit >= 0 && digit <= 9) {
+                if (result == -1) {
+                    result = digit;
+                } else {
+                    long r = (long) result * (long) 10;
+                    if ((int) r != r) {
+                        // Overflow
+                        return -1;
+                    }
+                    result = (int) r + digit;
+                }
+                cursor++;
+            } else {
+                break;
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Parse {@code "."} or {@code "-b"} at {@link #cursor}.
+     *
+     * @return {@code true} iff there was an expected separator at {@link #cursor}
+     */
+    private boolean parseSeparator() {
+        if (cursor < vmVersion.length()) {
+            char ch = vmVersion.charAt(cursor);
+            if (ch == '.') {
+                cursor++;
+                return true;
+            }
+            if (ch == '-') {
+                cursor++;
+                if (cursor < vmVersion.length()) {
+                    if (vmVersion.charAt(cursor) == 'b') {
+                        cursor++;
+                        return true;
+                    }
+                }
+                return false;
+            }
+        }
+        return false;
+    }
+
+    private void run(boolean exitOnFailure, int jvmci8MinMajorVersion, int jvmci8MinMinorVersion) {
         // Don't use regular expressions to minimize Graal startup time
-        String javaSpecVersion = props.get("java.specification.version");
-        String vmVersion = props.get("java.vm.version");
         if (javaSpecVersion.compareTo("1.9") < 0) {
-            int start = vmVersion.indexOf("-jvmci-");
-            if (start >= 0) {
-                start += "-jvmci-".length();
-                int end = vmVersion.indexOf('.', start);
-                if (end > 0) {
-                    int major;
-                    try {
-                        major = Integer.parseInt(vmVersion.substring(start, end));
-                    } catch (NumberFormatException e) {
-                        failVersionCheck(props, exitOnFailure, "The VM does not support the minimum JVMCI API version required by Graal.%n" +
-                                        "Cannot read JVMCI major version from java.vm.version property: %s.%n", vmVersion);
-                        return;
-                    }
-                    start = end + 1;
-                    end = start;
-                    while (end < vmVersion.length() && Character.isDigit(vmVersion.charAt(end))) {
-                        end++;
-                    }
-                    int minor;
-                    try {
-                        minor = Integer.parseInt(vmVersion.substring(start, end));
-                    } catch (NumberFormatException e) {
+            cursor = vmVersion.indexOf("-jvmci-");
+            if (cursor >= 0) {
+                cursor += "-jvmci-".length();
+                int major = parseNumber();
+                if (major == -1) {
+                    failVersionCheck(props, exitOnFailure, "The VM does not support the minimum JVMCI API version required by Graal.%n" +
+                                    "Cannot read JVMCI major version from java.vm.version property: %s.%n", vmVersion);
+                    return;
+                }
+
+                if (parseSeparator()) {
+                    int minor = parseNumber();
+                    if (minor == -1) {
                         failVersionCheck(props, exitOnFailure, "The VM does not support the minimum JVMCI API version required by Graal.%n" +
                                         "Cannot read JVMCI minor version from java.vm.version property: %s.%n", vmVersion);
                         return;
                     }
-                    if (major >= JVMCI8_MIN_MAJOR_VERSION && minor >= JVMCI8_MIN_MINOR_VERSION) {
+
+                    if (major > jvmci8MinMajorVersion || (major >= jvmci8MinMajorVersion && minor >= jvmci8MinMinorVersion)) {
                         return;
                     }
                     failVersionCheck(props, exitOnFailure, "The VM does not support the minimum JVMCI API version required by Graal: %d.%d < %d.%d.%n",
-                                    major, minor, JVMCI8_MIN_MAJOR_VERSION, JVMCI8_MIN_MINOR_VERSION);
+                                    major, minor, jvmci8MinMajorVersion, jvmci8MinMinorVersion);
                     return;
                 }
             }
