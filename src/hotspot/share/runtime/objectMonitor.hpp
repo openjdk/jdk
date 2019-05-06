@@ -291,6 +291,9 @@ class ObjectMonitor {
   void      notify(TRAPS);
   void      notifyAll(TRAPS);
 
+  void      print() const { print_on(tty); }
+  void      print_on(outputStream* st) const;
+
 // Use the following at your own risk
   intptr_t  complete_exit(TRAPS);
   void      reenter(intptr_t recursions, TRAPS);

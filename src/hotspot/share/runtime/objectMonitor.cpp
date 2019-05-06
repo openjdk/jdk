@@ -1926,3 +1926,11 @@ void ObjectMonitor::Initialize() {
 
   DEBUG_ONLY(InitDone = true;)
 }
+
+void ObjectMonitor::print_on(outputStream* st) const {
+  // The minimal things to print for markOop printing, more can be added for debugging and logging.
+  st->print("{contentions=0x%08x,waiters=0x%08x"
+            ",recursions=" INTPTR_FORMAT ",owner=" INTPTR_FORMAT "}",
+            contentions(), waiters(), recursions(),
+            p2i(owner()));
+}

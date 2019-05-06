@@ -733,8 +733,9 @@ void Klass::print_on(outputStream* st) const {
   st->cr();
 }
 
+#define BULLET  " - "
+
 void Klass::oop_print_on(oop obj, outputStream* st) {
-  ResourceMark rm;
   // print title
   st->print_cr("%s ", internal_name());
   obj->print_address_on(st);
@@ -742,10 +743,13 @@ void Klass::oop_print_on(oop obj, outputStream* st) {
   if (WizardMode) {
      // print header
      obj->mark()->print_on(st);
+     st->cr();
+     st->print(BULLET"prototype_header: " INTPTR_FORMAT, p2i(_prototype_header));
+     st->cr();
   }
 
   // print class
-  st->print(" - klass: ");
+  st->print(BULLET"klass: ");
   obj->klass()->print_value_on(st);
   st->cr();
 }
