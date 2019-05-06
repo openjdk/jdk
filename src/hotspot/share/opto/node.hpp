@@ -456,10 +456,10 @@ protected:
   void setup_is_top();
 
   // Strip away casting.  (It is depth-limited.)
-  Node* uncast() const;
+  Node* uncast(bool keep_deps = false) const;
   // Return whether two Nodes are equivalent, after stripping casting.
-  bool eqv_uncast(const Node* n) const {
-    return (this->uncast() == n->uncast());
+  bool eqv_uncast(const Node* n, bool keep_deps = false) const {
+    return (this->uncast(keep_deps) == n->uncast(keep_deps));
   }
 
   // Find out of current node that matches opcode.
@@ -470,7 +470,7 @@ protected:
   bool has_out_with(int opcode1, int opcode2, int opcode3, int opcode4);
 
 private:
-  static Node* uncast_helper(const Node* n);
+  static Node* uncast_helper(const Node* n, bool keep_deps);
 
   // Add an output edge to the end of the list
   void add_out( Node *n ) {
