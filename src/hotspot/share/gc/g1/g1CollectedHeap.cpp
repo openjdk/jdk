@@ -1036,7 +1036,7 @@ void G1CollectedHeap::prepare_heap_for_full_collection() {
 
 void G1CollectedHeap::verify_before_full_collection(bool explicit_gc) {
   assert(!GCCause::is_user_requested_gc(gc_cause()) || explicit_gc, "invariant");
-  assert(used() == recalculate_used(), "Should be equal");
+  assert_used_and_recalculate_used_equal(this);
   _verifier->verify_region_sets_optional();
   _verifier->verify_before_gc(G1HeapVerifier::G1VerifyFull);
   _verifier->check_bitmaps("Full GC Start");
@@ -4539,9 +4539,7 @@ void G1CollectedHeap::rebuild_region_sets(bool free_list_only) {
       _archive_allocator->clear_used();
     }
   }
-  assert(used() == recalculate_used(),
-         "inconsistent used(), value: " SIZE_FORMAT " recalculated: " SIZE_FORMAT,
-         used(), recalculate_used());
+  assert_used_and_recalculate_used_equal(this);
 }
 
 // Methods for the mutator alloc region

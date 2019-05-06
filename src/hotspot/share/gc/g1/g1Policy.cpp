@@ -487,10 +487,7 @@ void G1Policy::record_collection_pause_start(double start_time_sec) {
   assert(max_survivor_regions() + _g1h->num_used_regions() <= _g1h->max_regions(),
          "Maximum survivor regions %u plus used regions %u exceeds max regions %u",
          max_survivor_regions(), _g1h->num_used_regions(), _g1h->max_regions());
-
-  assert(_g1h->used() == _g1h->recalculate_used(),
-         "sanity, used: " SIZE_FORMAT " recalculate_used: " SIZE_FORMAT,
-         _g1h->used(), _g1h->recalculate_used());
+  assert_used_and_recalculate_used_equal(_g1h);
 
   phase_times()->record_cur_collection_start_sec(start_time_sec);
   _pending_cards = _g1h->pending_card_num();
@@ -581,8 +578,8 @@ bool G1Policy::need_to_start_conc_mark(const char* source, size_t alloc_word_siz
 void G1Policy::record_collection_pause_end(double pause_time_ms, size_t cards_scanned, size_t heap_used_bytes_before_gc) {
   double end_time_sec = os::elapsedTime();
 
+  assert_used_and_recalculate_used_equal(_g1h);
   size_t cur_used_bytes = _g1h->used();
-  assert(cur_used_bytes == _g1h->recalculate_used(), "It should!");
   bool this_pause_included_initial_mark = false;
   bool this_pause_was_young_only = collector_state()->in_young_only_phase();
 

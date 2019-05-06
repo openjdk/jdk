@@ -354,6 +354,15 @@ private:
     assert(Thread::current()->is_VM_thread(), "current thread is not VM thread"); \
   } while (0)
 
+#define assert_used_and_recalculate_used_equal(g1h)                           \
+  do {                                                                        \
+    size_t cur_used_bytes = g1h->used();                                      \
+    size_t recal_used_bytes = g1h->recalculate_used();                        \
+    assert(cur_used_bytes == recal_used_bytes, "Used(" SIZE_FORMAT ") is not" \
+           " same as recalculated used(" SIZE_FORMAT ").",                    \
+           cur_used_bytes, recal_used_bytes);                                 \
+  } while (0)
+
   const char* young_gc_name() const;
 
   // The young region list.
