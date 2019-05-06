@@ -36,6 +36,8 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 
+// The test doesn't work for PRODUCT because it needs WizardMode
+#ifndef PRODUCT
 static bool test_pattern(stringStream* st, const char* pattern) {
   return (strstr(st->as_string(), pattern) != NULL);
 }
@@ -135,3 +137,4 @@ TEST_VM(markOopDesc, printing) {
   intx hash = h_obj->identity_hash();
   assert_test_pattern(h_obj, "is_neutral hash=0x");
 }
+#endif // PRODUCT
