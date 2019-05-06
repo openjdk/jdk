@@ -624,6 +624,10 @@ bool Method::can_be_statically_bound() const {
   return can_be_statically_bound(method_holder()->access_flags());
 }
 
+bool Method::can_be_statically_bound(InstanceKlass* context) const {
+  return (method_holder() == context) && can_be_statically_bound();
+}
+
 bool Method::is_accessor() const {
   return is_getter() || is_setter();
 }

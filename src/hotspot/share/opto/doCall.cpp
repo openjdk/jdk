@@ -1152,14 +1152,19 @@ ciMethod* Compile::optimize_inlining(ciMethod* caller, int bci, ciInstanceKlass*
       cha_monomorphic_target = NULL;
     }
   }
+
   if (cha_monomorphic_target != NULL) {
     // Hardwiring a virtual.
-    // If we inlined because CHA revealed only a single target method,
-    // then we are dependent on that target method not getting overridden
-    // by dynamic class loading.  Be sure to test the "static" receiver
-    // dest_method here, as opposed to the actual receiver, which may
-    // falsely lead us to believe that the receiver is final or private.
-    dependencies()->assert_unique_concrete_method(actual_receiver, cha_monomorphic_target);
+    assert(!callee->can_be_statically_bound(), "should have been handled earlier");
+    assert(!cha_monomorphic_target->is_abstract(), "");
+    if (!cha_monomorphic_target->can_be_statically_bound(actual_receiver)) {
+      // If we inlined because CHA revealed only a single target method,
+      // then we are dependent on that target method not getting overridden
+      // by dynamic class loading.  Be sure to test the "static" receiver
+      // dest_method here, as opposed to the actual receiver, which may
+      // falsely lead us to believe that the receiver is final or private.
+      dependencies()->assert_unique_concrete_method(actual_receiver, cha_monomorphic_target);
+    }
     return cha_monomorphic_target;
   }
 
