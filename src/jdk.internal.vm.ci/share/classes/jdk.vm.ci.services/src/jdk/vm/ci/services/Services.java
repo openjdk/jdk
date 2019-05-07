@@ -283,6 +283,17 @@ public final class Services {
     }
 
     /**
+     * A Java {@code char} has a maximal UTF8 length of 3.
+     */
+    private static final int MAX_UNICODE_IN_UTF8_LENGTH = 3;
+
+    /**
+     * {@link DataOutputStream#writeUTF(String)} only supports values whose UTF8 encoding length is
+     * less than 65535.
+     */
+    private static final int MAX_UTF8_PROPERTY_STRING_LENGTH = 65535 / MAX_UNICODE_IN_UTF8_LENGTH;
+
+    /**
      * Serializes the {@linkplain #getSavedProperties() saved system properties} to a byte array for
      * the purpose of {@linkplain #initializeSavedProperties(byte[]) initializing} the initial
      * properties in the JVMCI shared library.
@@ -292,25 +303,48 @@ public final class Services {
         if (IS_IN_NATIVE_IMAGE) {
             throw new InternalError("Can only serialize saved properties in HotSpot runtime");
         }
-        Map<String, String> props = Services.getSavedProperties();
+        return serializeProperties(Services.getSavedProperties());
+    }
 
+    private static byte[] serializeProperties(Map<String, String> props) throws IOException {
         // Compute size of output on the assumption that
         // all system properties have ASCII names and values
-        int estimate = 4;
+        int estimate = 4 + 4;
+        int nonUtf8Props = 0;
         for (Map.Entry<String, String> e : props.entrySet()) {
             String name = e.getKey();
             String value = e.getValue();
             estimate += (2 + (name.length())) + (2 + (value.length()));
+            if (name.length() > MAX_UTF8_PROPERTY_STRING_LENGTH || value.length() > MAX_UTF8_PROPERTY_STRING_LENGTH) {
+                nonUtf8Props++;
+            }
         }
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream(estimate);
         DataOutputStream out = new DataOutputStream(baos);
-        out.writeInt(props.size());
+        out.writeInt(props.size() - nonUtf8Props);
+        out.writeInt(nonUtf8Props);
         for (Map.Entry<String, String> e : props.entrySet()) {
             String name = e.getKey();
             String value = e.getValue();
-            out.writeUTF(name);
-            out.writeUTF(value);
+            if (name.length() <= MAX_UTF8_PROPERTY_STRING_LENGTH && value.length() <= MAX_UTF8_PROPERTY_STRING_LENGTH) {
+                out.writeUTF(name);
+                out.writeUTF(value);
+            }
+        }
+        if (nonUtf8Props != 0) {
+            for (Map.Entry<String, String> e : props.entrySet()) {
+                String name = e.getKey();
+                String value = e.getValue();
+                if (name.length() > MAX_UTF8_PROPERTY_STRING_LENGTH || value.length() > MAX_UTF8_PROPERTY_STRING_LENGTH) {
+                    byte[] utf8Name = name.getBytes("UTF-8");
+                    byte[] utf8Value = value.getBytes("UTF-8");
+                    out.writeInt(utf8Name.length);
+                    out.write(utf8Name);
+                    out.writeInt(utf8Value.length);
+                    out.write(utf8Value);
+                }
+            }
         }
         return baos.toByteArray();
     }
@@ -325,13 +359,33 @@ public final class Services {
         if (!IS_IN_NATIVE_IMAGE) {
             throw new InternalError("Can only initialize saved properties in JVMCI shared library runtime");
         }
+        savedProperties = Collections.unmodifiableMap(deserializeProperties(serializedProperties));
+    }
+
+    private static Map<String, String> deserializeProperties(byte[] serializedProperties) throws IOException {
         DataInputStream in = new DataInputStream(new ByteArrayInputStream(serializedProperties));
-        Map<String, String> props = new HashMap<>(in.readInt());
+        int utf8Props = in.readInt();
+        int nonUtf8Props = in.readInt();
+        Map<String, String> props = new HashMap<>(utf8Props + nonUtf8Props);
+        int index = 0;
         while (in.available() != 0) {
-            String name = in.readUTF();
-            String value = in.readUTF();
-            props.put(name, value);
+            if (index < utf8Props) {
+                String name = in.readUTF();
+                String value = in.readUTF();
+                props.put(name, value);
+            } else {
+                int nameLen = in.readInt();
+                byte[] nameBytes = new byte[nameLen];
+                in.read(nameBytes);
+                int valueLen = in.readInt();
+                byte[] valueBytes = new byte[valueLen];
+                in.read(valueBytes);
+                String name = new String(nameBytes, "UTF-8");
+                String value = new String(valueBytes, "UTF-8");
+                props.put(name, value);
+            }
+            index++;
         }
-        savedProperties = Collections.unmodifiableMap(props);
+        return props;
     }
 }

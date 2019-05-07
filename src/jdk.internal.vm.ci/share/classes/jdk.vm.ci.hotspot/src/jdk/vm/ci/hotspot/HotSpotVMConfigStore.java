@@ -193,8 +193,7 @@ public final class HotSpotVMConfigStore {
     private static void printConfigLine(CompilerToVM vm, String format, Object... args) {
         String line = String.format(format, args);
         byte[] lineBytes = line.getBytes();
-        vm.writeDebugOutput(lineBytes, 0, lineBytes.length);
-        vm.flushDebugOutput();
+        vm.writeDebugOutput(lineBytes, 0, lineBytes.length, true, true);
     }
 
 }

@@ -612,10 +612,15 @@ final class CompilerToVM {
      * Writes {@code length} bytes from {@code bytes} starting at offset {@code offset} to HotSpot's
      * log stream.
      *
+     * @param flush specifies if the log stream should be flushed after writing
+     * @param canThrow specifies if an error in the {@code bytes}, {@code offset} or {@code length}
+     *            arguments should result in an exception or a negative return value
+     * @return 0 on success, -1 if {@code bytes == null && !canThrow}, -2 if {@code !canThrow} and
+     *         copying would cause access of data outside array bounds
      * @throws NullPointerException if {@code bytes == null}
      * @throws IndexOutOfBoundsException if copying would cause access of data outside array bounds
      */
-    native void writeDebugOutput(byte[] bytes, int offset, int length);
+    native int writeDebugOutput(byte[] bytes, int offset, int length, boolean flush, boolean canThrow);
 
     /**
      * Flush HotSpot's log stream.
@@ -947,4 +952,18 @@ final class CompilerToVM {
      */
     native boolean addFailedSpeculation(long failedSpeculationsAddress, byte[] speculation);
 
+    /**
+     * @see HotSpotJVMCIRuntime#isCurrentThreadAttached()
+     */
+    native boolean isCurrentThreadAttached();
+
+    /**
+     * @see HotSpotJVMCIRuntime#attachCurrentThread
+     */
+    native boolean attachCurrentThread(boolean asDaemon);
+
+    /**
+     * @see HotSpotJVMCIRuntime#detachCurrentThread()
+     */
+    native void detachCurrentThread();
 }

@@ -36,15 +36,6 @@ class JVMCIPrimitiveArray;
 class JVMCICompiler;
 class JVMCIRuntime;
 
-// Bring the JVMCI compiler thread into the VM state.
-#define JVMCI_VM_ENTRY_MARK                       \
-  JavaThread* thread = JavaThread::current(); \
-  ThreadInVMfromNative __tiv(thread);       \
-  ResetNoHandleMark rnhm;                   \
-  HandleMarkCleaner __hm(thread);           \
-  Thread* THREAD = thread;                  \
-  debug_only(VMNativeEntryWrapper __vew;)
-
 #define JVMCI_EXCEPTION_CONTEXT \
   JavaThread* thread=JavaThread::current(); \
   Thread* THREAD = thread;
@@ -154,24 +145,25 @@ class JVMCIEnv : public ResourceObj {
   static void*   _shared_library_handle; // result of os::dll_load
   static JavaVM* _shared_library_javavm; // result of calling JNI_CreateJavaVM in shared library
 
-  // Attaches the current thread to the JavaVM in the shared library,
-  // initializing the shared library VM first if necessary.
-  // Returns the JNI interface pointer of the current thread.
-  // The _shared_library_* fields are initialized by the first
-  // call to this method.
-  static JNIEnv* attach_shared_library();
+  // Initializes the shared library JavaVM if not already initialized.
+  // Returns the JNI interface pointer for the current thread
+  // if initialization was performed by this call, NULL if
+  // initialization was performed by a previous call.
+  static JNIEnv* init_shared_library(JavaThread* thread);
 
   // Initializes the _env, _mode and _runtime fields.
-  void init_env_mode_runtime(JNIEnv* parent_env);
+  void init_env_mode_runtime(JavaThread* thread, JNIEnv* parent_env);
 
-  void init(bool is_hotspot, const char* file, int line);
+  void init(JavaThread* thread, bool is_hotspot, const char* file, int line);
 
-  JNIEnv*                _env;     // JNI env for calling into shared library
-  JVMCIRuntime*          _runtime; // Access to a HotSpotJVMCIRuntime
-  bool             _is_hotspot;    // Which heap is the HotSpotJVMCIRuntime in
-  bool        _throw_to_caller;    // Propagate an exception raised in this env to the caller?
-  const char*            _file;    // The file and ...
-  int                    _line;    // ... line where this JNIEnv was created
+  JNIEnv*                 _env;  // JNI env for calling into shared library
+  bool     _pop_frame_on_close;  // Must pop frame on close?
+  bool        _detach_on_close;  // Must detach on close?
+  JVMCIRuntime*       _runtime;  // Access to a HotSpotJVMCIRuntime
+  bool             _is_hotspot;  // Which heap is the HotSpotJVMCIRuntime in
+  bool        _throw_to_caller;  // Propagate an exception raised in this env to the caller?
+  const char*            _file;  // The file and ...
+  int                    _line;  // ... line where this JNIEnv was created
 
   // Translates an exception on the HotSpot heap to an exception on
   // the shared library heap. The translation includes the stack and
@@ -185,12 +177,12 @@ public:
   // scope closes so that it will be propagated back to Java.
   // The JVMCIEnv destructor translates the exception object for the
   // Java runtime if necessary.
-  JVMCIEnv(JNIEnv* env, const char* file, int line);
+  JVMCIEnv(JavaThread* thread, JNIEnv* env, const char* file, int line);
 
   // Opens a JVMCIEnv scope for a compilation scheduled by the CompileBroker.
   // An exception occurring within the scope must not be propagated back to
   // the CompileBroker.
-  JVMCIEnv(JVMCICompileState* compile_state, const char* file, int line);
+  JVMCIEnv(JavaThread* thread, JVMCICompileState* compile_state, const char* file, int line);
 
   // Opens a JNIEnv scope for a call from within the VM. An exception occurring
   // within the scope must not be propagated back to the caller.
@@ -198,20 +190,20 @@ public:
 
   // Opens a JNIEnv scope for accessing `for_object`. An exception occurring
   // within the scope must not be propagated back to the caller.
-  JVMCIEnv(JVMCIObject for_object, const char* file, int line) {
+  JVMCIEnv(JavaThread* thread, JVMCIObject for_object, const char* file, int line) {
     // A JNI call to access an object in the shared library heap
     // can block or take a long time so do not allow such access
     // on the VM thread.
     assert(for_object.is_hotspot() || !Thread::current()->is_VM_thread(),
         "cannot open JVMCIEnv scope when in the VM thread for accessing a shared library heap object");
-    init(for_object.is_hotspot(), file, line);
+    init(thread, for_object.is_hotspot(), file, line);
   }
 
   // Opens a JNIEnv scope for the HotSpot runtime if `is_hotspot` is true
   // otherwise for the shared library runtime. An exception occurring
   // within the scope must not be propagated back to the caller.
-  JVMCIEnv(bool is_hotspot, const char* file, int line) {
-    init(is_hotspot, file, line);
+  JVMCIEnv(JavaThread* thread, bool is_hotspot, const char* file, int line) {
+    init(thread, is_hotspot, file, line);
   }
 
   ~JVMCIEnv();
@@ -247,8 +239,10 @@ public:
   long get_long_at(JVMCIPrimitiveArray array, int index);
   void put_long_at(JVMCIPrimitiveArray array, int index, jlong value);
 
-  void copy_bytes_to(JVMCIPrimitiveArray src, jbyte* dest, int offset, int size_in_bytes);
-  void copy_bytes_from(jbyte* src, JVMCIPrimitiveArray dest, int offset, int size_in_bytes);
+  void copy_bytes_to(JVMCIPrimitiveArray src, jbyte* dest, int offset, jsize length);
+  void copy_bytes_from(jbyte* src, JVMCIPrimitiveArray dest, int offset, jsize length);
+
+  void copy_longs_from(jlong* src, JVMCIPrimitiveArray dest, int offset, jsize length);
 
   JVMCIObjectArray initialize_intrinsics(JVMCI_TRAPS);
 
@@ -323,6 +317,8 @@ public:
   DO_THROW(IllegalArgumentException)
   DO_THROW(InvalidInstalledCodeException)
   DO_THROW(UnsatisfiedLinkError)
+  DO_THROW(UnsupportedOperationException)
+  DO_THROW(ClassNotFoundException)
 
 #undef DO_THROW
 

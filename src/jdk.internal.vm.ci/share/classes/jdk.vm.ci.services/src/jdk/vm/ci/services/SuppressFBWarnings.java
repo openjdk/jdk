@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,23 +22,21 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.vm.ci.services;
 
-module jdk.internal.vm.ci {
-    exports jdk.vm.ci.services to
-        jdk.internal.vm.compiler,
-        jdk.internal.vm.compiler.management;
-    exports jdk.vm.ci.runtime to
-        jdk.internal.vm.compiler,
-        jdk.internal.vm.compiler.management;
-    exports jdk.vm.ci.meta to jdk.internal.vm.compiler;
-    exports jdk.vm.ci.code to jdk.internal.vm.compiler;
-    exports jdk.vm.ci.hotspot to jdk.internal.vm.compiler;
+/**
+ * Used to suppress <a href="http://findbugs.sourceforge.net">FindBugs</a> warnings.
+ */
+@interface SuppressFBWarnings {
+    /**
+     * The set of FindBugs
+     * <a href="http://findbugs.sourceforge.net/bugDescriptions.html">warnings</a> that are to be
+     * suppressed in annotated element. The value can be a bug category, kind or pattern.
+     */
+    String[] value();
 
-    uses jdk.vm.ci.services.JVMCIServiceLocator;
-    uses jdk.vm.ci.hotspot.HotSpotJVMCIBackendFactory;
-
-    provides jdk.vm.ci.hotspot.HotSpotJVMCIBackendFactory with
-        jdk.vm.ci.hotspot.aarch64.AArch64HotSpotJVMCIBackendFactory,
-        jdk.vm.ci.hotspot.amd64.AMD64HotSpotJVMCIBackendFactory,
-        jdk.vm.ci.hotspot.sparc.SPARCHotSpotJVMCIBackendFactory;
+    /**
+     * Reason why the warning is suppressed.
+     */
+    String justification();
 }

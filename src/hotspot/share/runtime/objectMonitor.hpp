@@ -139,6 +139,7 @@ class ObjectMonitor {
   friend class ObjectSynchronizer;
   friend class ObjectWaiter;
   friend class VMStructs;
+  JVMCI_ONLY(friend class JVMCIVMStructs;)
 
   volatile markOop   _header;       // displaced object header word - mark
   void*     volatile _object;       // backward object pointer - strong root

@@ -32,8 +32,8 @@ class JVMCIEnv;
 #define JVMCIENV __jvmci_env__
 #define JVMCI_TRAPS  JVMCIEnv* JVMCIENV
 
-#define JNI_JVMCIENV(env)                                     \
-  JVMCIEnv __stack_jvmci_env__(env, __FILE__, __LINE__);      \
+#define JNI_JVMCIENV(thread, env)                                     \
+  JVMCIEnv __stack_jvmci_env__(thread, env, __FILE__, __LINE__);      \
   JVMCIEnv* JVMCIENV = &__stack_jvmci_env__
 
 #define THREAD_JVMCIENV(thread)                               \

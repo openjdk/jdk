@@ -160,13 +160,14 @@ class JavaArgumentUnboxer : public SignatureIterator {
 };
 
 class JNIHandleMark : public StackObj {
+  JavaThread* _thread;
   public:
-    JNIHandleMark() { push_jni_handle_block(); }
-    ~JNIHandleMark() { pop_jni_handle_block(); }
+    JNIHandleMark(JavaThread* thread) : _thread(thread) { push_jni_handle_block(thread); }
+    ~JNIHandleMark() { pop_jni_handle_block(_thread); }
 
   private:
-    static void push_jni_handle_block();
-    static void pop_jni_handle_block();
+    static void push_jni_handle_block(JavaThread* thread);
+    static void pop_jni_handle_block(JavaThread* thread);
 };
 
 #endif // SHARE_JVMCI_JVMCICOMPILERTOVM_HPP

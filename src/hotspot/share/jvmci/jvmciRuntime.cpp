@@ -655,7 +655,7 @@ JRT_END
 
 // private static JVMCIRuntime JVMCI.initializeRuntime()
 JVM_ENTRY_NO_ENV(jobject, JVM_GetJVMCIRuntime(JNIEnv *env, jclass c))
-  JNI_JVMCIENV(env);
+  JNI_JVMCIENV(thread, env);
   if (!EnableJVMCI) {
     JVMCI_THROW_MSG_NULL(InternalError, "JVMCI is not enabled");
   }
@@ -877,7 +877,7 @@ JVM_ENTRY_NO_ENV(void, JVM_RegisterJVMCINatives(JNIEnv *env, jclass c2vmClass))
   fatal("check TLAB allocation code for address space conflicts");
 #endif
 
-  JNI_JVMCIENV(env);
+  JNI_JVMCIENV(thread, env);
 
   if (!EnableJVMCI) {
     JVMCI_THROW_MSG(InternalError, "JVMCI is not enabled");
@@ -1351,6 +1351,10 @@ void JVMCIRuntime::compile_method(JVMCIEnv* JVMCIENV, JVMCICompiler* compiler, c
     // no OSR compilations during bootstrap - the compiler is just too slow at this point,
     // and we know that there are no endless loops
     compile_state->set_failure(true, "No OSR during boostrap");
+    return;
+  }
+  if (JVMCI::shutdown_called()) {
+    compile_state->set_failure(false, "Avoiding compilation during shutdown");
     return;
   }
 
