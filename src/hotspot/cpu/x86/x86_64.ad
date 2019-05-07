@@ -8181,6 +8181,52 @@ instruct xchgN( memory mem, rRegN newval) %{
   ins_pipe( pipe_cmpxchg );
 %}
 
+//----------Abs Instructions-------------------------------------------
+
+// Integer Absolute Instructions
+instruct absI_rReg(rRegI dst, rRegI src, rRegI tmp, rFlagsReg cr)
+%{
+  match(Set dst (AbsI src));
+  effect(TEMP dst, TEMP tmp, KILL cr);
+  format %{ "movl $tmp, $src\n\t"
+            "sarl $tmp, 31\n\t"
+            "movl $dst, $src\n\t"
+            "xorl $dst, $tmp\n\t"
+            "subl $dst, $tmp\n"
+          %}
+  ins_encode %{
+    __ movl($tmp$$Register, $src$$Register);
+    __ sarl($tmp$$Register, 31);
+    __ movl($dst$$Register, $src$$Register);
+    __ xorl($dst$$Register, $tmp$$Register);
+    __ subl($dst$$Register, $tmp$$Register);
+  %}
+
+  ins_pipe(ialu_reg_reg);
+%}
+
+// Long Absolute Instructions
+instruct absL_rReg(rRegL dst, rRegL src, rRegL tmp, rFlagsReg cr)
+%{
+  match(Set dst (AbsL src));
+  effect(TEMP dst, TEMP tmp, KILL cr);
+  format %{ "movq $tmp, $src\n\t"
+            "sarq $tmp, 63\n\t"
+            "movq $dst, $src\n\t"
+            "xorq $dst, $tmp\n\t"
+            "subq $dst, $tmp\n"
+          %}
+  ins_encode %{
+    __ movq($tmp$$Register, $src$$Register);
+    __ sarq($tmp$$Register, 63);
+    __ movq($dst$$Register, $src$$Register);
+    __ xorq($dst$$Register, $tmp$$Register);
+    __ subq($dst$$Register, $tmp$$Register);
+  %}
+
+  ins_pipe(ialu_reg_reg);
+%}
+
 //----------Subtraction Instructions-------------------------------------------
 
 // Integer Subtraction Instructions

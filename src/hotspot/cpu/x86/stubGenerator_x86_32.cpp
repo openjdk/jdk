@@ -602,7 +602,59 @@ class StubGenerator: public StubCodeGenerator {
 
     return start;
   }
+  //---------------------------------------------------------------------------------------------------
 
+  address generate_vector_mask(const char *stub_name, int32_t mask) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", stub_name);
+    address start = __ pc();
+
+    for (int i = 0; i < 16; i++) {
+      __ emit_data(mask, relocInfo::none, 0);
+    }
+
+    return start;
+  }
+
+  address generate_vector_mask_long_double(const char *stub_name, int32_t maskhi, int32_t masklo) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", stub_name);
+    address start = __ pc();
+
+    for (int i = 0; i < 8; i++) {
+      __ emit_data(masklo, relocInfo::none, 0);
+      __ emit_data(maskhi, relocInfo::none, 0);
+    }
+
+    return start;
+  }
+
+  //----------------------------------------------------------------------------------------------------
+
+  address generate_vector_byte_perm_mask(const char *stub_name) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", stub_name);
+    address start = __ pc();
+
+    __ emit_data(0x00000001, relocInfo::none, 0);
+    __ emit_data(0x00000000, relocInfo::none, 0);
+    __ emit_data(0x00000003, relocInfo::none, 0);
+    __ emit_data(0x00000000, relocInfo::none, 0);
+    __ emit_data(0x00000005, relocInfo::none, 0);
+    __ emit_data(0x00000000, relocInfo::none, 0);
+    __ emit_data(0x00000007, relocInfo::none, 0);
+    __ emit_data(0x00000000, relocInfo::none, 0);
+    __ emit_data(0x00000000, relocInfo::none, 0);
+    __ emit_data(0x00000000, relocInfo::none, 0);
+    __ emit_data(0x00000002, relocInfo::none, 0);
+    __ emit_data(0x00000000, relocInfo::none, 0);
+    __ emit_data(0x00000004, relocInfo::none, 0);
+    __ emit_data(0x00000000, relocInfo::none, 0);
+    __ emit_data(0x00000006, relocInfo::none, 0);
+    __ emit_data(0x00000000, relocInfo::none, 0);
+
+    return start;
+  }
 
   //----------------------------------------------------------------------------------------------------
   // Non-destructive plausibility checks for oops
@@ -3822,6 +3874,14 @@ class StubGenerator: public StubCodeGenerator {
 
     //------------------------------------------------------------------------------------------------------------------------
     // entry points that are platform specific
+
+    StubRoutines::x86::_vector_float_sign_mask = generate_vector_mask("vector_float_sign_mask", 0x7FFFFFFF);
+    StubRoutines::x86::_vector_float_sign_flip = generate_vector_mask("vector_float_sign_flip", 0x80000000);
+    StubRoutines::x86::_vector_double_sign_mask = generate_vector_mask_long_double("vector_double_sign_mask", 0x7FFFFFFF, 0xFFFFFFFF);
+    StubRoutines::x86::_vector_double_sign_flip = generate_vector_mask_long_double("vector_double_sign_flip", 0x80000000, 0x00000000);
+    StubRoutines::x86::_vector_short_to_byte_mask = generate_vector_mask("vector_short_to_byte_mask", 0x00ff00ff);
+    StubRoutines::x86::_vector_byte_perm_mask = generate_vector_byte_perm_mask("vector_byte_perm_mask");
+    StubRoutines::x86::_vector_long_sign_mask = generate_vector_mask_long_double("vector_long_sign_mask", 0x80000000, 0x00000000);
 
     // support for verify_oop (must happen after universe_init)
     StubRoutines::_verify_oop_subroutine_entry     = generate_verify_oop();

@@ -102,6 +102,10 @@ public class TestIntVect {
       test_xorv(a0, a1, (int)BIT_MASK);
       test_xora(a0, a1, a4);
 
+      test_absc(a0, a1);
+      test_negc(a0, a1);
+      test_notc(a0, a1);
+
       test_sllc(a0, a1);
       test_sllv(a0, a1, VALUE);
       test_srlc(a0, a1);
@@ -274,6 +278,21 @@ public class TestIntVect {
       test_xora(a0, a1, a4);
       for (int i=0; i<ARRLEN; i++) {
         errn += verify("test_xora: ", i, a0[i], (int)((int)(ADD_INIT+i)^BIT_MASK));
+      }
+
+      test_absc(a0, a1);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_absc: ", i, a0[i], (int)(Math.abs((int)(ADD_INIT+i))));
+      }
+
+      test_negc(a0, a1);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_negc: ", i, a0[i], (int)(-(int)(ADD_INIT+i)));
+      }
+
+      test_notc(a0, a1);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_notc: ", i, a0[i], (int)(~(int)(ADD_INIT+i)));
       }
 
       test_sllc(a0, a1);
@@ -647,6 +666,27 @@ public class TestIntVect {
     }
     end = System.currentTimeMillis();
     System.out.println("test_xora: " + (end - start));
+
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test_absc(a0, a1);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_absc: " + (end - start));
+
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test_negc(a0, a1);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_negc: " + (end - start));
+
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test_notc(a0, a1);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_notc: " + (end - start));
 
     start = System.currentTimeMillis();
     for (int i=0; i<ITERS; i++) {
@@ -1037,6 +1077,24 @@ public class TestIntVect {
   static void test_xora(int[] a0, int[] a1, int[] a2) {
     for (int i = 0; i < a0.length; i+=1) {
       a0[i] = (int)(a1[i]^a2[i]);
+    }
+  }
+
+  static void test_absc(int[] a0, int[] a1) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = (int)(Math.abs(a1[i]));
+    }
+  }
+
+  static void test_negc(int[] a0, int[] a1) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = (int)(-a1[i]);
+    }
+  }
+
+  static void test_notc(int[] a0, int[] a1) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = (int)(~a1[i]);
     }
   }
 

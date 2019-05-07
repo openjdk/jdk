@@ -224,6 +224,14 @@ class SubVDNode : public VectorNode {
   virtual int Opcode() const;
 };
 
+//------------------------------MulVBNode--------------------------------------
+// Vector multiply byte
+class MulVBNode : public VectorNode {
+ public:
+  MulVBNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  virtual int Opcode() const;
+};
+
 //------------------------------MulVSNode--------------------------------------
 // Vector multiply short
 class MulVSNode : public VectorNode {
@@ -357,6 +365,38 @@ class DivVFNode : public VectorNode {
 class DivVDNode : public VectorNode {
  public:
   DivVDNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------AbsVBNode--------------------------------------
+// Vector Abs byte
+class AbsVBNode : public VectorNode {
+public:
+  AbsVBNode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------AbsVSNode--------------------------------------
+// Vector Abs short
+class AbsVSNode : public VectorNode {
+public:
+  AbsVSNode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------AbsVINode--------------------------------------
+// Vector Abs int
+class AbsVINode : public VectorNode {
+public:
+  AbsVINode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------AbsVLNode--------------------------------------
+// Vector Abs long
+class AbsVLNode : public VectorNode {
+public:
+  AbsVLNode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {}
   virtual int Opcode() const;
 };
 

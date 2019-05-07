@@ -979,6 +979,40 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  address generate_vector_mask(const char *stub_name, int64_t mask) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", stub_name);
+    address start = __ pc();
+
+    __ emit_data64(mask, relocInfo::none);
+    __ emit_data64(mask, relocInfo::none);
+    __ emit_data64(mask, relocInfo::none);
+    __ emit_data64(mask, relocInfo::none);
+    __ emit_data64(mask, relocInfo::none);
+    __ emit_data64(mask, relocInfo::none);
+    __ emit_data64(mask, relocInfo::none);
+    __ emit_data64(mask, relocInfo::none);
+
+    return start;
+  }
+
+  address generate_vector_byte_perm_mask(const char *stub_name) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", stub_name);
+    address start = __ pc();
+
+    __ emit_data64(0x0000000000000001, relocInfo::none);
+    __ emit_data64(0x0000000000000003, relocInfo::none);
+    __ emit_data64(0x0000000000000005, relocInfo::none);
+    __ emit_data64(0x0000000000000007, relocInfo::none);
+    __ emit_data64(0x0000000000000000, relocInfo::none);
+    __ emit_data64(0x0000000000000002, relocInfo::none);
+    __ emit_data64(0x0000000000000004, relocInfo::none);
+    __ emit_data64(0x0000000000000006, relocInfo::none);
+
+    return start;
+  }
+
   // Non-destructive plausibility checks for oops
   //
   // Arguments:
@@ -5871,6 +5905,13 @@ address generate_avx_ghash_processBlocks() {
     StubRoutines::x86::_float_sign_flip  = generate_fp_mask("float_sign_flip",  0x8000000080000000);
     StubRoutines::x86::_double_sign_mask = generate_fp_mask("double_sign_mask", 0x7FFFFFFFFFFFFFFF);
     StubRoutines::x86::_double_sign_flip = generate_fp_mask("double_sign_flip", 0x8000000000000000);
+    StubRoutines::x86::_vector_float_sign_mask = generate_vector_mask("vector_float_sign_mask", 0x7FFFFFFF7FFFFFFF);
+    StubRoutines::x86::_vector_float_sign_flip = generate_vector_mask("vector_float_sign_flip", 0x8000000080000000);
+    StubRoutines::x86::_vector_double_sign_mask = generate_vector_mask("vector_double_sign_mask", 0x7FFFFFFFFFFFFFFF);
+    StubRoutines::x86::_vector_double_sign_flip = generate_vector_mask("vector_double_sign_flip", 0x8000000000000000);
+    StubRoutines::x86::_vector_short_to_byte_mask = generate_vector_mask("vector_short_to_byte_mask", 0x00ff00ff00ff00ff);
+    StubRoutines::x86::_vector_byte_perm_mask = generate_vector_byte_perm_mask("vector_byte_perm_mask");
+    StubRoutines::x86::_vector_long_sign_mask = generate_vector_mask("vector_long_sign_mask", 0x8000000000000000);
 
     // support for verify_oop (must happen after universe_init)
     StubRoutines::_verify_oop_subroutine_entry = generate_verify_oop();
