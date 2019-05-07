@@ -30,6 +30,7 @@
 #include "gc/shared/isGCActiveMark.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
+#include "logging/logConfiguration.hpp"
 #include "memory/heapInspection.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/symbol.hpp"
@@ -469,6 +470,16 @@ int VM_Exit::wait_for_threads_in_native_to_block() {
 }
 
 void VM_Exit::doit() {
+
+  if (VerifyBeforeExit) {
+    HandleMark hm(VMThread::vm_thread());
+    // Among other things, this ensures that Eden top is correct.
+    Universe::heap()->prepare_for_verify();
+    // Silent verification so as not to pollute normal output,
+    // unless we really asked for it.
+    Universe::verify();
+  }
+
   CompileBroker::set_should_block();
 
   // Wait for a short period for threads in native to block. Any thread
@@ -480,9 +491,16 @@ void VM_Exit::doit() {
 
   set_vm_exited();
 
+  // We'd like to call IdealGraphPrinter::clean_up() to finalize the
+  // XML logging, but we can't safely do that here. The logic to make
+  // XML termination logging safe is tied to the termination of the
+  // VMThread, and it doesn't terminate on this exit path. See 8222534.
+
   // cleanup globals resources before exiting. exit_globals() currently
   // cleans up outputStream resources and PerfMemory resources.
   exit_globals();
+
+  LogConfiguration::finalize();
 
   // Check for exit hook
   exit_hook_t exit_hook = Arguments::exit_hook();
