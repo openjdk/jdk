@@ -50,6 +50,8 @@ void ShenandoahArguments::initialize() {
   FLAG_SET_DEFAULT(ShenandoahStoreValEnqueueBarrier, false);
   FLAG_SET_DEFAULT(ShenandoahCASBarrier,             false);
   FLAG_SET_DEFAULT(ShenandoahCloneBarrier,           false);
+
+  FLAG_SET_DEFAULT(ShenandoahVerifyOptoBarriers,     false);
 #endif
 
 #ifdef _LP64
