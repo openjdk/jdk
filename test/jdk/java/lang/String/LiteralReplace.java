@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 8058779 8054307
+ * @bug 8058779 8054307 8222955
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
  * @run testng LiteralReplace
@@ -79,6 +79,10 @@ public class LiteralReplace {
         source.replace(target, replacement);
     }
 
+    @Test(expectedExceptions = {OutOfMemoryError.class})
+    public void testOOM() {
+        "1".repeat(65537).replace("1", "2".repeat(65537));
+    }
 
     @DataProvider
     public static Object[][] sourceTargetReplacementExpected() {
@@ -104,6 +108,14 @@ public class LiteralReplace {
             {"abcdefgh", "[a-h]", "X", "abcdefgh"},
             {"aa+", "a+", "", "a"},
             {"^abc$", "abc", "x", "^x$"},
+            {"abc", "b", "_", "a_c"},
+            {"abc", "bc", "_", "a_"},
+            {"abc".repeat(65537) + "end", "b", "_XYZ_", "a_XYZ_c".repeat(65537) + "end"},
+            {"abc".repeat(65537) + "end", "a", "_", "_bc".repeat(65537) + "end"},
+            {"a".repeat(65537), "a", "", ""},
+            {"ab".repeat(65537), "a", "", "b".repeat(65537)},
+            {"ab".repeat(65537), "ab", "", ""},
+            {"b" + "ab".repeat(65537), "ab", "", "b"},
 
             // more with non-latin1 characters
             {"\u4e00\u4e00\u4e00",
@@ -207,6 +219,42 @@ public class LiteralReplace {
              "\u4e00\u4e01\u4e02\u4e03\u4e04\u4e05",
              "",
              ""},
+
+            {"\u4e01\u4e02\u4e03", "\u4e02", "\u4e02", "\u4e01\u4e02\u4e03"},
+            {"\u4e01\u4e02\u4e03", "\u4e02", "\u4e04", "\u4e01\u4e04\u4e03"},
+            {"\u4e01\u4e02\u4e03", "\u4e02", "_", "\u4e01_\u4e03"},
+            {"a\u4e02c", "\u4e02", "_", "a_c"},
+            {"\u4e01@\u4e03", "@", "_", "\u4e01_\u4e03"},
+            {"\u4e01@\u4e03", "@", "\u4e02", "\u4e01\u4e02\u4e03"},
+            {"\u4e01\u4e02\u4e03", "\u4e02\u4e03", "\u4e02\u4e03", "\u4e01\u4e02\u4e03"},
+            {"\u4e01\u4e02\u4e03", "\u4e02\u4e03", "\u4e04\u4e05", "\u4e01\u4e04\u4e05"},
+            {"\u4e01\u4e02\u4e03", "\u4e02\u4e03", "\u4e06", "\u4e01\u4e06"},
+            {"\u4e01\u4e02\u4e03", "\u4e02\u4e03", "<>", "\u4e01<>"},
+            {"@\u4e02\u4e03", "\u4e02\u4e03", "<>", "@<>"},
+            {"\u4e01@@", "\u4e01@", "", "@"},
+            {"\u4e01@@", "\u4e01@", "#", "#@"},
+            {"\u4e01@@", "\u4e01@", "\u4e09", "\u4e09@"},
+            {"\u4e01@@", "\u4e01@", "#\u4e09", "#\u4e09@"},
+            {"\u4e01\u4e02\u4e03".repeat(32771) + "end", "\u4e02", "\u4e02", "\u4e01\u4e02\u4e03".repeat(32771) + "end"},
+            {"\u4e01\u4e02\u4e03".repeat(32771) + "end", "\u4e02", "\u4e04", "\u4e01\u4e04\u4e03".repeat(32771) + "end"},
+            {"\u4e01\u4e02\u4e03".repeat(32771) + "end", "\u4e02", "\u4e04\u4e05", "\u4e01\u4e04\u4e05\u4e03".repeat(32771) + "end"},
+            {"\u4e01\u4e02\u4e03".repeat(32771) + "end", "\u4e02", "_", "\u4e01_\u4e03".repeat(32771) + "end"},
+            {"\u4e01_\u4e03".repeat(32771) + "end", "_", "_", "\u4e01_\u4e03".repeat(32771) + "end"},
+            {"\u4e01_\u4e03".repeat(32771) + "end", "_", "\u4e06", "\u4e01\u4e06\u4e03".repeat(32771) + "end"},
+            {"\u4e01_\u4e03".repeat(32771) + "end", "_", "\u4e06\u4e06", "\u4e01\u4e06\u4e06\u4e03".repeat(32771) + "end"},
+            {"X_Y".repeat(32771) + "end", "_", "\u4e07", "X\u4e07Y".repeat(32771) + "end"},
+            {"X_Y".repeat(32771) + "end", "_", "\u4e07\u4e08", "X\u4e07\u4e08Y".repeat(32771) + "end"},
+            {"X_Y".repeat(32771) + "end", "_", ".\u4e08.", "X.\u4e08.Y".repeat(32771) + "end"},
+            {"\u4e0a".repeat(32771), "\u4e0a", "", ""},
+            {"\u4e0a\u4e0b".repeat(32771), "\u4e0a", "", "\u4e0b".repeat(32771)},
+            {"\u4e0a\u4e0b".repeat(32771), "\u4e0b", "", "\u4e0a".repeat(32771)},
+            {"\u4e0a\u4e0b".repeat(32771), "\u4e0a\u4e0b", "", ""},
+            {"\u4e0b" + "\u4e0a\u4e0b".repeat(32771), "\u4e0a\u4e0b", "", "\u4e0b"},
+            {"\u4e0a\u4e0b".repeat(32771) + "\u4e0a", "\u4e0a\u4e0b", "", "\u4e0a"},
+            {"\u4e0b" + "\u4e0a\u4e0b".repeat(32771) + "\u4e0a", "\u4e0a\u4e0b", "", "\u4e0b\u4e0a"},
+            {"b" + "\u4e0a\u4e0b".repeat(32771), "\u4e0a\u4e0b", "", "b"},
+            {"\u4e0a\u4e0b".repeat(32771) + "a", "\u4e0a\u4e0b", "", "a"},
+            {"b" + "\u4e0a\u4e0b".repeat(32771) + "a", "\u4e0a\u4e0b", "", "ba"},
         };
     }
 

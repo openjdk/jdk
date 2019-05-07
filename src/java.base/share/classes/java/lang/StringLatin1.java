@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,14 @@ import static java.lang.String.UTF16;
 import static java.lang.String.checkOffset;
 
 final class StringLatin1 {
+
+    /**
+     * The maximum size of array to allocate (unless necessary).
+     * Some VMs reserve some header words in an array.
+     * Attempts to allocate larger arrays may result in
+     * OutOfMemoryError: Requested array size exceeds VM limit
+     */
+    private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
 
     public static char charAt(byte[] value, int index) {
         if (index < 0 || index >= value.length) {
@@ -304,7 +312,7 @@ final class StringLatin1 {
             }
             if (i < len) {
                 if (canEncode(newChar)) {
-                    byte buf[] = new byte[len];
+                    byte[] buf = StringConcatHelper.newArray(len);
                     for (int j = 0; j < i; j++) {    // TBD arraycopy?
                         buf[j] = value[j];
                     }
@@ -328,6 +336,64 @@ final class StringLatin1 {
             }
         }
         return null; // for string to return this;
+    }
+
+    public static String replace(byte[] value, int valLen, byte[] targ,
+                                 int targLen, byte[] repl, int replLen)
+    {
+        assert targLen > 0;
+        int i, j, p = 0;
+        if (valLen == 0 || (i = indexOf(value, valLen, targ, targLen, 0)) < 0) {
+            return null; // for string to return this;
+        }
+
+        // find and store indices of substrings to replace
+        int[] pos = new int[16];
+        pos[0] = i;
+        i += targLen;
+        while ((j = indexOf(value, valLen, targ, targLen, i)) > 0) {
+            if (++p == pos.length) {
+                int cap = p + (p >> 1);
+                // overflow-conscious code
+                if (cap - MAX_ARRAY_SIZE > 0) {
+                    if (p == MAX_ARRAY_SIZE) {
+                        throw new OutOfMemoryError();
+                    }
+                    cap = MAX_ARRAY_SIZE;
+                }
+                pos = Arrays.copyOf(pos, cap);
+            }
+            pos[p] = j;
+            i = j + targLen;
+        }
+
+        int resultLen;
+        try {
+            resultLen = Math.addExact(valLen,
+                    Math.multiplyExact(++p, replLen - targLen));
+        } catch (ArithmeticException ignored) {
+            throw new OutOfMemoryError();
+        }
+        if (resultLen == 0) {
+            return "";
+        }
+
+        byte[] result = StringConcatHelper.newArray(resultLen);
+        int posFrom = 0, posTo = 0;
+        for (int q = 0; q < p; ++q) {
+            int nextPos = pos[q];
+            while (posFrom < nextPos) {
+                result[posTo++] = value[posFrom++];
+            }
+            posFrom += targLen;
+            for (int k = 0; k < replLen; ++k) {
+                result[posTo++] = repl[k];
+            }
+        }
+        while (posFrom < valLen) {
+            result[posTo++] = value[posFrom++];
+        }
+        return new String(result, LATIN1);
     }
 
     // case insensitive
