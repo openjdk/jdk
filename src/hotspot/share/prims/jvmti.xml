@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <?xml-stylesheet type="text/xsl" href="jvmti.xsl"?>
 <!--
- Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 -->
 
 <!DOCTYPE specification [
-   <!ELEMENT specification (title, copyright, intro*, functionsection, errorsection,
+   <!ELEMENT specification (title, intro*, functionsection, errorsection,
                             eventsection, datasection, issuessection, changehistory)>
    <!ATTLIST specification label CDATA #REQUIRED
                            majorversion CDATA #REQUIRED
@@ -33,8 +33,6 @@
 
    <!ELEMENT title (#PCDATA|jvmti|tm)*>
    <!ATTLIST title subtitle CDATA #REQUIRED>
-
-   <!ELEMENT copyright ANY>
 
    <!ELEMENT intro ANY>
    <!ATTLIST intro id CDATA #IMPLIED
@@ -366,10 +364,6 @@
   <title subtitle="Version">
     <tm>JVM</tm> Tool Interface
   </title>
-
-  <copyright>
-    Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
-  </copyright>
 
   <intro id="whatIs" label="What is the JVM Tool Interface?">
     The <tm>JVM</tm> Tool Interface (<jvmti/>)

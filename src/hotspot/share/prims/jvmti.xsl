@@ -1,6 +1,6 @@
-<?xml version="1.0"?> 
+<?xml version="1.0"?>
 <!--
- Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -20,14 +20,14 @@
  Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  or visit www.oracle.com if you need additional information or have any
  questions.
-  
+
 -->
 
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
 
 <xsl:import href="jvmtiLib.xsl"/>
 
-<xsl:output method="html" indent="yes" 
+<xsl:output method="html" indent="yes"
   doctype-system="about:legacy-compat"/>
 
 <xsl:param name="development"></xsl:param>
@@ -119,7 +119,7 @@
       <li>
         <a href="#DataSection"><b>Data Types</b></a>
         <ul>
-          <xsl:for-each select="//basetypes">   
+          <xsl:for-each select="//basetypes">
           <li>
             <a>
               <xsl:attribute name="href">#<xsl:value-of select="@id"/></xsl:attribute>
@@ -204,7 +204,6 @@
     <p id="ChangeHistory"/>
       <xsl:apply-templates select="changehistory"/>
     </div>
-    <xsl:apply-templates select="copyright"/>
   </body>
 </html>
 </xsl:template>
@@ -218,12 +217,6 @@
       <xsl:text> </xsl:text>
       <xsl:call-template name="showbasicversion"/>
     </h3>
-</xsl:template>
-
-<xsl:template match="copyright">
-  <p>
-    <xsl:apply-templates/>
-  </p>
 </xsl:template>
 
 <xsl:template match="functionsection">
@@ -286,7 +279,7 @@
       <xsl:apply-templates select="$calltypes" mode="index"/>
     </ul>
   </xsl:if>
-  <xsl:variable name="cattypes" 
+  <xsl:variable name="cattypes"
     select="(descendant::typedef|descendant::uniontypedef|descendant::capabilitiestypedef|descendant::constants[@kind='enum'])"/>
   <xsl:if test="count($cattypes)!=0">
     <xsl:value-of select="@label"/> types:
@@ -304,9 +297,9 @@
           <xsl:value-of select="@label"/>
         </li>
       </xsl:for-each>
-    </ul>    
+    </ul>
   </xsl:if>
-  <xsl:variable name="catconst" 
+  <xsl:variable name="catconst"
     select="(descendant::constants[@kind!='enum'])"/>
   <xsl:if test="count($catconst)!=0">
     <xsl:value-of select="@label"/> flags and constants:
@@ -322,7 +315,7 @@
           </a>
         </li>
       </xsl:for-each>
-    </ul>    
+    </ul>
   </xsl:if>
   <xsl:apply-templates select="intro|typedef|uniontypedef|capabilitiestypedef"/>
   <div class="sep"/>
@@ -334,7 +327,7 @@
     <xsl:attribute name="id">
       <xsl:value-of select="@id"/>
     </xsl:attribute>
-    
+
   </hr>
   <xsl:apply-templates select="synopsis" mode="body"/>
   <blockquote>
@@ -505,7 +498,7 @@
     <xsl:when test="contains(@callbacksafe,'safe')">
     This function may be called from the callbacks to the
     <a href="#Heap">Heap</a> iteration functions, or from the
-    event handlers for the 
+    event handlers for the
     <a href="#GarbageCollectionStart"><code>GarbageCollectionStart</code></a>,
     <a href="#GarbageCollectionFinish"><code>GarbageCollectionFinish</code></a>,
     and <a href="#ObjectFree"><code>ObjectFree</code></a> events.
@@ -536,7 +529,7 @@
       <xsl:for-each select="parameters">
         <xsl:apply-templates select="param[position()=1]" mode="signature"/>
         <xsl:for-each select="param[position()>1]">
-          <xsl:text>, 
+          <xsl:text>,
      </xsl:text>
           <xsl:apply-templates select="." mode="signature"/>
         </xsl:for-each>
@@ -932,7 +925,7 @@ typedef struct {
           </a>
           <xsl:apply-templates select="description" mode="brief"/>
         </td>
-      </tr>      
+      </tr>
     </xsl:when>
     <xsl:otherwise>
       <tr>
@@ -949,12 +942,12 @@ typedef struct {
           </a>
           <xsl:apply-templates select="description" mode="brief"/>
         </td>
-      </tr>      
+      </tr>
       <tr>
         <td>
           <pre>
             <xsl:apply-templates select="definition"/>
-          </pre>          
+          </pre>
         </td>
       </tr>
     </xsl:otherwise>
@@ -977,7 +970,7 @@ typedef struct {
       <xsl:when test=".=''">
         <code>
           <xsl:value-of select="@id"/>
-        </code>        
+        </code>
       </xsl:when>
       <xsl:otherwise>
         <xsl:apply-templates/>
@@ -994,7 +987,7 @@ typedef struct {
       <xsl:when test=".=''">
         <code>
           <xsl:value-of select="@id"/>
-        </code>        
+        </code>
       </xsl:when>
       <xsl:otherwise>
         <xsl:apply-templates/>
@@ -1010,7 +1003,7 @@ typedef struct {
       <xsl:when test=".=''">
         <code>
           <xsl:value-of select="@id"/>
-        </code>        
+        </code>
       </xsl:when>
       <xsl:otherwise>
         <xsl:apply-templates/>
@@ -1038,7 +1031,7 @@ typedef struct {
 <xsl:template match="eventphaselist">
   <xsl:variable name="phase" select="@phase"/>
   <ul>
-    <xsl:for-each select="//eventsection/event[@phase=$phase]">   
+    <xsl:for-each select="//eventsection/event[@phase=$phase]">
       <li>
         <a>
           <xsl:attribute name="href">#<xsl:value-of select="@id"/></xsl:attribute>
@@ -1064,7 +1057,7 @@ typedef struct {
   <cite>
     <xsl:text>The Java&#8482; Virtual Machine Specification</xsl:text>
     <xsl:if test="count(@chapter)=1">
-      <xsl:text>, Chapter </xsl:text> 
+      <xsl:text>, Chapter </xsl:text>
       <xsl:value-of select="@chapter"/>
     </xsl:if>
   </cite>
@@ -1155,18 +1148,18 @@ typedef struct {
         <tr>
           <td colspan="2">
             <b>Optional Functionality:</b> might not be implemented for all
-            virtual machines. 
+            virtual machines.
             <xsl:choose>
               <xsl:when test="count(required)=1">
-                The following capability 
+                The following capability
               </xsl:when>
               <xsl:otherwise>
                 One of the following capabilities
               </xsl:otherwise>
             </xsl:choose>
-            (as returned by 
+            (as returned by
             <a href="#GetCapabilities"><code>GetCapabilities</code></a>)
-            must be true to use this      
+            must be true to use this
             <xsl:choose>
               <xsl:when test="ancestor::function">
                 function.
@@ -1322,8 +1315,8 @@ typedef struct {
       <xsl:when test="contains($haserrors,'yes')">
         <tr>
           <td colspan="2">
-            This function returns either a 
-            <a href="#universal-error">universal error</a> 
+            This function returns either a
+            <a href="#universal-error">universal error</a>
             or one of the following errors
           </td>
         </tr>
@@ -1342,7 +1335,7 @@ typedef struct {
       <xsl:otherwise>
         <tr>
           <td colspan="{$fullRowColspan}">
-            This function returns a 
+            This function returns a
             <a href="#universal-error">universal error</a>
           </td>
         </tr>
@@ -1370,7 +1363,7 @@ typedef struct {
         <xsl:attribute name="href">#jvmtiCapabilities.<xsl:value-of select="@id"/></xsl:attribute>
         <code>
           <xsl:value-of select="@id"/>
-        </code>        
+        </code>
       </a>.
       Use <a href="#AddCapabilities"><code>AddCapabilities</code></a>.
     </td>
@@ -1412,7 +1405,7 @@ typedef struct {
     </tr>
   </xsl:if>
 </xsl:template>
- 
+
 <xsl:template match="param" mode="errors2">
   <xsl:variable name="haserrors2">
     <xsl:apply-templates mode="haserrors2"/>
@@ -1439,7 +1432,7 @@ typedef struct {
     </tr>
   </xsl:if>
 </xsl:template>
- 
+
 <xsl:template match="description" mode="haserrors">
 </xsl:template>
 
@@ -1684,7 +1677,7 @@ typedef struct {
     </xsl:attribute>
     <code>
       <xsl:value-of select="ancestor::param/@id"/>
-    </code>        
+    </code>
   </a>
 </xsl:template>
 
@@ -1858,7 +1851,7 @@ typedef struct {
       </td>
       <td>
         <pre>
-          <xsl:text>void *reserved</xsl:text>        
+          <xsl:text>void *reserved</xsl:text>
           <xsl:value-of select="$index"/>
           <xsl:text>;</xsl:text>
         </pre>

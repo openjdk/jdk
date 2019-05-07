@@ -58,7 +58,7 @@ endef
 #   OUTPUT_DIR the directory where we store the processed files.
 #   OUTPUT_FILE the name of the resulting file. Only allowed if processing a
 #       single file.
-#   SOURCE_BASE_DIR a common root to all SOURCE_DIRS.
+#   SOURCE_BASE_DIR a common root to all SOURCE_DIRS or SOURCE_FILES.
 #       If specified, files will keep the path relative to the base in the
 #       OUTPUT_DIR. Otherwise, the hierarchy will be flattened into the OUTPUT_DIR.
 #   INCLUDE_FILES only include files matching these patterns (used only with
@@ -83,9 +83,6 @@ define SetupTextFileProcessingBody
   ifneq ($$($1_SOURCE_FILES),)
     ifneq ($$($1_SOURCE_DIRS),)
       $$(error Cannot use both SOURCE_FILES and SOURCE_DIRS (in $1))
-    endif
-    ifneq ($$($1_SOURCE_BASE_DIR),)
-      $$(error Cannot use SOURCE_BASE_DIR without SOURCE_DIRS (in $1))
     endif
     ifneq ($$($1_EXCLUDE_FILES)$$($1_INCLUDE_FILES),)
       $$(error Cannot INCLUDE/EXCLUDE_FILES with SOURCE_FILES (in $1))
@@ -155,9 +152,10 @@ define SetupTextFileProcessingBody
     # Convert the REPLACEMENTS syntax ( A => B ; C => D ; ...) to a sed command
     # line (-e "s/A/B/g" -e "s/C/D/g" ...), basically by replacing '=>' with '/'
     # and ';' with '/g" -e "s/', and adjusting for edge cases.
+    # '&' has special meaning in sed so needs to be escaped.
     $1_REPLACEMENTS_COMMAND_LINE := $(SED) -e 's$$($1_SEP)$$(subst $$(SPACE);$$(SPACE),$$($1_SEP)g' \
         -e 's$$($1_SEP),$$(subst $$(SPACE)=>$$(SPACE),$$($1_SEP),$$(subst $$(SPACE)=>$$(SPACE);$$(SPACE),$$($1_SEP)$$($1_SEP)g' \
-        -e 's$$($1_SEP),$$(strip $$($1_REPLACEMENTS)))))$$($1_SEP)g'
+        -e 's$$($1_SEP),$$(subst &,\&,$$(strip $$($1_REPLACEMENTS))))))$$($1_SEP)g'
   else
     # We don't have any replacements, just pipe the file through cat.
     $1_REPLACEMENTS_COMMAND_LINE := $(CAT)
