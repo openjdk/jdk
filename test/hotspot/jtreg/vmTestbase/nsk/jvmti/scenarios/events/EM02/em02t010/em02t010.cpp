@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 #include <string.h>
 #include "jvmti.h"
 #include "agent_common.h"
+#include "ExceptionCheckingJniEnv.hpp"
 #include "jni_tools.h"
 #include "jvmti_tools.h"
 #include "JVMTITools.h"
@@ -451,6 +452,7 @@ setCallBacks(int step) {
 static void JNICALL
 agentProc(jvmtiEnv* jvmti, JNIEnv* agentJNI, void* arg) {
 
+    ExceptionCheckingJniEnvPtr ec_jni(agentJNI);
     int i;
     jfieldID field_accID, field_modID;
     jclass cls;
@@ -459,17 +461,9 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* agentJNI, void* arg) {
     if (!nsk_jvmti_waitForSync(timeout))
         return;
 
-    cls = agentJNI->FindClass(CLASS_NAME);
-    if (!NSK_JNI_VERIFY(agentJNI, cls != NULL))
-        return;
-
-    field_accID = agentJNI->GetStaticFieldID(cls, FIELD_ACC_NAME, "I");
-    if (!NSK_JNI_VERIFY(agentJNI, field_accID != NULL))
-        return;
-
-    field_modID = agentJNI->GetStaticFieldID(cls, FIELD_MOD_NAME, "I");
-    if (!NSK_JNI_VERIFY(agentJNI, field_modID != NULL))
-        return;
+    cls = ec_jni->FindClass(CLASS_NAME, TRACE_JNI_CALL);
+    field_accID = ec_jni->GetStaticFieldID(cls, FIELD_ACC_NAME, "I", TRACE_JNI_CALL);
+    field_modID = ec_jni->GetStaticFieldID(cls, FIELD_MOD_NAME, "I", TRACE_JNI_CALL);
 
     if (!NSK_JVMTI_VERIFY(jvmti->SetFieldModificationWatch(cls, field_modID)))
         return;

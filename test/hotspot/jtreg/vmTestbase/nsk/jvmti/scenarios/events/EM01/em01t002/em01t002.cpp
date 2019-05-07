@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 #include <string.h>
 #include "jvmti.h"
 #include "agent_common.h"
+#include "ExceptionCheckingJniEnv.hpp"
 #include "jni_tools.h"
 #include "jvmti_tools.h"
 #include "JVMTITools.h"
@@ -61,28 +62,16 @@ static jvmtiPhase currentPhase;
 JNIEXPORT jclass JNICALL
 Java_nsk_jvmti_scenarios_events_EM01_em01t002_loadClass(JNIEnv *jni_env,
                         jobject o, jobject loader, jstring className) {
+    ExceptionCheckingJniEnvPtr ec_jni(jni_env);
     jclass klass;
     jmethodID methodID;
     jclass loadedClass;
 
-    klass = jni_env->GetObjectClass(loader);
-    if (!NSK_JNI_VERIFY(jni_env, klass != NULL)) {
-        nsk_jvmti_setFailStatus();
-        return NULL;
-    }
-
-    methodID = jni_env->GetMethodID(
-            klass, "loadClass", "(Ljava/lang/String;)Ljava/lang/Class;");
-    if (!NSK_JNI_VERIFY(jni_env, methodID != NULL)) {
-        nsk_jvmti_setFailStatus();
-        return NULL;
-    }
-
-    loadedClass = (jclass) jni_env->CallObjectMethod(loader, methodID, className);
-    if (!NSK_JNI_VERIFY(jni_env, loadedClass != NULL)) {
-        nsk_jvmti_setFailStatus();
-        return NULL;
-    }
+    klass = ec_jni->GetObjectClass(loader, TRACE_JNI_CALL);
+    methodID = ec_jni->GetMethodID(
+            klass, "loadClass", "(Ljava/lang/String;)Ljava/lang/Class;", TRACE_JNI_CALL);
+    loadedClass = (jclass) ec_jni->CallObjectMethod(loader, methodID,
+                                                    TRACE_JNI_CALL_VARARGS(className));
 
     return loadedClass;
 }
@@ -93,16 +82,12 @@ Java_nsk_jvmti_scenarios_events_EM01_em01t002_loadClass(JNIEnv *jni_env,
  * Signature: (Ljava/lang/Class;)Z
  */
 JNIEXPORT jboolean JNICALL
-Java_nsk_jvmti_scenarios_events_EM01_em01t002_prepareClass(JNIEnv *jni_env,
+Java_nsk_jvmti_scenarios_events_EM01_em01t002_prepareClass(JNIEnv *jni,
                         jobject o, jclass klass) {
+    ExceptionCheckingJniEnvPtr ec_jni(jni);
     jfieldID fieldID;
 
-    fieldID = jni_env->GetStaticFieldID(klass, "toProvokePreparation", "I");
-    if (!NSK_JNI_VERIFY(jni_env, fieldID != NULL)) {
-        nsk_jvmti_setFailStatus();
-        return NSK_FALSE;
-    }
-
+    fieldID = ec_jni->GetStaticFieldID(klass, "toProvokePreparation", "I", TRACE_JNI_CALL);
     return NSK_TRUE;
 }
 
@@ -114,26 +99,13 @@ Java_nsk_jvmti_scenarios_events_EM01_em01t002_prepareClass(JNIEnv *jni_env,
 JNIEXPORT jboolean JNICALL
 Java_nsk_jvmti_scenarios_events_EM01_em01t002_startThread(JNIEnv *jni_env,
                         jobject o, jobject thread) {
+    ExceptionCheckingJniEnvPtr ec_jni(jni_env);
     jclass klass;
     jmethodID methodID;
 
-    klass = jni_env->GetObjectClass(thread);
-    if (!NSK_JNI_VERIFY(jni_env, klass != NULL)) {
-        nsk_jvmti_setFailStatus();
-        return NSK_FALSE;
-    }
-
-    methodID = jni_env->GetMethodID(klass, "start", "()V");
-    if (!NSK_JNI_VERIFY(jni_env, methodID != NULL)) {
-        nsk_jvmti_setFailStatus();
-        return NSK_FALSE;
-    }
-
-    if (!NSK_JNI_VERIFY_VOID(jni_env,jni_env->CallVoidMethod(thread, methodID))) {
-        nsk_jvmti_setFailStatus();
-        return NSK_FALSE;
-    }
-
+    klass = ec_jni->GetObjectClass(thread, TRACE_JNI_CALL);
+    methodID = ec_jni->GetMethodID(klass, "start", "()V", TRACE_JNI_CALL);
+    ec_jni->CallVoidMethod(thread, methodID, TRACE_JNI_CALL);
     return NSK_TRUE;
 }
 
@@ -224,17 +196,14 @@ classEventsHandler(jvmtiEvent event, jvmtiEnv* jvmti_env, JNIEnv* jni_env,
 void
 threadEventHandler(jvmtiEvent event, jvmtiEnv* jvmti_env, JNIEnv* jni_env,
                             jthread thread) {
+    ExceptionCheckingJniEnvPtr ec_jni(jni_env);
     jclass classObject;
     char *className;
     char *generic;
     jvmtiPhase phase;
 
 
-    classObject = jni_env->GetObjectClass(thread);
-    if (!NSK_JNI_VERIFY(jni_env, classObject != NULL)) {
-        nsk_jvmti_setFailStatus();
-        return;
-    }
+    classObject = ec_jni->GetObjectClass(thread, TRACE_JNI_CALL);
 
     if (!NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(classObject, &className, &generic))) {
         nsk_jvmti_setFailStatus();

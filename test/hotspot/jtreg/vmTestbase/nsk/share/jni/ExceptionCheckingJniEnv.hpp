@@ -59,6 +59,7 @@
  */
 
 #define TRACE_JNI_CALL __LINE__, __FILE__
+#define TRACE_JNI_CALL_VARARGS(...) __LINE__, __FILE__, __VA_ARGS__
 
 class ExceptionCheckingJniEnv {
  public:
@@ -69,6 +70,8 @@ class ExceptionCheckingJniEnv {
                             int line, const char* file_name);
   jfieldID GetFieldID(jclass klass, const char* name, const char* type,
                       int line, const char* file_name);
+  jmethodID GetStaticMethodID(jclass klass, const char* name, const char* sig,
+                              int line, const char* file_name);
   jmethodID GetMethodID(jclass klass, const char* name, const char* sig,
                         int line, const char* file_name);
 
@@ -105,6 +108,14 @@ class ExceptionCheckingJniEnv {
   void DeleteLocalRef(jobject ref, int line, const char* file_name);
   jweak NewWeakGlobalRef(jobject obj, int line, const char* file_name);
   void DeleteWeakGlobalRef(jweak obj, int line, const char* file_name);
+
+  jboolean IsSameObject(jobject ref1, jobject ref2, int line,
+                        const char* file_name);
+
+  jobject CallObjectMethod(jobject obj, jmethodID methodID, int line,
+                           const char* file_name, ...);
+  void CallVoidMethod(jobject obj, jmethodID methodID, int line,
+                      const char* file_name, ...);
 
   // ExceptionCheckingJniEnv methods.
   JNIEnv* GetJNIEnv() {

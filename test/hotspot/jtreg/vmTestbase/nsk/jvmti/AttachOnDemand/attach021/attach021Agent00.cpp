@@ -89,15 +89,15 @@ void JNICALL objectFreeHandler(jvmtiEnv *jvmti, jlong tag) {
 }
 
 void registerNativeMethods(JNIEnv* jni_env) {
-    ExceptionCheckingJniEnvPtr jni(jni_env);
+    ExceptionCheckingJniEnvPtr ec_jni(jni_env);
     jclass appClass;
     JNINativeMethod nativeMethods[] = {
             { (char*) "setTagFor", (char*) "(Ljava/lang/Object;)Z", (void*) Java_nsk_jvmti_AttachOnDemand_attach021_attach021Target_setTagFor },
             { (char*) "shutdownAgent", (char*) "()V", (void*) Java_nsk_jvmti_AttachOnDemand_attach021_attach021Target_shutdownAgent } };
     jint nativeMethodsNumber = 2;
 
-    appClass = jni->FindClass(ATTACH021_TARGET_APP_CLASS_NAME, TRACE_JNI_CALL);
-    jni->RegisterNatives(appClass, nativeMethods, nativeMethodsNumber, TRACE_JNI_CALL);
+    appClass = ec_jni->FindClass(ATTACH021_TARGET_APP_CLASS_NAME, TRACE_JNI_CALL);
+    ec_jni->RegisterNatives(appClass, nativeMethods, nativeMethodsNumber, TRACE_JNI_CALL);
 }
 
 #ifdef STATIC_BUILD

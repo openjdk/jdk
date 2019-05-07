@@ -426,6 +426,17 @@ jmethodID ExceptionCheckingJniEnv::GetMethodID(jclass klass, const char* name, c
   return marker.ResultNotNull(_jni_env->GetMethodID(klass, name, sig));
 }
 
+jmethodID ExceptionCheckingJniEnv::GetStaticMethodID(jclass klass, const char* name, const char* sig,
+                                                     int line, const char* file_name) {
+  JNIVerifier<jmethodID> marker(this, "GetStaticMethodID", klass, name, sig, line, file_name);
+  return marker.ResultNotNull(_jni_env->GetStaticMethodID(klass, name, sig));
+}
+
+jboolean ExceptionCheckingJniEnv::IsSameObject(jobject ref1, jobject ref2, int line, const char* file_name) {
+  JNIVerifier<> marker(this, "IsSameObject", ref1, ref2, line, file_name);
+  return _jni_env->IsSameObject(ref1, ref2);
+}
+
 jobject ExceptionCheckingJniEnv::NewObject(jclass klass, jmethodID methodID,
                                            int line, const char* file_name, ...) {
   // In the case of NewObject, we miss the extra arguments passed to NewObject sadly.
@@ -436,4 +447,25 @@ jobject ExceptionCheckingJniEnv::NewObject(jclass klass, jmethodID methodID,
   jobject result = marker.ResultNotNull(_jni_env->NewObjectV(klass, methodID, args));
   va_end(args);
   return result;
+}
+
+jobject ExceptionCheckingJniEnv::CallObjectMethod(jobject obj, jmethodID methodID, int line,
+                         const char* file_name, ...) {
+  JNIVerifier<> marker(this, "CallObjectMethod", obj, methodID, line, file_name);
+
+  va_list args;
+  va_start(args, file_name);
+  jobject result = _jni_env->CallObjectMethodV(obj, methodID, args);
+  va_end(args);
+  return result;
+}
+
+void ExceptionCheckingJniEnv::CallVoidMethod(jobject obj, jmethodID methodID, int line,
+                    const char* file_name, ...) {
+  JNIVerifier<> marker(this, "CallVoidMethod", obj, methodID, line, file_name);
+
+  va_list args;
+  va_start(args, file_name);
+  _jni_env->CallVoidMethodV(obj, methodID, args);
+  va_end(args);
 }

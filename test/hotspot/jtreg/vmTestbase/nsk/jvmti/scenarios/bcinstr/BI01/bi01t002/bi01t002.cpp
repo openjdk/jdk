@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 #include <string.h>
 #include "jvmti.h"
 #include "agent_common.h"
+#include "ExceptionCheckingJniEnv.hpp"
 #include "jni_tools.h"
 #include "jvmti_tools.h"
 
@@ -51,21 +52,18 @@ JNIEXPORT jboolean JNICALL
 Java_nsk_jvmti_scenarios_bcinstr_BI01_bi01t002_setNewByteCode(JNIEnv *jni_env,
                         jobject o, jint ind, jbyteArray byteCode) {
 
+    ExceptionCheckingJniEnvPtr ec_jni(jni_env);
     jbyte* elements;
     jboolean isCopy;
 
-    newClassSize[ind] = jni_env->GetArrayLength(byteCode);
-    if (!NSK_JNI_VERIFY(jni_env, newClassSize[ind] > 0)) {
+    newClassSize[ind] = ec_jni->GetArrayLength(byteCode, TRACE_JNI_CALL);
+    if (!NSK_VERIFY(newClassSize[ind] > 0)) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
     NSK_DISPLAY1("\t... got array size: %d\n", newClassSize[ind]);
 
-    elements = jni_env->GetByteArrayElements(byteCode, &isCopy);
-    if (!NSK_JNI_VERIFY(jni_env, elements != NULL)) {
-        nsk_jvmti_setFailStatus();
-        return NSK_FALSE;
-    }
+    elements = ec_jni->GetByteArrayElements(byteCode, &isCopy, TRACE_JNI_CALL);
     NSK_DISPLAY1("\t... got elements list: 0x%p\n", (void*)elements);
 
     if (!NSK_JVMTI_VERIFY(jvmti->Allocate(newClassSize[ind], &newClassBytes[ind]))) {
@@ -82,7 +80,7 @@ Java_nsk_jvmti_scenarios_bcinstr_BI01_bi01t002_setNewByteCode(JNIEnv *jni_env,
     NSK_DISPLAY1("\t... copied bytecode: %d bytes\n", (int)newClassSize[ind]);
 
     NSK_DISPLAY1("\t... release elements list: 0x%p\n", (void*)elements);
-    NSK_TRACE(jni_env->ReleaseByteArrayElements(byteCode, elements, JNI_ABORT));
+    NSK_TRACE(ec_jni->ReleaseByteArrayElements(byteCode, elements, JNI_ABORT, TRACE_JNI_CALL));
     NSK_DISPLAY0("\t... released\n");
     return NSK_TRUE;
 }
@@ -97,10 +95,8 @@ JNIEXPORT void JNICALL
 Java_nsk_jvmti_scenarios_bcinstr_BI01_bi01t002_setClass(JNIEnv *jni_env,
                         jobject o, jint ind, jclass cls) {
 
-    oldClassDef[ind].klass = (jclass) jni_env->NewGlobalRef(cls);
-    if (!NSK_JNI_VERIFY(jni_env, oldClassDef[ind].klass != NULL)) {
-        nsk_jvmti_setFailStatus();
-    }
+    ExceptionCheckingJniEnvPtr ec_jni(jni_env);
+    oldClassDef[ind].klass = (jclass) ec_jni->NewGlobalRef(cls, TRACE_JNI_CALL);
 }
 
 /* ============================================================================= */
