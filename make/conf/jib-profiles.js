@@ -1301,10 +1301,16 @@ var versionArgs = function(input, common) {
     var args = ["--with-version-build=" + common.build_number];
     if (input.build_type == "promoted") {
         args = concat(args,
-                      // This needs to be changed when we start building release candidates
-                      // with-version-pre must be set to ea for 'ea' and empty for fcs build
-                      "--with-version-pre=ea",
+                      "--with-version-pre=" + version_numbers.get("DEFAULT_PROMOTION_VERSION_PRE"),
                       "--without-version-opt");
+    } else if (input.build_type == "ci") {
+        var optString = input.build_id_data.ciBuildNumber;
+        var preString = input.build_id_data.projectName;
+        if (preString == "jdk") {
+            preString = version_numbers.get("DEFAULT_PROMOTED_VERSION_PRE");
+        }
+        args = concat(args, "--with-version-pre=" + preString,
+                     "--with-version-opt=" + optString);
     } else {
         args = concat(args, "--with-version-opt=" + common.build_id);
     }
