@@ -33,12 +33,12 @@ import java.security.SecureRandom;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.security.spec.AlgorithmParameterSpec;
-import java.util.Base64;
 
 import com.sun.org.apache.xml.internal.security.algorithms.JCEMapper;
 import com.sun.org.apache.xml.internal.security.algorithms.SignatureAlgorithmSpi;
 import com.sun.org.apache.xml.internal.security.signature.XMLSignature;
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureException;
+import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
 
 /**
  *
@@ -132,7 +132,7 @@ public abstract class SignatureECDSA extends SignatureAlgorithmSpi {
             byte[] jcebytes = SignatureECDSA.convertXMLDSIGtoASN1(signature);
 
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Called ECDSA.verify() on " + Base64.getMimeEncoder().encodeToString(signature));
+                LOG.debug("Called ECDSA.verify() on " + XMLUtils.encodeToString(signature));
             }
 
             return this.signatureAlgorithm.verify(jcebytes);

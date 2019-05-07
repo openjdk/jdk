@@ -145,7 +145,7 @@ void SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
   // Skip any loops already optimized by slp
   if (cl->is_vectorized_loop()) return;
 
-  if (cl->do_unroll_only()) return;
+  if (cl->is_unroll_only()) return;
 
   if (cl->is_main_loop()) {
     // Check for pre-loop ending with CountedLoopEnd(Bool(Cmp(x,Opaque1(limit))))

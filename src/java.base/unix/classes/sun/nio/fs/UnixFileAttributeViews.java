@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,15 +73,23 @@ class UnixFileAttributeViews {
 
             boolean haveFd = false;
             boolean useFutimes = false;
+            boolean useLutimes = false;
             int fd = -1;
             try {
-                fd = file.openForAttributeAccess(followLinks);
-                if (fd != -1) {
-                    haveFd = true;
-                    useFutimes = futimesSupported();
+                if (!followLinks) {
+                    useLutimes = lutimesSupported() &&
+                        UnixFileAttributes.get(file, false).isSymbolicLink();
+                }
+                if (!useLutimes) {
+                    fd = file.openForAttributeAccess(followLinks);
+                    if (fd != -1) {
+                        haveFd = true;
+                        useFutimes = futimesSupported();
+                    }
                 }
             } catch (UnixException x) {
-                if (x.errno() != UnixConstants.ENXIO) {
+                if (!(x.errno() == UnixConstants.ENXIO ||
+                     (x.errno() == UnixConstants.ELOOP && useLutimes))) {
                     x.rethrowAsIOException(file);
                 }
             }
@@ -112,6 +120,8 @@ class UnixFileAttributeViews {
                 try {
                     if (useFutimes) {
                         futimes(fd, accessValue, modValue);
+                    } else if (useLutimes) {
+                        lutimes(file, accessValue, modValue);
                     } else {
                         utimes(file, accessValue, modValue);
                     }
@@ -131,6 +141,8 @@ class UnixFileAttributeViews {
                     try {
                         if (useFutimes) {
                             futimes(fd, accessValue, modValue);
+                        } else if (useLutimes) {
+                            lutimes(file, accessValue, modValue);
                         } else {
                             utimes(file, accessValue, modValue);
                         }

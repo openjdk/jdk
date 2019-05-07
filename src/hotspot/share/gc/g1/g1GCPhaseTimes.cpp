@@ -65,7 +65,6 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[CMRefRoots] = new WorkerDataArray<double>(max_gc_threads, "CM RefProcessor Roots (ms):");
   _gc_par_phases[WaitForStrongCLD] = new WorkerDataArray<double>(max_gc_threads, "Wait For Strong CLD (ms):");
   _gc_par_phases[WeakCLDRoots] = new WorkerDataArray<double>(max_gc_threads, "Weak CLD Roots (ms):");
-  _gc_par_phases[SATBFiltering] = new WorkerDataArray<double>(max_gc_threads, "SATB Filtering (ms):");
 
   _gc_par_phases[UpdateRS] = new WorkerDataArray<double>(max_gc_threads, "Update RS (ms):");
   if (G1HotCardCache::default_use_cache()) {
@@ -406,7 +405,7 @@ double G1GCPhaseTimes::print_evacuate_collection_set() const {
 
   trace_phase(_gc_par_phases[GCWorkerStart], false);
   debug_phase(_gc_par_phases[ExtRootScan]);
-  for (int i = ExtRootScanSubPhasesStart; i <= ExtRootScanSubPhasesEnd; i++) {
+  for (int i = ExtRootScanSubPhasesFirst; i <= ExtRootScanSubPhasesLast; i++) {
     trace_phase(_gc_par_phases[i]);
   }
   if (G1HotCardCache::default_use_cache()) {
@@ -531,7 +530,6 @@ const char* G1GCPhaseTimes::phase_name(GCParPhases phase) {
       "CMRefRoots",
       "WaitForStrongCLD",
       "WeakCLDRoots",
-      "SATBFiltering",
       "UpdateRS",
       "ScanHCC",
       "ScanRS",

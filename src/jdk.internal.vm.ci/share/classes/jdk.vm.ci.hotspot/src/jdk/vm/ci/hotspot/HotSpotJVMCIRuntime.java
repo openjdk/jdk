@@ -46,7 +46,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.ServiceLoader;
-import java.util.TreeMap;
 import java.util.function.Predicate;
 
 import jdk.internal.misc.Unsafe;
@@ -180,8 +179,8 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
 
                         // Can only do eager initialization of the JVMCI compiler
                         // once the singleton instance is available.
-                        if (instance.config.getFlag("EagerJVMCI", Boolean.class)) {
-                            instance.getCompiler();
+                        if (result.config.getFlag("EagerJVMCI", Boolean.class)) {
+                            result.getCompiler();
                         }
                     }
                     // Ensures JVMCIRuntime::_HotSpotJVMCIRuntime_instance is
@@ -384,7 +383,25 @@ assert factories != null : "sanity";
     /**
      * Cache for speeding up {@link #fromClass(Class)}.
      */
-    @NativeImageReinitialize private volatile ClassValue<WeakReference<HotSpotResolvedJavaType>> resolvedJavaType;
+    @NativeImageReinitialize private volatile ClassValue<WeakReferenceHolder<HotSpotResolvedJavaType>> resolvedJavaType;
+
+    /**
+     * To avoid calling ClassValue.remove to refresh the weak reference, which
+     * under certain circumstances can lead to an infinite loop, we use a
+     * permanent holder with a mutable field that we refresh.
+     */
+    private static class WeakReferenceHolder<T> {
+        private volatile WeakReference<T> ref;
+        WeakReferenceHolder(T value) {
+            set(value);
+        }
+        void set(T value) {
+            ref = new WeakReference<T>(value);
+        }
+        T get() {
+            return ref.get();
+        }
+    };
 
     @NativeImageReinitialize private HashMap<Long, WeakReference<ResolvedJavaType>> resolvedJavaTypes;
 
@@ -464,7 +481,7 @@ assert factories != null : "sanity";
         }
 
         if (Option.PrintConfig.getBoolean()) {
-            printConfig(configStore, compilerToVm);
+            configStore.printConfig();
         }
     }
 
@@ -486,27 +503,25 @@ assert factories != null : "sanity";
         if (resolvedJavaType == null) {
             synchronized (this) {
                 if (resolvedJavaType == null) {
-                    resolvedJavaType = new ClassValue<WeakReference<HotSpotResolvedJavaType>>() {
+                    resolvedJavaType = new ClassValue<WeakReferenceHolder<HotSpotResolvedJavaType>>() {
                         @Override
-                        protected WeakReference<HotSpotResolvedJavaType> computeValue(Class<?> type) {
-                            return new WeakReference<>(createClass(type));
+                        protected WeakReferenceHolder<HotSpotResolvedJavaType> computeValue(Class<?> type) {
+                            return new WeakReferenceHolder<>(createClass(type));
                         }
                     };
                 }
             }
         }
-        HotSpotResolvedJavaType javaType = null;
-        while (javaType == null) {
-            WeakReference<HotSpotResolvedJavaType> type = resolvedJavaType.get(javaClass);
-            javaType = type.get();
-            if (javaType == null) {
-                /*
-                 * If the referent has become null, clear out the current value and let computeValue
-                 * above create a new value. Reload the value in a loop because in theory the
-                 * WeakReference referent can be reclaimed at any point.
-                 */
-                resolvedJavaType.remove(javaClass);
-            }
+
+        WeakReferenceHolder<HotSpotResolvedJavaType> ref = resolvedJavaType.get(javaClass);
+        HotSpotResolvedJavaType javaType = ref.get();
+        if (javaType == null) {
+            /*
+             * If the referent has become null, create a new value and
+             * update cached weak reference.
+             */
+            javaType = createClass(javaClass);
+            ref.set(javaType);
         }
         return javaType;
     }
@@ -727,39 +742,21 @@ assert factories != null : "sanity";
         }
     }
 
-    @SuppressFBWarnings(value = "DM_DEFAULT_ENCODING", justification = "no localization here please!")
-    private static void printConfigLine(CompilerToVM vm, String format, Object... args) {
-        String line = String.format(format, args);
-        byte[] lineBytes = line.getBytes();
-        vm.writeDebugOutput(lineBytes, 0, lineBytes.length);
-        vm.flushDebugOutput();
-    }
-
-    private static void printConfig(HotSpotVMConfigStore store, CompilerToVM vm) {
-        TreeMap<String, VMField> fields = new TreeMap<>(store.getFields());
-        for (VMField field : fields.values()) {
-            if (!field.isStatic()) {
-                printConfigLine(vm, "[vmconfig:instance field] %s %s {offset=%d[0x%x]}%n", field.type, field.name, field.offset, field.offset);
-            } else {
-                String value = field.value == null ? "null" : field.value instanceof Boolean ? field.value.toString() : String.format("%d[0x%x]", field.value, field.value);
-                printConfigLine(vm, "[vmconfig:static field] %s %s = %s {address=0x%x}%n", field.type, field.name, value, field.address);
-            }
-        }
-        TreeMap<String, VMFlag> flags = new TreeMap<>(store.getFlags());
-        for (VMFlag flag : flags.values()) {
-            printConfigLine(vm, "[vmconfig:flag] %s %s = %s%n", flag.type, flag.name, flag.value);
-        }
-        TreeMap<String, Long> addresses = new TreeMap<>(store.getAddresses());
-        for (Map.Entry<String, Long> e : addresses.entrySet()) {
-            printConfigLine(vm, "[vmconfig:address] %s = %d[0x%x]%n", e.getKey(), e.getValue(), e.getValue());
-        }
-        TreeMap<String, Long> constants = new TreeMap<>(store.getConstants());
-        for (Map.Entry<String, Long> e : constants.entrySet()) {
-            printConfigLine(vm, "[vmconfig:constant] %s = %d[0x%x]%n", e.getKey(), e.getValue(), e.getValue());
-        }
-        for (VMIntrinsicMethod e : store.getIntrinsics()) {
-            printConfigLine(vm, "[vmconfig:intrinsic] %d = %s.%s %s%n", e.id, e.declaringClass, e.name, e.descriptor);
-        }
+    /**
+     * Writes {@code length} bytes from {@code bytes} starting at offset {@code offset} to HotSpot's
+     * log stream.
+     *
+     * @param flush specifies if the log stream should be flushed after writing
+     * @param canThrow specifies if an error in the {@code bytes}, {@code offset} or {@code length}
+     *            arguments should result in an exception or a negative return value. If
+     *            {@code false}, this call will not perform any heap allocation
+     * @return 0 on success, -1 if {@code bytes == null && !canThrow}, -2 if {@code !canThrow} and
+     *         copying would cause access of data outside array bounds
+     * @throws NullPointerException if {@code bytes == null}
+     * @throws IndexOutOfBoundsException if copying would cause access of data outside array bounds
+     */
+    public int writeDebugOutput(byte[] bytes, int offset, int length, boolean flush, boolean canThrow) {
+        return compilerToVm.writeDebugOutput(bytes, offset, length, flush, canThrow);
     }
 
     /**
@@ -777,7 +774,7 @@ assert factories != null : "sanity";
                 } else if (len == 0) {
                     return;
                 }
-                compilerToVm.writeDebugOutput(b, off, len);
+                compilerToVm.writeDebugOutput(b, off, len, false, true);
             }
 
             @Override
@@ -907,11 +904,13 @@ assert factories != null : "sanity";
      *         the Java VM in the JVMCI shared library, and the remaining values are the first 3
      *         pointers in the Invocation API function table (i.e., {@code JNIInvokeInterface})
      * @throws NullPointerException if {@code clazz == null}
-     * @throws IllegalArgumentException if the current execution context is the JVMCI shared library
-     *             or if {@code clazz} is {@link Class#isPrimitive()}
-     * @throws UnsatisfiedLinkError if the JVMCI shared library is not available, a native method in
-     *             {@code clazz} is already linked or the JVMCI shared library does not contain a
-     *             JNI-compatible symbol for a native method in {@code clazz}
+     * @throws UnsupportedOperationException if the JVMCI shared library is not enabled (i.e.
+     *             {@code -XX:-UseJVMCINativeLibrary})
+     * @throws IllegalStateException if the current execution context is the JVMCI shared library
+     * @throws IllegalArgumentException if {@code clazz} is {@link Class#isPrimitive()}
+     * @throws UnsatisfiedLinkError if there's a problem linking a native method in {@code clazz}
+     *             (no matching JNI symbol or the native method is already linked to a different
+     *             address)
      */
     public long[] registerNativeMethods(Class<?> clazz) {
         return compilerToVm.registerNativeMethods(clazz);
@@ -935,6 +934,8 @@ assert factories != null : "sanity";
      *
      * @param obj an object for which an equivalent instance in the peer runtime is requested
      * @return a JNI global reference to the mirror of {@code obj} in the peer runtime
+     * @throws UnsupportedOperationException if the JVMCI shared library is not enabled (i.e.
+     *             {@code -XX:-UseJVMCINativeLibrary})
      * @throws IllegalArgumentException if {@code obj} is not of a translatable type
      *
      * @see "https://docs.oracle.com/javase/8/docs/technotes/guides/jni/spec/design.html#global_and_local_references"
@@ -950,13 +951,53 @@ assert factories != null : "sanity";
      *
      * @param handle a JNI global reference to an object in the current runtime
      * @return the object referred to by {@code handle}
-     * @throws ClassCastException if the returned object cannot be case to {@code type}
+     * @throws UnsupportedOperationException if the JVMCI shared library is not enabled (i.e.
+     *             {@code -XX:-UseJVMCINativeLibrary})
+     * @throws ClassCastException if the returned object cannot be cast to {@code type}
      *
      * @see "https://docs.oracle.com/javase/8/docs/technotes/guides/jni/spec/design.html#global_and_local_references"
      *
      */
     public <T> T unhand(Class<T> type, long handle) {
         return type.cast(compilerToVm.unhand(handle));
+    }
+
+    /**
+     * Determines if the current thread is attached to the peer runtime.
+     *
+     * @throws UnsupportedOperationException if the JVMCI shared library is not enabled (i.e.
+     *             {@code -XX:-UseJVMCINativeLibrary})
+     * @throws IllegalStateException if the peer runtime has not been initialized
+     */
+    public boolean isCurrentThreadAttached() {
+        return compilerToVm.isCurrentThreadAttached();
+    }
+
+    /**
+     * Ensures the current thread is attached to the peer runtime.
+     *
+     * @param asDaemon if the thread is not yet attached, should it be attached as a daemon
+     * @return {@code true} if this call attached the current thread, {@code false} if the current
+     *         thread was already attached
+     * @throws UnsupportedOperationException if the JVMCI shared library is not enabled (i.e.
+     *             {@code -XX:-UseJVMCINativeLibrary})
+     * @throws IllegalStateException if the peer runtime has not been initialized or there is an
+     *             error while trying to attach the thread
+     */
+    public boolean attachCurrentThread(boolean asDaemon) {
+        return compilerToVm.attachCurrentThread(asDaemon);
+    }
+
+    /**
+     * Detaches the current thread from the peer runtime.
+     *
+     * @throws UnsupportedOperationException if the JVMCI shared library is not enabled (i.e.
+     *             {@code -XX:-UseJVMCINativeLibrary})
+     * @throws IllegalStateException if the peer runtime has not been initialized or if the current
+     *             thread is not attached or if there is an error while trying to detach the thread
+     */
+    public void detachCurrentThread() {
+        compilerToVm.detachCurrentThread();
     }
 
     /**

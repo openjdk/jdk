@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,9 @@ public class Responses {
 
         public HttpServer() {
             try {
-                ss = new ServerSocket(0);
+                InetAddress loopback = InetAddress.getLoopbackAddress();
+                ss = new ServerSocket();
+                ss.bind(new InetSocketAddress(loopback, 0));
             } catch (IOException ioe) {
                 throw new Error("Unable to create ServerSocket: " + ioe);
             }
@@ -68,6 +70,16 @@ public class Responses {
 
         public int port() {
             return ss.getLocalPort();
+        }
+
+        public String authority() {
+            InetAddress address = ss.getInetAddress();
+            String hostaddr = address.isAnyLocalAddress()
+                ? "localhost" : address.getHostAddress();
+            if (hostaddr.indexOf(':') > -1) {
+                hostaddr = "[" + hostaddr + "]";
+            }
+            return hostaddr + ":" + port();
         }
 
         public void shutdown() throws IOException {
@@ -116,7 +128,8 @@ public class Responses {
         HttpServer svr = new HttpServer();
         (new Thread(svr)).start();
 
-        int port = svr.port();
+        String authority = svr.authority();
+        System.out.println("Server listening on: " + authority);
 
         /*
          * Iterate through each test case and check that getResponseCode
@@ -129,7 +142,7 @@ public class Responses {
             System.out.println("******************");
             System.out.println("Test with response: >" + tests[i][0] + "<");
 
-            URL url = new URL("http://localhost:" + port + "/" + i);
+            URL url = new URL("http://" + authority + "/" + i);
             HttpURLConnection http = (HttpURLConnection)url.openConnection();
 
             try {

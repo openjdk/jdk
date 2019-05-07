@@ -1036,7 +1036,7 @@ void G1CollectedHeap::prepare_heap_for_full_collection() {
 
 void G1CollectedHeap::verify_before_full_collection(bool explicit_gc) {
   assert(!GCCause::is_user_requested_gc(gc_cause()) || explicit_gc, "invariant");
-  assert(used() == recalculate_used(), "Should be equal");
+  assert_used_and_recalculate_used_equal(this);
   _verifier->verify_region_sets_optional();
   _verifier->verify_before_gc(G1HeapVerifier::G1VerifyFull);
   _verifier->check_bitmaps("Full GC Start");
@@ -1092,7 +1092,7 @@ void G1CollectedHeap::verify_after_full_collection() {
   // the full GC has compacted objects and updated TAMS but not updated
   // the prev bitmap.
   if (G1VerifyBitmaps) {
-    GCTraceTime(Debug, gc)("Clear Prev Bitmap for Verification");
+    GCTraceTime(Debug, gc) tm("Clear Prev Bitmap for Verification");
     _cm->clear_prev_bitmap(workers());
   }
   // This call implicitly verifies that the next bitmap is clear after Full GC.
@@ -4539,9 +4539,7 @@ void G1CollectedHeap::rebuild_region_sets(bool free_list_only) {
       _archive_allocator->clear_used();
     }
   }
-  assert(used() == recalculate_used(),
-         "inconsistent used(), value: " SIZE_FORMAT " recalculated: " SIZE_FORMAT,
-         used(), recalculate_used());
+  assert_used_and_recalculate_used_equal(this);
 }
 
 // Methods for the mutator alloc region

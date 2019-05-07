@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,13 +38,13 @@ public class MetaUtil {
      * @return the simple name
      */
     public static String getSimpleName(Class<?> clazz, boolean withEnclosingClass) {
-        final String simpleName = clazz.getSimpleName();
+        final String simpleName = safeSimpleName(clazz);
         if (simpleName.length() != 0) {
             if (withEnclosingClass) {
                 String prefix = "";
                 Class<?> enclosingClass = clazz;
                 while ((enclosingClass = enclosingClass.getEnclosingClass()) != null) {
-                    prefix = enclosingClass.getSimpleName() + "." + prefix;
+                    prefix = safeSimpleName(enclosingClass) + "." + prefix;
                 }
                 return prefix + simpleName;
             }
@@ -61,6 +61,29 @@ public class MetaUtil {
             return name;
         }
         return name.substring(index + 1);
+    }
+
+    private static String safeSimpleName(Class<?> clazz) {
+        try {
+            return clazz.getSimpleName();
+        } catch (InternalError e) {
+            // Scala inner class names do not always start with '$',
+            // causing Class.getSimpleName to throw an InternalError
+            Class<?> enclosingClass = clazz.getEnclosingClass();
+            String fqn = clazz.getName();
+            if (enclosingClass == null) {
+                // Should never happen given logic in
+                // Class.getSimpleName but best be safe
+                return fqn;
+            }
+            String enclosingFQN = enclosingClass.getName();
+            int length = fqn.length();
+            if (enclosingFQN.length() >= length) {
+                // Should also never happen
+                return fqn;
+            }
+            return fqn.substring(enclosingFQN.length());
+        }
     }
 
     /**

@@ -826,6 +826,10 @@ public final class SSLSocketImpl
         // reading lock
         private final ReentrantLock readLock = new ReentrantLock();
 
+        // closing status
+        private volatile boolean isClosing;
+        private volatile boolean hasDepleted;
+
         AppInputStream() {
             this.appDataIsAvailable = false;
             this.buffer = ByteBuffer.allocate(4096);
@@ -871,8 +875,7 @@ public final class SSLSocketImpl
          * and returning "-1" on non-fault EOF status.
          */
         @Override
-        public int read(byte[] b, int off, int len)
-                throws IOException {
+        public int read(byte[] b, int off, int len) throws IOException {
             if (b == null) {
                 throw new NullPointerException("the target buffer is null");
             } else if (off < 0 || len < 0 || len > b.length - off) {
@@ -900,12 +903,40 @@ public final class SSLSocketImpl
                 throw new SocketException("Connection or inbound has closed");
             }
 
+            // Check if the input stream has been depleted.
+            //
+            // Note that the "hasDepleted" rather than the isClosing
+            // filed is checked here, in case the closing process is
+            // still in progress.
+            if (hasDepleted) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                    SSLLogger.fine("The input stream has been depleted");
+                }
+
+                return -1;
+            }
+
             // Read the available bytes at first.
             //
             // Note that the receiving and processing of post-handshake message
             // are also synchronized with the read lock.
             readLock.lock();
             try {
+                // Double check if the Socket is invalid (error or closed).
+                if (conContext.isBroken || conContext.isInboundClosed()) {
+                    throw new SocketException(
+                            "Connection or inbound has closed");
+                }
+
+                // Double check if the input stream has been depleted.
+                if (hasDepleted) {
+                    if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                        SSLLogger.fine("The input stream is closing");
+                    }
+
+                    return -1;
+                }
+
                 int remains = available();
                 if (remains > 0) {
                     int howmany = Math.min(remains, len);
@@ -938,7 +969,17 @@ public final class SSLSocketImpl
                     return -1;
                 }
             } finally {
-                readLock.unlock();
+                // Check if the input stream is closing.
+                //
+                // If the deplete() did not hold the lock, clean up the
+                // input stream here.
+                try {
+                    if (isClosing) {
+                        readLockedDeplete();
+                    }
+                } finally {
+                    readLock.unlock();
+                }
             }
         }
 
@@ -1016,34 +1057,48 @@ public final class SSLSocketImpl
          * socket gracefully, without impact the performance too much.
          */
         private void deplete() {
-            if (conContext.isInboundClosed()) {
+            if (conContext.isInboundClosed() || isClosing) {
                 return;
             }
 
-            readLock.lock();
-            try {
-                // double check
-                if (conContext.isInboundClosed()) {
-                    return;
-                }
-
-                if (!(conContext.inputRecord instanceof SSLSocketInputRecord)) {
-                    return;
-                }
-
-                SSLSocketInputRecord socketInputRecord =
-                        (SSLSocketInputRecord)conContext.inputRecord;
+            isClosing = true;
+            if (readLock.tryLock()) {
                 try {
-                    socketInputRecord.deplete(
-                        conContext.isNegotiated && (getSoTimeout() > 0));
-                } catch (IOException ioe) {
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
-                        SSLLogger.warning(
-                            "input stream close depletion failed", ioe);
-                    }
+                    readLockedDeplete();
+                } finally {
+                    readLock.unlock();
+                }
+            }
+        }
+
+        /**
+         * Try to use up the input records.
+         *
+         * Please don't call this method unless the readLock is held by
+         * the current thread.
+         */
+        private void readLockedDeplete() {
+            // double check
+            if (hasDepleted || conContext.isInboundClosed()) {
+                return;
+            }
+
+            if (!(conContext.inputRecord instanceof SSLSocketInputRecord)) {
+                return;
+            }
+
+            SSLSocketInputRecord socketInputRecord =
+                    (SSLSocketInputRecord)conContext.inputRecord;
+            try {
+                socketInputRecord.deplete(
+                    conContext.isNegotiated && (getSoTimeout() > 0));
+            } catch (Exception ex) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                    SSLLogger.warning(
+                        "input stream close depletion failed", ex);
                 }
             } finally {
-                readLock.unlock();
+                hasDepleted = true;
             }
         }
     }

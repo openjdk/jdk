@@ -79,69 +79,69 @@ static void ErrorCheckerMessage(JNIEnv* env, const char* error_message) {
 }
 
 static bool checkSuccess(JNIEnv* env, jclass cls) {
-  ExceptionCheckingJniEnvPtr jni(env, ErrorCheckerMessage);
+  ExceptionCheckingJniEnvPtr ec_jni(env, ErrorCheckerMessage);
   is_error_called = false;
 
-  jni->GetFieldID(cls, "anInteger", "I", TRACE_JNI_CALL);
+  ec_jni->GetFieldID(cls, "anInteger", "I", TRACE_JNI_CALL);
   return !is_error_called;
 }
 
 static bool checkFailureMessageReturnNull(JNIEnv* env, jclass cls) {
-  ExceptionCheckingJniEnvPtr jni(env, ErrorCheckerMessage);
+  ExceptionCheckingJniEnvPtr ec_jni(env, ErrorCheckerMessage);
 
   expected_message_start = null_return_expected_message_start;
   expected_line_number = __LINE__ + 1;
-  jni->GetFieldID(cls, "whatever", "does not matter", TRACE_JNI_CALL);
+  ec_jni->GetFieldID(cls, "whatever", "does not matter", TRACE_JNI_CALL);
 
   return is_error_called && error_message_ok;
 }
 
 static bool checkFailureMessageEmptyFile(JNIEnv* env, jclass cls) {
-  ExceptionCheckingJniEnvPtr jni(env, ErrorCheckerMessage);
+  ExceptionCheckingJniEnvPtr ec_jni(env, ErrorCheckerMessage);
 
   expected_message_start = null_file_expected_message_start;
   expected_line_number = __LINE__ + 1;
-  jni->GetFieldID(cls, "whatever", "does not matter", __LINE__, NULL);
+  ec_jni->GetFieldID(cls, "whatever", "does not matter", __LINE__, NULL);
 
   return is_error_called && error_message_ok;
 }
 
 static bool checkFailureMessageNilLine(JNIEnv* env, jclass cls) {
-  ExceptionCheckingJniEnvPtr jni(env, ErrorCheckerMessage);
+  ExceptionCheckingJniEnvPtr ec_jni(env, ErrorCheckerMessage);
 
   expected_message_start = null_return_expected_message_start;
   expected_line_number = 0;
-  jni->GetFieldID(cls, "whatever", "does not matter", 0, __FILE__);
+  ec_jni->GetFieldID(cls, "whatever", "does not matter", 0, __FILE__);
 
   return is_error_called && error_message_ok;
 }
 
 static bool checkFailureMessageNegativeLine(JNIEnv* env, jclass cls) {
-  ExceptionCheckingJniEnvPtr jni(env, ErrorCheckerMessage);
+  ExceptionCheckingJniEnvPtr ec_jni(env, ErrorCheckerMessage);
 
   expected_message_start = null_return_expected_message_start;
   expected_line_number = -1;
-  jni->GetFieldID(cls, "whatever", "does not matter", -1, __FILE__);
+  ec_jni->GetFieldID(cls, "whatever", "does not matter", -1, __FILE__);
 
   return is_error_called && error_message_ok;
 }
 
 static bool checkFailureMessageMinLine(JNIEnv* env, jclass cls) {
-  ExceptionCheckingJniEnvPtr jni(env, ErrorCheckerMessage);
+  ExceptionCheckingJniEnvPtr ec_jni(env, ErrorCheckerMessage);
 
   expected_message_start = null_return_expected_message_start;
   expected_line_number = INT32_MIN;
-  jni->GetFieldID(cls, "whatever", "does not matter", INT32_MIN, __FILE__);
+  ec_jni->GetFieldID(cls, "whatever", "does not matter", INT32_MIN, __FILE__);
 
   return is_error_called && error_message_ok;
 }
 
 static bool checkFailureMessageMaxLine(JNIEnv* env, jclass cls) {
-  ExceptionCheckingJniEnvPtr jni(env, ErrorCheckerMessage);
+  ExceptionCheckingJniEnvPtr ec_jni(env, ErrorCheckerMessage);
 
   expected_message_start = null_return_expected_message_start;
   expected_line_number = INT32_MAX;
-  jni->GetFieldID(cls, "whatever", "does not matter", INT32_MAX, __FILE__);
+  ec_jni->GetFieldID(cls, "whatever", "does not matter", INT32_MAX, __FILE__);
 
   return is_error_called && error_message_ok;
 }

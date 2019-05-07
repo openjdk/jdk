@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,7 +113,7 @@ public class JDKPlatformProvider implements PlatformProvider {
         SUPPORTED_JAVA_PLATFORM_VERSIONS = new TreeSet<>(NUMERICAL_COMPARATOR);
         Path ctSymFile = findCtSym();
         if (Files.exists(ctSymFile)) {
-            try (FileSystem fs = FileSystems.newFileSystem(ctSymFile, null);
+            try (FileSystem fs = FileSystems.newFileSystem(ctSymFile, (ClassLoader)null);
                  DirectoryStream<Path> dir =
                          Files.newDirectoryStream(fs.getRootDirectories().iterator().next())) {
                 for (Path section : dir) {
@@ -252,7 +252,7 @@ public class JDKPlatformProvider implements PlatformProvider {
                 try {
                     FileSystem fs = ctSym2FileSystem.get(file);
                     if (fs == null) {
-                        ctSym2FileSystem.put(file, fs = FileSystems.newFileSystem(file, null));
+                        ctSym2FileSystem.put(file, fs = FileSystems.newFileSystem(file, (ClassLoader)null));
                     }
 
                     Path root = fs.getRootDirectories().iterator().next();

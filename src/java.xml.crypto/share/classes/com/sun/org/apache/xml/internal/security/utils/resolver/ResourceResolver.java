@@ -97,7 +97,7 @@ public class ResourceResolver {
 
                 LOG.debug("check resolvability by class {}", resolverTmp.getClass().getName());
 
-                if (resolverTmp != null && resolverTmp.canResolve(context)) {
+                if (resolverTmp.canResolve(context)) {
                     // Check to see whether the Resolver is allowed
                     if (context.secureValidation
                         && (resolverTmp.resolverSpi instanceof ResolverLocalFilesystem

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 #include <string.h>
 #include "jvmti.h"
 #include "agent_common.h"
+#include "ExceptionCheckingJniEnv.hpp"
 #include "jni_tools.h"
 #include "jvmti_tools.h"
 #include "JVMTITools.h"
@@ -436,6 +437,7 @@ setCallBacks(int step) {
 static void JNICALL
 agentProc(jvmtiEnv* jvmti, JNIEnv* agentJNI, void* arg) {
 
+    ExceptionCheckingJniEnvPtr ec_jni(agentJNI);
     int i;
     jmethodID methodID;
     jclass cls;
@@ -444,13 +446,8 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* agentJNI, void* arg) {
     if (!nsk_jvmti_waitForSync(timeout))
         return;
 
-    cls = agentJNI->FindClass(CLASS_NAME);
-    if (!NSK_JNI_VERIFY(agentJNI, cls != NULL))
-        return;
-
-    methodID = agentJNI->GetStaticMethodID(cls, METHOD_NAME, "()I");
-    if (!NSK_JNI_VERIFY(agentJNI, methodID != NULL))
-        return;
+    cls = ec_jni->FindClass(CLASS_NAME, TRACE_JNI_CALL);
+    methodID = ec_jni->GetStaticMethodID(cls, METHOD_NAME, "()I", TRACE_JNI_CALL);
 
     if (!NSK_JVMTI_VERIFY(jvmti->SetBreakpoint(methodID, 0)))
         return;

@@ -93,6 +93,7 @@ import static org.graalvm.compiler.bytecode.Bytecodes.SASTORE;
 import static org.graalvm.compiler.bytecode.Bytecodes.TABLESWITCH;
 import static org.graalvm.compiler.core.common.GraalOptions.SupportJsrBytecodes;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -117,7 +118,7 @@ import jdk.vm.ci.meta.ExceptionHandler;
 
 /**
  * Builds a mapping between bytecodes and basic blocks and builds a conservative control flow graph
- * (CFG). It makes one linear passes over the bytecodes to build the CFG where it detects block
+ * (CFG). It makes one linear pass over the bytecodes to build the CFG where it detects block
  * headers and connects them.
  * <p>
  * It also creates exception dispatch blocks for exception handling. These blocks are between a
@@ -474,6 +475,18 @@ public final class BciBlockMapping {
         @Override
         public boolean isExceptionDispatch() {
             return true;
+        }
+    }
+
+    private static final class TraversalStep {
+        private BciBlock block;
+        private int currentSuccessorIndex;
+        private long loops;
+
+        private TraversalStep(BciBlock block) {
+            this.block = block;
+            this.currentSuccessorIndex = 0;
+            this.loops = 0;
         }
     }
 
@@ -857,7 +870,7 @@ public final class BciBlockMapping {
                 b.visited = false;
             }
 
-            long loop = fixLoopBits(blockMap, blockMap[0]);
+            long loop = fixLoopBits(blockMap[0]);
 
             if (loop != 0) {
                 // There is a path from a loop end to the method entry that does not pass the loop
@@ -1029,78 +1042,107 @@ public final class BciBlockMapping {
     }
 
     /**
-     * Depth-first traversal of the control flow graph. The flag {@linkplain BciBlock#visited} is
-     * used to visit every block only once. The flag {@linkplain BciBlock#active} is used to detect
-     * cycles (backward edges).
+     * Non-recursive depth-first traversal of the control flow graph. The flag
+     * {@linkplain BciBlock#visited} is used to visit every block only once. The flag
+     * {@linkplain BciBlock#active} is used to detect cycles (backward edges)
      */
-    private long computeBlockOrder(BciBlock block) {
-        if (block.visited) {
-            if (block.active) {
-                // Reached block via backward branch.
-                makeLoopHeader(block);
-                // Return cached loop information for this block.
-                return block.loops;
-            } else if (block.isLoopHeader) {
-                return block.loops & ~(1L << block.loopId);
+    private long computeBlockOrder(BciBlock initialBlock) {
+        ArrayDeque<TraversalStep> workStack = new ArrayDeque<>();
+        workStack.push(new TraversalStep(initialBlock));
+        while (true) {
+            TraversalStep step = workStack.peek();
+            BciBlock block = step.block;
+            if (step.currentSuccessorIndex == 0) {
+                block.visited = true;
+                block.active = true;
             } else {
-                return block.loops;
+                BciBlock successor = block.getSuccessor(step.currentSuccessorIndex - 1);
+                if (successor.active) {
+                    // Reached block via backward branch.
+                    step.loops |= (1L << successor.loopId);
+                }
+            }
+            if (step.currentSuccessorIndex < block.successors.size()) {
+                BciBlock successor = block.getSuccessors().get(step.currentSuccessorIndex);
+                if (successor.visited) {
+                    if (successor.active) {
+                        // Reached block via backward branch.
+                        makeLoopHeader(successor);
+                        step.loops |= successor.loops;
+                    } else if (successor.isLoopHeader) {
+                        step.loops |= successor.loops & ~(1L << successor.loopId);
+                    } else {
+                        step.loops |= successor.loops;
+                    }
+                } else {
+                    workStack.push(new TraversalStep(successor));
+                }
+                step.currentSuccessorIndex++;
+            } else {
+                // We processed all the successors of this block.
+                block.loops = step.loops;
+                debug.log("computeBlockOrder(%s) -> %x", block, block.loops);
+
+                if (block.isLoopHeader) {
+                    step.loops &= ~(1L << block.loopId);
+                }
+
+                block.active = false;
+                blocksNotYetAssignedId--;
+                blocks[blocksNotYetAssignedId] = block;
+
+                workStack.pop();
+                if (!workStack.isEmpty()) {
+                    workStack.peek().loops |= step.loops;
+                } else {
+                    return step.loops;
+                }
             }
         }
-
-        block.visited = true;
-        block.active = true;
-
-        long loops = 0;
-        for (BciBlock successor : block.getSuccessors()) {
-            // Recursively process successors.
-            loops |= computeBlockOrder(successor);
-            if (successor.active) {
-                // Reached block via backward branch.
-                loops |= (1L << successor.loopId);
-            }
-        }
-
-        block.loops = loops;
-        debug.log("computeBlockOrder(%s) -> %x", block, block.loops);
-
-        if (block.isLoopHeader) {
-            loops &= ~(1L << block.loopId);
-        }
-
-        block.active = false;
-        blocksNotYetAssignedId--;
-        blocks[blocksNotYetAssignedId] = block;
-
-        return loops;
     }
 
-    private long fixLoopBits(BciBlock[] blockMap, BciBlock block) {
-        if (block.visited) {
-            // Return cached loop information for this block.
-            if (block.isLoopHeader) {
-                return block.loops & ~(1L << block.loopId);
+    private long fixLoopBits(BciBlock initialBlock) {
+        ArrayDeque<TraversalStep> workStack = new ArrayDeque<>();
+        workStack.push(new TraversalStep(initialBlock));
+        while (true) {
+            TraversalStep step = workStack.peek();
+            BciBlock block = step.block;
+            if (step.currentSuccessorIndex == 0) {
+                block.visited = true;
+                step.loops = block.loops;
+            }
+            if (step.currentSuccessorIndex < block.getSuccessors().size()) {
+                BciBlock successor = block.getSuccessors().get(step.currentSuccessorIndex);
+                if (successor.visited) {
+                    // Return cached loop information for this block.
+                    if (successor.isLoopHeader) {
+                        step.loops |= successor.loops & ~(1L << successor.loopId);
+                    } else {
+                        step.loops |= successor.loops;
+                    }
+                } else {
+                    workStack.push(new TraversalStep(successor));
+                }
+                step.currentSuccessorIndex++;
             } else {
-                return block.loops;
+                if (block.loops != step.loops) {
+                    loopChanges = true;
+                    block.loops = step.loops;
+                    debug.log("fixLoopBits0(%s) -> %x", block, block.loops);
+                }
+
+                if (block.isLoopHeader) {
+                    step.loops &= ~(1L << block.loopId);
+                }
+
+                workStack.pop();
+                if (!workStack.isEmpty()) {
+                    workStack.peek().loops |= step.loops;
+                } else {
+                    return step.loops;
+                }
             }
         }
-
-        block.visited = true;
-        long loops = block.loops;
-        for (BciBlock successor : block.getSuccessors()) {
-            // Recursively process successors.
-            loops |= fixLoopBits(blockMap, successor);
-        }
-        if (block.loops != loops) {
-            loopChanges = true;
-            block.loops = loops;
-            debug.log("fixLoopBits0(%s) -> %x", block, block.loops);
-        }
-
-        if (block.isLoopHeader) {
-            loops &= ~(1L << block.loopId);
-        }
-
-        return loops;
     }
 
     public static BciBlockMapping create(BytecodeStream stream, Bytecode code, OptionValues options, DebugContext debug) {

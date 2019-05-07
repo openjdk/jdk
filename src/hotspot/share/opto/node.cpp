@@ -891,13 +891,15 @@ int Node::disconnect_inputs(Node *n, Compile* C) {
 //-----------------------------uncast---------------------------------------
 // %%% Temporary, until we sort out CheckCastPP vs. CastPP.
 // Strip away casting.  (It is depth-limited.)
-Node* Node::uncast() const {
+// Optionally, keep casts with dependencies.
+Node* Node::uncast(bool keep_deps) const {
   // Should be inline:
   //return is_ConstraintCast() ? uncast_helper(this) : (Node*) this;
-  if (is_ConstraintCast())
-    return uncast_helper(this);
-  else
+  if (is_ConstraintCast()) {
+    return uncast_helper(this, keep_deps);
+  } else {
     return (Node*) this;
+  }
 }
 
 // Find out of current node that matches opcode.
@@ -929,7 +931,7 @@ bool Node::has_out_with(int opcode1, int opcode2, int opcode3, int opcode4) {
 
 
 //---------------------------uncast_helper-------------------------------------
-Node* Node::uncast_helper(const Node* p) {
+Node* Node::uncast_helper(const Node* p, bool keep_deps) {
 #ifdef ASSERT
   uint depth_count = 0;
   const Node* orig_p = p;
@@ -947,6 +949,9 @@ Node* Node::uncast_helper(const Node* p) {
     if (p == NULL || p->req() != 2) {
       break;
     } else if (p->is_ConstraintCast()) {
+      if (keep_deps && p->as_ConstraintCast()->carry_dependency()) {
+        break; // stop at casts with dependencies
+      }
       p = p->in(1);
     } else {
       break;

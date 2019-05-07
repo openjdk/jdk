@@ -331,7 +331,7 @@ public abstract class Canonicalizer20010315 extends CanonicalizerBase {
                     ns.addMapping(NName, NValue, attribute);
                 }
             } else if (XML_LANG_URI.equals(attribute.getNamespaceURI())
-                && (!c14n11 || c14n11 && !"id".equals(NName))) {
+                && (!c14n11 || !"id".equals(NName))) {
                 xmlattrStack.addXmlnsAttr(attribute);
             }
         }

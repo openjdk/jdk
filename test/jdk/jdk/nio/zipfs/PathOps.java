@@ -604,7 +604,7 @@ public class PathOps {
         // create empty JAR file, test doesn't require any contents
         Path emptyJar = Utils.createJarFile("empty.jar");
 
-        fs = FileSystems.newFileSystem(emptyJar, null);
+        fs = FileSystems.newFileSystem(emptyJar);
         try {
             npes();
             mismatchedProviders();

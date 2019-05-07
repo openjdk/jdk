@@ -321,6 +321,35 @@ bool InlineTree::should_not_inline(ciMethod *callee_method,
   return false;
 }
 
+bool InlineTree::is_not_reached(ciMethod* callee_method, ciMethod* caller_method, int caller_bci, ciCallProfile& profile) {
+  if (!UseInterpreter) {
+    return false; // -Xcomp
+  }
+  if (profile.count() > 0) {
+    return false; // reachable according to profile
+  }
+  if (!callee_method->was_executed_more_than(0)) {
+    return true; // callee was never executed
+  }
+  if (caller_method->is_not_reached(caller_bci)) {
+    return true; // call site not resolved
+  }
+  if (profile.count() == -1) {
+    return false; // immature profile; optimistically treat as reached
+  }
+  assert(profile.count() == 0, "sanity");
+
+  // Profile info is scarce.
+  // Try to guess: check if the call site belongs to a start block.
+  // Call sites in a start block should be reachable if no exception is thrown earlier.
+  ciMethodBlocks* caller_blocks = caller_method->get_method_blocks();
+  bool is_start_block = caller_blocks->block_containing(caller_bci)->start_bci() == 0;
+  if (is_start_block) {
+    return false; // treat the call reached as part of start block
+  }
+  return true; // give up and treat the call site as not reached
+}
+
 //-----------------------------try_to_inline-----------------------------------
 // return true if ok
 // Relocated from "InliningClosure::try_to_inline"
@@ -372,7 +401,7 @@ bool InlineTree::try_to_inline(ciMethod* callee_method, ciMethod* caller_method,
       // inline constructors even if they are not reached.
     } else if (forced_inline()) {
       // Inlining was forced by CompilerOracle, ciReplay or annotation
-    } else if (profile.count() == 0) {
+    } else if (is_not_reached(callee_method, caller_method, caller_bci, profile)) {
       // don't inline unreached call sites
        set_msg("call site not reached");
        return false;

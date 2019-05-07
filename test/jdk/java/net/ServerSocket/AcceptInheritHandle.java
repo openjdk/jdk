@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.io.*;
 import java.net.*;
 import java.nio.channels.ServerSocketChannel;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
@@ -41,8 +42,8 @@ public class AcceptInheritHandle {
     enum ServerSocketProducer {
         JAVA_NET(() -> {
             try {
-                return new ServerSocket(); }
-            catch(IOException x) {
+                return new ServerSocket();
+            } catch(IOException x) {
                 throw new UncheckedIOException(x);
             }
         }),
@@ -86,13 +87,13 @@ public class AcceptInheritHandle {
         test(ServerSocketProducer.NIO_CHANNELS);
     }
 
-    static void test(ServerSocketProducer ssp, String... sysProps) throws Exception {
+    static void test(ServerSocketProducer ssp, String... jvmArgs) throws Exception {
         System.out.println("\nStarting test for " + ssp.name());
 
         List<String> commands = new ArrayList<>();
         commands.add(JAVA);
-        for (String prop : sysProps)
-            commands.add(prop);
+        for (String arg : jvmArgs)
+            commands.add(arg);
         commands.add("-cp");
         commands.add(CLASSPATH);
         commands.add("AcceptInheritHandle");
@@ -107,7 +108,14 @@ public class AcceptInheritHandle {
         int port = dis.readInt();
         System.out.println("Server process listening on " + port + ", connecting...");
 
-        Socket socket = new Socket("localhost", port);
+        String address;
+        if (Arrays.stream(jvmArgs).anyMatch("-Djava.net.preferIPv4Stack=true"::equals)) {
+            address = "127.0.0.1";
+        } else {
+            InetAddress loopback = InetAddress.getLoopbackAddress();
+            address = loopback.getHostAddress();
+        }
+        Socket socket = new Socket(address, port);
         String s = dis.readUTF();
         System.out.println("Server process said " + s);
 
@@ -128,7 +136,8 @@ public class AcceptInheritHandle {
 
     static void server(ServerSocketProducer producer) throws Exception {
         try (ServerSocket ss = producer.supplier().get()) {
-            ss.bind(new InetSocketAddress(0));
+            InetAddress loopback = InetAddress.getLoopbackAddress();
+            ss.bind(new InetSocketAddress(loopback, 0));
             int port = ss.getLocalPort();
             DataOutputStream dos = new DataOutputStream(System.out);
             dos.writeInt(port);

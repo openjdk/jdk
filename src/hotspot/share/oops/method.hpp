@@ -619,6 +619,7 @@ class Method : public Metadata {
 
   // true if method needs no dynamic dispatch (final and/or no vtable entry)
   bool can_be_statically_bound() const;
+  bool can_be_statically_bound(InstanceKlass* context) const;
   bool can_be_statically_bound(AccessFlags class_access_flags) const;
 
   // returns true if the method has any backward branches.

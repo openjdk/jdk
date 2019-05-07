@@ -108,6 +108,7 @@ void Dependencies::assert_concrete_with_no_concrete_subtype(ciKlass* ctxk) {
 
 void Dependencies::assert_unique_concrete_method(ciKlass* ctxk, ciMethod* uniqm) {
   check_ctxk(ctxk);
+  check_unique_method(ctxk, uniqm);
   assert_common_2(unique_concrete_method, ctxk, uniqm);
 }
 
@@ -180,6 +181,7 @@ void Dependencies::assert_abstract_with_unique_concrete_subtype(Klass* ctxk, Kla
 
 void Dependencies::assert_unique_concrete_method(Klass* ctxk, Method* uniqm) {
   check_ctxk(ctxk);
+  check_unique_method(ctxk, uniqm);
   assert_common_2(unique_concrete_method, DepValue(_oop_recorder, ctxk), DepValue(_oop_recorder, uniqm));
 }
 

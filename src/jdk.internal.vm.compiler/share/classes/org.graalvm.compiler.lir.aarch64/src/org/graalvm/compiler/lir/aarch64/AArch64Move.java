@@ -710,4 +710,71 @@ public class AArch64Move {
         }
     }
 
+    private abstract static class ZeroNullConversionOp extends AArch64LIRInstruction {
+        @Def({REG, HINT}) protected AllocatableValue result;
+        @Use({REG}) protected AllocatableValue input;
+
+        protected ZeroNullConversionOp(LIRInstructionClass<? extends ZeroNullConversionOp> type, AllocatableValue result, AllocatableValue input) {
+            super(type);
+            this.result = result;
+            this.input = input;
+        }
+
+        @Override
+        public void emitCode(CompilationResultBuilder crb, AArch64MacroAssembler masm) {
+            Register nullRegister = crb.nullRegister;
+            if (!nullRegister.equals(Register.None)) {
+                emitConversion(asRegister(result), asRegister(input), nullRegister, masm);
+            }
+        }
+
+        protected abstract void emitConversion(Register resultRegister, Register inputRegister, Register nullRegister, AArch64MacroAssembler masm);
+    }
+
+    public static class ConvertNullToZeroOp extends ZeroNullConversionOp {
+        public static final LIRInstructionClass<ConvertNullToZeroOp> TYPE = LIRInstructionClass.create(ConvertNullToZeroOp.class);
+
+        public ConvertNullToZeroOp(AllocatableValue result, AllocatableValue input) {
+            super(TYPE, result, input);
+        }
+
+        @Override
+        protected final void emitConversion(Register resultRegister, Register inputRegister, Register nullRegister, AArch64MacroAssembler masm) {
+            if (inputRegister.equals(resultRegister)) {
+                masm.subs(64, inputRegister, inputRegister, nullRegister);
+                Label done = new Label();
+                masm.branchConditionally(AArch64Assembler.ConditionFlag.EQ, done);
+                masm.add(64, inputRegister, inputRegister, nullRegister);
+                masm.bind(done);
+            } else {
+                masm.subs(64, resultRegister, resultRegister, resultRegister);
+                masm.cmp(64, inputRegister, nullRegister);
+                Label done = new Label();
+                masm.branchConditionally(AArch64Assembler.ConditionFlag.EQ, done);
+                masm.movx(resultRegister, inputRegister);
+                masm.bind(done);
+            }
+        }
+    }
+
+    public static class ConvertZeroToNullOp extends ZeroNullConversionOp {
+        public static final LIRInstructionClass<ConvertZeroToNullOp> TYPE = LIRInstructionClass.create(ConvertZeroToNullOp.class);
+
+        public ConvertZeroToNullOp(AllocatableValue result, AllocatableValue input) {
+            super(TYPE, result, input);
+        }
+
+        @Override
+        protected final void emitConversion(Register resultRegister, Register inputRegister, Register nullRegister, AArch64MacroAssembler masm) {
+            if (!inputRegister.equals(resultRegister)) {
+                masm.movx(resultRegister, inputRegister);
+            }
+            Label done = new Label();
+            masm.ands(64, zr, inputRegister, inputRegister);
+            masm.branchConditionally(AArch64Assembler.ConditionFlag.NE, done);
+            masm.movx(resultRegister, nullRegister);
+            masm.bind(done);
+        }
+    }
+
 }

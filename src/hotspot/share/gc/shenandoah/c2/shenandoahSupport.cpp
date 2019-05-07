@@ -1333,8 +1333,8 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
         }
       }
     }
-    if (ctrl->is_Proj() && ctrl->in(0)->is_CallJava()) {
-      CallNode* call = ctrl->in(0)->as_CallJava();
+    if ((ctrl->is_Proj() && ctrl->in(0)->is_CallJava()) || ctrl->is_CallJava()) {
+      CallNode* call = ctrl->is_Proj() ? ctrl->in(0)->as_CallJava() : ctrl->as_CallJava();
       CallProjections projs;
       call->extract_projections(&projs, false, false);
 
@@ -1362,7 +1362,7 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
         if (idx < n->outcnt()) {
           Node* u = n->raw_out(idx);
           Node* c = phase->ctrl_or_self(u);
-          if (c == ctrl) {
+          if (phase->is_dominator(call, c) && phase->is_dominator(c, projs.fallthrough_proj)) {
             stack.set_index(idx+1);
             assert(!u->is_CFG(), "");
             stack.push(u, 0);
@@ -1404,14 +1404,11 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
             }
           }
         } else {
-          // assert(n_clone->outcnt() > 0, "");
-          // assert(n->outcnt() > 0, "");
           stack.pop();
           clones.pop();
         }
       } while (stack.size() > 0);
       assert(stack.size() == 0 && clones.size() == 0, "");
-      ctrl = projs.fallthrough_catchproj;
     }
   }
 
@@ -1950,6 +1947,9 @@ void ShenandoahBarrierC2Support::optimize_after_expansion(VectorSet &visited, No
               head->verify_strip_mined(0);
             }
             move_heap_stable_test_out_of_loop(iff, phase);
+
+            AutoNodeBudget node_budget(phase);
+
             if (loop->policy_unswitching(phase)) {
               if (head->is_strip_mined()) {
                 OuterStripMinedLoopNode* outer = head->as_CountedLoop()->outer_loop();

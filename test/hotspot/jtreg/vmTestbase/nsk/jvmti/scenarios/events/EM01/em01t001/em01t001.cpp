@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 #include <string.h>
 #include "jvmti.h"
 #include "agent_common.h"
+#include "ExceptionCheckingJniEnv.hpp"
 #include "jni_tools.h"
 #include "jvmti_tools.h"
 #include "JVMTITools.h"
@@ -135,17 +136,13 @@ classEventsHandler(jvmtiEvent event, jvmtiEnv* jvmti_env, JNIEnv* jni_env,
 void
 threadEventHandler(jvmtiEvent event, jvmtiEnv* jvmti_env, JNIEnv* jni_env,
                             jthread thread) {
+    ExceptionCheckingJniEnvPtr ec_jni(jni_env);
     jclass classObject;
     char *className;
     char *generic;
     jvmtiPhase phase;
 
-
-    classObject = jni_env->GetObjectClass(thread);
-    if (!NSK_JNI_VERIFY(jni_env, classObject != NULL)) {
-        nsk_jvmti_setFailStatus();
-        return;
-    }
+    classObject = ec_jni->GetObjectClass(thread, TRACE_JNI_CALL);
 
     if (!NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(classObject, &className, &generic))) {
         nsk_jvmti_setFailStatus();

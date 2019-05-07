@@ -342,7 +342,7 @@ public abstract class Canonicalizer20010315Excl extends CanonicalizerBase {
     protected void circumventBugIfNeeded(XMLSignatureInput input)
         throws CanonicalizationException, ParserConfigurationException,
                IOException, SAXException {
-        if (!input.isNeedsToBeExpanded() || inclusiveNSSet.isEmpty() || inclusiveNSSet.isEmpty()) {
+        if (!input.isNeedsToBeExpanded() || inclusiveNSSet.isEmpty()) {
             return;
         }
         Document doc = null;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,6 +143,7 @@ typedef int fstatat64_func(int, const char *, struct stat64 *, int);
 typedef int unlinkat_func(int, const char*, int);
 typedef int renameat_func(int, const char*, int, const char*);
 typedef int futimesat_func(int, const char *, const struct timeval *);
+typedef int lutimes_func(const char *, const struct timeval *);
 typedef DIR* fdopendir_func(int);
 
 static openat64_func* my_openat64_func = NULL;
@@ -150,6 +151,7 @@ static fstatat64_func* my_fstatat64_func = NULL;
 static unlinkat_func* my_unlinkat_func = NULL;
 static renameat_func* my_renameat_func = NULL;
 static futimesat_func* my_futimesat_func = NULL;
+static lutimes_func* my_lutimes_func = NULL;
 static fdopendir_func* my_fdopendir_func = NULL;
 
 /**
@@ -269,7 +271,10 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
 #endif
     my_unlinkat_func = (unlinkat_func*) dlsym(RTLD_DEFAULT, "unlinkat");
     my_renameat_func = (renameat_func*) dlsym(RTLD_DEFAULT, "renameat");
+#ifndef _ALLBSD_SOURCE
     my_futimesat_func = (futimesat_func*) dlsym(RTLD_DEFAULT, "futimesat");
+    my_lutimes_func = (lutimes_func*) dlsym(RTLD_DEFAULT, "lutimes");
+#endif
 #if defined(_AIX)
     my_fdopendir_func = (fdopendir_func*) dlsym(RTLD_DEFAULT, "fdopendir64");
 #else
@@ -282,13 +287,16 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
         my_fstatat64_func = (fstatat64_func*)&fstatat64_wrapper;
 #endif
 
-    /* supports futimes or futimesat */
+    /* supports futimes or futimesat and/or lutimes */
 
 #ifdef _ALLBSD_SOURCE
     capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_FUTIMES;
+    capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_LUTIMES;
 #else
     if (my_futimesat_func != NULL)
         capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_FUTIMES;
+    if (my_lutimes_func != NULL)
+        capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_LUTIMES;
 #endif
 
     /* supports openat, etc. */
@@ -675,10 +683,38 @@ Java_sun_nio_fs_UnixNativeDispatcher_futimes(JNIEnv* env, jclass this, jint file
     RESTARTABLE(futimes(filedes, &times[0]), err);
 #else
     if (my_futimesat_func == NULL) {
-        JNU_ThrowInternalError(env, "my_ftimesat_func is NULL");
+        JNU_ThrowInternalError(env, "my_futimesat_func is NULL");
         return;
     }
     RESTARTABLE((*my_futimesat_func)(filedes, NULL, &times[0]), err);
+#endif
+    if (err == -1) {
+        throwUnixException(env, errno);
+    }
+}
+
+JNIEXPORT void JNICALL
+Java_sun_nio_fs_UnixNativeDispatcher_lutimes0(JNIEnv* env, jclass this,
+    jlong pathAddress, jlong accessTime, jlong modificationTime)
+{
+    int err;
+    struct timeval times[2];
+    const char* path = (const char*)jlong_to_ptr(pathAddress);
+
+    times[0].tv_sec = accessTime / 1000000;
+    times[0].tv_usec = accessTime % 1000000;
+
+    times[1].tv_sec = modificationTime / 1000000;
+    times[1].tv_usec = modificationTime % 1000000;
+
+#ifdef _ALLBSD_SOURCE
+    RESTARTABLE(lutimes(path, &times[0]), err);
+#else
+    if (my_lutimes_func == NULL) {
+        JNU_ThrowInternalError(env, "my_lutimes_func is NULL");
+        return;
+    }
+    RESTARTABLE((*my_lutimes_func)(path, &times[0]), err);
 #endif
     if (err == -1) {
         throwUnixException(env, errno);

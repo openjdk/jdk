@@ -139,6 +139,7 @@ class ObjectMonitor {
   friend class ObjectSynchronizer;
   friend class ObjectWaiter;
   friend class VMStructs;
+  JVMCI_ONLY(friend class JVMCIVMStructs;)
 
   volatile markOop   _header;       // displaced object header word - mark
   void*     volatile _object;       // backward object pointer - strong root
@@ -290,6 +291,9 @@ class ObjectMonitor {
   void      wait(jlong millis, bool interruptable, TRAPS);
   void      notify(TRAPS);
   void      notifyAll(TRAPS);
+
+  void      print() const { print_on(tty); }
+  void      print_on(outputStream* st) const;
 
 // Use the following at your own risk
   intptr_t  complete_exit(TRAPS);

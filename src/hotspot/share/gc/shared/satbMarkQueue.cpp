@@ -189,18 +189,6 @@ void SATBMarkQueueSet::set_active_all_threads(bool active, bool expected_active)
   Threads::threads_do(&closure);
 }
 
-void SATBMarkQueueSet::filter_thread_buffers() {
-  class FilterThreadBufferClosure : public ThreadClosure {
-    SATBMarkQueueSet* _qset;
-  public:
-    FilterThreadBufferClosure(SATBMarkQueueSet* qset) : _qset(qset) {}
-    virtual void do_thread(Thread* t) {
-      _qset->satb_queue_for_thread(t).filter();
-    }
-  } closure(this);
-  Threads::threads_do(&closure);
-}
-
 bool SATBMarkQueueSet::apply_closure_to_completed_buffer(SATBBufferClosure* cl) {
   BufferNode* nd = get_completed_buffer();
   if (nd != NULL) {

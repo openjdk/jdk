@@ -301,7 +301,7 @@ public class CompilerToVMHelper {
     }
 
     public static void writeDebugOutput(byte[] bytes, int offset, int length) {
-        CTVM.writeDebugOutput(bytes, offset, length);
+        CTVM.writeDebugOutput(bytes, offset, length, true, true);
     }
 
     public static void flushDebugOutput() {

@@ -38,29 +38,29 @@ static jfieldID objFieldId = NULL;
  */
 JNIEXPORT void JNICALL Java_nsk_share_gc_lock_jniref_JNIGlobalRefLocker_criticalNative
   (JNIEnv *jni_env, jobject o, jlong enterTime, jlong sleepTime) {
-        ExceptionCheckingJniEnvPtr jni(jni_env);
+        ExceptionCheckingJniEnvPtr ec_jni(jni_env);
 
         jobject obj;
         jobject gref;
         time_t start_time, current_time;
 
         if (objFieldId == NULL) {
-                jclass klass = jni->GetObjectClass(o, TRACE_JNI_CALL);
-                objFieldId = jni->GetFieldID(klass, "obj", "Ljava/lang/Object;", TRACE_JNI_CALL);
+                jclass klass = ec_jni->GetObjectClass(o, TRACE_JNI_CALL);
+                objFieldId = ec_jni->GetFieldID(klass, "obj", "Ljava/lang/Object;", TRACE_JNI_CALL);
         }
-        obj = jni->GetObjectField(o, objFieldId, TRACE_JNI_CALL);
-        jni->SetObjectField(o, objFieldId, NULL, TRACE_JNI_CALL);
+        obj = ec_jni->GetObjectField(o, objFieldId, TRACE_JNI_CALL);
+        ec_jni->SetObjectField(o, objFieldId, NULL, TRACE_JNI_CALL);
         start_time = time(NULL);
         enterTime /= 1000;
         current_time = 0;
         while (current_time - start_time < enterTime) {
-                gref = jni->NewGlobalRef(obj, TRACE_JNI_CALL);
+                gref = ec_jni->NewGlobalRef(obj, TRACE_JNI_CALL);
                 mssleep((long) sleepTime);
-                jni->DeleteGlobalRef(gref, TRACE_JNI_CALL);
+                ec_jni->DeleteGlobalRef(gref, TRACE_JNI_CALL);
                 mssleep((long) sleepTime);
                 current_time = time(NULL);
         }
-        jni->SetObjectField(o, objFieldId, obj, TRACE_JNI_CALL);
+        ec_jni->SetObjectField(o, objFieldId, obj, TRACE_JNI_CALL);
 }
 
 }

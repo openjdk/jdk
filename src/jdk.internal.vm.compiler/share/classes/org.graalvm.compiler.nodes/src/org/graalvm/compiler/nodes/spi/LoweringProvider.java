@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,5 +53,12 @@ public interface LoweringProvider {
     default Integer smallestCompareWidth() {
         // most platforms only support 32 and 64 bit compares
         return 32;
+    }
+
+    /**
+     * Indicates whether the target platform supports bulk zeroing instruction.
+     */
+    default boolean supportBulkZeroing() {
+        return false;
     }
 }

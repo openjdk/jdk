@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 #include <string.h>
 #include "jvmti.h"
 #include "agent_common.h"
+#include "ExceptionCheckingJniEnv.hpp"
 #include "jni_tools.h"
 #include "jvmti_tools.h"
 #include "JVMTITools.h"
@@ -102,24 +103,20 @@ static jobject
 getStaticObjField(const char* className, const char* objFieldName,
                     const char* signature) {
 
+    ExceptionCheckingJniEnvPtr ec_jni(jni);
     jfieldID fieldID;
     jclass klass = NULL;
 
-    klass = jni->FindClass(className);
-    if (!NSK_JNI_VERIFY(jni, klass != NULL))
-        return NULL;
-
-    fieldID = jni->GetStaticFieldID(klass, objFieldName, signature);
-    if (!NSK_JNI_VERIFY(jni, fieldID != NULL))
-        return NULL;
-
-    return jni->GetStaticObjectField(klass, fieldID);
+    klass = ec_jni->FindClass(className, TRACE_JNI_CALL);
+    fieldID = ec_jni->GetStaticFieldID(klass, objFieldName, signature, TRACE_JNI_CALL);
+    return ec_jni->GetStaticObjectField(klass, fieldID, TRACE_JNI_CALL);
 }
 
 /* ============================================================================= */
 
 static int prepare() {
 
+    ExceptionCheckingJniEnvPtr ec_jni(jni);
     mainThread = findThread(MAIN_THREAD_NAME);
     if (!NSK_VERIFY(mainThread != NULL)) {
         NSK_COMPLAIN1("<%s> thread not found\n", MAIN_THREAD_NAME);
@@ -127,29 +124,20 @@ static int prepare() {
     }
 
     /* make thread accessable for a long time */
-    mainThread = jni->NewGlobalRef(mainThread);
-    if (!NSK_JNI_VERIFY(jni, mainThread != NULL))
-        return NSK_FALSE;
-
+    mainThread = ec_jni->NewGlobalRef(mainThread, TRACE_JNI_CALL);
     startObject = getStaticObjField(DEBUGEE_CLASS_NAME, START_FIELD_NAME, OBJECT_FIELD_SIG);
     if (!NSK_VERIFY(startObject != NULL))
         return NSK_FALSE;
 
     /*make object accessable for a long time*/
-    startObject = jni->NewGlobalRef(startObject);
-    if (!NSK_JNI_VERIFY(jni, startObject != NULL))
-        return NSK_FALSE;
-
+    startObject = ec_jni->NewGlobalRef(startObject, TRACE_JNI_CALL);
 
     endObject = getStaticObjField(DEBUGEE_CLASS_NAME, END_FIELD_NAME, OBJECT_FIELD_SIG);
     if (!NSK_VERIFY(endObject != NULL))
         return NSK_FALSE;
 
     /*make object accessable for a long time*/
-    endObject = jni->NewGlobalRef(endObject);
-    if (!NSK_JNI_VERIFY(jni, endObject != NULL))
-        return NSK_FALSE;
-
+    endObject = ec_jni->NewGlobalRef(endObject, TRACE_JNI_CALL);
 
     debuggeeThread = (jthread) getStaticObjField(DEBUGEE_CLASS_NAME,
                                                  THREAD_FIELD_NAME,
@@ -158,10 +146,7 @@ static int prepare() {
         return NSK_FALSE;
 
     /* make thread accessable for a long time */
-    debuggeeThread = jni->NewGlobalRef(debuggeeThread);
-    if (!NSK_JNI_VERIFY(jni, debuggeeThread != NULL))
-        return NSK_FALSE;
-
+    debuggeeThread = ec_jni->NewGlobalRef(debuggeeThread, TRACE_JNI_CALL);
     return NSK_TRUE;
 }
 
@@ -170,6 +155,7 @@ static int prepare() {
 static int
 clean() {
 
+    ExceptionCheckingJniEnvPtr ec_jni(jni);
     /* disable MonitorContendedEnter event */
     if (!NSK_JVMTI_VERIFY(
             jvmti->SetEventNotificationMode(
@@ -177,10 +163,10 @@ clean() {
         nsk_jvmti_setFailStatus();
 
     /* dispose global references */
-    jni->DeleteGlobalRef(startObject);
-    jni->DeleteGlobalRef(endObject);
-    jni->DeleteGlobalRef(debuggeeThread);
-    jni->DeleteGlobalRef(mainThread);
+    ec_jni->DeleteGlobalRef(startObject, TRACE_JNI_CALL);
+    ec_jni->DeleteGlobalRef(endObject, TRACE_JNI_CALL);
+    ec_jni->DeleteGlobalRef(debuggeeThread, TRACE_JNI_CALL);
+    ec_jni->DeleteGlobalRef(mainThread, TRACE_JNI_CALL);
 
     startObject = NULL;
     endObject = NULL;
@@ -409,18 +395,19 @@ void
 handlerMC1(jvmtiEvent event, jvmtiEnv* jvmti, JNIEnv* jni_env,
                             jthread thread, jobject object,
                             jthread expectedThread, jobject expectedObject) {
+    ExceptionCheckingJniEnvPtr ec_jni(jni_env);
 
     if (expectedThread == NULL || expectedObject == NULL)
         return;
 
     /* check if event is for tested thread and for tested object */
-    if (jni_env->IsSameObject(expectedThread, thread) &&
-            jni_env->IsSameObject(expectedObject, object)) {
+    if (ec_jni->IsSameObject(expectedThread, thread, TRACE_JNI_CALL) &&
+            ec_jni->IsSameObject(expectedObject, object, TRACE_JNI_CALL)) {
 
         NSK_DISPLAY1("--->%-40s is received\n", TranslateEvent(event));
 
         showThreadInfo(thread);
-        if (jni_env->IsSameObject(expectedObject, endObject))
+        if (ec_jni->IsSameObject(expectedObject, endObject, TRACE_JNI_CALL))
             NSK_DISPLAY0("\tobject: 'endingMonitor'\n");
         else
             NSK_DISPLAY0("\tobject: 'startingMonitor'\n");
@@ -495,18 +482,19 @@ void
 handlerMC2(jvmtiEvent event, jvmtiEnv* jvmti, JNIEnv* jni_env,
                             jthread thread, jobject object,
                             jthread expectedThread, jobject expectedObject) {
+    ExceptionCheckingJniEnvPtr ec_jni(jni_env);
 
     if (expectedThread == NULL || expectedObject == NULL)
         return;
 
     /* check if event is for tested thread and for tested object */
-    if (jni_env->IsSameObject(expectedThread, thread) &&
-            jni_env->IsSameObject(expectedObject, object)) {
+    if (ec_jni->IsSameObject(expectedThread, thread, TRACE_JNI_CALL) &&
+            ec_jni->IsSameObject(expectedObject, object, TRACE_JNI_CALL)) {
 
         NSK_DISPLAY1("--->%-40s is received (new callbacks)\n", TranslateEvent(event));
 
         showThreadInfo(thread);
-        if (jni_env->IsSameObject(expectedObject, endObject))
+        if (ec_jni->IsSameObject(expectedObject, endObject, TRACE_JNI_CALL))
             NSK_DISPLAY0("\tobject: 'endingMonitor'\n");
         else
             NSK_DISPLAY0("\tobject: 'startingMonitor'\n");

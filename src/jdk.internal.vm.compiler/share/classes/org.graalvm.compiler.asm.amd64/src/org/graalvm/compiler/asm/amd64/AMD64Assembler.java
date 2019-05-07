@@ -3003,6 +3003,18 @@ public class AMD64Assembler extends AMD64BaseAssembler {
         emitByte(0x99);
     }
 
+    public final void repStosb() {
+        emitByte(0xf3);
+        rexw();
+        emitByte(0xaa);
+    }
+
+    public final void repStosq() {
+        emitByte(0xf3);
+        rexw();
+        emitByte(0xab);
+    }
+
     public final void cmovq(ConditionFlag cc, Register dst, Register src) {
         prefixq(dst, src);
         emitByte(0x0F);

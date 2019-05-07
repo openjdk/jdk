@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 #include <string.h>
 #include "jvmti.h"
 #include "agent_common.h"
+#include "ExceptionCheckingJniEnv.hpp"
 #include "jni_tools.h"
 #include "jvmti_tools.h"
 
@@ -91,23 +92,15 @@ int readNewBytecode(jvmtiEnv* jvmti) {
 static void JNICALL
 agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
+    ExceptionCheckingJniEnvPtr ec_jni(jni);
     /*Wait for debuggee to set classes to be redefined nsk_jvmti_waitForSync#4*/
     NSK_DISPLAY0("Wait for debuggee to set classes to be redefined nsk_jvmti_waitForSync#4\n");
     if (!nsk_jvmti_waitForSync(timeout))
         return;
 
     NSK_DISPLAY1("Find class: %s\n", TESTED_CLASS_NAME);
-    classDef.klass = jni->FindClass(TESTED_CLASS_NAME);
-    if (!NSK_JNI_VERIFY(jni, classDef.klass != NULL)) {
-        nsk_jvmti_setFailStatus();
-        return;
-    }
-
-    classDef.klass = (jclass) jni->NewGlobalRef(classDef.klass);
-    if (!NSK_JNI_VERIFY(jni, classDef.klass != NULL)) {
-        nsk_jvmti_setFailStatus();
-        return;
-    }
+    classDef.klass = ec_jni->FindClass(TESTED_CLASS_NAME, TRACE_JNI_CALL);
+    classDef.klass = (jclass) ec_jni->NewGlobalRef(classDef.klass, TRACE_JNI_CALL);
 
     NSK_DISPLAY0("Redfine class with new byte code\n");
     NSK_DISPLAY3("class definition:\n\t0x%p, 0x%p:%d\n",
@@ -123,7 +116,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         return;
     }
 
-    jni->DeleteGlobalRef(classDef.klass);
+    ec_jni->DeleteGlobalRef(classDef.klass, TRACE_JNI_CALL);
 
     if (!nsk_jvmti_resumeSync())
         return;

@@ -37,7 +37,7 @@ static jfieldID objFieldId = NULL;
  */
 JNIEXPORT jboolean JNICALL Java_nsk_share_gc_lock_jni_BooleanArrayCriticalLocker_criticalNative
 (JNIEnv *jni_env, jobject o, jlong enterTime, jlong sleepTime) {
-        ExceptionCheckingJniEnvPtr jni(jni_env);
+        ExceptionCheckingJniEnvPtr ec_jni(jni_env);
 
         jsize size, i;
         jbooleanArray arr;
@@ -46,18 +46,18 @@ JNIEXPORT jboolean JNICALL Java_nsk_share_gc_lock_jni_BooleanArrayCriticalLocker
         time_t start_time, current_time;
 
         if (objFieldId == NULL) {
-                jclass klass = jni->GetObjectClass(o, TRACE_JNI_CALL);
-                objFieldId = jni->GetFieldID(klass, "obj", "Ljava/lang/Object;", TRACE_JNI_CALL);
+                jclass klass = ec_jni->GetObjectClass(o, TRACE_JNI_CALL);
+                objFieldId = ec_jni->GetFieldID(klass, "obj", "Ljava/lang/Object;", TRACE_JNI_CALL);
         }
-        arr = (jbooleanArray) jni->GetObjectField(o, objFieldId, TRACE_JNI_CALL);
-        jni->SetObjectField(o, objFieldId, NULL, TRACE_JNI_CALL);
+        arr = (jbooleanArray) ec_jni->GetObjectField(o, objFieldId, TRACE_JNI_CALL);
+        ec_jni->SetObjectField(o, objFieldId, NULL, TRACE_JNI_CALL);
 
-        size = jni->GetArrayLength(arr, TRACE_JNI_CALL);
+        size = ec_jni->GetArrayLength(arr, TRACE_JNI_CALL);
         start_time = time(NULL);
         enterTime /= 1000;
         current_time = 0;
         while (current_time - start_time < enterTime) {
-                pa = (jboolean*) jni->GetPrimitiveArrayCritical(arr, NULL, TRACE_JNI_CALL);
+                pa = (jboolean*) ec_jni->GetPrimitiveArrayCritical(arr, NULL, TRACE_JNI_CALL);
                 if (pa != NULL) {
                         for (i = 0; i < size; ++i)
                                 hash ^= pa[i];
@@ -65,11 +65,11 @@ JNIEXPORT jboolean JNICALL Java_nsk_share_gc_lock_jni_BooleanArrayCriticalLocker
                         hash = JNI_FALSE;
                 }
                 mssleep((long) sleepTime);
-                jni->ReleasePrimitiveArrayCritical(arr, pa, 0, TRACE_JNI_CALL);
+                ec_jni->ReleasePrimitiveArrayCritical(arr, pa, 0, TRACE_JNI_CALL);
                 mssleep((long) sleepTime);
                 current_time = time(NULL);
         }
-        jni->SetObjectField(o, objFieldId, arr, TRACE_JNI_CALL);
+        ec_jni->SetObjectField(o, objFieldId, arr, TRACE_JNI_CALL);
         return hash;
 }
 

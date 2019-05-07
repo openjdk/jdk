@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -384,11 +384,14 @@ public abstract class PKCS11Test {
 
     static boolean loadNSPR(String libdir) throws Exception {
         // load NSS softoken dependencies in advance to avoid resolver issues
-        safeReload(libdir + System.mapLibraryName("nspr4"));
-        safeReload(libdir + System.mapLibraryName("plc4"));
-        safeReload(libdir + System.mapLibraryName("plds4"));
-        safeReload(libdir + System.mapLibraryName("sqlite3"));
-        safeReload(libdir + System.mapLibraryName("nssutil3"));
+        String dir = libdir.endsWith(File.separator)
+                     ? libdir
+                     : libdir + File.separator;
+        safeReload(dir + System.mapLibraryName("nspr4"));
+        safeReload(dir + System.mapLibraryName("plc4"));
+        safeReload(dir + System.mapLibraryName("plds4"));
+        safeReload(dir + System.mapLibraryName("sqlite3"));
+        safeReload(dir + System.mapLibraryName("nssutil3"));
         return true;
     }
 
@@ -903,21 +906,21 @@ public abstract class PKCS11Test {
     @Artifact(
             organization = "jpg.tests.jdk.nsslib",
             name = "nsslib-windows_x64",
-            revision = "3.35",
+            revision = "3.41-VS2017",
             extension = "zip")
     private static class WINDOWS_X64 { }
 
     @Artifact(
             organization = "jpg.tests.jdk.nsslib",
             name = "nsslib-windows_x86",
-            revision = "3.35",
+            revision = "3.41-VS2017",
             extension = "zip")
     private static class WINDOWS_X86 { }
 
     @Artifact(
             organization = "jpg.tests.jdk.nsslib",
             name = "nsslib-macosx_x64",
-            revision = "3.35",
+            revision = "3.41",
             extension = "zip")
     private static class MACOSX_X64 { }
 }

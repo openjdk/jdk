@@ -122,16 +122,6 @@ void G1RootProcessor::evacuate_roots(G1ParScanThreadState* pss, uint worker_i) {
     assert(closures->second_pass_weak_clds() == NULL, "Should be null if not tracing metadata.");
   }
 
-  // During conc marking we have to filter the per-thread SATB buffers
-  // to make sure we remove any oops into the CSet (which will show up
-  // as implicitly live).
-  {
-    G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::SATBFiltering, worker_i);
-    if (_process_strong_tasks.try_claim_task(G1RP_PS_filter_satb_buffers) && _g1h->collector_state()->mark_or_rebuild_in_progress()) {
-      G1BarrierSet::satb_mark_queue_set().filter_thread_buffers();
-    }
-  }
-
   _process_strong_tasks.all_tasks_completed(n_workers());
 }
 

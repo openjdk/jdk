@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 #include <string.h>
 #include "jvmti.h"
 #include "agent_common.h"
+#include "ExceptionCheckingJniEnv.hpp"
 #include "jni_tools.h"
 #include "jvmti_tools.h"
 #include "JVMTITools.h"
@@ -48,12 +49,11 @@ static int newEventCount[JVMTI_EVENT_COUNT];
 
 /* ============================================================================= */
 JNIEXPORT void JNICALL
-Java_nsk_jvmti_scenarios_events_EM02_em02t012_setThread(JNIEnv *jni_env,
+Java_nsk_jvmti_scenarios_events_EM02_em02t012_setThread(JNIEnv *jni,
                         jobject o, jthread thrd) {
-
+    ExceptionCheckingJniEnvPtr ec_jni(jni);
     /* make thread accessable for a long time */
-    testedThread = jni_env->NewGlobalRef(thrd);
-    NSK_JNI_VERIFY(jni_env, testedThread != NULL);
+    testedThread = ec_jni->NewGlobalRef(thrd, TRACE_JNI_CALL);
 }
 
 static void

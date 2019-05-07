@@ -330,6 +330,7 @@ public class WhiteBox {
     return enqueueInitializerForCompilation0(aClass, compLevel);
   }
   private native void    clearMethodState0(Executable method);
+  public  native void    markMethodProfiled(Executable method);
   public         void    clearMethodState(Executable method) {
     Objects.requireNonNull(method);
     clearMethodState0(method);

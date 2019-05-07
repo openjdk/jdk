@@ -765,6 +765,14 @@ ciMethod* ciMethod::find_monomorphic_target(ciInstanceKlass* caller,
 }
 
 // ------------------------------------------------------------------
+// ciMethod::can_be_statically_bound
+//
+// Tries to determine whether a method can be statically bound in some context.
+bool ciMethod::can_be_statically_bound(ciInstanceKlass* context) const {
+  return (holder() == context) && can_be_statically_bound();
+}
+
+// ------------------------------------------------------------------
 // ciMethod::resolve_invoke
 //
 // Given a known receiver klass, find the target for the call.

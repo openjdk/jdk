@@ -45,13 +45,13 @@
 // Given an IfNode, return the loop-exiting projection or NULL if both
 // arms remain in the loop.
 Node *IdealLoopTree::is_loop_exit(Node *iff) const {
-  if( iff->outcnt() != 2 ) return NULL; // Ignore partially dead tests
+  if (iff->outcnt() != 2) return NULL;  // Ignore partially dead tests
   PhaseIdealLoop *phase = _phase;
   // Test is an IfNode, has 2 projections.  If BOTH are in the loop
   // we need loop unswitching instead of peeling.
-  if( !is_member(phase->get_loop( iff->raw_out(0) )) )
+  if (!is_member(phase->get_loop(iff->raw_out(0))))
     return iff->raw_out(0);
-  if( !is_member(phase->get_loop( iff->raw_out(1) )) )
+  if (!is_member(phase->get_loop(iff->raw_out(1))))
     return iff->raw_out(1);
   return NULL;
 }
@@ -63,7 +63,7 @@ Node *IdealLoopTree::is_loop_exit(Node *iff) const {
 //------------------------------record_for_igvn----------------------------
 // Put loop body on igvn work list
 void IdealLoopTree::record_for_igvn() {
-  for( uint i = 0; i < _body.size(); i++ ) {
+  for (uint i = 0; i < _body.size(); i++) {
     Node *n = _body.at(i);
     _phase->_igvn._worklist.push(n);
   }
@@ -145,7 +145,9 @@ float IdealLoopTree::compute_profile_trip_cnt_helper(Node* n) {
       Node *exit = is_loop_exit(iff);
       if (exit) {
         float exit_prob = iff->_prob;
-        if (exit->Opcode() == Op_IfFalse) exit_prob = 1.0 - exit_prob;
+        if (exit->Opcode() == Op_IfFalse) {
+          exit_prob = 1.0 - exit_prob;
+        }
         if (exit_prob > PROB_MIN) {
           float exit_cnt = iff->_fcnt * exit_prob;
           return exit_cnt;
@@ -202,7 +204,7 @@ void IdealLoopTree::compute_profile_trip_cnt(PhaseIdealLoop *phase) {
     // Now compute a loop exit count
     float loop_exit_cnt = 0.0f;
     if (_child == NULL) {
-      for( uint i = 0; i < _body.size(); i++ ) {
+      for (uint i = 0; i < _body.size(); i++) {
         Node *n = _body[i];
         loop_exit_cnt += compute_profile_trip_cnt_helper(n);
       }
@@ -342,33 +344,48 @@ void IdealLoopTree::reassociate_invariants(PhaseIdealLoop *phase) {
 //------------------------------policy_peeling---------------------------------
 // Return TRUE or FALSE if the loop should be peeled or not.  Peel if we can
 // make some loop-invariant test (usually a null-check) happen before the loop.
-bool IdealLoopTree::policy_peeling( PhaseIdealLoop *phase ) const {
-  Node *test = ((IdealLoopTree*)this)->tail();
-  int  body_size = ((IdealLoopTree*)this)->_body.size();
+bool IdealLoopTree::policy_peeling(PhaseIdealLoop *phase) const {
+  IdealLoopTree *loop = (IdealLoopTree*)this;
+
+  // If nodes are depleted, some transform has miscalculated its needs.
+  assert(!phase->exceeding_node_budget(), "sanity");
+
+  uint body_size = loop->_body.size();
   // Peeling does loop cloning which can result in O(N^2) node construction
-  if( body_size > 255 /* Prevent overflow for large body_size */
-      || (body_size * body_size + phase->C->live_nodes()) > phase->C->max_node_limit() ) {
-    return false;           // too large to safely clone
+  if (body_size > 255) {
+    return false;   // Prevent overflow for large body size
+  }
+  uint estimate = body_size * body_size;
+  if (phase->exceeding_node_budget(estimate)) {
+    return false;   // Too large to safely clone
   }
 
   // check for vectorized loops, any peeling done was already applied
-  if (_head->is_CountedLoop() && _head->as_CountedLoop()->do_unroll_only()) return false;
-
-  if (_head->is_CountedLoop() && _head->as_CountedLoop()->trip_count() == 1) {
-    return false;
+  if (_head->is_CountedLoop()) {
+    CountedLoopNode* cl = _head->as_CountedLoop();
+    if (cl->is_unroll_only() || cl->trip_count() == 1) {
+      return false;
+    }
   }
 
-  while( test != _head ) {      // Scan till run off top of loop
-    if( test->is_If() ) {       // Test?
+  Node* test = loop->tail();
+
+  while (test != _head) {       // Scan till run off top of loop
+    if (test->is_If()) {        // Test?
       Node *ctrl = phase->get_ctrl(test->in(1));
-      if (ctrl->is_top())
+      if (ctrl->is_top()) {
         return false;           // Found dead test on live IF?  No peeling!
+      }
       // Standard IF only has one input value to check for loop invariance
-      assert(test->Opcode() == Op_If || test->Opcode() == Op_CountedLoopEnd || test->Opcode() == Op_RangeCheck, "Check this code when new subtype is added");
+      assert(test->Opcode() == Op_If ||
+             test->Opcode() == Op_CountedLoopEnd ||
+             test->Opcode() == Op_RangeCheck,
+             "Check this code when new subtype is added");
       // Condition is not a member of this loop?
-      if( !is_member(phase->get_loop(ctrl)) &&
-          is_loop_exit(test) )
-        return true;            // Found reason to peel!
+      if (!is_member(phase->get_loop(ctrl)) && is_loop_exit(test)) {
+        // Found reason to peel!
+        return phase->may_require_nodes(estimate);
+      }
     }
     // Walk up dominators to loop _head looking for test which is
     // executed on every path thru loop.
@@ -381,27 +398,27 @@ bool IdealLoopTree::policy_peeling( PhaseIdealLoop *phase ) const {
 // If we got the effect of peeling, either by actually peeling or by making
 // a pre-loop which must execute at least once, we can remove all
 // loop-invariant dominated tests in the main body.
-void PhaseIdealLoop::peeled_dom_test_elim( IdealLoopTree *loop, Node_List &old_new ) {
+void PhaseIdealLoop::peeled_dom_test_elim(IdealLoopTree *loop, Node_List &old_new) {
   bool progress = true;
-  while( progress ) {
+  while (progress) {
     progress = false;           // Reset for next iteration
     Node *prev = loop->_head->in(LoopNode::LoopBackControl);//loop->tail();
     Node *test = prev->in(0);
-    while( test != loop->_head ) { // Scan till run off top of loop
+    while (test != loop->_head) { // Scan till run off top of loop
 
       int p_op = prev->Opcode();
-      if( (p_op == Op_IfFalse || p_op == Op_IfTrue) &&
+      if ((p_op == Op_IfFalse || p_op == Op_IfTrue) &&
           test->is_If() &&      // Test?
           !test->in(1)->is_Con() && // And not already obvious?
           // Condition is not a member of this loop?
           !loop->is_member(get_loop(get_ctrl(test->in(1))))){
         // Walk loop body looking for instances of this test
-        for( uint i = 0; i < loop->_body.size(); i++ ) {
+        for (uint i = 0; i < loop->_body.size(); i++) {
           Node *n = loop->_body.at(i);
-          if( n->is_If() && n->in(1) == test->in(1) /*&& n != loop->tail()->in(0)*/ ) {
+          if (n->is_If() && n->in(1) == test->in(1) /*&& n != loop->tail()->in(0)*/) {
             // IfNode was dominated by version in peeled loop body
             progress = true;
-            dominated_by( old_new[prev->_idx], n );
+            dominated_by(old_new[prev->_idx], n);
           }
         }
       }
@@ -409,7 +426,7 @@ void PhaseIdealLoop::peeled_dom_test_elim( IdealLoopTree *loop, Node_List &old_n
       test = idom(test);
     } // End of scan tests in loop
 
-  } // End of while( progress )
+  } // End of while (progress)
 }
 
 //------------------------------do_peeling-------------------------------------
@@ -550,7 +567,7 @@ void PhaseIdealLoop::peeled_dom_test_elim( IdealLoopTree *loop, Node_List &old_n
 //              v
 //             exit
 //
-void PhaseIdealLoop::do_peeling( IdealLoopTree *loop, Node_List &old_new ) {
+void PhaseIdealLoop::do_peeling(IdealLoopTree *loop, Node_List &old_new) {
 
   C->set_major_progress();
   // Peeling a 'main' loop in a pre/main/post situation obfuscates the
@@ -599,7 +616,7 @@ void PhaseIdealLoop::do_peeling( IdealLoopTree *loop, Node_List &old_new ) {
     Node* old = head->fast_out(j);
     if (old->in(0) == loop->_head && old->req() == 3 && old->is_Phi()) {
       Node* new_exit_value = old_new[old->in(LoopNode::LoopBackControl)->_idx];
-      if (!new_exit_value )     // Backedge value is ALSO loop invariant?
+      if (!new_exit_value)     // Backedge value is ALSO loop invariant?
         // Then loop body backedge value remains the same.
         new_exit_value = old->in(LoopNode::LoopBackControl);
       _igvn.hash_delete(old);
@@ -628,8 +645,9 @@ void PhaseIdealLoop::do_peeling( IdealLoopTree *loop, Node_List &old_new ) {
   for (uint j3 = 0; j3 < loop->_body.size(); j3++) {
     Node *old = loop->_body.at(j3);
     Node *nnn = old_new[old->_idx];
-    if (!has_ctrl(nnn))
+    if (!has_ctrl(nnn)) {
       set_idom(nnn, idom(nnn), dd-1);
+    }
   }
 
   // Now force out all loop-invariant dominating tests.  The optimizer
@@ -644,12 +662,12 @@ void PhaseIdealLoop::do_peeling( IdealLoopTree *loop, Node_List &old_new ) {
 //------------------------------policy_maximally_unroll------------------------
 // Calculate exact loop trip count and return true if loop can be maximally
 // unrolled.
-bool IdealLoopTree::policy_maximally_unroll( PhaseIdealLoop *phase ) const {
+bool IdealLoopTree::policy_maximally_unroll(PhaseIdealLoop *phase) const {
   CountedLoopNode *cl = _head->as_CountedLoop();
   assert(cl->is_normal_loop(), "");
-  if (!cl->is_valid_counted_loop())
+  if (!cl->is_valid_counted_loop()) {
     return false; // Malformed counted loop
-
+  }
   if (!cl->has_exact_trip_count()) {
     // Trip count is not exact.
     return false;
@@ -660,31 +678,36 @@ bool IdealLoopTree::policy_maximally_unroll( PhaseIdealLoop *phase ) const {
   assert(trip_count > 1, "one iteration loop should be optimized out already");
   assert(trip_count < max_juint, "exact trip_count should be less than max_uint.");
 
+  // If nodes are depleted, some transform has miscalculated its needs.
+  assert(!phase->exceeding_node_budget(), "sanity");
+
   // Real policy: if we maximally unroll, does it get too big?
   // Allow the unrolled mess to get larger than standard loop
   // size.  After all, it will no longer be a loop.
   uint body_size    = _body.size();
   uint unroll_limit = (uint)LoopUnrollLimit * 4;
-  assert( (intx)unroll_limit == LoopUnrollLimit * 4, "LoopUnrollLimit must fit in 32bits");
+  assert((intx)unroll_limit == LoopUnrollLimit * 4, "LoopUnrollLimit must fit in 32bits");
   if (trip_count > unroll_limit || body_size > unroll_limit) {
     return false;
   }
 
-  // Fully unroll a loop with few iterations regardless next
-  // conditions since following loop optimizations will split
-  // such loop anyway (pre-main-post).
-  if (trip_count <= 3)
-    return true;
-
   // Take into account that after unroll conjoined heads and tails will fold,
   // otherwise policy_unroll() may allow more unrolling than max unrolling.
-  uint new_body_size = EMPTY_LOOP_SIZE + (body_size - EMPTY_LOOP_SIZE) * trip_count;
-  uint tst_body_size = (new_body_size - EMPTY_LOOP_SIZE) / trip_count + EMPTY_LOOP_SIZE;
-  if (body_size != tst_body_size) // Check for int overflow
+  uint new_body_size = est_loop_clone_sz(trip_count, body_size - EMPTY_LOOP_SIZE);
+
+  if (new_body_size == UINT_MAX) { // Check for bad estimate (overflow).
     return false;
+  }
+
+  // Fully unroll a loop with few iterations regardless next conditions since
+  // following loop optimizations will split such loop anyway (pre-main-post).
+  if (trip_count <= 3) {
+    return phase->may_require_nodes(new_body_size);
+  }
+
   if (new_body_size > unroll_limit ||
       // Unrolling can result in a large amount of node construction
-      new_body_size >= phase->C->max_node_limit() - phase->C->live_nodes()) {
+      phase->exceeding_node_budget(new_body_size)) {
     return false;
   }
 
@@ -714,38 +737,43 @@ bool IdealLoopTree::policy_maximally_unroll( PhaseIdealLoop *phase ) const {
     } // switch
   }
 
-  return true; // Do maximally unroll
+  return phase->may_require_nodes(new_body_size);
 }
 
 
 //------------------------------policy_unroll----------------------------------
-// Return TRUE or FALSE if the loop should be unrolled or not.  Unroll if
-// the loop is a CountedLoop and the body is small enough.
+// Return TRUE or FALSE if the loop should be unrolled or not.  Unroll if the
+// loop is a CountedLoop and the body is small enough.
 bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
 
   CountedLoopNode *cl = _head->as_CountedLoop();
   assert(cl->is_normal_loop() || cl->is_main_loop(), "");
 
-  if (!cl->is_valid_counted_loop())
+  if (!cl->is_valid_counted_loop()) {
     return false; // Malformed counted loop
+  }
+
+  // If nodes are depleted, some transform has miscalculated its needs.
+  assert(!phase->exceeding_node_budget(), "sanity");
 
   // Protect against over-unrolling.
   // After split at least one iteration will be executed in pre-loop.
-  if (cl->trip_count() <= (uint)(cl->is_normal_loop() ? 2 : 1)) return false;
-
-  _local_loop_unroll_limit = LoopUnrollLimit;
+  if (cl->trip_count() <= (cl->is_normal_loop() ? 2u : 1u)) {
+    return false;
+  }
+  _local_loop_unroll_limit  = LoopUnrollLimit;
   _local_loop_unroll_factor = 4;
-  int future_unroll_ct = cl->unrolled_count() * 2;
+  int future_unroll_cnt = cl->unrolled_count() * 2;
   if (!cl->is_vectorized_loop()) {
-    if (future_unroll_ct > LoopMaxUnroll) return false;
+    if (future_unroll_cnt > LoopMaxUnroll) return false;
   } else {
     // obey user constraints on vector mapped loops with additional unrolling applied
     int unroll_constraint = (cl->slp_max_unroll()) ? cl->slp_max_unroll() : 1;
-    if ((future_unroll_ct / unroll_constraint) > LoopMaxUnroll) return false;
+    if ((future_unroll_cnt / unroll_constraint) > LoopMaxUnroll) return false;
   }
 
   // Check for initial stride being a small enough constant
-  if (abs(cl->stride_con()) > (1<<2)*future_unroll_ct) return false;
+  if (abs(cl->stride_con()) > (1<<2)*future_unroll_cnt) return false;
 
   // Don't unroll if the next round of unrolling would push us
   // over the expected trip count of the loop.  One is subtracted
@@ -753,8 +781,8 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
   // executes 1 iteration.
   if (UnrollLimitForProfileCheck > 0 &&
       cl->profile_trip_cnt() != COUNT_UNKNOWN &&
-      future_unroll_ct        > UnrollLimitForProfileCheck &&
-      (float)future_unroll_ct > cl->profile_trip_cnt() - 1.0) {
+      future_unroll_cnt        > UnrollLimitForProfileCheck &&
+      (float)future_unroll_cnt > cl->profile_trip_cnt() - 1.0) {
     return false;
   }
 
@@ -763,8 +791,8 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
   //   and rounds of "unroll,optimize" are not making significant progress
   //   Progress defined as current size less than 20% larger than previous size.
   if (UseSuperWord && cl->node_count_before_unroll() > 0 &&
-      future_unroll_ct > LoopUnrollMin &&
-      (future_unroll_ct - 1) * (100 / LoopPercentProfileLimit) > cl->profile_trip_cnt() &&
+      future_unroll_cnt > LoopUnrollMin &&
+      (future_unroll_cnt - 1) * (100 / LoopPercentProfileLimit) > cl->profile_trip_cnt() &&
       1.2 * cl->node_count_before_unroll() < (double)_body.size()) {
     return false;
   }
@@ -848,8 +876,8 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
     if (LoopMaxUnroll > _local_loop_unroll_factor) {
       // Once policy_slp_analysis succeeds, mark the loop with the
       // maximal unroll factor so that we minimize analysis passes
-      if (future_unroll_ct >= _local_loop_unroll_factor) {
-        policy_unroll_slp_analysis(cl, phase, future_unroll_ct);
+      if (future_unroll_cnt >= _local_loop_unroll_factor) {
+        policy_unroll_slp_analysis(cl, phase, future_unroll_cnt);
       }
     }
   }
@@ -858,32 +886,40 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
   if ((LoopMaxUnroll < slp_max_unroll_factor) && FLAG_IS_DEFAULT(LoopMaxUnroll) && UseSubwordForMaxVector) {
     LoopMaxUnroll = slp_max_unroll_factor;
   }
+
+  uint estimate = est_loop_clone_sz(2, body_size);
+
   if (cl->has_passed_slp()) {
-    if (slp_max_unroll_factor >= future_unroll_ct) return true;
-    // Normal case: loop too big
-    return false;
+    if (slp_max_unroll_factor >= future_unroll_cnt) {
+      return phase->may_require_nodes(estimate);
+    }
+    return false; // Loop too big.
   }
 
   // Check for being too big
   if (body_size > (uint)_local_loop_unroll_limit) {
-    if ((cl->is_subword_loop() || xors_in_loop >= 4) && body_size < (uint)LoopUnrollLimit * 4) {
-      return true;
+    if ((cl->is_subword_loop() || xors_in_loop >= 4) && body_size < 4u * LoopUnrollLimit) {
+      return phase->may_require_nodes(estimate);
     }
-    // Normal case: loop too big
-    return false;
+    return false; // Loop too big.
   }
 
-  if (cl->do_unroll_only()) {
+  if (cl->is_unroll_only()) {
     if (TraceSuperWordLoopUnrollAnalysis) {
-      tty->print_cr("policy_unroll passed vector loop(vlen=%d,factor = %d)\n", slp_max_unroll_factor, future_unroll_ct);
+      tty->print_cr("policy_unroll passed vector loop(vlen=%d, factor=%d)\n",
+                    slp_max_unroll_factor, future_unroll_cnt);
     }
   }
 
   // Unroll once!  (Each trip will soon do double iterations)
-  return true;
+  return phase->may_require_nodes(estimate);
 }
 
-void IdealLoopTree::policy_unroll_slp_analysis(CountedLoopNode *cl, PhaseIdealLoop *phase, int future_unroll_ct) {
+void IdealLoopTree::policy_unroll_slp_analysis(CountedLoopNode *cl, PhaseIdealLoop *phase, int future_unroll_cnt) {
+
+  // If nodes are depleted, some transform has miscalculated its needs.
+  assert(!phase->exceeding_node_budget(), "sanity");
+
   // Enable this functionality target by target as needed
   if (SuperWordLoopUnrollAnalysis) {
     if (!cl->was_slp_analyzed()) {
@@ -898,7 +934,7 @@ void IdealLoopTree::policy_unroll_slp_analysis(CountedLoopNode *cl, PhaseIdealLo
 
     if (cl->has_passed_slp()) {
       int slp_max_unroll_factor = cl->slp_max_unroll();
-      if (slp_max_unroll_factor >= future_unroll_ct) {
+      if (slp_max_unroll_factor >= future_unroll_cnt) {
         int new_limit = cl->node_count_before_unroll() * slp_max_unroll_factor;
         if (new_limit > LoopUnrollLimit) {
           if (TraceSuperWordLoopUnrollAnalysis) {
@@ -917,15 +953,18 @@ void IdealLoopTree::policy_unroll_slp_analysis(CountedLoopNode *cl, PhaseIdealLo
 // aligned in a loop (unless the VM guarantees mutual alignment).  Note that
 // if we vectorize short memory ops into longer memory ops, we may want to
 // increase alignment.
-bool IdealLoopTree::policy_align( PhaseIdealLoop *phase ) const {
+bool IdealLoopTree::policy_align(PhaseIdealLoop *phase) const {
   return false;
 }
 
 //------------------------------policy_range_check-----------------------------
 // Return TRUE or FALSE if the loop should be range-check-eliminated.
 // Actually we do iteration-splitting, a more powerful form of RCE.
-bool IdealLoopTree::policy_range_check( PhaseIdealLoop *phase ) const {
+bool IdealLoopTree::policy_range_check(PhaseIdealLoop *phase) const {
   if (!RangeCheckElimination) return false;
+
+  // If nodes are depleted, some transform has miscalculated its needs.
+  assert(!phase->exceeding_node_budget(), "sanity");
 
   CountedLoopNode *cl = _head->as_CountedLoop();
   // If we unrolled with no intention of doing RCE and we later
@@ -935,7 +974,7 @@ bool IdealLoopTree::policy_range_check( PhaseIdealLoop *phase ) const {
   Node *trip_counter = cl->phi();
 
   // check for vectorized loops, some opts are no longer needed
-  if (cl->do_unroll_only()) return false;
+  if (cl->is_unroll_only()) return false;
 
   // Check loop body for tests of trip-counter plus loop-invariant vs
   // loop-invariant.
@@ -946,38 +985,45 @@ bool IdealLoopTree::policy_range_check( PhaseIdealLoop *phase ) const {
 
       // Comparing trip+off vs limit
       Node *bol = iff->in(1);
-      if (bol->req() != 2) continue; // dead constant test
+      if (bol->req() != 2) {
+        continue; // dead constant test
+      }
       if (!bol->is_Bool()) {
         assert(bol->Opcode() == Op_Conv2B, "predicate check only");
         continue;
       }
-      if (bol->as_Bool()->_test._test == BoolTest::ne)
+      if (bol->as_Bool()->_test._test == BoolTest::ne) {
         continue; // not RC
-
+      }
       Node *cmp = bol->in(1);
       Node *rc_exp = cmp->in(1);
       Node *limit = cmp->in(2);
 
       Node *limit_c = phase->get_ctrl(limit);
-      if( limit_c == phase->C->top() )
+      if (limit_c == phase->C->top()) {
         return false;           // Found dead test on live IF?  No RCE!
-      if( is_member(phase->get_loop(limit_c) ) ) {
+      }
+      if (is_member(phase->get_loop(limit_c))) {
         // Compare might have operands swapped; commute them
         rc_exp = cmp->in(2);
         limit  = cmp->in(1);
         limit_c = phase->get_ctrl(limit);
-        if( is_member(phase->get_loop(limit_c) ) )
+        if (is_member(phase->get_loop(limit_c))) {
           continue;             // Both inputs are loop varying; cannot RCE
+        }
       }
 
       if (!phase->is_scaled_iv_plus_offset(rc_exp, trip_counter, NULL, NULL)) {
         continue;
       }
-      // Yeah!  Found a test like 'trip+off vs limit'
-      // Test is an IfNode, has 2 projections.  If BOTH are in the loop
-      // we need loop unswitching instead of iteration splitting.
-      if( is_loop_exit(iff) )
-        return true;            // Found reason to split iterations
+      // Found a test like 'trip+off vs  limit'.  Test is an IfNode, has two
+      // (2) projections.  If BOTH are in  the loop we need loop unswitching
+      // instead of iteration splitting.
+      if (is_loop_exit(iff)) {
+        // Found valid reason to split iterations (if there is room).
+        // NOTE: Usually a gross overestimate.
+        return phase->may_require_nodes(est_loop_clone_sz(2, _body.size()));
+      }
     } // End of is IF
   }
 
@@ -987,14 +1033,21 @@ bool IdealLoopTree::policy_range_check( PhaseIdealLoop *phase ) const {
 //------------------------------policy_peel_only-------------------------------
 // Return TRUE or FALSE if the loop should NEVER be RCE'd or aligned.  Useful
 // for unrolling loops with NO array accesses.
-bool IdealLoopTree::policy_peel_only( PhaseIdealLoop *phase ) const {
+bool IdealLoopTree::policy_peel_only(PhaseIdealLoop *phase) const {
+
+  // If nodes are depleted, some transform has miscalculated its needs.
+  assert(!phase->exceeding_node_budget(), "sanity");
+
   // check for vectorized loops, any peeling done was already applied
-  if (_head->is_CountedLoop() && _head->as_CountedLoop()->do_unroll_only()) return false;
+  if (_head->is_CountedLoop() && _head->as_CountedLoop()->is_unroll_only()) {
+    return false;
+  }
 
-  for( uint i = 0; i < _body.size(); i++ )
-    if( _body[i]->is_Mem() )
+  for (uint i = 0; i < _body.size(); i++) {
+    if (_body[i]->is_Mem()) {
       return false;
-
+    }
+  }
   // No memory accesses at all!
   return true;
 }
@@ -1002,33 +1055,31 @@ bool IdealLoopTree::policy_peel_only( PhaseIdealLoop *phase ) const {
 //------------------------------clone_up_backedge_goo--------------------------
 // If Node n lives in the back_ctrl block and cannot float, we clone a private
 // version of n in preheader_ctrl block and return that, otherwise return n.
-Node *PhaseIdealLoop::clone_up_backedge_goo( Node *back_ctrl, Node *preheader_ctrl, Node *n, VectorSet &visited, Node_Stack &clones ) {
-  if( get_ctrl(n) != back_ctrl ) return n;
+Node *PhaseIdealLoop::clone_up_backedge_goo(Node *back_ctrl, Node *preheader_ctrl, Node *n, VectorSet &visited, Node_Stack &clones) {
+  if (get_ctrl(n) != back_ctrl) return n;
 
   // Only visit once
   if (visited.test_set(n->_idx)) {
     Node *x = clones.find(n->_idx);
-    if (x != NULL)
-      return x;
-    return n;
+    return (x != NULL) ? x : n;
   }
 
   Node *x = NULL;               // If required, a clone of 'n'
   // Check for 'n' being pinned in the backedge.
-  if( n->in(0) && n->in(0) == back_ctrl ) {
+  if (n->in(0) && n->in(0) == back_ctrl) {
     assert(clones.find(n->_idx) == NULL, "dead loop");
     x = n->clone();             // Clone a copy of 'n' to preheader
     clones.push(x, n->_idx);
-    x->set_req( 0, preheader_ctrl ); // Fix x's control input to preheader
+    x->set_req(0, preheader_ctrl); // Fix x's control input to preheader
   }
 
   // Recursive fixup any other input edges into x.
   // If there are no changes we can just return 'n', otherwise
   // we need to clone a private copy and change it.
-  for( uint i = 1; i < n->req(); i++ ) {
-    Node *g = clone_up_backedge_goo( back_ctrl, preheader_ctrl, n->in(i), visited, clones );
-    if( g != n->in(i) ) {
-      if( !x ) {
+  for (uint i = 1; i < n->req(); i++) {
+    Node *g = clone_up_backedge_goo(back_ctrl, preheader_ctrl, n->in(i), visited, clones);
+    if (g != n->in(i)) {
+      if (!x) {
         assert(clones.find(n->_idx) == NULL, "dead loop");
         x = n->clone();
         clones.push(x, n->_idx);
@@ -1036,11 +1087,11 @@ Node *PhaseIdealLoop::clone_up_backedge_goo( Node *back_ctrl, Node *preheader_ct
       x->set_req(i, g);
     }
   }
-  if( x ) {                     // x can legally float to pre-header location
-    register_new_node( x, preheader_ctrl );
+  if (x) {                     // x can legally float to pre-header location
+    register_new_node(x, preheader_ctrl);
     return x;
   } else {                      // raise n to cover LCA of uses
-    set_ctrl( n, find_non_split_ctrl(back_ctrl->in(0)) );
+    set_ctrl(n, find_non_split_ctrl(back_ctrl->in(0)));
   }
   return n;
 }
@@ -1244,7 +1295,7 @@ void PhaseIdealLoop::duplicate_predicates(CountedLoopNode* pre_head, Node* start
 // Insert pre and post loops.  If peel_only is set, the pre-loop can not have
 // more iterations added.  It acts as a 'peel' only, no lower-bound RCE, no
 // alignment.  Useful to unroll loops that do no array accesses.
-void PhaseIdealLoop::insert_pre_post_loops( IdealLoopTree *loop, Node_List &old_new, bool peel_only ) {
+void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_new, bool peel_only) {
 
 #ifndef PRODUCT
   if (TraceLoopOpts) {
@@ -1259,9 +1310,9 @@ void PhaseIdealLoop::insert_pre_post_loops( IdealLoopTree *loop, Node_List &old_
 
   // Find common pieces of the loop being guarded with pre & post loops
   CountedLoopNode *main_head = loop->_head->as_CountedLoop();
-  assert( main_head->is_normal_loop(), "" );
+  assert(main_head->is_normal_loop(), "");
   CountedLoopEndNode *main_end = main_head->loopexit();
-  assert( main_end->outcnt() == 2, "1 true, 1 false path only" );
+  assert(main_end->outcnt() == 2, "1 true, 1 false path only");
 
   Node *pre_header= main_head->in(LoopNode::EntryControl);
   Node *init      = main_head->init_trip();
@@ -1273,13 +1324,13 @@ void PhaseIdealLoop::insert_pre_post_loops( IdealLoopTree *loop, Node_List &old_
 
   // Need only 1 user of 'bol' because I will be hacking the loop bounds.
   Node *bol = main_end->in(CountedLoopEndNode::TestValue);
-  if( bol->outcnt() != 1 ) {
+  if (bol->outcnt() != 1) {
     bol = bol->clone();
     register_new_node(bol,main_end->in(CountedLoopEndNode::TestControl));
     _igvn.replace_input_of(main_end, CountedLoopEndNode::TestValue, bol);
   }
   // Need only 1 user of 'cmp' because I will be hacking the loop bounds.
-  if( cmp->outcnt() != 1 ) {
+  if (cmp->outcnt() != 1) {
     cmp = cmp->clone();
     register_new_node(cmp,main_end->in(CountedLoopEndNode::TestControl));
     _igvn.replace_input_of(bol, 1, cmp);
@@ -1314,9 +1365,9 @@ void PhaseIdealLoop::insert_pre_post_loops( IdealLoopTree *loop, Node_List &old_
 
   // Find the pre-loop normal exit.
   Node* pre_exit = pre_end->proj_out(false);
-  assert( pre_exit->Opcode() == Op_IfFalse, "" );
+  assert(pre_exit->Opcode() == Op_IfFalse, "");
   IfFalseNode *new_pre_exit = new IfFalseNode(pre_end);
-  _igvn.register_new_node_with_optimizer( new_pre_exit );
+  _igvn.register_new_node_with_optimizer(new_pre_exit);
   set_idom(new_pre_exit, pre_end, dd_main_head);
   set_loop(new_pre_exit, outer_loop->_parent);
 
@@ -1325,26 +1376,26 @@ void PhaseIdealLoop::insert_pre_post_loops( IdealLoopTree *loop, Node_List &old_
   // zero-trip guard will become the minimum-trip guard when we unroll
   // the main-loop.
   Node *min_opaq = new Opaque1Node(C, limit);
-  Node *min_cmp  = new CmpINode( pre_incr, min_opaq );
-  Node *min_bol  = new BoolNode( min_cmp, b_test );
-  register_new_node( min_opaq, new_pre_exit );
-  register_new_node( min_cmp , new_pre_exit );
-  register_new_node( min_bol , new_pre_exit );
+  Node *min_cmp  = new CmpINode(pre_incr, min_opaq);
+  Node *min_bol  = new BoolNode(min_cmp, b_test);
+  register_new_node(min_opaq, new_pre_exit);
+  register_new_node(min_cmp , new_pre_exit);
+  register_new_node(min_bol , new_pre_exit);
 
   // Build the IfNode (assume the main-loop is executed always).
-  IfNode *min_iff = new IfNode( new_pre_exit, min_bol, PROB_ALWAYS, COUNT_UNKNOWN );
-  _igvn.register_new_node_with_optimizer( min_iff );
+  IfNode *min_iff = new IfNode(new_pre_exit, min_bol, PROB_ALWAYS, COUNT_UNKNOWN);
+  _igvn.register_new_node_with_optimizer(min_iff);
   set_idom(min_iff, new_pre_exit, dd_main_head);
   set_loop(min_iff, outer_loop->_parent);
 
   // Plug in the false-path, taken if we need to skip main-loop
-  _igvn.hash_delete( pre_exit );
+  _igvn.hash_delete(pre_exit);
   pre_exit->set_req(0, min_iff);
   set_idom(pre_exit, min_iff, dd_main_head);
   set_idom(pre_exit->unique_ctrl_out(), min_iff, dd_main_head);
   // Make the true-path, must enter the main loop
-  Node *min_taken = new IfTrueNode( min_iff );
-  _igvn.register_new_node_with_optimizer( min_taken );
+  Node *min_taken = new IfTrueNode(min_iff);
+  _igvn.register_new_node_with_optimizer(min_taken);
   set_idom(min_taken, min_iff, dd_main_head);
   set_loop(min_taken, outer_loop->_parent);
   // Plug in the true path
@@ -1359,14 +1410,14 @@ void PhaseIdealLoop::insert_pre_post_loops( IdealLoopTree *loop, Node_List &old_
   // fall-out values of the pre-loop.
   for (DUIterator_Fast i2max, i2 = main_head->fast_outs(i2max); i2 < i2max; i2++) {
     Node* main_phi = main_head->fast_out(i2);
-    if( main_phi->is_Phi() && main_phi->in(0) == main_head && main_phi->outcnt() > 0 ) {
+    if (main_phi->is_Phi() && main_phi->in(0) == main_head && main_phi->outcnt() > 0) {
       Node *pre_phi = old_new[main_phi->_idx];
       Node *fallpre  = clone_up_backedge_goo(pre_head->back_control(),
                                              main_head->skip_strip_mined()->in(LoopNode::EntryControl),
                                              pre_phi->in(LoopNode::LoopBackControl),
                                              visited, clones);
       _igvn.hash_delete(main_phi);
-      main_phi->set_req( LoopNode::EntryControl, fallpre );
+      main_phi->set_req(LoopNode::EntryControl, fallpre);
     }
   }
 
@@ -1381,7 +1432,7 @@ void PhaseIdealLoop::insert_pre_post_loops( IdealLoopTree *loop, Node_List &old_
   // dependencies.
 
   // CastII for the main loop:
-  Node* castii = cast_incr_before_loop( pre_incr, min_taken, main_head );
+  Node* castii = cast_incr_before_loop(pre_incr, min_taken, main_head);
   assert(castii != NULL, "no castII inserted");
   Node* opaque_castii = new Opaque1Node(C, castii);
   register_new_node(opaque_castii, outer_main_head->in(LoopNode::EntryControl));
@@ -1390,18 +1441,18 @@ void PhaseIdealLoop::insert_pre_post_loops( IdealLoopTree *loop, Node_List &old_
   // Step B4: Shorten the pre-loop to run only 1 iteration (for now).
   // RCE and alignment may change this later.
   Node *cmp_end = pre_end->cmp_node();
-  assert( cmp_end->in(2) == limit, "" );
-  Node *pre_limit = new AddINode( init, stride );
+  assert(cmp_end->in(2) == limit, "");
+  Node *pre_limit = new AddINode(init, stride);
 
   // Save the original loop limit in this Opaque1 node for
   // use by range check elimination.
   Node *pre_opaq  = new Opaque1Node(C, pre_limit, limit);
 
-  register_new_node( pre_limit, pre_head->in(0) );
-  register_new_node( pre_opaq , pre_head->in(0) );
+  register_new_node(pre_limit, pre_head->in(0));
+  register_new_node(pre_opaq , pre_head->in(0));
 
   // Since no other users of pre-loop compare, I can hack limit directly
-  assert( cmp_end->outcnt() == 1, "no other users" );
+  assert(cmp_end->outcnt() == 1, "no other users");
   _igvn.hash_delete(cmp_end);
   cmp_end->set_req(2, peel_only ? pre_limit : pre_opaq);
 
@@ -1421,24 +1472,26 @@ void PhaseIdealLoop::insert_pre_post_loops( IdealLoopTree *loop, Node_List &old_
     // Modify pre loop end condition
     Node* pre_bol = pre_end->in(CountedLoopEndNode::TestValue)->as_Bool();
     BoolNode* new_bol0 = new BoolNode(pre_bol->in(1), new_test);
-    register_new_node( new_bol0, pre_head->in(0) );
+    register_new_node(new_bol0, pre_head->in(0));
     _igvn.replace_input_of(pre_end, CountedLoopEndNode::TestValue, new_bol0);
     // Modify main loop guard condition
     assert(min_iff->in(CountedLoopEndNode::TestValue) == min_bol, "guard okay");
     BoolNode* new_bol1 = new BoolNode(min_bol->in(1), new_test);
-    register_new_node( new_bol1, new_pre_exit );
+    register_new_node(new_bol1, new_pre_exit);
     _igvn.hash_delete(min_iff);
     min_iff->set_req(CountedLoopEndNode::TestValue, new_bol1);
     // Modify main loop end condition
     BoolNode* main_bol = main_end->in(CountedLoopEndNode::TestValue)->as_Bool();
     BoolNode* new_bol2 = new BoolNode(main_bol->in(1), new_test);
-    register_new_node( new_bol2, main_end->in(CountedLoopEndNode::TestControl) );
+    register_new_node(new_bol2, main_end->in(CountedLoopEndNode::TestControl));
     _igvn.replace_input_of(main_end, CountedLoopEndNode::TestValue, new_bol2);
   }
 
   // Flag main loop
   main_head->set_main_loop();
-  if( peel_only ) main_head->set_main_no_pre_loop();
+  if (peel_only) {
+    main_head->set_main_no_pre_loop();
+  }
 
   // Subtract a trip count for the pre-loop.
   main_head->set_trip_count(main_head->trip_count() - 1);
@@ -1457,8 +1510,9 @@ void PhaseIdealLoop::insert_pre_post_loops( IdealLoopTree *loop, Node_List &old_
 
 //------------------------------insert_vector_post_loop------------------------
 // Insert a copy of the atomic unrolled vectorized main loop as a post loop,
-// unroll_policy has already informed us that more unrolling is about to happen to
-// the main loop.  The resultant post loop will serve as a vectorized drain loop.
+// unroll_policy has  already informed  us that more  unrolling is  about to
+// happen  to the  main  loop.  The  resultant  post loop  will  serve as  a
+// vectorized drain loop.
 void PhaseIdealLoop::insert_vector_post_loop(IdealLoopTree *loop, Node_List &old_new) {
   if (!loop->_head->is_CountedLoop()) return;
 
@@ -1467,6 +1521,9 @@ void PhaseIdealLoop::insert_vector_post_loop(IdealLoopTree *loop, Node_List &old
   // only process vectorized main loops
   if (!cl->is_vectorized_loop() || !cl->is_main_loop()) return;
 
+  if (!may_require_nodes(est_loop_clone_sz(2, loop->_body.size()))) {
+    return;
+  }
   int slp_max_unroll_factor = cl->slp_max_unroll();
   int cur_unroll = cl->unrolled_count();
 
@@ -1638,7 +1695,7 @@ Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree *loop, Node_List &old_new,
   // fall-out values of the main-loop.
   for (DUIterator_Fast imax, i = main_head->fast_outs(imax); i < imax; i++) {
     Node* main_phi = main_head->fast_out(i);
-    if (main_phi->is_Phi() && main_phi->in(0) == main_head && main_phi->outcnt() >0) {
+    if (main_phi->is_Phi() && main_phi->in(0) == main_head && main_phi->outcnt() > 0) {
       Node *cur_phi = old_new[main_phi->_idx];
       Node *fallnew = clone_up_backedge_goo(main_head->back_control(),
                                             post_head->init_control(),
@@ -1710,7 +1767,7 @@ void PhaseIdealLoop::update_skeleton_predicates(Node* ctrl, CountedLoopNode* loo
 
 //------------------------------do_unroll--------------------------------------
 // Unroll the loop body one step - make each trip do 2 iterations.
-void PhaseIdealLoop::do_unroll( IdealLoopTree *loop, Node_List &old_new, bool adjust_min_trip ) {
+void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adjust_min_trip) {
   assert(LoopUnrollLimit, "");
   CountedLoopNode *loop_head = loop->_head->as_CountedLoop();
   CountedLoopEndNode *loop_end = loop_head->loopexit();
@@ -1733,8 +1790,8 @@ void PhaseIdealLoop::do_unroll( IdealLoopTree *loop, Node_List &old_new, bool ad
     Node_List rpo_list;
     VectorSet visited(arena);
     visited.set(loop_head->_idx);
-    rpo( loop_head, stack, visited, rpo_list );
-    dump(loop, rpo_list.size(), rpo_list );
+    rpo(loop_head, stack, visited, rpo_list);
+    dump(loop, rpo_list.size(), rpo_list);
   }
 #endif
 
@@ -1811,7 +1868,8 @@ void PhaseIdealLoop::do_unroll( IdealLoopTree *loop, Node_List &old_new, bool ad
     // Verify that policy_unroll result is still valid.
     const TypeInt* limit_type = _igvn.type(limit)->is_int();
     assert(stride_con > 0 && ((limit_type->_hi - stride_con) < limit_type->_hi) ||
-        stride_con < 0 && ((limit_type->_lo - stride_con) > limit_type->_lo), "sanity");
+           stride_con < 0 && ((limit_type->_lo - stride_con) > limit_type->_lo),
+           "sanity");
 
     if (limit->is_Con()) {
       // The check in policy_unroll and the assert above guarantee
@@ -1829,8 +1887,8 @@ void PhaseIdealLoop::do_unroll( IdealLoopTree *loop, Node_List &old_new, bool ad
         // zero trip guard limit will be different from loop limit.
         assert(has_ctrl(opaq), "should have it");
         Node* opaq_ctrl = get_ctrl(opaq);
-        limit = new Opaque2Node( C, limit );
-        register_new_node( limit, opaq_ctrl );
+        limit = new Opaque2Node(C, limit);
+        register_new_node(limit, opaq_ctrl);
       }
       if ((stride_con > 0 && (java_subtract(limit_type->_lo, stride_con) < limit_type->_lo)) ||
           (stride_con < 0 && (java_subtract(limit_type->_hi, stride_con) > limit_type->_hi))) {
@@ -1871,15 +1929,16 @@ void PhaseIdealLoop::do_unroll( IdealLoopTree *loop, Node_List &old_new, bool ad
           adj_limit = new SubINode(limit, stride);
         }
         assert(old_limit != NULL && adj_limit != NULL, "");
-        register_new_node( adj_limit, ctrl ); // adjust amount
+        register_new_node(adj_limit, ctrl); // adjust amount
         Node* adj_cmp = new CmpINode(old_limit, adj_limit);
-        register_new_node( adj_cmp, ctrl );
+        register_new_node(adj_cmp, ctrl);
         Node* adj_bool = new BoolNode(adj_cmp, bt);
-        register_new_node( adj_bool, ctrl );
+        register_new_node(adj_bool, ctrl);
         new_limit = new CMoveINode(adj_bool, adj_limit, adj_max, TypeInt::INT);
       }
       register_new_node(new_limit, ctrl);
     }
+
     assert(new_limit != NULL, "");
     // Replace in loop test.
     assert(loop_end->in(1)->in(1) == cmp, "sanity");
@@ -1929,10 +1988,10 @@ void PhaseIdealLoop::do_unroll( IdealLoopTree *loop, Node_List &old_new, bool ad
   // Make the fall-in from the original come from the fall-out of the clone.
   for (DUIterator_Fast jmax, j = loop_head->fast_outs(jmax); j < jmax; j++) {
     Node* phi = loop_head->fast_out(j);
-    if( phi->is_Phi() && phi->in(0) == loop_head && phi->outcnt() > 0 ) {
+    if (phi->is_Phi() && phi->in(0) == loop_head && phi->outcnt() > 0) {
       Node *newphi = old_new[phi->_idx];
-      _igvn.hash_delete( phi );
-      _igvn.hash_delete( newphi );
+      _igvn.hash_delete(phi);
+      _igvn.hash_delete(newphi);
 
       phi   ->set_req(LoopNode::   EntryControl, newphi->in(LoopNode::LoopBackControl));
       newphi->set_req(LoopNode::LoopBackControl, phi   ->in(LoopNode::LoopBackControl));
@@ -1940,7 +1999,7 @@ void PhaseIdealLoop::do_unroll( IdealLoopTree *loop, Node_List &old_new, bool ad
     }
   }
   Node *clone_head = old_new[loop_head->_idx];
-  _igvn.hash_delete( clone_head );
+  _igvn.hash_delete(clone_head);
   loop_head ->set_req(LoopNode::   EntryControl, clone_head->in(LoopNode::LoopBackControl));
   clone_head->set_req(LoopNode::LoopBackControl, loop_head ->in(LoopNode::LoopBackControl));
   loop_head ->set_req(LoopNode::LoopBackControl, C->top());
@@ -1951,18 +2010,19 @@ void PhaseIdealLoop::do_unroll( IdealLoopTree *loop, Node_List &old_new, bool ad
 
   // Kill the clone's backedge
   Node *newcle = old_new[loop_end->_idx];
-  _igvn.hash_delete( newcle );
+  _igvn.hash_delete(newcle);
   Node *one = _igvn.intcon(1);
   set_ctrl(one, C->root());
   newcle->set_req(1, one);
   // Force clone into same loop body
   uint max = loop->_body.size();
-  for( uint k = 0; k < max; k++ ) {
+  for (uint k = 0; k < max; k++) {
     Node *old = loop->_body.at(k);
     Node *nnn = old_new[old->_idx];
     loop->_body.push(nnn);
-    if (!has_ctrl(old))
+    if (!has_ctrl(old)) {
       set_loop(nnn, loop);
+    }
   }
 
   loop->record_for_igvn();
@@ -1974,7 +2034,7 @@ void PhaseIdealLoop::do_unroll( IdealLoopTree *loop, Node_List &old_new, bool ad
     for (uint i = 0; i < loop->_body.size(); i++) {
       loop->_body.at(i)->dump();
     }
-    if(C->clone_map().is_debug()) {
+    if (C->clone_map().is_debug()) {
       tty->print("\nCloneMap\n");
       Dict* dict = C->clone_map().dict();
       DictI i(dict);
@@ -1990,12 +2050,11 @@ void PhaseIdealLoop::do_unroll( IdealLoopTree *loop, Node_List &old_new, bool ad
     }
   }
 #endif
-
 }
 
 //------------------------------do_maximally_unroll----------------------------
 
-void PhaseIdealLoop::do_maximally_unroll( IdealLoopTree *loop, Node_List &old_new ) {
+void PhaseIdealLoop::do_maximally_unroll(IdealLoopTree *loop, Node_List &old_new) {
   CountedLoopNode *cl = loop->_head->as_CountedLoop();
   assert(cl->has_exact_trip_count(), "trip count is not exact");
   assert(cl->trip_count() > 0, "");
@@ -2113,7 +2172,7 @@ Node* PhaseIdealLoop::adjust_limit(int stride_con, Node * scale, Node *offset, N
 // the pre-loop or the post-loop until the condition holds true in the main
 // loop.  Stride, scale, offset and limit are all loop invariant.  Further,
 // stride and scale are constants (offset and limit often are).
-void PhaseIdealLoop::add_constraint( int stride_con, int scale_con, Node *offset, Node *low_limit, Node *upper_limit, Node *pre_ctrl, Node **pre_limit, Node **main_limit ) {
+void PhaseIdealLoop::add_constraint(int stride_con, int scale_con, Node *offset, Node *low_limit, Node *upper_limit, Node *pre_ctrl, Node **pre_limit, Node **main_limit) {
   // For positive stride, the pre-loop limit always uses a MAX function
   // and the main loop a MIN function.  For negative stride these are
   // reversed.
@@ -2198,7 +2257,7 @@ void PhaseIdealLoop::add_constraint( int stride_con, int scale_con, Node *offset
     set_ctrl(one, C->root());
 
     Node *plus_one = new AddINode(offset, one);
-    register_new_node( plus_one, pre_ctrl );
+    register_new_node(plus_one, pre_ctrl);
     // Pass (-stride) to indicate pre_loop_cond = NOT(main_loop_cond);
     *pre_limit = adjust_limit((-stride_con), scale, plus_one, upper_limit, *pre_limit, pre_ctrl,
                               scale_con < -1 && stride_con > 0);
@@ -2367,7 +2426,7 @@ Node* PhaseIdealLoop::add_range_check_predicate(IdealLoopTree* loop, CountedLoop
 
 //------------------------------do_range_check---------------------------------
 // Eliminate range-checks and other trip-counter vs loop-invariant tests.
-int PhaseIdealLoop::do_range_check( IdealLoopTree *loop, Node_List &old_new ) {
+int PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
 #ifndef PRODUCT
   if (PrintOpto && VerifyLoopOptimizations) {
     tty->print("Range Check Elimination ");
@@ -2377,15 +2436,16 @@ int PhaseIdealLoop::do_range_check( IdealLoopTree *loop, Node_List &old_new ) {
     loop->dump_head();
   }
 #endif
+
   assert(RangeCheckElimination, "");
   CountedLoopNode *cl = loop->_head->as_CountedLoop();
   // If we fail before trying to eliminate range checks, set multiversion state
   int closed_range_checks = 1;
 
   // protect against stride not being a constant
-  if (!cl->stride_is_con())
+  if (!cl->stride_is_con()) {
     return closed_range_checks;
-
+  }
   // Find the trip counter; we are iteration splitting based on it
   Node *trip_counter = cl->phi();
   // Find the main loop limit; we will trim it's iterations
@@ -2400,7 +2460,7 @@ int PhaseIdealLoop::do_range_check( IdealLoopTree *loop, Node_List &old_new ) {
   }
 
   // Need to find the main-loop zero-trip guard
-  Node *ctrl  = cl->skip_predicates();
+  Node *ctrl = cl->skip_predicates();
   Node *iffm = ctrl->in(0);
   Node *opqzm = iffm->in(1)->in(1)->in(2);
   assert(opqzm->in(1) == main_limit, "do not understand situation");
@@ -2418,8 +2478,9 @@ int PhaseIdealLoop::do_range_check( IdealLoopTree *loop, Node_List &old_new ) {
   // Occasionally it's possible for a pre-loop Opaque1 node to be
   // optimized away and then another round of loop opts attempted.
   // We can not optimize this particular loop in that case.
-  if (pre_opaq1->Opcode() != Op_Opaque1)
+  if (pre_opaq1->Opcode() != Op_Opaque1) {
     return closed_range_checks;
+  }
   Opaque1Node *pre_opaq = (Opaque1Node*)pre_opaq1;
   Node *pre_limit = pre_opaq->in(1);
 
@@ -2429,9 +2490,9 @@ int PhaseIdealLoop::do_range_check( IdealLoopTree *loop, Node_List &old_new ) {
   // Ensure the original loop limit is available from the
   // pre-loop Opaque1 node.
   Node *orig_limit = pre_opaq->original_loop_limit();
-  if (orig_limit == NULL || _igvn.type(orig_limit) == Type::TOP)
+  if (orig_limit == NULL || _igvn.type(orig_limit) == Type::TOP) {
     return closed_range_checks;
-
+  }
   // Must know if its a count-up or count-down loop
 
   int stride_con = cl->stride_con();
@@ -2457,8 +2518,9 @@ int PhaseIdealLoop::do_range_check( IdealLoopTree *loop, Node_List &old_new ) {
 
   Node* predicate_proj = cl->skip_strip_mined()->in(LoopNode::EntryControl);
   assert(predicate_proj->is_Proj() && predicate_proj->in(0)->is_If(), "if projection only");
+
   // Check loop body for tests of trip-counter plus loop-invariant vs loop-variant.
-  for( uint i = 0; i < loop->_body.size(); i++ ) {
+  for (uint i = 0; i < loop->_body.size(); i++) {
     Node *iff = loop->_body[i];
     if (iff->Opcode() == Op_If ||
         iff->Opcode() == Op_RangeCheck) { // Test?
@@ -2466,18 +2528,18 @@ int PhaseIdealLoop::do_range_check( IdealLoopTree *loop, Node_List &old_new ) {
       // we need loop unswitching instead of iteration splitting.
       closed_range_checks++;
       Node *exit = loop->is_loop_exit(iff);
-      if( !exit ) continue;
+      if (!exit) continue;
       int flip = (exit->Opcode() == Op_IfTrue) ? 1 : 0;
 
       // Get boolean condition to test
       Node *i1 = iff->in(1);
-      if( !i1->is_Bool() ) continue;
+      if (!i1->is_Bool()) continue;
       BoolNode *bol = i1->as_Bool();
       BoolTest b_test = bol->_test;
       // Flip sense of test if exit condition is flipped
-      if( flip )
+      if (flip) {
         b_test = b_test.negate();
-
+      }
       // Get compare
       Node *cmp = bol->in(1);
 
@@ -2487,14 +2549,15 @@ int PhaseIdealLoop::do_range_check( IdealLoopTree *loop, Node_List &old_new ) {
       int scale_con= 1;        // Assume trip counter not scaled
 
       Node *limit_c = get_ctrl(limit);
-      if( loop->is_member(get_loop(limit_c) ) ) {
+      if (loop->is_member(get_loop(limit_c))) {
         // Compare might have operands swapped; commute them
         b_test = b_test.commute();
         rc_exp = cmp->in(2);
         limit  = cmp->in(1);
         limit_c = get_ctrl(limit);
-        if( loop->is_member(get_loop(limit_c) ) )
+        if (loop->is_member(get_loop(limit_c))) {
           continue;             // Both inputs are loop varying; cannot RCE
+        }
       }
       // Here we know 'limit' is loop invariant
 
@@ -2513,8 +2576,9 @@ int PhaseIdealLoop::do_range_check( IdealLoopTree *loop, Node_List &old_new ) {
       }
 
       Node *offset_c = get_ctrl(offset);
-      if( loop->is_member( get_loop(offset_c) ) )
+      if (loop->is_member(get_loop(offset_c))) {
         continue;               // Offset is not really loop invariant
+      }
       // Here we know 'offset' is loop invariant.
 
       // As above for the 'limit', the 'offset' maybe pinned below the
@@ -2536,10 +2600,10 @@ int PhaseIdealLoop::do_range_check( IdealLoopTree *loop, Node_List &old_new ) {
       // sense of the test.
 
       // Adjust pre and main loop limits to guard the correct iteration set
-      if( cmp->Opcode() == Op_CmpU ) {// Unsigned compare is really 2 tests
-        if( b_test._test == BoolTest::lt ) { // Range checks always use lt
+      if (cmp->Opcode() == Op_CmpU) { // Unsigned compare is really 2 tests
+        if (b_test._test == BoolTest::lt) { // Range checks always use lt
           // The underflow and overflow limits: 0 <= scale*I+offset < limit
-          add_constraint( stride_con, scale_con, offset, zero, limit, pre_ctrl, &pre_limit, &main_limit );
+          add_constraint(stride_con, scale_con, offset, zero, limit, pre_ctrl, &pre_limit, &main_limit);
           // (0-offset)/scale could be outside of loop iterations range.
           conditional_rc = true;
           Node* init = cl->init_trip();
@@ -2566,29 +2630,29 @@ int PhaseIdealLoop::do_range_check( IdealLoopTree *loop, Node_List &old_new ) {
           continue;             // In release mode, ignore it
         }
       } else {                  // Otherwise work on normal compares
-        switch( b_test._test ) {
+        switch(b_test._test) {
         case BoolTest::gt:
           // Fall into GE case
         case BoolTest::ge:
           // Convert (I*scale+offset) >= Limit to (I*(-scale)+(-offset)) <= -Limit
           scale_con = -scale_con;
-          offset = new SubINode( zero, offset );
-          register_new_node( offset, pre_ctrl );
-          limit  = new SubINode( zero, limit );
-          register_new_node( limit, pre_ctrl );
+          offset = new SubINode(zero, offset);
+          register_new_node(offset, pre_ctrl);
+          limit  = new SubINode(zero, limit);
+          register_new_node(limit, pre_ctrl);
           // Fall into LE case
         case BoolTest::le:
           if (b_test._test != BoolTest::gt) {
             // Convert X <= Y to X < Y+1
-            limit = new AddINode( limit, one );
-            register_new_node( limit, pre_ctrl );
+            limit = new AddINode(limit, one);
+            register_new_node(limit, pre_ctrl);
           }
           // Fall into LT case
         case BoolTest::lt:
           // The underflow and overflow limits: MIN_INT <= scale*I+offset < limit
           // Note: (MIN_INT+1 == -MAX_INT) is used instead of MIN_INT here
           // to avoid problem with scale == -1: MIN_INT/(-1) == MIN_INT.
-          add_constraint( stride_con, scale_con, offset, mini, limit, pre_ctrl, &pre_limit, &main_limit );
+          add_constraint(stride_con, scale_con, offset, mini, limit, pre_ctrl, &pre_limit, &main_limit);
           // ((MIN_INT+1)-offset)/scale could be outside of loop iterations range.
           // Note: negative offset is replaced with 0 but (MIN_INT+1)/scale could
           // still be outside of loop range.
@@ -2604,7 +2668,7 @@ int PhaseIdealLoop::do_range_check( IdealLoopTree *loop, Node_List &old_new ) {
 
       // Kill the eliminated test
       C->set_major_progress();
-      Node *kill_con = _igvn.intcon( 1-flip );
+      Node *kill_con = _igvn.intcon(1-flip);
       set_ctrl(kill_con, C->root());
       _igvn.replace_input_of(iff, 1, kill_con);
       // Find surviving projection
@@ -2624,9 +2688,7 @@ int PhaseIdealLoop::do_range_check( IdealLoopTree *loop, Node_List &old_new ) {
       if (limit->Opcode() == Op_LoadRange) {
         closed_range_checks--;
       }
-
     } // End of is IF
-
   }
   if (predicate_proj != cl->skip_strip_mined()->in(LoopNode::EntryControl)) {
     _igvn.replace_input_of(cl->skip_strip_mined(), LoopNode::EntryControl, predicate_proj);
@@ -2647,21 +2709,21 @@ int PhaseIdealLoop::do_range_check( IdealLoopTree *loop, Node_List &old_new ) {
   Node *main_cle = cl->loopexit();
   Node *main_bol = main_cle->in(1);
   // Hacking loop bounds; need private copies of exit test
-  if( main_bol->outcnt() > 1 ) {// BoolNode shared?
-    main_bol = main_bol->clone();// Clone a private BoolNode
-    register_new_node( main_bol, main_cle->in(0) );
+  if (main_bol->outcnt() > 1) {     // BoolNode shared?
+    main_bol = main_bol->clone();   // Clone a private BoolNode
+    register_new_node(main_bol, main_cle->in(0));
     _igvn.replace_input_of(main_cle, 1, main_bol);
   }
   Node *main_cmp = main_bol->in(1);
-  if( main_cmp->outcnt() > 1 ) { // CmpNode shared?
-    main_cmp = main_cmp->clone();// Clone a private CmpNode
-    register_new_node( main_cmp, main_cle->in(0) );
+  if (main_cmp->outcnt() > 1) {     // CmpNode shared?
+    main_cmp = main_cmp->clone();   // Clone a private CmpNode
+    register_new_node(main_cmp, main_cle->in(0));
     _igvn.replace_input_of(main_bol, 1, main_cmp);
   }
   // Hack the now-private loop bounds
   _igvn.replace_input_of(main_cmp, 2, main_limit);
   // The OpaqueNode is unshared by design
-  assert( opqzm->outcnt() == 1, "cannot hack shared node" );
+  assert(opqzm->outcnt() == 1, "cannot hack shared node");
   _igvn.replace_input_of(opqzm, 1, main_limit);
 
   return closed_range_checks;
@@ -2830,64 +2892,67 @@ void PhaseIdealLoop::poison_rce_post_loop(IdealLoopTree *rce_loop) {
 //------------------------------DCE_loop_body----------------------------------
 // Remove simplistic dead code from loop body
 void IdealLoopTree::DCE_loop_body() {
-  for( uint i = 0; i < _body.size(); i++ )
-    if( _body.at(i)->outcnt() == 0 )
-      _body.map( i--, _body.pop() );
+  for (uint i = 0; i < _body.size(); i++) {
+    if (_body.at(i)->outcnt() == 0) {
+      _body.map(i, _body.pop());
+      i--; // Ensure we revisit the updated index.
+    }
+  }
 }
 
 
 //------------------------------adjust_loop_exit_prob--------------------------
 // Look for loop-exit tests with the 50/50 (or worse) guesses from the parsing stage.
 // Replace with a 1-in-10 exit guess.
-void IdealLoopTree::adjust_loop_exit_prob( PhaseIdealLoop *phase ) {
+void IdealLoopTree::adjust_loop_exit_prob(PhaseIdealLoop *phase) {
   Node *test = tail();
-  while( test != _head ) {
+  while (test != _head) {
     uint top = test->Opcode();
-    if( top == Op_IfTrue || top == Op_IfFalse ) {
+    if (top == Op_IfTrue || top == Op_IfFalse) {
       int test_con = ((ProjNode*)test)->_con;
       assert(top == (uint)(test_con? Op_IfTrue: Op_IfFalse), "sanity");
       IfNode *iff = test->in(0)->as_If();
-      if( iff->outcnt() == 2 ) {        // Ignore dead tests
+      if (iff->outcnt() == 2) {         // Ignore dead tests
         Node *bol = iff->in(1);
-        if( bol && bol->req() > 1 && bol->in(1) &&
-            ((bol->in(1)->Opcode() == Op_StorePConditional ) ||
-             (bol->in(1)->Opcode() == Op_StoreIConditional ) ||
-             (bol->in(1)->Opcode() == Op_StoreLConditional ) ||
-             (bol->in(1)->Opcode() == Op_CompareAndExchangeB ) ||
-             (bol->in(1)->Opcode() == Op_CompareAndExchangeS ) ||
-             (bol->in(1)->Opcode() == Op_CompareAndExchangeI ) ||
-             (bol->in(1)->Opcode() == Op_CompareAndExchangeL ) ||
-             (bol->in(1)->Opcode() == Op_CompareAndExchangeP ) ||
-             (bol->in(1)->Opcode() == Op_CompareAndExchangeN ) ||
-             (bol->in(1)->Opcode() == Op_WeakCompareAndSwapB ) ||
-             (bol->in(1)->Opcode() == Op_WeakCompareAndSwapS ) ||
-             (bol->in(1)->Opcode() == Op_WeakCompareAndSwapI ) ||
-             (bol->in(1)->Opcode() == Op_WeakCompareAndSwapL ) ||
-             (bol->in(1)->Opcode() == Op_WeakCompareAndSwapP ) ||
-             (bol->in(1)->Opcode() == Op_WeakCompareAndSwapN ) ||
-             (bol->in(1)->Opcode() == Op_CompareAndSwapB ) ||
-             (bol->in(1)->Opcode() == Op_CompareAndSwapS ) ||
-             (bol->in(1)->Opcode() == Op_CompareAndSwapI ) ||
-             (bol->in(1)->Opcode() == Op_CompareAndSwapL ) ||
-             (bol->in(1)->Opcode() == Op_CompareAndSwapP ) ||
-             (bol->in(1)->Opcode() == Op_CompareAndSwapN ) ||
-             (bol->in(1)->Opcode() == Op_ShenandoahCompareAndExchangeP ) ||
-             (bol->in(1)->Opcode() == Op_ShenandoahCompareAndExchangeN ) ||
-             (bol->in(1)->Opcode() == Op_ShenandoahWeakCompareAndSwapP ) ||
-             (bol->in(1)->Opcode() == Op_ShenandoahWeakCompareAndSwapN ) ||
-             (bol->in(1)->Opcode() == Op_ShenandoahCompareAndSwapP ) ||
-             (bol->in(1)->Opcode() == Op_ShenandoahCompareAndSwapN )))
+        if (bol && bol->req() > 1 && bol->in(1) &&
+            ((bol->in(1)->Opcode() == Op_StorePConditional) ||
+             (bol->in(1)->Opcode() == Op_StoreIConditional) ||
+             (bol->in(1)->Opcode() == Op_StoreLConditional) ||
+             (bol->in(1)->Opcode() == Op_CompareAndExchangeB) ||
+             (bol->in(1)->Opcode() == Op_CompareAndExchangeS) ||
+             (bol->in(1)->Opcode() == Op_CompareAndExchangeI) ||
+             (bol->in(1)->Opcode() == Op_CompareAndExchangeL) ||
+             (bol->in(1)->Opcode() == Op_CompareAndExchangeP) ||
+             (bol->in(1)->Opcode() == Op_CompareAndExchangeN) ||
+             (bol->in(1)->Opcode() == Op_WeakCompareAndSwapB) ||
+             (bol->in(1)->Opcode() == Op_WeakCompareAndSwapS) ||
+             (bol->in(1)->Opcode() == Op_WeakCompareAndSwapI) ||
+             (bol->in(1)->Opcode() == Op_WeakCompareAndSwapL) ||
+             (bol->in(1)->Opcode() == Op_WeakCompareAndSwapP) ||
+             (bol->in(1)->Opcode() == Op_WeakCompareAndSwapN) ||
+             (bol->in(1)->Opcode() == Op_CompareAndSwapB) ||
+             (bol->in(1)->Opcode() == Op_CompareAndSwapS) ||
+             (bol->in(1)->Opcode() == Op_CompareAndSwapI) ||
+             (bol->in(1)->Opcode() == Op_CompareAndSwapL) ||
+             (bol->in(1)->Opcode() == Op_CompareAndSwapP) ||
+             (bol->in(1)->Opcode() == Op_CompareAndSwapN) ||
+             (bol->in(1)->Opcode() == Op_ShenandoahCompareAndExchangeP) ||
+             (bol->in(1)->Opcode() == Op_ShenandoahCompareAndExchangeN) ||
+             (bol->in(1)->Opcode() == Op_ShenandoahWeakCompareAndSwapP) ||
+             (bol->in(1)->Opcode() == Op_ShenandoahWeakCompareAndSwapN) ||
+             (bol->in(1)->Opcode() == Op_ShenandoahCompareAndSwapP) ||
+             (bol->in(1)->Opcode() == Op_ShenandoahCompareAndSwapN)))
           return;               // Allocation loops RARELY take backedge
         // Find the OTHER exit path from the IF
         Node* ex = iff->proj_out(1-test_con);
         float p = iff->_prob;
-        if( !phase->is_member( this, ex ) && iff->_fcnt == COUNT_UNKNOWN ) {
-          if( top == Op_IfTrue ) {
-            if( p < (PROB_FAIR + PROB_UNLIKELY_MAG(3))) {
+        if (!phase->is_member(this, ex) && iff->_fcnt == COUNT_UNKNOWN) {
+          if (top == Op_IfTrue) {
+            if (p < (PROB_FAIR + PROB_UNLIKELY_MAG(3))) {
               iff->_prob = PROB_STATIC_FREQUENT;
             }
           } else {
-            if( p > (PROB_FAIR - PROB_UNLIKELY_MAG(3))) {
+            if (p > (PROB_FAIR - PROB_UNLIKELY_MAG(3))) {
               iff->_prob = PROB_STATIC_INFREQUENT;
             }
           }
@@ -2949,26 +3014,28 @@ void IdealLoopTree::remove_main_post_loops(CountedLoopNode *cl, PhaseIdealLoop *
   phase->_igvn.replace_input_of(main_cmp, 2, main_cmp->in(2)->in(1));
 }
 
-//------------------------------policy_do_remove_empty_loop--------------------
-// Micro-benchmark spamming.  Policy is to always remove empty loops.
-// The 'DO' part is to replace the trip counter with the value it will
-// have on the last iteration.  This will break the loop.
-bool IdealLoopTree::policy_do_remove_empty_loop( PhaseIdealLoop *phase ) {
+//------------------------------do_remove_empty_loop---------------------------
+// We always attempt remove empty loops.   The approach is to replace the trip
+// counter with the value it will have on the last iteration.  This will break
+// the loop.
+bool IdealLoopTree::do_remove_empty_loop(PhaseIdealLoop *phase) {
   // Minimum size must be empty loop
-  if (_body.size() > EMPTY_LOOP_SIZE)
+  if (_body.size() > EMPTY_LOOP_SIZE) {
     return false;
-
-  if (!_head->is_CountedLoop())
-    return false;     // Dead loop
+  }
+  if (!_head->is_CountedLoop()) {
+    return false;   // Dead loop
+  }
   CountedLoopNode *cl = _head->as_CountedLoop();
-  if (!cl->is_valid_counted_loop())
-    return false; // Malformed loop
-  if (!phase->is_member(this, phase->get_ctrl(cl->loopexit()->in(CountedLoopEndNode::TestValue))))
-    return false;             // Infinite loop
-
+  if (!cl->is_valid_counted_loop()) {
+    return false;   // Malformed loop
+  }
+  if (!phase->is_member(this, phase->get_ctrl(cl->loopexit()->in(CountedLoopEndNode::TestValue)))) {
+    return false;   // Infinite loop
+  }
   if (cl->is_pre_loop()) {
-    // If the loop we are removing is a pre-loop then the main and
-    // post loop can be removed as well
+    // If the loop we are removing is a pre-loop then the main and post loop
+    // can be removed as well.
     remove_main_post_loops(cl, phase);
   }
 
@@ -2978,11 +3045,11 @@ bool IdealLoopTree::policy_do_remove_empty_loop( PhaseIdealLoop *phase ) {
   for (DUIterator_Fast imax, i = cl->fast_outs(imax); i < imax; i++) {
     Node* n = cl->fast_out(i);
     if (n->Opcode() == Op_Phi) {
-      assert(iv == NULL, "Too many phis" );
+      assert(iv == NULL, "Too many phis");
       iv = n;
     }
   }
-  assert(iv == cl->phi(), "Wrong phi" );
+  assert(iv == cl->phi(), "Wrong phi");
 #endif
 
   // main and post loops have explicitly created zero trip guard
@@ -3056,26 +3123,26 @@ bool IdealLoopTree::policy_do_remove_empty_loop( PhaseIdealLoop *phase ) {
   }
   // Note: the final value after increment should not overflow since
   // counted loop has limit check predicate.
-  Node *final = new SubINode( exact_limit, cl->stride() );
+  Node *final = new SubINode(exact_limit, cl->stride());
   phase->register_new_node(final,cl->in(LoopNode::EntryControl));
   phase->_igvn.replace_node(phi,final);
   phase->C->set_major_progress();
   return true;
 }
 
-//------------------------------policy_do_one_iteration_loop-------------------
+//------------------------------do_one_iteration_loop--------------------------
 // Convert one iteration loop into normal code.
-bool IdealLoopTree::policy_do_one_iteration_loop( PhaseIdealLoop *phase ) {
-  if (!_head->as_Loop()->is_valid_counted_loop())
+bool IdealLoopTree::do_one_iteration_loop(PhaseIdealLoop *phase) {
+  if (!_head->as_Loop()->is_valid_counted_loop()) {
     return false; // Only for counted loop
-
+  }
   CountedLoopNode *cl = _head->as_CountedLoop();
   if (!cl->has_exact_trip_count() || cl->trip_count() != 1) {
     return false;
   }
 
 #ifndef PRODUCT
-  if(TraceLoopOpts) {
+  if (TraceLoopOpts) {
     tty->print("OneIteration ");
     this->dump_head();
   }
@@ -3096,20 +3163,22 @@ bool IdealLoopTree::policy_do_one_iteration_loop( PhaseIdealLoop *phase ) {
 
 //=============================================================================
 //------------------------------iteration_split_impl---------------------------
-bool IdealLoopTree::iteration_split_impl( PhaseIdealLoop *phase, Node_List &old_new ) {
+bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_new) {
   // Compute loop trip count if possible.
   compute_trip_count(phase);
 
   // Convert one iteration loop into normal code.
-  if (policy_do_one_iteration_loop(phase))
+  if (do_one_iteration_loop(phase)) {
     return true;
-
+  }
   // Check and remove empty loops (spam micro-benchmarks)
-  if (policy_do_remove_empty_loop(phase))
+  if (do_remove_empty_loop(phase)) {
     return true;  // Here we removed an empty loop
+  }
 
-  bool should_peel = policy_peeling(phase); // Should we peel?
+  AutoNodeBudget node_budget(phase);
 
+  bool should_peel     = policy_peeling(phase);
   bool should_unswitch = policy_unswitching(phase);
 
   // Non-counted loops may be peeled; exactly 1 iteration is peeled.
@@ -3144,20 +3213,13 @@ bool IdealLoopTree::iteration_split_impl( PhaseIdealLoop *phase, Node_List &old_
       phase->do_unswitching(this, old_new);
       return true;
     }
-    bool should_maximally_unroll =  policy_maximally_unroll(phase);
+    bool should_maximally_unroll = policy_maximally_unroll(phase);
     if (should_maximally_unroll) {
       // Here we did some unrolling and peeling.  Eventually we will
       // completely unroll this loop and it will no longer be a loop.
-      phase->do_maximally_unroll(this,old_new);
+      phase->do_maximally_unroll(this, old_new);
       return true;
     }
-  }
-
-  // Skip next optimizations if running low on nodes. Note that
-  // policy_unswitching and policy_maximally_unroll have this check.
-  int nodes_left = phase->C->max_node_limit() - phase->C->live_nodes();
-  if ((int)(2 * _body.size()) > nodes_left) {
-    return true;
   }
 
   // Counted loops may be peeled, may need some iterations run up
@@ -3173,26 +3235,28 @@ bool IdealLoopTree::iteration_split_impl( PhaseIdealLoop *phase, Node_List &old_
   // unrolling), plus any needed for RCE purposes.
 
   bool should_unroll = policy_unroll(phase);
+  bool should_rce    = policy_range_check(phase);
+  // TODO: Remove align -- not used.
+  bool should_align  = policy_align(phase);
 
-  bool should_rce = policy_range_check(phase);
-
-  bool should_align = policy_align(phase);
-
-  // If not RCE'ing (iteration splitting) or Aligning, then we do not
-  // need a pre-loop.  We may still need to peel an initial iteration but
-  // we will not be needing an unknown number of pre-iterations.
+  // If not RCE'ing  (iteration splitting) or Aligning, then we  do not need a
+  // pre-loop.  We may still need to peel an initial iteration but we will not
+  // be needing an unknown number of pre-iterations.
   //
-  // Basically, if may_rce_align reports FALSE first time through,
-  // we will not be able to later do RCE or Aligning on this loop.
+  // Basically, if may_rce_align reports FALSE first time through, we will not
+  // be able to later do RCE or Aligning on this loop.
   bool may_rce_align = !policy_peel_only(phase) || should_rce || should_align;
 
   // If we have any of these conditions (RCE, alignment, unrolling) met, then
   // we switch to the pre-/main-/post-loop model.  This model also covers
   // peeling.
   if (should_rce || should_align || should_unroll) {
-    if (cl->is_normal_loop())  // Convert to 'pre/main/post' loops
+    if (cl->is_normal_loop()) { // Convert to 'pre/main/post' loops
+      if (!phase->may_require_nodes(est_loop_clone_sz(3, _body.size()))) {
+        return false;
+      }
       phase->insert_pre_post_loops(this,old_new, !may_rce_align);
-
+    }
     // Adjust the pre- and main-loop limits to let the pre and post loops run
     // with full checks, but the main-loop with no checks.  Remove said
     // checks from the main body.
@@ -3223,14 +3287,14 @@ bool IdealLoopTree::iteration_split_impl( PhaseIdealLoop *phase, Node_List &old_
       phase->do_unroll(this, old_new, true);
     }
 
-    // Adjust the pre-loop limits to align the main body
-    // iterations.
-    if (should_align)
+    // Adjust the pre-loop limits to align the main body iterations.
+    if (should_align) {
       Unimplemented();
-
+    }
   } else {                      // Else we have an unchanged counted loop
-    if (should_peel)           // Might want to peel but do nothing else
+    if (should_peel) {          // Might want to peel but do nothing else
       phase->do_peeling(this,old_new);
+    }
   }
   return true;
 }
@@ -3238,35 +3302,32 @@ bool IdealLoopTree::iteration_split_impl( PhaseIdealLoop *phase, Node_List &old_
 
 //=============================================================================
 //------------------------------iteration_split--------------------------------
-bool IdealLoopTree::iteration_split( PhaseIdealLoop *phase, Node_List &old_new ) {
+bool IdealLoopTree::iteration_split(PhaseIdealLoop* phase, Node_List &old_new) {
   // Recursively iteration split nested loops
-  if (_child && !_child->iteration_split(phase, old_new))
+  if (_child && !_child->iteration_split(phase, old_new)) {
     return false;
+  }
 
   // Clean out prior deadwood
   DCE_loop_body();
 
-
   // Look for loop-exit tests with my 50/50 guesses from the Parsing stage.
   // Replace with a 1-in-10 exit guess.
-  if (_parent /*not the root loop*/ &&
-      !_irreducible &&
-      // Also ignore the occasional dead backedge
-      !tail()->is_top()) {
+  if (!is_root() && is_loop()) {
     adjust_loop_exit_prob(phase);
   }
 
-  // Gate unrolling, RCE and peeling efforts.
-  if (!_child &&                // If not an inner loop, do not split
-      !_irreducible &&
-      _allow_optimizations &&
-      !tail()->is_top()) {     // Also ignore the occasional dead backedge
+  // Unrolling, RCE and peeling efforts, iff innermost loop.
+  if (_allow_optimizations && is_innermost()) {
     if (!_has_call) {
-        if (!iteration_split_impl(phase, old_new)) {
-          return false;
-        }
-    } else if (policy_unswitching(phase)) {
-      phase->do_unswitching(this, old_new);
+      if (!iteration_split_impl(phase, old_new)) {
+        return false;
+      }
+    } else {
+      AutoNodeBudget node_budget(phase);
+      if (policy_unswitching(phase)) {
+        phase->do_unswitching(this, old_new);
+      }
     }
   }
 
@@ -3274,8 +3335,9 @@ bool IdealLoopTree::iteration_split( PhaseIdealLoop *phase, Node_List &old_new )
   // trip counter when there was no major reshaping.
   phase->reorg_offsets(this);
 
-  if (_next && !_next->iteration_split(phase, old_new))
+  if (_next && !_next->iteration_split(phase, old_new)) {
     return false;
+  }
   return true;
 }
 
@@ -3537,7 +3599,7 @@ bool PhaseIdealLoop::match_fill_loop(IdealLoopTree* lpt, Node*& store, Node*& st
 
 bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
   // Only for counted inner loops
-  if (!lpt->is_counted() || !lpt->is_inner()) {
+  if (!lpt->is_counted() || !lpt->is_innermost()) {
     return false;
   }
 

@@ -53,7 +53,10 @@
           "Prints properties used by the JVMCI compiler and exits")         \
                                                                             \
   experimental(bool, BootstrapJVMCI, false,                                 \
-          "Bootstrap JVMCI before running Java main method")                \
+          "Bootstrap JVMCI before running Java main method. This "          \
+          "initializes the compile queue with a small set of methods "      \
+          "and processes the queue until it is empty. Combining this with " \
+          "-XX:-TieredCompilation makes JVMCI compile more of itself.")     \
                                                                             \
   experimental(bool, EagerJVMCI, false,                                     \
           "Force eager JVMCI initialization")                               \

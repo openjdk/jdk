@@ -1678,7 +1678,13 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             return;
         int j = i;
         i += 2;
-        int[] newtemp = new int[j + 3*(pLen-i) + 2];
+        int newTempLen;
+        try {
+            newTempLen = Math.addExact(j + 2, Math.multiplyExact(3, pLen - i));
+        } catch (ArithmeticException ae) {
+            throw new OutOfMemoryError();
+        }
+        int[] newtemp = new int[newTempLen];
         System.arraycopy(temp, 0, newtemp, 0, j);
 
         boolean inQuote = true;

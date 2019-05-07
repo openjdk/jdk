@@ -643,6 +643,8 @@
                 DESCRIPTION="Uses an X509 SubjectName to retrieve a certificate from the storages" />
       <Resolver JAVACLASS="com.sun.org.apache.xml.internal.security.keys.keyresolver.implementations.X509IssuerSerialResolver"
                 DESCRIPTION="Uses an X509 IssuerName and IssuerSerial to retrieve a certificate from the storages" />
+      <Resolver JAVACLASS="com.sun.org.apache.xml.internal.security.keys.keyresolver.implementations.ECKeyValueResolver"
+                DESCRIPTION="Can extract EC public keys" />
    </KeyResolver>
  
    <PrefixMappings>
@@ -665,5 +667,7 @@
                      prefix="ec" />
       <PrefixMapping namespace="http://www.nue.et-inf.uni-siegen.de/~geuer-pollmann/#xpathFilter"
                      prefix="xx" />
+       <PrefixMapping namespace="http://www.w3.org/2009/xmldsig11#"
+                     prefix="dsig11" />
    </PrefixMappings>
 </Configuration>

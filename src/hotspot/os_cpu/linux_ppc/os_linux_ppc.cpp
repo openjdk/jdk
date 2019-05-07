@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -302,7 +302,6 @@ JVM_handle_linux_signal(int sig,
   address stub = NULL;
   address pc   = NULL;
 
-  //%note os_trap_1
   if (info != NULL && uc != NULL && thread != NULL) {
     pc = (address) os::Linux::ucontext_get_pc(uc);
 
@@ -311,17 +310,17 @@ JVM_handle_linux_signal(int sig,
       // si_addr may not be valid due to a bug in the linux-ppc64 kernel (see
       // comment below). Use get_stack_bang_address instead of si_addr.
       // If SIGSEGV is caused due to a branch to an invalid address an
-      // "Instruction Storage" interruption is generated and 'pc' (NIP) already
+      // "Instruction Storage Interrupt" is generated and 'pc' (NIP) already
       // contains the invalid address. Otherwise, the SIGSEGV is caused due to
       // load/store instruction trying to load/store from/to an invalid address
-      // and causing a "Data Storage" interruption, so we inspect the intruction
+      // and causing a "Data Storage Interrupt", so we inspect the intruction
       // in order to extract the faulty data addresss.
       address addr;
       if ((ucontext_get_trap(uc) & 0x0F00 /* no IRQ reply bits */) == 0x0400) {
-        // Instruction interruption
+        // Instruction Storage Interrupt (ISI)
         addr = pc;
       } else {
-        // Data interruption (0x0300): extract faulty data address
+        // Data Storage Interrupt (DSI), i.e. 0x0300: extract faulty data address
         addr = ((NativeInstruction*)pc)->get_stack_bang_address(uc);
       }
 

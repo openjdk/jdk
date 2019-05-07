@@ -353,6 +353,16 @@ CompileTask* TieredThresholdPolicy::select_task(CompileQueue* compile_queue) {
       TieredStopAtLevel > CompLevel_full_profile &&
       max_method != NULL && is_method_profiled(max_method)) {
     max_task->set_comp_level(CompLevel_limited_profile);
+
+    if (CompileBroker::compilation_is_complete(max_method, max_task->osr_bci(), CompLevel_limited_profile)) {
+      if (PrintTieredEvents) {
+        print_event(REMOVE_FROM_QUEUE, max_method, max_method, max_task->osr_bci(), (CompLevel)max_task->comp_level());
+      }
+      compile_queue->remove_and_mark_stale(max_task);
+      max_method->clear_queued_for_compilation();
+      return NULL;
+    }
+
     if (PrintTieredEvents) {
       print_event(UPDATE_IN_QUEUE, max_method, max_method, max_task->osr_bci(), (CompLevel)max_task->comp_level());
     }

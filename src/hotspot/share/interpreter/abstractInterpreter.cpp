@@ -28,6 +28,7 @@
 #include "compiler/disassembler.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/bytecodeInterpreter.hpp"
+#include "interpreter/bytecodeStream.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/interp_masm.hpp"
@@ -36,6 +37,8 @@
 #include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/arrayOop.hpp"
+#include "oops/constantPool.hpp"
+#include "oops/cpCache.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
@@ -240,9 +243,36 @@ void AbstractInterpreter::set_entry_for_kind(AbstractInterpreter::MethodKind kin
 // Return true if the interpreter can prove that the given bytecode has
 // not yet been executed (in Java semantics, not in actual operation).
 bool AbstractInterpreter::is_not_reached(const methodHandle& method, int bci) {
-  Bytecodes::Code code = method()->code_at(bci);
+  BytecodeStream s(method, bci);
+  Bytecodes::Code code = s.next();
 
-  if (!Bytecodes::must_rewrite(code)) {
+  if (Bytecodes::is_invoke(code)) {
+    assert(!Bytecodes::must_rewrite(code), "invokes aren't rewritten");
+    ConstantPool* cpool = method()->constants();
+
+    Bytecode invoke_bc(s.bytecode());
+
+    switch (code) {
+      case Bytecodes::_invokedynamic: {
+        assert(invoke_bc.has_index_u4(code), "sanity");
+        int method_index = invoke_bc.get_index_u4(code);
+        return cpool->invokedynamic_cp_cache_entry_at(method_index)->is_f1_null();
+      }
+      case Bytecodes::_invokevirtual:   // fall-through
+      case Bytecodes::_invokeinterface: // fall-through
+      case Bytecodes::_invokespecial:   // fall-through
+      case Bytecodes::_invokestatic: {
+        if (cpool->has_preresolution()) {
+          return false; // might have been reached
+        }
+        assert(!invoke_bc.has_index_u4(code), "sanity");
+        int method_index = invoke_bc.get_index_u2_cpcache(code);
+        Method* resolved_method = ConstantPool::method_at_if_loaded(cpool, method_index);
+        return (resolved_method == NULL);
+      }
+      default: ShouldNotReachHere();
+    }
+  } else if (!Bytecodes::must_rewrite(code)) {
     // might have been reached
     return false;
   }

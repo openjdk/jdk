@@ -70,7 +70,6 @@
 #if INCLUDE_JVMCI
 #include "jvmci/jvmciEnv.hpp"
 #include "jvmci/jvmciRuntime.hpp"
-#include "runtime/vframe.hpp"
 #endif
 #ifdef COMPILER2
 #include "opto/c2compiler.hpp"
@@ -1063,20 +1062,22 @@ void CompileBroker::compile_method_base(const methodHandle& method,
     }
 
 #if INCLUDE_JVMCI
-    if (UseJVMCICompiler && blocking && !UseJVMCINativeLibrary) {
+    if (UseJVMCICompiler && blocking) {
       // Don't allow blocking compiles for requests triggered by JVMCI.
       if (thread->is_Compiler_thread()) {
         blocking = false;
       }
 
-      // Don't allow blocking compiles if inside a class initializer or while performing class loading
-      vframeStream vfst((JavaThread*) thread);
-      for (; !vfst.at_end(); vfst.next()) {
-        if (vfst.method()->is_static_initializer() ||
-            (vfst.method()->method_holder()->is_subclass_of(SystemDictionary::ClassLoader_klass()) &&
-                vfst.method()->name() == vmSymbols::loadClass_name())) {
-          blocking = false;
-          break;
+      if (!UseJVMCINativeLibrary) {
+        // Don't allow blocking compiles if inside a class initializer or while performing class loading
+        vframeStream vfst((JavaThread*) thread);
+        for (; !vfst.at_end(); vfst.next()) {
+          if (vfst.method()->is_static_initializer() ||
+              (vfst.method()->method_holder()->is_subclass_of(SystemDictionary::ClassLoader_klass()) &&
+                  vfst.method()->name() == vmSymbols::loadClass_name())) {
+            blocking = false;
+            break;
+          }
         }
       }
 
@@ -2063,7 +2064,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
       compilable = ciEnv::MethodCompilable_never;
     } else {
       JVMCICompileState compile_state(task, system_dictionary_modification_counter);
-      JVMCIEnv env(&compile_state, __FILE__, __LINE__);
+      JVMCIEnv env(thread, &compile_state, __FILE__, __LINE__);
       methodHandle method(thread, target_handle);
       env.runtime()->compile_method(&env, jvmci, method, osr_bci);
 

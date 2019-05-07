@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,7 +160,7 @@ class SJFM_TestBase {
     List<Path> getTestZipPaths() throws IOException {
         if (zipfs == null) {
             Path testZip = createSourceZip();
-            zipfs = FileSystems.newFileSystem(testZip, null);
+            zipfs = FileSystems.newFileSystem(testZip);
             closeables.add(zipfs);
             zipPaths = Files.list(zipfs.getRootDirectories().iterator().next())
                 .filter(p -> p.getFileName().toString().endsWith(".java"))

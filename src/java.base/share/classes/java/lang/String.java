@@ -75,7 +75,7 @@ import static java.util.function.Predicate.not;
  *     System.out.println("abc");
  *     String cde = "cde";
  *     System.out.println("abc" + cde);
- *     String c = "abc".substring(2,3);
+ *     String c = "abc".substring(2, 3);
  *     String d = cde.substring(1, 2);
  * </pre></blockquote>
  * <p>
@@ -2160,27 +2160,48 @@ public final class String
      * @since 1.5
      */
     public String replace(CharSequence target, CharSequence replacement) {
-        String tgtStr = target.toString();
+        String trgtStr = target.toString();
         String replStr = replacement.toString();
-        int j = indexOf(tgtStr);
-        if (j < 0) {
-            return this;
-        }
-        int tgtLen = tgtStr.length();
-        int tgtLen1 = Math.max(tgtLen, 1);
         int thisLen = length();
+        int trgtLen = trgtStr.length();
+        int replLen = replStr.length();
 
-        int newLenHint = thisLen - tgtLen + replStr.length();
-        if (newLenHint < 0) {
-            throw new OutOfMemoryError();
+        if (trgtLen > 0) {
+            if (trgtLen == 1 && replLen == 1) {
+                return replace(trgtStr.charAt(0), replStr.charAt(0));
+            }
+
+            boolean thisIsLatin1 = this.isLatin1();
+            boolean trgtIsLatin1 = trgtStr.isLatin1();
+            boolean replIsLatin1 = replStr.isLatin1();
+            String ret = (thisIsLatin1 && trgtIsLatin1 && replIsLatin1)
+                    ? StringLatin1.replace(value, thisLen,
+                                           trgtStr.value, trgtLen,
+                                           replStr.value, replLen)
+                    : StringUTF16.replace(value, thisLen, thisIsLatin1,
+                                          trgtStr.value, trgtLen, trgtIsLatin1,
+                                          replStr.value, replLen, replIsLatin1);
+            if (ret != null) {
+                return ret;
+            }
+            return this;
+
+        } else { // trgtLen == 0
+            int resultLen;
+            try {
+                resultLen = Math.addExact(thisLen, Math.multiplyExact(
+                        Math.addExact(thisLen, 1), replLen));
+            } catch (ArithmeticException ignored) {
+                throw new OutOfMemoryError();
+            }
+
+            StringBuilder sb = new StringBuilder(resultLen);
+            sb.append(replStr);
+            for (int i = 0; i < thisLen; ++i) {
+                sb.append(charAt(i)).append(replStr);
+            }
+            return sb.toString();
         }
-        StringBuilder sb = new StringBuilder(newLenHint);
-        int i = 0;
-        do {
-            sb.append(this, i, j).append(replStr);
-            i = j + tgtLen;
-        } while (j < thisLen && (j = indexOf(tgtStr, j + tgtLen1)) > 0);
-        return sb.append(this, i, thisLen).toString();
     }
 
     /**

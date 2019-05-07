@@ -387,7 +387,7 @@ else # $(HAS_SPEC)=true
 	fi
         # Re-run configure with the same arguments (and possibly some additional),
         # must be done after patching.
-	( cd $(OUTPUTDIR) && PATH="$(ORIGINAL_PATH)" \
+	( cd $(CONFIGURE_START_DIR) && PATH="$(ORIGINAL_PATH)" \
 	    $(BASH) $(topdir)/configure $(CONFIGURE_COMMAND_LINE) $(COMPARE_BUILD_CONF))
   endef
 

@@ -335,13 +335,13 @@ static int startThread(jthread threadObj) {
 
 /** Create thread object for new agent thread. */
 static jthread newThreadObj(JNIEnv* jni_env) {
-    ExceptionCheckingJniEnvPtr jni(jni_env);
+    ExceptionCheckingJniEnvPtr ec_jni(jni_env);
     jclass thrClass;
     jmethodID cid;
 
-    thrClass = jni->FindClass("java/lang/Thread", TRACE_JNI_CALL);
-    cid = jni->GetMethodID(thrClass, "<init>", "()V", TRACE_JNI_CALL);
-    return jni->NewObject(thrClass, cid, TRACE_JNI_CALL);
+    thrClass = ec_jni->FindClass("java/lang/Thread", TRACE_JNI_CALL);
+    cid = ec_jni->GetMethodID(thrClass, "<init>", "()V", TRACE_JNI_CALL);
+    return ec_jni->NewObject(thrClass, cid, TRACE_JNI_CALL);
 }
 
 /***********************************************************************/
@@ -491,12 +491,12 @@ Java_nsk_jvmti_scenarios_allocation_AP04_ap04t003_runIterateOverInstancesOfClass
 JNIEXPORT void JNICALL
 Java_nsk_jvmti_scenarios_allocation_AP04_ap04t003_runIterateOverObjectsReachableFromObject(JNIEnv* jni_env,
                                                                                            jclass  klass) {
-    ExceptionCheckingJniEnvPtr jni(jni_env);
+    ExceptionCheckingJniEnvPtr ec_jni(jni_env);
     jobject root = NULL;
     int modified = 0;
     int found = 0;
 
-    root = jni->GetStaticObjectField(debugeeClass, rootFieldID, TRACE_JNI_CALL);
+    root = ec_jni->GetStaticObjectField(debugeeClass, rootFieldID, TRACE_JNI_CALL);
 
     if (!prepareToIteration(jni_env))
         return;
@@ -524,7 +524,7 @@ Java_nsk_jvmti_scenarios_allocation_AP04_ap04t003_runIterateOverObjectsReachable
 
 static void JNICALL
 agentProc(jvmtiEnv* jvmti, JNIEnv* jni_env, void* arg) {
-    ExceptionCheckingJniEnvPtr jni(jni_env);
+    ExceptionCheckingJniEnvPtr ec_jni(jni_env);
     NSK_DISPLAY0("Wait for debugee start\n\n");
     if (!NSK_VERIFY(nsk_jvmti_waitForSync(timeout)))
         return;
@@ -536,10 +536,10 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni_env, void* arg) {
         return;
     }
 
-    debugeeClass = (jclass) jni->NewGlobalRef(debugeeClass, TRACE_JNI_CALL);
+    debugeeClass = (jclass) ec_jni->NewGlobalRef(debugeeClass, TRACE_JNI_CALL);
 
     NSK_DISPLAY1("Find ID of 'root' field: %s\n", ROOT_SIGNATURE);
-    rootFieldID = jni->GetStaticFieldID(debugeeClass, "root",
+    rootFieldID = ec_jni->GetStaticFieldID(debugeeClass, "root",
                                         ROOT_SIGNATURE, TRACE_JNI_CALL);
 
     NSK_DISPLAY0("Let debugee to run test cases\n");
@@ -550,7 +550,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni_env, void* arg) {
     if (!NSK_VERIFY(nsk_jvmti_waitForSync(timeout)))
         return;
 
-    jni->DeleteGlobalRef(debugeeClass, TRACE_JNI_CALL);
+    ec_jni->DeleteGlobalRef(debugeeClass, TRACE_JNI_CALL);
     NSK_TRACE(jvmti->DestroyRawMonitor(counterMonitor_ptr));
     NSK_TRACE(jvmti->DestroyRawMonitor(startLock));
     NSK_TRACE(jvmti->DestroyRawMonitor(runLock));

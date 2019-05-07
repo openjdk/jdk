@@ -88,6 +88,10 @@ protected:
                                 ciMethod* caller_method,
                                 JVMState* jvms,
                                 WarmCallInfo* wci_result);
+  bool        is_not_reached(ciMethod* callee_method,
+                             ciMethod* caller_method,
+                             int caller_bci,
+                             ciCallProfile& profile);
   void        print_inlining(ciMethod* callee_method, int caller_bci,
                              ciMethod* caller_method, bool success) const;
 

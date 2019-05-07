@@ -89,7 +89,6 @@ void ShenandoahRootProcessor::process_all_roots_slow(OopClosure* oops) {
 
   AlwaysTrueClosure always_true;
   WeakProcessor::weak_oops_do(&always_true, oops);
-  JvmtiExport::weak_oops_do(&always_true, oops);
 
   if (ShenandoahStringDedup::is_enabled()) {
     ShenandoahStringDedup::oops_do_slow(oops);

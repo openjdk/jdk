@@ -114,31 +114,37 @@ const Type* SubNode::Value(PhaseGVN* phase) const {
 }
 
 //=============================================================================
-
 //------------------------------Helper function--------------------------------
-static bool ok_to_convert(Node* inc, Node* iv) {
-    // Do not collapse (x+c0)-y if "+" is a loop increment, because the
-    // "-" is loop invariant and collapsing extends the live-range of "x"
-    // to overlap with the "+", forcing another register to be used in
-    // the loop.
-    // This test will be clearer with '&&' (apply DeMorgan's rule)
-    // but I like the early cutouts that happen here.
-    const PhiNode *phi;
-    if( ( !inc->in(1)->is_Phi() ||
-          !(phi=inc->in(1)->as_Phi()) ||
-          phi->is_copy() ||
-          !phi->region()->is_CountedLoop() ||
-          inc != phi->region()->as_CountedLoop()->incr() )
-       &&
-        // Do not collapse (x+c0)-iv if "iv" is a loop induction variable,
-        // because "x" maybe invariant.
-        ( !iv->is_loop_iv() )
-      ) {
-      return true;
-    } else {
-      return false;
-    }
+
+static bool is_cloop_increment(Node* inc) {
+  precond(inc->Opcode() == Op_AddI || inc->Opcode() == Op_AddL);
+
+  if (!inc->in(1)->is_Phi()) {
+    return false;
+  }
+  const PhiNode* phi = inc->in(1)->as_Phi();
+
+  if (phi->is_copy() || !phi->region()->is_CountedLoop()) {
+    return false;
+  }
+
+  return inc == phi->region()->as_CountedLoop()->incr();
 }
+
+// Given the expression '(x + C) - v', or
+//                      'v - (x + C)', we examine nodes '+' and 'v':
+//
+//  1. Do not convert if '+' is a counted-loop increment, because the '-' is
+//     loop invariant and converting extends the live-range of 'x' to overlap
+//     with the '+', forcing another register to be used in the loop.
+//
+//  2. Do not convert if 'v' is a counted-loop induction variable, because
+//     'x' might be invariant.
+//
+static bool ok_to_convert(Node* inc, Node* var) {
+  return !(is_cloop_increment(inc) || var->is_cloop_ind_var());
+}
+
 //------------------------------Ideal------------------------------------------
 Node *SubINode::Ideal(PhaseGVN *phase, bool can_reshape){
   Node *in1 = in(1);

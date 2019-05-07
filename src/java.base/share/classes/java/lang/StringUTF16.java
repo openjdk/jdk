@@ -574,7 +574,7 @@ final class StringUTF16 {
             }
         }
         if (i < len) {
-            byte buf[] = new byte[value.length];
+            byte[] buf = new byte[value.length];
             for (int j = 0; j < i; j++) {
                 putChar(buf, j, getChar(value, j)); // TBD:arraycopy?
             }
@@ -582,19 +582,143 @@ final class StringUTF16 {
                 char c = getChar(value, i);
                 putChar(buf, i, c == oldChar ? newChar : c);
                 i++;
-           }
-           // Check if we should try to compress to latin1
-           if (String.COMPACT_STRINGS &&
-               !StringLatin1.canEncode(oldChar) &&
-               StringLatin1.canEncode(newChar)) {
-               byte[] val = compress(buf, 0, len);
-               if (val != null) {
-                   return new String(val, LATIN1);
-               }
-           }
-           return new String(buf, UTF16);
+            }
+            // Check if we should try to compress to latin1
+            if (String.COMPACT_STRINGS &&
+                !StringLatin1.canEncode(oldChar) &&
+                StringLatin1.canEncode(newChar)) {
+                byte[] val = compress(buf, 0, len);
+                if (val != null) {
+                    return new String(val, LATIN1);
+                }
+            }
+            return new String(buf, UTF16);
         }
         return null;
+    }
+
+    public static String replace(byte[] value, int valLen, boolean valLat1,
+                                 byte[] targ, int targLen, boolean targLat1,
+                                 byte[] repl, int replLen, boolean replLat1)
+    {
+        assert targLen > 0;
+        assert !valLat1 || !targLat1 || !replLat1;
+
+        //  Possible combinations of the arguments/result encodings:
+        //  +---+--------+--------+--------+-----------------------+
+        //  | # | VALUE  | TARGET | REPL   | RESULT                |
+        //  +===+========+========+========+=======================+
+        //  | 1 | Latin1 | Latin1 |  UTF16 | null or UTF16         |
+        //  +---+--------+--------+--------+-----------------------+
+        //  | 2 | Latin1 |  UTF16 | Latin1 | null                  |
+        //  +---+--------+--------+--------+-----------------------+
+        //  | 3 | Latin1 |  UTF16 |  UTF16 | null                  |
+        //  +---+--------+--------+--------+-----------------------+
+        //  | 4 |  UTF16 | Latin1 | Latin1 | null or UTF16         |
+        //  +---+--------+--------+--------+-----------------------+
+        //  | 5 |  UTF16 | Latin1 |  UTF16 | null or UTF16         |
+        //  +---+--------+--------+--------+-----------------------+
+        //  | 6 |  UTF16 |  UTF16 | Latin1 | null, Latin1 or UTF16 |
+        //  +---+--------+--------+--------+-----------------------+
+        //  | 7 |  UTF16 |  UTF16 |  UTF16 | null or UTF16         |
+        //  +---+--------+--------+--------+-----------------------+
+
+        if (String.COMPACT_STRINGS && valLat1 && !targLat1) {
+            // combinations 2 or 3
+            return null; // for string to return this;
+        }
+
+        int i = (String.COMPACT_STRINGS && valLat1)
+                        ? StringLatin1.indexOf(value, targ) :
+                (String.COMPACT_STRINGS && targLat1)
+                        ? indexOfLatin1(value, targ)
+                        : indexOf(value, targ);
+        if (i < 0) {
+            return null; // for string to return this;
+        }
+
+        // find and store indices of substrings to replace
+        int j, p = 0;
+        int[] pos = new int[16];
+        pos[0] = i;
+        i += targLen;
+        while ((j = ((String.COMPACT_STRINGS && valLat1)
+                            ? StringLatin1.indexOf(value, valLen, targ, targLen, i) :
+                     (String.COMPACT_STRINGS && targLat1)
+                            ? indexOfLatin1(value, valLen, targ, targLen, i)
+                            : indexOf(value, valLen, targ, targLen, i))) > 0)
+        {
+            if (++p == pos.length) {
+                int cap = p + (p >> 1);
+                // overflow-conscious code
+                if (cap - MAX_ARRAY_SIZE > 0) {
+                    if (p == MAX_ARRAY_SIZE) {
+                        throw new OutOfMemoryError();
+                    }
+                    cap = MAX_ARRAY_SIZE;
+                }
+                pos = Arrays.copyOf(pos, cap);
+            }
+            pos[p] = j;
+            i = j + targLen;
+        }
+
+        int resultLen;
+        try {
+            resultLen = Math.addExact(valLen,
+                    Math.multiplyExact(++p, replLen - targLen));
+        } catch (ArithmeticException ignored) {
+            throw new OutOfMemoryError();
+        }
+        if (resultLen == 0) {
+            return "";
+        }
+
+        byte[] result = newBytesFor(resultLen);
+        int posFrom = 0, posTo = 0;
+        for (int q = 0; q < p; ++q) {
+            int nextPos = pos[q];
+            if (String.COMPACT_STRINGS && valLat1) {
+                while (posFrom < nextPos) {
+                    char c = (char)(value[posFrom++] & 0xff);
+                    putChar(result, posTo++, c);
+                }
+            } else {
+                while (posFrom < nextPos) {
+                    putChar(result, posTo++, getChar(value, posFrom++));
+                }
+            }
+            posFrom += targLen;
+            if (String.COMPACT_STRINGS && replLat1) {
+                for (int k = 0; k < replLen; ++k) {
+                    char c = (char)(repl[k] & 0xff);
+                    putChar(result, posTo++, c);
+                }
+            } else {
+                for (int k = 0; k < replLen; ++k) {
+                    putChar(result, posTo++, getChar(repl, k));
+                }
+            }
+        }
+        if (String.COMPACT_STRINGS && valLat1) {
+            while (posFrom < valLen) {
+                char c = (char)(value[posFrom++] & 0xff);
+                putChar(result, posTo++, c);
+            }
+        } else {
+            while (posFrom < valLen) {
+                putChar(result, posTo++, getChar(value, posFrom++));
+            }
+        }
+
+        if (String.COMPACT_STRINGS && replLat1 && !targLat1) {
+            // combination 6
+            byte[] lat1Result = compress(result, 0, resultLen);
+            if (lat1Result != null) {
+                return new String(lat1Result, LATIN1);
+            }
+        }
+        return new String(result, UTF16);
     }
 
     public static boolean regionMatchesCI(byte[] value, int toffset,
@@ -1429,6 +1553,15 @@ final class StringUTF16 {
     }
 
     static final int MAX_LENGTH = Integer.MAX_VALUE >> 1;
+
+
+    /**
+     * The maximum size of array to allocate (unless necessary).
+     * Some VMs reserve some header words in an array.
+     * Attempts to allocate larger arrays may result in
+     * OutOfMemoryError: Requested array size exceeds VM limit
+     */
+    private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
 
     // Used by trusted callers.  Assumes all necessary bounds checks have
     // been done by the caller.

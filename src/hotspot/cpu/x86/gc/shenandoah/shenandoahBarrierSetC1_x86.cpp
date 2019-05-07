@@ -46,12 +46,14 @@ void LIR_OpShenandoahCompareAndSwap::emit_code(LIR_Assembler* masm) {
   // Apply storeval barrier to newval.
   ShenandoahBarrierSet::assembler()->storeval_barrier(masm->masm(), newval, tmp1);
 
+#ifdef _LP64
   if (UseCompressedOops) {
     __ encode_heap_oop(cmpval);
     __ mov(rscratch1, newval);
     __ encode_heap_oop(rscratch1);
     newval = rscratch1;
   }
+#endif
 
   ShenandoahBarrierSet::assembler()->cmpxchg_oop(masm->masm(), result, Address(addr, 0), cmpval, newval, false, tmp1, tmp2);
 }

@@ -1,3 +1,7 @@
+/*
+ * reserved comment block
+ * DO NOT REMOVE OR ALTER!
+ */
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements. See the NOTICE file
@@ -17,7 +21,7 @@
  * under the License.
  */
 /*
- * Copyright 2005 Sun Microsystems, Inc. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * $Id$
@@ -33,16 +37,16 @@ import org.w3c.dom.Node;
 import org.w3c.dom.Text;
 
 /**
- * A DOM-based representation of the XML <code>CryptoBinary</code> simple type
+ * A DOM-based representation of the XML {@code CryptoBinary} simple type
  * as defined in the W3C specification for XML-Signature Syntax and Processing.
  * The XML Schema Definition is defined as:
  *
- * <xmp>
+ * <pre>{@code
  * <simpleType name="CryptoBinary">
  *   <restriction base = "base64Binary">
  *   </restriction>
  * </simpleType>
- * </xmp>
+ * }</pre>
  *
  * @author Sean Mullan
  */
@@ -52,11 +56,11 @@ public final class DOMCryptoBinary extends DOMStructure {
     private final String value;
 
     /**
-     * Create a <code>DOMCryptoBinary</code> instance from the specified
-     * <code>BigInteger</code>
+     * Create a {@code DOMCryptoBinary} instance from the specified
+     * {@code BigInteger}
      *
      * @param bigNum the arbitrary-length integer
-     * @throws NullPointerException if <code>bigNum</code> is <code>null</code>
+     * @throws NullPointerException if {@code bigNum} is {@code null}
      */
     public DOMCryptoBinary(BigInteger bigNum) {
         if (bigNum == null) {
@@ -69,7 +73,7 @@ public final class DOMCryptoBinary extends DOMStructure {
     }
 
     /**
-     * Creates a <code>DOMCryptoBinary</code> from a node.
+     * Creates a {@code DOMCryptoBinary} from a node.
      *
      * @param cbNode a CryptoBinary text node
      * @throws MarshalException if value cannot be decoded (invalid format)
@@ -84,9 +88,9 @@ public final class DOMCryptoBinary extends DOMStructure {
     }
 
     /**
-     * Returns the <code>BigInteger</code> that this object contains.
+     * Returns the {@code BigInteger} that this object contains.
      *
-     * @return the <code>BigInteger</code> that this object contains
+     * @return the {@code BigInteger} that this object contains
      */
     public BigInteger getBigNum() {
         return bigNum;

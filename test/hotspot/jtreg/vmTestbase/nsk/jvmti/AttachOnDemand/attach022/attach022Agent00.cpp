@@ -98,15 +98,15 @@ void JNICALL objectFreeHandler(jvmtiEnv *jvmti, jlong tag) {
 #define ATTACH022_TARGET_APP_CLASS_NAME "nsk/jvmti/AttachOnDemand/attach022/attach022Target"
 
 void registerNativeMethods(JNIEnv* jni_env) {
-    ExceptionCheckingJniEnvPtr jni(jni_env);
+    ExceptionCheckingJniEnvPtr ec_jni(jni_env);
     jclass appClass;
     JNINativeMethod nativeMethods[] = {
             { (char*)"shutdownAgent", (char*)"(I)Z",
               (void*) Java_nsk_jvmti_AttachOnDemand_attach022_attach022Target_shutdownAgent } };
     jint nativeMethodsNumber = 1;
 
-    appClass = jni->FindClass(ATTACH022_TARGET_APP_CLASS_NAME, TRACE_JNI_CALL);
-    jni->RegisterNatives(appClass, nativeMethods, nativeMethodsNumber, TRACE_JNI_CALL);
+    appClass = ec_jni->FindClass(ATTACH022_TARGET_APP_CLASS_NAME, TRACE_JNI_CALL);
+    ec_jni->RegisterNatives(appClass, nativeMethods, nativeMethodsNumber, TRACE_JNI_CALL);
 }
 
 void JNICALL vmObjectAllocHandler(jvmtiEnv * jvmti,

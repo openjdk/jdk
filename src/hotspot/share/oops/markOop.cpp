@@ -25,45 +25,40 @@
 #include "precompiled.hpp"
 #include "oops/markOop.hpp"
 #include "runtime/thread.inline.hpp"
-#include "runtime/objectMonitor.inline.hpp"
+#include "runtime/objectMonitor.hpp"
 
 void markOopDesc::print_on(outputStream* st) const {
-  if (is_marked()) {
+  if (is_marked()) {  // last bits = 11
     st->print(" marked(" INTPTR_FORMAT ")", value());
-  } else if (has_monitor()) {
+  } else if (has_monitor()) {  // last bits = 10
     // have to check has_monitor() before is_locked()
     st->print(" monitor(" INTPTR_FORMAT ")=", value());
     ObjectMonitor* mon = monitor();
     if (mon == NULL) {
       st->print("NULL (this should never be seen!)");
     } else {
-      st->print("{contentions=0x%08x,waiters=0x%08x"
-                ",recursions=" INTPTR_FORMAT ",owner=" INTPTR_FORMAT "}",
-                mon->contentions(), mon->waiters(), mon->recursions(),
-                p2i(mon->owner()));
+      mon->print_on(st);
     }
-  } else if (is_locked()) {
-    st->print(" locked(" INTPTR_FORMAT ")->", value());
-    if (is_neutral()) {
+  } else if (is_locked()) {  // last bits != 01 => 00
+    // thin locked
+    st->print(" locked(" INTPTR_FORMAT ")", value());
+  } else {
+    st->print(" mark(");
+    // Biased bit is 3rd rightmost bit
+    if (is_neutral()) {   // last bits = 001
       st->print("is_neutral");
       if (has_no_hash()) {
         st->print(" no_hash");
       } else {
         st->print(" hash=" INTPTR_FORMAT, hash());
       }
-      st->print(" age=%d", age());
-    } else if (has_bias_pattern()) {
+    } else if (has_bias_pattern()) {  // last bits = 101
       st->print("is_biased");
       JavaThread* jt = biased_locker();
-      st->print(" biased_locker=" INTPTR_FORMAT, p2i(jt));
+      st->print(" biased_locker=" INTPTR_FORMAT " epoch=%d", p2i(jt), bias_epoch());
     } else {
       st->print("??");
     }
-  } else {
-    assert(is_unlocked() || has_bias_pattern(), "just checking");
-    st->print("mark(");
-    if (has_bias_pattern()) st->print("biased,");
-    st->print("hash " INTPTR_FORMAT ",", hash());
-    st->print("age %d)", age());
+    st->print(" age=%d)", age());
   }
 }

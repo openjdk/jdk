@@ -21,10 +21,10 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * $Id: DOMX509Data.java 1789702 2017-03-31 15:15:04Z coheigea $
+ * $Id: DOMX509Data.java 1854026 2019-02-21 09:30:01Z coheigea $
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -33,12 +33,13 @@ import java.io.IOException;
 import java.security.cert.*;
 import java.util.*;
 
-import javax.xml.crypto.*;
+import javax.security.auth.x500.X500Principal;
+import javax.xml.crypto.MarshalException;
+import javax.xml.crypto.XMLStructure;
 import javax.xml.crypto.dom.DOMCryptoContext;
-import javax.xml.crypto.dsig.*;
+import javax.xml.crypto.dsig.XMLSignature;
 import javax.xml.crypto.dsig.keyinfo.X509Data;
 import javax.xml.crypto.dsig.keyinfo.X509IssuerSerial;
-import javax.security.auth.x500.X500Principal;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -115,7 +116,7 @@ public final class DOMX509Data extends DOMStructure implements X509Data {
                 } else if ("X509SubjectName".equals(localName) && XMLSignature.XMLNS.equals(namespace)) {
                     newContent.add(childElem.getFirstChild().getNodeValue());
                 } else if ("X509SKI".equals(localName) && XMLSignature.XMLNS.equals(namespace)) {
-                    String content = XMLUtils.getFullTextChildrenFromElement(childElem);
+                    String content = XMLUtils.getFullTextChildrenFromNode(childElem);
                     newContent.add(XMLUtils.decode(content));
                 } else if ("X509CRL".equals(localName) && XMLSignature.XMLNS.equals(namespace)) {
                     newContent.add(unmarshalX509CRL(childElem));
@@ -132,6 +133,7 @@ public final class DOMX509Data extends DOMStructure implements X509Data {
         return content;
     }
 
+    @Override
     public void marshal(Node parent, String dsPrefix, DOMCryptoContext context)
         throws MarshalException
     {
@@ -241,7 +243,7 @@ public final class DOMX509Data extends DOMStructure implements X509Data {
             if (cf == null) {
                 cf = CertificateFactory.getInstance("X.509");
             }
-            String content = XMLUtils.getFullTextChildrenFromElement(elem);
+            String content = XMLUtils.getFullTextChildrenFromNode(elem);
             return new ByteArrayInputStream(XMLUtils.decode(content));
         } catch (CertificateException e) {
             throw new MarshalException("Cannot create CertificateFactory", e);

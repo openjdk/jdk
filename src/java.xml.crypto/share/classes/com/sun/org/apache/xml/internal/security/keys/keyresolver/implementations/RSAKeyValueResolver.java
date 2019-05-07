@@ -44,10 +44,11 @@ public class RSAKeyValueResolver extends KeyResolverSpi {
     public PublicKey engineLookupAndResolvePublicKey(
         Element element, String baseURI, StorageResolver storage
     ) {
-        LOG.debug("Can I resolve {}", element.getTagName());
         if (element == null) {
             return null;
         }
+
+        LOG.debug("Can I resolve {}", element.getTagName());
 
         boolean isKeyValue = XMLUtils.elementIsInSignatureSpace(element, Constants._TAG_KEYVALUE);
         Element rsaKeyElement = null;

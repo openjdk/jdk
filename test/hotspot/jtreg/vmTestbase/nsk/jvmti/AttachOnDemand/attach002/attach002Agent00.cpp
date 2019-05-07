@@ -69,14 +69,14 @@ Java_nsk_jvmti_AttachOnDemand_attach002_attach002Target_agentGotCapabilities(JNI
 #define ATTACH002_TARGET_APP_CLASS_NAME "nsk/jvmti/AttachOnDemand/attach002/attach002Target"
 
 void registerNativeMethods(JNIEnv* jni_env) {
-    ExceptionCheckingJniEnvPtr jni(jni_env);
+    ExceptionCheckingJniEnvPtr ec_jni(jni_env);
     jclass appClass;
     JNINativeMethod nativeMethods[] = {
             { (char*) "agentGotCapabilities", (char*) "()Z", (void*) Java_nsk_jvmti_AttachOnDemand_attach002_attach002Target_agentGotCapabilities } };
     jint nativeMethodsNumber = 1;
 
-    appClass = jni->FindClass(ATTACH002_TARGET_APP_CLASS_NAME, TRACE_JNI_CALL);
-    jni->RegisterNatives(appClass, nativeMethods, nativeMethodsNumber, TRACE_JNI_CALL);
+    appClass = ec_jni->FindClass(ATTACH002_TARGET_APP_CLASS_NAME, TRACE_JNI_CALL);
+    ec_jni->RegisterNatives(appClass, nativeMethods, nativeMethodsNumber, TRACE_JNI_CALL);
 }
 
 void JNICALL  classLoadHandler(
