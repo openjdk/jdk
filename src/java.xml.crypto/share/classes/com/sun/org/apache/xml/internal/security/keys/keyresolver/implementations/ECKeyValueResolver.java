@@ -25,56 +25,61 @@ package com.sun.org.apache.xml.internal.security.keys.keyresolver.implementation
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 
-
 import com.sun.org.apache.xml.internal.security.exceptions.XMLSecurityException;
-import com.sun.org.apache.xml.internal.security.keys.content.keyvalues.RSAKeyValue;
+import com.sun.org.apache.xml.internal.security.keys.content.keyvalues.ECKeyValue;
 import com.sun.org.apache.xml.internal.security.keys.keyresolver.KeyResolverSpi;
 import com.sun.org.apache.xml.internal.security.keys.storage.StorageResolver;
 import com.sun.org.apache.xml.internal.security.utils.Constants;
 import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
 import org.w3c.dom.Element;
 
-public class RSAKeyValueResolver extends KeyResolverSpi {
+public class ECKeyValueResolver extends KeyResolverSpi {
 
     private static final com.sun.org.slf4j.internal.Logger LOG =
-        com.sun.org.slf4j.internal.LoggerFactory.getLogger(RSAKeyValueResolver.class);
+        com.sun.org.slf4j.internal.LoggerFactory.getLogger(ECKeyValueResolver.class);
 
 
-    /** {@inheritDoc} */
+    /**
+     * Method engineResolvePublicKey
+     *
+     * @param element
+     * @param baseURI
+     * @param storage
+     * @return null if no {@link PublicKey} could be obtained
+     */
     public PublicKey engineLookupAndResolvePublicKey(
         Element element, String baseURI, StorageResolver storage
     ) {
         if (element == null) {
             return null;
         }
-
-        LOG.debug("Can I resolve {}", element.getTagName());
-
-        boolean isKeyValue = XMLUtils.elementIsInSignatureSpace(element, Constants._TAG_KEYVALUE);
-        Element rsaKeyElement = null;
+        Element ecKeyElement = null;
+        boolean isKeyValue =
+            XMLUtils.elementIsInSignatureSpace(element, Constants._TAG_KEYVALUE);
         if (isKeyValue) {
-            rsaKeyElement =
-                XMLUtils.selectDsNode(element.getFirstChild(), Constants._TAG_RSAKEYVALUE, 0);
-        } else if (XMLUtils.elementIsInSignatureSpace(element, Constants._TAG_RSAKEYVALUE)) {
+            ecKeyElement =
+                XMLUtils.selectDs11Node(element.getFirstChild(), Constants._TAG_ECKEYVALUE, 0);
+        } else if (XMLUtils.elementIsInSignature11Space(element, Constants._TAG_ECKEYVALUE)) {
             // this trick is needed to allow the RetrievalMethodResolver to eat a
-            // ds:RSAKeyValue directly (without KeyValue)
-            rsaKeyElement = element;
+            // ds:ECKeyValue directly (without KeyValue)
+            ecKeyElement = element;
         }
 
-        if (rsaKeyElement == null) {
+        if (ecKeyElement == null) {
             return null;
         }
 
         try {
-            RSAKeyValue rsaKeyValue = new RSAKeyValue(rsaKeyElement, baseURI);
-
-            return rsaKeyValue.getPublicKey();
+            ECKeyValue ecKeyValue = new ECKeyValue(ecKeyElement, baseURI);
+            return ecKeyValue.getPublicKey();
         } catch (XMLSecurityException ex) {
-            LOG.debug("XMLSecurityException", ex);
+            LOG.debug(ex.getMessage(), ex);
+            //do nothing
         }
 
         return null;
     }
+
 
     /** {@inheritDoc} */
     public X509Certificate engineLookupResolveX509Certificate(

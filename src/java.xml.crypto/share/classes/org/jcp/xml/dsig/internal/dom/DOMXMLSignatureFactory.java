@@ -21,10 +21,10 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * $Id: DOMXMLSignatureFactory.java 1788465 2017-03-24 15:10:51Z coheigea $
+ * $Id: DOMXMLSignatureFactory.java 1854026 2019-02-21 09:30:01Z coheigea $
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -253,8 +253,6 @@ public final class DOMXMLSignatureFactory extends XMLSignatureFactory {
             return new DOMSignatureMethod.SHA256withRSA(params);
         } else if (algorithm.equals(DOMSignatureMethod.RSA_SHA384)) {
             return new DOMSignatureMethod.SHA384withRSA(params);
-        } else if (algorithm.equals(DOMSignatureMethod.RSA_SHA512)) {
-            return new DOMSignatureMethod.SHA512withRSA(params);
         } else if (algorithm.equals(DOMSignatureMethod.RSA_SHA512)) {
             return new DOMSignatureMethod.SHA512withRSA(params);
         } else if (algorithm.equals(DOMSignatureMethod.RSA_RIPEMD160)) {

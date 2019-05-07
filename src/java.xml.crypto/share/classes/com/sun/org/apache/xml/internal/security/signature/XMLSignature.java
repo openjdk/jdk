@@ -27,7 +27,6 @@ import java.io.OutputStream;
 import java.security.Key;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
-import java.util.Base64;
 
 import javax.crypto.SecretKey;
 
@@ -504,8 +503,8 @@ public final class XMLSignature extends SignatureElementProxy {
      * @throws XMLSignatureException If there is no content
      */
     public byte[] getSignatureValue() throws XMLSignatureException {
-        String content = XMLUtils.getFullTextChildrenFromElement(signatureValueElement);
-        return Base64.getMimeDecoder().decode(content);
+        String content = XMLUtils.getFullTextChildrenFromNode(signatureValueElement);
+        return XMLUtils.decode(content);
     }
 
     /**
@@ -520,7 +519,7 @@ public final class XMLSignature extends SignatureElementProxy {
             signatureValueElement.removeChild(signatureValueElement.getFirstChild());
         }
 
-        String base64codedValue = Base64.getMimeEncoder().encodeToString(bytes);
+        String base64codedValue = XMLUtils.encodeToString(bytes);
 
         if (base64codedValue.length() > 76 && !XMLUtils.ignoreLineBreaks()) {
             base64codedValue = "\n" + base64codedValue + "\n";

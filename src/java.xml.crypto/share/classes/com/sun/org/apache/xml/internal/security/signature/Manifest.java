@@ -23,7 +23,10 @@
 package com.sun.org.apache.xml.internal.security.signature;
 
 import java.io.IOException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -56,19 +59,24 @@ import org.xml.sax.SAXException;
 public class Manifest extends SignatureElementProxy {
 
     /**
-     * The maximum number of references per Manifest, if secure validation is enabled.
+     * The default maximum number of references per Manifest, if secure validation is enabled.
      */
     public static final int MAXIMUM_REFERENCE_COUNT = 30;
 
     private static final com.sun.org.slf4j.internal.Logger LOG =
         com.sun.org.slf4j.internal.LoggerFactory.getLogger(Manifest.class);
 
+    private static Integer referenceCount =
+        AccessController.doPrivileged(
+            (PrivilegedAction<Integer>) () -> Integer.parseInt(System.getProperty("com.sun.org.apache.xml.internal.security.maxReferences",
+                                                                Integer.toString(MAXIMUM_REFERENCE_COUNT))));
+
     /** Field references */
     private List<Reference> references;
     private Element[] referencesEl;
 
     /** Field verificationResults[] */
-    private boolean[] verificationResults;
+    private List<VerifiedReference> verificationResults;
 
     /** Field resolverProperties */
     private Map<String, String> resolverProperties;
@@ -135,8 +143,8 @@ public class Manifest extends SignatureElementProxy {
                                    I18n.translate("xml.WrongContent", exArgs));
         }
 
-        if (secureValidation && le > MAXIMUM_REFERENCE_COUNT) {
-            Object exArgs[] = { le, MAXIMUM_REFERENCE_COUNT };
+        if (secureValidation && le > referenceCount) {
+            Object exArgs[] = { le, referenceCount };
 
             throw new XMLSecurityException("signature.tooManyReferences", exArgs);
         }
@@ -317,13 +325,13 @@ public class Manifest extends SignatureElementProxy {
         if (referencesEl.length == 0) {
             throw new XMLSecurityException("empty", new Object[]{"References are empty"});
         }
-        if (secureValidation && referencesEl.length > MAXIMUM_REFERENCE_COUNT) {
-            Object exArgs[] = { referencesEl.length, MAXIMUM_REFERENCE_COUNT };
+        if (secureValidation && referencesEl.length > referenceCount) {
+            Object exArgs[] = { referencesEl.length, referenceCount };
 
             throw new XMLSecurityException("signature.tooManyReferences", exArgs);
         }
 
-        this.verificationResults = new boolean[referencesEl.length];
+        this.verificationResults = new ArrayList<>(referencesEl.length);
         boolean verify = true;
         for (int i = 0; i < this.referencesEl.length; i++) {
             Reference currentRef =
@@ -335,12 +343,12 @@ public class Manifest extends SignatureElementProxy {
             try {
                 boolean currentRefVerified = currentRef.verify();
 
-                this.setVerificationResult(i, currentRefVerified);
-
                 if (!currentRefVerified) {
                     verify = false;
                 }
                 LOG.debug("The Reference has Type {}", currentRef.getType());
+
+                List<VerifiedReference> manifestReferences = Collections.emptyList();
 
                 // was verification successful till now and do we want to verify the Manifest?
                 if (verify && followManifests && currentRef.typeIsReferenceToManifest()) {
@@ -393,6 +401,8 @@ public class Manifest extends SignatureElementProxy {
                         } else {
                             LOG.debug("The nested Manifest was valid (good)");
                         }
+
+                        manifestReferences = referencedManifest.getVerificationResults();
                     } catch (IOException ex) {
                         throw new ReferenceNotInitializedException(ex);
                     } catch (ParserConfigurationException ex) {
@@ -401,6 +411,8 @@ public class Manifest extends SignatureElementProxy {
                         throw new ReferenceNotInitializedException(ex);
                     }
                 }
+
+                verificationResults.add(new VerifiedReference(currentRefVerified, currentRef.getURI(), manifestReferences));
             } catch (ReferenceNotInitializedException ex) {
                 Object exArgs[] = { currentRef.getURI() };
 
@@ -411,20 +423,6 @@ public class Manifest extends SignatureElementProxy {
         }
 
         return verify;
-    }
-
-    /**
-     * Method setVerificationResult
-     *
-     * @param index
-     * @param verify
-     */
-    private void setVerificationResult(int index, boolean verify) {
-        if (this.verificationResults == null) {
-            this.verificationResults = new boolean[this.getLength()];
-        }
-
-        this.verificationResults[index] = verify;
     }
 
     /**
@@ -455,14 +453,24 @@ public class Manifest extends SignatureElementProxy {
             }
         }
 
-        return this.verificationResults[index];
+        return ((ArrayList<VerifiedReference>)verificationResults).get(index).isValid();
+    }
+
+    /**
+     * Get the list of verification result objects
+     */
+    public List<VerifiedReference> getVerificationResults() {
+        if (verificationResults == null) {
+            return Collections.emptyList();
+        }
+        return Collections.unmodifiableList(verificationResults);
     }
 
     /**
      * Adds Resource Resolver for retrieving resources at specified {@code URI} attribute
      * in {@code reference} element
      *
-     * @param resolver {@link ResourceResolver} can provide the implemenatin subclass of
+     * @param resolver {@link ResourceResolver} can provide the implementation subclass of
      * {@link ResourceResolverSpi} for retrieving resource.
      */
     public void addResourceResolver(ResourceResolver resolver) {

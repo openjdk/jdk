@@ -26,6 +26,7 @@ import java.security.PublicKey;
 
 import com.sun.org.apache.xml.internal.security.exceptions.XMLSecurityException;
 import com.sun.org.apache.xml.internal.security.keys.content.keyvalues.DSAKeyValue;
+import com.sun.org.apache.xml.internal.security.keys.content.keyvalues.ECKeyValue;
 import com.sun.org.apache.xml.internal.security.keys.content.keyvalues.RSAKeyValue;
 import com.sun.org.apache.xml.internal.security.utils.Constants;
 import com.sun.org.apache.xml.internal.security.utils.SignatureElementProxy;
@@ -107,9 +108,14 @@ public class KeyValue extends SignatureElementProxy implements KeyInfoContent {
 
             appendSelf(rsa);
             addReturnToSelf();
+        } else if (pk instanceof java.security.interfaces.ECPublicKey) {
+            ECKeyValue ec = new ECKeyValue(getDocument(), pk);
+
+            appendSelf(ec);
+            addReturnToSelf();
         } else {
             String error = "The given PublicKey type " + pk + " is not supported. Only DSAPublicKey and "
-                + "RSAPublicKey types are currently supported";
+                + "RSAPublicKey and ECPublicKey types are currently supported";
             throw new IllegalArgumentException(error);
         }
     }

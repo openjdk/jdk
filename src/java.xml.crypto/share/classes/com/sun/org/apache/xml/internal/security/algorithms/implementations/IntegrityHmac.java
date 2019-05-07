@@ -40,6 +40,7 @@ import com.sun.org.apache.xml.internal.security.utils.Constants;
 import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.w3c.dom.Text;
 
 public abstract class IntegrityHmac extends SignatureAlgorithmSpi {
@@ -325,12 +326,13 @@ public abstract class IntegrityHmac extends SignatureAlgorithmSpi {
             throw new IllegalArgumentException("element null");
         }
 
-        Text hmaclength =
-            XMLUtils.selectDsNodeText(element.getFirstChild(), Constants._TAG_HMACOUTPUTLENGTH, 0);
-
-        if (hmaclength != null) {
-            this.HMACOutputLength = Integer.parseInt(hmaclength.getData());
-            this.HMACOutputLengthSet = true;
+        Node n = XMLUtils.selectDsNode(element.getFirstChild(), Constants._TAG_HMACOUTPUTLENGTH, 0);
+        if (n != null) {
+            String hmacLength = XMLUtils.getFullTextChildrenFromNode(n);
+            if (hmacLength != null && !"".equals(hmacLength)) {
+                this.HMACOutputLength = Integer.parseInt(hmacLength);
+                this.HMACOutputLengthSet = true;
+            }
         }
     }
 

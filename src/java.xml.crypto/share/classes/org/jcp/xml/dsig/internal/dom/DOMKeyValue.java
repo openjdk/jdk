@@ -21,17 +21,12 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * $Id: DOMKeyValue.java 1788465 2017-03-24 15:10:51Z coheigea $
+ * $Id: DOMKeyValue.java 1854026 2019-02-21 09:30:01Z coheigea $
  */
 package org.jcp.xml.dsig.internal.dom;
-
-import javax.xml.crypto.*;
-import javax.xml.crypto.dom.DOMCryptoContext;
-import javax.xml.crypto.dsig.*;
-import javax.xml.crypto.dsig.keyinfo.KeyValue;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -54,6 +49,11 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.util.Arrays;
+
+import javax.xml.crypto.MarshalException;
+import javax.xml.crypto.dom.DOMCryptoContext;
+import javax.xml.crypto.dsig.XMLSignature;
+import javax.xml.crypto.dsig.keyinfo.KeyValue;
 
 import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
 import org.w3c.dom.Document;
@@ -500,7 +500,7 @@ public abstract class DOMKeyValue<K extends PublicKey> extends DOMStructure impl
                 throw new MarshalException("Invalid ECParameterSpec");
             }
             DOMUtils.setAttribute(namedCurveElem, "URI", "urn:oid:" + oid);
-            String qname = (prefix == null || prefix.length() == 0)
+            String qname = prefix == null || prefix.length() == 0
                        ? "xmlns" : "xmlns:" + prefix;
             namedCurveElem.setAttributeNS("http://www.w3.org/2000/xmlns/",
                                           qname, XMLDSIG_11_XMLNS);
@@ -554,7 +554,7 @@ public abstract class DOMKeyValue<K extends PublicKey> extends DOMStructure impl
             ECPoint ecPoint = null;
 
             try {
-                String content = XMLUtils.getFullTextChildrenFromElement(curElem);
+                String content = XMLUtils.getFullTextChildrenFromNode(curElem);
                 ecPoint = decodePoint(XMLUtils.decode(content),
                                       ecParams.getCurve());
             } catch (IOException ioe) {

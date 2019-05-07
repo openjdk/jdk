@@ -21,10 +21,10 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * $Id: DOMPGPData.java 1788465 2017-03-24 15:10:51Z coheigea $
+ * $Id: DOMPGPData.java 1854026 2019-02-21 09:30:01Z coheigea $
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -56,7 +56,7 @@ public final class DOMPGPData extends DOMStructure implements PGPData {
      * and optional list of external elements.
      *
      * @param keyPacket a PGP Key Material Packet as defined in section 5.5 of
-     *    <a href="http://www.ietf.org/rfc/rfc2440.txt">RFC 2440</a>. The
+     *    <a href="https://www.ietf.org/rfc/rfc2440.txt">RFC 2440</a>. The
      *    array is cloned to prevent subsequent modification.
      * @param other a list of {@link XMLStructure}s representing elements from
      *    an external namespace. The list is defensively copied to prevent
@@ -94,10 +94,10 @@ public final class DOMPGPData extends DOMStructure implements PGPData {
      * optional key packet and list of external elements.
      *
      * @param keyId a PGP public key id as defined in section 11.2 of
-     *    <a href="http://www.ietf.org/rfc/rfc2440.txt">RFC 2440</a>. The
+     *    <a href="https://www.ietf.org/rfc/rfc2440.txt">RFC 2440</a>. The
      *    array is cloned to prevent subsequent modification.
      * @param keyPacket a PGP Key Material Packet as defined in section 5.5 of
-     *    <a href="http://www.ietf.org/rfc/rfc2440.txt">RFC 2440</a> (may
+     *    <a href="https://www.ietf.org/rfc/rfc2440.txt">RFC 2440</a> (may
      *    be {@code null}). The array is cloned to prevent subsequent
      *    modification.
      * @param other a list of {@link XMLStructure}s representing elements from
@@ -157,10 +157,10 @@ public final class DOMPGPData extends DOMStructure implements PGPData {
                 String localName = childElem.getLocalName();
                 String namespace = childElem.getNamespaceURI();
                 if ("PGPKeyID".equals(localName) && XMLSignature.XMLNS.equals(namespace)) {
-                    String content = XMLUtils.getFullTextChildrenFromElement(childElem);
+                    String content = XMLUtils.getFullTextChildrenFromNode(childElem);
                     pgpKeyId = XMLUtils.decode(content);
                 } else if ("PGPKeyPacket".equals(localName) && XMLSignature.XMLNS.equals(namespace)) {
-                    String content = XMLUtils.getFullTextChildrenFromElement(childElem);
+                    String content = XMLUtils.getFullTextChildrenFromNode(childElem);
                     pgpKeyPacket = XMLUtils.decode(content);
                 } else {
                     other.add

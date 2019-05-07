@@ -254,16 +254,21 @@ public final class XMLUtils {
         }
     }
 
+    @Deprecated
+    public static String getFullTextChildrenFromElement(Element element) {
+        return getFullTextChildrenFromNode(element);
+    }
+
     /**
-     * Method getFullTextChildrenFromElement
+     * Method getFullTextChildrenFromNode
      *
-     * @param element
+     * @param node
      * @return the string of children
      */
-    public static String getFullTextChildrenFromElement(Element element) {
+    public static String getFullTextChildrenFromNode(Node node) {
         StringBuilder sb = new StringBuilder();
 
-        Node child = element.getFirstChild();
+        Node child = node.getFirstChild();
         while (child != null) {
             if (child.getNodeType() == Node.TEXT_NODE) {
                 sb.append(((Text)child).getData());
@@ -682,7 +687,7 @@ public final class XMLUtils {
         while (sibling != null) {
             if (sibling.getNamespaceURI() != null && sibling.getNamespaceURI().equals(uri)
                 && sibling.getLocalName().equals(nodeName)) {
-                if (number == 0){
+                if (number == 0) {
                     return (Element)sibling;
                 }
                 number--;

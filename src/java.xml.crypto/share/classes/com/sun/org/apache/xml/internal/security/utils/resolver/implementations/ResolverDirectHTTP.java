@@ -33,9 +33,9 @@ import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureInput;
+import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
 import com.sun.org.apache.xml.internal.security.utils.resolver.ResourceResolverContext;
 import com.sun.org.apache.xml.internal.security.utils.resolver.ResourceResolverException;
 import com.sun.org.apache.xml.internal.security.utils.resolver.ResourceResolverSpi;
@@ -57,7 +57,7 @@ import com.sun.org.apache.xml.internal.security.utils.resolver.ResourceResolverS
  * </PRE>
  *
  * @see <A HREF="http://www.javaworld.com/javaworld/javatips/jw-javatip42_p.html">Java Tip 42: Write Java apps that work with proxy-based firewalls</A>
- * @see <A HREF="http://docs.oracle.com/javase/1.4.2/docs/guide/net/properties.html">SUN J2SE docs for network properties</A>
+ * @see <A HREF="https://docs.oracle.com/javase/8/docs/technotes/guides/net/properties.html">JDK docs for network properties</A>
  * @see <A HREF="http://metalab.unc.edu/javafaq/javafaq.html#proxy">The JAVA FAQ Question 9.5: How do I make Java work with a proxy server?</A>
  */
 public class ResolverDirectHTTP extends ResourceResolverSpi {
@@ -122,7 +122,7 @@ public class ResolverDirectHTTP extends ResourceResolverSpi {
                     urlConnection = openConnection(url);
 
                     String password = user + ":" + pass;
-                    String encodedPassword = Base64.getMimeEncoder().encodeToString(password.getBytes(StandardCharsets.ISO_8859_1));
+                    String encodedPassword = XMLUtils.encodeToString(password.getBytes(StandardCharsets.ISO_8859_1));
 
                     // set authentication property in the http header
                     urlConnection.setRequestProperty("Authorization",
@@ -187,7 +187,7 @@ public class ResolverDirectHTTP extends ResourceResolverSpi {
 
             if (proxyUser != null && proxyPass != null) {
                 String password = proxyUser + ":" + proxyPass;
-                String authString = "Basic " + Base64.getMimeEncoder().encodeToString(password.getBytes(StandardCharsets.ISO_8859_1));
+                String authString = "Basic " + XMLUtils.encodeToString(password.getBytes(StandardCharsets.ISO_8859_1));
 
                 urlConnection.setRequestProperty("Proxy-Authorization", authString);
             }

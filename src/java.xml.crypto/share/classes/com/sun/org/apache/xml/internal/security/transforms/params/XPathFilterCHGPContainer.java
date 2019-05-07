@@ -30,6 +30,7 @@ import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.w3c.dom.Text;
 
 /**
  * Implements the parameters for a custom Transform which has a better performance
@@ -204,7 +205,7 @@ public class XPathFilterCHGPContainer extends ElementProxy implements TransformP
                 getElement().getFirstChild(), this.getBaseNamespace(), type, 0
             );
 
-        return XMLUtils.getFullTextChildrenFromElement(xElem);
+        return XMLUtils.getFullTextChildrenFromNode(xElem);
     }
 
     /**
@@ -258,9 +259,21 @@ public class XPathFilterCHGPContainer extends ElementProxy implements TransformP
             return null;
         }
 
-        return XMLUtils.selectNodeText(
+        return selectNodeText(
             getFirstChild(), this.getBaseNamespace(), type, 0
         );
+    }
+
+    private static Text selectNodeText(Node sibling, String uri, String nodeName, int number) {
+        Node n = XMLUtils.selectNode(sibling, uri, nodeName, number);
+        if (n == null) {
+            return null;
+        }
+        n = n.getFirstChild();
+        while (n != null && n.getNodeType() != Node.TEXT_NODE) {
+            n = n.getNextSibling();
+        }
+        return (Text)n;
     }
 
     /**

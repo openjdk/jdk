@@ -21,7 +21,7 @@
  * under the License.
  */
 /*
- * Portions copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Portions copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * ===========================================================================
@@ -31,7 +31,7 @@
  * ===========================================================================
  */
 /*
- * $Id: DOMReference.java 1803518 2017-07-31 11:02:52Z coheigea $
+ * $Id: DOMReference.java 1854026 2019-02-21 09:30:01Z coheigea $
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -56,7 +56,6 @@ import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
 import org.jcp.xml.dsig.internal.DigesterOutputStream;
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureInput;
 import com.sun.org.apache.xml.internal.security.utils.UnsyncBufferedOutputStream;
-import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
 
 /**
  * DOM-based implementation of Reference.
@@ -244,7 +243,7 @@ public final class DOMReference extends DOMStructure
 
         // unmarshal DigestValue
         Element dvElem = DOMUtils.getNextSiblingElement(dmElem, "DigestValue", XMLSignature.XMLNS);
-        String content = XMLUtils.getFullTextChildrenFromElement(dvElem);
+        String content = XMLUtils.getFullTextChildrenFromNode(dvElem);
         this.digestValue = XMLUtils.decode(content);
 
         // check for extra elements
@@ -311,6 +310,7 @@ public final class DOMReference extends DOMStructure
 
         refElem = DOMUtils.createElement(ownerDoc, "Reference",
                                          XMLSignature.XMLNS, dsPrefix);
+
         // set attributes
         DOMUtils.setAttributeID(refElem, "Id", id);
         DOMUtils.setAttribute(refElem, "URI", uri);
@@ -341,7 +341,6 @@ public final class DOMReference extends DOMStructure
         if (digestValue != null) {
             digestValueElem.appendChild
                 (ownerDoc.createTextNode(XMLUtils.encodeToString(digestValue)));
-
         }
         refElem.appendChild(digestValueElem);
 

@@ -28,10 +28,10 @@
  * ===========================================================================
  */
 /*
- * Portions copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Portions copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * $Id: XMLDSigRI.java 1804972 2017-08-14 09:59:23Z coheigea $
+ * $Id: XMLDSigRI.java 1833618 2018-06-15 17:36:20Z mullan $
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -123,7 +123,7 @@ public final class XMLDSigRI extends Provider {
                     } else if (algo.equals(Transform.XSLT)) {
                         return new DOMXSLTTransform();
                     }
-                 }
+                }
             } catch (Exception ex) {
                 throw new NoSuchAlgorithmException("Error constructing " +
                     type + " for " + algo + " using XMLDSig", ex);
