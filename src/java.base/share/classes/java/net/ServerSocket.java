@@ -32,6 +32,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.channels.ServerSocketChannel;
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
+import java.util.Objects;
 import java.util.Set;
 import java.util.Collections;
 
@@ -81,6 +82,7 @@ class ServerSocket implements java.io.Closeable {
      * @since 12
      */
     protected ServerSocket(SocketImpl impl) {
+        Objects.requireNonNull(impl);
         this.impl = impl;
     }
 
