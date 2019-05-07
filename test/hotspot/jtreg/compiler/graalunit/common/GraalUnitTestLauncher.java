@@ -254,7 +254,11 @@ public class GraalUnitTestLauncher {
                                       .collect(Collectors.joining(File.pathSeparator));
 
         javaFlags.add("-cp");
-        javaFlags.add(String.join(File.pathSeparator, System.getProperty("java.class.path"), graalJarsCP));
+        // Existing classpath returned by System.getProperty("java.class.path") may contain another
+        // version of junit with which the jtreg tool is built. It may be incompatible with required
+        // junit version. So we put graalJarsCP before existing classpath when generating a new one
+        // to avoid incompatibility issues.
+        javaFlags.add(String.join(File.pathSeparator, graalJarsCP, System.getProperty("java.class.path")));
 
         //
         javaFlags.add("com.oracle.mxtool.junit.MxJUnitWrapper");
