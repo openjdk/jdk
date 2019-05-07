@@ -23,7 +23,7 @@
 
  /*
  * @test
- * @bug 8005471 8008577 8129881 8130845 8136518 8181157 8210490
+ * @bug 8005471 8008577 8129881 8130845 8136518 8181157 8210490 8220037
  * @modules jdk.localedata
  * @run main/othervm -Djava.locale.providers=CLDR CLDRDisplayNamesTest
  * @summary Make sure that localized time zone names of CLDR are used
@@ -130,13 +130,10 @@ public class CLDRDisplayNamesTest {
             System.err.printf("Wrong display name for timezone Etc/GMT-5 : expected GMT+05:00,  Actual " + displayName);
             errors++;
         }
-        if (errors > 0) {
-            throw new RuntimeException("test failed");
-        }
 
         // 8217366: No "no inheritance marker" should be left in the returned array
         // from DateFormatSymbols.getZoneStrings()
-        List.of(Locale.ROOT,
+        errors += List.of(Locale.ROOT,
                 Locale.CHINA,
                 Locale.GERMANY,
                 Locale.JAPAN,
@@ -149,11 +146,26 @@ public class CLDRDisplayNamesTest {
             .flatMap(zoneStrings -> Arrays.stream(zoneStrings))
             .filter(namesArray -> Arrays.stream(namesArray)
                 .anyMatch(aName -> aName.equals(NO_INHERITANCE_MARKER)))
-            .findAny()
-            .ifPresentOrElse(marker -> {
-                    throw new RuntimeException("No inheritance marker detected with tzid: "
+            .peek(marker -> {
+                 System.err.println("No-inheritance-marker is detected with tzid: "
                                                 + marker[0]);
-                },
-                () -> System.out.println("Success: No \"no inheritance marker\" detected."));
+            })
+            .count();
+
+        // 8220037: Make sure CLDRConverter uniquely produces bundles, regardless of the
+        // source file enumeration order.
+        tz = TimeZone.getTimeZone("America/Argentina/La_Rioja");
+        if (!"ARST".equals(tz.getDisplayName(true, TimeZone.SHORT,
+                                new Locale.Builder()
+                                    .setLanguage("en")
+                                    .setRegion("CA")
+                                    .build()))) {
+            System.err.println("Short display name of \"" + tz.getID() + "\" was not \"ARST\"");
+            errors++;
+        }
+
+        if (errors > 0) {
+            throw new RuntimeException("test failed");
+        }
     }
 }
