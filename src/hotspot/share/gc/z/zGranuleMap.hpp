@@ -35,10 +35,10 @@ class ZGranuleMap {
   friend class ZGranuleMapIterator<T>;
 
 private:
-  T* const _map;
+  const size_t _size;
+  T* const     _map;
 
   size_t index_for_addr(uintptr_t addr) const;
-  size_t size() const;
 
 public:
   ZGranuleMap();
