@@ -101,9 +101,11 @@ TEST_VM(markOopDesc, printing) {
   markOop mark = obj->mark()->incr_bias_epoch();
   obj->set_mark(mark);
   ObjectSynchronizer::fast_enter(h_obj, lock.lock(), true, THREAD);
-#ifdef _LP64
   // Look for the biased_locker in markOop, not prototype_header.
+#ifdef _LP64
   assert_not_test_pattern(h_obj, "mark(is_biased biased_locker=0x0000000000000000");
+#else
+  assert_not_test_pattern(h_obj, "mark(is_biased biased_locker=0x00000000");
 #endif
 
   // Same thread tries to lock it again.
