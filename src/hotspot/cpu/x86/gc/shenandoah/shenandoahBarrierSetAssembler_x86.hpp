@@ -31,8 +31,8 @@ class LIR_Assembler;
 class ShenandoahPreBarrierStub;
 class ShenandoahLoadReferenceBarrierStub;
 class StubAssembler;
-class StubCodeGenerator;
 #endif
+class StubCodeGenerator;
 
 class ShenandoahBarrierSetAssembler: public BarrierSetAssembler {
 private:
