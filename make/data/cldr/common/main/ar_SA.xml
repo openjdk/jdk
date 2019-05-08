@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2018 Unicode, Inc.
+<!-- Copyright © 1991-2019 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 13880 $"/>
+		<version number="$Revision: 14936 $"/>
 		<language type="ar"/>
 		<territory type="SA"/>
 	</identity>
@@ -32,7 +32,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MO" draft="contributed">ماكاو الصينية (منطقة إدارية خاصة)</territory>
 			<territory type="MO" alt="short" draft="contributed">ماكاو</territory>
 			<territory type="MS" draft="contributed">مونتيسيرات</territory>
-			<territory type="PM" draft="contributed">سان بيير وميكولون</territory>
 			<territory type="UY" draft="contributed">أوروغواي</territory>
 		</territories>
 	</localeDisplayNames>
@@ -45,13 +44,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dayPeriods>
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="morning1">فجرًا</dayPeriod>
-							<dayPeriod type="morning2">ص</dayPeriod>
-							<dayPeriod type="afternoon1">ظهرًا</dayPeriod>
-							<dayPeriod type="afternoon2">بعد الظهر</dayPeriod>
-							<dayPeriod type="evening1">مساءً</dayPeriod>
-							<dayPeriod type="night1">منتصف الليل</dayPeriod>
 							<dayPeriod type="night2">ل</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="morning1" draft="contributed">فجرًا</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="morning1" draft="contributed">فجرًا</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="morning1" draft="contributed">فجرًا</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="morning1" draft="contributed">فجرًا</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="morning1" draft="contributed">فجرًا</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>

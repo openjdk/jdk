@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2018 Unicode, Inc.
+<!-- Copyright © 1991-2019 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -9,7 +9,7 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 13911 $"/>
+		<version number="$Revision: 14982 $"/>
 		<language type="ug"/>
 	</identity>
 	<localeDisplayNames>
@@ -877,8 +877,7 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 			<territory type="MF">ساينت مارتىن</territory>
 			<territory type="MG">ماداغاسقار</territory>
 			<territory type="MH">مارشال ئاراللىرى</territory>
-			<territory type="MK" draft="contributed">ماكېدونىيە</territory>
-			<territory type="MK" alt="variant">ماكېدونىيە (سابىق يۇگوسلاۋىيە ماكېدونىيە جۇمھۇرىيىتى)</territory>
+			<territory type="MK">شىمالىي ماكېدونىيە</territory>
 			<territory type="ML">مالى</territory>
 			<territory type="MM">بىرما</territory>
 			<territory type="MN">موڭغۇلىيە</territory>
@@ -1155,8 +1154,9 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 		</orientation>
 	</layout>
 	<characters>
-		<exemplarCharacters draft="contributed">[ئ ا ە ب پ ت ج چ خ د ر ز ژ س ش غ ف ق ك گ ڭ ل م ن ھ و ۇ ۆ ۈ ۋ ې ى ي]</exemplarCharacters>
-		<exemplarCharacters type="index" draft="contributed">[ئ ا ە ب پ ت ج چ خ د ر ز ژ س ش غ ف ق ك گ ڭ ل م ن ھ و ۇ ۆ ۈ ۋ ې ى ي]</exemplarCharacters>
+		<exemplarCharacters draft="contributed">[{ئا} {ئه} {ئو} {ئۇ} {ئۆ} {ئۈ} {ئې} {ئى} ا ە ب پ ت ج چ خ د ر ز ژ س ش غ ف ق ك گ ڭ ل م ن ھ و ۇ ۆ ۈ ۋ ې ى ي]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[\u200E\u200F ئ]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="contributed">[{ئا} {ئه} {ئو} {ئۇ} {ئۆ} {ئۈ} {ئې} {ئى} ا ە ب پ ت ج چ خ د ر ز ژ س ش غ ف ق ك گ ڭ ل م ن ھ و ۇ ۆ ۈ ۋ ې ى ي]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 	</characters>
 	<delimiters>
@@ -1724,8 +1724,8 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 						<dateFormatItem id="MMMd">d-MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">d-MMM، E</dateFormatItem>
 						<dateFormatItem id="MMMMd">d-MMMM</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="one">MMM، W-ھەپتە</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="other">MMM، W-ھەپتە</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">MMMM، W-ھەپتە</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">MMMM، W-ھەپتە</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">M-y</dateFormatItem>
@@ -1737,8 +1737,8 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 						<dateFormatItem id="yMMMM">y MMMM</dateFormatItem>
 						<dateFormatItem id="yQQQ">y QQQ</dateFormatItem>
 						<dateFormatItem id="yQQQQ">y QQQQ</dateFormatItem>
-						<dateFormatItem id="yw" count="one">y، w-ھەپتە</dateFormatItem>
-						<dateFormatItem id="yw" count="other">y، w-ھەپتە</dateFormatItem>
+						<dateFormatItem id="yw" count="one">Y، w-ھەپتە</dateFormatItem>
+						<dateFormatItem id="yw" count="other">Y، w-ھەپتە</dateFormatItem>
 					</availableFormats>
 					<appendItems>
 						<appendItem request="Timezone">{0} {1}</appendItem>
@@ -4514,6 +4514,11 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 				<displayName count="other" draft="contributed">ۋېنېزۇئېلا بولىۋارى (1871–2008)</displayName>
 			</currency>
 			<currency type="VEF">
+				<displayName draft="contributed">ۋېنېزۇئېلا بولىۋارى (2008–2018)</displayName>
+				<displayName count="one" draft="contributed">ۋېنېزۇئېلا بولىۋارى (2008–2018)</displayName>
+				<displayName count="other" draft="contributed">ۋېنېزۇئېلا بولىۋارى (2008–2018)</displayName>
+			</currency>
+			<currency type="VES">
 				<displayName draft="contributed">ۋېنېزۇئېلا بولىۋارى</displayName>
 				<displayName count="one" draft="contributed">ۋېنېزۇئېلا بولىۋارى</displayName>
 				<displayName count="other" draft="contributed">ۋېنېزۇئېلا بولىۋارى</displayName>

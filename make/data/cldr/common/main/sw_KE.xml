@@ -1,85 +1,128 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2018 Unicode, Inc.
+<!-- Copyright © 1991-2019 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 13839 $"/>
+		<version number="$Revision: 14771 $"/>
 		<language type="sw"/>
 		<territory type="KE"/>
 	</identity>
 	<localeDisplayNames>
 		<languages>
-			<language type="ain">Ainu</language>
-			<language type="ar_001">Kiarabu cha Sasa Kilichosanifishwa</language>
 			<language type="arq">Kiarabu cha Aljeria</language>
-			<language type="az">Kiazabajani</language>
-			<language type="bug">Kibugini</language>
-			<language type="ckb">Kikurdi cha Kati</language>
-			<language type="dsb">Kisorbian cha Chini</language>
+			<language type="as">Kiasamisi</language>
+			<language type="chr">Kicheroki</language>
+			<language type="cu">Kislovakia cha Kanisa la Jadi</language>
+			<language type="gaa">Kiga</language>
 			<language type="grc">Kigiriki cha Kale</language>
+			<language type="gwi">Kigwichʼin</language>
 			<language type="hsb">Kisorbia cha Juu</language>
-			<language type="inh">Kingushi</language>
+			<language type="hup">Kihupa</language>
+			<language type="hy">Kiamenia</language>
+			<language type="inh">Kiingushi</language>
 			<language type="jbo">Kilojbani</language>
-			<language type="kac">Kikachin</language>
-			<language type="khq">Kikoyra Chiini</language>
+			<language type="kac">Kikachini</language>
+			<language type="khq">Kikoyrachiini</language>
 			<language type="kkj">Kikako</language>
+			<language type="km">Kikhmeri</language>
+			<language type="kn">Kikanada</language>
 			<language type="koi">Kikomipermyak</language>
 			<language type="kru">Kikurukh</language>
+			<language type="lag">Kilangi</language>
 			<language type="lam">Kilamba</language>
-			<language type="li">Kilimbugish</language>
+			<language type="li">Kilimbugishi</language>
 			<language type="mdf">Kimoksha</language>
-			<language type="mic">Kimicmac</language>
+			<language type="mic">Kimi'kmak</language>
 			<language type="mk">Kimasedonia</language>
 			<language type="moh">Kimohoki</language>
 			<language type="nnh">Kiingiemboon</language>
 			<language type="nqo">Kiin’ko</language>
 			<language type="or">Kiodia</language>
-			<language type="pcm">Pijini ya Nijeria</language>
-			<language type="root">Kiroot</language>
-			<language type="sco">sco</language>
-			<language type="ses">Kikoyraboro Senni</language>
+			<language type="pcm">Kipijini cha Nigeria</language>
+			<language type="ses">Kikoyraborosenni</language>
 			<language type="shu">Kiarabu cha Chadi</language>
-			<language type="srn">Kiscran Tongo</language>
-			<language type="swb">Kicomoro</language>
-			<language type="syr">Kisyria</language>
+			<language type="srn">Kisranantongo</language>
+			<language type="sw_CD">Kiswahili cha Kongo</language>
+			<language type="swb">Kikomoro</language>
+			<language type="syr">Kisiria</language>
 			<language type="tw">Kitwi</language>
-			<language type="tzm">Lugha ya Central Atlas Tamazight</language>
+			<language type="twq">Kitasawak</language>
 			<language type="udm">Kiudumurti</language>
-			<language type="wa">Kiwaloon</language>
-			<language type="wae">Kiwalser</language>
-			<language type="zgh">Tamazight Sanifu ya Moroko</language>
+			<language type="ug">Kiuiguri</language>
+			<language type="zgh">Kitamazighati Sanifu cha Moroko</language>
 		</languages>
 		<territories>
+			<territory type="AF">Afghanistani</territory>
+			<territory type="AI">Anguila</territory>
 			<territory type="AQ">Antaktika</territory>
 			<territory type="AZ">Azabajani</territory>
+			<territory type="BJ">Benini</territory>
+			<territory type="BT">Bhutani</territory>
+			<territory type="BY">Belarusi</territory>
+			<territory type="CC">Visiwa vya Kokos (Keeling)</territory>
+			<territory type="CD">Kongo - Kinshasa</territory>
 			<territory type="CI">Ivorikosti</territory>
-			<territory type="CX">Kisiwa cha Christmas</territory>
 			<territory type="CY">Saiprasi</territory>
+			<territory type="DK">Denmaki</territory>
+			<territory type="EA">Keuta na Melilla</territory>
+			<territory type="EC">Ekwado</territory>
 			<territory type="FM">Mikronesia</territory>
+			<territory type="GA">Gaboni</territory>
+			<territory type="GL">Grinilandi</territory>
 			<territory type="GP">Gwadelupe</territory>
+			<territory type="GS">Visiwa vya Jojia ya Kusini na Sandwich ya Kusini</territory>
+			<territory type="GU">Guami</territory>
+			<territory type="HR">Kroashia</territory>
+			<territory type="IO">Himaya ya Uingereza katika Bahari Hindi</territory>
 			<territory type="JO">Yordani</territory>
+			<territory type="KY">Visiwa vya Kaimani</territory>
+			<territory type="LA">Laosi</territory>
 			<territory type="LB">Lebanoni</territory>
-			<territory type="LI">Lishtensteni</territory>
+			<territory type="LI">Lishenteni</territory>
 			<territory type="LS">Lesotho</territory>
 			<territory type="LU">Lasembagi</territory>
 			<territory type="LV">Lativia</territory>
+			<territory type="MA">Moroko</territory>
+			<territory type="MC">Monako</territory>
+			<territory type="MK">Masedonia</territory>
+			<territory type="MK" alt="variant">Masedonia (FYROM)</territory>
+			<territory type="MM">Myama (Burma)</territory>
+			<territory type="MO">Makau SAR China</territory>
+			<territory type="MO" alt="short">Makau</territory>
+			<territory type="MQ">Martiniki</territory>
+			<territory type="MS">Montserati</territory>
 			<territory type="MV">Maldivi</territory>
 			<territory type="NC">Nyukaledonia</territory>
-			<territory type="NE">Nijer</territory>
-			<territory type="NG">Nijeria</territory>
+			<territory type="NE">Nijeri</territory>
 			<territory type="NO">Norwe</territory>
 			<territory type="NP">Nepali</territory>
 			<territory type="OM">Omani</territory>
 			<territory type="PF">Polinesia ya Ufaransa</territory>
+			<territory type="PG">Papua Guinea Mpya</territory>
+			<territory type="PL">Polandi</territory>
 			<territory type="PR">Puetoriko</territory>
+			<territory type="PS">Himaya za Palestina</territory>
+			<territory type="PY">Paragwai</territory>
 			<territory type="QA">Katari</territory>
+			<territory type="SG">Singapuri</territory>
+			<territory type="SR">Surinamu</territory>
 			<territory type="ST">Sao Tome na Prinsipe</territory>
+			<territory type="SY">Shamu</territory>
 			<territory type="TD">Chadi</territory>
+			<territory type="TH">Thailandi</territory>
+			<territory type="TM">Turukimenstani</territory>
+			<territory type="TW">Taiwani</territory>
+			<territory type="UA">Ukreni</territory>
+			<territory type="UY">Urugwai</territory>
+			<territory type="VA">Mji wa Vatikani</territory>
+			<territory type="VG">Visiwa vya Virgin vya Uingereza</territory>
+			<territory type="VI">Visiwa vya Virgin vya Marekani</territory>
 			<territory type="VN">Vietnamu</territory>
+			<territory type="YT">Mayote</territory>
 		</territories>
 	</localeDisplayNames>
 	<dates>
@@ -109,6 +152,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</dateTimeFormats>
 			</calendar>
 			<calendar type="gregorian">
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="pm">PM</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>

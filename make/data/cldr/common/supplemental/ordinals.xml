@@ -6,13 +6,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 For terms of use, see http://www.unicode.org/copyright.html
 -->
 <supplementalData>
-    <version number="$Revision: 13819 $"/>
+    <version number="$Revision: 14855 $"/>
     <plurals type="ordinal">
         <!-- For a canonicalized list, use GeneratedPluralSamples -->
 
         <!-- 1: other -->
 
-        <pluralRules locales="af am ar bg bs ce cs da de dsb el es et eu fa fi fy gl gsw he hr hsb id in is iw ja km kn ko ky lt lv ml mn my nb nl pa pl prg ps pt root ru sd sh si sk sl sr sw ta te th tr ur uz yue zh zu">
+        <pluralRules locales="af am ar bg bs ce cs da de dsb el es et eu fa fi fy gl gsw he hr hsb ia id in is iw ja km kn ko ky lt lv ml mn my nb nl pa pl prg ps pt root ru sd sh si sk sl sr sw ta te th tr ur uz yue zh zu">
             <pluralRule count="other"> @integer 0~15, 100, 1000, 10000, 100000, 1000000, …</pluralRule>
         </pluralRules>
 
@@ -56,7 +56,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <pluralRule count="many">n % 10 = 6 or n % 10 = 9 or n % 10 = 0 and n != 0 @integer 6, 9, 10, 16, 19, 20, 26, 29, 30, 36, 39, 40, 100, 1000, 10000, 100000, 1000000, …</pluralRule>
             <pluralRule count="other"> @integer 0~5, 7, 8, 11~15, 17, 18, 21, 101, 1001, …</pluralRule>
         </pluralRules>
-        <pluralRules locales="it scn">
+        <pluralRules locales="it sc scn">
             <pluralRule count="many">n = 11,8,80,800 @integer 8, 11, 80, 800</pluralRule>
             <pluralRule count="other"> @integer 0~7, 9, 10, 12~17, 100, 1000, 10000, 100000, 1000000, …</pluralRule>
         </pluralRules>
@@ -73,6 +73,11 @@ For terms of use, see http://www.unicode.org/copyright.html
             <pluralRule count="many">n % 10 = 4 and n % 100 != 14 @integer 4, 24, 34, 44, 54, 64, 74, 84, 104, 1004, …</pluralRule>
             <pluralRule count="other"> @integer 0, 2, 3, 5~17, 100, 1000, 10000, 100000, 1000000, …</pluralRule>
         </pluralRules>
+        <pluralRules locales="kw">
+            <pluralRule count="one">n = 1..4 or n % 100 = 1..4,21..24,41..44,61..64,81..84 @integer 1~4, 21~24, 41~44, 61~64, 101, 1001, …</pluralRule>
+            <pluralRule count="many">n = 5 or n % 100 = 5 @integer 5, 105, 205, 305, 405, 505, 605, 705, 1005, …</pluralRule>
+            <pluralRule count="other"> @integer 0, 6~20, 100, 1000, 10000, 100000, 1000000, …</pluralRule>
+        </pluralRules>
 
         <!-- 4: one,two,few,other -->
 
@@ -87,6 +92,12 @@ For terms of use, see http://www.unicode.org/copyright.html
             <pluralRule count="two">n = 2,3 @integer 2, 3</pluralRule>
             <pluralRule count="few">n = 4 @integer 4</pluralRule>
             <pluralRule count="other"> @integer 0, 5~19, 100, 1000, 10000, 100000, 1000000, …</pluralRule>
+        </pluralRules>
+        <pluralRules locales="gd">
+            <pluralRule count="one">n = 1,11 @integer 1, 11</pluralRule>
+            <pluralRule count="two">n = 2,12 @integer 2, 12</pluralRule>
+            <pluralRule count="few">n = 3,13 @integer 3, 13</pluralRule>
+            <pluralRule count="other"> @integer 0, 4~10, 14~21, 100, 1000, 10000, 100000, 1000000, …</pluralRule>
         </pluralRules>
         <pluralRules locales="ca">
             <pluralRule count="one">n = 1,3 @integer 1, 3</pluralRule>

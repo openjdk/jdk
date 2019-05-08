@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2018 Unicode, Inc.
+<!-- Copyright © 1991-2019 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 13869 $"/>
+		<version number="$Revision: 14771 $"/>
 		<language type="sr"/>
 		<script type="Cyrl"/>
 		<territory type="XK"/>
@@ -59,61 +59,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<months>
 					<monthContext type="format">
 						<monthWidth type="abbreviated">
-							<month type="1" draft="contributed">јан.</month>
-							<month type="2" draft="contributed">феб.</month>
 							<month type="3" draft="contributed">март</month>
-							<month type="4" draft="contributed">апр.</month>
 							<month type="5" draft="contributed">мај</month>
 							<month type="6" draft="contributed">јун</month>
 							<month type="7" draft="contributed">јул</month>
-							<month type="8" draft="contributed">авг.</month>
-							<month type="9" draft="contributed">септ.</month>
-							<month type="10" draft="contributed">окт.</month>
-							<month type="11" draft="contributed">нов.</month>
-							<month type="12" draft="contributed">дец.</month>
+							<month type="9">септ</month>
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
 						<monthWidth type="abbreviated">
-							<month type="1" draft="contributed">јан.</month>
-							<month type="2" draft="contributed">феб.</month>
 							<month type="3" draft="contributed">март</month>
-							<month type="4" draft="contributed">апр.</month>
 							<month type="5" draft="contributed">мај</month>
 							<month type="6" draft="contributed">јун</month>
 							<month type="7" draft="contributed">јул</month>
-							<month type="8" draft="contributed">авг.</month>
-							<month type="9" draft="contributed">септ.</month>
-							<month type="10" draft="contributed">окт.</month>
-							<month type="11" draft="contributed">нов.</month>
-							<month type="12" draft="contributed">дец.</month>
+							<month type="9">септ</month>
 						</monthWidth>
 					</monthContext>
 				</months>
-				<days>
-					<dayContext type="format">
-						<dayWidth type="abbreviated">
-							<day type="sun" draft="contributed">нед.</day>
-							<day type="mon" draft="contributed">пон.</day>
-							<day type="tue" draft="contributed">ут.</day>
-							<day type="wed" draft="contributed">ср.</day>
-							<day type="thu" draft="contributed">чет.</day>
-							<day type="fri" draft="contributed">пет.</day>
-							<day type="sat" draft="contributed">суб.</day>
-						</dayWidth>
-					</dayContext>
-					<dayContext type="stand-alone">
-						<dayWidth type="abbreviated">
-							<day type="sun" draft="contributed">нед.</day>
-							<day type="mon" draft="contributed">пон.</day>
-							<day type="tue" draft="contributed">ут.</day>
-							<day type="wed" draft="contributed">ср.</day>
-							<day type="thu" draft="contributed">чет.</day>
-							<day type="fri" draft="contributed">пет.</day>
-							<day type="sat" draft="contributed">суб.</day>
-						</dayWidth>
-					</dayContext>
-				</days>
 				<dayPeriods>
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -594,7 +594,7 @@ public class Basic$Type$ extends Basic {
         $type$ oneToSeven = ($type$) 1234567;
         test("%d", "1234567", oneToSeven);
         test("%,d", "1,234,567", oneToSeven);
-        test(Locale.FRANCE, "%,d", "1\u00a0234\u00a0567", oneToSeven);
+        test(Locale.FRANCE, "%,d", "1\u202f234\u202f567", oneToSeven);
         test("%,d", "-1,234,567", negate(oneToSeven));
         test("%(d", "1234567", oneToSeven);
         test("%(d", "(1234567)", negate(oneToSeven));
@@ -789,7 +789,7 @@ public class Basic$Type$ extends Basic {
         test("%d", "null", (Object)null);
         test("%d", "1234567", new BigInteger("1234567", 10));
         test("%,d", "1,234,567", new BigInteger("1234567", 10));
-        test(Locale.FRANCE, "%,d", "1\u00a0234\u00a0567", new BigInteger("1234567", 10));
+        test(Locale.FRANCE, "%,d", "1\u202f234\u202f567", new BigInteger("1234567", 10));
         test("%,d", "-1,234,567", new BigInteger("-1234567", 10));
         test("%(d", "1234567", new BigInteger("1234567", 10));
         test("%(d", "(1234567)", new BigInteger("-1234567", 10));
@@ -1166,7 +1166,7 @@ public class Basic$Type$ extends Basic {
         test("%.3f", "-3141.593", mult(pi, -1000.0));
 
         test("%,.2f", "3,141.59", mult(pi, 1000.0));
-        test(Locale.FRANCE, "%,.2f", "3\u00a0141,59", mult(pi, 1000.0));
+        test(Locale.FRANCE, "%,.2f", "3\u202f141,59", mult(pi, 1000.0));
         test("%,.2f", "-3,141.59", mult(pi, -1000.0));
         test("%(.2f", "3141.59", mult(pi, 1000.0));
         test("%(.2f", "(3141.59)", mult(pi, -1000.0));
@@ -1181,7 +1181,7 @@ public class Basic$Type$ extends Basic {
         test("%.3f", "3141592.654", mult(pi, 1000000.0));
         test("%.3f", "-3141592.654", mult(pi, -1000000.0));
         test("%,.4f", "3,141,592.6536", mult(pi, 1000000.0));
-        test(Locale.FRANCE, "%,.4f", "3\u00a0141\u00a0592,6536", mult(pi, 1000000.0));
+        test(Locale.FRANCE, "%,.4f", "3\u202f141\u202f592,6536", mult(pi, 1000000.0));
         test("%,.4f", "-3,141,592.6536", mult(pi, -1000000.0));
         test("%(.4f", "3141592.6536", mult(pi, 1000000.0));
         test("%(.4f", "(3141592.6536)", mult(pi, -1000000.0));

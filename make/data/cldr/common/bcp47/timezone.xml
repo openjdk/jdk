@@ -7,7 +7,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 -->
 
 <ldmlBCP47>
-    <version number="$Revision: 13421 $"/>
+    <version number="$Revision: 14742 $"/>
     <keyword>
         <key name="tz" description="Time zone key" alias="timezone">
             <type name="adalv" description="Andorra" alias="Europe/Andorra"/>
@@ -240,6 +240,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="kzakx" description="Aqtobe, Kazakhstan" alias="Asia/Aqtobe"/>
             <type name="kzala" description="Almaty, Kazakhstan" alias="Asia/Almaty"/>
             <type name="kzguw" description="Atyrau (Guryev), Kazakhstan" alias="Asia/Atyrau" since="31"/>
+            <type name="kzksn" description="Qostanay (Kostanay), Kazakhstan" alias="Asia/Qostanay" since="35"/>
             <type name="kzkzo" description="Kyzylorda, Kazakhstan" alias="Asia/Qyzylorda"/>
             <type name="kzura" description="Oral, Kazakhstan" alias="Asia/Oral"/>
             <type name="lavte" description="Vientiane, Laos" alias="Asia/Vientiane"/>
@@ -444,7 +445,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="utce10" description="10 hours ahead of UTC" alias="Etc/GMT-10"/>
             <type name="utce11" description="11 hours ahead of UTC" alias="Etc/GMT-11"/>
             <type name="utce12" description="12 hours ahead of UTC" alias="Etc/GMT-12"/>
-            <type name="utce13" description="13hours ahead of UTC" alias="Etc/GMT-13"/>
+            <type name="utce13" description="13 hours ahead of UTC" alias="Etc/GMT-13"/>
             <type name="utce14" description="14 hours ahead of UTC" alias="Etc/GMT-14"/>
             <type name="utcw01" description="1 hour behind UTC" alias="Etc/GMT+1"/>
             <type name="utcw02" description="2 hours behind UTC" alias="Etc/GMT+2"/>

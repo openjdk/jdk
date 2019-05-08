@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2018 Unicode, Inc.
+<!-- Copyright © 1991-2019 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -9,7 +9,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 13911 $"/>
+		<version number="$Revision: 14817 $"/>
 		<language type="as"/>
 	</identity>
 	<localeDisplayNames>
@@ -65,6 +65,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bug">বগিনীজ</language>
 			<language type="byn">ব্লিন</language>
 			<language type="ca">কাতালান</language>
+			<language type="ccp">চাক্‌মা</language>
 			<language type="ce">চেচেন</language>
 			<language type="ceb">চিবুৱানো</language>
 			<language type="cgg">চিগা</language>
@@ -266,6 +267,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="naq">নামা</language>
 			<language type="nb">নৰৱেজিয়ান বোকমাল</language>
 			<language type="nd">উত্তৰ নিবেবেলে</language>
+			<language type="nds">ল’ জাৰ্মান</language>
 			<language type="ne">নেপালী</language>
 			<language type="new">নেৱাৰি</language>
 			<language type="ng">এন্দোঙ্গা</language>
@@ -575,6 +577,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="FI">ফিনলেণ্ড</territory>
 			<territory type="FJ">ফিজি</territory>
 			<territory type="FK">ফকলেণ্ড দ্বীপপুঞ্জ</territory>
+			<territory type="FK" alt="variant">ফকলেণ্ড দ্বীপপুঞ্জ (আইলেছ মালভিনাছ)</territory>
 			<territory type="FM">মাইক্ৰোনেচিয়া</territory>
 			<territory type="FO">ফাৰো দ্বীপপুঞ্জ</territory>
 			<territory type="FR">ফ্ৰান্স</territory>
@@ -722,7 +725,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="SV">এল ছেলভেড’ৰ</territory>
 			<territory type="SX">চিণ্ট মাৰ্টেন</territory>
 			<territory type="SY">চিৰিয়া</territory>
-			<territory type="SZ">স্বাজিলেণ্ড</territory>
+			<territory type="SZ">ইচ্চুটিনি</territory>
+			<territory type="SZ" alt="variant">স্বাজিলেণ্ড</territory>
 			<territory type="TA">ত্ৰিস্তান দ্যা কুনহা</territory>
 			<territory type="TC">টাৰ্কছ অৰু কেইক’ছ দ্বীপপুঞ্জ</territory>
 			<territory type="TD">চাড</territory>
@@ -758,6 +762,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="VU">ভানাটু</territory>
 			<territory type="WF">ৱালিছ আৰু ফুটুনা</territory>
 			<territory type="WS">চামোৱা</territory>
+			<territory type="XA">ছুডু-একচেণ্ট</territory>
+			<territory type="XB">ছুডু-বিডি</territory>
 			<territory type="XK">কচ’ভ’</territory>
 			<territory type="YE">য়েমেন</territory>
 			<territory type="YT">মায়োট্টে</territory>
@@ -863,6 +869,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<exemplarCharacters type="auxiliary">[\u200C\u200D ৲ ৎ র]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="unconfirmed">[অ আ ই ঈ উ ঊ ঋ ৠ ঌ ৡ এ ঐ ও ঔ ক খ গ ঘ ঙ চ ছ জ ঝ ঞ ট ঠ ড ঢ ণ ৎ ত থ দ ধ ন প ফ ব ভ ম য ৰ ল ৱ শ ষ স হ ঽ]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- , . % ‰ + 0০ 1১ 2২ 3৩ 4৪ 5৫ 6৬ 7৭ 8৮ 9৯]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐ – — , ; \: ! ? . … । ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -871,23 +878,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>?</moreInformation>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample="-" draft="contributed">[\--/]</parseLenient>
 			<parseLenient sample=":" draft="contributed">[\:∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="." draft="contributed">[.․。︒﹒．｡]</parseLenient>
+			<parseLenient sample="’" draft="contributed">['ʼ՚᾽᾿’＇]</parseLenient>
+			<parseLenient sample="%" draft="contributed">[%٪﹪％]</parseLenient>
+			<parseLenient sample="‰" draft="contributed">[؉‰]</parseLenient>
 			<parseLenient sample="$" draft="contributed">[\$﹩＄$]</parseLenient>
 			<parseLenient sample="£" draft="contributed">[£₤]</parseLenient>
-			<parseLenient sample="₹" draft="contributed">[₨₹{Rp}{Rs}]</parseLenient>
+			<parseLenient sample="¥" draft="contributed">[¥￥]</parseLenient>
+			<parseLenient sample="₩" draft="contributed">[₩￦]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
 			<parseLenient sample="-" draft="contributed">[\-‒⁻₋−➖﹣－]</parseLenient>
-			<parseLenient sample="," draft="contributed">[,،٫、︐︑﹐﹑，､]</parseLenient>
-			<parseLenient sample="+" draft="contributed">[+⁺₊➕﬩﹢＋]</parseLenient>
-		</parseLenients>
-		<parseLenients scope="number" level="stricter">
-			<parseLenient sample="," draft="contributed">[,٫︐﹐，]</parseLenient>
-			<parseLenient sample="." draft="contributed">[.․﹒．｡]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -987,8 +990,55 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</availableFormats>
 					<intervalFormats>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="Bh">
+							<greatestDifference id="B">h B – h B</greatestDifference>
+							<greatestDifference id="h">h – h B</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Bhm">
+							<greatestDifference id="B">h:mm B – h:mm B</greatestDifference>
+							<greatestDifference id="h">h:mm – h:mm B</greatestDifference>
+							<greatestDifference id="m">h:mm – h:mm B</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d–d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G">G y – G y</greatestDifference>
+							<greatestDifference id="y">G y–y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G">GGGGG M/y – GGGGG M/y</greatestDifference>
+							<greatestDifference id="M">GGGGG M/y – M/y</greatestDifference>
+							<greatestDifference id="y">GGGGG M/y – M/y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d">GGGGG d/M/y – d/M/y</greatestDifference>
+							<greatestDifference id="G">GGGGG d/M/y – GGGGG d/M/y</greatestDifference>
+							<greatestDifference id="M">GGGGG d/M/y – d/M/y</greatestDifference>
+							<greatestDifference id="y">GGGGG d/M/y – d/M/y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d">GGGGG E, d/M/y – E, d/M/y</greatestDifference>
+							<greatestDifference id="G">GGGGG E, d/M/y – GGGGG E, d/M/y</greatestDifference>
+							<greatestDifference id="M">GGGGG E, d/M/y – E, d/M/y</greatestDifference>
+							<greatestDifference id="y">GGGGG E, d/M/y – E, d/M/y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G">G MMM y – G MMM y</greatestDifference>
+							<greatestDifference id="M">G MMM – MMM y</greatestDifference>
+							<greatestDifference id="y">G MMM y – MMM y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d">G d – d MMM, y</greatestDifference>
+							<greatestDifference id="G">G d MMM, y – G d MMM, y</greatestDifference>
+							<greatestDifference id="M">G d MMM – d MMM, y</greatestDifference>
+							<greatestDifference id="y">G d MMM, y – d MMM, y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d">G E, d MMM – E, d MMM, y</greatestDifference>
+							<greatestDifference id="G">G E, d MMM, y – G E, d MMM, y</greatestDifference>
+							<greatestDifference id="M">G E, d MMM – E, d MMM, y</greatestDifference>
+							<greatestDifference id="y">G E, d MMM, y – E, d MMM, y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M">MM–MM</greatestDifference>
@@ -1295,11 +1345,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<eraNames>
 						<era type="0">খ্ৰীষ্টপূৰ্ব</era>
 						<era type="1">খ্ৰীষ্টাব্দ</era>
+						<era type="1" alt="variant">চি. ই.</era>
 					</eraNames>
 					<eraAbbr>
 						<era type="0">খ্ৰীঃ পূঃ</era>
 						<era type="0" alt="variant">খ্ৰীষ্টপূৰ্ব</era>
 						<era type="1">খ্ৰীঃ</era>
+						<era type="1" alt="variant">চি. ই.</era>
 					</eraAbbr>
 				</eras>
 				<dateFormats>
@@ -1422,8 +1474,55 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</appendItems>
 					<intervalFormats>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="Bh">
+							<greatestDifference id="B">h B – h B</greatestDifference>
+							<greatestDifference id="h">h – h B</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Bhm">
+							<greatestDifference id="B">h:mm B – h:mm B</greatestDifference>
+							<greatestDifference id="h">h:mm – h:mm B</greatestDifference>
+							<greatestDifference id="m">h:mm – h:mm B</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d–d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G">G y – G y</greatestDifference>
+							<greatestDifference id="y">G y – y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G">GGGGG M/y – GGGGG M/y</greatestDifference>
+							<greatestDifference id="M">GGGGG M/y – M/y</greatestDifference>
+							<greatestDifference id="y">GGGGG M/y – M/y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d">GGGGG d/M/y – d/M/y</greatestDifference>
+							<greatestDifference id="G">GGGGG d/M/y – GGGGG d/M/y</greatestDifference>
+							<greatestDifference id="M">GGGGG d/M/y – d/M/y</greatestDifference>
+							<greatestDifference id="y">GGGGG d/M/y – d/M/y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d">GGGGG E, d/M/y – E, d/M/y</greatestDifference>
+							<greatestDifference id="G">GGGGG E, d/M/y – GGGGG E, d/M/y</greatestDifference>
+							<greatestDifference id="M">GGGGG E, d/M/y – E, d/M/y</greatestDifference>
+							<greatestDifference id="y">GGGGG E, d/M/y – E, d/M/y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G">G MMM y – G MMM y</greatestDifference>
+							<greatestDifference id="M">G MMM – MMM y</greatestDifference>
+							<greatestDifference id="y">G MMM y – MMM y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d">G d – d MMM, y</greatestDifference>
+							<greatestDifference id="G">G d MMM, y – G d MMM, y</greatestDifference>
+							<greatestDifference id="M">G d MMM – d MMM, y</greatestDifference>
+							<greatestDifference id="y">G d MMM, y – d MMM, y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d">G E, d MMM – E, d MMM, y</greatestDifference>
+							<greatestDifference id="G">G E, d MMM, y – G E, d MMM, y</greatestDifference>
+							<greatestDifference id="M">G E, d MMM – E, d MMM, y</greatestDifference>
+							<greatestDifference id="y">G E, d MMM, y – E, d MMM, y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">a h – a h</greatestDifference>
@@ -2822,6 +2921,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Aqtobe">
 				<exemplarCity>এক্যোটব</exemplarCity>
 			</zone>
+			<zone type="Asia/Qostanay">
+				<exemplarCity>ক’ষ্টেনী</exemplarCity>
+			</zone>
 			<zone type="Asia/Qyzylorda">
 				<exemplarCity>কেজিলোৰ্ডা</exemplarCity>
 			</zone>
@@ -2904,7 +3006,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>কোইবাল্ছন</exemplarCity>
 			</zone>
 			<zone type="Asia/Macau">
-				<exemplarCity>মাকাউ</exemplarCity>
+				<exemplarCity>মাকাও</exemplarCity>
 			</zone>
 			<zone type="Pacific/Saipan">
 				<exemplarCity>ছাইপান</exemplarCity>
@@ -4331,11 +4433,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<timeSeparator draft="unconfirmed">.</timeSeparator>
 		</symbols>
 		<symbols numberSystem="beng">
-			<decimal>.</decimal>
-			<group>,</group>
 			<percentSign>%</percentSign>
-			<plusSign>+</plusSign>
-			<minusSign>-</minusSign>
 			<exponential>E</exponential>
 			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>‰</perMille>
@@ -4343,11 +4441,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<nan>NaN</nan>
 		</symbols>
 		<symbols numberSystem="latn">
-			<decimal>.</decimal>
-			<group>,</group>
 			<percentSign>%</percentSign>
-			<plusSign>+</plusSign>
-			<minusSign>-</minusSign>
 			<exponential>E</exponential>
 			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>‰</perMille>
@@ -4504,1017 +4598,784 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>সংযুক্ত আৰব আমিৰাত ডিৰহেম</displayName>
 				<displayName count="one">UAE ডিৰহেম</displayName>
 				<displayName count="other">UAE ডিৰহেম</displayName>
-				<symbol draft="contributed">AED</symbol>
 			</currency>
 			<currency type="AFN">
 				<displayName>আফগান আফগানী</displayName>
 				<displayName count="one">আফগান আফগানী</displayName>
 				<displayName count="other">আফগান আফগানী</displayName>
-				<symbol draft="contributed">AFN</symbol>
 			</currency>
 			<currency type="ALL">
 				<displayName>আলবেনীয় লেক</displayName>
 				<displayName count="one">আলবেনীয় লেক</displayName>
 				<displayName count="other">আলবেনীয় লেক</displayName>
-				<symbol draft="contributed">ALL</symbol>
 			</currency>
 			<currency type="AMD">
 				<displayName>আৰ্মেনিয়ান ড্ৰাম</displayName>
 				<displayName count="one">আৰ্মেনিয়ান ড্ৰাম</displayName>
 				<displayName count="other">আৰ্মেনিয়ান ড্ৰাম</displayName>
-				<symbol draft="contributed">AMD</symbol>
 			</currency>
 			<currency type="ANG">
 				<displayName>নেডাৰলেণ্ডছ এণ্টিলিয়েন গিল্ডাৰ</displayName>
 				<displayName count="one">নেডাৰলেণ্ডছ এণ্টিলিয়েন গিল্ডাৰ</displayName>
 				<displayName count="other">নেডাৰলেণ্ডছ এণ্টিলিয়েন গিল্ডাৰ</displayName>
-				<symbol draft="contributed">ANG</symbol>
 			</currency>
 			<currency type="AOA">
 				<displayName>এংগোলান কোৱাঞ্জা</displayName>
 				<displayName count="one">এংগোলান কোৱাঞ্জা</displayName>
 				<displayName count="other">এংগোলান কোৱাঞ্জা</displayName>
-				<symbol draft="contributed">AOA</symbol>
-				<symbol alt="narrow" draft="contributed">Kz</symbol>
 			</currency>
 			<currency type="ARS">
 				<displayName>আৰ্জেণ্টাইন পেছো</displayName>
 				<displayName count="one">আৰ্জেণ্টাইন পেছো</displayName>
 				<displayName count="other">আৰ্জেণ্টাইন পেছো</displayName>
-				<symbol draft="contributed">ARS</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="AUD">
 				<displayName>অষ্ট্ৰেলিয়ান ডলাৰ</displayName>
 				<displayName count="one">অষ্ট্ৰেলিয়ান ডলাৰ</displayName>
 				<displayName count="other">অষ্ট্ৰেলিয়ান ডলাৰ</displayName>
-				<symbol draft="contributed">A$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="AWG">
 				<displayName>আৰুবান ফ্ল’ৰিন</displayName>
 				<displayName count="one">আৰুবান ফ্ল’ৰিন</displayName>
 				<displayName count="other">আৰুবান ফ্ল’ৰিন</displayName>
-				<symbol draft="contributed">AWG</symbol>
 			</currency>
 			<currency type="AZN">
 				<displayName>আজেৰবাইজানী মানাত</displayName>
 				<displayName count="one">আজেৰবাইজানী মানাত</displayName>
 				<displayName count="other">আজেৰবাইজানী মানাত</displayName>
-				<symbol draft="contributed">AZN</symbol>
 			</currency>
 			<currency type="BAM">
 				<displayName>ব’ছনিয়া আৰু হাৰ্জেগ’ভিনা কনভাৰ্টিব্‌ল মাৰ্ক</displayName>
 				<displayName count="one">ব’ছনিয়া আৰু হাৰ্জেগ’ভিনা কনভাৰ্টিব্‌ল মাৰ্ক</displayName>
 				<displayName count="other">ব’ছনিয়া আৰু হাৰ্জেগ’ভিনা কনভাৰ্টিব্‌ল মাৰ্ক</displayName>
-				<symbol draft="contributed">BAM</symbol>
-				<symbol alt="narrow" draft="contributed">KM</symbol>
 			</currency>
 			<currency type="BBD">
 				<displayName>বাৰ্বাডিয়ান ডলাৰ</displayName>
 				<displayName count="one">বাৰ্বাডিয়ান ডলাৰ</displayName>
 				<displayName count="other">বাৰ্বাডিয়ান ডলাৰ</displayName>
-				<symbol draft="contributed">BBD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BDT">
 				<displayName>বাংলাদেশী টাকা</displayName>
 				<displayName count="one">বাংলাদেশী টাকা</displayName>
 				<displayName count="other">বাংলাদেশী টাকা</displayName>
-				<symbol draft="contributed">BDT</symbol>
-				<symbol alt="narrow" draft="contributed">৳</symbol>
 			</currency>
 			<currency type="BGN">
 				<displayName>বুলগেৰীয় লেভ</displayName>
 				<displayName count="one">বুলগেৰীয় লেভ</displayName>
 				<displayName count="other">বুলগেৰীয় লেভ</displayName>
-				<symbol draft="contributed">BGN</symbol>
 			</currency>
 			<currency type="BHD">
 				<displayName>বাহৰেইনী ডিনাৰ</displayName>
 				<displayName count="one">বাহৰেইনী ডিনাৰ</displayName>
 				<displayName count="other">বাহৰেইনী ডিনাৰ</displayName>
-				<symbol draft="contributed">BHD</symbol>
 			</currency>
 			<currency type="BIF">
 				<displayName>বুৰুণ্ডিয়ান ফ্ৰেংক</displayName>
 				<displayName count="one">বুৰুণ্ডিয়ান ফ্ৰেংক</displayName>
 				<displayName count="other">বুৰুণ্ডিয়ান ফ্ৰেংক</displayName>
-				<symbol draft="contributed">BIF</symbol>
 			</currency>
 			<currency type="BMD">
 				<displayName>বাৰ্মুডান ডলাৰ</displayName>
 				<displayName count="one">বাৰ্মুডান ডলাৰ</displayName>
 				<displayName count="other">বাৰ্মুডান ডলাৰ</displayName>
-				<symbol draft="contributed">BMD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BND">
 				<displayName>ব্ৰুনেই ডলাৰ</displayName>
 				<displayName count="one">ব্ৰুনেই ডলাৰ</displayName>
 				<displayName count="other">ব্ৰুনেই ডলাৰ</displayName>
-				<symbol draft="contributed">BND</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BOB">
 				<displayName>বলিভিয়ান বলিভিয়ানো</displayName>
 				<displayName count="one">বলিভিয়ান বলিভিয়ানো</displayName>
 				<displayName count="other">বলিভিয়ান বলিভিয়ানো</displayName>
-				<symbol draft="contributed">BOB</symbol>
-				<symbol alt="narrow" draft="contributed">Bs</symbol>
 			</currency>
 			<currency type="BRL">
 				<displayName>ব্ৰাজিলিয়ান ৰিয়েল</displayName>
 				<displayName count="one">ব্ৰাজিলিয়ান ৰিয়েল</displayName>
 				<displayName count="other">ব্ৰাজিলিয়ান ৰিয়েল</displayName>
-				<symbol draft="contributed">R$</symbol>
-				<symbol alt="narrow" draft="contributed">R$</symbol>
 			</currency>
 			<currency type="BSD">
 				<displayName>বাহামিয়ান ডলাৰ</displayName>
 				<displayName count="one">বাহামিয়ান ডলাৰ</displayName>
 				<displayName count="other">বাহামিয়ান ডলাৰ</displayName>
-				<symbol draft="contributed">BSD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BTN">
 				<displayName>ভুটানী নংগলট্ৰাম</displayName>
 				<displayName count="one">ভুটানী নংগলট্ৰাম</displayName>
 				<displayName count="other">ভুটানী নংগলট্ৰাম</displayName>
-				<symbol draft="contributed">BTN</symbol>
 			</currency>
 			<currency type="BWP">
 				<displayName>ব’টচোৱানান পুলা</displayName>
 				<displayName count="one">ব’টচোৱানান পুলা</displayName>
 				<displayName count="other">ব’টচোৱানান পুলা</displayName>
-				<symbol draft="contributed">BWP</symbol>
-				<symbol alt="narrow" draft="contributed">P</symbol>
 			</currency>
 			<currency type="BYN">
 				<displayName>বেলাৰুছীয় ৰুবেল</displayName>
 				<displayName count="one">বেলাৰুছীয় ৰুবেল</displayName>
 				<displayName count="other">বেলাৰুছীয় ৰুবেল</displayName>
-				<symbol draft="contributed">BYN</symbol>
-				<symbol alt="narrow" draft="contributed">р.</symbol>
 			</currency>
 			<currency type="BZD">
 				<displayName>বেলিজ ডলাৰ</displayName>
 				<displayName count="one">বেলিজ ডলাৰ</displayName>
 				<displayName count="other">বেলিজ ডলাৰ</displayName>
-				<symbol draft="contributed">BZD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CAD">
 				<displayName>কানাডিয়ান ডলাৰ</displayName>
 				<displayName count="one">কানাডিয়ান ডলাৰ</displayName>
 				<displayName count="other">কানাডিয়ান ডলাৰ</displayName>
-				<symbol draft="contributed">CA$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CDF">
 				<displayName>কংগো ফ্ৰেংক</displayName>
 				<displayName count="one">কংগো ফ্ৰেংক</displayName>
 				<displayName count="other">কংগো ফ্ৰেংক</displayName>
-				<symbol draft="contributed">CDF</symbol>
 			</currency>
 			<currency type="CHF">
 				<displayName>চুইছ ফ্ৰেংক</displayName>
 				<displayName count="one">চুইছ ফ্ৰেংক</displayName>
 				<displayName count="other">চুইছ ফ্ৰেংক</displayName>
-				<symbol draft="contributed">CHF</symbol>
 			</currency>
 			<currency type="CLP">
 				<displayName>চিলিয়ান পেছো</displayName>
 				<displayName count="one">চিলিয়ান পেছো</displayName>
 				<displayName count="other">চিলিয়ান পেছো</displayName>
-				<symbol draft="contributed">CLP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CNH">
 				<displayName>চীনা ইউৱান (অফশ্ব’ৰ)</displayName>
 				<displayName count="one">চীনা ইউৱান (অফশ্ব’ৰ)</displayName>
 				<displayName count="other">চীনা ইউৱান (অফশ্ব’ৰ)</displayName>
-				<symbol draft="contributed">CNH</symbol>
 			</currency>
 			<currency type="CNY">
 				<displayName>চীনা ইউৱান</displayName>
 				<displayName count="one">চীনা ইউৱান</displayName>
 				<displayName count="other">চীনা ইউৱান</displayName>
-				<symbol draft="contributed">CN¥</symbol>
-				<symbol alt="narrow" draft="contributed">¥</symbol>
 			</currency>
 			<currency type="COP">
 				<displayName>কলম্বিয়ান পেছো</displayName>
 				<displayName count="one">কলম্বিয়ান পেছো</displayName>
 				<displayName count="other">কলম্বিয়ান পেছো</displayName>
-				<symbol draft="contributed">COP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CRC">
 				<displayName>কোষ্টা ৰিকান কোলন</displayName>
 				<displayName count="one">কোষ্টা ৰিকান কোলন</displayName>
 				<displayName count="other">কোষ্টা ৰিকান কোলন</displayName>
-				<symbol draft="contributed">CRC</symbol>
-				<symbol alt="narrow" draft="contributed">₡</symbol>
 			</currency>
 			<currency type="CUC">
 				<displayName>কিউবান ৰূপান্তৰযোগ্য পেছো</displayName>
 				<displayName count="one">কিউবান ৰূপান্তৰযোগ্য পেছো</displayName>
 				<displayName count="other">কিউবান ৰূপান্তৰযোগ্য পেছো</displayName>
-				<symbol draft="contributed">CUC</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CUP">
 				<displayName>কিউবান পেছো</displayName>
 				<displayName count="one">কিউবান পেছো</displayName>
 				<displayName count="other">কিউবান পেছো</displayName>
-				<symbol draft="contributed">CUP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CVE">
 				<displayName>কেপ ভাৰ্দে এছকুডো</displayName>
 				<displayName count="one">কেপ ভাৰ্দে এছকুডো</displayName>
 				<displayName count="other">কেপ ভাৰ্দে এছকুডো</displayName>
-				<symbol draft="contributed">CVE</symbol>
 			</currency>
 			<currency type="CZK">
 				<displayName>চেক কোৰুনা</displayName>
 				<displayName count="one">চেক কোৰুনা</displayName>
 				<displayName count="other">চেক কোৰুনা</displayName>
-				<symbol draft="contributed">CZK</symbol>
-				<symbol alt="narrow" draft="contributed">Kč</symbol>
 			</currency>
 			<currency type="DJF">
 				<displayName>জিবুটি ফ্ৰেংক</displayName>
 				<displayName count="one">জিবুটি ফ্ৰেংক</displayName>
 				<displayName count="other">জিবুটি ফ্ৰেংক</displayName>
-				<symbol draft="contributed">DJF</symbol>
 			</currency>
 			<currency type="DKK">
 				<displayName>ডেনিচ ক্ৰোন</displayName>
 				<displayName count="one">ডেনিচ ক্ৰোন</displayName>
 				<displayName count="other">ডেনিচ ক্ৰোন</displayName>
-				<symbol draft="contributed">DKK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="DOP">
 				<displayName>ড’মিনিকান পেছো</displayName>
 				<displayName count="one">ড’মিনিকান পেছো</displayName>
 				<displayName count="other">ড’মিনিকান পেছো</displayName>
-				<symbol draft="contributed">DOP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="DZD">
 				<displayName>আলজেৰীয় ডিনাৰ</displayName>
 				<displayName count="one">আলজেৰীয় ডিনাৰ</displayName>
 				<displayName count="other">আলজেৰীয় ডিনাৰ</displayName>
-				<symbol draft="contributed">DZD</symbol>
 			</currency>
 			<currency type="EGP">
 				<displayName>ইজিপ্তৰ পাউণ্ড</displayName>
 				<displayName count="one">ইজিপ্তৰ পাউণ্ড</displayName>
 				<displayName count="other">ইজিপ্তৰ পাউণ্ড</displayName>
-				<symbol draft="contributed">EGP</symbol>
-				<symbol alt="narrow" draft="contributed">E£</symbol>
 			</currency>
 			<currency type="ERN">
 				<displayName>এৰিট্ৰিয়ন নাক্‌ফা</displayName>
 				<displayName count="one">এৰিট্ৰিয়ন নাক্‌ফা</displayName>
 				<displayName count="other">এৰিট্ৰিয়ন নাক্‌ফা</displayName>
-				<symbol draft="contributed">ERN</symbol>
 			</currency>
 			<currency type="ETB">
 				<displayName>ইথিঅ’পিয়ান বিৰ</displayName>
 				<displayName count="one">ইথিঅ’পিয়ান বিৰ</displayName>
 				<displayName count="other">ইথিঅ’পিয়ান বিৰ</displayName>
-				<symbol draft="contributed">ETB</symbol>
 			</currency>
 			<currency type="EUR">
 				<displayName>ইউৰো</displayName>
 				<displayName count="one">ইউৰো</displayName>
 				<displayName count="other">ইউৰো</displayName>
-				<symbol draft="contributed">€</symbol>
-				<symbol alt="narrow" draft="contributed">€</symbol>
 			</currency>
 			<currency type="FJD">
 				<displayName>ফিজিয়ান ডলাৰ</displayName>
 				<displayName count="one">ফিজিয়ান ডলাৰ</displayName>
 				<displayName count="other">ফিজিয়ান ডলাৰ</displayName>
-				<symbol draft="contributed">FJD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="FKP">
 				<displayName>ফকলেণ্ড দ্বীপপুঞ্জৰ পাউণ্ড</displayName>
 				<displayName count="one">ফকলেণ্ড দ্বীপপুঞ্জৰ পাউণ্ড</displayName>
 				<displayName count="other">ফকলেণ্ড দ্বীপপুঞ্জৰ পাউণ্ড</displayName>
-				<symbol draft="contributed">FKP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="GBP">
 				<displayName>ব্ৰিটিছ পাউণ্ড</displayName>
 				<displayName count="one">ব্ৰিটিছ পাউণ্ড</displayName>
 				<displayName count="other">ব্ৰিটিছ পাউণ্ড</displayName>
-				<symbol draft="contributed">£</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="GEL">
 				<displayName>জৰ্জিয়ান লাৰি</displayName>
 				<displayName count="one">জৰ্জিয়ান লাৰি</displayName>
 				<displayName count="other">জৰ্জিয়ান লাৰি</displayName>
-				<symbol draft="contributed">GEL</symbol>
-				<symbol alt="narrow" draft="contributed">₾</symbol>
 			</currency>
 			<currency type="GHS">
 				<displayName>ঘানাৰ চেডি</displayName>
 				<displayName count="one">ঘানাৰ চেডি</displayName>
 				<displayName count="other">ঘানাৰ চেডি</displayName>
-				<symbol draft="contributed">GHS</symbol>
 			</currency>
 			<currency type="GIP">
 				<displayName>জিব্ৰাল্টৰ পাউণ্ড</displayName>
 				<displayName count="one">জিব্ৰাল্টৰ পাউণ্ড</displayName>
 				<displayName count="other">জিব্ৰাল্টৰ পাউণ্ড</displayName>
-				<symbol draft="contributed">GIP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="GMD">
 				<displayName>গাম্বিয়া ডালাছি</displayName>
 				<displayName count="one">গাম্বিয়া ডালাছি</displayName>
 				<displayName count="other">গাম্বিয়া ডালাছি</displayName>
-				<symbol draft="contributed">GMD</symbol>
 			</currency>
 			<currency type="GNF">
 				<displayName>গিনি ফ্ৰেংক</displayName>
 				<displayName count="one">গিনি ফ্ৰেংক</displayName>
 				<displayName count="other">গিনি ফ্ৰেংক</displayName>
-				<symbol draft="contributed">GNF</symbol>
-				<symbol alt="narrow" draft="contributed">FG</symbol>
 			</currency>
 			<currency type="GTQ">
 				<displayName>গুৱাটেমালা কুৱেৎজাল</displayName>
 				<displayName count="one">গুৱাটেমালা কুৱেৎজাল</displayName>
 				<displayName count="other">গুৱাটেমালা কুৱেৎজাল</displayName>
-				<symbol draft="contributed">GTQ</symbol>
-				<symbol alt="narrow" draft="contributed">Q</symbol>
 			</currency>
 			<currency type="GYD">
 				<displayName>গায়ানিজ ডলাৰ</displayName>
 				<displayName count="one">গায়ানিজ ডলাৰ</displayName>
 				<displayName count="other">গায়ানিজ ডলাৰ</displayName>
-				<symbol draft="contributed">GYD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="HKD">
 				<displayName>হং কং ডলাৰ</displayName>
 				<displayName count="one">হং কং ডলাৰ</displayName>
 				<displayName count="other">হং কং ডলাৰ</displayName>
-				<symbol draft="contributed">HK$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="HNL">
 				<displayName>হোন্দুৰান লেম্পিৰা</displayName>
 				<displayName count="one">হোন্দুৰান লেম্পিৰা</displayName>
 				<displayName count="other">হোন্দুৰান লেম্পিৰা</displayName>
-				<symbol draft="contributed">HNL</symbol>
-				<symbol alt="narrow" draft="contributed">L</symbol>
 			</currency>
 			<currency type="HRK">
 				<displayName>ক্ৰোৱেছিয়ান কুনা</displayName>
 				<displayName count="one">ক্ৰোৱেছিয়ান কুনা</displayName>
 				<displayName count="other">ক্ৰোৱেছিয়ান কুনা</displayName>
-				<symbol draft="contributed">HRK</symbol>
-				<symbol alt="narrow" draft="contributed">kn</symbol>
 			</currency>
 			<currency type="HTG">
 				<displayName>হাইটিয়ান গৌৰ্ড</displayName>
 				<displayName count="one">হাইটিয়ান গৌৰ্ড</displayName>
 				<displayName count="other">হাইটিয়ান গৌৰ্ড</displayName>
-				<symbol draft="contributed">HTG</symbol>
 			</currency>
 			<currency type="HUF">
 				<displayName>হাংগেৰীয়ান ফ’ৰিণ্ট</displayName>
 				<displayName count="one">হাংগেৰীয়ান ফ’ৰিণ্ট</displayName>
 				<displayName count="other">হাংগেৰীয়ান ফ’ৰিণ্ট</displayName>
-				<symbol draft="contributed">HUF</symbol>
-				<symbol alt="narrow" draft="contributed">Ft</symbol>
 			</currency>
 			<currency type="IDR">
 				<displayName>ইণ্ডোনেচিয়ান ৰুপিয়াহ</displayName>
 				<displayName count="one">ইণ্ডোনেচিয়ান ৰুপিয়াহ</displayName>
 				<displayName count="other">ইণ্ডোনেচিয়ান ৰুপিয়াহ</displayName>
-				<symbol draft="contributed">IDR</symbol>
-				<symbol alt="narrow" draft="contributed">Rp</symbol>
 			</currency>
 			<currency type="ILS">
 				<displayName>ইজৰাইলী নিউ শ্বেকেল</displayName>
 				<displayName count="one">ইজৰাইলী নিউ শ্বেকেল</displayName>
 				<displayName count="other">ইজৰাইলী নিউ শ্বেকেল</displayName>
-				<symbol draft="contributed">₪</symbol>
-				<symbol alt="narrow" draft="contributed">₪</symbol>
 			</currency>
 			<currency type="INR">
 				<displayName>ভাৰতীয় ৰুপী</displayName>
 				<displayName count="one">ভাৰতীয় ৰুপী</displayName>
 				<displayName count="other">ভাৰতীয় ৰুপী</displayName>
-				<symbol draft="contributed">₹</symbol>
-				<symbol alt="narrow" draft="contributed">₹</symbol>
 			</currency>
 			<currency type="IQD">
 				<displayName>ইৰাকী ডিনাৰ</displayName>
 				<displayName count="one">ইৰাকী ডিনাৰ</displayName>
 				<displayName count="other">ইৰাকী ডিনাৰ</displayName>
-				<symbol draft="contributed">IQD</symbol>
 			</currency>
 			<currency type="IRR">
 				<displayName>ইৰানীয়ান ৰিয়েল</displayName>
 				<displayName count="one">ইৰানীয়ান ৰিয়েল</displayName>
 				<displayName count="other">ইৰানীয়ান ৰিয়েল</displayName>
-				<symbol draft="contributed">IRR</symbol>
 			</currency>
 			<currency type="ISK">
 				<displayName>আইচলেণ্ডিক ক্ৰোনা</displayName>
 				<displayName count="one">আইচলেণ্ডিক ক্ৰোনা</displayName>
 				<displayName count="other">আইচলেণ্ডিক ক্ৰোনাৰ</displayName>
-				<symbol draft="contributed">ISK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="JMD">
 				<displayName>জামাইকান ডলাৰ</displayName>
 				<displayName count="one">জামাইকান ডলাৰ</displayName>
 				<displayName count="other">জামাইকান ডলাৰ</displayName>
-				<symbol draft="contributed">JMD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="JOD">
 				<displayName>জৰ্ডানিয়ান ডিনাৰ</displayName>
 				<displayName count="one">জৰ্ডানিয়ান ডিনাৰ</displayName>
 				<displayName count="other">জৰ্ডানিয়ান ডিনাৰ</displayName>
-				<symbol draft="contributed">JOD</symbol>
 			</currency>
 			<currency type="JPY">
 				<displayName>জাপানী য়েন</displayName>
 				<displayName count="one">জাপানী য়েন</displayName>
 				<displayName count="other">জাপানী য়েন</displayName>
-				<symbol draft="contributed">JP¥</symbol>
-				<symbol alt="narrow" draft="contributed">¥</symbol>
 			</currency>
 			<currency type="KES">
 				<displayName>কেনিয়ান শ্বিলিং</displayName>
 				<displayName count="one">কেনিয়ান শ্বিলিং</displayName>
 				<displayName count="other">কেনিয়ান শ্বিলিং</displayName>
-				<symbol draft="contributed">KES</symbol>
 			</currency>
 			<currency type="KGS">
 				<displayName>কিৰ্গিস্তানী ছোম</displayName>
 				<displayName count="one">কিৰ্গিস্তানী ছোম</displayName>
 				<displayName count="other">কিৰ্গিস্তানী ছোম</displayName>
-				<symbol draft="contributed">KGS</symbol>
 			</currency>
 			<currency type="KHR">
 				<displayName>কেম্ব’ডিয়ান ৰিয়েল</displayName>
 				<displayName count="one">কেম্ব’ডিয়ান ৰিয়েল</displayName>
 				<displayName count="other">কেম্ব’ডিয়ান ৰিয়েল</displayName>
-				<symbol draft="contributed">KHR</symbol>
-				<symbol alt="narrow" draft="contributed">៛</symbol>
 			</currency>
 			<currency type="KMF">
 				<displayName>ক’মোৰিয়ান ফ্ৰেংক</displayName>
 				<displayName count="one">ক’মোৰিয়ান ফ্ৰেংক</displayName>
 				<displayName count="other">ক’মোৰিয়ান ফ্ৰেংক</displayName>
-				<symbol draft="contributed">KMF</symbol>
-				<symbol alt="narrow" draft="contributed">CF</symbol>
 			</currency>
 			<currency type="KPW">
 				<displayName>উত্তৰ কোৰিয়াৰ ওৱান</displayName>
 				<displayName count="one">উত্তৰ কোৰিয়াৰ ওৱান</displayName>
 				<displayName count="other">উত্তৰ কোৰিয়াৰ ওৱান</displayName>
-				<symbol draft="contributed">KPW</symbol>
-				<symbol alt="narrow" draft="contributed">₩</symbol>
 			</currency>
 			<currency type="KRW">
 				<displayName>দক্ষিণ কোৰিয়াৰ ওৱান</displayName>
 				<displayName count="one">দক্ষিণ কোৰিয়াৰ ওৱান</displayName>
 				<displayName count="other">দক্ষিণ কোৰিয়াৰ ওৱান</displayName>
-				<symbol draft="contributed">₩</symbol>
-				<symbol alt="narrow" draft="contributed">₩</symbol>
 			</currency>
 			<currency type="KWD">
 				<displayName>কুৱেইটি ডিনাৰ</displayName>
 				<displayName count="one">কুৱেইটি ডিনাৰ</displayName>
 				<displayName count="other">কুৱেইটি ডিনাৰ</displayName>
-				<symbol draft="contributed">KWD</symbol>
 			</currency>
 			<currency type="KYD">
 				<displayName>কেইমেন দ্বীপপুঞ্জৰ ডলাৰ</displayName>
 				<displayName count="one">কেইমেন দ্বীপপুঞ্জৰ ডলাৰ</displayName>
 				<displayName count="other">কেইমেন দ্বীপপুঞ্জৰ ডলাৰ</displayName>
-				<symbol draft="contributed">KYD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="KZT">
 				<displayName>কাজাখস্তানী তেঞ্জ</displayName>
 				<displayName count="one">কাজাখস্তানী তেঞ্জ</displayName>
 				<displayName count="other">কাজাখস্তানী তেঞ্জ</displayName>
-				<symbol draft="contributed">KZT</symbol>
-				<symbol alt="narrow" draft="contributed">₸</symbol>
 			</currency>
 			<currency type="LAK">
 				<displayName>লাওচিয়ান কিপ</displayName>
 				<displayName count="one">লাওচিয়ান কিপ</displayName>
 				<displayName count="other">লাওচিয়ান কিপ</displayName>
-				<symbol draft="contributed">LAK</symbol>
-				<symbol alt="narrow" draft="contributed">₭</symbol>
 			</currency>
 			<currency type="LBP">
 				<displayName>লেবানীজ পাউণ্ড</displayName>
 				<displayName count="one">লেবানীজ পাউণ্ড</displayName>
 				<displayName count="other">লেবানীজ পাউণ্ড</displayName>
-				<symbol draft="contributed">LBP</symbol>
-				<symbol alt="narrow" draft="contributed">L£</symbol>
 			</currency>
 			<currency type="LKR">
 				<displayName>শ্ৰীলংকান ৰুপী</displayName>
 				<displayName count="one">শ্ৰীলংকান ৰুপী</displayName>
 				<displayName count="other">শ্ৰীলংকান ৰুপী</displayName>
-				<symbol draft="contributed">LKR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="LRD">
 				<displayName>লাইবেৰিয়ান ডলাৰ</displayName>
 				<displayName count="one">লাইবেৰিয়ান ডলাৰ</displayName>
 				<displayName count="other">লাইবেৰিয়ান ডলাৰ</displayName>
-				<symbol draft="contributed">LRD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="LYD">
 				<displayName>লিবিয়ান ডিনাৰ</displayName>
 				<displayName count="one">লিবিয়ান ডিনাৰ</displayName>
 				<displayName count="other">লিবিয়ান ডিনাৰ</displayName>
-				<symbol draft="contributed">LYD</symbol>
 			</currency>
 			<currency type="MAD">
 				<displayName>মৰোক্কান ডিৰহাম</displayName>
 				<displayName count="one">মৰোক্কান ডিৰহাম</displayName>
 				<displayName count="other">মৰোক্কান ডিৰহাম</displayName>
-				<symbol draft="contributed">MAD</symbol>
 			</currency>
 			<currency type="MDL">
 				<displayName>মোলডোভান লেউ</displayName>
 				<displayName count="one">মোলডোভান লেউ</displayName>
 				<displayName count="other">মোলডোভান লেই</displayName>
-				<symbol draft="contributed">MDL</symbol>
 			</currency>
 			<currency type="MGA">
 				<displayName>মালাগাছী এৰিয়াৰী</displayName>
 				<displayName count="one">মালাগাছী এৰিয়াৰী</displayName>
 				<displayName count="other">মালাগাছী এৰিয়াৰী</displayName>
-				<symbol draft="contributed">MGA</symbol>
-				<symbol alt="narrow" draft="contributed">Ar</symbol>
 			</currency>
 			<currency type="MKD">
 				<displayName>মেচিডোনীয় ডেনাৰ</displayName>
 				<displayName count="one">মেচিডোনীয় ডেনাৰ</displayName>
 				<displayName count="other">মেচিডোনীয় ডেনাৰ</displayName>
-				<symbol draft="contributed">MKD</symbol>
 			</currency>
 			<currency type="MMK">
 				<displayName>ম্যানমাৰ কিয়াট</displayName>
 				<displayName count="one">ম্যানমাৰ কিয়াট</displayName>
 				<displayName count="other">ম্যানমাৰ কিয়াট</displayName>
-				<symbol draft="contributed">MMK</symbol>
-				<symbol alt="narrow" draft="contributed">K</symbol>
 			</currency>
 			<currency type="MNT">
 				<displayName>মঙ্গোলিয়ান টুৰ্গিক</displayName>
 				<displayName count="one">মঙ্গোলিয়ান টুৰ্গিক</displayName>
 				<displayName count="other">মঙ্গোলিয়ান টুৰ্গিক</displayName>
-				<symbol draft="contributed">MNT</symbol>
-				<symbol alt="narrow" draft="contributed">₮</symbol>
 			</currency>
 			<currency type="MOP">
 				<displayName>মেকানীজ পাটাকা</displayName>
 				<displayName count="one">মেকানীজ পাটাকা</displayName>
 				<displayName count="other">মেকানীজ পাটাকা</displayName>
-				<symbol draft="contributed">MOP</symbol>
 			</currency>
 			<currency type="MRO">
 				<displayName>ম’ৰিটেনিয়ান ঔগুইয়া (1973–2017)</displayName>
 				<displayName count="one">ম’ৰিটেনিয়ান ঔগুইয়া (1973–2017)</displayName>
 				<displayName count="other">ম’ৰিটেনিয়ান ঔগুইয়া (1973–2017)</displayName>
-				<symbol draft="contributed">MRO</symbol>
 			</currency>
 			<currency type="MRU">
 				<displayName>ম’ৰিটেনিয়ান ঔগুইয়া</displayName>
 				<displayName count="one">ম’ৰিটেনিয়ান ঔগুইয়া</displayName>
 				<displayName count="other">ম’ৰিটেনিয়ান ঔগুইয়া</displayName>
+				<symbol draft="contributed">MRU</symbol>
 			</currency>
 			<currency type="MUR">
 				<displayName>মৰিচিয়ান ৰুপী</displayName>
 				<displayName count="one">মৰিচিয়ান ৰুপী</displayName>
 				<displayName count="other">মৰিচিয়ান ৰুপী</displayName>
-				<symbol draft="contributed">MUR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="MVR">
 				<displayName>মালডিভিয়ান ৰুফিয়া</displayName>
 				<displayName count="one">মালডিভিয়ান ৰুফিয়া</displayName>
 				<displayName count="other">মালডিভিয়ান ৰুফিয়া</displayName>
-				<symbol draft="contributed">MVR</symbol>
 			</currency>
 			<currency type="MWK">
 				<displayName>মালাউইয়ান কোৱাচা</displayName>
 				<displayName count="one">মালাউইয়ান কোৱাচা</displayName>
 				<displayName count="other">মালাউইয়ান কোৱাচা</displayName>
-				<symbol draft="contributed">MWK</symbol>
 			</currency>
 			<currency type="MXN">
 				<displayName>মেক্সিকান পেছো</displayName>
 				<displayName count="one">মেক্সিকান পেছো</displayName>
 				<displayName count="other">মেক্সিকান পেছো</displayName>
-				<symbol draft="contributed">MX$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="MYR">
 				<displayName>মালায়েচিয়ান ৰিংগিট</displayName>
 				<displayName count="one">মালায়েচিয়ান ৰিংগিট</displayName>
 				<displayName count="other">মালায়েচিয়ান ৰিংগিট</displayName>
-				<symbol draft="contributed">MYR</symbol>
-				<symbol alt="narrow" draft="contributed">RM</symbol>
 			</currency>
 			<currency type="MZN">
 				<displayName>মোজাম্বিকান মেটিকল</displayName>
 				<displayName count="one">মোজাম্বিকান মেটিকল</displayName>
 				<displayName count="other">মোজাম্বিকান মেটিকল</displayName>
-				<symbol draft="contributed">MZN</symbol>
 			</currency>
 			<currency type="NAD">
 				<displayName>নামিবিয়ান ডলাৰ</displayName>
 				<displayName count="one">নামিবিয়ান ডলাৰ</displayName>
 				<displayName count="other">নামিবিয়ান ডলাৰ</displayName>
-				<symbol draft="contributed">NAD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="NGN">
 				<displayName>নাইজেৰিয়ান নাইৰা</displayName>
 				<displayName count="one">নাইজেৰিয়ান নাইৰা</displayName>
 				<displayName count="other">নাইজেৰিয়ান নাইৰা</displayName>
-				<symbol draft="contributed">NGN</symbol>
-				<symbol alt="narrow" draft="contributed">₦</symbol>
 			</currency>
 			<currency type="NIO">
 				<displayName>নিকাৰাগুৱান কোৰ্ডোবা</displayName>
 				<displayName count="one">নিকাৰাগুৱান কোৰ্ডোবা</displayName>
 				<displayName count="other">নিকাৰাগুৱান কোৰ্ডোবা</displayName>
-				<symbol draft="contributed">NIO</symbol>
-				<symbol alt="narrow" draft="contributed">C$</symbol>
 			</currency>
 			<currency type="NOK">
 				<displayName>নৰৱেজিয়ান ক্ৰোন</displayName>
 				<displayName count="one">নৰৱেজিয়ান ক্ৰোন</displayName>
 				<displayName count="other">নৰৱেজিয়ান ক্ৰোনাৰ</displayName>
-				<symbol draft="contributed">NOK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="NPR">
 				<displayName>নেপালী ৰুপী</displayName>
 				<displayName count="one">নেপালী ৰুপী</displayName>
 				<displayName count="other">নেপালী ৰুপী</displayName>
-				<symbol draft="contributed">NPR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="NZD">
 				<displayName>নিউজিলেণ্ড ডলাৰ</displayName>
 				<displayName count="one">নিউজিলেণ্ড ডলাৰ</displayName>
 				<displayName count="other">নিউজিলেণ্ড ডলাৰ</displayName>
-				<symbol draft="contributed">NZ$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="OMR">
 				<displayName>ওমানি ৰিয়েল</displayName>
 				<displayName count="one">ওমানি ৰিয়েল</displayName>
 				<displayName count="other">ওমানি ৰিয়েল</displayName>
-				<symbol draft="contributed">OMR</symbol>
 			</currency>
 			<currency type="PAB">
 				<displayName>পানামেনিয়ান বাল্বোৱা</displayName>
 				<displayName count="one">পানামেনিয়ান বাল্বোৱা</displayName>
 				<displayName count="other">পানামেনিয়ান বাল্বোৱা</displayName>
-				<symbol draft="contributed">PAB</symbol>
 			</currency>
 			<currency type="PEN">
 				<displayName>পেৰুভিয়ান ছ’ল</displayName>
 				<displayName count="one">পেৰুভিয়ান ছ’ল</displayName>
 				<displayName count="other">পেৰুভিয়ান ছ’ল</displayName>
-				<symbol draft="contributed">PEN</symbol>
 			</currency>
 			<currency type="PGK">
 				<displayName>পাপুৱা নিউ গিনি কিনা</displayName>
 				<displayName count="one">পাপুৱা নিউ গিনি কিনা</displayName>
 				<displayName count="other">পাপুৱা নিউ গিনি কিনা</displayName>
-				<symbol draft="contributed">PGK</symbol>
 			</currency>
 			<currency type="PHP">
 				<displayName>ফিলিপিন পেইছ’</displayName>
 				<displayName count="one">ফিলিপিন পেইছ’</displayName>
 				<displayName count="other">ফিলিপিন পেইছ’</displayName>
-				<symbol draft="contributed">PHP</symbol>
-				<symbol alt="narrow" draft="contributed">₱</symbol>
 			</currency>
 			<currency type="PKR">
 				<displayName>পাকিস্তানী ৰুপী</displayName>
 				<displayName count="one">পাকিস্তানী ৰুপী</displayName>
 				<displayName count="other">পাকিস্তানী ৰুপী</displayName>
-				<symbol draft="contributed">PKR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="PLN">
 				<displayName>প’লিচ জোল্টী</displayName>
 				<displayName count="one">প’লিচ জোল্টী</displayName>
 				<displayName count="other">প’লিচ জোল্টী</displayName>
-				<symbol draft="contributed">PLN</symbol>
-				<symbol alt="narrow" draft="contributed">zł</symbol>
 			</currency>
 			<currency type="PYG">
 				<displayName>পাৰাগুয়ান গুৱাৰানি</displayName>
 				<displayName count="one">পাৰাগুয়ান গুৱাৰানি</displayName>
 				<displayName count="other">পাৰাগুয়ান গুৱাৰানি</displayName>
-				<symbol draft="contributed">PYG</symbol>
-				<symbol alt="narrow" draft="contributed">₲</symbol>
 			</currency>
 			<currency type="QAR">
 				<displayName>কাটাৰি ৰিয়েল</displayName>
 				<displayName count="one">কাটাৰি ৰিয়েল</displayName>
 				<displayName count="other">কাটাৰি ৰিয়েল</displayName>
-				<symbol draft="contributed">QAR</symbol>
 			</currency>
 			<currency type="RON">
 				<displayName>ৰোমানীয় লেউ</displayName>
 				<displayName count="one">ৰোমানীয় লেউ</displayName>
 				<displayName count="other">ৰোমানীয় লেউ</displayName>
-				<symbol draft="contributed">RON</symbol>
-				<symbol alt="narrow" draft="contributed">lei</symbol>
 			</currency>
 			<currency type="RSD">
 				<displayName>চাৰ্বিয়ান ডিনাৰ</displayName>
 				<displayName count="one">চাৰ্বিয়ান ডিনাৰ</displayName>
 				<displayName count="other">চাৰ্বিয়ান ডিনাৰ</displayName>
-				<symbol draft="contributed">RSD</symbol>
 			</currency>
 			<currency type="RUB">
 				<displayName>ৰাছিয়ান ৰুব্‌ল</displayName>
 				<displayName count="one">ৰাছিয়ান ৰুব্‌ল</displayName>
 				<displayName count="other">ৰাছিয়ান ৰুব্‌ল</displayName>
-				<symbol draft="contributed">RUB</symbol>
-				<symbol alt="narrow" draft="contributed">₽</symbol>
 			</currency>
 			<currency type="RWF">
 				<displayName>ৰোৱান্দান ফ্ৰেংক</displayName>
 				<displayName count="one">ৰোৱান্দান ফ্ৰেংক</displayName>
 				<displayName count="other">ৰোৱান্দান ফ্ৰেংক</displayName>
-				<symbol draft="contributed">RWF</symbol>
-				<symbol alt="narrow" draft="contributed">RF</symbol>
 			</currency>
 			<currency type="SAR">
 				<displayName>চৌডি ৰিয়েল</displayName>
 				<displayName count="one">চৌডি ৰিয়েল</displayName>
 				<displayName count="other">চৌডি ৰিয়েল</displayName>
-				<symbol draft="contributed">SAR</symbol>
 			</currency>
 			<currency type="SBD">
 				<displayName>চোলোমোন দ্বীপপুঞ্জৰ ডলাৰ</displayName>
 				<displayName count="one">চোলোমোন দ্বীপপুঞ্জৰ ডলাৰ</displayName>
 				<displayName count="other">চোলোমোন দ্বীপপুঞ্জৰ ডলাৰ</displayName>
-				<symbol draft="contributed">SBD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="SCR">
 				<displayName>ছেচেলৱা ৰুপী</displayName>
 				<displayName count="one">ছেচেলৱা ৰুপী</displayName>
 				<displayName count="other">ছেচেলৱা ৰুপী</displayName>
-				<symbol draft="contributed">SCR</symbol>
 			</currency>
 			<currency type="SDG">
 				<displayName>চুডানী পাউণ্ড</displayName>
 				<displayName count="one">চুডানী পাউণ্ড</displayName>
 				<displayName count="other">চুডানী পাউণ্ড</displayName>
-				<symbol draft="contributed">SDG</symbol>
 			</currency>
 			<currency type="SEK">
 				<displayName>চুইডিছ ক্ৰোনা</displayName>
 				<displayName count="one">চুইডিছ ক্ৰোনা</displayName>
 				<displayName count="other">চুইডিছ ক্ৰোনোৰ</displayName>
-				<symbol draft="contributed">SEK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="SGD">
 				<displayName>ছিংগাপুৰ ডলাৰ</displayName>
 				<displayName count="one">ছিংগাপুৰ ডলাৰ</displayName>
 				<displayName count="other">ছিংগাপুৰ ডলাৰ</displayName>
-				<symbol draft="contributed">SGD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="SHP">
 				<displayName>ছেইণ্ট হেলেনা পাউণ্ড</displayName>
 				<displayName count="one">ছেইণ্ট হেলেনা পাউণ্ড</displayName>
 				<displayName count="other">ছেইণ্ট হেলেনা পাউণ্ড</displayName>
-				<symbol draft="contributed">SHP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="SLL">
 				<displayName>চিয়েৰা লিঅ’নৰ লিঅ’ন</displayName>
 				<displayName count="one">চিয়েৰা লিঅ’নৰ লিঅ’ন</displayName>
 				<displayName count="other">চিয়েৰা লিঅ’নৰ লিঅ’ন</displayName>
-				<symbol draft="contributed">SLL</symbol>
 			</currency>
 			<currency type="SOS">
 				<displayName>চোমালি শ্বিলিং</displayName>
 				<displayName count="one">চোমালি শ্বিলিং</displayName>
 				<displayName count="other">চোমালি শ্বিলিং</displayName>
-				<symbol draft="contributed">SOS</symbol>
 			</currency>
 			<currency type="SRD">
 				<displayName>ছুৰিনামী ডলাৰ</displayName>
 				<displayName count="one">ছুৰিনামী ডলাৰ</displayName>
 				<displayName count="other">ছুৰিনামী ডলাৰ</displayName>
-				<symbol draft="contributed">SRD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="SSP">
 				<displayName>দক্ষিণ চুডানীজ পাউণ্ড</displayName>
 				<displayName count="one">দক্ষিণ চুডানীজ পাউণ্ড</displayName>
 				<displayName count="other">দক্ষিণ চুডানীজ পাউণ্ড</displayName>
-				<symbol draft="contributed">SSP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="STD">
 				<displayName>চাও টোমে আৰু প্ৰিনচিপে ডোব্‌ৰা (1977–2017)</displayName>
 				<displayName count="one">চাও টোমে আৰু প্ৰিনচিপে ডোব্‌ৰা (1977–2017)</displayName>
 				<displayName count="other">চাও টোমে আৰু প্ৰিনচিপে ডোব্‌ৰা (1977–2017)</displayName>
-				<symbol draft="contributed">STD</symbol>
 			</currency>
 			<currency type="STN">
 				<displayName>চাও টোমে আৰু প্ৰিনচিপে ডোব্‌ৰা</displayName>
 				<displayName count="one">চাও টোমে আৰু প্ৰিনচিপে ডোব্‌ৰা</displayName>
 				<displayName count="other">চাও টোমে আৰু প্ৰিনচিপে ডোব্‌ৰা</displayName>
-				<symbol draft="contributed">STN</symbol>
 				<symbol alt="narrow" draft="contributed">Db</symbol>
 			</currency>
 			<currency type="SYP">
 				<displayName>চিৰিয়ান পাউণ্ড</displayName>
 				<displayName count="one">চিৰিয়ান পাউণ্ড</displayName>
 				<displayName count="other">চিৰিয়ান পাউণ্ড</displayName>
-				<symbol draft="contributed">SYP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="SZL">
 				<displayName>স্বাজি লিলেংগেনি</displayName>
 				<displayName count="one">স্বাজি লিলেংগেনি</displayName>
 				<displayName count="other">স্বাজি এমেলানজেনি</displayName>
-				<symbol draft="contributed">SZL</symbol>
 			</currency>
 			<currency type="THB">
 				<displayName>থাই বাত</displayName>
 				<displayName count="one">থাই বাত</displayName>
 				<displayName count="other">থাই বাত</displayName>
-				<symbol draft="contributed">THB</symbol>
-				<symbol alt="narrow" draft="contributed">฿</symbol>
 			</currency>
 			<currency type="TJS">
 				<displayName>তাজিকিস্তানী ছোমনি</displayName>
 				<displayName count="one">তাজিকিস্তানী ছোমনি</displayName>
 				<displayName count="other">তাজিকিস্তানী ছোমনি</displayName>
-				<symbol draft="contributed">TJS</symbol>
 			</currency>
 			<currency type="TMT">
 				<displayName>তুৰ্কমেনিস্তানী মানাত</displayName>
 				<displayName count="one">তুৰ্কমেনিস্তানী মানাত</displayName>
 				<displayName count="other">তুৰ্কমেনিস্তানী মানাত</displayName>
-				<symbol draft="contributed">TMT</symbol>
 			</currency>
 			<currency type="TND">
 				<displayName>টুনিচিয়ান ডিনাৰ</displayName>
 				<displayName count="one">টুনিচিয়ান ডিনাৰ</displayName>
 				<displayName count="other">টুনিচিয়ান ডিনাৰ</displayName>
-				<symbol draft="contributed">TND</symbol>
 			</currency>
 			<currency type="TOP">
 				<displayName>টংগান পাআংগা</displayName>
 				<displayName count="one">টংগান পাআংগা</displayName>
 				<displayName count="other">টংগান পাআংগা</displayName>
-				<symbol draft="contributed">TOP</symbol>
-				<symbol alt="narrow" draft="contributed">T$</symbol>
 			</currency>
 			<currency type="TRY">
 				<displayName>তুৰ্কীৰ লিৰা</displayName>
 				<displayName count="one">তুৰ্কীৰ লিৰা</displayName>
 				<displayName count="other">তুৰ্কীৰ লিৰা</displayName>
-				<symbol draft="contributed">TRY</symbol>
-				<symbol alt="narrow" draft="contributed">₺</symbol>
-				<symbol alt="variant" draft="contributed">TL</symbol>
 			</currency>
 			<currency type="TTD">
 				<displayName>ট্ৰিনিডাড আৰু টোবাগো ডলাৰ</displayName>
 				<displayName count="one">ট্ৰিনিডাড আৰু টোবাগো ডলাৰ</displayName>
 				<displayName count="other">ট্ৰিনিডাড আৰু টোবাগো ডলাৰ</displayName>
-				<symbol draft="contributed">TTD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="TWD">
 				<displayName>নিউ টাইৱান ডলাৰ</displayName>
 				<displayName count="one">নিউ টাইৱান ডলাৰ</displayName>
 				<displayName count="other">নিউ টাইৱান ডলাৰ</displayName>
-				<symbol draft="contributed">NT$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="TZS">
 				<displayName>টানজানিয়ান শ্বিলিং</displayName>
 				<displayName count="one">টানজানিয়ান শ্বিলিং</displayName>
 				<displayName count="other">টানজানিয়ান শ্বিলিং</displayName>
-				<symbol draft="contributed">TZS</symbol>
 			</currency>
 			<currency type="UAH">
 				<displayName>ইউক্ৰেইনীয় হৃভনিয়া</displayName>
 				<displayName count="one">ইউক্ৰেইনীয় হৃভনিয়া</displayName>
 				<displayName count="other">ইউক্ৰেইনীয় হৃভনিয়া</displayName>
-				<symbol draft="contributed">UAH</symbol>
-				<symbol alt="narrow" draft="contributed">₴</symbol>
 			</currency>
 			<currency type="UGX">
 				<displayName>উগাণ্ডান শ্বিলিং</displayName>
 				<displayName count="one">উগাণ্ডান শ্বিলিং</displayName>
 				<displayName count="other">উগাণ্ডান শ্বিলিং</displayName>
-				<symbol draft="contributed">UGX</symbol>
 			</currency>
 			<currency type="USD">
 				<displayName>ইউ. এছ. ডলাৰ</displayName>
 				<displayName count="one">ইউ. এছ. ডলাৰ</displayName>
 				<displayName count="other">ইউ. এছ. ডলাৰ</displayName>
-				<symbol draft="contributed">US$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="UYU">
 				<displayName>উৰুগুৱেয়ান পেছো</displayName>
 				<displayName count="one">উৰুগুৱেয়ান পেছো</displayName>
 				<displayName count="other">উৰুগুৱেয়ান পেছো</displayName>
-				<symbol draft="contributed">UYU</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="UZS">
 				<displayName>উজবেকিস্তানী ছোম</displayName>
 				<displayName count="one">উজবেকিস্তানী ছোম</displayName>
 				<displayName count="other">উজবেকিস্তানী ছোম</displayName>
-				<symbol draft="contributed">UZS</symbol>
+			</currency>
+			<currency type="VEB">
+				<displayName>ভেনিজুৱেলান বলিভাৰ (1871–2008)</displayName>
+				<displayName count="one">ভেনিজুৱেলান বলিভাৰ (1871–2008)</displayName>
+				<displayName count="other">ভেনিজুৱেলান বলিভাৰ (1871–2008)</displayName>
 			</currency>
 			<currency type="VEF">
+				<displayName>ভেনিজুৱেলান বলিভাৰ (2008–2018)</displayName>
+				<displayName count="one">ভেনিজুৱেলান বলিভাৰ (2008–2018)</displayName>
+				<displayName count="other">ভেনিজুৱেলান বলিভাৰ (2008–2018)</displayName>
+			</currency>
+			<currency type="VES">
 				<displayName>ভেনিজুৱেলান বলিভাৰ</displayName>
-				<displayName count="one">ভেনিজুৱেলান বলিভাৰ</displayName>
-				<displayName count="other">ভেনিজুৱেলান বলিভাৰ</displayName>
-				<symbol draft="contributed">VEF</symbol>
-				<symbol alt="narrow" draft="contributed">Bs</symbol>
+				<displayName count="one">ভেনিজুৱেলান ব’লিভাৰ</displayName>
+				<displayName count="other">ভেনিজুৱেলান ব’লিভাৰছ্</displayName>
+				<symbol draft="contributed">VES</symbol>
 			</currency>
 			<currency type="VND">
 				<displayName>ভিয়েটনামীজ ডং</displayName>
 				<displayName count="one">ভিয়েটনামীজ ডং</displayName>
 				<displayName count="other">ভিয়েটনামীজ ডং</displayName>
-				<symbol draft="contributed">₫</symbol>
-				<symbol alt="narrow" draft="contributed">₫</symbol>
 			</currency>
 			<currency type="VUV">
 				<displayName>ভানাটুৰ ভাটু</displayName>
 				<displayName count="one">ভানাটুৰ ভাটু</displayName>
 				<displayName count="other">ভানাটুৰ ভাটু</displayName>
-				<symbol draft="contributed">VUV</symbol>
 			</currency>
 			<currency type="WST">
 				<displayName>ছামোৱান টালা</displayName>
 				<displayName count="one">ছামোৱান টালা</displayName>
 				<displayName count="other">ছামোৱান টালা</displayName>
-				<symbol draft="contributed">WST</symbol>
 			</currency>
 			<currency type="XAF">
 				<displayName>মধ্য আফ্ৰিকান CFA ফ্ৰেংক</displayName>
 				<displayName count="one">মধ্য আফ্ৰিকান CFA ফ্ৰেংক</displayName>
 				<displayName count="other">মধ্য আফ্ৰিকান CFA ফ্ৰেংক</displayName>
-				<symbol draft="contributed">FCFA</symbol>
 			</currency>
 			<currency type="XCD">
 				<displayName>ইষ্ট কেৰিবিয়ান ডলাৰ</displayName>
 				<displayName count="one">ইষ্ট কেৰিবিয়ান ডলাৰ</displayName>
 				<displayName count="other">ইষ্ট কেৰিবিয়ান ডলাৰ</displayName>
-				<symbol draft="contributed">EC$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="XOF">
 				<displayName>পশ্চিম আফ্ৰিকান CFA ফ্ৰেংক</displayName>
 				<displayName count="one">পশ্চিম আফ্ৰিকান CFA ফ্ৰেংক</displayName>
 				<displayName count="other">পশ্চিম আফ্ৰিকান CFA ফ্ৰেংক</displayName>
-				<symbol draft="contributed">CFA</symbol>
 			</currency>
 			<currency type="XPF">
 				<displayName>CFP ফ্ৰেংক</displayName>
 				<displayName count="one">CFP ফ্ৰেংক</displayName>
 				<displayName count="other">CFP ফ্ৰেংক</displayName>
-				<symbol draft="contributed">CFPF</symbol>
 			</currency>
 			<currency type="XXX">
 				<displayName>অজ্ঞাত মুদ্ৰা</displayName>
@@ -5525,25 +5386,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>য়েমেনী ৰিয়েল</displayName>
 				<displayName count="one">য়েমেনী ৰিয়েল</displayName>
 				<displayName count="other">য়েমেনী ৰিয়েল</displayName>
-				<symbol draft="contributed">YER</symbol>
 			</currency>
 			<currency type="ZAR">
 				<displayName>দক্ষিণ আফ্ৰিকাৰ ৰাণ্ড</displayName>
 				<displayName count="one">দক্ষিণ আফ্ৰিকাৰ ৰাণ্ড</displayName>
 				<displayName count="other">দক্ষিণ আফ্ৰিকাৰ ৰাণ্ড</displayName>
-				<symbol draft="contributed">ZAR</symbol>
-				<symbol alt="narrow" draft="contributed">R</symbol>
 			</currency>
 			<currency type="ZMW">
 				<displayName>জাম্বিয়ান কোৱাচা</displayName>
 				<displayName count="one">জাম্বিয়ান কোৱাচা</displayName>
 				<displayName count="other">জাম্বিয়ান কোৱাচা</displayName>
-				<symbol draft="contributed">ZMW</symbol>
-				<symbol alt="narrow" draft="contributed">ZK</symbol>
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
-			<pattern type="atLeast">⩾{0}</pattern>
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
 			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
 		<minimalPairs>
@@ -5642,6 +5500,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} বৰ্গ ইঞ্চি</unitPattern>
 				<perUnitPattern>{0} প্ৰতি বৰ্গ ইঞ্চি</perUnitPattern>
 			</unit>
+			<unit type="area-dunam">
+				<displayName>ডুনাম</displayName>
+				<unitPattern count="one">{0} ডুনাম</unitPattern>
+				<unitPattern count="other">{0} ডুনাম</unitPattern>
+			</unit>
 			<unit type="concentr-karat">
 				<displayName>কেৰেট</displayName>
 				<unitPattern count="one">{0} কেৰেট</unitPattern>
@@ -5662,6 +5525,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">প্ৰতি মিলিয়নত {0} ভাগ</unitPattern>
 				<unitPattern count="other">প্ৰতি মিলিয়নত {0} ভাগ</unitPattern>
 			</unit>
+			<unit type="concentr-percent">
+				<displayName>%</displayName>
+				<unitPattern count="one">{0} শতাংশ</unitPattern>
+				<unitPattern count="other">{0} শতাংশ</unitPattern>
+			</unit>
+			<unit type="concentr-permille">
+				<displayName>প্ৰতিমাইল</displayName>
+				<unitPattern count="one">{0} প্ৰতিমাইল</unitPattern>
+				<unitPattern count="other">{0} প্ৰতিমাইল</unitPattern>
+			</unit>
+			<unit type="concentr-permyriad">
+				<displayName>পাৰমিৰেইড</displayName>
+				<unitPattern count="one">{0} পাৰমিৰেইড</unitPattern>
+				<unitPattern count="other">{0} পাৰমিৰেইড</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName>ম’ল</displayName>
+				<unitPattern count="one">{0} ম’ল</unitPattern>
+				<unitPattern count="other">{0} ম’ল</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>প্ৰতি কিলোমিটাৰত লিটাৰ</displayName>
 				<unitPattern count="one">প্ৰতি কিলোমিটাৰত {0} লিটাৰ</unitPattern>
@@ -5681,6 +5564,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>প্ৰতি ইম্পেৰিয়াল গেলনত মাইল</displayName>
 				<unitPattern count="one">প্ৰতি ইম্পেৰিয়াল গেলনত {0} মাইল</unitPattern>
 				<unitPattern count="other">প্ৰতি ইম্পেৰিয়াল গেলনত {0} মাইল</unitPattern>
+			</unit>
+			<unit type="digital-petabyte">
+				<displayName>পেটাবাইট</displayName>
+				<unitPattern count="one">{0} পেটাবাইট</unitPattern>
+				<unitPattern count="other">{0} পেটাবাইট</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>টেৰাবাইট</displayName>
@@ -5844,6 +5732,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} কিলোৱাট ঘণ্টা</unitPattern>
 				<unitPattern count="other">{0} কিলোৱাট ঘণ্টা</unitPattern>
 			</unit>
+			<unit type="energy-electronvolt">
+				<displayName>ইলেক্ট্ৰ’নভ’ল্ট</displayName>
+				<unitPattern count="one">{0} ইলেক্ট্ৰ’নভ’ল্ট</unitPattern>
+				<unitPattern count="other">{0} ইলেক্ট্ৰ’নভ’ল্ট</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName>ব্ৰিটিশ্ব থাৰ্মেল ইউনিট</displayName>
+				<unitPattern count="one">{0} ব্ৰিটিশ্ব থাৰ্মেল ইউনিট</unitPattern>
+				<unitPattern count="other">{0} ব্ৰিটিশ্ব থাৰ্মেল ইউনিট</unitPattern>
+			</unit>
+			<unit type="force-pound-force">
+				<displayName>পাউণ্ড-বল</displayName>
+				<unitPattern count="one">{0} পাউণ্ড-বল</unitPattern>
+				<unitPattern count="other">{0} পাউণ্ড-বল</unitPattern>
+			</unit>
+			<unit type="force-newton">
+				<displayName>নিউটন</displayName>
+				<unitPattern count="one">{0} নিউটন</unitPattern>
+				<unitPattern count="other">{0} নিউটন</unitPattern>
+			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>গিগাহাৰ্টজ</displayName>
 				<unitPattern count="one">{0} গিগাহাৰ্টজ</unitPattern>
@@ -5959,10 +5867,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} পইণ্ট</unitPattern>
 				<unitPattern count="other">{0} পইণ্ট</unitPattern>
 			</unit>
+			<unit type="length-solar-radius">
+				<displayName>সৌৰ ৰেডিয়াছ</displayName>
+				<unitPattern count="one">{0} সৌৰ ৰেডিয়াছ</unitPattern>
+				<unitPattern count="other">{0} সৌৰ ৰেডিয়াছ</unitPattern>
+			</unit>
 			<unit type="light-lux">
 				<displayName>লাক্স</displayName>
 				<unitPattern count="one">{0} লাক্স</unitPattern>
 				<unitPattern count="other">{0} লাক্স</unitPattern>
+			</unit>
+			<unit type="light-solar-luminosity">
+				<displayName>ছ’লাৰ লুমিন’ছিটী</displayName>
+				<unitPattern count="one">{0} ছ’লাৰ লুমিন’ছিটী</unitPattern>
+				<unitPattern count="other">{0} ছ’লাৰ লুমিন’ছিটী</unitPattern>
 			</unit>
 			<unit type="mass-metric-ton">
 				<displayName>মেট্রিক টন</displayName>
@@ -6017,6 +5935,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>কেৰেট</displayName>
 				<unitPattern count="one">{0} কেৰেট</unitPattern>
 				<unitPattern count="other">{0} কেৰেট</unitPattern>
+			</unit>
+			<unit type="mass-dalton">
+				<displayName>ডলট’ন</displayName>
+				<unitPattern count="one">{0} ডলট’ন</unitPattern>
+				<unitPattern count="other">{0} ডলট’ন</unitPattern>
+			</unit>
+			<unit type="mass-earth-mass">
+				<displayName>আৰ্থ মাছ</displayName>
+				<unitPattern count="one">{0} আৰ্থ মাছ</unitPattern>
+				<unitPattern count="other">{0} আৰ্থ মাছ</unitPattern>
+			</unit>
+			<unit type="mass-solar-mass">
+				<displayName>সৌৰ ভৰ</displayName>
+				<unitPattern count="one">{0} সৌৰ ভৰ</unitPattern>
+				<unitPattern count="other">{0} সৌৰ ভৰ</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>গিগাৱাট</displayName>
@@ -6073,6 +6006,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} মিলিবাৰ</unitPattern>
 				<unitPattern count="other">{0} মিলিবাৰ</unitPattern>
 			</unit>
+			<unit type="pressure-atmosphere">
+				<displayName>বতৰ</displayName>
+				<unitPattern count="one">{0} বতৰ</unitPattern>
+				<unitPattern count="other">{0} atm</unitPattern>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<displayName>কিল’পাস্কেল</displayName>
+				<unitPattern count="one">{0} কিল’পাস্কেল</unitPattern>
+				<unitPattern count="other">{0} কি. পা.</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<displayName>মেগাপাস্কেল</displayName>
+				<unitPattern count="one">{0} মেগাপাস্কেল</unitPattern>
+				<unitPattern count="other">{0} মেগাপাস্কেল</unitPattern>
+			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>ঘণ্টা প্ৰতি কিলোমিটাৰ</displayName>
 				<unitPattern count="one">{0} ঘণ্টা প্ৰতি কিলোমিটাৰ</unitPattern>
@@ -6112,6 +6060,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>কেলভিন</displayName>
 				<unitPattern count="one">{0} কেলভিন</unitPattern>
 				<unitPattern count="other">{0} কেলভিন</unitPattern>
+			</unit>
+			<unit type="torque-pound-foot">
+				<displayName>পাউণ্ড-ফুট</displayName>
+				<unitPattern count="one">{0} পাউণ্ড-ফুট</unitPattern>
+				<unitPattern count="other">{0} পাউণ্ড-ফুট</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<displayName>নিউটন-মিটাৰ</displayName>
+				<unitPattern count="one">{0} নিউটন-মিটাৰ</unitPattern>
+				<unitPattern count="other">{0} নিউটন-মিটাৰ</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<displayName>ঘন কিলোমিটাৰ</displayName>
@@ -6228,6 +6186,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ফ্লুইড আউন্স</unitPattern>
 				<unitPattern count="other">{0} ফ্লুইড আউন্স</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName>ইম্পেৰিয়েল ফ্লুইড আউন্স</displayName>
+				<unitPattern count="one">{0} ইম্পেৰিয়েল ফ্লুইড আউন্স</unitPattern>
+				<unitPattern count="other">{0} ইম্পেৰিয়েল ফ্লুইড আউন্স</unitPattern>
+			</unit>
 			<unit type="volume-tablespoon">
 				<displayName>টেব’লস্পুন</displayName>
 				<unitPattern count="one">{0} টেব’লস্পুন</unitPattern>
@@ -6238,7 +6201,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} চাহচামোছ</unitPattern>
 				<unitPattern count="other">{0} চাহচামোছ</unitPattern>
 			</unit>
+			<unit type="volume-barrel">
+				<displayName>বেৰেল</displayName>
+				<unitPattern count="one">{0} বেৰেল</unitPattern>
+				<unitPattern count="other">{0} বেৰেল</unitPattern>
+			</unit>
 			<coordinateUnit>
+				<displayName>প্ৰধান দিক্-নিৰ্দেশনা</displayName>
 				<coordinateUnitPattern type="east">{0} পূব</coordinateUnitPattern>
 				<coordinateUnitPattern type="north">{0} উত্তৰ</coordinateUnitPattern>
 				<coordinateUnitPattern type="south">{0} দক্ষিণ</coordinateUnitPattern>
@@ -6334,6 +6303,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} in²</unitPattern>
 				<perUnitPattern>{0}/in²</perUnitPattern>
 			</unit>
+			<unit type="area-dunam">
+				<displayName>ডুনাম</displayName>
+				<unitPattern count="one">{0} ডুনাম</unitPattern>
+				<unitPattern count="other">{0} ডুনাম</unitPattern>
+			</unit>
 			<unit type="concentr-karat">
 				<displayName>কেৰেট</displayName>
 				<unitPattern count="one">{0} কেৰেট</unitPattern>
@@ -6354,6 +6328,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ppm</unitPattern>
 				<unitPattern count="other">{0} ppm</unitPattern>
 			</unit>
+			<unit type="concentr-percent">
+				<displayName>শতাংশ</displayName>
+				<unitPattern count="one">{0}%</unitPattern>
+				<unitPattern count="other">{0}%</unitPattern>
+			</unit>
+			<unit type="concentr-permille">
+				<displayName>প্ৰতিমাইল</displayName>
+				<unitPattern count="one">{0}‰</unitPattern>
+				<unitPattern count="other">{0}‰</unitPattern>
+			</unit>
+			<unit type="concentr-permyriad">
+				<displayName>পাৰমিৰেইড</displayName>
+				<unitPattern count="one">{0}‱</unitPattern>
+				<unitPattern count="other">{0}‱</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName>ম’ল</displayName>
+				<unitPattern count="one">{0} ম’ল</unitPattern>
+				<unitPattern count="other">{0} ম’ল</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>লিটাৰ/কিঃ মিঃ</displayName>
 				<unitPattern count="one">{0} লিঃ/কিঃ মিঃ</unitPattern>
@@ -6373,6 +6367,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>mpg Imp.</displayName>
 				<unitPattern count="one">{0} mpg Imp.</unitPattern>
 				<unitPattern count="other">{0} mpg Imp.</unitPattern>
+			</unit>
+			<unit type="digital-petabyte">
+				<displayName>PByte</displayName>
+				<unitPattern count="one">{0} PB</unitPattern>
+				<unitPattern count="other">{0} PB</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>টেৰাবাইট</displayName>
@@ -6536,6 +6535,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} কিঃ ৱাঃ-ঘঃ</unitPattern>
 				<unitPattern count="other">{0} কিঃ ৱাঃ-ঘঃ</unitPattern>
 			</unit>
+			<unit type="energy-electronvolt">
+				<displayName>ইলেক্ট্ৰ’নভ’ল্ট</displayName>
+				<unitPattern count="one">{0} eV</unitPattern>
+				<unitPattern count="other">{0} eV</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName>BTU</displayName>
+				<unitPattern count="one">{0} Btu</unitPattern>
+				<unitPattern count="other">{0} Btu</unitPattern>
+			</unit>
+			<unit type="force-pound-force">
+				<displayName>পাউণ্ড-বল</displayName>
+				<unitPattern count="one">{0} lbf</unitPattern>
+				<unitPattern count="other">{0} lbf</unitPattern>
+			</unit>
+			<unit type="force-newton">
+				<displayName>নিউটন</displayName>
+				<unitPattern count="one">{0} N</unitPattern>
+				<unitPattern count="other">{0} N</unitPattern>
+			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>গিগাহাৰ্টজ</displayName>
 				<unitPattern count="one">{0} গিগাহাৰ্টজ</unitPattern>
@@ -6651,10 +6670,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} পইণ্ট</unitPattern>
 				<unitPattern count="other">{0} পইণ্ট</unitPattern>
 			</unit>
+			<unit type="length-solar-radius">
+				<displayName>সৌৰ ৰেডিয়াছ</displayName>
+				<unitPattern count="one">{0} R☉</unitPattern>
+				<unitPattern count="other">{0} R☉</unitPattern>
+			</unit>
 			<unit type="light-lux">
 				<displayName>লাক্স</displayName>
 				<unitPattern count="one">{0} লাক্স</unitPattern>
 				<unitPattern count="other">{0} লাক্স</unitPattern>
+			</unit>
+			<unit type="light-solar-luminosity">
+				<displayName>ছ’লাৰ লুমিন’ছিটী</displayName>
+				<unitPattern count="one">{0} L☉</unitPattern>
+				<unitPattern count="other">{0} L☉</unitPattern>
 			</unit>
 			<unit type="mass-metric-ton">
 				<displayName>ট</displayName>
@@ -6709,6 +6738,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>কেৰেট</displayName>
 				<unitPattern count="one">{0} কেৰেট</unitPattern>
 				<unitPattern count="other">{0} কেৰেট</unitPattern>
+			</unit>
+			<unit type="mass-dalton">
+				<displayName>ডলট’ন</displayName>
+				<unitPattern count="one">{0} ডলট’ন</unitPattern>
+				<unitPattern count="other">{0} ডলট’ন</unitPattern>
+			</unit>
+			<unit type="mass-earth-mass">
+				<displayName>আৰ্থ মাছ</displayName>
+				<unitPattern count="one">{0} M⊕</unitPattern>
+				<unitPattern count="other">{0} M⊕</unitPattern>
+			</unit>
+			<unit type="mass-solar-mass">
+				<displayName>সৌৰ ভৰ</displayName>
+				<unitPattern count="one">{0} M☉</unitPattern>
+				<unitPattern count="other">{0} M☉</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>গিঃ ৱাঃ</displayName>
@@ -6765,6 +6809,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} mbar</unitPattern>
 				<unitPattern count="other">{0} mbar</unitPattern>
 			</unit>
+			<unit type="pressure-atmosphere">
+				<displayName>atm</displayName>
+				<unitPattern count="one">{0} atm</unitPattern>
+				<unitPattern count="other">{0} atm</unitPattern>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<displayName>কি. পা.</displayName>
+				<unitPattern count="one">{0} কি. পা.</unitPattern>
+				<unitPattern count="other">{0} কি. পা.</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<displayName>মেগাপাস্কেল</displayName>
+				<unitPattern count="one">{0} মে. পা.</unitPattern>
+				<unitPattern count="other">{0} মে. পা.</unitPattern>
+			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>কিঃ মিঃ/ঘঃ</displayName>
 				<unitPattern count="one">{0} কিঃ মিঃ/ঘঃ</unitPattern>
@@ -6804,6 +6863,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>কেলভিন</displayName>
 				<unitPattern count="one">{0} কেলভিন</unitPattern>
 				<unitPattern count="other">{0} কেলভিন</unitPattern>
+			</unit>
+			<unit type="torque-pound-foot">
+				<displayName>lbf⋅ft</displayName>
+				<unitPattern count="one">{0} lbf⋅ft</unitPattern>
+				<unitPattern count="other">{0} lbf⋅ft</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<displayName>নি. মি.</displayName>
+				<unitPattern count="one">{0} নি. মি.</unitPattern>
+				<unitPattern count="other">{0} নি. মি.</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<displayName>ঘন কিলোমিটাৰ</displayName>
@@ -6920,6 +6989,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ফ্লুঃ আঃ</unitPattern>
 				<unitPattern count="other">{0} ফ্লুঃ আঃ</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName>ইম্পে. ফ্লু. আ.</displayName>
+				<unitPattern count="one">{0} ইম্পে. ফ্লু. আ.</unitPattern>
+				<unitPattern count="other">{0} ইম্পে. ফ্লু. আ.</unitPattern>
+			</unit>
 			<unit type="volume-tablespoon">
 				<displayName>টেব’লস্পুন</displayName>
 				<unitPattern count="one">{0} টেব’লস্পুন</unitPattern>
@@ -6930,7 +7004,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} চাহঃ চাঃ</unitPattern>
 				<unitPattern count="other">{0} চাহঃ চাঃ</unitPattern>
 			</unit>
+			<unit type="volume-barrel">
+				<displayName>বেৰেল</displayName>
+				<unitPattern count="one">{0} bbl</unitPattern>
+				<unitPattern count="other">{0} bbl</unitPattern>
+			</unit>
 			<coordinateUnit>
+				<displayName>দিক্-নিৰ্দেশনা</displayName>
 				<coordinateUnitPattern type="east">{0} পূঃ</coordinateUnitPattern>
 				<coordinateUnitPattern type="north">{0} উঃ</coordinateUnitPattern>
 				<coordinateUnitPattern type="south">{0} দঃ</coordinateUnitPattern>
@@ -6941,6 +7021,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
+			<unit type="concentr-percent">
+				<displayName>%</displayName>
+				<unitPattern count="one">{0}%</unitPattern>
+				<unitPattern count="other">{0}%</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-100kilometers">
 				<displayName>ল/১০০ ক.ম.</displayName>
 				<unitPattern count="one">{0} ল/১০০ ক.ম.</unitPattern>
@@ -7032,6 +7117,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} লিঃ</unitPattern>
 			</unit>
 			<coordinateUnit>
+				<displayName>দিক্-নিৰ্দেশনা</displayName>
 				<coordinateUnitPattern type="east">{0} পূঃ</coordinateUnitPattern>
 				<coordinateUnitPattern type="north">{0} উঃ</coordinateUnitPattern>
 				<coordinateUnitPattern type="south">{0} দঃ</coordinateUnitPattern>
@@ -7061,11 +7147,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<listPatternPart type="end">{0} বা {1}</listPatternPart>
 			<listPatternPart type="2">{0} বা {1}</listPatternPart>
 		</listPattern>
-		<listPattern type="standard-short">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
+		<listPattern type="standard-narrow">
 			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0} আৰু {1}</listPatternPart>
-			<listPatternPart type="2">{0} আৰু {1}</listPatternPart>
+			<listPatternPart type="end">{0}, {1}</listPatternPart>
+			<listPatternPart type="2">{0}, {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit">
 			<listPatternPart type="start">{0}, {1}</listPatternPart>
@@ -7191,4 +7276,74 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabel type="western_asian_scripts">পাশ্চাত্য এছীয় লিপি</characterLabel>
 		<characterLabel type="whitespace">হোৱাইটস্পেচ</characterLabel>
 	</characterLabels>
+	<typographicNames>
+		<axisName type="ital">ইটালিক</axisName>
+		<axisName type="opsz">অপ্টিকেল আকাৰ</axisName>
+		<axisName type="slnt">নমা</axisName>
+		<axisName type="wdth">বহল</axisName>
+		<axisName type="wght">ডাঠ</axisName>
+		<styleName type="ital" subtype="1">কাৰ্ছিভ</styleName>
+		<styleName type="opsz" subtype="8">কেপশ্বন</styleName>
+		<styleName type="opsz" subtype="12">পাঠ</styleName>
+		<styleName type="opsz" subtype="18">নাম দিয়া</styleName>
+		<styleName type="opsz" subtype="72">প্ৰদৰ্শন</styleName>
+		<styleName type="opsz" subtype="144">প’ষ্টাৰ</styleName>
+		<styleName type="slnt" subtype="-12">পিছলৈ নমোৱা</styleName>
+		<styleName type="slnt" subtype="0">খাড়া</styleName>
+		<styleName type="slnt" subtype="12">তললৈ নমা</styleName>
+		<styleName type="slnt" subtype="24">অতিৰিক্ত নমা</styleName>
+		<styleName type="wdth" subtype="50">অতি ঘনীভূত</styleName>
+		<styleName type="wdth" subtype="50" alt="compressed">অতি সংকুচিত</styleName>
+		<styleName type="wdth" subtype="50" alt="narrow">অতি ঠেক</styleName>
+		<styleName type="wdth" subtype="62.5">অতিৰিক্ত-ঘনীভূত</styleName>
+		<styleName type="wdth" subtype="62.5" alt="compressed">অতিৰিক্ত-সংকুচিত</styleName>
+		<styleName type="wdth" subtype="62.5" alt="narrow">অতিৰিক্ত-ঠেক</styleName>
+		<styleName type="wdth" subtype="75">ঘনীভূত</styleName>
+		<styleName type="wdth" subtype="75" alt="compressed">সংকুচিত</styleName>
+		<styleName type="wdth" subtype="75" alt="narrow">সংকুচিত</styleName>
+		<styleName type="wdth" subtype="87.5">আধা ঘনীভূত</styleName>
+		<styleName type="wdth" subtype="87.5" alt="compressed">আধা সংকুচিত</styleName>
+		<styleName type="wdth" subtype="87.5" alt="narrow">আধা ঠেক</styleName>
+		<styleName type="wdth" subtype="100">সাধাৰণ</styleName>
+		<styleName type="wdth" subtype="112.5">আধা বিস্তাৰিত</styleName>
+		<styleName type="wdth" subtype="112.5" alt="extended">আধা বিস্তৃত্ব</styleName>
+		<styleName type="wdth" subtype="112.5" alt="wide">আধা বহল</styleName>
+		<styleName type="wdth" subtype="125">বিস্তাৰিত</styleName>
+		<styleName type="wdth" subtype="125" alt="extended">বিস্তৃত্ব</styleName>
+		<styleName type="wdth" subtype="125" alt="wide">বহল</styleName>
+		<styleName type="wdth" subtype="150">অতিৰিক্ত-বিস্তাৰিত</styleName>
+		<styleName type="wdth" subtype="150" alt="extended">অতিৰিক্ত-বিস্তৃত্ব</styleName>
+		<styleName type="wdth" subtype="150" alt="wide">অতিৰিক্ত-বহল</styleName>
+		<styleName type="wdth" subtype="200">অতি বিস্তাৰিত</styleName>
+		<styleName type="wdth" subtype="200" alt="extended">অতি বিস্তৃত্ব</styleName>
+		<styleName type="wdth" subtype="200" alt="wide">অতি বহল</styleName>
+		<styleName type="wght" subtype="100">ক্ষীণ</styleName>
+		<styleName type="wght" subtype="200">অতিৰিক্ত-পাতল</styleName>
+		<styleName type="wght" subtype="200" alt="ultra">অতি পাতল</styleName>
+		<styleName type="wght" subtype="300">পাতল</styleName>
+		<styleName type="wght" subtype="350">আধা পাতল</styleName>
+		<styleName type="wght" subtype="380">কিতাপ</styleName>
+		<styleName type="wght" subtype="400">ৰেগুলাৰ</styleName>
+		<styleName type="wght" subtype="500">মিডিয়াম</styleName>
+		<styleName type="wght" subtype="600">ছেমিব’ল্ড</styleName>
+		<styleName type="wght" subtype="600" alt="demi">ডেমিব’ল্ড</styleName>
+		<styleName type="wght" subtype="700">ব’ল্ড</styleName>
+		<styleName type="wght" subtype="800">অতিৰিক্ত-ব’ল্ড</styleName>
+		<styleName type="wght" subtype="900">ক’লা</styleName>
+		<styleName type="wght" subtype="900" alt="heavy">কাড়া</styleName>
+		<styleName type="wght" subtype="950">অতিৰিক্ত-ক’লা</styleName>
+		<styleName type="wght" subtype="950" alt="ultrablack">অতি ক’লা</styleName>
+		<styleName type="wght" subtype="950" alt="ultraheavy">অতি কাড়া</styleName>
+		<featureName type="afrc">উলম্ব ভগ্নাংশ</featureName>
+		<featureName type="cpsp">বৰফলাৰ ব্যৱধান</featureName>
+		<featureName type="dlig">ঐচ্ছিক বন্ধনী</featureName>
+		<featureName type="frac">তিৰ্যক ভগ্নাংশ</featureName>
+		<featureName type="lnum">আস্তৰণৰ সংখ্যা</featureName>
+		<featureName type="onum">পুৰণা শৈলীৰ সংখ্যা</featureName>
+		<featureName type="ordn">ক্ৰমবোধক সংখ্যা</featureName>
+		<featureName type="pnum">আনুপাতিক সংখ্যা</featureName>
+		<featureName type="smcp">সৰু আখৰ</featureName>
+		<featureName type="tnum">সৰণিবদ্ধ সংখ্যা</featureName>
+		<featureName type="zero">শূন্য ঘটোৱা</featureName>
+	</typographicNames>
 </ldml>

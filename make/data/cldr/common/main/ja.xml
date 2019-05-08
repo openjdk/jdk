@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2018 Unicode, Inc.
+<!-- Copyright © 1991-2019 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -9,7 +9,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 13920 $"/>
+		<version number="$Revision: 14982 $"/>
 		<language type="ja"/>
 	</identity>
 	<localeDisplayNames>
@@ -107,6 +107,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="car">カリブ語</language>
 			<language type="cay">カユーガ語</language>
 			<language type="cch">チャワイ語</language>
+			<language type="ccp" draft="contributed">チャクマ語</language>
 			<language type="ce">チェチェン語</language>
 			<language type="ceb">セブアノ語</language>
 			<language type="cgg">チガ語</language>
@@ -134,7 +135,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="cy">ウェールズ語</language>
 			<language type="da">デンマーク語</language>
 			<language type="dak">ダコタ語</language>
-			<language type="dar">ダルガン語</language>
+			<language type="dar">ダルグワ語</language>
 			<language type="dav">タイタ語</language>
 			<language type="de">ドイツ語</language>
 			<language type="de_CH">標準ドイツ語 (スイス)</language>
@@ -256,7 +257,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="io">イド語</language>
 			<language type="is">アイスランド語</language>
 			<language type="it">イタリア語</language>
-			<language type="iu">イヌクウティトット語</language>
+			<language type="iu">イヌクティトット語</language>
 			<language type="izh">イングリア語</language>
 			<language type="ja">日本語</language>
 			<language type="jam">ジャマイカ・クレオール語</language>
@@ -428,7 +429,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="oc">オック語</language>
 			<language type="oj">オジブウェー語</language>
 			<language type="om">オロモ語</language>
-			<language type="or">オリヤー語</language>
+			<language type="or">オディア語</language>
 			<language type="os">オセット語</language>
 			<language type="osa">オセージ語</language>
 			<language type="ota">オスマントルコ語</language>
@@ -836,7 +837,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="151">東ヨーロッパ</territory>
 			<territory type="154">北ヨーロッパ</territory>
 			<territory type="155">西ヨーロッパ</territory>
-			<territory type="202" draft="contributed">サブサハラアフリカ</territory>
+			<territory type="202">サブサハラアフリカ</territory>
 			<territory type="419">ラテンアメリカ</territory>
 			<territory type="AC">アセンション島</territory>
 			<territory type="AD">アンドラ</territory>
@@ -995,8 +996,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="MF">サン・マルタン</territory>
 			<territory type="MG">マダガスカル</territory>
 			<territory type="MH">マーシャル諸島</territory>
-			<territory type="MK">マケドニア</territory>
-			<territory type="MK" alt="variant">マケドニア(旧ユーゴスラビア共和国)</territory>
+			<territory type="MK">北マケドニア</territory>
 			<territory type="ML">マリ</territory>
 			<territory type="MM">ミャンマー (ビルマ)</territory>
 			<territory type="MN">モンゴル</territory>
@@ -1068,7 +1068,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="SV">エルサルバドル</territory>
 			<territory type="SX">シント・マールテン</territory>
 			<territory type="SY">シリア</territory>
-			<territory type="SZ">スワジランド</territory>
+			<territory type="SZ">エスワティニ</territory>
+			<territory type="SZ" alt="variant">スワジランド</territory>
 			<territory type="TA">トリスタン・ダ・クーニャ</territory>
 			<territory type="TC">タークス・カイコス諸島</territory>
 			<territory type="TD">チャド</territory>
@@ -1144,7 +1145,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<variant type="KSCOR" draft="contributed">標準コーンウォール語正書法</variant>
 			<variant type="LAUKIKA" draft="contributed">ラウキカ</variant>
 			<variant type="LIPAW" draft="contributed">レージア方言 リポヴァツ方言</variant>
-			<variant type="LUNA1918" draft="contributed">LUNA1918</variant>
 			<variant type="METELKO" draft="contributed">メテルチッツァ</variant>
 			<variant type="MONOTON">モノトニック</variant>
 			<variant type="NDYUKA" draft="contributed">ンジュカ方言</variant>
@@ -1153,7 +1153,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<variant type="NULIK" draft="contributed">現代ヴォラピュク語</variant>
 			<variant type="OSOJS" draft="contributed">オゼアッコ/オソヤネ方言</variant>
 			<variant type="PAMAKA" draft="contributed">パマカ方言</variant>
-			<variant type="PETR1708" draft="contributed">PETR1708</variant>
 			<variant type="PINYIN">ピン音(ローマ字表記法)</variant>
 			<variant type="POLYTON">ポリトニック</variant>
 			<variant type="POSIX">コンピュータ</variant>
@@ -1161,7 +1160,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<variant type="REVISED">改訂版</variant>
 			<variant type="RIGIK" draft="contributed">古典ヴォラピュク語</variant>
 			<variant type="ROZAJ">レシア方言</variant>
-			<variant type="RUMGR" draft="contributed">RUMGR</variant>
 			<variant type="SAAHO">サホ語</variant>
 			<variant type="SCOTLAND" draft="contributed">スコットランド標準英語</variant>
 			<variant type="SCOUSE">リバプール方言</variant>
@@ -1355,6 +1353,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<ellipsis type="word-initial">… {0}</ellipsis>
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>?</moreInformation>
+		<parseLenients scope="date" level="lenient">
+			<parseLenient sample="-" draft="contributed">[\--/]</parseLenient>
+			<parseLenient sample=":" draft="contributed">[\:∶]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="general" level="lenient">
+			<parseLenient sample="." draft="contributed">[.․。︒﹒．｡]</parseLenient>
+			<parseLenient sample="$" draft="contributed">[\$﹩＄$]</parseLenient>
+			<parseLenient sample="£" draft="contributed">[£₤]</parseLenient>
+			<parseLenient sample="₹" draft="contributed">[₨₹{Rp}{Rs}]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="number" level="lenient">
+			<parseLenient sample="-" draft="contributed">[\-‒⁻₋−➖﹣－]</parseLenient>
+			<parseLenient sample="," draft="contributed">[,،٫、︐︑﹐﹑，､]</parseLenient>
+			<parseLenient sample="+" draft="contributed">[+⁺₊➕﬩﹢＋]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="number" level="stricter">
+			<parseLenient sample="," draft="contributed">[,٫︐﹐，]</parseLenient>
+			<parseLenient sample="." draft="contributed">[.․﹒．｡]</parseLenient>
+		</parseLenients>
 	</characters>
 	<delimiters>
 		<quotationStart>「</quotationStart>
@@ -1369,12 +1386,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<eraNames>
 						<era type="0">仏暦</era>
 					</eraNames>
-					<eraAbbr>
-						<era type="0" draft="contributed">BE</era>
-					</eraAbbr>
-					<eraNarrow>
-						<era type="0" draft="contributed">BE</era>
-					</eraNarrow>
 				</eras>
 				<dateFormats>
 					<dateFormatLength type="full">
@@ -1873,21 +1884,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="12" draft="contributed">メスラ</month>
 							<month type="13" draft="contributed">ナシエ</month>
 						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1" draft="contributed">1</month>
-							<month type="2" draft="contributed">2</month>
-							<month type="3" draft="contributed">3</month>
-							<month type="4" draft="contributed">4</month>
-							<month type="5" draft="contributed">5</month>
-							<month type="6" draft="contributed">6</month>
-							<month type="7" draft="contributed">7</month>
-							<month type="8" draft="contributed">8</month>
-							<month type="9" draft="contributed">9</month>
-							<month type="10" draft="contributed">10</month>
-							<month type="11" draft="contributed">11</month>
-							<month type="12" draft="contributed">12</month>
-							<month type="13" draft="contributed">13</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1" draft="contributed">トウト</month>
 							<month type="2" draft="contributed">ババ</month>
@@ -1920,21 +1916,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="12" draft="contributed">メスラ</month>
 							<month type="13" draft="contributed">ナシエ</month>
 						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1" draft="contributed">1</month>
-							<month type="2" draft="contributed">2</month>
-							<month type="3" draft="contributed">3</month>
-							<month type="4" draft="contributed">4</month>
-							<month type="5" draft="contributed">5</month>
-							<month type="6" draft="contributed">6</month>
-							<month type="7" draft="contributed">7</month>
-							<month type="8" draft="contributed">8</month>
-							<month type="9" draft="contributed">9</month>
-							<month type="10" draft="contributed">10</month>
-							<month type="11" draft="contributed">11</month>
-							<month type="12" draft="contributed">12</month>
-							<month type="13" draft="contributed">13</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1" draft="contributed">トウト</month>
 							<month type="2" draft="contributed">ババ</month>
@@ -1952,20 +1933,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</monthWidth>
 					</monthContext>
 				</months>
-				<eras>
-					<eraNames>
-						<era type="0" draft="contributed">ERA0</era>
-						<era type="1" draft="contributed">ERA1</era>
-					</eraNames>
-					<eraAbbr>
-						<era type="0" draft="contributed">ERA0</era>
-						<era type="1" draft="contributed">ERA1</era>
-					</eraAbbr>
-					<eraNarrow>
-						<era type="0" draft="contributed">ERA0</era>
-						<era type="1" draft="contributed">ERA1</era>
-					</eraNarrow>
-				</eras>
 			</calendar>
 			<calendar type="dangi">
 				<months>
@@ -2203,21 +2170,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="12" draft="contributed">ネハッセ</month>
 							<month type="13" draft="contributed">パグメン</month>
 						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1" draft="contributed">1</month>
-							<month type="2" draft="contributed">2</month>
-							<month type="3" draft="contributed">3</month>
-							<month type="4" draft="contributed">4</month>
-							<month type="5" draft="contributed">5</month>
-							<month type="6" draft="contributed">6</month>
-							<month type="7" draft="contributed">7</month>
-							<month type="8" draft="contributed">8</month>
-							<month type="9" draft="contributed">9</month>
-							<month type="10" draft="contributed">10</month>
-							<month type="11" draft="contributed">11</month>
-							<month type="12" draft="contributed">12</month>
-							<month type="13" draft="contributed">13</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1" draft="contributed">メスケレム</month>
 							<month type="2" draft="contributed">テケムト</month>
@@ -2250,21 +2202,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="12" draft="contributed">ネハッセ</month>
 							<month type="13" draft="contributed">パグメン</month>
 						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1" draft="contributed">1</month>
-							<month type="2" draft="contributed">2</month>
-							<month type="3" draft="contributed">3</month>
-							<month type="4" draft="contributed">4</month>
-							<month type="5" draft="contributed">5</month>
-							<month type="6" draft="contributed">6</month>
-							<month type="7" draft="contributed">7</month>
-							<month type="8" draft="contributed">8</month>
-							<month type="9" draft="contributed">9</month>
-							<month type="10" draft="contributed">10</month>
-							<month type="11" draft="contributed">11</month>
-							<month type="12" draft="contributed">12</month>
-							<month type="13" draft="contributed">13</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1" draft="contributed">メスケレム</month>
 							<month type="2" draft="contributed">テケムト</month>
@@ -2282,20 +2219,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</monthWidth>
 					</monthContext>
 				</months>
-				<eras>
-					<eraNames>
-						<era type="0" draft="contributed">ERA0</era>
-						<era type="1" draft="contributed">ERA1</era>
-					</eraNames>
-					<eraAbbr>
-						<era type="0" draft="contributed">ERA0</era>
-						<era type="1" draft="contributed">ERA1</era>
-					</eraAbbr>
-					<eraNarrow>
-						<era type="0" draft="contributed">ERA0</era>
-						<era type="1" draft="contributed">ERA1</era>
-					</eraNarrow>
-				</eras>
 			</calendar>
 			<calendar type="generic">
 				<dateFormats>
@@ -2311,12 +2234,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
-							<pattern>Gy/MM/dd</pattern>
+							<pattern>GGGGGy/MM/dd</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
-							<pattern>Gy/M/d</pattern>
+							<pattern>GGGGGy/M/d</pattern>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -2378,10 +2301,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">Gy年</dateFormatItem>
 						<dateFormatItem id="yyyy">Gy年</dateFormatItem>
-						<dateFormatItem id="yyyyM">Gy/M</dateFormatItem>
-						<dateFormatItem id="yyyyMd">Gy/M/d</dateFormatItem>
-						<dateFormatItem id="yyyyMEd">Gy/M/d(E)</dateFormatItem>
-						<dateFormatItem id="yyyyMEEEEd">Gy/M/d(EEEE)</dateFormatItem>
+						<dateFormatItem id="yyyyM">GGGGGy/M</dateFormatItem>
+						<dateFormatItem id="yyyyMd">GGGGGy/M/d</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">GGGGGy/M/d(E)</dateFormatItem>
+						<dateFormatItem id="yyyyMEEEEd">GGGGGy/M/d(EEEE)</dateFormatItem>
 						<dateFormatItem id="yyyyMMM">Gy年M月</dateFormatItem>
 						<dateFormatItem id="yyyyMMMd">Gy年M月d日</dateFormatItem>
 						<dateFormatItem id="yyyyMMMEd">Gy年M月d日(E)</dateFormatItem>
@@ -2392,8 +2315,72 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</availableFormats>
 					<intervalFormats>
 						<intervalFormatFallback>{0}～{1}</intervalFormatFallback>
+						<intervalFormatItem id="Bh">
+							<greatestDifference id="B">BK時～BK時</greatestDifference>
+							<greatestDifference id="h">BK時～K時</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Bhm">
+							<greatestDifference id="B">BK:mm～BK:mm</greatestDifference>
+							<greatestDifference id="h">BK:mm～K:mm</greatestDifference>
+							<greatestDifference id="m">BK:mm～K:mm</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d日～d日</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G">Gy年～Gy年</greatestDifference>
+							<greatestDifference id="y">Gy年～y年</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GGGGGyM">
+							<greatestDifference id="G">GGGGGy/MM～GGGGGy/MM</greatestDifference>
+							<greatestDifference id="M">GGGGGy/MM～y/MM</greatestDifference>
+							<greatestDifference id="y">GGGGGy/MM～y/MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GGGGGyMd">
+							<greatestDifference id="d">GGGGGy/MM/dd～y/MM/dd</greatestDifference>
+							<greatestDifference id="G">GGGGGy/MM/dd～GGGGGy/MM/dd</greatestDifference>
+							<greatestDifference id="M">GGGGGy/MM/dd～y/MM/dd</greatestDifference>
+							<greatestDifference id="y">GGGGGy/MM/dd～y/MM/dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GGGGGyMEd">
+							<greatestDifference id="d">GGGGGy/MM/dd(E)～y/MM/dd(E)</greatestDifference>
+							<greatestDifference id="G">GGGGGy/MM/dd(E)～GGGGGy/MM/dd(E)</greatestDifference>
+							<greatestDifference id="M">GGGGGy/MM/dd(E)～y/MM/dd(E)</greatestDifference>
+							<greatestDifference id="y">GGGGGy/MM/dd(E)～y/MM/dd(E)</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G">GGGGGy/MM～GGGGGy/MM</greatestDifference>
+							<greatestDifference id="M">GGGGGy/MM～y/MM</greatestDifference>
+							<greatestDifference id="y">GGGGGy/MM～y/MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d">GGGGGy/MM/dd～y/MM/dd</greatestDifference>
+							<greatestDifference id="G">GGGGGy/MM/dd～GGGGGy/MM/dd</greatestDifference>
+							<greatestDifference id="M">GGGGGy/MM/dd～y/MM/dd</greatestDifference>
+							<greatestDifference id="y">GGGGGy/MM/dd～y/MM/dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d">GGGGGy/MM/dd(E)～y/MM/dd(E)</greatestDifference>
+							<greatestDifference id="G">GGGGGy/MM/dd(E)～GGGGGy/MM/dd(E)</greatestDifference>
+							<greatestDifference id="M">GGGGGy/MM/dd(E)～y/MM/dd(E)</greatestDifference>
+							<greatestDifference id="y">GGGGGy/MM/dd(E)～y/MM/dd(E)</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G">Gy年M月～Gy年M月</greatestDifference>
+							<greatestDifference id="M">Gy年M月～M月</greatestDifference>
+							<greatestDifference id="y">Gy年M月～y年M月</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d">Gy年M月d日～d日</greatestDifference>
+							<greatestDifference id="G">Gy年M月d日～Gy年M月d日</greatestDifference>
+							<greatestDifference id="M">Gy年M月d日～M月d日</greatestDifference>
+							<greatestDifference id="y">Gy年M月d日～y年M月d日</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d">Gy年M月d日(E)～d日(E)</greatestDifference>
+							<greatestDifference id="G">Gy年M月d日(E)～Gy年M月d日(E)</greatestDifference>
+							<greatestDifference id="M">Gy年M月d日(E)～M月d日(E)</greatestDifference>
+							<greatestDifference id="y">Gy年M月d日(E)～y年M月d日(E)</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">aK時～aK時</greatestDifference>
@@ -2456,18 +2443,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">Gy年～y年</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M">Gy/MM～y/MM</greatestDifference>
-							<greatestDifference id="y">Gy/MM～y/MM</greatestDifference>
+							<greatestDifference id="M">GGGGGy/MM～y/MM</greatestDifference>
+							<greatestDifference id="y">GGGGGy/MM～y/MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d">Gy/MM/dd～y/MM/dd</greatestDifference>
-							<greatestDifference id="M">Gy/MM/dd～y/MM/dd</greatestDifference>
-							<greatestDifference id="y">Gy/MM/dd～y/MM/dd</greatestDifference>
+							<greatestDifference id="d">GGGGGy/MM/dd～y/MM/dd</greatestDifference>
+							<greatestDifference id="M">GGGGGy/MM/dd～y/MM/dd</greatestDifference>
+							<greatestDifference id="y">GGGGGy/MM/dd～y/MM/dd</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">Gy/MM/dd(E)～y/MM/dd(E)</greatestDifference>
-							<greatestDifference id="M">Gy/MM/dd(E)～y/MM/dd(E)</greatestDifference>
-							<greatestDifference id="y">Gy/MM/dd(E)～y/MM/dd(E)</greatestDifference>
+							<greatestDifference id="d">GGGGGy/MM/dd(E)～y/MM/dd(E)</greatestDifference>
+							<greatestDifference id="M">GGGGGy/MM/dd(E)～y/MM/dd(E)</greatestDifference>
+							<greatestDifference id="y">GGGGGy/MM/dd(E)～y/MM/dd(E)</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
 							<greatestDifference id="M">Gy年M月～M月</greatestDifference>
@@ -2507,20 +2494,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="11">11月</month>
 							<month type="12">12月</month>
 						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1">1</month>
-							<month type="2">2</month>
-							<month type="3">3</month>
-							<month type="4">4</month>
-							<month type="5">5</month>
-							<month type="6">6</month>
-							<month type="7">7</month>
-							<month type="8">8</month>
-							<month type="9">9</month>
-							<month type="10">10</month>
-							<month type="11">11</month>
-							<month type="12">12</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">1月</month>
 							<month type="2">2月</month>
@@ -2550,20 +2523,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="10">10月</month>
 							<month type="11">11月</month>
 							<month type="12">12月</month>
-						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1">1</month>
-							<month type="2">2</month>
-							<month type="3">3</month>
-							<month type="4">4</month>
-							<month type="5">5</month>
-							<month type="6">6</month>
-							<month type="7">7</month>
-							<month type="8">8</month>
-							<month type="9">9</month>
-							<month type="10">10</month>
-							<month type="11">11</month>
-							<month type="12">12</month>
 						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">1月</month>
@@ -2788,9 +2747,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</eraAbbr>
 					<eraNarrow>
 						<era type="0">BC</era>
-						<era type="0" alt="variant" draft="contributed">BCE</era>
 						<era type="1">AD</era>
-						<era type="1" alt="variant" draft="contributed">CE</era>
 					</eraNarrow>
 				</eras>
 				<dateFormats>
@@ -2918,8 +2875,55 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</appendItems>
 					<intervalFormats>
 						<intervalFormatFallback>{0}～{1}</intervalFormatFallback>
+						<intervalFormatItem id="Bh">
+							<greatestDifference id="B">BK時～BK時</greatestDifference>
+							<greatestDifference id="h">BK時～K時</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Bhm">
+							<greatestDifference id="B">BK:mm～BK:mm</greatestDifference>
+							<greatestDifference id="h">BK:mm～K:mm</greatestDifference>
+							<greatestDifference id="m">BK:mm～K:mm</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d日～d日</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G">Gy年～Gy年</greatestDifference>
+							<greatestDifference id="y">Gy年～y年</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G">Gy/MM～Gy/MM</greatestDifference>
+							<greatestDifference id="M">Gy/MM～y/MM</greatestDifference>
+							<greatestDifference id="y">Gy/MM～y/MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d">Gy/MM/dd～y/MM/dd</greatestDifference>
+							<greatestDifference id="G">Gy/MM/dd～Gy/MM/dd</greatestDifference>
+							<greatestDifference id="M">Gy/MM/dd～y/MM/dd</greatestDifference>
+							<greatestDifference id="y">Gy/MM/dd～y/MM/dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d">Gy/MM/dd(E)～y/MM/dd(E)</greatestDifference>
+							<greatestDifference id="G">Gy/MM/dd(E)～Gy/MM/dd(E)</greatestDifference>
+							<greatestDifference id="M">Gy/MM/dd(E)～y/MM/dd(E)</greatestDifference>
+							<greatestDifference id="y">Gy/MM/dd(E)～y/MM/dd(E)</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G">Gy年M月～Gy年M月</greatestDifference>
+							<greatestDifference id="M">Gy年M月～M月</greatestDifference>
+							<greatestDifference id="y">Gy年M月～y年M月</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d">Gy年M月d日～d日</greatestDifference>
+							<greatestDifference id="G">Gy年M月d日～Gy年M月d日</greatestDifference>
+							<greatestDifference id="M">Gy年M月d日～M月d日</greatestDifference>
+							<greatestDifference id="y">Gy年M月d日～y年M月d日</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d">Gy年M月d日(E)～d日(E)</greatestDifference>
+							<greatestDifference id="G">Gy年M月d日(E)～Gy年M月d日(E)</greatestDifference>
+							<greatestDifference id="M">Gy年M月d日(E)～M月d日(E)</greatestDifference>
+							<greatestDifference id="y">Gy年M月d日(E)～y年M月d日(E)</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">aK時～aK時</greatestDifference>
@@ -3035,22 +3039,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="12" draft="contributed">アヴ</month>
 							<month type="13" draft="contributed">エルル</month>
 						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1" draft="contributed">1</month>
-							<month type="2" draft="contributed">2</month>
-							<month type="3" draft="contributed">3</month>
-							<month type="4" draft="contributed">4</month>
-							<month type="5" draft="contributed">5</month>
-							<month type="6" draft="contributed">6</month>
-							<month type="7" draft="contributed">7</month>
-							<month type="7" yeartype="leap" draft="contributed">7</month>
-							<month type="8" draft="contributed">8</month>
-							<month type="9" draft="contributed">9</month>
-							<month type="10" draft="contributed">10</month>
-							<month type="11" draft="contributed">11</month>
-							<month type="12" draft="contributed">12</month>
-							<month type="13" draft="contributed">13</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1" draft="contributed">ティスレ</month>
 							<month type="2" draft="contributed">へシボン</month>
@@ -3085,22 +3073,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="12" draft="contributed">アヴ</month>
 							<month type="13" draft="contributed">エルル</month>
 						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1">1</month>
-							<month type="2">2</month>
-							<month type="3">3</month>
-							<month type="4">4</month>
-							<month type="5">5</month>
-							<month type="6">6</month>
-							<month type="7">7</month>
-							<month type="7" yeartype="leap">7</month>
-							<month type="8">8</month>
-							<month type="9">9</month>
-							<month type="10">10</month>
-							<month type="11">11</month>
-							<month type="12">12</month>
-							<month type="13">13</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1" draft="contributed">ティスレ</month>
 							<month type="2" draft="contributed">へシボン</month>
@@ -3119,17 +3091,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</monthWidth>
 					</monthContext>
 				</months>
-				<eras>
-					<eraNames>
-						<era type="0" draft="contributed">AM</era>
-					</eraNames>
-					<eraAbbr>
-						<era type="0" draft="contributed">AM</era>
-					</eraAbbr>
-					<eraNarrow>
-						<era type="0" draft="contributed">AM</era>
-					</eraNarrow>
-				</eras>
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
@@ -3170,20 +3131,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="11" draft="contributed">マーガ</month>
 							<month type="12" draft="contributed">パルグナ</month>
 						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1" draft="contributed">1</month>
-							<month type="2" draft="contributed">2</month>
-							<month type="3" draft="contributed">3</month>
-							<month type="4" draft="contributed">4</month>
-							<month type="5" draft="contributed">5</month>
-							<month type="6" draft="contributed">6</month>
-							<month type="7" draft="contributed">7</month>
-							<month type="8" draft="contributed">8</month>
-							<month type="9" draft="contributed">9</month>
-							<month type="10" draft="contributed">10</month>
-							<month type="11" draft="contributed">11</month>
-							<month type="12" draft="contributed">12</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1" draft="contributed">カイトラ</month>
 							<month type="2" draft="contributed">ヴァイサカ</month>
@@ -3213,20 +3160,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="10" draft="contributed">パウサ</month>
 							<month type="11" draft="contributed">マーガ</month>
 							<month type="12" draft="contributed">パルグナ</month>
-						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1" draft="contributed">1</month>
-							<month type="2" draft="contributed">2</month>
-							<month type="3" draft="contributed">3</month>
-							<month type="4" draft="contributed">4</month>
-							<month type="5" draft="contributed">5</month>
-							<month type="6" draft="contributed">6</month>
-							<month type="7" draft="contributed">7</month>
-							<month type="8" draft="contributed">8</month>
-							<month type="9" draft="contributed">9</month>
-							<month type="10" draft="contributed">10</month>
-							<month type="11" draft="contributed">11</month>
-							<month type="12" draft="contributed">12</month>
 						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1" draft="contributed">カイトラ</month>
@@ -3273,20 +3206,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="11" draft="contributed">ズル・カイダ</month>
 							<month type="12" draft="contributed">ズル・ヒッジャ</month>
 						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1" draft="contributed">1</month>
-							<month type="2" draft="contributed">2</month>
-							<month type="3" draft="contributed">3</month>
-							<month type="4" draft="contributed">4</month>
-							<month type="5" draft="contributed">5</month>
-							<month type="6" draft="contributed">6</month>
-							<month type="7" draft="contributed">7</month>
-							<month type="8" draft="contributed">8</month>
-							<month type="9" draft="contributed">9</month>
-							<month type="10" draft="contributed">10</month>
-							<month type="11" draft="contributed">11</month>
-							<month type="12" draft="contributed">12</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1" draft="contributed">ムハッラム</month>
 							<month type="2" draft="contributed">サフアル</month>
@@ -3317,20 +3236,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="11" draft="contributed">ズル・カイダ</month>
 							<month type="12" draft="contributed">ズル・ヒッジャ</month>
 						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1" draft="contributed">1</month>
-							<month type="2" draft="contributed">2</month>
-							<month type="3" draft="contributed">3</month>
-							<month type="4" draft="contributed">4</month>
-							<month type="5" draft="contributed">5</month>
-							<month type="6" draft="contributed">6</month>
-							<month type="7" draft="contributed">7</month>
-							<month type="8" draft="contributed">8</month>
-							<month type="9" draft="contributed">9</month>
-							<month type="10" draft="contributed">10</month>
-							<month type="11" draft="contributed">11</month>
-							<month type="12" draft="contributed">12</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1" draft="contributed">ムハッラム</month>
 							<month type="2" draft="contributed">サフアル</month>
@@ -3347,17 +3252,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</monthWidth>
 					</monthContext>
 				</months>
-				<eras>
-					<eraNames>
-						<era type="0" draft="contributed">AH</era>
-					</eraNames>
-					<eraAbbr>
-						<era type="0" draft="contributed">AH</era>
-					</eraAbbr>
-					<eraNarrow>
-						<era type="0" draft="contributed">AH</era>
-					</eraNarrow>
-				</eras>
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
@@ -3878,17 +3772,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern>Gy年M月d日EEEE</pattern>
+							<pattern numbers="y=jpanyear">Gy年M月d日EEEE</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
-							<pattern>Gy年M月d日</pattern>
+							<pattern numbers="y=jpanyear">Gy年M月d日</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
-							<pattern>Gy年M月d日</pattern>
+							<pattern numbers="y=jpanyear">Gy年M月d日</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
@@ -3946,11 +3840,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">Gy年</dateFormatItem>
 						<dateFormatItem id="yyyy">Gy年</dateFormatItem>
-						<dateFormatItem id="yyyyM">Gy/M</dateFormatItem>
-						<dateFormatItem id="yyyyMd">Gy/M/d</dateFormatItem>
-						<dateFormatItem id="yyyyMEd">Gy/M/d(E)</dateFormatItem>
-						<dateFormatItem id="yyyyMEEEEd">Gy/M/dEEEE</dateFormatItem>
-						<dateFormatItem id="yyyyMM">Gy/MM</dateFormatItem>
+						<dateFormatItem id="yyyyM">GGGGGy/M</dateFormatItem>
+						<dateFormatItem id="yyyyMd">GGGGGy/M/d</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">GGGGGy/M/d(E)</dateFormatItem>
+						<dateFormatItem id="yyyyMEEEEd">GGGGGy/M/dEEEE</dateFormatItem>
+						<dateFormatItem id="yyyyMM">GGGGGy/MM</dateFormatItem>
 						<dateFormatItem id="yyyyMMM">Gy年M月</dateFormatItem>
 						<dateFormatItem id="yyyyMMMd">Gy年M月d日</dateFormatItem>
 						<dateFormatItem id="yyyyMMMEd">Gy年M月d日(E)</dateFormatItem>
@@ -3977,20 +3871,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="10" draft="contributed">デイ</month>
 							<month type="11" draft="contributed">バフマン</month>
 							<month type="12" draft="contributed">エスファンド</month>
-						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1" draft="contributed">1</month>
-							<month type="2" draft="contributed">2</month>
-							<month type="3" draft="contributed">3</month>
-							<month type="4" draft="contributed">4</month>
-							<month type="5" draft="contributed">5</month>
-							<month type="6" draft="contributed">6</month>
-							<month type="7" draft="contributed">7</month>
-							<month type="8" draft="contributed">8</month>
-							<month type="9" draft="contributed">9</month>
-							<month type="10" draft="contributed">10</month>
-							<month type="11" draft="contributed">11</month>
-							<month type="12" draft="contributed">12</month>
 						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1" draft="contributed">ファルヴァルディーン</month>
@@ -4022,20 +3902,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="11" draft="contributed">バフマン</month>
 							<month type="12" draft="contributed">エスファンド</month>
 						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1" draft="contributed">1</month>
-							<month type="2" draft="contributed">2</month>
-							<month type="3" draft="contributed">3</month>
-							<month type="4" draft="contributed">4</month>
-							<month type="5" draft="contributed">5</month>
-							<month type="6" draft="contributed">6</month>
-							<month type="7" draft="contributed">7</month>
-							<month type="8" draft="contributed">8</month>
-							<month type="9" draft="contributed">9</month>
-							<month type="10" draft="contributed">10</month>
-							<month type="11" draft="contributed">11</month>
-							<month type="12" draft="contributed">12</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1" draft="contributed">ファルヴァルディーン</month>
 							<month type="2" draft="contributed">オルディーベヘシュト</month>
@@ -4052,17 +3918,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</monthWidth>
 					</monthContext>
 				</months>
-				<eras>
-					<eraNames>
-						<era type="0" draft="contributed">AP</era>
-					</eraNames>
-					<eraAbbr>
-						<era type="0" draft="contributed">AP</era>
-					</eraAbbr>
-					<eraNarrow>
-						<era type="0" draft="contributed">AP</era>
-					</eraNarrow>
-				</eras>
 			</calendar>
 			<calendar type="roc">
 				<eras>
@@ -4175,6 +4030,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="quarter-short">
 				<displayName>四半期</displayName>
+				<relative type="-1">前四半期</relative>
+				<relative type="0">今四半期</relative>
+				<relative type="1">翌四半期</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">{0} 四半期後</relativeTimePattern>
 				</relativeTime>
@@ -4184,6 +4042,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="quarter-narrow">
 				<displayName>四半期</displayName>
+				<relative type="-1">前四半期</relative>
+				<relative type="0">今四半期</relative>
+				<relative type="1">翌四半期</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">{0}四半期後</relativeTimePattern>
 				</relativeTime>
@@ -5337,7 +5198,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>コモロ</exemplarCity>
 			</zone>
 			<zone type="America/St_Kitts">
-				<exemplarCity>セントキッツ</exemplarCity>
+				<exemplarCity>セントクリストファー</exemplarCity>
 			</zone>
 			<zone type="Asia/Pyongyang">
 				<exemplarCity>平壌</exemplarCity>
@@ -6742,9 +6603,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Pierre_Miquelon">
 				<long>
-					<generic>サンピエール・ミクロン時間</generic>
-					<standard>サンピエール・ミクロン標準時</standard>
-					<daylight>サンピエール・ミクロン夏時間</daylight>
+					<generic>サンピエール島・ミクロン島時間</generic>
+					<standard>サンピエール島・ミクロン島標準時</standard>
+					<daylight>サンピエール島・ミクロン島夏時間</daylight>
 				</long>
 			</metazone>
 			<metazone type="Pitcairn">
@@ -6948,20 +6809,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<defaultNumberingSystem>latn</defaultNumberingSystem>
 		<otherNumberingSystems>
-			<native>latn</native>
 			<traditional>jpan</traditional>
 			<finance>jpanfin</finance>
 		</otherNumberingSystems>
 		<minimumGroupingDigits draft="contributed">1</minimumGroupingDigits>
 		<symbols numberSystem="latn">
-			<decimal>.</decimal>
-			<group>,</group>
-			<list>;</list>
 			<percentSign>%</percentSign>
-			<plusSign>+</plusSign>
-			<minusSign>-</minusSign>
 			<exponential>E</exponential>
 			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>‰</perMille>
@@ -6970,11 +6824,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<timeSeparator draft="contributed">:</timeSeparator>
 		</symbols>
 		<decimalFormats numberSystem="latn">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern>#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
 			<decimalFormatLength type="long">
 				<decimalFormat>
 					<pattern type="1000" count="other">0</pattern>
@@ -7053,7 +6902,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="ADP">
 				<displayName>アンドラ ペセタ</displayName>
 				<displayName count="other">アンドラ ペセタ</displayName>
-				<symbol draft="contributed">ADP</symbol>
 			</currency>
 			<currency type="AED">
 				<displayName>アラブ首長国連邦ディルハム</displayName>
@@ -7063,7 +6911,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="AFA">
 				<displayName>アフガニスタン アフガニー (1927–2002)</displayName>
 				<displayName count="other">アフガニスタン アフガニー (1927–2002)</displayName>
-				<symbol draft="contributed">AFA</symbol>
 			</currency>
 			<currency type="AFN">
 				<displayName>アフガニスタン アフガニー</displayName>
@@ -7073,12 +6920,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="ALK">
 				<displayName draft="contributed">アルバニア レク (1946–1965)</displayName>
 				<displayName count="other" draft="contributed">アルバニア レク (1946–1965)</displayName>
-				<symbol draft="contributed">ALK</symbol>
 			</currency>
 			<currency type="ALL">
 				<displayName>アルバニア レク</displayName>
 				<displayName count="other">アルバニア レク</displayName>
-				<symbol>ALL</symbol>
 			</currency>
 			<currency type="AMD">
 				<displayName>アルメニア ドラム</displayName>
@@ -7088,75 +6933,61 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="ANG">
 				<displayName>オランダ領アンティル ギルダー</displayName>
 				<displayName count="other">オランダ領アンティル ギルダー</displayName>
-				<symbol>ANG</symbol>
 			</currency>
 			<currency type="AOA">
 				<displayName>アンゴラ クワンザ</displayName>
 				<displayName count="other">アンゴラ クワンザ</displayName>
-				<symbol>AOA</symbol>
 				<symbol alt="narrow" draft="contributed">Kz</symbol>
 			</currency>
 			<currency type="AOK">
 				<displayName>アンゴラ クワンザ (1977–1991)</displayName>
 				<displayName count="other">アンゴラ クワンザ (1977–1991)</displayName>
-				<symbol draft="contributed">AOK</symbol>
 			</currency>
 			<currency type="AON">
 				<displayName>アンゴラ 新クワンザ (1990–2000)</displayName>
 				<displayName count="other">アンゴラ 新クワンザ (1990–2000)</displayName>
-				<symbol draft="contributed">AON</symbol>
 			</currency>
 			<currency type="AOR">
 				<displayName>アンゴラ 旧クワンザ (1995–1999)</displayName>
 				<displayName count="other">アンゴラ 旧クワンザ (1995–1999)</displayName>
-				<symbol draft="contributed">AOR</symbol>
 			</currency>
 			<currency type="ARA">
 				<displayName>アルゼンチン アゥストラール</displayName>
 				<displayName count="other">アルゼンチン アゥストラール</displayName>
-				<symbol draft="contributed">ARA</symbol>
 			</currency>
 			<currency type="ARL">
 				<displayName draft="contributed">アルゼンチン・ペソ・レイ（1970–1983）</displayName>
 				<displayName count="other" draft="contributed">アルゼンチン・ペソ・レイ（1970–1983）</displayName>
-				<symbol draft="contributed">ARL</symbol>
 			</currency>
 			<currency type="ARM">
 				<displayName draft="contributed">アルゼンチン・ペソ（1881–1970）</displayName>
 				<displayName count="other" draft="contributed">アルゼンチン・ペソ（1881–1970）</displayName>
-				<symbol draft="contributed">ARM</symbol>
 			</currency>
 			<currency type="ARP">
 				<displayName>アルゼンチン ペソ (1983–1985)</displayName>
 				<displayName count="other">アルゼンチン ペソ (1983–1985)</displayName>
-				<symbol draft="contributed">ARP</symbol>
 			</currency>
 			<currency type="ARS">
 				<displayName>アルゼンチン ペソ</displayName>
 				<displayName count="other">アルゼンチン ペソ</displayName>
-				<symbol>ARS</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="ATS">
 				<displayName>オーストリア シリング</displayName>
 				<displayName count="other">オーストリア シリング</displayName>
-				<symbol draft="contributed">ATS</symbol>
 			</currency>
 			<currency type="AUD">
 				<displayName>オーストラリア ドル</displayName>
 				<displayName count="other">オーストラリア ドル</displayName>
-				<symbol>A$</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="AWG">
 				<displayName>アルバ ギルダー</displayName>
 				<displayName count="other">アルバ ギルダー</displayName>
-				<symbol>AWG</symbol>
 			</currency>
 			<currency type="AZM">
 				<displayName>アゼルバイジャン マナト (1993–2006)</displayName>
 				<displayName count="other">アゼルバイジャン マナト (1993–2006)</displayName>
-				<symbol draft="contributed">AZM</symbol>
 			</currency>
 			<currency type="AZN">
 				<displayName>アゼルバイジャン マナト</displayName>
@@ -7166,23 +6997,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="BAD">
 				<displayName>ボスニア・ヘルツェゴビナ ディナール (1992–1994)</displayName>
 				<displayName count="other">ボスニア・ヘルツェゴビナ ディナール (1992–1994)</displayName>
-				<symbol draft="contributed">BAD</symbol>
 			</currency>
 			<currency type="BAM">
 				<displayName>ボスニア・ヘルツェゴビナ 兌換マルク (BAM)</displayName>
 				<displayName count="other">ボスニア・ヘルツェゴビナ 兌換マルク (BAM)</displayName>
-				<symbol>BAM</symbol>
 				<symbol alt="narrow" draft="contributed">KM</symbol>
 			</currency>
 			<currency type="BAN">
 				<displayName>ボスニア・ヘルツェゴビナ 新ディナール（1994–1997）</displayName>
 				<displayName count="other">ボスニア・ヘルツェゴビナ 新ディナール（1994–1997）</displayName>
-				<symbol draft="contributed">BAN</symbol>
 			</currency>
 			<currency type="BBD">
 				<displayName>バルバドス ドル</displayName>
 				<displayName count="other">バルバドス ドル</displayName>
-				<symbol>BBD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BDT">
@@ -7194,37 +7021,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="BEC">
 				<displayName>ベルギー フラン (BEC)</displayName>
 				<displayName count="other">ベルギー フラン (BEC)</displayName>
-				<symbol draft="contributed">BEC</symbol>
 			</currency>
 			<currency type="BEF">
 				<displayName>ベルギー フラン</displayName>
 				<displayName count="other">ベルギー フラン</displayName>
-				<symbol draft="contributed">BEF</symbol>
 			</currency>
 			<currency type="BEL">
 				<displayName>ベルギー フラン (BEL)</displayName>
 				<displayName count="other">ベルギー フラン (BEL)</displayName>
-				<symbol draft="contributed">BEL</symbol>
 			</currency>
 			<currency type="BGL">
 				<displayName>ブルガリア レフ</displayName>
 				<displayName count="other">ブルガリア レフ</displayName>
-				<symbol draft="contributed">BGL</symbol>
 			</currency>
 			<currency type="BGM">
 				<displayName draft="contributed">ブルガリア社会主義 レフ</displayName>
 				<displayName count="other" draft="contributed">ブルガリア社会主義 レフ</displayName>
-				<symbol draft="contributed">BGM</symbol>
 			</currency>
 			<currency type="BGN">
 				<displayName>ブルガリア 新レフ</displayName>
 				<displayName count="other">ブルガリア 新レフ</displayName>
-				<symbol>BGN</symbol>
 			</currency>
 			<currency type="BGO">
 				<displayName draft="contributed">ブルガリア レフ（1879–1952）</displayName>
 				<displayName count="other" draft="contributed">ブルガリア レフ（1879–1952）</displayName>
-				<symbol draft="contributed">BGO</symbol>
 			</currency>
 			<currency type="BHD">
 				<displayName>バーレーン ディナール</displayName>
@@ -7234,12 +7054,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="BIF">
 				<displayName>ブルンジ フラン</displayName>
 				<displayName count="other">ブルンジ フラン</displayName>
-				<symbol>BIF</symbol>
 			</currency>
 			<currency type="BMD">
 				<displayName>バミューダ ドル</displayName>
 				<displayName count="other">バミューダ ドル</displayName>
-				<symbol>BMD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BND">
@@ -7251,64 +7069,52 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="BOB">
 				<displayName>ボリビア ボリビアーノ</displayName>
 				<displayName count="other">ボリビア ボリビアーノ</displayName>
-				<symbol>BOB</symbol>
 				<symbol alt="narrow" draft="contributed">Bs</symbol>
 			</currency>
 			<currency type="BOL">
 				<displayName>ボリビア ボリビアーノ (1863–1963)</displayName>
 				<displayName count="other">ボリビア ボリビアーノ (1863–1963)</displayName>
-				<symbol draft="contributed">BOL</symbol>
 			</currency>
 			<currency type="BOP">
 				<displayName>ボリビア ペソ</displayName>
 				<displayName count="other">ボリビア ペソ</displayName>
-				<symbol draft="contributed">BOP</symbol>
 			</currency>
 			<currency type="BOV">
 				<displayName>ボリビア (Mvdol)</displayName>
 				<displayName count="other">ボリビア (Mvdol)</displayName>
-				<symbol draft="contributed">BOV</symbol>
 			</currency>
 			<currency type="BRB">
 				<displayName>ブラジル 新クルゼイロ (1967–1986)</displayName>
 				<displayName count="other">ブラジル 新クルゼイロ (1967–1986)</displayName>
-				<symbol draft="contributed">BRB</symbol>
 			</currency>
 			<currency type="BRC">
 				<displayName>ブラジル クルザード (1986–1989)</displayName>
 				<displayName count="other">ブラジル クルザード (1986–1989)</displayName>
-				<symbol draft="contributed">BRC</symbol>
 			</currency>
 			<currency type="BRE">
 				<displayName>ブラジル クルゼイロ (1990–1993)</displayName>
 				<displayName count="other">ブラジル クルゼイロ (1990–1993)</displayName>
-				<symbol draft="contributed">BRE</symbol>
 			</currency>
 			<currency type="BRL">
 				<displayName>ブラジル レアル</displayName>
 				<displayName count="other">ブラジル レアル</displayName>
-				<symbol>R$</symbol>
 				<symbol alt="narrow" draft="contributed">R$</symbol>
 			</currency>
 			<currency type="BRN">
 				<displayName>ブラジル 新クルザード (1989–1990)</displayName>
 				<displayName count="other">ブラジル 新クルザード (1989–1990)</displayName>
-				<symbol draft="contributed">BRN</symbol>
 			</currency>
 			<currency type="BRR">
 				<displayName>ブラジル クルゼイロ (1993–1994)</displayName>
 				<displayName count="other">ブラジル クルゼイロ (1993–1994)</displayName>
-				<symbol draft="contributed">BRR</symbol>
 			</currency>
 			<currency type="BRZ">
 				<displayName draft="contributed">ブラジル クルゼイロ（1942–1967）</displayName>
 				<displayName count="other" draft="contributed">ブラジル クルゼイロ（1942–1967）</displayName>
-				<symbol draft="contributed">BRZ</symbol>
 			</currency>
 			<currency type="BSD">
 				<displayName>バハマ ドル</displayName>
 				<displayName count="other">バハマ ドル</displayName>
-				<symbol>BSD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BTN">
@@ -7319,87 +7125,72 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="BUK">
 				<displayName>ビルマ チャット</displayName>
 				<displayName count="other">ビルマ チャット</displayName>
-				<symbol draft="contributed">BUK</symbol>
 			</currency>
 			<currency type="BWP">
 				<displayName>ボツワナ プラ</displayName>
 				<displayName count="other">ボツワナ プラ</displayName>
-				<symbol>BWP</symbol>
 				<symbol alt="narrow" draft="contributed">P</symbol>
 			</currency>
 			<currency type="BYB">
 				<displayName>ベラルーシ 新ルーブル (1994–1999)</displayName>
 				<displayName count="other">ベラルーシ 新ルーブル (1994–1999)</displayName>
-				<symbol draft="contributed">BYB</symbol>
 			</currency>
 			<currency type="BYN">
 				<displayName>ベラルーシ ルーブル</displayName>
 				<displayName count="other">ベラルーシ ルーブル</displayName>
-				<symbol>BYN</symbol>
 				<symbol alt="narrow" draft="contributed">р.</symbol>
 			</currency>
 			<currency type="BYR">
 				<displayName>ベラルーシ ルーブル (2000–2016)</displayName>
 				<displayName count="other">ベラルーシ ルーブル (2000–2016)</displayName>
-				<symbol>BYR</symbol>
 			</currency>
 			<currency type="BZD">
 				<displayName>ベリーズ ドル</displayName>
 				<displayName count="other">ベリーズ ドル</displayName>
-				<symbol>BZD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CAD">
 				<displayName>カナダ ドル</displayName>
 				<displayName count="other">カナダ ドル</displayName>
-				<symbol>CA$</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CDF">
 				<displayName>コンゴ フラン</displayName>
 				<displayName count="other">コンゴ フラン</displayName>
-				<symbol>CDF</symbol>
 			</currency>
 			<currency type="CHE">
 				<displayName>ユーロ (WIR)</displayName>
 				<displayName count="other">ユーロ (WIR)</displayName>
-				<symbol draft="contributed">CHE</symbol>
 			</currency>
 			<currency type="CHF">
 				<displayName>スイス フラン</displayName>
 				<displayName count="other">スイス フラン</displayName>
-				<symbol>CHF</symbol>
 			</currency>
 			<currency type="CHW">
 				<displayName>フラン (WIR)</displayName>
 				<displayName count="other">フラン (WIR)</displayName>
-				<symbol draft="contributed">CHW</symbol>
 			</currency>
 			<currency type="CLE">
 				<displayName draft="contributed">チリ エスクード</displayName>
 				<displayName count="other" draft="contributed">チリ エスクード</displayName>
-				<symbol draft="contributed">CLE</symbol>
 			</currency>
 			<currency type="CLF">
 				<displayName>チリ ウニダ・デ・フォメント (UF)</displayName>
 				<displayName count="other">チリ ウニダ・デ・フォメント (UF)</displayName>
-				<symbol draft="contributed">CLF</symbol>
 			</currency>
 			<currency type="CLP">
 				<displayName>チリ ペソ</displayName>
 				<displayName count="other">チリ ペソ</displayName>
-				<symbol>CLP</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CNH">
-				<displayName draft="contributed">中国人民元(オフショア)</displayName>
-				<displayName count="other" draft="contributed">中国人民元(オフショア)</displayName>
+				<displayName>中国人民元(オフショア)</displayName>
+				<displayName count="other">中国人民元(オフショア)</displayName>
 				<symbol draft="contributed">CNH</symbol>
 			</currency>
 			<currency type="CNX">
 				<displayName draft="contributed">中国人民銀行ドル</displayName>
 				<displayName count="other" draft="contributed">中国人民銀行ドル</displayName>
-				<symbol draft="contributed">CNX</symbol>
 			</currency>
 			<currency type="CNY">
 				<displayName>中国人民元</displayName>
@@ -7410,175 +7201,142 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="COP">
 				<displayName>コロンビア ペソ</displayName>
 				<displayName count="other">コロンビア ペソ</displayName>
-				<symbol>COP</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="COU">
 				<displayName>コロンビア レアル （UVR)</displayName>
 				<displayName count="other">コロンビア レアル （UVR)</displayName>
-				<symbol draft="contributed">COU</symbol>
 			</currency>
 			<currency type="CRC">
 				<displayName>コスタリカ コロン</displayName>
 				<displayName count="other">コスタリカ コロン</displayName>
-				<symbol>CRC</symbol>
 				<symbol alt="narrow" draft="contributed">₡</symbol>
 			</currency>
 			<currency type="CSD">
 				<displayName>セルビア ディナール (2002–2006)</displayName>
 				<displayName count="other">セルビア ディナール (2002–2006)</displayName>
-				<symbol draft="contributed">CSD</symbol>
 			</currency>
 			<currency type="CSK">
 				<displayName>チェコスロバキア コルナ</displayName>
 				<displayName count="other">チェコスロバキア コルナ</displayName>
-				<symbol draft="contributed">CSK</symbol>
 			</currency>
 			<currency type="CUC">
 				<displayName>キューバ 兌換ペソ</displayName>
 				<displayName count="other">キューバ 兌換ペソ</displayName>
-				<symbol>CUC</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CUP">
 				<displayName>キューバ ペソ</displayName>
 				<displayName count="other">キューバ ペソ</displayName>
-				<symbol>CUP</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CVE">
 				<displayName>カーボベルデ エスクード</displayName>
 				<displayName count="other">カーボベルデ エスクード</displayName>
-				<symbol>CVE</symbol>
 			</currency>
 			<currency type="CYP">
 				<displayName>キプロス ポンド</displayName>
 				<displayName count="other">キプロス ポンド</displayName>
-				<symbol draft="contributed">CYP</symbol>
 			</currency>
 			<currency type="CZK">
 				<displayName>チェコ コルナ</displayName>
 				<displayName count="other">チェコ コルナ</displayName>
-				<symbol>CZK</symbol>
 				<symbol alt="narrow" draft="contributed">Kč</symbol>
 			</currency>
 			<currency type="DDM">
 				<displayName>東ドイツ マルク</displayName>
 				<displayName count="other">東ドイツ マルク</displayName>
-				<symbol draft="contributed">DDM</symbol>
 			</currency>
 			<currency type="DEM">
 				<displayName>ドイツ マルク</displayName>
 				<displayName count="other">ドイツ マルク</displayName>
-				<symbol draft="contributed">DEM</symbol>
 			</currency>
 			<currency type="DJF">
 				<displayName>ジブチ フラン</displayName>
 				<displayName count="other">ジブチ フラン</displayName>
-				<symbol>DJF</symbol>
 			</currency>
 			<currency type="DKK">
 				<displayName>デンマーク クローネ</displayName>
 				<displayName count="other">デンマーク クローネ</displayName>
-				<symbol>DKK</symbol>
 				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="DOP">
 				<displayName>ドミニカ ペソ</displayName>
 				<displayName count="other">ドミニカ ペソ</displayName>
-				<symbol>DOP</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="DZD">
 				<displayName>アルジェリア ディナール</displayName>
 				<displayName count="other">アルジェリア ディナール</displayName>
-				<symbol>DZD</symbol>
 			</currency>
 			<currency type="ECS">
 				<displayName>エクアドル スクレ</displayName>
 				<displayName count="other">エクアドル スクレ</displayName>
-				<symbol draft="contributed">ECS</symbol>
 			</currency>
 			<currency type="ECV">
 				<displayName>エクアドル (UVC)</displayName>
 				<displayName count="other">エクアドル (UVC)</displayName>
-				<symbol draft="contributed">ECV</symbol>
 			</currency>
 			<currency type="EEK">
 				<displayName>エストニア クルーン</displayName>
 				<displayName count="other">エストニア クルーン</displayName>
-				<symbol draft="contributed">EEK</symbol>
 			</currency>
 			<currency type="EGP">
 				<displayName>エジプト ポンド</displayName>
 				<displayName count="other">エジプト ポンド</displayName>
-				<symbol>EGP</symbol>
 				<symbol alt="narrow" draft="contributed">E£</symbol>
 			</currency>
 			<currency type="ERN">
 				<displayName>エリトリア ナクファ</displayName>
 				<displayName count="other">エリトリア ナクファ</displayName>
-				<symbol>ERN</symbol>
 			</currency>
 			<currency type="ESA">
 				<displayName>スペインペセタ（勘定A）</displayName>
 				<displayName count="other">スペインペセタ（勘定A）</displayName>
-				<symbol draft="contributed">ESA</symbol>
 			</currency>
 			<currency type="ESB">
 				<displayName>スペイン 兌換ペセタ</displayName>
 				<displayName count="other">スペイン 兌換ペセタ</displayName>
-				<symbol draft="contributed">ESB</symbol>
 			</currency>
 			<currency type="ESP">
 				<displayName>スペイン ペセタ</displayName>
 				<displayName count="other">スペイン ペセタ</displayName>
-				<symbol draft="contributed">ESP</symbol>
-				<symbol alt="narrow" draft="contributed">₧</symbol>
 			</currency>
 			<currency type="ETB">
 				<displayName>エチオピア ブル</displayName>
 				<displayName count="other">エチオピア ブル</displayName>
-				<symbol>ETB</symbol>
 			</currency>
 			<currency type="EUR">
 				<displayName>ユーロ</displayName>
 				<displayName count="other">ユーロ</displayName>
-				<symbol>€</symbol>
 				<symbol alt="narrow" draft="contributed">€</symbol>
 			</currency>
 			<currency type="FIM">
 				<displayName>フィンランド マルカ</displayName>
 				<displayName count="other">フィンランド マルカ</displayName>
-				<symbol draft="contributed">FIM</symbol>
 			</currency>
 			<currency type="FJD">
 				<displayName>フィジー ドル</displayName>
 				<displayName count="other">フィジー ドル</displayName>
-				<symbol>FJD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="FKP">
 				<displayName>フォークランド（マルビナス）諸島 ポンド</displayName>
 				<displayName count="other">フォークランド（マルビナス）諸島 ポンド</displayName>
-				<symbol>FKP</symbol>
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="FRF">
 				<displayName>フランス フラン</displayName>
 				<displayName count="other">フランス フラン</displayName>
-				<symbol draft="contributed">FRF</symbol>
 			</currency>
 			<currency type="GBP">
 				<displayName>英国ポンド</displayName>
 				<displayName count="other">英国ポンド</displayName>
-				<symbol>£</symbol>
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="GEK">
 				<displayName>ジョージア クーポン ラリ</displayName>
 				<displayName count="other">ジョージア クーポン ラリ</displayName>
-				<symbol draft="contributed">GEK</symbol>
 			</currency>
 			<currency type="GEL">
 				<displayName>ジョージア ラリ</displayName>
@@ -7590,99 +7348,81 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="GHC">
 				<displayName>ガーナ セディ (1979–2007)</displayName>
 				<displayName count="other">ガーナ セディ (1979–2007)</displayName>
-				<symbol draft="contributed">GHC</symbol>
 			</currency>
 			<currency type="GHS">
 				<displayName>ガーナ セディ</displayName>
 				<displayName count="other">ガーナ セディ</displayName>
-				<symbol>GHS</symbol>
 			</currency>
 			<currency type="GIP">
 				<displayName>ジブラルタル ポンド</displayName>
 				<displayName count="other">ジブラルタル ポンド</displayName>
-				<symbol>GIP</symbol>
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="GMD">
 				<displayName>ガンビア ダラシ</displayName>
 				<displayName count="other">ガンビア ダラシ</displayName>
-				<symbol>GMD</symbol>
 			</currency>
 			<currency type="GNF">
 				<displayName>ギニア フラン</displayName>
 				<displayName count="other">ギニア フラン</displayName>
-				<symbol>GNF</symbol>
 				<symbol alt="narrow" draft="contributed">FG</symbol>
 			</currency>
 			<currency type="GNS">
 				<displayName>ギニア シリー</displayName>
 				<displayName count="other">ギニア シリー</displayName>
-				<symbol draft="contributed">GNS</symbol>
 			</currency>
 			<currency type="GQE">
 				<displayName>赤道ギニア エクウェレ</displayName>
 				<displayName count="other">赤道ギニア エクウェレ</displayName>
-				<symbol draft="contributed">GQE</symbol>
 			</currency>
 			<currency type="GRD">
 				<displayName>ギリシャ ドラクマ</displayName>
 				<displayName count="other">ギリシャ ドラクマ</displayName>
-				<symbol draft="contributed">GRD</symbol>
 			</currency>
 			<currency type="GTQ">
 				<displayName>グアテマラ ケツァル</displayName>
 				<displayName count="other">グアテマラ ケツァル</displayName>
-				<symbol>GTQ</symbol>
 				<symbol alt="narrow" draft="contributed">Q</symbol>
 			</currency>
 			<currency type="GWE">
 				<displayName>ポルトガル領ギニア エスクード</displayName>
 				<displayName count="other">ポルトガル領ギニア エスクード</displayName>
-				<symbol draft="contributed">GWE</symbol>
 			</currency>
 			<currency type="GWP">
 				<displayName>ギニアビサウ ペソ</displayName>
 				<displayName count="other">ギニアビサウ ペソ</displayName>
-				<symbol draft="contributed">GWP</symbol>
 			</currency>
 			<currency type="GYD">
 				<displayName>ガイアナ ドル</displayName>
 				<displayName count="other">ガイアナ ドル</displayName>
-				<symbol>GYD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="HKD">
 				<displayName>香港ドル</displayName>
 				<displayName count="other">香港ドル</displayName>
-				<symbol>HK$</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="HNL">
 				<displayName>ホンジュラス レンピラ</displayName>
 				<displayName count="other">ホンジュラス レンピラ</displayName>
-				<symbol>HNL</symbol>
 				<symbol alt="narrow" draft="contributed">L</symbol>
 			</currency>
 			<currency type="HRD">
 				<displayName>クロアチア ディナール</displayName>
 				<displayName count="other">クロアチア ディナール</displayName>
-				<symbol draft="contributed">HRD</symbol>
 			</currency>
 			<currency type="HRK">
 				<displayName>クロアチア クーナ</displayName>
 				<displayName count="other">クロアチア クーナ</displayName>
-				<symbol>HRK</symbol>
 				<symbol alt="narrow" draft="contributed">kn</symbol>
 			</currency>
 			<currency type="HTG">
 				<displayName>ハイチ グールド</displayName>
 				<displayName count="other">ハイチ グールド</displayName>
-				<symbol>HTG</symbol>
 			</currency>
 			<currency type="HUF">
 				<displayName>ハンガリー フォリント</displayName>
 				<displayName count="other">ハンガリー フォリント</displayName>
-				<symbol>HUF</symbol>
 				<symbol alt="narrow" draft="contributed">Ft</symbol>
 			</currency>
 			<currency type="IDR">
@@ -7694,28 +7434,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="IEP">
 				<displayName>アイリッシュ ポンド</displayName>
 				<displayName count="other">アイリッシュ ポンド</displayName>
-				<symbol draft="contributed">IEP</symbol>
 			</currency>
 			<currency type="ILP">
 				<displayName>イスラエル ポンド</displayName>
 				<displayName count="other">イスラエル ポンド</displayName>
-				<symbol draft="contributed">ILP</symbol>
 			</currency>
 			<currency type="ILR">
 				<displayName draft="contributed">イスラエル シェケル (1980–1985)</displayName>
 				<displayName count="other" draft="contributed">イスラエル シェケル (1980–1985)</displayName>
-				<symbol draft="contributed">ILR</symbol>
 			</currency>
 			<currency type="ILS">
 				<displayName>イスラエル新シェケル</displayName>
 				<displayName count="other">イスラエル新シェケル</displayName>
-				<symbol>₪</symbol>
 				<symbol alt="narrow" draft="contributed">₪</symbol>
 			</currency>
 			<currency type="INR">
 				<displayName>インド ルピー</displayName>
 				<displayName count="other">インド ルピー</displayName>
-				<symbol>₹</symbol>
 				<symbol alt="narrow" draft="contributed">₹</symbol>
 			</currency>
 			<currency type="IQD">
@@ -7731,23 +7466,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="ISJ">
 				<displayName draft="contributed">アイスランド クローナ (1918–1981)</displayName>
 				<displayName count="other" draft="contributed">アイスランド クローナ (1918–1981)</displayName>
-				<symbol draft="contributed">ISJ</symbol>
 			</currency>
 			<currency type="ISK">
 				<displayName>アイスランド クローナ</displayName>
 				<displayName count="other">アイスランド クローナ</displayName>
-				<symbol>ISK</symbol>
 				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="ITL">
 				<displayName>イタリア リラ</displayName>
 				<displayName count="other">イタリア リラ</displayName>
-				<symbol draft="contributed">ITL</symbol>
 			</currency>
 			<currency type="JMD">
 				<displayName>ジャマイカ ドル</displayName>
 				<displayName count="other">ジャマイカ ドル</displayName>
-				<symbol>JMD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="JOD">
@@ -7764,7 +7495,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="KES">
 				<displayName>ケニア シリング</displayName>
 				<displayName count="other">ケニア シリング</displayName>
-				<symbol>KES</symbol>
 			</currency>
 			<currency type="KGS">
 				<displayName>キルギス ソム</displayName>
@@ -7780,7 +7510,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="KMF">
 				<displayName>コモロ フラン</displayName>
 				<displayName count="other">コモロ フラン</displayName>
-				<symbol>KMF</symbol>
 				<symbol alt="narrow" draft="contributed">CF</symbol>
 			</currency>
 			<currency type="KPW">
@@ -7792,18 +7521,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="KRH">
 				<displayName draft="contributed">韓国 ファン（1953–1962）</displayName>
 				<displayName count="other" draft="contributed">韓国 ファン（1953–1962）</displayName>
-				<symbol draft="contributed">KRH</symbol>
 			</currency>
 			<currency type="KRO">
 				<displayName draft="contributed">韓国 ウォン（1945–1953）</displayName>
 				<displayName count="other" draft="contributed">韓国 ウォン（1945–1953）</displayName>
-				<symbol draft="contributed">KRO</symbol>
 			</currency>
 			<currency type="KRW">
 				<displayName>韓国ウォン</displayName>
 				<displayName count="other">韓国ウォン</displayName>
-				<symbol>₩</symbol>
-				<symbol alt="narrow">₩</symbol>
 			</currency>
 			<currency type="KWD">
 				<displayName>クウェート ディナール</displayName>
@@ -7813,7 +7538,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="KYD">
 				<displayName>ケイマン諸島 ドル</displayName>
 				<displayName count="other">ケイマン諸島 ドル</displayName>
-				<symbol>KYD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="KZT">
@@ -7843,104 +7567,84 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="LRD">
 				<displayName>リベリア ドル</displayName>
 				<displayName count="other">リベリア ドル</displayName>
-				<symbol>LRD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="LSL">
 				<displayName>レソト ロティ</displayName>
 				<displayName count="other">レソト ロティ</displayName>
-				<symbol draft="contributed">LSL</symbol>
 			</currency>
 			<currency type="LTL">
 				<displayName>リトアニア リタス</displayName>
 				<displayName count="other">リトアニア リタス</displayName>
-				<symbol>LTL</symbol>
 			</currency>
 			<currency type="LTT">
 				<displayName>リトアニア タロナ</displayName>
 				<displayName count="other">リトアニア タロナ</displayName>
-				<symbol draft="contributed">LTT</symbol>
 			</currency>
 			<currency type="LUC">
 				<displayName>ルクセンブルク 兌換フラン</displayName>
 				<displayName count="other">ルクセンブルク 兌換フラン</displayName>
-				<symbol draft="contributed">LUC</symbol>
 			</currency>
 			<currency type="LUF">
 				<displayName>ルクセンブルグ フラン</displayName>
 				<displayName count="other">ルクセンブルグ フラン</displayName>
-				<symbol draft="contributed">LUF</symbol>
 			</currency>
 			<currency type="LUL">
 				<displayName>ルクセンブルク 金融フラン</displayName>
 				<displayName count="other">ルクセンブルク 金融フラン</displayName>
-				<symbol draft="contributed">LUL</symbol>
 			</currency>
 			<currency type="LVL">
 				<displayName>ラトビア ラッツ</displayName>
 				<displayName count="other">ラトビア ラッツ</displayName>
-				<symbol>LVL</symbol>
 			</currency>
 			<currency type="LVR">
 				<displayName>ラトビア ルーブル</displayName>
 				<displayName count="other">ラトビア ルーブル</displayName>
-				<symbol draft="contributed">LVR</symbol>
 			</currency>
 			<currency type="LYD">
 				<displayName>リビア ディナール</displayName>
 				<displayName count="other">リビア ディナール</displayName>
-				<symbol>LYD</symbol>
 			</currency>
 			<currency type="MAD">
 				<displayName>モロッコ ディルハム</displayName>
 				<displayName count="other">モロッコ ディルハム</displayName>
-				<symbol>MAD</symbol>
 			</currency>
 			<currency type="MAF">
 				<displayName>モロッコ フラン</displayName>
 				<displayName count="other">モロッコ フラン</displayName>
-				<symbol draft="contributed">MAF</symbol>
 			</currency>
 			<currency type="MCF">
 				<displayName draft="contributed">モネガスク フラン</displayName>
 				<displayName count="other" draft="contributed">モネガスク フラン</displayName>
-				<symbol draft="contributed">MCF</symbol>
 			</currency>
 			<currency type="MDC">
 				<displayName draft="contributed">モルドバ クーポン</displayName>
 				<displayName count="other" draft="contributed">モルドバ クーポン</displayName>
-				<symbol draft="contributed">MDC</symbol>
 			</currency>
 			<currency type="MDL">
 				<displayName>モルドバ レイ</displayName>
 				<displayName count="other">モルドバ レイ</displayName>
-				<symbol>MDL</symbol>
 			</currency>
 			<currency type="MGA">
 				<displayName>マダガスカル アリアリ</displayName>
 				<displayName count="other">マダガスカル アリアリ</displayName>
-				<symbol>MGA</symbol>
 				<symbol alt="narrow" draft="contributed">Ar</symbol>
 			</currency>
 			<currency type="MGF">
 				<displayName>マラガシ フラン</displayName>
 				<displayName count="other">マラガシ フラン</displayName>
-				<symbol draft="contributed">MGF</symbol>
 			</currency>
 			<currency type="MKD">
 				<displayName>マケドニア デナル</displayName>
 				<displayName count="other">マケドニア デナル</displayName>
-				<symbol>MKD</symbol>
 			</currency>
 			<currency type="MKN">
 				<displayName draft="contributed">マケドニア ディナール（1992–1993）</displayName>
 				<displayName count="other" draft="contributed">マケドニア ディナール（1992–1993）</displayName>
-				<symbol draft="contributed">MKN</symbol>
 			</currency>
 			<currency type="MLF">
 				<displayName>マリ フラン</displayName>
 				<displayName count="other">マリ フラン</displayName>
-				<symbol draft="contributed">MLF</symbol>
 			</currency>
 			<currency type="MMK">
 				<displayName>ミャンマー チャット</displayName>
@@ -7962,32 +7666,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="MRO">
 				<displayName>モーリタニア ウギア (1973–2017)</displayName>
 				<displayName count="other">モーリタニア ウギア (1973–2017)</displayName>
-				<symbol>MRO</symbol>
 			</currency>
 			<currency type="MRU">
 				<displayName>モーリタニア ウギア</displayName>
 				<displayName count="other">モーリタニア ウギア</displayName>
+				<symbol draft="contributed">MRU</symbol>
 			</currency>
 			<currency type="MTL">
 				<displayName>マルタ リラ</displayName>
 				<displayName count="other">マルタ リラ</displayName>
-				<symbol draft="contributed">MTL</symbol>
 			</currency>
 			<currency type="MTP">
 				<displayName>マルタ ポンド</displayName>
 				<displayName count="other">マルタ ポンド</displayName>
-				<symbol draft="contributed">MTP</symbol>
 			</currency>
 			<currency type="MUR">
 				<displayName>モーリシャス ルピー</displayName>
 				<displayName count="other">モーリシャス ルピー</displayName>
-				<symbol>MUR</symbol>
 				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="MVP">
 				<displayName draft="contributed">モルディブ諸島 ルピー</displayName>
 				<displayName count="other" draft="contributed">モルディブ諸島 ルピー</displayName>
-				<symbol draft="contributed">MVP</symbol>
 			</currency>
 			<currency type="MVR">
 				<displayName>モルディブ ルフィア</displayName>
@@ -7997,23 +7697,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="MWK">
 				<displayName>マラウィ クワチャ</displayName>
 				<displayName count="other">マラウィ クワチャ</displayName>
-				<symbol>MWK</symbol>
 			</currency>
 			<currency type="MXN">
 				<displayName>メキシコ ペソ</displayName>
 				<displayName count="other">メキシコ ペソ</displayName>
-				<symbol>MX$</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="MXP">
 				<displayName>メキシコ ペソ (1861–1992)</displayName>
 				<displayName count="other">メキシコ ペソ (1861–1992)</displayName>
-				<symbol draft="contributed">MXP</symbol>
 			</currency>
 			<currency type="MXV">
 				<displayName>メキシコ (UDI)</displayName>
 				<displayName count="other">メキシコ (UDI)</displayName>
-				<symbol draft="contributed">MXV</symbol>
 			</currency>
 			<currency type="MYR">
 				<displayName>マレーシア リンギット</displayName>
@@ -8024,50 +7720,41 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="MZE">
 				<displayName>モザンピーク エスクード</displayName>
 				<displayName count="other">モザンピーク エスクード</displayName>
-				<symbol draft="contributed">MZE</symbol>
 			</currency>
 			<currency type="MZM">
 				<displayName>モザンビーク メティカル (1980–2006)</displayName>
 				<displayName count="other">モザンビーク メティカル (1980–2006)</displayName>
-				<symbol draft="contributed">MZM</symbol>
 			</currency>
 			<currency type="MZN">
 				<displayName>モザンビーク メティカル</displayName>
 				<displayName count="other">モザンビーク メティカル</displayName>
-				<symbol>MZN</symbol>
 			</currency>
 			<currency type="NAD">
 				<displayName>ナミビア ドル</displayName>
 				<displayName count="other">ナミビア ドル</displayName>
-				<symbol>NAD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="NGN">
 				<displayName>ナイジェリア ナイラ</displayName>
 				<displayName count="other">ナイジェリア ナイラ</displayName>
-				<symbol>NGN</symbol>
 				<symbol alt="narrow" draft="contributed">₦</symbol>
 			</currency>
 			<currency type="NIC">
 				<displayName>ニカラグア コルドバ (1988–1991)</displayName>
 				<displayName count="other">ニカラグア コルドバ (1988–1991)</displayName>
-				<symbol draft="contributed">NIC</symbol>
 			</currency>
 			<currency type="NIO">
 				<displayName>ニカラグア コルドバ オロ</displayName>
 				<displayName count="other">ニカラグア コルドバ オロ</displayName>
-				<symbol>NIO</symbol>
 				<symbol alt="narrow" draft="contributed">C$</symbol>
 			</currency>
 			<currency type="NLG">
 				<displayName>オランダ ギルダー</displayName>
 				<displayName count="other">オランダ ギルダー</displayName>
-				<symbol draft="contributed">NLG</symbol>
 			</currency>
 			<currency type="NOK">
 				<displayName>ノルウェー クローネ</displayName>
 				<displayName count="other">ノルウェー クローネ</displayName>
-				<symbol>NOK</symbol>
 				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="NPR">
@@ -8079,7 +7766,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="NZD">
 				<displayName>ニュージーランド ドル</displayName>
 				<displayName count="other">ニュージーランド ドル</displayName>
-				<symbol>NZ$</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="OMR">
@@ -8090,27 +7776,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="PAB">
 				<displayName>パナマ バルボア</displayName>
 				<displayName count="other">パナマ バルボア</displayName>
-				<symbol>PAB</symbol>
 			</currency>
 			<currency type="PEI">
 				<displayName>ペルー インティ</displayName>
 				<displayName count="other">ペルー インティ</displayName>
-				<symbol draft="contributed">PEI</symbol>
 			</currency>
 			<currency type="PEN">
 				<displayName>ペルー ソル</displayName>
 				<displayName count="other">ペルー ソル</displayName>
-				<symbol>PEN</symbol>
 			</currency>
 			<currency type="PES">
 				<displayName>ペルー ソル (1863–1965)</displayName>
 				<displayName count="other">ペルー ソル (1863–1965)</displayName>
-				<symbol draft="contributed">PES</symbol>
 			</currency>
 			<currency type="PGK">
 				<displayName>パプアニューギニア キナ</displayName>
 				<displayName count="other">パプアニューギニア キナ</displayName>
-				<symbol>PGK</symbol>
 			</currency>
 			<currency type="PHP">
 				<displayName>フィリピン ペソ</displayName>
@@ -8127,23 +7808,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="PLN">
 				<displayName>ポーランド ズウォティ</displayName>
 				<displayName count="other">ポーランド ズウォティ</displayName>
-				<symbol>PLN</symbol>
 				<symbol alt="narrow" draft="contributed">zł</symbol>
 			</currency>
 			<currency type="PLZ">
 				<displayName>ポーランド ズウォティ (1950–1995)</displayName>
 				<displayName count="other">ポーランド ズウォティ (1950–1995)</displayName>
-				<symbol draft="contributed">PLZ</symbol>
 			</currency>
 			<currency type="PTE">
 				<displayName>ポルトガル エスクード</displayName>
 				<displayName count="other">ポルトガル エスクード</displayName>
-				<symbol draft="contributed">PTE</symbol>
 			</currency>
 			<currency type="PYG">
 				<displayName>パラグアイ グアラニ</displayName>
 				<displayName count="other">パラグアイ グアラニ</displayName>
-				<symbol>PYG</symbol>
 				<symbol alt="narrow" draft="contributed">₲</symbol>
 			</currency>
 			<currency type="QAR">
@@ -8154,39 +7831,32 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="RHD">
 				<displayName>ローデシア ドル</displayName>
 				<displayName count="other">ローデシア ドル</displayName>
-				<symbol draft="contributed">RHD</symbol>
 			</currency>
 			<currency type="ROL">
 				<displayName>ルーマニア レイ (1952–2006)</displayName>
 				<displayName count="other">ルーマニア レイ (1952–2006)</displayName>
-				<symbol draft="contributed">ROL</symbol>
 			</currency>
 			<currency type="RON">
 				<displayName>ルーマニア レイ</displayName>
 				<displayName count="other">ルーマニア レイ</displayName>
-				<symbol>RON</symbol>
 				<symbol alt="narrow" draft="contributed">レイ</symbol>
 			</currency>
 			<currency type="RSD">
 				<displayName>ディナール (セルビア)</displayName>
 				<displayName count="other">ディナール (セルビア)</displayName>
-				<symbol>RSD</symbol>
 			</currency>
 			<currency type="RUB">
 				<displayName>ロシア ルーブル</displayName>
 				<displayName count="other">ロシア ルーブル</displayName>
-				<symbol>RUB</symbol>
 				<symbol alt="narrow" draft="contributed">₽</symbol>
 			</currency>
 			<currency type="RUR">
 				<displayName>ロシア ルーブル (1991–1998)</displayName>
 				<displayName count="other">ロシア ルーブル (1991–1998)</displayName>
-				<symbol draft="contributed">RUR</symbol>
 			</currency>
 			<currency type="RWF">
 				<displayName>ルワンダ フラン</displayName>
 				<displayName count="other">ルワンダ フラン</displayName>
-				<symbol>RWF</symbol>
 				<symbol alt="narrow" draft="contributed">RF</symbol>
 			</currency>
 			<currency type="SAR">
@@ -8197,33 +7867,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="SBD">
 				<displayName>ソロモン諸島 ドル</displayName>
 				<displayName count="other">ソロモン諸島 ドル</displayName>
-				<symbol>SBD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="SCR">
 				<displayName>セーシェル ルピー</displayName>
 				<displayName count="other">セーシェル ルピー</displayName>
-				<symbol>SCR</symbol>
 			</currency>
 			<currency type="SDD">
 				<displayName>スーダン ディナール (1992–2007)</displayName>
 				<displayName count="other">スーダン ディナール (1992–2007)</displayName>
-				<symbol draft="contributed">SDD</symbol>
 			</currency>
 			<currency type="SDG">
 				<displayName>スーダン ポンド</displayName>
 				<displayName count="other">スーダン ポンド</displayName>
-				<symbol>SDG</symbol>
 			</currency>
 			<currency type="SDP">
 				<displayName>スーダン ポンド (1957–1998)</displayName>
 				<displayName count="other">スーダン ポンド (1957–1998)</displayName>
-				<symbol draft="contributed">SDP</symbol>
 			</currency>
 			<currency type="SEK">
 				<displayName>スウェーデン クローナ</displayName>
 				<displayName count="other">スウェーデン クローナ</displayName>
-				<symbol>SEK</symbol>
 				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="SGD">
@@ -8235,65 +7899,55 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="SHP">
 				<displayName>セントヘレナ ポンド</displayName>
 				<displayName count="other">セントヘレナ ポンド</displayName>
-				<symbol>SHP</symbol>
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="SIT">
 				<displayName>スロベニア トラール</displayName>
 				<displayName count="other">スロベニア トラール</displayName>
-				<symbol draft="contributed">SIT</symbol>
 			</currency>
 			<currency type="SKK">
 				<displayName>スロバキア コルナ</displayName>
 				<displayName count="other">スロバキア コルナ</displayName>
-				<symbol draft="contributed">SKK</symbol>
 			</currency>
 			<currency type="SLL">
 				<displayName>シエラレオネ レオン</displayName>
 				<displayName count="other">シエラレオネ レオン</displayName>
-				<symbol>SLL</symbol>
 			</currency>
 			<currency type="SOS">
 				<displayName>ソマリア シリング</displayName>
 				<displayName count="other">ソマリア シリング</displayName>
-				<symbol>SOS</symbol>
 			</currency>
 			<currency type="SRD">
 				<displayName>スリナム ドル</displayName>
 				<displayName count="other">スリナム ドル</displayName>
-				<symbol>SRD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="SRG">
 				<displayName>スリナム ギルダー</displayName>
 				<displayName count="other">スリナム ギルダー</displayName>
-				<symbol draft="contributed">SRG</symbol>
 			</currency>
 			<currency type="SSP">
 				<displayName>南スーダン ポンド</displayName>
 				<displayName count="other">南スーダン ポンド</displayName>
-				<symbol>SSP</symbol>
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="STD">
 				<displayName>サントメ・プリンシペ ドブラ (1977–2017)</displayName>
 				<displayName count="other">サントメ・プリンシペ ドブラ (1977–2017)</displayName>
-				<symbol>STD</symbol>
 			</currency>
 			<currency type="STN">
 				<displayName>サントメ・プリンシペ ドブラ</displayName>
 				<displayName count="other">サントメ・プリンシペ ドブラ</displayName>
+				<symbol draft="contributed">STN</symbol>
 				<symbol alt="narrow" draft="contributed">Db</symbol>
 			</currency>
 			<currency type="SUR">
 				<displayName>ソ連 ルーブル</displayName>
 				<displayName count="other">ソ連 ルーブル</displayName>
-				<symbol draft="contributed">SUR</symbol>
 			</currency>
 			<currency type="SVC">
 				<displayName>エルサルバドル コロン</displayName>
 				<displayName count="other">エルサルバドル コロン</displayName>
-				<symbol draft="contributed">SVC</symbol>
 			</currency>
 			<currency type="SYP">
 				<displayName>シリア ポンド</displayName>
@@ -8304,18 +7958,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="SZL">
 				<displayName>スワジランド リランゲニ</displayName>
 				<displayName count="other">スワジランド リランゲニ</displayName>
-				<symbol>SZL</symbol>
 			</currency>
 			<currency type="THB">
 				<displayName>タイ バーツ</displayName>
 				<displayName count="other">タイ バーツ</displayName>
-				<symbol>THB</symbol>
 				<symbol alt="narrow" draft="contributed">฿</symbol>
 			</currency>
 			<currency type="TJR">
 				<displayName>タジキスタン ルーブル</displayName>
 				<displayName count="other">タジキスタン ルーブル</displayName>
-				<symbol draft="contributed">TJR</symbol>
 			</currency>
 			<currency type="TJS">
 				<displayName>タジキスタン ソモニ</displayName>
@@ -8325,7 +7976,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="TMM">
 				<displayName>トルクメニスタン マナト (1993–2009)</displayName>
 				<displayName count="other">トルクメニスタン マナト (1993–2009)</displayName>
-				<symbol draft="contributed">TMM</symbol>
 			</currency>
 			<currency type="TMT">
 				<displayName>トルクメニスタン マナト</displayName>
@@ -8335,23 +7985,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="TND">
 				<displayName>チュニジア ディナール</displayName>
 				<displayName count="other">チュニジア ディナール</displayName>
-				<symbol>TND</symbol>
 			</currency>
 			<currency type="TOP">
 				<displayName>トンガ パ・アンガ</displayName>
 				<displayName count="other">トンガ パ・アンガ</displayName>
-				<symbol>TOP</symbol>
 				<symbol alt="narrow" draft="contributed">T$</symbol>
 			</currency>
 			<currency type="TPE">
 				<displayName>ティモール エスクード</displayName>
 				<displayName count="other">ティモール エスクード</displayName>
-				<symbol draft="contributed">TPE</symbol>
 			</currency>
 			<currency type="TRL">
 				<displayName>トルコ リラ (1922–2005)</displayName>
 				<displayName count="other">トルコ リラ (1922–2005)</displayName>
-				<symbol draft="contributed">TRL</symbol>
 			</currency>
 			<currency type="TRY">
 				<displayName>新トルコリラ</displayName>
@@ -8363,40 +8009,32 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="TTD">
 				<displayName>トリニダード・トバゴ ドル</displayName>
 				<displayName count="other">トリニダード・トバゴ ドル</displayName>
-				<symbol>TTD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="TWD">
 				<displayName>新台湾ドル</displayName>
 				<displayName count="other">新台湾ドル</displayName>
-				<symbol>NT$</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="TZS">
 				<displayName>タンザニア シリング</displayName>
 				<displayName count="other">タンザニア シリング</displayName>
-				<symbol>TZS</symbol>
 			</currency>
 			<currency type="UAH">
 				<displayName>ウクライナ グリブナ</displayName>
 				<displayName count="other">ウクライナ グリブナ</displayName>
-				<symbol>UAH</symbol>
 				<symbol alt="narrow" draft="contributed">₴</symbol>
 			</currency>
 			<currency type="UAK">
 				<displayName>ウクライナ カルボバネツ</displayName>
 				<displayName count="other">ウクライナ カルボバネツ</displayName>
-				<symbol draft="contributed">UAK</symbol>
 			</currency>
 			<currency type="UGS">
 				<displayName>ウガンダ シリング (1966–1987)</displayName>
 				<displayName count="other">ウガンダ シリング (1966–1987)</displayName>
-				<symbol draft="contributed">UGS</symbol>
 			</currency>
 			<currency type="UGX">
 				<displayName>ウガンダ シリング</displayName>
 				<displayName count="other">ウガンダ シリング</displayName>
-				<symbol>UGX</symbol>
 			</currency>
 			<currency type="USD">
 				<displayName>米ドル</displayName>
@@ -8407,27 +8045,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="USN">
 				<displayName>米ドル (翌日)</displayName>
 				<displayName count="other">米ドル (翌日)</displayName>
-				<symbol draft="contributed">USN</symbol>
 			</currency>
 			<currency type="USS">
 				<displayName>米ドル (当日)</displayName>
 				<displayName count="other">米ドル (当日)</displayName>
-				<symbol draft="contributed">USS</symbol>
 			</currency>
 			<currency type="UYI">
 				<displayName draft="contributed">ウルグアイ ペソエン</displayName>
 				<displayName count="other" draft="contributed">ウルグアイ ペソエン</displayName>
-				<symbol draft="contributed">UYI</symbol>
 			</currency>
 			<currency type="UYP">
 				<displayName>ウルグアイ ペソ (1975–1993)</displayName>
 				<displayName count="other">ウルグアイ ペソ (1975–1993)</displayName>
-				<symbol draft="contributed">UYP</symbol>
 			</currency>
 			<currency type="UYU">
 				<displayName>ウルグアイ ペソ</displayName>
 				<displayName count="other">ウルグアイ ペソ</displayName>
-				<symbol>UYU</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="UZS">
@@ -8438,135 +8071,114 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="VEB">
 				<displayName>ベネズエラ ボリバル (1871–2008)</displayName>
 				<displayName count="other">ベネズエラ ボリバル (1871–2008)</displayName>
-				<symbol draft="contributed">VEB</symbol>
 			</currency>
 			<currency type="VEF">
+				<displayName>ベネズエラ ボリバル (2008–2018)</displayName>
+				<displayName count="other">ベネズエラ ボリバル (2008–2018)</displayName>
+				<symbol alt="narrow" draft="contributed">Bs</symbol>
+			</currency>
+			<currency type="VES">
 				<displayName>ベネズエラ ボリバル</displayName>
 				<displayName count="other">ベネズエラ ボリバル</displayName>
-				<symbol>VEF</symbol>
-				<symbol alt="narrow" draft="contributed">Bs</symbol>
+				<symbol draft="contributed">VES</symbol>
 			</currency>
 			<currency type="VND">
 				<displayName>ベトナム ドン</displayName>
 				<displayName count="other">ベトナム ドン</displayName>
-				<symbol>₫</symbol>
 				<symbol alt="narrow" draft="contributed">₫</symbol>
 			</currency>
 			<currency type="VNN">
 				<displayName draft="contributed">ベトナム ドン（1978–1985）</displayName>
 				<displayName count="other" draft="contributed">ベトナム ドン（1978–1985）</displayName>
-				<symbol draft="contributed">VNN</symbol>
 			</currency>
 			<currency type="VUV">
 				<displayName>バヌアツ バツ</displayName>
 				<displayName count="other">バヌアツ バツ</displayName>
-				<symbol>VUV</symbol>
 			</currency>
 			<currency type="WST">
 				<displayName>サモア タラ</displayName>
 				<displayName count="other">サモア タラ</displayName>
-				<symbol>WST</symbol>
 			</currency>
 			<currency type="XAF">
 				<displayName>中央アフリカ CFA フラン</displayName>
 				<displayName count="other">中央アフリカ CFA フラン</displayName>
-				<symbol>FCFA</symbol>
 			</currency>
 			<currency type="XAG">
 				<displayName>銀</displayName>
 				<displayName count="other">銀</displayName>
-				<symbol draft="contributed">XAG</symbol>
 			</currency>
 			<currency type="XAU">
 				<displayName>金</displayName>
 				<displayName count="other">金</displayName>
-				<symbol draft="contributed">XAU</symbol>
 			</currency>
 			<currency type="XBA">
 				<displayName>ヨーロッパ混合単位 (EURCO)</displayName>
 				<displayName count="other">ヨーロッパ混合単位 (EURCO)</displayName>
-				<symbol draft="contributed">XBA</symbol>
 			</currency>
 			<currency type="XBB">
 				<displayName>ヨーロッパ通貨単位 (EMU–6)</displayName>
 				<displayName count="other">ヨーロッパ通貨単位 (EMU–6)</displayName>
-				<symbol draft="contributed">XBB</symbol>
 			</currency>
 			<currency type="XBC">
 				<displayName>ヨーロッパ勘定単位 (EUA–9)</displayName>
 				<displayName count="other">ヨーロッパ勘定単位 (EUA–9)</displayName>
-				<symbol draft="contributed">XBC</symbol>
 			</currency>
 			<currency type="XBD">
 				<displayName>ヨーロッパ勘定単位 (EUA–17)</displayName>
 				<displayName count="other">ヨーロッパ勘定単位 (EUA–17)</displayName>
-				<symbol draft="contributed">XBD</symbol>
 			</currency>
 			<currency type="XCD">
 				<displayName>東カリブ ドル</displayName>
 				<displayName count="other">東カリブ ドル</displayName>
-				<symbol>EC$</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="XDR">
 				<displayName>特別引き出し権</displayName>
 				<displayName count="other">特別引き出し権</displayName>
-				<symbol draft="contributed">XDR</symbol>
 			</currency>
 			<currency type="XEU">
 				<displayName>ヨーロッパ通貨単位</displayName>
 				<displayName count="other">ヨーロッパ通貨単位</displayName>
-				<symbol draft="contributed">XEU</symbol>
 			</currency>
 			<currency type="XFO">
 				<displayName>フランス金フラン</displayName>
 				<displayName count="other">フランス金フラン</displayName>
-				<symbol draft="contributed">XFO</symbol>
 			</currency>
 			<currency type="XFU">
 				<displayName>フランス フラン (UIC)</displayName>
 				<displayName count="other">フランス フラン (UIC)</displayName>
-				<symbol draft="contributed">XFU</symbol>
 			</currency>
 			<currency type="XOF">
 				<displayName>西アフリカ CFA フラン</displayName>
 				<displayName count="other">西アフリカ CFA フラン</displayName>
-				<symbol>CFA</symbol>
 			</currency>
 			<currency type="XPD">
 				<displayName>パラジウム</displayName>
 				<displayName count="other">パラジウム</displayName>
-				<symbol draft="contributed">XPD</symbol>
 			</currency>
 			<currency type="XPF">
 				<displayName>CFP フラン</displayName>
 				<displayName count="other">CFP フラン</displayName>
-				<symbol>CFPF</symbol>
 			</currency>
 			<currency type="XPT">
 				<displayName>プラチナ</displayName>
 				<displayName count="other">プラチナ</displayName>
-				<symbol draft="contributed">XPT</symbol>
 			</currency>
 			<currency type="XRE">
 				<displayName>RINET基金</displayName>
 				<displayName count="other">RINET基金</displayName>
-				<symbol draft="contributed">XRE</symbol>
 			</currency>
 			<currency type="XSU">
 				<displayName draft="contributed">スクレ</displayName>
 				<displayName count="other" draft="contributed">スクレ</displayName>
-				<symbol draft="contributed">XSU</symbol>
 			</currency>
 			<currency type="XTS">
 				<displayName>テスト用通貨コード</displayName>
 				<displayName count="other">テスト用通貨コード</displayName>
-				<symbol draft="contributed">XTS</symbol>
 			</currency>
 			<currency type="XUA">
 				<displayName draft="contributed">UA (アフリカ開発銀行)</displayName>
 				<displayName count="other" draft="contributed">UA (アフリカ開発銀行)</displayName>
-				<symbol draft="contributed">XUA</symbol>
 			</currency>
 			<currency type="XXX">
 				<displayName>不明または無効な通貨</displayName>
@@ -8576,7 +8188,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="YDD">
 				<displayName>イエメン ディナール</displayName>
 				<displayName count="other">イエメン ディナール</displayName>
-				<symbol draft="contributed">YDD</symbol>
 			</currency>
 			<currency type="YER">
 				<displayName>イエメン リアル</displayName>
@@ -8586,73 +8197,62 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="YUD">
 				<displayName>ユーゴスラビア ハード・ディナール (1966–1990)</displayName>
 				<displayName count="other">ユーゴスラビア ハード・ディナール (1966–1990)</displayName>
-				<symbol draft="contributed">YUD</symbol>
 			</currency>
 			<currency type="YUM">
 				<displayName>ユーゴスラビア ノビ・ディナール (1994–2002)</displayName>
 				<displayName count="other">ユーゴスラビア ノビ・ディナール (1994–2002)</displayName>
-				<symbol draft="contributed">YUM</symbol>
 			</currency>
 			<currency type="YUN">
 				<displayName>ユーゴスラビア 兌換ディナール (1990–1992)</displayName>
 				<displayName count="other">ユーゴスラビア 兌換ディナール (1990–1992)</displayName>
-				<symbol draft="contributed">YUN</symbol>
 			</currency>
 			<currency type="YUR">
 				<displayName draft="contributed">ユーゴスラビア 改革ディナール（1992–1993）</displayName>
 				<displayName count="other" draft="contributed">ユーゴスラビア 改革ディナール（1992–1993）</displayName>
-				<symbol draft="contributed">YUR</symbol>
 			</currency>
 			<currency type="ZAL">
 				<displayName>南アフリカ ランド (ZAL)</displayName>
 				<displayName count="other">南アフリカ ランド (ZAL)</displayName>
-				<symbol draft="contributed">ZAL</symbol>
 			</currency>
 			<currency type="ZAR">
 				<displayName>南アフリカ ランド</displayName>
 				<displayName count="other">南アフリカ ランド</displayName>
-				<symbol>ZAR</symbol>
 				<symbol alt="narrow" draft="contributed">R</symbol>
 			</currency>
 			<currency type="ZMK">
 				<displayName>ザンビア クワチャ (1968–2012)</displayName>
 				<displayName count="other">ザンビア クワチャ (1968–2012)</displayName>
-				<symbol draft="contributed">ZMK</symbol>
 			</currency>
 			<currency type="ZMW">
 				<displayName>ザンビア クワチャ</displayName>
 				<displayName count="other">ザンビア クワチャ</displayName>
-				<symbol>ZMW</symbol>
 				<symbol alt="narrow" draft="contributed">ZK</symbol>
 			</currency>
 			<currency type="ZRN">
 				<displayName>ザイール 新ザイール (1993–1998)</displayName>
 				<displayName count="other">ザイール 新ザイール (1993–1998)</displayName>
-				<symbol draft="contributed">ZRN</symbol>
 			</currency>
 			<currency type="ZRZ">
 				<displayName>ザイール ザイール (1971–1993)</displayName>
 				<displayName count="other">ザイール ザイール (1971–1993)</displayName>
-				<symbol draft="contributed">ZRZ</symbol>
 			</currency>
 			<currency type="ZWD">
 				<displayName>ジンバブエ ドル (1980–2008)</displayName>
 				<displayName count="other">ジンバブエ ドル (1980–2008)</displayName>
-				<symbol draft="contributed">ZWD</symbol>
 			</currency>
 			<currency type="ZWL">
 				<displayName>ジンバブエ ドル (2009)</displayName>
 				<displayName count="other">ジンバブエ ドル (2009)</displayName>
-				<symbol draft="contributed">ZWL</symbol>
 			</currency>
 			<currency type="ZWR">
 				<displayName>シンバブエ ドル（2008）</displayName>
 				<displayName count="other">シンバブエ ドル（2008）</displayName>
-				<symbol draft="contributed">ZWR</symbol>
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
+			<pattern type="approximately">約 {0}</pattern>
 			<pattern type="atLeast">{0} 以上</pattern>
+			<pattern type="atMost">{0} 以下</pattern>
 			<pattern type="range">{0}～{1}</pattern>
 		</miscPatterns>
 		<minimalPairs>
@@ -8734,6 +8334,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} 平方インチ</unitPattern>
 				<perUnitPattern>{0}/平方インチ</perUnitPattern>
 			</unit>
+			<unit type="area-dunam">
+				<displayName draft="contributed">ドゥナム</displayName>
+				<unitPattern count="other" draft="contributed">{0} ドゥナム</unitPattern>
+			</unit>
 			<unit type="concentr-karat">
 				<displayName>金</displayName>
 				<unitPattern count="other">{0} 金</unitPattern>
@@ -8750,6 +8354,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ppm</displayName>
 				<unitPattern count="other">{0} ppm</unitPattern>
 			</unit>
+			<unit type="concentr-percent">
+				<displayName>パーセント</displayName>
+				<unitPattern count="other">{0} パーセント</unitPattern>
+			</unit>
+			<unit type="concentr-permille">
+				<displayName>パーミル</displayName>
+				<unitPattern count="other">{0} パーミル</unitPattern>
+			</unit>
+			<unit type="concentr-permyriad">
+				<displayName draft="contributed">パーミリアド</displayName>
+				<unitPattern count="other" draft="contributed">{0} パーミリアド</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName draft="contributed">モル</displayName>
+				<unitPattern count="other" draft="contributed">{0} モル</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>リットル毎キロメートル</displayName>
 				<unitPattern count="other">{0} リットル毎キロメートル</unitPattern>
@@ -8765,6 +8385,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="consumption-mile-per-gallon-imperial">
 				<displayName>マイル毎英ガロン</displayName>
 				<unitPattern count="other">{0} マイル毎英ガロン</unitPattern>
+			</unit>
+			<unit type="digital-petabyte">
+				<displayName>ペタバイト</displayName>
+				<unitPattern count="other">{0} ペタバイト</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>テラバイト</displayName>
@@ -8897,6 +8521,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>キロワット時</displayName>
 				<unitPattern count="other">{0} キロワット時</unitPattern>
 			</unit>
+			<unit type="energy-electronvolt">
+				<displayName draft="contributed">電子ボルト</displayName>
+				<unitPattern count="other" draft="contributed">{0} 電子ボルト</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName draft="contributed">英熱量</displayName>
+				<unitPattern count="other" draft="contributed">{0} 英熱量</unitPattern>
+			</unit>
+			<unit type="force-pound-force">
+				<displayName draft="contributed">重量ポンド</displayName>
+				<unitPattern count="other" draft="contributed">{0} 重量ポンド</unitPattern>
+			</unit>
+			<unit type="force-newton">
+				<displayName draft="contributed">ニュートン</displayName>
+				<unitPattern count="other" draft="contributed">{0} ニュートン</unitPattern>
+			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>ギガヘルツ</displayName>
 				<unitPattern count="other">{0} ギガヘルツ</unitPattern>
@@ -8998,9 +8638,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ポイント</displayName>
 				<unitPattern count="other">{0} ポイント</unitPattern>
 			</unit>
+			<unit type="length-solar-radius">
+				<displayName draft="contributed">太陽半径</displayName>
+				<unitPattern count="other" draft="contributed">{0} 太陽半径</unitPattern>
+			</unit>
 			<unit type="light-lux">
 				<displayName>ルクス</displayName>
 				<unitPattern count="other">{0} ルクス</unitPattern>
+			</unit>
+			<unit type="light-solar-luminosity">
+				<displayName draft="contributed">太陽光度</displayName>
+				<unitPattern count="other" draft="contributed">{0} 太陽光度</unitPattern>
 			</unit>
 			<unit type="mass-metric-ton">
 				<displayName>トン</displayName>
@@ -9050,6 +8698,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>カラット</displayName>
 				<unitPattern count="other">{0} カラット</unitPattern>
 			</unit>
+			<unit type="mass-dalton">
+				<displayName draft="contributed">ダルトン</displayName>
+				<unitPattern count="other" draft="contributed">{0} ダルトン</unitPattern>
+			</unit>
+			<unit type="mass-earth-mass">
+				<displayName draft="contributed">地球質量</displayName>
+				<unitPattern count="other" draft="contributed">{0} 地球質量</unitPattern>
+			</unit>
+			<unit type="mass-solar-mass">
+				<displayName draft="contributed">太陽質量</displayName>
+				<unitPattern count="other" draft="contributed">{0} 太陽質量</unitPattern>
+			</unit>
 			<unit type="power-gigawatt">
 				<displayName>ギガワット</displayName>
 				<unitPattern count="other">{0} ギガワット</unitPattern>
@@ -9094,6 +8754,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ミリバール</displayName>
 				<unitPattern count="other">{0} ミリバール</unitPattern>
 			</unit>
+			<unit type="pressure-atmosphere">
+				<displayName>気圧</displayName>
+				<unitPattern count="other">{0} 気圧</unitPattern>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<displayName draft="contributed">キロパスカル</displayName>
+				<unitPattern count="other" draft="contributed">{0} キロパスカル</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<displayName draft="contributed">メガパスカル</displayName>
+				<unitPattern count="other" draft="contributed">{0} メガパスカル</unitPattern>
+			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>キロメートル毎時</displayName>
 				<unitPattern count="other">時速 {0} キロメートル</unitPattern>
@@ -9125,6 +8797,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="temperature-kelvin">
 				<displayName>ケルビン</displayName>
 				<unitPattern count="other">{0} ケルビン</unitPattern>
+			</unit>
+			<unit type="torque-pound-foot">
+				<displayName draft="contributed">ポンドフィート</displayName>
+				<unitPattern count="other" draft="contributed">{0} ポンドフィート</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<displayName draft="contributed">ニュートンメートル</displayName>
+				<unitPattern count="other" draft="contributed">{0} ニュートンメートル</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<displayName>立方キロメートル</displayName>
@@ -9223,6 +8903,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>液量オンス</displayName>
 				<unitPattern count="other">{0} 液量オンス</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName draft="contributed">英液量オンス</displayName>
+				<unitPattern count="other" draft="contributed">{0} 英液量オンス</unitPattern>
+			</unit>
 			<unit type="volume-tablespoon">
 				<displayName>大さじ</displayName>
 				<unitPattern count="other">大さじ {0}</unitPattern>
@@ -9231,7 +8915,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>小さじ</displayName>
 				<unitPattern count="other">小さじ {0}</unitPattern>
 			</unit>
+			<unit type="volume-barrel">
+				<displayName draft="contributed">バレル</displayName>
+				<unitPattern count="other" draft="contributed">{0} バレル</unitPattern>
+			</unit>
 			<coordinateUnit>
+				<displayName>方位</displayName>
 				<coordinateUnitPattern type="east">東経{0}</coordinateUnitPattern>
 				<coordinateUnitPattern type="north">北緯{0}</coordinateUnitPattern>
 				<coordinateUnitPattern type="south">南緯{0}</coordinateUnitPattern>
@@ -9311,6 +9000,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} in²</unitPattern>
 				<perUnitPattern>{0}/in²</perUnitPattern>
 			</unit>
+			<unit type="area-dunam">
+				<displayName draft="contributed">ドゥナム</displayName>
+				<unitPattern count="other" draft="contributed">{0}ドゥナム</unitPattern>
+			</unit>
 			<unit type="concentr-karat">
 				<displayName>金</displayName>
 				<unitPattern count="other">{0} 金</unitPattern>
@@ -9327,6 +9020,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ppm</displayName>
 				<unitPattern count="other">{0} ppm</unitPattern>
 			</unit>
+			<unit type="concentr-percent">
+				<displayName>パーセント</displayName>
+				<unitPattern count="other">{0}%</unitPattern>
+			</unit>
+			<unit type="concentr-permille">
+				<displayName>パーミル</displayName>
+				<unitPattern count="other">{0}‰</unitPattern>
+			</unit>
+			<unit type="concentr-permyriad">
+				<displayName draft="contributed">パーミリアド</displayName>
+				<unitPattern count="other" draft="contributed">{0}‱</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName draft="contributed">モル</displayName>
+				<unitPattern count="other" draft="contributed">{0} mol</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>L/km</displayName>
 				<unitPattern count="other">{0} L/km</unitPattern>
@@ -9342,6 +9051,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="consumption-mile-per-gallon-imperial">
 				<displayName>マイル毎英ガロン</displayName>
 				<unitPattern count="other">{0} mpg Imp.</unitPattern>
+			</unit>
+			<unit type="digital-petabyte">
+				<displayName>ペタバイト</displayName>
+				<unitPattern count="other">{0} PB</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>テラバイト</displayName>
@@ -9368,8 +9081,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} Mb</unitPattern>
 			</unit>
 			<unit type="digital-kilobyte">
-				<displayName>KB</displayName>
-				<unitPattern count="other">{0} KB</unitPattern>
+				<displayName>kB</displayName>
+				<unitPattern count="other">{0} kB</unitPattern>
 			</unit>
 			<unit type="digital-kilobit">
 				<displayName>キロビット</displayName>
@@ -9474,6 +9187,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>キロワット時</displayName>
 				<unitPattern count="other">{0} kWh</unitPattern>
 			</unit>
+			<unit type="energy-electronvolt">
+				<displayName draft="contributed">電子ボルト</displayName>
+				<unitPattern count="other" draft="contributed">{0} eV</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName draft="contributed">英熱量</displayName>
+				<unitPattern count="other" draft="contributed">{0} BTU</unitPattern>
+			</unit>
+			<unit type="force-pound-force">
+				<displayName draft="contributed">重量ポンド</displayName>
+				<unitPattern count="other" draft="contributed">{0} lbf</unitPattern>
+			</unit>
+			<unit type="force-newton">
+				<displayName draft="contributed">ニュートン</displayName>
+				<unitPattern count="other" draft="contributed">{0} N</unitPattern>
+			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>GHz</displayName>
 				<unitPattern count="other">{0} GHz</unitPattern>
@@ -9557,11 +9286,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="length-furlong">
 				<displayName draft="contributed">ハロン</displayName>
-				<unitPattern count="other" draft="contributed">{0} fur</unitPattern>
 			</unit>
 			<unit type="length-fathom">
 				<displayName draft="contributed">ファゾム</displayName>
-				<unitPattern count="other" draft="contributed">{0} fm</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} fth</unitPattern>
 			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>海里</displayName>
@@ -9575,9 +9303,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ポイント</displayName>
 				<unitPattern count="other">{0} pt</unitPattern>
 			</unit>
+			<unit type="length-solar-radius">
+				<displayName draft="contributed">太陽半径</displayName>
+				<unitPattern count="other" draft="contributed">{0} R☉</unitPattern>
+			</unit>
 			<unit type="light-lux">
 				<displayName>ルクス</displayName>
 				<unitPattern count="other">{0} lx</unitPattern>
+			</unit>
+			<unit type="light-solar-luminosity">
+				<displayName draft="contributed">太陽光度</displayName>
+				<unitPattern count="other" draft="contributed">{0} L☉</unitPattern>
 			</unit>
 			<unit type="mass-metric-ton">
 				<displayName>トン</displayName>
@@ -9607,7 +9343,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="mass-stone">
 				<displayName draft="contributed">ストーン</displayName>
-				<unitPattern count="other" draft="contributed">{0} st</unitPattern>
 			</unit>
 			<unit type="mass-pound">
 				<displayName>ポンド</displayName>
@@ -9626,6 +9361,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="mass-carat">
 				<displayName>カラット</displayName>
 				<unitPattern count="other">{0} ct</unitPattern>
+			</unit>
+			<unit type="mass-dalton">
+				<displayName draft="contributed">ダルトン</displayName>
+				<unitPattern count="other" draft="contributed">{0} Da</unitPattern>
+			</unit>
+			<unit type="mass-earth-mass">
+				<displayName draft="contributed">地球質量</displayName>
+				<unitPattern count="other" draft="contributed">{0} M⊕</unitPattern>
+			</unit>
+			<unit type="mass-solar-mass">
+				<displayName draft="contributed">太陽質量</displayName>
+				<unitPattern count="other" draft="contributed">{0} M☉</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>ギガワット</displayName>
@@ -9671,6 +9418,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ミリバール</displayName>
 				<unitPattern count="other">{0} mb</unitPattern>
 			</unit>
+			<unit type="pressure-atmosphere">
+				<displayName>気圧</displayName>
+				<unitPattern count="other">{0} atm</unitPattern>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<displayName draft="contributed">kPa</displayName>
+				<unitPattern count="other" draft="contributed">{0} kPa</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<displayName draft="contributed">MPa</displayName>
+				<unitPattern count="other" draft="contributed">{0} MPa</unitPattern>
+			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>km/h</displayName>
 				<unitPattern count="other">{0} km/h</unitPattern>
@@ -9702,6 +9461,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="temperature-kelvin">
 				<displayName>K</displayName>
 				<unitPattern count="other">{0} K</unitPattern>
+			</unit>
+			<unit type="torque-pound-foot">
+				<displayName draft="contributed">ポンドフィート</displayName>
+				<unitPattern count="other" draft="contributed">{0} lbf⋅ft</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<displayName draft="contributed">ニュートンメートル</displayName>
+				<unitPattern count="other" draft="contributed">{0} N⋅m</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<displayName>km³</displayName>
@@ -9772,7 +9539,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="volume-bushel">
 				<displayName draft="contributed">ブッシェル</displayName>
-				<unitPattern count="other" draft="contributed">{0} bu</unitPattern>
 			</unit>
 			<unit type="volume-gallon">
 				<displayName>ガロン</displayName>
@@ -9800,6 +9566,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>液量オンス</displayName>
 				<unitPattern count="other">{0} fl oz</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName draft="contributed">英液量オンス</displayName>
+				<unitPattern count="other" draft="contributed">{0} fl oz Imp</unitPattern>
+			</unit>
 			<unit type="volume-tablespoon">
 				<displayName>大さじ</displayName>
 				<unitPattern count="other">大さじ {0}</unitPattern>
@@ -9808,7 +9578,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>小さじ</displayName>
 				<unitPattern count="other">小さじ {0}</unitPattern>
 			</unit>
+			<unit type="volume-barrel">
+				<displayName draft="contributed">バレル</displayName>
+				<unitPattern count="other" draft="contributed">{0} bbl</unitPattern>
+			</unit>
 			<coordinateUnit>
+				<displayName>方位</displayName>
 				<coordinateUnitPattern type="east">東経{0}</coordinateUnitPattern>
 				<coordinateUnitPattern type="north">北緯{0}</coordinateUnitPattern>
 				<coordinateUnitPattern type="south">南緯{0}</coordinateUnitPattern>
@@ -9824,20 +9599,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}G</unitPattern>
 			</unit>
 			<unit type="acceleration-meter-per-second-squared">
-				<displayName draft="contributed">m/s²</displayName>
 				<unitPattern count="other" draft="contributed">{0}m/s²</unitPattern>
 			</unit>
 			<unit type="angle-radian">
 				<unitPattern count="other" draft="contributed">{0}rad</unitPattern>
-			</unit>
-			<unit type="angle-degree">
-				<unitPattern count="other">{0}°</unitPattern>
-			</unit>
-			<unit type="angle-arc-minute">
-				<unitPattern count="other">{0}′</unitPattern>
-			</unit>
-			<unit type="angle-arc-second">
-				<unitPattern count="other">{0}″</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
 				<unitPattern count="other">{0}km²</unitPattern>
@@ -9869,6 +9634,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="concentr-karat">
 				<unitPattern count="other" draft="contributed">{0}K</unitPattern>
 			</unit>
+			<unit type="concentr-percent">
+				<displayName>%</displayName>
+				<unitPattern count="other">{0}%</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<unitPattern count="other" draft="contributed">{0}L/km</unitPattern>
 			</unit>
@@ -9898,7 +9667,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" draft="contributed">{0}Mb</unitPattern>
 			</unit>
 			<unit type="digital-kilobyte">
-				<unitPattern count="other" draft="contributed">{0}KB</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}kB</unitPattern>
 			</unit>
 			<unit type="digital-kilobit">
 				<unitPattern count="other" draft="contributed">{0}kb</unitPattern>
@@ -9930,22 +9699,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="duration-day">
 				<displayName>日</displayName>
-				<unitPattern count="other">{0}日</unitPattern>
+				<unitPattern count="other">{0}d</unitPattern>
 				<perUnitPattern draft="contributed">{0}/日</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName>時間</displayName>
-				<unitPattern count="other">{0}時間</unitPattern>
+				<unitPattern count="other">{0}h</unitPattern>
 				<perUnitPattern draft="contributed">{0}/時間</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName>分</displayName>
-				<unitPattern count="other">{0}分</unitPattern>
+				<unitPattern count="other">{0}m</unitPattern>
 				<perUnitPattern draft="contributed">{0}/分</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>秒</displayName>
-				<unitPattern count="other">{0}秒</unitPattern>
+				<unitPattern count="other">{0}s</unitPattern>
 				<perUnitPattern draft="contributed">{0}/秒</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
@@ -9957,7 +9726,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" draft="contributed">{0}μs</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
-				<displayName draft="contributed">ns</displayName>
 				<unitPattern count="other" draft="contributed">{0}ns</unitPattern>
 			</unit>
 			<unit type="electric-ampere">
@@ -10005,12 +9773,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="length-kilometer">
 				<displayName>km</displayName>
 				<unitPattern count="other">{0}km</unitPattern>
-				<perUnitPattern draft="contributed">{0}/km</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName>m</displayName>
 				<unitPattern count="other">{0}m</unitPattern>
-				<perUnitPattern draft="contributed">{0}/m</perUnitPattern>
 			</unit>
 			<unit type="length-decimeter">
 				<displayName draft="contributed">デシメートル</displayName>
@@ -10019,7 +9785,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="length-centimeter">
 				<displayName>cm</displayName>
 				<unitPattern count="other">{0}cm</unitPattern>
-				<perUnitPattern draft="contributed">{0}/cm</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
 				<displayName>mm</displayName>
@@ -10048,12 +9813,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="length-foot">
 				<displayName draft="contributed">フィート</displayName>
 				<unitPattern count="other">{0}′</unitPattern>
-				<perUnitPattern draft="contributed">{0}/ft</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
 				<displayName draft="contributed">インチ</displayName>
 				<unitPattern count="other">{0}″</unitPattern>
-				<perUnitPattern draft="contributed">{0}/in</perUnitPattern>
 			</unit>
 			<unit type="length-parsec">
 				<displayName draft="contributed">パーセク</displayName>
@@ -10068,12 +9831,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" draft="contributed">{0}au</unitPattern>
 			</unit>
 			<unit type="length-furlong">
-				<displayName draft="contributed">fur</displayName>
 				<unitPattern count="other" draft="contributed">{0}fur</unitPattern>
 			</unit>
 			<unit type="length-fathom">
-				<displayName draft="contributed">fm</displayName>
-				<unitPattern count="other" draft="contributed">{0}fm</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}fth</unitPattern>
 			</unit>
 			<unit type="length-nautical-mile">
 				<displayName draft="contributed">海里</displayName>
@@ -10081,11 +9842,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="length-mile-scandinavian">
 				<displayName draft="contributed">スカンジナビアマイル</displayName>
-				<unitPattern count="other" draft="contributed">{0} smi</unitPattern>
-			</unit>
-			<unit type="length-point">
-				<displayName draft="contributed">pt</displayName>
-				<unitPattern count="other" draft="contributed">{0} pt</unitPattern>
 			</unit>
 			<unit type="light-lux">
 				<unitPattern count="other" draft="contributed">{0}lx</unitPattern>
@@ -10096,12 +9852,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="mass-kilogram">
 				<displayName>kg</displayName>
 				<unitPattern count="other">{0}kg</unitPattern>
-				<perUnitPattern draft="contributed">{0}/kg</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<displayName>g</displayName>
 				<unitPattern count="other">{0}g</unitPattern>
-				<perUnitPattern draft="contributed">{0}/g</perUnitPattern>
 			</unit>
 			<unit type="mass-milligram">
 				<unitPattern count="other" draft="contributed">{0}mg</unitPattern>
@@ -10113,18 +9867,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" draft="contributed">{0}t</unitPattern>
 			</unit>
 			<unit type="mass-stone">
-				<displayName draft="contributed">st</displayName>
 				<unitPattern count="other" draft="contributed">{0}st</unitPattern>
 			</unit>
 			<unit type="mass-pound">
 				<displayName draft="contributed">ポンド</displayName>
 				<unitPattern count="other">{0}lb</unitPattern>
-				<perUnitPattern draft="contributed">{0}/lb</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce">
 				<displayName draft="contributed">オンス</displayName>
 				<unitPattern count="other">{0}oz</unitPattern>
-				<perUnitPattern draft="contributed">{0}/oz</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce-troy">
 				<unitPattern count="other" draft="contributed">{0}oz t</unitPattern>
@@ -10151,7 +9902,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}hp</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
-				<displayName draft="contributed">hPa</displayName>
 				<unitPattern count="other">{0}hPa</unitPattern>
 			</unit>
 			<unit type="pressure-millimeter-of-mercury">
@@ -10175,7 +9925,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}km/h</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
-				<displayName draft="contributed">m/s</displayName>
 				<unitPattern count="other">{0}m/s</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
@@ -10184,22 +9933,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="speed-knot">
 				<displayName draft="contributed">ノット</displayName>
-				<unitPattern count="other" draft="contributed">{0} kn</unitPattern>
-			</unit>
-			<unit type="temperature-generic">
-				<displayName draft="contributed">°</displayName>
-				<unitPattern count="other" draft="contributed">{0}°</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
 				<displayName>°C</displayName>
 				<unitPattern count="other">{0}°C</unitPattern>
 			</unit>
-			<unit type="temperature-fahrenheit">
-				<displayName draft="contributed">°F</displayName>
-				<unitPattern count="other">{0}°F</unitPattern>
-			</unit>
 			<unit type="temperature-kelvin">
-				<displayName>K</displayName>
 				<unitPattern count="other">{0}K</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
@@ -10246,7 +9985,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" draft="contributed">{0}ac ft</unitPattern>
 			</unit>
 			<unit type="volume-bushel">
-				<displayName draft="contributed">bu</displayName>
 				<unitPattern count="other" draft="contributed">{0}bu</unitPattern>
 			</unit>
 			<unit type="volume-gallon">
@@ -10271,6 +10009,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" draft="contributed">小さじ{0}</unitPattern>
 			</unit>
 			<coordinateUnit>
+				<displayName>方位</displayName>
 				<coordinateUnitPattern type="east">{0}E</coordinateUnitPattern>
 				<coordinateUnitPattern type="north">{0}N</coordinateUnitPattern>
 				<coordinateUnitPattern type="south">{0}S</coordinateUnitPattern>
@@ -10299,6 +10038,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<listPatternPart type="middle">{0}、{1}</listPatternPart>
 			<listPatternPart type="end">{0}、または{1}</listPatternPart>
 			<listPatternPart type="2">{0}または{1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-narrow">
+			<listPatternPart type="start" draft="contributed">{0}、{1}</listPatternPart>
+			<listPatternPart type="middle" draft="contributed">{0}、{1}</listPatternPart>
+			<listPatternPart type="end" draft="contributed">{0}、{1}</listPatternPart>
+			<listPatternPart type="2" draft="contributed">{0}、{1}</listPatternPart>
 		</listPattern>
 		<listPattern type="standard-short">
 			<listPatternPart type="start">{0}、{1}</listPatternPart>
@@ -10432,10 +10177,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	<typographicNames>
 		<axisName type="ital">イタリック</axisName>
 		<axisName type="opsz">オプティカルサイズ</axisName>
-		<axisName type="slnt">傾斜角</axisName>
+		<axisName type="slnt">スラント</axisName>
 		<axisName type="wdth">字幅</axisName>
 		<axisName type="wght">太さ</axisName>
 		<styleName type="ital" subtype="1">カーシブ</styleName>
+		<styleName type="opsz" subtype="8">キャプション</styleName>
+		<styleName type="opsz" subtype="12">テキスト</styleName>
 		<styleName type="opsz" subtype="18">タイトル</styleName>
 		<styleName type="opsz" subtype="72">ディスプレイ</styleName>
 		<styleName type="opsz" subtype="144">ポスター</styleName>
@@ -10484,8 +10231,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<styleName type="wght" subtype="900">ブラック</styleName>
 		<styleName type="wght" subtype="900" alt="heavy">ヘビー</styleName>
 		<styleName type="wght" subtype="950">エクストラ・ブラック</styleName>
-		<styleName type="wght" subtype="950" alt="ultraheavy">ウルトラ・ヘビー</styleName>
 		<styleName type="wght" subtype="950" alt="ultrablack">ウルトラ・ブラック</styleName>
+		<styleName type="wght" subtype="950" alt="ultraheavy">ウルトラ・ヘビー</styleName>
 		<featureName type="afrc">縦書きの分数</featureName>
 		<featureName type="cpsp">大文字の間隔</featureName>
 		<featureName type="dlig">オプションのリガチャ</featureName>

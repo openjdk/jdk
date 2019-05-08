@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2018 Unicode, Inc.
+<!-- Copyright © 1991-2019 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -9,7 +9,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 13911 $"/>
+		<version number="$Revision: 14982 $"/>
 		<language type="am"/>
 	</identity>
 	<localeDisplayNames>
@@ -49,7 +49,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="as">አሳሜዛዊ</language>
 			<language type="asa">አሱ</language>
 			<language type="ase">የአሜሪካ የምልክት ቋንቋ</language>
-			<language type="ast">አውስትሪያን</language>
+			<language type="ast">አስቱሪያን</language>
 			<language type="av">አቫሪክ</language>
 			<language type="awa">አዋድሂ</language>
 			<language type="ay">አያማርኛ</language>
@@ -136,7 +136,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="dsb">የታችኛው ሰርቢያንኛ</language>
 			<language type="dtp">ሴንተራል ዱሰን</language>
 			<language type="dua">ዱዋላኛ</language>
-			<language type="dv">ዲቬህ</language>
+			<language type="dv">ዲቬሂ</language>
 			<language type="dyo">ጆላ ፎንያኛ</language>
 			<language type="dyu">ድዩላ</language>
 			<language type="dz">ድዞንግኻኛ</language>
@@ -260,7 +260,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ks">ካሽሚርኛ</language>
 			<language type="ksb">ሻምባላ</language>
 			<language type="ksf">ባፊያ</language>
-			<language type="ksh">ኮሎኝያን</language>
+			<language type="ksh">ኮሎኝኛ</language>
 			<language type="ku">ኩርድሽኛ</language>
 			<language type="kum">ኩማይክ</language>
 			<language type="kv">ኮሚ</language>
@@ -304,7 +304,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="min">ሚናንግካባኡ</language>
 			<language type="mk">ማሴዶንኛ</language>
 			<language type="ml">ማላያላምኛ</language>
-			<language type="mn">ሞንጎላዊኛ</language>
+			<language type="mn">ሞንጎሊያኛ</language>
 			<language type="mni">ማኒፑሪ</language>
 			<language type="moh">ሞሃውክ</language>
 			<language type="mos">ሞሲ</language>
@@ -327,7 +327,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="nds">የታችኛው ጀርመን</language>
 			<language type="nds_NL">የታችኛው ሳክሰን</language>
 			<language type="ne">ኔፓሊኛ</language>
-			<language type="new">ነዋሪ</language>
+			<language type="new">ኒዋሪ(ኔፓል)</language>
 			<language type="ng">ንዶንጋ</language>
 			<language type="nia">ኒአስ</language>
 			<language type="niu">ኒዩአንኛ</language>
@@ -412,7 +412,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="snk">ሶኒንኬ</language>
 			<language type="so">ሱማልኛ</language>
 			<language type="sq">አልባንያንኛ</language>
-			<language type="sr">ሰርቢኛ</language>
+			<language type="sr">ሰርብያኛ</language>
 			<language type="srn">ስራናን ቶንጎ</language>
 			<language type="ss">ስዋቲኛ</language>
 			<language type="ssy">ሳሆኛ</language>
@@ -450,7 +450,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="twq">ታሳዋቅ</language>
 			<language type="ty">ታሂታንኛ</language>
 			<language type="tyv">ቱቪንያንኛ</language>
-			<language type="tzm">መካከለኛ አትላስ ታማዚግት</language>
+			<language type="tzm">መካከለኛው አትላስ ታማዚኛ</language>
 			<language type="udm">ኡድሙርት</language>
 			<language type="ug">ኡዊግሁርኛ</language>
 			<language type="ug" alt="variant">ኡይገር</language>
@@ -578,17 +578,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="019">አሜሪካ</territory>
 			<territory type="021">ሰሜናዊ አሜሪካ</territory>
 			<territory type="029">ካሪቢያን</territory>
-			<territory type="030">ምዕራባዊ እሲያ</territory>
+			<territory type="030">ምስራቃዊ እስያ</territory>
 			<territory type="034">ደቡባዊ እሲያ</territory>
 			<territory type="035">ምዕራባዊ ደቡብ እሲያ</territory>
 			<territory type="039">ደቡባዊ አውሮፓ</territory>
-			<territory type="053">አውስትራሊያ</territory>
+			<territory type="053">አውስትራሌዥያ</territory>
 			<territory type="054">ሜላኔዥያ</territory>
 			<territory type="057">የማይክሮኔዥያን ክልል</territory>
 			<territory type="061">ፖሊኔዥያ</territory>
 			<territory type="142">እሲያ</territory>
 			<territory type="143">መካከለኛው እሲያ</territory>
-			<territory type="145">ምስራቃዊ እሲያ</territory>
+			<territory type="145">ምዕራባዊ እስያ</territory>
 			<territory type="150">አውሮፓ</territory>
 			<territory type="151">ምዕራባዊ አውሮፓ</territory>
 			<territory type="154">ሰሜናዊ አውሮፓ</territory>
@@ -653,9 +653,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="CU">ኩባ</territory>
 			<territory type="CV">ኬፕ ቬርዴ</territory>
 			<territory type="CW">ኩራሳዎ</territory>
-			<territory type="CX">የገና ደሴት</territory>
+			<territory type="CX">ክሪስማስ ደሴት</territory>
 			<territory type="CY">ሳይፕረስ</territory>
-			<territory type="CZ">ቼችኒያ</territory>
+			<territory type="CZ">ቼቺያ</territory>
 			<territory type="CZ" alt="variant">ቼክ ሪፑብሊክ</territory>
 			<territory type="DE">ጀርመን</territory>
 			<territory type="DG">ዲዬጎ ጋርሺያ</territory>
@@ -683,7 +683,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="FR">ፈረንሳይ</territory>
 			<territory type="GA">ጋቦን</territory>
 			<territory type="GB">ዩናይትድ ኪንግደም</territory>
-			<territory type="GB" alt="short">ዩናይትድ ኪንግደም</territory>
+			<territory type="GB" alt="short">ዩኬ</territory>
 			<territory type="GD">ግሬናዳ</territory>
 			<territory type="GE">ጆርጂያ</territory>
 			<territory type="GF">የፈረንሳይ ጉዊአና</territory>
@@ -752,8 +752,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="MF">ሴንት ማርቲን</territory>
 			<territory type="MG">ማዳጋስካር</territory>
 			<territory type="MH">ማርሻል አይላንድ</territory>
-			<territory type="MK">መቄዶንያ</territory>
-			<territory type="MK" alt="variant">መቄዶንያ (የቀድሞ የዩጎስላቭ መቄዶንያ ሪፐብሊክ)</territory>
+			<territory type="MK">ሰሜን መቄዶንያ</territory>
 			<territory type="ML">ማሊ</territory>
 			<territory type="MM">ማይናማር(በርማ)</territory>
 			<territory type="MN">ሞንጎሊያ</territory>
@@ -826,6 +825,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="SX">ሲንት ማርተን</territory>
 			<territory type="SY">ሲሪያ</territory>
 			<territory type="SZ">ሱዋዚላንድ</territory>
+			<territory type="SZ" alt="variant">ስዋዚላንድ</territory>
 			<territory type="TA">ትሪስታን ዲ ኩንሃ</territory>
 			<territory type="TC">የቱርኮችና የካኢኮስ ደሴቶች</territory>
 			<territory type="TD">ቻድ</territory>
@@ -834,7 +834,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="TH">ታይላንድ</territory>
 			<territory type="TJ">ታጃኪስታን</territory>
 			<territory type="TK">ቶክላው</territory>
-			<territory type="TL">ምስራቅ ሌስት</territory>
+			<territory type="TL">ቲሞር ሌስቴ</territory>
 			<territory type="TL" alt="variant">ምስራቅ ቲሞር</territory>
 			<territory type="TM">ቱርክሜኒስታን</territory>
 			<territory type="TN">ቱኒዚያ</territory>
@@ -900,7 +900,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="gregorian">የግሪጎሪያን የቀን አቆጣጠር</type>
 			<type key="calendar" type="hebrew">የእብራዊያን የቀን አቆጣጠር</type>
 			<type key="calendar" type="indian">የህንድ ብሔራዊ የቀን አቆጣጠር</type>
-			<type key="calendar" type="islamic">የእስላማዊ የሰዓት አቆጣጠር</type>
+			<type key="calendar" type="islamic">እስላማዊ የቀን አቆጣጠር</type>
 			<type key="calendar" type="islamic-civil">የእስላም ህዝባዊ የቀን አቆጣጠር</type>
 			<type key="calendar" type="iso8601">ISO-8601 የቀን አቆጣጠር</type>
 			<type key="calendar" type="japanese">የጃፓን የቀን አቆጣጠር</type>
@@ -941,7 +941,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colStrength" type="secondary">የፊደል ጭረቶችን ደርድር</type>
 			<type key="colStrength" type="tertiary">የፊደል ጭረቶች/መልከፊደል/ስፋት ደርድር</type>
 			<type key="d0" type="fwidth">ሙሉ ወርድ</type>
-			<type key="d0" type="hwidth">ሃልፍዊድዝ</type>
+			<type key="d0" type="hwidth">ግማሽ ወርድ</type>
 			<type key="d0" type="npinyin">አሃዛዊ</type>
 			<type key="hc" type="h11">የ12 ሰዓት ስርዓት (0–11)</type>
 			<type key="hc" type="h12">የ12 ሰዓት ስርዓት (1–12)</type>
@@ -961,7 +961,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="armnlow">የአሜሪካን ንዑስ ሆሄ አሃዞች</type>
 			<type key="numbers" type="beng">የቤንጋሊ አሃዞች</type>
 			<type key="numbers" type="deva">የዴቫንጋሪ አሃዞች</type>
-			<type key="numbers" type="ethi">የኢትዮፒክ ቁጥሮች</type>
+			<type key="numbers" type="ethi">የኢትዮጵያ ቁጥሮች</type>
 			<type key="numbers" type="finance">የፋይናንስ ቁጥሮች</type>
 			<type key="numbers" type="fullwide">የሙሉ ወርድ አሃዞች</type>
 			<type key="numbers" type="geor">የጆርጂያን ቁጥሮች</type>
@@ -1009,8 +1009,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</localeDisplayNames>
 	<characters>
 		<exemplarCharacters>[ሀ ሁ ሂ ሃ ሄ ህ ሆ ለ ሉ ሊ ላ ሌ ል ሎ ሏ ሐ ሑ ሒ ሓ ሔ ሕ ሖ ሗ መ ሙ ሚ ማ ሜ ም ሞ ሟ ሠ ሡ ሢ ሣ ሤ ሥ ሦ ሧ ረ ሩ ሪ ራ ሬ ር ሮ ሯ ሰ ሱ ሲ ሳ ሴ ስ ሶ ሷ ሸ ሹ ሺ ሻ ሼ ሽ ሾ ሿ ቀ ቁ ቂ ቃ ቄ ቅ ቆ ቈ ቊ ቋ ቌ ቍ በ ቡ ቢ ባ ቤ ብ ቦ ቧ ቨ ቩ ቪ ቫ ቬ ቭ ቮ ቯ ተ ቱ ቲ ታ ቴ ት ቶ ቷ ቸ ቹ ቺ ቻ ቼ ች ቾ ቿ ኀ ኁ ኂ ኃ ኄ ኅ ኆ ኈ ኊ ኋ ኌ ኍ ነ ኑ ኒ ና ኔ ን ኖ ኗ ኘ ኙ ኚ ኛ ኜ ኝ ኞ ኟ አ ኡ ኢ ኣ ኤ እ ኦ ኧ ከ ኩ ኪ ካ ኬ ክ ኮ ኰ ኲ ኳ ኴ ኵ ኸ ኹ ኺ ኻ ኼ ኽ ኾ ወ ዉ ዊ ዋ ዌ ው ዎ ዐ ዑ ዒ ዓ ዔ ዕ ዖ ዘ ዙ ዚ ዛ ዜ ዝ ዞ ዟ ዠ ዡ ዢ ዣ ዤ ዥ ዦ ዧ የ ዩ ዪ ያ ዬ ይ ዮ ደ ዱ ዲ ዳ ዴ ድ ዶ ዷ ጀ ጁ ጂ ጃ ጄ ጅ ጆ ጇ ገ ጉ ጊ ጋ ጌ ግ ጎ ጐ ጒ ጓ ጔ ጕ ጠ ጡ ጢ ጣ ጤ ጥ ጦ ጧ ጨ ጩ ጪ ጫ ጬ ጭ ጮ ጯ ጰ ጱ ጲ ጳ ጴ ጵ ጶ ጷ ጸ ጹ ጺ ጻ ጼ ጽ ጾ ጿ ፀ ፁ ፂ ፃ ፄ ፅ ፆ ፈ ፉ ፊ ፋ ፌ ፍ ፎ ፏ ፐ ፑ ፒ ፓ ፔ ፕ ፖ ፗ]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[]</exemplarCharacters>
-		<exemplarCharacters type="index" draft="unconfirmed">[ሀ ለ ሐ መ ሠ ረ ሰ ሸ ቀ ቈ በ ቨ ተ ቸ ኀ ኈ ነ ኘ አ ከ ኰ ኸ ወ ዐ ዘ ዠ የ ደ ጀ ገ ጐ ጠ ጨ ጰ ጸ ፀ ፈ ፐ]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="contributed">[ሀ ለ ሐ መ ሠ ረ ሰ ሸ ቀ ቈ በ ቨ ተ ቸ ኀ ኈ ነ ኘ አ ከ ኰ ኸ ወ ዐ ዘ ዠ የ ደ ጀ ገ ጐ ጠ ጨ ጰ ጸ ፀ ፈ ፐ]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[‐ – , ፡ ፣ ፤ ፥ ፦ ! ? . ። ‹ › « » ( ) \[ \]]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
@@ -1531,6 +1530,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
+			<calendar type="ethiopic-amete-alem">
+				<eras>
+					<eraNames>
+						<era type="0">ERA0</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0">ERA0</era>
+					</eraAbbr>
+					<eraNarrow>
+						<era type="0">ERA0</era>
+					</eraNarrow>
+				</eras>
+			</calendar>
 			<calendar type="generic">
 				<dateFormats>
 					<dateFormatLength type="full">
@@ -1589,7 +1601,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
-						<dateFormatItem id="GyMMM">MMM፣ y G</dateFormatItem>
+						<dateFormatItem id="GyMMM">G y MMM</dateFormatItem>
 						<dateFormatItem id="GyMMMd">MMM d፣ y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E MMM d፣ y G</dateFormatItem>
 						<dateFormatItem id="h">h a</dateFormatItem>
@@ -1630,6 +1642,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</availableFormats>
 					<intervalFormats>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="Bh">
+							<greatestDifference id="B">h B – h B</greatestDifference>
+							<greatestDifference id="h">h–h B</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Bhm">
+							<greatestDifference id="B">h:mm B – h:mm B</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm B</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm B</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d–d</greatestDifference>
 						</intervalFormatItem>
@@ -1944,7 +1965,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<dayPeriod type="noon">ቀትር</dayPeriod>
 							<dayPeriod type="pm">ከሰዓት</dayPeriod>
 							<dayPeriod type="morning1">ጥዋት1</dayPeriod>
-							<dayPeriod type="afternoon1">ከሰዓት1</dayPeriod>
+							<dayPeriod type="afternoon1">ከሰዓት 7</dayPeriod>
 							<dayPeriod type="evening1">ማታ1</dayPeriod>
 							<dayPeriod type="night1">ሌሊት1</dayPeriod>
 						</dayPeriodWidth>
@@ -1964,7 +1985,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<dayPeriod type="noon">ቀትር</dayPeriod>
 							<dayPeriod type="pm">ከሰዓት</dayPeriod>
 							<dayPeriod type="morning1">ጥዋት1</dayPeriod>
-							<dayPeriod type="afternoon1">ከሰዓት1</dayPeriod>
+							<dayPeriod type="afternoon1">ከሰዓት 7 ሰዓት</dayPeriod>
 							<dayPeriod type="evening1">ማታ1</dayPeriod>
 							<dayPeriod type="night1">ሌሊት1</dayPeriod>
 						</dayPeriodWidth>
@@ -2012,7 +2033,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<eraAbbr>
 						<era type="0">ዓ/ዓ</era>
 						<era type="1">ዓ/ም</era>
-						<era type="1" alt="variant">CE</era>
 					</eraAbbr>
 					<eraNarrow>
 						<era type="0">ዓ/ዓ</era>
@@ -2022,7 +2042,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern>EEEE ፣d MMMM y</pattern>
+							<pattern>y MMMM d, EEEE</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
@@ -2099,8 +2119,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
-						<dateFormatItem id="GyMMMd">MMM d፣ y G</dateFormatItem>
-						<dateFormatItem id="GyMMMEd">E፣ MMM d፣ y G</dateFormatItem>
+						<dateFormatItem id="GyMMMd">G y MMM d</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">G y MMM d, E</dateFormatItem>
 						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="H">H</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
@@ -2119,8 +2139,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="MMMEd">E፣ MMM d</dateFormatItem>
 						<dateFormatItem id="MMMMd">MMMM d</dateFormatItem>
 						<dateFormatItem id="MMMMEd">E፣ MMMM d</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="one">'week' W 'of' MMM</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="other">'week' W 'of' MMM</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">M/y</dateFormatItem>
@@ -2132,16 +2150,61 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
-						<dateFormatItem id="yw" count="one">'week' w 'of' Y</dateFormatItem>
-						<dateFormatItem id="yw" count="other">'week' w 'of' Y</dateFormatItem>
 					</availableFormats>
 					<appendItems>
 						<appendItem request="Timezone">{0} {1}</appendItem>
 					</appendItems>
 					<intervalFormats>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="Bh">
+							<greatestDifference id="B">h B – h B</greatestDifference>
+							<greatestDifference id="h">h–h B</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Bhm">
+							<greatestDifference id="B">h:mm B – h:mm B</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm B</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm B</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d–d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G">G y – G y</greatestDifference>
+							<greatestDifference id="y">G y–y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G">GGGGG M/y – GGGGG M/y</greatestDifference>
+							<greatestDifference id="M">GGGGG M/y – M/y</greatestDifference>
+							<greatestDifference id="y">GGGGG M/y – M/y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d">GGGGG d/M/y – d/M/y</greatestDifference>
+							<greatestDifference id="G">GGGGG d/M/y – GGGGG d/M/y</greatestDifference>
+							<greatestDifference id="M">GGGGG d/M/y – d/M/y</greatestDifference>
+							<greatestDifference id="y">GGGGG d/M/y – d/M/y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="G">GGGGG y-MM-dd, E – GGGGG y-MM-dd, E</greatestDifference>
+							<greatestDifference id="M">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="y">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G">G MMM y – G MMM y</greatestDifference>
+							<greatestDifference id="M">G MMM–MMM፣ y</greatestDifference>
+							<greatestDifference id="y">G MMM y – MMM y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d">G MMM d–d፣ y</greatestDifference>
+							<greatestDifference id="G">G MMM d፣ y – G MMM d፣ y</greatestDifference>
+							<greatestDifference id="M">G MMM d – MMM d፣ y</greatestDifference>
+							<greatestDifference id="y">G MMM d፣ y – MMM d፣ y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d">G E MMM d – E MMM d፣ y</greatestDifference>
+							<greatestDifference id="G">G E፣ MMM d፣ y – G E፣ MMM d፣ y</greatestDifference>
+							<greatestDifference id="M">G E MMM d፣ y – E MMM d</greatestDifference>
+							<greatestDifference id="y">G E፣ MMM d፣ y – E፣ MMM d፣ y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">h a – h a</greatestDifference>
@@ -2195,7 +2258,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">E d – E d፣ MMM</greatestDifference>
-							<greatestDifference id="M">E፣ MMM d – E፣ MMM d</greatestDifference>
+							<greatestDifference id="M">MMM d, E – MMM d, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">y–y</greatestDifference>
@@ -2210,7 +2273,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">d/M/y – d/M/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">E፣ d/M/y – E፣ d/M/y</greatestDifference>
+							<greatestDifference id="d">y-MM-dd, E – y-MM-dd, E</greatestDifference>
 							<greatestDifference id="M">E d/M/ – E d/M፣ y</greatestDifference>
 							<greatestDifference id="y">E፣ d/M/y – E፣ d/M/y</greatestDifference>
 						</intervalFormatItem>
@@ -4260,16 +4323,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="America_Central">
 				<long>
-					<generic>የመካከለኛ ሰዓት አቆጣጠር</generic>
-					<standard>የመካከለኛ መደበኛ ሰዓት አቆጣጠር</standard>
+					<generic>የሰሜን አሜሪካ የመካከለኛ ሰዓት አቆጣጠር</generic>
+					<standard>የሰሜን አሜሪካ የመካከለኛ መደበኛ ሰዓት አቆጣጠር</standard>
 					<daylight>የመካከለኛ የቀን ሰዓት አቆጣጠር</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Eastern">
 				<long>
-					<generic>የምዕራባዊ ሰዓት አቆጣጠር</generic>
-					<standard>የምዕራባዊ መደበኛ የሰዓት አቆጣጠር</standard>
-					<daylight>የምዕራባዊ የቀን ሰዓት አቆጣጠር</daylight>
+					<generic>ምስራቃዊ ሰዓት አቆጣጠር</generic>
+					<standard>ምስራቃዊ መደበኛ ሰዓት አቆጣጠር</standard>
+					<daylight>ምስራቃዊ የቀን ሰዓት አቆጣጠር</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Mountain">
@@ -5120,32 +5183,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<defaultNumberingSystem>latn</defaultNumberingSystem>
 		<otherNumberingSystems>
-			<native>latn</native>
 			<traditional>ethi</traditional>
 		</otherNumberingSystems>
 		<minimumGroupingDigits draft="contributed">1</minimumGroupingDigits>
 		<symbols numberSystem="latn">
-			<decimal>.</decimal>
-			<group>,</group>
 			<list>;</list>
 			<percentSign>%</percentSign>
-			<plusSign>+</plusSign>
-			<minusSign>-</minusSign>
 			<exponential>E</exponential>
 			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>‰</perMille>
 			<infinity>∞</infinity>
 			<nan>NaN</nan>
-			<timeSeparator draft="contributed">:</timeSeparator>
 		</symbols>
 		<decimalFormats numberSystem="latn">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern>#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
 			<decimalFormatLength type="long">
 				<decimalFormat>
 					<pattern type="1000" count="one">0 ሺ</pattern>
@@ -5262,44 +5313,37 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>የተባበሩት የአረብ ኤምሬትስ ድርሀም</displayName>
 				<displayName count="one">የተባበሩት የአረብ ኤምሬትስ ድርሀም</displayName>
 				<displayName count="other">የተባበሩት የአረብ ኤምሬትስ ድርሀም</displayName>
-				<symbol>AED</symbol>
 			</currency>
 			<currency type="AFN">
 				<displayName>የአፍጋን አፍጋኒ</displayName>
 				<displayName count="one">የአፍጋን አፍጋኒ</displayName>
 				<displayName count="other">የአፍጋን አፍጋኒ</displayName>
-				<symbol>AFN</symbol>
 			</currency>
 			<currency type="ALL">
 				<displayName>የአልባንያ ሌክ</displayName>
 				<displayName count="one">የአልባንያ ሌክ</displayName>
 				<displayName count="other">የአልባንያ ሌክ</displayName>
-				<symbol>ALL</symbol>
 			</currency>
 			<currency type="AMD">
 				<displayName>የአርመን ድራም</displayName>
 				<displayName count="one">የአርመን ድራም</displayName>
 				<displayName count="other">የአርመን ድራም</displayName>
-				<symbol>AMD</symbol>
 			</currency>
 			<currency type="ANG">
 				<displayName>ኔዘርላንድስ አንቲሊአን ጊልደር</displayName>
 				<displayName count="one">ኔዘርላንድስ አንቲሊአን ጊልደር</displayName>
 				<displayName count="other">ኔዘርላንድስ አንቲሊአን ጊልደር</displayName>
-				<symbol>ANG</symbol>
 			</currency>
 			<currency type="AOA">
 				<displayName>የአንጎላ ኩዋንዛ</displayName>
 				<displayName count="one">የአንጎላ ኩዋንዛ</displayName>
 				<displayName count="other">የአንጎላ ኩዋንዛ</displayName>
-				<symbol>AOA</symbol>
 				<symbol alt="narrow" draft="contributed">Kz</symbol>
 			</currency>
 			<currency type="ARS">
 				<displayName>የአርጀንቲና ፔሶ</displayName>
 				<displayName count="one">የአርጀንቲና ፔሶ</displayName>
 				<displayName count="other">የአርጀንቲና ፔሶ</displayName>
-				<symbol>ARS</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="AUD">
@@ -5313,145 +5357,123 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>አሩባን ፍሎሪን</displayName>
 				<displayName count="one">አሩባን ፍሎሪን</displayName>
 				<displayName count="other">አሩባን ፍሎሪን</displayName>
-				<symbol>AWG</symbol>
 			</currency>
 			<currency type="AZN">
 				<displayName>የአዛርባጃን ማናት</displayName>
 				<displayName count="one">የአዛርባጃን ማናት</displayName>
 				<displayName count="other">የአዛርባጃን ማናት</displayName>
-				<symbol>AZN</symbol>
 			</currency>
 			<currency type="BAM">
 				<displayName>የቦስኒያ ሄርዞጎቪና የሚመነዘር ማርክ</displayName>
 				<displayName count="one">የቦስኒያ ሄርዞጎቪና የሚመነዘር ማርክ</displayName>
 				<displayName count="other">የቦስኒያ ሄርዞጎቪና የሚመነዘር ማርክ</displayName>
-				<symbol>BAM</symbol>
 				<symbol alt="narrow" draft="contributed">KM</symbol>
 			</currency>
 			<currency type="BBD">
 				<displayName>የባርቤዶስ ዶላር</displayName>
 				<displayName count="one">የባርቤዶስ ዶላር</displayName>
 				<displayName count="other">የባርቤዶስ ዶላር</displayName>
-				<symbol>BBD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BDT">
 				<displayName>የባንግላዲሽ ታካ</displayName>
 				<displayName count="one">የባንግላዲሽ ታካ</displayName>
 				<displayName count="other">የባንግላዲሽ ታካ</displayName>
-				<symbol>BDT</symbol>
 				<symbol alt="narrow" draft="contributed">৳</symbol>
 			</currency>
 			<currency type="BGN">
 				<displayName>የቡልጋሪያ ሌቭ</displayName>
 				<displayName count="one">የቡልጋሪያ ሌቭ</displayName>
 				<displayName count="other">የቡልጋሪያ ሌቭ</displayName>
-				<symbol>BGN</symbol>
 			</currency>
 			<currency type="BHD">
 				<displayName>የባኽሬን ዲናር</displayName>
 				<displayName count="one">የባኽሬን ዲናር</displayName>
 				<displayName count="other">የባኽሬን ዲናር</displayName>
-				<symbol>BHD</symbol>
 			</currency>
 			<currency type="BIF">
 				<displayName>የብሩንዲ ፍራንክ</displayName>
 				<displayName count="one">የብሩንዲ ፍራንክ</displayName>
 				<displayName count="other">የብሩንዲ ፍራንክ</displayName>
-				<symbol>BIF</symbol>
 			</currency>
 			<currency type="BMD">
 				<displayName>የቤርሙዳ ዶላር</displayName>
 				<displayName count="one">የቤርሙዳ ዶላር</displayName>
 				<displayName count="other">የቤርሙዳ ዶላር</displayName>
-				<symbol>BMD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BND">
 				<displayName>የብሩኔ ዶላር</displayName>
 				<displayName count="one">የብሩኔ ዶላር</displayName>
 				<displayName count="other">የብሩኔ ዶላር</displayName>
-				<symbol>BND</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BOB">
 				<displayName>የቦሊቪያ ቦሊቪያኖ</displayName>
 				<displayName count="one">የቦሊቪያ ቦሊቪያኖ</displayName>
 				<displayName count="other">የቦሊቪያ ቦሊቪያኖ</displayName>
-				<symbol>BOB</symbol>
 				<symbol alt="narrow" draft="contributed">Bs</symbol>
 			</currency>
 			<currency type="BRL">
 				<displayName>የብራዚል ሪል</displayName>
 				<displayName count="one">የብራዚል ሪል</displayName>
 				<displayName count="other">የብራዚል ሪል</displayName>
-				<symbol>R$</symbol>
 				<symbol alt="narrow" draft="contributed">R$</symbol>
 			</currency>
 			<currency type="BSD">
 				<displayName>የባሃማስ ዶላር</displayName>
 				<displayName count="one">የባሃማስ ዶላር</displayName>
 				<displayName count="other">የባሃማስ ዶላር</displayName>
-				<symbol>BSD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BTN">
 				<displayName>ብሁታኒዝ ንጉልትረም</displayName>
 				<displayName count="one">ብሁታኒዝ ንጉልትረም</displayName>
 				<displayName count="other">ብሁታኒዝ ንጉልትረም</displayName>
-				<symbol>BTN</symbol>
 			</currency>
 			<currency type="BWP">
 				<displayName>የቦትስዋና ፑላ</displayName>
 				<displayName count="one">የቦትስዋና ፑላ</displayName>
 				<displayName count="other">የቦትስዋና ፑላ</displayName>
-				<symbol>BWP</symbol>
 				<symbol alt="narrow" draft="contributed">P</symbol>
 			</currency>
 			<currency type="BYN">
 				<displayName>የቤላሩስያ ሩብል</displayName>
 				<displayName count="one">የቤላሩስያ ሩብል</displayName>
 				<displayName count="other">የቤላሩስያ ሩብል</displayName>
-				<symbol>BYN</symbol>
 				<symbol alt="narrow" draft="contributed">р.</symbol>
 			</currency>
 			<currency type="BYR">
 				<displayName>የቤላሩስያ ሩብል (2000–2016)</displayName>
 				<displayName count="one">የቤላሩስያ ሩብል (2000–2016)</displayName>
 				<displayName count="other">የቤላሩስያ ሩብል (2000–2016)</displayName>
-				<symbol>BYR</symbol>
 			</currency>
 			<currency type="BZD">
 				<displayName>የቤሊዝ ዶላር</displayName>
 				<displayName count="one">የቤሊዝ ዶላር</displayName>
 				<displayName count="other">የቤሊዝ ዶላር</displayName>
-				<symbol>BZD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CAD">
 				<displayName>የካናዳ ዶላር</displayName>
 				<displayName count="one">የካናዳ ዶላር</displayName>
 				<displayName count="other">የካናዳ ዶላር</displayName>
-				<symbol>CA$</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CDF">
 				<displayName>የኮንጐ ፍራንክ ኮንጐሌዝ</displayName>
 				<displayName count="one">የኮንጐ ፍራንክ ኮንጐሌዝ</displayName>
 				<displayName count="other">የኮንጐ ፍራንክ ኮንጐሌዝ</displayName>
-				<symbol>CDF</symbol>
 			</currency>
 			<currency type="CHF">
 				<displayName>የስዊስ ፍራንክ</displayName>
 				<displayName count="one">የስዊስ ፍራንክ</displayName>
 				<displayName count="other">የስዊስ ፍራንክ</displayName>
-				<symbol>CHF</symbol>
 			</currency>
 			<currency type="CLP">
 				<displayName>የቺሊ ፔሶ</displayName>
 				<displayName count="one">የቺሊ ፔሶ</displayName>
 				<displayName count="other">የቺሊ ፔሶ</displayName>
-				<symbol>CLP</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CNH">
@@ -5464,88 +5486,75 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>የቻይና የን</displayName>
 				<displayName count="one">የቻይና የን</displayName>
 				<displayName count="other">የቻይና የን</displayName>
-				<symbol>CN¥</symbol>
 				<symbol alt="narrow" draft="contributed">¥</symbol>
 			</currency>
 			<currency type="COP">
 				<displayName>የኮሎምቢያ ፔሶ</displayName>
 				<displayName count="one">የኮሎምቢያ ፔሶ</displayName>
 				<displayName count="other">የኮሎምቢያ ፔሶ</displayName>
-				<symbol>COP</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CRC">
 				<displayName>የኮስታሪካ ኮሎን</displayName>
 				<displayName count="one">የኮስታሪካ ኮሎን</displayName>
 				<displayName count="other">የኮስታሪካ ኮሎን</displayName>
-				<symbol>CRC</symbol>
 				<symbol alt="narrow" draft="contributed">₡</symbol>
 			</currency>
 			<currency type="CUC">
 				<displayName>የኩባ የሚመነዘር ፔሶ</displayName>
 				<displayName count="one">የኩባ የሚመነዘር ፔሶ</displayName>
 				<displayName count="other">የኩባ የሚመነዘር ፔሶ</displayName>
-				<symbol>CUC</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CUP">
 				<displayName>የኩባ ፔሶ</displayName>
 				<displayName count="one">የኩባ ፔሶ</displayName>
 				<displayName count="other">የኩባ ፔሶ</displayName>
-				<symbol>CUP</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CVE">
 				<displayName>የኬፕ ቫርዲ ኤስኩዶ</displayName>
 				<displayName count="one">የኬፕ ቫርዲ ኤስኩዶ</displayName>
 				<displayName count="other">የኬፕ ቫርዲ ኤስኩዶ</displayName>
-				<symbol>CVE</symbol>
 			</currency>
 			<currency type="CZK">
 				<displayName>ቼክ ሪፐብሊክ ኮሩና</displayName>
 				<displayName count="one">ቼክ ሪፐብሊክ ኮሩና</displayName>
 				<displayName count="other">ቼክ ሪፐብሊክ ኮሮና</displayName>
-				<symbol>CZK</symbol>
 				<symbol alt="narrow" draft="contributed">Kč</symbol>
 			</currency>
 			<currency type="DJF">
 				<displayName>የጅቡቲ ፍራንክ</displayName>
 				<displayName count="one">የጅቡቲ ፍራንክ</displayName>
 				<displayName count="other">የጅቡቲ ፍራንክ</displayName>
-				<symbol>DJF</symbol>
 			</currency>
 			<currency type="DKK">
 				<displayName>የዴንማርክ ክሮን</displayName>
 				<displayName count="one">የዴንማርክ ክሮን</displayName>
 				<displayName count="other">የዴንማርክ ክሮን</displayName>
-				<symbol>DKK</symbol>
 				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="DOP">
 				<displayName>የዶሚኒክ ፔሶ</displayName>
 				<displayName count="one">የዶሚኒክ ፔሶ</displayName>
 				<displayName count="other">የዶሚኒክ ፔሶ</displayName>
-				<symbol>DOP</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="DZD">
 				<displayName>የአልጄሪያ ዲናር</displayName>
 				<displayName count="one">የአልጄሪያ ዲናር</displayName>
 				<displayName count="other">የአልጄሪያ ዲናር</displayName>
-				<symbol>DZD</symbol>
 			</currency>
 			<currency type="EGP">
 				<displayName>የግብጽ ፓውንድ</displayName>
 				<displayName count="one">የግብጽ ፓውንድ</displayName>
 				<displayName count="other">የግብጽ ፓውንድ</displayName>
-				<symbol>EGP</symbol>
 				<symbol alt="narrow" draft="contributed">E£</symbol>
 			</currency>
 			<currency type="ERN">
 				<displayName>የኤርትራ ናቅፋ</displayName>
 				<displayName count="one">የኤርትራ ናቅፋ</displayName>
 				<displayName count="other">የኤርትራ ናቅፋ</displayName>
-				<symbol>ERN</symbol>
 			</currency>
 			<currency type="ETB">
 				<displayName>የኢትዮጵያ ብር</displayName>
@@ -5557,35 +5566,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ዩሮ</displayName>
 				<displayName count="one">ዩሮ</displayName>
 				<displayName count="other">ዩሮ</displayName>
-				<symbol>€</symbol>
 				<symbol alt="narrow" draft="contributed">€</symbol>
 			</currency>
 			<currency type="FJD">
 				<displayName>የፊጂ ዶላር</displayName>
 				<displayName count="one">የፊጂ ዶላር</displayName>
 				<displayName count="other">የፊጂ ዶላር</displayName>
-				<symbol>FJD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="FKP">
 				<displayName>የፎክላንድ ደሴቶች ፓውንድ</displayName>
 				<displayName count="one">የፎክላንድ ደሴቶች ፓውንድ</displayName>
 				<displayName count="other">የፎክላንድ ደሴቶች ፓውንድ</displayName>
-				<symbol>FKP</symbol>
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="GBP">
 				<displayName>የእንግሊዝ ፓውንድ ስተርሊንግ</displayName>
 				<displayName count="one">የእንግሊዝ ፓውንድ ስተርሊንግ</displayName>
 				<displayName count="other">የእንግሊዝ ፓውንድ ስተርሊንግ</displayName>
-				<symbol>£</symbol>
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="GEL">
 				<displayName>የጆርጅያ ላሪ</displayName>
 				<displayName count="one">የጆርጅያ ላሪ</displayName>
 				<displayName count="other">የጆርጅያ ላሪ</displayName>
-				<symbol>GEL</symbol>
 				<symbol alt="narrow" draft="contributed">₾</symbol>
 				<symbol alt="variant" draft="contributed">₾</symbol>
 			</currency>
@@ -5596,222 +5600,189 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>የጋና ሲዲ</displayName>
 				<displayName count="one">የጋና ሲዲ</displayName>
 				<displayName count="other">የጋና ሲዲ</displayName>
-				<symbol>GHS</symbol>
 			</currency>
 			<currency type="GIP">
 				<displayName>ጂብራልተር ፓውንድ</displayName>
 				<displayName count="one">ጂብራልተር ፓውንድ</displayName>
 				<displayName count="other">ጂብራልተር ፓውንድ</displayName>
-				<symbol>GIP</symbol>
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="GMD">
 				<displayName>የጋምቢያ ዳላሲ</displayName>
 				<displayName count="one">የጋምቢያ ዳላሲ</displayName>
 				<displayName count="other">የጋምቢያ ዳላሲ</displayName>
-				<symbol>GMD</symbol>
 			</currency>
 			<currency type="GNF">
 				<displayName>የጊኒ ፍራንክ</displayName>
 				<displayName count="one">የጊኒ ፍራንክ</displayName>
 				<displayName count="other">የጊኒ ፍራንክ</displayName>
-				<symbol>GNF</symbol>
 				<symbol alt="narrow" draft="contributed">FG</symbol>
 			</currency>
 			<currency type="GTQ">
 				<displayName>ጓቲማላን ኩቲዛል</displayName>
 				<displayName count="one">ጓቲማላን ኩቲዛል</displayName>
 				<displayName count="other">ጓቲማላን ኩቲዛል</displayName>
-				<symbol>GTQ</symbol>
 				<symbol alt="narrow" draft="contributed">Q</symbol>
 			</currency>
 			<currency type="GYD">
 				<displayName>የጉየና ዶላር</displayName>
 				<displayName count="one">የጉየና ዶላር</displayName>
 				<displayName count="other">የጉየና ዶላር</displayName>
-				<symbol>GYD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="HKD">
 				<displayName>የሆንግኮንግ ዶላር</displayName>
 				<displayName count="one">የሆንግኮንግ ዶላር</displayName>
 				<displayName count="other">የሆንግኮንግ ዶላር</displayName>
-				<symbol>HK$</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="HNL">
 				<displayName>የሃንዱራ ሌምፓአይራ</displayName>
 				<displayName count="one">የሃንዱራ ሌምፓአይራ</displayName>
 				<displayName count="other">የሃንዱራ ሌምፓአይራ</displayName>
-				<symbol>HNL</symbol>
 				<symbol alt="narrow" draft="contributed">L</symbol>
 			</currency>
 			<currency type="HRK">
 				<displayName>HRK</displayName>
 				<displayName count="one">የክሮሽያ ኩና</displayName>
 				<displayName count="other">የክሮሽያ ኩና</displayName>
-				<symbol>HRK</symbol>
 				<symbol alt="narrow" draft="contributed">kn</symbol>
 			</currency>
 			<currency type="HTG">
 				<displayName>የሃያቲ ጓርዴ</displayName>
 				<displayName count="one">የሃያቲ ጓርዴ</displayName>
 				<displayName count="other">የሃያቲ ጓርዴ</displayName>
-				<symbol>HTG</symbol>
 			</currency>
 			<currency type="HUF">
 				<displayName>የሃንጋሪያን ፎሪንት</displayName>
 				<displayName count="one">የሃንጋሪያን ፎሪንት</displayName>
 				<displayName count="other">የሃንጋሪያን ፎሪንት</displayName>
-				<symbol>HUF</symbol>
 				<symbol alt="narrow" draft="contributed">Ft</symbol>
 			</currency>
 			<currency type="IDR">
 				<displayName>የኢንዶኔዥያ ሩፒሃ</displayName>
 				<displayName count="one">የኢንዶኔዥያ ሩፒሃ</displayName>
 				<displayName count="other">የኢንዶኔዥያ ሩፒሃ</displayName>
-				<symbol>IDR</symbol>
 				<symbol alt="narrow" draft="contributed">Rp</symbol>
 			</currency>
 			<currency type="ILS">
 				<displayName>የእስራኤል አዲስ ሽቅል</displayName>
 				<displayName count="one">የእስራኤል አዲስ ሽቅል</displayName>
 				<displayName count="other">የእስራኤል አዲስ ሽቅል</displayName>
-				<symbol>₪</symbol>
 				<symbol alt="narrow" draft="contributed">₪</symbol>
 			</currency>
 			<currency type="INR">
 				<displayName>የሕንድ ሩፒ</displayName>
 				<displayName count="one">የሕንድ ሩፒ</displayName>
 				<displayName count="other">የሕንድ ሩፒ</displayName>
-				<symbol>₹</symbol>
 				<symbol alt="narrow" draft="contributed">₹</symbol>
 			</currency>
 			<currency type="IQD">
 				<displayName>የኢራቅ ዲናር</displayName>
 				<displayName count="one">የኢራቅ ዲናር</displayName>
 				<displayName count="other">የኢራቅ ዲናር</displayName>
-				<symbol>IQD</symbol>
 			</currency>
 			<currency type="IRR">
 				<displayName>የኢራን ሪአል</displayName>
 				<displayName count="one">የኢራን ሪአል</displayName>
 				<displayName count="other">የኢራን ሪአል</displayName>
-				<symbol>IRR</symbol>
 			</currency>
 			<currency type="ISK">
 				<displayName>የአይስላንድ ክሮና</displayName>
 				<displayName count="one">የአይስላንድ ክሮና</displayName>
 				<displayName count="other">የአይስላንድ ክሮና</displayName>
-				<symbol>ISK</symbol>
 				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="JMD">
 				<displayName>የጃማይካ ዶላር</displayName>
 				<displayName count="one">የጃማይካ ዶላር</displayName>
 				<displayName count="other">የጃማይካ ዶላር</displayName>
-				<symbol>JMD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="JOD">
 				<displayName>የጆርዳን ዲናር</displayName>
 				<displayName count="one">የጆርዳን ዲናር</displayName>
 				<displayName count="other">የጆርዳን ዲናር</displayName>
-				<symbol>JOD</symbol>
 			</currency>
 			<currency type="JPY">
 				<displayName>የጃፓን የን</displayName>
 				<displayName count="one">የጃፓን የን</displayName>
 				<displayName count="other">የጃፓን የን</displayName>
-				<symbol>JP¥</symbol>
 				<symbol alt="narrow" draft="contributed">¥</symbol>
 			</currency>
 			<currency type="KES">
 				<displayName>የኬኒያ ሺሊንግ</displayName>
 				<displayName count="one">የኬኒያ ሺሊንግ</displayName>
 				<displayName count="other">የኬኒያ ሺሊንግ</displayName>
-				<symbol>KES</symbol>
 			</currency>
 			<currency type="KGS">
 				<displayName>የኪርጊስታን ሶም</displayName>
 				<displayName count="one">የኪርጊስታን ሶም</displayName>
 				<displayName count="other">የኪርጊስታን ሶም</displayName>
-				<symbol>KGS</symbol>
 			</currency>
 			<currency type="KHR">
 				<displayName>የካምቦዲያ ሬል</displayName>
 				<displayName count="one">የካምቦዲያ ሬል</displayName>
 				<displayName count="other">የካምቦዲያ ሬል</displayName>
-				<symbol>KHR</symbol>
 				<symbol alt="narrow" draft="contributed">៛</symbol>
 			</currency>
 			<currency type="KMF">
 				<displayName>የኮሞሮ ፍራንክ</displayName>
 				<displayName count="one">የኮሞሮ ፍራንክ</displayName>
 				<displayName count="other">የኮሞሮ ፍራንክ</displayName>
-				<symbol>KMF</symbol>
 				<symbol alt="narrow" draft="contributed">CF</symbol>
 			</currency>
 			<currency type="KPW">
 				<displayName>የሰሜን ኮሪያ ዎን</displayName>
 				<displayName count="one">የሰሜን ኮሪያ ዎን</displayName>
 				<displayName count="other">የሰሜን ኮሪያ ዎን</displayName>
-				<symbol>KPW</symbol>
 				<symbol alt="narrow" draft="contributed">₩</symbol>
 			</currency>
 			<currency type="KRW">
 				<displayName>የደቡብ ኮሪያ ዎን</displayName>
 				<displayName count="one">የደቡብ ኮሪያ ዎን</displayName>
 				<displayName count="other">የደቡብ ኮሪያ ዎን</displayName>
-				<symbol>₩</symbol>
 				<symbol alt="narrow" draft="contributed">₩</symbol>
 			</currency>
 			<currency type="KWD">
 				<displayName>የኩዌት ዲናር</displayName>
 				<displayName count="one">የኩዌት ዲናር</displayName>
 				<displayName count="other">የኩዌት ዲናር</displayName>
-				<symbol>KWD</symbol>
 			</currency>
 			<currency type="KYD">
 				<displayName>የካይማን ደሴቶች ዶላር</displayName>
 				<displayName count="one">የካይማን ደሴቶች ዶላር</displayName>
 				<displayName count="other">የካይማን ደሴቶች ዶላር</displayName>
-				<symbol>KYD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="KZT">
 				<displayName>የካዛኪስታን ተንጌ</displayName>
 				<displayName count="one">የካዛኪስታን ተንጌ</displayName>
 				<displayName count="other">የካዛኪስታን ተንጌ</displayName>
-				<symbol>KZT</symbol>
 				<symbol alt="narrow" draft="contributed">₸</symbol>
 			</currency>
 			<currency type="LAK">
 				<displayName>የላኦቲ ኪፕ</displayName>
 				<displayName count="one">የላኦቲ ኪፕ</displayName>
 				<displayName count="other">የላኦቲ ኪፕ</displayName>
-				<symbol>LAK</symbol>
 				<symbol alt="narrow" draft="contributed">₭</symbol>
 			</currency>
 			<currency type="LBP">
 				<displayName>የሊባኖስ ፓውንድ</displayName>
 				<displayName count="one">የሊባኖስ ፓውንድ</displayName>
 				<displayName count="other">የሊባኖስ ፓውንድ</displayName>
-				<symbol>LBP</symbol>
 				<symbol alt="narrow" draft="contributed">L£</symbol>
 			</currency>
 			<currency type="LKR">
 				<displayName>የሲሪላንካ ሩፒ</displayName>
 				<displayName count="one">የሲሪላንካ ሩፒ</displayName>
 				<displayName count="other">የሲሪላንካ ሩፒ</displayName>
-				<symbol>LKR</symbol>
 				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="LRD">
 				<displayName>የላይቤሪያ ዶላር</displayName>
 				<displayName count="one">የላይቤሪያ ዶላር</displayName>
 				<displayName count="other">የላይቤሪያ ዶላር</displayName>
-				<symbol>LRD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="LSL">
@@ -5821,341 +5792,295 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ሊቱዌንያን ሊታስ</displayName>
 				<displayName count="one">ሊቱዌንያን ሊታስ</displayName>
 				<displayName count="other">ሊቱዌንያን ሊታስ</displayName>
-				<symbol>LTL</symbol>
 			</currency>
 			<currency type="LVL">
 				<displayName>የላቲቫ ላትስ</displayName>
 				<displayName count="one">የላቲቫ ላትስ</displayName>
 				<displayName count="other">የላቲቫ ላትስ</displayName>
-				<symbol>LVL</symbol>
 			</currency>
 			<currency type="LYD">
 				<displayName>የሊቢያ ዲናር</displayName>
 				<displayName count="one">የሊቢያ ዲናር</displayName>
 				<displayName count="other">የሊቢያ ዲናር</displayName>
-				<symbol>LYD</symbol>
 			</currency>
 			<currency type="MAD">
 				<displayName>የሞሮኮ ዲርሀም</displayName>
 				<displayName count="one">የሞሮኮ ዲርሀም</displayName>
 				<displayName count="other">የሞሮኮ ዲርሀም</displayName>
-				<symbol>MAD</symbol>
 			</currency>
 			<currency type="MDL">
 				<displayName>ሞልዶቫን ሊኡ</displayName>
 				<displayName count="one">ሞልዶቫን ሊኡ</displayName>
 				<displayName count="other">ሞልዶቫን ሊኡ</displayName>
-				<symbol>MDL</symbol>
 			</currency>
 			<currency type="MGA">
 				<displayName>የማደጋስካር ማላጋስይ አሪያርይ</displayName>
 				<displayName count="one">የማደጋስካር ማላጋስይ አሪያርይ</displayName>
 				<displayName count="other">የማደጋስካር ማላጋስይ አሪያርይ</displayName>
-				<symbol>MGA</symbol>
 				<symbol alt="narrow" draft="contributed">Ar</symbol>
 			</currency>
 			<currency type="MKD">
 				<displayName>የሜቆድንያ ዲናር</displayName>
 				<displayName count="one">የሜቆድንያ ዲናር</displayName>
 				<displayName count="other">የሜቆድንያ ዲናር</displayName>
-				<symbol>MKD</symbol>
 			</currency>
 			<currency type="MMK">
 				<displayName>የማያናማር ክያት</displayName>
 				<displayName count="one">የማያናማር ክያት</displayName>
 				<displayName count="other">የማያናማር ክያት</displayName>
-				<symbol>MMK</symbol>
 				<symbol alt="narrow" draft="contributed">K</symbol>
 			</currency>
 			<currency type="MNT">
 				<displayName>የሞንጎሊያን ቱግሪክ</displayName>
 				<displayName count="one">የሞንጎሊያን ቱግሪክ</displayName>
 				<displayName count="other">የሞንጎሊያን ቱግሪክ</displayName>
-				<symbol>MNT</symbol>
 				<symbol alt="narrow" draft="contributed">₮</symbol>
 			</currency>
 			<currency type="MOP">
 				<displayName>የማካኔዝ ፓታካ</displayName>
 				<displayName count="one">የማካኔዝ ፓታካ</displayName>
 				<displayName count="other">የማካኔዝ ፓታካ</displayName>
-				<symbol>MOP</symbol>
 			</currency>
 			<currency type="MRO">
 				<displayName>የሞሪቴኒያ ኦውጉያ (1973–2017)</displayName>
 				<displayName count="one">የሞሪቴኒያ ኦውጉያ (1973–2017)</displayName>
 				<displayName count="other">የሞሪቴኒያ ኦውጉያ (1973–2017)</displayName>
-				<symbol>MRO</symbol>
 			</currency>
 			<currency type="MRU">
 				<displayName>የሞሪቴኒያ ኦውጉያ</displayName>
 				<displayName count="one">የሞሪቴኒያ ኦውጉያ</displayName>
 				<displayName count="other">የሞሪቴኒያ ኦውጉያ</displayName>
+				<symbol draft="contributed">MRU</symbol>
 			</currency>
 			<currency type="MUR">
 				<displayName>የሞሪሸስ ሩፒ</displayName>
 				<displayName count="one">የሞሪሸስ ሩፒ</displayName>
 				<displayName count="other">የሞሪሸስ ሩፒ</displayName>
-				<symbol>MUR</symbol>
 				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="MVR">
 				<displayName>የማልዲቫ ሩፊያ</displayName>
 				<displayName count="one">የማልዲቫ ሩፊያ</displayName>
 				<displayName count="other">የማልዲቫ ሩፊያ</displayName>
-				<symbol>MVR</symbol>
 			</currency>
 			<currency type="MWK">
 				<displayName>የማላዊ ኩዋቻ</displayName>
 				<displayName count="one">የማላዊ ኩዋቻ</displayName>
 				<displayName count="other">የማላዊ ኩዋቻ</displayName>
-				<symbol>MWK</symbol>
 			</currency>
 			<currency type="MXN">
 				<displayName>የሜክሲኮ ፔሶ</displayName>
 				<displayName count="one">የሜክሲኮ ፔሶ</displayName>
 				<displayName count="other">የሜክሲኮ ፔሶ</displayName>
-				<symbol>MX$</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="MYR">
 				<displayName>የማሌዥያ ሪንጊት</displayName>
 				<displayName count="one">የማሌዥያ ሪንጊት</displayName>
 				<displayName count="other">የማሌዥያ ሪንጊት</displayName>
-				<symbol>MYR</symbol>
 				<symbol alt="narrow" draft="contributed">RM</symbol>
 			</currency>
 			<currency type="MZN">
 				<displayName>የሞዛምቢክ ሜቲካል</displayName>
 				<displayName count="one">የሞዛምቢክ ሜቲካል</displayName>
 				<displayName count="other">የሞዛምቢክ ሜቲካል</displayName>
-				<symbol>MZN</symbol>
 			</currency>
 			<currency type="NAD">
 				<displayName>የናሚቢያ ዶላር</displayName>
 				<displayName count="one">የናሚቢያ ዶላር</displayName>
 				<displayName count="other">የናሚቢያ ዶላር</displayName>
-				<symbol>NAD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="NGN">
 				<displayName>የናይጄሪያ ናይራ</displayName>
 				<displayName count="one">የናይጄሪያ ናይራ</displayName>
 				<displayName count="other">የናይጄሪያ ናይራ</displayName>
-				<symbol>NGN</symbol>
 				<symbol alt="narrow" draft="contributed">₦</symbol>
 			</currency>
 			<currency type="NIO">
 				<displayName>የኒካራጓ ኮርዶባ</displayName>
 				<displayName count="one">የኒካራጓ ኮርዶባ</displayName>
 				<displayName count="other">የኒካራጓ ኮርዶባ</displayName>
-				<symbol>NIO</symbol>
 				<symbol alt="narrow" draft="contributed">C$</symbol>
 			</currency>
 			<currency type="NOK">
 				<displayName>የኖርዌይ ክሮን</displayName>
 				<displayName count="one">የኖርዌይ ክሮን</displayName>
 				<displayName count="other">የኖርዌይ ክሮን</displayName>
-				<symbol>NOK</symbol>
 				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="NPR">
 				<displayName>የኔፓል ሩፒ</displayName>
 				<displayName count="one">የኔፓል ሩፒ</displayName>
 				<displayName count="other">የኔፓል ሩፒ</displayName>
-				<symbol>NPR</symbol>
 				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="NZD">
 				<displayName>የኒውዚላንድ ዶላር</displayName>
 				<displayName count="one">የኒውዚላንድ ዶላር</displayName>
 				<displayName count="other">የኒውዚላንድ ዶላር</displayName>
-				<symbol>NZ$</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="OMR">
 				<displayName>የኦማን ሪአል</displayName>
 				<displayName count="one">የኦማን ሪአል</displayName>
 				<displayName count="other">የኦማን ሪአል</displayName>
-				<symbol>OMR</symbol>
 			</currency>
 			<currency type="PAB">
 				<displayName>ፓናማኒአን ባልቦአ</displayName>
 				<displayName count="one">ፓናማኒአን ባልቦአ</displayName>
 				<displayName count="other">ፓናማኒአን ባልቦአ</displayName>
-				<symbol>PAB</symbol>
 			</currency>
 			<currency type="PEN">
 				<displayName>የፔሩቪያ ሶል</displayName>
 				<displayName count="one">የፔሩቪያ ሶል</displayName>
 				<displayName count="other">የፔሩቪያ ሶል</displayName>
-				<symbol>PEN</symbol>
 			</currency>
 			<currency type="PGK">
 				<displayName>የፓፕዋ ኒው ጊኒ ኪና</displayName>
 				<displayName count="one">የፓፕዋ ኒው ጊኒ ኪና</displayName>
 				<displayName count="other">የፓፕዋ ኒው ጊኒ ኪና</displayName>
-				<symbol>PGK</symbol>
 			</currency>
 			<currency type="PHP">
 				<displayName>የፊሊፒንስ ፔሶ</displayName>
 				<displayName count="one">የፊሊፒንስ ፔሶ</displayName>
 				<displayName count="other">የፊሊፒንስ ፔሶ</displayName>
-				<symbol>PHP</symbol>
 				<symbol alt="narrow" draft="contributed">₱</symbol>
 			</currency>
 			<currency type="PKR">
 				<displayName>የፓኪስታን ሩፒ</displayName>
 				<displayName count="one">የፓኪስታን ሩፒ</displayName>
 				<displayName count="other">የፓኪስታን ሩፒ</displayName>
-				<symbol>PKR</symbol>
 				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="PLN">
 				<displayName>የፖላንድ ዝሎቲ</displayName>
 				<displayName count="one">የፖላንድ ዝሎቲ</displayName>
 				<displayName count="other">የፖላንድ ዝሎቲ</displayName>
-				<symbol>PLN</symbol>
 				<symbol alt="narrow" draft="contributed">zł</symbol>
 			</currency>
 			<currency type="PYG">
 				<displayName>የፓራጓይ ጉአራኒ</displayName>
 				<displayName count="one">የፓራጓይ ጉአራኒ</displayName>
 				<displayName count="other">የፓራጓይ ጉአራኒ</displayName>
-				<symbol>PYG</symbol>
 				<symbol alt="narrow" draft="contributed">₲</symbol>
 			</currency>
 			<currency type="QAR">
 				<displayName>የኳታር ሪአል</displayName>
 				<displayName count="one">የኳታር ሪአል</displayName>
 				<displayName count="other">የኳታር ሪአል</displayName>
-				<symbol>QAR</symbol>
 			</currency>
 			<currency type="RON">
 				<displayName>የሮማኒያ ለው</displayName>
 				<displayName count="one">የሮማኒያ ለው</displayName>
 				<displayName count="other">የሮማኒያ ለው</displayName>
-				<symbol>RON</symbol>
 				<symbol alt="narrow" draft="contributed">lei</symbol>
 			</currency>
 			<currency type="RSD">
 				<displayName>የሰርቢያ ዲናር</displayName>
 				<displayName count="one">የሰርቢያ ዲናር</displayName>
 				<displayName count="other">የሰርቢያ ዲናር</displayName>
-				<symbol>RSD</symbol>
 			</currency>
 			<currency type="RUB">
 				<displayName>የሩስያ ሩብል</displayName>
 				<displayName count="one">የሩስያ ሩብል</displayName>
 				<displayName count="other">የሩስያ ሩብል</displayName>
-				<symbol>RUB</symbol>
 				<symbol alt="narrow" draft="contributed">₽</symbol>
 			</currency>
 			<currency type="RWF">
 				<displayName>የሩዋንዳ ፍራንክ</displayName>
 				<displayName count="one">የሩዋንዳ ፍራንክ</displayName>
 				<displayName count="other">የሩዋንዳ ፍራንክ</displayName>
-				<symbol>RWF</symbol>
 				<symbol alt="narrow" draft="contributed">RF</symbol>
 			</currency>
 			<currency type="SAR">
 				<displayName>የሳውዲ ሪያል</displayName>
 				<displayName count="one">የሳውዲ ሪያል</displayName>
 				<displayName count="other">የሳውዲ ሪያል</displayName>
-				<symbol>SAR</symbol>
 			</currency>
 			<currency type="SBD">
 				<displayName>የሰለሞን ደሴቶች ዶላር</displayName>
 				<displayName count="one">የሰለሞን ደሴቶች ዶላር</displayName>
 				<displayName count="other">የሰለሞን ደሴቶች ዶላር</displayName>
-				<symbol>SBD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="SCR">
 				<displayName>የሲሼል ሩፒ</displayName>
 				<displayName count="one">የሲሼል ሩፒ</displayName>
 				<displayName count="other">የሲሼል ሩፒ</displayName>
-				<symbol>SCR</symbol>
 			</currency>
 			<currency type="SDG">
-				<displayName>የሱዳን ዲናር</displayName>
-				<displayName count="one">የሱዳን ዲናር</displayName>
-				<displayName count="other">የሱዳን ዲናር</displayName>
-				<symbol>SDG</symbol>
+				<displayName>የሱዳን ፓውንድ</displayName>
+				<displayName count="one">የሱዳን ፓውንድ</displayName>
+				<displayName count="other">የሱዳን ፓውንድ</displayName>
 			</currency>
 			<currency type="SDP">
-				<displayName>የሱዳን ፓውንድ</displayName>
+				<displayName>የሱዳን ፓውንድ (1957–1998)</displayName>
+				<displayName count="one">የሱዳን ፓውንድ (1957–1998)</displayName>
+				<displayName count="other">የሱዳን ፓውንድ (1957–1998)</displayName>
 			</currency>
 			<currency type="SEK">
 				<displayName>የስዊድን ክሮና</displayName>
 				<displayName count="one">የስዊድን ክሮና</displayName>
 				<displayName count="other">የስዊድን ክሮና</displayName>
-				<symbol>SEK</symbol>
 				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="SGD">
 				<displayName>የሲንጋፖር ዶላር</displayName>
 				<displayName count="one">የሲንጋፖር ዶላር</displayName>
 				<displayName count="other">የሲንጋፖር ዶላር</displayName>
-				<symbol>SGD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="SHP">
 				<displayName>የሴይንት ሔሌና ፓውንድ</displayName>
 				<displayName count="one">የሴይንት ሔሌና ፓውንድ</displayName>
 				<displayName count="other">የሴይንት ሔሌና ፓውንድ</displayName>
-				<symbol>SHP</symbol>
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="SLL">
 				<displayName>የሴራሊዎን ሊዎን</displayName>
 				<displayName count="one">የሴራሊዎን ሊዎን</displayName>
 				<displayName count="other">የሴራሊዎን ሊዎን</displayName>
-				<symbol>SLL</symbol>
 			</currency>
 			<currency type="SOS">
 				<displayName>የሶማሌ ሺሊንግ</displayName>
 				<displayName count="one">የሶማሌ ሺሊንግ</displayName>
 				<displayName count="other">የሶማሌ ሺሊንግ</displayName>
-				<symbol>SOS</symbol>
 			</currency>
 			<currency type="SRD">
 				<displayName>የሰርናሜዝ ዶላር</displayName>
 				<displayName count="one">የሰርናሜዝ ዶላር</displayName>
 				<displayName count="other">የሰርናሜዝ ዶላር</displayName>
-				<symbol>SRD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="SSP">
 				<displayName>የደቡብ ሱዳን ፓውንድ</displayName>
 				<displayName count="one">የደቡብ ሱዳን ፓውንድ</displayName>
 				<displayName count="other">የደቡብ ሱዳን ፓውንድ</displayName>
-				<symbol>SSP</symbol>
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="STD">
 				<displayName>የሳኦ ቶሜ እና ፕሪንሲፔ ዶብራ (1977–2017)</displayName>
 				<displayName count="one">የሳኦ ቶሜ እና ፕሪንሲፔ ዶብራ (1977–2017)</displayName>
 				<displayName count="other">የሳኦ ቶሜ እና ፕሪንሲፔ ዶብራ (1977–2017)</displayName>
-				<symbol>STD</symbol>
 			</currency>
 			<currency type="STN">
 				<displayName>የሳኦ ቶሜ እና ፕሪንሲፔ ዶብራ</displayName>
 				<displayName count="one">የሳኦ ቶሜ እና ፕሪንሲፔ ዶብራ</displayName>
 				<displayName count="other">የሳኦ ቶሜ እና ፕሪንሲፔ ዶብራ</displayName>
+				<symbol draft="contributed">STN</symbol>
 				<symbol alt="narrow" draft="contributed">Db</symbol>
 			</currency>
 			<currency type="SYP">
 				<displayName>የሲሪያ ፓውንድ</displayName>
 				<displayName count="one">የሲሪያ ፓውንድ</displayName>
 				<displayName count="other">የሲሪያ ፓውንድ</displayName>
-				<symbol>SYP</symbol>
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="SZL">
 				<displayName>የስዋዚላንድ ሊላንገኒ</displayName>
 				<displayName count="one">የስዋዚላንድ ሊላንገኒ</displayName>
 				<displayName count="other">የስዋዚላንድ ሊላንገኒ</displayName>
-				<symbol>SZL</symbol>
 			</currency>
 			<currency type="THB">
 				<displayName>የታይላንድ ባህት</displayName>
@@ -6168,32 +6093,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>የታጂክስታን ሶሞኒ</displayName>
 				<displayName count="one">የታጂክስታን ሶሞኒ</displayName>
 				<displayName count="other">የታጂክስታን ሶሞኒ</displayName>
-				<symbol>TJS</symbol>
 			</currency>
 			<currency type="TMT">
 				<displayName>ቱርክሜኒስታኒ ማናት</displayName>
 				<displayName count="one">ቱርክሜኒስታኒ ማናት</displayName>
 				<displayName count="other">ቱርክሜኒስታኒ ማናት</displayName>
-				<symbol>TMT</symbol>
 			</currency>
 			<currency type="TND">
 				<displayName>የቱኒዚያ ዲናር</displayName>
 				<displayName count="one">የቱኒዚያ ዲናር</displayName>
 				<displayName count="other">የቱኒዚያ ዲናር</displayName>
-				<symbol>TND</symbol>
 			</currency>
 			<currency type="TOP">
 				<displayName>ቶንጋን ፓ’አንጋ</displayName>
 				<displayName count="one">ቶንጋን ፓ’አንጋ</displayName>
 				<displayName count="other">ቶንጋን ፓ’አንጋ</displayName>
-				<symbol>TOP</symbol>
 				<symbol alt="narrow" draft="contributed">T$</symbol>
 			</currency>
 			<currency type="TRY">
 				<displayName>የቱርክ ሊራ</displayName>
 				<displayName count="one">የቱርክ ሊራ</displayName>
 				<displayName count="other">የቱርክ ሊራ</displayName>
-				<symbol>TRY</symbol>
 				<symbol alt="narrow" draft="contributed">₺</symbol>
 				<symbol alt="variant" draft="contributed">TL</symbol>
 			</currency>
@@ -6201,105 +6121,95 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>የትሪንዳድ እና ቶቤጎዶላር</displayName>
 				<displayName count="one">የትሪንዳድ እና ቶቤጎዶላር</displayName>
 				<displayName count="other">የትሪንዳድ እና ቶቤጎዶላር</displayName>
-				<symbol>TTD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="TWD">
 				<displayName>የአዲሷ ታይዋን ዶላር</displayName>
 				<displayName count="one">የአዲሷ ታይዋን ዶላር</displayName>
 				<displayName count="other">የአዲሷ ታይዋን ዶላር</displayName>
-				<symbol>NT$</symbol>
 				<symbol alt="narrow" draft="contributed">NT$</symbol>
 			</currency>
 			<currency type="TZS">
 				<displayName>የታንዛኒያ ሺሊንግ</displayName>
 				<displayName count="one">የታንዛኒያ ሺሊንግ</displayName>
 				<displayName count="other">የታንዛኒያ ሺሊንግ</displayName>
-				<symbol>TZS</symbol>
 			</currency>
 			<currency type="UAH">
 				<displayName>የዩክሬን ሀሪይቭኒአ</displayName>
 				<displayName count="one">የዩክሬን ሀሪይቭኒአ</displayName>
 				<displayName count="other">የዩክሬን ሀሪይቭኒአ</displayName>
-				<symbol>UAH</symbol>
 				<symbol alt="narrow" draft="contributed">₴</symbol>
 			</currency>
 			<currency type="UGX">
 				<displayName>የዩጋንዳ ሺሊንግ</displayName>
 				<displayName count="one">የዩጋንዳ ሺሊንግ</displayName>
 				<displayName count="other">የዩጋንዳ ሺሊንግ</displayName>
-				<symbol>UGX</symbol>
 			</currency>
 			<currency type="USD">
 				<displayName>የአሜሪካን ዶላር</displayName>
 				<displayName count="one">የአሜሪካን ዶላር</displayName>
 				<displayName count="other">የአሜሪካን ዶላር</displayName>
-				<symbol>US$</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="UYU">
 				<displayName>የኡራጓይ ፔሶ</displayName>
 				<displayName count="one">የኡራጓይ ፔሶ</displayName>
 				<displayName count="other">የኡራጓይ ፔሶ</displayName>
-				<symbol>UYU</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="UZS">
 				<displayName>የኡዝፔኪስታን ሶም</displayName>
 				<displayName count="one">የኡዝፔኪስታን ሶም</displayName>
 				<displayName count="other">የኡዝፔኪስታን ሶም</displayName>
-				<symbol>UZS</symbol>
 			</currency>
 			<currency type="VEF">
-				<displayName>የቬንዝዌላ ቦሊቫር</displayName>
-				<displayName count="one">የቬንዝዌላ ቦሊቫር</displayName>
-				<displayName count="other">የቬንዝዌላ ቦሊቫር</displayName>
-				<symbol>VEF</symbol>
+				<displayName>የቬንዝዌላ ቦሊቫር (2008–2018)</displayName>
+				<displayName count="one">የቬንዝዌላ ቦሊቫር (2008–2018)</displayName>
+				<displayName count="other">የቬንዝዌላ ቦሊቫር (2008–2018)</displayName>
 				<symbol alt="narrow" draft="contributed">Bs</symbol>
+			</currency>
+			<currency type="VES">
+				<displayName>የቬንዝዌላ-ቦሊቫር</displayName>
+				<displayName count="one">የቬንዝዌላ-ቦሊቫር</displayName>
+				<displayName count="other">የቬንዝዌላ-ቦሊቫር</displayName>
+				<symbol draft="contributed">VES</symbol>
 			</currency>
 			<currency type="VND">
 				<displayName>የቭየትናም ዶንግ</displayName>
 				<displayName count="one">የቭየትናም ዶንግ</displayName>
 				<displayName count="other">የቭየትናም ዶንግ</displayName>
-				<symbol>₫</symbol>
 				<symbol alt="narrow" draft="contributed">₫</symbol>
 			</currency>
 			<currency type="VUV">
 				<displayName>የቫንዋንቱ ቫቱ</displayName>
 				<displayName count="one">የቫንዋንቱ ቫቱ</displayName>
 				<displayName count="other">የቫንዋንቱ ቫቱ</displayName>
-				<symbol>VUV</symbol>
 			</currency>
 			<currency type="WST">
 				<displayName>ሳሞአን ታላ</displayName>
 				<displayName count="one">ሳሞአን ታላ</displayName>
 				<displayName count="other">ሳሞአን ታላ</displayName>
-				<symbol>WST</symbol>
 			</currency>
 			<currency type="XAF">
 				<displayName>የመካከለኛው አፍሪካ ሴፋ ፍራንክ</displayName>
 				<displayName count="one">የመካከለኛው አፍሪካ ሴፋ ፍራንክ</displayName>
 				<displayName count="other">የመካከለኛው አፍሪካ ሴፋ ፍራንክ</displayName>
-				<symbol>FCFA</symbol>
 			</currency>
 			<currency type="XCD">
 				<displayName>የምዕራብ ካሪብያን ዶላር</displayName>
 				<displayName count="one">የምዕራብ ካሪብያን ዶላር</displayName>
 				<displayName count="other">የምዕራብ ካሪብያን ዶላር</displayName>
-				<symbol>EC$</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="XOF">
 				<displayName>የምዕራብ አፍሪካ ሴፋ ፍራንክ</displayName>
 				<displayName count="one">የምዕራብ አፍሪካ ሴፋ ፍራንክ</displayName>
 				<displayName count="other">የምዕራብ አፍሪካ ሴፋ ፍራንክ</displayName>
-				<symbol>CFA</symbol>
 			</currency>
 			<currency type="XPF">
 				<displayName>ሲ ኤፍ ፒ ፍራንክ</displayName>
 				<displayName count="one">ሲ ኤፍ ፒ ፍራንክ</displayName>
 				<displayName count="other">ሲ ኤፍ ፒ ፍራንክ</displayName>
-				<symbol>CFPF</symbol>
 			</currency>
 			<currency type="XXX">
 				<displayName>ያልታወቀ ገንዘብ</displayName>
@@ -6310,13 +6220,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>የየመን ሪአል</displayName>
 				<displayName count="one">የየመን ሪአል</displayName>
 				<displayName count="other">የየመን ሪአል</displayName>
-				<symbol>YER</symbol>
 			</currency>
 			<currency type="ZAR">
 				<displayName>የደቡብ አፍሪካ ራንድ</displayName>
 				<displayName count="one">የደቡብ አፍሪካ ራንድ</displayName>
 				<displayName count="other">የደቡብ አፍሪካ ራንድ</displayName>
-				<symbol>ZAR</symbol>
 				<symbol alt="narrow" draft="contributed">R</symbol>
 			</currency>
 			<currency type="ZMK">
@@ -6328,7 +6236,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>የዛምቢያ ክዋቻ</displayName>
 				<displayName count="one">የዛምቢያ ክዋቻ</displayName>
 				<displayName count="other">የዛምቢያ ክዋቻ</displayName>
-				<symbol>ZMW</symbol>
 				<symbol alt="narrow" draft="contributed">ZK</symbol>
 			</currency>
 			<currency type="ZWD">
@@ -6336,7 +6243,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
+			<pattern type="approximately">~{0}</pattern>
 			<pattern type="atLeast">{0}+</pattern>
+			<pattern type="atMost">≤{0}</pattern>
 			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
 		<minimalPairs>
@@ -6435,6 +6344,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ኢንች²</unitPattern>
 				<perUnitPattern>{0}/ኢንች²</perUnitPattern>
 			</unit>
+			<unit type="area-dunam">
+				<displayName>ጋሻ</displayName>
+				<unitPattern count="one">{0} ጋሻ</unitPattern>
+				<unitPattern count="other">{0} ጋሻ</unitPattern>
+			</unit>
 			<unit type="concentr-karat">
 				<displayName>ካራት</displayName>
 				<unitPattern count="one">{0} ካራት</unitPattern>
@@ -6454,6 +6368,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ppm</displayName>
 				<unitPattern count="one">{0} ppm</unitPattern>
 				<unitPattern count="other">{0} ppm</unitPattern>
+			</unit>
+			<unit type="concentr-percent">
+				<displayName>ፐርሰንት</displayName>
+				<unitPattern count="one">{0} ፐርሰንት</unitPattern>
+				<unitPattern count="other">{0} ፐርሰንት</unitPattern>
+			</unit>
+			<unit type="concentr-permille">
+				<displayName>በማይል</displayName>
+				<unitPattern count="one">{0} በማይል</unitPattern>
+				<unitPattern count="other">{0}‰</unitPattern>
+			</unit>
+			<unit type="concentr-permyriad">
+				<displayName>‱</displayName>
+				<unitPattern count="one" draft="contributed">{0}‱</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}‱</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName>mol</displayName>
+				<unitPattern count="one" draft="contributed">{0} mol</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} mol</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>ሊ/ኪሜ</displayName>
@@ -6475,13 +6409,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} mpg Imp.</unitPattern>
 				<unitPattern count="other">{0} mpg Imp.</unitPattern>
 			</unit>
+			<unit type="digital-petabyte">
+				<displayName>ፔታ ባይት</displayName>
+				<unitPattern count="one">{0} ፔታ ባይት</unitPattern>
+				<unitPattern count="other">{0} ፔታ ባይቶች</unitPattern>
+			</unit>
 			<unit type="digital-terabyte">
 				<displayName>ቴራባይት</displayName>
 				<unitPattern count="one">{0} ቴራባይት</unitPattern>
 				<unitPattern count="other">{0} ቴራባይት</unitPattern>
 			</unit>
 			<unit type="digital-terabit">
-				<displayName>ቴባ</displayName>
+				<displayName>ቴራባይትስ</displayName>
 				<unitPattern count="one">{0} ቴባ</unitPattern>
 				<unitPattern count="other">{0} ቴባ</unitPattern>
 			</unit>
@@ -6637,6 +6576,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} kWh</unitPattern>
 				<unitPattern count="other">{0} kWh</unitPattern>
 			</unit>
+			<unit type="energy-electronvolt">
+				<displayName>ኤቮ</displayName>
+				<unitPattern count="one">{0} ኤቮ</unitPattern>
+				<unitPattern count="other">{0} ኤቮ</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName>Btu</displayName>
+				<unitPattern count="one" draft="contributed">{0} Btu</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} Btu</unitPattern>
+			</unit>
+			<unit type="force-pound-force">
+				<displayName>lbf</displayName>
+				<unitPattern count="one" draft="contributed">{0} lbf</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} lbf</unitPattern>
+			</unit>
+			<unit type="force-newton">
+				<displayName>ኒ</displayName>
+				<unitPattern count="one">{0} ኒ</unitPattern>
+				<unitPattern count="other">{0} ኒ</unitPattern>
+			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>GHz</displayName>
 				<unitPattern count="one">{0} GHz</unitPattern>
@@ -6752,10 +6711,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ነጥብ</unitPattern>
 				<unitPattern count="other">{0} ነጥብ</unitPattern>
 			</unit>
+			<unit type="length-solar-radius">
+				<displayName>R☉</displayName>
+				<unitPattern count="one" draft="contributed">{0} R☉</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} R☉</unitPattern>
+			</unit>
 			<unit type="light-lux">
 				<displayName>lx</displayName>
 				<unitPattern count="one">{0} lx</unitPattern>
 				<unitPattern count="other">{0} lx</unitPattern>
+			</unit>
+			<unit type="light-solar-luminosity">
+				<displayName>L☉</displayName>
+				<unitPattern count="one" draft="contributed">{0} L☉</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} L☉</unitPattern>
 			</unit>
 			<unit type="mass-metric-ton">
 				<displayName>t</displayName>
@@ -6810,6 +6779,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>CD</displayName>
 				<unitPattern count="one">{0} CD</unitPattern>
 				<unitPattern count="other">{0} CD</unitPattern>
+			</unit>
+			<unit type="mass-dalton">
+				<displayName>Da</displayName>
+				<unitPattern count="one" draft="contributed">{0} Da</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} Da</unitPattern>
+			</unit>
+			<unit type="mass-earth-mass">
+				<displayName>M⊕</displayName>
+				<unitPattern count="one" draft="contributed">{0} M⊕</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} M⊕</unitPattern>
+			</unit>
+			<unit type="mass-solar-mass">
+				<displayName>M☉</displayName>
+				<unitPattern count="one" draft="contributed">{0} M☉</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} M☉</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>GW</displayName>
@@ -6866,6 +6850,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ሚሊባር</unitPattern>
 				<unitPattern count="other">{0} ሚሊባር</unitPattern>
 			</unit>
+			<unit type="pressure-atmosphere">
+				<displayName>ከባቢ አየር</displayName>
+				<unitPattern count="one">{0} ከባቢ አየር</unitPattern>
+				<unitPattern count="other">{0} ከባቢ አየር</unitPattern>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<displayName>ኪሎፓስካል</displayName>
+				<unitPattern count="one">{0} ኪሎፓስካል</unitPattern>
+				<unitPattern count="other">{0} ኪሎፓስካል</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<displayName>ሜጋፓስካል</displayName>
+				<unitPattern count="one">{0} ሜጋፓስካል</unitPattern>
+				<unitPattern count="other">{0} ሜጋፓስካሎች</unitPattern>
+			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>ኪሎሜትር በሰዓት</displayName>
 				<unitPattern count="one">{0} ኪሎሜትር በሰዓት</unitPattern>
@@ -6905,6 +6904,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>K</displayName>
 				<unitPattern count="one">{0} K</unitPattern>
 				<unitPattern count="other">{0} K</unitPattern>
+			</unit>
+			<unit type="torque-pound-foot">
+				<displayName>lbf⋅ft</displayName>
+				<unitPattern count="one" draft="contributed">{0} lbf⋅ft</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} lbf⋅ft</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<displayName>ኒ.ሜ</displayName>
+				<unitPattern count="one">{0} ኒ.ሜ</unitPattern>
+				<unitPattern count="other">{0} ኒ.ሜ</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<displayName>ኩቢክ ኪሎሜትር</displayName>
@@ -7021,6 +7030,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} fl oz</unitPattern>
 				<unitPattern count="other">{0} fl oz</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName>Imp. fl oz</displayName>
+				<unitPattern count="one" draft="contributed">{0} fl oz Imp.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} fl oz Imp.</unitPattern>
+			</unit>
 			<unit type="volume-tablespoon">
 				<displayName>tbsp</displayName>
 				<unitPattern count="one">{0} tbsp</unitPattern>
@@ -7031,7 +7045,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} tsp</unitPattern>
 				<unitPattern count="other">{0} tsp</unitPattern>
 			</unit>
+			<unit type="volume-barrel">
+				<displayName>በርሜል</displayName>
+				<unitPattern count="one">{0} በርሜል</unitPattern>
+				<unitPattern count="other">{0} በርሜሎች</unitPattern>
+			</unit>
 			<coordinateUnit>
+				<displayName>ዓቢይ አቅጣጫ</displayName>
 				<coordinateUnitPattern type="east">{0}ምስ</coordinateUnitPattern>
 				<coordinateUnitPattern type="north">{0}ሰ</coordinateUnitPattern>
 				<coordinateUnitPattern type="south">{0}ደ</coordinateUnitPattern>
@@ -7127,6 +7147,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ኢንች²</unitPattern>
 				<perUnitPattern>{0}/ኢንች²</perUnitPattern>
 			</unit>
+			<unit type="area-dunam">
+				<displayName>ጋሻዎች</displayName>
+				<unitPattern count="one">{0} ጋሻ</unitPattern>
+				<unitPattern count="other">{0} ጋሻ</unitPattern>
+			</unit>
 			<unit type="concentr-karat">
 				<displayName>ካራት</displayName>
 				<unitPattern count="one">{0} ካራት</unitPattern>
@@ -7147,6 +7172,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ppm</unitPattern>
 				<unitPattern count="other">{0} ppm</unitPattern>
 			</unit>
+			<unit type="concentr-percent">
+				<displayName>ፐርሰንት</displayName>
+				<unitPattern count="one">{0}%</unitPattern>
+				<unitPattern count="other">{0}%</unitPattern>
+			</unit>
+			<unit type="concentr-permille">
+				<displayName>በማይል</displayName>
+				<unitPattern count="one">{0}‰</unitPattern>
+				<unitPattern count="other">{0}‰</unitPattern>
+			</unit>
+			<unit type="concentr-permyriad">
+				<displayName>‱</displayName>
+				<unitPattern count="one" draft="contributed">{0}‱</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}‱</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName>mol</displayName>
+				<unitPattern count="one" draft="contributed">{0} mol</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} mol</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>ሊ/ኪሜ</displayName>
 				<unitPattern count="one">{0} ሊ/ኪሜ</unitPattern>
@@ -7166,6 +7211,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>mpg Imp.</displayName>
 				<unitPattern count="one">{0} mpg Imp.</unitPattern>
 				<unitPattern count="other">{0} mpg Imp.</unitPattern>
+			</unit>
+			<unit type="digital-petabyte">
+				<displayName>ፔ ባይት</displayName>
+				<unitPattern count="one">{0} ፔባ</unitPattern>
+				<unitPattern count="other">{0} ፔባ</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>ቴራባይት</displayName>
@@ -7329,6 +7379,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} kWh</unitPattern>
 				<unitPattern count="other">{0} kWh</unitPattern>
 			</unit>
+			<unit type="energy-electronvolt">
+				<displayName>ኤቮ</displayName>
+				<unitPattern count="one">{0} ኤቮ</unitPattern>
+				<unitPattern count="other">{0} ኤቮ</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName>Btu</displayName>
+				<unitPattern count="one" draft="contributed">{0} Btu</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} Btu</unitPattern>
+			</unit>
+			<unit type="force-pound-force">
+				<displayName>lbf</displayName>
+				<unitPattern count="one" draft="contributed">{0} lbf</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} lbf</unitPattern>
+			</unit>
+			<unit type="force-newton">
+				<displayName>ኒ</displayName>
+				<unitPattern count="one">{0} ኒ</unitPattern>
+				<unitPattern count="other">{0} ኒ</unitPattern>
+			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>GHz</displayName>
 				<unitPattern count="one">{0} GHz</unitPattern>
@@ -7444,10 +7514,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ነጥብ</unitPattern>
 				<unitPattern count="other">{0} ነጥብ</unitPattern>
 			</unit>
+			<unit type="length-solar-radius">
+				<displayName>R☉</displayName>
+				<unitPattern count="one" draft="contributed">{0} R☉</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} R☉</unitPattern>
+			</unit>
 			<unit type="light-lux">
 				<displayName>lx</displayName>
 				<unitPattern count="one">{0} lx</unitPattern>
 				<unitPattern count="other">{0} lx</unitPattern>
+			</unit>
+			<unit type="light-solar-luminosity">
+				<displayName>L☉</displayName>
+				<unitPattern count="one" draft="contributed">{0} L☉</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} L☉</unitPattern>
 			</unit>
 			<unit type="mass-metric-ton">
 				<displayName>t</displayName>
@@ -7502,6 +7582,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>CD</displayName>
 				<unitPattern count="one">{0} CD</unitPattern>
 				<unitPattern count="other">{0} CD</unitPattern>
+			</unit>
+			<unit type="mass-dalton">
+				<displayName>Da</displayName>
+				<unitPattern count="one" draft="contributed">{0} Da</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} Da</unitPattern>
+			</unit>
+			<unit type="mass-earth-mass">
+				<displayName>M⊕</displayName>
+				<unitPattern count="one" draft="contributed">{0} M⊕</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} M⊕</unitPattern>
+			</unit>
+			<unit type="mass-solar-mass">
+				<displayName>M☉</displayName>
+				<unitPattern count="one" draft="contributed">{0} M☉</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} M☉</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>GW</displayName>
@@ -7558,6 +7653,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ሚባ</unitPattern>
 				<unitPattern count="other">{0} ሚባ</unitPattern>
 			</unit>
+			<unit type="pressure-atmosphere">
+				<displayName>ከባቢ አየር</displayName>
+				<unitPattern count="one">{0} ከባቢ አየር</unitPattern>
+				<unitPattern count="other">{0} ከባቢ አየር</unitPattern>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<displayName>ኪሎፓስካል</displayName>
+				<unitPattern count="one">{0} ኪሎፓስካል</unitPattern>
+				<unitPattern count="other">{0} ኪሎፓስካል</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<displayName>ሜጋፓስካል</displayName>
+				<unitPattern count="one">{0} ሜጋፓስካል</unitPattern>
+				<unitPattern count="other">{0} ሜጋፓስካል</unitPattern>
+			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>ኪሎሜትር በሰዓት</displayName>
 				<unitPattern count="one">{0} ኪሜ/ሰ</unitPattern>
@@ -7597,6 +7707,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>K</displayName>
 				<unitPattern count="one">{0} K</unitPattern>
 				<unitPattern count="other">{0} K</unitPattern>
+			</unit>
+			<unit type="torque-pound-foot">
+				<displayName>lbf⋅ft</displayName>
+				<unitPattern count="one" draft="contributed">{0} lbf⋅ft</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} lbf⋅ft</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<displayName>ኒ.ሜ</displayName>
+				<unitPattern count="one">{0} ኒ.ሜ</unitPattern>
+				<unitPattern count="other">{0} ኒ.ሜ</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<displayName>ኩቢክ ኪሎሜትር</displayName>
@@ -7713,6 +7833,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} fl oz</unitPattern>
 				<unitPattern count="other">{0} fl oz</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName>Imp. fl oz</displayName>
+				<unitPattern count="one" draft="contributed">{0} fl oz Imp.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} fl oz Imp.</unitPattern>
+			</unit>
 			<unit type="volume-tablespoon">
 				<displayName>tbsp</displayName>
 				<unitPattern count="one">{0} tbsp</unitPattern>
@@ -7723,7 +7848,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} tsp</unitPattern>
 				<unitPattern count="other">{0} tsp</unitPattern>
 			</unit>
+			<unit type="volume-barrel">
+				<displayName>በርሜል</displayName>
+				<unitPattern count="one">{0} በርሜል</unitPattern>
+				<unitPattern count="other">{0} በርሜል</unitPattern>
+			</unit>
 			<coordinateUnit>
+				<displayName>አቅጣጫ</displayName>
 				<coordinateUnitPattern type="east">{0}ምስ</coordinateUnitPattern>
 				<coordinateUnitPattern type="north">{0}ሰ</coordinateUnitPattern>
 				<coordinateUnitPattern type="south">{0}ደ</coordinateUnitPattern>
@@ -7773,6 +7904,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="area-square-foot">
 				<unitPattern count="one">{0} ጫማ²</unitPattern>
 				<unitPattern count="other">{0} ጫማ²</unitPattern>
+			</unit>
+			<unit type="concentr-percent">
+				<displayName>%</displayName>
+				<unitPattern count="one">{0}%</unitPattern>
+				<unitPattern count="other">{0}%</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100kilometers">
 				<displayName>ሊትር በ100 ኪሎሜትሮች</displayName>
@@ -7944,6 +8080,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ሊ</unitPattern>
 			</unit>
 			<coordinateUnit>
+				<displayName>አቅጣጫ</displayName>
 				<coordinateUnitPattern type="east">{0}ምስ</coordinateUnitPattern>
 				<coordinateUnitPattern type="north">{0}ሰ</coordinateUnitPattern>
 				<coordinateUnitPattern type="south">{0}ደ</coordinateUnitPattern>
@@ -7972,6 +8109,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<listPatternPart type="middle">{0}፣ {1}</listPatternPart>
 			<listPatternPart type="end">{0} ወይም {1}﻿</listPatternPart>
 			<listPatternPart type="2">{0} ወይም {1}﻿</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-narrow">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}፣ {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="standard-short">
 			<listPatternPart type="start">{0}፣ {1}</listPatternPart>
@@ -8103,4 +8244,74 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabel type="western_asian_scripts">ምእራባዊ ኤስያ ስክሪፕት</characterLabel>
 		<characterLabel type="whitespace">ባዶ ቦታ</characterLabel>
 	</characterLabels>
+	<typographicNames>
+		<axisName type="ital">italic</axisName>
+		<axisName type="opsz">optical size</axisName>
+		<axisName type="slnt">slant</axisName>
+		<axisName type="wdth">width</axisName>
+		<axisName type="wght">weight</axisName>
+		<styleName type="ital" subtype="1">cursive</styleName>
+		<styleName type="opsz" subtype="8">caption</styleName>
+		<styleName type="opsz" subtype="12">text</styleName>
+		<styleName type="opsz" subtype="18">titling</styleName>
+		<styleName type="opsz" subtype="72">display</styleName>
+		<styleName type="opsz" subtype="144">poster</styleName>
+		<styleName type="slnt" subtype="-12">backslanted</styleName>
+		<styleName type="slnt" subtype="0">upright</styleName>
+		<styleName type="slnt" subtype="12">slanted</styleName>
+		<styleName type="slnt" subtype="24">extra-slanted</styleName>
+		<styleName type="wdth" subtype="50">ultracondensed</styleName>
+		<styleName type="wdth" subtype="50" alt="compressed">ultracompressed</styleName>
+		<styleName type="wdth" subtype="50" alt="narrow">ultranarrow</styleName>
+		<styleName type="wdth" subtype="62.5">extra-condensed</styleName>
+		<styleName type="wdth" subtype="62.5" alt="compressed">extra-compressed</styleName>
+		<styleName type="wdth" subtype="62.5" alt="narrow">extra-narrow</styleName>
+		<styleName type="wdth" subtype="75">condensed</styleName>
+		<styleName type="wdth" subtype="75" alt="compressed">compressed</styleName>
+		<styleName type="wdth" subtype="75" alt="narrow">compressed</styleName>
+		<styleName type="wdth" subtype="87.5">semicondensed</styleName>
+		<styleName type="wdth" subtype="87.5" alt="compressed">semicompressed</styleName>
+		<styleName type="wdth" subtype="87.5" alt="narrow">seminarrow</styleName>
+		<styleName type="wdth" subtype="100">normal</styleName>
+		<styleName type="wdth" subtype="112.5">semiexpanded</styleName>
+		<styleName type="wdth" subtype="112.5" alt="extended">semiextended</styleName>
+		<styleName type="wdth" subtype="112.5" alt="wide">semiwide</styleName>
+		<styleName type="wdth" subtype="125">expanded</styleName>
+		<styleName type="wdth" subtype="125" alt="extended">extended</styleName>
+		<styleName type="wdth" subtype="125" alt="wide">wide</styleName>
+		<styleName type="wdth" subtype="150">extra-expanded</styleName>
+		<styleName type="wdth" subtype="150" alt="extended">extra-extended</styleName>
+		<styleName type="wdth" subtype="150" alt="wide">extra-wide</styleName>
+		<styleName type="wdth" subtype="200">ultraexpanded</styleName>
+		<styleName type="wdth" subtype="200" alt="extended">ultraextended</styleName>
+		<styleName type="wdth" subtype="200" alt="wide">ultrawide</styleName>
+		<styleName type="wght" subtype="100">thin</styleName>
+		<styleName type="wght" subtype="200">extra-light</styleName>
+		<styleName type="wght" subtype="200" alt="ultra">ultralight</styleName>
+		<styleName type="wght" subtype="300">light</styleName>
+		<styleName type="wght" subtype="350">semilight</styleName>
+		<styleName type="wght" subtype="380">book</styleName>
+		<styleName type="wght" subtype="400">regular</styleName>
+		<styleName type="wght" subtype="500">medium</styleName>
+		<styleName type="wght" subtype="600">semibold</styleName>
+		<styleName type="wght" subtype="600" alt="demi">demibold</styleName>
+		<styleName type="wght" subtype="700">bold</styleName>
+		<styleName type="wght" subtype="800">extra-bold</styleName>
+		<styleName type="wght" subtype="900">black</styleName>
+		<styleName type="wght" subtype="900" alt="heavy">heavy</styleName>
+		<styleName type="wght" subtype="950">extra-black</styleName>
+		<styleName type="wght" subtype="950" alt="ultrablack">ultrablack</styleName>
+		<styleName type="wght" subtype="950" alt="ultraheavy">ultraheavy</styleName>
+		<featureName type="afrc">vertical fractions</featureName>
+		<featureName type="cpsp">capital spacing</featureName>
+		<featureName type="dlig">optional ligatures</featureName>
+		<featureName type="frac">diagonal fractions</featureName>
+		<featureName type="lnum">lining numbers</featureName>
+		<featureName type="onum">old-style figures</featureName>
+		<featureName type="ordn">ordinals</featureName>
+		<featureName type="pnum">proportional numbers</featureName>
+		<featureName type="smcp">small capitals</featureName>
+		<featureName type="tnum">tabular numbers</featureName>
+		<featureName type="zero">slashed zero</featureName>
+	</typographicNames>
 </ldml>

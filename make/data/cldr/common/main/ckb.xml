@@ -1,133 +1,406 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2018 Unicode, Inc.
+<!-- Copyright © 1991-2019 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 13871 $"/>
+		<version number="$Revision: 14772 $"/>
 		<language type="ckb"/>
 	</identity>
 	<localeDisplayNames>
 		<languages>
-			<language type="af" draft="unconfirmed">ئه‌فریكای</language>
-			<language type="am">ئەمهەرینجی</language>
+			<language type="aa">ئەفار</language>
+			<language type="ab">ئەبخازی</language>
+			<language type="ace">ئاچەیی</language>
+			<language type="ada">دانگمێ</language>
+			<language type="ady">ئادیگی</language>
+			<language type="af">ئەفریکانس</language>
+			<language type="agq">ئاگێم</language>
+			<language type="ain">ئاینوو</language>
+			<language type="ak">ئاکان</language>
+			<language type="ale">ئالیوت</language>
+			<language type="alt">ئاڵتایی باشوور</language>
+			<language type="am">ئەمھەری</language>
+			<language type="an">ئاراگۆنی</language>
+			<language type="anp">ئەنگیکا</language>
 			<language type="ar">عەرەبی</language>
+			<language type="ar_001">عەرەبیی ستاندارد</language>
+			<language type="arn">ماپووچە</language>
+			<language type="arp">ئاراپاهۆ</language>
 			<language type="as">ئاسامی</language>
+			<language type="asa">ئاسوو</language>
+			<language type="ast">ئاستۆری</language>
+			<language type="av">ئەڤاری</language>
+			<language type="awa">ئاوادهی</language>
+			<language type="ay">ئایمارا</language>
 			<language type="az">ئازەربایجانی</language>
 			<language type="az" alt="short">ئازەربایجانی</language>
 			<language type="az_Arab">ئازەربایجانی باشووری</language>
+			<language type="ba">باشکیەر</language>
+			<language type="ban">بالی</language>
+			<language type="bas">باسا</language>
 			<language type="be">بیلاڕووسی</language>
+			<language type="bem">بێمبا</language>
+			<language type="bez">بێنا</language>
 			<language type="bg">بۆلگاری</language>
+			<language type="bho">بوجپووری</language>
+			<language type="bi">بیسلاما</language>
+			<language type="bin">بینی</language>
+			<language type="bla">سیکسیکا</language>
+			<language type="bm">بامبارا</language>
 			<language type="bn">بەنگلادێشی</language>
+			<language type="bo">تەبەتی</language>
 			<language type="br">برێتونی</language>
+			<language type="brx">بۆدۆ</language>
 			<language type="bs">بۆسنی</language>
+			<language type="bug">بووگی</language>
+			<language type="byn">بلین</language>
 			<language type="ca">كاتالۆنی</language>
+			<language type="ce">چیچانی</language>
+			<language type="ceb">سێبوانۆ</language>
+			<language type="cgg">کیگا</language>
+			<language type="ch">چامۆرۆ</language>
+			<language type="chk">چووکی</language>
+			<language type="chm">ماری</language>
+			<language type="cho">چۆکتاو</language>
+			<language type="chr">چێرۆکی</language>
+			<language type="chy">شایان</language>
 			<language type="ckb">کوردیی ناوەندی</language>
-			<language type="cs">چەكی</language>
+			<language type="co">کۆرسیکی</language>
+			<language type="crs">فەرەنسیی سیشێلی</language>
+			<language type="cs">چێکی</language>
+			<language type="cu">سلاویی کلیسەیی</language>
+			<language type="cv">چووڤاشی</language>
 			<language type="cy">وێلزی</language>
 			<language type="da">دانماركی</language>
-			<language type="de">ئاڵمانی</language>
+			<language type="dak">داکۆتایی</language>
+			<language type="dar">دارگینی</language>
+			<language type="dav">تایتا</language>
+			<language type="de">ئەڵمانی</language>
+			<language type="dgr">دۆگریب</language>
+			<language type="dje">زارما</language>
+			<language type="dsb">سربیی خوارین</language>
+			<language type="dua">دووالا</language>
+			<language type="dv">دیڤێهی</language>
+			<language type="dyo">جۆلافۆنی</language>
+			<language type="dz">دزوونگخا</language>
+			<language type="dzg">دازا</language>
+			<language type="ebu">ئێمبوو</language>
+			<language type="ee">ئێوێیی</language>
+			<language type="efi">ئێفیک</language>
+			<language type="eka">ئێکاجووک</language>
 			<language type="el">یۆنانی</language>
 			<language type="en">ئینگلیزی</language>
 			<language type="en_AU">ئینگلیزیی ئۆسترالیایی</language>
 			<language type="en_CA">ئینگلیزیی کەنەدایی</language>
 			<language type="en_GB">ئینگلیزیی بریتانیایی</language>
+			<language type="en_GB" alt="short">ئینگلیزی (GB)</language>
 			<language type="en_US">ئینگلیزیی ئەمەریکایی</language>
 			<language type="en_US" alt="short">ئینگلیزیی ئەمەریکایی</language>
 			<language type="eo">ئێسپیرانتۆ</language>
 			<language type="es">ئیسپانی</language>
 			<language type="et">ئیستۆنی</language>
 			<language type="eu">باسکی</language>
+			<language type="ewo">ئێوۆندۆ</language>
 			<language type="fa">فارسی</language>
+			<language type="ff">فوولایی</language>
 			<language type="fi">فینلەندی</language>
-			<language type="fil" draft="unconfirmed">تاگالۆگی</language>
-			<language type="fo" draft="unconfirmed">فه‌رئۆیی</language>
-			<language type="fr">فەرانسی</language>
+			<language type="fil">فیلیپینی</language>
+			<language type="fj">فیجی</language>
+			<language type="fo">فەرۆیی</language>
+			<language type="fon">فۆنی</language>
+			<language type="fr">فەرەنسی</language>
+			<language type="fur">فریئوولی</language>
 			<language type="fy">فریسیی ڕۆژاوا</language>
 			<language type="ga">ئیرلەندی</language>
-			<language type="gd" draft="unconfirmed">گه‌لیكی سكۆتله‌ندی</language>
+			<language type="gaa">گایی</language>
+			<language type="gd">گه‌لیكی سكۆتله‌ندی</language>
+			<language type="gez">گیزی</language>
+			<language type="gil">گیلبێرتی</language>
 			<language type="gl">گالیسی</language>
 			<language type="gn">گووارانی</language>
+			<language type="gor">گۆرۆنتالی</language>
+			<language type="gsw">ئەڵمانیی سویسڕا</language>
 			<language type="gu">گوجاراتی</language>
-			<language type="he">هیبرێ</language>
+			<language type="guz">گووسی</language>
+			<language type="gv">مانکی</language>
+			<language type="gwi">گویچین</language>
+			<language type="ha">هائووسا</language>
+			<language type="haw">هاوایی</language>
+			<language type="he">عیبری</language>
 			<language type="hi">هیندی</language>
+			<language type="hil">هیلیگاینۆن</language>
+			<language type="hmn">همۆنگ</language>
 			<language type="hr">كرواتی</language>
+			<language type="hsb">سربیی سەروو</language>
+			<language type="ht">کریولی هائیتی</language>
 			<language type="hu">هەنگاری (مەجاری)</language>
+			<language type="hup">هووپا</language>
 			<language type="hy">ئەرمەنی</language>
-			<language type="ia" draft="unconfirmed">ئینترلینگوی</language>
-			<language type="id">ئێەندونیزی</language>
+			<language type="hz">هێرێرۆ</language>
+			<language type="ia">ئینترلینگووا</language>
+			<language type="iba">ئیبان</language>
+			<language type="ibb">ئیبیبۆ</language>
+			<language type="id">ئیندۆنیزی</language>
 			<language type="ie" draft="unconfirmed">ئینتەرلیگ</language>
+			<language type="ig">ئیگبۆ</language>
+			<language type="ii">سیچوان یی</language>
+			<language type="ilo">ئیلۆکۆ</language>
+			<language type="inh">ئینگووش</language>
+			<language type="io">ئیدۆ</language>
 			<language type="is">ئیسلەندی</language>
 			<language type="it">ئیتالی</language>
+			<language type="iu">ئینوکتیتوت</language>
 			<language type="ja">ژاپۆنی</language>
-			<language type="jv">جاڤانی</language>
+			<language type="jbo">لۆژبان</language>
+			<language type="jgo">نگۆمبا</language>
+			<language type="jmc">ماچامێ</language>
+			<language type="jv">جاڤایی</language>
 			<language type="ka">گۆرجستانی</language>
+			<language type="kab">کبائیلی</language>
+			<language type="kac">کاچین</language>
+			<language type="kaj">کیجوو</language>
+			<language type="kam">کامبا</language>
+			<language type="kbd">کاباردی</language>
+			<language type="kcg">تیاپ</language>
+			<language type="kde">ماکۆندە</language>
+			<language type="kea">کابووڤێردیانۆ</language>
+			<language type="kfo">کۆرۆ</language>
+			<language type="kha">کهاسی</language>
+			<language type="khq">کۆیرا چینی</language>
+			<language type="ki">کیکوویوو</language>
+			<language type="kj">کوانیاما</language>
 			<language type="kk">کازاخی</language>
-			<language type="km" draft="unconfirmed">کامبۆجی (زوبان)</language>
-			<language type="kn" draft="unconfirmed">كه‌نه‌دایی</language>
-			<language type="ko" draft="unconfirmed">كۆری</language>
+			<language type="kkj">کاکۆ</language>
+			<language type="kl">کالالیسووت</language>
+			<language type="kln">کالێنجین</language>
+			<language type="km">خمێر</language>
+			<language type="kmb">کیمبووندوو</language>
+			<language type="kn">کاننادا</language>
+			<language type="ko">كۆری</language>
+			<language type="kok">کۆنکانی</language>
+			<language type="kpe">کپێلێ</language>
+			<language type="kr">کانووری</language>
+			<language type="krc">کاراچای بالکار</language>
+			<language type="krl">کارێلی</language>
+			<language type="kru">کوورووخ</language>
+			<language type="ks">کەشمیری</language>
+			<language type="ksb">شامابالا</language>
+			<language type="ksf">بافیا</language>
+			<language type="ksh">کۆلۆنی</language>
 			<language type="ku">کوردی</language>
+			<language type="kum">کوومیک</language>
+			<language type="kv">کۆمی</language>
+			<language type="kw">کۆڕنی</language>
 			<language type="ky">كرگیزی</language>
 			<language type="la">لاتینی</language>
+			<language type="lad">لادینۆ</language>
+			<language type="lag">لانگی</language>
+			<language type="lb">لوکسەمبورگی</language>
+			<language type="lez">لەزگی</language>
+			<language type="lg">گاندا</language>
+			<language type="li">لیمبورگی</language>
+			<language type="lkt">لاکۆتا</language>
 			<language type="ln">لينگالا</language>
-			<language type="lo">لاوی</language>
+			<language type="lo">لائۆیی</language>
+			<language type="loz">لۆزی</language>
+			<language type="lrc">لوڕیی باکوور</language>
 			<language type="lt">لیتوانی</language>
+			<language type="lu">لووبا کاتانگا</language>
+			<language type="lua">لووبا لوولووا</language>
+			<language type="lun">لووندا</language>
+			<language type="luo">لووئۆ</language>
+			<language type="lus">میزۆ</language>
+			<language type="luy">لوویا</language>
 			<language type="lv">لێتۆنی</language>
+			<language type="mad">مادووری</language>
+			<language type="mag">ماگاهی</language>
+			<language type="mai">مائیتیلی</language>
+			<language type="mak">ماکاسار</language>
+			<language type="mas">ماسایی</language>
+			<language type="mdf">مۆکشا</language>
+			<language type="men">مێندێ</language>
+			<language type="mer">مێروو</language>
+			<language type="mfe">مۆریسی</language>
+			<language type="mg">مالاگاسی</language>
+			<language type="mgh">ماخوامیتۆ</language>
+			<language type="mgo">مێتە</language>
+			<language type="mh">مارشاڵی</language>
+			<language type="mi">مائۆری</language>
+			<language type="mic">میکماک</language>
+			<language type="min">مینانکاباو</language>
 			<language type="mk">ماكێدۆنی</language>
-			<language type="ml" draft="unconfirmed">مالایلام</language>
+			<language type="ml">مالایالام</language>
 			<language type="mn">مەنگۆلی</language>
+			<language type="mni">مانیپووری</language>
+			<language type="moh">مۆهاوک</language>
+			<language type="mos">مۆسی</language>
 			<language type="mr">ماراتی</language>
-			<language type="ms" draft="unconfirmed">مالیزی</language>
-			<language type="mt" draft="unconfirmed">ماڵتایی</language>
+			<language type="ms">مالیزی</language>
+			<language type="mt">ماڵتی</language>
+			<language type="mua">موندانگ</language>
+			<language type="mul">چەند زمان</language>
+			<language type="mus">کریک</language>
+			<language type="mwl">میراندی</language>
+			<language type="my">میانماری</language>
+			<language type="myv">ئێرزیا</language>
 			<language type="mzn">مازەندەرانی</language>
+			<language type="na">نائوروو</language>
+			<language type="nap">ناپۆلی</language>
+			<language type="naq">ناما</language>
+			<language type="nb">نەرویژیی بۆکمال</language>
+			<language type="nd">ئندێبێلێی باکوور</language>
 			<language type="ne">نیپالی</language>
+			<language type="new">نێواری</language>
+			<language type="ng">ندۆنگا</language>
+			<language type="nia">نیاس</language>
+			<language type="niu">نیئوویی</language>
 			<language type="nl">هۆڵەندی</language>
+			<language type="nl_BE">فلێمی</language>
+			<language type="nmg">کواسیۆ</language>
+			<language type="nn">نەرویژیی نینۆرسک</language>
+			<language type="nnh">نگیمبوون</language>
 			<language type="no">نۆروێژی</language>
-			<language type="oc" draft="unconfirmed">ئۆسیتانی</language>
-			<language type="or">ئۆرییا</language>
+			<language type="nog">نۆگای</language>
+			<language type="nqo">نکۆ</language>
+			<language type="nr">ئندێبێلێی باشوور</language>
+			<language type="nso">سۆتۆی باکوور</language>
+			<language type="nus">نوێر</language>
+			<language type="nv">ناڤاجۆ</language>
+			<language type="ny">نیانجا</language>
+			<language type="nyn">نیانکۆلێ</language>
+			<language type="oc">ئۆکسیتانی</language>
+			<language type="om">ئۆرۆمۆ</language>
+			<language type="or">ئۆدیا</language>
+			<language type="os">ئۆسێتی</language>
 			<language type="pa">پەنجابی</language>
-			<language type="pl">پۆڵۆنیایی (لەهستانی)</language>
+			<language type="pag">پانگاسینان</language>
+			<language type="pam">پامپانگا</language>
+			<language type="pap">پاپیامێنتۆ</language>
+			<language type="pau">پالائوویی</language>
+			<language type="pcm">پیجینی نیجریا</language>
+			<language type="pl">پۆڵەندی</language>
+			<language type="prg">پڕووسی</language>
 			<language type="ps">پەشتوو</language>
 			<language type="pt">پورتوگالی</language>
+			<language type="qu">کێچوا</language>
+			<language type="quc">کیچەیی</language>
+			<language type="rap">ڕاپانوویی</language>
+			<language type="rar">ڕاڕۆتۆنگان</language>
+			<language type="rm">ڕۆمانش</language>
+			<language type="rn">ڕووندی</language>
 			<language type="ro">ڕۆمانی</language>
+			<language type="ro_MD">مۆڵداڤی</language>
+			<language type="rof">ڕۆمبۆ</language>
+			<language type="root">ڕووت</language>
 			<language type="ru">ڕووسی</language>
+			<language type="rup">ئارمۆمانی</language>
+			<language type="rw">کینیارواندا</language>
+			<language type="rwk">ڕوا</language>
 			<language type="sa">سانسکريت</language>
+			<language type="sad">سانداوێ</language>
+			<language type="sah">ساخا</language>
+			<language type="saq">سامبووروو</language>
+			<language type="sat">سانتالی</language>
+			<language type="sba">نگامبای</language>
+			<language type="sbp">سانگوو</language>
+			<language type="sc">ساردینی</language>
+			<language type="scn">سیسیلی</language>
+			<language type="sco">سکۆتس</language>
 			<language type="sd">سيندی</language>
 			<language type="sdh">کوردیی باشووری</language>
+			<language type="se">سامیی باکوور</language>
+			<language type="seh">سێنا</language>
+			<language type="ses">کۆیرابۆرۆ سێنی</language>
+			<language type="sg">سانگۆ</language>
 			<language type="sh" draft="unconfirmed">سێربۆكرواتی</language>
-			<language type="si">سینهەلی</language>
+			<language type="shi">شیلها</language>
+			<language type="shn">شان</language>
+			<language type="si">سینهالی</language>
 			<language type="sk">سلۆڤاكی</language>
 			<language type="sl">سلۆڤێنی</language>
-			<language type="sma">سامی باشووری</language>
+			<language type="sm">سامۆیی</language>
+			<language type="sma">سامیی باشوور</language>
+			<language type="smj">لوولێ سامی</language>
+			<language type="smn">ئیناری سامی</language>
+			<language type="sms">سامیی سکۆڵت</language>
+			<language type="sn">شۆنا</language>
+			<language type="snk">سۆنینکێ</language>
 			<language type="so">سۆمالی</language>
 			<language type="sq">ئەڵبانی</language>
-			<language type="sr">سەربی</language>
-			<language type="st">سێسۆتۆ</language>
-			<language type="su">سودانی</language>
+			<language type="sr">سربی</language>
+			<language type="srn">سرانان تۆنگۆ</language>
+			<language type="ss">سواتی</language>
+			<language type="ssy">ساهۆ</language>
+			<language type="st">سۆتۆی باشوور</language>
+			<language type="su">سوندانی</language>
+			<language type="suk">سووکووما</language>
 			<language type="sv">سویدی</language>
-			<language type="sw" draft="unconfirmed">سواهیلی</language>
+			<language type="sw">سواهیلی</language>
+			<language type="sw_CD">سواهیلیی کۆنگۆ</language>
+			<language type="swb">کۆمۆری</language>
+			<language type="syr">سریانی</language>
 			<language type="ta">تامیلی</language>
-			<language type="te">تەلۆگوی</language>
+			<language type="te">تێلووگوو</language>
+			<language type="tem">تیمنێ</language>
+			<language type="teo">تێسوو</language>
+			<language type="tet">تێتووم</language>
 			<language type="tg">تاجیکی</language>
 			<language type="th">تایلەندی</language>
-			<language type="ti">تیگرینیای</language>
+			<language type="ti">تیگرینیا</language>
+			<language type="tig">تیگرێ</language>
 			<language type="tk">تورکمانی</language>
-			<language type="tlh" draft="unconfirmed">كلینگۆن</language>
+			<language type="tlh">كلینگۆن</language>
+			<language type="tn">تسوانا</language>
+			<language type="to">تۆنگان</language>
+			<language type="tpi">تۆکپیسین</language>
 			<language type="tr">تورکی</language>
+			<language type="trv">تارۆکۆ</language>
+			<language type="ts">تسۆنگا</language>
+			<language type="tt">تاتاری</language>
+			<language type="tum">تومبووکا</language>
+			<language type="tvl">تووڤالوو</language>
 			<language type="tw" draft="unconfirmed">توی</language>
-			<language type="ug">ئويخووری</language>
+			<language type="twq">تاساواک</language>
+			<language type="ty">تاهیتی</language>
+			<language type="tyv">تووڤینی</language>
+			<language type="tzm">ئەمازیغی ناوەڕاست</language>
+			<language type="udm">ئوودموورت</language>
+			<language type="ug">ئۆیخۆری</language>
 			<language type="uk">ئۆكراینی</language>
+			<language type="umb">ئومبووندوو</language>
 			<language type="und">زمانی نەناسراو</language>
 			<language type="ur">ئۆردوو</language>
 			<language type="uz">ئوزبەکی</language>
+			<language type="vai">ڤایی</language>
+			<language type="ve">ڤێندا</language>
 			<language type="vi">ڤیەتنامی</language>
-			<language type="xh" draft="unconfirmed">سسوسا</language>
-			<language type="yi" draft="unconfirmed">یوددی</language>
+			<language type="vo">ڤۆلاپووک</language>
+			<language type="vun">ڤوونجوو</language>
+			<language type="wa">والوون</language>
+			<language type="wae">والسێر</language>
+			<language type="wal">وۆلایتا</language>
+			<language type="war">وارای</language>
+			<language type="wo">وۆلۆف</language>
+			<language type="xal">کالمیک</language>
+			<language type="xh">سسوسا</language>
+			<language type="xog">سۆگا</language>
+			<language type="yav">یانگبێن</language>
+			<language type="ybb">یێمبا</language>
+			<language type="yi">ییدیش</language>
+			<language type="yo">یۆرووبا</language>
+			<language type="yue">کانتۆنی</language>
+			<language type="zgh">ئەمازیغیی مەغریب</language>
 			<language type="zh">چینی</language>
-			<language type="zu">زولو</language>
+			<language type="zh_Hans">چینی (چینیی ئاسانکراو)</language>
+			<language type="zh_Hant">چینی (چینیی دێرین)</language>
+			<language type="zu">زوولوو</language>
+			<language type="zun">زوونی</language>
+			<language type="zxx">هیچ ناوەرۆکی زمانی نیە</language>
+			<language type="zza">زازا</language>
 		</languages>
 		<scripts>
 			<script type="Arab">عەرەبی</script>
@@ -142,59 +415,79 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Grek">یۆنانی</script>
 			<script type="Gujr">گوجەراتی</script>
 			<script type="Guru">گورموکھی</script>
+			<script type="Hanb">هان لەگەڵ بۆپۆمۆفۆ</script>
 			<script type="Hang">ھانگول</script>
-			<script type="Hani" draft="unconfirmed">ھان</script>
-			<script type="Hans" draft="unconfirmed">چینیی ئاسانکراو</script>
-			<script type="Hant" draft="unconfirmed">چینیی دێرین</script>
-			<script type="Hebr">هیبرێ</script>
+			<script type="Hani">ھان</script>
+			<script type="Hans">ئاسانکراو</script>
+			<script type="Hans" alt="stand-alone">هانی ئاسانکراو</script>
+			<script type="Hant">دێرین</script>
+			<script type="Hant" alt="stand-alone">هانی دێرین</script>
+			<script type="Hebr">عیبری</script>
 			<script type="Hira">ھیراگانا</script>
+			<script type="Hrkt">ژاپۆنیی بڕگەیی</script>
+			<script type="Jamo">جامۆ</script>
 			<script type="Jpan">ژاپۆنی</script>
 			<script type="Kana">کاتاکانا</script>
-			<script type="Khmr">خمێری</script>
-			<script type="Knda">کەنەدا</script>
-			<script type="Kore">کۆریایی</script>
-			<script type="Laoo">لاو</script>
+			<script type="Khmr">خمێر</script>
+			<script type="Knda">کاننادا</script>
+			<script type="Kore">کۆری</script>
+			<script type="Laoo">لائۆ</script>
 			<script type="Latn">لاتینی</script>
 			<script type="Mlym">مالایالام</script>
 			<script type="Mong">مەنگۆلی</script>
 			<script type="Mymr">میانمار</script>
-			<script type="Orya">ئۆریا</script>
+			<script type="Orya">ئۆدیا</script>
 			<script type="Sinh">سینھالا</script>
 			<script type="Taml">تامیلی</script>
-			<script type="Telu">تیلوگو</script>
-			<script type="Thaa">تانە</script>
+			<script type="Telu">تێلووگوو</script>
+			<script type="Thaa">تانا</script>
 			<script type="Thai">تایلەندی</script>
-			<script type="Zxxx" draft="unconfirmed">نەنووسراو</script>
-			<script type="Zzzz" draft="unconfirmed">خەتی نەناسراو</script>
+			<script type="Tibt">تەبەتی</script>
+			<script type="Zmth">نیشانەی بیرکاری</script>
+			<script type="Zsye">ئیمۆجی</script>
+			<script type="Zsym">هێماکان</script>
+			<script type="Zxxx">نەنووسراو</script>
+			<script type="Zyyy">باو</script>
+			<script type="Zzzz">خەتی نەناسراو</script>
 		</scripts>
 		<territories>
-			<territory type="002" draft="unconfirmed">ئەفریقا</territory>
-			<territory type="003" draft="unconfirmed">ئەمەریکای باکوور</territory>
-			<territory type="005" draft="unconfirmed">ئەمەریکای باشوور</territory>
-			<territory type="009" draft="unconfirmed">ئۆقیانووسیا</territory>
-			<territory type="011" draft="unconfirmed">ڕۆژاوای ئەفریقا</territory>
-			<territory type="013" draft="unconfirmed">ئەمریکای ناوەڕاست</territory>
-			<territory type="014" draft="unconfirmed">ڕۆژھەڵاتی ئەفریقا</territory>
-			<territory type="018" draft="unconfirmed">باشووری ئەفریقا</territory>
-			<territory type="019" draft="unconfirmed">ئەمریکاکان</territory>
-			<territory type="021" draft="unconfirmed">ئەمریکای باکوور</territory>
-			<territory type="030" draft="unconfirmed">ئاسیای ڕۆژھەڵات</territory>
-			<territory type="034" draft="unconfirmed">باشووری ئاسیا</territory>
-			<territory type="035" draft="unconfirmed">باشووری ڕۆژھەڵاتی ئاسیا</territory>
-			<territory type="039">ئەورووپای باشووری</territory>
-			<territory type="057" draft="unconfirmed">ناوچەی مایکرۆنیزیا</territory>
-			<territory type="142" draft="unconfirmed">ئاسیا</territory>
-			<territory type="143">ئاسیای ناوەندی</territory>
-			<territory type="145">ئاسیای ڕۆژاوا</territory>
-			<territory type="150" draft="unconfirmed">ئەورووپا</territory>
-			<territory type="151" draft="unconfirmed">ئەورووپای ڕۆژھەڵات</territory>
-			<territory type="154" draft="unconfirmed">ئەورووپای باکوور</territory>
-			<territory type="155" draft="unconfirmed">ڕۆژاوای ئەورووپا</territory>
-			<territory type="419" draft="unconfirmed">ئەمەریکای لاتین</territory>
+			<territory type="001">جیهان</territory>
+			<territory type="002">ئەفریقا</territory>
+			<territory type="003">ئەمەریکای باکوور</territory>
+			<territory type="005">ئەمەریکای باشوور</territory>
+			<territory type="009">ئۆقیانووسیا</territory>
+			<territory type="011">ڕۆژاوای ئەفریقا</territory>
+			<territory type="013">ئەمریکای ناوەڕاست</territory>
+			<territory type="014">ڕۆژھەڵاتی ئەفریقا</territory>
+			<territory type="015">باکووری ئەفریقا</territory>
+			<territory type="017">ناوەڕاستی ئەفریقا</territory>
+			<territory type="018">باشووری ئەفریقا</territory>
+			<territory type="019">ئەمەریکای باکوور و باشوور</territory>
+			<territory type="021">ئەمریکای باکوور</territory>
+			<territory type="029">کاریبی</territory>
+			<territory type="030">ڕۆژهەڵاتی ئاسیا</territory>
+			<territory type="034">باشووری ئاسیا</territory>
+			<territory type="035">باشووری ڕۆژھەڵاتی ئاسیا</territory>
+			<territory type="039">باشووری ئەورووپا</territory>
+			<territory type="053">ئۆسترالیا</territory>
+			<territory type="054">میلانێزیا</territory>
+			<territory type="057">ناوچەی مایکرۆنیزیا</territory>
+			<territory type="061">پۆلینیزیا</territory>
+			<territory type="142">ئاسیا</territory>
+			<territory type="143">ناوەڕاستی ئاسیا</territory>
+			<territory type="145">ڕۆژاوای ئاسیا</territory>
+			<territory type="150">ئەورووپا</territory>
+			<territory type="151">ڕۆژهەڵاتی ئەورووپا</territory>
+			<territory type="154">باکووری ئەورووپا</territory>
+			<territory type="155">ڕۆژاوای ئەورووپا</territory>
+			<territory type="202">ئەفریقای ژێر سەحرا</territory>
+			<territory type="419">ئەمەریکای لاتین</territory>
+			<territory type="AC">دوورگەی ئاسینسیۆن</territory>
 			<territory type="AD">ئاندۆرا</territory>
 			<territory type="AE">میرنشینە یەکگرتووە عەرەبییەکان</territory>
 			<territory type="AF">ئەفغانستان</territory>
 			<territory type="AG">ئانتیگوا و باربودا</territory>
+			<territory type="AI">ئانگویلا</territory>
 			<territory type="AL">ئەڵبانیا</territory>
 			<territory type="AM">ئەرمەنستان</territory>
 			<territory type="AO">ئەنگۆلا</territory>
@@ -204,6 +497,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="AT">نەمسا</territory>
 			<territory type="AU">ئوسترالیا</territory>
 			<territory type="AW">ئارووبا</territory>
+			<territory type="AX">دوورگەکانی ئالاند</territory>
 			<territory type="AZ">ئازەربایجان</territory>
 			<territory type="BA">بۆسنیا و ھەرزەگۆڤینا</territory>
 			<territory type="BB">باربادۆس</territory>
@@ -214,87 +508,119 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="BH">بەحرەین</territory>
 			<territory type="BI">بوروندی</territory>
 			<territory type="BJ">بێنین</territory>
-			<territory type="BN" draft="unconfirmed">بروونای</territory>
+			<territory type="BL">سەن بارتێلێمی</territory>
+			<territory type="BM">بێرموودا</territory>
+			<territory type="BN">بروونای</territory>
 			<territory type="BO">بۆلیڤیا</territory>
+			<territory type="BQ">دوورگە کاریبیەکانی هۆڵەندا</territory>
 			<territory type="BR">برازیل</territory>
 			<territory type="BS">بەھاما</territory>
 			<territory type="BT">بووتان</territory>
+			<territory type="BV">دوورگەی بووڤێ</territory>
 			<territory type="BW">بۆتسوانا</territory>
 			<territory type="BY">بیلاڕووس</territory>
 			<territory type="BZ">بەلیز</territory>
-			<territory type="CA">کانەدا</territory>
+			<territory type="CA">کەنەدا</territory>
+			<territory type="CC">دوورگەکانی کیلینگ</territory>
 			<territory type="CD">کۆنگۆ کینشاسا</territory>
 			<territory type="CD" alt="variant">کۆماری دیموکراتیکی کۆنگۆ</territory>
 			<territory type="CF">کۆماری ئەفریقای ناوەڕاست</territory>
-			<territory type="CG" draft="unconfirmed">کۆنگۆ برازاڤیل</territory>
+			<territory type="CG">کۆنگۆ برازاڤیل</territory>
 			<territory type="CG" alt="variant">کۆماری کۆنگۆ</territory>
-			<territory type="CH">سویسرا</territory>
+			<territory type="CH">سویسڕا</territory>
 			<territory type="CI">کۆتدیڤوار</territory>
+			<territory type="CK">دوورگەکانی کوک</territory>
 			<territory type="CL">چیلی</territory>
 			<territory type="CM">کامیرۆن</territory>
 			<territory type="CN">چین</territory>
 			<territory type="CO">کۆلۆمبیا</territory>
+			<territory type="CP">دوورگەی کلیپێرتۆن</territory>
 			<territory type="CR">کۆستاریکا</territory>
 			<territory type="CU">کووبا</territory>
 			<territory type="CV">کەیپڤەرد</territory>
+			<territory type="CW">کوراچاو</territory>
+			<territory type="CX">دوورگەی کریسمس</territory>
 			<territory type="CY">قیبرس</territory>
 			<territory type="CZ">کۆماری چیک</territory>
 			<territory type="DE">ئەڵمانیا</territory>
+			<territory type="DG">دیەگۆ گارسیا</territory>
 			<territory type="DJ">جیبووتی</territory>
 			<territory type="DK">دانمارک</territory>
 			<territory type="DM">دۆمینیکا</territory>
+			<territory type="DO">کۆماری دۆمینیکا</territory>
 			<territory type="DZ">جەزایر</territory>
+			<territory type="EA">سێئووتا و مێلییا</territory>
 			<territory type="EC">ئیکوادۆر</territory>
+			<territory type="EE">ئیستۆنیا</territory>
 			<territory type="EG">میسر</territory>
-			<territory type="EH" draft="unconfirmed">ڕۆژاوای سەحرا</territory>
+			<territory type="EH">سەحرای ڕۆژاوا</territory>
 			<territory type="ER">ئەریتریا</territory>
 			<territory type="ES">ئیسپانیا</territory>
 			<territory type="ET">ئەتیۆپیا</territory>
-			<territory type="EU" draft="unconfirmed">یەکێتیی ئەورووپا</territory>
+			<territory type="EU">یەکێتیی ئەورووپا</territory>
+			<territory type="EZ">ناوچەی یۆرۆ</territory>
 			<territory type="FI">فینلاند</territory>
 			<territory type="FJ">فیجی</territory>
+			<territory type="FK">دوورگەکانی مالڤیناس</territory>
 			<territory type="FM">مایکرۆنیزیا</territory>
+			<territory type="FO">دوورگەکانی فارەو</territory>
 			<territory type="FR">فەڕەنسا</territory>
 			<territory type="GA">گابۆن</territory>
 			<territory type="GB">شانشینی یەکگرتوو</territory>
+			<territory type="GB" alt="short">شانشینی یەکگرتوو</territory>
 			<territory type="GD">گرینادا</territory>
 			<territory type="GE">گورجستان</territory>
+			<territory type="GF">گیانای فەرەنسا</territory>
+			<territory type="GG">گێرنزی</territory>
 			<territory type="GH">غەنا</territory>
+			<territory type="GI">گیبرالتار</territory>
 			<territory type="GL">گرینلاند</territory>
 			<territory type="GM">گامبیا</territory>
 			<territory type="GN">گینێ</territory>
+			<territory type="GP">گوادێلۆپ</territory>
+			<territory type="GQ">گینێی ئیستوایی</territory>
 			<territory type="GR">یۆنان</territory>
+			<territory type="GS">دوورگەکانی جۆرجیا و ساندویچی باشوور</territory>
 			<territory type="GT">گواتیمالا</territory>
 			<territory type="GU">گوام</territory>
 			<territory type="GW">گینێ بیساو</territory>
 			<territory type="GY">گویانا</territory>
+			<territory type="HK">هۆنگ کۆنگ</territory>
+			<territory type="HK" alt="short">هۆنگ کۆنگ</territory>
+			<territory type="HM">دوورگەکانی هێرد و مەکدانڵد</territory>
 			<territory type="HN">ھۆندووراس</territory>
 			<territory type="HR">کرۆواتیا</territory>
 			<territory type="HT">ھایتی</territory>
-			<territory type="HU">مەجارستان</territory>
+			<territory type="HU">هەنگاریا</territory>
+			<territory type="IC">دوورگەکانی کەناری</territory>
 			<territory type="ID">ئیندۆنیزیا</territory>
 			<territory type="IE">ئیرلەند</territory>
 			<territory type="IL">ئیسرائیل</territory>
+			<territory type="IM">دوورگەی مان</territory>
 			<territory type="IN">ھیندستان</territory>
+			<territory type="IO">ھەرێمی بەریتانی لە ئۆقیانووسی ھیند</territory>
 			<territory type="IQ">عێراق</territory>
 			<territory type="IR">ئێران</territory>
 			<territory type="IS">ئایسلەند</territory>
-			<territory type="IT">ئیتاڵی</territory>
+			<territory type="IT">ئیتالیا</territory>
+			<territory type="JE">جێرسی</territory>
 			<territory type="JM">جامایکا</territory>
 			<territory type="JO">ئوردن</territory>
 			<territory type="JP">ژاپۆن</territory>
+			<territory type="KE">کینیا</territory>
 			<territory type="KG">قرغیزستان</territory>
 			<territory type="KH">کەمبۆدیا</territory>
 			<territory type="KI">کیریباس</territory>
 			<territory type="KM">دوورگەکانی کۆمۆر</territory>
-			<territory type="KN">سەینت کیتس و نیڤیس</territory>
+			<territory type="KN">سەن کیتس و نیڤیس</territory>
 			<territory type="KP">کۆریای باکوور</territory>
-			<territory type="KR" draft="unconfirmed">کۆریای باشوور</territory>
+			<territory type="KR">کۆریای باشوور</territory>
 			<territory type="KW">کوەیت</territory>
+			<territory type="KY">دوورگەکانی کایمان</territory>
 			<territory type="KZ">کازاخستان</territory>
 			<territory type="LA">لاوس</territory>
 			<territory type="LB">لوبنان</territory>
-			<territory type="LC">سەینت لووسیا</territory>
+			<territory type="LC">سەن لووسیا</territory>
 			<territory type="LI">لیختنشتاین</territory>
 			<territory type="LK">سریلانکا</territory>
 			<territory type="LR">لیبەریا</territory>
@@ -307,39 +633,57 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MC">مۆناکۆ</territory>
 			<territory type="MD">مۆلدۆڤا</territory>
 			<territory type="ME">مۆنتینیگرۆ</territory>
+			<territory type="MF">سەن مارتین</territory>
 			<territory type="MG">ماداگاسکار</territory>
 			<territory type="MH">دوورگەکانی مارشاڵ</territory>
+			<territory type="MK">ماکەدۆنیا</territory>
 			<territory type="ML">مالی</territory>
 			<territory type="MM">میانمار</territory>
 			<territory type="MN">مەنگۆلیا</territory>
-			<territory type="MO" alt="short" draft="unconfirmed">ماکاو</territory>
+			<territory type="MO">ماکائۆ</territory>
+			<territory type="MO" alt="short">ماکائۆ</territory>
+			<territory type="MP">دوورگەکانی ماریانای باکوور</territory>
+			<territory type="MQ">مارتینیک</territory>
 			<territory type="MR">مۆریتانیا</territory>
+			<territory type="MS">مۆنتسێرات</territory>
 			<territory type="MT">ماڵتا</territory>
+			<territory type="MU">مووریتیووس</territory>
 			<territory type="MV">مالدیڤ</territory>
 			<territory type="MW">مالاوی</territory>
 			<territory type="MX">مەکسیک</territory>
 			<territory type="MY">مالیزیا</territory>
 			<territory type="MZ">مۆزامبیک</territory>
 			<territory type="NA">نامیبیا</territory>
+			<territory type="NC">نیووکالێدۆنیا</territory>
 			<territory type="NE">نیجەر</territory>
+			<territory type="NF">دوورگەی نۆرفۆڵک</territory>
+			<territory type="NG">نیجریا</territory>
 			<territory type="NI">نیکاراگوا</territory>
 			<territory type="NL">ھۆڵەندا</territory>
 			<territory type="NO">نۆرویژ</territory>
 			<territory type="NP">نیپال</territory>
 			<territory type="NR">نائوروو</territory>
+			<territory type="NU">نیووئی</territory>
 			<territory type="NZ">نیوزیلاند</territory>
 			<territory type="OM">عومان</territory>
 			<territory type="PA">پاناما</territory>
-			<territory type="PE">پیروو</territory>
+			<territory type="PE">پێروو</territory>
+			<territory type="PF">پۆلینیسیای فەرەنسا</territory>
 			<territory type="PG">پاپوا گینێی نوێ</territory>
 			<territory type="PH">فلیپین</territory>
 			<territory type="PK">پاکستان</territory>
 			<territory type="PL">پۆڵەندا</territory>
-			<territory type="PS" draft="unconfirmed">فەلەستین</territory>
+			<territory type="PM">سەن پیێر و میکێلۆن</territory>
+			<territory type="PN">دوورگەکانی پیتکەرن</territory>
+			<territory type="PR">پۆرتۆڕیکۆ</territory>
+			<territory type="PS">ناوچە فەلەستینیەکان</territory>
+			<territory type="PS" alt="short">فەلەستین</territory>
 			<territory type="PT">پورتوگال</territory>
 			<territory type="PW">پالاو</territory>
 			<territory type="PY">پاراگوای</territory>
 			<territory type="QA">قەتەر</territory>
+			<territory type="QO">دەرەوەی ئۆقیانووسیا</territory>
+			<territory type="RE">ڕییوونیەن</territory>
 			<territory type="RO">ڕۆمانیا</territory>
 			<territory type="RS">سربیا</territory>
 			<territory type="RU">ڕووسیا</territory>
@@ -350,22 +694,30 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="SD">سوودان</territory>
 			<territory type="SE">سوید</territory>
 			<territory type="SG">سینگاپور</territory>
+			<territory type="SH">سەن هێلێنا</territory>
 			<territory type="SI">سلۆڤێنیا</territory>
+			<territory type="SJ">سڤالبارد و یان مایەن</territory>
 			<territory type="SK">سلۆڤاکیا</territory>
 			<territory type="SL">سیەرالیۆن</territory>
 			<territory type="SM">سان مارینۆ</territory>
-			<territory type="SN">سینیگال</territory>
+			<territory type="SN">سێنێگاڵ</territory>
 			<territory type="SO">سۆمالیا</territory>
 			<territory type="SR">سورینام</territory>
+			<territory type="SS">سوودانی باشوور</territory>
 			<territory type="ST">ساوتۆمێ و پرینسیپی</territory>
 			<territory type="SV">ئێلسالڤادۆر</territory>
+			<territory type="SX">سینت مارتن</territory>
 			<territory type="SY">سووریا</territory>
 			<territory type="SZ">سوازیلاند</territory>
+			<territory type="TA">تریستێن دا کوونا</territory>
+			<territory type="TC">دوورگەکانی تورکس و کایکۆس</territory>
 			<territory type="TD">چاد</territory>
+			<territory type="TF">هەرێمە باشووریەکانی فەرەنسا</territory>
 			<territory type="TG">تۆگۆ</territory>
 			<territory type="TH">تایلەند</territory>
 			<territory type="TJ">تاجیکستان</territory>
-			<territory type="TL" alt="variant" draft="unconfirmed">تیمۆری ڕۆژھەڵات</territory>
+			<territory type="TK">تۆکێلاو</territory>
+			<territory type="TL">تیمۆری ڕۆژھەڵات</territory>
 			<territory type="TM">تورکمانستان</territory>
 			<territory type="TN">توونس</territory>
 			<territory type="TO">تۆنگا</territory>
@@ -376,19 +728,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="TZ">تانزانیا</territory>
 			<territory type="UA">ئۆکرانیا</territory>
 			<territory type="UG">ئوگاندا</territory>
+			<territory type="UM">دوورگەکانی دەرەوەی ئەمریکا</territory>
+			<territory type="UN">نەتەوە یەکگرتووەکان</territory>
 			<territory type="US">ویلایەتە یەکگرتووەکان</territory>
+			<territory type="US" alt="short">ویلایەتە یەکگرتووەکان</territory>
 			<territory type="UY">ئوروگوای</territory>
 			<territory type="UZ">ئوزبەکستان</territory>
 			<territory type="VA">ڤاتیکان</territory>
 			<territory type="VC">سەینت ڤینسەنت و گرینادینز</territory>
+			<territory type="VE">ڤەنزوێلا</territory>
+			<territory type="VG">دوورگەکانی ڤیرجنی بەریتانیا</territory>
+			<territory type="VI">دوورگەکانی ڤیرجنی ئەمەریکا</territory>
 			<territory type="VN">ڤیەتنام</territory>
 			<territory type="VU">ڤانوواتوو</territory>
+			<territory type="WF">والیس و فوتونا</territory>
 			<territory type="WS">ساموا</territory>
+			<territory type="XK">کۆسۆڤۆ</territory>
 			<territory type="YE">یەمەن</territory>
+			<territory type="YT">مایۆت</territory>
 			<territory type="ZA">ئەفریقای باشوور</territory>
 			<territory type="ZM">زامبیا</territory>
 			<territory type="ZW">زیمبابوی</territory>
-			<territory type="ZZ" draft="unconfirmed">نەناسراو</territory>
+			<territory type="ZZ">ناوچەی نەناسراو</territory>
 		</territories>
 		<keys>
 			<key type="calendar" draft="unconfirmed">ڕۆژژمێر</key>
@@ -1019,8 +1380,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="MMMd">dی MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E، dی MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">MMMM d</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="one">هەفتەی W ی MMM</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="other">هەفتەی W ی MMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">هەفتەی W ی MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">هەفتەی W ی MMMM</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">M/y</dateFormatItem>
@@ -1032,8 +1393,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yMMMM">y MMMM</dateFormatItem>
 						<dateFormatItem id="yQQQ">y QQQ</dateFormatItem>
 						<dateFormatItem id="yQQQQ">y QQQQ</dateFormatItem>
-						<dateFormatItem id="yw" count="one">هەفتەی w ی y</dateFormatItem>
-						<dateFormatItem id="yw" count="other">هەفتەی w ی y</dateFormatItem>
+						<dateFormatItem id="yw" count="one">هەفتەی w ی Y</dateFormatItem>
+						<dateFormatItem id="yw" count="other">هەفتەی w ی Y</dateFormatItem>
 					</availableFormats>
 					<appendItems>
 						<appendItem request="Timezone">{0} {1}</appendItem>
@@ -1310,7 +1671,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
-			<pattern type="atLeast">⩾{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
 			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
 	</numbers>

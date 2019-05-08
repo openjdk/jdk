@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2018 Unicode, Inc.
+<!-- Copyright © 1991-2019 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 13873 $"/>
+		<version number="$Revision: 14783 $"/>
 		<language type="se"/>
 		<territory type="FI"/>
 	</identity>
@@ -388,9 +388,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="one">MMMM:a 'vahkku' W</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="two">MMMM:a 'vahkku' W</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="other">MMM:a 'vahkku' W</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">MMMM:'a' 'vahkku' W</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="two">MMMM:'a' 'vahkku' W</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">MMMM:'a' 'vahkku' W</dateFormatItem>
 						<dateFormatItem id="yM">MM.y</dateFormatItem>
 						<dateFormatItem id="yMd">dd.MM.y</dateFormatItem>
 						<dateFormatItem id="yMEd">E dd.MM.y</dateFormatItem>
@@ -488,6 +488,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="year-short">
 				<displayName>j.</displayName>
+				<relative type="0">dán jagi</relative>
+				<relative type="1">boahtte jagi</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} j. siste</relativeTimePattern>
 					<relativeTimePattern count="two">{0} jagi siste</relativeTimePattern>

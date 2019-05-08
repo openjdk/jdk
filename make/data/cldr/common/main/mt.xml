@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2018 Unicode, Inc.
+<!-- Copyright © 1991-2019 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 13911 $"/>
+		<version number="$Revision: 14982 $"/>
 		<language type="mt"/>
 	</identity>
 	<localeDisplayNames>
@@ -613,12 +613,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="CF">ir-Repubblika Ċentru-Afrikana</territory>
 			<territory type="CG">il-Kongo - Brazzaville</territory>
 			<territory type="CG" alt="variant">ir-Repubblika tal-Kongo</territory>
-			<territory type="CH">Żvizzera</territory>
+			<territory type="CH">l-Iżvizzera</territory>
 			<territory type="CI">il-Kosta tal-Avorju</territory>
 			<territory type="CK">Gżejjer Cook</territory>
 			<territory type="CL">iċ-Ċili</territory>
 			<territory type="CM">il-Kamerun</territory>
-			<territory type="CN">CN</territory>
+			<territory type="CN">iċ-Ċina</territory>
 			<territory type="CO">il-Kolombja</territory>
 			<territory type="CP">il-Gżira Clipperton</territory>
 			<territory type="CR">il-Costa Rica</territory>
@@ -628,6 +628,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="CX">il-Gżira Christmas</territory>
 			<territory type="CY">Ċipru</territory>
 			<territory type="CZ">ir-Repubblika Ċeka</territory>
+			<territory type="CZ" alt="variant">Ir-Repubblika Ċeka</territory>
 			<territory type="DE">il-Ġermanja</territory>
 			<territory type="DG">Diego Garcia</territory>
 			<territory type="DJ">il-Djibouti</territory>
@@ -722,7 +723,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MF">Saint Martin</territory>
 			<territory type="MG">Madagascar</territory>
 			<territory type="MH">Gżejjer Marshall</territory>
-			<territory type="MK">l-Eks-Repubblika Jugoslava tal-Maċedonia</territory>
+			<territory type="MK">il-Maċedonja ta’ Fuq</territory>
 			<territory type="ML">il-Mali</territory>
 			<territory type="MM">il-Myanmar/Burma</territory>
 			<territory type="MN">il-Mongolja</territory>
@@ -828,7 +829,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="VU">Vanuatu</territory>
 			<territory type="WF">Wallis u Futuna</territory>
 			<territory type="WS">Samoa</territory>
-			<territory type="XK">Kosovo</territory>
+			<territory type="XK">il-Kosovo</territory>
 			<territory type="YE">il-Jemen</territory>
 			<territory type="YT">Mayotte</territory>
 			<territory type="ZA">l-Afrika t’Isfel</territory>
@@ -949,7 +950,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yyyyMMM">GGGGG MMM y</dateFormatItem>
 						<dateFormatItem id="yyyyMMMd">GGGGG dd MMM y</dateFormatItem>
 						<dateFormatItem id="yyyyMMMEd">GGGGG E, dd MMM y</dateFormatItem>
-						<dateFormatItem id="yyyyMMMM">GGGGG MMM y</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM">GGGGG MMMM y</dateFormatItem>
 						<dateFormatItem id="yyyyQQQ">G y QQQ</dateFormatItem>
 						<dateFormatItem id="yyyyQQQQ">G y QQQQ</dateFormatItem>
 					</availableFormats>
@@ -1290,7 +1291,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<eras>
 					<eraNames>
 						<era type="0">Qabel Kristu</era>
+						<era type="0" alt="variant">QEK</era>
 						<era type="1">Wara Kristu</era>
+						<era type="1" alt="variant">EK</era>
 					</eraNames>
 					<eraAbbr>
 						<era type="0">QK</era>
@@ -1365,8 +1368,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">h B</dateFormatItem>
+						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
+						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
+						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">d, E</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
@@ -1382,6 +1390,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
+						<dateFormatItem id="Hmsv">HH:mm:ss v</dateFormatItem>
+						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
+						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">MM-dd</dateFormatItem>
 						<dateFormatItem id="MEd">E, M-d</dateFormatItem>
@@ -1389,9 +1401,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="MMMd">MMM d</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, d 'ta'’ MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d 'ta'’ MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">W 'ġimgħa' 'ta''' MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="few">W 'ġimgħa' 'ta''' MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="many">W 'ġimgħa' 'ta''' MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">W 'ġimgħa' 'ta''' MMMM</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">y-MM</dateFormatItem>
+						<dateFormatItem id="yMd">M/d/y</dateFormatItem>
 						<dateFormatItem id="yMEd">E, d/M/y</dateFormatItem>
 						<dateFormatItem id="yMMM">MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMd">d 'ta'’ MMM, y</dateFormatItem>
@@ -1399,6 +1416,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ - y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ - y</dateFormatItem>
+						<dateFormatItem id="yw" count="one">w 'ġimgħa' 'ta''' Y</dateFormatItem>
+						<dateFormatItem id="yw" count="few">w 'ġimgħa' 'ta''' Y</dateFormatItem>
+						<dateFormatItem id="yw" count="many">w 'ġimgħa' 'ta''' Y</dateFormatItem>
+						<dateFormatItem id="yw" count="other">w 'ġimgħa' 'ta''' Y</dateFormatItem>
 					</availableFormats>
 					<appendItems>
 						<appendItem request="Timezone">{0} {1}</appendItem>
@@ -1493,83 +1514,540 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="M">E, d 'ta'’ MMM – E, d 'ta'’ MMM y</greatestDifference>
 							<greatestDifference id="y">E, d 'ta'’ MMM y – E, d 'ta'’ MMM y</greatestDifference>
 						</intervalFormatItem>
+						<intervalFormatItem id="yMMMM">
+							<greatestDifference id="M">MMMM – MMMM y</greatestDifference>
+							<greatestDifference id="y">MMMM y – MMMM y</greatestDifference>
+						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
 		</calendars>
 		<fields>
 			<field type="era">
-				<displayName>Epoka</displayName>
+				<displayName>Era</displayName>
+			</field>
+			<field type="era-short">
+				<displayName>Era</displayName>
+			</field>
+			<field type="era-narrow">
+				<displayName>Era</displayName>
 			</field>
 			<field type="year">
 				<displayName>Sena</displayName>
-				<relative type="-1">Is-sena li għaddiet</relative>
+				<relative type="-1">is-sena l-oħra</relative>
 				<relative type="0">din is-sena</relative>
-				<relative type="1">Is-sena d-dieħla</relative>
+				<relative type="1">is-sena d-dieħla</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">fi żmien sena</relativeTimePattern>
+					<relativeTimePattern count="few">fi żmien {0} snin oħra</relativeTimePattern>
+					<relativeTimePattern count="many">fi żmien {0} snin oħra</relativeTimePattern>
+					<relativeTimePattern count="other">fi żmien {0} snin oħra</relativeTimePattern>
+				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} sena ilu</relativeTimePattern>
+					<relativeTimePattern count="one">sena ilu</relativeTimePattern>
 					<relativeTimePattern count="few">{0} snin ilu</relativeTimePattern>
 					<relativeTimePattern count="many">{0} snin ilu</relativeTimePattern>
 					<relativeTimePattern count="other">{0} snin ilu</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="year-short">
+				<displayName>Sena</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">fi żmien sena</relativeTimePattern>
+					<relativeTimePattern count="few">fi żmien {0} snin oħra</relativeTimePattern>
+					<relativeTimePattern count="many">fi żmien {0} snin oħra</relativeTimePattern>
+					<relativeTimePattern count="other">fi żmien {0} snin oħra</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">sa sena ilu</relativeTimePattern>
+					<relativeTimePattern count="few">{0} snin ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0} snin ilu</relativeTimePattern>
+					<relativeTimePattern count="other">{0} snin ilu</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="year-narrow">
+				<displayName>Sena</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">fi żmien sena</relativeTimePattern>
+					<relativeTimePattern count="few">fi żmien {0} snin oħra</relativeTimePattern>
+					<relativeTimePattern count="many">fi żmien {0} snin oħra</relativeTimePattern>
+					<relativeTimePattern count="other">fi żmien {0} snin oħra</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">sena ilu</relativeTimePattern>
+					<relativeTimePattern count="few">{0} snin ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0} snin ilu</relativeTimePattern>
+					<relativeTimePattern count="other">{0} snin ilu</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="quarter">
+				<displayName draft="provisional">kwart</displayName>
+				<relative type="-1">il-kwart ta’ sena li għadda</relative>
+				<relative type="0">il-kwart ta’ sena li qegħdin fih</relative>
+				<relative type="1">il-kwart li jmiss tas-sena</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">f’{0} kwarti ta’ sena oħrajn</relativeTimePattern>
+					<relativeTimePattern count="few">f’{0} kwarti ta’ sena oħrajn</relativeTimePattern>
+					<relativeTimePattern count="many">f’{0} kwarti ta’ sena oħrajn</relativeTimePattern>
+					<relativeTimePattern count="other">f’{0} kwarti ta’ sena oħrajn</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">il-kwart ta’ sena li għadda</relativeTimePattern>
+					<relativeTimePattern count="few">{0} kwarti ta’ sena li għaddew</relativeTimePattern>
+					<relativeTimePattern count="many">{0} kwarti ta’ sena li għaddew</relativeTimePattern>
+					<relativeTimePattern count="other">{0} kwarti ta’ sena li għaddew</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="quarter-short">
+				<displayName draft="provisional">kwrt.</displayName>
+				<relative type="-1">il-kwart ta’ sena li għadda</relative>
+				<relative type="0">il-kwart ta’ sena li qegħdin fih</relative>
+				<relative type="1">il-kwart li jmiss tas-sena</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">fil-kwart tas-sena li ġej</relativeTimePattern>
+					<relativeTimePattern count="few">f’{0} kwarti ta’ sena oħrajn</relativeTimePattern>
+					<relativeTimePattern count="many">f’{0} kwarti ta’ sena oħrajn</relativeTimePattern>
+					<relativeTimePattern count="other">f’{0} kwarti ta’ sena oħrajn</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">fil-kwart tas-sena li għadda</relativeTimePattern>
+					<relativeTimePattern count="few">{0} kwarti ta’ sena ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0} kwarti ta’ sena ilu</relativeTimePattern>
+					<relativeTimePattern count="other">{0} kwarti ta’ sena ilu</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="quarter-narrow">
+				<displayName>l-ewwel kwart tas-sena, it-tieni kwart tas-sena, it-tielet kwart tas-sena, ir-raba’ kwart tas-sena</displayName>
+				<relative type="-1">il-kwart ta’ sena li għadda</relative>
+				<relative type="0">il-kwart ta’ sena li qegħdin fih</relative>
+				<relative type="1">il-kwart li jmiss tas-sena</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">fi kwart ta’ sena ieħor</relativeTimePattern>
+					<relativeTimePattern count="few">f’{0} kwarti ta’ sena oħrajn</relativeTimePattern>
+					<relativeTimePattern count="many">f’{0} kwarti ta’ sena oħrajn</relativeTimePattern>
+					<relativeTimePattern count="other">f’{0} kwarti ta’ sena oħrajn</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">fil-kwart tas-sena li għadda</relativeTimePattern>
+					<relativeTimePattern count="few">{0} kwarti ta’ sena ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0} kwarti ta’ sena ilu</relativeTimePattern>
+					<relativeTimePattern count="other">{0} kwarti ta’ sena ilu</relativeTimePattern>
+				</relativeTime>
+			</field>
 			<field type="month">
-				<displayName>Xahar</displayName>
+				<displayName>xahar</displayName>
 				<relative type="-1">Ix-xahar li għadda</relative>
 				<relative type="0">Dan ix-xahar</relative>
 				<relative type="1">Ix-xahar id-dieħel</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">sa xahar ieħor</relativeTimePattern>
+					<relativeTimePattern count="few">fi {0} xhur oħra</relativeTimePattern>
+					<relativeTimePattern count="many">fi {0} xhur oħra</relativeTimePattern>
+					<relativeTimePattern count="other">fi {0} xhur oħra</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">xahar ilu</relativeTimePattern>
+					<relativeTimePattern count="few">{0} xhur ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0} xhur ilu</relativeTimePattern>
+					<relativeTimePattern count="other">{0} xhur ilu</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="month-short">
+				<displayName>Xahar</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">sa xahar ieħor</relativeTimePattern>
+					<relativeTimePattern count="few">sa {0} xhur oħra</relativeTimePattern>
+					<relativeTimePattern count="many">sa {0} xhur oħra</relativeTimePattern>
+					<relativeTimePattern count="other">sa {0} xhur oħra</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} xahar ilu</relativeTimePattern>
+					<relativeTimePattern count="few">{0} xhur ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0} xhur ilu</relativeTimePattern>
+					<relativeTimePattern count="other">{0} xhur ilu</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="month-narrow">
+				<displayName>Xahar</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">sa xahar ieħor</relativeTimePattern>
+					<relativeTimePattern count="few">sa {0} xhur oħra</relativeTimePattern>
+					<relativeTimePattern count="many">sa {0} xhur oħra</relativeTimePattern>
+					<relativeTimePattern count="other">sa {0} xhur oħra</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">xahar ilu</relativeTimePattern>
+					<relativeTimePattern count="few">{0} xhur ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0} xhur ilu</relativeTimePattern>
+					<relativeTimePattern count="other">{0} xhur ilu</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="week">
-				<displayName>Ġimgħa</displayName>
-				<relative type="-1">Il-ġimgħa li għaddiet</relative>
-				<relative type="0">Din il-ġimgħa</relative>
-				<relative type="1">Il-ġimgħa d-dieħla</relative>
+				<displayName>ġimgħa</displayName>
+				<relative type="-1">il-ġimgħa li għaddiet</relative>
+				<relative type="0">din il-ġimgħa</relative>
+				<relative type="1">il-ġimgħa d-dieħla</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">sa ġimgħa oħra</relativeTimePattern>
+					<relativeTimePattern count="few">sa {0} ġimgħat oħra</relativeTimePattern>
+					<relativeTimePattern count="many">sa {0} ġimgħat oħra</relativeTimePattern>
+					<relativeTimePattern count="other">sa {0} ġimgħat oħra</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ġimgħa ilu</relativeTimePattern>
+					<relativeTimePattern count="few">{0} ġimgħat ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0} ġimgħat ilu</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ġimgħat ilu</relativeTimePattern>
+				</relativeTime>
+				<relativePeriod>fil-ġimgħa ta’ {0}</relativePeriod>
+			</field>
+			<field type="week-short">
+				<displayName draft="provisional">Ġimgħa</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">sa ġimgħa oħra</relativeTimePattern>
+					<relativeTimePattern count="few">sa {0} ġimgħat oħra</relativeTimePattern>
+					<relativeTimePattern count="many">sa {0} ġimgħat oħra</relativeTimePattern>
+					<relativeTimePattern count="other">+{0} w</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ġimgħa ilu</relativeTimePattern>
+					<relativeTimePattern count="few">{0} ġimgħat ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0} ġimgħat ilu</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ġimgħat ilu</relativeTimePattern>
+				</relativeTime>
+				<relativePeriod>fil-ġimgħa ta’ {0}</relativePeriod>
+			</field>
+			<field type="week-narrow">
+				<displayName draft="provisional">Ġimgħa</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">sa ġimgħa oħra</relativeTimePattern>
+					<relativeTimePattern count="few">sa {0} ġimgħat oħra</relativeTimePattern>
+					<relativeTimePattern count="many">sa {0} ġimgħat oħra</relativeTimePattern>
+					<relativeTimePattern count="other">sa {0} ġimgħat oħra</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ġimgħa ilu</relativeTimePattern>
+					<relativeTimePattern count="few">{0} ġimgħat ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0} ġimgħat ilu</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ġimgħat ilu</relativeTimePattern>
+				</relativeTime>
+				<relativePeriod>fil-ġimgħa ta’ {0}</relativePeriod>
+			</field>
+			<field type="weekOfMonth">
+				<displayName>ġimgħa tax-xahar</displayName>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName>ġimgħa tax-xahar</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName>ġimgħa tax-xahar</displayName>
 			</field>
 			<field type="day">
+				<displayName>jum</displayName>
+				<relative type="-1">lbieraħ</relative>
+				<relative type="0">illum</relative>
+				<relative type="1">għada</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">fi żmien ġurnata</relativeTimePattern>
+					<relativeTimePattern count="few">fi żmien {0} ġurnata oħra</relativeTimePattern>
+					<relativeTimePattern count="many">fi żmien {0} ġurnata oħra</relativeTimePattern>
+					<relativeTimePattern count="other">fi żmien {0} ġurnata oħra</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ġurnata ilu</relativeTimePattern>
+					<relativeTimePattern count="few">{0} ġranet ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0}-il ġurnata ilu</relativeTimePattern>
+					<relativeTimePattern count="other">{0}-il ġurnata ilu</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="day-short">
 				<displayName>Jum</displayName>
-				<relative type="-1">Ilbieraħ</relative>
-				<relative type="0">Illum</relative>
-				<relative type="1">Għada</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">fi żmien ġurnata</relativeTimePattern>
+					<relativeTimePattern count="few">fi żmien {0} ġurnata oħra</relativeTimePattern>
+					<relativeTimePattern count="many">fi żmien {0} ġurnata oħra</relativeTimePattern>
+					<relativeTimePattern count="other">fi żmien {0} ġurnata oħra</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ġurnata ilu</relativeTimePattern>
+					<relativeTimePattern count="few">{0} ġranet ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0}-il ġurnata ilu</relativeTimePattern>
+					<relativeTimePattern count="other">{0}-il ġurnata ilu</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="day-narrow">
+				<displayName>Jum</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">fi żmien ġurnata</relativeTimePattern>
+					<relativeTimePattern count="few">fi żmien {0} ġurnata oħra</relativeTimePattern>
+					<relativeTimePattern count="many">fi żmien {0} ġurnata oħra</relativeTimePattern>
+					<relativeTimePattern count="other">fi żmien {0} ġurnata oħra</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ġurnata ilu</relativeTimePattern>
+					<relativeTimePattern count="few">{0} ġranet ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0}-il ġurnata ilu</relativeTimePattern>
+					<relativeTimePattern count="other">{0}-il ġurnata ilu</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayOfYear">
+				<displayName>jum tas-sena</displayName>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName draft="provisional">jum tas-sena</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName>jum tas-sena</displayName>
 			</field>
 			<field type="weekday">
-				<displayName>Jum tal-Ġimgħa</displayName>
+				<displayName>jum tal-ġimgħa</displayName>
+			</field>
+			<field type="weekday-short">
+				<displayName>jum tal-ġimgħa</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName>jum tal-ġimgħa</displayName>
+			</field>
+			<field type="weekdayOfMonth">
+				<displayName>jum tax-xahar</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName>jum tax-xahar</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName>Weekday Of Month</displayName>
 			</field>
 			<field type="sun">
 				<relative type="-1">Il-Ħadd li għadda</relative>
-				<relative type="0">Dan il-Ħadd</relative>
-				<relative type="1">Il-Ħadd li ġej</relative>
+				<relative type="0">il-Ħadd li ġej</relative>
+				<relative type="1">il-Ħadd ta’ wara</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">sa Ħadd ieħor</relativeTimePattern>
+					<relativeTimePattern count="few">sa {0} Ħdud oħra</relativeTimePattern>
+					<relativeTimePattern count="many">sa {0} Ħdud oħra</relativeTimePattern>
+					<relativeTimePattern count="other">sa {0} Ħdud oħra</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">il-Ħadd li għadda</relativeTimePattern>
+					<relativeTimePattern count="few">{0} Ħdud ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0} Ħdud ilu</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Ħdud ilu</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sun-short">
+				<relative type="-1">il-Ħd. li għadda</relative>
+				<relative type="0">il-Ħd. li ġej</relative>
+				<relative type="1">il-Ħd. ta’ wara</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">sa Ħd. ieħor</relativeTimePattern>
+					<relativeTimePattern count="few">sa {0} Ħd. oħra</relativeTimePattern>
+					<relativeTimePattern count="many">sa {0} Ħd. oħra</relativeTimePattern>
+					<relativeTimePattern count="other">sa {0} Ħd. oħra</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">il-Ħd. li għadda</relativeTimePattern>
+					<relativeTimePattern count="few">{0} Ħd. ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0} Ħd. ilu</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Ħd. ilu</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sun-narrow">
+				<relative type="-1">il-Ħd. li għadda</relative>
+				<relative type="0">il-Ħd. li ġej</relative>
+				<relative type="1">il-Ħd. ta’ wara</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">sa Ħd. ieħor</relativeTimePattern>
+					<relativeTimePattern count="few">sa {0} Ħd. oħra</relativeTimePattern>
+					<relativeTimePattern count="many">sa {0} Ħd. oħra</relativeTimePattern>
+					<relativeTimePattern count="other">sa {0} Ħd. oħra</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Ħd. ilu</relativeTimePattern>
+					<relativeTimePattern count="few">{0} Ħd. ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0} Ħd. ilu</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Ħd. ilu</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon">
 				<relative type="-1">It-Tnejn li għadda</relative>
 				<relative type="0">Dan It-Tnejn</relative>
 				<relative type="1">It-Tnejn li ġej</relative>
 			</field>
+			<field type="mon-short">
+				<relative type="-1">it-Tn. li għadda</relative>
+				<relative type="0">it-Tn. li ġej</relative>
+				<relative type="1">it-Tn. ta’ wara</relative>
+			</field>
+			<field type="mon-narrow">
+				<relative type="-1">it-Tn. li għadda</relative>
+				<relative type="0">it-Tn. li ġej</relative>
+				<relative type="1">it-Tn. ta’ wara</relative>
+			</field>
+			<field type="tue">
+				<relative type="-1">it-Tlieta li għaddiet</relative>
+				<relative type="0">it-Tlieta li ġejja</relative>
+				<relative type="1">it-Tlieta ta’ wara</relative>
+			</field>
+			<field type="fri">
+				<relative type="-1">last Friday</relative>
+				<relative type="0">this Friday</relative>
+				<relative type="1">next Friday</relative>
+			</field>
+			<field type="dayperiod-short">
+				<displayName>AM/PM</displayName>
+			</field>
 			<field type="dayperiod">
-				<displayName draft="unconfirmed">QN/WN</displayName>
+				<displayName>AM/PM</displayName>
+			</field>
+			<field type="dayperiod-narrow">
+				<displayName>AM/PM</displayName>
 			</field>
 			<field type="hour">
-				<displayName>Siegħa</displayName>
+				<displayName>siegħa</displayName>
+				<relative type="0">din is-siegħa</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">fi żmien siegħa oħra</relativeTimePattern>
+					<relativeTimePattern count="few">fi żmien {0} sigħat</relativeTimePattern>
+					<relativeTimePattern count="many">fi żmien{0} sigħat</relativeTimePattern>
+					<relativeTimePattern count="other">fi żmien {0} sigħat</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">siegħa ilu</relativeTimePattern>
+					<relativeTimePattern count="few">{0} sigħat ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0} sigħat ilu</relativeTimePattern>
+					<relativeTimePattern count="other">{0} sigħat ilu</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="hour-short">
+				<displayName>siegħa</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">fi żmien siegħa oħra</relativeTimePattern>
+					<relativeTimePattern count="few">fi żmien {0} sigħat</relativeTimePattern>
+					<relativeTimePattern count="many">+{0} h</relativeTimePattern>
+					<relativeTimePattern count="other">fi żmien {0} sigħat</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">siegħa ilu</relativeTimePattern>
+					<relativeTimePattern count="few">{0} sigħat ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0} sigħat ilu</relativeTimePattern>
+					<relativeTimePattern count="other">{0} sigħat ilu</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="hour-narrow">
+				<displayName>siegħa</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">fi żmien siegħa oħra</relativeTimePattern>
+					<relativeTimePattern count="few">fi żmien {0} sigħat</relativeTimePattern>
+					<relativeTimePattern count="many">fi żmien {0} sigħat</relativeTimePattern>
+					<relativeTimePattern count="other">fi żmien {0} sigħat</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">siegħa ilu</relativeTimePattern>
+					<relativeTimePattern count="few">{0} sigħat ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0} sigħat ilu</relativeTimePattern>
+					<relativeTimePattern count="other">{0} sigħat ilu</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="minute">
-				<displayName>Minuta</displayName>
+				<displayName>minuta</displayName>
+				<relative type="0">din il-minuta</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">sa minuta oħra</relativeTimePattern>
+					<relativeTimePattern count="few">sa {0} minuti oħra</relativeTimePattern>
+					<relativeTimePattern count="many">sa {0} minuti oħra</relativeTimePattern>
+					<relativeTimePattern count="other">sa {0} minuti oħra</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">minuta ilu</relativeTimePattern>
+					<relativeTimePattern count="few">{0} minuti ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0} minuti ilu</relativeTimePattern>
+					<relativeTimePattern count="other">{0} minuti ilu</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="minute-short">
-				<displayName draft="unconfirmed">min.</displayName>
+				<displayName>min.</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">sa min. oħra</relativeTimePattern>
+					<relativeTimePattern count="few">sa {0} min. oħra</relativeTimePattern>
+					<relativeTimePattern count="many">sa {0} min. oħra</relativeTimePattern>
+					<relativeTimePattern count="other">sa {0} min. oħra</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">min. ilu</relativeTimePattern>
+					<relativeTimePattern count="few">{0} min. ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0} minuti ilu</relativeTimePattern>
+					<relativeTimePattern count="other">{0} min. ilu</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="minute-narrow">
-				<displayName draft="unconfirmed">m</displayName>
+				<displayName>m</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">sa min. oħra</relativeTimePattern>
+					<relativeTimePattern count="few">sa {0} min. oħra</relativeTimePattern>
+					<relativeTimePattern count="many">+{0} min</relativeTimePattern>
+					<relativeTimePattern count="other">sa {0} min. oħra</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">min. ilu</relativeTimePattern>
+					<relativeTimePattern count="few">{0} min. ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0} min. ilu</relativeTimePattern>
+					<relativeTimePattern count="other">{0} min. ilu</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="second">
-				<displayName>Sekonda</displayName>
+				<displayName>sekonda</displayName>
+				<relative type="0">issa</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">sa {0} sekondi oħra</relativeTimePattern>
+					<relativeTimePattern count="few">sa {0} sekondi oħra</relativeTimePattern>
+					<relativeTimePattern count="many">sa {0} sekondi oħra</relativeTimePattern>
+					<relativeTimePattern count="other">sa {0} sekondi oħra</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">sekonda ilu</relativeTimePattern>
+					<relativeTimePattern count="few">{0} sekondi ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0} sekondi ilu</relativeTimePattern>
+					<relativeTimePattern count="other">{0} sekondi ilu</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="second-short">
-				<displayName draft="unconfirmed">sek.</displayName>
+				<displayName>sek.</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">sa {0} sekondi oħra</relativeTimePattern>
+					<relativeTimePattern count="few">sa {0} sek. oħra</relativeTimePattern>
+					<relativeTimePattern count="many">sa {0} sek. oħra</relativeTimePattern>
+					<relativeTimePattern count="other">sa {0} sekondi oħra</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">sek. ilu</relativeTimePattern>
+					<relativeTimePattern count="few">{0} sek. ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0} sek. ilu</relativeTimePattern>
+					<relativeTimePattern count="other">{0} sek. ilu</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="second-narrow">
-				<displayName draft="unconfirmed">s</displayName>
+				<displayName>s</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">sa sek. oħra</relativeTimePattern>
+					<relativeTimePattern count="few">sa {0} sek. oħra</relativeTimePattern>
+					<relativeTimePattern count="many">sa {0} sek. oħra</relativeTimePattern>
+					<relativeTimePattern count="other">sa {0} sek. oħra</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">sek. ilu</relativeTimePattern>
+					<relativeTimePattern count="few">{0} sek. ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0} sek. ilu</relativeTimePattern>
+					<relativeTimePattern count="other">{0} sek. ilu</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="zone">
-				<displayName>Żona</displayName>
+				<displayName>żona tal-ħin</displayName>
+			</field>
+			<field type="zone-short">
+				<displayName>żona</displayName>
+			</field>
+			<field type="zone-narrow">
+				<displayName>żona</displayName>
 			</field>
 		</fields>
 		<timeZoneNames>
@@ -2820,6 +3298,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
+					<pattern>¤#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
 					<pattern>¤#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
@@ -4075,6 +4556,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">VEF</displayName>
 				<symbol draft="contributed">VEF</symbol>
 			</currency>
+			<currency type="VES">
+				<displayName>VES</displayName>
+				<displayName count="one">VES</displayName>
+				<displayName count="few">VES</displayName>
+				<displayName count="many">VES</displayName>
+				<displayName count="other">VES</displayName>
+			</currency>
 			<currency type="VND">
 				<displayName>VND</displayName>
 				<displayName count="one">VND</displayName>
@@ -4167,7 +4655,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
-			<pattern type="atLeast">⩾{0}</pattern>
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
 			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
 	</numbers>

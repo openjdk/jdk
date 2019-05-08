@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2018 Unicode, Inc.
+<!-- Copyright © 1991-2019 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 13869 $"/>
+		<version number="$Revision: 14982 $"/>
 		<language type="uz"/>
 		<script type="Cyrl"/>
 	</identity>
@@ -552,8 +552,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MF">Сент-Мартин</territory>
 			<territory type="MG">Мадагаскар</territory>
 			<territory type="MH">Маршал ороллари</territory>
-			<territory type="MK">Македония</territory>
-			<territory type="MK" alt="variant">Македония (МСЮР)</territory>
+			<territory type="MK">Шимолий Македония</territory>
 			<territory type="ML">Мали</territory>
 			<territory type="MM">Мьянма (Бирма)</territory>
 			<territory type="MN">Монголия</territory>
@@ -884,6 +883,50 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<months>
 					<monthContext type="format">
 						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">янв</month>
+							<month type="2" draft="contributed">фев</month>
+							<month type="3" draft="contributed">мар</month>
+							<month type="4" draft="contributed">апр</month>
+							<month type="5" draft="contributed">май</month>
+							<month type="6" draft="contributed">июн</month>
+							<month type="7" draft="contributed">июл</month>
+							<month type="8" draft="contributed">авг</month>
+							<month type="9" draft="contributed">сен</month>
+							<month type="10" draft="contributed">окт</month>
+							<month type="11" draft="contributed">ноя</month>
+							<month type="12" draft="contributed">дек</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1">Я</month>
+							<month type="2">Ф</month>
+							<month type="3">М</month>
+							<month type="4">А</month>
+							<month type="5">М</month>
+							<month type="6">И</month>
+							<month type="7">И</month>
+							<month type="8">А</month>
+							<month type="9">С</month>
+							<month type="10">О</month>
+							<month type="11">Н</month>
+							<month type="12">Д</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">январ</month>
+							<month type="2">феврал</month>
+							<month type="3">март</month>
+							<month type="4">апрел</month>
+							<month type="5">май</month>
+							<month type="6">июн</month>
+							<month type="7">июл</month>
+							<month type="8">август</month>
+							<month type="9">сентябр</month>
+							<month type="10">октябр</month>
+							<month type="11">ноябр</month>
+							<month type="12">декабр</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
 							<month type="1">янв</month>
 							<month type="2">фев</month>
 							<month type="3">мар</month>
@@ -926,50 +969,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="12">декабр</month>
 						</monthWidth>
 					</monthContext>
-					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1">Янв</month>
-							<month type="2">Фев</month>
-							<month type="3">Мар</month>
-							<month type="4">Апр</month>
-							<month type="5">Май</month>
-							<month type="6">Июн</month>
-							<month type="7">Июл</month>
-							<month type="8">Авг</month>
-							<month type="9">Сен</month>
-							<month type="10">Окт</month>
-							<month type="11">Ноя</month>
-							<month type="12">Дек</month>
-						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1">Я</month>
-							<month type="2">Ф</month>
-							<month type="3">М</month>
-							<month type="4">А</month>
-							<month type="5">М</month>
-							<month type="6">И</month>
-							<month type="7">И</month>
-							<month type="8">А</month>
-							<month type="9">С</month>
-							<month type="10">О</month>
-							<month type="11">Н</month>
-							<month type="12">Д</month>
-						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1">Январ</month>
-							<month type="2">Феврал</month>
-							<month type="3">Март</month>
-							<month type="4">Апрел</month>
-							<month type="5">Май</month>
-							<month type="6">Июн</month>
-							<month type="7">Июл</month>
-							<month type="8">Август</month>
-							<month type="9">Сентябр</month>
-							<month type="10">Октябр</month>
-							<month type="11">Ноябр</month>
-							<month type="12">Декабр</month>
-						</monthWidth>
-					</monthContext>
 				</months>
 				<days>
 					<dayContext type="format">
@@ -992,13 +991,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="sat">Ш</day>
 						</dayWidth>
 						<dayWidth type="short">
-							<day type="sun">Як</day>
-							<day type="mon">Ду</day>
-							<day type="tue">Се</day>
-							<day type="wed">Чо</day>
-							<day type="thu">Па</day>
-							<day type="fri">Жу</day>
-							<day type="sat">Ша</day>
+							<day type="sun">як</day>
+							<day type="mon">ду</day>
+							<day type="tue">се</day>
+							<day type="wed">чо</day>
+							<day type="thu">па</day>
+							<day type="fri">жу</day>
+							<day type="sat">ша</day>
 						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun">якшанба</day>
@@ -1012,13 +1011,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</dayContext>
 					<dayContext type="stand-alone">
 						<dayWidth type="abbreviated">
-							<day type="sun">Якш</day>
-							<day type="mon">Душ</day>
-							<day type="tue">Сеш</day>
-							<day type="wed">Чор</day>
-							<day type="thu">Пай</day>
-							<day type="fri">Жум</day>
-							<day type="sat">Шан</day>
+							<day type="sun">якш</day>
+							<day type="mon">душ</day>
+							<day type="tue">сеш</day>
+							<day type="wed">чор</day>
+							<day type="thu">пай</day>
+							<day type="fri">жум</day>
+							<day type="sat">шан</day>
 						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun">Я</day>
@@ -1030,22 +1029,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="sat">Ш</day>
 						</dayWidth>
 						<dayWidth type="short">
-							<day type="sun">Як</day>
-							<day type="mon">Ду</day>
-							<day type="tue">Се</day>
-							<day type="wed">Чо</day>
-							<day type="thu">Па</day>
-							<day type="fri">Жу</day>
-							<day type="sat">Ша</day>
+							<day type="sun">як</day>
+							<day type="mon">ду</day>
+							<day type="tue">се</day>
+							<day type="wed">чо</day>
+							<day type="thu">па</day>
+							<day type="fri">жу</day>
+							<day type="sat">ша</day>
 						</dayWidth>
 						<dayWidth type="wide">
-							<day type="sun">Якшанба</day>
-							<day type="mon">Душанба</day>
-							<day type="tue">Сешанба</day>
-							<day type="wed">Чоршанба</day>
-							<day type="thu">Пайшанба</day>
-							<day type="fri">Жума</day>
-							<day type="sat">Шанба</day>
+							<day type="sun">якшанба</day>
+							<day type="mon">душанба</day>
+							<day type="tue">сешанба</day>
+							<day type="wed">чоршанба</day>
+							<day type="thu">пайшанба</day>
+							<day type="fri">жума</day>
+							<day type="sat">шанба</day>
 						</dayWidth>
 					</dayContext>
 				</days>
@@ -1162,11 +1161,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<era type="0">милоддан аввалги</era>
 						<era type="0" alt="variant">эрамиздан аввалги</era>
 						<era type="1">милодий</era>
+						<era type="1" alt="variant">эрамиз</era>
 					</eraNames>
 					<eraAbbr>
 						<era type="0">м.а.</era>
 						<era type="0" alt="variant">э.а.</era>
 						<era type="1">милодий</era>
+						<era type="1" alt="variant">эрамиз</era>
 					</eraAbbr>
 				</eras>
 				<dateFormats>
@@ -1235,7 +1236,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">B h</dateFormatItem>
+						<dateFormatItem id="Bhm">B h:mm</dateFormatItem>
+						<dateFormatItem id="Bhms">B h:mm:ss</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
+						<dateFormatItem id="EBhm">E, B h:mm</dateFormatItem>
+						<dateFormatItem id="EBhms">E, B h:mm:ss</dateFormatItem>
 						<dateFormatItem id="Ed">d, E</dateFormatItem>
 						<dateFormatItem id="Ehm">E, h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E, HH:mm</dateFormatItem>
@@ -1262,8 +1268,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="one">MMM, W-'ҳафта'</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="other">MMM, W-'ҳафта'</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">MMMM, W-'ҳафта'</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">MMMM, W-'ҳафта'</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">MM/y</dateFormatItem>
@@ -2918,6 +2924,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<symbol>сўм</symbol>
 			</currency>
 			<currency type="VEF">
+				<displayName>Венесуэла боливари (2008–2018)</displayName>
+				<displayName count="one">Венесуэла боливари (2008–2018)</displayName>
+				<displayName count="other">Венесуэла боливари (2008–2018)</displayName>
+			</currency>
+			<currency type="VES">
 				<displayName>Венесуэла боливари</displayName>
 				<displayName count="one">Венесуэла боливари</displayName>
 				<displayName count="other">Венесуэла боливари</displayName>

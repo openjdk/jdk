@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 /*
  * @test
- * @bug 8177552
+ * @bug 8177552 8221432
  * @summary Checks the behaviour of Unicode BCP 47 U Extension with
  *          compact number format
  * @modules jdk.localedata
@@ -47,7 +47,7 @@ public class TestUExtensionOverride {
             {Locale.forLanguageTag("en-US-u-nu-zzzz"), 12345, "12K"},
             // -rg
             {Locale.forLanguageTag("fr-FR-u-rg-cazzzz"), 1234567,
-                "1\u00a0234\u00a0567"},
+                "1\u00a0M"},
             {Locale.forLanguageTag("fr-FR-u-rg-cazzzz"), 1234567890,
                 "1\u00a0G"},
             // -nu and -rg

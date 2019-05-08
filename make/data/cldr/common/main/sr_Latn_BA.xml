@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2018 Unicode, Inc.
+<!-- Copyright © 1991-2019 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 13869 $"/>
+		<version number="$Revision: 14877 $"/>
 		<language type="sr"/>
 		<script type="Latn"/>
 		<territory type="BA"/>
@@ -64,49 +64,33 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</calendar>
 			<calendar type="gregorian">
 				<months>
-					<monthContext type="format">
-						<monthWidth type="abbreviated">
-							<month type="1" draft="contributed">jan.</month>
-							<month type="2" draft="contributed">feb.</month>
-							<month type="3" draft="contributed">mart</month>
-							<month type="4" draft="contributed">apr.</month>
-							<month type="5" draft="contributed">maj</month>
-							<month type="6" draft="contributed">jun</month>
-							<month type="7" draft="contributed">jul</month>
-							<month type="8" draft="contributed">avg.</month>
-							<month type="9" draft="contributed">sept.</month>
-							<month type="10" draft="contributed">okt.</month>
-							<month type="11" draft="contributed">nov.</month>
-							<month type="12" draft="contributed">dec.</month>
-						</monthWidth>
-					</monthContext>
 					<monthContext type="stand-alone">
 						<monthWidth type="abbreviated">
-							<month type="1" draft="contributed">jan.</month>
-							<month type="2" draft="contributed">feb.</month>
-							<month type="3" draft="contributed">mart</month>
-							<month type="4" draft="contributed">apr.</month>
-							<month type="5" draft="contributed">maj</month>
-							<month type="6" draft="contributed">jun</month>
-							<month type="7" draft="contributed">jul</month>
-							<month type="8" draft="contributed">avg.</month>
-							<month type="9" draft="contributed">sept.</month>
-							<month type="10" draft="contributed">okt.</month>
-							<month type="11" draft="contributed">nov.</month>
-							<month type="12" draft="contributed">dec.</month>
+							<month type="1">jan</month>
+							<month type="2">feb</month>
+							<month type="3">mart</month>
+							<month type="4">apr</month>
+							<month type="5">maj</month>
+							<month type="6">jun</month>
+							<month type="7">jul</month>
+							<month type="8">avg</month>
+							<month type="9">sept</month>
+							<month type="10">okt</month>
+							<month type="11">nov</month>
+							<month type="12">dec</month>
 						</monthWidth>
 					</monthContext>
 				</months>
 				<days>
 					<dayContext type="format">
 						<dayWidth type="abbreviated">
-							<day type="sun" draft="contributed">ned.</day>
-							<day type="mon" draft="contributed">pon.</day>
-							<day type="tue" draft="contributed">ut.</day>
-							<day type="wed" draft="contributed">sr.</day>
-							<day type="thu" draft="contributed">čet.</day>
-							<day type="fri" draft="contributed">pet.</day>
-							<day type="sat" draft="contributed">sub.</day>
+							<day type="sun">ned</day>
+							<day type="mon">pon</day>
+							<day type="tue">ut</day>
+							<day type="wed">sr</day>
+							<day type="thu">čet</day>
+							<day type="fri">pet</day>
+							<day type="sat">sub</day>
 						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun" draft="contributed">nedjelja</day>
@@ -120,13 +104,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</dayContext>
 					<dayContext type="stand-alone">
 						<dayWidth type="abbreviated">
-							<day type="sun" draft="contributed">ned.</day>
-							<day type="mon" draft="contributed">pon.</day>
-							<day type="tue" draft="contributed">ut.</day>
-							<day type="wed" draft="contributed">sr.</day>
-							<day type="thu" draft="contributed">čet.</day>
-							<day type="fri" draft="contributed">pet.</day>
-							<day type="sat" draft="contributed">sub.</day>
+							<day type="sun">ned</day>
+							<day type="mon">pon</day>
+							<day type="tue">ut</day>
+							<day type="wed">sr</day>
+							<day type="thu">čet</day>
+							<day type="fri">pet</day>
+							<day type="sat">sub</day>
 						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun" draft="contributed">nedjelja</day>
@@ -187,39 +171,45 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</eras>
 				<dateTimeFormats>
 					<availableFormats>
-						<dateFormatItem id="MMMMW" count="one" draft="contributed">W. 'sjedmica' 'u' MMM</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="few" draft="contributed">W. 'sjedmica' 'u' MMM</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="other" draft="contributed">W. 'sjedmica' 'u' MMM</dateFormatItem>
-						<dateFormatItem id="yw" count="one" draft="contributed">w. 'sjedmica' 'u' y.</dateFormatItem>
-						<dateFormatItem id="yw" count="few" draft="contributed">w. 'sjedmica' 'u' y.</dateFormatItem>
-						<dateFormatItem id="yw" count="other" draft="contributed">w. 'sjedmica' 'u' y.</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one" draft="contributed">W. 'sjedmica' 'u' MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="few" draft="contributed">W. 'sjedmica' 'u' MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other" draft="contributed">W. 'sjedmica' 'u' MMMM</dateFormatItem>
+						<dateFormatItem id="yw" count="one" draft="contributed">w. 'sjedmica' 'u' Y.</dateFormatItem>
+						<dateFormatItem id="yw" count="few" draft="contributed">w. 'sjedmica' 'u' Y.</dateFormatItem>
+						<dateFormatItem id="yw" count="other" draft="contributed">w. 'sjedmica' 'u' Y.</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d" draft="unconfirmed">MM-dd – MM-dd</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">MM-dd – MM-dd</greatestDifference>
+							<greatestDifference id="d" draft="contributed">MM-dd – MM-dd</greatestDifference>
+							<greatestDifference id="M" draft="contributed">MM-dd – MM-dd</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d" draft="unconfirmed">E, MM-dd – E, MM-dd</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E, MM-dd – E, MM-dd</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E, MM-dd – E, MM-dd</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E, MM-dd – E, MM-dd</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M" draft="unconfirmed">y-MM – y-MM</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">y-MM – y-MM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">y-MM – y-MM</greatestDifference>
+							<greatestDifference id="y" draft="contributed">y-MM – y-MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d" draft="unconfirmed">y-MM-dd – y-MM-dd</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">y-MM-dd – y-MM-dd</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="d" draft="contributed">y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="M" draft="contributed">y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="y" draft="contributed">y-MM-dd – y-MM-dd</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d" draft="unconfirmed">E, y-MM-dd – E, y-MM-dd</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E, y-MM-dd – E, y-MM-dd</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">E, y-MM-dd – E, y-MM-dd</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E, y-MM-dd – E, y-MM-dd</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E, y-MM-dd – E, y-MM-dd</greatestDifference>
+							<greatestDifference id="y" draft="contributed">E, y-MM-dd – E, y-MM-dd</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
 		</calendars>
+		<fields>
+			<field type="week">
+				<relative type="-1" draft="contributed">prethodne nedelje</relative>
+				<relative type="1" draft="contributed">naredne nedelje</relative>
+			</field>
+		</fields>
 	</dates>
 </ldml>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2018 Unicode, Inc.
+<!-- Copyright © 1991-2019 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -9,7 +9,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 13911 $"/>
+		<version number="$Revision: 14982 $"/>
 		<language type="fa"/>
 	</identity>
 	<localeDisplayNames>
@@ -59,7 +59,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="az" alt="short">آذری</language>
 			<language type="az" alt="variant">آذربایجانی</language>
 			<language type="az_Arab">ترکی آذری جنوبی</language>
-			<language type="ba">باشغیری</language>
+			<language type="ba">باشقیری</language>
 			<language type="bal">بلوچی</language>
 			<language type="ban">بالیایی</language>
 			<language type="bar">باواریایی</language>
@@ -91,6 +91,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ca">کاتالان</language>
 			<language type="cad">کادویی</language>
 			<language type="car">کاریبی</language>
+			<language type="ccp" draft="contributed">چاکما</language>
 			<language type="ce">چچنی</language>
 			<language type="ceb">سبویی</language>
 			<language type="cgg">چیگا</language>
@@ -132,7 +133,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="dv">دیوهی</language>
 			<language type="dyo">دیولا فونی</language>
 			<language type="dyu">دایولایی</language>
-			<language type="dz">جونخایی</language>
+			<language type="dz">دزونگخا</language>
 			<language type="dzg">دازاگایی</language>
 			<language type="ebu">امبو</language>
 			<language type="ee">اوه‌ای</language>
@@ -161,7 +162,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="fa_AF">دری</language>
 			<language type="fan">فانگی</language>
 			<language type="fat">فانتیایی</language>
-			<language type="ff">فولایی</language>
+			<language type="ff">فولانی</language>
 			<language type="fi">فنلاندی</language>
 			<language type="fil">فیلیپینی</language>
 			<language type="fj">فیجیایی</language>
@@ -378,7 +379,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="nyn">نیانکوله‌ای</language>
 			<language type="nyo">نیورویی</language>
 			<language type="nzi">نزیمایی</language>
-			<language type="oc">اوکیتایی</language>
+			<language type="oc">اکسیتان</language>
 			<language type="oj">اوجیبوایی</language>
 			<language type="om">اورومویی</language>
 			<language type="or">اوریه‌ای</language>
@@ -711,7 +712,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="151">شرق اروپا</territory>
 			<territory type="154">شمال اروپا</territory>
 			<territory type="155">غرب اروپا</territory>
-			<territory type="202" draft="contributed">افریقای سیاه</territory>
+			<territory type="202">افریقای سیاه</territory>
 			<territory type="419">امریکای لاتین</territory>
 			<territory type="AC">جزایر آسنسیون</territory>
 			<territory type="AD">آندورا</territory>
@@ -760,6 +761,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="CG" alt="variant">کنگو (جمهوری)</territory>
 			<territory type="CH">سوئیس</territory>
 			<territory type="CI">ساحل عاج</territory>
+			<territory type="CI" alt="variant">ساحل‌عاج</territory>
 			<territory type="CK">جزایر کوک</territory>
 			<territory type="CL">شیلی</territory>
 			<territory type="CM">کامرون</territory>
@@ -817,7 +819,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="GU">گوام</territory>
 			<territory type="GW">گینهٔ بیسائو</territory>
 			<territory type="GY">گویان</territory>
-			<territory type="HK">هنگ‌کنگ، ناحیهٔ ویژهٔ حکومتی چین</territory>
+			<territory type="HK">هنگ‌کنگ، منطقۀ ویژۀ اداری چین</territory>
 			<territory type="HK" alt="short">هنگ‌کنگ</territory>
 			<territory type="HM">جزیرهٔ هرد و جزایر مک‌دونالد</territory>
 			<territory type="HN">هندوراس</territory>
@@ -843,7 +845,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="KG">قرقیزستان</territory>
 			<territory type="KH">کامبوج</territory>
 			<territory type="KI">کیریباتی</territory>
-			<territory type="KM">کومورو</territory>
+			<territory type="KM">کومور</territory>
 			<territory type="KN">سنت کیتس و نویس</territory>
 			<territory type="KP">کرهٔ شمالی</territory>
 			<territory type="KR">کرهٔ جنوبی</territory>
@@ -868,12 +870,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="MF">سنت مارتین</territory>
 			<territory type="MG">ماداگاسکار</territory>
 			<territory type="MH">جزایر مارشال</territory>
-			<territory type="MK">مقدونیه</territory>
-			<territory type="MK" alt="variant">مقدونیه (جمهوری سابقاً یوگسلاو)</territory>
+			<territory type="MK">مقدونیهٔ شمالی</territory>
 			<territory type="ML">مالی</territory>
 			<territory type="MM">میانمار (برمه)</territory>
 			<territory type="MN">مغولستان</territory>
-			<territory type="MO">ماکائو، ناحیهٔ ویژهٔ حکومتی چین</territory>
+			<territory type="MO">ماکائو، منطقۀ ویژۀ اداری چین</territory>
 			<territory type="MO" alt="short">ماکائو</territory>
 			<territory type="MP">جزایر ماریانای شمالی</territory>
 			<territory type="MQ">مارتینیک</territory>
@@ -942,11 +943,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="SV">السالوادور</territory>
 			<territory type="SX">سنت مارتن</territory>
 			<territory type="SY">سوریه</territory>
-			<territory type="SZ">سوازیلند</territory>
+			<territory type="SZ">اسواتینی</territory>
+			<territory type="SZ" alt="variant">سوازیلند</territory>
 			<territory type="TA">تریستان دا کونا</territory>
 			<territory type="TC">جزایر تورکس و کایکوس</territory>
 			<territory type="TD">چاد</territory>
-			<territory type="TF">قلمروهای جنوبی فرانسه</territory>
+			<territory type="TF">سرزمین‌های جنوب فرانسه</territory>
 			<territory type="TG">توگو</territory>
 			<territory type="TH">تایلند</territory>
 			<territory type="TJ">تاجیکستان</territory>
@@ -1158,31 +1160,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<exemplarCharacters type="index">[آ ا ب پ ت ث ج چ ح خ د ذ ر ز ژ س ش ص ض ط ظ ع غ ف ق ک گ ل م ن و ه ی]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\u200E , ٫ ٬ . % ٪ ‰ ؉ + − 0۰ 1۱ 2۲ 3۳ 4۴ 5۵ 6۶ 7۷ 8۸ 9۹]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- ‐ ، ٫ ٬ ؛ \: ! ؟ . … ‹ › « » ( ) \[ \] * / \\]</exemplarCharacters>
-		<ellipsis type="final">{0}…</ellipsis>
-		<ellipsis type="initial">…{0}</ellipsis>
-		<ellipsis type="medial">{0}…{1}</ellipsis>
-		<ellipsis type="word-final">{0} …</ellipsis>
-		<ellipsis type="word-initial">… {0}</ellipsis>
-		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>؟</moreInformation>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample="-" draft="contributed">[\--/]</parseLenient>
 			<parseLenient sample=":" draft="contributed">[\:∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="." draft="contributed">[.․。︒﹒．｡]</parseLenient>
+			<parseLenient sample="’" draft="contributed">['ʼ՚᾽᾿’＇]</parseLenient>
+			<parseLenient sample="%" draft="contributed">[%٪﹪％]</parseLenient>
+			<parseLenient sample="‰" draft="contributed">[؉‰]</parseLenient>
 			<parseLenient sample="$" draft="contributed">[\$﹩＄$]</parseLenient>
 			<parseLenient sample="£" draft="contributed">[£₤]</parseLenient>
-			<parseLenient sample="₹" draft="contributed">[₨₹{Rp}{Rs}]</parseLenient>
+			<parseLenient sample="¥" draft="contributed">[¥￥]</parseLenient>
+			<parseLenient sample="₩" draft="contributed">[₩￦]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
 			<parseLenient sample="-" draft="contributed">[\-‒⁻₋−➖﹣－]</parseLenient>
-			<parseLenient sample="," draft="contributed">[,،٫、︐︑﹐﹑，､]</parseLenient>
-			<parseLenient sample="+" draft="contributed">[+⁺₊➕﬩﹢＋]</parseLenient>
-		</parseLenients>
-		<parseLenients scope="number" level="stricter">
-			<parseLenient sample="," draft="contributed">[,٫︐﹐，]</parseLenient>
-			<parseLenient sample="." draft="contributed">[.․﹒．｡]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -1396,22 +1388,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern>G EEEE d MMMM y</pattern>
+							<pattern>EEEE d MMMM y G</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
-							<pattern>G d MMMM y</pattern>
+							<pattern>d MMMM y G</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
-							<pattern>G d MMM y</pattern>
+							<pattern>d MMM y G</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
-							<pattern>G d/M/y</pattern>
+							<pattern>y/M/d G</pattern>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -1477,7 +1469,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMEd">E d MMM y G</dateFormatItem>
-						<dateFormatItem id="yyyyMMMM">G y MMMM</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM">y MMMM G</dateFormatItem>
 						<dateFormatItem id="yyyyQQQ">QQQQ y G</dateFormatItem>
 						<dateFormatItem id="yyyyQQQQ">QQQQ y G</dateFormatItem>
 					</availableFormats>
@@ -1487,8 +1479,55 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</appendItems>
 					<intervalFormats>
 						<intervalFormatFallback>{0} تا {1}</intervalFormatFallback>
+						<intervalFormatItem id="Bh">
+							<greatestDifference id="B">h B تا h B</greatestDifference>
+							<greatestDifference id="h">h تا h B</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Bhm">
+							<greatestDifference id="B">h:mm B تا h:mm B</greatestDifference>
+							<greatestDifference id="h">h:mm تا h:mm B</greatestDifference>
+							<greatestDifference id="m">h:mm تا h:mm B</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d تا d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G" draft="contributed">G y – G y</greatestDifference>
+							<greatestDifference id="y" draft="contributed">G y–y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G" draft="contributed">GGGGG y-MM – GGGGG y-MM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">GGGGG y-MM – y-MM</greatestDifference>
+							<greatestDifference id="y" draft="contributed">GGGGG y-MM – y-MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d" draft="contributed">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="G" draft="contributed">GGGGG y-MM-dd – GGGGG y-MM-dd</greatestDifference>
+							<greatestDifference id="M" draft="contributed">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="y" draft="contributed">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d" draft="contributed">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="G" draft="contributed">GGGGG y-MM-dd, E – GGGGG y-MM-dd, E</greatestDifference>
+							<greatestDifference id="M" draft="contributed">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="y" draft="contributed">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G" draft="contributed">G y MMM – G y MMM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">G y MMM–MMM</greatestDifference>
+							<greatestDifference id="y" draft="contributed">G y MMM – y MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d" draft="contributed">G y MMM d–d</greatestDifference>
+							<greatestDifference id="G" draft="contributed">G y MMM d – G y MMM d</greatestDifference>
+							<greatestDifference id="M" draft="contributed">G y MMM d – MMM d</greatestDifference>
+							<greatestDifference id="y" draft="contributed">G y MMM d – y MMM d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d" draft="contributed">G y MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="G" draft="contributed">G y MMM d, E – G y MMM d, E</greatestDifference>
+							<greatestDifference id="M" draft="contributed">G y MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="y" draft="contributed">G y MMM d, E – y MMM d, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">h a تا h a</greatestDifference>
@@ -1796,66 +1835,66 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dayPeriods>
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="midnight">نیمه‌شب</dayPeriod>
 							<dayPeriod type="am">ق.ظ.</dayPeriod>
-							<dayPeriod type="noon">ظهر</dayPeriod>
 							<dayPeriod type="pm">ب.ظ.</dayPeriod>
-							<dayPeriod type="morning1">صبح</dayPeriod>
-							<dayPeriod type="afternoon1">ب.ظ.</dayPeriod>
-							<dayPeriod type="evening1">عصر</dayPeriod>
+							<dayPeriod type="morning1">بامداد</dayPeriod>
+							<dayPeriod type="morning2">صبح</dayPeriod>
+							<dayPeriod type="afternoon1">ظهر</dayPeriod>
+							<dayPeriod type="afternoon2">عصر</dayPeriod>
 							<dayPeriod type="night1">شب</dayPeriod>
+							<dayPeriod type="night2">نیمه‌شب</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
-							<dayPeriod type="midnight">ن</dayPeriod>
 							<dayPeriod type="am">ق</dayPeriod>
-							<dayPeriod type="noon">ظ</dayPeriod>
 							<dayPeriod type="pm">ب</dayPeriod>
-							<dayPeriod type="morning1">ص</dayPeriod>
-							<dayPeriod type="afternoon1">ب.ظ.</dayPeriod>
-							<dayPeriod type="evening1">ع</dayPeriod>
+							<dayPeriod type="morning1">ب</dayPeriod>
+							<dayPeriod type="morning2">ص</dayPeriod>
+							<dayPeriod type="afternoon1">ظ</dayPeriod>
+							<dayPeriod type="afternoon2">ع</dayPeriod>
 							<dayPeriod type="night1">ش</dayPeriod>
+							<dayPeriod type="night2">ن</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
-							<dayPeriod type="midnight">نیمه‌شب</dayPeriod>
 							<dayPeriod type="am">قبل‌ازظهر</dayPeriod>
-							<dayPeriod type="noon">ظهر</dayPeriod>
 							<dayPeriod type="pm">بعدازظهر</dayPeriod>
-							<dayPeriod type="morning1">صبح</dayPeriod>
-							<dayPeriod type="afternoon1">بعدازظهر</dayPeriod>
-							<dayPeriod type="evening1">عصر</dayPeriod>
+							<dayPeriod type="morning1">بامداد</dayPeriod>
+							<dayPeriod type="morning2">صبح</dayPeriod>
+							<dayPeriod type="afternoon1">ظهر</dayPeriod>
+							<dayPeriod type="afternoon2">عصر</dayPeriod>
 							<dayPeriod type="night1">شب</dayPeriod>
+							<dayPeriod type="night2">نیمه‌شب</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="midnight">نیمه‌شب</dayPeriod>
 							<dayPeriod type="am">ق.ظ.</dayPeriod>
-							<dayPeriod type="noon">ظهر</dayPeriod>
 							<dayPeriod type="pm">ب.ظ.</dayPeriod>
-							<dayPeriod type="morning1">صبح</dayPeriod>
-							<dayPeriod type="afternoon1">بعدازظهر</dayPeriod>
-							<dayPeriod type="evening1">عصر</dayPeriod>
+							<dayPeriod type="morning1">بامداد</dayPeriod>
+							<dayPeriod type="morning2">صبح</dayPeriod>
+							<dayPeriod type="afternoon1">ظهر</dayPeriod>
+							<dayPeriod type="afternoon2">عصر</dayPeriod>
 							<dayPeriod type="night1">شب</dayPeriod>
+							<dayPeriod type="night2">نیمه‌شب</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
-							<dayPeriod type="midnight">ن</dayPeriod>
-							<dayPeriod type="am">ق.ظ.</dayPeriod>
-							<dayPeriod type="noon">ظ</dayPeriod>
-							<dayPeriod type="pm">ب.ظ.</dayPeriod>
-							<dayPeriod type="morning1">ص</dayPeriod>
-							<dayPeriod type="afternoon1">ب.ظ.</dayPeriod>
-							<dayPeriod type="evening1">ع</dayPeriod>
+							<dayPeriod type="am">ق</dayPeriod>
+							<dayPeriod type="pm">ب</dayPeriod>
+							<dayPeriod type="morning1">ب</dayPeriod>
+							<dayPeriod type="morning2">ص</dayPeriod>
+							<dayPeriod type="afternoon1">ظ</dayPeriod>
+							<dayPeriod type="afternoon2">ع</dayPeriod>
 							<dayPeriod type="night1">ش</dayPeriod>
+							<dayPeriod type="night2">ن</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
-							<dayPeriod type="midnight">نیمه‌شب</dayPeriod>
 							<dayPeriod type="am">قبل‌ازظهر</dayPeriod>
-							<dayPeriod type="noon">ظهر</dayPeriod>
 							<dayPeriod type="pm">بعدازظهر</dayPeriod>
-							<dayPeriod type="morning1">صبح</dayPeriod>
-							<dayPeriod type="afternoon1">بعدازظهر</dayPeriod>
-							<dayPeriod type="evening1">عصر</dayPeriod>
+							<dayPeriod type="morning1">بامداد</dayPeriod>
+							<dayPeriod type="morning2">صبح</dayPeriod>
+							<dayPeriod type="afternoon1">ظهر</dayPeriod>
+							<dayPeriod type="afternoon2">عصر</dayPeriod>
 							<dayPeriod type="night1">شب</dayPeriod>
+							<dayPeriod type="night2">نیمه‌شب</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
@@ -1980,8 +2019,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="MMMEd">E d LLL</dateFormatItem>
 						<dateFormatItem id="MMMMd">d LLLL</dateFormatItem>
 						<dateFormatItem id="MMMMEd">E d LLLL</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="one">هفته W از MMM</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="other">هفته W از MMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">هفتۀ W از LLLL</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">هفتۀ W از LLLL</dateFormatItem>
 						<dateFormatItem id="mmss">mm:ss</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y</dateFormatItem>
@@ -2004,8 +2043,55 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</appendItems>
 					<intervalFormats>
 						<intervalFormatFallback>{0} تا {1}</intervalFormatFallback>
+						<intervalFormatItem id="Bh">
+							<greatestDifference id="B">h B تا h B</greatestDifference>
+							<greatestDifference id="h">h تا h B</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Bhm">
+							<greatestDifference id="B">h:mm B تا h:mm B</greatestDifference>
+							<greatestDifference id="h">h:mm تا h:mm B</greatestDifference>
+							<greatestDifference id="m">h:mm تا h:mm B</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d تا d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G" draft="contributed">G y – G y</greatestDifference>
+							<greatestDifference id="y" draft="contributed">G y–y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G" draft="contributed">GGGGG y-MM – GGGGG y-MM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">GGGGG y-MM – y-MM</greatestDifference>
+							<greatestDifference id="y" draft="contributed">GGGGG y-MM – y-MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d" draft="contributed">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="G" draft="contributed">GGGGG y-MM-dd – GGGGG y-MM-dd</greatestDifference>
+							<greatestDifference id="M" draft="contributed">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="y" draft="contributed">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d" draft="contributed">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="G" draft="contributed">GGGGG y-MM-dd, E – GGGGG y-MM-dd, E</greatestDifference>
+							<greatestDifference id="M" draft="contributed">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="y" draft="contributed">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G" draft="contributed">G y MMM – G y MMM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">G y MMM–MMM</greatestDifference>
+							<greatestDifference id="y" draft="contributed">G y MMM – y MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d" draft="contributed">G y MMM d–d</greatestDifference>
+							<greatestDifference id="G" draft="contributed">G y MMM d – G y MMM d</greatestDifference>
+							<greatestDifference id="M" draft="contributed">G y MMM d – MMM d</greatestDifference>
+							<greatestDifference id="y" draft="contributed">G y MMM d – y MMM d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d" draft="contributed">G y MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="G" draft="contributed">G y MMM d, E – G y MMM d, E</greatestDifference>
+							<greatestDifference id="M" draft="contributed">G y MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="y" draft="contributed">G y MMM d, E – y MMM d, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">h a تا h a</greatestDifference>
@@ -2439,13 +2525,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="MMMMEd">E d LLLL</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y G</dateFormatItem>
-						<dateFormatItem id="yM">y/M</dateFormatItem>
-						<dateFormatItem id="yMEd">E y/M/d</dateFormatItem>
+						<dateFormatItem id="yM">y/M G</dateFormatItem>
+						<dateFormatItem id="yMEd">E y/M/d G</dateFormatItem>
 						<dateFormatItem id="yMMM">MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E d MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
-						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
-						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
+						<dateFormatItem id="yQQQ">QQQ y G</dateFormatItem>
+						<dateFormatItem id="yQQQQ">QQQQ y G</dateFormatItem>
 						<dateFormatItem id="yyyy">y G</dateFormatItem>
 						<dateFormatItem id="yyyyM">y/M G</dateFormatItem>
 						<dateFormatItem id="yyyyMd">y/M/d G</dateFormatItem>
@@ -2453,11 +2539,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMEd">E d MMM y G</dateFormatItem>
-						<dateFormatItem id="yyyyMMMM">G y MMMM</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM">y MMMM G</dateFormatItem>
 						<dateFormatItem id="yyyyQQQ">QQQ y G</dateFormatItem>
 						<dateFormatItem id="yyyyQQQQ">QQQQ y G</dateFormatItem>
 					</availableFormats>
 				</dateTimeFormats>
+			</calendar>
+			<calendar type="japanese">
+				<eras>
+					<eraAbbr>
+						<era type="235" draft="contributed">هیسه‌ای</era>
+						<era type="236" draft="contributed">ریوا</era>
+					</eraAbbr>
+				</eras>
 			</calendar>
 			<calendar type="persian">
 				<months>
@@ -4002,6 +4096,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Asia/Aqtobe">
 				<exemplarCity>آقتوبه</exemplarCity>
+			</zone>
+			<zone type="Asia/Qostanay">
+				<exemplarCity draft="contributed">قوستانای</exemplarCity>
 			</zone>
 			<zone type="Asia/Qyzylorda">
 				<exemplarCity>قیزیل‌اوردا</exemplarCity>
@@ -5573,9 +5670,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<timeSeparator draft="contributed">:</timeSeparator>
 		</symbols>
 		<symbols numberSystem="arabext">
-			<decimal>٫</decimal>
-			<group>٬</group>
-			<list>؛</list>
 			<percentSign>٪</percentSign>
 			<plusSign>‎+</plusSign>
 			<minusSign>‎−</minusSign>
@@ -5587,8 +5681,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<timeSeparator>:</timeSeparator>
 		</symbols>
 		<symbols numberSystem="latn">
-			<decimal>.</decimal>
-			<group>,</group>
 			<list>;</list>
 			<percentSign>%</percentSign>
 			<plusSign>‎+</plusSign>
@@ -5598,21 +5690,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<perMille>‰</perMille>
 			<infinity>∞</infinity>
 			<nan>ناعدد</nan>
-			<timeSeparator>:</timeSeparator>
 		</symbols>
-		<decimalFormats numberSystem="arabext">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern>#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
 		<decimalFormats numberSystem="latn">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern>#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
 			<decimalFormatLength type="long">
 				<decimalFormat>
 					<pattern type="1000" count="one">0 هزار</pattern>
@@ -5767,7 +5846,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>درهم امارات متحدهٔ عربی</displayName>
 				<displayName count="one">درهم امارات متحدهٔ عربی</displayName>
 				<displayName count="other">درهم امارات متحدهٔ عربی</displayName>
-				<symbol draft="contributed">AED</symbol>
 			</currency>
 			<currency type="AFA">
 				<displayName>افغانی افغانستان (۱۹۲۷ تا ۲۰۰۲)</displayName>
@@ -5782,26 +5860,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>لک آلبانی</displayName>
 				<displayName count="one">لک آلبانی</displayName>
 				<displayName count="other">لک آلبانی</displayName>
-				<symbol draft="contributed">ALL</symbol>
 			</currency>
 			<currency type="AMD">
 				<displayName>درام ارمنستان</displayName>
 				<displayName count="one">درام ارمنستان</displayName>
 				<displayName count="other">درام ارمنستان</displayName>
-				<symbol draft="contributed">AMD</symbol>
 			</currency>
 			<currency type="ANG">
 				<displayName>گیلدر آنتیل هلند</displayName>
 				<displayName count="one">گیلدر آنتیل هلند</displayName>
 				<displayName count="other">گیلدر آنتیل هلند</displayName>
-				<symbol draft="contributed">ANG</symbol>
 			</currency>
 			<currency type="AOA">
 				<displayName>کوانزای آنگولا</displayName>
 				<displayName count="one">کوانزای آنگولا</displayName>
 				<displayName count="other">کوانزای آنگولا</displayName>
-				<symbol draft="contributed">AOA</symbol>
-				<symbol alt="narrow" draft="contributed">Kz</symbol>
 			</currency>
 			<currency type="ARP">
 				<displayName>پزوی آرژانتین (۱۹۸۳ تا ۱۹۸۵)‏</displayName>
@@ -5810,8 +5883,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>پزوی آرژانتین</displayName>
 				<displayName count="one">پزوی آرژانتین</displayName>
 				<displayName count="other">پزوی آرژانتین</displayName>
-				<symbol draft="contributed">ARS</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="ATS">
 				<displayName>شیلینگ اتریش</displayName>
@@ -5822,14 +5893,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>دلار استرالیا</displayName>
 				<displayName count="one">دلار استرالیا</displayName>
 				<displayName count="other">دلار استرالیا</displayName>
-				<symbol draft="contributed">A$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="AWG">
 				<displayName>فلورین آروبا</displayName>
 				<displayName count="one">فلورین آروبا</displayName>
 				<displayName count="other">فلورین آروبا</displayName>
-				<symbol draft="contributed">AWG</symbol>
 			</currency>
 			<currency type="AZM">
 				<displayName>منات جمهوری آذربایجان (۱۹۹۳ تا ۲۰۰۶)</displayName>
@@ -5838,7 +5906,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>منات جمهوری آذربایجان</displayName>
 				<displayName count="one">منات جمهوری آذربایجان</displayName>
 				<displayName count="other">منات جمهوری آذربایجان</displayName>
-				<symbol draft="contributed">AZN</symbol>
 			</currency>
 			<currency type="BAD">
 				<displayName>دینار بوسنی و هرزگوین (۱۹۹۲ تا ۱۹۹۴)</displayName>
@@ -5847,22 +5914,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>مارک تبدیل‌پذیر بوسنی و هرزگوین</displayName>
 				<displayName count="one">مارک تبدیل‌پذیر بوسنی و هرزگوین</displayName>
 				<displayName count="other">مارک تبدیل‌پذیر بوسنی و هرزگوین</displayName>
-				<symbol draft="contributed">BAM</symbol>
-				<symbol alt="narrow" draft="contributed">KM</symbol>
 			</currency>
 			<currency type="BBD">
 				<displayName>دلار باربادوس</displayName>
 				<displayName count="one">دلار باربادوس</displayName>
 				<displayName count="other">دلار باربادوس</displayName>
-				<symbol draft="contributed">BBD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BDT">
 				<displayName>تاکای بنگلادش</displayName>
 				<displayName count="one">تاکای بنگلادش</displayName>
 				<displayName count="other">تاکای بنگلادش</displayName>
-				<symbol draft="contributed">BDT</symbol>
-				<symbol alt="narrow" draft="contributed">৳</symbol>
 			</currency>
 			<currency type="BEF">
 				<displayName>فرانک بلژیک</displayName>
@@ -5878,40 +5939,31 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>لف بلغارستان</displayName>
 				<displayName count="one">لف بلغارستان</displayName>
 				<displayName count="other">لف بلغارستان</displayName>
-				<symbol draft="contributed">BGN</symbol>
 			</currency>
 			<currency type="BHD">
 				<displayName>دینار بحرین</displayName>
 				<displayName count="one">دینار بحرین</displayName>
 				<displayName count="other">دینار بحرین</displayName>
-				<symbol draft="contributed">BHD</symbol>
 			</currency>
 			<currency type="BIF">
 				<displayName>فرانک بوروندی</displayName>
 				<displayName count="one">فرانک بوروندی</displayName>
 				<displayName count="other">فرانک بوروندی</displayName>
-				<symbol draft="contributed">BIF</symbol>
 			</currency>
 			<currency type="BMD">
 				<displayName>دلار برمودا</displayName>
 				<displayName count="one">دلار برمودا</displayName>
 				<displayName count="other">دلار برمودا</displayName>
-				<symbol draft="contributed">BMD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BND">
 				<displayName>دلار برونئی</displayName>
 				<displayName count="one">دلار برونئی</displayName>
 				<displayName count="other">دلار برونئی</displayName>
-				<symbol draft="contributed">BND</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BOB">
 				<displayName>بولیویانوی بولیوی</displayName>
 				<displayName count="one">بولیویانوی بولیوی</displayName>
 				<displayName count="other">بولیویانوی بولیوی</displayName>
-				<symbol draft="contributed">BOB</symbol>
-				<symbol alt="narrow" draft="contributed">Bs</symbol>
 			</currency>
 			<currency type="BOP">
 				<displayName>پزوی بولیوی</displayName>
@@ -5920,28 +5972,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>رئال برزیل</displayName>
 				<displayName count="one">رئال برزیل</displayName>
 				<displayName count="other">رئال برزیل</displayName>
-				<symbol draft="contributed">R$</symbol>
-				<symbol alt="narrow" draft="contributed">R$</symbol>
 			</currency>
 			<currency type="BSD">
 				<displayName>دلار باهاما</displayName>
 				<displayName count="one">دلار باهاما</displayName>
 				<displayName count="other">دلار باهاما</displayName>
-				<symbol draft="contributed">BSD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BTN">
 				<displayName>انگولتروم بوتان</displayName>
 				<displayName count="one">انگولتروم بوتان</displayName>
 				<displayName count="other">انگولتروم بوتان</displayName>
-				<symbol draft="contributed">BTN</symbol>
 			</currency>
 			<currency type="BWP">
 				<displayName>پولای بوتسوانا</displayName>
 				<displayName count="one">پولای بوتسوانا</displayName>
 				<displayName count="other">پولای بوتسوانا</displayName>
-				<symbol draft="contributed">BWP</symbol>
-				<symbol alt="narrow" draft="contributed">P</symbol>
 			</currency>
 			<currency type="BYB">
 				<displayName>روبل جدید بیلوروسی (۱۹۹۴ تا ۱۹۹۹)</displayName>
@@ -5950,74 +5995,58 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>روبل بلاروسی</displayName>
 				<displayName count="one">روبل بلاروسی</displayName>
 				<displayName count="other">روبل بلاروسی</displayName>
-				<symbol draft="contributed">BYN</symbol>
-				<symbol alt="narrow" draft="contributed">р.</symbol>
 			</currency>
 			<currency type="BYR">
 				<displayName>روبل بلاروسی (۲۰۱۶–۲۰۰۰)</displayName>
 				<displayName count="one">روبل بلاروسی (۲۰۱۶–۲۰۰۰)</displayName>
 				<displayName count="other">روبل بلاروسی (۲۰۱۶–۲۰۰۰)</displayName>
-				<symbol draft="contributed">BYR</symbol>
 			</currency>
 			<currency type="BZD">
 				<displayName>دلار بلیز</displayName>
 				<displayName count="one">دلار بلیز</displayName>
 				<displayName count="other">دلار بلیز</displayName>
-				<symbol draft="contributed">BZD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CAD">
 				<displayName>دلار کانادا</displayName>
 				<displayName count="one">دلار کانادا</displayName>
 				<displayName count="other">دلار کانادا</displayName>
 				<symbol>$CA</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CDF">
 				<displayName>فرانک کنگو</displayName>
 				<displayName count="one">فرانک کنگو</displayName>
 				<displayName count="other">فرانک کنگو</displayName>
-				<symbol draft="contributed">CDF</symbol>
 			</currency>
 			<currency type="CHF">
 				<displayName>فرانک سوئیس</displayName>
 				<displayName count="one">فرانک سوئیس</displayName>
 				<displayName count="other">فرانک سوئیس</displayName>
-				<symbol draft="contributed">CHF</symbol>
 			</currency>
 			<currency type="CLP">
 				<displayName>پزوی شیلی</displayName>
 				<displayName count="one">پزوی شیلی</displayName>
 				<displayName count="other">پزوی شیلی</displayName>
-				<symbol draft="contributed">CLP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CNH">
 				<displayName>یوآن چین (برون‌مرزی)</displayName>
 				<displayName count="one">یوآن چین (برون‌مرزی)</displayName>
 				<displayName count="other">یوآن چین (برون‌مرزی)</displayName>
-				<symbol draft="contributed">CNH</symbol>
 			</currency>
 			<currency type="CNY">
 				<displayName>یوآن چین</displayName>
 				<displayName count="one">یوآن چین</displayName>
 				<displayName count="other">یوآن چین</displayName>
 				<symbol>¥CN</symbol>
-				<symbol alt="narrow">¥</symbol>
 			</currency>
 			<currency type="COP">
 				<displayName>پزوی کلمبیا</displayName>
 				<displayName count="one">پزوی کلمبیا</displayName>
 				<displayName count="other">پزوی کلمبیا</displayName>
-				<symbol draft="contributed">COP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CRC">
 				<displayName>کولون کاستاریکا</displayName>
 				<displayName count="one">کولون کاستاریکا</displayName>
 				<displayName count="other">کولون کاستاریکا</displayName>
-				<symbol draft="contributed">CRC</symbol>
-				<symbol alt="narrow" draft="contributed">₡</symbol>
 			</currency>
 			<currency type="CSD">
 				<displayName>دینار صربستان (۲۰۰۲ تا ۲۰۰۶)</displayName>
@@ -6026,21 +6055,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>پزوی تبدیل‌پذیر کوبا</displayName>
 				<displayName count="one">پزوی تبدیل‌پذیر کوبا</displayName>
 				<displayName count="other">پزوی تبدیل‌پذیر کوبا</displayName>
-				<symbol draft="contributed">CUC</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CUP">
 				<displayName>پزوی کوبا</displayName>
 				<displayName count="one">پزوی کوبا</displayName>
 				<displayName count="other">پزوی کوبا</displayName>
-				<symbol draft="contributed">CUP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CVE">
 				<displayName>اسکودوی کیپ‌ورد</displayName>
 				<displayName count="one">اسکودوی کیپ‌ورد</displayName>
 				<displayName count="other">اسکودوی کیپ‌ورد</displayName>
-				<symbol draft="contributed">CVE</symbol>
 			</currency>
 			<currency type="CYP">
 				<displayName>پوند قبرس</displayName>
@@ -6049,8 +6073,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>کورونای جمهوری چک</displayName>
 				<displayName count="one">کورونای جمهوری چک</displayName>
 				<displayName count="other">کورونای جمهوری چک</displayName>
-				<symbol draft="contributed">CZK</symbol>
-				<symbol alt="narrow" draft="contributed">Kč</symbol>
 			</currency>
 			<currency type="DDM">
 				<displayName>مارک آلمان شرقی</displayName>
@@ -6064,67 +6086,51 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>فرانک جیبوتی</displayName>
 				<displayName count="one">فرانک جیبوتی</displayName>
 				<displayName count="other">فرانک جیبوتی</displayName>
-				<symbol draft="contributed">DJF</symbol>
 			</currency>
 			<currency type="DKK">
 				<displayName>کرون دانمارک</displayName>
 				<displayName count="one">کرون دانمارک</displayName>
 				<displayName count="other">کرون دانمارک</displayName>
-				<symbol draft="contributed">DKK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="DOP">
 				<displayName>پزوی جمهوری دومینیکن</displayName>
 				<displayName count="one">پزوی جمهوری دومینیکن</displayName>
 				<displayName count="other">پزوی جمهوری دومینیکن</displayName>
-				<symbol draft="contributed">DOP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="DZD">
 				<displayName>دینار الجزایر</displayName>
 				<displayName count="one">دینار الجزایر</displayName>
 				<displayName count="other">دینار الجزایر</displayName>
-				<symbol draft="contributed">DZD</symbol>
 			</currency>
 			<currency type="EGP">
 				<displayName>پوند مصر</displayName>
 				<displayName count="one">پوند مصر</displayName>
 				<displayName count="other">پوند مصر</displayName>
-				<symbol draft="contributed">EGP</symbol>
-				<symbol alt="narrow" draft="contributed">E£</symbol>
 			</currency>
 			<currency type="ERN">
 				<displayName>ناکفای اریتره</displayName>
 				<displayName count="one">ناکفای اریتره</displayName>
 				<displayName count="other">ناکفای اریتره</displayName>
-				<symbol draft="contributed">ERN</symbol>
 			</currency>
 			<currency type="ETB">
 				<displayName>بیر اتیوپی</displayName>
 				<displayName count="one">بیر اتیوپی</displayName>
 				<displayName count="other">بیر اتیوپی</displayName>
-				<symbol draft="contributed">ETB</symbol>
 			</currency>
 			<currency type="EUR">
 				<displayName>یورو</displayName>
 				<displayName count="one">یورو</displayName>
 				<displayName count="other">یورو</displayName>
-				<symbol>€</symbol>
-				<symbol alt="narrow">€</symbol>
 			</currency>
 			<currency type="FJD">
 				<displayName>دلار فیجی</displayName>
 				<displayName count="one">دلار فیجی</displayName>
 				<displayName count="other">دلار فیجی</displayName>
-				<symbol draft="contributed">FJD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="FKP">
 				<displayName>پوند جزایر فالکلند</displayName>
 				<displayName count="one">پوند جزایر فالکلند</displayName>
 				<displayName count="other">پوند جزایر فالکلند</displayName>
-				<symbol draft="contributed">FKP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="FRF">
 				<displayName>فرانک فرانسه</displayName>
@@ -6135,42 +6141,32 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>پوند بریتانیا</displayName>
 				<displayName count="one">پوند بریتانیا</displayName>
 				<displayName count="other">پوند بریتانیا</displayName>
-				<symbol>£</symbol>
-				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="GEL">
 				<displayName>لاری گرجستان</displayName>
 				<displayName count="one">لاری گرجستان</displayName>
 				<displayName count="other">لاری گرجستان</displayName>
-				<symbol draft="contributed">GEL</symbol>
-				<symbol alt="narrow" draft="contributed">₾</symbol>
 				<symbol alt="variant" draft="contributed">₾</symbol>
 			</currency>
 			<currency type="GHS">
 				<displayName>سدی غنا</displayName>
 				<displayName count="one">سدی غنا</displayName>
 				<displayName count="other">سدی غنا</displayName>
-				<symbol draft="contributed">GHS</symbol>
 			</currency>
 			<currency type="GIP">
 				<displayName>پوند جبل‌الطارق</displayName>
 				<displayName count="one">پوند جبل‌الطارق</displayName>
 				<displayName count="other">پوند جبل‌الطارق</displayName>
-				<symbol draft="contributed">GIP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="GMD">
 				<displayName>دالاسی گامبیا</displayName>
 				<displayName count="one">دالاسی گامبیا</displayName>
 				<displayName count="other">دالاسی گامبیا</displayName>
-				<symbol draft="contributed">GMD</symbol>
 			</currency>
 			<currency type="GNF">
 				<displayName>فرانک گینه</displayName>
 				<displayName count="one">فرانک گینه</displayName>
 				<displayName count="other">فرانک گینه</displayName>
-				<symbol draft="contributed">GNF</symbol>
-				<symbol alt="narrow" draft="contributed">FG</symbol>
 			</currency>
 			<currency type="GRD">
 				<displayName>دراخمای یونان</displayName>
@@ -6179,8 +6175,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>کتزال گواتمالا</displayName>
 				<displayName count="one">کتزال گواتمالا</displayName>
 				<displayName count="other">کتزال گواتمالا</displayName>
-				<symbol draft="contributed">GTQ</symbol>
-				<symbol alt="narrow" draft="contributed">Q</symbol>
 			</currency>
 			<currency type="GWP">
 				<displayName>پزوی گینهٔ بیسائو</displayName>
@@ -6189,22 +6183,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>دلار گویانا</displayName>
 				<displayName count="one">دلار گویانا</displayName>
 				<displayName count="other">دلار گویانا</displayName>
-				<symbol draft="contributed">GYD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="HKD">
 				<displayName>دلار هنگ‌کنگ</displayName>
 				<displayName count="one">دلار هنگ‌کنگ</displayName>
 				<displayName count="other">دلار هنگ‌کنگ</displayName>
 				<symbol>$HK</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="HNL">
 				<displayName>لمپیرای هندوراس</displayName>
 				<displayName count="one">لمپیرای هندوراس</displayName>
 				<displayName count="other">لمپیرای هندوراس</displayName>
-				<symbol draft="contributed">HNL</symbol>
-				<symbol alt="narrow" draft="contributed">L</symbol>
 			</currency>
 			<currency type="HRD">
 				<displayName>دینار کرواسی</displayName>
@@ -6213,28 +6202,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>کونای کرواسی</displayName>
 				<displayName count="one">کونای کرواسی</displayName>
 				<displayName count="other">کونای کرواسی</displayName>
-				<symbol draft="contributed">HRK</symbol>
-				<symbol alt="narrow" draft="contributed">kn</symbol>
 			</currency>
 			<currency type="HTG">
 				<displayName>گورد هائیتی</displayName>
 				<displayName count="one">گورد هائیتی</displayName>
 				<displayName count="other">گورد هائیتی</displayName>
-				<symbol draft="contributed">HTG</symbol>
 			</currency>
 			<currency type="HUF">
 				<displayName>فورینت مجارستان</displayName>
 				<displayName count="one">فورینت مجارستان</displayName>
 				<displayName count="other">فورینت مجارستان</displayName>
-				<symbol draft="contributed">HUF</symbol>
-				<symbol alt="narrow" draft="contributed">Ft</symbol>
 			</currency>
 			<currency type="IDR">
 				<displayName>روپیهٔ اندونزی</displayName>
 				<displayName count="one">روپیهٔ اندونزی</displayName>
 				<displayName count="other">روپیهٔ اندونزی</displayName>
-				<symbol draft="contributed">IDR</symbol>
-				<symbol alt="narrow" draft="contributed">Rp</symbol>
 			</currency>
 			<currency type="IEP">
 				<displayName>پوند ایرلند</displayName>
@@ -6243,21 +6225,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>شقل جدید اسرائیل</displayName>
 				<displayName count="one">شقل جدید اسرائیل</displayName>
 				<displayName count="other">شقل جدید اسرائیل</displayName>
-				<symbol>₪</symbol>
-				<symbol alt="narrow" draft="contributed">₪</symbol>
 			</currency>
 			<currency type="INR">
 				<displayName>روپیهٔ هند</displayName>
 				<displayName count="one">روپیهٔ هند</displayName>
 				<displayName count="other">روپیهٔ هند</displayName>
-				<symbol>₹</symbol>
-				<symbol alt="narrow">₹</symbol>
 			</currency>
 			<currency type="IQD">
 				<displayName>دینار عراق</displayName>
 				<displayName count="one">دینار عراق</displayName>
 				<displayName count="other">دینار عراق</displayName>
-				<symbol draft="contributed">IQD</symbol>
 			</currency>
 			<currency type="IRR">
 				<displayName>ریال ایران</displayName>
@@ -6269,8 +6246,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>کرونای ایسلند</displayName>
 				<displayName count="one">کرونای ایسلند</displayName>
 				<displayName count="other">کرونای ایسلند</displayName>
-				<symbol draft="contributed">ISK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="ITL">
 				<displayName>لیرهٔ ایتالیا</displayName>
@@ -6279,109 +6254,82 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>دلار جامائیکا</displayName>
 				<displayName count="one">دلار جامائیکا</displayName>
 				<displayName count="other">دلار جامائیکا</displayName>
-				<symbol draft="contributed">JMD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="JOD">
 				<displayName>دینار اردن</displayName>
 				<displayName count="one">دینار اردن</displayName>
 				<displayName count="other">دینار اردن</displayName>
-				<symbol draft="contributed">JOD</symbol>
 			</currency>
 			<currency type="JPY">
 				<displayName>ین ژاپن</displayName>
 				<displayName count="one">ین ژاپن</displayName>
 				<displayName count="other">ین ژاپن</displayName>
 				<symbol>¥</symbol>
-				<symbol alt="narrow">¥</symbol>
 			</currency>
 			<currency type="KES">
 				<displayName>شیلینگ کنیا</displayName>
 				<displayName count="one">شیلینگ کنیا</displayName>
 				<displayName count="other">شیلینگ کنیا</displayName>
-				<symbol draft="contributed">KES</symbol>
 			</currency>
 			<currency type="KGS">
 				<displayName>سوم قرقیزستان</displayName>
 				<displayName count="one">سوم قرقیزستان</displayName>
 				<displayName count="other">سوم قرقیزستان</displayName>
-				<symbol draft="contributed">KGS</symbol>
 			</currency>
 			<currency type="KHR">
 				<displayName>ری‌یل کامبوج</displayName>
 				<displayName count="one">ری‌یل کامبوج</displayName>
 				<displayName count="other">ری‌یل کامبوج</displayName>
-				<symbol draft="contributed">KHR</symbol>
-				<symbol alt="narrow" draft="contributed">៛</symbol>
 			</currency>
 			<currency type="KMF">
 				<displayName>فرانک کومورو</displayName>
 				<displayName count="one">فرانک کومورو</displayName>
 				<displayName count="other">فرانک کومورو</displayName>
-				<symbol draft="contributed">KMF</symbol>
-				<symbol alt="narrow" draft="contributed">CF</symbol>
 			</currency>
 			<currency type="KPW">
 				<displayName>وون کرهٔ شمالی</displayName>
 				<displayName count="one">وون کرهٔ شمالی</displayName>
 				<displayName count="other">وون کرهٔ شمالی</displayName>
-				<symbol draft="contributed">KPW</symbol>
-				<symbol alt="narrow" draft="contributed">₩</symbol>
 			</currency>
 			<currency type="KRW">
 				<displayName>وون کرهٔ جنوبی</displayName>
 				<displayName count="one">وون کرهٔ جنوبی</displayName>
 				<displayName count="other">وون کرهٔ جنوبی</displayName>
-				<symbol>₩</symbol>
-				<symbol alt="narrow" draft="contributed">₩</symbol>
 			</currency>
 			<currency type="KWD">
 				<displayName>دینار کویت</displayName>
 				<displayName count="one">دینار کویت</displayName>
 				<displayName count="other">دینار کویت</displayName>
-				<symbol draft="contributed">KWD</symbol>
 			</currency>
 			<currency type="KYD">
 				<displayName>دلار جزایر کِیمن</displayName>
 				<displayName count="one">دلار جزایر کِیمن</displayName>
 				<displayName count="other">دلار جزایر کِیمن</displayName>
-				<symbol draft="contributed">KYD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="KZT">
 				<displayName>تنگهٔ قزاقستان</displayName>
 				<displayName count="one">تنگهٔ قزاقستان</displayName>
 				<displayName count="other">تنگهٔ قزاقستان</displayName>
-				<symbol draft="contributed">KZT</symbol>
-				<symbol alt="narrow" draft="contributed">₸</symbol>
 			</currency>
 			<currency type="LAK">
 				<displayName>کیپ لائوس</displayName>
 				<displayName count="one">کیپ لائوس</displayName>
 				<displayName count="other">کیپ لائوس</displayName>
-				<symbol draft="contributed">LAK</symbol>
-				<symbol alt="narrow" draft="contributed">₭</symbol>
 			</currency>
 			<currency type="LBP">
 				<displayName>لیرهٔ لبنان</displayName>
 				<displayName count="one">لیرهٔ لبنان</displayName>
 				<displayName count="other">لیرهٔ لبنان</displayName>
-				<symbol draft="contributed">LBP</symbol>
-				<symbol alt="narrow" draft="contributed">L£</symbol>
 			</currency>
 			<currency type="LKR">
 				<displayName>روپیهٔ سری‌لانکا</displayName>
 				<displayName count="one">روپیهٔ سری‌لانکا</displayName>
 				<displayName count="other">روپیهٔ سری‌لانکا</displayName>
-				<symbol draft="contributed">LKR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="LRD">
 				<displayName>دلار لیبریا</displayName>
 				<displayName count="one">دلار لیبریا</displayName>
 				<displayName count="other">دلار لیبریا</displayName>
-				<symbol draft="contributed">LRD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="LSL">
 				<displayName>لوتی لسوتو</displayName>
@@ -6390,6 +6338,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="LTL">
 				<displayName>لیتاس لیتوانی</displayName>
+				<symbol draft="contributed">LTL</symbol>
 			</currency>
 			<currency type="LUF">
 				<displayName>فرانک لوکزامبورگ</displayName>
@@ -6401,6 +6350,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="LVL">
 				<displayName>لاتس لتونی</displayName>
+				<symbol draft="contributed">LVL</symbol>
 			</currency>
 			<currency type="LVR">
 				<displayName>روبل لتونی</displayName>
@@ -6409,13 +6359,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>دینار لیبی</displayName>
 				<displayName count="one">دینار لیبی</displayName>
 				<displayName count="other">دینار لیبی</displayName>
-				<symbol draft="contributed">LYD</symbol>
 			</currency>
 			<currency type="MAD">
 				<displayName>درهم مراکش</displayName>
 				<displayName count="one">درهم مراکش</displayName>
 				<displayName count="other">درهم مراکش</displayName>
-				<symbol draft="contributed">MAD</symbol>
 			</currency>
 			<currency type="MAF">
 				<displayName>فرانک مراکش</displayName>
@@ -6424,14 +6372,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>لئوی مولداوی</displayName>
 				<displayName count="one">لئوی مولداوی</displayName>
 				<displayName count="other">لئوی مولداوی</displayName>
-				<symbol draft="contributed">MDL</symbol>
 			</currency>
 			<currency type="MGA">
 				<displayName>آریاری مالاگاسی</displayName>
 				<displayName count="one">آریاری مالاگاسی</displayName>
 				<displayName count="other">آریاری مالاگاسی</displayName>
-				<symbol draft="contributed">MGA</symbol>
-				<symbol alt="narrow" draft="contributed">Ar</symbol>
 			</currency>
 			<currency type="MGF">
 				<displayName>فرانک ماداگاسکار</displayName>
@@ -6440,7 +6385,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>دینار مقدونیه</displayName>
 				<displayName count="one">دینار مقدونیه</displayName>
 				<displayName count="other">دینار مقدونیه</displayName>
-				<symbol draft="contributed">MKD</symbol>
 			</currency>
 			<currency type="MLF">
 				<displayName>فرانک مالی</displayName>
@@ -6449,27 +6393,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>کیات میانمار</displayName>
 				<displayName count="one">کیات میانمار</displayName>
 				<displayName count="other">کیات میانمار</displayName>
-				<symbol draft="contributed">MMK</symbol>
-				<symbol alt="narrow" draft="contributed">K</symbol>
 			</currency>
 			<currency type="MNT">
 				<displayName>توگریک مغولستان</displayName>
 				<displayName count="one">توگریک مغولستان</displayName>
 				<displayName count="other">توگریک مغولستان</displayName>
-				<symbol draft="contributed">MNT</symbol>
-				<symbol alt="narrow" draft="contributed">₮</symbol>
 			</currency>
 			<currency type="MOP">
 				<displayName>پاتاکای ماکائو</displayName>
 				<displayName count="one">پاتاکای ماکائو</displayName>
 				<displayName count="other">پاتاکای ماکائو</displayName>
-				<symbol draft="contributed">MOP</symbol>
 			</currency>
 			<currency type="MRO">
 				<displayName>اوگوئیای موریتانی (۱۹۷۳ تا ۲۰۱۷)</displayName>
 				<displayName count="one">اوگوئیای موریتانی (۱۹۷۳ تا ۲۰۱۷)</displayName>
 				<displayName count="other">اوگوئیای موریتانی (۱۹۷۳ تا ۲۰۱۷)</displayName>
-				<symbol draft="contributed">MRO</symbol>
 			</currency>
 			<currency type="MRU">
 				<displayName>اوگوئیای موریتانی</displayName>
@@ -6486,27 +6424,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>روپیهٔ موریس</displayName>
 				<displayName count="one">روپیهٔ موریس</displayName>
 				<displayName count="other">روپیهٔ موریس</displayName>
-				<symbol draft="contributed">MUR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="MVR">
 				<displayName>روپیهٔ مالدیو</displayName>
 				<displayName count="one">روپیهٔ مالدیو</displayName>
 				<displayName count="other">روپیهٔ مالدیو</displayName>
-				<symbol draft="contributed">MVR</symbol>
 			</currency>
 			<currency type="MWK">
 				<displayName>کواچای مالاوی</displayName>
 				<displayName count="one">کواچای مالاوی</displayName>
 				<displayName count="other">کواچای مالاوی</displayName>
-				<symbol draft="contributed">MWK</symbol>
 			</currency>
 			<currency type="MXN">
 				<displayName>پزوی مکزیک</displayName>
 				<displayName count="one">پزوی مکزیک</displayName>
 				<displayName count="other">پزوی مکزیک</displayName>
 				<symbol>$MX</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="MXP">
 				<displayName>پزوی نقرهٔ مکزیک (۱۸۶۱ تا ۱۹۹۲)</displayName>
@@ -6518,8 +6451,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>رینگیت مالزی</displayName>
 				<displayName count="one">رینگیت مالزی</displayName>
 				<displayName count="other">رینگیت مالزی</displayName>
-				<symbol draft="contributed">MYR</symbol>
-				<symbol alt="narrow" draft="contributed">RM</symbol>
 			</currency>
 			<currency type="MZE">
 				<displayName>اسکودوی موزامبیک</displayName>
@@ -6528,28 +6459,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>متیکال موزامبیک</displayName>
 				<displayName count="one">متیکال موزامبیک</displayName>
 				<displayName count="other">متیکال موزامبیک</displayName>
-				<symbol draft="contributed">MZN</symbol>
 			</currency>
 			<currency type="NAD">
 				<displayName>دلار نامیبیا</displayName>
 				<displayName count="one">دلار نامیبیا</displayName>
 				<displayName count="other">دلار نامیبیا</displayName>
-				<symbol draft="contributed">NAD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="NGN">
 				<displayName>نایرای نیجریه</displayName>
 				<displayName count="one">نایرای نیجریه</displayName>
 				<displayName count="other">نایرای نیجریه</displayName>
-				<symbol draft="contributed">NGN</symbol>
-				<symbol alt="narrow" draft="contributed">₦</symbol>
 			</currency>
 			<currency type="NIO">
 				<displayName>کوردوبای نیکاراگوئه</displayName>
 				<displayName count="one">کوردوبای نیکاراگوئه</displayName>
 				<displayName count="other">کوردوبای نیکاراگوئه</displayName>
-				<symbol draft="contributed">NIO</symbol>
-				<symbol alt="narrow" draft="contributed">C$</symbol>
 			</currency>
 			<currency type="NLG">
 				<displayName>گیلدر هلند</displayName>
@@ -6560,67 +6484,52 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>کرون نروژ</displayName>
 				<displayName count="one">کرون نروژ</displayName>
 				<displayName count="other">کرون نروژ</displayName>
-				<symbol draft="contributed">NOK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="NPR">
 				<displayName>روپیهٔ نپال</displayName>
 				<displayName count="one">روپیهٔ نپال</displayName>
 				<displayName count="other">روپیهٔ نپال</displayName>
-				<symbol draft="contributed">NPR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="NZD">
 				<displayName>دلار زلاند نو</displayName>
 				<displayName count="one">دلار زلاند نو</displayName>
 				<displayName count="other">دلار زلاند نو</displayName>
 				<symbol>$NZ</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="OMR">
 				<displayName>ریال عمان</displayName>
 				<displayName count="one">ریال عمان</displayName>
 				<displayName count="other">ریال عمان</displayName>
-				<symbol draft="contributed">OMR</symbol>
 			</currency>
 			<currency type="PAB">
 				<displayName>بالبوای پاناما</displayName>
 				<displayName count="one">بالبوای پاناما</displayName>
 				<displayName count="other">بالبوای پاناما</displayName>
-				<symbol draft="contributed">PAB</symbol>
 			</currency>
 			<currency type="PEN">
 				<displayName>نوئووسول پرو</displayName>
 				<displayName count="one">نوئووسول پرو</displayName>
 				<displayName count="other">نوئووسول پرو</displayName>
-				<symbol draft="contributed">PEN</symbol>
 			</currency>
 			<currency type="PGK">
 				<displayName>کینای پاپوا گینهٔ نو</displayName>
 				<displayName count="one">کینای پاپوا گینهٔ نو</displayName>
 				<displayName count="other">کینای پاپوا گینهٔ نو</displayName>
-				<symbol draft="contributed">PGK</symbol>
 			</currency>
 			<currency type="PHP">
 				<displayName>پزوی فیلیپین</displayName>
 				<displayName count="one">پزوی فیلیپین</displayName>
 				<displayName count="other">پزوی فیلیپین</displayName>
-				<symbol draft="contributed">PHP</symbol>
-				<symbol alt="narrow" draft="contributed">₱</symbol>
 			</currency>
 			<currency type="PKR">
 				<displayName>روپیهٔ پاکستان</displayName>
 				<displayName count="one">روپیهٔ پاکستان</displayName>
 				<displayName count="other">روپیهٔ پاکستان</displayName>
-				<symbol draft="contributed">PKR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="PLN">
 				<displayName>زواتی لهستان</displayName>
 				<displayName count="one">زواتی لهستان</displayName>
 				<displayName count="other">زواتی لهستان</displayName>
-				<symbol draft="contributed">PLN</symbol>
-				<symbol alt="narrow" draft="contributed">zł</symbol>
 			</currency>
 			<currency type="PTE">
 				<displayName>اسکودوی پرتغال</displayName>
@@ -6629,14 +6538,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>گوارانی پاراگوئه</displayName>
 				<displayName count="one">گوارانی پاراگوئه</displayName>
 				<displayName count="other">گوارانی پاراگوئه</displayName>
-				<symbol draft="contributed">PYG</symbol>
-				<symbol alt="narrow" draft="contributed">₲</symbol>
 			</currency>
 			<currency type="QAR">
 				<displayName>ریال قطر</displayName>
 				<displayName count="one">ریال قطر</displayName>
 				<displayName count="other">ریال قطر</displayName>
-				<symbol draft="contributed">QAR</symbol>
 			</currency>
 			<currency type="RHD">
 				<displayName>دلار رودزیا</displayName>
@@ -6645,21 +6551,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>لئوی رومانی</displayName>
 				<displayName count="one">لئوی رومانی</displayName>
 				<displayName count="other">لئوی رومانی</displayName>
-				<symbol draft="contributed">RON</symbol>
-				<symbol alt="narrow" draft="contributed">lei</symbol>
 			</currency>
 			<currency type="RSD">
 				<displayName>دینار صربستان</displayName>
 				<displayName count="one">دینار صربستان</displayName>
 				<displayName count="other">دینار صربستان</displayName>
-				<symbol draft="contributed">RSD</symbol>
 			</currency>
 			<currency type="RUB">
 				<displayName>روبل روسیه</displayName>
 				<displayName count="one">روبل روسیه</displayName>
 				<displayName count="other">روبل روسیه</displayName>
-				<symbol draft="contributed">RUB</symbol>
-				<symbol alt="narrow" draft="contributed">₽</symbol>
 				<symbol alt="variant">₽</symbol>
 			</currency>
 			<currency type="RUR">
@@ -6669,27 +6570,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>فرانک رواندا</displayName>
 				<displayName count="one">فرانک رواندا</displayName>
 				<displayName count="other">فرانک رواندا</displayName>
-				<symbol draft="contributed">RWF</symbol>
-				<symbol alt="narrow" draft="contributed">RF</symbol>
 			</currency>
 			<currency type="SAR">
 				<displayName>ریال سعودی</displayName>
 				<displayName count="one">ریال سعودی</displayName>
 				<displayName count="other">ریال سعودی</displayName>
-				<symbol draft="contributed">SAR</symbol>
 			</currency>
 			<currency type="SBD">
 				<displayName>دلار جزایر سلیمان</displayName>
 				<displayName count="one">دلار جزایر سلیمان</displayName>
 				<displayName count="other">دلار جزایر سلیمان</displayName>
-				<symbol draft="contributed">SBD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="SCR">
 				<displayName>روپیهٔ سیشل</displayName>
 				<displayName count="one">روپیهٔ سیشل</displayName>
 				<displayName count="other">روپیهٔ سیشل</displayName>
-				<symbol draft="contributed">SCR</symbol>
 			</currency>
 			<currency type="SDD">
 				<displayName>دینار سودان (۱۹۹۲ تا ۲۰۰۷)</displayName>
@@ -6698,47 +6593,36 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>پوند سودان</displayName>
 				<displayName count="one">پوند سودان</displayName>
 				<displayName count="other">پوند سودان</displayName>
-				<symbol draft="contributed">SDG</symbol>
 			</currency>
 			<currency type="SEK">
 				<displayName>کرون سوئد</displayName>
 				<displayName count="one">کرون سوئد</displayName>
 				<displayName count="other">کرون سوئد</displayName>
-				<symbol draft="contributed">SEK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="SGD">
 				<displayName>دلار سنگاپور</displayName>
 				<displayName count="one">دلار سنگاپور</displayName>
 				<displayName count="other">دلار سنگاپور</displayName>
-				<symbol draft="contributed">SGD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="SHP">
 				<displayName>پوند سنت هلن</displayName>
 				<displayName count="one">پوند سنت هلن</displayName>
 				<displayName count="other">پوند سنت هلن</displayName>
-				<symbol draft="contributed">SHP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="SLL">
 				<displayName>لئون سیرالئون</displayName>
 				<displayName count="one">لئون سیرالئون</displayName>
 				<displayName count="other">لئون سیرالئون</displayName>
-				<symbol draft="contributed">SLL</symbol>
 			</currency>
 			<currency type="SOS">
 				<displayName>شیلینگ سومالی</displayName>
 				<displayName count="one">شیلینگ سومالی</displayName>
 				<displayName count="other">شیلینگ سومالی</displayName>
-				<symbol draft="contributed">SOS</symbol>
 			</currency>
 			<currency type="SRD">
 				<displayName>دلار سورینام</displayName>
 				<displayName count="one">دلار سورینام</displayName>
 				<displayName count="other">دلار سورینام</displayName>
-				<symbol draft="contributed">SRD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="SRG">
 				<displayName>گیلدر سورینام</displayName>
@@ -6747,21 +6631,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>پوند سودان جنوبی</displayName>
 				<displayName count="one">پوند سودان جنوبی</displayName>
 				<displayName count="other">پوند سودان جنوبی</displayName>
-				<symbol draft="contributed">SSP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="STD">
 				<displayName>دوبرای سائوتومه و پرنسیپ (۱۹۷۷ تا ۲۰۱۷)</displayName>
 				<displayName count="one">دوبرای سائوتومه و پرنسیپ (۱۹۷۷ تا ۲۰۱۷)</displayName>
 				<displayName count="other">دوبرای سائوتومه و پرنسیپ (۱۹۷۷ تا ۲۰۱۷)</displayName>
-				<symbol draft="contributed">STD</symbol>
 			</currency>
 			<currency type="STN">
 				<displayName>دوبرای سائوتومه و پرنسیپ</displayName>
 				<displayName count="one">دوبرای سائوتومه و پرنسیپ</displayName>
 				<displayName count="other">دوبرای سائوتومه و پرنسیپ</displayName>
-				<symbol draft="contributed">STN</symbol>
-				<symbol alt="narrow" draft="contributed">Db</symbol>
 			</currency>
 			<currency type="SUR">
 				<displayName>روبل شوروی</displayName>
@@ -6770,21 +6649,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>لیرهٔ سوریه</displayName>
 				<displayName count="one">لیرهٔ سوریه</displayName>
 				<displayName count="other">لیرهٔ سوریه</displayName>
-				<symbol draft="contributed">SYP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="SZL">
 				<displayName>لیلانگنی سوازیلند</displayName>
 				<displayName count="one">لیلانگنی سوازیلند</displayName>
 				<displayName count="other">لیلانگنی سوازیلند</displayName>
-				<symbol draft="contributed">SZL</symbol>
 			</currency>
 			<currency type="THB">
 				<displayName>بات تایلند</displayName>
 				<displayName count="one">بات تایلند</displayName>
 				<displayName count="other">بات تایلند</displayName>
 				<symbol>฿</symbol>
-				<symbol alt="narrow" draft="contributed">฿</symbol>
 			</currency>
 			<currency type="TJR">
 				<displayName>روبل تاجیکستان</displayName>
@@ -6793,7 +6668,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>سامانی تاجیکستان</displayName>
 				<displayName count="one">سامانی تاجیکستان</displayName>
 				<displayName count="other">سامانی تاجیکستان</displayName>
-				<symbol draft="contributed">TJS</symbol>
 			</currency>
 			<currency type="TMM">
 				<displayName>منات ترکمنستان (۱۹۹۳ تا ۲۰۰۹)</displayName>
@@ -6802,20 +6676,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>منات ترکمنستان</displayName>
 				<displayName count="one">منات ترکمنستان</displayName>
 				<displayName count="other">منات ترکمنستان</displayName>
-				<symbol draft="contributed">TMT</symbol>
 			</currency>
 			<currency type="TND">
 				<displayName>دینار تونس</displayName>
 				<displayName count="one">دینار تونس</displayName>
 				<displayName count="other">دینار تونس</displayName>
-				<symbol draft="contributed">TND</symbol>
 			</currency>
 			<currency type="TOP">
 				<displayName>پاآنگای تونگا</displayName>
 				<displayName count="one">پاآنگای تونگا</displayName>
 				<displayName count="other">پاآنگای تونگا</displayName>
-				<symbol draft="contributed">TOP</symbol>
-				<symbol alt="narrow" draft="contributed">T$</symbol>
 			</currency>
 			<currency type="TPE">
 				<displayName>اسکودوی تیمور</displayName>
@@ -6827,36 +6697,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>لیرهٔ ترکیه</displayName>
 				<displayName count="one">لیرهٔ ترکیه</displayName>
 				<displayName count="other">لیرهٔ ترکیه</displayName>
-				<symbol draft="contributed">TRY</symbol>
-				<symbol alt="narrow" draft="contributed">₺</symbol>
-				<symbol alt="variant" draft="contributed">TL</symbol>
 			</currency>
 			<currency type="TTD">
 				<displayName>دلار ترینیداد و توباگو</displayName>
 				<displayName count="one">دلار ترینیداد و توباگو</displayName>
 				<displayName count="other">دلار ترینیداد و توباگو</displayName>
-				<symbol draft="contributed">TTD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="TWD">
 				<displayName>دلار جدید تایوان</displayName>
 				<displayName count="one">دلار جدید تایوان</displayName>
 				<displayName count="other">دلار جدید تایوان</displayName>
-				<symbol draft="contributed">NT$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="TZS">
 				<displayName>شیلینگ تانزانیا</displayName>
 				<displayName count="one">شیلینگ تانزانیا</displayName>
 				<displayName count="other">شیلینگ تانزانیا</displayName>
-				<symbol draft="contributed">TZS</symbol>
 			</currency>
 			<currency type="UAH">
 				<displayName>هریونیای اوکراین</displayName>
 				<displayName count="one">هریونیای اوکراین</displayName>
 				<displayName count="other">هریونیای اوکراین</displayName>
-				<symbol draft="contributed">UAH</symbol>
-				<symbol alt="narrow" draft="contributed">₴</symbol>
 			</currency>
 			<currency type="UGS">
 				<displayName>شیلینگ اوگاندا (۱۹۶۶ تا ۱۹۸۷)</displayName>
@@ -6865,14 +6725,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>شیلینگ اوگاندا</displayName>
 				<displayName count="one">شیلینگ اوگاندا</displayName>
 				<displayName count="other">شیلینگ اوگاندا</displayName>
-				<symbol draft="contributed">UGX</symbol>
 			</currency>
 			<currency type="USD">
 				<displayName>دلار امریکا</displayName>
 				<displayName count="one">دلار امریکا</displayName>
 				<displayName count="other">دلار امریکا</displayName>
 				<symbol>$</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="USN">
 				<displayName>دلار امریکا (روز بعد)</displayName>
@@ -6893,14 +6751,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>پزوی اوروگوئه</displayName>
 				<displayName count="one">پزوی اوروگوئه</displayName>
 				<displayName count="other">پزوی اوروگوئه</displayName>
-				<symbol draft="contributed">UYU</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="UZS">
 				<displayName>سوم ازبکستان</displayName>
 				<displayName count="one">سوم ازبکستان</displayName>
 				<displayName count="other">سوم ازبکستان</displayName>
-				<symbol draft="contributed">UZS</symbol>
 			</currency>
 			<currency type="VEB">
 				<displayName>بولیوار ونزوئلا (۱۸۷۱ تا ۲۰۰۸)</displayName>
@@ -6908,36 +6763,34 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other">بولیوار ونزوئلا (۱۸۷۱ تا ۲۰۰۸)</displayName>
 			</currency>
 			<currency type="VEF">
+				<displayName>بولیوار ونزوئلا (۲۰۰۸ تا ۲۰۱۸)</displayName>
+				<displayName count="one">بولیوار ونزوئلا (۲۰۰۸ تا ۲۰۱۸)</displayName>
+				<displayName count="other">بولیوار ونزوئلا (۲۰۰۸ تا ۲۰۱۸)</displayName>
+			</currency>
+			<currency type="VES">
 				<displayName>بولیوار ونزوئلا</displayName>
 				<displayName count="one">بولیوار ونزوئلا</displayName>
 				<displayName count="other">بولیوار ونزوئلا</displayName>
-				<symbol draft="contributed">VEF</symbol>
-				<symbol alt="narrow" draft="contributed">Bs</symbol>
 			</currency>
 			<currency type="VND">
 				<displayName>دانگ ویتنام</displayName>
 				<displayName count="one">دانگ ویتنام</displayName>
 				<displayName count="other">دانگ ویتنام</displayName>
-				<symbol>₫</symbol>
-				<symbol alt="narrow" draft="contributed">₫</symbol>
 			</currency>
 			<currency type="VUV">
 				<displayName>واتوی وانوواتو</displayName>
 				<displayName count="one">واتوی وانوواتو</displayName>
 				<displayName count="other">واتوی وانوواتو</displayName>
-				<symbol draft="contributed">VUV</symbol>
 			</currency>
 			<currency type="WST">
 				<displayName>تالای ساموا</displayName>
 				<displayName count="one">تالای ساموا</displayName>
 				<displayName count="other">تالای ساموا</displayName>
-				<symbol draft="contributed">WST</symbol>
 			</currency>
 			<currency type="XAF">
 				<displayName>فرانک CFA مرکز افریقا</displayName>
 				<displayName count="one">فرانک CFA مرکز افریقا</displayName>
 				<displayName count="other">فرانک CFA مرکز افریقا</displayName>
-				<symbol>FCFA</symbol>
 			</currency>
 			<currency type="XAG">
 				<displayName>نقره</displayName>
@@ -6950,7 +6803,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">دلار شرق کارائیب</displayName>
 				<displayName count="other">دلار شرق کارائیب</displayName>
 				<symbol>$EC</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="XFO">
 				<displayName>فرانک طلای فرانسه</displayName>
@@ -6959,7 +6811,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>فرانک CFA غرب افریقا</displayName>
 				<displayName count="one">فرانک CFA غرب افریقا</displayName>
 				<displayName count="other">فرانک CFA غرب افریقا</displayName>
-				<symbol>CFA</symbol>
 			</currency>
 			<currency type="XPD">
 				<displayName>پالادیم</displayName>
@@ -6968,7 +6819,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>فرانک اقیانوسیه</displayName>
 				<displayName count="one">فرانک اقیانوسیه</displayName>
 				<displayName count="other">فرانک اقیانوسیه</displayName>
-				<symbol>CFPF</symbol>
 			</currency>
 			<currency type="XPT">
 				<displayName>پلاتین</displayName>
@@ -6985,14 +6835,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ریال یمن</displayName>
 				<displayName count="one">ریال یمن</displayName>
 				<displayName count="other">ریال یمن</displayName>
-				<symbol draft="contributed">YER</symbol>
 			</currency>
 			<currency type="ZAR">
 				<displayName>راند افریقای جنوبی</displayName>
 				<displayName count="one">راند افریقای جنوبی</displayName>
 				<displayName count="other">راند افریقای جنوبی</displayName>
-				<symbol draft="contributed">ZAR</symbol>
-				<symbol alt="narrow" draft="contributed">R</symbol>
 			</currency>
 			<currency type="ZMK">
 				<displayName>کواچای زامبیا (۱۹۶۸ تا ۲۰۱۲)</displayName>
@@ -7001,8 +6848,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>کواچای زامبیا</displayName>
 				<displayName count="one">کواچای زامبیا</displayName>
 				<displayName count="other">کواچای زامبیا</displayName>
-				<symbol draft="contributed">ZMW</symbol>
-				<symbol alt="narrow" draft="contributed">ZK</symbol>
 			</currency>
 			<currency type="ZWD">
 				<displayName>دلار زیمبابوه (۱۹۸۰ تا ۲۰۰۸)</displayName>
@@ -7015,12 +6860,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
+			<pattern type="approximately">~{0}</pattern>
 			<pattern type="atLeast">‎{0}+‎</pattern>
+			<pattern type="atMost">≤{0}</pattern>
 			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
 		<minimalPairs>
 			<pluralMinimalPairs count="one">او {0} فیلم در هفته می‌بیند که کمدی است.</pluralMinimalPairs>
-			<pluralMinimalPairs count="other">او {0} فیلم در هفته می‌بیند که کمدی هستند.</pluralMinimalPairs>
+			<pluralMinimalPairs count="other">او {0} فیلم در هفته می‌بیند که کمدی‌اند.</pluralMinimalPairs>
 			<ordinalMinimalPairs ordinal="other">در پیچ {0}ام سمت راست بپیچید.</ordinalMinimalPairs>
 		</minimalPairs>
 	</numbers>
@@ -7114,6 +6961,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} اینچ مربع</unitPattern>
 				<perUnitPattern>{0} در اینچ مربع</perUnitPattern>
 			</unit>
+			<unit type="area-dunam">
+				<displayName>دونوم</displayName>
+				<unitPattern count="one" draft="contributed">{0} دونوم</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} دونوم</unitPattern>
+			</unit>
 			<unit type="concentr-karat">
 				<displayName>عیار</displayName>
 				<unitPattern count="one">{0} عیار</unitPattern>
@@ -7134,6 +6986,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} بخش در میلیون</unitPattern>
 				<unitPattern count="other">{0} بخش در میلیون</unitPattern>
 			</unit>
+			<unit type="concentr-percent">
+				<displayName>درصد</displayName>
+				<unitPattern count="one">{0} درصد</unitPattern>
+				<unitPattern count="other">{0} درصد</unitPattern>
+			</unit>
+			<unit type="concentr-permille">
+				<displayName>هزارم</displayName>
+				<unitPattern count="one">{0} هزارم</unitPattern>
+				<unitPattern count="other">{0} هزارم</unitPattern>
+			</unit>
+			<unit type="concentr-permyriad">
+				<displayName>ده‌هزارم</displayName>
+				<unitPattern count="one">{0} ده‌هزارم</unitPattern>
+				<unitPattern count="other">{0} ده‌هزارم</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName>مول</displayName>
+				<unitPattern count="one">{0} مول</unitPattern>
+				<unitPattern count="other">{0} مول</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>لیتر در کیلومتر</displayName>
 				<unitPattern count="one">{0} لیتر در کیلومتر</unitPattern>
@@ -7153,6 +7025,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>مایل در امپریال گالن</displayName>
 				<unitPattern count="one">{0} مایل در امپریال گالن</unitPattern>
 				<unitPattern count="other">{0} مایل در امپریال گالن</unitPattern>
+			</unit>
+			<unit type="digital-petabyte">
+				<displayName>پتابایت</displayName>
+				<unitPattern count="one">{0} پتابایت</unitPattern>
+				<unitPattern count="other">{0} پتابایت</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>ترابایت</displayName>
@@ -7316,6 +7193,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} کیلووات‌ساعت</unitPattern>
 				<unitPattern count="other">{0} کیلووات‌ساعت</unitPattern>
 			</unit>
+			<unit type="energy-electronvolt">
+				<displayName>الکترون ولت</displayName>
+				<unitPattern count="one">{0} الکترون ولت</unitPattern>
+				<unitPattern count="other">{0} الکترون‌ولت</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName>بی‌تی‌یو</displayName>
+				<unitPattern count="one">{0} بی‌تی‌یو</unitPattern>
+				<unitPattern count="other">{0} بی‌تی‌یو</unitPattern>
+			</unit>
+			<unit type="force-pound-force">
+				<displayName>پوند-نیرو</displayName>
+				<unitPattern count="one">{0} پوند-نیرو</unitPattern>
+				<unitPattern count="other">{0} پوند-نیرو</unitPattern>
+			</unit>
+			<unit type="force-newton">
+				<displayName>نیوتن</displayName>
+				<unitPattern count="one">{0} نیوتن</unitPattern>
+				<unitPattern count="other">{0} نیوتن</unitPattern>
+			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>گیگاهرتز</displayName>
 				<unitPattern count="one">{0} گیگاهرتز</unitPattern>
@@ -7431,10 +7328,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} امتیاز</unitPattern>
 				<unitPattern count="other">{0} امتیاز</unitPattern>
 			</unit>
+			<unit type="length-solar-radius">
+				<displayName draft="contributed">شعاع خورشید</displayName>
+				<unitPattern count="one" draft="contributed">{0} شعاع خورشید</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} شعاع خورشید</unitPattern>
+			</unit>
 			<unit type="light-lux">
 				<displayName>لوکس</displayName>
 				<unitPattern count="one">{0} لوکس</unitPattern>
 				<unitPattern count="other">{0} لوکس</unitPattern>
+			</unit>
+			<unit type="light-solar-luminosity">
+				<displayName>تابندگی خورشید</displayName>
+				<unitPattern count="one">{0} تابندگی خورشید</unitPattern>
+				<unitPattern count="other">{0} تابندگی خورشید</unitPattern>
 			</unit>
 			<unit type="mass-metric-ton">
 				<displayName>تن متریک</displayName>
@@ -7489,6 +7396,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>قیراط</displayName>
 				<unitPattern count="one">{0} قیراط</unitPattern>
 				<unitPattern count="other">{0} قیراط</unitPattern>
+			</unit>
+			<unit type="mass-dalton">
+				<displayName>دالتون</displayName>
+				<unitPattern count="one">{0} دالتون</unitPattern>
+				<unitPattern count="other">{0} دالتون</unitPattern>
+			</unit>
+			<unit type="mass-earth-mass">
+				<displayName>جرم زمین</displayName>
+				<unitPattern count="one">{0} جرم زمین</unitPattern>
+				<unitPattern count="other">{0} جرم زمین</unitPattern>
+			</unit>
+			<unit type="mass-solar-mass">
+				<displayName>جرم خورشید</displayName>
+				<unitPattern count="one">{0} جرم خورشید</unitPattern>
+				<unitPattern count="other">{0} جرم خورشید</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>گیگاوات</displayName>
@@ -7545,6 +7467,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} میلی‌بار</unitPattern>
 				<unitPattern count="other">{0} میلی‌بار</unitPattern>
 			</unit>
+			<unit type="pressure-atmosphere">
+				<displayName>اتمسفر</displayName>
+				<unitPattern count="one">{0} اتمسفر</unitPattern>
+				<unitPattern count="other">{0} اتمسفر</unitPattern>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<displayName>کیلوپاسکال</displayName>
+				<unitPattern count="one">{0} کیلوپاسکال</unitPattern>
+				<unitPattern count="other">{0} کیلوپاسکال</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<displayName>مگاپاسکال</displayName>
+				<unitPattern count="one">{0} مگاپاسکال</unitPattern>
+				<unitPattern count="other">{0} مگاپاسکال</unitPattern>
+			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>کیلومتر در ساعت</displayName>
 				<unitPattern count="one">{0} کیلومتر در ساعت</unitPattern>
@@ -7565,11 +7502,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} گره</unitPattern>
 				<unitPattern count="other">{0} گره</unitPattern>
 			</unit>
-			<unit type="temperature-generic">
-				<displayName>°</displayName>
-				<unitPattern count="one">{0}°</unitPattern>
-				<unitPattern count="other">{0}°</unitPattern>
-			</unit>
 			<unit type="temperature-celsius">
 				<displayName>درجهٔ سلسیوس</displayName>
 				<unitPattern count="one">{0} درجهٔ سلسیوس</unitPattern>
@@ -7584,6 +7516,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>درجهٔ کلوین</displayName>
 				<unitPattern count="one">{0} درجهٔ کلوین</unitPattern>
 				<unitPattern count="other">{0} درجهٔ کلوین</unitPattern>
+			</unit>
+			<unit type="torque-pound-foot">
+				<displayName>پوند-فوت</displayName>
+				<unitPattern count="one">{0} پوند-فوت</unitPattern>
+				<unitPattern count="other">{0} پوند-فوت</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<displayName>نیوتن‌متر</displayName>
+				<unitPattern count="one">{0} نیوتن‌متر</unitPattern>
+				<unitPattern count="other">{0} نیوتن‌متر</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<displayName>کیلومتر مکعب</displayName>
@@ -7700,6 +7642,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} اونس سیال</unitPattern>
 				<unitPattern count="other">{0} اونس سیال</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName>اونس سیال انگلیسی</displayName>
+				<unitPattern count="one">{0} اونس سیال انگلیسی</unitPattern>
+				<unitPattern count="other">{0} اونس سیال انگلیسی</unitPattern>
+			</unit>
 			<unit type="volume-tablespoon">
 				<displayName>قاشق غذاخوری</displayName>
 				<unitPattern count="one">{0} قاشق غذاخوری</unitPattern>
@@ -7710,7 +7657,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} قاشق چای‌خوری</unitPattern>
 				<unitPattern count="other">{0} قاشق چای‌خوری</unitPattern>
 			</unit>
+			<unit type="volume-barrel">
+				<displayName>بشکه</displayName>
+				<unitPattern count="one">{0} بشکه</unitPattern>
+				<unitPattern count="other">{0} بشکه</unitPattern>
+			</unit>
 			<coordinateUnit>
+				<displayName>جهت اصلی</displayName>
 				<coordinateUnitPattern type="east">{0} شرقی</coordinateUnitPattern>
 				<coordinateUnitPattern type="north">{0} شمالی</coordinateUnitPattern>
 				<coordinateUnitPattern type="south">{0} جنوبی</coordinateUnitPattern>
@@ -7718,9 +7671,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
-			<compoundUnit type="per">
-				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
-			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>نیروی جاذبه</displayName>
 				<unitPattern count="one">{0} جاذبه</unitPattern>
@@ -7760,7 +7710,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>کیلومتر مربع</displayName>
 				<unitPattern count="one">{0}‎ km²</unitPattern>
 				<unitPattern count="other">{0}‎ km²</unitPattern>
-				<perUnitPattern>{0}/km²</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>هکتار</displayName>
@@ -7783,7 +7732,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>مایل مربع</displayName>
 				<unitPattern count="one">{0} مایل مربع</unitPattern>
 				<unitPattern count="other">{0} مایل مربع</unitPattern>
-				<perUnitPattern>{0}/mi²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>جریب</displayName>
@@ -7806,6 +7754,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} اینچ مربع</unitPattern>
 				<perUnitPattern>{0} در اینچ مربع</perUnitPattern>
 			</unit>
+			<unit type="area-dunam">
+				<displayName>دونوم</displayName>
+				<unitPattern count="one" draft="contributed">{0} دونوم</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} دونوم</unitPattern>
+			</unit>
 			<unit type="concentr-karat">
 				<displayName>عیار</displayName>
 				<unitPattern count="one">{0} عیار</unitPattern>
@@ -7813,18 +7766,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-milligram-per-deciliter">
 				<displayName>میلی‌گرم در دسی‌لیتر</displayName>
-				<unitPattern count="one">{0} mg/dL</unitPattern>
-				<unitPattern count="other">{0} mg/dL</unitPattern>
 			</unit>
 			<unit type="concentr-millimole-per-liter">
 				<displayName>میلی‌مول/لیتر</displayName>
-				<unitPattern count="one">{0} mmol/L</unitPattern>
-				<unitPattern count="other">{0} mmol/L</unitPattern>
 			</unit>
 			<unit type="concentr-part-per-million">
 				<displayName>بخش/میلیون</displayName>
-				<unitPattern count="one">{0} ppm</unitPattern>
-				<unitPattern count="other">{0} ppm</unitPattern>
+			</unit>
+			<unit type="concentr-percent">
+				<displayName>درصد</displayName>
+				<unitPattern count="one">{0}٪</unitPattern>
+				<unitPattern count="other">{0}٪</unitPattern>
+			</unit>
+			<unit type="concentr-permille">
+				<displayName>هزارم</displayName>
+			</unit>
+			<unit type="concentr-permyriad">
+				<displayName>ده‌هزارم</displayName>
+				<unitPattern count="one">{0}‱</unitPattern>
+				<unitPattern count="other">{0}‱</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName>مول</displayName>
+				<unitPattern count="one">{0} مول</unitPattern>
+				<unitPattern count="other">{0} مول</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>لیتر/کیلومتر</displayName>
@@ -7843,8 +7808,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="consumption-mile-per-gallon-imperial">
 				<displayName>مایل/امپریال گالن</displayName>
-				<unitPattern count="one">{0} mpg Imp.</unitPattern>
-				<unitPattern count="other">{0} mpg Imp.</unitPattern>
+			</unit>
+			<unit type="digital-petabyte">
+				<displayName>پتابایت</displayName>
+				<unitPattern count="one">{0} پتابایت</unitPattern>
+				<unitPattern count="other">{0} پتابایت</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>ترابایت</displayName>
@@ -8008,6 +7976,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ک.وات‌ساعت</unitPattern>
 				<unitPattern count="other">{0} ک.وات‌ساعت</unitPattern>
 			</unit>
+			<unit type="energy-electronvolt">
+				<displayName>الکترون‌ولت</displayName>
+				<unitPattern count="one">{0} eV</unitPattern>
+				<unitPattern count="other">{0} eV</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName>بی‌تی‌یو</displayName>
+				<unitPattern count="one">{0} بی‌تی‌یو</unitPattern>
+				<unitPattern count="other">{0} بی‌تی‌یو</unitPattern>
+			</unit>
+			<unit type="force-pound-force">
+				<displayName>پوند-نیرو</displayName>
+				<unitPattern count="one">{0} پوند-نیرو</unitPattern>
+				<unitPattern count="other">{0} پوند-نیرو</unitPattern>
+			</unit>
+			<unit type="force-newton">
+				<displayName>نیوتن</displayName>
+				<unitPattern count="one">{0} نیوتن</unitPattern>
+				<unitPattern count="other">{0} نیوتن</unitPattern>
+			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>گیگاهرتز</displayName>
 				<unitPattern count="one">{0} گیگاهرتز</unitPattern>
@@ -8123,10 +8111,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} امتیاز</unitPattern>
 				<unitPattern count="other">{0} امتیاز</unitPattern>
 			</unit>
+			<unit type="length-solar-radius">
+				<displayName draft="contributed">شعاع خورشید</displayName>
+				<unitPattern count="one" draft="contributed">{0} ☉R</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ☉R</unitPattern>
+			</unit>
 			<unit type="light-lux">
 				<displayName>لوکس</displayName>
 				<unitPattern count="one">{0} لوکس</unitPattern>
 				<unitPattern count="other">{0} لوکس</unitPattern>
+			</unit>
+			<unit type="light-solar-luminosity">
+				<displayName>تابندگی خورشید</displayName>
+				<unitPattern count="one">{0} ☉L</unitPattern>
+				<unitPattern count="other">{0} ☉L</unitPattern>
 			</unit>
 			<unit type="mass-metric-ton">
 				<displayName>تن متریک</displayName>
@@ -8181,6 +8179,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>قیراط</displayName>
 				<unitPattern count="one">{0} قیراط</unitPattern>
 				<unitPattern count="other">{0} قیراط</unitPattern>
+			</unit>
+			<unit type="mass-dalton">
+				<displayName>دالتون</displayName>
+				<unitPattern count="one">{0} دالتون</unitPattern>
+				<unitPattern count="other">{0} دالتون</unitPattern>
+			</unit>
+			<unit type="mass-earth-mass">
+				<displayName>جرم زمین</displayName>
+				<unitPattern count="one">{0} M⊕</unitPattern>
+				<unitPattern count="other">{0} ⊕M</unitPattern>
+			</unit>
+			<unit type="mass-solar-mass">
+				<displayName>جرم خورشید</displayName>
+				<unitPattern count="one">{0} ☉M</unitPattern>
+				<unitPattern count="other">{0} ☉M</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>گیگاوات</displayName>
@@ -8237,6 +8250,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} میلی‌بار</unitPattern>
 				<unitPattern count="other">{0} میلی‌بار</unitPattern>
 			</unit>
+			<unit type="pressure-atmosphere">
+				<displayName>اتمسفر</displayName>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<displayName>ک.پاسکال</displayName>
+				<unitPattern count="one">{0} ک.پاسکال</unitPattern>
+				<unitPattern count="other">{0} ک.پاسکال</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<displayName>مگاپاسکال</displayName>
+				<unitPattern count="one">{0} مگاپاسکال</unitPattern>
+				<unitPattern count="other">{0} مگاپاسکال</unitPattern>
+			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>کیلومتر در ساعت</displayName>
 				<unitPattern count="one">{0}‎ km/h</unitPattern>
@@ -8257,25 +8283,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} گره</unitPattern>
 				<unitPattern count="other">{0} گره</unitPattern>
 			</unit>
-			<unit type="temperature-generic">
-				<displayName>°</displayName>
-				<unitPattern count="one">{0}°</unitPattern>
-				<unitPattern count="other">{0}°</unitPattern>
-			</unit>
 			<unit type="temperature-celsius">
 				<displayName>درجهٔ سلسیوس</displayName>
-				<unitPattern count="one">{0}°C</unitPattern>
-				<unitPattern count="other">{0}°C</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
 				<displayName>درجهٔ فارنهایت</displayName>
-				<unitPattern count="one">{0}°F</unitPattern>
-				<unitPattern count="other">{0}°F</unitPattern>
 			</unit>
 			<unit type="temperature-kelvin">
 				<displayName>درجهٔ کلوین</displayName>
 				<unitPattern count="one">‎{0} K</unitPattern>
 				<unitPattern count="other">‎{0} K</unitPattern>
+			</unit>
+			<unit type="torque-pound-foot">
+				<displayName>پوند-فوت</displayName>
+				<unitPattern count="one">{0} پوند-فوت</unitPattern>
+				<unitPattern count="other">{0} پوند-فوت</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<displayName>نیوتن‌متر</displayName>
+				<unitPattern count="one">{0} نیوتن‌متر</unitPattern>
+				<unitPattern count="other">{0} نیوتن‌متر</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<displayName>کیلومتر مکعب</displayName>
@@ -8392,6 +8419,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}‎ fl oz</unitPattern>
 				<unitPattern count="other">{0}‎ fl oz</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName>اونس سیال انگلیسی</displayName>
+				<unitPattern count="one">{0} fl oz Imp</unitPattern>
+				<unitPattern count="other">{0} fl oz Imp</unitPattern>
+			</unit>
 			<unit type="volume-tablespoon">
 				<displayName>قاشق غ.</displayName>
 				<unitPattern count="one">{0} قاشق غ.</unitPattern>
@@ -8402,7 +8434,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} قاشق چ.</unitPattern>
 				<unitPattern count="other">{0} قاشق چ.</unitPattern>
 			</unit>
+			<unit type="volume-barrel">
+				<displayName>بشکه</displayName>
+				<unitPattern count="one">{0} بشکه</unitPattern>
+				<unitPattern count="other">{0} بشکه</unitPattern>
+			</unit>
 			<coordinateUnit>
+				<displayName>جهت</displayName>
 				<coordinateUnitPattern type="east">{0} شرقی</coordinateUnitPattern>
 				<coordinateUnitPattern type="north">{0} شمالی</coordinateUnitPattern>
 				<coordinateUnitPattern type="south">{0} جنوبی</coordinateUnitPattern>
@@ -8410,9 +8448,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
-			<compoundUnit type="per">
-				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
-			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName draft="contributed">نیروی جاذبه</displayName>
 				<unitPattern count="one">{0}G</unitPattern>
@@ -8420,8 +8455,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="acceleration-meter-per-second-squared">
 				<displayName draft="contributed">متر/مجذور ثانیه</displayName>
-				<unitPattern count="one" draft="contributed">{0} m/s²</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} m/s²</unitPattern>
 			</unit>
 			<unit type="angle-radian">
 				<displayName>رادیان</displayName>
@@ -8467,6 +8500,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="area-square-foot">
 				<unitPattern count="one">{0}ft²</unitPattern>
 				<unitPattern count="other">{0}ft²</unitPattern>
+			</unit>
+			<unit type="concentr-percent">
+				<displayName>٪</displayName>
+				<unitPattern count="one">{0}٪</unitPattern>
+				<unitPattern count="other">{0}٪</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100kilometers">
 				<displayName>لیتر/۱۰۰ کیلومتر</displayName>
@@ -8560,7 +8598,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>کیلومتر</displayName>
 				<unitPattern count="one">{0}km</unitPattern>
 				<unitPattern count="other">{0}km</unitPattern>
-				<perUnitPattern draft="contributed">{0}/km</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName>متر</displayName>
@@ -8569,7 +8606,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern>{0}/متر</perUnitPattern>
 			</unit>
 			<unit type="length-decimeter">
-				<displayName draft="contributed">dm</displayName>
 				<unitPattern count="one" draft="contributed">{0}dm</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}dm</unitPattern>
 			</unit>
@@ -8585,7 +8621,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} م‌م</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
-				<displayName draft="contributed">µm</displayName>
 				<unitPattern count="one" draft="contributed">{0}µm</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}µm</unitPattern>
 			</unit>
@@ -8633,8 +8668,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="length-astronomical-unit">
 				<displayName>واحد نجومی</displayName>
-				<unitPattern count="one" draft="contributed">{0} au</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} au</unitPattern>
 			</unit>
 			<unit type="mass-metric-ton">
 				<displayName draft="contributed">تن متریک</displayName>
@@ -8645,7 +8678,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>کیلوگرم</displayName>
 				<unitPattern count="one">{0}kg</unitPattern>
 				<unitPattern count="other">{0}kg</unitPattern>
-				<perUnitPattern draft="contributed">{0}/kg</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<displayName>گرم</displayName>
@@ -8655,8 +8687,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="mass-milligram">
 				<displayName draft="contributed">میلی‌گرم</displayName>
-				<unitPattern count="one" draft="contributed">{0} mg</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} mg</unitPattern>
 			</unit>
 			<unit type="mass-microgram">
 				<displayName draft="contributed">میکروگرم</displayName>
@@ -8738,23 +8768,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" draft="contributed">{0} گره</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} گره</unitPattern>
 			</unit>
-			<unit type="temperature-generic">
-				<displayName draft="contributed">°</displayName>
-				<unitPattern count="one" draft="contributed">{0}°</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}°</unitPattern>
-			</unit>
 			<unit type="temperature-celsius">
 				<displayName>‎°C</displayName>
-				<unitPattern count="one">{0}°C</unitPattern>
-				<unitPattern count="other">{0}°C</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
 				<displayName>‎°F</displayName>
-				<unitPattern count="one">{0}°F</unitPattern>
-				<unitPattern count="other">{0}°F</unitPattern>
 			</unit>
 			<unit type="temperature-kelvin">
-				<displayName>K</displayName>
 				<unitPattern count="one">{0}K</unitPattern>
 				<unitPattern count="other">{0}K</unitPattern>
 			</unit>
@@ -8772,6 +8792,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} لیتر</unitPattern>
 			</unit>
 			<coordinateUnit>
+				<displayName>جهت</displayName>
 				<coordinateUnitPattern type="east">{0} شرقی</coordinateUnitPattern>
 				<coordinateUnitPattern type="north">{0} شمالی</coordinateUnitPattern>
 				<coordinateUnitPattern type="south">{0} جنوبی</coordinateUnitPattern>
@@ -8800,6 +8821,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<listPatternPart type="middle">{0}، {1}</listPatternPart>
 			<listPatternPart type="end">{0}، یا {1}</listPatternPart>
 			<listPatternPart type="2">{0} یا {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-narrow">
+			<listPatternPart type="start">{0}،‏ {1}</listPatternPart>
+			<listPatternPart type="middle">{0}،‏ {1}</listPatternPart>
+			<listPatternPart type="end">{0}، و {1}</listPatternPart>
+			<listPatternPart type="2">{0}، {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="standard-short">
 			<listPatternPart type="start">{0}،‏ {1}</listPatternPart>
@@ -8882,7 +8909,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabel type="hanzi_traditional">هانزی (سنتی)</characterLabel>
 		<characterLabel type="heart">قلب</characterLabel>
 		<characterLabel type="historic_scripts">دبیره‌های تاریخی</characterLabel>
-		<characterLabel type="ideographic_desc_characters">نویسه‌های توصیفی اندیش‌نگاری</characterLabel>
+		<characterLabel type="ideographic_desc_characters">نویسه‌های توصیفی اندیشه‌نگاری</characterLabel>
 		<characterLabel type="japanese_kana">کانای ژاپنی</characterLabel>
 		<characterLabel type="kanbun">کانبوم</characterLabel>
 		<characterLabel type="kanji">کانجی</characterLabel>
@@ -8931,4 +8958,74 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabel type="western_asian_scripts">دبیره‌های آسیای غربی</characterLabel>
 		<characterLabel type="whitespace">فضای سفید</characterLabel>
 	</characterLabels>
+	<typographicNames>
+		<axisName type="ital">ایتالیک</axisName>
+		<axisName type="opsz">اندازهٔ نوری</axisName>
+		<axisName type="slnt">کج</axisName>
+		<axisName type="wdth">پهنا</axisName>
+		<axisName type="wght">وزن</axisName>
+		<styleName type="ital" subtype="1">شکسته</styleName>
+		<styleName type="opsz" subtype="8">حروف کوچک</styleName>
+		<styleName type="opsz" subtype="12">متن چاپی</styleName>
+		<styleName type="opsz" subtype="18">عنوان دادن</styleName>
+		<styleName type="opsz" subtype="72">حروف بزرگ</styleName>
+		<styleName type="opsz" subtype="144">دیوارکوب</styleName>
+		<styleName type="slnt" subtype="-12">مایل‌به‌چپ</styleName>
+		<styleName type="slnt" subtype="0">عمود</styleName>
+		<styleName type="slnt" subtype="12">مایل</styleName>
+		<styleName type="slnt" subtype="24">خیلی مایل</styleName>
+		<styleName type="wdth" subtype="50">فوق‌العاده متراکم</styleName>
+		<styleName type="wdth" subtype="50" alt="compressed">فوق‌العاده فشرده</styleName>
+		<styleName type="wdth" subtype="50" alt="narrow">فوق‌العاده نازک</styleName>
+		<styleName type="wdth" subtype="62.5">خیلی متراکم</styleName>
+		<styleName type="wdth" subtype="62.5" alt="compressed">خیلی فشرده</styleName>
+		<styleName type="wdth" subtype="62.5" alt="narrow">خیلی نازک</styleName>
+		<styleName type="wdth" subtype="75">متراکم</styleName>
+		<styleName type="wdth" subtype="75" alt="compressed">فشرده</styleName>
+		<styleName type="wdth" subtype="75" alt="narrow">فشرده</styleName>
+		<styleName type="wdth" subtype="87.5">نیم‌متراکم</styleName>
+		<styleName type="wdth" subtype="87.5" alt="compressed">نیم‌فشرده</styleName>
+		<styleName type="wdth" subtype="87.5" alt="narrow">نیم‌نازک</styleName>
+		<styleName type="wdth" subtype="100">معمولی</styleName>
+		<styleName type="wdth" subtype="112.5">نیم‌گسترده</styleName>
+		<styleName type="wdth" subtype="112.5" alt="extended">نیم‌کشیده</styleName>
+		<styleName type="wdth" subtype="112.5" alt="wide">نیم‌پهن</styleName>
+		<styleName type="wdth" subtype="125">گسترده</styleName>
+		<styleName type="wdth" subtype="125" alt="extended">کشیده</styleName>
+		<styleName type="wdth" subtype="125" alt="wide">پهن</styleName>
+		<styleName type="wdth" subtype="150">خیلی گسترده</styleName>
+		<styleName type="wdth" subtype="150" alt="extended">خیلی کشیده</styleName>
+		<styleName type="wdth" subtype="150" alt="wide">خیلی پهن</styleName>
+		<styleName type="wdth" subtype="200">فوق‌العاده گسترده</styleName>
+		<styleName type="wdth" subtype="200" alt="extended">فوق‌العاده کشیده</styleName>
+		<styleName type="wdth" subtype="200" alt="wide">فوق‌العاده پهن</styleName>
+		<styleName type="wght" subtype="100">باریک</styleName>
+		<styleName type="wght" subtype="200">خیلی روشن</styleName>
+		<styleName type="wght" subtype="200" alt="ultra">فوق‌العاده روشن</styleName>
+		<styleName type="wght" subtype="300">روشن</styleName>
+		<styleName type="wght" subtype="350">نیم‌روشن</styleName>
+		<styleName type="wght" subtype="380">کتابی</styleName>
+		<styleName type="wght" subtype="400">عادی</styleName>
+		<styleName type="wght" subtype="500">متوسط</styleName>
+		<styleName type="wght" subtype="600">نیم‌توپر</styleName>
+		<styleName type="wght" subtype="600" alt="demi">نیم‌توپر</styleName>
+		<styleName type="wght" subtype="700">توپر</styleName>
+		<styleName type="wght" subtype="800">خیلی توپر</styleName>
+		<styleName type="wght" subtype="900">مشکی</styleName>
+		<styleName type="wght" subtype="900" alt="heavy">سنگین</styleName>
+		<styleName type="wght" subtype="950">خیلی مشکی</styleName>
+		<styleName type="wght" subtype="950" alt="ultrablack">فوق‌العاده مشکی</styleName>
+		<styleName type="wght" subtype="950" alt="ultraheavy">فوق‌العاده سنگین</styleName>
+		<featureName type="afrc">کسری‌های عمودی</featureName>
+		<featureName type="cpsp">فاصله‌گذاری حروف بزرگ</featureName>
+		<featureName type="dlig">لیگاتورهای اختیاری</featureName>
+		<featureName type="frac">کسری‌های مورب</featureName>
+		<featureName type="lnum">اعداد هم‌تراز</featureName>
+		<featureName type="onum">ارقام به شیوه قدیمی</featureName>
+		<featureName type="ordn">اعداد ترتیبی</featureName>
+		<featureName type="pnum">اعداد نسبی</featureName>
+		<featureName type="smcp">حروف بزرگِ کوچک</featureName>
+		<featureName type="tnum">اعداد ستونی</featureName>
+		<featureName type="zero">صفرِ خط‌دار</featureName>
+	</typographicNames>
 </ldml>

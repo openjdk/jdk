@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2018 Unicode, Inc.
+<!-- Copyright © 1991-2019 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 13869 $"/>
+		<version number="$Revision: 14782 $"/>
 		<language type="kl"/>
 	</identity>
 	<localeDisplayNames>
@@ -625,7 +625,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<days>
 					<dayContext type="format">
 						<dayWidth type="abbreviated">
-							<day type="sun">sab</day>
+							<day type="sun">sap</day>
 							<day type="mon">ata</day>
 							<day type="tue">mar</day>
 							<day type="wed">pin</day>
@@ -634,7 +634,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="sat">arf</day>
 						</dayWidth>
 						<dayWidth type="short">
-							<day type="sun">sab</day>
+							<day type="sun">sap</day>
 							<day type="mon">ata</day>
 							<day type="tue">mar</day>
 							<day type="wed">pin</day>
@@ -643,7 +643,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="sat">arf</day>
 						</dayWidth>
 						<dayWidth type="wide">
-							<day type="sun">sabaat</day>
+							<day type="sun">sapaat</day>
 							<day type="mon">ataasinngorneq</day>
 							<day type="tue">marlunngorneq</day>
 							<day type="wed">pingasunngorneq</day>
@@ -663,7 +663,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="sat" draft="unconfirmed">A</day>
 						</dayWidth>
 						<dayWidth type="short">
-							<day type="sun">sab</day>
+							<day type="sun">sap</day>
 							<day type="mon">ata</day>
 							<day type="tue">mar</day>
 							<day type="wed">pin</day>
@@ -672,7 +672,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="sat">arf</day>
 						</dayWidth>
 						<dayWidth type="wide">
-							<day type="sun">sabaat</day>
+							<day type="sun">sapaat</day>
 							<day type="mon">ataasinngorneq</day>
 							<day type="tue">marlunngorneq</day>
 							<day type="wed">pingasunngorneq</day>
@@ -1114,7 +1114,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<superscriptingExponent draft="unconfirmed">·</superscriptingExponent>
 			<perMille draft="unconfirmed">‰</perMille>
 			<infinity draft="unconfirmed">∞</infinity>
-			<nan draft="unconfirmed">¤¤¤</nan>
+			<nan draft="unconfirmed">NaN</nan>
 		</symbols>
 		<decimalFormats numberSystem="latn">
 			<decimalFormatLength>
@@ -1265,7 +1265,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
-			<pattern type="atLeast" draft="unconfirmed">⩾{0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">≥{0}</pattern>
 			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
 		</miscPatterns>
 		<minimalPairs>
@@ -1501,8 +1501,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="length-fathom">
 				<displayName>fm</displayName>
-				<unitPattern count="one">{0} fm</unitPattern>
-				<unitPattern count="other">{0} fm</unitPattern>
+				<unitPattern count="one">{0} fth</unitPattern>
+				<unitPattern count="other">{0} fth</unitPattern>
 			</unit>
 			<unit type="length-nautical-mile">
 				<displayName draft="unconfirmed">sømili</displayName>
@@ -1894,8 +1894,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="length-fathom">
 				<displayName>fm</displayName>
-				<unitPattern count="one">{0} fm</unitPattern>
-				<unitPattern count="other">{0} fm</unitPattern>
+				<unitPattern count="one">{0} fth</unitPattern>
+				<unitPattern count="other">{0} fth</unitPattern>
 			</unit>
 			<unit type="length-nautical-mile">
 				<displayName draft="unconfirmed">sømili</displayName>
@@ -2256,8 +2256,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="length-fathom">
 				<displayName>fm</displayName>
-				<unitPattern count="one">{0} fm</unitPattern>
-				<unitPattern count="other">{0} fm</unitPattern>
+				<unitPattern count="one">{0} fth</unitPattern>
+				<unitPattern count="other">{0} fth</unitPattern>
 			</unit>
 			<unit type="length-nautical-mile">
 				<displayName draft="unconfirmed">sømili</displayName>

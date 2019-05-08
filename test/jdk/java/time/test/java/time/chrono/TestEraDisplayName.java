@@ -66,8 +66,8 @@ public class TestEraDisplayName {
 
             // JapaneseEra
             { JapaneseEra.MEIJI,    TextStyle.FULL,     Locale.US,      "Meiji" },
-            { JapaneseEra.TAISHO,   TextStyle.FULL,     Locale.US,      "Taisho" },
-            { JapaneseEra.SHOWA,    TextStyle.FULL,     Locale.US,      "Showa" },
+            { JapaneseEra.TAISHO,   TextStyle.FULL,     Locale.US,      "Taish\u014d" },
+            { JapaneseEra.SHOWA,    TextStyle.FULL,     Locale.US,      "Sh\u014dwa" },
             { JapaneseEra.HEISEI,   TextStyle.FULL,     Locale.US,      "Heisei" },
             { JapaneseEra.REIWA,    TextStyle.FULL,     Locale.US,      "Reiwa" },
             { JapaneseEra.MEIJI,    TextStyle.FULL,     Locale.JAPAN,   "\u660e\u6cbb" },
@@ -76,8 +76,8 @@ public class TestEraDisplayName {
             { JapaneseEra.HEISEI,   TextStyle.FULL,     Locale.JAPAN,   "\u5e73\u6210" },
             { JapaneseEra.REIWA,    TextStyle.FULL,     Locale.JAPAN,   "\u4ee4\u548c" },
             { JapaneseEra.MEIJI,    TextStyle.SHORT,    Locale.US,      "Meiji" },
-            { JapaneseEra.TAISHO,   TextStyle.SHORT,    Locale.US,      "Taisho" },
-            { JapaneseEra.SHOWA,    TextStyle.SHORT,    Locale.US,      "Showa" },
+            { JapaneseEra.TAISHO,   TextStyle.SHORT,    Locale.US,      "Taish\u014d" },
+            { JapaneseEra.SHOWA,    TextStyle.SHORT,    Locale.US,      "Sh\u014dwa" },
             { JapaneseEra.HEISEI,   TextStyle.SHORT,    Locale.US,      "Heisei" },
             { JapaneseEra.REIWA,    TextStyle.SHORT,    Locale.US,      "Reiwa" },
             { JapaneseEra.MEIJI,    TextStyle.SHORT,    Locale.JAPAN,   "\u660e\u6cbb" },
@@ -104,9 +104,7 @@ public class TestEraDisplayName {
                 "\u0e1e\u0e38\u0e17\u0e18\u0e28\u0e31\u0e01\u0e23\u0e32\u0e0a" },
             { ThaiBuddhistEra.BEFORE_BE,    TextStyle.SHORT, Locale.US,     "BC" },
             { ThaiBuddhistEra.BE,           TextStyle.SHORT, Locale.US,     "BE" },
-            { ThaiBuddhistEra.BEFORE_BE,    TextStyle.SHORT, THAI,
-                "\u0e1b\u0e35\u0e01\u0e48\u0e2d\u0e19\u0e04\u0e23\u0e34\u0e2a" +
-                "\u0e15\u0e4c\u0e01\u0e32\u0e25\u0e17\u0e35\u0e48" },
+            { ThaiBuddhistEra.BEFORE_BE,    TextStyle.SHORT, THAI,          "BC" },
             { ThaiBuddhistEra.BE,           TextStyle.SHORT, THAI,  "\u0e1e.\u0e28." },
             { ThaiBuddhistEra.BEFORE_BE,    TextStyle.NARROW, Locale.US,    "BC" },
             { ThaiBuddhistEra.BE,           TextStyle.NARROW, Locale.US,    "BE" },

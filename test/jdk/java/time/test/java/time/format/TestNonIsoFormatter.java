@@ -142,7 +142,7 @@ public class TestNonIsoFormatter {
         return new Object[][] {
             // Chronology, lenient era/year, strict era/year
             { JAPANESE, "Meiji 123", "Heisei 2" },
-            { JAPANESE, "Showa 65", "Heisei 2" },
+            { JAPANESE, "Sh\u014dwa 65", "Heisei 2" },
             { JAPANESE, "Heisei 32", "Reiwa 2" },
         };
     }

@@ -3,7 +3,7 @@
 <!-- Copyright © 1991-2013 Unicode, Inc. CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/) For terms 
 	of use, see http://www.unicode.org/copyright.html -->
 <supplementalData>
-	<version number="$Revision: 13628 $"/>
+	<version number="$Revision: 14755 $"/>
 	<languageMatching>
 		<languageMatches type="written">
 			<!-- Base Language Matches -->
@@ -179,7 +179,7 @@
 			<languageMatch desired="*_*_*" supported="*_*_*" percent="96"/> <!-- [Default value - must be at end!] Normally there are small differences across regions. -->
 		</languageMatches>
 		<languageMatches type="written_new">
-			<paradigmLocales locales="en en-GB es es-419 pt-BR pt-PT"/>
+			<paradigmLocales locales="en en_GB es es_419 pt_BR pt_PT"/>
 			<matchVariable id="$enUS" value="AS+GU+MH+MP+PR+UM+US+VI"/>
 			<matchVariable id="$cnsar" value="HK+MO"/>
 			<matchVariable id="$americas" value="019"/>

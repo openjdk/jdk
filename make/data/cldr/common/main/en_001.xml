@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2018 Unicode, Inc.
+<!-- Copyright © 1991-2019 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -9,17 +9,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 13869 $"/>
+		<version number="$Revision: 14769 $"/>
 		<language type="en"/>
 		<territory type="001"/>
 	</identity>
 	<localeDisplayNames>
 		<keys>
+			<key type="colCaseLevel" draft="contributed">Case-Sensitive Sorting</key>
 			<key type="colNormalization">Normalised Sorting</key>
 		</keys>
 		<types>
 			<type key="colNormalization" type="no">Sort Without Normalisation</type>
 			<type key="colNormalization" type="yes">Sort Unicode Normalised</type>
+			<type key="hc" type="h11">12-Hour System (0–11)</type>
+			<type key="hc" type="h12">12-Hour System (1–12)</type>
+			<type key="hc" type="h23">24-Hour System (0–23)</type>
+			<type key="hc" type="h24">24-Hour System (1–24)</type>
 		</types>
 	</localeDisplayNames>
 	<dates>
@@ -136,12 +141,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</dateFormats>
 				<dateTimeFormats>
 					<availableFormats>
+						<dateFormatItem id="Bhms">h:mm.ss B</dateFormatItem>
+						<dateFormatItem id="EBhm">E, h:mm B</dateFormatItem>
+						<dateFormatItem id="EBhms">E, h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E d</dateFormatItem>
+						<dateFormatItem id="Ehm">E, h:mm a</dateFormatItem>
+						<dateFormatItem id="EHm">E, HH:mm</dateFormatItem>
+						<dateFormatItem id="Ehms">E, h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="EHms">E, HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM y G</dateFormatItem>
 						<dateFormatItem id="M">LL</dateFormatItem>
 						<dateFormatItem id="Md">dd/MM</dateFormatItem>
-						<dateFormatItem id="MEd">E, dd/MM</dateFormatItem>
+						<dateFormatItem id="MEd">E, d/M</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
@@ -196,6 +208,36 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</dateTimeFormats>
 			</calendar>
 			<calendar type="gregorian">
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am">am</dayPeriod>
+							<dayPeriod type="noon">noon</dayPeriod>
+							<dayPeriod type="pm">pm</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="noon">n</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">am</dayPeriod>
+							<dayPeriod type="noon">noon</dayPeriod>
+							<dayPeriod type="pm">pm</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am">am</dayPeriod>
+							<dayPeriod type="pm">pm</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="pm">pm</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">am</dayPeriod>
+							<dayPeriod type="pm">pm</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
@@ -220,6 +262,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</dateFormats>
 				<dateTimeFormats>
 					<availableFormats>
+						<dateFormatItem id="EBhm">E, h:mm B</dateFormatItem>
+						<dateFormatItem id="EBhms">E, h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E d</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM y G</dateFormatItem>
@@ -368,147 +412,128 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other">{0} wk ago</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="sun-short">
-				<relativeTime type="future">
-					<relativeTimePattern count="one">in {0} Sunday</relativeTimePattern>
-					<relativeTimePattern count="other">in {0} Sundays</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} Sunday ago</relativeTimePattern>
-					<relativeTimePattern count="other">{0} Sundays ago</relativeTimePattern>
-				</relativeTime>
+			<field type="weekOfMonth-short">
+				<displayName>wk of mo</displayName>
 			</field>
-			<field type="sun-narrow">
+			<field type="weekOfMonth-narrow">
+				<displayName>wk of mo</displayName>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName>day of yr</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName>day of yr</displayName>
+			</field>
+			<field type="weekday-short">
+				<displayName>day of wk</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName>day of wk</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName>wkday of mo</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName>wkday of mo</displayName>
+			</field>
+			<field type="sun-short">
+				<relative type="-1">last Sun</relative>
+				<relative type="0">this Sun</relative>
+				<relative type="1">next Sun</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">in {0} Sunday</relativeTimePattern>
-					<relativeTimePattern count="other">in {0} Sundays</relativeTimePattern>
+					<relativeTimePattern count="one">in {0} Sun</relativeTimePattern>
+					<relativeTimePattern count="other">in {0} Sun</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} Sunday ago</relativeTimePattern>
-					<relativeTimePattern count="other">{0} Sundays ago</relativeTimePattern>
+					<relativeTimePattern count="one">{0} Sun ago</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Sun ago</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="mon-short">
+				<relative type="-1">last Mon</relative>
+				<relative type="0">this Mon</relative>
+				<relative type="1">next Mon</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">in {0} Monday</relativeTimePattern>
-					<relativeTimePattern count="other">in {0} Mondays</relativeTimePattern>
+					<relativeTimePattern count="one">in {0} Mon</relativeTimePattern>
+					<relativeTimePattern count="other">in {0} Mon</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} Monday ago</relativeTimePattern>
-					<relativeTimePattern count="other">{0} Mondays ago</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="mon-narrow">
-				<relativeTime type="future">
-					<relativeTimePattern count="one">in {0} Monday</relativeTimePattern>
-					<relativeTimePattern count="other">in {0} Mondays</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} Monday ago</relativeTimePattern>
-					<relativeTimePattern count="other">{0} Mondays ago</relativeTimePattern>
+					<relativeTimePattern count="one">{0} Mon ago</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Mon ago</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="tue-short">
+				<relative type="-1">last Tue</relative>
+				<relative type="0">this Tue</relative>
+				<relative type="1">next Tue</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">in {0} Tuesday</relativeTimePattern>
-					<relativeTimePattern count="other">in {0} Tuesdays</relativeTimePattern>
+					<relativeTimePattern count="one">in {0} Tue</relativeTimePattern>
+					<relativeTimePattern count="other">in {0} Tue</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} Tuesday ago</relativeTimePattern>
-					<relativeTimePattern count="other">{0} Tuesdays ago</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="tue-narrow">
-				<relativeTime type="future">
-					<relativeTimePattern count="one">in {0} Tuesday</relativeTimePattern>
-					<relativeTimePattern count="other">in {0} Tuesdays</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} Tuesday ago</relativeTimePattern>
-					<relativeTimePattern count="other">{0} Tuesdays ago</relativeTimePattern>
+					<relativeTimePattern count="one">{0} Tue ago</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Tue ago</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="wed-short">
+				<relative type="-1">last Wed</relative>
+				<relative type="0">this Wed</relative>
+				<relative type="1">next Wed</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">in {0} Wednesday</relativeTimePattern>
-					<relativeTimePattern count="other">in {0} Wednesdays</relativeTimePattern>
+					<relativeTimePattern count="one">in {0} Wed</relativeTimePattern>
+					<relativeTimePattern count="other">in {0} Wed</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} Wednesday ago</relativeTimePattern>
-					<relativeTimePattern count="other">{0} Wednesdays ago</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="wed-narrow">
-				<relativeTime type="future">
-					<relativeTimePattern count="one">in {0} Wednesday</relativeTimePattern>
-					<relativeTimePattern count="other">in {0} Wednesdays</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} Wednesday ago</relativeTimePattern>
-					<relativeTimePattern count="other">{0} Wednesdays ago</relativeTimePattern>
+					<relativeTimePattern count="one">{0} Wed ago</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Wed ago</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="thu-short">
+				<relative type="-1">last Thu</relative>
+				<relative type="0">this Thu</relative>
+				<relative type="1">next Thu</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">in {0} Thursday</relativeTimePattern>
-					<relativeTimePattern count="other">in {0} Thursdays</relativeTimePattern>
+					<relativeTimePattern count="one">in {0} Thu</relativeTimePattern>
+					<relativeTimePattern count="other">in {0} Thu</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} Thursday ago</relativeTimePattern>
-					<relativeTimePattern count="other">{0} Thursdays ago</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="thu-narrow">
-				<relativeTime type="future">
-					<relativeTimePattern count="one">in {0} Thursday</relativeTimePattern>
-					<relativeTimePattern count="other">in {0} Thursdays</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} Thursday ago</relativeTimePattern>
-					<relativeTimePattern count="other">{0} Thursdays ago</relativeTimePattern>
+					<relativeTimePattern count="one">{0} Thu ago</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Thu ago</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="fri-short">
+				<relative type="-1">last Fri</relative>
+				<relative type="0">this Fri</relative>
+				<relative type="1">next Fri</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">in {0} Friday</relativeTimePattern>
-					<relativeTimePattern count="other">in {0} Fridays</relativeTimePattern>
+					<relativeTimePattern count="one">in {0} Fri</relativeTimePattern>
+					<relativeTimePattern count="other">in {0} Fri</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} Friday ago</relativeTimePattern>
-					<relativeTimePattern count="other">{0} Fridays ago</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="fri-narrow">
-				<relativeTime type="future">
-					<relativeTimePattern count="one">in {0} Friday</relativeTimePattern>
-					<relativeTimePattern count="other">in {0} Fridays</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} Friday ago</relativeTimePattern>
-					<relativeTimePattern count="other">{0} Fridays ago</relativeTimePattern>
+					<relativeTimePattern count="one">{0} Fri ago</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Fri ago</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="sat-short">
+				<relative type="-1">last Sat</relative>
+				<relative type="0">this Sat</relative>
+				<relative type="1">next Sat</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">in {0} Saturday</relativeTimePattern>
-					<relativeTimePattern count="other">in {0} Saturdays</relativeTimePattern>
+					<relativeTimePattern count="one">in {0} Sat</relativeTimePattern>
+					<relativeTimePattern count="other">in {0} Sat</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} Saturday ago</relativeTimePattern>
-					<relativeTimePattern count="other">{0} Saturdays ago</relativeTimePattern>
+					<relativeTimePattern count="one">{0} Sat ago</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Sat ago</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="sat-narrow">
-				<relativeTime type="future">
-					<relativeTimePattern count="one">in {0} Saturday</relativeTimePattern>
-					<relativeTimePattern count="other">in {0} Saturdays</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} Saturday ago</relativeTimePattern>
-					<relativeTimePattern count="other">{0} Saturdays ago</relativeTimePattern>
-				</relativeTime>
+			<field type="dayperiod-short">
+				<displayName>am/pm</displayName>
 			</field>
 			<field type="dayperiod">
+				<displayName>am/pm</displayName>
+			</field>
+			<field type="dayperiod-narrow">
 				<displayName>am/pm</displayName>
 			</field>
 			<field type="hour-short">
@@ -953,7 +978,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-megaliter">
 				<displayName>Ml</displayName>
 				<unitPattern count="one">{0} Ml</unitPattern>
-				<unitPattern count="other">{0} MLl</unitPattern>
+				<unitPattern count="other">{0} Ml</unitPattern>
 			</unit>
 			<unit type="volume-hectoliter">
 				<displayName>hl</displayName>
@@ -1034,6 +1059,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}lb</unitPattern>
 				<unitPattern count="other">{0}lb</unitPattern>
 			</unit>
+			<unit type="speed-kilometer-per-hour">
+				<displayName>km/h</displayName>
+			</unit>
 			<unit type="temperature-celsius">
 				<unitPattern count="one">{0}°</unitPattern>
 				<unitPattern count="other">{0}°</unitPattern>
@@ -1088,6 +1116,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</unitLength>
 	</units>
 	<characterLabels>
-		<characterLabel type="math_symbols">maths symbols</characterLabel>
+		<characterLabelPattern type="all">{0} – all</characterLabelPattern>
+		<characterLabelPattern type="compatibility">{0} – compatibility</characterLabelPattern>
+		<characterLabelPattern type="enclosed">{0} – enclosed</characterLabelPattern>
+		<characterLabelPattern type="extended">{0} – extended</characterLabelPattern>
+		<characterLabelPattern type="historic">{0} – historic</characterLabelPattern>
+		<characterLabelPattern type="miscellaneous">{0} – miscellaneous</characterLabelPattern>
+		<characterLabelPattern type="other">{0} – other</characterLabelPattern>
+		<characterLabelPattern type="scripts">scripts – {0}</characterLabelPattern>
 	</characterLabels>
 </ldml>

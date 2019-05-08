@@ -1,16 +1,21 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2018 Unicode, Inc.
+<!-- Copyright © 1991-2019 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 13869 $"/>
+		<version number="$Revision: 14845 $"/>
 		<language type="ig"/>
 	</identity>
 	<localeDisplayNames>
+		<localeDisplayPattern>
+			<localePattern>{0} ({1})</localePattern>
+			<localeSeparator>{0}, {1}</localeSeparator>
+			<localeKeyTypePattern>{0}: {1}</localeKeyTypePattern>
+		</localeDisplayPattern>
 		<languages>
 			<language type="ak">Akan</language>
 			<language type="am">Amariikị</language>
@@ -19,19 +24,32 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="bg">Bọlụgarịa</language>
 			<language type="bn">Bengali</language>
 			<language type="cs">Cheekị</language>
-			<language type="de">Jamaan</language>
+			<language type="de">Asụsụ Jaman</language>
+			<language type="de_AT">Jaman ndị Austria</language>
+			<language type="de_CH">Jaman Izugbe ndị Switzerland</language>
 			<language type="el">Giriikị</language>
-			<language type="en">Oyibo</language>
-			<language type="es">Panya</language>
+			<language type="en">Asụsụ Bekee</language>
+			<language type="en_AU">Bekee ndị Australia</language>
+			<language type="en_CA">Bekee ndị Canada</language>
+			<language type="en_GB">Bekee ndị Britain</language>
+			<language type="en_GB" alt="short">Bekee ndị UK</language>
+			<language type="en_US">Bekee ndị America</language>
+			<language type="en_US" alt="short">Bekee ndị US</language>
+			<language type="es">Asụsụ Spanish</language>
+			<language type="es_419">Asụsụ Spanish ndị Latin America</language>
+			<language type="es_ES">Asụsụ Spanish ndị Europe</language>
+			<language type="es_MX">Asụsụ Spanish ndị Mexico</language>
 			<language type="fa">Peshan</language>
-			<language type="fr">Fụrench</language>
+			<language type="fr">Asụsụ Fụrench</language>
+			<language type="fr_CA">Fụrench ndị Canada</language>
+			<language type="fr_CH">Fụrench ndị Switzerland</language>
 			<language type="ha">Awụsa</language>
 			<language type="hi">Hindi</language>
 			<language type="hu">Magịya</language>
 			<language type="id">Indonisia</language>
-			<language type="ig">Igbo</language>
-			<language type="it">Italo</language>
-			<language type="ja">Japanese</language>
+			<language type="ig">Asụsụ Igbo</language>
+			<language type="it">Asụsụ Italian</language>
+			<language type="ja">Asụsụ Japanese</language>
 			<language type="jv">Java</language>
 			<language type="km">Keme, Etiti</language>
 			<language type="ko">Koria</language>
@@ -41,9 +59,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="nl">Dọọch</language>
 			<language type="pa">Punjabi</language>
 			<language type="pl">Poliishi</language>
-			<language type="pt">Potoki</language>
+			<language type="pt">Asụsụ Portuguese</language>
+			<language type="pt_BR">Asụsụ Portuguese ndị Brazil</language>
+			<language type="pt_PT">Asụsụ Portuguese ndị Europe</language>
 			<language type="ro">Rumenia</language>
-			<language type="ru">Rọshan</language>
+			<language type="ru">Asụsụ Russian</language>
 			<language type="rw">Rụwanda</language>
 			<language type="so">Somali</language>
 			<language type="sv">Sụwidiishi</language>
@@ -51,27 +71,68 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="th">Taị</language>
 			<language type="tr">Tọkiishi</language>
 			<language type="uk">Ukureenị</language>
+			<language type="und">Asụsụ amaghị</language>
 			<language type="ur">Urudu</language>
 			<language type="vi">Viyetịnaamụ</language>
 			<language type="yo">Yoruba</language>
 			<language type="zh">Mandarịịnị</language>
+			<language type="zh_Hans">Asụsụ Chinese dị mfe</language>
+			<language type="zh_Hant">Asụsụ Chinese Izugbe</language>
 			<language type="zu">Zulu</language>
 		</languages>
+		<scripts>
+			<script type="Arab">Mkpụrụ Okwu Arabic</script>
+			<script type="Cyrl">Mkpụrụ Okwu Cyrillic</script>
+			<script type="Hans">Nke dị mfe</script>
+			<script type="Hans" alt="stand-alone">Han di mfe</script>
+			<script type="Hant">Izugbe</script>
+			<script type="Hant" alt="stand-alone">Han Izugbe</script>
+			<script type="Latn">Latin</script>
+			<script type="Zxxx">Edeghị ede</script>
+			<script type="Zzzz">Mkpụrụ okwu amaghị</script>
+		</scripts>
 		<territories>
 			<territory type="BJ">Binin</territory>
 			<territory type="BM">Bemuda</territory>
-			<territory type="CN">Chaina</territory>
+			<territory type="BR">Mba Brazil</territory>
+			<territory type="CN">Mba China</territory>
+			<territory type="DE">Mba Germany</territory>
+			<territory type="FR">Mba France</territory>
+			<territory type="GB">Mba United Kingdom</territory>
 			<territory type="HT">Hati</territory>
+			<territory type="IN">Mba India</territory>
+			<territory type="IT">Mba Italy</territory>
+			<territory type="JP">Mba Japan</territory>
 			<territory type="KM">Comorosu</territory>
 			<territory type="LY">Libyia</territory>
 			<territory type="MV">Maldivesa</territory>
 			<territory type="NG">Naịjịrịa</territory>
+			<territory type="RU">Mba Russia</territory>
+			<territory type="US">Mba United States</territory>
+			<territory type="ZZ">Mpaghara Amaghị</territory>
 		</territories>
+		<types>
+			<type key="calendar" type="gregorian">Kalenda Gregory</type>
+			<type key="collation" type="standard">Usoro Nhazi</type>
+			<type key="numbers" type="latn">Ọnụ Ọgụgụ Mpaghara Ọdịda Anyanwụ</type>
+		</types>
+		<measurementSystemNames>
+			<measurementSystemName type="metric">Metriik</measurementSystemName>
+			<measurementSystemName type="UK">UK</measurementSystemName>
+			<measurementSystemName type="US">US</measurementSystemName>
+		</measurementSystemNames>
+		<codePatterns>
+			<codePattern type="language">Asụsụ: {0}</codePattern>
+			<codePattern type="script">Mkpụrụ Okwu: {0}</codePattern>
+			<codePattern type="territory">Mpaghara: {0}</codePattern>
+		</codePatterns>
 	</localeDisplayNames>
 	<characters>
 		<exemplarCharacters>[a b {ch} d e ẹ f g {gb} {gh} {gw} h i ị j k {kp} {kw} l m n ṅ {nw} {ny} o ọ p r s {sh} t u ụ v w y z]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[áàā c éèē íìī{ị́}{ị̀} ḿ{m̀} ńǹ óòō{ọ́}{ọ̀} q úùū{ụ́}{ụ̀} x]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="numbers" draft="contributed">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="contributed">[\- , ; \: ! ? . ‘ ’ “ ” ( ) \[ \] \{ \}]</exemplarCharacters>
 	</characters>
 	<delimiters>
 		<quotationStart>“</quotationStart>
@@ -105,6 +166,26 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</dateFormatLength>
 				</dateFormats>
 				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern>{1} 'na' {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern>{1} 'na' {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
 					<availableFormats>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
@@ -128,6 +209,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
 					</availableFormats>
+					<intervalFormats>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
 			<calendar type="gregorian">
@@ -148,24 +232,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="12">Dis</month>
 						</monthWidth>
 						<monthWidth type="narrow">
-							<month type="1">1</month>
-							<month type="2">2</month>
-							<month type="3">3</month>
-							<month type="4">4</month>
-							<month type="5">5</month>
-							<month type="6">6</month>
-							<month type="7">7</month>
-							<month type="8">8</month>
-							<month type="9">9</month>
-							<month type="10">10</month>
-							<month type="11">11</month>
-							<month type="12">12</month>
+							<month type="1">J</month>
+							<month type="2">F</month>
+							<month type="3">M</month>
+							<month type="4">E</month>
+							<month type="5">M</month>
+							<month type="6">J</month>
+							<month type="7">J</month>
+							<month type="8">Ọ</month>
+							<month type="9">S</month>
+							<month type="10">Ọ</month>
+							<month type="11">N</month>
+							<month type="12">D</month>
 						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">Jenụwarị</month>
 							<month type="2">Febrụwarị</month>
 							<month type="3">Maachị</month>
-							<month type="4">Eprel</month>
+							<month type="4">Epreel</month>
 							<month type="5">Mee</month>
 							<month type="6">Juun</month>
 							<month type="7">Julaị</month>
@@ -192,24 +276,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="12">Dis</month>
 						</monthWidth>
 						<monthWidth type="narrow">
-							<month type="1">1</month>
-							<month type="2">2</month>
-							<month type="3">3</month>
-							<month type="4">4</month>
-							<month type="5">5</month>
-							<month type="6">6</month>
-							<month type="7">7</month>
-							<month type="8">8</month>
-							<month type="9">9</month>
-							<month type="10">10</month>
-							<month type="11">11</month>
-							<month type="12">12</month>
+							<month type="1">J</month>
+							<month type="2">F</month>
+							<month type="3">M</month>
+							<month type="4">E</month>
+							<month type="5">M</month>
+							<month type="6">J</month>
+							<month type="7">J</month>
+							<month type="8">Ọ</month>
+							<month type="9">S</month>
+							<month type="10">Ọ</month>
+							<month type="11">N</month>
+							<month type="12">D</month>
 						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">Jenụwarị</month>
 							<month type="2">Febrụwarị</month>
 							<month type="3">Maachị</month>
-							<month type="4">Eprel</month>
+							<month type="4">Epreel</month>
 							<month type="5">Mee</month>
 							<month type="6">Juun</month>
 							<month type="7">Julaị</month>
@@ -230,7 +314,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="wed">Wen</day>
 							<day type="thu">Tọọ</day>
 							<day type="fri">Fraị</day>
-							<day type="sat">Sat</day>
+							<day type="sat">Satọdee</day>
 						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun">S</day>
@@ -251,7 +335,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="sat">Sat</day>
 						</dayWidth>
 						<dayWidth type="wide">
-							<day type="sun">Mbọsị Ụka</day>
+							<day type="sun">Ụbọchị Ụka</day>
 							<day type="mon">Mọnde</day>
 							<day type="tue">Tiuzdee</day>
 							<day type="wed">Wenezdee</day>
@@ -268,7 +352,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="wed">Wen</day>
 							<day type="thu">Tọọ</day>
 							<day type="fri">Fraị</day>
-							<day type="sat">Sat</day>
+							<day type="sat">Satọdee</day>
 						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun">S</day>
@@ -289,7 +373,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="sat">Sat</day>
 						</dayWidth>
 						<dayWidth type="wide">
-							<day type="sun">Mbọsị Ụka</day>
+							<day type="sun">Ụbọchị Ụka</day>
 							<day type="mon">Mọnde</day>
 							<day type="tue">Tiuzdee</day>
 							<day type="wed">Wenezdee</day>
@@ -352,8 +436,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<dayPeriod type="pm">P.M.</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">A.M.</dayPeriod>
-							<dayPeriod type="pm">P.M.</dayPeriod>
+							<dayPeriod type="am">N’ụtụtụ</dayPeriod>
+							<dayPeriod type="pm">N’abali</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
@@ -380,9 +464,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</eraNames>
 					<eraAbbr>
 						<era type="0">T.K.</era>
-						<era type="0" alt="variant">BCE</era>
+						<era type="0" alt="variant">TOA</era>
 						<era type="1">A.K.</era>
-						<era type="1" alt="variant">CE</era>
+						<era type="1" alt="variant">OA</era>
 					</eraAbbr>
 					<eraNarrow>
 						<era type="0">T.K.</era>
@@ -409,7 +493,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
-							<pattern>dd/MM/y</pattern>
+							<pattern>d/M/yy</pattern>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -438,36 +522,41 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
-							<pattern>{1} {0}</pattern>
+							<pattern>{1} 'na' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
-							<pattern>{1} {0}</pattern>
+							<pattern>{1} 'na' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
-							<pattern>{1} {0}</pattern>
+							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
-							<pattern>{1} {0}</pattern>
+							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">h B</dateFormatItem>
+						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
+						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
+						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">d, E</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="Gy">y G</dateFormatItem>
-						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
-						<dateFormatItem id="GyMMMd">MMM d, y G</dateFormatItem>
-						<dateFormatItem id="GyMMMEd">E, MMM d, y G</dateFormatItem>
+						<dateFormatItem id="Gy">G y</dateFormatItem>
+						<dateFormatItem id="GyMMM">MMM G y</dateFormatItem>
+						<dateFormatItem id="GyMMMd">d MMM, G y</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">E, d MMM, G y</dateFormatItem>
 						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="H">HH</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
@@ -479,26 +568,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
 						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
-						<dateFormatItem id="Md">M/d</dateFormatItem>
-						<dateFormatItem id="MEd">E, M/d</dateFormatItem>
+						<dateFormatItem id="Md">d/M</dateFormatItem>
+						<dateFormatItem id="MEd">E, d/M</dateFormatItem>
 						<dateFormatItem id="MMM">LLL</dateFormatItem>
-						<dateFormatItem id="MMMd">MMM d</dateFormatItem>
-						<dateFormatItem id="MMMEd">E, MMM d</dateFormatItem>
-						<dateFormatItem id="MMMMd">MMMM d</dateFormatItem>
-						<dateFormatItem id="MMMMEd">E, MMMM d</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="other">'week' W 'of' MMM</dateFormatItem>
+						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
+						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMEd">E, d MMMM</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">M/y</dateFormatItem>
-						<dateFormatItem id="yMd">y-MM-dd</dateFormatItem>
-						<dateFormatItem id="yMEd">E, M/d/y</dateFormatItem>
+						<dateFormatItem id="yMd">d/M/y</dateFormatItem>
+						<dateFormatItem id="yMEd">E, d/M/y</dateFormatItem>
 						<dateFormatItem id="yMMM">MMM y</dateFormatItem>
-						<dateFormatItem id="yMMMd">MMM d, y</dateFormatItem>
-						<dateFormatItem id="yMMMEd">E, MMM d, y</dateFormatItem>
+						<dateFormatItem id="yMMMd">d MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMEd">E, d MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
-						<dateFormatItem id="yw" count="other">'week' w 'of' y</dateFormatItem>
 					</availableFormats>
 					<appendItems>
 						<appendItem request="Timezone">{0} {1}</appendItem>
@@ -608,13 +695,52 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="year">
 				<displayName>Afọ</displayName>
 			</field>
+			<field type="year-short">
+				<displayName>Afọ</displayName>
+			</field>
+			<field type="year-narrow">
+				<displayName>Afọ</displayName>
+			</field>
+			<field type="quarter">
+				<displayName>Nkeji Afọ</displayName>
+			</field>
+			<field type="quarter-short">
+				<displayName>Nkeji Afọ</displayName>
+			</field>
+			<field type="quarter-narrow">
+				<displayName>Nkeji Afọ</displayName>
+			</field>
 			<field type="month">
+				<displayName>Ọnwa</displayName>
+			</field>
+			<field type="month-short">
+				<displayName>Ọnwa</displayName>
+			</field>
+			<field type="month-narrow">
 				<displayName>Ọnwa</displayName>
 			</field>
 			<field type="week">
 				<displayName>Izu</displayName>
 			</field>
+			<field type="week-short">
+				<displayName>Izu</displayName>
+			</field>
+			<field type="week-narrow">
+				<displayName>Izu</displayName>
+			</field>
 			<field type="day">
+				<displayName>Ụbọchị</displayName>
+				<relative type="-1">Ụnyaahụ</relative>
+				<relative type="0">Taa</relative>
+				<relative type="1">Echi</relative>
+			</field>
+			<field type="day-short">
+				<displayName>Ụbọchị</displayName>
+				<relative type="-1">Nnyaafụ</relative>
+				<relative type="0">Taata</relative>
+				<relative type="1">Echi</relative>
+			</field>
+			<field type="day-narrow">
 				<displayName>Ụbọchị</displayName>
 				<relative type="-1">Nnyaafụ</relative>
 				<relative type="0">Taata</relative>
@@ -624,23 +750,123 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>Ụbọchị izu</displayName>
 			</field>
 			<field type="dayperiod">
-				<displayName>N’ụtụtụ/N’anyasị</displayName>
+				<displayName>N’ụtụtụ/N’abalị</displayName>
 			</field>
 			<field type="hour">
+				<displayName>Elekere</displayName>
+			</field>
+			<field type="hour-short">
+				<displayName>Elekere</displayName>
+			</field>
+			<field type="hour-narrow">
 				<displayName>Elekere</displayName>
 			</field>
 			<field type="minute">
 				<displayName>Nkeji</displayName>
 			</field>
+			<field type="minute-short">
+				<displayName>Nkeji</displayName>
+			</field>
+			<field type="minute-narrow">
+				<displayName>Nkeji</displayName>
+			</field>
 			<field type="second">
-				<displayName>Nkejinta</displayName>
+				<displayName>Sekọnd</displayName>
+			</field>
+			<field type="second-short">
+				<displayName>Sekọnd</displayName>
+			</field>
+			<field type="second-narrow">
+				<displayName>Sekọnd</displayName>
 			</field>
 			<field type="zone">
 				<displayName>Mpaghara oge</displayName>
 			</field>
 		</fields>
+		<timeZoneNames>
+			<hourFormat>+HH:mm;-HH:mm</hourFormat>
+			<gmtFormat>GMT{0}</gmtFormat>
+			<gmtZeroFormat>GMT</gmtZeroFormat>
+			<regionFormat>Oge {0}</regionFormat>
+			<regionFormat type="daylight">Oge Ihe {0}</regionFormat>
+			<regionFormat type="standard">Oge Izugbe {0}</regionFormat>
+			<fallbackFormat>{1} ({0})</fallbackFormat>
+			<zone type="Etc/UTC">
+				<long>
+					<standard>Nhazi Oge Ụwa Niile</standard>
+				</long>
+			</zone>
+			<zone type="Etc/Unknown">
+				<exemplarCity>Obodo Amaghị</exemplarCity>
+			</zone>
+			<metazone type="America_Central">
+				<long>
+					<generic>Oge Mpaghara Etiti</generic>
+					<standard>Oge Izugbe Mpaghara Etiti</standard>
+					<daylight>Oge Ihe Mpaghara Etiti</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Eastern">
+				<long>
+					<generic>Oge Mpaghara Ọwụwa Anyanwụ</generic>
+					<standard>Oge Izugbe Mpaghara Ọwụwa Anyanwụ</standard>
+					<daylight>Oge Ihe Mpaghara Ọwụwa Anyanwụ</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Mountain">
+				<long>
+					<generic>Oge Mpaghara Ugwu</generic>
+					<standard>Oge Izugbe Mpaghara Ugwu</standard>
+					<daylight>Oge Ihe Mpaghara Ugwu</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Pacific">
+				<long>
+					<generic>Oge Mpaghara Pacific</generic>
+					<standard>Oge Izugbe Mpaghara Pacific</standard>
+					<daylight>Oge Ihe Mpaghara Pacific</daylight>
+				</long>
+			</metazone>
+			<metazone type="Atlantic">
+				<long>
+					<generic>Oge Mpaghara Atlantic</generic>
+					<standard>Oge Izugbe Mpaghara Atlantic</standard>
+					<daylight>Oge Ihe Mpaghara Atlantic</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Central">
+				<long>
+					<generic>Oge Mpaghara Etiti Europe</generic>
+					<standard>Oge Izugbe Mpaghara Etiti Europe</standard>
+					<daylight>Oge Okpomọkụ Mpaghara Etiti Europe</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Eastern">
+				<long>
+					<generic>Oge Mpaghara Ọwụwa Anyanwụ Europe</generic>
+					<standard>Oge Izugbe Mpaghara Ọwụwa Anyanwụ Europe</standard>
+					<daylight>Oge Okpomọkụ Mpaghara Ọwụwa Anyanwụ Europe</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Western">
+				<long>
+					<generic>Oge Mpaghara Ọdịda Anyanwụ Europe</generic>
+					<standard>Oge Izugbe Mpaghara Ọdịda Anyanwụ Europe</standard>
+					<daylight>Oge Okpomọkụ Mpaghara Ọdịda Anyanwụ Europe</daylight>
+				</long>
+			</metazone>
+			<metazone type="GMT">
+				<long>
+					<standard>Oge Mpaghara Greemwich Mean</standard>
+				</long>
+			</metazone>
+		</timeZoneNames>
 	</dates>
 	<numbers>
+		<defaultNumberingSystem draft="contributed">latn</defaultNumberingSystem>
+		<otherNumberingSystems>
+			<native draft="contributed">latn</native>
+		</otherNumberingSystems>
 		<minimumGroupingDigits draft="contributed">1</minimumGroupingDigits>
 		<symbols numberSystem="arab">
 			<decimal>٫</decimal>
@@ -766,18 +992,89 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
+			<currency type="BRL">
+				<displayName>Real Brazil</displayName>
+				<displayName count="other">Real Brazil</displayName>
+				<symbol draft="contributed">R$</symbol>
+				<symbol alt="narrow" draft="contributed">R$</symbol>
+			</currency>
+			<currency type="CNY">
+				<displayName>Yuan China</displayName>
+				<displayName count="other">Yuan China</displayName>
+				<symbol draft="contributed">CN¥</symbol>
+				<symbol alt="narrow" draft="contributed">¥</symbol>
+			</currency>
 			<currency type="CVE">
 				<displayName>Escudo Caboverdiano</displayName>
+			</currency>
+			<currency type="EUR">
+				<displayName>Euro</displayName>
+				<displayName count="other">euro</displayName>
+				<symbol draft="contributed">€</symbol>
+				<symbol alt="narrow" draft="contributed">€</symbol>
+			</currency>
+			<currency type="GBP">
+				<displayName>Pound British</displayName>
+				<displayName count="other">Pound British</displayName>
+				<symbol draft="contributed">£</symbol>
+				<symbol alt="narrow" draft="contributed">£</symbol>
+			</currency>
+			<currency type="INR">
+				<displayName>Rupee India</displayName>
+				<displayName count="other">Rupee India</displayName>
+				<symbol draft="contributed">₹</symbol>
+				<symbol alt="narrow" draft="contributed">₹</symbol>
+			</currency>
+			<currency type="JPY">
+				<displayName>Yen Japan</displayName>
+				<displayName count="other">Yen Japan</displayName>
+				<symbol draft="contributed">¥</symbol>
+				<symbol alt="narrow" draft="contributed">¥</symbol>
 			</currency>
 			<currency type="NGN">
 				<displayName>Naịra</displayName>
 				<symbol>₦</symbol>
+			</currency>
+			<currency type="RUB">
+				<displayName>Ruble Russia</displayName>
+				<displayName count="other">Ruble Russia</displayName>
+				<symbol draft="contributed">RUB</symbol>
+				<symbol alt="narrow" draft="contributed">₽</symbol>
+			</currency>
+			<currency type="USD">
+				<displayName>Dollar US</displayName>
+				<displayName count="other">dollar US</displayName>
+				<symbol draft="contributed">$</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
+			</currency>
+			<currency type="XXX">
+				<displayName>Ego Amaghị</displayName>
+				<displayName count="other">(ego amaghị)</displayName>
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
 			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
 	</numbers>
+	<units>
+		<durationUnit type="hm">
+			<durationUnitPattern>h:mm</durationUnitPattern>
+		</durationUnit>
+		<durationUnit type="hms">
+			<durationUnitPattern>h:mm:ss</durationUnitPattern>
+		</durationUnit>
+		<durationUnit type="ms">
+			<durationUnitPattern>m:ss</durationUnitPattern>
+		</durationUnit>
+	</units>
+	<listPatterns>
+		<listPattern>
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0}, na {1}</listPatternPart>
+			<listPatternPart type="2">{0} na {1}</listPatternPart>
+		</listPattern>
+	</listPatterns>
 	<posix>
 		<messages>
 			<yesstr>Eye:E</yesstr>

@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2018 Unicode, Inc.
+<!-- Copyright © 1991-2019 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 13911 $"/>
+		<version number="$Revision: 14782 $"/>
 		<language type="mzn"/>
 	</identity>
 	<localeDisplayNames>
@@ -1057,6 +1057,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<otherNumberingSystems>
 			<native draft="contributed">arabext</native>
 		</otherNumberingSystems>
+		<symbols numberSystem="arabext">
+			<timeSeparator>:</timeSeparator>
+		</symbols>
 		<currencies>
 			<currency type="AED">
 				<displayName>متحده عربی امارات ِدرهم</displayName>
@@ -1841,10 +1844,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<symbol draft="contributed">UZS</symbol>
 			</currency>
 			<currency type="VEF">
-				<displayName>ونزوئلایِ بولیوار</displayName>
-				<displayName count="other">ونزوئلایِ بولیوار</displayName>
+				<displayName>ونزوئلایِ بولیوار (2008–2018)</displayName>
+				<displayName count="other">ونزوئلایِ بولیوار (2008–2018)</displayName>
 				<symbol draft="contributed">VEF</symbol>
 				<symbol alt="narrow" draft="contributed">Bs</symbol>
+			</currency>
+			<currency type="VES">
+				<displayName>ونزوئلایِ بولیوار</displayName>
+				<displayName count="other">ونزوئلایِ بولیوار</displayName>
 			</currency>
 			<currency type="VND">
 				<displayName>ویتنام ِدنگ</displayName>
