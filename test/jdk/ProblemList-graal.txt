@@ -102,3 +102,5 @@ jdk/jfr/event/compiler/TestCodeSweeper.java              8193210   generic-all
 jdk/jfr/event/compiler/TestCompilerInlining.java         8193210   generic-all
 jdk/jfr/event/compiler/TestCompilerPhase.java            8193210   generic-all
 
+# Next tests should be re-enabled once libgraal is introduced
+java/lang/ref/ReachabilityFenceTest.java                 8207267   generic-all
