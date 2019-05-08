@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,27 +99,6 @@ static BOOL shouldUsePressAndHold() {
         //[self setLayerContentsRedrawPolicy: NSViewLayerContentsRedrawDuringViewResize];
         //[self setLayerContentsPlacement: NSViewLayerContentsPlacementTopLeft];
         //[self setAutoresizingMask: NSViewHeightSizable | NSViewWidthSizable];
-
-#ifdef REMOTELAYER
-        CGLLayer *parentLayer = (CGLLayer*)self.cglLayer;
-        parentLayer.parentLayer = NULL;
-        parentLayer.remoteLayer = NULL;
-        if (JRSRemotePort != 0 && remoteSocketFD > 0) {
-            CGLLayer *remoteLayer = [[CGLLayer alloc] initWithJavaLayer: parentLayer.javaLayer];
-            remoteLayer.target = GL_TEXTURE_2D;
-            NSLog(@"Creating Parent=%p, Remote=%p", parentLayer, remoteLayer);
-            parentLayer.remoteLayer = remoteLayer;
-            remoteLayer.parentLayer = parentLayer;
-            remoteLayer.remoteLayer = NULL;
-            remoteLayer.jrsRemoteLayer = [remoteLayer createRemoteLayerBoundTo:JRSRemotePort];
-            [remoteLayer retain];  // REMIND
-            remoteLayer.frame = CGRectMake(0, 0, 720, 500); // REMIND
-            [remoteLayer.jrsRemoteLayer retain]; // REMIND
-            int layerID = [remoteLayer.jrsRemoteLayer layerID];
-            NSLog(@"layer id to send = %d", layerID);
-            sendLayerID(layerID);
-        }
-#endif /* REMOTELAYER */
     }
 
     return self;

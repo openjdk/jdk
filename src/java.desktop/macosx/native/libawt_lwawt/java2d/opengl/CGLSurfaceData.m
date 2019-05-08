@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -344,23 +344,6 @@ OGLSD_Flush(JNIEnv *env)
             [JNFRunLoop performOnMainThreadWaiting:NO withBlock:^(){
                 AWT_ASSERT_APPKIT_THREAD;
                 [layer setNeedsDisplay];
-
-#ifdef REMOTELAYER
-                /* If there's a remote layer (being used for testing)
-                 * then we want to have that also receive the texture.
-                 * First sync. up its dimensions with that of the layer
-                 * we have attached to the local window and tell it that
-                 * it also needs to copy the texture.
-                 */
-                if (layer.remoteLayer != nil) {
-                    CGLLayer* remoteLayer = layer.remoteLayer;
-                    remoteLayer.target = GL_TEXTURE_2D;
-                    remoteLayer.textureID = layer.textureID;
-                    remoteLayer.textureWidth = layer.textureWidth;
-                    remoteLayer.textureHeight = layer.textureHeight;
-                    [remoteLayer setNeedsDisplay];
-                }
-#endif /* REMOTELAYER */
             }];
         }
     }
