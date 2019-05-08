@@ -927,7 +927,7 @@ private:
     T o = RawAccess<>::oop_load(p);
     if (!CompressedOops::is_null(o)) {
       oop obj = CompressedOops::decode_not_null(o);
-      oop fwd = (oop) ShenandoahBrooksPointer::get_raw_unchecked(obj);
+      oop fwd = (oop) ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
       if (!oopDesc::equals_raw(obj, fwd)) {
         ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, p, NULL,
                                          "Verify Roots", "Should not be forwarded", __FILE__, __LINE__);
