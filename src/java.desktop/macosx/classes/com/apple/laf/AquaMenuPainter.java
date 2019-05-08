@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -253,9 +253,9 @@ public class AquaMenuPainter {
         }
 
         // Draw the accelerator first in case the HTML renderer changes the color
-        if (keyString != null && !keyString.equals("")) {
+        if (keyString != null && !keyString.isEmpty()) {
             final int yAccel = acceleratorRect.y + fm.getAscent();
-            if (modifiersString.equals("")) {
+            if (modifiersString.isEmpty()) {
                 // just draw the keyString
                 SwingUtilities2.drawString(c, g, keyString, acceleratorRect.x, yAccel);
             } else {
@@ -282,7 +282,7 @@ public class AquaMenuPainter {
         }
 
         // Draw the Text
-        if (text != null && !text.equals("")) {
+        if (text != null && !text.isEmpty()) {
             final View v = (View)c.getClientProperty(BasicHTML.propertyKey);
             if (v != null) {
                 v.paint(g, textRect);
@@ -342,7 +342,7 @@ public class AquaMenuPainter {
         //   r = iconRect.union(textRect);
 
         // Add in the accelerator
-        boolean acceleratorTextIsEmpty = (keyString == null) || keyString.equals("");
+        boolean acceleratorTextIsEmpty = (keyString == null) || keyString.isEmpty();
 
         if (!acceleratorTextIsEmpty) {
             r.width += acceleratorRect.width;
@@ -444,7 +444,7 @@ public class AquaMenuPainter {
         // Force it to do "LEFT", then flip the rects if we're right-to-left
         SwingUtilities.layoutCompoundLabel(menuItem, fm, text, icon, verticalAlignment, SwingConstants.LEFT, verticalTextPosition, horizontalTextPosition, viewR, iconR, textR, textIconGap);
 
-        final boolean acceleratorTextIsEmpty = (keyString == null) || keyString.equals("");
+        final boolean acceleratorTextIsEmpty = (keyString == null) || keyString.isEmpty();
 
         if (acceleratorTextIsEmpty) {
             acceleratorR.width = acceleratorR.height = 0;

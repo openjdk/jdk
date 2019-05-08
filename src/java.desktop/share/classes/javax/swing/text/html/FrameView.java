@@ -69,7 +69,7 @@ class FrameView extends ComponentView implements HyperlinkListener {
         AttributeSet attributes = elem.getAttributes();
         String srcAtt = (String)attributes.getAttribute(HTML.Attribute.SRC);
 
-        if ((srcAtt != null) && (!srcAtt.equals(""))) {
+        if (srcAtt != null && !srcAtt.isEmpty()) {
             try {
                 URL base = ((HTMLDocument)elem.getDocument()).getBase();
                 src = new URL(base, srcAtt);

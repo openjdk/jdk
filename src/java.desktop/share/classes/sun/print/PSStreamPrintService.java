@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -212,7 +212,7 @@ public class PSStreamPrintService extends StreamPrintService
         } else if (category == Media.class) {
             String defaultCountry = Locale.getDefault().getCountry();
             if (defaultCountry != null &&
-                (defaultCountry.equals("") ||
+                (defaultCountry.isEmpty() ||
                  defaultCountry.equals(Locale.US.getCountry()) ||
                  defaultCountry.equals(Locale.CANADA.getCountry()))) {
                 return MediaSizeName.NA_LETTER;
@@ -224,7 +224,7 @@ public class PSStreamPrintService extends StreamPrintService
             float iw, ih;
             float margin = 0.5f; // both these papers > 5" in all dimensions
             if (defaultCountry != null &&
-                (defaultCountry.equals("") ||
+                (defaultCountry.isEmpty() ||
                  defaultCountry.equals(Locale.US.getCountry()) ||
                  defaultCountry.equals(Locale.CANADA.getCountry()))) {
                 iw = MediaSize.NA.LETTER.getX(Size2DSyntax.INCH) - 2*margin;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -289,7 +289,7 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
             // Remove the header lines
             if (posPrinters[i].startsWith("---") ||
                 posPrinters[i].startsWith("Queue") ||
-                posPrinters[i].equals("")) continue;
+                posPrinters[i].isEmpty()) continue;
 
             // Check if there is a ":" in the end of the first colomn.
             // This means that it is not a valid printer definition.
@@ -694,7 +694,7 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
         } else if (category == Media.class) {
             String defaultCountry = Locale.getDefault().getCountry();
             if (defaultCountry != null &&
-                (defaultCountry.equals("") ||
+                (defaultCountry.isEmpty() ||
                  defaultCountry.equals(Locale.US.getCountry()) ||
                  defaultCountry.equals(Locale.CANADA.getCountry()))) {
                 return MediaSizeName.NA_LETTER;
@@ -705,7 +705,7 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
             String defaultCountry = Locale.getDefault().getCountry();
             float iw, ih;
             if (defaultCountry != null &&
-                (defaultCountry.equals("") ||
+                (defaultCountry.isEmpty() ||
                  defaultCountry.equals(Locale.US.getCountry()) ||
                  defaultCountry.equals(Locale.CANADA.getCountry()))) {
                 iw = MediaSize.NA.LETTER.getX(Size2DSyntax.INCH) - 0.5f;
@@ -997,7 +997,7 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
         } else if (attr.getCategory() == Destination.class) {
             URI uri = ((Destination)attr).getURI();
                 if ("file".equals(uri.getScheme()) &&
-                    !(uri.getSchemeSpecificPart().equals(""))) {
+                    !uri.getSchemeSpecificPart().isEmpty()) {
                 return true;
             } else {
             return false;

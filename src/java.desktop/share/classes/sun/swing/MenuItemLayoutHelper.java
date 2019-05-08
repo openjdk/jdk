@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -256,7 +256,7 @@ public class MenuItemLayoutHelper {
         }
 
         // accRect
-        if (!accText.equals("")) {
+        if (!accText.isEmpty()) {
             accSize.width = SwingUtilities2.stringWidth(mi, accFm, accText);
             accSize.height = accFm.getHeight();
         }
@@ -264,7 +264,7 @@ public class MenuItemLayoutHelper {
         // textRect
         if (text == null) {
             text = "";
-        } else if (!text.equals("")) {
+        } else if (!text.isEmpty()) {
             if (htmlView != null) {
                 // Text is HTML
                 textSize.width =

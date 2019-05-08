@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -840,7 +840,7 @@ public class AquaFileChooserUI extends FileChooserUI {
     File makeFile(final JFileChooser fc, final String filename) {
         File selectedFile = null;
         // whitespace is legal on Macs, even on beginning and end of filename
-        if (filename != null && !filename.equals("")) {
+        if (filename != null && !filename.isEmpty()) {
             final FileSystemView fs = fc.getFileSystemView();
             selectedFile = fs.createFileObject(filename);
             if (!selectedFile.isAbsolute()) {
@@ -853,7 +853,7 @@ public class AquaFileChooserUI extends FileChooserUI {
     // Utility to tell if the textfield has anything in it
     boolean textfieldIsValid() {
         final String s = getFileName();
-        return (s != null && !s.equals(""));
+        return (s != null && !s.isEmpty());
     }
 
     // Action to attach to the file list so we can override the default action
@@ -1960,7 +1960,7 @@ public class AquaFileChooserUI extends FileChooserUI {
             final String buttonText = fc.getApproveButtonText();
             if (buttonText != null) {
                 buttonText.trim();
-                if (!buttonText.equals("")) return buttonText;
+                if (!buttonText.isEmpty()) return buttonText;
             }
             return fallbackText;
         }
@@ -1979,7 +1979,7 @@ public class AquaFileChooserUI extends FileChooserUI {
             final String tooltipText = fc.getApproveButtonToolTipText();
             if (tooltipText != null) {
                 tooltipText.trim();
-                if (!tooltipText.equals("")) return tooltipText;
+                if (!tooltipText.isEmpty()) return tooltipText;
             }
             return fallbackText;
         }

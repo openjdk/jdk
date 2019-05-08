@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -457,7 +457,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
      */
     private PrintService getServiceByName(PrinterName nameAttr) {
         String name = nameAttr.getValue();
-        if (name == null || name.equals("") || !checkPrinterName(name)) {
+        if (name == null || name.isEmpty() || !checkPrinterName(name)) {
             return null;
         }
         /* check if all printers are already available */
@@ -823,7 +823,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
         for (int i=0; i < names.length; i++) {
             if (!names[i].equals("_default") &&
                 !names[i].equals(defaultPrinter) &&
-                !names[i].equals("")) {
+                !names[i].isEmpty()) {
                 printerNames.add(names[i]);
             }
         }

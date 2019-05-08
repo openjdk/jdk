@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -208,7 +208,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
     }
 
     protected String getWMName() {
-        if (winAttr.title == null || winAttr.title.trim().equals("")) {
+        if (winAttr.title == null || winAttr.title.trim().isEmpty()) {
             return " ";
         } else {
             return winAttr.title;
@@ -220,7 +220,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
         try {
             super.updateWMName();
             String name = getWMName();
-            if (name == null || name.trim().equals("")) {
+            if (name == null || name.trim().isEmpty()) {
                 name = "Java";
             }
             XAtom iconNameAtom = XAtom.get(XAtom.XA_WM_ICON_NAME);

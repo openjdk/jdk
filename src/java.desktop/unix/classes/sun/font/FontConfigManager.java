@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,7 +143,7 @@ public class FontConfigManager {
         Locale l = SunToolkit.getStartupLocale();
         String localeStr = l.getLanguage();
         String country = l.getCountry();
-        if (!country.equals("")) {
+        if (!country.isEmpty()) {
             localeStr = localeStr + "-" + country;
         }
         return localeStr;

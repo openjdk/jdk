@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1346,7 +1346,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                 flavor.equals(DocFlavor.SERVICE_FORMATTED.PRINTABLE)) {
                 URI uri = ((Destination)attr).getURI();
                 if ("file".equals(uri.getScheme()) &&
-                    !(uri.getSchemeSpecificPart().equals(""))) {
+                    !uri.getSchemeSpecificPart().isEmpty()) {
                     return true;
                 }
             }
@@ -1503,7 +1503,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
             if (mediaSizeNames.length == 0) {
                 String defaultCountry = Locale.getDefault().getCountry();
                 if (defaultCountry != null &&
-                    (defaultCountry.equals("") ||
+                    (defaultCountry.isEmpty() ||
                      defaultCountry.equals(Locale.US.getCountry()) ||
                      defaultCountry.equals(Locale.CANADA.getCountry()))) {
                     return MediaSizeName.NA_LETTER;
@@ -1540,7 +1540,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                  String defaultCountry = Locale.getDefault().getCountry();
                  float iw, ih;
                  if (defaultCountry != null &&
-                     (defaultCountry.equals("") ||
+                     (defaultCountry.isEmpty() ||
                       defaultCountry.equals(Locale.US.getCountry()) ||
                       defaultCountry.equals(Locale.CANADA.getCountry()))) {
                      iw = MediaSize.NA.LETTER.getX(Size2DSyntax.INCH) - 0.5f;

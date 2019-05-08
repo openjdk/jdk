@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,7 +162,7 @@ public final class DebugSettings {
 
         // check if the user specified a particular settings file
         propPath = System.getProperty(PREFIX + "." + PROP_FILE, "");
-        if (propPath.equals("")) {
+        if (propPath.isEmpty()) {
         // otherwise get it from the user's home directory
             propPath = System.getProperty("user.home", "") +
                         File.separator +

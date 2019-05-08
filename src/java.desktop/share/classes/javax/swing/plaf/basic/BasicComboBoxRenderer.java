@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ implements ListCellRenderer<Object>, Serializable {
     public Dimension getPreferredSize() {
         Dimension size;
 
-        if ((this.getText() == null) || (this.getText().equals( "" ))) {
+        if (this.getText() == null || this.getText().isEmpty()) {
             setText( " " );
             size = super.getPreferredSize();
             setText( "" );

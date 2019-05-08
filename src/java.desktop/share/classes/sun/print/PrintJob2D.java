@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -683,7 +683,7 @@ public class PrintJob2D extends PrintJob implements Printable, Runnable {
                 URI uri = null;
                 try {
                     if (fileName != null) {
-                        if (fileName.equals("")) {
+                        if (fileName.isEmpty()) {
                             fileName = ".";
                         }
                     } else {
@@ -1233,11 +1233,11 @@ public class PrintJob2D extends PrintJob implements Printable, Runnable {
             (jobAttributes.getDestination() == DestinationType.PRINTER) ?
                           PRINTER : FILE);
         str = jobAttributes.getPrinter();
-        if (str != null && !str.equals("")) {
+        if (str != null && !str.isEmpty()) {
             props.setProperty(PRINTER_PROP, str);
         }
         str = jobAttributes.getFileName();
-        if (str != null && !str.equals("")) {
+        if (str != null && !str.isEmpty()) {
             props.setProperty(FILENAME_PROP, str);
         }
         int copies = jobAttributes.getCopies();
@@ -1245,7 +1245,7 @@ public class PrintJob2D extends PrintJob implements Printable, Runnable {
             props.setProperty(NUMCOPIES_PROP, "" + copies);
         }
         str = this.options;
-        if (str != null && !str.equals("")) {
+        if (str != null && !str.isEmpty()) {
             props.setProperty(OPTIONS_PROP, str);
         }
         props.setProperty(ORIENT_PROP,

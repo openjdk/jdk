@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -444,7 +444,7 @@ public class FileDialog extends Dialog {
      * @see       java.awt.FileDialog#getDirectory
      */
     public void setDirectory(String dir) {
-        this.dir = (dir != null && dir.equals("")) ? null : dir;
+        this.dir = (dir != null && dir.isEmpty()) ? null : dir;
         FileDialogPeer peer = (FileDialogPeer)this.peer;
         if (peer != null) {
             peer.setDirectory(this.dir);
@@ -524,7 +524,7 @@ public class FileDialog extends Dialog {
      * @see      #getFiles
      */
     public void setFile(String file) {
-        this.file = (file != null && file.equals("")) ? null : file;
+        this.file = (file != null && file.isEmpty()) ? null : file;
         FileDialogPeer peer = (FileDialogPeer)this.peer;
         if (peer != null) {
             peer.setFile(this.file);
@@ -605,10 +605,10 @@ public class FileDialog extends Dialog {
         s.defaultReadObject();
 
         // 1.1 Compatibility: "" is not converted to null in 1.1
-        if (dir != null && dir.equals("")) {
+        if (dir != null && dir.isEmpty()) {
             dir = null;
         }
-        if (file != null && file.equals("")) {
+        if (file != null && file.isEmpty()) {
             file = null;
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -939,10 +939,10 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
             } else {
                 String target = (anchor != null) ?
                     (String)anchor.getAttribute(HTML.Attribute.TARGET) : null;
-                if ((target == null) || (target.equals(""))) {
+                if (target == null || target.isEmpty()) {
                     target = hdoc.getBaseTarget();
                 }
-                if ((target == null) || (target.equals(""))) {
+                if (target == null || target.isEmpty()) {
                     target = "_self";
                 }
                     linkEvent = new HTMLFrameHyperlinkEvent(

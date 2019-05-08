@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1284,7 +1284,7 @@ public class TIFFImageMetadata extends IIOMetadata {
                         if(keywordNode != null) {
                             String keyword = keywordNode.getNodeValue();
                             String value = getAttribute(child, "value");
-                            if(!keyword.equals("") && !value.equals("")) {
+                            if (!keyword.isEmpty() && !value.isEmpty()) {
                                 if(keyword.equalsIgnoreCase("DocumentName")) {
                                     tagNumber =
                                         BaselineTIFFTagSet.TAG_DOCUMENT_NAME;

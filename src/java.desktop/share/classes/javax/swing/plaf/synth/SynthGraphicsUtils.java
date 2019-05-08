@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -638,7 +638,7 @@ public class SynthGraphicsUtils {
     static void paintAccText(Graphics g, SynthMenuItemLayoutHelper lh,
                              MenuItemLayoutHelper.LayoutResult lr) {
         String accText = lh.getAccText();
-        if (accText != null && !accText.equals("")) {
+        if (accText != null && !accText.isEmpty()) {
             g.setColor(lh.getAccStyle().getColor(lh.getAccContext(),
                     ColorType.TEXT_FOREGROUND));
             g.setFont(lh.getAccStyle().getFont(lh.getAccContext()));
@@ -649,7 +649,7 @@ public class SynthGraphicsUtils {
 
     static void paintText(Graphics g, SynthMenuItemLayoutHelper lh,
                           MenuItemLayoutHelper.LayoutResult lr) {
-        if (!lh.getText().equals("")) {
+        if (!lh.getText().isEmpty()) {
             if (lh.getHtmlView() != null) {
                 // Text is HTML
                 lh.getHtmlView().paint(g, lr.getTextRect());

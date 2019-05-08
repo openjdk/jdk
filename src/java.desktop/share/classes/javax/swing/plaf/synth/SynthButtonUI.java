@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,7 +195,7 @@ public class SynthButtonUI extends BasicButtonUI implements
         }
         AbstractButton b = (AbstractButton)c;
         String text = b.getText();
-        if (text == null || "".equals(text)) {
+        if (text == null || text.isEmpty()) {
             return -1;
         }
         Insets i = b.getInsets();

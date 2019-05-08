@@ -773,7 +773,7 @@ public class InputContext extends java.awt.im.InputContext
                                           getStartupLocale());
         }
 
-        if (inputMethodInfo != null && !inputMethodInfo.equals("")) {
+        if (inputMethodInfo != null && !inputMethodInfo.isEmpty()) {
             return inputMethodInfo;
         }
 

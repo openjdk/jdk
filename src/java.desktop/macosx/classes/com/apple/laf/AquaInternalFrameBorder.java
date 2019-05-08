@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,7 +180,7 @@ public class AquaInternalFrameBorder implements Border, UIResource {
         int startXPosition = fThisLeftSideTotal;
         boolean wasTextShortened = false;
         // shorten the string to fit in the
-        if ((text != null) && !(text.equals(""))) {
+        if (text != null && !text.isEmpty()) {
             totalTextWidth = SwingUtilities.computeStringWidth(fm, text);
             final String clipString = "\u2026";
             if (totalTextWidth > availTextWidth) {

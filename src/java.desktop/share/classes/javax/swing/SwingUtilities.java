@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1100,7 +1100,7 @@ public class SwingUtilities implements SwingConstants
          * and use 0,0,0,0 for textR.
          */
 
-        boolean textIsEmpty = (text == null) || text.equals("");
+        boolean textIsEmpty = (text == null) || text.isEmpty();
         int lsb = 0;
         int rsb = 0;
         /* Unless both text and icon are non-null, we effectively ignore

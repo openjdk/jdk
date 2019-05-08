@@ -207,7 +207,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup {
 
     public synchronized PrintService getPrintServiceByName(String name) {
 
-        if (name == null || name.equals("")) {
+        if (name == null || name.isEmpty()) {
             return null;
         } else {
             /* getPrintServices() is now very fast. */

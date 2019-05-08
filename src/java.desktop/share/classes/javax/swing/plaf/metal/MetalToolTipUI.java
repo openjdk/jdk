@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,7 +132,7 @@ public class MetalToolTipUI extends BasicToolTipUI {
             accelBL = metrics.getAscent();
         }
 
-        if (!accelString.equals("")) {
+        if (!accelString.isEmpty()) {
             g.setFont(smallFont);
             g.setColor( MetalLookAndFeel.getPrimaryControlDarkShadow() );
             SwingUtilities2.drawString(tip, g, accelString,
@@ -145,7 +145,7 @@ public class MetalToolTipUI extends BasicToolTipUI {
     }
 
     private int calcAccelSpacing(JComponent c, FontMetrics fm, String accel) {
-        return accel.equals("")
+        return accel.isEmpty()
                ? 0
                : padSpaceBetweenStrings +
                  SwingUtilities2.stringWidth(c, fm, accel);
@@ -155,7 +155,7 @@ public class MetalToolTipUI extends BasicToolTipUI {
         Dimension d = super.getPreferredSize(c);
 
         String key = getAcceleratorString((JToolTip)c);
-        if (!(key.equals(""))) {
+        if (!key.isEmpty()) {
             d.width += calcAccelSpacing(c, c.getFontMetrics(smallFont), key);
         }
         return d;

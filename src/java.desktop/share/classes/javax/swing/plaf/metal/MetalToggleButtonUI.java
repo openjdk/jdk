@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -224,7 +224,7 @@ public class MetalToggleButtonUI extends BasicToggleButtonUI {
         boolean isIcon = b.getIcon() != null;
 
         // If there is text
-        if ( text != null && !text.equals( "" ) ) {
+        if ( text != null && !text.isEmpty()) {
             if ( !isIcon ) {
                 focusRect.setBounds( textRect );
             }

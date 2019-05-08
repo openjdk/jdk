@@ -645,7 +645,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
 
         String fontName = f.fullName;
         String familyName = f.familyName;
-        if (fontName == null || "".equals(fontName)) {
+        if (fontName == null || fontName.isEmpty()) {
             return null;
         }
         if (compositeFonts.containsKey(fontName)) {
