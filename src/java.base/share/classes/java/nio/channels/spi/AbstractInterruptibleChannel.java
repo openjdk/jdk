@@ -30,7 +30,6 @@ import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.Channel;
 import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.InterruptibleChannel;
-import java.util.concurrent.locks.ReentrantLock;
 
 import jdk.internal.access.SharedSecrets;
 import sun.nio.ch.Interruptible;
@@ -86,7 +85,7 @@ import sun.nio.ch.Interruptible;
 public abstract class AbstractInterruptibleChannel
     implements Channel, InterruptibleChannel
 {
-    private final ReentrantLock closeLock = new ReentrantLock();
+    private final Object closeLock = new Object();
     private volatile boolean closed;
 
     /**
@@ -106,14 +105,11 @@ public abstract class AbstractInterruptibleChannel
      *          If an I/O error occurs
      */
     public final void close() throws IOException {
-        closeLock.lock();
-        try {
+        synchronized (closeLock) {
             if (closed)
                 return;
             closed = true;
             implCloseChannel();
-        } finally {
-            closeLock.unlock();
         }
     }
 
@@ -157,8 +153,7 @@ public abstract class AbstractInterruptibleChannel
         if (interruptor == null) {
             interruptor = new Interruptible() {
                     public void interrupt(Thread target) {
-                        closeLock.lock();
-                        try {
+                        synchronized (closeLock) {
                             if (closed)
                                 return;
                             closed = true;
@@ -166,8 +161,6 @@ public abstract class AbstractInterruptibleChannel
                             try {
                                 AbstractInterruptibleChannel.this.implCloseChannel();
                             } catch (IOException x) { }
-                        } finally {
-                            closeLock.unlock();
                         }
                     }};
         }
