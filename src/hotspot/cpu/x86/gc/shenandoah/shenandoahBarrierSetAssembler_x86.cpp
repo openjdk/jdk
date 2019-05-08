@@ -53,12 +53,14 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, Dec
 
   if (type == T_OBJECT || type == T_ARRAY) {
 #ifdef _LP64
-    if (!checkcast && !obj_int) {
-      // Save count for barrier
-      __ movptr(r11, count);
-    } else if (disjoint && obj_int) {
-      // Save dst in r11 in the disjoint case
-      __ movq(r11, dst);
+    if (!checkcast) {
+      if (!obj_int) {
+        // Save count for barrier
+        __ movptr(r11, count);
+      } else if (disjoint) {
+        // Save dst in r11 in the disjoint case
+        __ movq(r11, dst);
+      }
     }
 #else
     if (disjoint) {
@@ -123,13 +125,15 @@ void ShenandoahBarrierSetAssembler::arraycopy_epilogue(MacroAssembler* masm, Dec
 
   if (type == T_OBJECT || type == T_ARRAY) {
 #ifdef _LP64
-    if (!checkcast && !obj_int) {
-      // Save count for barrier
-      count = r11;
-    } else if (disjoint && obj_int) {
-      // Use the saved dst in the disjoint case
-      dst = r11;
-    } else if (checkcast) {
+    if (!checkcast) {
+      if (!obj_int) {
+        // Save count for barrier
+        count = r11;
+      } else if (disjoint && obj_int) {
+        // Use the saved dst in the disjoint case
+        dst = r11;
+      }
+    } else {
       tmp = rscratch1;
     }
 #else
