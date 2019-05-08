@@ -128,7 +128,7 @@ public class PoolWriter {
     /**
      * Puts a dynamic reference into the constant pool and return its index.
      */
-    int putDynamic(DynamicMethodSymbol d) {
+    int putDynamic(Dynamic d) {
         return pool.writeIfNeeded(d);
     }
 
@@ -454,6 +454,13 @@ public class PoolWriter {
                 }
                 case ClassFile.CONSTANT_InvokeDynamic: {
                     DynamicMethodSymbol d = (DynamicMethodSymbol)c;
+                    poolbuf.appendByte(tag);
+                    poolbuf.appendChar(makeBoostrapEntry(d));
+                    poolbuf.appendChar(putNameAndType(d));
+                    break;
+                }
+                case ClassFile.CONSTANT_Dynamic: {
+                    Symbol.DynamicVarSymbol d = (Symbol.DynamicVarSymbol)c;
                     poolbuf.appendByte(tag);
                     poolbuf.appendChar(makeBoostrapEntry(d));
                     poolbuf.appendChar(putNameAndType(d));
