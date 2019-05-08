@@ -216,7 +216,9 @@ vmTestbase/nsk/jdb/clear/clear003/clear003.java                               82
 
 compiler/jsr292/InvokerSignatureMismatch.java           8221577   generic-all
 
+# Next tests should be re-enabled once libgraal is introduced
 compiler/arguments/TestScavengeRootsInCode.java         8207267   generic-all
+compiler/c2/Test8062950.java                            8207267   generic-all
 compiler/intrinsics/mathexact/LongMulOverflowTest.java  8207267   generic-all
 compiler/loopopts/TestOverunrolling.java                8207267   generic-all
 
