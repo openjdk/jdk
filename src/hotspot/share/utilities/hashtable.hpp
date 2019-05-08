@@ -30,6 +30,7 @@
 #include "oops/symbol.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/tableStatistics.hpp"
 
 // This is a generic hashtable, designed to be used for the symbol
 // and string tables.
@@ -168,6 +169,8 @@ private:
 
 protected:
 
+  TableRateStatistics _stats_rate;
+
   void initialize(int table_size, int entry_size, int number_of_entries);
 
   // Accessor
@@ -245,6 +248,7 @@ public:
     return this->hash_to_index(compute_hash(name));
   }
 
+  TableStatistics statistics_calculate(T (*literal_load_barrier)(HashtableEntry<T, F>*) = NULL);
   void print_table_statistics(outputStream* st, const char *table_name, T (*literal_load_barrier)(HashtableEntry<T, F>*) = NULL);
 
  protected:

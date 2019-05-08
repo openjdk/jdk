@@ -99,6 +99,7 @@ private:
   // The string table
   static StringTable* the_table() { return _the_table; }
   size_t table_size();
+  TableStatistics get_table_statistics();
 
   static OopStorage* weak_storage() { return the_table()->_weak_handles; }
 

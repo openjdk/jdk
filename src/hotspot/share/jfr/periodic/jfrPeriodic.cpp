@@ -27,6 +27,9 @@
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoaderStats.hpp"
 #include "classfile/javaClasses.hpp"
+#include "classfile/stringTable.hpp"
+#include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compileBroker.hpp"
 #include "gc/g1/g1HeapRegionEventSender.hpp"
@@ -504,6 +507,46 @@ class JfrClassLoaderStatsVMOperation : public ClassLoaderStatsVMOperation {
 TRACE_REQUEST_FUNC(ClassLoaderStatistics) {
   JfrClassLoaderStatsVMOperation op;
   VMThread::execute(&op);
+}
+
+template<typename EVENT>
+static void emit_table_statistics(TableStatistics statistics) {
+  EVENT event;
+  event.set_bucketCount(statistics._number_of_buckets);
+  event.set_entryCount(statistics._number_of_entries);
+  event.set_totalFootprint(statistics._total_footprint);
+  event.set_bucketCountMaximum(statistics._maximum_bucket_size);
+  event.set_bucketCountAverage(statistics._average_bucket_size);
+  event.set_bucketCountVariance(statistics._variance_of_bucket_size);
+  event.set_bucketCountStandardDeviation(statistics._stddev_of_bucket_size);
+  event.set_insertionRate(statistics._add_rate);
+  event.set_removalRate(statistics._remove_rate);
+  event.commit();
+}
+
+TRACE_REQUEST_FUNC(SymbolTableStatistics) {
+  TableStatistics statistics = SymbolTable::the_table()->get_table_statistics();
+  emit_table_statistics<EventSymbolTableStatistics>(statistics);
+}
+
+TRACE_REQUEST_FUNC(StringTableStatistics) {
+  TableStatistics statistics = StringTable::the_table()->get_table_statistics();
+  emit_table_statistics<EventStringTableStatistics>(statistics);
+}
+
+TRACE_REQUEST_FUNC(PlaceholderTableStatistics) {
+  TableStatistics statistics = SystemDictionary::placeholders_statistics();
+  emit_table_statistics<EventPlaceholderTableStatistics>(statistics);
+}
+
+TRACE_REQUEST_FUNC(LoaderConstraintsTableStatistics) {
+  TableStatistics statistics = SystemDictionary::loader_constraints_statistics();
+  emit_table_statistics<EventLoaderConstraintsTableStatistics>(statistics);
+}
+
+TRACE_REQUEST_FUNC(ProtectionDomainCacheTableStatistics) {
+  TableStatistics statistics = SystemDictionary::protection_domain_cache_statistics();
+  emit_table_statistics<EventProtectionDomainCacheTableStatistics>(statistics);
 }
 
 TRACE_REQUEST_FUNC(CompilerStatistics) {

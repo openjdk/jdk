@@ -171,6 +171,7 @@ public:
   // The symbol table
   static SymbolTable* the_table() { return _the_table; }
   size_t table_size();
+  TableStatistics get_table_statistics();
 
   enum {
     symbol_alloc_batch_size = 8,

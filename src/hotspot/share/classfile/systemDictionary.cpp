@@ -2849,11 +2849,23 @@ void SystemDictionary::dump(outputStream *st, bool verbose) {
     print_on(st);
   } else {
     CDS_ONLY(SystemDictionaryShared::print_table_statistics(st));
-    ClassLoaderDataGraph::print_dictionary_statistics(st);
+    ClassLoaderDataGraph::print_table_statistics(st);
     placeholders()->print_table_statistics(st, "Placeholder Table");
     constraints()->print_table_statistics(st, "LoaderConstraints Table");
-    _pd_cache_table->print_table_statistics(st, "ProtectionDomainCache Table");
+    pd_cache_table()->print_table_statistics(st, "ProtectionDomainCache Table");
   }
+}
+
+TableStatistics SystemDictionary::placeholders_statistics() {
+  return placeholders()->statistics_calculate();
+}
+
+TableStatistics SystemDictionary::loader_constraints_statistics() {
+  return constraints()->statistics_calculate();
+}
+
+TableStatistics SystemDictionary::protection_domain_cache_statistics() {
+  return pd_cache_table()->statistics_calculate();
 }
 
 // Utility for dumping dictionaries.

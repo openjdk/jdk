@@ -443,7 +443,7 @@ void ClassLoaderDataGraph::print_dictionary(outputStream* st) {
   }
 }
 
-void ClassLoaderDataGraph::print_dictionary_statistics(outputStream* st) {
+void ClassLoaderDataGraph::print_table_statistics(outputStream* st) {
   FOR_ALL_DICTIONARY(cld) {
     ResourceMark rm;
     stringStream tempst;

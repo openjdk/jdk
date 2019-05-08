@@ -130,6 +130,7 @@ class AllocatedObj {
   f(mtTest,          "Test")        /* Test type for verifying NMT               */ \
   f(mtTracing,       "Tracing")                                                     \
   f(mtLogging,       "Logging")                                                     \
+  f(mtStatistics,    "Statistics")                                                  \
   f(mtArguments,     "Arguments")                                                   \
   f(mtModule,        "Module")                                                      \
   f(mtSafepoint,     "Safepoint")                                                   \
