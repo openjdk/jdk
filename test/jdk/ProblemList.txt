@@ -566,6 +566,8 @@ java/lang/management/MemoryMXBean/PendingAllGC.sh               8158837 generic-
 java/lang/management/ThreadMXBean/ThreadMXBeanStateTest.java    8081652 generic-all
 java/lang/management/ThreadMXBean/AllThreadIds.java             8131745 generic-all
 
+javax/management/monitor/DerivedGaugeMonitorTest.java         8042211 generic-all
+
 ############################################################################
 
 # jdk_io
