@@ -49,7 +49,7 @@ import jdk.internal.vm.annotation.Contended;
 /*
  * @test TestHumongousReferenceObjectShenandoah
  * @summary Test that verifies that iteration over large, plain Java objects, that potentially cross region boundaries, with references in them works.
- * @requires vm.gc.Shenandoah
+ * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @bug 8151499 8153734
  * @modules java.base/jdk.internal.vm.annotation
  * @run main/othervm -XX:+EnableContended -XX:-RestrictContended -Xmx128m -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahHeapRegionSize=8M -XX:ContendedPaddingWidth=8192 gc.TestHumongousReferenceObject

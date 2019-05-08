@@ -25,7 +25,7 @@
  * @test TestVerifyJCStress
  * @summary Tests that we pass at least one jcstress-like test with all verification turned on
  * @key gc
- * @requires vm.gc.Shenandoah
+ * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main/othervm  -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions

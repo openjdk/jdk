@@ -81,7 +81,7 @@ import gc.testlibrary.PerfCounters;
 
 /* @test TestMetaspacePerfCountersShenandoah
  * @bug 8014659
- * @requires vm.gc.Shenandoah
+ * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @library /test/lib /
  * @summary Tests that performance counters for metaspace and compressed class
  *          space exists and works.

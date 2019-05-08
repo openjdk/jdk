@@ -25,7 +25,7 @@
  * @test TestHumongousThresholdArgs
  * @summary Test that Shenandoah humongous threshold args are checked
  * @key gc
- * @requires vm.gc.Shenandoah
+ * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

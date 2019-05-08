@@ -24,7 +24,7 @@
 /* @test TestWrongBarrierDisable
  * @summary Test that disabling wrong barriers fails early
  * @key gc
- * @requires vm.gc.Shenandoah
+ * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @library /test/lib
  * @run main/othervm TestWrongBarrierDisable
  */
