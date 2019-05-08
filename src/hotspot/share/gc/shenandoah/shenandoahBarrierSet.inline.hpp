@@ -26,14 +26,14 @@
 
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
-#include "gc/shenandoah/shenandoahBrooksPointer.inline.hpp"
+#include "gc/shenandoah/shenandoahForwarding.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 
 inline oop ShenandoahBarrierSet::resolve_forwarded_not_null(oop p) {
-  return ShenandoahBrooksPointer::forwardee(p);
+  return ShenandoahForwarding::get_forwardee(p);
 }
 
 inline oop ShenandoahBarrierSet::resolve_forwarded(oop p) {

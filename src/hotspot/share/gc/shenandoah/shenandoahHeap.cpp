@@ -33,7 +33,7 @@
 
 #include "gc/shenandoah/shenandoahAllocTracker.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
-#include "gc/shenandoah/shenandoahBrooksPointer.hpp"
+#include "gc/shenandoah/shenandoahForwarding.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
@@ -133,7 +133,7 @@ public:
 };
 
 jint ShenandoahHeap::initialize() {
-  ShenandoahBrooksPointer::initial_checks();
+  ShenandoahForwarding::initial_checks();
 
   initialize_heuristics();
 
@@ -861,7 +861,7 @@ private:
   MemAllocator& _initializer;
 public:
   ShenandoahMemAllocator(MemAllocator& initializer, Klass* klass, size_t word_size, Thread* thread) :
-  MemAllocator(klass, word_size + ShenandoahBrooksPointer::word_size(), thread),
+  MemAllocator(klass, word_size + ShenandoahForwarding::word_size(), thread),
     _initializer(initializer) {}
 
 protected:
@@ -869,8 +869,8 @@ protected:
     HeapWord* result = MemAllocator::mem_allocate(allocation);
     // Initialize brooks-pointer
     if (result != NULL) {
-      result += ShenandoahBrooksPointer::word_size();
-      ShenandoahBrooksPointer::initialize(oop(result));
+      result += ShenandoahForwarding::word_size();
+      ShenandoahForwarding::initialize(oop(result));
       assert(! ShenandoahHeap::heap()->in_collection_set(result), "never allocate in targetted region");
     }
     return result;
@@ -947,7 +947,7 @@ void ShenandoahHeap::fill_with_dummy_object(HeapWord* start, HeapWord* end, bool
 }
 
 size_t ShenandoahHeap::min_dummy_object_size() const {
-  return CollectedHeap::min_dummy_object_size() + ShenandoahBrooksPointer::word_size();
+  return CollectedHeap::min_dummy_object_size() + ShenandoahForwarding::word_size();
 }
 
 class ShenandoahConcurrentEvacuateRegionObjectClosure : public ObjectClosure {
@@ -1040,8 +1040,8 @@ void ShenandoahHeap::print_heap_regions_on(outputStream* st) const {
 void ShenandoahHeap::trash_humongous_region_at(ShenandoahHeapRegion* start) {
   assert(start->is_humongous_start(), "reclaim regions starting with the first one");
 
-  oop humongous_obj = oop(start->bottom() + ShenandoahBrooksPointer::word_size());
-  size_t size = humongous_obj->size() + ShenandoahBrooksPointer::word_size();
+  oop humongous_obj = oop(start->bottom() + ShenandoahForwarding::word_size());
+  size_t size = humongous_obj->size() + ShenandoahForwarding::word_size();
   size_t required_regions = ShenandoahHeapRegion::required_regions(size * HeapWordSize);
   size_t index = start->region_number() + required_regions - 1;
 
@@ -1854,8 +1854,8 @@ void ShenandoahHeap::set_evacuation_in_progress(bool in_progress) {
 
 HeapWord* ShenandoahHeap::tlab_post_allocation_setup(HeapWord* obj) {
   // Initialize Brooks pointer for the next object
-  HeapWord* result = obj + ShenandoahBrooksPointer::word_size();
-  ShenandoahBrooksPointer::initialize(oop(result));
+  HeapWord* result = obj + ShenandoahForwarding::word_size();
+  ShenandoahForwarding::initialize(oop(result));
   return result;
 }
 
@@ -2824,9 +2824,9 @@ void ShenandoahHeap::flush_liveness_cache(uint worker_id) {
 }
 
 size_t ShenandoahHeap::obj_size(oop obj) const {
-  return CollectedHeap::obj_size(obj) + ShenandoahBrooksPointer::word_size();
+  return CollectedHeap::obj_size(obj) + ShenandoahForwarding::word_size();
 }
 
 ptrdiff_t ShenandoahHeap::cell_header_size() const {
-  return ShenandoahBrooksPointer::byte_size();
+  return ShenandoahForwarding::byte_size();
 }

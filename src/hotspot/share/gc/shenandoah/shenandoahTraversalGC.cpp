@@ -35,6 +35,7 @@
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
+#include "gc/shenandoah/shenandoahForwarding.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.inline.hpp"
@@ -640,7 +641,7 @@ void ShenandoahTraversalGC::final_traversal_collection() {
         bool candidate = traversal_regions->is_in(r) && !r->has_live() && not_allocated;
         if (r->is_humongous_start() && candidate) {
           // Trash humongous.
-          HeapWord* humongous_obj = r->bottom() + ShenandoahBrooksPointer::word_size();
+          HeapWord* humongous_obj = r->bottom() + ShenandoahForwarding::word_size();
           assert(!ctx->is_marked(oop(humongous_obj)), "must not be marked");
           r->make_trash_immediate();
           while (i + 1 < num_regions && _heap->get_region(i + 1)->is_humongous_continuation()) {

@@ -26,6 +26,7 @@
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
+#include "gc/shenandoah/shenandoahForwarding.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahTraversalGC.hpp"
@@ -261,7 +262,7 @@ oop ShenandoahBarrierSet::load_reference_barrier_mutator(oop obj) {
       ShenandoahHeapRegion* r = _heap->heap_region_containing(obj);
       assert(r->is_cset(), "sanity");
 
-      HeapWord* cur = (HeapWord*)obj + obj->size() + ShenandoahBrooksPointer::word_size();
+      HeapWord* cur = (HeapWord*)obj + obj->size() + ShenandoahForwarding::word_size();
 
       size_t count = 0;
       while ((cur < r->top()) && ctx->is_marked(oop(cur)) && (count++ < max)) {
@@ -269,7 +270,7 @@ oop ShenandoahBarrierSet::load_reference_barrier_mutator(oop obj) {
         if (oopDesc::equals_raw(cur_oop, resolve_forwarded_not_null(cur_oop))) {
           _heap->evacuate_object(cur_oop, thread);
         }
-        cur = cur + cur_oop->size() + ShenandoahBrooksPointer::word_size();
+        cur = cur + cur_oop->size() + ShenandoahForwarding::word_size();
       }
     }
 

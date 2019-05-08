@@ -30,8 +30,8 @@
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
-#include "gc/shenandoah/shenandoahBrooksPointer.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.inline.hpp"
+#include "gc/shenandoah/shenandoahForwarding.inline.hpp"
 #include "gc/shenandoah/shenandoahWorkGroup.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.inline.hpp"
@@ -235,7 +235,7 @@ inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
   assert(ShenandoahThreadLocalData::is_evac_allowed(thread), "must be enclosed in oom-evac scope");
 
   size_t size_no_fwdptr = (size_t) p->size();
-  size_t size_with_fwdptr = size_no_fwdptr + ShenandoahBrooksPointer::word_size();
+  size_t size_with_fwdptr = size_no_fwdptr + ShenandoahForwarding::word_size();
 
   assert(!heap_region_containing(p)->is_humongous(), "never evacuate humongous objects");
 
@@ -269,14 +269,14 @@ inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
   }
 
   // Copy the object and initialize its forwarding ptr:
-  HeapWord* copy = filler + ShenandoahBrooksPointer::word_size();
+  HeapWord* copy = filler + ShenandoahForwarding::word_size();
   oop copy_val = oop(copy);
 
   Copy::aligned_disjoint_words((HeapWord*) p, copy, size_no_fwdptr);
-  ShenandoahBrooksPointer::initialize(oop(copy));
+  ShenandoahForwarding::initialize(oop(copy));
 
   // Try to install the new forwarding pointer.
-  oop result = ShenandoahBrooksPointer::try_update_forwardee(p, copy_val);
+  oop result = ShenandoahForwarding::try_update_forwardee(p, copy_val);
 
   if (oopDesc::equals_raw(result, p)) {
     // Successfully evacuated. Our copy is now the public one!
@@ -370,7 +370,7 @@ inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, 
 
 template<class T>
 inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, T* cl, HeapWord* limit) {
-  assert(ShenandoahBrooksPointer::word_offset() < 0, "skip_delta calculation below assumes the forwarding ptr is before obj");
+  assert(ShenandoahForwarding::word_offset() < 0, "skip_delta calculation below assumes the forwarding ptr is before obj");
   assert(! region->is_humongous_continuation(), "no humongous continuation regions here");
 
   ShenandoahMarkingContext* const ctx = complete_marking_context();
@@ -379,10 +379,10 @@ inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, 
   MarkBitMap* mark_bit_map = ctx->mark_bit_map();
   HeapWord* tams = ctx->top_at_mark_start(region);
 
-  size_t skip_bitmap_delta = ShenandoahBrooksPointer::word_size() + 1;
-  size_t skip_objsize_delta = ShenandoahBrooksPointer::word_size() /* + actual obj.size() below */;
-  HeapWord* start = region->bottom() + ShenandoahBrooksPointer::word_size();
-  HeapWord* end = MIN2(tams + ShenandoahBrooksPointer::word_size(), region->end());
+  size_t skip_bitmap_delta = ShenandoahForwarding::word_size() + 1;
+  size_t skip_objsize_delta = ShenandoahForwarding::word_size() /* + actual obj.size() below */;
+  HeapWord* start = region->bottom() + ShenandoahForwarding::word_size();
+  HeapWord* end = MIN2(tams + ShenandoahForwarding::word_size(), region->end());
 
   // Step 1. Scan below the TAMS based on bitmap data.
   HeapWord* limit_bitmap = MIN2(limit, tams);
@@ -412,7 +412,7 @@ inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, 
     do {
       avail = 0;
       for (int c = 0; (c < dist) && (cb < limit_bitmap); c++) {
-        Prefetch::read(cb, ShenandoahBrooksPointer::byte_offset());
+        Prefetch::read(cb, ShenandoahForwarding::byte_offset());
         slots[avail++] = cb;
         cb += skip_bitmap_delta;
         if (cb < limit_bitmap) {
@@ -447,7 +447,7 @@ inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, 
   // Step 2. Accurate size-based traversal, happens past the TAMS.
   // This restarts the scan at TAMS, which makes sure we traverse all objects,
   // regardless of what happened at Step 1.
-  HeapWord* cs = tams + ShenandoahBrooksPointer::word_size();
+  HeapWord* cs = tams + ShenandoahForwarding::word_size();
   while (cs < limit) {
     assert (cs > tams,  "only objects past TAMS here: "   PTR_FORMAT " (" PTR_FORMAT ")", p2i(cs), p2i(tams));
     assert (cs < limit, "only objects below limit here: " PTR_FORMAT " (" PTR_FORMAT ")", p2i(cs), p2i(limit));

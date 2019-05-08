@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
+#include "gc/shenandoah/shenandoahForwarding.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahHeuristics.hpp"
@@ -221,7 +222,7 @@ void ShenandoahBarrierSetAssembler::resolve_forward_pointer(MacroAssembler* masm
 // IMPORTANT: This must preserve all registers, even rscratch1 and rscratch2.
 void ShenandoahBarrierSetAssembler::resolve_forward_pointer_not_null(MacroAssembler* masm, Register dst) {
   assert(ShenandoahLoadRefBarrier || ShenandoahCASBarrier, "Should be enabled");
-  __ ldr(dst, Address(dst, ShenandoahBrooksPointer::byte_offset()));
+  __ ldr(dst, Address(dst, ShenandoahForwarding::byte_offset()));
 }
 
 void ShenandoahBarrierSetAssembler::load_reference_barrier_not_null(MacroAssembler* masm, Register dst, Register tmp) {
@@ -355,9 +356,9 @@ void ShenandoahBarrierSetAssembler::tlab_allocate(MacroAssembler* masm, Register
 
   __ ldr(obj, Address(rthread, JavaThread::tlab_top_offset()));
   if (var_size_in_bytes == noreg) {
-    __ lea(end, Address(obj, (int) (con_size_in_bytes + ShenandoahBrooksPointer::byte_size())));
+    __ lea(end, Address(obj, (int) (con_size_in_bytes + ShenandoahForwarding::byte_size())));
   } else {
-    __ add(var_size_in_bytes, var_size_in_bytes, ShenandoahBrooksPointer::byte_size());
+    __ add(var_size_in_bytes, var_size_in_bytes, ShenandoahForwarding::byte_size());
     __ lea(end, Address(obj, var_size_in_bytes));
   }
   __ ldr(rscratch1, Address(rthread, JavaThread::tlab_end_offset()));
@@ -367,8 +368,8 @@ void ShenandoahBarrierSetAssembler::tlab_allocate(MacroAssembler* masm, Register
   // update the tlab top pointer
   __ str(end, Address(rthread, JavaThread::tlab_top_offset()));
 
-  __ add(obj, obj, ShenandoahBrooksPointer::byte_size());
-  __ str(obj, Address(obj, ShenandoahBrooksPointer::byte_offset()));
+  __ add(obj, obj, ShenandoahForwarding::byte_size());
+  __ str(obj, Address(obj, ShenandoahForwarding::byte_offset()));
 
   // recover var_size_in_bytes if necessary
   if (var_size_in_bytes == end) {
