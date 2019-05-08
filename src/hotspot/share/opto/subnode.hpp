@@ -350,6 +350,17 @@ public:
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
+//------------------------------AbsLNode---------------------------------------
+// Absolute value a long.  Since a naive graph involves control flow, we
+// "match" it in the ideal world (so the control flow can be removed).
+class AbsLNode : public AbsNode {
+public:
+  AbsLNode( Node *in1 ) : AbsNode(in1) {}
+  virtual int Opcode() const;
+  const Type *bottom_type() const { return TypeLong::LONG; }
+  virtual uint ideal_reg() const { return Op_RegL; }
+};
+
 //------------------------------AbsFNode---------------------------------------
 // Absolute value a float, a common float-point idiom with a cheap hardware
 // implemention on most chips.  Since a naive graph involves control flow, we

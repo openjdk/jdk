@@ -8949,6 +8949,28 @@ instruct overflowMulI_rReg_imm(eFlagsReg cr, rRegI op1, immI op2, rRegI tmp)
   ins_pipe(ialu_reg_reg_alu0);
 %}
 
+// Integer Absolute Instructions
+instruct absI_rReg(rRegI dst, rRegI src, rRegI tmp, eFlagsReg cr)
+%{
+  match(Set dst (AbsI src));
+  effect(TEMP dst, TEMP tmp, KILL cr);
+  format %{ "movl $tmp, $src\n\t"
+            "sarl $tmp, 31\n\t"
+            "movl $dst, $src\n\t"
+            "xorl $dst, $tmp\n\t"
+            "subl $dst, $tmp\n"
+          %}
+  ins_encode %{
+    __ movl($tmp$$Register, $src$$Register);
+    __ sarl($tmp$$Register, 31);
+    __ movl($dst$$Register, $src$$Register);
+    __ xorl($dst$$Register, $tmp$$Register);
+    __ subl($dst$$Register, $tmp$$Register);
+  %}
+
+  ins_pipe(ialu_reg_reg);
+%} 
+
 //----------Long Instructions------------------------------------------------
 // Add Long Register with Register
 instruct addL_eReg(eRegL dst, eRegL src, eFlagsReg cr) %{

@@ -43,6 +43,13 @@ address StubRoutines::x86::_ghash_shuffmask_addr = NULL;
 address StubRoutines::x86::_upper_word_mask_addr = NULL;
 address StubRoutines::x86::_shuffle_byte_flip_mask_addr = NULL;
 address StubRoutines::x86::_k256_adr = NULL;
+address StubRoutines::x86::_vector_short_to_byte_mask = NULL;
+address StubRoutines::x86::_vector_float_sign_mask = NULL;
+address StubRoutines::x86::_vector_float_sign_flip = NULL;
+address StubRoutines::x86::_vector_double_sign_mask = NULL;
+address StubRoutines::x86::_vector_double_sign_flip = NULL;
+address StubRoutines::x86::_vector_byte_perm_mask = NULL;
+address StubRoutines::x86::_vector_long_sign_mask = NULL;
 #ifdef _LP64
 address StubRoutines::x86::_k256_W_adr = NULL;
 address StubRoutines::x86::_k512_W_addr = NULL;

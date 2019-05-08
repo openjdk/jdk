@@ -70,8 +70,8 @@ int VectorNode::opcode(int sopc, BasicType bt) {
     return Op_SubVD;
   case Op_MulI:
     switch (bt) {
-    case T_BOOLEAN:
-    case T_BYTE:   return 0;   // Unimplemented
+    case T_BOOLEAN:return 0;
+    case T_BYTE:   return Op_MulVB;
     case T_CHAR:
     case T_SHORT:  return Op_MulVS;
     case T_INT:    return Op_MulVI;
@@ -104,6 +104,18 @@ int VectorNode::opcode(int sopc, BasicType bt) {
   case Op_DivD:
     assert(bt == T_DOUBLE, "must be");
     return Op_DivVD;
+  case Op_AbsI:
+    switch (bt) {
+    case T_BOOLEAN:
+    case T_CHAR:  return 0; // abs does not make sense for unsigned
+    case T_BYTE:  return Op_AbsVB;
+    case T_SHORT: return Op_AbsVS;
+    case T_INT:   return Op_AbsVI;
+    default: ShouldNotReachHere(); return 0;
+    }
+  case Op_AbsL:
+    assert(bt == T_LONG, "must be");
+    return Op_AbsVL;
   case Op_AbsF:
     assert(bt == T_FLOAT, "must be");
     return Op_AbsVF;
@@ -350,6 +362,7 @@ VectorNode* VectorNode::make(int opc, Node* n1, Node* n2, uint vlen, BasicType b
   case Op_SubVF: return new SubVFNode(n1, n2, vt);
   case Op_SubVD: return new SubVDNode(n1, n2, vt);
 
+  case Op_MulVB: return new MulVBNode(n1, n2, vt);
   case Op_MulVS: return new MulVSNode(n1, n2, vt);
   case Op_MulVI: return new MulVINode(n1, n2, vt);
   case Op_MulVL: return new MulVLNode(n1, n2, vt);
@@ -359,6 +372,10 @@ VectorNode* VectorNode::make(int opc, Node* n1, Node* n2, uint vlen, BasicType b
   case Op_DivVF: return new DivVFNode(n1, n2, vt);
   case Op_DivVD: return new DivVDNode(n1, n2, vt);
 
+  case Op_AbsVB: return new AbsVBNode(n1, vt);
+  case Op_AbsVS: return new AbsVSNode(n1, vt);
+  case Op_AbsVI: return new AbsVINode(n1, vt);
+  case Op_AbsVL: return new AbsVLNode(n1, vt);
   case Op_AbsVF: return new AbsVFNode(n1, vt);
   case Op_AbsVD: return new AbsVDNode(n1, vt);
 
