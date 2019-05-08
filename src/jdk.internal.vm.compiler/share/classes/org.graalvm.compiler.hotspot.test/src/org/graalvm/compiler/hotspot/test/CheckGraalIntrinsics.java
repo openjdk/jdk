@@ -398,7 +398,6 @@ public class CheckGraalIntrinsics extends GraalTest {
 
         if (isJDK13OrHigher()) {
             add(toBeInvestigated,
-                            "java/lang/Math.abs(F)F",
                             "java/lang/Math.abs(I)I",
                             "java/lang/Math.abs(J)J",
                             "java/lang/Math.max(DD)D",
