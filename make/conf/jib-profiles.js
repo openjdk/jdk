@@ -1301,7 +1301,7 @@ var versionArgs = function(input, common) {
     var args = ["--with-version-build=" + common.build_number];
     if (input.build_type == "promoted") {
         args = concat(args,
-                      "--with-version-pre=" + version_numbers.get("DEFAULT_PROMOTION_VERSION_PRE"),
+                      "--with-version-pre=" + version_numbers.get("DEFAULT_PROMOTED_VERSION_PRE"),
                       "--without-version-opt");
     } else if (input.build_type == "ci") {
         var optString = input.build_id_data.ciBuildNumber;
