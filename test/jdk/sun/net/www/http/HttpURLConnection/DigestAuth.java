@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Authenticator;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.PasswordAuthentication;
 import java.net.URL;
@@ -54,7 +55,6 @@ import java.util.List;
  */
 public class DigestAuth {
 
-    static final String LOCALHOST = "localhost";
     static final String EXPECT_FAILURE = null;
     static final String EXPECT_DIGEST = "Digest";
     static final String REALM = "testrealm@host.com";
@@ -119,8 +119,7 @@ public class DigestAuth {
             AuthenticatorImpl auth = new AuthenticatorImpl();
             Authenticator.setDefault(auth);
 
-            String url = String.format("http://%s:%d/test/",
-                    LOCALHOST, server.getPort());
+            String url = String.format("http://%s/test/", server.getAuthority());
 
             boolean success = true;
             switch (testcase) {
@@ -322,6 +321,16 @@ public class DigestAuth {
             this.server = server;
         }
 
+        public String getAuthority() {
+            InetAddress address = server.getAddress().getAddress();
+            String hostaddr = address.isAnyLocalAddress()
+                ? "localhost" : address.getHostAddress();
+            if (hostaddr.indexOf(':') > -1) {
+                hostaddr = "[" + hostaddr + "]";
+            }
+            return hostaddr + ":" + getPort();
+        }
+
         void setWWWAuthHeader(String wwwAuthHeader) {
             this.wwwAuthHeader = wwwAuthHeader;
         }
@@ -331,8 +340,9 @@ public class DigestAuth {
         }
 
         static LocalHttpServer startServer() throws IOException {
+            InetAddress loopback = InetAddress.getLoopbackAddress();
             HttpServer httpServer = HttpServer.create(
-                    new InetSocketAddress(0), 0);
+                    new InetSocketAddress(loopback, 0), 0);
             LocalHttpServer localHttpServer = new LocalHttpServer(httpServer);
             localHttpServer.start();
 
@@ -342,7 +352,7 @@ public class DigestAuth {
         void start() {
             server.createContext("/test", this);
             server.start();
-            System.out.println("HttpServer: started on port " + getPort());
+            System.out.println("HttpServer: started on port " + getAuthority());
         }
 
         void stop() {

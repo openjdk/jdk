@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,8 +84,8 @@ public class MultiThreadTest extends Thread {
     byte[] b;
     int requests;
 
-    MultiThreadTest(int port, int requests) throws Exception {
-        uri = "http://localhost:" + port + "/foo.html";
+    MultiThreadTest(String authority, int requests) throws Exception {
+        uri = "http://" + authority + "/foo.html";
 
         b = new byte [256];
         this.requests = requests;
@@ -134,14 +134,16 @@ public class MultiThreadTest extends Thread {
         }
 
         /* start the server */
-        ServerSocket ss = new ServerSocket(0);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        ServerSocket ss = new ServerSocket();
+        ss.bind(new InetSocketAddress(loopback, 0));
         Server svr = new Server(ss);
         svr.start();
 
         Object lock = MultiThreadTest.getLock();
         synchronized (lock) {
             for (int i=0; i<threads; i++) {
-                MultiThreadTest t = new MultiThreadTest(ss.getLocalPort(), requests);
+                MultiThreadTest t = new MultiThreadTest(svr.getAuthority(), requests);
                 t.start ();
             }
             try {
@@ -183,6 +185,16 @@ public class MultiThreadTest extends Thread {
 
         Server(ServerSocket ss) {
             this.ss = ss;
+        }
+
+        public String getAuthority() {
+            InetAddress address = ss.getInetAddress();
+            String hostaddr = address.isAnyLocalAddress()
+                ? "localhost" : address.getHostAddress();
+            if (hostaddr.indexOf(':') > -1) {
+                hostaddr = "[" + hostaddr + "]";
+            }
+            return hostaddr + ":" + ss.getLocalPort();
         }
 
         public Queue<Worker> workers() {

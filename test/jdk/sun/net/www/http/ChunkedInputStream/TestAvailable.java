@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 6446990
  * @modules jdk.httpserver
+ * @library /test/lib
  * @run main/othervm TestAvailable
  * @summary HttpURLConnection#available() reads more and more data into memory
  */
@@ -35,6 +36,7 @@ import java.io.*;
 import com.sun.net.httpserver.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
+import jdk.test.lib.net.URIBuilder;
 
 public class TestAvailable
 {
@@ -60,7 +62,13 @@ public class TestAvailable
         try {
             InetSocketAddress address = httpServer.getAddress();
 
-            URL url = new URL("http://localhost:" + address.getPort() + "/testAvailable/");
+            URL url = URIBuilder.newBuilder()
+                      .scheme("http")
+                      .host(address.getAddress())
+                      .port(address.getPort())
+                      .path("/testAvailable/")
+                      .toURLUnchecked();
+
             HttpURLConnection uc = (HttpURLConnection)url.openConnection();
 
             uc.setDoOutput(true);
@@ -102,7 +110,9 @@ public class TestAvailable
      * Http Server
      */
     public void startHttpServer() throws IOException {
-        httpServer = com.sun.net.httpserver.HttpServer.create(new InetSocketAddress(0), 0);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        InetSocketAddress sockaddr = new InetSocketAddress(loopback, 0);
+        httpServer = com.sun.net.httpserver.HttpServer.create(sockaddr, 0);
 
         // create HttpServer context
         HttpContext ctx = httpServer.createContext("/testAvailable/", new MyHandler());

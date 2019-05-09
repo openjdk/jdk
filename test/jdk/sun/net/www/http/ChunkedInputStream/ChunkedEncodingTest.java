@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 4333920
  * @modules jdk.httpserver
+ * @library /test/lib
  * @run main ChunkedEncodingTest
  * @summary ChunkedEncodingTest unit test
  */
@@ -36,6 +37,7 @@ import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpExchange;
 import static java.lang.System.out;
+import jdk.test.lib.net.URIBuilder;
 
 public class ChunkedEncodingTest{
     private static MessageDigest serverDigest, clientDigest;
@@ -61,7 +63,13 @@ public class ChunkedEncodingTest{
 
             int port = server.getAddress().getPort();
             out.println ("Server listening on port: " + port);
-            client("http://localhost:" + port + "/chunked/");
+            String url = URIBuilder.newBuilder()
+                .scheme("http")
+                .host(server.getAddress().getAddress())
+                .port(port)
+                .path("/chunked/")
+                .build().toString();
+            client(url);
 
             if (!MessageDigest.isEqual(clientMac, serverMac)) {
                 throw new RuntimeException(
@@ -83,7 +91,8 @@ public class ChunkedEncodingTest{
      * Http Server
      */
     static HttpServer startHttpServer() throws IOException {
-        HttpServer httpServer = HttpServer.create(new InetSocketAddress(0), 0);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        HttpServer httpServer = HttpServer.create(new InetSocketAddress(loopback, 0), 0);
         HttpHandler httpHandler = new SimpleHandler();
         httpServer.createContext("/chunked/", httpHandler);
         httpServer.start();
