@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,6 +113,7 @@ Java_sun_awt_UNIXToolkit_load_1gtk_1icon(JNIEnv *env, jobject this,
 {
 #ifndef HEADLESS
     int len;
+    jsize jlen;
     char *filename_str = NULL;
     GError **error = NULL;
 
@@ -122,6 +123,7 @@ Java_sun_awt_UNIXToolkit_load_1gtk_1icon(JNIEnv *env, jobject this,
     }
 
     len = (*env)->GetStringUTFLength(env, filename);
+    jlen = (*env)->GetStringLength(env, filename);
     filename_str = (char *)SAFE_SIZE_ARRAY_ALLOC(malloc,
             sizeof(char), len + 1);
     if (filename_str == NULL) {
@@ -132,7 +134,7 @@ Java_sun_awt_UNIXToolkit_load_1gtk_1icon(JNIEnv *env, jobject this,
         free(filename_str);
         return JNI_FALSE;
     }
-    (*env)->GetStringUTFRegion(env, filename, 0, len, filename_str);
+    (*env)->GetStringUTFRegion(env, filename, 0, jlen, filename_str);
     jboolean result = gtk->get_file_icon_data(env, filename_str, error,
                                             icon_upcall_method, this);
 
@@ -159,6 +161,7 @@ Java_sun_awt_UNIXToolkit_load_1stock_1icon(JNIEnv *env, jobject this,
 {
 #ifndef HEADLESS
     int len;
+    jsize jlen;
     char *stock_id_str = NULL;
     char *detail_str = NULL;
     jboolean result = JNI_FALSE;
@@ -169,18 +172,20 @@ Java_sun_awt_UNIXToolkit_load_1stock_1icon(JNIEnv *env, jobject this,
     }
 
     len = (*env)->GetStringUTFLength(env, stock_id);
+    jlen = (*env)->GetStringLength(env, stock_id);
     stock_id_str = (char *)SAFE_SIZE_ARRAY_ALLOC(malloc,
             sizeof(char), len + 1);
     if (stock_id_str == NULL) {
         JNU_ThrowOutOfMemoryError(env, "OutOfMemoryError");
         return JNI_FALSE;
     }
-    (*env)->GetStringUTFRegion(env, stock_id, 0, len, stock_id_str);
+    (*env)->GetStringUTFRegion(env, stock_id, 0, jlen, stock_id_str);
 
     /* Detail isn't required so check for NULL. */
     if (detail != NULL)
     {
         len = (*env)->GetStringUTFLength(env, detail);
+        jlen = (*env)->GetStringLength(env, detail);
         detail_str = (char *)SAFE_SIZE_ARRAY_ALLOC(malloc,
                 sizeof(char), len + 1);
         if (detail_str == NULL) {
@@ -188,7 +193,7 @@ Java_sun_awt_UNIXToolkit_load_1stock_1icon(JNIEnv *env, jobject this,
             JNU_ThrowOutOfMemoryError(env, "OutOfMemoryError");
             return JNI_FALSE;
         }
-        (*env)->GetStringUTFRegion(env, detail, 0, len, detail_str);
+        (*env)->GetStringUTFRegion(env, detail, 0, jlen, detail_str);
     }
 
     if (init_method(env, this)) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,12 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
 #include "gtk_interface.h"
 #include "com_sun_java_swing_plaf_gtk_GTKEngine.h"
 
 /* Static buffer for conversion from java.lang.String to UTF-8 */
-static char conversionBuffer[CONV_BUFFER_SIZE];
+static char conversionBuffer[(CONV_BUFFER_SIZE - 1) * 3 + 1];
 
 const char *getStrFor(JNIEnv *env, jstring val)
 {
@@ -38,6 +39,7 @@ const char *getStrFor(JNIEnv *env, jstring val)
         length = CONV_BUFFER_SIZE-1;
     }
 
+    memset(conversionBuffer, 0, sizeof(conversionBuffer));
     (*env)->GetStringUTFRegion(env, val, 0, length, conversionBuffer);
     return conversionBuffer;
 }
