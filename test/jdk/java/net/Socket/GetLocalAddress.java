@@ -41,7 +41,7 @@ public class GetLocalAddress implements Runnable {
     static int port;
 
     public static void main(String args[]) throws Exception {
-        IPSupport.skipIfCurrentConfigurationIsInvalid();
+        IPSupport.throwSkippedExceptionIfNonOperational();
 
         testBindNull();
 

@@ -159,7 +159,7 @@ public class Test {
     }
 
     public static void main(String args[]) throws Exception {
-        IPSupport.skipIfCurrentConfigurationIsInvalid();
+        IPSupport.throwSkippedExceptionIfNonOperational();
 
         Test t = new Test();
 

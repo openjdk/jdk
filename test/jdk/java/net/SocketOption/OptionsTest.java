@@ -280,7 +280,7 @@ public class OptionsTest {
     }
 
     public static void main(String args[]) throws Exception {
-        IPSupport.skipIfCurrentConfigurationIsInvalid();
+        IPSupport.throwSkippedExceptionIfNonOperational();
         doSocketTests();
         doServerSocketTests();
         doDgSocketTests();

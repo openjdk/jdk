@@ -107,7 +107,7 @@ public class UnreferencedMulticastSockets {
     }
 
     public static void main(String args[]) throws Exception {
-        IPSupport.skipIfCurrentConfigurationIsInvalid();
+        IPSupport.throwSkippedExceptionIfNonOperational();
 
         // Create and close a MulticastSocket to warm up the FD count for side effects.
         try (MulticastSocket s = new MulticastSocket(0)) {

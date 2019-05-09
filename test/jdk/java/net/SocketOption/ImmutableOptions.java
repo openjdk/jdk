@@ -44,7 +44,7 @@ public class ImmutableOptions {
 
     @BeforeTest
     void setupServerSocketFactory() throws IOException {
-        IPSupport.skipIfCurrentConfigurationIsInvalid();
+        IPSupport.throwSkippedExceptionIfNonOperational();
         ServerSocket.setSocketFactory(new ServerSocketImplFactory());
     }
 

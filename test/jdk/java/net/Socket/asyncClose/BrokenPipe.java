@@ -55,7 +55,7 @@ public class BrokenPipe {
     }
 
     public static void main(String[] args) throws Exception {
-        IPSupport.skipIfCurrentConfigurationIsInvalid();
+        IPSupport.throwSkippedExceptionIfNonOperational();
 
         ServerSocket ss = new ServerSocket(0);
         Socket client = new Socket(InetAddress.getLocalHost(),

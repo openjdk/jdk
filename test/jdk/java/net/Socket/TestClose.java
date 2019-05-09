@@ -37,7 +37,7 @@ import jdk.test.lib.net.IPSupport;
 public class TestClose {
 
     public static void main(String[] args) throws Exception {
-        IPSupport.skipIfCurrentConfigurationIsInvalid();
+        IPSupport.throwSkippedExceptionIfNonOperational();
 
         ServerSocket ss;
         Socket s;

@@ -40,7 +40,7 @@ import static java.util.concurrent.CompletableFuture.*;
 public class AsyncClose {
 
     public static void main(String args[]) throws Exception {
-        IPSupport.skipIfCurrentConfigurationIsInvalid();
+        IPSupport.throwSkippedExceptionIfNonOperational();
 
         AsyncCloseTest tests[] = {
             new Socket_getInputStream_read(),

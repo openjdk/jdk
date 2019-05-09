@@ -38,7 +38,7 @@ import jdk.test.lib.net.IPSupport;
 public class CloseAvailable {
 
     public static void main(String[] args) throws Exception {
-        IPSupport.skipIfCurrentConfigurationIsInvalid();
+        IPSupport.throwSkippedExceptionIfNonOperational();
 
         testClose();
 

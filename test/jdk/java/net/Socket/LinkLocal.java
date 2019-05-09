@@ -122,7 +122,7 @@ public class LinkLocal {
     }
 
     public static void main(String args[]) throws Exception {
-        IPSupport.skipIfCurrentConfigurationIsInvalid();
+        IPSupport.throwSkippedExceptionIfNonOperational();
 
         /*
          * If an argument is provided ensure that it's

@@ -63,7 +63,7 @@ public class TrafficClass {
     }
 
     public static void main(String args[]) throws Exception {
-        IPSupport.skipIfCurrentConfigurationIsInvalid();
+        IPSupport.throwSkippedExceptionIfNonOperational();
 
         DatagramSocket ds = new DatagramSocket();
         testDatagramSocket(ds);

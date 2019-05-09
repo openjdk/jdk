@@ -240,7 +240,7 @@ public class MulticastSendReceiveTests {
     }
 
     public static void main(String[] args) throws IOException {
-        IPSupport.skipIfCurrentConfigurationIsInvalid();
+        IPSupport.throwSkippedExceptionIfNonOperational();
 
         NetworkConfiguration config = NetworkConfiguration.probe();
 

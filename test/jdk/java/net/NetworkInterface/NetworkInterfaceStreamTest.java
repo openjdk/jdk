@@ -52,7 +52,7 @@ public class NetworkInterfaceStreamTest extends OpTestCase {
 
     @BeforeTest
     void setup() {
-        IPSupport.skipIfCurrentConfigurationIsInvalid();
+        IPSupport.throwSkippedExceptionIfNonOperational();
     }
 
     @Test

@@ -56,7 +56,7 @@ public class HttpProxy {
     static final int SO_TIMEOUT = 15000;
 
     public static void main(String[] args) throws Exception {
-        IPSupport.skipIfCurrentConfigurationIsInvalid();
+        IPSupport.throwSkippedExceptionIfNonOperational();
 
         String host;
         int port;

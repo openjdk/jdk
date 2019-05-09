@@ -42,7 +42,7 @@ import jdk.test.lib.net.IPSupport;
 public class SetGetNetworkInterfaceTest {
 
     public static void main(String[] args) throws Exception {
-        IPSupport.skipIfCurrentConfigurationIsInvalid();
+        IPSupport.throwSkippedExceptionIfNonOperational();
         NetworkConfiguration nc = NetworkConfiguration.probe();
         try (MulticastSocket ms = new MulticastSocket()) {
             nc.multicastInterfaces(true).forEach(nif -> setGetNetworkInterface(ms, nif));

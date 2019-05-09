@@ -39,7 +39,7 @@ import jdk.test.lib.net.IPSupport;
 public class RejectIPv6 {
 
     public static void main(String [] argv) throws Throwable {
-        IPSupport.skipIfCurrentConfigurationIsInvalid();
+        IPSupport.throwSkippedExceptionIfNonOperational();
 
         ServerSocket serverSocket = new ServerSocket(0);
         serverSocket.setSoTimeout(1000);

@@ -48,7 +48,7 @@ public class UseDGWithIPv6 {
 
     public static void main(String[] args) throws IOException
     {
-        IPSupport.skipIfCurrentConfigurationIsInvalid();
+        IPSupport.throwSkippedExceptionIfNonOperational();
 
         ByteBuffer data = ByteBuffer.wrap("TESTING DATA".getBytes());
         DatagramChannel dgChannel = DatagramChannel.open();

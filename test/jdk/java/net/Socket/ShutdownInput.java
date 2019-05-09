@@ -45,7 +45,7 @@ public class ShutdownInput {
     static boolean failed = false;
 
     public static void main(String args[]) throws Exception {
-        IPSupport.skipIfCurrentConfigurationIsInvalid();
+        IPSupport.throwSkippedExceptionIfNonOperational();
 
         InetAddress iaddr = InetAddress.getLocalHost();
 

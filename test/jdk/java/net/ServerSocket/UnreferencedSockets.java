@@ -110,7 +110,7 @@ public class UnreferencedSockets {
     }
 
     public static void main(String args[]) throws Exception {
-        IPSupport.skipIfCurrentConfigurationIsInvalid();
+        IPSupport.throwSkippedExceptionIfNonOperational();
 
         // Create and close a ServerSocket to warm up the FD count for side effects.
         try (ServerSocket s = new ServerSocket(0)) {

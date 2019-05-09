@@ -63,7 +63,7 @@ public class SocketClosedException {
     static Exception serverException = null;
 
     public static void main(String[] args) throws Exception {
-        IPSupport.skipIfCurrentConfigurationIsInvalid();
+        IPSupport.throwSkippedExceptionIfNonOperational();
         serverSocket = new ServerSocket(0);
         startServer();
         try {

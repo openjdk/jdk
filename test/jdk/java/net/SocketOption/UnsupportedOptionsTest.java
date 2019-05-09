@@ -72,7 +72,7 @@ public class UnsupportedOptionsTest {
     }
 
     public static void main(String[] args) throws IOException {
-        IPSupport.skipIfCurrentConfigurationIsInvalid();
+        IPSupport.throwSkippedExceptionIfNonOperational();
 
         Socket s = new Socket();
         ServerSocket ss = new ServerSocket();

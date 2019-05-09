@@ -36,7 +36,7 @@ import jdk.test.lib.net.IPSupport;
 
 public class ReadTimeout  {
     public static void main(String args[]) throws Exception {
-    IPSupport.skipIfCurrentConfigurationIsInvalid();
+    IPSupport.throwSkippedExceptionIfNonOperational();
 
     InetAddress  sin = null;
     Socket       soc = null,soc1 = null;

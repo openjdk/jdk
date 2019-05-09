@@ -193,7 +193,7 @@ public class Promiscuous {
     }
 
     public static void main(String[] args) throws IOException {
-        IPSupport.skipIfCurrentConfigurationIsInvalid();
+        IPSupport.throwSkippedExceptionIfNonOperational();
 
         String os = System.getProperty("os.name");
 

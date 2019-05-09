@@ -123,9 +123,19 @@ public class IPSupport {
     }
 
     /**
-     * Throws a jtreg.SkippedException if the current networking configuration is invalid.
+     * Ensures that the platform supports the ability to create a
+     * minimally-operational socket whose protocol is either one of IPv4
+     * or IPv6.
+     *
+     * <p> A minimally-operation socket is one that can be created and
+     * bound to an IP-specific loopback address. IP support is
+     * considered non-operational if a socket cannot be bound to either
+     * one of, an IPv4 loopback address, or the IPv6 loopback address.
+     *
+     * @throws SkippedException if the current networking configuration
+     *         is non-operational
      */
-    public static void skipIfCurrentConfigurationIsInvalid() throws SkippedException {
+    public static void throwSkippedExceptionIfNonOperational() throws SkippedException {
         if (!currentConfigurationIsValid()) {
             ByteArrayOutputStream os = new ByteArrayOutputStream();
             PrintStream ps = new PrintStream(os);

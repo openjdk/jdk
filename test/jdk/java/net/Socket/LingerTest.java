@@ -107,7 +107,7 @@ public class LingerTest {
     }
 
     public static void main(String args[]) throws Exception {
-        IPSupport.skipIfCurrentConfigurationIsInvalid();
+        IPSupport.throwSkippedExceptionIfNonOperational();
 
         InetAddress loopback = InetAddress.getLoopbackAddress();
         ServerSocket ss = new ServerSocket(0, 50, loopback);

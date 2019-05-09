@@ -44,7 +44,7 @@ import jdk.test.lib.net.IPSupport;
 public class SupportedOptionsSet {
 
     public static void main(String[] args) throws IOException {
-        IPSupport.skipIfCurrentConfigurationIsInvalid();
+        IPSupport.throwSkippedExceptionIfNonOperational();
 
         if (args[0].equals("first"))
             first();

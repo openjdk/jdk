@@ -50,7 +50,7 @@ public class SocksConnectTimeout {
     static int failed, passed;
 
     public static void main(String[] args) {
-        IPSupport.skipIfCurrentConfigurationIsInvalid();
+        IPSupport.throwSkippedExceptionIfNonOperational();
 
         try {
             serverSocket = new ServerSocket(0);

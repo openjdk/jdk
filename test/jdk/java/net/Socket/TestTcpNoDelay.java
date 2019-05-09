@@ -37,7 +37,7 @@ import jdk.test.lib.net.IPSupport;
 public class TestTcpNoDelay
 {
     public static void main(String[] args) {
-        IPSupport.skipIfCurrentConfigurationIsInvalid();
+        IPSupport.throwSkippedExceptionIfNonOperational();
 
         try {
             Socket socket = new Socket();

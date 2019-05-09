@@ -47,7 +47,7 @@ public class InheritHandle
                          "bin" + File.separator + "java";
 
     public static void main(String[] args) {
-        IPSupport.skipIfCurrentConfigurationIsInvalid();
+        IPSupport.throwSkippedExceptionIfNonOperational();
 
         if (args.length == 1) {
             doWait();

@@ -38,7 +38,7 @@ import jdk.test.lib.net.IPSupport;
 
 public class Disconnect {
     public static void main(String[] args) throws IOException {
-        IPSupport.skipIfCurrentConfigurationIsInvalid();
+        IPSupport.throwSkippedExceptionIfNonOperational();
 
         // test with default protocol family
         try (DatagramChannel dc = DatagramChannel.open()) {

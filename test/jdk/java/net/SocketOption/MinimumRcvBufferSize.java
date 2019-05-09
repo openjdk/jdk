@@ -36,7 +36,7 @@ import jdk.test.lib.net.IPSupport;
 public class MinimumRcvBufferSize {
 
     public static void main(String args[]) throws Exception {
-        IPSupport.skipIfCurrentConfigurationIsInvalid();
+        IPSupport.throwSkippedExceptionIfNonOperational();
 
         boolean error = false;
         ServerSocketChannel channel = ServerSocketChannel.open();

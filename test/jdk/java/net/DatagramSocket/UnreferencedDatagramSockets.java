@@ -106,7 +106,7 @@ public class UnreferencedDatagramSockets {
     }
 
     public static void main(String args[]) throws Exception {
-        IPSupport.skipIfCurrentConfigurationIsInvalid();
+        IPSupport.throwSkippedExceptionIfNonOperational();
 
         // Create and close a DatagramSocket to warm up the FD count for side effects.
         try (DatagramSocket s = new DatagramSocket(0)) {

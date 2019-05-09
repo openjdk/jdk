@@ -44,7 +44,7 @@ public class PrintSupportedOptions {
     }
 
     public static void main(String[] args) throws IOException {
-        IPSupport.skipIfCurrentConfigurationIsInvalid();
+        IPSupport.throwSkippedExceptionIfNonOperational();
 
         test(() -> SocketChannel.open());
         test(() -> ServerSocketChannel.open());

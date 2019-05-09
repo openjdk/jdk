@@ -49,7 +49,7 @@ public class Restart {
      */
 
     public static void main(String args[]) throws Exception {
-        IPSupport.skipIfCurrentConfigurationIsInvalid();
+        IPSupport.throwSkippedExceptionIfNonOperational();
 
         ServerSocket ss = new ServerSocket(0);
         Socket s1 = null, s2 = null;

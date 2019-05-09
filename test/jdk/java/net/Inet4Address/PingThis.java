@@ -48,7 +48,7 @@ public class PingThis {
         if (System.getProperty("os.name").startsWith("Windows")) {
             return;
         }
-        IPSupport.skipIfCurrentConfigurationIsInvalid();
+        IPSupport.throwSkippedExceptionIfNonOperational();
 
         List<String> addrs = new ArrayList<String>();
 

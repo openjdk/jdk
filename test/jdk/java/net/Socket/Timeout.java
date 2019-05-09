@@ -35,7 +35,7 @@ import jdk.test.lib.net.IPSupport;
 
 public class Timeout {
     public static void main(String[] args) throws Exception {
-        IPSupport.skipIfCurrentConfigurationIsInvalid();
+        IPSupport.throwSkippedExceptionIfNonOperational();
 
         boolean success = false;
         ServerSocket sock = new ServerSocket(0);

@@ -40,7 +40,7 @@ public class TestAfterClose
     static int failCount;
 
     public static void main(String[] args) {
-        IPSupport.skipIfCurrentConfigurationIsInvalid();
+        IPSupport.throwSkippedExceptionIfNonOperational();
 
         try {
             InetAddress loopback = InetAddress.getLoopbackAddress();

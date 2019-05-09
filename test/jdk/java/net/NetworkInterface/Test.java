@@ -37,7 +37,7 @@ public class Test {
     static final boolean isWindows = System.getProperty("os.name").startsWith("Windows");
 
     public static void main(String args[]) throws Exception {
-        IPSupport.skipIfCurrentConfigurationIsInvalid();
+        IPSupport.throwSkippedExceptionIfNonOperational();
 
         Enumeration nifs = NetworkInterface.getNetworkInterfaces();
 

@@ -43,7 +43,7 @@ import jdk.test.lib.net.IPSupport;
 public class JoinLeave {
 
     public static void main(String args[]) throws IOException {
-        IPSupport.skipIfCurrentConfigurationIsInvalid();
+        IPSupport.throwSkippedExceptionIfNonOperational();
         InetAddress ip4Group = InetAddress.getByName("224.80.80.80");
         InetAddress ip6Group = InetAddress.getByName("ff02::a");
 

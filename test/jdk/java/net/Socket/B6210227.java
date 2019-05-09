@@ -37,7 +37,7 @@ import jdk.test.lib.net.IPSupport;
 public class B6210227 {
     public static void main(String[] args) throws Exception
     {
-        IPSupport.skipIfCurrentConfigurationIsInvalid();
+        IPSupport.throwSkippedExceptionIfNonOperational();
 
         ServerSocket ss = new ServerSocket(0);
         int port = ss.getLocalPort();

@@ -38,7 +38,7 @@ public class SocketTimeout  {
     static final int TIMEOUT = 1000;
 
     public static void main(String args[]) throws Exception {
-    IPSupport.skipIfCurrentConfigurationIsInvalid();
+    IPSupport.throwSkippedExceptionIfNonOperational();
     InetAddress  sin = InetAddress.getLocalHost();
     Socket       soc = null,soc1 = null;
     InputStream  is = null;

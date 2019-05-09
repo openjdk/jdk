@@ -44,7 +44,7 @@ import jdk.test.lib.net.IPSupport;
 public class GetLocalHostWithSM {
 
         public static void main(String[] args) throws Exception {
-            IPSupport.skipIfCurrentConfigurationIsInvalid();
+            IPSupport.throwSkippedExceptionIfNonOperational();
 
             // try setting the local hostname
             InetAddress localHost = InetAddress.getLocalHost();

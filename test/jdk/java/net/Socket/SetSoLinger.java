@@ -37,7 +37,7 @@ public class SetSoLinger {
     static final int LINGER = 65546;
 
     public static void main(String args[]) throws Exception {
-        IPSupport.skipIfCurrentConfigurationIsInvalid();
+        IPSupport.throwSkippedExceptionIfNonOperational();
 
         int value;
         InetAddress addr = InetAddress.getLocalHost();

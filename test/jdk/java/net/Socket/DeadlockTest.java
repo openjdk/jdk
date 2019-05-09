@@ -37,7 +37,7 @@ import jdk.test.lib.net.IPSupport;
 
 public class DeadlockTest {
     public static void main(String [] argv) throws Exception {
-        IPSupport.skipIfCurrentConfigurationIsInvalid();
+        IPSupport.throwSkippedExceptionIfNonOperational();
 
         ServerSocket ss = new ServerSocket(0);
         Socket clientSocket = new Socket();
