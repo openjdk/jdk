@@ -23,6 +23,8 @@ package com.sun.org.apache.xerces.internal.impl.xs.traversers;
 import com.sun.org.apache.xerces.internal.impl.dv.InvalidDatatypeValueException;
 import com.sun.org.apache.xerces.internal.impl.dv.XSFacets;
 import com.sun.org.apache.xerces.internal.impl.dv.XSSimpleType;
+import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
+import com.sun.org.apache.xerces.internal.impl.dv.xs.XSSimpleTypeDecl;
 import com.sun.org.apache.xerces.internal.impl.validation.ValidationState;
 import com.sun.org.apache.xerces.internal.impl.xs.SchemaGrammar;
 import com.sun.org.apache.xerces.internal.impl.xs.SchemaSymbols;
@@ -42,6 +44,7 @@ import com.sun.org.apache.xerces.internal.xni.NamespaceContext;
 import com.sun.org.apache.xerces.internal.xni.QName;
 import com.sun.org.apache.xerces.internal.xs.XSAttributeUse;
 import com.sun.org.apache.xerces.internal.xs.XSObjectList;
+import com.sun.org.apache.xerces.internal.xs.XSSimpleTypeDefinition;
 import com.sun.org.apache.xerces.internal.xs.XSTypeDefinition;
 import java.util.ArrayList;
 import java.util.List;
@@ -280,6 +283,7 @@ abstract class XSDAbstractTraverser {
     }
 
     FacetInfo traverseFacets(Element content,
+            XSTypeDefinition typeDef,
             XSSimpleType baseValidator,
             XSDocumentInfo schemaDoc) {
 
@@ -293,6 +297,9 @@ abstract class XSDAbstractTraverser {
         List<NamespaceContext> enumNSDecls = hasQName ? new ArrayList<>() : null;
         int currentFacet = 0;
         xsFacets.reset();
+        boolean seenPattern = false;
+        Element contextNode = (Element)content.getParentNode();
+        boolean hasLengthFacet = false, hasMinLengthFacet = false, hasMaxLengthFacet = false;
         while (content != null) {
             // General Attribute Checking
             Object[] attrs = null;
@@ -364,7 +371,6 @@ abstract class XSDAbstractTraverser {
                 }
             }
             else if (facet.equals(SchemaSymbols.ELT_PATTERN)) {
-                facetsPresent |= XSSimpleType.FACET_PATTERN;
                 attrs = fAttrChecker.checkAttributes(content, false, schemaDoc);
                 String patternVal = (String)attrs[XSAttributeChecker.ATTIDX_VALUE];
                 // The facet can't be used if the value is missing. Ignore
@@ -376,6 +382,7 @@ abstract class XSDAbstractTraverser {
                     continue;
                 }
 
+                seenPattern = true;
                 if (fPattern.length() == 0) {
                     fPattern.append(patternVal);
                 } else {
@@ -477,9 +484,11 @@ abstract class XSDAbstractTraverser {
                 switch (currentFacet) {
                 case XSSimpleType.FACET_MINLENGTH:
                     xsFacets.minLength = ((XInt)attrs[XSAttributeChecker.ATTIDX_VALUE]).intValue();
+                    hasMinLengthFacet = true;
                     break;
                 case XSSimpleType.FACET_MAXLENGTH:
                     xsFacets.maxLength = ((XInt)attrs[XSAttributeChecker.ATTIDX_VALUE]).intValue();
+                    hasMaxLengthFacet = true;
                     break;
                 case XSSimpleType.FACET_MAXEXCLUSIVE:
                     xsFacets.maxExclusive = (String)attrs[XSAttributeChecker.ATTIDX_VALUE];
@@ -504,6 +513,7 @@ abstract class XSDAbstractTraverser {
                     break;
                 case XSSimpleType.FACET_LENGTH:
                     xsFacets.length = ((XInt)attrs[XSAttributeChecker.ATTIDX_VALUE]).intValue();
+                    hasLengthFacet = true;
                     break;
                 }
 
@@ -566,15 +576,147 @@ abstract class XSDAbstractTraverser {
             xsFacets.enumNSDecls = enumNSDecls;
             xsFacets.enumAnnotations = enumAnnotations;
         }
-        if ((facetsPresent & XSSimpleType.FACET_PATTERN) != 0) {
+        if (seenPattern) {
+            facetsPresent |= XSSimpleType.FACET_PATTERN;
             xsFacets.pattern = fPattern.toString();
             xsFacets.patternAnnotations = patternAnnotations;
         }
 
         fPattern.setLength(0);
 
+        // check if length, minLength and maxLength facets contradict with enumeration facets.
+        // currently considers the case when the baseValidator is a built-in type.
+        if (enumData != null) {
+           if (hasLengthFacet) {
+              checkEnumerationAndLengthInconsistency(baseValidator, enumData, contextNode, getSchemaTypeName(typeDef));
+           }
+           if (hasMinLengthFacet) {
+              checkEnumerationAndMinLengthInconsistency(baseValidator, enumData, contextNode, getSchemaTypeName(typeDef));
+           }
+           if (hasMaxLengthFacet) {
+              checkEnumerationAndMaxLengthInconsistency(baseValidator, enumData, contextNode, getSchemaTypeName(typeDef));
+           }
+        }
+
         return new FacetInfo(xsFacets, content, facetsPresent, facetsFixed);
     }
+
+    /*
+     * Get name of an XSD type definition as a string value (which will typically be the value of "name" attribute of a
+     * type definition, or an internal name determined by the validator for anonymous types).
+     */
+    public static String getSchemaTypeName(XSTypeDefinition typeDefn) {
+
+        String typeNameStr = "";
+        if (typeDefn instanceof XSSimpleTypeDefinition) {
+            typeNameStr = ((XSSimpleTypeDecl) typeDefn).getTypeName();
+        }
+        else {
+            typeNameStr = ((XSComplexTypeDecl) typeDefn).getTypeName();
+        }
+
+        return typeNameStr;
+
+    } // getSchemaTypeName
+
+    /*
+     * Check whether values of xs:maxLength and xs:enumeration are consistent. Report a warning message if they are not.
+     */
+    private void checkEnumerationAndMaxLengthInconsistency(XSSimpleType baseValidator, List<String> enumData, Element contextNode, String typeName) {
+        if (SchemaSymbols.URI_SCHEMAFORSCHEMA.equals(baseValidator.getNamespace()) &&
+            SchemaSymbols.ATTVAL_HEXBINARY.equals(baseValidator.getName())) {
+            for (int enumIdx = 0; enumIdx < enumData.size(); enumIdx++) {
+                String enumVal = (enumData.get(enumIdx));
+                if (enumVal.length() / 2 > xsFacets.maxLength) {
+                    reportSchemaWarning("FacetsContradict", new Object[]{enumVal, SchemaSymbols.ELT_MAXLENGTH, typeName}, contextNode);
+                }
+            }
+        }
+        else if (SchemaSymbols.URI_SCHEMAFORSCHEMA.equals(baseValidator.getNamespace()) &&
+                 SchemaSymbols.ATTVAL_BASE64BINARY.equals(baseValidator.getName())) {
+            for (int enumIdx = 0; enumIdx < enumData.size(); enumIdx++) {
+                String enumVal = (enumData.get(enumIdx));
+                byte[] decodedVal = Base64.decode(enumVal);
+                if (decodedVal != null && (new String(decodedVal)).length() > xsFacets.maxLength) {
+                   reportSchemaWarning("FacetsContradict", new Object[]{enumVal, SchemaSymbols.ELT_MAXLENGTH, typeName}, contextNode);
+                }
+            }
+        }
+        else {
+            for (int enumIdx = 0; enumIdx < enumData.size(); enumIdx++) {
+                String enumVal = (enumData.get(enumIdx));
+                if (enumVal.length() > xsFacets.maxLength) {
+                    reportSchemaWarning("FacetsContradict", new Object[]{enumVal, SchemaSymbols.ELT_MAXLENGTH, typeName}, contextNode);
+                }
+            }
+        }
+    } // checkEnumerationAndMaxLengthInconsistency
+
+    /*
+     * Check whether values of xs:minLength and xs:enumeration are consistent. Report a warning message if they are not.
+     */
+    private void checkEnumerationAndMinLengthInconsistency(XSSimpleType baseValidator, List<String> enumData, Element contextNode, String typeName) {
+        if (SchemaSymbols.URI_SCHEMAFORSCHEMA.equals(baseValidator.getNamespace()) &&
+            SchemaSymbols.ATTVAL_HEXBINARY.equals(baseValidator.getName())) {
+            for (int enumIdx = 0; enumIdx < enumData.size(); enumIdx++) {
+                String enumVal = (enumData.get(enumIdx));
+                if (enumVal.length() / 2 < xsFacets.minLength) {
+                    reportSchemaWarning("FacetsContradict", new Object[]{enumVal, SchemaSymbols.ELT_MINLENGTH, typeName}, contextNode);
+                }
+            }
+        }
+        else if (SchemaSymbols.URI_SCHEMAFORSCHEMA.equals(baseValidator.getNamespace()) &&
+                 SchemaSymbols.ATTVAL_BASE64BINARY.equals(baseValidator.getName())) {
+            for (int enumIdx = 0; enumIdx < enumData.size(); enumIdx++) {
+                String enumVal = (enumData.get(enumIdx));
+                byte[] decodedVal = Base64.decode(enumVal);
+                if (decodedVal != null && (new String(decodedVal)).length() < xsFacets.minLength) {
+                   reportSchemaWarning("FacetsContradict", new Object[]{enumVal, SchemaSymbols.ELT_MINLENGTH, typeName}, contextNode);
+                }
+            }
+        }
+        else {
+            for (int enumIdx = 0; enumIdx < enumData.size(); enumIdx++) {
+                String enumVal = (enumData.get(enumIdx));
+                if (enumVal.length() < xsFacets.minLength) {
+                    reportSchemaWarning("FacetsContradict", new Object[]{enumVal, SchemaSymbols.ELT_MINLENGTH, typeName}, contextNode);
+                }
+            }
+        }
+    } // checkEnumerationAndMinLengthInconsistency
+
+    /*
+     * Check whether values of xs:length and xs:enumeration are consistent. Report a warning message if they are not.
+     */
+    private void checkEnumerationAndLengthInconsistency(XSSimpleType baseValidator, List<String> enumData, Element contextNode, String typeName) {
+        if (SchemaSymbols.URI_SCHEMAFORSCHEMA.equals(baseValidator.getNamespace()) &&
+            SchemaSymbols.ATTVAL_HEXBINARY.equals(baseValidator.getName())) {
+            for (int enumIdx = 0; enumIdx < enumData.size(); enumIdx++) {
+                String enumVal = (enumData.get(enumIdx));
+                if (enumVal.length() / 2 != xsFacets.length) {
+                    reportSchemaWarning("FacetsContradict", new Object[]{enumVal, SchemaSymbols.ELT_LENGTH, typeName}, contextNode);
+                }
+            }
+        }
+        else if (SchemaSymbols.URI_SCHEMAFORSCHEMA.equals(baseValidator.getNamespace()) &&
+                 SchemaSymbols.ATTVAL_BASE64BINARY.equals(baseValidator.getName())) {
+            for (int enumIdx = 0; enumIdx < enumData.size(); enumIdx++) {
+                String enumVal = (enumData.get(enumIdx));
+                byte[] decodedVal = Base64.decode(enumVal);
+                if (decodedVal != null && (new String(decodedVal)).length() != xsFacets.length) {
+                   reportSchemaWarning("FacetsContradict", new Object[]{enumVal, SchemaSymbols.ELT_LENGTH, typeName}, contextNode);
+                }
+            }
+        }
+        else {
+            for (int enumIdx = 0; enumIdx < enumData.size(); enumIdx++) {
+                String enumVal = (enumData.get(enumIdx));
+                if (enumVal.length() != xsFacets.length) {
+                    reportSchemaWarning("FacetsContradict", new Object[]{enumVal, SchemaSymbols.ELT_LENGTH, typeName}, contextNode);
+                }
+            }
+        }
+    } // checkEnumerationAndLengthInconsistency
 
 
     // return whether QName/NOTATION is part of the given type
@@ -722,6 +864,10 @@ abstract class XSDAbstractTraverser {
 
     void reportSchemaError (String key, Object[] args, Element ele) {
         fSchemaHandler.reportSchemaError(key, args, ele);
+    }
+
+    void reportSchemaWarning (String key, Object[] args, Element ele) {
+        fSchemaHandler.reportSchemaWarning(key, args, ele);
     }
 
     /**

@@ -395,7 +395,7 @@ class XSDSimpleTypeTraverser extends XSDAbstractTraverser {
         }
         // now traverse facets, if it's derived by restriction
         if (restriction && content != null) {
-            FacetInfo fi = traverseFacets(content, baseValidator, schemaDoc);
+            FacetInfo fi = traverseFacets(content, newDecl, baseValidator, schemaDoc);
             content = fi.nodeAfterFacets;
 
             try {
