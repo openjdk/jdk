@@ -37,7 +37,6 @@ class MemAllocator: StackObj {
 protected:
   class Allocation;
 
-  CollectedHeap* const _heap;
   Thread* const        _thread;
   Klass* const         _klass;
   const size_t         _word_size;
@@ -50,8 +49,7 @@ private:
 
 protected:
   MemAllocator(Klass* klass, size_t word_size, Thread* thread)
-    : _heap(Universe::heap()),
-      _thread(thread),
+    : _thread(thread),
       _klass(klass),
       _word_size(word_size)
   { }
