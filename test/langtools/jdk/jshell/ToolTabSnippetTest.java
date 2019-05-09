@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8177076 8185426 8189595 8188072
+ * @bug 8177076 8185426 8189595 8188072 8221759
  * @modules
  *     jdk.compiler/com.sun.tools.javac.api
  *     jdk.compiler/com.sun.tools.javac.main
@@ -263,6 +263,15 @@ public class ToolTabSnippetTest extends UITesting {
             String allCompletions =
                     resource("jshell.console.completion.all.completions");
             waitOutput(out, ".*xyzAA.*" + allCompletions + ".*\u0005String s = xyzA");
+        });
+    }
+
+    public void testCrash8221759() throws Exception {
+        doRunTest((inputSink, out) -> {
+            inputSink.write("java.io.File.path" + TAB);
+            waitOutput(out, "java.io.File.path\n" +
+                            "pathSeparator       pathSeparatorChar   " +
+                            REDRAW_PROMPT + "java.io.File.pathSeparator");
         });
     }
 

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8131025 8141092 8153761 8145263 8131019 8175886 8176184 8176241 8176110 8177466 8197439
+ * @bug 8131025 8141092 8153761 8145263 8131019 8175886 8176184 8176241 8176110 8177466 8197439 8221759
  * @summary Test Completion and Documentation
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -325,6 +325,14 @@ public class CompletionSuggestionTest extends KullaTesting {
         assertSignature("\"\".getBytes(\"\" |", "void String.getBytes(int, int, byte[], int)",
                                                      "byte[] String.getBytes(String) throws java.io.UnsupportedEncodingException",
                                                      "byte[] String.getBytes(java.nio.charset.Charset)");
+        //JDK-8221759:
+        Compiler compiler = new Compiler();
+        Path testOutDir = Paths.get("WithPrivateField");
+        String input = "package field; public class FieldTest { private static String field; private static String field2; }";
+        compiler.compile(testOutDir, input);
+        addToClasspath(compiler.getPath(testOutDir));
+        assertSignature("field.FieldTest.field|");
+        assertSignature("field.FieldTest.field2|");
     }
 
     public void testMethodsWithNoArguments() throws Exception {

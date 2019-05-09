@@ -1229,6 +1229,13 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                     return Collections.emptyList();
                 }
 
+                Predicate<Element> accessibility = createAccessibilityFilter(at, tp);
+
+                if (!accessibility.test(el)) {
+                    //not accessible
+                    return Collections.emptyList();
+                }
+
                 elements = Stream.of(el);
             } else {
                 return Collections.emptyList();
