@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,9 +46,4 @@ JDK_GetVersionInfo0(jdk_version_info* info, size_t info_size) {
                         ((version_security & 0xFF) << 8)  |
                         (version_build & 0xFF);
     info->patch_version = version_patch;
-    info->thread_park_blocker = 1;
-    // Advertise presence of PostVMInitHook:
-    // future optimization: detect if this is enabled.
-    info->post_vm_init_hook_enabled = 1;
-    info->pending_list_uses_discovered_field = 1;
 }
