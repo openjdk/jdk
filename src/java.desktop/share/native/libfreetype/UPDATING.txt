@@ -21,9 +21,16 @@ sources.
 
 Use "expand" and "sed" to remove tabs and trailing white space from the imported
 sources. The current version of freetype is quite clean in this respect.
-./src/base/md5.h and ./src/base/md5.c are the only files with tabs,
-and ./include/freetype/ftdriver.h has the only trailing white space.
+None of files we import have tabs, and ./include/freetype/freetype.h,
+./include/freetype/ftlcdfil.h and ./include/freetype/ftstroke.h have the
+only trailing white space.
 If you forget this step, or aren't thorough, jcheck will remind you.
 
 Remember to update the freetype version identified in
 src/java.desktop/share/legal/freetype.md
+
+When updating specify --with-freetype=bundled to test builds to
+expose build issues.
+This is important because presently on Linux and Solaris the build
+defaults to linking against the system library and does not attempt
+to compile the sources.
