@@ -31,6 +31,7 @@
 #include "logging/logStream.hpp"
 #include "logging/logConfiguration.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/universe.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/verifyOopClosure.hpp"

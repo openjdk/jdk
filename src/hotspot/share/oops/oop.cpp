@@ -27,6 +27,7 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "memory/heapShared.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"

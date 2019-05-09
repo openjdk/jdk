@@ -25,18 +25,12 @@
 #ifndef SHARE_MEMORY_OOPFACTORY_HPP
 #define SHARE_MEMORY_OOPFACTORY_HPP
 
-#include "classfile/symbolTable.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "memory/referenceType.hpp"
-#include "memory/universe.hpp"
-#include "oops/objArrayKlass.hpp"
-#include "oops/oop.hpp"
-#include "oops/typeArrayKlass.hpp"
-#include "utilities/growableArray.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "runtime/handles.hpp"
+#include "utilities/exceptions.hpp"
 
 // oopFactory is a class used for creating new objects.
-
-class vframeArray;
 
 class oopFactory: AllStatic {
  public:

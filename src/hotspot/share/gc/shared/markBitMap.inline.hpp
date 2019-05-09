@@ -28,7 +28,6 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/markBitMap.hpp"
 #include "memory/memRegion.hpp"
-#include "memory/universe.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 

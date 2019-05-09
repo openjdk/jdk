@@ -25,7 +25,6 @@
 #ifndef SHARE_OOPS_KLASS_INLINE_HPP
 #define SHARE_OOPS_KLASS_INLINE_HPP
 
-#include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"
 #include "oops/klass.hpp"
 #include "oops/markOop.hpp"

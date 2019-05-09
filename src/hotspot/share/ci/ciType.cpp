@@ -28,6 +28,7 @@
 #include "ci/ciUtilities.inline.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 
 ciType* ciType::_basic_types[T_CONFLICT+1];

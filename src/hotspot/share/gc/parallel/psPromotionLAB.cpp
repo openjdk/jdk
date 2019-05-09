@@ -26,6 +26,7 @@
 #include "gc/parallel/mutableSpace.hpp"
 #include "gc/parallel/parallelScavengeHeap.hpp"
 #include "gc/parallel/psPromotionLAB.hpp"
+#include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 
 size_t PSPromotionLAB::filler_header_size;

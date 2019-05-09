@@ -31,6 +31,7 @@
 #include "memory/metaspaceShared.hpp"
 #include "memory/padded.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/universe.hpp"
 #include "oops/markOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"

@@ -26,7 +26,6 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "memory/resourceArea.hpp"
-#include "memory/universe.hpp"
 #include "oops/annotations.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/instanceKlass.hpp"

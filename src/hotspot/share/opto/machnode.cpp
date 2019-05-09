@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"
 #include "opto/machnode.hpp"
 #include "opto/regalloc.hpp"

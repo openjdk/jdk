@@ -27,6 +27,7 @@
 
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/threadLocalAllocBuffer.hpp"
+#include "memory/universe.hpp"
 #include "logging/log.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/copy.hpp"

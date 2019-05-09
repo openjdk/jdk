@@ -26,7 +26,6 @@
 #define SHARE_GC_SHARED_GCCONFIGURATION_HPP
 
 #include "gc/shared/gcName.hpp"
-#include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"
 #include "utilities/globalDefinitions.hpp"
 

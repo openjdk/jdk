@@ -26,6 +26,7 @@
 #define SHARE_OOPS_OOP_INLINE_HPP
 
 #include "gc/shared/collectedHeap.hpp"
+#include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/arrayKlass.hpp"
 #include "oops/arrayOop.hpp"

@@ -27,6 +27,7 @@
 
 #include "classfile/classLoaderData.hpp"
 #include "memory/iterator.hpp"
+#include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/klass.hpp"

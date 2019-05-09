@@ -35,7 +35,6 @@
 #include "memory/metaspaceClosure.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
-#include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.hpp"
 #include "oops/constantPool.inline.hpp"

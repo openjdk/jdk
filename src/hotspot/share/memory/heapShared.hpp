@@ -29,7 +29,6 @@
 #include "classfile/systemDictionary.hpp"
 #include "memory/allocation.hpp"
 #include "memory/metaspaceShared.hpp"
-#include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.hpp"

@@ -35,6 +35,7 @@
 #include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/workgroup.hpp"
+#include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/vmThread.hpp"
 #include "services/memoryManager.hpp"

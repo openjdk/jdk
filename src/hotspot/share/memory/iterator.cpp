@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "code/nmethod.hpp"
 #include "memory/iterator.inline.hpp"
-#include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"

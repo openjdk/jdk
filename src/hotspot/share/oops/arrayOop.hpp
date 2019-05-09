@@ -25,7 +25,6 @@
 #ifndef SHARE_OOPS_ARRAYOOP_HPP
 #define SHARE_OOPS_ARRAYOOP_HPP
 
-#include "memory/universe.hpp"
 #include "oops/oop.hpp"
 #include "utilities/align.hpp"
 

@@ -28,6 +28,7 @@
 #include "gc/g1/g1Allocator.hpp"
 #include "gc/g1/g1AllocRegion.inline.hpp"
 #include "gc/shared/plab.inline.hpp"
+#include "memory/universe.hpp"
 
 inline MutatorAllocRegion* G1Allocator::mutator_alloc_region() {
   return &_mutator_alloc_region;

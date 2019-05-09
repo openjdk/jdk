@@ -35,6 +35,7 @@
 #include "jvmci/compilerRuntime.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"
 #include "oops/method.inline.hpp"
 #include "runtime/handles.inline.hpp"

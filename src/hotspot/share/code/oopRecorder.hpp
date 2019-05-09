@@ -25,7 +25,6 @@
 #ifndef SHARE_CODE_OOPRECORDER_HPP
 #define SHARE_CODE_OOPRECORDER_HPP
 
-#include "memory/universe.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/growableArray.hpp"
 

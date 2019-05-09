@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
+#include "memory/universe.hpp"
 
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/gcTimer.hpp"
@@ -65,7 +66,6 @@
 #include "gc/shenandoah/heuristics/shenandoahPassiveHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahStaticHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahTraversalHeuristics.hpp"
-
 #include "memory/metaspace.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "runtime/globals.hpp"

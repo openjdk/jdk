@@ -45,6 +45,7 @@
 #include "gc/shared/scavengableNMethods.hpp"
 #include "logging/log.hpp"
 #include "memory/metaspaceCounters.hpp"
+#include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"

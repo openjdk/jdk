@@ -27,7 +27,6 @@
 
 #include "gc/shared/verifyOption.hpp"
 #include "memory/iterator.hpp"
-#include "memory/universe.hpp"
 
 class G1CollectedHeap;
 class G1FullCollector;

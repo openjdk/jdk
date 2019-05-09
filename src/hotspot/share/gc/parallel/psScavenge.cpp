@@ -48,6 +48,7 @@
 #include "gc/shared/spaceDecorator.hpp"
 #include "gc/shared/weakProcessor.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/universe.hpp"
 #include "logging/log.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"

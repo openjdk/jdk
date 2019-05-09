@@ -31,10 +31,10 @@
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
-#include "oops/compressedOops.inline.hpp"
 #include "memory/allocation.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/compressedOops.inline.hpp"
 
 // Avoid name collision on verify_oop (defined in macroAssembler_arm.hpp)
 #ifdef verify_oop
@@ -947,4 +947,3 @@ void ShenandoahVerifier::verify_roots_no_forwarded() {
   ShenandoahVerifyNoForwared cl;
   rp.process_all_roots_slow(&cl);
 }
-

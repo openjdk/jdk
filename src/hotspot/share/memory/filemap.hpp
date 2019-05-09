@@ -29,7 +29,6 @@
 #include "include/cds.h"
 #include "memory/metaspaceShared.hpp"
 #include "memory/metaspace.hpp"
-#include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"
 #include "utilities/align.hpp"
 

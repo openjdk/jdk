@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "memory/universe.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/thread.hpp"
 
@@ -228,4 +229,3 @@ void BarrierSetAssembler::incr_allocated_bytes(MacroAssembler* masm,
   }
   __ str(t1, Address(rthread, in_bytes(JavaThread::allocated_bytes_offset())));
 }
-

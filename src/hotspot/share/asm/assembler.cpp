@@ -27,6 +27,7 @@
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/icache.hpp"
