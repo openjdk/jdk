@@ -25,6 +25,7 @@
 #ifndef SHARE_MEMORY_UNIVERSE_HPP
 #define SHARE_MEMORY_UNIVERSE_HPP
 
+#include "gc/shared/verifyOption.hpp"
 #include "oops/array.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/growableArray.hpp"
@@ -68,16 +69,6 @@ class LatestMethodCache : public CHeapObj<mtClass> {
     f->do_ptr((void**)&_klass);
   }
   void metaspace_pointers_do(MetaspaceClosure* it);
-};
-
-
-enum VerifyOption {
-      VerifyOption_Default = 0,
-
-      // G1
-      VerifyOption_G1UsePrevMarking = VerifyOption_Default,
-      VerifyOption_G1UseNextMarking = VerifyOption_G1UsePrevMarking + 1,
-      VerifyOption_G1UseFullMarking = VerifyOption_G1UseNextMarking + 1
 };
 
 class Universe: AllStatic {

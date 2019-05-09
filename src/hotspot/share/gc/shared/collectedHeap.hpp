@@ -27,6 +27,7 @@
 
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcWhen.hpp"
+#include "gc/shared/verifyOption.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/perfData.hpp"

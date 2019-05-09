@@ -32,6 +32,7 @@
 #include "gc/g1/survRateGroup.hpp"
 #include "gc/shared/ageTable.hpp"
 #include "gc/shared/cardTable.hpp"
+#include "gc/shared/verifyOption.hpp"
 #include "gc/shared/spaceDecorator.hpp"
 #include "utilities/macros.hpp"
 

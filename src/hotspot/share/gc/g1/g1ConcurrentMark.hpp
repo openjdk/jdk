@@ -31,6 +31,7 @@
 #include "gc/g1/g1RegionMarkStatsCache.hpp"
 #include "gc/g1/heapRegionSet.hpp"
 #include "gc/shared/taskqueue.hpp"
+#include "gc/shared/verifyOption.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/compilerWarnings.hpp"
 
