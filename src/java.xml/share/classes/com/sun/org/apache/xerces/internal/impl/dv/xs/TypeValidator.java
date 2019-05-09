@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -23,6 +22,8 @@ package com.sun.org.apache.xerces.internal.impl.dv.xs;
 
 import com.sun.org.apache.xerces.internal.impl.dv.InvalidDatatypeValueException;
 import com.sun.org.apache.xerces.internal.impl.dv.ValidationContext;
+import com.sun.org.apache.xerces.internal.util.XMLChar;
+import jdk.xml.internal.SecuritySupport;
 
 /**
  * All primitive types plus ID/IDREF/ENTITY/INTEGER are derived from this abstract
@@ -35,8 +36,13 @@ import com.sun.org.apache.xerces.internal.impl.dv.ValidationContext;
  * @author Neeraj Bajaj, Sun Microsystems, inc.
  * @author Sandy Gao, IBM
  *
+ * @LastModified: Apr 2019
  */
 public abstract class TypeValidator {
+
+    private static final boolean USE_CODE_POINT_COUNT_FOR_STRING_LENGTH =
+            Boolean.parseBoolean(SecuritySupport.getSystemProperty(
+                    "com.sun.org.apache.xerces.internal.impl.dv.xs.useCodePointCountForStringLength", "false"));
 
     // which facets are allowed for this type
     public abstract short getAllowedFacets();
@@ -82,7 +88,14 @@ public abstract class TypeValidator {
     // get the length of the value
     // the parameters are in compiled form (from getActualValue)
     public int getDataLength(Object value) {
-        return (value instanceof String) ? ((String)value).length() : -1;
+        if (value instanceof String) {
+            final String str = (String)value;
+            if (!USE_CODE_POINT_COUNT_FOR_STRING_LENGTH) {
+                return str.length();
+            }
+            return getCodePointLength(str);
+        }
+        return -1;
     }
 
     // get the number of digits of the value
@@ -95,6 +108,25 @@ public abstract class TypeValidator {
     // the parameters are in compiled form (from getActualValue)
     public int getFractionDigits(Object value) {
         return -1;
+    }
+
+    // Returns the length of the string in Unicode code points.
+    private int getCodePointLength(String value) {
+        // Count the number of surrogate pairs, and subtract them from
+        // the total length.
+        final int len = value.length();
+        int surrogatePairCount = 0;
+        for (int i = 0; i < len - 1; ++i) {
+            if (XMLChar.isHighSurrogate(value.charAt(i))) {
+                if (XMLChar.isLowSurrogate(value.charAt(++i))) {
+                    ++surrogatePairCount;
+                }
+                else {
+                    --i;
+                }
+            }
+        }
+        return len - surrogatePairCount;
     }
 
     // check whether the character is in the range 0x30 ~ 0x39
