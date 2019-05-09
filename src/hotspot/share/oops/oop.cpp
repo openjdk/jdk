@@ -28,6 +28,7 @@
 #include "memory/heapShared.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/access.inline.hpp"
+#include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/verifyOopClosure.hpp"
 #include "runtime/handles.inline.hpp"
@@ -150,16 +151,11 @@ bool oopDesc::has_klass_gap() {
   return UseCompressedClassPointers;
 }
 
-oop oopDesc::decode_oop_raw(narrowOop narrow_oop) {
-  return (oop)(void*)( (uintptr_t)Universe::narrow_oop_base() +
-                      ((uintptr_t)narrow_oop << Universe::narrow_oop_shift()));
-}
-
 void* oopDesc::load_klass_raw(oop obj) {
   if (UseCompressedClassPointers) {
     narrowKlass narrow_klass = *(obj->compressed_klass_addr());
     if (narrow_klass == 0) return NULL;
-    return (void*)Klass::decode_klass_raw(narrow_klass);
+    return (void*)CompressedKlassPointers::decode_raw(narrow_klass);
   } else {
     return *(void**)(obj->klass_addr());
   }
@@ -170,7 +166,7 @@ void* oopDesc::load_oop_raw(oop obj, int offset) {
   if (UseCompressedOops) {
     narrowOop narrow_oop = *(narrowOop*)addr;
     if (narrow_oop == 0) return NULL;
-    return (void*)decode_oop_raw(narrow_oop);
+    return (void*)CompressedOops::decode_raw(narrow_oop);
   } else {
     return *(void**)addr;
   }

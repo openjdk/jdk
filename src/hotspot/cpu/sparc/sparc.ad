@@ -1579,15 +1579,15 @@ void MachUEPNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
   if (UseCompressedClassPointers) {
     assert(Universe::heap() != NULL, "java heap should be initialized");
     st->print_cr("\tLDUW   [R_O0 + oopDesc::klass_offset_in_bytes],R_G5\t! Inline cache check - compressed klass");
-    if (Universe::narrow_klass_base() != 0) {
-      st->print_cr("\tSET    Universe::narrow_klass_base,R_G6_heap_base");
-      if (Universe::narrow_klass_shift() != 0) {
-        st->print_cr("\tSLL    R_G5,Universe::narrow_klass_shift,R_G5");
+    if (CompressedKlassPointers::base() != 0) {
+      st->print_cr("\tSET    CompressedKlassPointers::base,R_G6_heap_base");
+      if (CompressedKlassPointers::shift() != 0) {
+        st->print_cr("\tSLL    R_G5,CompressedKlassPointers::shift,R_G5");
       }
       st->print_cr("\tADD    R_G5,R_G6_heap_base,R_G5");
-      st->print_cr("\tSET    Universe::narrow_ptrs_base,R_G6_heap_base");
+      st->print_cr("\tSET    CompressedOops::ptrs_base,R_G6_heap_base");
     } else {
-      st->print_cr("\tSLL    R_G5,Universe::narrow_klass_shift,R_G5");
+      st->print_cr("\tSLL    R_G5,CompressedKlassPointers::shift,R_G5");
     }
   } else {
     st->print_cr("\tLDX    [R_O0 + oopDesc::klass_offset_in_bytes],R_G5\t! Inline cache check");
@@ -1827,14 +1827,14 @@ bool Matcher::narrow_klass_use_complex_address() {
 bool Matcher::const_oop_prefer_decode() {
   // TODO: Check if loading ConP from TOC in heap-based mode is better:
   // Prefer ConN+DecodeN over ConP in simple compressed oops mode.
-  // return Universe::narrow_oop_base() == NULL;
+  // return CompressedOops::base() == NULL;
   return true;
 }
 
 bool Matcher::const_klass_prefer_decode() {
   // TODO: Check if loading ConP from TOC in heap-based mode is better:
   // Prefer ConNKlass+DecodeNKlass over ConP in simple compressed klass mode.
-  // return Universe::narrow_klass_base() == NULL;
+  // return CompressedKlassPointers::base() == NULL;
   return true;
 }
 
@@ -6251,7 +6251,7 @@ instruct encodeHeapOop(iRegN dst, iRegP src) %{
   ins_encode %{
     __ encode_heap_oop($src$$Register, $dst$$Register);
   %}
-  ins_avoid_back_to_back(Universe::narrow_oop_base() == NULL ? AVOID_NONE : AVOID_BEFORE);
+  ins_avoid_back_to_back(CompressedOops::base() == NULL ? AVOID_NONE : AVOID_BEFORE);
   ins_pipe(ialu_reg);
 %}
 

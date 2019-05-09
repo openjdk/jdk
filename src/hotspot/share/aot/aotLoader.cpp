@@ -22,12 +22,12 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
-
 #include "aot/aotCodeHeap.hpp"
 #include "aot/aotLoader.inline.hpp"
+#include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/compressedOops.hpp"
 #include "oops/method.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/os.inline.hpp"
@@ -184,14 +184,14 @@ void AOTLoader::universe_init() {
     // AOT sets shift values during heap and metaspace initialization.
     // Check shifts value to make sure thay did not change.
     if (UseCompressedOops && AOTLib::narrow_oop_shift_initialized()) {
-      int oop_shift = Universe::narrow_oop_shift();
+      int oop_shift = CompressedOops::shift();
       FOR_ALL_AOT_LIBRARIES(lib) {
-        (*lib)->verify_flag((*lib)->config()->_narrowOopShift, oop_shift, "Universe::narrow_oop_shift");
+        (*lib)->verify_flag((*lib)->config()->_narrowOopShift, oop_shift, "CompressedOops::shift");
       }
       if (UseCompressedClassPointers) { // It is set only if UseCompressedOops is set
-        int klass_shift = Universe::narrow_klass_shift();
+        int klass_shift = CompressedKlassPointers::shift();
         FOR_ALL_AOT_LIBRARIES(lib) {
-          (*lib)->verify_flag((*lib)->config()->_narrowKlassShift, klass_shift, "Universe::narrow_klass_shift");
+          (*lib)->verify_flag((*lib)->config()->_narrowKlassShift, klass_shift, "CompressedKlassPointers::shift");
         }
       }
     }
@@ -225,10 +225,10 @@ void AOTLoader::set_narrow_oop_shift() {
   // This method is called from Universe::initialize_heap().
   if (UseAOT && libraries_count() > 0 &&
       UseCompressedOops && AOTLib::narrow_oop_shift_initialized()) {
-    if (Universe::narrow_oop_shift() == 0) {
+    if (CompressedOops::shift() == 0) {
       // 0 is valid shift value for small heap but we can safely increase it
       // at this point when nobody used it yet.
-      Universe::set_narrow_oop_shift(AOTLib::narrow_oop_shift());
+      CompressedOops::set_shift(AOTLib::narrow_oop_shift());
     }
   }
 }
@@ -238,8 +238,8 @@ void AOTLoader::set_narrow_klass_shift() {
   if (UseAOT && libraries_count() > 0 &&
       UseCompressedOops && AOTLib::narrow_oop_shift_initialized() &&
       UseCompressedClassPointers) {
-    if (Universe::narrow_klass_shift() == 0) {
-      Universe::set_narrow_klass_shift(AOTLib::narrow_klass_shift());
+    if (CompressedKlassPointers::shift() == 0) {
+      CompressedKlassPointers::set_shift(AOTLib::narrow_klass_shift());
     }
   }
 }

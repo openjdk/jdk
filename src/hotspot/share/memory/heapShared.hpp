@@ -30,6 +30,7 @@
 #include "memory/allocation.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/universe.hpp"
+#include "oops/compressedOops.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.hpp"
 #include "oops/typeArrayKlass.hpp"
@@ -321,7 +322,7 @@ private:
   static void initialize_from_archived_subgraph(Klass* k) NOT_CDS_JAVA_HEAP_RETURN;
 
   // NarrowOops stored in the CDS archive may use a different encoding scheme
-  // than Universe::narrow_oop_{base,shift} -- see FileMapInfo::map_heap_regions_impl.
+  // than CompressedOops::{base,shift} -- see FileMapInfo::map_heap_regions_impl.
   // To decode them, do not use CompressedOops::decode_not_null. Use this
   // function instead.
   inline static oop decode_from_archive(narrowOop v) NOT_CDS_JAVA_HEAP_RETURN_(NULL);

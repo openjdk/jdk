@@ -25,6 +25,7 @@
 #include "ci/ciUtilities.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/cardTable.hpp"
+#include "oops/compressedOops.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "jvmci/jvmciEnv.hpp"
 #include "jvmci/jvmciCompilerToVM.hpp"
@@ -100,10 +101,10 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
 
   Universe_collectedHeap = Universe::heap();
   Universe_base_vtable_size = Universe::base_vtable_size();
-  Universe_narrow_oop_base = Universe::narrow_oop_base();
-  Universe_narrow_oop_shift = Universe::narrow_oop_shift();
-  Universe_narrow_klass_base = Universe::narrow_klass_base();
-  Universe_narrow_klass_shift = Universe::narrow_klass_shift();
+  Universe_narrow_oop_base = CompressedOops::base();
+  Universe_narrow_oop_shift = CompressedOops::shift();
+  Universe_narrow_klass_base = CompressedKlassPointers::base();
+  Universe_narrow_klass_shift = CompressedKlassPointers::shift();
   Universe_non_oop_bits = Universe::non_oop_word();
   Universe_verify_oop_mask = Universe::verify_oop_mask();
   Universe_verify_oop_bits = Universe::verify_oop_bits();

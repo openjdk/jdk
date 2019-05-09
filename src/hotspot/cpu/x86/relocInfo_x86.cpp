@@ -58,9 +58,9 @@ void Relocation::pd_set_data_value(address x, intptr_t o, bool verify_only) {
     }
   } else {
       if (verify_only) {
-        guarantee(*(uint32_t*) disp == Klass::encode_klass((Klass*)x), "instructions must match");
+        guarantee(*(uint32_t*) disp == CompressedKlassPointers::encode((Klass*)x), "instructions must match");
       } else {
-        *(int32_t*) disp = Klass::encode_klass((Klass*)x);
+        *(int32_t*) disp = CompressedKlassPointers::encode((Klass*)x);
       }
     }
   } else {

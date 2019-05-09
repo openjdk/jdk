@@ -184,12 +184,12 @@ void FileMapHeader::populate(FileMapInfo* mapinfo, size_t alignment) {
   _alignment = alignment;
   _obj_alignment = ObjectAlignmentInBytes;
   _compact_strings = CompactStrings;
-  _narrow_oop_mode = Universe::narrow_oop_mode();
-  _narrow_oop_base = Universe::narrow_oop_base();
-  _narrow_oop_shift = Universe::narrow_oop_shift();
+  _narrow_oop_mode = CompressedOops::mode();
+  _narrow_oop_base = CompressedOops::base();
+  _narrow_oop_shift = CompressedOops::shift();
   _max_heap_size = MaxHeapSize;
-  _narrow_klass_base = Universe::narrow_klass_base();
-  _narrow_klass_shift = Universe::narrow_klass_shift();
+  _narrow_klass_base = CompressedKlassPointers::base();
+  _narrow_klass_shift = CompressedKlassPointers::shift();
   _shared_path_table_size = mapinfo->_shared_path_table_size;
   _shared_path_table = mapinfo->_shared_path_table;
   _shared_path_entry_size = mapinfo->_shared_path_entry_size;
@@ -638,7 +638,7 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
     si->_file_offset = _file_offset;
   }
   if (HeapShared::is_heap_region(region)) {
-    assert((base - (char*)Universe::narrow_oop_base()) % HeapWordSize == 0, "Sanity");
+    assert((base - (char*)CompressedOops::base()) % HeapWordSize == 0, "Sanity");
     if (base != NULL) {
       si->_addr._offset = (intx)CompressedOops::encode_not_null((oop)base);
     } else {
@@ -976,19 +976,19 @@ void FileMapInfo::map_heap_regions_impl() {
   log_info(cds)("The current max heap size = " SIZE_FORMAT "M, HeapRegion::GrainBytes = " SIZE_FORMAT,
                 heap_reserved.byte_size()/M, HeapRegion::GrainBytes);
   log_info(cds)("    narrow_klass_base = " PTR_FORMAT ", narrow_klass_shift = %d",
-                p2i(Universe::narrow_klass_base()), Universe::narrow_klass_shift());
+                p2i(CompressedKlassPointers::base()), CompressedKlassPointers::shift());
   log_info(cds)("    narrow_oop_mode = %d, narrow_oop_base = " PTR_FORMAT ", narrow_oop_shift = %d",
-                Universe::narrow_oop_mode(), p2i(Universe::narrow_oop_base()), Universe::narrow_oop_shift());
+                CompressedOops::mode(), p2i(CompressedOops::base()), CompressedOops::shift());
 
-  if (narrow_klass_base() != Universe::narrow_klass_base() ||
-      narrow_klass_shift() != Universe::narrow_klass_shift()) {
+  if (narrow_klass_base() != CompressedKlassPointers::base() ||
+      narrow_klass_shift() != CompressedKlassPointers::shift()) {
     log_info(cds)("CDS heap data cannot be used because the archive was created with an incompatible narrow klass encoding mode.");
     return;
   }
 
-  if (narrow_oop_mode() != Universe::narrow_oop_mode() ||
-      narrow_oop_base() != Universe::narrow_oop_base() ||
-      narrow_oop_shift() != Universe::narrow_oop_shift()) {
+  if (narrow_oop_mode() != CompressedOops::mode() ||
+      narrow_oop_base() != CompressedOops::base() ||
+      narrow_oop_shift() != CompressedOops::shift()) {
     log_info(cds)("CDS heap data need to be relocated because the archive was created with an incompatible oop encoding mode.");
     _heap_pointers_need_patching = true;
   } else {

@@ -39,6 +39,7 @@
 #include "memory/metaspaceShared.hpp"
 #include "memory/metaspaceTracer.hpp"
 #include "memory/universe.hpp"
+#include "oops/compressedOops.hpp"
 #include "runtime/init.hpp"
 #include "runtime/orderAccess.hpp"
 #include "services/memTracker.hpp"
@@ -974,7 +975,7 @@ void Metaspace::set_narrow_klass_base_and_shift(address metaspace_base, address 
     }
   }
 
-  Universe::set_narrow_klass_base(lower_base);
+  CompressedKlassPointers::set_base(lower_base);
 
   // CDS uses LogKlassAlignmentInBytes for narrow_klass_shift. See
   // MetaspaceShared::initialize_dumptime_shared_and_meta_spaces() for
@@ -984,9 +985,9 @@ void Metaspace::set_narrow_klass_base_and_shift(address metaspace_base, address 
   // can be used at same time as AOT code.
   if (!UseSharedSpaces
       && (uint64_t)(higher_address - lower_base) <= UnscaledClassSpaceMax) {
-    Universe::set_narrow_klass_shift(0);
+    CompressedKlassPointers::set_shift(0);
   } else {
-    Universe::set_narrow_klass_shift(LogKlassAlignmentInBytes);
+    CompressedKlassPointers::set_shift(LogKlassAlignmentInBytes);
   }
   AOTLoader::set_narrow_klass_shift();
 }
@@ -1131,7 +1132,7 @@ void Metaspace::allocate_metaspace_compressed_klass_ptrs(char* requested_addr, a
 
 void Metaspace::print_compressed_class_space(outputStream* st, const char* requested_addr) {
   st->print_cr("Narrow klass base: " PTR_FORMAT ", Narrow klass shift: %d",
-               p2i(Universe::narrow_klass_base()), Universe::narrow_klass_shift());
+               p2i(CompressedKlassPointers::base()), CompressedKlassPointers::shift());
   if (_class_space_list != NULL) {
     address base = (address)_class_space_list->current_virtual_space()->bottom();
     st->print("Compressed class space size: " SIZE_FORMAT " Address: " PTR_FORMAT,

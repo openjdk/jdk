@@ -1644,7 +1644,7 @@ const bool Matcher::need_masked_shift_count = false;
 
 // Set this as clone_shift_expressions.
 bool Matcher::narrow_oop_use_complex_address() {
-  if (Universe::narrow_oop_base() == NULL && Universe::narrow_oop_shift() == 0) return true;
+  if (CompressedOops::base() == NULL && CompressedOops::shift() == 0) return true;
   return false;
 }
 
@@ -1657,12 +1657,12 @@ bool Matcher::narrow_klass_use_complex_address() {
 
 bool Matcher::const_oop_prefer_decode() {
   // Prefer ConN+DecodeN over ConP in simple compressed oops mode.
-  return Universe::narrow_oop_base() == NULL;
+  return CompressedOops::base() == NULL;
 }
 
 bool Matcher::const_klass_prefer_decode() {
   // Prefer ConNKlass+DecodeNKlass over ConP in simple compressed klass mode.
-  return Universe::narrow_klass_base() == NULL;
+  return CompressedKlassPointers::base() == NULL;
 }
 
 // Is it better to copy float constants, or load them directly from memory?
@@ -3507,7 +3507,7 @@ operand interpreter_method_oop_regP(iRegP reg) %{
 // Operands to remove register moves in unscaled mode.
 // Match read/write registers with an EncodeP node if neither shift nor add are required.
 operand iRegP2N(iRegP reg) %{
-  predicate(Universe::narrow_oop_shift() == 0 && _leaf->as_EncodeP()->in(0) == NULL);
+  predicate(CompressedOops::shift() == 0 && _leaf->as_EncodeP()->in(0) == NULL);
   constraint(ALLOC_IN_RC(z_memory_ptr_reg));
   match(EncodeP reg);
   format %{ "$reg" %}
@@ -3515,7 +3515,7 @@ operand iRegP2N(iRegP reg) %{
 %}
 
 operand iRegN2P(iRegN reg) %{
-  predicate(Universe::narrow_oop_base() == NULL && Universe::narrow_oop_shift() == 0 &&
+  predicate(CompressedOops::base() == NULL && CompressedOops::shift() == 0 &&
             _leaf->as_DecodeN()->in(0) == NULL);
   constraint(ALLOC_IN_RC(z_memory_ptr_reg));
   match(DecodeN reg);
@@ -4784,7 +4784,7 @@ instruct loadConNKlass(iRegN dst, immNKlass src) %{
 
 instruct decodeLoadN(iRegP dst, memory mem) %{
   match(Set dst (DecodeN (LoadN mem)));
-  predicate(false && (Universe::narrow_oop_base()==NULL)&&(Universe::narrow_oop_shift()==0));
+  predicate(false && (CompressedOops::base()==NULL)&&(CompressedOops::shift()==0));
   ins_cost(MEMORY_REF_COST);
   size(Z_DISP3_SIZE);
   format %{ "DecodeLoadN  $dst,$mem\t# (cOop Load+Decode)" %}
@@ -4795,7 +4795,7 @@ instruct decodeLoadN(iRegP dst, memory mem) %{
 
 instruct decodeLoadNKlass(iRegP dst, memory mem) %{
   match(Set dst (DecodeNKlass (LoadNKlass mem)));
-  predicate(false && (Universe::narrow_klass_base()==NULL)&&(Universe::narrow_klass_shift()==0));
+  predicate(false && (CompressedKlassPointers::base()==NULL)&&(CompressedKlassPointers::shift()==0));
   ins_cost(MEMORY_REF_COST);
   size(Z_DISP3_SIZE);
   format %{ "DecodeLoadNKlass  $dst,$mem\t# (load/decode NKlass)" %}
@@ -4823,7 +4823,7 @@ instruct decodeLoadConNKlass(iRegP dst, immNKlass src) %{
 instruct decodeN(iRegP dst, iRegN src, flagsReg cr) %{
   match(Set dst (DecodeN src));
   effect(KILL cr);
-  predicate(Universe::narrow_oop_base() == NULL || !ExpandLoadingBaseDecode);
+  predicate(CompressedOops::base() == NULL || !ExpandLoadingBaseDecode);
   ins_cost(MEMORY_REF_COST+3 * DEFAULT_COST + BRANCH_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
   format %{ "decodeN  $dst,$src\t# (decode cOop)" %}
@@ -4847,7 +4847,7 @@ instruct decodeN_NN(iRegP dst, iRegN src, flagsReg cr) %{
   effect(KILL cr);
   predicate((n->bottom_type()->make_ptr()->ptr() == TypePtr::NotNull ||
              n->bottom_type()->is_oopptr()->ptr() == TypePtr::Constant) &&
-            (Universe::narrow_oop_base()== NULL || !ExpandLoadingBaseDecode_NN));
+            (CompressedOops::base()== NULL || !ExpandLoadingBaseDecode_NN));
   ins_cost(MEMORY_REF_COST+2 * DEFAULT_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
   format %{ "decodeN  $dst,$src\t# (decode cOop NN)" %}
@@ -4876,7 +4876,7 @@ instruct decodeN_NN(iRegP dst, iRegN src, flagsReg cr) %{
     format %{ "decodeN  $dst = ($src == 0) ? NULL : ($src << 3) + $base + pow2_offset\t# (decode cOop)" %}
     ins_encode %{
       __ oop_decoder($dst$$Register, $src$$Register, true, $base$$Register,
-                     (jlong)MacroAssembler::get_oop_base_pow2_offset((uint64_t)(intptr_t)Universe::narrow_oop_base()));
+                     (jlong)MacroAssembler::get_oop_base_pow2_offset((uint64_t)(intptr_t)CompressedOops::base()));
     %}
     ins_pipe(pipe_class_dummy);
   %}
@@ -4890,7 +4890,7 @@ instruct decodeN_NN(iRegP dst, iRegN src, flagsReg cr) %{
     format %{ "decodeN  $dst = ($src << 3) + $base + pow2_offset\t# (decode cOop)" %}
     ins_encode %{
       __ oop_decoder($dst$$Register, $src$$Register, false, $base$$Register,
-                     (jlong)MacroAssembler::get_oop_base_pow2_offset((uint64_t)(intptr_t)Universe::narrow_oop_base()));
+                     (jlong)MacroAssembler::get_oop_base_pow2_offset((uint64_t)(intptr_t)CompressedOops::base()));
     %}
     ins_pipe(pipe_class_dummy);
   %}
@@ -4898,11 +4898,11 @@ instruct decodeN_NN(iRegP dst, iRegN src, flagsReg cr) %{
 // Decoder for heapbased mode peeling off loading the base.
 instruct decodeN_Ex(iRegP dst, iRegN src, flagsReg cr) %{
   match(Set dst (DecodeN src));
-  predicate(Universe::narrow_oop_base() != NULL && ExpandLoadingBaseDecode);
+  predicate(CompressedOops::base() != NULL && ExpandLoadingBaseDecode);
   ins_cost(MEMORY_REF_COST+3 * DEFAULT_COST + BRANCH_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
   expand %{
-    immL baseImm %{ (jlong)(intptr_t)Universe::narrow_oop_base() %}
+    immL baseImm %{ (jlong)(intptr_t)CompressedOops::base() %}
     iRegL base;
     loadBase(base, baseImm);
     decodeN_base(dst, src, base, cr);
@@ -4914,11 +4914,11 @@ instruct decodeN_NN_Ex(iRegP dst, iRegN src, flagsReg cr) %{
   match(Set dst (DecodeN src));
   predicate((n->bottom_type()->make_ptr()->ptr() == TypePtr::NotNull ||
              n->bottom_type()->is_oopptr()->ptr() == TypePtr::Constant) &&
-            Universe::narrow_oop_base() != NULL && ExpandLoadingBaseDecode_NN);
+            CompressedOops::base() != NULL && ExpandLoadingBaseDecode_NN);
   ins_cost(MEMORY_REF_COST+2 * DEFAULT_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
   expand %{
-    immL baseImm %{ (jlong)(intptr_t)Universe::narrow_oop_base() %}
+    immL baseImm %{ (jlong)(intptr_t)CompressedOops::base() %}
     iRegL base;
     loadBase(base, baseImm);
     decodeN_NN_base(dst, src, base, cr);
@@ -4932,8 +4932,8 @@ instruct encodeP(iRegN dst, iRegP src, flagsReg cr) %{
   match(Set dst (EncodeP src));
   effect(KILL cr);
   predicate((n->bottom_type()->make_ptr()->ptr() != TypePtr::NotNull) &&
-            (Universe::narrow_oop_base() == 0 ||
-             Universe::narrow_oop_base_disjoint() ||
+            (CompressedOops::base() == 0 ||
+             CompressedOops::base_disjoint() ||
              !ExpandLoadingBaseEncode));
   ins_cost(MEMORY_REF_COST+3 * DEFAULT_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
@@ -4955,8 +4955,8 @@ instruct encodeP_NN(iRegN dst, iRegP src, flagsReg cr) %{
   match(Set dst (EncodeP src));
   effect(KILL cr);
   predicate((n->bottom_type()->make_ptr()->ptr() == TypePtr::NotNull) &&
-            (Universe::narrow_oop_base() == 0 ||
-             Universe::narrow_oop_base_disjoint() ||
+            (CompressedOops::base() == 0 ||
+             CompressedOops::base_disjoint() ||
              !ExpandLoadingBaseEncode_NN));
   ins_cost(MEMORY_REF_COST+3 * DEFAULT_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
@@ -4975,7 +4975,7 @@ instruct encodeP_NN(iRegN dst, iRegP src, flagsReg cr) %{
     format %{ "encodeP  $dst = ($src>>3) +$base + pow2_offset\t# (encode cOop)" %}
     ins_encode %{
       jlong offset = -(jlong)MacroAssembler::get_oop_base_pow2_offset
-        (((uint64_t)(intptr_t)Universe::narrow_oop_base()) >> Universe::narrow_oop_shift());
+        (((uint64_t)(intptr_t)CompressedOops::base()) >> CompressedOops::shift());
       __ oop_encoder($dst$$Register, $src$$Register, true, $base$$Register, offset);
     %}
     ins_pipe(pipe_class_dummy);
@@ -4998,11 +4998,11 @@ instruct encodeP_Ex(iRegN dst, iRegP src, flagsReg cr) %{
   match(Set dst (EncodeP src));
   effect(KILL cr);
   predicate((n->bottom_type()->make_ptr()->ptr() != TypePtr::NotNull) &&
-            (Universe::narrow_oop_base_overlaps() && ExpandLoadingBaseEncode));
+            (CompressedOops::base_overlaps() && ExpandLoadingBaseEncode));
   ins_cost(MEMORY_REF_COST+3 * DEFAULT_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
   expand %{
-    immL baseImm %{ ((jlong)(intptr_t)Universe::narrow_oop_base()) >> Universe::narrow_oop_shift() %}
+    immL baseImm %{ ((jlong)(intptr_t)CompressedOops::base()) >> CompressedOops::shift() %}
     immL_0 zero %{ (0) %}
     flagsReg ccr;
     iRegL base;
@@ -5018,12 +5018,12 @@ instruct encodeP_NN_Ex(iRegN dst, iRegP src, flagsReg cr) %{
   match(Set dst (EncodeP src));
   effect(KILL cr);
   predicate((n->bottom_type()->make_ptr()->ptr() == TypePtr::NotNull) &&
-            (Universe::narrow_oop_base_overlaps() && ExpandLoadingBaseEncode_NN));
+            (CompressedOops::base_overlaps() && ExpandLoadingBaseEncode_NN));
   ins_cost(MEMORY_REF_COST+3 * DEFAULT_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
   expand %{
-    immL baseImm %{ (jlong)(intptr_t)Universe::narrow_oop_base() %}
-    immL pow2_offset %{ -(jlong)MacroAssembler::get_oop_base_pow2_offset(((uint64_t)(intptr_t)Universe::narrow_oop_base())) %}
+    immL baseImm %{ (jlong)(intptr_t)CompressedOops::base() %}
+    immL pow2_offset %{ -(jlong)MacroAssembler::get_oop_base_pow2_offset(((uint64_t)(intptr_t)CompressedOops::base())) %}
     immL_0 zero %{ 0 %}
     flagsReg ccr;
     iRegL base;
@@ -6209,7 +6209,7 @@ instruct addP_reg_reg_imm12(iRegP dst, memoryRegP src1, iRegL src2, uimmL12 con)
 
 instruct addP_regN_reg_imm12(iRegP dst, iRegP_N2P src1, iRegL src2, uimmL12 con) %{
   match(Set dst (AddP (AddP src1 src2) con));
-  predicate( PreferLAoverADD && Universe::narrow_oop_base() == NULL && Universe::narrow_oop_shift() == 0);
+  predicate( PreferLAoverADD && CompressedOops::base() == NULL && CompressedOops::shift() == 0);
   ins_cost(DEFAULT_COST_LOW);
   size(4);
   format %{ "LA      $dst,$con($src1,$src2)\t # ptr d12(x,b)" %}
@@ -6231,7 +6231,7 @@ instruct addP_reg_reg_imm20(iRegP dst, memoryRegP src1, iRegL src2, immL20 con) 
 
 instruct addP_regN_reg_imm20(iRegP dst, iRegP_N2P src1, iRegL src2, immL20 con) %{
   match(Set dst (AddP (AddP src1 src2) con));
-  predicate( PreferLAoverADD && Universe::narrow_oop_base() == NULL && Universe::narrow_oop_shift() == 0);
+  predicate( PreferLAoverADD && CompressedOops::base() == NULL && CompressedOops::shift() == 0);
   ins_cost(DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
   format %{ "LAY     $dst,$con($src1,$src2)\t # ptr d20(x,b)" %}
@@ -8555,7 +8555,7 @@ instruct compP_reg_imm0(flagsReg cr, iRegP_N2P op1, immP0 op2) %{
 // Don't use LTGFR which performs sign extend.
 instruct compP_decode_reg_imm0(flagsReg cr, iRegN op1, immP0 op2) %{
   match(Set cr (CmpP (DecodeN op1) op2));
-  predicate(Universe::narrow_oop_base() == NULL && Universe::narrow_oop_shift() == 0);
+  predicate(CompressedOops::base() == NULL && CompressedOops::shift() == 0);
   ins_cost(DEFAULT_COST_LOW);
   size(2);
   format %{ "LTR    $op1, $op1\t # ptr" %}
@@ -11024,4 +11024,3 @@ instruct popCountL(iRegI dst, iRegL src, iRegL tmp, flagsReg cr) %{
 
 // ============================================================================
 // TYPE PROFILING RULES
-

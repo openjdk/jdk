@@ -237,7 +237,7 @@ class OopMapSet : public ResourceObj {
   int heap_size() const;
 
   // Methods oops_do() and all_do() filter out NULL oops and
-  // oop == Universe::narrow_oop_base() before passing oops
+  // oop == CompressedOops::base() before passing oops
   // to closures.
 
   // Iterates through frame for a compiled method

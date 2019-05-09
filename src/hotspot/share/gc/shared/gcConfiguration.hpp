@@ -27,6 +27,7 @@
 
 #include "gc/shared/gcName.hpp"
 #include "memory/universe.hpp"
+#include "oops/compressedOops.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class GCConfiguration {
@@ -63,7 +64,7 @@ class GCHeapConfiguration {
   size_t min_size() const;
   size_t initial_size() const;
   bool uses_compressed_oops() const;
-  Universe::NARROW_OOP_MODE narrow_oop_mode() const;
+  CompressedOops::Mode narrow_oop_mode() const;
   uint object_alignment_in_bytes() const;
   int heap_address_size_in_bits() const;
 };

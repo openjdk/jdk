@@ -32,6 +32,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/compressedOops.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/signature.hpp"
@@ -346,11 +347,11 @@ void OopMapSet::all_do(const frame *fr, const RegisterMap *reg_map,
         oop *derived_loc = loc;
         oop *base_loc    = fr->oopmapreg_to_location(omv.content_reg(), reg_map);
         // Ignore NULL oops and decoded NULL narrow oops which
-        // equal to Universe::narrow_oop_base when a narrow oop
+        // equal to CompressedOops::base() when a narrow oop
         // implicit null check is used in compiled code.
         // The narrow_oop_base could be NULL or be the address
         // of the page below heap depending on compressed oops mode.
-        if (base_loc != NULL && *base_loc != NULL && !Universe::is_narrow_oop_base(*base_loc)) {
+        if (base_loc != NULL && *base_loc != NULL && !CompressedOops::is_base(*base_loc)) {
           derived_oop_fn(base_loc, derived_loc);
         }
         oms.next();
@@ -371,9 +372,9 @@ void OopMapSet::all_do(const frame *fr, const RegisterMap *reg_map,
       guarantee(loc != NULL, "missing saved register");
       if ( omv.type() == OopMapValue::oop_value ) {
         oop val = *loc;
-        if (val == NULL || Universe::is_narrow_oop_base(val)) {
+        if (val == NULL || CompressedOops::is_base(val)) {
           // Ignore NULL oops and decoded NULL narrow oops which
-          // equal to Universe::narrow_oop_base when a narrow oop
+          // equal to CompressedOops::base() when a narrow oop
           // implicit null check is used in compiled code.
           // The narrow_oop_base could be NULL or be the address
           // of the page below heap depending on compressed oops mode.

@@ -67,6 +67,7 @@
 #include "gc/shenandoah/heuristics/shenandoahTraversalHeuristics.hpp"
 
 #include "memory/metaspace.hpp"
+#include "oops/compressedOops.inline.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/safepointMechanism.hpp"

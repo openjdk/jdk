@@ -114,7 +114,7 @@ StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMap* r
     case Location::oop: {
       oop val = *(oop *)value_addr;
 #ifdef _LP64
-      if (Universe::is_narrow_oop_base(val)) {
+      if (CompressedOops::is_base(val)) {
          // Compiled code may produce decoded oop = narrow_oop_base
          // when a narrow oop implicit null check is used.
          // The narrow_oop_base could be NULL or be the address

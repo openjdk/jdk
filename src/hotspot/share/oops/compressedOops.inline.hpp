@@ -27,6 +27,7 @@
 
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/universe.hpp"
+#include "oops/compressedOops.hpp"
 #include "oops/oop.hpp"
 
 // Functions for encoding and decoding compressed oops.
@@ -39,46 +40,69 @@
 // offset from the heap base.  Saving the check for null can save instructions
 // in inner GC loops so these are separated.
 
-namespace CompressedOops {
-  inline bool is_null(oop obj)       { return obj == NULL; }
-  inline bool is_null(narrowOop obj) { return obj == 0; }
+inline oop CompressedOops::decode_raw(narrowOop v) {
+  return (oop)(void*)((uintptr_t)base() + ((uintptr_t)v << shift()));
+}
 
-  inline oop decode_not_null(narrowOop v) {
-    assert(!is_null(v), "narrow oop value can never be zero");
-    address base = Universe::narrow_oop_base();
-    int    shift = Universe::narrow_oop_shift();
-    oop result = (oop)(void*)((uintptr_t)base + ((uintptr_t)v << shift));
-    assert(check_obj_alignment(result), "address not aligned: " INTPTR_FORMAT, p2i((void*) result));
-    return result;
+inline oop CompressedOops::decode_not_null(narrowOop v) {
+  assert(!is_null(v), "narrow oop value can never be zero");
+  oop result = decode_raw(v);
+  assert(check_obj_alignment(result), "address not aligned: " INTPTR_FORMAT, p2i((void*) result));
+  return result;
+}
+
+inline oop CompressedOops::decode(narrowOop v) {
+  return is_null(v) ? (oop)NULL : decode_not_null(v);
+}
+
+inline narrowOop CompressedOops::encode_not_null(oop v) {
+  assert(!is_null(v), "oop value can never be zero");
+  assert(check_obj_alignment(v), "Address not aligned");
+  assert(Universe::heap()->is_in_reserved(v), "Address not in heap");
+  uint64_t  pd = (uint64_t)(pointer_delta((void*)v, (void*)base(), 1));
+  assert(OopEncodingHeapMax > pd, "change encoding max if new encoding");
+  uint64_t result = pd >> shift();
+  assert((result & CONST64(0xffffffff00000000)) == 0, "narrow oop overflow");
+  assert(oopDesc::equals_raw(decode(result), v), "reversibility");
+  return (narrowOop)result;
+}
+
+inline narrowOop CompressedOops::encode(oop v) {
+  return is_null(v) ? (narrowOop)0 : encode_not_null(v);
+}
+
+static inline bool check_alignment(Klass* v) {
+  return (intptr_t)v % KlassAlignmentInBytes == 0;
+}
+
+inline Klass* CompressedKlassPointers::decode_raw(narrowKlass v) {
+    return (Klass*)(void*)((uintptr_t)base() +((uintptr_t)v << shift()));
   }
 
-  inline oop decode(narrowOop v) {
-    return is_null(v) ? (oop)NULL : decode_not_null(v);
-  }
+inline Klass* CompressedKlassPointers::decode_not_null(narrowKlass v) {
+  assert(!is_null(v), "narrow klass value can never be zero");
+  Klass* result = decode_raw(v);
+  assert(check_alignment(result), "address not aligned: " INTPTR_FORMAT, p2i((void*) result));
+  return result;
+}
 
-  inline narrowOop encode_not_null(oop v) {
-    assert(!is_null(v), "oop value can never be zero");
-    assert(check_obj_alignment(v), "Address not aligned");
-    assert(Universe::heap()->is_in_reserved(v), "Address not in heap");
-    address base = Universe::narrow_oop_base();
-    int    shift = Universe::narrow_oop_shift();
-    uint64_t  pd = (uint64_t)(pointer_delta((void*)v, (void*)base, 1));
-    assert(OopEncodingHeapMax > pd, "change encoding max if new encoding");
-    uint64_t result = pd >> shift;
-    assert((result & CONST64(0xffffffff00000000)) == 0, "narrow oop overflow");
-    assert(oopDesc::equals_raw(decode(result), v), "reversibility");
-    return (narrowOop)result;
-  }
+inline Klass* CompressedKlassPointers::decode(narrowKlass v) {
+  return is_null(v) ? (Klass*)NULL : decode_not_null(v);
+}
 
-  inline narrowOop encode(oop v) {
-    return is_null(v) ? (narrowOop)0 : encode_not_null(v);
-  }
+inline narrowKlass CompressedKlassPointers::encode_not_null(Klass* v) {
+  assert(!is_null(v), "klass value can never be zero");
+  assert(check_alignment(v), "Address not aligned");
+  uint64_t pd = (uint64_t)(pointer_delta((void*)v, base(), 1));
+  assert(KlassEncodingMetaspaceMax > pd, "change encoding max if new encoding");
+  uint64_t result = pd >> shift();
+  assert((result & CONST64(0xffffffff00000000)) == 0, "narrow klass pointer overflow");
+  assert(decode(result) == v, "reversibility");
+  return (narrowKlass)result;
+}
 
-  // No conversions needed for these overloads
-  inline oop decode_not_null(oop v)             { return v; }
-  inline oop decode(oop v)                      { return v; }
-  inline narrowOop encode_not_null(narrowOop v) { return v; }
-  inline narrowOop encode(narrowOop v)          { return v; }
+inline narrowKlass CompressedKlassPointers::encode(Klass* v) {
+  return is_null(v) ? (narrowKlass)0 : encode_not_null(v);
 }
 
 #endif // SHARE_OOPS_COMPRESSEDOOPS_INLINE_HPP
