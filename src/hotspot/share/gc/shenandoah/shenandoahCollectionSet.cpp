@@ -28,6 +28,7 @@
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "runtime/atomic.hpp"
+#include "services/memTracker.hpp"
 #include "utilities/copy.hpp"
 
 ShenandoahCollectionSet::ShenandoahCollectionSet(ShenandoahHeap* heap, char* heap_base, size_t size) :
