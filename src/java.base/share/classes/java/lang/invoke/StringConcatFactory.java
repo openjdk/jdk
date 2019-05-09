@@ -1666,25 +1666,33 @@ public final class StringConcatFactory {
             // and deduce the coder from there. Arguments would be either converted to Strings
             // during the initial filtering, or handled by specializations in MIXERS.
             //
-            // The method handle shape before and after all mixers are combined in is:
+            // The method handle shape before all mixers are combined in is:
             //   (long, <args>)String = ("indexCoder", <args>)
+            //
+            // We will bind the initialLengthCoder value to the last mixer (the one that will be
+            // executed first), then fold that in. This leaves the shape after all mixers are
+            // combined in as:
+            //   (<args>)String = (<args>)
 
+            int ac = -1;
+            MethodHandle mix = null;
             for (RecipeElement el : recipe.getElements()) {
                 switch (el.getTag()) {
                     case TAG_CONST:
                         // Constants already handled in the code above
                         break;
                     case TAG_ARG:
-                        int ac = el.getArgPos();
+                        if (ac >= 0) {
+                            // Compute new "index" in-place using old value plus the appropriate argument.
+                            mh = MethodHandles.filterArgumentsWithCombiner(mh, 0, mix,
+                                    0, // old-index
+                                    1 + ac // selected argument
+                            );
+                        }
 
+                        ac = el.getArgPos();
                         Class<?> argClass = ptypes[ac];
-                        MethodHandle mix = mixer(argClass);
-
-                        // Compute new "index" in-place using old value plus the appropriate argument.
-                        mh = MethodHandles.filterArgumentsWithCombiner(mh, 0, mix,
-                                0, // old-index
-                                1 + ac // selected argument
-                        );
+                        mix = mixer(argClass);
 
                         break;
                     default:
@@ -1692,9 +1700,19 @@ public final class StringConcatFactory {
                 }
             }
 
-            // Insert initial length and coder value here.
+            // Insert the initialLengthCoder value into the final mixer, then
+            // fold that into the base method handle
+            if (ac >= 0) {
+                mix = MethodHandles.insertArguments(mix, 0, initialLengthCoder);
+                mh = MethodHandles.foldArgumentsWithCombiner(mh, 0, mix,
+                        1 + ac // selected argument
+                );
+            } else {
+                // No mixer (constants only concat), insert initialLengthCoder directly
+                mh = MethodHandles.insertArguments(mh, 0, initialLengthCoder);
+            }
+
             // The method handle shape here is (<args>).
-            mh = MethodHandles.insertArguments(mh, 0, initialLengthCoder);
 
             // Apply filters, converting the arguments:
             if (filters != null) {
