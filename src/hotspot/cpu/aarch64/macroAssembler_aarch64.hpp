@@ -27,6 +27,7 @@
 #define CPU_AARCH64_MACROASSEMBLER_AARCH64_HPP
 
 #include "asm/assembler.hpp"
+#include "oops/compressedOops.hpp"
 
 // MacroAssembler extends Assembler by frequently used macros.
 //
@@ -85,10 +86,10 @@ class MacroAssembler: public Assembler {
  public:
   MacroAssembler(CodeBuffer* code) : Assembler(code) {
     use_XOR_for_compressed_class_base
-      = (operand_valid_for_logical_immediate(false /*is32*/,
-                                             (uint64_t)Universe::narrow_klass_base())
-         && ((uint64_t)Universe::narrow_klass_base()
-             > (1UL << log2_intptr(Universe::narrow_klass_range()))));
+      = operand_valid_for_logical_immediate
+           (/*is32*/false, (uint64_t)CompressedKlassPointers::base())
+         && ((uint64_t)CompressedKlassPointers::base()
+             > (1UL << log2_intptr(CompressedKlassPointers::range())));
   }
 
  // These routines should emit JVMTI PopFrame and ForceEarlyReturn handling code.
