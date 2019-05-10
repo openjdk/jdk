@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ public class SubSystem {
                     path = mountPoint;
                 }
                 else {
-                    if (root.indexOf(cgroupPath) == 0) {
+                    if (cgroupPath.startsWith(root)) {
                         if (cgroupPath.length() > root.length()) {
                             String cgroupSubstr = cgroupPath.substring(root.length());
                             path = mountPoint + cgroupSubstr;
