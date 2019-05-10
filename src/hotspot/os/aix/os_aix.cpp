@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1389,12 +1389,15 @@ void os::print_os_info(outputStream* st) {
 
   os::Posix::print_rlimit_info(st);
 
+  // _SC_THREAD_THREADS_MAX is the maximum number of threads within a process.
+  long tmax = sysconf(_SC_THREAD_THREADS_MAX);
+  st->print_cr("maximum #threads within a process:%ld", tmax);
+
   // load average
   st->print("load average:");
   double loadavg[3] = {-1.L, -1.L, -1.L};
   os::loadavg(loadavg, 3);
-  st->print("%0.02f %0.02f %0.02f", loadavg[0], loadavg[1], loadavg[2]);
-  st->cr();
+  st->print_cr("%0.02f %0.02f %0.02f", loadavg[0], loadavg[1], loadavg[2]);
 
   // print wpar info
   libperfstat::wparinfo_t wi;
