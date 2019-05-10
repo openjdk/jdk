@@ -30,7 +30,8 @@ import java.util.List;
 /**
  * Represents the package declaration.
  *
- * @jls sections 7.3, and 7.4
+ * @jls 7.3 Compilation Units
+ * @jls 7.4 Package Declarations
  *
  * @author Paul Govereau
  * @since 9

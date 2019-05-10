@@ -39,7 +39,7 @@ import javax.lang.model.element.Name;
  *   break <em>expression</em> ;
  * </pre>
  *
- * @jls section 14.15
+ * @jls 14.15 The break Statement
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

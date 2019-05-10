@@ -37,7 +37,7 @@ import java.util.List;
  *   new <em>type</em> <em>dimensions</em> [ ] <em>initializers</em>
  * </pre>
  *
- * @jls section 15.10
+ * @jls 15.10.1 Array Creation Expressions
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

@@ -34,7 +34,7 @@ package com.sun.source.tree;
  *   ( <em>expression</em> )
  * </pre>
  *
- * @jls section 15.8.5
+ * @jls 15.8.5 Parenthesized Expressions
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

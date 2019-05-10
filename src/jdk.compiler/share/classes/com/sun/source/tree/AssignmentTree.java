@@ -33,7 +33,7 @@ package com.sun.source.tree;
  *   <em>variable</em> = <em>expression</em>
  * </pre>
  *
- * @jls section 15.26.1
+ * @jls 15.26.1 Simple Assignment Operator =
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

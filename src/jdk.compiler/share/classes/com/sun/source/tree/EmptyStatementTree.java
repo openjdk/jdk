@@ -33,7 +33,7 @@ package com.sun.source.tree;
  *    ;
  * </pre>
  *
- * @jls section 14.6
+ * @jls 14.6 The Empty Statement
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

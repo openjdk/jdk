@@ -39,7 +39,7 @@ import java.util.List;
  *       <em>statements</em>
  * </pre>
  *
- * @jls section 14.11
+ * @jls 14.11 The switch Statement
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

@@ -36,7 +36,7 @@ import java.util.List;
  *       <em>statement</em>
  * </pre>
  *
- * @jls section 14.14.1
+ * @jls 14.14.1 The basic for Statement
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

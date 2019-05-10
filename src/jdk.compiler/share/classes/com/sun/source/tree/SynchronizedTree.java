@@ -34,7 +34,7 @@ package com.sun.source.tree;
  *       <em>block</em>
  * </pre>
  *
- * @jls section 14.19
+ * @jls 14.19 The synchronized Statement
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

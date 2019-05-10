@@ -35,7 +35,7 @@ import java.util.List;
  *   <em>type</em> &lt; <em>typeArguments</em> &gt;
  * </pre>
  *
- * @jls section 4.5.1
+ * @jls 4.5.1 Type Arguments of Parameterized Types
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

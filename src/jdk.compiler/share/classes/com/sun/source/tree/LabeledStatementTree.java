@@ -35,7 +35,7 @@ import javax.lang.model.element.Name;
  *   <em>label</em> : <em>statement</em>
  * </pre>
  *
- * @jls section 14.7
+ * @jls 14.7 Labeled Statements
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

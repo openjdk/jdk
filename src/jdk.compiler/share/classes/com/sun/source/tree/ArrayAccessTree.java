@@ -33,7 +33,7 @@ package com.sun.source.tree;
  *   <em>expression</em> [ <em>index</em> ]
  * </pre>
  *
- * @jls section 15.13
+ * @jls 15.10.3 Array Access Expressions
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

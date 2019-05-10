@@ -33,7 +33,7 @@ package com.sun.source.tree;
  *   <em>condition</em> ? <em>trueExpression</em> : <em>falseExpression</em>
  * </pre>
  *
- * @jls section 15.25
+ * @jls 15.25 Conditional Operator ? :
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

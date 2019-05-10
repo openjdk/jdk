@@ -40,7 +40,11 @@ import javax.lang.model.element.Name;
  *   <em>modifiers</em> <em>type</em> <em>name</em> () default <em>defaultValue</em>
  * </pre>
  *
- * @jls sections 8.4, 8.6, 8.7, 9.4, and 9.6
+ * @jls 8.4 Method Declarations
+ * @jls 8.6 Instance Initializers
+ * @jls 8.7 Static Initializers
+ * @jls 9.4 Method Declarations
+ * @jls 9.6.1 Annotation Type Elements
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

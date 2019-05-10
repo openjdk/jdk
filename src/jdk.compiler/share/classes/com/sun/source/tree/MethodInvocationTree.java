@@ -37,7 +37,7 @@ import java.util.List;
  *   this . <em>typeArguments</em> <em>identifier</em> ( <em>arguments</em> )
  * </pre>
  *
- * @jls section 15.12
+ * @jls 15.12 Method Invocation Expressions
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

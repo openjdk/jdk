@@ -34,7 +34,7 @@ package com.sun.source.tree;
  *   <em>variable</em> <em>operator</em> <em>expression</em>
  * </pre>
  *
- * @jls section 15.26.2
+ * @jls 15.26.2 Compound Assignment Operators
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

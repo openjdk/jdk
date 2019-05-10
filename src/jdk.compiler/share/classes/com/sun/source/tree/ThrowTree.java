@@ -33,7 +33,7 @@ package com.sun.source.tree;
  *   throw <em>expression</em>;
  * </pre>
  *
- * @jls section 14.18
+ * @jls 14.18 The throw Statement
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

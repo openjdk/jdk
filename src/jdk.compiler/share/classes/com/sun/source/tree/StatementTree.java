@@ -29,7 +29,7 @@ package com.sun.source.tree;
  * A tree node used as the base class for the different kinds of
  * statements.
  *
- * @jls chapter 14
+ * @jls 14 Blocks and Statements
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

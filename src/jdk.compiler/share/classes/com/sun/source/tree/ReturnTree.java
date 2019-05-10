@@ -34,7 +34,7 @@ package com.sun.source.tree;
  *   return <em>expression</em>;
  * </pre>
  *
- * @jls section 14.17
+ * @jls 14.17 The return Statement
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

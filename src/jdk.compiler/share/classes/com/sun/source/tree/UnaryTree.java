@@ -36,7 +36,8 @@ package com.sun.source.tree;
  *   <em>expression</em> <em>operator</em>
  * </pre>
  *
- * @jls sections 15.14 and 15.15
+ * @jls 15.14 Postfix Expressions
+ * @jls 15.15 Unary Operators
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

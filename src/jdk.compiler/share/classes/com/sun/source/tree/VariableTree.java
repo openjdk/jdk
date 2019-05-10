@@ -36,7 +36,8 @@ import javax.lang.model.element.Name;
  *   <em>modifiers</em> <em>type</em> <em>qualified-name</em>.this
  * </pre>
  *
- * @jls sections 8.3 and 14.4
+ * @jls 8.3 Field Declarations
+ * @jls 14.4 Local Variable Declaration Statements
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

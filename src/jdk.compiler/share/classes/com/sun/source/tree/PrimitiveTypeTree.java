@@ -35,7 +35,7 @@ import javax.lang.model.type.TypeKind;
  *   <em>primitiveTypeKind</em>
  * </pre>
  *
- * @jls section 4.2
+ * @jls 4.2 Primitive Types and Values
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons
