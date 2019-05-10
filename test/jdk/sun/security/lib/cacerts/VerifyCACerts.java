@@ -32,8 +32,15 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.security.KeyStore;
 import java.security.MessageDigest;
-import java.security.cert.*;
-import java.util.*;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateNotYetValidException;
+import java.security.cert.X509Certificate;
+import java.util.Date;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 
 public class VerifyCACerts {
 
@@ -45,8 +52,8 @@ public class VerifyCACerts {
     private static final int COUNT = 92;
 
     // map of cert alias to SHA-256 fingerprint
-    private static final Map<String, String> FINGERPRINT_MAP
-            = new HashMap<String, String>() {
+    @SuppressWarnings("serial")
+    private static final Map<String, String> FINGERPRINT_MAP = new HashMap<>() {
         {
             put("actalisauthenticationrootca [jdk]",
                     "55:92:60:84:EC:96:3A:64:B9:6E:2A:BE:01:CE:0B:A8:6A:64:FB:FE:BC:C7:AA:B5:AF:C1:55:B3:7F:D7:60:66");
@@ -237,6 +244,7 @@ public class VerifyCACerts {
 
     // Exception list to 90 days expiry policy
     // No error will be reported if certificate in this list expires
+    @SuppressWarnings("serial")
     private static final HashSet<String> EXPIRY_EXC_ENTRIES = new HashSet<>() {
         {
             // Valid until: Sat Jul 06 19:59:59 EDT 2019
