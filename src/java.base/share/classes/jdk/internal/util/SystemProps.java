@@ -90,7 +90,6 @@ public final class SystemProps {
         putIfAbsent(props, "http.nonProxyHosts", raw.propDefault(Raw._http_nonProxyHosts_NDX));
         putIfAbsent(props, "ftp.nonProxyHosts", raw.propDefault(Raw._ftp_nonProxyHosts_NDX));
         putIfAbsent(props, "socksNonProxyHosts", raw.propDefault(Raw._socksNonProxyHosts_NDX));
-        putIfAbsent(props, "awt.toolkit", raw.propDefault(Raw._awt_toolkit_NDX));
         putIfAbsent(props, "sun.arch.abi", raw.propDefault(Raw._sun_arch_abi_NDX));
         putIfAbsent(props, "sun.arch.data.model", raw.propDefault(Raw._sun_arch_data_model_NDX));
         putIfAbsent(props, "sun.os.patch.level", raw.propDefault(Raw._sun_os_patch_level_NDX));
@@ -185,8 +184,7 @@ public final class SystemProps {
     public static class Raw {
         // Array indices written by native vmProperties()
         // The order is arbitrary (but alphabetic for convenience)
-        @Native private static final int _awt_toolkit_NDX = 0;
-        @Native private static final int _display_country_NDX = 1 + _awt_toolkit_NDX;
+        @Native private static final int _display_country_NDX = 0;
         @Native private static final int _display_language_NDX = 1 + _display_country_NDX;
         @Native private static final int _display_script_NDX = 1 + _display_language_NDX;
         @Native private static final int _display_variant_NDX = 1 + _display_script_NDX;

@@ -394,14 +394,6 @@ GetJavaProperties(JNIEnv *env)
     /* patches/service packs installed */
     sprops.patch_level = NULL;      // leave it undefined
 
-    /* Java 2D/AWT properties */
-#ifdef MACOSX
-    // Always the same Toolkit on Mac OS X
-    sprops.awt_toolkit = "sun.lwawt.macosx.LWCToolkit";
-#else
-    sprops.awt_toolkit = "sun.awt.X11.XToolkit";
-#endif
-
 #ifdef SI_ISALIST
     /* supported instruction sets */
     {

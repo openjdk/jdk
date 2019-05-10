@@ -204,8 +204,6 @@ Java_jdk_internal_util_SystemProps_00024Raw_platformProperties(JNIEnv *env, jcla
     /* patch level */
     PUTPROP(propArray, _sun_os_patch_level_NDX, sprops->patch_level);
 
-    PUTPROP(propArray, _awt_toolkit_NDX, sprops->awt_toolkit);
-
     PUTPROP_PlatformString(propArray, _java_io_tmpdir_NDX, sprops->tmp_dir);
 
     PUTPROP_PlatformString(propArray, _user_name_NDX, sprops->user_name);

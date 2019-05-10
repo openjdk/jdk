@@ -78,6 +78,7 @@ import sun.awt.AWTPermissions;
 import sun.awt.AppContext;
 import sun.awt.HeadlessToolkit;
 import sun.awt.PeerEvent;
+import sun.awt.PlatformGraphicsInfo;
 import sun.awt.SunToolkit;
 
 /**
@@ -582,43 +583,17 @@ public abstract class Toolkit {
      * specified.
      *
      * @return     the default toolkit.
-     * @exception  AWTError  if a toolkit could not be found, or
-     *                 if one could not be accessed or instantiated.
+     * @throws  AWTError in case of an error loading assistive technologies.
      * @see java.util.ServiceLoader
      * @see javax.accessibility.AccessibilityProvider
      */
     public static synchronized Toolkit getDefaultToolkit() {
         if (toolkit == null) {
-            java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction<Void>() {
-                public Void run() {
-                    Class<?> cls = null;
-                    String nm = System.getProperty("awt.toolkit");
-                    try {
-                        cls = Class.forName(nm);
-                    } catch (ClassNotFoundException e) {
-                        ClassLoader cl = ClassLoader.getSystemClassLoader();
-                        if (cl != null) {
-                            try {
-                                cls = cl.loadClass(nm);
-                            } catch (final ClassNotFoundException ignored) {
-                                throw new AWTError("Toolkit not found: " + nm);
-                            }
-                        }
-                    }
-                    try {
-                        if (cls != null) {
-                            toolkit = (Toolkit)cls.getConstructor().newInstance();
-                            if (GraphicsEnvironment.isHeadless()) {
-                                toolkit = new HeadlessToolkit(toolkit);
-                            }
-                        }
-                    } catch (final ReflectiveOperationException ignored) {
-                        throw new AWTError("Could not create Toolkit: " + nm);
-                    }
-                    return null;
-                }
-            });
+            toolkit = PlatformGraphicsInfo.createToolkit();
+            if (GraphicsEnvironment.isHeadless() &&
+                !(toolkit instanceof HeadlessToolkit)) {
+                toolkit = new HeadlessToolkit(toolkit);
+            }
             if (!GraphicsEnvironment.isHeadless()) {
                 loadAssistiveTechnologies();
             }

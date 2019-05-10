@@ -365,9 +365,6 @@ GetJavaProperties(JNIEnv* env)
         return &sprops;
     }
 
-    /* AWT properties */
-    sprops.awt_toolkit = "sun.awt.windows.WToolkit";
-
     /* tmp dir */
     {
         WCHAR tmpdir[MAX_PATH + 1];

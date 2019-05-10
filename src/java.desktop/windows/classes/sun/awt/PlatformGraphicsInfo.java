@@ -26,11 +26,16 @@
 package sun.awt;
 
 import java.awt.GraphicsEnvironment;
+import java.awt.Toolkit;
 
 public class PlatformGraphicsInfo {
 
     public static GraphicsEnvironment createGE() {
         return new Win32GraphicsEnvironment();
+    }
+
+    public static Toolkit createToolkit() {
+        return new sun.awt.windows.WToolkit();
     }
 
     public static boolean getDefaultHeadlessProperty() {

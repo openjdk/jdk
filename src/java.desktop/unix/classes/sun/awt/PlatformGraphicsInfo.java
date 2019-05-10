@@ -26,6 +26,7 @@
 package sun.awt;
 
 import java.awt.GraphicsEnvironment;
+import java.awt.Toolkit;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
@@ -33,6 +34,10 @@ public class PlatformGraphicsInfo {
 
     public static GraphicsEnvironment createGE() {
         return new X11GraphicsEnvironment();
+    }
+
+    public static Toolkit createToolkit() {
+        return new sun.awt.X11.XToolkit();
     }
 
     /**

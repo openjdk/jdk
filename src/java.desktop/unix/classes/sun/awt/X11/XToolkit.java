@@ -346,10 +346,14 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
 
             arrowCursor = XlibWrapper.XCreateFontCursor(XToolkit.getDisplay(),
                 XCursorFontConstants.XC_arrow);
-            areExtraMouseButtonsEnabled = Boolean.parseBoolean(System.getProperty("sun.awt.enableExtraMouseButtons", "true"));
-            //set system property if not yet assigned
-            System.setProperty("sun.awt.enableExtraMouseButtons", ""+areExtraMouseButtonsEnabled);
-
+            final String extraButtons = "sun.awt.enableExtraMouseButtons";
+            AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+                areExtraMouseButtonsEnabled =
+                    Boolean.parseBoolean(System.getProperty(extraButtons, "true"));
+                //set system property if not yet assigned
+                System.setProperty(extraButtons, ""+areExtraMouseButtonsEnabled);
+                return null;
+            });
             // Detect display mode changes
             XlibWrapper.XSelectInput(XToolkit.getDisplay(), XToolkit.getDefaultRootWindow(), XConstants.StructureNotifyMask);
             XToolkit.addEventDispatcher(XToolkit.getDefaultRootWindow(), new XEventDispatcher() {

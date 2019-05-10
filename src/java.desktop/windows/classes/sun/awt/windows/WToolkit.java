@@ -245,10 +245,13 @@ public final class WToolkit extends SunToolkit implements Runnable {
         ThreadGroup rootTG = AccessController.doPrivileged(
                 (PrivilegedAction<ThreadGroup>) ThreadGroupUtils::getRootThreadGroup);
         if (!startToolkitThread(this, rootTG)) {
-            String name = "AWT-Windows";
-            Thread toolkitThread = new Thread(rootTG, this, name, 0, false);
-            toolkitThread.setDaemon(true);
-            toolkitThread.start();
+            final String name = "AWT-Windows";
+            AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+                Thread toolkitThread = new Thread(rootTG, this, name, 0, false);
+                toolkitThread.setDaemon(true);
+                toolkitThread.start();
+                return null;
+            });
         }
 
         try {
@@ -264,10 +267,14 @@ public final class WToolkit extends SunToolkit implements Runnable {
         // Enabled "live resizing" by default.  It remains controlled
         // by the native system though.
         setDynamicLayout(true);
-
-        areExtraMouseButtonsEnabled = Boolean.parseBoolean(System.getProperty("sun.awt.enableExtraMouseButtons", "true"));
-        //set system property if not yet assigned
-        System.setProperty("sun.awt.enableExtraMouseButtons", ""+areExtraMouseButtonsEnabled);
+        final String extraButtons = "sun.awt.enableExtraMouseButtons";
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+            areExtraMouseButtonsEnabled =
+                 Boolean.parseBoolean(System.getProperty(extraButtons, "true"));
+            //set system property if not yet assigned
+            System.setProperty(extraButtons, ""+areExtraMouseButtonsEnabled);
+            return null;
+        });
         setExtraMouseButtonsEnabledNative(areExtraMouseButtonsEnabled);
     }
 

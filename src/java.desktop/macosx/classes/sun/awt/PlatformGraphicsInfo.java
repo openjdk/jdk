@@ -26,6 +26,7 @@
 package sun.awt;
 
 import java.awt.GraphicsEnvironment;
+import java.awt.Toolkit;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
@@ -40,6 +41,10 @@ public class PlatformGraphicsInfo {
 
     public static GraphicsEnvironment createGE() {
         return new CGraphicsEnvironment();
+    }
+
+    public static Toolkit createToolkit() {
+        return new sun.lwawt.macosx.LWCToolkit();
     }
 
     /**
