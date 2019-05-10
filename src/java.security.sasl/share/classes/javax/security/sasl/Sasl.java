@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,12 @@
 package javax.security.sasl;
 
 import javax.security.auth.callback.CallbackHandler;
-
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
@@ -38,6 +41,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.Provider.Service;
 import java.security.Security;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A static class for creating SASL clients and servers.
@@ -65,6 +70,30 @@ import java.security.Security;
  * @author Rob Weltman
  */
 public class Sasl {
+
+    private static List<String> disabledMechanisms = new ArrayList<>();
+
+    static {
+        String prop = AccessController.doPrivileged(
+                (PrivilegedAction<String>)
+                () -> Security.getProperty("jdk.sasl.disabledMechanisms"));
+
+        if (prop != null) {
+            for (String s : prop.split("\\s*,\\s*")) {
+                if (!s.isEmpty()) {
+                    disabledMechanisms.add(s);
+                }
+            }
+        }
+    }
+
+    private static final String SASL_LOGGER_NAME = "javax.security.sasl";
+
+    /**
+     * Logger for debug messages
+     */
+    private static final Logger logger = Logger.getLogger(SASL_LOGGER_NAME);
+
     // Cannot create one of these
     private Sasl() {
     }
@@ -318,6 +347,9 @@ public class Sasl {
      * the preferred provider order for the specified algorithm. This
      * may be different than the order of providers returned by
      * {@link Security#getProviders() Security.getProviders()}.
+     * <p>
+     * If a mechanism is listed in the {@code jdk.sasl.disabledMechanisms}
+     * security property, it will be ignored and won't be negotiated.
      *
      * @param mechanisms The non-null list of mechanism names to try. Each is the
      * IANA-registered name of a SASL mechanism. (e.g. "GSSAPI", "CRAM-MD5").
@@ -380,6 +412,10 @@ public class Sasl {
                 throw new NullPointerException(
                     "Mechanism name cannot be null");
             } else if (mechName.length() == 0) {
+                continue;
+            } else if (isDisabled(mechName)) {
+                logger.log(Level.FINE,
+                        "Disabled " + mechName + " mechanism ignored");
                 continue;
             }
             String type = "SaslClientFactory";
@@ -468,6 +504,9 @@ public class Sasl {
      * the preferred provider order for the specified algorithm. This
      * may be different than the order of providers returned by
      * {@link Security#getProviders() Security.getProviders()}.
+     * <p>
+     * If {@code mechanism} is listed in the {@code jdk.sasl.disabledMechanisms}
+     * security property, it will be ignored and this method returns {@code null}.
      *
      * @param mechanism The non-null mechanism name. It must be an
      * IANA-registered name of a SASL mechanism. (e.g. "GSSAPI", "CRAM-MD5").
@@ -520,6 +559,10 @@ public class Sasl {
         if (mechanism == null) {
             throw new NullPointerException("Mechanism name cannot be null");
         } else if (mechanism.length() == 0) {
+            return null;
+        } else if (isDisabled(mechanism)) {
+            logger.log(Level.FINE,
+                    "Disabled " + mechanism + " mechanism ignored");
             return null;
         }
 
@@ -615,5 +658,9 @@ public class Sasl {
             }
         }
         return Collections.unmodifiableSet(result);
+    }
+
+    private static boolean isDisabled(String name) {
+        return disabledMechanisms.contains(name);
     }
 }
