@@ -162,6 +162,11 @@
   volatile_nonstatic_field(JavaFrameAnchor,    _last_Java_sp,                                 intptr_t*)                             \
   volatile_nonstatic_field(JavaFrameAnchor,    _last_Java_pc,                                 address)                               \
                                                                                                                                      \
+  nonstatic_field(JVMCICompileState,           _jvmti_can_hotswap_or_post_breakpoint,         jbyte)                                 \
+  nonstatic_field(JVMCICompileState,           _jvmti_can_access_local_variables,             jbyte)                                 \
+  nonstatic_field(JVMCICompileState,           _jvmti_can_post_on_exceptions,                 jbyte)                                 \
+  nonstatic_field(JVMCICompileState,           _jvmti_can_pop_frame,                          jbyte)                                 \
+                                                                                                                                     \
   nonstatic_field(JavaThread,                  _threadObj,                                    oop)                                   \
   nonstatic_field(JavaThread,                  _anchor,                                       JavaFrameAnchor)                       \
   nonstatic_field(JavaThread,                  _vm_result,                                    oop)                                   \
