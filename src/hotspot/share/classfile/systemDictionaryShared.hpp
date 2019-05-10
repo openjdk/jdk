@@ -295,7 +295,7 @@ public:
   static void dumptime_classes_do(class MetaspaceClosure* it);
   static void write_to_archive();
   static void serialize_dictionary_headers(class SerializeClosure* soc);
-  static void print() { return print_on(tty); }
+  static void print();
   static void print_on(outputStream* st) NOT_CDS_RETURN;
   static void print_table_statistics(outputStream* st) NOT_CDS_RETURN;
 

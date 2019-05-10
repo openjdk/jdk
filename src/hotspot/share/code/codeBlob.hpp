@@ -224,7 +224,7 @@ public:
 
   // Debugging
   virtual void verify() = 0;
-  virtual void print() const                     { print_on(tty); };
+  virtual void print() const;
   virtual void print_on(outputStream* st) const;
   virtual void print_value_on(outputStream* st) const;
   void dump_for_addr(address addr, outputStream* st, bool verbose) const;
@@ -374,7 +374,6 @@ class RuntimeBlob : public CodeBlob {
   virtual void preserve_callee_argument_oops(frame fr, const RegisterMap* reg_map, OopClosure* f)  { ShouldNotReachHere(); }
 
   // Debugging
-  void print() const                             { print_on(tty); }
   virtual void print_on(outputStream* st) const { CodeBlob::print_on(st); }
   virtual void print_value_on(outputStream* st) const { CodeBlob::print_value_on(st); }
 

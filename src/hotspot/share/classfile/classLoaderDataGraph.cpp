@@ -707,3 +707,5 @@ void ClassLoaderDataGraph::print_on(outputStream * const out) {
   }
 }
 #endif // PRODUCT
+
+void ClassLoaderDataGraph::print() { print_on(tty); }

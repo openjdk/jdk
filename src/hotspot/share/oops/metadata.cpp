@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,9 @@ void Metadata::print_on(outputStream* st) const {
   print_address_on(st);
   st->cr();
 }
+
+void Metadata::print() const { print_on(tty); }
+void Metadata::print_value() const { print_value_on(tty); }
 
 char* Metadata::print_value_string() const {
   char buf[256];

@@ -133,7 +133,7 @@ public:
   }
 
   void print_on(outputStream* st) const;
-  void print() const { print_on(tty); }
+  void print() const;
 };
 
 
@@ -194,7 +194,7 @@ class OopMap: public ResourceObj {
 
   // Printing
   void print_on(outputStream* st) const;
-  void print() const { print_on(tty); }
+  void print() const;
   bool equals(const OopMap* other) const;
 };
 
@@ -253,7 +253,7 @@ class OopMapSet : public ResourceObj {
 
   // Printing
   void print_on(outputStream* st) const;
-  void print() const { print_on(tty); }
+  void print() const;
 };
 
 class ImmutableOopMapBuilder;
@@ -279,7 +279,7 @@ public:
 
   // Printing
   void print_on(outputStream* st) const;
-  void print() const { print_on(tty); }
+  void print() const;
 };
 
 class ImmutableOopMapSet;
@@ -330,7 +330,7 @@ public:
   int nr_of_bytes() const { return _size; }
 
   void print_on(outputStream* st) const;
-  void print() const { print_on(tty); }
+  void print() const;
 };
 
 class OopMapStream : public StackObj {

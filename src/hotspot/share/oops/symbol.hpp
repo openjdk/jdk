@@ -248,8 +248,8 @@ class Symbol : public MetaspaceObj {
   void print_value_on(outputStream* st) const;   // Second level print.
 
   // printing on default output stream
-  void print()         { print_on(tty);       }
-  void print_value()   { print_value_on(tty); }
+  void print() const;
+  void print_value() const;
 
   static bool is_valid(Symbol* s);
 

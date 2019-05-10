@@ -1269,6 +1269,8 @@ void SystemDictionaryShared::print_on(outputStream* st) {
   }
 }
 
+void SystemDictionaryShared::print() { print_on(tty); }
+
 void SystemDictionaryShared::print_table_statistics(outputStream* st) {
   if (UseSharedSpaces) {
     _builtin_dictionary.print_table_statistics(st, "Builtin Shared Dictionary");

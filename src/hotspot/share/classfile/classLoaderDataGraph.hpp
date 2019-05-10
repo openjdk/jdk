@@ -134,7 +134,7 @@ class ClassLoaderDataGraph : public AllStatic {
   static void set_metaspace_oom(bool value) { _metaspace_oom = value; }
 
   static void print_on(outputStream * const out) PRODUCT_RETURN;
-  static void print() { print_on(tty); }
+  static void print();
   static void verify();
 
   // instance and array class counters

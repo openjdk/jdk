@@ -106,8 +106,8 @@ class RTMLockingCounters {
 
   bool nonzero() {  return (_abort_count + _total_count) > 0; }
 
-  void print_on(outputStream* st);
-  void print() { print_on(tty); }
+  void print_on(outputStream* st) const;
+  void print() const;
 };
 
 #endif // SHARE_RUNTIME_RTMLOCKING_HPP

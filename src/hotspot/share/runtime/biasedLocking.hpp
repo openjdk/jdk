@@ -128,7 +128,7 @@ class BiasedLockingCounters {
     _fast_path_entry_count(0),
     _slow_path_entry_count(0) {}
 
-  int slow_path_entry_count(); // Compute this field if necessary
+  int slow_path_entry_count() const; // Compute this field if necessary
 
   int* total_entry_count_addr()                   { return &_total_entry_count; }
   int* biased_lock_entry_count_addr()             { return &_biased_lock_entry_count; }
@@ -140,8 +140,8 @@ class BiasedLockingCounters {
 
   bool nonzero() { return _total_entry_count > 0; }
 
-  void print_on(outputStream* st);
-  void print() { print_on(tty); }
+  void print_on(outputStream* st) const;
+  void print() const;
 };
 
 

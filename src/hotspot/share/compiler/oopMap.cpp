@@ -510,6 +510,8 @@ void OopMapValue::print_on(outputStream* st) const {
   st->print(" ");
 }
 
+void OopMapValue::print() const { print_on(tty); }
+
 void ImmutableOopMap::print_on(outputStream* st) const {
   OopMapValue omv;
   st->print("ImmutableOopMap{");
@@ -520,6 +522,8 @@ void ImmutableOopMap::print_on(outputStream* st) const {
   st->print("}");
 }
 
+void ImmutableOopMap::print() const { print_on(tty); }
+
 void OopMap::print_on(outputStream* st) const {
   OopMapValue omv;
   st->print("OopMap{");
@@ -529,6 +533,8 @@ void OopMap::print_on(outputStream* st) const {
   }
   st->print("off=%d}", (int) offset());
 }
+
+void OopMap::print() const { print_on(tty); }
 
 void ImmutableOopMapSet::print_on(outputStream* st) const {
   const ImmutableOopMap* last = NULL;
@@ -545,6 +551,8 @@ void ImmutableOopMapSet::print_on(outputStream* st) const {
   }
 }
 
+void ImmutableOopMapSet::print() const { print_on(tty); }
+
 void OopMapSet::print_on(outputStream* st) const {
   int i, len = om_count();
 
@@ -557,6 +565,8 @@ void OopMapSet::print_on(outputStream* st) const {
     st->cr();
   }
 }
+
+void OopMapSet::print() const { print_on(tty); }
 
 bool OopMap::equals(const OopMap* other) const {
   if (other->_omv_count != _omv_count) {

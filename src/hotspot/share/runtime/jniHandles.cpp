@@ -310,6 +310,8 @@ void JNIHandles::print_on(outputStream* st) {
   st->flush();
 }
 
+void JNIHandles::print() { print_on(tty); }
+
 class VerifyJNIHandles: public OopClosure {
 public:
   virtual void do_oop(oop* root) {

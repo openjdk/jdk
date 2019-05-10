@@ -915,6 +915,8 @@ void ClassLoaderData::print_value_on(outputStream* out) const {
   }
 }
 
+void ClassLoaderData::print_value() const { print_value_on(tty); }
+
 #ifndef PRODUCT
 void ClassLoaderData::print_on(outputStream* out) const {
   out->print("ClassLoaderData CLD: " PTR_FORMAT ", loader: " PTR_FORMAT ", loader_klass: %s {",
@@ -932,6 +934,8 @@ void ClassLoaderData::print_on(outputStream* out) const {
   out->print_cr("}");
 }
 #endif // PRODUCT
+
+void ClassLoaderData::print() const { print_on(tty); }
 
 void ClassLoaderData::verify() {
   assert_locked_or_safepoint(_metaspace_lock);

@@ -136,6 +136,8 @@ void CollectedHeap::print_heap_after_gc() {
   }
 }
 
+void CollectedHeap::print() const { print_on(tty); }
+
 void CollectedHeap::print_on_error(outputStream* st) const {
   st->print_cr("Heap:");
   print_extended_on(st);

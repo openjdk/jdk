@@ -366,6 +366,8 @@ void Symbol::print_on(outputStream* st) const {
   st->print(" count %d", refcount());
 }
 
+void Symbol::print() const { print_on(tty); }
+
 // The print_value functions are present in all builds, to support the
 // disassembler and error reporting.
 void Symbol::print_value_on(outputStream* st) const {
@@ -375,6 +377,8 @@ void Symbol::print_value_on(outputStream* st) const {
   }
   st->print("'");
 }
+
+void Symbol::print_value() const { print_value_on(tty); }
 
 bool Symbol::is_valid(Symbol* s) {
   if (!is_aligned(s, sizeof(MetaWord))) return false;

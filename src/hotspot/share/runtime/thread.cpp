@@ -953,6 +953,8 @@ void Thread::print_on(outputStream* st, bool print_extended_info) const {
   debug_only(if (WizardMode) print_owned_locks_on(st);)
 }
 
+void Thread::print() const { print_on(tty); }
+
 // Thread::print_on_error() is called by fatal error handler. Don't use
 // any lock or allocate memory.
 void Thread::print_on_error(outputStream* st, char* buf, int buflen) const {
@@ -3025,6 +3027,8 @@ void JavaThread::print_on(outputStream *st, bool print_extended_info) const {
     st->cr();
   }
 }
+
+void JavaThread::print() const { print_on(tty); }
 
 void JavaThread::print_name_on_error(outputStream* st, char *buf, int buflen) const {
   st->print("%s", get_thread_name_string(buf, buflen));

@@ -84,6 +84,7 @@ void VtableStub::print_on(outputStream* st) const {
              index(), p2i(receiver_location()), p2i(code_begin()), p2i(code_end()));
 }
 
+void VtableStub::print() const { print_on(tty); }
 
 // -----------------------------------------------------------------------------------------
 // Implementation of VtableStubs

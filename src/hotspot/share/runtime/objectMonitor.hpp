@@ -292,7 +292,7 @@ class ObjectMonitor {
   void      notify(TRAPS);
   void      notifyAll(TRAPS);
 
-  void      print() const { print_on(tty); }
+  void      print() const;
   void      print_on(outputStream* st) const;
 
 // Use the following at your own risk

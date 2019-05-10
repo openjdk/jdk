@@ -97,7 +97,7 @@ class JNIHandles : AllStatic {
 
   // Debugging
   static void print_on(outputStream* st);
-  static void print()           { print_on(tty); }
+  static void print();
   static void verify();
   // The category predicates all require handle != NULL.
   static bool is_local_handle(Thread* thread, jobject handle);
