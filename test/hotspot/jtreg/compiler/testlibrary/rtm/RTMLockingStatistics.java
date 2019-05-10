@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,14 +36,14 @@ import java.util.regex.Pattern;
  * Example of locking statistics:
  *
  * java/lang/ClassLoader.loadClass@7
- * # rtm locks total (estimated): 0
- * # rtm lock aborts  : 13
- * # rtm lock aborts 0: 12
- * # rtm lock aborts 1: 0
- * # rtm lock aborts 2: 0
- * # rtm lock aborts 3: 0
- * # rtm lock aborts 4: 0
- * # rtm lock aborts 5: 0
+ * # rtm locks total (estimated): 6656
+ * # rtm lock aborts (total): 10000
+ * # rtm lock aborts 0 (abort instruction   ): 9999
+ * # rtm lock aborts 1 (may succeed on retry): 9999
+ * # rtm lock aborts 2 (thread conflict     ): 0
+ * # rtm lock aborts 3 (buffer overflow     ): 1
+ * # rtm lock aborts 4 (debug or trap hit   ): 0
+ * # rtm lock aborts 5 (maximum nested depth): 0
  */
 public class RTMLockingStatistics {
     /**
@@ -58,7 +58,7 @@ public class RTMLockingStatistics {
 
     static {
         String abortRe
-                = "# rtm lock aborts\\s+(?<type>[0-9]+):\\s(?<count>[0-9]+)";
+                = "# rtm lock aborts\\s+(?<type>[0-9]+)\\s+\\([a-z\\s]+\\):\\s(?<count>[0-9]+)";
 
         ABORT_PATTERN = Pattern.compile(abortRe);
         RTM_LOCKING_STATISTICS_PATTERN = Pattern.compile(
@@ -66,7 +66,7 @@ public class RTMLockingStatistics {
                 "(?<methodName>[^@\n]+)@(?<bci>[0-9]+)\n" +
                 "# rtm locks total \\(estimated\\):\\s*" +
                 "(?<totalLocks>[0-9]+)\n" +
-                "# rtm lock aborts\\s+:\\s*(?<totalAborts>[0-9]+)\n" +
+                "# rtm lock aborts\\s+\\(total\\):\\s*(?<totalAborts>[0-9]+)\n" +
                 "(?<abortStats>(" + abortRe + "\n)+)");
     }
 
