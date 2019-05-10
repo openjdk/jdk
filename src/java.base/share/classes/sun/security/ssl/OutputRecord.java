@@ -64,7 +64,7 @@ abstract class OutputRecord
     int                         packetSize;
 
     // fragment size
-    int                         fragmentSize;
+    private int                 fragmentSize;
 
     // closed or not?
     volatile boolean            isClosed;
@@ -293,6 +293,24 @@ abstract class OutputRecord
     // shared helpers
     //
 
+    private static final class T13PaddingHolder {
+        private static final byte[] zeros = new byte[16];
+    }
+
+    int calculateFragmentSize(int fragmentLimit) {
+        if (fragmentSize > 0) {
+            fragmentLimit = Math.min(fragmentLimit, fragmentSize);
+        }
+
+        if (protocolVersion.useTLS13PlusSpec()) {
+            // No negative integer checking as the fragment capacity should
+            // have been ensured.
+            return fragmentLimit -  T13PaddingHolder.zeros.length - 1;
+        }
+
+        return fragmentLimit;
+    }
+
     // Encrypt a fragment and wrap up a record.
     //
     // To be consistent with the spec of SSLEngine.wrap() methods, the
@@ -374,8 +392,12 @@ abstract class OutputRecord
         if (!encCipher.isNullCipher()) {
             // inner plaintext, using zero length padding.
             int endOfPt = destination.limit();
-            destination.limit(endOfPt + 1);
-            destination.put(endOfPt, contentType);
+            int startOfPt = destination.position();
+            destination.position(endOfPt);
+            destination.limit(endOfPt + 1 + T13PaddingHolder.zeros.length);
+            destination.put(contentType);
+            destination.put(T13PaddingHolder.zeros);
+            destination.position(startOfPt);
         }
 
         // use the right TLSCiphertext.opaque_type and legacy_record_version
@@ -441,10 +463,6 @@ abstract class OutputRecord
         } else {
             return t10Encrypt(encCipher, contentType, headerSize);
         }
-    }
-
-    private static final class T13PaddingHolder {
-        private static final byte[] zeros = new byte[16];
     }
 
     private long t13Encrypt(

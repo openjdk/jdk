@@ -312,9 +312,8 @@ final class SSLSocketOutputRecord extends OutputRecord implements SSLRecord {
                     fragLen = Record.maxDataSize;
                 }
 
-                if (fragmentSize > 0) {
-                    fragLen = Math.min(fragLen, fragmentSize);
-                }
+                // Calculate more impact, for example TLS 1.3 padding.
+                fragLen = calculateFragmentSize(fragLen);
 
                 if (isFirstRecordOfThePayload && needToSplitPayload()) {
                     fragLen = 1;
@@ -413,9 +412,8 @@ final class SSLSocketOutputRecord extends OutputRecord implements SSLRecord {
             fragLimit = Record.maxDataSize;
         }
 
-        if (fragmentSize > 0) {
-            fragLimit = Math.min(fragLimit, fragmentSize);
-        }
+        // Calculate more impact, for example TLS 1.3 padding.
+        fragLimit = calculateFragmentSize(fragLimit);
 
         return fragLimit;
     }
