@@ -362,8 +362,12 @@ void decode_env::print_hook_comments(address pc, bool newline) {
 }
 
 decode_env::decode_env(CodeBlob* code, outputStream* output, CodeStrings c,
-                       ptrdiff_t offset) {
-  memset(this, 0, sizeof(*this)); // Beware, this zeroes bits of fields.
+                       ptrdiff_t offset) : _nm(NULL),
+                                           _start(NULL),
+                                           _end(NULL),
+                                           _option_buf(),
+                                           _print_raw('\0'),
+                                           _cur_insn(NULL) {
   _output = output ? output : tty;
   _code = code;
   if (code != NULL && code->is_nmethod())
