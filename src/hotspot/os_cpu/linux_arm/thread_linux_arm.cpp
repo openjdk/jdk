@@ -28,6 +28,7 @@
 #include "gc/shared/cardTableBarrierSet.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/metaspaceShared.hpp"
+#include "memory/universe.hpp"
 #include "runtime/frame.inline.hpp"
 
 frame JavaThread::pd_last_frame() {
