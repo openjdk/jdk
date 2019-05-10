@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -62,7 +62,7 @@ import org.w3c.dom.Element;
  * </complexType>
  *
  * @xerces.internal
- *
+ * @LastModified: Apr 2019
  */
 
 class  XSDComplexTypeTraverser extends XSDAbstractParticleTraverser {
@@ -574,7 +574,7 @@ class  XSDComplexTypeTraverser extends XSDAbstractParticleTraverser {
             short fixedFacets = 0 ;
 
             if (simpleContent!=null) {
-                FacetInfo fi = traverseFacets(simpleContent, baseValidator, schemaDoc);
+                FacetInfo fi = traverseFacets(simpleContent, fComplexTypeDecl, baseValidator, schemaDoc);
                 attrNode = fi.nodeAfterFacets;
                 facetData = fi.facetdata;
                 presentFacets = fi.fPresentFacets;
@@ -1193,9 +1193,6 @@ class  XSDComplexTypeTraverser extends XSDAbstractParticleTraverser {
         // REVISIT: do we need to remove all attribute uses already added into
         // the attribute group? maybe it's ok to leave them there. -SG
         fAttrGrp.fAttributeWC = getErrorWildcard();
-
-        return;
-
     }
 
     private void contentBackup() {

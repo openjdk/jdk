@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,14 +43,15 @@ public class test {
     public static void main(String[] args)  throws Exception {
 
         TestCache.reset();
-        HttpServer s = HttpServer.create (new InetSocketAddress(0), 10);
-        s.createContext ("/", new HttpHandler () {
-            public void handle (HttpExchange e) {
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        HttpServer s = HttpServer.create(new InetSocketAddress(loopback, 0), 10);
+        s.createContext("/", new HttpHandler() {
+            public void handle(HttpExchange e) {
                 try {
                     byte[] buf = new byte [LEN];
                     OutputStream o = e.getResponseBody();
                     e.sendResponseHeaders(200, LEN);
-                    o.write (buf);
+                    o.write(buf);
                     e.close();
                 } catch (IOException ex) {
                     ex.printStackTrace();
@@ -91,10 +92,10 @@ public class test {
         }
 
         if (TestCache.fail) {
-            System.out.println ("TEST FAILED");
-            throw new RuntimeException ();
+            System.out.println("TEST FAILED");
+            throw new RuntimeException();
         } else {
-            System.out.println ("TEST OK");
+            System.out.println("TEST OK");
         }
     }
 }

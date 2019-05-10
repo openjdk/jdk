@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,23 +24,70 @@
 package validation;
 
 import java.io.File;
-
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.List;
 import javax.xml.XMLConstants;
+import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.SchemaFactory;
-
+import org.testng.Assert;
 import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
+import org.xml.sax.ErrorHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 
 /*
  * @test
+ * @bug 8149915 8222991
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.SchemaTest
  * @run testng/othervm validation.SchemaTest
  * @summary Test Schema creation
- * @bug 8149915
  */
 @Listeners({jaxp.library.FilePolicy.class})
 public class SchemaTest {
+    /**
+     * Verifies that an over-the-limit value of an enumeration is caught as a
+     * warning.
+     * @throws Exception if the test fails
+     */
+    @Test
+    public void testSchema() throws Exception {
+        String xsd = "<xsd:schema xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">\n" +
+                "    <xsd:simpleType name=\"PaymentStatus\">\n" +
+                "        <xsd:restriction base=\"xsd:string\">\n" +
+                "            <xsd:maxLength value=\"15\"/>\n" +
+                "            <xsd:enumeration value=\"AWAIT_PAY_INFO\"/>\n" +
+                "            <xsd:enumeration value=\"AWAIT_AUTH\"/>\n" +
+                "            <xsd:enumeration value=\"REQUESTED_AUTH\"/>\n" +
+                "            <xsd:enumeration value=\"REQUESTED_CHARGE\"/>\n" +
+                "            <xsd:enumeration value=\"PAID\"/>\n" +
+                "        </xsd:restriction>\n" +
+                "    </xsd:simpleType> \n" +
+                "</xsd:schema>";
+        SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+        final List<SAXParseException> exceptions = new ArrayList<>();
+
+        factory.setErrorHandler(new ErrorHandler()
+        {
+          @Override
+          public void warning(SAXParseException exception) throws SAXException
+          {
+            exceptions.add(exception);
+          }
+
+          @Override
+          public void fatalError(SAXParseException exception) throws SAXException
+          {}
+
+          @Override
+          public void error(SAXParseException exception) throws SAXException
+          {}
+        });
+        factory.newSchema(new StreamSource(new StringReader(xsd)));
+        Assert.assertTrue(exceptions.get(0).toString().contains("FacetsContradict"),
+                "Report warning when the maxLength limit is exceeded in an enumeration");
+    }
 
     /*
      * @bug 8149915

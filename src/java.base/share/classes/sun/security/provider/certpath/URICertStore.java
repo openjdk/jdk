@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,23 +123,40 @@ class URICertStore extends CertStoreSpi {
     // allowed when downloading CRLs
     private static final int DEFAULT_CRL_CONNECT_TIMEOUT = 15000;
 
+    // Default maximum read timeout in milliseconds (15 seconds)
+    // allowed when downloading CRLs
+    private static final int DEFAULT_CRL_READ_TIMEOUT = 15000;
+
     /**
      * Integer value indicating the connect timeout, in seconds, to be
      * used for the CRL download. A timeout of zero is interpreted as
      * an infinite timeout.
      */
-    private static final int CRL_CONNECT_TIMEOUT = initializeTimeout();
+    private static final int CRL_CONNECT_TIMEOUT =
+        initializeTimeout("com.sun.security.crl.timeout",
+                          DEFAULT_CRL_CONNECT_TIMEOUT);
 
     /**
-     * Initialize the timeout length by getting the CRL timeout
-     * system property. If the property has not been set, or if its
-     * value is negative, set the timeout length to the default.
+     * Integer value indicating the read timeout, in seconds, to be
+     * used for the CRL download. A timeout of zero is interpreted as
+     * an infinite timeout.
      */
-    private static int initializeTimeout() {
-        Integer tmp = java.security.AccessController.doPrivileged(
-                new GetIntegerAction("com.sun.security.crl.timeout"));
+    private static final int CRL_READ_TIMEOUT =
+        initializeTimeout("com.sun.security.crl.readtimeout",
+                          DEFAULT_CRL_READ_TIMEOUT);
+
+    /**
+     * Initialize the timeout length by getting the specified CRL timeout
+     * system property. If the property has not been set, or if its
+     * value is negative, set the timeout length to the specified default.
+     */
+    private static int initializeTimeout(String prop, int def) {
+        Integer tmp = GetIntegerAction.privilegedGetProperty(prop);
         if (tmp == null || tmp < 0) {
-            return DEFAULT_CRL_CONNECT_TIMEOUT;
+            return def;
+        }
+        if (debug != null) {
+            debug.println(prop + " set to " + tmp + " seconds");
         }
         // Convert to milliseconds, as the system property will be
         // specified in seconds
@@ -364,6 +381,7 @@ class URICertStore extends CertStoreSpi {
             }
             long oldLastModified = lastModified;
             connection.setConnectTimeout(CRL_CONNECT_TIMEOUT);
+            connection.setReadTimeout(CRL_READ_TIMEOUT);
             try (InputStream in = connection.getInputStream()) {
                 lastModified = connection.getLastModified();
                 if (oldLastModified != 0) {

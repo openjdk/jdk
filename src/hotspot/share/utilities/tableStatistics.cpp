@@ -23,11 +23,14 @@
  */
 
 #include "precompiled.hpp"
-#include "jfr/jfr.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/tableStatistics.hpp"
+#if INCLUDE_JFR
+#include "jfr/jfr.hpp"
+#endif
 
 TableRateStatistics::TableRateStatistics() :
   _added_items(0), _removed_items(0),
@@ -38,15 +41,19 @@ TableRateStatistics::TableRateStatistics() :
 TableRateStatistics::~TableRateStatistics() { };
 
 void TableRateStatistics::add() {
+#if INCLUDE_JFR
   if (Jfr::is_recording()) {
     Atomic::inc(&_added_items);
   }
+#endif
 }
 
 void TableRateStatistics::remove() {
+#if INCLUDE_JFR
   if (Jfr::is_recording()) {
     Atomic::inc(&_removed_items);
   }
+#endif
 }
 
 void TableRateStatistics::stamp() {
@@ -108,11 +115,13 @@ TableStatistics::TableStatistics(TableRateStatistics& rate_stats, NumberSeq summ
   _bucket_size = (_number_of_buckets <= 0) ? 0 : (_bucket_bytes / _number_of_buckets);
   _entry_size = (_number_of_entries <= 0) ? 0 : (_entry_bytes / _number_of_entries);
 
+#if INCLUDE_JFR
   if (Jfr::is_recording()) {
     rate_stats.stamp();
     _add_rate = rate_stats.get_add_rate();
     _remove_rate = rate_stats.get_remove_rate();
   }
+#endif
 }
 
 TableStatistics::~TableStatistics() { }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,16 @@ public class FtpServer extends Thread implements AutoCloseable {
      * connections on the specified port. If the port is set to 0, it will
      * automatically select an available ephemeral port.
      */
+    public FtpServer(InetAddress addr, int port) throws IOException {
+        listener = new ServerSocket();
+        listener.bind(new InetSocketAddress(addr, port));
+    }
+
+    /**
+     * Creates an instance of an FTP server which will listen for incoming
+     * connections on the specified port. If the port is set to 0, it will
+     * automatically select an available ephemeral port.
+     */
     public FtpServer(int port) throws IOException {
         listener = new ServerSocket(port);
     }
@@ -99,6 +109,17 @@ public class FtpServer extends Thread implements AutoCloseable {
     public int getLocalPort() {
         return listener.getLocalPort();
     }
+
+    public String getAuthority() {
+        InetAddress address = listener.getInetAddress();
+        String hostaddr = address.isAnyLocalAddress()
+            ? "localhost" : address.getHostAddress();
+        if (hostaddr.indexOf(':') > -1) {
+            hostaddr = "[" + hostaddr + "]";
+        }
+        return hostaddr + ":" + getLocalPort();
+    }
+
 
     void addClient(Socket client) {
         FtpCommandHandler h = new FtpCommandHandler(client, this);

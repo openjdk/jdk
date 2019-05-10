@@ -26,6 +26,7 @@
 #include "classfile/moduleEntry.hpp"
 #include "jvmci/jvmciEnv.hpp"
 #include "jvmci/jvmciRuntime.hpp"
+#include "oops/objArrayOop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 
 JVMCICompiler* JVMCICompiler::_instance = NULL;

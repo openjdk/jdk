@@ -450,8 +450,8 @@ CompileTask* CompileQueue::get() {
     save_hot_method = methodHandle(task->hot_method());
 
     remove(task);
-    purge_stale_tasks(); // may temporarily release MCQ lock
   }
+  purge_stale_tasks(); // may temporarily release MCQ lock
   return task;
 }
 

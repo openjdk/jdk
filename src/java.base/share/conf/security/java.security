@@ -1161,6 +1161,23 @@ jceks.key.serialFilter = java.base/java.lang.Enum;java.base/java.security.KeyRep
 #jdk.includeInExceptions=hostInfo,jar
 
 #
+# Disabled mechanisms for the Simple Authentication and Security Layer (SASL)
+#
+# Disabled mechanisms will not be negotiated by both SASL clients and servers.
+# These mechanisms will be ignored if they are specified in the mechanisms argument
+# of `Sasl.createClient` or the mechanism argument of `Sasl.createServer`.
+#
+# The value of this property is a comma-separated list of SASL mechanisms.
+# The mechanisms are case-sensitive. Whitespaces around the commas are ignored.
+#
+# Note: This property is currently used by the JDK Reference implementation.
+# It is not guaranteed to be examined and used by other implementations.
+#
+# Example:
+#   jdk.sasl.disabledMechanisms=PLAIN, CRAM-MD5, DIGEST-MD5
+jdk.sasl.disabledMechanisms=
+
+#
 # Policies for distrusting Certificate Authorities (CAs).
 #
 # This is a comma separated value of one or more case-sensitive strings, each

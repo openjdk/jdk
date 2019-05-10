@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,17 +32,19 @@
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.URL;
 
 public class FtpURLConnectionLeak {
 
     public static void main(String[] args) throws Exception {
-        FtpServer server = new FtpServer(0);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        FtpServer server = new FtpServer(loopback, 0);
         server.setFileSystemHandler(new CustomFileSystemHandler("/"));
         server.setAuthHandler(new MyAuthHandler());
-        int port = server.getLocalPort();
+        String authority = server.getAuthority();
         server.start();
-        URL url = new URL("ftp://localhost:" + port + "/filedoesNotExist.txt");
+        URL url = new URL("ftp://" + authority + "/filedoesNotExist.txt");
         try (server) {
             for (int i = 0; i < 3; i++) {
                 try {
