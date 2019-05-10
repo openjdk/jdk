@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,14 @@
  */
 
 import java.io.IOException;
-import java.net.*;
+import java.net.Authenticator;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.PasswordAuthentication;
+import java.net.Proxy;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.UnknownHostException;
 
 public class SocksV4Test {
 
@@ -55,8 +62,9 @@ public class SocksV4Test {
         // We actually use V5 for this test because that is the default
         // protocol version used by the client and it doesn't really handle
         // down grading very well.
-        try (SocksServer srvr = new SocksServer(0, false);
-             ServerSocket ss = new ServerSocket(0)) {
+        InetAddress lba = InetAddress.getLoopbackAddress();
+        try (SocksServer srvr = new SocksServer(lba, 0, false);
+             ServerSocket ss = new ServerSocket(0, 0, lba)) {
 
             srvr.addUser(USER, PASSWORD);
             int serverPort = ss.getLocalPort();
@@ -64,9 +72,9 @@ public class SocksV4Test {
             int proxyPort = srvr.getPort();
             System.out.printf("Server port %d, Proxy port %d\n", serverPort, proxyPort);
             Proxy sp = new Proxy(Proxy.Type.SOCKS,
-                    new InetSocketAddress("localhost", proxyPort));
+                    new InetSocketAddress(lba, proxyPort));
             // Let's create an unresolved address
-            InetSocketAddress ad = new InetSocketAddress("127.0.0.1", serverPort);
+            InetSocketAddress ad = new InetSocketAddress(lba.getHostAddress(), serverPort);
             try (Socket s = new Socket(sp)) {
                 s.connect(ad, 10000);
                 int pp = s.getLocalPort();
@@ -85,11 +93,12 @@ public class SocksV4Test {
         // sanity before running the test
         assertUnresolvableHost(HOSTNAME);
 
+        InetAddress lba = InetAddress.getLoopbackAddress();
         // Create a SOCKS V4 proxy
-        try (SocksServer srvr = new SocksServer(0, true)) {
+        try (SocksServer srvr = new SocksServer(lba, 0, true)) {
             srvr.start();
             Proxy sp = new Proxy(Proxy.Type.SOCKS,
-                    new InetSocketAddress("localhost", srvr.getPort()));
+                    new InetSocketAddress(lba, srvr.getPort()));
             // Let's create an unresolved address
             InetSocketAddress ad = new InetSocketAddress(HOSTNAME, 1234);
             try (Socket s = new Socket(sp)) {

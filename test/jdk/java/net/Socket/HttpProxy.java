@@ -25,7 +25,9 @@
  * @test
  * @bug 6370908 8220663
  * @library /test/lib
- * @summary Add support for HTTP_CONNECT proxy in Socket class
+ * @summary Add support for HTTP_CONNECT proxy in Socket class.
+ * This test uses the wildcard address and is susceptible to fail intermittently.
+ * @key intermittent
  * @modules java.base/sun.net.www
  * @run main HttpProxy
  * @run main/othervm -Djava.net.preferIPv4Stack=true HttpProxy
@@ -63,7 +65,7 @@ public class HttpProxy {
             // Start internal proxy
             proxy = new ConnectProxyTunnelServer();
             proxy.start();
-            host = "localhost";
+            host = InetAddress.getLoopbackAddress().getHostAddress();
             port = proxy.getLocalPort();
             out.println("Running with internal proxy: " + host + ":" + port);
         } else if (args.length == 2) {
@@ -93,6 +95,7 @@ public class HttpProxy {
         InetSocketAddress proxyAddress = new InetSocketAddress(proxyHost, proxyPort);
         Proxy httpProxy = new Proxy(Proxy.Type.HTTP, proxyAddress);
 
+        // Wildcard address is needed here
         try (ServerSocket ss = new ServerSocket(0)) {
             List<InetSocketAddress> externalAddresses = new ArrayList<>();
             externalAddresses.add(
@@ -195,7 +198,7 @@ public class HttpProxy {
         private volatile boolean closed;
 
         public ConnectProxyTunnelServer() throws IOException {
-            ss = new ServerSocket(0);
+            ss = new ServerSocket(0, 0, InetAddress.getLoopbackAddress());
         }
 
         @Override

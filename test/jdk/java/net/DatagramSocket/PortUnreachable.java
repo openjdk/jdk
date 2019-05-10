@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,10 @@
  *           exception on Windows 2000.
  */
 import java.net.BindException;
-import java.net.InetAddress;
-import java.net.DatagramSocket;
 import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 
 public class PortUnreachable {
 
@@ -67,7 +68,7 @@ public class PortUnreachable {
                 serverPort);
         while (serverSocket == null) {
             try {
-                serverSocket = new DatagramSocket(serverPort);
+                serverSocket = new DatagramSocket(serverPort, InetAddress.getLocalHost());
             } catch (BindException bEx) {
                 if (retryCount++ < 5) {
                     Thread.sleep(500);
@@ -84,8 +85,7 @@ public class PortUnreachable {
     }
 
     PortUnreachable() throws Exception {
-
-        clientSock = new DatagramSocket();
+        clientSock = new DatagramSocket(new InetSocketAddress(InetAddress.getLocalHost(), 0));
         clientPort = clientSock.getLocalPort();
 
     }
@@ -93,7 +93,7 @@ public class PortUnreachable {
     void execute () throws Exception{
 
         // pick a port for the server
-        DatagramSocket sock2 = new DatagramSocket();
+        DatagramSocket sock2 = new DatagramSocket(new InetSocketAddress(InetAddress.getLocalHost(), 0));
         serverPort = sock2.getLocalPort();
 
         // send a burst of packets to the unbound port - we should get back
