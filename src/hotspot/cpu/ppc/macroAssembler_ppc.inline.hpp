@@ -33,6 +33,7 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "oops/accessDecorators.hpp"
+#include "oops/compressedOops.hpp"
 #include "runtime/safepointMechanism.hpp"
 
 inline bool MacroAssembler::is_ld_largeoffset(address a) {

@@ -26,6 +26,7 @@
 #define SHARE_OOPS_COMPRESSEDOOPS_HPP
 
 #include "memory/allocation.hpp"
+#include "oops/oopsHierarchy.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class outputStream;
