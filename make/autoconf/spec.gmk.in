@@ -395,7 +395,7 @@ JCOV_FILTERS=@JCOV_FILTERS@
 export ASAN_ENABLED:=@ASAN_ENABLED@
 export DEVKIT_LIB_DIR:=@DEVKIT_LIB_DIR@
 ifeq ($(ASAN_ENABLED), yes)
-  export ASAN_OPTIONS="handle_segv=0 detect_leaks=0"
+  export ASAN_OPTIONS=handle_segv=0 detect_leaks=0
   ifneq ($(DEVKIT_LIB_DIR),)
     export LD_LIBRARY_PATH:=$(LD_LIBRARY_PATH):$(DEVKIT_LIB_DIR)
   endif
