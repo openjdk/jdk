@@ -56,11 +56,15 @@ gc/g1/TestConcurrentSystemGC.java                               8196611   generi
 gc/g1/TestPeriodicCollection.java                               8196611   generic-all
 gc/parallel/TestPrintGCDetailsVerbose.java                      8196611   generic-all
 vmTestbase/gc/lock/malloc/malloclock03/TestDescription.java     8196611   macosx-all
+vmTestbase/gc/gctests/LargeObjects/large001/large001.java       8196611   generic-all
+vmTestbase/gc/gctests/ReferencesGC/ReferencesGC.java            8196611   generic-all
 vmTestbase/nsk/stress/except/except004.java                     8196611   generic-all
 vmTestbase/nsk/stress/except/except007.java                     8196611   generic-all
 vmTestbase/nsk/stress/except/except008.java                     8196611   generic-all
 vmTestbase/nsk/stress/except/except011.java                     8196611   generic-all
 serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorMultiArrayTest.java 8196611   generic-all
+vmTestbase/nsk/jdi/VirtualMachine/instanceCounts/instancecounts003/instancecounts003.java          8196611   generic-all
+vmTestbase/nsk/jdi/ObjectReference/referringObjects/referringObjects002/referringObjects002.java   8196611   generic-all
 
 gc/g1/ihop/TestIHOPErgo.java                                    8191048   generic-all
 gc/g1/plab/TestPLABEvacuationFailure.java                       8191048   generic-all
@@ -221,6 +225,7 @@ compiler/arguments/TestScavengeRootsInCode.java         8207267   generic-all
 compiler/c2/Test8062950.java                            8207267   generic-all
 compiler/intrinsics/mathexact/LongMulOverflowTest.java  8207267   generic-all
 compiler/loopopts/TestOverunrolling.java                8207267   generic-all
+compiler/jsr292/NonInlinedCall/InvokeTest.java          8207267   generic-all
 
 runtime/exceptionMsgs/AbstractMethodError/AbstractMethodErrorTest.java        8222582 generic-all
 
