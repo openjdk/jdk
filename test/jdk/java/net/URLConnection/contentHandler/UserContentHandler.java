@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /* @test
  * @bug 4191147
  * @summary 1.2beta4 does not load user defined content handlers
+ * @library /test/lib
  * @build UserContentHandler
  * @run main/othervm UserContentHandler
  */
@@ -38,6 +39,7 @@
 import java.net.*;
 import java.io.*;
 import java.util.*;
+import jdk.test.lib.net.URIBuilder;
 
 public class UserContentHandler implements Runnable {
 
@@ -74,7 +76,9 @@ public class UserContentHandler implements Runnable {
 
     UserContentHandler() throws Exception {
 
-        ss = new ServerSocket(0);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        ss = new ServerSocket();
+        ss.bind(new InetSocketAddress(loopback, 0));
         Thread thr = new Thread(this);
         thr.start();
 
@@ -87,8 +91,13 @@ public class UserContentHandler implements Runnable {
         props.put("java.content.handler.pkgs", "COM.foo.content");
         System.setProperties(props);
 
-        URL u = new URL("http://localhost:" + ss.getLocalPort() +
-                        "/anything.txt");
+        URL u = URIBuilder.newBuilder()
+                .scheme("http")
+                .loopback()
+                .port(ss.getLocalPort())
+                .path("/anything.txt")
+                .toURL();
+
         if (!(u.openConnection().getContent() instanceof String)) {
             throw new RuntimeException("Load user defined content handler failed.");
         } else {
