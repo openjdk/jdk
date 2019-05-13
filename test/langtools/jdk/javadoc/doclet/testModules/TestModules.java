@@ -27,7 +27,7 @@
  *      8168766 8168688 8162674 8160196 8175799 8174974 8176778 8177562 8175218
  *      8175823 8166306 8178043 8181622 8183511 8169819 8074407 8183037 8191464
         8164407 8192007 8182765 8196200 8196201 8196202 8196202 8205593 8202462
-        8184205
+        8184205 8219060
  * @summary Test modules support in javadoc.
  * @author bpatel
  * @library ../../lib
@@ -421,6 +421,39 @@ public class TestModules extends JavadocTester {
                 "testpkgmdlA", "testpkgmdlB", "testpkg3mdlB");
         checkExit(Exit.OK);
         checkLinkOffline();
+    }
+
+    /**
+     * Test -linksource option.
+     */
+    @Test
+    public void testLinkSource() {
+        javadoc("-d", "out-linksource",
+                "-use",
+                "-linksource",
+                "-Xdoclint:none",
+                "--module-source-path", testSrc,
+                "--module", "moduleA,moduleB");
+        checkExit(Exit.OK);
+        checkLinks();
+        checkLinkSource(false);
+    }
+
+    /**
+     * Test -linksource option combined with -private.
+     */
+    @Test
+    public void testLinkSourcePrivate() {
+        javadoc("-d", "out-linksource-private",
+                "-use",
+                "-private",
+                "-linksource",
+                "-Xdoclint:none",
+                "--module-source-path", testSrc,
+                "--module", "moduleA,moduleB");
+        checkExit(Exit.OK);
+        checkLinks();
+        checkLinkSource(true);
     }
 
     void checkDescription(boolean found) {
@@ -1239,7 +1272,38 @@ public class TestModules extends JavadocTester {
         checkOutput("moduleB/testpkg3mdlB/package-summary.html", true,
                 "<a href=\"https://docs.oracle.com/javase/9/docs/api/java.base/module-summary.html?is-external=true\" "
                 + "class=\"externalLink\"><code>Link to java.base module</code></a>");
-}
+    }
+
+    void checkLinkSource(boolean includePrivate) {
+        checkOutput("moduleA/module-summary.html", !includePrivate,
+                "<table>\n<caption><span>Exports</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
+                + "<thead>\n<tr>\n<th class=\"colFirst\" scope=\"col\">Package</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Description</th>\n</tr>\n</thead>\n"
+                + "<tbody>\n<tr class=\"altColor\" id=\"i0\">\n"
+                + "<th class=\"colFirst\" scope=\"row\"><a href=\"testpkgmdlA/package-summary.html\">testpkgmdlA</a></th>\n"
+                + "<td class=\"colLast\">&nbsp;</td>\n</tr>\n</tbody>\n</table>");
+        checkOutput("moduleA/testpkgmdlA/TestClassInModuleA.html", true,
+                "<section class=\"description\">\n<hr>\n"
+                + "<pre>public class <a href=\"../../src-html/moduleA/testpkgmdlA/TestClassInModuleA.html#line.25\">"
+                + "TestClassInModuleA</a>\nextends java.lang.Object</pre>\n</section>");
+        checkOutput("src-html/moduleA/testpkgmdlA/TestClassInModuleA.html", true,
+                "<span class=\"sourceLineNo\">019</span><a id=\"line.19\"> * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA</a>\n"
+                + "<span class=\"sourceLineNo\">020</span><a id=\"line.20\"> * or visit www.oracle.com if you need additional information or have any</a>\n"
+                + "<span class=\"sourceLineNo\">021</span><a id=\"line.21\"> * questions.</a>\n"
+                + "<span class=\"sourceLineNo\">022</span><a id=\"line.22\"> */</a>\n"
+                + "<span class=\"sourceLineNo\">023</span><a id=\"line.23\">package testpkgmdlA;</a>\n"
+                + "<span class=\"sourceLineNo\">024</span><a id=\"line.24\"></a>\n"
+                + "<span class=\"sourceLineNo\">025</span><a id=\"line.25\">public class TestClassInModuleA {</a>\n"
+                + "<span class=\"sourceLineNo\">026</span><a id=\"line.26\">}</a>");
+        if (includePrivate) {
+            checkOutput("src-html/moduleA/concealedpkgmdlA/ConcealedClassInModuleA.html", true,
+                    "<span class=\"sourceLineNo\">024</span><a id=\"line.24\">package concealedpkgmdlA;</a>\n"
+                    + "<span class=\"sourceLineNo\">025</span><a id=\"line.25\"></a>\n"
+                    + "<span class=\"sourceLineNo\">026</span><a id=\"line.26\">public class ConcealedClassInModuleA {</a>\n"
+                    + "<span class=\"sourceLineNo\">027</span><a id=\"line.27\">    public void testMethodConcealedClass() { }</a>\n"
+                    + "<span class=\"sourceLineNo\">028</span><a id=\"line.28\">}</a>");
+        }
+    }
 
     void checkAllPkgsAllClasses(boolean found) {
         checkOutput("allclasses-index.html", true,

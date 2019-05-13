@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8218998 8219946
+ * @bug 8218998 8219946 8219060
  * @summary Add metadata to generated API documentation files
  * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -72,9 +72,7 @@ public class TestMetadata extends JavadocTester {
                      args.add("-d");
                      args.add(String.format("out-%s-%s", s, i));
                      args.add("-use");
-                     if (s != Source.MODULES) {
-                         args.add("-linksource"); // broken, with modules: JDK-8219060
-                     }
+                     args.add("-linksource");
                      if (i == Index.SPLIT) {
                          args.add("-splitIndex");
                      }

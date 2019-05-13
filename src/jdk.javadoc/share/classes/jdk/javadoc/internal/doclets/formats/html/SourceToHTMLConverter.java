@@ -31,6 +31,7 @@ import java.io.*;
 import java.util.List;
 
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.tools.FileObject;
@@ -121,6 +122,12 @@ public class SourceToHTMLConverter {
         if (docEnv == null || outputdir == null) {
             return;
         }
+        for (ModuleElement mdl : configuration.getSpecifiedModuleElements()) {
+            // If -nodeprecated option is set and the module is marked as deprecated,
+            // do not convert the module files to HTML.
+            if (!(configuration.nodeprecated && utils.isDeprecated(mdl)))
+                convertModule(mdl, outputdir);
+        }
         for (PackageElement pkg : configuration.getSpecifiedPackageElements()) {
             // If -nodeprecated option is set and the package is marked as deprecated,
             // do not convert the package files to HTML.
@@ -157,6 +164,27 @@ public class SourceToHTMLConverter {
             // the calling method above.
             if (!(configuration.nodeprecated && utils.isDeprecated(te)))
                 convertClass((TypeElement)te, outputdir);
+        }
+    }
+
+    /**
+     * Convert the documented packages contained in the given module to an HTML representation.
+     *
+     * @param mdl the module to convert.
+     * @param outputdir the name of the directory to output to.
+     * @throws DocFileIOException if there is a problem generating an output file
+     * @throws SimpleDocletException if there is a problem reading a source file
+     */
+    public void convertModule(ModuleElement mdl, DocPath outputdir)
+            throws DocFileIOException, SimpleDocletException {
+        if (mdl == null) {
+            return;
+        }
+        for (Element elem : mdl.getEnclosedElements()) {
+            if (elem instanceof PackageElement && configuration.docEnv.isIncluded(elem)
+                    && !(configuration.nodeprecated && utils.isDeprecated(elem))) {
+                convertPackage((PackageElement) elem, outputdir);
+            }
         }
     }
 
