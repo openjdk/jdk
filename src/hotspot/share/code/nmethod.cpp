@@ -1555,7 +1555,7 @@ void nmethod::metadata_do(MetadataClosure* f) {
     // Visit all immediate references that are embedded in the instruction stream.
     RelocIterator iter(this, oops_reloc_begin());
     while (iter.next()) {
-      if (iter.type() == relocInfo::metadata_type ) {
+      if (iter.type() == relocInfo::metadata_type) {
         metadata_Relocation* r = iter.metadata_reloc();
         // In this metadata, we must only follow those metadatas directly embedded in
         // the code.  Other metadatas (oop_index>0) are seen as part of
