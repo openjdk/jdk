@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -318,7 +318,11 @@ public class SharedArchiveConsistency {
 
         // test, should pass
         System.out.println("1. Normal, should pass but may fail\n");
+
         String[] execArgs = {"-cp", jarFile, "Hello"};
+        // tests that corrupt contents of the archive need to run with
+        // VerifySharedSpaces enabled to detect inconsistencies
+        String[] verifyExecArgs = {"-XX:+VerifySharedSpaces", "-cp", jarFile, "Hello"};
 
         OutputAnalyzer output = TestCommon.execCommon(execArgs);
 
@@ -350,9 +354,10 @@ public class SharedArchiveConsistency {
 
         // modify content
         System.out.println("\n3. Corrupt Content, should fail\n");
+
         copyFile(orgJsaFile, jsa);
         modifyJsaContent();
-        testAndCheck(execArgs);
+        testAndCheck(verifyExecArgs);
 
         // modify both header and content, test should fail
         System.out.println("\n4. Corrupt Header and Content, should fail\n");
@@ -363,19 +368,19 @@ public class SharedArchiveConsistency {
         output.shouldContain("The shared archive file has the wrong version");
         output.shouldNotContain("Checksum verification failed");
 
-        // delete bytes in data sectoin
-        System.out.println("\n5. Delete bytes at begining of data section, should fail\n");
+        // delete bytes in data section
+        System.out.println("\n5. Delete bytes at beginning of data section, should fail\n");
         copyFile(orgJsaFile, jsa, true);
-        testAndCheck(execArgs);
+        testAndCheck(verifyExecArgs);
 
-        // insert bytes in data sectoin forward
-        System.out.println("\n6. Insert bytes at begining of data section, should fail\n");
+        // insert bytes in data section forward
+        System.out.println("\n6. Insert bytes at beginning of data section, should fail\n");
         copyFile(orgJsaFile, jsa, false);
-        testAndCheck(execArgs);
+        testAndCheck(verifyExecArgs);
 
         System.out.println("\n7. modify Content in random areas, should fail\n");
         copyFile(orgJsaFile, jsa);
         modifyJsaContentRandomly();
-        testAndCheck(execArgs);
+        testAndCheck(verifyExecArgs);
     }
 }

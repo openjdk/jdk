@@ -877,7 +877,7 @@ char* FileMapInfo::map_region(int i, char** top_ret) {
   MemTracker::record_virtual_memory_type((address)base, mtClassShared);
 #endif
 
-  if (!verify_region_checksum(i)) {
+  if (VerifySharedSpaces && !verify_region_checksum(i)) {
     return NULL;
   }
 
@@ -1143,9 +1143,11 @@ bool FileMapInfo::map_heap_data(MemRegion **heap_mem, int first,
 
 bool FileMapInfo::verify_mapped_heap_regions(int first, int num) {
   assert(num > 0, "sanity");
-  for (int i = first; i < first + num; i++) {
-    if (!verify_region_checksum(i)) {
-      return false;
+  if (VerifySharedSpaces) {
+    for (int i = first; i < first + num; i++) {
+      if (!verify_region_checksum(i)) {
+        return false;
+      }
     }
   }
   return true;
@@ -1204,9 +1206,7 @@ void FileMapInfo::dealloc_archive_heap_regions(MemRegion* regions, int num, bool
 #endif // INCLUDE_CDS_JAVA_HEAP
 
 bool FileMapInfo::verify_region_checksum(int i) {
-  if (!VerifySharedSpaces) {
-    return true;
-  }
+  assert(VerifySharedSpaces, "sanity");
 
   size_t sz = space_at(i)->_used;
 
