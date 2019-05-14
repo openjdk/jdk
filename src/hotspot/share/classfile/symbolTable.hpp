@@ -43,7 +43,7 @@ class JavaThread;
 // it becomes "managed" by TempNewSymbol instances. As a handle class, TempNewSymbol
 // needs to maintain proper reference counting in context of copy semantics.
 //
-// In SymbolTable, new_symbol() and lookup() will create a Symbol* if not already in the
+// In SymbolTable, new_symbol() will create a Symbol* if not already in the
 // symbol table and add to the symbol's reference count.
 // probe() and lookup_only() will increment the refcount if symbol is found.
 class TempNewSymbol : public StackObj {
@@ -139,16 +139,19 @@ private:
 
   SymbolTable();
 
-  Symbol* allocate_symbol(const char* name, int len, bool c_heap, TRAPS); // Assumes no characters larger than 0x7F
+  Symbol* allocate_symbol(const char* name, int len, bool c_heap); // Assumes no characters larger than 0x7F
   Symbol* do_lookup(const char* name, int len, uintx hash);
-  Symbol* do_add_if_needed(const char* name, int len, uintx hash, bool heap, TRAPS);
+  Symbol* do_add_if_needed(const char* name, int len, uintx hash, bool heap);
+
+  // lookup only, won't add. Also calculate hash. Used by the ClassfileParser.
+  static Symbol* lookup_only(const char* name, int len, unsigned int& hash);
+  static Symbol* lookup_only_unicode(const jchar* name, int len, unsigned int& hash);
 
   // Adding elements
   static void new_symbols(ClassLoaderData* loader_data,
                           const constantPoolHandle& cp, int names_count,
                           const char** name, int* lengths,
-                          int* cp_indices, unsigned int* hashValues,
-                          TRAPS);
+                          int* cp_indices, unsigned int* hashValues);
 
   static Symbol* lookup_shared(const char* name, int len, unsigned int hash);
   Symbol* lookup_dynamic(const char* name, int len, unsigned int hash);
@@ -190,14 +193,6 @@ public:
   static void trigger_cleanup();
 
   // Probing
-  static Symbol* lookup(const char* name, int len, TRAPS);
-  // lookup only, won't add. Also calculate hash.
-  static Symbol* lookup_only(const char* name, int len, unsigned int& hash);
-  // adds new symbol if not found
-  static Symbol* lookup(const Symbol* sym, int begin, int end, TRAPS);
-  // jchar (UTF16) version of lookups
-  static Symbol* lookup_unicode(const jchar* name, int len, TRAPS);
-  static Symbol* lookup_only_unicode(const jchar* name, int len, unsigned int& hash);
   // Needed for preloading classes in signatures when compiling.
   // Returns the symbol is already present in symbol table, otherwise
   // NULL.  NO ALLOCATION IS GUARANTEED!
@@ -210,20 +205,18 @@ public:
     return lookup_only_unicode(name, len, ignore_hash);
   }
 
-  // Symbol creation
-  static Symbol* new_symbol(const char* utf8_buffer, int length, TRAPS) {
-    assert(utf8_buffer != NULL, "just checking");
-    return lookup(utf8_buffer, length, THREAD);
+  // Symbol lookup and create if not found.
+  // jchar (UTF16) version of lookup
+  static Symbol* new_symbol(const jchar* name, int len);
+  // char (UTF8) versions
+  static Symbol* new_symbol(const Symbol* sym, int begin, int end);
+  static Symbol* new_symbol(const char* utf8_buffer, int length);
+  static Symbol* new_symbol(const char* name) {
+    return new_symbol(name, (int)strlen(name));
   }
-  static Symbol* new_symbol(const char* name, TRAPS) {
-    return new_symbol(name, (int)strlen(name), THREAD);
-  }
-  static Symbol* new_symbol(const Symbol* sym, int begin, int end, TRAPS) {
-    assert(begin <= end && end <= sym->utf8_length(), "just checking");
-    return lookup(sym, begin, end, THREAD);
-  }
+
   // Create a symbol in the arena for symbols that are not deleted
-  static Symbol* new_permanent_symbol(const char* name, TRAPS);
+  static Symbol* new_permanent_symbol(const char* name);
 
   // Rehash the string table if it gets out of balance
   static void rehash_table();
@@ -245,7 +238,6 @@ public:
   static void dump(outputStream* st, bool verbose=false);
   // Debugging
   static void verify();
-  static void read(const char* filename, TRAPS);
 
   // Histogram
   static void print_histogram() PRODUCT_RETURN;

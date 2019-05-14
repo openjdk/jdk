@@ -371,7 +371,7 @@ void MetaspaceShared::read_extra_data(const char* filename, TRAPS) {
     utf8_buffer[utf8_length] = '\0';
 
     if (prefix_type == HashtableTextDump::SymbolPrefix) {
-      SymbolTable::new_permanent_symbol(utf8_buffer, THREAD);
+      SymbolTable::new_permanent_symbol(utf8_buffer);
     } else{
       assert(prefix_type == HashtableTextDump::StringPrefix, "Sanity");
       oop s = StringTable::intern(utf8_buffer, THREAD);

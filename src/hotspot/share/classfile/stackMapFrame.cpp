@@ -92,8 +92,7 @@ VerificationType StackMapFrame::set_locals_from_arg(
   // local num may be greater than size of parameters because long/double occupies two slots
   while(!ss.at_return_type()) {
     init_local_num += _verifier->change_sig_to_verificationType(
-      &ss, &_locals[init_local_num],
-      CHECK_VERIFY_(verifier(), VerificationType::bogus_type()));
+      &ss, &_locals[init_local_num]);
     ss.next();
   }
   _locals_size = init_local_num;
@@ -102,13 +101,12 @@ VerificationType StackMapFrame::set_locals_from_arg(
     case T_OBJECT:
     case T_ARRAY:
     {
-      Symbol* sig = ss.as_symbol(CHECK_(VerificationType::bogus_type()));
+      Symbol* sig = ss.as_symbol();
       if (!sig->is_permanent()) {
         // Create another symbol to save as signature stream unreferences
         // this symbol.
         Symbol *sig_copy =
-          verifier()->create_temporary_symbol(sig, 0, sig->utf8_length(),
-        CHECK_(VerificationType::bogus_type()));
+          verifier()->create_temporary_symbol(sig, 0, sig->utf8_length());
         assert(sig_copy == sig, "symbols don't match");
         sig = sig_copy;
       }

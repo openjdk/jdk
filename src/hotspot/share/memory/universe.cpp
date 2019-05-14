@@ -807,7 +807,7 @@ void initialize_known_method(LatestMethodCache* method_cache,
                              Symbol* signature,
                              bool is_static, TRAPS)
 {
-  TempNewSymbol name = SymbolTable::new_symbol(method, CHECK);
+  TempNewSymbol name = SymbolTable::new_symbol(method);
   Method* m = NULL;
   // The klass must be linked before looking up the method.
   if (!ik->link_class_or_fail(THREAD) ||

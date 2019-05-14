@@ -1579,7 +1579,7 @@ bool Method::load_signature_classes(const methodHandle& m, TRAPS) {
   Symbol*  signature = m->signature();
   for(SignatureStream ss(signature); !ss.is_done(); ss.next()) {
     if (ss.is_object()) {
-      Symbol* sym = ss.as_symbol(CHECK_(false));
+      Symbol* sym = ss.as_symbol();
       Symbol*  name  = sym;
       Klass* klass = SystemDictionary::resolve_or_null(name, class_loader,
                                              protection_domain, THREAD);

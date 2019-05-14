@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -171,8 +171,8 @@ static oop construct_dcmd_instance(JfrJavaArguments* args, TRAPS) {
   assert(args != NULL, "invariant");
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
   assert(args->klass() != NULL, "invariant");
-  args->set_name("<init>", CHECK_NULL);
-  args->set_signature("()V", CHECK_NULL);
+  args->set_name("<init>");
+  args->set_signature("()V");
   JfrJavaSupport::new_object(args, CHECK_NULL);
   return (oop)args->result()->get_jobject();
 }

@@ -244,7 +244,7 @@ PackageEntry* ClassLoader::get_package_entry(const char* class_name, ClassLoader
     return NULL;
   }
   PackageEntryTable* pkgEntryTable = loader_data->packages();
-  TempNewSymbol pkg_symbol = SymbolTable::new_symbol(pkg_name, CHECK_NULL);
+  TempNewSymbol pkg_symbol = SymbolTable::new_symbol(pkg_name);
   return pkgEntryTable->lookup_only(pkg_symbol);
 }
 
@@ -646,7 +646,7 @@ void ClassLoader::setup_patch_mod_entries() {
 
   for (int i = 0; i < num_of_entries; i++) {
     const char* module_name = (patch_mod_args->at(i))->module_name();
-    Symbol* const module_sym = SymbolTable::lookup(module_name, (int)strlen(module_name), CHECK);
+    Symbol* const module_sym = SymbolTable::new_symbol(module_name);
     assert(module_sym != NULL, "Failed to obtain Symbol for module name");
     ModuleClassPathList* module_cpl = new ModuleClassPathList(module_sym);
 
@@ -1126,7 +1126,7 @@ bool ClassLoader::add_package(const char *fullq_class_name, s2 classpath_index, 
   const char *cp = package_from_name(fullq_class_name);
   if (cp != NULL) {
     PackageEntryTable* pkg_entry_tbl = ClassLoaderData::the_null_class_loader_data()->packages();
-    TempNewSymbol pkg_symbol = SymbolTable::new_symbol(cp, CHECK_false);
+    TempNewSymbol pkg_symbol = SymbolTable::new_symbol(cp);
     PackageEntry* pkg_entry = pkg_entry_tbl->lookup_only(pkg_symbol);
     if (pkg_entry != NULL) {
       assert(classpath_index != -1, "Unexpected classpath_index");
@@ -1141,7 +1141,7 @@ bool ClassLoader::add_package(const char *fullq_class_name, s2 classpath_index, 
 oop ClassLoader::get_system_package(const char* name, TRAPS) {
   // Look up the name in the boot loader's package entry table.
   if (name != NULL) {
-    TempNewSymbol package_sym = SymbolTable::new_symbol(name, (int)strlen(name), CHECK_NULL);
+    TempNewSymbol package_sym = SymbolTable::new_symbol(name);
     // Look for the package entry in the boot loader's package entry table.
     PackageEntry* package =
       ClassLoaderData::the_null_class_loader_data()->packages()->lookup_only(package_sym);

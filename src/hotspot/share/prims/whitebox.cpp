@@ -179,7 +179,7 @@ public:
 WB_ENTRY(jboolean, WB_IsClassAlive(JNIEnv* env, jobject target, jstring name))
   oop h_name = JNIHandles::resolve(name);
   if (h_name == NULL) return false;
-  Symbol* sym = java_lang_String::as_symbol(h_name, CHECK_false);
+  Symbol* sym = java_lang_String::as_symbol(h_name);
   TempNewSymbol tsym(sym); // Make sure to decrement reference count on sym on return
 
   WBIsKlassAliveClosure closure(sym);
@@ -191,7 +191,7 @@ WB_END
 WB_ENTRY(jint, WB_GetSymbolRefcount(JNIEnv* env, jobject unused, jstring name))
   oop h_name = JNIHandles::resolve(name);
   if (h_name == NULL) return false;
-  Symbol* sym = java_lang_String::as_symbol(h_name, CHECK_0);
+  Symbol* sym = java_lang_String::as_symbol(h_name);
   TempNewSymbol tsym(sym); // Make sure to decrement reference count on sym on return
   return (jint)sym->refcount();
 WB_END
@@ -1996,8 +1996,7 @@ int WhiteBox::offset_for_field(const char* field_name, oop object,
   InstanceKlass* ik = InstanceKlass::cast(arg_klass);
 
   //Create symbols to look for in the class
-  TempNewSymbol name_symbol = SymbolTable::lookup(field_name, (int) strlen(field_name),
-      THREAD);
+  TempNewSymbol name_symbol = SymbolTable::new_symbol(field_name);
 
   //To be filled in with an offset of the field we're looking for
   fieldDescriptor fd;

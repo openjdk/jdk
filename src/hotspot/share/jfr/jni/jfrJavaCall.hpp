@@ -47,11 +47,11 @@ class JfrJavaArguments : public StackObj {
   void set_klass(const Klass* klass);
 
   Symbol* name() const;
-  void set_name(const char* name, TRAPS);
+  void set_name(const char* name);
   void set_name(const Symbol* name);
 
   Symbol* signature() const;
-  void set_signature(const char* signature, TRAPS);
+  void set_signature(const char* signature);
   void set_signature(const Symbol* signature);
 
   int array_length() const;

@@ -116,7 +116,7 @@ Klass* ObjArrayKlass::allocate_objArray_klass(ClassLoaderData* loader_data,
       new_str[idx++] = ';';
     }
     new_str[idx++] = '\0';
-    name = SymbolTable::new_permanent_symbol(new_str, CHECK_0);
+    name = SymbolTable::new_permanent_symbol(new_str);
     if (element_klass->is_instance_klass()) {
       InstanceKlass* ik = InstanceKlass::cast(element_klass);
       ik->set_array_name(name);

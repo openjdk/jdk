@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,14 +34,14 @@ TEST_VM(SymbolTable, temp_new_symbol) {
   // the thread should be in vm to use locks
   ThreadInVMfromNative ThreadInVMfromNative(THREAD);
 
-  Symbol* abc = SymbolTable::new_symbol("abc", CATCH);
+  Symbol* abc = SymbolTable::new_symbol("abc");
   int abccount = abc->refcount();
   TempNewSymbol ss = abc;
   ASSERT_EQ(ss->refcount(), abccount) << "only one abc";
   ASSERT_EQ(ss->refcount(), abc->refcount()) << "should match TempNewSymbol";
 
-  Symbol* efg = SymbolTable::new_symbol("efg", CATCH);
-  Symbol* hij = SymbolTable::new_symbol("hij", CATCH);
+  Symbol* efg = SymbolTable::new_symbol("efg");
+  Symbol* hij = SymbolTable::new_symbol("hij");
   int efgcount = efg->refcount();
   int hijcount = hij->refcount();
 
@@ -63,12 +63,12 @@ TEST_VM(SymbolTable, temp_new_symbol) {
   ASSERT_EQ(s1->refcount(), abccount + 1) << "should still be two abc (s1 and ss)";
 
   TempNewSymbol s3;
-  Symbol* klm = SymbolTable::new_symbol("klm", CATCH);
+  Symbol* klm = SymbolTable::new_symbol("klm");
   int klmcount = klm->refcount();
   s3 = klm; // assignment
   ASSERT_EQ(s3->refcount(), klmcount) << "only one klm now";
 
-  Symbol* xyz = SymbolTable::new_symbol("xyz", CATCH);
+  Symbol* xyz = SymbolTable::new_symbol("xyz");
   int xyzcount = xyz->refcount();
   { // inner scope
     TempNewSymbol s_inner = xyz;
@@ -77,7 +77,7 @@ TEST_VM(SymbolTable, temp_new_symbol) {
           << "Should have been decremented by dtor in inner scope";
 
   // Test overflowing refcount making symbol permanent
-  Symbol* bigsym = SymbolTable::new_symbol("bigsym", CATCH);
+  Symbol* bigsym = SymbolTable::new_symbol("bigsym");
   for (int i = 0; i < PERM_REFCOUNT + 100; i++) {
     bigsym->increment_refcount();
   }
@@ -101,9 +101,8 @@ class SymbolThread : public JavaTestThread {
   SymbolThread(Semaphore* post) : JavaTestThread(post) {}
   virtual ~SymbolThread() {}
   void main_run() {
-    Thread* THREAD = Thread::current();
     for (int i = 0; i < 1000; i++) {
-      TempNewSymbol sym = SymbolTable::new_symbol(symbol_name, CATCH);
+      TempNewSymbol sym = SymbolTable::new_symbol(symbol_name);
       // Create and destroy new symbol
       EXPECT_TRUE(sym->refcount() != 0) << "Symbol refcount unexpectedly zeroed";
     }
@@ -121,12 +120,10 @@ public:
   void main_run() {
     Semaphore done(0);
 
-    Thread* THREAD = Thread::current();
-
     // Find a symbol where there will probably be only one instance.
     for (int i = 0; i < 100; i++) {
        os::snprintf(symbol_name, SYM_NAME_LENGTH, "some_symbol%d", i);
-       TempNewSymbol ts = SymbolTable::new_symbol(symbol_name, CATCH);
+       TempNewSymbol ts = SymbolTable::new_symbol(symbol_name);
        if (ts->refcount() == 1) {
          EXPECT_TRUE(ts->refcount() == 1) << "Symbol is just created";
          break;  // found a unique symbol

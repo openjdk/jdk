@@ -92,7 +92,7 @@ void JVMCIEnv::copy_saved_properties() {
   }
 
   // Get the serialized saved properties from HotSpot
-  TempNewSymbol serializeSavedProperties = SymbolTable::new_symbol("serializeSavedProperties", CHECK_EXIT);
+  TempNewSymbol serializeSavedProperties = SymbolTable::new_symbol("serializeSavedProperties");
   JavaValue result(T_OBJECT);
   JavaCallArguments args;
   JavaCalls::call_static(&result, ik, serializeSavedProperties, vmSymbols::serializePropertiesToByteArray_signature(), &args, THREAD);

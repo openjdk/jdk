@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,8 +62,8 @@ static void log_cfg_update(LogLevelType llt, JfrLogTagSetType jflt, TRAPS) {
   JavaValue result(T_VOID);
   JfrJavaArguments args(&result);
   args.set_klass(JfrJavaSupport::klass(lt));
-  args.set_name("tagSetLevel", CHECK);
-  args.set_signature("I", CHECK);
+  args.set_name("tagSetLevel");
+  args.set_signature("I");
   args.set_receiver(JfrJavaSupport::resolve_non_null(lt));
   args.push_int(llt);
   JfrJavaSupport::set_field(&args, THREAD);

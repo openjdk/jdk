@@ -400,7 +400,7 @@ class SignatureStream : public StackObj {
   bool is_object() const;                        // True if this argument is an object
   bool is_array() const;                         // True if this argument is an array
   BasicType type() const                         { return _type; }
-  Symbol* as_symbol(TRAPS);
+  Symbol* as_symbol();
   enum FailureMode { ReturnNull, NCDFError };
   Klass* as_klass(Handle class_loader, Handle protection_domain, FailureMode failure_mode, TRAPS);
   oop as_java_mirror(Handle class_loader, Handle protection_domain, FailureMode failure_mode, TRAPS);

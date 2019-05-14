@@ -829,8 +829,8 @@ void CompilerOracle::parse_compile_only(char * line) {
       }
 
       EXCEPTION_MARK;
-      Symbol* c_name = SymbolTable::new_symbol(className, CHECK);
-      Symbol* m_name = SymbolTable::new_symbol(methodName, CHECK);
+      Symbol* c_name = SymbolTable::new_symbol(className);
+      Symbol* m_name = SymbolTable::new_symbol(methodName);
       Symbol* signature = NULL;
 
       BasicMatcher* bm = new BasicMatcher();

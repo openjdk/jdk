@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,11 +49,11 @@ static bool initialize(TRAPS) {
   static bool initialized = false;
   if (!initialized) {
     DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
-    jvm_upcalls_class_sym = SymbolTable::new_permanent_symbol("jdk/jfr/internal/JVMUpcalls", CHECK_false);
-    on_retransform_method_sym = SymbolTable::new_permanent_symbol("onRetransform", CHECK_false);
-    on_retransform_signature_sym = SymbolTable::new_permanent_symbol("(JZLjava/lang/Class;[B)[B", CHECK_false);
-    bytes_for_eager_instrumentation_sym = SymbolTable::new_permanent_symbol("bytesForEagerInstrumentation", CHECK_false);
-    bytes_for_eager_instrumentation_sig_sym = SymbolTable::new_permanent_symbol("(JZLjava/lang/Class;[B)[B", THREAD);
+    jvm_upcalls_class_sym = SymbolTable::new_permanent_symbol("jdk/jfr/internal/JVMUpcalls");
+    on_retransform_method_sym = SymbolTable::new_permanent_symbol("onRetransform");
+    on_retransform_signature_sym = SymbolTable::new_permanent_symbol("(JZLjava/lang/Class;[B)[B");
+    bytes_for_eager_instrumentation_sym = SymbolTable::new_permanent_symbol("bytesForEagerInstrumentation");
+    bytes_for_eager_instrumentation_sig_sym = SymbolTable::new_permanent_symbol("(JZLjava/lang/Class;[B)[B");
     initialized = bytes_for_eager_instrumentation_sig_sym != NULL;
   }
   return initialized;

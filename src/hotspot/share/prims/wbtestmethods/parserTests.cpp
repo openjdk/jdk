@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@
 static const char* lookup_diagnosticArgumentEnum(const char* field_name, oop object) {
   Thread* THREAD = Thread::current();
   const char* enum_sig = "Lsun/hotspot/parser/DiagnosticCommand$DiagnosticArgumentType;";
-  TempNewSymbol enumSigSymbol = SymbolTable::lookup(enum_sig, (int) strlen(enum_sig), THREAD);
+  TempNewSymbol enumSigSymbol = SymbolTable::new_symbol(enum_sig);
   int offset = WhiteBox::offset_for_field(field_name, object, enumSigSymbol);
   oop enumOop = object->obj_field(offset);
 

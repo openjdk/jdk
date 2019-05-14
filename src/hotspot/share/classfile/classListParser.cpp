@@ -326,8 +326,7 @@ InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS
 }
 
 Klass* ClassListParser::load_current_class(TRAPS) {
-  TempNewSymbol class_name_symbol = SymbolTable::new_symbol(_class_name, THREAD);
-  guarantee(!HAS_PENDING_EXCEPTION, "Exception creating a symbol.");
+  TempNewSymbol class_name_symbol = SymbolTable::new_symbol(_class_name);
 
   Klass *klass = NULL;
   if (!is_loading_from_source()) {
