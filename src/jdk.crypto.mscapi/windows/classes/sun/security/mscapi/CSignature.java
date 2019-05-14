@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,7 +121,8 @@ abstract class CSignature extends SignatureSpi {
 
             if ((key instanceof CPrivateKey) == false
                     || !key.getAlgorithm().equalsIgnoreCase("RSA")) {
-                throw new InvalidKeyException("Key type not supported");
+                throw new InvalidKeyException("Key type not supported: "
+                        + key.getClass() + " " + key.getAlgorithm());
             }
             privateKey = (CPrivateKey) key;
 
@@ -201,16 +202,22 @@ abstract class CSignature extends SignatureSpi {
 
             byte[] hash = getDigestValue();
 
-            // Omit the hash OID when generating a NONEwithRSA signature
-            boolean noHashOID = this instanceof NONEwithRSA;
-
-            // Sign hash using MS Crypto APIs
-            byte[] result = signHash(noHashOID, hash, hash.length,
+            if (privateKey.getHCryptKey() == 0) {
+                return signCngHash(1, hash, hash.length,
+                        0,
+                        this instanceof NONEwithRSA ? null : messageDigestAlgorithm,
+                        privateKey.getHCryptProvider(), 0);
+            } else {
+                // Omit the hash OID when generating a NONEwithRSA signature
+                boolean noHashOID = this instanceof NONEwithRSA;
+                // Sign hash using MS Crypto APIs
+                byte[] result = signHash(noHashOID, hash, hash.length,
                         messageDigestAlgorithm, privateKey.getHCryptProvider(),
                         privateKey.getHCryptKey());
 
-            // Convert signature array from little endian to big endian
-            return convertEndianArray(result);
+                // Convert signature array from little endian to big endian
+                return convertEndianArray(result);
+            }
         }
 
         /**
@@ -230,10 +237,20 @@ abstract class CSignature extends SignatureSpi {
                 throws SignatureException {
             byte[] hash = getDigestValue();
 
-            return verifySignedHash(hash, hash.length,
-                    messageDigestAlgorithm, convertEndianArray(sigBytes),
-                    sigBytes.length, publicKey.getHCryptProvider(),
-                    publicKey.getHCryptKey());
+            if (publicKey.getHCryptKey() == 0) {
+                return verifyCngSignedHash(
+                        1, hash, hash.length,
+                        sigBytes, sigBytes.length,
+                        0,
+                        messageDigestAlgorithm,
+                        publicKey.getHCryptProvider(),
+                        0);
+            } else {
+                return verifySignedHash(hash, hash.length,
+                        messageDigestAlgorithm, convertEndianArray(sigBytes),
+                        sigBytes.length, publicKey.getHCryptProvider(),
+                        publicKey.getHCryptKey());
+            }
         }
 
         /**

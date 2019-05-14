@@ -128,9 +128,14 @@ public abstract class CPublicKey extends CKey implements PublicKey {
         public String toString() {
             StringBuffer sb = new StringBuffer();
             sb.append(algorithm + "PublicKey [size=").append(keyLength)
-                    .append(" bits, type=").append(getKeyType(handles.hCryptKey))
-                    .append(", container=").append(getContainerName(handles.hCryptProv))
-                    .append("]\n  modulus: ").append(getModulus())
+                    .append(" bits, type=");
+            if (handles.hCryptKey != 0) {
+                sb.append(getKeyType(handles.hCryptKey))
+                        .append(", container=").append(getContainerName(handles.hCryptProv));
+            } else {
+                sb.append("CNG");
+            }
+            sb.append("]\n  modulus: ").append(getModulus())
                     .append("\n  public exponent: ").append(getPublicExponent());
             return sb.toString();
         }

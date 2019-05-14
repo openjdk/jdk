@@ -3578,6 +3578,11 @@ public final class Main {
     {
         Key key = null;
 
+        if (KeyStoreUtil.isWindowsKeyStore(storetype)) {
+            key = keyStore.getKey(alias, null);
+            return Pair.of(key, null);
+        }
+
         if (keyStore.containsAlias(alias) == false) {
             MessageFormat form = new MessageFormat
                 (rb.getString("Alias.alias.does.not.exist"));
