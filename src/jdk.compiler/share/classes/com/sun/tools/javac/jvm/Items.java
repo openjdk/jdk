@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -474,16 +474,17 @@ public class Items {
         }
 
         Item load() {
-            assert false;
-            return null;
+            Assert.check(member.kind == Kinds.Kind.VAR);
+            Type type = member.erasure(types);
+            int rescode = Code.typecode(type);
+            code.emitLdc((DynamicVarSymbol)member);
+            return stackItem[rescode];
         }
 
-        void store() {
-            assert false;
-        }
+        void store() { Assert.error("this method shouldn't be invoked"); }
 
         Item invoke() {
-            // assert target.hasNativeInvokeDynamic();
+            Assert.check(member.kind == Kinds.Kind.MTH);
             MethodType mtype = (MethodType)member.erasure(types);
             int rescode = Code.typecode(mtype.restype);
             code.emitInvokedynamic((DynamicMethodSymbol)member, mtype);

@@ -323,7 +323,6 @@ class oopDesc {
   }
 
   // for error reporting
-  static oop   decode_oop_raw(narrowOop narrow_oop);
   static void* load_klass_raw(oop obj);
   static void* load_oop_raw(oop obj, int offset);
   static bool  is_valid(oop obj);

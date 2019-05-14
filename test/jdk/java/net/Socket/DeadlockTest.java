@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 4176738
+ * @library /test/lib
  * @summary Make sure a deadlock situation
  *     would not occur
  * @run main DeadlockTest
@@ -32,9 +33,12 @@
 
 import java.net.*;
 import java.io.*;
+import jdk.test.lib.net.IPSupport;
 
 public class DeadlockTest {
     public static void main(String [] argv) throws Exception {
+        IPSupport.throwSkippedExceptionIfNonOperational();
+
         ServerSocket ss = new ServerSocket(0);
         Socket clientSocket = new Socket();
 

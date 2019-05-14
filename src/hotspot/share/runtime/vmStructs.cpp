@@ -370,6 +370,7 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   nonstatic_field(JNIid,                       _holder,                                       Klass*)                                \
   nonstatic_field(JNIid,                       _next,                                         JNIid*)                                \
   nonstatic_field(JNIid,                       _offset,                                       int)                                   \
+                                                                                                                                     \
   /************/                                                                                                                     \
   /* Universe */                                                                                                                     \
   /************/                                                                                                                     \
@@ -389,11 +390,21 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
      static_field(Universe,                    _verify_oop_mask,                              uintptr_t)                             \
      static_field(Universe,                    _verify_oop_bits,                              uintptr_t)                             \
      static_field(Universe,                    _non_oop_bits,                                 intptr_t)                              \
-     static_field(Universe,                    _narrow_oop._base,                             address)                               \
-     static_field(Universe,                    _narrow_oop._shift,                            int)                                   \
-     static_field(Universe,                    _narrow_oop._use_implicit_null_checks,         bool)                                  \
-     static_field(Universe,                    _narrow_klass._base,                           address)                               \
-     static_field(Universe,                    _narrow_klass._shift,                          int)                                   \
+                                                                                                                                     \
+  /******************/                                                                                                               \
+  /* CompressedOops */                                                                                                               \
+  /******************/                                                                                                               \
+                                                                                                                                     \
+     static_field(CompressedOops,              _narrow_oop._base,                             address)                               \
+     static_field(CompressedOops,              _narrow_oop._shift,                            int)                                   \
+     static_field(CompressedOops,              _narrow_oop._use_implicit_null_checks,         bool)                                  \
+                                                                                                                                     \
+  /***************************/                                                                                                      \
+  /* CompressedKlassPointers */                                                                                                      \
+  /***************************/                                                                                                      \
+                                                                                                                                     \
+     static_field(CompressedKlassPointers,     _narrow_klass._base,                           address)                               \
+     static_field(CompressedKlassPointers,     _narrow_klass._shift,                          int)                                   \
                                                                                                                                      \
   /******/                                                                                                                           \
   /* os */                                                                                                                           \
@@ -1981,6 +1992,8 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   declare_toplevel_type(StubQueue*)                                       \
   declare_toplevel_type(Thread*)                                          \
   declare_toplevel_type(Universe)                                         \
+  declare_toplevel_type(CompressedOops)                                   \
+  declare_toplevel_type(CompressedKlassPointers)                          \
   declare_toplevel_type(os)                                               \
   declare_toplevel_type(vframeArray)                                      \
   declare_toplevel_type(vframeArrayElement)                               \

@@ -69,7 +69,7 @@ import tests.JImageGenerator;
  *          jdk.jlink/jdk.tools.jimage
  *          jdk.compiler
  * @build tests.*
- * @run main IntegrationTest
+ * @run main/othervm -Xmx1g IntegrationTest
  */
 public class IntegrationTest {
 

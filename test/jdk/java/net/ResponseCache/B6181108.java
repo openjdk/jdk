@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 6181108
+ * @library /test/lib
  * @summary double encoded URL passed to ResponseCache
  * @author Edward Wang
  */
@@ -31,7 +32,7 @@
 import java.net.*;
 import java.util.*;
 import java.io.*;
-
+import jdk.test.lib.net.URIBuilder;
 
 public class B6181108 implements Runnable {
     ServerSocket ss;
@@ -44,7 +45,7 @@ public class B6181108 implements Runnable {
         try {
             Socket s = ss.accept();
 
-            InputStream is = s.getInputStream ();
+            InputStream is = s.getInputStream();
             BufferedReader r = new BufferedReader(new InputStreamReader(is));
             String x;
             while ((x=r.readLine()) != null) {
@@ -75,32 +76,38 @@ public class B6181108 implements Runnable {
     }
 
     static class ResponseCache extends java.net.ResponseCache {
-        public CacheResponse get (URI uri, String method, Map<String,List<String>> hdrs) {
-            System.out.println ("get uri = " + uri);
+        public CacheResponse get(URI uri, String method, Map<String,List<String>> hdrs) {
+            System.out.println("get uri = " + uri);
             if (!urlWithSpace.equals(uri.toString())) {
                 throw new RuntimeException("test failed");
             }
             return null;
         }
-        public CacheRequest put (URI uri,  URLConnection urlc) {
-            System.out.println ("put uri = " + uri);
+        public CacheRequest put(URI uri,  URLConnection urlc) {
+            System.out.println("put uri = " + uri);
             return null;
         }
     }
 
     B6181108() throws Exception {
         /* start the server */
-        ss = new ServerSocket(0);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        ss = new ServerSocket();
+        ss.bind(new InetSocketAddress(loopback, 0));
         (new Thread(this)).start();
 
-        ResponseCache.setDefault (new ResponseCache());
-        urlWithSpace = "http://localhost:" +
-                        Integer.toString(ss.getLocalPort()) +
-                        "/space%20test/page1.html";
-        URL url = new URL (urlWithSpace);
+        ResponseCache.setDefault(new ResponseCache());
+        String base = URIBuilder.newBuilder()
+                   .scheme("http")
+                   .loopback()
+                   .port(ss.getLocalPort())
+                   .build()
+                   .toString();
+        urlWithSpace = base + "/space%20test/page1.html";
+        URL url = new URL(urlWithSpace);
         URLConnection urlc = url.openConnection();
         int i = ((HttpURLConnection)(urlc)).getResponseCode();
-        System.out.println ("response code = " + i);
+        System.out.println("response code = " + i);
         ResponseCache.setDefault(null);
     }
 

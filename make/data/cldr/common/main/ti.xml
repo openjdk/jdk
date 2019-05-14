@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2018 Unicode, Inc.
+<!-- Copyright © 1991-2019 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 13872 $"/>
+		<version number="$Revision: 14982 $"/>
 		<language type="ti"/>
 	</identity>
 	<localeDisplayNames>
@@ -293,8 +293,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MF">ሴንት ማርቲን</territory>
 			<territory type="MG">ማዳጋስካር</territory>
 			<territory type="MH">ማርሻል አይላንድ</territory>
-			<territory type="MK">ማከዶኒያ</territory>
-			<territory type="MK" alt="variant">መቄዶኒያ</territory>
+			<territory type="MK">ሰሜን መቆዶንያ</territory>
 			<territory type="ML">ማሊ</territory>
 			<territory type="MM">ማያንማር</territory>
 			<territory type="MN">ሞንጎሊያ</territory>
@@ -615,9 +614,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dayWidth type="wide">
 							<day type="sun">ሰንበት</day>
 							<day type="mon">ሰኑይ</day>
-							<day type="tue">ሰሉስ</day>
+							<day type="tue">ሠሉስ</day>
 							<day type="wed">ረቡዕ</day>
-							<day type="thu">ሓሙስ</day>
+							<day type="thu">ኃሙስ</day>
 							<day type="fri">ዓርቢ</day>
 							<day type="sat">ቀዳም</day>
 						</dayWidth>
@@ -810,8 +809,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="MMMEd">MMM d, E</dateFormatItem>
 						<dateFormatItem id="MMMMd">MMMM d</dateFormatItem>
 						<dateFormatItem id="MMMMdd">dd MMMM</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="one">ሰሙን W ናይ MMM</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="other">ሰሙን W ናይ MMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">ሰሙን W ናይ MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">ሰሙን W ናይ MMMM</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">y-MM</dateFormatItem>
@@ -824,8 +823,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">y QQQQ</dateFormatItem>
-						<dateFormatItem id="yw" count="one">መበል w ሰሙን ናይ y</dateFormatItem>
-						<dateFormatItem id="yw" count="other">መበል w ሰሙን ናይ y</dateFormatItem>
+						<dateFormatItem id="yw" count="one">መበል w ሰሙን ናይ Y</dateFormatItem>
+						<dateFormatItem id="yw" count="other">መበል w ሰሙን ናይ Y</dateFormatItem>
 					</availableFormats>
 					<appendItems>
 						<appendItem request="Timezone">{0} {1}</appendItem>
@@ -3004,7 +3003,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
-			<pattern type="atLeast">⩾{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
 			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
 	</numbers>

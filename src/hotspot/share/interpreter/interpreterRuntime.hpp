@@ -27,7 +27,6 @@
 
 #include "interpreter/bytecode.hpp"
 #include "interpreter/linkResolver.hpp"
-#include "memory/universe.hpp"
 #include "oops/method.hpp"
 #include "runtime/frame.hpp"
 #include "runtime/signature.hpp"

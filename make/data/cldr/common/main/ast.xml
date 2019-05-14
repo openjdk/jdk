@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2018 Unicode, Inc.
+<!-- Copyright © 1991-2019 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 13911 $"/>
+		<version number="$Revision: 14782 $"/>
 		<language type="ast"/>
 	</identity>
 	<localeDisplayNames>
@@ -763,54 +763,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Phnx">feniciu</script>
 			<script type="Plrd">fonéticu de Pollard</script>
 			<script type="Prti">partu d’inscripciones</script>
-			<script type="Qaaa">qaaa</script>
-			<script type="Qaab">qaab</script>
-			<script type="Qaac">qaac</script>
-			<script type="Qaad">qaad</script>
-			<script type="Qaae">qaae</script>
-			<script type="Qaaf">qaaf</script>
-			<script type="Qaag">qaag</script>
-			<script type="Qaah">qaah</script>
-			<script type="Qaak">qaak</script>
-			<script type="Qaal">qaal</script>
-			<script type="Qaam">qaam</script>
-			<script type="Qaan">qaan</script>
-			<script type="Qaao">qaao</script>
-			<script type="Qaap">qaap</script>
-			<script type="Qaaq">qaaq</script>
-			<script type="Qaar">qaar</script>
-			<script type="Qaas">qaas</script>
-			<script type="Qaat">qaat</script>
-			<script type="Qaau">qaau</script>
-			<script type="Qaav">qaav</script>
-			<script type="Qaaw">qaaw</script>
-			<script type="Qaax">qaax</script>
-			<script type="Qaay">qaay</script>
-			<script type="Qaaz">qaaz</script>
-			<script type="Qaba">qaba</script>
-			<script type="Qabb">qabb</script>
-			<script type="Qabc">qabc</script>
-			<script type="Qabd">qabd</script>
-			<script type="Qabe">qabe</script>
-			<script type="Qabf">qabf</script>
-			<script type="Qabg">qabg</script>
-			<script type="Qabh">qabh</script>
-			<script type="Qabi">qabi</script>
-			<script type="Qabj">qabj</script>
-			<script type="Qabk">qabk</script>
-			<script type="Qabl">qabl</script>
-			<script type="Qabm">qabm</script>
-			<script type="Qabn">qabn</script>
-			<script type="Qabo">qabo</script>
-			<script type="Qabp">qabp</script>
-			<script type="Qabq">qabq</script>
-			<script type="Qabr">qabr</script>
-			<script type="Qabs">qabs</script>
-			<script type="Qabt">qabt</script>
-			<script type="Qabu">qabu</script>
-			<script type="Qabv">qabv</script>
-			<script type="Qabw">qabw</script>
-			<script type="Qabx">qabx</script>
 			<script type="Rjng">rejang</script>
 			<script type="Roro">rongorongo</script>
 			<script type="Runr">runes</script>
@@ -2690,8 +2642,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="one">'selmana' W 'de' MMM</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="other">'selmana' W 'de' MMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">'selmana' W 'de' MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">'selmana' W 'de' MMMM</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">M/y</dateFormatItem>
@@ -2703,8 +2655,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yMMMM">LLLL 'de' y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ 'de' y</dateFormatItem>
-						<dateFormatItem id="yw" count="one">'selmana' w 'de' y</dateFormatItem>
-						<dateFormatItem id="yw" count="other">'selmana' w 'de' y</dateFormatItem>
+						<dateFormatItem id="yw" count="one">'selmana' w 'de' Y</dateFormatItem>
+						<dateFormatItem id="yw" count="other">'selmana' w 'de' Y</dateFormatItem>
 					</availableFormats>
 					<appendItems>
 						<appendItem request="Timezone">{0} {1}</appendItem>
@@ -8929,11 +8881,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<symbol draft="contributed">VEB</symbol>
 			</currency>
 			<currency type="VEF">
+				<displayName>bolívar venezolanu (2008–2018)</displayName>
+				<displayName count="one">bolívar venezolanu (2008–2018)</displayName>
+				<displayName count="other">bolívares venezolanos (2008–2018)</displayName>
+				<symbol>VEF</symbol>
+				<symbol alt="narrow" draft="contributed">Bs</symbol>
+			</currency>
+			<currency type="VES">
 				<displayName>bolívar venezolanu</displayName>
 				<displayName count="one">bolívar venezolanu</displayName>
 				<displayName count="other">bolívares venezolanos</displayName>
-				<symbol>VEF</symbol>
-				<symbol alt="narrow" draft="contributed">Bs</symbol>
 			</currency>
 			<currency type="VND">
 				<displayName>dong vietnamín</displayName>
@@ -9181,7 +9138,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
-			<pattern type="atLeast">⩾{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
 			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
 		<minimalPairs>
@@ -10301,8 +10258,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="length-fathom">
 				<displayName>fathoms</displayName>
-				<unitPattern count="one">{0} ftm</unitPattern>
-				<unitPattern count="other">{0} ftm</unitPattern>
+				<unitPattern count="one">{0} fth</unitPattern>
+				<unitPattern count="other">{0} fth</unitPattern>
 			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>nmi</displayName>
@@ -11013,8 +10970,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="length-fathom">
 				<displayName>fathom</displayName>
-				<unitPattern count="one">{0}fm</unitPattern>
-				<unitPattern count="other">{0}fm</unitPattern>
+				<unitPattern count="one">{0}fth</unitPattern>
+				<unitPattern count="other">{0}fth</unitPattern>
 			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>nmi</displayName>

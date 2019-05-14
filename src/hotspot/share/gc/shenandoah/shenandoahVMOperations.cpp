@@ -26,6 +26,7 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
+#include "memory/universe.hpp"
 
 bool VM_ShenandoahReferenceOperation::doit_prologue() {
   Heap_lock->lock();

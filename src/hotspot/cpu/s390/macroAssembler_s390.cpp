@@ -1171,7 +1171,7 @@ void MacroAssembler::load_narrow_oop(Register t, narrowOop a) {
 // Load narrow klass constant, compression required.
 void MacroAssembler::load_narrow_klass(Register t, Klass* k) {
   assert(UseCompressedClassPointers, "must be on to call this method");
-  narrowKlass encoded_k = Klass::encode_klass(k);
+  narrowKlass encoded_k = CompressedKlassPointers::encode(k);
   load_const_32to64(t, encoded_k, false /*sign_extend*/);
 }
 
@@ -1189,7 +1189,7 @@ void MacroAssembler::compare_immediate_narrow_oop(Register oop1, narrowOop oop2)
 // Compare narrow oop in reg with narrow oop constant, no decompression.
 void MacroAssembler::compare_immediate_narrow_klass(Register klass1, Klass* klass2) {
   assert(UseCompressedClassPointers, "must be on to call this method");
-  narrowKlass encoded_k = Klass::encode_klass(klass2);
+  narrowKlass encoded_k = CompressedKlassPointers::encode(klass2);
 
   Assembler::z_clfi(klass1, encoded_k);
 }
@@ -1285,7 +1285,7 @@ int MacroAssembler::patch_load_narrow_oop(address pos, oop o) {
 int MacroAssembler::patch_load_narrow_klass(address pos, Klass* k) {
   assert(UseCompressedClassPointers, "Can only patch compressed klass pointers");
 
-  narrowKlass nk = Klass::encode_klass(k);
+  narrowKlass nk = CompressedKlassPointers::encode(k);
   return patch_load_const_32to64(pos, nk);
 }
 
@@ -1303,7 +1303,7 @@ int MacroAssembler::patch_compare_immediate_narrow_oop(address pos, oop o) {
 int MacroAssembler::patch_compare_immediate_narrow_klass(address pos, Klass* k) {
   assert(UseCompressedClassPointers, "Can only patch compressed klass pointers");
 
-  narrowKlass nk = Klass::encode_klass(k);
+  narrowKlass nk = CompressedKlassPointers::encode(k);
   return patch_compare_immediate_32(pos, nk);
 }
 
@@ -3606,8 +3606,8 @@ void MacroAssembler::null_check(Register reg, Register tmp, int64_t offset) {
 // Klass oop manipulations if compressed.
 void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
   Register current = (src != noreg) ? src : dst; // Klass is in dst if no src provided. (dst == src) also possible.
-  address  base    = Universe::narrow_klass_base();
-  int      shift   = Universe::narrow_klass_shift();
+  address  base    = CompressedKlassPointers::base();
+  int      shift   = CompressedKlassPointers::shift();
   assert(UseCompressedClassPointers, "only for compressed klass ptrs");
 
   BLOCK_COMMENT("cKlass encoder {");
@@ -3655,8 +3655,8 @@ void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
 // when (Universe::heap() != NULL). Hence, if the instructions
 // it generates change, then this method needs to be updated.
 int MacroAssembler::instr_size_for_decode_klass_not_null() {
-  address  base    = Universe::narrow_klass_base();
-  int shift_size   = Universe::narrow_klass_shift() == 0 ? 0 : 6; /* sllg */
+  address  base    = CompressedKlassPointers::base();
+  int shift_size   = CompressedKlassPointers::shift() == 0 ? 0 : 6; /* sllg */
   int addbase_size = 0;
   assert(UseCompressedClassPointers, "only for compressed klass ptrs");
 
@@ -3685,8 +3685,8 @@ int MacroAssembler::instr_size_for_decode_klass_not_null() {
 // This variant of decode_klass_not_null() must generate predictable code!
 // The code must only depend on globally known parameters.
 void MacroAssembler::decode_klass_not_null(Register dst) {
-  address  base    = Universe::narrow_klass_base();
-  int      shift   = Universe::narrow_klass_shift();
+  address  base    = CompressedKlassPointers::base();
+  int      shift   = CompressedKlassPointers::shift();
   int      beg_off = offset();
   assert(UseCompressedClassPointers, "only for compressed klass ptrs");
 
@@ -3728,8 +3728,8 @@ void MacroAssembler::decode_klass_not_null(Register dst) {
 //  1) the size of the generated instructions may vary
 //  2) the result is (potentially) stored in a register different from the source.
 void MacroAssembler::decode_klass_not_null(Register dst, Register src) {
-  address base  = Universe::narrow_klass_base();
-  int     shift = Universe::narrow_klass_shift();
+  address base  = CompressedKlassPointers::base();
+  int     shift = CompressedKlassPointers::shift();
   assert(UseCompressedClassPointers, "only for compressed klass ptrs");
 
   BLOCK_COMMENT("cKlass decoder {");
@@ -3829,8 +3829,8 @@ void MacroAssembler::compare_klass_ptr(Register Rop1, int64_t disp, Register Rba
   BLOCK_COMMENT("compare klass ptr {");
 
   if (UseCompressedClassPointers) {
-    const int shift = Universe::narrow_klass_shift();
-    address   base  = Universe::narrow_klass_base();
+    const int shift = CompressedKlassPointers::shift();
+    address   base  = CompressedKlassPointers::base();
 
     assert((shift == 0) || (shift == LogKlassAlignmentInBytes), "cKlass encoder detected bad shift");
     assert_different_registers(Rop1, Z_R0);
@@ -3963,8 +3963,8 @@ void MacroAssembler::compare_heap_oop(Register Rop1, Address mem, bool maybeNULL
   Register Rindex = mem.indexOrR0();
   int64_t  disp   = mem.disp();
 
-  const int shift = Universe::narrow_oop_shift();
-  address   base  = Universe::narrow_oop_base();
+  const int shift = CompressedOops::shift();
+  address   base  = CompressedOops::base();
 
   assert(UseCompressedOops, "must be on to call this method");
   assert(Universe::heap() != NULL, "java heap must be initialized to call this method");
@@ -4075,9 +4075,9 @@ void MacroAssembler::store_heap_oop(Register Roop, const Address &a,
 void MacroAssembler::oop_encoder(Register Rdst, Register Rsrc, bool maybeNULL,
                                  Register Rbase, int pow2_offset, bool only32bitValid) {
 
-  const address oop_base  = Universe::narrow_oop_base();
-  const int     oop_shift = Universe::narrow_oop_shift();
-  const bool    disjoint  = Universe::narrow_oop_base_disjoint();
+  const address oop_base  = CompressedOops::base();
+  const int     oop_shift = CompressedOops::shift();
+  const bool    disjoint  = CompressedOops::base_disjoint();
 
   assert(UseCompressedOops, "must be on to call this method");
   assert(Universe::heap() != NULL, "java heap must be initialized to call this encoder");
@@ -4210,9 +4210,9 @@ void MacroAssembler::oop_encoder(Register Rdst, Register Rsrc, bool maybeNULL,
 //  - avoid Z_R1 for Rdst if Rdst == Rbase.
 void MacroAssembler::oop_decoder(Register Rdst, Register Rsrc, bool maybeNULL, Register Rbase, int pow2_offset) {
 
-  const address oop_base  = Universe::narrow_oop_base();
-  const int     oop_shift = Universe::narrow_oop_shift();
-  const bool    disjoint  = Universe::narrow_oop_base_disjoint();
+  const address oop_base  = CompressedOops::base();
+  const int     oop_shift = CompressedOops::shift();
+  const bool    disjoint  = CompressedOops::base_disjoint();
 
   assert(UseCompressedOops, "must be on to call this method");
   assert(Universe::heap() != NULL, "java heap must be initialized to call this decoder");

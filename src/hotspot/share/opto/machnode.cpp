@@ -24,6 +24,8 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "memory/universe.hpp"
+#include "oops/compressedOops.hpp"
 #include "opto/machnode.hpp"
 #include "opto/regalloc.hpp"
 #include "utilities/vmError.hpp"
@@ -354,11 +356,11 @@ const class TypePtr *MachNode::adr_type() const {
   if (base == NodeSentinel)  return TypePtr::BOTTOM;
 
   const Type* t = base->bottom_type();
-  if (t->isa_narrowoop() && Universe::narrow_oop_shift() == 0) {
+  if (t->isa_narrowoop() && CompressedOops::shift() == 0) {
     // 32-bit unscaled narrow oop can be the base of any address expression
     t = t->make_ptr();
   }
-  if (t->isa_narrowklass() && Universe::narrow_klass_shift() == 0) {
+  if (t->isa_narrowklass() && CompressedKlassPointers::shift() == 0) {
     // 32-bit unscaled narrow oop can be the base of any address expression
     t = t->make_ptr();
   }

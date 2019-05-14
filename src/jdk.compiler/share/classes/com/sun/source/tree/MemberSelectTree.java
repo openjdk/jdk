@@ -35,7 +35,9 @@ import javax.lang.model.element.Name;
  *   <em>expression</em> . <em>identifier</em>
  * </pre>
  *
- * @jls sections 6.5, 15.11,and 15.12
+ * @jls 6.5 Determining the Meaning of a Name
+ * @jls 15.11 Field Access Expressions
+ * @jls 15.12 Method Invocation Expressions
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

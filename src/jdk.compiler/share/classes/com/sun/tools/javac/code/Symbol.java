@@ -434,6 +434,10 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         return name == name.table.names.init;
     }
 
+    public boolean isDynamic() {
+        return false;
+    }
+
     /** The fully qualified name of this symbol.
      *  This is the same as the symbol's name except for class symbols,
      *  which are handled separately.
@@ -1776,10 +1780,6 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
                     ClassFile.CONSTANT_InterfaceMethodref : ClassFile.CONSTANT_Methodref;
         }
 
-        public boolean isDynamic() {
-            return false;
-        }
-
         public boolean isHandle() {
             return false;
         }
@@ -2106,6 +2106,44 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         @Override
         public Type dynamicType() {
             return type;
+        }
+    }
+
+    /** A class for condy.
+     */
+    public static class DynamicVarSymbol extends VarSymbol implements Dynamic, LoadableConstant {
+        public LoadableConstant[] staticArgs;
+        public MethodHandleSymbol bsm;
+
+        public DynamicVarSymbol(Name name, Symbol owner, MethodHandleSymbol bsm, Type type, LoadableConstant[] staticArgs) {
+            super(0, name, type, owner);
+            this.bsm = bsm;
+            this.staticArgs = staticArgs;
+        }
+
+        @Override
+        public boolean isDynamic() {
+            return true;
+        }
+
+        @Override
+        public PoolConstant dynamicType() {
+            return type;
+        }
+
+        @Override
+        public LoadableConstant[] staticArgs() {
+            return staticArgs;
+        }
+
+        @Override
+        public LoadableConstant bootstrapMethod() {
+            return bsm;
+        }
+
+        @Override
+        public int poolTag() {
+            return ClassFile.CONSTANT_Dynamic;
         }
     }
 

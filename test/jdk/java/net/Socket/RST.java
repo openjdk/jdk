@@ -22,13 +22,16 @@
  */
 
 /*
+ * @test
  * @bug 4468997
+ * @library /test/lib
  * @summary SO_LINGER is ignored on Windows with Winsock 2
  * @run main RST
  * @run main/othervm -Djava.net.preferIPv4Stack=true RST
  */
 import java.net.*;
 import java.io.*;
+import jdk.test.lib.net.IPSupport;
 
 public class RST implements Runnable {
 
@@ -77,6 +80,8 @@ public class RST implements Runnable {
 
 
     public static void main(String args[]) throws Exception {
+        IPSupport.throwSkippedExceptionIfNonOperational();
+
         new RST();
     }
 }

@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2018 Unicode, Inc.
+<!-- Copyright © 1991-2019 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 13937 $"/>
+		<version number="$Revision: 14786 $"/>
 		<language type="de"/>
 		<territory type="CH"/>
 	</identity>
@@ -15,6 +15,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<languages>
 			<language type="ace">Aceh-Sprache</language>
 			<language type="ach">Acholi-Sprache</language>
+			<language type="ars">Nadschd-Arabisch</language>
 			<language type="bas">Basaa-Sprache</language>
 			<language type="be">Weissrussisch</language>
 			<language type="bik">Bikol-Sprache</language>
@@ -54,6 +55,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	<characters>
 		<exemplarCharacters>[a ä b c d e f g h i j k l m n o ö p q r s t u ü v w x y z]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- . ’ % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<parseLenients scope="general" level="lenient">
+			<parseLenient sample="’" draft="contributed">['ʼ՚᾽᾿’＇]</parseLenient>
+		</parseLenients>
 	</characters>
 	<dates>
 		<calendars>
@@ -78,8 +82,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>Epoche</displayName>
 			</field>
 			<field type="quarter">
-				<relative type="-1">letztes Quartal</relative>
-				<relative type="0">dieses Quartal</relative>
+				<relative type="-1" draft="contributed">letztes Quartal</relative>
+				<relative type="0" draft="contributed">dieses Quartal</relative>
 			</field>
 			<field type="weekOfMonth">
 				<displayName>Woche im Monat</displayName>
@@ -107,9 +111,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 		</fields>
 		<timeZoneNames>
+			<zone type="Asia/Brunei">
+				<exemplarCity>Brunei</exemplarCity>
+			</zone>
+			<zone type="Asia/Macau">
+				<exemplarCity>Macao</exemplarCity>
+			</zone>
 			<zone type="Europe/Saratov">
 				<exemplarCity>Saratov</exemplarCity>
 			</zone>
+			<metazone type="Brunei">
+				<long>
+					<standard>Brunei-Zeit</standard>
+				</long>
+			</metazone>
+			<metazone type="Solomon">
+				<long>
+					<standard>Salomoninseln-Zeit</standard>
+				</long>
+			</metazone>
 		</timeZoneNames>
 	</dates>
 	<numbers>
@@ -142,18 +162,27 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="one">Weissrussischer Rubel (2000–2016)</displayName>
 				<displayName count="other">Weissrussische Rubel (2000–2016)</displayName>
 			</currency>
+			<currency type="CHF">
+				<symbol draft="contributed">CHF</symbol>
+			</currency>
 			<currency type="EUR">
 				<symbol>EUR</symbol>
 				<symbol alt="narrow" draft="contributed">EUR</symbol>
-			</currency>
-			<currency type="PEN">
-				<displayName>Peruanischer Neuer Sol</displayName>
-				<displayName count="one">Peruanischer Neuer Sol</displayName>
 			</currency>
 			<currency type="STN">
 				<displayName>São-toméischer Dobra (2018)</displayName>
 				<displayName count="one">São-toméischer Dobra (2018)</displayName>
 				<displayName count="other">São-toméischer Dobra (2018)</displayName>
+			</currency>
+			<currency type="VEF">
+				<displayName>Venezolanischer Bolívar</displayName>
+				<displayName count="one">Venezolanischer Bolívar</displayName>
+				<displayName count="other">Venezolanische Bolívares</displayName>
+			</currency>
+			<currency type="VES">
+				<displayName>VES</displayName>
+				<displayName count="one">VES</displayName>
+				<displayName count="other">VES</displayName>
 			</currency>
 		</currencies>
 	</numbers>
@@ -179,6 +208,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} Kubikfuss</unitPattern>
 			</unit>
 			<unit type="volume-gallon-imperial">
+				<unitPattern count="one">{0} gal Imp.</unitPattern>
 				<unitPattern count="other">{0} gal Imp.</unitPattern>
 				<perUnitPattern>{0}/gal Imp.</perUnitPattern>
 			</unit>
@@ -201,5 +231,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<styleName type="opsz" subtype="18">Schaugrösse</styleName>
 		<styleName type="opsz" subtype="72">Plakatgrösse</styleName>
 		<styleName type="opsz" subtype="144">Ferngrösse</styleName>
+		<styleName type="wght" subtype="200" alt="ultra">ultralight</styleName>
+		<styleName type="wght" subtype="500">medium</styleName>
+		<styleName type="wght" subtype="600" alt="demi">demibold</styleName>
+		<styleName type="wght" subtype="900" alt="heavy">heavy</styleName>
 	</typographicNames>
 </ldml>

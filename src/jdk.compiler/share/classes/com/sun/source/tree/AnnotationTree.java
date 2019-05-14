@@ -36,7 +36,7 @@ import java.util.List;
  *    {@code @}<em>annotationType</em> ( <em>arguments</em> )
  * </pre>
  *
- * @jls section 9.7
+ * @jls 9.7 Annotations
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

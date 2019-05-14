@@ -30,6 +30,7 @@
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "logging/log.hpp"
 #include "memory/padded.inline.hpp"
+#include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/arrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"

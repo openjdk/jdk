@@ -39,7 +39,7 @@ import java.util.List;
  *   static { <em>statements</em> }
  * </pre>
  *
- * @jls section 14.2
+ * @jls 14.2 Blocks
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

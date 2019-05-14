@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @library /test/lib
  * @modules java.management java.base/java.io:+open java.base/java.net:+open
  * @run main/othervm UnreferencedDatagramSockets
  * @run main/othervm -Djava.net.preferIPv4Stack=true UnreferencedDatagramSockets
@@ -50,6 +51,8 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import com.sun.management.UnixOperatingSystemMXBean;
+
+import jdk.test.lib.net.IPSupport;
 
 public class UnreferencedDatagramSockets {
 
@@ -103,6 +106,7 @@ public class UnreferencedDatagramSockets {
     }
 
     public static void main(String args[]) throws Exception {
+        IPSupport.throwSkippedExceptionIfNonOperational();
 
         // Create and close a DatagramSocket to warm up the FD count for side effects.
         try (DatagramSocket s = new DatagramSocket(0)) {

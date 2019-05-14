@@ -26,6 +26,7 @@
 #include "gc/shared/oopStorage.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
+#include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -308,6 +309,8 @@ void JNIHandles::print_on(outputStream* st) {
   st->cr();
   st->flush();
 }
+
+void JNIHandles::print() { print_on(tty); }
 
 class VerifyJNIHandles: public OopClosure {
 public:

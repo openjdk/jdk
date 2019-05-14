@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,13 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.*;
 import java.util.concurrent.Executors;
+import jdk.test.lib.net.URIBuilder;
 
 /*
  * @test
  * @bug 7025238
  * @modules jdk.httpserver
+ * @library /test/lib
  * @summary HttpURLConnection does not handle URLs with an empty path component
  */
 public class B7025238 {
@@ -44,7 +46,13 @@ public class B7025238 {
         try {
             s = new Server();
             s.startServer();
-            URL url = new URL("http://localhost:" + s.getPort() + "?q=test");
+            URL url = URIBuilder.newBuilder()
+                      .scheme("http")
+                      .loopback()
+                      .port(s.getPort())
+                      .query("q=test")
+                      .toURL();
+            System.out.println("Connecting to: " + url);
             HttpURLConnection urlConnection = (HttpURLConnection)url.openConnection();
             urlConnection.setRequestMethod("GET");
             urlConnection.connect();
@@ -62,7 +70,8 @@ public class B7025238 {
         HttpServer server;
 
         public void startServer() {
-            InetSocketAddress addr = new InetSocketAddress(0);
+            InetAddress loopback = InetAddress.getLoopbackAddress();
+            InetSocketAddress addr = new InetSocketAddress(loopback, 0);
             try {
                 server = HttpServer.create(addr, 0);
             } catch (IOException ioe) {
@@ -101,4 +110,3 @@ public class B7025238 {
         }
     }
 }
-

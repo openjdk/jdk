@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 4511404
+ * @library /test/lib
  * @summary Check that a broken pipe error doesn't throw an exception
  *          indicating the socket is closed.
  * @run main BrokenPipe
@@ -31,6 +32,7 @@
  */
 import java.io.*;
 import java.net.*;
+import jdk.test.lib.net.IPSupport;
 
 public class BrokenPipe {
 
@@ -53,6 +55,8 @@ public class BrokenPipe {
     }
 
     public static void main(String[] args) throws Exception {
+        IPSupport.throwSkippedExceptionIfNonOperational();
+
         ServerSocket ss = new ServerSocket(0);
         Socket client = new Socket(InetAddress.getLocalHost(),
                                    ss.getLocalPort());

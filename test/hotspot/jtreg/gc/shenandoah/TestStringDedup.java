@@ -25,7 +25,7 @@
  * @test TestStringDedup
  * @summary Test Shenandoah string deduplication implementation
  * @key gc
- * @requires vm.gc.Shenandoah
+ * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @library /test/lib
  * @modules java.base/jdk.internal.misc:open
  * @modules java.base/java.lang:open

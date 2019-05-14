@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@
  *      8017142 8037343 8055222 8042126 8074791 8075173 8080774 8129361 8134916
  *      8145136 8145952 8164784 8037111 8081643 7037368 8178872 8185841 8190918
  *      8187946 8195478 8181157 8179071 8193552 8202026 8204269 8202537 8208746
- *      8209775
+ *      8209775 8221432
  * @summary Verify locale data
  * @modules java.base/sun.util.resources
  * @modules jdk.localedata

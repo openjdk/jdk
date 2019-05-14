@@ -1934,3 +1934,4 @@ void ObjectMonitor::print_on(outputStream* st) const {
             contentions(), waiters(), recursions(),
             p2i(owner()));
 }
+void ObjectMonitor::print() const { print_on(tty); }

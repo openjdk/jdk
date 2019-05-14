@@ -3,9 +3,8 @@
 <!-- Copyright © 1991-2013 Unicode, Inc. CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/) 
 	For terms of use, see http://www.unicode.org/copyright.html -->
 <supplementalData>
-	<version number="$Revision: 13819 $" />
+	<version number="$Revision: 14851 $" />
 	<plurals> <!-- Format with GeneratePluralRanges.java -->
-
 
 <!-- other -->
 		<pluralRanges locales="id ja km ko lo ms my th vi yue zh">
@@ -21,6 +20,7 @@
 		<pluralRanges locales="ak fa or sd">
 			<pluralRange start="one"   end="one"   result="other"/>
 			<pluralRange start="one"   end="other" result="other"/>
+			<pluralRange start="other" end="one" result="one"/>
 			<pluralRange start="other" end="other" result="other"/>
 		</pluralRanges>
 		<pluralRanges locales="ka">
@@ -28,12 +28,12 @@
 			<pluralRange start="other" end="one"   result="other"/>
 			<pluralRange start="other" end="other" result="other"/>
 		</pluralRanges>
-		<pluralRanges locales="az de el gl gsw hu it kk ky ml mn ne nl scn sq sw ta te tk tr ug uz">
+		<pluralRanges locales="az de el gl gsw hu it kk ky ml mn ne nl sc scn sq sw ta te tk tr ug uz">
 			<pluralRange start="one"   end="other" result="other"/>
 			<pluralRange start="other" end="one"   result="one"/>
 			<pluralRange start="other" end="other" result="other"/>
 		</pluralRanges>
-		<pluralRanges locales="af bg ca en es et eu fi io nb sv ur">
+		<pluralRanges locales="af bg ca en es et eu fi ia io nb sv ur">
 			<pluralRange start="one"   end="other" result="other"/>
 			<pluralRange start="other" end="one"   result="other"/>
 			<pluralRange start="other" end="other" result="other"/>

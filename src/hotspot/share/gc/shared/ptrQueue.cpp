@@ -94,7 +94,7 @@ BufferNode::Allocator::Allocator(const char* name, size_t buffer_size) :
   _free_count(0),
   _transfer_lock(false)
 {
-  strncpy(_name, name, sizeof(_name));
+  strncpy(_name, name, sizeof(_name) - 1);
   _name[sizeof(_name) - 1] = '\0';
 }
 

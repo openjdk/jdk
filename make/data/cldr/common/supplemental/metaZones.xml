@@ -6,7 +6,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 For terms of use, see http://www.unicode.org/copyright.html
 -->
 <supplementalData>
-	<version number="$Revision: 13924 $"/>
+	<version number="$Revision: 14982 $"/>
 
 	<metaZones>
 		<metazoneInfo>
@@ -56,7 +56,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<timezone type="Africa/Casablanca">
 				<usesMetazone to="1984-03-16 00:00" mzone="Europe_Western"/>
 				<usesMetazone to="1985-12-31 23:00" from="1984-03-16 00:00" mzone="Europe_Central"/>
-				<usesMetazone from="1985-12-31 23:00" mzone="Europe_Western"/>
+				<usesMetazone to="2018-10-28 02:00" from="1985-12-31 23:00" mzone="Europe_Western"/>
 			</timezone>
 			<timezone type="Africa/Ceuta">
 				<usesMetazone to="1984-03-16 00:00" mzone="Europe_Western"/>
@@ -79,7 +79,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</timezone>
 			<timezone type="Africa/El_Aaiun">
 				<usesMetazone to="1976-04-14 01:00" mzone="Africa_FarWestern"/>
-				<usesMetazone from="1976-04-14 01:00" mzone="Europe_Western"/>
+				<usesMetazone to="2018-10-28 02:00" from="1976-04-14 01:00" mzone="Europe_Western"/>
 			</timezone>
 			<timezone type="Africa/Freetown">
 				<usesMetazone mzone="GMT"/>
@@ -168,7 +168,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</timezone>
 			<timezone type="Africa/Sao_Tome">
 				<usesMetazone to="2018-01-01 01:00" mzone="GMT"/>
-                <usesMetazone from="2018-01-01 01:00" mzone="Africa_Western"/>
+				<usesMetazone to="2019-01-01 01:00" from="2018-01-01 01:00" mzone="Africa_Western"/>
+				<usesMetazone from="2019-01-01 01:00" mzone="GMT"/>
 			</timezone>
 			<timezone type="Africa/Tripoli">
 				<usesMetazone to="1981-12-31 22:00" mzone="Europe_Eastern"/>
@@ -185,8 +186,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<timezone type="Africa/Windhoek">
 				<usesMetazone to="1990-03-20 22:00" mzone="Africa_Southern"/>
 				<usesMetazone to="1994-03-20 22:00" from="1990-03-20 22:00" mzone="Africa_Central"/>
-				<usesMetazone to="2017-09-03 01:00" from="1994-03-20 22:00" mzone="Africa_Western"/>
-				<usesMetazone from="2017-09-03 01:00" mzone="Africa_Central"/>
+				<usesMetazone to="2017-10-23 22:00" from="1994-03-20 22:00" mzone="Africa_Western"/>
+				<usesMetazone from="2017-10-23 22:00" mzone="Africa_Central"/>
 			</timezone>
 			<timezone type="America/Adak">
 				<usesMetazone to="1983-10-30 12:00" mzone="Bering"/>
@@ -560,7 +561,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</timezone>
 			<timezone type="America/Metlakatla">
 				<usesMetazone to="2015-11-01 10:00" mzone="America_Pacific"/>
-				<usesMetazone from="2015-11-01 10:00" mzone="Alaska"/>
+				<usesMetazone to="2018-11-04 10:00" from="2015-11-01 10:00" mzone="Alaska"/>
+				<usesMetazone to="2019-01-20 10:00" from="2018-11-04 10:00" mzone="America_Pacific"/>
+				<usesMetazone from="2019-01-20 10:00" mzone="Alaska"/>
 			</timezone>
 			<timezone type="America/Mexico_City">
 				<usesMetazone mzone="America_Central"/>
@@ -761,7 +764,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<usesMetazone to="2011-10-27 18:00" from="2010-03-04 15:00" mzone="Australia_Western"/>
 				<usesMetazone to="2012-02-21 17:00" from="2011-10-27 18:00" mzone="Casey"/>
 				<usesMetazone to="2016-10-21 16:00" from="2012-02-21 17:00" mzone="Australia_Western"/>
-				<usesMetazone from="2016-10-21 16:00" mzone="Casey"/>
+				<usesMetazone to="2018-03-10 17:00" from="2016-10-21 16:00" mzone="Casey"/>
+				<usesMetazone from="2018-03-10 17:00" mzone="Australia_Western"/>
 			</timezone>
 			<timezone type="Antarctica/Davis">
 				<usesMetazone mzone="Davis"/>
@@ -1003,16 +1007,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</timezone>
 			<timezone type="Asia/Pyongyang">
 				<usesMetazone to="2015-08-14 15:00" mzone="Korea"/>
-				<usesMetazone from="2015-08-14 15:00" mzone="Pyongyang"/>
+				<usesMetazone to="2018-05-04 15:00" from="2015-08-14 15:00" mzone="Pyongyang"/>
+				<usesMetazone from="2018-05-04 15:00" mzone="Korea"/>
 			</timezone>
 			<timezone type="Asia/Qatar">
 				<usesMetazone to="1972-05-31 20:00" mzone="Gulf"/>
 				<usesMetazone from="1972-05-31 20:00" mzone="Arabian"/>
 			</timezone>
+			<timezone type="Asia/Qostanay">
+				<usesMetazone from="2004-10-30 21:00" mzone="Kazakhstan_Eastern"/>
+			</timezone>
 			<timezone type="Asia/Qyzylorda">
 				<usesMetazone to="1991-12-15 19:00" mzone="Kizilorda"/>
 				<usesMetazone to="2004-10-30 21:00" from="1991-12-15 19:00" mzone="Qyzylorda"/>
-				<usesMetazone from="2004-10-30 21:00" mzone="Kazakhstan_Eastern"/>
+				<usesMetazone to="2018-12-20 18:00" from="2004-10-30 21:00" mzone="Kazakhstan_Eastern"/>
+				<usesMetazone from="2018-12-20 18:00" mzone="Kazakhstan_Western"/>
 			</timezone>
 			<timezone type="Asia/Rangoon">
 				<usesMetazone mzone="Myanmar"/>
@@ -1374,7 +1383,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</timezone>
 			<timezone type="Europe/Volgograd">
 				<usesMetazone to="1992-03-28 22:00" mzone="Volgograd"/>
-				<usesMetazone from="1992-03-28 22:00" mzone="Moscow"/>
+				<usesMetazone to="2018-10-27 23:00" from="1992-03-28 22:00" mzone="Moscow"/>
+				<usesMetazone from="2018-10-27 23:00" mzone="Volgograd"/>
 			</timezone>
 			<timezone type="Europe/Warsaw">
 				<usesMetazone mzone="Europe_Central"/>
@@ -1484,8 +1494,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<usesMetazone mzone="Kosrae"/>
 			</timezone>
 			<timezone type="Pacific/Kwajalein">
-				<usesMetazone to="1993-08-20 12:00" mzone="Kwajalein"/>
-				<usesMetazone from="1993-08-20 12:00" mzone="Marshall_Islands"/>
+				<usesMetazone to="1993-08-21 12:00" mzone="Kwajalein"/>
+				<usesMetazone from="1993-08-21 12:00" mzone="Marshall_Islands"/>
 			</timezone>
 			<timezone type="Pacific/Majuro">
 				<usesMetazone mzone="Marshall_Islands"/>
@@ -1555,7 +1565,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</timezone>
 		</metazoneInfo>
 
-		<mapTimezones type="metazones" typeVersion="2011n">
+		<mapTimezones type="metazones" typeVersion="2018e">
 			<mapZone other="Acre" territory="001" type="America/Rio_Branco"/>
 			<mapZone other="Afghanistan" territory="001" type="Asia/Kabul"/>
 			<mapZone other="Africa_Central" territory="001" type="Africa/Maputo"/>

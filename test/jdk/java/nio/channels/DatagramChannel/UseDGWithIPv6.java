@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @library /test/lib
  * @bug 6435300
  * @summary Check using IPv6 address does not crash the VM
  * @run main/othervm UseDGWithIPv6
@@ -35,6 +36,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.UnsupportedAddressTypeException;
 
+import jdk.test.lib.net.IPSupport;
+
 public class UseDGWithIPv6 {
     static String[] targets = {
         "3ffe:e00:811:b::21:5",
@@ -45,6 +48,8 @@ public class UseDGWithIPv6 {
 
     public static void main(String[] args) throws IOException
     {
+        IPSupport.throwSkippedExceptionIfNonOperational();
+
         ByteBuffer data = ByteBuffer.wrap("TESTING DATA".getBytes());
         DatagramChannel dgChannel = DatagramChannel.open();
 

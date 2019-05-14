@@ -35,7 +35,7 @@ package com.sun.source.tree;
  *   assert <em>condition</em> : <em>detail</em> ;
  * </pre>
  *
- * @jls section 14.10
+ * @jls 14.10 The assert Statement
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

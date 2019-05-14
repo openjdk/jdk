@@ -88,7 +88,7 @@ class OSThread: public CHeapObj<mtThread> {
 
   // Printing
   void print_on(outputStream* st) const;
-  void print() const                                { print_on(tty); }
+  void print() const;
 
   // For java intrinsics:
   static ByteSize interrupted_offset()            { return byte_offset_of(OSThread, _interrupted); }

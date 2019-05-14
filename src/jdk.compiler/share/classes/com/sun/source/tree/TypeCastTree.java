@@ -33,7 +33,7 @@ package com.sun.source.tree;
  *   ( <em>type</em> ) <em>expression</em>
  * </pre>
  *
- * @jls section 15.16
+ * @jls 15.16 Cast Expressions
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

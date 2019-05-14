@@ -1,21 +1,26 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2018 Unicode, Inc.
+<!-- Copyright © 1991-2019 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 13873 $"/>
+		<version number="$Revision: 14786 $"/>
 		<language type="fr"/>
 		<territory type="CA"/>
 	</identity>
 	<localeDisplayNames>
+		<localeDisplayPattern>
+			<localeKeyTypePattern>{0} : {1}</localeKeyTypePattern>
+		</localeDisplayPattern>
 		<languages>
 			<language type="ady">adygué</language>
 			<language type="ang">vieil anglais</language>
+			<language type="asa">assou</language>
 			<language type="az">azerbaïdjanais</language>
+			<language type="bbj">ghomala</language>
 			<language type="bez">bena</language>
 			<language type="bik">bicol</language>
 			<language type="byn">bilen</language>
@@ -34,61 +39,66 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="goh">vieux haut-allemand</language>
 			<language type="gu">gujarati</language>
 			<language type="ii">yi de Sichuan</language>
-			<language type="ilo">ilocano</language>
-			<language type="kbd">kabarde</language>
 			<language type="ken">kenyang</language>
-			<language type="kj">kuanyama</language>
+			<language type="kg">kongo</language>
 			<language type="kl">kalaallisut</language>
+			<language type="ks">kashmiri</language>
+			<language type="ksb">chambala</language>
 			<language type="ksh">kölsch</language>
 			<language type="liv">live</language>
+			<language type="lu">luba-katanga</language>
 			<language type="luo">luo</language>
 			<language type="lzh">chinois classique</language>
+			<language type="mgh">makhuwa-meetto</language>
 			<language type="mgo">meta’</language>
+			<language type="mr">marathe</language>
 			<language type="mwr">marwari</language>
 			<language type="mwv" draft="contributed">mentawai</language>
 			<language type="nds">bas allemand</language>
 			<language type="nds_NL" draft="contributed">bas saxon</language>
 			<language type="njo">ao naga</language>
+			<language type="nmg">kwasio</language>
 			<language type="nwc">newari classique</language>
 			<language type="nyn">nkole</language>
-			<language type="or">odia</language>
 			<language type="pau">palauan</language>
 			<language type="pdc">allemand de Pennsylvanie</language>
 			<language type="pdt">bas allemand mennonite</language>
 			<language type="peo">vieux perse</language>
 			<language type="pfl">palatin</language>
 			<language type="pro">ancien occitan</language>
+			<language type="quc">k’iche’</language>
 			<language type="rar">rarotonga</language>
-			<language type="rup">aroumain</language>
-			<language type="sat">santali</language>
+			<language type="sbp">sangu</language>
 			<language type="sdh">kurde méridional</language>
-			<language type="se">same du Nord</language>
 			<language type="sei">seri</language>
-			<language type="sg">sango</language>
 			<language type="sga">vieil irlandais</language>
 			<language type="sly">selayar</language>
-			<language type="sma">same du Sud</language>
-			<language type="smj">same de Lule</language>
-			<language type="sms">same skolt</language>
+			<language type="smn">sami d’Inari</language>
 			<language type="stq" draft="provisional">frison de Saterland</language>
 			<language type="sus" draft="provisional">sosso</language>
 			<language type="sw_CD">swahili congolais</language>
 			<language type="tru">turoyo</language>
 			<language type="tzm">tamazight</language>
-			<language type="vo">volapük</language>
+			<language type="ug" alt="variant">ouïghour</language>
 		</languages>
 		<scripts>
 			<script type="Deva">devanagari</script>
 			<script type="Gujr">gujarati</script>
 			<script type="Hanb">hanb</script>
+			<script type="Hans">idéogrammes han simplifiés</script>
 			<script type="Hans" alt="stand-alone">caractères chinois simplifiés</script>
+			<script type="Hant">idéogrammes han traditionnels</script>
 			<script type="Hant" alt="stand-alone">caractères chinois traditionnels</script>
 			<script type="Hrkt">syllabaires japonais</script>
-			<script type="Orya">odia</script>
 			<script type="Zsye">zsye</script>
 		</scripts>
 		<territories>
+			<territory type="030">Asie orientale</territory>
+			<territory type="039">Europe méridionale</territory>
+			<territory type="145">Asie occidentale</territory>
 			<territory type="151">Europe orientale</territory>
+			<territory type="154">Europe septentrionale</territory>
+			<territory type="155">Europe occidentale</territory>
 			<territory type="AC">île de l’Ascension</territory>
 			<territory type="AX">îles d’Åland</territory>
 			<territory type="BN">Brunei</territory>
@@ -114,7 +124,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="QO">Océanie lointaine</territory>
 			<territory type="RE">la Réunion</territory>
 			<territory type="SX">Saint-Martin (Pays-Bas)</territory>
-			<territory type="TK">Tokelau</territory>
 			<territory type="TL">Timor-Leste</territory>
 			<territory type="TL" alt="variant">Timor oriental</territory>
 			<territory type="UM">îles mineures éloignées des États-Unis</territory>
@@ -130,13 +139,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="collation" type="eor" draft="contributed">ordre multilingue européen</type>
 			<type key="collation" type="reformed" draft="contributed">Ordre de tri réformé</type>
 			<type key="collation" type="searchjl" draft="contributed">Rechercher par consonne initiale en hangeul</type>
+			<type key="d0" type="fwidth">pleine chasse</type>
+			<type key="d0" type="hwidth">demi-chasse</type>
 			<type key="m0" type="bgn">BGN (commission de toponymie des États-Unis)</type>
 			<type key="m0" type="ungegn">GENUNG</type>
 			<type key="numbers" type="gujr">chiffres gujaratis</type>
 			<type key="numbers" type="mong" draft="contributed">Chiffres mongols</type>
-			<type key="numbers" type="taml">chiffres tamouls traditionnels</type>
 		</types>
+		<codePatterns>
+			<codePattern type="language">langue : {0}</codePattern>
+			<codePattern type="script">écriture : {0}</codePattern>
+			<codePattern type="territory">région : {0}</codePattern>
+		</codePatterns>
 	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters type="auxiliary" draft="unconfirmed">[á å ä ã ā ē í ì ī ñ ó ò ö ø ú ǔ]</exemplarCharacters>
+	</characters>
 	<delimiters>
 		<alternateQuotationStart>”</alternateQuotationStart>
 		<alternateQuotationEnd>“</alternateQuotationEnd>
@@ -236,7 +254,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dateTimeFormats>
 					<availableFormats>
 						<dateFormatItem id="Bh">h 'h' B</dateFormatItem>
-						<dateFormatItem id="Bhm" draft="provisional">h 'h' mm B</dateFormatItem>
+						<dateFormatItem id="Bhm" draft="contributed">h 'h' mm B</dateFormatItem>
 						<dateFormatItem id="Bhms" draft="contributed">h 'h' mm 'min' ss 's' B</dateFormatItem>
 						<dateFormatItem id="EBhm" draft="contributed">E h 'h' mm B</dateFormatItem>
 						<dateFormatItem id="EBhms" draft="contributed">E h 'h' mm 'min' ss 's' B</dateFormatItem>
@@ -261,6 +279,51 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yyyyMM">y-MM G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatItem id="Bh">
+							<greatestDifference id="B" draft="contributed">h 'h' B – h 'h' B</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h – h 'h' B</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Bhm">
+							<greatestDifference id="B" draft="contributed">h 'h' mm B – h 'h' mm B</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h 'h' mm – h 'h' mm B</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h 'h' mm – h 'h' mm B</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G" draft="contributed">y G – y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G" draft="contributed">y-MM GGGGG – y-MM GGGGG</greatestDifference>
+							<greatestDifference id="M" draft="contributed">y-MM – y-MM GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="contributed">y-MM – y-MM GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d" draft="contributed">y-MM-dd – y-MM-dd GGGGG</greatestDifference>
+							<greatestDifference id="G" draft="contributed">y-MM-dd GGGGG – y-MM-dd GGGGG</greatestDifference>
+							<greatestDifference id="M" draft="contributed">y-MM-dd – y-MM-dd GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="contributed">y-MM-dd – y-MM-dd GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d" draft="contributed">E y-MM-dd – E y-MM-dd GGGGG</greatestDifference>
+							<greatestDifference id="G" draft="contributed">E y-MM-dd GGGGG – E y-MM-dd GGGGG</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E y-MM-dd GGGGG – E y-MM-dd GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="contributed">E y-MM-dd – E y-MM-dd GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G" draft="contributed">MMM y G – MMM y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">MMM y – MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">MMM y – MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="G" draft="contributed">d MMM y G – d MMM y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d MMM – d MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">d MMM y – d MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d" draft="contributed">E d MMM – E d MMM y G</greatestDifference>
+							<greatestDifference id="G" draft="contributed">E d MMM y G – E d MMM y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E d MMM – E d MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">E d MMM y – E d MMM y G</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="Md">
 							<greatestDifference id="d">MM-dd – MM-dd</greatestDifference>
 							<greatestDifference id="M">MM-dd – MM-dd</greatestDifference>
@@ -324,6 +387,30 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</monthWidth>
 					</monthContext>
 				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="narrow">
+							<day type="sun" draft="contributed">D</day>
+							<day type="mon" draft="contributed">L</day>
+							<day type="tue" draft="contributed">M</day>
+							<day type="wed" draft="contributed">M</day>
+							<day type="thu" draft="contributed">J</day>
+							<day type="fri" draft="contributed">V</day>
+							<day type="sat" draft="contributed">S</day>
+						</dayWidth>
+					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="narrow">
+							<day type="sun" draft="contributed">D</day>
+							<day type="mon" draft="contributed">L</day>
+							<day type="tue" draft="contributed">M</day>
+							<day type="wed" draft="contributed">M</day>
+							<day type="thu" draft="contributed">J</day>
+							<day type="fri" draft="contributed">V</day>
+							<day type="sat" draft="contributed">S</day>
+						</dayWidth>
+					</dayContext>
+				</days>
 				<dayPeriods>
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
@@ -337,13 +424,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<dayPeriod type="night1">du mat.</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
-							<dayPeriod type="midnight">minuit</dayPeriod>
 							<dayPeriod type="am">a</dayPeriod>
 							<dayPeriod type="noon">midi</dayPeriod>
 							<dayPeriod type="pm">p</dayPeriod>
-							<dayPeriod type="morning1">mat.</dayPeriod>
 							<dayPeriod type="afternoon1">après-midi</dayPeriod>
-							<dayPeriod type="evening1">soir</dayPeriod>
 							<dayPeriod type="night1">mat.</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
@@ -357,13 +441,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<dayPeriod type="pm">p.m.</dayPeriod>
 							<dayPeriod type="morning1">mat.</dayPeriod>
 							<dayPeriod type="afternoon1">après-midi</dayPeriod>
-							<dayPeriod type="evening1">soir</dayPeriod>
-							<dayPeriod type="night1">nuit</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
 							<dayPeriod type="am">a.m.</dayPeriod>
 							<dayPeriod type="pm">p.m.</dayPeriod>
-							<dayPeriod type="morning1">mat.</dayPeriod>
 							<dayPeriod type="afternoon1">après-midi</dayPeriod>
 							<dayPeriod type="evening1">soir</dayPeriod>
 							<dayPeriod type="night1">mat.</dayPeriod>
@@ -371,7 +452,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="am">a.m.</dayPeriod>
 							<dayPeriod type="pm">p.m.</dayPeriod>
-							<dayPeriod type="night1">nuit</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
@@ -446,8 +526,53 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yMM">y-MM</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatItem id="Bh">
+							<greatestDifference id="B" draft="contributed">h 'h' B – h 'h' B</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h – h 'h' B</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Bhm">
+							<greatestDifference id="B" draft="contributed">h 'h' mm B – h 'h' mm B</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h 'h' mm – h 'h' mm B</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h 'h' mm – h 'h' mm B</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d – d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G" draft="contributed">y G – y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G" draft="contributed">y-MM GGGGG – y-MM GGGGG</greatestDifference>
+							<greatestDifference id="M" draft="contributed">y-MM – y-MM GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="contributed">y-MM – y-MM GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d" draft="contributed">y-MM-dd – y-MM-dd GGGGG</greatestDifference>
+							<greatestDifference id="G" draft="contributed">y-MM-dd GGGGG – y-MM-dd GGGGG</greatestDifference>
+							<greatestDifference id="M" draft="contributed">y-MM-dd – y-MM-dd GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="contributed">y-MM-dd – y-MM-dd GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d" draft="contributed">E y-MM-dd – E y-MM-dd GGGGG</greatestDifference>
+							<greatestDifference id="G" draft="contributed">E y-MM-dd GGGGG – E y-MM-dd GGGGG</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E y-MM-dd – E y-MM-dd GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="contributed">E y-MM-dd – E y-MM-dd GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G" draft="contributed">MMM y G – MMM y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">MMM y – MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">MMM y – MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="G" draft="contributed">d MMM y G – d MMM y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d MMM – d MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">d MMM y – d MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d" draft="contributed">E d MMM – E d MMM y G</greatestDifference>
+							<greatestDifference id="G" draft="contributed">E d MMM y G – E d MMM y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E d MMM – E d MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">E d MMM y – E d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">h 'h' a – h 'h' a</greatestDifference>
@@ -521,6 +646,65 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
+			<calendar type="hebrew">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1">tis.</month>
+							<month type="2">hes.</month>
+							<month type="4">téb.</month>
+							<month type="5">sché.</month>
+							<month type="13">ell.</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">T</month>
+							<month type="2" draft="contributed">H</month>
+							<month type="3" draft="contributed">K</month>
+							<month type="4" draft="contributed">T</month>
+							<month type="5" draft="contributed">S</month>
+							<month type="6" draft="contributed">A</month>
+							<month type="7" draft="contributed">A</month>
+							<month type="7" yeartype="leap" draft="contributed">A</month>
+							<month type="8" draft="contributed">N</month>
+							<month type="9" draft="contributed">I</month>
+							<month type="10" draft="contributed">S</month>
+							<month type="11" draft="contributed">T</month>
+							<month type="12" draft="contributed">A</month>
+							<month type="13" draft="contributed">E</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1">tis.</month>
+							<month type="2">hes.</month>
+							<month type="4">téb.</month>
+							<month type="5">sché.</month>
+							<month type="13">ell.</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">T</month>
+							<month type="2" draft="contributed">H</month>
+							<month type="3" draft="contributed">K</month>
+							<month type="4" draft="contributed">T</month>
+							<month type="5" draft="contributed">S</month>
+							<month type="6" draft="contributed">A</month>
+							<month type="7" draft="contributed">A</month>
+							<month type="7" yeartype="leap" draft="contributed">A</month>
+							<month type="8" draft="contributed">N</month>
+							<month type="9" draft="contributed">I</month>
+							<month type="10" draft="contributed">S</month>
+							<month type="11" draft="contributed">T</month>
+							<month type="12" draft="contributed">A</month>
+							<month type="13" draft="contributed">E</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<eras>
+					<eraAbbr>
+						<era type="0" draft="contributed">AM</era>
+					</eraAbbr>
+				</eras>
+			</calendar>
 			<calendar type="indian">
 				<months>
 					<monthContext type="format">
@@ -560,6 +744,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<eraNames>
 						<era type="0" draft="contributed">Saka</era>
 					</eraNames>
+					<eraAbbr>
+						<era type="0" draft="contributed">Saka</era>
+					</eraAbbr>
+					<eraNarrow>
+						<era type="0" draft="contributed">Saka</era>
+					</eraNarrow>
 				</eras>
 			</calendar>
 			<calendar type="islamic">
@@ -674,20 +864,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="year-short">
 				<displayName>a</displayName>
-				<relative type="0" draft="contributed">cette année</relative>
-			</field>
-			<field type="year-narrow">
-				<relative type="0" draft="contributed">cette année</relative>
 			</field>
 			<field type="quarter">
 				<relative type="-1">le trimestre dernier</relative>
 				<relative type="0">ce trimestre-ci</relative>
 				<relative type="1">le trimestre prochain</relative>
 			</field>
-			<field type="month-narrow">
-				<relativeTime type="future">
-					<relativeTimePattern count="other">+{0} m.</relativeTimePattern>
-				</relativeTime>
+			<field type="quarter-short">
+				<relative type="-1" draft="contributed">trim. dernier</relative>
+				<relative type="1" draft="contributed">trim. prochain</relative>
+			</field>
+			<field type="quarter-narrow">
+				<relative type="-1" draft="contributed">trim. dernier</relative>
+				<relative type="1" draft="contributed">trim.prochain</relative>
 			</field>
 			<field type="weekOfMonth">
 				<displayName>semaine du mois</displayName>
@@ -698,13 +887,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="weekOfMonth-narrow">
 				<displayName>sem. (mois)</displayName>
 			</field>
-			<field type="day-short">
-				<relative type="-2" draft="contributed">avant-hier</relative>
-				<relative type="2" draft="contributed">après-demain</relative>
+			<field type="day">
+				<relative type="-2">avant-hier</relative>
+				<relative type="-1">hier</relative>
+				<relative type="0">aujourd’hui</relative>
+				<relative type="1">demain</relative>
+				<relative type="2">après-demain</relative>
 			</field>
-			<field type="day-narrow">
-				<relative type="-2" draft="contributed">avant-hier</relative>
-				<relative type="2" draft="contributed">après-demain</relative>
+			<field type="day-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="other">dans {0} j</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="dayOfYear">
 				<displayName>jour de l’année</displayName>
@@ -785,6 +978,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="sat-narrow">
+				<relative type="-1">sam. dernier</relative>
 				<relative type="0">ce sam</relative>
 				<relative type="1">sam proch</relative>
 				<relativeTime type="future">
@@ -813,6 +1007,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="America/Barbados">
 				<exemplarCity>Barbade (La)</exemplarCity>
+			</zone>
+			<zone type="Asia/Dhaka">
+				<exemplarCity>Dacca</exemplarCity>
 			</zone>
 			<zone type="Asia/Thimphu">
 				<exemplarCity>Thimphou</exemplarCity>
@@ -1510,15 +1707,40 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</timeZoneNames>
 	</dates>
 	<numbers>
+		<symbols numberSystem="latn">
+			<group draft="contributed"> </group>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+		</symbols>
 		<decimalFormats numberSystem="latn">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
 			<decimalFormatLength type="long">
 				<decimalFormat>
 					<pattern type="1000" count="one">0 mille</pattern>
 					<pattern type="1000" count="other">0 mille</pattern>
+					<pattern type="10000" count="other">00 mille</pattern>
+					<pattern type="100000" count="other">000 mille</pattern>
+					<pattern type="1000000" count="one">0 million</pattern>
+					<pattern type="1000000" count="other">0 millions</pattern>
+					<pattern type="10000000" count="one">00 million</pattern>
+					<pattern type="10000000" count="other">00 millions</pattern>
+					<pattern type="100000000" count="other">000 millions</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
 			<decimalFormatLength type="short">
 				<decimalFormat>
+					<pattern type="1000" count="one">0 k</pattern>
+					<pattern type="1000" count="other">0 k</pattern>
+					<pattern type="10000" count="other">00 k</pattern>
+					<pattern type="100000" count="other">000 k</pattern>
+					<pattern type="1000000" count="one">0 M</pattern>
+					<pattern type="1000000" count="other">0 M</pattern>
+					<pattern type="10000000" count="other">00 M</pattern>
+					<pattern type="100000000" count="other">000 M</pattern>
 					<pattern type="1000000000" count="one">0 G</pattern>
 					<pattern type="1000000000" count="other">0 G</pattern>
 					<pattern type="10000000000" count="one">00 G</pattern>
@@ -1565,11 +1787,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currencyFormatLength>
 		</currencyFormats>
 		<currencies>
+			<currency type="AFN">
+				<symbol draft="contributed">AFN</symbol>
+			</currency>
 			<currency type="ARS">
 				<symbol draft="contributed">ARS</symbol>
 			</currency>
 			<currency type="AUD">
 				<symbol draft="contributed">$ AU</symbol>
+			</currency>
+			<currency type="AZN">
+				<displayName>manat azerbaïdjanais</displayName>
+				<displayName count="one">manat azerbaïdjanais</displayName>
+				<displayName count="other">manats azerbaïdjanais</displayName>
+			</currency>
+			<currency type="BBD">
+				<symbol draft="contributed">BBD</symbol>
+			</currency>
+			<currency type="BDT">
+				<symbol draft="contributed">BDT</symbol>
+			</currency>
+			<currency type="BHD">
+				<symbol draft="contributed">BHD</symbol>
 			</currency>
 			<currency type="BMD">
 				<symbol draft="contributed">BMD</symbol>
@@ -1577,17 +1816,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="BND">
 				<symbol draft="contributed">BND</symbol>
 			</currency>
-			<currency type="BSD">
-				<symbol draft="contributed">BSD</symbol>
-			</currency>
 			<currency type="BYN">
 				<symbol alt="narrow" draft="contributed">Br</symbol>
+			</currency>
+			<currency type="BYR">
+				<symbol draft="contributed">BYR</symbol>
 			</currency>
 			<currency type="BZD">
 				<symbol draft="contributed">BZD</symbol>
 			</currency>
 			<currency type="CAD">
 				<symbol>$</symbol>
+			</currency>
+			<currency type="CHF">
+				<symbol draft="contributed">CHF</symbol>
 			</currency>
 			<currency type="CLP">
 				<symbol draft="contributed">CLP</symbol>
@@ -1597,6 +1839,27 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="COP">
 				<symbol draft="contributed">COP</symbol>
+			</currency>
+			<currency type="CUP">
+				<symbol draft="contributed">CUP</symbol>
+			</currency>
+			<currency type="CVE">
+				<displayName>escudo cap-verdien</displayName>
+				<displayName count="one">escudo cap-verdien</displayName>
+				<displayName count="other">escudos cap-verdiens</displayName>
+				<symbol draft="contributed">CVE</symbol>
+			</currency>
+			<currency type="DKK">
+				<symbol draft="contributed">DKK</symbol>
+			</currency>
+			<currency type="DZD">
+				<symbol draft="contributed">DZD</symbol>
+			</currency>
+			<currency type="EGP">
+				<symbol draft="contributed">EGP</symbol>
+			</currency>
+			<currency type="EUR">
+				<symbol draft="contributed">€</symbol>
 			</currency>
 			<currency type="FJD">
 				<symbol draft="contributed">FJD</symbol>
@@ -1611,13 +1874,30 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<symbol draft="contributed">£</symbol>
 			</currency>
 			<currency type="GEL">
+				<displayName count="one">lari géorgien</displayName>
 				<symbol alt="narrow" draft="contributed">GEL</symbol>
+			</currency>
+			<currency type="GHS">
+				<symbol draft="contributed">GHS</symbol>
 			</currency>
 			<currency type="GIP">
 				<symbol draft="contributed">GIP</symbol>
 			</currency>
+			<currency type="GMD">
+				<symbol draft="contributed">GMD</symbol>
+			</currency>
+			<currency type="GNF">
+				<symbol draft="contributed">GNF</symbol>
+			</currency>
+			<currency type="GYD">
+				<displayName count="one">dollar guyanien</displayName>
+				<displayName count="other">dollars guyaniens</displayName>
+			</currency>
 			<currency type="HKD">
 				<symbol draft="contributed">$ HK</symbol>
+			</currency>
+			<currency type="IDR">
+				<symbol draft="contributed">IDR</symbol>
 			</currency>
 			<currency type="ILS">
 				<symbol draft="contributed">ILS</symbol>
@@ -1626,9 +1906,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<symbol draft="contributed">INR</symbol>
 			</currency>
 			<currency type="IRR">
-				<displayName draft="contributed">rial iranien</displayName>
-				<displayName count="one" draft="contributed">rial iranien</displayName>
-				<displayName count="other" draft="contributed">rials iraniens</displayName>
+				<displayName>rial iranien</displayName>
+				<displayName count="one">rial iranien</displayName>
+				<displayName count="other">rials iraniens</displayName>
+			</currency>
+			<currency type="ISK">
+				<symbol draft="contributed">ISK</symbol>
 			</currency>
 			<currency type="JPY">
 				<symbol draft="contributed">¥</symbol>
@@ -1636,42 +1919,145 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="KMF">
 				<symbol alt="narrow" draft="contributed">CF</symbol>
 			</currency>
+			<currency type="KPW">
+				<symbol draft="contributed">KPW</symbol>
+			</currency>
 			<currency type="KRW">
 				<symbol draft="contributed">KRW</symbol>
+			</currency>
+			<currency type="LAK">
+				<displayName>kip laotien</displayName>
+				<displayName count="one">kip laotien</displayName>
+				<displayName count="other">kips laotiens</displayName>
 			</currency>
 			<currency type="LBP">
 				<symbol draft="contributed">LBP</symbol>
 			</currency>
+			<currency type="LKR">
+				<symbol draft="contributed">LKR</symbol>
+			</currency>
+			<currency type="LRD">
+				<symbol draft="contributed">LRD</symbol>
+			</currency>
+			<currency type="LTL">
+				<symbol draft="contributed">LTL</symbol>
+			</currency>
+			<currency type="LVL">
+				<symbol draft="contributed">LVL</symbol>
+			</currency>
+			<currency type="LYD">
+				<symbol draft="contributed">LYD</symbol>
+			</currency>
+			<currency type="MAD">
+				<symbol draft="contributed">MAD</symbol>
+			</currency>
+			<currency type="MMK">
+				<symbol draft="contributed">MMK</symbol>
+			</currency>
+			<currency type="MNT">
+				<symbol draft="contributed">MNT</symbol>
+			</currency>
+			<currency type="MOP">
+				<symbol draft="contributed">MOP</symbol>
+			</currency>
+			<currency type="MRO">
+				<symbol draft="contributed">MRO</symbol>
+			</currency>
+			<currency type="MVR">
+				<symbol draft="contributed">MVR</symbol>
+			</currency>
 			<currency type="MXN">
 				<symbol draft="contributed">MXN</symbol>
+			</currency>
+			<currency type="MYR">
+				<symbol draft="contributed">MYR</symbol>
 			</currency>
 			<currency type="NAD">
 				<symbol draft="contributed">NAD</symbol>
 			</currency>
+			<currency type="NGN">
+				<symbol draft="contributed">NGN</symbol>
+			</currency>
 			<currency type="NIO">
 				<symbol alt="narrow" draft="contributed">C$</symbol>
+			</currency>
+			<currency type="NOK">
+				<symbol draft="contributed">NOK</symbol>
+			</currency>
+			<currency type="NPR">
+				<symbol draft="contributed">NPR</symbol>
 			</currency>
 			<currency type="NZD">
 				<symbol draft="contributed">$ NZ</symbol>
 			</currency>
 			<currency type="OMR">
-				<displayName draft="contributed">rial omanais</displayName>
-				<displayName count="one" draft="contributed">rial omanais</displayName>
-				<displayName count="other" draft="contributed">rials omanis</displayName>
+				<displayName>rial omanais</displayName>
+				<displayName count="one">rial omanais</displayName>
+				<displayName count="other">rials omanis</displayName>
+			</currency>
+			<currency type="PEN">
+				<displayName>nouveau sol péruvien</displayName>
+				<displayName count="one">nouveau sol péruvien</displayName>
+				<displayName count="other">nouveaux sols péruviens</displayName>
+				<symbol draft="contributed">PEN</symbol>
+			</currency>
+			<currency type="PGK">
+				<displayName>kina papou-néo-guinéen</displayName>
+				<displayName count="one">kina papou-néo-guinéen</displayName>
+				<displayName count="other">kinas papou-néo-guinéens</displayName>
+				<symbol draft="contributed">PGK</symbol>
+			</currency>
+			<currency type="PKR">
+				<symbol draft="contributed">PKR</symbol>
+			</currency>
+			<currency type="QAR">
+				<displayName>riyal du Qatar</displayName>
+				<displayName count="one">riyal du Qatar</displayName>
+				<displayName count="other">riyals du Qatar</displayName>
 			</currency>
 			<currency type="SAR">
-				<displayName draft="contributed">rial saoudien</displayName>
-				<displayName count="one" draft="contributed">rial saoudien</displayName>
-				<displayName count="other" draft="contributed">rials saoudiens</displayName>
+				<displayName>rial saoudien</displayName>
+				<displayName count="one">rial saoudien</displayName>
+				<displayName count="other">rials saoudiens</displayName>
 			</currency>
 			<currency type="SBD">
 				<symbol draft="contributed">SBD</symbol>
 			</currency>
+			<currency type="SDG">
+				<symbol draft="contributed">SDG</symbol>
+			</currency>
+			<currency type="SEK">
+				<symbol draft="contributed">SEK</symbol>
+			</currency>
 			<currency type="SGD">
 				<symbol draft="contributed">$ SG</symbol>
 			</currency>
+			<currency type="SHP">
+				<symbol draft="contributed">SHP</symbol>
+			</currency>
+			<currency type="SLL">
+				<symbol draft="contributed">SLL</symbol>
+			</currency>
 			<currency type="SRD">
+				<displayName>dollar du Suriname</displayName>
+				<displayName count="one">dollar du Suriname</displayName>
+				<displayName count="other">dollars du Suriname</displayName>
 				<symbol draft="contributed">SRD</symbol>
+			</currency>
+			<currency type="SSP">
+				<symbol draft="contributed">SSP</symbol>
+			</currency>
+			<currency type="STD">
+				<symbol draft="contributed">STD</symbol>
+			</currency>
+			<currency type="THB">
+				<symbol draft="contributed">THB</symbol>
+			</currency>
+			<currency type="TJS">
+				<symbol draft="contributed">TJS</symbol>
+			</currency>
+			<currency type="TND">
+				<symbol draft="contributed">TND</symbol>
 			</currency>
 			<currency type="TOP">
 				<displayName draft="contributed">pa’anga</displayName>
@@ -1694,6 +2080,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="VND">
 				<symbol draft="contributed">VND</symbol>
 			</currency>
+			<currency type="VUV">
+				<displayName>vatu</displayName>
+				<displayName count="one">vatu</displayName>
+				<displayName count="other">vatus</displayName>
+			</currency>
+			<currency type="WST">
+				<displayName>tala</displayName>
+				<displayName count="one">tala</displayName>
+				<displayName count="other">talas</displayName>
+				<symbol draft="contributed">WST</symbol>
+			</currency>
 			<currency type="XAF">
 				<symbol draft="contributed">XAF</symbol>
 			</currency>
@@ -1709,9 +2106,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">(devise inconnue)</displayName>
 			</currency>
 			<currency type="YER">
-				<displayName draft="contributed">rial yéménite</displayName>
-				<displayName count="one" draft="contributed">rial yéménite</displayName>
-				<displayName count="other" draft="contributed">rials yéménites</displayName>
+				<displayName>rial yéménite</displayName>
+				<displayName count="one">rial yéménite</displayName>
+				<displayName count="other">rials yéménites</displayName>
 			</currency>
 			<currency type="ZMW">
 				<symbol alt="narrow" draft="contributed">ZK</symbol>
@@ -1722,31 +2119,82 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<unitLength type="long">
 			<unit type="acceleration-g-force">
 				<displayName draft="contributed">force G</displayName>
+				<unitPattern count="one" draft="contributed">{0} fois la gravitation terrestre</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} fois la gravitation terrestre</unitPattern>
+			</unit>
+			<unit type="acceleration-meter-per-second-squared">
+				<unitPattern count="one">{0} mètre par seconde carrée</unitPattern>
+				<unitPattern count="other">{0} mètres par seconde carrée</unitPattern>
+			</unit>
+			<unit type="angle-radian">
+				<unitPattern count="one">{0} radian</unitPattern>
+				<unitPattern count="other">{0} radians</unitPattern>
+			</unit>
+			<unit type="angle-degree">
+				<unitPattern count="one">{0} degré</unitPattern>
+				<unitPattern count="other">{0} degrés</unitPattern>
+			</unit>
+			<unit type="angle-arc-minute">
+				<unitPattern count="one">{0} minute d’angle</unitPattern>
+				<unitPattern count="other">{0} minutes d’angle</unitPattern>
 			</unit>
 			<unit type="angle-arc-second">
 				<unitPattern count="one">{0} seconde d’angle</unitPattern>
 				<unitPattern count="other">{0} secondes d’angle</unitPattern>
 			</unit>
+			<unit type="area-square-kilometer">
+				<unitPattern count="one">{0} kilomètre carré</unitPattern>
+				<unitPattern count="other">{0} kilomètres carrés</unitPattern>
+			</unit>
+			<unit type="area-hectare">
+				<unitPattern count="one">{0} hectare</unitPattern>
+				<unitPattern count="other">{0} hectares</unitPattern>
+			</unit>
+			<unit type="area-square-meter">
+				<unitPattern count="one">{0} mètre carré</unitPattern>
+				<unitPattern count="other">{0} mètres carrés</unitPattern>
+			</unit>
+			<unit type="area-square-centimeter">
+				<unitPattern count="one">{0} centimètre carré</unitPattern>
+				<unitPattern count="other">{0} centimètres carrés</unitPattern>
+			</unit>
 			<unit type="area-square-mile">
+				<unitPattern count="one">{0} mille carré</unitPattern>
+				<unitPattern count="other">{0} milles carrés</unitPattern>
 				<perUnitPattern draft="contributed">{0} par mille carré</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
-				<displayName draft="contributed">acres</displayName>
-				<unitPattern count="one" draft="contributed">{0} acre</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} acres</unitPattern>
+				<displayName>acres</displayName>
+				<unitPattern count="one">{0} acre</unitPattern>
+				<unitPattern count="other">{0} acres</unitPattern>
 			</unit>
 			<unit type="area-square-yard">
 				<displayName>verges carrées</displayName>
-				<unitPattern count="one" draft="contributed">{0} verge carrée</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} verges carrées</unitPattern>
+				<unitPattern count="one">{0} verge carrée</unitPattern>
+				<unitPattern count="other">{0} verges carrées</unitPattern>
+			</unit>
+			<unit type="area-square-foot">
+				<unitPattern count="one">{0} pied carré</unitPattern>
+				<unitPattern count="other">{0} pieds carrés</unitPattern>
+			</unit>
+			<unit type="area-square-inch">
+				<unitPattern count="one">{0} pouce carré</unitPattern>
+				<unitPattern count="other">{0} pouces carrés</unitPattern>
 			</unit>
 			<unit type="concentr-part-per-million">
-				<displayName draft="contributed">parties par million</displayName>
-				<unitPattern count="one" draft="contributed">{0} partie par million</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} parties par million</unitPattern>
+				<displayName>parties par million</displayName>
+				<unitPattern count="one">{0} partie par million</unitPattern>
+				<unitPattern count="other">{0} parties par million</unitPattern>
+			</unit>
+			<unit type="concentr-percent">
+				<unitPattern count="other">{0} pour cent</unitPattern>
+			</unit>
+			<unit type="concentr-permille">
+				<unitPattern count="one">{0} pour mille</unitPattern>
+				<unitPattern count="other">{0} pour mille</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100kilometers">
-				<displayName draft="contributed">litres aux 100 kilomètres</displayName>
+				<displayName>litres aux 100 kilomètres</displayName>
 				<unitPattern count="one">{0} litre aux 100 kilomètres</unitPattern>
 				<unitPattern count="other">{0} litres aux 100 kilomètres</unitPattern>
 			</unit>
@@ -1760,8 +2208,175 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} mille au gallon impérial</unitPattern>
 				<unitPattern count="other">{0} milles au gallon impérial</unitPattern>
 			</unit>
+			<unit type="digital-terabyte">
+				<unitPattern count="one">{0} téraoctet</unitPattern>
+				<unitPattern count="other">{0} téraoctets</unitPattern>
+			</unit>
+			<unit type="digital-terabit">
+				<unitPattern count="one">{0} térabit</unitPattern>
+				<unitPattern count="other">{0} térabits</unitPattern>
+			</unit>
+			<unit type="digital-gigabyte">
+				<unitPattern count="one">{0} gigaoctet</unitPattern>
+				<unitPattern count="other">{0} gigaoctets</unitPattern>
+			</unit>
+			<unit type="digital-gigabit">
+				<unitPattern count="one">{0} gigabit</unitPattern>
+				<unitPattern count="other">{0} gigabits</unitPattern>
+			</unit>
+			<unit type="digital-megabyte">
+				<unitPattern count="one">{0} mégaoctet</unitPattern>
+				<unitPattern count="other">{0} mégaoctets</unitPattern>
+			</unit>
+			<unit type="digital-megabit">
+				<unitPattern count="one">{0} mégabit</unitPattern>
+				<unitPattern count="other">{0} mégabits</unitPattern>
+			</unit>
+			<unit type="digital-kilobyte">
+				<unitPattern count="one">{0} kilooctet</unitPattern>
+				<unitPattern count="other">{0} kilooctets</unitPattern>
+			</unit>
+			<unit type="digital-kilobit">
+				<unitPattern count="one">{0} kilobit</unitPattern>
+				<unitPattern count="other">{0} kilobits</unitPattern>
+			</unit>
+			<unit type="digital-byte">
+				<unitPattern count="one">{0} octet</unitPattern>
+				<unitPattern count="other">{0} octets</unitPattern>
+			</unit>
+			<unit type="digital-bit">
+				<unitPattern count="one">{0} bit</unitPattern>
+				<unitPattern count="other">{0} bits</unitPattern>
+			</unit>
+			<unit type="duration-year">
+				<unitPattern count="one">{0} an</unitPattern>
+				<unitPattern count="other">{0} ans</unitPattern>
+			</unit>
+			<unit type="duration-month">
+				<unitPattern count="one" draft="contributed">{0} mois</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} mois</unitPattern>
+			</unit>
+			<unit type="duration-week">
+				<unitPattern count="one" draft="contributed">{0} semaine</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} semaines</unitPattern>
+			</unit>
+			<unit type="duration-day">
+				<unitPattern count="one" draft="contributed">{0} jour</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} jours</unitPattern>
+			</unit>
+			<unit type="duration-hour">
+				<unitPattern count="one" draft="contributed">{0} heure</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} heures</unitPattern>
+			</unit>
 			<unit type="duration-second">
+				<unitPattern count="one" draft="contributed">{0} seconde</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} secondes</unitPattern>
 				<perUnitPattern draft="contributed">{0} à la seconde</perUnitPattern>
+			</unit>
+			<unit type="duration-millisecond">
+				<unitPattern count="one" draft="contributed">{0} milliseconde</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} millisecondes</unitPattern>
+			</unit>
+			<unit type="duration-microsecond">
+				<unitPattern count="one" draft="contributed">{0} microseconde</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} microsecondes</unitPattern>
+			</unit>
+			<unit type="duration-nanosecond">
+				<unitPattern count="one" draft="contributed">{0} nanoseconde</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} nanosecondes</unitPattern>
+			</unit>
+			<unit type="electric-ampere">
+				<unitPattern count="one">{0} ampère</unitPattern>
+				<unitPattern count="other">{0} ampères</unitPattern>
+			</unit>
+			<unit type="electric-milliampere">
+				<unitPattern count="one">{0} milliampère</unitPattern>
+				<unitPattern count="other">{0} milliampères</unitPattern>
+			</unit>
+			<unit type="electric-ohm">
+				<unitPattern count="one">{0} ohm</unitPattern>
+				<unitPattern count="other">{0} ohms</unitPattern>
+			</unit>
+			<unit type="electric-volt">
+				<unitPattern count="one">{0} volt</unitPattern>
+				<unitPattern count="other">{0} volts</unitPattern>
+			</unit>
+			<unit type="energy-kilocalorie">
+				<unitPattern count="one">{0} kilocalorie</unitPattern>
+				<unitPattern count="other">{0} kilocalories</unitPattern>
+			</unit>
+			<unit type="energy-calorie">
+				<unitPattern count="one">{0} calorie</unitPattern>
+				<unitPattern count="other">{0} calories</unitPattern>
+			</unit>
+			<unit type="energy-foodcalorie">
+				<unitPattern count="one">{0} kilocalorie</unitPattern>
+				<unitPattern count="other">{0} kilocalories</unitPattern>
+			</unit>
+			<unit type="energy-kilojoule">
+				<unitPattern count="one">{0} kilojoule</unitPattern>
+				<unitPattern count="other">{0} kilojoules</unitPattern>
+			</unit>
+			<unit type="energy-joule">
+				<unitPattern count="one">{0} joule</unitPattern>
+				<unitPattern count="other">{0} joules</unitPattern>
+			</unit>
+			<unit type="energy-kilowatt-hour">
+				<unitPattern count="one">{0} kilowattheure</unitPattern>
+				<unitPattern count="other">{0} kilowattheures</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName draft="contributed">Unités thermiques britanniques</displayName>
+				<unitPattern count="one" draft="contributed">{0} unité thermique britannique</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} unités thermiques britanniques</unitPattern>
+			</unit>
+			<unit type="frequency-gigahertz">
+				<unitPattern count="one">{0} gigahertz</unitPattern>
+				<unitPattern count="other">{0} gigahertz</unitPattern>
+			</unit>
+			<unit type="frequency-megahertz">
+				<unitPattern count="one">{0} mégahertz</unitPattern>
+				<unitPattern count="other">{0} mégahertz</unitPattern>
+			</unit>
+			<unit type="frequency-kilohertz">
+				<unitPattern count="one">{0} kilohertz</unitPattern>
+				<unitPattern count="other">{0} kilohertz</unitPattern>
+			</unit>
+			<unit type="frequency-hertz">
+				<unitPattern count="one">{0} hertz</unitPattern>
+				<unitPattern count="other">{0} hertz</unitPattern>
+			</unit>
+			<unit type="length-kilometer">
+				<unitPattern count="one" draft="contributed">{0} kilomètre</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} kilomètres</unitPattern>
+			</unit>
+			<unit type="length-meter">
+				<unitPattern count="one" draft="contributed">{0} mètre</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} mètres</unitPattern>
+			</unit>
+			<unit type="length-decimeter">
+				<unitPattern count="one" draft="contributed">{0} décimètre</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} décimètres</unitPattern>
+			</unit>
+			<unit type="length-centimeter">
+				<unitPattern count="one" draft="contributed">{0} centimètre</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} centimètres</unitPattern>
+			</unit>
+			<unit type="length-millimeter">
+				<unitPattern count="one">{0} millimètre</unitPattern>
+				<unitPattern count="other">{0} millimètres</unitPattern>
+			</unit>
+			<unit type="length-micrometer">
+				<unitPattern count="one" draft="contributed">{0} micromètre</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} micromètres</unitPattern>
+			</unit>
+			<unit type="length-nanometer">
+				<unitPattern count="one">{0} nanomètre</unitPattern>
+				<unitPattern count="other">{0} nanomètres</unitPattern>
+			</unit>
+			<unit type="length-picometer">
+				<unitPattern count="one" draft="contributed">{0} picomètre</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} picomètres</unitPattern>
 			</unit>
 			<unit type="length-mile">
 				<displayName>mille</displayName>
@@ -1773,14 +2388,121 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" draft="contributed">{0} verge</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} verges</unitPattern>
 			</unit>
+			<unit type="length-foot">
+				<unitPattern count="one" draft="contributed">{0} pied</unitPattern>
+			</unit>
+			<unit type="length-inch">
+				<unitPattern count="one" draft="contributed">{0} pouce</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} pouces</unitPattern>
+			</unit>
+			<unit type="length-parsec">
+				<unitPattern count="one" draft="contributed">{0} parsec</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} parsecs</unitPattern>
+			</unit>
+			<unit type="length-light-year">
+				<unitPattern count="one" draft="contributed">{0} année-lumière</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} années-lumière</unitPattern>
+			</unit>
+			<unit type="length-astronomical-unit">
+				<unitPattern count="one" draft="contributed">{0} unité astronomique</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} unités astronomiques</unitPattern>
+			</unit>
+			<unit type="length-nautical-mile">
+				<unitPattern count="one" draft="contributed">{0} mille marin</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} milles marins</unitPattern>
+			</unit>
+			<unit type="light-lux">
+				<unitPattern count="one">{0} lux</unitPattern>
+				<unitPattern count="other">{0} lux</unitPattern>
+			</unit>
+			<unit type="mass-metric-ton">
+				<unitPattern count="one">{0} tonne</unitPattern>
+				<unitPattern count="other">{0} tonnes</unitPattern>
+			</unit>
 			<unit type="mass-kilogram">
-				<perUnitPattern draft="contributed">{0} par kilogramme</perUnitPattern>
+				<unitPattern count="one">{0} kilogramme</unitPattern>
+				<unitPattern count="other">{0} kilogrammes</unitPattern>
+				<perUnitPattern>{0} par kilogramme</perUnitPattern>
+			</unit>
+			<unit type="mass-gram">
+				<unitPattern count="one" draft="contributed">{0} gramme</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} grammes</unitPattern>
+			</unit>
+			<unit type="mass-milligram">
+				<unitPattern count="one" draft="contributed">{0} milligramme</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} milligrammes</unitPattern>
+			</unit>
+			<unit type="mass-ton">
+				<unitPattern count="one">{0} tonne courte</unitPattern>
+				<unitPattern count="other">{0} tonnes courtes</unitPattern>
 			</unit>
 			<unit type="mass-stone">
 				<unitPattern count="other" draft="contributed">{0} stone</unitPattern>
 			</unit>
+			<unit type="mass-pound">
+				<unitPattern count="one" draft="contributed">{0} livre</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} livres</unitPattern>
+			</unit>
+			<unit type="mass-ounce">
+				<unitPattern count="one" draft="contributed">{0} once</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} onces</unitPattern>
+			</unit>
+			<unit type="mass-ounce-troy">
+				<unitPattern count="one" draft="contributed">{0} once troy</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} onces troy</unitPattern>
+			</unit>
+			<unit type="mass-carat">
+				<unitPattern count="one">{0} carat</unitPattern>
+				<unitPattern count="other">{0} carats</unitPattern>
+			</unit>
+			<unit type="power-gigawatt">
+				<unitPattern count="one">{0} gigawatt</unitPattern>
+				<unitPattern count="other">{0} gigawatts</unitPattern>
+			</unit>
+			<unit type="power-megawatt">
+				<unitPattern count="one">{0} mégawatt</unitPattern>
+				<unitPattern count="other">{0} mégawatts</unitPattern>
+			</unit>
+			<unit type="power-kilowatt">
+				<unitPattern count="one">{0} kilowatt</unitPattern>
+				<unitPattern count="other">{0} kilowatts</unitPattern>
+			</unit>
+			<unit type="power-watt">
+				<unitPattern count="one">{0} watt</unitPattern>
+				<unitPattern count="other">{0} watts</unitPattern>
+			</unit>
+			<unit type="power-milliwatt">
+				<unitPattern count="one">{0} milliwatt</unitPattern>
+				<unitPattern count="other">{0} milliwatts</unitPattern>
+			</unit>
+			<unit type="power-horsepower">
+				<unitPattern count="one">{0} cheval-vapeur</unitPattern>
+				<unitPattern count="other">{0} chevaux-vapeur</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<unitPattern count="one" draft="contributed">{0} hectopascal</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} hectopascals</unitPattern>
+			</unit>
+			<unit type="pressure-inch-hg">
+				<unitPattern count="one">{0} pouce de mercure</unitPattern>
+				<unitPattern count="other">{0} pouces de mercure</unitPattern>
+			</unit>
+			<unit type="pressure-millibar">
+				<unitPattern count="one">{0} millibar</unitPattern>
+				<unitPattern count="other">{0} millibars</unitPattern>
+			</unit>
+			<unit type="pressure-atmosphere">
+				<unitPattern count="one">{0} atmosphère</unitPattern>
+				<unitPattern count="other">{0} atmosphères</unitPattern>
+			</unit>
 			<unit type="speed-kilometer-per-hour">
-				<displayName draft="contributed">kilomètres à l’heure</displayName>
+				<displayName>kilomètres à l’heure</displayName>
+				<unitPattern count="one">{0} kilomètre par heure</unitPattern>
+				<unitPattern count="other">{0} kilomètres par heure</unitPattern>
+			</unit>
+			<unit type="speed-meter-per-second">
+				<unitPattern count="one">{0} mètre par seconde</unitPattern>
+				<unitPattern count="other">{0} mètres par seconde</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
 				<displayName>milles à l’heure</displayName>
@@ -1792,18 +2514,62 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0}°</unitPattern>
 				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
+			<unit type="temperature-celsius">
+				<unitPattern count="one">{0} degré Celsius</unitPattern>
+				<unitPattern count="other">{0} degrés Celsius</unitPattern>
+			</unit>
+			<unit type="temperature-fahrenheit">
+				<unitPattern count="one">{0} degré Fahrenheit</unitPattern>
+				<unitPattern count="other">{0} degrés Fahrenheit</unitPattern>
+			</unit>
+			<unit type="volume-cubic-kilometer">
+				<unitPattern count="one">{0} kilomètre cube</unitPattern>
+				<unitPattern count="other">{0} kilomètres cubes</unitPattern>
+			</unit>
+			<unit type="volume-cubic-meter">
+				<unitPattern count="one" draft="contributed">{0} mètre cube</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} mètres cubes</unitPattern>
+			</unit>
+			<unit type="volume-cubic-centimeter">
+				<unitPattern count="one" draft="contributed">{0} centimètre cube</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} centimètres cubes</unitPattern>
+			</unit>
+			<unit type="volume-cubic-mile">
+				<unitPattern count="one">{0} mille cube</unitPattern>
+				<unitPattern count="other">{0} milles cubes</unitPattern>
+			</unit>
 			<unit type="volume-cubic-yard">
 				<displayName>verges cubes</displayName>
 				<unitPattern count="one">{0} verge cube</unitPattern>
 				<unitPattern count="other">{0} verges cubes</unitPattern>
 			</unit>
+			<unit type="volume-cubic-foot">
+				<unitPattern count="one" draft="contributed">{0} pied cube</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} pieds cubes</unitPattern>
+			</unit>
+			<unit type="volume-cubic-inch">
+				<unitPattern count="one" draft="contributed">{0} pouce cube</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} pouces cubes</unitPattern>
+			</unit>
+			<unit type="volume-megaliter">
+				<unitPattern count="one" draft="contributed">{0} mégalitre</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} mégalitres</unitPattern>
+			</unit>
+			<unit type="volume-hectoliter">
+				<unitPattern count="one">{0} hectolitre</unitPattern>
+				<unitPattern count="other">{0} hectolitres</unitPattern>
+			</unit>
+			<unit type="volume-liter">
+				<unitPattern count="one" draft="contributed">{0} litre</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} litres</unitPattern>
+			</unit>
 			<unit type="volume-gallon-imperial">
 				<displayName draft="contributed">gallon impérial</displayName>
 			</unit>
 			<unit type="volume-quart">
-				<displayName draft="contributed">pintes</displayName>
-				<unitPattern count="one" draft="contributed">{0} pinte</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} pintes</unitPattern>
+				<displayName>pintes</displayName>
+				<unitPattern count="one">{0} pinte</unitPattern>
+				<unitPattern count="other">{0} pintes</unitPattern>
 			</unit>
 			<unit type="volume-pint">
 				<displayName>chopine</displayName>
@@ -1815,19 +2581,72 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} cuillère à thé</unitPattern>
 				<unitPattern count="other">{0} cuillères à thé</unitPattern>
 			</unit>
+			<coordinateUnit>
+				<displayName draft="contributed">point cardinal</displayName>
+				<coordinateUnitPattern type="west">{0} ouest</coordinateUnitPattern>
+			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
+			<unit type="acceleration-g-force">
+				<displayName>G</displayName>
+				<unitPattern count="one">{0} G</unitPattern>
+				<unitPattern count="other">{0} G</unitPattern>
+			</unit>
+			<unit type="acceleration-meter-per-second-squared">
+				<unitPattern count="one">{0} m/s²</unitPattern>
+				<unitPattern count="other">{0} m/s²</unitPattern>
+			</unit>
+			<unit type="angle-radian">
+				<unitPattern count="one">{0} rad</unitPattern>
+				<unitPattern count="other">{0} rad</unitPattern>
+			</unit>
+			<unit type="area-square-kilometer">
+				<unitPattern count="one">{0} km²</unitPattern>
+				<unitPattern count="other">{0} km²</unitPattern>
+			</unit>
+			<unit type="area-hectare">
+				<unitPattern count="one">{0} ha</unitPattern>
+				<unitPattern count="other">{0} ha</unitPattern>
+			</unit>
+			<unit type="area-square-meter">
+				<unitPattern count="one">{0} m²</unitPattern>
+				<unitPattern count="other">{0} m²</unitPattern>
+			</unit>
+			<unit type="area-square-centimeter">
+				<unitPattern count="one">{0} cm²</unitPattern>
+				<unitPattern count="other">{0} cm²</unitPattern>
+			</unit>
+			<unit type="area-square-mile">
+				<unitPattern count="one">{0} mi²</unitPattern>
+				<unitPattern count="other">{0} mi²</unitPattern>
+			</unit>
+			<unit type="area-acre">
+				<unitPattern count="one">{0} ac</unitPattern>
+				<unitPattern count="other">{0} ac</unitPattern>
+			</unit>
 			<unit type="area-square-yard">
 				<displayName draft="contributed">vg²</displayName>
-				<unitPattern count="one" draft="contributed">{0} vg²</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} vg²</unitPattern>
+				<unitPattern count="one">{0} vg²</unitPattern>
+				<unitPattern count="other">{0} vg²</unitPattern>
 			</unit>
 			<unit type="area-square-foot">
 				<unitPattern count="one">{0} pi²</unitPattern>
 				<unitPattern count="other">{0} pi²</unitPattern>
 			</unit>
+			<unit type="area-square-inch">
+				<unitPattern count="one">{0} po²</unitPattern>
+				<unitPattern count="other">{0} po²</unitPattern>
+			</unit>
 			<unit type="concentr-karat">
 				<displayName>carats</displayName>
+			</unit>
+			<unit type="concentr-percent">
+				<unitPattern count="one">{0} %</unitPattern>
+				<unitPattern count="other">{0} %</unitPattern>
+			</unit>
+			<unit type="concentr-permille">
+				<unitPattern count="one">{0} ‰</unitPattern>
+				<unitPattern count="other">{0} ‰</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>L/km</displayName>
@@ -1839,19 +2658,197 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} L/100 km</unitPattern>
 				<unitPattern count="other">{0} L/100 km</unitPattern>
 			</unit>
+			<unit type="consumption-mile-per-gallon">
+				<unitPattern count="one">{0} mi/gal</unitPattern>
+				<unitPattern count="other">{0} mi/gal</unitPattern>
+			</unit>
 			<unit type="consumption-mile-per-gallon-imperial">
-				<displayName draft="contributed">mi/gal Imp</displayName>
-				<unitPattern count="one" draft="contributed">{0} mi/gal Imp</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} mi/gal Imp</unitPattern>
+				<displayName>mi/gal Imp</displayName>
+				<unitPattern count="one">{0} mi/gal Imp</unitPattern>
+				<unitPattern count="other">{0} mi/gal Imp</unitPattern>
+			</unit>
+			<unit type="digital-terabyte">
+				<unitPattern count="one">{0} To</unitPattern>
+				<unitPattern count="other">{0} To</unitPattern>
+			</unit>
+			<unit type="digital-terabit">
+				<displayName>Tb</displayName>
+				<unitPattern count="one">{0} Tb</unitPattern>
+				<unitPattern count="other">{0} Tb</unitPattern>
+			</unit>
+			<unit type="digital-gigabyte">
+				<unitPattern count="one">{0} Go</unitPattern>
+				<unitPattern count="other">{0} Go</unitPattern>
 			</unit>
 			<unit type="digital-gigabit">
 				<displayName>Gb</displayName>
+				<unitPattern count="one">{0} Gb</unitPattern>
+				<unitPattern count="other">{0} Gb</unitPattern>
+			</unit>
+			<unit type="digital-megabyte">
+				<unitPattern count="one">{0} Mo</unitPattern>
+				<unitPattern count="other">{0} Mo</unitPattern>
 			</unit>
 			<unit type="digital-megabit">
 				<displayName>Mb</displayName>
+				<unitPattern count="one">{0} Mb</unitPattern>
+				<unitPattern count="other">{0} Mb</unitPattern>
+			</unit>
+			<unit type="digital-kilobyte">
+				<unitPattern count="one">{0} ko</unitPattern>
+				<unitPattern count="other">{0} ko</unitPattern>
 			</unit>
 			<unit type="digital-kilobit">
 				<displayName>kb</displayName>
+				<unitPattern count="one">{0} kb</unitPattern>
+				<unitPattern count="other">{0} kb</unitPattern>
+			</unit>
+			<unit type="digital-byte">
+				<unitPattern count="one">{0} octet</unitPattern>
+				<unitPattern count="other">{0} octet</unitPattern>
+			</unit>
+			<unit type="digital-bit">
+				<unitPattern count="one">{0} bit</unitPattern>
+				<unitPattern count="other">{0} bit</unitPattern>
+			</unit>
+			<unit type="duration-century">
+				<displayName draft="contributed">si</displayName>
+			</unit>
+			<unit type="duration-year">
+				<unitPattern count="one">{0} an</unitPattern>
+				<unitPattern count="other">{0} ans</unitPattern>
+			</unit>
+			<unit type="duration-month">
+				<unitPattern count="one" draft="contributed">{0} m.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} m.</unitPattern>
+			</unit>
+			<unit type="duration-week">
+				<unitPattern count="one" draft="contributed">{0} sem.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} sem.</unitPattern>
+			</unit>
+			<unit type="duration-day">
+				<unitPattern count="one" draft="contributed">{0} j</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} j</unitPattern>
+			</unit>
+			<unit type="duration-hour">
+				<unitPattern count="one" draft="contributed">{0} h</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} h</unitPattern>
+			</unit>
+			<unit type="duration-minute">
+				<unitPattern count="one" draft="contributed">{0} min</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} min</unitPattern>
+			</unit>
+			<unit type="duration-second">
+				<unitPattern count="one">{0} s</unitPattern>
+				<unitPattern count="other">{0} s</unitPattern>
+			</unit>
+			<unit type="duration-millisecond">
+				<unitPattern count="one" draft="contributed">{0} ms</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ms</unitPattern>
+			</unit>
+			<unit type="duration-microsecond">
+				<unitPattern count="one" draft="contributed">{0} μs</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} μs</unitPattern>
+			</unit>
+			<unit type="duration-nanosecond">
+				<unitPattern count="one">{0} ns</unitPattern>
+				<unitPattern count="other">{0} ns</unitPattern>
+			</unit>
+			<unit type="electric-ampere">
+				<unitPattern count="one">{0} A</unitPattern>
+				<unitPattern count="other">{0} A</unitPattern>
+			</unit>
+			<unit type="electric-milliampere">
+				<unitPattern count="one">{0} mA</unitPattern>
+				<unitPattern count="other">{0} mA</unitPattern>
+			</unit>
+			<unit type="electric-ohm">
+				<unitPattern count="one">{0} Ω</unitPattern>
+				<unitPattern count="other">{0} Ω</unitPattern>
+			</unit>
+			<unit type="electric-volt">
+				<unitPattern count="one">{0} V</unitPattern>
+				<unitPattern count="other">{0} V</unitPattern>
+			</unit>
+			<unit type="energy-kilocalorie">
+				<unitPattern count="one">{0} kcal</unitPattern>
+				<unitPattern count="other">{0} kcal</unitPattern>
+			</unit>
+			<unit type="energy-calorie">
+				<unitPattern count="one">{0} cal</unitPattern>
+				<unitPattern count="other">{0} cal</unitPattern>
+			</unit>
+			<unit type="energy-foodcalorie">
+				<unitPattern count="one">{0} kcal</unitPattern>
+				<unitPattern count="other">{0} kcal</unitPattern>
+			</unit>
+			<unit type="energy-kilojoule">
+				<unitPattern count="one">{0} kJ</unitPattern>
+				<unitPattern count="other">{0} kJ</unitPattern>
+			</unit>
+			<unit type="energy-joule">
+				<unitPattern count="one">{0} J</unitPattern>
+				<unitPattern count="other">{0} J</unitPattern>
+			</unit>
+			<unit type="energy-kilowatt-hour">
+				<unitPattern count="one">{0} kWh</unitPattern>
+				<unitPattern count="other">{0} kWh</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<unitPattern count="one" draft="contributed">{0} BTU</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} BTU</unitPattern>
+			</unit>
+			<unit type="frequency-gigahertz">
+				<unitPattern count="one">{0} GHz</unitPattern>
+				<unitPattern count="other">{0} GHz</unitPattern>
+			</unit>
+			<unit type="frequency-megahertz">
+				<unitPattern count="one">{0} MHz</unitPattern>
+				<unitPattern count="other">{0} MHz</unitPattern>
+			</unit>
+			<unit type="frequency-kilohertz">
+				<unitPattern count="one">{0} kHz</unitPattern>
+				<unitPattern count="other">{0} kHz</unitPattern>
+			</unit>
+			<unit type="frequency-hertz">
+				<unitPattern count="one">{0} Hz</unitPattern>
+				<unitPattern count="other">{0} Hz</unitPattern>
+			</unit>
+			<unit type="length-kilometer">
+				<unitPattern count="one" draft="contributed">{0} km</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} km</unitPattern>
+			</unit>
+			<unit type="length-meter">
+				<unitPattern count="one" draft="contributed">{0} m</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} m</unitPattern>
+			</unit>
+			<unit type="length-decimeter">
+				<unitPattern count="one" draft="contributed">{0} dm</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} dm</unitPattern>
+			</unit>
+			<unit type="length-centimeter">
+				<unitPattern count="one" draft="contributed">{0} cm</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} cm</unitPattern>
+			</unit>
+			<unit type="length-millimeter">
+				<unitPattern count="one">{0} mm</unitPattern>
+				<unitPattern count="other">{0} mm</unitPattern>
+			</unit>
+			<unit type="length-micrometer">
+				<unitPattern count="one" draft="contributed">{0} µm</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} µm</unitPattern>
+			</unit>
+			<unit type="length-nanometer">
+				<unitPattern count="one">{0} nm</unitPattern>
+				<unitPattern count="other">{0} nm</unitPattern>
+			</unit>
+			<unit type="length-picometer">
+				<unitPattern count="one" draft="contributed">{0} pm</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} pm</unitPattern>
+			</unit>
+			<unit type="length-mile">
+				<unitPattern count="one">{0} mi</unitPattern>
+				<unitPattern count="other">{0} mi</unitPattern>
 			</unit>
 			<unit type="length-yard">
 				<displayName draft="contributed">vg</displayName>
@@ -1862,6 +2859,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" draft="contributed">{0} pi</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} pi</unitPattern>
 			</unit>
+			<unit type="length-inch">
+				<unitPattern count="one" draft="contributed">{0} po</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} po</unitPattern>
+			</unit>
+			<unit type="length-parsec">
+				<unitPattern count="one" draft="contributed">{0} pc</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} pc</unitPattern>
+			</unit>
+			<unit type="length-light-year">
+				<unitPattern count="one" draft="contributed">{0} al</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} al</unitPattern>
+			</unit>
 			<unit type="length-astronomical-unit">
 				<unitPattern count="one" draft="contributed">{0} ua</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} ua</unitPattern>
@@ -1871,15 +2880,145 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" draft="contributed">{0} NM</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} NM</unitPattern>
 			</unit>
+			<unit type="light-lux">
+				<unitPattern count="one">{0} lx</unitPattern>
+				<unitPattern count="other">{0} lx</unitPattern>
+			</unit>
+			<unit type="mass-metric-ton">
+				<unitPattern count="one" draft="contributed">{0} t</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} t</unitPattern>
+			</unit>
+			<unit type="mass-kilogram">
+				<unitPattern count="one" draft="contributed">{0} kg</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} kg</unitPattern>
+			</unit>
+			<unit type="mass-gram">
+				<unitPattern count="one">{0} g</unitPattern>
+				<unitPattern count="other">{0} g</unitPattern>
+			</unit>
+			<unit type="mass-milligram">
+				<unitPattern count="one">{0} mg</unitPattern>
+				<unitPattern count="other">{0} mg</unitPattern>
+			</unit>
+			<unit type="mass-microgram">
+				<unitPattern count="one" draft="contributed">{0} µg</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} µg</unitPattern>
+			</unit>
 			<unit type="mass-ton">
 				<displayName>tc</displayName>
 				<unitPattern count="one">{0} tc</unitPattern>
 				<unitPattern count="other">{0} tc</unitPattern>
 			</unit>
+			<unit type="mass-pound">
+				<unitPattern count="one" draft="contributed">{0} lb</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} lb</unitPattern>
+			</unit>
+			<unit type="mass-ounce">
+				<unitPattern count="one" draft="contributed">{0} oz</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} oz</unitPattern>
+			</unit>
+			<unit type="mass-ounce-troy">
+				<unitPattern count="one" draft="contributed">{0} oz t</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} oz t</unitPattern>
+			</unit>
+			<unit type="mass-carat">
+				<unitPattern count="one" draft="contributed">{0} ct</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ct</unitPattern>
+			</unit>
+			<unit type="power-gigawatt">
+				<unitPattern count="one">{0} GW</unitPattern>
+				<unitPattern count="other">{0} GW</unitPattern>
+			</unit>
+			<unit type="power-megawatt">
+				<unitPattern count="one">{0} MW</unitPattern>
+				<unitPattern count="other">{0} MW</unitPattern>
+			</unit>
+			<unit type="power-kilowatt">
+				<unitPattern count="one">{0} kW</unitPattern>
+				<unitPattern count="other">{0} kW</unitPattern>
+			</unit>
+			<unit type="power-watt">
+				<unitPattern count="one">{0} W</unitPattern>
+				<unitPattern count="other">{0} W</unitPattern>
+			</unit>
+			<unit type="power-milliwatt">
+				<unitPattern count="one">{0} mW</unitPattern>
+				<unitPattern count="other">{0} mW</unitPattern>
+			</unit>
+			<unit type="power-horsepower">
+				<unitPattern count="one">{0} ch</unitPattern>
+				<unitPattern count="other">{0} ch</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<unitPattern count="one" draft="contributed">{0} hPa</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} hPa</unitPattern>
+			</unit>
+			<unit type="pressure-millimeter-of-mercury">
+				<displayName>mm Hg</displayName>
+				<unitPattern count="one">{0} mm Hg</unitPattern>
+				<unitPattern count="other">{0} mm Hg</unitPattern>
+			</unit>
 			<unit type="pressure-pound-per-square-inch">
 				<displayName>psi</displayName>
 				<unitPattern count="one">{0} psi</unitPattern>
 				<unitPattern count="other">{0} psi</unitPattern>
+			</unit>
+			<unit type="pressure-inch-hg">
+				<displayName>po Hg</displayName>
+				<unitPattern count="one">{0} po Hg</unitPattern>
+				<unitPattern count="other">{0} po Hg</unitPattern>
+			</unit>
+			<unit type="pressure-millibar">
+				<unitPattern count="one">{0} mbar</unitPattern>
+				<unitPattern count="other">{0} mbar</unitPattern>
+			</unit>
+			<unit type="speed-kilometer-per-hour">
+				<unitPattern count="one" draft="contributed">{0} km/h</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} km/h</unitPattern>
+			</unit>
+			<unit type="speed-meter-per-second">
+				<unitPattern count="one">{0} m/s</unitPattern>
+				<unitPattern count="other">{0} m/s</unitPattern>
+			</unit>
+			<unit type="speed-mile-per-hour">
+				<unitPattern count="one">{0} mi/h</unitPattern>
+				<unitPattern count="other">{0} mi/h</unitPattern>
+			</unit>
+			<unit type="temperature-generic">
+				<unitPattern count="one">{0}°</unitPattern>
+			</unit>
+			<unit type="temperature-celsius">
+				<unitPattern count="one">{0} °C</unitPattern>
+				<unitPattern count="other">{0} °C</unitPattern>
+			</unit>
+			<unit type="temperature-fahrenheit">
+				<unitPattern count="one">{0} °F</unitPattern>
+				<unitPattern count="other">{0} °F</unitPattern>
+			</unit>
+			<unit type="temperature-kelvin">
+				<unitPattern count="one">{0} K</unitPattern>
+				<unitPattern count="other">{0} K</unitPattern>
+			</unit>
+			<unit type="torque-pound-foot">
+				<displayName draft="contributed">lb-pi</displayName>
+				<unitPattern count="one" draft="contributed">{0} lb-pi</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} lb-pi</unitPattern>
+			</unit>
+			<unit type="volume-cubic-kilometer">
+				<unitPattern count="one">{0} km³</unitPattern>
+				<unitPattern count="other">{0} km³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-meter">
+				<unitPattern count="one" draft="contributed">{0} m³</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} m³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-centimeter">
+				<unitPattern count="one" draft="contributed">{0} cm³</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} cm³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-mile">
+				<unitPattern count="one" draft="contributed">{0} mi³</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} mi³</unitPattern>
 			</unit>
 			<unit type="volume-cubic-yard">
 				<displayName>vg³</displayName>
@@ -1887,8 +3026,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} vg³</unitPattern>
 			</unit>
 			<unit type="volume-cubic-foot">
-				<unitPattern count="one" draft="contributed">{0} pi³</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} pi³</unitPattern>
+				<unitPattern count="one">{0} pi³</unitPattern>
+				<unitPattern count="other">{0} pi³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-inch">
+				<unitPattern count="one">{0} po³</unitPattern>
+				<unitPattern count="other">{0} po³</unitPattern>
 			</unit>
 			<unit type="volume-megaliter">
 				<displayName>ML</displayName>
@@ -1928,9 +3071,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern draft="contributed">{0}/gal Imp</perUnitPattern>
 			</unit>
 			<unit type="volume-quart">
-				<displayName draft="contributed">pte</displayName>
-				<unitPattern count="one" draft="contributed">{0} pte</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} pte</unitPattern>
+				<displayName>pte</displayName>
+				<unitPattern count="one">{0} pte</unitPattern>
+				<unitPattern count="other">{0} pte</unitPattern>
 			</unit>
 			<unit type="volume-pint">
 				<displayName>chop</displayName>
@@ -1941,6 +3084,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>oz liq.</displayName>
 				<unitPattern count="one">{0} oz liq.</unitPattern>
 				<unitPattern count="other">{0} oz liq.</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName draft="contributed">oz liq imp.</displayName>
+				<unitPattern count="one">{0} oz liq imp.</unitPattern>
+				<unitPattern count="other">{0} oz liq imp.</unitPattern>
 			</unit>
 			<unit type="volume-teaspoon">
 				<displayName>c. à t.</displayName>
@@ -1953,6 +3101,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" draft="contributed">{0}m/s²</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}m/s²</unitPattern>
 			</unit>
+			<unit type="concentr-percent">
+				<unitPattern count="one">{0} %</unitPattern>
+				<unitPattern count="other">{0} %</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-100kilometers">
 				<displayName draft="contributed">L/100 km</displayName>
 				<unitPattern count="one" draft="contributed">{0} L/100 km</unitPattern>
@@ -1963,12 +3115,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="contributed">´{0}s.</unitPattern>
 			</unit>
 			<unit type="duration-month">
+				<unitPattern count="one" draft="contributed">{0}m</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}m</unitPattern>
 				<perUnitPattern draft="contributed">{0}/m</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
+				<displayName>sem</displayName>
+				<unitPattern count="one" draft="contributed">{0}sem</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}sem</unitPattern>
 				<perUnitPattern draft="contributed">{0}/sem</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
+				<unitPattern count="one" draft="contributed">{0}m</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}m</unitPattern>
 				<perUnitPattern draft="contributed">{0}/m</perUnitPattern>
 			</unit>
 			<unit type="duration-microsecond">
@@ -1976,8 +3135,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="contributed">{0}µs</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
-				<unitPattern count="one" draft="contributed">{0}ns</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}ns</unitPattern>
+				<unitPattern count="one">{0}ns</unitPattern>
+				<unitPattern count="other">{0}ns</unitPattern>
 			</unit>
 			<unit type="length-decimeter">
 				<unitPattern count="one" draft="contributed">{0}dm</unitPattern>
@@ -2085,9 +3244,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<characterLabel type="ideographic_desc_characters">symboles de description sinographique</characterLabel>
 		<characterLabel type="keycap">dessus de touche</characterLabel>
 		<characterLabel type="sign_standard_symbols">signe ou symbole</characterLabel>
-		<characterLabel type="smiley">émoticône</characterLabel>
 		<characterLabel type="south_asian_scripts">écritures d’Asie du Sud</characterLabel>
 		<characterLabel type="southeast_asian_scripts">écritures d’Asie du Sud-Est</characterLabel>
 		<characterLabel type="western_asian_scripts">écritures d’Asie de l’Ouest</characterLabel>
 	</characterLabels>
+	<typographicNames>
+		<axisName type="opsz">taille optique</axisName>
+		<featureName type="onum">chiffres en bas de casse</featureName>
+	</typographicNames>
 </ldml>

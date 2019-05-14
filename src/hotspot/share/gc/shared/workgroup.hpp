@@ -239,7 +239,7 @@ public:
   virtual bool is_ConcurrentGC_thread() const;
   // Printing
   void print_on(outputStream* st) const;
-  virtual void print() const { print_on(tty); }
+  virtual void print() const;
 
 protected:
   AbstractWorkGang* _gang;

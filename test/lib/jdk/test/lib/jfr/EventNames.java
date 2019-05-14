@@ -82,6 +82,11 @@ public class EventNames {
     public final static String BiasedLockRevocation = PREFIX + "BiasedLockRevocation";
     public final static String BiasedLockSelfRevocation = PREFIX + "BiasedLockSelfRevocation";
     public final static String BiasedLockClassRevocation = PREFIX + "BiasedLockClassRevocation";
+    public final static String SymbolTableStatistics = PREFIX + "SymbolTableStatistics";
+    public final static String StringTableStatistics = PREFIX + "StringTableStatistics";
+    public final static String PlaceholderTableStatistics = PREFIX + "PlaceholderTableStatistics";
+    public final static String LoaderConstraintsTableStatistics = PREFIX + "LoaderConstraintsTableStatistics";
+    public final static String ProtectionDomainCacheTableStatistics = PREFIX + "ProtectionDomainCacheTableStatistics";
     // This event is hard to test
     public final static String ReservedStackActivation = PREFIX + "ReservedStackActivation";
 

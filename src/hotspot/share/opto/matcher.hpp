@@ -487,18 +487,7 @@ public:
   // [oop_reg + offset]
   // NullCheck oop_reg
   //
-  inline static bool gen_narrow_oop_implicit_null_checks() {
-    // Advice matcher to perform null checks on the narrow oop side.
-    // Implicit checks are not possible on the uncompressed oop side anyway
-    // (at least not for read accesses).
-    // Performs significantly better (especially on Power 6).
-    if (!os::zero_page_read_protected()) {
-      return true;
-    }
-    return Universe::narrow_oop_use_implicit_null_checks() &&
-           (narrow_oop_use_complex_address() ||
-            Universe::narrow_oop_base() != NULL);
-  }
+  static bool gen_narrow_oop_implicit_null_checks();
 
   // Is it better to copy float constants, or load them directly from memory?
   // Intel can load a float constant from a direct address, requiring no

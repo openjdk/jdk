@@ -7,13 +7,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 -->
 
 <supplementalData>
-    <version number="$Revision: 13922 $"/>
+    <version number="$Revision: 14982 $"/>
     <currencyData>
         <fractions>
             <info iso4217="ADP" digits="0" rounding="0"/>
             <info iso4217="AFN" digits="0" rounding="0"/>
             <info iso4217="ALL" digits="0" rounding="0"/>
-            <info iso4217="AMD" digits="0" rounding="0"/>
+            <info iso4217="AMD" digits="2" rounding="0" cashDigits="0" cashRounding="0"/>
             <info iso4217="BHD" digits="3" rounding="0"/>
             <info iso4217="BIF" digits="0" rounding="0"/>
             <info iso4217="BYR" digits="0" rounding="0"/>
@@ -22,7 +22,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <info iso4217="CHF" digits="2" rounding="0" cashRounding="5"/>
             <info iso4217="CLF" digits="4" rounding="0"/>
             <info iso4217="CLP" digits="0" rounding="0"/>
-            <info iso4217="COP" digits="0" rounding="0"/>
+            <info iso4217="COP" digits="2" rounding="0" cashDigits="0" cashRounding="0"/>
             <info iso4217="CRC" digits="2" rounding="0" cashDigits="0" cashRounding="0"/>
             <info iso4217="CZK" digits="2" rounding="0" cashDigits="0" cashRounding="0"/>
             <info iso4217="DEFAULT" digits="2" rounding="0"/>
@@ -30,9 +30,9 @@ For terms of use, see http://www.unicode.org/copyright.html
             <info iso4217="DKK" digits="2" rounding="0" cashRounding="50"/>
             <info iso4217="ESP" digits="0" rounding="0"/>
             <info iso4217="GNF" digits="0" rounding="0"/>
-            <info iso4217="GYD" digits="0" rounding="0"/>
+            <info iso4217="GYD" digits="2" rounding="0" cashDigits="0" cashRounding="0"/>
             <info iso4217="HUF" digits="2" rounding="0" cashDigits="0" cashRounding="0"/>
-            <info iso4217="IDR" digits="0" rounding="0"/>
+            <info iso4217="IDR" digits="2" rounding="0" cashDigits="0" cashRounding="0"/>
             <info iso4217="IQD" digits="0" rounding="0"/>
             <info iso4217="IRR" digits="0" rounding="0"/>
             <info iso4217="ISK" digits="0" rounding="0"/>
@@ -50,12 +50,12 @@ For terms of use, see http://www.unicode.org/copyright.html
             <info iso4217="MGA" digits="0" rounding="0"/>
             <info iso4217="MGF" digits="0" rounding="0"/>
             <info iso4217="MMK" digits="0" rounding="0"/>
-            <info iso4217="MNT" digits="0" rounding="0"/>
+            <info iso4217="MNT" digits="2" rounding="0" cashDigits="0" cashRounding="0"/>
             <info iso4217="MRO" digits="0" rounding="0"/>
-            <info iso4217="MUR" digits="0" rounding="0"/>
+            <info iso4217="MUR" digits="2" rounding="0" cashDigits="0" cashRounding="0"/>
             <info iso4217="NOK" digits="2" rounding="0" cashDigits="0" cashRounding="0"/>
             <info iso4217="OMR" digits="3" rounding="0"/>
-            <info iso4217="PKR" digits="0" rounding="0"/>
+            <info iso4217="PKR" digits="2" rounding="0" cashDigits="0" cashRounding="0"/>
             <info iso4217="PYG" digits="0" rounding="0"/>
             <info iso4217="RSD" digits="0" rounding="0"/>
             <info iso4217="RWF" digits="0" rounding="0"/>
@@ -67,11 +67,13 @@ For terms of use, see http://www.unicode.org/copyright.html
             <info iso4217="TMM" digits="0" rounding="0"/>
             <info iso4217="TND" digits="3" rounding="0"/>
             <info iso4217="TRL" digits="0" rounding="0"/>
-            <info iso4217="TZS" digits="0" rounding="0"/>
+            <info iso4217="TZS" digits="2" rounding="0" cashDigits="0" cashRounding="0"/>
             <info iso4217="TWD" digits="2" rounding="0" cashDigits="0" cashRounding="0"/>
             <info iso4217="UGX" digits="0" rounding="0"/>
-            <info iso4217="UZS" digits="0" rounding="0"/>
+            <info iso4217="UZS" digits="2" rounding="0" cashDigits="0" cashRounding="0"/>
             <info iso4217="UYI" digits="0" rounding="0"/>
+            <info iso4217="UYW" digits="4" rounding="0"/>
+            <info iso4217="VEF" digits="2" rounding="0" cashDigits="0" cashRounding="0"/>
             <info iso4217="VND" digits="0" rounding="0"/>
             <info iso4217="VUV" digits="0" rounding="0"/>
             <info iso4217="XAF" digits="0" rounding="0"/>
@@ -773,6 +775,7 @@ The printed version of ISO-4217:2001
         </region>
         <region iso3166="MV">
             <currency iso4217="MVR" from="1981-07-01"/>
+            <currency iso4217="MVP" from="1947-01-01" to="1981-07-01"/>
         </region>
         <region iso3166="MW">
             <currency iso4217="MWK" from="1971-02-15"/>
@@ -1092,6 +1095,7 @@ The printed version of ISO-4217:2001
             <currency iso4217="UYU" from="1993-03-01"/>
             <currency iso4217="UYP" from="1975-07-01" to="1993-03-01"/>
             <currency iso4217="UYI" tender="false"/>
+            <currency iso4217="UYW" tender="false"/>
         </region>
         <region iso3166="UZ">
             <currency iso4217="UZS" from="1994-07-01"/>
@@ -1105,7 +1109,8 @@ The printed version of ISO-4217:2001
             <currency iso4217="XCD" from="1965-10-06"/>
         </region>
         <region iso3166="VE">
-            <currency iso4217="VEF" from="2008-01-01"/>
+            <currency iso4217="VES" from="2018-08-20"/>
+            <currency iso4217="VEF" from="2008-01-01" to="2018-08-20"/>
             <currency iso4217="VEB" from="1871-05-11" to="2008-06-30"/>
         </region>
         <region iso3166="VG">
@@ -1220,10 +1225,10 @@ XXX Code for transations where no currency is involved
         <group type="001" contains="QU" status="deprecated"/> <!--European Union -->
         <group type="011" contains="BF BJ CI CV GH GM GN GW LR ML MR NE NG SH SL SN TG"/> <!--Western Africa -->
         <group type="013" contains="BZ CR GT HN MX NI PA SV"/> <!--Central America -->
-        <group type="014" contains="BI DJ ER ET IO KE KM MG MU MW MZ RE RW SC SO SS TZ UG YT ZM ZW"/> <!--Eastern Africa -->
+        <group type="014" contains="BI DJ ER ET IO KE KM MG MU MW MZ RE RW SC SO SS TF TZ UG YT ZM ZW"/> <!--Eastern Africa -->
         <group type="142" contains="145 143 030 034 035"/> <!--Asia -->
         <group type="143" contains="TM TJ KG KZ UZ"/> <!-- Central Asia -->
-        <group type="145" contains="AE AM AZ BH CY GE IL IQ JO KW LB OM PS QA SA SY TF TR YE"/> <!--Western Asia -->
+        <group type="145" contains="AE AM AZ BH CY GE IL IQ JO KW LB OM PS QA SA SY TR YE"/> <!--Western Asia -->
         <group type="145" contains="NT YD" status="deprecated"/> <!--Western Asia -->
         <group type="015" contains="DZ EG EH LY MA SD TN EA IC"/> <!--Northern Africa -->
         <group type="150" contains="154 155 151 039"/> <!--Europe -->
@@ -1492,6 +1497,7 @@ XXX Code for transations where no currency is involved
 		<language type="dje" territories="NE" alt="secondary"/>
 		<language type="dng" scripts="Cyrl"/>
 		<language type="dnj" scripts="Latn"/>
+		<language type="dnj" territories="CI" alt="secondary"/>
 		<language type="doi" scripts="Arab"/>
 		<language type="doi" scripts="Takr" territories="IN" alt="secondary"/>
 		<language type="dsb" scripts="Latn"/>
@@ -1517,7 +1523,7 @@ XXX Code for transations where no currency is involved
 		<language type="eky" scripts="Kali"/>
 		<language type="el" scripts="Grek" territories="CY GR"/>
 		<language type="en" scripts="Latn" territories="AG AI AS AU BB BI BM BS BW BZ CA CC CK CM CX DG DM ER FJ FK FM GB GD GG GH GI GM GU GY HK IE IM IN IO JE JM KE KI KN KY LC LR LS MG MH MP MS MT MU MW NA NF NG NR NU NZ PG PH PK PN PR PW RW SB SC SD SG SH SL SS SX SZ TC TK TO TT TV TZ UG UM US VC VG VI VU WS ZA ZM ZW"/>
-		<language type="en" scripts="Dsrt Shaw" territories="AC AR AT BA BD BE BG BR CH CL CY CZ DE DK DZ EE EG ES ET FI FR GR HR HU IL IQ IT JO KZ LB LK LT LU LV MA MX MY NL PL PT RO SE SI SK TA TH TR YE" alt="secondary"/>
+		<language type="en" scripts="Dsrt Shaw" territories="AC AE AR AT BA BD BE BG BR CH CL CY CZ DE DK DZ EE EG ES ET FI FR GR HR HU IL IQ IT JO KZ LB LK LT LU LV MA MX MY NL PL PT RO SE SI SK TA TH TR YE" alt="secondary"/>
 		<language type="enm" scripts="Latn" alt="secondary"/>
 		<language type="eo" scripts="Latn"/>
 		<language type="es" scripts="Latn" territories="AR BO CL CO CR CU DO EA EC ES GQ GT HN IC MX NI PA PE PR PY SV UY VE"/>
@@ -1534,7 +1540,7 @@ XXX Code for transations where no currency is involved
 		<language type="fa" territories="PK" alt="secondary"/>
 		<language type="fan" scripts="Latn"/>
 		<language type="fan" territories="GQ" alt="secondary"/>
-		<language type="ff" scripts="Latn"/>
+		<language type="ff" scripts="Latn Adlm"/>
 		<language type="ff" territories="GN SN" alt="secondary"/>
 		<language type="ffm" scripts="Latn"/>
 		<language type="ffm" territories="ML" alt="secondary"/>
@@ -1585,8 +1591,8 @@ XXX Code for transations where no currency is involved
 		<language type="gd" scripts="Latn"/>
 		<language type="gd" territories="GB" alt="secondary"/>
 		<language type="gez" scripts="Ethi" alt="secondary"/>
-		<language type="ggn" scripts="Deva"/>
-		<language type="ggn" scripts="Latn" alt="secondary"/>
+		<language type="gvr" scripts="Deva"/>
+		<language type="gvr" scripts="Latn" alt="secondary"/>
 		<language type="gil" scripts="Latn" territories="KI"/>
 		<language type="gjk" scripts="Arab"/>
 		<language type="gju" scripts="Arab"/>
@@ -1619,7 +1625,6 @@ XXX Code for transations where no currency is involved
 		<language type="guz" scripts="Latn"/>
 		<language type="guz" territories="KE" alt="secondary"/>
 		<language type="gv" scripts="Latn" territories="IM"/>
-		<language type="gvr" scripts="Deva"/>
 		<language type="gwi" scripts="Latn"/>
 		<language type="ha" scripts="Arab Latn"/>
 		<language type="ha" territories="NE NG" alt="secondary"/>
@@ -1758,7 +1763,7 @@ XXX Code for transations where no currency is involved
 		<language type="kn" territories="IN" alt="secondary"/>
 		<language type="knf" territories="SN" alt="secondary"/>
 		<language type="ko" scripts="Kore" territories="KP KR"/>
-		<language type="ko" territories="CN" alt="secondary"/>
+		<language type="ko" territories="CN US" alt="secondary"/>
 		<language type="koi" scripts="Cyrl"/>
 		<language type="koi" territories="RU" alt="secondary"/>
 		<language type="kok" scripts="Deva"/>
@@ -1841,7 +1846,7 @@ XXX Code for transations where no currency is involved
 		<language type="lu" territories="CD" alt="secondary"/>
 		<language type="lua" scripts="Latn"/>
 		<language type="lua" territories="CD" alt="secondary"/>
-		<language type="lui" scripts="Latn"/>
+		<language type="lui" scripts="Latn" alt="secondary"/>
 		<language type="lun" scripts="Latn"/>
 		<language type="luo" scripts="Latn"/>
 		<language type="luo" territories="KE" alt="secondary"/>
@@ -2243,7 +2248,6 @@ XXX Code for transations where no currency is involved
 		<language type="ts" scripts="Latn"/>
 		<language type="ts" territories="MZ ZA" alt="secondary"/>
 		<language type="tsd" scripts="Grek"/>
-		<language type="tsf" scripts="Deva"/>
 		<language type="tsg" scripts="Latn"/>
 		<language type="tsg" territories="PH" alt="secondary"/>
 		<language type="tsi" scripts="Latn"/>
@@ -2371,22 +2375,23 @@ XXX Code for transations where no currency is involved
 	</languageData>
  <!-- See http://unicode.org/cldr/data/diff/supplemental/territory_language_information.html for more information on territoryInfo. -->
 	<territoryInfo>
-		<territory type="AC" gdp="41800000" literacyPercent="99" population="940">	<!--Ascension Island-->
+		<territory type="AC" gdp="42230000" literacyPercent="99" population="940">	<!--Ascension Island-->
 			<languagePopulation type="en" populationPercent="99" references="R1020"/>	<!--English-->
 		</territory>
-		<territory type="AD" gdp="3327000000" literacyPercent="100" population="85702">	<!--Andorra-->
+		<territory type="AD" gdp="3327000000" literacyPercent="100" population="85708">	<!--Andorra-->
 			<languagePopulation type="ca" populationPercent="51" officialStatus="official"/>	<!--Catalan-->
 			<languagePopulation type="es" populationPercent="43"/>	<!--Spanish-->
 			<languagePopulation type="fr" populationPercent="6.7"/>	<!--French-->
 		</territory>
-		<territory type="AE" gdp="691900000000" literacyPercent="90" population="6072480">	<!--United Arab Emirates-->
+		<territory type="AE" gdp="696000000000" literacyPercent="90" population="9701320">	<!--United Arab Emirates-->
 			<languagePopulation type="ar" populationPercent="78" officialStatus="official"/>	<!--Arabic-->
+			<languagePopulation type="en" populationPercent="50"/>	<!--English-->
 			<languagePopulation type="ml" populationPercent="7"/>	<!--Malayalam-->
 			<languagePopulation type="ps" populationPercent="2.9"/>	<!--Pashto-->
 			<languagePopulation type="bal" populationPercent="2.3"/>	<!--Baluchi-->
 			<languagePopulation type="fa" populationPercent="1.9"/>	<!--Persian-->
 		</territory>
-		<territory type="AF" gdp="69510000000" literacyPercent="28.1" population="34124800">	<!--Afghanistan-->
+		<territory type="AF" gdp="69450000000" literacyPercent="28.1" population="34940800">	<!--Afghanistan-->
 			<languagePopulation type="fa" populationPercent="50" officialStatus="official"/>	<!--Persian-->
 			<languagePopulation type="ps" populationPercent="43" officialStatus="official" references="R1055"/>	<!--Pashto-->
 			<languagePopulation type="haz" populationPercent="5.9"/>	<!--Hazaragi-->
@@ -2395,46 +2400,46 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="prd" populationPercent="1.2"/>	<!--Parsi-Dari-->
 			<languagePopulation type="bal" populationPercent="0.67" officialStatus="official_regional"/>	<!--Baluchi-->
 			<languagePopulation type="bgn" writingPercent="5" populationPercent="0.63" references="R1209"/>	<!--Western Balochi-->
-			<languagePopulation type="ug" populationPercent="0.0088" references="R1165"/>	<!--Uyghur-->
-			<languagePopulation type="kk_Arab" populationPercent="0.0059" references="R1119"/>	<!--Kazakh (Arabic)-->
+			<languagePopulation type="ug" populationPercent="0.0086" references="R1165"/>	<!--Uyghur-->
+			<languagePopulation type="kk_Arab" populationPercent="0.0057" references="R1119"/>	<!--Kazakh (Arabic)-->
 		</territory>
-		<territory type="AG" gdp="2390000000" literacyPercent="99" population="94731">	<!--Antigua & Barbuda-->
+		<territory type="AG" gdp="2398000000" literacyPercent="99" population="95882">	<!--Antigua & Barbuda-->
 			<languagePopulation type="en" populationPercent="86" officialStatus="official"/>	<!--English-->
 			<languagePopulation type="pt" populationPercent="1.7"/>	<!--Portuguese-->
 		</territory>
-		<territory type="AI" gdp="175400000" literacyPercent="95" population="17087">	<!--Anguilla-->
+		<territory type="AI" gdp="175400000" literacyPercent="95" population="17422">	<!--Anguilla-->
 			<languagePopulation type="en" populationPercent="95" officialStatus="official"/>	<!--English-->
 		</territory>
-		<territory type="AL" gdp="35870000000" literacyPercent="96.8" population="3047990">	<!--Albania-->
+		<territory type="AL" gdp="36010000000" literacyPercent="96.8" population="3057220">	<!--Albania-->
 			<languagePopulation type="sq" populationPercent="100" officialStatus="official"/>	<!--Albanian-->
 			<languagePopulation type="el" populationPercent="1.9"/>	<!--Greek-->
 			<languagePopulation type="mk" populationPercent="0.47"/>	<!--Macedonian-->
 		</territory>
-		<territory type="AM" gdp="27210000000" literacyPercent="99.6" population="3045190">	<!--Armenia-->
+		<territory type="AM" gdp="28340000000" literacyPercent="99.6" population="3038220">	<!--Armenia-->
 			<languagePopulation type="hy" populationPercent="98" officialStatus="official"/>	<!--Armenian-->
 			<languagePopulation type="ku" populationPercent="3.3"/>	<!--Kurdish-->
 			<languagePopulation type="az" populationPercent="0" references="R1290"/>	<!--Azerbaijani-->
 		</territory>
-		<territory type="AO" gdp="192000000000" literacyPercent="70.4" population="29310300">	<!--Angola-->
+		<territory type="AO" gdp="193600000000" literacyPercent="70.4" population="30355900">	<!--Angola-->
 			<languagePopulation type="pt" populationPercent="67" officialStatus="official"/>	<!--Portuguese-->
 			<languagePopulation type="umb" populationPercent="29"/>	<!--Umbundu-->
 			<languagePopulation type="kmb" literacyPercent="10" populationPercent="25" references="R1034"/>	<!--Kimbundu-->
 			<languagePopulation type="ln" populationPercent="0.67" references="R1010"/>	<!--Lingala-->
 		</territory>
-		<territory type="AQ" gdp="17780000" literacyPercent="99" population="300">	<!--Antarctica-->
+		<territory type="AQ" gdp="17760000" literacyPercent="99" population="300">	<!--Antarctica-->
 			<languagePopulation type="und" populationPercent="100" references="R1060"/>	<!--Unknown language-->
 		</territory>
-		<territory type="AR" gdp="911500000000" literacyPercent="97.9" population="44293300">	<!--Argentina-->
+		<territory type="AR" gdp="922100000000" literacyPercent="97.9" population="44694200">	<!--Argentina-->
 			<languagePopulation type="es" populationPercent="100" officialStatus="official"/>	<!--Spanish-->
 			<languagePopulation type="en" populationPercent="7"/>	<!--English-->
-			<languagePopulation type="cy" populationPercent="0.066"/>	<!--Welsh-->
+			<languagePopulation type="cy" populationPercent="0.065"/>	<!--Welsh-->
 			<languagePopulation type="gn" populationPercent="0.047"/>	<!--Guarani-->
 		</territory>
-		<territory type="AS" gdp="711000000" literacyPercent="97" population="51504">	<!--American Samoa-->
+		<territory type="AS" gdp="658000000" literacyPercent="97" population="50826">	<!--American Samoa-->
 			<languagePopulation type="sm" populationPercent="99" officialStatus="official"/>	<!--Samoan-->
 			<languagePopulation type="en" populationPercent="97" officialStatus="de_facto_official"/>	<!--English-->
 		</territory>
-		<territory type="AT" gdp="434100000000" literacyPercent="98" population="8754410">	<!--Austria-->
+		<territory type="AT" gdp="441000000000" literacyPercent="98" population="8793370">	<!--Austria-->
 			<languagePopulation type="de" populationPercent="97" officialStatus="official"/>	<!--German-->
 			<languagePopulation type="bar" populationPercent="95"/>	<!--Bavarian-->
 			<languagePopulation type="en" populationPercent="73"/>	<!--English-->
@@ -2444,13 +2449,13 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="sl" populationPercent="0.37" officialStatus="official_regional"/>	<!--Slovenian-->
 			<languagePopulation type="hu" populationPercent="0.27" officialStatus="official_regional"/>	<!--Hungarian-->
 		</territory>
-		<territory type="AU" gdp="1235000000000" literacyPercent="99" population="23232400">	<!--Australia-->
+		<territory type="AU" gdp="1248000000000" literacyPercent="99" population="23470100">	<!--Australia-->
 			<languagePopulation type="en" populationPercent="96" officialStatus="de_facto_official" references="R1001"/>	<!--English-->
 			<languagePopulation type="zh_Hant" populationPercent="2.1"/>	<!--Chinese (Traditional)-->
 			<languagePopulation type="it" populationPercent="1.9"/>	<!--Italian-->
 			<languagePopulation type="wbp" populationPercent="0.011"/>	<!--Warlpiri-->
 		</territory>
-		<territory type="AW" gdp="2516000000" literacyPercent="96.8" population="115120">	<!--Aruba-->
+		<territory type="AW" gdp="4158000000" literacyPercent="96.8" population="116576">	<!--Aruba-->
 			<languagePopulation type="nl" populationPercent="97" officialStatus="official" references="R1000"/>	<!--Dutch-->
 			<languagePopulation type="pap" populationPercent="61" officialStatus="official"/>	<!--Papiamento-->
 			<languagePopulation type="en" populationPercent="2.6"/>	<!--English-->
@@ -2458,7 +2463,7 @@ XXX Code for transations where no currency is involved
 		<territory type="AX" gdp="929800000" literacyPercent="100" population="26200">	<!--Åland Islands-->
 			<languagePopulation type="sv" populationPercent="99" officialStatus="official"/>	<!--Swedish-->
 		</territory>
-		<territory type="AZ" gdp="166800000000" literacyPercent="99.8" population="9961400">	<!--Azerbaijan-->
+		<territory type="AZ" gdp="172200000000" literacyPercent="99.8" population="10046500">	<!--Azerbaijan-->
 			<languagePopulation type="az" populationPercent="89" officialStatus="official" references="R1120"/>	<!--Azerbaijani-->
 			<languagePopulation type="az_Cyrl" populationPercent="9.9" officialStatus="official" references="R1121"/>	<!--Azerbaijani (Cyrillic)-->
 			<languagePopulation type="tly" populationPercent="9.8"/>	<!--Talysh-->
@@ -2466,7 +2471,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="ttt" populationPercent="0.22"/>	<!--Muslim Tat-->
 			<languagePopulation type="tkr" populationPercent="0.16"/>	<!--Tsakhur-->
 		</territory>
-		<territory type="BA" gdp="43850000000" literacyPercent="98" population="3856180">	<!--Bosnia & Herzegovina-->
+		<territory type="BA" gdp="44830000000" literacyPercent="98" population="3849890">	<!--Bosnia & Herzegovina-->
 			<languagePopulation type="bs" populationPercent="99" officialStatus="official"/>	<!--Bosnian-->
 			<languagePopulation type="bs_Cyrl" writingPercent="5" populationPercent="99" officialStatus="official" references="R1083"/>	<!--Bosnian (Cyrillic)-->
 			<languagePopulation type="en" populationPercent="45"/>	<!--English-->
@@ -2474,10 +2479,10 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="sr" populationPercent="10" officialStatus="official"/>	<!--Serbian-->
 			<languagePopulation type="sr_Latn" writingPercent="5" populationPercent="10" officialStatus="official" references="R1003"/>	<!--Serbian (Latin)-->
 		</territory>
-		<territory type="BB" gdp="4919000000" literacyPercent="99.7" population="292336">	<!--Barbados-->
+		<territory type="BB" gdp="5218000000" literacyPercent="99.7" population="293131">	<!--Barbados-->
 			<languagePopulation type="en" populationPercent="100" officialStatus="official"/>	<!--English-->
 		</territory>
-		<territory type="BD" gdp="686500000000" literacyPercent="57.7" population="157827000">	<!--Bangladesh-->
+		<territory type="BD" gdp="690300000000" literacyPercent="57.7" population="159453000">	<!--Bangladesh-->
 			<languagePopulation type="bn" populationPercent="98" officialStatus="official"/>	<!--Bangla-->
 			<languagePopulation type="en" populationPercent="18"/>	<!--English-->
 			<languagePopulation type="rkt" literacyPercent="20" populationPercent="6.5" references="R1087"/>	<!--Rangpuri-->
@@ -2488,7 +2493,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="mro" populationPercent="0.018" references="R1105"/>	<!--Mru-->
 			<languagePopulation type="mni" populationPercent="0.011"/>	<!--Manipuri-->
 		</territory>
-		<territory type="BE" gdp="526400000000" literacyPercent="99" population="11491300">	<!--Belgium-->
+		<territory type="BE" gdp="529200000000" literacyPercent="99" population="11570800">	<!--Belgium-->
 			<languagePopulation type="en" populationPercent="59" references="R1052"/>	<!--English-->
 			<languagePopulation type="nl" populationPercent="55" officialStatus="official" references="R1004"/>	<!--Dutch-->
 			<languagePopulation type="fr" populationPercent="38" officialStatus="official"/>	<!--French-->
@@ -2496,57 +2501,59 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="vls" populationPercent="10"/>	<!--West Flemish-->
 			<languagePopulation type="wa" writingPercent="5" populationPercent="5.8" references="R1005"/>	<!--Walloon-->
 		</territory>
-		<territory type="BF" gdp="35680000000" literacyPercent="28.7" population="20107500">	<!--Burkina Faso-->
+		<territory type="BF" gdp="35850000000" literacyPercent="28.7" population="19742700">	<!--Burkina Faso-->
 			<languagePopulation type="mos" populationPercent="40" references="R1307"/>	<!--Mossi-->
 			<languagePopulation type="dyu" populationPercent="32" references="R1091"/>	<!--Dyula-->
 			<languagePopulation type="fr" populationPercent="22" officialStatus="official"/>	<!--French-->
+			<languagePopulation type="ff" populationPercent="0" references="R1150"/>	<!--Fulah-->
+			<languagePopulation type="ff_Adlm" populationPercent="0" references="R1150"/>	<!--Fulah (Adlam)-->
 		</territory>
-		<territory type="BG" gdp="152400000000" literacyPercent="98.4" population="7101510">	<!--Bulgaria-->
+		<territory type="BG" gdp="153500000000" literacyPercent="98.4" population="7057500">	<!--Bulgaria-->
 			<languagePopulation type="bg" populationPercent="100" officialStatus="official"/>	<!--Bulgarian-->
 			<languagePopulation type="en" populationPercent="25"/>	<!--English-->
 			<languagePopulation type="ru" populationPercent="23"/>	<!--Russian-->
 			<languagePopulation type="tr" populationPercent="11"/>	<!--Turkish-->
 			<languagePopulation type="de" populationPercent="8"/>	<!--German-->
 		</territory>
-		<territory type="BH" gdp="69770000000" literacyPercent="94.6" population="1410940">	<!--Bahrain-->
+		<territory type="BH" gdp="71170000000" literacyPercent="94.6" population="1442660">	<!--Bahrain-->
 			<languagePopulation type="ar" populationPercent="87" officialStatus="official" references="R1007"/>	<!--Arabic-->
 			<languagePopulation type="ml" populationPercent="3.3" references="R1109"/>	<!--Malayalam-->
 		</territory>
-		<territory type="BI" gdp="7985000000" literacyPercent="67.2" population="11466800">	<!--Burundi-->
+		<territory type="BI" gdp="8007000000" literacyPercent="67.2" population="11844500">	<!--Burundi-->
 			<languagePopulation type="rn" populationPercent="63" officialStatus="official"/>	<!--Rundi-->
 			<languagePopulation type="fr" populationPercent="59" officialStatus="official"/>	<!--French-->
-			<languagePopulation type="sw" populationPercent="0.055"/>	<!--Swahili-->
-			<languagePopulation type="en" populationPercent="0.054" officialStatus="official" references="R1308"/>	<!--English-->
+			<languagePopulation type="sw" populationPercent="0.054"/>	<!--Swahili-->
+			<languagePopulation type="en" populationPercent="0.053" officialStatus="official" references="R1308"/>	<!--English-->
 		</territory>
-		<territory type="BJ" gdp="25290000000" literacyPercent="42.4" population="11038800">	<!--Benin-->
+		<territory type="BJ" gdp="25390000000" literacyPercent="42.4" population="11340500">	<!--Benin-->
 			<languagePopulation type="fr" populationPercent="35" officialStatus="official"/>	<!--French-->
 			<languagePopulation type="fon" populationPercent="25"/>	<!--Fon-->
 			<languagePopulation type="yo" populationPercent="6.7"/>	<!--Yoruba-->
 		</territory>
-		<territory type="BL" gdp="255000000" literacyPercent="99" population="7184">	<!--St. Barthélemy-->
-			<languagePopulation type="fr" populationPercent="95" officialStatus="official"/>	<!--French-->
+		<territory type="BL" gdp="255000000" literacyPercent="99" population="7160">	<!--St. Barthélemy-->
+			<languagePopulation type="fr" populationPercent="96" officialStatus="official"/>	<!--French-->
 		</territory>
-		<territory type="BM" gdp="5198000000" literacyPercent="98" population="70864">	<!--Bermuda-->
+		<territory type="BM" gdp="6127000000" literacyPercent="98" population="71176">	<!--Bermuda-->
 			<languagePopulation type="en" populationPercent="92" officialStatus="official"/>	<!--English-->
 		</territory>
-		<territory type="BN" gdp="32910000000" literacyPercent="95.4" population="443593">	<!--Brunei-->
+		<territory type="BN" gdp="33870000000" literacyPercent="95.4" population="450565">	<!--Brunei-->
 			<languagePopulation type="ms" populationPercent="93" officialStatus="official"/>	<!--Malay-->
 			<languagePopulation type="zh_Hant" populationPercent="11"/>	<!--Chinese (Traditional)-->
 			<languagePopulation type="ms_Arab" populationPercent="5" officialStatus="official" references="R1229"/>	<!--Malay (Arabic)-->
 			<languagePopulation type="en" populationPercent="1.8"/>	<!--English-->
 		</territory>
-		<territory type="BO" gdp="83500000000" literacyPercent="91.2" population="11138200">	<!--Bolivia-->
+		<territory type="BO" gdp="83720000000" literacyPercent="91.2" population="11306300">	<!--Bolivia-->
 			<languagePopulation type="es" populationPercent="61" officialStatus="official" references="R1191"/>	<!--Spanish-->
 			<languagePopulation type="qu" populationPercent="32" officialStatus="official" references="R1008"/>	<!--Quechua-->
 			<languagePopulation type="ay" populationPercent="20" officialStatus="official"/>	<!--Aymara-->
 			<languagePopulation type="gn" populationPercent="0.45"/>	<!--Guarani-->
 			<languagePopulation type="aro" populationPercent="0.001"/>	<!--Araona-->
 		</territory>
-		<territory type="BQ" gdp="418000000" literacyPercent="99" population="20000">	<!--Caribbean Netherlands-->
+		<territory type="BQ" gdp="416400000" literacyPercent="96" population="20000">	<!--Caribbean Netherlands-->
 			<languagePopulation type="pap" populationPercent="81"/>	<!--Papiamento-->
 			<languagePopulation type="nl" populationPercent="8" officialStatus="official"/>	<!--Dutch-->
 		</territory>
-		<territory type="BR" gdp="3219000000000" literacyPercent="90.4" population="207353000">	<!--Brazil-->
+		<territory type="BR" gdp="3248000000000" literacyPercent="90.4" population="208847000">	<!--Brazil-->
 			<languagePopulation type="pt" populationPercent="91" officialStatus="official"/>	<!--Portuguese-->
 			<languagePopulation type="en" populationPercent="8"/>	<!--English-->
 			<languagePopulation type="de" populationPercent="0.84"/>	<!--German-->
@@ -2559,33 +2566,33 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="yrl" populationPercent="0.0052"/>	<!--Nheengatu-->
 			<languagePopulation type="xav" populationPercent="0.0048"/>	<!--Xavánte-->
 		</territory>
-		<territory type="BS" gdp="9339000000" literacyPercent="95.6" population="329988">	<!--Bahamas-->
+		<territory type="BS" gdp="12060000000" literacyPercent="95.6" population="332634">	<!--Bahamas-->
 			<languagePopulation type="en" populationPercent="100" officialStatus="official"/>	<!--English-->
 		</territory>
-		<territory type="BT" gdp="7011000000" literacyPercent="52.8" population="758288">	<!--Bhutan-->
+		<territory type="BT" gdp="7205000000" literacyPercent="52.8" population="766397">	<!--Bhutan-->
 			<languagePopulation type="dz" populationPercent="47" officialStatus="official"/>	<!--Dzongkha-->
 			<languagePopulation type="ne" populationPercent="17"/>	<!--Nepali-->
 			<languagePopulation type="tsj" populationPercent="15"/>	<!--Tshangla-->
 			<languagePopulation type="en" populationPercent="11"/>	<!--English-->
 			<languagePopulation type="lep" populationPercent="3.9"/>	<!--Lepcha-->
 		</territory>
-		<territory type="BV" gdp="44470" literacyPercent="99" population="1">	<!--Bouvet Island-->
+		<territory type="BV" gdp="44930" literacyPercent="99" population="1">	<!--Bouvet Island-->
 			<languagePopulation type="und" populationPercent="100"/>	<!--Unknown language-->
 		</territory>
-		<territory type="BW" gdp="39550000000" literacyPercent="85.1" population="2214860">	<!--Botswana-->
+		<territory type="BW" gdp="39010000000" literacyPercent="85.1" population="2249100">	<!--Botswana-->
 			<languagePopulation type="en" populationPercent="81" officialStatus="official" references="R1009"/>	<!--English-->
 			<languagePopulation type="tn" populationPercent="62" officialStatus="official"/>	<!--Tswana-->
 			<languagePopulation type="af" populationPercent="0.27"/>	<!--Afrikaans-->
 		</territory>
-		<territory type="BY" gdp="175900000000" literacyPercent="99.6" population="9549750">	<!--Belarus-->
+		<territory type="BY" gdp="179400000000" literacyPercent="99.6" population="9527540">	<!--Belarus-->
 			<languagePopulation type="be" populationPercent="100" officialStatus="official"/>	<!--Belarusian-->
 			<languagePopulation type="ru" populationPercent="12" officialStatus="official"/>	<!--Russian-->
 		</territory>
-		<territory type="BZ" gdp="3230000000" literacyPercent="76.9" population="360346">	<!--Belize-->
+		<territory type="BZ" gdp="3218000000" literacyPercent="76.9" population="385854">	<!--Belize-->
 			<languagePopulation type="en" populationPercent="100" officialStatus="official"/>	<!--English-->
 			<languagePopulation type="es" populationPercent="28"/>	<!--Spanish-->
 		</territory>
-		<territory type="CA" gdp="1764000000000" literacyPercent="99" population="35623700">	<!--Canada-->
+		<territory type="CA" gdp="1774000000000" literacyPercent="99" population="35881700">	<!--Canada-->
 			<languagePopulation type="en" populationPercent="86" officialStatus="official" references="R1194"/>	<!--English-->
 			<languagePopulation type="fr" populationPercent="22" officialStatus="official"/>	<!--French-->
 			<languagePopulation type="it" populationPercent="2" references="R1207"/>	<!--Italian-->
@@ -2597,7 +2604,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="iu" literacyPercent="30" populationPercent="0.042" officialStatus="official_regional" references="R1207"/>	<!--Inuktitut-->
 			<languagePopulation type="iu_Latn" literacyPercent="30" populationPercent="0.042" officialStatus="official_regional" references="R1207"/>	<!--Inuktitut (Latin)-->
 			<languagePopulation type="moe" populationPercent="0.033" references="R1063"/>	<!--Montagnais-->
-			<languagePopulation type="crj" populationPercent="0.021" references="R1063"/>	<!--Southern East Cree-->
+			<languagePopulation type="crj" populationPercent="0.02" references="R1063"/>	<!--Southern East Cree-->
 			<languagePopulation type="atj" populationPercent="0.016" references="R1063"/>	<!--Atikamekw-->
 			<languagePopulation type="crl" populationPercent="0.015" references="R1063"/>	<!--Northern East Cree-->
 			<languagePopulation type="csw" populationPercent="0.014" references="R1063"/>	<!--Swampy Cree-->
@@ -2605,17 +2612,17 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="ikt" literacyPercent="30" populationPercent="0.011" officialStatus="official_regional" references="R1207"/>	<!--Inuinnaqtun-->
 			<languagePopulation type="moh" populationPercent="0.0098" references="R1090"/>	<!--Mohawk-->
 			<languagePopulation type="dgr" populationPercent="0.0074" references="R1136"/>	<!--Dogrib-->
-			<languagePopulation type="den" populationPercent="0.0065"/>	<!--Slave-->
+			<languagePopulation type="den" populationPercent="0.0064"/>	<!--Slave-->
 			<languagePopulation type="scs" populationPercent="0.0035" references="R1172"/>	<!--North Slavey-->
 			<languagePopulation type="nsk" populationPercent="0.0033" references="R1063"/>	<!--Naskapi-->
-			<languagePopulation type="chp" populationPercent="0.0022" references="R1063"/>	<!--Chipewyan-->
+			<languagePopulation type="chp" populationPercent="0.0021" references="R1063"/>	<!--Chipewyan-->
 			<languagePopulation type="gwi" populationPercent="0.0016" references="R1173"/>	<!--Gwichʼin-->
 		</territory>
-		<territory type="CC" gdp="31680000" literacyPercent="99" population="596">	<!--Cocos (Keeling) Islands-->
+		<territory type="CC" gdp="31690000" literacyPercent="99" population="596">	<!--Cocos (Keeling) Islands-->
 			<languagePopulation type="ms_Arab" populationPercent="83"/>	<!--Malay (Arabic)-->
 			<languagePopulation type="en" populationPercent="17" officialStatus="de_facto_official"/>	<!--English-->
 		</territory>
-		<territory type="CD" gdp="67990000000" literacyPercent="66.8" population="83301200">	<!--Congo - Kinshasa-->
+		<territory type="CD" gdp="68600000000" literacyPercent="66.8" population="85281000">	<!--Congo - Kinshasa-->
 			<languagePopulation type="sw" populationPercent="50" officialStatus="official_regional" references="R1122"/>	<!--Swahili-->
 			<languagePopulation type="lua" populationPercent="9.6" officialStatus="official_regional" references="R1092"/>	<!--Luba-Lulua-->
 			<languagePopulation type="fr" populationPercent="3.8" officialStatus="official" references="R1002"/>	<!--French-->
@@ -2625,16 +2632,16 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="lol" populationPercent="0.61"/>	<!--Mongo-->
 			<languagePopulation type="rw" populationPercent="0.38"/>	<!--Kinyarwanda-->
 		</territory>
-		<territory type="CF" gdp="3395000000" literacyPercent="56.6" population="5625120">	<!--Central African Republic-->
+		<territory type="CF" gdp="3390000000" literacyPercent="56.6" population="5745060">	<!--Central African Republic-->
 			<languagePopulation type="fr" populationPercent="49" officialStatus="official"/>	<!--French-->
 			<languagePopulation type="sg" populationPercent="49" officialStatus="official" references="R1011"/>	<!--Sango-->
 			<languagePopulation type="ln" populationPercent="0.24"/>	<!--Lingala-->
 		</territory>
-		<territory type="CG" gdp="29160000000" literacyPercent="83.8" population="4954670">	<!--Congo - Brazzaville-->
+		<territory type="CG" gdp="29390000000" literacyPercent="83.8" population="5062020">	<!--Congo - Brazzaville-->
 			<languagePopulation type="fr" populationPercent="84" officialStatus="official"/>	<!--French-->
 			<languagePopulation type="ln" populationPercent="2.4"/>	<!--Lingala-->
 		</territory>
-		<territory type="CH" gdp="516700000000" literacyPercent="99" population="8236300">	<!--Switzerland-->
+		<territory type="CH" gdp="523100000000" literacyPercent="99" population="8292810">	<!--Switzerland-->
 			<languagePopulation type="de" populationPercent="73" officialStatus="official"/>	<!--German-->
 			<languagePopulation type="gsw" writingPercent="5" populationPercent="65" officialStatus="de_facto_official" references="R1006"/>	<!--Swiss German-->
 			<languagePopulation type="en" populationPercent="61" references="R1137"/>	<!--English-->
@@ -2646,7 +2653,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="rmo" populationPercent="0.29"/>	<!--Sinte Romani-->
 			<languagePopulation type="wae" populationPercent="0.12"/>	<!--Walser-->
 		</territory>
-		<territory type="CI" gdp="96270000000" literacyPercent="56.9" population="24184800">	<!--Côte d’Ivoire-->
+		<territory type="CI" gdp="97160000000" literacyPercent="56.9" population="26260600">	<!--Côte d’Ivoire-->
 			<languagePopulation type="fr" populationPercent="49" officialStatus="official"/>	<!--French-->
 			<languagePopulation type="bci" literacyPercent="10" populationPercent="11"/>	<!--Baoulé-->
 			<languagePopulation type="sef" writingPercent="5" populationPercent="4.3"/>	<!--Cebaara Senoufo-->
@@ -2654,19 +2661,19 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="kfo" populationPercent="0.23"/>	<!--Koro-->
 			<languagePopulation type="bqv" literacyPercent="10" populationPercent="0.17"/>	<!--Koro Wachi-->
 		</territory>
-		<territory type="CK" gdp="244100000" literacyPercent="95" population="9290">	<!--Cook Islands-->
-			<languagePopulation type="en" populationPercent="95" officialStatus="official"/>	<!--English-->
+		<territory type="CK" gdp="299900000" literacyPercent="95" population="9038">	<!--Cook Islands-->
+			<languagePopulation type="en" populationPercent="98" officialStatus="official"/>	<!--English-->
 		</territory>
-		<territory type="CL" gdp="452100000000" literacyPercent="98.6" population="17789300">	<!--Chile-->
+		<territory type="CL" gdp="452100000000" literacyPercent="98.6" population="17925300">	<!--Chile-->
 			<languagePopulation type="es" populationPercent="98" officialStatus="official" references="R1192"/>	<!--Spanish-->
 			<languagePopulation type="en" populationPercent="9.5"/>	<!--English-->
 			<languagePopulation type="arn" populationPercent="1.5" references="R1287"/>	<!--Mapuche-->
 		</territory>
-		<territory type="CM" gdp="81550000000" literacyPercent="71.3" population="24994900">	<!--Cameroon-->
+		<territory type="CM" gdp="89540000000" literacyPercent="71.3" population="25641000">	<!--Cameroon-->
 			<languagePopulation type="fr" populationPercent="68" officialStatus="official"/>	<!--French-->
 			<languagePopulation type="en" populationPercent="38" officialStatus="official" references="R1013"/>	<!--English-->
 			<languagePopulation type="bum" populationPercent="4.6"/>	<!--Bulu-->
-			<languagePopulation type="ff" populationPercent="3.6" references="R1216"/>	<!--Fulah-->
+			<languagePopulation type="ff" populationPercent="3.6" references="R1317"/>	<!--Fulah-->
 			<languagePopulation type="ewo" literacyPercent="15" populationPercent="3.1" references="R1025"/>	<!--Ewondo-->
 			<languagePopulation type="ybb" literacyPercent="2" populationPercent="1.6" references="R1114"/>	<!--Yemba-->
 			<languagePopulation type="bbj" literacyPercent="25" populationPercent="1.4" references="R1147"/>	<!--Ghomala-->
@@ -2676,7 +2683,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="bax" populationPercent="1.2"/>	<!--Bamun-->
 			<languagePopulation type="byv" literacyPercent="15" populationPercent="1.1" references="R1242"/>	<!--Medumba-->
 			<languagePopulation type="mua" populationPercent="1"/>	<!--Mundang-->
-			<languagePopulation type="maf" populationPercent="0.73"/>	<!--Mafa-->
+			<languagePopulation type="maf" populationPercent="0.74"/>	<!--Mafa-->
 			<languagePopulation type="bfd" literacyPercent="30" populationPercent="0.57" references="R1243"/>	<!--Bafut-->
 			<languagePopulation type="bss" literacyPercent="30" populationPercent="0.54" references="R1244"/>	<!--Akoose-->
 			<languagePopulation type="kkj" populationPercent="0.54"/>	<!--Kako-->
@@ -2687,10 +2694,11 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="ksf" populationPercent="0.32"/>	<!--Bafia-->
 			<languagePopulation type="agq" literacyPercent="20" populationPercent="0.14"/>	<!--Aghem-->
 			<languagePopulation type="ha_Arab" populationPercent="0.14"/>	<!--Hausa (Arabic)-->
-			<languagePopulation type="nmg" literacyPercent="10" populationPercent="0.036" references="R1246"/>	<!--Kwasio-->
-			<languagePopulation type="yav" populationPercent="0.0092"/>	<!--Yangben-->
+			<languagePopulation type="nmg" literacyPercent="10" populationPercent="0.035" references="R1246"/>	<!--Kwasio-->
+			<languagePopulation type="yav" populationPercent="0.009"/>	<!--Yangben-->
+			<languagePopulation type="ff_Adlm" populationPercent="0" references="R1150"/>	<!--Fulah (Adlam)-->
 		</territory>
-		<territory type="CN" gdp="23120000000000" literacyPercent="95.1" population="1379300000">	<!--China-->
+		<territory type="CN" gdp="23210000000000" literacyPercent="95.1" population="1384690000">	<!--China-->
 			<languagePopulation type="zh" populationPercent="90" officialStatus="official"/>	<!--Chinese-->
 			<languagePopulation type="wuu" populationPercent="6"/>	<!--Wu Chinese-->
 			<languagePopulation type="yue_Hans" populationPercent="5.2" references="R1219"/>	<!--Cantonese (Simplified)-->
@@ -2717,24 +2725,24 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="uz_Cyrl" populationPercent="0.0004"/>	<!--Uzbek (Cyrillic)-->
 			<languagePopulation type="lzh" populationPercent="0" references="R1150"/>	<!--Literary Chinese-->
 		</territory>
-		<territory type="CO" gdp="712500000000" literacyPercent="93.6" population="47698500">	<!--Colombia-->
+		<territory type="CO" gdp="711600000000" literacyPercent="93.6" population="48169000">	<!--Colombia-->
 			<languagePopulation type="es" populationPercent="93" officialStatus="official" references="R1014"/>	<!--Spanish-->
 			<languagePopulation type="guc" populationPercent="0.27"/>	<!--Wayuu-->
 		</territory>
-		<territory type="CP" gdp="42110" literacyPercent="99" population="1">	<!--Clipperton Island-->
+		<territory type="CP" gdp="42400" literacyPercent="99" population="1">	<!--Clipperton Island-->
 			<languagePopulation type="und" populationPercent="100" references="R1062"/>	<!--Unknown language-->
 		</territory>
-		<territory type="CR" gdp="85200000000" literacyPercent="96.3" population="4930260">	<!--Costa Rica-->
+		<territory type="CR" gdp="83940000000" literacyPercent="96.3" population="4987140">	<!--Costa Rica-->
 			<languagePopulation type="es" populationPercent="95" officialStatus="official" references="R1193"/>	<!--Spanish-->
 		</territory>
-		<territory type="CU" gdp="132900000000" literacyPercent="99.8" population="11147400">	<!--Cuba-->
+		<territory type="CU" gdp="137000000000" literacyPercent="99.8" population="11116400">	<!--Cuba-->
 			<languagePopulation type="es" populationPercent="100" officialStatus="official"/>	<!--Spanish-->
 		</territory>
-		<territory type="CV" gdp="3734000000" literacyPercent="84.9" population="560899">	<!--Cape Verde-->
+		<territory type="CV" gdp="3777000000" literacyPercent="84.9" population="568373">	<!--Cape Verde-->
 			<languagePopulation type="kea" populationPercent="91" references="R1031"/>	<!--Kabuverdianu-->
 			<languagePopulation type="pt" populationPercent="76" officialStatus="official"/>	<!--Portuguese-->
 		</territory>
-		<territory type="CW" gdp="3128000000" literacyPercent="99" population="149648">	<!--Curaçao-->
+		<territory type="CW" gdp="3128000000" literacyPercent="96" population="150241">	<!--Curaçao-->
 			<languagePopulation type="pap" populationPercent="81" officialStatus="de_facto_official" references="R1221"/>	<!--Papiamento-->
 			<languagePopulation type="nl" populationPercent="8" officialStatus="official" references="R1221"/>	<!--Dutch-->
 			<languagePopulation type="es" populationPercent="3.8" references="R1221"/>	<!--Spanish-->
@@ -2742,7 +2750,7 @@ XXX Code for transations where no currency is involved
 		<territory type="CX" gdp="117200000" literacyPercent="99" population="2205">	<!--Christmas Island-->
 			<languagePopulation type="en" populationPercent="63" officialStatus="official"/>	<!--English-->
 		</territory>
-		<territory type="CY" gdp="31190000000" literacyPercent="98.7" population="1221550">	<!--Cyprus-->
+		<territory type="CY" gdp="31780000000" literacyPercent="98.7" population="1237090">	<!--Cyprus-->
 			<languagePopulation type="el" populationPercent="95" officialStatus="official"/>	<!--Greek-->
 			<languagePopulation type="en" populationPercent="73"/>	<!--English-->
 			<languagePopulation type="tr" populationPercent="23" officialStatus="official"/>	<!--Turkish-->
@@ -2750,14 +2758,14 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="hy" populationPercent="0.22"/>	<!--Armenian-->
 			<languagePopulation type="ar" populationPercent="0.11"/>	<!--Arabic-->
 		</territory>
-		<territory type="CZ" gdp="372600000000" literacyPercent="99" population="10674700">	<!--Czechia-->
+		<territory type="CZ" gdp="375900000000" literacyPercent="99" population="10686300">	<!--Czechia-->
 			<languagePopulation type="cs" populationPercent="98" officialStatus="official"/>	<!--Czech-->
 			<languagePopulation type="en" populationPercent="27"/>	<!--English-->
 			<languagePopulation type="sk" populationPercent="16"/>	<!--Slovak-->
 			<languagePopulation type="de" populationPercent="15"/>	<!--German-->
 			<languagePopulation type="pl" populationPercent="0.49"/>	<!--Polish-->
 		</territory>
-		<territory type="DE" gdp="4150000000000" literacyPercent="99" population="80594000">	<!--Germany-->
+		<territory type="DE" gdp="4199000000000" literacyPercent="99" population="80457700">	<!--Germany-->
 			<languagePopulation type="de" populationPercent="91" officialStatus="official"/>	<!--German-->
 			<languagePopulation type="en" populationPercent="64"/>	<!--English-->
 			<languagePopulation type="fr" populationPercent="18" references="R1304"/>	<!--French-->
@@ -2784,16 +2792,16 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="stq" populationPercent="0.0012"/>	<!--Saterland Frisian-->
 			<languagePopulation type="pfl" populationPercent="0" references="R1150"/>	<!--Palatine German-->
 		</territory>
-		<territory type="DG" gdp="22230000" literacyPercent="99" population="500">	<!--Diego Garcia-->
+		<territory type="DG" gdp="22460000" literacyPercent="99" population="500">	<!--Diego Garcia-->
 			<languagePopulation type="en" populationPercent="99" officialStatus="de_facto_official" references="R1065"/>	<!--English-->
 		</territory>
-		<territory type="DJ" gdp="3640000000" literacyPercent="67.9" population="865267">	<!--Djibouti-->
+		<territory type="DJ" gdp="3640000000" literacyPercent="67.9" population="884017">	<!--Djibouti-->
 			<languagePopulation type="aa" populationPercent="42"/>	<!--Afar-->
 			<languagePopulation type="so" populationPercent="41"/>	<!--Somali-->
 			<languagePopulation type="ar" populationPercent="7.3" officialStatus="official"/>	<!--Arabic-->
 			<languagePopulation type="fr" populationPercent="2.1" officialStatus="official"/>	<!--French-->
 		</territory>
-		<territory type="DK" gdp="285500000000" literacyPercent="99" population="5605950">	<!--Denmark-->
+		<territory type="DK" gdp="287800000000" literacyPercent="99" population="5809500">	<!--Denmark-->
 			<languagePopulation type="da" populationPercent="93" officialStatus="official"/>	<!--Danish-->
 			<languagePopulation type="en" populationPercent="86"/>	<!--English-->
 			<languagePopulation type="de" populationPercent="47" officialStatus="official_regional" references="R1247"/>	<!--German-->
@@ -2802,45 +2810,45 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="kl" populationPercent="0.12" officialStatus="official_regional"/>	<!--Kalaallisut-->
 			<languagePopulation type="jut" populationPercent="0" references="R1150"/>	<!--Jutish-->
 		</territory>
-		<territory type="DM" gdp="851000000" literacyPercent="94" population="73897">	<!--Dominica-->
+		<territory type="DM" gdp="783000000" literacyPercent="94" population="74027">	<!--Dominica-->
 			<languagePopulation type="en" populationPercent="94" officialStatus="official"/>	<!--English-->
 		</territory>
-		<territory type="DO" gdp="172600000000" literacyPercent="90.1" population="10734200">	<!--Dominican Republic-->
+		<territory type="DO" gdp="173000000000" literacyPercent="90.1" population="10298800">	<!--Dominican Republic-->
 			<languagePopulation type="es" populationPercent="78" officialStatus="official"/>	<!--Spanish-->
-			<languagePopulation type="en" populationPercent="0.075"/>	<!--English-->
+			<languagePopulation type="en" populationPercent="0.078"/>	<!--English-->
 		</territory>
-		<territory type="DZ" gdp="629300000000" literacyPercent="72.6" population="40969400">	<!--Algeria-->
+		<territory type="DZ" gdp="630000000000" literacyPercent="72.6" population="41657500">	<!--Algeria-->
 			<languagePopulation type="arq" populationPercent="83"/>	<!--Algerian Arabic-->
 			<languagePopulation type="ar" populationPercent="74" officialStatus="official"/>	<!--Arabic-->
 			<languagePopulation type="fr" populationPercent="20" officialStatus="official" references="R1124"/>	<!--French-->
 			<languagePopulation type="kab" literacyPercent="10" populationPercent="7.8" references="R1293"/>	<!--Kabyle-->
 			<languagePopulation type="en" populationPercent="7"/>	<!--English-->
 		</territory>
-		<territory type="EA" gdp="5420000000" literacyPercent="97.7" population="150000">	<!--Ceuta & Melilla-->
+		<territory type="EA" gdp="5406000000" literacyPercent="97.7" population="150000">	<!--Ceuta & Melilla-->
 			<languagePopulation type="es" populationPercent="98" officialStatus="official" references="R1067"/>	<!--Spanish-->
 		</territory>
-		<territory type="EC" gdp="188500000000" literacyPercent="91.6" population="16290900">	<!--Ecuador-->
+		<territory type="EC" gdp="193000000000" literacyPercent="91.6" population="16498500">	<!--Ecuador-->
 			<languagePopulation type="es" populationPercent="96" officialStatus="official" references="R1210"/>	<!--Spanish-->
 			<languagePopulation type="qu" populationPercent="17" officialStatus="official" references="R1288"/>	<!--Quechua-->
 			<languagePopulation type="qug" populationPercent="5.7"/>	<!--Chimborazo Highland Quichua-->
 		</territory>
-		<territory type="EE" gdp="41200000000" literacyPercent="99.8" population="1251580">	<!--Estonia-->
+		<territory type="EE" gdp="41650000000" literacyPercent="99.8" population="1244290">	<!--Estonia-->
 			<languagePopulation type="et" populationPercent="71" officialStatus="official"/>	<!--Estonian-->
 			<languagePopulation type="ru" populationPercent="56"/>	<!--Russian-->
 			<languagePopulation type="en" populationPercent="50"/>	<!--English-->
 			<languagePopulation type="fi" populationPercent="21"/>	<!--Finnish-->
 			<languagePopulation type="vro" populationPercent="5.7"/>	<!--Võro-->
 		</territory>
-		<territory type="EG" gdp="1199000000000" literacyPercent="73.9" population="97041100">	<!--Egypt-->
+		<territory type="EG" gdp="1204000000000" literacyPercent="73.9" population="99413300">	<!--Egypt-->
 			<languagePopulation type="ar" populationPercent="94" officialStatus="official"/>	<!--Arabic-->
 			<languagePopulation type="arz" populationPercent="64"/>	<!--Egyptian Arabic-->
 			<languagePopulation type="en" populationPercent="35"/>	<!--English-->
 			<languagePopulation type="el" populationPercent="0.061"/>	<!--Greek-->
 		</territory>
-		<territory type="EH" gdp="906500000" literacyPercent="50" population="603253">	<!--Western Sahara-->
+		<territory type="EH" gdp="906500000" literacyPercent="50" population="619551">	<!--Western Sahara-->
 			<languagePopulation type="ar" populationPercent="100" officialStatus="official"/>	<!--Arabic-->
 		</territory>
-		<territory type="ER" gdp="9631000000" literacyPercent="68.9" population="5918920">	<!--Eritrea-->
+		<territory type="ER" gdp="9402000000" literacyPercent="68.9" population="5970650">	<!--Eritrea-->
 			<languagePopulation type="ti" populationPercent="60" officialStatus="de_facto_official" references="R1223"/>	<!--Tigrinya-->
 			<languagePopulation type="en" populationPercent="59" officialStatus="official" references="R1248"/>	<!--English-->
 			<languagePopulation type="tig" populationPercent="18"/>	<!--Tigre-->
@@ -2849,7 +2857,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="ssy" populationPercent="3.6" references="R1175"/>	<!--Saho-->
 			<languagePopulation type="byn" populationPercent="1.3" references="R1224"/>	<!--Blin-->
 		</territory>
-		<territory type="ES" gdp="1769000000000" literacyPercent="97.7" population="48958200">	<!--Spain-->
+		<territory type="ES" gdp="1778000000000" literacyPercent="97.7" population="49331100">	<!--Spain-->
 			<languagePopulation type="es" populationPercent="99" officialStatus="official" references="R1176"/>	<!--Spanish-->
 			<languagePopulation type="en" populationPercent="24"/>	<!--English-->
 			<languagePopulation type="ca" populationPercent="17" officialStatus="official_regional" references="R1177"/>	<!--Catalan-->
@@ -2858,7 +2866,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="ast" populationPercent="1.3" officialStatus="official_regional" references="R1096"/>	<!--Asturian-->
 			<languagePopulation type="ext" populationPercent="0.49"/>	<!--Extremaduran-->
 		</territory>
-		<territory type="ET" gdp="195800000000" literacyPercent="39" population="105350000">	<!--Ethiopia-->
+		<territory type="ET" gdp="200600000000" literacyPercent="39" population="108386000">	<!--Ethiopia-->
 			<languagePopulation type="en" populationPercent="43"/>	<!--English-->
 			<languagePopulation type="am" populationPercent="33" officialStatus="official"/>	<!--Amharic-->
 			<languagePopulation type="om" populationPercent="32"/>	<!--Oromo-->
@@ -2868,40 +2876,40 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="wal" populationPercent="1.8"/>	<!--Wolaytta-->
 			<languagePopulation type="aa" populationPercent="1.4"/>	<!--Afar-->
 		</territory>
-		<territory type="FI" gdp="242400000000" literacyPercent="100" population="5518370">	<!--Finland-->
+		<territory type="FI" gdp="244900000000" literacyPercent="100" population="5537360">	<!--Finland-->
 			<languagePopulation type="fi" populationPercent="94" officialStatus="official"/>	<!--Finnish-->
 			<languagePopulation type="en" populationPercent="70" references="R1110"/>	<!--English-->
 			<languagePopulation type="sv" populationPercent="44" officialStatus="official"/>	<!--Swedish-->
 			<languagePopulation type="de" populationPercent="18"/>	<!--German-->
 			<languagePopulation type="ru" populationPercent="0.81" references="R1110"/>	<!--Russian-->
 			<languagePopulation type="et" populationPercent="0.11"/>	<!--Estonian-->
-			<languagePopulation type="rmf" populationPercent="0.091" references="R1111"/>	<!--Kalo Finnish Romani-->
+			<languagePopulation type="rmf" populationPercent="0.09" references="R1111"/>	<!--Kalo Finnish Romani-->
 			<languagePopulation type="se" populationPercent="0.036"/>	<!--Northern Sami-->
 			<languagePopulation type="smn" populationPercent="0.011" references="R1112"/>	<!--Inari Sami-->
 			<languagePopulation type="sms" populationPercent="0.011" references="R1112"/>	<!--Skolt Sami-->
 		</territory>
-		<territory type="FJ" gdp="8647000000" literacyPercent="93.7" population="920938">	<!--Fiji-->
+		<territory type="FJ" gdp="8629000000" literacyPercent="93.7" population="926276">	<!--Fiji-->
 			<languagePopulation type="en" populationPercent="94" officialStatus="official"/>	<!--English-->
 			<languagePopulation type="hi" populationPercent="44" references="R1097"/>	<!--Hindi-->
 			<languagePopulation type="hif" populationPercent="41" officialStatus="official" references="R1299"/>	<!--Fiji Hindi-->
 			<languagePopulation type="fj" populationPercent="39" officialStatus="official"/>	<!--Fijian-->
 			<languagePopulation type="rtm" populationPercent="0.27"/>	<!--Rotuman-->
 		</territory>
-		<territory type="FK" gdp="281800000" literacyPercent="99" population="2931">	<!--Falkland Islands-->
-			<languagePopulation type="en" populationPercent="96" officialStatus="official"/>	<!--English-->
+		<territory type="FK" gdp="206400000" literacyPercent="99" population="3198">	<!--Falkland Islands-->
+			<languagePopulation type="en" populationPercent="88" officialStatus="official"/>	<!--English-->
 		</territory>
-		<territory type="FM" gdp="347000000" literacyPercent="89" population="104196">	<!--Micronesia-->
+		<territory type="FM" gdp="348000000" literacyPercent="89" population="103643">	<!--Micronesia-->
 			<languagePopulation type="en" populationPercent="57" officialStatus="official"/>	<!--English-->
 			<languagePopulation type="chk" populationPercent="30"/>	<!--Chuukese-->
 			<languagePopulation type="pon" populationPercent="23"/>	<!--Pohnpeian-->
 			<languagePopulation type="kos" populationPercent="7.7"/>	<!--Kosraean-->
-			<languagePopulation type="yap" populationPercent="6.3"/>	<!--Yapese-->
+			<languagePopulation type="yap" populationPercent="6.4"/>	<!--Yapese-->
 			<languagePopulation type="uli" populationPercent="2.9"/>	<!--Ulithian-->
 		</territory>
-		<territory type="FO" gdp="2001000000" literacyPercent="99" population="50730">	<!--Faroe Islands-->
+		<territory type="FO" gdp="2001000000" literacyPercent="99" population="51018">	<!--Faroe Islands-->
 			<languagePopulation type="fo" populationPercent="95" officialStatus="official"/>	<!--Faroese-->
 		</territory>
-		<territory type="FR" gdp="2826000000000" literacyPercent="99" population="67106200">	<!--France-->
+		<territory type="FR" gdp="2856000000000" literacyPercent="99" population="67364400">	<!--France-->
 			<languagePopulation type="fr" populationPercent="99" officialStatus="official"/>	<!--French-->
 			<languagePopulation type="en" populationPercent="39"/>	<!--English-->
 			<languagePopulation type="es" populationPercent="13" references="R1125"/>	<!--Spanish-->
@@ -2919,11 +2927,11 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="frp" populationPercent="0.094"/>	<!--Arpitan-->
 			<languagePopulation type="ia" populationPercent="0.0002" references="R1298"/>	<!--Interlingua-->
 		</territory>
-		<territory type="GA" gdp="36750000000" literacyPercent="89" population="1772260">	<!--Gabon-->
+		<territory type="GA" gdp="36660000000" literacyPercent="89" population="2119040">	<!--Gabon-->
 			<languagePopulation type="fr" populationPercent="63" officialStatus="official"/>	<!--French-->
 			<languagePopulation type="puu" populationPercent="9"/>	<!--Punu-->
 		</territory>
-		<territory type="GB" gdp="2880000000000" literacyPercent="99" population="64769500">	<!--United Kingdom-->
+		<territory type="GB" gdp="2925000000000" literacyPercent="99" population="65105200">	<!--United Kingdom-->
 			<languagePopulation type="en" populationPercent="99" officialStatus="official"/>	<!--English-->
 			<languagePopulation type="fr" populationPercent="19"/>	<!--French-->
 			<languagePopulation type="de" populationPercent="6"/>	<!--German-->
@@ -2932,7 +2940,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="cy" populationPercent="0.77" officialStatus="official_regional"/>	<!--Welsh-->
 			<languagePopulation type="bn" populationPercent="0.67"/>	<!--Bangla-->
 			<languagePopulation type="zh_Hant" populationPercent="0.54"/>	<!--Chinese (Traditional)-->
-			<languagePopulation type="syl" populationPercent="0.51"/>	<!--Sylheti-->
+			<languagePopulation type="syl" populationPercent="0.5"/>	<!--Sylheti-->
 			<languagePopulation type="el" populationPercent="0.34"/>	<!--Greek-->
 			<languagePopulation type="it" populationPercent="0.34"/>	<!--Italian-->
 			<languagePopulation type="ks" populationPercent="0.19"/>	<!--Kashmiri-->
@@ -2942,10 +2950,10 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="ga" populationPercent="0.026" officialStatus="official_regional" references="R1139"/>	<!--Irish-->
 			<languagePopulation type="kw" populationPercent="0.0031" references="R1140"/>	<!--Cornish-->
 		</territory>
-		<territory type="GD" gdp="1590000000" literacyPercent="96" population="111724">	<!--Grenada-->
+		<territory type="GD" gdp="1634000000" literacyPercent="96" population="112207">	<!--Grenada-->
 			<languagePopulation type="en" populationPercent="96" officialStatus="official" references="R1018"/>	<!--English-->
 		</territory>
-		<territory type="GE" gdp="39320000000" literacyPercent="99.7" population="4926330">	<!--Georgia-->
+		<territory type="GE" gdp="39850000000" literacyPercent="99.7" population="4926090">	<!--Georgia-->
 			<languagePopulation type="ka" populationPercent="86" officialStatus="official"/>	<!--Georgian-->
 			<languagePopulation type="xmf" populationPercent="11"/>	<!--Mingrelian-->
 			<languagePopulation type="ru" populationPercent="9" references="R1038"/>	<!--Russian-->
@@ -2959,10 +2967,10 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="gcr" populationPercent="26"/>	<!--Guianese Creole French-->
 			<languagePopulation type="zh_Hant" populationPercent="2.5"/>	<!--Chinese (Traditional)-->
 		</territory>
-		<territory type="GG" gdp="3465000000" literacyPercent="100" population="66502">	<!--Guernsey-->
+		<territory type="GG" gdp="3465000000" literacyPercent="100" population="66697">	<!--Guernsey-->
 			<languagePopulation type="en" populationPercent="100" officialStatus="official"/>	<!--English-->
 		</territory>
-		<territory type="GH" gdp="130200000000" literacyPercent="71.5" population="27499900">	<!--Ghana-->
+		<territory type="GH" gdp="134000000000" literacyPercent="71.5" population="28102500">	<!--Ghana-->
 			<languagePopulation type="ak" populationPercent="39" officialStatus="official_regional"/>	<!--Akan-->
 			<languagePopulation type="en" populationPercent="21" officialStatus="official" references="R1225"/>	<!--English-->
 			<languagePopulation type="ee" populationPercent="11" officialStatus="official_regional"/>	<!--Ewe-->
@@ -2972,39 +2980,44 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="gaa" populationPercent="2.8" officialStatus="official_regional"/>	<!--Ga-->
 			<languagePopulation type="nzi" populationPercent="1" references="R1226"/>	<!--Nzima-->
 			<languagePopulation type="ha" populationPercent="0.87" references="R1141"/>	<!--Hausa-->
-			<languagePopulation type="saf" populationPercent="0.015" references="R1226"/>	<!--Safaliba-->
+			<languagePopulation type="saf" populationPercent="0.014" references="R1226"/>	<!--Safaliba-->
+			<languagePopulation type="ff" populationPercent="0" references="R1150"/>	<!--Fulah-->
+			<languagePopulation type="ff_Adlm" populationPercent="0" references="R1150"/>	<!--Fulah (Adlam)-->
 		</territory>
-		<territory type="GI" gdp="2044000000" literacyPercent="80" population="29396">	<!--Gibraltar-->
+		<territory type="GI" gdp="2044000000" literacyPercent="80" population="29461">	<!--Gibraltar-->
 			<languagePopulation type="en" populationPercent="80" officialStatus="official" references="R1022"/>	<!--English-->
 			<languagePopulation type="es" populationPercent="50" references="R1022"/>	<!--Spanish-->
 		</territory>
-		<territory type="GL" gdp="2173000000" literacyPercent="100" population="57713">	<!--Greenland-->
+		<territory type="GL" gdp="2413000000" literacyPercent="100" population="57691">	<!--Greenland-->
 			<languagePopulation type="kl" populationPercent="84" officialStatus="official"/>	<!--Kalaallisut-->
 			<languagePopulation type="da" populationPercent="14"/>	<!--Danish-->
 		</territory>
-		<territory type="GM" gdp="3582000000" literacyPercent="51.1" population="2051360">	<!--Gambia-->
+		<territory type="GM" gdp="5556000000" literacyPercent="51.1" population="2092730">	<!--Gambia-->
 			<languagePopulation type="en" populationPercent="40" officialStatus="official"/>	<!--English-->
 			<languagePopulation type="man" populationPercent="29"/>	<!--Mandingo-->
+			<languagePopulation type="ff" populationPercent="0"/>	<!--Fulah-->
+			<languagePopulation type="ff_Adlm" populationPercent="0"/>	<!--Fulah (Adlam)-->
 		</territory>
-		<territory type="GN" gdp="26450000000" literacyPercent="41" population="12413900">	<!--Guinea-->
+		<territory type="GN" gdp="27970000000" literacyPercent="41" population="11855400">	<!--Guinea-->
 			<languagePopulation type="fr" populationPercent="29" officialStatus="official" references="R1040"/>	<!--French-->
 			<languagePopulation type="ff" populationPercent="26"/>	<!--Fulah-->
 			<languagePopulation type="man_Nkoo" populationPercent="23"/>	<!--Mandingo (N’Ko)-->
 			<languagePopulation type="sus" populationPercent="11"/>	<!--Susu-->
 			<languagePopulation type="nqo" populationPercent="5" references="R1286"/>	<!--N’Ko-->
 			<languagePopulation type="kpe" populationPercent="3.8"/>	<!--Kpelle-->
+			<languagePopulation type="ff_Adlm" populationPercent="0" references="R1250"/>	<!--Fulah (Adlam)-->
 		</territory>
 		<territory type="GP" gdp="3513000000" literacyPercent="90" population="452776">	<!--Guadeloupe-->
 			<languagePopulation type="fr" populationPercent="90" officialStatus="official" references="R1023"/>	<!--French-->
 		</territory>
-		<territory type="GQ" gdp="29380000000" literacyPercent="94.2" population="778358">	<!--Equatorial Guinea-->
+		<territory type="GQ" gdp="31520000000" literacyPercent="94.2" population="797457">	<!--Equatorial Guinea-->
 			<languagePopulation type="es" populationPercent="87" officialStatus="official" references="R1142"/>	<!--Spanish-->
 			<languagePopulation type="fan" populationPercent="51"/>	<!--Fang-->
 			<languagePopulation type="fr" populationPercent="8.8" officialStatus="official" references="R1084"/>	<!--French-->
 			<languagePopulation type="bvb" populationPercent="7.9"/>	<!--Bube-->
 			<languagePopulation type="pt" populationPercent="0.0001" officialStatus="official" references="R1150"/>	<!--Portuguese-->
 		</territory>
-		<territory type="GR" gdp="299500000000" literacyPercent="97.3" population="10768500">	<!--Greece-->
+		<territory type="GR" gdp="299300000000" literacyPercent="97.3" population="10761500">	<!--Greece-->
 			<languagePopulation type="el" populationPercent="99" officialStatus="official" references="R1211"/>	<!--Greek-->
 			<languagePopulation type="en" populationPercent="51"/>	<!--English-->
 			<languagePopulation type="fr" populationPercent="9"/>	<!--French-->
@@ -3016,47 +3029,49 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="sq" populationPercent="0.093"/>	<!--Albanian-->
 			<languagePopulation type="tsd" populationPercent="0.0019"/>	<!--Tsakonian-->
 		</territory>
-		<territory type="GS" gdp="889300" literacyPercent="99" population="20">	<!--South Georgia & South Sandwich Islands-->
+		<territory type="GS" gdp="898500" literacyPercent="99" population="20">	<!--South Georgia & South Sandwich Islands-->
 			<languagePopulation type="und" literacyPercent="100" populationPercent="100" references="R1178"/>	<!--Unknown language-->
 		</territory>
-		<territory type="GT" gdp="138300000000" literacyPercent="75.9" population="15460700">	<!--Guatemala-->
+		<territory type="GT" gdp="138100000000" literacyPercent="75.9" population="16581300">	<!--Guatemala-->
 			<languagePopulation type="es" populationPercent="93" officialStatus="official" references="R1227"/>	<!--Spanish-->
 			<languagePopulation type="quc" populationPercent="7" officialStatus="official_regional" references="R1289"/>	<!--Kʼicheʼ-->
 		</territory>
-		<territory type="GU" gdp="4882000000" literacyPercent="99" population="167358">	<!--Guam-->
+		<territory type="GU" gdp="5793000000" literacyPercent="99" population="167772">	<!--Guam-->
 			<languagePopulation type="en" populationPercent="91" officialStatus="de_facto_official"/>	<!--English-->
 			<languagePopulation type="ch" populationPercent="22" officialStatus="official"/>	<!--Chamorro-->
 		</territory>
-		<territory type="GW" gdp="3071000000" literacyPercent="55.3" population="1792340">	<!--Guinea-Bissau-->
+		<territory type="GW" gdp="3171000000" literacyPercent="55.3" population="1833250">	<!--Guinea-Bissau-->
 			<languagePopulation type="pt" populationPercent="100" officialStatus="official" references="R1027"/>	<!--Portuguese-->
 			<languagePopulation type="knf" populationPercent="2.6" references="R1220"/>	<!--Mankanya-->
+			<languagePopulation type="ff" populationPercent="0.0001" references="R1150"/>	<!--Fulah-->
+			<languagePopulation type="ff_Adlm" populationPercent="0.0001" references="R1150"/>	<!--Fulah (Adlam)-->
 		</territory>
-		<territory type="GY" gdp="6367000000" literacyPercent="91.8" population="737718">	<!--Guyana-->
+		<territory type="GY" gdp="6301000000" literacyPercent="91.8" population="740685">	<!--Guyana-->
 			<languagePopulation type="en" populationPercent="100" officialStatus="official"/>	<!--English-->
 		</territory>
-		<territory type="HK" gdp="453000000000" literacyPercent="93.5" population="7191500">	<!--Hong Kong SAR China-->
+		<territory type="HK" gdp="455900000000" literacyPercent="93.5" population="7213340">	<!--Hong Kong SAR China-->
 			<languagePopulation type="zh_Hant" populationPercent="95" officialStatus="official"/>	<!--Chinese (Traditional)-->
 			<languagePopulation type="yue" populationPercent="90" references="R1320"/>	<!--Cantonese-->
 			<languagePopulation type="en" populationPercent="51" officialStatus="official"/>	<!--English-->
 			<languagePopulation type="zh" populationPercent="5" references="R1143"/>	<!--Chinese-->
 		</territory>
-		<territory type="HM" gdp="53160" literacyPercent="99" population="1">	<!--Heard & McDonald Islands-->
+		<territory type="HM" gdp="53170" literacyPercent="99" population="1">	<!--Heard & McDonald Islands-->
 			<languagePopulation type="und" literacyPercent="100" populationPercent="100" references="R1064"/>	<!--Unknown language-->
 		</territory>
-		<territory type="HN" gdp="45680000000" literacyPercent="85.1" population="9038740">	<!--Honduras-->
+		<territory type="HN" gdp="46300000000" literacyPercent="85.1" population="9182770">	<!--Honduras-->
 			<languagePopulation type="es" populationPercent="78" officialStatus="official"/>	<!--Spanish-->
 			<languagePopulation type="en" populationPercent="0.44"/>	<!--English-->
 		</territory>
-		<territory type="HR" gdp="100200000000" literacyPercent="98.9" population="4292100">	<!--Croatia-->
+		<territory type="HR" gdp="102100000000" literacyPercent="98.9" population="4270480">	<!--Croatia-->
 			<languagePopulation type="hr" populationPercent="99" officialStatus="official"/>	<!--Croatian-->
 			<languagePopulation type="en" populationPercent="49"/>	<!--English-->
 			<languagePopulation type="it" populationPercent="1.6" officialStatus="official_regional"/>	<!--Italian-->
 		</territory>
-		<territory type="HT" gdp="19880000000" literacyPercent="48.7" population="10646700">	<!--Haiti-->
+		<territory type="HT" gdp="19970000000" literacyPercent="48.7" population="10788400">	<!--Haiti-->
 			<languagePopulation type="ht" populationPercent="81" officialStatus="official" references="R1029"/>	<!--Haitian Creole-->
 			<languagePopulation type="fr" literacyPercent="100" populationPercent="4.7" officialStatus="official" references="R1030"/>	<!--French-->
 		</territory>
-		<territory type="HU" gdp="283600000000" literacyPercent="99" population="9850850">	<!--Hungary-->
+		<territory type="HU" gdp="289600000000" literacyPercent="99" population="9825700">	<!--Hungary-->
 			<languagePopulation type="hu" populationPercent="100" officialStatus="official"/>	<!--Hungarian-->
 			<languagePopulation type="en" populationPercent="20"/>	<!--English-->
 			<languagePopulation type="de" populationPercent="18"/>	<!--German-->
@@ -3066,10 +3081,10 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="sk" populationPercent="0.11"/>	<!--Slovak-->
 			<languagePopulation type="sl" populationPercent="0.051"/>	<!--Slovenian-->
 		</territory>
-		<territory type="IC" gdp="75830000000" literacyPercent="97.7" population="2098590">	<!--Canary Islands-->
+		<territory type="IC" gdp="75640000000" literacyPercent="97.7" population="2098590">	<!--Canary Islands-->
 			<languagePopulation type="es" populationPercent="98" officialStatus="official" references="R1075"/>	<!--Spanish-->
 		</territory>
-		<territory type="ID" gdp="3243000000000" literacyPercent="92.8" population="260581000">	<!--Indonesia-->
+		<territory type="ID" gdp="3250000000000" literacyPercent="92.8" population="262787000">	<!--Indonesia-->
 			<languagePopulation type="id" populationPercent="64" officialStatus="official"/>	<!--Indonesian-->
 			<languagePopulation type="jv" literacyPercent="10" populationPercent="34" references="R1294"/>	<!--Javanese-->
 			<languagePopulation type="su" populationPercent="12" references="R1269"/>	<!--Sundanese-->
@@ -3100,12 +3115,12 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="sly" populationPercent="0.054"/>	<!--Selayar-->
 			<languagePopulation type="mwv" populationPercent="0.024"/>	<!--Mentawai-->
 		</territory>
-		<territory type="IE" gdp="344800000000" literacyPercent="99" population="5011100">	<!--Ireland-->
+		<territory type="IE" gdp="353300000000" literacyPercent="99" population="5068050">	<!--Ireland-->
 			<languagePopulation type="en" populationPercent="98" officialStatus="official" references="R1202"/>	<!--English-->
 			<languagePopulation type="ga" populationPercent="22" officialStatus="official" references="R1043"/>	<!--Irish-->
 			<languagePopulation type="fr" populationPercent="17"/>	<!--French-->
 		</territory>
-		<territory type="IL" gdp="315600000000" literacyPercent="97.1" population="8299710">	<!--Israel-->
+		<territory type="IL" gdp="317100000000" literacyPercent="97.1" population="8424900">	<!--Israel-->
 			<languagePopulation type="he" populationPercent="100" officialStatus="official"/>	<!--Hebrew-->
 			<languagePopulation type="en" populationPercent="85"/>	<!--English-->
 			<languagePopulation type="ar" populationPercent="20" officialStatus="official"/>	<!--Arabic-->
@@ -3117,13 +3132,13 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="hu" populationPercent="1"/>	<!--Hungarian-->
 			<languagePopulation type="am" populationPercent="0.59"/>	<!--Amharic-->
 			<languagePopulation type="ti" populationPercent="0.12"/>	<!--Tigrinya-->
-			<languagePopulation type="ml" populationPercent="0.096" references="R1115"/>	<!--Malayalam-->
+			<languagePopulation type="ml" populationPercent="0.095" references="R1115"/>	<!--Malayalam-->
 		</territory>
-		<territory type="IM" gdp="7428000000" literacyPercent="99" population="88815">	<!--Isle of Man-->
+		<territory type="IM" gdp="6792000000" literacyPercent="99" population="89407">	<!--Isle of Man-->
 			<languagePopulation type="en" populationPercent="100" officialStatus="official"/>	<!--English-->
 			<languagePopulation type="gv" populationPercent="1.9" officialStatus="official"/>	<!--Manx-->
 		</territory>
-		<territory type="IN" gdp="9447000000000" literacyPercent="62.8" population="1281940000">	<!--India-->
+		<territory type="IN" gdp="9474000000000" literacyPercent="62.8" population="1296830000">	<!--India-->
 			<languagePopulation type="hi" populationPercent="41" officialStatus="official" references="R1066"/>	<!--Hindi-->
 			<languagePopulation type="en" populationPercent="19" officialStatus="official" references="R1033"/>	<!--English-->
 			<languagePopulation type="bn" populationPercent="8.1" officialStatus="official_regional" references="R1195"/>	<!--Bangla-->
@@ -3137,14 +3152,14 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="or" populationPercent="3.2" officialStatus="official_regional" references="R1195"/>	<!--Odia-->
 			<languagePopulation type="pa" populationPercent="2.8" officialStatus="official_regional" references="R1195"/>	<!--Punjabi-->
 			<languagePopulation type="bho" literacyPercent="30" populationPercent="2.3"/>	<!--Bhojpuri-->
-			<languagePopulation type="awa" writingPercent="5" populationPercent="1.9"/>	<!--Awadhi-->
+			<languagePopulation type="awa" writingPercent="5" populationPercent="1.8"/>	<!--Awadhi-->
 			<languagePopulation type="as" populationPercent="1.3" officialStatus="official_regional"/>	<!--Assamese-->
 			<languagePopulation type="bgc" literacyPercent="55" populationPercent="1.2" references="R1146"/>	<!--Haryanvi-->
 			<languagePopulation type="mag" literacyPercent="30" populationPercent="1.2" references="R1098"/>	<!--Magahi-->
 			<languagePopulation type="mwr" populationPercent="1.2" references="R1126"/>	<!--Marwari-->
 			<languagePopulation type="mai" populationPercent="1.2" officialStatus="official_regional" references="R1195"/>	<!--Maithili-->
 			<languagePopulation type="hne" populationPercent="1.1"/>	<!--Chhattisgarhi-->
-			<languagePopulation type="dcc" populationPercent="0.99"/>	<!--Deccan-->
+			<languagePopulation type="dcc" populationPercent="1"/>	<!--Deccan-->
 			<languagePopulation type="bjj" literacyPercent="60" populationPercent="0.56"/>	<!--Kanauji-->
 			<languagePopulation type="ne" populationPercent="0.56" officialStatus="official_regional"/>	<!--Nepali-->
 			<languagePopulation type="sat" populationPercent="0.55" officialStatus="official_regional"/>	<!--Santali-->
@@ -3159,7 +3174,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="sd" populationPercent="0.26" officialStatus="official_regional"/>	<!--Sindhi-->
 			<languagePopulation type="gon" populationPercent="0.24"/>	<!--Gondi-->
 			<languagePopulation type="kfy" populationPercent="0.22"/>	<!--Kumaoni-->
-			<languagePopulation type="doi" populationPercent="0.19"/>	<!--Dogri-->
+			<languagePopulation type="doi" populationPercent="0.2"/>	<!--Dogri-->
 			<languagePopulation type="kru" populationPercent="0.19"/>	<!--Kurukh-->
 			<languagePopulation type="sck" populationPercent="0.18"/>	<!--Sadri-->
 			<languagePopulation type="wbq" populationPercent="0.18"/>	<!--Waddar-->
@@ -3172,9 +3187,9 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="bhb" populationPercent="0.12"/>	<!--Bhili-->
 			<languagePopulation type="mni" populationPercent="0.11"/>	<!--Manipuri-->
 			<languagePopulation type="raj" populationPercent="0.1"/>	<!--Rajasthani-->
-			<languagePopulation type="hoc" populationPercent="0.099" references="R1195"/>	<!--Ho-->
+			<languagePopulation type="hoc" populationPercent="0.1" references="R1195"/>	<!--Ho-->
 			<languagePopulation type="mtr" populationPercent="0.098"/>	<!--Mewari-->
-			<languagePopulation type="unr" populationPercent="0.095"/>	<!--Mundari-->
+			<languagePopulation type="unr" populationPercent="0.094"/>	<!--Mundari-->
 			<languagePopulation type="bhi" populationPercent="0.092"/>	<!--Bhilali-->
 			<languagePopulation type="hoj" populationPercent="0.082"/>	<!--Hadothi-->
 			<languagePopulation type="kha" literacyPercent="29" populationPercent="0.08" officialStatus="official_regional"/>	<!--Khasi-->
@@ -3202,10 +3217,10 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="dv" populationPercent="0.0004"/>	<!--Divehi-->
 			<languagePopulation type="dz" populationPercent="0.0002"/>	<!--Dzongkha-->
 		</territory>
-		<territory type="IO" gdp="155600000" literacyPercent="99" population="3500">	<!--British Indian Ocean Territory-->
+		<territory type="IO" gdp="157200000" literacyPercent="99" population="3500">	<!--British Indian Ocean Territory-->
 			<languagePopulation type="en" literacyPercent="100" populationPercent="100" officialStatus="official" references="R1179"/>	<!--English-->
 		</territory>
-		<territory type="IQ" gdp="660700000000" literacyPercent="78.5" population="39192100">	<!--Iraq-->
+		<territory type="IQ" gdp="649300000000" literacyPercent="78.5" population="40194200">	<!--Iraq-->
 			<languagePopulation type="ar" populationPercent="68" officialStatus="official"/>	<!--Arabic-->
 			<languagePopulation type="en" populationPercent="35"/>	<!--English-->
 			<languagePopulation type="ckb" populationPercent="20" officialStatus="official_regional" references="R1073"/>	<!--Central Kurdish-->
@@ -3214,7 +3229,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="lrc" populationPercent="0.61" references="R1310"/>	<!--Northern Luri-->
 			<languagePopulation type="syr" populationPercent="0.5" references="R1311"/>	<!--Syriac-->
 		</territory>
-		<territory type="IR" gdp="1631000000000" literacyPercent="85" population="82021600">	<!--Iran-->
+		<territory type="IR" gdp="1640000000000" literacyPercent="85" population="83024700">	<!--Iran-->
 			<languagePopulation type="fa" populationPercent="75" officialStatus="official"/>	<!--Persian-->
 			<languagePopulation type="az_Arab" populationPercent="24"/>	<!--Azerbaijani (Arabic)-->
 			<languagePopulation type="mzn" populationPercent="5"/>	<!--Mazanderani-->
@@ -3234,14 +3249,14 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="hy" populationPercent="0.24"/>	<!--Armenian-->
 			<languagePopulation type="ps" populationPercent="0.16"/>	<!--Pashto-->
 			<languagePopulation type="ka" populationPercent="0.071"/>	<!--Georgian-->
-			<languagePopulation type="gbz" populationPercent="0.0098"/>	<!--Zoroastrian Dari-->
-			<languagePopulation type="kk_Arab" populationPercent="0.0037" references="R1119"/>	<!--Kazakh (Arabic)-->
+			<languagePopulation type="gbz" populationPercent="0.0096"/>	<!--Zoroastrian Dari-->
+			<languagePopulation type="kk_Arab" populationPercent="0.0036" references="R1119"/>	<!--Kazakh (Arabic)-->
 		</territory>
-		<territory type="IS" gdp="17730000000" literacyPercent="99" population="339747">	<!--Iceland-->
+		<territory type="IS" gdp="18180000000" literacyPercent="99" population="343518">	<!--Iceland-->
 			<languagePopulation type="is" populationPercent="100" officialStatus="official" references="R1035"/>	<!--Icelandic-->
-			<languagePopulation type="da" populationPercent="0.66"/>	<!--Danish-->
+			<languagePopulation type="da" populationPercent="0.65"/>	<!--Danish-->
 		</territory>
-		<territory type="IT" gdp="2307000000000" literacyPercent="99" population="62137800">	<!--Italy-->
+		<territory type="IT" gdp="2317000000000" literacyPercent="99" population="62246700">	<!--Italy-->
 			<languagePopulation type="it" populationPercent="95" officialStatus="official"/>	<!--Italian-->
 			<languagePopulation type="en" populationPercent="34"/>	<!--English-->
 			<languagePopulation type="fr" populationPercent="6.3" officialStatus="official_regional" references="R1252"/>	<!--French-->
@@ -3262,23 +3277,23 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="hr" populationPercent="0.0056"/>	<!--Croatian-->
 			<languagePopulation type="rgn" populationPercent="0" references="R1150"/>	<!--Romagnol-->
 		</territory>
-		<territory type="JE" gdp="5080000000" literacyPercent="99" population="98840">	<!--Jersey-->
+		<territory type="JE" gdp="5569000000" literacyPercent="99" population="99602">	<!--Jersey-->
 			<languagePopulation type="en" populationPercent="95" officialStatus="official"/>	<!--English-->
 		</territory>
-		<territory type="JM" gdp="26200000000" literacyPercent="87" population="2990560">	<!--Jamaica-->
+		<territory type="JM" gdp="26060000000" literacyPercent="87" population="2812090">	<!--Jamaica-->
 			<languagePopulation type="en" populationPercent="98" officialStatus="official"/>	<!--English-->
 			<languagePopulation type="jam" populationPercent="95"/>	<!--Jamaican Creole English-->
 		</territory>
-		<territory type="JO" gdp="89050000000" literacyPercent="95.9" population="10248100">	<!--Jordan-->
+		<territory type="JO" gdp="89000000000" literacyPercent="95.9" population="10458400">	<!--Jordan-->
 			<languagePopulation type="ar" populationPercent="100" officialStatus="official" references="R1036"/>	<!--Arabic-->
 			<languagePopulation type="en" populationPercent="45" references="R1036"/>	<!--English-->
 		</territory>
-		<territory type="JP" gdp="5405000000000" literacyPercent="99" population="126451000">	<!--Japan-->
+		<territory type="JP" gdp="5443000000000" literacyPercent="99" population="126168000">	<!--Japan-->
 			<languagePopulation type="ja" populationPercent="95" officialStatus="official"/>	<!--Japanese-->
 			<languagePopulation type="ryu" writingPercent="5" populationPercent="0.77" references="R1151"/>	<!--Central Okinawan-->
 			<languagePopulation type="ko" populationPercent="0.52"/>	<!--Korean-->
 		</territory>
-		<territory type="KE" gdp="163400000000" literacyPercent="87.4" population="47615700">	<!--Kenya-->
+		<territory type="KE" gdp="163700000000" literacyPercent="87.4" population="48397500">	<!--Kenya-->
 			<languagePopulation type="sw" populationPercent="66" officialStatus="official" references="R1127"/>	<!--Swahili-->
 			<languagePopulation type="en" populationPercent="19" officialStatus="official"/>	<!--English-->
 			<languagePopulation type="ki" populationPercent="17"/>	<!--Kikuyu-->
@@ -3298,112 +3313,114 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="saq" literacyPercent="1" populationPercent="0.46" references="R1180"/>	<!--Samburu-->
 			<languagePopulation type="ar" populationPercent="0.046"/>	<!--Arabic-->
 			<languagePopulation type="pa" populationPercent="0.021"/>	<!--Punjabi-->
-			<languagePopulation type="gu" populationPercent="0.011"/>	<!--Gujarati-->
+			<languagePopulation type="gu" populationPercent="0.01"/>	<!--Gujarati-->
 		</territory>
-		<territory type="KG" gdp="22640000000" literacyPercent="99.2" population="5789120">	<!--Kyrgyzstan-->
+		<territory type="KG" gdp="23150000000" literacyPercent="99.2" population="5849300">	<!--Kyrgyzstan-->
 			<languagePopulation type="ky" populationPercent="48" officialStatus="official"/>	<!--Kyrgyz-->
 			<languagePopulation type="ru" populationPercent="36" officialStatus="official" references="R1108"/>	<!--Russian-->
 		</territory>
-		<territory type="KH" gdp="64210000000" literacyPercent="73.9" population="16204500">	<!--Cambodia-->
+		<territory type="KH" gdp="64210000000" literacyPercent="73.9" population="16449500">	<!--Cambodia-->
 			<languagePopulation type="km" populationPercent="89" officialStatus="official"/>	<!--Khmer-->
 			<languagePopulation type="cja" populationPercent="1.6"/>	<!--Western Cham-->
 			<languagePopulation type="kdt" populationPercent="0.11"/>	<!--Kuy-->
 		</territory>
-		<territory type="KI" gdp="224000000" literacyPercent="90" population="108145">	<!--Kiribati-->
+		<territory type="KI" gdp="227000000" literacyPercent="90" population="109367">	<!--Kiribati-->
 			<languagePopulation type="en" populationPercent="100" officialStatus="official" references="R1037"/>	<!--English-->
 			<languagePopulation type="gil" populationPercent="60" officialStatus="official"/>	<!--Gilbertese-->
 		</territory>
-		<territory type="KM" gdp="1323000000" literacyPercent="75.5" population="808080">	<!--Comoros-->
+		<territory type="KM" gdp="1319000000" literacyPercent="75.5" population="821164">	<!--Comoros-->
 			<languagePopulation type="ar" populationPercent="66" officialStatus="official"/>	<!--Arabic-->
 			<languagePopulation type="fr" populationPercent="56" officialStatus="official"/>	<!--French-->
 			<languagePopulation type="zdj" populationPercent="37" officialStatus="official" references="R1198"/>	<!--Ngazidja Comorian-->
 			<languagePopulation type="wni" populationPercent="34" officialStatus="official" references="R1313"/>	<!--Ndzwani Comorian-->
 		</territory>
-		<territory type="KN" gdp="1528000000" literacyPercent="97.8" population="52715">	<!--St. Kitts & Nevis-->
+		<territory type="KN" gdp="1550000000" literacyPercent="97.8" population="53094">	<!--St. Kitts & Nevis-->
 			<languagePopulation type="en" populationPercent="98" officialStatus="official"/>	<!--English-->
 		</territory>
-		<territory type="KP" gdp="40000000000" literacyPercent="100" population="25248100">	<!--North Korea-->
+		<territory type="KP" gdp="40000000000" literacyPercent="100" population="25381100">	<!--North Korea-->
 			<languagePopulation type="ko" populationPercent="88" officialStatus="official"/>	<!--Korean-->
 		</territory>
-		<territory type="KR" gdp="2027000000000" literacyPercent="97.9" population="51181300">	<!--South Korea-->
+		<territory type="KR" gdp="2035000000000" literacyPercent="97.9" population="51418100">	<!--South Korea-->
 			<languagePopulation type="ko" populationPercent="100" officialStatus="official"/>	<!--Korean-->
 		</territory>
-		<territory type="KW" gdp="302500000000" literacyPercent="93.9" population="2875420">	<!--Kuwait-->
+		<territory type="KW" gdp="289700000000" literacyPercent="93.9" population="2916470">	<!--Kuwait-->
 			<languagePopulation type="ar" populationPercent="100" officialStatus="official"/>	<!--Arabic-->
 		</territory>
-		<territory type="KY" gdp="2507000000" literacyPercent="98.9" population="58441">	<!--Cayman Islands-->
+		<territory type="KY" gdp="2507000000" literacyPercent="98.9" population="59613">	<!--Cayman Islands-->
 			<languagePopulation type="en" populationPercent="98" officialStatus="official"/>	<!--English-->
 		</territory>
-		<territory type="KZ" gdp="474300000000" literacyPercent="99.7" population="18556700">	<!--Kazakhstan-->
+		<territory type="KZ" gdp="478600000000" literacyPercent="99.7" population="18744500">	<!--Kazakhstan-->
 			<languagePopulation type="ru" populationPercent="72" officialStatus="official" references="R1257"/>	<!--Russian-->
 			<languagePopulation type="kk" populationPercent="64" officialStatus="official" references="R1068"/>	<!--Kazakh-->
 			<languagePopulation type="en" populationPercent="15"/>	<!--English-->
 			<languagePopulation type="de" populationPercent="6.4"/>	<!--German-->
 			<languagePopulation type="ug_Cyrl" populationPercent="2"/>	<!--Uyghur (Cyrillic)-->
 		</territory>
-		<territory type="LA" gdp="49210000000" literacyPercent="72.7" population="7126710">	<!--Laos-->
+		<territory type="LA" gdp="49340000000" literacyPercent="72.7" population="7234170">	<!--Laos-->
 			<languagePopulation type="lo" populationPercent="69" officialStatus="official"/>	<!--Lao-->
 			<languagePopulation type="kjg" populationPercent="5.8" references="R1230"/>	<!--Khmu-->
 			<languagePopulation type="kdt" populationPercent="0.96" references="R1231"/>	<!--Kuy-->
 		</territory>
-		<territory type="LB" gdp="87890000000" literacyPercent="89.6" population="6229790">	<!--Lebanon-->
+		<territory type="LB" gdp="88250000000" literacyPercent="89.6" population="6100080">	<!--Lebanon-->
 			<languagePopulation type="ar" populationPercent="86" officialStatus="official"/>	<!--Arabic-->
 			<languagePopulation type="en" populationPercent="40"/>	<!--English-->
 			<languagePopulation type="hy" populationPercent="5.2"/>	<!--Armenian-->
-			<languagePopulation type="ku_Arab" populationPercent="1.6"/>	<!--Kurdish (Arabic)-->
+			<languagePopulation type="ku_Arab" populationPercent="1.7"/>	<!--Kurdish (Arabic)-->
 			<languagePopulation type="fr" populationPercent="0.37"/>	<!--French-->
 		</territory>
-		<territory type="LC" gdp="2384000000" literacyPercent="90.1" population="164994">	<!--St. Lucia-->
+		<territory type="LC" gdp="2542000000" literacyPercent="90.1" population="165510">	<!--St. Lucia-->
 			<languagePopulation type="en" populationPercent="90" officialStatus="official"/>	<!--English-->
 		</territory>
-		<territory type="LI" gdp="4978000000" literacyPercent="100" population="38244">	<!--Liechtenstein-->
+		<territory type="LI" gdp="4978000000" literacyPercent="100" population="38547">	<!--Liechtenstein-->
 			<languagePopulation type="de" populationPercent="100" officialStatus="official" references="R1039"/>	<!--German-->
 			<languagePopulation type="gsw" writingPercent="5" populationPercent="85" officialStatus="de_facto_official"/>	<!--Swiss German-->
 			<languagePopulation type="wae" populationPercent="3.4"/>	<!--Walser-->
 		</territory>
-		<territory type="LK" gdp="278200000000" literacyPercent="91.2" population="22409400">	<!--Sri Lanka-->
+		<territory type="LK" gdp="275800000000" literacyPercent="91.2" population="22576600">	<!--Sri Lanka-->
 			<languagePopulation type="si" populationPercent="68" officialStatus="official"/>	<!--Sinhala-->
 			<languagePopulation type="ta" populationPercent="15" officialStatus="official"/>	<!--Tamil-->
 			<languagePopulation type="en" populationPercent="10"/>	<!--English-->
 		</territory>
-		<territory type="LR" gdp="3906000000" literacyPercent="60.8" population="4689020">	<!--Liberia-->
+		<territory type="LR" gdp="6112000000" literacyPercent="60.8" population="4809770">	<!--Liberia-->
 			<languagePopulation type="en" populationPercent="83" officialStatus="official" references="R1046"/>	<!--English-->
 			<languagePopulation type="kpe" populationPercent="14"/>	<!--Kpelle-->
 			<languagePopulation type="vai" populationPercent="2.6" references="R1271"/>	<!--Vai-->
 			<languagePopulation type="men" populationPercent="0.48"/>	<!--Mende-->
+			<languagePopulation type="ff" populationPercent="0" references="R1150"/>	<!--Fulah-->
+			<languagePopulation type="ff_Adlm" populationPercent="0" references="R1150"/>	<!--Fulah (Adlam)-->
 			<languagePopulation type="vai_Latn" populationPercent="0" references="R1272"/>	<!--Vai (Latin)-->
 		</territory>
-		<territory type="LS" gdp="7448000000" literacyPercent="89.6" population="1958040">	<!--Lesotho-->
+		<territory type="LS" gdp="6656000000" literacyPercent="89.6" population="1962460">	<!--Lesotho-->
 			<languagePopulation type="st" populationPercent="98" officialStatus="official"/>	<!--Southern Sotho-->
 			<languagePopulation type="en" populationPercent="27" officialStatus="official" references="R1047"/>	<!--English-->
 			<languagePopulation type="zu" populationPercent="14"/>	<!--Zulu-->
 			<languagePopulation type="ss" populationPercent="2.4"/>	<!--Swati-->
-			<languagePopulation type="xh" populationPercent="0.99"/>	<!--Xhosa-->
+			<languagePopulation type="xh" populationPercent="1"/>	<!--Xhosa-->
 		</territory>
-		<territory type="LT" gdp="90630000000" literacyPercent="99.7" population="2823860">	<!--Lithuania-->
+		<territory type="LT" gdp="91470000000" literacyPercent="99.7" population="2793280">	<!--Lithuania-->
 			<languagePopulation type="lt" populationPercent="86" officialStatus="official"/>	<!--Lithuanian-->
 			<languagePopulation type="ru" populationPercent="80"/>	<!--Russian-->
 			<languagePopulation type="en" populationPercent="38"/>	<!--English-->
 			<languagePopulation type="de" populationPercent="14"/>	<!--German-->
 			<languagePopulation type="sgs" populationPercent="0" references="R1303"/>	<!--Samogitian-->
 		</territory>
-		<territory type="LU" gdp="64390000000" literacyPercent="100" population="594130">	<!--Luxembourg-->
+		<territory type="LU" gdp="62110000000" literacyPercent="100" population="605764">	<!--Luxembourg-->
 			<languagePopulation type="fr" populationPercent="87" officialStatus="official"/>	<!--French-->
 			<languagePopulation type="lb" writingPercent="5" populationPercent="67" officialStatus="official" references="R1024"/>	<!--Luxembourgish-->
 			<languagePopulation type="de" populationPercent="63" officialStatus="official"/>	<!--German-->
 			<languagePopulation type="en" populationPercent="56"/>	<!--English-->
 			<languagePopulation type="pt" populationPercent="16" references="R1321"/>	<!--Portuguese-->
 		</territory>
-		<territory type="LV" gdp="53470000000" literacyPercent="99.8" population="1944640">	<!--Latvia-->
+		<territory type="LV" gdp="54020000000" literacyPercent="99.8" population="1923560">	<!--Latvia-->
 			<languagePopulation type="lv" populationPercent="61" officialStatus="official"/>	<!--Latvian-->
 			<languagePopulation type="en" populationPercent="46"/>	<!--English-->
 			<languagePopulation type="ru" populationPercent="38"/>	<!--Russian-->
 			<languagePopulation type="ltg" populationPercent="8.9"/>	<!--Latgalian-->
 		</territory>
-		<territory type="LY" gdp="63140000000" literacyPercent="89.5" population="6653210">	<!--Libya-->
+		<territory type="LY" gdp="61970000000" literacyPercent="89.5" population="6754510">	<!--Libya-->
 			<languagePopulation type="ar" populationPercent="74" officialStatus="official"/>	<!--Arabic-->
 		</territory>
-		<territory type="MA" gdp="300100000000" literacyPercent="67.1" population="33986700">	<!--Morocco-->
+		<territory type="MA" gdp="298600000000" literacyPercent="67.1" population="34314100">	<!--Morocco-->
 			<languagePopulation type="ary" populationPercent="87"/>	<!--Moroccan Arabic-->
 			<languagePopulation type="ar" populationPercent="62" officialStatus="official"/>	<!--Arabic-->
 			<languagePopulation type="zgh" populationPercent="22" references="R1254"/>	<!--Standard Moroccan Tamazight-->
@@ -3416,39 +3433,39 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="rif_Latn" writingPercent="5" populationPercent="4.9"/>	<!--Riffian (Latin)-->
 			<languagePopulation type="es" populationPercent="0.065"/>	<!--Spanish-->
 		</territory>
-		<territory type="MC" gdp="7672000000" literacyPercent="99" population="30645">	<!--Monaco-->
+		<territory type="MC" gdp="7672000000" literacyPercent="99" population="30727">	<!--Monaco-->
 			<languagePopulation type="fr" populationPercent="99" officialStatus="official"/>	<!--French-->
 		</territory>
-		<territory type="MD" gdp="20070000000" literacyPercent="99" population="3474120">	<!--Moldova-->
+		<territory type="MD" gdp="23720000000" literacyPercent="99" population="3437720">	<!--Moldova-->
 			<languagePopulation type="ro" populationPercent="63" officialStatus="official"/>	<!--Romanian-->
 			<languagePopulation type="uk" populationPercent="14"/>	<!--Ukrainian-->
 			<languagePopulation type="bg" populationPercent="9.4"/>	<!--Bulgarian-->
 			<languagePopulation type="gag" populationPercent="3.3" references="R1128"/>	<!--Gagauz-->
 			<languagePopulation type="ru" populationPercent="3" references="R1051"/>	<!--Russian-->
 		</territory>
-		<territory type="ME" gdp="10860000000" literacyPercent="98.5" population="642550">	<!--Montenegro-->
+		<territory type="ME" gdp="11080000000" literacyPercent="98.5" population="614249">	<!--Montenegro-->
 			<languagePopulation type="sr_Latn" populationPercent="100" officialStatus="official"/>	<!--Serbian (Latin)-->
 			<languagePopulation type="sq" populationPercent="7.9"/>	<!--Albanian-->
 			<languagePopulation type="sr" populationPercent="5" references="R1255"/>	<!--Serbian-->
 		</territory>
-		<territory type="MF" gdp="561500000" literacyPercent="99" population="32125">	<!--St. Martin-->
+		<territory type="MF" gdp="561500000" literacyPercent="99" population="32284">	<!--St. Martin-->
 			<languagePopulation type="fr" populationPercent="100" officialStatus="official"/>	<!--French-->
 		</territory>
-		<territory type="MG" gdp="39810000000" literacyPercent="64.5" population="25054200">	<!--Madagascar-->
+		<territory type="MG" gdp="39850000000" literacyPercent="64.5" population="25683600">	<!--Madagascar-->
 			<languagePopulation type="mg" populationPercent="90" officialStatus="official" references="R1089"/>	<!--Malagasy-->
 			<languagePopulation type="fr" populationPercent="69" officialStatus="official"/>	<!--French-->
 			<languagePopulation type="en" populationPercent="18" officialStatus="official" references="R1118"/>	<!--English-->
 		</territory>
-		<territory type="MH" gdp="189000000" literacyPercent="93.7" population="74539">	<!--Marshall Islands-->
+		<territory type="MH" gdp="196000000" literacyPercent="93.7" population="75684">	<!--Marshall Islands-->
 			<languagePopulation type="en" populationPercent="93" officialStatus="official"/>	<!--English-->
 			<languagePopulation type="mh" populationPercent="73" officialStatus="official"/>	<!--Marshallese-->
 		</territory>
-		<territory type="MK" gdp="31550000000" literacyPercent="97.4" population="2103720">	<!--Macedonia-->
+		<territory type="MK" gdp="31030000000" literacyPercent="97.4" population="2118950">	<!--North Macedonia-->
 			<languagePopulation type="mk" populationPercent="67" officialStatus="official"/>	<!--Macedonian-->
 			<languagePopulation type="sq" populationPercent="25" officialStatus="official_regional" references="R1053"/>	<!--Albanian-->
 			<languagePopulation type="tr" populationPercent="3.5"/>	<!--Turkish-->
 		</territory>
-		<territory type="ML" gdp="40980000000" literacyPercent="33.4" population="17885200">	<!--Mali-->
+		<territory type="ML" gdp="41220000000" literacyPercent="33.4" population="18429900">	<!--Mali-->
 			<languagePopulation type="bm" populationPercent="46"/>	<!--Bambara-->
 			<languagePopulation type="fr" populationPercent="46" officialStatus="official"/>	<!--French-->
 			<languagePopulation type="ffm" populationPercent="7.7"/>	<!--Maasina Fulfulde-->
@@ -3464,49 +3481,50 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="bmq" populationPercent="0.86"/>	<!--Bomu-->
 			<languagePopulation type="bze" populationPercent="0.84"/>	<!--Jenaama Bozo-->
 		</territory>
-		<territory type="MM" gdp="330900000000" literacyPercent="92.7" population="55123800">	<!--Myanmar (Burma)-->
+		<territory type="MM" gdp="329800000000" literacyPercent="92.7" population="55622500">	<!--Myanmar (Burma)-->
 			<languagePopulation type="my" populationPercent="64" officialStatus="official"/>	<!--Burmese-->
 			<languagePopulation type="shn" populationPercent="6.4"/>	<!--Shan-->
 			<languagePopulation type="kac" populationPercent="1.7"/>	<!--Kachin-->
 			<languagePopulation type="mnw" populationPercent="1.5"/>	<!--Mon-->
-			<languagePopulation type="kht" populationPercent="0.0077"/>	<!--Khamti-->
+			<languagePopulation type="kht" populationPercent="0.0076"/>	<!--Khamti-->
 		</territory>
-		<territory type="MN" gdp="38400000000" literacyPercent="97.4" population="3068240">	<!--Mongolia-->
+		<territory type="MN" gdp="39730000000" literacyPercent="97.4" population="3103430">	<!--Mongolia-->
 			<languagePopulation type="mn" populationPercent="93" officialStatus="official"/>	<!--Mongolian-->
 			<languagePopulation type="kk_Arab" populationPercent="7.2" references="R1119"/>	<!--Kazakh (Arabic)-->
 			<languagePopulation type="zh" populationPercent="1.4"/>	<!--Chinese-->
 			<languagePopulation type="ru" populationPercent="0.13"/>	<!--Russian-->
-			<languagePopulation type="ug_Cyrl" populationPercent="0.033"/>	<!--Uyghur (Cyrillic)-->
+			<languagePopulation type="ug_Cyrl" populationPercent="0.032"/>	<!--Uyghur (Cyrillic)-->
 		</territory>
-		<territory type="MO" gdp="73580000000" literacyPercent="95.6" population="601969">	<!--Macau SAR China-->
+		<territory type="MO" gdp="71820000000" literacyPercent="95.6" population="606340">	<!--Macao SAR China-->
 			<languagePopulation type="zh_Hant" populationPercent="98" officialStatus="official"/>	<!--Chinese (Traditional)-->
 			<languagePopulation type="pt" populationPercent="5" officialStatus="official" references="R1085"/>	<!--Portuguese-->
 			<languagePopulation type="zh" populationPercent="5" references="R1143"/>	<!--Chinese-->
 			<languagePopulation type="en" populationPercent="2.3" references="R1273"/>	<!--English-->
 		</territory>
-		<territory type="MP" gdp="682000000" literacyPercent="97" population="52263">	<!--Northern Mariana Islands-->
+		<territory type="MP" gdp="1242000000" literacyPercent="97" population="51994">	<!--Northern Mariana Islands-->
 			<languagePopulation type="en" populationPercent="97" officialStatus="de_facto_official"/>	<!--English-->
 			<languagePopulation type="ch" populationPercent="18"/>	<!--Chamorro-->
 		</territory>
 		<territory type="MQ" gdp="6117000000" literacyPercent="98" population="436131">	<!--Martinique-->
 			<languagePopulation type="fr" populationPercent="98" officialStatus="official"/>	<!--French-->
 		</territory>
-		<territory type="MR" gdp="17370000000" literacyPercent="58.6" population="3758570">	<!--Mauritania-->
+		<territory type="MR" gdp="17280000000" literacyPercent="58.6" population="3840430">	<!--Mauritania-->
 			<languagePopulation type="ar" populationPercent="85" officialStatus="official"/>	<!--Arabic-->
 			<languagePopulation type="fr" populationPercent="17" references="R1135"/>	<!--French-->
 			<languagePopulation type="ff" populationPercent="5.7"/>	<!--Fulah-->
-			<languagePopulation type="wo" populationPercent="0.27"/>	<!--Wolof-->
+			<languagePopulation type="wo" populationPercent="0.26"/>	<!--Wolof-->
+			<languagePopulation type="ff_Adlm" populationPercent="0" references="R1150"/>	<!--Fulah (Adlam)-->
 		</territory>
-		<territory type="MS" gdp="43780000" literacyPercent="97" population="5292">	<!--Montserrat-->
+		<territory type="MS" gdp="167400000" literacyPercent="97" population="5315">	<!--Montserrat-->
 			<languagePopulation type="en" populationPercent="66" officialStatus="official"/>	<!--English-->
 		</territory>
-		<territory type="MT" gdp="18530000000" literacyPercent="92.4" population="416338">	<!--Malta-->
+		<territory type="MT" gdp="19260000000" literacyPercent="92.4" population="449043">	<!--Malta-->
 			<languagePopulation type="mt" populationPercent="100" officialStatus="official"/>	<!--Maltese-->
 			<languagePopulation type="en" populationPercent="88" officialStatus="official"/>	<!--English-->
 			<languagePopulation type="it" populationPercent="56" references="R1319"/>	<!--Italian-->
 			<languagePopulation type="fr" populationPercent="11"/>	<!--French-->
 		</territory>
-		<territory type="MU" gdp="27440000000" literacyPercent="88.8" population="1356390">	<!--Mauritius-->
+		<territory type="MU" gdp="28270000000" literacyPercent="88.8" population="1364280">	<!--Mauritius-->
 			<languagePopulation type="mfe" populationPercent="90"/>	<!--Morisyen-->
 			<languagePopulation type="en" populationPercent="72" officialStatus="official" references="R1152"/>	<!--English-->
 			<languagePopulation type="bho" populationPercent="27"/>	<!--Bhojpuri-->
@@ -3514,27 +3532,27 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="fr" populationPercent="3" officialStatus="official"/>	<!--French-->
 			<languagePopulation type="ta" populationPercent="2.5"/>	<!--Tamil-->
 		</territory>
-		<territory type="MV" gdp="6896000000" literacyPercent="98.4" population="392709">	<!--Maldives-->
+		<territory type="MV" gdp="6901000000" literacyPercent="98.4" population="392473">	<!--Maldives-->
 			<languagePopulation type="dv" populationPercent="94" officialStatus="official"/>	<!--Divehi-->
 		</territory>
-		<territory type="MW" gdp="22470000000" literacyPercent="74.8" population="19196200">	<!--Malawi-->
+		<territory type="MW" gdp="22420000000" literacyPercent="74.8" population="19842600">	<!--Malawi-->
 			<languagePopulation type="en" populationPercent="63" officialStatus="official"/>	<!--English-->
 			<languagePopulation type="ny" populationPercent="63" officialStatus="official"/>	<!--Nyanja-->
 			<languagePopulation type="tum" populationPercent="8.4"/>	<!--Tumbuka-->
 			<languagePopulation type="tog" populationPercent="0.98"/>	<!--Nyasa Tonga-->
 			<languagePopulation type="zu" populationPercent="0.33"/>	<!--Zulu-->
 		</territory>
-		<territory type="MX" gdp="2406000000000" literacyPercent="93.5" population="124575000">	<!--Mexico-->
+		<territory type="MX" gdp="2463000000000" literacyPercent="93.5" population="125959000">	<!--Mexico-->
 			<languagePopulation type="es" populationPercent="83" officialStatus="de_facto_official"/>	<!--Spanish-->
 			<languagePopulation type="en" populationPercent="13"/>	<!--English-->
 			<languagePopulation type="yua" populationPercent="0.67"/>	<!--Yucateco-->
 			<languagePopulation type="nhe" populationPercent="0.39"/>	<!--Eastern Huasteca Nahuatl-->
-			<languagePopulation type="nhw" populationPercent="0.38"/>	<!--Western Huasteca Nahuatl-->
+			<languagePopulation type="nhw" populationPercent="0.39"/>	<!--Western Huasteca Nahuatl-->
 			<languagePopulation type="maz" populationPercent="0.34"/>	<!--Central Mazahua-->
 			<languagePopulation type="nch" populationPercent="0.19"/>	<!--Central Huasteca Nahuatl-->
 			<languagePopulation type="sei" populationPercent="0.0007"/>	<!--Seri-->
 		</territory>
-		<territory type="MY" gdp="926100000000" literacyPercent="93.1" population="31382000">	<!--Malaysia-->
+		<territory type="MY" gdp="933300000000" literacyPercent="93.1" population="31809700">	<!--Malaysia-->
 			<languagePopulation type="ms" populationPercent="75" officialStatus="official"/>	<!--Malay-->
 			<languagePopulation type="en" populationPercent="21"/>	<!--English-->
 			<languagePopulation type="zh_Hant" populationPercent="17"/>	<!--Chinese (Traditional)-->
@@ -3547,7 +3565,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="bug" populationPercent="0.079" references="R1056"/>	<!--Buginese-->
 			<languagePopulation type="bjn" populationPercent="0.016"/>	<!--Banjar-->
 		</territory>
-		<territory type="MZ" gdp="37390000000" literacyPercent="56.1" population="26573700">	<!--Mozambique-->
+		<territory type="MZ" gdp="37090000000" literacyPercent="56.1" population="27233800">	<!--Mozambique-->
 			<languagePopulation type="pt" populationPercent="27" officialStatus="official"/>	<!--Portuguese-->
 			<languagePopulation type="vmw" populationPercent="13"/>	<!--Makhuwa-->
 			<languagePopulation type="ndc" populationPercent="9.9"/>	<!--Ndau-->
@@ -3558,10 +3576,10 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="rng" populationPercent="3.4"/>	<!--Ronga-->
 			<languagePopulation type="ny" populationPercent="2.6"/>	<!--Nyanja-->
 			<languagePopulation type="yao" populationPercent="2.4"/>	<!--Yao-->
-			<languagePopulation type="sw" populationPercent="0.035"/>	<!--Swahili-->
-			<languagePopulation type="zu" populationPercent="0.0068"/>	<!--Zulu-->
+			<languagePopulation type="sw" populationPercent="0.034"/>	<!--Swahili-->
+			<languagePopulation type="zu" populationPercent="0.0066"/>	<!--Zulu-->
 		</territory>
-		<territory type="NA" gdp="27020000000" literacyPercent="88.8" population="2484780">	<!--Namibia-->
+		<territory type="NA" gdp="26600000000" literacyPercent="88.8" population="2533220">	<!--Namibia-->
 			<languagePopulation type="af" populationPercent="75" references="R1256"/>	<!--Afrikaans-->
 			<languagePopulation type="kj" populationPercent="35"/>	<!--Kuanyama-->
 			<languagePopulation type="ng" populationPercent="21"/>	<!--Ndonga-->
@@ -3571,22 +3589,24 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="de" populationPercent="0.9"/>	<!--German-->
 			<languagePopulation type="tn" populationPercent="0.56"/>	<!--Tswana-->
 		</territory>
-		<territory type="NC" gdp="10770000000" literacyPercent="96.2" population="279070">	<!--New Caledonia-->
+		<territory type="NC" gdp="11110000000" literacyPercent="96.2" population="282754">	<!--New Caledonia-->
 			<languagePopulation type="fr" populationPercent="96" officialStatus="official"/>	<!--French-->
 		</territory>
-		<territory type="NE" gdp="21620000000" literacyPercent="28.7" population="19245300">	<!--Niger-->
+		<territory type="NE" gdp="21860000000" literacyPercent="28.7" population="19866200">	<!--Niger-->
 			<languagePopulation type="ha" populationPercent="41"/>	<!--Hausa-->
 			<languagePopulation type="fr" populationPercent="29" officialStatus="official" references="R1041"/>	<!--French-->
 			<languagePopulation type="dje" populationPercent="17"/>	<!--Zarma-->
 			<languagePopulation type="fuq" populationPercent="7"/>	<!--Central-Eastern Niger Fulfulde-->
 			<languagePopulation type="tmh" populationPercent="6"/>	<!--Tamashek-->
 			<languagePopulation type="ar" populationPercent="0.21"/>	<!--Arabic-->
-			<languagePopulation type="twq" populationPercent="0.042"/>	<!--Tasawaq-->
+			<languagePopulation type="twq" populationPercent="0.04"/>	<!--Tasawaq-->
+			<languagePopulation type="ff" populationPercent="0" references="R1150"/>	<!--Fulah-->
+			<languagePopulation type="ff_Adlm" populationPercent="0" references="R1150"/>	<!--Fulah (Adlam)-->
 		</territory>
-		<territory type="NF" gdp="117500000" literacyPercent="99" population="2210">	<!--Norfolk Island-->
-			<languagePopulation type="en" populationPercent="76" officialStatus="official"/>	<!--English-->
+		<territory type="NF" gdp="92950000" literacyPercent="99" population="1748">	<!--Norfolk Island-->
+			<languagePopulation type="en" populationPercent="96" officialStatus="official"/>	<!--English-->
 		</territory>
-		<territory type="NG" gdp="1118000000000" literacyPercent="61.3" population="190632000">	<!--Nigeria-->
+		<territory type="NG" gdp="1121000000000" literacyPercent="61.3" population="203453000">	<!--Nigeria-->
 			<languagePopulation type="en" populationPercent="53" officialStatus="official"/>	<!--English-->
 			<languagePopulation type="pcm" populationPercent="21" references="R1275"/>	<!--Nigerian Pidgin-->
 			<languagePopulation type="ha" populationPercent="13"/>	<!--Hausa-->
@@ -3602,12 +3622,14 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="kcg" populationPercent="0.093"/>	<!--Tyap-->
 			<languagePopulation type="ar" populationPercent="0.071"/>	<!--Arabic-->
 			<languagePopulation type="cch" populationPercent="0.021"/>	<!--Atsam-->
-			<languagePopulation type="amo" populationPercent="0.0087"/>	<!--Amo-->
+			<languagePopulation type="amo" populationPercent="0.0088"/>	<!--Amo-->
+			<languagePopulation type="ff" populationPercent="0" references="R1150"/>	<!--Fulah-->
+			<languagePopulation type="ff_Adlm" populationPercent="0" references="R1150"/>	<!--Fulah (Adlam)-->
 		</territory>
-		<territory type="NI" gdp="36220000000" literacyPercent="78" population="6025950">	<!--Nicaragua-->
+		<territory type="NI" gdp="36400000000" literacyPercent="78" population="6085210">	<!--Nicaragua-->
 			<languagePopulation type="es" populationPercent="78" officialStatus="official"/>	<!--Spanish-->
 		</territory>
-		<territory type="NL" gdp="915200000000" literacyPercent="99" population="17084700">	<!--Netherlands-->
+		<territory type="NL" gdp="924400000000" literacyPercent="99" population="17151200">	<!--Netherlands-->
 			<languagePopulation type="nl" populationPercent="100" officialStatus="official" references="R1042"/>	<!--Dutch-->
 			<languagePopulation type="en" populationPercent="90" references="R1070"/>	<!--English-->
 			<languagePopulation type="de" writingPercent="5" populationPercent="71"/>	<!--German-->
@@ -3621,19 +3643,19 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="rif_Latn" populationPercent="1.2"/>	<!--Riffian (Latin)-->
 			<languagePopulation type="tr" populationPercent="1.2"/>	<!--Turkish-->
 		</territory>
-		<territory type="NO" gdp="375900000000" literacyPercent="100" population="5320050">	<!--Norway-->
+		<territory type="NO" gdp="381200000000" literacyPercent="100" population="5372190">	<!--Norway-->
 			<languagePopulation type="nb" populationPercent="100" officialStatus="official"/>	<!--Norwegian Bokmål-->
 			<languagePopulation type="nn" populationPercent="25" officialStatus="official"/>	<!--Norwegian Nynorsk-->
 			<languagePopulation type="se" populationPercent="0.29" officialStatus="official_regional"/>	<!--Northern Sami-->
 		</territory>
-		<territory type="NP" gdp="78550000000" literacyPercent="57.4" population="29384300">	<!--Nepal-->
+		<territory type="NP" gdp="79190000000" literacyPercent="57.4" population="29717600">	<!--Nepal-->
 			<languagePopulation type="ne" populationPercent="44" officialStatus="official"/>	<!--Nepali-->
 			<languagePopulation type="mai" populationPercent="11"/>	<!--Maithili-->
 			<languagePopulation type="bho" populationPercent="6.8"/>	<!--Bhojpuri-->
 			<languagePopulation type="new" populationPercent="3.3"/>	<!--Newari-->
 			<languagePopulation type="jml" populationPercent="3.2"/>	<!--Jumli-->
 			<languagePopulation type="en" populationPercent="3"/>	<!--English-->
-			<languagePopulation type="taj" populationPercent="3"/>	<!--Eastern Tamang-->
+			<languagePopulation type="taj" populationPercent="3.43"/>	<!--Eastern Tamang-->
 			<languagePopulation type="dty" populationPercent="2.5" references="R1322"/>	<!--Dotyali-->
 			<languagePopulation type="awa" populationPercent="2.2"/>	<!--Awadhi-->
 			<languagePopulation type="thl" populationPercent="2"/>	<!--Dangaura Tharu-->
@@ -3647,55 +3669,53 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="bfy" populationPercent="0.54"/>	<!--Bagheli-->
 			<languagePopulation type="xsr" populationPercent="0.52"/>	<!--Sherpa-->
 			<languagePopulation type="rjs" literacyPercent="67" populationPercent="0.44" references="R1232"/>	<!--Rajbanshi-->
-			<languagePopulation type="tsf" populationPercent="0.43"/>	<!--Southwestern Tamang-->
 			<languagePopulation type="hi" populationPercent="0.42"/>	<!--Hindi-->
-			<languagePopulation type="ggn" populationPercent="0.42"/>	<!--Eastern Gurung-->
-			<languagePopulation type="gvr" populationPercent="0.29"/>	<!--Gurung-->
+			<languagePopulation type="gvr" populationPercent="0.71"/>	<!--Gurung-->
 			<languagePopulation type="bo" populationPercent="0.24"/>	<!--Tibetan-->
 			<languagePopulation type="tkt" populationPercent="0.24"/>	<!--Kathoriya Tharu-->
 			<languagePopulation type="tdh" populationPercent="0.12"/>	<!--Thulung-->
 			<languagePopulation type="bn" populationPercent="0.094"/>	<!--Bangla-->
 			<languagePopulation type="unr_Deva" populationPercent="0.019"/>	<!--Mundari (Devanagari)-->
-			<languagePopulation type="lep" populationPercent="0.0096"/>	<!--Lepcha-->
+			<languagePopulation type="lep" populationPercent="0.0095"/>	<!--Lepcha-->
 		</territory>
-		<territory type="NR" gdp="159000000" literacyPercent="99" population="9642">	<!--Nauru-->
+		<territory type="NR" gdp="160000000" literacyPercent="99" population="9692">	<!--Nauru-->
 			<languagePopulation type="en" populationPercent="97" officialStatus="official"/>	<!--English-->
 			<languagePopulation type="na" populationPercent="71" officialStatus="official" references="R1154"/>	<!--Nauru-->
 		</territory>
-		<territory type="NU" gdp="10010000" literacyPercent="95" population="1626">	<!--Niue-->
-			<languagePopulation type="en" populationPercent="69" officialStatus="official"/>	<!--English-->
-			<languagePopulation type="niu" populationPercent="69" officialStatus="official" references="R1155"/>	<!--Niuean-->
+		<territory type="NU" gdp="10010000" literacyPercent="95" population="1618">	<!--Niue-->
+			<languagePopulation type="en" populationPercent="70" officialStatus="official"/>	<!--English-->
+			<languagePopulation type="niu" populationPercent="70" officialStatus="official" references="R1155"/>	<!--Niuean-->
 		</territory>
-		<territory type="NZ" gdp="185700000000" literacyPercent="99" population="4510330">	<!--New Zealand-->
+		<territory type="NZ" gdp="189000000000" literacyPercent="99" population="4545630">	<!--New Zealand-->
 			<languagePopulation type="en" populationPercent="98" officialStatus="de_facto_official" references="R1203"/>	<!--English-->
 			<languagePopulation type="mi" populationPercent="2.8" officialStatus="official" references="R1044"/>	<!--Maori-->
 		</territory>
-		<territory type="OM" gdp="187900000000" literacyPercent="86.9" population="3424390">	<!--Oman-->
+		<territory type="OM" gdp="190100000000" literacyPercent="86.9" population="3494120">	<!--Oman-->
 			<languagePopulation type="ar" populationPercent="81" officialStatus="official"/>	<!--Arabic-->
 			<languagePopulation type="bal" populationPercent="4.9"/>	<!--Baluchi-->
 			<languagePopulation type="fa" populationPercent="0.94"/>	<!--Persian-->
 		</territory>
-		<territory type="PA" gdp="99430000000" literacyPercent="94.1" population="3753140">	<!--Panama-->
+		<territory type="PA" gdp="104100000000" literacyPercent="94.1" population="3800640">	<!--Panama-->
 			<languagePopulation type="es" populationPercent="69" officialStatus="official"/>	<!--Spanish-->
 			<languagePopulation type="en" populationPercent="14"/>	<!--English-->
 			<languagePopulation type="zh_Hant" populationPercent="0.16"/>	<!--Chinese (Traditional)-->
 		</territory>
-		<territory type="PE" gdp="424600000000" literacyPercent="89.6" population="31036700">	<!--Peru-->
+		<territory type="PE" gdp="430300000000" literacyPercent="89.6" population="31331200">	<!--Peru-->
 			<languagePopulation type="es" populationPercent="73" officialStatus="official"/>	<!--Spanish-->
 			<languagePopulation type="qu" populationPercent="15" officialStatus="official"/>	<!--Quechua-->
 			<languagePopulation type="ay" populationPercent="1.6"/>	<!--Aymara-->
 		</territory>
-		<territory type="PF" gdp="5490000000" literacyPercent="98" population="287881">	<!--French Polynesia-->
+		<territory type="PF" gdp="5490000000" literacyPercent="98" population="290373">	<!--French Polynesia-->
 			<languagePopulation type="fr" populationPercent="61" officialStatus="official"/>	<!--French-->
 			<languagePopulation type="ty" populationPercent="31" officialStatus="official"/>	<!--Tahitian-->
 			<languagePopulation type="zh_Hant" populationPercent="7.8"/>	<!--Chinese (Traditional)-->
 		</territory>
-		<territory type="PG" gdp="30840000000" literacyPercent="62.4" population="6909700">	<!--Papua New Guinea-->
+		<territory type="PG" gdp="30190000000" literacyPercent="62.4" population="7027330">	<!--Papua New Guinea-->
 			<languagePopulation type="tpi" literacyPercent="45" populationPercent="71" officialStatus="official" references="R1057"/>	<!--Tok Pisin-->
 			<languagePopulation type="en" populationPercent="50" officialStatus="official" references="R1156"/>	<!--English-->
 			<languagePopulation type="ho" writingPercent="5" populationPercent="2.1" officialStatus="official" references="R1058"/>	<!--Hiri Motu-->
 		</territory>
-		<territory type="PH" gdp="874500000000" literacyPercent="95.4" population="104256000">	<!--Philippines-->
+		<territory type="PH" gdp="877200000000" literacyPercent="95.4" population="105893000">	<!--Philippines-->
 			<languagePopulation type="en" populationPercent="64" officialStatus="official" references="R1157"/>	<!--English-->
 			<languagePopulation type="fil" populationPercent="60" officialStatus="official" references="R1028"/>	<!--Filipino-->
 			<languagePopulation type="es" populationPercent="31"/>	<!--Spanish-->
@@ -3710,14 +3730,14 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="mdh" populationPercent="1.2" officialStatus="official_regional"/>	<!--Maguindanaon-->
 			<languagePopulation type="tsg" populationPercent="1.1" officialStatus="official_regional"/>	<!--Tausug-->
 			<languagePopulation type="zh_Hant" populationPercent="0.73"/>	<!--Chinese (Traditional)-->
-			<languagePopulation type="cps" populationPercent="0.67"/>	<!--Capiznon-->
+			<languagePopulation type="cps" populationPercent="0.66"/>	<!--Capiznon-->
 			<languagePopulation type="krj" populationPercent="0.39"/>	<!--Kinaray-a-->
 			<languagePopulation type="bto" populationPercent="0.28"/>	<!--Rinconada Bikol-->
 			<languagePopulation type="hnn" populationPercent="0.016"/>	<!--Hanunoo-->
-			<languagePopulation type="tbw" literacyPercent="36" populationPercent="0.0096" references="R1100"/>	<!--Tagbanwa-->
-			<languagePopulation type="bku" populationPercent="0.0077"/>	<!--Buhid-->
+			<languagePopulation type="tbw" literacyPercent="36" populationPercent="0.0094" references="R1100"/>	<!--Tagbanwa-->
+			<languagePopulation type="bku" populationPercent="0.0076"/>	<!--Buhid-->
 		</territory>
-		<territory type="PK" gdp="1056000000000" literacyPercent="54.9" population="204925000">	<!--Pakistan-->
+		<territory type="PK" gdp="1061000000000" literacyPercent="54.9" population="207863000">	<!--Pakistan-->
 			<languagePopulation type="ur" populationPercent="95" officialStatus="official" references="R1106"/>	<!--Urdu-->
 			<languagePopulation type="pa_Arab" populationPercent="70" references="R1158"/>	<!--Punjabi (Arabic)-->
 			<languagePopulation type="en" populationPercent="50" officialStatus="official" references="R1106"/>	<!--English-->
@@ -3742,7 +3762,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="ks" populationPercent="0.069"/>	<!--Kashmiri-->
 			<languagePopulation type="btv" populationPercent="0.019"/>	<!--Bateri-->
 		</territory>
-		<territory type="PL" gdp="1111000000000" literacyPercent="99.7" population="38476300">	<!--Poland-->
+		<territory type="PL" gdp="1126000000000" literacyPercent="99.7" population="38420700">	<!--Poland-->
 			<languagePopulation type="pl" populationPercent="96" officialStatus="official"/>	<!--Polish-->
 			<languagePopulation type="en" populationPercent="33" references="R1277"/>	<!--English-->
 			<languagePopulation type="de" populationPercent="19" officialStatus="official_regional" references="R1277"/>	<!--German-->
@@ -3754,37 +3774,37 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="sli" populationPercent="0.031"/>	<!--Lower Silesian-->
 			<languagePopulation type="lt" populationPercent="0.021" officialStatus="official_regional" references="R1258"/>	<!--Lithuanian-->
 		</territory>
-		<territory type="PM" gdp="215300000" literacyPercent="99" population="5533">	<!--St. Pierre & Miquelon-->
-			<languagePopulation type="fr" populationPercent="92" officialStatus="official"/>	<!--French-->
+		<territory type="PM" gdp="261300000" literacyPercent="99" population="5471">	<!--St. Pierre & Miquelon-->
+			<languagePopulation type="fr" populationPercent="93" officialStatus="official"/>	<!--French-->
 			<languagePopulation type="en" populationPercent="3.4"/>	<!--English-->
 		</territory>
-		<territory type="PN" gdp="2401000" literacyPercent="99" population="54">	<!--Pitcairn Islands-->
+		<territory type="PN" gdp="2426000" literacyPercent="99" population="54">	<!--Pitcairn Islands-->
 			<languagePopulation type="en" populationPercent="85" officialStatus="official"/>	<!--English-->
 		</territory>
-		<territory type="PR" gdp="127300000000" literacyPercent="90.3" population="3351830">	<!--Puerto Rico-->
+		<territory type="PR" gdp="130000000000" literacyPercent="90.3" population="3294630">	<!--Puerto Rico-->
 			<languagePopulation type="es" populationPercent="87" officialStatus="official"/>	<!--Spanish-->
 			<languagePopulation type="en" populationPercent="49" officialStatus="de_facto_official" references="R1072"/>	<!--English-->
 		</territory>
-		<territory type="PS" gdp="21220000000" literacyPercent="95.3" population="4543130">	<!--Palestinian Territories-->
+		<territory type="PS" gdp="21220000000" literacyPercent="95.3" population="4635210">	<!--Palestinian Territories-->
 			<languagePopulation type="ar" populationPercent="100" officialStatus="official"/>	<!--Arabic-->
 		</territory>
-		<territory type="PT" gdp="311300000000" literacyPercent="95.4" population="10839500">	<!--Portugal-->
+		<territory type="PT" gdp="314100000000" literacyPercent="95.4" population="10355500">	<!--Portugal-->
 			<languagePopulation type="pt" populationPercent="96" officialStatus="official"/>	<!--Portuguese-->
 			<languagePopulation type="en" populationPercent="27"/>	<!--English-->
 			<languagePopulation type="fr" populationPercent="15"/>	<!--French-->
 			<languagePopulation type="es" populationPercent="10" references="R1323"/>	<!--Spanish-->
 			<languagePopulation type="gl" populationPercent="0.14"/>	<!--Galician-->
 		</territory>
-		<territory type="PW" gdp="301000000" literacyPercent="92" population="21431">	<!--Palau-->
+		<territory type="PW" gdp="264000000" literacyPercent="92" population="21516">	<!--Palau-->
 			<languagePopulation type="pau" populationPercent="74" officialStatus="official"/>	<!--Palauan-->
-			<languagePopulation type="en" populationPercent="8.8" officialStatus="official" references="R1059"/>	<!--English-->
+			<languagePopulation type="en" populationPercent="8.7" officialStatus="official" references="R1059"/>	<!--English-->
 		</territory>
-		<territory type="PY" gdp="68050000000" literacyPercent="93.9" population="6943740">	<!--Paraguay-->
+		<territory type="PY" gdp="88910000000" literacyPercent="93.9" population="7025760">	<!--Paraguay-->
 			<languagePopulation type="gn" populationPercent="80" officialStatus="official"/>	<!--Guarani-->
 			<languagePopulation type="es" populationPercent="3.2" officialStatus="official"/>	<!--Spanish-->
 			<languagePopulation type="de" populationPercent="2.9"/>	<!--German-->
 		</territory>
-		<territory type="QA" gdp="341700000000" literacyPercent="96.3" population="2314310">	<!--Qatar-->
+		<territory type="QA" gdp="339500000000" literacyPercent="96.3" population="2363570">	<!--Qatar-->
 			<languagePopulation type="ar" populationPercent="89" officialStatus="official"/>	<!--Arabic-->
 			<languagePopulation type="fa" populationPercent="11"/>	<!--Persian-->
 			<languagePopulation type="ml" populationPercent="0.28"/>	<!--Malayalam-->
@@ -3794,7 +3814,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="rcf" populationPercent="71"/>	<!--Réunion Creole French-->
 			<languagePopulation type="ta" populationPercent="15"/>	<!--Tamil-->
 		</territory>
-		<territory type="RO" gdp="474000000000" literacyPercent="97.7" population="21530000">	<!--Romania-->
+		<territory type="RO" gdp="483400000000" literacyPercent="97.7" population="21457100">	<!--Romania-->
 			<languagePopulation type="ro" populationPercent="90" officialStatus="official"/>	<!--Romanian-->
 			<languagePopulation type="en" populationPercent="31"/>	<!--English-->
 			<languagePopulation type="fr" populationPercent="17"/>	<!--French-->
@@ -3807,17 +3827,17 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="el" populationPercent="0.019"/>	<!--Greek-->
 			<languagePopulation type="pl" populationPercent="0.013"/>	<!--Polish-->
 		</territory>
-		<territory type="RS" gdp="106600000000" literacyPercent="98" population="7111020">	<!--Serbia-->
+		<territory type="RS" gdp="105700000000" literacyPercent="98" population="7078110">	<!--Serbia-->
 			<languagePopulation type="sr" populationPercent="99" officialStatus="official"/>	<!--Serbian-->
 			<languagePopulation type="sr_Latn" writingPercent="5" populationPercent="99" officialStatus="official" references="R1017"/>	<!--Serbian (Latin)-->
 			<languagePopulation type="sq" populationPercent="19"/>	<!--Albanian-->
 			<languagePopulation type="hu" populationPercent="4.8" officialStatus="official_regional" references="R1259"/>	<!--Hungarian-->
 			<languagePopulation type="ro" populationPercent="2.1" officialStatus="official_regional" references="R1259"/>	<!--Romanian-->
 			<languagePopulation type="hr" populationPercent="0.93" officialStatus="official_regional" references="R1259"/>	<!--Croatian-->
-			<languagePopulation type="sk" populationPercent="0.85" officialStatus="official_regional" references="R1259"/>	<!--Slovak-->
+			<languagePopulation type="sk" populationPercent="0.86" officialStatus="official_regional" references="R1259"/>	<!--Slovak-->
 			<languagePopulation type="uk" populationPercent="0" officialStatus="official_regional" references="R1260"/>	<!--Ukrainian-->
 		</territory>
-		<territory type="RU" gdp="4000000000000" literacyPercent="99.7" population="142258000">	<!--Russia-->
+		<territory type="RU" gdp="4016000000000" literacyPercent="99.7" population="142123000">	<!--Russia-->
 			<languagePopulation type="ru" populationPercent="94" officialStatus="official" references="R1204"/>	<!--Russian-->
 			<languagePopulation type="tt" populationPercent="1.4" officialStatus="official_regional" references="R1214"/>	<!--Tatar-->
 			<languagePopulation type="ba" populationPercent="1.3" officialStatus="official_regional"/>	<!--Bashkir-->
@@ -3837,7 +3857,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="kum" populationPercent="0.2" officialStatus="official_regional"/>	<!--Kumyk-->
 			<languagePopulation type="kv" populationPercent="0.18" officialStatus="official_regional"/>	<!--Komi-->
 			<languagePopulation type="lez" populationPercent="0.18" officialStatus="official_regional"/>	<!--Lezghian-->
-			<languagePopulation type="krc" populationPercent="0.16" officialStatus="official_regional"/>	<!--Karachay-Balkar-->
+			<languagePopulation type="krc" populationPercent="0.17" officialStatus="official_regional"/>	<!--Karachay-Balkar-->
 			<languagePopulation type="inh" populationPercent="0.16" officialStatus="official_regional"/>	<!--Ingush-->
 			<languagePopulation type="tyv" populationPercent="0.13" officialStatus="official_regional"/>	<!--Tuvinian-->
 			<languagePopulation type="az_Cyrl" populationPercent="0.093" officialStatus="official_regional" references="R1261"/>	<!--Azerbaijani (Cyrillic)-->
@@ -3855,24 +3875,24 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="vot" populationPercent="0"/>	<!--Votic-->
 			<languagePopulation type="cu" populationPercent="0" references="R1279"/>	<!--Church Slavic-->
 		</territory>
-		<territory type="RW" gdp="24610000000" literacyPercent="71.1" population="11901500">	<!--Rwanda-->
+		<territory type="RW" gdp="24680000000" literacyPercent="71.1" population="12187400">	<!--Rwanda-->
 			<languagePopulation type="rw" populationPercent="77" officialStatus="official"/>	<!--Kinyarwanda-->
 			<languagePopulation type="en" populationPercent="15" officialStatus="official" references="R1054"/>	<!--English-->
 			<languagePopulation type="fr" populationPercent="0.019" officialStatus="official"/>	<!--French-->
 		</territory>
-		<territory type="SA" gdp="1789000000000" literacyPercent="87.2" population="28571800">	<!--Saudi Arabia-->
+		<territory type="SA" gdp="1775000000000" literacyPercent="87.2" population="33091100">	<!--Saudi Arabia-->
 			<languagePopulation type="ar" populationPercent="100" officialStatus="official"/>	<!--Arabic-->
 		</territory>
-		<territory type="SB" gdp="1317000000" literacyPercent="84.1" population="647581">	<!--Solomon Islands-->
+		<territory type="SB" gdp="1330000000" literacyPercent="84.1" population="660121">	<!--Solomon Islands-->
 			<languagePopulation type="en" populationPercent="100" officialStatus="official" references="R1045"/>	<!--English-->
 			<languagePopulation type="rug" populationPercent="1.5"/>	<!--Roviana-->
 		</territory>
-		<territory type="SC" gdp="2712000000" literacyPercent="91.8" population="93920">	<!--Seychelles-->
+		<territory type="SC" gdp="2750000000" literacyPercent="91.8" population="94633">	<!--Seychelles-->
 			<languagePopulation type="crs" populationPercent="98" references="R1160"/>	<!--Seselwa Creole French-->
 			<languagePopulation type="fr" populationPercent="60" officialStatus="official" references="R1161"/>	<!--French-->
 			<languagePopulation type="en" populationPercent="38" officialStatus="official"/>	<!--English-->
 		</territory>
-		<territory type="SD" gdp="186800000000" literacyPercent="71.9" population="37345900">	<!--Sudan-->
+		<territory type="SD" gdp="177400000000" literacyPercent="71.9" population="43120800">	<!--Sudan-->
 			<languagePopulation type="ar" populationPercent="61" officialStatus="official" references="R1234"/>	<!--Arabic-->
 			<languagePopulation type="en" populationPercent="61" officialStatus="official" references="R1235"/>	<!--English-->
 			<languagePopulation type="bej" populationPercent="5.4" references="R1314"/>	<!--Beja-->
@@ -3882,7 +3902,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="fia" populationPercent="0.83"/>	<!--Nobiin-->
 			<languagePopulation type="zag" populationPercent="0.51"/>	<!--Zaghawa-->
 		</territory>
-		<territory type="SE" gdp="521700000000" literacyPercent="99" population="9960490">	<!--Sweden-->
+		<territory type="SE" gdp="518000000000" literacyPercent="99" population="10041000">	<!--Sweden-->
 			<languagePopulation type="sv" populationPercent="95" officialStatus="official" references="R1205"/>	<!--Swedish-->
 			<languagePopulation type="en" populationPercent="86"/>	<!--English-->
 			<languagePopulation type="fi" populationPercent="2.2" officialStatus="official_regional"/>	<!--Finnish-->
@@ -3894,7 +3914,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="sma" literacyPercent="75" populationPercent="0.003"/>	<!--Southern Sami-->
 			<languagePopulation type="ia" populationPercent="0" references="R1215"/>	<!--Interlingua-->
 		</territory>
-		<territory type="SG" gdp="513700000000" literacyPercent="95.9" population="5888930">	<!--Singapore-->
+		<territory type="SG" gdp="528100000000" literacyPercent="95.9" population="5995990">	<!--Singapore-->
 			<languagePopulation type="en" populationPercent="93" officialStatus="official" references="R1131"/>	<!--English-->
 			<languagePopulation type="zh" populationPercent="77" officialStatus="official"/>	<!--Chinese-->
 			<languagePopulation type="ms" populationPercent="14" officialStatus="official"/>	<!--Malay-->
@@ -3902,22 +3922,22 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="ml" populationPercent="0.17"/>	<!--Malayalam-->
 			<languagePopulation type="pa" populationPercent="0.16"/>	<!--Punjabi-->
 		</territory>
-		<territory type="SH" gdp="31100000" literacyPercent="97" population="7828">	<!--St. Helena-->
+		<territory type="SH" gdp="31100000" literacyPercent="97" population="7841">	<!--St. Helena-->
 			<languagePopulation type="en" populationPercent="69" officialStatus="official"/>	<!--English-->
 		</territory>
-		<territory type="SI" gdp="70360000000" literacyPercent="99.7" population="1972130">	<!--Slovenia-->
+		<territory type="SI" gdp="71230000000" literacyPercent="99.7" population="2102130">	<!--Slovenia-->
 			<languagePopulation type="sl" populationPercent="87" officialStatus="official"/>	<!--Slovenian-->
 			<languagePopulation type="hr" populationPercent="61"/>	<!--Croatian-->
 			<languagePopulation type="en" populationPercent="59"/>	<!--English-->
 			<languagePopulation type="de" populationPercent="42"/>	<!--German-->
-			<languagePopulation type="hu" populationPercent="0.47"/>	<!--Hungarian-->
-			<languagePopulation type="it" populationPercent="0.2"/>	<!--Italian-->
+			<languagePopulation type="hu" populationPercent="0.44"/>	<!--Hungarian-->
+			<languagePopulation type="it" populationPercent="0.19"/>	<!--Italian-->
 		</territory>
-		<territory type="SJ" gdp="188400000" literacyPercent="100" population="2667">	<!--Svalbard & Jan Mayen-->
-			<languagePopulation type="nb" populationPercent="56" officialStatus="official" references="R1116"/>	<!--Norwegian Bokmål-->
-			<languagePopulation type="ru" populationPercent="45" references="R1074"/>	<!--Russian-->
+		<territory type="SJ" gdp="183300000" literacyPercent="100" population="2583">	<!--Svalbard & Jan Mayen-->
+			<languagePopulation type="nb" populationPercent="58" officialStatus="official" references="R1116"/>	<!--Norwegian Bokmål-->
+			<languagePopulation type="ru" populationPercent="46" references="R1074"/>	<!--Russian-->
 		</territory>
-		<territory type="SK" gdp="178700000000" literacyPercent="99.6" population="5445830">	<!--Slovakia-->
+		<territory type="SK" gdp="179700000000" literacyPercent="99.6" population="5445040">	<!--Slovakia-->
 			<languagePopulation type="sk" populationPercent="90" officialStatus="official"/>	<!--Slovak-->
 			<languagePopulation type="cs" populationPercent="47"/>	<!--Czech-->
 			<languagePopulation type="en" populationPercent="26"/>	<!--English-->
@@ -3926,17 +3946,19 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="uk" populationPercent="1.9"/>	<!--Ukrainian-->
 			<languagePopulation type="pl" populationPercent="0.93"/>	<!--Polish-->
 		</territory>
-		<territory type="SL" gdp="11750000000" literacyPercent="43.3" population="6163200">	<!--Sierra Leone-->
+		<territory type="SL" gdp="11550000000" literacyPercent="43.3" population="6312210">	<!--Sierra Leone-->
 			<languagePopulation type="kri" populationPercent="95" references="R1162"/>	<!--Krio-->
 			<languagePopulation type="en" populationPercent="35" officialStatus="official"/>	<!--English-->
 			<languagePopulation type="men" populationPercent="27"/>	<!--Mende-->
 			<languagePopulation type="tem" literacyPercent="6" populationPercent="26" references="R1061"/>	<!--Timne-->
+			<languagePopulation type="ff" populationPercent="0" references="R1150"/>	<!--Fulah-->
+			<languagePopulation type="ff_Adlm" populationPercent="0" references="R1150"/>	<!--Fulah (Adlam)-->
 		</territory>
-		<territory type="SM" gdp="2083000000" literacyPercent="96" population="33537">	<!--San Marino-->
+		<territory type="SM" gdp="2064000000" literacyPercent="96" population="33779">	<!--San Marino-->
 			<languagePopulation type="it" populationPercent="89" officialStatus="official"/>	<!--Italian-->
-			<languagePopulation type="eo" populationPercent="0.89" references="R1268"/>	<!--Esperanto-->
+			<languagePopulation type="eo" populationPercent="0.89" references="R1325"/>	<!--Esperanto-->
 		</territory>
-		<territory type="SN" gdp="43070000000" literacyPercent="49.7" population="14668500">	<!--Senegal-->
+		<territory type="SN" gdp="54800000000" literacyPercent="49.7" population="15020900">	<!--Senegal-->
 			<languagePopulation type="wo" populationPercent="70" officialStatus="de_facto_official" references="R1297"/>	<!--Wolof-->
 			<languagePopulation type="fr" literacyPercent="100" populationPercent="39" officialStatus="official" references="R1069"/>	<!--French-->
 			<languagePopulation type="ff" populationPercent="21" officialStatus="official_regional"/>	<!--Fulah-->
@@ -3947,70 +3969,71 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="bjt" literacyPercent="100" populationPercent="0.61" officialStatus="official_regional" references="R1069"/>	<!--Balanta-Ganja-->
 			<languagePopulation type="snf" literacyPercent="10" populationPercent="0.24" officialStatus="official_regional" references="R1281"/>	<!--Noon-->
 			<languagePopulation type="knf" literacyPercent="10" populationPercent="0.21" officialStatus="official_regional" references="R1281"/>	<!--Mankanya-->
-			<languagePopulation type="bsc" literacyPercent="10" populationPercent="0.098" officialStatus="official_regional" references="R1281"/>	<!--Bassari-->
-			<languagePopulation type="mey" literacyPercent="10" populationPercent="0.049" officialStatus="official_regional" references="R1281"/>	<!--Hassaniyya-->
+			<languagePopulation type="bsc" literacyPercent="10" populationPercent="0.097" officialStatus="official_regional" references="R1281"/>	<!--Bassari-->
+			<languagePopulation type="mey" literacyPercent="10" populationPercent="0.048" officialStatus="official_regional" references="R1281"/>	<!--Hassaniyya-->
 			<languagePopulation type="tnr" literacyPercent="10" populationPercent="0.023" officialStatus="official_regional" references="R1281"/>	<!--Ménik-->
+			<languagePopulation type="ff_Adlm" populationPercent="0" references="R1150"/>	<!--Fulah (Adlam)-->
 		</territory>
-		<territory type="SO" gdp="17470000000" literacyPercent="37.8" population="11031400">	<!--Somalia-->
+		<territory type="SO" gdp="20440000000" literacyPercent="37.8" population="11259000">	<!--Somalia-->
 			<languagePopulation type="so" populationPercent="78" officialStatus="official"/>	<!--Somali-->
 			<languagePopulation type="ar" literacyPercent="99" populationPercent="34" officialStatus="official" references="R1236"/>	<!--Arabic-->
 			<languagePopulation type="sw" populationPercent="2"/>	<!--Swahili-->
 			<languagePopulation type="om" populationPercent="0.42"/>	<!--Oromo-->
 		</territory>
-		<territory type="SR" gdp="7928000000" literacyPercent="94.7" population="591919">	<!--Suriname-->
+		<territory type="SR" gdp="8688000000" literacyPercent="94.7" population="597927">	<!--Suriname-->
 			<languagePopulation type="nl" populationPercent="90" officialStatus="official" references="R1163"/>	<!--Dutch-->
 			<languagePopulation type="srn" literacyPercent="75" populationPercent="68" references="R1103"/>	<!--Sranan Tongo-->
 			<languagePopulation type="zh_Hant" populationPercent="1.2"/>	<!--Chinese (Traditional)-->
 		</territory>
-		<territory type="SS" gdp="19750000000" literacyPercent="27" population="13026100">	<!--South Sudan-->
+		<territory type="SS" gdp="20010000000" literacyPercent="27" population="10204600">	<!--South Sudan-->
 			<languagePopulation type="ar" populationPercent="27" references="R1237"/>	<!--Arabic-->
 			<languagePopulation type="en" populationPercent="27" officialStatus="official" references="R1237"/>	<!--English-->
 			<languagePopulation type="nus" populationPercent="5.6" references="R1280"/>	<!--Nuer-->
 		</territory>
-		<territory type="ST" gdp="682000000" literacyPercent="69.5" population="201025">	<!--São Tomé & Príncipe-->
+		<territory type="ST" gdp="686000000" literacyPercent="69.5" population="204454">	<!--São Tomé & Príncipe-->
 			<languagePopulation type="pt" populationPercent="85" officialStatus="official"/>	<!--Portuguese-->
 		</territory>
-		<territory type="SV" gdp="56900000000" literacyPercent="84.5" population="6172010">	<!--El Salvador-->
+		<territory type="SV" gdp="51170000000" literacyPercent="84.5" population="6187270">	<!--El Salvador-->
 			<languagePopulation type="es" populationPercent="89" officialStatus="official"/>	<!--Spanish-->
 		</territory>
-		<territory type="SX" gdp="365800000" literacyPercent="99" population="42083">	<!--Sint Maarten-->
+		<territory type="SX" gdp="365800000" literacyPercent="99" population="42677">	<!--Sint Maarten-->
 			<languagePopulation type="en" populationPercent="68" officialStatus="official" references="R1238"/>	<!--English-->
-			<languagePopulation type="es" populationPercent="12" references="R1238"/>	<!--Spanish-->
-			<languagePopulation type="vic" populationPercent="7.4" references="R1238"/>	<!--Virgin Islands Creole English-->
-			<languagePopulation type="nl" populationPercent="3.8" officialStatus="official" references="R1238"/>	<!--Dutch-->
+			<languagePopulation type="es" populationPercent="11" references="R1238"/>	<!--Spanish-->
+			<languagePopulation type="vic" populationPercent="7.3" references="R1238"/>	<!--Virgin Islands Creole English-->
+			<languagePopulation type="nl" populationPercent="3.7" officialStatus="official" references="R1238"/>	<!--Dutch-->
 		</territory>
-		<territory type="SY" gdp="50280000000" literacyPercent="84.1" population="18028500">	<!--Syria-->
+		<territory type="SY" gdp="50280000000" literacyPercent="84.1" population="19454300">	<!--Syria-->
 			<languagePopulation type="ar" populationPercent="80" officialStatus="official"/>	<!--Arabic-->
 			<languagePopulation type="ku" populationPercent="8"/>	<!--Kurdish-->
 			<languagePopulation type="fr" populationPercent="5.9" officialStatus="official" references="R1088"/>	<!--French-->
 			<languagePopulation type="hy" populationPercent="1.8"/>	<!--Armenian-->
 			<languagePopulation type="syr" writingPercent="5" populationPercent="0.084" references="R1017"/>	<!--Syriac-->
 		</territory>
-		<territory type="SZ" gdp="11340000000" literacyPercent="87.8" population="1467150">	<!--Swaziland-->
+		<territory type="SZ" gdp="11600000000" literacyPercent="87.8" population="1087200">	<!--Eswatini-->
 			<languagePopulation type="en" populationPercent="80" officialStatus="official" references="R1071"/>	<!--English-->
 			<languagePopulation type="ss" populationPercent="58" officialStatus="official"/>	<!--Swati-->
 			<languagePopulation type="zu" populationPercent="6.8"/>	<!--Zulu-->
 			<languagePopulation type="ts" populationPercent="1.7"/>	<!--Tsonga-->
 		</territory>
-		<territory type="TA" gdp="12230000" literacyPercent="99" population="275">	<!--Tristan da Cunha-->
+		<territory type="TA" gdp="12350000" literacyPercent="99" population="275">	<!--Tristan da Cunha-->
 			<languagePopulation type="en" populationPercent="99"/>	<!--English-->
 		</territory>
-		<territory type="TC" gdp="632000000" literacyPercent="98" population="52570">	<!--Turks & Caicos Islands-->
+		<territory type="TC" gdp="632000000" literacyPercent="98" population="53701">	<!--Turks & Caicos Islands-->
 			<languagePopulation type="en" populationPercent="98" officialStatus="official"/>	<!--English-->
 		</territory>
-		<territory type="TD" gdp="29640000000" literacyPercent="35.4" population="12076000">	<!--Chad-->
+		<territory type="TD" gdp="28620000000" literacyPercent="35.4" population="15833100">	<!--Chad-->
 			<languagePopulation type="fr" populationPercent="26" officialStatus="official" references="R1239"/>	<!--French-->
 			<languagePopulation type="ar" populationPercent="17" officialStatus="official" references="R1239"/>	<!--Arabic-->
 		</territory>
-		<territory type="TF" gdp="5896000" literacyPercent="99" population="140">	<!--French Southern Territories-->
+		<territory type="TF" gdp="5935000" literacyPercent="99" population="140">	<!--French Southern Territories-->
 			<languagePopulation type="fr" literacyPercent="100" populationPercent="100" references="R1184"/>	<!--French-->
 		</territory>
-		<territory type="TG" gdp="12430000000" literacyPercent="60.4" population="7965060">	<!--Togo-->
+		<territory type="TG" gdp="12970000000" literacyPercent="60.4" population="8176450">	<!--Togo-->
 			<languagePopulation type="fr" populationPercent="61" officialStatus="official"/>	<!--French-->
 			<languagePopulation type="ee" populationPercent="17"/>	<!--Ewe-->
 			<languagePopulation type="ife" literacyPercent="15" populationPercent="1.3" references="R1048"/>	<!--Ifè-->
 		</territory>
-		<territory type="TH" gdp="1229000000000" literacyPercent="93.5" population="68414100">	<!--Thailand-->
+		<territory type="TH" gdp="1236000000000" literacyPercent="93.5" population="68615900">	<!--Thailand-->
 			<languagePopulation type="th" literacyPercent="93" populationPercent="80" officialStatus="official" references="R1199"/>	<!--Thai-->
 			<languagePopulation type="en" populationPercent="27"/>	<!--English-->
 			<languagePopulation type="tts" writingPercent="5" populationPercent="24" references="R1164"/>	<!--Northeastern Thai-->
@@ -4025,7 +4048,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="lcp" literacyPercent="25" populationPercent="0.01"/>	<!--Western Lawa-->
 			<languagePopulation type="lwl" populationPercent="0.01"/>	<!--Eastern Lawa-->
 		</territory>
-		<territory type="TJ" gdp="27670000000" literacyPercent="99.7" population="8468560">	<!--Tajikistan-->
+		<territory type="TJ" gdp="28430000000" literacyPercent="99.7" population="8604880">	<!--Tajikistan-->
 			<languagePopulation type="tg" populationPercent="100" officialStatus="official"/>	<!--Tajik-->
 			<languagePopulation type="ru" populationPercent="12" references="R1108"/>	<!--Russian-->
 			<languagePopulation type="fa" populationPercent="0.78"/>	<!--Persian-->
@@ -4035,26 +4058,26 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="en" populationPercent="100" officialStatus="official"/>	<!--English-->
 			<languagePopulation type="tkl" writingPercent="5" populationPercent="100" officialStatus="official" references="R1185"/>	<!--Tokelau-->
 		</territory>
-		<territory type="TL" gdp="6211000000" literacyPercent="58.3" population="1291360">	<!--Timor-Leste-->
+		<territory type="TL" gdp="7426000000" literacyPercent="58.3" population="1321930">	<!--Timor-Leste-->
 			<languagePopulation type="pt" literacyPercent="100" populationPercent="59" officialStatus="official" references="R1049"/>	<!--Portuguese-->
 			<languagePopulation type="tet" populationPercent="59" officialStatus="official" references="R1076"/>	<!--Tetum-->
 		</territory>
-		<territory type="TM" gdp="103500000000" literacyPercent="99.6" population="5351280">	<!--Turkmenistan-->
+		<territory type="TM" gdp="103700000000" literacyPercent="99.6" population="5411010">	<!--Turkmenistan-->
 			<languagePopulation type="tk" populationPercent="70" officialStatus="official"/>	<!--Turkmen-->
 			<languagePopulation type="ru" populationPercent="12"/>	<!--Russian-->
 			<languagePopulation type="uz" populationPercent="9"/>	<!--Uzbek-->
 			<languagePopulation type="ku" populationPercent="0.41"/>	<!--Kurdish-->
 		</territory>
-		<territory type="TN" gdp="135900000000" literacyPercent="79.1" population="11403800">	<!--Tunisia-->
+		<territory type="TN" gdp="137700000000" literacyPercent="79.1" population="11516200">	<!--Tunisia-->
 			<languagePopulation type="aeb" populationPercent="90"/>	<!--Tunisian Arabic-->
 			<languagePopulation type="ar" populationPercent="90" officialStatus="official"/>	<!--Arabic-->
 			<languagePopulation type="fr" populationPercent="74" officialStatus="official" references="R1132"/>	<!--French-->
 		</territory>
-		<territory type="TO" gdp="587000000" literacyPercent="99" population="106479">	<!--Tonga-->
+		<territory type="TO" gdp="591000000" literacyPercent="99" population="106398">	<!--Tonga-->
 			<languagePopulation type="to" populationPercent="95" officialStatus="official"/>	<!--Tongan-->
 			<languagePopulation type="en" populationPercent="28" officialStatus="official" references="R1078"/>	<!--English-->
 		</territory>
-		<territory type="TR" gdp="2133000000000" literacyPercent="94.1" population="80845200">	<!--Turkey-->
+		<territory type="TR" gdp="2186000000000" literacyPercent="94.1" population="81257200">	<!--Turkey-->
 			<languagePopulation type="tr" populationPercent="93" officialStatus="official" references="R1206"/>	<!--Turkish-->
 			<languagePopulation type="en" populationPercent="17"/>	<!--English-->
 			<languagePopulation type="ku" populationPercent="5.5"/>	<!--Kurdish-->
@@ -4079,19 +4102,19 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="ky_Latn" populationPercent="0.0014"/>	<!--Kyrgyz (Latin)-->
 			<languagePopulation type="kk" populationPercent="0.0007" references="R1119"/>	<!--Kazakh-->
 		</territory>
-		<territory type="TT" gdp="42780000000" literacyPercent="98.8" population="1218210">	<!--Trinidad & Tobago-->
+		<territory type="TT" gdp="42850000000" literacyPercent="98.8" population="1215530">	<!--Trinidad & Tobago-->
 			<languagePopulation type="en" populationPercent="88" officialStatus="official"/>	<!--English-->
 			<languagePopulation type="es" populationPercent="0.34"/>	<!--Spanish-->
 		</territory>
-		<territory type="TV" gdp="42000000" literacyPercent="95" population="11052">	<!--Tuvalu-->
-			<languagePopulation type="tvl" populationPercent="90" officialStatus="official"/>	<!--Tuvalu-->
-			<languagePopulation type="en" populationPercent="9.7" officialStatus="official" references="R1080"/>	<!--English-->
+		<territory type="TV" gdp="42000000" literacyPercent="95" population="11147">	<!--Tuvalu-->
+			<languagePopulation type="tvl" populationPercent="89" officialStatus="official"/>	<!--Tuvalu-->
+			<languagePopulation type="en" populationPercent="9.6" officialStatus="official" references="R1080"/>	<!--English-->
 		</territory>
-		<territory type="TW" gdp="1175000000000" literacyPercent="96.1" population="23508400">	<!--Taiwan-->
+		<territory type="TW" gdp="1189000000000" literacyPercent="96.1" population="23546000">	<!--Taiwan-->
 			<languagePopulation type="zh_Hant" populationPercent="95" officialStatus="official"/>	<!--Chinese (Traditional)-->
 			<languagePopulation type="trv" populationPercent="0.02"/>	<!--Taroko-->
 		</territory>
-		<territory type="TZ" gdp="162800000000" literacyPercent="67.8" population="53950900">	<!--Tanzania-->
+		<territory type="TZ" gdp="162500000000" literacyPercent="67.8" population="55451300">	<!--Tanzania-->
 			<languagePopulation type="sw" populationPercent="90" officialStatus="official" references="R1133"/>	<!--Swahili-->
 			<languagePopulation type="en" populationPercent="69" officialStatus="official" references="R1081"/>	<!--English-->
 			<languagePopulation type="suk" populationPercent="8.7"/>	<!--Sukuma-->
@@ -4109,7 +4132,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="rwk" populationPercent="0.22"/>	<!--Rwa-->
 			<languagePopulation type="sbp" literacyPercent="1" populationPercent="0.2" references="R1282"/>	<!--Sangu-->
 		</territory>
-		<territory type="UA" gdp="366400000000" literacyPercent="99.7" population="44033900">	<!--Ukraine-->
+		<territory type="UA" gdp="369600000000" literacyPercent="99.7" population="43952300">	<!--Ukraine-->
 			<languagePopulation type="uk" populationPercent="65" officialStatus="official"/>	<!--Ukrainian-->
 			<languagePopulation type="ru" populationPercent="46" officialStatus="de_facto_official" references="R1200"/>	<!--Russian-->
 			<languagePopulation type="pl" populationPercent="2.4"/>	<!--Polish-->
@@ -4123,7 +4146,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="hu" populationPercent="0.37"/>	<!--Hungarian-->
 			<languagePopulation type="el" populationPercent="0.016"/>	<!--Greek-->
 		</territory>
-		<territory type="UG" gdp="88610000000" literacyPercent="73.2" population="39570100">	<!--Uganda-->
+		<territory type="UG" gdp="89190000000" literacyPercent="73.2" population="40853700">	<!--Uganda-->
 			<languagePopulation type="sw" populationPercent="75" officialStatus="official" references="R1134"/>	<!--Swahili-->
 			<languagePopulation type="lg" populationPercent="13"/>	<!--Ganda-->
 			<languagePopulation type="nyn" populationPercent="6.3"/>	<!--Nyankole-->
@@ -4136,12 +4159,12 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="myx" populationPercent="2.9"/>	<!--Masaaba-->
 			<languagePopulation type="rw" populationPercent="2.1"/>	<!--Kinyarwanda-->
 			<languagePopulation type="ttj" populationPercent="1.9"/>	<!--Tooro-->
-			<languagePopulation type="hi" populationPercent="0.0056"/>	<!--Hindi-->
+			<languagePopulation type="hi" populationPercent="0.0054"/>	<!--Hindi-->
 		</territory>
-		<territory type="UM" gdp="18730000" literacyPercent="99" population="316">	<!--U.S. Outlying Islands-->
+		<territory type="UM" gdp="18710000" literacyPercent="99" population="316">	<!--U.S. Outlying Islands-->
 			<languagePopulation type="en" populationPercent="100" officialStatus="de_facto_official" references="R1190"/>	<!--English-->
 		</territory>
-		<territory type="US" gdp="19360000000000" literacyPercent="99" population="326626000">	<!--United States-->
+		<territory type="US" gdp="19490000000000" literacyPercent="99" population="329256000">	<!--United States-->
 			<languagePopulation type="en" populationPercent="96" officialStatus="de_facto_official"/>	<!--English-->
 			<languagePopulation type="es" populationPercent="9.6" officialStatus="official_regional"/>	<!--Spanish-->
 			<languagePopulation type="zh_Hant" populationPercent="0.69"/>	<!--Chinese (Traditional)-->
@@ -4152,11 +4175,11 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="vi" populationPercent="0.34"/>	<!--Vietnamese-->
 			<languagePopulation type="ko" populationPercent="0.3"/>	<!--Korean-->
 			<languagePopulation type="ru" populationPercent="0.24"/>	<!--Russian-->
-			<languagePopulation type="nv" populationPercent="0.05"/>	<!--Navajo-->
+			<languagePopulation type="nv" populationPercent="0.051"/>	<!--Navajo-->
 			<languagePopulation type="yi" populationPercent="0.049" references="R1262"/>	<!--Yiddish-->
 			<languagePopulation type="pdc" populationPercent="0.039"/>	<!--Pennsylvania German-->
 			<languagePopulation type="haw" populationPercent="0.0089" officialStatus="official_regional" references="R1166"/>	<!--Hawaiian-->
-			<languagePopulation type="frc" populationPercent="0.0084"/>	<!--Cajun French-->
+			<languagePopulation type="frc" populationPercent="0.0085"/>	<!--Cajun French-->
 			<languagePopulation type="chr" writingPercent="5" populationPercent="0.0077" references="R1017"/>	<!--Cherokee-->
 			<languagePopulation type="esu" populationPercent="0.0062"/>	<!--Central Yupik-->
 			<languagePopulation type="dak" populationPercent="0.0059"/>	<!--Dakota-->
@@ -4165,58 +4188,58 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="ik" writingPercent="5" populationPercent="0.0024" references="R1017"/>	<!--Inupiaq-->
 			<languagePopulation type="mus" populationPercent="0.0012"/>	<!--Creek-->
 		</territory>
-		<territory type="UY" gdp="78410000000" literacyPercent="98.1" population="3360150">	<!--Uruguay-->
+		<territory type="UY" gdp="78160000000" literacyPercent="98.1" population="3369300">	<!--Uruguay-->
 			<languagePopulation type="es" populationPercent="88" officialStatus="official"/>	<!--Spanish-->
 		</territory>
-		<territory type="UZ" gdp="221700000000" literacyPercent="99.4" population="29748900">	<!--Uzbekistan-->
+		<territory type="UZ" gdp="223000000000" literacyPercent="99.4" population="30023700">	<!--Uzbekistan-->
 			<languagePopulation type="uz" populationPercent="85" officialStatus="official" references="R1263"/>	<!--Uzbek-->
 			<languagePopulation type="uz_Cyrl" populationPercent="15" officialStatus="official" references="R1263"/>	<!--Uzbek (Cyrillic)-->
 			<languagePopulation type="ru" populationPercent="14"/>	<!--Russian-->
 			<languagePopulation type="kaa" populationPercent="1.6"/>	<!--Kara-Kalpak-->
 			<languagePopulation type="tr" populationPercent="0.76"/>	<!--Turkish-->
 		</territory>
-		<territory type="VA" gdp="37130000" literacyPercent="100" population="1000">	<!--Vatican City-->
+		<territory type="VA" gdp="37220000" literacyPercent="100" population="1000">	<!--Vatican City-->
 			<languagePopulation type="it" populationPercent="82" officialStatus="de_facto_official" references="R1077"/>	<!--Italian-->
 			<languagePopulation type="la" populationPercent="82" references="R1284"/>	<!--Latin-->
 		</territory>
-		<territory type="VC" gdp="1281000000" literacyPercent="96" population="102089">	<!--St. Vincent & Grenadines-->
+		<territory type="VC" gdp="1265000000" literacyPercent="96" population="101844">	<!--St. Vincent & Grenadines-->
 			<languagePopulation type="en" populationPercent="96" officialStatus="official"/>	<!--English-->
 		</territory>
-		<territory type="VE" gdp="389400000000" literacyPercent="95.5" population="31304000">	<!--Venezuela-->
+		<territory type="VE" gdp="381600000000" literacyPercent="95.5" population="31689200">	<!--Venezuela-->
 			<languagePopulation type="es" populationPercent="82" officialStatus="official"/>	<!--Spanish-->
 		</territory>
-		<territory type="VG" gdp="500000000" literacyPercent="97.8" population="35015">	<!--British Virgin Islands-->
+		<territory type="VG" gdp="500000000" literacyPercent="97.8" population="35802">	<!--British Virgin Islands-->
 			<languagePopulation type="en" populationPercent="98" officialStatus="official"/>	<!--English-->
 		</territory>
-		<territory type="VI" gdp="3792000000" literacyPercent="99" population="107268">	<!--U.S. Virgin Islands-->
+		<territory type="VI" gdp="3872000000" literacyPercent="99" population="106977">	<!--U.S. Virgin Islands-->
 			<languagePopulation type="en" populationPercent="75" officialStatus="de_facto_official"/>	<!--English-->
 		</territory>
-		<territory type="VN" gdp="643900000000" literacyPercent="93.4" population="96160200">	<!--Vietnam-->
+		<territory type="VN" gdp="648700000000" literacyPercent="93.4" population="97040300">	<!--Vietnam-->
 			<languagePopulation type="vi" populationPercent="86" officialStatus="official" references="R1218"/>	<!--Vietnamese-->
-			<languagePopulation type="zh_Hant" populationPercent="1"/>	<!--Chinese (Traditional)-->
+			<languagePopulation type="zh_Hant" populationPercent="1.1"/>	<!--Chinese (Traditional)-->
 			<languagePopulation type="cjm" literacyPercent="60" populationPercent="0.089"/>	<!--Eastern Cham-->
 		</territory>
-		<territory type="VU" gdp="787000000" literacyPercent="83.2" population="282814">	<!--Vanuatu-->
+		<territory type="VU" gdp="772000000" literacyPercent="83.2" population="288037">	<!--Vanuatu-->
 			<languagePopulation type="bi" populationPercent="90" officialStatus="official" references="R1201"/>	<!--Bislama-->
 			<languagePopulation type="en" populationPercent="83" officialStatus="official"/>	<!--English-->
 			<languagePopulation type="fr" populationPercent="50" officialStatus="official"/>	<!--French-->
 		</territory>
-		<territory type="WF" gdp="60000000" literacyPercent="50" population="15714">	<!--Wallis & Futuna-->
+		<territory type="WF" gdp="60000000" literacyPercent="50" population="15763">	<!--Wallis & Futuna-->
 			<languagePopulation type="wls" populationPercent="60"/>	<!--Wallisian-->
 			<languagePopulation type="fr" populationPercent="48" officialStatus="official" references="R1168"/>	<!--French-->
 			<languagePopulation type="fud" populationPercent="31"/>	<!--East Futuna-->
 		</territory>
-		<territory type="WS" gdp="1130000000" literacyPercent="98.8" population="200108">	<!--Samoa-->
+		<territory type="WS" gdp="1137000000" literacyPercent="98.8" population="201316">	<!--Samoa-->
 			<languagePopulation type="sm" populationPercent="100" officialStatus="official"/>	<!--Samoan-->
 			<languagePopulation type="en" populationPercent="2.2" officialStatus="official"/>	<!--English-->
 		</territory>
-		<territory type="XK" gdp="19380000000" literacyPercent="91.9" population="1895250">	<!--Kosovo-->
+		<territory type="XK" gdp="19600000000" literacyPercent="91.9" population="1907590">	<!--Kosovo-->
 			<languagePopulation type="sq" populationPercent="92" officialStatus="official"/>	<!--Albanian-->
 			<languagePopulation type="aln" populationPercent="74" references="R1305"/>	<!--Gheg Albanian-->
 			<languagePopulation type="sr" populationPercent="5" officialStatus="official" references="R1264"/>	<!--Serbian-->
 			<languagePopulation type="sr_Latn" populationPercent="5" officialStatus="official" references="R1264"/>	<!--Serbian (Latin)-->
 		</territory>
-		<territory type="YE" gdp="68950000000" literacyPercent="65.3" population="28036800">	<!--Yemen-->
+		<territory type="YE" gdp="73630000000" literacyPercent="65.3" population="28667200">	<!--Yemen-->
 			<languagePopulation type="ar" populationPercent="74" officialStatus="official"/>	<!--Arabic-->
 			<languagePopulation type="en" populationPercent="9"/>	<!--English-->
 		</territory>
@@ -4226,7 +4249,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="buc" populationPercent="23"/>	<!--Bushi-->
 			<languagePopulation type="sw" populationPercent="1.4"/>	<!--Swahili-->
 		</territory>
-		<territory type="ZA" gdp="757300000000" literacyPercent="93" population="54841600">	<!--South Africa-->
+		<territory type="ZA" gdp="767200000000" literacyPercent="93" population="55380200">	<!--South Africa-->
 			<languagePopulation type="en" literacyPercent="99" populationPercent="31" officialStatus="official" references="R1265"/>	<!--English-->
 			<languagePopulation type="zu" literacyPercent="50" populationPercent="24" officialStatus="official_regional"/>	<!--Zulu-->
 			<languagePopulation type="xh" literacyPercent="50" populationPercent="18" officialStatus="official_regional"/>	<!--Xhosa-->
@@ -4241,13 +4264,13 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="nr" literacyPercent="50" populationPercent="1.6" officialStatus="official_regional"/>	<!--South Ndebele-->
 			<languagePopulation type="sw" literacyPercent="50" populationPercent="0.0018"/>	<!--Swahili-->
 		</territory>
-		<territory type="ZM" gdp="68900000000" literacyPercent="61.4" population="15972000">	<!--Zambia-->
+		<territory type="ZM" gdp="68930000000" literacyPercent="61.4" population="16445100">	<!--Zambia-->
 			<languagePopulation type="bem" populationPercent="31" references="R1104"/>	<!--Bemba-->
 			<languagePopulation type="en" populationPercent="16" officialStatus="official"/>	<!--English-->
 			<languagePopulation type="ny" populationPercent="15"/>	<!--Nyanja-->
 			<languagePopulation type="loz" populationPercent="6" references="R1285"/>	<!--Lozi-->
 		</territory>
-		<territory type="ZW" gdp="33870000000" literacyPercent="83.6" population="13805100">	<!--Zimbabwe-->
+		<territory type="ZW" gdp="34270000000" literacyPercent="83.6" population="14030400">	<!--Zimbabwe-->
 			<languagePopulation type="sn" populationPercent="81" officialStatus="official"/>	<!--Shona-->
 			<languagePopulation type="en" populationPercent="42" officialStatus="official" references="R1171"/>	<!--English-->
 			<languagePopulation type="nd" populationPercent="12" officialStatus="official"/>	<!--North Ndebele-->
@@ -4416,7 +4439,7 @@ XXX Code for transations where no currency is involved
               <era type="138" start="1275-4-25"/>
               <era type="139" start="1278-2-29"/>
               <era type="140" start="1288-4-28"/>
-              <era type="141" start="1293-8-55"/>
+              <era type="141" start="1293-8-5"/>
               <era type="142" start="1299-4-25"/>
               <era type="143" start="1302-11-21"/>
               <era type="144" start="1303-8-5"/>
@@ -4441,7 +4464,7 @@ XXX Code for transations where no currency is involved
               <era type="163" start="1379-3-22"/>
               <era type="164" start="1381-2-10"/>
               <era type="165" start="1384-4-28"/>
-              <era type="166" start="1384-2-27"/>
+              <era type="166" start="1387-8-22"/>
               <era type="167" start="1387-8-23"/>
               <era type="168" start="1389-2-9"/>
               <era type="169" start="1390-3-26"/>
@@ -4511,6 +4534,7 @@ XXX Code for transations where no currency is involved
               <era type="233" start="1912-7-30"/>
               <era type="234" start="1926-12-25"/>
               <era type="235" start="1989-1-8"/>
+              <era type="236" start="2019-5-1"/>
           </eras>
         </calendar>
         <calendar type="islamic">
@@ -4656,12 +4680,12 @@ XXX Code for transations where no currency is involved
 			FI FJ FO FR
 			GB GE GF GP GR
 			HR HU
-			IS IT
+			IE IS IT
 			KG KZ
 			LB LI LK LT LU LV
 			MC MD ME MK MN MQ MY
 			NL NO NZ
-			PL PT
+			PL
 			RE RO RS RU
 			SE SI SK SM
 			TJ TM TR
@@ -4670,7 +4694,7 @@ XXX Code for transations where no currency is involved
 			XK"
 		  />
 		<firstDay day="fri" territories="MV"/>
-		<firstDay day="sat" territories="AE AF BH DJ DZ EG IQ IR JO KW LY MA OM QA SD SY"/>
+		<firstDay day="sat" territories="AE AF BH DJ DZ EG IQ IR JO KW LY OM QA SD SY"/>
           <firstDay day="sun"  territories="
 			AG AR AS AU
 			BD BR BS BT BW BZ
@@ -4679,15 +4703,15 @@ XXX Code for transations where no currency is involved
 			ET
 			GT GU
 			HK HN
-			ID IE IL IN
+			ID IL IN
 			JM JP
 			KE KH KR
 			LA
 			MH MM MO MT MX MZ
 			NI NP
-			PA PE PH PK PR PY
+			PA PE PH PK PR PT PY
 			SA SG SV
-			TH TN TT TW
+			TH TT TW
 			UM US
 			VE VI
 			WS
@@ -4696,17 +4720,17 @@ XXX Code for transations where no currency is involved
           />
 		<firstDay day="sun" territories="GB" alt="variant" references="Shorter Oxford Dictionary (5th edition, 2002)"/>
 		<weekendStart day="thu" territories="AF"/>
-		<weekendStart day="fri" territories="AE BH DZ EG IL IQ IR JO KW LY MA OM QA SA SD SY TN YE"/>
+		<weekendStart day="fri" territories="AE BH DZ EG IL IQ IR JO KW LY OM QA SA SD SY YE"/>
 		<weekendStart day="sat" territories="001"/>
 		<weekendStart day="sun" territories="IN"/>
 		<weekendEnd day="fri" territories="AF IR"/>
-		<weekendEnd day="sat" territories="AE BH DZ EG IL IQ JO KW LY MA OM QA SA SD SY TN YE"/>
+		<weekendEnd day="sat" territories="AE BH DZ EG IL IQ JO KW LY OM QA SA SD SY YE"/>
 		<weekendEnd day="sun" territories="001"/>
 		
 		<weekOfPreference ordering="weekOfYear" locales="und"/>
 		<weekOfPreference ordering="weekOfYear weekOfMonth" locales="am az bs cs cy da el et hi ky lt mk sk ta th"/>
 		<weekOfPreference ordering="weekOfYear weekOfMonth weekOfInterval" locales="is mn no sv vi"/>
-		<weekOfPreference ordering="weekOfYear weekOfDate weekOfMonth" locales="fi zh-TW"/>
+		<weekOfPreference ordering="weekOfYear weekOfDate weekOfMonth" locales="fi zh_TW"/>
 		<weekOfPreference ordering="weekOfYear weekOfInterval" locales="zu"/>
 		<weekOfPreference ordering="weekOfDate" locales="ca es fr gl"/>
 		<weekOfPreference ordering="weekOfDate weekOfMonth" locales="en bn ja ka"/>
@@ -4729,31 +4753,30 @@ XXX Code for transations where no currency is involved
 		<hours preferred="H" allowed="H" regions="AX BQ CP CZ DK FI ID IS ML NE RU SE SJ SK"/>
 		<hours preferred="H" allowed="H h" regions="001"/>
 		<hours preferred="H" allowed="H h hb hB" regions="AC AI BW BZ CC CK CX DG FK GB GG GI IE IM IO JE LT MK MN MS NF NG NR NU PN SH SX TA ZA"/>
-		<hours preferred="H" allowed="H h hB" regions="CF CM LU NP PF SC SN TF ca_ES gl_ES"/>
-		<hours preferred="H" allowed="H h hB hb" regions="KG KM LK MA af_ZA"/>
+		<hours preferred="H" allowed="H h hB" regions="CF CM LU NP PF SC SM SN TF VA ca_ES fr_CA gl_ES it_CH it_IT"/>
+		<hours preferred="H" allowed="H h hB hb" regions="AR CL CR CU EA GT HN IC KG KM LK MA MX NI PY SV UY af_ZA es_BO es_BR es_EC es_ES es_GQ es_PE"/>
 		<hours preferred="H" allowed="H h K" regions="JP"/>
-		<hours preferred="H" allowed="H hb hB h" regions="AF IR LA"/>
+		<hours preferred="H" allowed="H hb hB h" regions="AF LA"/>
 		<hours preferred="H" allowed="H hB"
-			regions="AD AM AO AT AW BE BF BJ BL BR CG CI CV DE EE FR GA GF GN GP GW HR IL IT KZ MC MD MF MQ MZ NC NL PM PT RE RO SI SM SR ST TG TR WF YT"/>
-		<hours preferred="H" allowed="H hB h" regions="AZ BA BG CH GE LI ME RS UA UZ VA XK"/>
-		<hours preferred="H" allowed="H hB h hb" regions="AR BO CL CR CU EA EC ES GQ GT HN IC MX NI PE SV UY"/>
+			regions="AD AM AO AT AW BE BF BJ BL BR CG CI CV DE EE FR GA GF GN GP GW HR IL IT KZ MC MD MF MQ MZ NC NL PM PT RE RO SI SR ST TG TR WF YT"/>
+		<hours preferred="H" allowed="H hB h" regions="AZ BA BG CH GE LI ME RS UA UZ XK"/>
+		<hours preferred="H" allowed="H hB h hb" regions="BO EC ES GQ PE"/>
 		<hours preferred="H" allowed="H hB hb h" regions="LV TL zu_ZA"/>
-		<hours preferred="H" allowed="hB H" regions="CD"/>
-		<hours preferred="H" allowed="hB hb h H" regions="KE MM TZ UG"/>
+		<hours preferred="H" allowed="hB H" regions="CD IR"/>
+		<hours preferred="H" allowed="hB hb H h" regions="KE MM TZ UG"/>
 		<hours preferred="h" allowed="h H" regions="AS BT DJ ER GH IN LS PG PW SO TO VU WS"/>
 		<hours preferred="h" allowed="h H hb hB" regions="CY GR"/>
-		<hours preferred="h" allowed="h H hB" regions="AL TD fr_CA"/>
+		<hours preferred="h" allowed="h H hB" regions="AL TD"/>
 		<hours preferred="h" allowed="h H hB hb" regions="CO DO KP KR NA PA PR VE"/>
 		<hours preferred="h" allowed="h hb H hB"
-			regions="AG AU BB BM BS CA DM FJ FM GD GM GU GY JM KI KN KY LC LR MH MP MW NZ SB SG SL SS SZ TC TT UM US VC VG VI ZM"/>
+			regions="AG AU BB BM BS CA DM FJ FM GD GM GU GY JM KI KN KY LC LR MH MP MW NZ SB SG SL SS SZ TC TT UM US VC VG VI ZM en_001"/>
 		<hours preferred="h" allowed="h hB H" regions="BD PK"/>
-		<hours preferred="h" allowed="h hB hb H" regions="AE BH DZ EG EH IQ JO KW LB LY MR OM PH PS QA SA SD SY TN YE"/>
-		<hours preferred="h" allowed="hb hB H h" regions="BN MY"/>
-		<hours preferred="h" allowed="hB h H" regions="kn_IN ml_IN te_IN"/>
+		<hours preferred="h" allowed="h hB hb H" regions="AE BH DZ EG EH IQ JO KW LB LY MR OM PH PS QA SA SD SY TN YE ar_001"/>
+		<hours preferred="h" allowed="hb hB h H" regions="BN MY"/>
+		<hours preferred="h" allowed="hB h H" regions="hi_IN kn_IN ml_IN te_IN"/>
 		<hours preferred="h" allowed="hB h H hb" regions="KH"/>
 		<hours preferred="h" allowed="hB h hb H" regions="ta_IN"/>
-		<hours preferred="h" allowed="hB hb H h" regions="CN HK MO TW"/>
-		<hours preferred="h" allowed="hB hb h H" regions="ET gu_IN mr_IN pa_IN"/>
+		<hours preferred="h" allowed="hB hb h H" regions="CN HK MO TW ET gu_IN mr_IN pa_IN"/>
     </timeData>
 
     <measurementData>
@@ -4980,7 +5003,7 @@ XXX Code for transations where no currency is involved
         <territoryCodes type="FR" numeric="250" alpha3="FRA"/>
         <territoryCodes type="FX" numeric="249" alpha3="FXX"/>
         <territoryCodes type="GA" numeric="266" alpha3="GAB" fips10="GB"/>
-        <territoryCodes type="GB" numeric="826" alpha3="GBR" fips10="UK" internet="UK GB"/>
+        <territoryCodes type="GB" numeric="826" alpha3="GBR" fips10="UK"/>
         <territoryCodes type="GD" numeric="308" alpha3="GRD" fips10="GJ"/>
         <territoryCodes type="GE" numeric="268" alpha3="GEO" fips10="GG"/>
         <territoryCodes type="GF" numeric="254" alpha3="GUF" fips10="FG"/>
@@ -5110,7 +5133,7 @@ XXX Code for transations where no currency is involved
         <territoryCodes type="RE" numeric="638" alpha3="REU"/>
         <territoryCodes type="RO" numeric="642" alpha3="ROU"/>
         <territoryCodes type="RS" numeric="688" alpha3="SRB" fips10="RB"/>
-        <territoryCodes type="RU" numeric="643" alpha3="RUS" fips10="RS" internet="RU SU"/>
+        <territoryCodes type="RU" numeric="643" alpha3="RUS" fips10="RS"/>
         <territoryCodes type="RW" numeric="646" alpha3="RWA"/>
         <territoryCodes type="SA" numeric="682" alpha3="SAU"/>
         <territoryCodes type="SB" numeric="090" alpha3="SLB" fips10="BP"/>
@@ -5201,7 +5224,7 @@ XXX Code for transations where no currency is involved
         <territoryCodes type="ZM" numeric="894" alpha3="ZMB" fips10="ZA"/>
         <territoryCodes type="ZR" numeric="180" alpha3="ZAR"/>
         <territoryCodes type="ZW" numeric="716" alpha3="ZWE" fips10="ZI"/>
-        <territoryCodes type="ZZ" numeric="999" alpha3="ZZZ" internet="AAA AARP ABARTH ABB ABBOTT ABBVIE ABC ABLE ABOGADO ABUDHABI ACADEMY ACCENTURE ACCOUNTANT ACCOUNTANTS ACO ACTIVE ACTOR ADAC ADS ADULT AEG AERO AETNA AFAMILYCOMPANY AFL AGAKHAN AGENCY AIG AIGO AIRBUS AIRFORCE AIRTEL AKDN ALFAROMEO ALIBABA ALIPAY ALLFINANZ ALLSTATE ALLY ALSACE ALSTOM AMERICANEXPRESS AMERICANFAMILY AMEX AMFAM AMICA AMSTERDAM ANALYTICS ANDROID ANQUAN ANZ AOL APARTMENTS APP APPLE AQUARELLE ARAMCO ARCHI ARMY ARPA ART ARTE ASDA ASIA ASSOCIATES ATHLETA ATTORNEY AUCTION AUDI AUDIBLE AUDIO AUSPOST AUTHOR AUTO AUTOS AVIANCA AWS AXA AZURE BABY BAIDU BANAMEX BANANAREPUBLIC BAND BANK BAR BARCELONA BARCLAYCARD BARCLAYS BAREFOOT BARGAINS BASEBALL BASKETBALL BAUHAUS BAYERN BBC BBT BBVA BCG BCN BEATS BEAUTY BEER BENTLEY BERLIN BEST BESTBUY BET BHARTI BIBLE BID BIKE BING BINGO BIO BIZ BLACK BLACKFRIDAY BLANCO BLOCKBUSTER BLOG BLOOMBERG BLUE BMS BMW BNL BNPPARIBAS BOATS BOEHRINGER BOFA BOM BOND BOO BOOK BOOKING BOOTS BOSCH BOSTIK BOSTON BOT BOUTIQUE BOX BRADESCO BRIDGESTONE BROADWAY BROKER BROTHER BRUSSELS BUDAPEST BUGATTI BUILD BUILDERS BUSINESS BUY BUZZ BZH CAB CAFE CAL CALL CALVINKLEIN CAM CAMERA CAMP CANCERRESEARCH CANON CAPETOWN CAPITAL CAPITALONE CAR CARAVAN CARDS CARE CAREER CAREERS CARS CARTIER CASA CASE CASEIH CASH CASINO CAT CATERING CATHOLIC CBA CBN CBRE CBS CEB CENTER CEO CERN CFA CFD CHANEL CHANNEL CHASE CHAT CHEAP CHINTAI CHLOE CHRISTMAS CHROME CHRYSLER CHURCH CIPRIANI CIRCLE CISCO CITADEL CITI CITIC CITY CITYEATS CLAIMS CLEANING CLICK CLINIC CLINIQUE CLOTHING CLOUD CLUB CLUBMED COACH CODES COFFEE COLLEGE COLOGNE COM COMCAST COMMBANK COMMUNITY COMPANY COMPARE COMPUTER COMSEC CONDOS CONSTRUCTION CONSULTING CONTACT CONTRACTORS COOKING COOKINGCHANNEL COOL COOP CORSICA COUNTRY COUPON COUPONS COURSES CREDIT CREDITCARD CREDITUNION CRICKET CROWN CRS CRUISE CRUISES CSC CUISINELLA CYMRU CYOU DABUR DAD DANCE DATA DATE DATING DATSUN DAY DCLK DDS DEAL DEALER DEALS DEGREE DELIVERY DELL DELOITTE DELTA DEMOCRAT DENTAL DENTIST DESI DESIGN DEV DHL DIAMONDS DIET DIGITAL DIRECT DIRECTORY DISCOUNT DISCOVER DISH DIY DNP DOCS DOCTOR DODGE DOG DOHA DOMAINS DOT DOWNLOAD DRIVE DTV DUBAI DUCK DUNLOP DUNS DUPONT DURBAN DVAG DVR EARTH EAT ECO EDEKA EDU EDUCATION EMAIL EMERCK ENERGY ENGINEER ENGINEERING ENTERPRISES EPOST EPSON EQUIPMENT ERICSSON ERNI ESQ ESTATE ESURANCE EUROVISION EUS EVENTS EVERBANK EXCHANGE EXPERT EXPOSED EXPRESS EXTRASPACE FAGE FAIL FAIRWINDS FAITH FAMILY FAN FANS FARM FARMERS FASHION FAST FEDEX FEEDBACK FERRARI FERRERO FIAT FIDELITY FIDO FILM FINAL FINANCE FINANCIAL FIRE FIRESTONE FIRMDALE FISH FISHING FIT FITNESS FLICKR FLIGHTS FLIR FLORIST FLOWERS FLY FOO FOOD FOODNETWORK FOOTBALL FORD FOREX FORSALE FORUM FOUNDATION FOX FREE FRESENIUS FRL FROGANS FRONTDOOR FRONTIER FTR FUJITSU FUJIXEROX FUN FUND FURNITURE FUTBOL FYI GAL GALLERY GALLO GALLUP GAME GAMES GAP GARDEN GBIZ GDN GEA GENT GENTING GEORGE GGEE GIFT GIFTS GIVES GIVING GLADE GLASS GLE GLOBAL GLOBO GMAIL GMBH GMO GMX GODADDY GOLD GOLDPOINT GOLF GOO GOODHANDS GOODYEAR GOOG GOOGLE GOP GOT GOV GRAINGER GRAPHICS GRATIS GREEN GRIPE GROUP GUARDIAN GUCCI GUGE GUIDE GUITARS GURU HAIR HAMBURG HANGOUT HAUS HBO HDFC HDFCBANK HEALTH HEALTHCARE HELP HELSINKI HERE HERMES HGTV HIPHOP HISAMITSU HITACHI HIV HKT HOCKEY HOLDINGS HOLIDAY HOMEDEPOT HOMEGOODS HOMES HOMESENSE HONDA HONEYWELL HORSE HOSPITAL HOST HOSTING HOT HOTELES HOTMAIL HOUSE HOW HSBC HTC HUGHES HYATT HYUNDAI IBM ICBC ICE ICU IEEE IFM IKANO IMAMAT IMDB IMMO IMMOBILIEN INDUSTRIES INFINITI INFO ING INK INSTITUTE INSURANCE INSURE INT INTEL INTERNATIONAL INTUIT INVESTMENTS IPIRANGA IRISH ISELECT ISMAILI IST ISTANBUL ITAU ITV IVECO IWC JAGUAR JAVA JCB JCP JEEP JETZT JEWELRY JIO JLC JLL JMP JNJ JOBS JOBURG JOT JOY JPMORGAN JPRS JUEGOS JUNIPER KAUFEN KDDI KERRYHOTELS KERRYLOGISTICS KERRYPROPERTIES KFH KIA KIM KINDER KINDLE KITCHEN KIWI KOELN KOMATSU KOSHER KPMG KPN KRD KRED KUOKGROUP KYOTO LACAIXA LADBROKES LAMBORGHINI LAMER LANCASTER LANCIA LANCOME LAND LANDROVER LANXESS LASALLE LAT LATINO LATROBE LAW LAWYER LDS LEASE LECLERC LEFRAK LEGAL LEGO LEXUS LGBT LIAISON LIDL LIFE LIFEINSURANCE LIFESTYLE LIGHTING LIKE LILLY LIMITED LIMO LINCOLN LINDE LINK LIPSY LIVE LIVING LIXIL LOAN LOANS LOCKER LOCUS LOFT LOL LONDON LOTTE LOTTO LOVE LPL LPLFINANCIAL LTD LTDA LUNDBECK LUPIN LUXE LUXURY MACYS MADRID MAIF MAISON MAKEUP MAN MANAGEMENT MANGO MARKET MARKETING MARKETS MARRIOTT MARSHALLS MASERATI MATTEL MBA MCD MCDONALDS MCKINSEY MED MEDIA MEET MELBOURNE MEME MEMORIAL MEN MENU MEO METLIFE MIAMI MICROSOFT MIL MINI MINT MIT MITSUBISHI MLB MLS MMA MOBI MOBILE MOBILY MODA MOE MOI MOM MONASH MONEY MONSTER MONTBLANC MOPAR MORMON MORTGAGE MOSCOW MOTO MOTORCYCLES MOV MOVIE MOVISTAR MSD MTN MTPC MTR MUSEUM MUTUAL NAB NADEX NAGOYA NAME NATIONWIDE NATURA NAVY NBA NEC NET NETBANK NETFLIX NETWORK NEUSTAR NEW NEWHOLLAND NEWS NEXT NEXTDIRECT NEXUS NFL NGO NHK NICO NIKE NIKON NINJA NISSAN NISSAY NOKIA NORTHWESTERNMUTUAL NORTON NOW NOWRUZ NOWTV NRA NRW NTT NYC OBI OBSERVER OFF OFFICE OKINAWA OLAYAN OLAYANGROUP OLDNAVY OLLO OMEGA ONE ONG ONL ONLINE ONYOURSIDE OOO OPEN ORACLE ORANGE ORG ORGANIC ORIENTEXPRESS ORIGINS OSAKA OTSUKA OTT OVH PAGE PAMPEREDCHEF PANASONIC PANERAI PARIS PARS PARTNERS PARTS PARTY PASSAGENS PAY PCCW PET PFIZER PHARMACY PHILIPS PHONE PHOTO PHOTOGRAPHY PHOTOS PHYSIO PIAGET PICS PICTET PICTURES PID PIN PING PINK PIONEER PIZZA PLACE PLAY PLAYSTATION PLUMBING PLUS PNC POHL POKER POLITIE PORN POST PRAMERICA PRAXI PRESS PRIME PRO PROD PRODUCTIONS PROF PROGRESSIVE PROMO PROPERTIES PROPERTY PROTECTION PRU PRUDENTIAL PUB PWC QPON QUEBEC QUEST QVC RACING RADIO RAID READ REALESTATE REALTOR REALTY RECIPES RED REDSTONE REDUMBRELLA REHAB REISE REISEN REIT RELIANCE REN RENT RENTALS REPAIR REPORT REPUBLICAN REST RESTAURANT REVIEW REVIEWS REXROTH RICH RICHARDLI RICOH RIGHTATHOME RIL RIO RIP RMIT ROCHER ROCKS RODEO ROGERS ROOM RSVP RUHR RUN RWE RYUKYU SAARLAND SAFE SAFETY SAKURA SALE SALON SAMSCLUB SAMSUNG SANDVIK SANDVIKCOROMANT SANOFI SAP SAPO SARL SAS SAVE SAXO SBI SBS SCA SCB SCHAEFFLER SCHMIDT SCHOLARSHIPS SCHOOL SCHULE SCHWARZ SCIENCE SCJOHNSON SCOR SCOT SEAT SECURE SECURITY SEEK SELECT SENER SERVICES SES SEVEN SEW SEX SEXY SFR SHANGRILA SHARP SHAW SHELL SHIA SHIKSHA SHOES SHOP SHOPPING SHOUJI SHOW SHOWTIME SHRIRAM SILK SINA SINGLES SITE SKI SKIN SKY SKYPE SLING SMART SMILE SNCF SOCCER SOCIAL SOFTBANK SOFTWARE SOHU SOLAR SOLUTIONS SONG SONY SOY SPACE SPIEGEL SPOT SPREADBETTING SRL SRT STADA STAPLES STAR STARHUB STATEBANK STATEFARM STATOIL STC STCGROUP STOCKHOLM STORAGE STORE STREAM STUDIO STUDY STYLE SUCKS SUPPLIES SUPPLY SUPPORT SURF SURGERY SUZUKI SWATCH SWIFTCOVER SWISS SYDNEY SYMANTEC SYSTEMS TAB TAIPEI TALK TAOBAO TARGET TATAMOTORS TATAR TATTOO TAX TAXI TCI TDK TEAM TECH TECHNOLOGY TEL TELECITY TELEFONICA TEMASEK TENNIS TEVA THD THEATER THEATRE TIAA TICKETS TIENDA TIFFANY TIPS TIRES TIROL TJMAXX TJX TKMAXX TMALL TODAY TOKYO TOOLS TOP TORAY TOSHIBA TOTAL TOURS TOWN TOYOTA TOYS TRADE TRADING TRAINING TRAVEL TRAVELCHANNEL TRAVELERS TRAVELERSINSURANCE TRUST TRV TUBE TUI TUNES TUSHU TVS UBANK UBS UCONNECT UNICOM UNIVERSITY UNO UOL UPS VACATIONS VANA VANGUARD VEGAS VENTURES VERISIGN VERSICHERUNG VET VIAJES VIDEO VIG VIKING VILLAS VIN VIP VIRGIN VISA VISION VISTA VISTAPRINT VIVA VIVO VLAANDEREN VODKA VOLKSWAGEN VOLVO VOTE VOTING VOTO VOYAGE VUELOS WALES WALMART WALTER WANG WANGGOU WARMAN WATCH WATCHES WEATHER WEATHERCHANNEL WEBCAM WEBER WEBSITE WED WEDDING WEIBO WEIR WHOSWHO WIEN WIKI WILLIAMHILL WIN WINDOWS WINE WINNERS WME WOLTERSKLUWER WOODSIDE WORK WORKS WORLD WOW WTC WTF XBOX XEROX XFINITY XIHUAN XIN XN--11B4C3D XN--1CK2E1B XN--1QQW23A XN--30RR7Y XN--3BST00M XN--3DS443G XN--3E0B707E XN--3OQ18VL8PN36A XN--3PXU8K XN--42C2D9A XN--45BRJ9C XN--45Q11C XN--4GBRIM XN--54B7FTA0CC XN--55QW42G XN--55QX5D XN--5SU34J936BGSG XN--5TZM5G XN--6FRZ82G XN--6QQ986B3XL XN--80ADXHKS XN--80AO21A XN--80AQECDR1A XN--80ASEHDB XN--80ASWG XN--8Y0A063A XN--90A3AC XN--90AE XN--90AIS XN--9DBQ2A XN--9ET52U XN--9KRT00A XN--B4W605FERD XN--BCK1B9A5DRE4C XN--C1AVG XN--C2BR7G XN--CCK2B3B XN--CG4BKI XN--CLCHC0EA0B2G2A9GCD XN--CZR694B XN--CZRS0T XN--CZRU2D XN--D1ACJ3B XN--D1ALF XN--E1A4C XN--ECKVDTC9D XN--EFVY88H XN--ESTV75G XN--FCT429K XN--FHBEI XN--FIQ228C5HS XN--FIQ64B XN--FIQS8S XN--FIQZ9S XN--FJQ720A XN--FLW351E XN--FPCRJ9C3D XN--FZC2C9E2C XN--FZYS8D69UVGM XN--G2XX48C XN--GCKR3F0F XN--GECRJ9C XN--GK3AT1E XN--H2BRJ9C XN--HXT814E XN--I1B6B1A6A2E XN--IMR513N XN--IO0A7I XN--J1AEF XN--J1AMH XN--J6W193G XN--JLQ61U9W7B XN--JVR189M XN--KCRX77D1X4A XN--KPRW13D XN--KPRY57D XN--KPU716F XN--KPUT3I XN--L1ACC XN--LGBBAT1AD8J XN--MGB9AWBF XN--MGBA3A3EJT XN--MGBA3A4F16A XN--MGBA7C0BBN0A XN--MGBAAM7A8H XN--MGBAB2BD XN--MGBAYH7GPA XN--MGBB9FBPOB XN--MGBBH1A71E XN--MGBC0A9AZCG XN--MGBCA7DZDO XN--MGBERP4A5D4AR XN--MGBI4ECEXP XN--MGBPL2FH XN--MGBT3DHD XN--MGBTX2B XN--MGBX4CD0AB XN--MIX891F XN--MK1BU44C XN--MXTQ1M XN--NGBC5AZD XN--NGBE9E0A XN--NODE XN--NQV7F XN--NQV7FS00EMA XN--NYQY26A XN--O3CW4H XN--OGBPF8FL XN--P1ACF XN--P1AI XN--PBT977C XN--PGBS0DH XN--PSSY2U XN--Q9JYB4C XN--QCKA1PMC XN--QXAM XN--RHQV96G XN--ROVU88B XN--S9BRJ9C XN--SES554G XN--T60B56A XN--TCKWE XN--TIQ49XQYJ XN--UNUP4Y XN--VERMGENSBERATER-CTB XN--VERMGENSBERATUNG-PWB XN--VHQUV XN--VUQ861B XN--W4R85EL8FHU5DNRA XN--W4RS40L XN--WGBH1C XN--WGBL6A XN--XHQ521B XN--XKC2AL3HYE2A XN--XKC2DL3A5EE0H XN--Y9A3AQ XN--YFRO4I67O XN--YGBI2AMMX XN--ZFR164B XPERIA XXX XYZ YACHTS YAHOO YAMAXUN YANDEX YODOBASHI YOGA YOKOHAMA YOU YOUTUBE YUN ZAPPOS ZARA ZERO ZIP ZIPPO ZONE ZUERICH"/>
+        <territoryCodes type="ZZ" numeric="999" alpha3="ZZZ"/>
     <!-- end of data generated with CountItems tool per http://sites.google.com/site/cldr/development/updating-codes/update-languagescriptregion-subtags -->
 
 	    <currencyCodes type="AED" numeric="784"/>
@@ -5359,8 +5382,10 @@ XXX Code for transations where no currency is involved
 		<currencyCodes type="USN" numeric="997"/>
 		<currencyCodes type="UYI" numeric="940"/>
 		<currencyCodes type="UYU" numeric="858"/>
+		<currencyCodes type="UYW" numeric="927"/>
 		<currencyCodes type="UZS" numeric="860"/>
 		<currencyCodes type="VEF" numeric="937"/>
+		<currencyCodes type="VES" numeric="928"/>
 		<currencyCodes type="VND" numeric="704"/>
 		<currencyCodes type="VUV" numeric="548"/>
 		<currencyCodes type="WST" numeric="882"/>
@@ -5387,11 +5412,11 @@ XXX Code for transations where no currency is involved
     </codeMappings>
 
 	<parentLocales>
-		<parentLocale parent="root" locales="az_Arab az_Cyrl bm_Nkoo bs_Cyrl en_Dsrt en_Shaw ha_Arab iu_Latn mn_Mong ms_Arab pa_Arab shi_Latn sr_Latn uz_Arab uz_Cyrl vai_Latn zh_Hant yue_Hans"/>
-		<parentLocale parent="en_001" locales="en_150 en_AG en_AI en_AU en_BB en_BE en_BM en_BS en_BW en_BZ en_CA en_CC en_CK en_CM en_CX en_CY en_DG en_DM en_ER en_FJ en_FK en_FM en_GB en_GD en_GG en_GH en_GI en_GM en_GY en_HK en_IE en_IL en_IM en_IN en_IO en_JE en_JM en_KE en_KI en_KN en_KY en_LC en_LR en_LS en_MG en_MO en_MS en_MT en_MU en_MW en_MY en_NA en_NF en_NG en_NR en_NU en_NZ en_PG en_PH en_PK en_PN en_PW en_RW en_SB en_SC en_SD en_SG en_SH en_SL en_SS en_SX en_SZ en_TC en_TK en_TO en_TT en_TV en_TZ en_UG en_VC en_VG en_VU en_WS en_ZA en_ZM en_ZW"/>
-		<parentLocale parent="en_150" locales="en_AT en_CH en_DE en_DK en_FI en_NL en_SE en_SI"/>
+		<parentLocale parent="root" locales="az_Arab az_Cyrl blt_Latn bm_Nkoo bs_Cyrl byn_Latn cu_Glag dje_Arab dyo_Arab en_Dsrt en_Shaw ff_Adlm ff_Arab ha_Arab iu_Latn kk_Arab ku_Arab ky_Arab ky_Latn ml_Arab mn_Mong ms_Arab pa_Arab sd_Deva sd_Khoj sd_Sind shi_Latn so_Arab sr_Latn sw_Arab tg_Arab ug_Cyrl uz_Arab uz_Cyrl vai_Latn wo_Arab yo_Arab yue_Hans zh_Hant"/>
+		<parentLocale parent="en_001" locales="en_150 en_AG en_AI en_AU en_BB en_BM en_BS en_BW en_BZ en_CA en_CC en_CK en_CM en_CX en_CY en_DG en_DM en_ER en_FJ en_FK en_FM en_GB en_GD en_GG en_GH en_GI en_GM en_GY en_HK en_IE en_IL en_IM en_IN en_IO en_JE en_JM en_KE en_KI en_KN en_KY en_LC en_LR en_LS en_MG en_MO en_MS en_MT en_MU en_MW en_MY en_NA en_NF en_NG en_NR en_NU en_NZ en_PG en_PH en_PK en_PN en_PW en_RW en_SB en_SC en_SD en_SG en_SH en_SL en_SS en_SX en_SZ en_TC en_TK en_TO en_TT en_TV en_TZ en_UG en_VC en_VG en_VU en_WS en_ZA en_ZM en_ZW"/>
+		<parentLocale parent="en_150" locales="en_AT en_BE en_CH en_DE en_DK en_FI en_NL en_SE en_SI"/>
 		<parentLocale parent="es_419" locales="es_AR es_BO es_BR es_BZ es_CL es_CO es_CR es_CU es_DO es_EC es_GT es_HN es_MX es_NI es_PA es_PE es_PR es_PY es_SV es_US es_UY es_VE"/>
-		<parentLocale parent="pt_PT" locales="pt_AO pt_CH pt_CV pt_GQ pt_GW pt_LU pt_MO pt_MZ pt_ST pt_TL"/>
+		<parentLocale parent="pt_PT" locales="pt_AO pt_CH pt_CV pt_FR pt_GQ pt_GW pt_LU pt_MO pt_MZ pt_ST pt_TL"/>
 		<parentLocale parent="zh_Hant_HK" locales="zh_Hant_MO"/>
 	</parentLocales>
 
@@ -5612,7 +5637,6 @@ XXX Code for transations where no currency is involved
 		<reference type="R1213" uri="http://ec.europa.eu/education/languages/archive/languages/langmin/euromosaic/pol3_en.html">- regional lang community status, taught in some schools</reference>
 		<reference type="R1214" uri="http://www.tatar.ru/">- 52.9% of Tatarstan is ethnic Tatar, the pop figure is an upper bound</reference>
 		<reference type="R1215"> http://en.wikipedia.org/wiki/Interlingua#Community Has a regular conf in Sweden, also Brazil; an auxiliary language with tiny population worldwide</reference>
-		<reference type="R1216">This is base pop for &quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;fub&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot; lang code; ff shows as a macrolanguage</reference>
 		<reference type="R1217" uri="http://www.ethnologue.com/language/bkm">[missing]</reference>
 		<reference type="R1218" uri="http://en.wikipedia.org/wiki/Vietnamese_language">(could be higher if 2nd lang included; no data yet)</reference>
 		<reference type="R1219">Mainly in Guangdong Prov, ~70-80 million</reference>
@@ -5646,6 +5670,7 @@ XXX Code for transations where no currency is involved
 		<reference type="R1247">protected minority, southern Jutland</reference>
 		<reference type="R1248">etimate only based on literacy; no population data currently available</reference>
 		<reference type="R1249" uri="http://en.wikipedia.org/wiki/Yiddish_language#Numbers_of_speakers">[missing]</reference>
+		<reference type="R1250">No Data Available at present.</reference>
 		<reference type="R1251">co-official in South Tyrol</reference>
 		<reference type="R1252">Aosta Valley</reference>
 		<reference type="R1253">in Trieste and  Gorizia</reference>
@@ -5663,7 +5688,6 @@ XXX Code for transations where no currency is involved
 		<reference type="R1265">Estimate based on 90% of literate pop &gt; 15 years (71% of Cpop) can use English, for lack of official number of users</reference>
 		<reference type="R1266" uri="http://www.ethnologue.com/language/mgh">low litreracy ~5%</reference>
 		<reference type="R1267" uri="http://www.ethnologue.com/language/jgo">2nd lang literacy 30%</reference>
-		<reference type="R1268" uri="http://en.wikipedia.org/wiki/Esperanto">http://en.wikipedia.org/wiki/Akademio_Internacia_de_la_Sciencoj_San_Marino - estimate 100% of the academy can use Esperanto; the language is used as 1st language of instruction; academy has 300 &quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;members&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;.</reference>
 		<reference type="R1269" uri="https://en.wikipedia.org/wiki/Sundanese_language">recognized in West Java</reference>
 		<reference type="R1270">Mainly unwritten</reference>
 		<reference type="R1271">Vai script is the main script for this language.</reference>
@@ -5712,6 +5736,7 @@ XXX Code for transations where no currency is involved
 		<reference type="R1314" uri="http://www.axl.cefan.ulaval.ca/afrique/soudan.htm">[missing]</reference>
 		<reference type="R1315" uri="https://en.wikipedia.org/wiki/Languages_of_Brazil">[missing]</reference>
 		<reference type="R1316" uri="http://www.bfs.admin.ch/bfs/portal/en/index/themen/01/05/blank/key/sprachen.html">[missing]</reference>
+		<reference type="R1317">This is base pop for &quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;fub&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot; lang code; ff shows as a macrolanguage</reference>
 		<reference type="R1318" uri="https://en.wikipedia.org/wiki/Bavarian_language">Widely spoken less written, and most speakers know standard German as well</reference>
 		<reference type="R1319" uri="http://nso.gov.mt/en/publicatons/Publications_by_Unit/Documents/C1_Living_Conditions_and_Culture_Statistics/Culture_Participation_Survey_2011.pdf">[missing]</reference>
 		<reference type="R1320" uri="https://www.cia.gov/library/publications/the-world-factbook/geos/hk.html">and https://www.ethnologue.com/language/yue</reference>
@@ -5719,5 +5744,6 @@ XXX Code for transations where no currency is involved
 		<reference type="R1322" uri="https://en.wikipedia.org/wiki/Doteli_language">[missing]</reference>
 		<reference type="R1323" uri="https://en.wikipedia.org/wiki/Immigration_to_Portugal#Immigration">[missing]</reference>
 		<reference type="R1324" uri="http://2001.ukrcensus.gov.ua/eng/results/general/nationality/">[missing]</reference>
+		<reference type="R1325" uri="http://en.wikipedia.org/wiki/Esperanto">http://en.wikipedia.org/wiki/Akademio_Internacia_de_la_Sciencoj_San_Marino - estimate 100% of the academy can use Esperanto; the language is used as 1st language of instruction; academy has 300 &quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;members&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;.</reference>
 	</references>
 </supplementalData>

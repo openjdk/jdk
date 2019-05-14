@@ -25,7 +25,7 @@
 
 #include "code/codeCache.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
-#include "gc/shenandoah/shenandoahBrooksPointer.hpp"
+#include "gc/shenandoah/shenandoahForwarding.inline.hpp"
 #include "gc/shenandoah/shenandoahConcurrentMark.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
@@ -43,6 +43,8 @@
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
 #include "memory/metaspace.hpp"
+#include "memory/universe.hpp"
+#include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/copy.hpp"
@@ -266,7 +268,7 @@ public:
     assert(_heap->complete_marking_context()->is_marked(p), "must be marked");
     assert(!_heap->complete_marking_context()->allocated_after_mark_start((HeapWord*) p), "must be truly marked");
 
-    size_t obj_size = p->size() + ShenandoahBrooksPointer::word_size();
+    size_t obj_size = p->size() + ShenandoahForwarding::word_size();
     if (_compact_point + obj_size > _to_region->end()) {
       finish_region();
 
@@ -289,7 +291,7 @@ public:
     // Object fits into current region, record new location:
     assert(_compact_point + obj_size <= _to_region->end(), "must fit");
     shenandoah_assert_not_forwarded(NULL, p);
-    ShenandoahBrooksPointer::set_raw(p, _compact_point + ShenandoahBrooksPointer::word_size());
+    ShenandoahForwarding::set_forwardee_raw(p, _compact_point + ShenandoahForwarding::word_size());
     _compact_point += obj_size;
   }
 };
@@ -385,15 +387,15 @@ void ShenandoahMarkCompact::calculate_target_humongous_objects() {
 
     if (r->is_humongous_start() && r->is_move_allowed()) {
       // From-region candidate: movable humongous region
-      oop old_obj = oop(r->bottom() + ShenandoahBrooksPointer::word_size());
-      size_t words_size = old_obj->size() + ShenandoahBrooksPointer::word_size();
+      oop old_obj = oop(r->bottom() + ShenandoahForwarding::word_size());
+      size_t words_size = old_obj->size() + ShenandoahForwarding::word_size();
       size_t num_regions = ShenandoahHeapRegion::required_regions(words_size * HeapWordSize);
 
       size_t start = to_end - num_regions;
 
       if (start >= to_begin && start != r->region_number()) {
         // Fits into current window, and the move is non-trivial. Record the move then, and continue scan.
-        ShenandoahBrooksPointer::set_raw(old_obj, heap->get_region(start)->bottom() + ShenandoahBrooksPointer::word_size());
+        ShenandoahForwarding::set_forwardee_raw(old_obj, heap->get_region(start)->bottom() + ShenandoahForwarding::word_size());
         to_end = start;
         continue;
       }
@@ -441,7 +443,7 @@ public:
 
   void heap_region_do(ShenandoahHeapRegion* r) {
     if (r->is_humongous_start()) {
-      oop humongous_obj = oop(r->bottom() + ShenandoahBrooksPointer::word_size());
+      oop humongous_obj = oop(r->bottom() + ShenandoahForwarding::word_size());
       if (!_ctx->is_marked(humongous_obj)) {
         assert(!r->has_live(),
                "Region " SIZE_FORMAT " is not marked, should not have live", r->region_number());
@@ -504,7 +506,7 @@ private:
     if (!CompressedOops::is_null(o)) {
       oop obj = CompressedOops::decode_not_null(o);
       assert(_ctx->is_marked(obj), "must be marked");
-      oop forw = oop(ShenandoahBrooksPointer::get_raw(obj));
+      oop forw = oop(ShenandoahForwarding::get_forwardee_raw(obj));
       RawAccess<IS_NOT_NULL>::oop_store(p, forw);
     }
   }
@@ -529,7 +531,7 @@ public:
   }
   void do_object(oop p) {
     assert(_heap->complete_marking_context()->is_marked(p), "must be marked");
-    HeapWord* forw = ShenandoahBrooksPointer::get_raw(p);
+    HeapWord* forw = ShenandoahForwarding::get_forwardee_raw(p);
     p->oop_iterate(&_cl);
   }
 };
@@ -614,13 +616,13 @@ public:
   void do_object(oop p) {
     assert(_heap->complete_marking_context()->is_marked(p), "must be marked");
     size_t size = (size_t)p->size();
-    HeapWord* compact_to = ShenandoahBrooksPointer::get_raw(p);
+    HeapWord* compact_to = ShenandoahForwarding::get_forwardee_raw(p);
     HeapWord* compact_from = (HeapWord*) p;
     if (compact_from != compact_to) {
       Copy::aligned_conjoint_words(compact_from, compact_to, size);
     }
     oop new_obj = oop(compact_to);
-    ShenandoahBrooksPointer::initialize(new_obj);
+    ShenandoahForwarding::initialize(new_obj);
   }
 };
 
@@ -714,13 +716,13 @@ void ShenandoahMarkCompact::compact_humongous_objects() {
   for (size_t c = heap->num_regions() - 1; c > 0; c--) {
     ShenandoahHeapRegion* r = heap->get_region(c);
     if (r->is_humongous_start()) {
-      oop old_obj = oop(r->bottom() + ShenandoahBrooksPointer::word_size());
-      size_t words_size = old_obj->size() + ShenandoahBrooksPointer::word_size();
+      oop old_obj = oop(r->bottom() + ShenandoahForwarding::word_size());
+      size_t words_size = old_obj->size() + ShenandoahForwarding::word_size();
       size_t num_regions = ShenandoahHeapRegion::required_regions(words_size * HeapWordSize);
 
       size_t old_start = r->region_number();
       size_t old_end   = old_start + num_regions - 1;
-      size_t new_start = heap->heap_region_index_containing(ShenandoahBrooksPointer::get_raw(old_obj));
+      size_t new_start = heap->heap_region_index_containing(ShenandoahForwarding::get_forwardee_raw(old_obj));
       size_t new_end   = new_start + num_regions - 1;
 
       if (old_start == new_start) {
@@ -734,8 +736,8 @@ void ShenandoahMarkCompact::compact_humongous_objects() {
                                    heap->get_region(new_start)->bottom(),
                                    ShenandoahHeapRegion::region_size_words()*num_regions);
 
-      oop new_obj = oop(heap->get_region(new_start)->bottom() + ShenandoahBrooksPointer::word_size());
-      ShenandoahBrooksPointer::initialize(new_obj);
+      oop new_obj = oop(heap->get_region(new_start)->bottom() + ShenandoahForwarding::word_size());
+      ShenandoahForwarding::initialize(new_obj);
 
       {
         for (size_t c = old_start; c <= old_end; c++) {

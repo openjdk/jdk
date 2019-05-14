@@ -21,13 +21,13 @@
  *
  */
 
-#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHBROOKSPOINTER_HPP
-#define SHARE_GC_SHENANDOAH_SHENANDOAHBROOKSPOINTER_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHFORWARDING_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHFORWARDING_HPP
 
 #include "oops/oop.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-class ShenandoahBrooksPointer {
+class ShenandoahForwarding {
   /*
    * Notes:
    *
@@ -70,13 +70,13 @@ public:
     guarantee (MinObjAlignmentInBytes > 0, "sanity, byte_size is correct");
   }
 
-  /* Initializes Brooks pointer (to self).
+  /* Initializes forwarding pointer (to self).
    */
   static inline void initialize(oop obj);
 
   /* Gets forwardee from the given object.
    */
-  static inline oop forwardee(oop obj);
+  static inline oop get_forwardee(oop obj);
 
   /* Tries to atomically update forwardee in $holder object to $update.
    * Assumes $holder points at itself.
@@ -88,19 +88,19 @@ public:
   /* Sets raw value for forwardee slot.
    * THIS IS DANGEROUS: USERS HAVE TO INITIALIZE/SET FORWARDEE BACK AFTER THEY ARE DONE.
    */
-  static inline void set_raw(oop obj, HeapWord* update);
+  static inline void set_forwardee_raw(oop obj, HeapWord* update);
 
   /* Returns the raw value from forwardee slot.
    */
-  static inline HeapWord* get_raw(oop obj);
+  static inline HeapWord* get_forwardee_raw(oop obj);
 
   /* Returns the raw value from forwardee slot without any checks.
    * Used for quick verification.
    */
-  static inline HeapWord* get_raw_unchecked(oop obj);
+  static inline HeapWord* get_forwardee_raw_unchecked(oop obj);
 
 private:
-  static inline HeapWord** brooks_ptr_addr(oop obj);
+  static inline HeapWord** forward_ptr_addr(oop obj);
 };
 
-#endif // SHARE_GC_SHENANDOAH_SHENANDOAHBROOKSPOINTER_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHFORWARDING_HPP

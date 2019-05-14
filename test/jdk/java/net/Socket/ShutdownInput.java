@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 7014860
+ * @library /test/lib
  * @summary Socket.getInputStream().available() not clear for
  *          case that connection is shutdown for reading
  * @run main ShutdownInput
@@ -38,11 +39,14 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import jdk.test.lib.net.IPSupport;
 
 public class ShutdownInput {
     static boolean failed = false;
 
     public static void main(String args[]) throws Exception {
+        IPSupport.throwSkippedExceptionIfNonOperational();
+
         InetAddress iaddr = InetAddress.getLocalHost();
 
         try ( ServerSocket ss = new ServerSocket(0);

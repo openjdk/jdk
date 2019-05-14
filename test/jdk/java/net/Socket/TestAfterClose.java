@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 6505016
+ * @library /test/lib
  * @summary Socket spec should clarify what getInetAddress/getPort/etc return
  *          after the Socket is closed
  * @run main TestAfterClose
@@ -32,12 +33,15 @@
 
 import java.net.*;
 import java.io.*;
+import jdk.test.lib.net.IPSupport;
 
 public class TestAfterClose
 {
     static int failCount;
 
     public static void main(String[] args) {
+        IPSupport.throwSkippedExceptionIfNonOperational();
+
         try {
             InetAddress loopback = InetAddress.getLoopbackAddress();
             ServerSocket ss = new ServerSocket(0, 0, loopback);

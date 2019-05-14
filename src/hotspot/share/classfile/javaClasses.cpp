@@ -28,6 +28,7 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/stringTable.hpp"
+#include "classfile/symbolTable.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/debugInfo.hpp"
 #include "code/dependencyContext.hpp"
@@ -1737,9 +1738,6 @@ jlong java_lang_Thread::thread_id(oop java_thread) {
 }
 
 oop java_lang_Thread::park_blocker(oop java_thread) {
-  assert(JDK_Version::current().supports_thread_park_blocker(),
-         "Must support parkBlocker field");
-
   return java_thread->obj_field(_park_blocker_offset);
 }
 

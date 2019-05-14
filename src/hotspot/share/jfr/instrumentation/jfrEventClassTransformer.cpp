@@ -30,6 +30,7 @@
 #include "classfile/moduleEntry.hpp"
 #include "classfile/modules.hpp"
 #include "classfile/stackMapTable.hpp"
+#include "classfile/symbolTable.hpp"
 #include "classfile/verificationType.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "jfr/instrumentation/jfrEventClassTransformer.hpp"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.Phaser;
@@ -42,7 +44,9 @@ public class Streams {
 
     public static void main(String[] args) throws Exception {
 
-        try (ServerSocket ss = new ServerSocket(0)) {
+        try (ServerSocket ss = new ServerSocket()) {
+            InetAddress loopback = InetAddress.getLoopbackAddress();
+            ss.bind(new InetSocketAddress(loopback, 0));
             runTest(OutputStreamGetter.class, ss);
             runTest(InputStreamGetter.class, ss);
         }
@@ -55,9 +59,12 @@ public class Streams {
         throws Exception
     {
         final int port = ss.getLocalPort();
+        final InetAddress address = ss.getInetAddress();
         Socket[] sockets = new Socket[NUM_THREADS];
         for (int i=0; i<NUM_THREADS; i++) {
-            sockets[i] = new Socket("localhost", port);
+            sockets[i] = address.isAnyLocalAddress()
+                         ? new Socket("localhost", port)
+                         : new Socket(address, port);
             try (Socket socket = ss.accept()) {}
         }
 

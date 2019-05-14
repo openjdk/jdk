@@ -3119,13 +3119,13 @@ void MacroAssembler::get_vm_result_2(Register metadata_result) {
 
 Register MacroAssembler::encode_klass_not_null(Register dst, Register src) {
   Register current = (src != noreg) ? src : dst; // Klass is in dst if no src provided.
-  if (Universe::narrow_klass_base() != 0) {
+  if (CompressedKlassPointers::base() != 0) {
     // Use dst as temp if it is free.
-    sub_const_optimized(dst, current, Universe::narrow_klass_base(), R0);
+    sub_const_optimized(dst, current, CompressedKlassPointers::base(), R0);
     current = dst;
   }
-  if (Universe::narrow_klass_shift() != 0) {
-    srdi(dst, current, Universe::narrow_klass_shift());
+  if (CompressedKlassPointers::shift() != 0) {
+    srdi(dst, current, CompressedKlassPointers::shift());
     current = dst;
   }
   return current;
@@ -3153,7 +3153,7 @@ void MacroAssembler::store_klass_gap(Register dst_oop, Register val) {
 int MacroAssembler::instr_size_for_decode_klass_not_null() {
   if (!UseCompressedClassPointers) return 0;
   int num_instrs = 1;  // shift or move
-  if (Universe::narrow_klass_base() != 0) num_instrs = 7;  // shift + load const + add
+  if (CompressedKlassPointers::base() != 0) num_instrs = 7;  // shift + load const + add
   return num_instrs * BytesPerInstWord;
 }
 
@@ -3161,13 +3161,13 @@ void MacroAssembler::decode_klass_not_null(Register dst, Register src) {
   assert(dst != R0, "Dst reg may not be R0, as R0 is used here.");
   if (src == noreg) src = dst;
   Register shifted_src = src;
-  if (Universe::narrow_klass_shift() != 0 ||
-      Universe::narrow_klass_base() == 0 && src != dst) {  // Move required.
+  if (CompressedKlassPointers::shift() != 0 ||
+      CompressedKlassPointers::base() == 0 && src != dst) {  // Move required.
     shifted_src = dst;
-    sldi(shifted_src, src, Universe::narrow_klass_shift());
+    sldi(shifted_src, src, CompressedKlassPointers::shift());
   }
-  if (Universe::narrow_klass_base() != 0) {
-    add_const_optimized(dst, shifted_src, Universe::narrow_klass_base(), R0);
+  if (CompressedKlassPointers::base() != 0) {
+    add_const_optimized(dst, shifted_src, CompressedKlassPointers::base(), R0);
   }
 }
 

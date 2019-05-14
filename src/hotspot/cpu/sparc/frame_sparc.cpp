@@ -26,6 +26,7 @@
 #include "code/codeCache.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/universe.hpp"
 #include "oops/markOop.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"

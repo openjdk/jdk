@@ -24,10 +24,12 @@
 /*
  * @test
  * @bug 4742177
+ * @library /test/lib
  * @summary Re-test IPv6 (and specifically MulticastSocket) with latest Linux & USAGI code
  */
 import java.util.*;
 import java.net.*;
+import jdk.test.lib.net.IPSupport;
 
 public class NoLoopbackPackets {
     private static String osname;
@@ -38,31 +40,9 @@ public class NoLoopbackPackets {
         return osname.contains("Windows");
     }
 
-    private static boolean hasIPv6() throws Exception {
-        List<NetworkInterface> nics = Collections.list(
-                                        NetworkInterface.getNetworkInterfaces());
-        for (NetworkInterface nic : nics) {
-            if (!nic.isLoopback()) {
-                List<InetAddress> addrs = Collections.list(nic.getInetAddresses());
-                for (InetAddress addr : addrs) {
-                    if (addr instanceof Inet6Address) {
-                        return true;
-                    }
-                }
-            }
-        }
-
-        return false;
-    }
-
     public static void main(String[] args) throws Exception {
         if (isWindows()) {
             System.out.println("The test only run on non-Windows OS. Bye.");
-            return;
-        }
-
-        if (!hasIPv6()) {
-            System.out.println("No IPv6 available. Bye.");
             return;
         }
 
@@ -77,9 +57,16 @@ public class NoLoopbackPackets {
             // 224.1.1.1, ::ffff:224.1.1.2, and ff02::1:1
             //
             List<SocketAddress> groups = new ArrayList<SocketAddress>();
-            groups.add(new InetSocketAddress(InetAddress.getByName("224.1.1.1"), port));
-            groups.add(new InetSocketAddress(InetAddress.getByName("::ffff:224.1.1.2"), port));
-            groups.add(new InetSocketAddress(InetAddress.getByName("ff02::1:1"), port));
+            if (IPSupport.hasIPv4()) {
+                groups.add(new InetSocketAddress(InetAddress.getByName("224.1.1.1"), port));
+            }
+            if (IPSupport.hasIPv6()) {
+                groups.add(new InetSocketAddress(InetAddress.getByName("::ffff:224.1.1.2"), port));
+                groups.add(new InetSocketAddress(InetAddress.getByName("ff02::1:1"), port));
+            }
+            if (groups.isEmpty()) {
+                System.err.println("Nothing to test: there are no network interfaces");
+            }
 
             sender = new Sender(groups);
             new Thread(sender).start();

@@ -34,7 +34,7 @@ package com.sun.source.tree;
  *       <em>statement</em>
  * </pre>
  *
- * @jls section 14.14.2
+ * @jls 14.14.2 The enhanced for statement
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

@@ -39,6 +39,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
+#include "oops/compressedOops.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "oops/weakHandle.inline.hpp"
@@ -578,6 +579,13 @@ struct SizeFunc : StackObj {
     return literal_size(s);
   };
 };
+
+TableStatistics StringTable::get_table_statistics() {
+  static TableStatistics ts;
+  SizeFunc sz;
+  ts = _local_table->statistics_get(Thread::current(), sz, ts);
+  return ts;
+}
 
 void StringTable::print_table_statistics(outputStream* st,
                                          const char* table_name) {

@@ -84,6 +84,13 @@ else
   BUILD_JDK_JTREG_EXCLUDE += exeJniInvocationTest.c
 endif
 
+ifeq ($(call isTargetOs, linux), true)
+  # Unconditionally compile with debug symbols and don't ever perform
+  # stripping during the test libraries' build.
+  BUILD_JDK_JTREG_LIBRARIES_CFLAGS_libFib := -g
+  BUILD_JDK_JTREG_LIBRARIES_STRIP_SYMBOLS_libFib := false
+endif
+
 # This evaluation is expensive and should only be done if this target was
 # explicitly called.
 ifneq ($(filter build-test-jdk-jtreg-native, $(MAKECMDGOALS)), )

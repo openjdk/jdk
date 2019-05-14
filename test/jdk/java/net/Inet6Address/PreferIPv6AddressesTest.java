@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 8016521
+ * @library /test/lib
  * @summary InetAddress should not always re-order addresses returned from name
  *          service
  * @run main/othervm -Djava.net.preferIPv6Addresses=false PreferIPv6AddressesTest
@@ -38,6 +39,7 @@ import java.nio.channels.DatagramChannel;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 import static java.lang.System.out;
+import jdk.test.lib.net.IPSupport;
 
 public class PreferIPv6AddressesTest {
 
@@ -50,7 +52,6 @@ public class PreferIPv6AddressesTest {
             System.getProperty("java.net.preferIPv6Addresses", "false");
 
     public static void main(String args[]) throws IOException {
-
         InetAddress addrs[];
         try {
             addrs = InetAddress.getAllByName(HOST_NAME);
@@ -66,7 +67,7 @@ public class PreferIPv6AddressesTest {
                 .filter(x -> addrs[x] instanceof Inet6Address)
                 .findFirst().orElse(-1);
 
-        out.println("IPv6 supported: " + IPv6Supported());
+        out.println("IPv6 supported: " + IPSupport.hasIPv6());
         out.println("Addresses: " + Arrays.asList(addrs));
 
         if (preferIPV6Address.equalsIgnoreCase("true") && firstIPv6Address != -1) {
@@ -81,10 +82,10 @@ public class PreferIPv6AddressesTest {
             assertAllv6Addresses(addrs, off, addrs.length);
             assertLoopbackAddress(Inet4Address.class);
             assertAnyLocalAddress(Inet4Address.class);
-        } else if (preferIPV6Address.equalsIgnoreCase("system") && IPv6Supported()) {
+        } else if (preferIPV6Address.equalsIgnoreCase("system") && IPSupport.hasIPv6()) {
             assertLoopbackAddress(Inet6Address.class);
             assertAnyLocalAddress(Inet6Address.class);
-        } else if (preferIPV6Address.equalsIgnoreCase("system") && !IPv6Supported()) {
+        } else if (preferIPV6Address.equalsIgnoreCase("system") && !IPSupport.hasIPv6()) {
             assertLoopbackAddress(Inet4Address.class);
             assertAnyLocalAddress(Inet4Address.class);
         }
@@ -119,14 +120,5 @@ public class PreferIPv6AddressesTest {
         if (!anyAddr.getClass().isAssignableFrom(expectedType))
             throw new RuntimeException("Expected " + expectedType
                     + ", got " + anyAddr.getClass());
-    }
-
-    static boolean IPv6Supported() throws IOException {
-        try {
-            DatagramChannel.open(StandardProtocolFamily.INET6);
-            return true;
-        } catch (UnsupportedOperationException x) {
-            return false;
-        }
     }
 }

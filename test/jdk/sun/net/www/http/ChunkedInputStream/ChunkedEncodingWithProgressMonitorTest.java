@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary ChunkedEncoding unit test; MeteredStream/ProgressData problem
  * @modules java.base/sun.net
  *          jdk.httpserver
+ * @library /test/lib
  * @run main ChunkedEncodingWithProgressMonitorTest
  */
 

@@ -39,7 +39,7 @@ import java.util.List;
  *       <em>finallyBlock</em>
  * </pre>
  *
- * @jls section 14.20
+ * @jls 14.20 The try statement
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2018 Unicode, Inc.
+<!-- Copyright © 1991-2019 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 13911 $"/>
+		<version number="$Revision: 14982 $"/>
 		<language type="nn"/>
 	</identity>
 	<localeDisplayNames>
@@ -840,8 +840,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MF">Saint Martin</territory>
 			<territory type="MG">Madagaskar</territory>
 			<territory type="MH">Marshalløyane</territory>
-			<territory type="MK">Makedonia</territory>
-			<territory type="MK" alt="variant">Den tidlegare jugoslaviske republikken Makedonia</territory>
+			<territory type="MK">Nord-Makedonia</territory>
 			<territory type="ML">Mali</territory>
 			<territory type="MM">Myanmar (Burma)</territory>
 			<territory type="MN">Mongolia</territory>
@@ -1645,8 +1644,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="MMMd">d. MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E d. MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d. MMMM</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="one">'veke' W 'i' MMM</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="other">'veke' W 'i' MMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">'veke' W 'i' MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">'veke' W 'i' MMMM</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">M.y</dateFormatItem>
@@ -6111,11 +6110,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">venezuelanske bolivar (1871–2008)</displayName>
 			</currency>
 			<currency type="VEF">
+				<displayName>venezuelanske bolivar (2008–2018)</displayName>
+				<displayName count="one">venezuelansk bolivar (2008–2018)</displayName>
+				<displayName count="other">venezuelanske bolivar (2008–2018)</displayName>
+				<symbol draft="contributed">VEF</symbol>
+				<symbol alt="narrow" draft="contributed">Bs</symbol>
+			</currency>
+			<currency type="VES">
 				<displayName>venezuelanske bolivar</displayName>
 				<displayName count="one">venezuelansk bolivar</displayName>
 				<displayName count="other">venezuelanske bolivar</displayName>
-				<symbol draft="contributed">VEF</symbol>
-				<symbol alt="narrow" draft="contributed">Bs</symbol>
 			</currency>
 			<currency type="VND">
 				<displayName>vietnamesiske dong</displayName>
@@ -6297,7 +6301,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
-			<pattern type="atLeast">⩾{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
 			<pattern type="range">{0}‒{1}</pattern>
 		</miscPatterns>
 		<minimalPairs>

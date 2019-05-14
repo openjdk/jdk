@@ -32,6 +32,7 @@
 #include "memory/allocation.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/universe.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/thread.hpp"

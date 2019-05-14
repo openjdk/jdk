@@ -30,6 +30,7 @@
 #include "classfile/modules.hpp"
 #include "classfile/protectionDomainCache.hpp"
 #include "classfile/stringTable.hpp"
+#include "classfile/symbolTable.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/methodMatcher.hpp"
 #include "compiler/directivesParser.hpp"
@@ -45,6 +46,7 @@
 #include "memory/universe.hpp"
 #include "memory/oopFactory.hpp"
 #include "oops/array.hpp"
+#include "oops/compressedOops.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -259,17 +261,17 @@ WB_ENTRY(void, WB_ReadFromNoaccessArea(JNIEnv* env, jobject o))
 
   // Check if constraints are complied
   if (!( UseCompressedOops && rhs.base() != NULL &&
-         Universe::narrow_oop_base() != NULL &&
-         Universe::narrow_oop_use_implicit_null_checks() )) {
+         CompressedOops::base() != NULL &&
+         CompressedOops::use_implicit_null_checks() )) {
     tty->print_cr("WB_ReadFromNoaccessArea method is useless:\n "
                   "\tUseCompressedOops is %d\n"
                   "\trhs.base() is " PTR_FORMAT "\n"
-                  "\tUniverse::narrow_oop_base() is " PTR_FORMAT "\n"
-                  "\tUniverse::narrow_oop_use_implicit_null_checks() is %d",
+                  "\tCompressedOops::base() is " PTR_FORMAT "\n"
+                  "\tCompressedOops::use_implicit_null_checks() is %d",
                   UseCompressedOops,
                   p2i(rhs.base()),
-                  p2i(Universe::narrow_oop_base()),
-                  Universe::narrow_oop_use_implicit_null_checks());
+                  p2i(CompressedOops::base()),
+                  CompressedOops::use_implicit_null_checks());
     return;
   }
   tty->print_cr("Reading from no access area... ");

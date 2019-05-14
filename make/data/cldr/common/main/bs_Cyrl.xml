@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2018 Unicode, Inc.
+<!-- Copyright © 1991-2019 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 13911 $"/>
+		<version number="$Revision: 14982 $"/>
 		<language type="bs"/>
 		<script type="Cyrl"/>
 	</identity>
@@ -778,8 +778,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MF">Свети Мартин</territory>
 			<territory type="MG">Мадагаскар</territory>
 			<territory type="MH">Маршалска Острва</territory>
-			<territory type="MK">Македонија</territory>
-			<territory type="MK" alt="variant">Македонија (БЈР)</territory>
+			<territory type="MK">Сјеверна Македонија</territory>
 			<territory type="ML">Мали</territory>
 			<territory type="MM">Мјанмар</territory>
 			<territory type="MN">Монголија</territory>
@@ -1259,7 +1258,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</monthContext>
 					<monthContext type="stand-alone">
 						<monthWidth type="abbreviated">
-							<month type="8">ауг</month>
+							<month type="1" draft="contributed">јан</month>
+							<month type="2" draft="contributed">феб</month>
+							<month type="3" draft="contributed">мар</month>
+							<month type="4" draft="contributed">апр</month>
+							<month type="5" draft="contributed">мај</month>
+							<month type="6" draft="contributed">јун</month>
+							<month type="7" draft="contributed">јул</month>
+							<month type="8" draft="contributed">ауг</month>
+							<month type="9" draft="contributed">сеп</month>
+							<month type="10" draft="contributed">окт</month>
+							<month type="11" draft="contributed">нов</month>
+							<month type="12" draft="contributed">дец</month>
 						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1">ј</month>
@@ -1276,7 +1286,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="12">д</month>
 						</monthWidth>
 						<monthWidth type="wide">
-							<month type="8">аугуст</month>
+							<month type="1" draft="contributed">јануар</month>
+							<month type="2" draft="contributed">фебруар</month>
+							<month type="3" draft="contributed">март</month>
+							<month type="4" draft="contributed">април</month>
+							<month type="5" draft="contributed">мај</month>
+							<month type="6" draft="contributed">јуни</month>
+							<month type="7" draft="contributed">јули</month>
+							<month type="8" draft="contributed">аугуст</month>
+							<month type="9" draft="contributed">септембар</month>
+							<month type="10" draft="contributed">октобар</month>
+							<month type="11" draft="contributed">новембар</month>
+							<month type="12" draft="contributed">децембар</month>
 						</monthWidth>
 					</monthContext>
 				</months>
@@ -1312,7 +1333,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="sat">с</day>
 						</dayWidth>
 						<dayWidth type="wide">
-							<day type="sun">недјеља</day>
+							<day type="sun" draft="contributed">недјеља</day>
+							<day type="mon" draft="contributed">понедјељак</day>
+							<day type="tue" draft="contributed">уторак</day>
+							<day type="wed" draft="contributed">сриједа</day>
+							<day type="thu" draft="contributed">четвртак</day>
+							<day type="fri" draft="contributed">петак</day>
+							<day type="sat" draft="contributed">субота</day>
 						</dayWidth>
 					</dayContext>
 				</days>
@@ -1932,6 +1959,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<era type="233">Таишо</era>
 						<era type="234">Шова</era>
 						<era type="235">Хаисеи</era>
+						<era type="236" draft="contributed">Реива</era>
 					</eraAbbr>
 				</eras>
 				<dateFormats>
@@ -5934,6 +5962,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">венецуеланских боливара (1871–2008)</displayName>
 			</currency>
 			<currency type="VEF">
+				<displayName>Венецуелански боливар (2008–2018)</displayName>
+				<displayName count="one">венецуелански боливар (2008–2018)</displayName>
+				<displayName count="few">венецуеланска боливара (2008–2018)</displayName>
+				<displayName count="other">венецуеланских боливара (2008–2018)</displayName>
+			</currency>
+			<currency type="VES">
 				<displayName>Венецуелански боливар</displayName>
 				<displayName count="one">венецуелански боливар</displayName>
 				<displayName count="few">венецуеланска боливара</displayName>

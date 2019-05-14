@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 4511783
+ * @library /test/lib
  * @summary Test that setTrafficClass/getTraffiClass don't
  *          throw an exception
  * @run main TrafficClass
@@ -32,6 +33,7 @@
 import java.net.*;
 import java.nio.*;
 import java.nio.channels.*;
+import jdk.test.lib.net.IPSupport;
 
 public class TrafficClass {
 
@@ -61,6 +63,7 @@ public class TrafficClass {
     }
 
     public static void main(String args[]) throws Exception {
+        IPSupport.throwSkippedExceptionIfNonOperational();
 
         DatagramSocket ds = new DatagramSocket();
         testDatagramSocket(ds);

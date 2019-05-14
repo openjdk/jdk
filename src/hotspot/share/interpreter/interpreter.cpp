@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,6 +80,8 @@ void InterpreterCodelet::print_on(outputStream* st) const {
     Disassembler::decode(code_begin(), code_end(), st, DEBUG_ONLY(_strings) NOT_DEBUG(CodeStrings()));
   }
 }
+
+void InterpreterCodelet::print() const { print_on(tty); }
 
 CodeletMark::CodeletMark(InterpreterMacroAssembler*& masm,
                          const char* description,

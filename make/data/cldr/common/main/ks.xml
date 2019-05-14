@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2018 Unicode, Inc.
+<!-- Copyright © 1991-2019 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 13911 $"/>
+		<version number="$Revision: 14783 $"/>
 		<language type="ks"/>
 	</identity>
 	<localeDisplayNames>
@@ -20,10 +20,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ab">اَبخازِیان</language>
 			<language type="ace">اَچَےنیٖز</language>
 			<language type="ach">اَکولی</language>
-			<language type="ada">اَدَنٛگمیے</language>
+			<language type="ada">اَدَنگمیے</language>
 			<language type="ady">اَدَیٖگیے</language>
 			<language type="ae">اَویستَن</language>
-			<language type="af">اَفریٖکانٛز</language>
+			<language type="af">اَفریٖکانز</language>
 			<language type="afh">اَفرِہِلی</language>
 			<language type="ain">اینوٗ</language>
 			<language type="ak">اَکان</language>
@@ -32,8 +32,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="alt">جنوٗبی اَلتایی</language>
 			<language type="am">اَمہاری</language>
 			<language type="an">اَراگونی</language>
-			<language type="ang">پرون اَنٛگریٖزی</language>
-			<language type="anp">اَنٛگِکا</language>
+			<language type="ang">پرون اَنگریٖزی</language>
+			<language type="anp">اَنگِکا</language>
 			<language type="ar">عربی</language>
 			<language type="arc">اَرَمیک</language>
 			<language type="arn">ایرو کونِیَن</language>
@@ -51,7 +51,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="bas">باسا</language>
 			<language type="be">بیلَروٗشیَن</language>
 			<language type="bej">بیجا</language>
-			<language type="bem">بیٚمبا</language>
+			<language type="bem">بیمبا</language>
 			<language type="bg">بینا</language>
 			<language type="bho">بوجپوٗری</language>
 			<language type="bi">بِسلاما</language>
@@ -59,10 +59,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="bin">بِنی</language>
 			<language type="bla">سِکسِکا</language>
 			<language type="bm">بَمبارا</language>
-			<language type="bn">بَنٛگٲلۍ</language>
+			<language type="bn">بَنگٲلۍ</language>
 			<language type="bo">تِبتی</language>
 			<language type="br">بریٹَن</language>
-			<language type="bra">برٛج</language>
+			<language type="bra">برج</language>
 			<language type="bs">بوسنِیَن</language>
 			<language type="bua">بُرِیَت</language>
 			<language type="bug">بَگنیٖز</language>
@@ -81,55 +81,55 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="chn">چِنوٗک جارگَن</language>
 			<language type="cho">چوکتَو</language>
 			<language type="chp">شیپویان</language>
-			<language type="chr">چیٚروکی</language>
+			<language type="chr">چیروکی</language>
 			<language type="chy">شییون</language>
 			<language type="co">کارسِکَن</language>
 			<language type="cop">کاپٹِک</language>
 			<language type="cr">کری</language>
 			<language type="crh">کرٕمیٖن تُرکی</language>
-			<language type="cs">چیٚک</language>
+			<language type="cs">چیک</language>
 			<language type="csb">کَشوٗبِیَن</language>
 			<language type="cu">چٔرچ سلاوِک</language>
 			<language type="cv">چُواش</language>
-			<language type="cy">ویٚلش</language>
+			<language type="cy">ویلش</language>
 			<language type="da">ڈینِش</language>
 			<language type="dak">ڈکوٹا</language>
 			<language type="dar">دَرگوا</language>
 			<language type="de">جٔرمَن</language>
 			<language type="de_AT">آسٹرِیَن جٔرمَن</language>
 			<language type="de_CH">سٕوِس ہاےجٔرمَن</language>
-			<language type="del">ڈیٚلوییَر</language>
+			<language type="del">ڈیلوییَر</language>
 			<language type="den">سلیو</language>
 			<language type="dgr">ڈاگرِب</language>
 			<language type="din">ڈِنکا</language>
 			<language type="doi">ڈوگری</language>
-			<language type="dsb">بوٚنِم ساربِیَن</language>
+			<language type="dsb">بۆنِم ساربِیَن</language>
 			<language type="dua">دُوالا</language>
 			<language type="dum">وَستی پُرتُگالی</language>
 			<language type="dv">دِویہی</language>
 			<language type="dyu">ڈِیوٗلا</language>
-			<language type="dz">زونٛگکھا</language>
+			<language type="dz">زونگکھا</language>
 			<language type="ee">ایٖو</language>
-			<language type="efi">ایٚفِک</language>
+			<language type="efi">ایفِک</language>
 			<language type="egy">قدیٖمی مِصری</language>
-			<language type="eka">ایٚکاجُک</language>
+			<language type="eka">ایکاجُک</language>
 			<language type="el">یوٗنٲنی</language>
-			<language type="elx">ایٚلامایِٹ</language>
-			<language type="en">اَنٛگیٖزۍ</language>
-			<language type="en_AU">آسٹریلیَن اَنٛگریٖزۍ</language>
-			<language type="en_CA">کینَڈِیٲیی اَنٛگریٖزۍ</language>
-			<language type="en_GB">بَرطانوی اَنٛگریٖزۍ</language>
-			<language type="en_US">یوٗ ایٚس اَنٛگریٖزۍ</language>
-			<language type="enm">وَسطی اَنٛگریٖزۍ</language>
-			<language type="eo">ایٚسپَرینٹو</language>
+			<language type="elx">ایلامایِٹ</language>
+			<language type="en">اَنگیٖزۍ</language>
+			<language type="en_AU">آسٹریلیَن اَنگریٖزۍ</language>
+			<language type="en_CA">کینَڈِیٲیی اَنگریٖزۍ</language>
+			<language type="en_GB">بَرطانوی اَنگریٖزۍ</language>
+			<language type="en_US">یوٗ ایس اَنگریٖزۍ</language>
+			<language type="enm">وَسطی اَنگریٖزۍ</language>
+			<language type="eo">ایسپَرینٹو</language>
 			<language type="es">سپینِش</language>
 			<language type="es_419">لیٹٕن امریٖکی سپینِش</language>
 			<language type="es_ES">لِبیریَن سپینِش</language>
-			<language type="et">ایٚسٹونیَن</language>
+			<language type="et">ایسٹونیَن</language>
 			<language type="eu">باسک</language>
-			<language type="ewo">ایٚوونڈو</language>
+			<language type="ewo">ایوونڈو</language>
 			<language type="fa">فارسی</language>
-			<language type="fan">فینٛگ</language>
+			<language type="fan">فینگ</language>
 			<language type="fat">فانٹی</language>
 			<language type="ff">فُلاہ</language>
 			<language type="fi">فِنِش</language>
@@ -137,11 +137,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="fj">فِجیَن</language>
 			<language type="fo">فَروس</language>
 			<language type="fon">فون</language>
-			<language type="fr">فریٚنچ</language>
-			<language type="fr_CA">کَنیڈیَن فریٚنچ</language>
-			<language type="fr_CH">سٕوٕس فریٚنچ</language>
-			<language type="frm">وسطی فریٚنچ</language>
-			<language type="fro">پرون فریٚنچ</language>
+			<language type="fr">فرینچ</language>
+			<language type="fr_CA">کَنیڈیَن فرینچ</language>
+			<language type="fr_CH">سٕوٕس فرینچ</language>
+			<language type="frm">وسطی فرینچ</language>
+			<language type="fro">پرون فرینچ</language>
 			<language type="frr">شُمٲلی فرِشیَن</language>
 			<language type="frs">مشرِقی فرِشیَن</language>
 			<language type="fur">فروٗلِیَن</language>
@@ -164,7 +164,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="grc">قدیٖم یوٗنٲنی</language>
 			<language type="gsw">سٕوِس جٔرمَن</language>
 			<language type="gu">گُجرٲتی</language>
-			<language type="gv">مینٛکس</language>
+			<language type="gv">مینکس</language>
 			<language type="gwi">گُوِچ اِن</language>
 			<language type="ha">ہاوسا</language>
 			<language type="hai">ہَیدا</language>
@@ -173,24 +173,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="hi">ہِندی</language>
 			<language type="hil">ہِلیٖگینَن</language>
 			<language type="hit">ہِتایِت</language>
-			<language type="hmn">ہمونٛگ</language>
+			<language type="hmn">ہمونگ</language>
 			<language type="ho">ہِری موتوٗ</language>
 			<language type="hr">کروشِیَن</language>
-			<language type="hsb">ہیٚرِم ساربِیَن</language>
+			<language type="hsb">ہیرِم ساربِیَن</language>
 			<language type="ht">ہیتِیاں</language>
-			<language type="hu">ہَنٛگیریَن</language>
+			<language type="hu">ہَنگیریَن</language>
 			<language type="hup">ہُپا</language>
 			<language type="hy">اَرمینیَن</language>
-			<language type="hz">ہیٚریٖرو</language>
-			<language type="ia">اِنٹَرلِنٛگوا</language>
+			<language type="hz">ہیریٖرو</language>
+			<language type="ia">اِنٹَرلِنگوا</language>
 			<language type="iba">اِبان</language>
 			<language type="id">اِنڈونیشیا</language>
-			<language type="ie">اِنٹَر لِنٛنگویے</language>
+			<language type="ie">اِنٹَر لِننگویے</language>
 			<language type="ig">اِگبو</language>
 			<language type="ii">سِچوان یٖی</language>
 			<language type="ik">اِنُپِیاک</language>
 			<language type="ilo">اِلوکو</language>
-			<language type="inh">اِنٛگُش</language>
+			<language type="inh">اِنگُش</language>
 			<language type="io">اِڈو</language>
 			<language type="is">آیِسلینڈِک</language>
 			<language type="it">اِٹیلیَن</language>
@@ -210,7 +210,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="kbd">کَبارڈِیَن</language>
 			<language type="kcg">تَیَپ</language>
 			<language type="kfo">کورو</language>
-			<language type="kg">کونٛگو</language>
+			<language type="kg">کونگو</language>
 			<language type="kha">کھاسی</language>
 			<language type="kho">کھوتَنیٖز</language>
 			<language type="ki">کِکُیوٗ</language>
@@ -245,10 +245,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="li">لِمبٔرگِش</language>
 			<language type="ln">لِنگالا</language>
 			<language type="lo">لاو</language>
-			<language type="lol">مونٛگو</language>
+			<language type="lol">مونگو</language>
 			<language type="loz">لوزی</language>
 			<language type="lt">لِتھوانِیَن</language>
-			<language type="lu">لوُبا کَتَنٛگا</language>
+			<language type="lu">لوُبا کَتَنگا</language>
 			<language type="lua">لوٗبا لوٗلُوا</language>
 			<language type="lui">لویِسینو</language>
 			<language type="lun">لُندا</language>
@@ -259,7 +259,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="mag">مَگاے</language>
 			<language type="mai">میتَھلی</language>
 			<language type="mak">مَکَسار</language>
-			<language type="man">مَندِنٛگو</language>
+			<language type="man">مَندِنگو</language>
 			<language type="mas">مَساے</language>
 			<language type="mdf">موکشا</language>
 			<language type="mdr">مَندَر</language>
@@ -269,11 +269,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="mh">مارشَلیٖز</language>
 			<language type="mi">ماوری</language>
 			<language type="mic">مِکمیک</language>
-			<language type="min">مِنَنٛگکَباو</language>
+			<language type="min">مِنَنگکَباو</language>
 			<language type="mk">میکَڈونیَن</language>
 			<language type="ml">مٔلیالَم</language>
-			<language type="mn">مَنٛگولی</language>
-			<language type="mnc">مانٛچوٗ</language>
+			<language type="mn">مَنگولی</language>
+			<language type="mnc">مانچوٗ</language>
 			<language type="mni">مَنیپوٗری</language>
 			<language type="moh">موہاک</language>
 			<language type="mos">موسی</language>
@@ -285,52 +285,52 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="mwl">مِراندیٖز</language>
 			<language type="mwr">مارواڑی</language>
 			<language type="my">بٔمیٖز</language>
-			<language type="myv">ایٚرزِیا</language>
+			<language type="myv">ایرزِیا</language>
 			<language type="na">ناورُ</language>
 			<language type="nap">نیٖپالیٹَن</language>
 			<language type="nb">ناروییَن بوکمال</language>
 			<language type="nd">شُمال ڈَبیل</language>
-			<language type="nds">بوٚنِم جٔرمَن</language>
-			<language type="ne">نیٚپٲلۍ</language>
-			<language type="new">نیٚواری</language>
-			<language type="ng">ڈونٛگا</language>
+			<language type="nds">بۆنِم جٔرمَن</language>
+			<language type="ne">نیپٲلۍ</language>
+			<language type="new">نیواری</language>
+			<language type="ng">ڈونگا</language>
 			<language type="nia">نِیاس</language>
 			<language type="niu">نِیویَن</language>
 			<language type="nl">ڈَچ</language>
-			<language type="nl_BE">فلیٚمِش</language>
+			<language type="nl_BE">فلیمِش</language>
 			<language type="nn">ناروییَن نَے نورسک</language>
 			<language type="no">ناروییَن</language>
 			<language type="nog">نوگاے</language>
 			<language type="non">پرون نارسی</language>
-			<language type="nqo">ایٚن کو</language>
-			<language type="nr">جنوب ڈیٚبیل</language>
+			<language type="nqo">این کو</language>
+			<language type="nr">جنوب ڈیبیل</language>
 			<language type="nso">شمالی ستھو</language>
 			<language type="nv">نَواجو</language>
 			<language type="nwc">کلاسِکَل نیواری</language>
 			<language type="ny">نِیَنجا</language>
-			<language type="nym">نِیَمویٚزی</language>
+			<language type="nym">نِیَمویزی</language>
 			<language type="nyn">نِیَنکول</language>
 			<language type="nyo">نِیورو</language>
 			<language type="nzi">نَظیٖما</language>
 			<language type="oc">اوکسیٖٹَن</language>
 			<language type="oj">اوجِبوا</language>
-			<language type="om">اوٚرومو</language>
-			<language type="or">اوٚرِیا</language>
-			<language type="os">اوٚسیٚٹِک</language>
-			<language type="osa">اوٚسیج</language>
+			<language type="om">اۆرومو</language>
+			<language type="or">اۆرِیا</language>
+			<language type="os">اۆسیٹِک</language>
+			<language type="osa">اۆسیج</language>
 			<language type="ota">اوٹومَن تُرکِش</language>
 			<language type="pa">پَنجٲبۍ</language>
-			<language type="pag">پَنٛگاسِنَن</language>
+			<language type="pag">پَنگاسِنَن</language>
 			<language type="pal">پَہلَوی</language>
-			<language type="pam">پَمپَنٛگا</language>
-			<language type="pap">پَپِیامیٚنٹو</language>
+			<language type="pam">پَمپَنگا</language>
+			<language type="pap">پَپِیامینٹو</language>
 			<language type="pau">پَلااُواں</language>
 			<language type="peo">پرون فارسی</language>
 			<language type="phn">فونیٖشیَن</language>
 			<language type="pi">پالی</language>
 			<language type="pl">پالِش</language>
-			<language type="pon">پانپیٚیَن</language>
-			<language type="pro">پرون پروویٚنچَل</language>
+			<language type="pon">پانپییَن</language>
+			<language type="pro">پرون پرووینچَل</language>
 			<language type="ps">پَشتوٗ</language>
 			<language type="pt">پُرتَگیٖز</language>
 			<language type="pt_BR">برازیٖلی پُتَگیٖز</language>
@@ -338,7 +338,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="qu">کُویشُوا</language>
 			<language type="raj">راجِستھٲنۍ</language>
 			<language type="rap">رَپانوی</language>
-			<language type="rar">رَروٹونٛگَن</language>
+			<language type="rar">رَروٹونگَن</language>
 			<language type="rm">رومانش</language>
 			<language type="rn">رُندی</language>
 			<language type="ro">رومٲنی</language>
@@ -359,10 +359,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="sco">سکاٹس</language>
 			<language type="sd">سِندی</language>
 			<language type="se">شُمٲلی سَمی</language>
-			<language type="sel">سیٚلکُپ</language>
+			<language type="sel">سیلکُپ</language>
 			<language type="sg">سَنگو</language>
 			<language type="sga">پرون ایرِش</language>
-			<language type="sh">سیٚربو کروشِیَن</language>
+			<language type="sh">سیربو کروشِیَن</language>
 			<language type="shn">شان</language>
 			<language type="si">سِنہالا</language>
 			<language type="sid">سِدامو</language>
@@ -379,8 +379,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="sog">سوگڈِیَن</language>
 			<language type="sq">البانِیَن</language>
 			<language type="sr">سٔربِیَن</language>
-			<language type="srn">سرٛانَن ٹونٛگو</language>
-			<language type="srr">سیٚریر</language>
+			<language type="srn">سرانَن ٹونگو</language>
+			<language type="srr">سیریر</language>
 			<language type="ss">سواتی</language>
 			<language type="st">جنوبی ستھو</language>
 			<language type="su">سَنڈَنیٖز</language>
@@ -393,7 +393,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ta">تَمِل</language>
 			<language type="te">تیلگوٗ</language>
 			<language type="tem">ٹِمنیے</language>
-			<language type="ter">ٹیٚریٚنو</language>
+			<language type="ter">ٹیرینو</language>
 			<language type="tet">ٹیٹَم</language>
 			<language type="tg">تاجِک</language>
 			<language type="th">تھاے</language>
@@ -407,11 +407,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="tli">ٹِلِنگِت</language>
 			<language type="tmh">تاماشیک</language>
 			<language type="tn">سوانا</language>
-			<language type="to">ٹونٛگا</language>
-			<language type="tog">نیاسا ٹونٛگا</language>
+			<language type="to">ٹونگا</language>
+			<language type="tog">نیاسا ٹونگا</language>
 			<language type="tpi">ٹاک پِسِن</language>
 			<language type="tr">تُرکِش</language>
-			<language type="ts">ژونٛگا</language>
+			<language type="ts">ژونگا</language>
 			<language type="tsi">ژھِمشِیان</language>
 			<language type="tt">تَتار</language>
 			<language type="tum">تُمبُکا</language>
@@ -442,15 +442,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="yap">یَپیٖز</language>
 			<language type="yi">یِدِش</language>
 			<language type="yo">یورُبا</language>
-			<language type="za">زُہانٛگ</language>
-			<language type="zap">زَپوتیٚک</language>
+			<language type="za">زُہانگ</language>
+			<language type="zap">زَپوتیک</language>
 			<language type="zen">زیناگا</language>
 			<language type="zh">چیٖنی</language>
-			<language type="zh_Hans">سیٚود چیٖنی</language>
+			<language type="zh_Hans">سیود چیٖنی</language>
 			<language type="zh_Hant">رِوٲجی چیٖنی</language>
 			<language type="zu">زُلوٗ</language>
 			<language type="zun">زوٗنی</language>
-			<language type="zxx">کانٛہہ تہِ لِسانیاتی مواد نہٕ</language>
+			<language type="zxx">کانہہ تہِ لِسانیاتی مواد نہٕ</language>
 			<language type="zza">زازا</language>
 		</languages>
 		<scripts>
@@ -459,24 +459,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Avst">اَویستَن</script>
 			<script type="Bali">بالَنیٖز</script>
 			<script type="Batk">باتَک</script>
-			<script type="Beng">بیٚنگٲلۍ</script>
+			<script type="Beng">بینگٲلۍ</script>
 			<script type="Blis">بِلِس سِمبلز</script>
 			<script type="Bopo">بوپوموفو</script>
-			<script type="Brah">برٛاہمی</script>
+			<script type="Brah">براہمی</script>
 			<script type="Brai">بریل</script>
 			<script type="Bugi">بُگِنیٖز</script>
 			<script type="Buhd">بُہِد</script>
-			<script type="Cans">یُنِفایِڑ کنیڑِیَن ایٚب آرجِنَل سِلیبِک</script>
+			<script type="Cans">یُنِفایِڑ کنیڑِیَن ایب آرجِنَل سِلیبِک</script>
 			<script type="Cari">کاریَن</script>
 			<script type="Cham">چَم</script>
-			<script type="Cher">چیٚروکی</script>
+			<script type="Cher">چیروکی</script>
 			<script type="Cirt">کِرتھ</script>
 			<script type="Copt">کاپٹِک</script>
 			<script type="Cprt">کِپرایِٹ</script>
 			<script type="Cyrl">سَیرِلِک</script>
 			<script type="Cyrs">پرون چٔرچسلیوونِک سَیرِلِک</script>
 			<script type="Deva">دیوناگری</script>
-			<script type="Dsrt">ڈیٚسٔریٚٹ</script>
+			<script type="Dsrt">ڈیسٔریٹ</script>
 			<script type="Egyd">اِجپشِیَن ڈِماٹِک</script>
 			<script type="Egyh">اِجِپشَن ہَیریٹِک</script>
 			<script type="Egyp">اِجِپشَن ہَیروگلِپھس</script>
@@ -488,20 +488,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Grek">گرَنتھا</script>
 			<script type="Gujr">گریٖک</script>
 			<script type="Guru">گُجرٲتۍ</script>
-			<script type="Hang">ہانٛگُل</script>
+			<script type="Hang">ہانگُل</script>
 			<script type="Hani">ہان</script>
 			<script type="Hano">ہانُنوٗ</script>
 			<script type="Hans">سِمپلِفایِڑ ہان</script>
 			<script type="Hant">ٹریڑِشَنَل</script>
 			<script type="Hebr">ہِبرِو</script>
 			<script type="Hira">ہیٖراگانا</script>
-			<script type="Hmng">پَہاو مانٛگ</script>
+			<script type="Hmng">پَہاو مانگ</script>
 			<script type="Hrkt">کَٹاکانا یا ہِراگانا</script>
 			<script type="Hung">پرون ہَنگیریَن</script>
 			<script type="Inds">اِنڈَس</script>
 			<script type="Ital">اولڈ اِٹیلِک</script>
 			<script type="Java">جاوَنیٖز</script>
-			<script type="Jpan">جیٚپَنیٖز</script>
+			<script type="Jpan">جیپَنیٖز</script>
 			<script type="Kali">کایا لی</script>
 			<script type="Kana">کَتاکانا</script>
 			<script type="Khar">خَروشتھی</script>
@@ -510,10 +510,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Kore">کوریَن</script>
 			<script type="Lana">لانا</script>
 			<script type="Laoo">لاو</script>
-			<script type="Latf">فرٛکتُر لیٹِن</script>
+			<script type="Latf">فرکتُر لیٹِن</script>
 			<script type="Latg">گیلِک لیٹَن</script>
 			<script type="Latn">لیٹِن</script>
-			<script type="Lepc">لیٚپکا</script>
+			<script type="Lepc">لیپکا</script>
 			<script type="Limb">لِمبوٗ</script>
 			<script type="Lina">لیٖنیَر اے</script>
 			<script type="Linb">لیٖنیَر بی</script>
@@ -524,11 +524,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Maya">مایَن ہیٖروگلِپھ</script>
 			<script type="Mero">مِرایٹِک</script>
 			<script type="Mlym">مَلیالَم</script>
-			<script type="Mong">مَنٛگولیَن</script>
+			<script type="Mong">مَنگولیَن</script>
 			<script type="Moon">موٗن</script>
 			<script type="Mtei">میتی مایَک</script>
 			<script type="Mymr">مَیَنمار</script>
-			<script type="Nkoo">ایٚن کو</script>
+			<script type="Nkoo">این کو</script>
 			<script type="Ogam">اوگہام</script>
 			<script type="Olck">اول چِکی</script>
 			<script type="Orkh">اورکھون</script>
@@ -539,8 +539,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Phlv">بوٗک پَہَلوی</script>
 			<script type="Phnx">پھونِشِیَن</script>
 			<script type="Plrd">پولاڑ پھونِٹِک</script>
-			<script type="Rjng">ریجَنٛگ</script>
-			<script type="Roro">رونٛگو رونٛگو</script>
+			<script type="Rjng">ریجَنگ</script>
+			<script type="Roro">رونگو رونگو</script>
 			<script type="Runr">رَنِک</script>
 			<script type="Samr">سَمارِٹَن</script>
 			<script type="Sara">سَراتی</script>
@@ -551,15 +551,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Sund">سَنڈَنیٖز</script>
 			<script type="Sylo">سیلوتی ناگری</script>
 			<script type="Syrc">سیٖرِیَک</script>
-			<script type="Syre">ایٚسٹرینجِلو سیٖرِیَک</script>
+			<script type="Syre">ایسٹرینجِلو سیٖرِیَک</script>
 			<script type="Syrj">مغرِبی سیٖریَک</script>
 			<script type="Syrn">مشرَقی سیٖریَک</script>
 			<script type="Tagb">تَگبَنوا</script>
 			<script type="Tale">تَیلیے</script>
-			<script type="Talu">نوٚو تیلو</script>
+			<script type="Talu">نۆو تیلو</script>
 			<script type="Taml">تَمِل</script>
 			<script type="Telu">تیلگوٗ</script>
-			<script type="Teng">تیٚنگوار</script>
+			<script type="Teng">تینگوار</script>
 			<script type="Tfng">تِفِناگ</script>
 			<script type="Tglg">تَگَلوگ</script>
 			<script type="Thaa">تھانا</script>
@@ -571,7 +571,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Xpeo">پرون فارسی</script>
 			<script type="Xsux">سُمیرو اکادیَن کوٗنِفام</script>
 			<script type="Yiii">یٖی</script>
-			<script type="Zxxx">لیٚکھنَے</script>
+			<script type="Zxxx">لیکھنَے</script>
 			<script type="Zyyy">عام</script>
 			<script type="Zzzz">اَن زٲنۍ یا نا لَگہٕ ہار رَسمُل خظ</script>
 		</scripts>
@@ -594,8 +594,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="034">جنوٗبی ایشیا</territory>
 			<territory type="035">جنوٗبہِ مَشرِقی ایشیا</territory>
 			<territory type="039">جنوٗبی یوٗرَپ</territory>
-			<territory type="053">آسٹریلیا تہٕ نِوزِلینٛڑ</territory>
-			<territory type="054">مٮ۪لَنیٖشِیا</territory>
+			<territory type="053">آسٹریلیا تہٕ نِوزِلینڑ</territory>
+			<territory type="054">مؠلَنیٖشِیا</territory>
 			<territory type="057">مَیکرونَیشِیَن خٕطہٕ</territory>
 			<territory type="061">پالنیشِیا</territory>
 			<territory type="142">ایشیا</territory>
@@ -606,12 +606,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="154">شُمٲلی یوٗرَپ</territory>
 			<territory type="155">مغرِبی یوٗرَپ</territory>
 			<territory type="419">لاطیٖنی اَمریٖکا تہٕ کیرَبیٖن</territory>
-			<territory type="AD">اٮ۪نڑورا</territory>
+			<territory type="AD">اؠنڑورا</territory>
 			<territory type="AE">مُتحدہ عرَب امارات</territory>
 			<territory type="AF">اَفغانَستان</territory>
-			<territory type="AG">اٮ۪نٹِگُوا تہٕ باربوڑا</territory>
+			<territory type="AG">اؠنٹِگُوا تہٕ باربوڑا</territory>
 			<territory type="AI">انگوئیلا</territory>
-			<territory type="AL">اٮ۪لبانِیا</territory>
+			<territory type="AL">اؠلبانِیا</territory>
 			<territory type="AM">اَرمانِیا</territory>
 			<territory type="AO">انگولا</territory>
 			<territory type="AQ">اینٹارٹِکا</territory>
@@ -620,23 +620,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="AT">آسٹِیا</territory>
 			<territory type="AU">آسٹریلِیا</territory>
 			<territory type="AW">اَروٗبا</territory>
-			<territory type="AX">ایلینٛڑ جٔزیٖرٕ</territory>
+			<territory type="AX">ایلینڑ جٔزیٖرٕ</territory>
 			<territory type="AZ">آزَرباجان</territory>
 			<territory type="BA">بوسنِیا تہٕ ہَرزِگووِنا</territory>
 			<territory type="BB">باربیڈاس</territory>
-			<territory type="BD">بَنٛگلادیش</territory>
-			<territory type="BE">بیٛلجِیَم</territory>
+			<territory type="BD">بَنگلادیش</territory>
+			<territory type="BE">بیلجِیَم</territory>
 			<territory type="BF">بُرکِنا فیسو</territory>
 			<territory type="BG">بَلجیرِیا</territory>
 			<territory type="BH">بحریٖن</territory>
 			<territory type="BI">بورَنڈِ</territory>
 			<territory type="BJ">بِنِن</territory>
-			<territory type="BL">سینٛٹ بارتَھیلمی</territory>
+			<territory type="BL">سینٹ بارتَھیلمی</territory>
 			<territory type="BM">بٔرمیوڈا</territory>
 			<territory type="BN">بُرنٔے</territory>
 			<territory type="BO">بولِوِیا</territory>
 			<territory type="BQ">برطانوی قُطبہِ جَنوٗبی علاقہٕ</territory>
-			<territory type="BR">برٛازِل</territory>
+			<territory type="BR">برازِل</territory>
 			<territory type="BS">بَہامَس</territory>
 			<territory type="BT">بوٗٹان</territory>
 			<territory type="BV">بووَٹ جٔزیٖرٕ</territory>
@@ -644,29 +644,29 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="BY">بیلاروٗس</territory>
 			<territory type="BZ">بیلِج</territory>
 			<territory type="CA">کینَڑا</territory>
-			<territory type="CC">کوکَس کیٖلِنٛگ جٔزیٖرٕ</territory>
-			<territory type="CD">کونٛگو کِنشاسا</territory>
+			<territory type="CC">کوکَس کیٖلِنگ جٔزیٖرٕ</territory>
+			<territory type="CD">کونگو کِنشاسا</territory>
 			<territory type="CF">مرکٔزی اَفریٖکی جموٗریَت</territory>
-			<territory type="CG">کونٛگو بٔرٛزاوِلی</territory>
-			<territory type="CH">سُوِزَرلینٛڑ</territory>
+			<territory type="CG">کونگو بٔرزاوِلی</territory>
+			<territory type="CH">سُوِزَرلینڑ</territory>
 			<territory type="CI">اَیوٕری کوسٹ</territory>
 			<territory type="CK">کُک جٔزیٖرٕ</territory>
 			<territory type="CL">چِلی</territory>
-			<territory type="CM">کیٚمِروٗن</territory>
+			<territory type="CM">کیمِروٗن</territory>
 			<territory type="CN">چیٖن</territory>
 			<territory type="CO">کولَمبِیا</territory>
 			<territory type="CR">کوسٹا رِکا</territory>
 			<territory type="CU">کیوٗبا</territory>
 			<territory type="CV">کیپ ؤرڑی</territory>
 			<territory type="CX">کرِسمَس جٔزیٖرٕ</territory>
-			<territory type="CY">سایفرٛس</territory>
+			<territory type="CY">سایفرس</territory>
 			<territory type="CZ">چیک جَموٗرِیَت</territory>
 			<territory type="DE">جرمٔنی</territory>
 			<territory type="DJ">جِبوٗتی</territory>
-			<territory type="DK">ڈینٛمارٕک</territory>
+			<territory type="DK">ڈینمارٕک</territory>
 			<territory type="DM">ڈومِنِکا</territory>
 			<territory type="DO">ڈومِنِکَن جموٗرِیَت</territory>
-			<territory type="DZ">اٮ۪لجیرِیا</territory>
+			<territory type="DZ">اؠلجیرِیا</territory>
 			<territory type="EC">اِکواڑور</territory>
 			<territory type="EE">ایسٹونِیا</territory>
 			<territory type="EG">مِسٔر</territory>
@@ -674,91 +674,91 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ER">اِرٕٹِیا</territory>
 			<territory type="ES">سٕپین</territory>
 			<territory type="ET">اِتھوپِیا</territory>
-			<territory type="FI">فِنلینٛڑ</territory>
+			<territory type="FI">فِنلینڑ</territory>
 			<territory type="FJ">فِجی</territory>
-			<territory type="FK">فٕلاکلینٛڑ جٔزیٖرٕ</territory>
-			<territory type="FR">فرٛانس</territory>
+			<territory type="FK">فٕلاکلینڑ جٔزیٖرٕ</territory>
+			<territory type="FR">فرانس</territory>
 			<territory type="GA">گیبان</territory>
-			<territory type="GB">یُنایٹِڑ کِنٛگڈَم</territory>
-			<territory type="GD">گرٛنیڑا</territory>
+			<territory type="GB">یُنایٹِڑ کِنگڈَم</territory>
+			<territory type="GD">گرنیڑا</territory>
 			<territory type="GE">جارجِیا</territory>
-			<territory type="GF">فرٛانسِسی گِانا</territory>
+			<territory type="GF">فرانسِسی گِانا</territory>
 			<territory type="GG">گیوَنَرسے</territory>
 			<territory type="GH">گانا</territory>
 			<territory type="GI">جِبرالٹَر</territory>
-			<territory type="GL">گریٖنلینٛڑ</territory>
+			<territory type="GL">گریٖنلینڑ</territory>
 			<territory type="GM">گَمبِیا</territory>
 			<territory type="GN">گِنی</territory>
 			<territory type="GP">گَواڑیلوپ</territory>
 			<territory type="GQ">اِکوِٹورِیَل گِنی</territory>
 			<territory type="GR">گریٖس</territory>
-			<territory type="GS">جنوٗبی جارجِیا تہٕ جنوٗبی سینٛڑوٕچ جٔزیٖرٕ</territory>
+			<territory type="GS">جنوٗبی جارجِیا تہٕ جنوٗبی سینڑوٕچ جٔزیٖرٕ</territory>
 			<territory type="GT">گوتیدالا</territory>
 			<territory type="GU">گُوام</territory>
 			<territory type="GW">گیٖنی بِساو</territory>
 			<territory type="GY">گُیانا</territory>
-			<territory type="HK">ہانٛگ کانٛگ ایس اے آر چیٖن</territory>
-			<territory type="HM">ہَرٕڑ جٔزیٖرٕ تہٕ مٮ۪کڈونالڑٕ جٔزیٖرٕ</territory>
-			<territory type="HN">ہانٛڈوٗرِس</territory>
-			<territory type="HR">کرٛوشِیا</territory>
+			<territory type="HK">ہانگ کانگ ایس اے آر چیٖن</territory>
+			<territory type="HM">ہَرٕڑ جٔزیٖرٕ تہٕ مؠکڈونالڑٕ جٔزیٖرٕ</territory>
+			<territory type="HN">ہانڈوٗرِس</territory>
+			<territory type="HR">کروشِیا</territory>
 			<territory type="HT">ہایتی</territory>
-			<territory type="HU">ہَنٛگری</territory>
+			<territory type="HU">ہَنگری</territory>
 			<territory type="ID">اِنڑونیشِیا</territory>
-			<territory type="IE">اَیَرلینٛڑ</territory>
+			<territory type="IE">اَیَرلینڑ</territory>
 			<territory type="IL">اِسرایٖل</territory>
-			<territory type="IM">آیِل آف میٛن</territory>
-			<territory type="IN">ہِنٛدوستان</territory>
-			<territory type="IO">برطانوی بحرِ ہِنٛدۍ علاقہٕ</territory>
+			<territory type="IM">آیِل آف مین</territory>
+			<territory type="IN">ہِندوستان</territory>
+			<territory type="IO">برطانوی بحرِ ہِندۍ علاقہٕ</territory>
 			<territory type="IQ">ایٖراق</territory>
 			<territory type="IR">ایٖران</territory>
-			<territory type="IS">اَیِسلینٛڑ</territory>
+			<territory type="IS">اَیِسلینڑ</territory>
 			<territory type="IT">اِٹلی</territory>
 			<territory type="JE">جٔرسی</territory>
 			<territory type="JM">جَمایکا</territory>
 			<territory type="JP">جاپان</territory>
-			<territory type="KE">کِنٛیا</territory>
+			<territory type="KE">کِنیا</territory>
 			<territory type="KG">کِرگِستان</territory>
 			<territory type="KH">کَمبوڑِیا</territory>
 			<territory type="KI">کِرٕباتی</territory>
 			<territory type="KM">کَمورَس</territory>
-			<territory type="KN">سینٛٹ کِٹَس تہٕ نیوِس</territory>
+			<territory type="KN">سینٹ کِٹَس تہٕ نیوِس</territory>
 			<territory type="KP">شُمٲلی کورِیا</territory>
 			<territory type="KR">جنوٗبی کورِیا</territory>
 			<territory type="KW">کُویت</territory>
 			<territory type="KY">کیمَن جٔزیٖرٕ</territory>
 			<territory type="KZ">کَزاکِستان</territory>
 			<territory type="LA">لاس</territory>
-			<territory type="LB">لٮ۪بنان</territory>
-			<territory type="LC">سینٛٹ لوٗسِیا</territory>
-			<territory type="LI">لِکٹیٛسٹیٖن</territory>
-			<territory type="LK">سِریٖلَنٛکا</territory>
+			<territory type="LB">لؠبنان</territory>
+			<territory type="LC">سینٹ لوٗسِیا</territory>
+			<territory type="LI">لِکٹیسٹیٖن</territory>
+			<territory type="LK">سِریٖلَنکا</territory>
 			<territory type="LR">لایبیرِیا</territory>
 			<territory type="LS">لیسوتھو</territory>
 			<territory type="LT">لِتھُوانِیا</territory>
 			<territory type="LU">لَکسَمبٔرٕگ</territory>
-			<territory type="LV">لیٛٹوِیا</territory>
+			<territory type="LV">لیٹوِیا</territory>
 			<territory type="LY">لِبیا</territory>
 			<territory type="MA">موروکو</territory>
-			<territory type="MC">مونیٚکو</territory>
+			<territory type="MC">مونیکو</territory>
 			<territory type="MD">مولڑاوِیا</territory>
-			<territory type="ME">موٹونیٛگِریو</territory>
-			<territory type="MF">سینٛٹ مارٹِن</territory>
+			<territory type="ME">موٹونیگِریو</territory>
+			<territory type="MF">سینٹ مارٹِن</territory>
 			<territory type="MG">میڑاگاسکار</territory>
 			<territory type="MH">مارشَل جٔزیٖرٕ</territory>
-			<territory type="MK">مٮ۪سوڑونِیا</territory>
+			<territory type="MK">مؠسوڑونِیا</territory>
 			<territory type="ML">مالی</territory>
 			<territory type="MM">مَیَنما بٔرما</territory>
-			<territory type="MN">مَنٛگولِیا</territory>
+			<territory type="MN">مَنگولِیا</territory>
 			<territory type="MO">مَکاوو ایس اے آر چیٖن</territory>
 			<territory type="MP">شُمٲلی مارِیانا جٔزیٖرٕ</territory>
 			<territory type="MQ">مارٹِنِک</territory>
 			<territory type="MR">مارٕٹانِیا</territory>
-			<territory type="MS">مانٛٹسیراٹ</territory>
+			<territory type="MS">مانٹسیراٹ</territory>
 			<territory type="MT">مالٹا</territory>
 			<territory type="MU">مورِشَس</territory>
 			<territory type="MV">مالدیٖو</territory>
 			<territory type="MW">ملاوی</territory>
-			<territory type="MX">مٮ۪کسِکو</territory>
+			<territory type="MX">مؠکسِکو</territory>
 			<territory type="MY">مَلیشِیا</territory>
 			<territory type="MZ">موزَمبِک</territory>
 			<territory type="NA">نامِبِیا</territory>
@@ -767,21 +767,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="NF">نارفاک جٔزیٖرٕ</territory>
 			<territory type="NG">نایجیرِیا</territory>
 			<territory type="NI">ناکاراگُوا</territory>
-			<territory type="NL">نیٖدَرلینٛڑ</territory>
+			<territory type="NL">نیٖدَرلینڑ</territory>
 			<territory type="NO">ناروے</territory>
 			<territory type="NP">نیپال</territory>
 			<territory type="NR">نارووٗ</territory>
 			<territory type="NU">نیوٗ</territory>
-			<territory type="NZ">نیوٗزِلینٛڑ</territory>
+			<territory type="NZ">نیوٗزِلینڑ</territory>
 			<territory type="OM">اومان</territory>
 			<territory type="PA">پَناما</territory>
 			<territory type="PE">پیٖروٗ</territory>
-			<territory type="PF">فرٛانسی پولِنیشِیا</territory>
+			<territory type="PF">فرانسی پولِنیشِیا</territory>
 			<territory type="PG">پاپُوا نیوٗ گیٖنی</territory>
 			<territory type="PH">فِلِپِینس</territory>
 			<territory type="PK">پاکِستان</territory>
-			<territory type="PL">پولینٛڑ</territory>
-			<territory type="PM">سینٛٹ پیٖری تہٕ موکیلِیَن</territory>
+			<territory type="PL">پولینڑ</territory>
+			<territory type="PM">سینٹ پیٖری تہٕ موکیلِیَن</territory>
 			<territory type="PN">پِٹکیرٕنۍ جٔزیٖرٕ</territory>
 			<territory type="PR">پٔرٹو رِکو</territory>
 			<territory type="PS">فَلَستیٖن</territory>
@@ -794,14 +794,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="RO">رومانِیا</territory>
 			<territory type="RS">سَربِیا</territory>
 			<territory type="RU">روٗس</territory>
-			<territory type="RW">روٗوانٛڈا</territory>
+			<territory type="RW">روٗوانڈا</territory>
 			<territory type="SA">سوٗدی عربِیہ</territory>
 			<territory type="SB">سولامان جٔزیٖرٕ</territory>
 			<territory type="SC">سیشَلِس</territory>
 			<territory type="SD">سوٗڈان</territory>
 			<territory type="SE">سُوِڈَن</territory>
-			<territory type="SG">ٛسِنٛگاپوٗر</territory>
-			<territory type="SH">سینٛٹ ہٮ۪لِنا</territory>
+			<territory type="SG">سِنگاپوٗر</territory>
+			<territory type="SH">سینٹ ہؠلِنا</territory>
 			<territory type="SI">سَلووینِیا</territory>
 			<territory type="SJ">سَوالبریڑ تہٕ جان ماییڑ</territory>
 			<territory type="SK">سَلوواکِیا</territory>
@@ -810,34 +810,34 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="SN">سینیگَل</territory>
 			<territory type="SO">سومالِیا</territory>
 			<territory type="SR">سُرِنام</territory>
-			<territory type="ST">ساو توم تہٕ پرٛنسِپی</territory>
-			<territory type="SV">اٮ۪ل سَلواڑور</territory>
+			<territory type="ST">ساو توم تہٕ پرنسِپی</territory>
+			<territory type="SV">اؠل سَلواڑور</territory>
 			<territory type="SY">شام</territory>
-			<territory type="SZ">سُوزِلینٛڑ</territory>
+			<territory type="SZ">سُوزِلینڑ</territory>
 			<territory type="TC">تُرُک تہٕ کیکوس جٔزیٖرٕ</territory>
 			<territory type="TD">چاڑ</territory>
-			<territory type="TF">فرٛانسِسی جَنوٗبی عَلاقہٕ</territory>
+			<territory type="TF">فرانسِسی جَنوٗبی عَلاقہٕ</territory>
 			<territory type="TG">ٹوگو</territory>
-			<territory type="TH">تھایلینٛڑ</territory>
+			<territory type="TH">تھایلینڑ</territory>
 			<territory type="TJ">تاجکِستان</territory>
 			<territory type="TK">توکیلاو</territory>
 			<territory type="TL">مَشرِقی تایمور</territory>
 			<territory type="TM">تُرمِنِستان</territory>
 			<territory type="TN">ٹونیشِیا</territory>
-			<territory type="TO">ٹونٛگا</territory>
+			<territory type="TO">ٹونگا</territory>
 			<territory type="TR">تُرکی</territory>
-			<territory type="TT">ٹرٛنِنداد تہٕ ٹوبیگو</territory>
+			<territory type="TT">ٹرنِنداد تہٕ ٹوبیگو</territory>
 			<territory type="TV">توٗوالوٗ</territory>
 			<territory type="TW">تایوان</territory>
 			<territory type="TZ">تَنجانِیا</territory>
 			<territory type="UA">یوٗرِکین</territory>
-			<territory type="UG">یوٗگانٛڑا</territory>
-			<territory type="UM">یوٗنایٹِڑ سِٹیٹِس ماینَر آوُٹلییِنٛگ جٔزیٖرٕ</territory>
+			<territory type="UG">یوٗگانڑا</territory>
+			<territory type="UM">یوٗنایٹِڑ سِٹیٹِس ماینَر آوُٹلییِنگ جٔزیٖرٕ</territory>
 			<territory type="US">یوٗنایٹِڑ سِٹیٹِس</territory>
 			<territory type="UY">یوٗروگے</territory>
 			<territory type="UZ">اُزبِکِستان</territory>
 			<territory type="VA">ویٹِکَن سِٹی</territory>
-			<territory type="VC">سینٛٹ وینسٮ۪ٹ تہٕ گرٛیناڑاینٕز</territory>
+			<territory type="VC">سینٹ وینسؠٹ تہٕ گریناڑاینٕز</territory>
 			<territory type="VE">وینازوٗلا</territory>
 			<territory type="VG">بَرطانوی ؤرجِن جٔزیٖرٕ</territory>
 			<territory type="VI">یوٗ ایس ؤرجِن جٔزیٖرٕ</territory>
@@ -853,26 +853,26 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ZZ">نامعلوٗم تہٕ نالَگہار عَلاقہٕ</territory>
 		</territories>
 		<variants>
-			<variant type="1901">رٮ۪وٲتی جٔرمَن عِلمہِ ہِجا</variant>
+			<variant type="1901">رؠوٲتی جٔرمَن عِلمہِ ہِجا</variant>
 			<variant type="1994">مَیعٲری روٗسی عِلمہِ ہِجا</variant>
 			<variant type="1996">جٔرمَن عِلمہِ ہِجا ۱۹۹۶سُک</variant>
-			<variant type="1606NICT">بعد وَقت وَسطی فرٛانس پٮ۪ٹھ ۱۶٠۶ تام</variant>
+			<variant type="1606NICT">بعد وَقت وَسطی فرانس پؠٹھ ۱۶٠۶ تام</variant>
 			<variant type="AREVELA">مَشرِقی اَمریٖکا</variant>
 			<variant type="BAKU1926">جٔمع کٔرِتھ تُرکی لاطیٖنی اَچھر</variant>
 			<variant type="BISKE">سین جارجِیو/بِلا بوٗلۍ</variant>
 			<variant type="FONIPA">آوازیات</variant>
 			<variant type="FONUPA">یوٗ پی اے آوازِیات</variant>
-			<variant type="LIPAW">روٗسی زَبانہِ ہِنٛز لِپوواز بوٗلۍ</variant>
-			<variant type="MONOTON">اَکٔے لہجہٕ واجٮ۪ن زَبان</variant>
-			<variant type="NEDIS">نٮ۪ٹِسون بوٗلۍ</variant>
+			<variant type="LIPAW">روٗسی زَبانہِ ہِنز لِپوواز بوٗلۍ</variant>
+			<variant type="MONOTON">اَکٔے لہجہٕ واجؠن زَبان</variant>
+			<variant type="NEDIS">نؠٹِسون بوٗلۍ</variant>
 			<variant type="NJIVA">نیجِوا بوٗلۍ</variant>
 			<variant type="OSOJS">اُشیکو/اوسوجین بوٗلۍ</variant>
-			<variant type="POLYTON">واریاہ لہجہٕ واجٮ۪ن زَبان</variant>
+			<variant type="POLYTON">واریاہ لہجہٕ واجؠن زَبان</variant>
 			<variant type="POSIX">کَمپیوٗٹَر</variant>
 			<variant type="REVISED">دُبارٕ دۄہراونہٕ آمُت عِلمہِ ہِجا</variant>
 			<variant type="ROZAJ">روٗسی</variant>
 			<variant type="SAAHO">سوہو</variant>
-			<variant type="SCOTLAND">سُکاٹِش مَیعٲری اَنٛگریٖزۍ</variant>
+			<variant type="SCOTLAND">سُکاٹِش مَیعٲری اَنگریٖزۍ</variant>
 			<variant type="SCOUSE">سِکوس</variant>
 			<variant type="SOLBA">ثٹولوِزا/سولبِکا بوٗلۍ</variant>
 			<variant type="TARASK">تاراسکیٖوِکا علمہ ہِجاِ</variant>
@@ -882,7 +882,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<key type="currency">ضَرب</key>
 		</keys>
 		<types>
-			<type key="calendar" type="buddhist">بُدَن ہُنٛد کیلنڑَر</type>
+			<type key="calendar" type="buddhist">بُدَن ہُند کیلنڑَر</type>
 			<type key="calendar" type="chinese">چیٖنی کیلَنڑَر</type>
 			<type key="calendar" type="gregorian">گرگوریَن کیلنڑَر</type>
 			<type key="calendar" type="hebrew">ہِبرِو کیلنڑَر</type>
@@ -890,11 +890,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="islamic-civil">اِسلٲمی اِجتمٲیی کیلنڑَر</type>
 			<type key="calendar" type="japanese">جاپٲنۍ کیلنڑَر</type>
 			<type key="calendar" type="roc">جموٗریٲتی چیٖنی کیلَنڑَر</type>
-			<type key="collation" type="big5han">رٮ۪وٲتی چیٖنی تِرتیٖب</type>
+			<type key="collation" type="big5han">رؠوٲتی چیٖنی تِرتیٖب</type>
 			<type key="collation" type="phonebook">فون بُک تَرتیٖب</type>
 			<type key="collation" type="pinyin">آسان بَناونہٕ آمُت چیٖنی پیٖنیَن تَرتیٖب</type>
-			<type key="collation" type="stroke">رٮ۪وٲتی چیٖنی سٹروک تَرتیٖب</type>
-			<type key="collation" type="traditional">رٮ۪وٲتی تَرتیٖب</type>
+			<type key="collation" type="stroke">رؠوٲتی چیٖنی سٹروک تَرتیٖب</type>
+			<type key="collation" type="traditional">رؠوٲتی تَرتیٖب</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">میٖٹرِک</measurementSystemName>
@@ -912,9 +912,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</orientation>
 	</layout>
 	<characters>
-		<exemplarCharacters>[\u06EA\u06ED \u064E \u064F \u0650 \u0654 \u0655 \u0656 \u0657 \u065A \u065B ء آ أ ٲ ؤ ا ٮ ب پ ت ث ٹ ج چ ح خ د ذ ڈ ر ز ڑ ژ س ش ص ض ط ظ ع غ ف ق ک گ ل م ن ں ھ ہ و ۄ ی ۍ ے]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[\u200E\u200F]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[\u200E \- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters>[ء آ أ ٲ ؤ ا ب پ ت ث ٹ ج چ ح خ د ذ ڈ ر ز ڑ ژ س ش ص ض ط ظ ع غ ف ق ک گ ل م ن ں ھ ہ و ۄ ۆ ی ۍ ؠ ے]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[\u200E\u200F \u064E \u064F \u0650 \u0654 \u0655 \u065F \u0656 \u0657]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\u200E \- , . % ‰ + 0۰ 1۱ 2۲ 3۳ 4۴ 5۵ 6۶ 7۷ 8۸ 9۹]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>
@@ -1032,19 +1032,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dayContext type="format">
 						<dayWidth type="abbreviated">
 							<day type="sun">آتھوار</day>
-							<day type="mon">ژٔنٛدٕروار</day>
-							<day type="tue">بوٚموار</day>
+							<day type="mon">ژٔندٕروار</day>
+							<day type="tue">بۆموار</day>
 							<day type="wed">بودوار</day>
-							<day type="thu">برٛٮ۪سوار</day>
+							<day type="thu">برؠسوار</day>
 							<day type="fri">جُمہ</day>
 							<day type="sat">بٹوار</day>
 						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun">اَتھوار</day>
-							<day type="mon">ژٔنٛدرٕروار</day>
-							<day type="tue">بوٚموار</day>
+							<day type="mon">ژٔندرٕروار</day>
+							<day type="tue">بۆموار</day>
 							<day type="wed">بودوار</day>
-							<day type="thu">برٛٮ۪سوار</day>
+							<day type="thu">برؠسوار</day>
 							<day type="fri">جُمہ</day>
 							<day type="sat">بٹوار</day>
 						</dayWidth>
@@ -1065,14 +1065,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<quarterContext type="format">
 						<quarterWidth type="abbreviated">
 							<quarter type="1">ژۄباگ</quarter>
-							<quarter type="2">دوٚیِم ژۄباگ</quarter>
-							<quarter type="3">ترٛیِم ژۄباگ</quarter>
+							<quarter type="2">دۆیِم ژۄباگ</quarter>
+							<quarter type="3">تریِم ژۄباگ</quarter>
 							<quarter type="4">ژوٗرِم ژۄباگ</quarter>
 						</quarterWidth>
 						<quarterWidth type="wide">
 							<quarter type="1">گۄڑنیُک ژۄباگ</quarter>
-							<quarter type="2">دوٚیِم ژۄباگ</quarter>
-							<quarter type="3">ترٛیِم ژۄباگ</quarter>
+							<quarter type="2">دۆیِم ژۄباگ</quarter>
+							<quarter type="3">تریِم ژۄباگ</quarter>
 							<quarter type="4">ژوٗرِم ژۄباگ</quarter>
 						</quarterWidth>
 					</quarterContext>
@@ -1210,7 +1210,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ؤری</displayName>
 			</field>
 			<field type="month">
-				<displayName>رٮ۪تھ</displayName>
+				<displayName>رؠتھ</displayName>
 			</field>
 			<field type="week">
 				<displayName>ہفتہٕ</displayName>
@@ -1228,13 +1228,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>صبح/رات</displayName>
 			</field>
 			<field type="hour">
-				<displayName>گٲنٛٹہٕ</displayName>
+				<displayName>گٲنٹہٕ</displayName>
 			</field>
 			<field type="minute">
 				<displayName>مِنَٹ</displayName>
 			</field>
 			<field type="second">
-				<displayName>سٮ۪کَنڑ</displayName>
+				<displayName>سؠکَنڑ</displayName>
 			</field>
 			<field type="zone">
 				<displayName>زون</displayName>
@@ -1250,7 +1250,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>غٲر زان</exemplarCity>
 			</zone>
 			<zone type="Europe/Andorra">
-				<exemplarCity>اَنٛڑورا</exemplarCity>
+				<exemplarCity>اَنڑورا</exemplarCity>
 			</zone>
 			<zone type="Asia/Dubai">
 				<exemplarCity>دُبَے</exemplarCity>
@@ -1259,19 +1259,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>قابُل</exemplarCity>
 			</zone>
 			<zone type="America/Antigua">
-				<exemplarCity>اٮ۪نٹِگُوا</exemplarCity>
+				<exemplarCity>اؠنٹِگُوا</exemplarCity>
 			</zone>
 			<zone type="America/Anguilla">
-				<exemplarCity>اٮ۪نگِولا</exemplarCity>
+				<exemplarCity>اؠنگِولا</exemplarCity>
 			</zone>
 			<zone type="Europe/Tirane">
 				<exemplarCity>ٹِرین</exemplarCity>
 			</zone>
 			<zone type="Asia/Yerevan">
-				<exemplarCity>یےریٚوَن</exemplarCity>
+				<exemplarCity>یےریوَن</exemplarCity>
 			</zone>
 			<zone type="Africa/Luanda">
-				<exemplarCity>لُعٮ۪نٛڑا</exemplarCity>
+				<exemplarCity>لُعؠنڑا</exemplarCity>
 			</zone>
 			<zone type="Antarctica/Rothera">
 				<exemplarCity>روتھیرا</exemplarCity>
@@ -1280,7 +1280,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>پامَر</exemplarCity>
 			</zone>
 			<zone type="Antarctica/Syowa">
-				<exemplarCity>سیٚووا</exemplarCity>
+				<exemplarCity>سیووا</exemplarCity>
 			</zone>
 			<zone type="Antarctica/Mawson">
 				<exemplarCity>ماسَن</exemplarCity>
@@ -1295,16 +1295,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>کیسی</exemplarCity>
 			</zone>
 			<zone type="Antarctica/DumontDUrville">
-				<exemplarCity>ڈُمونٛٹ ڈ اَروِل</exemplarCity>
+				<exemplarCity>ڈُمونٹ ڈ اَروِل</exemplarCity>
 			</zone>
 			<zone type="Antarctica/McMurdo">
-				<exemplarCity>مٮ۪ک مٲڑو</exemplarCity>
+				<exemplarCity>مؠک مٲڑو</exemplarCity>
 			</zone>
 			<zone type="America/Argentina/Rio_Gallegos">
 				<exemplarCity>رِیو گالیگوس</exemplarCity>
 			</zone>
 			<zone type="America/Mendoza">
-				<exemplarCity>مٮ۪نڑوزا</exemplarCity>
+				<exemplarCity>مؠنڑوزا</exemplarCity>
 			</zone>
 			<zone type="America/Argentina/San_Juan">
 				<exemplarCity>سین جُواں</exemplarCity>
@@ -1349,16 +1349,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>ڈاروِن</exemplarCity>
 			</zone>
 			<zone type="Australia/Adelaide">
-				<exemplarCity>اٮ۪ڑِلیڑ</exemplarCity>
+				<exemplarCity>اؠڑِلیڑ</exemplarCity>
 			</zone>
 			<zone type="Australia/Broken_Hill">
-				<exemplarCity>برٛوکٕن ہِل</exemplarCity>
+				<exemplarCity>بروکٕن ہِل</exemplarCity>
 			</zone>
 			<zone type="Australia/Currie">
 				<exemplarCity>کیوٗری</exemplarCity>
 			</zone>
 			<zone type="Australia/Melbourne">
-				<exemplarCity>مٮ۪لبعارن</exemplarCity>
+				<exemplarCity>مؠلبعارن</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>حۄبٲٹ</exemplarCity>
@@ -1370,7 +1370,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>سِڑنی</exemplarCity>
 			</zone>
 			<zone type="Australia/Brisbane">
-				<exemplarCity>برٛسبین</exemplarCity>
+				<exemplarCity>برسبین</exemplarCity>
 			</zone>
 			<zone type="Australia/Lord_Howe">
 				<exemplarCity>لعاڑ ہووے</exemplarCity>
@@ -1388,7 +1388,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>ڈھاکا</exemplarCity>
 			</zone>
 			<zone type="Europe/Brussels">
-				<exemplarCity>برٛسٕلس</exemplarCity>
+				<exemplarCity>برسٕلس</exemplarCity>
 			</zone>
 			<zone type="Africa/Ouagadougou">
 				<exemplarCity>اوآگدوگو</exemplarCity>
@@ -1397,7 +1397,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>سوفِیا</exemplarCity>
 			</zone>
 			<zone type="Asia/Bahrain">
-				<exemplarCity>بٮ۪ہریٖن</exemplarCity>
+				<exemplarCity>بؠہریٖن</exemplarCity>
 			</zone>
 			<zone type="Africa/Bujumbura">
 				<exemplarCity>بُجُمبُرا</exemplarCity>
@@ -1409,7 +1409,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>برموٗڑا</exemplarCity>
 			</zone>
 			<zone type="Asia/Brunei">
-				<exemplarCity>برٛوٗنَے</exemplarCity>
+				<exemplarCity>بروٗنَے</exemplarCity>
 			</zone>
 			<zone type="America/La_Paz">
 				<exemplarCity>لا پاز</exemplarCity>
@@ -1418,10 +1418,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>ایٖروٗنیپ</exemplarCity>
 			</zone>
 			<zone type="America/Rio_Branco">
-				<exemplarCity>رِیو برٛانٛکو</exemplarCity>
+				<exemplarCity>رِیو برانکو</exemplarCity>
 			</zone>
 			<zone type="America/Porto_Velho">
-				<exemplarCity>پوٹو وٮ۪لہو</exemplarCity>
+				<exemplarCity>پوٹو وؠلہو</exemplarCity>
 			</zone>
 			<zone type="America/Boa_Vista">
 				<exemplarCity>بوآ وِسٹا</exemplarCity>
@@ -1433,13 +1433,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>کوٗیابا</exemplarCity>
 			</zone>
 			<zone type="America/Campo_Grande">
-				<exemplarCity>کٮ۪مپو گرینٛڑ</exemplarCity>
+				<exemplarCity>کؠمپو گرینڑ</exemplarCity>
 			</zone>
 			<zone type="America/Belem">
-				<exemplarCity>بٮ۪لٮ۪م</exemplarCity>
+				<exemplarCity>بؠلؠم</exemplarCity>
 			</zone>
 			<zone type="America/Araguaina">
-				<exemplarCity>اٮ۪ریگُوینا</exemplarCity>
+				<exemplarCity>اؠریگُوینا</exemplarCity>
 			</zone>
 			<zone type="America/Sao_Paulo">
 				<exemplarCity>ساو پعالو</exemplarCity>
@@ -1454,10 +1454,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>میسِیوو</exemplarCity>
 			</zone>
 			<zone type="America/Recife">
-				<exemplarCity>رٮ۪چیٖف</exemplarCity>
+				<exemplarCity>رؠچیٖف</exemplarCity>
 			</zone>
 			<zone type="America/Noronha">
-				<exemplarCity>نورونٛہا</exemplarCity>
+				<exemplarCity>نورونہا</exemplarCity>
 			</zone>
 			<zone type="America/Nassau">
 				<exemplarCity>نساؤں</exemplarCity>
@@ -1466,13 +1466,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>تھِمپوٗ</exemplarCity>
 			</zone>
 			<zone type="Africa/Gaborone">
-				<exemplarCity>گٮ۪بورون</exemplarCity>
+				<exemplarCity>گؠبورون</exemplarCity>
 			</zone>
 			<zone type="Europe/Minsk">
-				<exemplarCity>مِنٛسک</exemplarCity>
+				<exemplarCity>مِنسک</exemplarCity>
 			</zone>
 			<zone type="America/Belize">
-				<exemplarCity>بٮ۪لیٖز</exemplarCity>
+				<exemplarCity>بؠلیٖز</exemplarCity>
 			</zone>
 			<zone type="America/Dawson">
 				<exemplarCity>ڑاسَن</exemplarCity>
@@ -1484,28 +1484,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>اِنوٗوِک</exemplarCity>
 			</zone>
 			<zone type="America/Vancouver">
-				<exemplarCity>وٮ۪نٛکووَر</exemplarCity>
+				<exemplarCity>وؠنکووَر</exemplarCity>
 			</zone>
 			<zone type="America/Dawson_Creek">
-				<exemplarCity>ڑاسَن کرٛیٖک</exemplarCity>
+				<exemplarCity>ڑاسَن کریٖک</exemplarCity>
 			</zone>
 			<zone type="America/Yellowknife">
-				<exemplarCity>یٮ۪لو نایِف</exemplarCity>
+				<exemplarCity>یؠلو نایِف</exemplarCity>
 			</zone>
 			<zone type="America/Edmonton">
-				<exemplarCity>اٮ۪ڑمَنٹَن</exemplarCity>
+				<exemplarCity>اؠڑمَنٹَن</exemplarCity>
 			</zone>
 			<zone type="America/Swift_Current">
-				<exemplarCity>سٕوِفٹ کَرَنٛٹ</exemplarCity>
+				<exemplarCity>سٕوِفٹ کَرَنٹ</exemplarCity>
 			</zone>
 			<zone type="America/Cambridge_Bay">
 				<exemplarCity>کیمبرِج خلیٖج</exemplarCity>
 			</zone>
 			<zone type="America/Regina">
-				<exemplarCity>رٮ۪جیٖنا</exemplarCity>
+				<exemplarCity>رؠجیٖنا</exemplarCity>
 			</zone>
 			<zone type="America/Winnipeg">
-				<exemplarCity>وِنِپٮ۪گ</exemplarCity>
+				<exemplarCity>وِنِپؠگ</exemplarCity>
 			</zone>
 			<zone type="America/Resolute">
 				<exemplarCity>رِسولیوٗٹ</exemplarCity>
@@ -1514,10 +1514,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>رینی رِوَر</exemplarCity>
 			</zone>
 			<zone type="America/Rankin_Inlet">
-				<exemplarCity>رینٛکِن اِنلٮ۪ٹ</exemplarCity>
+				<exemplarCity>رینکِن اِنلؠٹ</exemplarCity>
 			</zone>
 			<zone type="America/Coral_Harbour">
-				<exemplarCity>کورَل بٔنٛدٕرگاہ</exemplarCity>
+				<exemplarCity>کورَل بٔندٕرگاہ</exemplarCity>
 			</zone>
 			<zone type="America/Thunder_Bay">
 				<exemplarCity>تھَنڑَر خلیٖج</exemplarCity>
@@ -1526,19 +1526,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>نِپِگَن</exemplarCity>
 			</zone>
 			<zone type="America/Toronto">
-				<exemplarCity>ٹورونٛٹو</exemplarCity>
+				<exemplarCity>ٹورونٹو</exemplarCity>
 			</zone>
 			<zone type="America/Iqaluit">
 				<exemplarCity>اِقالیوٗیِت</exemplarCity>
 			</zone>
 			<zone type="America/Pangnirtung">
-				<exemplarCity>پَنٛگنِرٹَنٛگ</exemplarCity>
+				<exemplarCity>پَنگنِرٹَنگ</exemplarCity>
 			</zone>
 			<zone type="America/Moncton">
-				<exemplarCity>مونٛکٹٕن</exemplarCity>
+				<exemplarCity>مونکٹٕن</exemplarCity>
 			</zone>
 			<zone type="America/Halifax">
-				<exemplarCity>حیلِفٮ۪کس</exemplarCity>
+				<exemplarCity>حیلِفؠکس</exemplarCity>
 			</zone>
 			<zone type="America/Goose_Bay">
 				<exemplarCity>گوٗس خلیٖج</exemplarCity>
@@ -1547,10 +1547,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>گلیس خلیٖج</exemplarCity>
 			</zone>
 			<zone type="America/Blanc-Sablon">
-				<exemplarCity>بلانٛک سٮ۪بلَن</exemplarCity>
+				<exemplarCity>بلانک سؠبلَن</exemplarCity>
 			</zone>
 			<zone type="America/St_Johns">
-				<exemplarCity>سٮ۪نٛٹ جونس</exemplarCity>
+				<exemplarCity>سؠنٹ جونس</exemplarCity>
 			</zone>
 			<zone type="Indian/Cocos">
 				<exemplarCity>کوکوس</exemplarCity>
@@ -1562,10 +1562,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>لُبُمباشی</exemplarCity>
 			</zone>
 			<zone type="Africa/Bangui">
-				<exemplarCity>بٮ۪نٛگوٗیی</exemplarCity>
+				<exemplarCity>بؠنگوٗیی</exemplarCity>
 			</zone>
 			<zone type="Africa/Brazzaville">
-				<exemplarCity>برٛازاوِل</exemplarCity>
+				<exemplarCity>برازاوِل</exemplarCity>
 			</zone>
 			<zone type="Europe/Zurich">
 				<exemplarCity>زیوٗرِک</exemplarCity>
@@ -1574,13 +1574,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>عابِدجان</exemplarCity>
 			</zone>
 			<zone type="Pacific/Rarotonga">
-				<exemplarCity>راروٹونٛگا</exemplarCity>
+				<exemplarCity>راروٹونگا</exemplarCity>
 			</zone>
 			<zone type="Pacific/Easter">
 				<exemplarCity>ایٖسٹَر</exemplarCity>
 			</zone>
 			<zone type="America/Santiago">
-				<exemplarCity>سینٹِعٮ۪گو</exemplarCity>
+				<exemplarCity>سینٹِعؠگو</exemplarCity>
 			</zone>
 			<zone type="Africa/Douala">
 				<exemplarCity>دوعالا</exemplarCity>
@@ -1622,19 +1622,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>ڈومِنِکا</exemplarCity>
 			</zone>
 			<zone type="America/Santo_Domingo">
-				<exemplarCity>سٮ۪نٹو ڑومِنگو</exemplarCity>
+				<exemplarCity>سؠنٹو ڑومِنگو</exemplarCity>
 			</zone>
 			<zone type="Africa/Algiers">
 				<exemplarCity>اَلجیٖرِیا</exemplarCity>
 			</zone>
 			<zone type="Pacific/Galapagos">
-				<exemplarCity>گٮ۪لَپگوس</exemplarCity>
+				<exemplarCity>گؠلَپگوس</exemplarCity>
 			</zone>
 			<zone type="America/Guayaquil">
 				<exemplarCity>گوایاکِوَل</exemplarCity>
 			</zone>
 			<zone type="Europe/Tallinn">
-				<exemplarCity>ٹٮ۪لِن</exemplarCity>
+				<exemplarCity>ٹؠلِن</exemplarCity>
 			</zone>
 			<zone type="Africa/Cairo">
 				<exemplarCity>کَیرو</exemplarCity>
@@ -1643,7 +1643,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>اَسمیرا</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Canary">
-				<exemplarCity>کٮ۪نَری</exemplarCity>
+				<exemplarCity>کؠنَری</exemplarCity>
 			</zone>
 			<zone type="Africa/Ceuta">
 				<exemplarCity>کیوٗٹا</exemplarCity>
@@ -1652,7 +1652,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>میڑرِڑ</exemplarCity>
 			</zone>
 			<zone type="Europe/Helsinki">
-				<exemplarCity>حٮ۪لسِنٛکی</exemplarCity>
+				<exemplarCity>حؠلسِنکی</exemplarCity>
 			</zone>
 			<zone type="Pacific/Fiji">
 				<exemplarCity>فِجی</exemplarCity>
@@ -1661,7 +1661,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>سٹینلی</exemplarCity>
 			</zone>
 			<zone type="Pacific/Truk">
-				<exemplarCity>ٹرٛک</exemplarCity>
+				<exemplarCity>ٹرک</exemplarCity>
 			</zone>
 			<zone type="Pacific/Ponape">
 				<exemplarCity>پوناپے</exemplarCity>
@@ -1670,7 +1670,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>کوسراے</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Faeroe">
-				<exemplarCity>فٮ۪رو</exemplarCity>
+				<exemplarCity>فؠرو</exemplarCity>
 			</zone>
 			<zone type="Europe/Paris">
 				<exemplarCity>پیرِس</exemplarCity>
@@ -1682,10 +1682,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<long>
 					<daylight>برطٲنوی سَمَر ٹایِم</daylight>
 				</long>
-				<exemplarCity>لَنٛدَن</exemplarCity>
+				<exemplarCity>لَندَن</exemplarCity>
 			</zone>
 			<zone type="America/Grenada">
-				<exemplarCity>گرٛیناڑا</exemplarCity>
+				<exemplarCity>گریناڑا</exemplarCity>
 			</zone>
 			<zone type="Asia/Tbilisi">
 				<exemplarCity>بِلِسی</exemplarCity>
@@ -1694,7 +1694,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>کَیین</exemplarCity>
 			</zone>
 			<zone type="Africa/Accra">
-				<exemplarCity>اٮ۪کرا</exemplarCity>
+				<exemplarCity>اؠکرا</exemplarCity>
 			</zone>
 			<zone type="Europe/Gibraltar">
 				<exemplarCity>گِبرالٹَر</exemplarCity>
@@ -1706,16 +1706,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>گعاڑتھیب</exemplarCity>
 			</zone>
 			<zone type="America/Scoresbysund">
-				<exemplarCity>سکورٕسباےسَنٛڑ</exemplarCity>
+				<exemplarCity>سکورٕسباےسَنڑ</exemplarCity>
 			</zone>
 			<zone type="America/Danmarkshavn">
-				<exemplarCity>ڑٮ۪نمارکشَون</exemplarCity>
+				<exemplarCity>ڑؠنمارکشَون</exemplarCity>
 			</zone>
 			<zone type="Africa/Banjul">
 				<exemplarCity>بَنجوٗل</exemplarCity>
 			</zone>
 			<zone type="Africa/Conakry">
-				<exemplarCity>کوناکرٛی</exemplarCity>
+				<exemplarCity>کوناکری</exemplarCity>
 			</zone>
 			<zone type="America/Guadeloupe">
 				<exemplarCity>گوڑلوپ</exemplarCity>
@@ -1724,7 +1724,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>مالابو</exemplarCity>
 			</zone>
 			<zone type="Europe/Athens">
-				<exemplarCity>اٮ۪تھٕنس</exemplarCity>
+				<exemplarCity>اؠتھٕنس</exemplarCity>
 			</zone>
 			<zone type="Atlantic/South_Georgia">
 				<exemplarCity>ساوتھ جورجِیا</exemplarCity>
@@ -1742,10 +1742,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>گُیانا</exemplarCity>
 			</zone>
 			<zone type="Asia/Hong_Kong">
-				<exemplarCity>حانٛگ کانٛگ</exemplarCity>
+				<exemplarCity>حانگ کانگ</exemplarCity>
 			</zone>
 			<zone type="America/Port-au-Prince">
-				<exemplarCity>پوٹ آؤں پرِنٛس</exemplarCity>
+				<exemplarCity>پوٹ آؤں پرِنس</exemplarCity>
 			</zone>
 			<zone type="Europe/Budapest">
 				<exemplarCity>بُڑاپیسٹ</exemplarCity>
@@ -1754,7 +1754,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>جکارتا</exemplarCity>
 			</zone>
 			<zone type="Asia/Pontianak">
-				<exemplarCity>پونٛتِعانٛک</exemplarCity>
+				<exemplarCity>پونتِعانک</exemplarCity>
 			</zone>
 			<zone type="Asia/Makassar">
 				<exemplarCity>مَکَسَر</exemplarCity>
@@ -1769,7 +1769,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>ڈَبلِن</exemplarCity>
 			</zone>
 			<zone type="Asia/Jerusalem">
-				<exemplarCity>یٮ۪روٗسَلَم</exemplarCity>
+				<exemplarCity>یؠروٗسَلَم</exemplarCity>
 			</zone>
 			<zone type="Indian/Chagos">
 				<exemplarCity>چاگوس</exemplarCity>
@@ -1778,10 +1778,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>بغداد</exemplarCity>
 			</zone>
 			<zone type="Asia/Tehran">
-				<exemplarCity>تٮ۪ہران</exemplarCity>
+				<exemplarCity>تؠہران</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Reykjavik">
-				<exemplarCity>رٮ۪کیاوِک</exemplarCity>
+				<exemplarCity>رؠکیاوِک</exemplarCity>
 			</zone>
 			<zone type="Europe/Rome">
 				<exemplarCity>روم</exemplarCity>
@@ -1802,10 +1802,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>بِشکیک</exemplarCity>
 			</zone>
 			<zone type="Asia/Phnom_Penh">
-				<exemplarCity>نوم پٮ۪نٛہہ</exemplarCity>
+				<exemplarCity>نوم پؠنہہ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>اٮ۪نٛڑربیری</exemplarCity>
+				<exemplarCity>اؠنڑربیری</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
 				<exemplarCity>کِرِتِماتی</exemplarCity>
@@ -1817,10 +1817,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>کومورو</exemplarCity>
 			</zone>
 			<zone type="America/St_Kitts">
-				<exemplarCity>سینٛٹ کِٹس</exemplarCity>
+				<exemplarCity>سینٹ کِٹس</exemplarCity>
 			</zone>
 			<zone type="Asia/Pyongyang">
-				<exemplarCity>پیونٛگیانٛگ</exemplarCity>
+				<exemplarCity>پیونگیانگ</exemplarCity>
 			</zone>
 			<zone type="Asia/Seoul">
 				<exemplarCity>سول</exemplarCity>
@@ -1841,7 +1841,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>اَقٹوب</exemplarCity>
 			</zone>
 			<zone type="Asia/Qyzylorda">
-				<exemplarCity>قٮ۪زٮ۪لوڑا</exemplarCity>
+				<exemplarCity>قؠزؠلوڑا</exemplarCity>
 			</zone>
 			<zone type="Asia/Almaty">
 				<exemplarCity>اَلماٹی</exemplarCity>
@@ -1853,7 +1853,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>بیرُت</exemplarCity>
 			</zone>
 			<zone type="America/St_Lucia">
-				<exemplarCity>سٮ۪نٛٹ لوٗسِیا</exemplarCity>
+				<exemplarCity>سؠنٹ لوٗسِیا</exemplarCity>
 			</zone>
 			<zone type="Europe/Vaduz">
 				<exemplarCity>وادُز</exemplarCity>
@@ -1877,10 +1877,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>رِگا</exemplarCity>
 			</zone>
 			<zone type="Africa/Tripoli">
-				<exemplarCity>ترٛپولی</exemplarCity>
+				<exemplarCity>ترپولی</exemplarCity>
 			</zone>
 			<zone type="Africa/Casablanca">
-				<exemplarCity>کٮ۪سابلٮ۪نٛکا</exemplarCity>
+				<exemplarCity>کؠسابلؠنکا</exemplarCity>
 			</zone>
 			<zone type="Europe/Monaco">
 				<exemplarCity>موناکو</exemplarCity>
@@ -1889,7 +1889,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>چِسیٖنو</exemplarCity>
 			</zone>
 			<zone type="Indian/Antananarivo">
-				<exemplarCity>اٮ۪نٛٹنانرِوو</exemplarCity>
+				<exemplarCity>اؠنٹنانرِوو</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kwajalein">
 				<exemplarCity>کُوجلین</exemplarCity>
@@ -1901,7 +1901,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>بماکو</exemplarCity>
 			</zone>
 			<zone type="Asia/Rangoon">
-				<exemplarCity>رنٛگوٗن</exemplarCity>
+				<exemplarCity>رنگوٗن</exemplarCity>
 			</zone>
 			<zone type="Asia/Hovd">
 				<exemplarCity>حووڑ</exemplarCity>
@@ -1931,7 +1931,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>مالٹا</exemplarCity>
 			</zone>
 			<zone type="Indian/Mauritius">
-				<exemplarCity>مورِشیٚس</exemplarCity>
+				<exemplarCity>مورِشیس</exemplarCity>
 			</zone>
 			<zone type="Indian/Maldives">
 				<exemplarCity>مالدیٖوز</exemplarCity>
@@ -1952,13 +1952,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>چِہُوا ہُوا</exemplarCity>
 			</zone>
 			<zone type="America/Monterrey">
-				<exemplarCity>موٹیٚری</exemplarCity>
+				<exemplarCity>موٹیری</exemplarCity>
 			</zone>
 			<zone type="America/Mexico_City">
-				<exemplarCity>میٚکسِکو سِٹی</exemplarCity>
+				<exemplarCity>میکسِکو سِٹی</exemplarCity>
 			</zone>
 			<zone type="America/Merida">
-				<exemplarCity>میٚرِڈا</exemplarCity>
+				<exemplarCity>میرِڈا</exemplarCity>
 			</zone>
 			<zone type="America/Cancun">
 				<exemplarCity>کینکَن</exemplarCity>
@@ -1967,7 +1967,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>کولالَمپوٗر</exemplarCity>
 			</zone>
 			<zone type="Asia/Kuching">
-				<exemplarCity>کُچِنٛگ</exemplarCity>
+				<exemplarCity>کُچِنگ</exemplarCity>
 			</zone>
 			<zone type="Africa/Maputo">
 				<exemplarCity>مَپوٗٹو</exemplarCity>
@@ -1985,7 +1985,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>نورفوک</exemplarCity>
 			</zone>
 			<zone type="Africa/Lagos">
-				<exemplarCity>لیٚگوس</exemplarCity>
+				<exemplarCity>لیگوس</exemplarCity>
 			</zone>
 			<zone type="America/Managua">
 				<exemplarCity>مَناگوا</exemplarCity>
@@ -2075,13 +2075,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>رِیوٗنیَن</exemplarCity>
 			</zone>
 			<zone type="Europe/Bucharest">
-				<exemplarCity>بَچاریٚسٹ</exemplarCity>
+				<exemplarCity>بَچاریسٹ</exemplarCity>
 			</zone>
 			<zone type="Europe/Kaliningrad">
 				<exemplarCity>کَلِناِنگرَد</exemplarCity>
 			</zone>
 			<zone type="Europe/Simferopol">
-				<exemplarCity>سِمفیٚروپول</exemplarCity>
+				<exemplarCity>سِمفیروپول</exemplarCity>
 			</zone>
 			<zone type="Europe/Moscow">
 				<exemplarCity>ماسکو</exemplarCity>
@@ -2102,7 +2102,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>نوووسِبِرسک</exemplarCity>
 			</zone>
 			<zone type="Asia/Krasnoyarsk">
-				<exemplarCity>کرنٛسنویارسک</exemplarCity>
+				<exemplarCity>کرنسنویارسک</exemplarCity>
 			</zone>
 			<zone type="Asia/Irkutsk">
 				<exemplarCity>اِرکُسک</exemplarCity>
@@ -2144,10 +2144,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>سٹاک ہولم</exemplarCity>
 			</zone>
 			<zone type="Asia/Singapore">
-				<exemplarCity>سِنٛگاپور</exemplarCity>
+				<exemplarCity>سِنگاپور</exemplarCity>
 			</zone>
 			<zone type="Atlantic/St_Helena">
-				<exemplarCity>سینٛٹ ہیٚلِنا</exemplarCity>
+				<exemplarCity>سینٹ ہیلِنا</exemplarCity>
 			</zone>
 			<zone type="Africa/Freetown">
 				<exemplarCity>فری ٹاوُن</exemplarCity>
@@ -2165,7 +2165,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>ساو ٹوم</exemplarCity>
 			</zone>
 			<zone type="America/El_Salvador">
-				<exemplarCity>ایٚل سَلویدَر</exemplarCity>
+				<exemplarCity>ایل سَلویدَر</exemplarCity>
 			</zone>
 			<zone type="Asia/Damascus">
 				<exemplarCity>دَمَسکَس</exemplarCity>
@@ -2174,7 +2174,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>مابین</exemplarCity>
 			</zone>
 			<zone type="America/Grand_Turk">
-				<exemplarCity>گرینٛڈ تٔرک</exemplarCity>
+				<exemplarCity>گرینڈ تٔرک</exemplarCity>
 			</zone>
 			<zone type="Africa/Ndjamena">
 				<exemplarCity>جَمیٖنا</exemplarCity>
@@ -2258,7 +2258,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>جوٗنی</exemplarCity>
 			</zone>
 			<zone type="America/Los_Angeles">
-				<exemplarCity>لاس ایٚنجٕلز</exemplarCity>
+				<exemplarCity>لاس اینجٕلز</exemplarCity>
 			</zone>
 			<zone type="America/Boise">
 				<exemplarCity>بویِس</exemplarCity>
@@ -2267,7 +2267,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>پھِنِکس</exemplarCity>
 			</zone>
 			<zone type="America/Denver">
-				<exemplarCity>ڈیٚنوَر</exemplarCity>
+				<exemplarCity>ڈینوَر</exemplarCity>
 			</zone>
 			<zone type="America/North_Dakota/New_Salem">
 				<exemplarCity>نوو سیلٕم</exemplarCity>
@@ -2279,16 +2279,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>شِکاگو</exemplarCity>
 			</zone>
 			<zone type="America/Menominee">
-				<exemplarCity>میٚنومِنی</exemplarCity>
+				<exemplarCity>مینومِنی</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Vincennes">
-				<exemplarCity>وِنسیٚنیٚس</exemplarCity>
+				<exemplarCity>وِنسینیس</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Petersburg">
 				<exemplarCity>پِٹس بٔرگ</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Tell_City">
-				<exemplarCity>ٹیٚل سِٹی</exemplarCity>
+				<exemplarCity>ٹیل سِٹی</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Knox">
 				<exemplarCity>نوکس</exemplarCity>
@@ -2297,7 +2297,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>وِنیمیک</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Marengo">
-				<exemplarCity>میٚریٚنگو</exemplarCity>
+				<exemplarCity>میرینگو</exemplarCity>
 			</zone>
 			<zone type="America/Indianapolis">
 				<exemplarCity>اِنڈیَن پولِس</exemplarCity>
@@ -2306,28 +2306,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>لوٗیِس وِل</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Vevay">
-				<exemplarCity>ویٚویے</exemplarCity>
+				<exemplarCity>ویویے</exemplarCity>
 			</zone>
 			<zone type="America/Kentucky/Monticello">
-				<exemplarCity>مونٹِسیٚلو</exemplarCity>
+				<exemplarCity>مونٹِسیلو</exemplarCity>
 			</zone>
 			<zone type="America/Detroit">
-				<exemplarCity>ڈیٚٹرایِٹ</exemplarCity>
+				<exemplarCity>ڈیٹرایِٹ</exemplarCity>
 			</zone>
 			<zone type="America/New_York">
 				<exemplarCity>نِو یارک</exemplarCity>
 			</zone>
 			<zone type="America/Montevideo">
-				<exemplarCity>مونٹیٚوِڈیو</exemplarCity>
+				<exemplarCity>مونٹیوِڈیو</exemplarCity>
 			</zone>
 			<zone type="Asia/Samarkand">
-				<exemplarCity>سَمَرکَنٛد</exemplarCity>
+				<exemplarCity>سَمَرکَند</exemplarCity>
 			</zone>
 			<zone type="Asia/Tashkent">
-				<exemplarCity>تاشکیٚنٛٹ</exemplarCity>
+				<exemplarCity>تاشکینٹ</exemplarCity>
 			</zone>
 			<zone type="America/St_Vincent">
-				<exemplarCity>وِنسیٚنٛٹ</exemplarCity>
+				<exemplarCity>وِنسینٹ</exemplarCity>
 			</zone>
 			<zone type="America/Caracas">
 				<exemplarCity>کیرَکَس</exemplarCity>
@@ -2336,13 +2336,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>ٹارٹولا</exemplarCity>
 			</zone>
 			<zone type="America/St_Thomas">
-				<exemplarCity>سینٛٹ تھامَس</exemplarCity>
+				<exemplarCity>سینٹ تھامَس</exemplarCity>
 			</zone>
 			<zone type="Asia/Saigon">
 				<exemplarCity>سیگَن</exemplarCity>
 			</zone>
 			<zone type="Pacific/Efate">
-				<exemplarCity>ایٚفاتیے</exemplarCity>
+				<exemplarCity>ایفاتیے</exemplarCity>
 			</zone>
 			<zone type="Pacific/Wallis">
 				<exemplarCity>ویلِس</exemplarCity>
@@ -2351,7 +2351,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>آپِیا</exemplarCity>
 			</zone>
 			<zone type="Asia/Aden">
-				<exemplarCity>ایٚڈٕن</exemplarCity>
+				<exemplarCity>ایڈٕن</exemplarCity>
 			</zone>
 			<zone type="Indian/Mayotte">
 				<exemplarCity>میوٹ</exemplarCity>
@@ -2367,9 +2367,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<metazone type="Acre">
 				<long>
-					<generic>اٮ۪کرے ٹایِم</generic>
-					<standard>اٮ۪کرے سٹینڑاڑ ٹایِم</standard>
-					<daylight>اٮ۪کرے سَمَر ٹایِم</daylight>
+					<generic>اؠکرے ٹایِم</generic>
+					<standard>اؠکرے سٹینڑاڑ ٹایِم</standard>
+					<daylight>اؠکرے سَمَر ٹایِم</daylight>
 				</long>
 			</metazone>
 			<metazone type="Afghanistan">
@@ -2401,23 +2401,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Alaska">
 				<long>
-					<generic>اٮ۪لاسکا ٹایِم</generic>
-					<standard>اٮ۪لاسکا سٹینڑاڑ ٹایِم</standard>
-					<daylight>اٮ۪لاسکا ڈےلایِٔٹ ٹایِم</daylight>
+					<generic>اؠلاسکا ٹایِم</generic>
+					<standard>اؠلاسکا سٹینڑاڑ ٹایِم</standard>
+					<daylight>اؠلاسکا ڈےلایِٔٹ ٹایِم</daylight>
 				</long>
 			</metazone>
 			<metazone type="Almaty">
 				<long>
-					<generic>اٮ۪لمٮ۪ٹی ٹایِم</generic>
-					<standard>اٮ۪لمٮ۪ٹی سٹینڑاڑ ٹایِم</standard>
-					<daylight>اٮ۪لمٮ۪ٹی سَمَر ٹایِم</daylight>
+					<generic>اؠلمؠٹی ٹایِم</generic>
+					<standard>اؠلمؠٹی سٹینڑاڑ ٹایِم</standard>
+					<daylight>اؠلمؠٹی سَمَر ٹایِم</daylight>
 				</long>
 			</metazone>
 			<metazone type="Amazon">
 				<long>
-					<generic>اٮ۪مَزَن ٹایِم</generic>
-					<standard>اٮ۪مَزَن سٹینڑاڑ ٹایِم</standard>
-					<daylight>اٮ۪مَزَن سَمَر ٹایِم</daylight>
+					<generic>اؠمَزَن ٹایِم</generic>
+					<standard>اؠمَزَن سٹینڑاڑ ٹایِم</standard>
+					<daylight>اؠمَزَن سَمَر ٹایِم</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Central">
@@ -2450,44 +2450,44 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Anadyr">
 				<long>
-					<generic>اٮ۪نَڑیٖر ٹایِم</generic>
-					<standard>اٮ۪نَڑیٖر سٹینڑاڑ ٹایِم</standard>
-					<daylight>اٮ۪نڑیٖر سَمَر ٹایِم</daylight>
+					<generic>اؠنَڑیٖر ٹایِم</generic>
+					<standard>اؠنَڑیٖر سٹینڑاڑ ٹایِم</standard>
+					<daylight>اؠنڑیٖر سَمَر ٹایِم</daylight>
 				</long>
 			</metazone>
 			<metazone type="Aqtau">
 				<long>
-					<generic>اٮ۪کٹاؤ ٹایِم</generic>
-					<standard>اٮ۪کٹاؤ سٹینڑاڑ ٹایِم</standard>
-					<daylight>اٮ۪کٹاؤ سَمَر ٹایِم</daylight>
+					<generic>اؠکٹاؤ ٹایِم</generic>
+					<standard>اؠکٹاؤ سٹینڑاڑ ٹایِم</standard>
+					<daylight>اؠکٹاؤ سَمَر ٹایِم</daylight>
 				</long>
 			</metazone>
 			<metazone type="Aqtobe">
 				<long>
-					<generic>اٮ۪کٹوب ٹایِم</generic>
-					<standard>اٮ۪کٹوب سٹینڑاڑ ٹایِم</standard>
-					<daylight>اٮ۪کٹوب سَمَر ٹایِم</daylight>
+					<generic>اؠکٹوب ٹایِم</generic>
+					<standard>اؠکٹوب سٹینڑاڑ ٹایِم</standard>
+					<daylight>اؠکٹوب سَمَر ٹایِم</daylight>
 				</long>
 			</metazone>
 			<metazone type="Arabian">
 				<long>
-					<generic>ارٮ۪بِیَن ٹایِم</generic>
-					<standard>ارٮ۪بِیَن سٹینڑاڑ ٹایِم</standard>
-					<daylight>ارٮ۪بِیَن ڈےلایِٔٹ ٹایِم</daylight>
+					<generic>ارؠبِیَن ٹایِم</generic>
+					<standard>ارؠبِیَن سٹینڑاڑ ٹایِم</standard>
+					<daylight>ارؠبِیَن ڈےلایِٔٹ ٹایِم</daylight>
 				</long>
 			</metazone>
 			<metazone type="Argentina">
 				<long>
-					<generic>ارجٮ۪نٹیٖنا ٹایِم</generic>
-					<standard>ارجٮ۪نٹیٖنا سٹینڑاڑ ٹایِم</standard>
-					<daylight>ارجٮ۪نٹیٖنا سَمَر ٹایِم</daylight>
+					<generic>ارجؠنٹیٖنا ٹایِم</generic>
+					<standard>ارجؠنٹیٖنا سٹینڑاڑ ٹایِم</standard>
+					<daylight>ارجؠنٹیٖنا سَمَر ٹایِم</daylight>
 				</long>
 			</metazone>
 			<metazone type="Argentina_Western">
 				<long>
-					<generic>مغربی ارجٮ۪نٹیٖنا ٹایِم</generic>
-					<standard>مغربی ارجٮ۪نٹیٖنا سٹینڑاڑ ٹایِم</standard>
-					<daylight>مغربی ارجٮ۪نٹیٖنا سَمَر ٹایِم</daylight>
+					<generic>مغربی ارجؠنٹیٖنا ٹایِم</generic>
+					<standard>مغربی ارجؠنٹیٖنا سٹینڑاڑ ٹایِم</standard>
+					<daylight>مغربی ارجؠنٹیٖنا سَمَر ٹایِم</daylight>
 				</long>
 			</metazone>
 			<metazone type="Armenia">
@@ -2499,9 +2499,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Atlantic">
 				<long>
-					<generic>اٮ۪ٹلانٹِک ٹایِم</generic>
-					<standard>اٮ۪ٹلانٹِک سٹینڑاڑ ٹایِم</standard>
-					<daylight>اٮ۪ٹلانٹِک ڈےلایِٔٹ ٹایِم</daylight>
+					<generic>اؠٹلانٹِک ٹایِم</generic>
+					<standard>اؠٹلانٹِک سٹینڑاڑ ٹایِم</standard>
+					<daylight>اؠٹلانٹِک ڈےلایِٔٹ ٹایِم</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_Central">
@@ -2541,16 +2541,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Azores">
 				<long>
-					<generic>اٮ۪زورٕس ٹایِم</generic>
-					<standard>اٮ۪زورٕس سٹینڑاڑ ٹایِم</standard>
-					<daylight>اٮ۪زورٕس سَمَر ٹ</daylight>
+					<generic>اؠزورٕس ٹایِم</generic>
+					<standard>اؠزورٕس سٹینڑاڑ ٹایِم</standard>
+					<daylight>اؠزورٕس سَمَر ٹ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Bangladesh">
 				<long>
-					<generic>بَنٛگلادیش ٹایِم</generic>
-					<standard>بَنٛگلادیش سٹینڑاڑ ٹایِم</standard>
-					<daylight>بَنٛگلادیش سَمَر ٹایِم</daylight>
+					<generic>بَنگلادیش ٹایِم</generic>
+					<standard>بَنگلادیش سٹینڑاڑ ٹایِم</standard>
+					<daylight>بَنگلادیش سَمَر ٹایِم</daylight>
 				</long>
 			</metazone>
 			<metazone type="Bhutan">
@@ -2565,14 +2565,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Brasilia">
 				<long>
-					<generic>برٮ۪سِلِیا ٹایِم</generic>
-					<standard>برٮ۪سِلِیا سٹینڑاڑ ٹایِم</standard>
-					<daylight>برٮ۪سِلِیا سَمَر ٹایِم</daylight>
+					<generic>برؠسِلِیا ٹایِم</generic>
+					<standard>برؠسِلِیا سٹینڑاڑ ٹایِم</standard>
+					<daylight>برؠسِلِیا سَمَر ٹایِم</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
 				<long>
-					<standard>برٛوٗنَے دَروٗسَلَم ٹایِم</standard>
+					<standard>بروٗنَے دَروٗسَلَم ٹایِم</standard>
 				</long>
 			</metazone>
 			<metazone type="Cape_Verde">
@@ -2584,14 +2584,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Chamorro">
 				<long>
-					<standard>کٮ۪مورو سٹینڑاڑ ٹایِم</standard>
+					<standard>کؠمورو سٹینڑاڑ ٹایِم</standard>
 				</long>
 			</metazone>
 			<metazone type="Chatham">
 				<long>
-					<generic>کٮ۪تھَم ٹایِم</generic>
-					<standard>کٮ۪تھَم سٹینڑاڑ ٹایِم</standard>
-					<daylight>چٮ۪تھَم سَمَر ٹایِم</daylight>
+					<generic>کؠتھَم ٹایِم</generic>
+					<standard>کؠتھَم سٹینڑاڑ ٹایِم</standard>
+					<daylight>چؠتھَم سَمَر ٹایِم</daylight>
 				</long>
 			</metazone>
 			<metazone type="Chile">
@@ -2610,14 +2610,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Choibalsan">
 				<long>
-					<generic>کوےبٮ۪لسَن ٹایِم</generic>
-					<standard>کوےبٮ۪لسَن سٹینڑاڑ ٹایِم</standard>
-					<daylight>کوےبٮ۪لسَن سَمَر ٹایِم</daylight>
+					<generic>کوےبؠلسَن ٹایِم</generic>
+					<standard>کوےبؠلسَن سٹینڑاڑ ٹایِم</standard>
+					<daylight>کوےبؠلسَن سَمَر ٹایِم</daylight>
 				</long>
 			</metazone>
 			<metazone type="Christmas">
 				<long>
-					<standard>کرٛسمَس ٹایِم</standard>
+					<standard>کرسمَس ٹایِم</standard>
 				</long>
 			</metazone>
 			<metazone type="Cocos">
@@ -2710,22 +2710,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="French_Guiana">
 				<long>
-					<standard>فرٛٮ۪نٛچ گیوٗٮ۪نا ٹایِم</standard>
+					<standard>فرؠنچ گیوٗؠنا ٹایِم</standard>
 				</long>
 			</metazone>
 			<metazone type="French_Southern">
 				<long>
-					<standard>جنوٗبی فرٮ۪نٛچ ٹایِم</standard>
+					<standard>جنوٗبی فرؠنچ ٹایِم</standard>
 				</long>
 			</metazone>
 			<metazone type="Galapagos">
 				<long>
-					<standard>گٮ۪لٮ۪پیٚگوز ٹایِم</standard>
+					<standard>گؠلؠپیگوز ٹایِم</standard>
 				</long>
 			</metazone>
 			<metazone type="Gambier">
 				<long>
-					<standard>گٮ۪مبِیَر ٹایِم</standard>
+					<standard>گؠمبِیَر ٹایِم</standard>
 				</long>
 			</metazone>
 			<metazone type="Georgia">
@@ -2742,7 +2742,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="GMT">
 				<long>
-					<standard>گرٛیٖن وِچ میٖن ٹایِم</standard>
+					<standard>گریٖن وِچ میٖن ٹایِم</standard>
 				</long>
 			</metazone>
 			<metazone type="Greenland_Eastern">
@@ -2761,7 +2761,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Guam">
 				<long>
-					<standard>گُوٮ۪م ٹایِم</standard>
+					<standard>گُوؠم ٹایِم</standard>
 				</long>
 			</metazone>
 			<metazone type="Gulf">
@@ -2776,16 +2776,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
-					<generic>حَواے اٮ۪لیوٗٹِیَن ٹایِم</generic>
-					<standard>حَواے اٮ۪لیوٗٹِیَن سٹینڑاڑ ٹایِم</standard>
-					<daylight>حَواے اٮ۪لیوٗٹِیَن سَمَر ٹایِم</daylight>
+					<generic>حَواے اؠلیوٗٹِیَن ٹایِم</generic>
+					<standard>حَواے اؠلیوٗٹِیَن سٹینڑاڑ ٹایِم</standard>
+					<daylight>حَواے اؠلیوٗٹِیَن سَمَر ٹایِم</daylight>
 				</long>
 			</metazone>
 			<metazone type="Hong_Kong">
 				<long>
-					<generic>حانگ کانٛگ ٹایِم</generic>
-					<standard>حانگ کانٛگ سٹینڑاڑ ٹایِم</standard>
-					<daylight>حانٛگ کانٛگ سَمَر ٹایِم</daylight>
+					<generic>حانگ کانگ ٹایِم</generic>
+					<standard>حانگ کانگ سٹینڑاڑ ٹایِم</standard>
+					<daylight>حانگ کانگ سَمَر ٹایِم</daylight>
 				</long>
 			</metazone>
 			<metazone type="Hovd">
@@ -2797,7 +2797,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="India">
 				<long>
-					<standard>ہِنٛدوستان</standard>
+					<standard>ہِندوستان</standard>
 				</long>
 			</metazone>
 			<metazone type="Indian_Ocean">
@@ -2884,9 +2884,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Krasnoyarsk">
 				<long>
-					<generic>کرٮ۪سنوےیارسک ٹایِم</generic>
-					<standard>کرٮ۪سنوےیارسک سٹینڑاڑ ٹایِم</standard>
-					<daylight>کرٮ۪سنوےیارسک سَمَر ٹایِم</daylight>
+					<generic>کرؠسنوےیارسک ٹایِم</generic>
+					<standard>کرؠسنوےیارسک سٹینڑاڑ ٹایِم</standard>
+					<daylight>کرؠسنوےیارسک سَمَر ٹایِم</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kyrgystan">
@@ -2896,7 +2896,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Lanka">
 				<long>
-					<standard>لَنٛکا ٹایِم</standard>
+					<standard>لَنکا ٹایِم</standard>
 				</long>
 			</metazone>
 			<metazone type="Line_Islands">
@@ -2983,14 +2983,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Nepal">
 				<long>
-					<standard>نٮ۪پٲلۍ ٹایِم</standard>
+					<standard>نؠپٲلۍ ٹایِم</standard>
 				</long>
 			</metazone>
 			<metazone type="New_Caledonia">
 				<long>
-					<generic>نِو کیلٮ۪ڑونِیا ٹایِم</generic>
-					<standard>نِو کیلٮ۪ڑونِیا سٹینڑاڑ ٹایِم</standard>
-					<daylight>نِو کیلٮ۪ڑونِیس سَمَر ٹایِم</daylight>
+					<generic>نِو کیلؠڑونِیا ٹایِم</generic>
+					<standard>نِو کیلؠڑونِیا سٹینڑاڑ ٹایِم</standard>
+					<daylight>نِو کیلؠڑونِیس سَمَر ٹایِم</daylight>
 				</long>
 			</metazone>
 			<metazone type="New_Zealand">
@@ -3057,14 +3057,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Papua_New_Guinea">
 				<long>
-					<standard>پاپُعا نیوٗ گٮ۪نی ٹایِم</standard>
+					<standard>پاپُعا نیوٗ گؠنی ٹایِم</standard>
 				</long>
 			</metazone>
 			<metazone type="Paraguay">
 				<long>
-					<generic>پیرٮ۪گوے ٹایِم</generic>
-					<standard>پیرٮ۪گوے سٹینڑاڑ ٹایِم</standard>
-					<daylight>پیرٮ۪گوے سَمَر ٹایِم</daylight>
+					<generic>پیرؠگوے ٹایِم</generic>
+					<standard>پیرؠگوے سٹینڑاڑ ٹایِم</standard>
+					<daylight>پیرؠگوے سَمَر ٹایِم</daylight>
 				</long>
 			</metazone>
 			<metazone type="Peru">
@@ -3088,9 +3088,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Pierre_Miquelon">
 				<long>
-					<generic>سینٛٹ پَیری مِقیوٗلَن ٹایِم</generic>
-					<standard>سینٛٹ پَیری مِقیوٗلَن سٹینڑاڑ ٹایِم</standard>
-					<daylight>سینٛٹ پَیری مِقیوٗلَن ڑےلایِٔٹ ٹایِم</daylight>
+					<generic>سینٹ پَیری مِقیوٗلَن ٹایِم</generic>
+					<standard>سینٹ پَیری مِقیوٗلَن سٹینڑاڑ ٹایِم</standard>
+					<daylight>سینٹ پَیری مِقیوٗلَن ڑےلایِٔٹ ٹایِم</daylight>
 				</long>
 			</metazone>
 			<metazone type="Pitcairn">
@@ -3117,43 +3117,43 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Rothera">
 				<long>
-					<standard>روتھٮ۪را ٹایِم</standard>
+					<standard>روتھؠرا ٹایِم</standard>
 				</long>
 			</metazone>
 			<metazone type="Sakhalin">
 				<long>
-					<generic>سَکھٮ۪لِن ٹایِم</generic>
-					<standard>سَکھٮ۪لِن سٹینڑاڑ ٹایِم</standard>
-					<daylight>سَکھٮ۪لِن سَمَر ٹایِم</daylight>
+					<generic>سَکھؠلِن ٹایِم</generic>
+					<standard>سَکھؠلِن سٹینڑاڑ ٹایِم</standard>
+					<daylight>سَکھؠلِن سَمَر ٹایِم</daylight>
 				</long>
 			</metazone>
 			<metazone type="Samara">
 				<long>
-					<generic>سمٮ۪را ٹایِم</generic>
-					<standard>سمٮ۪را سٹینڑاڑ ٹایِم</standard>
-					<daylight>سمٮ۪را سَمَر ٹایِم</daylight>
+					<generic>سمؠرا ٹایِم</generic>
+					<standard>سمؠرا سٹینڑاڑ ٹایِم</standard>
+					<daylight>سمؠرا سَمَر ٹایِم</daylight>
 				</long>
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>سٮ۪موآ ٹایِم</generic>
-					<standard>سٮ۪موآ سٹینڑاڑ ٹایِم</standard>
-					<daylight>سٮ۪موآ سَمَر ٹایِم</daylight>
+					<generic>سؠموآ ٹایِم</generic>
+					<standard>سؠموآ سٹینڑاڑ ٹایِم</standard>
+					<daylight>سؠموآ سَمَر ٹایِم</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
 				<long>
-					<standard>سیشٮ۪لٕز ٹایِم</standard>
+					<standard>سیشؠلٕز ٹایِم</standard>
 				</long>
 			</metazone>
 			<metazone type="Singapore">
 				<long>
-					<standard>سِنٛگاپوٗر ٹایِم</standard>
+					<standard>سِنگاپوٗر ٹایِم</standard>
 				</long>
 			</metazone>
 			<metazone type="Solomon">
 				<long>
-					<standard>سولومَن ججیٖرَن ہُنٛد ٹایِم</standard>
+					<standard>سولومَن ججیٖرَن ہُند ٹایِم</standard>
 				</long>
 			</metazone>
 			<metazone type="South_Georgia">
@@ -3183,14 +3183,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Tokelau">
 				<long>
-					<standard>ٹوکٮ۪لو ٹایِم</standard>
+					<standard>ٹوکؠلو ٹایِم</standard>
 				</long>
 			</metazone>
 			<metazone type="Tonga">
 				<long>
-					<generic>ٹعانٛگا ٹایِم</generic>
-					<standard>ٹعانٛگا سٹینڑاڑ ٹایِم</standard>
-					<daylight>ٹعانٛگا سَمَر ٹایِم</daylight>
+					<generic>ٹعانگا ٹایِم</generic>
+					<standard>ٹعانگا سٹینڑاڑ ٹایِم</standard>
+					<daylight>ٹعانگا سَمَر ٹایِم</daylight>
 				</long>
 			</metazone>
 			<metazone type="Truk">
@@ -3200,9 +3200,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
-					<generic>تُرکمٮ۪نِستان ٹایِم</generic>
-					<standard>تُرکمٮ۪نِستان سٹینڑاڑ ٹایِم</standard>
-					<daylight>تُرکمٮ۪نِستان سَمَر ٹایِم</daylight>
+					<generic>تُرکمؠنِستان ٹایِم</generic>
+					<standard>تُرکمؠنِستان سٹینڑاڑ ٹایِم</standard>
+					<daylight>تُرکمؠنِستان سَمَر ٹایِم</daylight>
 				</long>
 			</metazone>
 			<metazone type="Tuvalu">
@@ -3212,9 +3212,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Uruguay">
 				<long>
-					<generic>یوٗرٮ۪گوَے ٹایِم</generic>
-					<standard>یوٗرٮ۪گوَے سٹینڑاڑ ٹایِم</standard>
-					<daylight>یوٗرٮ۪گوَے سَمَر ٹایِم</daylight>
+					<generic>یوٗرؠگوَے ٹایِم</generic>
+					<standard>یوٗرؠگوَے سٹینڑاڑ ٹایِم</standard>
+					<daylight>یوٗرؠگوَے سَمَر ٹایِم</daylight>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
@@ -3233,7 +3233,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Venezuela">
 				<long>
-					<standard>وٮ۪نٮ۪زیوٗلا ٹایِم</standard>
+					<standard>وؠنؠزیوٗلا ٹایِم</standard>
 				</long>
 			</metazone>
 			<metazone type="Vladivostok">
@@ -3274,9 +3274,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Yekaterinburg">
 				<long>
-					<generic>یٮ۪کَٹٔرِنبٔرگ ٹایِم</generic>
-					<standard>یٮ۪کَٹٔرِنبٔرگ سٹینڑاڑ ٹایِم</standard>
-					<daylight>یٮ۪کَٹرِنبٔرگ سَمَر ٹایِم</daylight>
+					<generic>یؠکَٹٔرِنبٔرگ ٹایِم</generic>
+					<standard>یؠکَٹٔرِنبٔرگ سٹینڑاڑ ٹایِم</standard>
+					<daylight>یؠکَٹرِنبٔرگ سَمَر ٹایِم</daylight>
 				</long>
 			</metazone>
 		</timeZoneNames>
@@ -3286,6 +3286,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<otherNumberingSystems>
 			<native>arabext</native>
 		</otherNumberingSystems>
+		<symbols numberSystem="arabext">
+			<timeSeparator>:</timeSeparator>
+		</symbols>
 		<symbols numberSystem="latn">
 			<decimal>.</decimal>
 			<group>,</group>
@@ -3356,7 +3359,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</currencyFormats>
 		<currencies>
 			<currency type="ADP">
-				<displayName>اٮ۪ڑورَن پیسِٹا</displayName>
+				<displayName>اؠڑورَن پیسِٹا</displayName>
 			</currency>
 			<currency type="AED">
 				<displayName>مُتحدہ عرب اِمارات دِرہم</displayName>
@@ -3365,19 +3368,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>افغان افغٲنی</displayName>
 			</currency>
 			<currency type="ALL">
-				<displayName>اٮ۪لبینِیَن لِک</displayName>
+				<displayName>اؠلبینِیَن لِک</displayName>
 			</currency>
 			<currency type="AMD">
-				<displayName>اَرمانٮ۪ن ڈرٛٮ۪م</displayName>
+				<displayName>اَرمانؠن ڈرؠم</displayName>
 			</currency>
 			<currency type="ANG">
-				<displayName>نایدَرلینٛڑ اٮ۪نٹٕلیٖیَن گِلڑَر</displayName>
+				<displayName>نایدَرلینڑ اؠنٹٕلیٖیَن گِلڑَر</displayName>
 			</currency>
 			<currency type="AOA">
-				<displayName>اٮ۪نگولَن کوانزا</displayName>
+				<displayName>اؠنگولَن کوانزا</displayName>
 			</currency>
 			<currency type="AOR">
-				<displayName>اٮ۪نگولَن کوانٛزا رٮ۪جِسٹاڑو</displayName>
+				<displayName>اؠنگولَن کوانزا رؠجِسٹاڑو</displayName>
 			</currency>
 			<currency type="ARA">
 				<displayName>أرجَنٹیٖن اَسٹرل</displayName>
@@ -3386,7 +3389,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>أرجَنٹیٖن پِسو</displayName>
 			</currency>
 			<currency type="ATS">
-				<displayName>آسٹریَن شِلِنٛگ</displayName>
+				<displayName>آسٹریَن شِلِنگ</displayName>
 			</currency>
 			<currency type="AUD">
 				<displayName>آسٹریلِیَن ڈالَر</displayName>
@@ -3410,7 +3413,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>بَنگلادیٖشی ٹَکا</displayName>
 			</currency>
 			<currency type="BEF">
-				<displayName>بَلجِیَن فرینٛک</displayName>
+				<displayName>بَلجِیَن فرینک</displayName>
 			</currency>
 			<currency type="BGN">
 				<displayName>بیلگیرِیَن ہاڑ لِو</displayName>
@@ -3419,13 +3422,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>بحریٖنی دیٖنار</displayName>
 			</currency>
 			<currency type="BIF">
-				<displayName>بُرُنڑِین فرینٛک</displayName>
+				<displayName>بُرُنڑِین فرینک</displayName>
 			</currency>
 			<currency type="BMD">
 				<displayName>بٔرمیوٗڑَن ڈالَر</displayName>
 			</currency>
 			<currency type="BND">
-				<displayName>برٛونی ڈالَر</displayName>
+				<displayName>برونی ڈالَر</displayName>
 			</currency>
 			<currency type="BOB">
 				<displayName>بولِوِیَن بولوینو</displayName>
@@ -3437,28 +3440,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>بولوِیَن مَوڈال</displayName>
 			</currency>
 			<currency type="BRB">
-				<displayName>برٛازیٖلین کرٛوزِرو نووو</displayName>
+				<displayName>برازیٖلین کروزِرو نووو</displayName>
 			</currency>
 			<currency type="BRC">
-				<displayName>برٛازیٖلین کرٛوزیڑو</displayName>
+				<displayName>برازیٖلین کروزیڑو</displayName>
 			</currency>
 			<currency type="BRE">
-				<displayName>برٛازیٖلین کرٛوزِرو</displayName>
+				<displayName>برازیٖلین کروزِرو</displayName>
 			</currency>
 			<currency type="BRL">
-				<displayName>برٛازیٖلین رِیَل</displayName>
+				<displayName>برازیٖلین رِیَل</displayName>
 			</currency>
 			<currency type="BRN">
-				<displayName>برٛازیٖلین کرٛوزیڑو نووو</displayName>
+				<displayName>برازیٖلین کروزیڑو نووو</displayName>
 			</currency>
 			<currency type="BRR">
-				<displayName>برٛازیٖلین کرٛوزیرو</displayName>
+				<displayName>برازیٖلین کروزیرو</displayName>
 			</currency>
 			<currency type="BSD">
 				<displayName>بہامِیَن ڈالر</displayName>
 			</currency>
 			<currency type="BTN">
-				<displayName>بوٗٹینیٖز نگُلٹرٛم</displayName>
+				<displayName>بوٗٹینیٖز نگُلٹرم</displayName>
 			</currency>
 			<currency type="BUK">
 				<displayName>بٔرمیٖز کیٹ</displayName>
@@ -3482,7 +3485,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>کینَڑِیَن ڈالر</displayName>
 			</currency>
 			<currency type="CDF">
-				<displayName>کونٛگولیٖز فرٛیک</displayName>
+				<displayName>کونگولیٖز فریک</displayName>
 			</currency>
 			<currency type="CHE">
 				<displayName>وِر یوٗرو</displayName>
@@ -3491,7 +3494,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>سُوِز فریک</displayName>
 			</currency>
 			<currency type="CHW">
-				<displayName>وِر فرٛیک</displayName>
+				<displayName>وِر فریک</displayName>
 			</currency>
 			<currency type="CLF">
 				<displayName>چِلِن یوٗنِڑیدیٖز ڑِ فومیٹو</displayName>
@@ -3512,7 +3515,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>کوسٹا رِکَن کولَن</displayName>
 			</currency>
 			<currency type="CSD">
-				<displayName>پرٛون سٔربِین ڈالر</displayName>
+				<displayName>پرون سٔربِین ڈالر</displayName>
 			</currency>
 			<currency type="CSK">
 				<displayName>چِکوسولوواک ہاڑ کوروٗنا</displayName>
@@ -3533,16 +3536,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>جٔرمَن مارٕک</displayName>
 			</currency>
 			<currency type="DKK">
-				<displayName>ڈٔنِش کرٛون</displayName>
+				<displayName>ڈٔنِش کرون</displayName>
 			</currency>
 			<currency type="DOP">
 				<displayName>ڈومِنِکَن پِسو</displayName>
 			</currency>
 			<currency type="DZD">
-				<displayName>اٮ۪لجیرِیَن ڈیٖنار</displayName>
+				<displayName>اؠلجیرِیَن ڈیٖنار</displayName>
 			</currency>
 			<currency type="EEK">
-				<displayName>اٮ۪سٹونِیَن کرٛون</displayName>
+				<displayName>اؠسٹونِیَن کرون</displayName>
 			</currency>
 			<currency type="EGP">
 				<displayName>اِجِپٹِیَن پَوُنڑ</displayName>
@@ -3566,13 +3569,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>فِجین ڈالر</displayName>
 			</currency>
 			<currency type="FKP">
-				<displayName>فیکلینٛڑِس آیلینٛڑ پونٛڑ</displayName>
+				<displayName>فیکلینڑِس آیلینڑ پونڑ</displayName>
 			</currency>
 			<currency type="FRF">
-				<displayName>فرٛانسِسی فرٛیک</displayName>
+				<displayName>فرانسِسی فریک</displayName>
 			</currency>
 			<currency type="GBP">
-				<displayName>برطٲنوی پاونٛڑ سٹٔرلِنٛگ</displayName>
+				<displayName>برطٲنوی پاونڑ سٹٔرلِنگ</displayName>
 			</currency>
 			<currency type="GEK">
 				<displayName>جارجِیَن کیوٗپَن لَرِٹ</displayName>
@@ -3581,46 +3584,46 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>جارجِیَن لاری</displayName>
 			</currency>
 			<currency type="GHC">
-				<displayName>گَنیٚیَن سٮ۪ڑی(۱۹۷۹–۲٠٠۷)</displayName>
+				<displayName>گَنییَن سؠڑی(۱۹۷۹–۲٠٠۷)</displayName>
 			</currency>
 			<currency type="GHS">
-				<displayName>گَنیٚیَن سٮ۪ڑی</displayName>
+				<displayName>گَنییَن سؠڑی</displayName>
 			</currency>
 			<currency type="GIP">
-				<displayName>گِبریلٹَر پَاونٛڑ</displayName>
+				<displayName>گِبریلٹَر پَاونڑ</displayName>
 			</currency>
 			<currency type="GMD">
 				<displayName>گیمبِیاہُک دلاسی</displayName>
 			</currency>
 			<currency type="GNF">
-				<displayName>گِنِیَن فرٛینٛک</displayName>
+				<displayName>گِنِیَن فرینک</displayName>
 			</currency>
 			<currency type="GNS">
 				<displayName>گِنِیَن سِلی</displayName>
 			</currency>
 			<currency type="GQE">
-				<displayName>اِکویٹورِیَل گِنِیَن اٮ۪کویٖل</displayName>
+				<displayName>اِکویٹورِیَل گِنِیَن اؠکویٖل</displayName>
 			</currency>
 			<currency type="GRD">
-				<displayName>گریٖسُک ڑرٛٮ۪کما</displayName>
+				<displayName>گریٖسُک ڑرؠکما</displayName>
 			</currency>
 			<currency type="GTQ">
 				<displayName>گواٹَمالَن قیوٗٹزَل</displayName>
 			</currency>
 			<currency type="GWE">
-				<displayName>پورتگیٖزُک گِنی اٮ۪سکیوٗڑو</displayName>
+				<displayName>پورتگیٖزُک گِنی اؠسکیوٗڑو</displayName>
 			</currency>
 			<currency type="GWP">
-				<displayName>گِنی بِساوُک پٮ۪سو</displayName>
+				<displayName>گِنی بِساوُک پؠسو</displayName>
 			</currency>
 			<currency type="GYD">
 				<displayName>گَیَنیٖزُک ڑالَر</displayName>
 			</currency>
 			<currency type="HKD">
-				<displayName>حانٛگ کانٛگُک ڑالَر</displayName>
+				<displayName>حانگ کانگُک ڑالَر</displayName>
 			</currency>
 			<currency type="HNL">
-				<displayName>حونڑورنُک لٮ۪مپیٖرا</displayName>
+				<displayName>حونڑورنُک لؠمپیٖرا</displayName>
 			</currency>
 			<currency type="HRD">
 				<displayName>کروایشنُک دیٖنار</displayName>
@@ -3632,19 +3635,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>حیشَنُک گوڑ</displayName>
 			</currency>
 			<currency type="HUF">
-				<displayName>حَنگیرِیَن فورِنٛٹ</displayName>
+				<displayName>حَنگیرِیَن فورِنٹ</displayName>
 			</currency>
 			<currency type="IDR">
 				<displayName>اِنڑونیشیاہُک رُپِیاہ</displayName>
 			</currency>
 			<currency type="IEP">
-				<displayName>اَیرلینڑُک پاونٛڑ</displayName>
+				<displayName>اَیرلینڑُک پاونڑ</displayName>
 			</currency>
 			<currency type="ILP">
-				<displayName>اِزرٲیِلی پاونٛڑ</displayName>
+				<displayName>اِزرٲیِلی پاونڑ</displayName>
 			</currency>
 			<currency type="ILS">
-				<displayName>اِزرٲیِلی نٔوۍ شٮ۪قٕل</displayName>
+				<displayName>اِزرٲیِلی نٔوۍ شؠقٕل</displayName>
 			</currency>
 			<currency type="INR">
 				<displayName>ہِندُستٲنۍ رۄپَے</displayName>
@@ -3656,7 +3659,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ایٖرانُک رِیال</displayName>
 			</currency>
 			<currency type="ISK">
-				<displayName>اَیسلینٛڑُک کرٛونا</displayName>
+				<displayName>اَیسلینڑُک کرونا</displayName>
 			</currency>
 			<currency type="ITL">
 				<displayName>اِٹلیٖ یُک لیٖرا</displayName>
@@ -3671,7 +3674,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>جاپانُک یَن</displayName>
 			</currency>
 			<currency type="KES">
-				<displayName>کٮ۪نیَن شِلِنٛگ</displayName>
+				<displayName>کؠنیَن شِلِنگ</displayName>
 			</currency>
 			<currency type="KGS">
 				<displayName>کِرگِستانُک سوم</displayName>
@@ -3680,7 +3683,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>کَمبوڑِیاہُک رِیال</displayName>
 			</currency>
 			<currency type="KMF">
-				<displayName>کومورِیَن فرٛینٛک</displayName>
+				<displayName>کومورِیَن فرینک</displayName>
 			</currency>
 			<currency type="KPW">
 				<displayName>جنوٗبی کورِیَن وَن</displayName>
@@ -3695,13 +3698,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>کیمین ججیٖرُک ڑالَر</displayName>
 			</currency>
 			<currency type="KZT">
-				<displayName>کزاکِستان ٹینٛج</displayName>
+				<displayName>کزاکِستان ٹینج</displayName>
 			</currency>
 			<currency type="LAK">
 				<displayName>لَوٹِیَن کِپ</displayName>
 			</currency>
 			<currency type="LBP">
-				<displayName>لیبنیٖزُک پاونٛڑ</displayName>
+				<displayName>لیبنیٖزُک پاونڑ</displayName>
 			</currency>
 			<currency type="LKR">
 				<displayName>سری لَنکاہٕچ رۄپَے</displayName>
@@ -3716,16 +3719,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>لِتھوینِیَن لِٹاس</displayName>
 			</currency>
 			<currency type="LTT">
-				<displayName>لِتھوینِیَن ٹٮ۪لوناس</displayName>
+				<displayName>لِتھوینِیَن ٹؠلوناس</displayName>
 			</currency>
 			<currency type="LUC">
-				<displayName>لَکزٕمبورگِیَن کَنؤرٹِبٕل فرٛینٛک</displayName>
+				<displayName>لَکزٕمبورگِیَن کَنؤرٹِبٕل فرینک</displayName>
 			</currency>
 			<currency type="LUF">
-				<displayName>لَکزٕمبورگِیَن فرٛینٛک</displayName>
+				<displayName>لَکزٕمبورگِیَن فرینک</displayName>
 			</currency>
 			<currency type="LUL">
-				<displayName>لَکزٕمبوگ فَینانشَل فرٛینٛک</displayName>
+				<displayName>لَکزٕمبوگ فَینانشَل فرینک</displayName>
 			</currency>
 			<currency type="LVL">
 				<displayName>لَتوِیَن لیٹس</displayName>
@@ -3740,22 +3743,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>موروکَن دِرہَم</displayName>
 			</currency>
 			<currency type="MAF">
-				<displayName>موروکَن فرٛینٛک</displayName>
+				<displayName>موروکَن فرینک</displayName>
 			</currency>
 			<currency type="MDL">
 				<displayName>مولڑووین لیوٗ</displayName>
 			</currency>
 			<currency type="MGA">
-				<displayName>مٮ۪لٮ۪گیسی اٮ۪ریَری</displayName>
+				<displayName>مؠلؠگیسی اؠریَری</displayName>
 			</currency>
 			<currency type="MGF">
-				<displayName>مٮ۪لٮ۪گیسی فرٛینٛک</displayName>
+				<displayName>مؠلؠگیسی فرینک</displayName>
 			</currency>
 			<currency type="MKD">
-				<displayName>مٮ۪کَڑونِیَن دیٖنار</displayName>
+				<displayName>مؠکَڑونِیَن دیٖنار</displayName>
 			</currency>
 			<currency type="MLF">
-				<displayName>میلِیَن فرٛینٛک</displayName>
+				<displayName>میلِیَن فرینک</displayName>
 			</currency>
 			<currency type="MMK">
 				<displayName>مِیانما کیاٹ</displayName>
@@ -3764,7 +3767,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>مۄنگولِیَن ٹُگرِک</displayName>
 			</currency>
 			<currency type="MOP">
-				<displayName>مٮ۪کانیٖز پَٹاکا</displayName>
+				<displayName>مؠکانیٖز پَٹاکا</displayName>
 			</currency>
 			<currency type="MRO">
 				<displayName>مورِٹینِیَن عوگیوٗیا (1973–2017)</displayName>
@@ -3776,34 +3779,34 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>مالٹیٖزُک لیٖرا</displayName>
 			</currency>
 			<currency type="MTP">
-				<displayName>مالٹیٖزُک پاونٛڑ</displayName>
+				<displayName>مالٹیٖزُک پاونڑ</displayName>
 			</currency>
 			<currency type="MUR">
-				<displayName>مورٮ۪شِیاہٕچ رۄپَے</displayName>
+				<displayName>مورؠشِیاہٕچ رۄپَے</displayName>
 			</currency>
 			<currency type="MVR">
 				<displayName>مالدِیٖوِیَن رُفِیا</displayName>
 			</currency>
 			<currency type="MWK">
-				<displayName>مٮ۪لیوِیَن کواچا</displayName>
+				<displayName>مؠلیوِیَن کواچا</displayName>
 			</currency>
 			<currency type="MXN">
-				<displayName>مٮ۪کسِکَن پٮ۪سو</displayName>
+				<displayName>مؠکسِکَن پؠسو</displayName>
 			</currency>
 			<currency type="MXP">
-				<displayName>مٮ۪کسِکَن سِلوَر پٮ۪سو (۱۸۶۱–۱۹۹۲)</displayName>
+				<displayName>مؠکسِکَن سِلوَر پؠسو (۱۸۶۱–۱۹۹۲)</displayName>
 			</currency>
 			<currency type="MYR">
-				<displayName>مَلیشِیَن رِنٛگِٹ</displayName>
+				<displayName>مَلیشِیَن رِنگِٹ</displayName>
 			</currency>
 			<currency type="MZE">
 				<displayName>موزیمبِکَن سکیوٗڑو</displayName>
 			</currency>
 			<currency type="MZM">
-				<displayName>پرٛون موزیمبِکَن مٮ۪ٹِکَل</displayName>
+				<displayName>پرون موزیمبِکَن مؠٹِکَل</displayName>
 			</currency>
 			<currency type="MZN">
-				<displayName>موزیمبِکَن مٮ۪ٹِکَل</displayName>
+				<displayName>موزیمبِکَن مؠٹِکَل</displayName>
 			</currency>
 			<currency type="NAD">
 				<displayName>نامِبِیَن ڑالَر</displayName>
@@ -3812,22 +3815,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>نَیجیرِیَن ڑالَر</displayName>
 			</currency>
 			<currency type="NIC">
-				<displayName>نِکٮ۪راگُوٮ۪ن کورڑوبا</displayName>
+				<displayName>نِکؠراگُوؠن کورڑوبا</displayName>
 			</currency>
 			<currency type="NIO">
-				<displayName>نِکٮ۪راگُوٮ۪ن کورڑوبا اورو</displayName>
+				<displayName>نِکؠراگُوؠن کورڑوبا اورو</displayName>
 			</currency>
 			<currency type="NLG">
 				<displayName>ڈَچ گِلڑَر</displayName>
 			</currency>
 			<currency type="NOK">
-				<displayName>نورویٚیِنُک کرٛون</displayName>
+				<displayName>نوروییِنُک کرون</displayName>
 			</currency>
 			<currency type="NPR">
 				<displayName>نیپالٕچ رۄپَے</displayName>
 			</currency>
 			<currency type="NZD">
-				<displayName>نِوزیٖلینٛڑُک ڑالَر</displayName>
+				<displayName>نِوزیٖلینڑُک ڑالَر</displayName>
 			</currency>
 			<currency type="OMR">
 				<displayName>اومِنی رِیال</displayName>
@@ -3836,7 +3839,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>پانامانِیَن بالبوز</displayName>
 			</currency>
 			<currency type="PEI">
-				<displayName>پٔریوٗوِیَن اِنٛٹی</displayName>
+				<displayName>پٔریوٗوِیَن اِنٹی</displayName>
 			</currency>
 			<currency type="PEN">
 				<displayName>پٔریوٗوِیَن سولٕز</displayName>
@@ -3848,7 +3851,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>نیوٗ پیپُعا گِنِیَن کیٖنا</displayName>
 			</currency>
 			<currency type="PHP">
-				<displayName>پھِلِپایِٔن پٮ۪سو</displayName>
+				<displayName>پھِلِپایِٔن پؠسو</displayName>
 			</currency>
 			<currency type="PKR">
 				<displayName>پاکِستٲنۍ رۄپَے</displayName>
@@ -3860,10 +3863,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>پولِش زلوٹی(۱۹۵٠–۱۹۹۵)</displayName>
 			</currency>
 			<currency type="PTE">
-				<displayName>پورتُگیٖز اٮ۪سکیوٗڑو</displayName>
+				<displayName>پورتُگیٖز اؠسکیوٗڑو</displayName>
 			</currency>
 			<currency type="PYG">
-				<displayName>پٮ۪رٮ۪گیوٗوَیَن گُعارانی</displayName>
+				<displayName>پؠرؠگیوٗوَیَن گُعارانی</displayName>
 			</currency>
 			<currency type="QAR">
 				<displayName>قطاری رِیال</displayName>
@@ -3872,10 +3875,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>رھوڑیشِیَن ڑالَر</displayName>
 			</currency>
 			<currency type="ROL">
-				<displayName>اولڑ رومانِیَن لٮ۪یوٗ</displayName>
+				<displayName>اولڑ رومانِیَن لؠیوٗ</displayName>
 			</currency>
 			<currency type="RON">
-				<displayName>رومانِیَن لٮ۪یوٗ</displayName>
+				<displayName>رومانِیَن لؠیوٗ</displayName>
 			</currency>
 			<currency type="RSD">
 				<displayName>سٔربِیَن دیٖنار</displayName>
@@ -3887,7 +3890,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>رٔشیَن رَبٕل(۱۹۹۱–۱۹۹۸)</displayName>
 			</currency>
 			<currency type="RWF">
-				<displayName>روانٛڑَن فرانٛک</displayName>
+				<displayName>روانڑَن فرانک</displayName>
 			</currency>
 			<currency type="SAR">
 				<displayName>سودیٖیُک رِیال</displayName>
@@ -3899,10 +3902,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>پرون سوٗڈانُک دیٖنار</displayName>
 			</currency>
 			<currency type="SDG">
-				<displayName>سوٗڈانُک پونٛڈ</displayName>
+				<displayName>سوٗڈانُک پونڈ</displayName>
 			</currency>
 			<currency type="SDP">
-				<displayName>پرون سوٗڈانُک پونٛڈ</displayName>
+				<displayName>پرون سوٗڈانُک پونڈ</displayName>
 			</currency>
 			<currency type="SEK">
 				<displayName>سویٖڈِش کَرونا</displayName>
@@ -3911,7 +3914,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>سِنگاپورُک ڈالَر</displayName>
 			</currency>
 			<currency type="SHP">
-				<displayName>سینٹ ہیلِنا پونٛڈ</displayName>
+				<displayName>سینٹ ہیلِنا پونڈ</displayName>
 			</currency>
 			<currency type="SIT">
 				<displayName>سلووینُک ٹولَر</displayName>
@@ -3920,7 +3923,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>سلووَک کَرونا</displayName>
 			</currency>
 			<currency type="SOS">
-				<displayName>سومالی شِلِنٛگ</displayName>
+				<displayName>سومالی شِلِنگ</displayName>
 			</currency>
 			<currency type="SRD">
 				<displayName>سُریٖنامُک ڈالَر</displayName>
@@ -3935,10 +3938,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>سَلویدَرُک کولَن</displayName>
 			</currency>
 			<currency type="SYP">
-				<displayName>سیٖریاہُک پونٛڈ</displayName>
+				<displayName>سیٖریاہُک پونڈ</displayName>
 			</currency>
 			<currency type="SZL">
-				<displayName>سوازی لِلَنگیٚنی</displayName>
+				<displayName>سوازی لِلَنگینی</displayName>
 			</currency>
 			<currency type="THB">
 				<displayName>تھایھک بات</displayName>
@@ -3956,10 +3959,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ٹُنیشیاہُک دیٖنار</displayName>
 			</currency>
 			<currency type="TOP">
-				<displayName>ٹونگَن پانٛگا</displayName>
+				<displayName>ٹونگَن پانگا</displayName>
 			</currency>
 			<currency type="TPE">
-				<displayName>ٹیموریٚسو ایٚکیٖڈو</displayName>
+				<displayName>ٹیموریسو ایکیٖڈو</displayName>
 			</currency>
 			<currency type="TRL">
 				<displayName>پرون تُرکِش لیرا</displayName>
@@ -3971,10 +3974,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ٹرِنہِ ڈیڈ تہٕ ٹوبیگو ڈالَر</displayName>
 			</currency>
 			<currency type="TWD">
-				<displayName>نوٚو تیوانُک ڈالَر</displayName>
+				<displayName>نۆو تیوانُک ڈالَر</displayName>
 			</currency>
 			<currency type="TZS">
-				<displayName>تَنزانیاہُک شِلِنٛگ</displayName>
+				<displayName>تَنزانیاہُک شِلِنگ</displayName>
 			</currency>
 			<currency type="UAH">
 				<displayName>یوٗکرینیاہُک ہرِوِنیا</displayName>
@@ -3983,28 +3986,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>یوٗکرینیاہُک کاربووَنیٹس</displayName>
 			</currency>
 			<currency type="UGS">
-				<displayName>اُگاداہُک شِلِنٛگ(۱۹۶۶–۱۹۸۷)</displayName>
+				<displayName>اُگاداہُک شِلِنگ(۱۹۶۶–۱۹۸۷)</displayName>
 			</currency>
 			<currency type="UGX">
-				<displayName>اُگاداہُک شِلِنٛگ</displayName>
+				<displayName>اُگاداہُک شِلِنگ</displayName>
 			</currency>
 			<currency type="USD">
-				<displayName>یوٗ ایٚس ڈالَر</displayName>
+				<displayName>یوٗ ایس ڈالَر</displayName>
 			</currency>
 			<currency type="USN">
-				<displayName>یوٗ ایٚس ڈالَر(پَگاہ)</displayName>
+				<displayName>یوٗ ایس ڈالَر(پَگاہ)</displayName>
 			</currency>
 			<currency type="USS">
-				<displayName>یوٗ ایٚس ڈالَر(تَمی دًۄہ)</displayName>
+				<displayName>یوٗ ایس ڈالَر(تَمی دًۄہ)</displayName>
 			</currency>
 			<currency type="UYI">
-				<displayName>اُرگایَن پیٚسو یوٗنِڈیڈَس اِنڈیٚکسَس</displayName>
+				<displayName>اُرگایَن پیسو یوٗنِڈیڈَس اِنڈیکسَس</displayName>
 			</currency>
 			<currency type="UYP">
-				<displayName>اُرگایَن پیٚسو(۱۹۷۵–۱۹۹۳)</displayName>
+				<displayName>اُرگایَن پیسو(۱۹۷۵–۱۹۹۳)</displayName>
 			</currency>
 			<currency type="UYU">
-				<displayName>اُروٗگایَن پیٚسو</displayName>
+				<displayName>اُروٗگایَن پیسو</displayName>
 			</currency>
 			<currency type="UZS">
 				<displayName>اُبیکِستان سوم</displayName>
@@ -4013,10 +4016,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>وینٕزوٗلیُک بولِوَر (۱۸۷۱–۲۰۰۸)</displayName>
 			</currency>
 			<currency type="VEF">
+				<displayName>وینٕزوٗلیُک بولِوَر (2008–2018)</displayName>
+			</currency>
+			<currency type="VES">
 				<displayName>وینٕزوٗلیُک بولِوَر</displayName>
 			</currency>
 			<currency type="VND">
-				<displayName>وِیَنَمُک ڈانٛگ</displayName>
+				<displayName>وِیَنَمُک ڈانگ</displayName>
 			</currency>
 			<currency type="VUV">
 				<displayName>وَنوٗاَتوٗ وَتوٗ</displayName>
@@ -4025,7 +4031,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>سَمون تَلا</displayName>
 			</currency>
 			<currency type="XAF">
-				<displayName>سی ایٚف اے فرینک بی ایٖ اے سی</displayName>
+				<displayName>سی ایف اے فرینک بی ایٖ اے سی</displayName>
 			</currency>
 			<currency type="XAG">
 				<displayName>رۄپھ</displayName>
@@ -4040,43 +4046,43 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>یوٗرپی مونِٹَری یوٗنِٹ</displayName>
 			</currency>
 			<currency type="XBC">
-				<displayName>یوٗرپی یوٗنِٹ آف ایٚکاوُنٛٹ (ایکس بی سی)</displayName>
+				<displayName>یوٗرپی یوٗنِٹ آف ایکاوُنٹ (ایکس بی سی)</displayName>
 			</currency>
 			<currency type="XBD">
-				<displayName>یوٗرپی یوٗنِٹ آف ایٚکاوُنٛٹ (ایکس بی ڈی)</displayName>
+				<displayName>یوٗرپی یوٗنِٹ آف ایکاوُنٹ (ایکس بی ڈی)</displayName>
 			</currency>
 			<currency type="XCD">
 				<displayName>مَشرِقی کیرِبِیَن ڈالَر</displayName>
 			</currency>
 			<currency type="XDR">
-				<displayName>خاص ڈرایِنٛگ رایٹس</displayName>
+				<displayName>خاص ڈرایِنگ رایٹس</displayName>
 			</currency>
 			<currency type="XEU">
 				<displayName>یوٗرپی کَرَنسی یوٗنِٹ</displayName>
 			</currency>
 			<currency type="XFO">
-				<displayName>فریٚنچ گولڈ فرینک</displayName>
+				<displayName>فرینچ گولڈ فرینک</displayName>
 			</currency>
 			<currency type="XFU">
-				<displayName>فریٛنچ یوٗ اے سی فرینک</displayName>
+				<displayName>فرینچ یوٗ اے سی فرینک</displayName>
 			</currency>
 			<currency type="XOF">
-				<displayName>سی ایٚف اے فرینک بی سی ایٖ اے او</displayName>
+				<displayName>سی ایف اے فرینک بی سی ایٖ اے او</displayName>
 			</currency>
 			<currency type="XPD">
 				<displayName>پُلیڈیَم</displayName>
 			</currency>
 			<currency type="XPF">
-				<displayName>سی ایٚف پی فرینک</displayName>
+				<displayName>سی ایف پی فرینک</displayName>
 			</currency>
 			<currency type="XPT">
 				<displayName>پلیٹِنَم</displayName>
 			</currency>
 			<currency type="XRE">
-				<displayName>آر آے ایٚن ایٖ ٹی فَنٛڈ</displayName>
+				<displayName>آر آے این ایٖ ٹی فَنڈ</displayName>
 			</currency>
 			<currency type="XTS">
-				<displayName>ٹیٚسٹِنٛگ کَرَنسی کوڈ</displayName>
+				<displayName>ٹیسٹِنگ کَرَنسی کوڈ</displayName>
 			</currency>
 			<currency type="XXX">
 				<displayName>اَنزٲنۍ یا نالَگہٕ ہار سِکہٕ</displayName>
@@ -4124,9 +4130,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ؤری</unitPattern>
 			</unit>
 			<unit type="duration-month">
-				<displayName draft="provisional">ریٚتھ</displayName>
-				<unitPattern count="one">{0} ریٚتھ</unitPattern>
-				<unitPattern count="other">{0} ریٚتھ</unitPattern>
+				<displayName draft="provisional">ریتھ</displayName>
+				<unitPattern count="one">{0} ریتھ</unitPattern>
+				<unitPattern count="other">{0} ریتھ</unitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName draft="provisional">ہَفتہٕ</displayName>
@@ -4139,9 +4145,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} دۄہ</unitPattern>
 			</unit>
 			<unit type="duration-hour">
-				<displayName draft="provisional">گٲنٛٹہٕ</displayName>
+				<displayName draft="provisional">گٲنٹہٕ</displayName>
 				<unitPattern count="one">{0} گَنٹہٕ</unitPattern>
-				<unitPattern count="other">{0} گٲنٛٹہٕ</unitPattern>
+				<unitPattern count="other">{0} گٲنٹہٕ</unitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName draft="provisional">مِنَٹ</displayName>
@@ -4149,9 +4155,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} مِنَٹ</unitPattern>
 			</unit>
 			<unit type="duration-second">
-				<displayName draft="provisional">سیٚکَنٛڈ</displayName>
-				<unitPattern count="one">{0} سیٚکَنٛڈ</unitPattern>
-				<unitPattern count="other">{0} سیٚکَنٛڈ</unitPattern>
+				<displayName draft="provisional">سیکَنڈ</displayName>
+				<unitPattern count="one">{0} سیکَنڈ</unitPattern>
+				<unitPattern count="other">{0} سیکَنڈ</unitPattern>
 			</unit>
 		</unitLength>
 		<unitLength type="short">
@@ -4159,7 +4165,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="provisional">ؤری</displayName>
 			</unit>
 			<unit type="duration-month">
-				<displayName draft="provisional">ریٚتھ</displayName>
+				<displayName draft="provisional">ریتھ</displayName>
 			</unit>
 			<unit type="duration-week">
 				<displayName draft="provisional">ہَفتہٕ</displayName>
@@ -4168,19 +4174,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="provisional">دۄہ</displayName>
 			</unit>
 			<unit type="duration-hour">
-				<displayName draft="provisional">گٲنٛٹہٕ</displayName>
+				<displayName draft="provisional">گٲنٹہٕ</displayName>
 			</unit>
 			<unit type="duration-minute">
 				<displayName draft="provisional">مِنَٹ</displayName>
 			</unit>
 			<unit type="duration-second">
-				<displayName draft="provisional">سیٚکَنٛڈ</displayName>
+				<displayName draft="provisional">سیکَنڈ</displayName>
 			</unit>
 		</unitLength>
 	</units>
 	<posix>
 		<messages>
-			<yesstr>اۭں</yesstr>
+			<yesstr>اٟں</yesstr>
 			<nostr>نَہ</nostr>
 		</messages>
 	</posix>

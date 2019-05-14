@@ -65,6 +65,7 @@
 #include "memory/iterator.inline.hpp"
 #include "memory/padded.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"

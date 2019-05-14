@@ -25,7 +25,7 @@
  * @test TestAllocHumongousFragment
  * @summary Make sure Shenandoah can recover from humongous allocation fragmentation
  * @key gc
- * @requires vm.gc.Shenandoah
+ * @requires vm.gc.Shenandoah & !vm.graal.enabled
  *
  * @run main/othervm -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx1g -Xms1g -XX:ShenandoahTargetNumRegions=2048 -XX:ShenandoahGCHeuristics=passive    -XX:-ShenandoahDegeneratedGC     -XX:+ShenandoahVerify TestAllocHumongousFragment
  * @run main/othervm -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx1g -Xms1g -XX:ShenandoahTargetNumRegions=2048 -XX:ShenandoahGCHeuristics=passive    -XX:+ShenandoahDegeneratedGC     -XX:+ShenandoahVerify TestAllocHumongousFragment

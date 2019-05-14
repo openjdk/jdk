@@ -31,6 +31,7 @@
 #include "code/vtableStubs.hpp"
 #include "compiler/disassembler.hpp"
 #include "interpreter/bytecode.hpp"
+#include "interpreter/interpreter.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/heap.hpp"
 #include "memory/resourceArea.hpp"
@@ -556,6 +557,8 @@ void CodeBlob::print_on(outputStream* st) const {
   st->print_cr("[CodeBlob (" INTPTR_FORMAT ")]", p2i(this));
   st->print_cr("Framesize: %d", _frame_size);
 }
+
+void CodeBlob::print() const { print_on(tty); }
 
 void CodeBlob::print_value_on(outputStream* st) const {
   st->print_cr("[CodeBlob]");

@@ -27,7 +27,6 @@
 
 #include "interpreter/bytecodeStream.hpp"
 #include "memory/allocation.hpp"
-#include "memory/universe.hpp"
 #include "oops/method.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/signature.hpp"

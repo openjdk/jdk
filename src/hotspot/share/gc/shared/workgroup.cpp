@@ -318,6 +318,8 @@ void AbstractGangWorker::print_on(outputStream* st) const {
   st->cr();
 }
 
+void AbstractGangWorker::print() const { print_on(tty); }
+
 WorkData GangWorker::wait_for_task() {
   return gang()->dispatcher()->worker_wait_for_task();
 }

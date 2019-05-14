@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2018 Unicode, Inc.
+<!-- Copyright © 1991-2019 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -9,7 +9,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 13911 $"/>
+		<version number="$Revision: 14982 $"/>
 		<language type="hy"/>
 	</identity>
 	<localeDisplayNames>
@@ -606,7 +606,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="BO">Բոլիվիա</territory>
 			<territory type="BQ">Կարիբյան Նիդեռլանդներ</territory>
 			<territory type="BR">Բրազիլիա</territory>
-			<territory type="BS">Բահամաներ</territory>
+			<territory type="BS">Բահամյան կղզիներ</territory>
 			<territory type="BT">Բութան</territory>
 			<territory type="BV">Բուվե կղզի</territory>
 			<territory type="BW">Բոթսվանա</territory>
@@ -711,7 +711,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="KP">Հյուսիսային Կորեա</territory>
 			<territory type="KR">Հարավային Կորեա</territory>
 			<territory type="KW">Քուվեյթ</territory>
-			<territory type="KY">Կայման կղզիներ</territory>
+			<territory type="KY">Կայմանյան կղզիներ</territory>
 			<territory type="KZ">Ղազախստան</territory>
 			<territory type="LA">Լաոս</territory>
 			<territory type="LB">Լիբանան</territory>
@@ -731,8 +731,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="MF">Սեն Մարտեն</territory>
 			<territory type="MG">Մադագասկար</territory>
 			<territory type="MH">Մարշալյան կղզիներ</territory>
-			<territory type="MK">Մակեդոնիա</territory>
-			<territory type="MK" alt="variant">Մակեդոնիա (ՄՆՀՀ)</territory>
+			<territory type="MK">Հյուսիսային Մակեդոնիա</territory>
 			<territory type="ML">Մալի</territory>
 			<territory type="MM">Մյանմա (Բիրմա)</territory>
 			<territory type="MN">Մոնղոլիա</territory>
@@ -804,7 +803,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="SV">Սալվադոր</territory>
 			<territory type="SX">Սինտ Մարտեն</territory>
 			<territory type="SY">Սիրիա</territory>
-			<territory type="SZ">Սվազիլենդ</territory>
+			<territory type="SZ">Էսվատինի</territory>
+			<territory type="SZ" alt="variant">Սվազիլենդ</territory>
 			<territory type="TA">Տրիստան դա Կունյա</territory>
 			<territory type="TC">Թըրքս և Կայկոս կղզիներ</territory>
 			<territory type="TD">Չադ</territory>
@@ -939,7 +939,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</localeDisplayNames>
 	<characters>
 		<exemplarCharacters>[ա բ գ դ ե զ է ը թ ժ ի լ խ ծ կ հ ձ ղ ճ մ յ ն շ ո չ պ ջ ռ ս վ տ ր ց ւ փ ք և օ ֆ]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="unconfirmed">[Ա Բ Գ Դ Ե Զ Է Ը Թ Ժ Ի Լ Խ Ծ Կ Հ Ձ Ղ Ճ Մ Յ Ն Շ Ո Չ Պ Ջ Ռ Ս Վ Տ Ր Ց Ւ Փ Ք Օ Ֆ]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[  \- , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[֊ , ՝ \: ՜ ՞ . « » ՚ ՛ ՟]</exemplarCharacters>
@@ -1048,8 +1047,55 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</availableFormats>
 					<intervalFormats>
 						<intervalFormatFallback>{0} - {1}</intervalFormatFallback>
+						<intervalFormatItem id="Bh">
+							<greatestDifference id="B">B h–ից B h-ը</greatestDifference>
+							<greatestDifference id="h">B h–ից h-ը</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Bhm">
+							<greatestDifference id="B">B h:mm – B h:mm</greatestDifference>
+							<greatestDifference id="h">B h:mm – h:mm</greatestDifference>
+							<greatestDifference id="m">B h:mm – h:mm</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d–d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G">G y – G y</greatestDifference>
+							<greatestDifference id="y">G y–y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G">GGGGG y-MM – GGGGG y-MM</greatestDifference>
+							<greatestDifference id="M">GGGGG y-MM – y-MM</greatestDifference>
+							<greatestDifference id="y">GGGGG y-MM – y-MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="G">GGGGG y-MM-dd – GGGGG y-MM-dd</greatestDifference>
+							<greatestDifference id="M">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="y">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="G">GGGGG y-MM-dd, E – GGGGG y-MM-dd, E</greatestDifference>
+							<greatestDifference id="M">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="y">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G">G y MMM – G y MMM</greatestDifference>
+							<greatestDifference id="M">G y MMM–MMM</greatestDifference>
+							<greatestDifference id="y">G y MMM – y MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d">G y MMM d–d</greatestDifference>
+							<greatestDifference id="G">G y MMM d – G y MMM d</greatestDifference>
+							<greatestDifference id="M">G y MMM d – MMM d</greatestDifference>
+							<greatestDifference id="y">G y MMM d – y MMM d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d">G y MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="G">G y MMM d, E – G y MMM d, E</greatestDifference>
+							<greatestDifference id="M">G y MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="y">G y MMM d, E – y MMM d, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">h a – h a</greatestDifference>
@@ -1358,9 +1404,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
 							<dayPeriod type="midnight">կեսգիշեր</dayPeriod>
-							<dayPeriod type="am">ԿԱ</dayPeriod>
+							<dayPeriod type="am">AM</dayPeriod>
 							<dayPeriod type="noon">կեսօր</dayPeriod>
-							<dayPeriod type="pm">ԿՀ</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
 							<dayPeriod type="morning1">առավոտյան</dayPeriod>
 							<dayPeriod type="afternoon1">ցերեկը</dayPeriod>
 							<dayPeriod type="evening1">երեկոյան</dayPeriod>
@@ -1378,9 +1424,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="midnight">կեսգիշերին</dayPeriod>
-							<dayPeriod type="am">ԿԱ</dayPeriod>
+							<dayPeriod type="am">AM</dayPeriod>
 							<dayPeriod type="noon">կեսօրին</dayPeriod>
-							<dayPeriod type="pm">ԿՀ</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
 							<dayPeriod type="morning1">առավոտյան</dayPeriod>
 							<dayPeriod type="afternoon1">ցերեկը</dayPeriod>
 							<dayPeriod type="evening1">երեկոյան</dayPeriod>
@@ -1390,9 +1436,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dayPeriodContext type="stand-alone">
 						<dayPeriodWidth type="abbreviated">
 							<dayPeriod type="midnight">կեսգիշեր</dayPeriod>
-							<dayPeriod type="am">ԿԱ</dayPeriod>
+							<dayPeriod type="am">AM</dayPeriod>
 							<dayPeriod type="noon">կեսօր</dayPeriod>
-							<dayPeriod type="pm">ԿՀ</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
 							<dayPeriod type="morning1">առավոտ</dayPeriod>
 							<dayPeriod type="afternoon1">ցերեկ</dayPeriod>
 							<dayPeriod type="evening1">երեկո</dayPeriod>
@@ -1400,9 +1446,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
 							<dayPeriod type="midnight">կեսգիշեր</dayPeriod>
-							<dayPeriod type="am">ԿԱ</dayPeriod>
+							<dayPeriod type="am">AM</dayPeriod>
 							<dayPeriod type="noon">կեսօր</dayPeriod>
-							<dayPeriod type="pm">ԿՀ</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
 							<dayPeriod type="morning1">առավոտ</dayPeriod>
 							<dayPeriod type="afternoon1">ցերեկ</dayPeriod>
 							<dayPeriod type="evening1">երեկո</dayPeriod>
@@ -1410,9 +1456,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="midnight">կեսգիշեր</dayPeriod>
-							<dayPeriod type="am">ԿԱ</dayPeriod>
+							<dayPeriod type="am">AM</dayPeriod>
 							<dayPeriod type="noon">կեսօր</dayPeriod>
-							<dayPeriod type="pm">ԿՀ</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
 							<dayPeriod type="morning1">առավոտ</dayPeriod>
 							<dayPeriod type="afternoon1">ցերեկ</dayPeriod>
 							<dayPeriod type="evening1">երեկո</dayPeriod>
@@ -1533,8 +1579,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">d MMM, E</dateFormatItem>
 						<dateFormatItem id="MMMMd">MMMM d</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="one">MMM W շաբ</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="other">MMM W շաբ</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">MMMM W շաբ</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">MMMM W շաբ</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">MM.y</dateFormatItem>
@@ -1554,8 +1600,55 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</appendItems>
 					<intervalFormats>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="Bh">
+							<greatestDifference id="B">B h–ից B h-ը</greatestDifference>
+							<greatestDifference id="h">B h–ից h-ը</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Bhm">
+							<greatestDifference id="B">B h:mm – B h:mm</greatestDifference>
+							<greatestDifference id="h">B h:mm–h:mm</greatestDifference>
+							<greatestDifference id="m">B h:mm – h:mm</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d–d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G" draft="provisional">G y – G y</greatestDifference>
+							<greatestDifference id="y">G y–y թթ․</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G">GGGGG MM.y – GGGGG MM.y</greatestDifference>
+							<greatestDifference id="M">GGGGG MM.y – MM.y</greatestDifference>
+							<greatestDifference id="y">GGGGG MM.y – MM.y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d">GGGGG dd.MM.y – dd.MM.y</greatestDifference>
+							<greatestDifference id="G">GGGGG dd.MM.y – GGGGG dd.MM.y</greatestDifference>
+							<greatestDifference id="M">GGGGG dd.MM.y – dd.MM.y</greatestDifference>
+							<greatestDifference id="y">GGGGG dd.MM.y – dd.MM.y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d">GGGGG ccc, dd.MM.y – ccc, dd.MM.y</greatestDifference>
+							<greatestDifference id="G">GGGGG ccc, dd.MM.y – GGGGG ccc, dd.MM.y</greatestDifference>
+							<greatestDifference id="M">GGGGG ccc, dd.MM.y – ccc, dd.MM.y</greatestDifference>
+							<greatestDifference id="y">GGGGG ccc, dd.MM.y – ccc, dd.MM.y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G">G y MMM – G y MMM</greatestDifference>
+							<greatestDifference id="M">G y թ. MMM – MMM</greatestDifference>
+							<greatestDifference id="y">G y MMM – y MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d">G dd–dd MMM, y թ.</greatestDifference>
+							<greatestDifference id="G">G dd MMM, y թ․ – G dd MMM, y թ.</greatestDifference>
+							<greatestDifference id="M">G dd MMM – dd MMM, y թ.</greatestDifference>
+							<greatestDifference id="y">G dd MMM, y թ․ – G dd MMM, y թ.</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d">G E, d MMM – E, d MMM, y թ.</greatestDifference>
+							<greatestDifference id="G">G E, d MMM – G E, d MMM, y թ.</greatestDifference>
+							<greatestDifference id="M">G E, d MMM y թ. – E, d MMM</greatestDifference>
+							<greatestDifference id="y">G E, d MMM y թ. – E, d MMM y թ.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">h a – h a</greatestDifference>
@@ -4473,9 +4566,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<defaultNumberingSystem>latn</defaultNumberingSystem>
 		<otherNumberingSystems>
-			<native>latn</native>
 			<traditional>armn</traditional>
 		</otherNumberingSystems>
 		<minimumGroupingDigits draft="contributed">1</minimumGroupingDigits>
@@ -4484,8 +4575,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<group> </group>
 			<list>;</list>
 			<percentSign>%</percentSign>
-			<plusSign>+</plusSign>
-			<minusSign>-</minusSign>
 			<exponential>E</exponential>
 			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>‰</perMille>
@@ -4494,11 +4583,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<timeSeparator draft="contributed">:</timeSeparator>
 		</symbols>
 		<decimalFormats numberSystem="latn">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern>#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
 			<decimalFormatLength type="long">
 				<decimalFormat>
 					<pattern type="1000" count="one">0 հազար</pattern>
@@ -4615,19 +4699,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Արաբական Միացյալ Էմիրությունների դիրհամ</displayName>
 				<displayName count="one">ԱՄԷ դիրհամ</displayName>
 				<displayName count="other">ԱՄԷ դիրհամ</displayName>
-				<symbol>AED</symbol>
 			</currency>
 			<currency type="AFN">
 				<displayName>աֆղանական աֆղանի</displayName>
 				<displayName count="one">աֆղանական աֆղանի</displayName>
 				<displayName count="other">աֆղանական աֆղանի</displayName>
-				<symbol>AFN</symbol>
 			</currency>
 			<currency type="ALL">
 				<displayName>ալբանական լեկ</displayName>
 				<displayName count="one">ալբանական լեկ</displayName>
 				<displayName count="other">ալբանական լեկ</displayName>
-				<symbol>ALL</symbol>
 			</currency>
 			<currency type="AMD">
 				<displayName>հայկական դրամ</displayName>
@@ -4640,598 +4721,464 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>նիդեռլանդական անտիլյան գուլդեն</displayName>
 				<displayName count="one">նիդեռլանդական անտիլյան գուլդեն</displayName>
 				<displayName count="other">նիդեռլանդական անտիլյան գուլդեն</displayName>
-				<symbol>ANG</symbol>
 			</currency>
 			<currency type="AOA">
 				<displayName>անգոլական կվանզա</displayName>
 				<displayName count="one">անգոլական կվանզա</displayName>
 				<displayName count="other">անգոլական կվանզա</displayName>
-				<symbol>AOA</symbol>
-				<symbol alt="narrow" draft="contributed">Kz</symbol>
 			</currency>
 			<currency type="ARS">
 				<displayName>արգենտինական պեսո</displayName>
 				<displayName count="one">արգենտինական պեսո</displayName>
 				<displayName count="other">արգենտինական պեսո</displayName>
-				<symbol>ARS</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="AUD">
 				<displayName>ավստրալիական դոլար</displayName>
 				<displayName count="one">ավստրալիական դոլար</displayName>
 				<displayName count="other">ավստրալիական դոլար</displayName>
-				<symbol>A$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="AWG">
 				<displayName>արուբական ֆլորին</displayName>
 				<displayName count="one">արուբական ֆլորին</displayName>
 				<displayName count="other">արուբական ֆլորին</displayName>
-				<symbol>AWG</symbol>
 			</currency>
 			<currency type="AZN">
 				<displayName>ադրբեջանական մանաթ</displayName>
 				<displayName count="one">ադրբեջանական մանաթ</displayName>
 				<displayName count="other">ադրբեջանական մանաթ</displayName>
-				<symbol>AZN</symbol>
 			</currency>
 			<currency type="BAM">
 				<displayName>Բոսնիա և Հերցեգովինայի փոխարկվող մարկ</displayName>
 				<displayName count="one">Բոսնիա և Հերցեգովինայի փոխարկվող մարկ</displayName>
 				<displayName count="other">Բոսնիա և Հերցեգովինայի փոխարկվող մարկ</displayName>
-				<symbol>BAM</symbol>
-				<symbol alt="narrow" draft="contributed">KM</symbol>
 			</currency>
 			<currency type="BBD">
 				<displayName>բարբադոսյան դոլար</displayName>
 				<displayName count="one">բարբադոսյան դոլար</displayName>
 				<displayName count="other">բարբադոսյան դոլար</displayName>
-				<symbol>BBD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BDT">
 				<displayName>Բանգլադեշի տակա</displayName>
 				<displayName count="one">Բանգլադեշի տակա</displayName>
 				<displayName count="other">Բանգլադեշի տակա</displayName>
-				<symbol>BDT</symbol>
-				<symbol alt="narrow" draft="contributed">৳</symbol>
 			</currency>
 			<currency type="BGN">
 				<displayName>բուլղարական լև</displayName>
 				<displayName count="one">բուլղարական լև</displayName>
 				<displayName count="other">բուլղարական լև</displayName>
-				<symbol>BGN</symbol>
 			</currency>
 			<currency type="BHD">
 				<displayName>Բահրեյնի դինար</displayName>
 				<displayName count="one">Բահրեյնի դինար</displayName>
 				<displayName count="other">Բահրեյնի դինար</displayName>
-				<symbol>BHD</symbol>
 			</currency>
 			<currency type="BIF">
 				<displayName>բուրունդիական ֆրանկ</displayName>
 				<displayName count="one">բուրունդիական ֆրանկ</displayName>
 				<displayName count="other">բուրունդիական ֆրանկ</displayName>
-				<symbol>BIF</symbol>
 			</currency>
 			<currency type="BMD">
 				<displayName>բերմուդյան դոլար</displayName>
 				<displayName count="one">բերմուդյան դոլար</displayName>
 				<displayName count="other">բերմուդյան դոլար</displayName>
-				<symbol>BMD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BND">
 				<displayName>Բրունեյի դոլար</displayName>
 				<displayName count="one">Բրունեյի դոլար</displayName>
 				<displayName count="other">Բրունեյի դոլար</displayName>
-				<symbol>BND</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BOB">
 				<displayName>բոլիվիական բոլիվիանո</displayName>
 				<displayName count="one">բոլիվիական բոլիվիանո</displayName>
 				<displayName count="other">բոլիվիական բոլիվիանո</displayName>
-				<symbol>BOB</symbol>
-				<symbol alt="narrow" draft="contributed">Bs</symbol>
 			</currency>
 			<currency type="BRL">
 				<displayName>բրազիլական ռեալ</displayName>
 				<displayName count="one">բրազիլական ռեալ</displayName>
 				<displayName count="other">բրազիլական ռեալ</displayName>
-				<symbol>R$</symbol>
-				<symbol alt="narrow" draft="contributed">R$</symbol>
 			</currency>
 			<currency type="BSD">
 				<displayName>բահամյան դոլար</displayName>
 				<displayName count="one">բահամյան դոլար</displayName>
 				<displayName count="other">բահամյան դոլար</displayName>
-				<symbol>BSD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BTN">
 				<displayName>բութանական նգուլտրում</displayName>
 				<displayName count="one">բութանական նգուլտրում</displayName>
 				<displayName count="other">բութանական նգուլտրում</displayName>
-				<symbol>BTN</symbol>
 			</currency>
 			<currency type="BWP">
 				<displayName>բոթսվանական պուլա</displayName>
 				<displayName count="one">բոթսվանական պուլա</displayName>
 				<displayName count="other">բոթսվանական պուլա</displayName>
-				<symbol>BWP</symbol>
-				<symbol alt="narrow" draft="contributed">P</symbol>
 			</currency>
 			<currency type="BYN">
 				<displayName>բելառուսական ռուբլի</displayName>
 				<displayName count="one">բելառուսական ռուբլի</displayName>
 				<displayName count="other">բելառուսական ռուբլի</displayName>
-				<symbol>BYN</symbol>
-				<symbol alt="narrow" draft="contributed">р.</symbol>
 			</currency>
 			<currency type="BYR">
 				<displayName>Բելառուսական ռուբլի (2000–2016)</displayName>
 				<displayName count="one">բելառուսական ռուբլի (2000–2016)</displayName>
 				<displayName count="other">բելառուսական ռուբլի (2000–2016)</displayName>
-				<symbol>BYR</symbol>
 			</currency>
 			<currency type="BZD">
 				<displayName>Բելիզի դոլար</displayName>
 				<displayName count="one">Բելիզի դոլար</displayName>
 				<displayName count="other">Բելիզի դոլար</displayName>
-				<symbol>BZD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CAD">
 				<displayName>կանադական դոլար</displayName>
 				<displayName count="one">կանադական դոլար</displayName>
 				<displayName count="other">կանադական դոլար</displayName>
-				<symbol>CA$</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CDF">
 				<displayName>Կոնգոյի ֆրանկ</displayName>
 				<displayName count="one">Կոնգոյի ֆրանկ</displayName>
 				<displayName count="other">Կոնգոյի ֆրանկ</displayName>
-				<symbol>CDF</symbol>
 			</currency>
 			<currency type="CHF">
 				<displayName>շվեյցարական ֆրանկ</displayName>
 				<displayName count="one">շվեյցարական ֆրանկ</displayName>
 				<displayName count="other">շվեյցարական ֆրանկ</displayName>
-				<symbol>CHF</symbol>
 			</currency>
 			<currency type="CLP">
 				<displayName>չիլիական պեսո</displayName>
 				<displayName count="one">չիլիական պեսո</displayName>
 				<displayName count="other">չիլիական պեսո</displayName>
-				<symbol>CLP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CNH">
 				<displayName>CNH</displayName>
 				<displayName count="one">CNH</displayName>
 				<displayName count="other">CNH</displayName>
-				<symbol draft="contributed">CNH</symbol>
 			</currency>
 			<currency type="CNY">
 				<displayName>չինական յուան</displayName>
 				<displayName count="one">չինական յուան</displayName>
 				<displayName count="other">չինական յուան</displayName>
-				<symbol>CN¥</symbol>
-				<symbol alt="narrow" draft="contributed">¥</symbol>
 			</currency>
 			<currency type="COP">
 				<displayName>կոլումբիական պեսո</displayName>
 				<displayName count="one">կոլումբիական պեսո</displayName>
 				<displayName count="other">կոլումբիական պեսո</displayName>
-				<symbol>COP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CRC">
 				<displayName>Կոստա Ռիկայի կոլոն</displayName>
 				<displayName count="one">Կոստա Ռիկայի կոլոն</displayName>
 				<displayName count="other">Կոստա Ռիկայի կոլոն</displayName>
-				<symbol>CRC</symbol>
 				<symbol alt="narrow" draft="contributed">₡</symbol>
 			</currency>
 			<currency type="CUC">
 				<displayName>կուբայական փոխարկվող պեսո</displayName>
 				<displayName count="one">կուբայական փոխարկվող պեսո</displayName>
 				<displayName count="other">կուբայական փոխարկվող պեսո</displayName>
-				<symbol>CUC</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CUP">
 				<displayName>կուբայական պեսո</displayName>
 				<displayName count="one">կուբայական պեսո</displayName>
 				<displayName count="other">կուբայական պեսո</displayName>
-				<symbol>CUP</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CVE">
 				<displayName>Կաբո Վերդեի էսկուդո</displayName>
 				<displayName count="one">Կաբո Վերդեի էսկուդո</displayName>
 				<displayName count="other">Կաբո Վերդեի էսկուդո</displayName>
-				<symbol>CVE</symbol>
 			</currency>
 			<currency type="CZK">
 				<displayName>չեխական կրոն</displayName>
 				<displayName count="one">չեխական կրոն</displayName>
 				<displayName count="other">չեխական կրոն</displayName>
-				<symbol>CZK</symbol>
-				<symbol alt="narrow" draft="contributed">Kč</symbol>
 			</currency>
 			<currency type="DJF">
 				<displayName>Ջիբութիի ֆրանկ</displayName>
 				<displayName count="one">Ջիբութիի ֆրանկ</displayName>
 				<displayName count="other">Ջիբութիի ֆրանկ</displayName>
-				<symbol>DJF</symbol>
 			</currency>
 			<currency type="DKK">
 				<displayName>դանիական կրոն</displayName>
 				<displayName count="one">դանիական կրոն</displayName>
 				<displayName count="other">դանիական կրոն</displayName>
-				<symbol>DKK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="DOP">
 				<displayName>դոմինիկյան պեսո</displayName>
 				<displayName count="one">դոմինիկյան պեսո</displayName>
 				<displayName count="other">դոմինիկյան պեսո</displayName>
-				<symbol>DOP</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="DZD">
 				<displayName>ալժիրական դինար</displayName>
 				<displayName count="one">ալժիրական դինար</displayName>
 				<displayName count="other">ալժիրական դինար</displayName>
-				<symbol>DZD</symbol>
 			</currency>
 			<currency type="EGP">
 				<displayName>եգիպտական ֆունտ</displayName>
 				<displayName count="one">եգիպտական ֆունտ</displayName>
 				<displayName count="other">եգիպտական ֆունտ</displayName>
-				<symbol>EGP</symbol>
-				<symbol alt="narrow" draft="contributed">E£</symbol>
 			</currency>
 			<currency type="ERN">
 				<displayName>էրիթրեական նակվա</displayName>
 				<displayName count="one">էրիթրեական նակֆա</displayName>
 				<displayName count="other">էրիթրեական նակֆա</displayName>
-				<symbol>ERN</symbol>
 			</currency>
 			<currency type="ETB">
 				<displayName>եթովպիական բիր</displayName>
 				<displayName count="one">եթովպիական բիր</displayName>
 				<displayName count="other">եթովպիական բիր</displayName>
-				<symbol>ETB</symbol>
 			</currency>
 			<currency type="EUR">
 				<displayName>եվրո</displayName>
 				<displayName count="one">եվրո</displayName>
 				<displayName count="other">եվրո</displayName>
-				<symbol>€</symbol>
-				<symbol alt="narrow" draft="contributed">€</symbol>
 			</currency>
 			<currency type="FJD">
 				<displayName>ֆիջիական դոլար</displayName>
 				<displayName count="one">ֆիջիական դոլար</displayName>
 				<displayName count="other">ֆիջիական դոլար</displayName>
-				<symbol>FJD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="FKP">
 				<displayName>Ֆոլքլենդյան կղզիների ֆունտ</displayName>
 				<displayName count="one">Ֆոլքլենդյան կղզիների ֆունտ</displayName>
 				<displayName count="other">Ֆոլքլենդյան կղզիների ֆունտ</displayName>
-				<symbol>FKP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="GBP">
 				<displayName>բրիտանական ֆունտ ստերլինգ</displayName>
 				<displayName count="one">բրիտանական ֆունտ ստերլինգ</displayName>
 				<displayName count="other">բրիտանական ֆունտ ստերլինգ</displayName>
-				<symbol>£</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="GEL">
 				<displayName>վրացական լարի</displayName>
 				<displayName count="one">վրացական լարի</displayName>
 				<displayName count="other">վրացական լարի</displayName>
-				<symbol>GEL</symbol>
-				<symbol alt="narrow" draft="contributed">₾</symbol>
 			</currency>
 			<currency type="GHS">
 				<displayName>գայանական սեդի</displayName>
 				<displayName count="one">գանայական սեդի</displayName>
 				<displayName count="other">գանայական սեդի</displayName>
-				<symbol>GHS</symbol>
 			</currency>
 			<currency type="GIP">
 				<displayName>Ջիբրալթարի ֆունտ</displayName>
 				<displayName count="one">Ջիբրալթարի ֆունտ</displayName>
 				<displayName count="other">Ջիբրալթարի ֆունտ</displayName>
-				<symbol>GIP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="GMD">
 				<displayName>գամբիական դալասի</displayName>
 				<displayName count="one">գամբիական դալասի</displayName>
 				<displayName count="other">գամբիական դալասի</displayName>
-				<symbol>GMD</symbol>
 			</currency>
 			<currency type="GNF">
 				<displayName>գվինեական ֆրանկ</displayName>
 				<displayName count="one">գվինեական ֆրանկ</displayName>
 				<displayName count="other">գվինեական ֆրանկ</displayName>
-				<symbol>GNF</symbol>
-				<symbol alt="narrow" draft="contributed">FG</symbol>
 			</currency>
 			<currency type="GTQ">
 				<displayName>գվատեմալական կետսալ</displayName>
 				<displayName count="one">գվատեմալական կետսալ</displayName>
 				<displayName count="other">գվատեմալական կետսալ</displayName>
-				<symbol>GTQ</symbol>
 				<symbol alt="narrow" draft="contributed">Q</symbol>
 			</currency>
 			<currency type="GYD">
 				<displayName>գայանական դոլար</displayName>
 				<displayName count="one">գայանական դոլար</displayName>
 				<displayName count="other">գայանական դոլար</displayName>
-				<symbol>GYD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="HKD">
 				<displayName>Հոնկոնգի դոլար</displayName>
 				<displayName count="one">Հոնկոնգի դոլար</displayName>
 				<displayName count="other">Հոնկոնգի դոլար</displayName>
-				<symbol>HK$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="HNL">
 				<displayName>հոնդուրասական լեմպիրա</displayName>
 				<displayName count="one">հոնդուրասական լեմպիրա</displayName>
 				<displayName count="other">հոնդուրասական լեմպիրա</displayName>
-				<symbol>HNL</symbol>
 				<symbol alt="narrow" draft="contributed">L</symbol>
 			</currency>
 			<currency type="HRK">
 				<displayName>խորվաթական կունա</displayName>
 				<displayName count="one">խորվաթական կունա</displayName>
 				<displayName count="other">խորվաթական կունա</displayName>
-				<symbol>HRK</symbol>
-				<symbol alt="narrow" draft="contributed">kn</symbol>
 			</currency>
 			<currency type="HTG">
-				<displayName>հաիթյան գուրդ</displayName>
-				<displayName count="one">հաիթյան գուրդ</displayName>
-				<displayName count="other">հաիթյան գուրդ</displayName>
-				<symbol>HTG</symbol>
+				<displayName>հայիթյան գուրդ</displayName>
+				<displayName count="one">հայիթյան գուրդ</displayName>
+				<displayName count="other">հայիթյան գուրդ</displayName>
 			</currency>
 			<currency type="HUF">
 				<displayName>հունգարական ֆորինտ</displayName>
 				<displayName count="one">հունգարական ֆորինտ</displayName>
 				<displayName count="other">հունգարական ֆորինտ</displayName>
-				<symbol>HUF</symbol>
-				<symbol alt="narrow" draft="contributed">Ft</symbol>
 			</currency>
 			<currency type="IDR">
 				<displayName>ինդոնեզիական ռուփի</displayName>
 				<displayName count="one">ինդոնեզիական ռուփի</displayName>
 				<displayName count="other">ինդոնեզիական ռուփի</displayName>
-				<symbol>IDR</symbol>
-				<symbol alt="narrow" draft="contributed">Rp</symbol>
 			</currency>
 			<currency type="ILS">
 				<displayName>Իսրայելի նոր շեկել</displayName>
 				<displayName count="one">Իսրայելի նոր շեկել</displayName>
 				<displayName count="other">Իսրայելի նոր շեկել</displayName>
-				<symbol>₪</symbol>
-				<symbol alt="narrow" draft="contributed">₪</symbol>
 			</currency>
 			<currency type="INR">
 				<displayName>հնդկական ռուփի</displayName>
 				<displayName count="one">հնդկական ռուփի</displayName>
 				<displayName count="other">հնդկական ռուփի</displayName>
-				<symbol>₹</symbol>
-				<symbol alt="narrow" draft="contributed">₹</symbol>
 			</currency>
 			<currency type="IQD">
 				<displayName>իրաքյան դինար</displayName>
 				<displayName count="one">իրաքյան դինար</displayName>
 				<displayName count="other">իրաքյան դինար</displayName>
-				<symbol>IQD</symbol>
 			</currency>
 			<currency type="IRR">
 				<displayName>իրանական ռիալ</displayName>
 				<displayName count="one">իրանական ռիալ</displayName>
 				<displayName count="other">իրանական ռիալ</displayName>
-				<symbol>IRR</symbol>
 			</currency>
 			<currency type="ISK">
 				<displayName>իսլանդական կրոն</displayName>
 				<displayName count="one">իսլանդական կրոն</displayName>
 				<displayName count="other">իսլանդական կրոն</displayName>
-				<symbol>ISK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="JMD">
 				<displayName>Ճամայկայի դոլար</displayName>
 				<displayName count="one">Ճամայկայի դոլար</displayName>
 				<displayName count="other">Ճամայկայի դոլար</displayName>
-				<symbol>JMD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="JOD">
 				<displayName>հորդանանյան դինար</displayName>
 				<displayName count="one">հորդանանյան դինար</displayName>
 				<displayName count="other">հորդանանյան դինար</displayName>
-				<symbol>JOD</symbol>
 			</currency>
 			<currency type="JPY">
 				<displayName>ճապոնական իեն</displayName>
 				<displayName count="one">ճապոնական իեն</displayName>
 				<displayName count="other">ճապոնական իեն</displayName>
-				<symbol>JP¥</symbol>
-				<symbol alt="narrow" draft="contributed">¥</symbol>
 			</currency>
 			<currency type="KES">
 				<displayName>քենիական շիլինգ</displayName>
 				<displayName count="one">քենիական շիլինգ</displayName>
 				<displayName count="other">քենիական շիլինգ</displayName>
-				<symbol>KES</symbol>
 			</currency>
 			<currency type="KGS">
 				<displayName>ղրղզական սոմ</displayName>
 				<displayName count="one">ղրղզական սոմ</displayName>
 				<displayName count="other">ղրղզական սոմ</displayName>
-				<symbol>KGS</symbol>
 			</currency>
 			<currency type="KHR">
 				<displayName>կամբոջական ռիել</displayName>
 				<displayName count="one">կամբոջական ռիել</displayName>
 				<displayName count="other">կամբոջական ռիել</displayName>
-				<symbol>KHR</symbol>
-				<symbol alt="narrow" draft="contributed">៛</symbol>
 			</currency>
 			<currency type="KMF">
 				<displayName>կոմորյան ֆրանկ</displayName>
 				<displayName count="one">կոմորյան ֆրանկ</displayName>
 				<displayName count="other">կոմորյան ֆրանկ</displayName>
-				<symbol>KMF</symbol>
-				<symbol alt="narrow" draft="contributed">CF</symbol>
 			</currency>
 			<currency type="KPW">
 				<displayName>հյուսիսկորեական վոն</displayName>
 				<displayName count="one">հյուսիսկորեական վոն</displayName>
 				<displayName count="other">հյուսիսկորեական վոն</displayName>
-				<symbol>KPW</symbol>
-				<symbol alt="narrow" draft="contributed">₩</symbol>
 			</currency>
 			<currency type="KRW">
 				<displayName>հարավկորեական վոն</displayName>
 				<displayName count="one">հարավկորեական վոն</displayName>
 				<displayName count="other">հարավկորեական վոն</displayName>
-				<symbol>₩</symbol>
-				<symbol alt="narrow" draft="contributed">₩</symbol>
 			</currency>
 			<currency type="KWD">
 				<displayName>Քուվեյթի դինար</displayName>
 				<displayName count="one">Քուվեյթի դինար</displayName>
 				<displayName count="other">Քուվեյթի դինար</displayName>
-				<symbol>KWD</symbol>
 			</currency>
 			<currency type="KYD">
 				<displayName>Կայմանյան կղզիների դոլար</displayName>
 				<displayName count="one">Կայմանյան կղզիների դոլար</displayName>
 				<displayName count="other">Կայմանյան կղզիների դոլար</displayName>
-				<symbol>KYD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="KZT">
 				<displayName>ղազախական տենգե</displayName>
 				<displayName count="one">ղազախական տենգե</displayName>
 				<displayName count="other">ղազախական տենգե</displayName>
-				<symbol>KZT</symbol>
-				<symbol alt="narrow" draft="contributed">₸</symbol>
 			</currency>
 			<currency type="LAK">
 				<displayName>լաոսական կիպ</displayName>
 				<displayName count="one">լաոսական կիպ</displayName>
 				<displayName count="other">լաոսական կիպ</displayName>
-				<symbol>LAK</symbol>
-				<symbol alt="narrow" draft="contributed">₭</symbol>
 			</currency>
 			<currency type="LBP">
 				<displayName>լիբանանյան ֆունտ</displayName>
 				<displayName count="one">լիբանանյան ֆունտ</displayName>
 				<displayName count="other">լիբանանյան ֆունտ</displayName>
-				<symbol>LBP</symbol>
-				<symbol alt="narrow" draft="contributed">L£</symbol>
 			</currency>
 			<currency type="LKR">
 				<displayName>Շրի Լանկայի ռուփի</displayName>
 				<displayName count="one">Շրի Լանկայի ռուփի</displayName>
 				<displayName count="other">Շրի Լանկայի ռուփի</displayName>
-				<symbol>LKR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="LRD">
 				<displayName>լիբերիական դոլար</displayName>
 				<displayName count="one">լիբերիական դոլար</displayName>
 				<displayName count="other">լիբերիական դոլար</displayName>
-				<symbol>LRD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="LTL">
 				<displayName>Լիտվական լիտ</displayName>
 				<displayName count="one">Լիտվական լիտ</displayName>
 				<displayName count="other">Լիտվական լիտ</displayName>
-				<symbol>LTL</symbol>
 			</currency>
 			<currency type="LVL">
 				<displayName>Լատվիական լատ</displayName>
 				<displayName count="one">Լատվիական լատ</displayName>
 				<displayName count="other">Լատվիական լատ</displayName>
-				<symbol>LVL</symbol>
 			</currency>
 			<currency type="LYD">
 				<displayName>լիբիական դինար</displayName>
 				<displayName count="one">լիբիական դինար</displayName>
 				<displayName count="other">լիբիական դինար</displayName>
-				<symbol>LYD</symbol>
 			</currency>
 			<currency type="MAD">
 				<displayName>Մարոկկոյի դիրհամ</displayName>
 				<displayName count="one">Մարոկկոյի դիրհամ</displayName>
 				<displayName count="other">Մարոկկոյի դիրհամ</displayName>
-				<symbol>MAD</symbol>
 			</currency>
 			<currency type="MDL">
 				<displayName>մոլդովական լեյ</displayName>
 				<displayName count="one">մոլդովական լեյ</displayName>
 				<displayName count="other">մոլդովական լեյ</displayName>
-				<symbol>MDL</symbol>
 			</currency>
 			<currency type="MGA">
 				<displayName>Մադագասկարի արիարի</displayName>
 				<displayName count="one">Մադագասկարի արիարի</displayName>
 				<displayName count="other">Մադագասկարի արիարի</displayName>
-				<symbol>MGA</symbol>
-				<symbol alt="narrow" draft="contributed">Ar</symbol>
 			</currency>
 			<currency type="MKD">
 				<displayName>մակեդոնական դենար</displayName>
 				<displayName count="one">մակեդոնական դենար</displayName>
 				<displayName count="other">մակեդոնական դենար</displayName>
-				<symbol>MKD</symbol>
 			</currency>
 			<currency type="MMK">
 				<displayName>Մյանմայի կյատ</displayName>
 				<displayName count="one">Մյանմայի կյատ</displayName>
 				<displayName count="other">Մյանմայի կյատ</displayName>
-				<symbol>MMK</symbol>
-				<symbol alt="narrow" draft="contributed">K</symbol>
 			</currency>
 			<currency type="MNT">
 				<displayName>մոնղոլական տուգրիկ</displayName>
 				<displayName count="one">մոնղոլական տուգրիկ</displayName>
 				<displayName count="other">մոնղոլական տուգրիկ</displayName>
-				<symbol>MNT</symbol>
-				<symbol alt="narrow" draft="contributed">₮</symbol>
 			</currency>
 			<currency type="MOP">
 				<displayName>Մակաոյի պատակա</displayName>
 				<displayName count="one">Մակաոյի պատակա</displayName>
 				<displayName count="other">Մակաոյի պատակա</displayName>
-				<symbol>MOP</symbol>
 			</currency>
 			<currency type="MRO">
 				<displayName>մավրիտանական ուգիյա (1973–2017)</displayName>
 				<displayName count="one">մավրիտանական ուգիյա (1973–2017)</displayName>
 				<displayName count="other">մավրիտանական ուգիյա (1973–2017)</displayName>
-				<symbol>MRO</symbol>
 			</currency>
 			<currency type="MRU">
 				<displayName>մավրիտանական ուգիյա</displayName>
@@ -5242,338 +5189,262 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>մավրիկյան ռուփի</displayName>
 				<displayName count="one">մավրիկյան ռուփի</displayName>
 				<displayName count="other">մավրիկյան ռուփի</displayName>
-				<symbol>MUR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="MVR">
 				<displayName>մալդիվյան ռուֆիյա</displayName>
 				<displayName count="one">մալդիվյան ռուֆիյա</displayName>
 				<displayName count="other">մալդիվյան ռուֆիյա</displayName>
-				<symbol>MVR</symbol>
 			</currency>
 			<currency type="MWK">
 				<displayName>մալավիական կվաչա</displayName>
 				<displayName count="one">մալավիական կվաչա</displayName>
 				<displayName count="other">մալավիական կվաչա</displayName>
-				<symbol>MWK</symbol>
 			</currency>
 			<currency type="MXN">
 				<displayName>մեքսիկական պեսո</displayName>
 				<displayName count="one">մեքսիկական պեսո</displayName>
 				<displayName count="other">մեքսիկական պեսո</displayName>
-				<symbol>MX$</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="MYR">
 				<displayName>մալայզիական ռինգիտ</displayName>
 				<displayName count="one">մալայզիական ռինգիտ</displayName>
 				<displayName count="other">մալայզիական ռինգիտ</displayName>
-				<symbol>MYR</symbol>
-				<symbol alt="narrow" draft="contributed">RM</symbol>
 			</currency>
 			<currency type="MZN">
 				<displayName>մոզամբիկյան մետիկալ</displayName>
 				<displayName count="one">մոզամբիկյան մետիկալ</displayName>
 				<displayName count="other">մոզամբիկյան մետիկալ</displayName>
-				<symbol>MZN</symbol>
 			</currency>
 			<currency type="NAD">
 				<displayName>նամիբիական դոլար</displayName>
 				<displayName count="one">նամիբիական դոլար</displayName>
 				<displayName count="other">նամիբիական դոլար</displayName>
-				<symbol>NAD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="NGN">
 				<displayName>նիգերիական նայրա</displayName>
 				<displayName count="one">նիգերիական նայրա</displayName>
 				<displayName count="other">նիգերիական նայրա</displayName>
-				<symbol>NGN</symbol>
-				<symbol alt="narrow" draft="contributed">₦</symbol>
 			</currency>
 			<currency type="NIO">
 				<displayName>նիկարագուական կորդոբա</displayName>
 				<displayName count="one">նիկարագուական կորդոբա</displayName>
 				<displayName count="other">նիկարագուական կորդոբա</displayName>
-				<symbol>NIO</symbol>
 				<symbol alt="narrow" draft="contributed">C$</symbol>
 			</currency>
 			<currency type="NOK">
 				<displayName>նորվեգական կրոն</displayName>
 				<displayName count="one">նորվեգական կրոն</displayName>
 				<displayName count="other">նորվեգական կրոն</displayName>
-				<symbol>NOK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="NPR">
 				<displayName>Նեպալի ռուփի</displayName>
 				<displayName count="one">Նեպալի ռուփի</displayName>
 				<displayName count="other">Նեպալի ռուփի</displayName>
-				<symbol>NPR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="NZD">
 				<displayName>նորզելանդական դոլար</displayName>
 				<displayName count="one">նորզելանդական դոլար</displayName>
 				<displayName count="other">նորզելանդական դոլար</displayName>
-				<symbol>NZ$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="OMR">
 				<displayName>Օմանի ռիալ</displayName>
 				<displayName count="one">Օմանի ռիալ</displayName>
 				<displayName count="other">Օմանի ռիալ</displayName>
-				<symbol>OMR</symbol>
 			</currency>
 			<currency type="PAB">
 				<displayName>պանամական բալբոա</displayName>
 				<displayName count="one">պանամական բալբոա</displayName>
 				<displayName count="other">պանամական բալբոա</displayName>
-				<symbol>PAB</symbol>
 			</currency>
 			<currency type="PEN">
 				<displayName>Պերուի սոլ</displayName>
 				<displayName count="one">Պերուի սոլ</displayName>
 				<displayName count="other">Պերուի սոլ</displayName>
-				<symbol>PEN</symbol>
 			</currency>
 			<currency type="PGK">
 				<displayName>Պապուա Նոր Գվինեայի կինա</displayName>
 				<displayName count="one">Պապուա Նոր Գվինեայի կինա</displayName>
 				<displayName count="other">Պապուա Նոր Գվինեայի կինա</displayName>
-				<symbol>PGK</symbol>
 			</currency>
 			<currency type="PHP">
 				<displayName>ֆիլիպինյան պեսո</displayName>
 				<displayName count="one">ֆիլիպինյան պեսո</displayName>
 				<displayName count="other">ֆիլիպինյան պեսո</displayName>
-				<symbol>PHP</symbol>
-				<symbol alt="narrow" draft="contributed">₱</symbol>
 			</currency>
 			<currency type="PKR">
 				<displayName>պակիստանյան ռուփի</displayName>
 				<displayName count="one">պակիստանյան ռուփի</displayName>
 				<displayName count="other">պակիստանյան ռուփի</displayName>
-				<symbol>PKR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="PLN">
 				<displayName>լեհական զլոտի</displayName>
 				<displayName count="one">լեհական զլոտի</displayName>
 				<displayName count="other">լեհական զլոտի</displayName>
-				<symbol>PLN</symbol>
-				<symbol alt="narrow" draft="contributed">zł</symbol>
 			</currency>
 			<currency type="PYG">
 				<displayName>պարագվայական գուարանի</displayName>
 				<displayName count="one">պարագվայական գուարանի</displayName>
 				<displayName count="other">պարագվայական գուարանի</displayName>
-				<symbol>PYG</symbol>
-				<symbol alt="narrow" draft="contributed">₲</symbol>
 			</currency>
 			<currency type="QAR">
 				<displayName>Կատարի ռիալ</displayName>
 				<displayName count="one">Կատարի ռիալ</displayName>
 				<displayName count="other">Կատարի ռիալ</displayName>
-				<symbol>QAR</symbol>
 			</currency>
 			<currency type="RON">
 				<displayName>ռումինական լեյ</displayName>
 				<displayName count="one">ռումինական լեյ</displayName>
 				<displayName count="other">ռումինական լեյ</displayName>
-				<symbol>RON</symbol>
-				<symbol alt="narrow" draft="contributed">lei</symbol>
 			</currency>
 			<currency type="RSD">
 				<displayName>սերբական դինար</displayName>
 				<displayName count="one">սերբական դինար</displayName>
 				<displayName count="other">սերբական դինար</displayName>
-				<symbol>RSD</symbol>
 			</currency>
 			<currency type="RUB">
 				<displayName>ռուսական ռուբլի</displayName>
 				<displayName count="one">ռուսական ռուբլի</displayName>
 				<displayName count="other">ռուսական ռուբլի</displayName>
-				<symbol>RUB</symbol>
-				<symbol alt="narrow" draft="contributed">₽</symbol>
 			</currency>
 			<currency type="RWF">
 				<displayName>ռուանդական ֆրանկ</displayName>
 				<displayName count="one">ռուանդական ֆրանկ</displayName>
 				<displayName count="other">ռուանդական ֆրանկ</displayName>
-				<symbol>RWF</symbol>
-				<symbol alt="narrow" draft="contributed">RF</symbol>
 			</currency>
 			<currency type="SAR">
 				<displayName>Սաուդյան Արաբիայի ռիալ</displayName>
 				<displayName count="one">Սաուդյան Արաբիայի ռիալ</displayName>
 				<displayName count="other">Սաուդյան Արաբիայի ռիալ</displayName>
-				<symbol>SAR</symbol>
 			</currency>
 			<currency type="SBD">
 				<displayName>Սողոմոնյան կղզիների դոլար</displayName>
 				<displayName count="one">Սողոմոնյան կղզիների դոլար</displayName>
 				<displayName count="other">Սողոմոնյան կղզիների դոլար</displayName>
-				<symbol>SBD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="SCR">
 				<displayName>սեյշելյան ռուփի</displayName>
 				<displayName count="one">սեյշելյան ռուփի</displayName>
 				<displayName count="other">սեյշելյան ռուփի</displayName>
-				<symbol>SCR</symbol>
 			</currency>
 			<currency type="SDG">
 				<displayName>սուդանական ֆունտ</displayName>
 				<displayName count="one">սուդանական ֆունտ</displayName>
 				<displayName count="other">սուդանական ֆունտ</displayName>
-				<symbol>SDG</symbol>
 			</currency>
 			<currency type="SEK">
 				<displayName>շվեդական կրոն</displayName>
 				<displayName count="one">շվեդական կրոն</displayName>
 				<displayName count="other">շվեդական կրոն</displayName>
-				<symbol>SEK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="SGD">
 				<displayName>Սինգապուրի դոլար</displayName>
 				<displayName count="one">Սինգապուրի դոլար</displayName>
 				<displayName count="other">Սինգապուրի դոլար</displayName>
-				<symbol>SGD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="SHP">
 				<displayName>Սուրբ Հեղինեի ֆունտ</displayName>
 				<displayName count="one">Սուրբ Հեղինեի ֆունտ</displayName>
 				<displayName count="other">Սուրբ Հեղինեի ֆունտ</displayName>
-				<symbol>SHP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="SLL">
 				<displayName>Սիեռա Լեոնեի լեոնե</displayName>
 				<displayName count="one">Սիեռա Լեոնեի լեոնե</displayName>
 				<displayName count="other">Սիեռա Լեոնեի լեոնե</displayName>
-				<symbol>SLL</symbol>
 			</currency>
 			<currency type="SOS">
 				<displayName>սոմալիական շիլինգ</displayName>
 				<displayName count="one">սոմալիական շիլինգ</displayName>
 				<displayName count="other">սոմալիական շիլինգ</displayName>
-				<symbol>SOS</symbol>
 			</currency>
 			<currency type="SRD">
 				<displayName>սուրինամական դոլար</displayName>
 				<displayName count="one">սուրինամական դոլար</displayName>
 				<displayName count="other">սուրինամական դոլար</displayName>
-				<symbol>SRD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="SSP">
 				<displayName>հարավսուդանական ֆունտ</displayName>
 				<displayName count="one">հարավսուդանական ֆունտ</displayName>
 				<displayName count="other">հարավսուդանական ֆունտ</displayName>
-				<symbol>SSP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="STD">
 				<displayName>Սան Տոմե և Փրինսիպիի դոբրա (1977–2017)</displayName>
 				<displayName count="one">Սան Տոմե և Փրինսիպիի դոբրա (1977–2017)</displayName>
 				<displayName count="other">Սան Տոմե և Փրինսիպիի դոբրա (1977–2017)</displayName>
-				<symbol>STD</symbol>
 			</currency>
 			<currency type="STN">
 				<displayName>Սան Տոմե և Փրինսիպիի դոբրա</displayName>
 				<displayName count="one">Սան Տոմե և Փրինսիպիի դոբրա</displayName>
 				<displayName count="other">Սան Տոմե և Փրինսիպիի դոբրա</displayName>
-				<symbol draft="contributed">STN</symbol>
 				<symbol alt="narrow" draft="contributed">Db</symbol>
 			</currency>
 			<currency type="SYP">
 				<displayName>սիրիական ֆունտ</displayName>
 				<displayName count="one">սիրիական ֆունտ</displayName>
 				<displayName count="other">սիրիական ֆունտ</displayName>
-				<symbol>SYP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="SZL">
 				<displayName>սվազիլենդական լիլանգենի</displayName>
 				<displayName count="one">սվազիլենդական լիլանգենի</displayName>
 				<displayName count="other">սվազիլենդական լիլանգենի</displayName>
-				<symbol>SZL</symbol>
 			</currency>
 			<currency type="THB">
 				<displayName>թայլանդական բատ</displayName>
 				<displayName count="one">թայլանդական բատ</displayName>
 				<displayName count="other">թայլանդական բատ</displayName>
 				<symbol>฿</symbol>
-				<symbol alt="narrow" draft="contributed">฿</symbol>
 			</currency>
 			<currency type="TJS">
 				<displayName>տաջիկական սոմոնի</displayName>
 				<displayName count="one">տաջիկական սոմոնի</displayName>
 				<displayName count="other">տաջիկական սոմոնի</displayName>
-				<symbol>TJS</symbol>
 			</currency>
 			<currency type="TMT">
 				<displayName>թուրքմենական մանաթ</displayName>
 				<displayName count="one">թուրքմենական մանաթ</displayName>
 				<displayName count="other">թուրքմենական մանաթ</displayName>
-				<symbol>TMT</symbol>
 			</currency>
 			<currency type="TND">
 				<displayName>թունիսյան դինար</displayName>
 				<displayName count="one">թունիսյան դինար</displayName>
 				<displayName count="other">թունիսյան դինար</displayName>
-				<symbol>TND</symbol>
 			</currency>
 			<currency type="TOP">
 				<displayName>Տոնգայի պաանգա</displayName>
 				<displayName count="one">Տոնգայի պաանգա</displayName>
 				<displayName count="other">Տոնգայի պաանգա</displayName>
-				<symbol>TOP</symbol>
-				<symbol alt="narrow" draft="contributed">T$</symbol>
 			</currency>
 			<currency type="TRY">
 				<displayName>թուրքական լիրա</displayName>
 				<displayName count="one">թուրքական լիրա</displayName>
 				<displayName count="other">թուրքական լիրա</displayName>
-				<symbol>TRY</symbol>
-				<symbol alt="narrow" draft="contributed">₺</symbol>
-				<symbol alt="variant" draft="contributed">TL</symbol>
 			</currency>
 			<currency type="TTD">
 				<displayName>Տրինիդադ և Տոբագոյի դոլար</displayName>
 				<displayName count="one">Տրինիդադ և Տոբագոյի դոլար</displayName>
 				<displayName count="other">Տրինիդադ և Տոբագոյի դոլար</displayName>
-				<symbol>TTD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="TWD">
 				<displayName>թայվանական նոր դոլար</displayName>
 				<displayName count="one">թայվանական նոր դոլար</displayName>
 				<displayName count="other">թայվանական նոր դոլար</displayName>
-				<symbol>NT$</symbol>
 				<symbol alt="narrow" draft="contributed">NT$</symbol>
 			</currency>
 			<currency type="TZS">
 				<displayName>տանզանիական շիլինգ</displayName>
 				<displayName count="one">տանզանիական շիլինգ</displayName>
 				<displayName count="other">տանզանիական շիլինգ</displayName>
-				<symbol>TZS</symbol>
 			</currency>
 			<currency type="UAH">
 				<displayName>ուկրաինական գրիվնա</displayName>
 				<displayName count="one">ուկրաինական գրիվնա</displayName>
 				<displayName count="other">ուկրաինական գրիվնա</displayName>
-				<symbol>UAH</symbol>
-				<symbol alt="narrow" draft="contributed">₴</symbol>
 			</currency>
 			<currency type="UGX">
 				<displayName>ուգանդական շիլինգ</displayName>
 				<displayName count="one">ուգանդական շիլինգ</displayName>
 				<displayName count="other">ուգանդական շիլինգ</displayName>
-				<symbol>UGX</symbol>
 			</currency>
 			<currency type="USD">
 				<displayName>ԱՄՆ դոլար</displayName>
@@ -5586,65 +5457,57 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ուրուգվայական պեսո</displayName>
 				<displayName count="one">ուրուգվայական պեսո</displayName>
 				<displayName count="other">ուրուգվայական պեսո</displayName>
-				<symbol>UYU</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="UZS">
 				<displayName>ուզբեկական սոմ</displayName>
 				<displayName count="one">ուզբեկական սոմ</displayName>
 				<displayName count="other">ուզբեկական սոմ</displayName>
-				<symbol>UZS</symbol>
 			</currency>
 			<currency type="VEF">
+				<displayName>վենեսուելական բոլիվար (2008–2018)</displayName>
+				<displayName count="one">վենեսուելական բոլիվար (2008–2018)</displayName>
+				<displayName count="other">վենեսուելական բոլիվար (2008–2018)</displayName>
+			</currency>
+			<currency type="VES">
 				<displayName>վենեսուելական բոլիվար</displayName>
 				<displayName count="one">վենեսուելական բոլիվար</displayName>
 				<displayName count="other">վենեսուելական բոլիվար</displayName>
-				<symbol>VEF</symbol>
-				<symbol alt="narrow" draft="contributed">Bs</symbol>
 			</currency>
 			<currency type="VND">
 				<displayName>վիետնամական դոնգ</displayName>
 				<displayName count="one">վիետնամական դոնգ</displayName>
 				<displayName count="other">վիետնամական դոնգ</displayName>
-				<symbol>₫</symbol>
-				<symbol alt="narrow" draft="contributed">₫</symbol>
 			</currency>
 			<currency type="VUV">
 				<displayName>Վանուատուի վատու</displayName>
 				<displayName count="one">Վանուատուի վատու</displayName>
 				<displayName count="other">Վանուատուի վատու</displayName>
-				<symbol>VUV</symbol>
 			</currency>
 			<currency type="WST">
 				<displayName>սամոական տալա</displayName>
 				<displayName count="one">սամոական տալա</displayName>
 				<displayName count="other">սամոական տալա</displayName>
-				<symbol>WST</symbol>
 			</currency>
 			<currency type="XAF">
 				<displayName>Կենտրոնական Աֆրիկայի ԿՖԱ ֆրանկ</displayName>
 				<displayName count="one">Կենտրոնական Աֆրիկայի ԿՖԱ ֆրանկ</displayName>
 				<displayName count="other">Կենտրոնական Աֆրիկայի ԿՖԱ ֆրանկ</displayName>
-				<symbol>FCFA</symbol>
 			</currency>
 			<currency type="XCD">
 				<displayName>արևելակարիբյան դոլար</displayName>
 				<displayName count="one">արևելակարիբյան դոլար</displayName>
 				<displayName count="other">արևելակարիբյան դոլար</displayName>
-				<symbol>EC$</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="XOF">
 				<displayName>Արևմտյան Աֆրիկայի ԿՖԱ ֆրանկ</displayName>
 				<displayName count="one">Արևմտյան Աֆրիկայի ԿՖԱ ֆրանկ</displayName>
 				<displayName count="other">Արևմտյան Աֆրիկայի ԿՖԱ ֆրանկ</displayName>
-				<symbol>CFA</symbol>
 			</currency>
 			<currency type="XPF">
 				<displayName>ԿՊՖ ֆրանկ</displayName>
 				<displayName count="one">ԿՊՖ ֆրանկ</displayName>
 				<displayName count="other">ԿՊՖ ֆրանկ</displayName>
-				<symbol>CFPF</symbol>
 			</currency>
 			<currency type="XXX">
 				<displayName>անհայտ արժույթ</displayName>
@@ -5655,14 +5518,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>եմենական ռիալ</displayName>
 				<displayName count="one">եմենական ռիալ</displayName>
 				<displayName count="other">եմենական ռիալ</displayName>
-				<symbol>YER</symbol>
 			</currency>
 			<currency type="ZAR">
 				<displayName>հարավաֆրիկյան ռանդ</displayName>
 				<displayName count="one">հարավաֆրիկյան ռանդ</displayName>
 				<displayName count="other">հարավաֆրիկյան ռանդ</displayName>
-				<symbol>ZAR</symbol>
-				<symbol alt="narrow" draft="contributed">R</symbol>
 			</currency>
 			<currency type="ZMK">
 				<displayName>Զամբիական կվաչա (1968–2012)</displayName>
@@ -5673,12 +5533,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>զամբիական կվաչա</displayName>
 				<displayName count="one">զամբիական կվաչա</displayName>
 				<displayName count="other">զամբիական կվաչա</displayName>
-				<symbol>ZMW</symbol>
-				<symbol alt="narrow" draft="contributed">ZK</symbol>
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
+			<pattern type="approximately">~{0}</pattern>
 			<pattern type="atLeast">{0}+</pattern>
+			<pattern type="atMost">≤{0}</pattern>
 			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
 		<minimalPairs>
@@ -5778,6 +5638,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} քառակուսի դյույմ</unitPattern>
 				<perUnitPattern>{0} քառակուսի դյույմի վրա</perUnitPattern>
 			</unit>
+			<unit type="area-dunam">
+				<displayName>դունամներ</displayName>
+				<unitPattern count="one">{0} դունամ</unitPattern>
+				<unitPattern count="other">{0} դունամ</unitPattern>
+			</unit>
 			<unit type="concentr-karat">
 				<displayName>կարատ</displayName>
 				<unitPattern count="one">{0} կարատ</unitPattern>
@@ -5798,6 +5663,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} մասնիկ միլիոնի վրա</unitPattern>
 				<unitPattern count="other">{0} մասնիկ միլիոնի վրա</unitPattern>
 			</unit>
+			<unit type="concentr-percent">
+				<displayName>տոկոս</displayName>
+				<unitPattern count="one">{0} տոկոս</unitPattern>
+				<unitPattern count="other">{0} տոկոս</unitPattern>
+			</unit>
+			<unit type="concentr-permille">
+				<displayName>պրոմիլ</displayName>
+				<unitPattern count="one">{0} պրոմիլ</unitPattern>
+				<unitPattern count="other">{0} պրոմիլ</unitPattern>
+			</unit>
+			<unit type="concentr-permyriad">
+				<displayName>պերմիրիադ</displayName>
+				<unitPattern count="one">{0} պերմիրիադ</unitPattern>
+				<unitPattern count="other">{0} պերմիրիադ</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName>մոլեր</displayName>
+				<unitPattern count="one">{0} մոլ</unitPattern>
+				<unitPattern count="other">{0} մոլ</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>լիտրեր կիլոմետրի վրա</displayName>
 				<unitPattern count="one">{0} լիտր կիլոմետրի վրա</unitPattern>
@@ -5817,6 +5702,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>մղոններ անգլիական գալոնի վրա</displayName>
 				<unitPattern count="one">{0} մղոն անգլիական գալոնի վրա</unitPattern>
 				<unitPattern count="other">{0} մղոն անգլիական գալոնի վրա</unitPattern>
+			</unit>
+			<unit type="digital-petabyte">
+				<displayName>պետաբայթ</displayName>
+				<unitPattern count="one">{0} պետաբայթ</unitPattern>
+				<unitPattern count="other">{0} պետաբայթ</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>տերաբայթեր</displayName>
@@ -5980,6 +5870,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} կիլովատտ-ժամ</unitPattern>
 				<unitPattern count="other">{0} կիլովատտ-ժամ</unitPattern>
 			</unit>
+			<unit type="energy-electronvolt">
+				<displayName>էլեկտրոն-վոլտեր</displayName>
+				<unitPattern count="one">{0} էլեկտրոն-վոլտ</unitPattern>
+				<unitPattern count="other">{0} էլեկտրոն-վոլտ</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName>բրիտանական ջերմային միավորներ</displayName>
+				<unitPattern count="one">{0} բրիտանական ջերմային միավոր</unitPattern>
+				<unitPattern count="other">{0} բրիտանական ջերմային միավոր</unitPattern>
+			</unit>
+			<unit type="force-pound-force">
+				<displayName>ֆունտ-ուժեր</displayName>
+				<unitPattern count="one">{0} ֆունտ-ուժ</unitPattern>
+				<unitPattern count="other">{0} ֆունտ-ուժ</unitPattern>
+			</unit>
+			<unit type="force-newton">
+				<displayName>նյուտոններ</displayName>
+				<unitPattern count="one">{0} նյուտոն</unitPattern>
+				<unitPattern count="other">{0} նյուտոն</unitPattern>
+			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>գիգահերցեր</displayName>
 				<unitPattern count="one">{0} գիգահերց</unitPattern>
@@ -6095,10 +6005,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} կետ</unitPattern>
 				<unitPattern count="other">{0} կետ</unitPattern>
 			</unit>
+			<unit type="length-solar-radius">
+				<displayName>արեգակնային շառավիղներ</displayName>
+				<unitPattern count="one">{0} արեգակնային շառավիղ</unitPattern>
+				<unitPattern count="other">{0} արեգակնային շառավիղ</unitPattern>
+			</unit>
 			<unit type="light-lux">
 				<displayName>լյուքսեր</displayName>
 				<unitPattern count="one">{0} լյուքս</unitPattern>
 				<unitPattern count="other">{0} լյուքս</unitPattern>
+			</unit>
+			<unit type="light-solar-luminosity">
+				<displayName>արեգակնային լուսատվություններ</displayName>
+				<unitPattern count="one">{0} արեգակնային լուսատվություն</unitPattern>
+				<unitPattern count="other">{0} արեգակնային լուսատվություն</unitPattern>
 			</unit>
 			<unit type="mass-metric-ton">
 				<displayName>տոննաներ</displayName>
@@ -6153,6 +6073,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>կարատներ</displayName>
 				<unitPattern count="one">{0} կարատ</unitPattern>
 				<unitPattern count="other">{0} կարատ</unitPattern>
+			</unit>
+			<unit type="mass-dalton">
+				<displayName>դալտոններ</displayName>
+				<unitPattern count="one">{0} դալտոն</unitPattern>
+				<unitPattern count="other">{0} դալտոն</unitPattern>
+			</unit>
+			<unit type="mass-earth-mass">
+				<displayName>երկրային զանգվածներ</displayName>
+				<unitPattern count="one">{0} երկրային զանգված</unitPattern>
+				<unitPattern count="other">{0} արևային զանգված</unitPattern>
+			</unit>
+			<unit type="mass-solar-mass">
+				<displayName>արեգակնային զանգվածներ</displayName>
+				<unitPattern count="one">{0} արեգակնային զանգված</unitPattern>
+				<unitPattern count="other">{0} արեգակնային զանգված</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>գիգավատտեր</displayName>
@@ -6209,6 +6144,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} միլիբար</unitPattern>
 				<unitPattern count="other">{0} միլիբար</unitPattern>
 			</unit>
+			<unit type="pressure-atmosphere">
+				<displayName>մթնոլորտներ</displayName>
+				<unitPattern count="one">{0} մթնոլորտ</unitPattern>
+				<unitPattern count="other">{0} մթնոլորտ</unitPattern>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<displayName>կիլոպասկալներ</displayName>
+				<unitPattern count="one">{0} կիլոպասկալ</unitPattern>
+				<unitPattern count="other">{0} կիլոպասկալ</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<displayName>մեգապասկալներ</displayName>
+				<unitPattern count="one">{0} ՄՊա</unitPattern>
+				<unitPattern count="other">{0} մեգապասկալ</unitPattern>
+			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>կիլոմետրեր ժամում</displayName>
 				<unitPattern count="one">{0} կիլոմետր ժամում</unitPattern>
@@ -6248,6 +6198,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>կելվիններ</displayName>
 				<unitPattern count="one">{0} կելվին</unitPattern>
 				<unitPattern count="other">{0} կելվին</unitPattern>
+			</unit>
+			<unit type="torque-pound-foot">
+				<displayName>ֆունտ-ֆուտեր</displayName>
+				<unitPattern count="one">{0} ֆունտ-ֆուտ</unitPattern>
+				<unitPattern count="other">{0} ֆունտ-ֆուտ</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<displayName>նյուտոն-մետրեր</displayName>
+				<unitPattern count="one">{0} նյուտոն-մետր</unitPattern>
+				<unitPattern count="other">{0} նյուտոն-մետր</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<displayName>խորանարդ կիլոմետրեր</displayName>
@@ -6364,6 +6324,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} հեղուկ ունցիա</unitPattern>
 				<unitPattern count="other">{0} հեղուկ ունցիա</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName>անգլիական հեղուկ ունցիաներ</displayName>
+				<unitPattern count="one">{0} անգլիական հեղուկ ունցիա</unitPattern>
+				<unitPattern count="other">{0} անգլիական հեղուկ ունցիա</unitPattern>
+			</unit>
 			<unit type="volume-tablespoon">
 				<displayName>ճաշի գդալ</displayName>
 				<unitPattern count="one">{0} ճաշի գդալ</unitPattern>
@@ -6374,7 +6339,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} թեյի գդալ</unitPattern>
 				<unitPattern count="other">{0} թեյի գդալ</unitPattern>
 			</unit>
+			<unit type="volume-barrel">
+				<displayName>բարելներ</displayName>
+				<unitPattern count="one">{0} բարել</unitPattern>
+				<unitPattern count="other">{0} բարել</unitPattern>
+			</unit>
 			<coordinateUnit>
+				<displayName>ուղղություն</displayName>
 				<coordinateUnitPattern type="east">արևելյան երկարության {0}</coordinateUnitPattern>
 				<coordinateUnitPattern type="north">հյուսիսային լայնության {0}</coordinateUnitPattern>
 				<coordinateUnitPattern type="south">հարավային լայնության {0}</coordinateUnitPattern>
@@ -6470,6 +6441,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} դյմ²</unitPattern>
 				<perUnitPattern>{0}/դյմ²</perUnitPattern>
 			</unit>
+			<unit type="area-dunam">
+				<displayName>դունամ</displayName>
+				<unitPattern count="one">{0} դունամ</unitPattern>
+				<unitPattern count="other">{0} դունամ</unitPattern>
+			</unit>
 			<unit type="concentr-karat">
 				<displayName>կար</displayName>
 				<unitPattern count="one">{0} կար</unitPattern>
@@ -6490,6 +6466,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} մասնիկ/միլիոն</unitPattern>
 				<unitPattern count="other">{0} մասնիկ/միլիոն</unitPattern>
 			</unit>
+			<unit type="concentr-percent">
+				<displayName>տոկոս</displayName>
+				<unitPattern count="one">{0}%</unitPattern>
+				<unitPattern count="other">{0}%</unitPattern>
+			</unit>
+			<unit type="concentr-permille">
+				<displayName>պրոմիլ</displayName>
+				<unitPattern count="one">{0}‰</unitPattern>
+				<unitPattern count="other">{0}‰</unitPattern>
+			</unit>
+			<unit type="concentr-permyriad">
+				<displayName>‱</displayName>
+				<unitPattern count="one">{0}‱</unitPattern>
+				<unitPattern count="other">{0}‱</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName>մոլ</displayName>
+				<unitPattern count="one">{0} մոլ</unitPattern>
+				<unitPattern count="other">{0} մոլ</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>լ/կմ</displayName>
 				<unitPattern count="one">{0} լ/կմ</unitPattern>
@@ -6509,6 +6505,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>մղ/անգլ․ գալ</displayName>
 				<unitPattern count="one">{0} մղ/անգլ․ գալ</unitPattern>
 				<unitPattern count="other">{0} մղ/անգլ․ գալ</unitPattern>
+			</unit>
+			<unit type="digital-petabyte">
+				<displayName>պետաբայթ</displayName>
+				<unitPattern count="one">{0} ՊԲ</unitPattern>
+				<unitPattern count="other">{0} ՊԲ</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>ՏԲ</displayName>
@@ -6672,6 +6673,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} կՎտ·ժ</unitPattern>
 				<unitPattern count="other">{0} կՎտ·ժ</unitPattern>
 			</unit>
+			<unit type="energy-electronvolt">
+				<displayName>էՎ</displayName>
+				<unitPattern count="one">{0} էՎ</unitPattern>
+				<unitPattern count="other">{0} էՎ</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName>Btu</displayName>
+				<unitPattern count="one" draft="contributed">{0} Btu</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} Btu</unitPattern>
+			</unit>
+			<unit type="force-pound-force">
+				<displayName>ֆնտ․ ու․</displayName>
+				<unitPattern count="one">{0} ֆնտ․ ու․</unitPattern>
+				<unitPattern count="other">{0} ֆնտ․ ու․</unitPattern>
+			</unit>
+			<unit type="force-newton">
+				<displayName>Ն</displayName>
+				<unitPattern count="one">{0} Ն</unitPattern>
+				<unitPattern count="other">{0} Ն</unitPattern>
+			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>ԳՀց</displayName>
 				<unitPattern count="one">{0} ԳՀց</unitPattern>
@@ -6787,10 +6808,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} կտ</unitPattern>
 				<unitPattern count="other">{0} կտ</unitPattern>
 			</unit>
+			<unit type="length-solar-radius">
+				<displayName>R☉</displayName>
+				<unitPattern count="one">{0} R☉</unitPattern>
+				<unitPattern count="other">{0} R☉</unitPattern>
+			</unit>
 			<unit type="light-lux">
 				<displayName>լք</displayName>
 				<unitPattern count="one">{0} լք</unitPattern>
 				<unitPattern count="other">{0} լք</unitPattern>
+			</unit>
+			<unit type="light-solar-luminosity">
+				<displayName>L☉</displayName>
+				<unitPattern count="one" draft="contributed">{0} L☉</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} L☉</unitPattern>
 			</unit>
 			<unit type="mass-metric-ton">
 				<displayName>տ</displayName>
@@ -6845,6 +6876,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>կար</displayName>
 				<unitPattern count="one">{0} կար</unitPattern>
 				<unitPattern count="other">{0} կար</unitPattern>
+			</unit>
+			<unit type="mass-dalton">
+				<displayName>դա</displayName>
+				<unitPattern count="one">{0} դա</unitPattern>
+				<unitPattern count="other">{0} դա</unitPattern>
+			</unit>
+			<unit type="mass-earth-mass">
+				<displayName>M⊕</displayName>
+				<unitPattern count="one" draft="contributed">{0} M⊕</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} M⊕</unitPattern>
+			</unit>
+			<unit type="mass-solar-mass">
+				<displayName>M☉</displayName>
+				<unitPattern count="one" draft="contributed">{0} M☉</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} M☉</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>ԳՎտ</displayName>
@@ -6901,6 +6947,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} մբար</unitPattern>
 				<unitPattern count="other">{0} մբար</unitPattern>
 			</unit>
+			<unit type="pressure-atmosphere">
+				<displayName>մթն</displayName>
+				<unitPattern count="one">{0} մթն</unitPattern>
+				<unitPattern count="other">{0} մթն</unitPattern>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<displayName>կՊա</displayName>
+				<unitPattern count="one">{0} կՊա</unitPattern>
+				<unitPattern count="other">{0} կՊա</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<displayName>ՄՊա</displayName>
+				<unitPattern count="one">{0} ՄՊա</unitPattern>
+				<unitPattern count="other">{0} ՄՊա</unitPattern>
+			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>կմ/ժ</displayName>
 				<unitPattern count="one">{0} կմ/ժ</unitPattern>
@@ -6940,6 +7001,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Կ</displayName>
 				<unitPattern count="one">{0} Կ</unitPattern>
 				<unitPattern count="other">{0} Կ</unitPattern>
+			</unit>
+			<unit type="torque-pound-foot">
+				<displayName>ֆնտ-ֆտ</displayName>
+				<unitPattern count="one">{0} ֆնտ-ֆտ</unitPattern>
+				<unitPattern count="other">{0} ֆնտ-ֆտ</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<displayName>Ն·մ</displayName>
+				<unitPattern count="one">{0} Ն·մ</unitPattern>
+				<unitPattern count="other">{0} Ն·մ</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<displayName>կմ³</displayName>
@@ -7056,6 +7127,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} հղ. ունց․</unitPattern>
 				<unitPattern count="other">{0} հղ. ունց․</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName>ա․ հ․ ու․</displayName>
+				<unitPattern count="one">{0} ա․ հ․ ու․</unitPattern>
+				<unitPattern count="other">{0} ա․ հ․ ու․</unitPattern>
+			</unit>
 			<unit type="volume-tablespoon">
 				<displayName>ճգ.</displayName>
 				<unitPattern count="one">{0} ճգ.</unitPattern>
@@ -7066,7 +7142,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} թգ.</unitPattern>
 				<unitPattern count="other">{0} թգ.</unitPattern>
 			</unit>
+			<unit type="volume-barrel">
+				<displayName>բարել</displayName>
+				<unitPattern count="one">{0} բարել</unitPattern>
+				<unitPattern count="other">{0} բարել</unitPattern>
+			</unit>
 			<coordinateUnit>
+				<displayName>ուղղություն</displayName>
 				<coordinateUnitPattern type="east">{0} ավ․ ե․</coordinateUnitPattern>
 				<coordinateUnitPattern type="north">{0} հս․ լ․</coordinateUnitPattern>
 				<coordinateUnitPattern type="south">{0} հվ․ լ․</coordinateUnitPattern>
@@ -7116,6 +7198,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="area-square-foot">
 				<unitPattern count="one">{0}ֆտ²</unitPattern>
 				<unitPattern count="other">{0}ֆտ²</unitPattern>
+			</unit>
+			<unit type="concentr-percent">
+				<displayName>%</displayName>
+				<unitPattern count="one">{0}%</unitPattern>
+				<unitPattern count="other">{0}%</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100kilometers">
 				<displayName>լ/100 կմ</displayName>
@@ -7284,6 +7371,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} լ</unitPattern>
 			</unit>
 			<coordinateUnit>
+				<displayName>ուղղ․</displayName>
 				<coordinateUnitPattern type="east">{0} ավ․ ե․</coordinateUnitPattern>
 				<coordinateUnitPattern type="north">{0} հս․ լ․</coordinateUnitPattern>
 				<coordinateUnitPattern type="south">{0} հվ․ լ․</coordinateUnitPattern>
@@ -7312,6 +7400,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0} կամ {1}</listPatternPart>
 			<listPatternPart type="2">{0} կամ {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-narrow">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} և {1}</listPatternPart>
+			<listPatternPart type="2">{0} և {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="standard-short">
 			<listPatternPart type="start">{0}, {1}</listPatternPart>
@@ -7443,4 +7537,74 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabel type="western_asian_scripts">Արևմտաասիական գրեր</characterLabel>
 		<characterLabel type="whitespace">Բացատներ</characterLabel>
 	</characterLabels>
+	<typographicNames>
+		<axisName type="ital">շեղագիր</axisName>
+		<axisName type="opsz">օպտիկական չափ</axisName>
+		<axisName type="slnt">թեքություն</axisName>
+		<axisName type="wdth">լայնություն</axisName>
+		<axisName type="wght">հագեցվածություն</axisName>
+		<styleName type="ital" subtype="1">ձեռագիր</styleName>
+		<styleName type="opsz" subtype="8">ենթագիր</styleName>
+		<styleName type="opsz" subtype="12">տեքստ</styleName>
+		<styleName type="opsz" subtype="18">տիտղոսային</styleName>
+		<styleName type="opsz" subtype="72">մոնիտոր</styleName>
+		<styleName type="opsz" subtype="144">պաստառ</styleName>
+		<styleName type="slnt" subtype="-12">թեք շեղագիր</styleName>
+		<styleName type="slnt" subtype="0">ուղիղ</styleName>
+		<styleName type="slnt" subtype="12">թեք</styleName>
+		<styleName type="slnt" subtype="24">գերթեք</styleName>
+		<styleName type="wdth" subtype="50">ուլտրասեղմված</styleName>
+		<styleName type="wdth" subtype="50" alt="compressed">ուլտրանեղացված</styleName>
+		<styleName type="wdth" subtype="50" alt="narrow">ուլտրանեղ</styleName>
+		<styleName type="wdth" subtype="62.5">գերսեղմված</styleName>
+		<styleName type="wdth" subtype="62.5" alt="compressed">գերնեղացված</styleName>
+		<styleName type="wdth" subtype="62.5" alt="narrow">ուլտրանեղ</styleName>
+		<styleName type="wdth" subtype="75">սեղմված</styleName>
+		<styleName type="wdth" subtype="75" alt="compressed">նեղացված</styleName>
+		<styleName type="wdth" subtype="75" alt="narrow">նեղացված</styleName>
+		<styleName type="wdth" subtype="87.5">կիսասեղմված</styleName>
+		<styleName type="wdth" subtype="87.5" alt="compressed">կիսանեղացված</styleName>
+		<styleName type="wdth" subtype="87.5" alt="narrow">կիսանեղ</styleName>
+		<styleName type="wdth" subtype="100">նորմալ</styleName>
+		<styleName type="wdth" subtype="112.5">կիսալայնացված</styleName>
+		<styleName type="wdth" subtype="112.5" alt="extended">կիսաձգված</styleName>
+		<styleName type="wdth" subtype="112.5" alt="wide">կիսալայն</styleName>
+		<styleName type="wdth" subtype="125">լայնացված</styleName>
+		<styleName type="wdth" subtype="125" alt="extended">ձգված</styleName>
+		<styleName type="wdth" subtype="125" alt="wide">լայն</styleName>
+		<styleName type="wdth" subtype="150">գերլայնացված</styleName>
+		<styleName type="wdth" subtype="150" alt="extended">գերձգված</styleName>
+		<styleName type="wdth" subtype="150" alt="wide">գերլայն</styleName>
+		<styleName type="wdth" subtype="200">ուլտրալայնացված</styleName>
+		<styleName type="wdth" subtype="200" alt="extended">ուլտրաձգված</styleName>
+		<styleName type="wdth" subtype="200" alt="wide">ուլտրալայն</styleName>
+		<styleName type="wght" subtype="100">բարակ</styleName>
+		<styleName type="wght" subtype="200">գերթեթև</styleName>
+		<styleName type="wght" subtype="200" alt="ultra">ուլտրաթեթև</styleName>
+		<styleName type="wght" subtype="300">թեթև</styleName>
+		<styleName type="wght" subtype="350">կիսաթեթև</styleName>
+		<styleName type="wght" subtype="380">գրքային</styleName>
+		<styleName type="wght" subtype="400">սովորական</styleName>
+		<styleName type="wght" subtype="500">միջին</styleName>
+		<styleName type="wght" subtype="600">կիսաթավ</styleName>
+		<styleName type="wght" subtype="600" alt="demi">միջին թավության</styleName>
+		<styleName type="wght" subtype="700">թավ</styleName>
+		<styleName type="wght" subtype="800">գերթավ</styleName>
+		<styleName type="wght" subtype="900">սև</styleName>
+		<styleName type="wght" subtype="900" alt="heavy">ծանր</styleName>
+		<styleName type="wght" subtype="950">գերսև</styleName>
+		<styleName type="wght" subtype="950" alt="ultrablack">ուլտրասև</styleName>
+		<styleName type="wght" subtype="950" alt="ultraheavy">ուլտրածանր</styleName>
+		<featureName type="afrc">ուղղաձիգ կոտորակներ</featureName>
+		<featureName type="cpsp">գլխատառերի միջև բացատներ</featureName>
+		<featureName type="dlig">ոչ պարտադիր կցագրեր</featureName>
+		<featureName type="frac">շեղ կոտորակներ</featureName>
+		<featureName type="lnum">թվանշանների հավասարեցում</featureName>
+		<featureName type="onum">հնաոճ տարրեր</featureName>
+		<featureName type="ordn">դասական թվականներ</featureName>
+		<featureName type="pnum">համաչափ թվանշաններ</featureName>
+		<featureName type="smcp">փոքր գլխատառեր</featureName>
+		<featureName type="tnum">աղյուսակային թվանշաններ</featureName>
+		<featureName type="zero">զրո</featureName>
+	</typographicNames>
 </ldml>

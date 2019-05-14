@@ -25,8 +25,8 @@
 #ifndef SHARE_GC_G1_G1FULLGCOOPCLOSURES_HPP
 #define SHARE_GC_G1_G1FULLGCOOPCLOSURES_HPP
 
+#include "gc/shared/verifyOption.hpp"
 #include "memory/iterator.hpp"
-#include "memory/universe.hpp"
 
 class G1CollectedHeap;
 class G1FullCollector;

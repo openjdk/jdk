@@ -24,12 +24,13 @@
 /* @test
  * @bug 8081678 8131155
  * @summary Tests for stream returning methods
- * @library /lib/testlibrary/bootlib
+ * @library /lib/testlibrary/bootlib /test/lib
  * @build java.base/java.util.stream.OpTestCase
  * @run testng/othervm NetworkInterfaceStreamTest
  * @run testng/othervm -Djava.net.preferIPv4Stack=true NetworkInterfaceStreamTest
  */
 
+import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
 import java.net.InetAddress;
@@ -43,9 +44,16 @@ import java.util.stream.OpTestCase;
 import java.util.stream.Stream;
 import java.util.stream.TestData;
 
+import jdk.test.lib.net.IPSupport;
+
 public class NetworkInterfaceStreamTest extends OpTestCase {
 
     private final static boolean IS_WINDOWS = System.getProperty("os.name").startsWith("Windows");
+
+    @BeforeTest
+    void setup() {
+        IPSupport.throwSkippedExceptionIfNonOperational();
+    }
 
     @Test
     public void testNetworkInterfaces() throws SocketException {

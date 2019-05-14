@@ -88,7 +88,7 @@ class StubCodeDesc: public CHeapObj<mtCode> {
   int         size_in_bytes() const              { return _end - _begin; }
   bool        contains(address pc) const         { return _begin <= pc && pc < _end; }
   void        print_on(outputStream* st) const;
-  void        print() const                      { print_on(tty); }
+  void        print() const;
 };
 
 // The base class for all stub-generating code generators.

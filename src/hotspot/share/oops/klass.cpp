@@ -39,6 +39,7 @@
 #include "memory/metaspaceShared.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/universe.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
@@ -805,11 +806,6 @@ void Klass::verify_on(outputStream* st) {
 void Klass::oop_verify_on(oop obj, outputStream* st) {
   guarantee(oopDesc::is_oop(obj),  "should be oop");
   guarantee(obj->klass()->is_klass(), "klass field is not a klass");
-}
-
-Klass* Klass::decode_klass_raw(narrowKlass narrow_klass) {
-  return (Klass*)(void*)( (uintptr_t)Universe::narrow_klass_base() +
-                         ((uintptr_t)narrow_klass << Universe::narrow_klass_shift()));
 }
 
 bool Klass::is_valid(Klass* k) {

@@ -1662,7 +1662,7 @@ bool Matcher::const_klass_prefer_decode() {
   // TODO: Either support matching DecodeNKlass (heap-based) in operand
   //       or condisider the following:
   // Prefer ConNKlass+DecodeNKlass over ConP in simple compressed klass mode.
-  //return Universe::narrow_klass_base() == NULL;
+  //return CompressedKlassPointers::base() == NULL;
   return true;
 }
 
@@ -3914,9 +3914,9 @@ operand indPosIndexScaleOffset(any_RegP reg, immL32 off, rRegI idx, immI2 scale)
 
 // Indirect Narrow Oop Plus Offset Operand
 // Note: x86 architecture doesn't support "scale * index + offset" without a base
-// we can't free r12 even with Universe::narrow_oop_base() == NULL.
+// we can't free r12 even with CompressedOops::base() == NULL.
 operand indCompressedOopOffset(rRegN reg, immL32 off) %{
-  predicate(UseCompressedOops && (Universe::narrow_oop_shift() == Address::times_8));
+  predicate(UseCompressedOops && (CompressedOops::shift() == Address::times_8));
   constraint(ALLOC_IN_RC(ptr_reg));
   match(AddP (DecodeN reg) off);
 
@@ -3933,7 +3933,7 @@ operand indCompressedOopOffset(rRegN reg, immL32 off) %{
 // Indirect Memory Operand
 operand indirectNarrow(rRegN reg)
 %{
-  predicate(Universe::narrow_oop_shift() == 0);
+  predicate(CompressedOops::shift() == 0);
   constraint(ALLOC_IN_RC(ptr_reg));
   match(DecodeN reg);
 
@@ -3949,7 +3949,7 @@ operand indirectNarrow(rRegN reg)
 // Indirect Memory Plus Short Offset Operand
 operand indOffset8Narrow(rRegN reg, immL8 off)
 %{
-  predicate(Universe::narrow_oop_shift() == 0);
+  predicate(CompressedOops::shift() == 0);
   constraint(ALLOC_IN_RC(ptr_reg));
   match(AddP (DecodeN reg) off);
 
@@ -3965,7 +3965,7 @@ operand indOffset8Narrow(rRegN reg, immL8 off)
 // Indirect Memory Plus Long Offset Operand
 operand indOffset32Narrow(rRegN reg, immL32 off)
 %{
-  predicate(Universe::narrow_oop_shift() == 0);
+  predicate(CompressedOops::shift() == 0);
   constraint(ALLOC_IN_RC(ptr_reg));
   match(AddP (DecodeN reg) off);
 
@@ -3981,7 +3981,7 @@ operand indOffset32Narrow(rRegN reg, immL32 off)
 // Indirect Memory Plus Index Register Plus Offset Operand
 operand indIndexOffsetNarrow(rRegN reg, rRegL lreg, immL32 off)
 %{
-  predicate(Universe::narrow_oop_shift() == 0);
+  predicate(CompressedOops::shift() == 0);
   constraint(ALLOC_IN_RC(ptr_reg));
   match(AddP (AddP (DecodeN reg) lreg) off);
 
@@ -3998,7 +3998,7 @@ operand indIndexOffsetNarrow(rRegN reg, rRegL lreg, immL32 off)
 // Indirect Memory Plus Index Register Plus Offset Operand
 operand indIndexNarrow(rRegN reg, rRegL lreg)
 %{
-  predicate(Universe::narrow_oop_shift() == 0);
+  predicate(CompressedOops::shift() == 0);
   constraint(ALLOC_IN_RC(ptr_reg));
   match(AddP (DecodeN reg) lreg);
 
@@ -4015,7 +4015,7 @@ operand indIndexNarrow(rRegN reg, rRegL lreg)
 // Indirect Memory Times Scale Plus Index Register
 operand indIndexScaleNarrow(rRegN reg, rRegL lreg, immI2 scale)
 %{
-  predicate(Universe::narrow_oop_shift() == 0);
+  predicate(CompressedOops::shift() == 0);
   constraint(ALLOC_IN_RC(ptr_reg));
   match(AddP (DecodeN reg) (LShiftL lreg scale));
 
@@ -4032,7 +4032,7 @@ operand indIndexScaleNarrow(rRegN reg, rRegL lreg, immI2 scale)
 // Indirect Memory Times Scale Plus Index Register Plus Offset Operand
 operand indIndexScaleOffsetNarrow(rRegN reg, immL32 off, rRegL lreg, immI2 scale)
 %{
-  predicate(Universe::narrow_oop_shift() == 0);
+  predicate(CompressedOops::shift() == 0);
   constraint(ALLOC_IN_RC(ptr_reg));
   match(AddP (AddP (DecodeN reg) (LShiftL lreg scale)) off);
 
@@ -4050,7 +4050,7 @@ operand indIndexScaleOffsetNarrow(rRegN reg, immL32 off, rRegL lreg, immI2 scale
 operand indPosIndexOffsetNarrow(rRegN reg, immL32 off, rRegI idx)
 %{
   constraint(ALLOC_IN_RC(ptr_reg));
-  predicate(Universe::narrow_oop_shift() == 0 && n->in(2)->in(3)->as_Type()->type()->is_long()->_lo >= 0);
+  predicate(CompressedOops::shift() == 0 && n->in(2)->in(3)->as_Type()->type()->is_long()->_lo >= 0);
   match(AddP (AddP (DecodeN reg) (ConvI2L idx)) off);
 
   op_cost(10);
@@ -4067,7 +4067,7 @@ operand indPosIndexOffsetNarrow(rRegN reg, immL32 off, rRegI idx)
 operand indPosIndexScaleOffsetNarrow(rRegN reg, immL32 off, rRegI idx, immI2 scale)
 %{
   constraint(ALLOC_IN_RC(ptr_reg));
-  predicate(Universe::narrow_oop_shift() == 0 && n->in(2)->in(3)->in(1)->as_Type()->type()->is_long()->_lo >= 0);
+  predicate(CompressedOops::shift() == 0 && n->in(2)->in(3)->in(1)->as_Type()->type()->is_long()->_lo >= 0);
   match(AddP (AddP (DecodeN reg) (LShiftL (ConvI2L idx) scale)) off);
 
   op_cost(10);
@@ -5752,7 +5752,7 @@ instruct leaPPosIdxScaleOff(rRegP dst, indPosIndexScaleOffset mem)
 // Load Effective Address which uses Narrow (32-bits) oop
 instruct leaPCompressedOopOffset(rRegP dst, indCompressedOopOffset mem)
 %{
-  predicate(UseCompressedOops && (Universe::narrow_oop_shift() != 0));
+  predicate(UseCompressedOops && (CompressedOops::shift() != 0));
   match(Set dst mem);
 
   ins_cost(110);
@@ -5764,7 +5764,7 @@ instruct leaPCompressedOopOffset(rRegP dst, indCompressedOopOffset mem)
 
 instruct leaP8Narrow(rRegP dst, indOffset8Narrow mem)
 %{
-  predicate(Universe::narrow_oop_shift() == 0);
+  predicate(CompressedOops::shift() == 0);
   match(Set dst mem);
 
   ins_cost(110); // XXX
@@ -5776,7 +5776,7 @@ instruct leaP8Narrow(rRegP dst, indOffset8Narrow mem)
 
 instruct leaP32Narrow(rRegP dst, indOffset32Narrow mem)
 %{
-  predicate(Universe::narrow_oop_shift() == 0);
+  predicate(CompressedOops::shift() == 0);
   match(Set dst mem);
 
   ins_cost(110);
@@ -5788,7 +5788,7 @@ instruct leaP32Narrow(rRegP dst, indOffset32Narrow mem)
 
 instruct leaPIdxOffNarrow(rRegP dst, indIndexOffsetNarrow mem)
 %{
-  predicate(Universe::narrow_oop_shift() == 0);
+  predicate(CompressedOops::shift() == 0);
   match(Set dst mem);
 
   ins_cost(110);
@@ -5800,7 +5800,7 @@ instruct leaPIdxOffNarrow(rRegP dst, indIndexOffsetNarrow mem)
 
 instruct leaPIdxScaleNarrow(rRegP dst, indIndexScaleNarrow mem)
 %{
-  predicate(Universe::narrow_oop_shift() == 0);
+  predicate(CompressedOops::shift() == 0);
   match(Set dst mem);
 
   ins_cost(110);
@@ -5812,7 +5812,7 @@ instruct leaPIdxScaleNarrow(rRegP dst, indIndexScaleNarrow mem)
 
 instruct leaPIdxScaleOffNarrow(rRegP dst, indIndexScaleOffsetNarrow mem)
 %{
-  predicate(Universe::narrow_oop_shift() == 0);
+  predicate(CompressedOops::shift() == 0);
   match(Set dst mem);
 
   ins_cost(110);
@@ -5824,7 +5824,7 @@ instruct leaPIdxScaleOffNarrow(rRegP dst, indIndexScaleOffsetNarrow mem)
 
 instruct leaPPosIdxOffNarrow(rRegP dst, indPosIndexOffsetNarrow mem)
 %{
-  predicate(Universe::narrow_oop_shift() == 0);
+  predicate(CompressedOops::shift() == 0);
   match(Set dst mem);
 
   ins_cost(110);
@@ -5836,7 +5836,7 @@ instruct leaPPosIdxOffNarrow(rRegP dst, indPosIndexOffsetNarrow mem)
 
 instruct leaPPosIdxScaleOffNarrow(rRegP dst, indPosIndexScaleOffsetNarrow mem)
 %{
-  predicate(Universe::narrow_oop_shift() == 0);
+  predicate(CompressedOops::shift() == 0);
   match(Set dst mem);
 
   ins_cost(110);
@@ -6200,7 +6200,7 @@ instruct storeP(memory mem, any_RegP src)
 
 instruct storeImmP0(memory mem, immP0 zero)
 %{
-  predicate(UseCompressedOops && (Universe::narrow_oop_base() == NULL) && (Universe::narrow_klass_base() == NULL));
+  predicate(UseCompressedOops && (CompressedOops::base() == NULL) && (CompressedKlassPointers::base() == NULL));
   match(Set mem (StoreP mem zero));
 
   ins_cost(125); // XXX
@@ -6250,7 +6250,7 @@ instruct storeNKlass(memory mem, rRegN src)
 
 instruct storeImmN0(memory mem, immN0 zero)
 %{
-  predicate(Universe::narrow_oop_base() == NULL && Universe::narrow_klass_base() == NULL);
+  predicate(CompressedOops::base() == NULL && CompressedKlassPointers::base() == NULL);
   match(Set mem (StoreN mem zero));
 
   ins_cost(125); // XXX
@@ -6293,7 +6293,7 @@ instruct storeImmNKlass(memory mem, immNKlass src)
 // Store Integer Immediate
 instruct storeImmI0(memory mem, immI0 zero)
 %{
-  predicate(UseCompressedOops && (Universe::narrow_oop_base() == NULL) && (Universe::narrow_klass_base() == NULL));
+  predicate(UseCompressedOops && (CompressedOops::base() == NULL) && (CompressedKlassPointers::base() == NULL));
   match(Set mem (StoreI mem zero));
 
   ins_cost(125); // XXX
@@ -6318,7 +6318,7 @@ instruct storeImmI(memory mem, immI src)
 // Store Long Immediate
 instruct storeImmL0(memory mem, immL0 zero)
 %{
-  predicate(UseCompressedOops && (Universe::narrow_oop_base() == NULL) && (Universe::narrow_klass_base() == NULL));
+  predicate(UseCompressedOops && (CompressedOops::base() == NULL) && (CompressedKlassPointers::base() == NULL));
   match(Set mem (StoreL mem zero));
 
   ins_cost(125); // XXX
@@ -6343,7 +6343,7 @@ instruct storeImmL(memory mem, immL32 src)
 // Store Short/Char Immediate
 instruct storeImmC0(memory mem, immI0 zero)
 %{
-  predicate(UseCompressedOops && (Universe::narrow_oop_base() == NULL) && (Universe::narrow_klass_base() == NULL));
+  predicate(UseCompressedOops && (CompressedOops::base() == NULL) && (CompressedKlassPointers::base() == NULL));
   match(Set mem (StoreC mem zero));
 
   ins_cost(125); // XXX
@@ -6369,7 +6369,7 @@ instruct storeImmI16(memory mem, immI16 src)
 // Store Byte Immediate
 instruct storeImmB0(memory mem, immI0 zero)
 %{
-  predicate(UseCompressedOops && (Universe::narrow_oop_base() == NULL) && (Universe::narrow_klass_base() == NULL));
+  predicate(UseCompressedOops && (CompressedOops::base() == NULL) && (CompressedKlassPointers::base() == NULL));
   match(Set mem (StoreB mem zero));
 
   ins_cost(125); // XXX
@@ -6394,7 +6394,7 @@ instruct storeImmB(memory mem, immI8 src)
 // Store CMS card-mark Immediate
 instruct storeImmCM0_reg(memory mem, immI0 zero)
 %{
-  predicate(UseCompressedOops && (Universe::narrow_oop_base() == NULL) && (Universe::narrow_klass_base() == NULL));
+  predicate(UseCompressedOops && (CompressedOops::base() == NULL) && (CompressedKlassPointers::base() == NULL));
   match(Set mem (StoreCM mem zero));
 
   ins_cost(125); // XXX
@@ -6432,7 +6432,7 @@ instruct storeF(memory mem, regF src)
 // Store immediate Float value (it is faster than store from XMM register)
 instruct storeF0(memory mem, immF0 zero)
 %{
-  predicate(UseCompressedOops && (Universe::narrow_oop_base() == NULL) && (Universe::narrow_klass_base() == NULL));
+  predicate(UseCompressedOops && (CompressedOops::base() == NULL) && (CompressedKlassPointers::base() == NULL));
   match(Set mem (StoreF mem zero));
 
   ins_cost(25); // XXX
@@ -6470,7 +6470,7 @@ instruct storeD(memory mem, regD src)
 // Store immediate double 0.0 (it is faster than store from XMM register)
 instruct storeD0_imm(memory mem, immD0 src)
 %{
-  predicate(!UseCompressedOops || (Universe::narrow_oop_base() != NULL));
+  predicate(!UseCompressedOops || (CompressedOops::base() != NULL));
   match(Set mem (StoreD mem src));
 
   ins_cost(50);
@@ -6482,7 +6482,7 @@ instruct storeD0_imm(memory mem, immD0 src)
 
 instruct storeD0(memory mem, immD0 zero)
 %{
-  predicate(UseCompressedOops && (Universe::narrow_oop_base() == NULL) && (Universe::narrow_klass_base() == NULL));
+  predicate(UseCompressedOops && (CompressedOops::base() == NULL) && (CompressedKlassPointers::base() == NULL));
   match(Set mem (StoreD mem zero));
 
   ins_cost(25); // XXX
@@ -6919,7 +6919,7 @@ instruct convP2I(rRegI dst, rRegP src)
 // in case of 32bit oops (heap < 4Gb).
 instruct convN2I(rRegI dst, rRegN src)
 %{
-  predicate(Universe::narrow_oop_shift() == 0);
+  predicate(CompressedOops::shift() == 0);
   match(Set dst (ConvL2I (CastP2X (DecodeN src))));
 
   format %{ "movl    $dst, $src\t# compressed ptr -> int" %}
@@ -11957,7 +11957,7 @@ instruct testP_reg(rFlagsReg cr, rRegP src, immP0 zero)
 // any compare to a zero should be eq/neq.
 instruct testP_mem(rFlagsReg cr, memory op, immP0 zero)
 %{
-  predicate(!UseCompressedOops || (Universe::narrow_oop_base() != NULL));
+  predicate(!UseCompressedOops || (CompressedOops::base() != NULL));
   match(Set cr (CmpP (LoadP op) zero));
 
   ins_cost(500); // XXX
@@ -11970,7 +11970,7 @@ instruct testP_mem(rFlagsReg cr, memory op, immP0 zero)
 
 instruct testP_mem_reg0(rFlagsReg cr, memory mem, immP0 zero)
 %{
-  predicate(UseCompressedOops && (Universe::narrow_oop_base() == NULL) && (Universe::narrow_klass_base() == NULL));
+  predicate(UseCompressedOops && (CompressedOops::base() == NULL) && (CompressedKlassPointers::base() == NULL));
   match(Set cr (CmpP (LoadP mem) zero));
 
   format %{ "cmpq    R12, $mem\t# ptr (R12_heapbase==0)" %}
@@ -12052,7 +12052,7 @@ instruct testN_reg(rFlagsReg cr, rRegN src, immN0 zero) %{
 
 instruct testN_mem(rFlagsReg cr, memory mem, immN0 zero)
 %{
-  predicate(Universe::narrow_oop_base() != NULL);
+  predicate(CompressedOops::base() != NULL);
   match(Set cr (CmpN (LoadN mem) zero));
 
   ins_cost(500); // XXX
@@ -12065,7 +12065,7 @@ instruct testN_mem(rFlagsReg cr, memory mem, immN0 zero)
 
 instruct testN_mem_reg0(rFlagsReg cr, memory mem, immN0 zero)
 %{
-  predicate(Universe::narrow_oop_base() == NULL && (Universe::narrow_klass_base() == NULL));
+  predicate(CompressedOops::base() == NULL && (CompressedKlassPointers::base() == NULL));
   match(Set cr (CmpN (LoadN mem) zero));
 
   format %{ "cmpl    R12, $mem\t# compressed ptr (R12_heapbase==0)" %}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
+#include "gc/shenandoah/shenandoahForwarding.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahHeuristics.hpp"
@@ -53,12 +54,14 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, Dec
 
   if (type == T_OBJECT || type == T_ARRAY) {
 #ifdef _LP64
-    if (!checkcast && !obj_int) {
-      // Save count for barrier
-      __ movptr(r11, count);
-    } else if (disjoint && obj_int) {
-      // Save dst in r11 in the disjoint case
-      __ movq(r11, dst);
+    if (!checkcast) {
+      if (!obj_int) {
+        // Save count for barrier
+        __ movptr(r11, count);
+      } else if (disjoint) {
+        // Save dst in r11 in the disjoint case
+        __ movq(r11, dst);
+      }
     }
 #else
     if (disjoint) {
@@ -123,13 +126,15 @@ void ShenandoahBarrierSetAssembler::arraycopy_epilogue(MacroAssembler* masm, Dec
 
   if (type == T_OBJECT || type == T_ARRAY) {
 #ifdef _LP64
-    if (!checkcast && !obj_int) {
-      // Save count for barrier
-      count = r11;
-    } else if (disjoint && obj_int) {
-      // Use the saved dst in the disjoint case
-      dst = r11;
-    } else if (checkcast) {
+    if (!checkcast) {
+      if (!obj_int) {
+        // Save count for barrier
+        count = r11;
+      } else if (disjoint && obj_int) {
+        // Use the saved dst in the disjoint case
+        dst = r11;
+      }
+    } else {
       tmp = rscratch1;
     }
 #else
@@ -323,7 +328,7 @@ void ShenandoahBarrierSetAssembler::resolve_forward_pointer(MacroAssembler* masm
 
 void ShenandoahBarrierSetAssembler::resolve_forward_pointer_not_null(MacroAssembler* masm, Register dst) {
   assert(ShenandoahCASBarrier || ShenandoahLoadRefBarrier, "should be enabled");
-  __ movptr(dst, Address(dst, ShenandoahBrooksPointer::byte_offset()));
+  __ movptr(dst, Address(dst, ShenandoahForwarding::byte_offset()));
 }
 
 
@@ -497,9 +502,9 @@ void ShenandoahBarrierSetAssembler::tlab_allocate(MacroAssembler* masm,
 
   __ movptr(obj, Address(thread, JavaThread::tlab_top_offset()));
   if (var_size_in_bytes == noreg) {
-    __ lea(end, Address(obj, con_size_in_bytes + ShenandoahBrooksPointer::byte_size()));
+    __ lea(end, Address(obj, con_size_in_bytes + ShenandoahForwarding::byte_size()));
   } else {
-    __ addptr(var_size_in_bytes, ShenandoahBrooksPointer::byte_size());
+    __ addptr(var_size_in_bytes, ShenandoahForwarding::byte_size());
     __ lea(end, Address(obj, var_size_in_bytes, Address::times_1));
   }
   __ cmpptr(end, Address(thread, JavaThread::tlab_end_offset()));
@@ -510,11 +515,11 @@ void ShenandoahBarrierSetAssembler::tlab_allocate(MacroAssembler* masm,
 
   // Initialize brooks pointer
 #ifdef _LP64
-  __ incrementq(obj, ShenandoahBrooksPointer::byte_size());
+  __ incrementq(obj, ShenandoahForwarding::byte_size());
 #else
-  __ incrementl(obj, ShenandoahBrooksPointer::byte_size());
+  __ incrementl(obj, ShenandoahForwarding::byte_size());
 #endif
-  __ movptr(Address(obj, ShenandoahBrooksPointer::byte_offset()), obj);
+  __ movptr(Address(obj, ShenandoahForwarding::byte_offset()), obj);
 
   // recover var_size_in_bytes if necessary
   if (var_size_in_bytes == end) {
@@ -721,9 +726,10 @@ void ShenandoahBarrierSetAssembler::restore_vector_registers(MacroAssembler* mas
   }
 }
 
+#undef __
+
 #ifdef COMPILER1
 
-#undef __
 #define __ ce->masm()->
 
 void ShenandoahBarrierSetAssembler::gen_pre_barrier_stub(LIR_Assembler* ce, ShenandoahPreBarrierStub* stub) {

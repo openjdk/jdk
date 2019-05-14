@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/markBitMap.inline.hpp"
+#include "memory/universe.hpp"
 #include "memory/virtualspace.hpp"
 
 void MarkBitMap::print_on_error(outputStream* st, const char* prefix) const {

@@ -28,6 +28,7 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/compressedOops.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "runtime/stubCodeGenerator.hpp"
@@ -84,8 +85,8 @@ void VM_Version::initialize() {
 
   // 32-bit oops don't make sense for the 64-bit VM on SPARC since the 32-bit
   // VM has the same registers and smaller objects.
-  Universe::set_narrow_oop_shift(LogMinObjAlignmentInBytes);
-  Universe::set_narrow_klass_shift(LogKlassAlignmentInBytes);
+  CompressedOops::set_shift(LogMinObjAlignmentInBytes);
+  CompressedKlassPointers::set_shift(LogKlassAlignmentInBytes);
 
 #ifdef COMPILER2
   if (has_fast_ind_br() && FLAG_IS_DEFAULT(UseJumpTables)) {

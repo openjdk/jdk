@@ -36,7 +36,7 @@ import javax.lang.model.element.Name;
  *   continue <em>label</em> ;
  * </pre>
  *
- * @jls section 14.16
+ * @jls 14.16 The continue Statement
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

@@ -29,6 +29,7 @@
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/universe.hpp"
 #include "runtime/globals.hpp"
 
 jint EpsilonHeap::initialize() {

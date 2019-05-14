@@ -30,7 +30,6 @@
 #include "memory/heapShared.inline.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceShared.hpp"
-#include "oops/compressedOops.inline.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/numberSeq.hpp"
 #include <sys/stat.h>

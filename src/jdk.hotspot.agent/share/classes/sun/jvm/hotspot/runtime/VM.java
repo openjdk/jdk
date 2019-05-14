@@ -544,8 +544,8 @@ public class VM {
     }
 
     debugger.putHeapConst(soleInstance.getHeapOopSize(), soleInstance.getKlassPtrSize(),
-                          Universe.getNarrowOopBase(), Universe.getNarrowOopShift(),
-                          Universe.getNarrowKlassBase(), Universe.getNarrowKlassShift());
+                          CompressedOops.getBase(), CompressedOops.getShift(),
+                          CompressedKlassPointers.getBase(), CompressedKlassPointers.getShift());
   }
 
   /** This is used by the debugging system */

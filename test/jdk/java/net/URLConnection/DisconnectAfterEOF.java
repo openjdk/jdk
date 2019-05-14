@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 4774503
+ * @library /test/lib
  * @summary Calling HttpURLConnection's disconnect method after the
  *          response has been received causes havoc with persistent
  *          connections.
@@ -31,6 +32,9 @@
 import java.net.*;
 import java.io.*;
 import java.util.*;
+import jdk.test.lib.net.URIBuilder;
+
+
 
 public class DisconnectAfterEOF {
 
@@ -239,13 +243,18 @@ public class DisconnectAfterEOF {
 
     public static void main(String args[]) throws Exception {
         // start server
-        ServerSocket ss = new ServerSocket(0);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        ServerSocket ss = new ServerSocket();
+        ss.bind(new InetSocketAddress(loopback, 0));
         Server svr = new Server(ss);
         svr.start();
 
-        String uri = "http://localhost:" +
-                     Integer.toString(ss.getLocalPort()) +
-                     "/foo.html";
+        String uri = URIBuilder.newBuilder()
+                     .scheme("http")
+                     .loopback()
+                     .port(ss.getLocalPort())
+                     .path("/foo.html")
+                     .build().toString();
 
         /*
          * The following is the test scenario we create here :-

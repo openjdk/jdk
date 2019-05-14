@@ -50,8 +50,8 @@ class Metadata : public MetaspaceObj {
   virtual const char* internal_name()  const = 0;
   virtual void metaspace_pointers_do(MetaspaceClosure* iter) {}
 
-  void print()       const { print_on(tty); }
-  void print_value() const { print_value_on(tty); }
+  void print()       const;
+  void print_value() const;
 
   static void print_value_on_maybe_null(outputStream* st, const Metadata* m) {
     if (NULL == m)

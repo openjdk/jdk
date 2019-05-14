@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2018 Unicode, Inc.
+<!-- Copyright © 1991-2019 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 13839 $"/>
+		<version number="$Revision: 14770 $"/>
 		<language type="fr"/>
 		<territory type="BE"/>
 	</identity>
@@ -15,14 +15,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<languages>
 			<language type="frp" draft="contributed">franco-provençal</language>
 			<language type="goh" draft="contributed">ancien haut-allemand</language>
-			<language type="got" draft="contributed">gotique</language>
 			<language type="gu" draft="contributed">gujarati</language>
 			<language type="njo" draft="contributed">ao</language>
-			<language type="se" draft="contributed">same du Nord</language>
-			<language type="sma" draft="contributed">same du Sud</language>
-			<language type="smj" draft="contributed">same de Lule</language>
-			<language type="smn" draft="contributed">same d’Inari</language>
-			<language type="sms" draft="contributed">same skolt</language>
 		</languages>
 		<territories>
 			<territory type="BN" draft="contributed">Brunei</territory>

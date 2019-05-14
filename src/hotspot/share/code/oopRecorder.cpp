@@ -26,7 +26,7 @@
 #include "ci/ciEnv.hpp"
 #include "ci/ciInstance.hpp"
 #include "ci/ciMetadata.hpp"
-#include "code/oopRecorder.hpp"
+#include "code/oopRecorder.inline.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"

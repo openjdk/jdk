@@ -41,6 +41,7 @@
 #include <proc_service.h>
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/heap.hpp"
+#include "oops/compressedOops.hpp"
 #include "runtime/vmStructs.hpp"
 
 typedef enum GEN_variant {

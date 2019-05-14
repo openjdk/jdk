@@ -42,7 +42,7 @@ import java.util.List;
  *   <em>enclosingExpression</em>.new <em>identifier</em> ( <em>arguments</em> )
  * </pre>
  *
- * @jls section 15.9
+ * @jls 15.9 Class Instance Creation Expressions
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

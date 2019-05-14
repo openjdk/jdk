@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2018 Unicode, Inc.
+<!-- Copyright © 1991-2019 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -9,7 +9,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 13920 $"/>
+		<version number="$Revision: 14982 $"/>
 		<language type="zh"/>
 	</identity>
 	<localeDisplayNames>
@@ -43,7 +43,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="arc">阿拉米语</language>
 			<language type="arn">马普切语</language>
 			<language type="arp">阿拉帕霍语</language>
-			<language type="ars">纳吉迪阿拉伯文</language>
+			<language type="ars">纳吉迪阿拉伯语</language>
 			<language type="arw">阿拉瓦克语</language>
 			<language type="as">阿萨姆语</language>
 			<language type="asa">帕雷语</language>
@@ -91,6 +91,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="car">加勒比语</language>
 			<language type="cay">卡尤加语</language>
 			<language type="cch">阿灿语</language>
+			<language type="ccp">查克玛语</language>
 			<language type="ce">车臣语</language>
 			<language type="ceb">宿务语</language>
 			<language type="cgg">奇加语</language>
@@ -560,8 +561,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<scripts>
 			<script type="Adlm">阿德拉姆文</script>
 			<script type="Afak">阿法卡文</script>
-			<script type="Aghb" draft="contributed">Aghb</script>
-			<script type="Ahom" draft="contributed">Ahom</script>
 			<script type="Arab">阿拉伯文</script>
 			<script type="Arab" alt="variant">波斯阿拉伯文</script>
 			<script type="Armi">皇室亚拉姆文</script>
@@ -590,6 +589,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Cyrl">西里尔文</script>
 			<script type="Cyrs">西里尔文字（古教会斯拉夫文的变体）</script>
 			<script type="Deva">天城文</script>
+			<script type="Dogr" draft="contributed">多格拉文</script>
 			<script type="Dsrt">德塞莱特文</script>
 			<script type="Dupl">杜普洛伊速记</script>
 			<script type="Egyd">后期埃及文</script>
@@ -600,6 +600,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Geok">格鲁吉亚文（教堂体）</script>
 			<script type="Geor">格鲁吉亚文</script>
 			<script type="Glag">格拉哥里文</script>
+			<script type="Gong" draft="contributed">贡贾拉贡德文</script>
 			<script type="Gonm">马萨拉姆冈德文</script>
 			<script type="Goth">哥特文</script>
 			<script type="Gran">格兰塔文</script>
@@ -614,11 +615,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Hans" alt="stand-alone">简体中文</script>
 			<script type="Hant">繁体</script>
 			<script type="Hant" alt="stand-alone">繁体中文</script>
-			<script type="Hatr" draft="contributed">Hatr</script>
 			<script type="Hebr">希伯来文</script>
 			<script type="Hira">平假名</script>
 			<script type="Hluw">安那托利亚象形文字</script>
 			<script type="Hmng">杨松录苗文</script>
+			<script type="Hmnp" draft="contributed">尼亚肯蒲丘苗文</script>
 			<script type="Hrkt">假名表</script>
 			<script type="Hung">古匈牙利文</script>
 			<script type="Inds">印度河文字</script>
@@ -649,22 +650,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Loma">洛马文</script>
 			<script type="Lyci">利西亚文</script>
 			<script type="Lydi">吕底亚文</script>
-			<script type="Mahj" draft="contributed">Mahj</script>
+			<script type="Maka" draft="contributed">望加锡文</script>
 			<script type="Mand">阿拉米文</script>
 			<script type="Mani">摩尼教文</script>
 			<script type="Marc">大玛尔文</script>
 			<script type="Maya">玛雅圣符文</script>
+			<script type="Medf" draft="contributed">梅德法伊德林文</script>
 			<script type="Mend">门迪文</script>
 			<script type="Merc">麦罗埃草书</script>
 			<script type="Mero">麦若提克文</script>
 			<script type="Mlym">马拉雅拉姆文</script>
-			<script type="Modi" draft="contributed">Modi</script>
 			<script type="Mong">蒙古文</script>
 			<script type="Moon">韩文语系</script>
 			<script type="Mroo">谬文</script>
 			<script type="Mtei">曼尼普尔文</script>
-			<script type="Mult" draft="contributed">Mult</script>
 			<script type="Mymr">缅甸文</script>
+			<script type="Nand" draft="contributed">楠迪梵文</script>
 			<script type="Narb">古北方阿拉伯文</script>
 			<script type="Nbat">纳巴泰文</script>
 			<script type="Newa">尼瓦文</script>
@@ -687,7 +688,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Phnx">腓尼基文</script>
 			<script type="Plrd">波拉德音标文字</script>
 			<script type="Prti">帕提亚文碑铭体</script>
+			<script type="Qaag" draft="contributed">Qaag</script>
 			<script type="Rjng">拉让文</script>
+			<script type="Rohg" draft="contributed">哈乃斐罗兴亚文</script>
 			<script type="Roro">朗格朗格文</script>
 			<script type="Runr">古代北欧文</script>
 			<script type="Samr">撒马利亚文</script>
@@ -700,6 +703,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Sidd" draft="contributed">悉昙</script>
 			<script type="Sind">信德文</script>
 			<script type="Sinh">僧伽罗文</script>
+			<script type="Sogd" draft="contributed">粟特文</script>
+			<script type="Sogo" draft="contributed">古粟特文</script>
 			<script type="Sora">索朗桑朋文</script>
 			<script type="Soyo">索永布文</script>
 			<script type="Sund">巽他文</script>
@@ -929,8 +934,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="MF">法属圣马丁</territory>
 			<territory type="MG">马达加斯加</territory>
 			<territory type="MH">马绍尔群岛</territory>
-			<territory type="MK">马其顿</territory>
-			<territory type="MK" alt="variant">马其顿（前南斯拉夫马其顿共和国）</territory>
+			<territory type="MK">北马其顿</territory>
 			<territory type="ML">马里</territory>
 			<territory type="MM">缅甸</territory>
 			<territory type="MN">蒙古</territory>
@@ -1012,6 +1016,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="TJ">塔吉克斯坦</territory>
 			<territory type="TK">托克劳</territory>
 			<territory type="TL">东帝汶</territory>
+			<territory type="TL" alt="variant">TL</territory>
 			<territory type="TM">土库曼斯坦</territory>
 			<territory type="TN">突尼斯</territory>
 			<territory type="TO">汤加</territory>
@@ -1038,6 +1043,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="VU">瓦努阿图</territory>
 			<territory type="WF">瓦利斯和富图纳</territory>
 			<territory type="WS">萨摩亚</territory>
+			<territory type="XA">伪地区</territory>
+			<territory type="XB">伪双向语言地区</territory>
 			<territory type="XK">科索沃</territory>
 			<territory type="YE">也门</territory>
 			<territory type="YT">马约特</territory>
@@ -1057,32 +1064,49 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<variant type="ALALC97">1997 版 ALA-LC 罗马字</variant>
 			<variant type="ALUKU">阿鲁库方言</variant>
 			<variant type="AO1990" draft="contributed">1990年葡萄牙语正写法协议</variant>
+			<variant type="ARANES" draft="contributed">阿兰方言</variant>
 			<variant type="AREVELA">东亚美尼亚文</variant>
 			<variant type="AREVMDA">西亚美尼亚文</variant>
+			<variant type="ASANTE" draft="contributed">阿散蒂方言</variant>
 			<variant type="BAKU1926">统一土耳其拉丁字母</variant>
 			<variant type="BALANKA" draft="contributed">阿尼语Balanka方言</variant>
+			<variant type="BARLA" draft="contributed">佛得角语向风方言组</variant>
 			<variant type="BASICENG" draft="contributed">基本英语</variant>
 			<variant type="BAUDDHA">佛陀梵文</variant>
 			<variant type="BISCAYAN">比斯开方言</variant>
 			<variant type="BISKE">圣乔治/比拉方言</variant>
 			<variant type="BOONT">布恩特林方言</variant>
+			<variant type="COLB1945" draft="contributed">1945年葡萄牙-巴西正写法协定</variant>
+			<variant type="CORNU" draft="contributed">科尔尼方言</variant>
+			<variant type="DAJNKO" draft="contributed">达金科字母</variant>
+			<variant type="EMODENG" draft="contributed">近代英语</variant>
 			<variant type="FONIPA">国际音标</variant>
 			<variant type="FONUPA">UPA 音标</variant>
 			<variant type="FONXSAMP">X-SAMPA 音标</variant>
+			<variant type="GASCON" draft="contributed">加斯科方言</variant>
 			<variant type="HEPBURN">赫伯恩罗马字</variant>
 			<variant type="HOGNORSK">高地挪威文</variant>
 			<variant type="ITIHASA">史诗梵文</variant>
 			<variant type="JAUER">米施泰尔方言</variant>
 			<variant type="JYUTPING">粤语拼音</variant>
 			<variant type="KKCOR">常用拼字</variant>
+			<variant type="KSCOR" draft="contributed">标准正写法</variant>
 			<variant type="LAUKIKA">传统梵文</variant>
+			<variant type="LEMOSIN" draft="contributed">利姆赞方言</variant>
+			<variant type="LENGADOC" draft="contributed">隆格多克方言</variant>
 			<variant type="LIPAW">雷西亚 Lipovaz 方言</variant>
 			<variant type="LUNA1918">俄文拼字（1918年起）</variant>
 			<variant type="MONOTON">单音字母</variant>
 			<variant type="NDYUKA">Ndyuka 方言</variant>
 			<variant type="NEDIS">Natisone 方言</variant>
+			<variant type="NICARD" draft="contributed">尼斯方言</variant>
 			<variant type="NJIVA">Gniva/Njiva 方言</variant>
+			<variant type="NULIK" draft="contributed">现代沃拉普克语</variant>
 			<variant type="OSOJS">Oseacco/Osojane 方言</variant>
+			<variant type="OXENDICT" draft="contributed">《牛津英语词典》拼法</variant>
+			<variant type="PAHAWH2" draft="contributed">帕哈苗文2代</variant>
+			<variant type="PAHAWH3" draft="contributed">帕哈苗文3代</variant>
+			<variant type="PAHAWH4" draft="contributed">帕哈苗文4代</variant>
 			<variant type="PAMAKA">Pamaka 方言</variant>
 			<variant type="PETR1708">俄文拼字（1708年）</variant>
 			<variant type="PINYIN">拼音罗马字</variant>
@@ -1090,12 +1114,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<variant type="POSIX">电脑</variant>
 			<variant type="PUTER">瑞士普特尔方言</variant>
 			<variant type="REVISED">修订的拼字</variant>
+			<variant type="RIGIK" draft="contributed">古典沃拉普克语</variant>
 			<variant type="ROZAJ">雷西亚文</variant>
 			<variant type="RUMGR">罗曼什文</variant>
 			<variant type="SAAHO">萨霍文</variant>
 			<variant type="SCOTLAND">苏格兰标准英文</variant>
 			<variant type="SCOUSE">利物浦方言</variant>
+			<variant type="SIMPLE" draft="contributed">简单英语</variant>
 			<variant type="SOLBA">Stolvizza/Solbica 方言</variant>
+			<variant type="SOTAV" draft="contributed">佛得角语背风方言组</variant>
+			<variant type="SPANGLIS" draft="contributed">西班牙式英语</variant>
 			<variant type="SURMIRAN">瑞士苏迈拉方言</variant>
 			<variant type="SURSILV">瑞士苏瑟瓦方言</variant>
 			<variant type="SUTSILV">瑞士苏希瓦方言</variant>
@@ -1103,6 +1131,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<variant type="UCCOR">统一的拼字</variant>
 			<variant type="UCRCOR">统一和修订的拼字</variant>
 			<variant type="ULSTER">阿尔斯特方言</variant>
+			<variant type="UNIFON" draft="contributed">Unifon音位字母</variant>
 			<variant type="VAIDIKA">吠陀梵文</variant>
 			<variant type="VALENCIA">瓦伦西亚文</variant>
 			<variant type="VALLADER">瑞士瓦勒德方言</variant>
@@ -1140,6 +1169,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="indian">印度国定历</type>
 			<type key="calendar" type="islamic">伊斯兰历</type>
 			<type key="calendar" type="islamic-civil">伊斯兰希吉来日历</type>
+			<type key="calendar" type="islamic-rgsa" draft="contributed">沙特阿拉伯伊斯兰历</type>
+			<type key="calendar" type="islamic-tbla" draft="contributed">伊斯兰天文历</type>
 			<type key="calendar" type="islamic-umalqura">伊斯兰历（乌姆库拉）</type>
 			<type key="calendar" type="iso8601">国际标准历法</type>
 			<type key="calendar" type="japanese">和历</type>
@@ -1214,6 +1245,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="finance">金融数字</type>
 			<type key="numbers" type="fullwide">全角数字</type>
 			<type key="numbers" type="geor">格鲁吉亚数字</type>
+			<type key="numbers" type="gong" draft="contributed">马萨拉姆冈德数字</type>
 			<type key="numbers" type="gonm" draft="contributed">马萨拉姆冈德数字</type>
 			<type key="numbers" type="grek">希腊数字</type>
 			<type key="numbers" type="greklow">希腊小写数字</type>
@@ -1226,6 +1258,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="hantfin">繁体中文大写数字</type>
 			<type key="numbers" type="hebr">希伯来数字</type>
 			<type key="numbers" type="hmng">杨松录苗文数字</type>
+			<type key="numbers" type="hmnp" draft="contributed">尼亚肯蒲丘苗文数字</type>
 			<type key="numbers" type="java">爪哇文数字</type>
 			<type key="numbers" type="jpan">日文数字</type>
 			<type key="numbers" type="jpanfin">日文大写数字</type>
@@ -1239,8 +1272,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="lepc">雷布查文数字</type>
 			<type key="numbers" type="limb">林布文数字</type>
 			<type key="numbers" type="mathbold" draft="contributed">数学粗体数字</type>
+			<type key="numbers" type="mathdbl" draft="contributed">数学空心数字</type>
+			<type key="numbers" type="mathmono" draft="contributed">数学等宽数字</type>
+			<type key="numbers" type="mathsanb" draft="contributed">数学无衬线粗体数字</type>
+			<type key="numbers" type="mathsans" draft="contributed">数学无衬线数字</type>
 			<type key="numbers" type="mlym">马拉雅拉姆数字</type>
+			<type key="numbers" type="modi" draft="contributed">莫迪数字</type>
 			<type key="numbers" type="mong">蒙古文数字</type>
+			<type key="numbers" type="mroo" draft="contributed">谬文数字</type>
 			<type key="numbers" type="mtei">曼尼普尔数字</type>
 			<type key="numbers" type="mymr">缅甸数字</type>
 			<type key="numbers" type="mymrshan">缅甸掸文数字</type>
@@ -1248,9 +1287,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="nkoo">曼德数字</type>
 			<type key="numbers" type="olck">桑塔利文数字</type>
 			<type key="numbers" type="orya">奥里亚数字</type>
+			<type key="numbers" type="osma" draft="contributed">奥斯曼数字</type>
+			<type key="numbers" type="rohg" draft="contributed">哈乃斐罗兴亚数字</type>
 			<type key="numbers" type="roman">罗马数字</type>
 			<type key="numbers" type="romanlow">罗马小写数字</type>
 			<type key="numbers" type="saur">索拉什特拉文数字</type>
+			<type key="numbers" type="shrd" draft="contributed">夏拉达数字</type>
+			<type key="numbers" type="sind" draft="contributed">库达瓦迪数字</type>
+			<type key="numbers" type="sinh" draft="contributed">僧伽罗文数字</type>
+			<type key="numbers" type="sora" draft="contributed">素拉僧平数字</type>
 			<type key="numbers" type="sund">苏丹文数字</type>
 			<type key="numbers" type="takr" draft="contributed">泰克里数字</type>
 			<type key="numbers" type="talu">新傣仂文数字</type>
@@ -1288,6 +1333,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<ellipsis type="word-initial">…{0}</ellipsis>
 		<ellipsis type="word-medial">{0}…{1}</ellipsis>
 		<moreInformation>？</moreInformation>
+		<parseLenients scope="date" level="lenient">
+			<parseLenient sample="-" draft="contributed">[\--/]</parseLenient>
+			<parseLenient sample=":" draft="contributed">[\:∶]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="general" level="lenient">
+			<parseLenient sample="." draft="contributed">[.․。︒﹒．｡]</parseLenient>
+			<parseLenient sample="’" draft="contributed">['ʼ՚᾽᾿’＇]</parseLenient>
+			<parseLenient sample="%" draft="contributed">[%٪﹪％]</parseLenient>
+			<parseLenient sample="‰" draft="contributed">[؉‰]</parseLenient>
+			<parseLenient sample="$" draft="contributed">[\$﹩＄$]</parseLenient>
+			<parseLenient sample="£" draft="contributed">[£₤]</parseLenient>
+			<parseLenient sample="¥" draft="contributed">[¥￥]</parseLenient>
+			<parseLenient sample="₩" draft="contributed">[₩￦]</parseLenient>
+			<parseLenient sample="₹" draft="contributed">[₨₹{Rp}{Rs}]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="number" level="lenient">
+			<parseLenient sample="-" draft="contributed">[\-‒⁻₋−➖﹣－]</parseLenient>
+			<parseLenient sample="," draft="contributed">[,،٫、︐︑﹐﹑，､]</parseLenient>
+			<parseLenient sample="+" draft="contributed">[+⁺₊➕﬩﹢＋]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="number" level="stricter">
+			<parseLenient sample="," draft="contributed">[,٫︐﹐，]</parseLenient>
+			<parseLenient sample="." draft="contributed">[.․﹒．｡]</parseLenient>
+		</parseLenients>
 	</characters>
 	<delimiters>
 		<quotationStart>“</quotationStart>
@@ -1332,29 +1401,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</dateFormatLength>
 				</dateFormats>
 				<dateTimeFormats>
-					<dateTimeFormatLength type="full">
-						<dateTimeFormat>
-							<pattern draft="contributed">{1} {0}</pattern>
-						</dateTimeFormat>
-					</dateTimeFormatLength>
-					<dateTimeFormatLength type="long">
-						<dateTimeFormat>
-							<pattern draft="contributed">{1} {0}</pattern>
-						</dateTimeFormat>
-					</dateTimeFormatLength>
-					<dateTimeFormatLength type="medium">
-						<dateTimeFormat>
-							<pattern draft="contributed">{1} {0}</pattern>
-						</dateTimeFormat>
-					</dateTimeFormatLength>
-					<dateTimeFormatLength type="short">
-						<dateTimeFormat>
-							<pattern draft="contributed">{1} {0}</pattern>
-						</dateTimeFormat>
-					</dateTimeFormatLength>
 					<availableFormats>
 						<dateFormatItem id="d">d日</dateFormatItem>
-						<dateFormatItem id="E" draft="contributed">ccc</dateFormatItem>
 						<dateFormatItem id="Ed" draft="contributed">d日E</dateFormatItem>
 						<dateFormatItem id="Gy" draft="contributed">Gy年</dateFormatItem>
 						<dateFormatItem id="GyMMM" draft="contributed">Gy年MM月</dateFormatItem>
@@ -1363,7 +1411,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="M">M月</dateFormatItem>
 						<dateFormatItem id="Md">M-d</dateFormatItem>
 						<dateFormatItem id="MEd">M-dE</dateFormatItem>
-						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">M月d日</dateFormatItem>
 						<dateFormatItem id="MMMEd">M月d日E</dateFormatItem>
 						<dateFormatItem id="MMMMd">M月d日</dateFormatItem>
@@ -1380,25 +1427,64 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyyQQQQ">Gy年QQQQ</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback draft="contributed">{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="Bh">
+							<greatestDifference id="B" draft="contributed">Bh时至Bh时</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh时至h时</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Bhm">
+							<greatestDifference id="B" draft="contributed">Bh:mm至Bh:mm</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh:mm至h:mm</greatestDifference>
+							<greatestDifference id="m" draft="contributed">Bh:mm至h:mm</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d" draft="contributed">d至d日</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G" draft="contributed">G y – G y</greatestDifference>
+							<greatestDifference id="y" draft="contributed">G y–y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G" draft="contributed">GGGGG y-MM – GGGGG y-MM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">GGGGG y-MM – y-MM</greatestDifference>
+							<greatestDifference id="y" draft="contributed">GGGGG y-MM – y-MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d" draft="contributed">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="G" draft="contributed">GGGGG y-MM-dd – GGGGG y-MM-dd</greatestDifference>
+							<greatestDifference id="M" draft="contributed">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="y" draft="contributed">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d" draft="contributed">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="G" draft="contributed">GGGGG y-MM-dd, E – GGGGG y-MM-dd, E</greatestDifference>
+							<greatestDifference id="M" draft="contributed">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="y" draft="contributed">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G" draft="contributed">G y MMM – G y MMM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">G y MMM–MMM</greatestDifference>
+							<greatestDifference id="y" draft="contributed">G y MMM – y MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d" draft="contributed">G y MMM d–d</greatestDifference>
+							<greatestDifference id="G" draft="contributed">G y MMM d – G y MMM d</greatestDifference>
+							<greatestDifference id="M" draft="contributed">G y MMM d – MMM d</greatestDifference>
+							<greatestDifference id="y" draft="contributed">G y MMM d – y MMM d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d" draft="contributed">G y MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="G" draft="contributed">G y MMM d, E – G y MMM d, E</greatestDifference>
+							<greatestDifference id="M" draft="contributed">G y MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="y" draft="contributed">G y MMM d, E – y MMM d, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a" draft="contributed">ah时至ah时</greatestDifference>
 							<greatestDifference id="h" draft="contributed">ah时至h时</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="H">
-							<greatestDifference id="H" draft="contributed">HH–HH</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="hm">
 							<greatestDifference id="a" draft="contributed">ah:mm至ah:mm</greatestDifference>
 							<greatestDifference id="h" draft="contributed">ah:mm至h:mm</greatestDifference>
 							<greatestDifference id="m" draft="contributed">ah:mm至h:mm</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hm">
-							<greatestDifference id="H" draft="contributed">HH:mm–HH:mm</greatestDifference>
-							<greatestDifference id="m" draft="contributed">HH:mm–HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
 							<greatestDifference id="a" draft="contributed">vah:mm至ah:mm</greatestDifference>
@@ -1412,9 +1498,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="hv">
 							<greatestDifference id="a" draft="contributed">vah时至ah时</greatestDifference>
 							<greatestDifference id="h" draft="contributed">vah时至h时</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hv">
-							<greatestDifference id="H" draft="contributed">HH–HH v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M" draft="contributed">M–M月</greatestDifference>
@@ -1741,6 +1824,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</dateFormatLength>
 				</dateFormats>
 				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern draft="contributed">{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern draft="contributed">{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern draft="contributed">{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern draft="contributed">{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
 					<availableFormats>
 						<dateFormatItem id="Bh">Bh时</dateFormatItem>
 						<dateFormatItem id="Bhm">Bh:mm</dateFormatItem>
@@ -1787,6 +1890,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</availableFormats>
 					<intervalFormats>
 						<intervalFormatFallback draft="contributed">{0}–{1}</intervalFormatFallback>
+						<intervalFormatItem id="Bh">
+							<greatestDifference id="B">Bh至Bh时</greatestDifference>
+							<greatestDifference id="h">Bh至h时</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Bhm">
+							<greatestDifference id="B">Bh:mm至Bh:mm</greatestDifference>
+							<greatestDifference id="h">Bh:mm至h:mm</greatestDifference>
+							<greatestDifference id="m">Bh:mm至h:mm</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d日至d日</greatestDifference>
 						</intervalFormatItem>
@@ -2000,6 +2112,57 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
+				<dateTimeFormats>
+					<intervalFormats>
+						<intervalFormatItem id="Bh">
+							<greatestDifference id="B" draft="contributed">Bh时至Bh时</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh时至h时</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Bhm">
+							<greatestDifference id="B" draft="contributed">Bh:mm至Bh:mm</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh:mm至h:mm</greatestDifference>
+							<greatestDifference id="m" draft="contributed">Bh:mm至h:mm</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G" draft="contributed">G y – G y</greatestDifference>
+							<greatestDifference id="y" draft="contributed">G y–y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G" draft="contributed">GGGGG y-MM – GGGGG y-MM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">GGGGG y-MM – y-MM</greatestDifference>
+							<greatestDifference id="y" draft="contributed">GGGGG y-MM – y-MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d" draft="contributed">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="G" draft="contributed">GGGGG y-MM-dd – GGGGG y-MM-dd</greatestDifference>
+							<greatestDifference id="M" draft="contributed">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="y" draft="contributed">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d" draft="contributed">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="G" draft="contributed">GGGGG y-MM-dd, E – GGGGG y-MM-dd, E</greatestDifference>
+							<greatestDifference id="M" draft="contributed">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="y" draft="contributed">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G" draft="contributed">G y MMM – G y MMM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">G y MMM–MMM</greatestDifference>
+							<greatestDifference id="y" draft="contributed">G y MMM – y MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d" draft="contributed">G y MMM d–d</greatestDifference>
+							<greatestDifference id="G" draft="contributed">G y MMM d – G y MMM d</greatestDifference>
+							<greatestDifference id="M" draft="contributed">G y MMM d – MMM d</greatestDifference>
+							<greatestDifference id="y" draft="contributed">G y MMM d – y MMM d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d" draft="contributed">G y MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="G" draft="contributed">G y MMM d, E – G y MMM d, E</greatestDifference>
+							<greatestDifference id="M" draft="contributed">G y MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="y" draft="contributed">G y MMM d, E – y MMM d, E</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
 			</calendar>
 			<calendar type="dangi">
 				<cyclicNameSets>
@@ -2240,6 +2403,39 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</cyclicNameContext>
 					</cyclicNameSet>
 				</cyclicNameSets>
+				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern draft="contributed">{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern draft="contributed">{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern draft="contributed">{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern draft="contributed">{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<intervalFormats>
+						<intervalFormatItem id="Bh">
+							<greatestDifference id="B" draft="contributed">Bh至Bh时</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh至h时</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Bhm">
+							<greatestDifference id="B" draft="contributed">Bh:mm至Bh:mm</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh:mm至h:mm</greatestDifference>
+							<greatestDifference id="m" draft="contributed">Bh:mm至h:mm</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
 			</calendar>
 			<calendar type="ethiopic">
 				<months>
@@ -2448,24 +2644,64 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</availableFormats>
 					<intervalFormats>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="Bh">
+							<greatestDifference id="B">Bh时至Bh时</greatestDifference>
+							<greatestDifference id="h">Bh时至h时</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Bhm">
+							<greatestDifference id="B">Bh:mm至Bh:mm</greatestDifference>
+							<greatestDifference id="h">Bh:mm至h:mm</greatestDifference>
+							<greatestDifference id="m">Bh:mm至h:mm</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d至d日</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G">G y – G y</greatestDifference>
+							<greatestDifference id="y">G y–y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G">GGGGG y-MM – GGGGG y-MM</greatestDifference>
+							<greatestDifference id="M">GGGGG y-MM – y-MM</greatestDifference>
+							<greatestDifference id="y">GGGGG y-MM – y-MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="G">GGGGG y-MM-dd – GGGGG y-MM-dd</greatestDifference>
+							<greatestDifference id="M">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="y">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="G">GGGGG y-MM-dd, E – GGGGG y-MM-dd, E</greatestDifference>
+							<greatestDifference id="M">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="y">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G">G y MMM – G y MMM</greatestDifference>
+							<greatestDifference id="M">G y MMM–MMM</greatestDifference>
+							<greatestDifference id="y">G y MMM – y MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d">G y MMM d–d</greatestDifference>
+							<greatestDifference id="G">G y MMM d – G y MMM d</greatestDifference>
+							<greatestDifference id="M">G y MMM d – MMM d</greatestDifference>
+							<greatestDifference id="y">G y MMM d – y MMM d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d">G y MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="G">G y MMM d, E – G y MMM d, E</greatestDifference>
+							<greatestDifference id="M">G y MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="y">G y MMM d, E – y MMM d, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">ah时至ah时</greatestDifference>
 							<greatestDifference id="h">ah时至h时</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="H">
-							<greatestDifference id="H">HH–HH</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="hm">
 							<greatestDifference id="a">ah:mm至ah:mm</greatestDifference>
 							<greatestDifference id="h">ah:mm至h:mm</greatestDifference>
 							<greatestDifference id="m">ah:mm至h:mm</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hm">
-							<greatestDifference id="H">HH:mm–HH:mm</greatestDifference>
-							<greatestDifference id="m">HH:mm–HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
 							<greatestDifference id="a">vah:mm至ah:mm</greatestDifference>
@@ -2479,9 +2715,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="hv">
 							<greatestDifference id="a">vah时至ah时</greatestDifference>
 							<greatestDifference id="h">vah时至h时</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hv">
-							<greatestDifference id="H">HH–HH v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M">M–M月</greatestDifference>
@@ -2560,20 +2793,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="11">11月</month>
 							<month type="12">12月</month>
 						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1">1</month>
-							<month type="2">2</month>
-							<month type="3">3</month>
-							<month type="4">4</month>
-							<month type="5">5</month>
-							<month type="6">6</month>
-							<month type="7">7</month>
-							<month type="8">8</month>
-							<month type="9">9</month>
-							<month type="10">10</month>
-							<month type="11">11</month>
-							<month type="12">12</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">一月</month>
 							<month type="2">二月</month>
@@ -2603,20 +2822,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="10">10月</month>
 							<month type="11">11月</month>
 							<month type="12">12月</month>
-						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1">1</month>
-							<month type="2">2</month>
-							<month type="3">3</month>
-							<month type="4">4</month>
-							<month type="5">5</month>
-							<month type="6">6</month>
-							<month type="7">7</month>
-							<month type="8">8</month>
-							<month type="9">9</month>
-							<month type="10">10</month>
-							<month type="11">11</month>
-							<month type="12">12</month>
 						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">一月</month>
@@ -2829,15 +3034,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<eras>
 					<eraNames>
 						<era type="0">公元前</era>
+						<era type="0" alt="variant">BCE</era>
 						<era type="1">公元</era>
+						<era type="1" alt="variant">CE</era>
 					</eraNames>
 					<eraAbbr>
 						<era type="0">公元前</era>
+						<era type="0" alt="variant">BCE</era>
 						<era type="1">公元</era>
+						<era type="1" alt="variant">CE</era>
 					</eraAbbr>
 					<eraNarrow>
 						<era type="0">公元前</era>
+						<era type="0" alt="variant" draft="contributed">BCE</era>
 						<era type="1">公元</era>
+						<era type="1" alt="variant" draft="contributed">CE</era>
 					</eraNarrow>
 				</eras>
 				<dateFormats>
@@ -2940,7 +3151,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="MMMd">M月d日</dateFormatItem>
 						<dateFormatItem id="MMMEd">M月d日E</dateFormatItem>
 						<dateFormatItem id="MMMMd">M月d日</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="other">MMM第W周</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">MMMM第W周</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y年</dateFormatItem>
 						<dateFormatItem id="yM">y年M月</dateFormatItem>
@@ -2960,8 +3171,55 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</appendItems>
 					<intervalFormats>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="Bh">
+							<greatestDifference id="B">Bh时至Bh时</greatestDifference>
+							<greatestDifference id="h">Bh时至h时</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Bhm">
+							<greatestDifference id="B">Bh:mm至Bh:mm</greatestDifference>
+							<greatestDifference id="h">Bh:mm至h:mm</greatestDifference>
+							<greatestDifference id="m">Bh:mm至h:mm</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d–d日</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G">G y – G y</greatestDifference>
+							<greatestDifference id="y">G y–y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G">GGGGG y-MM – GGGGG y-MM</greatestDifference>
+							<greatestDifference id="M">GGGGG y-MM – y-MM</greatestDifference>
+							<greatestDifference id="y">GGGGG y-MM – y-MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="G">GGGGG y-MM-dd – GGGGG y-MM-dd</greatestDifference>
+							<greatestDifference id="M">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="y">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="G">GGGGG y-MM-dd, E – GGGGG y-MM-dd, E</greatestDifference>
+							<greatestDifference id="M">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="y">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G">G y MMM – G y MMM</greatestDifference>
+							<greatestDifference id="M">G y MMM–MMM</greatestDifference>
+							<greatestDifference id="y">G y MMM – y MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d">G y MMM d–d</greatestDifference>
+							<greatestDifference id="G">G y MMM d – G y MMM d</greatestDifference>
+							<greatestDifference id="M">G y MMM d – MMM d</greatestDifference>
+							<greatestDifference id="y">G y MMM d – y MMM d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d">G y MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="G">G y MMM d, E – G y MMM d, E</greatestDifference>
+							<greatestDifference id="M">G y MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="y">G y MMM d, E – y MMM d, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">ah时至ah时</greatestDifference>
@@ -3074,22 +3332,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="12">12月</month>
 							<month type="13">13月</month>
 						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1" draft="contributed">1</month>
-							<month type="2" draft="contributed">2</month>
-							<month type="3" draft="contributed">3</month>
-							<month type="4" draft="contributed">4</month>
-							<month type="5" draft="contributed">5</month>
-							<month type="6" draft="contributed">6</month>
-							<month type="7" draft="contributed">7</month>
-							<month type="7" yeartype="leap" draft="contributed">7</month>
-							<month type="8" draft="contributed">8</month>
-							<month type="9" draft="contributed">9</month>
-							<month type="10" draft="contributed">10</month>
-							<month type="11" draft="contributed">11</month>
-							<month type="12" draft="contributed">12</month>
-							<month type="13" draft="contributed">13</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">一月</month>
 							<month type="2">二月</month>
@@ -3192,35 +3434,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</dateFormatLength>
 				</dateFormats>
 				<dateTimeFormats>
-					<dateTimeFormatLength type="full">
-						<dateTimeFormat>
-							<pattern draft="contributed">{1} {0}</pattern>
-						</dateTimeFormat>
-					</dateTimeFormatLength>
-					<dateTimeFormatLength type="long">
-						<dateTimeFormat>
-							<pattern draft="contributed">{1} {0}</pattern>
-						</dateTimeFormat>
-					</dateTimeFormatLength>
-					<dateTimeFormatLength type="medium">
-						<dateTimeFormat>
-							<pattern draft="contributed">{1} {0}</pattern>
-						</dateTimeFormat>
-					</dateTimeFormatLength>
-					<dateTimeFormatLength type="short">
-						<dateTimeFormat>
-							<pattern draft="contributed">{1} {0}</pattern>
-						</dateTimeFormat>
-					</dateTimeFormatLength>
 					<availableFormats>
 						<dateFormatItem id="d" draft="contributed">d日</dateFormatItem>
-						<dateFormatItem id="E" draft="contributed">ccc</dateFormatItem>
 						<dateFormatItem id="Ed" draft="contributed">d日E</dateFormatItem>
 						<dateFormatItem id="Gy" draft="contributed">Gy年</dateFormatItem>
 						<dateFormatItem id="GyMMM" draft="contributed">Gy年MM月</dateFormatItem>
 						<dateFormatItem id="GyMMMd" draft="contributed">Gy年MM月d日</dateFormatItem>
 						<dateFormatItem id="GyMMMEd" draft="contributed">Gy年MM月d日E</dateFormatItem>
-						<dateFormatItem id="M" draft="contributed">L</dateFormatItem>
 						<dateFormatItem id="Md" draft="contributed">M/d</dateFormatItem>
 						<dateFormatItem id="MEd" draft="contributed">M/dE</dateFormatItem>
 						<dateFormatItem id="MMM" draft="contributed">LL</dateFormatItem>
@@ -3240,7 +3460,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyyQQQQ" draft="contributed">Gy年第Q季度</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback draft="contributed">{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="Bh">
+							<greatestDifference id="B" draft="contributed">Bh时至Bh时</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh时至h时</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Bhm">
+							<greatestDifference id="B" draft="contributed">Bh:mm至Bh:mm</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh:mm至h:mm</greatestDifference>
+							<greatestDifference id="m" draft="contributed">Bh:mm至h:mm</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d" draft="contributed">d至d日</greatestDifference>
 						</intervalFormatItem>
@@ -3248,17 +3476,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="a" draft="contributed">ah时至ah时</greatestDifference>
 							<greatestDifference id="h" draft="contributed">ah时至h时</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="H">
-							<greatestDifference id="H" draft="contributed">HH–HH</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="hm">
 							<greatestDifference id="a" draft="contributed">ah:mm至ah:mm</greatestDifference>
 							<greatestDifference id="h" draft="contributed">ah:mm至h:mm</greatestDifference>
 							<greatestDifference id="m" draft="contributed">ah:mm至h:mm</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hm">
-							<greatestDifference id="H" draft="contributed">HH:mm–HH:mm</greatestDifference>
-							<greatestDifference id="m" draft="contributed">HH:mm–HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
 							<greatestDifference id="a" draft="contributed">vah:mm至ah:mm</greatestDifference>
@@ -3272,9 +3493,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="hv">
 							<greatestDifference id="a" draft="contributed">vah时至ah时</greatestDifference>
 							<greatestDifference id="h" draft="contributed">vah时至h时</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hv">
-							<greatestDifference id="H" draft="contributed">HH–HH v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M" draft="contributed">M–M月</greatestDifference>
@@ -3353,20 +3571,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="11">11月</month>
 							<month type="12">12月</month>
 						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1" draft="contributed">1</month>
-							<month type="2" draft="contributed">2</month>
-							<month type="3" draft="contributed">3</month>
-							<month type="4" draft="contributed">4</month>
-							<month type="5" draft="contributed">5</month>
-							<month type="6" draft="contributed">6</month>
-							<month type="7" draft="contributed">7</month>
-							<month type="8" draft="contributed">8</month>
-							<month type="9" draft="contributed">9</month>
-							<month type="10" draft="contributed">10</month>
-							<month type="11" draft="contributed">11</month>
-							<month type="12" draft="contributed">12</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1" draft="contributed">一月</month>
 							<month type="2" draft="contributed">二月</month>
@@ -3396,20 +3600,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="10">10月</month>
 							<month type="11">11月</month>
 							<month type="12">12月</month>
-						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1" draft="contributed">1</month>
-							<month type="2" draft="contributed">2</month>
-							<month type="3" draft="contributed">3</month>
-							<month type="4" draft="contributed">4</month>
-							<month type="5" draft="contributed">5</month>
-							<month type="6" draft="contributed">6</month>
-							<month type="7" draft="contributed">7</month>
-							<month type="8" draft="contributed">8</month>
-							<month type="9" draft="contributed">9</month>
-							<month type="10" draft="contributed">10</month>
-							<month type="11" draft="contributed">11</month>
-							<month type="12" draft="contributed">12</month>
 						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">一月</month>
@@ -3461,35 +3651,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</dateFormatLength>
 				</dateFormats>
 				<dateTimeFormats>
-					<dateTimeFormatLength type="full">
-						<dateTimeFormat>
-							<pattern draft="contributed">{1} {0}</pattern>
-						</dateTimeFormat>
-					</dateTimeFormatLength>
-					<dateTimeFormatLength type="long">
-						<dateTimeFormat>
-							<pattern draft="contributed">{1} {0}</pattern>
-						</dateTimeFormat>
-					</dateTimeFormatLength>
-					<dateTimeFormatLength type="medium">
-						<dateTimeFormat>
-							<pattern draft="contributed">{1} {0}</pattern>
-						</dateTimeFormat>
-					</dateTimeFormatLength>
-					<dateTimeFormatLength type="short">
-						<dateTimeFormat>
-							<pattern draft="contributed">{1} {0}</pattern>
-						</dateTimeFormat>
-					</dateTimeFormatLength>
 					<availableFormats>
 						<dateFormatItem id="d" draft="contributed">d日</dateFormatItem>
-						<dateFormatItem id="E" draft="contributed">ccc</dateFormatItem>
 						<dateFormatItem id="Ed" draft="contributed">d日E</dateFormatItem>
 						<dateFormatItem id="Gy" draft="contributed">Gy年</dateFormatItem>
 						<dateFormatItem id="GyMMM" draft="contributed">Gy年MM月</dateFormatItem>
 						<dateFormatItem id="GyMMMd" draft="contributed">Gy年MM月d日</dateFormatItem>
 						<dateFormatItem id="GyMMMEd" draft="contributed">Gy年MM月d日E</dateFormatItem>
-						<dateFormatItem id="M" draft="contributed">L</dateFormatItem>
 						<dateFormatItem id="Md" draft="contributed">M/d</dateFormatItem>
 						<dateFormatItem id="MEd" draft="contributed">M/dE</dateFormatItem>
 						<dateFormatItem id="MMM" draft="contributed">LL</dateFormatItem>
@@ -3509,7 +3677,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyyQQQQ" draft="contributed">Gy年第Q季度</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback draft="contributed">{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="Bh">
+							<greatestDifference id="B" draft="contributed">Bh时至Bh时</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh时至h时</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Bhm">
+							<greatestDifference id="B" draft="contributed">Bh:mm至Bh:mm</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh:mm至h:mm</greatestDifference>
+							<greatestDifference id="m" draft="contributed">Bh:mm至h:mm</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d" draft="contributed">d至d日</greatestDifference>
 						</intervalFormatItem>
@@ -3517,17 +3693,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="a" draft="contributed">ah时至ah时</greatestDifference>
 							<greatestDifference id="h" draft="contributed">ah时至h时</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="H">
-							<greatestDifference id="H" draft="contributed">HH–HH</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="hm">
 							<greatestDifference id="a" draft="contributed">ah:mm至ah:mm</greatestDifference>
 							<greatestDifference id="h" draft="contributed">ah:mm至h:mm</greatestDifference>
 							<greatestDifference id="m" draft="contributed">ah:mm至h:mm</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hm">
-							<greatestDifference id="H" draft="contributed">HH:mm–HH:mm</greatestDifference>
-							<greatestDifference id="m" draft="contributed">HH:mm–HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
 							<greatestDifference id="a" draft="contributed">vah:mm至ah:mm</greatestDifference>
@@ -3541,9 +3710,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="hv">
 							<greatestDifference id="a" draft="contributed">vah时至ah时</greatestDifference>
 							<greatestDifference id="h" draft="contributed">vah时至h时</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hv">
-							<greatestDifference id="H" draft="contributed">HH–HH v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M" draft="contributed">M–M月</greatestDifference>
@@ -3970,6 +4136,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<era type="233" draft="contributed">大正</era>
 						<era type="234" draft="contributed">昭和</era>
 						<era type="235" draft="contributed">平成</era>
+						<era type="236" draft="contributed">令和</era>
 					</eraNames>
 					<eraAbbr>
 						<era type="0">大化 (645–650)</era>
@@ -4208,6 +4375,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<era type="233">大正</era>
 						<era type="234">昭和</era>
 						<era type="235">平成</era>
+						<era type="236">令和</era>
 					</eraAbbr>
 					<eraNarrow>
 						<era type="0">大化(645–650)</era>
@@ -4373,6 +4541,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<era type="160" draft="contributed">建德(1370–1372)</era>
 						<era type="161" draft="contributed">文中(1372–1375)</era>
 						<era type="162" draft="contributed">天授(1375–1379)</era>
+						<era type="163" draft="contributed">康历(1379–1381)</era>
+						<era type="164" draft="contributed">弘和(1381–1384)</era>
+						<era type="165" draft="contributed">元中(1384–1392)</era>
+						<era type="166" draft="contributed">明德(1384–1387)</era>
+						<era type="232" draft="contributed">M</era>
+						<era type="233" draft="contributed">T</era>
+						<era type="234" draft="contributed">S</era>
+						<era type="235" draft="contributed">H</era>
+						<era type="236" draft="contributed">R</era>
 					</eraNarrow>
 				</eras>
 				<dateFormats>
@@ -4451,6 +4628,55 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyyQQQ">Gy年第Q季度</dateFormatItem>
 						<dateFormatItem id="yyyyQQQQ">Gy年QQQQ</dateFormatItem>
 					</availableFormats>
+					<intervalFormats>
+						<intervalFormatItem id="Bh">
+							<greatestDifference id="B" draft="contributed">Bh时至Bh时</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh时至h时</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Bhm">
+							<greatestDifference id="B" draft="contributed">Bh:mm至Bh:mm</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh:mm至h:mm</greatestDifference>
+							<greatestDifference id="m" draft="contributed">Bh:mm至h:mm</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G" draft="contributed">G y – G y</greatestDifference>
+							<greatestDifference id="y" draft="contributed">G y–y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G" draft="contributed">GGGGG y-MM – GGGGG y-MM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">GGGGG y-MM – y-MM</greatestDifference>
+							<greatestDifference id="y" draft="contributed">GGGGG y-MM – y-MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d" draft="contributed">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="G" draft="contributed">GGGGG y-MM-dd – GGGGG y-MM-dd</greatestDifference>
+							<greatestDifference id="M" draft="contributed">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="y" draft="contributed">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d" draft="contributed">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="G" draft="contributed">GGGGG y-MM-dd, E – GGGGG y-MM-dd, E</greatestDifference>
+							<greatestDifference id="M" draft="contributed">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="y" draft="contributed">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G" draft="contributed">G y MMM – G y MMM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">G y MMM–MMM</greatestDifference>
+							<greatestDifference id="y" draft="contributed">G y MMM – y MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d" draft="contributed">G y MMM d–d</greatestDifference>
+							<greatestDifference id="G" draft="contributed">G y MMM d – G y MMM d</greatestDifference>
+							<greatestDifference id="M" draft="contributed">G y MMM d – MMM d</greatestDifference>
+							<greatestDifference id="y" draft="contributed">G y MMM d – y MMM d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d" draft="contributed">G y MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="G" draft="contributed">G y MMM d, E – G y MMM d, E</greatestDifference>
+							<greatestDifference id="M" draft="contributed">G y MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="y" draft="contributed">G y MMM d, E – y MMM d, E</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
 			<calendar type="persian">
@@ -4555,6 +4781,50 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<era type="0" draft="contributed">波斯历</era>
 					</eraNarrow>
 				</eras>
+				<dateTimeFormats>
+					<intervalFormats>
+						<intervalFormatItem id="Bh">
+							<greatestDifference id="B" draft="contributed">Bh时至Bh时</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh时至h时</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Bhm">
+							<greatestDifference id="B" draft="contributed">Bh:mm至Bh:mm</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh:mm至h:mm</greatestDifference>
+							<greatestDifference id="m" draft="contributed">Bh:mm至h:mm</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G" draft="contributed">G y – G y</greatestDifference>
+							<greatestDifference id="y" draft="contributed">G y–y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G" draft="contributed">GGGGG y-MM – GGGGG y-MM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">GGGGG y-MM – y-MM</greatestDifference>
+							<greatestDifference id="y" draft="contributed">GGGGG y-MM – y-MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d" draft="contributed">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="G" draft="contributed">GGGGG y-MM-dd – GGGGG y-MM-dd</greatestDifference>
+							<greatestDifference id="M" draft="contributed">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="y" draft="contributed">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d" draft="contributed">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="G" draft="contributed">GGGGG y-MM-dd, E – GGGGG y-MM-dd, E</greatestDifference>
+							<greatestDifference id="M" draft="contributed">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="y" draft="contributed">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G" draft="contributed">G y MMM – G y MMM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">G y MMM–MMM</greatestDifference>
+							<greatestDifference id="y" draft="contributed">G y MMM – y MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d" draft="contributed">G y MMM d–d</greatestDifference>
+							<greatestDifference id="G" draft="contributed">G y MMM d – G y MMM d</greatestDifference>
+							<greatestDifference id="M" draft="contributed">G y MMM d – MMM d</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
 			</calendar>
 			<calendar type="roc">
 				<eras>
@@ -4594,26 +4864,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</dateFormatLength>
 				</dateFormats>
 				<dateTimeFormats>
-					<dateTimeFormatLength type="full">
-						<dateTimeFormat>
-							<pattern draft="contributed">{1} {0}</pattern>
-						</dateTimeFormat>
-					</dateTimeFormatLength>
-					<dateTimeFormatLength type="long">
-						<dateTimeFormat>
-							<pattern draft="contributed">{1} {0}</pattern>
-						</dateTimeFormat>
-					</dateTimeFormatLength>
-					<dateTimeFormatLength type="medium">
-						<dateTimeFormat>
-							<pattern draft="contributed">{1} {0}</pattern>
-						</dateTimeFormat>
-					</dateTimeFormatLength>
-					<dateTimeFormatLength type="short">
-						<dateTimeFormat>
-							<pattern draft="contributed">{1} {0}</pattern>
-						</dateTimeFormat>
-					</dateTimeFormatLength>
 					<availableFormats>
 						<dateFormatItem id="d">d日</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
@@ -4642,7 +4892,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyyQQQQ">Gy年第Q季度</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback draft="contributed">{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="Bh">
+							<greatestDifference id="B" draft="contributed">Bh时至Bh时</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh时至h时</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Bhm">
+							<greatestDifference id="B" draft="contributed">Bh:mm至Bh:mm</greatestDifference>
+							<greatestDifference id="h" draft="contributed">Bh:mm至h:mm</greatestDifference>
+							<greatestDifference id="m" draft="contributed">Bh:mm至h:mm</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d" draft="contributed">d至d日</greatestDifference>
 						</intervalFormatItem>
@@ -4650,17 +4908,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="a" draft="contributed">ah时至ah时</greatestDifference>
 							<greatestDifference id="h" draft="contributed">ah时至h时</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="H">
-							<greatestDifference id="H" draft="contributed">HH–HH</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="hm">
 							<greatestDifference id="a" draft="contributed">ah:mm至ah:mm</greatestDifference>
 							<greatestDifference id="h" draft="contributed">ah:mm至h:mm</greatestDifference>
 							<greatestDifference id="m" draft="contributed">ah:mm至h:mm</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hm">
-							<greatestDifference id="H" draft="contributed">HH:mm–HH:mm</greatestDifference>
-							<greatestDifference id="m" draft="contributed">HH:mm–HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
 							<greatestDifference id="a" draft="contributed">vah:mm至ah:mm</greatestDifference>
@@ -4674,9 +4925,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="hv">
 							<greatestDifference id="a" draft="contributed">vah时至ah时</greatestDifference>
 							<greatestDifference id="h" draft="contributed">vah时至h时</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hv">
-							<greatestDifference id="H" draft="contributed">HH–HH v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M" draft="contributed">M–M月</greatestDifference>
@@ -5332,6 +5580,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<long>
 					<standard>协调世界时</standard>
 				</long>
+				<short>
+					<standard draft="contributed">UTC</standard>
+				</short>
 			</zone>
 			<zone type="Etc/Unknown">
 				<exemplarCity>未知城市</exemplarCity>
@@ -5998,6 +6249,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Asia/Aqtobe">
 				<exemplarCity>阿克托别</exemplarCity>
+			</zone>
+			<zone type="Asia/Qostanay">
+				<exemplarCity draft="contributed">库斯塔奈</exemplarCity>
 			</zone>
 			<zone type="Asia/Qyzylorda">
 				<exemplarCity>克孜洛尔达</exemplarCity>
@@ -7579,7 +7833,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<defaultNumberingSystem>latn</defaultNumberingSystem>
 		<otherNumberingSystems>
 			<native>hanidec</native>
 			<traditional>hans</traditional>
@@ -7587,36 +7840,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</otherNumberingSystems>
 		<minimumGroupingDigits draft="contributed">1</minimumGroupingDigits>
 		<symbols numberSystem="arab">
-			<decimal draft="contributed">٫</decimal>
-			<group draft="contributed">٬</group>
-			<list draft="contributed">؛</list>
-			<exponential draft="contributed">اس</exponential>
-			<superscriptingExponent draft="contributed">×</superscriptingExponent>
-			<perMille draft="contributed">؉</perMille>
-			<infinity draft="contributed">∞</infinity>
-			<nan draft="contributed">NaN</nan>
-			<timeSeparator draft="contributed">:</timeSeparator>
-		</symbols>
-		<symbols numberSystem="arabext">
-			<decimal draft="contributed">٫</decimal>
-			<group draft="contributed">٬</group>
-			<list draft="contributed">؛</list>
-			<percentSign draft="contributed">٪</percentSign>
-			<plusSign draft="contributed">‎+‎</plusSign>
-			<minusSign draft="contributed">‎-‎</minusSign>
-			<exponential draft="contributed">×۱۰^</exponential>
-			<superscriptingExponent draft="contributed">×</superscriptingExponent>
-			<perMille draft="contributed">؉</perMille>
-			<infinity draft="contributed">∞</infinity>
-			<nan draft="contributed">NaN</nan>
-			<timeSeparator draft="contributed">٫</timeSeparator>
+			<percentSign draft="contributed">٪؜</percentSign>
+			<plusSign draft="contributed">؜+</plusSign>
+			<minusSign draft="contributed">؜-</minusSign>
 		</symbols>
 		<symbols numberSystem="hanidec">
-			<decimal>.</decimal>
-			<group>,</group>
 			<percentSign>%</percentSign>
-			<plusSign>+</plusSign>
-			<minusSign>-</minusSign>
 			<exponential>E</exponential>
 			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>‰</perMille>
@@ -7624,165 +7853,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<nan>NaN</nan>
 		</symbols>
 		<symbols numberSystem="latn">
-			<decimal>.</decimal>
-			<group>,</group>
 			<list>;</list>
 			<percentSign>%</percentSign>
-			<plusSign>+</plusSign>
-			<minusSign>-</minusSign>
 			<exponential>E</exponential>
 			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>‰</perMille>
 			<infinity>∞</infinity>
 			<nan>NaN</nan>
-			<timeSeparator draft="contributed">:</timeSeparator>
 		</symbols>
-		<decimalFormats numberSystem="arab">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<decimalFormats numberSystem="arabext">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<decimalFormats numberSystem="bali">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<decimalFormats numberSystem="beng">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<decimalFormats numberSystem="brah">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<decimalFormats numberSystem="cakm">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<decimalFormats numberSystem="cham">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<decimalFormats numberSystem="deva">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<decimalFormats numberSystem="fullwide">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<decimalFormats numberSystem="gonm">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<decimalFormats numberSystem="gujr">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<decimalFormats numberSystem="guru">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<decimalFormats numberSystem="hanidec">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern>#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<decimalFormats numberSystem="java">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<decimalFormats numberSystem="kali">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<decimalFormats numberSystem="khmr">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<decimalFormats numberSystem="knda">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<decimalFormats numberSystem="lana">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<decimalFormats numberSystem="lanatham">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<decimalFormats numberSystem="laoo">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
 		<decimalFormats numberSystem="latn">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern>#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
 			<decimalFormatLength type="long">
 				<decimalFormat>
 					<pattern type="1000" count="other">0</pattern>
@@ -7816,297 +7895,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</decimalFormat>
 			</decimalFormatLength>
 		</decimalFormats>
-		<decimalFormats numberSystem="lepc">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<decimalFormats numberSystem="limb">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<decimalFormats numberSystem="mlym">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<decimalFormats numberSystem="mong">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<decimalFormats numberSystem="mtei">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<decimalFormats numberSystem="mymr">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<decimalFormats numberSystem="mymrshan">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<decimalFormats numberSystem="nkoo">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<decimalFormats numberSystem="olck">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<decimalFormats numberSystem="orya">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<decimalFormats numberSystem="osma">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<decimalFormats numberSystem="saur">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<decimalFormats numberSystem="shrd">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<decimalFormats numberSystem="sora">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<decimalFormats numberSystem="sund">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<decimalFormats numberSystem="takr">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<decimalFormats numberSystem="talu">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<decimalFormats numberSystem="tamldec">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<decimalFormats numberSystem="telu">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<decimalFormats numberSystem="thai">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<decimalFormats numberSystem="tibt">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<decimalFormats numberSystem="vaii">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<scientificFormats numberSystem="arab">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern draft="contributed">#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<scientificFormats numberSystem="arabext">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern draft="contributed">#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<scientificFormats numberSystem="bali">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern draft="contributed">#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<scientificFormats numberSystem="beng">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern draft="contributed">#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<scientificFormats numberSystem="brah">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern draft="contributed">#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<scientificFormats numberSystem="cakm">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern draft="contributed">#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<scientificFormats numberSystem="cham">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern draft="contributed">#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<scientificFormats numberSystem="deva">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern draft="contributed">#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<scientificFormats numberSystem="fullwide">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern draft="contributed">#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<scientificFormats numberSystem="gonm">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern draft="contributed">#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<scientificFormats numberSystem="gujr">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern draft="contributed">#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<scientificFormats numberSystem="guru">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern draft="contributed">#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
 		<scientificFormats numberSystem="hanidec">
 			<scientificFormatLength>
 				<scientificFormat>
 					<pattern>#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<scientificFormats numberSystem="java">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern draft="contributed">#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<scientificFormats numberSystem="kali">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern draft="contributed">#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<scientificFormats numberSystem="khmr">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern draft="contributed">#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<scientificFormats numberSystem="knda">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern draft="contributed">#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<scientificFormats numberSystem="lana">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern draft="contributed">#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<scientificFormats numberSystem="lanatham">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern draft="contributed">#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<scientificFormats numberSystem="laoo">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern draft="contributed">#E0</pattern>
 				</scientificFormat>
 			</scientificFormatLength>
 		</scientificFormats>
@@ -8117,241 +7909,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</scientificFormat>
 			</scientificFormatLength>
 		</scientificFormats>
-		<scientificFormats numberSystem="lepc">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern draft="contributed">#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<scientificFormats numberSystem="limb">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern draft="contributed">#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<scientificFormats numberSystem="mlym">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern draft="contributed">#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<scientificFormats numberSystem="mong">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern draft="contributed">#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<scientificFormats numberSystem="mtei">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern draft="contributed">#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<scientificFormats numberSystem="mymr">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern draft="contributed">#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<scientificFormats numberSystem="mymrshan">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern draft="contributed">#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<scientificFormats numberSystem="nkoo">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern draft="contributed">#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<scientificFormats numberSystem="olck">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern draft="contributed">#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<scientificFormats numberSystem="orya">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern draft="contributed">#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<scientificFormats numberSystem="osma">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern draft="contributed">#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<scientificFormats numberSystem="saur">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern draft="contributed">#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<scientificFormats numberSystem="shrd">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern draft="contributed">#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<scientificFormats numberSystem="sora">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern draft="contributed">#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<scientificFormats numberSystem="sund">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern draft="contributed">#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<scientificFormats numberSystem="takr">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern draft="contributed">#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<scientificFormats numberSystem="talu">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern draft="contributed">#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<scientificFormats numberSystem="tamldec">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern draft="contributed">#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<scientificFormats numberSystem="telu">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern draft="contributed">#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<scientificFormats numberSystem="thai">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern draft="contributed">#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<scientificFormats numberSystem="tibt">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern draft="contributed">#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<scientificFormats numberSystem="vaii">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern draft="contributed">#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
 		<percentFormats numberSystem="arab">
 			<percentFormatLength>
 				<percentFormat>
 					<pattern>#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
-		<percentFormats numberSystem="arabext">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="contributed">#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
-		<percentFormats numberSystem="bali">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="contributed">#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
-		<percentFormats numberSystem="beng">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="contributed">#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
-		<percentFormats numberSystem="brah">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="contributed">#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
-		<percentFormats numberSystem="cakm">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="contributed">#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
-		<percentFormats numberSystem="cham">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="contributed">#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
-		<percentFormats numberSystem="deva">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="contributed">#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
-		<percentFormats numberSystem="fullwide">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="contributed">#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
-		<percentFormats numberSystem="gonm">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="contributed">#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
-		<percentFormats numberSystem="gujr">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="contributed">#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
-		<percentFormats numberSystem="guru">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="contributed">#,##0%</pattern>
 				</percentFormat>
 			</percentFormatLength>
 		</percentFormats>
@@ -8362,213 +7923,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</percentFormat>
 			</percentFormatLength>
 		</percentFormats>
-		<percentFormats numberSystem="java">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="contributed">#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
-		<percentFormats numberSystem="kali">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="contributed">#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
-		<percentFormats numberSystem="khmr">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="contributed">#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
-		<percentFormats numberSystem="knda">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="contributed">#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
-		<percentFormats numberSystem="lana">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="contributed">#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
-		<percentFormats numberSystem="lanatham">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="contributed">#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
-		<percentFormats numberSystem="laoo">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="contributed">#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
 		<percentFormats numberSystem="latn">
 			<percentFormatLength>
 				<percentFormat>
 					<pattern>#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
-		<percentFormats numberSystem="lepc">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="contributed">#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
-		<percentFormats numberSystem="limb">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="contributed">#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
-		<percentFormats numberSystem="mlym">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="contributed">#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
-		<percentFormats numberSystem="mong">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="contributed">#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
-		<percentFormats numberSystem="mtei">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="contributed">#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
-		<percentFormats numberSystem="mymr">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="contributed">#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
-		<percentFormats numberSystem="mymrshan">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="contributed">#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
-		<percentFormats numberSystem="nkoo">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="contributed">#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
-		<percentFormats numberSystem="olck">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="contributed">#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
-		<percentFormats numberSystem="orya">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="contributed">#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
-		<percentFormats numberSystem="osma">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="contributed">#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
-		<percentFormats numberSystem="saur">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="contributed">#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
-		<percentFormats numberSystem="shrd">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="contributed">#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
-		<percentFormats numberSystem="sora">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="contributed">#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
-		<percentFormats numberSystem="sund">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="contributed">#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
-		<percentFormats numberSystem="takr">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="contributed">#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
-		<percentFormats numberSystem="talu">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="contributed">#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
-		<percentFormats numberSystem="tamldec">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="contributed">#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
-		<percentFormats numberSystem="telu">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="contributed">#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
-		<percentFormats numberSystem="thai">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="contributed">#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
-		<percentFormats numberSystem="tibt">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="contributed">#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
-		<percentFormats numberSystem="vaii">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="contributed">#,##0%</pattern>
 				</percentFormat>
 			</percentFormatLength>
 		</percentFormats>
@@ -9069,87 +8427,72 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="AED">
 				<displayName>阿联酋迪拉姆</displayName>
 				<displayName count="other">阿联酋迪拉姆</displayName>
-				<symbol>AED</symbol>
 			</currency>
 			<currency type="AFA">
 				<displayName>阿富汗尼 (1927–2002)</displayName>
+				<symbol draft="contributed">AFA</symbol>
 			</currency>
 			<currency type="AFN">
 				<displayName>阿富汗尼</displayName>
 				<displayName count="other">阿富汗尼</displayName>
-				<symbol>AFN</symbol>
 			</currency>
 			<currency type="ALK">
 				<displayName>阿尔巴尼亚列克(1946–1965)</displayName>
 				<displayName count="other">阿尔巴尼亚列克(1946–1965)</displayName>
-				<symbol>ALK</symbol>
 			</currency>
 			<currency type="ALL">
 				<displayName>阿尔巴尼亚列克</displayName>
 				<displayName count="other">阿尔巴尼亚列克</displayName>
-				<symbol>ALL</symbol>
 			</currency>
 			<currency type="AMD">
 				<displayName>亚美尼亚德拉姆</displayName>
 				<displayName count="other">亚美尼亚德拉姆</displayName>
-				<symbol>AMD</symbol>
 			</currency>
 			<currency type="ANG">
 				<displayName>荷属安的列斯盾</displayName>
 				<displayName count="other">荷属安的列斯盾</displayName>
-				<symbol>ANG</symbol>
 			</currency>
 			<currency type="AOA">
 				<displayName>安哥拉宽扎</displayName>
 				<displayName count="other">安哥拉宽扎</displayName>
-				<symbol>AOA</symbol>
 				<symbol alt="narrow" draft="contributed">Kz</symbol>
 			</currency>
 			<currency type="AOK">
 				<displayName>安哥拉宽扎 (1977–1990)</displayName>
 				<displayName count="other">安哥拉宽扎 (1977–1990)</displayName>
-				<symbol draft="contributed">AOK</symbol>
 			</currency>
 			<currency type="AON">
 				<displayName>安哥拉新宽扎 (1990–2000)</displayName>
 				<displayName count="other">安哥拉新宽扎 (1990–2000)</displayName>
-				<symbol draft="contributed">AON</symbol>
 			</currency>
 			<currency type="AOR">
 				<displayName>安哥拉重新调整宽扎 (1995–1999)</displayName>
 				<displayName count="other">安哥拉重新调整宽扎 (1995–1999)</displayName>
-				<symbol draft="contributed">AOR</symbol>
 			</currency>
 			<currency type="ARA">
 				<displayName>阿根廷奥斯特拉尔</displayName>
 				<displayName count="other">阿根廷奥斯特拉尔</displayName>
-				<symbol draft="contributed">ARA</symbol>
 			</currency>
 			<currency type="ARL">
 				<displayName>阿根廷法定比索 (1970–1983)</displayName>
 				<displayName count="other">阿根廷法定比索 (1970–1983)</displayName>
-				<symbol draft="contributed">ARL</symbol>
 			</currency>
 			<currency type="ARM">
 				<displayName>阿根廷比索 (1881–1970)</displayName>
 				<displayName count="other">阿根廷比索 (1881–1970)</displayName>
-				<symbol draft="contributed">ARM</symbol>
 			</currency>
 			<currency type="ARP">
 				<displayName>阿根廷比索 (1983–1985)</displayName>
 				<displayName count="other">阿根廷比索 (1983–1985)</displayName>
-				<symbol draft="contributed">ARP</symbol>
 			</currency>
 			<currency type="ARS">
 				<displayName>阿根廷比索</displayName>
 				<displayName count="other">阿根廷比索</displayName>
-				<symbol>ARS</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="ATS">
 				<displayName>奥地利先令</displayName>
 				<displayName count="other">奥地利先令</displayName>
-				<symbol draft="contributed">ATS</symbol>
 			</currency>
 			<currency type="AUD">
 				<displayName>澳大利亚元</displayName>
@@ -9160,17 +8503,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="AWG">
 				<displayName>阿鲁巴弗罗林</displayName>
 				<displayName count="other">阿鲁巴弗罗林</displayName>
-				<symbol>AWG</symbol>
 			</currency>
 			<currency type="AZM">
 				<displayName>阿塞拜疆马纳特 (1993–2006)</displayName>
 				<displayName count="other">阿塞拜疆马纳特 (1993–2006)</displayName>
-				<symbol draft="contributed">AZM</symbol>
 			</currency>
 			<currency type="AZN">
 				<displayName>阿塞拜疆马纳特</displayName>
 				<displayName count="other">阿塞拜疆马纳特</displayName>
-				<symbol>AZN</symbol>
 			</currency>
 			<currency type="BAD">
 				<displayName>波士尼亚-赫塞哥维纳第纳尔 (1992–1994)</displayName>
@@ -9180,7 +8520,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="BAM">
 				<displayName>波斯尼亚-黑塞哥维那可兑换马克</displayName>
 				<displayName count="other">波斯尼亚-黑塞哥维那可兑换马克</displayName>
-				<symbol>BAM</symbol>
 				<symbol alt="narrow" draft="contributed">KM</symbol>
 			</currency>
 			<currency type="BAN">
@@ -9191,29 +8530,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="BBD">
 				<displayName>巴巴多斯元</displayName>
 				<displayName count="other">巴巴多斯元</displayName>
-				<symbol>BBD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BDT">
 				<displayName>孟加拉塔卡</displayName>
 				<displayName count="other">孟加拉塔卡</displayName>
-				<symbol>BDT</symbol>
 				<symbol alt="narrow" draft="contributed">৳</symbol>
 			</currency>
 			<currency type="BEC">
 				<displayName>比利时法郎（可兑换）</displayName>
 				<displayName count="other">比利时法郎（可兑换）</displayName>
-				<symbol draft="contributed">BEC</symbol>
 			</currency>
 			<currency type="BEF">
 				<displayName>比利时法郎</displayName>
 				<displayName count="other">比利时法郎</displayName>
-				<symbol draft="contributed">BEF</symbol>
 			</currency>
 			<currency type="BEL">
 				<displayName>比利时法郎（金融）</displayName>
 				<displayName count="other">比利时法郎（金融）</displayName>
-				<symbol draft="contributed">BEL</symbol>
 			</currency>
 			<currency type="BGL">
 				<displayName>保加利亚硬列弗</displayName>
@@ -9228,7 +8562,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="BGN">
 				<displayName>保加利亚列弗</displayName>
 				<displayName count="other">保加利亚新列弗</displayName>
-				<symbol>BGN</symbol>
 			</currency>
 			<currency type="BGO">
 				<displayName>保加利亚列弗 (1879–1952)</displayName>
@@ -9238,17 +8571,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="BHD">
 				<displayName>巴林第纳尔</displayName>
 				<displayName count="other">巴林第纳尔</displayName>
-				<symbol>BHD</symbol>
 			</currency>
 			<currency type="BIF">
 				<displayName>布隆迪法郎</displayName>
 				<displayName count="other">布隆迪法郎</displayName>
-				<symbol>BIF</symbol>
 			</currency>
 			<currency type="BMD">
 				<displayName>百慕大元</displayName>
 				<displayName count="other">百慕大元</displayName>
-				<symbol>BMD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BND">
@@ -9260,78 +8590,65 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="BOB">
 				<displayName>玻利维亚诺</displayName>
 				<displayName count="other">玻利维亚诺</displayName>
-				<symbol>BOB</symbol>
 				<symbol alt="narrow" draft="contributed">Bs</symbol>
 			</currency>
 			<currency type="BOL">
 				<displayName>玻利维亚诺 (1863–1963)</displayName>
 				<displayName count="other">玻利维亚诺 (1863–1963)</displayName>
-				<symbol draft="contributed">BOL</symbol>
 			</currency>
 			<currency type="BOP">
 				<displayName>玻利维亚比索</displayName>
 				<displayName count="other">玻利维亚比索</displayName>
-				<symbol draft="contributed">BOP</symbol>
 			</currency>
 			<currency type="BOV">
 				<displayName>玻利维亚 Mvdol（资金）</displayName>
 				<displayName count="other">玻利维亚 Mvdol（资金）</displayName>
-				<symbol draft="contributed">BOV</symbol>
 			</currency>
 			<currency type="BRB">
 				<displayName>巴西新克鲁赛罗 (1967–1986)</displayName>
 				<displayName count="other">巴西新克鲁赛罗 (1967–1986)</displayName>
-				<symbol draft="contributed">BRB</symbol>
 			</currency>
 			<currency type="BRC">
 				<displayName>巴西克鲁扎多 (1986–1989)</displayName>
 				<displayName count="other">巴西克鲁扎多 (1986–1989)</displayName>
-				<symbol draft="contributed">BRC</symbol>
 			</currency>
 			<currency type="BRE">
 				<displayName>巴西克鲁塞罗 (1990–1993)</displayName>
 				<displayName count="other">巴西克鲁塞罗 (1990–1993)</displayName>
-				<symbol draft="contributed">BRE</symbol>
 			</currency>
 			<currency type="BRL">
 				<displayName>巴西雷亚尔</displayName>
 				<displayName count="other">巴西雷亚尔</displayName>
-				<symbol>R$</symbol>
 				<symbol alt="narrow" draft="contributed">R$</symbol>
 			</currency>
 			<currency type="BRN">
 				<displayName>巴西新克鲁扎多 (1989–1990)</displayName>
 				<displayName count="other">巴西新克鲁扎多 (1989–1990)</displayName>
-				<symbol draft="contributed">BRN</symbol>
 			</currency>
 			<currency type="BRR">
 				<displayName>巴西克鲁塞罗 (1993–1994)</displayName>
 				<displayName count="other">巴西克鲁塞罗 (1993–1994)</displayName>
-				<symbol draft="contributed">BRR</symbol>
 			</currency>
 			<currency type="BRZ">
 				<displayName>巴西克鲁塞罗 (1942–1967)</displayName>
 				<displayName count="other">巴西克鲁塞罗 (1942–1967)</displayName>
-				<symbol draft="contributed">BRZ</symbol>
 			</currency>
 			<currency type="BSD">
 				<displayName>巴哈马元</displayName>
 				<displayName count="other">巴哈马元</displayName>
-				<symbol>BSD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BTN">
 				<displayName>不丹努尔特鲁姆</displayName>
 				<displayName count="other">不丹努尔特鲁姆</displayName>
-				<symbol>BTN</symbol>
 			</currency>
 			<currency type="BUK">
 				<displayName>缅元</displayName>
+				<symbol draft="contributed">BUK</symbol>
 			</currency>
 			<currency type="BWP">
 				<displayName>博茨瓦纳普拉</displayName>
 				<displayName count="other">博茨瓦纳普拉</displayName>
-				<symbol>BWP</symbol>
 				<symbol alt="narrow" draft="contributed">P</symbol>
 			</currency>
 			<currency type="BYB">
@@ -9342,60 +8659,49 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="BYN">
 				<displayName>白俄罗斯卢布</displayName>
 				<displayName count="other">白俄罗斯卢布</displayName>
-				<symbol>BYN</symbol>
 				<symbol alt="narrow" draft="contributed">р.</symbol>
 			</currency>
 			<currency type="BYR">
 				<displayName>白俄罗斯卢布 (2000–2016)</displayName>
 				<displayName count="other">白俄罗斯卢布 (2000–2016)</displayName>
-				<symbol>BYR</symbol>
 			</currency>
 			<currency type="BZD">
 				<displayName>伯利兹元</displayName>
 				<displayName count="other">伯利兹元</displayName>
-				<symbol>BZD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CAD">
 				<displayName>加拿大元</displayName>
 				<displayName count="other">加拿大元</displayName>
-				<symbol>CA$</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CDF">
 				<displayName>刚果法郎</displayName>
 				<displayName count="other">刚果法郎</displayName>
-				<symbol>CDF</symbol>
 			</currency>
 			<currency type="CHE">
 				<displayName>欧元 (WIR)</displayName>
 				<displayName count="other">欧元 (WIR)</displayName>
-				<symbol draft="contributed">CHE</symbol>
 			</currency>
 			<currency type="CHF">
 				<displayName>瑞士法郎</displayName>
 				<displayName count="other">瑞士法郎</displayName>
-				<symbol>CHF</symbol>
 			</currency>
 			<currency type="CHW">
 				<displayName>法郎 (WIR)</displayName>
 				<displayName count="other">法郎 (WIR)</displayName>
-				<symbol draft="contributed">CHW</symbol>
 			</currency>
 			<currency type="CLE">
 				<displayName>智利埃斯库多</displayName>
 				<displayName count="other">智利埃斯库多</displayName>
-				<symbol draft="contributed">CLE</symbol>
 			</currency>
 			<currency type="CLF">
 				<displayName>智利（资金）</displayName>
 				<displayName count="other">智利（资金）</displayName>
-				<symbol draft="contributed">CLF</symbol>
 			</currency>
 			<currency type="CLP">
 				<displayName>智利比索</displayName>
 				<displayName count="other">智利比索</displayName>
-				<symbol>CLP</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CNH">
@@ -9412,18 +8718,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="COP">
 				<displayName>哥伦比亚比索</displayName>
 				<displayName count="other">哥伦比亚比索</displayName>
-				<symbol>COP</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="COU">
 				<displayName>哥伦比亚币</displayName>
 				<displayName count="other">哥伦比亚币</displayName>
-				<symbol draft="contributed">COU</symbol>
 			</currency>
 			<currency type="CRC">
 				<displayName>哥斯达黎加科朗</displayName>
 				<displayName count="other">哥斯达黎加科朗</displayName>
-				<symbol>CRC</symbol>
 				<symbol alt="narrow" draft="contributed">₡</symbol>
 			</currency>
 			<currency type="CSD">
@@ -9439,88 +8742,72 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="CUC">
 				<displayName>古巴可兑换比索</displayName>
 				<displayName count="other">古巴可兑换比索</displayName>
-				<symbol>CUC</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CUP">
 				<displayName>古巴比索</displayName>
 				<displayName count="other">古巴比索</displayName>
-				<symbol>CUP</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CVE">
 				<displayName>佛得角埃斯库多</displayName>
 				<displayName count="other">佛得角埃斯库多</displayName>
-				<symbol>CVE</symbol>
 			</currency>
 			<currency type="CYP">
 				<displayName>塞浦路斯镑</displayName>
 				<displayName count="other">塞浦路斯镑</displayName>
-				<symbol draft="contributed">CYP</symbol>
 			</currency>
 			<currency type="CZK">
 				<displayName>捷克克朗</displayName>
 				<displayName count="other">捷克克朗</displayName>
-				<symbol>CZK</symbol>
 				<symbol alt="narrow" draft="contributed">Kč</symbol>
 			</currency>
 			<currency type="DDM">
 				<displayName>东德奥斯特马克</displayName>
 				<displayName count="other">东德奥斯特马克</displayName>
-				<symbol draft="contributed">DDM</symbol>
 			</currency>
 			<currency type="DEM">
 				<displayName>德国马克</displayName>
 				<displayName count="other">德国马克</displayName>
-				<symbol draft="contributed">DEM</symbol>
 			</currency>
 			<currency type="DJF">
 				<displayName>吉布提法郎</displayName>
 				<displayName count="other">吉布提法郎</displayName>
-				<symbol>DJF</symbol>
 			</currency>
 			<currency type="DKK">
 				<displayName>丹麦克朗</displayName>
 				<displayName count="other">丹麦克朗</displayName>
-				<symbol>DKK</symbol>
 				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="DOP">
 				<displayName>多米尼加比索</displayName>
 				<displayName count="other">多米尼加比索</displayName>
-				<symbol>DOP</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="DZD">
 				<displayName>阿尔及利亚第纳尔</displayName>
 				<displayName count="other">阿尔及利亚第纳尔</displayName>
-				<symbol>DZD</symbol>
 			</currency>
 			<currency type="ECS">
 				<displayName>厄瓜多尔苏克雷</displayName>
 				<displayName count="other">厄瓜多尔苏克雷</displayName>
-				<symbol draft="contributed">ECS</symbol>
 			</currency>
 			<currency type="ECV">
 				<displayName>厄瓜多尔 (UVC)</displayName>
 				<displayName count="other">厄瓜多尔 (UVC)</displayName>
-				<symbol draft="contributed">ECV</symbol>
 			</currency>
 			<currency type="EEK">
 				<displayName>爱沙尼亚克朗</displayName>
 				<displayName count="other">爱沙尼亚克朗</displayName>
-				<symbol draft="contributed">EEK</symbol>
 			</currency>
 			<currency type="EGP">
 				<displayName>埃及镑</displayName>
 				<displayName count="other">埃及镑</displayName>
-				<symbol>EGP</symbol>
 				<symbol alt="narrow" draft="contributed">E£</symbol>
 			</currency>
 			<currency type="ERN">
 				<displayName>厄立特里亚纳克法</displayName>
 				<displayName count="other">厄立特里亚纳克法</displayName>
-				<symbol>ERN</symbol>
 			</currency>
 			<currency type="ESA">
 				<displayName>西班牙比塞塔（帐户 A）</displayName>
@@ -9541,90 +8828,74 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="ETB">
 				<displayName>埃塞俄比亚比尔</displayName>
 				<displayName count="other">埃塞俄比亚比尔</displayName>
-				<symbol>ETB</symbol>
 			</currency>
 			<currency type="EUR">
 				<displayName>欧元</displayName>
 				<displayName count="other">欧元</displayName>
-				<symbol>€</symbol>
 				<symbol alt="narrow" draft="contributed">€</symbol>
 			</currency>
 			<currency type="FIM">
 				<displayName>芬兰马克</displayName>
 				<displayName count="other">芬兰马克</displayName>
-				<symbol draft="contributed">FIM</symbol>
 			</currency>
 			<currency type="FJD">
 				<displayName>斐济元</displayName>
 				<displayName count="other">斐济元</displayName>
-				<symbol>FJD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="FKP">
 				<displayName>福克兰群岛镑</displayName>
 				<displayName count="other">福克兰群岛镑</displayName>
-				<symbol>FKP</symbol>
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="FRF">
 				<displayName>法国法郎</displayName>
 				<displayName count="other">法国法郎</displayName>
-				<symbol draft="contributed">FRF</symbol>
 			</currency>
 			<currency type="GBP">
 				<displayName>英镑</displayName>
 				<displayName count="other">英镑</displayName>
-				<symbol>£</symbol>
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="GEK">
 				<displayName>乔治亚库蓬拉瑞特</displayName>
 				<displayName count="other">乔治亚库蓬拉瑞特</displayName>
-				<symbol draft="contributed">GEK</symbol>
 			</currency>
 			<currency type="GEL">
 				<displayName>格鲁吉亚拉里</displayName>
 				<displayName count="other">格鲁吉亚拉里</displayName>
-				<symbol>GEL</symbol>
 				<symbol alt="narrow" draft="contributed">₾</symbol>
 				<symbol alt="variant" draft="contributed">₾</symbol>
 			</currency>
 			<currency type="GHC">
 				<displayName>加纳塞第</displayName>
 				<displayName count="other">加纳塞第</displayName>
-				<symbol draft="contributed">GHC</symbol>
 			</currency>
 			<currency type="GHS">
 				<displayName>加纳塞地</displayName>
 				<displayName count="other">加纳塞地</displayName>
-				<symbol>GHS</symbol>
 			</currency>
 			<currency type="GIP">
 				<displayName>直布罗陀镑</displayName>
 				<displayName count="other">直布罗陀镑</displayName>
-				<symbol>GIP</symbol>
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="GMD">
 				<displayName>冈比亚达拉西</displayName>
 				<displayName count="other">冈比亚达拉西</displayName>
-				<symbol>GMD</symbol>
 			</currency>
 			<currency type="GNF">
 				<displayName>几内亚法郎</displayName>
 				<displayName count="other">几内亚法郎</displayName>
-				<symbol>GNF</symbol>
 				<symbol alt="narrow" draft="contributed">FG</symbol>
 			</currency>
 			<currency type="GNS">
 				<displayName>几内亚西里</displayName>
 				<displayName count="other">几内亚西里</displayName>
-				<symbol draft="contributed">GNS</symbol>
 			</currency>
 			<currency type="GQE">
 				<displayName>赤道几内亚埃奎勒</displayName>
 				<displayName count="other">赤道几内亚埃奎勒</displayName>
-				<symbol draft="contributed">GQE</symbol>
 			</currency>
 			<currency type="GRD">
 				<displayName>希腊德拉克马</displayName>
@@ -9634,35 +8905,29 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="GTQ">
 				<displayName>危地马拉格查尔</displayName>
 				<displayName count="other">危地马拉格查尔</displayName>
-				<symbol>GTQ</symbol>
 				<symbol alt="narrow" draft="contributed">Q</symbol>
 			</currency>
 			<currency type="GWE">
 				<displayName>葡萄牙几内亚埃斯库多</displayName>
 				<displayName count="other">葡萄牙几内亚埃斯库多</displayName>
-				<symbol draft="contributed">GWE</symbol>
 			</currency>
 			<currency type="GWP">
 				<displayName>几内亚比绍比索</displayName>
 				<displayName count="other">几内亚比绍比索</displayName>
-				<symbol draft="contributed">GWP</symbol>
 			</currency>
 			<currency type="GYD">
 				<displayName>圭亚那元</displayName>
 				<displayName count="other">圭亚那元</displayName>
-				<symbol>GYD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="HKD">
 				<displayName>港元</displayName>
 				<displayName count="other">港元</displayName>
-				<symbol>HK$</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="HNL">
 				<displayName>洪都拉斯伦皮拉</displayName>
 				<displayName count="other">洪都拉斯伦皮拉</displayName>
-				<symbol>HNL</symbol>
 				<symbol alt="narrow" draft="contributed">L</symbol>
 			</currency>
 			<currency type="HRD">
@@ -9673,18 +8938,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="HRK">
 				<displayName>克罗地亚库纳</displayName>
 				<displayName count="other">克罗地亚库纳</displayName>
-				<symbol>HRK</symbol>
 				<symbol alt="narrow" draft="contributed">kn</symbol>
 			</currency>
 			<currency type="HTG">
 				<displayName>海地古德</displayName>
 				<displayName count="other">海地古德</displayName>
-				<symbol>HTG</symbol>
 			</currency>
 			<currency type="HUF">
 				<displayName>匈牙利福林</displayName>
 				<displayName count="other">匈牙利福林</displayName>
-				<symbol>HUF</symbol>
 				<symbol alt="narrow" draft="contributed">Ft</symbol>
 			</currency>
 			<currency type="IDR">
@@ -9696,12 +8958,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="IEP">
 				<displayName>爱尔兰镑</displayName>
 				<displayName count="other">爱尔兰镑</displayName>
-				<symbol draft="contributed">IEP</symbol>
 			</currency>
 			<currency type="ILP">
 				<displayName>以色列镑</displayName>
 				<displayName count="other">以色列镑</displayName>
-				<symbol draft="contributed">ILP</symbol>
 			</currency>
 			<currency type="ILR">
 				<displayName draft="contributed">以色列谢克尔(1980–1985)</displayName>
@@ -9711,24 +8971,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="ILS">
 				<displayName>以色列新谢克尔</displayName>
 				<displayName count="other">以色列新谢克尔</displayName>
-				<symbol>₪</symbol>
 				<symbol alt="narrow" draft="contributed">₪</symbol>
 			</currency>
 			<currency type="INR">
 				<displayName>印度卢比</displayName>
 				<displayName count="other">印度卢比</displayName>
-				<symbol>₹</symbol>
 				<symbol alt="narrow" draft="contributed">₹</symbol>
 			</currency>
 			<currency type="IQD">
 				<displayName>伊拉克第纳尔</displayName>
 				<displayName count="other">伊拉克第纳尔</displayName>
-				<symbol>IQD</symbol>
 			</currency>
 			<currency type="IRR">
 				<displayName>伊朗里亚尔</displayName>
 				<displayName count="other">伊朗里亚尔</displayName>
-				<symbol>IRR</symbol>
 			</currency>
 			<currency type="ISJ">
 				<displayName draft="contributed">冰岛克朗(1918–1981)</displayName>
@@ -9738,7 +8994,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="ISK">
 				<displayName>冰岛克朗</displayName>
 				<displayName count="other">冰岛克朗</displayName>
-				<symbol>ISK</symbol>
 				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="ITL">
@@ -9749,53 +9004,47 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="JMD">
 				<displayName>牙买加元</displayName>
 				<displayName count="other">牙买加元</displayName>
-				<symbol>JMD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="JOD">
 				<displayName>约旦第纳尔</displayName>
 				<displayName count="other">约旦第纳尔</displayName>
-				<symbol>JOD</symbol>
 			</currency>
 			<currency type="JPY">
 				<displayName>日元</displayName>
 				<displayName count="other">日元</displayName>
-				<symbol>JP¥</symbol>
 				<symbol alt="narrow" draft="contributed">¥</symbol>
 			</currency>
 			<currency type="KES">
 				<displayName>肯尼亚先令</displayName>
 				<displayName count="other">肯尼亚先令</displayName>
-				<symbol>KES</symbol>
 			</currency>
 			<currency type="KGS">
 				<displayName>吉尔吉斯斯坦索姆</displayName>
 				<displayName count="other">吉尔吉斯斯坦索姆</displayName>
-				<symbol>KGS</symbol>
 			</currency>
 			<currency type="KHR">
 				<displayName>柬埔寨瑞尔</displayName>
 				<displayName count="other">柬埔寨瑞尔</displayName>
-				<symbol>KHR</symbol>
 				<symbol alt="narrow" draft="contributed">៛</symbol>
 			</currency>
 			<currency type="KMF">
 				<displayName>科摩罗法郎</displayName>
 				<displayName count="other">科摩罗法郎</displayName>
-				<symbol>KMF</symbol>
 				<symbol alt="narrow" draft="contributed">CF</symbol>
 			</currency>
 			<currency type="KPW">
 				<displayName>朝鲜元</displayName>
 				<displayName count="other">朝鲜元</displayName>
-				<symbol>KPW</symbol>
 				<symbol alt="narrow" draft="contributed">₩</symbol>
 			</currency>
 			<currency type="KRH">
 				<displayName>韩元 (1953–1962)</displayName>
+				<symbol draft="contributed">KRH</symbol>
 			</currency>
 			<currency type="KRO">
 				<displayName>韩元 (1945–1953)</displayName>
+				<symbol draft="contributed">KRO</symbol>
 			</currency>
 			<currency type="KRW">
 				<displayName>韩元</displayName>
@@ -9806,103 +9055,86 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="KWD">
 				<displayName>科威特第纳尔</displayName>
 				<displayName count="other">科威特第纳尔</displayName>
-				<symbol>KWD</symbol>
 			</currency>
 			<currency type="KYD">
 				<displayName>开曼元</displayName>
 				<displayName count="other">开曼元</displayName>
-				<symbol>KYD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="KZT">
 				<displayName>哈萨克斯坦坚戈</displayName>
 				<displayName count="other">哈萨克斯坦坚戈</displayName>
-				<symbol>KZT</symbol>
 				<symbol alt="narrow" draft="contributed">₸</symbol>
 			</currency>
 			<currency type="LAK">
 				<displayName>老挝基普</displayName>
 				<displayName count="other">老挝基普</displayName>
-				<symbol>LAK</symbol>
 				<symbol alt="narrow" draft="contributed">₭</symbol>
 			</currency>
 			<currency type="LBP">
 				<displayName>黎巴嫩镑</displayName>
 				<displayName count="other">黎巴嫩镑</displayName>
-				<symbol>LBP</symbol>
 				<symbol alt="narrow" draft="contributed">L£</symbol>
 			</currency>
 			<currency type="LKR">
 				<displayName>斯里兰卡卢比</displayName>
 				<displayName count="other">斯里兰卡卢比</displayName>
-				<symbol>LKR</symbol>
 				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="LRD">
 				<displayName>利比里亚元</displayName>
 				<displayName count="other">利比里亚元</displayName>
-				<symbol>LRD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="LSL">
 				<displayName>莱索托洛蒂</displayName>
 				<displayName count="other">莱索托洛蒂</displayName>
-				<symbol draft="contributed">LSL</symbol>
 			</currency>
 			<currency type="LTL">
 				<displayName>立陶宛立特</displayName>
 				<displayName count="other">立陶宛立特</displayName>
-				<symbol>LTL</symbol>
+				<symbol alt="narrow" draft="contributed">Lt</symbol>
 			</currency>
 			<currency type="LTT">
 				<displayName>立陶宛塔咯呐司</displayName>
 				<displayName count="other">立陶宛塔咯呐司</displayName>
-				<symbol draft="contributed">LTT</symbol>
 			</currency>
 			<currency type="LUC">
 				<displayName>卢森堡可兑换法郎</displayName>
 				<displayName count="other">卢森堡可兑换法郎</displayName>
-				<symbol draft="contributed">LUC</symbol>
 			</currency>
 			<currency type="LUF">
 				<displayName>卢森堡法郎</displayName>
 				<displayName count="other">卢森堡法郎</displayName>
-				<symbol draft="contributed">LUF</symbol>
 			</currency>
 			<currency type="LUL">
 				<displayName>卢森堡金融法郎</displayName>
 				<displayName count="other">卢森堡金融法郎</displayName>
-				<symbol draft="contributed">LUL</symbol>
 			</currency>
 			<currency type="LVL">
 				<displayName>拉脱维亚拉特</displayName>
 				<displayName count="other">拉脱维亚拉特</displayName>
-				<symbol>LVL</symbol>
+				<symbol alt="narrow" draft="contributed">Ls</symbol>
 			</currency>
 			<currency type="LVR">
 				<displayName>拉脱维亚卢布</displayName>
 				<displayName count="other">拉脱维亚卢布</displayName>
-				<symbol draft="contributed">LVR</symbol>
 			</currency>
 			<currency type="LYD">
 				<displayName>利比亚第纳尔</displayName>
 				<displayName count="other">利比亚第纳尔</displayName>
-				<symbol>LYD</symbol>
 			</currency>
 			<currency type="MAD">
 				<displayName>摩洛哥迪拉姆</displayName>
 				<displayName count="other">摩洛哥迪拉姆</displayName>
-				<symbol>MAD</symbol>
 			</currency>
 			<currency type="MAF">
 				<displayName>摩洛哥法郎</displayName>
 				<displayName count="other">摩洛哥法郎</displayName>
-				<symbol draft="contributed">MAF</symbol>
 			</currency>
 			<currency type="MCF">
 				<displayName>摩纳哥法郎</displayName>
 				<displayName count="other">摩纳哥法郎</displayName>
-				<symbol draft="contributed">MCF</symbol>
 			</currency>
 			<currency type="MDC">
 				<displayName>摩尔多瓦库邦</displayName>
@@ -9912,23 +9144,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="MDL">
 				<displayName>摩尔多瓦列伊</displayName>
 				<displayName count="other">摩尔多瓦列伊</displayName>
-				<symbol>MDL</symbol>
 			</currency>
 			<currency type="MGA">
 				<displayName>马达加斯加阿里亚里</displayName>
 				<displayName count="other">马达加斯加阿里亚里</displayName>
-				<symbol>MGA</symbol>
 				<symbol alt="narrow" draft="contributed">Ar</symbol>
 			</currency>
 			<currency type="MGF">
 				<displayName>马达加斯加法郎</displayName>
 				<displayName count="other">马达加斯加法郎</displayName>
-				<symbol draft="contributed">MGF</symbol>
 			</currency>
 			<currency type="MKD">
 				<displayName>马其顿第纳尔</displayName>
 				<displayName count="other">马其顿第纳尔</displayName>
-				<symbol>MKD</symbol>
 			</currency>
 			<currency type="MKN">
 				<displayName>马其顿第纳尔 (1992–1993)</displayName>
@@ -9938,29 +9166,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="MLF">
 				<displayName>马里法郎</displayName>
 				<displayName count="other">马里法郎</displayName>
-				<symbol draft="contributed">MLF</symbol>
 			</currency>
 			<currency type="MMK">
 				<displayName>缅甸元</displayName>
 				<displayName count="other">缅甸元</displayName>
-				<symbol>MMK</symbol>
 				<symbol alt="narrow" draft="contributed">K</symbol>
 			</currency>
 			<currency type="MNT">
 				<displayName>蒙古图格里克</displayName>
 				<displayName count="other">蒙古图格里克</displayName>
-				<symbol>MNT</symbol>
 				<symbol alt="narrow" draft="contributed">₮</symbol>
 			</currency>
 			<currency type="MOP">
 				<displayName>澳门币</displayName>
 				<displayName count="other">澳门元</displayName>
-				<symbol>MOP</symbol>
 			</currency>
 			<currency type="MRO">
 				<displayName>毛里塔尼亚乌吉亚 (1973–2017)</displayName>
 				<displayName count="other">毛里塔尼亚乌吉亚 (1973–2017)</displayName>
-				<symbol>MRO</symbol>
 			</currency>
 			<currency type="MRU">
 				<displayName>毛里塔尼亚乌吉亚</displayName>
@@ -9979,27 +9202,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="MUR">
 				<displayName>毛里求斯卢比</displayName>
 				<displayName count="other">毛里求斯卢比</displayName>
-				<symbol>MUR</symbol>
 				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="MVP">
 				<displayName draft="contributed">马尔代夫卢比(1947–1981)</displayName>
 				<displayName count="other" draft="contributed">马尔代夫卢比(1947–1981)</displayName>
+				<symbol draft="contributed">MVP</symbol>
 			</currency>
 			<currency type="MVR">
 				<displayName>马尔代夫卢菲亚</displayName>
 				<displayName count="other">马尔代夫卢菲亚</displayName>
-				<symbol>MVR</symbol>
 			</currency>
 			<currency type="MWK">
 				<displayName>马拉维克瓦查</displayName>
 				<displayName count="other">马拉维克瓦查</displayName>
-				<symbol>MWK</symbol>
 			</currency>
 			<currency type="MXN">
 				<displayName>墨西哥比索</displayName>
 				<displayName count="other">墨西哥比索</displayName>
-				<symbol>MX$</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="MXP">
@@ -10015,34 +9235,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="MYR">
 				<displayName>马来西亚林吉特</displayName>
 				<displayName count="other">马来西亚林吉特</displayName>
-				<symbol>MYR</symbol>
 				<symbol alt="narrow" draft="contributed">RM</symbol>
 			</currency>
 			<currency type="MZE">
 				<displayName>莫桑比克埃斯库多</displayName>
 				<displayName count="other">莫桑比克埃斯库多</displayName>
-				<symbol draft="contributed">MZE</symbol>
 			</currency>
 			<currency type="MZM">
 				<displayName>旧莫桑比克美提卡</displayName>
 				<displayName count="other">旧莫桑比克美提卡</displayName>
-				<symbol draft="contributed">MZM</symbol>
 			</currency>
 			<currency type="MZN">
 				<displayName>莫桑比克美提卡</displayName>
 				<displayName count="other">莫桑比克美提卡</displayName>
-				<symbol>MZN</symbol>
 			</currency>
 			<currency type="NAD">
 				<displayName>纳米比亚元</displayName>
 				<displayName count="other">纳米比亚元</displayName>
-				<symbol>NAD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="NGN">
 				<displayName>尼日利亚奈拉</displayName>
 				<displayName count="other">尼日利亚奈拉</displayName>
-				<symbol>NGN</symbol>
 				<symbol alt="narrow" draft="contributed">₦</symbol>
 			</currency>
 			<currency type="NIC">
@@ -10053,78 +9267,64 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="NIO">
 				<displayName>尼加拉瓜科多巴</displayName>
 				<displayName count="other">尼加拉瓜金科多巴</displayName>
-				<symbol>NIO</symbol>
 				<symbol alt="narrow" draft="contributed">C$</symbol>
 			</currency>
 			<currency type="NLG">
 				<displayName>荷兰盾</displayName>
 				<displayName count="other">荷兰盾</displayName>
-				<symbol draft="contributed">NLG</symbol>
 			</currency>
 			<currency type="NOK">
 				<displayName>挪威克朗</displayName>
 				<displayName count="other">挪威克朗</displayName>
-				<symbol>NOK</symbol>
 				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="NPR">
 				<displayName>尼泊尔卢比</displayName>
 				<displayName count="other">尼泊尔卢比</displayName>
-				<symbol>NPR</symbol>
 				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="NZD">
 				<displayName>新西兰元</displayName>
 				<displayName count="other">新西兰元</displayName>
-				<symbol>NZ$</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="OMR">
 				<displayName>阿曼里亚尔</displayName>
 				<displayName count="other">阿曼里亚尔</displayName>
-				<symbol>OMR</symbol>
 			</currency>
 			<currency type="PAB">
 				<displayName>巴拿马巴波亚</displayName>
 				<displayName count="other">巴拿马巴波亚</displayName>
-				<symbol>PAB</symbol>
 			</currency>
 			<currency type="PEI">
 				<displayName>秘鲁印第</displayName>
 				<displayName count="other">秘鲁印第</displayName>
-				<symbol draft="contributed">PEI</symbol>
 			</currency>
 			<currency type="PEN">
 				<displayName>秘鲁索尔</displayName>
 				<displayName count="other">秘鲁索尔</displayName>
-				<symbol>PEN</symbol>
 			</currency>
 			<currency type="PES">
 				<displayName>秘鲁索尔 (1863–1965)</displayName>
 				<displayName count="other">秘鲁索尔 (1863–1965)</displayName>
-				<symbol draft="contributed">PES</symbol>
 			</currency>
 			<currency type="PGK">
 				<displayName>巴布亚新几内亚基那</displayName>
 				<displayName count="other">巴布亚新几内亚基那</displayName>
-				<symbol>PGK</symbol>
 			</currency>
 			<currency type="PHP">
 				<displayName>菲律宾比索</displayName>
 				<displayName count="other">菲律宾比索</displayName>
-				<symbol>PHP</symbol>
 				<symbol alt="narrow" draft="contributed">₱</symbol>
 			</currency>
 			<currency type="PKR">
 				<displayName>巴基斯坦卢比</displayName>
 				<displayName count="other">巴基斯坦卢比</displayName>
-				<symbol>PKR</symbol>
 				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="PLN">
 				<displayName>波兰兹罗提</displayName>
 				<displayName count="other">波兰兹罗提</displayName>
-				<symbol>PLN</symbol>
 				<symbol alt="narrow" draft="contributed">zł</symbol>
 			</currency>
 			<currency type="PLZ">
@@ -10140,18 +9340,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="PYG">
 				<displayName>巴拉圭瓜拉尼</displayName>
 				<displayName count="other">巴拉圭瓜拉尼</displayName>
-				<symbol>PYG</symbol>
 				<symbol alt="narrow" draft="contributed">₲</symbol>
 			</currency>
 			<currency type="QAR">
 				<displayName>卡塔尔里亚尔</displayName>
 				<displayName count="other">卡塔尔里亚尔</displayName>
-				<symbol>QAR</symbol>
 			</currency>
 			<currency type="RHD">
 				<displayName>罗得西亚元</displayName>
 				<displayName count="other">罗得西亚元</displayName>
-				<symbol draft="contributed">RHD</symbol>
 			</currency>
 			<currency type="ROL">
 				<displayName>旧罗马尼亚列伊</displayName>
@@ -10161,18 +9358,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="RON">
 				<displayName>罗马尼亚列伊</displayName>
 				<displayName count="other">罗马尼亚列伊</displayName>
-				<symbol>RON</symbol>
-				<symbol alt="narrow">lei</symbol>
 			</currency>
 			<currency type="RSD">
 				<displayName>塞尔维亚第纳尔</displayName>
 				<displayName count="other">塞尔维亚第纳尔</displayName>
-				<symbol>RSD</symbol>
 			</currency>
 			<currency type="RUB">
 				<displayName>俄罗斯卢布</displayName>
 				<displayName count="other">俄罗斯卢布</displayName>
-				<symbol>RUB</symbol>
 				<symbol alt="narrow" draft="contributed">₽</symbol>
 			</currency>
 			<currency type="RUR">
@@ -10184,56 +9377,46 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="RWF">
 				<displayName>卢旺达法郎</displayName>
 				<displayName count="other">卢旺达法郎</displayName>
-				<symbol>RWF</symbol>
 				<symbol alt="narrow" draft="contributed">RF</symbol>
 			</currency>
 			<currency type="SAR">
 				<displayName>沙特里亚尔</displayName>
 				<displayName count="other">沙特里亚尔</displayName>
-				<symbol>SAR</symbol>
 			</currency>
 			<currency type="SBD">
 				<displayName>所罗门群岛元</displayName>
 				<displayName count="other">所罗门群岛元</displayName>
-				<symbol>SBD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="SCR">
 				<displayName>塞舌尔卢比</displayName>
 				<displayName count="other">塞舌尔卢比</displayName>
-				<symbol>SCR</symbol>
 			</currency>
 			<currency type="SDD">
 				<displayName>苏丹第纳尔 (1992–2007)</displayName>
 				<displayName count="other">苏丹第纳尔 (1992–2007)</displayName>
-				<symbol draft="contributed">SDD</symbol>
 			</currency>
 			<currency type="SDG">
 				<displayName>苏丹镑</displayName>
 				<displayName count="other">苏丹镑</displayName>
-				<symbol>SDG</symbol>
 			</currency>
 			<currency type="SDP">
 				<displayName>旧苏丹镑</displayName>
 				<displayName count="other">旧苏丹镑</displayName>
-				<symbol draft="contributed">SDP</symbol>
 			</currency>
 			<currency type="SEK">
 				<displayName>瑞典克朗</displayName>
 				<displayName count="other">瑞典克朗</displayName>
-				<symbol>SEK</symbol>
 				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="SGD">
 				<displayName>新加坡元</displayName>
 				<displayName count="other">新加坡元</displayName>
-				<symbol>SGD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="SHP">
 				<displayName>圣赫勒拿群岛磅</displayName>
 				<displayName count="other">圣赫勒拿群岛磅</displayName>
-				<symbol>SHP</symbol>
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="SIT">
@@ -10249,39 +9432,32 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="SLL">
 				<displayName>塞拉利昂利昂</displayName>
 				<displayName count="other">塞拉利昂利昂</displayName>
-				<symbol>SLL</symbol>
 			</currency>
 			<currency type="SOS">
 				<displayName>索马里先令</displayName>
 				<displayName count="other">索马里先令</displayName>
-				<symbol>SOS</symbol>
 			</currency>
 			<currency type="SRD">
 				<displayName>苏里南元</displayName>
 				<displayName count="other">苏里南元</displayName>
-				<symbol>SRD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="SRG">
 				<displayName>苏里南盾</displayName>
 				<displayName count="other">苏里南盾</displayName>
-				<symbol draft="contributed">SRG</symbol>
 			</currency>
 			<currency type="SSP">
 				<displayName>南苏丹镑</displayName>
 				<displayName count="other">南苏丹镑</displayName>
-				<symbol>SSP</symbol>
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="STD">
 				<displayName>圣多美和普林西比多布拉 (1977–2017)</displayName>
 				<displayName count="other">圣多美和普林西比多布拉 (1977–2017)</displayName>
-				<symbol>STD</symbol>
 			</currency>
 			<currency type="STN">
 				<displayName>圣多美和普林西比多布拉</displayName>
 				<displayName count="other">圣多美和普林西比多布拉</displayName>
-				<symbol alt="narrow" draft="contributed">Db</symbol>
 			</currency>
 			<currency type="SUR">
 				<displayName>苏联卢布</displayName>
@@ -10296,87 +9472,73 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="SYP">
 				<displayName>叙利亚镑</displayName>
 				<displayName count="other">叙利亚镑</displayName>
-				<symbol>SYP</symbol>
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="SZL">
 				<displayName>斯威士兰里兰吉尼</displayName>
 				<displayName count="other">斯威士兰里兰吉尼</displayName>
-				<symbol>SZL</symbol>
 			</currency>
 			<currency type="THB">
 				<displayName>泰铢</displayName>
 				<displayName count="other">泰铢</displayName>
-				<symbol>THB</symbol>
 				<symbol alt="narrow" draft="contributed">฿</symbol>
 			</currency>
 			<currency type="TJR">
 				<displayName>塔吉克斯坦卢布</displayName>
 				<displayName count="other">塔吉克斯坦卢布</displayName>
-				<symbol draft="contributed">TJR</symbol>
 			</currency>
 			<currency type="TJS">
 				<displayName>塔吉克斯坦索莫尼</displayName>
 				<displayName count="other">塔吉克斯坦索莫尼</displayName>
-				<symbol>TJS</symbol>
 			</currency>
 			<currency type="TMM">
 				<displayName>土库曼斯坦马纳特 (1993–2009)</displayName>
 				<displayName count="other">土库曼斯坦马纳特 (1993–2009)</displayName>
-				<symbol draft="contributed">TMM</symbol>
 			</currency>
 			<currency type="TMT">
 				<displayName>土库曼斯坦马纳特</displayName>
 				<displayName count="other">土库曼斯坦马纳特</displayName>
-				<symbol>TMT</symbol>
 			</currency>
 			<currency type="TND">
 				<displayName>突尼斯第纳尔</displayName>
 				<displayName count="other">突尼斯第纳尔</displayName>
-				<symbol>TND</symbol>
 			</currency>
 			<currency type="TOP">
 				<displayName>汤加潘加</displayName>
 				<displayName count="other">汤加潘加</displayName>
-				<symbol>TOP</symbol>
 				<symbol alt="narrow" draft="contributed">T$</symbol>
 			</currency>
 			<currency type="TPE">
 				<displayName>帝汶埃斯库多</displayName>
+				<symbol draft="contributed">TPE</symbol>
 			</currency>
 			<currency type="TRL">
 				<displayName>土耳其里拉 (1922–2005)</displayName>
 				<displayName count="other">土耳其里拉 (1922–2005)</displayName>
-				<symbol draft="contributed">TRL</symbol>
 			</currency>
 			<currency type="TRY">
 				<displayName>土耳其里拉</displayName>
 				<displayName count="other">土耳其里拉</displayName>
-				<symbol>TRY</symbol>
 				<symbol alt="narrow" draft="contributed">₺</symbol>
 				<symbol alt="variant" draft="contributed">TL</symbol>
 			</currency>
 			<currency type="TTD">
 				<displayName>特立尼达和多巴哥元</displayName>
 				<displayName count="other">特立尼达和多巴哥元</displayName>
-				<symbol>TTD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="TWD">
 				<displayName>新台币</displayName>
 				<displayName count="other">新台币</displayName>
-				<symbol>NT$</symbol>
 				<symbol alt="narrow" draft="contributed">NT$</symbol>
 			</currency>
 			<currency type="TZS">
 				<displayName>坦桑尼亚先令</displayName>
 				<displayName count="other">坦桑尼亚先令</displayName>
-				<symbol>TZS</symbol>
 			</currency>
 			<currency type="UAH">
 				<displayName>乌克兰格里夫纳</displayName>
 				<displayName count="other">乌克兰格里夫纳</displayName>
-				<symbol>UAH</symbol>
 				<symbol alt="narrow" draft="contributed">₴</symbol>
 			</currency>
 			<currency type="UAK">
@@ -10387,17 +9549,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="UGS">
 				<displayName>乌干达先令 (1966–1987)</displayName>
 				<displayName count="other">乌干达先令 (1966–1987)</displayName>
-				<symbol draft="contributed">UGS</symbol>
 			</currency>
 			<currency type="UGX">
 				<displayName>乌干达先令</displayName>
 				<displayName count="other">乌干达先令</displayName>
-				<symbol>UGX</symbol>
 			</currency>
 			<currency type="USD">
 				<displayName>美元</displayName>
 				<displayName count="other">美元</displayName>
-				<symbol>US$</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="USN">
@@ -10413,132 +9572,150 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="UYI">
 				<displayName>乌拉圭比索（索引单位）</displayName>
 				<displayName count="other">乌拉圭比索（索引单位）</displayName>
-				<symbol draft="contributed">UYI</symbol>
 			</currency>
 			<currency type="UYP">
 				<displayName>乌拉圭比索 (1975–1993)</displayName>
 				<displayName count="other">乌拉圭比索 (1975–1993)</displayName>
-				<symbol draft="contributed">UYP</symbol>
 			</currency>
 			<currency type="UYU">
 				<displayName>乌拉圭比索</displayName>
 				<displayName count="other">乌拉圭比索</displayName>
-				<symbol>UYU</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
+			</currency>
+			<currency type="UYW">
+				<displayName draft="contributed">乌拉圭票面工资指数单位</displayName>
+				<displayName count="other" draft="contributed">乌拉圭票面工资指数单位</displayName>
+				<symbol draft="contributed">UYW</symbol>
 			</currency>
 			<currency type="UZS">
 				<displayName>乌兹别克斯坦苏姆</displayName>
 				<displayName count="other">乌兹别克斯坦苏姆</displayName>
-				<symbol>UZS</symbol>
 			</currency>
 			<currency type="VEB">
 				<displayName>委内瑞拉玻利瓦尔 (1871–2008)</displayName>
 				<displayName count="other">委内瑞拉玻利瓦尔 (1871–2008)</displayName>
-				<symbol draft="contributed">VEB</symbol>
 			</currency>
 			<currency type="VEF">
+				<displayName>委内瑞拉玻利瓦尔 (2008–2018)</displayName>
+				<displayName count="other">委内瑞拉玻利瓦尔 (2008–2018)</displayName>
+				<symbol alt="narrow" draft="contributed">Bs</symbol>
+			</currency>
+			<currency type="VES">
 				<displayName>委内瑞拉玻利瓦尔</displayName>
 				<displayName count="other">委内瑞拉玻利瓦尔</displayName>
-				<symbol>VEF</symbol>
-				<symbol alt="narrow" draft="contributed">Bs</symbol>
 			</currency>
 			<currency type="VND">
 				<displayName>越南盾</displayName>
 				<displayName count="other">越南盾</displayName>
-				<symbol>₫</symbol>
 				<symbol alt="narrow" draft="contributed">₫</symbol>
 			</currency>
 			<currency type="VNN">
 				<displayName>越南盾 (1978–1985)</displayName>
+				<symbol draft="contributed">VNN</symbol>
 			</currency>
 			<currency type="VUV">
 				<displayName>瓦努阿图瓦图</displayName>
 				<displayName count="other">瓦努阿图瓦图</displayName>
-				<symbol>VUV</symbol>
 			</currency>
 			<currency type="WST">
 				<displayName>萨摩亚塔拉</displayName>
 				<displayName count="other">萨摩亚塔拉</displayName>
-				<symbol>WST</symbol>
 			</currency>
 			<currency type="XAF">
 				<displayName>中非法郎</displayName>
 				<displayName count="other">中非法郎</displayName>
-				<symbol>FCFA</symbol>
 			</currency>
 			<currency type="XAG">
 				<displayName>银</displayName>
+				<symbol draft="contributed">XAG</symbol>
 			</currency>
 			<currency type="XAU">
 				<displayName>黄金</displayName>
+				<symbol draft="contributed">XAU</symbol>
 			</currency>
 			<currency type="XBA">
 				<displayName>欧洲复合单位</displayName>
+				<symbol draft="contributed">XBA</symbol>
 			</currency>
 			<currency type="XBB">
 				<displayName>欧洲货币联盟</displayName>
+				<symbol draft="contributed">XBB</symbol>
 			</currency>
 			<currency type="XBC">
 				<displayName>欧洲计算单位 (XBC)</displayName>
+				<symbol draft="contributed">XBC</symbol>
 			</currency>
 			<currency type="XBD">
 				<displayName>欧洲计算单位 (XBD)</displayName>
+				<symbol draft="contributed">XBD</symbol>
 			</currency>
 			<currency type="XCD">
 				<displayName>东加勒比元</displayName>
 				<displayName count="other">东加勒比元</displayName>
-				<symbol>EC$</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="XDR">
 				<displayName>特别提款权</displayName>
+				<symbol draft="contributed">XDR</symbol>
 			</currency>
 			<currency type="XEU">
 				<displayName>欧洲货币单位</displayName>
 				<displayName count="other">欧洲货币单位</displayName>
-				<symbol draft="contributed">XEU</symbol>
 			</currency>
 			<currency type="XFO">
 				<displayName>法国金法郎</displayName>
+				<symbol draft="contributed">XFO</symbol>
 			</currency>
 			<currency type="XFU">
 				<displayName>法国法郎 (UIC)</displayName>
+				<symbol draft="contributed">XFU</symbol>
 			</currency>
 			<currency type="XOF">
 				<displayName>西非法郎</displayName>
 				<displayName count="other">西非法郎</displayName>
-				<symbol>CFA</symbol>
 			</currency>
 			<currency type="XPD">
 				<displayName>钯</displayName>
+				<symbol draft="contributed">XPD</symbol>
 			</currency>
 			<currency type="XPF">
 				<displayName>太平洋法郎</displayName>
 				<displayName count="other">太平洋法郎</displayName>
-				<symbol>CFPF</symbol>
 			</currency>
 			<currency type="XPT">
 				<displayName>铂</displayName>
+				<symbol draft="contributed">XPT</symbol>
 			</currency>
 			<currency type="XRE">
 				<displayName>RINET 基金</displayName>
+				<symbol draft="contributed">XRE</symbol>
+			</currency>
+			<currency type="XSU">
+				<displayName draft="contributed">苏克雷</displayName>
+				<displayName count="other" draft="contributed">苏克雷</displayName>
+				<symbol draft="contributed">XSU</symbol>
 			</currency>
 			<currency type="XTS">
 				<displayName>测试货币代码</displayName>
+				<symbol draft="contributed">XTS</symbol>
+			</currency>
+			<currency type="XUA">
+				<displayName draft="contributed">非洲开发银行记账单位</displayName>
+				<displayName count="other" draft="contributed">非洲开发银行记账单位</displayName>
+				<symbol draft="contributed">XUA</symbol>
 			</currency>
 			<currency type="XXX">
 				<displayName>未知货币</displayName>
 				<displayName count="other">（未知货币）</displayName>
+				<symbol draft="contributed">XXX</symbol>
 			</currency>
 			<currency type="YDD">
 				<displayName>也门第纳尔</displayName>
 				<displayName count="other">也门第纳尔</displayName>
-				<symbol draft="contributed">YDD</symbol>
 			</currency>
 			<currency type="YER">
 				<displayName>也门里亚尔</displayName>
 				<displayName count="other">也门里亚尔</displayName>
-				<symbol>YER</symbol>
 			</currency>
 			<currency type="YUD">
 				<displayName>南斯拉夫硬第纳尔 (1966–1990)</displayName>
@@ -10563,49 +9740,40 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="ZAL">
 				<displayName>南非兰特 (金融)</displayName>
 				<displayName count="other">南非兰特 (金融)</displayName>
-				<symbol draft="contributed">ZAL</symbol>
 			</currency>
 			<currency type="ZAR">
 				<displayName>南非兰特</displayName>
 				<displayName count="other">南非兰特</displayName>
-				<symbol>ZAR</symbol>
 				<symbol alt="narrow" draft="contributed">R</symbol>
 			</currency>
 			<currency type="ZMK">
 				<displayName>赞比亚克瓦查 (1968–2012)</displayName>
 				<displayName count="other">赞比亚克瓦查 (1968–2012)</displayName>
-				<symbol draft="contributed">ZMK</symbol>
 			</currency>
 			<currency type="ZMW">
 				<displayName>赞比亚克瓦查</displayName>
 				<displayName count="other">赞比亚克瓦查</displayName>
-				<symbol>ZMW</symbol>
 				<symbol alt="narrow" draft="contributed">ZK</symbol>
 			</currency>
 			<currency type="ZRN">
 				<displayName>新扎伊尔 (1993–1998)</displayName>
 				<displayName count="other">新扎伊尔 (1993–1998)</displayName>
-				<symbol draft="contributed">ZRN</symbol>
 			</currency>
 			<currency type="ZRZ">
 				<displayName>扎伊尔 (1971–1993)</displayName>
 				<displayName count="other">扎伊尔 (1971–1993)</displayName>
-				<symbol draft="contributed">ZRZ</symbol>
 			</currency>
 			<currency type="ZWD">
 				<displayName>津巴布韦元 (1980–2008)</displayName>
 				<displayName count="other">津巴布韦元 (1980–2008)</displayName>
-				<symbol draft="contributed">ZWD</symbol>
 			</currency>
 			<currency type="ZWL">
 				<displayName>津巴布韦元 (2009)</displayName>
 				<displayName count="other">津巴布韦元 (2009)</displayName>
-				<symbol draft="contributed">ZWL</symbol>
 			</currency>
 			<currency type="ZWR">
 				<displayName>津巴布韦元 (2008)</displayName>
 				<displayName count="other">津巴布韦元 (2008)</displayName>
-				<symbol draft="contributed">ZWR</symbol>
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="arab">
@@ -10689,7 +9857,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<pattern type="range" draft="contributed">{0}-{1}</pattern>
 		</miscPatterns>
 		<miscPatterns numberSystem="latn">
+			<pattern type="approximately">~{0}</pattern>
 			<pattern type="atLeast">{0}+</pattern>
+			<pattern type="atMost">≤{0}</pattern>
 			<pattern type="range">{0}-{1}</pattern>
 		</miscPatterns>
 		<miscPatterns numberSystem="lepc">
@@ -10859,6 +10029,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}平方英寸</unitPattern>
 				<perUnitPattern>每平方英寸{0}</perUnitPattern>
 			</unit>
+			<unit type="area-dunam">
+				<displayName>杜纳亩</displayName>
+				<unitPattern count="other">{0}杜纳亩</unitPattern>
+			</unit>
 			<unit type="concentr-karat">
 				<displayName>克拉</displayName>
 				<unitPattern count="other">{0}克拉</unitPattern>
@@ -10875,6 +10049,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ppm</displayName>
 				<unitPattern count="other">百万分之{0}</unitPattern>
 			</unit>
+			<unit type="concentr-permyriad">
+				<displayName>‱</displayName>
+				<unitPattern count="other">{0}‱</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName>摩尔</displayName>
+				<unitPattern count="other">{0}摩尔</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>升/公里</displayName>
 				<unitPattern count="other">每公里{0}升</unitPattern>
@@ -10890,6 +10072,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="consumption-mile-per-gallon-imperial">
 				<displayName>英里/英制加仑</displayName>
 				<unitPattern count="other">每英制加仑{0}英里</unitPattern>
+			</unit>
+			<unit type="digital-petabyte">
+				<displayName draft="contributed">拍字节</displayName>
+				<unitPattern count="other" draft="contributed">{0}拍字节</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>太字节</displayName>
@@ -11022,6 +10208,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>千瓦时</displayName>
 				<unitPattern count="other">{0}千瓦时</unitPattern>
 			</unit>
+			<unit type="energy-electronvolt">
+				<displayName>电子伏特</displayName>
+				<unitPattern count="other">{0}电子伏特</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName>英热单位</displayName>
+				<unitPattern count="other">{0}英热单位</unitPattern>
+			</unit>
+			<unit type="force-pound-force">
+				<displayName>磅力</displayName>
+				<unitPattern count="other">{0}磅力</unitPattern>
+			</unit>
+			<unit type="force-newton">
+				<displayName>牛顿</displayName>
+				<unitPattern count="other">{0}牛顿</unitPattern>
+			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>吉赫</displayName>
 				<unitPattern count="other">{0}吉赫</unitPattern>
@@ -11123,9 +10325,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>pt</displayName>
 				<unitPattern count="other">{0} pt</unitPattern>
 			</unit>
+			<unit type="length-solar-radius">
+				<displayName>太阳半径</displayName>
+				<unitPattern count="other">{0}太阳半径</unitPattern>
+			</unit>
 			<unit type="light-lux">
 				<displayName>勒克斯</displayName>
 				<unitPattern count="other">{0}勒克斯</unitPattern>
+			</unit>
+			<unit type="light-solar-luminosity">
+				<displayName>太阳光度</displayName>
+				<unitPattern count="other">{0}太阳光度</unitPattern>
 			</unit>
 			<unit type="mass-metric-ton">
 				<displayName>公吨</displayName>
@@ -11175,6 +10385,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>克拉</displayName>
 				<unitPattern count="other">{0}克拉</unitPattern>
 			</unit>
+			<unit type="mass-dalton">
+				<displayName>道尔顿</displayName>
+				<unitPattern count="other">{0}道尔顿</unitPattern>
+			</unit>
+			<unit type="mass-earth-mass">
+				<displayName>地球质量</displayName>
+				<unitPattern count="other">{0}地球质量</unitPattern>
+			</unit>
+			<unit type="mass-solar-mass">
+				<displayName>太阳质量</displayName>
+				<unitPattern count="other">{0}太阳质量</unitPattern>
+			</unit>
 			<unit type="power-gigawatt">
 				<displayName>吉瓦</displayName>
 				<unitPattern count="other">{0}吉瓦</unitPattern>
@@ -11219,6 +10441,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>毫巴</displayName>
 				<unitPattern count="other">{0}毫巴</unitPattern>
 			</unit>
+			<unit type="pressure-atmosphere">
+				<displayName draft="contributed">标准大气压</displayName>
+				<unitPattern count="other" draft="contributed">{0}个标准大气压</unitPattern>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<displayName>千帕斯卡</displayName>
+				<unitPattern count="other">{0}千帕斯卡</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<displayName>兆帕斯卡</displayName>
+				<unitPattern count="other">{0}兆帕斯卡</unitPattern>
+			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>公里/小时</displayName>
 				<unitPattern count="other">每小时{0}公里</unitPattern>
@@ -11250,6 +10484,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="temperature-kelvin">
 				<displayName>开尔文</displayName>
 				<unitPattern count="other">{0}开尔文</unitPattern>
+			</unit>
+			<unit type="torque-pound-foot">
+				<displayName>磅英尺</displayName>
+				<unitPattern count="other">{0}磅英尺</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<displayName>牛顿米</displayName>
+				<unitPattern count="other">{0}牛顿米</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<displayName>立方千米</displayName>
@@ -11348,6 +10590,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>液盎司</displayName>
 				<unitPattern count="other">{0}液盎司</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName>英制液盎司</displayName>
+				<unitPattern count="other">{0}英制液盎司</unitPattern>
+			</unit>
 			<unit type="volume-tablespoon">
 				<displayName>汤匙</displayName>
 				<unitPattern count="other">{0}汤匙</unitPattern>
@@ -11356,7 +10602,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>茶匙</displayName>
 				<unitPattern count="other">{0}茶匙</unitPattern>
 			</unit>
+			<unit type="volume-barrel">
+				<displayName>桶</displayName>
+				<unitPattern count="other">{0}桶</unitPattern>
+			</unit>
 			<coordinateUnit>
+				<displayName draft="contributed">主方向</displayName>
 				<coordinateUnitPattern type="east">东经{0}</coordinateUnitPattern>
 				<coordinateUnitPattern type="north">北纬{0}</coordinateUnitPattern>
 				<coordinateUnitPattern type="south">南纬{0}</coordinateUnitPattern>
@@ -11436,6 +10687,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}平方英寸</unitPattern>
 				<perUnitPattern>{0}/平方英寸</perUnitPattern>
 			</unit>
+			<unit type="area-dunam">
+				<displayName>杜纳亩</displayName>
+				<unitPattern count="other">{0}杜纳亩</unitPattern>
+			</unit>
 			<unit type="concentr-karat">
 				<displayName>克拉</displayName>
 				<unitPattern count="other">{0}克拉</unitPattern>
@@ -11451,6 +10706,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="concentr-part-per-million">
 				<displayName>ppm</displayName>
 				<unitPattern count="other">{0}ppm</unitPattern>
+			</unit>
+			<unit type="concentr-permyriad">
+				<displayName>‱</displayName>
+				<unitPattern count="other">{0}‱</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName>摩尔</displayName>
+				<unitPattern count="other">{0}摩尔</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>升/公里</displayName>
@@ -11599,6 +10862,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>千瓦时</displayName>
 				<unitPattern count="other">{0}千瓦时</unitPattern>
 			</unit>
+			<unit type="energy-electronvolt">
+				<displayName>电子伏</displayName>
+				<unitPattern count="other">{0}电子伏</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName>英热单位</displayName>
+				<unitPattern count="other">{0}英热单位</unitPattern>
+			</unit>
+			<unit type="force-pound-force">
+				<displayName>磅力</displayName>
+				<unitPattern count="other">{0}磅力</unitPattern>
+			</unit>
+			<unit type="force-newton">
+				<displayName>牛</displayName>
+				<unitPattern count="other">{0}牛</unitPattern>
+			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>吉赫</displayName>
 				<unitPattern count="other">{0}吉赫</unitPattern>
@@ -11700,9 +10979,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>pt</displayName>
 				<unitPattern count="other">{0} pt</unitPattern>
 			</unit>
+			<unit type="length-solar-radius">
+				<displayName>太阳半径</displayName>
+				<unitPattern count="other">{0}太阳半径</unitPattern>
+			</unit>
 			<unit type="light-lux">
 				<displayName>勒克斯</displayName>
 				<unitPattern count="other">{0}勒克斯</unitPattern>
+			</unit>
+			<unit type="light-solar-luminosity">
+				<displayName>太阳光度</displayName>
+				<unitPattern count="other">{0}太阳光度</unitPattern>
 			</unit>
 			<unit type="mass-metric-ton">
 				<displayName>公吨</displayName>
@@ -11752,6 +11039,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>克拉</displayName>
 				<unitPattern count="other">{0}克拉</unitPattern>
 			</unit>
+			<unit type="mass-dalton">
+				<displayName>道尔顿</displayName>
+				<unitPattern count="other">{0}道尔顿</unitPattern>
+			</unit>
+			<unit type="mass-earth-mass">
+				<displayName>地球质量</displayName>
+				<unitPattern count="other">{0}地球质量</unitPattern>
+			</unit>
+			<unit type="mass-solar-mass">
+				<displayName>太阳质量</displayName>
+				<unitPattern count="other">{0}太阳质量</unitPattern>
+			</unit>
 			<unit type="power-gigawatt">
 				<displayName>吉瓦</displayName>
 				<unitPattern count="other">{0}吉瓦</unitPattern>
@@ -11796,6 +11095,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>毫巴</displayName>
 				<unitPattern count="other">{0}毫巴</unitPattern>
 			</unit>
+			<unit type="pressure-atmosphere">
+				<displayName draft="contributed">大气压</displayName>
+				<unitPattern count="other" draft="contributed">{0}个大气压</unitPattern>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<displayName>千帕</displayName>
+				<unitPattern count="other">{0}千帕</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<displayName>兆帕</displayName>
+				<unitPattern count="other">{0}兆帕</unitPattern>
+			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>公里/小时</displayName>
 				<unitPattern count="other">每小时{0}公里</unitPattern>
@@ -11827,6 +11138,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="temperature-kelvin">
 				<displayName>开</displayName>
 				<unitPattern count="other">{0}K</unitPattern>
+			</unit>
+			<unit type="torque-pound-foot">
+				<displayName>磅英尺</displayName>
+				<unitPattern count="other">{0}磅英尺</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<displayName>牛米</displayName>
+				<unitPattern count="other">{0}牛米</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<displayName>立方千米</displayName>
@@ -11925,6 +11244,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>液盎司</displayName>
 				<unitPattern count="other">{0}液盎司</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName>英制液盎司</displayName>
+				<unitPattern count="other">{0}英制液盎司</unitPattern>
+			</unit>
 			<unit type="volume-tablespoon">
 				<displayName>汤匙</displayName>
 				<unitPattern count="other">{0}汤匙</unitPattern>
@@ -11933,7 +11256,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>茶匙</displayName>
 				<unitPattern count="other">{0}茶匙</unitPattern>
 			</unit>
+			<unit type="volume-barrel">
+				<displayName>桶</displayName>
+				<unitPattern count="other">{0}桶</unitPattern>
+			</unit>
 			<coordinateUnit>
+				<displayName draft="contributed">方向</displayName>
 				<coordinateUnitPattern type="east">东经{0}</coordinateUnitPattern>
 				<coordinateUnitPattern type="north">北纬{0}</coordinateUnitPattern>
 				<coordinateUnitPattern type="south">南纬{0}</coordinateUnitPattern>
@@ -12002,6 +11330,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" draft="contributed">{0}平方英寸</unitPattern>
 				<perUnitPattern draft="contributed">{0}/平方英寸</perUnitPattern>
 			</unit>
+			<unit type="area-dunam">
+				<displayName draft="contributed">杜纳亩</displayName>
+				<unitPattern count="other" draft="contributed">{0}杜纳亩</unitPattern>
+			</unit>
+			<unit type="concentr-permyriad">
+				<displayName draft="contributed">‱</displayName>
+				<unitPattern count="other" draft="contributed">{0}‱</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName draft="contributed">摩尔</displayName>
+				<unitPattern count="other" draft="contributed">{0}摩尔</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-100kilometers">
 				<displayName>升/100千米</displayName>
 				<unitPattern count="other">{0}L/100km</unitPattern>
@@ -12068,6 +11408,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="energy-joule">
 				<displayName draft="contributed">焦耳</displayName>
 				<unitPattern count="other" draft="contributed">{0}焦耳</unitPattern>
+			</unit>
+			<unit type="energy-electronvolt">
+				<displayName draft="contributed">电子伏</displayName>
+				<unitPattern count="other" draft="contributed">{0}电子伏</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName draft="contributed">英热单位</displayName>
+				<unitPattern count="other" draft="contributed">{0}英热单位</unitPattern>
+			</unit>
+			<unit type="force-pound-force">
+				<displayName draft="contributed">磅力</displayName>
+				<unitPattern count="other" draft="contributed">{0}磅力</unitPattern>
+			</unit>
+			<unit type="force-newton">
+				<displayName draft="contributed">牛</displayName>
+				<unitPattern count="other" draft="contributed">{0}牛</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>公里</displayName>
@@ -12150,9 +11506,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName draft="contributed">斯堪的纳维亚英里</displayName>
 				<unitPattern count="other" draft="provisional">{0}smi</unitPattern>
 			</unit>
-			<unit type="length-point">
-				<displayName draft="contributed">pt</displayName>
-				<unitPattern count="other" draft="contributed">{0} pt</unitPattern>
+			<unit type="length-solar-radius">
+				<displayName draft="contributed">太阳半径</displayName>
+				<unitPattern count="other" draft="contributed">{0}太阳半径</unitPattern>
+			</unit>
+			<unit type="light-solar-luminosity">
+				<displayName draft="contributed">太阳光度</displayName>
+				<unitPattern count="other" draft="contributed">{0}太阳光度</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
 				<displayName>千克</displayName>
@@ -12172,6 +11532,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="mass-ounce">
 				<unitPattern count="other">{0}盎司</unitPattern>
 			</unit>
+			<unit type="mass-dalton">
+				<displayName draft="contributed">道尔顿</displayName>
+				<unitPattern count="other" draft="contributed">{0}道尔顿</unitPattern>
+			</unit>
+			<unit type="mass-earth-mass">
+				<displayName draft="contributed">地球质量</displayName>
+				<unitPattern count="other" draft="contributed">{0}地球质量</unitPattern>
+			</unit>
+			<unit type="mass-solar-mass">
+				<displayName draft="contributed">太阳质量</displayName>
+				<unitPattern count="other" draft="contributed">{0}太阳质量</unitPattern>
+			</unit>
 			<unit type="power-kilowatt">
 				<unitPattern count="other">{0}kW</unitPattern>
 			</unit>
@@ -12189,6 +11561,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="pressure-millibar">
 				<unitPattern count="other">{0}mb</unitPattern>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<displayName draft="contributed">千帕</displayName>
+				<unitPattern count="other" draft="contributed">{0}千帕</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<displayName draft="contributed">兆帕</displayName>
+				<unitPattern count="other" draft="contributed">{0}兆帕</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>公里/小时</displayName>
@@ -12212,6 +11592,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="temperature-fahrenheit">
 				<unitPattern count="other">{0}°F</unitPattern>
+			</unit>
+			<unit type="torque-pound-foot">
+				<displayName draft="contributed">磅英尺</displayName>
+				<unitPattern count="other" draft="contributed">{0}磅英尺</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<displayName draft="contributed">牛米</displayName>
+				<unitPattern count="other" draft="contributed">{0}牛米</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<displayName draft="contributed">立方千米</displayName>
@@ -12310,6 +11698,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName draft="contributed">液盎司</displayName>
 				<unitPattern count="other" draft="contributed">{0}液盎司</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName draft="contributed">英制液盎司</displayName>
+			</unit>
 			<unit type="volume-tablespoon">
 				<displayName draft="contributed">汤匙</displayName>
 				<unitPattern count="other" draft="contributed">{0}汤匙</unitPattern>
@@ -12318,7 +11709,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName draft="contributed">茶匙</displayName>
 				<unitPattern count="other" draft="contributed">{0}茶匙</unitPattern>
 			</unit>
+			<unit type="volume-barrel">
+				<displayName draft="contributed">桶</displayName>
+				<unitPattern count="other" draft="contributed">{0}桶</unitPattern>
+			</unit>
 			<coordinateUnit>
+				<displayName draft="contributed">方向</displayName>
 				<coordinateUnitPattern type="east">{0}E</coordinateUnitPattern>
 				<coordinateUnitPattern type="north">{0}N</coordinateUnitPattern>
 				<coordinateUnitPattern type="south">{0}S</coordinateUnitPattern>
@@ -12347,6 +11743,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<listPatternPart type="middle">{0}、{1}</listPatternPart>
 			<listPatternPart type="end">{0}或{1}</listPatternPart>
 			<listPatternPart type="2">{0}或{1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-narrow">
+			<listPatternPart type="start">{0}、{1}</listPatternPart>
+			<listPatternPart type="middle">{0}、{1}</listPatternPart>
+			<listPatternPart type="end">{0}和{1}</listPatternPart>
+			<listPatternPart type="2">{0}和{1}</listPatternPart>
 		</listPattern>
 		<listPattern type="standard-short">
 			<listPatternPart type="start">{0}、{1}</listPatternPart>
@@ -12480,10 +11882,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	<typographicNames>
 		<axisName type="ital">斜体</axisName>
 		<axisName type="opsz">视觉大小</axisName>
-		<axisName type="slnt">倾斜</axisName>
+		<axisName type="slnt">倾斜度</axisName>
 		<axisName type="wdth">宽度</axisName>
 		<axisName type="wght">直线宽度</axisName>
 		<styleName type="ital" subtype="1">草体</styleName>
+		<styleName type="opsz" subtype="8">图片说明</styleName>
+		<styleName type="opsz" subtype="12">文本</styleName>
 		<styleName type="opsz" subtype="18">标题</styleName>
 		<styleName type="opsz" subtype="72">展示体</styleName>
 		<styleName type="opsz" subtype="144">海报体</styleName>
@@ -12493,16 +11897,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<styleName type="slnt" subtype="24">特斜体</styleName>
 		<styleName type="wdth" subtype="50">极窄体</styleName>
 		<styleName type="wdth" subtype="50" alt="compressed">极密体</styleName>
+		<styleName type="wdth" subtype="50" alt="narrow">极窄</styleName>
 		<styleName type="wdth" subtype="62.5">特窄体</styleName>
 		<styleName type="wdth" subtype="62.5" alt="compressed">特密体</styleName>
+		<styleName type="wdth" subtype="62.5" alt="narrow">特窄</styleName>
 		<styleName type="wdth" subtype="75">紧缩体</styleName>
-		<styleName type="wdth" subtype="75" alt="short">窄体</styleName>
 		<styleName type="wdth" subtype="75" alt="compressed">压缩体</styleName>
 		<styleName type="wdth" subtype="75" alt="narrow">窄</styleName>
+		<styleName type="wdth" subtype="75" alt="short">窄体</styleName>
 		<styleName type="wdth" subtype="87.5">半窄体</styleName>
+		<styleName type="wdth" subtype="87.5" alt="compressed">半压缩</styleName>
+		<styleName type="wdth" subtype="87.5" alt="narrow">半窄</styleName>
 		<styleName type="wdth" subtype="100">正常</styleName>
 		<styleName type="wdth" subtype="112.5">半阔体</styleName>
 		<styleName type="wdth" subtype="112.5" alt="extended">半宽体</styleName>
+		<styleName type="wdth" subtype="112.5" alt="wide">半宽</styleName>
 		<styleName type="wdth" subtype="125">阔体</styleName>
 		<styleName type="wdth" subtype="125" alt="extended">扩展</styleName>
 		<styleName type="wdth" subtype="125" alt="wide">宽</styleName>
@@ -12511,7 +11920,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<styleName type="wdth" subtype="150" alt="wide">特宽体</styleName>
 		<styleName type="wdth" subtype="200">极阔体</styleName>
 		<styleName type="wdth" subtype="200" alt="extended">极宽体</styleName>
-		<styleName type="wght" subtype="100">细体</styleName>
+		<styleName type="wdth" subtype="200" alt="wide">极宽</styleName>
+		<styleName type="wght" subtype="100">较细体</styleName>
 		<styleName type="wght" subtype="200">特细体</styleName>
 		<styleName type="wght" subtype="200" alt="ultra">超细体</styleName>
 		<styleName type="wght" subtype="300">细体</styleName>
@@ -12520,14 +11930,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<styleName type="wght" subtype="400">常规体</styleName>
 		<styleName type="wght" subtype="500">中等</styleName>
 		<styleName type="wght" subtype="600">半粗体</styleName>
+		<styleName type="wght" subtype="600" alt="demi">半粗</styleName>
 		<styleName type="wght" subtype="700">粗体</styleName>
 		<styleName type="wght" subtype="800">特粗体</styleName>
 		<styleName type="wght" subtype="800" alt="ultra">极粗体</styleName>
 		<styleName type="wght" subtype="900">黑色</styleName>
 		<styleName type="wght" subtype="900" alt="heavy">特黑体</styleName>
 		<styleName type="wght" subtype="950">加黑体</styleName>
-		<styleName type="wght" subtype="950" alt="ultraheavy">极特黑体</styleName>
 		<styleName type="wght" subtype="950" alt="ultrablack">极黑体</styleName>
+		<styleName type="wght" subtype="950" alt="ultraheavy">极特黑体</styleName>
 		<featureName type="afrc">竖排分数</featureName>
 		<featureName type="cpsp">大写字母间距</featureName>
 		<featureName type="dlig">可选连字</featureName>

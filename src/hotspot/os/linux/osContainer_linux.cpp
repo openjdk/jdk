@@ -467,7 +467,7 @@ jlong OSContainer::memory_limit_in_bytes() {
     log_trace(os, container)("Non-Hierarchical Memory Limit is: Unlimited");
     if (memory->is_hierarchical()) {
       const char* matchline = "hierarchical_memory_limit";
-      char* format = "%s " JULONG_FORMAT;
+      const char* format = "%s " JULONG_FORMAT;
       GET_CONTAINER_INFO_LINE(julong, memory, "/memory.stat", matchline,
                              "Hierarchical Memory Limit is: " JULONG_FORMAT, format, hier_memlimit)
       if (hier_memlimit >= _unlimited_memory) {
@@ -490,7 +490,7 @@ jlong OSContainer::memory_and_swap_limit_in_bytes() {
     log_trace(os, container)("Non-Hierarchical Memory and Swap Limit is: Unlimited");
     if (memory->is_hierarchical()) {
       const char* matchline = "hierarchical_memsw_limit";
-      char* format = "%s " JULONG_FORMAT;
+      const char* format = "%s " JULONG_FORMAT;
       GET_CONTAINER_INFO_LINE(julong, memory, "/memory.stat", matchline,
                              "Hierarchical Memory and Swap Limit is : " JULONG_FORMAT, format, hier_memlimit)
       if (hier_memlimit >= _unlimited_memory) {

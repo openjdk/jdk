@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/cms/cmsLockVerifier.hpp"
 #include "gc/cms/concurrentMarkSweepThread.hpp"
+#include "memory/universe.hpp"
 #include "runtime/vmThread.hpp"
 
 ///////////// Locking verification specific to CMS //////////////

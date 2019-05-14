@@ -34,6 +34,7 @@ package MyPackage;
 
 public class HeapMonitorStatArrayCorrectnessTest {
 
+  private static final int maxCount = 10;
   // Do 100000 iterations and expect maxIteration / multiplier samples.
   private static final int maxIteration = 100000;
   private static int array[];
@@ -46,6 +47,8 @@ public class HeapMonitorStatArrayCorrectnessTest {
 
   public static void main(String[] args) {
     int sizes[] = {1000, 10000, 100000};
+    double expected = 0;
+    int count = 0;
 
     for (int currentSize : sizes) {
       System.out.println("Testing size " + currentSize);
@@ -55,35 +58,43 @@ public class HeapMonitorStatArrayCorrectnessTest {
         throw new RuntimeException("Should not have any events stored yet.");
       }
 
-      // 111 is as good a number as any.
-      final int samplingMultiplier = 111;
-      HeapMonitor.setSamplingInterval(samplingMultiplier * currentSize);
+      for (count = 1; count < maxCount; count++) {
+        // 111 is as good a number as any.
+        final int samplingMultiplier = 111;
+        HeapMonitor.setSamplingInterval(samplingMultiplier * currentSize);
 
-      HeapMonitor.enableSamplingEvents();
+        HeapMonitor.enableSamplingEvents();
 
-      allocate(currentSize);
+        allocate(currentSize);
 
-      HeapMonitor.disableSamplingEvents();
+        HeapMonitor.disableSamplingEvents();
 
-      // For simplifications, we ignore the array memory usage for array internals (with the array
-      // sizes requested, it should be a negligible oversight).
-      //
-      // That means that with maxIterations, the loop in the method allocate requests:
-      //    maxIterations * currentSize * 4 bytes (4 for integers)
-      //
-      // Via the enable sampling, the code requests a sample every samplingMultiplier * currentSize bytes.
-      //
-      // Therefore, the expected sample number is:
-      //   (maxIterations * currentSize * 4) / (samplingMultiplier * currentSize);
-      double expected = maxIteration;
-      expected *= 4;
-      expected /= samplingMultiplier;
+        // For simplifications, we ignore the array memory usage for array internals (with the array
+        // sizes requested, it should be a negligible oversight).
+        //
+        // That means that with maxIterations, the loop in the method allocate requests:
+        //    maxIterations * currentSize * 4 bytes (4 for integers)
+        //
+        // Via the enable sampling, the code requests a sample every samplingMultiplier * currentSize bytes.
+        //
+        // Therefore, the expected sample number is:
+        //   count * (maxIterations * currentSize * 4) / (samplingMultiplier * currentSize);
+        //   (count because we can do this multiple times in order to converge).
+        expected = maxIteration * count;
+        expected *= 4;
+        expected /= samplingMultiplier;
 
-      // 10% error ensures a sanity test without becoming flaky.
-      // Flakiness is due to the fact that this test is dependent on the sampling interval, which is a
-      // statistical geometric variable around the sampling interval. This means that the test could be
-      // unlucky and not achieve the mean average fast enough for the test case.
-      if (!HeapMonitor.statsHaveExpectedNumberSamples((int) expected, 10)) {
+        // 10% error ensures a sanity test without becoming flaky.
+        // Flakiness is due to the fact that this test is dependent on the sampling interval, which is a
+        // statistical geometric variable around the sampling interval. This means that the test could be
+        // unlucky and not achieve the mean average fast enough for the test case.
+        if (HeapMonitor.statsHaveExpectedNumberSamples((int) expected, 10)) {
+          break;
+        }
+      }
+
+      // If we failed maxCount times, throw the exception.
+      if (count == maxCount) {
         throw new RuntimeException("Statistics should show about " + expected + " samples; "
             + " but have " + HeapMonitor.sampledEvents() + " instead for the size "
             + currentSize);

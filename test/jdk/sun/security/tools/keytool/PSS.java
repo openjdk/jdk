@@ -23,13 +23,17 @@
 
 /*
  * @test
- * @bug 8215694
+ * @bug 8215694 8222987
  * @summary keytool cannot generate RSASSA-PSS certificates
  * @library /test/lib
  * @modules java.base/sun.security.util
  *          java.base/sun.security.x509
+ * @requires os.family != "solaris"
  * @run main PSS
  */
+
+// This test is excluded from Solaris because the 8192-bit RSA key pair
+// generator is extremely slow there.
 
 import jdk.test.lib.Asserts;
 import jdk.test.lib.SecurityTools;

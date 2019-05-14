@@ -33,7 +33,7 @@ package com.sun.source.tree;
  *   <em>expression</em> ;
  * </pre>
  *
- * @jls section 14.8
+ * @jls 14.8 Expression Statements
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

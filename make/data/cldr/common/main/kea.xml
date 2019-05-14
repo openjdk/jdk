@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2018 Unicode, Inc.
+<!-- Copyright © 1991-2019 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 13911 $"/>
+		<version number="$Revision: 14809 $"/>
 		<language type="kea"/>
 	</identity>
 	<localeDisplayNames>
@@ -573,9 +573,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</localeDisplayNames>
 	<characters>
 		<exemplarCharacters>[a b d {dj} e f g h i j k l {lh} m n ñ {nh} o p r s t {tx} u v x y z]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[á à ă â å ä ã ā æ c ç é è ĕ ê ë ẽ ē í ì ĭ î ï ĩ ī {n\u0308} ó ò ŏ ô ö õ ø ō œ q {rr} ú ù ŭ û ü ũ ū w ÿ]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[ª á à ă â å ä ã ā æ c ç é è ĕ ê ë ẽ ē í ì ĭ î ï ĩ ī {n\u0308} º ó ò ŏ ô ö õ ø ō œ q {rr} ú ù ŭ û ü ũ ū w ÿ]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B D E F G H I J K L M N O P R S T U V X Z]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[  \- , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” « » ( ) \[ \] § @ * / \&amp; # † ‡]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -1590,8 +1591,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Etc/Unknown">
 				<exemplarCity>Sidadi Diskonxedu</exemplarCity>
 			</zone>
+			<zone type="Atlantic/Bermuda">
+				<exemplarCity>Bermuda</exemplarCity>
+			</zone>
 			<zone type="America/Blanc-Sablon">
 				<exemplarCity>Blank-Sablon</exemplarCity>
+			</zone>
+			<zone type="America/Indianapolis">
+				<exemplarCity>Indianapolis</exemplarCity>
 			</zone>
 			<metazone type="Africa_Central">
 				<long>
@@ -1957,7 +1964,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<symbol>GEL</symbol>
 			</currency>
 			<currency type="GHC">
-				<displayName>Sedi di Gana</displayName>
+				<displayName>Sedi di Gana (1979–2007)</displayName>
 			</currency>
 			<currency type="GMD">
 				<displayName>Dalasi</displayName>
@@ -2220,7 +2227,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<symbol>SDG</symbol>
 			</currency>
 			<currency type="SDP">
-				<displayName>Libra sudanes antigu</displayName>
+				<displayName>Libra sudanes antigu (1957–1998)</displayName>
 			</currency>
 			<currency type="SEK">
 				<displayName>Kuroa sueku</displayName>
@@ -2359,7 +2366,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<symbol>ZMW</symbol>
 			</currency>
 			<currency type="ZWD">
-				<displayName>Dola di Zimbabue</displayName>
+				<displayName>Dola di Zimbabue (1980–2008)</displayName>
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
@@ -2865,12 +2872,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} Mb</unitPattern>
 			</unit>
 			<unit type="digital-kilobyte">
-				<displayName>KB</displayName>
-				<unitPattern count="other">{0} KB</unitPattern>
+				<displayName>kB</displayName>
+				<unitPattern count="other">{0} kB</unitPattern>
 			</unit>
 			<unit type="digital-kilobit">
-				<displayName>Kb</displayName>
-				<unitPattern count="other">{0} Kb</unitPattern>
+				<displayName>kb</displayName>
+				<unitPattern count="other">{0} kb</unitPattern>
 			</unit>
 			<unit type="digital-byte">
 				<displayName>B</displayName>

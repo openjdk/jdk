@@ -26,8 +26,8 @@
 #define SHARE_GC_G1_G1HEAPVERIFIER_HPP
 
 #include "gc/g1/heapRegionSet.hpp"
+#include "gc/shared/verifyOption.hpp"
 #include "memory/allocation.hpp"
-#include "memory/universe.hpp"
 #include "utilities/macros.hpp"
 
 class G1CollectedHeap;

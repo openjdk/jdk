@@ -27,10 +27,10 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/softRefPolicy.hpp"
 #include "gc/shared/space.hpp"
-#include "services/memoryManager.hpp"
 #include "gc/epsilon/epsilonMonitoringSupport.hpp"
 #include "gc/epsilon/epsilonBarrierSet.hpp"
 #include "gc/epsilon/epsilon_globals.hpp"
+#include "services/memoryManager.hpp"
 
 class EpsilonHeap : public CollectedHeap {
   friend class VMStructs;

@@ -35,7 +35,7 @@ import javax.lang.model.element.Name;
  *   <em>name</em>
  * </pre>
  *
- * @jls section 6.5.6.1
+ * @jls 6.5.6.1 Simple Expression Names
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

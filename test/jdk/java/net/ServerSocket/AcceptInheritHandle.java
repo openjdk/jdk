@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8067105
+ * @library /test/lib
  * @summary Socket returned by ServerSocket.accept() is inherited by child process on Windows
  * @author Chris Hegarty
  */
@@ -36,6 +37,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import jdk.test.lib.net.IPSupport;
 
 public class AcceptInheritHandle {
 
@@ -81,7 +83,9 @@ public class AcceptInheritHandle {
 
     static void testJavaNetServerSocket() throws Exception {
         test(ServerSocketProducer.JAVA_NET);
-        test(ServerSocketProducer.JAVA_NET, "-Djava.net.preferIPv4Stack=true");
+        if (IPSupport.hasIPv4()) {
+            test(ServerSocketProducer.JAVA_NET, "-Djava.net.preferIPv4Stack=true");
+        }
     }
     static void testNioServerSocketChannel() throws Exception {
         test(ServerSocketProducer.NIO_CHANNELS);

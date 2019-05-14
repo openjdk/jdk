@@ -43,6 +43,7 @@
 #include "memory/metaspaceClosure.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/universe.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
@@ -1267,6 +1268,8 @@ void SystemDictionaryShared::print_on(outputStream* st) {
     _unregistered_dictionary.iterate(&p);
   }
 }
+
+void SystemDictionaryShared::print() { print_on(tty); }
 
 void SystemDictionaryShared::print_table_statistics(outputStream* st) {
   if (UseSharedSpaces) {

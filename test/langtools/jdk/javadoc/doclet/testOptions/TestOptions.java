@@ -188,7 +188,7 @@ public class TestOptions extends JavadocTester {
                 "-package",
                 "linksource");
         checkExit(Exit.OK);
-
+        checkLinks();
         checkOutput("linksource/AnnotationTypeField.html", true,
                 "<pre>@Documented\npublic @interface <a href="
                 + "\"../src-html/linksource/AnnotationTypeField.html#line.31\">"

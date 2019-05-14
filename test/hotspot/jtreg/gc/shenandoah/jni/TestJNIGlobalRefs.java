@@ -24,7 +24,7 @@
 /* @test TestJNIGlobalRefs
  * @summary Test JNI Global Refs with Shenandoah
  * @key gc
- * @requires vm.gc.Shenandoah
+ * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xlog:gc -XX:ShenandoahGCHeuristics=aggressive -XX:+ShenandoahVerify TestJNIGlobalRefs
  * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xlog:gc -XX:ShenandoahGCHeuristics=aggressive                       TestJNIGlobalRefs
  */

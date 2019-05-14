@@ -24,11 +24,13 @@
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import jdk.test.lib.net.IPSupport;
 import static java.util.concurrent.CompletableFuture.*;
 
 /*
  * @test
  * @bug 4344135
+ * @library /test/lib
  * @summary Check that {Socket,ServerSocket,DatagramSocket}.close will
  *          cause any thread blocked on the socket to throw a SocketException.
  * @run main AsyncClose
@@ -38,6 +40,7 @@ import static java.util.concurrent.CompletableFuture.*;
 public class AsyncClose {
 
     public static void main(String args[]) throws Exception {
+        IPSupport.throwSkippedExceptionIfNonOperational();
 
         AsyncCloseTest tests[] = {
             new Socket_getInputStream_read(),

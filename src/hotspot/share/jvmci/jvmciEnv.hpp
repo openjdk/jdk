@@ -87,7 +87,7 @@ class JVMCIKlassHandle : public StackObj {
 // by the CompileBroker.  It is created in the broker and passed through
 // into the code installation step.
 class JVMCICompileState : public ResourceObj {
-  friend class VMStructs;
+  friend class JVMCIVMStructs;
  private:
   CompileTask*     _task;
   int              _system_dictionary_modification_counter;

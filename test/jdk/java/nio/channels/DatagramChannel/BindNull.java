@@ -23,6 +23,7 @@
 
 /* @test
  * @bug 7161881
+ * @library /test/lib
  * @run main/othervm -Djava.net.preferIPv6Addresses=true BindNull
  * @summary Make sure the bind method uses an ipv4 address for the null case
  *          when the DatagramChannel is connected to an IPv4 socket and
@@ -32,19 +33,22 @@
 import java.io.*;
 import java.net.*;
 import java.nio.channels.*;
+import jdk.test.lib.net.IPSupport;
 
 public class BindNull {
     public static void main(String[] args) throws IOException {
         try (DatagramChannel dc = DatagramChannel.open()) {
             dc.bind(null);
         }
-        try (DatagramChannel dc = DatagramChannel.open(StandardProtocolFamily.INET)) {
-            dc.bind(null);
+        if (IPSupport.hasIPv4()) {
+            try (DatagramChannel dc = DatagramChannel.open(StandardProtocolFamily.INET)) {
+                dc.bind(null);
+            }
         }
-        try (DatagramChannel dc = DatagramChannel.open(StandardProtocolFamily.INET6)) {
-            dc.bind(null);
-        } catch (UnsupportedOperationException uoe) {
-            // IPv6 not available
+        if (IPSupport.hasIPv6()) {
+            try (DatagramChannel dc = DatagramChannel.open(StandardProtocolFamily.INET6)) {
+                dc.bind(null);
+            }
         }
     }
 }

@@ -420,7 +420,7 @@ class JvmtiCodeBlobDesc : public CHeapObj<mtInternal> {
  public:
   JvmtiCodeBlobDesc(const char *name, address code_begin, address code_end) {
     assert(name != NULL, "all code blobs must be named");
-    strncpy(_name, name, sizeof(_name));
+    strncpy(_name, name, sizeof(_name) - 1);
     _name[sizeof(_name)-1] = '\0';
     _code_begin = code_begin;
     _code_end = code_end;

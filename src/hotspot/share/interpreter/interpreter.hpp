@@ -69,7 +69,7 @@ class InterpreterCodelet: public Stub {
   // Debugging
   void    verify();
   void    print_on(outputStream* st) const;
-  void    print() const { print_on(tty); }
+  void    print() const;
 
   // Interpreter-specific initialization
   void    initialize(const char* description, Bytecodes::Code bytecode);

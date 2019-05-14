@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@ public class MetricsTester {
                 String mountPoint = paths[1];
                 if (root != null && cgroupPath != null) {
                     if (root.equals("/")) {
-                        if (cgroupPath.equals("/")) {
+                        if (!cgroupPath.equals("/")) {
                             finalPath = mountPoint + cgroupPath;
                         } else {
                             finalPath = mountPoint;
@@ -94,7 +94,7 @@ public class MetricsTester {
                         if (root.equals(cgroupPath)) {
                             finalPath = mountPoint;
                         } else {
-                            if (root.indexOf(cgroupPath) == 0) {
+                            if (cgroupPath.startsWith(root)) {
                                 if (cgroupPath.length() > root.length()) {
                                     String cgroupSubstr = cgroupPath.substring(root.length());
                                     finalPath = mountPoint + cgroupSubstr;
@@ -103,7 +103,7 @@ public class MetricsTester {
                         }
                     }
                 }
-                subSystemPaths.put(subSystem, new String[]{finalPath});
+                subSystemPaths.put(subSystem, new String[]{finalPath, mountPoint});
             }
         }
     }

@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "asm/codeBuffer.hpp"
+#include "code/oopRecorder.inline.hpp"
 #include "compiler/disassembler.hpp"
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"

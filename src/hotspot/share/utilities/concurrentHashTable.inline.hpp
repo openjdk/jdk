@@ -485,6 +485,7 @@ inline bool ConcurrentHashTable<VALUE, CONFIG, F>::
   GlobalCounter::write_synchronize();
   delete_f(rem_n->value());
   Node::destroy_node(rem_n);
+  JFR_ONLY(_stats_rate.remove();)
   return true;
 }
 
@@ -533,6 +534,7 @@ inline void ConcurrentHashTable<VALUE, CONFIG, F>::
     for (size_t node_it = 0; node_it < nd; node_it++) {
       del_f(ndel[node_it]->value());
       Node::destroy_node(ndel[node_it]);
+      JFR_ONLY(_stats_rate.remove();)
       DEBUG_ONLY(ndel[node_it] = (Node*)POISON_PTR;)
     }
     cs_context = GlobalCounter::critical_section_begin(thread);
@@ -571,6 +573,7 @@ inline void ConcurrentHashTable<VALUE, CONFIG, F>::
     GlobalCounter::write_synchronize();
     for (size_t node_it = 0; node_it < dels; node_it++) {
       Node::destroy_node(ndel[node_it]);
+      JFR_ONLY(_stats_rate.remove();)
       DEBUG_ONLY(ndel[node_it] = (Node*)POISON_PTR;)
     }
   }
@@ -900,6 +903,7 @@ inline bool ConcurrentHashTable<VALUE, CONFIG, F>::
       if (old == NULL) {
         new_node->set_next(first_at_start);
         if (bucket->cas_first(new_node, first_at_start)) {
+          JFR_ONLY(_stats_rate.add();)
           new_node = NULL;
           ret = true;
           break; /* leave critical section */
@@ -1008,6 +1012,7 @@ inline ConcurrentHashTable<VALUE, CONFIG, F>::
        _size_limit_reached(false), _resize_lock_owner(NULL),
        _invisible_epoch(0)
 {
+  _stats_rate = TableRateStatistics();
   _resize_lock =
     new Mutex(Mutex::leaf, "ConcurrentHashTable", false,
               Monitor::_safepoint_check_never);
@@ -1081,6 +1086,7 @@ inline bool ConcurrentHashTable<VALUE, CONFIG, F>::
   if (!bucket->cas_first(new_node, bucket->first())) {
     assert(false, "bad");
   }
+  JFR_ONLY(_stats_rate.add();)
   return true;
 }
 
@@ -1182,24 +1188,18 @@ inline void ConcurrentHashTable<VALUE, CONFIG, F>::
 
 template <typename VALUE, typename CONFIG, MEMFLAGS F>
 template <typename VALUE_SIZE_FUNC>
-inline void ConcurrentHashTable<VALUE, CONFIG, F>::
-  statistics_to(Thread* thread, VALUE_SIZE_FUNC& vs_f,
-                outputStream* st, const char* table_name)
+inline TableStatistics ConcurrentHashTable<VALUE, CONFIG, F>::
+  statistics_calculate(Thread* thread, VALUE_SIZE_FUNC& vs_f)
 {
   NumberSeq summary;
   size_t literal_bytes = 0;
-  if (!try_resize_lock(thread)) {
-    st->print_cr("statistics unavailable at this moment");
-    return;
-  }
-
   InternalTable* table = get_table();
   for (size_t bucket_it = 0; bucket_it < table->_size; bucket_it++) {
     ScopedCS cs(thread, this);
     size_t count = 0;
     Bucket* bucket = table->get_bucket(bucket_it);
     if (bucket->have_redirect() || bucket->is_locked()) {
-        continue;
+      continue;
     }
     Node* current_node = bucket->first();
     while (current_node != NULL) {
@@ -1210,37 +1210,39 @@ inline void ConcurrentHashTable<VALUE, CONFIG, F>::
     summary.add((double)count);
   }
 
-  double num_buckets = summary.num();
-  double num_entries = summary.sum();
+  return TableStatistics(_stats_rate, summary, literal_bytes, sizeof(Bucket), sizeof(Node));
+}
 
-  size_t bucket_bytes = num_buckets * sizeof(Bucket);
-  size_t entry_bytes  = num_entries * sizeof(Node);
-  size_t total_bytes = literal_bytes +  bucket_bytes + entry_bytes;
-
-  size_t bucket_size  = (num_buckets <= 0) ? 0 : (bucket_bytes  / num_buckets);
-  size_t entry_size   = (num_entries <= 0) ? 0 : (entry_bytes   / num_entries);
-
-  st->print_cr("%s statistics:", table_name);
-  st->print_cr("Number of buckets       : %9" PRIuPTR " = %9" PRIuPTR
-               " bytes, each " SIZE_FORMAT,
-               (size_t)num_buckets, bucket_bytes,  bucket_size);
-  st->print_cr("Number of entries       : %9" PRIuPTR " = %9" PRIuPTR
-               " bytes, each " SIZE_FORMAT,
-               (size_t)num_entries, entry_bytes,   entry_size);
-  if (literal_bytes != 0) {
-    double literal_avg = (num_entries <= 0) ? 0 : (literal_bytes / num_entries);
-    st->print_cr("Number of literals      : %9" PRIuPTR " = %9" PRIuPTR
-                 " bytes, avg %7.3f",
-                 (size_t)num_entries, literal_bytes, literal_avg);
+template <typename VALUE, typename CONFIG, MEMFLAGS F>
+template <typename VALUE_SIZE_FUNC>
+inline TableStatistics ConcurrentHashTable<VALUE, CONFIG, F>::
+  statistics_get(Thread* thread, VALUE_SIZE_FUNC& vs_f, TableStatistics old)
+{
+  if (!try_resize_lock(thread)) {
+    return old;
   }
-  st->print_cr("Total footprsize_t         : %9s = %9" PRIuPTR " bytes", ""
-               , total_bytes);
-  st->print_cr("Average bucket size     : %9.3f", summary.avg());
-  st->print_cr("Variance of bucket size : %9.3f", summary.variance());
-  st->print_cr("Std. dev. of bucket size: %9.3f", summary.sd());
-  st->print_cr("Maximum bucket size     : %9" PRIuPTR,
-               (size_t)summary.maximum());
+
+  TableStatistics ts = statistics_calculate(thread, vs_f);
   unlock_resize_lock(thread);
+
+  return ts;
+}
+
+template <typename VALUE, typename CONFIG, MEMFLAGS F>
+template <typename VALUE_SIZE_FUNC>
+inline void ConcurrentHashTable<VALUE, CONFIG, F>::
+  statistics_to(Thread* thread, VALUE_SIZE_FUNC& vs_f,
+                outputStream* st, const char* table_name)
+{
+  if (!try_resize_lock(thread)) {
+    st->print_cr("statistics unavailable at this moment");
+    return;
+  }
+
+  TableStatistics ts = statistics_calculate(thread, vs_f);
+  unlock_resize_lock(thread);
+
+  ts.print(st, table_name);
 }
 
 template <typename VALUE, typename CONFIG, MEMFLAGS F>

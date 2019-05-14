@@ -40,6 +40,7 @@
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/universe.hpp"
 #include "oops/methodData.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -449,8 +450,8 @@ CompileTask* CompileQueue::get() {
     save_hot_method = methodHandle(task->hot_method());
 
     remove(task);
-    purge_stale_tasks(); // may temporarily release MCQ lock
   }
+  purge_stale_tasks(); // may temporarily release MCQ lock
   return task;
 }
 

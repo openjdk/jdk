@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 4507501
+ * @library /test/lib
  * @summary Test various methods that should throw IAE when passed improper
  *          SocketAddress
  * @run main AddressTest
@@ -31,6 +32,7 @@
  */
 
 import java.net.*;
+import jdk.test.lib.net.IPSupport;
 
 public class AddressTest {
     class MySocketAddress extends SocketAddress {
@@ -153,6 +155,7 @@ public class AddressTest {
     }
 
     public static void main(String[] args) throws Exception {
+        IPSupport.throwSkippedExceptionIfNonOperational();
         new AddressTest();
     }
 }

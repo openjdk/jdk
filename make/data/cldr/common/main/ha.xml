@@ -1,16 +1,21 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2018 Unicode, Inc.
+<!-- Copyright © 1991-2019 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 13911 $"/>
+		<version number="$Revision: 14845 $"/>
 		<language type="ha"/>
 	</identity>
 	<localeDisplayNames>
+		<localeDisplayPattern>
+			<localePattern>{0} ({1})</localePattern>
+			<localeSeparator>{0}, {1}</localeSeparator>
+			<localeKeyTypePattern>{0}: {1}</localeKeyTypePattern>
+		</localeDisplayPattern>
 		<languages>
 			<language type="af" draft="unconfirmed">Afirkanci</language>
 			<language type="ak">Akan</language>
@@ -28,10 +33,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="cy" draft="unconfirmed">Kabilar Welsh</language>
 			<language type="da" draft="unconfirmed">Danish</language>
 			<language type="de">Jamusanci</language>
+			<language type="de_AT">Jamusanci Ostiriya</language>
+			<language type="de_CH">Jamusanci Suwizalan</language>
 			<language type="el">Girkanci</language>
 			<language type="en">Turanci</language>
+			<language type="en_AU">Turanci Ostareliya</language>
+			<language type="en_CA">Turanci Kanada</language>
+			<language type="en_GB">Turanci Biritaniya</language>
+			<language type="en_GB" alt="short">Turanci Ingila</language>
+			<language type="en_US">Turanci Amirka</language>
+			<language type="en_US" alt="short">Amirka Turanci</language>
 			<language type="eo" draft="unconfirmed">Dʼan/ʼYar Kabilar Andalus</language>
-			<language type="es">Ispaniyanci</language>
+			<language type="es">Sifaniyanci</language>
+			<language type="es_419">Sifaniyancin Latin Amirka</language>
+			<language type="es_ES">Sifaniyanci Turai</language>
+			<language type="es_MX">Sifaniyanci Mesiko</language>
 			<language type="et" draft="unconfirmed">Istoniyanci</language>
 			<language type="eu" draft="unconfirmed">Dan/ʼYar Kabilar Bas</language>
 			<language type="fa">Parisanci</language>
@@ -39,6 +55,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="fil" draft="unconfirmed">Dan Filifin</language>
 			<language type="fo" draft="unconfirmed">Faroese</language>
 			<language type="fr">Faransanci</language>
+			<language type="fr_CA">Farasanci Kanada</language>
+			<language type="fr_CH">Farasanci Suwizalan</language>
 			<language type="fy" draft="unconfirmed">Kʼabilan Firsi</language>
 			<language type="ga" draft="unconfirmed">Dan Ailan</language>
 			<language type="gd" draft="unconfirmed">Kʼabilan Scots Gaelic</language>
@@ -86,9 +104,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="pa">Punjabi</language>
 			<language type="pl">Harshen Polan</language>
 			<language type="ps" draft="unconfirmed">Pashtanci</language>
-			<language type="pt">Harshen Portugal</language>
-			<language type="pt_BR" draft="unconfirmed">Fotigis (Burazil)</language>
-			<language type="pt_PT" draft="unconfirmed">Yaren Kasar Portugal</language>
+			<language type="pt">Harshen Fotugis</language>
+			<language type="pt_BR">Fotugis Kasashen Birazil</language>
+			<language type="pt_PT">Fotugis kasashen Turai</language>
 			<language type="ro">Romaniyanci</language>
 			<language type="ru">Rashanci</language>
 			<language type="rw">Kiniyaruwanda</language>
@@ -115,14 +133,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="tw" draft="unconfirmed">Tiwiniyanci</language>
 			<language type="ug" draft="unconfirmed">Ugiranci</language>
 			<language type="uk">Harshen Yukuren</language>
+			<language type="und">Harshen da ba a sani ba</language>
 			<language type="ur">Harshen Urdu</language>
 			<language type="uz" draft="unconfirmed">Uzbek</language>
 			<language type="vi">Harshen Biyetinam</language>
 			<language type="xh" draft="unconfirmed">Bazosa</language>
 			<language type="yo">Yarbanci</language>
-			<language type="zh">Harshen Sin</language>
+			<language type="zh">Harshen Sinanci</language>
+			<language type="zh_Hans">Sauƙaƙaƙƙen Sinanci</language>
+			<language type="zh_Hant">Sinanci na gargajiya</language>
 			<language type="zu">Harshen Zulu</language>
 		</languages>
+		<scripts>
+			<script type="Arab">Larabci</script>
+			<script type="Cyrl">Cyrl</script>
+			<script type="Hans">Sauƙaƙaƙƙen</script>
+			<script type="Hans" alt="stand-alone">Sauƙaƙaƙƙen Hans</script>
+			<script type="Hant">Na gargajiya</script>
+			<script type="Hant" alt="stand-alone">Han na gargajiya</script>
+			<script type="Latn">Latin</script>
+			<script type="Zxxx">Ba rubutacce ba</script>
+			<script type="Zzzz">Rubutun da ba sani ba</script>
+		</scripts>
 		<territories>
 			<territory type="AD">Andora</territory>
 			<territory type="AE">Haɗaɗɗiyar Daular Larabawa</territory>
@@ -180,7 +212,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="DZ">Aljeriya</territory>
 			<territory type="EC">Ekwador</territory>
 			<territory type="EE">Estoniya</territory>
-			<territory type="EG">Masar, Misira</territory>
+			<territory type="EG">Misira</territory>
 			<territory type="ER">Eritireya</territory>
 			<territory type="ES">Sipen</territory>
 			<territory type="ET">Habasha</territory>
@@ -190,7 +222,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="FM">Mikuronesiya</territory>
 			<territory type="FR">Faransa</territory>
 			<territory type="GA">Gabon</territory>
-			<territory type="GB">Birtaniya</territory>
+			<territory type="GB">Biritaniya</territory>
 			<territory type="GD">Girnada</territory>
 			<territory type="GE">Jiwarjiya</territory>
 			<territory type="GF">Gini Ta Faransa</territory>
@@ -221,7 +253,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IT">Italiya</territory>
 			<territory type="JM">Jamaika</territory>
 			<territory type="JO">Jordan</territory>
-			<territory type="JP">Japan</territory>
+			<territory type="JP">Jàpân</territory>
 			<territory type="KE">Kenya</territory>
 			<territory type="KG">Kirgizistan</territory>
 			<territory type="KH">Kambodiya</territory>
@@ -331,7 +363,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="TZ">Tanzaniya</territory>
 			<territory type="UA">Yukaran</territory>
 			<territory type="UG">Yuganda</territory>
-			<territory type="US">Amurka</territory>
+			<territory type="US">Amirka</territory>
 			<territory type="UY">Yurugai</territory>
 			<territory type="UZ">Uzubekistan</territory>
 			<territory type="VA">Batikan</territory>
@@ -348,13 +380,31 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ZA">Afirka Ta Kudu</territory>
 			<territory type="ZM">Zambiya</territory>
 			<territory type="ZW">Zimbabuwe</territory>
+			<territory type="ZZ">Yanki da ba a sani ba</territory>
 		</territories>
+		<types>
+			<type key="calendar" type="gregorian">Gregorian Kalanda</type>
+			<type key="collation" type="standard">Daidai ta ce Kasà</type>
+			<type key="numbers" type="arab">Lambobi na larabawan a gabas</type>
+			<type key="numbers" type="latn">Lambobi na yammacin</type>
+		</types>
+		<measurementSystemNames>
+			<measurementSystemName type="metric">Tsarin awo</measurementSystemName>
+			<measurementSystemName type="UK">Tsarin awo kasar Ingila</measurementSystemName>
+			<measurementSystemName type="US">Tsarin awo kasar Amirka</measurementSystemName>
+		</measurementSystemNames>
+		<codePatterns>
+			<codePattern type="language">Harshe: {0}</codePattern>
+			<codePattern type="script">Rubutu: {0}</codePattern>
+			<codePattern type="territory">Yanki/Sashe: {0}</codePattern>
+		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a b ɓ c d ɗ e f g h i j k ƙ l m n o r s {sh} t {ts} u w y {ʼy} z ʼ]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[á à â é è ê í ì î ó ò ô p q {r\u0303} ú ù û v x ƴ]</exemplarCharacters>
-		<exemplarCharacters type="index" draft="contributed">[A B Ɓ C D Ɗ E F G H I J K Ƙ L M N O P Q R S T U V W X Y {ʼY} Z]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters>[a b ɓ c d ɗ e f g h i j k ƙ l m n o r s {sh} t {ts} u w y {ƴ} z ʼ]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[á à â é è ê í ì î ó ò ô p q {r\u0303} ú ù û v x]</exemplarCharacters>
+		<exemplarCharacters type="index">[A B Ɓ C D Ɗ E F G H I J K Ƙ L M N O R S T U W Y Ƴ Z]</exemplarCharacters>
+		<exemplarCharacters type="numbers" draft="contributed">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="contributed">[\- , ; \: ! ? . ' ‘ ’ &quot; “ ” ( ) \[ \] \{ \} ′ ″]</exemplarCharacters>
 	</characters>
 	<delimiters>
 		<quotationStart>“</quotationStart>
@@ -388,10 +438,48 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</dateFormatLength>
 				</dateFormats>
 				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">h B</dateFormatItem>
+						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
+						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
+						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
+						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
+						<dateFormatItem id="Ed">d, E</dateFormatItem>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="Gy">G y</dateFormatItem>
+						<dateFormatItem id="GyMMM">G y MMM</dateFormatItem>
+						<dateFormatItem id="GyMMMd">G y MMM d</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">G y MMM d, E</dateFormatItem>
+						<dateFormatItem id="h">h a</dateFormatItem>
+						<dateFormatItem id="H">HH</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">M/d</dateFormatItem>
@@ -410,7 +498,127 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
+						<dateFormatItem id="yyyy">G y</dateFormatItem>
+						<dateFormatItem id="yyyyM">GGGGG y-MM</dateFormatItem>
+						<dateFormatItem id="yyyyMd">GGGGG y-MM-dd</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">GGGGG y-MM-dd, E</dateFormatItem>
+						<dateFormatItem id="yyyyMMM">G y MMM</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd">G y MMM d</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd">G y MMM d, E</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM">G y MMMM</dateFormatItem>
+						<dateFormatItem id="yyyyQQQ">G y QQQ</dateFormatItem>
+						<dateFormatItem id="yyyyQQQQ">G y QQQQ</dateFormatItem>
 					</availableFormats>
+					<intervalFormats>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="Bh">
+							<greatestDifference id="B">h B – h B</greatestDifference>
+							<greatestDifference id="h">h–h B</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Bhm">
+							<greatestDifference id="B">h:mm B – h:mm B</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm B</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm B</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="d">
+							<greatestDifference id="d">d–d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G">G y – G y</greatestDifference>
+							<greatestDifference id="y">G y–y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G">GGGGG y-MM – GGGGG y-MM</greatestDifference>
+							<greatestDifference id="M">GGGGG y-MM – y-MM</greatestDifference>
+							<greatestDifference id="y">GGGGG y-MM – y-MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="G">GGGGG y-MM-dd – GGGGG y-MM-dd</greatestDifference>
+							<greatestDifference id="M">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="y">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="G">GGGGG y-MM-dd, E – GGGGG y-MM-dd, E</greatestDifference>
+							<greatestDifference id="M">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="y">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G">G y MMM – G y MMM</greatestDifference>
+							<greatestDifference id="M">G y MMM–MMM</greatestDifference>
+							<greatestDifference id="y">G y MMM – y MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d">G y MMM d–d</greatestDifference>
+							<greatestDifference id="G">G y MMM d – G y MMM d</greatestDifference>
+							<greatestDifference id="M">G y MMM d – MMM d</greatestDifference>
+							<greatestDifference id="y">G y MMM d – y MMM d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d">G y MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="G">G y MMM d, E – G y MMM d, E</greatestDifference>
+							<greatestDifference id="M">G y MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="y">G y MMM d, E – y MMM d, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="M">
+							<greatestDifference id="M">MM–MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Md">
+							<greatestDifference id="d">MM-dd – MM-dd</greatestDifference>
+							<greatestDifference id="M">MM-dd – MM-dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MEd">
+							<greatestDifference id="d">MM-dd, E – MM-dd, E</greatestDifference>
+							<greatestDifference id="M">MM-dd, E – MM-dd, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMM">
+							<greatestDifference id="M">LLL–LLL</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMd">
+							<greatestDifference id="d">MMM d–d</greatestDifference>
+							<greatestDifference id="M">MMM d – MMM d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d">MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="M">MMM d, E – MMM d, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="y">
+							<greatestDifference id="y">G y–y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yM">
+							<greatestDifference id="M">GGGGG y-MM – y-MM</greatestDifference>
+							<greatestDifference id="y">GGGGG y-MM – y-MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMd">
+							<greatestDifference id="d">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="M">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="y">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="M">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="y">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="M">G y MMM–MMM</greatestDifference>
+							<greatestDifference id="y">G y MMM – y MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d">G y MMM d–d</greatestDifference>
+							<greatestDifference id="M">G y MMM d – MMM d</greatestDifference>
+							<greatestDifference id="y">G y MMM d – y MMM d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMEd">
+							<greatestDifference id="d">G y MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="M">G y MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="y">G y MMM d, E – y MMM d, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMM">
+							<greatestDifference id="M">G y MMMM–MMMM</greatestDifference>
+							<greatestDifference id="y">G y MMMM – y MMMM</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
 			<calendar type="gregorian">
@@ -630,9 +838,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<dayPeriod type="am">AM</dayPeriod>
 							<dayPeriod type="pm">PM</dayPeriod>
 						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
+						<dayPeriodWidth type="narrow">
 							<dayPeriod type="am">AM</dayPeriod>
 							<dayPeriod type="pm">PM</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">Safiya</dayPeriod>
+							<dayPeriod type="pm">Yamma</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
@@ -653,17 +865,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<eras>
 					<eraNames>
 						<era type="0">Kafin haihuwar annab</era>
+						<era type="0" alt="variant">K.H.Y</era>
 						<era type="1">Bayan haihuwar annab</era>
+						<era type="1" alt="variant">sananne Zamani</era>
 					</eraNames>
 					<eraAbbr>
-						<era type="0">KHAI</era>
+						<era type="0">K.H</era>
+						<era type="0" alt="variant">K.H.Y</era>
 						<era type="1">BHAI</era>
+						<era type="1" alt="variant">B.H.Y</era>
 					</eraAbbr>
 				</eras>
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern>EEEE, d MMMM, y</pattern>
+							<pattern>EEEE d MMMM, y</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
@@ -705,13 +921,53 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">h B</dateFormatItem>
+						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
+						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
+						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
+						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E, d</dateFormatItem>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="Gy">G y</dateFormatItem>
+						<dateFormatItem id="GyMMM">G y MMM</dateFormatItem>
+						<dateFormatItem id="GyMMMd">G y MMM d</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">G y MMM d, E</dateFormatItem>
+						<dateFormatItem id="h">h a</dateFormatItem>
+						<dateFormatItem id="H">HH</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
+						<dateFormatItem id="Hmsv">HH:mm:ss v</dateFormatItem>
+						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
+						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">M/d</dateFormatItem>
 						<dateFormatItem id="MEd">E, M/d</dateFormatItem>
@@ -720,6 +976,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="MMMEd">E, MMM d</dateFormatItem>
 						<dateFormatItem id="MMMMd">MMMM d</dateFormatItem>
 						<dateFormatItem id="MMMMEd">E, MMMM d</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one" draft="contributed">'week' W 'of' MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other" draft="contributed">'week' W 'of' MMMM</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">M/y</dateFormatItem>
@@ -731,23 +989,120 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
+						<dateFormatItem id="yw" count="one" draft="contributed">'week' w 'of' Y</dateFormatItem>
+						<dateFormatItem id="yw" count="other" draft="contributed">'week' w 'of' Y</dateFormatItem>
 					</availableFormats>
+					<appendItems>
+						<appendItem request="Timezone">{0} {1}</appendItem>
+					</appendItems>
 					<intervalFormats>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="Bh">
+							<greatestDifference id="B">h B – h B</greatestDifference>
+							<greatestDifference id="h">h–h B</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Bhm">
+							<greatestDifference id="B">h:mm B – h:mm B</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm B</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm B</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="d">
+							<greatestDifference id="d">d–d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G">G y – G y</greatestDifference>
+							<greatestDifference id="y">G y–y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G">GGGGG y-MM – GGGGG y-MM</greatestDifference>
+							<greatestDifference id="M">GGGGG y-MM – y-MM</greatestDifference>
+							<greatestDifference id="y">GGGGG y-MM – y-MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="G">GGGGG y-MM-dd – GGGGG y-MM-dd</greatestDifference>
+							<greatestDifference id="M">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="y">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="G">GGGGG y-MM-dd, E – GGGGG y-MM-dd, E</greatestDifference>
+							<greatestDifference id="M">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="y">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G">G y MMM – G y MMM</greatestDifference>
+							<greatestDifference id="M">G y MMM–MMM</greatestDifference>
+							<greatestDifference id="y">G y MMM – y MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d">G y MMM d–d</greatestDifference>
+							<greatestDifference id="G">G y MMM d – G y MMM d</greatestDifference>
+							<greatestDifference id="M">G y MMM d – MMM d</greatestDifference>
+							<greatestDifference id="y">G y MMM d – y MMM d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d">G y MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="G">G y MMM d, E – G y MMM d, E</greatestDifference>
+							<greatestDifference id="M">G y MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="y">G y MMM d, E – y MMM d, E</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">h a – h a</greatestDifference>
+							<greatestDifference id="h">h–h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H">HH–HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
 							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H">HH:mm–HH:mm</greatestDifference>
 							<greatestDifference id="m">HH:mm–HH:mm</greatestDifference>
 						</intervalFormatItem>
+						<intervalFormatItem id="hmv">
+							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hmv">
+							<greatestDifference id="H">HH:mm–HH:mm v</greatestDifference>
+							<greatestDifference id="m">HH:mm–HH:mm v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hv">
+							<greatestDifference id="a">h a – h a v</greatestDifference>
+							<greatestDifference id="h">h–h a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hv">
+							<greatestDifference id="H">HH–HH v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="M">
+							<greatestDifference id="M">MM–MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Md">
+							<greatestDifference id="d">MM-dd – MM-dd</greatestDifference>
+							<greatestDifference id="M">MM-dd – MM-dd</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
 							<greatestDifference id="d">E, dd/M – E, dd/M</greatestDifference>
+							<greatestDifference id="M">MM-dd, E – MM-dd, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMM">
+							<greatestDifference id="M">LLL–LLL</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMd">
+							<greatestDifference id="d">MMM d–d</greatestDifference>
+							<greatestDifference id="M">MMM d – MMM d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d">MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="M">MMM d, E – MMM d, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="y">
+							<greatestDifference id="y">y–y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
 							<greatestDifference id="M">MM/y – MM/y</greatestDifference>
@@ -756,21 +1111,29 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<intervalFormatItem id="yMd">
 							<greatestDifference id="d">dd/MM/y – dd/MM/y</greatestDifference>
 							<greatestDifference id="M">dd/MM/y – dd/MM/y</greatestDifference>
+							<greatestDifference id="y">y-MM-dd – y-MM-dd</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d">y-MM-dd, E – y-MM-dd, E</greatestDifference>
 							<greatestDifference id="M">y-MM-dd, E – y-MM-dd, E</greatestDifference>
 							<greatestDifference id="y">y-MM-dd, E – y-MM-dd, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
+							<greatestDifference id="M">y MMM–MMM</greatestDifference>
 							<greatestDifference id="y">y MMM – y MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d">y MMM d–d</greatestDifference>
+							<greatestDifference id="M">y MMM d – MMM d</greatestDifference>
 							<greatestDifference id="y">y MMM d – y MMM d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
+							<greatestDifference id="d">y MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="M">y MMM d, E – MMM d, E</greatestDifference>
 							<greatestDifference id="y">y MMM d, E – y MMM d, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
+							<greatestDifference id="M">y MMMM–MMMM</greatestDifference>
 							<greatestDifference id="y">y MMMM – y MMMM</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
@@ -784,10 +1147,37 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="year">
 				<displayName>Shekara</displayName>
 			</field>
+			<field type="year-short">
+				<displayName>Shekara</displayName>
+			</field>
+			<field type="year-narrow">
+				<displayName>Shekara</displayName>
+			</field>
+			<field type="quarter">
+				<displayName>Kwata</displayName>
+			</field>
+			<field type="quarter-short">
+				<displayName>Kwata</displayName>
+			</field>
+			<field type="quarter-narrow">
+				<displayName>Kwata</displayName>
+			</field>
 			<field type="month">
 				<displayName>Wata</displayName>
 			</field>
+			<field type="month-short">
+				<displayName>Wata</displayName>
+			</field>
+			<field type="month-narrow">
+				<displayName>Wata</displayName>
+			</field>
 			<field type="week">
+				<displayName>Mako</displayName>
+			</field>
+			<field type="week-short">
+				<displayName>Mako</displayName>
+			</field>
+			<field type="week-narrow">
 				<displayName>Mako</displayName>
 			</field>
 			<field type="day">
@@ -796,30 +1186,532 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">Yau</relative>
 				<relative type="1">Gobe</relative>
 			</field>
+			<field type="day-short">
+				<displayName>Kwana</displayName>
+				<relative type="-1">Jiya</relative>
+				<relative type="0">Yau</relative>
+				<relative type="1">Gobe</relative>
+			</field>
+			<field type="day-narrow">
+				<displayName>Kwana</displayName>
+				<relative type="-1">Jiya</relative>
+				<relative type="0">Yau</relative>
+				<relative type="1">Gobe</relative>
+			</field>
 			<field type="weekday">
-				<displayName>Rana</displayName>
+				<displayName>Rana mako</displayName>
 			</field>
 			<field type="dayperiod">
-				<displayName>Yini</displayName>
+				<displayName>Lokuttan rana</displayName>
 			</field>
 			<field type="hour">
+				<displayName>Awa</displayName>
+			</field>
+			<field type="hour-short">
+				<displayName>Awa</displayName>
+			</field>
+			<field type="hour-narrow">
 				<displayName>Awa</displayName>
 			</field>
 			<field type="minute">
 				<displayName>Minti</displayName>
 			</field>
+			<field type="minute-short">
+				<displayName>Minti</displayName>
+			</field>
+			<field type="minute-narrow">
+				<displayName>Minti</displayName>
+			</field>
 			<field type="second">
 				<displayName>Daƙiƙa</displayName>
 			</field>
+			<field type="second-short">
+				<displayName>Daƙiƙa</displayName>
+			</field>
+			<field type="second-narrow">
+				<displayName>Daƙiƙa</displayName>
+			</field>
 			<field type="zone">
-				<displayName>Agogo</displayName>
+				<displayName>Lokacin yanki</displayName>
 			</field>
 		</fields>
+		<timeZoneNames>
+			<hourFormat>+HH:mm;-HH:mm</hourFormat>
+			<gmtFormat>GMT{0}</gmtFormat>
+			<gmtZeroFormat>GMT</gmtZeroFormat>
+			<regionFormat>{0} Lokaci</regionFormat>
+			<regionFormat type="daylight">{0} Lokaci rana</regionFormat>
+			<regionFormat type="standard">{0} Daidai ta ce lokaci</regionFormat>
+			<fallbackFormat>{1} ({0})</fallbackFormat>
+			<zone type="Etc/UTC">
+				<long>
+					<standard>Hadewa duniya lokaci</standard>
+				</long>
+			</zone>
+			<zone type="Etc/Unknown">
+				<exemplarCity>Birni da ba a sani ba</exemplarCity>
+			</zone>
+			<zone type="America/Antigua">
+				<exemplarCity>Antigua</exemplarCity>
+			</zone>
+			<zone type="America/Anguilla">
+				<exemplarCity>Anguilla</exemplarCity>
+			</zone>
+			<zone type="America/Aruba">
+				<exemplarCity>Aruba</exemplarCity>
+			</zone>
+			<zone type="America/Barbados">
+				<exemplarCity>Barbados</exemplarCity>
+			</zone>
+			<zone type="America/St_Barthelemy">
+				<exemplarCity>St. Barthelemy</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Bermuda">
+				<exemplarCity>Bermuda</exemplarCity>
+			</zone>
+			<zone type="America/Kralendijk">
+				<exemplarCity>Kralendijk</exemplarCity>
+			</zone>
+			<zone type="America/Nassau">
+				<exemplarCity>Nassau</exemplarCity>
+			</zone>
+			<zone type="America/Belize">
+				<exemplarCity>Belize</exemplarCity>
+			</zone>
+			<zone type="America/Dawson">
+				<exemplarCity>Dawson</exemplarCity>
+			</zone>
+			<zone type="America/Whitehorse">
+				<exemplarCity>Whitehorse</exemplarCity>
+			</zone>
+			<zone type="America/Inuvik">
+				<exemplarCity>Inuvik</exemplarCity>
+			</zone>
+			<zone type="America/Vancouver">
+				<exemplarCity>Vancouver</exemplarCity>
+			</zone>
+			<zone type="America/Fort_Nelson">
+				<exemplarCity>Fort Nelson</exemplarCity>
+			</zone>
+			<zone type="America/Dawson_Creek">
+				<exemplarCity>Dawson Creek</exemplarCity>
+			</zone>
+			<zone type="America/Creston">
+				<exemplarCity>Creston</exemplarCity>
+			</zone>
+			<zone type="America/Yellowknife">
+				<exemplarCity>Yellowknife</exemplarCity>
+			</zone>
+			<zone type="America/Edmonton">
+				<exemplarCity>Edmonton</exemplarCity>
+			</zone>
+			<zone type="America/Swift_Current">
+				<exemplarCity>Swift Current</exemplarCity>
+			</zone>
+			<zone type="America/Cambridge_Bay">
+				<exemplarCity>Cambridge Bay</exemplarCity>
+			</zone>
+			<zone type="America/Regina">
+				<exemplarCity>Regina</exemplarCity>
+			</zone>
+			<zone type="America/Winnipeg">
+				<exemplarCity>Winnipeg</exemplarCity>
+			</zone>
+			<zone type="America/Resolute">
+				<exemplarCity>Resolute</exemplarCity>
+			</zone>
+			<zone type="America/Rainy_River">
+				<exemplarCity>Rainy River</exemplarCity>
+			</zone>
+			<zone type="America/Rankin_Inlet">
+				<exemplarCity>Rankin Inlet</exemplarCity>
+			</zone>
+			<zone type="America/Coral_Harbour">
+				<exemplarCity>Atikokan</exemplarCity>
+			</zone>
+			<zone type="America/Thunder_Bay">
+				<exemplarCity>Thunder Bay</exemplarCity>
+			</zone>
+			<zone type="America/Nipigon">
+				<exemplarCity>Nipigon</exemplarCity>
+			</zone>
+			<zone type="America/Toronto">
+				<exemplarCity>Toronto</exemplarCity>
+			</zone>
+			<zone type="America/Iqaluit">
+				<exemplarCity>Iqaluit</exemplarCity>
+			</zone>
+			<zone type="America/Pangnirtung">
+				<exemplarCity>Pangnirtung</exemplarCity>
+			</zone>
+			<zone type="America/Moncton">
+				<exemplarCity>Moncton</exemplarCity>
+			</zone>
+			<zone type="America/Halifax">
+				<exemplarCity>Halifax</exemplarCity>
+			</zone>
+			<zone type="America/Goose_Bay">
+				<exemplarCity>Goose Bay</exemplarCity>
+			</zone>
+			<zone type="America/Glace_Bay">
+				<exemplarCity>Glace Bay</exemplarCity>
+			</zone>
+			<zone type="America/Blanc-Sablon">
+				<exemplarCity>Blanc-Sablon</exemplarCity>
+			</zone>
+			<zone type="America/St_Johns">
+				<exemplarCity>St. John’s</exemplarCity>
+			</zone>
+			<zone type="America/Costa_Rica">
+				<exemplarCity>Costa Rica</exemplarCity>
+			</zone>
+			<zone type="America/Havana">
+				<exemplarCity>Havana</exemplarCity>
+			</zone>
+			<zone type="America/Curacao">
+				<exemplarCity>Curacao</exemplarCity>
+			</zone>
+			<zone type="America/Dominica">
+				<exemplarCity>Dominica</exemplarCity>
+			</zone>
+			<zone type="America/Santo_Domingo">
+				<exemplarCity>Santo Domingo</exemplarCity>
+			</zone>
+			<zone type="America/Grenada">
+				<exemplarCity>Grenada</exemplarCity>
+			</zone>
+			<zone type="America/Thule">
+				<exemplarCity>Thule</exemplarCity>
+			</zone>
+			<zone type="America/Godthab">
+				<exemplarCity>Nuuk</exemplarCity>
+			</zone>
+			<zone type="America/Scoresbysund">
+				<exemplarCity>Ittoqqortoormiit</exemplarCity>
+			</zone>
+			<zone type="America/Danmarkshavn">
+				<exemplarCity>Danmarkshavn</exemplarCity>
+			</zone>
+			<zone type="America/Guadeloupe">
+				<exemplarCity>Guadeloupe</exemplarCity>
+			</zone>
+			<zone type="America/Guatemala">
+				<exemplarCity>Guatemala</exemplarCity>
+			</zone>
+			<zone type="America/Tegucigalpa">
+				<exemplarCity>Tegucigalpa</exemplarCity>
+			</zone>
+			<zone type="America/Port-au-Prince">
+				<exemplarCity>Port-au-Prince</exemplarCity>
+			</zone>
+			<zone type="America/Jamaica">
+				<exemplarCity>Jamaica</exemplarCity>
+			</zone>
+			<zone type="America/St_Kitts">
+				<exemplarCity>St. Kitts</exemplarCity>
+			</zone>
+			<zone type="America/Cayman">
+				<exemplarCity>Cayman</exemplarCity>
+			</zone>
+			<zone type="America/St_Lucia">
+				<exemplarCity>St. Lucia</exemplarCity>
+			</zone>
+			<zone type="America/Marigot">
+				<exemplarCity>Marigot</exemplarCity>
+			</zone>
+			<zone type="America/Martinique">
+				<exemplarCity>Martinique</exemplarCity>
+			</zone>
+			<zone type="America/Montserrat">
+				<exemplarCity>Montserrat</exemplarCity>
+			</zone>
+			<zone type="America/Tijuana">
+				<exemplarCity>Tijuana</exemplarCity>
+			</zone>
+			<zone type="America/Hermosillo">
+				<exemplarCity>Hermosillo</exemplarCity>
+			</zone>
+			<zone type="America/Mazatlan">
+				<exemplarCity>Mazatlan</exemplarCity>
+			</zone>
+			<zone type="America/Chihuahua">
+				<exemplarCity>Chihuahua</exemplarCity>
+			</zone>
+			<zone type="America/Bahia_Banderas">
+				<exemplarCity>Bahia Banderas</exemplarCity>
+			</zone>
+			<zone type="America/Ojinaga">
+				<exemplarCity>Ojinaga</exemplarCity>
+			</zone>
+			<zone type="America/Monterrey">
+				<exemplarCity>Monterrey</exemplarCity>
+			</zone>
+			<zone type="America/Mexico_City">
+				<exemplarCity>Mexico City</exemplarCity>
+			</zone>
+			<zone type="America/Matamoros">
+				<exemplarCity>Matamoros</exemplarCity>
+			</zone>
+			<zone type="America/Merida">
+				<exemplarCity>Merida</exemplarCity>
+			</zone>
+			<zone type="America/Cancun">
+				<exemplarCity>Cancun</exemplarCity>
+			</zone>
+			<zone type="America/Managua">
+				<exemplarCity>Managua</exemplarCity>
+			</zone>
+			<zone type="America/Panama">
+				<exemplarCity>Panama</exemplarCity>
+			</zone>
+			<zone type="America/Miquelon">
+				<exemplarCity>Miquelon</exemplarCity>
+			</zone>
+			<zone type="America/Puerto_Rico">
+				<exemplarCity>Puerto Rico</exemplarCity>
+			</zone>
+			<zone type="America/El_Salvador">
+				<exemplarCity>El Salvador</exemplarCity>
+			</zone>
+			<zone type="America/Lower_Princes">
+				<exemplarCity>Lower Prince’s Quarter</exemplarCity>
+			</zone>
+			<zone type="America/Grand_Turk">
+				<exemplarCity>Grand Turk</exemplarCity>
+			</zone>
+			<zone type="America/Port_of_Spain">
+				<exemplarCity>Port of Spain</exemplarCity>
+			</zone>
+			<zone type="America/Adak">
+				<exemplarCity>Adak</exemplarCity>
+			</zone>
+			<zone type="America/Nome">
+				<exemplarCity>Nome</exemplarCity>
+			</zone>
+			<zone type="America/Anchorage">
+				<exemplarCity>Anchorage</exemplarCity>
+			</zone>
+			<zone type="America/Yakutat">
+				<exemplarCity>Yakutat</exemplarCity>
+			</zone>
+			<zone type="America/Sitka">
+				<exemplarCity>Sitka</exemplarCity>
+			</zone>
+			<zone type="America/Juneau">
+				<exemplarCity>Juneau</exemplarCity>
+			</zone>
+			<zone type="America/Metlakatla">
+				<exemplarCity>Metlakatla</exemplarCity>
+			</zone>
+			<zone type="America/Los_Angeles">
+				<exemplarCity>Los Angeles</exemplarCity>
+			</zone>
+			<zone type="America/Boise">
+				<exemplarCity>Boise</exemplarCity>
+			</zone>
+			<zone type="America/Phoenix">
+				<exemplarCity>Phoenix</exemplarCity>
+			</zone>
+			<zone type="America/Denver">
+				<exemplarCity>Denver</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/Beulah">
+				<exemplarCity>Beulah, North Dakota</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/New_Salem">
+				<exemplarCity>New Salem, North Dakota</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/Center">
+				<exemplarCity>Center, North Dakota</exemplarCity>
+			</zone>
+			<zone type="America/Chicago">
+				<exemplarCity>Chicago</exemplarCity>
+			</zone>
+			<zone type="America/Menominee">
+				<exemplarCity>Menominee</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Vincennes">
+				<exemplarCity>Vincennes, Indiana</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Petersburg">
+				<exemplarCity>Petersburg, Indiana</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Tell_City">
+				<exemplarCity>Tell City, Indiana</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Knox">
+				<exemplarCity>Knox, Indiana</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Winamac">
+				<exemplarCity>Winamac, Indiana</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Marengo">
+				<exemplarCity>Marengo, Indiana</exemplarCity>
+			</zone>
+			<zone type="America/Indianapolis">
+				<exemplarCity>Indianapolis</exemplarCity>
+			</zone>
+			<zone type="America/Louisville">
+				<exemplarCity>Louisville</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Vevay">
+				<exemplarCity>Vevay, Indiana</exemplarCity>
+			</zone>
+			<zone type="America/Kentucky/Monticello">
+				<exemplarCity>Monticello, Kentucky</exemplarCity>
+			</zone>
+			<zone type="America/Detroit">
+				<exemplarCity>Detroit</exemplarCity>
+			</zone>
+			<zone type="America/New_York">
+				<exemplarCity>New York</exemplarCity>
+			</zone>
+			<zone type="America/St_Vincent">
+				<exemplarCity>St. Vincent</exemplarCity>
+			</zone>
+			<zone type="America/Tortola">
+				<exemplarCity>Tortola</exemplarCity>
+			</zone>
+			<zone type="America/St_Thomas">
+				<exemplarCity>St. Thomas</exemplarCity>
+			</zone>
+			<metazone type="Alaska">
+				<long>
+					<generic>Lokaci ta Alaska</generic>
+					<standard>Ida Lokaci ta Alaska</standard>
+					<daylight>Lokaci rana ta Alaska</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Central">
+				<long>
+					<generic>Lokaci dake Amurika arewa ta tsakiyar</generic>
+					<standard>Ida Lokaci dake Amurika arewa ta tsakiyar</standard>
+					<daylight>Lokaci rana dake Amurika arewa ta tsakiyar</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Eastern">
+				<long>
+					<generic>Lokaci gabas a arewacin da Amirka</generic>
+					<standard>Lokaci daidai ta ce a arewacin da Amirka</standard>
+					<daylight>Lokaci rana a arewacin da Amirka</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Mountain">
+				<long>
+					<generic>Lokaci tsauni a arewacin da Amirka</generic>
+					<standard>Lokacin daidai ta ce tsauni a arewacin da Amirka</standard>
+					<daylight>Lokaci rana tsauni a arewacin da Amirka</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Pacific">
+				<long>
+					<generic>Amurika da arewa a lokaci lafiya</generic>
+					<standard>Ida Amurika da arewa a lokaci lafiya</standard>
+					<daylight>Ida Amurika da arewa a lokaci rana</daylight>
+				</long>
+			</metazone>
+			<metazone type="Atlantic">
+				<long>
+					<generic>Lokaci da Kanada, Puerto Rico da Virgin Islands</generic>
+					<standard>Ida Lokaci da Kanada, Puerto Rico da Virgin Islands</standard>
+					<daylight>Lokaci rana da amfani da shi Kanada, Puerto rico da Virgin Islands</daylight>
+				</long>
+			</metazone>
+			<metazone type="Cuba">
+				<long>
+					<generic>Lokaci ta Kuba</generic>
+					<standard>Ida Lokaci ta Kuba</standard>
+					<daylight>Lokaci rana ta Kuba</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Central">
+				<long>
+					<generic>Tsakiyar a lokaci turai</generic>
+					<standard>Ida Tsakiyar a Lokaci Turai</standard>
+					<daylight>Tsakiyar bazara a lokaci turai</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Eastern">
+				<long>
+					<generic>Lokaci a turai gabas</generic>
+					<standard>Ida lokaci a turai gabas</standard>
+					<daylight>Gabas a lokaci turai da bazara</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Western">
+				<long>
+					<generic>Lokaci ta yammacin turai</generic>
+					<standard>Ida lokaci ta yammacin turai</standard>
+					<daylight>Ida lokaci ta yammacin turai da bazara</daylight>
+				</long>
+			</metazone>
+			<metazone type="GMT">
+				<long>
+					<standard>Lokacin Greenwhich a London</standard>
+				</long>
+			</metazone>
+			<metazone type="Greenland_Eastern">
+				<long>
+					<generic>Lokaci a gabas ta Greeland</generic>
+					<standard>Ida Lokaci a gabas ta Greeland</standard>
+					<daylight>Lokaci rana a gabas ta Greeland</daylight>
+				</long>
+			</metazone>
+			<metazone type="Greenland_Western">
+				<long>
+					<generic>Lokaci a yammacin ta Greeland</generic>
+					<standard>Ida Lokaci a yammacin ta Greeland</standard>
+					<daylight>Lokaci rana a yammacin ta Greeland</daylight>
+				</long>
+			</metazone>
+			<metazone type="Hawaii_Aleutian">
+				<long>
+					<generic>Lokaci ta Hawaii-Aleutian</generic>
+					<standard>Ida Lokaci ta Hawaii-Aleutian</standard>
+					<daylight>Lokaci rana ta Hawaii-Aleutian</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mexico_Northwest">
+				<long>
+					<generic>Lokaci a arewa da yammacin ta Mesiko</generic>
+					<standard>Ida Lokaci a arewa da yammacin ta Mesiko</standard>
+					<daylight>Lokaci rana a arewa da yammacin ta Mesiko</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mexico_Pacific">
+				<long>
+					<generic>Lokaci a lafiya ta Mesiko</generic>
+					<standard>Ida Lokaci a lafiya ta Mesiko</standard>
+					<daylight>Lokaci rana a lafiya ta Mesiko</daylight>
+				</long>
+			</metazone>
+			<metazone type="Newfoundland">
+				<long>
+					<generic>Lokaci ta Newfoundland</generic>
+					<standard>Ida Lokaci ta Newfoundland</standard>
+					<daylight>Lokaci rana ta Newfoundland</daylight>
+				</long>
+			</metazone>
+			<metazone type="Pierre_Miquelon">
+				<long>
+					<generic>Lokaci ta St. Pierre da Miquelon</generic>
+					<standard>Ida Lokaci ta St. Pierre da Miquelon</standard>
+					<daylight>Lokaci rana ta St. Pierre da Miquelon</daylight>
+				</long>
+			</metazone>
+		</timeZoneNames>
 	</dates>
 	<numbers>
+		<defaultNumberingSystem draft="contributed">latn</defaultNumberingSystem>
+		<otherNumberingSystems>
+			<native draft="contributed">latn</native>
+		</otherNumberingSystems>
 		<symbols numberSystem="latn">
 			<decimal>.</decimal>
 			<group>,</group>
+			<percentSign>%</percentSign>
+			<plusSign>+</plusSign>
+			<minusSign>-</minusSign>
 		</symbols>
 		<decimalFormats numberSystem="latn">
 			<decimalFormatLength>
@@ -932,6 +1824,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<pattern type="100000000000000" count="other">¤000T</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
+			<unitPattern count="one" draft="contributed">{0} {1}</unitPattern>
+			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="AED">
@@ -949,6 +1843,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="BIF">
 				<displayName>Kuɗin Burundi</displayName>
 			</currency>
+			<currency type="BRL">
+				<displayName>Ril Kudin Birazil</displayName>
+				<displayName count="one">Ril Kudin Birazil</displayName>
+				<displayName count="other">Ril Kudin Birazil</displayName>
+				<symbol draft="contributed">R$</symbol>
+				<symbol alt="narrow" draft="contributed">R$</symbol>
+			</currency>
 			<currency type="BWP">
 				<displayName>Kuɗin Baswana</displayName>
 			</currency>
@@ -962,7 +1863,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>Kuɗin Suwizalan</displayName>
 			</currency>
 			<currency type="CNY">
-				<displayName>Kuɗin Caina/Sin</displayName>
+				<displayName>Yuwan kasar Sin</displayName>
+				<displayName count="one" draft="contributed">Yuwan kasar Sin</displayName>
+				<displayName count="other" draft="contributed">Yuwan kasar Sin</displayName>
+				<symbol draft="contributed">CN¥</symbol>
+				<symbol alt="narrow" draft="contributed">¥</symbol>
 			</currency>
 			<currency type="CVE">
 				<displayName>Kuɗin Tsibiran Kap Barde</displayName>
@@ -984,9 +1889,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="EUR">
 				<displayName>Yuro</displayName>
+				<symbol draft="contributed">€</symbol>
+				<symbol alt="narrow" draft="contributed">€</symbol>
 			</currency>
 			<currency type="GBP">
-				<displayName>Fam kin Ingila</displayName>
+				<displayName>Fam na Ingila</displayName>
+				<displayName count="one">Fam na Ingila</displayName>
+				<displayName count="other">Faman na Ingila</displayName>
+				<symbol draft="contributed">£</symbol>
+				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="GHC">
 				<displayName>Cedi</displayName>
@@ -999,9 +1910,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="INR">
 				<displayName>Kuɗin Indiya</displayName>
+				<symbol draft="contributed">₹</symbol>
+				<symbol alt="narrow" draft="contributed">₹</symbol>
 			</currency>
 			<currency type="JPY">
-				<displayName>Kuɗin Japan</displayName>
+				<displayName>Yen kasar Japan</displayName>
+				<displayName count="one">Yen kasar Japan</displayName>
+				<displayName count="other">Yen kasar Japan</displayName>
+				<symbol draft="contributed">¥</symbol>
+				<symbol alt="narrow" draft="contributed">¥</symbol>
 			</currency>
 			<currency type="KES">
 				<displayName>Sulen Kenya</displayName>
@@ -1046,6 +1963,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>Naira</displayName>
 				<symbol>₦</symbol>
 			</currency>
+			<currency type="RUB">
+				<displayName>Ruble kasar Rasha</displayName>
+				<displayName count="one" draft="contributed">Ruble kasar Rasha</displayName>
+				<displayName count="other" draft="contributed">Ruble kasar Rasha</displayName>
+				<symbol draft="contributed">RUB</symbol>
+				<symbol alt="narrow" draft="contributed">₽</symbol>
+			</currency>
 			<currency type="RWF">
 				<displayName>Kuɗin Ruwanda</displayName>
 			</currency>
@@ -1086,13 +2010,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>Sule Yuganda</displayName>
 			</currency>
 			<currency type="USD">
-				<displayName>Dalar Amurka</displayName>
+				<displayName>Dalar Amirka</displayName>
+				<displayName count="one" draft="contributed">Dalar Amirka</displayName>
+				<displayName count="other" draft="contributed">Dalar Amirka</displayName>
+				<symbol draft="contributed">$</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="XAF">
 				<displayName>Kuɗin Sefa na Afirka Ta Tsakiya</displayName>
 			</currency>
 			<currency type="XOF">
 				<displayName>Kuɗin Sefa na Afirka Ta Yamma</displayName>
+			</currency>
+			<currency type="XXX">
+				<displayName>Kudin da ba a sani ba</displayName>
+				<displayName count="one">Kudin sashe da ba a sani ba</displayName>
+				<displayName count="other">(Kudin da ba a sani ba)</displayName>
 			</currency>
 			<currency type="ZAR">
 				<displayName>Kuɗin Afirka Ta Kudu</displayName>
@@ -1108,6 +2041,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 		</currencies>
 	</numbers>
+	<units>
+		<durationUnit type="hm">
+			<durationUnitPattern>h:mm</durationUnitPattern>
+		</durationUnit>
+		<durationUnit type="hms">
+			<durationUnitPattern>h:mm:ss</durationUnitPattern>
+		</durationUnit>
+		<durationUnit type="ms">
+			<durationUnitPattern>m:ss</durationUnitPattern>
+		</durationUnit>
+	</units>
+	<listPatterns>
+		<listPattern>
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} da {1}</listPatternPart>
+			<listPatternPart type="2">{0} da {1}</listPatternPart>
+		</listPattern>
+	</listPatterns>
 	<posix>
 		<messages>
 			<yesstr>i</yesstr>

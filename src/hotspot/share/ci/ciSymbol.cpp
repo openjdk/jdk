@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "ci/ciSymbol.hpp"
 #include "ci/ciUtilities.inline.hpp"
+#include "classfile/symbolTable.hpp"
 #include "memory/oopFactory.hpp"
 
 // ------------------------------------------------------------------

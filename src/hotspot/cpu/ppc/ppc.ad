@@ -2378,7 +2378,7 @@ const bool Matcher::isSimpleConstant64(jlong value) {
 /* TODO: PPC port
 // Make a new machine dependent decode node (with its operands).
 MachTypeNode *Matcher::make_decode_node() {
-  assert(Universe::narrow_oop_base() == NULL && Universe::narrow_oop_shift() == 0,
+  assert(CompressedOops::base() == NULL && CompressedOops::shift() == 0,
          "This method is only implemented for unscaled cOops mode so far");
   MachTypeNode *decode = new decodeN_unscaledNode();
   decode->set_opnd_array(0, new iRegPdstOper());
@@ -2429,12 +2429,12 @@ bool Matcher::narrow_klass_use_complex_address() {
 
 bool Matcher::const_oop_prefer_decode() {
   // Prefer ConN+DecodeN over ConP in simple compressed oops mode.
-  return Universe::narrow_oop_base() == NULL;
+  return CompressedOops::base() == NULL;
 }
 
 bool Matcher::const_klass_prefer_decode() {
   // Prefer ConNKlass+DecodeNKlass over ConP in simple compressed klass mode.
-  return Universe::narrow_klass_base() == NULL;
+  return CompressedKlassPointers::base() == NULL;
 }
 
 // Is it better to copy float constants, or load them directly from memory?
@@ -4151,7 +4151,7 @@ frame %{
   // opcodes. This simplifies the register allocator.
   c_return_value %{
     assert((ideal_reg >= Op_RegI && ideal_reg <= Op_RegL) ||
-            (ideal_reg == Op_RegN && Universe::narrow_oop_base() == NULL && Universe::narrow_oop_shift() == 0),
+            (ideal_reg == Op_RegN && CompressedOops::base() == NULL && CompressedOops::shift() == 0),
             "only return normal values");
     // enum names from opcodes.hpp:    Op_Node Op_Set Op_RegN       Op_RegI       Op_RegP       Op_RegF       Op_RegD       Op_RegL
     static int typeToRegLo[Op_RegL+1] = { 0,   0,     R3_num,   R3_num,   R3_num,   F1_num,   F1_num,   R3_num };
@@ -4162,7 +4162,7 @@ frame %{
   // Location of compiled Java return values.  Same as C
   return_value %{
     assert((ideal_reg >= Op_RegI && ideal_reg <= Op_RegL) ||
-            (ideal_reg == Op_RegN && Universe::narrow_oop_base() == NULL && Universe::narrow_oop_shift() == 0),
+            (ideal_reg == Op_RegN && CompressedOops::base() == NULL && CompressedOops::shift() == 0),
             "only return normal values");
     // enum names from opcodes.hpp:    Op_Node Op_Set Op_RegN       Op_RegI       Op_RegP       Op_RegF       Op_RegD       Op_RegL
     static int typeToRegLo[Op_RegL+1] = { 0,   0,     R3_num,   R3_num,   R3_num,   F1_num,   F1_num,   R3_num };
@@ -4978,7 +4978,7 @@ operand interpreter_method_oop_regP(iRegPdst reg) %{
 // Operands to remove register moves in unscaled mode.
 // Match read/write registers with an EncodeP node if neither shift nor add are required.
 operand iRegP2N(iRegPsrc reg) %{
-  predicate(false /* TODO: PPC port MatchDecodeNodes*/&& Universe::narrow_oop_shift() == 0);
+  predicate(false /* TODO: PPC port MatchDecodeNodes*/&& CompressedOops::shift() == 0);
   constraint(ALLOC_IN_RC(bits64_reg_ro));
   match(EncodeP reg);
   format %{ "$reg" %}
@@ -4994,7 +4994,7 @@ operand iRegN2P(iRegNsrc reg) %{
 %}
 
 operand iRegN2P_klass(iRegNsrc reg) %{
-  predicate(Universe::narrow_klass_base() == NULL && Universe::narrow_klass_shift() == 0);
+  predicate(CompressedKlassPointers::base() == NULL && CompressedKlassPointers::shift() == 0);
   constraint(ALLOC_IN_RC(bits32_reg_ro));
   match(DecodeNKlass reg);
   format %{ "$reg" %}
@@ -5063,7 +5063,7 @@ operand indirectNarrow(iRegNsrc reg) %{
 %}
 
 operand indirectNarrow_klass(iRegNsrc reg) %{
-  predicate(Universe::narrow_klass_base() == NULL && Universe::narrow_klass_shift() == 0);
+  predicate(CompressedKlassPointers::base() == NULL && CompressedKlassPointers::shift() == 0);
   constraint(ALLOC_IN_RC(bits64_reg_ro));
   match(DecodeNKlass reg);
   op_cost(100);
@@ -5092,7 +5092,7 @@ operand indOffset16Narrow(iRegNsrc reg, immL16 offset) %{
 %}
 
 operand indOffset16Narrow_klass(iRegNsrc reg, immL16 offset) %{
-  predicate(Universe::narrow_klass_base() == NULL && Universe::narrow_klass_shift() == 0);
+  predicate(CompressedKlassPointers::base() == NULL && CompressedKlassPointers::shift() == 0);
   constraint(ALLOC_IN_RC(bits64_reg_ro));
   match(AddP (DecodeNKlass reg) offset);
   op_cost(100);
@@ -5121,7 +5121,7 @@ operand indOffset16NarrowAlg4(iRegNsrc reg, immL16Alg4 offset) %{
 %}
 
 operand indOffset16NarrowAlg4_klass(iRegNsrc reg, immL16Alg4 offset) %{
-  predicate(Universe::narrow_klass_base() == NULL && Universe::narrow_klass_shift() == 0);
+  predicate(CompressedKlassPointers::base() == NULL && CompressedKlassPointers::shift() == 0);
   constraint(ALLOC_IN_RC(bits64_reg_ro));
   match(AddP (DecodeNKlass reg) offset);
   op_cost(100);
@@ -5850,7 +5850,7 @@ instruct loadN_ac(iRegNdst dst, memory mem) %{
 // Load Compressed Pointer and decode it if narrow_oop_shift == 0.
 instruct loadN2P_unscaled(iRegPdst dst, memory mem) %{
   match(Set dst (DecodeN (LoadN mem)));
-  predicate(_kids[0]->_leaf->as_Load()->is_unordered() && Universe::narrow_oop_shift() == 0);
+  predicate(_kids[0]->_leaf->as_Load()->is_unordered() && CompressedOops::shift() == 0);
   ins_cost(MEMORY_REF_COST);
 
   format %{ "LWZ     $dst, $mem \t// DecodeN (unscaled)" %}
@@ -5861,7 +5861,7 @@ instruct loadN2P_unscaled(iRegPdst dst, memory mem) %{
 
 instruct loadN2P_klass_unscaled(iRegPdst dst, memory mem) %{
   match(Set dst (DecodeNKlass (LoadNKlass mem)));
-  predicate(Universe::narrow_klass_base() == NULL && Universe::narrow_klass_shift() == 0 &&
+  predicate(CompressedKlassPointers::base() == NULL && CompressedKlassPointers::shift() == 0 &&
             _kids[0]->_leaf->as_Load()->is_unordered());
   ins_cost(MEMORY_REF_COST);
 
@@ -6327,7 +6327,7 @@ instruct loadBase(iRegLdst dst) %{
   format %{ "LoadConst $dst, heapbase" %}
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_compound);
-    __ load_const_optimized($dst$$Register, Universe::narrow_oop_base(), R0);
+    __ load_const_optimized($dst$$Register, CompressedOops::base(), R0);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -6375,7 +6375,7 @@ instruct loadConNKlass_hi(iRegNdst dst, immNKlass_NM src) %{
   size(4);
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_addis);
-    intptr_t Csrc = Klass::encode_klass((Klass *)$src$$constant);
+    intptr_t Csrc = CompressedKlassPointers::encode((Klass *)$src$$constant);
     __ lis($dst$$Register, (int)(short)((Csrc >> 16) & 0xffff));
   %}
   ins_pipe(pipe_class_default);
@@ -6407,7 +6407,7 @@ instruct loadConNKlass_lo(iRegNdst dst, immNKlass_NM src1, iRegNsrc src2) %{
   size(4);
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_ori);
-    intptr_t Csrc = Klass::encode_klass((Klass *)$src1$$constant);
+    intptr_t Csrc = CompressedKlassPointers::encode((Klass *)$src1$$constant);
     assert(__ oop_recorder() != NULL, "this assembler needs an OopRecorder");
     int klass_index = __ oop_recorder()->find_index((Klass *)$src1$$constant);
     RelocationHolder rspec = metadata_Relocation::spec(klass_index);
@@ -6435,7 +6435,7 @@ instruct loadConNKlass_Ex(iRegNdst dst, immNKlass src) %{
     nodes->push(m1);
 
     MachNode *m2 = m1;
-    if (!Assembler::is_uimm((jlong)Klass::encode_klass((Klass *)op_src->constant()), 31)) {
+    if (!Assembler::is_uimm((jlong)CompressedKlassPointers::encode((Klass *)op_src->constant()), 31)) {
       // Value might be 1-extended. Mask out these bits.
       m2 = new loadConNKlass_maskNode();
       m2->add_req(NULL, m1);
@@ -6949,7 +6949,7 @@ instruct encodeP_shift(iRegNdst dst, iRegNsrc src) %{
   size(4);
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_rldicl);
-    __ srdi($dst$$Register, $src$$Register, Universe::narrow_oop_shift() & 0x3f);
+    __ srdi($dst$$Register, $src$$Register, CompressedOops::shift() & 0x3f);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -6963,7 +6963,7 @@ instruct encodeP_sub(iRegPdst dst, iRegPdst src) %{
   format %{ "SUB     $dst, $src, oop_base \t// encode" %}
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_compound);
-    __ sub_const_optimized($dst$$Register, $src$$Register, Universe::narrow_oop_base(), R0);
+    __ sub_const_optimized($dst$$Register, $src$$Register, CompressedOops::base(), R0);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -6981,7 +6981,7 @@ instruct cond_sub_base(iRegNdst dst, flagsRegSrc crx, iRegPsrc src1) %{
     // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     Label done;
     __ beq($crx$$CondRegister, done);
-    __ sub_const_optimized($dst$$Register, $src1$$Register, Universe::narrow_oop_base(), R0);
+    __ sub_const_optimized($dst$$Register, $src1$$Register, CompressedOops::base(), R0);
     __ bind(done);
   %}
   ins_pipe(pipe_class_default);
@@ -7006,13 +7006,13 @@ instruct cond_set_0_oop(iRegNdst dst, flagsRegSrc crx, iRegPsrc src1) %{
 // Disjoint narrow oop base.
 instruct encodeP_Disjoint(iRegNdst dst, iRegPsrc src) %{
   match(Set dst (EncodeP src));
-  predicate(Universe::narrow_oop_base_disjoint());
+  predicate(CompressedOops::base_disjoint());
 
   format %{ "EXTRDI  $dst, $src, #32, #3 \t// encode with disjoint base" %}
   size(4);
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_rldicl);
-    __ rldicl($dst$$Register, $src$$Register, 64-Universe::narrow_oop_shift(), 32);
+    __ rldicl($dst$$Register, $src$$Register, 64-CompressedOops::shift(), 32);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -7022,8 +7022,8 @@ instruct encodeP_Ex(iRegNdst dst, flagsReg crx, iRegPsrc src) %{
   match(Set dst (EncodeP src));
   effect(TEMP crx);
   predicate(n->bottom_type()->make_ptr()->ptr() != TypePtr::NotNull &&
-            Universe::narrow_oop_shift() != 0 &&
-            Universe::narrow_oop_base_overlaps());
+            CompressedOops::shift() != 0 &&
+            CompressedOops::base_overlaps());
 
   format %{ "EncodeP $dst, $crx, $src \t// postalloc expanded" %}
   postalloc_expand( postalloc_expand_encode_oop(dst, src, crx));
@@ -7033,8 +7033,8 @@ instruct encodeP_Ex(iRegNdst dst, flagsReg crx, iRegPsrc src) %{
 instruct encodeP_not_null_Ex(iRegNdst dst, iRegPsrc src) %{
   match(Set dst (EncodeP src));
   predicate(n->bottom_type()->make_ptr()->ptr() == TypePtr::NotNull &&
-            Universe::narrow_oop_shift() != 0 &&
-            Universe::narrow_oop_base_overlaps());
+            CompressedOops::shift() != 0 &&
+            CompressedOops::base_overlaps());
 
   format %{ "EncodeP $dst, $src\t// $src != Null, postalloc expanded" %}
   postalloc_expand( postalloc_expand_encode_oop_not_null(dst, src) );
@@ -7044,14 +7044,14 @@ instruct encodeP_not_null_Ex(iRegNdst dst, iRegPsrc src) %{
 // TODO: This is the same as encodeP_shift. Merge!
 instruct encodeP_not_null_base_null(iRegNdst dst, iRegPsrc src) %{
   match(Set dst (EncodeP src));
-  predicate(Universe::narrow_oop_shift() != 0 &&
-            Universe::narrow_oop_base() ==0);
+  predicate(CompressedOops::shift() != 0 &&
+            CompressedOops::base() ==0);
 
   format %{ "SRDI    $dst, $src, #3 \t// encodeP, $src != NULL" %}
   size(4);
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_rldicl);
-    __ srdi($dst$$Register, $src$$Register, Universe::narrow_oop_shift() & 0x3f);
+    __ srdi($dst$$Register, $src$$Register, CompressedOops::shift() & 0x3f);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -7060,7 +7060,7 @@ instruct encodeP_not_null_base_null(iRegNdst dst, iRegPsrc src) %{
 // shift == 0, base == 0
 instruct encodeP_narrow_oop_shift_0(iRegNdst dst, iRegPsrc src) %{
   match(Set dst (EncodeP src));
-  predicate(Universe::narrow_oop_shift() == 0);
+  predicate(CompressedOops::shift() == 0);
 
   format %{ "MR      $dst, $src \t// Ptr->Narrow" %}
   // variable size, 0 or 4.
@@ -7083,7 +7083,7 @@ instruct decodeN_shift(iRegPdst dst, iRegPsrc src) %{
   size(4);
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_rldicr);
-    __ sldi($dst$$Register, $src$$Register, Universe::narrow_oop_shift());
+    __ sldi($dst$$Register, $src$$Register, CompressedOops::shift());
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -7097,7 +7097,7 @@ instruct decodeN_add(iRegPdst dst, iRegPdst src) %{
   format %{ "ADD     $dst, $src, heapbase \t// DecodeN, add oop base" %}
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_compound);
-    __ add_const_optimized($dst$$Register, $src$$Register, Universe::narrow_oop_base(), R0);
+    __ add_const_optimized($dst$$Register, $src$$Register, CompressedOops::base(), R0);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -7118,7 +7118,7 @@ instruct cond_add_base(iRegPdst dst, flagsRegSrc crx, iRegPsrc src) %{
     // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     Label done;
     __ beq($crx$$CondRegister, done);
-    __ add_const_optimized($dst$$Register, $src$$Register, Universe::narrow_oop_base(), R0);
+    __ add_const_optimized($dst$$Register, $src$$Register, CompressedOops::base(), R0);
     __ bind(done);
   %}
   ins_pipe(pipe_class_default);
@@ -7147,8 +7147,8 @@ instruct decodeN_Ex(iRegPdst dst, iRegNsrc src, flagsReg crx) %{
   match(Set dst (DecodeN src));
   predicate((n->bottom_type()->is_oopptr()->ptr() != TypePtr::NotNull &&
              n->bottom_type()->is_oopptr()->ptr() != TypePtr::Constant) &&
-            Universe::narrow_oop_shift() != 0 &&
-            Universe::narrow_oop_base() != 0);
+            CompressedOops::shift() != 0 &&
+            CompressedOops::base() != 0);
   ins_cost(4 * DEFAULT_COST); // Should be more expensive than decodeN_Disjoint_isel_Ex.
   effect(TEMP crx);
 
@@ -7159,14 +7159,14 @@ instruct decodeN_Ex(iRegPdst dst, iRegNsrc src, flagsReg crx) %{
 // shift != 0, base == 0
 instruct decodeN_nullBase(iRegPdst dst, iRegNsrc src) %{
   match(Set dst (DecodeN src));
-  predicate(Universe::narrow_oop_shift() != 0 &&
-            Universe::narrow_oop_base() == 0);
+  predicate(CompressedOops::shift() != 0 &&
+            CompressedOops::base() == 0);
 
   format %{ "SLDI    $dst, $src, #3 \t// DecodeN (zerobased)" %}
   size(4);
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_rldicr);
-    __ sldi($dst$$Register, $src$$Register, Universe::narrow_oop_shift());
+    __ sldi($dst$$Register, $src$$Register, CompressedOops::shift());
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -7183,7 +7183,7 @@ instruct decodeN_mergeDisjoint(iRegPdst dst, iRegNsrc src, iRegLsrc base) %{
   size(4);
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_rldimi);
-    __ rldimi($dst$$Register, $src$$Register, Universe::narrow_oop_shift(), 32-Universe::narrow_oop_shift());
+    __ rldimi($dst$$Register, $src$$Register, CompressedOops::shift(), 32-CompressedOops::shift());
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -7197,7 +7197,7 @@ instruct decodeN_Disjoint_notNull_Ex(iRegPdst dst, iRegNsrc src) %{
   effect(TEMP_DEF dst);
   predicate((n->bottom_type()->is_oopptr()->ptr() == TypePtr::NotNull ||
              n->bottom_type()->is_oopptr()->ptr() == TypePtr::Constant) &&
-            Universe::narrow_oop_base_disjoint());
+            CompressedOops::base_disjoint());
   ins_cost(DEFAULT_COST);
 
   format %{ "MOV     $dst, heapbase \t\n"
@@ -7227,7 +7227,7 @@ instruct decodeN_Disjoint_isel_Ex(iRegPdst dst, iRegNsrc src, flagsReg crx) %{
   effect(TEMP_DEF dst, TEMP crx);
   predicate((n->bottom_type()->is_oopptr()->ptr() != TypePtr::NotNull &&
              n->bottom_type()->is_oopptr()->ptr() != TypePtr::Constant) &&
-            Universe::narrow_oop_base_disjoint() && VM_Version::has_isel());
+            CompressedOops::base_disjoint() && VM_Version::has_isel());
   ins_cost(3 * DEFAULT_COST);
 
   format %{ "DecodeN  $dst, $src \t// decode with disjoint base using isel" %}
@@ -7276,8 +7276,8 @@ instruct decodeN_notNull_addBase_Ex(iRegPdst dst, iRegNsrc src) %{
   match(Set dst (DecodeN src));
   predicate((n->bottom_type()->is_oopptr()->ptr() == TypePtr::NotNull ||
              n->bottom_type()->is_oopptr()->ptr() == TypePtr::Constant) &&
-            Universe::narrow_oop_shift() != 0 &&
-            Universe::narrow_oop_base() != 0);
+            CompressedOops::shift() != 0 &&
+            CompressedOops::base() != 0);
   ins_cost(2 * DEFAULT_COST);
 
   format %{ "DecodeN $dst, $src \t// $src != NULL, postalloc expanded" %}
@@ -7287,7 +7287,7 @@ instruct decodeN_notNull_addBase_Ex(iRegPdst dst, iRegNsrc src) %{
 // Compressed OOPs with narrow_oop_shift == 0.
 instruct decodeN_unscaled(iRegPdst dst, iRegNsrc src) %{
   match(Set dst (DecodeN src));
-  predicate(Universe::narrow_oop_shift() == 0);
+  predicate(CompressedOops::shift() == 0);
   ins_cost(DEFAULT_COST);
 
   format %{ "MR      $dst, $src \t// DecodeN (unscaled)" %}
@@ -7302,7 +7302,7 @@ instruct decodeN_unscaled(iRegPdst dst, iRegNsrc src) %{
 // Convert compressed oop into int for vectors alignment masking.
 instruct decodeN2I_unscaled(iRegIdst dst, iRegNsrc src) %{
   match(Set dst (ConvL2I (CastP2X (DecodeN src))));
-  predicate(Universe::narrow_oop_shift() == 0);
+  predicate(CompressedOops::shift() == 0);
   ins_cost(DEFAULT_COST);
 
   format %{ "MR      $dst, $src \t// (int)DecodeN (unscaled)" %}
@@ -7328,7 +7328,7 @@ instruct encodePKlass_shift(iRegNdst dst, iRegNsrc src) %{
   size(4);
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_rldicl);
-    __ srdi($dst$$Register, $src$$Register, Universe::narrow_klass_shift());
+    __ srdi($dst$$Register, $src$$Register, CompressedKlassPointers::shift());
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -7351,13 +7351,13 @@ instruct encodePKlass_sub_base(iRegPdst dst, iRegLsrc base, iRegPdst src) %{
 // Disjoint narrow oop base.
 instruct encodePKlass_Disjoint(iRegNdst dst, iRegPsrc src) %{
   match(Set dst (EncodePKlass src));
-  predicate(false /* TODO: PPC port Universe::narrow_klass_base_disjoint()*/);
+  predicate(false /* TODO: PPC port CompressedKlassPointers::base_disjoint()*/);
 
   format %{ "EXTRDI  $dst, $src, #32, #3 \t// encode with disjoint base" %}
   size(4);
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_rldicl);
-    __ rldicl($dst$$Register, $src$$Register, 64-Universe::narrow_klass_shift(), 32);
+    __ rldicl($dst$$Register, $src$$Register, 64-CompressedKlassPointers::shift(), 32);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -7392,13 +7392,13 @@ instruct encodePKlass_not_null_Ex(iRegNdst dst, iRegLsrc base, iRegPsrc src) %{
 // shift != 0, base != 0
 instruct encodePKlass_not_null_ExEx(iRegNdst dst, iRegPsrc src) %{
   match(Set dst (EncodePKlass src));
-  //predicate(Universe::narrow_klass_shift() != 0 &&
-  //          true /* TODO: PPC port Universe::narrow_klass_base_overlaps()*/);
+  //predicate(CompressedKlassPointers::shift() != 0 &&
+  //          true /* TODO: PPC port CompressedKlassPointers::base_overlaps()*/);
 
   //format %{ "EncodePKlass $dst, $src\t// $src != Null, postalloc expanded" %}
   ins_cost(DEFAULT_COST*2);  // Don't count constant.
   expand %{
-    immL baseImm %{ (jlong)(intptr_t)Universe::narrow_klass_base() %}
+    immL baseImm %{ (jlong)(intptr_t)CompressedKlassPointers::base() %}
     iRegLdst base;
     loadConL_Ex(base, baseImm);
     encodePKlass_not_null_Ex(dst, base, src);
@@ -7417,7 +7417,7 @@ instruct decodeNKlass_shift(iRegPdst dst, iRegPsrc src) %{
   size(4);
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_rldicr);
-    __ sldi($dst$$Register, $src$$Register, Universe::narrow_klass_shift());
+    __ sldi($dst$$Register, $src$$Register, CompressedKlassPointers::shift());
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -7470,8 +7470,8 @@ instruct decodeNKlass_notNull_addBase_Ex(iRegPdst dst, iRegLsrc base, iRegNsrc s
 // src != 0, shift != 0, base != 0
 instruct decodeNKlass_notNull_addBase_ExEx(iRegPdst dst, iRegNsrc src) %{
   match(Set dst (DecodeNKlass src));
-  // predicate(Universe::narrow_klass_shift() != 0 &&
-  //           Universe::narrow_klass_base() != 0);
+  // predicate(CompressedKlassPointers::shift() != 0 &&
+  //           CompressedKlassPointers::base() != 0);
 
   //format %{ "DecodeNKlass $dst, $src \t// $src != NULL, expanded" %}
 
@@ -7479,7 +7479,7 @@ instruct decodeNKlass_notNull_addBase_ExEx(iRegPdst dst, iRegNsrc src) %{
   expand %{
     // We add first, then we shift. Like this, we can get along with one register less.
     // But we have to load the base pre-shifted.
-    immL baseImm %{ (jlong)((intptr_t)Universe::narrow_klass_base() >> Universe::narrow_klass_shift()) %}
+    immL baseImm %{ (jlong)((intptr_t)CompressedKlassPointers::base() >> CompressedKlassPointers::shift()) %}
     iRegLdst base;
     loadConL_Ex(base, baseImm);
     decodeNKlass_notNull_addBase_Ex(dst, base, src);

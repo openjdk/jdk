@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @library /test/lib
  * @bug 8170920
  * @run main MinimumRcvBufferSize
  * @run main/othervm -Djava.net.preferIPv4Stack=true MinimumRcvBufferSize
@@ -30,10 +31,13 @@
 
 import java.nio.channels.*;
 import java.net.*;
+import jdk.test.lib.net.IPSupport;
 
 public class MinimumRcvBufferSize {
 
     public static void main(String args[]) throws Exception {
+        IPSupport.throwSkippedExceptionIfNonOperational();
+
         boolean error = false;
         ServerSocketChannel channel = ServerSocketChannel.open();
         int before = channel.getOption(StandardSocketOptions.SO_RCVBUF);

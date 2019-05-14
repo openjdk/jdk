@@ -31,6 +31,8 @@
 #include "logging/logConfiguration.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/universe.hpp"
+#include "oops/compressedOops.hpp"
 #include "prims/whitebox.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
@@ -291,14 +293,14 @@ static void print_oom_reasons(outputStream* st) {
   st->print_cr("#   Decrease Java thread stack sizes (-Xss)");
   st->print_cr("#   Set larger code cache with -XX:ReservedCodeCacheSize=");
   if (UseCompressedOops) {
-    switch (Universe::narrow_oop_mode()) {
-      case Universe::UnscaledNarrowOop:
+    switch (CompressedOops::mode()) {
+      case CompressedOops::UnscaledNarrowOop:
         st->print_cr("#   JVM is running with Unscaled Compressed Oops mode in which the Java heap is");
         st->print_cr("#     placed in the first 4GB address space. The Java Heap base address is the");
         st->print_cr("#     maximum limit for the native heap growth. Please use -XX:HeapBaseMinAddress");
         st->print_cr("#     to set the Java Heap base and to place the Java Heap above 4GB virtual address.");
         break;
-      case Universe::ZeroBasedNarrowOop:
+      case CompressedOops::ZeroBasedNarrowOop:
         st->print_cr("#   JVM is running with Zero Based Compressed Oops mode in which the Java heap is");
         st->print_cr("#     placed in the first 32GB address space. The Java Heap base address is the");
         st->print_cr("#     maximum limit for the native heap growth. Please use -XX:HeapBaseMinAddress");
@@ -882,7 +884,7 @@ void VMError::report(outputStream* st, bool _verbose) {
   STEP("printing compressed oops mode")
 
      if (_verbose && UseCompressedOops) {
-       Universe::print_compressed_oops_mode(st);
+       CompressedOops::print_mode(st);
        if (UseCompressedClassPointers) {
          Metaspace::print_compressed_class_space(st);
        }
@@ -1083,7 +1085,7 @@ void VMError::print_vm_info(outputStream* st) {
   // STEP("printing compressed oops mode")
 
   if (UseCompressedOops) {
-    Universe::print_compressed_oops_mode(st);
+    CompressedOops::print_mode(st);
     if (UseCompressedClassPointers) {
       Metaspace::print_compressed_class_space(st);
     }
@@ -1804,4 +1806,3 @@ void VMError::controlled_crash(int how) {
   ShouldNotReachHere();
 }
 #endif // !PRODUCT
-

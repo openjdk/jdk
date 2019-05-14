@@ -39,7 +39,7 @@ package com.sun.source.tree;
  *       <em>elseStatement</em>
  * </pre>
  *
- * @jls section 14.9
+ * @jls 14.9 The if Statement
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

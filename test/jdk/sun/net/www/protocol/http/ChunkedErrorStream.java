@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 6488669 6595324 6993490
+ * @library /test/lib
  * @modules jdk.httpserver
  * @run main/othervm ChunkedErrorStream
  * @summary Chunked ErrorStream tests
@@ -32,6 +33,7 @@
 import java.net.*;
 import java.io.*;
 import com.sun.net.httpserver.*;
+import jdk.test.lib.net.URIBuilder;
 
 /**
  * Part 1: 6488669
@@ -94,16 +96,21 @@ public class ChunkedErrorStream
         for (int times=0; times<3; times++) {
             HttpURLConnection uc = null;
             try {
-                InetSocketAddress address = httpServer.getAddress();
-                String URLStr = "http://localhost:" + address.getPort() + "/test/";
+                String path = "/test/";
                 if (times == 0) {
-                    URLStr += "first";
+                    path += "first";
                 } else {
-                    URLStr += "second";
+                    path += "second";
                 }
 
-                System.out.println("Trying " + URLStr);
-                URL url = new URL(URLStr);
+                URL url = URIBuilder.newBuilder()
+                        .scheme("http")
+                        .host(httpServer.getAddress().getAddress())
+                        .port(httpServer.getAddress().getPort())
+                        .path(path)
+                        .toURLUnchecked();
+
+                System.out.println("Trying " + url);
                 uc = (HttpURLConnection)url.openConnection();
                 uc.getInputStream();
 
@@ -142,7 +149,9 @@ public class ChunkedErrorStream
      * Http Server
      */
     void startHttpServer() throws IOException {
-        httpServer = com.sun.net.httpserver.HttpServer.create(new InetSocketAddress(0), 0);
+        InetAddress lba = InetAddress.getLoopbackAddress();
+        InetSocketAddress addr = new InetSocketAddress(lba, 0);
+        httpServer = com.sun.net.httpserver.HttpServer.create(addr, 0);
 
         // create HttpServer context
         httpServer.createContext("/test/first", new FirstHandler());

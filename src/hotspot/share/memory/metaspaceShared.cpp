@@ -47,6 +47,7 @@
 #include "memory/metaspaceClosure.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/universe.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/instanceClassLoaderKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
@@ -246,7 +247,7 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
       // with the archived ones, so it must be done after all encodings are determined.
       mapinfo->map_heap_regions();
     }
-    Universe::set_narrow_klass_range(CompressedClassSpaceSize);
+    CompressedKlassPointers::set_range(CompressedClassSpaceSize);
 #endif // _LP64
   } else {
     assert(!mapinfo->is_open() && !UseSharedSpaces,
@@ -308,16 +309,16 @@ void MetaspaceShared::initialize_dumptime_shared_and_meta_spaces() {
   _shared_rs = _shared_rs.first_part(max_archive_size);
 
   // Set up compress class pointers.
-  Universe::set_narrow_klass_base((address)_shared_rs.base());
+  CompressedKlassPointers::set_base((address)_shared_rs.base());
   // Set narrow_klass_shift to be LogKlassAlignmentInBytes. This is consistent
   // with AOT.
-  Universe::set_narrow_klass_shift(LogKlassAlignmentInBytes);
+  CompressedKlassPointers::set_shift(LogKlassAlignmentInBytes);
   // Set the range of klass addresses to 4GB.
-  Universe::set_narrow_klass_range(cds_total);
+  CompressedKlassPointers::set_range(cds_total);
 
   Metaspace::initialize_class_space(tmp_class_space);
   log_info(cds)("narrow_klass_base = " PTR_FORMAT ", narrow_klass_shift = %d",
-                p2i(Universe::narrow_klass_base()), Universe::narrow_klass_shift());
+                p2i(CompressedKlassPointers::base()), CompressedKlassPointers::shift());
 
   log_info(cds)("Allocated temporary class space: " SIZE_FORMAT " bytes at " PTR_FORMAT,
                 CompressedClassSpaceSize, p2i(tmp_class_space.base()));

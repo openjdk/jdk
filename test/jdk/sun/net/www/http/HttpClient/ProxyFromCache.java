@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,14 @@
  * @bug 6498566
  * @summary URL.openConnection(Proxy.NO_PROXY) may connect through a proxy.
  * @modules java.base/sun.net.www
+ * @library /test/lib
  * @run main/othervm ProxyFromCache
  */
 
 import java.net.*;
 import java.io.*;
 import sun.net.www.MessageHeader;
+import jdk.test.lib.net.URIBuilder;
 
 /* Creates a simple proxy and http server that just return 200 OK.
  * Open a URL pointing to the http server and specify that the
@@ -43,18 +45,21 @@ import sun.net.www.MessageHeader;
 
 public class ProxyFromCache
 {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         ServerSocket proxySSocket, httpSSocket;
         int proxyPort, httpPort;
+        InetAddress loopback = InetAddress.getLoopbackAddress();
 
         try {
-            proxySSocket = new ServerSocket(0);
+            proxySSocket = new ServerSocket();
+            proxySSocket.bind(new InetSocketAddress(loopback, 0));
             proxyPort = proxySSocket.getLocalPort();
-            httpSSocket = new ServerSocket(0);
+            httpSSocket = new ServerSocket();
+            httpSSocket.bind(new InetSocketAddress(loopback, 0));
             httpPort = httpSSocket.getLocalPort();
         } catch (Exception e) {
             System.out.println ("Exception: " + e);
-            return;
+            throw e;
         }
 
         SimpleServer proxyServer = new SimpleServer(proxySSocket);
@@ -62,12 +67,18 @@ public class ProxyFromCache
         SimpleServer httpServer = new SimpleServer(httpSSocket);
         httpServer.start();
 
-        InetSocketAddress addr = new InetSocketAddress("localhost", proxyPort);
+        InetSocketAddress addr = new InetSocketAddress(loopback, proxyPort);
         Proxy proxy = new Proxy(Proxy.Type.HTTP, addr);
 
         try {
-            String urlStr = "http://localhost:" + httpPort + "/";
-            URL url = new URL(urlStr);
+            URL url = URIBuilder.newBuilder()
+                      .scheme("http")
+                      .loopback()
+                      .port(httpPort)
+                      .path("/")
+                      .toURL();
+
+            String urlStr = url.toString();
 
             // 1st connection.
             HttpURLConnection uc = (HttpURLConnection) url.openConnection(proxy);
@@ -100,7 +111,7 @@ public class ProxyFromCache
                 throw new RuntimeException("Failed: Proxy being sent " + proxyCount  + " requests");
             }
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw e;
         }
     }
 }

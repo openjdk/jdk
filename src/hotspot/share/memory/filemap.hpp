@@ -29,7 +29,7 @@
 #include "include/cds.h"
 #include "memory/metaspaceShared.hpp"
 #include "memory/metaspace.hpp"
-#include "memory/universe.hpp"
+#include "oops/compressedOops.hpp"
 #include "utilities/align.hpp"
 
 // Layout of the file:
@@ -100,7 +100,7 @@ struct FileMapHeader : public CDSFileMapHeaderBase {
   int    _narrow_oop_shift;         // compressed oop encoding shift
   bool    _compact_strings;         // value of CompactStrings
   uintx  _max_heap_size;            // java max heap size during dumping
-  Universe::NARROW_OOP_MODE _narrow_oop_mode; // compressed oop encoding mode
+  CompressedOops::Mode _narrow_oop_mode; // compressed oop encoding mode
   int     _narrow_klass_shift;      // save narrow klass base and shift
   address _narrow_klass_base;
   char*   _misc_data_patching_start;
@@ -222,7 +222,7 @@ public:
   void   invalidate();
   int    version()                    { return _header->_version; }
   size_t alignment()                  { return _header->_alignment; }
-  Universe::NARROW_OOP_MODE narrow_oop_mode() { return _header->_narrow_oop_mode; }
+  CompressedOops::Mode narrow_oop_mode() { return _header->_narrow_oop_mode; }
   address narrow_oop_base()    const  { return _header->_narrow_oop_base; }
   int     narrow_oop_shift()   const  { return _header->_narrow_oop_shift; }
   uintx   max_heap_size()      const  { return _header->_max_heap_size; }

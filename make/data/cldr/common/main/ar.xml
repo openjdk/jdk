@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2018 Unicode, Inc.
+<!-- Copyright © 1991-2019 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -9,7 +9,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 13920 $"/>
+		<version number="$Revision: 14982 $"/>
 		<language type="ar"/>
 	</identity>
 	<localeDisplayNames>
@@ -91,7 +91,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="cay">الكايوجية</language>
 			<language type="cch">الأتسام</language>
 			<language type="ce">الشيشانية</language>
-			<language type="ceb">السيبونية</language>
+			<language type="ceb">السيبيوانية</language>
 			<language type="cgg">تشيغا</language>
 			<language type="ch">التشامورو</language>
 			<language type="chb">التشيبشا</language>
@@ -203,7 +203,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ha">الهوسا</language>
 			<language type="hai">الهيدا</language>
 			<language type="hak">الهاكا الصينية</language>
-			<language type="haw">لغة أهل الهاواي</language>
+			<language type="haw">لغة هاواي</language>
 			<language type="he">العبرية</language>
 			<language type="hi">الهندية</language>
 			<language type="hil">الهيليجينون</language>
@@ -321,7 +321,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="men">الميند</language>
 			<language type="mer">الميرو</language>
 			<language type="mfe">المورسيانية</language>
-			<language type="mg">المالاغاشية</language>
+			<language type="mg">الملغاشي</language>
 			<language type="mga">الأيرلندية الوسطى</language>
 			<language type="mgh">ماخاوا-ميتو</language>
 			<language type="mgo">ميتا</language>
@@ -351,7 +351,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="nan">مين-نان الصينية</language>
 			<language type="nap">النابولية</language>
 			<language type="naq">لغة الناما</language>
-			<language type="nb">بوكمول النرويجية</language>
+			<language type="nb">النرويجية بوكمال</language>
 			<language type="nd">النديبيل الشمالية</language>
 			<language type="nds">الألمانية السفلى</language>
 			<language type="nds_NL">السكسونية السفلى</language>
@@ -379,7 +379,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="nyn">النيانكول</language>
 			<language type="nyo">النيورو</language>
 			<language type="nzi">النزيما</language>
-			<language type="oc">الأوكيتانية</language>
+			<language type="oc">الأوكسيتانية</language>
 			<language type="oj">الأوجيبوا</language>
 			<language type="om">الأورومية</language>
 			<language type="or">الأورية</language>
@@ -406,7 +406,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="pt_BR">البرتغالية البرازيلية</language>
 			<language type="pt_PT">البرتغالية الأوروبية</language>
 			<language type="qu">الكويتشوا</language>
-			<language type="quc">كيشي</language>
+			<language type="quc">الكيشية</language>
 			<language type="raj">الراجاسثانية</language>
 			<language type="rap">الراباني</language>
 			<language type="rar">الراروتونجاني</language>
@@ -423,11 +423,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="rwk">الروا</language>
 			<language type="sa">السنسكريتية</language>
 			<language type="sad">السانداوي</language>
-			<language type="sah">الساخية</language>
+			<language type="sah">الساخيّة</language>
 			<language type="sam">الآرامية السامرية</language>
 			<language type="saq">سامبورو</language>
 			<language type="sas">الساساك</language>
-			<language type="sat">السانتالي</language>
+			<language type="sat">السانتالية</language>
 			<language type="sba">نامبي</language>
 			<language type="sbp">سانغو</language>
 			<language type="sc">السردينية</language>
@@ -709,7 +709,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="151">شرق أوروبا</territory>
 			<territory type="154">شمال أوروبا</territory>
 			<territory type="155">غرب أوروبا</territory>
-			<territory type="202" draft="contributed">202</territory>
+			<territory type="202">أفريقيا جنوب الصحراء الكبرى</territory>
 			<territory type="419">أمريكا اللاتينية</territory>
 			<territory type="AC">جزيرة أسينشيون</territory>
 			<territory type="AD">أندورا</territory>
@@ -789,7 +789,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ES">إسبانيا</territory>
 			<territory type="ET">إثيوبيا</territory>
 			<territory type="EU">الاتحاد الأوروبي</territory>
-			<territory type="EZ" draft="contributed">منطقة اليورو</territory>
+			<territory type="EZ">منطقة اليورو</territory>
 			<territory type="FI">فنلندا</territory>
 			<territory type="FJ">فيجي</territory>
 			<territory type="FK">جزر فوكلاند</territory>
@@ -868,8 +868,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="MF">سان مارتن</territory>
 			<territory type="MG">مدغشقر</territory>
 			<territory type="MH">جزر مارشال</territory>
-			<territory type="MK">مقدونيا</territory>
-			<territory type="MK" alt="variant">مقدونيا- جمهورية مقدونيا اليوغسلافية السابقة</territory>
+			<territory type="MK">مقدونيا الشمالية</territory>
 			<territory type="ML">مالي</territory>
 			<territory type="MM">ميانمار (بورما)</territory>
 			<territory type="MN">منغوليا</territory>
@@ -941,7 +940,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="SV">السلفادور</territory>
 			<territory type="SX">سانت مارتن</territory>
 			<territory type="SY">سوريا</territory>
-			<territory type="SZ">سوازيلاند</territory>
+			<territory type="SZ">إسواتيني</territory>
 			<territory type="TA">تريستان دا كونا</territory>
 			<territory type="TC">جزر توركس وكايكوس</territory>
 			<territory type="TD">تشاد</territory>
@@ -950,7 +949,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="TH">تايلاند</territory>
 			<territory type="TJ">طاجيكستان</territory>
 			<territory type="TK">توكيلو</territory>
-			<territory type="TL">تيمور- ليشتي</territory>
+			<territory type="TL">تيمور - ليشتي</territory>
 			<territory type="TL" alt="variant">تيمور الشرقية</territory>
 			<territory type="TM">تركمانستان</territory>
 			<territory type="TN">تونس</territory>
@@ -978,6 +977,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="VU">فانواتو</territory>
 			<territory type="WF">جزر والس وفوتونا</territory>
 			<territory type="WS">ساموا</territory>
+			<territory type="XA" draft="contributed">XA</territory>
 			<territory type="XK">كوسوفو</territory>
 			<territory type="YE">اليمن</territory>
 			<territory type="YT">مايوت</territory>
@@ -1166,23 +1166,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>؟</moreInformation>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample="-" draft="contributed">[\--/]</parseLenient>
 			<parseLenient sample=":" draft="contributed">[\:∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="." draft="contributed">[.․。︒﹒．｡]</parseLenient>
 			<parseLenient sample="$" draft="contributed">[\$﹩＄$]</parseLenient>
 			<parseLenient sample="£" draft="contributed">[£₤]</parseLenient>
-			<parseLenient sample="₹" draft="contributed">[₨₹{Rp}{Rs}]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
 			<parseLenient sample="-" draft="contributed">[\-‒⁻₋−➖﹣－]</parseLenient>
-			<parseLenient sample="," draft="contributed">[,،٫、︐︑﹐﹑，､]</parseLenient>
-			<parseLenient sample="+" draft="contributed">[+⁺₊➕﬩﹢＋]</parseLenient>
-		</parseLenients>
-		<parseLenients scope="number" level="stricter">
-			<parseLenient sample="," draft="contributed">[,٫︐﹐，]</parseLenient>
-			<parseLenient sample="." draft="contributed">[.․﹒．｡]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -1370,18 +1361,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
-						<dateFormatItem id="Bh" draft="contributed">h B</dateFormatItem>
-						<dateFormatItem id="Bhm" draft="contributed">h:mm B</dateFormatItem>
-						<dateFormatItem id="Bhms" draft="contributed">h:mm:ss B</dateFormatItem>
+						<dateFormatItem id="Bh">h B</dateFormatItem>
+						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
+						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
-						<dateFormatItem id="EBhm" draft="contributed">E h:mm B</dateFormatItem>
-						<dateFormatItem id="EBhms" draft="contributed">E h:mm:ss B</dateFormatItem>
+						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
+						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E، d</dateFormatItem>
-						<dateFormatItem id="Ehm" draft="contributed">E h:mm a</dateFormatItem>
-						<dateFormatItem id="EHm" draft="contributed">E HH:mm</dateFormatItem>
-						<dateFormatItem id="Ehms" draft="contributed">E h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="EHms" draft="contributed">E HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
@@ -1389,7 +1380,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="H">HH</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
-						<dateFormatItem id="Hm" draft="contributed">HH:mm</dateFormatItem>
+						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
@@ -1399,7 +1390,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E، d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
-						<dateFormatItem id="ms" draft="contributed">mm:ss</dateFormatItem>
+						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y G</dateFormatItem>
 						<dateFormatItem id="yyyy">y G</dateFormatItem>
 						<dateFormatItem id="yyyyM">M‏/y G</dateFormatItem>
@@ -1414,8 +1405,55 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</availableFormats>
 					<intervalFormats>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="Bh">
+							<greatestDifference id="B" draft="contributed">h B – h B</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h–h B</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Bhm">
+							<greatestDifference id="B" draft="contributed">h:mm B – h:mm B</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm–h:mm B</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm–h:mm B</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d–d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G" draft="contributed">G y – G y</greatestDifference>
+							<greatestDifference id="y" draft="contributed">G y–y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G" draft="contributed">GGGGG y-MM – GGGGG y-MM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">GGGGG y-MM – y-MM</greatestDifference>
+							<greatestDifference id="y" draft="contributed">GGGGG y-MM – y-MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d" draft="contributed">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="G" draft="contributed">GGGGG y-MM-dd – GGGGG y-MM-dd</greatestDifference>
+							<greatestDifference id="M" draft="contributed">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="y" draft="contributed">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d" draft="contributed">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="G" draft="contributed">GGGGG y-MM-dd, E – GGGGG y-MM-dd, E</greatestDifference>
+							<greatestDifference id="M" draft="contributed">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="y" draft="contributed">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G" draft="contributed">G y MMM – G y MMM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">G y MMM–MMM</greatestDifference>
+							<greatestDifference id="y" draft="contributed">G y MMM – y MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d" draft="contributed">G y MMM d–d</greatestDifference>
+							<greatestDifference id="G" draft="contributed">G y MMM d – G y MMM d</greatestDifference>
+							<greatestDifference id="M" draft="contributed">G y MMM d – MMM d</greatestDifference>
+							<greatestDifference id="y" draft="contributed">G y MMM d – y MMM d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d" draft="contributed">G y MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="G" draft="contributed">G y MMM d, E – G y MMM d, E</greatestDifference>
+							<greatestDifference id="M" draft="contributed">G y MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="y" draft="contributed">G y MMM d, E – y MMM d, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">h a – h a</greatestDifference>
@@ -1910,12 +1948,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="MMMEd">E، d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMEd">E، d MMMM</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="zero">الأسبوع W من MMM</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="one">الأسبوع W من MMM</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="two">الأسبوع W من MMM</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="few">الأسبوع W من MMM</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="many">الأسبوع W من MMM</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="other">الأسبوع W من MMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="zero">الأسبوع W من MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">الأسبوع W من MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="two">الأسبوع W من MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="few">الأسبوع W من MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="many">الأسبوع W من MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">الأسبوع W من MMMM</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">M‏/y</dateFormatItem>
@@ -1940,8 +1978,55 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</appendItems>
 					<intervalFormats>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="Bh">
+							<greatestDifference id="B" draft="contributed">h B – h B</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h–h B</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Bhm">
+							<greatestDifference id="B" draft="contributed">h:mm B – h:mm B</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm–h:mm B</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm–h:mm B</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d–d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G" draft="contributed">G y – G y</greatestDifference>
+							<greatestDifference id="y" draft="contributed">G y–y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G" draft="contributed">GGGGG y-MM – GGGGG y-MM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">GGGGG y-MM – y-MM</greatestDifference>
+							<greatestDifference id="y" draft="contributed">GGGGG y-MM – y-MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d" draft="contributed">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="G" draft="contributed">GGGGG y-MM-dd – GGGGG y-MM-dd</greatestDifference>
+							<greatestDifference id="M" draft="contributed">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="y" draft="contributed">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d" draft="contributed">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="G" draft="contributed">GGGGG y-MM-dd, E – GGGGG y-MM-dd, E</greatestDifference>
+							<greatestDifference id="M" draft="contributed">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="y" draft="contributed">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G" draft="contributed">G y MMM – G y MMM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">G y MMM–MMM</greatestDifference>
+							<greatestDifference id="y" draft="contributed">G y MMM – y MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d" draft="contributed">G y MMM d–d</greatestDifference>
+							<greatestDifference id="G" draft="contributed">G y MMM d – G y MMM d</greatestDifference>
+							<greatestDifference id="M" draft="contributed">G y MMM d – MMM d</greatestDifference>
+							<greatestDifference id="y" draft="contributed">G y MMM d – y MMM d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d" draft="contributed">G y MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="G" draft="contributed">G y MMM d, E – G y MMM d, E</greatestDifference>
+							<greatestDifference id="M" draft="contributed">G y MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="y" draft="contributed">G y MMM d, E – y MMM d, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">h a – h a</greatestDifference>
@@ -2257,13 +2342,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</dateFormats>
 				<dateTimeFormats>
 					<availableFormats>
+						<dateFormatItem id="Bh">h B</dateFormatItem>
+						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
+						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
+						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E، d</dateFormatItem>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E، d MMM y G</dateFormatItem>
+						<dateFormatItem id="h">h a</dateFormatItem>
+						<dateFormatItem id="H">HH</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">d/‏M</dateFormatItem>
 						<dateFormatItem id="MEd">E، d/M</dateFormatItem>
@@ -2524,6 +2624,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<era type="233">تيشو</era>
 						<era type="234">شووا</era>
 						<era type="235">هيسي</era>
+						<era type="236" draft="contributed">ريوا</era>
 					</eraAbbr>
 				</eras>
 			</calendar>
@@ -2855,6 +2956,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="day-short">
 				<displayName>يوم</displayName>
+				<relative type="-2" draft="contributed">أول أمس</relative>
+				<relative type="-1" draft="contributed">أمس</relative>
+				<relative type="0" draft="contributed">اليوم</relative>
+				<relative type="1" draft="contributed">غدًا</relative>
+				<relative type="2" draft="contributed">بعد الغد</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="zero">خلال {0} يوم</relativeTimePattern>
 					<relativeTimePattern count="one">خلال يوم واحد</relativeTimePattern>
@@ -2874,6 +2980,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="day-narrow">
 				<displayName>يوم</displayName>
+				<relative type="-2" draft="contributed">أول أمس</relative>
+				<relative type="-1" draft="contributed">أمس</relative>
+				<relative type="0" draft="contributed">اليوم</relative>
+				<relative type="1" draft="contributed">غدًا</relative>
+				<relative type="2" draft="contributed">بعد الغد</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="zero">خلال {0} يوم</relativeTimePattern>
 					<relativeTimePattern count="one">خلال يوم واحد</relativeTimePattern>
@@ -4070,7 +4181,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>كايين</exemplarCity>
 			</zone>
 			<zone type="Europe/Guernsey">
-				<exemplarCity>غيرنسي</exemplarCity>
+				<exemplarCity>غيرنزي</exemplarCity>
 			</zone>
 			<zone type="Africa/Accra">
 				<exemplarCity>أكرا</exemplarCity>
@@ -4237,6 +4348,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Aqtobe">
 				<exemplarCity>أكتوب</exemplarCity>
 			</zone>
+			<zone type="Asia/Qostanay">
+				<exemplarCity draft="contributed">قوستاناي</exemplarCity>
+			</zone>
 			<zone type="Asia/Qyzylorda">
 				<exemplarCity>كيزيلوردا</exemplarCity>
 			</zone>
@@ -4367,7 +4481,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>مونتيري</exemplarCity>
 			</zone>
 			<zone type="America/Mexico_City">
-				<exemplarCity>مدينة المكسيك</exemplarCity>
+				<exemplarCity>مكسيكو سيتي</exemplarCity>
 			</zone>
 			<zone type="America/Matamoros">
 				<exemplarCity>ماتاموروس</exemplarCity>
@@ -5062,9 +5176,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Chile">
 				<long>
-					<generic>توقيت شيلي</generic>
-					<standard>توقيت شيلي الرسمي</standard>
-					<daylight>توقيت شيلي الصيفي</daylight>
+					<generic>توقيت تشيلي</generic>
+					<standard>توقيت تشيلي الرسمي</standard>
+					<daylight>توقيت تشيلي الصيفي</daylight>
 				</long>
 			</metazone>
 			<metazone type="China">
@@ -5101,8 +5215,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Cook">
 				<long>
 					<generic>توقيت جزر كووك</generic>
-					<standard>توقيت جزر كووك الرسمي</standard>
-					<daylight>توقيت جزر كووك الصيفي</daylight>
+					<standard>توقيت جزر كوك الرسمي</standard>
+					<daylight>توقيت جزر كوك الصيفي</daylight>
 				</long>
 			</metazone>
 			<metazone type="Cuba">
@@ -5181,7 +5295,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="French_Guiana">
 				<long>
-					<standard>توقيت غايانا الفرنسية</standard>
+					<standard>توقيت غويانا الفرنسية</standard>
 				</long>
 			</metazone>
 			<metazone type="French_Southern">
@@ -5239,6 +5353,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<long>
 					<standard>توقيت الخليج</standard>
 				</long>
+				<short>
+					<standard>GST</standard>
+				</short>
 			</metazone>
 			<metazone type="Guyana">
 				<long>
@@ -5396,7 +5513,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Maldives">
 				<long>
-					<standard>توقيت الـمالديف</standard>
+					<standard>توقيت جزر المالديف</standard>
 				</long>
 			</metazone>
 			<metazone type="Marquesas">
@@ -5588,7 +5705,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Reunion">
 				<long>
-					<standard>توقيت ريونيون</standard>
+					<standard>توقيت روينيون</standard>
 				</long>
 			</metazone>
 			<metazone type="Rothera">
@@ -5772,12 +5889,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</otherNumberingSystems>
 		<minimumGroupingDigits draft="contributed">1</minimumGroupingDigits>
 		<symbols numberSystem="arab">
-			<decimal>٫</decimal>
-			<group>٬</group>
 			<list>؛</list>
 			<percentSign>٪؜</percentSign>
-			<plusSign>؜+</plusSign>
-			<minusSign>؜-</minusSign>
 			<exponential>اس</exponential>
 			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>؉</perMille>
@@ -5786,9 +5899,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<timeSeparator draft="contributed">:</timeSeparator>
 		</symbols>
 		<symbols numberSystem="latn">
-			<decimal>.</decimal>
-			<group>,</group>
-			<list>;</list>
 			<percentSign>‎%‎</percentSign>
 			<plusSign>‎+</plusSign>
 			<minusSign>‎-</minusSign>
@@ -5799,19 +5909,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<nan>ليس رقمًا</nan>
 			<timeSeparator draft="contributed">:</timeSeparator>
 		</symbols>
-		<decimalFormats numberSystem="arab">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern>#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
 		<decimalFormats numberSystem="latn">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern>#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
 			<decimalFormatLength type="long">
 				<decimalFormat>
 					<pattern type="1000" count="zero">0 ألف</pattern>
@@ -6292,6 +6390,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="BEL">
 				<displayName>فرنك بلجيكي مالي</displayName>
 			</currency>
+			<currency type="BGL">
+				<symbol draft="contributed">BGL</symbol>
+			</currency>
 			<currency type="BGN">
 				<displayName>ليف بلغاري</displayName>
 				<displayName count="zero">ليف بلغاري</displayName>
@@ -6384,7 +6485,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">ريال برازيلي</displayName>
 				<displayName count="many">ريال برازيلي</displayName>
 				<displayName count="other">ريال برازيلي</displayName>
-				<symbol>R$</symbol>
 				<symbol alt="narrow" draft="contributed">R$</symbol>
 			</currency>
 			<currency type="BSD">
@@ -6465,7 +6565,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">دولار كندي</displayName>
 				<displayName count="many">دولار كندي</displayName>
 				<displayName count="other">دولار كندي</displayName>
-				<symbol>CA$</symbol>
 				<symbol alt="narrow" draft="contributed">CA$</symbol>
 			</currency>
 			<currency type="CDF">
@@ -6517,7 +6616,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">يوان صيني</displayName>
 				<displayName count="many">يوان صيني</displayName>
 				<displayName count="other">يوان صيني</displayName>
-				<symbol>CN¥</symbol>
 				<symbol alt="narrow" draft="contributed">CN¥</symbol>
 			</currency>
 			<currency type="COP">
@@ -6571,13 +6669,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol alt="narrow" draft="contributed">CU$</symbol>
 			</currency>
 			<currency type="CVE">
-				<displayName>اسكودو الرأس الخضراء</displayName>
-				<displayName count="zero">اسكودو الرأس الخضراء</displayName>
-				<displayName count="one">اسكودو الرأس الخضراء</displayName>
-				<displayName count="two">اسكودو الرأس الخضراء</displayName>
-				<displayName count="few">اسكودو الرأس الخضراء</displayName>
-				<displayName count="many">اسكودو الرأس الخضراء</displayName>
-				<displayName count="other">اسكودو الرأس الخضراء</displayName>
+				<displayName>اسكودو الرأس الأخضر</displayName>
+				<displayName count="zero">اسكودو الرأس الأخضر</displayName>
+				<displayName count="one">اسكودو الرأس الأخضر</displayName>
+				<displayName count="two">اسكودو الرأس الأخضر</displayName>
+				<displayName count="few">اسكودو الرأس الأخضر</displayName>
+				<displayName count="many">اسكودو الرأس الأخضر</displayName>
+				<displayName count="other">اسكودو الرأس الأخضر</displayName>
 				<symbol draft="contributed">CVE</symbol>
 			</currency>
 			<currency type="CYP">
@@ -6711,7 +6809,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">يورو</displayName>
 				<displayName count="many">يورو</displayName>
 				<displayName count="other">يورو</displayName>
-				<symbol>€</symbol>
 				<symbol alt="narrow" draft="contributed">€</symbol>
 			</currency>
 			<currency type="FIM">
@@ -6762,7 +6859,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">جنيه إسترليني</displayName>
 				<displayName count="many">جنيه إسترليني</displayName>
 				<displayName count="other">جنيه إسترليني</displayName>
-				<symbol>£</symbol>
 				<symbol alt="narrow" draft="contributed">UK£</symbol>
 			</currency>
 			<currency type="GEL">
@@ -6805,7 +6901,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="many">جنيه جبل طارق</displayName>
 				<displayName count="other">جنيه جبل طارق</displayName>
 				<symbol draft="contributed">GIP</symbol>
-				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="GMD">
 				<displayName>دلاسي غامبي</displayName>
@@ -6936,7 +7031,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">روبية إندونيسية</displayName>
 				<displayName count="many">روبية إندونيسية</displayName>
 				<displayName count="other">روبية إندونيسية</displayName>
-				<symbol>IDR</symbol>
 				<symbol alt="narrow" draft="contributed">Rp</symbol>
 			</currency>
 			<currency type="IEP">
@@ -6976,7 +7070,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">روبية هندي</displayName>
 				<displayName count="many">روبية هندي</displayName>
 				<displayName count="other">روبية هندي</displayName>
-				<symbol>₹</symbol>
 				<symbol alt="narrow" draft="contributed">₹</symbol>
 			</currency>
 			<currency type="IQD">
@@ -7090,7 +7183,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">فرنك جزر القمر</displayName>
 				<displayName count="many">فرنك جزر القمر</displayName>
 				<displayName count="other">فرنك جزر القمر</displayName>
-				<symbol>KMF</symbol>
 				<symbol alt="narrow" draft="contributed">CF</symbol>
 			</currency>
 			<currency type="KPW">
@@ -7189,7 +7281,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="many">دولارًا ليبيريًا</displayName>
 				<displayName count="other">دولار ليبيري</displayName>
 				<symbol draft="contributed">LRD</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="LSL">
 				<displayName>لوتي ليسوتو</displayName>
@@ -7199,6 +7290,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few" draft="provisional">لوتي ليسوتو</displayName>
 				<displayName count="many" draft="provisional">لوتي ليسوتو</displayName>
 				<displayName count="other" draft="provisional">لوتي ليسوتو</displayName>
+				<symbol draft="contributed">LSL</symbol>
 			</currency>
 			<currency type="LTL">
 				<displayName>ليتا ليتوانية</displayName>
@@ -7208,7 +7300,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">ليتا ليتوانية</displayName>
 				<displayName count="many">ليتا ليتوانية</displayName>
 				<displayName count="other">ليتا ليتوانية</displayName>
-				<symbol draft="contributed">LTL</symbol>
 			</currency>
 			<currency type="LTT">
 				<displayName>تالوناس ليتواني</displayName>
@@ -7230,7 +7321,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">لاتس لاتفي</displayName>
 				<displayName count="many">لاتس لاتفي</displayName>
 				<displayName count="other">لاتس لاتفي</displayName>
-				<symbol draft="contributed">LVL</symbol>
 			</currency>
 			<currency type="LVR">
 				<displayName>روبل لاتفيا</displayName>
@@ -7335,7 +7425,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">أوقية موريتانية - 1973-2017</displayName>
 				<displayName count="many">أوقية موريتانية - 1973-2017</displayName>
 				<displayName count="other">أوقية موريتانية - 1973-2017</displayName>
-				<symbol>أ.م.‏</symbol>
 			</currency>
 			<currency type="MRU">
 				<displayName>أوقية موريتانية</displayName>
@@ -7345,6 +7434,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">أوقية موريتانية</displayName>
 				<displayName count="many">أوقية موريتانية</displayName>
 				<displayName count="other">أوقية موريتانية</displayName>
+				<symbol>أ.م.</symbol>
 			</currency>
 			<currency type="MTL">
 				<displayName>ليرة مالطية</displayName>
@@ -7403,7 +7493,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">بيزو مكسيكي</displayName>
 				<displayName count="many">بيزو مكسيكي</displayName>
 				<displayName count="other">بيزو مكسيكي</displayName>
-				<symbol>MX$</symbol>
 				<symbol alt="narrow" draft="contributed">MX$</symbol>
 			</currency>
 			<currency type="MXP">
@@ -7448,7 +7537,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="many">دولار ناميبي</displayName>
 				<displayName count="other">دولار ناميبي</displayName>
 				<symbol draft="contributed">NAD</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="NGN">
 				<displayName>نايرا نيجيري</displayName>
@@ -7576,7 +7664,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">روبية باكستاني</displayName>
 				<displayName count="many">روبية باكستاني</displayName>
 				<displayName count="other">روبية باكستاني</displayName>
-				<symbol>PKR</symbol>
 				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="PLN">
@@ -7861,6 +7948,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">دوبرا ساو تومي وبرينسيبي</displayName>
 				<displayName count="many">دوبرا ساو تومي وبرينسيبي</displayName>
 				<displayName count="other">دوبرا ساو تومي وبرينسيبي</displayName>
+				<symbol draft="contributed">STN</symbol>
 				<symbol alt="narrow" draft="contributed">Db</symbol>
 			</currency>
 			<currency type="SUR">
@@ -8048,7 +8136,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">دولار أمريكي</displayName>
 				<displayName count="many">دولار أمريكي</displayName>
 				<displayName count="other">دولار أمريكي</displayName>
-				<symbol>US$</symbol>
 				<symbol alt="narrow" draft="contributed">US$</symbol>
 			</currency>
 			<currency type="USN">
@@ -8085,6 +8172,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>بوليفار فنزويلي - 1871-2008</displayName>
 			</currency>
 			<currency type="VEF">
+				<displayName>بوليفار فنزويلي - 2008–2018</displayName>
+				<displayName count="zero">بوليفار فنزويلي - 2008–2018</displayName>
+				<displayName count="one">بوليفار فنزويلي - 2008–2018</displayName>
+				<displayName count="two">بوليفار فنزويلي - 2008–2018</displayName>
+				<displayName count="few">بوليفار فنزويلي - 2008–2018</displayName>
+				<displayName count="many">بوليفار فنزويلي - 2008–2018</displayName>
+				<displayName count="other">بوليفار فنزويلي - 2008–2018</displayName>
+				<symbol draft="contributed">VEF</symbol>
+				<symbol alt="narrow" draft="contributed">Bs</symbol>
+			</currency>
+			<currency type="VES">
 				<displayName>بوليفار فنزويلي</displayName>
 				<displayName count="zero">بوليفار فنزويلي</displayName>
 				<displayName count="one">بوليفار فنزويلي</displayName>
@@ -8092,8 +8190,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">بوليفار فنزويلي</displayName>
 				<displayName count="many">بوليفار فنزويلي</displayName>
 				<displayName count="other">بوليفار فنزويلي</displayName>
-				<symbol draft="contributed">VEF</symbol>
-				<symbol alt="narrow" draft="contributed">Bs</symbol>
+				<symbol draft="contributed">VES</symbol>
 			</currency>
 			<currency type="VND">
 				<displayName>دونج فيتنامي</displayName>
@@ -8134,7 +8231,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">فرنك وسط أفريقي</displayName>
 				<displayName count="many">فرنك وسط أفريقي</displayName>
 				<displayName count="other">فرنك وسط أفريقي</displayName>
-				<symbol>FCFA</symbol>
 			</currency>
 			<currency type="XAG">
 				<displayName>فضة</displayName>
@@ -8198,7 +8294,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">دولار شرق الكاريبي</displayName>
 				<displayName count="many">دولار شرق الكاريبي</displayName>
 				<displayName count="other">دولار شرق الكاريبي</displayName>
-				<symbol>EC$</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="XDR">
@@ -8239,7 +8334,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">فرنك غرب أفريقي</displayName>
 				<displayName count="many">فرنك غرب أفريقي</displayName>
 				<displayName count="other">فرنك غرب أفريقي</displayName>
-				<symbol>CFA</symbol>
 			</currency>
 			<currency type="XPD">
 				<displayName>بالاديوم</displayName>
@@ -8323,6 +8417,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few" draft="contributed">كواشا زامبي - 1968-2012</displayName>
 				<displayName count="many" draft="contributed">كواشا زامبي - 1968-2012</displayName>
 				<displayName count="other" draft="contributed">كواشا زامبي - 1968-2012</displayName>
+				<symbol draft="contributed">ZMK</symbol>
 			</currency>
 			<currency type="ZMW">
 				<displayName>كواشا زامبي</displayName>
@@ -8367,7 +8462,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
+			<pattern type="approximately">~{0}</pattern>
 			<pattern type="atLeast">+{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
 			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
 		<minimalPairs>
@@ -8534,6 +8631,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} بوصة مربعة</unitPattern>
 				<perUnitPattern>{0} لكل بوصة مربعة</perUnitPattern>
 			</unit>
+			<unit type="area-dunam">
+				<displayName draft="contributed">دونم</displayName>
+				<unitPattern count="zero" draft="contributed">دونم</unitPattern>
+				<unitPattern count="one" draft="contributed">{0} دونم</unitPattern>
+				<unitPattern count="two" draft="contributed">{0} دونم</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} دونم</unitPattern>
+				<unitPattern count="many" draft="contributed">{0} دونم</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} دونم</unitPattern>
+			</unit>
 			<unit type="concentr-karat">
 				<displayName>قيراط</displayName>
 				<unitPattern count="zero">{0} قيراط</unitPattern>
@@ -8570,6 +8676,42 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} جزء في المليون</unitPattern>
 				<unitPattern count="other">{0} جزء في المليون</unitPattern>
 			</unit>
+			<unit type="concentr-percent">
+				<displayName>بالمائة</displayName>
+				<unitPattern count="zero">{0}٪</unitPattern>
+				<unitPattern count="one">{0} بالمائة</unitPattern>
+				<unitPattern count="two">{0}٪</unitPattern>
+				<unitPattern count="few">{0}٪</unitPattern>
+				<unitPattern count="many">{0}٪</unitPattern>
+				<unitPattern count="other">{0} بالمائة</unitPattern>
+			</unit>
+			<unit type="concentr-permille">
+				<displayName>في الألف</displayName>
+				<unitPattern count="zero">{0} في الألف</unitPattern>
+				<unitPattern count="one">{0} في الألف</unitPattern>
+				<unitPattern count="two">{0} في الألف</unitPattern>
+				<unitPattern count="few">{0} في الألف</unitPattern>
+				<unitPattern count="many">{0} في الألف</unitPattern>
+				<unitPattern count="other">{0} في الألف</unitPattern>
+			</unit>
+			<unit type="concentr-permyriad">
+				<displayName draft="contributed">‱</displayName>
+				<unitPattern count="zero" draft="contributed">{0}‱</unitPattern>
+				<unitPattern count="one" draft="contributed">{0}‱</unitPattern>
+				<unitPattern count="two" draft="contributed">{0}‱</unitPattern>
+				<unitPattern count="few" draft="contributed">{0}‱</unitPattern>
+				<unitPattern count="many" draft="contributed">{0}‱</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}‱</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName draft="contributed">مول</displayName>
+				<unitPattern count="zero" draft="contributed">{0} مول</unitPattern>
+				<unitPattern count="one" draft="contributed">{0} مول</unitPattern>
+				<unitPattern count="two" draft="contributed">{0} مول</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} مول</unitPattern>
+				<unitPattern count="many" draft="contributed">{0} مول</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} مول</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>لتر لكل كيلومتر</displayName>
 				<unitPattern count="zero">{0} لتر لكل كيلومتر</unitPattern>
@@ -8605,6 +8747,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} ميل لكل غالون إمبراطوري</unitPattern>
 				<unitPattern count="many">{0} ميل لكل غالون إمبراطوري</unitPattern>
 				<unitPattern count="other">{0} ميل لكل غالون إمبراطوري</unitPattern>
+			</unit>
+			<unit type="digital-petabyte">
+				<displayName>بيتابايت</displayName>
+				<unitPattern count="zero">{0} بيتابايت</unitPattern>
+				<unitPattern count="one">{0} بيتابايت</unitPattern>
+				<unitPattern count="two">{0} بيتابايت</unitPattern>
+				<unitPattern count="few">{0} بيتابايت</unitPattern>
+				<unitPattern count="many">{0} بيتابايت</unitPattern>
+				<unitPattern count="other">{0} بيتابايت</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>تيرابايت</displayName>
@@ -8892,6 +9043,42 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} كيلو واط/ساعة</unitPattern>
 				<unitPattern count="other">{0} كيلو واط/ساعة</unitPattern>
 			</unit>
+			<unit type="energy-electronvolt">
+				<displayName draft="contributed">إلكترون فولت</displayName>
+				<unitPattern count="zero" draft="contributed">{0} إلكترون فولت</unitPattern>
+				<unitPattern count="one" draft="contributed">{0} إلكترون فولت</unitPattern>
+				<unitPattern count="two" draft="contributed">{0} إلكترون فولت</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} إلكترون فولت</unitPattern>
+				<unitPattern count="many" draft="contributed">{0} إلكترون فولت</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} إلكترون فولت</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName draft="contributed">وحدة حرارية بريطانية</displayName>
+				<unitPattern count="zero" draft="contributed">{0} وحدة حرارية بريطانية</unitPattern>
+				<unitPattern count="one" draft="contributed">{0} وحدة حرارية بريطانية</unitPattern>
+				<unitPattern count="two" draft="contributed">{0} وحدة حرارية بريطانية</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} وحدة حرارية بريطانية</unitPattern>
+				<unitPattern count="many" draft="contributed">{0} وحدة حرارية بريطانية</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} وحدة حرارية بريطانية</unitPattern>
+			</unit>
+			<unit type="force-pound-force">
+				<displayName draft="contributed">باوند قوة</displayName>
+				<unitPattern count="zero" draft="contributed">{0} باوند قوة</unitPattern>
+				<unitPattern count="one" draft="contributed">{0} باوند قوة</unitPattern>
+				<unitPattern count="two" draft="contributed">{0} باوند قوة</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} باوند قوة</unitPattern>
+				<unitPattern count="many" draft="contributed">{0} باوند قوة</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} باوند قوة</unitPattern>
+			</unit>
+			<unit type="force-newton">
+				<displayName draft="contributed">نيوتن</displayName>
+				<unitPattern count="zero" draft="contributed">{0} نيوتن</unitPattern>
+				<unitPattern count="one" draft="contributed">{0} نيوتن</unitPattern>
+				<unitPattern count="two" draft="contributed">{0} نيوتن</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} نيوتن</unitPattern>
+				<unitPattern count="many" draft="contributed">{0} نيوتن</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} نيوتن</unitPattern>
+			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>غيغا هرتز</displayName>
 				<unitPattern count="zero">{0} غيغا هرتز</unitPattern>
@@ -9095,6 +9282,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" draft="contributed">{0} نقطة</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} نقطة</unitPattern>
 			</unit>
+			<unit type="length-solar-radius">
+				<displayName draft="contributed">نصف قطر الشمس</displayName>
+				<unitPattern count="zero" draft="contributed">{0} نصف قطر الشمس</unitPattern>
+				<unitPattern count="one" draft="contributed">{0} نصف قطر الشمس</unitPattern>
+				<unitPattern count="two" draft="contributed">{0} نصف قطر الشمس</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} نصف قطر الشمس</unitPattern>
+				<unitPattern count="many" draft="contributed">{0} نصف قطر الشمس</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} نصف قطر الشمس</unitPattern>
+			</unit>
 			<unit type="light-lux">
 				<displayName>لكس</displayName>
 				<unitPattern count="zero">{0} لكس</unitPattern>
@@ -9103,6 +9299,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} لكس</unitPattern>
 				<unitPattern count="many">{0} لكس</unitPattern>
 				<unitPattern count="other">{0} لكس</unitPattern>
+			</unit>
+			<unit type="light-solar-luminosity">
+				<displayName draft="contributed">ضياء شمسي</displayName>
+				<unitPattern count="zero" draft="contributed">{0} L☉</unitPattern>
+				<unitPattern count="one" draft="contributed">{0} ضياء شمسي</unitPattern>
+				<unitPattern count="two" draft="contributed">{0} ضياء شمسي</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} ضياء شمسي</unitPattern>
+				<unitPattern count="many" draft="contributed">{0} ضياء شمسي</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ضياء شمسي</unitPattern>
 			</unit>
 			<unit type="mass-metric-ton">
 				<displayName>طن متري</displayName>
@@ -9197,6 +9402,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} قيراط</unitPattern>
 				<unitPattern count="many">{0} قيراط</unitPattern>
 				<unitPattern count="other">{0} قيراط</unitPattern>
+			</unit>
+			<unit type="mass-dalton">
+				<displayName draft="contributed">دالتون</displayName>
+				<unitPattern count="zero" draft="contributed">{0} Da</unitPattern>
+				<unitPattern count="one" draft="contributed">{0} دالتون</unitPattern>
+				<unitPattern count="two" draft="contributed">{0} Da</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} Da</unitPattern>
+				<unitPattern count="many" draft="contributed">{0} Da</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} دالتون</unitPattern>
+			</unit>
+			<unit type="mass-earth-mass">
+				<displayName draft="contributed">كتلة الأرض</displayName>
+				<unitPattern count="zero" draft="contributed">{0} كتلة الأرض</unitPattern>
+				<unitPattern count="one" draft="contributed">{0} كتلة الأرض</unitPattern>
+				<unitPattern count="two" draft="contributed">{0} كتلة الأرض</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} كتلة الأرض</unitPattern>
+				<unitPattern count="many" draft="contributed">{0} كتلة الأرض</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} كتلة الأرض</unitPattern>
+			</unit>
+			<unit type="mass-solar-mass">
+				<displayName draft="contributed">كتلة شمسية</displayName>
+				<unitPattern count="zero" draft="contributed">{0} كتلة شمسية</unitPattern>
+				<unitPattern count="one" draft="contributed">{0} كتلة شمسية</unitPattern>
+				<unitPattern count="two" draft="contributed">{0} كتلة شمسية</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} كتلة شمسية</unitPattern>
+				<unitPattern count="many" draft="contributed">{0} كتلة شمسية</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} كتلة شمسية</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>غيغا واط</displayName>
@@ -9297,6 +9529,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} ملي بار</unitPattern>
 				<unitPattern count="other">{0} ملي بار</unitPattern>
 			</unit>
+			<unit type="pressure-atmosphere">
+				<displayName>وحدة الضغط الجوي</displayName>
+				<unitPattern count="zero">{0} ض.ج</unitPattern>
+				<unitPattern count="one">{0} ضغط جوي</unitPattern>
+				<unitPattern count="two">{0} ض.ج</unitPattern>
+				<unitPattern count="few">{0} ض.ج</unitPattern>
+				<unitPattern count="many">{0} ض.ج</unitPattern>
+				<unitPattern count="other">{0} ضغط جوي</unitPattern>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<displayName draft="contributed">كيلوباسكال</displayName>
+				<unitPattern count="zero" draft="contributed">{0} كيلوباسكال</unitPattern>
+				<unitPattern count="one" draft="contributed">{0} كيلوباسكال</unitPattern>
+				<unitPattern count="two" draft="contributed">{0} كيلوباسكال</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} كيلوباسكال</unitPattern>
+				<unitPattern count="many" draft="contributed">{0} كيلوباسكال</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} كيلوباسكال</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<displayName draft="contributed">ميغاباسكال</displayName>
+				<unitPattern count="zero" draft="contributed">{0} ميغاباسكال</unitPattern>
+				<unitPattern count="one" draft="contributed">{0} ميغاباسكال</unitPattern>
+				<unitPattern count="two" draft="contributed">{0} ميغاباسكال</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} ميغاباسكال</unitPattern>
+				<unitPattern count="many" draft="contributed">{0} ميغاباسكال</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ميغاباسكال</unitPattern>
+			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>كيلومتر في الساعة</displayName>
 				<unitPattern count="zero">{0} كيلومتر في الساعة</unitPattern>
@@ -9368,6 +9627,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} درجة كلفن</unitPattern>
 				<unitPattern count="many">{0} درجة كلفن</unitPattern>
 				<unitPattern count="other">{0} درجة كلفن</unitPattern>
+			</unit>
+			<unit type="torque-pound-foot">
+				<displayName draft="contributed">باوند قدم</displayName>
+				<unitPattern count="zero" draft="contributed">{0} باوند قدم</unitPattern>
+				<unitPattern count="one" draft="contributed">{0} باوند قدم</unitPattern>
+				<unitPattern count="two" draft="contributed">{0} باوند قدم</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} باوند قدم</unitPattern>
+				<unitPattern count="many" draft="contributed">{0} باوند قدم</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} باوند قدم</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<displayName draft="contributed">نيوتن متر</displayName>
+				<unitPattern count="zero" draft="contributed">{0} نيوتن متر</unitPattern>
+				<unitPattern count="one" draft="contributed">{0} نيوتن متر</unitPattern>
+				<unitPattern count="two" draft="contributed">{0} نيوتن متر</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} نيوتن متر</unitPattern>
+				<unitPattern count="many" draft="contributed">{0} نيوتن متر</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} نيوتن متر</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<displayName>كيلومتر مكعب</displayName>
@@ -9572,6 +9849,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} أونصة سائلة</unitPattern>
 				<unitPattern count="other">{0} أونصة سائلة</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName draft="contributed">Imp. fl oz</displayName>
+				<unitPattern count="zero" draft="contributed">{0} fl oz Imp.</unitPattern>
+				<unitPattern count="one" draft="contributed">{0} fl oz Imp.</unitPattern>
+				<unitPattern count="two" draft="contributed">{0} fl oz Imp.</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} fl oz Imp.</unitPattern>
+				<unitPattern count="many" draft="contributed">{0} fl oz Imp.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} fl oz Imp.</unitPattern>
+			</unit>
 			<unit type="volume-tablespoon">
 				<displayName>ملعقة كبيرة</displayName>
 				<unitPattern count="zero">{0} ملعقة كبيرة</unitPattern>
@@ -9590,7 +9876,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} ملعقة صغيرة</unitPattern>
 				<unitPattern count="other">{0} ملعقة صغيرة</unitPattern>
 			</unit>
+			<unit type="volume-barrel">
+				<displayName draft="contributed">برميل</displayName>
+				<unitPattern count="zero" draft="contributed">{0} برميل</unitPattern>
+				<unitPattern count="one" draft="contributed">{0} برميل</unitPattern>
+				<unitPattern count="two" draft="contributed">{0} برميل</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} برميل</unitPattern>
+				<unitPattern count="many" draft="contributed">{0} برميل</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} برميل</unitPattern>
+			</unit>
 			<coordinateUnit>
+				<displayName draft="contributed">اتجاه أساسي</displayName>
 				<coordinateUnitPattern type="east">{0} شرقًا</coordinateUnitPattern>
 				<coordinateUnitPattern type="north">{0} شمالاً</coordinateUnitPattern>
 				<coordinateUnitPattern type="south">{0} جنوبًا</coordinateUnitPattern>
@@ -9750,6 +10046,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} بوصة²</unitPattern>
 				<perUnitPattern>{0}/بوصة²</perUnitPattern>
 			</unit>
+			<unit type="area-dunam">
+				<displayName draft="contributed">دونم</displayName>
+				<unitPattern count="zero" draft="contributed">{0} دونم</unitPattern>
+				<unitPattern count="one" draft="contributed">{0} دونم</unitPattern>
+				<unitPattern count="two" draft="contributed">{0} دونم</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} دونم</unitPattern>
+				<unitPattern count="many" draft="contributed">{0} دونم</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} دونم</unitPattern>
+			</unit>
 			<unit type="concentr-karat">
 				<displayName>قيراط</displayName>
 				<unitPattern count="zero">{0} قيراط</unitPattern>
@@ -9786,6 +10091,36 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} جزء/مليون</unitPattern>
 				<unitPattern count="other">{0} جزء/مليون</unitPattern>
 			</unit>
+			<unit type="concentr-percent">
+				<displayName>بالمائة</displayName>
+				<unitPattern count="zero">{0}٪</unitPattern>
+				<unitPattern count="one">{0}٪</unitPattern>
+				<unitPattern count="two">{0}٪</unitPattern>
+				<unitPattern count="few">{0}٪</unitPattern>
+				<unitPattern count="many">{0}٪</unitPattern>
+				<unitPattern count="other">{0}٪</unitPattern>
+			</unit>
+			<unit type="concentr-permille">
+				<displayName>في الألف</displayName>
+			</unit>
+			<unit type="concentr-permyriad">
+				<displayName draft="contributed">‱</displayName>
+				<unitPattern count="zero" draft="contributed">{0}‱</unitPattern>
+				<unitPattern count="one" draft="contributed">{0}‱</unitPattern>
+				<unitPattern count="two" draft="contributed">{0}‱</unitPattern>
+				<unitPattern count="few" draft="contributed">{0}‱</unitPattern>
+				<unitPattern count="many" draft="contributed">{0}‱</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}‱</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName draft="contributed">مول</displayName>
+				<unitPattern count="zero" draft="contributed">{0} mol</unitPattern>
+				<unitPattern count="one" draft="contributed">{0} mol</unitPattern>
+				<unitPattern count="two" draft="contributed">{0} mol</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} mol</unitPattern>
+				<unitPattern count="many" draft="contributed">{0} mol</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} mol</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>لتر/كم</displayName>
 				<unitPattern count="zero">{0} لتر/كم</unitPattern>
@@ -9821,6 +10156,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} ميل/غ. إمبراطوري</unitPattern>
 				<unitPattern count="many">{0} ميل/غ. إمبراطوري</unitPattern>
 				<unitPattern count="other">{0} ميل/غ. إمبراطوري</unitPattern>
+			</unit>
+			<unit type="digital-petabyte">
+				<displayName>بيتابايت</displayName>
+				<unitPattern count="zero">{0} بيتابايت</unitPattern>
+				<unitPattern count="one">{0} بيتابايت</unitPattern>
+				<unitPattern count="two">{0} بيتابايت</unitPattern>
+				<unitPattern count="few">{0} بيتابايت</unitPattern>
+				<unitPattern count="many">{0} بيتابايت</unitPattern>
+				<unitPattern count="other">{0} بيتابايت</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>تيرابايت</displayName>
@@ -10108,6 +10452,42 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} ك.و.س</unitPattern>
 				<unitPattern count="other">{0} ك.و.س</unitPattern>
 			</unit>
+			<unit type="energy-electronvolt">
+				<displayName draft="contributed">إلكترون فولت</displayName>
+				<unitPattern count="zero" draft="contributed">{0} eV</unitPattern>
+				<unitPattern count="one" draft="contributed">{0} eV</unitPattern>
+				<unitPattern count="two" draft="contributed">{0} eV</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} eV</unitPattern>
+				<unitPattern count="many" draft="contributed">{0} eV</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} eV</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName draft="contributed">Btu</displayName>
+				<unitPattern count="zero" draft="contributed">{0} Btu</unitPattern>
+				<unitPattern count="one" draft="contributed">{0} Btu</unitPattern>
+				<unitPattern count="two" draft="contributed">{0} Btu</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} Btu</unitPattern>
+				<unitPattern count="many" draft="contributed">{0} Btu</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} Btu</unitPattern>
+			</unit>
+			<unit type="force-pound-force">
+				<displayName draft="contributed">باوند قوة</displayName>
+				<unitPattern count="zero" draft="contributed">{0} lbf</unitPattern>
+				<unitPattern count="one" draft="contributed">{0} lbf</unitPattern>
+				<unitPattern count="two" draft="contributed">{0} lbf</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} lbf</unitPattern>
+				<unitPattern count="many" draft="contributed">{0} lbf</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} lbf</unitPattern>
+			</unit>
+			<unit type="force-newton">
+				<displayName draft="contributed">نيوتن</displayName>
+				<unitPattern count="zero" draft="contributed">{0} N</unitPattern>
+				<unitPattern count="one" draft="contributed">{0} N</unitPattern>
+				<unitPattern count="two" draft="contributed">{0} N</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} N</unitPattern>
+				<unitPattern count="many" draft="contributed">{0} N</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} N</unitPattern>
+			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>غ هرتز</displayName>
 				<unitPattern count="zero">{0} غ هرتز</unitPattern>
@@ -10311,6 +10691,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" draft="contributed">{0} ن</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} ن</unitPattern>
 			</unit>
+			<unit type="length-solar-radius">
+				<displayName draft="contributed">R☉</displayName>
+				<unitPattern count="zero" draft="contributed">{0} R☉</unitPattern>
+				<unitPattern count="one" draft="contributed">{0} R☉</unitPattern>
+				<unitPattern count="two" draft="contributed">{0} R☉</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} R☉</unitPattern>
+				<unitPattern count="many" draft="contributed">{0} R☉</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} R☉</unitPattern>
+			</unit>
 			<unit type="light-lux">
 				<displayName>لكس</displayName>
 				<unitPattern count="zero">{0} لكس</unitPattern>
@@ -10319,6 +10708,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} لكس</unitPattern>
 				<unitPattern count="many">{0} لكس</unitPattern>
 				<unitPattern count="other">{0} لكس</unitPattern>
+			</unit>
+			<unit type="light-solar-luminosity">
+				<displayName draft="contributed">ضياء شمسي</displayName>
+				<unitPattern count="zero" draft="contributed">{0} L☉</unitPattern>
+				<unitPattern count="one" draft="contributed">{0} L☉</unitPattern>
+				<unitPattern count="two" draft="contributed">{0} L☉</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} L☉</unitPattern>
+				<unitPattern count="many" draft="contributed">{0} L☉</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} L☉</unitPattern>
 			</unit>
 			<unit type="mass-metric-ton">
 				<displayName>ط.م</displayName>
@@ -10413,6 +10811,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} قيراط</unitPattern>
 				<unitPattern count="many">{0} قيراط</unitPattern>
 				<unitPattern count="other">{0} قيراط</unitPattern>
+			</unit>
+			<unit type="mass-dalton">
+				<displayName draft="contributed">Da</displayName>
+				<unitPattern count="zero" draft="contributed">{0} Da</unitPattern>
+				<unitPattern count="one" draft="contributed">{0} Da</unitPattern>
+				<unitPattern count="two" draft="contributed">{0} Da</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} Da</unitPattern>
+				<unitPattern count="many" draft="contributed">{0} Da</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} Da</unitPattern>
+			</unit>
+			<unit type="mass-earth-mass">
+				<displayName draft="contributed">M⊕</displayName>
+				<unitPattern count="zero" draft="contributed">{0} M⊕</unitPattern>
+				<unitPattern count="one" draft="contributed">{0} M⊕</unitPattern>
+				<unitPattern count="two" draft="contributed">{0} M⊕</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} M⊕</unitPattern>
+				<unitPattern count="many" draft="contributed">{0} M⊕</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} M⊕</unitPattern>
+			</unit>
+			<unit type="mass-solar-mass">
+				<displayName draft="contributed">M☉</displayName>
+				<unitPattern count="zero" draft="contributed">{0} M☉</unitPattern>
+				<unitPattern count="one" draft="contributed">{0} M☉</unitPattern>
+				<unitPattern count="two" draft="contributed">{0} M☉</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} M☉</unitPattern>
+				<unitPattern count="many" draft="contributed">{0} M☉</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} M☉</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>غ واط</displayName>
@@ -10513,6 +10938,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} م. بار</unitPattern>
 				<unitPattern count="other">{0} م. بار</unitPattern>
 			</unit>
+			<unit type="pressure-atmosphere">
+				<displayName>ض.ج</displayName>
+				<unitPattern count="zero">{0} ض.ج</unitPattern>
+				<unitPattern count="one">{0} ض.ج</unitPattern>
+				<unitPattern count="two">{0} ض.ج</unitPattern>
+				<unitPattern count="few">{0} ض.ج</unitPattern>
+				<unitPattern count="many">{0} ض.ج</unitPattern>
+				<unitPattern count="other">{0} ض.ج</unitPattern>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<displayName draft="contributed">kPa</displayName>
+				<unitPattern count="zero" draft="contributed">{0} kPa</unitPattern>
+				<unitPattern count="one" draft="contributed">{0} kPa</unitPattern>
+				<unitPattern count="two" draft="contributed">{0} kPa</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} kPa</unitPattern>
+				<unitPattern count="many" draft="contributed">{0} kPa</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} kPa</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<displayName draft="contributed">MPa</displayName>
+				<unitPattern count="zero" draft="contributed">{0} MPa</unitPattern>
+				<unitPattern count="one" draft="contributed">{0} MPa</unitPattern>
+				<unitPattern count="two" draft="contributed">{0} MPa</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} MPa</unitPattern>
+				<unitPattern count="many" draft="contributed">{0} MPa</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} MPa</unitPattern>
+			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>كم/س</displayName>
 				<unitPattern count="zero">{0} كم/س</unitPattern>
@@ -10584,6 +11036,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} د كلفن</unitPattern>
 				<unitPattern count="many">{0} د كلفن</unitPattern>
 				<unitPattern count="other">{0} د كلفن</unitPattern>
+			</unit>
+			<unit type="torque-pound-foot">
+				<displayName draft="contributed">lbf⋅ft</displayName>
+				<unitPattern count="zero" draft="contributed">{0} lbf⋅ft</unitPattern>
+				<unitPattern count="one" draft="contributed">{0} lbf⋅ft</unitPattern>
+				<unitPattern count="two" draft="contributed">{0} lbf⋅ft</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} lbf⋅ft</unitPattern>
+				<unitPattern count="many" draft="contributed">{0} lbf⋅ft</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} lbf⋅ft</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<displayName draft="contributed">N⋅m</displayName>
+				<unitPattern count="zero" draft="contributed">{0} N⋅m</unitPattern>
+				<unitPattern count="one" draft="contributed">{0} N⋅m</unitPattern>
+				<unitPattern count="two" draft="contributed">{0} N⋅m</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} N⋅m</unitPattern>
+				<unitPattern count="many" draft="contributed">{0} N⋅m</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} N⋅m</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<displayName>كم³</displayName>
@@ -10788,6 +11258,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} أونصة س</unitPattern>
 				<unitPattern count="other">{0} أونصة س</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName draft="contributed">Imp. fl oz</displayName>
+				<unitPattern count="zero" draft="contributed">{0} fl oz Imp.</unitPattern>
+				<unitPattern count="one" draft="contributed">{0} fl oz Imp.</unitPattern>
+				<unitPattern count="two" draft="contributed">{0} fl oz Imp.</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} fl oz Imp.</unitPattern>
+				<unitPattern count="many" draft="contributed">{0} fl oz Imp.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} fl oz Imp.</unitPattern>
+			</unit>
 			<unit type="volume-tablespoon">
 				<displayName>ملعقة كبيرة</displayName>
 				<unitPattern count="zero">{0} ملعقة ك.</unitPattern>
@@ -10806,7 +11285,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} ملعقة ص</unitPattern>
 				<unitPattern count="other">{0} ملعقة ص</unitPattern>
 			</unit>
+			<unit type="volume-barrel">
+				<displayName draft="contributed">bbl</displayName>
+				<unitPattern count="zero" draft="contributed">{0} bbl</unitPattern>
+				<unitPattern count="one" draft="contributed">{0} bbl</unitPattern>
+				<unitPattern count="two" draft="contributed">{0} bbl</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} bbl</unitPattern>
+				<unitPattern count="many" draft="contributed">{0} bbl</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} bbl</unitPattern>
+			</unit>
 			<coordinateUnit>
+				<displayName>اتجاه</displayName>
 				<coordinateUnitPattern type="east">{0} شرق</coordinateUnitPattern>
 				<coordinateUnitPattern type="north">{0} شمال</coordinateUnitPattern>
 				<coordinateUnitPattern type="south">{0} ج</coordinateUnitPattern>
@@ -10896,6 +11385,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0}ft²</unitPattern>
 				<unitPattern count="many">{0}ft²</unitPattern>
 				<unitPattern count="other">{0}ft²</unitPattern>
+			</unit>
+			<unit type="concentr-percent">
+				<displayName>٪</displayName>
+				<unitPattern count="zero">{0}٪</unitPattern>
+				<unitPattern count="one">{0}٪</unitPattern>
+				<unitPattern count="two">{0}٪</unitPattern>
+				<unitPattern count="few">{0}٪</unitPattern>
+				<unitPattern count="many">{0}٪</unitPattern>
+				<unitPattern count="other">{0}٪</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100kilometers">
 				<displayName>ل/١٠٠كم</displayName>
@@ -11214,6 +11712,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ل</unitPattern>
 			</unit>
 			<coordinateUnit>
+				<displayName>اتجاه</displayName>
 				<coordinateUnitPattern type="east">{0} شرق</coordinateUnitPattern>
 				<coordinateUnitPattern type="north">{0} شمال</coordinateUnitPattern>
 				<coordinateUnitPattern type="south">{0} ج</coordinateUnitPattern>
@@ -11242,6 +11741,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<listPatternPart type="middle" draft="contributed">{0} و{1}</listPatternPart>
 			<listPatternPart type="end" draft="contributed">{0} أو {1}</listPatternPart>
 			<listPatternPart type="2" draft="contributed">{0} أو {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-narrow">
+			<listPatternPart type="start">{0} و{1}</listPatternPart>
+			<listPatternPart type="middle">{0} و{1}</listPatternPart>
+			<listPatternPart type="end">{0} و{1}</listPatternPart>
+			<listPatternPart type="2">{0} و{1}</listPatternPart>
 		</listPattern>
 		<listPattern type="standard-short">
 			<listPatternPart type="start">{0}، و{1}</listPatternPart>
@@ -11285,9 +11790,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabelPattern type="other">{0} - غير ذلك</characterLabelPattern>
 		<characterLabelPattern type="scripts">أنظمة الكتابة - {0}</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="zero">{0} ضغطة</characterLabelPattern>
-		<characterLabelPattern type="strokes" count="one">{0} ضغطة</characterLabelPattern>
-		<characterLabelPattern type="strokes" count="two">{0} ضغطة</characterLabelPattern>
-		<characterLabelPattern type="strokes" count="few">{0} ضغطة</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="one">ضغطة واحدة ({0})</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="two">ضغطتان ({0})</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="few">{0} ضغطات</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="many">{0} ضغطة</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="other">{0} ضغطة</characterLabelPattern>
 		<characterLabel type="activities">أنشطة</characterLabel>
@@ -11378,7 +11883,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabel type="whitespace">مسافة بيضاء</characterLabel>
 	</characterLabels>
 	<typographicNames>
+		<axisName type="ital">مائل</axisName>
+		<axisName type="opsz">الحجم البصري</axisName>
+		<axisName type="slnt">انحراف</axisName>
+		<axisName type="wdth">العرض</axisName>
+		<axisName type="wght">الوزن</axisName>
 		<styleName type="ital" subtype="1">متصل</styleName>
+		<styleName type="opsz" subtype="8">شرح</styleName>
+		<styleName type="opsz" subtype="12">نص</styleName>
 		<styleName type="opsz" subtype="18">عنونة</styleName>
 		<styleName type="opsz" subtype="72">عرض</styleName>
 		<styleName type="opsz" subtype="144">ملصق</styleName>
@@ -11388,17 +11900,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<styleName type="slnt" subtype="24">منحدر زائد</styleName>
 		<styleName type="wdth" subtype="50">مكثف للغاية</styleName>
 		<styleName type="wdth" subtype="50" alt="compressed">مضغوط للغاية</styleName>
+		<styleName type="wdth" subtype="50" alt="narrow">ضيق للغاية</styleName>
 		<styleName type="wdth" subtype="62.5">مكثف زائد</styleName>
 		<styleName type="wdth" subtype="62.5" alt="compressed">مضغوط زائد</styleName>
 		<styleName type="wdth" subtype="62.5" alt="narrow">ضيق زائد</styleName>
 		<styleName type="wdth" subtype="75">تكثيف</styleName>
-		<styleName type="wdth" subtype="75" alt="short">مكثف</styleName>
 		<styleName type="wdth" subtype="75" alt="compressed">مضغوط</styleName>
 		<styleName type="wdth" subtype="75" alt="narrow">ضيق</styleName>
+		<styleName type="wdth" subtype="75" alt="short">مكثف</styleName>
 		<styleName type="wdth" subtype="87.5">شبه مكثف</styleName>
+		<styleName type="wdth" subtype="87.5" alt="compressed">شبه مضغوط</styleName>
+		<styleName type="wdth" subtype="87.5" alt="narrow">شبه ضيق</styleName>
 		<styleName type="wdth" subtype="100">عادي</styleName>
 		<styleName type="wdth" subtype="112.5">شبه موسع</styleName>
 		<styleName type="wdth" subtype="112.5" alt="extended">شبه ممتد</styleName>
+		<styleName type="wdth" subtype="112.5" alt="wide">شبه واسع</styleName>
 		<styleName type="wdth" subtype="125">تمديد</styleName>
 		<styleName type="wdth" subtype="125" alt="extended">ممتد</styleName>
 		<styleName type="wdth" subtype="125" alt="wide">عريض</styleName>
@@ -11407,23 +11923,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<styleName type="wdth" subtype="150" alt="wide">واسع زائد</styleName>
 		<styleName type="wdth" subtype="200">موسع للغاية</styleName>
 		<styleName type="wdth" subtype="200" alt="extended">ممتد للغاية</styleName>
+		<styleName type="wdth" subtype="200" alt="wide">واسع للغاية</styleName>
 		<styleName type="wght" subtype="100">رفيع</styleName>
 		<styleName type="wght" subtype="200">خفيف زائد</styleName>
 		<styleName type="wght" subtype="200" alt="ultra">خفيف للغاية</styleName>
 		<styleName type="wght" subtype="300">فاتح</styleName>
 		<styleName type="wght" subtype="350">شبه خفيف</styleName>
 		<styleName type="wght" subtype="380">دفتر</styleName>
-		<styleName type="wght" subtype="400">عادي</styleName>
+		<styleName type="wght" subtype="400">معياري</styleName>
 		<styleName type="wght" subtype="500">متوسط</styleName>
-		<styleName type="wght" subtype="600">نصف عريض</styleName>
-		<styleName type="wght" subtype="700">عريض</styleName>
+		<styleName type="wght" subtype="600">شبه عريض</styleName>
+		<styleName type="wght" subtype="600" alt="demi">نصف عريض</styleName>
+		<styleName type="wght" subtype="700">غامق</styleName>
 		<styleName type="wght" subtype="800">عريض زائد</styleName>
 		<styleName type="wght" subtype="800" alt="ultra">عريض للغاية</styleName>
 		<styleName type="wght" subtype="900">أسود</styleName>
 		<styleName type="wght" subtype="900" alt="heavy">ثقيل</styleName>
 		<styleName type="wght" subtype="950">أسود زائد</styleName>
-		<styleName type="wght" subtype="950" alt="ultraheavy">ثقيل للغاية</styleName>
 		<styleName type="wght" subtype="950" alt="ultrablack">أسود للغاية</styleName>
+		<styleName type="wght" subtype="950" alt="ultraheavy">ثقيل للغاية</styleName>
 		<featureName type="afrc">كسور رأسية</featureName>
 		<featureName type="cpsp">تباعد الأحرف الاستهلالية</featureName>
 		<featureName type="dlig">أحرف مزدوجة اختيارية</featureName>

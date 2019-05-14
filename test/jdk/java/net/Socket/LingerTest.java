@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 4796166
+ * @library /test/lib
  * @summary Linger interval delays usage of released file descriptor
  * @run main LingerTest
  * @run main/othervm -Djava.net.preferIPv4Stack=true LingerTest
@@ -31,6 +32,7 @@
 
 import java.net.*;
 import java.io.*;
+import jdk.test.lib.net.IPSupport;
 
 public class LingerTest {
 
@@ -105,6 +107,8 @@ public class LingerTest {
     }
 
     public static void main(String args[]) throws Exception {
+        IPSupport.throwSkippedExceptionIfNonOperational();
+
         InetAddress loopback = InetAddress.getLoopbackAddress();
         ServerSocket ss = new ServerSocket(0, 50, loopback);
 

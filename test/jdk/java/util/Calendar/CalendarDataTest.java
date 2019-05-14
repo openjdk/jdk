@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8190918 8202537
+ * @bug 8190918 8202537 8221432
  * @summary Tests for region dependent calendar data, i.e.,
  *      firstDayOfWeek and minimalDaysInFirstWeek.
  * @modules jdk.localedata
@@ -41,16 +41,16 @@ public class CalendarDataTest {
     // golden data from CLDR
     private static final List<List<String>> FIRSTDAYDATA = List.of(
         List.of("1", "AG AR AS AU BD BR BS BT BW BZ CA CN CO DM DO ET GT " +
-            "GU HK HN ID IE IL IN JM JP KE KH KR LA MH MM MO MT MX MZ " +
-            "NI NP PA PE PH PK PR PY SA SG SV TH TN TT TW UM US VE " +
+            "GU HK HN ID IL IN JM JP KE KH KR LA MH MM MO MT MX MZ " +
+            "NI NP PA PE PH PK PR PT PY SA SG SV TH TT TW UM US VE " +
             "VI WS YE ZA ZW"),
         List.of("2",   "001 AD AI AL AM AN AT AX AZ BA BE BG BM BN BY " +
             "CH CL CM CR CY CZ DE DK EC EE ES FI FJ FO FR GB GE GF GP " +
-            "GR HR HU IS IT KG KZ LB LI LK LT LU LV MC MD ME MK MN MQ " +
-            "MY NL NO NZ PL PT RE RO RU RS SE SI SK SM TJ TM TR UA UY UZ " +
+            "GR HR HU IE IS IT KG KZ LB LI LK LT LU LV MA MC MD ME MK MN MQ " +
+            "MY NL NO NZ PL RE RO RU RS SE SI SK SM TJ TM TN TR UA UY UZ " +
             "VA VN XK"),
         List.of("6", "MV"),
-        List.of("7", "AE AF BH DJ DZ EG IQ IR JO KW LY MA OM QA SD SY"));
+        List.of("7", "AE AF BH DJ DZ EG IQ IR JO KW LY OM QA SD SY"));
 
     private static final List<List<String>> MINDAYSDATA = List.of(
         List.of("1", "001 GU UM US VI"),

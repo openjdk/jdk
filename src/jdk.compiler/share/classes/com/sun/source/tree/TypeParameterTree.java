@@ -40,7 +40,7 @@ import javax.lang.model.element.Name;
  *   <em>annotations</em> <em>name</em>
  * </pre>
  *
- * @jls section 4.4
+ * @jls 4.4 Type Variables
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

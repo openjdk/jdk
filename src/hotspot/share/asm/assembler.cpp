@@ -27,6 +27,8 @@
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "memory/universe.hpp"
+#include "oops/compressedOops.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/os.hpp"
@@ -315,12 +317,12 @@ bool MacroAssembler::uses_implicit_null_check(void* address) {
   intptr_t cell_header_size = Universe::heap()->cell_header_size();
   size_t region_size = os::vm_page_size() + cell_header_size;
 #ifdef _LP64
-  if (UseCompressedOops && Universe::narrow_oop_base() != NULL) {
+  if (UseCompressedOops && CompressedOops::base() != NULL) {
     // A SEGV can legitimately happen in C2 code at address
     // (heap_base + offset) if  Matcher::narrow_oop_use_complex_address
     // is configured to allow narrow oops field loads to be implicitly
     // null checked
-    intptr_t start = ((intptr_t)Universe::narrow_oop_base()) - cell_header_size;
+    intptr_t start = ((intptr_t)CompressedOops::base()) - cell_header_size;
     intptr_t end = start + region_size;
     if (int_address >= start && int_address < end) {
       return true;

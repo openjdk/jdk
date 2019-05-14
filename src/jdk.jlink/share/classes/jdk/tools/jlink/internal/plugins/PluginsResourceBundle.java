@@ -62,7 +62,11 @@ public final class PluginsResourceBundle {
     }
 
     public static String getMessage(String key, Object... args) throws MissingResourceException {
-        String val = pluginsBundle.getString(key);
+        return getMessage(pluginsBundle, key, args);
+    }
+
+    public static String getMessage(ResourceBundle bundle, String key, Object... args) throws MissingResourceException {
+        String val = bundle.getString(key);
         return MessageFormat.format(val, args);
     }
 }

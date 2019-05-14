@@ -30,6 +30,7 @@
 #include "jvmci/jvmciJavaClasses.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 #include "jvmci/metadataHandleBlock.hpp"
+#include "memory/universe.hpp"
 
 OopStorage* JVMCI::_object_handles = NULL;
 MetadataHandleBlock* JVMCI::_metadata_handles = NULL;

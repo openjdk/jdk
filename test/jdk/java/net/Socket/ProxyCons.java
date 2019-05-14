@@ -24,12 +24,15 @@
 /*
  * @test
  * @bug 4097826
+ * @library /test/lib
  * @summary SOCKS support inadequate
  * @run main/timeout=40/othervm -DsocksProxyHost=nonexistant ProxyCons
  * @run main/timeout=40/othervm -DsocksProxyHost=nonexistant -Djava.net.preferIPv4Stack=true ProxyCons
  */
 
 import java.net.*;
+import jdk.test.lib.net.IPSupport;
+
 public class ProxyCons {
     class Server extends Thread {
         ServerSocket server;
@@ -77,6 +80,8 @@ public class ProxyCons {
     }
 
     public static void main(String[] args) throws Exception {
+        IPSupport.throwSkippedExceptionIfNonOperational();
+
         ProxyCons c = new ProxyCons();
         c.test();
     }

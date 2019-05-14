@@ -27,7 +27,6 @@
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "memory/universe.hpp"
 
 // ciUtilities
 //

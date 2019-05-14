@@ -39,6 +39,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/universe.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/orderAccess.hpp"
 #include "utilities/debug.hpp"

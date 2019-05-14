@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2018 Unicode, Inc.
+<!-- Copyright © 1991-2019 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 13911 $"/>
+		<version number="$Revision: 14771 $"/>
 		<language type="sw"/>
 		<territory type="CD"/>
 	</identity>
@@ -17,7 +17,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ar_001">Kiarabu cha Dunia Kilichosanifishwa</language>
 			<language type="arq">Kiarabu cha Aljeria</language>
 			<language type="az">Kiazabajani</language>
-			<language type="bug">Kibugini</language>
 			<language type="gv">Kimanksi</language>
 			<language type="gwi">Kigwichiin</language>
 			<language type="hup">Kihupa</language>
@@ -41,13 +40,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="nqo">Kiinko</language>
 			<language type="pcm">Pijini ya Nijeria</language>
 			<language type="quc">Kikiiche</language>
-			<language type="root">Kiroot</language>
 			<language type="shu">Kiarabu cha Chadi</language>
 			<language type="srn">Kitongo cha Sranan</language>
 			<language type="swb">Kikomoro</language>
 			<language type="syr">Kisiria</language>
 			<language type="udm">Kiudumurti</language>
-			<language type="wae">Kiwalser</language>
 			<language type="yi">Kiyidi</language>
 		</languages>
 		<territories>

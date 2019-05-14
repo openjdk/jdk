@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2018 Unicode, Inc.
+<!-- Copyright © 1991-2019 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 13911 $"/>
+		<version number="$Revision: 14888 $"/>
 		<language type="ccp"/>
 	</identity>
 	<localeDisplayNames>
@@ -548,7 +548,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Brai">𑄝𑄳𑄢𑄳𑄆𑄬𑄣𑄴</script>
 			<script type="Bugi">𑄝𑄪𑄉𑄨</script>
 			<script type="Buhd">𑄝𑄪𑄦𑄨𑄓𑄴</script>
-			<script type="Cakm">𑄌𑄋𑄴𑄟𑄳𑄦</script>
+			<script type="Cakm">𑄌𑄇𑄴𑄟</script>
 			<script type="Cans">𑄎𑄧𑄙 𑄇𑄚𑄓𑄨𑄠𑄚𑄴 𑄃𑄳𑄠𑄝𑄳𑄢𑄮𑄎𑄨𑄚𑄨𑄠𑄚𑄴 𑄥𑄨𑄣𑄬𑄝𑄨𑄇𑄴𑄥𑄧</script>
 			<script type="Cari">𑄇𑄳𑄠𑄢𑄨𑄠𑄚𑄴</script>
 			<script type="Cham">𑄌𑄳𑄠𑄟𑄴</script>
@@ -682,7 +682,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="014">𑄛𑄪𑄇𑄴𑄘𑄩 𑄃𑄜𑄳𑄢𑄨𑄇</territory>
 			<territory type="015">𑄅𑄪𑄖𑄴𑄖𑄮𑄢𑄴 𑄃𑄜𑄳𑄢𑄨𑄇</territory>
 			<territory type="017">𑄟𑄧𑄖𑄴𑄙𑄳𑄠𑄧 𑄃𑄜𑄳𑄢𑄨𑄇</territory>
-			<territory type="018">𑄘𑄧𑄉𑄨𑄚𑄴 𑄃𑄜𑄳𑄢𑄨𑄇 𑄎𑄉</territory>
 			<territory type="019">𑄃𑄟𑄬𑄢𑄨𑄇𑄥𑄴</territory>
 			<territory type="021">𑄅𑄪𑄖𑄴𑄖𑄮𑄢𑄴 𑄎𑄉𑄢𑄴 𑄃𑄟𑄬𑄢𑄨𑄇</territory>
 			<territory type="029">𑄇𑄳𑄠𑄢𑄝𑄨𑄠𑄚𑄴</territory>
@@ -1127,7 +1126,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<exemplarCharacters>[\U00011100 \U00011101 \U00011102 𑄃 𑄄 𑄅 𑄆 𑄇 𑄈 𑄉 𑄊 𑄋 𑄌 𑄍 𑄎 𑄏 𑄐 𑄑 𑄒 𑄓 𑄔 𑄕 𑄖 𑄗 𑄘 𑄙 𑄚 𑄛 𑄜 𑄝 𑄞 𑄟 𑄠 𑄡 𑄢 𑄣 𑄤 𑄥 𑄦 \U00011127 \U00011128 \U00011129 \U0001112A \U0001112B 𑄬 \U0001112D \U0001112E \U0001112F \U00011130 \U00011131 \U00011132 \U00011133 \U00011134]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[]</exemplarCharacters>
 		<exemplarCharacters type="index">[𑄃 𑄄 𑄅 𑄆 𑄇 𑄈 𑄉 𑄊 𑄋 𑄌 𑄍 𑄎 𑄏 𑄐 𑄑 𑄒 𑄓 𑄔 𑄕 𑄖 𑄗 𑄘 𑄙 𑄚 𑄛 𑄜 𑄝 𑄞 𑄟 𑄠 𑄡 𑄢 𑄣 𑄤 𑄥 𑄦]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[\- , . % ‰ + 0০ 1১ 2২ 3৩ 4৪ 5৫ 6৬ 7৭ 8৮ 9৯]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- ‐ – — , ; \: ! ? 𑅃 . … 𑅁 𑅂 𑅀 ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 	</characters>
 	<delimiters>
@@ -3926,13 +3924,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>𑄃𑄧𑄌𑄴𑄑𑄳𑄢𑄬𑄣𑄨𑄠𑄧 𑄃𑄏𑄧𑄣𑄴 𑄉𑄧𑄢𑄳𑄦𑄢𑄴 𑄘𑄨𑄚𑄮𑄃𑄣𑄮𑄢𑄴 𑄃𑄧𑄇𑄴𑄖𑄧</daylight>
 				</long>
 			</metazone>
-			<metazone type="Australia_CentralWestern">
-				<long>
-					<generic>𑄃𑄧𑄌𑄴𑄑𑄳𑄢𑄬𑄣𑄨𑄠𑄧 𑄃𑄏𑄧𑄣𑄴 𑄉𑄧𑄢𑄳𑄦𑄢𑄴 𑄛𑄧𑄏𑄨𑄟𑄬𑄘𑄨 𑄃𑄧𑄇𑄴𑄖𑄧</generic>
-					<standard>𑄃𑄧𑄌𑄴𑄑𑄳𑄢𑄬𑄣𑄨𑄠𑄧 𑄃𑄏𑄧𑄣𑄴 𑄉𑄧𑄢𑄳𑄦𑄢𑄴 𑄛𑄧𑄏𑄨𑄟𑄬𑄘𑄨 𑄟𑄚𑄧𑄇𑄴 𑄃𑄧𑄇𑄴𑄖𑄧</standard>
-					<daylight>𑄃𑄧𑄌𑄴𑄑𑄳𑄢𑄬𑄣𑄨𑄠𑄧 𑄃𑄏𑄧𑄣𑄴 𑄉𑄧𑄢𑄳𑄦𑄢𑄴 𑄛𑄧𑄏𑄨𑄟𑄬𑄘𑄨 𑄘𑄨𑄚𑄮𑄃𑄣𑄮𑄢𑄴 𑄃𑄧𑄇𑄴𑄖𑄧</daylight>
-				</long>
-			</metazone>
 			<metazone type="Australia_Eastern">
 				<long>
 					<generic>𑄛𑄪𑄉𑄬𑄘𑄨 𑄃𑄧𑄌𑄴𑄑𑄳𑄢𑄬𑄣𑄨𑄠𑄧 𑄃𑄧𑄇𑄴𑄖𑄧</generic>
@@ -4770,6 +4761,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<pattern>#,##,##0.###</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
+			<decimalFormatLength type="short">
+				<decimalFormat>
+					<pattern type="1000000000" count="other" draft="contributed">0G</pattern>
+					<pattern type="10000000000" count="other" draft="contributed">00G</pattern>
+					<pattern type="100000000000" count="other" draft="contributed">000G</pattern>
+					<pattern type="1000000000000" count="other" draft="unconfirmed">0T</pattern>
+					<pattern type="10000000000000" count="other" draft="unconfirmed">00T</pattern>
+					<pattern type="100000000000000" count="other" draft="unconfirmed">000T</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
 		</decimalFormats>
 		<scientificFormats numberSystem="cakm">
 			<scientificFormatLength>
@@ -5604,15 +5605,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<symbol>MOP</symbol>
 			</currency>
 			<currency type="MRO">
-				<displayName>𑄟𑄯𑄢𑄨𑄖𑄚𑄨𑄠𑄚𑄴 𑄃𑄮𑄃𑄪𑄉𑄭𑄪𑄠 (1973–2017)</displayName>
-				<displayName count="one">𑄟𑄯𑄢𑄨𑄖𑄚𑄨𑄠𑄚𑄴 𑄃𑄮𑄃𑄪𑄉𑄭𑄪𑄠 (1973–2017)</displayName>
-				<displayName count="other">𑄟𑄯𑄢𑄨𑄖𑄚𑄨𑄠𑄚𑄴 𑄃𑄮𑄃𑄪𑄉𑄭𑄪𑄠 (1973–2017)</displayName>
-				<symbol>MRO</symbol>
-			</currency>
-			<currency type="MRU">
 				<displayName>𑄟𑄯𑄢𑄨𑄖𑄚𑄨𑄠𑄚𑄴 𑄃𑄮𑄃𑄪𑄉𑄭𑄪𑄠</displayName>
 				<displayName count="one">𑄟𑄯𑄢𑄨𑄖𑄚𑄨𑄠𑄚𑄴 𑄃𑄮𑄃𑄪𑄉𑄭𑄪𑄠</displayName>
 				<displayName count="other">𑄟𑄯𑄢𑄨𑄖𑄚𑄨𑄠𑄚𑄴 𑄃𑄮𑄃𑄪𑄉𑄭𑄪𑄠</displayName>
+				<symbol>MRO</symbol>
 			</currency>
 			<currency type="MTL">
 				<displayName>𑄟𑄣𑄴𑄑 𑄣𑄨𑄢</displayName>
@@ -5914,15 +5910,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="STD">
-				<displayName>𑄥𑄃𑄮 𑄑𑄮𑄟𑄬 𑄃𑄳𑄃 𑄛𑄳𑄢𑄨𑄚𑄴𑄥𑄨𑄛𑄬 𑄓𑄮𑄛𑄴𑄢 (1977–2017)</displayName>
-				<displayName count="one">𑄥𑄃𑄮 𑄑𑄮𑄟𑄬 𑄃𑄳𑄃 𑄛𑄳𑄢𑄨𑄚𑄴𑄥𑄨𑄛𑄬 𑄓𑄮𑄛𑄴𑄢 (1977–2017)</displayName>
-				<displayName count="other">𑄥𑄃𑄮 𑄑𑄮𑄟𑄬 𑄃𑄳𑄃 𑄛𑄳𑄢𑄨𑄚𑄴𑄥𑄨𑄛𑄬 𑄓𑄮𑄛𑄴𑄢 (1977–2017)</displayName>
-				<symbol>STD</symbol>
-			</currency>
-			<currency type="STN">
 				<displayName>𑄥𑄃𑄮 𑄑𑄮𑄟𑄬 𑄃𑄳𑄃 𑄛𑄳𑄢𑄨𑄚𑄴𑄥𑄨𑄛𑄬 𑄓𑄮𑄛𑄴𑄢</displayName>
 				<displayName count="one">𑄥𑄃𑄮 𑄑𑄮𑄟𑄬 𑄃𑄳𑄃 𑄛𑄳𑄢𑄨𑄚𑄴𑄥𑄨𑄛𑄬 𑄓𑄮𑄛𑄴𑄢</displayName>
 				<displayName count="other">𑄥𑄃𑄮 𑄑𑄮𑄟𑄬 𑄃𑄳𑄃 𑄛𑄳𑄢𑄨𑄚𑄴𑄥𑄨𑄛𑄬 𑄓𑄮𑄛𑄴𑄢</displayName>
+				<symbol>STD</symbol>
 				<symbol alt="narrow">Db</symbol>
 			</currency>
 			<currency type="SUR">
@@ -5961,10 +5952,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<symbol>TJS</symbol>
 			</currency>
 			<currency type="TMM">
-				<displayName>𑄖𑄪𑄢𑄴𑄇𑄧𑄟𑄬𑄚𑄨𑄌𑄴𑄖𑄚𑄨 𑄟𑄚𑄖𑄴(𑄷𑄿𑄿𑄹-𑄸𑄶𑄶𑄿)</displayName>
-				<displayName count="one">𑄖𑄪𑄢𑄴𑄇𑄧𑄟𑄬𑄚𑄨𑄌𑄴𑄖𑄚𑄨 𑄟𑄚𑄖𑄴(𑄷𑄿𑄿𑄹-𑄸𑄶𑄶𑄿)</displayName>
-				<displayName count="other">𑄖𑄪𑄢𑄴𑄇𑄧𑄟𑄬𑄚𑄨𑄌𑄴𑄖𑄚𑄨 𑄟𑄚𑄖𑄴(𑄷𑄿𑄿𑄹-𑄸𑄶𑄶𑄿)</displayName>
-				<symbol>TMM</symbol>
+				<displayName>𑄖𑄪𑄢𑄴𑄇𑄧𑄟𑄬𑄚𑄨𑄌𑄴𑄖𑄚𑄨 𑄟𑄚𑄖𑄴 (1993–2009)</displayName>
 			</currency>
 			<currency type="TMT">
 				<displayName>𑄖𑄪𑄢𑄴𑄇𑄧𑄟𑄬𑄚𑄨𑄌𑄴𑄖𑄚𑄨 𑄟𑄚𑄖𑄴</displayName>
@@ -6186,10 +6174,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<symbol alt="narrow">ZK</symbol>
 			</currency>
 			<currency type="ZRN">
-				<displayName>𑄎𑄭𑄢𑄨𑄠𑄚𑄴 𑄚𑄨𑄅𑄪 𑄎𑄭𑄢𑄬 (𑄷𑄿𑄿𑄹-𑄷𑄿𑄿𑄾)</displayName>
+				<displayName>𑄎𑄭𑄢𑄨𑄠𑄚𑄴 𑄚𑄨𑄅𑄪 𑄎𑄭𑄢𑄬 (1993–1998)</displayName>
 			</currency>
 			<currency type="ZRZ">
-				<displayName>𑄎𑄭𑄢𑄨𑄠𑄚𑄴 𑄚𑄨𑄅𑄪 𑄎𑄭𑄢𑄬 (𑄷𑄿𑄽𑄷-𑄷𑄿𑄿𑄹)</displayName>
+				<displayName>𑄎𑄭𑄢𑄨𑄠𑄚𑄴 𑄚𑄨𑄅𑄪 𑄎𑄭𑄢𑄬 (1971–1993)</displayName>
 			</currency>
 			<currency type="ZWD">
 				<displayName>𑄎𑄨𑄟𑄴𑄝𑄝𑄪𑄠𑄬 𑄓𑄧𑄣𑄢𑄴 (𑄷𑄿𑄾𑄶-𑄸𑄶𑄶𑄾)</displayName>

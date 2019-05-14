@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "memory/universe.hpp"
 #include "unittest.hpp"
 
 TEST_VM(CollectedHeap, is_in) {

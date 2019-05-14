@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2018 Unicode, Inc.
+<!-- Copyright © 1991-2019 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 13839 $"/>
+		<version number="$Revision: 14786 $"/>
 		<language type="ar"/>
 		<territory type="MA"/>
 	</identity>
@@ -21,88 +21,59 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<months>
 					<monthContext type="format">
 						<monthWidth type="abbreviated">
-							<month type="1">يناير</month>
-							<month type="2">فبراير</month>
-							<month type="3">مارس</month>
 							<month type="4">أبريل</month>
 							<month type="5">ماي</month>
-							<month type="6">يونيو</month>
 							<month type="7">يوليوز</month>
 							<month type="8">غشت</month>
 							<month type="9">شتنبر</month>
-							<month type="10">أكتوبر</month>
 							<month type="11">نونبر</month>
 							<month type="12">دجنبر</month>
 						</monthWidth>
 						<monthWidth type="narrow">
-							<month type="1">ي</month>
-							<month type="2">ف</month>
-							<month type="3">م</month>
 							<month type="4">أ</month>
 							<month type="5">م</month>
 							<month type="6">ن</month>
 							<month type="7">ل</month>
-							<month type="8">غ</month>
 							<month type="9">ش</month>
 							<month type="10">ك</month>
 							<month type="11">ب</month>
 							<month type="12">د</month>
 						</monthWidth>
 						<monthWidth type="wide">
-							<month type="1">يناير</month>
-							<month type="2">فبراير</month>
-							<month type="3">مارس</month>
 							<month type="4">أبريل</month>
 							<month type="5">ماي</month>
-							<month type="6">يونيو</month>
 							<month type="7">يوليوز</month>
 							<month type="8">غشت</month>
 							<month type="9">شتنبر</month>
-							<month type="10">أكتوبر</month>
 							<month type="11">نونبر</month>
 							<month type="12">دجنبر</month>
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
 						<monthWidth type="abbreviated">
-							<month type="1">يناير</month>
-							<month type="2">فبراير</month>
-							<month type="3">مارس</month>
-							<month type="4">أبريل</month>
 							<month type="5">ماي</month>
-							<month type="6">يونيو</month>
 							<month type="7">يوليوز</month>
 							<month type="8">غشت</month>
 							<month type="9">شتنبر</month>
-							<month type="10">أكتوبر</month>
 							<month type="11">نونبر</month>
 							<month type="12">دجنبر</month>
 						</monthWidth>
 						<monthWidth type="narrow">
-							<month type="1">ي</month>
-							<month type="2">ف</month>
-							<month type="3">م</month>
 							<month type="4">أ</month>
 							<month type="5">م</month>
 							<month type="6">ن</month>
 							<month type="7">ل</month>
-							<month type="8">غ</month>
 							<month type="9">ش</month>
 							<month type="10">ك</month>
 							<month type="11">ب</month>
 							<month type="12">د</month>
 						</monthWidth>
 						<monthWidth type="wide">
-							<month type="1">يناير</month>
-							<month type="2">فبراير</month>
-							<month type="3">مارس</month>
 							<month type="4">أبريل</month>
 							<month type="5">ماي</month>
-							<month type="6">يونيو</month>
 							<month type="7">يوليوز</month>
 							<month type="8">غشت</month>
 							<month type="9">شتنبر</month>
-							<month type="10">أكتوبر</month>
 							<month type="11">نونبر</month>
 							<month type="12">دجنبر</month>
 						</monthWidth>
@@ -135,6 +106,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</dates>
 	<numbers>
 		<defaultNumberingSystem>latn</defaultNumberingSystem>
+		<symbols numberSystem="arab">
+			<decimal draft="contributed">٫</decimal>
+			<group draft="contributed">٬</group>
+		</symbols>
 		<symbols numberSystem="latn">
 			<decimal>,</decimal>
 			<group>.</group>

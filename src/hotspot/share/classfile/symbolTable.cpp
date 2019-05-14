@@ -503,6 +503,13 @@ struct SizeFunc : StackObj {
   };
 };
 
+TableStatistics SymbolTable::get_table_statistics() {
+  static TableStatistics ts;
+  SizeFunc sz;
+  ts = _local_table->statistics_get(Thread::current(), sz, ts);
+  return ts;
+}
+
 void SymbolTable::print_table_statistics(outputStream* st,
                                          const char* table_name) {
   SizeFunc sz;

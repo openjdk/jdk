@@ -226,7 +226,7 @@ class ThreadSafepointState: public CHeapObj<mtThread> {
 
   // debugging
   void print_on(outputStream* st) const;
-  void print() const                        { print_on(tty); }
+  void print() const;
 
   // Initialize
   static void create(JavaThread *thread);

@@ -29,8 +29,10 @@
 #include "memory/allocation.hpp"
 #include "oops/array.hpp"
 #include "oops/oopHandle.hpp"
+#include "runtime/handles.hpp"
 #include "utilities/align.hpp"
 #include "utilities/constantTag.hpp"
+#include "utilities/growableArray.hpp"
 
 class PSPromotionManager;
 

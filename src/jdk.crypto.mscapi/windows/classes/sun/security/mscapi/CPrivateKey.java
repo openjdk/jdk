@@ -62,9 +62,13 @@ class CPrivateKey extends CKey implements PrivateKey {
     }
 
     public String toString() {
-        return algorithm + "PrivateKey [size=" + keyLength + " bits, type=" +
-            getKeyType(handles.hCryptKey) + ", container=" +
-            getContainerName(handles.hCryptProv) + "]";
+        if (handles.hCryptKey != 0) {
+            return algorithm + "PrivateKey [size=" + keyLength + " bits, type=" +
+                    getKeyType(handles.hCryptKey) + ", container=" +
+                    getContainerName(handles.hCryptProv) + "]";
+        } else {
+            return algorithm + "PrivateKey [size=" + keyLength + " bits, type=CNG]";
+        }
     }
 
     // This class is not serializable

@@ -32,7 +32,8 @@ import javax.tools.JavaFileObject;
  * Represents the abstract syntax tree for compilation units (source
  * files) and package declarations (package-info.java).
  *
- * @jls sections 7.3, and 7.4
+ * @jls 7.3 Compilation Units
+ * @jls 7.4 Package Declarations
  *
  * @author Peter von der Ah&eacute;
  * @since 1.6

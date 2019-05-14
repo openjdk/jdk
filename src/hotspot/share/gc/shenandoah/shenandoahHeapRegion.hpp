@@ -29,7 +29,6 @@
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahPacer.hpp"
-#include "memory/universe.hpp"
 #include "utilities/sizes.hpp"
 
 class VMStructs;

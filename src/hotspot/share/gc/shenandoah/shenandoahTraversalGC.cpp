@@ -35,6 +35,7 @@
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
+#include "gc/shenandoah/shenandoahForwarding.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.inline.hpp"
@@ -52,6 +53,7 @@
 #include "memory/iterator.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/universe.hpp"
 
 /**
  * NOTE: We are using the SATB buffer in thread.hpp and satbMarkQueue.hpp, however, it is not an SATB algorithm.
@@ -554,7 +556,10 @@ bool ShenandoahTraversalGC::check_and_handle_cancelled_gc(ShenandoahTaskTerminat
 }
 
 void ShenandoahTraversalGC::concurrent_traversal_collection() {
-  ClassLoaderDataGraph::clear_claimed_marks();
+  {
+    MutexLocker ml(ClassLoaderDataGraph_lock);
+    ClassLoaderDataGraph::clear_claimed_marks();
+  }
 
   ShenandoahGCPhase phase_work(ShenandoahPhaseTimings::conc_traversal);
   if (!_heap->cancelled_gc()) {
@@ -637,7 +642,7 @@ void ShenandoahTraversalGC::final_traversal_collection() {
         bool candidate = traversal_regions->is_in(r) && !r->has_live() && not_allocated;
         if (r->is_humongous_start() && candidate) {
           // Trash humongous.
-          HeapWord* humongous_obj = r->bottom() + ShenandoahBrooksPointer::word_size();
+          HeapWord* humongous_obj = r->bottom() + ShenandoahForwarding::word_size();
           assert(!ctx->is_marked(oop(humongous_obj)), "must not be marked");
           r->make_trash_immediate();
           while (i + 1 < num_regions && _heap->get_region(i + 1)->is_humongous_continuation()) {

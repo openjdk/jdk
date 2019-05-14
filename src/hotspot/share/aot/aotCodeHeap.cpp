@@ -35,6 +35,8 @@
 #include "jvmci/compilerRuntime.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/universe.hpp"
+#include "oops/compressedOops.hpp"
 #include "oops/method.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/os.hpp"
@@ -577,8 +579,8 @@ void AOTCodeHeap::link_global_lib_symbols() {
     SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_heap_top_address", address, (heap->supports_inline_contig_alloc() ? heap->top_addr() : NULL));
     SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_heap_end_address", address, (heap->supports_inline_contig_alloc() ? heap->end_addr() : NULL));
     SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_polling_page", address, os::get_polling_page());
-    SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_narrow_klass_base_address", address, Universe::narrow_klass_base());
-    SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_narrow_oop_base_address", address, Universe::narrow_oop_base());
+    SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_narrow_klass_base_address", address, CompressedKlassPointers::base());
+    SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_narrow_oop_base_address", address, CompressedOops::base());
 #if INCLUDE_G1GC
     SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_log_of_heap_region_grain_bytes", int, HeapRegion::LogOfHRGrainBytes);
 #endif

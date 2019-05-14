@@ -30,6 +30,7 @@
 #include "classfile/moduleEntry.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/universe.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/handles.inline.hpp"

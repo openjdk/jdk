@@ -31,6 +31,7 @@
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
+#include "memory/universe.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 
 void VM_G1CollectFull::doit() {

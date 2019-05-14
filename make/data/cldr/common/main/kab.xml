@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2018 Unicode, Inc.
+<!-- Copyright © 1991-2019 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 13911 $"/>
+		<version number="$Revision: 14782 $"/>
 		<language type="kab"/>
 	</identity>
 	<localeDisplayNames>
@@ -22,7 +22,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ace" draft="unconfirmed">Tačinist</language>
 			<language type="ada" draft="unconfirmed">Tadangmit</language>
 			<language type="ady" draft="unconfirmed">Tadiganit</language>
-			<language type="af" draft="unconfirmed">Tafrikanst</language>
+			<language type="af" draft="unconfirmed">Tafrikant</language>
 			<language type="agq" draft="unconfirmed">Taghemit</language>
 			<language type="ain" draft="unconfirmed">Taynut</language>
 			<language type="ak">Takanit</language>
@@ -32,16 +32,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="an" draft="unconfirmed">Taṛagunit</language>
 			<language type="anp" draft="unconfirmed">Tangikat</language>
 			<language type="ar">Taɛrabt</language>
-			<language type="ar_001" draft="unconfirmed">Taɛrabt tatrart</language>
 			<language type="arn" draft="unconfirmed">Tamapuct</language>
 			<language type="arp" draft="unconfirmed">Taṛapahut</language>
 			<language type="as" draft="unconfirmed">Tasamizt</language>
 			<language type="asa" draft="unconfirmed">Tasut</language>
-			<language type="ast" draft="unconfirmed">Tasturyant</language>
+			<language type="ast" draft="unconfirmed">Tasturit</language>
 			<language type="av" draft="unconfirmed">Tavarikt</language>
 			<language type="awa" draft="unconfirmed">Tawadhit</language>
-			<language type="ay" draft="unconfirmed">Taymarat</language>
-			<language type="az" draft="unconfirmed">Tazerbayǧant</language>
+			<language type="ay" draft="unconfirmed">Taymarit</language>
+			<language type="az" draft="unconfirmed">Tazerbiǧanit</language>
 			<language type="az" alt="short" draft="unconfirmed">Tazrit</language>
 			<language type="ba" draft="unconfirmed">Tabackirt</language>
 			<language type="ban" draft="unconfirmed">Tabalinit</language>
@@ -84,18 +83,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="dar" draft="unconfirmed">Tadargwat</language>
 			<language type="dav" draft="unconfirmed">Tataytat</language>
 			<language type="de">Talmant</language>
-			<language type="de_AT" draft="unconfirmed">Talmant n Ustriya</language>
-			<language type="de_CH" draft="unconfirmed">Talmant n Swis</language>
+			<language type="de_AT" draft="unconfirmed">Talmanit n Ustriya</language>
+			<language type="de_CH" draft="unconfirmed">Talmanit n Swis</language>
 			<language type="dgr" draft="unconfirmed">Tadugribt</language>
 			<language type="dje" draft="unconfirmed">Tazarmat</language>
-			<language type="dsb" draft="unconfirmed">Tasiṛbit n wadda</language>
+			<language type="dsb" draft="unconfirmed">Taṣurbyant n wadda</language>
 			<language type="dua" draft="unconfirmed">Tadwalat</language>
 			<language type="dv" draft="unconfirmed">Tamaldivit</language>
 			<language type="dyo" draft="unconfirmed">Jula-Funyi</language>
 			<language type="dz" draft="unconfirmed">Tadzungat</language>
 			<language type="dzg" draft="unconfirmed">Tadazagat</language>
 			<language type="ebu" draft="unconfirmed">Tumbut</language>
-			<language type="ee" draft="unconfirmed">Tawit</language>
+			<language type="ee" draft="unconfirmed">Tiwit</language>
 			<language type="efi" draft="unconfirmed">Tafikt</language>
 			<language type="eka" draft="unconfirmed">Takajukt</language>
 			<language type="el">Tagrikit</language>
@@ -128,14 +127,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="fy" draft="unconfirmed">Tafrizunt n umalu</language>
 			<language type="ga" draft="unconfirmed">Tirlandit</language>
 			<language type="gaa" draft="unconfirmed">Tagat</language>
-			<language type="gd" draft="unconfirmed">Tagalikant n Skutland</language>
+			<language type="gd" draft="unconfirmed">Tagaylikt n Skuṭland</language>
 			<language type="gez" draft="unconfirmed">Tagizit</language>
 			<language type="gil" draft="unconfirmed">Tajibṛaltart</language>
-			<language type="gl" draft="unconfirmed">Tagalisyant</language>
-			<language type="gn" draft="unconfirmed">Tagwaranit</language>
+			<language type="gl" draft="unconfirmed">Tagalisit</language>
+			<language type="gn" draft="unconfirmed">Tagaranit</language>
 			<language type="gor" draft="unconfirmed">Taguruntalut</language>
-			<language type="gsw" draft="unconfirmed">Talmanit n Swis</language>
-			<language type="gu" draft="unconfirmed">Tagujaratit</language>
+			<language type="gsw" draft="unconfirmed">Talmanit n Swiss</language>
+			<language type="gu" draft="unconfirmed">Taguǧaṛatit</language>
 			<language type="guz" draft="unconfirmed">Tagusit</language>
 			<language type="gv" draft="unconfirmed">Tamanksit</language>
 			<language type="gwi" draft="unconfirmed">Tagwičint</language>
@@ -150,18 +149,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ht" draft="unconfirmed">Takriyult n Hayti</language>
 			<language type="hu">Tahungarit</language>
 			<language type="hup" draft="unconfirmed">Tahupat</language>
-			<language type="hy" draft="unconfirmed">Tarminit</language>
-			<language type="hz" draft="unconfirmed">Tahirirut</language>
-			<language type="ia" draft="unconfirmed">Tantirlingwat</language>
+			<language type="hy" draft="unconfirmed">Taṛminit</language>
+			<language type="hz" draft="unconfirmed">Tahiriṛut</language>
+			<language type="ia" draft="unconfirmed">Tutlayt tagraɣlant</language>
 			<language type="iba" draft="unconfirmed">Tibant</language>
 			<language type="ibb" draft="unconfirmed">Tabibyut</language>
 			<language type="id">Tandunisit</language>
 			<language type="ig">Tigbut</language>
-			<language type="ii" draft="unconfirmed">Yi n Sicwan</language>
+			<language type="ii" draft="unconfirmed">Yi-n-Sicwan</language>
 			<language type="ilo" draft="unconfirmed">Tilukanut</language>
 			<language type="inh" draft="unconfirmed">Tinguct</language>
 			<language type="io" draft="unconfirmed">Tidut</language>
-			<language type="is" draft="unconfirmed">Taslandit</language>
+			<language type="is" draft="unconfirmed">Taṣlandit</language>
 			<language type="it">Taṭalyanit</language>
 			<language type="iu" draft="unconfirmed">Tinuktitut</language>
 			<language type="ja">Tajapunit</language>
@@ -203,23 +202,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ksh" draft="unconfirmed">Takulunyant</language>
 			<language type="ku" draft="unconfirmed">Takurdit</language>
 			<language type="kum" draft="unconfirmed">Takumyakt</language>
-			<language type="kv" draft="unconfirmed">Takumit</language>
+			<language type="kv" draft="unconfirmed">Taklingunit</language>
 			<language type="kw" draft="unconfirmed">Takurnikt</language>
 			<language type="ky" draft="unconfirmed">Takirgizt</language>
-			<language type="la" draft="unconfirmed">Talatinit</language>
+			<language type="la" draft="unconfirmed">Talaṭinit</language>
 			<language type="lad" draft="unconfirmed">Taladinut</language>
 			<language type="lag" draft="unconfirmed">Talangit</language>
-			<language type="lb" draft="unconfirmed">Taluxemburgit</language>
+			<language type="lb" draft="unconfirmed">Taluksumburgit</language>
 			<language type="lez" draft="unconfirmed">Talezɣant</language>
 			<language type="lg" draft="unconfirmed">Tagandat</language>
 			<language type="li" draft="unconfirmed">Talimburjwat</language>
 			<language type="lkt" draft="unconfirmed">Talakutat</language>
 			<language type="ln" draft="unconfirmed">Talingalat</language>
-			<language type="lo" draft="unconfirmed">Talawit</language>
+			<language type="lo" draft="unconfirmed">Talawsit</language>
 			<language type="loz" draft="unconfirmed">Taluzit</language>
 			<language type="lrc" draft="unconfirmed">Talurit n ugafa</language>
 			<language type="lt" draft="unconfirmed">Talitwanit</language>
-			<language type="lu" draft="unconfirmed">Talubat n Katanga</language>
+			<language type="lu" draft="unconfirmed">Talubit-Takatangit</language>
 			<language type="lua" draft="unconfirmed">Talubat n Lulua</language>
 			<language type="lun" draft="unconfirmed">Talundat</language>
 			<language type="luo" draft="unconfirmed">Taluwut</language>
@@ -238,19 +237,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="mg" draft="unconfirmed">Tamalgact</language>
 			<language type="mgh" draft="unconfirmed">Makhuwa-meetto</language>
 			<language type="mgo" draft="unconfirmed">Tamitat</language>
-			<language type="mh" draft="unconfirmed">Tamarcalit</language>
+			<language type="mh" draft="unconfirmed">Tamaṛcalit</language>
 			<language type="mi" draft="unconfirmed">Tamawrit</language>
 			<language type="mic" draft="unconfirmed">Tamikmakt</language>
 			<language type="min" draft="unconfirmed">Taminangkabut</language>
-			<language type="mk" draft="unconfirmed">Tamasidunt</language>
-			<language type="ml" draft="unconfirmed">Tamalayalamt</language>
+			<language type="mk" draft="unconfirmed">Tamasidunit</language>
+			<language type="ml" draft="unconfirmed">Tamalayalamit</language>
 			<language type="mn" draft="unconfirmed">Tamungulit</language>
 			<language type="mni" draft="unconfirmed">Tamanipurit</language>
 			<language type="moh" draft="unconfirmed">Tamuhawkt</language>
 			<language type="mos" draft="unconfirmed">Tamurit</language>
-			<language type="mr" draft="unconfirmed">Tamaratit</language>
+			<language type="mr" draft="unconfirmed">Tamaṛatit</language>
 			<language type="ms">Tamalawit</language>
-			<language type="mt" draft="unconfirmed">Tamaltit</language>
+			<language type="mt" draft="unconfirmed">Tamalṭit</language>
 			<language type="mua" draft="unconfirmed">Tamundangt</language>
 			<language type="mul" draft="unconfirmed">Tugett n tutlayin</language>
 			<language type="mus" draft="unconfirmed">Takrikt</language>
@@ -271,7 +270,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="nl">Tadučit</language>
 			<language type="nl_BE" draft="unconfirmed">Taflamant</language>
 			<language type="nmg" draft="unconfirmed">Takwazyut</language>
-			<language type="nn" draft="unconfirmed">Tanurvijit Nynorsk</language>
+			<language type="nn" draft="unconfirmed">Tanuṛvijt ninuṛsk</language>
 			<language type="nnh" draft="unconfirmed">Tangimbunt</language>
 			<language type="nog" draft="unconfirmed">Tanugayt</language>
 			<language type="nqo" draft="unconfirmed">Tankut</language>
@@ -293,9 +292,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="pcm" draft="unconfirmed">Tapidgint n Nijirya</language>
 			<language type="pl">Tapulunit</language>
 			<language type="prg" draft="unconfirmed">Taprusit</language>
-			<language type="ps" draft="unconfirmed">Tapactunt</language>
+			<language type="ps" draft="unconfirmed">Tapactut</language>
 			<language type="pt">Tapurtugalit</language>
-			<language type="qu" draft="unconfirmed">Takicwat</language>
+			<language type="pt_BR" draft="unconfirmed">Tapuṛṭugit (Brizil)</language>
+			<language type="pt_PT" draft="unconfirmed">Tapuṛṭugit (Purtugal)</language>
+			<language type="qu" draft="unconfirmed">Takicwit</language>
 			<language type="quc" draft="unconfirmed">Takict</language>
 			<language type="rap" draft="unconfirmed">Tarapanwit</language>
 			<language type="rar" draft="unconfirmed">Tararutungant</language>
@@ -316,29 +317,29 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="sat" draft="unconfirmed">Tasantalt</language>
 			<language type="sba" draft="unconfirmed">Tangambayt</language>
 			<language type="sbp" draft="unconfirmed">Tasangut</language>
-			<language type="sc" draft="unconfirmed">Tasardit</language>
+			<language type="sc" draft="unconfirmed">Tasardinit</language>
 			<language type="scn" draft="unconfirmed">Tasisilit</language>
 			<language type="sco" draft="unconfirmed">Taskutlandit</language>
-			<language type="sd" draft="unconfirmed">Tasindhit</language>
-			<language type="se" draft="unconfirmed">Tasami n Ugafa</language>
+			<language type="sd" draft="unconfirmed">Tasinḍit</language>
+			<language type="se" draft="unconfirmed">Tasamt n ugafa</language>
 			<language type="seh" draft="unconfirmed">Tasisinat</language>
 			<language type="ses" draft="unconfirmed">Takuyraburut n Senni</language>
-			<language type="sg" draft="unconfirmed">Tasanɣut</language>
+			<language type="sg" draft="unconfirmed">Tasangit</language>
 			<language type="shi" draft="unconfirmed">Tacelḥit</language>
 			<language type="shn" draft="unconfirmed">Tacant</language>
-			<language type="si" draft="unconfirmed">Tasinɣalit</language>
+			<language type="si" draft="unconfirmed">Tasinhalit</language>
 			<language type="sk" draft="unconfirmed">Tasluvakt</language>
 			<language type="sl" draft="unconfirmed">Tasluvinit</language>
-			<language type="sm" draft="unconfirmed">Tasamwant</language>
+			<language type="sm" draft="unconfirmed">Taṣamwant</language>
 			<language type="sma" draft="unconfirmed">Tasamit n unzul</language>
 			<language type="smj" draft="unconfirmed">Tasamit n Lule</language>
 			<language type="smn" draft="unconfirmed">Tasami n Inari</language>
 			<language type="sms" draft="unconfirmed">Tasamit n Skolt</language>
-			<language type="sn" draft="unconfirmed">Tacunat</language>
+			<language type="sn" draft="unconfirmed">Tacunit</language>
 			<language type="snk" draft="unconfirmed">Tasunikit</language>
 			<language type="so">Taṣumalit</language>
 			<language type="sq" draft="unconfirmed">Talbanit</language>
-			<language type="sr" draft="unconfirmed">Tasirbit</language>
+			<language type="sr" draft="unconfirmed">Taṣirbit</language>
 			<language type="srn" draft="unconfirmed">Tasranant n Tongo</language>
 			<language type="ss" draft="unconfirmed">Taswatit</language>
 			<language type="ssy" draft="unconfirmed">Tasahut</language>
@@ -346,32 +347,32 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="su" draft="unconfirmed">Tasudanit</language>
 			<language type="suk" draft="unconfirmed">Tasukumat</language>
 			<language type="sv">Taswidit</language>
-			<language type="sw" draft="unconfirmed">Taswahilit</language>
-			<language type="sw_CD" draft="unconfirmed">Taswahilit n Kungu</language>
+			<language type="sw" draft="unconfirmed">Taswayilit</language>
+			<language type="sw_CD" draft="unconfirmed">Taswayilit n Kungu</language>
 			<language type="swb" draft="unconfirmed">Takumurit</language>
 			<language type="syr" draft="unconfirmed">Tasiryakt</language>
 			<language type="ta">Taṭamulit</language>
-			<language type="te" draft="unconfirmed">Tatilugut</language>
+			<language type="te" draft="unconfirmed">Taluggut</language>
 			<language type="tem" draft="unconfirmed">Tatimnit</language>
 			<language type="teo" draft="unconfirmed">Tatizut</language>
 			<language type="tet" draft="unconfirmed">Tatitumt</language>
 			<language type="tg" draft="unconfirmed">Tatajikt</language>
 			<language type="th">Taṭaylundit</language>
-			<language type="ti" draft="unconfirmed">Tigrignat</language>
+			<language type="ti" draft="unconfirmed">Tigrinit</language>
 			<language type="tig" draft="unconfirmed">Tatigrit</language>
 			<language type="tk" draft="unconfirmed">Taturkmant</language>
 			<language type="tlh" draft="unconfirmed">Taklingunt</language>
-			<language type="tn" draft="unconfirmed">Tatswanat</language>
+			<language type="tn" draft="unconfirmed">Tattwanit</language>
 			<language type="to" draft="unconfirmed">Tatungant</language>
 			<language type="tpi" draft="unconfirmed">Tatukt n Pisin</language>
 			<language type="tr">Taṭurkit</language>
 			<language type="trv" draft="unconfirmed">Tatarukut</language>
-			<language type="ts" draft="unconfirmed">Tatsungat</language>
-			<language type="tt" draft="unconfirmed">Tatatart</language>
+			<language type="ts" draft="unconfirmed">Ttunga</language>
+			<language type="tt" draft="unconfirmed">Taṭaṭarit</language>
 			<language type="tum" draft="unconfirmed">Tatumbukat</language>
 			<language type="tvl" draft="unconfirmed">Tatuvalut</language>
 			<language type="twq" draft="unconfirmed">Tatasawaqt</language>
-			<language type="ty" draft="unconfirmed">Tatahitant</language>
+			<language type="ty" draft="unconfirmed">Tahesiant</language>
 			<language type="tyv" draft="unconfirmed">Tatuvat</language>
 			<language type="tzm" draft="unconfirmed">Tamaziɣt n Waṭlas alemmas</language>
 			<language type="udm" draft="unconfirmed">Tudmurt</language>
@@ -386,13 +387,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="vi">Tabyiṭnamit</language>
 			<language type="vo" draft="unconfirmed">Tavulapukt</language>
 			<language type="vun" draft="unconfirmed">Tavunjut</language>
-			<language type="wa" draft="unconfirmed">Tawalunt</language>
+			<language type="wa" draft="unconfirmed">Tawalunit</language>
 			<language type="wae" draft="unconfirmed">Tawalsirt</language>
 			<language type="wal" draft="unconfirmed">Tawalamut</language>
 			<language type="war" draft="unconfirmed">Tawarayt</language>
 			<language type="wo" draft="unconfirmed">Tawuluft</language>
 			<language type="xal" draft="unconfirmed">Takalmukt</language>
-			<language type="xh" draft="unconfirmed">Taksuzat</language>
+			<language type="xh" draft="unconfirmed">Taksuzit</language>
 			<language type="xog" draft="unconfirmed">Tasugat</language>
 			<language type="yav" draft="unconfirmed">Tayangbent</language>
 			<language type="ybb" draft="unconfirmed">Yemba</language>
@@ -545,7 +546,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="CU">Kuba</territory>
 			<territory type="CV">Tigzirin n yixef azegzaw</territory>
 			<territory type="CW" draft="unconfirmed">Kuṛaṣaw</territory>
-			<territory type="CX" draft="unconfirmed">Tigzirin n Krsitmas</territory>
+			<territory type="CX" draft="unconfirmed">Tigzrin n Kristmaṣ</territory>
 			<territory type="CY">Cipr</territory>
 			<territory type="CZ">Čček</territory>
 			<territory type="CZ" alt="variant" draft="unconfirmed">Tagduda n Čik</territory>
@@ -565,7 +566,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ES">Spanya</territory>
 			<territory type="ET">Utyupi</territory>
 			<territory type="EU" draft="unconfirmed">Tiddukla n Turuft</territory>
-			<territory type="EZ" draft="unconfirmed">Tamnaṭ n Turuft</territory>
+			<territory type="EZ" draft="unconfirmed">Tamnaḍt n Turuft</territory>
 			<territory type="FI">Finlund</territory>
 			<territory type="FJ">Fiji</territory>
 			<territory type="FK">Tigzirin n Falkland</territory>
@@ -686,7 +687,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="PN">Pitkarin</territory>
 			<territory type="PR">Purtu Riku</territory>
 			<territory type="PS">Falisṭin d Ɣezza</territory>
-			<territory type="PS" alt="short" draft="unconfirmed">Palistin</territory>
+			<territory type="PS" alt="short" draft="unconfirmed">Falisṭin</territory>
 			<territory type="PT">Purtugal</territory>
 			<territory type="PW">Palu</territory>
 			<territory type="PY">Paragway</territory>
@@ -705,7 +706,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="SG">Singafur</territory>
 			<territory type="SH">Sant Ilina</territory>
 			<territory type="SI">Sluvinya</territory>
-			<territory type="SJ" draft="unconfirmed">Salvard d Jan Mayen</territory>
+			<territory type="SJ" draft="unconfirmed">Svalvard d Jan Mayen</territory>
 			<territory type="SK">Sluvakya</territory>
 			<territory type="SL">Sira Lyun</territory>
 			<territory type="SM">San Marinu</territory>
@@ -759,7 +760,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ZA">Tafriqt Wadda</territory>
 			<territory type="ZM">Zambya</territory>
 			<territory type="ZW">Zimbabwi</territory>
-			<territory type="ZZ" draft="unconfirmed">Timanḍin tirussinin</territory>
+			<territory type="ZZ" draft="unconfirmed">Timnaḍin Tirussinin</territory>
 		</territories>
 		<keys>
 			<key type="calendar" draft="unconfirmed">Awitay</key>
@@ -836,7 +837,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric" draft="unconfirmed">Amitran</measurementSystemName>
-			<measurementSystemName type="UK" draft="unconfirmed">Impiryal</measurementSystemName>
+			<measurementSystemName type="UK" draft="unconfirmed">Aglizi</measurementSystemName>
 			<measurementSystemName type="US" draft="unconfirmed">Amarikan</measurementSystemName>
 		</measurementSystemNames>
 		<codePatterns>
@@ -850,6 +851,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<exemplarCharacters type="auxiliary">[o v]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C Č D Ḍ E Ɛ F G Ǧ Ɣ H Ḥ I J K L M N P Q R Ṛ S Ṣ T Ṭ U W X Y Z Ẓ]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[  \- , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="unconfirmed">[\- , ; \: ! ? . ( ) \[ \] \{ \}]</exemplarCharacters>
 		<ellipsis type="final" draft="unconfirmed">{0}…</ellipsis>
 		<ellipsis type="initial" draft="unconfirmed">…{0}</ellipsis>
 		<ellipsis type="medial" draft="unconfirmed">{0}…{1}</ellipsis>
@@ -1136,7 +1138,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="9" draft="unconfirmed">Ctembeṛ</month>
 							<month type="10" draft="unconfirmed">Tubeṛ</month>
 							<month type="11" draft="unconfirmed">Wambeṛ</month>
-							<month type="12" draft="unconfirmed">Dujembeṛ</month>
+							<month type="12" draft="unconfirmed">Duǧembeṛ</month>
 						</monthWidth>
 					</monthContext>
 				</months>
@@ -1241,10 +1243,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</quarterContext>
 					<quarterContext type="stand-alone">
 						<quarterWidth type="abbreviated">
-							<quarter type="1" draft="unconfirmed">Kyr1</quarter>
-							<quarter type="2" draft="unconfirmed">Kyr2</quarter>
-							<quarter type="3" draft="unconfirmed">Kyr3</quarter>
-							<quarter type="4" draft="unconfirmed">Kyr4</quarter>
+							<quarter type="1" draft="unconfirmed">Kḍg1</quarter>
+							<quarter type="2" draft="unconfirmed">Kḍg2</quarter>
+							<quarter type="3" draft="unconfirmed">Kḍg3</quarter>
+							<quarter type="4" draft="unconfirmed">Kḍg4</quarter>
 						</quarterWidth>
 						<quarterWidth type="narrow">
 							<quarter type="1" draft="unconfirmed">1</quarter>
@@ -1253,10 +1255,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<quarter type="4" draft="unconfirmed">4</quarter>
 						</quarterWidth>
 						<quarterWidth type="wide">
-							<quarter type="1" draft="unconfirmed">Akraḍyur wis-yiwen</quarter>
-							<quarter type="2" draft="unconfirmed">akraḍyur wis-sin</quarter>
+							<quarter type="1" draft="unconfirmed">akraḍaggur amenzu</quarter>
+							<quarter type="2" draft="unconfirmed">akraḍaggur wis-sin</quarter>
 							<quarter type="3" draft="unconfirmed">akraḍaggur wis-kraḍ</quarter>
-							<quarter type="4" draft="unconfirmed">Akraḍyur wis-kuẓ</quarter>
+							<quarter type="4" draft="unconfirmed">akraḍaggur wis-kuẓ</quarter>
 						</quarterWidth>
 					</quarterContext>
 				</quarters>
@@ -6036,11 +6038,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<symbol draft="unconfirmed">VEB</symbol>
 			</currency>
 			<currency type="VEF">
+				<displayName draft="unconfirmed">Abulivaṛ n Vinizwila (2008–2018)</displayName>
+				<displayName count="one" draft="unconfirmed">Abulivaṛ n Vinizwila (2008–2018)</displayName>
+				<displayName count="other" draft="unconfirmed">Ibulivaṛen n Vinizwila (2008–2018)</displayName>
+				<symbol draft="unconfirmed">VEF</symbol>
+				<symbol alt="narrow" draft="unconfirmed">Bs</symbol>
+			</currency>
+			<currency type="VES">
 				<displayName draft="unconfirmed">Abulivaṛ n Vinizwila</displayName>
 				<displayName count="one" draft="unconfirmed">Abulivaṛ n Vinizwila</displayName>
 				<displayName count="other" draft="unconfirmed">Ibulivaṛen n Vinizwila</displayName>
-				<symbol draft="unconfirmed">VEF</symbol>
-				<symbol alt="narrow" draft="unconfirmed">Bs</symbol>
 			</currency>
 			<currency type="VND">
 				<displayName draft="unconfirmed">Adung n Vyitnam</displayName>
@@ -6278,7 +6285,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
-			<pattern type="atLeast" draft="unconfirmed">⩾{0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">≥{0}</pattern>
 			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
 		</miscPatterns>
 		<minimalPairs>
@@ -6860,14 +6867,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="duration-year">
 				<displayName draft="unconfirmed">iseggasen</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} sgs</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} sgs</unitPattern>
+				<unitPattern count="one" draft="unconfirmed">{0} sg</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} sgn</unitPattern>
 				<perUnitPattern draft="unconfirmed">{0}/g</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName draft="unconfirmed">ayyuren</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} yyr</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} yyr</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} yyrn</unitPattern>
 				<perUnitPattern draft="unconfirmed">{0}/y</perUnitPattern>
 			</unit>
 			<unit type="duration-week">

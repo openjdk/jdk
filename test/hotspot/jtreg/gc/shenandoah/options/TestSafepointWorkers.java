@@ -24,7 +24,7 @@
 /*
  * @test TestSingleSafepointWorker
  * @key gc
- * @requires vm.gc.Shenandoah
+ * @requires vm.gc.Shenandoah & !vm.graal.enabled
  *
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahParallelSafepointThreads=1 -Xmx128m TestSafepointWorkers
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahParallelSafepointThreads=2 -Xmx128m TestSafepointWorkers

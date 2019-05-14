@@ -27,6 +27,7 @@
 #include "gc/shared/plab.inline.hpp"
 #include "gc/shared/threadLocalAllocBuffer.hpp"
 #include "logging/log.hpp"
+#include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 
 size_t PLAB::min_size() {

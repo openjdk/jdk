@@ -27,7 +27,6 @@
 #include "code/nmethod.hpp"
 #include "gc/shared/scavengableNMethods.hpp"
 #include "gc/shared/scavengableNMethodsData.hpp"
-#include "memory/universe.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/debug.hpp"
 

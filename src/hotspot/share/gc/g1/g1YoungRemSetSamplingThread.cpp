@@ -32,6 +32,7 @@
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
+#include "memory/universe.hpp"
 #include "runtime/mutexLocker.hpp"
 
 G1YoungRemSetSamplingThread::G1YoungRemSetSamplingThread() :

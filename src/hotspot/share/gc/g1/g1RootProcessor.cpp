@@ -40,6 +40,7 @@
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/universe.hpp"
 #include "runtime/mutex.hpp"
 #include "services/management.hpp"
 #include "utilities/macros.hpp"

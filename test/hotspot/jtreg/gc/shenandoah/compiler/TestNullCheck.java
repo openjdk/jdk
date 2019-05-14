@@ -25,7 +25,7 @@
  * @test TestNullCheck
  * @summary implicit null check on brooks pointer must not cause crash
  * @key gc
- * @requires vm.gc.Shenandoah
+ * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:-TieredCompilation
  *                   -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC
  *                   -Xmx4G -XX:HeapBaseMinAddress=0x800000000 TestNullCheck

@@ -28,6 +28,7 @@
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/oopFactory.hpp"
+#include "memory/universe.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/instanceOop.hpp"

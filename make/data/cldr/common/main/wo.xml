@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2018 Unicode, Inc.
+<!-- Copyright © 1991-2019 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 13871 $"/>
+		<version number="$Revision: 14982 $"/>
 		<language type="wo"/>
 	</identity>
 	<localeDisplayNames>
@@ -322,8 +322,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MF">Saŋ Marteŋ</territory>
 			<territory type="MG">Madagaskaar</territory>
 			<territory type="MH">Duni Marsaal</territory>
-			<territory type="MK">Maseduwaan</territory>
-			<territory type="MK" alt="variant">Maseduwaan (Réewum yugoslawi gu yàgg ga)</territory>
+			<territory type="MK">Maseduwaan bëj Gànnaar</territory>
 			<territory type="ML">Mali</territory>
 			<territory type="MM">Miyanmaar</territory>
 			<territory type="MN">Mongoli</territory>
@@ -451,7 +450,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<exemplarCharacters>[a à b c d e é ë f g i j k l m n ñ ŋ o ó p q r s t u w x y]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[ã h v z]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D E F G H I J K L M N Ŋ O P Q R S T U V W X Y Z]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 	</characters>
 	<delimiters>
 		<quotationStart>“</quotationStart>

@@ -26,8 +26,14 @@
  * @test
  * @summary Test extended ArrayIndexOutOfBoundsException message. The
  *   message lists information about the array and the indexes involved.
- * @compile ArrayIndexOutOfBoundsExceptionTest.java
+ * @comment This will run in 'normal' mode when Graal is not enabled, else
+ *   Graal mode.
  * @run testng ArrayIndexOutOfBoundsExceptionTest
+ */
+/**
+ * @test
+ * @requires !vm.graal.enabled
+ * @comment These test C1 and C2 so make no sense when Graal is enabled.
  * @run testng/othervm -Xcomp -XX:-TieredCompilation  ArrayIndexOutOfBoundsExceptionTest
  * @run testng/othervm -Xcomp -XX:TieredStopAtLevel=1 ArrayIndexOutOfBoundsExceptionTest
  */

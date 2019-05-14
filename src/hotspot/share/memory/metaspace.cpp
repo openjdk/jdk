@@ -39,6 +39,7 @@
 #include "memory/metaspaceShared.hpp"
 #include "memory/metaspaceTracer.hpp"
 #include "memory/universe.hpp"
+#include "oops/compressedOops.hpp"
 #include "runtime/init.hpp"
 #include "runtime/orderAccess.hpp"
 #include "services/memTracker.hpp"
@@ -666,12 +667,19 @@ void MetaspaceUtils::print_report(outputStream* out, size_t scale, int flags) {
     for (int space_type = (int)Metaspace::ZeroMetaspaceType;
          space_type < (int)Metaspace::MetaspaceTypeCount; space_type ++)
     {
-      uintx num = cl._num_loaders_by_spacetype[space_type];
-      out->print("%s (" UINTX_FORMAT " loader%s)%c",
+      uintx num_loaders = cl._num_loaders_by_spacetype[space_type];
+      uintx num_classes = cl._num_classes_by_spacetype[space_type];
+      out->print("%s - " UINTX_FORMAT " %s",
         space_type_name((Metaspace::MetaspaceType)space_type),
-        num, (num == 1 ? "" : "s"), (num > 0 ? ':' : '.'));
-      if (num > 0) {
+        num_loaders, loaders_plural(num_loaders));
+      if (num_classes > 0) {
+        out->print(", ");
+        print_number_of_classes(out, num_classes, cl._num_classes_shared_by_spacetype[space_type]);
+        out->print(":");
         cl._stats_by_spacetype[space_type].print_on(out, scale, print_by_chunktype);
+      } else {
+        out->print(".");
+        out->cr();
       }
       out->cr();
     }
@@ -679,10 +687,15 @@ void MetaspaceUtils::print_report(outputStream* out, size_t scale, int flags) {
 
   // Print totals for in-use data:
   out->cr();
-  out->print_cr("Total Usage ( " UINTX_FORMAT " loader%s)%c",
-      cl._num_loaders, (cl._num_loaders == 1 ? "" : "s"), (cl._num_loaders > 0 ? ':' : '.'));
-
-  cl._stats_total.print_on(out, scale, print_by_chunktype);
+  {
+    uintx num_loaders = cl._num_loaders;
+    out->print("Total Usage - " UINTX_FORMAT " %s, ",
+      num_loaders, loaders_plural(num_loaders));
+    print_number_of_classes(out, cl._num_classes, cl._num_classes_shared);
+    out->print(":");
+    cl._stats_total.print_on(out, scale, print_by_chunktype);
+    out->cr();
+  }
 
   // -- Print Virtual space.
   out->cr();
@@ -974,7 +987,7 @@ void Metaspace::set_narrow_klass_base_and_shift(address metaspace_base, address 
     }
   }
 
-  Universe::set_narrow_klass_base(lower_base);
+  CompressedKlassPointers::set_base(lower_base);
 
   // CDS uses LogKlassAlignmentInBytes for narrow_klass_shift. See
   // MetaspaceShared::initialize_dumptime_shared_and_meta_spaces() for
@@ -984,9 +997,9 @@ void Metaspace::set_narrow_klass_base_and_shift(address metaspace_base, address 
   // can be used at same time as AOT code.
   if (!UseSharedSpaces
       && (uint64_t)(higher_address - lower_base) <= UnscaledClassSpaceMax) {
-    Universe::set_narrow_klass_shift(0);
+    CompressedKlassPointers::set_shift(0);
   } else {
-    Universe::set_narrow_klass_shift(LogKlassAlignmentInBytes);
+    CompressedKlassPointers::set_shift(LogKlassAlignmentInBytes);
   }
   AOTLoader::set_narrow_klass_shift();
 }
@@ -1131,7 +1144,7 @@ void Metaspace::allocate_metaspace_compressed_klass_ptrs(char* requested_addr, a
 
 void Metaspace::print_compressed_class_space(outputStream* st, const char* requested_addr) {
   st->print_cr("Narrow klass base: " PTR_FORMAT ", Narrow klass shift: %d",
-               p2i(Universe::narrow_klass_base()), Universe::narrow_klass_shift());
+               p2i(CompressedKlassPointers::base()), CompressedKlassPointers::shift());
   if (_class_space_list != NULL) {
     address base = (address)_class_space_list->current_virtual_space()->bottom();
     st->print("Compressed class space size: " SIZE_FORMAT " Address: " PTR_FORMAT,

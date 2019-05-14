@@ -25,6 +25,7 @@
 #include "aot/compiledIC_aot.hpp"
 #include "code/codeCache.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/universe.hpp"
 
 void CompiledDirectStaticCall::set_to_far(const methodHandle& callee, address entry) {
   if (TraceICs) {

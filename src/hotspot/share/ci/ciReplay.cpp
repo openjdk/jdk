@@ -29,6 +29,7 @@
 #include "ci/ciSymbol.hpp"
 #include "ci/ciKlass.hpp"
 #include "ci/ciUtilities.inline.hpp"
+#include "classfile/symbolTable.hpp"
 #include "compiler/compileBroker.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/oopFactory.hpp"

@@ -26,6 +26,7 @@
 #define SHARE_OOPS_OOP_INLINE_HPP
 
 #include "gc/shared/collectedHeap.hpp"
+#include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/arrayKlass.hpp"
 #include "oops/arrayOop.hpp"
@@ -88,7 +89,7 @@ void oopDesc::init_mark_raw() {
 
 Klass* oopDesc::klass() const {
   if (UseCompressedClassPointers) {
-    return Klass::decode_klass_not_null(_metadata._compressed_klass);
+    return CompressedKlassPointers::decode_not_null(_metadata._compressed_klass);
   } else {
     return _metadata._klass;
   }
@@ -96,7 +97,7 @@ Klass* oopDesc::klass() const {
 
 Klass* oopDesc::klass_or_null() const volatile {
   if (UseCompressedClassPointers) {
-    return Klass::decode_klass(_metadata._compressed_klass);
+    return CompressedKlassPointers::decode(_metadata._compressed_klass);
   } else {
     return _metadata._klass;
   }
@@ -107,7 +108,7 @@ Klass* oopDesc::klass_or_null_acquire() const volatile {
     // Workaround for non-const load_acquire parameter.
     const volatile narrowKlass* addr = &_metadata._compressed_klass;
     volatile narrowKlass* xaddr = const_cast<volatile narrowKlass*>(addr);
-    return Klass::decode_klass(OrderAccess::load_acquire(xaddr));
+    return CompressedKlassPointers::decode(OrderAccess::load_acquire(xaddr));
   } else {
     return OrderAccess::load_acquire(&_metadata._klass);
   }
@@ -144,7 +145,7 @@ narrowKlass* oopDesc::compressed_klass_addr() {
 void oopDesc::set_klass(Klass* k) {
   CHECK_SET_KLASS(k);
   if (UseCompressedClassPointers) {
-    *compressed_klass_addr() = Klass::encode_klass_not_null(k);
+    *compressed_klass_addr() = CompressedKlassPointers::encode_not_null(k);
   } else {
     *klass_addr() = k;
   }
@@ -154,7 +155,7 @@ void oopDesc::release_set_klass(HeapWord* mem, Klass* klass) {
   CHECK_SET_KLASS(klass);
   if (UseCompressedClassPointers) {
     OrderAccess::release_store(compressed_klass_addr(mem),
-                               Klass::encode_klass_not_null(klass));
+                               CompressedKlassPointers::encode_not_null(klass));
   } else {
     OrderAccess::release_store(klass_addr(mem), klass);
   }

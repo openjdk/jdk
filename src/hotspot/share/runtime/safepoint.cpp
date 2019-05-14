@@ -1037,6 +1037,8 @@ void ThreadSafepointState::print_on(outputStream *st) const {
   _thread->print_thread_state_on(st);
 }
 
+void ThreadSafepointState::print() const { print_on(tty); }
+
 // ---------------------------------------------------------------------------------------------------------------------
 
 // Block the thread at poll or poll return for safepoint/handshake.

@@ -23,6 +23,7 @@
 
 /* @test
  * @bug 4405354 6594296 8058216
+ * @library /test/lib
  * @run main Test
  * @run main/othervm -Djava.net.preferIPv4Stack=true Test
  * @summary Basic tests for NetworkInterface
@@ -30,11 +31,13 @@
 import java.net.NetworkInterface;
 import java.net.InetAddress;
 import java.util.Enumeration;
+import jdk.test.lib.net.IPSupport;
 
 public class Test {
     static final boolean isWindows = System.getProperty("os.name").startsWith("Windows");
 
     public static void main(String args[]) throws Exception {
+        IPSupport.throwSkippedExceptionIfNonOperational();
 
         Enumeration nifs = NetworkInterface.getNetworkInterfaces();
 

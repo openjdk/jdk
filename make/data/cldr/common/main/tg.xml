@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2018 Unicode, Inc.
+<!-- Copyright © 1991-2019 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 13871 $"/>
+		<version number="$Revision: 14982 $"/>
 		<language type="tg"/>
 	</identity>
 	<localeDisplayNames>
@@ -328,8 +328,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MF">Ҷазираи Сент-Мартин</territory>
 			<territory type="MG">Мадагаскар</territory>
 			<territory type="MH">Ҷазираҳои Маршалл</territory>
-			<territory type="MK">Мақдун</territory>
-			<territory type="MK" alt="variant">Мақдун (ҶСЮМ)</territory>
+			<territory type="MK">Македонияи Шимолӣ</territory>
 			<territory type="ML">Мали</territory>
 			<territory type="MM">Мянма</territory>
 			<territory type="MN">Муғулистон</territory>
@@ -461,7 +460,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<exemplarCharacters>[а б в г ғ д е ё ж з и ӣ й к қ л м н о п р с т у ӯ ф х ҳ ч ҷ ш ъ э ю я]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[ц щ ы ь]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="unconfirmed">[А Б В Г Ғ Д Е Ж З И Й К Қ Л М Н О П Р С Т У Ф Х Ҳ Ч Ҷ Ш Ъ Э Ю Я]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[  \- , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 	</characters>
 	<delimiters>
 		<quotationStart>«</quotationStart>
@@ -761,12 +759,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dayPeriods>
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am" draft="unconfirmed">пе. чо.</dayPeriod>
-							<dayPeriod type="pm" draft="unconfirmed">па. чо.</dayPeriod>
+							<dayPeriod type="am" draft="unconfirmed">пе. чо.</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">па. чо.</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">пе. чо.</dayPeriod>
-							<dayPeriod type="pm">па. чо.</dayPeriod>
+							<dayPeriod type="am">пе. чо.</dayPeriod>
+							<dayPeriod type="pm">па. чо.</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
@@ -871,7 +869,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="other">'ҳафтаи' W, MMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">'ҳафтаи' W, MMMM</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">MM-y</dateFormatItem>
@@ -883,7 +881,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
-						<dateFormatItem id="yw" count="other">'ҳафтаи' w, y</dateFormatItem>
+						<dateFormatItem id="yw" count="other">'ҳафтаи' w, Y</dateFormatItem>
 					</availableFormats>
 					<appendItems>
 						<appendItem request="Timezone">{0} {1}</appendItem>
@@ -950,7 +948,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>рӯзи ҳафта</displayName>
 			</field>
 			<field type="dayperiod">
-				<displayName>пе. чо./па. чо.</displayName>
+				<displayName>пе. чо./па. чо.</displayName>
 			</field>
 			<field type="hour">
 				<displayName>соат</displayName>

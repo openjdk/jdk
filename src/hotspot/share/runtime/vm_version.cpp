@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
-#include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/vm_version.hpp"

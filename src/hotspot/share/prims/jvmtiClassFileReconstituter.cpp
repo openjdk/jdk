@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/symbolTable.hpp"
 #include "interpreter/bytecodeStream.hpp"
+#include "memory/universe.hpp"
 #include "oops/fieldStreams.hpp"
 #include "prims/jvmtiClassFileReconstituter.hpp"
 #include "runtime/handles.inline.hpp"

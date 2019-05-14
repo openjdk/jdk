@@ -30,6 +30,7 @@
 #include "jfr/leakprofiler/utilities/unifiedOop.hpp"
 #include "jfr/leakprofiler/checkpoint/rootResolver.hpp"
 #include "memory/iterator.hpp"
+#include "memory/universe.hpp"
 #include "oops/klass.hpp"
 #include "oops/markOop.hpp"
 #include "oops/oop.hpp"

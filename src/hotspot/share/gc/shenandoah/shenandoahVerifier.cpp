@@ -24,7 +24,7 @@
 #include "precompiled.hpp"
 
 #include "gc/shenandoah/shenandoahAsserts.hpp"
-#include "gc/shenandoah/shenandoahBrooksPointer.hpp"
+#include "gc/shenandoah/shenandoahForwarding.inline.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.hpp"
@@ -34,6 +34,7 @@
 #include "memory/allocation.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/compressedOops.inline.hpp"
 
 // Avoid name collision on verify_oop (defined in macroAssembler_arm.hpp)
 #ifdef verify_oop
@@ -137,7 +138,7 @@ private:
           // skip
           break;
         case ShenandoahVerifier::_verify_liveness_complete:
-          Atomic::add(obj->size() + ShenandoahBrooksPointer::word_size(), &_ld[obj_reg->region_number()]);
+          Atomic::add(obj->size() + ShenandoahForwarding::word_size(), &_ld[obj_reg->region_number()]);
           // fallthrough for fast failure for un-live regions:
         case ShenandoahVerifier::_verify_liveness_conservative:
           check(ShenandoahAsserts::_safe_oop, obj, obj_reg->has_live(),
@@ -148,7 +149,7 @@ private:
       }
     }
 
-    oop fwd = (oop) ShenandoahBrooksPointer::get_raw_unchecked(obj);
+    oop fwd = (oop) ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
 
     ShenandoahHeapRegion* fwd_reg = NULL;
 
@@ -181,7 +182,7 @@ private:
       check(ShenandoahAsserts::_safe_oop, obj, (fwd_addr + fwd->size()) <= fwd_reg->top(),
              "Forwardee end should be within the region");
 
-      oop fwd2 = (oop) ShenandoahBrooksPointer::get_raw_unchecked(fwd);
+      oop fwd2 = (oop) ShenandoahForwarding::get_forwardee_raw_unchecked(fwd);
       check(ShenandoahAsserts::_safe_oop, obj, oopDesc::equals_raw(fwd, fwd2),
              "Double forwarding");
     } else {
@@ -528,7 +529,7 @@ public:
 
   virtual void work_humongous(ShenandoahHeapRegion *r, ShenandoahVerifierStack& stack, ShenandoahVerifyOopClosure& cl) {
     size_t processed = 0;
-    HeapWord* obj = r->bottom() + ShenandoahBrooksPointer::word_size();
+    HeapWord* obj = r->bottom() + ShenandoahForwarding::word_size();
     if (_heap->complete_marking_context()->is_marked((oop)obj)) {
       verify_and_follow(obj, stack, cl, &processed);
     }
@@ -542,12 +543,12 @@ public:
 
     // Bitmaps, before TAMS
     if (tams > r->bottom()) {
-      HeapWord* start = r->bottom() + ShenandoahBrooksPointer::word_size();
+      HeapWord* start = r->bottom() + ShenandoahForwarding::word_size();
       HeapWord* addr = mark_bit_map->get_next_marked_addr(start, tams);
 
       while (addr < tams) {
         verify_and_follow(addr, stack, cl, &processed);
-        addr += ShenandoahBrooksPointer::word_size();
+        addr += ShenandoahForwarding::word_size();
         if (addr < tams) {
           addr = mark_bit_map->get_next_marked_addr(addr, tams);
         }
@@ -557,11 +558,11 @@ public:
     // Size-based, after TAMS
     {
       HeapWord* limit = r->top();
-      HeapWord* addr = tams + ShenandoahBrooksPointer::word_size();
+      HeapWord* addr = tams + ShenandoahForwarding::word_size();
 
       while (addr < limit) {
         verify_and_follow(addr, stack, cl, &processed);
-        addr += oop(addr)->size() + ShenandoahBrooksPointer::word_size();
+        addr += oop(addr)->size() + ShenandoahForwarding::word_size();
       }
     }
 
@@ -927,7 +928,7 @@ private:
     T o = RawAccess<>::oop_load(p);
     if (!CompressedOops::is_null(o)) {
       oop obj = CompressedOops::decode_not_null(o);
-      oop fwd = (oop) ShenandoahBrooksPointer::get_raw_unchecked(obj);
+      oop fwd = (oop) ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
       if (!oopDesc::equals_raw(obj, fwd)) {
         ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, p, NULL,
                                          "Verify Roots", "Should not be forwarded", __FILE__, __LINE__);
@@ -946,4 +947,3 @@ void ShenandoahVerifier::verify_roots_no_forwarded() {
   ShenandoahVerifyNoForwared cl;
   rp.process_all_roots_slow(&cl);
 }
-

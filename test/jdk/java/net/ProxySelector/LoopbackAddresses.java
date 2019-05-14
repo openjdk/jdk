@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,12 @@
 
 /* @test
  * @bug 4924226
- * @summary PIT: Can no launch jnlp application via 127.0.0.1 address on the web server
+ * @key intermittent
+ * @summary PIT: Can no launch jnlp application via 127.0.0.1 address on the web server.
+ *          This test might fail intermittently as it needs a server that
+ *          binds to the wildcard address.
  * @modules java.base/sun.net.www
- * @library ../../../sun/net/www/httptest/
+ * @library ../../../sun/net/www/httptest/ /test/lib
  * @build ClosedChannelList TestHttpServer HttpTransaction HttpCallback
  * @compile LoopbackAddresses.java
  * @run main/othervm LoopbackAddresses
@@ -33,6 +36,7 @@
 
 import java.net.*;
 import java.io.*;
+import jdk.test.lib.net.URIBuilder;
 
 /**
  * Our default proxy selector should bypass localhost and loopback
@@ -53,12 +57,18 @@ public class LoopbackAddresses implements HttpCallback {
 
     public static void main(String[] args) {
         try {
+            InetAddress loopback = InetAddress.getLoopbackAddress();
+
+            // This server needs to bind to the wildcard address as we want it
+            // to answer both for the loopback and "localhost".
+            // Though "localhost" usually point to the loopback there is no
+            // hard guarantee.
             server = new TestHttpServer (new LoopbackAddresses(), 1, 10, 0);
             ProxyServer pserver = new ProxyServer(InetAddress.getByName("localhost"), server.getLocalPort());
             // start proxy server
             new Thread(pserver).start();
 
-            System.setProperty("http.proxyHost", "localhost");
+            System.setProperty("http.proxyHost", loopback.getHostAddress());
             System.setProperty("http.proxyPort", pserver.getPort()+"");
 
             URL url = new URL("http://localhost:"+server.getLocalPort());
@@ -72,7 +82,11 @@ public class LoopbackAddresses implements HttpCallback {
             }
 
             try {
-                url = new URL("http://127.0.0.1:"+server.getLocalPort());
+                url = URIBuilder.newBuilder()
+                      .scheme("http")
+                      .host(loopback.getHostAddress())
+                      .port(server.getLocalPort())
+                      .toURL();
                 HttpURLConnection urlc = (HttpURLConnection)url.openConnection ();
                 int respCode = urlc.getResponseCode();
                 urlc.disconnect();
@@ -104,7 +118,8 @@ public class LoopbackAddresses implements HttpCallback {
         public ProxyServer(InetAddress server, int port) throws IOException {
             serverInetAddr = server;
             serverPort = port;
-            ss = new ServerSocket(0);
+            ss = new ServerSocket();
+            ss.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
         }
 
         public void run() {

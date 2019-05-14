@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 #
 
 EXTRAOPTS="--add-exports java.base/jdk.internal.math=ALL-UNNAMED"
+LOCALEOPTS="-Djava.locale.providers=CLDR"
 ${COMPILEJAVA}/bin/javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} ${EXTRAOPTS} -cp ${TESTSRC} -d . \
     ${TESTSRC}/Basic.java
 
@@ -40,7 +41,7 @@ runTest() {
   echo "Testing:" ${1}
   TZ="${1}"; export TZ
   echo "  " $TZ
-  ${TESTJAVA}/bin/java ${TESTVMOPTS} ${EXTRAOPTS} Basic
+  ${TESTJAVA}/bin/java ${TESTVMOPTS} ${EXTRAOPTS} ${LOCALEOPTS} Basic
   expectPass $?
 }
 

@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 4092038
+ * @library /test/lib
  * @summary TCP Urgent data support
  * @run main UrgentDataTest
  * @run main/othervm -Djava.net.preferIPv4Stack=true UrgentDataTest
@@ -31,6 +32,7 @@
 
 import java.net.*;
 import java.io.*;
+import jdk.test.lib.net.IPSupport;
 
 public class UrgentDataTest {
 
@@ -51,6 +53,8 @@ public class UrgentDataTest {
     }
 
     public static void main (String args[]) {
+        IPSupport.throwSkippedExceptionIfNonOperational();
+
         try {
             UrgentDataTest test = new UrgentDataTest ();
             if (args.length == 0) {

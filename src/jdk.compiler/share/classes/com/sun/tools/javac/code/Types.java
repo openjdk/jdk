@@ -5202,6 +5202,8 @@ public class Types {
                 return syms.methodHandleType;
             case ClassFile.CONSTANT_MethodType:
                 return syms.methodTypeType;
+            case ClassFile.CONSTANT_Dynamic:
+                return ((DynamicVarSymbol)c).type;
             default:
                 throw new AssertionError("Not a loadable constant: " + c.poolTag());
         }

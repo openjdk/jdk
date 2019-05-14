@@ -177,7 +177,7 @@ class VtableStub {
   bool is_null_pointer_exception(address epc)    { return epc == code_begin()+_npe_offset; }
 
   void print_on(outputStream* st) const;
-  void print() const                             { print_on(tty); }
+  void print() const;
 
 };
 

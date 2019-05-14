@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2018 Unicode, Inc.
+<!-- Copyright © 1991-2019 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 13911 $"/>
+		<version number="$Revision: 14782 $"/>
 		<language type="ksh"/>
 	</identity>
 	<localeDisplayNames>
@@ -1796,7 +1796,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<exponential draft="contributed">×10^</exponential>
 			<perMille draft="contributed">‰</perMille>
 			<infinity draft="contributed">∞</infinity>
-			<nan draft="contributed">¤¤¤</nan>
+			<nan draft="contributed">NaN</nan>
 		</symbols>
 		<decimalFormats numberSystem="latn">
 			<decimalFormatLength>
@@ -2530,6 +2530,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="contributed">ußbeekesche Som</displayName>
 			</currency>
 			<currency type="VEF">
+				<displayName draft="contributed">venezuelaanesche Bolívar (2008–2018)</displayName>
+			</currency>
+			<currency type="VES">
 				<displayName draft="contributed">venezuelaanesche Bolívar</displayName>
 			</currency>
 			<currency type="VND">

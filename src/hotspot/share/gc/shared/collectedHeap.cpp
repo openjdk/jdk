@@ -38,6 +38,7 @@
 #include "logging/log.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/universe.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -134,6 +135,8 @@ void CollectedHeap::print_heap_after_gc() {
     _gc_heap_log->log_heap_after(this);
   }
 }
+
+void CollectedHeap::print() const { print_on(tty); }
 
 void CollectedHeap::print_on_error(outputStream* st) const {
   st->print_cr("Heap:");

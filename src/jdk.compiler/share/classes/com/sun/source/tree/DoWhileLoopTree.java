@@ -35,7 +35,7 @@ package com.sun.source.tree;
  *   while ( <em>expression</em> );
  * </pre>
  *
- * @jls section 14.13
+ * @jls 14.13 The do Statement
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

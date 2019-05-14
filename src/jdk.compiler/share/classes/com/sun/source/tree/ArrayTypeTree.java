@@ -33,7 +33,7 @@ package com.sun.source.tree;
  *   <em>type</em> []
  * </pre>
  *
- * @jls section 10.1
+ * @jls 10.1 Array Types
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/barrierSet.hpp"
+#include "gc/shenandoah/shenandoahForwarding.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahRuntime.hpp"
@@ -716,7 +717,7 @@ Node* ShenandoahBarrierSetC2::obj_allocate(PhaseMacroExpand* macro, Node* ctrl, 
   PhaseIterGVN& igvn = macro->igvn();
 
   // Allocate several words more for the Shenandoah brooks pointer.
-  size_in_bytes = new AddXNode(size_in_bytes, igvn.MakeConX(ShenandoahBrooksPointer::byte_size()));
+  size_in_bytes = new AddXNode(size_in_bytes, igvn.MakeConX(ShenandoahForwarding::byte_size()));
   macro->transform_later(size_in_bytes);
 
   Node* fast_oop = BarrierSetC2::obj_allocate(macro, ctrl, mem, toobig_false, size_in_bytes,
@@ -724,11 +725,11 @@ Node* ShenandoahBarrierSetC2::obj_allocate(PhaseMacroExpand* macro, Node* ctrl, 
                                               prefetch_lines);
 
   // Bump up object for Shenandoah brooks pointer.
-  fast_oop = new AddPNode(macro->top(), fast_oop, igvn.MakeConX(ShenandoahBrooksPointer::byte_size()));
+  fast_oop = new AddPNode(macro->top(), fast_oop, igvn.MakeConX(ShenandoahForwarding::byte_size()));
   macro->transform_later(fast_oop);
 
   // Initialize Shenandoah brooks pointer to point to the object itself.
-  fast_oop_rawmem = macro->make_store(fast_oop_ctrl, fast_oop_rawmem, fast_oop, ShenandoahBrooksPointer::byte_offset(), fast_oop, T_OBJECT);
+  fast_oop_rawmem = macro->make_store(fast_oop_ctrl, fast_oop_rawmem, fast_oop, ShenandoahForwarding::byte_offset(), fast_oop, T_OBJECT);
 
   return fast_oop;
 }

@@ -282,9 +282,9 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   JNIMethodBlock* jmethod_ids() const              { return _jmethod_ids; }
   void set_jmethod_ids(JNIMethodBlock* new_block)  { _jmethod_ids = new_block; }
 
-  void print()                                     { print_on(tty); }
+  void print() const;
   void print_on(outputStream* out) const PRODUCT_RETURN;
-  void print_value()                               { print_value_on(tty); }
+  void print_value() const;
   void print_value_on(outputStream* out) const;
   void verify();
 

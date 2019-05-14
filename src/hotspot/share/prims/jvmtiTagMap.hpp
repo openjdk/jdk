@@ -31,7 +31,6 @@
 #include "jvmtifiles/jvmti.h"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "memory/allocation.hpp"
-#include "memory/universe.hpp"
 
 // forward references
 class JvmtiTagHashmap;

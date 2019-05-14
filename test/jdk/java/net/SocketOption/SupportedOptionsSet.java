@@ -25,10 +25,12 @@ import java.io.IOException;
 import java.net.*;
 import java.util.Set;
 import static java.lang.System.out;
+import jdk.test.lib.net.IPSupport;
 
 /*
  * @test
  * @bug 8143923
+ * @library /test/lib
  * @summary java.net socket supportedOptions set depends on call order
  * @run main/othervm SupportedOptionsSet first
  * @run main/othervm SupportedOptionsSet second
@@ -42,6 +44,8 @@ import static java.lang.System.out;
 public class SupportedOptionsSet {
 
     public static void main(String[] args) throws IOException {
+        IPSupport.throwSkippedExceptionIfNonOperational();
+
         if (args[0].equals("first"))
             first();
         else if (args[0].equals("second"))

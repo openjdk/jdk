@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @library /test/lib
  * @modules java.management java.base/java.io:+open java.base/java.net:+open
  * @run main/othervm UnreferencedSockets
  * @run main/othervm -Djava.net.preferIPv4Stack=true UnreferencedSockets
@@ -50,6 +51,8 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import com.sun.management.UnixOperatingSystemMXBean;
+
+import jdk.test.lib.net.IPSupport;
 
 public class UnreferencedSockets {
 
@@ -107,6 +110,7 @@ public class UnreferencedSockets {
     }
 
     public static void main(String args[]) throws Exception {
+        IPSupport.throwSkippedExceptionIfNonOperational();
 
         // Create and close a ServerSocket to warm up the FD count for side effects.
         try (ServerSocket s = new ServerSocket(0)) {

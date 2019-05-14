@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 4531817 8026245
+ * @library /test/lib
  * @summary Inet[46]Address.localHost need doPrivileged
  * @run main/othervm GetLocalHostWithSM
  * @run main/othervm -Djava.net.preferIPv4Stack=true GetLocalHostWithSM
@@ -38,9 +39,12 @@ import java.security.Principal;
 import java.security.PrivilegedExceptionAction;
 import java.util.*;
 
+import jdk.test.lib.net.IPSupport;
+
 public class GetLocalHostWithSM {
 
         public static void main(String[] args) throws Exception {
+            IPSupport.throwSkippedExceptionIfNonOperational();
 
             // try setting the local hostname
             InetAddress localHost = InetAddress.getLocalHost();

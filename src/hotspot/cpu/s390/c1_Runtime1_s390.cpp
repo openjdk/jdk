@@ -32,6 +32,7 @@
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "interpreter/interpreter.hpp"
+#include "memory/universe.hpp"
 #include "nativeInst_s390.hpp"
 #include "oops/compiledICHolder.hpp"
 #include "oops/oop.inline.hpp"

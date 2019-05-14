@@ -25,7 +25,6 @@
 #ifndef SHARE_CODE_OOPRECORDER_HPP
 #define SHARE_CODE_OOPRECORDER_HPP
 
-#include "memory/universe.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/growableArray.hpp"
 
@@ -77,9 +76,7 @@ template <class T> class ValueRecorder : public StackObj {
   }
 
   // Helper function; returns false for NULL or Universe::non_oop_word().
-  bool is_real(T h) {
-    return h != NULL && h != (T)Universe::non_oop_word();
-  }
+  inline bool is_real(T h);
 
   // copy the generated table to nmethod
   void copy_values_to(nmethod* nm);
@@ -207,9 +204,7 @@ class OopRecorder : public ResourceObj {
   int oop_count() {
     return _oops.count();
   }
-  bool is_real(jobject h) {
-    return _oops.is_real(h);
-  }
+  inline bool is_real(jobject h);
 
   int allocate_metadata_index(Metadata* oop) {
     return _metadata.allocate_index(oop);
@@ -226,9 +221,7 @@ class OopRecorder : public ResourceObj {
   int metadata_count() {
     return _metadata.count();
   }
-  bool is_real(Metadata* h) {
-    return _metadata.is_real(h);
-  }
+  inline bool is_real(Metadata* h);
 
   bool is_unused() {
     return _oops.is_unused() && _metadata.is_unused();

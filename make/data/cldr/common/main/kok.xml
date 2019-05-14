@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2018 Unicode, Inc.
+<!-- Copyright © 1991-2019 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 13869 $"/>
+		<version number="$Revision: 14982 $"/>
 		<language type="kok"/>
 	</identity>
 	<localeDisplayNames>
@@ -217,7 +217,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="li">लिंबुर्ग</language>
 			<language type="lkt">लाकोटा</language>
 			<language type="ln">लिंगाला</language>
-			<language type="lo">लाअो</language>
+			<language type="lo">लाओ</language>
 			<language type="loz">लोझीं</language>
 			<language type="lrc">उत्तरीय लुरी</language>
 			<language type="lt">लिथुआनियन्</language>
@@ -296,7 +296,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="pcm">नायझेरियन पिडगीन</language>
 			<language type="pl">पोलिष</language>
 			<language type="prg">प्रुसियन</language>
-			<language type="ps">पाष्टो (पुष्टो)</language>
+			<language type="ps">पाष्टो</language>
 			<language type="pt">पोर्तुगिज</language>
 			<language type="pt_BR">ब्राझिलियन पोर्तुगिज</language>
 			<language type="pt_PT">युरोपियन पोर्तुगिज</language>
@@ -304,7 +304,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="quc">किचे</language>
 			<language type="rap">रापान्यु</language>
 			<language type="rar">रारोटोंगान</language>
-			<language type="rm">रहटो-रोमान्स्</language>
+			<language type="rm">रोमांन्श</language>
 			<language type="rn">रुंदी</language>
 			<language type="ro">रोमानियन्</language>
 			<language type="ro_MD">मोल्डावियन्</language>
@@ -419,14 +419,50 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</languages>
 		<scripts>
 			<script type="Arab">अरेबिक</script>
+			<script type="Armn">आर्मेनियन</script>
+			<script type="Beng">बांग्ला</script>
+			<script type="Bopo">बोपोमोफो</script>
+			<script type="Brai">ब्रैल</script>
 			<script type="Cyrl">सिरिलिक</script>
 			<script type="Deva">देवनागरी</script>
+			<script type="Ethi">इथियोपीक</script>
+			<script type="Geor">जॉर्जियन</script>
+			<script type="Grek">ग्रीक</script>
+			<script type="Gujr">गुजराती</script>
+			<script type="Guru">गुरमुखी</script>
+			<script type="Hanb">बोपोमोफो वांगडा हॅन</script>
+			<script type="Hang">हंगूल</script>
+			<script type="Hani">हॅन</script>
 			<script type="Hans">सोंपी</script>
 			<script type="Hans" alt="stand-alone">सोंपी हॅन</script>
 			<script type="Hant">पारंपारीक</script>
 			<script type="Hant" alt="stand-alone">पारंपारीक हॅन</script>
+			<script type="Hebr">हिब्रू</script>
+			<script type="Hira">हिरागना</script>
+			<script type="Hrkt">जपानी अक्षरमाळ</script>
+			<script type="Jamo">जामो</script>
+			<script type="Jpan">जपानी</script>
+			<script type="Kana">काटकाना</script>
+			<script type="Khmr">खमेर</script>
+			<script type="Knda">कन्नड</script>
+			<script type="Kore">कोरियन</script>
+			<script type="Laoo">लाओ</script>
 			<script type="Latn">लॅटीन</script>
+			<script type="Mlym">मलयाळम</script>
+			<script type="Mong">मोंगोलियन</script>
+			<script type="Mymr">म्यानमार</script>
+			<script type="Orya">ओरिया</script>
+			<script type="Sinh">सिन्हाला</script>
+			<script type="Taml">तमीळ</script>
+			<script type="Telu">तेलुगू</script>
+			<script type="Thaa">थाणा</script>
+			<script type="Thai">थाई</script>
+			<script type="Tibt">तिबेटन</script>
+			<script type="Zmth">गणिताची चिन्नां</script>
+			<script type="Zsye">Emoji</script>
+			<script type="Zsym">चिन्नां</script>
 			<script type="Zxxx">अलिखीत</script>
+			<script type="Zyyy">सामान्य</script>
 			<script type="Zzzz">अज्ञात लिपी</script>
 		</scripts>
 		<territories>
@@ -459,6 +495,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="151">उदेंत येवरोप</territory>
 			<territory type="154">उत्तर येवरोप</territory>
 			<territory type="155">अस्तंत येवरोप</territory>
+			<territory type="202">उप-सहाराई आफ्रिका</territory>
 			<territory type="419">लॅटीन अमेरिका</territory>
 			<territory type="AC">असेशन आयलँड</territory>
 			<territory type="AD">अंडोरा</territory>
@@ -617,8 +654,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MF">सॅंट मार्टिन</territory>
 			<territory type="MG">माडागास्कर</territory>
 			<territory type="MH">मार्शल आयलँड्स</territory>
-			<territory type="MK">मॅसिडोनिया</territory>
-			<territory type="MK" alt="variant">मॅसिडोनिया (FYROM)</territory>
+			<territory type="MK">उत्तर मॅसिडोनिया</territory>
 			<territory type="ML">माली</territory>
 			<territory type="MM">म्यानमार (बर्मा)</territory>
 			<territory type="MN">मंगोलिया</territory>
@@ -734,11 +770,78 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ZW">जिम्बाब्वे</territory>
 			<territory type="ZZ">अज्ञात प्रांत</territory>
 		</territories>
+		<keys>
+			<key type="calendar">दिनदर्शिका</key>
+			<key type="cf">चलनाचें स्वरूप</key>
+			<key type="collation">वर्गवारी क्रम</key>
+			<key type="currency">चलन</key>
+			<key type="hc">वराचें चक्र (12 वि 24)</key>
+			<key type="lb">रेग खंड करपाची शैली</key>
+			<key type="ms">मापन प्रणाली</key>
+			<key type="numbers">क्रमांक</key>
+		</keys>
 		<types>
+			<type key="calendar" type="buddhist">बुध्दीश्ट दिनदर्शिका</type>
+			<type key="calendar" type="chinese">चीनी दिनदर्शिका</type>
+			<type key="calendar" type="dangi">डांगी दिनदर्शिका</type>
+			<type key="calendar" type="ethiopic">इथियोपिक दिनदर्शिका</type>
 			<type key="calendar" type="gregorian">ग्रेगोरियन दिनदर्शिका</type>
-			<type key="collation" type="standard">प्रमाणित वर्गिकरण क्रमांक</type>
+			<type key="calendar" type="hebrew">हिब्रू दिनदर्शिका</type>
+			<type key="calendar" type="islamic">ईस्लामीक दिनदर्शिका</type>
+			<type key="calendar" type="iso8601">आयएसओ-8601 दिनदर्शिका</type>
+			<type key="calendar" type="japanese">जपानी</type>
+			<type key="calendar" type="persian">पर्शियन दिनदर्शिका</type>
+			<type key="calendar" type="roc">मिंगुआ दिनदर्शिका (अणकाराची कुरू: जाका चिनी दिनदर्शिकेचें प्रजासत्ताक&quot;, &quot;रिपब्लिकन दिनदर्शिका&quot;)</type>
+			<type key="cf" type="account">लेखा चलन स्वरूप</type>
+			<type key="cf" type="standard">प्रमाणित</type>
+			<type key="collation" type="ducet">डिफॉल्ट युनिकोड वर्गवारी क्रम</type>
+			<type key="collation" type="search">सोद घेवचो</type>
+			<type key="collation" type="standard">प्रमाणित वर्गवारी क्रम</type>
+			<type key="hc" type="h11">12 वरांची यंत्रणा (0–11)</type>
+			<type key="hc" type="h12">12 वरांची यंत्रणा (1–12)</type>
+			<type key="hc" type="h23">24 वरांची यंत्रणा (0–23)</type>
+			<type key="hc" type="h24">24 वरांची यंत्रणा (1–24)</type>
+			<type key="lb" type="loose">लूज रेग खंड शैली</type>
+			<type key="lb" type="normal">सामान्य रेग खंड शैली</type>
+			<type key="lb" type="strict">सक्तीची रेग खंड शैली</type>
+			<type key="ms" type="metric">मॅट्रीक प्रणाली</type>
+			<type key="ms" type="uksystem">व्हडली मापन प्रणाली</type>
+			<type key="ms" type="ussystem">युएस मापन प्रणाली</type>
+			<type key="numbers" type="arab">अरेबिक-भारतीय अंक</type>
+			<type key="numbers" type="arabext">विस्तारीत अरेबीक-भारतीय अंक</type>
+			<type key="numbers" type="armn">आर्मेनियन संख्या</type>
+			<type key="numbers" type="armnlow">आर्मेनियन लोवरकेस संख्या</type>
+			<type key="numbers" type="beng">बांग्ला अंक</type>
 			<type key="numbers" type="deva">देवनागरी अंक</type>
+			<type key="numbers" type="ethi">इथियोपिक संख्या</type>
+			<type key="numbers" type="fullwide">पूर्ण-रुंदी अंक</type>
+			<type key="numbers" type="geor">जॉर्जियन संख्या</type>
+			<type key="numbers" type="grek">ग्रीक संख्या</type>
+			<type key="numbers" type="greklow">ग्रीक लोवरकेस संख्या</type>
+			<type key="numbers" type="gujr">गुजराती अंक</type>
+			<type key="numbers" type="guru">गुरुमुखी अंक</type>
+			<type key="numbers" type="hanidec">चिनी दशांश संख्या</type>
+			<type key="numbers" type="hans">सोंपी केल्ली चिनी संख्या</type>
+			<type key="numbers" type="hansfin">सोंपी केल्ली चिनी महसूल संख्या</type>
+			<type key="numbers" type="hant">पारंपारीक चिनी संख्या</type>
+			<type key="numbers" type="hantfin">पारंपारीक चिनी महसूल संख्या</type>
+			<type key="numbers" type="hebr">हिब्रू संख्या</type>
+			<type key="numbers" type="jpan">जपानी संख्या</type>
+			<type key="numbers" type="jpanfin">जपानी महसूल संख्या</type>
+			<type key="numbers" type="khmr">कंबोडियन अंक</type>
+			<type key="numbers" type="knda">कन्नड अंक</type>
+			<type key="numbers" type="laoo">लाओ अंक</type>
 			<type key="numbers" type="latn">अस्तंत अंक</type>
+			<type key="numbers" type="mlym">मल्याळम अंक</type>
+			<type key="numbers" type="mymr">म्यानमार अंक</type>
+			<type key="numbers" type="orya">ओडिया</type>
+			<type key="numbers" type="roman">रोमन संख्या</type>
+			<type key="numbers" type="romanlow">रोमन लोवरकेस संख्या</type>
+			<type key="numbers" type="taml">पारंपारीक तमिळ संख्या</type>
+			<type key="numbers" type="tamldec">तमिळ अंक</type>
+			<type key="numbers" type="telu">तेलुगू अंक</type>
+			<type key="numbers" type="thai">थाय अंक</type>
+			<type key="numbers" type="tibt">तिबेतियन</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">Metric</measurementSystemName>
@@ -754,8 +857,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	<characters>
 		<exemplarCharacters>[\u093C ० १ २ ३ ४ ५ ६ ७ ८ ९ ॐ \u0902 \u0901 ः अ आ इ ई उ ऊ ऋ ऌ ऍ ए ऐ ऑ ओ औ क {क\u093C} ख {ख\u093C} ग {ग\u093C} घ ङ च छ ज {ज\u093C} झ ञ ट ठ ड {ड\u093C} ढ {ढ\u093C} ण त थ द ध न प फ {फ\u093C} ब भ म य {य\u093C} र ल व श ष स ह ळ ऽ ा ि ी \u0941 \u0942 \u0943 \u0944 \u0945 \u0947 \u0948 ॉ ो ौ \u094D]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[\u200C\u200D]</exemplarCharacters>
-		<exemplarCharacters type="index" draft="unconfirmed">[ॐ अ आ इ ई उ ऊ ऋ ऌ ऍ ए ऐ ऑ ओ औ क ख ग घ ङ च छ ज झ ञ ट ठ ड ढ ण त थ द ध न प फ ब भ म य र ल व श ष स ह ळ ऽ]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="contributed">[अ आ इ ई उ ऊ ऋ ऌ ऍ ए ऐ ऑ ओ औ क ख ग घ ङ च छ ज झ ञ ट ठ ड ढ ण त थ द ध न प फ ब भ म य र ल व श ष स ह ळ]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- , . % ‰ + 0० 1१ 2२ 3३ 4४ 5५ 6६ 7७ 8८ 9९]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 	</characters>
 	<delimiters>
 		<quotationStart>“</quotationStart>
@@ -809,8 +913,111 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
+					<availableFormats>
+						<dateFormatItem id="Bh">h B</dateFormatItem>
+						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
+						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
+						<dateFormatItem id="d">d</dateFormatItem>
+						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
+						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
+						<dateFormatItem id="Ed">E, d</dateFormatItem>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">E d, MMM y G</dateFormatItem>
+						<dateFormatItem id="h">h a</dateFormatItem>
+						<dateFormatItem id="H">HH</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="M">L</dateFormatItem>
+						<dateFormatItem id="Md">dd-MM</dateFormatItem>
+						<dateFormatItem id="MEd">E, dd-MM</dateFormatItem>
+						<dateFormatItem id="MMM">LLL</dateFormatItem>
+						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd">E d, MMM</dateFormatItem>
+						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
+						<dateFormatItem id="ms">mm:ss</dateFormatItem>
+						<dateFormatItem id="y">y G</dateFormatItem>
+						<dateFormatItem id="yyyy">y G</dateFormatItem>
+						<dateFormatItem id="yyyyM">MM-y GGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMd">d/M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E, d/M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd">d MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd">E, d MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM">MMMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyQQQ">QQQ y G</dateFormatItem>
+						<dateFormatItem id="yyyyQQQQ">QQQQ y G</dateFormatItem>
+					</availableFormats>
 					<intervalFormats>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="d">
+							<greatestDifference id="d">d–d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="M">
+							<greatestDifference id="M">MM–MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Md">
+							<greatestDifference id="d">d/M–d/M</greatestDifference>
+							<greatestDifference id="M">d/M – d/M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MEd">
+							<greatestDifference id="d">E, d/M – E, d/M</greatestDifference>
+							<greatestDifference id="M">E, dd-MM, E dd-MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMM">
+							<greatestDifference id="M">MMM–MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMd">
+							<greatestDifference id="d">d–d MMM</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d">E, d MMM – E, d MMM</greatestDifference>
+							<greatestDifference id="M">E, d MMM – E, d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="y">
+							<greatestDifference id="y">y–y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yM">
+							<greatestDifference id="M">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">M/y – M/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMd">
+							<greatestDifference id="d">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">d/M/y – d/M/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="M">MMM–MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y G – MMM y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d">d–d MMM, y G</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM, y G</greatestDifference>
+							<greatestDifference id="y">d, MMM y – d, MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMEd">
+							<greatestDifference id="d">E, d MMM – E, d MMM, yG</greatestDifference>
+							<greatestDifference id="M">E, d, MMM y – E, d, MMM y G</greatestDifference>
+							<greatestDifference id="y">E, d, MMM y – E, d, MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMM">
+							<greatestDifference id="M">MMMM – MMMM y G</greatestDifference>
+							<greatestDifference id="y">MMMM y – MMMM y G</greatestDifference>
+						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
@@ -1168,7 +1375,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="MMMd">MMM d</dateFormatItem>
 						<dateFormatItem id="MMMEd">MMM d, E</dateFormatItem>
 						<dateFormatItem id="MMMMd">MMMM d</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="other">'week' W 'of' MMMM</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">y-MM</dateFormatItem>
@@ -1180,7 +1386,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yMMMM">y MMMM</dateFormatItem>
 						<dateFormatItem id="yQQQ">y QQQ</dateFormatItem>
 						<dateFormatItem id="yQQQQ">y QQQQ</dateFormatItem>
-						<dateFormatItem id="yw" count="other">'week' w 'of' y</dateFormatItem>
 					</availableFormats>
 					<appendItems>
 						<appendItem request="Timezone">{0} {1}</appendItem>
@@ -1817,6 +2022,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 		</fields>
 		<timeZoneNames>
+			<hourFormat>+HH:mm;-HH:mm</hourFormat>
+			<gmtFormat>GMT{0}</gmtFormat>
+			<gmtZeroFormat>GMT</gmtZeroFormat>
+			<regionFormat>{0} वेळ</regionFormat>
+			<regionFormat type="daylight">{0} डेलायट वेळ</regionFormat>
+			<regionFormat type="standard">{0} प्रमाणित वेळ</regionFormat>
+			<fallbackFormat>{1} ({0})</fallbackFormat>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>समन्वित वैश्विक वेळ</standard>
@@ -1825,16 +2037,639 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Etc/Unknown">
 				<exemplarCity>अज्ञात शार</exemplarCity>
 			</zone>
+			<zone type="America/Antigua">
+				<exemplarCity>एँटिगुआ</exemplarCity>
+			</zone>
+			<zone type="America/Anguilla">
+				<exemplarCity>अंगुला</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Rio_Gallegos">
+				<exemplarCity>रियो गलेगॉस</exemplarCity>
+			</zone>
+			<zone type="America/Mendoza">
+				<exemplarCity>मेन्डोझा</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/San_Juan">
+				<exemplarCity>सान जुआन</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Ushuaia">
+				<exemplarCity>उशुआइया</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/La_Rioja">
+				<exemplarCity>ला रियोजा</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/San_Luis">
+				<exemplarCity>सान लुईस</exemplarCity>
+			</zone>
+			<zone type="America/Catamarca">
+				<exemplarCity>काटामारका</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Salta">
+				<exemplarCity>साल्टा</exemplarCity>
+			</zone>
+			<zone type="America/Jujuy">
+				<exemplarCity>जुजेय</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Tucuman">
+				<exemplarCity>टुकुमॅन</exemplarCity>
+			</zone>
+			<zone type="America/Cordoba">
+				<exemplarCity>कोरडोबा</exemplarCity>
+			</zone>
+			<zone type="America/Buenos_Aires">
+				<exemplarCity>ब्यूनस आयर्स</exemplarCity>
+			</zone>
+			<zone type="America/Aruba">
+				<exemplarCity>अरुबा</exemplarCity>
+			</zone>
+			<zone type="America/Barbados">
+				<exemplarCity>बारबाडोस</exemplarCity>
+			</zone>
+			<zone type="America/St_Barthelemy">
+				<exemplarCity>सेंट बार्थेलेमी</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Bermuda">
+				<exemplarCity>बर्मुडा</exemplarCity>
+			</zone>
+			<zone type="America/La_Paz">
+				<exemplarCity>ला पाझ</exemplarCity>
+			</zone>
+			<zone type="America/Kralendijk">
+				<exemplarCity>क्रालेनडीक</exemplarCity>
+			</zone>
+			<zone type="America/Eirunepe">
+				<exemplarCity>ईरुनेपे</exemplarCity>
+			</zone>
+			<zone type="America/Rio_Branco">
+				<exemplarCity>रियो ब्रांको</exemplarCity>
+			</zone>
+			<zone type="America/Porto_Velho">
+				<exemplarCity>पोर्टो वेल्हो</exemplarCity>
+			</zone>
+			<zone type="America/Boa_Vista">
+				<exemplarCity>बाओ विस्टा</exemplarCity>
+			</zone>
+			<zone type="America/Manaus">
+				<exemplarCity>मनौस</exemplarCity>
+			</zone>
+			<zone type="America/Cuiaba">
+				<exemplarCity>कुययबा</exemplarCity>
+			</zone>
+			<zone type="America/Santarem">
+				<exemplarCity>सांतारेम</exemplarCity>
+			</zone>
+			<zone type="America/Campo_Grande">
+				<exemplarCity>कॅम्पो ग्रांड</exemplarCity>
+			</zone>
+			<zone type="America/Belem">
+				<exemplarCity>बेलेम</exemplarCity>
+			</zone>
+			<zone type="America/Araguaina">
+				<exemplarCity>अरगुयेना</exemplarCity>
+			</zone>
+			<zone type="America/Sao_Paulo">
+				<exemplarCity>साओ पावलो</exemplarCity>
+			</zone>
+			<zone type="America/Bahia">
+				<exemplarCity>बहिया</exemplarCity>
+			</zone>
+			<zone type="America/Fortaleza">
+				<exemplarCity>फोर्टालेझा</exemplarCity>
+			</zone>
+			<zone type="America/Maceio">
+				<exemplarCity>मासियो</exemplarCity>
+			</zone>
+			<zone type="America/Recife">
+				<exemplarCity>रेसीफ</exemplarCity>
+			</zone>
+			<zone type="America/Noronha">
+				<exemplarCity>नोरोन्हा</exemplarCity>
+			</zone>
+			<zone type="America/Nassau">
+				<exemplarCity>नसाऊ</exemplarCity>
+			</zone>
+			<zone type="America/Belize">
+				<exemplarCity>बेलिझ</exemplarCity>
+			</zone>
+			<zone type="America/Dawson">
+				<exemplarCity>डौसन</exemplarCity>
+			</zone>
+			<zone type="America/Whitehorse">
+				<exemplarCity>व्हायटहॉर्स</exemplarCity>
+			</zone>
+			<zone type="America/Inuvik">
+				<exemplarCity>इनुविक</exemplarCity>
+			</zone>
+			<zone type="America/Vancouver">
+				<exemplarCity>व्हँकुव्हर</exemplarCity>
+			</zone>
+			<zone type="America/Fort_Nelson">
+				<exemplarCity>फोर्ट नेल्सन</exemplarCity>
+			</zone>
+			<zone type="America/Dawson_Creek">
+				<exemplarCity>डौसन क्रिक</exemplarCity>
+			</zone>
+			<zone type="America/Creston">
+				<exemplarCity>क्रेस्टोन</exemplarCity>
+			</zone>
+			<zone type="America/Yellowknife">
+				<exemplarCity>यलोक्नायफ</exemplarCity>
+			</zone>
+			<zone type="America/Edmonton">
+				<exemplarCity>ऍडमोंटन</exemplarCity>
+			</zone>
+			<zone type="America/Swift_Current">
+				<exemplarCity>स्विफ्ट करंट</exemplarCity>
+			</zone>
+			<zone type="America/Cambridge_Bay">
+				<exemplarCity>केंब्रिज बे</exemplarCity>
+			</zone>
+			<zone type="America/Regina">
+				<exemplarCity>रेजीना</exemplarCity>
+			</zone>
+			<zone type="America/Winnipeg">
+				<exemplarCity>विनीपेग</exemplarCity>
+			</zone>
+			<zone type="America/Resolute">
+				<exemplarCity>रिसोल्युट</exemplarCity>
+			</zone>
+			<zone type="America/Rainy_River">
+				<exemplarCity>पावसाळी न्हय</exemplarCity>
+			</zone>
+			<zone type="America/Rankin_Inlet">
+				<exemplarCity>रँकिन इनलॅट</exemplarCity>
+			</zone>
+			<zone type="America/Coral_Harbour">
+				<exemplarCity>अतिकोकॉन</exemplarCity>
+			</zone>
+			<zone type="America/Thunder_Bay">
+				<exemplarCity>थंडर बे</exemplarCity>
+			</zone>
+			<zone type="America/Nipigon">
+				<exemplarCity>निपिगोन</exemplarCity>
+			</zone>
+			<zone type="America/Toronto">
+				<exemplarCity>टॉरंटो</exemplarCity>
+			</zone>
+			<zone type="America/Iqaluit">
+				<exemplarCity>इकालुयीट</exemplarCity>
+			</zone>
+			<zone type="America/Pangnirtung">
+				<exemplarCity>पंगनिर्टुंग</exemplarCity>
+			</zone>
+			<zone type="America/Moncton">
+				<exemplarCity>मोंक्टॉन</exemplarCity>
+			</zone>
+			<zone type="America/Halifax">
+				<exemplarCity>हेलिफॅक्स</exemplarCity>
+			</zone>
+			<zone type="America/Goose_Bay">
+				<exemplarCity>गूस बे</exemplarCity>
+			</zone>
+			<zone type="America/Glace_Bay">
+				<exemplarCity>ग्लेस बे</exemplarCity>
+			</zone>
+			<zone type="America/Blanc-Sablon">
+				<exemplarCity>ब्लांक-साब्लोन</exemplarCity>
+			</zone>
+			<zone type="America/St_Johns">
+				<exemplarCity>सेंट जॉन्स</exemplarCity>
+			</zone>
+			<zone type="Pacific/Easter">
+				<exemplarCity>ईस्टर</exemplarCity>
+			</zone>
+			<zone type="America/Punta_Arenas">
+				<exemplarCity>पुंटा अरेनास</exemplarCity>
+			</zone>
+			<zone type="America/Santiago">
+				<exemplarCity>सँटियागो</exemplarCity>
+			</zone>
+			<zone type="America/Bogota">
+				<exemplarCity>बोगोटा</exemplarCity>
+			</zone>
+			<zone type="America/Costa_Rica">
+				<exemplarCity>कोस्ता रिका</exemplarCity>
+			</zone>
+			<zone type="America/Havana">
+				<exemplarCity>हवाना</exemplarCity>
+			</zone>
+			<zone type="America/Curacao">
+				<exemplarCity>कुराकाओ</exemplarCity>
+			</zone>
+			<zone type="America/Dominica">
+				<exemplarCity>डोमिनीका</exemplarCity>
+			</zone>
+			<zone type="America/Santo_Domingo">
+				<exemplarCity>सांतो डोमिंगो</exemplarCity>
+			</zone>
+			<zone type="Pacific/Galapagos">
+				<exemplarCity>गालापागोस</exemplarCity>
+			</zone>
+			<zone type="America/Guayaquil">
+				<exemplarCity>ग्वायेकिल</exemplarCity>
+			</zone>
 			<zone type="Europe/London">
 				<long>
 					<daylight>ब्रिटिश ग्रीष्म वेळ</daylight>
 				</long>
+			</zone>
+			<zone type="America/Grenada">
+				<exemplarCity>ग्रेनॅडा</exemplarCity>
+			</zone>
+			<zone type="America/Cayenne">
+				<exemplarCity>केइन</exemplarCity>
+			</zone>
+			<zone type="America/Thule">
+				<exemplarCity>थुले</exemplarCity>
+			</zone>
+			<zone type="America/Godthab">
+				<exemplarCity>नूक</exemplarCity>
+			</zone>
+			<zone type="America/Scoresbysund">
+				<exemplarCity>इटोकॉरटॉर्मीट</exemplarCity>
+			</zone>
+			<zone type="America/Danmarkshavn">
+				<exemplarCity>डेन्मार्कशॉन</exemplarCity>
+			</zone>
+			<zone type="America/Guadeloupe">
+				<exemplarCity>ग्वाडेलोप</exemplarCity>
+			</zone>
+			<zone type="America/Guatemala">
+				<exemplarCity>ग्वाटेमाला</exemplarCity>
+			</zone>
+			<zone type="America/Guyana">
+				<exemplarCity>गुयाना</exemplarCity>
+			</zone>
+			<zone type="America/Tegucigalpa">
+				<exemplarCity>तेगुसिगल्पा</exemplarCity>
+			</zone>
+			<zone type="America/Port-au-Prince">
+				<exemplarCity>पोर्ट-औ-प्रिन्स</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
 				<long>
 					<daylight>आयरिश प्रमाणित वेळ</daylight>
 				</long>
 			</zone>
+			<zone type="America/Jamaica">
+				<exemplarCity>जमैका</exemplarCity>
+			</zone>
+			<zone type="America/St_Kitts">
+				<exemplarCity>सेंट किट्स</exemplarCity>
+			</zone>
+			<zone type="America/Cayman">
+				<exemplarCity>कैमेन</exemplarCity>
+			</zone>
+			<zone type="America/St_Lucia">
+				<exemplarCity>सेंट लुसीया</exemplarCity>
+			</zone>
+			<zone type="America/Marigot">
+				<exemplarCity>मेरीगॉट</exemplarCity>
+			</zone>
+			<zone type="America/Martinique">
+				<exemplarCity>मार्टिनिक</exemplarCity>
+			</zone>
+			<zone type="America/Montserrat">
+				<exemplarCity>मॉन्टसेराट</exemplarCity>
+			</zone>
+			<zone type="America/Tijuana">
+				<exemplarCity>तिजुआना</exemplarCity>
+			</zone>
+			<zone type="America/Hermosillo">
+				<exemplarCity>हर्मोसिलो</exemplarCity>
+			</zone>
+			<zone type="America/Mazatlan">
+				<exemplarCity>माझाट्लान</exemplarCity>
+			</zone>
+			<zone type="America/Chihuahua">
+				<exemplarCity>चिहुआहुआ</exemplarCity>
+			</zone>
+			<zone type="America/Bahia_Banderas">
+				<exemplarCity>बहिया बंदेरस</exemplarCity>
+			</zone>
+			<zone type="America/Ojinaga">
+				<exemplarCity>ओजिनागा</exemplarCity>
+			</zone>
+			<zone type="America/Monterrey">
+				<exemplarCity>मोंटेरी</exemplarCity>
+			</zone>
+			<zone type="America/Mexico_City">
+				<exemplarCity>मेक्सिको शार</exemplarCity>
+			</zone>
+			<zone type="America/Matamoros">
+				<exemplarCity>माटामोरोस</exemplarCity>
+			</zone>
+			<zone type="America/Merida">
+				<exemplarCity>मेरिडा</exemplarCity>
+			</zone>
+			<zone type="America/Cancun">
+				<exemplarCity>कानकुन</exemplarCity>
+			</zone>
+			<zone type="America/Managua">
+				<exemplarCity>मॅनाग्वा</exemplarCity>
+			</zone>
+			<zone type="America/Panama">
+				<exemplarCity>पनामा</exemplarCity>
+			</zone>
+			<zone type="America/Lima">
+				<exemplarCity>लिमा</exemplarCity>
+			</zone>
+			<zone type="America/Miquelon">
+				<exemplarCity>मिक्वेलोन</exemplarCity>
+			</zone>
+			<zone type="America/Puerto_Rico">
+				<exemplarCity>पिर्टो रिको</exemplarCity>
+			</zone>
+			<zone type="America/Asuncion">
+				<exemplarCity>असंसियन</exemplarCity>
+			</zone>
+			<zone type="America/Paramaribo">
+				<exemplarCity>परामारिबो</exemplarCity>
+			</zone>
+			<zone type="America/El_Salvador">
+				<exemplarCity>एल साल्वाडोर</exemplarCity>
+			</zone>
+			<zone type="America/Lower_Princes">
+				<exemplarCity>लोवर प्रिंसेस क्वार्टर</exemplarCity>
+			</zone>
+			<zone type="America/Grand_Turk">
+				<exemplarCity>ग्रँड तुर्क</exemplarCity>
+			</zone>
+			<zone type="America/Port_of_Spain">
+				<exemplarCity>पोर्ट ऑफ स्पेन</exemplarCity>
+			</zone>
+			<zone type="America/Adak">
+				<exemplarCity>अडाक</exemplarCity>
+			</zone>
+			<zone type="America/Nome">
+				<exemplarCity>नोमे</exemplarCity>
+			</zone>
+			<zone type="America/Anchorage">
+				<exemplarCity>ऐंकरज</exemplarCity>
+			</zone>
+			<zone type="America/Yakutat">
+				<exemplarCity>याकुटाट</exemplarCity>
+			</zone>
+			<zone type="America/Sitka">
+				<exemplarCity>सिट्का</exemplarCity>
+			</zone>
+			<zone type="America/Juneau">
+				<exemplarCity>जूनो</exemplarCity>
+			</zone>
+			<zone type="America/Metlakatla">
+				<exemplarCity>मेट्लाकाट्ला</exemplarCity>
+			</zone>
+			<zone type="America/Los_Angeles">
+				<exemplarCity>लॉस एंजलीस</exemplarCity>
+			</zone>
+			<zone type="America/Boise">
+				<exemplarCity>बोयस</exemplarCity>
+			</zone>
+			<zone type="America/Phoenix">
+				<exemplarCity>फिनिक्स</exemplarCity>
+			</zone>
+			<zone type="America/Denver">
+				<exemplarCity>डेन्वेर</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/Beulah">
+				<exemplarCity>ब्यूल्लाह, उत्तर डाकोटा</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/New_Salem">
+				<exemplarCity>न्यु सालेम, उत्तर डाकोटा</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/Center">
+				<exemplarCity>मध्य, उत्तर डाकोटा</exemplarCity>
+			</zone>
+			<zone type="America/Chicago">
+				<exemplarCity>शिकागो</exemplarCity>
+			</zone>
+			<zone type="America/Menominee">
+				<exemplarCity>मेनोमिनी</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Vincennes">
+				<exemplarCity>विंसेनस, इंडियाना</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Petersburg">
+				<exemplarCity>पिटर्सबर्ग, इंडियाना</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Tell_City">
+				<exemplarCity>टेल सिटी, इंडियाना</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Knox">
+				<exemplarCity>नॉक्स, इंडियाना</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Winamac">
+				<exemplarCity>विनामॅक, इंडियाना</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Marengo">
+				<exemplarCity>मारेंगो, इंडियाना</exemplarCity>
+			</zone>
+			<zone type="America/Indianapolis">
+				<exemplarCity>इंडियानापोलीस</exemplarCity>
+			</zone>
+			<zone type="America/Louisville">
+				<exemplarCity>लुईजविले</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Vevay">
+				<exemplarCity>वेवय, इंडियाना</exemplarCity>
+			</zone>
+			<zone type="America/Kentucky/Monticello">
+				<exemplarCity>मोंटीसॅलो, केंटुकाय</exemplarCity>
+			</zone>
+			<zone type="America/Detroit">
+				<exemplarCity>डेट्रॉईट</exemplarCity>
+			</zone>
+			<zone type="America/New_York">
+				<exemplarCity>न्यु यॉर्क</exemplarCity>
+			</zone>
+			<zone type="America/Montevideo">
+				<exemplarCity>मोंटेव्हिडियो</exemplarCity>
+			</zone>
+			<zone type="America/St_Vincent">
+				<exemplarCity>सेंट विन्सेंट</exemplarCity>
+			</zone>
+			<zone type="America/Caracas">
+				<exemplarCity>कराकस</exemplarCity>
+			</zone>
+			<zone type="America/Tortola">
+				<exemplarCity>टोरटोला</exemplarCity>
+			</zone>
+			<zone type="America/St_Thomas">
+				<exemplarCity>सेंट थॉमस</exemplarCity>
+			</zone>
+			<metazone type="Africa_Central">
+				<long>
+					<standard>मध्य आफ्रिका वेळ</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Eastern">
+				<long>
+					<standard>उदेंत आफ्रिका वेळ</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Southern">
+				<long>
+					<standard>दक्षिण आफ्रिका प्रमाणित वेळ</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Western">
+				<long>
+					<generic>अस्तंत आफ्रिका वेळ</generic>
+					<standard>अस्तंत आफ्रिका प्रमाणित वेळ</standard>
+					<daylight>अस्तंत आफ्रिका ग्रीष्म वेळ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Alaska">
+				<long>
+					<generic>अलास्का वेळ</generic>
+					<standard>अलास्का प्रमाणित वेळ</standard>
+					<daylight>अलास्का डेलायट वेळ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Amazon">
+				<long>
+					<generic>अमेझोन वेळ</generic>
+					<standard>अमेझोन प्रमाणित वेळ</standard>
+					<daylight>अमेझोन ग्रीष्म वेळ</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Central">
+				<long>
+					<generic>मध्य वेळ</generic>
+					<standard>मध्य प्रमाणित वेळ</standard>
+					<daylight>मध्य डेलायट वेळ</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Eastern">
+				<long>
+					<generic>उदेंत वेळ</generic>
+					<standard>उदेंत प्रमाणित वेळ</standard>
+					<daylight>उदेंतेचो डेलायट वेळ</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Mountain">
+				<long>
+					<generic>पर्वतीय वेळ</generic>
+					<standard>पर्वतीय प्रमाणित वेळ</standard>
+					<daylight>पर्वतीय डेलायट वेळ</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Pacific">
+				<long>
+					<generic>प्रशांत वेळ</generic>
+					<standard>प्रशांत प्रमाणित वेळ</standard>
+					<daylight>प्रशांत डेलायट वेळ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina">
+				<long>
+					<generic>अर्जेंटिना वेळ</generic>
+					<standard>अर्जेंटिना प्रमाणित वेळ</standard>
+					<daylight>अर्जेंटिना ग्रीष्म वेळ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina_Western">
+				<long>
+					<generic>अस्तंत अर्जेंटिना वेळ</generic>
+					<standard>अस्तंत अर्जेंटिना प्रमाणित वेळ</standard>
+					<daylight>अस्तंत अर्जेंटिना ग्रीष्म वेळ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Atlantic">
+				<long>
+					<generic>अटलांटीक वेळ</generic>
+					<standard>अटलांटीक प्रमाणित वेळ</standard>
+					<daylight>अटलांटीक डेलायट वेळ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bolivia">
+				<long>
+					<standard>बोलिव्हिया वेळ</standard>
+				</long>
+			</metazone>
+			<metazone type="Brasilia">
+				<long>
+					<generic>ब्राझिलिया वेळ</generic>
+					<standard>ब्राझिलिया प्रमाणित वेळ</standard>
+					<daylight>ब्राझिलिया ग्रीष्म वेळ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Chile">
+				<long>
+					<generic>चिली वेळ</generic>
+					<standard>चिली प्रमाणित वेळ</standard>
+					<daylight>चिली ग्रीष्म वेळ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Colombia">
+				<long>
+					<generic>कोलंबिया</generic>
+					<standard>कोलंबिया प्रमाणित वेळ</standard>
+					<daylight>कोलंबिया ग्रीष्म वेळ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Cuba">
+				<long>
+					<generic>क्युबा वेळ</generic>
+					<standard>क्युबा प्रमाणित वेळ</standard>
+					<daylight>क्युबा डेलायट वेळ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Easter">
+				<long>
+					<generic>ईस्टर आयलँड वेळ</generic>
+					<standard>ईस्टर आयलँड प्रमाणित वेळ</standard>
+					<daylight>ईस्टर आयलँड ग्रीष्म वेळ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Ecuador">
+				<long>
+					<standard>इक्वेडोर वेळ</standard>
+				</long>
+			</metazone>
+			<metazone type="Falkland">
+				<long>
+					<generic>फॉकलँड आयलँड्स वेळ</generic>
+					<standard>फॉकलँड आयलँड्स प्रमाणित वेळ</standard>
+					<daylight>फॉकलँड आयलँड्स ग्रीष्म वेळ</daylight>
+				</long>
+			</metazone>
+			<metazone type="French_Guiana">
+				<long>
+					<standard>फ्रेंच गयाना वेळ</standard>
+				</long>
+			</metazone>
+			<metazone type="Galapagos">
+				<long>
+					<standard>गालापागोस वेळ</standard>
+				</long>
+			</metazone>
+			<metazone type="Greenland_Eastern">
+				<long>
+					<generic>उदेंत ग्रीनलँड वेळ</generic>
+					<standard>उदेंत ग्रीनलँड प्रमाणित वेळ</standard>
+					<daylight>उदेंत ग्रीनलँड ग्रीष्म वेळ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Greenland_Western">
+				<long>
+					<generic>अस्तंत ग्रीनलँड वेळ</generic>
+					<standard>अस्तंत ग्रीनलँड प्रमाणित वेळ</standard>
+					<daylight>अस्तंत ग्रीनलँड ग्रीष्म वेळ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Guyana">
+				<long>
+					<standard>गुयाना वेळ</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii_Aleutian">
+				<long>
+					<generic>हवाई-अलेयुशिन वेळ</generic>
+					<standard>हवाई-अलेयुशिन प्रमाणित वेळ</standard>
+					<daylight>हवाई-अलेयुशिन डेलायट वेळ</daylight>
+				</long>
+			</metazone>
 			<metazone type="India">
 				<long>
 					<standard>भारतीय समय</standard>
@@ -1842,6 +2677,77 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<short>
 					<standard>IST</standard>
 				</short>
+			</metazone>
+			<metazone type="Mexico_Northwest">
+				<long>
+					<generic>वायव्य मेक्सिको वेळ</generic>
+					<standard>वायव्य मेक्सिको प्रमाणित वेळ</standard>
+					<daylight>वायव्य मेक्सिको डेलायट वेळ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mexico_Pacific">
+				<long>
+					<generic>मेक्सिकन प्रशांत वेळ</generic>
+					<standard>मेक्सिकन प्रशांत प्रमाणित वेळ</standard>
+					<daylight>मेक्सिकन प्रशांत डेलायट वेळ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Newfoundland">
+				<long>
+					<generic>न्युफावंडलँड वेळ</generic>
+					<standard>न्युफावंडलँड प्रमाणित वेळ</standard>
+					<daylight>न्युफावंडलँड डेलायट वेळ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Noronha">
+				<long>
+					<generic>फर्नांडो दी नोरोन्हा वेळ</generic>
+					<standard>फर्नांडो दी नोरोन्हा प्रमाणित वेळ</standard>
+					<daylight>Vote फर्नांडो दी नोरोन्हा ग्रीष्म वेळ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Paraguay">
+				<long>
+					<generic>परागुआ वेळ</generic>
+					<standard>परागुआ प्रमाणित वेळ</standard>
+					<daylight>परागुआ ग्रीष्म वेळ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Peru">
+				<long>
+					<generic>पेरू वेळ</generic>
+					<standard>पेरू प्रमाणित वेळ</standard>
+					<daylight>पेरू ग्रीष्म वेळ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Pierre_Miquelon">
+				<long>
+					<generic>सेंट पियर आनी मिकलान वेळ</generic>
+					<standard>सेंट पियर आनी मिकलान प्रमाणित वेळ</standard>
+					<daylight>सेंट पियर आनी मिकलान डेलायट वेळ</daylight>
+				</long>
+			</metazone>
+			<metazone type="South_Georgia">
+				<long>
+					<standard>दक्षिण जॉर्जिया वेळ</standard>
+				</long>
+			</metazone>
+			<metazone type="Suriname">
+				<long>
+					<standard>सुरिनाम वेळ</standard>
+				</long>
+			</metazone>
+			<metazone type="Uruguay">
+				<long>
+					<generic>उरुग्वे वेळ</generic>
+					<standard>उरुग्वे प्रमाणित वेळ</standard>
+					<daylight>उरुग्वे ग्रीष्म वेळ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Venezuela">
+				<long>
+					<standard>वेनेझुएला वेळ</standard>
+				</long>
 			</metazone>
 		</timeZoneNames>
 	</dates>
@@ -2033,7 +2939,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
-			<pattern type="atLeast">⩾{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
 			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
 		<minimalPairs>

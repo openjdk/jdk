@@ -1,51 +1,80 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2018 Unicode, Inc.
+<!-- Copyright © 1991-2019 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 13869 $"/>
+		<version number="$Revision: 14856 $"/>
 		<language type="kw"/>
 	</identity>
 	<localeDisplayNames>
 		<languages>
 			<language type="ar" draft="unconfirmed">Arabek</language>
+			<language type="ar_001" draft="unconfirmed">Arabek Savonek Arnowydh</language>
+			<language type="br" draft="unconfirmed">Bretonek</language>
 			<language type="cy" draft="unconfirmed">Kembrek</language>
 			<language type="da" draft="unconfirmed">Danek</language>
 			<language type="de" draft="unconfirmed">Almaynek</language>
+			<language type="de_AT" draft="unconfirmed">Almaynek (Ostri)</language>
+			<language type="de_CH" draft="unconfirmed">Almaynek Ughel (Pow Swis)</language>
+			<language type="el" draft="unconfirmed">Greka</language>
 			<language type="en" draft="unconfirmed">Sowsnek</language>
+			<language type="en_AU" draft="unconfirmed">Sowsnek (Ostrali)</language>
+			<language type="en_CA" draft="unconfirmed">Sowsnek (Kanada)</language>
+			<language type="en_GB" draft="unconfirmed">Sowsnek (Breten Veur)</language>
+			<language type="en_GB" alt="short" draft="unconfirmed">Sowsnek (RU)</language>
+			<language type="en_US" alt="short" draft="unconfirmed">Sowsnek (SU)</language>
 			<language type="es" draft="unconfirmed">Spaynek</language>
 			<language type="eu" draft="unconfirmed">Baskek</language>
 			<language type="fr" draft="unconfirmed">Frenkek</language>
+			<language type="fr_CA" draft="unconfirmed">Frenkek (Kanada)</language>
+			<language type="fr_CH" draft="unconfirmed">Frenkek (Pow Swis)</language>
 			<language type="ga" draft="unconfirmed">Wordhonek</language>
+			<language type="gd" draft="unconfirmed">Godhalek Alban</language>
 			<language type="it" draft="unconfirmed">Italek</language>
 			<language type="ja" draft="unconfirmed">Japanek</language>
 			<language type="kw">kernewek</language>
 			<language type="nl" draft="unconfirmed">Iseldiryek</language>
 			<language type="pt" draft="unconfirmed">Portyngalek</language>
-			<language type="pt_BR" draft="unconfirmed">Portyngalek Brasil</language>
+			<language type="pt_PT" draft="unconfirmed">Portyngalek (Ewrop)</language>
+			<language type="ro_MD" draft="unconfirmed">Moldavek</language>
 			<language type="ru" draft="unconfirmed">Russek</language>
 			<language type="yue" draft="unconfirmed">Kantonek</language>
 			<language type="zh" draft="unconfirmed">Chinek</language>
-			<language type="zh_Hans" draft="unconfirmed">Chinek sempel</language>
-			<language type="zh_Hant" draft="unconfirmed">Chînek Tradycyonal</language>
+			<language type="zh_Hans" draft="unconfirmed">Chinek sempelhes</language>
+			<language type="zh_Hant" draft="unconfirmed">Chinek hengovek</language>
 		</languages>
 		<scripts>
 			<script type="Arab" draft="unconfirmed">Arabek</script>
+			<script type="Grek" draft="unconfirmed">Greka</script>
+			<script type="Hani" draft="unconfirmed">Han</script>
+			<script type="Hans" draft="unconfirmed">Sempelhes</script>
+			<script type="Hans" alt="stand-alone" draft="unconfirmed">Han sempelhes</script>
+			<script type="Hant" draft="unconfirmed">Hengovek</script>
+			<script type="Hant" alt="stand-alone" draft="unconfirmed">Han hengovek</script>
+			<script type="Latn" draft="unconfirmed">Latin</script>
 		</scripts>
 		<territories>
+			<territory type="001" draft="unconfirmed">An Bys</territory>
+			<territory type="002" draft="unconfirmed">Afrika</territory>
+			<territory type="003" draft="unconfirmed">Amerika Gledh</territory>
+			<territory type="019" draft="unconfirmed">An Amerikas</territory>
+			<territory type="142" draft="unconfirmed">Asi</territory>
+			<territory type="150" draft="unconfirmed">Europa</territory>
 			<territory type="BR" draft="unconfirmed">Brasil</territory>
 			<territory type="CN" draft="unconfirmed">China</territory>
 			<territory type="DE" draft="unconfirmed">Almayn</territory>
+			<territory type="EU" draft="unconfirmed">Unyans Europek</territory>
 			<territory type="FR" draft="unconfirmed">Pow Frenk</territory>
 			<territory type="GB">Rywvaneth Unys</territory>
 			<territory type="IN" draft="unconfirmed">Eynda</territory>
 			<territory type="IT" draft="unconfirmed">Itali</territory>
 			<territory type="JP" draft="unconfirmed">Japan</territory>
 			<territory type="RU" draft="unconfirmed">Russi</territory>
+			<territory type="UN" draft="unconfirmed">Kenedhlow Unys</territory>
 			<territory type="US" draft="unconfirmed">Statys Unys</territory>
 		</territories>
 		<keys>
@@ -54,6 +83,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<types>
 			<type key="calendar" type="gregorian" draft="unconfirmed">Kalans gregorek</type>
 		</types>
+		<codePatterns>
+			<codePattern type="language" draft="unconfirmed">Taves: {0}</codePattern>
+		</codePatterns>
 	</localeDisplayNames>
 	<characters>
 		<exemplarCharacters>[a b c d e f g h i j k l m n o p q r s t u v w x y z]</exemplarCharacters>
@@ -264,46 +296,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤#,##0.00</pattern>
-				</currencyFormat>
-			</currencyFormatLength>
-			<currencyFormatLength type="short">
-				<currencyFormat type="standard">
-					<pattern type="1000" count="one" draft="provisional">¤0K</pattern>
-					<pattern type="1000" count="two" draft="provisional">¤0K</pattern>
-					<pattern type="1000" count="other" draft="provisional">¤0K</pattern>
-					<pattern type="10000" count="one" draft="provisional">¤00K</pattern>
-					<pattern type="10000" count="two" draft="provisional">¤00K</pattern>
-					<pattern type="10000" count="other" draft="provisional">¤00K</pattern>
-					<pattern type="100000" count="one" draft="provisional">¤000K</pattern>
-					<pattern type="100000" count="two" draft="provisional">¤000K</pattern>
-					<pattern type="100000" count="other" draft="provisional">¤000K</pattern>
-					<pattern type="1000000" count="one" draft="provisional">¤0M</pattern>
-					<pattern type="1000000" count="two" draft="provisional">¤0M</pattern>
-					<pattern type="1000000" count="other" draft="provisional">¤0M</pattern>
-					<pattern type="10000000" count="one" draft="provisional">¤00M</pattern>
-					<pattern type="10000000" count="two" draft="provisional">¤00M</pattern>
-					<pattern type="10000000" count="other" draft="provisional">¤00M</pattern>
-					<pattern type="100000000" count="one" draft="provisional">¤000M</pattern>
-					<pattern type="100000000" count="two" draft="provisional">¤000M</pattern>
-					<pattern type="100000000" count="other" draft="provisional">¤000M</pattern>
-					<pattern type="1000000000" count="one" draft="provisional">¤0G</pattern>
-					<pattern type="1000000000" count="two" draft="provisional">¤0G</pattern>
-					<pattern type="1000000000" count="other" draft="provisional">¤0G</pattern>
-					<pattern type="10000000000" count="one" draft="provisional">¤00G</pattern>
-					<pattern type="10000000000" count="two" draft="provisional">¤00G</pattern>
-					<pattern type="10000000000" count="other" draft="provisional">¤00G</pattern>
-					<pattern type="100000000000" count="one" draft="provisional">¤000G</pattern>
-					<pattern type="100000000000" count="two" draft="provisional">¤000G</pattern>
-					<pattern type="100000000000" count="other" draft="provisional">¤000G</pattern>
-					<pattern type="1000000000000" count="one" draft="provisional">¤0T</pattern>
-					<pattern type="1000000000000" count="two" draft="provisional">¤0T</pattern>
-					<pattern type="1000000000000" count="other" draft="provisional">¤0T</pattern>
-					<pattern type="10000000000000" count="one" draft="provisional">¤00T</pattern>
-					<pattern type="10000000000000" count="two" draft="provisional">¤00T</pattern>
-					<pattern type="10000000000000" count="other" draft="provisional">¤00T</pattern>
-					<pattern type="100000000000000" count="one" draft="provisional">¤000T</pattern>
-					<pattern type="100000000000000" count="two" draft="provisional">¤000T</pattern>
-					<pattern type="100000000000000" count="other" draft="provisional">¤000T</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>

@@ -53,10 +53,10 @@ public class JapaneseEraNameTest {
             // type,    locale,  name
             { LONG,     JAPAN,   "\u4ee4\u548c" },
             { LONG,     US,      "Reiwa" },
-            { LONG,     CHINA,   "Reiwa" },
+            { LONG,     CHINA,   "\u4ee4\u548c" },
             { SHORT,    JAPAN,   "\u4ee4\u548c" },
             { SHORT,    US,      "Reiwa" },
-            { SHORT,    CHINA,   "R" },
+            { SHORT,    CHINA,   "\u4ee4\u548c" },
         };
     }
 

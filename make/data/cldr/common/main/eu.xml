@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2018 Unicode, Inc.
+<!-- Copyright © 1991-2019 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -9,7 +9,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 13911 $"/>
+		<version number="$Revision: 14982 $"/>
 		<language type="eu"/>
 	</identity>
 	<localeDisplayNames>
@@ -25,7 +25,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ach">acholiera</language>
 			<language type="ada">adangmera</language>
 			<language type="ady">adigera</language>
-			<language type="af">afrikaansa</language>
+			<language type="af">afrikaans</language>
 			<language type="agq">aghemera</language>
 			<language type="ain">ainuera</language>
 			<language type="ak">akanera</language>
@@ -36,8 +36,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="anp">angikera</language>
 			<language type="ar">arabiera</language>
 			<language type="ar_001">arabiera moderno estandarra</language>
-			<language type="arn">maputxea</language>
-			<language type="arp">arapahoa</language>
+			<language type="arn">maputxe</language>
+			<language type="arp">arapaho</language>
 			<language type="as">assamera</language>
 			<language type="asa">asua</language>
 			<language type="ast">asturiera</language>
@@ -46,7 +46,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ay">aimara</language>
 			<language type="az">azerbaijanera</language>
 			<language type="az" alt="short">azerbaijanera</language>
-			<language type="ba">bashkirrera</language>
+			<language type="ba">baxkirera</language>
 			<language type="ban">baliera</language>
 			<language type="bas">basaa</language>
 			<language type="be">bielorrusiera</language>
@@ -65,8 +65,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bs">bosniera</language>
 			<language type="bug">buginera</language>
 			<language type="byn">bilena</language>
-			<language type="ca">katalana</language>
-			<language type="ce">txetxeniera</language>
+			<language type="ca">katalan</language>
+			<language type="ce">txetxenera</language>
 			<language type="ceb">cebuera</language>
 			<language type="cgg">chigera</language>
 			<language type="ch">chamorrera</language>
@@ -77,18 +77,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="chy">cheyennera</language>
 			<language type="ckb">sorania</language>
 			<language type="co">korsikera</language>
-			<language type="crs">seselwa frantses-kreolera</language>
+			<language type="crs">Seychelleetako kreolera</language>
 			<language type="cs">txekiera</language>
-			<language type="cu">Elizako eslaviera</language>
-			<language type="cv">chuvashera</language>
-			<language type="cy">galesa</language>
+			<language type="cu">elizako eslaviera</language>
+			<language type="cv">txuvaxera</language>
+			<language type="cy">gales</language>
 			<language type="da">daniera</language>
 			<language type="dak">dakotera</language>
 			<language type="dar">dargvera</language>
 			<language type="dav">taitera</language>
-			<language type="de">alemana</language>
-			<language type="de_AT">Austriako alemana</language>
-			<language type="de_CH">aleman garaia (Suitza)</language>
+			<language type="de">aleman</language>
+			<language type="de_AT">Austriako aleman</language>
+			<language type="de_CH">Suitzako aleman garai</language>
 			<language type="dgr">dogribera</language>
 			<language type="dje">zarma</language>
 			<language type="dsb">behe-sorabiera</language>
@@ -102,14 +102,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="efi">efikera</language>
 			<language type="eka">akajuka</language>
 			<language type="el">greziera</language>
-			<language type="en">ingelesa</language>
-			<language type="en_AU">Australiako ingelesa</language>
-			<language type="en_CA">Kanadako ingelesa</language>
-			<language type="en_GB">Britainia Handiko ingelesa</language>
-			<language type="en_GB" alt="short">Erresuma Batuko ingelesa</language>
-			<language type="en_US">AEBko ingelesa</language>
+			<language type="en">ingeles</language>
+			<language type="en_AU">Australiako ingeles</language>
+			<language type="en_CA">Kanadako ingeles</language>
+			<language type="en_GB">Britania Handiko ingeles</language>
+			<language type="en_GB" alt="short">Erresuma Batuko ingeles</language>
+			<language type="en_US">AEBko ingeles</language>
 			<language type="en_US" alt="short">AEBko ingelesa</language>
-			<language type="eo">esperantoa</language>
+			<language type="eo">esperanto</language>
 			<language type="es">espainiera</language>
 			<language type="es_419">Latinoamerikako espainiera</language>
 			<language type="es_ES">espainiera (Europa)</language>
@@ -124,21 +124,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="fj">fijiera</language>
 			<language type="fo">faroera</language>
 			<language type="fon">fona</language>
-			<language type="fr">frantsesa</language>
-			<language type="fr_CA">Kanadako frantsesa</language>
-			<language type="fr_CH">Suitzako frantsesa</language>
+			<language type="fr">frantses</language>
+			<language type="fr_CA">Kanadako frantses</language>
+			<language type="fr_CH">Suitzako frantses</language>
 			<language type="fur">friuliera</language>
 			<language type="fy">frisiera</language>
-			<language type="ga">gaelikoa</language>
+			<language type="ga">gaeliko</language>
 			<language type="gaa">ga</language>
 			<language type="gag">gagauzera</language>
-			<language type="gd">Eskoziako gaelikoa</language>
+			<language type="gd">Eskoziako gaeliko</language>
 			<language type="gez">ge’ez</language>
 			<language type="gil">gilbertera</language>
 			<language type="gl">galiziera</language>
 			<language type="gn">guaraniera</language>
 			<language type="gor">gorontaloa</language>
-			<language type="gsw">alemana (Suitza)</language>
+			<language type="gsw">Suitzako aleman</language>
 			<language type="gu">gujaratera</language>
 			<language type="guz">gusiiera</language>
 			<language type="gv">manxera</language>
@@ -146,8 +146,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ha">hausa</language>
 			<language type="haw">hawaiiera</language>
 			<language type="he">hebreera</language>
-			<language type="hi">hindia</language>
-			<language type="hil">hiligainona</language>
+			<language type="hi">hindi</language>
+			<language type="hil">hiligainon</language>
 			<language type="hmn">hmong</language>
 			<language type="hr">kroaziera</language>
 			<language type="hsb">goi-sorabiera</language>
@@ -155,7 +155,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="hu">hungariera</language>
 			<language type="hup">hupera</language>
 			<language type="hy">armeniera</language>
-			<language type="hz">herera</language>
+			<language type="hz">hereroera</language>
 			<language type="ia">interlingua</language>
 			<language type="iba">ibanera</language>
 			<language type="ibb">ibibioera</language>
@@ -168,7 +168,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="io">ido</language>
 			<language type="is">islandiera</language>
 			<language type="it">italiera</language>
-			<language type="iu">inuitera</language>
+			<language type="iu">inuktitut</language>
 			<language type="ja">japoniera</language>
 			<language type="jbo">lojbanera</language>
 			<language type="jgo">ngomba</language>
@@ -182,7 +182,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kbd">kabardiera</language>
 			<language type="kcg">kataba</language>
 			<language type="kde">makondera</language>
-			<language type="kea">Cabo Verdeko kreola</language>
+			<language type="kea">Cabo Verdeko kreolera</language>
 			<language type="kfo">koroa</language>
 			<language type="kg">kikongoa</language>
 			<language type="kha">kashia</language>
@@ -213,8 +213,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kv">komiera</language>
 			<language type="kw">kornubiera</language>
 			<language type="ky">kirgizera</language>
-			<language type="la">latina</language>
-			<language type="lad">ladinera</language>
+			<language type="la">latin</language>
+			<language type="lad">ladino</language>
 			<language type="lag">langiera</language>
 			<language type="lb">luxenburgera</language>
 			<language type="lez">lezgiera</language>
@@ -242,7 +242,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="men">mendeera</language>
 			<language type="mer">meruera</language>
 			<language type="mfe">Mauritaniako kreolera</language>
-			<language type="mg">malgaxea</language>
+			<language type="mg">malgaxe</language>
 			<language type="mgh">makhuwa-meettoera</language>
 			<language type="mgo">metera</language>
 			<language type="mh">marshallera</language>
@@ -268,18 +268,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="na">nauruera</language>
 			<language type="nap">napoliera</language>
 			<language type="naq">namera</language>
-			<language type="nb">bokmala (Norvegia)</language>
+			<language type="nb">bokmål (norvegiera)</language>
 			<language type="nd">iparraldeko ndebeleera</language>
 			<language type="nds_NL">behe-saxoiera</language>
 			<language type="ne">nepalera</language>
 			<language type="new">newarera</language>
 			<language type="ng">ndongera</language>
-			<language type="nia">niasa</language>
-			<language type="niu">niuera</language>
+			<language type="nia">niasera</language>
+			<language type="niu">niueera</language>
 			<language type="nl">nederlandera</language>
 			<language type="nl_BE">flandriera</language>
 			<language type="nmg">kwasiera</language>
-			<language type="nn">nynorsk norvegiera</language>
+			<language type="nn">nynorsk (norvegiera)</language>
 			<language type="nnh">ngiemboonera</language>
 			<language type="no">norvegiera</language>
 			<language type="nog">nogaiera</language>
@@ -287,7 +287,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="nr">hegoaldeko ndebelera</language>
 			<language type="nso">pediera</language>
 			<language type="nus">nuerera</language>
-			<language type="nv">navahoera</language>
+			<language type="nv">navajoera</language>
 			<language type="ny">chewera</language>
 			<language type="nyn">ankolera</language>
 			<language type="oc">okzitaniera</language>
@@ -297,15 +297,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="pa">punjabera</language>
 			<language type="pag">pangasinanera</language>
 			<language type="pam">pampangera</language>
-			<language type="pap">papiamentoa</language>
+			<language type="pap">papiamento</language>
 			<language type="pau">palauera</language>
 			<language type="pcm">Nigeriako pidgina</language>
 			<language type="pl">poloniera</language>
 			<language type="prg">prusiera</language>
 			<language type="ps">paxtuera</language>
-			<language type="pt">portugesa</language>
-			<language type="pt_BR">Brasilgo portugesa</language>
-			<language type="pt_PT">portugesa (Europa)</language>
+			<language type="pt">portuges</language>
+			<language type="pt_BR">Brasilgo portuges</language>
+			<language type="pt_PT">Europako portuges</language>
 			<language type="qu">kitxua</language>
 			<language type="quc">quicheera</language>
 			<language type="rap">rapa nui</language>
@@ -317,11 +317,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="rof">romboera</language>
 			<language type="root">erroa</language>
 			<language type="ru">errusiera</language>
-			<language type="rup">aromania</language>
+			<language type="rup">aromaniera</language>
 			<language type="rw">kinyaruanda</language>
 			<language type="rwk">rwaera</language>
-			<language type="sa">sanskritoa</language>
-			<language type="sad">sandawea</language>
+			<language type="sa">sanskrito</language>
+			<language type="sad">sandaweera</language>
 			<language type="sah">sakhera</language>
 			<language type="saq">samburuera</language>
 			<language type="sat">santalera</language>
@@ -330,11 +330,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="sc">sardiniera</language>
 			<language type="scn">siziliera</language>
 			<language type="sco">eskoziera</language>
-			<language type="sd">sindhia</language>
+			<language type="sd">sindhi</language>
 			<language type="se">iparraldeko samiera</language>
 			<language type="seh">senera</language>
 			<language type="ses">koyraboro sennia</language>
-			<language type="sg">sangoa</language>
+			<language type="sg">sango</language>
 			<language type="sh">serbokroaziera</language>
 			<language type="shi">tachelhita</language>
 			<language type="shn">shanera</language>
@@ -343,8 +343,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="sl">esloveniera</language>
 			<language type="sm">samoera</language>
 			<language type="sma">hegoaldeko samiera</language>
-			<language type="smj">lule samiera</language>
-			<language type="smn">inari-samiera</language>
+			<language type="smj">Luleko samiera</language>
+			<language type="smn">Inariko samiera</language>
 			<language type="sms">skolten samiera</language>
 			<language type="sn">shonera</language>
 			<language type="snk">soninkera</language>
@@ -361,22 +361,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="sw">swahilia</language>
 			<language type="sw_CD">Kongoko swahilia</language>
 			<language type="swb">komoreera</language>
-			<language type="syr">asiriera</language>
+			<language type="syr">siriera</language>
 			<language type="ta">tamilera</language>
-			<language type="te">telugua</language>
+			<language type="te">telugu</language>
 			<language type="tem">temnea</language>
 			<language type="teo">tesoera</language>
-			<language type="tet">tetuma</language>
+			<language type="tet">tetum</language>
 			<language type="tg">tajikera</language>
 			<language type="th">thailandiera</language>
-			<language type="ti">tigriñera</language>
+			<language type="ti">tigrinyera</language>
 			<language type="tig">tigrea</language>
 			<language type="tk">turkmenera</language>
 			<language type="tl">tagalog</language>
 			<language type="tlh">klingonera</language>
 			<language type="tn">tswanera</language>
 			<language type="to">tongera</language>
-			<language type="tpi">tok pisina</language>
+			<language type="tpi">tok pisin</language>
 			<language type="tr">turkiera</language>
 			<language type="trv">tarokoa</language>
 			<language type="ts">tsongera</language>
@@ -384,22 +384,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="tum">tumbukera</language>
 			<language type="tvl">tuvaluera</language>
 			<language type="tw">twia</language>
-			<language type="twq">tasawaqa</language>
+			<language type="twq">tasawaq</language>
 			<language type="ty">tahitiera</language>
 			<language type="tyv">tuvera</language>
 			<language type="tzm">Erdialdeko Atlaseko amazigera</language>
 			<language type="udm">udmurtera</language>
 			<language type="ug">uigurrera</language>
 			<language type="uk">ukrainera</language>
-			<language type="umb">umbunduera</language>
+			<language type="umb">umbundu</language>
 			<language type="und">hizkuntza ezezaguna</language>
-			<language type="ur">urdua</language>
+			<language type="ur">urdu</language>
 			<language type="uz">uzbekera</language>
 			<language type="vai">vaiera</language>
 			<language type="ve">vendera</language>
 			<language type="vi">vietnamera</language>
-			<language type="vo">volapüka</language>
-			<language type="vun">vunjoa</language>
+			<language type="vo">volapük</language>
+			<language type="vun">vunjo</language>
 			<language type="wa">waloiera</language>
 			<language type="wae">walserera</language>
 			<language type="wal">welayta</language>
@@ -410,7 +410,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="xog">sogera</language>
 			<language type="yav">jangbenera</language>
 			<language type="ybb">yemba</language>
-			<language type="yi">yiddisha</language>
+			<language type="yi">yiddish</language>
 			<language type="yo">jorubera</language>
 			<language type="yue">kantonera</language>
 			<language type="zgh">amazigera estandarra</language>
@@ -420,21 +420,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="zu">zuluera</language>
 			<language type="zun">zuñia</language>
 			<language type="zxx">ez dago eduki linguistikorik</language>
-			<language type="zza">zazakia</language>
+			<language type="zza">zazera</language>
 		</languages>
 		<scripts>
 			<script type="Arab">arabiarra</script>
 			<script type="Arab" alt="variant">persiar-arabiarra</script>
 			<script type="Armn">armeniarra</script>
-			<script type="Beng">bengaliarra</script>
+			<script type="Beng">bengalarra</script>
 			<script type="Bopo">bopomofoa</script>
 			<script type="Brai">braillea</script>
 			<script type="Cyrl">zirilikoa</script>
 			<script type="Deva">devanagaria</script>
 			<script type="Ethi">etiopiarra</script>
 			<script type="Geor">georgiarra</script>
-			<script type="Grek">greziarra</script>
-			<script type="Gujr">gujaratera</script>
+			<script type="Grek">grekoa</script>
+			<script type="Gujr">gujaratarra</script>
 			<script type="Guru">gurmukhia</script>
 			<script type="Hanb">hänera</script>
 			<script type="Hang">hangula</script>
@@ -443,9 +443,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Hans" alt="stand-alone">idazkera txinatar sinplifikatua</script>
 			<script type="Hant">tradizionala</script>
 			<script type="Hant" alt="stand-alone">idazkera txinatar tradizionala</script>
-			<script type="Hebr">hebreera</script>
+			<script type="Hebr">hebrearra</script>
 			<script type="Hira">hiragana</script>
-			<script type="Hrkt">silaba japoniarrak</script>
+			<script type="Hrkt">silabario japoniarrak</script>
 			<script type="Jamo">jamo-bihurketa</script>
 			<script type="Jpan">japoniarra</script>
 			<script type="Kana">katakana</script>
@@ -453,8 +453,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Knda">kanadarra</script>
 			<script type="Kore">korearra</script>
 			<script type="Laoo">laosarra</script>
-			<script type="Latn">latina</script>
-			<script type="Mlym">malayalamera</script>
+			<script type="Latn">latinoa</script>
+			<script type="Mlym">malayalamarra</script>
 			<script type="Mong">mongoliarra</script>
 			<script type="Mymr">birmaniarra</script>
 			<script type="Orya">oriyarra</script>
@@ -484,11 +484,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="017">Erdialdeko Afrika</territory>
 			<territory type="018">Afrika hegoaldea</territory>
 			<territory type="019">Amerika</territory>
-			<territory type="021">Amerika iparraldea</territory>
+			<territory type="021">Amerikako iparraldea</territory>
 			<territory type="029">Karibea</territory>
 			<territory type="030">Asia ekialdea</territory>
 			<territory type="034">Asia hegoaldea</territory>
-			<territory type="035">Asia hego-ekialdea</territory>
+			<territory type="035">Asiako hego-ekialdea</territory>
 			<territory type="039">Europa hegoaldea</territory>
 			<territory type="053">Australasia</territory>
 			<territory type="054">Melanesia</territory>
@@ -518,7 +518,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="AT">Austria</territory>
 			<territory type="AU">Australia</territory>
 			<territory type="AW">Aruba</territory>
-			<territory type="AX">Aland uharteak</territory>
+			<territory type="AX">Åland</territory>
 			<territory type="AZ">Azerbaijan</territory>
 			<territory type="BA">Bosnia-Herzegovina</territory>
 			<territory type="BB">Barbados</territory>
@@ -542,7 +542,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="BY">Bielorrusia</territory>
 			<territory type="BZ">Belize</territory>
 			<territory type="CA">Kanada</territory>
-			<territory type="CC">Cocos uharteak</territory>
+			<territory type="CC">Cocos (Keeling) uharteak</territory>
 			<territory type="CD">Kongoko Errepublika Demokratikoa</territory>
 			<territory type="CD" alt="variant">Kongo (DR)</territory>
 			<territory type="CF">Afrika Erdiko Errepublika</territory>
@@ -584,8 +584,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="EZ">Eurogunea</territory>
 			<territory type="FI">Finlandia</territory>
 			<territory type="FJ">Fiji</territory>
-			<territory type="FK">Malvinak</territory>
-			<territory type="FK" alt="variant">Falkland uharteak</territory>
+			<territory type="FK">Falklandak</territory>
+			<territory type="FK" alt="variant">Falklandak (Malvinak)</territory>
 			<territory type="FM">Mikronesia</territory>
 			<territory type="FO">Faroe uharteak</territory>
 			<territory type="FR">Frantzia</territory>
@@ -660,8 +660,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="MF">San Martin</territory>
 			<territory type="MG">Madagaskar</territory>
 			<territory type="MH">Marshall Uharteak</territory>
-			<territory type="MK">Mazedonia</territory>
-			<territory type="MK" alt="variant">Mazedoniako Jugoslaviar Errepublika Ohia</territory>
+			<territory type="MK">Ipar Mazedonia</territory>
 			<territory type="ML">Mali</territory>
 			<territory type="MM">Myanmar (Birmania)</territory>
 			<territory type="MN">Mongolia</territory>
@@ -701,7 +700,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="PM">Saint-Pierre eta Mikelune</territory>
 			<territory type="PN">Pitcairn uharteak</territory>
 			<territory type="PR">Puerto Rico</territory>
-			<territory type="PS">Palestinako Lurraldeak</territory>
+			<territory type="PS">Palestinar Lurralde Okupatuak</territory>
 			<territory type="PS" alt="short">Palestina</territory>
 			<territory type="PT">Portugal</territory>
 			<territory type="PW">Palau</territory>
@@ -864,8 +863,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="lb" type="loose">Lerro-jauziaren estilo malgua</type>
 			<type key="lb" type="normal">Lerro-jauziaren estilo arrunta</type>
 			<type key="lb" type="strict">Lerro-jauziaren estilo zorrotza</type>
-			<type key="m0" type="bgn">BGN bihurketa</type>
-			<type key="m0" type="ungegn">UNGEGN bihurketa</type>
+			<type key="m0" type="bgn">US BGN transliterazioa</type>
+			<type key="m0" type="ungegn">UN GEGN transliterazioa</type>
 			<type key="ms" type="metric">Sistema metrikoa</type>
 			<type key="ms" type="uksystem">Neurketa-sistema inperiala</type>
 			<type key="ms" type="ussystem">Neurketa-sistema anglosaxoia</type>
@@ -873,7 +872,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="arabext">Digitu arabiar-hindiko hedatuak</type>
 			<type key="numbers" type="armn">Zenbaki armeniarrak</type>
 			<type key="numbers" type="armnlow">Zenbaki armeniarrak minuskulaz</type>
-			<type key="numbers" type="beng">digitu bengalarrak</type>
+			<type key="numbers" type="beng">Digitu bengalarrak</type>
 			<type key="numbers" type="deva">Digitu devanagariak</type>
 			<type key="numbers" type="ethi">Zenbaki etiopiarrak</type>
 			<type key="numbers" type="finance">Finantza-zenbakiak</type>
@@ -1049,8 +1048,55 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</availableFormats>
 					<intervalFormats>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="Bh">
+							<greatestDifference id="B">B h – B h</greatestDifference>
+							<greatestDifference id="h">B h–h</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Bhm">
+							<greatestDifference id="B">B h:mm – B h:mm</greatestDifference>
+							<greatestDifference id="h">B h:mm–h:mm</greatestDifference>
+							<greatestDifference id="m">B h:mm–h:mm</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">dd–dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G">G y – G y</greatestDifference>
+							<greatestDifference id="y">G y–y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G">GGGGG y-MM – GGGGG y-MM</greatestDifference>
+							<greatestDifference id="M">GGGGG y-MM – y-MM</greatestDifference>
+							<greatestDifference id="y">GGGGG y-MM – y-MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="G">GGGGG y-MM-dd – GGGGG y-MM-dd</greatestDifference>
+							<greatestDifference id="M">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="y">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="G">GGGGG y-MM-dd, E – GGGGG y-MM-dd, E</greatestDifference>
+							<greatestDifference id="M">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="y">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G">G y, MMM – G y, MMM</greatestDifference>
+							<greatestDifference id="M">G y, MMM–MMM</greatestDifference>
+							<greatestDifference id="y">G y, MMM – G y, MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d">G y, MMM d–d</greatestDifference>
+							<greatestDifference id="G">G y, MMM d – G y, MMM d</greatestDifference>
+							<greatestDifference id="M">G y, MMM d – MMM d</greatestDifference>
+							<greatestDifference id="y">G y, MMM d – G y, MMM d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d">G y, MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="G">G y, MMM d, E – G y, MMM d, E</greatestDifference>
+							<greatestDifference id="M">G y, MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="y">G y, MMM d, E – G y, MMM d, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">h a – h a</greatestDifference>
@@ -1221,17 +1267,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">urtarrila</month>
-							<month type="2">Otsaila</month>
-							<month type="3">Martxoa</month>
-							<month type="4">Apirila</month>
-							<month type="5">Maiatza</month>
-							<month type="6">Ekaina</month>
-							<month type="7">Uztaila</month>
-							<month type="8">Abuztua</month>
-							<month type="9">Iraila</month>
-							<month type="10">Urria</month>
-							<month type="11">Azaroa</month>
-							<month type="12">Abendua</month>
+							<month type="2">otsaila</month>
+							<month type="3">martxoa</month>
+							<month type="4">apirila</month>
+							<month type="5">maiatza</month>
+							<month type="6">ekaina</month>
+							<month type="7">uztaila</month>
+							<month type="8">abuztua</month>
+							<month type="9">iraila</month>
+							<month type="10">urria</month>
+							<month type="11">azaroa</month>
+							<month type="12">abendua</month>
 						</monthWidth>
 					</monthContext>
 				</months>
@@ -1303,13 +1349,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<day type="sat">lr.</day>
 						</dayWidth>
 						<dayWidth type="wide">
-							<day type="sun">Igandea</day>
-							<day type="mon">Astelehena</day>
-							<day type="tue">Asteartea</day>
-							<day type="wed">Asteazkena</day>
-							<day type="thu">Osteguna</day>
-							<day type="fri">Ostirala</day>
-							<day type="sat">Larunbata</day>
+							<day type="sun">igandea</day>
+							<day type="mon">astelehena</day>
+							<day type="tue">asteartea</day>
+							<day type="wed">asteazkena</day>
+							<day type="thu">osteguna</day>
+							<day type="fri">ostirala</day>
+							<day type="sat">larunbata</day>
 						</dayWidth>
 					</dayContext>
 				</days>
@@ -1454,7 +1500,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
-							<pattern>y MMM d</pattern>
+							<pattern>y('e')'ko' MMM d('a')</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
@@ -1540,8 +1586,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="MMMd">MMM d</dateFormatItem>
 						<dateFormatItem id="MMMEd">MMM d, E</dateFormatItem>
 						<dateFormatItem id="MMMMd">MMMM d</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="one">MMM W. 'astea'</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="other">MMM W. 'astea'</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">MMMM W. 'astea'</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">MMMM W. 'astea'</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">y/M</dateFormatItem>
@@ -1563,8 +1609,55 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</appendItems>
 					<intervalFormats>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="Bh">
+							<greatestDifference id="B">B h – B h</greatestDifference>
+							<greatestDifference id="h">B h–h</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Bhm">
+							<greatestDifference id="B">B h:mm – B h:mm</greatestDifference>
+							<greatestDifference id="h">B h:mm–h:mm</greatestDifference>
+							<greatestDifference id="m">B h:mm–h:mm</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d–d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G">G y – G y</greatestDifference>
+							<greatestDifference id="y">G y–y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G">GGGGG y-MM – GGGGG y-MM</greatestDifference>
+							<greatestDifference id="M">GGGGG y-MM – y-MM</greatestDifference>
+							<greatestDifference id="y">GGGGG y-MM – y-MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="G">GGGGG y-MM-dd – GGGGG y-MM-dd</greatestDifference>
+							<greatestDifference id="M">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="y">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="G">GGGGG y-MM-dd, E – GGGGG y-MM-dd, E</greatestDifference>
+							<greatestDifference id="M">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="y">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G">G y, MMM – G y, MMM</greatestDifference>
+							<greatestDifference id="M">G y, MMM–MMM</greatestDifference>
+							<greatestDifference id="y">G y, MMM – G y, MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d">G y, MMM d–d</greatestDifference>
+							<greatestDifference id="G">G y, MMM d – G y, MMM d</greatestDifference>
+							<greatestDifference id="M">G y, MMM d – MMM d</greatestDifference>
+							<greatestDifference id="y">G y, MMM d – G y, MMM d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d">G y, MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="G">G y, MMM d, E – G y, MMM d, E</greatestDifference>
+							<greatestDifference id="M">G y, MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="y">G y, MMM d, E – G y, MMM d, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">h a – h a</greatestDifference>
@@ -1922,12 +2015,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0">ig. honetan</relative>
 				<relative type="1">hurrengo ig.</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} igande barru</relativeTimePattern>
-					<relativeTimePattern count="other">{0} igande barru</relativeTimePattern>
+					<relativeTimePattern count="one">{0} ig. barru</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ig. barru</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">Duela {0} igande</relativeTimePattern>
-					<relativeTimePattern count="other">Duela {0} igande</relativeTimePattern>
+					<relativeTimePattern count="one">Duela {0} ig.</relativeTimePattern>
+					<relativeTimePattern count="other">Duela {0} ig.</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="sun-narrow">
@@ -1935,12 +2028,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0">ig. honetan</relative>
 				<relative type="1">hurrengo ig.</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} igande barru</relativeTimePattern>
-					<relativeTimePattern count="other">{0} igande barru</relativeTimePattern>
+					<relativeTimePattern count="one">{0} ig. barru</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ig. barru</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">Duela {0} igande</relativeTimePattern>
-					<relativeTimePattern count="other">Duela {0} igande</relativeTimePattern>
+					<relativeTimePattern count="one">Duela {0} ig.</relativeTimePattern>
+					<relativeTimePattern count="other">Duela {0} ig.</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="mon">
@@ -1961,12 +2054,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0">al. honetan</relative>
 				<relative type="1">hurrengo al.</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} astelehen barru</relativeTimePattern>
-					<relativeTimePattern count="other">{0} astelehen barru</relativeTimePattern>
+					<relativeTimePattern count="one">{0} al. barru</relativeTimePattern>
+					<relativeTimePattern count="other">{0} al. barru</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">Duela {0} astelehen</relativeTimePattern>
-					<relativeTimePattern count="other">Duela {0} astelehen</relativeTimePattern>
+					<relativeTimePattern count="one">Duela {0} al.</relativeTimePattern>
+					<relativeTimePattern count="other">Duela {0} al.</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="mon-narrow">
@@ -2000,12 +2093,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0">ar. honetan</relative>
 				<relative type="1">hurrengo ar.</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} astearte barru</relativeTimePattern>
-					<relativeTimePattern count="other">{0} astearte barru</relativeTimePattern>
+					<relativeTimePattern count="one">{0} ar. barru</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ar. barru</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">Duela {0} astearte</relativeTimePattern>
-					<relativeTimePattern count="other">Duela {0} astearte</relativeTimePattern>
+					<relativeTimePattern count="one">Duela {0} ar.</relativeTimePattern>
+					<relativeTimePattern count="other">Duela {0} ar.</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="tue-narrow">
@@ -2039,12 +2132,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0">az. honetan</relative>
 				<relative type="1">hurrengo az.</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} asteazken barru</relativeTimePattern>
-					<relativeTimePattern count="other">{0} asteazken barru</relativeTimePattern>
+					<relativeTimePattern count="one">{0} az. barru</relativeTimePattern>
+					<relativeTimePattern count="other">{0} az. barru</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">Duela {0} asteazken</relativeTimePattern>
-					<relativeTimePattern count="other">Duela {0} asteazken</relativeTimePattern>
+					<relativeTimePattern count="one">Duela {0} az.</relativeTimePattern>
+					<relativeTimePattern count="other">Duela {0} az.</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="wed-narrow">
@@ -2052,12 +2145,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0">az. honetan</relative>
 				<relative type="1">hurrengo az.</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} asteazken barru</relativeTimePattern>
-					<relativeTimePattern count="other">{0} asteazken barru</relativeTimePattern>
+					<relativeTimePattern count="one">{0} az. barru</relativeTimePattern>
+					<relativeTimePattern count="other">{0} az. barru</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">Duela {0} asteazken</relativeTimePattern>
-					<relativeTimePattern count="other">Duela {0} asteazken</relativeTimePattern>
+					<relativeTimePattern count="one">Duela {0} az.</relativeTimePattern>
+					<relativeTimePattern count="other">Duela {0} az.</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="thu">
@@ -2065,12 +2158,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0">ostegun honetan</relative>
 				<relative type="1">hurrengo ostegunean</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} ostegun barru</relativeTimePattern>
-					<relativeTimePattern count="other">{0} ostegun barru</relativeTimePattern>
+					<relativeTimePattern count="one">{0} og. barru</relativeTimePattern>
+					<relativeTimePattern count="other">{0} og. barru</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">Duela {0} ostegun</relativeTimePattern>
-					<relativeTimePattern count="other">Duela {0} ostegun</relativeTimePattern>
+					<relativeTimePattern count="one">Duela {0} og.</relativeTimePattern>
+					<relativeTimePattern count="other">Duela {0} og.</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="thu-short">
@@ -2078,12 +2171,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0">og. honetan</relative>
 				<relative type="1">hurrengo og.</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} ostegun barru</relativeTimePattern>
-					<relativeTimePattern count="other">{0} ostegun barru</relativeTimePattern>
+					<relativeTimePattern count="one">{0} og. barru</relativeTimePattern>
+					<relativeTimePattern count="other">{0} og. barru</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">Duela {0} ostegun</relativeTimePattern>
-					<relativeTimePattern count="other">Duela {0} ostegun</relativeTimePattern>
+					<relativeTimePattern count="one">Duela {0} og.</relativeTimePattern>
+					<relativeTimePattern count="other">Duela {0} og.</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="thu-narrow">
@@ -2091,12 +2184,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0">og. honetan</relative>
 				<relative type="1">hurrengo og.</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} ostegun barru</relativeTimePattern>
-					<relativeTimePattern count="other">{0} ostegun barru</relativeTimePattern>
+					<relativeTimePattern count="one">{0} og. barru</relativeTimePattern>
+					<relativeTimePattern count="other">{0} og. barru</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">Duela {0} ostegun</relativeTimePattern>
-					<relativeTimePattern count="other">Duela {0} ostegun</relativeTimePattern>
+					<relativeTimePattern count="one">Duela {0} og.</relativeTimePattern>
+					<relativeTimePattern count="other">Duela {0} og.</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="fri">
@@ -2117,12 +2210,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0">or. honetan</relative>
 				<relative type="1">hurrengo or.</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} ostiral barru</relativeTimePattern>
-					<relativeTimePattern count="other">{0} ostiral barru</relativeTimePattern>
+					<relativeTimePattern count="one">{0} or. barru</relativeTimePattern>
+					<relativeTimePattern count="other">{0} or. barru</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">Duela {0} ostiral</relativeTimePattern>
-					<relativeTimePattern count="other">Duela {0} ostiral</relativeTimePattern>
+					<relativeTimePattern count="one">Duela {0} or.</relativeTimePattern>
+					<relativeTimePattern count="other">Duela {0} or.</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="fri-narrow">
@@ -2130,12 +2223,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0">or. honetan</relative>
 				<relative type="1">hurrengo or.</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} ostiral barru</relativeTimePattern>
-					<relativeTimePattern count="other">{0} ostiral barru</relativeTimePattern>
+					<relativeTimePattern count="one">{0} or. barru</relativeTimePattern>
+					<relativeTimePattern count="other">{0} or. barru</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">Duela {0} ostiral</relativeTimePattern>
-					<relativeTimePattern count="other">Duela {0} ostiral</relativeTimePattern>
+					<relativeTimePattern count="one">Duela {0} or.</relativeTimePattern>
+					<relativeTimePattern count="other">Duela {0} or.</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="sat">
@@ -2156,12 +2249,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0">lr. honetan</relative>
 				<relative type="1">hurrengo lr.</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} larunbat barru</relativeTimePattern>
-					<relativeTimePattern count="other">{0} larunbat barru</relativeTimePattern>
+					<relativeTimePattern count="one">{0} lr. barru</relativeTimePattern>
+					<relativeTimePattern count="other">{0} lr. barru</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">Duela {0} larunbat</relativeTimePattern>
-					<relativeTimePattern count="other">Duela {0} larunbat</relativeTimePattern>
+					<relativeTimePattern count="one">Duela {0} lr.</relativeTimePattern>
+					<relativeTimePattern count="other">Duela {0} lr.</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="sat-narrow">
@@ -2169,12 +2262,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0">lr. honetan</relative>
 				<relative type="1">hurrengo lr.</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} larunbat barru</relativeTimePattern>
-					<relativeTimePattern count="other">{0} larunbat barru</relativeTimePattern>
+					<relativeTimePattern count="one">{0} lr. barru</relativeTimePattern>
+					<relativeTimePattern count="other">{0} lr. barru</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">Duela {0} larunbat</relativeTimePattern>
-					<relativeTimePattern count="other">Duela {0} larunbat</relativeTimePattern>
+					<relativeTimePattern count="one">Duela {0} lr.</relativeTimePattern>
+					<relativeTimePattern count="other">Duela {0} lr.</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="dayperiod-short">
@@ -4519,31 +4612,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<defaultNumberingSystem draft="contributed">latn</defaultNumberingSystem>
-		<otherNumberingSystems>
-			<native draft="contributed">latn</native>
-		</otherNumberingSystems>
-		<minimumGroupingDigits draft="contributed">1</minimumGroupingDigits>
 		<symbols numberSystem="latn">
 			<decimal>,</decimal>
 			<group>.</group>
 			<list>;</list>
 			<percentSign>%</percentSign>
-			<plusSign>+</plusSign>
 			<minusSign>−</minusSign>
 			<exponential>E</exponential>
 			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>‰</perMille>
 			<infinity>∞</infinity>
 			<nan>NaN</nan>
-			<timeSeparator draft="contributed">:</timeSeparator>
 		</symbols>
 		<decimalFormats numberSystem="latn">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern>#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
 			<decimalFormatLength type="long">
 				<decimalFormat>
 					<pattern type="1000" count="one">0000</pattern>
@@ -5534,10 +5615,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol>STD</symbol>
 			</currency>
 			<currency type="STN">
-				<displayName>Sao Tomeko eta Principeko dobra</displayName>
-				<displayName count="one">Sao Tomeko eta Principeko dobra</displayName>
-				<displayName count="other">Sao Tomeko eta Principeko dobra</displayName>
-				<symbol draft="contributed">STN</symbol>
+				<displayName>Sao Tome eta Principeko dobra</displayName>
+				<displayName count="one">Sao Tome eta Principeko dobra</displayName>
+				<displayName count="other">Sao Tome eta Principeko dobra</displayName>
 				<symbol alt="narrow" draft="contributed">Db</symbol>
 			</currency>
 			<currency type="SYP">
@@ -5647,11 +5727,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol>UZS</symbol>
 			</currency>
 			<currency type="VEF">
+				<displayName>Venezuelako bolivarra (2008–2018)</displayName>
+				<displayName count="one">Venezuelako bolivar (2008–2018)</displayName>
+				<displayName count="other">Venezuelako bolivar (2008–2018)</displayName>
+				<symbol>VEF</symbol>
+				<symbol alt="narrow" draft="contributed">Bs</symbol>
+			</currency>
+			<currency type="VES">
 				<displayName>Venezuelako bolivarra</displayName>
 				<displayName count="one">Venezuelako bolivar</displayName>
 				<displayName count="other">Venezuelako bolivar</displayName>
-				<symbol>VEF</symbol>
-				<symbol alt="narrow" draft="contributed">Bs</symbol>
 			</currency>
 			<currency type="VND">
 				<displayName>Vietnameko donga</displayName>
@@ -5727,7 +5812,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
+			<pattern type="approximately">~{0}</pattern>
 			<pattern type="atLeast">{0}+</pattern>
+			<pattern type="atMost">≤{0}</pattern>
 			<pattern type="range">{0}-{1}</pattern>
 		</miscPatterns>
 		<minimalPairs>
@@ -5826,6 +5913,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} hazbete karratu</unitPattern>
 				<perUnitPattern>{0}/in²</perUnitPattern>
 			</unit>
+			<unit type="area-dunam">
+				<displayName>dunam</displayName>
+				<unitPattern count="one" draft="contributed">{0} dunam</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} dunam</unitPattern>
+			</unit>
 			<unit type="concentr-karat">
 				<displayName>kilateak</displayName>
 				<unitPattern count="one">{0} kilate</unitPattern>
@@ -5846,6 +5938,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} zati milioi bakoitzeko</unitPattern>
 				<unitPattern count="other">{0} zati milioi bakoitzeko</unitPattern>
 			</unit>
+			<unit type="concentr-percent">
+				<displayName>%</displayName>
+				<unitPattern count="one">% {0}</unitPattern>
+				<unitPattern count="other">% {0}</unitPattern>
+			</unit>
+			<unit type="concentr-permille">
+				<displayName>‰</displayName>
+				<unitPattern count="one">‰ {0}</unitPattern>
+				<unitPattern count="other">‰ {0}</unitPattern>
+			</unit>
+			<unit type="concentr-permyriad">
+				<displayName>‱</displayName>
+				<unitPattern count="one">‱ {0}</unitPattern>
+				<unitPattern count="other">‱ {0}</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName>mol</displayName>
+				<unitPattern count="one" draft="contributed">{0} mol</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} mol</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>litro kilometro bakoitzeko</displayName>
 				<unitPattern count="one">{0} litro kilometro bakoitzeko</unitPattern>
@@ -5865,6 +5977,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>milia galoi britainiar bakoitzeko</displayName>
 				<unitPattern count="one">{0} milia galoi britainiar bakoitzeko</unitPattern>
 				<unitPattern count="other">{0} milia galoi britainiar bakoitzeko</unitPattern>
+			</unit>
+			<unit type="digital-petabyte">
+				<displayName>PB</displayName>
+				<unitPattern count="one">{0} PB</unitPattern>
+				<unitPattern count="other">{0} PB</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>terabyte-ak</displayName>
@@ -6028,6 +6145,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} kilowatt-ordu</unitPattern>
 				<unitPattern count="other">{0} kilowatt-ordu</unitPattern>
 			</unit>
+			<unit type="energy-electronvolt">
+				<displayName>eV</displayName>
+				<unitPattern count="one" draft="contributed">{0} eV</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} eV</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName>Btu</displayName>
+				<unitPattern count="one" draft="contributed">{0} Btu</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} Btu</unitPattern>
+			</unit>
+			<unit type="force-pound-force">
+				<displayName>lbf</displayName>
+				<unitPattern count="one" draft="contributed">{0} lbf</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} lbf</unitPattern>
+			</unit>
+			<unit type="force-newton">
+				<displayName>N</displayName>
+				<unitPattern count="one" draft="contributed">{0} N</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} N</unitPattern>
+			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>gigahertz</displayName>
 				<unitPattern count="one">{0} gigahertz</unitPattern>
@@ -6143,10 +6280,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} puntu</unitPattern>
 				<unitPattern count="other">{0} puntu</unitPattern>
 			</unit>
+			<unit type="length-solar-radius">
+				<displayName>R☉</displayName>
+				<unitPattern count="one" draft="contributed">{0} R☉</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} R☉</unitPattern>
+			</unit>
 			<unit type="light-lux">
 				<displayName>lux</displayName>
 				<unitPattern count="one">{0} lux</unitPattern>
 				<unitPattern count="other">{0} lux</unitPattern>
+			</unit>
+			<unit type="light-solar-luminosity">
+				<displayName>L☉</displayName>
+				<unitPattern count="one" draft="contributed">{0} L☉</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} L☉</unitPattern>
 			</unit>
 			<unit type="mass-metric-ton">
 				<displayName>tonak</displayName>
@@ -6201,6 +6348,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>kilateak</displayName>
 				<unitPattern count="one">{0} kilate</unitPattern>
 				<unitPattern count="other">{0} kilate</unitPattern>
+			</unit>
+			<unit type="mass-dalton">
+				<displayName>Da</displayName>
+				<unitPattern count="one" draft="contributed">{0} Da</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} Da</unitPattern>
+			</unit>
+			<unit type="mass-earth-mass">
+				<displayName>M⊕</displayName>
+				<unitPattern count="one" draft="contributed">{0} M⊕</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} M⊕</unitPattern>
+			</unit>
+			<unit type="mass-solar-mass">
+				<displayName>M☉</displayName>
+				<unitPattern count="one" draft="contributed">{0} M☉</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} M☉</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>gigawatt-ak</displayName>
@@ -6257,6 +6419,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} milibar</unitPattern>
 				<unitPattern count="other">{0} milibar</unitPattern>
 			</unit>
+			<unit type="pressure-atmosphere">
+				<displayName>atm</displayName>
+				<unitPattern count="one">{0} atm</unitPattern>
+				<unitPattern count="other">{0} atm</unitPattern>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<displayName>kilopascalak</displayName>
+				<unitPattern count="one">{0} kilopascal</unitPattern>
+				<unitPattern count="other">{0} kilopascal</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<displayName>megapascalak</displayName>
+				<unitPattern count="one">{0} megapascal</unitPattern>
+				<unitPattern count="other">{0} megapascal</unitPattern>
+			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>kilometro orduko</displayName>
 				<unitPattern count="one">{0} kilometro orduko</unitPattern>
@@ -6296,6 +6473,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>kelvin graduak</displayName>
 				<unitPattern count="one">{0} kelvin gradu</unitPattern>
 				<unitPattern count="other">{0} kelvin gradu</unitPattern>
+			</unit>
+			<unit type="torque-pound-foot">
+				<displayName>lbf⋅ft</displayName>
+				<unitPattern count="one" draft="contributed">{0} lbf⋅ft</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} lbf⋅ft</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<displayName>N⋅m</displayName>
+				<unitPattern count="one" draft="contributed">{0} N⋅m</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} N⋅m</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<displayName>kilometro kubiko</displayName>
@@ -6412,6 +6599,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ontza likido</unitPattern>
 				<unitPattern count="other">{0} ontza likido</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName>Imp. fl oz</displayName>
+				<unitPattern count="one" draft="contributed">{0} fl oz Imp.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} fl oz Imp.</unitPattern>
+			</unit>
 			<unit type="volume-tablespoon">
 				<displayName>koilarakada</displayName>
 				<unitPattern count="one">{0} koilarakada</unitPattern>
@@ -6422,7 +6614,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} koilaratxokada</unitPattern>
 				<unitPattern count="other">{0} koilaratxokada</unitPattern>
 			</unit>
+			<unit type="volume-barrel">
+				<displayName>bbl</displayName>
+				<unitPattern count="one" draft="contributed">{0} bbl</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} bbl</unitPattern>
+			</unit>
 			<coordinateUnit>
+				<displayName>puntu kardinala</displayName>
 				<coordinateUnitPattern type="east">{0} E</coordinateUnitPattern>
 				<coordinateUnitPattern type="north">{0} I</coordinateUnitPattern>
 				<coordinateUnitPattern type="south">{0} H</coordinateUnitPattern>
@@ -6518,6 +6716,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} in²</unitPattern>
 				<perUnitPattern>{0}/in²</perUnitPattern>
 			</unit>
+			<unit type="area-dunam">
+				<displayName>dunam</displayName>
+				<unitPattern count="one" draft="contributed">{0} dunam</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} dunam</unitPattern>
+			</unit>
 			<unit type="concentr-karat">
 				<displayName>kt</displayName>
 				<unitPattern count="one">{0} kt</unitPattern>
@@ -6538,6 +6741,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ppm</unitPattern>
 				<unitPattern count="other">{0} ppm</unitPattern>
 			</unit>
+			<unit type="concentr-percent">
+				<displayName>%</displayName>
+				<unitPattern count="one">% {0}</unitPattern>
+				<unitPattern count="other">% {0}</unitPattern>
+			</unit>
+			<unit type="concentr-permille">
+				<displayName>‰</displayName>
+				<unitPattern count="one">‰ {0}</unitPattern>
+				<unitPattern count="other">‰ {0}</unitPattern>
+			</unit>
+			<unit type="concentr-permyriad">
+				<displayName>‱</displayName>
+				<unitPattern count="one">‱ {0}</unitPattern>
+				<unitPattern count="other">‱ {0}</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName>mol</displayName>
+				<unitPattern count="one" draft="contributed">{0} mol</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} mol</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>l/km</displayName>
 				<unitPattern count="one">{0} l/km</unitPattern>
@@ -6557,6 +6780,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>milia/galoi britainiar</displayName>
 				<unitPattern count="one">{0} mi gal brit.</unitPattern>
 				<unitPattern count="other">{0} mi gal brit.</unitPattern>
+			</unit>
+			<unit type="digital-petabyte">
+				<displayName>PB</displayName>
+				<unitPattern count="one">{0} PB</unitPattern>
+				<unitPattern count="other">{0} PB</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>TB</displayName>
@@ -6720,6 +6948,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} kW/h</unitPattern>
 				<unitPattern count="other">{0} kW/h</unitPattern>
 			</unit>
+			<unit type="energy-electronvolt">
+				<displayName>eV</displayName>
+				<unitPattern count="one" draft="contributed">{0} eV</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} eV</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName>Btu</displayName>
+				<unitPattern count="one" draft="contributed">{0} Btu</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} Btu</unitPattern>
+			</unit>
+			<unit type="force-pound-force">
+				<displayName>lbf</displayName>
+				<unitPattern count="one" draft="contributed">{0} lbf</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} lbf</unitPattern>
+			</unit>
+			<unit type="force-newton">
+				<displayName>N</displayName>
+				<unitPattern count="one" draft="contributed">{0} N</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} N</unitPattern>
+			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>GHz</displayName>
 				<unitPattern count="one">{0} GHz</unitPattern>
@@ -6835,10 +7083,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} pt</unitPattern>
 				<unitPattern count="other">{0} pt</unitPattern>
 			</unit>
+			<unit type="length-solar-radius">
+				<displayName>R☉</displayName>
+				<unitPattern count="one" draft="contributed">{0} R☉</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} R☉</unitPattern>
+			</unit>
 			<unit type="light-lux">
 				<displayName>lux</displayName>
 				<unitPattern count="one">{0} lux</unitPattern>
 				<unitPattern count="other">{0} lux</unitPattern>
+			</unit>
+			<unit type="light-solar-luminosity">
+				<displayName>L☉</displayName>
+				<unitPattern count="one" draft="contributed">{0} L☉</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} L☉</unitPattern>
 			</unit>
 			<unit type="mass-metric-ton">
 				<displayName>t</displayName>
@@ -6893,6 +7151,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>CD</displayName>
 				<unitPattern count="one">{0} CD</unitPattern>
 				<unitPattern count="other">{0} CD</unitPattern>
+			</unit>
+			<unit type="mass-dalton">
+				<displayName>Da</displayName>
+				<unitPattern count="one" draft="contributed">{0} Da</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} Da</unitPattern>
+			</unit>
+			<unit type="mass-earth-mass">
+				<displayName>M⊕</displayName>
+				<unitPattern count="one" draft="contributed">{0} M⊕</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} M⊕</unitPattern>
+			</unit>
+			<unit type="mass-solar-mass">
+				<displayName>M☉</displayName>
+				<unitPattern count="one" draft="contributed">{0} M☉</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} M☉</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>GW</displayName>
@@ -6949,6 +7222,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} mb</unitPattern>
 				<unitPattern count="other">{0} mb</unitPattern>
 			</unit>
+			<unit type="pressure-atmosphere">
+				<displayName>atm</displayName>
+				<unitPattern count="one">{0} atm</unitPattern>
+				<unitPattern count="other">{0} atm</unitPattern>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<displayName>kPa</displayName>
+				<unitPattern count="one">{0} kPa</unitPattern>
+				<unitPattern count="other">{0} kPa</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<displayName>MPa</displayName>
+				<unitPattern count="one">{0} MPa</unitPattern>
+				<unitPattern count="other">{0} MPa</unitPattern>
+			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>km/h</displayName>
 				<unitPattern count="one">{0} km/h</unitPattern>
@@ -6988,6 +7276,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>K</displayName>
 				<unitPattern count="one">{0} K</unitPattern>
 				<unitPattern count="other">{0} K</unitPattern>
+			</unit>
+			<unit type="torque-pound-foot">
+				<displayName>lbf⋅ft</displayName>
+				<unitPattern count="one" draft="contributed">{0} lbf⋅ft</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} lbf⋅ft</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<displayName>N⋅m</displayName>
+				<unitPattern count="one" draft="contributed">{0} N⋅m</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} N⋅m</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<displayName>km³</displayName>
@@ -7104,6 +7402,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} fl oz</unitPattern>
 				<unitPattern count="other">{0} fl oz</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName>Imp. fl oz</displayName>
+				<unitPattern count="one" draft="contributed">{0} fl oz Imp.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} fl oz Imp.</unitPattern>
+			</unit>
 			<unit type="volume-tablespoon">
 				<displayName>tbsp</displayName>
 				<unitPattern count="one">{0} tbsp</unitPattern>
@@ -7114,7 +7417,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} tsp</unitPattern>
 				<unitPattern count="other">{0} tsp</unitPattern>
 			</unit>
+			<unit type="volume-barrel">
+				<displayName>bbl</displayName>
+				<unitPattern count="one" draft="contributed">{0} bbl</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} bbl</unitPattern>
+			</unit>
 			<coordinateUnit>
+				<displayName>norabidea</displayName>
 				<coordinateUnitPattern type="east">{0} E</coordinateUnitPattern>
 				<coordinateUnitPattern type="north">{0} I</coordinateUnitPattern>
 				<coordinateUnitPattern type="south">{0} H</coordinateUnitPattern>
@@ -7164,6 +7473,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="area-square-foot">
 				<unitPattern count="one">{0} ft²</unitPattern>
 				<unitPattern count="other">{0} ft²</unitPattern>
+			</unit>
+			<unit type="concentr-percent">
+				<displayName>%</displayName>
+				<unitPattern count="one">% {0}</unitPattern>
+				<unitPattern count="other">% {0}</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100kilometers">
 				<displayName>l/100 km</displayName>
@@ -7332,6 +7646,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} l</unitPattern>
 			</unit>
 			<coordinateUnit>
+				<displayName>norabidea</displayName>
 				<coordinateUnitPattern type="east">{0} E</coordinateUnitPattern>
 				<coordinateUnitPattern type="north">{0} I</coordinateUnitPattern>
 				<coordinateUnitPattern type="south">{0} H</coordinateUnitPattern>
@@ -7485,4 +7800,74 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabel type="western_asian_scripts">Asiako mendebaldeko scriptak</characterLabel>
 		<characterLabel type="whitespace">Zuriunea</characterLabel>
 	</characterLabels>
+	<typographicNames>
+		<axisName type="ital">italic</axisName>
+		<axisName type="opsz">optical size</axisName>
+		<axisName type="slnt">slant</axisName>
+		<axisName type="wdth">width</axisName>
+		<axisName type="wght">weight</axisName>
+		<styleName type="ital" subtype="1">etzana</styleName>
+		<styleName type="opsz" subtype="8">azpititulua</styleName>
+		<styleName type="opsz" subtype="12">testua</styleName>
+		<styleName type="opsz" subtype="18">titling</styleName>
+		<styleName type="opsz" subtype="72">display</styleName>
+		<styleName type="opsz" subtype="144">poster</styleName>
+		<styleName type="slnt" subtype="-12">backslanted</styleName>
+		<styleName type="slnt" subtype="0">upright</styleName>
+		<styleName type="slnt" subtype="12">slanted</styleName>
+		<styleName type="slnt" subtype="24">extra-slanted</styleName>
+		<styleName type="wdth" subtype="50">ultracondensed</styleName>
+		<styleName type="wdth" subtype="50" alt="compressed">ultracompressed</styleName>
+		<styleName type="wdth" subtype="50" alt="narrow">ultranarrow</styleName>
+		<styleName type="wdth" subtype="62.5">extra-condensed</styleName>
+		<styleName type="wdth" subtype="62.5" alt="compressed">extra-compressed</styleName>
+		<styleName type="wdth" subtype="62.5" alt="narrow">extra-narrow</styleName>
+		<styleName type="wdth" subtype="75">condensed</styleName>
+		<styleName type="wdth" subtype="75" alt="compressed">compressed</styleName>
+		<styleName type="wdth" subtype="75" alt="narrow">compressed</styleName>
+		<styleName type="wdth" subtype="87.5">semicondensed</styleName>
+		<styleName type="wdth" subtype="87.5" alt="compressed">semicompressed</styleName>
+		<styleName type="wdth" subtype="87.5" alt="narrow">seminarrow</styleName>
+		<styleName type="wdth" subtype="100">normal</styleName>
+		<styleName type="wdth" subtype="112.5">semiexpanded</styleName>
+		<styleName type="wdth" subtype="112.5" alt="extended">semiextended</styleName>
+		<styleName type="wdth" subtype="112.5" alt="wide">semiwide</styleName>
+		<styleName type="wdth" subtype="125">expanded</styleName>
+		<styleName type="wdth" subtype="125" alt="extended">extended</styleName>
+		<styleName type="wdth" subtype="125" alt="wide">wide</styleName>
+		<styleName type="wdth" subtype="150">extra-expanded</styleName>
+		<styleName type="wdth" subtype="150" alt="extended">extra-extended</styleName>
+		<styleName type="wdth" subtype="150" alt="wide">extra-wide</styleName>
+		<styleName type="wdth" subtype="200">ultraexpanded</styleName>
+		<styleName type="wdth" subtype="200" alt="extended">ultraextended</styleName>
+		<styleName type="wdth" subtype="200" alt="wide">ultrawide</styleName>
+		<styleName type="wght" subtype="100">thin</styleName>
+		<styleName type="wght" subtype="200">extra-light</styleName>
+		<styleName type="wght" subtype="200" alt="ultra">ultralight</styleName>
+		<styleName type="wght" subtype="300">light</styleName>
+		<styleName type="wght" subtype="350">semilight</styleName>
+		<styleName type="wght" subtype="380">book</styleName>
+		<styleName type="wght" subtype="400">regular</styleName>
+		<styleName type="wght" subtype="500">medium</styleName>
+		<styleName type="wght" subtype="600">semibold</styleName>
+		<styleName type="wght" subtype="600" alt="demi">demibold</styleName>
+		<styleName type="wght" subtype="700">bold</styleName>
+		<styleName type="wght" subtype="800">extra-bold</styleName>
+		<styleName type="wght" subtype="900">black</styleName>
+		<styleName type="wght" subtype="900" alt="heavy">heavy</styleName>
+		<styleName type="wght" subtype="950">extra-black</styleName>
+		<styleName type="wght" subtype="950" alt="ultrablack">ultrablack</styleName>
+		<styleName type="wght" subtype="950" alt="ultraheavy">ultraheavy</styleName>
+		<featureName type="afrc">vertical fractions</featureName>
+		<featureName type="cpsp">capital spacing</featureName>
+		<featureName type="dlig">optional ligatures</featureName>
+		<featureName type="frac">diagonal fractions</featureName>
+		<featureName type="lnum">lining numbers</featureName>
+		<featureName type="onum">old-style figures</featureName>
+		<featureName type="ordn">ordinals</featureName>
+		<featureName type="pnum">proportional numbers</featureName>
+		<featureName type="smcp">small capitals</featureName>
+		<featureName type="tnum">tabular numbers</featureName>
+		<featureName type="zero">slashed zero</featureName>
+	</typographicNames>
 </ldml>

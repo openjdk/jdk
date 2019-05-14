@@ -1280,18 +1280,7 @@ typedef struct {
     unsigned int reserved3 : 8;
     unsigned int reserved1 : 16;
     unsigned int reserved2;
-
-    /* The following bits represents new JDK supports that VM has dependency on.
-     * VM implementation can use these bits to determine which JDK version
-     * and support it has to maintain runtime compatibility.
-     *
-     * When a new bit is added in a minor or update release, make sure
-     * the new bit is also added in the main/baseline.
-     */
-    unsigned int thread_park_blocker : 1;
-    unsigned int post_vm_init_hook_enabled : 1;
-    unsigned int pending_list_uses_discovered_field : 1;
-    unsigned int : 29;
+    unsigned int : 32;
     unsigned int : 32;
     unsigned int : 32;
 } jdk_version_info;

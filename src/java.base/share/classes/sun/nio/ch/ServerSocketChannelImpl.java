@@ -46,7 +46,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 import sun.net.NetHooks;
@@ -72,16 +71,14 @@ class ServerSocketChannelImpl
 
     // Lock held by any thread that modifies the state fields declared below
     // DO NOT invoke a blocking I/O operation while holding this lock!
-    private final ReentrantLock stateLock = new ReentrantLock();
-    private final Condition stateCondition = stateLock.newCondition();
+    private final Object stateLock = new Object();
 
     // -- The following fields are protected by stateLock
 
     // Channel state, increases monotonically
     private static final int ST_INUSE = 0;
     private static final int ST_CLOSING = 1;
-    private static final int ST_KILLPENDING = 2;
-    private static final int ST_KILLED = 3;
+    private static final int ST_CLOSED = 2;
     private int state;
 
     // ID of native thread currently blocked in this channel, for signalling
@@ -112,11 +109,8 @@ class ServerSocketChannelImpl
         this.fd =  fd;
         this.fdVal = IOUtil.fdVal(fd);
         if (bound) {
-            stateLock.lock();
-            try {
+            synchronized (stateLock) {
                 localAddress = Net.localAddress(fd);
-            } finally {
-                stateLock.unlock();
             }
         }
     }
@@ -129,26 +123,20 @@ class ServerSocketChannelImpl
 
     @Override
     public ServerSocket socket() {
-        stateLock.lock();
-        try {
+        synchronized (stateLock) {
             if (socket == null)
                 socket = ServerSocketAdaptor.create(this);
             return socket;
-        } finally {
-            stateLock.unlock();
         }
     }
 
     @Override
     public SocketAddress getLocalAddress() throws IOException {
-        stateLock.lock();
-        try {
+        synchronized (stateLock) {
             ensureOpen();
             return (localAddress == null)
                     ? null
                     : Net.getRevealedLocalAddress(localAddress);
-        } finally {
-            stateLock.unlock();
         }
     }
 
@@ -159,8 +147,7 @@ class ServerSocketChannelImpl
         Objects.requireNonNull(name);
         if (!supportedOptions().contains(name))
             throw new UnsupportedOperationException("'" + name + "' not supported");
-        stateLock.lock();
-        try {
+        synchronized (stateLock) {
             ensureOpen();
 
             if (name == StandardSocketOptions.SO_REUSEADDR && Net.useExclusiveBind()) {
@@ -171,8 +158,6 @@ class ServerSocketChannelImpl
                 Net.setSocketOption(fd, Net.UNSPEC, name, value);
             }
             return this;
-        } finally {
-            stateLock.unlock();
         }
     }
 
@@ -185,8 +170,7 @@ class ServerSocketChannelImpl
         if (!supportedOptions().contains(name))
             throw new UnsupportedOperationException("'" + name + "' not supported");
 
-        stateLock.lock();
-        try {
+        synchronized (stateLock) {
             ensureOpen();
             if (name == StandardSocketOptions.SO_REUSEADDR && Net.useExclusiveBind()) {
                 // SO_REUSEADDR emulated when using exclusive bind
@@ -194,8 +178,6 @@ class ServerSocketChannelImpl
             }
             // no options that require special handling
             return (T) Net.getSocketOption(fd, Net.UNSPEC, name);
-        } finally {
-            stateLock.unlock();
         }
     }
 
@@ -221,8 +203,7 @@ class ServerSocketChannelImpl
 
     @Override
     public ServerSocketChannel bind(SocketAddress local, int backlog) throws IOException {
-        stateLock.lock();
-        try {
+        synchronized (stateLock) {
             ensureOpen();
             if (localAddress != null)
                 throw new AlreadyBoundException();
@@ -236,8 +217,6 @@ class ServerSocketChannelImpl
             Net.bind(fd, isa.getAddress(), isa.getPort());
             Net.listen(fd, backlog < 1 ? 50 : backlog);
             localAddress = Net.localAddress(fd);
-        } finally {
-            stateLock.unlock();
         }
         return this;
     }
@@ -251,15 +230,12 @@ class ServerSocketChannelImpl
     private void begin(boolean blocking) throws ClosedChannelException {
         if (blocking)
             begin();  // set blocker to close channel if interrupted
-        stateLock.lock();
-        try {
+        synchronized (stateLock) {
             ensureOpen();
             if (localAddress == null)
                 throw new NotYetBoundException();
             if (blocking)
                 thread = NativeThread.current();
-        } finally {
-            stateLock.unlock();
         }
     }
 
@@ -273,15 +249,11 @@ class ServerSocketChannelImpl
         throws AsynchronousCloseException
     {
         if (blocking) {
-            stateLock.lock();
-            try {
+            synchronized (stateLock) {
                 thread = 0;
-                // notify any thread waiting in implCloseSelectableChannel
                 if (state == ST_CLOSING) {
-                    stateCondition.signalAll();
+                    tryFinishClose();
                 }
-            } finally {
-                stateLock.unlock();
             }
             end(completed);
         }
@@ -405,101 +377,99 @@ class ServerSocketChannelImpl
      */
     private void lockedConfigureBlocking(boolean block) throws IOException {
         assert acceptLock.isHeldByCurrentThread();
-        stateLock.lock();
-        try {
+        synchronized (stateLock) {
             ensureOpen();
             IOUtil.configureBlocking(fd, block);
-        } finally {
-            stateLock.unlock();
+        }
+    }
+
+    /**
+     * Closes the socket if there are no accept in progress and the channel is
+     * not registered with a Selector.
+     */
+    private boolean tryClose() throws IOException {
+        assert Thread.holdsLock(stateLock) && state == ST_CLOSING;
+        if ((thread == 0) && !isRegistered()) {
+            state = ST_CLOSED;
+            nd.close(fd);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Invokes tryClose to attempt to close the socket.
+     *
+     * This method is used for deferred closing by I/O and Selector operations.
+     */
+    private void tryFinishClose() {
+        try {
+            tryClose();
+        } catch (IOException ignore) { }
+    }
+
+    /**
+     * Closes this channel when configured in blocking mode.
+     *
+     * If there is an accept in progress then the socket is pre-closed and the
+     * accept thread is signalled, in which case the final close is deferred
+     * until the accept aborts.
+     */
+    private void implCloseBlockingMode() throws IOException {
+        synchronized (stateLock) {
+            assert state < ST_CLOSING;
+            state = ST_CLOSING;
+            if (!tryClose()) {
+                long th = thread;
+                if (th != 0) {
+                    nd.preClose(fd);
+                    NativeThread.signal(th);
+                }
+            }
+        }
+    }
+
+    /**
+     * Closes this channel when configured in non-blocking mode.
+     *
+     * If the channel is registered with a Selector then the close is deferred
+     * until the channel is flushed from all Selectors.
+     */
+    private void implCloseNonBlockingMode() throws IOException {
+        synchronized (stateLock) {
+            assert state < ST_CLOSING;
+            state = ST_CLOSING;
+        }
+        // wait for any accept to complete before trying to close
+        acceptLock.lock();
+        acceptLock.unlock();
+        synchronized (stateLock) {
+            if (state == ST_CLOSING) {
+                tryClose();
+            }
         }
     }
 
     /**
      * Invoked by implCloseChannel to close the channel.
-     *
-     * This method waits for outstanding I/O operations to complete. When in
-     * blocking mode, the socket is pre-closed and the threads in blocking I/O
-     * operations are signalled to ensure that the outstanding I/O operations
-     * complete quickly.
-     *
-     * The socket is closed by this method when it is not registered with a
-     * Selector. Note that a channel configured blocking may be registered with
-     * a Selector. This arises when a key is canceled and the channel configured
-     * to blocking mode before the key is flushed from the Selector.
      */
     @Override
     protected void implCloseSelectableChannel() throws IOException {
         assert !isOpen();
-
-        boolean interrupted = false;
-        boolean blocking;
-
-        // set state to ST_CLOSING
-        stateLock.lock();
-        try {
-            assert state < ST_CLOSING;
-            state = ST_CLOSING;
-            blocking = isBlocking();
-        } finally {
-            stateLock.unlock();
-        }
-
-        // wait for any outstanding accept to complete
-        if (blocking) {
-            stateLock.lock();
-            try {
-                assert state == ST_CLOSING;
-                long th = thread;
-                if (th != 0) {
-                    nd.preClose(fd);
-                    NativeThread.signal(th);
-
-                    // wait for accept operation to end
-                    while (thread != 0) {
-                        try {
-                            stateCondition.await();
-                        } catch (InterruptedException e) {
-                            interrupted = true;
-                        }
-                    }
-                }
-            } finally {
-                stateLock.unlock();
-            }
+        if (isBlocking()) {
+            implCloseBlockingMode();
         } else {
-            // non-blocking mode: wait for accept to complete
-            acceptLock.lock();
-            acceptLock.unlock();
+            implCloseNonBlockingMode();
         }
-
-        // set state to ST_KILLPENDING
-        stateLock.lock();
-        try {
-            assert state == ST_CLOSING;
-            state = ST_KILLPENDING;
-        } finally {
-            stateLock.unlock();
-        }
-
-        // close socket if not registered with Selector
-        if (!isRegistered())
-            kill();
-
-        // restore interrupt status
-        if (interrupted)
-            Thread.currentThread().interrupt();
     }
 
     @Override
-    public void kill() throws IOException {
-        stateLock.lock();
-        try {
-            if (state == ST_KILLPENDING) {
-                state = ST_KILLED;
-                nd.close(fd);
+    public void kill() {
+        synchronized (stateLock) {
+            if (state == ST_CLOSING) {
+                tryFinishClose();
             }
-        } finally {
-            stateLock.unlock();
         }
     }
 
@@ -507,11 +477,8 @@ class ServerSocketChannelImpl
      * Returns true if channel's socket is bound
      */
     boolean isBound() {
-        stateLock.lock();
-        try {
+        synchronized (stateLock) {
             return localAddress != null;
-        } finally {
-            stateLock.unlock();
         }
     }
 
@@ -519,11 +486,8 @@ class ServerSocketChannelImpl
      * Returns the local address, or null if not bound
      */
     InetSocketAddress localAddress() {
-        stateLock.lock();
-        try {
+        synchronized (stateLock) {
             return localAddress;
-        } finally {
-            stateLock.unlock();
         }
     }
 
@@ -589,16 +553,13 @@ class ServerSocketChannelImpl
         if (!isOpen()) {
             sb.append("closed");
         } else {
-            stateLock.lock();
-            try {
+            synchronized (stateLock) {
                 InetSocketAddress addr = localAddress;
                 if (addr == null) {
                     sb.append("unbound");
                 } else {
                     sb.append(Net.getRevealedLocalAddressAsString(addr));
                 }
-            } finally {
-                stateLock.unlock();
             }
         }
         sb.append(']');
