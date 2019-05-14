@@ -864,7 +864,7 @@ ifeq ($(call isTargetOs, linux), true)
     BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exestack-gap := -ljvm -lpthread
     BUILD_TEST_exeinvoke_exeinvoke.c_OPTIMIZATION := NONE
     BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exeFPRegs := -ldl
-    BUILD_HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libAsyncGetCallTraceTest := -ldl
+    BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libAsyncGetCallTraceTest := -ldl
 else
   BUILD_HOTSPOT_JTREG_EXCLUDE += libtest-rw.c libtest-rwx.c libTestJNI.c \
       exeinvoke.c exestack-gap.c libAsyncGetCallTraceTest.cpp
