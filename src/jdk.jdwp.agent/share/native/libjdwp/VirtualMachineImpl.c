@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,6 @@
 #include "FrameID.h"
 
 static char *versionName = "Java Debug Wire Protocol (Reference Implementation)";
-static int majorVersion = 11;  /* JDWP major version */
-static int minorVersion = 0;  /* JDWP minor version */
 
 static jboolean
 version(PacketInputStream *in, PacketOutputStream *out)
@@ -45,6 +43,10 @@ version(PacketInputStream *in, PacketOutputStream *out)
     char *vmName;
     char *vmVersion;
     char *vmInfo;
+
+    /* Now the JDWP versions are the same as JVMTI versions */
+    int majorVersion = jvmtiMajorVersion();
+    int minorVersion = 0;
 
     if (gdata->vmDead) {
         outStream_setError(out, JDWP_ERROR(VM_DEAD));

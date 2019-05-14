@@ -100,12 +100,17 @@ define SetupJvmtiGeneration
 endef
 
 $(eval $(call SetupJvmtiGeneration, jvmtiEnter.cpp, jvmtiEnter.xsl, \
+    -PARAM majorversion $(VERSION_FEATURE) \
     -PARAM interface jvmti))
 $(eval $(call SetupJvmtiGeneration, jvmtiEnterTrace.cpp, jvmtiEnter.xsl, \
+    -PARAM majorversion $(VERSION_FEATURE) \
     -PARAM interface jvmti -PARAM trace Trace))
-$(eval $(call SetupJvmtiGeneration, jvmtiEnv.hpp, jvmtiHpp.xsl))
-$(eval $(call SetupJvmtiGeneration, jvmti.h, jvmtiH.xsl))
-$(eval $(call SetupJvmtiGeneration, jvmti.html, jvmti.xsl))
+$(eval $(call SetupJvmtiGeneration, jvmtiEnv.hpp, jvmtiHpp.xsl, \
+    -PARAM majorversion $(VERSION_FEATURE)))
+$(eval $(call SetupJvmtiGeneration, jvmti.h, jvmtiH.xsl, \
+    -PARAM majorversion $(VERSION_FEATURE)))
+$(eval $(call SetupJvmtiGeneration, jvmti.html, jvmti.xsl, \
+    -PARAM majorversion $(VERSION_FEATURE)))
 
 JVMTI_BC_SRCDIR := $(TOPDIR)/src/hotspot/share/interpreter
 

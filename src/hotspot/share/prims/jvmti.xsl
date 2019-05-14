@@ -1899,12 +1899,20 @@ typedef struct {
   </dd>
 </xsl:template>
 
+<xsl:template name="lastchangeversion">
+  <xsl:for-each select="//change">
+     <xsl:if test="position() = last()">
+       <xsl:value-of select="@version"/>
+     </xsl:if>
+  </xsl:for-each>
+</xsl:template>
+
 <xsl:template match="changehistory">
     <div class="sep"/>
     <hr class="thick"/>
     <h2>Change History</h2>
     Last update: <xsl:value-of select="@update"/><br/>
-    Version: <xsl:call-template name="showversion"/>
+    Version: <xsl:call-template name="lastchangeversion"/>
     <div class="sep"/>
     <xsl:apply-templates select="intro"/>
     <div class="sep"/>
