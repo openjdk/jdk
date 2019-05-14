@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,13 @@
 /**
  * @test
  * @bug 4380568 7095949
+ * @library /test/lib
  * @summary  HttpURLConnection does not support 307 redirects
  */
 import java.io.*;
 import java.net.*;
+
+import jdk.test.lib.net.URIBuilder;
 
 class RedirServer extends Thread {
 
@@ -100,12 +103,16 @@ class RedirServer extends Thread {
 
 public class Redirect307Test {
     public static void main(String[] args) throws Exception {
-        ServerSocket sock = new ServerSocket(0);
+        ServerSocket sock = new ServerSocket(0, 0, InetAddress.getLoopbackAddress());
         int port = sock.getLocalPort();
         RedirServer server = new RedirServer(sock);
         server.start();
 
-        URL url = new URL("http://localhost:" + port);
+        URL url = URIBuilder.newBuilder()
+                .scheme("http")
+                .loopback()
+                .port(port)
+                .toURL();
         URLConnection conURL =  url.openConnection();
         conURL.setDoInput(true);
         conURL.setAllowUserInteraction(false);

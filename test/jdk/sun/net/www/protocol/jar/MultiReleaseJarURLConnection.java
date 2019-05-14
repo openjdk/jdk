@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8132734 8144062 8159785 8194070
  * @summary Test that URL connections to multi-release jars can be runtime versioned
- * @library /lib/testlibrary/java/util/jar
+ * @library /lib/testlibrary/java/util/jar /test/lib
  * @modules jdk.compiler
  *          jdk.httpserver
  *          jdk.jartool
@@ -38,7 +38,11 @@ import java.io.InputStream;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.net.InetAddress;
 import java.net.JarURLConnection;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLConnection;
@@ -46,6 +50,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Enumeration;
 import java.util.jar.JarFile;
+
+import jdk.test.lib.net.URIBuilder;
 
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
@@ -68,7 +74,7 @@ public class MultiReleaseJarURLConnection {
         creator.buildMultiReleaseJar();
         creator.buildSignedMultiReleaseJar();
 
-        server = new SimpleHttpServer();
+        server = new SimpleHttpServer(InetAddress.getLoopbackAddress());
         server.start();
 
     }
@@ -167,9 +173,9 @@ public class MultiReleaseJarURLConnection {
                 {"unsigned", new URL("jar:file:" + unsigned + "!/")},
                 {"signed", new URL("jar:file:" + signed + "!/")},
                 // external jar received via http protocol
-                {"http", new URL("jar:http://localhost:" + server.getPort() + "/multi-release.jar!/")},
-                {"http", new URL("http://localhost:" + server.getPort() + "/multi-release.jar")},
-
+                {"http", toHttpJarURL(server.getPort(), "/multi-release.jar", "!/")},
+                {"http", URIBuilder.newBuilder().scheme("http").port(server.getPort())
+                        .loopback().path("/multi-release.jar").toURL()},
         };
     }
 
@@ -218,6 +224,18 @@ public class MultiReleaseJarURLConnection {
             Assert.assertTrue(rep.endsWith(suffix));
         }
         cldr.close();
+    }
+
+    private static URL toHttpJarURL(int port, String jar, String file)
+            throws MalformedURLException, URISyntaxException {
+        assert file.startsWith("!/");
+        URI httpURI = URIBuilder.newBuilder()
+                .scheme("http")
+                .loopback()
+                .port(port)
+                .path(jar)
+                .build();
+        return new URL("jar:" + httpURI + file);
     }
 
     private boolean readAndCompare(URL url, String match) throws Exception {

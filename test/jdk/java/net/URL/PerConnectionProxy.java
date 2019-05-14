@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @bug 4920526
  * @summary Needs per connection proxy support for URLs
  * @modules java.base/sun.net.www
- * @library ../../../sun/net/www/httptest/
+ * @library ../../../sun/net/www/httptest/ /test/lib
  * @build ClosedChannelList TestHttpServer HttpTransaction HttpCallback
  * @compile PerConnectionProxy.java
  * @run main/othervm -Dhttp.proxyHost=inexistant -Dhttp.proxyPort=8080 PerConnectionProxy
@@ -33,7 +33,8 @@
 
 import java.net.*;
 import java.io.*;
-import sun.net.www.*;
+
+import jdk.test.lib.net.URIBuilder;
 
 public class PerConnectionProxy implements HttpCallback {
     static TestHttpServer server;
@@ -49,12 +50,17 @@ public class PerConnectionProxy implements HttpCallback {
 
     public static void main(String[] args) {
         try {
-            server = new TestHttpServer (new PerConnectionProxy(), 1, 10, 0);
-            ProxyServer pserver = new ProxyServer(InetAddress.getByName("localhost"), server.getLocalPort());
+            InetAddress loopbackAddress = InetAddress.getLoopbackAddress();
+            server = new TestHttpServer(new PerConnectionProxy(), 1, 10, loopbackAddress, 0);
+            ProxyServer pserver = new ProxyServer(loopbackAddress, server.getLocalPort());
             // start proxy server
             new Thread(pserver).start();
 
-            URL url = new URL("http://localhost:"+server.getLocalPort());
+            URL url = URIBuilder.newBuilder()
+                    .scheme("http")
+                    .loopback()
+                    .port(server.getLocalPort())
+                    .toURLUnchecked();
 
             // for non existing proxy expect an IOException
             try {
@@ -80,7 +86,9 @@ public class PerConnectionProxy implements HttpCallback {
             // for a normal proxy setting expect to see connection
             // goes through that proxy
             try {
-                InetSocketAddress isa = InetSocketAddress.createUnresolved("localhost", pserver.getPort());
+                InetSocketAddress isa = InetSocketAddress.createUnresolved(
+                        loopbackAddress.getHostAddress(),
+                        pserver.getPort());
                 Proxy p = new Proxy(Proxy.Type.HTTP, isa);
                 HttpURLConnection urlc = (HttpURLConnection)url.openConnection (p);
                 int respCode = urlc.getResponseCode();
@@ -115,7 +123,7 @@ public class PerConnectionProxy implements HttpCallback {
         public ProxyServer(InetAddress server, int port) throws IOException {
             serverInetAddr = server;
             serverPort = port;
-            ss = new ServerSocket(0);
+            ss = new ServerSocket(0, 0, InetAddress.getLoopbackAddress());
         }
 
         public void run() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 4458085 7095949
+ * @library /test/lib
  * @summary  Redirects Limited to 5
  */
 
@@ -34,6 +35,8 @@
 
 import java.io.*;
 import java.net.*;
+
+import jdk.test.lib.net.URIBuilder;
 
 class RedirLimitServer extends Thread {
     static final int TIMEOUT = 10 * 1000;
@@ -105,12 +108,16 @@ class RedirLimitServer extends Thread {
 
 public class RedirectLimit {
     public static void main(String[] args) throws Exception {
-        ServerSocket ss = new ServerSocket (0);
+        ServerSocket ss = new ServerSocket(0, 0, InetAddress.getLoopbackAddress());
         int port = ss.getLocalPort();
         RedirLimitServer server = new RedirLimitServer(ss);
         server.start();
 
-        URL url = new URL("http://localhost:" + port);
+        URL url = URIBuilder.newBuilder()
+                .scheme("http")
+                .loopback()
+                .port(port)
+                .toURL();
         URLConnection conURL =  url.openConnection();
 
         conURL.setDoInput(true);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ import com.sun.net.httpserver.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -42,13 +43,19 @@ class SimpleHttpServer {
     private static final Path multirelease = Paths.get(userdir, "multi-release.jar");
 
     private final HttpServer server;
+    private final InetAddress address;
 
     public SimpleHttpServer() throws IOException {
+        this(null);
+    }
+
+    public SimpleHttpServer(InetAddress addr) throws IOException {
+        address = addr;
         server = HttpServer.create();
     }
 
     public void start() throws IOException {
-        server.bind(new InetSocketAddress(0), 0);
+        server.bind(new InetSocketAddress(address, 0), 0);
         server.createContext("/multi-release.jar", t -> {
             try (InputStream is = t.getRequestBody()) {
                 is.readAllBytes();  // probably not necessary to consume request
