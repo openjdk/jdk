@@ -244,7 +244,7 @@ public:
     UPDATEREFS_BITPOS = 3,
 
     // Heap is under traversal collection
-    TRAVERSAL_BITPOS  = 4,
+    TRAVERSAL_BITPOS  = 4
   };
 
   enum GCState {
@@ -253,7 +253,7 @@ public:
     MARKING       = 1 << MARKING_BITPOS,
     EVACUATION    = 1 << EVACUATION_BITPOS,
     UPDATEREFS    = 1 << UPDATEREFS_BITPOS,
-    TRAVERSAL     = 1 << TRAVERSAL_BITPOS,
+    TRAVERSAL     = 1 << TRAVERSAL_BITPOS
   };
 
 private:
@@ -303,7 +303,7 @@ public:
     _degenerated_mark,
     _degenerated_evac,
     _degenerated_updaterefs,
-    _DEGENERATED_LIMIT,
+    _DEGENERATED_LIMIT
   };
 
   static const char* degen_point_to_string(ShenandoahDegenPoint point) {

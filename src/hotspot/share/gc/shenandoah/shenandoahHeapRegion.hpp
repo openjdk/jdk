@@ -114,7 +114,7 @@ private:
     _cset,                    // region is in collection set
     _pinned,                  // region is pinned
     _pinned_cset,             // region is pinned and in cset (evac failure path)
-    _trash,                   // region contains only trash
+    _trash                    // region contains only trash
   };
 
   const char* region_state_to_string(RegionState s) const {
