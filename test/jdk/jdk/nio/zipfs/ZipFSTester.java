@@ -228,7 +228,7 @@ public class ZipFSTester {
                 Files.newInputStream(parent);
                 throw new RuntimeException("Failed");
             } catch (FileSystemException e) {
-                e.printStackTrace();    // expected fse
+                // expected fse
             }
 
             // rmdirs
@@ -420,7 +420,15 @@ public class ZipFSTester {
 
     static Object[][] getEntries() {
         Object[][] entries = new Object[10 + rdm.nextInt(20)][3];
-        for (int i = 0; i < entries.length; i++) {
+        // first entries shall test the corner case of 0 bytes of data
+        entries[0][0] = "entries" + 0;
+        entries[0][1] = METHOD_STORED;
+        entries[0][2] = new byte[0];
+        entries[1][0] = "entries" + 1;
+        entries[1][1] = METHOD_DEFLATED;
+        entries[1][2] = new byte[0];
+        // the rest is random data
+        for (int i = 2; i < entries.length; i++) {
             entries[i][0] = "entries" + i;
             entries[i][1] = rdm.nextInt(10) % 2 == 0 ?
                 METHOD_STORED : METHOD_DEFLATED;
