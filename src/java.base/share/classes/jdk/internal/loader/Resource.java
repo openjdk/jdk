@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,9 +113,11 @@ public abstract class Resource {
                 int bytesToRead;
                 if (pos >= b.length) { // Only expand when there's no room
                     bytesToRead = Math.min(len - pos, b.length + 1024);
-                    if (b.length < pos + bytesToRead) {
-                        b = Arrays.copyOf(b, pos + bytesToRead);
+                    if (bytesToRead < 0) {
+                        // Can overflow only due to large b.length
+                        bytesToRead = len - pos;
                     }
+                    b = Arrays.copyOf(b, pos + bytesToRead);
                 } else {
                     bytesToRead = b.length - pos;
                 }
