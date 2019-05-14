@@ -545,12 +545,12 @@ void G1RemSet::update_rem_set(G1ParScanThreadState* pss, uint worker_i) {
   }
 }
 
-void G1RemSet::prepare_for_oops_into_collection_set_do() {
+void G1RemSet::prepare_for_scan_rem_set() {
   G1BarrierSet::dirty_card_queue_set().concatenate_logs();
   _scan_state->reset();
 }
 
-void G1RemSet::cleanup_after_oops_into_collection_set_do() {
+void G1RemSet::cleanup_after_scan_rem_set() {
   G1GCPhaseTimes* phase_times = _g1h->phase_times();
 
   // Set all cards back to clean.

@@ -3577,7 +3577,7 @@ void G1CollectedHeap::pre_evacuate_collection_set(G1EvacuationInfo& evacuation_i
   register_regions_with_region_attr();
   assert(_verifier->check_cset_fast_test(), "Inconsistency in the InCSetState table.");
 
-  rem_set()->prepare_for_oops_into_collection_set_do();
+  rem_set()->prepare_for_scan_rem_set();
   _preserved_marks_set.assert_empty();
 
 #if COMPILER2_OR_JVMCI
@@ -3790,7 +3790,7 @@ void G1CollectedHeap::evacuate_optional_collection_set(G1ParScanThreadStateSet* 
 void G1CollectedHeap::post_evacuate_collection_set(G1EvacuationInfo& evacuation_info, G1ParScanThreadStateSet* per_thread_states) {
   // Also cleans the card table from temporary duplicate detection information used
   // during UpdateRS/ScanRS.
-  rem_set()->cleanup_after_oops_into_collection_set_do();
+  rem_set()->cleanup_after_scan_rem_set();
 
   // Process any discovered reference objects - we have
   // to do this _before_ we retire the GC alloc regions

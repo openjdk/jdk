@@ -98,11 +98,10 @@ public:
   // into the collection set or update the remembered set.
   void update_rem_set(G1ParScanThreadState* pss, uint worker_i);
 
-  // Prepare for and cleanup after an oops_into_collection_set_do
-  // call.  Must call each of these once before and after (in sequential
-  // code) any thread calls oops_into_collection_set_do.
-  void prepare_for_oops_into_collection_set_do();
-  void cleanup_after_oops_into_collection_set_do();
+  // Prepare for and cleanup after scanning the remembered sets.  Must be called
+  // once before and after in sequential code.
+  void prepare_for_scan_rem_set();
+  void cleanup_after_scan_rem_set();
 
   G1RemSetScanState* scan_state() const { return _scan_state; }
 
