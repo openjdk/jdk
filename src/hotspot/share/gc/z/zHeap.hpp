@@ -66,6 +66,7 @@ private:
   ZServiceability     _serviceability;
 
   size_t heap_min_size() const;
+  size_t heap_initial_size() const;
   size_t heap_max_size() const;
   size_t heap_max_reserve_size() const;
 
@@ -128,6 +129,9 @@ public:
   ZPage* alloc_page(uint8_t type, size_t size, ZAllocationFlags flags);
   void undo_alloc_page(ZPage* page);
   void free_page(ZPage* page, bool reclaimed);
+
+  // Uncommit memory
+  uint64_t uncommit(uint64_t delay);
 
   // Object allocation
   uintptr_t alloc_tlab(size_t size);

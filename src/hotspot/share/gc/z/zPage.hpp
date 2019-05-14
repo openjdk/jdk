@@ -35,26 +35,27 @@ class ZPage : public CHeapObj<mtGC> {
   friend class ZList<ZPage>;
 
 private:
-  // Always hot
-  const uint8_t        _type;             // Page type
-  uint8_t              _numa_id;          // NUMA node affinity
-  uint32_t             _seqnum;           // Allocation sequence number
-  const ZVirtualMemory _virtual;          // Virtual start/end address
-  volatile uintptr_t   _top;              // Virtual top address
-  ZLiveMap             _livemap;          // Live map
+  uint8_t            _type;
+  uint8_t            _numa_id;
+  uint32_t           _seqnum;
+  ZVirtualMemory     _virtual;
+  volatile uintptr_t _top;
+  ZLiveMap           _livemap;
+  uint64_t           _last_used;
+  ZPhysicalMemory    _physical;
+  ZListNode<ZPage>   _node;
 
-  // Hot when relocated and cached
-  ZPhysicalMemory      _physical;         // Physical memory for page
-  ZListNode<ZPage>     _node;             // Page list node
+  void assert_initialized() const;
 
+  uint8_t type_from_size(size_t size) const;
   const char* type_to_string() const;
 
   bool is_object_marked(uintptr_t addr) const;
   bool is_object_strongly_marked(uintptr_t addr) const;
 
 public:
-  ZPage(uint8_t type, ZVirtualMemory vmem, ZPhysicalMemory pmem);
-  ~ZPage();
+  ZPage(const ZVirtualMemory& vmem, const ZPhysicalMemory& pmem);
+  ZPage(uint8_t type, const ZVirtualMemory& vmem, const ZPhysicalMemory& pmem);
 
   uint32_t object_max_count() const;
   size_t object_alignment_shift() const;
@@ -67,23 +68,30 @@ public:
   uintptr_t top() const;
   size_t remaining() const;
 
-  uint8_t numa_id();
-
-  ZPhysicalMemory& physical_memory();
+  const ZPhysicalMemory& physical_memory() const;
   const ZVirtualMemory& virtual_memory() const;
 
-  void reset();
-
-  bool is_in(uintptr_t addr) const;
-
-  uintptr_t block_start(uintptr_t addr) const;
-  bool block_is_obj(uintptr_t addr) const;
+  uint8_t numa_id();
 
   bool is_allocating() const;
   bool is_relocatable() const;
 
   bool is_mapped() const;
   void set_pre_mapped();
+
+  uint64_t last_used() const;
+  void set_last_used();
+
+  void reset();
+
+  ZPage* retype(uint8_t type);
+  ZPage* split(size_t size);
+  ZPage* split(uint8_t type, size_t size);
+
+  bool is_in(uintptr_t addr) const;
+
+  uintptr_t block_start(uintptr_t addr) const;
+  bool block_is_obj(uintptr_t addr) const;
 
   bool is_marked() const;
   bool is_object_live(uintptr_t addr) const;

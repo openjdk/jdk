@@ -56,6 +56,13 @@
   experimental(uint, ZCollectionInterval, 0,                                \
           "Force GC at a fixed time interval (in seconds)")                 \
                                                                             \
+  experimental(bool, ZUncommit, true,                                       \
+          "Uncommit unused memory")                                         \
+                                                                            \
+  experimental(uintx, ZUncommitDelay, 5 * 60,                               \
+          "Uncommit memory if it has been unused for the specified "        \
+          "amount of time (in seconds)")                                    \
+                                                                            \
   diagnostic(uint, ZStatisticsInterval, 10,                                 \
           "Time between statistics print outs (in seconds)")                \
           range(1, (uint)-1)                                                \

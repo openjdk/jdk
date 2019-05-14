@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,25 +21,25 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZPREMAPPEDMEMORY_INLINE_HPP
-#define SHARE_GC_Z_ZPREMAPPEDMEMORY_INLINE_HPP
+#ifndef SHARE_GC_Z_ZUNCOMMITTER_HPP
+#define SHARE_GC_Z_ZUNCOMMITTER_HPP
 
-#include "gc/z/zPreMappedMemory.hpp"
+#include "gc/shared/concurrentGCThread.hpp"
+#include "runtime/mutex.hpp"
 
-inline bool ZPreMappedMemory::is_initialized() const {
-  return _initialized;
-}
+class ZUncommitter : public ConcurrentGCThread {
+private:
+  Monitor _monitor;
+  bool    _stop;
 
-inline ZPhysicalMemory& ZPreMappedMemory::physical_memory() {
-  return _pmem;
-}
+  bool idle(uint64_t timeout);
 
-inline const ZVirtualMemory& ZPreMappedMemory::virtual_memory() const {
-  return _vmem;
-}
+protected:
+  virtual void run_service();
+  virtual void stop_service();
 
-inline size_t ZPreMappedMemory::available() const {
-  return _vmem.size();
-}
+public:
+  ZUncommitter();
+};
 
-#endif // SHARE_GC_Z_ZPREMAPPEDMEMORY_INLINE_HPP
+#endif // SHARE_GC_Z_ZUNCOMMITTER_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,6 +72,6 @@ ZVirtualMemory ZVirtualMemoryManager::alloc(size_t size, bool alloc_from_front) 
   return ZVirtualMemory(start, size);
 }
 
-void ZVirtualMemoryManager::free(ZVirtualMemory vmem) {
+void ZVirtualMemoryManager::free(const ZVirtualMemory& vmem) {
   _manager.free(vmem.start(), vmem.size());
 }

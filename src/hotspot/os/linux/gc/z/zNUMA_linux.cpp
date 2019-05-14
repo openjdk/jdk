@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@
 #endif
 
 static int z_get_mempolicy(uint32_t* mode, const unsigned long *nmask, unsigned long maxnode, uintptr_t addr, int flags) {
-  return syscall(__NR_get_mempolicy, mode, nmask, maxnode, addr, flags);
+  return syscall(SYS_get_mempolicy, mode, nmask, maxnode, addr, flags);
 }
 
 void ZNUMA::initialize_platform() {

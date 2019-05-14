@@ -169,9 +169,6 @@ public:
 
     // Teardown forwarding
     ZForwarding::destroy(forwarding);
-
-    // Teardown page
-    page.physical_memory().clear();
   }
 
   // Run the given function with a few different input values.

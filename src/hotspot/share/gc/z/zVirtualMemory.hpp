@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 #define SHARE_GC_Z_ZVIRTUALMEMORY_HPP
 
 #include "gc/z/zMemory.hpp"
-#include "memory/allocation.hpp"
 
 class ZVirtualMemory {
   friend class VMStructs;
@@ -42,8 +41,8 @@ public:
   uintptr_t start() const;
   uintptr_t end() const;
   size_t size() const;
+
   ZVirtualMemory split(size_t size);
-  void clear();
 };
 
 class ZVirtualMemoryManager {
@@ -60,7 +59,7 @@ public:
   bool is_initialized() const;
 
   ZVirtualMemory alloc(size_t size, bool alloc_from_front = false);
-  void free(ZVirtualMemory vmem);
+  void free(const ZVirtualMemory& vmem);
 };
 
 #endif // SHARE_GC_Z_ZVIRTUALMEMORY_HPP

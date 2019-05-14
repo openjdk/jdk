@@ -24,10 +24,35 @@
 #ifndef SHARE_GC_Z_ZPAGECACHE_INLINE_HPP
 #define SHARE_GC_Z_ZPAGECACHE_INLINE_HPP
 
+#include "gc/z/zList.inline.hpp"
 #include "gc/z/zPageCache.hpp"
 
 inline size_t ZPageCache::available() const {
   return _available;
+}
+
+template <typename Closure>
+inline void ZPageCache::pages_do(Closure* cl) const {
+  // Small
+  ZPerNUMAConstIterator<ZList<ZPage> > iter_numa(&_small);
+  for (const ZList<ZPage>* list; iter_numa.next(&list);) {
+    ZListIterator<ZPage> iter_small(list);
+    for (ZPage* page; iter_small.next(&page);) {
+      cl->do_page(page);
+    }
+  }
+
+  // Medium
+  ZListIterator<ZPage> iter_medium(&_medium);
+  for (ZPage* page; iter_medium.next(&page);) {
+    cl->do_page(page);
+  }
+
+  // Large
+  ZListIterator<ZPage> iter_large(&_large);
+  for (ZPage* page; iter_large.next(&page);) {
+    cl->do_page(page);
+  }
 }
 
 #endif // SHARE_GC_Z_ZPAGECACHE_INLINE_HPP

@@ -210,11 +210,11 @@ public:
 template <typename T, bool forward>
 class ZListIteratorImpl : public StackObj {
 private:
-  ZList<T>* const _list;
-  T*              _next;
+  const ZList<T>* const _list;
+  T*                    _next;
 
 public:
-  ZListIteratorImpl(ZList<T>* list);
+  ZListIteratorImpl(const ZList<T>* list);
 
   bool next(T** elem);
 };
@@ -226,14 +226,14 @@ public:
 template <typename T>
 class ZListIterator : public ZListIteratorImpl<T, ZLIST_FORWARD> {
 public:
-  ZListIterator(ZList<T>* list) :
+  ZListIterator(const ZList<T>* list) :
       ZListIteratorImpl<T, ZLIST_FORWARD>(list) {}
 };
 
 template <typename T>
 class ZListReverseIterator : public ZListIteratorImpl<T, ZLIST_REVERSE> {
 public:
-  ZListReverseIterator(ZList<T>* list) :
+  ZListReverseIterator(const ZList<T>* list) :
       ZListIteratorImpl<T, ZLIST_REVERSE>(list) {}
 };
 

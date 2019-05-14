@@ -30,7 +30,6 @@
 #include "gc/z/zGranuleMap.hpp"
 #include "gc/z/zHeap.hpp"
 #include "gc/z/zPageAllocator.hpp"
-#include "gc/z/zPhysicalMemory.hpp"
 #include "utilities/macros.hpp"
 
 // Expose some ZGC globals to the SA agent.
@@ -77,20 +76,18 @@ typedef ZAttachedArray<ZForwarding, ZForwardingEntry> ZAttachedArrayForForwardin
   nonstatic_field(ZPage,                        _virtual,             const ZVirtualMemory)          \
   volatile_nonstatic_field(ZPage,               _top,                 uintptr_t)                     \
                                                                                                      \
-  nonstatic_field(ZPageAllocator,               _physical,            ZPhysicalMemoryManager)        \
+  nonstatic_field(ZPageAllocator,               _max_capacity,        const size_t)                  \
+  nonstatic_field(ZPageAllocator,               _capacity,            size_t)                        \
   nonstatic_field(ZPageAllocator,               _used,                size_t)                        \
                                                                                                      \
   nonstatic_field(ZPageTable,                   _map,                 ZGranuleMapForPageTable)       \
                                                                                                      \
   nonstatic_field(ZGranuleMapForPageTable,      _map,                 ZPage** const)                 \
                                                                                                      \
-  nonstatic_field(ZVirtualMemory,               _start,               uintptr_t)                     \
-  nonstatic_field(ZVirtualMemory,               _end,                 uintptr_t)                     \
+  nonstatic_field(ZVirtualMemory,               _start,               const uintptr_t)               \
+  nonstatic_field(ZVirtualMemory,               _end,                 const uintptr_t)               \
                                                                                                      \
-  nonstatic_field(ZForwarding,                  _entries,             const ZAttachedArrayForForwarding) \
-                                                                                                     \
-  nonstatic_field(ZPhysicalMemoryManager,       _max_capacity,        const size_t)                  \
-  nonstatic_field(ZPhysicalMemoryManager,       _capacity,            size_t)
+  nonstatic_field(ZForwarding,                  _entries,             const ZAttachedArrayForForwarding)
 
 #define VM_INT_CONSTANTS_ZGC(declare_constant, declare_constant_with_value)                          \
   declare_constant(ZPhaseRelocate)                                                                   \

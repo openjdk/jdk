@@ -27,8 +27,6 @@ package sun.jvm.hotspot.gc.z;
 import sun.jvm.hotspot.debugger.Address;
 import sun.jvm.hotspot.runtime.VM;
 import sun.jvm.hotspot.runtime.VMObject;
-import sun.jvm.hotspot.runtime.VMObjectFactory;
-import sun.jvm.hotspot.types.AddressField;
 import sun.jvm.hotspot.types.CIntegerField;
 import sun.jvm.hotspot.types.Type;
 import sun.jvm.hotspot.types.TypeDataBase;
@@ -37,7 +35,8 @@ import sun.jvm.hotspot.types.TypeDataBase;
 
 public class ZPageAllocator extends VMObject {
 
-    private static long physicalFieldOffset;
+    private static CIntegerField maxCapacityField;
+    private static CIntegerField capacityField;
     private static CIntegerField usedField;
 
     static {
@@ -47,21 +46,17 @@ public class ZPageAllocator extends VMObject {
     static private synchronized void initialize(TypeDataBase db) {
         Type type = db.lookupType("ZPageAllocator");
 
-        physicalFieldOffset = type.getAddressField("_physical").getOffset();
+        maxCapacityField = type.getCIntegerField("_max_capacity");
+        capacityField = type.getCIntegerField("_capacity");
         usedField = type.getCIntegerField("_used");
     }
 
-    private ZPhysicalMemoryManager physical() {
-      Address physicalAddr = addr.addOffsetTo(physicalFieldOffset);
-      return (ZPhysicalMemoryManager)VMObjectFactory.newObject(ZPhysicalMemoryManager.class, physicalAddr);
-    }
-
     public long maxCapacity() {
-        return physical().maxCapacity();
+        return maxCapacityField.getValue(addr);
     }
 
     public long capacity() {
-        return physical().capacity();
+        return capacityField.getValue(addr);
     }
 
     public long used() {

@@ -37,6 +37,5 @@ serviceability/sa/ClhsdbSource.java                           8220624   generic-
 serviceability/sa/TestClhsdbJstackLock.java                   8220624   generic-all
 serviceability/sa/TestHeapDumpForInvokeDynamic.java           8220624   generic-all
 serviceability/sa/TestHeapDumpForLargeArray.java              8220624   generic-all
-serviceability/sa/TestUniverse.java                           8220624   generic-all
 serviceability/sa/TestJmapCore.java                           8220624   generic-all
 serviceability/sa/TestJmapCoreMetaspace.java                  8219443   generic-all

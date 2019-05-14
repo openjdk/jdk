@@ -29,7 +29,6 @@
 #include "gc/z/zLock.hpp"
 #include "gc/z/zPageCache.hpp"
 #include "gc/z/zPhysicalMemory.hpp"
-#include "gc/z/zPreMappedMemory.hpp"
 #include "gc/z/zSafeDelete.hpp"
 #include "gc/z/zVirtualMemory.hpp"
 #include "memory/allocation.hpp"
@@ -44,8 +43,11 @@ private:
   ZVirtualMemoryManager      _virtual;
   ZPhysicalMemoryManager     _physical;
   ZPageCache                 _cache;
+  const size_t               _min_capacity;
+  const size_t               _max_capacity;
   const size_t               _max_reserve;
-  ZPreMappedMemory           _pre_mapped;
+  size_t                     _current_max_capacity;
+  size_t                     _capacity;
   size_t                     _used_high;
   size_t                     _used_low;
   size_t                     _used;
@@ -53,39 +55,44 @@ private:
   ssize_t                    _reclaimed;
   ZList<ZPageAllocRequest>   _queue;
   mutable ZSafeDelete<ZPage> _safe_delete;
+  bool                       _uncommit;
+  bool                       _initialized;
 
   static ZPage* const      gc_marker;
+
+  void prime_cache(size_t size);
 
   void increase_used(size_t size, bool relocation);
   void decrease_used(size_t size, bool reclaimed);
 
-  size_t max_available(bool no_reserve) const;
-  size_t try_ensure_unused(size_t size, bool no_reserve);
-  size_t try_ensure_unused_for_pre_mapped(size_t size);
-
   ZPage* create_page(uint8_t type, size_t size);
   void destroy_page(ZPage* page);
 
-  void flush_pre_mapped();
-  void flush_cache(ZPageCacheFlushClosure* cl);
-  void evict_cache(size_t requested);
+  size_t max_available(bool no_reserve) const;
+  bool ensure_available(size_t size, bool no_reserve);
+  void ensure_uncached_available(size_t size);
 
   void check_out_of_memory_during_initialization();
 
-  ZPage* alloc_page_common_inner(uint8_t type, size_t size, ZAllocationFlags flags);
+  ZPage* alloc_page_common_inner(uint8_t type, size_t size, bool no_reserve);
   ZPage* alloc_page_common(uint8_t type, size_t size, ZAllocationFlags flags);
   ZPage* alloc_page_blocking(uint8_t type, size_t size, ZAllocationFlags flags);
   ZPage* alloc_page_nonblocking(uint8_t type, size_t size, ZAllocationFlags flags);
 
+  size_t flush_cache(ZPageCacheFlushClosure* cl);
+  void flush_cache_for_allocation(size_t requested);
+
   void satisfy_alloc_queue();
 
-  void detach_memory(const ZVirtualMemory& vmem, ZPhysicalMemory& pmem);
-
 public:
-  ZPageAllocator(size_t min_capacity, size_t max_capacity, size_t max_reserve);
+  ZPageAllocator(size_t min_capacity,
+                 size_t initial_capacity,
+                 size_t max_capacity,
+                 size_t max_reserve);
 
   bool is_initialized() const;
 
+  size_t min_capacity() const;
   size_t max_capacity() const;
   size_t current_max_capacity() const;
   size_t capacity() const;
@@ -102,11 +109,16 @@ public:
   ZPage* alloc_page(uint8_t type, size_t size, ZAllocationFlags flags);
   void free_page(ZPage* page, bool reclaimed);
 
+  uint64_t uncommit(uint64_t delay);
+
   void enable_deferred_delete() const;
   void disable_deferred_delete() const;
 
-  void map_page(ZPage* page);
-  void unmap_all_pages();
+  void map_page(const ZPage* page) const;
+
+  void debug_map_page(const ZPage* page) const;
+  void debug_map_cached_pages() const;
+  void debug_unmap_all_pages() const;
 
   bool is_alloc_stalled() const;
   void check_out_of_memory();
