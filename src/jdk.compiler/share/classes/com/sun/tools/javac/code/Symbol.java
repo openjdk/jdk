@@ -1963,6 +1963,13 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
             return (flags() & LAMBDA_METHOD) == LAMBDA_METHOD;
         }
 
+        /** override this method to point to the original enclosing method if this method symbol represents a synthetic
+         *  lambda method
+         */
+        public MethodSymbol originalEnclosingMethod() {
+            return this;
+        }
+
         /** The implementation of this (abstract) symbol in class origin;
          *  null if none exists. Synthetic methods are not considered
          *  as possible implementations.

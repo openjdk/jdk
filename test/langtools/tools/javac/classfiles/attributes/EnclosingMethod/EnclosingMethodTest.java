@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8042931
+ * @bug 8042931 8215470
  * @summary Checking EnclosingMethod attribute of anonymous/local class.
  * @library /tools/lib /tools/javac/lib ../lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -245,7 +245,7 @@ public class EnclosingMethodTest extends TestResult {
         // anonymous and local classes in lambda
         @ExpectedEnclosingMethod(
                 info = "EnclosingLambda in EnclosingMethodTest",
-                enclosingMethod = "lambda",
+                enclosingMethod = "<init>",
                 enclosingClazz = EnclosingMethodTest.class
         )
         class EnclosingLambda {
@@ -325,7 +325,7 @@ public class EnclosingMethodTest extends TestResult {
             // anonymous and local classes in lambda
             @ExpectedEnclosingMethod(
                     info = "EnclosingLambda in notEnclosing01",
-                    enclosingMethod = "lambda",
+                    enclosingMethod = "<init>",
                     enclosingClazz = notEnclosing01.class
             )
             class EnclosingLambda {
@@ -382,7 +382,7 @@ public class EnclosingMethodTest extends TestResult {
             // anonymous and local classes in lambda
             @ExpectedEnclosingMethod(
                     info = "EnclosingLambda in notEnclosing02",
-                    enclosingMethod = "lambda",
+                    enclosingMethod = "<clinit>",
                     enclosingClazz = notEnclosing02.class
             )
             class EnclosingLambda {
@@ -460,7 +460,7 @@ public class EnclosingMethodTest extends TestResult {
             // anonymous and local classes in lambda
             @ExpectedEnclosingMethod(
                     info = "EnclosingLambda in notEnclosing03",
-                    enclosingMethod = "lambda",
+                    enclosingMethod = "<init>",
                     enclosingClazz = notEnclosing03.class
             )
             class EnclosingLambda {
@@ -517,7 +517,7 @@ public class EnclosingMethodTest extends TestResult {
             // anonymous and local classes in lambda
             @ExpectedEnclosingMethod(
                     info = "EnclosingLambda in notEnclosing04",
-                    enclosingMethod = "lambda",
+                    enclosingMethod = "<clinit>",
                     enclosingClazz = notEnclosing04.class
             )
             class EnclosingLambda {

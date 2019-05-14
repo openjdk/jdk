@@ -603,21 +603,6 @@ public class LambdaToMethod extends TreeTranslator {
             tree.init = translate(tree.init);
             tree.sym = (VarSymbol) lambdaContext.getSymbolMap(LOCAL_VAR).get(tree.sym);
             result = tree;
-        } else if (context != null && lambdaContext.getSymbolMap(TYPE_VAR).containsKey(tree.sym)) {
-            JCExpression init = translate(tree.init);
-            VarSymbol xsym = (VarSymbol)lambdaContext.getSymbolMap(TYPE_VAR).get(tree.sym);
-            int prevPos = make.pos;
-            try {
-                result = make.at(tree).VarDef(xsym, init);
-            } finally {
-                make.at(prevPos);
-            }
-            // Replace the entered symbol for this variable
-            WriteableScope sc = tree.sym.owner.members();
-            if (sc != null) {
-                sc.remove(tree.sym);
-                sc.enter(xsym);
-            }
         } else {
             super.visitVarDef(tree);
         }
@@ -1572,9 +1557,6 @@ public class LambdaToMethod extends TreeTranslator {
                 // Check for type variables (including as type arguments).
                 // If they occur within class nested in a lambda, mark for erasure
                 Type type = tree.sym.asType();
-                if (inClassWithinLambda() && !types.isSameType(types.erasure(type), type)) {
-                    ltc.addSymbol(tree.sym, TYPE_VAR);
-                }
             }
 
             List<Frame> prevStack = frameStack;
@@ -1944,8 +1926,17 @@ public class LambdaToMethod extends TreeTranslator {
                  }
 
                 // This symbol will be filled-in in complete
-                this.translatedSym = makePrivateSyntheticMethod(0, null, null, owner.enclClass());
-
+                if (owner.kind == MTH) {
+                    final MethodSymbol originalOwner = (MethodSymbol)owner.clone(owner.owner);
+                    this.translatedSym = new MethodSymbol(SYNTHETIC | PRIVATE, null, null, owner.enclClass()) {
+                        @Override
+                        public MethodSymbol originalEnclosingMethod() {
+                            return originalOwner;
+                        }
+                    };
+                } else {
+                    this.translatedSym = makePrivateSyntheticMethod(0, null, null, owner.enclClass());
+                }
                 translatedSymbols = new EnumMap<>(LambdaSymbolKind.class);
 
                 translatedSymbols.put(PARAM, new LinkedHashMap<Symbol, Symbol>());
@@ -1953,7 +1944,6 @@ public class LambdaToMethod extends TreeTranslator {
                 translatedSymbols.put(CAPTURED_VAR, new LinkedHashMap<Symbol, Symbol>());
                 translatedSymbols.put(CAPTURED_THIS, new LinkedHashMap<Symbol, Symbol>());
                 translatedSymbols.put(CAPTURED_OUTER_THIS, new LinkedHashMap<Symbol, Symbol>());
-                translatedSymbols.put(TYPE_VAR, new LinkedHashMap<Symbol, Symbol>());
 
                 freeVarProcessedLocalClasses = new HashSet<>();
             }
@@ -2045,16 +2035,6 @@ public class LambdaToMethod extends TreeTranslator {
                 switch (skind) {
                     case CAPTURED_THIS:
                         ret = sym;  // self represented
-                        break;
-                    case TYPE_VAR:
-                        // Just erase the type var
-                        ret = new VarSymbol(sym.flags(), sym.name,
-                                types.erasure(sym.type), sym.owner);
-
-                        /* this information should also be kept for LVT generation at Gen
-                         * a Symbol with pos < startPos won't be tracked.
-                         */
-                        ((VarSymbol)ret).pos = ((VarSymbol)sym).pos;
                         break;
                     case CAPTURED_VAR:
                         ret = new VarSymbol(SYNTHETIC | FINAL | PARAMETER, sym.name, types.erasure(sym.type), translatedSym) {
@@ -2352,8 +2332,7 @@ public class LambdaToMethod extends TreeTranslator {
         LOCAL_VAR,      // original to translated lambda locals
         CAPTURED_VAR,   // variables in enclosing scope to translated synthetic parameters
         CAPTURED_THIS,  // class symbols to translated synthetic parameters (for captured member access)
-        CAPTURED_OUTER_THIS, // used when `this' capture is illegal, but outer this capture is legit (JDK-8129740)
-        TYPE_VAR;      // original to translated lambda type variables
+        CAPTURED_OUTER_THIS; // used when `this' capture is illegal, but outer this capture is legit (JDK-8129740)
 
         boolean propagateAnnotations() {
             switch (this) {
