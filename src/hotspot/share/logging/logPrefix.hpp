@@ -71,6 +71,8 @@ DEBUG_ONLY(size_t Test_log_prefix_prefixer(char* buf, size_t len);)
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, phases, ref)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, phases, start)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, phases, task)) \
+  LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, phases, verify)) \
+  LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, phases, verify, start)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, plab)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, promotion)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, region)) \
@@ -88,6 +90,8 @@ DEBUG_ONLY(size_t Test_log_prefix_prefixer(char* buf, size_t len);)
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, task, time)) \
   DEBUG_ONLY(LOG_PREFIX(Test_log_prefix_prefixer, LOG_TAGS(logging, test))) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, tlab)) \
+  LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, verify)) \
+  LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, verify, start)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, workgang))
 
 
