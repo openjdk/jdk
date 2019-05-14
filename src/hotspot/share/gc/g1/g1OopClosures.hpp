@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_G1_G1OOPCLOSURES_HPP
 #define SHARE_GC_G1_G1OOPCLOSURES_HPP
 
-#include "gc/g1/g1InCSetState.hpp"
+#include "gc/g1/g1HeapRegionAttr.hpp"
 #include "memory/iterator.hpp"
 #include "oops/markOop.hpp"
 
@@ -52,18 +52,18 @@ protected:
   inline void prefetch_and_push(T* p, oop const obj);
 
   template <class T>
-  inline void handle_non_cset_obj_common(InCSetState const state, T* p, oop const obj);
+  inline void handle_non_cset_obj_common(G1HeapRegionAttr const region_attr, T* p, oop const obj);
 public:
   virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS; }
 
   inline void trim_queue_partially();
 };
 
-// Used during the Update RS phase to refine remaining cards in the DCQ during garbage collection.
-class G1ScanObjsDuringUpdateRSClosure : public G1ScanClosureBase {
+// Used to scan cards from the DCQS or the remembered sets during garbage collection.
+class G1ScanCardClosure : public G1ScanClosureBase {
 public:
-  G1ScanObjsDuringUpdateRSClosure(G1CollectedHeap* g1h,
-                                  G1ParScanThreadState* pss) :
+  G1ScanCardClosure(G1CollectedHeap* g1h,
+                    G1ParScanThreadState* pss) :
     G1ScanClosureBase(g1h, pss) { }
 
   template <class T> void do_oop_work(T* p);
@@ -71,23 +71,11 @@ public:
   virtual void do_oop(oop* p)       { do_oop_work(p); }
 };
 
-// Used during the Scan RS phase to scan cards from the remembered set during garbage collection.
-class G1ScanObjsDuringScanRSClosure : public G1ScanClosureBase {
-public:
-  G1ScanObjsDuringScanRSClosure(G1CollectedHeap* g1h,
-                                G1ParScanThreadState* par_scan_state):
-    G1ScanClosureBase(g1h, par_scan_state) { }
-
-  template <class T> void do_oop_work(T* p);
-  virtual void do_oop(oop* p)          { do_oop_work(p); }
-  virtual void do_oop(narrowOop* p)    { do_oop_work(p); }
-};
-
 // Used during Optional RS scanning to make sure we trim the queues in a timely manner.
 class G1ScanRSForOptionalClosure : public OopClosure {
-  G1ScanObjsDuringScanRSClosure* _scan_cl;
+  G1ScanCardClosure* _scan_cl;
 public:
-  G1ScanRSForOptionalClosure(G1ScanObjsDuringScanRSClosure* cl) : _scan_cl(cl) { }
+  G1ScanRSForOptionalClosure(G1ScanCardClosure* cl) : _scan_cl(cl) { }
 
   template <class T> void do_oop_work(T* p);
   virtual void do_oop(oop* p)          { do_oop_work(p); }

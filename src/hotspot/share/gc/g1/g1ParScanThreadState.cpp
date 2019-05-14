@@ -75,11 +75,11 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
 
   _plab_allocator = new G1PLABAllocator(_g1h->allocator());
 
-  _dest[InCSetState::NotInCSet]    = InCSetState::NotInCSet;
+  _dest[G1HeapRegionAttr::NotInCSet] = G1HeapRegionAttr::NotInCSet;
   // The dest for Young is used when the objects are aged enough to
   // need to be moved to the next space.
-  _dest[InCSetState::Young]        = InCSetState::Old;
-  _dest[InCSetState::Old]          = InCSetState::Old;
+  _dest[G1HeapRegionAttr::Young] = G1HeapRegionAttr::Old;
+  _dest[G1HeapRegionAttr::Old]   = G1HeapRegionAttr::Old;
 
   _closures = G1EvacuationRootClosures::create_root_closures(this, _g1h);
 
@@ -157,18 +157,18 @@ void G1ParScanThreadState::trim_queue() {
   } while (!_refs->is_empty());
 }
 
-HeapWord* G1ParScanThreadState::allocate_in_next_plab(InCSetState const state,
-                                                      InCSetState* dest,
+HeapWord* G1ParScanThreadState::allocate_in_next_plab(G1HeapRegionAttr const region_attr,
+                                                      G1HeapRegionAttr* dest,
                                                       size_t word_sz,
                                                       bool previous_plab_refill_failed) {
-  assert(state.is_in_cset_or_humongous(), "Unexpected state: " CSETSTATE_FORMAT, state.value());
-  assert(dest->is_in_cset_or_humongous(), "Unexpected dest: " CSETSTATE_FORMAT, dest->value());
+  assert(region_attr.is_in_cset_or_humongous(), "Unexpected region attr type: %s", region_attr.get_type_str());
+  assert(dest->is_in_cset_or_humongous(), "Unexpected dest: %s region attr", dest->get_type_str());
 
   // Right now we only have two types of regions (young / old) so
   // let's keep the logic here simple. We can generalize it when necessary.
   if (dest->is_young()) {
     bool plab_refill_in_old_failed = false;
-    HeapWord* const obj_ptr = _plab_allocator->allocate(InCSetState::Old,
+    HeapWord* const obj_ptr = _plab_allocator->allocate(G1HeapRegionAttr::Old,
                                                         word_sz,
                                                         &plab_refill_in_old_failed);
     // Make sure that we won't attempt to copy any other objects out
@@ -190,38 +190,38 @@ HeapWord* G1ParScanThreadState::allocate_in_next_plab(InCSetState const state,
     return obj_ptr;
   } else {
     _old_gen_is_full = previous_plab_refill_failed;
-    assert(dest->is_old(), "Unexpected dest: " CSETSTATE_FORMAT, dest->value());
+    assert(dest->is_old(), "Unexpected dest region attr: %s", dest->get_type_str());
     // no other space to try.
     return NULL;
   }
 }
 
-InCSetState G1ParScanThreadState::next_state(InCSetState const state, markOop const m, uint& age) {
-  if (state.is_young()) {
+G1HeapRegionAttr G1ParScanThreadState::next_region_attr(G1HeapRegionAttr const region_attr, markOop const m, uint& age) {
+  if (region_attr.is_young()) {
     age = !m->has_displaced_mark_helper() ? m->age()
                                           : m->displaced_mark_helper()->age();
     if (age < _tenuring_threshold) {
-      return state;
+      return region_attr;
     }
   }
-  return dest(state);
+  return dest(region_attr);
 }
 
-void G1ParScanThreadState::report_promotion_event(InCSetState const dest_state,
+void G1ParScanThreadState::report_promotion_event(G1HeapRegionAttr const dest_attr,
                                                   oop const old, size_t word_sz, uint age,
                                                   HeapWord * const obj_ptr) const {
-  PLAB* alloc_buf = _plab_allocator->alloc_buffer(dest_state);
+  PLAB* alloc_buf = _plab_allocator->alloc_buffer(dest_attr);
   if (alloc_buf->contains(obj_ptr)) {
     _g1h->_gc_tracer_stw->report_promotion_in_new_plab_event(old->klass(), word_sz * HeapWordSize, age,
-                                                             dest_state.value() == InCSetState::Old,
+                                                             dest_attr.type() == G1HeapRegionAttr::Old,
                                                              alloc_buf->word_sz() * HeapWordSize);
   } else {
     _g1h->_gc_tracer_stw->report_promotion_outside_plab_event(old->klass(), word_sz * HeapWordSize, age,
-                                                              dest_state.value() == InCSetState::Old);
+                                                              dest_attr.type() == G1HeapRegionAttr::Old);
   }
 }
 
-oop G1ParScanThreadState::copy_to_survivor_space(InCSetState const state,
+oop G1ParScanThreadState::copy_to_survivor_space(G1HeapRegionAttr const region_attr,
                                                  oop const old,
                                                  markOop const old_mark) {
   const size_t word_sz = old->size();
@@ -232,21 +232,21 @@ oop G1ParScanThreadState::copy_to_survivor_space(InCSetState const state,
          (!from_region->is_young() && young_index == 0), "invariant" );
 
   uint age = 0;
-  InCSetState dest_state = next_state(state, old_mark, age);
+  G1HeapRegionAttr dest_attr = next_region_attr(region_attr, old_mark, age);
   // The second clause is to prevent premature evacuation failure in case there
   // is still space in survivor, but old gen is full.
-  if (_old_gen_is_full && dest_state.is_old()) {
+  if (_old_gen_is_full && dest_attr.is_old()) {
     return handle_evacuation_failure_par(old, old_mark);
   }
-  HeapWord* obj_ptr = _plab_allocator->plab_allocate(dest_state, word_sz);
+  HeapWord* obj_ptr = _plab_allocator->plab_allocate(dest_attr, word_sz);
 
   // PLAB allocations should succeed most of the time, so we'll
   // normally check against NULL once and that's it.
   if (obj_ptr == NULL) {
     bool plab_refill_failed = false;
-    obj_ptr = _plab_allocator->allocate_direct_or_new_plab(dest_state, word_sz, &plab_refill_failed);
+    obj_ptr = _plab_allocator->allocate_direct_or_new_plab(dest_attr, word_sz, &plab_refill_failed);
     if (obj_ptr == NULL) {
-      obj_ptr = allocate_in_next_plab(state, &dest_state, word_sz, plab_refill_failed);
+      obj_ptr = allocate_in_next_plab(region_attr, &dest_attr, word_sz, plab_refill_failed);
       if (obj_ptr == NULL) {
         // This will either forward-to-self, or detect that someone else has
         // installed a forwarding pointer.
@@ -255,7 +255,7 @@ oop G1ParScanThreadState::copy_to_survivor_space(InCSetState const state,
     }
     if (_g1h->_gc_tracer_stw->should_report_promotion_events()) {
       // The events are checked individually as part of the actual commit
-      report_promotion_event(dest_state, old, word_sz, age, obj_ptr);
+      report_promotion_event(dest_attr, old, word_sz, age, obj_ptr);
     }
   }
 
@@ -267,7 +267,7 @@ oop G1ParScanThreadState::copy_to_survivor_space(InCSetState const state,
   if (_g1h->evacuation_should_fail()) {
     // Doing this after all the allocation attempts also tests the
     // undo_allocation() method too.
-    _plab_allocator->undo_allocation(dest_state, obj_ptr, word_sz);
+    _plab_allocator->undo_allocation(dest_attr, obj_ptr, word_sz);
     return handle_evacuation_failure_par(old, old_mark);
   }
 #endif // !PRODUCT
@@ -280,7 +280,7 @@ oop G1ParScanThreadState::copy_to_survivor_space(InCSetState const state,
   if (forward_ptr == NULL) {
     Copy::aligned_disjoint_words((HeapWord*) old, obj_ptr, word_sz);
 
-    if (dest_state.is_young()) {
+    if (dest_attr.is_young()) {
       if (age < markOopDesc::max_age) {
         age++;
       }
@@ -300,8 +300,8 @@ oop G1ParScanThreadState::copy_to_survivor_space(InCSetState const state,
     }
 
     if (G1StringDedup::is_enabled()) {
-      const bool is_from_young = state.is_young();
-      const bool is_to_young = dest_state.is_young();
+      const bool is_from_young = region_attr.is_young();
+      const bool is_to_young = dest_attr.is_young();
       assert(is_from_young == _g1h->heap_region_containing(old)->is_young(),
              "sanity");
       assert(is_to_young == _g1h->heap_region_containing(obj)->is_young(),
@@ -322,12 +322,12 @@ oop G1ParScanThreadState::copy_to_survivor_space(InCSetState const state,
       oop* old_p = set_partial_array_mask(old);
       do_oop_partial_array(old_p);
     } else {
-      G1ScanInYoungSetter x(&_scanner, dest_state.is_young());
+      G1ScanInYoungSetter x(&_scanner, dest_attr.is_young());
       obj->oop_iterate_backwards(&_scanner);
     }
     return obj;
   } else {
-    _plab_allocator->undo_allocation(dest_state, obj_ptr, word_sz);
+    _plab_allocator->undo_allocation(dest_attr, obj_ptr, word_sz);
     return forward_ptr;
   }
 }

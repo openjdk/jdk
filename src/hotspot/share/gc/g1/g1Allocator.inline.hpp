@@ -63,15 +63,15 @@ inline HeapWord* G1Allocator::attempt_allocation_force(size_t word_size) {
   return mutator_alloc_region()->attempt_allocation_force(word_size);
 }
 
-inline PLAB* G1PLABAllocator::alloc_buffer(InCSetState dest) {
+inline PLAB* G1PLABAllocator::alloc_buffer(G1HeapRegionAttr dest) {
   assert(dest.is_valid(),
-         "Allocation buffer index out of bounds: " CSETSTATE_FORMAT, dest.value());
-  assert(_alloc_buffers[dest.value()] != NULL,
-         "Allocation buffer is NULL: " CSETSTATE_FORMAT, dest.value());
-  return _alloc_buffers[dest.value()];
+         "Allocation buffer index out of bounds: %s", dest.get_type_str());
+  assert(_alloc_buffers[dest.type()] != NULL,
+         "Allocation buffer is NULL: %s", dest.get_type_str());
+  return _alloc_buffers[dest.type()];
 }
 
-inline HeapWord* G1PLABAllocator::plab_allocate(InCSetState dest,
+inline HeapWord* G1PLABAllocator::plab_allocate(G1HeapRegionAttr dest,
                                                 size_t word_sz) {
   PLAB* buffer = alloc_buffer(dest);
   if (_survivor_alignment_bytes == 0 || !dest.is_young()) {
@@ -81,7 +81,7 @@ inline HeapWord* G1PLABAllocator::plab_allocate(InCSetState dest,
   }
 }
 
-inline HeapWord* G1PLABAllocator::allocate(InCSetState dest,
+inline HeapWord* G1PLABAllocator::allocate(G1HeapRegionAttr dest,
                                            size_t word_sz,
                                            bool* refill_failed) {
   HeapWord* const obj = plab_allocate(dest, word_sz);

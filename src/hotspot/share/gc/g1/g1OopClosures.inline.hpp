@@ -61,10 +61,10 @@ inline void G1ScanClosureBase::prefetch_and_push(T* p, const oop obj) {
 }
 
 template <class T>
-inline void G1ScanClosureBase::handle_non_cset_obj_common(InCSetState const state, T* p, oop const obj) {
-  if (state.is_humongous()) {
+inline void G1ScanClosureBase::handle_non_cset_obj_common(G1HeapRegionAttr const region_attr, T* p, oop const obj) {
+  if (region_attr.is_humongous()) {
     _g1h->set_humongous_is_live(obj);
-  } else if (state.is_optional()) {
+  } else if (region_attr.is_optional()) {
     _par_scan_state->remember_reference_into_optional_region(p);
   }
 }
@@ -81,16 +81,16 @@ inline void G1ScanEvacuatedObjClosure::do_oop_work(T* p) {
     return;
   }
   oop obj = CompressedOops::decode_not_null(heap_oop);
-  const InCSetState state = _g1h->in_cset_state(obj);
-  if (state.is_in_cset()) {
+  const G1HeapRegionAttr region_attr = _g1h->region_attr(obj);
+  if (region_attr.is_in_cset()) {
     prefetch_and_push(p, obj);
   } else if (!HeapRegion::is_in_same_region(p, obj)) {
-    handle_non_cset_obj_common(state, p, obj);
+    handle_non_cset_obj_common(region_attr, p, obj);
     assert(_scanning_in_young != Uninitialized, "Scan location has not been initialized.");
     if (_scanning_in_young == True) {
       return;
     }
-    _par_scan_state->enqueue_card_if_tracked(p, obj);
+    _par_scan_state->enqueue_card_if_tracked(region_attr, p, obj);
   }
 }
 
@@ -160,7 +160,7 @@ inline void G1ConcurrentRefineOopClosure::do_oop_work(T* p) {
 }
 
 template <class T>
-inline void G1ScanObjsDuringUpdateRSClosure::do_oop_work(T* p) {
+inline void G1ScanCardClosure::do_oop_work(T* p) {
   T o = RawAccess<>::oop_load(p);
   if (CompressedOops::is_null(o)) {
     return;
@@ -169,31 +169,15 @@ inline void G1ScanObjsDuringUpdateRSClosure::do_oop_work(T* p) {
 
   check_obj_during_refinement(p, obj);
 
-  assert(!_g1h->is_in_cset((HeapWord*)p), "Oop originates from " PTR_FORMAT " (region: %u) which is in the collection set.", p2i(p), _g1h->addr_to_region((HeapWord*)p));
-  const InCSetState state = _g1h->in_cset_state(obj);
-  if (state.is_in_cset()) {
-    // Since the source is always from outside the collection set, here we implicitly know
-    // that this is a cross-region reference too.
+  // We can not check for references from the collection set: the remembered sets
+  // may contain such entries and we do not filter them before.
+
+  const G1HeapRegionAttr region_attr = _g1h->region_attr(obj);
+  if (region_attr.is_in_cset()) {
     prefetch_and_push(p, obj);
   } else if (!HeapRegion::is_in_same_region(p, obj)) {
-    handle_non_cset_obj_common(state, p, obj);
-    _par_scan_state->enqueue_card_if_tracked(p, obj);
-  }
-}
-
-template <class T>
-inline void G1ScanObjsDuringScanRSClosure::do_oop_work(T* p) {
-  T heap_oop = RawAccess<>::oop_load(p);
-  if (CompressedOops::is_null(heap_oop)) {
-    return;
-  }
-  oop obj = CompressedOops::decode_not_null(heap_oop);
-
-  const InCSetState state = _g1h->in_cset_state(obj);
-  if (state.is_in_cset()) {
-    prefetch_and_push(p, obj);
-  } else if (!HeapRegion::is_in_same_region(p, obj)) {
-    handle_non_cset_obj_common(state, p, obj);
+    handle_non_cset_obj_common(region_attr, p, obj);
+    _par_scan_state->enqueue_card_if_tracked(region_attr, p, obj);
   }
 }
 
@@ -233,7 +217,7 @@ void G1ParCopyClosure<barrier, do_mark_object>::do_oop_work(T* p) {
 
   assert(_worker_id == _par_scan_state->worker_id(), "sanity");
 
-  const InCSetState state = _g1h->in_cset_state(obj);
+  const G1HeapRegionAttr state = _g1h->region_attr(obj);
   if (state.is_in_cset()) {
     oop forwardee;
     markOop m = obj->mark_raw();

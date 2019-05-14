@@ -71,7 +71,7 @@ public class TestEagerReclaimHumongousRegionsLog {
 
         // This gives an array of lines containing eager reclaim of humongous regions
         // log messages contents after the ":" in the following order for every GC:
-        //   Humongous Register: a.ams
+        //   Region Register: a.ams
         //   Humongous Total: b
         //   Humongous Candidate: c
         //   Humongous Reclaim: d.dms
@@ -79,7 +79,7 @@ public class TestEagerReclaimHumongousRegionsLog {
         //   Humongous Regions: f->g
 
         String[] lines = Arrays.stream(output.getStdout().split("\\R"))
-                         .filter(s -> s.contains("Humongous")).map(s -> s.substring(s.indexOf(LogSeparator) + LogSeparator.length()))
+                         .filter(s -> (s.contains("Humongous") || s.contains("Region Register"))).map(s -> s.substring(s.indexOf(LogSeparator) + LogSeparator.length()))
                          .toArray(String[]::new);
 
         Asserts.assertTrue(lines.length % 6 == 0, "There seems to be an unexpected amount of log messages (total: " + lines.length + ") per GC");

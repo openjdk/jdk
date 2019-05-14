@@ -41,14 +41,14 @@ template <class T> void G1ParScanThreadState::do_oop_evac(T* p) {
   // than one thread might claim the same card. So the same card may be
   // processed multiple times, and so we might get references into old gen here.
   // So we need to redo this check.
-  const InCSetState in_cset_state = _g1h->in_cset_state(obj);
+  const G1HeapRegionAttr region_attr = _g1h->region_attr(obj);
   // References pushed onto the work stack should never point to a humongous region
   // as they are not added to the collection set due to above precondition.
-  assert(!in_cset_state.is_humongous(),
+  assert(!region_attr.is_humongous(),
          "Obj " PTR_FORMAT " should not refer to humongous region %u from " PTR_FORMAT,
          p2i(obj), _g1h->addr_to_region((HeapWord*)obj), p2i(p));
 
-  if (!in_cset_state.is_in_cset()) {
+  if (!region_attr.is_in_cset()) {
     // In this case somebody else already did all the work.
     return;
   }
@@ -57,7 +57,7 @@ template <class T> void G1ParScanThreadState::do_oop_evac(T* p) {
   if (m->is_marked()) {
     obj = (oop) m->decode_pointer();
   } else {
-    obj = copy_to_survivor_space(in_cset_state, obj, m);
+    obj = copy_to_survivor_space(region_attr, obj, m);
   }
   RawAccess<IS_NOT_NULL>::oop_store(p, obj);
 
@@ -67,7 +67,7 @@ template <class T> void G1ParScanThreadState::do_oop_evac(T* p) {
   }
   HeapRegion* from = _g1h->heap_region_containing(p);
   if (!from->is_young()) {
-    enqueue_card_if_tracked(p, obj);
+    enqueue_card_if_tracked(_g1h->region_attr(obj), p, obj);
   }
 }
 

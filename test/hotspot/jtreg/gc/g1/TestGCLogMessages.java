@@ -132,6 +132,7 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Queue Fixup", Level.DEBUG),
         new LogMessageWithLevel("Table Fixup", Level.DEBUG),
         new LogMessageWithLevel("Expand Heap After Collection", Level.DEBUG),
+        new LogMessageWithLevel("Region Register", Level.DEBUG),
         // Free CSet
         new LogMessageWithLevel("Free Collection Set", Level.DEBUG),
         new LogMessageWithLevel("Free Collection Set Serial", Level.TRACE),
@@ -139,7 +140,6 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Non-Young Free Collection Set", Level.TRACE),
         // Humongous Eager Reclaim
         new LogMessageWithLevel("Humongous Reclaim", Level.DEBUG),
-        new LogMessageWithLevel("Humongous Register", Level.DEBUG),
         // Merge PSS
         new LogMessageWithLevel("Merge Per-Thread State", Level.DEBUG),
         // TLAB handling

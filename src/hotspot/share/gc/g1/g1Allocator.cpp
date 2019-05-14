@@ -39,8 +39,8 @@ G1Allocator::G1Allocator(G1CollectedHeap* heap) :
   _survivor_is_full(false),
   _old_is_full(false),
   _mutator_alloc_region(),
-  _survivor_gc_alloc_region(heap->alloc_buffer_stats(InCSetState::Young)),
-  _old_gc_alloc_region(heap->alloc_buffer_stats(InCSetState::Old)),
+  _survivor_gc_alloc_region(heap->alloc_buffer_stats(G1HeapRegionAttr::Young)),
+  _old_gc_alloc_region(heap->alloc_buffer_stats(G1HeapRegionAttr::Old)),
   _retained_old_gc_alloc_region(NULL) {
 }
 
@@ -161,7 +161,7 @@ size_t G1Allocator::used_in_alloc_regions() {
 }
 
 
-HeapWord* G1Allocator::par_allocate_during_gc(InCSetState dest,
+HeapWord* G1Allocator::par_allocate_during_gc(G1HeapRegionAttr dest,
                                               size_t word_size) {
   size_t temp = 0;
   HeapWord* result = par_allocate_during_gc(dest, word_size, word_size, &temp);
@@ -171,14 +171,14 @@ HeapWord* G1Allocator::par_allocate_during_gc(InCSetState dest,
   return result;
 }
 
-HeapWord* G1Allocator::par_allocate_during_gc(InCSetState dest,
+HeapWord* G1Allocator::par_allocate_during_gc(G1HeapRegionAttr dest,
                                               size_t min_word_size,
                                               size_t desired_word_size,
                                               size_t* actual_word_size) {
-  switch (dest.value()) {
-    case InCSetState::Young:
+  switch (dest.type()) {
+    case G1HeapRegionAttr::Young:
       return survivor_attempt_allocation(min_word_size, desired_word_size, actual_word_size);
-    case InCSetState::Old:
+    case G1HeapRegionAttr::Old:
       return old_attempt_allocation(min_word_size, desired_word_size, actual_word_size);
     default:
       ShouldNotReachHere();
@@ -246,22 +246,22 @@ uint G1PLABAllocator::calc_survivor_alignment_bytes() {
 G1PLABAllocator::G1PLABAllocator(G1Allocator* allocator) :
   _g1h(G1CollectedHeap::heap()),
   _allocator(allocator),
-  _surviving_alloc_buffer(_g1h->desired_plab_sz(InCSetState::Young)),
-  _tenured_alloc_buffer(_g1h->desired_plab_sz(InCSetState::Old)),
+  _surviving_alloc_buffer(_g1h->desired_plab_sz(G1HeapRegionAttr::Young)),
+  _tenured_alloc_buffer(_g1h->desired_plab_sz(G1HeapRegionAttr::Old)),
   _survivor_alignment_bytes(calc_survivor_alignment_bytes()) {
-  for (uint state = 0; state < InCSetState::Num; state++) {
+  for (uint state = 0; state < G1HeapRegionAttr::Num; state++) {
     _direct_allocated[state] = 0;
     _alloc_buffers[state] = NULL;
   }
-  _alloc_buffers[InCSetState::Young] = &_surviving_alloc_buffer;
-  _alloc_buffers[InCSetState::Old]  = &_tenured_alloc_buffer;
+  _alloc_buffers[G1HeapRegionAttr::Young] = &_surviving_alloc_buffer;
+  _alloc_buffers[G1HeapRegionAttr::Old]  = &_tenured_alloc_buffer;
 }
 
 bool G1PLABAllocator::may_throw_away_buffer(size_t const allocation_word_sz, size_t const buffer_size) const {
   return (allocation_word_sz * 100 < buffer_size * ParallelGCBufferWastePct);
 }
 
-HeapWord* G1PLABAllocator::allocate_direct_or_new_plab(InCSetState dest,
+HeapWord* G1PLABAllocator::allocate_direct_or_new_plab(G1HeapRegionAttr dest,
                                                        size_t word_sz,
                                                        bool* plab_refill_failed) {
   size_t plab_word_size = _g1h->desired_plab_sz(dest);
@@ -300,17 +300,17 @@ HeapWord* G1PLABAllocator::allocate_direct_or_new_plab(InCSetState dest,
   // Try direct allocation.
   HeapWord* result = _allocator->par_allocate_during_gc(dest, word_sz);
   if (result != NULL) {
-    _direct_allocated[dest.value()] += word_sz;
+    _direct_allocated[dest.type()] += word_sz;
   }
   return result;
 }
 
-void G1PLABAllocator::undo_allocation(InCSetState dest, HeapWord* obj, size_t word_sz) {
+void G1PLABAllocator::undo_allocation(G1HeapRegionAttr dest, HeapWord* obj, size_t word_sz) {
   alloc_buffer(dest)->undo_allocation(obj, word_sz);
 }
 
 void G1PLABAllocator::flush_and_retire_stats() {
-  for (uint state = 0; state < InCSetState::Num; state++) {
+  for (uint state = 0; state < G1HeapRegionAttr::Num; state++) {
     PLAB* const buf = _alloc_buffers[state];
     if (buf != NULL) {
       G1EvacStats* stats = _g1h->alloc_buffer_stats(state);
@@ -323,7 +323,7 @@ void G1PLABAllocator::flush_and_retire_stats() {
 
 size_t G1PLABAllocator::waste() const {
   size_t result = 0;
-  for (uint state = 0; state < InCSetState::Num; state++) {
+  for (uint state = 0; state < G1HeapRegionAttr::Num; state++) {
     PLAB * const buf = _alloc_buffers[state];
     if (buf != NULL) {
       result += buf->waste();
@@ -334,7 +334,7 @@ size_t G1PLABAllocator::waste() const {
 
 size_t G1PLABAllocator::undo_waste() const {
   size_t result = 0;
-  for (uint state = 0; state < InCSetState::Num; state++) {
+  for (uint state = 0; state < G1HeapRegionAttr::Num; state++) {
     PLAB * const buf = _alloc_buffers[state];
     if (buf != NULL) {
       result += buf->undo_waste();

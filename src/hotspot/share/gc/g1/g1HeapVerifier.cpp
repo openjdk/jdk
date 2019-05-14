@@ -790,50 +790,50 @@ class G1CheckCSetFastTableClosure : public HeapRegionClosure {
 
   virtual bool do_heap_region(HeapRegion* hr) {
     uint i = hr->hrm_index();
-    InCSetState cset_state = (InCSetState) G1CollectedHeap::heap()->_in_cset_fast_test.get_by_index(i);
+    G1HeapRegionAttr region_attr = (G1HeapRegionAttr) G1CollectedHeap::heap()->_region_attr.get_by_index(i);
     if (hr->is_humongous()) {
       if (hr->in_collection_set()) {
         log_error(gc, verify)("## humongous region %u in CSet", i);
         _failures = true;
         return true;
       }
-      if (cset_state.is_in_cset()) {
-        log_error(gc, verify)("## inconsistent cset state " CSETSTATE_FORMAT " for humongous region %u", cset_state.value(), i);
+      if (region_attr.is_in_cset()) {
+        log_error(gc, verify)("## inconsistent region attr type %s for humongous region %u", region_attr.get_type_str(), i);
         _failures = true;
         return true;
       }
-      if (hr->is_continues_humongous() && cset_state.is_humongous()) {
-        log_error(gc, verify)("## inconsistent cset state " CSETSTATE_FORMAT " for continues humongous region %u", cset_state.value(), i);
+      if (hr->is_continues_humongous() && region_attr.is_humongous()) {
+        log_error(gc, verify)("## inconsistent region attr type %s for continues humongous region %u", region_attr.get_type_str(), i);
         _failures = true;
         return true;
       }
     } else {
-      if (cset_state.is_humongous()) {
-        log_error(gc, verify)("## inconsistent cset state " CSETSTATE_FORMAT " for non-humongous region %u", cset_state.value(), i);
+      if (region_attr.is_humongous()) {
+        log_error(gc, verify)("## inconsistent region attr type %s for non-humongous region %u", region_attr.get_type_str(), i);
         _failures = true;
         return true;
       }
-      if (hr->in_collection_set() != cset_state.is_in_cset()) {
-        log_error(gc, verify)("## in CSet %d / cset state " CSETSTATE_FORMAT " inconsistency for region %u",
-                             hr->in_collection_set(), cset_state.value(), i);
+      if (hr->in_collection_set() != region_attr.is_in_cset()) {
+        log_error(gc, verify)("## in CSet %d / region attr type %s inconsistency for region %u",
+                             hr->in_collection_set(), region_attr.get_type_str(), i);
         _failures = true;
         return true;
       }
-      if (cset_state.is_in_cset()) {
+      if (region_attr.is_in_cset()) {
         if (hr->is_archive()) {
           log_error(gc, verify)("## is_archive in collection set for region %u", i);
           _failures = true;
           return true;
         }
-        if (hr->is_young() != (cset_state.is_young())) {
-          log_error(gc, verify)("## is_young %d / cset state " CSETSTATE_FORMAT " inconsistency for region %u",
-                               hr->is_young(), cset_state.value(), i);
+        if (hr->is_young() != (region_attr.is_young())) {
+          log_error(gc, verify)("## is_young %d / region attr type %s inconsistency for region %u",
+                               hr->is_young(), region_attr.get_type_str(), i);
           _failures = true;
           return true;
         }
-        if (hr->is_old() != (cset_state.is_old())) {
-          log_error(gc, verify)("## is_old %d / cset state " CSETSTATE_FORMAT " inconsistency for region %u",
-                               hr->is_old(), cset_state.value(), i);
+        if (hr->is_old() != (region_attr.is_old())) {
+          log_error(gc, verify)("## is_old %d / region attr type %s inconsistency for region %u",
+                               hr->is_old(), region_attr.get_type_str(), i);
           _failures = true;
           return true;
         }

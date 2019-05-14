@@ -45,17 +45,17 @@ class outputStream;
 
 class G1ParScanThreadState : public CHeapObj<mtGC> {
   G1CollectedHeap* _g1h;
-  RefToScanQueue*  _refs;
+  RefToScanQueue* _refs;
   G1DirtyCardQueue _dcq;
-  G1CardTable*     _ct;
+  G1CardTable* _ct;
   G1EvacuationRootClosures* _closures;
 
-  G1PLABAllocator*  _plab_allocator;
+  G1PLABAllocator* _plab_allocator;
 
-  AgeTable          _age_table;
-  InCSetState       _dest[InCSetState::Num];
+  AgeTable _age_table;
+  G1HeapRegionAttr _dest[G1HeapRegionAttr::Num];
   // Local tenuring threshold.
-  uint              _tenuring_threshold;
+  uint _tenuring_threshold;
   G1ScanEvacuatedObjClosure  _scanner;
 
   uint _worker_id;
@@ -80,12 +80,12 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   G1DirtyCardQueue& dirty_card_queue()           { return _dcq; }
   G1CardTable* ct()                              { return _ct; }
 
-  InCSetState dest(InCSetState original) const {
+  G1HeapRegionAttr dest(G1HeapRegionAttr original) const {
     assert(original.is_valid(),
-           "Original state invalid: " CSETSTATE_FORMAT, original.value());
-    assert(_dest[original.value()].is_valid_gen(),
-           "Dest state is invalid: " CSETSTATE_FORMAT, _dest[original.value()].value());
-    return _dest[original.value()];
+           "Original region attr invalid: %s", original.get_type_str());
+    assert(_dest[original.type()].is_valid_gen(),
+           "Dest region attr is invalid: %s", _dest[original.type()].get_type_str());
+    return _dest[original.type()];
   }
 
   size_t _num_optional_regions;
@@ -111,10 +111,19 @@ public:
   template <class T> void do_oop_ext(T* ref);
   template <class T> void push_on_queue(T* ref);
 
-  template <class T> void enqueue_card_if_tracked(T* p, oop o) {
+  template <class T> void enqueue_card_if_tracked(G1HeapRegionAttr region_attr, T* p, oop o) {
     assert(!HeapRegion::is_in_same_region(p, o), "Should have filtered out cross-region references already.");
     assert(!_g1h->heap_region_containing(p)->is_young(), "Should have filtered out from-young references already.");
-    if (!_g1h->heap_region_containing((HeapWord*)o)->rem_set()->is_tracked()) {
+
+#ifdef ASSERT
+    HeapRegion* const hr_obj = _g1h->heap_region_containing((HeapWord*)o);
+    assert(region_attr.needs_remset_update() == hr_obj->rem_set()->is_tracked(),
+           "State flag indicating remset tracking disagrees (%s) with actual remembered set (%s) for region %u",
+           BOOL_TO_STR(region_attr.needs_remset_update()),
+           BOOL_TO_STR(hr_obj->rem_set()->is_tracked()),
+           hr_obj->hrm_index());
+#endif
+    if (!region_attr.needs_remset_update()) {
       return;
     }
     size_t card_index = ct()->index_for(p);
@@ -184,14 +193,14 @@ private:
   // Returns a non-NULL pointer if successful, and updates dest if required.
   // Also determines whether we should continue to try to allocate into the various
   // generations or just end trying to allocate.
-  HeapWord* allocate_in_next_plab(InCSetState const state,
-                                  InCSetState* dest,
+  HeapWord* allocate_in_next_plab(G1HeapRegionAttr const region_attr,
+                                  G1HeapRegionAttr* dest,
                                   size_t word_sz,
                                   bool previous_plab_refill_failed);
 
-  inline InCSetState next_state(InCSetState const state, markOop const m, uint& age);
+  inline G1HeapRegionAttr next_region_attr(G1HeapRegionAttr const region_attr, markOop const m, uint& age);
 
-  void report_promotion_event(InCSetState const dest_state,
+  void report_promotion_event(G1HeapRegionAttr const dest_attr,
                               oop const old, size_t word_sz, uint age,
                               HeapWord * const obj_ptr) const;
 
@@ -200,7 +209,7 @@ private:
 
   inline void trim_queue_to_threshold(uint threshold);
 public:
-  oop copy_to_survivor_space(InCSetState const state, oop const obj, markOop const old_mark);
+  oop copy_to_survivor_space(G1HeapRegionAttr const region_attr, oop const obj, markOop const old_mark);
 
   void trim_queue();
   void trim_queue_partially();
