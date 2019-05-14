@@ -161,8 +161,8 @@ AC_DEFUN_ONCE([LIB_SETUP_ZLIB],
   AC_MSG_CHECKING([for which zlib to use])
 
   DEFAULT_ZLIB=system
-  if test "x$OPENJDK_TARGET_OS" = xwindows; then
-    # On windows default is bundled...on others default is system
+  if test "x$OPENJDK_TARGET_OS" = xwindows -o "x$OPENJDK_TARGET_OS" = xaix; then
+    # On windows and aix default is bundled, on others default is system
     DEFAULT_ZLIB=bundled
   fi
 
