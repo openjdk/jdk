@@ -34,6 +34,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.URL;
+import java.net.Proxy;
 
 public class FtpURLConnectionLeak {
 
@@ -48,7 +49,7 @@ public class FtpURLConnectionLeak {
         try (server) {
             for (int i = 0; i < 3; i++) {
                 try {
-                    InputStream stream = url.openStream();
+                    InputStream stream = url.openConnection(Proxy.NO_PROXY).getInputStream();
                 } catch (FileNotFoundException expected) {
                     // should always reach this point since the path does not exist
                     System.out.println("caught expected " + expected);
