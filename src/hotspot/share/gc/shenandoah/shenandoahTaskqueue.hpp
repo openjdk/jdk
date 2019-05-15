@@ -109,7 +109,7 @@ private:
 // some bits back if chunks are counted in ObjArrayMarkingStride units.
 //
 // There is also a fallback version that uses plain fields, when we don't have enough space to steal the
-// bits from the native pointer. It is useful to debug the _LP64 version.
+// bits from the native pointer. It is useful to debug the optimized version.
 //
 
 #ifdef _MSC_VER
@@ -119,6 +119,12 @@ private:
 #endif
 
 #ifdef _LP64
+#define SHENANDOAH_OPTIMIZED_OBJTASK 1
+#else
+#define SHENANDOAH_OPTIMIZED_OBJTASK 0
+#endif
+
+#if SHENANDOAH_OPTIMIZED_OBJTASK
 class ObjArrayChunkedTask
 {
 public:
@@ -135,17 +141,14 @@ public:
 
 public:
   ObjArrayChunkedTask(oop o = NULL) {
-    _obj = ((uintptr_t)(void*) o) << oop_shift;
+    assert(oopDesc::equals_raw(decode_oop(encode_oop(o)), o), "oop can be encoded: " PTR_FORMAT, p2i(o));
+    _obj = encode_oop(o);
   }
-  ObjArrayChunkedTask(oop o, int chunk, int mult) {
-    assert(0 <= chunk && chunk < nth_bit(chunk_bits), "chunk is sane: %d", chunk);
-    assert(0 <= mult && mult < nth_bit(pow_bits), "pow is sane: %d", mult);
-    uintptr_t t_b = ((uintptr_t) chunk) << chunk_shift;
-    uintptr_t t_m = ((uintptr_t) mult) << pow_shift;
-    uintptr_t obj = (uintptr_t)(void*)o;
-    assert(obj < nth_bit(oop_bits), "obj ref is sane: " PTR_FORMAT, obj);
-    intptr_t t_o = obj << oop_shift;
-    _obj = t_o | t_m | t_b;
+  ObjArrayChunkedTask(oop o, int chunk, int pow) {
+    assert(oopDesc::equals_raw(decode_oop(encode_oop(o)), o), "oop can be encoded: " PTR_FORMAT, p2i(o));
+    assert(decode_chunk(encode_chunk(chunk)) == chunk, "chunk can be encoded: %d", chunk);
+    assert(decode_pow(encode_pow(pow)) == pow, "pow can be encoded: %d", pow);
+    _obj = encode_oop(o) | encode_chunk(chunk) | encode_pow(pow);
   }
   ObjArrayChunkedTask(const ObjArrayChunkedTask& t): _obj(t._obj) { }
 
@@ -159,14 +162,38 @@ public:
     return *this;
   }
 
-  inline oop obj()   const { return (oop) reinterpret_cast<void*>((_obj >> oop_shift) & right_n_bits(oop_bits)); }
-  inline int chunk() const { return (int) (_obj >> chunk_shift) & right_n_bits(chunk_bits); }
-  inline int pow()   const { return (int) ((_obj >> pow_shift) & right_n_bits(pow_bits)); }
+  inline oop decode_oop(uintptr_t val) const {
+    return (oop) reinterpret_cast<void*>((val >> oop_shift) & right_n_bits(oop_bits));
+  }
+
+  inline int decode_chunk(uintptr_t val) const {
+    return (int) ((val >> chunk_shift) & right_n_bits(chunk_bits));
+  }
+
+  inline int decode_pow(uintptr_t val) const {
+    return (int) ((val >> pow_shift) & right_n_bits(pow_bits));
+  }
+
+  inline uintptr_t encode_oop(oop obj) const {
+    return ((uintptr_t)(void*) obj) << oop_shift;
+  }
+
+  inline uintptr_t encode_chunk(int chunk) const {
+    return ((uintptr_t) chunk) << chunk_shift;
+  }
+
+  inline uintptr_t encode_pow(int pow) const {
+    return ((uintptr_t) pow) << pow_shift;
+  }
+
+  inline oop obj()   const { return decode_oop(_obj);   }
+  inline int chunk() const { return decode_chunk(_obj); }
+  inline int pow()   const { return decode_pow(_obj);   }
   inline bool is_not_chunked() const { return (_obj & ~right_n_bits(oop_bits + pow_bits)) == 0; }
 
   DEBUG_ONLY(bool is_valid() const); // Tasks to be pushed/popped must be valid.
 
-  static size_t max_addressable() {
+  static uintptr_t max_addressable() {
     return nth_bit(oop_bits);
   }
 
@@ -229,7 +256,7 @@ private:
   int _chunk;
   int _pow;
 };
-#endif
+#endif // SHENANDOAH_OPTIMIZED_OBJTASK
 
 #ifdef _MSC_VER
 #pragma warning(pop)
