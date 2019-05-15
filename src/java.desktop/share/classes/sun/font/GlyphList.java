@@ -303,6 +303,14 @@ public final class GlyphList {
      */
     public void setGlyphIndex(int i) {
         glyphindex = i;
+        if (images[i] == 0L) {
+           metrics[0] = (int)gposx;
+           metrics[1] = (int)gposy;
+           metrics[2] = 0;
+           metrics[3] = 0;
+           metrics[4] = 0;
+           return;
+        }
         float gx =
             StrikeCache.unsafe.getFloat(images[i]+StrikeCache.topLeftXOffset);
         float gy =
@@ -340,6 +348,9 @@ public final class GlyphList {
             if (len > graybits.length) {
                 graybits = new byte[len];
             }
+        }
+        if (images[glyphindex] == 0L) {
+            return graybits;
         }
         long pixelDataAddress =
             StrikeCache.unsafe.getAddress(images[glyphindex] +
@@ -448,6 +459,9 @@ public final class GlyphList {
         char gw, gh;
         float gx, gy, gx0, gy0, gx1, gy1;
         for (int i=0; i<len; i++) {
+            if (images[i] == 0L) {
+                continue;
+            }
             gx = StrikeCache.unsafe.getFloat(images[i]+xOffset);
             gy = StrikeCache.unsafe.getFloat(images[i]+yOffset);
             gw = StrikeCache.unsafe.getChar(images[i]+wOffset);

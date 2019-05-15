@@ -635,16 +635,17 @@ Java_sun_font_FreetypeFontScaler_getGlyphAdvanceNative(
       to avoid unnecesary work with bitmaps. */
 
     GlyphInfo *info;
-    jfloat advance;
+    jfloat advance = 0.0f;
     jlong image;
 
     image = Java_sun_font_FreetypeFontScaler_getGlyphImageNative(
                  env, scaler, font2D, pScalerContext, pScaler, glyphCode);
     info = (GlyphInfo*) jlong_to_ptr(image);
 
-    advance = info->advanceX;
-
-    free(info);
+    if (info != NULL) {
+        advance = info->advanceX;
+        free(info);
+    }
 
     return advance;
 }
