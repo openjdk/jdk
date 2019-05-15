@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,14 @@
  * @test
  * @bug 4361492
  * @summary HTTPUrlConnection does not receive binary data correctly
+ * @library /test/lib
  * @run main/timeout=20 ResendPostBody
  */
 
 import java.io.*;
 import java.net.*;
+
+import jdk.test.lib.net.URIBuilder;
 
 /*
  * This test does the following:
@@ -139,13 +142,16 @@ public class ResendPostBody {
 
         byte b[] = "X=ABCDEFGHZZZ".getBytes();
 
-        ss = new ServerSocket (0);
+        ss = new ServerSocket(0, 0, InetAddress.getLoopbackAddress());
         server = new Server (ss);
         server.start ();
         /* Get the URL */
-
-        String s = "http://localhost:"+ss.getLocalPort()+"/test";
-        URL url = new URL(s);
+        URL url = URIBuilder.newBuilder()
+                .scheme("http")
+                .loopback()
+                .port(ss.getLocalPort())
+                .path("/test")
+                .toURL();
         HttpURLConnection conURL =  (HttpURLConnection)url.openConnection();
 
         conURL.setDoOutput(true);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 6518816
+ * @library /test/lib
  * @modules jdk.httpserver
  * @run main/othervm B6518816
  */
@@ -34,6 +35,8 @@ import java.io.*;
 import com.sun.net.httpserver.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
+
+import jdk.test.lib.net.URIBuilder;
 
 public class B6518816
 {
@@ -79,8 +82,12 @@ public class B6518816
             byte [] buf = new byte [TEN_MB];
 
             for (int j=0; j<MAX_CONNS; j++) {
-
-                URL url = new URL("http://localhost:"+address.getPort()+"/test/");
+                URL url = URIBuilder.newBuilder()
+                        .scheme("http")
+                        .loopback()
+                        .port(address.getPort())
+                        .path("/test/")
+                        .toURLUnchecked();
                 HttpURLConnection uc = (HttpURLConnection)url.openConnection();
                 uc.setDoOutput (true);
                 OutputStream os = uc.getOutputStream ();
@@ -130,7 +137,9 @@ public class B6518816
      * Http Server
      */
     public void startHttpServer() throws IOException {
-        httpServer = com.sun.net.httpserver.HttpServer.create(new InetSocketAddress(0), 0);
+        httpServer = com.sun.net.httpserver.HttpServer.create(
+                new InetSocketAddress(InetAddress.getLoopbackAddress(), 0),
+                0);
 
         // create HttpServer context for Part 1.
         HttpContext ctx = httpServer.createContext("/test/", new MyHandler());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,10 @@ public class ProxyTunnelServer extends Thread {
         ss = new ServerSocket(0);
     }
 
+    public ProxyTunnelServer(InetAddress address) throws IOException {
+        ss = new ServerSocket(0, 0, address);
+    }
+
     static private void close(Closeable c) {
         try {
             if (c != null)
@@ -124,10 +128,11 @@ public class ProxyTunnelServer extends Thread {
      * needAuth is set to false, Proxy-Authorization checks are not made
      */
     private void processRequests(boolean makeTunnel) throws Exception {
-
         InputStream in = clientSocket.getInputStream();
         MessageHeader mheader = new MessageHeader(in);
         String statusLine = mheader.getValue(0);
+
+        System.out.printf("Proxy: Processing request from '%s'%n", clientSocket);
 
         if (statusLine.startsWith("CONNECT")) {
             // retrieve the host and port info from the status-line
@@ -309,6 +314,10 @@ public class ProxyTunnelServer extends Thread {
 
     public int getPort() {
         return ss.getLocalPort();
+    }
+
+    public InetAddress getInetAddress() {
+        return ss.getInetAddress();
     }
 
     /*

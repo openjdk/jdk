@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,15 +29,16 @@
  */
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 
 public class SocketGrowth {
 
     public static void main(String[] args) throws IOException {
-
-        try (ServerSocket ss = new ServerSocket(0)) {
-            try (Socket s = new Socket("localhost", ss.getLocalPort());
+        InetAddress loopbackAddress = InetAddress.getLoopbackAddress();
+        try (ServerSocket ss = new ServerSocket(0, 0, loopbackAddress)) {
+            try (Socket s = new Socket(loopbackAddress, ss.getLocalPort());
                     Socket peer = ss.accept()) {
                 for (int i=0; i<1000000; i++) {
                     // buggy JDK will run out of memory in this loop

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ public class DeadlockTest {
     public static void main(String [] argv) throws Exception {
         IPSupport.throwSkippedExceptionIfNonOperational();
 
-        ServerSocket ss = new ServerSocket(0);
+        ServerSocket ss = new ServerSocket(0, 0, InetAddress.getLoopbackAddress());
         Socket clientSocket = new Socket();
 
         try {
@@ -154,7 +154,7 @@ class ClientThread implements Runnable {
         try {
             System.out.println("About to connect the client socket");
             this.sock = sock;
-            this.sock.connect(new InetSocketAddress("localhost", serverPort));
+            this.sock.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(), serverPort));
             System.out.println("connected");
 
             out = new ObjectOutputStream(sock.getOutputStream());

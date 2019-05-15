@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /* @test
  * @bug 4258697
+ * @library /test/lib
  * @summary Make sure that http CONTINUE status followed by invalid
  * response doesn't cause HttpClient to recursively loop and
  * eventually StackOverflow.
@@ -32,19 +33,21 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URL;
 import java.net.HttpURLConnection;
 
+import jdk.test.lib.net.URIBuilder;
+
 public class HttpContinueStackOverflow {
 
     static class Server implements Runnable {
-        int port;
         ServerSocket serverSock ;
 
         Server() throws IOException {
-            serverSock = new ServerSocket(0);
+            serverSock = new ServerSocket(0, 0, InetAddress.getLoopbackAddress());
         }
 
         int getLocalPort() {
@@ -82,8 +85,14 @@ public class HttpContinueStackOverflow {
         Server s = new Server();
         (new Thread(s)).start();
 
-        /* connect to server, connect to server and get response code */
-        URL url = new URL("http", "localhost", s.getLocalPort(), "anything.html");
+        /* connect to server and get response code */
+        URL url = URIBuilder.newBuilder()
+                .scheme("http")
+                .loopback()
+                .port(s.getLocalPort())
+                .path("/anything.html")
+                .toURL();
+
         HttpURLConnection conn = (HttpURLConnection)url.openConnection();
         conn.getResponseCode();
         System.out.println("TEST PASSED");
