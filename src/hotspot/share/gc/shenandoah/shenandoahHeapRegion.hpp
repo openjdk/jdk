@@ -114,7 +114,7 @@ private:
     _cset,                    // region is in collection set
     _pinned,                  // region is pinned
     _pinned_cset,             // region is pinned and in cset (evac failure path)
-    _trash,                   // region contains only trash
+    _trash                    // region contains only trash
   };
 
   const char* region_state_to_string(RegionState s) const {
@@ -257,7 +257,7 @@ public:
 
   static const size_t MIN_NUM_REGIONS = 10;
 
-  static void setup_sizes(size_t initial_heap_size, size_t max_heap_size);
+  static void setup_sizes(size_t max_heap_size);
 
   double empty_time() {
     return _empty_time;

@@ -159,10 +159,10 @@ void CompiledDirectStaticCall::set_to_interpreted(const methodHandle& callee, ad
   NativeJump*        jump          = nativeJump_at(method_holder->next_instruction_address());
 
 #ifdef ASSERT
-  // read the value once
-  volatile intptr_t data = method_holder->data();
-  volatile address destination = jump->jump_destination();
-  assert(data == 0 || data == (intptr_t)callee(),
+  Method* old_method = reinterpret_cast<Method*>(method_holder->data());
+  address destination = jump->jump_destination();
+  assert(old_method == NULL || old_method == callee() ||
+         !old_method->method_holder()->is_loader_alive(),
          "a) MT-unsafe modification of inline cache");
   assert(destination == (address)-1 || destination == entry,
          "b) MT-unsafe modification of inline cache");

@@ -26,10 +26,7 @@
 <!DOCTYPE specification [
    <!ELEMENT specification (title, intro*, functionsection, errorsection,
                             eventsection, datasection, issuessection, changehistory)>
-   <!ATTLIST specification label CDATA #REQUIRED
-                           majorversion CDATA #REQUIRED
-                           minorversion CDATA #REQUIRED
-                           microversion CDATA #REQUIRED>
+   <!ATTLIST specification label CDATA #REQUIRED>
 
    <!ELEMENT title (#PCDATA|jvmti|tm)*>
    <!ATTLIST title subtitle CDATA #REQUIRED>
@@ -357,10 +354,7 @@
    <!ELEMENT li  ANY>
  ]>
 
-<specification label="JVM(TM) Tool Interface"
-        majorversion="11"
-        minorversion="0"
-        microversion="0">
+<specification label="JVM(TM) Tool Interface">
   <title subtitle="Version">
     <tm>JVM</tm> Tool Interface
   </title>

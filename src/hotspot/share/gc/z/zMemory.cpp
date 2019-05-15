@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,30 @@ uintptr_t ZMemoryManager::alloc_from_front(size_t size) {
   return UINTPTR_MAX;
 }
 
+uintptr_t ZMemoryManager::alloc_from_front_at_most(size_t size, size_t* allocated) {
+  ZMemory* area = _freelist.first();
+  if (area != NULL) {
+    if (area->size() <= size) {
+      // Smaller than or equal to requested, remove area
+      const uintptr_t start = area->start();
+      *allocated = area->size();
+      _freelist.remove(area);
+      delete area;
+      return start;
+    } else {
+      // Larger than requested, shrink area
+      const uintptr_t start = area->start();
+      area->shrink_from_front(size);
+      *allocated = size;
+      return start;
+    }
+  }
+
+  // Out of memory
+  *allocated = 0;
+  return UINTPTR_MAX;
+}
+
 uintptr_t ZMemoryManager::alloc_from_back(size_t size) {
   ZListReverseIterator<ZMemory> iter(&_freelist);
   for (ZMemory* area; iter.next(&area);) {
@@ -68,6 +92,29 @@ uintptr_t ZMemoryManager::alloc_from_back(size_t size) {
   }
 
   // Out of memory
+  return UINTPTR_MAX;
+}
+
+uintptr_t ZMemoryManager::alloc_from_back_at_most(size_t size, size_t* allocated) {
+  ZMemory* area = _freelist.last();
+  if (area != NULL) {
+    if (area->size() <= size) {
+      // Smaller than or equal to requested, remove area
+      const uintptr_t start = area->start();
+      *allocated = area->size();
+      _freelist.remove(area);
+      delete area;
+      return start;
+    } else {
+      // Larger than requested, shrink area
+      area->shrink_from_back(size);
+      *allocated = size;
+      return area->end();
+    }
+  }
+
+  // Out of memory
+  *allocated = 0;
   return UINTPTR_MAX;
 }
 

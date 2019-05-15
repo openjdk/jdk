@@ -1430,7 +1430,7 @@ void Deoptimization::load_class_by_index(const constantPoolHandle& constant_pool
   ResourceMark rm(THREAD);
   for (SignatureStream ss(symbol); !ss.is_done(); ss.next()) {
     if (ss.is_object()) {
-      Symbol* class_name = ss.as_symbol(CHECK);
+      Symbol* class_name = ss.as_symbol();
       Handle protection_domain (THREAD, constant_pool->pool_holder()->protection_domain());
       SystemDictionary::resolve_or_null(class_name, class_loader, protection_domain, CHECK);
     }

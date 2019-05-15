@@ -40,7 +40,7 @@
 #include "gc/g1/g1HeapTransition.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1HRPrinter.hpp"
-#include "gc/g1/g1InCSetState.hpp"
+#include "gc/g1/g1HeapRegionAttr.hpp"
 #include "gc/g1/g1MonitoringSupport.hpp"
 #include "gc/g1/g1SurvivorRegions.hpp"
 #include "gc/g1/g1YCTypes.hpp"
@@ -464,10 +464,10 @@ private:
                                    size_t allocated_bytes);
 
   // For GC alloc regions.
-  bool has_more_regions(InCSetState dest);
-  HeapRegion* new_gc_alloc_region(size_t word_size, InCSetState dest);
+  bool has_more_regions(G1HeapRegionAttr dest);
+  HeapRegion* new_gc_alloc_region(size_t word_size, G1HeapRegionAttr dest);
   void retire_gc_alloc_region(HeapRegion* alloc_region,
-                              size_t allocated_bytes, InCSetState dest);
+                              size_t allocated_bytes, G1HeapRegionAttr dest);
 
   // - if explicit_gc is true, the GC is for a System.gc() etc,
   //   otherwise it's for a failed allocation.
@@ -551,10 +551,10 @@ public:
   bool expand(size_t expand_bytes, WorkGang* pretouch_workers = NULL, double* expand_time_ms = NULL);
 
   // Returns the PLAB statistics for a given destination.
-  inline G1EvacStats* alloc_buffer_stats(InCSetState dest);
+  inline G1EvacStats* alloc_buffer_stats(G1HeapRegionAttr dest);
 
   // Determines PLAB size for a given destination.
-  inline size_t desired_plab_sz(InCSetState dest);
+  inline size_t desired_plab_sz(G1HeapRegionAttr dest);
 
   // Do anything common to GC's.
   void gc_prologue(bool full);
@@ -573,27 +573,24 @@ public:
   inline void set_humongous_is_live(oop obj);
 
   // Register the given region to be part of the collection set.
-  inline void register_humongous_region_with_cset(uint index);
-  // Register regions with humongous objects (actually on the start region) in
-  // the in_cset_fast_test table.
-  void register_humongous_regions_with_cset();
+  inline void register_humongous_region_with_region_attr(uint index);
+  // Update region attributes table with information about all regions.
+  void register_regions_with_region_attr();
   // We register a region with the fast "in collection set" test. We
   // simply set to true the array slot corresponding to this region.
-  void register_young_region_with_cset(HeapRegion* r) {
-    _in_cset_fast_test.set_in_young(r->hrm_index());
+  void register_young_region_with_region_attr(HeapRegion* r) {
+    _region_attr.set_in_young(r->hrm_index());
   }
-  void register_old_region_with_cset(HeapRegion* r) {
-    _in_cset_fast_test.set_in_old(r->hrm_index());
-  }
-  void register_optional_region_with_cset(HeapRegion* r) {
-    _in_cset_fast_test.set_optional(r->hrm_index());
-  }
-  void clear_in_cset(const HeapRegion* hr) {
-    _in_cset_fast_test.clear(hr);
+  inline void register_region_with_region_attr(HeapRegion* r);
+  inline void register_old_region_with_region_attr(HeapRegion* r);
+  inline void register_optional_region_with_region_attr(HeapRegion* r);
+
+  void clear_region_attr(const HeapRegion* hr) {
+    _region_attr.clear(hr);
   }
 
-  void clear_cset_fast_test() {
-    _in_cset_fast_test.clear();
+  void clear_region_attr() {
+    _region_attr.clear();
   }
 
   bool is_user_requested_concurrent_full_gc(GCCause::Cause cause);
@@ -1110,11 +1107,11 @@ public:
   // This array is used for a quick test on whether a reference points into
   // the collection set or not. Each of the array's elements denotes whether the
   // corresponding region is in the collection set or not.
-  G1InCSetStateFastTestBiasedMappedArray _in_cset_fast_test;
+  G1HeapRegionAttrBiasedMappedArray _region_attr;
 
  public:
 
-  inline InCSetState in_cset_state(const oop obj);
+  inline G1HeapRegionAttr region_attr(const oop obj);
 
   // Return "TRUE" iff the given object address is in the reserved
   // region of g1.

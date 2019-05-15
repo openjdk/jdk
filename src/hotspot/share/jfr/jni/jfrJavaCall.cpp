@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,9 +38,9 @@ static bool is_large_value(const JavaValue& value) {
 }
 #endif // ASSERT
 
-static Symbol* resolve(const char* str, TRAPS) {
+static Symbol* resolve(const char* str) {
   assert(str != NULL, "invariant");
-  return SymbolTable::lookup(str, (int)strlen(str), THREAD);
+  return SymbolTable::new_symbol(str);
 }
 
 static Klass* resolve(Symbol* k_sym, TRAPS) {
@@ -199,10 +199,10 @@ JfrJavaArguments::JfrJavaArguments(JavaValue* result, const char* klass_name, co
     set_klass(klass_name, CHECK);
   }
   if (name != NULL) {
-    set_name(name, CHECK);
+    set_name(name);
   }
   if (signature != NULL) {
-    set_signature(signature, THREAD);
+    set_signature(signature);
   }
 }
 
@@ -230,7 +230,7 @@ Klass* JfrJavaArguments::klass() const {
 
 void JfrJavaArguments::set_klass(const char* klass_name, TRAPS) {
   assert(klass_name != NULL, "invariant");
-  Symbol* const k_sym = resolve(klass_name, CHECK);
+  Symbol* const k_sym = resolve(klass_name);
   assert(k_sym != NULL, "invariant");
   const Klass* const klass = resolve(k_sym, CHECK);
   set_klass(klass);
@@ -246,9 +246,9 @@ Symbol* JfrJavaArguments::name() const {
   return const_cast<Symbol*>(_name);
 }
 
-void JfrJavaArguments::set_name(const char* name, TRAPS) {
+void JfrJavaArguments::set_name(const char* name) {
   assert(name != NULL, "invariant");
-  const Symbol* const sym = resolve(name, CHECK);
+  const Symbol* const sym = resolve(name);
   set_name(sym);
 }
 
@@ -262,9 +262,9 @@ Symbol* JfrJavaArguments::signature() const {
   return const_cast<Symbol*>(_signature);
 }
 
-void JfrJavaArguments::set_signature(const char* signature, TRAPS) {
+void JfrJavaArguments::set_signature(const char* signature) {
   assert(signature != NULL, "invariant");
-  const Symbol* const sym = resolve(signature, CHECK);
+  const Symbol* const sym = resolve(signature);
   set_signature(sym);
 }
 

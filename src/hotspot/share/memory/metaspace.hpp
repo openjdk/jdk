@@ -329,11 +329,6 @@ class MetaspaceUtils : AllStatic {
   // Helper for print_xx_report.
   static void print_vs(outputStream* out, size_t scale);
 
-  // Utils to check if a pointer or range is part of a committed metaspace region
-  // without acquiring any locks.
-  static metaspace::VirtualSpaceNode* find_enclosing_virtual_space(const void* p);
-  static bool is_range_in_committed(const void* from, const void* to);
-
 public:
 
   // Collect used metaspace statistics. This involves walking the CLDG. The resulting

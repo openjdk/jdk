@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,14 +87,14 @@ static void check_klass(const Klass* klass) {
   static const Symbol* jdk_internal_event_sym = NULL;
   if (jdk_internal_event_sym == NULL) {
     // setup when loading the first TypeArrayKlass (Universe::genesis) hence single threaded invariant
-    jdk_internal_event_sym = SymbolTable::new_permanent_symbol("jdk/internal/event/Event", Thread::current());
+    jdk_internal_event_sym = SymbolTable::new_permanent_symbol("jdk/internal/event/Event");
   }
   assert(jdk_internal_event_sym != NULL, "invariant");
 
   static const Symbol* jdk_jfr_event_sym = NULL;
   if (jdk_jfr_event_sym == NULL) {
     // setup when loading the first TypeArrayKlass (Universe::genesis) hence single threaded invariant
-    jdk_jfr_event_sym = SymbolTable::new_permanent_symbol("jdk/jfr/Event", Thread::current());
+    jdk_jfr_event_sym = SymbolTable::new_permanent_symbol("jdk/jfr/Event");
   }
   assert(jdk_jfr_event_sym != NULL, "invariant");
   const Symbol* const klass_name = klass->name();

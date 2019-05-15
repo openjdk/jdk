@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketImpl;
@@ -71,8 +72,8 @@ public class UnreferencedSockets {
 
         ServerSocket ss;
 
-        Server() throws IOException {
-            ss = new ServerSocket(0);
+        Server(InetAddress address) throws IOException {
+            ss = new ServerSocket(0, 0, address);
             pendingSockets.add(new NamedWeak(ss, pendingQueue, "serverSocket"));
             extractRefs(ss, "serverSocket");
         }
@@ -80,7 +81,6 @@ public class UnreferencedSockets {
         public int localPort() {
             return ss.getLocalPort();
         }
-
 
         public void run() {
             try {
@@ -111,9 +111,9 @@ public class UnreferencedSockets {
 
     public static void main(String args[]) throws Exception {
         IPSupport.throwSkippedExceptionIfNonOperational();
-
+        InetAddress lba = InetAddress.getLoopbackAddress();
         // Create and close a ServerSocket to warm up the FD count for side effects.
-        try (ServerSocket s = new ServerSocket(0)) {
+        try (ServerSocket s = new ServerSocket(0, 0, lba)) {
             // no-op; close immediately
             s.getLocalPort();   // no-op
         }
@@ -122,11 +122,11 @@ public class UnreferencedSockets {
         listProcFD();
 
         // start a server
-        Server svr = new Server();
+        Server svr = new Server(lba);
         Thread thr = new Thread(svr);
         thr.start();
 
-        Socket s = new Socket("localhost", svr.localPort());
+        Socket s = new Socket(lba, svr.localPort());
         pendingSockets.add(new NamedWeak(s, pendingQueue, "clientSocket"));
         extractRefs(s, "clientSocket");
 

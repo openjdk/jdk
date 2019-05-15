@@ -139,7 +139,7 @@ jmethodID JNIJVMCI::_HotSpotResolvedPrimitiveType_fromMetaspace_method;
 #define METHOD(jniCallType, jniGetMethod, hsCallType, returnType, className, methodName, signatureSymbolName, args) \
   check_resolve_method(#hsCallType, k, vmSymbols::methodName##_name(), vmSymbols::signatureSymbolName(), CHECK);
 #define CONSTRUCTOR(className, signature) { \
-  TempNewSymbol sig = SymbolTable::new_symbol(signature, CHECK); \
+  TempNewSymbol sig = SymbolTable::new_symbol(signature); \
   check_resolve_method("call_special", k, vmSymbols::object_initializer_name(), sig, CHECK); \
   }
 #endif

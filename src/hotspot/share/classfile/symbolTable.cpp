@@ -195,7 +195,7 @@ void SymbolTable::trigger_cleanup() {
   Service_lock->notify_all();
 }
 
-Symbol* SymbolTable::allocate_symbol(const char* name, int len, bool c_heap, TRAPS) {
+Symbol* SymbolTable::allocate_symbol(const char* name, int len, bool c_heap) {
   assert (len <= Symbol::max_length(), "should be checked by caller");
 
   Symbol* sym;
@@ -204,12 +204,12 @@ Symbol* SymbolTable::allocate_symbol(const char* name, int len, bool c_heap, TRA
   }
   if (c_heap) {
     // refcount starts as 1
-    sym = new (len, THREAD) Symbol((const u1*)name, len, 1);
+    sym = new (len) Symbol((const u1*)name, len, 1);
     assert(sym != NULL, "new should call vm_exit_out_of_memory if C_HEAP is exhausted");
   } else {
     // Allocate to global arena
     MutexLocker ml(SymbolArena_lock, Mutex::_no_safepoint_check_flag); // Protect arena
-    sym = new (len, arena(), THREAD) Symbol((const u1*)name, len, PERM_REFCOUNT);
+    sym = new (len, arena()) Symbol((const u1*)name, len, PERM_REFCOUNT);
   }
   return sym;
 }
@@ -317,25 +317,26 @@ Symbol* SymbolTable::lookup_common(const char* name,
   return sym;
 }
 
-Symbol* SymbolTable::lookup(const char* name, int len, TRAPS) {
+Symbol* SymbolTable::new_symbol(const char* name, int len) {
   unsigned int hash = hash_symbol(name, len, SymbolTable::_alt_hash);
   Symbol* sym = SymbolTable::the_table()->lookup_common(name, len, hash);
   if (sym == NULL) {
-    sym = SymbolTable::the_table()->do_add_if_needed(name, len, hash, true, CHECK_NULL);
+    sym = SymbolTable::the_table()->do_add_if_needed(name, len, hash, true);
   }
   assert(sym->refcount() != 0, "lookup should have incremented the count");
   assert(sym->equals(name, len), "symbol must be properly initialized");
   return sym;
 }
 
-Symbol* SymbolTable::lookup(const Symbol* sym, int begin, int end, TRAPS) {
+Symbol* SymbolTable::new_symbol(const Symbol* sym, int begin, int end) {
+  assert(begin <= end && end <= sym->utf8_length(), "just checking");
   assert(sym->refcount() != 0, "require a valid symbol");
   const char* name = (const char*)sym->base() + begin;
   int len = end - begin;
   unsigned int hash = hash_symbol(name, len, SymbolTable::_alt_hash);
   Symbol* found = SymbolTable::the_table()->lookup_common(name, len, hash);
   if (found == NULL) {
-    found = SymbolTable::the_table()->do_add_if_needed(name, len, hash, true, THREAD);
+    found = SymbolTable::the_table()->do_add_if_needed(name, len, hash, true);
   }
   return found;
 }
@@ -347,8 +348,8 @@ private:
   int _len;
   const char* _str;
 public:
-  SymbolTableLookup(Thread* thread, const char* key, int len, uintx hash)
-  : _thread(thread), _hash(hash), _len(len), _str(key) {}
+  SymbolTableLookup(const char* key, int len, uintx hash)
+  : _hash(hash), _len(len), _str(key) {}
   uintx get_hash() const {
     return _hash;
   }
@@ -388,7 +389,7 @@ public:
 
 Symbol* SymbolTable::do_lookup(const char* name, int len, uintx hash) {
   Thread* thread = Thread::current();
-  SymbolTableLookup lookup(thread, name, len, hash);
+  SymbolTableLookup lookup(name, len, hash);
   SymbolTableGet stg;
   bool rehash_warning = false;
   _local_table->get(thread, lookup, stg, &rehash_warning);
@@ -406,23 +407,23 @@ Symbol* SymbolTable::lookup_only(const char* name, int len, unsigned int& hash) 
 // Suggestion: Push unicode-based lookup all the way into the hashing
 // and probing logic, so there is no need for convert_to_utf8 until
 // an actual new Symbol* is created.
-Symbol* SymbolTable::lookup_unicode(const jchar* name, int utf16_length, TRAPS) {
+Symbol* SymbolTable::new_symbol(const jchar* name, int utf16_length) {
   int utf8_length = UNICODE::utf8_length((jchar*) name, utf16_length);
   char stack_buf[ON_STACK_BUFFER_LENGTH];
   if (utf8_length < (int) sizeof(stack_buf)) {
     char* chars = stack_buf;
     UNICODE::convert_to_utf8(name, utf16_length, chars);
-    return lookup(chars, utf8_length, THREAD);
+    return new_symbol(chars, utf8_length);
   } else {
-    ResourceMark rm(THREAD);
+    ResourceMark rm;
     char* chars = NEW_RESOURCE_ARRAY(char, utf8_length + 1);
     UNICODE::convert_to_utf8(name, utf16_length, chars);
-    return lookup(chars, utf8_length, THREAD);
+    return new_symbol(chars, utf8_length);
   }
 }
 
 Symbol* SymbolTable::lookup_only_unicode(const jchar* name, int utf16_length,
-                                           unsigned int& hash) {
+                                         unsigned int& hash) {
   int utf8_length = UNICODE::utf8_length((jchar*) name, utf16_length);
   char stack_buf[ON_STACK_BUFFER_LENGTH];
   if (utf8_length < (int) sizeof(stack_buf)) {
@@ -439,32 +440,33 @@ Symbol* SymbolTable::lookup_only_unicode(const jchar* name, int utf16_length,
 
 void SymbolTable::new_symbols(ClassLoaderData* loader_data, const constantPoolHandle& cp,
                               int names_count, const char** names, int* lengths,
-                              int* cp_indices, unsigned int* hashValues, TRAPS) {
+                              int* cp_indices, unsigned int* hashValues) {
   bool c_heap = !loader_data->is_the_null_class_loader_data();
   for (int i = 0; i < names_count; i++) {
     const char *name = names[i];
     int len = lengths[i];
     unsigned int hash = hashValues[i];
     assert(SymbolTable::the_table()->lookup_shared(name, len, hash) == NULL, "must have checked already");
-    Symbol* sym = SymbolTable::the_table()->do_add_if_needed(name, len, hash, c_heap, CHECK);
+    Symbol* sym = SymbolTable::the_table()->do_add_if_needed(name, len, hash, c_heap);
     assert(sym->refcount() != 0, "lookup should have incremented the count");
     cp->symbol_at_put(cp_indices[i], sym);
   }
 }
 
-Symbol* SymbolTable::do_add_if_needed(const char* name, int len, uintx hash, bool heap, TRAPS) {
-  SymbolTableLookup lookup(THREAD, name, len, hash);
+Symbol* SymbolTable::do_add_if_needed(const char* name, int len, uintx hash, bool heap) {
+  SymbolTableLookup lookup(name, len, hash);
   SymbolTableGet stg;
   bool clean_hint = false;
   bool rehash_warning = false;
   Symbol* sym = NULL;
+  Thread* THREAD = Thread::current();
 
   do {
     if (_local_table->get(THREAD, lookup, stg, &rehash_warning)) {
       sym = stg.get_res_sym();
       break;
     }
-    sym = SymbolTable::the_table()->allocate_symbol(name, len, heap, THREAD);
+    sym = SymbolTable::the_table()->allocate_symbol(name, len, heap);
     if (_local_table->insert(THREAD, lookup, sym, &rehash_warning, &clean_hint)) {
       break;
     }
@@ -481,12 +483,12 @@ Symbol* SymbolTable::do_add_if_needed(const char* name, int len, uintx hash, boo
   return sym;
 }
 
-Symbol* SymbolTable::new_permanent_symbol(const char* name, TRAPS) {
+Symbol* SymbolTable::new_permanent_symbol(const char* name) {
   unsigned int hash = 0;
   int len = (int)strlen(name);
   Symbol* sym = SymbolTable::lookup_only(name, len, hash);
   if (sym == NULL) {
-    sym = SymbolTable::the_table()->do_add_if_needed(name, len, hash, false, CHECK_NULL);
+    sym = SymbolTable::the_table()->do_add_if_needed(name, len, hash, false);
   }
   if (!sym->is_permanent()) {
     sym->make_permanent();

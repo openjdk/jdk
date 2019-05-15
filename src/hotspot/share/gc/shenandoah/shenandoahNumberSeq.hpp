@@ -39,7 +39,7 @@ private:
   enum PrivateConstants {
     ValBuckets = 512,
     MagBuckets = 24,
-    MagMinimum = -12,
+    MagMinimum = -12
   };
   int** _hdr;
 

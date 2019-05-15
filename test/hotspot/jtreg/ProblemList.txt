@@ -41,6 +41,7 @@
 # :hotspot_compiler
 
 compiler/ciReplay/TestSAServer.java 8029528 generic-all
+compiler/ciReplay/TestServerVM.java 8223885 generic-all
 compiler/codecache/stress/OverloadCompileQueueTest.java 8166554 generic-all
 compiler/codegen/Test6896617.java 8193479 generic-all
 compiler/compilercontrol/jcmd/ClearDirectivesFileStackTest.java 8140405 generic-all

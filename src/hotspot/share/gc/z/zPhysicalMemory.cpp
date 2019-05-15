@@ -33,16 +33,40 @@ ZPhysicalMemory::ZPhysicalMemory() :
     _nsegments(0),
     _segments(NULL) {}
 
-ZPhysicalMemory::ZPhysicalMemory(size_t size) :
-    _nsegments(0),
-    _segments(NULL) {
-  add_segment(ZPhysicalMemorySegment(0, size));
-}
-
 ZPhysicalMemory::ZPhysicalMemory(const ZPhysicalMemorySegment& segment) :
     _nsegments(0),
     _segments(NULL) {
   add_segment(segment);
+}
+
+ZPhysicalMemory::ZPhysicalMemory(const ZPhysicalMemory& pmem) :
+    _nsegments(0),
+    _segments(NULL) {
+
+  // Copy segments
+  for (size_t i = 0; i < pmem.nsegments(); i++) {
+    add_segment(pmem.segment(i));
+  }
+}
+
+const ZPhysicalMemory& ZPhysicalMemory::operator=(const ZPhysicalMemory& pmem) {
+  // Free segments
+  delete [] _segments;
+  _segments = NULL;
+  _nsegments = 0;
+
+  // Copy segments
+  for (size_t i = 0; i < pmem.nsegments(); i++) {
+    add_segment(pmem.segment(i));
+  }
+
+  return *this;
+}
+
+ZPhysicalMemory::~ZPhysicalMemory() {
+  delete [] _segments;
+  _segments = NULL;
+  _nsegments = 0;
 }
 
 size_t ZPhysicalMemory::size() const {
@@ -55,134 +79,114 @@ size_t ZPhysicalMemory::size() const {
   return size;
 }
 
-void ZPhysicalMemory::add_segment(ZPhysicalMemorySegment segment) {
+void ZPhysicalMemory::add_segment(const ZPhysicalMemorySegment& segment) {
   // Try merge with last segment
   if (_nsegments > 0) {
     ZPhysicalMemorySegment& last = _segments[_nsegments - 1];
     assert(last.end() <= segment.start(), "Segments added out of order");
     if (last.end() == segment.start()) {
-      // Merge
-      last.expand(segment.size());
+      last = ZPhysicalMemorySegment(last.start(), last.size() + segment.size());
       return;
     }
   }
 
-  // Make room for a new segment
-  const size_t size = sizeof(ZPhysicalMemorySegment) * (_nsegments + 1);
-  _segments = (ZPhysicalMemorySegment*)ReallocateHeap((char*)_segments, size, mtGC);
+  // Resize array
+  ZPhysicalMemorySegment* const old_segments = _segments;
+  _segments = new ZPhysicalMemorySegment[_nsegments + 1];
+  for (size_t i = 0; i < _nsegments; i++) {
+    _segments[i] = old_segments[i];
+  }
+  delete [] old_segments;
 
   // Add new segment
   _segments[_nsegments] = segment;
   _nsegments++;
 }
 
-ZPhysicalMemory ZPhysicalMemory::split(size_t split_size) {
-  // Only splitting of single-segment instances have been implemented.
-  assert(nsegments() == 1, "Can only have one segment");
-  assert(split_size <= size(), "Invalid size");
-  return ZPhysicalMemory(_segments[0].split(split_size));
-}
+ZPhysicalMemory ZPhysicalMemory::split(size_t size) {
+  ZPhysicalMemory pmem;
+  size_t nsegments = 0;
 
-void ZPhysicalMemory::clear() {
-  if (_segments != NULL) {
-    FreeHeap(_segments);
-    _segments = NULL;
-    _nsegments = 0;
+  for (size_t i = 0; i < _nsegments; i++) {
+    const ZPhysicalMemorySegment& segment = _segments[i];
+    if (pmem.size() < size) {
+      if (pmem.size() + segment.size() <= size) {
+        // Transfer segment
+        pmem.add_segment(segment);
+      } else {
+        // Split segment
+        const size_t split_size = size - pmem.size();
+        pmem.add_segment(ZPhysicalMemorySegment(segment.start(), split_size));
+        _segments[nsegments++] = ZPhysicalMemorySegment(segment.start() + split_size, segment.size() - split_size);
+      }
+    } else {
+      // Keep segment
+      _segments[nsegments++] = segment;
+    }
   }
-}
 
-ZPhysicalMemoryManager::ZPhysicalMemoryManager(size_t max_capacity) :
-    _backing(max_capacity),
-    _max_capacity(max_capacity),
-    _current_max_capacity(max_capacity),
-    _capacity(0),
-    _used(0) {}
+  _nsegments = nsegments;
+
+  return pmem;
+}
 
 bool ZPhysicalMemoryManager::is_initialized() const {
   return _backing.is_initialized();
 }
 
-void ZPhysicalMemoryManager::try_ensure_unused_capacity(size_t size) {
-  const size_t unused = unused_capacity();
-  if (unused >= size) {
-    // Don't try to expand, enough unused capacity available
-    return;
-  }
-
-  const size_t current_max = current_max_capacity();
-  if (_capacity == current_max) {
-    // Don't try to expand, current max capacity reached
-    return;
-  }
-
-  // Try to expand
-  const size_t old_capacity = capacity();
-  const size_t new_capacity = MIN2(old_capacity + size - unused, current_max);
-  _capacity = _backing.try_expand(old_capacity, new_capacity);
-
-  if (_capacity != new_capacity) {
-    // Failed, or partly failed, to expand
-    log_error(gc, init)("Not enough space available on the backing filesystem to hold the current max");
-    log_error(gc, init)("Java heap size (" SIZE_FORMAT "M). Forcefully lowering max Java heap size to "
-                        SIZE_FORMAT "M (%.0lf%%).", current_max / M, _capacity / M,
-                        percent_of(_capacity, current_max));
-
-    // Adjust current max capacity to avoid further expand attempts
-    _current_max_capacity = _capacity;
-  }
+void ZPhysicalMemoryManager::warn_commit_limits(size_t max) const {
+  _backing.warn_commit_limits(max);
 }
 
-void ZPhysicalMemoryManager::nmt_commit(ZPhysicalMemory pmem, uintptr_t offset) {
+bool ZPhysicalMemoryManager::supports_uncommit() {
+  return _backing.supports_uncommit();
+}
+
+void ZPhysicalMemoryManager::nmt_commit(const ZPhysicalMemory& pmem, uintptr_t offset) const {
   const uintptr_t addr = _backing.nmt_address(offset);
   const size_t size = pmem.size();
   MemTracker::record_virtual_memory_commit((void*)addr, size, CALLER_PC);
 }
 
-void ZPhysicalMemoryManager::nmt_uncommit(ZPhysicalMemory pmem, uintptr_t offset) {
+void ZPhysicalMemoryManager::nmt_uncommit(const ZPhysicalMemory& pmem, uintptr_t offset) const {
   if (MemTracker::tracking_level() > NMT_minimal) {
     const uintptr_t addr = _backing.nmt_address(offset);
     const size_t size = pmem.size();
-
     Tracker tracker(Tracker::uncommit);
     tracker.record((address)addr, size);
   }
 }
 
-ZPhysicalMemory ZPhysicalMemoryManager::alloc(size_t size) {
-  if (unused_capacity() < size) {
-    // Not enough memory available
-    return ZPhysicalMemory();
-  }
+size_t ZPhysicalMemoryManager::commit(size_t size) {
+  return _backing.commit(size);
+}
 
-  _used += size;
+size_t ZPhysicalMemoryManager::uncommit(size_t size) {
+  return _backing.uncommit(size);
+}
+
+ZPhysicalMemory ZPhysicalMemoryManager::alloc(size_t size) {
   return _backing.alloc(size);
 }
 
-void ZPhysicalMemoryManager::free(ZPhysicalMemory pmem) {
+void ZPhysicalMemoryManager::free(const ZPhysicalMemory& pmem) {
   _backing.free(pmem);
-  _used -= pmem.size();
 }
 
-void ZPhysicalMemoryManager::map(ZPhysicalMemory pmem, uintptr_t offset) {
-  // Map page
+void ZPhysicalMemoryManager::map(const ZPhysicalMemory& pmem, uintptr_t offset) const {
   _backing.map(pmem, offset);
-
-  // Update native memory tracker
   nmt_commit(pmem, offset);
 }
 
-void ZPhysicalMemoryManager::unmap(ZPhysicalMemory pmem, uintptr_t offset) {
-  // Update native memory tracker
+void ZPhysicalMemoryManager::unmap(const ZPhysicalMemory& pmem, uintptr_t offset) const {
   nmt_uncommit(pmem, offset);
-
-  // Unmap page
   _backing.unmap(pmem, offset);
 }
 
-void ZPhysicalMemoryManager::debug_map(ZPhysicalMemory pmem, uintptr_t offset) {
+void ZPhysicalMemoryManager::debug_map(const ZPhysicalMemory& pmem, uintptr_t offset) const {
   _backing.debug_map(pmem, offset);
 }
 
-void ZPhysicalMemoryManager::debug_unmap(ZPhysicalMemory pmem, uintptr_t offset) {
+void ZPhysicalMemoryManager::debug_unmap(const ZPhysicalMemory& pmem, uintptr_t offset) const {
   _backing.debug_unmap(pmem, offset);
 }

@@ -1536,7 +1536,7 @@ G1CollectedHeap::G1CollectedHeap() :
   _ref_processor_cm(NULL),
   _is_alive_closure_cm(this),
   _is_subject_to_discovery_cm(this),
-  _in_cset_fast_test() {
+  _region_attr() {
 
   _verifier = new G1HeapVerifier(this);
 
@@ -1772,7 +1772,7 @@ jint G1CollectedHeap::initialize() {
     HeapWord* end = _hrm->reserved().end();
     size_t granularity = HeapRegion::GrainBytes;
 
-    _in_cset_fast_test.initialize(start, end, granularity);
+    _region_attr.initialize(start, end, granularity);
     _humongous_reclaim_candidates.initialize(start, end, granularity);
   }
 
@@ -2626,7 +2626,7 @@ bool G1CollectedHeap::is_potential_eager_reclaim_candidate(HeapRegion* r) const 
          G1EagerReclaimHumongousObjects && rem_set->is_empty();
 }
 
-class RegisterHumongousWithInCSetFastTestClosure : public HeapRegionClosure {
+class RegisterRegionsWithRegionAttrTableClosure : public HeapRegionClosure {
  private:
   size_t _total_humongous;
   size_t _candidate_humongous;
@@ -2690,24 +2690,26 @@ class RegisterHumongousWithInCSetFastTestClosure : public HeapRegionClosure {
   }
 
  public:
-  RegisterHumongousWithInCSetFastTestClosure()
+  RegisterRegionsWithRegionAttrTableClosure()
   : _total_humongous(0),
     _candidate_humongous(0),
     _dcq(&G1BarrierSet::dirty_card_queue_set()) {
   }
 
   virtual bool do_heap_region(HeapRegion* r) {
+    G1CollectedHeap* g1h = G1CollectedHeap::heap();
+
     if (!r->is_starts_humongous()) {
+      g1h->register_region_with_region_attr(r);
       return false;
     }
-    G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
     bool is_candidate = humongous_region_is_candidate(g1h, r);
     uint rindex = r->hrm_index();
     g1h->set_humongous_reclaim_candidate(rindex, is_candidate);
     if (is_candidate) {
       _candidate_humongous++;
-      g1h->register_humongous_region_with_cset(rindex);
+      g1h->register_humongous_region_with_region_attr(rindex);
       // Is_candidate already filters out humongous object with large remembered sets.
       // If we have a humongous object with a few remembered sets, we simply flush these
       // remembered set entries into the DCQS. That will result in automatic
@@ -2743,8 +2745,14 @@ class RegisterHumongousWithInCSetFastTestClosure : public HeapRegionClosure {
         // collecting remembered set entries for humongous regions that were not
         // reclaimed.
         r->rem_set()->set_state_complete();
+#ifdef ASSERT
+        G1HeapRegionAttr region_attr = g1h->region_attr(oop(r->bottom()));
+        assert(region_attr.needs_remset_update(), "must be");
+#endif
       }
       assert(r->rem_set()->is_empty(), "At this point any humongous candidate remembered set must be empty.");
+    } else {
+      g1h->register_region_with_region_attr(r);
     }
     _total_humongous++;
 
@@ -2757,21 +2765,15 @@ class RegisterHumongousWithInCSetFastTestClosure : public HeapRegionClosure {
   void flush_rem_set_entries() { _dcq.flush(); }
 };
 
-void G1CollectedHeap::register_humongous_regions_with_cset() {
-  if (!G1EagerReclaimHumongousObjects) {
-    phase_times()->record_fast_reclaim_humongous_stats(0.0, 0, 0);
-    return;
-  }
-  double time = os::elapsed_counter();
+void G1CollectedHeap::register_regions_with_region_attr() {
+  Ticks start = Ticks::now();
 
-  // Collect reclaim candidate information and register candidates with cset.
-  RegisterHumongousWithInCSetFastTestClosure cl;
+  RegisterRegionsWithRegionAttrTableClosure cl;
   heap_region_iterate(&cl);
 
-  time = ((double)(os::elapsed_counter() - time) / os::elapsed_frequency()) * 1000.0;
-  phase_times()->record_fast_reclaim_humongous_stats(time,
-                                                     cl.total_humongous(),
-                                                     cl.candidate_humongous());
+  phase_times()->record_register_regions((Ticks::now() - start).seconds() * 1000.0,
+                                         cl.total_humongous(),
+                                         cl.candidate_humongous());
   _has_humongous_reclaim_candidates = cl.candidate_humongous() > 0;
 
   // Finally flush all remembered set entries to re-check into the global DCQS.
@@ -2861,7 +2863,7 @@ void G1CollectedHeap::start_new_collection_set() {
 
   collection_set()->start_incremental_building();
 
-  clear_cset_fast_test();
+  clear_region_attr();
 
   guarantee(_eden.length() == 0, "eden should have been cleared");
   policy()->transfer_survivors_to_cset(survivor());
@@ -3302,17 +3304,17 @@ public:
     oop obj = *p;
     assert(obj != NULL, "the caller should have filtered out NULL values");
 
-    const InCSetState cset_state =_g1h->in_cset_state(obj);
-    if (!cset_state.is_in_cset_or_humongous()) {
+    const G1HeapRegionAttr region_attr =_g1h->region_attr(obj);
+    if (!region_attr.is_in_cset_or_humongous()) {
       return;
     }
-    if (cset_state.is_in_cset()) {
+    if (region_attr.is_in_cset()) {
       assert( obj->is_forwarded(), "invariant" );
       *p = obj->forwardee();
     } else {
       assert(!obj->is_forwarded(), "invariant" );
-      assert(cset_state.is_humongous(),
-             "Only allowed InCSet state is IsHumongous, but is %d", cset_state.value());
+      assert(region_attr.is_humongous(),
+             "Only allowed G1HeapRegionAttr state is IsHumongous, but is %d", region_attr.type());
      _g1h->set_humongous_is_live(obj);
     }
   }
@@ -3572,10 +3574,10 @@ void G1CollectedHeap::pre_evacuate_collection_set(G1EvacuationInfo& evacuation_i
   // Initialize the GC alloc regions.
   _allocator->init_gc_alloc_regions(evacuation_info);
 
-  register_humongous_regions_with_cset();
+  register_regions_with_region_attr();
   assert(_verifier->check_cset_fast_test(), "Inconsistency in the InCSetState table.");
 
-  rem_set()->prepare_for_oops_into_collection_set_do();
+  rem_set()->prepare_for_scan_rem_set();
   _preserved_marks_set.assert_empty();
 
 #if COMPILER2_OR_JVMCI
@@ -3788,7 +3790,7 @@ void G1CollectedHeap::evacuate_optional_collection_set(G1ParScanThreadStateSet* 
 void G1CollectedHeap::post_evacuate_collection_set(G1EvacuationInfo& evacuation_info, G1ParScanThreadStateSet* per_thread_states) {
   // Also cleans the card table from temporary duplicate detection information used
   // during UpdateRS/ScanRS.
-  rem_set()->cleanup_after_oops_into_collection_set_do();
+  rem_set()->cleanup_after_scan_rem_set();
 
   // Process any discovered reference objects - we have
   // to do this _before_ we retire the GC alloc regions
@@ -3970,7 +3972,7 @@ private:
       G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
       assert(r->in_collection_set(), "Region %u should be in collection set.", r->hrm_index());
-      g1h->clear_in_cset(r);
+      g1h->clear_region_attr(r);
 
       if (r->is_young()) {
         assert(r->young_index_in_cset() != -1 && (uint)r->young_index_in_cset() < g1h->collection_set()->young_region_length(),
@@ -4031,7 +4033,7 @@ private:
       G1Policy* policy = g1h->policy();
       policy->add_bytes_allocated_in_old_since_last_gc(_bytes_allocated_in_old_since_last_gc);
 
-      g1h->alloc_buffer_stats(InCSetState::Old)->add_failure_used_and_waste(_failure_used_words, _failure_waste_words);
+      g1h->alloc_buffer_stats(G1HeapRegionAttr::Old)->add_failure_used_and_waste(_failure_used_words, _failure_waste_words);
     }
   };
 
@@ -4365,7 +4367,7 @@ class G1AbandonCollectionSetClosure : public HeapRegionClosure {
 public:
   virtual bool do_heap_region(HeapRegion* r) {
     assert(r->in_collection_set(), "Region %u must have been in collection set", r->hrm_index());
-    G1CollectedHeap::heap()->clear_in_cset(r);
+    G1CollectedHeap::heap()->clear_region_attr(r);
     r->set_young_index_in_cset(-1);
     return false;
   }
@@ -4582,7 +4584,7 @@ void G1CollectedHeap::retire_mutator_alloc_region(HeapRegion* alloc_region,
 
 // Methods for the GC alloc regions
 
-bool G1CollectedHeap::has_more_regions(InCSetState dest) {
+bool G1CollectedHeap::has_more_regions(G1HeapRegionAttr dest) {
   if (dest.is_old()) {
     return true;
   } else {
@@ -4590,7 +4592,7 @@ bool G1CollectedHeap::has_more_regions(InCSetState dest) {
   }
 }
 
-HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size, InCSetState dest) {
+HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size, G1HeapRegionAttr dest) {
   assert(FreeList_lock->owned_by_self(), "pre-condition");
 
   if (!has_more_regions(dest)) {
@@ -4618,6 +4620,7 @@ HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size, InCSetState d
       _verifier->check_bitmaps("Old Region Allocation", new_alloc_region);
     }
     _policy->remset_tracker()->update_at_allocate(new_alloc_region);
+    register_region_with_region_attr(new_alloc_region);
     _hr_printer.alloc(new_alloc_region);
     return new_alloc_region;
   }
@@ -4626,12 +4629,12 @@ HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size, InCSetState d
 
 void G1CollectedHeap::retire_gc_alloc_region(HeapRegion* alloc_region,
                                              size_t allocated_bytes,
-                                             InCSetState dest) {
+                                             G1HeapRegionAttr dest) {
   policy()->record_bytes_copied_during_gc(allocated_bytes);
   if (dest.is_old()) {
     old_set_add(alloc_region);
   } else {
-    assert(dest.is_young(), "Retiring alloc region should be young(%d)", dest.value());
+    assert(dest.is_young(), "Retiring alloc region should be young (%d)", dest.type());
     _survivor.add_used_bytes(allocated_bytes);
   }
 

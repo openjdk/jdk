@@ -121,7 +121,7 @@ class AttachOperation: public CHeapObj<mtInternal> {
   const char* name() const                      { return _name; }
 
   // set the operation name
-  void set_name(char* name) {
+  void set_name(const char* name) {
     assert(strlen(name) <= name_length_max, "exceeds maximum name length");
     size_t len = MIN2(strlen(name), (size_t)name_length_max);
     memcpy(_name, name, len);
@@ -148,7 +148,7 @@ class AttachOperation: public CHeapObj<mtInternal> {
   }
 
   // create an operation of a given name
-  AttachOperation(char* name) {
+  AttachOperation(const char* name) {
     set_name(name);
     for (int i=0; i<arg_count_max; i++) {
       set_arg(i, NULL);

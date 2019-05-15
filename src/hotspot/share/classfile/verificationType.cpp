@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,13 +129,11 @@ VerificationType VerificationType::get_component(ClassVerifier *context, TRAPS) 
     case 'D': return VerificationType(Double);
     case '[':
       component = context->create_temporary_symbol(
-        name(), 1, name()->utf8_length(),
-        CHECK_(VerificationType::bogus_type()));
+        name(), 1, name()->utf8_length());
       return VerificationType::reference_type(component);
     case 'L':
       component = context->create_temporary_symbol(
-        name(), 2, name()->utf8_length() - 1,
-        CHECK_(VerificationType::bogus_type()));
+        name(), 2, name()->utf8_length() - 1);
       return VerificationType::reference_type(component);
     default:
       // Met an invalid type signature, e.g. [X

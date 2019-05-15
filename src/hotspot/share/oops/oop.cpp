@@ -182,9 +182,7 @@ bool oopDesc::is_valid(oop obj) {
   if (!Universe::heap()->is_in(obj)) return false;
 
   Klass* k = (Klass*)load_klass_raw(obj);
-
-  if (!os::is_readable_range(k, k + 1)) return false;
-  return MetaspaceUtils::is_range_in_committed(k, k + 1);
+  return Klass::is_valid(k);
 }
 
 oop oopDesc::oop_or_null(address addr) {

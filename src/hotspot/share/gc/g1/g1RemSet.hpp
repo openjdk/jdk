@@ -47,8 +47,7 @@ class G1HotCardCache;
 class G1RemSetScanState;
 class G1ParScanThreadState;
 class G1Policy;
-class G1ScanObjsDuringScanRSClosure;
-class G1ScanObjsDuringUpdateRSClosure;
+class G1ScanCardClosure;
 class HeapRegionClaimer;
 
 // A G1RemSet in which each heap region has a rem set that records the
@@ -99,11 +98,10 @@ public:
   // into the collection set or update the remembered set.
   void update_rem_set(G1ParScanThreadState* pss, uint worker_i);
 
-  // Prepare for and cleanup after an oops_into_collection_set_do
-  // call.  Must call each of these once before and after (in sequential
-  // code) any thread calls oops_into_collection_set_do.
-  void prepare_for_oops_into_collection_set_do();
-  void cleanup_after_oops_into_collection_set_do();
+  // Prepare for and cleanup after scanning the remembered sets.  Must be called
+  // once before and after in sequential code.
+  void prepare_for_scan_rem_set();
+  void cleanup_after_scan_rem_set();
 
   G1RemSetScanState* scan_state() const { return _scan_state; }
 
@@ -115,7 +113,7 @@ public:
   // Refine the card corresponding to "card_ptr", applying the given closure to
   // all references found. Must only be called during gc.
   // Returns whether the card has been scanned.
-  bool refine_card_during_gc(CardValue* card_ptr, G1ScanObjsDuringUpdateRSClosure* update_rs_cl);
+  bool refine_card_during_gc(CardValue* card_ptr, G1ScanCardClosure* update_rs_cl);
 
   // Print accumulated summary info from the start of the VM.
   void print_summary_info();
@@ -135,7 +133,7 @@ class G1ScanRSForRegionClosure : public HeapRegionClosure {
   G1CardTable *_ct;
 
   G1ParScanThreadState* _pss;
-  G1ScanObjsDuringScanRSClosure* _scan_objs_on_card_cl;
+  G1ScanCardClosure* _scan_objs_on_card_cl;
 
   G1RemSetScanState* _scan_state;
 
@@ -164,7 +162,7 @@ class G1ScanRSForRegionClosure : public HeapRegionClosure {
   void scan_strong_code_roots(HeapRegion* r);
 public:
   G1ScanRSForRegionClosure(G1RemSetScanState* scan_state,
-                           G1ScanObjsDuringScanRSClosure* scan_obj_on_card,
+                           G1ScanCardClosure* scan_obj_on_card,
                            G1ParScanThreadState* pss,
                            G1GCPhaseTimes::GCParPhases phase,
                            uint worker_i);

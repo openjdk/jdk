@@ -76,55 +76,55 @@ static void compute_offset(int &dest_offset,
 
 static bool setup_event_writer_offsets(TRAPS) {
   const char class_name[] = "jdk/jfr/internal/EventWriter";
-  Symbol* const k_sym = SymbolTable::lookup(class_name, sizeof class_name - 1, CHECK_false);
+  Symbol* const k_sym = SymbolTable::new_symbol(class_name);
   assert(k_sym != NULL, "invariant");
   Klass* klass = SystemDictionary::resolve_or_fail(k_sym, true, CHECK_false);
   assert(klass != NULL, "invariant");
 
   const char start_pos_name[] = "startPosition";
-  Symbol* const start_pos_sym = SymbolTable::lookup(start_pos_name, sizeof start_pos_name - 1, CHECK_false);
+  Symbol* const start_pos_sym = SymbolTable::new_symbol(start_pos_name);
   assert(start_pos_sym != NULL, "invariant");
   assert(invalid_offset == start_pos_offset, "invariant");
   compute_offset(start_pos_offset, klass, start_pos_sym, vmSymbols::long_signature());
   assert(start_pos_offset != invalid_offset, "invariant");
 
   const char start_pos_address_name[] = "startPositionAddress";
-  Symbol* const start_pos_address_sym = SymbolTable::lookup(start_pos_address_name, sizeof start_pos_address_name - 1, CHECK_false);
+  Symbol* const start_pos_address_sym = SymbolTable::new_symbol(start_pos_address_name);
   assert(start_pos_address_sym != NULL, "invariant");
   assert(invalid_offset == start_pos_address_offset, "invariant");
   compute_offset(start_pos_address_offset, klass, start_pos_address_sym, vmSymbols::long_signature());
   assert(start_pos_address_offset != invalid_offset, "invariant");
 
   const char event_pos_name[] = "currentPosition";
-  Symbol* const event_pos_sym = SymbolTable::lookup(event_pos_name, sizeof event_pos_name - 1, CHECK_false);
+  Symbol* const event_pos_sym = SymbolTable::new_symbol(event_pos_name);
   assert(event_pos_sym != NULL, "invariant");
   assert(invalid_offset == current_pos_offset, "invariant");
   compute_offset(current_pos_offset, klass, event_pos_sym,vmSymbols::long_signature());
   assert(current_pos_offset != invalid_offset, "invariant");
 
   const char max_pos_name[] = "maxPosition";
-  Symbol* const max_pos_sym = SymbolTable::lookup(max_pos_name, sizeof max_pos_name - 1, CHECK_false);
+  Symbol* const max_pos_sym = SymbolTable::new_symbol(max_pos_name);
   assert(max_pos_sym != NULL, "invariant");
   assert(invalid_offset == max_pos_offset, "invariant");
   compute_offset(max_pos_offset, klass, max_pos_sym, vmSymbols::long_signature());
   assert(max_pos_offset != invalid_offset, "invariant");
 
   const char max_event_size_name[] = "maxEventSize";
-  Symbol* const max_event_size_sym = SymbolTable::lookup(max_event_size_name, sizeof max_event_size_name - 1, CHECK_false);
+  Symbol* const max_event_size_sym = SymbolTable::new_symbol(max_event_size_name);
   assert (max_event_size_sym != NULL, "invariant");
   assert(invalid_offset == max_event_size_offset, "invariant");
   compute_offset(max_event_size_offset, klass, max_event_size_sym, vmSymbols::int_signature());
   assert(max_event_size_offset != invalid_offset, "invariant");
 
   const char notified_name[] = "notified";
-  Symbol* const notified_sym = SymbolTable::lookup(notified_name, sizeof notified_name - 1, CHECK_false);
+  Symbol* const notified_sym = SymbolTable::new_symbol(notified_name);
   assert (notified_sym != NULL, "invariant");
   assert(invalid_offset == notified_offset, "invariant");
   compute_offset(notified_offset, klass, notified_sym, vmSymbols::bool_signature());
   assert(notified_offset != invalid_offset, "invariant");
 
   const char valid_name[] = "valid";
-  Symbol* const valid_sym = SymbolTable::lookup(valid_name, sizeof valid_name - 1, CHECK_false);
+  Symbol* const valid_sym = SymbolTable::new_symbol(valid_name);
   assert (valid_sym != NULL, "invariant");
   assert(invalid_offset == valid_offset, "invariant");
   compute_offset(valid_offset, klass, valid_sym, vmSymbols::bool_signature());

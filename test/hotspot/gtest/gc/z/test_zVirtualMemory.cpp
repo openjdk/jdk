@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,26 +23,23 @@
 
 #include "precompiled.hpp"
 #include "gc/z/zVirtualMemory.inline.hpp"
-#include "utilities/debug.hpp"
 #include "unittest.hpp"
 
 TEST(ZVirtualMemory, split) {
-  const size_t PageSize = 2 * M;
+  ZVirtualMemory vmem(0, 10);
 
-  ZVirtualMemory mem(0, 10 * PageSize);
+  ZVirtualMemory vmem0 = vmem.split(0);
+  EXPECT_EQ(vmem0.size(), 0u);
+  EXPECT_EQ(vmem.size(), 10u);
 
-  ZVirtualMemory mem_split0 = mem.split(0 * PageSize);
-  EXPECT_EQ(mem_split0.size(),  0 * PageSize);
-  EXPECT_EQ(       mem.size(), 10 * PageSize);
+  ZVirtualMemory vmem1 = vmem.split(5);
+  EXPECT_EQ(vmem1.size(), 5u);
+  EXPECT_EQ(vmem.size(), 5u);
 
-  ZVirtualMemory mem_split1 = mem.split(5u * PageSize);
-  EXPECT_EQ(mem_split1.size(),  5 * PageSize);
-  EXPECT_EQ(       mem.size(),  5 * PageSize);
+  ZVirtualMemory vmem2 = vmem.split(5);
+  EXPECT_EQ(vmem2.size(), 5u);
+  EXPECT_EQ(vmem.size(), 0u);
 
-  ZVirtualMemory mem_split2 = mem.split(5u * PageSize);
-  EXPECT_EQ(mem_split2.size(),  5 * PageSize);
-  EXPECT_EQ(       mem.size(),  0 * PageSize);
-
-  ZVirtualMemory mem_split3 = mem.split(0 * PageSize);
-  EXPECT_EQ(mem_split3.size(),  0 * PageSize);
+  ZVirtualMemory vmem3 = vmem.split(0);
+  EXPECT_EQ(vmem3.size(), 0u);
 }

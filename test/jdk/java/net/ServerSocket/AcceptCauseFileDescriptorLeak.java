@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@
  */
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.List;
@@ -80,7 +81,7 @@ public class AcceptCauseFileDescriptorLeak {
             }
         }
 
-        final ServerSocket ss = new ServerSocket(0) {
+        final ServerSocket ss = new ServerSocket(0, 0, InetAddress.getLoopbackAddress()) {
             public Socket accept() throws IOException {
                 Socket s = new Socket() {
                 };
@@ -93,7 +94,7 @@ public class AcceptCauseFileDescriptorLeak {
             public void run() {
                 try {
                     for (int i = 0; i < REPS; i++) {
-                        (new Socket("localhost", ss.getLocalPort())).close();
+                        (new Socket(InetAddress.getLoopbackAddress(), ss.getLocalPort())).close();
                     }
                 } catch (IOException e) {
                     e.printStackTrace();

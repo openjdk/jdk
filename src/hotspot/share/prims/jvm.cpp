@@ -138,9 +138,9 @@ static void trace_class_resolution_impl(Klass* to_class, TRAPS) {
     vframeStream vfst(jthread);
 
     // scan up the stack skipping ClassLoader, AccessController and PrivilegedAction frames
-    TempNewSymbol access_controller = SymbolTable::new_symbol("java/security/AccessController", CHECK);
+    TempNewSymbol access_controller = SymbolTable::new_symbol("java/security/AccessController");
     Klass* access_controller_klass = SystemDictionary::resolve_or_fail(access_controller, false, CHECK);
-    TempNewSymbol privileged_action = SymbolTable::new_symbol("java/security/PrivilegedAction", CHECK);
+    TempNewSymbol privileged_action = SymbolTable::new_symbol("java/security/PrivilegedAction");
     Klass* privileged_action_klass = SystemDictionary::resolve_or_fail(privileged_action, false, CHECK);
 
     Method* last_caller = NULL;
@@ -786,7 +786,7 @@ JVM_ENTRY(jclass, JVM_FindClassFromBootLoader(JNIEnv* env,
     return NULL;
   }
 
-  TempNewSymbol h_name = SymbolTable::new_symbol(name, CHECK_NULL);
+  TempNewSymbol h_name = SymbolTable::new_symbol(name);
   Klass* k = SystemDictionary::resolve_or_null(h_name, CHECK_NULL);
   if (k == NULL) {
     return NULL;
@@ -810,7 +810,7 @@ JVM_ENTRY(jclass, JVM_FindClassFromCaller(JNIEnv* env, const char* name,
     THROW_MSG_0(vmSymbols::java_lang_ClassNotFoundException(), name);
   }
 
-  TempNewSymbol h_name = SymbolTable::new_symbol(name, CHECK_NULL);
+  TempNewSymbol h_name = SymbolTable::new_symbol(name);
 
   oop loader_oop = JNIHandles::resolve(loader);
   oop from_class = JNIHandles::resolve(caller);
@@ -852,7 +852,7 @@ JVM_ENTRY(jclass, JVM_FindClassFromClass(JNIEnv *env, const char *name,
                        name);
     return 0;
   }
-  TempNewSymbol h_name = SymbolTable::new_symbol(name, CHECK_NULL);
+  TempNewSymbol h_name = SymbolTable::new_symbol(name);
   oop from_class_oop = JNIHandles::resolve(from);
   Klass* from_class = (from_class_oop == NULL)
                            ? (Klass*)NULL
@@ -933,7 +933,7 @@ static jclass jvm_define_class_common(JNIEnv *env, const char *name,
                          name);
       return 0;
     }
-    class_name = SymbolTable::new_symbol(name, str_len, CHECK_NULL);
+    class_name = SymbolTable::new_symbol(name, str_len);
   }
 
   ResourceMark rm(THREAD);
@@ -989,7 +989,7 @@ JVM_ENTRY(jclass, JVM_FindLoadedClass(JNIEnv *env, jobject loader, jstring name)
     // into the constant pool.
     return NULL;
   }
-  TempNewSymbol klass_name = SymbolTable::new_symbol(str, str_len, CHECK_NULL);
+  TempNewSymbol klass_name = SymbolTable::new_symbol(str, str_len);
 
   // Security Note:
   //   The Java level wrapper will perform the necessary security check allowing

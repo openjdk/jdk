@@ -204,7 +204,7 @@ size_t ShenandoahArguments::conservative_max_heap_alignment() {
 
 void ShenandoahArguments::initialize_alignments() {
   // Need to setup sizes early to get correct alignments.
-  ShenandoahHeapRegion::setup_sizes(InitialHeapSize, MaxHeapSize);
+  ShenandoahHeapRegion::setup_sizes(MaxHeapSize);
 
   // This is expected by our algorithm for ShenandoahHeap::heap_region_containing().
   size_t align = ShenandoahHeapRegion::region_size_bytes();

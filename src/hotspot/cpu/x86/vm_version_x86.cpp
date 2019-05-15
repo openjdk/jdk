@@ -32,6 +32,7 @@
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "runtime/stubCodeGenerator.hpp"
+#include "utilities/virtualizationSupport.hpp"
 #include "vm_version_x86.hpp"
 
 
@@ -1581,6 +1582,7 @@ void VM_Version::print_platform_virtualization_info(outputStream* st) {
     st->print_cr("KVM virtualization detected");
   } else if (vrt == VMWare) {
     st->print_cr("VMWare virtualization detected");
+    VirtualizationSupport::print_virtualization_info(st);
   } else if (vrt == HyperV) {
     st->print_cr("HyperV virtualization detected");
   }
@@ -1684,6 +1686,8 @@ void VM_Version::check_virtualizations() {
 
     if (strncmp("VMwareVMware", signature, 12) == 0) {
       Abstract_VM_Version::_detected_virtualization = VMWare;
+      // check for extended metrics from guestlib
+      VirtualizationSupport::initialize();
     }
 
     if (strncmp("Microsoft Hv", signature, 12) == 0) {

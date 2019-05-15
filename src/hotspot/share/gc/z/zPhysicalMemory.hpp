@@ -27,20 +27,18 @@
 #include "memory/allocation.hpp"
 #include OS_CPU_HEADER(gc/z/zPhysicalMemoryBacking)
 
-class ZPhysicalMemorySegment {
+class ZPhysicalMemorySegment : public CHeapObj<mtGC> {
 private:
   uintptr_t _start;
   uintptr_t _end;
 
 public:
+  ZPhysicalMemorySegment();
   ZPhysicalMemorySegment(uintptr_t start, size_t size);
 
   uintptr_t start() const;
   uintptr_t end() const;
   size_t size() const;
-
-  void expand(size_t size);
-  ZPhysicalMemorySegment split(size_t size);
 };
 
 class ZPhysicalMemory {
@@ -50,53 +48,45 @@ private:
 
 public:
   ZPhysicalMemory();
-  ZPhysicalMemory(size_t size);
   ZPhysicalMemory(const ZPhysicalMemorySegment& segment);
+  ZPhysicalMemory(const ZPhysicalMemory& pmem);
+  const ZPhysicalMemory& operator=(const ZPhysicalMemory& pmem);
+  ~ZPhysicalMemory();
 
   bool is_null() const;
   size_t size() const;
 
   size_t nsegments() const;
-  ZPhysicalMemorySegment segment(size_t index) const;
-  void add_segment(ZPhysicalMemorySegment segment);
+  const ZPhysicalMemorySegment& segment(size_t index) const;
+  void add_segment(const ZPhysicalMemorySegment& segment);
 
   ZPhysicalMemory split(size_t size);
-  void clear();
 };
 
 class ZPhysicalMemoryManager {
-  friend class VMStructs;
-
 private:
   ZPhysicalMemoryBacking _backing;
-  const size_t           _max_capacity;
-  size_t                 _current_max_capacity;
-  size_t                 _capacity;
-  size_t                 _used;
 
-  void nmt_commit(ZPhysicalMemory pmem, uintptr_t offset);
-  void nmt_uncommit(ZPhysicalMemory pmem, uintptr_t offset);
+  void nmt_commit(const ZPhysicalMemory& pmem, uintptr_t offset) const;
+  void nmt_uncommit(const ZPhysicalMemory& pmem, uintptr_t offset) const;
 
 public:
-  ZPhysicalMemoryManager(size_t max_capacity);
-
   bool is_initialized() const;
 
-  size_t max_capacity() const;
-  size_t current_max_capacity() const;
-  size_t capacity() const;
-  size_t unused_capacity() const;
+  void warn_commit_limits(size_t max) const;
+  bool supports_uncommit();
 
-  void try_ensure_unused_capacity(size_t size);
+  size_t commit(size_t size);
+  size_t uncommit(size_t size);
 
   ZPhysicalMemory alloc(size_t size);
-  void free(ZPhysicalMemory pmem);
+  void free(const ZPhysicalMemory& pmem);
 
-  void map(ZPhysicalMemory pmem, uintptr_t offset);
-  void unmap(ZPhysicalMemory pmem, uintptr_t offset);
+  void map(const ZPhysicalMemory& pmem, uintptr_t offset) const;
+  void unmap(const ZPhysicalMemory& pmem, uintptr_t offset) const;
 
-  void debug_map(ZPhysicalMemory pmem, uintptr_t offset);
-  void debug_unmap(ZPhysicalMemory pmem, uintptr_t offset);
+  void debug_map(const ZPhysicalMemory& pmem, uintptr_t offset) const;
+  void debug_unmap(const ZPhysicalMemory& pmem, uintptr_t offset) const;
 };
 
 #endif // SHARE_GC_Z_ZPHYSICALMEMORY_HPP

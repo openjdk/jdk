@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8132734 8194070
  * @summary Test the System properties for JarFile that support multi-release jar files
- * @library /lib/testlibrary/java/util/jar
+ * @library /lib/testlibrary/java/util/jar /test/lib
  * @modules jdk.jartool
  *          jdk.compiler
  *          jdk.httpserver
@@ -44,8 +44,11 @@
  */
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.URL;
 import java.net.URLClassLoader;
+
+import jdk.test.lib.net.URIBuilder;
 
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
@@ -57,7 +60,7 @@ public class MultiReleaseJarHttpProperties extends MultiReleaseJarProperties {
 
     @BeforeClass
     public void initialize() throws Exception {
-        server = new SimpleHttpServer();
+        server = new SimpleHttpServer(InetAddress.getLoopbackAddress());
         server.start();
         super.initialize();
     }
@@ -65,7 +68,8 @@ public class MultiReleaseJarHttpProperties extends MultiReleaseJarProperties {
     @Override
     protected void initializeClassLoader() throws Exception {
         URL[] urls = new URL[]{
-                new URL("http://localhost:" + server.getPort() + "/multi-release.jar")
+                URIBuilder.newBuilder().scheme("http").port(server.getPort()).loopback()
+                        .path("/multi-release.jar").toURL(),
         };
         cldr = new URLClassLoader(urls);
         // load any class, Main is convenient and in the root entries

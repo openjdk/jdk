@@ -111,7 +111,7 @@ static ModuleEntry* get_module_entry(jobject module, TRAPS) {
 static PackageEntry* get_package_entry(ModuleEntry* module_entry, const char* package_name, TRAPS) {
   ResourceMark rm(THREAD);
   if (package_name == NULL) return NULL;
-  TempNewSymbol pkg_symbol = SymbolTable::new_symbol(package_name, CHECK_NULL);
+  TempNewSymbol pkg_symbol = SymbolTable::new_symbol(package_name);
   PackageEntryTable* package_entry_table = module_entry->loader_data()->packages();
   assert(package_entry_table != NULL, "Unexpected null package entry table");
   return package_entry_table->lookup_only(pkg_symbol);
@@ -148,7 +148,7 @@ static void define_javabase_module(jobject module, jstring version,
   const char* module_version = get_module_version(version);
   TempNewSymbol version_symbol;
   if (module_version != NULL) {
-    version_symbol = SymbolTable::new_symbol(module_version, CHECK);
+    version_symbol = SymbolTable::new_symbol(module_version);
   } else {
     version_symbol = NULL;
   }
@@ -160,7 +160,7 @@ static void define_javabase_module(jobject module, jstring version,
     module_location =
       java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(location));
     if (module_location != NULL) {
-      location_symbol = SymbolTable::new_symbol(module_location, CHECK);
+      location_symbol = SymbolTable::new_symbol(module_location);
     }
   }
 
@@ -173,7 +173,7 @@ static void define_javabase_module(jobject module, jstring version,
       THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
                 err_msg("Invalid package name: %s for module: " JAVA_BASE_NAME, package_name));
     }
-    Symbol* pkg_symbol = SymbolTable::new_symbol(package_name, CHECK);
+    Symbol* pkg_symbol = SymbolTable::new_symbol(package_name);
     pkg_list->append(pkg_symbol);
   }
 
@@ -345,7 +345,7 @@ void Modules::define_module(jobject module, jboolean is_open, jstring version,
       THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), message);
     }
 
-    Symbol* pkg_symbol = SymbolTable::new_symbol(package_name, CHECK);
+    Symbol* pkg_symbol = SymbolTable::new_symbol(package_name);
     pkg_list->append(pkg_symbol);
   }
 
@@ -353,14 +353,14 @@ void Modules::define_module(jobject module, jboolean is_open, jstring version,
   assert(module_table != NULL, "module entry table shouldn't be null");
 
   // Create symbol* entry for module name.
-  TempNewSymbol module_symbol = SymbolTable::new_symbol(module_name, CHECK);
+  TempNewSymbol module_symbol = SymbolTable::new_symbol(module_name);
 
   bool dupl_modules = false;
 
   // Create symbol* entry for module version.
   TempNewSymbol version_symbol;
   if (module_version != NULL) {
-    version_symbol = SymbolTable::new_symbol(module_version, CHECK);
+    version_symbol = SymbolTable::new_symbol(module_version);
   } else {
     version_symbol = NULL;
   }
@@ -372,7 +372,7 @@ void Modules::define_module(jobject module, jboolean is_open, jstring version,
     module_location =
       java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(location));
     if (module_location != NULL) {
-      location_symbol = SymbolTable::new_symbol(module_location, CHECK);
+      location_symbol = SymbolTable::new_symbol(module_location);
     }
   }
 
@@ -657,7 +657,7 @@ jobject Modules::get_named_module(Handle h_loader, const char* package_name, TRA
   if (strlen(package_name) == 0) {
     return NULL;
   }
-  TempNewSymbol package_sym = SymbolTable::new_symbol(package_name, CHECK_NULL);
+  TempNewSymbol package_sym = SymbolTable::new_symbol(package_name);
   const PackageEntry* const pkg_entry =
     get_package_entry_by_name(package_sym, h_loader, THREAD);
   const ModuleEntry* const module_entry = (pkg_entry != NULL ? pkg_entry->module() : NULL);

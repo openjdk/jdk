@@ -300,10 +300,10 @@ void MethodMatcher::parse_method_pattern(char*& line, const char*& error_msg, Me
         }
         line += bytes_read;
       }
-      signature = SymbolTable::new_symbol(sig, CHECK);
+      signature = SymbolTable::new_symbol(sig);
     }
-    Symbol* c_name = SymbolTable::new_symbol(class_name, CHECK);
-    Symbol* m_name = SymbolTable::new_symbol(method_name, CHECK);
+    Symbol* c_name = SymbolTable::new_symbol(class_name);
+    Symbol* m_name = SymbolTable::new_symbol(method_name);
 
     matcher->init(c_name, c_match, m_name, m_match, signature);
     return;

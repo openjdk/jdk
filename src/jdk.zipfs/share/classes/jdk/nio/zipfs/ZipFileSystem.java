@@ -1211,7 +1211,7 @@ class ZipFileSystem extends FileSystem {
             return 0;
 
         long written = 0;
-        if (e.crc != 0 && e.csize > 0) {
+        if (e.csize > 0 && (e.crc != 0 || e.size == 0)) {
             // pre-compressed entry, write directly to output stream
             writeTo(e, os);
         } else {

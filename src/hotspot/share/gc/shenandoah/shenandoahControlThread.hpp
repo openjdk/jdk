@@ -59,7 +59,7 @@ private:
     concurrent_traversal,
     concurrent_normal,
     stw_degenerated,
-    stw_full,
+    stw_full
   } GCMode;
 
   // While we could have a single lock for these, it may risk unblocking

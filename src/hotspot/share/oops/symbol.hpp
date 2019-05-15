@@ -132,8 +132,8 @@ class Symbol : public MetaspaceObj {
   }
 
   Symbol(const u1* name, int length, int refcount);
-  void* operator new(size_t size, int len, TRAPS) throw();
-  void* operator new(size_t size, int len, Arena* arena, TRAPS) throw();
+  void* operator new(size_t size, int len) throw();
+  void* operator new(size_t size, int len, Arena* arena) throw();
 
   void  operator delete(void* p);
 

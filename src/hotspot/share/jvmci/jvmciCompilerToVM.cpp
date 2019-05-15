@@ -506,7 +506,7 @@ C2V_END
 C2V_VMENTRY_NULL(jobject, lookupType, (JNIEnv* env, jobject, jstring jname, jclass accessing_class, jboolean resolve))
   JVMCIObject name = JVMCIENV->wrap(jname);
   const char* str = JVMCIENV->as_utf8_string(name);
-  TempNewSymbol class_name = SymbolTable::new_symbol(str, CHECK_NULL);
+  TempNewSymbol class_name = SymbolTable::new_symbol(str);
 
   if (class_name->utf8_length() <= 1) {
     JVMCI_THROW_MSG_0(InternalError, err_msg("Primitive type %s should be handled in Java code", class_name->as_C_string()));
@@ -537,8 +537,7 @@ C2V_VMENTRY_NULL(jobject, lookupType, (JNIEnv* env, jobject, jstring jname, jcla
       // This is a name from a signature.  Strip off the trimmings.
       // Call recursive to keep scope of strippedsym.
       TempNewSymbol strippedsym = SymbolTable::new_symbol(class_name->as_utf8()+1,
-                                                          class_name->utf8_length()-2,
-                                                          CHECK_0);
+                                                          class_name->utf8_length()-2);
       resolved_klass = SystemDictionary::find(strippedsym, class_loader, protection_domain, CHECK_0);
     } else if (FieldType::is_array(class_name)) {
       FieldArrayInfo fd;
@@ -547,8 +546,7 @@ C2V_VMENTRY_NULL(jobject, lookupType, (JNIEnv* env, jobject, jstring jname, jcla
       BasicType t = FieldType::get_array_info(class_name, fd, CHECK_0);
       if (t == T_OBJECT) {
         TempNewSymbol strippedsym = SymbolTable::new_symbol(class_name->as_utf8()+1+fd.dimension(),
-                                                            class_name->utf8_length()-2-fd.dimension(),
-                                                            CHECK_0);
+                                                            class_name->utf8_length()-2-fd.dimension());
         resolved_klass = SystemDictionary::find(strippedsym,
                                                              class_loader,
                                                              protection_domain,
@@ -1762,7 +1760,7 @@ C2V_END
 C2V_VMENTRY(void, compileToBytecode, (JNIEnv* env, jobject, jobject lambda_form_handle))
   Handle lambda_form = JVMCIENV->asConstant(JVMCIENV->wrap(lambda_form_handle), JVMCI_CHECK);
   if (lambda_form->is_a(SystemDictionary::LambdaForm_klass())) {
-    TempNewSymbol compileToBytecode = SymbolTable::new_symbol("compileToBytecode", CHECK);
+    TempNewSymbol compileToBytecode = SymbolTable::new_symbol("compileToBytecode");
     JavaValue result(T_VOID);
     JavaCalls::call_special(&result, lambda_form, SystemDictionary::LambdaForm_klass(), compileToBytecode, vmSymbols::void_method_signature(), CHECK);
   } else {

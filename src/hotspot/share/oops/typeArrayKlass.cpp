@@ -47,7 +47,7 @@ TypeArrayKlass* TypeArrayKlass::create_klass(BasicType type,
                                       const char* name_str, TRAPS) {
   Symbol* sym = NULL;
   if (name_str != NULL) {
-    sym = SymbolTable::new_permanent_symbol(name_str, CHECK_NULL);
+    sym = SymbolTable::new_permanent_symbol(name_str);
   }
 
   ClassLoaderData* null_loader_data = ClassLoaderData::the_null_class_loader_data();

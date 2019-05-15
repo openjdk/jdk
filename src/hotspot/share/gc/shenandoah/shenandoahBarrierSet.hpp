@@ -32,12 +32,13 @@
 class ShenandoahBarrierSetAssembler;
 
 class ShenandoahBarrierSet: public BarrierSet {
-private:
+public:
   enum ArrayCopyStoreValMode {
     NONE,
     READ_BARRIER,
     WRITE_BARRIER
   };
+private:
 
   ShenandoahHeap* _heap;
   ShenandoahSATBMarkQueueSet _satb_mark_queue_set;

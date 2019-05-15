@@ -27,7 +27,7 @@
 #include "gc/z/zList.hpp"
 
 template <typename T, bool forward>
-ZListIteratorImpl<T, forward>::ZListIteratorImpl(ZList<T>* list) :
+ZListIteratorImpl<T, forward>::ZListIteratorImpl(const ZList<T>* list) :
     _list(list),
     _next(forward ? list->first() : list->last()) {}
 

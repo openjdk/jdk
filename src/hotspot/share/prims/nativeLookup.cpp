@@ -407,9 +407,9 @@ address NativeLookup::lookup(const methodHandle& method, bool& in_base_library, 
 address NativeLookup::base_library_lookup(const char* class_name, const char* method_name, const char* signature) {
   EXCEPTION_MARK;
   bool in_base_library = true;  // SharedRuntime inits some math methods.
-  TempNewSymbol c_name = SymbolTable::new_symbol(class_name,  CATCH);
-  TempNewSymbol m_name = SymbolTable::new_symbol(method_name, CATCH);
-  TempNewSymbol s_name = SymbolTable::new_symbol(signature,   CATCH);
+  TempNewSymbol c_name = SymbolTable::new_symbol(class_name);
+  TempNewSymbol m_name = SymbolTable::new_symbol(method_name);
+  TempNewSymbol s_name = SymbolTable::new_symbol(signature);
 
   // Find the class
   Klass* k = SystemDictionary::resolve_or_fail(c_name, true, CATCH);

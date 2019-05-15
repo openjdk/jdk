@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,9 @@ private:
 
 public:
   uintptr_t alloc_from_front(size_t size);
+  uintptr_t alloc_from_front_at_most(size_t size, size_t* allocated);
   uintptr_t alloc_from_back(size_t size);
+  uintptr_t alloc_from_back_at_most(size_t size, size_t* allocated);
   void free(uintptr_t start, size_t size);
 };
 

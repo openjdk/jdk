@@ -459,7 +459,7 @@ class MethodFamily : public ResourceObj {
 };
 
 Symbol* MethodFamily::generate_no_defaults_message(TRAPS) const {
-  return SymbolTable::new_symbol("No qualifying defaults found", THREAD);
+  return SymbolTable::new_symbol("No qualifying defaults found");
 }
 
 Symbol* MethodFamily::generate_method_message(Symbol *klass_name, Method* method, TRAPS) const {
@@ -472,7 +472,7 @@ Symbol* MethodFamily::generate_method_message(Symbol *klass_name, Method* method
   ss.write((const char*)name->bytes(), name->utf8_length());
   ss.write((const char*)signature->bytes(), signature->utf8_length());
   ss.print(" is abstract");
-  return SymbolTable::new_symbol(ss.base(), (int)ss.size(), THREAD);
+  return SymbolTable::new_symbol(ss.base(), (int)ss.size());
 }
 
 Symbol* MethodFamily::generate_conflicts_message(GrowableArray<Method*>* methods, TRAPS) const {
@@ -487,7 +487,7 @@ Symbol* MethodFamily::generate_conflicts_message(GrowableArray<Method*>* methods
     ss.print(".");
     ss.write((const char*)name->bytes(), name->utf8_length());
   }
-  return SymbolTable::new_symbol(ss.base(), (int)ss.size(), THREAD);
+  return SymbolTable::new_symbol(ss.base(), (int)ss.size());
 }
 
 

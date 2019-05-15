@@ -305,7 +305,7 @@ void G1RemSet::initialize(size_t capacity, uint max_regions) {
 }
 
 G1ScanRSForRegionClosure::G1ScanRSForRegionClosure(G1RemSetScanState* scan_state,
-                                                   G1ScanObjsDuringScanRSClosure* scan_obj_on_card,
+                                                   G1ScanCardClosure* scan_obj_on_card,
                                                    G1ParScanThreadState* pss,
                                                    G1GCPhaseTimes::GCParPhases phase,
                                                    uint worker_i) :
@@ -345,7 +345,7 @@ void G1ScanRSForRegionClosure::scan_opt_rem_set_roots(HeapRegion* r) {
 
   G1OopStarChunkedList* opt_rem_set_list = _pss->oops_into_optional_region(r);
 
-  G1ScanObjsDuringScanRSClosure scan_cl(_g1h, _pss);
+  G1ScanCardClosure scan_cl(_g1h, _pss);
   G1ScanRSForOptionalClosure cl(&scan_cl);
   _opt_refs_scanned += opt_rem_set_list->oops_do(&cl, _pss->closures()->raw_strong_oops());
   _opt_refs_memory_used += opt_rem_set_list->used_memory();
@@ -464,7 +464,7 @@ void G1RemSet::scan_rem_set(G1ParScanThreadState* pss,
                             G1GCPhaseTimes::GCParPhases coderoots_phase) {
   assert(pss->trim_ticks().value() == 0, "Queues must have been trimmed before entering.");
 
-  G1ScanObjsDuringScanRSClosure scan_cl(_g1h, pss);
+  G1ScanCardClosure scan_cl(_g1h, pss);
   G1ScanRSForRegionClosure cl(_scan_state, &scan_cl, pss, scan_phase, worker_i);
   _g1h->collection_set_iterate_increment_from(&cl, worker_i);
 
@@ -489,12 +489,12 @@ void G1RemSet::scan_rem_set(G1ParScanThreadState* pss,
 // Closure used for updating rem sets. Only called during an evacuation pause.
 class G1RefineCardClosure: public G1CardTableEntryClosure {
   G1RemSet* _g1rs;
-  G1ScanObjsDuringUpdateRSClosure* _update_rs_cl;
+  G1ScanCardClosure* _update_rs_cl;
 
   size_t _cards_scanned;
   size_t _cards_skipped;
 public:
-  G1RefineCardClosure(G1CollectedHeap* g1h, G1ScanObjsDuringUpdateRSClosure* update_rs_cl) :
+  G1RefineCardClosure(G1CollectedHeap* g1h, G1ScanCardClosure* update_rs_cl) :
     _g1rs(g1h->rem_set()), _update_rs_cl(update_rs_cl), _cards_scanned(0), _cards_skipped(0)
   {}
 
@@ -527,7 +527,7 @@ void G1RemSet::update_rem_set(G1ParScanThreadState* pss, uint worker_i) {
   if (G1HotCardCache::default_use_cache()) {
     G1EvacPhaseTimesTracker x(p, pss, G1GCPhaseTimes::ScanHCC, worker_i);
 
-    G1ScanObjsDuringUpdateRSClosure scan_hcc_cl(_g1h, pss);
+    G1ScanCardClosure scan_hcc_cl(_g1h, pss);
     G1RefineCardClosure refine_card_cl(_g1h, &scan_hcc_cl);
     _g1h->iterate_hcc_closure(&refine_card_cl, worker_i);
   }
@@ -536,7 +536,7 @@ void G1RemSet::update_rem_set(G1ParScanThreadState* pss, uint worker_i) {
   {
     G1EvacPhaseTimesTracker x(p, pss, G1GCPhaseTimes::UpdateRS, worker_i);
 
-    G1ScanObjsDuringUpdateRSClosure update_rs_cl(_g1h, pss);
+    G1ScanCardClosure update_rs_cl(_g1h, pss);
     G1RefineCardClosure refine_card_cl(_g1h, &update_rs_cl);
     _g1h->iterate_dirty_card_closure(&refine_card_cl, worker_i);
 
@@ -545,12 +545,12 @@ void G1RemSet::update_rem_set(G1ParScanThreadState* pss, uint worker_i) {
   }
 }
 
-void G1RemSet::prepare_for_oops_into_collection_set_do() {
+void G1RemSet::prepare_for_scan_rem_set() {
   G1BarrierSet::dirty_card_queue_set().concatenate_logs();
   _scan_state->reset();
 }
 
-void G1RemSet::cleanup_after_oops_into_collection_set_do() {
+void G1RemSet::cleanup_after_scan_rem_set() {
   G1GCPhaseTimes* phase_times = _g1h->phase_times();
 
   // Set all cards back to clean.
@@ -712,7 +712,7 @@ void G1RemSet::refine_card_concurrently(CardValue* card_ptr,
 }
 
 bool G1RemSet::refine_card_during_gc(CardValue* card_ptr,
-                                     G1ScanObjsDuringUpdateRSClosure* update_rs_cl) {
+                                     G1ScanCardClosure* update_rs_cl) {
   assert(_g1h->is_gc_active(), "Only call during GC");
 
   // Construct the region representing the card.

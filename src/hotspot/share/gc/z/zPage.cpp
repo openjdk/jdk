@@ -28,30 +28,72 @@
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 
-ZPage::ZPage(uint8_t type, ZVirtualMemory vmem, ZPhysicalMemory pmem) :
+ZPage::ZPage(const ZVirtualMemory& vmem, const ZPhysicalMemory& pmem) :
+    _type(type_from_size(vmem.size())),
+    _numa_id((uint8_t)-1),
+    _seqnum(0),
+    _virtual(vmem),
+    _top(start()),
+    _livemap(object_max_count()),
+    _last_used(0),
+    _physical(pmem) {
+  assert_initialized();
+}
+
+ZPage::ZPage(uint8_t type, const ZVirtualMemory& vmem, const ZPhysicalMemory& pmem) :
     _type(type),
     _numa_id((uint8_t)-1),
     _seqnum(0),
     _virtual(vmem),
     _top(start()),
     _livemap(object_max_count()),
+    _last_used(0),
     _physical(pmem) {
-  assert(!_physical.is_null(), "Should not be null");
-  assert(!_virtual.is_null(), "Should not be null");
-  assert((type == ZPageTypeSmall && size() == ZPageSizeSmall) ||
-         (type == ZPageTypeMedium && size() == ZPageSizeMedium) ||
-         (type == ZPageTypeLarge && is_aligned(size(), ZGranuleSize)),
-         "Page type/size mismatch");
+  assert_initialized();
 }
 
-ZPage::~ZPage() {
-  assert(_physical.is_null(), "Should be null");
+void ZPage::assert_initialized() const {
+  assert(!_virtual.is_null(), "Should not be null");
+  assert(!_physical.is_null(), "Should not be null");
+  assert((_type == ZPageTypeSmall && size() == ZPageSizeSmall) ||
+         (_type == ZPageTypeMedium && size() == ZPageSizeMedium) ||
+         (_type == ZPageTypeLarge && is_aligned(size(), ZGranuleSize)),
+         "Page type/size mismatch");
 }
 
 void ZPage::reset() {
   _seqnum = ZGlobalSeqNum;
   _top = start();
   _livemap.reset();
+  _last_used = 0;
+}
+
+ZPage* ZPage::retype(uint8_t type) {
+  assert(_type != type, "Invalid retype");
+  _type = type;
+  _livemap.resize(object_max_count());
+  return this;
+}
+
+ZPage* ZPage::split(size_t size) {
+  return split(type_from_size(size), size);
+}
+
+ZPage* ZPage::split(uint8_t type, size_t size) {
+  assert(_virtual.size() > size, "Invalid split");
+
+  // Resize this page, keep _numa_id, _seqnum, and _last_used
+  const ZVirtualMemory vmem = _virtual.split(size);
+  const ZPhysicalMemory pmem = _physical.split(size);
+  _type = type_from_size(_virtual.size());
+  _top = start();
+  _livemap.resize(object_max_count());
+
+  // Create new page, inherit _seqnum and _last_used
+  ZPage* const page = new ZPage(type, vmem, pmem);
+  page->_seqnum = _seqnum;
+  page->_last_used = _last_used;
+  return page;
 }
 
 void ZPage::print_on(outputStream* out) const {

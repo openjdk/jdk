@@ -34,9 +34,22 @@
 #include "gc/z/zVirtualMemory.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/orderAccess.hpp"
+#include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
+
+inline uint8_t ZPage::type_from_size(size_t size) const {
+  switch (size) {
+  case ZPageSizeSmall:
+    return ZPageTypeSmall;
+
+  case ZPageSizeMedium:
+    return ZPageTypeMedium;
+
+  default:
+    return ZPageTypeLarge;
+  }
+}
 
 inline const char* ZPage::type_to_string() const {
   switch (type()) {
@@ -116,7 +129,7 @@ inline size_t ZPage::remaining() const {
   return end() - top();
 }
 
-inline ZPhysicalMemory& ZPage::physical_memory() {
+inline const ZPhysicalMemory& ZPage::physical_memory() const {
   return _physical;
 }
 
@@ -130,23 +143,6 @@ inline uint8_t ZPage::numa_id() {
   }
 
   return _numa_id;
-}
-
-inline bool ZPage::is_in(uintptr_t addr) const {
-  const uintptr_t offset = ZAddress::offset(addr);
-  return offset >= start() && offset < top();
-}
-
-inline uintptr_t ZPage::block_start(uintptr_t addr) const {
-  if (block_is_obj(addr)) {
-    return addr;
-  } else {
-    return ZAddress::good(top());
-  }
-}
-
-inline bool ZPage::block_is_obj(uintptr_t addr) const {
-  return ZAddress::offset(addr) < top();
 }
 
 inline bool ZPage::is_allocating() const {
@@ -166,6 +162,31 @@ inline void ZPage::set_pre_mapped() {
   // memory has been mapped. So, we need to set it to non-zero when the memory
   // has been pre-mapped.
   _seqnum = 1;
+}
+
+inline uint64_t ZPage::last_used() const {
+  return _last_used;
+}
+
+inline void ZPage::set_last_used() {
+  _last_used = os::elapsedTime();
+}
+
+inline bool ZPage::is_in(uintptr_t addr) const {
+  const uintptr_t offset = ZAddress::offset(addr);
+  return offset >= start() && offset < top();
+}
+
+inline uintptr_t ZPage::block_start(uintptr_t addr) const {
+  if (block_is_obj(addr)) {
+    return addr;
+  } else {
+    return ZAddress::good(top());
+  }
+}
+
+inline bool ZPage::block_is_obj(uintptr_t addr) const {
+  return ZAddress::offset(addr) < top();
 }
 
 inline bool ZPage::is_marked() const {

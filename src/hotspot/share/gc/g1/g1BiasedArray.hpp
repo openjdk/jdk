@@ -128,6 +128,11 @@ public:
     return biased_base()[biased_index];
   }
 
+  T* get_ref_by_index(uintptr_t index) const {
+    verify_index(index);
+    return &this->base()[index];
+  }
+
   // Return the index of the element of the given array that covers the given
   // word in the heap.
   idx_t get_index_by_address(HeapWord* value) const {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -757,7 +757,7 @@ static oop get_mirror_from_signature(const methodHandle& method,
 
 
   if (T_OBJECT == ss->type() || T_ARRAY == ss->type()) {
-    Symbol* name = ss->as_symbol(CHECK_NULL);
+    Symbol* name = ss->as_symbol();
     oop loader = method->method_holder()->class_loader();
     oop protection_domain = method->method_holder()->protection_domain();
     const Klass* k = SystemDictionary::resolve_or_fail(name,

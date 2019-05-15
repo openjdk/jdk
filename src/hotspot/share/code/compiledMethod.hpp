@@ -395,8 +395,6 @@ public:
  private:
   bool static clean_ic_if_metadata_is_dead(CompiledIC *ic);
 
-  void clean_ic_stubs();
-
  public:
   // GC unloading support
   // Cleans unloaded klasses and unloaded nmethods in inline caches

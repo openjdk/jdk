@@ -35,7 +35,7 @@ public:
     _safe_unknown,
     _safe_oop,
     _safe_oop_fwd,
-    _safe_all,
+    _safe_all
   };
 
   static void print_obj(ShenandoahMessageBuffer &msg, oop obj);

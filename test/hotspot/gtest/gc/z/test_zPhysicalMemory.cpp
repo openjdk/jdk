@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,59 +22,121 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/z/zGlobals.hpp"
 #include "gc/z/zPhysicalMemory.inline.hpp"
-#include "utilities/debug.hpp"
 #include "unittest.hpp"
 
-#if defined(AMD64)
+TEST(ZPhysicalMemoryTest, copy) {
+  const ZPhysicalMemorySegment seg0(0, 100);
+  const ZPhysicalMemorySegment seg1(200, 100);
 
-TEST(ZPhysicalMemorySegmentTest, split) {
-  ZPhysicalMemorySegment seg(0, 10 * ZGranuleSize);
+  ZPhysicalMemory pmem0;
+  pmem0.add_segment(seg0);
+  EXPECT_EQ(pmem0.nsegments(), 1u);
+  EXPECT_EQ(pmem0.segment(0).size(), 100u);
 
-  ZPhysicalMemorySegment seg_split0 = seg.split(0 * ZGranuleSize);
-  EXPECT_EQ(seg_split0.size(),  0 * ZGranuleSize);
-  EXPECT_EQ(       seg.size(), 10 * ZGranuleSize);
+  ZPhysicalMemory pmem1;
+  pmem1.add_segment(seg0);
+  pmem1.add_segment(seg1);
+  EXPECT_EQ(pmem1.nsegments(), 2u);
+  EXPECT_EQ(pmem1.segment(0).size(), 100u);
+  EXPECT_EQ(pmem1.segment(1).size(), 100u);
 
-  ZPhysicalMemorySegment seg_split1 = seg.split(5 * ZGranuleSize);
-  EXPECT_EQ(seg_split1.size(),  5 * ZGranuleSize);
-  EXPECT_EQ(       seg.size(),  5 * ZGranuleSize);
+  ZPhysicalMemory pmem2(pmem0);
+  EXPECT_EQ(pmem2.nsegments(), 1u);
+  EXPECT_EQ(pmem2.segment(0).size(), 100u);
 
-  ZPhysicalMemorySegment seg_split2 = seg.split(5 * ZGranuleSize);
-  EXPECT_EQ(seg_split2.size(),  5 * ZGranuleSize);
-  EXPECT_EQ(       seg.size(),  0 * ZGranuleSize);
+  pmem2 = pmem1;
+  EXPECT_EQ(pmem2.nsegments(), 2u);
+  EXPECT_EQ(pmem2.segment(0).size(), 100u);
+  EXPECT_EQ(pmem2.segment(1).size(), 100u);
+}
 
-  ZPhysicalMemorySegment seg_split3 = seg.split(0 * ZGranuleSize);
-  EXPECT_EQ(seg_split3.size(),  0 * ZGranuleSize);
-  EXPECT_EQ(       seg.size(),  0 * ZGranuleSize);
+TEST(ZPhysicalMemoryTest, segments) {
+  const ZPhysicalMemorySegment seg0(0, 1);
+  const ZPhysicalMemorySegment seg1(1, 1);
+  const ZPhysicalMemorySegment seg2(2, 1);
+  const ZPhysicalMemorySegment seg3(3, 1);
+  const ZPhysicalMemorySegment seg4(4, 1);
+  const ZPhysicalMemorySegment seg5(5, 1);
+  const ZPhysicalMemorySegment seg6(6, 1);
+
+  ZPhysicalMemory pmem0;
+  EXPECT_EQ(pmem0.nsegments(), 0u);
+  EXPECT_EQ(pmem0.is_null(), true);
+
+  ZPhysicalMemory pmem1;
+  pmem1.add_segment(seg0);
+  pmem1.add_segment(seg1);
+  pmem1.add_segment(seg2);
+  pmem1.add_segment(seg3);
+  pmem1.add_segment(seg4);
+  pmem1.add_segment(seg5);
+  pmem1.add_segment(seg6);
+  EXPECT_EQ(pmem1.nsegments(), 1u);
+  EXPECT_EQ(pmem1.segment(0).size(), 7u);
+  EXPECT_EQ(pmem1.is_null(), false);
+
+  ZPhysicalMemory pmem2;
+  pmem2.add_segment(seg0);
+  pmem2.add_segment(seg1);
+  pmem2.add_segment(seg2);
+  pmem2.add_segment(seg4);
+  pmem2.add_segment(seg5);
+  pmem2.add_segment(seg6);
+  EXPECT_EQ(pmem2.nsegments(), 2u);
+  EXPECT_EQ(pmem2.segment(0).size(), 3u);
+  EXPECT_EQ(pmem2.segment(1).size(), 3u);
+  EXPECT_EQ(pmem2.is_null(), false);
+
+  ZPhysicalMemory pmem3;
+  pmem3.add_segment(seg0);
+  pmem3.add_segment(seg2);
+  pmem3.add_segment(seg3);
+  pmem3.add_segment(seg4);
+  pmem3.add_segment(seg6);
+  EXPECT_EQ(pmem3.nsegments(), 3u);
+  EXPECT_EQ(pmem3.segment(0).size(), 1u);
+  EXPECT_EQ(pmem3.segment(1).size(), 3u);
+  EXPECT_EQ(pmem3.segment(2).size(), 1u);
+  EXPECT_EQ(pmem3.is_null(), false);
+
+  ZPhysicalMemory pmem4;
+  pmem4.add_segment(seg0);
+  pmem4.add_segment(seg2);
+  pmem4.add_segment(seg4);
+  pmem4.add_segment(seg6);
+  EXPECT_EQ(pmem4.nsegments(), 4u);
+  EXPECT_EQ(pmem4.segment(0).size(), 1u);
+  EXPECT_EQ(pmem4.segment(1).size(), 1u);
+  EXPECT_EQ(pmem4.segment(2).size(), 1u);
+  EXPECT_EQ(pmem4.segment(3).size(), 1u);
+  EXPECT_EQ(pmem4.is_null(), false);
 }
 
 TEST(ZPhysicalMemoryTest, split) {
-  ZPhysicalMemoryManager pmem_manager(10 * ZGranuleSize);
+  ZPhysicalMemory pmem;
 
-  pmem_manager.try_ensure_unused_capacity(10 * ZGranuleSize);
-  EXPECT_EQ(pmem_manager.unused_capacity(), 10 * ZGranuleSize);
+  pmem.add_segment(ZPhysicalMemorySegment(0, 10));
+  pmem.add_segment(ZPhysicalMemorySegment(10, 10));
+  pmem.add_segment(ZPhysicalMemorySegment(30, 10));
+  EXPECT_EQ(pmem.nsegments(), 2u);
+  EXPECT_EQ(pmem.size(), 30u);
 
-  ZPhysicalMemory pmem = pmem_manager.alloc(8 * ZGranuleSize);
-  EXPECT_EQ(pmem.nsegments(), 1u) << "wrong number of segments";
+  ZPhysicalMemory pmem0 = pmem.split(1);
+  EXPECT_EQ(pmem0.nsegments(), 1u);
+  EXPECT_EQ(pmem0.size(), 1u);
+  EXPECT_EQ(pmem.nsegments(), 2u);
+  EXPECT_EQ(pmem.size(), 29u);
 
-  ZPhysicalMemory split0_pmem = pmem.split(ZGranuleSize);
-  EXPECT_EQ(split0_pmem.nsegments(), 1u);
-  EXPECT_EQ(       pmem.nsegments(), 1u);
-  EXPECT_EQ(split0_pmem.size(), 1 * ZGranuleSize);
-  EXPECT_EQ(       pmem.size(), 7 * ZGranuleSize);
+  ZPhysicalMemory pmem1 = pmem.split(25);
+  EXPECT_EQ(pmem1.nsegments(), 2u);
+  EXPECT_EQ(pmem1.size(), 25u);
+  EXPECT_EQ(pmem.nsegments(), 1u);
+  EXPECT_EQ(pmem.size(), 4u);
 
-  ZPhysicalMemory split1_pmem = pmem.split(2 * ZGranuleSize);
-  EXPECT_EQ(split1_pmem.nsegments(), 1u);
-  EXPECT_EQ(       pmem.nsegments(), 1u);
-  EXPECT_EQ(split1_pmem.size(), 2 * ZGranuleSize);
-  EXPECT_EQ(       pmem.size(), 5 * ZGranuleSize);
-
-  ZPhysicalMemory split2_pmem = pmem.split(5 * ZGranuleSize);
-  EXPECT_EQ(split2_pmem.nsegments(), 1u);
-  EXPECT_EQ(       pmem.nsegments(), 1u);
-  EXPECT_EQ(split2_pmem.size(), 5 * ZGranuleSize);
-  EXPECT_EQ(       pmem.size(), 0 * ZGranuleSize);
+  ZPhysicalMemory pmem2 = pmem.split(4);
+  EXPECT_EQ(pmem2.nsegments(), 1u);
+  EXPECT_EQ(pmem2.size(), 4u);
+  EXPECT_EQ(pmem.nsegments(), 0u);
+  EXPECT_EQ(pmem.size(), 0u);
 }
-
-#endif
