@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -199,10 +199,15 @@ dbgsysSend(int fd, char *buf, size_t nBytes, int flags) {
 }
 
 int
-dbgsysGetAddrInfo(char *hostname, char *service,
-                  struct addrinfo *hints,
+dbgsysGetAddrInfo(const char *hostname, const char *service,
+                  const struct addrinfo *hints,
                   struct addrinfo **result) {
-  return getaddrinfo(hostname, service, hints, result);
+    return getaddrinfo(hostname, service, hints, result);
+}
+
+void
+dbgsysFreeAddrInfo(struct addrinfo *info) {
+    freeaddrinfo(info);
 }
 
 unsigned short
@@ -214,7 +219,7 @@ int
 dbgsysSocket(int domain, int type, int protocol) {
   int fd = (int)socket(domain, type, protocol);
   if (fd != SOCKET_ERROR) {
-      SetHandleInformation((HANDLE)(UINT_PTR)fd, HANDLE_FLAG_INHERIT, FALSE);
+    SetHandleInformation((HANDLE)(UINT_PTR)fd, HANDLE_FLAG_INHERIT, FALSE);
   }
   return fd;
 }
@@ -239,15 +244,6 @@ dbgsysBind(int fd, struct sockaddr *name, socklen_t namelen) {
     return bind(fd, name, namelen);
 }
 
-
-uint32_t
-dbgsysInetAddr(const char* cp) {
-    uint32_t addr;
-    if (inet_pton(AF_INET, cp, &addr) < 1) {
-      return -1;
-    }
-    return addr;
-}
 
 uint32_t
 dbgsysHostToNetworkLong(uint32_t hostlong) {

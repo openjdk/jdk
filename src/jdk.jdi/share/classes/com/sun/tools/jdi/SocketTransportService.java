@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,12 +79,7 @@ public class SocketTransportService extends TransportService {
                 try {
                     address = InetAddress.getLocalHost();
                 } catch (UnknownHostException uhe) {
-                    byte[] loopback = {0x7f,0x00,0x00,0x01};
-                    try {
-                        address = InetAddress.getByAddress("127.0.0.1", loopback);
-                    } catch (UnknownHostException x) {
-                        throw new InternalError("unable to get local hostname");
-                    }
+                    address = InetAddress.getLoopbackAddress();
                 }
             }
 
@@ -201,6 +196,44 @@ public class SocketTransportService extends TransportService {
         };
     }
 
+    private static class HostPort {
+        public final String host;
+        public final int port;
+        private HostPort(String host, int port) {
+            this.host = host;
+            this.port = port;
+        }
+
+        /**
+         * Creates an instance for given URN, which can be either <port> or <host>:<port>.
+         * If host is '*', the returned HostPort instance has host set to null.
+         * If <code>host</code> is a literal IPv6 address, it may be in square brackets.
+         */
+        public static HostPort parse(String hostPort) {
+            int splitIndex = hostPort.lastIndexOf(':');
+
+            int port;
+            try {
+                port = Integer.decode(hostPort.substring(splitIndex + 1));
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("unable to parse port number in address");
+            }
+            if (port < 0 || port > 0xFFFF) {
+                throw new IllegalArgumentException("port out of range");
+            }
+
+            if (splitIndex <= 0) {  // empty host means local connection
+                return new HostPort(InetAddress.getLoopbackAddress().getHostAddress(), port);
+            } else if (splitIndex == 1 && hostPort.charAt(0) == '*') {
+                return new HostPort(null, port);
+            } else if (hostPort.charAt(0) == '[' && hostPort.charAt(splitIndex - 1) == ']') {
+                return new HostPort(hostPort.substring(1, splitIndex - 1), port);
+            } else {
+                return new HostPort(hostPort.substring(0, splitIndex), port);
+            }
+        }
+    }
+
     /**
      * Attach to the specified address with optional attach and handshake
      * timeout.
@@ -215,31 +248,14 @@ public class SocketTransportService extends TransportService {
             throw new IllegalArgumentException("timeout is negative");
         }
 
-        int splitIndex = address.indexOf(':');
-        String host;
-        String portStr;
-        if (splitIndex < 0) {
-            host = "localhost";
-            portStr = address;
-        } else {
-            host = address.substring(0, splitIndex);
-            portStr = address.substring(splitIndex+1);
-        }
-
-        if (host.equals("*")) {
-            host = InetAddress.getLocalHost().getHostName();
-        }
-
-        int port;
-        try {
-            port = Integer.decode(portStr).intValue();
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException(
-                "unable to parse port number in address");
-        }
+        HostPort hostPort = HostPort.parse(address);
 
         // open TCP connection to VM
-        InetSocketAddress sa = new InetSocketAddress(host, port);
+        // formally "*" is not correct hostname to attach
+        // but lets connect to localhost
+        InetSocketAddress sa = new InetSocketAddress(hostPort.host == null
+                                                     ? InetAddress.getLoopbackAddress().getHostAddress()
+                                                     : hostPort.host, hostPort.port);
         Socket s = new Socket();
         try {
             s.connect(sa, (int)attachTimeout);
@@ -290,26 +306,8 @@ public class SocketTransportService extends TransportService {
      */
     public ListenKey startListening(String address) throws IOException {
         // use ephemeral port if address isn't specified.
-        if (address == null || address.length() == 0) {
-            address = "0";
-        }
-
-        int splitIndex = address.indexOf(':');
-        String localaddr = null;
-        if (splitIndex >= 0) {
-            localaddr = address.substring(0, splitIndex);
-            address = address.substring(splitIndex+1);
-        }
-
-        int port;
-        try {
-            port = Integer.decode(address).intValue();
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException(
-                    "unable to parse port number in address");
-        }
-
-        return startListening(localaddr, port);
+        HostPort hostPort = HostPort.parse((address == null || address.isEmpty()) ? "0" : address);
+        return startListening(hostPort.host, hostPort.port);
     }
 
     /**

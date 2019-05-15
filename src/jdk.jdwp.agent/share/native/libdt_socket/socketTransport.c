@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@
  * Service Provider Interface - see src/share/javavm/export/jdwpTransport.h.
  */
 
-static int serverSocketFD;
+static int serverSocketFD = -1;
 static int socketFD = -1;
 static jdwpTransportCallback *callback;
 static JavaVM *jvm;
@@ -78,8 +78,9 @@ static jint send_fully(int, char *, int);
 
 /* version >= JDWPTRANSPORT_VERSION_1_1 */
 typedef struct {
-    uint32_t subnet;
-    uint32_t netmask;
+    /* subnet and mask are stored as IPv6 addresses, IPv4 is stored as mapped IPv6 */
+    struct in6_addr subnet;
+    struct in6_addr netmask;
 } AllowedPeerInfo;
 
 #define STR(x) #x
@@ -88,6 +89,9 @@ typedef struct {
 static AllowedPeerInfo _peers[MAX_PEER_ENTRIES];
 static int _peers_cnt = 0;
 
+
+static int allowOnlyIPv4 = 0;                  // reflects "java.net.preferIPv4Stack" sys. property
+static int preferredAddressFamily = AF_INET;   // "java.net.preferIPv6Addresses"
 
 /*
  * Record the last error for this thread.
@@ -137,13 +141,19 @@ getLastError() {
 
 /* Set options common to client and server sides */
 static jdwpTransportError
-setOptionsCommon(int fd)
+setOptionsCommon(int domain, int fd)
 {
     jvalue dontcare;
     int err;
 
-    dontcare.i = 0;  /* keep compiler happy */
+    if (domain == AF_INET6) {
+        int off = 0;
+        // make the socket a dual mode socket
+        // this may fail if IPv4 is not supported - it's ok
+        setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, (char *)&off, sizeof(off));
+    }
 
+    dontcare.i = 0;  /* keep compiler happy */
     err = dbgsysSetSocketOption(fd, TCP_NODELAY, JNI_TRUE, dontcare);
     if (err < 0) {
         RETURN_IO_ERROR("setsockopt TCPNODELAY failed");
@@ -223,31 +233,6 @@ handshake(int fd, jlong timeout) {
     return JDWPTRANSPORT_ERROR_NONE;
 }
 
-static uint32_t
-getLocalHostAddress() {
-    // Simple routine to guess localhost address.
-    // it looks up "localhost" and returns 127.0.0.1 if lookup
-    // fails.
-    struct addrinfo hints, *res = NULL;
-    uint32_t addr;
-    int err;
-
-    // Use portable way to initialize the structure
-    memset((void *)&hints, 0, sizeof(hints));
-    hints.ai_family = AF_INET;
-
-    err = getaddrinfo("localhost", NULL, &hints, &res);
-    if (err < 0 || res == NULL) {
-        return dbgsysHostToNetworkLong(INADDR_LOOPBACK);
-    }
-
-    // getaddrinfo might return more than one address
-    // but we are using first one only
-    addr = ((struct sockaddr_in *)(res->ai_addr))->sin_addr.s_addr;
-    freeaddrinfo(res);
-    return addr;
-}
-
 static int
 getPortNumber(const char *s_port) {
     u_long n;
@@ -274,199 +259,290 @@ getPortNumber(const char *s_port) {
     return n;
 }
 
-static jdwpTransportError
-parseAddress(const char *address, struct sockaddr_in *sa) {
-    char *colon;
-    int port;
+static unsigned short getPort(struct sockaddr *sa)
+{
+    return dbgsysNetworkToHostShort(sa->sa_family == AF_INET
+                                    ? (((struct sockaddr_in*)sa)->sin_port)
+                                    : (((struct sockaddr_in6*)sa)->sin6_port));
+}
 
-    memset((void *)sa, 0, sizeof(struct sockaddr_in));
-    sa->sin_family = AF_INET;
+/*
+ * Result must be released with dbgsysFreeAddrInfo.
+ */
+static jdwpTransportError
+parseAddress(const char *address, struct addrinfo **result) {
+    const char *colon;
+    size_t hostLen;
+    char *host = NULL;
+    const char *port;
+    struct addrinfo hints;
+    int res;
+
+    *result = NULL;
 
     /* check for host:port or port */
-    colon = strchr(address, ':');
-    port = getPortNumber((colon == NULL) ? address : colon +1);
-    if (port < 0) {
+    colon = strrchr(address, ':');
+    port = (colon == NULL ? address : colon + 1);
+
+    /* ensure the port is valid (getaddrinfo allows port to be empty) */
+    if (getPortNumber(port) < 0) {
         RETURN_ERROR(JDWPTRANSPORT_ERROR_ILLEGAL_ARGUMENT, "invalid port number specified");
     }
-    sa->sin_port = dbgsysHostToNetworkShort((u_short)port);
 
-    if (colon == NULL) {
-        // bind to localhost only if no address specified
-        sa->sin_addr.s_addr = getLocalHostAddress();
-    } else if (strncmp(address, "localhost:", 10) == 0) {
-        // optimize for common case
-        sa->sin_addr.s_addr = getLocalHostAddress();
-    } else if (*address == '*' && *(address+1) == ':') {
-        // we are explicitly asked to bind server to all available IP addresses
-        // has no meaning for client.
-        sa->sin_addr.s_addr = dbgsysHostToNetworkLong(INADDR_ANY);
-     } else {
-        char *buf;
-        char *hostname;
-        uint32_t addr;
-        int ai;
-        buf = (*callback->alloc)((int)strlen(address) + 1);
-        if (buf == NULL) {
+    memset (&hints, 0, sizeof(hints));
+    hints.ai_family = allowOnlyIPv4 ? AF_INET : AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_protocol = IPPROTO_TCP;
+    hints.ai_flags = AI_NUMERICSERV;    // port must be a number
+
+    hostLen = (colon == NULL ? 0 : colon - address);
+    if (hostLen == 0) {
+        /* no hostname - use localhost address (pass NULL to getaddrinfo) */
+    } else  if (*address == '*' && hostLen == 1) {
+        /* *:port - listen on all interfaces
+         * use IPv6 socket (to accept IPv6 and mapped IPv4),
+         * pass hostname == NULL to getaddrinfo.
+         */
+        hints.ai_family = allowOnlyIPv4 ? AF_INET : AF_INET6;
+        hints.ai_flags |= AI_PASSIVE | (allowOnlyIPv4 ? 0 : AI_V4MAPPED | AI_ALL);
+    } else {
+        if (address[0] == '[' && colon[-1] == ']') {
+            address++;
+            hostLen -= 2;
+        }
+        host = (*callback->alloc)((int)hostLen + 1);
+        if (host == NULL) {
             RETURN_ERROR(JDWPTRANSPORT_ERROR_OUT_OF_MEMORY, "out of memory");
         }
-        strcpy(buf, address);
-        buf[colon - address] = '\0';
-        hostname = buf;
+        strncpy(host, address, hostLen);
+        host[hostLen] = '\0';
+    }
 
-        /*
-         * First see if the host is a literal IP address.
-         * If not then try to resolve it.
-         */
-        addr = dbgsysInetAddr(hostname);
-        if (addr == 0xffffffff) {
-            struct addrinfo hints;
-            struct addrinfo *results = NULL;
-            memset (&hints, 0, sizeof(hints));
-            hints.ai_family = AF_INET;
-            hints.ai_socktype = SOCK_STREAM;
-            hints.ai_protocol = IPPROTO_TCP;
-
-            ai = dbgsysGetAddrInfo(hostname, NULL, &hints, &results);
-
-            if (ai != 0) {
-                /* don't use RETURN_IO_ERROR as unknown host is normal */
-                setLastError(0, "getaddrinfo: unknown host");
-                (*callback->free)(buf);
-                return JDWPTRANSPORT_ERROR_IO_ERROR;
-            }
-
-            /* lookup was successful */
-            sa->sin_addr =  ((struct sockaddr_in *)results->ai_addr)->sin_addr;
-            freeaddrinfo(results);
-        } else {
-            sa->sin_addr.s_addr = addr;
-        }
-
-        (*callback->free)(buf);
+    res = dbgsysGetAddrInfo(host, port, &hints, result);
+    if (host != NULL) {
+        (*callback->free)(host);
+    }
+    if (res != 0) {
+        setLastError(res, "getaddrinfo: unknown host");
+        return JDWPTRANSPORT_ERROR_IO_ERROR;
     }
 
     return JDWPTRANSPORT_ERROR_NONE;
 }
 
-static const char *
-ip_s2u(const char *instr, uint32_t *ip) {
-    // Convert string representation of ip to integer
-    // in network byte order (big-endian)
-    char t[4] = { 0, 0, 0, 0 };
-    const char *s = instr;
-    int i = 0;
+/*
+ * Input is sockaddr just because all clients have it.
+ */
+static void convertIPv4ToIPv6(const struct sockaddr *addr4, struct in6_addr *addr6) {
+    // Implement in a platform-independent way.
+    // Spec requires in_addr has s_addr member, in6_addr has s6_addr[16] member.
+    struct in_addr *a4 = &(((struct sockaddr_in*)addr4)->sin_addr);
+    memset(addr6, 0, sizeof(*addr6));   // for safety
 
-    while (1) {
-        if (*s == '.') {
-            ++i;
-            ++s;
-            continue;
-        }
-        if (*s == 0 || *s == '+' || *s == '/') {
-            break;
-        }
-        if (*s < '0' || *s > '9') {
-            return instr;
-        }
-        t[i] = (t[i] * 10) + (*s - '0');
-        ++s;
-    }
-
-    *ip = *(uint32_t*)(t);
-    return s;
+    // Mapped address contains 80 zero bits, then 16 "1" bits, then IPv4 address (4 bytes).
+    addr6->s6_addr[10] = addr6->s6_addr[11] = 0xFF;
+    memcpy(&(addr6->s6_addr[12]), &(a4->s_addr), 4);
 }
 
-static const char *
-mask_s2u(const char *instr, uint32_t *mask) {
-    // Convert the number of bits to a netmask
-    // in network byte order (big-endian)
-    unsigned char m = 0;
-    const char *s = instr;
-
-    while (1) {
-        if (*s == 0 || *s == '+') {
-            break;
-        }
-        if (*s < '0' || *s > '9') {
-            return instr;
-        }
-        m = (m * 10) + (*s - '0');
-        ++s;
-    }
-
-    if (m == 0 || m > 32) {
-       // Drop invalid input
-       return instr;
-    }
-
-    *mask = htonl((uint32_t)(~0) << (32 - m));
-    return s;
-}
-
-static int
-ip_in_subnet(uint32_t subnet, uint32_t mask, uint32_t ipaddr) {
-    return (ipaddr & mask) == subnet;
-}
-
+/*
+ * Parses address (IPv4 or IPv6), fills in result by parsed address.
+ * For IPv4 mapped IPv6 is returned in result, isIPv4 is set.
+ */
 static jdwpTransportError
-parseAllowedPeers(const char *allowed_peers) {
-    // Build a list of allowed peers from char string
-    // of format 192.168.0.10+192.168.0.0/24
-    const char *s = NULL;
-    const char *p = allowed_peers;
-    uint32_t   ip = 0;
-    uint32_t mask = 0xFFFFFFFF;
+parseAllowedAddr(const char *buffer, struct in6_addr *result, int *isIPv4) {
+    struct addrinfo hints;
+    struct addrinfo *addrInfo = NULL;
+    int err;
 
-    while (1) {
-        s = ip_s2u(p, &ip);
-        if (s == p) {
+    /*
+     * To parse both IPv4 and IPv6 need to specify AF_UNSPEC family
+     * (with AF_INET6 IPv4 addresses are not parsed even with AI_V4MAPPED and AI_ALL flags).
+     */
+    memset (&hints, 0, sizeof(hints));
+    hints.ai_family = AF_UNSPEC;            // IPv6 or mapped IPv4
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_protocol = IPPROTO_TCP;
+    hints.ai_flags = AI_NUMERICHOST;        // only numeric addresses, no resolution
+
+    err = dbgsysGetAddrInfo(buffer, NULL, &hints, &addrInfo);
+
+    if (err != 0) {
+        setLastError(err, "getaddrinfo: failed to parse address");
+        return JDWPTRANSPORT_ERROR_IO_ERROR;
+    }
+
+    if (addrInfo->ai_family == AF_INET6) {
+        memcpy(result, &(((struct sockaddr_in6 *)(addrInfo->ai_addr))->sin6_addr), sizeof(*result));
+        *isIPv4 = 0;
+    } else {    // IPv4 address - convert to mapped IPv6
+        struct in6_addr addr6;
+        convertIPv4ToIPv6(addrInfo->ai_addr, &addr6);
+        memcpy(result, &addr6, sizeof(*result));
+        *isIPv4 = 1;
+    }
+
+    dbgsysFreeAddrInfo(addrInfo);
+
+    return JDWPTRANSPORT_ERROR_NONE;
+}
+
+/*
+ * Parses prefix length from buffer (integer value), fills in result with corresponding net mask.
+ * For IPv4 (isIPv4 is set), maximum prefix length is 32 bit, for IPv6 - 128 bit.
+ */
+static jdwpTransportError
+parseAllowedMask(const char *buffer, int isIPv4, struct in6_addr *result) {
+    int prefixLen = 0;
+    int maxValue = isIPv4 ? 32 : 128;
+
+    do {
+        if (*buffer < '0' || *buffer > '9') {
+            return JDWPTRANSPORT_ERROR_ILLEGAL_ARGUMENT;
+        }
+        prefixLen = prefixLen * 10 + (*buffer - '0');
+        if (prefixLen > maxValue) {  // avoid overflow
+            return JDWPTRANSPORT_ERROR_ILLEGAL_ARGUMENT;
+        }
+        buffer++;
+    } while (*buffer != '\0');
+
+    if (isIPv4) {
+        // IPv4 are stored as mapped IPv6, prefixLen needs to be converted too
+        prefixLen += 96;
+    }
+
+    if (prefixLen == 0) {
+        return JDWPTRANSPORT_ERROR_ILLEGAL_ARGUMENT;
+    }
+
+    // generate mask for prefix length
+    memset(result, 0, sizeof(*result));
+
+    // prefixLen <= 128, so we won't go over result's size
+    for (int i = 0; prefixLen > 0; i++, prefixLen -= 8) {
+        if (prefixLen >= 8) {
+            // set the whole byte
+            result->s6_addr[i] = 0xFF;
+        } else {
+            // set only "prefixLen" bits
+            result->s6_addr[i] = (char)(0xFF << (8 - prefixLen));
+        }
+    }
+
+    return JDWPTRANSPORT_ERROR_NONE;
+}
+
+/*
+ * Internal implementation of parseAllowedPeers (requires writable buffer).
+ */
+static jdwpTransportError
+parseAllowedPeersInternal(char *buffer) {
+    char *next;
+    int isIPv4 = 0;
+
+    do {
+        char *mask = NULL;
+        char *endOfAddr = strpbrk(buffer, "/+");
+        if (endOfAddr == NULL) {
+            // this is the last address and there is no prefix length
+            next = NULL;
+        } else {
+            next = endOfAddr + 1;
+            if (*endOfAddr == '/') {
+                // mask (prefix length) presents
+                char *endOfMask = strchr(next, '+');
+                mask = next;
+                if (endOfMask == NULL) {
+                    // no more addresses
+                    next = NULL;
+                } else {
+                    next = endOfMask + 1;
+                    *endOfMask = '\0';
+                }
+            }
+            *endOfAddr = '\0';
+        }
+
+        // parse subnet address (IPv4 is stored as mapped IPv6)
+        if (parseAllowedAddr(buffer, &(_peers[_peers_cnt].subnet), &isIPv4) != JDWPTRANSPORT_ERROR_NONE) {
             _peers_cnt = 0;
-            fprintf(stderr, "Error in allow option: '%s'\n", s);
+            fprintf(stderr, "Error in allow option: '%s'\n", buffer);
             RETURN_ERROR(JDWPTRANSPORT_ERROR_ILLEGAL_ARGUMENT,
                          "invalid IP address in allow option");
         }
-
-        if (*s == '/') {
-            // netmask specified
-            s = mask_s2u(s + 1, &mask);
-            if (*(s - 1) == '/') {
-                // Input is not consumed, something bad happened
+        if (mask != NULL) {
+            if (parseAllowedMask(mask, isIPv4, &(_peers[_peers_cnt].netmask)) != JDWPTRANSPORT_ERROR_NONE) {
                 _peers_cnt = 0;
-                fprintf(stderr, "Error in allow option: '%s'\n", s);
+                fprintf(stderr, "Error in allow option: '%s'\n", mask);
                 RETURN_ERROR(JDWPTRANSPORT_ERROR_ILLEGAL_ARGUMENT,
                              "invalid netmask in allow option");
             }
+            // for safety update subnet to satisfy the mask
+            for (size_t i = 0; i < sizeof(_peers[_peers_cnt].subnet); i++) {
+                _peers[_peers_cnt].subnet.s6_addr[i] &= _peers[_peers_cnt].netmask.s6_addr[i];
+            }
         } else {
-            // reset netmask
-            mask = 0xFFFFFFFF;
+            memset(&(_peers[_peers_cnt].netmask), 0xFF, sizeof(_peers[_peers_cnt].netmask));
         }
+        _peers_cnt++;
+        buffer = next;
+    } while (next != NULL);
 
-        if (*s == '+' || *s == 0) {
-            if (_peers_cnt >= MAX_PEER_ENTRIES) {
-                fprintf(stderr, "Error in allow option: '%s'\n", allowed_peers);
-                RETURN_ERROR(JDWPTRANSPORT_ERROR_ILLEGAL_ARGUMENT,
-                             "exceeded max number of allowed peers: " MAX_PEERS_STR);
-            }
-            _peers[_peers_cnt].subnet = ip;
-            _peers[_peers_cnt].netmask = mask;
-            _peers_cnt++;
-            if (*s == 0) {
-                // end of options
-                break;
-            }
-            // advance to next IP block
-            p = s + 1;
-        }
-    }
     return JDWPTRANSPORT_ERROR_NONE;
 }
 
+/*
+ * Parses 'allow' argument (fills in list of allowed peers (global _peers variable)).
+ * 'Allow' value consists of tokens separated by '+',
+ * each token contains IP address (IPv4 or IPv6) and optional prefixLength:
+ * '<addr>[/<prefixLength>]'.
+ * Example: '192.168.1.10+192.168.0.0/24'
+ *   - connections are allowed from 192.168.1.10 and subnet 192.168.0.XX.
+ */
+static jdwpTransportError
+parseAllowedPeers(const char *allowed_peers, size_t len) {
+    // Build a list of allowed peers from char string
+    // of format 192.168.0.10+192.168.0.0/24
+
+    // writable copy of the value
+    char *buffer = (*callback->alloc)((int)len + 1);
+    if (buffer == NULL) {
+        RETURN_ERROR(JDWPTRANSPORT_ERROR_OUT_OF_MEMORY, "out of memory");
+    }
+    strncpy(buffer, allowed_peers, len);
+    buffer[len] = '\0';
+
+    jdwpTransportError err = parseAllowedPeersInternal(buffer);
+
+    (*callback->free)(buffer);
+
+    return err;
+}
+
 static int
-isPeerAllowed(struct sockaddr_in *peer) {
-    int i;
-    for (i = 0; i < _peers_cnt; ++i) {
-        int peer_ip = peer->sin_addr.s_addr;
-        if (ip_in_subnet(_peers[i].subnet, _peers[i].netmask, peer_ip)) {
+isAddressInSubnet(const struct in6_addr *address, const struct in6_addr *subnet, const struct in6_addr *mask) {
+    for (size_t i = 0; i < sizeof(struct in6_addr); i++) {
+        if ((address->s6_addr[i] & mask->s6_addr[i]) != subnet->s6_addr[i]) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+static int
+isPeerAllowed(struct sockaddr_storage *peer) {
+    struct in6_addr tmp;
+    struct in6_addr *addr6;
+    // _peers contains IPv6 subnet and mask (IPv4 is converted to mapped IPv6)
+    if (peer->ss_family == AF_INET) {
+        convertIPv4ToIPv6((struct sockaddr *)peer, &tmp);
+        addr6 = &tmp;
+    } else {
+        addr6 = &(((struct sockaddr_in6 *)peer)->sin6_addr);
+    }
+
+    for (int i = 0; i < _peers_cnt; ++i) {
+        if (isAddressInSubnet(addr6, &(_peers[i].subnet), &(_peers[i].netmask))) {
             return 1;
         }
     }
@@ -490,65 +566,58 @@ socketTransport_getCapabilities(jdwpTransportEnv* env,
     return JDWPTRANSPORT_ERROR_NONE;
 }
 
-
-static jdwpTransportError JNICALL
-socketTransport_startListening(jdwpTransportEnv* env, const char* address,
-                               char** actualAddress)
+/*
+ * Starts listening on the specified addrinfo,
+ * returns listening socket and actual listening port.
+ * If the function fails and returned socket != -1, the socket should be closed.
+ */
+static jdwpTransportError startListening(struct addrinfo *ai, int *socket, char** actualAddress)
 {
-    struct sockaddr_in sa;
     int err;
 
-    memset((void *)&sa,0,sizeof(struct sockaddr_in));
-    sa.sin_family = AF_INET;
-
-    /* no address provided */
-    if ((address == NULL) || (address[0] == '\0')) {
-        address = "0";
-    }
-
-    err = parseAddress(address, &sa);
-    if (err != JDWPTRANSPORT_ERROR_NONE) {
-        return err;
-    }
-
-    serverSocketFD = dbgsysSocket(AF_INET, SOCK_STREAM, 0);
-    if (serverSocketFD < 0) {
+    *socket = dbgsysSocket(ai->ai_family, SOCK_STREAM, IPPROTO_TCP);
+    if (*socket < 0) {
         RETURN_IO_ERROR("socket creation failed");
     }
 
-    err = setOptionsCommon(serverSocketFD);
+    err = setOptionsCommon(ai->ai_family, *socket);
     if (err) {
         return err;
     }
-    if (sa.sin_port != 0) {
+
+    if (getPort(ai->ai_addr) != 0) {
         /*
          * Only need SO_REUSEADDR if we're using a fixed port. If we
          * start seeing EADDRINUSE due to collisions in free ports
          * then we should retry the dbgsysBind() a few times.
          */
-        err = setReuseAddrOption(serverSocketFD);
+        err = setReuseAddrOption(*socket);
         if (err) {
             return err;
         }
     }
 
-    err = dbgsysBind(serverSocketFD, (struct sockaddr *)&sa, sizeof(sa));
+    err = dbgsysBind(*socket, ai->ai_addr, (socklen_t)ai->ai_addrlen);
     if (err < 0) {
         RETURN_IO_ERROR("bind failed");
     }
 
-    err = dbgsysListen(serverSocketFD, 1);
+    err = dbgsysListen(*socket, 1); // only 1 debugger can attach
     if (err < 0) {
         RETURN_IO_ERROR("listen failed");
     }
 
     {
         char buf[20];
-        socklen_t len = sizeof(sa);
+        struct sockaddr_storage addr;
+        socklen_t len = sizeof(addr);
         jint portNum;
-        err = dbgsysGetSocketName(serverSocketFD,
-                               (struct sockaddr *)&sa, &len);
-        portNum = dbgsysNetworkToHostShort(sa.sin_port);
+        err = dbgsysGetSocketName(*socket, (struct sockaddr *)&addr, &len);
+        if (err != 0) {
+            RETURN_IO_ERROR("getsockname failed");
+        }
+
+        portNum = getPort((struct sockaddr *)&addr);
         sprintf(buf, "%d", portNum);
         *actualAddress = (*callback->alloc)((int)strlen(buf) + 1);
         if (*actualAddress == NULL) {
@@ -562,12 +631,62 @@ socketTransport_startListening(jdwpTransportEnv* env, const char* address,
 }
 
 static jdwpTransportError JNICALL
+socketTransport_startListening(jdwpTransportEnv* env, const char* address,
+                               char** actualAddress)
+{
+    int err;
+    struct addrinfo *addrInfo = NULL;
+    struct addrinfo *listenAddr = NULL;
+
+    /* no address provided */
+    if ((address == NULL) || (address[0] == '\0')) {
+        address = "0";
+    }
+
+    err = parseAddress(address, &addrInfo);
+    if (err != JDWPTRANSPORT_ERROR_NONE) {
+        return err;
+    }
+
+    /* 1st pass - preferredAddressFamily (by default IPv4), 2nd pass - the rest */
+    for (int pass = 0; pass < 2 && listenAddr == NULL; pass++) {
+        for (struct addrinfo *ai = addrInfo; ai != NULL; ai = ai->ai_next) {
+            if ((pass == 0 && ai->ai_family == preferredAddressFamily) ||
+                (pass == 1 && ai->ai_family != preferredAddressFamily))
+            {
+                listenAddr = ai;
+                break;
+            }
+        }
+    }
+
+    if (listenAddr == NULL) {
+        dbgsysFreeAddrInfo(addrInfo);
+        RETURN_ERROR(JDWPTRANSPORT_ERROR_INTERNAL, "listen failed: wrong address");
+    }
+
+    err = startListening(listenAddr, &serverSocketFD, actualAddress);
+
+    dbgsysFreeAddrInfo(addrInfo);
+
+    if (err != JDWPTRANSPORT_ERROR_NONE) {
+        if (serverSocketFD >= 0) {
+            dbgsysSocketClose(serverSocketFD);
+            serverSocketFD = -1;
+        }
+        return err;
+    }
+
+    return JDWPTRANSPORT_ERROR_NONE;
+}
+
+static jdwpTransportError JNICALL
 socketTransport_accept(jdwpTransportEnv* env, jlong acceptTimeout, jlong handshakeTimeout)
 {
-    socklen_t socketLen;
     int err = JDWPTRANSPORT_ERROR_NONE;
-    struct sockaddr_in socket;
-    jlong startTime = (jlong)0;
+    struct sockaddr_storage clientAddr;
+    socklen_t clientAddrLen;
+    jlong startTime = 0;
 
     /*
      * Use a default handshake timeout if not specified - this avoids an indefinite
@@ -605,11 +724,10 @@ socketTransport_accept(jdwpTransportEnv* env, jlong acceptTimeout, jlong handsha
         /*
          * Accept the connection
          */
-        memset((void *)&socket,0,sizeof(struct sockaddr_in));
-        socketLen = sizeof(socket);
+        clientAddrLen = sizeof(clientAddr);
         socketFD = dbgsysAccept(serverSocketFD,
-                                (struct sockaddr *)&socket,
-                                &socketLen);
+                                (struct sockaddr *)&clientAddr,
+                                &clientAddrLen);
         /* set the last error here as could be overridden by configureBlocking */
         if (socketFD < 0) {
             setLastError(JDWPTRANSPORT_ERROR_IO_ERROR, "accept failed");
@@ -632,12 +750,14 @@ socketTransport_accept(jdwpTransportEnv* env, jlong acceptTimeout, jlong handsha
          * Verify that peer is allowed to connect.
          */
         if (_peers_cnt > 0) {
-            if (!isPeerAllowed(&socket)) {
+            if (!isPeerAllowed(&clientAddr)) {
                 char ebuf[64] = { 0 };
-                char buf[INET_ADDRSTRLEN] = { 0 };
-                const char* addr_str = inet_ntop(AF_INET, &(socket.sin_addr), buf, INET_ADDRSTRLEN);
+                char addrStr[INET_ADDRSTRLEN] = { 0 };
+                int err2 = getnameinfo((struct sockaddr *)&clientAddr, clientAddrLen,
+                                       addrStr, sizeof(addrStr), NULL, 0,
+                                       NI_NUMERICHOST);
                 sprintf(ebuf, "ERROR: Peer not allowed to connect: %s\n",
-                        (addr_str == NULL) ? "<bad address>" : addr_str);
+                        (err2 != 0) ? "<bad address>" : addrStr);
                 dbgsysSocketClose(socketFD);
                 socketFD = -1;
                 err = JDWPTRANSPORT_ERROR_ILLEGAL_ARGUMENT;
@@ -686,28 +806,19 @@ socketTransport_stopListening(jdwpTransportEnv *env)
     return JDWPTRANSPORT_ERROR_NONE;
 }
 
-static jdwpTransportError JNICALL
-socketTransport_attach(jdwpTransportEnv* env, const char* addressString, jlong attachTimeout,
-                       jlong handshakeTimeout)
-{
-    struct sockaddr_in sa;
+/*
+ * Tries to connect to the specified addrinfo, returns connected socket.
+ * If the function fails and returned socket != -1, the socket should be closed.
+ */
+static jdwpTransportError connectToAddr(struct addrinfo *ai, jlong timeout, int *socket) {
     int err;
 
-    if (addressString == NULL || addressString[0] == '\0') {
-        RETURN_ERROR(JDWPTRANSPORT_ERROR_ILLEGAL_ARGUMENT, "address is missing");
-    }
-
-    err = parseAddress(addressString, &sa);
-    if (err != JDWPTRANSPORT_ERROR_NONE) {
-        return err;
-    }
-
-    socketFD = dbgsysSocket(AF_INET, SOCK_STREAM, 0);
-    if (socketFD < 0) {
+    *socket = dbgsysSocket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
+    if (*socket < 0) {
         RETURN_IO_ERROR("unable to create socket");
     }
 
-    err = setOptionsCommon(socketFD);
+    err = setOptionsCommon(ai->ai_family, socketFD);
     if (err) {
         return err;
     }
@@ -722,13 +833,13 @@ socketTransport_attach(jdwpTransportEnv* env, const char* addressString, jlong a
      * To do a timed connect we make the socket non-blocking
      * and poll with a timeout;
      */
-    if (attachTimeout > 0) {
+    if (timeout > 0) {
         dbgsysConfigureBlocking(socketFD, JNI_FALSE);
     }
 
-    err = dbgsysConnect(socketFD, (struct sockaddr *)&sa, sizeof(sa));
-    if (err == DBG_EINPROGRESS && attachTimeout > 0) {
-        err = dbgsysFinishConnect(socketFD, (long)attachTimeout);
+    err = dbgsysConnect(socketFD, ai->ai_addr, (socklen_t)ai->ai_addrlen);
+    if (err == DBG_EINPROGRESS && timeout > 0) {
+        err = dbgsysFinishConnect(socketFD, (long)timeout);
 
         if (err == DBG_ETIMEOUT) {
             dbgsysConfigureBlocking(socketFD, JNI_TRUE);
@@ -736,8 +847,53 @@ socketTransport_attach(jdwpTransportEnv* env, const char* addressString, jlong a
         }
     }
 
-    if (err < 0) {
+    if (err) {
         RETURN_IO_ERROR("connect failed");
+    }
+
+    return err;
+}
+
+
+static jdwpTransportError JNICALL
+socketTransport_attach(jdwpTransportEnv* env, const char* addressString, jlong attachTimeout,
+                       jlong handshakeTimeout)
+{
+    int err;
+    struct addrinfo *addrInfo = NULL;
+
+    if (addressString == NULL || addressString[0] == '\0') {
+        RETURN_ERROR(JDWPTRANSPORT_ERROR_ILLEGAL_ARGUMENT, "address is missing");
+    }
+
+    err = parseAddress(addressString, &addrInfo);
+    if (err) {
+        return err;
+    }
+
+    /* 1st pass - preferredAddressFamily (by default IPv4), 2nd pass - the rest */
+    for (int pass = 0; pass < 2 && socketFD < 0; pass++) {
+        for (struct addrinfo *ai = addrInfo; ai != NULL; ai = ai->ai_next) {
+            if ((pass == 0 && ai->ai_family == preferredAddressFamily) ||
+                (pass == 1 && ai->ai_family != preferredAddressFamily))
+            {
+                err = connectToAddr(ai, attachTimeout, &socketFD);
+                if (err == JDWPTRANSPORT_ERROR_NONE) {
+                    break;
+                }
+                if (socketFD >= 0) {
+                    dbgsysSocketClose(socketFD);
+                    socketFD = -1;
+                }
+            }
+        }
+    }
+
+    freeaddrinfo(addrInfo);
+
+    /* err from the last connectToAddr() call */
+    if (err != 0) {
+        return err;
     }
 
     if (attachTimeout > 0) {
@@ -1010,7 +1166,7 @@ socketTransport_setConfiguration(jdwpTransportEnv* env, jdwpTransportConfigurati
                              "allow option '*' cannot be expanded");
             }
         } else {
-            int err = parseAllowedPeers(allowed_peers);
+            int err = parseAllowedPeers(allowed_peers, len);
             if (err != JDWPTRANSPORT_ERROR_NONE) {
                 return err;
             }
@@ -1019,10 +1175,46 @@ socketTransport_setConfiguration(jdwpTransportEnv* env, jdwpTransportConfigurati
     return JDWPTRANSPORT_ERROR_NONE;
 }
 
+/*
+ * Reads boolean system value, sets *result to
+ *  - trueValue if the property is "true";
+ *  - falseValue if the property is "false".
+ * Doesn't change *result if the property is not set or failed to read.
+ */
+static int readBooleanSysProp(int *result, int trueValue, int falseValue,
+    JNIEnv* jniEnv, jclass sysClass, jmethodID getPropMethod, const char *propName)
+{
+    jstring value;
+    jstring name = (*jniEnv)->NewStringUTF(jniEnv, propName);
+
+    if (name == NULL) {
+        return JNI_ERR;
+    }
+    value = (jstring)(*jniEnv)->CallStaticObjectMethod(jniEnv, sysClass, getPropMethod, name);
+    if ((*jniEnv)->ExceptionCheck(jniEnv)) {
+        return JNI_ERR;
+    }
+    if (value != NULL) {
+        const char *theValue = (*jniEnv)->GetStringUTFChars(jniEnv, value, NULL);
+        if (theValue == NULL) {
+            return JNI_ERR;
+        }
+        if (strcmp(theValue, "true") == 0) {
+            *result = trueValue;
+        } else if (strcmp(theValue, "false") == 0) {
+            *result = falseValue;
+        }
+        (*jniEnv)->ReleaseStringUTFChars(jniEnv, value, theValue);
+    }
+    return JNI_OK;
+}
+
 JNIEXPORT jint JNICALL
 jdwpTransport_OnLoad(JavaVM *vm, jdwpTransportCallback* cbTablePtr,
                      jint version, jdwpTransportEnv** env)
 {
+    JNIEnv* jniEnv = NULL;
+
     if (version < JDWPTRANSPORT_VERSION_1_0 ||
         version > JDWPTRANSPORT_VERSION_1_1) {
         return JNI_EVERSION;
@@ -1055,5 +1247,33 @@ jdwpTransport_OnLoad(JavaVM *vm, jdwpTransportCallback* cbTablePtr,
 
     /* initialized TLS */
     tlsIndex = dbgsysTlsAlloc();
+
+    // retrieve network-related system properties
+    do {
+        jclass sysClass;
+        jmethodID getPropMethod;
+        if ((*vm)->GetEnv(vm, (void **)&jniEnv, JNI_VERSION_9) != JNI_OK) {
+            break;
+        }
+        sysClass = (*jniEnv)->FindClass(jniEnv, "java/lang/System");
+        if (sysClass == NULL) {
+            break;
+        }
+        getPropMethod = (*jniEnv)->GetStaticMethodID(jniEnv, sysClass,
+            "getProperty", "(Ljava/lang/String;)Ljava/lang/String;");
+        if (getPropMethod == NULL) {
+            break;
+        }
+        readBooleanSysProp(&allowOnlyIPv4, 1, 0,
+            jniEnv, sysClass, getPropMethod, "java.net.preferIPv4Stack");
+        readBooleanSysProp(&preferredAddressFamily, AF_INET6, AF_INET,
+            jniEnv, sysClass, getPropMethod, "java.net.preferIPv6Addresses");
+    } while (0);
+
+    if (jniEnv != NULL && (*jniEnv)->ExceptionCheck(jniEnv)) {
+        (*jniEnv)->ExceptionClear(jniEnv);
+    }
+
+
     return JNI_OK;
 }
