@@ -419,7 +419,7 @@ public:
 class ShenandoahVerifierReachableTask : public AbstractGangTask {
 private:
   const char* _label;
-  ShenandoahRootProcessor* _rp;
+  ShenandoahRootVerifier* _verifier;
   ShenandoahVerifier::VerifyOptions _options;
   ShenandoahHeap* _heap;
   ShenandoahLivenessData* _ld;
@@ -429,12 +429,12 @@ private:
 public:
   ShenandoahVerifierReachableTask(MarkBitMap* bitmap,
                                   ShenandoahLivenessData* ld,
-                                  ShenandoahRootProcessor* rp,
+                                  ShenandoahRootVerifier* verifier,
                                   const char* label,
                                   ShenandoahVerifier::VerifyOptions options) :
     AbstractGangTask("Shenandoah Parallel Verifier Reachable Task"),
     _label(label),
-    _rp(rp),
+    _verifier(verifier),
     _options(options),
     _heap(ShenandoahHeap::heap()),
     _ld(ld),
@@ -458,7 +458,7 @@ public:
         ShenandoahVerifyOopClosure cl(&stack, _bitmap, _ld,
                                       ShenandoahMessageBuffer("%s, Roots", _label),
                                       _options);
-        _rp->process_all_roots_slow(&cl);
+        _verifier->oops_do(&cl);
     }
 
     size_t processed = 0;
@@ -692,10 +692,9 @@ void ShenandoahVerifier::verify_at_safepoint(const char *label,
   // This verifies what application can see, since it only cares about reachable objects.
   size_t count_reachable = 0;
   if (ShenandoahVerifyLevel >= 2) {
-    ShenandoahRootProcessor rp(_heap, _heap->workers()->active_workers(),
-                               ShenandoahPhaseTimings::_num_phases); // no need for stats
+    ShenandoahRootVerifier verifier;
 
-    ShenandoahVerifierReachableTask task(_verification_bit_map, ld, &rp, label, options);
+    ShenandoahVerifierReachableTask task(_verification_bit_map, ld, &verifier, label, options);
     _heap->workers()->run_task(&task);
     count_reachable = task.processed();
   }
@@ -943,7 +942,15 @@ public:
 
 void ShenandoahVerifier::verify_roots_no_forwarded() {
   guarantee(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "only when nothing else happens");
-  ShenandoahRootProcessor rp(_heap, 1, ShenandoahPhaseTimings::_num_phases); // no need for stats
+  ShenandoahRootVerifier verifier;
   ShenandoahVerifyNoForwared cl;
-  rp.process_all_roots_slow(&cl);
+  verifier.oops_do(&cl);
+}
+
+void ShenandoahVerifier::verify_roots_no_forwarded_except(ShenandoahRootVerifier::RootTypes types) {
+  guarantee(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "only when nothing else happens");
+  ShenandoahRootVerifier verifier;
+  verifier.excludes(types);
+  ShenandoahVerifyNoForwared cl;
+  verifier.oops_do(&cl);
 }
