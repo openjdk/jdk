@@ -231,7 +231,7 @@ static void runUnitTestsInner(int argc, char** argv) {
 #endif // __APPLE__
 
 #else  // _WIN32
-  char* java_home_var = "_ALT_JAVA_HOME_DIR";
+  const char* java_home_var = "_ALT_JAVA_HOME_DIR";
   size_t len = strlen(java_home) + strlen(java_home_var) + 2;
   char * envString = new char[len];
   sprintf_s(envString, len, "%s=%s", java_home_var, java_home);
