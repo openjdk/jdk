@@ -525,12 +525,12 @@ static void emit_table_statistics(TableStatistics statistics) {
 }
 
 TRACE_REQUEST_FUNC(SymbolTableStatistics) {
-  TableStatistics statistics = SymbolTable::the_table()->get_table_statistics();
+  TableStatistics statistics = SymbolTable::get_table_statistics();
   emit_table_statistics<EventSymbolTableStatistics>(statistics);
 }
 
 TRACE_REQUEST_FUNC(StringTableStatistics) {
-  TableStatistics statistics = StringTable::the_table()->get_table_statistics();
+  TableStatistics statistics = StringTable::get_table_statistics();
   emit_table_statistics<EventStringTableStatistics>(statistics);
 }
 

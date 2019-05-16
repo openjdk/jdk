@@ -26,21 +26,17 @@
 #define SHARE_CLASSFILE_STRINGTABLE_HPP
 
 #include "gc/shared/oopStorage.hpp"
-#include "gc/shared/oopStorageParState.hpp"
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
 #include "oops/oop.hpp"
 #include "oops/weakHandle.hpp"
-#include "utilities/concurrentHashTable.hpp"
+#include "utilities/tableStatistics.hpp"
 
 class CompactHashtableWriter;
 class SerializeClosure;
 
 class StringTable;
 class StringTableConfig;
-typedef ConcurrentHashTable<WeakHandle<vm_string_table_data>,
-                            StringTableConfig, mtSymbol> StringTableHash;
-
 class StringTableCreateEntry;
 
 class StringTable : public CHeapObj<mtSymbol>{
@@ -49,93 +45,63 @@ class StringTable : public CHeapObj<mtSymbol>{
   friend class StringTableConfig;
   friend class StringTableCreateEntry;
 
-private:
-  void grow(JavaThread* jt);
-  void clean_dead_entries(JavaThread* jt);
+  static volatile bool _has_work;
+  static volatile size_t _uncleaned_items_count;
 
-  // The string table
-  static StringTable* _the_table;
-  static volatile bool _alt_hash;
-
-private:
-
-  StringTableHash* _local_table;
-  size_t _current_size;
-  volatile bool _has_work;
   // Set if one bucket is out of balance due to hash algorithm deficiency
-  volatile bool _needs_rehashing;
+  static volatile bool _needs_rehashing;
 
-  OopStorage* _weak_handles;
+  static OopStorage* _weak_handles;
 
-  volatile size_t _items_count;
-  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, sizeof(volatile size_t));
-  volatile size_t _uncleaned_items_count;
-  DEFINE_PAD_MINUS_SIZE(2, DEFAULT_CACHE_LINE_SIZE, sizeof(volatile size_t));
+  static void grow(JavaThread* jt);
+  static void clean_dead_entries(JavaThread* jt);
 
-  double get_load_factor() const;
-  double get_dead_factor() const;
+  static double get_load_factor();
+  static double get_dead_factor();
 
-  void check_concurrent_work();
-  void trigger_concurrent_work();
+  static void check_concurrent_work();
+  static void trigger_concurrent_work();
 
   static size_t item_added();
   static void item_removed();
-  size_t add_items_to_clean(size_t ndead);
-
-  StringTable();
+  static size_t add_items_to_clean(size_t ndead);
 
   static oop intern(Handle string_or_null_h, const jchar* name, int len, TRAPS);
-  oop do_intern(Handle string_or_null, const jchar* name, int len, uintx hash, TRAPS);
-  oop do_lookup(const jchar* name, int len, uintx hash);
+  static oop do_intern(Handle string_or_null, const jchar* name, int len, uintx hash, TRAPS);
+  static oop do_lookup(const jchar* name, int len, uintx hash);
 
-  void concurrent_work(JavaThread* jt);
-  void print_table_statistics(outputStream* st, const char* table_name);
+  static void print_table_statistics(outputStream* st, const char* table_name);
 
-  void try_rehash_table();
-  bool do_rehash();
-  inline void update_needs_rehash(bool rehash);
+  static bool do_rehash();
 
  public:
-  // The string table
-  static StringTable* the_table() { return _the_table; }
-  size_t table_size();
-  TableStatistics get_table_statistics();
+  static size_t table_size();
+  static TableStatistics get_table_statistics();
 
-  static OopStorage* weak_storage() { return the_table()->_weak_handles; }
+  static OopStorage* weak_storage() { return _weak_handles; }
 
-  static void create_table() {
-    assert(_the_table == NULL, "One string table allowed.");
-    _the_table = new StringTable();
-  }
+  static void create_table();
 
   static void do_concurrent_work(JavaThread* jt);
-  static bool has_work() { return the_table()->_has_work; }
+  static bool has_work() { return _has_work; }
 
   // GC support
 
   // Must be called before a parallel walk where strings might die.
-  static void reset_dead_counter() {
-    the_table()->_uncleaned_items_count = 0;
-  }
+  static void reset_dead_counter() { _uncleaned_items_count = 0; }
+
   // After the parallel walk this method must be called to trigger
   // cleaning. Note it might trigger a resize instead.
-  static void finish_dead_counter() {
-    the_table()->check_concurrent_work();
-  }
+  static void finish_dead_counter() { check_concurrent_work(); }
 
   // If GC uses ParState directly it should add the number of cleared
   // strings to this method.
-  static void inc_dead_counter(size_t ndead) {
-    the_table()->add_items_to_clean(ndead);
-  }
+  static void inc_dead_counter(size_t ndead) { add_items_to_clean(ndead); }
 
   // Serially invoke "f->do_oop" on the locations of all oops in the table.
+  // Used by JFR leak profiler.  TODO: it should find these oops through
+  // the WeakProcessor.
   static void oops_do(OopClosure* f);
-
-  // Possibly parallel versions of the above
-  static void possibly_parallel_oops_do(
-     OopStorage::ParState<false /* concurrent */, false /* const*/>* par_state_string,
-     OopClosure* f);
 
   // Probing
   static oop lookup(Symbol* symbol);
@@ -148,12 +114,16 @@ private:
 
   // Rehash the string table if it gets out of balance
   static void rehash_table();
-  static bool needs_rehashing()
-    { return StringTable::the_table()->_needs_rehashing; }
+  static bool needs_rehashing() { return _needs_rehashing; }
+  static inline void update_needs_rehash(bool rehash) {
+    if (rehash) {
+      _needs_rehashing = true;
+    }
+  }
 
   // Sharing
  private:
-  oop lookup_shared(const jchar* name, int len, unsigned int hash) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
+  static oop lookup_shared(const jchar* name, int len, unsigned int hash) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
   static void copy_shared_string_table(CompactHashtableWriter* ch_table) NOT_CDS_JAVA_HEAP_RETURN;
  public:
   static oop create_archived_string(oop s, Thread* THREAD) NOT_CDS_JAVA_HEAP_RETURN_(NULL);

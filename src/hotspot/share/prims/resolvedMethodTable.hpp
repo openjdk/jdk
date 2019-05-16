@@ -26,28 +26,17 @@
 #define SHARE_PRIMS_RESOLVEDMETHODTABLE_HPP
 
 #include "gc/shared/oopStorage.hpp"
-#include "gc/shared/oopStorageParState.hpp"
 #include "memory/allocation.hpp"
 #include "oops/symbol.hpp"
 #include "oops/weakHandle.hpp"
-#include "utilities/concurrentHashTable.hpp"
-#include "utilities/hashtable.hpp"
 
 class ResolvedMethodTable;
 class ResolvedMethodTableConfig;
-typedef ConcurrentHashTable<WeakHandle<vm_resolved_method_table_data>, ResolvedMethodTableConfig, mtClass> ResolvedMethodTableHash;
 
 class ResolvedMethodTable : public AllStatic {
-  static ResolvedMethodTableHash* _local_table;
-  static size_t                   _current_size;
-
   static OopStorage*              _weak_handles;
 
   static volatile bool            _has_work;
-
-  static volatile size_t          _items_count;
-  static volatile size_t          _uncleaned_items_count;
-
 public:
   // Initialization
   static void create_table();
@@ -63,10 +52,10 @@ public:
   static void item_removed();
 
   // Cleaning
-  static bool has_work();
+  static bool has_work() { return _has_work; }
 
   // GC Support - Backing storage for the oop*s
-  static OopStorage* weak_storage();
+  static OopStorage* weak_storage() { return _weak_handles; }
 
   // Cleaning and table management
 
