@@ -65,13 +65,13 @@ void VirtualizationSupport::initialize() {
     VMGuestLibError sg_error = GuestLib_StatGet("text", "resources", &result_info, &result_size);
     if (sg_error == VMGUESTLIB_ERROR_SUCCESS) {
       has_resource_information = true;
-      snprintf(extended_resource_info_at_startup, sizeof(extended_resource_info_at_startup), "%s", result_info);
+      os::snprintf(extended_resource_info_at_startup, sizeof(extended_resource_info_at_startup), "%s", result_info);
       GuestLib_StatFree(result_info, result_size);
     }
     sg_error = GuestLib_StatGet("text", "host", &result_info, &result_size);
     if (sg_error == VMGUESTLIB_ERROR_SUCCESS) {
       has_host_information = true;
-      snprintf(host_information, sizeof(host_information), "%s", result_info);
+      os::snprintf(host_information, sizeof(host_information), "%s", result_info);
       GuestLib_StatFree(result_info, result_size);
     }
   }
