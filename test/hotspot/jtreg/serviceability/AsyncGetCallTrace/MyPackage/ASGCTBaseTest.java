@@ -28,7 +28,8 @@ package MyPackage;
  * @test
  * @summary Verifies that AsyncGetCallTrace is call-able and provides sane information.
  * @compile ASGCTBaseTest.java
- * @requires (os.family == "linux")
+ * @requires os.family == "linux"
+ * @requires os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64" | os.arch=="arm" | os.arch=="sparc" | os.arch=="aarch64"
  * @run main/othervm/native -agentlib:AsyncGetCallTraceTest MyPackage.ASGCTBaseTest
  */
 

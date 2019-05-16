@@ -185,7 +185,7 @@ typedef void (*ASGCTType)(ASGCT_CallTrace *, jint, void *);
 
 JNIEXPORT jboolean JNICALL
 Java_MyPackage_ASGCTBaseTest_checkAsyncGetCallTraceCall(JNIEnv* env, jclass cls) {
-  ASGCTType agct = reinterpret_cast<ASGCTType>(dlsym(NULL, "AsyncGetCallTrace"));
+  ASGCTType agct = reinterpret_cast<ASGCTType>(dlsym(RTLD_DEFAULT, "AsyncGetCallTrace"));
 
   const int MAX_DEPTH = 16;
   ASGCT_CallTrace trace;
