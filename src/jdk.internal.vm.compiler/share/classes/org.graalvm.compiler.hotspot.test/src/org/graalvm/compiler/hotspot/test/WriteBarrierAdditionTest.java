@@ -55,6 +55,8 @@ import org.graalvm.compiler.phases.common.inlining.policy.InlineEverythingPolicy
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.phases.tiers.MidTierContext;
 import org.graalvm.compiler.replacements.NodeIntrinsificationProvider;
+import org.graalvm.compiler.word.Word;
+import jdk.internal.vm.compiler.word.WordFactory;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -255,6 +257,34 @@ public class WriteBarrierAdditionTest extends HotSpotGraalCompilerTest {
         test2("testArrayCopy", src, dst, dst.length);
     }
 
+    public static class WordContainer {
+        public Word word;
+    }
+
+    public static void testWordFieldSnippet() {
+        WordContainer wordContainer = new WordContainer();
+        wordContainer.word = WordFactory.signed(42);
+    }
+
+    @Test
+    public void testWordField() throws Exception {
+        testHelper("testWordFieldSnippet", 0);
+    }
+
+    public static Word[] testWordArraySnippet(int length) {
+        Word fortyTwo = WordFactory.signed(42);
+        Word[] words = new Word[length];
+        for (int i = 0; i < length; i++) {
+            words[i] = fortyTwo;
+        }
+        return words;
+    }
+
+    @Test
+    public void testWordArray() throws Exception {
+        testHelper("testWordArraySnippet", 0);
+    }
+
     public static Object testUnsafeLoad(Unsafe theUnsafe, Object a, Object b, Object c) throws Exception {
         final int offset = (c == null ? 0 : ((Integer) c).intValue());
         final long displacement = (b == null ? 0 : ((Long) b).longValue());
@@ -315,9 +345,10 @@ public class WriteBarrierAdditionTest extends HotSpotGraalCompilerTest {
                     JavaConstant constDisp = ((OffsetAddressNode) read.getAddress()).getOffset().asJavaConstant();
                     Assert.assertNotNull(constDisp);
                     Assert.assertEquals(referentOffset(getMetaAccess()), constDisp.asLong());
-                    Assert.assertTrue(config.useG1GC);
-                    Assert.assertEquals(BarrierType.PRECISE, read.getBarrierType());
-                    Assert.assertTrue(read.next() instanceof G1ReferentFieldReadBarrier);
+                    Assert.assertEquals(BarrierType.WEAK_FIELD, read.getBarrierType());
+                    if (config.useG1GC) {
+                        Assert.assertTrue(read.next() instanceof G1ReferentFieldReadBarrier);
+                    }
                 }
             }
         } catch (Throwable e) {

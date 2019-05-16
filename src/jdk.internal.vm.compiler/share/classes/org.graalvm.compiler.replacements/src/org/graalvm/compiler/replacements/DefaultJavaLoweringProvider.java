@@ -48,6 +48,7 @@ import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
+import org.graalvm.compiler.core.common.type.AbstractObjectStamp;
 import org.graalvm.compiler.core.common.type.IntegerStamp;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
@@ -139,6 +140,7 @@ import org.graalvm.compiler.phases.util.Providers;
 import org.graalvm.compiler.replacements.SnippetLowerableMemoryNode.SnippetLowering;
 import org.graalvm.compiler.replacements.nodes.BinaryMathIntrinsicNode;
 import org.graalvm.compiler.replacements.nodes.UnaryMathIntrinsicNode;
+import org.graalvm.compiler.word.WordTypes;
 import jdk.internal.vm.compiler.word.LocationIdentity;
 
 import jdk.vm.ci.code.CodeUtil;
@@ -164,6 +166,7 @@ public abstract class DefaultJavaLoweringProvider implements LoweringProvider {
     protected final TargetDescription target;
     private final boolean useCompressedOops;
     private final ResolvedJavaType objectArrayType;
+    private final WordTypes wordTypes;
 
     private BoxingSnippets.Templates boxingSnippets;
     private ConstantStringIndexOfSnippets.Templates indexOfSnippets;
@@ -174,6 +177,7 @@ public abstract class DefaultJavaLoweringProvider implements LoweringProvider {
         this.target = target;
         this.useCompressedOops = useCompressedOops;
         this.objectArrayType = metaAccess.lookupJavaType(Object[].class);
+        this.wordTypes = new WordTypes(metaAccess, target.wordJavaKind);
     }
 
     public void initialize(OptionValues options, Iterable<DebugHandlersFactory> factories, SnippetCounter.Group.Factory factory, Providers providers, SnippetReflectionProvider snippetReflection) {
@@ -513,7 +517,7 @@ public abstract class DefaultJavaLoweringProvider implements LoweringProvider {
 
         AddressNode address = createArrayIndexAddress(graph, array, elementKind, storeIndexed.index(), boundsCheck);
         WriteNode memoryWrite = graph.add(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), implicitStoreConvert(graph, elementKind, value),
-                        arrayStoreBarrierType(storeIndexed.elementKind())));
+                        arrayStoreBarrierType(array, storeIndexed.elementKind())));
         memoryWrite.setGuard(boundsCheck);
         if (condition != null) {
             tool.createGuard(storeIndexed, condition, DeoptimizationReason.ArrayStoreException, DeoptimizationAction.InvalidateReprofile);
@@ -788,11 +792,11 @@ public abstract class DefaultJavaLoweringProvider implements LoweringProvider {
                                 long offset = fieldOffset(field);
                                 if (offset >= 0) {
                                     address = createOffsetAddress(graph, newObject, offset);
-                                    barrierType = fieldInitializationBarrier(entryKind);
+                                    barrierType = fieldInitializationBarrier(field);
                                 }
                             } else {
                                 address = createOffsetAddress(graph, newObject, metaAccess.getArrayBaseOffset(entryKind) + i * metaAccess.getArrayIndexScale(entryKind));
-                                barrierType = arrayInitializationBarrier(entryKind);
+                                barrierType = arrayInitializationBarrier(newObject, entryKind);
                             }
                             if (address != null) {
                                 WriteNode write = new WriteNode(address, LocationIdentity.init(), implicitStoreConvert(graph, entryKind, value), barrierType);
@@ -822,10 +826,10 @@ public abstract class DefaultJavaLoweringProvider implements LoweringProvider {
                                 if (virtual instanceof VirtualInstanceNode) {
                                     VirtualInstanceNode virtualInstance = (VirtualInstanceNode) virtual;
                                     address = createFieldAddress(graph, newObject, virtualInstance.field(i));
-                                    barrierType = BarrierType.IMPRECISE;
+                                    barrierType = fieldStoreBarrierType(virtualInstance.field(i));
                                 } else {
                                     address = createArrayAddress(graph, newObject, virtual.entryKind(i), ConstantNode.forInt(i, graph));
-                                    barrierType = BarrierType.PRECISE;
+                                    barrierType = arrayStoreBarrierType(newObject, virtual.entryKind(i));
                                 }
                                 if (address != null) {
                                     WriteNode write = new WriteNode(address, LocationIdentity.init(), implicitStoreConvert(graph, JavaKind.Object, allocValue), barrierType);
@@ -939,25 +943,50 @@ public abstract class DefaultJavaLoweringProvider implements LoweringProvider {
     }
 
     protected BarrierType fieldStoreBarrierType(ResolvedJavaField field) {
-        if (field.getJavaKind() == JavaKind.Object) {
-            return BarrierType.IMPRECISE;
+        JavaKind fieldKind = wordTypes.asKind(field.getType());
+        if (fieldKind == JavaKind.Object) {
+            return BarrierType.FIELD;
         }
         return BarrierType.NONE;
     }
 
-    protected BarrierType arrayStoreBarrierType(JavaKind elementKind) {
-        if (elementKind == JavaKind.Object) {
-            return BarrierType.PRECISE;
+    /**
+     * If the given value is indeed an array, and its elements are of a word type, return the
+     * correct word kind; in all other cases, return the defaultElementKind. This is needed for
+     * determining the correct write barrier type.
+     *
+     * @param array a value that is expected to have an array stamp
+     * @param defaultElementKind the array's element kind without taking word types into account
+     * @return the element kind of the array taking word types into account
+     */
+    protected JavaKind maybeWordArrayElementKind(ValueNode array, JavaKind defaultElementKind) {
+        JavaKind elementKind = defaultElementKind;
+        Stamp arrayStamp = array.stamp(NodeView.DEFAULT);
+        if (arrayStamp instanceof AbstractObjectStamp && arrayStamp.hasValues()) {
+            ResolvedJavaType arrayType = ((AbstractObjectStamp) arrayStamp).type();
+            if (arrayType != null && arrayType.getComponentType() != null) {
+                elementKind = wordTypes.asKind(arrayType.getComponentType());
+            }
+        }
+        return elementKind;
+    }
+
+    protected BarrierType arrayStoreBarrierType(ValueNode array, JavaKind elementKind) {
+        JavaKind kind = maybeWordArrayElementKind(array, elementKind);
+        if (kind == JavaKind.Object) {
+            return BarrierType.ARRAY;
         }
         return BarrierType.NONE;
     }
 
-    public BarrierType fieldInitializationBarrier(JavaKind entryKind) {
-        return entryKind == JavaKind.Object ? BarrierType.IMPRECISE : BarrierType.NONE;
+    public BarrierType fieldInitializationBarrier(ResolvedJavaField field) {
+        JavaKind fieldKind = wordTypes.asKind(field.getType());
+        return fieldKind == JavaKind.Object ? BarrierType.FIELD : BarrierType.NONE;
     }
 
-    public BarrierType arrayInitializationBarrier(JavaKind entryKind) {
-        return entryKind == JavaKind.Object ? BarrierType.PRECISE : BarrierType.NONE;
+    public BarrierType arrayInitializationBarrier(ValueNode array, JavaKind entryKind) {
+        JavaKind kind = maybeWordArrayElementKind(array, entryKind);
+        return kind == JavaKind.Object ? BarrierType.ARRAY : BarrierType.NONE;
     }
 
     private BarrierType unsafeStoreBarrierType(RawStoreNode store) {
@@ -972,10 +1001,14 @@ public abstract class DefaultJavaLoweringProvider implements LoweringProvider {
             ResolvedJavaType type = StampTool.typeOrNull(object);
             // Array types must use a precise barrier, so if the type is unknown or is a supertype
             // of Object[] then treat it as an array.
-            if (type == null || type.isArray() || type.isAssignableFrom(objectArrayType)) {
-                return BarrierType.PRECISE;
+            if (type != null && type.isArray()) {
+                return arrayStoreBarrierType(object, JavaKind.Object);
+            } else if (type != null && wordTypes.isWord(type)) {
+                return BarrierType.NONE;
+            } else if (type == null || type.isAssignableFrom(objectArrayType)) {
+                return BarrierType.UNKNOWN;
             } else {
-                return BarrierType.IMPRECISE;
+                return BarrierType.FIELD;
             }
         }
         return BarrierType.NONE;

@@ -35,6 +35,7 @@ import org.graalvm.compiler.core.target.Backend;
 import org.graalvm.compiler.core.test.GraalCompilerTest;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.MethodSubstitutionPlugin;
 import org.graalvm.compiler.options.OptionValues;
@@ -95,7 +96,11 @@ public class RootMethodSubstitutionTest extends GraalCompilerTest {
                         }
                     }
                     if (!original.isNative()) {
-                        ret.add(new Object[]{original});
+                        // Make sure the plugin we found hasn't been overridden.
+                        InvocationPlugin plugin = providers.getReplacements().getGraphBuilderPlugins().getInvocationPlugins().lookupInvocation(original);
+                        if (plugin instanceof MethodSubstitutionPlugin) {
+                            ret.add(new Object[]{original});
+                        }
                     }
                 }
             }

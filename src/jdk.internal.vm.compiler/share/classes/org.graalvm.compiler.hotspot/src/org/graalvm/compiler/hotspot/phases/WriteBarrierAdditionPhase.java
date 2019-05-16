@@ -77,17 +77,17 @@ public class WriteBarrierAdditionPhase extends Phase {
 
     private BarrierSet createBarrierSet(GraalHotSpotVMConfig config) {
         if (config.useG1GC) {
-            return createG1BarrierSet();
+            return createG1BarrierSet(config);
         } else {
-            return createCardTableBarrierSet();
+            return createCardTableBarrierSet(config);
         }
     }
 
-    protected BarrierSet createCardTableBarrierSet() {
-        return new CardTableBarrierSet();
+    protected BarrierSet createCardTableBarrierSet(GraalHotSpotVMConfig config) {
+        return new CardTableBarrierSet(config);
     }
 
-    protected BarrierSet createG1BarrierSet() {
-        return new G1BarrierSet();
+    protected BarrierSet createG1BarrierSet(GraalHotSpotVMConfig config) {
+        return new G1BarrierSet(config);
     }
 }

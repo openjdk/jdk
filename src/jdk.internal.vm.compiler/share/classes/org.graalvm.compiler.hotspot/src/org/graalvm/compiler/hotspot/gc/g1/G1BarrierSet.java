@@ -26,6 +26,7 @@
 package org.graalvm.compiler.hotspot.gc.g1;
 
 import org.graalvm.compiler.debug.GraalError;
+import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
 import org.graalvm.compiler.hotspot.gc.shared.BarrierSet;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -41,10 +42,13 @@ import org.graalvm.compiler.nodes.type.StampTool;
 
 public class G1BarrierSet extends BarrierSet {
 
+    public G1BarrierSet(GraalHotSpotVMConfig vmConfig) {
+        super(vmConfig);
+    }
+
     @Override
     public void addReadNodeBarriers(ReadNode node, StructuredGraph graph) {
-        if (node.getBarrierType() != HeapAccess.BarrierType.NONE) {
-            assert (node.getBarrierType() == HeapAccess.BarrierType.PRECISE);
+        if (node.getBarrierType() == HeapAccess.BarrierType.WEAK_FIELD) {
             G1ReferentFieldReadBarrier barrier = graph.add(new G1ReferentFieldReadBarrier(node.getAddress(), node, false));
             graph.addAfterFixed(node, barrier);
         }
@@ -57,15 +61,19 @@ public class G1BarrierSet extends BarrierSet {
             case NONE:
                 // nothing to do
                 break;
-            case IMPRECISE:
-            case PRECISE:
-                boolean precise = barrierType == HeapAccess.BarrierType.PRECISE;
-                if (!node.getLocationIdentity().isInit()) {
-                    // The pre barrier does nothing if the value being read is null, so it can
-                    // be explicitly skipped when this is an initializing store.
-                    addG1PreWriteBarrier(node, node.getAddress(), null, true, node.getNullCheck(), graph);
+            case FIELD:
+            case ARRAY:
+            case UNKNOWN:
+                boolean init = node.getLocationIdentity().isInit();
+                if (!init || !getVMConfig().useDeferredInitBarriers) {
+                    if (!init) {
+                        // The pre barrier does nothing if the value being read is null, so it can
+                        // be explicitly skipped when this is an initializing store.
+                        addG1PreWriteBarrier(node, node.getAddress(), null, true, node.getNullCheck(), graph);
+                    }
+                    boolean precise = barrierType != HeapAccess.BarrierType.FIELD;
+                    addG1PostWriteBarrier(node, node.getAddress(), node.value(), precise, graph);
                 }
-                addG1PostWriteBarrier(node, node.getAddress(), node.value(), precise, graph);
                 break;
             default:
                 throw new GraalError("unexpected barrier type: " + barrierType);
@@ -79,9 +87,10 @@ public class G1BarrierSet extends BarrierSet {
             case NONE:
                 // nothing to do
                 break;
-            case IMPRECISE:
-            case PRECISE:
-                boolean precise = barrierType == HeapAccess.BarrierType.PRECISE;
+            case FIELD:
+            case ARRAY:
+            case UNKNOWN:
+                boolean precise = barrierType != HeapAccess.BarrierType.FIELD;
                 addG1PreWriteBarrier(node, node.getAddress(), null, true, node.getNullCheck(), graph);
                 addG1PostWriteBarrier(node, node.getAddress(), node.getNewValue(), precise, graph);
                 break;
@@ -97,9 +106,10 @@ public class G1BarrierSet extends BarrierSet {
             case NONE:
                 // nothing to do
                 break;
-            case IMPRECISE:
-            case PRECISE:
-                boolean precise = barrierType == HeapAccess.BarrierType.PRECISE;
+            case FIELD:
+            case ARRAY:
+            case UNKNOWN:
+                boolean precise = barrierType != HeapAccess.BarrierType.FIELD;
                 addG1PreWriteBarrier(node, node.getAddress(), node.getExpectedValue(), false, false, graph);
                 addG1PostWriteBarrier(node, node.getAddress(), node.getNewValue(), precise, graph);
                 break;

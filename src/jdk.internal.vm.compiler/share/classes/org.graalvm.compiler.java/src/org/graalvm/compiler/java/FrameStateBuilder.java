@@ -743,6 +743,13 @@ public final class FrameStateBuilder implements SideEffectsState {
         }
         locals[i] = x;
         if (slotKind.needsTwoSlots()) {
+            if (i < locals.length - 2 && locals[i + 2] == TWO_SLOT_MARKER) {
+                /*
+                 * Writing a two-slot marker to an index previously occupied by a two-slot value:
+                 * clear the old marker of the second slot.
+                 */
+                locals[i + 2] = null;
+            }
             /* Writing a two-slot value: mark the second slot. */
             locals[i + 1] = TWO_SLOT_MARKER;
         } else if (i < locals.length - 1 && locals[i + 1] == TWO_SLOT_MARKER) {

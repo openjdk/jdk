@@ -44,6 +44,7 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.extended.ArrayRangeWrite;
 import org.graalvm.compiler.nodes.java.LoweredAtomicReadAndWriteNode;
 import org.graalvm.compiler.nodes.java.LogicCompareAndSwapNode;
+import org.graalvm.compiler.nodes.java.ValueCompareAndSwapNode;
 import org.graalvm.compiler.nodes.memory.FixedAccessNode;
 import org.graalvm.compiler.nodes.memory.HeapAccess;
 import org.graalvm.compiler.nodes.memory.HeapAccess.BarrierType;
@@ -127,6 +128,9 @@ public class WriteBarrierVerificationPhase extends Phase {
         boolean validatePreBarrier = useG1GC() && (isObjectWrite(node) || !((ArrayRangeWrite) node).isInitialization());
         if (node instanceof WriteNode) {
             WriteNode writeNode = (WriteNode) node;
+            if (config.useDeferredInitBarriers && writeNode.getLocationIdentity().isInit()) {
+                return true;
+            }
             if (writeNode.getLocationIdentity().isInit()) {
                 validatePreBarrier = false;
             }
@@ -191,7 +195,8 @@ public class WriteBarrierVerificationPhase extends Phase {
     }
 
     private static boolean validateBarrier(FixedAccessNode write, ObjectWriteBarrier barrier) {
-        assert write instanceof WriteNode || write instanceof LogicCompareAndSwapNode || write instanceof LoweredAtomicReadAndWriteNode : "Node must be of type requiring a write barrier " + write;
+        assert write instanceof WriteNode || write instanceof LogicCompareAndSwapNode || write instanceof ValueCompareAndSwapNode ||
+                        write instanceof LoweredAtomicReadAndWriteNode : "Node must be of type requiring a write barrier " + write;
         if (!barrier.usePrecise()) {
             if (barrier.getAddress() instanceof OffsetAddressNode && write.getAddress() instanceof OffsetAddressNode) {
                 return GraphUtil.unproxify(((OffsetAddressNode) barrier.getAddress()).getBase()) == GraphUtil.unproxify(((OffsetAddressNode) write.getAddress()).getBase());

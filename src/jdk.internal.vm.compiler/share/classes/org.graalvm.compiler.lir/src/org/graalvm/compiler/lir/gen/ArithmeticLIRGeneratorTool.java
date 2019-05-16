@@ -103,6 +103,11 @@ public interface ArithmeticLIRGeneratorTool {
     void emitStore(ValueKind<?> kind, Value address, Value input, LIRFrameState state);
 
     @SuppressWarnings("unused")
+    default Value emitFusedMultiplyAdd(Value a, Value b, Value c) {
+        throw GraalError.unimplemented("No specialized implementation available");
+    }
+
+    @SuppressWarnings("unused")
     default Value emitMathLog(Value input, boolean base10) {
         throw GraalError.unimplemented("No specialized implementation available");
     }

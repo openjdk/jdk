@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,41 +22,41 @@
  */
 
 
-package org.graalvm.compiler.nodes.memory;
+package org.graalvm.compiler.hotspot.jdk9.test;
 
-/**
- * Encapsulates properties of a node describing how it accesses the heap.
- */
-public interface HeapAccess {
+import static org.junit.Assume.assumeTrue;
 
-    /**
-     * The types of (write/read) barriers attached to stores.
-     */
-    enum BarrierType {
-        /**
-         * Primitive access which do not necessitate barriers.
-         */
-        NONE,
-        /**
-         * Array object access.
-         */
-        ARRAY,
-        /**
-         * Field object access.
-         */
-        FIELD,
-        /**
-         * Unknown (aka field or array) object access.
-         */
-        UNKNOWN,
-        /**
-         * Weak field access (e.g. Hotspot's Reference.referent field).
-         */
-        WEAK_FIELD
+import org.graalvm.compiler.core.test.GraalCompilerTest;
+import org.graalvm.compiler.test.AddExports;
+import org.junit.Before;
+import org.junit.Test;
+
+import jdk.vm.ci.amd64.AMD64;
+
+@AddExports({"java.base/java.lang"})
+public final class MathFMAConstantInputTest extends GraalCompilerTest {
+
+    @Before
+    public void checkAMD64() {
+        assumeTrue("skipping AMD64 specific test", getTarget().arch instanceof AMD64);
     }
 
-    /**
-     * Gets the write barrier type for that particular access.
-     */
-    BarrierType getBarrierType();
+    public static float floatFMA() {
+        return Math.fma(2.0f, 2.0f, 2.0f);
+    }
+
+    @Test
+    public void testFloatFMA() {
+        test("floatFMA");
+    }
+
+    public static double doubleFMA() {
+        return Math.fma(2.0d, 2.0d, 2.0d);
+    }
+
+    @Test
+    public void testDoubleFMA() {
+        test("doubleFMA");
+    }
+
 }

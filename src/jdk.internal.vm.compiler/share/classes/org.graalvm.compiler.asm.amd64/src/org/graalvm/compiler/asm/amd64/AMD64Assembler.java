@@ -906,7 +906,8 @@ public class AMD64Assembler extends AMD64BaseAssembler {
         CPU_XMM(CPUFeature.AVX, null, CPU, null, XMM, null),
         AVX1_2_CPU_XMM(CPUFeature.AVX, CPUFeature.AVX2, CPU, null, XMM, null),
         BMI1(CPUFeature.BMI1, null, CPU, CPU, CPU, null),
-        BMI2(CPUFeature.BMI2, null, CPU, CPU, CPU, null);
+        BMI2(CPUFeature.BMI2, null, CPU, CPU, CPU, null),
+        FMA(CPUFeature.FMA, null, XMM, XMM, XMM, null);
 
         private final CPUFeature l128feature;
         private final CPUFeature l256feature;
@@ -1308,6 +1309,8 @@ public class AMD64Assembler extends AMD64BaseAssembler {
         public static final VexRVMOp VPCMPGTW  = new VexRVMOp("VPCMPGTW",  P_66, M_0F,   WIG, 0x65, VEXOpAssertion.AVX1_2);
         public static final VexRVMOp VPCMPGTD  = new VexRVMOp("VPCMPGTD",  P_66, M_0F,   WIG, 0x66, VEXOpAssertion.AVX1_2);
         public static final VexRVMOp VPCMPGTQ  = new VexRVMOp("VPCMPGTQ",  P_66, M_0F38, WIG, 0x37, VEXOpAssertion.AVX1_2);
+        public static final VexRVMOp VFMADD231SS = new VexRVMOp("VFMADD231SS", P_66, M_0F38, W0, 0xB9, VEXOpAssertion.FMA);
+        public static final VexRVMOp VFMADD231SD = new VexRVMOp("VFMADD231SD", P_66, M_0F38, W1, 0xB9, VEXOpAssertion.FMA);
         // @formatter:on
 
         private VexRVMOp(String opcode, int pp, int mmmmm, int w, int op) {
