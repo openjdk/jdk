@@ -40,6 +40,7 @@ extern "C" {
   typedef int (*get_cpu_info_t)();
   typedef bool (*check_vfp_t)(double *d);
   typedef bool (*check_simd_t)();
+  typedef bool (*check_mp_ext_t)(int *addr);
 }
 
 #define __ _masm->
@@ -95,6 +96,20 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
 
     return start;
   };
+
+  address generate_check_mp_ext() {
+    StubCodeMark mark(this, "VM_Version", "check_mp_ext");
+    address start = __ pc();
+
+    // PLDW is available with Multiprocessing Extensions only
+    __ pldw(Address(R0));
+    // Return true if instruction caused no signals
+    __ mov(R0, 1);
+    // JVM_handle_linux_signal moves PC here if SIGILL happens
+    __ bx(LR);
+
+    return start;
+  };
 };
 
 #undef __
@@ -103,6 +118,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
 extern "C" address check_vfp3_32_fault_instr;
 extern "C" address check_vfp_fault_instr;
 extern "C" address check_simd_fault_instr;
+extern "C" address check_mp_ext_fault_instr;
 
 void VM_Version::early_initialize() {
 
@@ -165,6 +181,13 @@ void VM_Version::initialize() {
 #endif
 #endif
 
+  address check_mp_ext_pc = g.generate_check_mp_ext();
+  check_mp_ext_t check_mp_ext = CAST_TO_FN_PTR(check_mp_ext_t, check_mp_ext_pc);
+  check_mp_ext_fault_instr = (address)check_mp_ext;
+  int dummy_local_variable;
+  if (check_mp_ext(&dummy_local_variable)) {
+    _features |= mp_ext_m;
+  }
 
   if (UseAESIntrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
     warning("AES intrinsics are not available on this CPU");
@@ -247,11 +270,12 @@ void VM_Version::initialize() {
          && _supports_atomic_getset8 && _supports_atomic_getadd8, "C2: atomic operations must be supported");
 #endif
   char buf[512];
-  jio_snprintf(buf, sizeof(buf), "(ARMv%d)%s%s%s",
+  jio_snprintf(buf, sizeof(buf), "(ARMv%d)%s%s%s%s",
                _arm_arch,
                (has_vfp() ? ", vfp" : ""),
                (has_vfp3_32() ? ", vfp3-32" : ""),
-               (has_simd() ? ", simd" : ""));
+               (has_simd() ? ", simd" : ""),
+               (has_multiprocessing_extensions() ? ", mp_ext" : ""));
 
   // buf is started with ", " or is empty
   _features_string = os::strdup(buf);

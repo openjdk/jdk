@@ -248,11 +248,13 @@ frame os::current_frame() {
 
 extern "C" address check_vfp_fault_instr;
 extern "C" address check_vfp3_32_fault_instr;
+extern "C" address check_simd_fault_instr;
+extern "C" address check_mp_ext_fault_instr;
 
 address check_vfp_fault_instr = NULL;
 address check_vfp3_32_fault_instr = NULL;
-extern "C" address check_simd_fault_instr;
 address check_simd_fault_instr = NULL;
+address check_mp_ext_fault_instr = NULL;
 
 // Utility functions
 
@@ -271,7 +273,8 @@ extern "C" int JVM_handle_linux_signal(int sig, siginfo_t* info,
   if (sig == SIGILL &&
       ((info->si_addr == (caddr_t)check_simd_fault_instr)
        || info->si_addr == (caddr_t)check_vfp_fault_instr
-       || info->si_addr == (caddr_t)check_vfp3_32_fault_instr)) {
+       || info->si_addr == (caddr_t)check_vfp3_32_fault_instr
+       || info->si_addr == (caddr_t)check_mp_ext_fault_instr)) {
     // skip faulty instruction + instruction that sets return value to
     // success and set return value to failure.
     os::Linux::ucontext_set_pc(uc, (address)info->si_addr + 8);

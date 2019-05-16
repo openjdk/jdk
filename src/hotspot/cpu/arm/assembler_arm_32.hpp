@@ -434,7 +434,9 @@ class Assembler : public AbstractAssembler  {
   }
 
   void pldw(Address addr) {
-    assert(VM_Version::arm_arch() >= 7 && os::is_MP(), "no pldw on this processor");
+    assert(!VM_Version::is_initialized() ||
+           (VM_Version::arm_arch() >= 7 && VM_Version::has_multiprocessing_extensions()),
+           "PLDW is available on ARMv7 with Multiprocessing Extensions only");
     emit_int32(0xf510f000 | addr.encoding2());
   }
 
