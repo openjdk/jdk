@@ -325,8 +325,7 @@ public class Head {
             tree.add(new RawHtml("<!--[if IE]>"));
             addJQueryFile(tree, DocPaths.JSZIPUTILS_IE_MIN);
             tree.add(new RawHtml("<![endif]-->"));
-            addJQueryFile(tree, DocPaths.JQUERY_JS_3_3);
-            addJQueryFile(tree, DocPaths.JQUERY_MIGRATE);
+            addJQueryFile(tree, DocPaths.JQUERY_JS_3_4);
             addJQueryFile(tree, DocPaths.JQUERY_JS);
         }
         for (Script script : scripts) {

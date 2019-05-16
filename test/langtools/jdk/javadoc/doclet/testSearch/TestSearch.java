@@ -25,7 +25,7 @@
  * @test
  * @bug 8141492 8071982 8141636 8147890 8166175 8168965 8176794 8175218 8147881
  *      8181622 8182263 8074407 8187521 8198522 8182765 8199278 8196201 8196202
- *      8184205 8214468
+ *      8184205 8214468 8222548
  * @summary Test the search feature of javadoc.
  * @author bpatel
  * @library ../../lib
@@ -376,8 +376,7 @@ public class TestSearch extends JavadocTester {
                 "<!--[if IE]>\n",
                 "<script type=\"text/javascript\" src=\"script-dir/jszip-utils/dist/jszip-utils-ie.min.js\"></script>\n",
                 "<![endif]-->\n",
-                "<script type=\"text/javascript\" src=\"script-dir/jquery-3.3.1.js\"></script>\n",
-                "<script type=\"text/javascript\" src=\"script-dir/jquery-migrate-3.0.1.js\"></script>\n",
+                "<script type=\"text/javascript\" src=\"script-dir/jquery-3.4.1.js\"></script>\n",
                 "<script type=\"text/javascript\" src=\"script-dir/jquery-ui.js\"></script>",
                 "var pathtoroot = \"./\";\n"
                 + "loadScripts(document, 'script');",
@@ -568,8 +567,7 @@ public class TestSearch extends JavadocTester {
     void checkJqueryAndImageFiles(boolean expectedOutput) {
         checkFiles(expectedOutput,
                 "search.js",
-                "script-dir/jquery-3.3.1.js",
-                "script-dir/jquery-migrate-3.0.1.js",
+                "script-dir/jquery-3.4.1.js",
                 "script-dir/jquery-ui.js",
                 "script-dir/jquery-ui.css",
                 "script-dir/jquery-ui.min.js",
