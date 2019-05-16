@@ -1143,7 +1143,6 @@ void nmethod::make_unloaded() {
     MutexLocker ml(SafepointSynchronize::is_at_safepoint() ? NULL : CodeCache_lock,
                      Mutex::_no_safepoint_check_flag);
     Universe::heap()->unregister_nmethod(this);
-    CodeCache::unregister_old_nmethod(this);
   }
 
   // Clear the method of this dead nmethod
@@ -1336,7 +1335,6 @@ bool nmethod::make_not_entrant_or_zombie(int state) {
       MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
       if (nmethod_needs_unregister) {
         Universe::heap()->unregister_nmethod(this);
-        CodeCache::unregister_old_nmethod(this);
       }
       flush_dependencies(/*delete_immediately*/true);
     }
@@ -1415,6 +1413,7 @@ void nmethod::flush() {
   }
 
   Universe::heap()->flush_nmethod(this);
+  CodeCache::unregister_old_nmethod(this);
 
   CodeBlob::flush();
   CodeCache::free(this);

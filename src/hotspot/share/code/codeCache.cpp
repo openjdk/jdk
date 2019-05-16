@@ -1055,7 +1055,7 @@ static void reset_old_method_table() {
 
 // Remove this method when zombied or unloaded.
 void CodeCache::unregister_old_nmethod(CompiledMethod* c) {
-  assert_locked_or_safepoint(CodeCache_lock);
+  assert_lock_strong(CodeCache_lock);
   if (old_compiled_method_table != NULL) {
     int index = old_compiled_method_table->find(c);
     if (index != -1) {
@@ -1070,7 +1070,11 @@ void CodeCache::old_nmethods_do(MetadataClosure* f) {
   if (old_compiled_method_table != NULL) {
     length = old_compiled_method_table->length();
     for (int i = 0; i < length; i++) {
-      old_compiled_method_table->at(i)->metadata_do(f);
+      CompiledMethod* cm = old_compiled_method_table->at(i);
+      // Only walk alive nmethods, the dead ones will get removed by the sweeper.
+      if (cm->is_alive()) {
+        old_compiled_method_table->at(i)->metadata_do(f);
+      }
     }
   }
   log_debug(redefine, class, nmethod)("Walked %d nmethods for mark_on_stack", length);
