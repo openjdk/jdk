@@ -27,8 +27,6 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Authors: Dan Egnor (egnor@google.com)
-//
 // A "smart" pointer type with reference tracking.  Every pointer to a
 // particular object is kept on a circular linked list.  When the last pointer
 // to an object is destroyed or reassigned, the object is deleted.
@@ -62,8 +60,10 @@
 //       raw pointer (e.g. via get()) concurrently, and
 //     - it's safe to write to two linked_ptrs that point to the same
 //       shared object concurrently.
-// TODO(wan@google.com): rename this to safe_linked_ptr to avoid
+// FIXME: rename this to safe_linked_ptr to avoid
 // confusion with normal linked_ptr.
+
+// GOOGLETEST_CM0001 DO NOT DELETE
 
 #ifndef GTEST_INCLUDE_GTEST_INTERNAL_GTEST_LINKED_PTR_H_
 #define GTEST_INCLUDE_GTEST_INTERNAL_GTEST_LINKED_PTR_H_
@@ -110,7 +110,12 @@ class linked_ptr_internal {
     MutexLock lock(&g_linked_ptr_mutex);
 
     linked_ptr_internal const* p = ptr;
-    while (p->next_ != ptr) p = p->next_;
+    while (p->next_ != ptr) {
+      assert(p->next_ != this &&
+             "Trying to join() a linked ring we are already in. "
+             "Is GMock thread safety enabled?");
+      p = p->next_;
+    }
     p->next_ = this;
     next_ = ptr;
   }
@@ -123,7 +128,12 @@ class linked_ptr_internal {
 
     if (next_ == this) return true;
     linked_ptr_internal const* p = next_;
-    while (p->next_ != this) p = p->next_;
+    while (p->next_ != this) {
+      assert(p->next_ != next_ &&
+             "Trying to depart() a linked ring we are not in. "
+             "Is GMock thread safety enabled?");
+      p = p->next_;
+    }
     p->next_ = next_;
     return false;
   }

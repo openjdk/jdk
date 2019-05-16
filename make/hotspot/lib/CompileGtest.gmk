@@ -80,8 +80,6 @@ $(eval $(call SetupNativeCompilation, BUILD_GTEST_LIBJVM, \
         self-assign-overloaded, \
     DISABLED_WARNINGS_solstudio := $(DISABLED_WARNINGS_solstudio) \
         identexpected, \
-    DISABLED_WARNINGS_microsoft := $(DISABLED_WARNINGS_microsoft) \
-        4996, \
     LDFLAGS := $(JVM_LDFLAGS), \
     LDFLAGS_solaris := -library=stlport4 $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS := $(JVM_LIBS), \

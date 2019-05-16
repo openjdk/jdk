@@ -30,10 +30,11 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Author: wan@google.com (Zhanyong Wan)
+
 
 // Implements a subset of TR1 tuple needed by Google Test and Google Mock.
+
+// GOOGLETEST_CM0001 DO NOT DELETE
 
 #ifndef GTEST_INCLUDE_GTEST_INTERNAL_GTEST_TUPLE_H_
 #define GTEST_INCLUDE_GTEST_INTERNAL_GTEST_TUPLE_H_
@@ -42,7 +43,7 @@
 
 // The compiler used in Symbian has a bug that prevents us from declaring the
 // tuple template as a friend (it complains that tuple is redefined).  This
-// hack bypasses the bug by declaring the members that should otherwise be
+// bypasses the bug by declaring the members that should otherwise be
 // private as public.
 // Sun Studio versions < 12 also have the above bug.
 #if defined(__SYMBIAN32__) || (defined(__SUNPRO_CC) && __SUNPRO_CC < 0x590)
@@ -51,6 +52,14 @@
 # define GTEST_DECLARE_TUPLE_AS_FRIEND_ \
     template <GTEST_10_TYPENAMES_(U)> friend class tuple; \
    private:
+#endif
+
+// Visual Studio 2010, 2012, and 2013 define symbols in std::tr1 that conflict
+// with our own definitions. Therefore using our own tuple does not work on
+// those compilers.
+#if defined(_MSC_VER) && _MSC_VER >= 1600  /* 1600 is Visual Studio 2010 */
+# error "gtest's tuple doesn't compile on Visual Studio 2010 or later. \
+GTEST_USE_OWN_TR1_TUPLE must be set to 0 on those compilers."
 #endif
 
 // GTEST_n_TUPLE_(T) is the type of an n-tuple.
