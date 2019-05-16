@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8206986
+ * @bug 8206986 8222169
  * @summary Check expression switch works.
  * @compile/fail/ref=ExpressionSwitch-old.out -source 9 -Xlint:-options -XDrawDiagnostics ExpressionSwitch.java
  * @compile --enable-preview -source ${jdk.version} ExpressionSwitch.java
@@ -27,6 +27,7 @@ public class ExpressionSwitch {
         assertEquals(convert1("B"), 0);
         assertEquals(convert1("C"), 1);
         assertEquals(convert1(""), -1);
+        assertEquals(convert1(null), -2);
         assertEquals(convert2("A"), 0);
         assertEquals(convert2("B"), 0);
         assertEquals(convert2("C"), 1);
@@ -85,11 +86,13 @@ public class ExpressionSwitch {
     }
 
     private int convert1(String s) {
-        return switch (s) {
-            case "A", "B" -> 0;
-            case "C" -> { break 1; }
-            default -> -1;
-        };
+        return s == null
+                ? -2
+                : switch (s) {
+                      case "A", "B" -> 0;
+                      case "C" -> { break 1; }
+                      default -> -1;
+                  };
     }
 
     private int convert2(String s) {
