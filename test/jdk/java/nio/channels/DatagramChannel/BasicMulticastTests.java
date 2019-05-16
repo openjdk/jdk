@@ -38,6 +38,7 @@ import java.util.*;
 import java.io.IOException;
 
 import jdk.test.lib.NetworkConfiguration;
+import jdk.test.lib.net.IPSupport;
 
 public class BasicMulticastTests {
 
@@ -45,16 +46,14 @@ public class BasicMulticastTests {
      * Tests that existing membership key is returned by join methods and that
      * membership key methods return the expected results
      */
-    static void membershipKeyTests(NetworkInterface nif,
+    static void membershipKeyTests(StandardProtocolFamily family,
                                    InetAddress group,
+                                   NetworkInterface nif,
                                    InetAddress source)
         throws IOException
     {
         System.out.format("MembershipKey test using %s @ %s\n",
             group.getHostAddress(), nif.getName());
-
-        ProtocolFamily family = (group instanceof Inet4Address) ?
-            StandardProtocolFamily.INET : StandardProtocolFamily.INET6;
 
         DatagramChannel dc = DatagramChannel.open(family)
             .setOption(StandardSocketOptions.SO_REUSEADDR, true)
@@ -114,31 +113,31 @@ public class BasicMulticastTests {
     /**
      * Tests exceptions for invalid arguments or scenarios
      */
-    static void exceptionTests(NetworkInterface nif)
+    static void exceptionTests(StandardProtocolFamily family,
+                               InetAddress group,
+                               InetAddress notGroup,
+                               NetworkInterface nif,
+                               InetAddress loopback)
         throws IOException
     {
         System.out.println("Exception Tests");
 
-        DatagramChannel dc = DatagramChannel.open(StandardProtocolFamily.INET)
+        DatagramChannel dc = DatagramChannel.open(family)
             .setOption(StandardSocketOptions.SO_REUSEADDR, true)
             .bind(new InetSocketAddress(0));
-
-        InetAddress group = InetAddress.getByName("225.4.5.6");
-        InetAddress notGroup = InetAddress.getByName("1.2.3.4");
-        InetAddress thisHost = InetAddress.getLocalHost();
 
         // IllegalStateException
         MembershipKey key;
         key = dc.join(group, nif);
         try {
-            dc.join(group, nif, thisHost);
+            dc.join(group, nif, loopback);
             throw new RuntimeException("IllegalStateException not thrown");
         } catch (IllegalStateException x) {
         } catch (UnsupportedOperationException x) {
         }
         key.drop();
         try {
-            key = dc.join(group, nif, thisHost);
+            key = dc.join(group, nif, loopback);
             try {
                 dc.join(group, nif);
                 throw new RuntimeException("IllegalStateException not thrown");
@@ -155,7 +154,7 @@ public class BasicMulticastTests {
         } catch (IllegalArgumentException x) {
         }
         try {
-            dc.join(notGroup, nif, thisHost);
+            dc.join(notGroup, nif, loopback);
             throw new RuntimeException("IllegalArgumentException not thrown");
         } catch (IllegalArgumentException x) {
         } catch (UnsupportedOperationException x) {
@@ -188,7 +187,7 @@ public class BasicMulticastTests {
         } catch (ClosedChannelException x) {
         }
         try {
-            dc.join(group, nif, thisHost);
+            dc.join(group, nif, loopback);
             throw new RuntimeException("ClosedChannelException not thrown");
         } catch (ClosedChannelException x) {
         } catch (UnsupportedOperationException x) {
@@ -201,26 +200,28 @@ public class BasicMulticastTests {
      * and invoke tests.
      */
     public static void main(String[] args) throws IOException {
-
-        // multicast groups used for the test
-        InetAddress ip4Group = InetAddress.getByName("225.4.5.6");
-        InetAddress ip6Group = InetAddress.getByName("ff02::a");
-
-
         NetworkConfiguration config = NetworkConfiguration.probe();
 
-        NetworkInterface nif = config.ip4MulticastInterfaces().iterator().next();
-        InetAddress anySource = config.ip4Addresses(nif).iterator().next();
-        membershipKeyTests(nif, ip4Group, anySource);
-        exceptionTests(nif);
+        // test IPv4 if available
+        if (IPSupport.hasIPv4()) {
+            InetAddress group = InetAddress.getByName("225.4.5.6");
+            InetAddress notGroup = InetAddress.getByName("1.2.3.4");
+            InetAddress loopback = InetAddress.getByName("127.0.0.1");
+            NetworkInterface nif = config.ip4MulticastInterfaces().iterator().next();
+            InetAddress anySource = config.ip4Addresses(nif).iterator().next();
+            membershipKeyTests(StandardProtocolFamily.INET, group, nif, anySource);
+            exceptionTests(StandardProtocolFamily.INET, group, notGroup, nif, loopback);
+        }
 
-        // re-run the membership key tests with IPv6 if available
-
-        Iterator<NetworkInterface> iter = config.ip6MulticastInterfaces().iterator();
-        if (iter.hasNext()) {
-            nif = iter.next();
-            anySource = config.ip6Addresses(nif).iterator().next();
-            membershipKeyTests(nif, ip6Group, anySource);
+        // test IPv6 if available
+        if (IPSupport.hasIPv6()) {
+            InetAddress group = InetAddress.getByName("ff02::a");
+            InetAddress notGroup = InetAddress.getByName("fe80::1234");
+            InetAddress loopback = InetAddress.getByName("::1");
+            NetworkInterface nif = config.ip6MulticastInterfaces().iterator().next();
+            InetAddress anySource = config.ip6Addresses(nif).iterator().next();
+            membershipKeyTests(StandardProtocolFamily.INET6, group, nif, anySource);
+            exceptionTests(StandardProtocolFamily.INET6, group, notGroup, nif, loopback);
         }
     }
 }
