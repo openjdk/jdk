@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,6 +152,24 @@ public class MethodHandleDescTest extends SymbolicDescTest {
         } catch (IllegalArgumentException ex) {
             // good
         }
+
+        // null list of parameters
+        try {
+            MethodHandleDesc.ofConstructor(ClassDesc.of("java.util.ArrayList", null));
+            fail("should have failed: null list of parameters");
+        } catch (NullPointerException ex) {
+            // good
+        }
+
+        // null elements in list of parameters
+        try {
+            ClassDesc[] paramList = new ClassDesc[1];
+            paramList[0] = null;
+            MethodHandleDesc.ofConstructor(ClassDesc.of("java.util.ArrayList"), paramList);
+            fail("should have failed: null content in list of parameters");
+        } catch (NullPointerException ex) {
+            // good
+        }
     }
 
     public void testAsType() throws Throwable {
@@ -183,6 +201,13 @@ public class MethodHandleDescTest extends SymbolicDescTest {
         // Short circuit optimization
         MethodHandleDesc same = mhr.asType(mhr.invocationType());
         assertSame(mhr, same);
+
+        try {
+            mhr.asType(null);
+            fail("Expected NPE");
+        } catch (NullPointerException ex) {
+            // good
+        }
 
         // @@@ Test varargs adaptation
         // @@@ Test bad adaptations and assert runtime error on resolution

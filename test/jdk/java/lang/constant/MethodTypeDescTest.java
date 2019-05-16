@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,6 +101,14 @@ public class MethodTypeDescTest extends SymbolicDescTest {
             MethodTypeDesc newDesc = mtDesc.changeReturnType(rc);
             assertEquals(newDesc, MethodTypeDesc.of(rc, paramTypes));
             testMethodTypeDesc(newDesc, mt.changeReturnType((Class<?>)rc.resolveConstantDesc(LOOKUP)));
+        }
+
+        // try with null parameter
+        try {
+            MethodTypeDesc newDesc = mtDesc.changeReturnType(null);
+            fail("should fail with NPE");
+        } catch (NullPointerException ex) {
+            // good
         }
 
         // changeParamType
@@ -231,6 +239,14 @@ public class MethodTypeDescTest extends SymbolicDescTest {
             catch (IllegalArgumentException e) {
                 // good
             }
+        }
+
+        // try with null argument
+        try {
+            MethodTypeDesc r = MethodTypeDesc.ofDescriptor(null);
+            fail("should fail with NPE");
+        } catch (NullPointerException ex) {
+            // good
         }
 
         // try with void arguments, this will stress another code path in particular
