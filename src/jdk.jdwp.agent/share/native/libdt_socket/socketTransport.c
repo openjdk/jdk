@@ -394,6 +394,7 @@ static jdwpTransportError
 parseAllowedMask(const char *buffer, int isIPv4, struct in6_addr *result) {
     int prefixLen = 0;
     int maxValue = isIPv4 ? 32 : 128;
+    int i;
 
     do {
         if (*buffer < '0' || *buffer > '9') {
@@ -419,7 +420,7 @@ parseAllowedMask(const char *buffer, int isIPv4, struct in6_addr *result) {
     memset(result, 0, sizeof(*result));
 
     // prefixLen <= 128, so we won't go over result's size
-    for (int i = 0; prefixLen > 0; i++, prefixLen -= 8) {
+    for (i = 0; prefixLen > 0; i++, prefixLen -= 8) {
         if (prefixLen >= 8) {
             // set the whole byte
             result->s6_addr[i] = 0xFF;
@@ -471,6 +472,7 @@ parseAllowedPeersInternal(char *buffer) {
                          "invalid IP address in allow option");
         }
         if (mask != NULL) {
+            size_t i;
             if (parseAllowedMask(mask, isIPv4, &(_peers[_peers_cnt].netmask)) != JDWPTRANSPORT_ERROR_NONE) {
                 _peers_cnt = 0;
                 fprintf(stderr, "Error in allow option: '%s'\n", mask);
@@ -478,7 +480,7 @@ parseAllowedPeersInternal(char *buffer) {
                              "invalid netmask in allow option");
             }
             // for safety update subnet to satisfy the mask
-            for (size_t i = 0; i < sizeof(_peers[_peers_cnt].subnet); i++) {
+            for (i = 0; i < sizeof(_peers[_peers_cnt].subnet); i++) {
                 _peers[_peers_cnt].subnet.s6_addr[i] &= _peers[_peers_cnt].netmask.s6_addr[i];
             }
         } else {
@@ -521,7 +523,8 @@ parseAllowedPeers(const char *allowed_peers, size_t len) {
 
 static int
 isAddressInSubnet(const struct in6_addr *address, const struct in6_addr *subnet, const struct in6_addr *mask) {
-    for (size_t i = 0; i < sizeof(struct in6_addr); i++) {
+    size_t i;
+    for (i = 0; i < sizeof(struct in6_addr); i++) {
         if ((address->s6_addr[i] & mask->s6_addr[i]) != subnet->s6_addr[i]) {
             return 0;
         }
@@ -533,6 +536,7 @@ static int
 isPeerAllowed(struct sockaddr_storage *peer) {
     struct in6_addr tmp;
     struct in6_addr *addr6;
+    int i;
     // _peers contains IPv6 subnet and mask (IPv4 is converted to mapped IPv6)
     if (peer->ss_family == AF_INET) {
         convertIPv4ToIPv6((struct sockaddr *)peer, &tmp);
@@ -541,7 +545,7 @@ isPeerAllowed(struct sockaddr_storage *peer) {
         addr6 = &(((struct sockaddr_in6 *)peer)->sin6_addr);
     }
 
-    for (int i = 0; i < _peers_cnt; ++i) {
+    for (i = 0; i < _peers_cnt; ++i) {
         if (isAddressInSubnet(addr6, &(_peers[i].subnet), &(_peers[i].netmask))) {
             return 1;
         }
@@ -635,8 +639,10 @@ socketTransport_startListening(jdwpTransportEnv* env, const char* address,
                                char** actualAddress)
 {
     int err;
+    int pass;
     struct addrinfo *addrInfo = NULL;
     struct addrinfo *listenAddr = NULL;
+    struct addrinfo *ai = NULL;
 
     /* no address provided */
     if ((address == NULL) || (address[0] == '\0')) {
@@ -649,8 +655,8 @@ socketTransport_startListening(jdwpTransportEnv* env, const char* address,
     }
 
     /* 1st pass - preferredAddressFamily (by default IPv4), 2nd pass - the rest */
-    for (int pass = 0; pass < 2 && listenAddr == NULL; pass++) {
-        for (struct addrinfo *ai = addrInfo; ai != NULL; ai = ai->ai_next) {
+    for (pass = 0; pass < 2 && listenAddr == NULL; pass++) {
+        for (ai = addrInfo; ai != NULL; ai = ai->ai_next) {
             if ((pass == 0 && ai->ai_family == preferredAddressFamily) ||
                 (pass == 1 && ai->ai_family != preferredAddressFamily))
             {
@@ -860,7 +866,9 @@ socketTransport_attach(jdwpTransportEnv* env, const char* addressString, jlong a
                        jlong handshakeTimeout)
 {
     int err;
+    int pass;
     struct addrinfo *addrInfo = NULL;
+    struct addrinfo *ai;
 
     if (addressString == NULL || addressString[0] == '\0') {
         RETURN_ERROR(JDWPTRANSPORT_ERROR_ILLEGAL_ARGUMENT, "address is missing");
@@ -872,8 +880,8 @@ socketTransport_attach(jdwpTransportEnv* env, const char* addressString, jlong a
     }
 
     /* 1st pass - preferredAddressFamily (by default IPv4), 2nd pass - the rest */
-    for (int pass = 0; pass < 2 && socketFD < 0; pass++) {
-        for (struct addrinfo *ai = addrInfo; ai != NULL; ai = ai->ai_next) {
+    for (pass = 0; pass < 2 && socketFD < 0; pass++) {
+        for (ai = addrInfo; ai != NULL; ai = ai->ai_next) {
             if ((pass == 0 && ai->ai_family == preferredAddressFamily) ||
                 (pass == 1 && ai->ai_family != preferredAddressFamily))
             {
