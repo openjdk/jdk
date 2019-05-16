@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,12 @@
 ################################################################################
 # Setup bundled libraries.
 #
-# For libjpeg, giflib, libpng, lcms2 and zlib, the source is present in the
-# OpenJDK repository. Default is to use these libraries as bundled, but they
-# might be replaced by en external version by the user.
+# For libjpeg, giflib, libpng, lcms2 and zlib the source is present in the
+# OpenJDK repository (referred to as "bundled"). Default is to use libjpeg,
+# giflib, libpng and lcms2 libraries as "bundled". The default for zlib is
+# to use the bundled zlib on Windows and AIX, otherwise the external ("system")
+# zlib, if present. However the libs may be replaced by an external ("system")
+# version by the user.
 ################################################################################
 AC_DEFUN_ONCE([LIB_SETUP_BUNDLED_LIBS],
 [

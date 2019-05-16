@@ -184,7 +184,7 @@
 </tr>
 <tr class="even">
 <td style="text-align: left;">Solaris</td>
-<td style="text-align: left;">Solaris 11.3</td>
+<td style="text-align: left;">Solaris 11.3 SRU 20</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">macOS</td>
@@ -497,7 +497,7 @@ CC: Sun C++ 5.13 SunOS_i386 151846-10 2015/10/30</code></pre>
 <li><code>--with-libffi=&lt;path&gt;</code> - Set the path to <a href="#libffi">libffi</a></li>
 <li><code>--with-jtreg=&lt;path&gt;</code> - Set the path to JTReg. See <a href="#running-tests">Running Tests</a></li>
 </ul>
-<p>Certain third-party libraries used by the JDK (libjpeg, giflib, libpng, lcms and zlib) are included in the JDK repository. The default behavior of the JDK build is to use this version of these libraries, but they might be replaced by an external version. To do so, specify <code>system</code> as the <code>&lt;source&gt;</code> option in these arguments. (The default is <code>bundled</code>).</p>
+<p>Certain third-party libraries used by the JDK (libjpeg, giflib, libpng, lcms and zlib) are included in the JDK repository. The default behavior of the JDK build is to use the included (&quot;bundled&quot;) versions of libjpeg, giflib, libpng and lcms. For zlib, the system lib (if present) is used except on Windows and AIX. However the bundled libraries may be replaced by an external version. To do so, specify <code>system</code> as the <code>&lt;source&gt;</code> option in these arguments. (The default is <code>bundled</code>).</p>
 <ul>
 <li><code>--with-libjpeg=&lt;source&gt;</code> - Use the specified source for libjpeg</li>
 <li><code>--with-giflib=&lt;source&gt;</code> - Use the specified source for giflib</li>
