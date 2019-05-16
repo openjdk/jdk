@@ -615,6 +615,10 @@
     <Field type="string" name="osVersion" label="OS Version" />
   </Event>
 
+  <Event name="VirtualizationInformation" category="Operating System" label="Virtualization Information" period="endChunk">
+    <Field type="string" name="name" label="Name" />
+  </Event>
+
   <Event name="InitialSystemProperty" category="Java Virtual Machine" label="Initial System Property" description="System Property at JVM start" period="endChunk">
     <Field type="string" name="key" label="Key" />
     <Field type="string" name="value" label="Value" />

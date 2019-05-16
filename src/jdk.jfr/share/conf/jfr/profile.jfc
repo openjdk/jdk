@@ -513,6 +513,11 @@
       <setting name="period">beginChunk</setting>
     </event>
 
+    <event name="jdk.VirtualizationInformation">
+     <setting name="enabled">true</setting>
+     <setting name="period">beginChunk</setting>
+    </event>
+
     <event name="jdk.CPUInformation">
       <setting name="enabled">true</setting>
       <setting name="period">beginChunk</setting>

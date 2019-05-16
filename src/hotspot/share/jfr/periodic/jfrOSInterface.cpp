@@ -215,6 +215,27 @@ int JfrOSInterface::os_version(char** os_version) {
   return instance()._impl->os_version(os_version);
 }
 
+const char* JfrOSInterface::virtualization_name() {
+  VirtualizationType vrt = VM_Version::get_detected_virtualization();
+  if (vrt == XenHVM) {
+    return "Xen hardware-assisted virtualization";
+  } else if (vrt == KVM) {
+    return "KVM virtualization";
+  } else if (vrt == VMWare) {
+    return "VMWare virtualization";
+  } else if (vrt == HyperV) {
+    return "HyperV virtualization";
+  } else if (vrt == PowerVM) {
+    return "PowerVM virtualization";
+  } else if (vrt == PowerKVM) {
+    return "Power KVM virtualization";
+  } else if (vrt == PowerFullPartitionMode) {
+    return "Power full partition";
+  }
+
+  return "No virtualization detected";
+}
+
 int JfrOSInterface::generate_initial_environment_variable_events() {
   if (environ == NULL) {
     return OS_ERR;

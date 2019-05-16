@@ -34,7 +34,10 @@ typedef enum {
   XenHVM,
   KVM,
   VMWare,
-  HyperV
+  HyperV,
+  PowerVM, // on AIX or Linux ppc64(le)
+  PowerFullPartitionMode, // on Linux ppc64(le)
+  PowerKVM
 } VirtualizationType;
 
 // VM_Version provides information about the VM.
