@@ -1195,10 +1195,16 @@ void VMError::print_vm_info(outputStream* st) {
 volatile intptr_t VMError::first_error_tid = -1;
 
 /** Expand a pattern into a buffer starting at pos and open a file using constructed path */
-static int expand_and_open(const char* pattern, char* buf, size_t buflen, size_t pos) {
+static int expand_and_open(const char* pattern, bool overwrite_existing, char* buf, size_t buflen, size_t pos) {
   int fd = -1;
+  int mode = O_RDWR | O_CREAT;
+  if (overwrite_existing) {
+    mode |= O_TRUNC;
+  } else {
+    mode |= O_EXCL;
+  }
   if (Arguments::copy_expand_pid(pattern, strlen(pattern), &buf[pos], buflen - pos)) {
-    fd = open(buf, O_RDWR | O_CREAT | O_TRUNC, 0666);
+    fd = open(buf, mode, 0666);
   }
   return fd;
 }
@@ -1208,12 +1214,12 @@ static int expand_and_open(const char* pattern, char* buf, size_t buflen, size_t
  * Name and location depends on pattern, default_pattern params and access
  * permissions.
  */
-static int prepare_log_file(const char* pattern, const char* default_pattern, char* buf, size_t buflen) {
+static int prepare_log_file(const char* pattern, const char* default_pattern, bool overwrite_existing, char* buf, size_t buflen) {
   int fd = -1;
 
   // If possible, use specified pattern to construct log file name
   if (pattern != NULL) {
-    fd = expand_and_open(pattern, buf, buflen, 0);
+    fd = expand_and_open(pattern, overwrite_existing, buf, buflen, 0);
   }
 
   // Either user didn't specify, or the user's location failed,
@@ -1225,7 +1231,7 @@ static int prepare_log_file(const char* pattern, const char* default_pattern, ch
       int fsep_len = jio_snprintf(&buf[pos], buflen-pos, "%s", os::file_separator());
       pos += fsep_len;
       if (fsep_len > 0) {
-        fd = expand_and_open(default_pattern, buf, buflen, pos);
+        fd = expand_and_open(default_pattern, overwrite_existing, buf, buflen, pos);
       }
     }
   }
@@ -1236,7 +1242,7 @@ static int prepare_log_file(const char* pattern, const char* default_pattern, ch
      if (tmpdir != NULL && strlen(tmpdir) > 0) {
        int pos = jio_snprintf(buf, buflen, "%s%s", tmpdir, os::file_separator());
        if (pos > 0) {
-         fd = expand_and_open(default_pattern, buf, buflen, pos);
+         fd = expand_and_open(default_pattern, overwrite_existing, buf, buflen, pos);
        }
      }
    }
@@ -1471,7 +1477,8 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
       } else if (ErrorFileToStderr) {
         fd_log = 2;
       } else {
-        fd_log = prepare_log_file(ErrorFile, "hs_err_pid%p.log", buffer, sizeof(buffer));
+        fd_log = prepare_log_file(ErrorFile, "hs_err_pid%p.log", true,
+                 buffer, sizeof(buffer));
         if (fd_log != -1) {
           out.print_raw("# An error report file with more information is saved as:\n# ");
           out.print_raw_cr(buffer);
@@ -1501,7 +1508,8 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     skip_replay = true;
     ciEnv* env = ciEnv::current();
     if (env != NULL) {
-      int fd = prepare_log_file(ReplayDataFile, "replay_pid%p.log", buffer, sizeof(buffer));
+      const bool overwrite = false; // We do not overwrite an existing replay file.
+      int fd = prepare_log_file(ReplayDataFile, "replay_pid%p.log", overwrite, buffer, sizeof(buffer));
       if (fd != -1) {
         FILE* replay_data_file = os::open(fd, "w");
         if (replay_data_file != NULL) {
