@@ -70,6 +70,10 @@ public class UdpTest extends Tests {
 
     public static void main (String[] args) throws Exception {
         checkDebug(args);
+        if (ia4addr == null) {
+            System.out.println ("No local IPv4 addresses: exiting now");
+            return;
+        }
         if (ia6addr == null) {
             System.out.println ("No local IPv6 addresses: exiting now");
             return;

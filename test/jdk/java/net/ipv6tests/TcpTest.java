@@ -60,6 +60,10 @@ public class TcpTest extends Tests {
 
     public static void main (String[] args) throws Exception {
         checkDebug(args);
+        if (ia4addr == null) {
+            System.out.println ("No IPV4 addresses: exiting test");
+            return;
+        }
         if (ia6addr == null) {
             System.out.println ("No IPV6 addresses: exiting test");
             return;
