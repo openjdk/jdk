@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 6964547 5001942 8129444
+ * @library /test/lib
  * @run main/othervm SocksProxyVersion
  * @summary test socksProxyVersion system property
  */
@@ -35,6 +36,7 @@ import java.net.SocketException;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Proxy;
+import jdk.test.lib.net.IPSupport;
 
 public class SocksProxyVersion implements Runnable {
     final ServerSocket ss;
@@ -80,14 +82,16 @@ public class SocksProxyVersion implements Runnable {
         Proxy proxy = new Proxy(Proxy.Type.SOCKS,
                                 new InetSocketAddress(addr, port));
 
-        // SOCKS V4
-        System.setProperty("socksProxyVersion", Integer.toString(4));
-        this.expected = 4;
-        check(new Socket(), addr, port);
-        check(new Socket(proxy), addr, port);
+        if (IPSupport.hasIPv4()) {
+            // SOCKS V4 (requires IPv4)
+            System.setProperty("socksProxyVersion", "4");
+            this.expected = 4;
+            check(new Socket(), addr, port);
+            check(new Socket(proxy), addr, port);
+        }
 
         // SOCKS V5
-        System.setProperty("socksProxyVersion", Integer.toString(5));
+        System.setProperty("socksProxyVersion", "5");
         this.expected = 5;
         check(new Socket(), addr, port);
         check(new Socket(proxy), addr, port);
