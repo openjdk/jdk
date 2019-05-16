@@ -106,7 +106,7 @@ public abstract class MappedByteBuffer
     private long mappingOffset(int index) {
         int ps = Bits.pageSize();
         long indexAddress = address + index;
-        long baseAddress = (indexAddress & ~(ps-1));
+        long baseAddress = alignDown(indexAddress, ps);
         return indexAddress - baseAddress;
     }
 
@@ -138,6 +138,12 @@ public abstract class MappedByteBuffer
     // length.
     private long mappingLength(long mappingOffset, long length) {
         return length + mappingOffset;
+    }
+
+    // align address down to page size
+    private static long alignDown(long address, int pageSize) {
+        // pageSize must be a power of 2
+        return address & ~(pageSize - 1);
     }
 
     /**
