@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,16 +110,15 @@ final public class ClassTypeImpl extends InvokableTypeImpl
 
     public List<ClassType> subclasses() {
         List<ClassType> subs = new ArrayList<>();
-        for (ReferenceType refType : vm.allClasses()) {
+        vm.forEachClass(refType -> {
             if (refType instanceof ClassType) {
                 ClassType clazz = (ClassType)refType;
                 ClassType superclass = clazz.superclass();
                 if ((superclass != null) && superclass.equals(this)) {
-                    subs.add((ClassType)refType);
+                    subs.add(clazz);
                 }
             }
-        }
-
+        });
         return subs;
     }
 

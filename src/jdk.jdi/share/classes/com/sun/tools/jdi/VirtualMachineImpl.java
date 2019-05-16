@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import com.sun.jdi.BooleanType;
 import com.sun.jdi.BooleanValue;
@@ -57,6 +58,7 @@ import com.sun.jdi.InternalException;
 import com.sun.jdi.LongType;
 import com.sun.jdi.LongValue;
 import com.sun.jdi.ModuleReference;
+import com.sun.jdi.ObjectCollectedException;
 import com.sun.jdi.PathSearchingVirtualMachine;
 import com.sun.jdi.PrimitiveType;
 import com.sun.jdi.ReferenceType;
@@ -336,6 +338,27 @@ class VirtualMachineImpl extends MirrorImpl
             a = new ArrayList<>(typesBySignature);
         }
         return Collections.unmodifiableList(a);
+    }
+
+    /**
+     * Performs an action for each loaded type.
+     */
+    public void forEachClass(Consumer<ReferenceType> action) {
+        for (ReferenceType type : allClasses()) {
+            try {
+                action.accept(type);
+            } catch (ObjectCollectedException ex) {
+                // Some classes might be unloaded and garbage collected since
+                // we retrieved the copy of all loaded classes and started
+                // iterating over them. In this case calling methods on such types
+                // might result in com.sun.jdi.ObjectCollectedException
+                // being thrown. We ignore such classes and keep iterating.
+                if ((vm.traceFlags & VirtualMachine.TRACE_OBJREFS) != 0) {
+                    vm.printTrace("ObjectCollectedException was thrown while " +
+                            "accessing unloaded class " + type.name());
+                }
+            }
+        }
     }
 
     public void
