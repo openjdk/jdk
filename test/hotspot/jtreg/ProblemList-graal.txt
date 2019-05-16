@@ -54,7 +54,9 @@ gc/arguments/TestVerifyBeforeAndAfterGCFlags.java               8196611   generi
 gc/g1/mixedgc/TestOldGenCollectionUsage.java                    8196611   generic-all
 gc/g1/TestConcurrentSystemGC.java                               8196611   generic-all
 gc/g1/TestPeriodicCollection.java                               8196611   generic-all
+gc/g1/TestFromCardCacheIndex.java                               8196611   generic-all
 gc/parallel/TestPrintGCDetailsVerbose.java                      8196611   generic-all
+vm/gc/InfiniteList.java                                         8196611 generic-all
 vmTestbase/gc/lock/malloc/malloclock03/TestDescription.java     8196611   macosx-all
 vmTestbase/gc/gctests/LargeObjects/large001/large001.java       8196611   generic-all
 vmTestbase/gc/gctests/ReferencesGC/ReferencesGC.java            8196611   generic-all
@@ -62,9 +64,12 @@ vmTestbase/nsk/stress/except/except004.java                     8196611   generi
 vmTestbase/nsk/stress/except/except007.java                     8196611   generic-all
 vmTestbase/nsk/stress/except/except008.java                     8196611   generic-all
 vmTestbase/nsk/stress/except/except011.java                     8196611   generic-all
-serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorMultiArrayTest.java 8196611   generic-all
 vmTestbase/nsk/jdi/VirtualMachine/instanceCounts/instancecounts003/instancecounts003.java          8196611   generic-all
 vmTestbase/nsk/jdi/ObjectReference/referringObjects/referringObjects002/referringObjects002.java   8196611   generic-all
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorMultiArrayTest.java 8196611   generic-all
+serviceability/tmtools/jstat/GcTest02.java                      8196611 generic-all
+serviceability/tmtools/jstat/GcCapacityTest.java                8196611 generic-all
+
 
 gc/g1/ihop/TestIHOPErgo.java                                    8191048   generic-all
 gc/g1/plab/TestPLABEvacuationFailure.java                       8191048   generic-all
@@ -204,15 +209,6 @@ compiler/stable/TestStableShort.java                             8204347   gener
 compiler/stable/TestStableUByte.java                             8204347   generic-all
 compiler/stable/TestStableUShort.java                            8204347   generic-all
 
-gc/g1/mixedgc/TestOldGenCollectionUsage.java                                  8196611 generic-all
-gc/g1/TestPeriodicCollection.java                                             8196611 generic-all
-gc/parallel/TestPrintGCDetailsVerbose.java                                    8196611 generic-all
-vm/gc/InfiniteList.java                                                       8196611 generic-all
-vmTestbase/nsk/stress/except/except007.java                                   8196611 generic-all
-vmTestbase/nsk/stress/except/except008.java                                   8196611 generic-all
-serviceability/tmtools/jstat/GcTest02.java                                    8196611 generic-all
-serviceability/tmtools/jstat/GcCapacityTest.java                              8196611 generic-all
-serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorMultiArrayTest.java     8196611 generic-all
 
 vmTestbase/nsk/jdb/unmonitor/unmonitor001/unmonitor001.java                   8218701 generic-all
 
