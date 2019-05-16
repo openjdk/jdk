@@ -226,6 +226,7 @@ compiler/c2/Test8062950.java                            8207267   generic-all
 compiler/intrinsics/mathexact/LongMulOverflowTest.java  8207267   generic-all
 compiler/loopopts/TestOverunrolling.java                8207267   generic-all
 compiler/jsr292/NonInlinedCall/InvokeTest.java          8207267   generic-all
+compiler/codegen/TestTrichotomyExpressions.java         8207267   generic-all
 
 runtime/exceptionMsgs/AbstractMethodError/AbstractMethodErrorTest.java        8222582 generic-all
 
