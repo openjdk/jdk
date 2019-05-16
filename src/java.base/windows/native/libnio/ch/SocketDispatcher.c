@@ -280,24 +280,8 @@ Java_sun_nio_ch_SocketDispatcher_writev0(JNIEnv *env, jclass clazz,
 }
 
 JNIEXPORT void JNICALL
-Java_sun_nio_ch_SocketDispatcher_preClose0(JNIEnv *env, jclass clazz,
-                                           jobject fdo)
+Java_sun_nio_ch_SocketDispatcher_close0(JNIEnv *env, jclass clazz, jint fd)
 {
-    jint fd = fdval(env, fdo);
-    struct linger l;
-    int len = sizeof(l);
-    if (getsockopt(fd, SOL_SOCKET, SO_LINGER, (char *)&l, &len) == 0) {
-        if (l.l_onoff == 0) {
-            shutdown(fd, SD_SEND);
-        }
-    }
-}
-
-JNIEXPORT void JNICALL
-Java_sun_nio_ch_SocketDispatcher_close0(JNIEnv *env, jclass clazz,
-                                         jobject fdo)
-{
-    jint fd = fdval(env, fdo);
     if (closesocket(fd) == SOCKET_ERROR) {
         JNU_ThrowIOExceptionWithLastError(env, "Socket close failed");
     }

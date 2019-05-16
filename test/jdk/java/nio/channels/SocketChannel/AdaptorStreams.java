@@ -31,6 +31,8 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
@@ -55,7 +57,7 @@ public class AdaptorStreams {
         withConnection((sc, peer) -> {
             peer.getOutputStream().write(99);
             int n = sc.socket().getInputStream().read();
-            assertTrue(n == 99);
+            assertEquals(n, 99);
         });
     }
 
@@ -66,7 +68,7 @@ public class AdaptorStreams {
         withConnection((sc, peer) -> {
             scheduleWrite(peer.getOutputStream(), 99, 1000);
             int n = sc.socket().getInputStream().read();
-            assertTrue(n == 99);
+            assertEquals(n, 99);
         });
     }
 
@@ -77,7 +79,7 @@ public class AdaptorStreams {
         withConnection((sc, peer) -> {
             peer.close();
             int n = sc.socket().getInputStream().read();
-            assertTrue(n == -1);
+            assertEquals(n, -1);
         });
     }
 
@@ -88,7 +90,7 @@ public class AdaptorStreams {
         withConnection((sc, peer) -> {
             scheduleClose(peer, 1000);
             int n = sc.socket().getInputStream().read();
-            assertTrue(n == -1);
+            assertEquals(n, -1);
         });
     }
 
@@ -158,7 +160,7 @@ public class AdaptorStreams {
             Socket s = sc.socket();
             s.setSoTimeout(1000);
             int n = s.getInputStream().read();
-            assertTrue(n == 99);
+            assertEquals(n, 99);
         });
     }
 
@@ -171,7 +173,7 @@ public class AdaptorStreams {
             Socket s = sc.socket();
             s.setSoTimeout(5000);
             int n = s.getInputStream().read();
-            assertTrue(n == 99);
+            assertEquals(n, 99);
         });
     }
 
@@ -326,7 +328,7 @@ public class AdaptorStreams {
             // test read when bytes are available
             peer.getOutputStream().write(99);
             int n = s.getInputStream().read();
-            assertTrue(n == 99);
+            assertEquals(n, 99);
         });
     }
 
@@ -350,7 +352,7 @@ public class AdaptorStreams {
             // test read blocking until bytes are available
             scheduleWrite(peer.getOutputStream(), 99, 500);
             int n = s.getInputStream().read();
-            assertTrue(n == 99);
+            assertEquals(n, 99);
         });
     }
 
@@ -370,7 +372,7 @@ public class AdaptorStreams {
             // test write
             s.getOutputStream().write(99);
             int n = peer.getInputStream().read();
-            assertTrue(n == 99);
+            assertEquals(n, 99);
         });
     }
 
@@ -396,7 +398,7 @@ public class AdaptorStreams {
             peer.getOutputStream().write(99);
             s.setSoTimeout(60*1000);
             int n = s.getInputStream().read();
-            assertTrue(n == 99);
+            assertEquals(n, 99);
         });
     }
 
@@ -421,7 +423,7 @@ public class AdaptorStreams {
             scheduleWrite(peer.getOutputStream(), 99, 500);
             s.setSoTimeout(60*1000);
             int n = s.getInputStream().read();
-            assertTrue(n == 99);
+            assertEquals(n, 99);
         });
     }
 
@@ -442,7 +444,7 @@ public class AdaptorStreams {
             // test write
             s.getOutputStream().write(99);
             int n = peer.getInputStream().read();
-            assertTrue(n == 99);
+            assertEquals(n, 99);
         });
     }
 
@@ -462,10 +464,14 @@ public class AdaptorStreams {
     static void withConnection(ThrowingBiConsumer<SocketChannel, Socket> consumer)
         throws Exception
     {
-        try (ServerSocket ss = new ServerSocket(0);
-             SocketChannel sc = SocketChannel.open(ss.getLocalSocketAddress());
-             Socket peer = ss.accept()) {
-            consumer.accept(sc, peer);
+        var loopback = InetAddress.getLoopbackAddress();
+        try (ServerSocket ss = new ServerSocket()) {
+            ss.bind(new InetSocketAddress(loopback, 0));
+            try (SocketChannel sc = SocketChannel.open(ss.getLocalSocketAddress())) {
+                try (Socket peer = ss.accept()) {
+                    consumer.accept(sc, peer);
+                }
+            }
         }
     }
 
