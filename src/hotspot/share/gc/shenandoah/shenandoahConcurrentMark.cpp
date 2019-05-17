@@ -81,10 +81,10 @@ ShenandoahMarkRefsSuperClosure::ShenandoahMarkRefsSuperClosure(ShenandoahObjToSc
 template<UpdateRefsMode UPDATE_REFS>
 class ShenandoahInitMarkRootsTask : public AbstractGangTask {
 private:
-  ShenandoahRootProcessor* _rp;
+  ShenandoahRootScanner* _rp;
   bool _process_refs;
 public:
-  ShenandoahInitMarkRootsTask(ShenandoahRootProcessor* rp, bool process_refs) :
+  ShenandoahInitMarkRootsTask(ShenandoahRootScanner* rp, bool process_refs) :
     AbstractGangTask("Shenandoah init mark roots task"),
     _rp(rp),
     _process_refs(process_refs) {
@@ -115,45 +115,21 @@ private:
     //      cache, because there could be the case of embedded class/oop in the generated code,
     //      which we will never visit during mark. Without code cache invalidation, as in (a),
     //      we risk executing that code cache blob, and crashing.
-    //   c. With ShenandoahConcurrentScanCodeRoots, we avoid scanning the entire code cache here,
-    //      and instead do that in concurrent phase under the relevant lock. This saves init mark
-    //      pause time.
-
-    CLDToOopClosure clds_cl(oops, ClassLoaderData::_claim_strong);
-    MarkingCodeBlobClosure blobs_cl(oops, ! CodeBlobToOopClosure::FixRelocations);
-
-    ResourceMark m;
     if (heap->unload_classes()) {
-      _rp->process_strong_roots(oops, &clds_cl, &blobs_cl, NULL, worker_id);
+      _rp->strong_roots_do(worker_id, oops);
     } else {
-      if (ShenandoahConcurrentScanCodeRoots) {
-        CodeBlobClosure* code_blobs = NULL;
-#ifdef ASSERT
-        ShenandoahAssertToSpaceClosure assert_to_space_oops;
-        CodeBlobToOopClosure assert_to_space(&assert_to_space_oops, !CodeBlobToOopClosure::FixRelocations);
-        // If conc code cache evac is disabled, code cache should have only to-space ptrs.
-        // Otherwise, it should have to-space ptrs only if mark does not update refs.
-        if (!heap->has_forwarded_objects()) {
-          code_blobs = &assert_to_space;
-        }
-#endif
-        _rp->process_all_roots(oops, &clds_cl, code_blobs, NULL, worker_id);
-      } else {
-        _rp->process_all_roots(oops, &clds_cl, &blobs_cl, NULL, worker_id);
-      }
+      _rp->roots_do(worker_id, oops);
     }
   }
 };
 
 class ShenandoahUpdateRootsTask : public AbstractGangTask {
 private:
-  ShenandoahRootProcessor* _rp;
-  const bool _update_code_cache;
+  ShenandoahRootUpdater*  _root_updater;
 public:
-  ShenandoahUpdateRootsTask(ShenandoahRootProcessor* rp, bool update_code_cache) :
+  ShenandoahUpdateRootsTask(ShenandoahRootUpdater* root_updater) :
     AbstractGangTask("Shenandoah update roots task"),
-    _rp(rp),
-    _update_code_cache(update_code_cache) {
+    _root_updater(root_updater) {
   }
 
   void work(uint worker_id) {
@@ -162,22 +138,8 @@ public:
 
     ShenandoahHeap* heap = ShenandoahHeap::heap();
     ShenandoahUpdateRefsClosure cl;
-    CLDToOopClosure cldCl(&cl, ClassLoaderData::_claim_strong);
-
-    CodeBlobClosure* code_blobs;
-    CodeBlobToOopClosure update_blobs(&cl, CodeBlobToOopClosure::FixRelocations);
-#ifdef ASSERT
-    ShenandoahAssertToSpaceClosure assert_to_space_oops;
-    CodeBlobToOopClosure assert_to_space(&assert_to_space_oops, !CodeBlobToOopClosure::FixRelocations);
-#endif
-    if (_update_code_cache) {
-      code_blobs = &update_blobs;
-    } else {
-      code_blobs =
-        DEBUG_ONLY(&assert_to_space)
-        NOT_DEBUG(NULL);
-    }
-    _rp->update_all_roots<AlwaysTrueClosure>(&cl, &cldCl, code_blobs, NULL, worker_id);
+    AlwaysTrueClosure always_true;
+    _root_updater->roots_do<AlwaysTrueClosure, ShenandoahUpdateRefsClosure>(worker_id, &always_true, &cl);
   }
 };
 
@@ -289,7 +251,7 @@ void ShenandoahConcurrentMark::mark_roots(ShenandoahPhaseTimings::Phase root_pha
 
   assert(nworkers <= task_queues()->size(), "Just check");
 
-  ShenandoahRootProcessor root_proc(heap, nworkers, root_phase);
+  ShenandoahRootScanner root_proc(nworkers, root_phase);
   TASKQUEUE_STATS_ONLY(task_queues()->reset_taskqueue_stats());
   task_queues()->reserve(nworkers);
 
@@ -333,8 +295,8 @@ void ShenandoahConcurrentMark::update_roots(ShenandoahPhaseTimings::Phase root_p
 
   uint nworkers = _heap->workers()->active_workers();
 
-  ShenandoahRootProcessor root_proc(_heap, nworkers, root_phase);
-  ShenandoahUpdateRootsTask update_roots(&root_proc, update_code_cache);
+  ShenandoahRootUpdater root_updater(nworkers, root_phase, update_code_cache);
+  ShenandoahUpdateRootsTask update_roots(&root_updater);
   _heap->workers()->run_task(&update_roots);
 
 #if defined(COMPILER2) || INCLUDE_JVMCI
