@@ -29,7 +29,6 @@
 #include "code/vmreg.hpp"
 #include "memory/allocation.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "utilities/growableArray.hpp"
 
 // Interface for generating the frame map for compiled code.  A frame map
 // describes for a specific pc whether each register and frame stack slot is:
@@ -42,7 +41,6 @@
 
 class frame;
 class RegisterMap;
-class DerivedPointerEntry;
 class OopClosure;
 
 class OopMapValue: public StackObj {
@@ -433,13 +431,14 @@ private:
 class DerivedPointerTable : public AllStatic {
   friend class VMStructs;
  private:
-   static GrowableArray<DerivedPointerEntry*>* _list;
-   static bool _active;                      // do not record pointers for verify pass etc.
+  class Entry;
+  static bool _active;                      // do not record pointers for verify pass etc.
+
  public:
   static void clear();                       // Called before scavenge/GC
   static void add(oop *derived, oop *base);  // Called during scavenge/GC
   static void update_pointers();             // Called after  scavenge/GC
-  static bool is_empty()                     { return _list == NULL || _list->is_empty(); }
+  static bool is_empty();
   static bool is_active()                    { return _active; }
   static void set_active(bool value)         { _active = value; }
 };
