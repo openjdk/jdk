@@ -35,7 +35,9 @@ import java.nio.channels.SeekableByteChannel;
 import java.nio.file.*;
 import java.nio.file.DirectoryStream.Filter;
 import java.nio.file.attribute.BasicFileAttributeView;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.FileAttributeView;
 import java.nio.file.attribute.FileTime;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -211,13 +213,13 @@ final class ZipPath implements Path {
 
     private boolean equalsNameAt(ZipPath other, int index) {
         int mbegin = offsets[index];
-        int mlen = 0;
+        int mlen;
         if (index == (offsets.length-1))
             mlen = path.length - mbegin;
         else
             mlen = offsets[index + 1] - mbegin - 1;
         int obegin = other.offsets[index];
-        int olen = 0;
+        int olen;
         if (index == (other.offsets.length - 1))
             olen = other.path.length - obegin;
         else
@@ -298,7 +300,7 @@ final class ZipPath implements Path {
 
     // opath is normalized, just concat
     private ZipPath resolve(byte[] opath) {
-        byte[] resolved = null;
+        byte[] resolved;
         byte[] tpath = this.path;
         int tlen = tpath.length;
         int olen = opath.length;
@@ -626,9 +628,8 @@ final class ZipPath implements Path {
 
     @Override
     public boolean equals(Object obj) {
-        return obj != null &&
-               obj instanceof ZipPath &&
-               this.zfs == ((ZipPath)obj).zfs &&
+        return obj instanceof ZipPath &&
+               this.zfs == ((ZipPath) obj).zfs &&
                compareTo((Path) obj) == 0;
     }
 
@@ -639,13 +640,11 @@ final class ZipPath implements Path {
         int len2 = o.path.length;
 
         int n = Math.min(len1, len2);
-        byte v1[] = this.path;
-        byte v2[] = o.path;
 
         int k = 0;
         while (k < n) {
-            int c1 = v1[k] & 0xff;
-            int c2 = v2[k] & 0xff;
+            int c1 = this.path[k] & 0xff;
+            int c2 = o.path[k] & 0xff;
             if (c1 != c2)
                 return c1 - c2;
             k++;
@@ -704,6 +703,27 @@ final class ZipPath implements Path {
 
     /////////////////////////////////////////////////////////////////////
 
+    @SuppressWarnings("unchecked") // Cast to V
+    <V extends FileAttributeView> V getFileAttributeView(Class<V> type) {
+        if (type == null)
+            throw new NullPointerException();
+        if (type == BasicFileAttributeView.class)
+            return (V)new ZipFileAttributeView(this, false);
+        if (type == ZipFileAttributeView.class)
+            return (V)new ZipFileAttributeView(this, true);
+        throw new UnsupportedOperationException("view <" + type + "> is not supported");
+    }
+
+    private ZipFileAttributeView getFileAttributeView(String type) {
+        if (type == null)
+            throw new NullPointerException();
+        if ("basic".equals(type))
+            return new ZipFileAttributeView(this, false);
+        if ("zip".equals(type))
+            return new ZipFileAttributeView(this, true);
+        throw new UnsupportedOperationException("view <" + type + "> is not supported");
+    }
+
     void createDirectory(FileAttribute<?>... attrs)
         throws IOException
     {
@@ -731,16 +751,25 @@ final class ZipPath implements Path {
         zfs.deleteFile(getResolvedPath(), true);
     }
 
-    void deleteIfExists() throws IOException {
+    private void deleteIfExists() throws IOException {
         zfs.deleteFile(getResolvedPath(), false);
     }
 
-    ZipFileAttributes getAttributes() throws IOException
-    {
+    ZipFileAttributes readAttributes() throws IOException {
         ZipFileAttributes zfas = zfs.getFileAttributes(getResolvedPath());
         if (zfas == null)
             throw new NoSuchFileException(toString());
         return zfas;
+    }
+
+    @SuppressWarnings("unchecked") // Cast to A
+    <A extends BasicFileAttributes> A readAttributes(Class<A> type) throws IOException {
+        if (type == BasicFileAttributes.class || type == ZipFileAttributes.class) {
+            return (A)readAttributes();
+        }
+
+        throw new UnsupportedOperationException("Attributes of type " +
+            type.getName() + " not supported");
     }
 
     void setAttribute(String attribute, Object value, LinkOption... options)
@@ -756,10 +785,7 @@ final class ZipPath implements Path {
             type = attribute.substring(0, colonPos++);
             attr = attribute.substring(colonPos);
         }
-        ZipFileAttributeView view = ZipFileAttributeView.get(this, type);
-        if (view == null)
-            throw new UnsupportedOperationException("view <" + view + "> is not supported");
-        view.setAttribute(attr, value);
+        getFileAttributeView(type).setAttribute(attr, value);
     }
 
     void setTimes(FileTime mtime, FileTime atime, FileTime ctime)
@@ -782,11 +808,7 @@ final class ZipPath implements Path {
             view = attributes.substring(0, colonPos++);
             attrs = attributes.substring(colonPos);
         }
-        ZipFileAttributeView zfv = ZipFileAttributeView.get(this, view);
-        if (zfv == null) {
-            throw new UnsupportedOperationException("view not supported");
-        }
-        return zfv.readAttributes(attrs);
+        return getFileAttributeView(view).readAttributes(attrs);
     }
 
     FileStore getFileStore() throws IOException {
@@ -846,11 +868,8 @@ final class ZipPath implements Path {
         }
     }
 
-    boolean exists() {
-        try {
-            return zfs.exists(getResolvedPath());
-        } catch (IOException x) {}
-        return false;
+    private boolean exists() {
+        return zfs.exists(getResolvedPath());
     }
 
     OutputStream newOutputStream(OpenOption... options) throws IOException
@@ -898,7 +917,7 @@ final class ZipPath implements Path {
                 copyAttrs = true;
         }
         // attributes of source file
-        ZipFileAttributes zfas = getAttributes();
+        ZipFileAttributes zfas = readAttributes();
         // check if target exists
         boolean exists;
         if (replaceExisting) {
@@ -918,25 +937,19 @@ final class ZipPath implements Path {
             // create directory or file
             target.createDirectory();
         } else {
-            InputStream is = zfs.newInputStream(getResolvedPath());
-            try {
-                OutputStream os = target.newOutputStream();
-                try {
-                    byte[] buf = new byte[8192];
-                    int n = 0;
-                    while ((n = is.read(buf)) != -1) {
-                        os.write(buf, 0, n);
-                    }
-                } finally {
-                    os.close();
+            try (InputStream is = zfs.newInputStream(getResolvedPath());
+                 OutputStream os = target.newOutputStream())
+            {
+                byte[] buf = new byte[8192];
+                int n;
+                while ((n = is.read(buf)) != -1) {
+                    os.write(buf, 0, n);
                 }
-            } finally {
-                is.close();
             }
         }
         if (copyAttrs) {
             BasicFileAttributeView view =
-                ZipFileAttributeView.get(target, BasicFileAttributeView.class);
+                target.getFileAttributeView(BasicFileAttributeView.class);
             try {
                 view.setTimes(zfas.lastModifiedTime(),
                               zfas.lastAccessTime(),
@@ -963,9 +976,9 @@ final class ZipPath implements Path {
     }
 
     // to avoid double escape
-    static String decodeUri(String s) {
+    private static String decodeUri(String s) {
         if (s == null)
-            return s;
+            return null;
         int n = s.length();
         if (n == 0)
             return s;

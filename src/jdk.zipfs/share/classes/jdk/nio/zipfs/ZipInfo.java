@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package jdk.nio.zipfs;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Map;
+import java.util.zip.ZipException;
 
 import static jdk.nio.zipfs.ZipConstants.*;
 import static jdk.nio.zipfs.ZipUtils.dosToJavaTime;
@@ -65,12 +66,12 @@ public class ZipInfo {
                 // twice
                 long len = LOCHDR + CENNAM(cen, pos) + CENEXT(cen, pos) + CENHDR;
                 if (zfs.readFullyAt(buf, 0, len, locoff(cen, pos)) != len)
-                    ZipFileSystem.zerror("read loc header failed");
+                    throw new ZipException("read loc header failed");
                 if (LOCEXT(buf) > CENEXT(cen, pos) + CENHDR) {
                     // have to read the second time;
                     len = LOCHDR + LOCNAM(buf) + LOCEXT(buf);
                     if (zfs.readFullyAt(buf, 0, len, locoff(cen, pos)) != len)
-                        ZipFileSystem.zerror("read loc header failed");
+                        throw new ZipException("read loc header failed");
                 }
                 printLOC(buf);
                 pos += CENHDR + CENNAM(cen, pos) + CENEXT(cen, pos) + CENCOM(cen, pos);
@@ -79,11 +80,11 @@ public class ZipInfo {
         }
     }
 
-    static void print(String fmt, Object... objs) {
+    private static void print(String fmt, Object... objs) {
         System.out.printf(fmt, objs);
     }
 
-    static void printLOC(byte[] loc) {
+    private static void printLOC(byte[] loc) {
         print("%n");
         print("[Local File Header]%n");
         print("    Signature   :   %#010x%n", LOCSIG(loc));
@@ -107,7 +108,7 @@ public class ZipInfo {
             printExtra(loc, LOCHDR + LOCNAM(loc), LOCEXT(loc));
     }
 
-    static void printCEN(byte[] cen, int off) {
+    private static void printCEN(byte[] cen, int off) {
         print("[Central Directory Header]%n");
         print("    Signature   :   %#010x%n", CENSIG(cen, off));
         if (CENSIG(cen, off) != CENSIG) {
@@ -140,7 +141,7 @@ public class ZipInfo {
 
     }
 
-    static long locoff(byte[] cen, int pos) {
+    private static long locoff(byte[] cen, int pos) {
         long locoff = CENOFF(cen, pos);
         if (locoff == ZIP64_MINVAL) {    //ZIP64
             int off = pos + CENHDR + CENNAM(cen, pos);
@@ -164,7 +165,7 @@ public class ZipInfo {
         return locoff;
     }
 
-    static void printExtra(byte[] extra, int off, int len) {
+    private static void printExtra(byte[] extra, int off, int len) {
         int end = off + len;
         while (off + 4 <= end) {
             int tag = SH(extra, off);

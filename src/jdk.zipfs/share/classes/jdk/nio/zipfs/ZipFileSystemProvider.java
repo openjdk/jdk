@@ -175,7 +175,7 @@ public class ZipFileSystemProvider extends FileSystemProvider {
     }
 
     // Checks that the given file is a UnixPath
-    static final ZipPath toZipPath(Path path) {
+    private static ZipPath toZipPath(Path path) {
         if (path == null)
             throw new NullPointerException();
         if (!(path instanceof ZipPath))
@@ -211,7 +211,7 @@ public class ZipFileSystemProvider extends FileSystemProvider {
     public <V extends FileAttributeView> V
         getFileAttributeView(Path path, Class<V> type, LinkOption... options)
     {
-        return ZipFileAttributeView.get(toZipPath(path), type);
+        return toZipPath(path).getFileAttributeView(type);
     }
 
     @Override
@@ -241,7 +241,6 @@ public class ZipFileSystemProvider extends FileSystemProvider {
             Set<? extends OpenOption> options,
             ExecutorService exec,
             FileAttribute<?>... attrs)
-            throws IOException
     {
         throw new UnsupportedOperationException();
     }
@@ -286,26 +285,23 @@ public class ZipFileSystemProvider extends FileSystemProvider {
     }
 
     @Override
-    @SuppressWarnings("unchecked") // Cast to A
     public <A extends BasicFileAttributes> A
         readAttributes(Path path, Class<A> type, LinkOption... options)
         throws IOException
     {
-        if (type == BasicFileAttributes.class || type == ZipFileAttributes.class)
-            return (A)toZipPath(path).getAttributes();
-        return null;
+        return toZipPath(path).readAttributes(type);
     }
 
     @Override
     public Map<String, Object>
-        readAttributes(Path path, String attribute, LinkOption... options)
+        readAttributes(Path path, String attributes, LinkOption... options)
         throws IOException
     {
-        return toZipPath(path).readAttributes(attribute, options);
+        return toZipPath(path).readAttributes(attributes, options);
     }
 
     @Override
-    public Path readSymbolicLink(Path link) throws IOException {
+    public Path readSymbolicLink(Path link) {
         throw new UnsupportedOperationException("Not supported.");
     }
 
