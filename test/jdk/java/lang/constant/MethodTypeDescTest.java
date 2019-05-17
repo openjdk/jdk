@@ -171,6 +171,34 @@ public class MethodTypeDescTest extends SymbolicDescTest {
         } catch (IndexOutOfBoundsException ex) {
             // good
         }
+
+        try {
+            ClassDesc[] newParamTypes = new ClassDesc[1];
+            newParamTypes[0] = CD_void;
+            MethodTypeDesc newDesc = MethodTypeDesc.of(returnType, CD_int);
+            newDesc = newDesc.insertParameterTypes(0, newParamTypes);
+            fail("shouldn't allow parameters with class descriptor CD_void");
+        } catch (IllegalArgumentException ex) {
+            // good
+        }
+
+        try {
+            MethodTypeDesc newDesc = MethodTypeDesc.of(returnType, CD_int);
+            newDesc = newDesc.insertParameterTypes(0, null);
+            fail("should fail with NPE");
+        } catch (NullPointerException ex) {
+            // good
+        }
+
+        try {
+            ClassDesc[] newParamTypes = new ClassDesc[1];
+            newParamTypes[0] = null;
+            MethodTypeDesc newDesc = MethodTypeDesc.of(returnType, CD_int);
+            newDesc = newDesc.insertParameterTypes(0, newParamTypes);
+            fail("should fail with NPE");
+        } catch (NullPointerException ex) {
+            // good
+        }
     }
 
     private void badDropParametersTypes(ClassDesc returnType, String... paramDescTypes) {

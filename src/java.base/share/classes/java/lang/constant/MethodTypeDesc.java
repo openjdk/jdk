@@ -154,9 +154,11 @@ public interface MethodTypeDesc
      * @param paramTypes {@link ClassDesc}s describing the new parameter types
      *                   to insert
      * @return a {@linkplain MethodTypeDesc} describing the desired method type
-     * @throws NullPointerException if any argument is {@code null}
+     * @throws NullPointerException if any argument or its contents are {@code null}
      * @throws IndexOutOfBoundsException if {@code pos} is outside the closed
      * range {[0, parameterCount]}
+     * @throws IllegalArgumentException if any element of {@code paramTypes}
+     * is a {@link ClassDesc} for {@code void}
      */
     MethodTypeDesc insertParameterTypes(int pos, ClassDesc... paramTypes);
 
