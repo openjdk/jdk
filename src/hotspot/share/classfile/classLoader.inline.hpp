@@ -62,7 +62,8 @@ inline ClassPathEntry* ClassLoader::classpath_entry(int n) {
 // entries during shared classpath setup time.
 
 inline int ClassLoader::num_boot_classpath_entries() {
-  assert(DumpSharedSpaces, "Should only be called at CDS dump time");
+  assert(DumpSharedSpaces || DynamicDumpSharedSpaces,
+         "Should only be called at CDS dump time");
   assert(has_jrt_entry(), "must have a java runtime image");
   int num_entries = 1; // count the runtime image
   ClassPathEntry* e = ClassLoader::_first_append_entry;
@@ -84,7 +85,8 @@ inline ClassPathEntry* ClassLoader::get_next_boot_classpath_entry(ClassPathEntry
 // Helper function used by CDS code to get the number of app classpath
 // entries during shared classpath setup time.
 inline int ClassLoader::num_app_classpath_entries() {
-  assert(DumpSharedSpaces, "Should only be called at CDS dump time");
+  assert(DumpSharedSpaces || DynamicDumpSharedSpaces,
+         "Should only be called at CDS dump time");
   int num_entries = 0;
   ClassPathEntry* e= ClassLoader::_app_classpath_entries;
   while (e != NULL) {

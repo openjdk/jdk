@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,8 +47,9 @@ public class WrongClasspath {
     // Then try to execute the archive without -classpath -- it should fail
     TestCommon.run(
         /* "-cp", appJar, */ // <- uncomment this and the execution should succeed
+        "-Xlog:cds",
         "Hello")
-      .assertAbnormalExit("Unable to use shared archive",
-                          "shared class paths mismatch");
+        .assertAbnormalExit("Unable to use shared archive",
+                            "shared class paths mismatch");
   }
 }

@@ -514,6 +514,7 @@ public class WhiteBox {
 
   // Sharing & archiving
   public native String  getDefaultArchivePath();
+  public native boolean cdsMemoryMappingFailed();
   public native boolean isSharingEnabled();
   public native boolean isShared(Object o);
   public native boolean isSharedClass(Class<?> c);
@@ -522,6 +523,7 @@ public class WhiteBox {
   public native boolean isJFRIncludedInVmBuild();
   public native boolean isJavaHeapArchiveSupported();
   public native Object  getResolvedReferences(Class<?> c);
+  public native void    linkClass(Class<?> c);
   public native boolean areOpenArchiveHeapObjectsMapped();
 
   // Compiler Directive

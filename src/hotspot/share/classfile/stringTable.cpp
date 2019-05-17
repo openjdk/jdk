@@ -779,9 +779,7 @@ void StringTable::write_to_archive() {
   assert(HeapShared::is_heap_object_archiving_allowed(), "must be");
 
   _shared_table.reset();
-  int num_buckets = CompactHashtableWriter::default_num_buckets(_items_count);
-  CompactHashtableWriter writer(num_buckets,
-                                &MetaspaceShared::stats()->string);
+  CompactHashtableWriter writer(_items_count, &MetaspaceShared::stats()->string);
 
   // Copy the interned strings into the "string space" within the java heap
   copy_shared_string_table(&writer);

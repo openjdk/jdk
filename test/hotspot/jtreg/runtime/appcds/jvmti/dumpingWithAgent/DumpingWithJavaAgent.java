@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,7 +105,7 @@ public class DumpingWithJavaAgent {
         if (!TestCommon.isUnableToMap(output)) {
             output.shouldHaveExitValue(0);
             output.shouldContain(errorMessage);
-            output.shouldMatch(".class.load. Hello source:.*DumpingWithJavaAgent.jar");
+            output.shouldMatch(".class.load.* Hello source:.*DumpingWithJavaAgent.jar");
 
         // CDS dumping with a java agent without the AllowArchvingWithJavaAgent diagnostic option.
         // VM will exit with an error message.
@@ -116,4 +116,3 @@ public class DumpingWithJavaAgent {
             .shouldHaveExitValue(1);
     }
 }
-

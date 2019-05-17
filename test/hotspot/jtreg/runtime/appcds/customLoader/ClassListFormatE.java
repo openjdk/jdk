@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
  * @modules java.base/jdk.internal.misc
  *          java.management
  *          jdk.jartool/sun.tools.jar
- * @compile test-classes/Hello.java test-classes/CustomLoadee.java test-classes/CustomLoadee2.java
+ * @compile ../test-classes/Hello.java test-classes/CustomLoadee.java test-classes/CustomLoadee2.java
  *          test-classes/CustomInterface2_ia.java test-classes/CustomInterface2_ib.java
  * @run driver ClassListFormatE
  */
@@ -106,4 +106,3 @@ public class ClassListFormatE extends ClassListFormatBase {
             "The specified super class CustomLoadee (id 4) does not match actual super class java.lang.Object");
     }
 }
-

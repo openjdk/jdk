@@ -28,6 +28,7 @@
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/dynamicArchive.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
@@ -69,6 +70,11 @@ static OffsetCompactHashtable<
   symbol_equals_compact_hashtable_entry
 > _shared_table;
 
+static OffsetCompactHashtable<
+  const char*, Symbol*,
+  symbol_equals_compact_hashtable_entry
+> _dynamic_shared_table;
+
 // --------------------------------------------------------------------------
 
 typedef ConcurrentHashTable<Symbol*,
@@ -109,9 +115,11 @@ static uintx hash_symbol(const char* s, int len, bool useAlt) {
   java_lang_String::hash_code((const jbyte*)s, len);
 }
 
+#if INCLUDE_CDS
 static uintx hash_shared_symbol(const char* s, int len) {
   return java_lang_String::hash_code((const jbyte*)s, len);
 }
+#endif
 
 class SymbolTableConfig : public SymbolTableHash::BaseConfig {
 private:
@@ -213,7 +221,7 @@ Symbol* SymbolTable::allocate_symbol(const char* name, int len, bool c_heap) {
   assert (len <= Symbol::max_length(), "should be checked by caller");
 
   Symbol* sym;
-  if (DumpSharedSpaces) {
+  if (DumpSharedSpaces || DynamicDumpSharedSpaces) {
     c_heap = false;
   }
   if (c_heap) {
@@ -254,6 +262,7 @@ void SymbolTable::symbols_do(SymbolClosure *cl) {
   // all symbols from shared table
   SharedSymbolIterator iter(cl);
   _shared_table.iterate(&iter);
+  _dynamic_shared_table.iterate(&iter);
 
   // all symbols from the dynamic table
   SymbolsDo sd(cl);
@@ -275,7 +284,7 @@ public:
 };
 
 void SymbolTable::metaspace_pointers_do(MetaspaceClosure* it) {
-  assert(DumpSharedSpaces, "called only during dump time");
+  assert(DumpSharedSpaces || DynamicDumpSharedSpaces, "called only during dump time");
   MetaspacePointersDo mpd(it);
   _local_table->do_safepoint_scan(mpd);
 }
@@ -287,19 +296,24 @@ Symbol* SymbolTable::lookup_dynamic(const char* name,
   return sym;
 }
 
+#if INCLUDE_CDS
 Symbol* SymbolTable::lookup_shared(const char* name,
                                    int len, unsigned int hash) {
+  Symbol* sym = NULL;
   if (!_shared_table.empty()) {
     if (_alt_hash) {
       // hash_code parameter may use alternate hashing algorithm but the shared table
       // always uses the same original hash code.
       hash = hash_shared_symbol(name, len);
     }
-    return _shared_table.lookup(name, hash, len);
-  } else {
-    return NULL;
+    sym = _shared_table.lookup(name, hash, len);
+    if (sym == NULL && DynamicArchive::is_mapped()) {
+      sym = _dynamic_shared_table.lookup(name, hash, len);
+    }
   }
+  return sym;
 }
+#endif
 
 Symbol* SymbolTable::lookup_common(const char* name,
                             int len, unsigned int hash) {
@@ -588,6 +602,9 @@ struct CopyToArchive : StackObj {
     unsigned int fixed_hash = hash_shared_symbol((const char*)sym->bytes(), sym->utf8_length());
     assert(fixed_hash == hash_symbol((const char*)sym->bytes(), sym->utf8_length(), false),
            "must not rehash during dumping");
+    if (DynamicDumpSharedSpaces) {
+      sym = DynamicArchive::original_to_target(sym);
+    }
     _writer->add(fixed_hash, MetaspaceShared::object_delta_u4(sym));
     return true;
   }
@@ -598,30 +615,43 @@ void SymbolTable::copy_shared_symbol_table(CompactHashtableWriter* writer) {
   _local_table->do_safepoint_scan(copy);
 }
 
-void SymbolTable::write_to_archive() {
-  _shared_table.reset();
-
-  int num_buckets = CompactHashtableWriter::default_num_buckets(
-      _items_count);
-  CompactHashtableWriter writer(num_buckets,
-                                &MetaspaceShared::stats()->symbol);
-  copy_shared_symbol_table(&writer);
-  writer.dump(&_shared_table, "symbol");
-
-  // Verify table is correct
-  Symbol* sym = vmSymbols::java_lang_Object();
-  const char* name = (const char*)sym->bytes();
-  int len = sym->utf8_length();
-  unsigned int hash = hash_symbol(name, len, _alt_hash);
-  assert(sym == _shared_table.lookup(name, hash, len), "sanity");
+size_t SymbolTable::estimate_size_for_archive() {
+  return CompactHashtableWriter::estimate_size(int(_items_count));
 }
 
-void SymbolTable::serialize_shared_table_header(SerializeClosure* soc) {
-  _shared_table.serialize_header(soc);
+void SymbolTable::write_to_archive(bool is_static_archive) {
+  _shared_table.reset();
+  _dynamic_shared_table.reset();
 
+  CompactHashtableWriter writer(int(_items_count),
+                                &MetaspaceShared::stats()->symbol);
+  copy_shared_symbol_table(&writer);
+  if (is_static_archive) {
+    writer.dump(&_shared_table, "symbol");
+
+    // Verify table is correct
+    Symbol* sym = vmSymbols::java_lang_Object();
+    const char* name = (const char*)sym->bytes();
+    int len = sym->utf8_length();
+    unsigned int hash = hash_symbol(name, len, _alt_hash);
+    assert(sym == _shared_table.lookup(name, hash, len), "sanity");
+  } else {
+    writer.dump(&_dynamic_shared_table, "symbol");
+  }
+}
+
+void SymbolTable::serialize_shared_table_header(SerializeClosure* soc,
+                                                bool is_static_archive) {
+  OffsetCompactHashtable<const char*, Symbol*, symbol_equals_compact_hashtable_entry> * table;
+  if (is_static_archive) {
+    table = &_shared_table;
+  } else {
+    table = &_dynamic_shared_table;
+  }
+  table->serialize_header(soc);
   if (soc->writing()) {
     // Sanity. Make sure we don't use the shared table at dump time
-    _shared_table.reset();
+    table->reset();
   }
 }
 #endif //INCLUDE_CDS

@@ -137,7 +137,7 @@ class SymbolTable : public AllStatic {
                           const char** name, int* lengths,
                           int* cp_indices, unsigned int* hashValues);
 
-  static Symbol* lookup_shared(const char* name, int len, unsigned int hash);
+  static Symbol* lookup_shared(const char* name, int len, unsigned int hash) NOT_CDS_RETURN_(NULL);
   static Symbol* lookup_dynamic(const char* name, int len, unsigned int hash);
   static Symbol* lookup_common(const char* name, int len, unsigned int hash);
 
@@ -209,8 +209,10 @@ public:
 private:
   static void copy_shared_symbol_table(CompactHashtableWriter* ch_table);
 public:
-  static void write_to_archive() NOT_CDS_RETURN;
-  static void serialize_shared_table_header(SerializeClosure* soc) NOT_CDS_RETURN;
+  static size_t estimate_size_for_archive() NOT_CDS_RETURN_(0);
+  static void write_to_archive(bool is_static_archive = true) NOT_CDS_RETURN;
+  static void serialize_shared_table_header(SerializeClosure* soc,
+                                            bool is_static_archive = true) NOT_CDS_RETURN;
   static void metaspace_pointers_do(MetaspaceClosure* it);
 
   // Jcmd

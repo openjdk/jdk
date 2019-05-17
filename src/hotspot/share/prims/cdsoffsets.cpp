@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "utilities/macros.hpp"
 #if INCLUDE_CDS
 #include "runtime/os.hpp"
+#include "memory/dynamicArchive.hpp"
 #include "memory/filemap.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
@@ -44,6 +45,7 @@ CDSOffsets* CDSOffsets::_all = NULL;
 
 #define CREATE_OFFSET_MAPS                                                                  \
     _all = new CDSOffsets("size_t_size", sizeof(size_t), NULL);                             \
+    ADD_NEXT(_all, "int_size", sizeof(int));                                                \
     ADD_NEXT(_all, "FileMapHeader::_magic", offset_of(FileMapHeader, _magic));              \
     ADD_NEXT(_all, "FileMapHeader::_crc", offset_of(FileMapHeader, _crc));                  \
     ADD_NEXT(_all, "FileMapHeader::_version", offset_of(FileMapHeader, _version));          \
@@ -52,6 +54,7 @@ CDSOffsets* CDSOffsets::_all = NULL;
     ADD_NEXT(_all, "CDSFileMapRegion::_used", offset_of(CDSFileMapRegion, _used));          \
     ADD_NEXT(_all, "FileMapHeader::_paths_misc_info_size", offset_of(FileMapHeader, _paths_misc_info_size)); \
     ADD_NEXT(_all, "file_header_size", sizeof(FileMapHeader));                              \
+    ADD_NEXT(_all, "DynamicArchiveHeader::_base_archive_crc", offset_of(DynamicArchiveHeader, _base_archive_crc)); \
     ADD_NEXT(_all, "CDSFileMapRegion_size", sizeof(CDSFileMapRegion));
 
 int CDSOffsets::find_offset(const char* name) {

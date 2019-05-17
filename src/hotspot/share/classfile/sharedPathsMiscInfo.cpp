@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,7 +104,7 @@ void SharedPathsMiscInfo::print_path(outputStream* out, int type, const char* pa
   }
 }
 
-bool SharedPathsMiscInfo::check() {
+bool SharedPathsMiscInfo::check(bool is_static) {
   // The whole buffer must be 0 terminated so that we can use strlen and strcmp
   // without fear.
   _end_ptr -= sizeof(jint);
@@ -116,9 +116,10 @@ bool SharedPathsMiscInfo::check() {
   }
 
   jshort cur_index = 0;
-  jshort max_cp_index = FileMapInfo::current_info()->header()->max_used_path_index();
-  jshort module_paths_start_index =
-    FileMapInfo::current_info()->header()->app_module_paths_start_index();
+  FileMapHeader* header = is_static ? FileMapInfo::current_info()->header() :
+                                      FileMapInfo::dynamic_info()->header();
+  jshort max_cp_index = header->max_used_path_index();
+  jshort module_paths_start_index = header->app_module_paths_start_index();
   while (_cur_ptr < _end_ptr) {
     jint type;
     const char* path = _cur_ptr;
@@ -136,7 +137,7 @@ bool SharedPathsMiscInfo::check() {
     }
     // skip checking the class path(s) which was not referenced during CDS dump
     if ((cur_index <= max_cp_index) || (cur_index >= module_paths_start_index)) {
-      if (!check(type, path)) {
+      if (!check(type, path, is_static)) {
         if (!PrintSharedArchiveAndExit) {
           return false;
         }
@@ -171,7 +172,7 @@ char* skip_first_path_entry(const char* path) {
   return p;
 }
 
-bool SharedPathsMiscInfo::check(jint type, const char* path) {
+bool SharedPathsMiscInfo::check(jint type, const char* path, bool is_static) {
   assert(UseSharedSpaces, "runtime only");
   switch (type) {
   case BOOT_PATH:
@@ -196,7 +197,9 @@ bool SharedPathsMiscInfo::check(jint type, const char* path) {
       char* rp = skip_first_path_entry(runtime_boot_path);
       char* dp = skip_first_path_entry(path);
 
-      bool relaxed_check = !FileMapInfo::current_info()->header()->has_platform_or_app_classes();
+      bool relaxed_check = is_static ?
+                             !FileMapInfo::current_info()->header()->has_platform_or_app_classes() :
+                             !FileMapInfo::dynamic_info()->header()->has_platform_or_app_classes();
       if (dp == NULL && rp == NULL) {
         break;   // ok, both runtime and dump time boot paths have modules_images only
       } else if (dp == NULL && rp != NULL && relaxed_check) {

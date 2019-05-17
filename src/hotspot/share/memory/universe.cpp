@@ -711,13 +711,14 @@ jint universe_init() {
   {
     SymbolTable::create_table();
     StringTable::create_table();
+  }
 
 #if INCLUDE_CDS
-    if (DumpSharedSpaces) {
-      MetaspaceShared::prepare_for_dumping();
-    }
-#endif
+  if (DumpSharedSpaces || DynamicDumpSharedSpaces) {
+    MetaspaceShared::prepare_for_dumping();
   }
+#endif
+
   if (strlen(VerifySubSet) > 0) {
     Universe::initialize_verify_flags();
   }

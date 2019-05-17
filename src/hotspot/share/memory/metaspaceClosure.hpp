@@ -101,9 +101,15 @@ public:
   //         Symbol*     bar() { return (Symbol*)    _obj; }
   //
   // [2] All Array<T> dimensions are statically declared.
-  class Ref {
+  class Ref : public CHeapObj<mtInternal> {
+    Writability _writability;
+    Ref* _next;
+    // Noncopyable.
+    Ref(const Ref&);
+    Ref& operator=(const Ref&);
   protected:
     virtual void** mpp() const = 0;
+    Ref(Writability w) : _writability(w), _next(NULL) {}
   public:
     virtual bool not_null() const = 0;
     virtual int size() const = 0;
@@ -111,6 +117,7 @@ public:
     virtual void metaspace_pointers_do_at(MetaspaceClosure *it, address new_loc) const = 0;
     virtual MetaspaceObj::Type msotype() const = 0;
     virtual bool is_read_only_by_default() const = 0;
+    virtual ~Ref() {}
 
     address obj() const {
       // In some rare cases (see CPSlot in constantPool.hpp) we store some flags in the lowest
@@ -119,7 +126,15 @@ public:
       return (address)(p & (~FLAG_MASK));
     }
 
+    address* addr() const {
+      return (address*)mpp();
+    }
+
     void update(address new_loc) const;
+
+    Writability writability() const { return _writability; };
+    void set_next(Ref* n)           { _next = n; }
+    Ref* next() const               { return _next; }
 
   private:
     static const uintx FLAG_MASK = 0x03;
@@ -143,7 +158,7 @@ private:
     }
 
   public:
-    ObjectRef(T** mpp) : _mpp(mpp) {}
+    ObjectRef(T** mpp, Writability w) : Ref(w), _mpp(mpp) {}
 
     virtual bool is_read_only_by_default() const { return T::is_read_only_by_default(); }
     virtual bool not_null()                const { return dereference() != NULL; }
@@ -170,7 +185,7 @@ private:
     }
 
   public:
-    PrimitiveArrayRef(Array<T>** mpp) : _mpp(mpp) {}
+    PrimitiveArrayRef(Array<T>** mpp, Writability w) : Ref(w), _mpp(mpp) {}
 
     // all Arrays are read-only by default
     virtual bool is_read_only_by_default() const { return true; }
@@ -200,7 +215,7 @@ private:
     }
 
   public:
-    PointerArrayRef(Array<T*>** mpp) : _mpp(mpp) {}
+    PointerArrayRef(Array<T*>** mpp, Writability w) : Ref(w), _mpp(mpp) {}
 
     // all Arrays are read-only by default
     virtual bool is_read_only_by_default() const { return true; }
@@ -224,9 +239,21 @@ private:
     }
   };
 
-  void push_impl(Ref* ref, Writability w);
+  // If recursion is too deep, save the Refs in _pending_refs, and push them later using
+  // MetaspaceClosure::finish()
+  static const int MAX_NEST_LEVEL = 5;
+  Ref* _pending_refs;
+  int _nest_level;
+
+  void push_impl(Ref* ref);
+  void do_push(Ref* ref);
 
 public:
+  MetaspaceClosure(): _pending_refs(NULL), _nest_level(0) {}
+  ~MetaspaceClosure();
+
+  void finish();
+
   // returns true if we want to keep iterating the pointers embedded inside <ref>
   virtual bool do_ref(Ref* ref, bool read_only) = 0;
 
@@ -237,22 +264,19 @@ public:
   // C++ will try to match the "most specific" template function. This one will
   // will be matched if possible (if mpp is an Array<> of any pointer type).
   template <typename T> void push(Array<T*>** mpp, Writability w = _default) {
-    PointerArrayRef<T> ref(mpp);
-    push_impl(&ref, w);
+    push_impl(new PointerArrayRef<T>(mpp, w));
   }
 
   // If the above function doesn't match (mpp is an Array<>, but T is not a pointer type), then
   // this is the second choice.
   template <typename T> void push(Array<T>** mpp, Writability w = _default) {
-    PrimitiveArrayRef<T> ref(mpp);
-    push_impl(&ref, w);
+    push_impl(new PrimitiveArrayRef<T>(mpp, w));
   }
 
   // If the above function doesn't match (mpp is not an Array<> type), then
   // this will be matched by default.
   template <class T> void push(T** mpp, Writability w = _default) {
-    ObjectRef<T> ref(mpp);
-    push_impl(&ref, w);
+    push_impl(new ObjectRef<T>(mpp, w));
   }
 };
 
@@ -266,7 +290,7 @@ class UniqueMetaspaceClosure : public MetaspaceClosure {
 
 public:
   // Gets called the first time we discover an object.
-  virtual void do_unique_ref(Ref* ref, bool read_only) = 0;
+  virtual bool do_unique_ref(Ref* ref, bool read_only) = 0;
   UniqueMetaspaceClosure() : _has_been_visited(INITIAL_TABLE_SIZE) {}
 
 private:

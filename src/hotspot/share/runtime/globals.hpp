@@ -2359,6 +2359,9 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
           "shared spaces, and dumps the shared spaces to a file to be "     \
           "used in future JVM runs")                                        \
                                                                             \
+  product(bool, DynamicDumpSharedSpaces, false,                             \
+          "Dynamic archive")                                                \
+                                                                            \
   product(bool, PrintSharedArchiveAndExit, false,                           \
           "Print shared archive file contents")                             \
                                                                             \
@@ -2475,6 +2478,9 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
                                                                             \
   product(ccstr, SharedArchiveFile, NULL,                                   \
           "Override the default location of the CDS archive file")          \
+                                                                            \
+  product(ccstr, ArchiveClassesAtExit, NULL,                                \
+          "The path and name of the dynamic archive file")                  \
                                                                             \
   product(ccstr, ExtraSharedClassListFile, NULL,                            \
           "Extra classlist for building the CDS archive file")              \

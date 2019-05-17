@@ -94,12 +94,14 @@ bool VerificationType::is_reference_assignable_from(
       return true;
     }
 
-    if (DumpSharedSpaces && SystemDictionaryShared::add_verification_constraint(klass,
+    if (DumpSharedSpaces || DynamicDumpSharedSpaces) {
+      if (SystemDictionaryShared::add_verification_constraint(klass,
               name(), from.name(), from_field_is_protected, from.is_array(),
               from.is_object())) {
-      // If add_verification_constraint() returns true, the resolution/check should be
-      // delayed until runtime.
-      return true;
+        // If add_verification_constraint() returns true, the resolution/check should be
+        // delayed until runtime.
+        return true;
+      }
     }
 
     return resolve_and_check_assignability(klass, name(), from.name(),

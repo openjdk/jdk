@@ -1220,6 +1220,10 @@ void Metaspace::global_initialize() {
     MetaspaceShared::initialize_runtime_shared_and_meta_spaces();
   }
 
+  if (DynamicDumpSharedSpaces && !UseSharedSpaces) {
+    vm_exit_during_initialization("DynamicDumpSharedSpaces not supported when base CDS archive is not loaded", NULL);
+  }
+
   if (!DumpSharedSpaces && !UseSharedSpaces)
 #endif // INCLUDE_CDS
   {

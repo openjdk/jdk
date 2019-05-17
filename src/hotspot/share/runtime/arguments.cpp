@@ -36,6 +36,7 @@
 #include "logging/logStream.hpp"
 #include "logging/logTag.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/filemap.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
@@ -95,6 +96,7 @@ intx   Arguments::_Tier4InvocationThreshold     = Tier4InvocationThreshold;
 bool   Arguments::_enable_preview               = false;
 
 char*  Arguments::SharedArchivePath             = NULL;
+char*  Arguments::SharedDynamicArchivePath      = NULL;
 
 AgentLibraryList Arguments::_libraryList;
 AgentLibraryList Arguments::_agentList;
@@ -1469,7 +1471,8 @@ const char* unsupported_options[] = { "--limit-modules",
                                       "--patch-module"
                                     };
 void Arguments::check_unsupported_dumping_properties() {
-  assert(DumpSharedSpaces, "this function is only used with -Xshare:dump");
+  assert(DumpSharedSpaces || DynamicDumpSharedSpaces,
+         "this function is only used with CDS dump time");
   assert(ARRAY_SIZE(unsupported_properties) == ARRAY_SIZE(unsupported_options), "must be");
   // If a vm option is found in the unsupported_options array, vm will exit with an error message.
   SystemProperty* sp = system_properties();
@@ -1492,6 +1495,13 @@ void Arguments::check_unsupported_dumping_properties() {
 bool Arguments::check_unsupported_cds_runtime_properties() {
   assert(UseSharedSpaces, "this function is only used with -Xshare:{on,auto}");
   assert(ARRAY_SIZE(unsupported_properties) == ARRAY_SIZE(unsupported_options), "must be");
+  if (ArchiveClassesAtExit != NULL) {
+    // dynamic dumping, just return false for now.
+    // check_unsupported_dumping_properties() will be called later to check the same set of
+    // properties, and will exit the VM with the correct error message if the unsupported properties
+    // are used.
+    return false;
+  }
   for (uint i = 0; i < ARRAY_SIZE(unsupported_properties); i++) {
     if (get_property(unsupported_properties[i]) != NULL) {
       if (RequireSharedSpaces) {
@@ -2713,7 +2723,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
       if (FLAG_SET_CMDLINE(bool, DumpSharedSpaces, true) != JVMFlag::SUCCESS) {
         return JNI_EINVAL;
       }
-      set_mode_flags(_int);     // Prevent compilation, which creates objects
     // -Xshare:on
     } else if (match_option(option, "-Xshare:on")) {
       if (FLAG_SET_CMDLINE(bool, UseSharedSpaces, true) != JVMFlag::SUCCESS) {
@@ -2722,7 +2731,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
       if (FLAG_SET_CMDLINE(bool, RequireSharedSpaces, true) != JVMFlag::SUCCESS) {
         return JNI_EINVAL;
       }
-    // -Xshare:auto
+    // -Xshare:auto || -XX:ArchiveClassesAtExit=<archive file>
     } else if (match_option(option, "-Xshare:auto")) {
       if (FLAG_SET_CMDLINE(bool, UseSharedSpaces, true) != JVMFlag::SUCCESS) {
         return JNI_EINVAL;
@@ -3110,15 +3119,24 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
     // the archived Klasses and Java string objects (at dump time only).
     UseBiasedLocking = false;
 
+    // Compiler threads may concurrently update the class metadata (such as method entries), so it's
+    // unsafe with DumpSharedSpaces (which modifies the class metadata in place). Let's disable
+    // compiler just to be safe.
+    //
+    // Note: this is not a concern for DynamicDumpSharedSpaces, which makes a copy of the class metadata
+    // instead of modifying them in place. The copy is inaccessible to the compiler.
+    // TODO: revisit the following for the static archive case.
+    set_mode_flags(_int);
+  }
+  if (DumpSharedSpaces || ArchiveClassesAtExit != NULL) {
     // Always verify non-system classes during CDS dump
     if (!BytecodeVerificationRemote) {
       BytecodeVerificationRemote = true;
       log_info(cds)("All non-system classes will be verified (-Xverify:remote) during CDS dump time.");
     }
-
-    // Compilation is already disabled if the user specifies -Xshare:dump.
-    // Disable compilation in case user specifies -XX:+DumpSharedSpaces instead of -Xshare:dump.
-    set_mode_flags(_int);
+  }
+  if (ArchiveClassesAtExit == NULL) {
+    FLAG_SET_DEFAULT(DynamicDumpSharedSpaces, false);
   }
   if (UseSharedSpaces && patch_mod_javabase) {
     no_shared_spaces("CDS is disabled when " JAVA_BASE_NAME " module is patched.");
@@ -3427,6 +3445,7 @@ void Arguments::set_shared_spaces_flags() {
   }
 }
 
+#if INCLUDE_CDS
 // Sharing support
 // Construct the path to the archive
 char* Arguments::get_default_shared_archive_path() {
@@ -3446,15 +3465,104 @@ char* Arguments::get_default_shared_archive_path() {
   return default_archive_path;
 }
 
-static char* get_shared_archive_path() {
-  char *shared_archive_path;
-  if (SharedArchiveFile == NULL) {
-    shared_archive_path = Arguments::get_default_shared_archive_path();
-  } else {
-    shared_archive_path = os::strdup_check_oom(SharedArchiveFile, mtArguments);
+int Arguments::num_archives(const char* archive_path) {
+  if (archive_path == NULL) {
+    return 0;
   }
-  return shared_archive_path;
+  int npaths = 1;
+  char* p = (char*)archive_path;
+  while (*p != '\0') {
+    if (*p == os::path_separator()[0]) {
+      npaths++;
+    }
+    p++;
+  }
+  return npaths;
 }
+
+void Arguments::extract_shared_archive_paths(const char* archive_path,
+                                         char** base_archive_path,
+                                         char** top_archive_path) {
+  char* begin_ptr = (char*)archive_path;
+  char* end_ptr = strchr((char*)archive_path, os::path_separator()[0]);
+  if (end_ptr == NULL || end_ptr == begin_ptr) {
+    vm_exit_during_initialization("Base archive was not specified", archive_path);
+  }
+  size_t len = end_ptr - begin_ptr;
+  char* cur_path = NEW_C_HEAP_ARRAY(char, len + 1, mtInternal);
+  strncpy(cur_path, begin_ptr, len);
+  cur_path[len] = '\0';
+  FileMapInfo::check_archive((const char*)cur_path, true /*is_static*/);
+  *base_archive_path = cur_path;
+
+  begin_ptr = ++end_ptr;
+  if (*begin_ptr == '\0') {
+    vm_exit_during_initialization("Top archive was not specified", archive_path);
+  }
+  end_ptr = strchr(begin_ptr, '\0');
+  assert(end_ptr != NULL, "sanity");
+  len = end_ptr - begin_ptr;
+  cur_path = NEW_C_HEAP_ARRAY(char, len + 1, mtInternal);
+  strncpy(cur_path, begin_ptr, len + 1);
+  //cur_path[len] = '\0';
+  FileMapInfo::check_archive((const char*)cur_path, false /*is_static*/);
+  *top_archive_path = cur_path;
+}
+
+bool Arguments::init_shared_archive_paths() {
+  if (ArchiveClassesAtExit != NULL) {
+    if (DumpSharedSpaces) {
+      vm_exit_during_initialization("-XX:ArchiveClassesAtExit cannot be used with -Xshare:dump");
+    }
+    if (FLAG_SET_CMDLINE(bool, DynamicDumpSharedSpaces, true) != JVMFlag::SUCCESS) {
+      return false;
+    }
+    check_unsupported_dumping_properties();
+    SharedDynamicArchivePath = os::strdup_check_oom(ArchiveClassesAtExit, mtArguments);
+  }
+  if (SharedArchiveFile == NULL) {
+    SharedArchivePath = get_default_shared_archive_path();
+  } else {
+    int archives = num_archives(SharedArchiveFile);
+    if (DynamicDumpSharedSpaces || DumpSharedSpaces) {
+      if (archives > 1) {
+        vm_exit_during_initialization(
+          "Cannot have more than 1 archive file specified in -XX:SharedArchiveFile during CDS dumping");
+      }
+      if (DynamicDumpSharedSpaces) {
+        if (FileMapInfo::same_files(SharedArchiveFile, ArchiveClassesAtExit)) {
+          vm_exit_during_initialization(
+            "Cannot have the same archive file specified for -XX:SharedArchiveFile and -XX:ArchiveClassesAtExit",
+            SharedArchiveFile);
+        }
+      }
+    }
+    if (!DynamicDumpSharedSpaces && !DumpSharedSpaces){
+      if (archives > 2) {
+        vm_exit_during_initialization(
+          "Cannot have more than 2 archive files specified in the -XX:SharedArchiveFile option");
+      }
+      if (archives == 1) {
+        char* temp_archive_path = os::strdup_check_oom(SharedArchiveFile, mtArguments);
+        int name_size;
+        bool success =
+          FileMapInfo::get_base_archive_name_from_header(temp_archive_path, &name_size, &SharedArchivePath);
+        if (!success) {
+          SharedArchivePath = temp_archive_path;
+        } else {
+          SharedDynamicArchivePath = temp_archive_path;
+        }
+      } else {
+        extract_shared_archive_paths((const char*)SharedArchiveFile,
+                                      &SharedArchivePath, &SharedDynamicArchivePath);
+      }
+    } else { // CDS dumping
+      SharedArchivePath = os::strdup_check_oom(SharedArchiveFile, mtArguments);
+    }
+  }
+  return (SharedArchivePath != NULL);
+}
+#endif // INCLUDE_CDS
 
 #ifndef PRODUCT
 // Determine whether LogVMOutput should be implicitly turned on.
@@ -3786,11 +3894,12 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
     return result;
   }
 
-  // Call get_shared_archive_path() here, after possible SharedArchiveFile option got parsed.
-  SharedArchivePath = get_shared_archive_path();
-  if (SharedArchivePath == NULL) {
+#if INCLUDE_CDS
+  // Initialize shared archive paths which could include both base and dynamic archive paths
+  if (!init_shared_archive_paths()) {
     return JNI_ENOMEM;
   }
+#endif
 
   // Delay warning until here so that we've had a chance to process
   // the -XX:-PrintWarnings flag

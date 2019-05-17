@@ -111,6 +111,7 @@ ifneq ($(call check-jvm-feature, cds), true)
   JVM_EXCLUDE_FILES += \
       classListParser.cpp \
       classLoaderExt.cpp \
+      dynamicArchive.cpp \
       filemap.cpp \
       heapShared.cpp \
       metaspaceShared.cpp \

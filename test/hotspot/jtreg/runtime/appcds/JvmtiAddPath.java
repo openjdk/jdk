@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,9 @@ public class JvmtiAddPath {
         run(check_appcds_enabled, appJar, "-Xlog:class+load", "JvmtiApp", "noadd"); // appcds should be enabled
 
         System.out.println("Test case 2: add to boot classpath only - should find Hello.class in boot loader");
-        run(check_appcds_disabled, appJar, "-Xlog:class+load", "JvmtiApp", "bootonly", addbootJar); // appcds should be disabled
+        String[] toCheck = (TestCommon.isDynamicArchive()) ? check_appcds_enabled
+                                                           : check_appcds_disabled;
+        run(toCheck, appJar, "-Xlog:class+load", "JvmtiApp", "bootonly", addbootJar); // appcds should be disabled
 
         System.out.println("Test case 3: add to app classpath only - should find Hello.class in app loader");
         run(appJar, "JvmtiApp", "apponly", addappJar);
@@ -97,7 +99,11 @@ public class JvmtiAddPath {
 
         System.out.println("Test case 6: add to app using AppCDS, but add to boot using JVMTI - should find Hello.class in boot loader");
         TestCommon.testDump(twoAppJars, TestCommon.list("JvmtiApp", "ExtraClass", "Hello"), use_whitebox_jar);
-        run(twoAppJars, "JvmtiApp", "bootonly", addappJar);
+        if (!TestCommon.isDynamicArchive()) {
+            // skip for dynamic archive, the Hello class will be loaded from
+            // the dynamic archive
+            run(twoAppJars, "JvmtiApp", "bootonly", addappJar);
+        }
 
         System.out.println("Test case 7: add to app using AppCDS, no JVMTI calls - should find Hello.class in app loader");
         run(twoAppJars, "JvmtiApp", "noadd-appcds");

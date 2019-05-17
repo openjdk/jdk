@@ -3964,10 +3964,8 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   SystemDictionary::compute_java_loaders(CHECK_JNI_ERR);
 
 #if INCLUDE_CDS
-  if (DumpSharedSpaces) {
-    // capture the module path info from the ModuleEntryTable
-    ClassLoader::initialize_module_path(THREAD);
-  }
+  // capture the module path info from the ModuleEntryTable
+  ClassLoader::initialize_module_path(THREAD);
 #endif
 
 #if INCLUDE_JVMCI
@@ -4169,7 +4167,7 @@ void Threads::create_vm_init_agents() {
   for (agent = Arguments::agents(); agent != NULL; agent = agent->next()) {
     // CDS dumping does not support native JVMTI agent.
     // CDS dumping supports Java agent if the AllowArchivingWithJavaAgent diagnostic option is specified.
-    if (DumpSharedSpaces) {
+    if (DumpSharedSpaces || DynamicDumpSharedSpaces) {
       if(!agent->is_instrument_lib()) {
         vm_exit_during_cds_dumping("CDS dumping does not support native JVMTI agent, name", agent->name());
       } else if (!AllowArchivingWithJavaAgent) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,20 @@ void MetaspaceClosure::Ref::update(address new_loc) const {
   *(address*)mpp() = (address)p;
 }
 
-void MetaspaceClosure::push_impl(MetaspaceClosure::Ref* ref, Writability w) {
-  if (ref->not_null()) {
+void MetaspaceClosure::push_impl(MetaspaceClosure::Ref* ref) {
+  if (_nest_level < MAX_NEST_LEVEL) {
+    do_push(ref);
+    delete ref;
+  } else {
+    ref->set_next(_pending_refs);
+    _pending_refs = ref;
+  }
+}
+
+void MetaspaceClosure::do_push(MetaspaceClosure::Ref* ref) {
+  if (ref->not_null()) { // FIXME: make this configurable, so DynamicArchiveBuilder mark all pointers
     bool read_only;
+    Writability w = ref->writability();
     switch (w) {
     case _writable:
       read_only = false;
@@ -48,10 +59,27 @@ void MetaspaceClosure::push_impl(MetaspaceClosure::Ref* ref, Writability w) {
       assert(w == _default, "must be");
       read_only = ref->is_read_only_by_default();
     }
+    _nest_level ++;
     if (do_ref(ref, read_only)) { // true means we want to iterate the embedded pointer in <ref>
       ref->metaspace_pointers_do(this);
     }
+    _nest_level --;
   }
+}
+
+void MetaspaceClosure::finish() {
+  assert(_nest_level == 0, "must be");
+  while (_pending_refs != NULL) {
+    Ref* ref = _pending_refs;
+    _pending_refs = _pending_refs->next();
+    do_push(ref);
+    delete ref;
+  }
+}
+
+MetaspaceClosure::~MetaspaceClosure() {
+  assert(_pending_refs == NULL,
+         "you must explicitly call MetaspaceClosure::finish() to process all refs!");
 }
 
 bool UniqueMetaspaceClosure::do_ref(MetaspaceClosure::Ref* ref, bool read_only) {
@@ -64,7 +92,6 @@ bool UniqueMetaspaceClosure::do_ref(MetaspaceClosure::Ref* ref, bool read_only) 
     if (_has_been_visited.maybe_grow(MAX_TABLE_SIZE)) {
       log_info(cds, hashtables)("Expanded _has_been_visited table to %d", _has_been_visited.table_size());
     }
-    do_unique_ref(ref, read_only);
-    return true;  // Saw this for the first time: iterate the embedded pointers.
+    return do_unique_ref(ref, read_only);
   }
 }

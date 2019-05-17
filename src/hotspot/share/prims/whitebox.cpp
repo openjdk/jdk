@@ -38,6 +38,7 @@
 #include "gc/shared/genArguments.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
+#include "memory/filemap.hpp"
 #include "memory/heapShared.inline.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/metadataFactory.hpp"
@@ -1883,6 +1884,10 @@ WB_ENTRY(jboolean, WB_IsSharingEnabled(JNIEnv* env, jobject wb))
   return UseSharedSpaces;
 WB_END
 
+WB_ENTRY(jboolean, WB_CDSMemoryMappingFailed(JNIEnv* env, jobject wb))
+  return FileMapInfo::memory_mapping_failed();
+WB_END
+
 WB_ENTRY(jboolean, WB_IsShared(JNIEnv* env, jobject wb, jobject obj))
   oop obj_oop = JNIHandles::resolve(obj);
   return HeapShared::is_archived_object(obj_oop);
@@ -1906,6 +1911,15 @@ WB_ENTRY(jobject, WB_GetResolvedReferences(JNIEnv* env, jobject wb, jclass clazz
   } else {
     return NULL;
   }
+WB_END
+
+WB_ENTRY(void, WB_LinkClass(JNIEnv* env, jobject wb, jclass clazz))
+  Klass *k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz));
+  if (!k->is_instance_klass()) {
+    return;
+  }
+  InstanceKlass *ik = InstanceKlass::cast(k);
+  ik->link_class(THREAD); // may throw verification error
 WB_END
 
 WB_ENTRY(jboolean, WB_AreOpenArchiveHeapObjectsMapped(JNIEnv* env))
@@ -2342,10 +2356,12 @@ static JNINativeMethod methods[] = {
   {CC"isSharedClass",      CC"(Ljava/lang/Class;)Z",  (void*)&WB_IsSharedClass },
   {CC"areSharedStringsIgnored",           CC"()Z",    (void*)&WB_AreSharedStringsIgnored },
   {CC"getResolvedReferences", CC"(Ljava/lang/Class;)Ljava/lang/Object;", (void*)&WB_GetResolvedReferences},
+  {CC"linkClass",          CC"(Ljava/lang/Class;)V",  (void*)&WB_LinkClass},
   {CC"areOpenArchiveHeapObjectsMapped",   CC"()Z",    (void*)&WB_AreOpenArchiveHeapObjectsMapped},
   {CC"isCDSIncludedInVmBuild",            CC"()Z",    (void*)&WB_IsCDSIncludedInVmBuild },
   {CC"isJFRIncludedInVmBuild",            CC"()Z",    (void*)&WB_IsJFRIncludedInVmBuild },
-  {CC"isJavaHeapArchiveSupported",      CC"()Z",      (void*)&WB_IsJavaHeapArchiveSupported },
+  {CC"isJavaHeapArchiveSupported",        CC"()Z",    (void*)&WB_IsJavaHeapArchiveSupported },
+  {CC"cdsMemoryMappingFailed",            CC"()Z",    (void*)&WB_CDSMemoryMappingFailed },
 
   {CC"clearInlineCaches0",  CC"(Z)V",                 (void*)&WB_ClearInlineCaches },
   {CC"handshakeWalkStack", CC"(Ljava/lang/Thread;Z)I", (void*)&WB_HandshakeWalkStack },

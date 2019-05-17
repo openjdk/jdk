@@ -484,6 +484,11 @@ class Arguments : AllStatic {
   static AliasedLoggingFlag catch_logging_aliases(const char* name, bool on);
 
   static char*  SharedArchivePath;
+  static char*  SharedDynamicArchivePath;
+  static int num_archives(const char* archive_path) NOT_CDS_RETURN_(0);
+  static void extract_shared_archive_paths(const char* archive_path,
+                                         char** base_archive_path,
+                                         char** top_archive_path) NOT_CDS_RETURN;
 
  public:
   // Parses the arguments, first phase
@@ -563,6 +568,7 @@ class Arguments : AllStatic {
   static vfprintf_hook_t vfprintf_hook()    { return _vfprintf_hook; }
 
   static const char* GetSharedArchivePath() { return SharedArchivePath; }
+  static const char* GetSharedDynamicArchivePath() { return SharedDynamicArchivePath; }
 
   // Java launcher properties
   static void process_sun_java_launcher_properties(JavaVMInitArgs* args);
@@ -625,7 +631,8 @@ class Arguments : AllStatic {
   static char* get_appclasspath() { return _java_class_path->value(); }
   static void  fix_appclasspath();
 
-  static char* get_default_shared_archive_path();
+  static char* get_default_shared_archive_path() NOT_CDS_RETURN_(NULL);
+  static bool  init_shared_archive_paths() NOT_CDS_RETURN_(false);
 
   // Operation modi
   static Mode mode()                        { return _mode; }

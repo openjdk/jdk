@@ -246,7 +246,7 @@ void Dictionary::all_entries_do(KlassClosure* closure) {
 
 // Used to scan and relocate the classes during CDS archive dump.
 void Dictionary::classes_do(MetaspaceClosure* it) {
-  assert(DumpSharedSpaces, "dump-time only");
+  assert(DumpSharedSpaces || DynamicDumpSharedSpaces, "dump-time only");
   for (int index = 0; index < table_size(); index++) {
     for (DictionaryEntry* probe = bucket(index);
                           probe != NULL;
@@ -311,7 +311,6 @@ InstanceKlass* Dictionary::find(unsigned int hash, Symbol* name,
     return NULL;
   }
 }
-
 
 InstanceKlass* Dictionary::find_class(int index, unsigned int hash,
                                       Symbol* name) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  * @modules jdk.compiler
  *          jdk.jartool/sun.tools.jar
  *          jdk.jlink
- * @run driver MainModuleOnly
+ * @run main/othervm MainModuleOnly
  * @summary Test some scenarios with a main modular jar specified in the --module-path and -cp options in the command line.
  */
 
@@ -39,6 +39,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 
+import jdk.test.lib.cds.CDSTestUtils.Result;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Platform;
 
@@ -60,6 +61,8 @@ public class MainModuleOnly {
     private static Path moduleDir = null;
     private static Path moduleDir2 = null;
     private static Path destJar = null;
+
+    private static final String jarFileError = "A jar file is not the one used while building the shared archive file:";
 
     public static void buildTestModule() throws Exception {
 
@@ -167,17 +170,21 @@ public class MainModuleOnly {
         // run with the archive and the jar with modified timestamp.
         // It should fail due to timestamp of the jar doesn't match the one
         // used during dump time.
-        TestCommon.run("-cp", destJar.toString(),
+        Result res = TestCommon.run("-cp", destJar.toString(),
+                       "-Xlog:cds",
                        "--module-path", moduleDir.toString(),
-                       "-m", TEST_MODULE1)
-            .assertAbnormalExit(
-                "A jar file is not the one used while building the shared archive file:");
+                       "-m", TEST_MODULE1);
+        res.assertAbnormalExit(jarFileError);
         // create an archive with a non-empty directory in the --module-path.
         // The dumping process will exit with an error due to non-empty directory
         // in the --module-path.
+        String mainModule = TEST_MODULE1;
+        if (TestCommon.isDynamicArchive()) {
+            mainModule += "/" + MAIN_CLASS;
+        }
         output = TestCommon.createArchive(destJar.toString(), appClasses,
                                           "--module-path", MODS_DIR.toString(),
-                                          "-m", TEST_MODULE1);
+                                          "-m", mainModule);
         output.shouldHaveExitValue(1)
               .shouldMatch("Error: non-empty directory.*com.simple");
 

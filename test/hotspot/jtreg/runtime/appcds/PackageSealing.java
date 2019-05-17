@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,15 @@
  * @summary AppCDS handling of package.
  * @requires vm.cds
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
+ * @modules jdk.jartool/sun.tools.jar
  * @compile test-classes/C1.java
  * @compile test-classes/C2.java
  * @compile test-classes/PackageSealingTest.java
+ * @compile test-classes/Hello.java
  * @run driver PackageSealing
  */
 
+import java.io.File;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class PackageSealing {
@@ -44,16 +45,19 @@ public class PackageSealing {
             ClassFileInstaller.Manifest.fromSourceFile("test-classes/package_seal.mf"),
             "PackageSealingTest", "sealed/pkg/C1", "pkg/C2");
 
+        String helloJar = JarBuilder.getOrCreateHelloJar();
+        String jars = helloJar + File.pathSeparator + appJar;
+
         // test shared package from -cp path
-        TestCommon.testDump(appJar, TestCommon.list(classList));
+        TestCommon.testDump(jars, TestCommon.list(classList));
         OutputAnalyzer output;
-        output = TestCommon.exec(appJar, "PackageSealingTest");
+        output = TestCommon.exec(jars, "PackageSealingTest");
         TestCommon.checkExec(output, "OK");
 
         // test shared package from -Xbootclasspath/a
-        TestCommon.dump(appJar, TestCommon.list(classList),
+        TestCommon.dump(helloJar, TestCommon.list(classList),
                         "-Xbootclasspath/a:" + appJar);
-        output = TestCommon.exec(appJar, "-Xbootclasspath/a:" + appJar, "PackageSealingTest");
+        output = TestCommon.exec(helloJar, "-Xbootclasspath/a:" + appJar, "PackageSealingTest");
         TestCommon.checkExec(output, "OK");
     }
 }

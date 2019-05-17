@@ -71,7 +71,18 @@ public class SharedArchiveConsistency {
 
     public static File jsa;        // will be updated during test
     public static File orgJsaFile; // kept the original file not touched.
-    public static String[] shared_region_name = {"MiscCode", "ReadWrite", "ReadOnly", "MiscData"};
+    // The following should be consistent with the enum in the C++ MetaspaceShared class
+    public static String[] shared_region_name = {
+        "mc",          // MiscCode
+        "rw",          // ReadWrite
+        "ro",          // ReadOnly
+        "md",          // MiscData
+        "first_closed_archive",
+        "last_closed_archive",
+        "first_open_archive",
+        "last_open_archive"
+    };
+
     public static int num_regions = shared_region_name.length;
     public static String[] matchMessages = {
         "Unable to use shared archive",
@@ -102,10 +113,11 @@ public class SharedArchiveConsistency {
             return file_header_size;
         }
         // this is not real header size, it is struct size
+        int int_size = wb.getOffsetForName("int_size");
         file_header_size = wb.getOffsetForName("file_header_size");
         int offset_path_misc_info = wb.getOffsetForName("FileMapHeader::_paths_misc_info_size") -
             offset_magic;
-        int path_misc_info_size   = (int)readInt(fc, offset_path_misc_info, size_t_size);
+        int path_misc_info_size   = (int)readInt(fc, offset_path_misc_info, int_size);
         file_header_size += path_misc_info_size; //readInt(fc, offset_path_misc_info, size_t_size);
         System.out.println("offset_path_misc_info = " + offset_path_misc_info);
         System.out.println("path_misc_info_size   = " + path_misc_info_size);
@@ -157,25 +169,26 @@ public class SharedArchiveConsistency {
 
     public static void modifyJsaContentRandomly() throws Exception {
         FileChannel fc = getFileChannel();
-        // corrupt random area in the data areas (MiscCode, ReadWrite, ReadOnly, MiscData)
+        // corrupt random area in the data areas
         long[] used    = new long[num_regions];       // record used bytes
         long start0, start, end, off;
         int used_offset, path_info_size;
 
         int bufSize;
-        System.out.printf("%-12s%-12s%-12s%-12s%-12s\n", "Space Name", "Offset", "Used bytes", "Reg Start", "Random Offset");
+        System.out.printf("%-24s%12s%12s%16s\n", "Space Name", "Used bytes", "Reg Start", "Random Offset");
         start0 = getFileHeaderSize(fc);
         for (int i = 0; i < num_regions; i++) {
-            used_offset = sp_offset + CDSFileMapRegion_size * i + sp_used_offset;
-            // read 'used'
-            used[i] = readInt(fc, used_offset, size_t_size);
+            used[i] = get_region_used_size_aligned(fc, i);
             start = start0;
             for (int j = 0; j < i; j++) {
                 start += align_up_page(used[j]);
             }
             end = start + used[i];
+            if (start == end) {
+                continue; // Ignore empty regions
+            }
             off = getRandomBetween(start, end);
-            System.out.printf("%-12s%-12d%-12d%-12d%-12d\n", shared_region_name[i], used_offset, used[i], start, off);
+            System.out.printf("%-24s%12d%12d%16d\n", shared_region_name[i], used[i], start, off);
             if (end - off < 1024) {
                 bufSize = (int)(end - off + 1);
             } else {
@@ -189,34 +202,50 @@ public class SharedArchiveConsistency {
         }
     }
 
-    public static void modifyJsaContent() throws Exception {
+    static long get_region_used_size_aligned(FileChannel fc, int region) throws Exception {
+        long n = sp_offset + CDSFileMapRegion_size * region + sp_used_offset;
+        long alignment = WhiteBox.getWhiteBox().metaspaceReserveAlignment();
+        long used = readInt(fc, n, size_t_size);
+        used = (used + alignment - 1) & ~(alignment - 1);
+        return used;
+    }
+
+    public static boolean modifyJsaContent(int region) throws Exception {
         FileChannel fc = getFileChannel();
         byte[] buf = new byte[4096];
         ByteBuffer bbuf = ByteBuffer.wrap(buf);
 
         long total = 0L;
-        long used_offset = 0L;
         long[] used = new long[num_regions];
-        System.out.printf("%-12s%-12s\n", "Space name", "Used bytes");
+        System.out.printf("%-24s%12s\n", "Space name", "Used bytes");
         for (int i = 0; i < num_regions; i++) {
-            used_offset = sp_offset + CDSFileMapRegion_size* i + sp_used_offset;
-            // read 'used'
-            used[i] = readInt(fc, used_offset, size_t_size);
-            System.out.printf("%-12s%-12d\n", shared_region_name[i], used[i]);
+            used[i] = get_region_used_size_aligned(fc, i);
+            System.out.printf("%-24s%12d\n", shared_region_name[i], used[i]);
             total += used[i];
         }
-        System.out.printf("%-12s%-12d\n", "Total: ", total);
-        long corrupt_used_offset =  getFileHeaderSize(fc);
-        System.out.println("Corrupt RO section, offset = " + corrupt_used_offset);
-        while (used_offset < used[0]) {
-            writeData(fc, corrupt_used_offset, bbuf);
+        System.out.printf("%-24s%12d\n", "Total: ", total);
+        long header_size = getFileHeaderSize(fc);
+        long region_start_offset = header_size;
+        for (int i=0; i<region; i++) {
+            region_start_offset += used[i];
+        }
+        if (used[region] == 0) {
+            System.out.println("Region " + shared_region_name[region] + " is empty. Nothing to corrupt.");
+            return false;
+        }
+        System.out.println("Corrupt " + shared_region_name[region] + " section, start = " + region_start_offset
+                           + " (header_size + 0x" + Long.toHexString(region_start_offset-header_size) + ")");
+        long bytes_written = 0L;
+        while (bytes_written < used[region]) {
+            writeData(fc, region_start_offset + bytes_written, bbuf);
             bbuf.clear();
-            used_offset += 4096;
+            bytes_written += 4096;
         }
         fc.force(true);
         if (fc.isOpen()) {
             fc.close();
         }
+        return true;
     }
 
     public static void modifyJsaHeader() throws Exception {
@@ -299,11 +328,11 @@ public class SharedArchiveConsistency {
     // read the jsa file
     //   1) run normal
     //   2) modify header
-    //   3) keep header correct but modify content
+    //   3) keep header correct but modify content in each region specified by shared_region_name[]
     //   4) update both header and content, test
     //   5) delete bytes in data begining
     //   6) insert bytes in data begining
-    //   7) randomly corrupt data in four areas: RO, RW. MISC DATA, MISC CODE
+    //   7) randomly corrupt data in each region specified by shared_region_name[]
     public static void main(String... args) throws Exception {
         // must call to get offset info first!!!
         getFileOffsetInfo();
@@ -352,18 +381,23 @@ public class SharedArchiveConsistency {
         output.shouldContain("The shared archive file has the wrong version");
         output.shouldNotContain("Checksum verification failed");
 
+        File newJsaFile = null;
         // modify content
         System.out.println("\n3. Corrupt Content, should fail\n");
-
-        copyFile(orgJsaFile, jsa);
-        modifyJsaContent();
-        testAndCheck(verifyExecArgs);
+        for (int i=0; i<num_regions; i++) {
+            newJsaFile = new File(TestCommon.getNewArchiveName(shared_region_name[i]));
+            copyFile(orgJsaFile, newJsaFile);
+            if (modifyJsaContent(i)) {
+                testAndCheck(execArgs);
+            }
+        }
 
         // modify both header and content, test should fail
         System.out.println("\n4. Corrupt Header and Content, should fail\n");
-        copyFile(orgJsaFile, jsa);
+        newJsaFile = new File(TestCommon.getNewArchiveName("header-and-content"));
+        copyFile(orgJsaFile, newJsaFile);
         modifyJsaHeader();
-        modifyJsaContent();  // this will not be reached since failed on header change first
+        modifyJsaContent(0);  // this will not be reached since failed on header change first
         output = TestCommon.execCommon(execArgs);
         output.shouldContain("The shared archive file has the wrong version");
         output.shouldNotContain("Checksum verification failed");
@@ -379,7 +413,8 @@ public class SharedArchiveConsistency {
         testAndCheck(verifyExecArgs);
 
         System.out.println("\n7. modify Content in random areas, should fail\n");
-        copyFile(orgJsaFile, jsa);
+        newJsaFile = new File(TestCommon.getNewArchiveName("random-areas"));
+        copyFile(orgJsaFile, newJsaFile);
         modifyJsaContentRandomly();
         testAndCheck(verifyExecArgs);
     }

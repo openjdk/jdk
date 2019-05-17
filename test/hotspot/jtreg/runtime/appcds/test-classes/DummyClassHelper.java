@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 import java.lang.*;
 import java.lang.reflect.*;
+import jdk.test.lib.cds.CDSTestUtils;
 import sun.hotspot.WhiteBox;
 
 public class DummyClassHelper {
@@ -50,9 +51,14 @@ public class DummyClassHelper {
             cls = Class.forName(classNames[i]);
             checkDummyMethod(cls, classNames[i]);
             if (doWBCheck) {
-                if (!wb.isSharedClass(cls)) {
-                    throw new java.lang.RuntimeException(classNames[i] +
-                        ".class should be in shared space.");
+                // FIXME: for dynamic archive, the class loaded from the
+                // bootclasspath jar during dump time is not loaded from the
+                // archive during run time.
+                if (!CDSTestUtils.isDynamicArchive()) {
+                    if (!wb.isSharedClass(cls)) {
+                        throw new java.lang.RuntimeException(classNames[i] +
+                            ".class should be in shared space.");
+                    }
                 }
             }
         }

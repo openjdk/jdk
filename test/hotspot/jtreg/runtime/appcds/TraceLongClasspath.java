@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
  *          java.management
  *          jdk.jartool/sun.tools.jar
  * @compile test-classes/Hello.java
+ * @compile test-classes/Super.java
  * @run driver TraceLongClasspath
  */
 
@@ -43,8 +44,10 @@ public class TraceLongClasspath {
 
     public static void main(String[] args) throws Exception {
         String appJar = JarBuilder.getOrCreateHelloJar();
+        String dummyJar = JarBuilder.build("dummy", "Super");
 
         String longClassPath =
+            dummyJar + ps +
             "/scratch/xxxx/yyyy/ZZZZZZ/aaaaaaaaaa/xx/abc/abc/modules/user-patch.jar" + ps +
             "/scratch/xxxx/yyyy/ZZZZZZ/aaaaaaaaaa/xx/abc/abc/modules/abc-startup.jar" + ps +
             "/scratch/xxxx/yyyy/ZZZZZZ/aaaaaaaaaa/xx/foobar_common/modules/features/com.foobar.db.jdbc7-dms.jar" + ps +
@@ -91,15 +94,15 @@ public class TraceLongClasspath {
         // Then try to execute the archive with a different classpath and with -XX:+TraceClassPaths.
         // The diagnosis "expecting" app classpath trace should show the entire classpath.
         TestCommon.run(
-            "-XX:+TraceClassPaths",
+            "-XX:+TraceClassPaths", "-Xlog:cds",
             "-cp", appJar,
             "Hello")
-          .assertAbnormalExit(output -> {
-              output.shouldContain("Unable to use shared archive");
-              output.shouldContain("shared class paths mismatch");
-              // the "expecting" app classpath from -XX:+TraceClassPaths should not
-              // be truncated
-              output.shouldContain(myCP);
-            });
+            .assertAbnormalExit(output -> {
+                output.shouldContain("Unable to use shared archive");
+                output.shouldContain("shared class paths mismatch");
+                // the "expecting" app classpath from -XX:+TraceClassPaths should not
+                // be truncated
+                output.shouldContain(myCP);
+              });
     }
 }

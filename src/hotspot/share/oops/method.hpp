@@ -468,8 +468,14 @@ class Method : public Metadata {
   void set_adapter_entry(AdapterHandlerEntry* adapter) {
     constMethod()->set_adapter_entry(adapter);
   }
+  void set_adapter_trampoline(AdapterHandlerEntry** trampoline) {
+    constMethod()->set_adapter_trampoline(trampoline);
+  }
   void update_adapter_trampoline(AdapterHandlerEntry* adapter) {
     constMethod()->update_adapter_trampoline(adapter);
+  }
+  void set_from_compiled_entry(address entry) {
+    _from_compiled_entry =  entry;
   }
 
   address get_i2c_entry();
@@ -511,7 +517,8 @@ class Method : public Metadata {
   address interpreter_entry() const              { return _i2i_entry; }
   // Only used when first initialize so we can set _i2i_entry and _from_interpreted_entry
   void set_interpreter_entry(address entry) {
-    assert(!is_shared(), "shared method's interpreter entry should not be changed at run time");
+    assert(!is_shared(),
+           "shared method's interpreter entry should not be changed at run time");
     if (_i2i_entry != entry) {
       _i2i_entry = entry;
     }

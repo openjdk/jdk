@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,9 @@
  * @summary Handling of directories in -cp is based on the classlist
  * @requires vm.cds
  * @library /test/lib
+ * @modules jdk.jartool/sun.tools.jar
  * @compile test-classes/Hello.java
+ * @compile test-classes/Super.java
  * @run driver DirClasspathTest
  */
 
@@ -42,10 +44,18 @@ import java.util.Arrays;
 public class DirClasspathTest {
     private static final int MAX_PATH = 260;
 
+    // We add helloJar into the classpath to be compatible with TestCommon.DYNAMIC_DUMP
+    static OutputAnalyzer doDump(String path, String classList[],
+                                        String... suffix) throws Exception {
+        String helloJar = JarBuilder.getOrCreateHelloJar();
+        return TestCommon.dump(helloJar + File.pathSeparator + path, classList, suffix);
+    }
+
     public static void main(String[] args) throws Exception {
         File dir = new File(System.getProperty("user.dir"));
         File emptydir = new File(dir, "emptydir");
         emptydir.mkdir();
+
 
         /////////////////////////////////////////////////////////////////
         // The classlist only contains boot class in following test cases
@@ -54,7 +64,7 @@ public class DirClasspathTest {
 
         // Empty dir in -cp: should be OK
         OutputAnalyzer output;
-        output = TestCommon.dump(emptydir.getPath(), bootClassList, "-Xlog:class+path=info");
+        output = doDump(emptydir.getPath(), bootClassList, "-Xlog:class+path=info");
         TestCommon.checkDump(output);
 
         // Long path to empty dir in -cp: should be OK
@@ -71,17 +81,17 @@ public class DirClasspathTest {
         longDir.mkdir();
         File subDir = new File(longDir, "subdir");
         subDir.mkdir();
-        output = TestCommon.dump(subDir.getPath(), bootClassList, "-Xlog:class+path=info");
+        output = doDump(subDir.getPath(), bootClassList, "-Xlog:class+path=info");
         TestCommon.checkDump(output);
 
         // Non-empty dir in -cp: should be OK
         // <dir> is not empty because it has at least one subdirectory, i.e., <emptydir>
-        output = TestCommon.dump(dir.getPath(), bootClassList, "-Xlog:class+path=info");
+        output = doDump(dir.getPath(), bootClassList, "-Xlog:class+path=info");
         TestCommon.checkDump(output);
 
         // Long path to non-empty dir in -cp: should be OK
         // <dir> is not empty because it has at least one subdirectory, i.e., <emptydir>
-        output = TestCommon.dump(longDir.getPath(), bootClassList, "-Xlog:class+path=info");
+        output = doDump(longDir.getPath(), bootClassList, "-Xlog:class+path=info");
         TestCommon.checkDump(output);
 
         /////////////////////////////////////////////////////////////////
@@ -90,27 +100,27 @@ public class DirClasspathTest {
         String appClassList[] = {"java/lang/Object", "com/sun/tools/javac/Main"};
 
         // Non-empty dir in -cp: should be OK (as long as no classes were loaded from there)
-        output = TestCommon.dump(dir.getPath(), appClassList, "-Xlog:class+path=info");
+        output = doDump(dir.getPath(), appClassList, "-Xlog:class+path=info");
         TestCommon.checkDump(output);
 
         // Long path to non-empty dir in -cp: should be OK (as long as no classes were loaded from there)
-        output = TestCommon.dump(longDir.getPath(), appClassList, "-Xlog:class+path=info");
+        output = doDump(longDir.getPath(), appClassList, "-Xlog:class+path=info");
         TestCommon.checkDump(output);
 
         /////////////////////////////////////////////////////////////////
         // Loading an app class from a directory
         /////////////////////////////////////////////////////////////////
-        String appClassList2[] = {"Hello", "java/lang/Object", "com/sun/tools/javac/Main"};
+        String appClassList2[] = {"Super", "java/lang/Object", "com/sun/tools/javac/Main"};
         // Non-empty dir in -cp: should report error if a class is loaded from it
-        output = TestCommon.dump(classDir.toString(), appClassList2, "-Xlog:class+path=info");
+        output = doDump(classDir.toString(), appClassList2, "-Xlog:class+path=info,class+load=trace");
         output.shouldNotHaveExitValue(0);
         output.shouldContain("Cannot have non-empty directory in paths");
 
         // Long path to non-empty dir in -cp: should report error if a class is loaded from it
-        File srcClass = new File(classDir.toFile(), "Hello.class");
-        File destClass = new File(longDir, "Hello.class");
+        File srcClass = new File(classDir.toFile(), "Super.class");
+        File destClass = new File(longDir, "Super.class");
         Files.copy(srcClass.toPath(), destClass.toPath());
-        output = TestCommon.dump(longDir.getPath(), appClassList2, "-Xlog:class+path=info");
+        output = doDump(longDir.getPath(), appClassList2, "-Xlog:class+path=info");
         output.shouldNotHaveExitValue(0);
         output.shouldContain("Cannot have non-empty directory in paths");
     }

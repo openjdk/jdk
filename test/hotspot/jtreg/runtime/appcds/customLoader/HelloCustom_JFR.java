@@ -30,10 +30,10 @@
  * @requires vm.hasJFR
  * @requires vm.cds
  * @requires vm.cds.custom.loaders
- * @library /test/lib /test/hotspot/jtreg/runtime/appcds
- * @compile test-classes/Hello.java test-classes/CustomLoadee.java
- * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller -jar hello.jar Hello
+ * @library /test/lib /test/hotspot/jtreg/runtime/appcds /runtime/testlibrary
+ * @compile test-classes/HelloUnload.java test-classes/CustomLoadee.java
+ * @build sun.hotspot.WhiteBox ClassUnloadCommon
+ * @run driver ClassFileInstaller -jar hello.jar HelloUnload ClassUnloadCommon ClassUnloadCommon$1 ClassUnloadCommon$TestFailure
  * @run driver ClassFileInstaller -jar hello_custom.jar CustomLoadee
  * @run driver ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
  * @run driver HelloCustom_JFR
@@ -47,4 +47,3 @@ public class HelloCustom_JFR {
         HelloCustom.run("-XX:StartFlightRecording=dumponexit=true", "-Xlog:cds+jvmti=debug");
     }
 }
-

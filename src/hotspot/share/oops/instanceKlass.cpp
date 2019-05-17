@@ -451,7 +451,7 @@ InstanceKlass::InstanceKlass(const ClassFileParser& parser, unsigned kind, Klass
   assert(is_instance_klass(), "is layout incorrect?");
   assert(size_helper() == parser.layout_size(), "incorrect size_helper?");
 
-  if (DumpSharedSpaces) {
+  if (DumpSharedSpaces || DynamicDumpSharedSpaces) {
     SystemDictionaryShared::init_dumptime_info(this);
   }
 }
@@ -601,7 +601,7 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   }
   set_annotations(NULL);
 
-  if (DumpSharedSpaces) {
+  if (DumpSharedSpaces || DynamicDumpSharedSpaces) {
     SystemDictionaryShared::remove_dumptime_info(this);
   }
 }
@@ -2225,8 +2225,8 @@ bool InstanceKlass::should_store_fingerprint(bool is_unsafe_anonymous) {
     // (1) We are running AOT to generate a shared library.
     return true;
   }
-  if (DumpSharedSpaces) {
-    // (2) We are running -Xshare:dump to create a shared archive
+  if (DumpSharedSpaces || DynamicDumpSharedSpaces) {
+    // (2) We are running -Xshare:dump or -XX:ArchiveClassesAtExit to create a shared archive
     return true;
   }
   if (UseAOT && is_unsafe_anonymous) {
@@ -2346,15 +2346,13 @@ void InstanceKlass::remove_unshareable_info() {
     array_klasses()->remove_unshareable_info();
   }
 
-  // These are not allocated from metaspace, but they should should all be empty
-  // during dump time, so we don't need to worry about them in InstanceKlass::iterate().
-  guarantee(_source_debug_extension == NULL, "must be");
-  guarantee(_dep_context == NULL, "must be");
-  guarantee(_osr_nmethods_head == NULL, "must be");
-
+  // These are not allocated from metaspace. They are safe to set to NULL.
+  _source_debug_extension = NULL;
+  _dep_context = NULL;
+  _osr_nmethods_head = NULL;
 #if INCLUDE_JVMTI
-  guarantee(_breakpoints == NULL, "must be");
-  guarantee(_previous_versions == NULL, "must be");
+  _breakpoints = NULL;
+  _previous_versions = NULL;
   _cached_class_file = NULL;
 #endif
 
@@ -2474,6 +2472,10 @@ void InstanceKlass::unload_class(InstanceKlass* ik) {
 
   // notify ClassLoadingService of class unload
   ClassLoadingService::notify_class_unloaded(ik);
+
+  if (DumpSharedSpaces || DynamicDumpSharedSpaces) {
+    SystemDictionaryShared::remove_dumptime_info(ik);
+  }
 
   if (log_is_enabled(Info, class, unload)) {
     ResourceMark rm;
@@ -3422,7 +3424,12 @@ void InstanceKlass::print_class_load_logging(ClassLoaderData* loader_data,
       info_stream.print(" source: %s", class_loader->klass()->external_name());
     }
   } else {
-    info_stream.print(" source: shared objects file");
+    assert(this->is_shared(), "must be");
+    if (MetaspaceShared::is_shared_dynamic((void*)this)) {
+      info_stream.print(" source: shared objects file (top)");
+    } else {
+      info_stream.print(" source: shared objects file");
+    }
   }
 
   msg.info("%s", info_stream.as_string());

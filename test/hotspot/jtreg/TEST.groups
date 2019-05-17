@@ -314,6 +314,23 @@ hotspot_cds = \
 hotspot_appcds = \
   runtime/appcds/
 
+hotspot_appcds_dynamic = \
+  runtime/appcds/ \
+ -runtime/appcds/cacheObject \
+ -runtime/appcds/customLoader \
+ -runtime/appcds/dynamicArchive \
+ -runtime/appcds/javaldr/ArrayTest.java \
+ -runtime/appcds/javaldr/GCSharedStringsDuringDump.java \
+ -runtime/appcds/javaldr/HumongousDuringDump.java \
+ -runtime/appcds/sharedStrings \
+ -runtime/appcds/DumpClassList.java \
+ -runtime/appcds/ExtraSymbols.java \
+ -runtime/appcds/LongClassListPath.java \
+ -runtime/appcds/LotsOfClasses.java \
+ -runtime/appcds/SharedArchiveConsistency.java \
+ -runtime/appcds/UnusedCPDuringDump.java \
+ -runtime/appcds/VerifierTest_1B.java
+
 # A subset of AppCDS tests to be run in tier1
 tier1_runtime_appcds = \
   runtime/appcds/HelloTest.java \
