@@ -2200,9 +2200,11 @@ void ShenandoahHeap::op_final_updaterefs() {
     verifier()->verify_roots_no_forwarded_except(ShenandoahRootVerifier::ThreadRoots);
   }
 
-  concurrent_mark()->update_roots(is_degenerated_gc_in_progress() ?
-                                  ShenandoahPhaseTimings::degen_gc_update_roots:
-                                  ShenandoahPhaseTimings::final_update_refs_roots);
+  if (is_degenerated_gc_in_progress()) {
+    concurrent_mark()->update_roots(ShenandoahPhaseTimings::degen_gc_update_roots);
+  } else {
+    concurrent_mark()->update_thread_roots(ShenandoahPhaseTimings::final_update_refs_roots);
+  }
 
   ShenandoahGCPhase final_update_refs(ShenandoahPhaseTimings::final_update_refs_recycle);
 

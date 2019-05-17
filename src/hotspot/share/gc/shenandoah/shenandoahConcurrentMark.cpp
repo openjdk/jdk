@@ -304,6 +304,34 @@ void ShenandoahConcurrentMark::update_roots(ShenandoahPhaseTimings::Phase root_p
 #endif
 }
 
+class ShenandoahUpdateThreadRootsTask : public AbstractGangTask {
+private:
+  ShenandoahThreadRoots           _thread_roots;
+  ShenandoahPhaseTimings::Phase   _phase;
+public:
+  ShenandoahUpdateThreadRootsTask(bool is_par, ShenandoahPhaseTimings::Phase phase) :
+    AbstractGangTask("Shenandoah Update Thread Roots"),
+    _thread_roots(is_par),
+    _phase(phase) {
+    ShenandoahHeap::heap()->phase_timings()->record_workers_start(_phase);
+  }
+
+  ~ShenandoahUpdateThreadRootsTask() {
+    ShenandoahHeap::heap()->phase_timings()->record_workers_end(_phase);
+  }
+  void work(uint worker_id) {
+    ShenandoahUpdateRefsClosure cl;
+    _thread_roots.oops_do(&cl, NULL, worker_id);
+  }
+};
+
+void ShenandoahConcurrentMark::update_thread_roots(ShenandoahPhaseTimings::Phase root_phase) {
+  WorkGang* workers = _heap->workers();
+  bool is_par = workers->active_workers() > 1;
+  ShenandoahUpdateThreadRootsTask task(is_par, root_phase);
+  workers->run_task(&task);
+}
+
 void ShenandoahConcurrentMark::initialize(uint workers) {
   _heap = ShenandoahHeap::heap();
 
