@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,11 @@
  */
 
 /**
- * This module provides support for
- * Java Programming Language 'snippet' evaluating tools, such as
- * Read-Eval-Print Loops (REPLs), including the <em>{@index jshell jshell tool}</em> tool.
+ * Provides the <em>{@index jshell jshell tool}</em> tool for evaluating
+ * snippets of Java code, and defines a JDK-specific API for modeling and
+ * executing snippets.
+ * The JShell API supports Java Programming Language 'snippet' evaluating
+ * tools, such as Read-Eval-Print Loops (REPLs).
  * Separate packages support building tools, configuring the execution of tools,
  * and programmatically launching the existing Java shell tool.
  * <p>
