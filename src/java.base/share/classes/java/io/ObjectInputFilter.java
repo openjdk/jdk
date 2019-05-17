@@ -283,7 +283,7 @@ public interface ObjectInputFilter {
         /**
          * Current configured filter.
          */
-        private static ObjectInputFilter serialFilter = configuredFilter;
+        private static volatile ObjectInputFilter serialFilter = configuredFilter;
 
         /**
          * Returns the system-wide serialization filter or {@code null} if not configured.
@@ -291,9 +291,7 @@ public interface ObjectInputFilter {
          * @return the system-wide serialization filter or {@code null} if not configured
          */
         public static ObjectInputFilter getSerialFilter() {
-            synchronized (serialFilterLock) {
-                return serialFilter;
-            }
+            return serialFilter;
         }
 
         /**
