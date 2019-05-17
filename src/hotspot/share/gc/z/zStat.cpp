@@ -850,7 +850,16 @@ void ZStat::sample_and_collect(ZStatSamplerHistory* history) const {
 }
 
 bool ZStat::should_print(LogTargetHandle log) const {
-  return log.is_enabled() && (_metronome.nticks() % ZStatisticsInterval == 0);
+  static uint64_t print_at = ZStatisticsInterval;
+  const uint64_t now = os::elapsedTime();
+
+  if (now < print_at) {
+    return false;
+  }
+
+  print_at = ((now / ZStatisticsInterval) * ZStatisticsInterval) + ZStatisticsInterval;
+
+  return log.is_enabled();
 }
 
 void ZStat::print(LogTargetHandle log, const ZStatSamplerHistory* history) const {
