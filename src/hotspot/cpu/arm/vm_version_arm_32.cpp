@@ -300,10 +300,12 @@ void VM_Version::initialize() {
     // SIMD/NEON can use 16, but default is 8 because currently
     // larger than 8 will disable instruction scheduling
     FLAG_SET_DEFAULT(MaxVectorSize, 8);
-  }
-
-  if (MaxVectorSize > 16) {
-    FLAG_SET_DEFAULT(MaxVectorSize, 8);
+  } else {
+    int max_vector_size = has_simd() ? 16 : 8;
+    if (MaxVectorSize > max_vector_size) {
+      warning("MaxVectorSize must be at most %i on this platform", max_vector_size);
+      FLAG_SET_DEFAULT(MaxVectorSize, max_vector_size);
+    }
   }
 #endif
 
