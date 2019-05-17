@@ -782,11 +782,12 @@ void G1HeapVerifier::check_bitmaps(const char* caller) {
   guarantee(!cl.failures(), "bitmap verification");
 }
 
-class G1CheckCSetFastTableClosure : public HeapRegionClosure {
- private:
+class G1CheckRegionAttrTableClosure : public HeapRegionClosure {
+private:
   bool _failures;
- public:
-  G1CheckCSetFastTableClosure() : HeapRegionClosure(), _failures(false) { }
+
+public:
+  G1CheckRegionAttrTableClosure() : HeapRegionClosure(), _failures(false) { }
 
   virtual bool do_heap_region(HeapRegion* hr) {
     uint i = hr->hrm_index();
@@ -845,8 +846,8 @@ class G1CheckCSetFastTableClosure : public HeapRegionClosure {
   bool failures() const { return _failures; }
 };
 
-bool G1HeapVerifier::check_cset_fast_test() {
-  G1CheckCSetFastTableClosure cl;
+bool G1HeapVerifier::check_region_attr_table() {
+  G1CheckRegionAttrTableClosure cl;
   _g1h->_hrm->iterate(&cl);
   return !cl.failures();
 }

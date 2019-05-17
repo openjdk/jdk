@@ -3575,7 +3575,7 @@ void G1CollectedHeap::pre_evacuate_collection_set(G1EvacuationInfo& evacuation_i
   _allocator->init_gc_alloc_regions(evacuation_info);
 
   register_regions_with_region_attr();
-  assert(_verifier->check_cset_fast_test(), "Inconsistency in the InCSetState table.");
+  assert(_verifier->check_region_attr_table(), "Inconsistency in the region attributes table.");
 
   rem_set()->prepare_for_scan_rem_set();
   _preserved_marks_set.assert_empty();
