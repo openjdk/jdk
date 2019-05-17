@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,8 @@ public class SALauncher {
 
     private static boolean launcherHelp() {
         System.out.println("    clhsdb       \tcommand line debugger");
-        System.out.println("    debugd       \tdebug server");
         System.out.println("    hsdb         \tui debugger");
+        System.out.println("    debugd --help\tto get more information");
         System.out.println("    jstack --help\tto get more information");
         System.out.println("    jmap   --help\tto get more information");
         System.out.println("    jinfo  --help\tto get more information");
@@ -49,25 +49,17 @@ public class SALauncher {
         // --pid <pid>
         // --exe <exe>
         // --core <core>
-        System.out.println("    --exe\texecutable image name");
-        System.out.println("    --core\tpath to coredump");
-        System.out.println("    --pid\tpid of process to attach");
+        System.out.println("    --exe\t<executable image name>");
+        System.out.println("    --core\t<path to coredump>");
+        System.out.println("    --pid\t<pid of process to attach>");
         return false;
     }
 
     private static boolean debugdHelp() {
         // [options] <pid> [server-id]
         // [options] <executable> <core> [server-id]
-        java.io.PrintStream out = System.out;
-        out.print(" [option] <pid> [server-id]");
-        out.println("\t\t(to connect to a live java process)");
-        out.print("   or  [option] <executable> <core> [server-id]");
-        out.println("\t\t(to connect to a core file produced by <executable>)");
-        out.print("\t\tserver-id is an optional unique id for this debug server, needed ");
-        out.println("\t\tif multiple debug servers are run on the same machine");
-        out.println("where option includes:");
-        out.println("   -h | -help\tto print this help message");
-        return false;
+        System.out.println("    --serverid\t<unique id for this debug server>");
+        return commonHelp();
     }
 
     private static boolean jinfoHelp() {
@@ -398,18 +390,48 @@ public class SALauncher {
     }
 
     private static void runDEBUGD(String[] oldArgs) {
-        if ((oldArgs.length < 1) || (oldArgs.length > 3)) {
-            debugdHelp();
-        }
-
         // By default SA agent classes prefer Windows process debugger
         // to windbg debugger. SA expects special properties to be set
         // to choose other debuggers. We will set those here before
         // attaching to SA agent.
         System.setProperty("sun.jvm.hotspot.debugger.useWindbgDebugger", "true");
 
+        SAGetopt sg = new SAGetopt(oldArgs);
+        String[] longOpts = {"exe=", "core=", "pid=", "serverid="};
+
+        ArrayList<String> newArgs = new ArrayList<>();
+        String exe = null;
+        String pid = null;
+        String core = null;
+        String s = null;
+        String serverid = null;
+
+        while((s = sg.next(null, longOpts)) != null) {
+          if (s.equals("exe")) {
+              exe = sg.getOptarg();
+              continue;
+          }
+          if (s.equals("core")) {
+              core = sg.getOptarg();
+              continue;
+          }
+          if (s.equals("pid")) {
+              pid = sg.getOptarg();
+              continue;
+          }
+          if (s.equals("serverid")) {
+              serverid = sg.getOptarg();
+              continue;
+          }
+        }
+
+        buildAttachArgs(newArgs, pid, exe, core, false);
+        if (serverid != null) {
+            newArgs.add(serverid);
+        }
+
         // delegate to the actual SA debug server.
-        sun.jvm.hotspot.DebugServer.main(oldArgs);
+        sun.jvm.hotspot.DebugServer.main(newArgs.toArray(new String[newArgs.size()]));
     }
 
     public static void main(String[] args) {
