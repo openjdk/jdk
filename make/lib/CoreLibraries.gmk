@@ -116,7 +116,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJAVA, \
     LIBS_aix := $(LIBDL) $(LIBM),\
     LIBS_macosx := -framework CoreFoundation \
         -framework Foundation \
-        -framework Security -framework SystemConfiguration, \
+        -framework SystemConfiguration, \
     LIBS_windows := jvm.lib $(WIN_VERIFY_LIB) \
         shell32.lib delayimp.lib \
         advapi32.lib version.lib, \

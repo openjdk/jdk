@@ -28,7 +28,6 @@
 #include <arpa/inet.h>
 #include <objc/objc-runtime.h>
 
-#include <Security/AuthSession.h>
 #include <CoreFoundation/CoreFoundation.h>
 #include <SystemConfiguration/SystemConfiguration.h>
 #include <Foundation/Foundation.h>
