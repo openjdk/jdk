@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,8 +69,6 @@ jobject AwtMenuItem::systemFont;
 
 jfieldID AwtMenuItem::labelID;
 jfieldID AwtMenuItem::enabledID;
-jfieldID AwtMenuItem::fontID;
-jfieldID AwtMenuItem::appContextID;
 jfieldID AwtMenuItem::shortcutLabelID;
 jfieldID AwtMenuItem::isCheckboxID;
 jfieldID AwtMenuItem::stateID;
@@ -958,13 +956,6 @@ extern "C" {
 JNIEXPORT void JNICALL
 Java_java_awt_MenuComponent_initIDs(JNIEnv *env, jclass cls)
 {
-    TRY;
-
-    AwtMenuItem::fontID = env->GetFieldID(cls, "font", "Ljava/awt/Font;");
-    CHECK_NULL(AwtMenuItem::fontID);
-    AwtMenuItem::appContextID = env->GetFieldID(cls, "appContext", "Lsun/awt/AppContext;");
-
-    CATCH_BAD_ALLOC;
 }
 
 } /* extern "C" */

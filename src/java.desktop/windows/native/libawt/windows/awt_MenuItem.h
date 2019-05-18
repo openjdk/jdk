@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,9 +45,6 @@ class AwtMenu;
 
 class AwtMenuItem : public AwtObject {
 public:
-    /* java.awt.MenuComponent fields */
-    static jfieldID fontID;
-    static jfieldID appContextID;
 
     /* java.awt.MenuItem fields */
     static jfieldID labelID;

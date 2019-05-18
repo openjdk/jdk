@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,16 +33,8 @@
 #endif
 
 #include "java_awt_Event.h"
-#include "jni_util.h"
-
-#include "awt_Event.h"
-
-struct EventIDs eventIDs;
 
 JNIEXPORT void JNICALL
 Java_java_awt_Event_initIDs(JNIEnv *env, jclass cls)
 {
-    CHECK_NULL(eventIDs.data = (*env)->GetFieldID(env, cls, "data", "J"));
-    CHECK_NULL(eventIDs.consumed = (*env)->GetFieldID(env, cls, "consumed", "Z"));
-    CHECK_NULL(eventIDs.id = (*env)->GetFieldID(env, cls, "id", "I"));
 }

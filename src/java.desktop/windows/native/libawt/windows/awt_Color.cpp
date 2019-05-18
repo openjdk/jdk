@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,7 @@
  * questions.
  */
 
-#include "awt.h"
-#include "awt_Color.h"
-
-
-/************************************************************************
- * AwtColor fields
- */
-
-jmethodID AwtColor::getRGBMID;
-
+#include "java_awt_Color.h"
 
 /************************************************************************
  * Color native methods
@@ -48,12 +39,6 @@ extern "C" {
 JNIEXPORT void JNICALL
 Java_java_awt_Color_initIDs(JNIEnv *env, jclass cls)
 {
-    TRY;
-
-    AwtColor::getRGBMID = env->GetMethodID(cls, "getRGB", "()I");
-    DASSERT(AwtColor::getRGBMID != NULL);
-
-    CATCH_BAD_ALLOC;
 }
 
 } /* extern "C" */
