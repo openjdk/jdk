@@ -188,7 +188,7 @@ public:
   void reset() {
     for (uint i = 0; i < _max_regions; i++) {
       _iter_states[i] = Unclaimed;
-      _scan_top[i] = NULL;
+      clear_scan_top(i);
     }
 
     G1ResetScanTopClosure cl(_scan_top);
@@ -251,6 +251,10 @@ public:
 
   HeapWord* scan_top(uint region_idx) const {
     return _scan_top[region_idx];
+  }
+
+  void clear_scan_top(uint region_idx) {
+    _scan_top[region_idx] = NULL;
   }
 
   // Clear the card table of "dirty" regions.
@@ -346,7 +350,7 @@ void G1ScanRSForRegionClosure::scan_opt_rem_set_roots(HeapRegion* r) {
   G1OopStarChunkedList* opt_rem_set_list = _pss->oops_into_optional_region(r);
 
   G1ScanCardClosure scan_cl(_g1h, _pss);
-  G1ScanRSForOptionalClosure cl(&scan_cl);
+  G1ScanRSForOptionalClosure cl(_g1h, &scan_cl);
   _opt_refs_scanned += opt_rem_set_list->oops_do(&cl, _pss->closures()->raw_strong_oops());
   _opt_refs_memory_used += opt_rem_set_list->used_memory();
 
@@ -548,6 +552,10 @@ void G1RemSet::update_rem_set(G1ParScanThreadState* pss, uint worker_i) {
 void G1RemSet::prepare_for_scan_rem_set() {
   G1BarrierSet::dirty_card_queue_set().concatenate_logs();
   _scan_state->reset();
+}
+
+void G1RemSet::prepare_for_scan_rem_set(uint region_idx) {
+  _scan_state->clear_scan_top(region_idx);
 }
 
 void G1RemSet::cleanup_after_scan_rem_set() {

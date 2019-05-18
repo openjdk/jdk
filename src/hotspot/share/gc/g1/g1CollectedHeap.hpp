@@ -1111,7 +1111,7 @@ public:
 
  public:
 
-  inline G1HeapRegionAttr region_attr(const oop obj);
+  inline G1HeapRegionAttr region_attr(const void* obj);
 
   // Return "TRUE" iff the given object address is in the reserved
   // region of g1.
