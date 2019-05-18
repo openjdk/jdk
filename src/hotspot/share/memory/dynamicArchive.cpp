@@ -511,7 +511,7 @@ public:
     size_t used = size_t(top - bottom) + _other_region_used_bytes;
     int diff = int(estimate) - int(used);
 
-    log_info(cds)("%s estimate = %lu used = %lu; diff = %d bytes", which, estimate, used, diff);
+    log_info(cds)("%s estimate = " SIZE_FORMAT " used = " SIZE_FORMAT "; diff = %d bytes", which, estimate, used, diff);
     assert(diff >= 0, "Estimate is too small");
 
     _last_verified_top = top;
