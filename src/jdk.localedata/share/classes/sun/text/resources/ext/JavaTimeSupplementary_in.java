@@ -148,6 +148,7 @@ public class JavaTimeSupplementary_in extends OpenListResourceBundle {
             "Taish\u014d",
             "Sh\u014dwa",
             "Heisei",
+            "Reiwa",
         };
 
         final String[] sharedEras = {

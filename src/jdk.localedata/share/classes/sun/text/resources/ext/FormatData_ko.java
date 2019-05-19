@@ -192,6 +192,7 @@ public class FormatData_ko extends ParallelListResourceBundle {
                     "\ub2e4\uc774\uc1fc",
                     "\uc1fc\uc640",
                     "\ud5e4\uc774\uc138\uc774",
+                    "\ub808\uc774\uc640",
                 }
             },
             { "AmPmMarkers",

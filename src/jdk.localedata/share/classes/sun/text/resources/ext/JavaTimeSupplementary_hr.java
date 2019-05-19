@@ -231,6 +231,7 @@ public class JavaTimeSupplementary_hr extends OpenListResourceBundle {
                     "Taish\u014d",
                     "Sh\u014dwa",
                     "Heisei",
+                    "Reiwa",
                 }
             },
             { "java.time.japanese.short.Eras",
@@ -240,6 +241,7 @@ public class JavaTimeSupplementary_hr extends OpenListResourceBundle {
                     "Taish\u014d",
                     "Sh\u014dwa",
                     "Heisei",
+                    "Reiwa",
                 }
             },
             { "java.time.long.Eras",
