@@ -122,12 +122,13 @@ public:
   ShenandoahHeap* heap() const { return _heap; }
 };
 
+template <typename ITR>
 class ShenandoahRootScanner : public ShenandoahRootProcessor {
 private:
   ShenandoahSerialRoots          _serial_roots;
   ShenandoahClassLoaderDataRoots _cld_roots;
   ShenandoahThreadRoots          _thread_roots;
-  ShenandoahCodeCacheRoots<ShenandoahAllCodeRootsIterator> _code_roots;
+  ShenandoahCodeCacheRoots<ITR>  _code_roots;
 public:
   ShenandoahRootScanner(uint n_workers, ShenandoahPhaseTimings::Phase phase);
 
@@ -141,6 +142,9 @@ public:
   void roots_do(uint worker_id, OopClosure* cl);
   void roots_do(uint worker_id, OopClosure* oops, CLDClosure* clds, CodeBlobClosure* code, ThreadClosure* tc = NULL);
 };
+
+typedef ShenandoahRootScanner<ShenandoahAllCodeRootsIterator> ShenandoahAllRootScanner;
+typedef ShenandoahRootScanner<ShenandoahCsetCodeRootsIterator> ShenandoahCSetRootScanner;
 
 // Evacuate all roots at a safepoint
 class ShenandoahRootEvacuator : public ShenandoahRootProcessor {

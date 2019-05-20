@@ -24,6 +24,7 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHROOTPROCESSOR_INLINE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHROOTPROCESSOR_INLINE_HPP
 
+#include "gc/shenandoah/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.hpp"
 #include "gc/shenandoah/shenandoahTimingTracker.hpp"
 
@@ -47,6 +48,74 @@ void ShenandoahCodeCacheRoots<ITR>::code_blobs_do(CodeBlobClosure* blob_cl, uint
 template <typename ITR>
 ShenandoahCodeCacheRoots<ITR>::~ShenandoahCodeCacheRoots() {
   nmethod::oops_do_marking_epilogue();
+}
+
+class ShenandoahParallelOopsDoThreadClosure : public ThreadClosure {
+private:
+  OopClosure* _f;
+  CodeBlobClosure* _cf;
+  ThreadClosure* _thread_cl;
+public:
+  ShenandoahParallelOopsDoThreadClosure(OopClosure* f, CodeBlobClosure* cf, ThreadClosure* thread_cl) :
+    _f(f), _cf(cf), _thread_cl(thread_cl) {}
+
+  void do_thread(Thread* t) {
+    if (_thread_cl != NULL) {
+      _thread_cl->do_thread(t);
+    }
+    t->oops_do(_f, _cf);
+  }
+};
+
+template <typename ITR>
+ShenandoahRootScanner<ITR>::ShenandoahRootScanner(uint n_workers, ShenandoahPhaseTimings::Phase phase) :
+  ShenandoahRootProcessor(phase),
+  _thread_roots(n_workers > 1) {
+}
+
+template <typename ITR>
+void ShenandoahRootScanner<ITR>::roots_do(uint worker_id, OopClosure* oops) {
+  CLDToOopClosure clds_cl(oops, ClassLoaderData::_claim_strong);
+  MarkingCodeBlobClosure blobs_cl(oops, !CodeBlobToOopClosure::FixRelocations);
+  roots_do(worker_id, oops, &clds_cl, &blobs_cl);
+}
+
+template <typename ITR>
+void ShenandoahRootScanner<ITR>::strong_roots_do(uint worker_id, OopClosure* oops) {
+  CLDToOopClosure clds_cl(oops, ClassLoaderData::_claim_strong);
+  MarkingCodeBlobClosure blobs_cl(oops, !CodeBlobToOopClosure::FixRelocations);
+  strong_roots_do(worker_id, oops, &clds_cl, &blobs_cl);
+}
+
+template <typename ITR>
+void ShenandoahRootScanner<ITR>::roots_do(uint worker_id, OopClosure* oops, CLDClosure* clds, CodeBlobClosure* code, ThreadClosure *tc) {
+  assert(!ShenandoahHeap::heap()->unload_classes() ||
+          ShenandoahHeap::heap()->heuristics()->can_do_traversal_gc(),
+          "No class unloading or traversal GC");
+  ShenandoahParallelOopsDoThreadClosure tc_cl(oops, code, tc);
+  ResourceMark rm;
+
+  _serial_roots.oops_do(oops, worker_id);
+  _cld_roots.clds_do(clds, clds, worker_id);
+  _thread_roots.threads_do(&tc_cl, worker_id);
+
+  // With ShenandoahConcurrentScanCodeRoots, we avoid scanning the entire code cache here,
+  // and instead do that in concurrent phase under the relevant lock. This saves init mark
+  // pause time.
+  if (code != NULL && !ShenandoahConcurrentScanCodeRoots) {
+    _code_roots.code_blobs_do(code, worker_id);
+  }
+}
+
+template <typename ITR>
+void ShenandoahRootScanner<ITR>::strong_roots_do(uint worker_id, OopClosure* oops, CLDClosure* clds, CodeBlobClosure* code, ThreadClosure* tc) {
+  assert(ShenandoahHeap::heap()->unload_classes(), "Should be used during class unloading");
+  ShenandoahParallelOopsDoThreadClosure tc_cl(oops, code, tc);
+  ResourceMark rm;
+
+  _serial_roots.oops_do(oops, worker_id);
+  _cld_roots.clds_do(clds, NULL, worker_id);
+  _thread_roots.threads_do(&tc_cl, worker_id);
 }
 
 template <typename IsAlive, typename KeepAlive>
