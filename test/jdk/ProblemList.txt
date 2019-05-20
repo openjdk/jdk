@@ -241,7 +241,7 @@ java/awt/Window/ShapedAndTranslucentWindows/FocusAWTTest.java 8222328 windows-al
 java/awt/Window/ShapedAndTranslucentWindows/Shaped.java  8222328 windows-all,linux-all,macosx-all
 java/awt/Window/ShapedAndTranslucentWindows/ShapedByAPI.java 8222328 windows-all,linux-all,macosx-all
 java/awt/Window/ShapedAndTranslucentWindows/ShapedTranslucent.java 8222328 windows-all,linux-all,macosx-all
-java/awt/Window/ShapedAndTranslucentWindows/StaticallyShaped.java 8222328 windows-all,macosx-all,linux-all
+java/awt/Window/ShapedAndTranslucentWindows/StaticallyShaped.java 8165218,8222328 windows-all,macosx-all,linux-all
 java/awt/Window/ShapedAndTranslucentWindows/Translucent.java 8222328 windows-all,linux-all,macosx-all
 java/awt/Window/AlwaysOnTop/AutoTestOnTop.java 6847593 macosx-all,windows-all,linux-all
 java/awt/Window/GrabSequence/GrabSequence.java 6848409 macosx-all,linux-all
