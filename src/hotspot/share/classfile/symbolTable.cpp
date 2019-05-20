@@ -481,12 +481,15 @@ Symbol* SymbolTable::do_add_if_needed(const char* name, int len, uintx hash, boo
   Thread* THREAD = Thread::current();
 
   do {
-    if (_local_table->get(THREAD, lookup, stg, &rehash_warning)) {
-      sym = stg.get_res_sym();
-      break;
-    }
+    // Callers have looked up the symbol once, insert the symbol.
     sym = allocate_symbol(name, len, heap);
     if (_local_table->insert(THREAD, lookup, sym, &rehash_warning, &clean_hint)) {
+      break;
+    }
+    // In case another thread did a concurrent add, return value already in the table.
+    // This could fail if the symbol got deleted concurrently, so loop back until success.
+    if (_local_table->get(THREAD, lookup, stg, &rehash_warning)) {
+      sym = stg.get_res_sym();
       break;
     }
   } while(true);

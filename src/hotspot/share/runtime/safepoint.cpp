@@ -516,6 +516,8 @@ bool SafepointSynchronize::is_cleanup_needed() {
   if (ObjectSynchronizer::is_cleanup_needed()) return true;
   // Need a safepoint if some inline cache buffers is non-empty
   if (!InlineCacheBuffer::is_empty()) return true;
+  if (StringTable::needs_rehashing()) return true;
+  if (SymbolTable::needs_rehashing()) return true;
   return false;
 }
 

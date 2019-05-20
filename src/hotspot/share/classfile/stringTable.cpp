@@ -372,15 +372,18 @@ oop StringTable::do_intern(Handle string_or_null_h, const jchar* name,
 
   bool rehash_warning;
   do {
-    if (_local_table->get(THREAD, lookup, stg, &rehash_warning)) {
-      update_needs_rehash(rehash_warning);
-      return stg.get_res_oop();
-    }
+    // Callers have already looked up the String using the jchar* name, so just go to add.
     WeakHandle<vm_string_table_data> wh = WeakHandle<vm_string_table_data>::create(string_h);
     // The hash table takes ownership of the WeakHandle, even if it's not inserted.
     if (_local_table->insert(THREAD, lookup, wh, &rehash_warning)) {
       update_needs_rehash(rehash_warning);
       return wh.resolve();
+    }
+    // In case another thread did a concurrent add, return value already in the table.
+    // This could fail if the String got gc'ed concurrently, so loop back until success.
+    if (_local_table->get(THREAD, lookup, stg, &rehash_warning)) {
+      update_needs_rehash(rehash_warning);
+      return stg.get_res_oop();
     }
   } while(true);
 }
