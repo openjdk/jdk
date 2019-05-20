@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@ import sun.java2d.pipe.Region;
 import sun.java2d.pipe.ShapeDrawPipe;
 import sun.java2d.pipe.TextPipe;
 import sun.java2d.pipe.ValidatePipe;
+import sun.java2d.x11.X11SurfaceData;
 import sun.java2d.x11.XSurfaceData;
 import sun.font.FontManagerNativeLibrary;
 
@@ -243,7 +244,7 @@ public abstract class XRSurfaceData extends XSurfaceData {
      */
     public static XRWindowSurfaceData createData(X11ComponentPeer peer) {
         XRGraphicsConfig gc = getGC(peer);
-        return new XRWindowSurfaceData(peer, gc, gc.getSurfaceType());
+        return new XRWindowSurfaceData(peer, gc, X11SurfaceData.getSurfaceType(gc, Transparency.OPAQUE));
     }
 
     /**
