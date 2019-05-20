@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -208,21 +208,22 @@ OGLBlitSwToSurface(OGLContext *oglc, SurfaceDataRasInfo *srcInfo,
 
     j2d_glPixelZoom(scalex, -scaley);
 
+    GLvoid *pSrc = PtrCoord(srcInfo->rasBase, sx1, srcInfo->pixelStride,
+                                              sy1, srcInfo->scanStride);
+
     // in case pixel stride is not a multiple of scanline stride the copy
     // has to be done line by line (see 6207877)
     if (srcInfo->scanStride % srcInfo->pixelStride != 0) {
         jint width = sx2-sx1;
         jint height = sy2-sy1;
-        GLvoid *pSrc = srcInfo->rasBase;
-
         while (height > 0) {
             j2d_glDrawPixels(width, 1, pf->format, pf->type, pSrc);
-            j2d_glBitmap(0, 0, 0, 0, (GLfloat)0, (GLfloat)-1, NULL);
+            j2d_glBitmap(0, 0, 0, 0, (GLfloat)0, (GLfloat)-scaley, NULL);
             pSrc = PtrAddBytes(pSrc, srcInfo->scanStride);
             height--;
         }
     } else {
-        j2d_glDrawPixels(sx2-sx1, sy2-sy1, pf->format, pf->type, srcInfo->rasBase);
+        j2d_glDrawPixels(sx2-sx1, sy2-sy1, pf->format, pf->type, pSrc);
     }
 
     j2d_glPixelZoom(1.0, 1.0);
@@ -317,12 +318,11 @@ OGLBlitToSurfaceViaTexture(OGLContext *oglc, SurfaceDataRasInfo *srcInfo,
             ty2 = ((GLdouble)sh) / th;
 
             if (swsurface) {
+                GLvoid *pSrc = PtrCoord(srcInfo->rasBase,
+                                        sx, srcInfo->pixelStride,
+                                        sy, srcInfo->scanStride);
                 if (slowPath) {
                     jint tmph = sh;
-                    GLvoid *pSrc = PtrCoord(srcInfo->rasBase,
-                                            sx, srcInfo->pixelStride,
-                                            sy, srcInfo->scanStride);
-
                     while (tmph > 0) {
                         j2d_glTexSubImage2D(GL_TEXTURE_2D, 0,
                                             0, sh - tmph, sw, 1,
@@ -332,16 +332,10 @@ OGLBlitToSurfaceViaTexture(OGLContext *oglc, SurfaceDataRasInfo *srcInfo,
                         tmph--;
                     }
                 } else {
-                    j2d_glPixelStorei(GL_UNPACK_SKIP_PIXELS, sx);
-                    j2d_glPixelStorei(GL_UNPACK_SKIP_ROWS, sy);
-
                     j2d_glTexSubImage2D(GL_TEXTURE_2D, 0,
                                         0, 0, sw, sh,
                                         pf->format, pf->type,
-                                        srcInfo->rasBase);
-
-                    j2d_glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
-                    j2d_glPixelStorei(GL_UNPACK_SKIP_ROWS, 0);
+                                        pSrc);
                 }
 
                 // the texture image is "right side up", so we align the
@@ -638,8 +632,9 @@ OGLBlitLoops_Blit(JNIEnv *env,
             J2dTraceLn4(J2D_TRACE_VERBOSE, "  dx1=%f dy1=%f dx2=%f dy2=%f",
                         dx1, dy1, dx2, dy2);
 
-            j2d_glPixelStorei(GL_UNPACK_SKIP_PIXELS, sx1);
-            j2d_glPixelStorei(GL_UNPACK_SKIP_ROWS, sy1);
+            // Note: we will calculate x/y positions in the raster manually
+            j2d_glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
+            j2d_glPixelStorei(GL_UNPACK_SKIP_ROWS, 0);
             j2d_glPixelStorei(GL_UNPACK_ROW_LENGTH,
                               srcInfo.scanStride / srcInfo.pixelStride);
             j2d_glPixelStorei(GL_UNPACK_ALIGNMENT, pf.alignment);
@@ -696,8 +691,6 @@ OGLBlitLoops_Blit(JNIEnv *env,
                 }
             }
 
-            j2d_glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
-            j2d_glPixelStorei(GL_UNPACK_SKIP_ROWS, 0);
             j2d_glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
             j2d_glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
         }

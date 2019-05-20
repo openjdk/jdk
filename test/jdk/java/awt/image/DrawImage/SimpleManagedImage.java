@@ -33,9 +33,6 @@ import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.ComponentColorModel;
 import java.awt.image.DataBuffer;
-import java.awt.image.DataBufferByte;
-import java.awt.image.DataBufferInt;
-import java.awt.image.DataBufferShort;
 import java.awt.image.Raster;
 import java.awt.image.VolatileImage;
 import java.awt.image.WritableRaster;
@@ -43,6 +40,8 @@ import java.io.File;
 import java.io.IOException;
 
 import javax.imageio.ImageIO;
+
+import sun.awt.image.SunWritableRaster;
 
 import static java.awt.Transparency.BITMASK;
 import static java.awt.Transparency.OPAQUE;
@@ -62,16 +61,17 @@ import static java.awt.image.BufferedImage.TYPE_INT_RGB;
  * @test
  * @key headful
  * @bug 8029253 6207877
- * @summary Tests asymmetric source offsets when unmanaged image is drawn to VI.
+ * @summary Tests the case when managed image is drawn to VI.
  *          Results of the blit to compatibleImage are used for comparison.
  * @author Sergey Bylokhov
- * @run main/othervm IncorrectUnmanagedImageSourceOffset
- * @run main/othervm -Dsun.java2d.uiScale=1 IncorrectUnmanagedImageSourceOffset
- * @run main/othervm -Dsun.java2d.uiScale=2 IncorrectUnmanagedImageSourceOffset
+ * @modules java.desktop/sun.awt.image
+ * @run main/othervm -Dsun.java2d.accthreshold=0 SimpleManagedImage
+ * @run main/othervm -Dsun.java2d.accthreshold=0 -Dsun.java2d.uiScale=1 SimpleManagedImage
+ * @run main/othervm -Dsun.java2d.accthreshold=0 -Dsun.java2d.uiScale=2 SimpleManagedImage
  */
-public final class IncorrectUnmanagedImageSourceOffset {
+public final class SimpleManagedImage {
 
-    // See the same test for managed images: IncorrectManagedImageSourceOffset
+    // See the same test for unmanaged images: SimpleUnmanagedImage
 
     private static final int[] TYPES = {TYPE_INT_RGB, TYPE_INT_ARGB,
                                         TYPE_INT_ARGB_PRE, TYPE_INT_BGR,
@@ -86,7 +86,7 @@ public final class IncorrectUnmanagedImageSourceOffset {
     public static void main(final String[] args) throws IOException {
         for (final int viType : TRANSPARENCIES) {
             for (final int biType : TYPES) {
-                BufferedImage bi = makeUnmanagedBI(biType);
+                BufferedImage bi = makeManagedBI(biType);
                 fill(bi);
                 test(bi, viType);
             }
@@ -99,12 +99,12 @@ public final class IncorrectUnmanagedImageSourceOffset {
                 .getLocalGraphicsEnvironment();
         GraphicsConfiguration gc = ge.getDefaultScreenDevice()
                                      .getDefaultConfiguration();
-        VolatileImage vi = gc.createCompatibleVolatileImage(511, 255, type);
-        BufferedImage gold = gc.createCompatibleImage(511, 255, type);
+        VolatileImage vi = gc.createCompatibleVolatileImage(1000, 1000, type);
+        BufferedImage gold = gc.createCompatibleImage(1000, 1000, type);
         // draw to compatible Image
+        init(gold);
         Graphics2D big = gold.createGraphics();
-        // force scaled blit
-        big.drawImage(bi, 7, 11, 127, 111, 7, 11, 127 * 2, 111, null);
+        big.drawImage(bi, 7, 11, null);
         big.dispose();
         // draw to volatile image
         BufferedImage snapshot;
@@ -117,9 +117,9 @@ public final class IncorrectUnmanagedImageSourceOffset {
                 }
                 continue;
             }
+            init(vi);
             Graphics2D vig = vi.createGraphics();
-            // force scaled blit
-            vig.drawImage(bi, 7, 11, 127, 111, 7, 11, 127 * 2, 111, null);
+            vig.drawImage(bi, 7, 11, null);
             vig.dispose();
             snapshot = vi.getSnapshot();
             if (vi.contentsLost()) {
@@ -132,8 +132,8 @@ public final class IncorrectUnmanagedImageSourceOffset {
             break;
         }
         // validate images
-        for (int x = 7; x < 127; ++x) {
-            for (int y = 11; y < 111; ++y) {
+        for (int x = 0; x < 1000; ++x) {
+            for (int y = 0; y < 1000; ++y) {
                 if (gold.getRGB(x, y) != snapshot.getRGB(x, y)) {
                     ImageIO.write(gold, "png", new File("gold.png"));
                     ImageIO.write(snapshot, "png", new File("bi.png"));
@@ -143,22 +143,14 @@ public final class IncorrectUnmanagedImageSourceOffset {
         }
     }
 
-    private static BufferedImage makeUnmanagedBI(final int type) {
+    private static BufferedImage makeManagedBI(final int type) {
         final BufferedImage bi;
         if (type == TYPE_CUSTOM) {
-            bi = makeCustomUnmanagedBI();
+            bi = makeCustomManagedBI();
         } else {
             bi = new BufferedImage(511, 255, type);
         }
-        final DataBuffer db = bi.getRaster().getDataBuffer();
-        if (db instanceof DataBufferInt) {
-            ((DataBufferInt) db).getData();
-        } else if (db instanceof DataBufferShort) {
-            ((DataBufferShort) db).getData();
-        } else if (db instanceof DataBufferByte) {
-            ((DataBufferByte) db).getData();
-        }
-        bi.setAccelerationPriority(0.0f);
+        bi.setAccelerationPriority(1.0f);
         return bi;
     }
 
@@ -167,7 +159,7 @@ public final class IncorrectUnmanagedImageSourceOffset {
      * BufferedImage.(w,h,TYPE_3BYTE_BGR), but uses the bigger scanlineStride.
      * This means that the raster will have gaps, between the rows.
      */
-    private static BufferedImage makeCustomUnmanagedBI() {
+    private static BufferedImage makeCustomManagedBI() {
         int w = 511, h = 255;
         ColorSpace cs = ColorSpace.getInstance(ColorSpace.CS_sRGB);
         int[] nBits = {8, 8, 8};
@@ -178,7 +170,18 @@ public final class IncorrectUnmanagedImageSourceOffset {
         WritableRaster raster =
                 Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE, w, h,
                                                w * 3 + 2, 3, bOffs, null);
-        return new BufferedImage(colorModel, raster, true, null);
+        BufferedImage bi = new BufferedImage(colorModel, raster, true, null);
+        SunWritableRaster.makeTrackable(raster.getDataBuffer());
+        SunWritableRaster.markDirty(bi);
+        return bi;
+    }
+
+    private static void init(final Image image) {
+        final Graphics2D graphics = (Graphics2D) image.getGraphics();
+        graphics.setComposite(AlphaComposite.Src);
+        graphics.setColor(new Color(0, 0, 0, 0));
+        graphics.fillRect(0, 0, image.getWidth(null), image.getHeight(null));
+        graphics.dispose();
     }
 
     private static void fill(final Image image) {
