@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,17 +51,23 @@ public class Test {
 
     static int count;
     static int failures;
+    static boolean retried;
 
     static void doTest(Object test[], InetAddress ia1, InetAddress ia2,
                        boolean silent) throws Exception {
-        String s1_type = (String)test[0];
-        String s2_type = (String)test[1];
-        int port = 0;
-
         /*
          * Increment test count
          */
         count++;
+
+        doTest(test, count, ia1, ia2, silent, !retried);
+    }
+
+    static void doTest(Object test[], int count, InetAddress ia1, InetAddress ia2,
+                       boolean silent, boolean retry) throws Exception {
+        String s1_type = (String)test[0];
+        String s2_type = (String)test[1];
+        int port = 0;
 
         /*
          * Do the test
@@ -74,6 +80,8 @@ public class Test {
         Socket sock1 = null;
         ServerSocket ss = null;
         DatagramSocket dsock1 = null;
+        boolean firstBound = false;
+
         try {
             /* bind the first socket */
 
@@ -95,6 +103,13 @@ public class Test {
 
             /* bind the second socket */
 
+            // The fact that the port was available for ia1 does not
+            // guarantee that it will also be available for ia2 as something
+            // else might already be bound to that port.
+            // For the sake of test stability we will retry once in
+            // case of unexpected bind exception.
+
+            firstBound = true;
             if (s2_type.equals("Socket")) {
                 try (Socket sock2 = new Socket()) {
                     sock2.bind( new InetSocketAddress(ia2, port));
@@ -145,6 +160,18 @@ public class Test {
          * If test passed and running in silent mode then exit
          */
         if (!failed && silent) {
+            return;
+        }
+
+        if (failed && retry && firstBound) {
+            // retry once at the first failure only
+            retried = true;
+            if (!silent) {
+                System.out.println("");
+                System.out.println("**************************");
+                System.out.println("Test " + count + ": Retrying...");
+            }
+            doTest(test, count, ia1, ia2, silent, false);
             return;
         }
 

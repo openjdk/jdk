@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,21 +29,25 @@
  * @bug 7129083
  * @summary Cookiemanager does not store cookies if url is read
  *          before setting cookiemanager
+ * @library /test/lib
  * @run main/othervm CookieHttpsClientTest
  */
 
 import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
+import java.net.InetAddress;
 import java.net.URL;
 import java.io.InputStream;
 import java.io.IOException;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
+import jdk.test.lib.net.URIBuilder;
 
 public class CookieHttpsClientTest {
     static final int TIMEOUT = 10 * 1000;
@@ -91,10 +95,11 @@ public class CookieHttpsClientTest {
      * to avoid infinite hangs.
      */
     void doServerSide() throws Exception {
+        InetAddress loopback = InetAddress.getLoopbackAddress();
         SSLServerSocketFactory sslssf =
             (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
         SSLServerSocket sslServerSocket =
-            (SSLServerSocket) sslssf.createServerSocket(serverPort);
+            (SSLServerSocket) sslssf.createServerSocket(serverPort, 0, loopback);
         serverPort = sslServerSocket.getLocalPort();
 
         /*
@@ -137,10 +142,17 @@ public class CookieHttpsClientTest {
                 return true;
             }});
 
-        URL url = new URL("https://localhost:" + serverPort +"/");
+        URL url = URIBuilder.newBuilder()
+                  .scheme("https")
+                  .loopback()
+                  .port(serverPort)
+                  .path("/")
+                  .toURL();
+
+        System.out.println("Client ready to connect to: " + url);
 
         // Run without a CookieHandler first
-        InputStream in = url.openConnection().getInputStream();
+        InputStream in = url.openConnection(java.net.Proxy.NO_PROXY).getInputStream();
         while (in.read() != -1);  // read response body so connection can be reused
 
         // Set a CookeHandler and retest using the HttpClient from the KAC
@@ -182,6 +194,10 @@ public class CookieHttpsClientTest {
 
     volatile Exception serverException = null;
     volatile Exception clientException = null;
+
+    private boolean sslConnectionFailed() {
+        return clientException instanceof SSLHandshakeException;
+    }
 
     public static void main(String args[]) throws Exception {
         String keyFilename =
@@ -229,7 +245,11 @@ public class CookieHttpsClientTest {
          */
         if (separateServerThread) {
             if (serverThread != null) {
-                serverThread.join();
+                // don't join the server thread if the
+                // client failed to connect
+                if (!sslConnectionFailed()) {
+                    serverThread.join();
+                }
             }
         } else {
             if (clientThread != null) {
@@ -259,7 +279,7 @@ public class CookieHttpsClientTest {
          */
         if ((local != null) && (remote != null)) {
             // If both failed, return the curthread's exception.
-            local.initCause(remote);
+            local.addSuppressed(remote);
             exception = local;
         } else if (local != null) {
             exception = local;
@@ -274,7 +294,7 @@ public class CookieHttpsClientTest {
          * output it.
          */
         if (exception != null) {
-            if (exception != startException) {
+            if (exception != startException && startException != null) {
                 exception.addSuppressed(startException);
             }
             throw exception;
@@ -323,7 +343,7 @@ public class CookieHttpsClientTest {
                         /*
                          * Our client thread just died.
                          */
-                        System.err.println("Client died...");
+                        System.err.println("Client died: " + e);
                         clientException = e;
                     }
                 }
@@ -333,6 +353,7 @@ public class CookieHttpsClientTest {
             try {
                 doClientSide();
             } catch (Exception e) {
+                System.err.println("Client died: " + e);
                 clientException = e;
             }
         }

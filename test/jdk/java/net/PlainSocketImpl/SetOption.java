@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,10 @@ public class SetOption {
 
     public static void main(String args[]) throws Exception {
 
-        ServerSocket ss = new ServerSocket(0);
-        Socket s1 = new Socket("localhost", ss.getLocalPort());
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        ServerSocket ss = new ServerSocket(0, 0, loopback);
+
+        Socket s1 = new Socket(loopback, ss.getLocalPort());
         Socket s2 = ss.accept();
 
         s1.close();

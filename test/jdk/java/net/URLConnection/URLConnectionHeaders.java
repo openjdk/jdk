@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,14 @@
  * @summary URLConnection cannot enumerate request properties,
  *          and URLConnection can neither get nor set multiple
  *          request properties w/ same key
+ * @library /test/lib
  *
  */
 
 import java.net.*;
 import java.util.*;
 import java.io.*;
+import jdk.test.lib.net.URIBuilder;
 
 public class URLConnectionHeaders {
 
@@ -77,15 +79,22 @@ public class URLConnectionHeaders {
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         try {
-            ServerSocket serversocket = new ServerSocket (0);
-            int port = serversocket.getLocalPort ();
-            XServer server = new XServer (serversocket);
-            server.start ();
-            Thread.sleep (200);
-            URL url = new URL ("http://localhost:"+port+"/index.html");
-            URLConnection uc = url.openConnection ();
+            InetAddress loopback = InetAddress.getLoopbackAddress();
+            ServerSocket serversocket = new ServerSocket();
+            serversocket.bind(new InetSocketAddress(loopback, 0));
+            int port = serversocket.getLocalPort();
+            XServer server = new XServer(serversocket);
+            server.start();
+            Thread.sleep(200);
+            URL url = URIBuilder.newBuilder()
+                      .scheme("http")
+                      .loopback()
+                      .port(port)
+                      .path("/index.html")
+                      .toURL();
+            URLConnection uc = url.openConnection();
 
             // add request properties
             uc.addRequestProperty("Cookie", "cookie1");
@@ -106,6 +115,7 @@ public class URLConnectionHeaders {
 
         } catch (Exception e) {
             e.printStackTrace();
+            throw e;
         }
     }
 }

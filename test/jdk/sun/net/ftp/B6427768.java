@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,13 +105,14 @@ public class B6427768 {
     }
 
     public static void main(String[] args) throws IOException {
-        FtpServer server = new FtpServer(0);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        FtpServer server = new FtpServer(loopback, 0);
         int port = server.getLocalPort();
         server.setFileSystemHandler(new MyFileSystemHandler("/"));
         server.setAuthHandler(new MyAuthHandler());
         server.start();
-        URL url = new URL("ftp://user:passwd@localhost:" + port + "/foo.txt");
-        URLConnection con = url.openConnection();
+        URL url = new URL("ftp://user:passwd@" + server.getAuthority() + "/foo.txt");
+        URLConnection con = url.openConnection(Proxy.NO_PROXY);
         // triggers the connection
         try {
             con.getInputStream();

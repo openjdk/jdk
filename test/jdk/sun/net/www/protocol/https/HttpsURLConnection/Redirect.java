@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 4423074
  * @summary Need to rebase all the duplicated classes from Merlin.
  *          This test will check out http POST
+ * @library /test/lib
  * @run main/othervm Redirect
  *
  *     SunJSSE does not support dynamic system properties, no way to re-use
@@ -35,6 +36,7 @@
 import java.io.*;
 import java.net.*;
 import javax.net.ssl.*;
+import jdk.test.lib.net.URIBuilder;
 
 public class Redirect {
 
@@ -95,10 +97,11 @@ public class Redirect {
      * to avoid infinite hangs.
      */
     void doServerSide() throws Exception {
+        InetAddress loopback = InetAddress.getLoopbackAddress();
         SSLServerSocketFactory sslssf =
             (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
         SSLServerSocket sslServerSocket =
-            (SSLServerSocket) sslssf.createServerSocket(serverPort);
+            (SSLServerSocket) sslssf.createServerSocket(serverPort, 0, loopback);
         serverPort = sslServerSocket.getLocalPort();
 
         /*
@@ -154,7 +157,11 @@ public class Redirect {
             }
 
             // Send HTTP POST request to server
-            URL url = new URL("https://localhost:"+serverPort);
+            URL url = URIBuilder.newBuilder()
+                      .scheme("https")
+                      .loopback()
+                      .port(serverPort)
+                      .toURL();
 
             HttpsURLConnection.setDefaultHostnameVerifier(
                                           new NameVerifier());
@@ -189,6 +196,10 @@ public class Redirect {
 
     volatile Exception serverException = null;
     volatile Exception clientException = null;
+
+    private boolean sslConnectionFailed() {
+        return clientException instanceof SSLHandshakeException;
+    }
 
     public static void main(String[] args) throws Exception {
         String keyFilename =
@@ -233,7 +244,9 @@ public class Redirect {
          * Wait for other side to close down.
          */
         if (separateServerThread) {
-            serverThread.join();
+            if (!sslConnectionFailed()) {
+                serverThread.join();
+            }
         } else {
             clientThread.join();
         }

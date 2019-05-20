@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,14 @@
 /*
  * @test
  * @bug 4868820
- * @summary IPv6 support for Windows XP and 2003 server
+ * @key intermittent
+ * @summary IPv6 support for Windows XP and 2003 server.
+ *          This test requires binding to the wildcard address and as such
+ *          may fail intermittently on some platforms.
  * @library /test/lib
  * @build jdk.test.lib.NetworkConfiguration
  *        jdk.test.lib.Platform
- * @run main UdpTest
+ * @run main UdpTest -d
  */
 
 import java.net.DatagramPacket;
@@ -92,6 +95,7 @@ public class UdpTest extends Tests {
     /* basic UDP connectivity test using IPv6 only and IPv4/IPv6 together */
 
     static void test1 () throws Exception {
+        System.out.println("Test1 starting");
         s1 = new DatagramSocket ();
         s2 = new DatagramSocket ();
         simpleDataExchange (s1, ia4addr, s2, ia4addr);
@@ -130,6 +134,7 @@ public class UdpTest extends Tests {
     /* check timeouts on receive */
 
     static void test2 () throws Exception {
+        System.out.println("Test2 starting");
         s1 = new DatagramSocket ();
         s2 = new DatagramSocket ();
         s1.setSoTimeout (4000);
@@ -180,6 +185,7 @@ public class UdpTest extends Tests {
     /* check connected sockets */
 
     static void test3 () throws Exception {
+        System.out.println("Test3 starting");
         s1 = new DatagramSocket ();
         s2 = new DatagramSocket ();
         s1.connect (ia6addr, s2.getLocalPort());
@@ -191,6 +197,7 @@ public class UdpTest extends Tests {
     /* check PortUnreachable */
 
     static void test4 () throws Exception {
+        System.out.println("Test4 starting");
         s1 = new DatagramSocket ();
         s1.connect (ia6addr, 5000);
         s1.setSoTimeout (3000);
