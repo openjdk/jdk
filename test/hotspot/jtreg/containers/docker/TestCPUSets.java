@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import jdk.test.lib.Asserts;
 import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
-
+import jtreg.SkippedException;
 
 public class TestCPUSets {
     private static final String imageName = Common.imageName("cpusets");
@@ -53,6 +53,7 @@ public class TestCPUSets {
         if (!DockerTestUtils.canTestDocker()) {
             return;
         }
+
 
         Common.prepareWhiteBox();
         DockerTestUtils.buildJdkDockerImage(imageName, "Dockerfile-BasicTest", "jdk-docker");
@@ -72,19 +73,45 @@ public class TestCPUSets {
         String cpuSetStr = CPUSetsReader.readFromProcStatus(setType);
 
         if (cpuSetStr == null) {
-            System.out.printf("The %s test is skipped %n", setType);
-        } else {
-            List<Integer> cpuSet = CPUSetsReader.parseCpuSet(cpuSetStr);
-
-            // Test subset of one, full subset, and half of the subset
-            testCpuSet(CPUSetsReader.listToString(cpuSet, 1));
-            if (cpuSet.size() > 1) {
-                testCpuSet(CPUSetsReader.listToString(cpuSet));
-            }
-            if (cpuSet.size() > 2) {
-                testCpuSet(CPUSetsReader.listToString(cpuSet, cpuSet.size()/2 ));
-            }
+            String msg = String.format("The %s test is skipped: cpuSetStr is null %n", setType);
+            throw new SkippedException(msg);
         }
+
+        List<Integer> cpuSet = CPUSetsReader.parseCpuSet(cpuSetStr);
+        int availableProcessors = Runtime.getRuntime().availableProcessors();
+
+        // print diagnostic info
+        printSet(setType, cpuSet);
+        log("getNumCpus(): " + CPUSetsReader.getNumCpus());
+        log("Runtime.getRuntime().availableProcessors(): " + availableProcessors);
+
+        int maxSetSize = Math.min(cpuSet.size(), availableProcessors);
+        log("maxSetSize = " + maxSetSize);
+
+        // Test subset of one, full set, and half of the set
+        testCpuSet(CPUSetsReader.listToString(cpuSet, 1));
+        if (maxSetSize >= 2) {
+            String cpuSetParam = CPUSetsReader.listToString(cpuSet, maxSetSize);
+            log("Testing with cpuSetParam = " + cpuSetParam);
+            testCpuSet(cpuSetParam);
+        }
+        if (maxSetSize >= 4) {
+            String cpuSetParam = CPUSetsReader.listToString(cpuSet, maxSetSize/2);
+            log("Testing with cpuSetParam = " + cpuSetParam);
+            testCpuSet(cpuSetParam);
+        }
+    }
+
+
+    private static void printSet(String setType, List<Integer> set) {
+        System.out.print("printSet(): " + setType + ": ");
+        set.forEach( i -> System.out.print(i + ", "));
+        System.out.println("");
+    }
+
+
+    private static void log(String msg) {
+        System.out.println(msg);
     }
 
 
