@@ -43,6 +43,7 @@ import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
+import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 
 /**
  * Generate the Class Information Page.
@@ -154,9 +155,9 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
     public void printDocument(Content contentTree) throws DocFileIOException {
         String description = getDescription("declaration", annotationType);
         PackageElement pkg = utils.containingPackage(this.annotationType);
-        Content stylesheetContent = getLocalStylesheetContent(pkg);
+        List<DocPath> localStylesheets = getLocalStylesheets(pkg);
         printHtmlDocument(configuration.metakeywords.getMetaKeywords(annotationType),
-                description, stylesheetContent, contentTree);
+                description, localStylesheets, contentTree);
     }
 
     /**

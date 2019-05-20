@@ -26,6 +26,7 @@
 package jdk.javadoc.internal.doclets.formats.html;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -399,7 +400,26 @@ public class HtmlDocletWriter {
                                   String description,
                                   Content body)
             throws DocFileIOException {
-        printHtmlDocument(metakeywords, description, new ContentBuilder(), body);
+        printHtmlDocument(metakeywords, description, new ContentBuilder(), Collections.emptyList(), body);
+    }
+
+    /**
+     * Generates the HTML document tree and prints it out.
+     *
+     * @param metakeywords Array of String keywords for META tag. Each element
+     *                     of the array is assigned to a separate META tag.
+     *                     Pass in null for no array
+     * @param description the content for the description META tag.
+     * @param localStylesheets local stylesheets to be included in the HEAD element
+     * @param body the body htmltree to be included in the document
+     * @throws DocFileIOException if there is a problem writing the file
+     */
+    public void printHtmlDocument(List<String> metakeywords,
+                                  String description,
+                                  List<DocPath> localStylesheets,
+                                  Content body)
+            throws DocFileIOException {
+        printHtmlDocument(metakeywords, description, new ContentBuilder(), localStylesheets, body);
     }
 
     /**
@@ -410,15 +430,19 @@ public class HtmlDocletWriter {
      *                     Pass in null for no array
      * @param description the content for the description META tag.
      * @param extraHeadContent any additional content to be included in the HEAD element
+     * @param localStylesheets local stylesheets to be included in the HEAD element
      * @param body the body htmltree to be included in the document
      * @throws DocFileIOException if there is a problem writing the file
      */
     public void printHtmlDocument(List<String> metakeywords,
                                   String description,
                                   Content extraHeadContent,
+                                  List<DocPath> localStylesheets,
                                   Content body)
             throws DocFileIOException {
         Content htmlComment = contents.newPage;
+        List<DocPath> additionalStylesheets = configuration.getAdditionalStylesheets();
+        additionalStylesheets.addAll(localStylesheets);
         Head head = new Head(path, configuration.docletVersion)
                 .setTimestamp(!configuration.notimestamp)
                 .setDescription(description)
@@ -426,7 +450,7 @@ public class HtmlDocletWriter {
                 .setTitle(winTitle)
                 .setCharset(configuration.charset)
                 .addKeywords(metakeywords)
-                .setStylesheets(configuration.getMainStylesheet(), configuration.getAdditionalStylesheets())
+                .setStylesheets(configuration.getMainStylesheet(), additionalStylesheets)
                 .setIndex(configuration.createindex, mainBodyScript)
                 .addContent(extraHeadContent);
 
@@ -2188,8 +2212,42 @@ public class HtmlDocletWriter {
         return mainBodyScript;
     }
 
-    Content getLocalStylesheetContent(Element element) throws DocFileIOException {
-        Content stylesheetContent = new ContentBuilder();
+    /**
+     * Returns the path of module/package specific stylesheets for the element.
+     * @param element module/Package element
+     * @return list of path of module/package specific stylesheets
+     * @throws DocFileIOException
+     */
+    List<DocPath> getLocalStylesheets(Element element) throws DocFileIOException {
+        List<DocPath> stylesheets = new ArrayList<>();
+        DocPath basePath = null;
+        if (element instanceof PackageElement) {
+            stylesheets.addAll(getModuleStylesheets((PackageElement)element));
+            basePath = docPaths.forPackage((PackageElement)element);
+        } else if (element instanceof ModuleElement) {
+            basePath = DocPaths.forModule((ModuleElement)element);
+        }
+        for (DocPath stylesheet : getStylesheets(element)) {
+            stylesheets.add(basePath.resolve(stylesheet.getPath()));
+        }
+        return stylesheets;
+    }
+
+    private List<DocPath> getModuleStylesheets(PackageElement pkgElement) throws
+            DocFileIOException {
+        List<DocPath> moduleStylesheets = new ArrayList<>();
+        ModuleElement moduleElement = utils.containingModule(pkgElement);
+        if (moduleElement != null && !moduleElement.isUnnamed()) {
+            List<DocPath> localStylesheets = getStylesheets(moduleElement);
+            DocPath basePath = DocPaths.forModule(moduleElement);
+            for (DocPath stylesheet : localStylesheets) {
+                moduleStylesheets.add(basePath.resolve(stylesheet));
+            }
+        }
+        return moduleStylesheets;
+    }
+
+    private List<DocPath> getStylesheets(Element element) throws DocFileIOException {
         List<DocPath> localStylesheets = configuration.localStylesheetMap.get(element);
         if (localStylesheets == null) {
             DocFilesHandlerImpl docFilesHandler = (DocFilesHandlerImpl)configuration
@@ -2197,11 +2255,7 @@ public class HtmlDocletWriter {
             localStylesheets = docFilesHandler.getStylesheets();
             configuration.localStylesheetMap.put(element, localStylesheets);
         }
-        for (DocPath stylesheet : localStylesheets) {
-            stylesheetContent.add(HtmlTree.LINK("stylesheet",
-                    "text/css", stylesheet.getPath(), "Style"));
-        }
-        return stylesheetContent;
+        return localStylesheets;
     }
 
 }

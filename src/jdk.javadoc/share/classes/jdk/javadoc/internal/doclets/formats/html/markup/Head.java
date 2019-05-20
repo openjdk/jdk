@@ -59,8 +59,8 @@ public class Head {
     private String description;
     private String generator;
     private boolean showTimestamp;
-    private DocFile mainStylesheetFile;
-    private List<DocFile> additionalStylesheetFiles = Collections.emptyList();
+    private DocPath mainStylesheet;
+    private List<DocPath> additionalStylesheets = Collections.emptyList();
     private boolean index;
     private Script mainBodyScript;
     private final List<Script> scripts;
@@ -157,14 +157,16 @@ public class Head {
 
     /**
      * Sets the main and any additional stylesheets to be listed in the HEAD element.
+     * The paths for the stylesheets must be relative to the root of the generated
+     * documentation hierarchy.
      *
      * @param main the main stylesheet, or null to use the default
      * @param additional a list of any additional stylesheets to be included
      * @return  this object
      */
-    public Head setStylesheets(DocFile main, List<DocFile> additional) {
-        this.mainStylesheetFile = main;
-        this.additionalStylesheetFiles = additional;
+    public Head setStylesheets(DocPath main, List<DocPath> additional) {
+        this.mainStylesheet = main;
+        this.additionalStylesheets = additional;
         return this;
     }
 
@@ -286,16 +288,13 @@ public class Head {
     }
 
     private void addStylesheets(HtmlTree tree) {
-        DocPath mainStylesheet;
-        if (mainStylesheetFile == null) {
+        if (mainStylesheet == null) {
             mainStylesheet = DocPaths.STYLESHEET;
-        } else {
-            mainStylesheet = DocPath.create(mainStylesheetFile.getName());
         }
         addStylesheet(tree, mainStylesheet);
 
-        for (DocFile file : additionalStylesheetFiles) {
-            addStylesheet(tree, DocPath.create(file.getName()));
+        for (DocPath path : additionalStylesheets) {
+            addStylesheet(tree, path);
         }
 
         if (index) {

@@ -47,6 +47,7 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.PackageSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
+import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 
 /**
@@ -317,9 +318,9 @@ public class PackageWriterImpl extends HtmlDocletWriter
     @Override
     public void printDocument(Content contentTree) throws DocFileIOException {
         String description = getDescription("declaration", packageElement);
-        Content stylesheetContent = getLocalStylesheetContent(packageElement);
+        List<DocPath> localStylesheets = getLocalStylesheets(packageElement);
         printHtmlDocument(configuration.metakeywords.getMetaKeywords(packageElement),
-                description, stylesheetContent, contentTree);
+                description, localStylesheets, contentTree);
     }
 
     /**
