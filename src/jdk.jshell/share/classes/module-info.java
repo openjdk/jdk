@@ -54,10 +54,7 @@
  *     definitions.
  * </p>
  *
- * <dl style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">
- * <dt class="simpleTagLabel">Tool Guides:
- * <dd>{@extLink jshell_tool_reference jshell}
- * </dl>
+ * @toolGuide jshell
  *
  * @provides javax.tools.Tool
  * @provides jdk.jshell.spi.ExecutionControlProvider

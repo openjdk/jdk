@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,7 @@
  * the JDK implementation-specific container file for classes and resources.
  *
  * <p> This module provides the equivalent of command-line access to the
- * <em>{@extLink jlink_tool_reference jlink}</em> and
- * <em>{@extLink jmod_tool_reference jmod}</em> tools via the
+ * <em>jlink</em> and <em>jmod</em> tools via the
  * {@link java.util.spi.ToolProvider ToolProvider} SPI.
  * Instances of the tools can be obtained by calling
  * {@link java.util.spi.ToolProvider#findFirst ToolProvider.findFirst}
@@ -41,11 +40,8 @@
  * <p> <em>jimage</em> only exists
  * as a command-line tool, and does not provide any direct API.
  *
- * <dl style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">
- * <dt class="simpleTagLabel">Tool Guides:
- * <dd>{@extLink jlink_tool_reference jlink},
- *     {@extLink jmod_tool_reference jmod}
- * </dl>
+ * @toolGuide jlink
+ * @toolGuide jmod
  *
  * @provides java.util.spi.ToolProvider
  *

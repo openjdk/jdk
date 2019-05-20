@@ -86,6 +86,7 @@ JAVADOC_TAGS := \
     -tag return \
     -tag throws \
     -taglet build.tools.taglet.ModuleGraph \
+    -taglet build.tools.taglet.ToolGuide \
     -tag since \
     -tag serialData \
     -tag factory \

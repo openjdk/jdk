@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,10 +55,7 @@
  * {@code jdk.zipfs} module, must be available if the compiler is to be able
  * to read JAR files.
  *
- * <dl style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">
- * <dt class="simpleTagLabel">Tool Guides:
- * <dd>{@extLink javac_tool_reference javac}
- * </dl>
+ * @toolGuide javac
  *
  * @provides java.util.spi.ToolProvider
  * @provides com.sun.tools.javac.platform.PlatformProvider
