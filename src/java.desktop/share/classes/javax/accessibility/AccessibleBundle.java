@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 
 package javax.accessibility;
 
-import java.util.Enumeration;
-import java.util.Hashtable;
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
@@ -49,8 +47,6 @@ import sun.awt.AWTAccessor;
  * @see AccessibleState
  */
 public abstract class AccessibleBundle {
-
-    private static Hashtable<Locale, Hashtable<String, Object>> table = new Hashtable<>();
 
     private final String defaultResourceBundleName
         = "com.sun.accessibility.internal.resources.accessibility";
@@ -87,26 +83,16 @@ public abstract class AccessibleBundle {
      * they can specify their own resource bundles which contain localized
      * strings for their keys.
      *
-     * @param  resourceBundleName the name of the resource bundle to use for
-     *         lookup
+     * @param  name the name of the resource bundle to use for lookup
      * @param  locale the locale for which to obtain a localized string
      * @return a localized string for the key
      */
-    protected String toDisplayString(String resourceBundleName,
-                                     Locale locale) {
-
-        // loads the resource bundle if necessary
-        loadResourceBundle(resourceBundleName, locale);
-
-        // returns the localized string
-        Hashtable<String, Object> ht = table.get(locale);
-        if (ht != null) {
-            Object o = ht.get(key);
-            if (o != null && o instanceof String) {
-                return (String)o;
-            }
+    protected String toDisplayString(final String name, final Locale locale) {
+        try {
+            return ResourceBundle.getBundle(name, locale).getString(key);
+        } catch (ClassCastException | MissingResourceException ignored) {
+            return key; // return the non-localized key
         }
-        return key;
     }
 
     /**
@@ -138,34 +124,5 @@ public abstract class AccessibleBundle {
      */
     public String toString() {
         return toDisplayString();
-    }
-
-    /**
-     * Loads the Accessibility resource bundle if necessary.
-     */
-    private void loadResourceBundle(String resourceBundleName,
-                                    Locale locale) {
-        if (! table.containsKey(locale)) {
-
-            try {
-                Hashtable<String, Object> resourceTable = new Hashtable<>();
-
-                ResourceBundle bundle = ResourceBundle.getBundle(resourceBundleName, locale);
-
-                Enumeration<String> iter = bundle.getKeys();
-                while(iter.hasMoreElements()) {
-                    String key = iter.nextElement();
-                    resourceTable.put(key, bundle.getObject(key));
-                }
-
-                table.put(locale, resourceTable);
-            }
-            catch (MissingResourceException e) {
-                System.err.println("loadResourceBundle: " + e);
-                // Just return so toDisplayString() returns the
-                // non-localized key.
-                return;
-            }
-        }
     }
 }
