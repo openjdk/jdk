@@ -9,6 +9,14 @@ grant codebase "http://localhost/" {
 grant codebase "http://127.0.0.1/" {
     permission java.util.PropertyPermission "user.name", "read";
 };
+grant codebase "http://[::1]/" {
+    permission java.util.PropertyPermission "user.name", "read";
+};
 grant codebase "http://localhost/", signedby "baz" {
     permission java.util.PropertyPermission "user.dir", "read";
+};
+// For IPSupport
+grant codebase "file:${test.classes}/../../../../test/lib/-" {
+    permission java.net.SocketPermission "localhost:0", "listen,resolve";
+    permission java.util.PropertyPermission "java.net.preferIPv4Stack", "read";
 };

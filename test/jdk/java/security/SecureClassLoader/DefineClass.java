@@ -51,10 +51,13 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.PropertyPermission;
+import jdk.test.lib.net.IPSupport;
 
 /*
  * @test
  * @bug 6826789 8131486 8130181
+ * @library /test/lib
+ * @build jdk.test.lib.net.IPSupport
  * @summary Make sure equivalent ProtectionDomains are granted the same
  *          permissions when the CodeSource URLs are different but resolve
  *          to the same ip address after name service resolution.
@@ -84,6 +87,15 @@ public class DefineClass {
         "AQAHYmFyL0JhcgEAEGphdmEvbGFuZy9PYmplY3QAIQACAAMAAAAAAAEAAQAE" +
         "AAUAAQAGAAAAHQABAAEAAAAFKrcAAbEAAAABAAcAAAAGAAEAAAABAAEACAAA" +
         "AAIACQ==";
+
+    // Base64 encoded bytes of simple class: "package bar2; public class Bar2 {}"
+    private final static String BAR2_CLASS =
+        "yv66vgAAADQADwoAAwAMBwANBwAOAQAGPGluaXQ+AQADKClWAQAEQ29kZQEA" +
+        "D0xpbmVOdW1iZXJUYWJsZQEABG1haW4BABYoW0xqYXZhL2xhbmcvU3RyaW5n" +
+        "OylWAQAKU291cmNlRmlsZQEACUJhcjIuamF2YQwABAAFAQAJYmFyMi9CYXIy" +
+        "AQAQamF2YS9sYW5nL09iamVjdAAhAAIAAwAAAAAAAgABAAQABQABAAYAAAAd" +
+        "AAEAAQAAAAUqtwABsQAAAAEABwAAAAYAAQAAAAEACQAIAAkAAQAGAAAAGQAA" +
+        "AAEAAAABsQAAAAEABwAAAAYAAQAAAAEAAQAKAAAAAgAL";
 
     // Base64 encoded bytes of simple class: "package baz; public class Baz {}"
     private final static String BAZ_CLASS =
@@ -137,12 +149,23 @@ public class DefineClass {
                                                       "foo.Foo", FOO_CLASS,
                                                       null);
         checkPerms(perms1, GRANTED_PERMS);
-        ArrayList<Permission> perms2 = getPermissions(scl, p,
-                                                      "http://127.0.0.1/",
-                                                      "bar.Bar", BAR_CLASS,
-                                                      null);
-        checkPerms(perms2, GRANTED_PERMS);
-        assert(perms1.equals(perms2));
+
+        if (IPSupport.hasIPv4()) {
+            ArrayList<Permission> perms2 = getPermissions(scl, p,
+                                                          "http://127.0.0.1/",
+                                                          "bar.Bar", BAR_CLASS,
+                                                          null);
+            checkPerms(perms2, GRANTED_PERMS);
+            assert(perms1.equals(perms2));
+        }
+        if (IPSupport.hasIPv6()) {
+            ArrayList<Permission> perms2 = getPermissions(scl, p,
+                                                          "http://[::1]/",
+                                                          "bar2.Bar2", BAR2_CLASS,
+                                                          null);
+            checkPerms(perms2, GRANTED_PERMS);
+            assert(perms1.equals(perms2));
+        }
 
         // check that class signed by baz is granted an additional permission
         Certificate[] chain = new Certificate[] {getCert(BAZ_CERT)};
