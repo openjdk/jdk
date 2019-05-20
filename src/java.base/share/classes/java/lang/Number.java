@@ -54,6 +54,11 @@ package java.lang;
  */
 public abstract class Number implements java.io.Serializable {
     /**
+     * Constructor for subclasses to call.
+     */
+    public Number() {super();}
+
+    /**
      * Returns the value of the specified number as an {@code int}.
      *
      * @return  the numeric value represented by this object after conversion
