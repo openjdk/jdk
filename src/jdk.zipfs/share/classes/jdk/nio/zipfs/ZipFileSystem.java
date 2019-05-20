@@ -1934,7 +1934,7 @@ class ZipFileSystem extends FileSystem {
             this.pos = pos;
         }
 
-        // constructor for cenInit() (1) remove trailing '/' (2) pad leading '/'
+        // constructor for initCEN() (1) remove trailing '/' (2) pad leading '/'
         IndexNode(byte[] cen, int pos, int nlen) {
             int noff = pos + CENHDR;
             if (cen[noff + nlen - 1] == '/') {
@@ -1948,8 +1948,49 @@ class ZipFileSystem extends FileSystem {
                 System.arraycopy(cen, noff, name, 1, nlen);
                 name[0] = '/';
             }
-            name(name);
+            name(normalize(name));
             this.pos = pos;
+        }
+
+        // Normalize the IndexNode.name field.
+        private byte[] normalize(byte[] path) {
+            int len = path.length;
+            if (len == 0)
+                return path;
+            byte prevC = 0;
+            for (int pathPos = 0; pathPos < len; pathPos++) {
+                byte c = path[pathPos];
+                if (c == '/' && prevC == '/')
+                    return normalize(path, pathPos - 1);
+                prevC = c;
+            }
+            if (len > 1 && prevC == '/') {
+                return Arrays.copyOf(path, len - 1);
+            }
+            return path;
+        }
+
+        private byte[] normalize(byte[] path, int off) {
+            // As we know we have at least one / to trim, we can reduce
+            // the size of the resulting array
+            byte[] to = new byte[path.length - 1];
+            int pathPos = 0;
+            while (pathPos < off) {
+                to[pathPos] = path[pathPos];
+                pathPos++;
+            }
+            int toPos = pathPos;
+            byte prevC = 0;
+            while (pathPos < path.length) {
+                byte c = path[pathPos++];
+                if (c == '/' && prevC == '/')
+                    continue;
+                to[toPos++] = c;
+                prevC = c;
+            }
+            if (toPos > 1 && to[toPos - 1] == '/')
+                toPos--;
+            return (toPos == to.length) ? to : Arrays.copyOf(to, toPos);
         }
 
         private static final ThreadLocal<IndexNode> cachedKey = new ThreadLocal<>();
