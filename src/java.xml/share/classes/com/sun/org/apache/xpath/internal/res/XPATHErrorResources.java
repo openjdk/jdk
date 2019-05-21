@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -32,6 +31,7 @@ import java.util.ListResourceBundle;
   * Also you need to  update the count of messages(MAX_CODE)or
  * the count of warnings(MAX_WARNING) [ Information purpose only]
  * @xsl.usage advanced
+ * @LastModified: May 2019
  */
 public class XPATHErrorResources extends ListResourceBundle
 {
@@ -150,6 +150,8 @@ public class XPATHErrorResources extends ListResourceBundle
          "ER_FOUND_COMMA_BUT_NO_FOLLOWING_ARG";
   public static final String ER_PREDICATE_ILLEGAL_SYNTAX =
          "ER_PREDICATE_ILLEGAL_SYNTAX";
+  public static final String ER_PREDICATE_TOO_MANY_OPEN =
+         "ER_PREDICATE_TOO_MANY_OPEN";
   public static final String ER_ILLEGAL_AXIS_NAME = "ER_ILLEGAL_AXIS_NAME";
   public static final String ER_UNKNOWN_NODETYPE = "ER_UNKNOWN_NODETYPE";
   public static final String ER_PATTERN_LITERAL_NEEDS_BE_QUOTED =
@@ -463,6 +465,9 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
 
   { ER_PREDICATE_ILLEGAL_SYNTAX,
       "'..[predicate]' or '.[predicate]' is illegal syntax.  Use 'self::node()[predicate]' instead."},
+
+  { ER_PREDICATE_TOO_MANY_OPEN,
+      "Stack overflow while parsing {0} at {1}. Too many open predicates {2}."},
 
   { ER_ILLEGAL_AXIS_NAME,
      "illegal axis name: {0}"},
