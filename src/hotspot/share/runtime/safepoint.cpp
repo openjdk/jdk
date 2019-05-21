@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.inline.hpp"
+#include "classfile/dictionary.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -610,23 +611,27 @@ public:
     }
 
     if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_CLD_PURGE)) {
-      // CMS delays purging the CLDG until the beginning of the next safepoint and to
-      // make sure concurrent sweep is done
-      const char* name = "purging class loader data graph";
-      EventSafepointCleanupTask event;
-      TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
-      ClassLoaderDataGraph::purge_if_needed();
+      if (ClassLoaderDataGraph::should_purge_and_reset()) {
+        // CMS delays purging the CLDG until the beginning of the next safepoint and to
+        // make sure concurrent sweep is done
+        const char* name = "purging class loader data graph";
+        EventSafepointCleanupTask event;
+        TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
+        ClassLoaderDataGraph::purge();
 
-      post_safepoint_cleanup_task_event(event, safepoint_id, name);
+        post_safepoint_cleanup_task_event(event, safepoint_id, name);
+      }
     }
 
     if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_SYSTEM_DICTIONARY_RESIZE)) {
-      const char* name = "resizing system dictionaries";
-      EventSafepointCleanupTask event;
-      TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
-      ClassLoaderDataGraph::resize_if_needed();
+      if (Dictionary::does_any_dictionary_needs_resizing()) {
+        const char* name = "resizing system dictionaries";
+        EventSafepointCleanupTask event;
+        TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
+        ClassLoaderDataGraph::resize_dictionaries();
 
-      post_safepoint_cleanup_task_event(event, safepoint_id, name);
+        post_safepoint_cleanup_task_event(event, safepoint_id, name);
+      }
     }
 
     _subtasks.all_tasks_completed(_num_workers);

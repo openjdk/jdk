@@ -596,14 +596,13 @@ void ClassLoaderDataGraph::purge() {
   DependencyContext::purge_dependency_contexts();
 }
 
-int ClassLoaderDataGraph::resize_if_needed() {
+int ClassLoaderDataGraph::resize_dictionaries() {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint!");
   int resized = 0;
-  if (Dictionary::does_any_dictionary_needs_resizing()) {
-    FOR_ALL_DICTIONARY(cld) {
-      if (cld->dictionary()->resize_if_needed()) {
-        resized++;
-      }
+  assert (Dictionary::does_any_dictionary_needs_resizing(), "some dictionary should need resizing");
+  FOR_ALL_DICTIONARY(cld) {
+    if (cld->dictionary()->resize_if_needed()) {
+      resized++;
     }
   }
   return resized;
