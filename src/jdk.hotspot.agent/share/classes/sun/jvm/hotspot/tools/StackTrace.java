@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,8 +71,8 @@ public class StackTrace extends Tool {
                 concLocksPrinter = new ConcurrentLocksPrinter();
             }
             Threads threads = VM.getVM().getThreads();
-            int i = 1;
-            for (JavaThread cur = threads.first(); cur != null; cur = cur.next(), i++) {
+            for (int i = 0; i < threads.getNumberOfThreads(); i++) {
+                JavaThread cur = threads.getJavaThreadAt(i);
                 if (cur.isJavaThread()) {
                     cur.printThreadInfoOn(tty);
                     try {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,15 +129,12 @@ public abstract class AbstractHeapGraphWriter implements HeapGraphWriter {
 
     protected void writeJavaThreads() throws IOException {
         Threads threads = VM.getVM().getThreads();
-        JavaThread jt = threads.first();
-        int index = 1;
-        while (jt != null) {
+        for (int i = 0; i < threads.getNumberOfThreads(); i++) {
+            JavaThread jt = threads.getJavaThreadAt(i);
             if (jt.getThreadObj() != null) {
                 // Note that the thread serial number range is 1-to-N
-                writeJavaThread(jt, index);
-                index++;
+                writeJavaThread(jt, i + 1);
             }
-            jt = jt.next();
         }
     }
 

@@ -708,8 +708,8 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         int frameSerialNum = 0;
         int numThreads = 0;
         Threads threads = VM.getVM().getThreads();
-
-        for (JavaThread thread = threads.first(); thread != null; thread = thread.next()) {
+        for (int i = 0; i < threads.getNumberOfThreads(); i++) {
+            JavaThread thread = threads.getJavaThreadAt(i);
             Oop threadObj = thread.getThreadObj();
             if (threadObj != null && !thread.isExiting() && !thread.isHiddenFromExternalView()) {
 

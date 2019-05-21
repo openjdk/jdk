@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -189,12 +189,12 @@ public class JSJavaVM extends DefaultScriptObject {
 
     private synchronized JSList getThreads() {
         if (threadsCache == null) {
-            List threads = new ArrayList(0);
-            threadsCache = factory.newJSList(threads);
-            JavaThread jthread = vm.getThreads().first();
-            while (jthread != null) {
-                threads.add(jthread);
-                jthread = jthread.next();
+            List threadsList = new ArrayList(0);
+            threadsCache = factory.newJSList(threadsList);
+            Threads threads = VM.getVM().getThreads();
+            for (int i = 0; i < threads.getNumberOfThreads(); i++) {
+                JavaThread thread = threads.getJavaThreadAt(i);
+                threadsList.add(thread);
             }
         }
         return threadsCache;

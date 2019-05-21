@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -619,10 +619,10 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
         Threads threads = VM.getVM().getThreads();
         int len = threads.getNumberOfThreads();
         long[] result = new long[len * 3];    // triple
-        JavaThread t = threads.first();
         long beg, end;
         int i = 0;
-        while (t != null) {
+        for (int k = 0; k < threads.getNumberOfThreads(); k++) {
+            JavaThread t = threads.getJavaThreadAt(k);
             end = t.getStackBaseValue();
             beg = end - t.getStackSize();
             BsdThread bsdt = (BsdThread)t.getThreadProxy();
@@ -631,7 +631,6 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
             result[i] = uid;
             result[i + 1] = beg;
             result[i + 2] = end;
-            t = t.next();
             i += 3;
         }
         return result;

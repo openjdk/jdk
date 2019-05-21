@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,12 +42,41 @@ import sun.jvm.hotspot.runtime.bsd_x86.BsdX86JavaThreadPDAccess;
 import sun.jvm.hotspot.runtime.bsd_amd64.BsdAMD64JavaThreadPDAccess;
 import sun.jvm.hotspot.utilities.*;
 
+class ThreadsList extends VMObject {
+    private static AddressField  threadsField;
+    private static CIntegerField lengthField;
+
+    static {
+        VM.registerVMInitializedObserver((o, d) -> initialize(VM.getVM().getTypeDataBase()));
+    }
+
+    private static synchronized void initialize(TypeDataBase db) {
+        Type type = db.lookupType("ThreadsList");
+        lengthField = type.getCIntegerField("_length");
+        threadsField = type.getAddressField("_threads");
+    }
+
+    public Address getJavaThreadAddressAt(int i) {
+      Address threadAddr = threadsField.getValue(addr);
+      Address at = threadAddr.getAddressAt(VM.getVM().getAddressSize() * i);
+      return at;
+    }
+
+    public long length() {
+        return lengthField.getValue(addr);
+    }
+
+    public ThreadsList(Address addr) {
+        super(addr);
+    }
+}
+
 public class Threads {
     private static JavaThreadFactory threadFactory;
     private static AddressField      threadListField;
-    private static CIntegerField     numOfThreadsField;
     private static VirtualConstructor virtualConstructor;
     private static JavaThreadPDAccess access;
+    private static ThreadsList _list;
 
     static {
         VM.registerVMInitializedObserver(new Observer() {
@@ -58,10 +87,8 @@ public class Threads {
     }
 
     private static synchronized void initialize(TypeDataBase db) {
-        Type type = db.lookupType("Threads");
-
-        threadListField = type.getAddressField("_thread_list");
-        numOfThreadsField = type.getCIntegerField("_number_of_threads");
+        Type type = db.lookupType("ThreadsSMRSupport");
+        threadListField = type.getAddressField("_java_thread_list");
 
         // Instantiate appropriate platform-specific JavaThreadFactory
         String os  = VM.getVM().getOS();
@@ -134,6 +161,7 @@ public class Threads {
     }
 
     public Threads() {
+        _list = VMObjectFactory.newObject(ThreadsList.class, threadListField.getValue());
     }
 
     /** NOTE: this returns objects of type JavaThread, CompilerThread,
@@ -147,17 +175,15 @@ public class Threads {
       false for the three subclasses. FIXME: should reconsider the
       inheritance hierarchy; see {@link
       sun.jvm.hotspot.runtime.JavaThread#isJavaThread}. */
-    public JavaThread first() {
-        Address threadAddr = threadListField.getValue();
-        if (threadAddr == null) {
-            return null;
+    public JavaThread getJavaThreadAt(int i) {
+        if (i < _list.length()) {
+            return createJavaThreadWrapper(_list.getJavaThreadAddressAt(i));
         }
-
-        return createJavaThreadWrapper(threadAddr);
+        return null;
     }
 
     public int getNumberOfThreads() {
-        return (int) numOfThreadsField.getValue();
+        return (int) _list.length();
     }
 
     /** Routine for instantiating appropriately-typed wrapper for a
@@ -177,7 +203,9 @@ public class Threads {
     /** Memory operations */
     public void oopsDo(AddressVisitor oopVisitor) {
         // FIXME: add more of VM functionality
-        for (JavaThread thread = first(); thread != null; thread = thread.next()) {
+        Threads threads = VM.getVM().getThreads();
+        for (int i = 0; i < threads.getNumberOfThreads(); i++) {
+            JavaThread thread = threads.getJavaThreadAt(i);
             thread.oopsDo(oopVisitor);
         }
     }
@@ -185,15 +213,17 @@ public class Threads {
     // refer to Threads::owning_thread_from_monitor_owner
     public JavaThread owningThreadFromMonitor(Address o) {
         if (o == null) return null;
-        for (JavaThread thread = first(); thread != null; thread = thread.next()) {
+        for (int i = 0; i < getNumberOfThreads(); i++) {
+            JavaThread thread = getJavaThreadAt(i);
             if (o.equals(thread.threadObjectAddress())) {
                 return thread;
             }
         }
 
-        for (JavaThread thread = first(); thread != null; thread = thread.next()) {
-          if (thread.isLockOwned(o))
-            return thread;
+        for (int i = 0; i < getNumberOfThreads(); i++) {
+            JavaThread thread = getJavaThreadAt(i);
+            if (thread.isLockOwned(o))
+                return thread;
         }
         return null;
     }
@@ -206,7 +236,8 @@ public class Threads {
     // Get list of Java threads that are waiting to enter the specified monitor.
     public List getPendingThreads(ObjectMonitor monitor) {
         List pendingThreads = new ArrayList();
-        for (JavaThread thread = first(); thread != null; thread = thread.next()) {
+        for (int i = 0; i < getNumberOfThreads(); i++) {
+            JavaThread thread = getJavaThreadAt(i);
             if (thread.isCompilerThread() || thread.isCodeCacheSweeperThread()) {
                 continue;
             }
@@ -221,7 +252,8 @@ public class Threads {
     // Get list of Java threads that have called Object.wait on the specified monitor.
     public List getWaitingThreads(ObjectMonitor monitor) {
         List pendingThreads = new ArrayList();
-        for (JavaThread thread = first(); thread != null; thread = thread.next()) {
+        for (int i = 0; i < getNumberOfThreads(); i++) {
+            JavaThread thread = getJavaThreadAt(i);
             ObjectMonitor waiting = thread.getCurrentWaitingMonitor();
             if (monitor.equals(waiting)) {
                 pendingThreads.add(thread);

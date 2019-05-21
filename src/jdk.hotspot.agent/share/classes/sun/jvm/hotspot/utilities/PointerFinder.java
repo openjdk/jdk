@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,9 @@ public class PointerFinder {
 
         if (VM.getVM().getUseTLAB()) {
           // Try to find thread containing it
-          for (JavaThread t = VM.getVM().getThreads().first(); t != null; t = t.next()) {
+          Threads threads = VM.getVM().getThreads();
+          for (int i = 0; i < threads.getNumberOfThreads(); i++) {
+            JavaThread t = threads.getJavaThreadAt(i);
             ThreadLocalAllocBuffer tlab = t.tlab();
             if (tlab.contains(a)) {
               loc.inTLAB = true;
@@ -125,7 +127,9 @@ public class PointerFinder {
       return loc;
     }
     // Look in thread-local handles
-    for (JavaThread t = VM.getVM().getThreads().first(); t != null; t = t.next()) {
+    Threads threads = VM.getVM().getThreads();
+    for (int i = 0; i < threads.getNumberOfThreads(); i++) {
+      JavaThread t = threads.getJavaThreadAt(i);
       JNIHandleBlock handleBlock = t.activeHandles();
       if (handleBlock != null) {
         handleBlock = handleBlock.blockContainingHandle(a);
