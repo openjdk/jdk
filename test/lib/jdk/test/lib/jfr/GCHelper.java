@@ -80,6 +80,7 @@ public class GCHelper {
     public static final String pauseLevelEvent = "GCPhasePauseLevel";
 
     private static final List<String> g1HeapRegionTypes;
+    private static final List<String> shenandoahHeapRegionStates;
     private static PrintStream defaultErrorLog = null;
 
     public static int getGcId(RecordedEvent event) {
@@ -207,6 +208,21 @@ public class GCHelper {
                                                          };
 
         g1HeapRegionTypes = Collections.unmodifiableList(Arrays.asList(g1HeapRegionTypeLiterals));
+
+        String[] shenandoahHeapRegionStateLiterals = new String[] {
+                                                                    "Empty Uncommitted",
+                                                                    "Empty Committed",
+                                                                    "Regular",
+                                                                    "Humongous Start",
+                                                                    "Humongous Continuation",
+                                                                    "Humongous Start, Pinned",
+                                                                    "Collection Set",
+                                                                    "Pinned",
+                                                                    "Collection Set, Pinned",
+                                                                    "Trash"
+        };
+
+        shenandoahHeapRegionStates = Collections.unmodifiableList(Arrays.asList(shenandoahHeapRegionStateLiterals));
     }
 
     /**
@@ -441,6 +457,13 @@ public class GCHelper {
 
     public static boolean isValidG1HeapRegionType(final String type) {
         return g1HeapRegionTypes.contains(type);
+    }
+
+    public static boolean assertIsValidShenandoahHeapRegionState(final String state) {
+        if (!shenandoahHeapRegionStates.contains(state)) {
+            throw new AssertionError("Unknown state '" + state + "', valid heap region states are " + shenandoahHeapRegionStates);
+        }
+        return true;
     }
 
     /**

@@ -983,6 +983,27 @@
     <Field type="ulong" name="value" label="Value" />
   </Event>
 
+  <Event name="ShenandoahHeapRegionStateChange" category="Java Virtual Machine, GC, Detailed" label="Shenandoah Heap Region State Change" description="Information about a Shenandoah heap region state change"
+    startTime="false">
+    <Field type="uint" name="index" label="Index" />
+    <Field type="ShenandoahHeapRegionState" name="from" label="From" />
+    <Field type="ShenandoahHeapRegionState" name="to" label="To" />
+    <Field type="ulong" contentType="address" name="start" label="Start" />
+    <Field type="ulong" contentType="bytes" name="used" label="Used" />
+  </Event>
+
+  <Event name="ShenandoahHeapRegionInformation" category="Java Virtual Machine, GC, Detailed" label="Shenandoah Heap Region Information" description="Information about a specific heap region in the Shenandoah GC"
+    period="everyChunk">
+    <Field type="uint" name="index" label="Index" />
+    <Field type="ShenandoahHeapRegionState" name="state" label="State" />
+    <Field type="ulong" contentType="address" name="start" label="Start" />
+    <Field type="ulong" contentType="bytes" name="used" label="Used" />
+  </Event>
+
+  <Type name="ShenandoahHeapRegionState" label="Shenandoah Heap Region State">
+    <Field type="string" name="state" label="State" />
+  </Type>
+
   <Type name="ZStatisticsCounterType" label="Z Statistics Counter">
     <Field type="string" name="counter" label="Counter" />
   </Type>
