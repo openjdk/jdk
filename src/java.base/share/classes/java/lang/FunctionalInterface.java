@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ import java.lang.annotation.*;
  * regardless of whether or not a {@code FunctionalInterface}
  * annotation is present on the interface declaration.
  *
- * @jls 4.3.2. The Class Object
+ * @jls 4.3.2 The Class Object
  * @jls 9.8 Functional Interfaces
  * @jls 9.4.3 Interface Method Body
  * @jls 9.6.4.9 @FunctionalInterface

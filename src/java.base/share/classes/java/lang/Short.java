@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -352,7 +352,7 @@ public final class Short extends Number implements Comparable<Short> {
     /**
      * Returns the value of this {@code Short} as a {@code byte} after
      * a narrowing primitive conversion.
-     * @jls 5.1.3 Narrowing Primitive Conversions
+     * @jls 5.1.3 Narrowing Primitive Conversion
      */
     public byte byteValue() {
         return (byte)value;
@@ -370,7 +370,7 @@ public final class Short extends Number implements Comparable<Short> {
     /**
      * Returns the value of this {@code Short} as an {@code int} after
      * a widening primitive conversion.
-     * @jls 5.1.2 Widening Primitive Conversions
+     * @jls 5.1.2 Widening Primitive Conversion
      */
     public int intValue() {
         return (int)value;
@@ -379,7 +379,7 @@ public final class Short extends Number implements Comparable<Short> {
     /**
      * Returns the value of this {@code Short} as a {@code long} after
      * a widening primitive conversion.
-     * @jls 5.1.2 Widening Primitive Conversions
+     * @jls 5.1.2 Widening Primitive Conversion
      */
     public long longValue() {
         return (long)value;
@@ -388,7 +388,7 @@ public final class Short extends Number implements Comparable<Short> {
     /**
      * Returns the value of this {@code Short} as a {@code float}
      * after a widening primitive conversion.
-     * @jls 5.1.2 Widening Primitive Conversions
+     * @jls 5.1.2 Widening Primitive Conversion
      */
     public float floatValue() {
         return (float)value;
@@ -397,7 +397,7 @@ public final class Short extends Number implements Comparable<Short> {
     /**
      * Returns the value of this {@code Short} as a {@code double}
      * after a widening primitive conversion.
-     * @jls 5.1.2 Widening Primitive Conversions
+     * @jls 5.1.2 Widening Primitive Conversion
      */
     public double doubleValue() {
         return (double)value;

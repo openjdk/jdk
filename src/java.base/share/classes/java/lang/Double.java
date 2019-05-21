@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -673,7 +673,7 @@ public final class Double extends Number
      *
      * @return  the {@code double} value represented by this object
      *          converted to type {@code byte}
-     * @jls 5.1.3 Narrowing Primitive Conversions
+     * @jls 5.1.3 Narrowing Primitive Conversion
      * @since 1.1
      */
     public byte byteValue() {
@@ -686,7 +686,7 @@ public final class Double extends Number
      *
      * @return  the {@code double} value represented by this object
      *          converted to type {@code short}
-     * @jls 5.1.3 Narrowing Primitive Conversions
+     * @jls 5.1.3 Narrowing Primitive Conversion
      * @since 1.1
      */
     public short shortValue() {
@@ -696,7 +696,7 @@ public final class Double extends Number
     /**
      * Returns the value of this {@code Double} as an {@code int}
      * after a narrowing primitive conversion.
-     * @jls 5.1.3 Narrowing Primitive Conversions
+     * @jls 5.1.3 Narrowing Primitive Conversion
      *
      * @return  the {@code double} value represented by this object
      *          converted to type {@code int}
@@ -711,7 +711,7 @@ public final class Double extends Number
      *
      * @return  the {@code double} value represented by this object
      *          converted to type {@code long}
-     * @jls 5.1.3 Narrowing Primitive Conversions
+     * @jls 5.1.3 Narrowing Primitive Conversion
      */
     public long longValue() {
         return (long)value;
@@ -723,7 +723,7 @@ public final class Double extends Number
      *
      * @return  the {@code double} value represented by this object
      *          converted to type {@code float}
-     * @jls 5.1.3 Narrowing Primitive Conversions
+     * @jls 5.1.3 Narrowing Primitive Conversion
      * @since 1.0
      */
     public float floatValue() {

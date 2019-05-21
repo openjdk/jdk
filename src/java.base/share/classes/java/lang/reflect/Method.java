@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -403,7 +403,7 @@ public final class Method extends Executable {
      * @return a string describing this {@code Method}
      *
      * @jls 8.4.3 Method Modifiers
-     * @jls 9.4   Method Declarations
+     * @jls 9.4 Method Declarations
      * @jls 9.6.1 Annotation Type Elements
      */
     public String toString() {
@@ -474,7 +474,7 @@ public final class Method extends Executable {
      * @since 1.5
      *
      * @jls 8.4.3 Method Modifiers
-     * @jls 9.4   Method Declarations
+     * @jls 9.4 Method Declarations
      * @jls 9.6.1 Annotation Type Elements
      */
     @Override

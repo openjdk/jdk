@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +108,7 @@ import jdk.internal.reflect.Reflection;
  * <em>named modules</em>.  Instead those packages are automatically defined
  * and have no specification and implementation versioning information.
  *
- * @jvms 5.3 Run-time package
+ * @jvms 5.3 Creation and Loading
  * @see <a href="{@docRoot}/../specs/jar/jar.html#package-sealing">
  * The JAR File Specification: Package Sealing</a>
  * @see ClassLoader#definePackage(String, String, String, String, String, String, String, URL)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,7 +104,7 @@ public interface Types {
      * @return {@code true} if and only if the first type is assignable
      *          to the second
      * @throws IllegalArgumentException if given a type for an executable, package, or module
-     * @jls 5.2 Assignment Conversion
+     * @jls 5.2 Assignment Contexts
      */
     boolean isAssignable(TypeMirror t1, TypeMirror t2);
 
@@ -115,7 +115,7 @@ public interface Types {
      * @param t2  the second type
      * @return {@code true} if and only if the first type contains the second
      * @throws IllegalArgumentException if given a type for an executable, package, or module
-     * @jls 4.5.1.1 Type Argument Containment and Equivalence
+     * @jls 4.5.1 Type Arguments of Parameterized Types
      */
     boolean contains(TypeMirror t1, TypeMirror t2);
 
