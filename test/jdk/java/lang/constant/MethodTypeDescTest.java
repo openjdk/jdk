@@ -237,7 +237,7 @@ public class MethodTypeDescTest extends SymbolicDescTest {
         try {
             MethodTypeDesc newDesc = mtDesc.dropParameterTypes(1, 0);
             fail("start index > end index should have failed");
-        } catch (IllegalArgumentException ex) {
+        } catch (IndexOutOfBoundsException ex) {
             // good
         }
     }

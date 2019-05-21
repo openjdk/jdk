@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,10 +111,8 @@ final class MethodTypeDescImpl implements MethodTypeDesc {
 
     @Override
     public MethodTypeDesc dropParameterTypes(int start, int end) {
-        if (start < 0 || start >= argTypes.length || end < 0 || end > argTypes.length)
+        if (start < 0 || start >= argTypes.length || end < 0 || end > argTypes.length || start > end)
             throw new IndexOutOfBoundsException();
-        else if (start > end)
-            throw new IllegalArgumentException(String.format("Range (%d, %d) not valid for size %d", start, end, argTypes.length));
         ClassDesc[] newArgs = new ClassDesc[argTypes.length - (end - start)];
         System.arraycopy(argTypes, 0, newArgs, 0, start);
         System.arraycopy(argTypes, end, newArgs, start, argTypes.length - end);

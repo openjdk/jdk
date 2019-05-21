@@ -141,8 +141,8 @@ public interface MethodTypeDesc
      * @param end the index after the last parameter to remove
      * @return a {@linkplain MethodTypeDesc} describing the desired method type
      * @throws IndexOutOfBoundsException if {@code start} is outside the half-open
-     * range {[0, parameterCount)}, or {@code end} is outside the closed range
-     * {@code [0, parameterCount]}
+     * range {@code [0, parameterCount)}, or {@code end} is outside the closed range
+     * {@code [0, parameterCount]}, or if {@code start > end}
      */
     MethodTypeDesc dropParameterTypes(int start, int end);
 
