@@ -28,7 +28,9 @@ package test.java.time.chrono;
 import java.time.*;
 import java.time.chrono.*;
 import java.time.format.*;
+import java.util.Arrays;
 import java.util.Locale;
+import java.util.stream.Stream;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -39,12 +41,17 @@ import static org.testng.Assert.assertEquals;
  * chrono implementation.
  * Note: The exact result may depend on locale data provider's implementation.
  *
- * @bug 8171049
+ * @bug 8171049 8224105
  */
 @Test
 public class TestEraDisplayName {
     private static final Locale THAI = Locale.forLanguageTag("th-TH");
     private static final Locale EGYPT = Locale.forLanguageTag("ar-EG");
+
+    private static final LocalDate REIWA_1ST = LocalDate.of(2019, 5, 1);
+    private static final DateTimeFormatter JAPANESE_FORMATTER =
+         DateTimeFormatter.ofPattern("yyyy MM dd GGGG G GGGGG")
+            .withChronology(JapaneseChronology.INSTANCE);
 
     @DataProvider(name="eraDisplayName")
     Object[][] eraDisplayName() {
@@ -135,8 +142,22 @@ public class TestEraDisplayName {
         };
     }
 
+    @DataProvider
+    Object[][] allLocales() {
+        return Arrays.stream(Locale.getAvailableLocales())
+            .map(Stream::of)
+            .map(Stream::toArray)
+            .toArray(Object[][]::new);
+    }
+
     @Test(dataProvider="eraDisplayName")
     public void test_eraDisplayName(Era era, TextStyle style, Locale locale, String expected) {
         assertEquals(era.getDisplayName(style, locale), expected);
+    }
+
+    @Test(dataProvider="allLocales")
+    public void test_reiwaNames(Locale locale) throws DateTimeParseException {
+        DateTimeFormatter f = JAPANESE_FORMATTER.withLocale(locale);
+        assertEquals(LocalDate.parse(REIWA_1ST.format(f), f), REIWA_1ST);
     }
 }

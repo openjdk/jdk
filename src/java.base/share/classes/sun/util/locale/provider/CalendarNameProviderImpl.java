@@ -257,11 +257,13 @@ public class CalendarNameProviderImpl extends CalendarNameProvider implements Av
         return langtags;
     }
 
+    // Check if each string is unique, except null or empty strings,
+    // as these strings are used for keys in the name-to-value map.
     private boolean hasDuplicates(String[] strings) {
         int len = strings.length;
         for (int i = 0; i < len - 1; i++) {
             String a = strings[i];
-            if (a != null) {
+            if (a != null && !a.isEmpty()) {
                 for (int j = i + 1; j < len; j++) {
                     if (a.equals(strings[j]))  {
                         return true;
