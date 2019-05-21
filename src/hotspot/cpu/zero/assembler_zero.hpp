@@ -37,6 +37,12 @@ class Assembler : public AbstractAssembler {
 
  public:
   void pd_patch_instruction(address branch, address target, const char* file, int line);
+
+  //---<  calculate length of instruction  >---
+  static unsigned int instr_len(unsigned char *instr) { return 1; }
+
+  //---<  longest instructions  >---
+  static unsigned int instr_maxlen() { return 1; }
 };
 
 class MacroAssembler : public Assembler {

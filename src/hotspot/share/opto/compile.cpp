@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -713,16 +713,19 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
   TraceTime t1("Total compilation time", &_t_totalCompilation, CITime, CITimeVerbose);
   TraceTime t2(NULL, &_t_methodCompilation, CITime, false);
 
-#ifndef PRODUCT
+#if defined(SUPPORT_ASSEMBLY) || defined(SUPPORT_ABSTRACT_ASSEMBLY)
   bool print_opto_assembly = directive->PrintOptoAssemblyOption;
-  if (!print_opto_assembly) {
-    bool print_assembly = directive->PrintAssemblyOption;
-    if (print_assembly && !Disassembler::can_decode()) {
-      tty->print_cr("PrintAssembly request changed to PrintOptoAssembly");
-      print_opto_assembly = true;
-    }
-  }
-  set_print_assembly(print_opto_assembly);
+  // We can always print a disassembly, either abstract (hex dump) or
+  // with the help of a suitable hsdis library. Thus, we should not
+  // couple print_assembly and print_opto_assembly controls.
+  // But: always print opto and regular assembly on compile command 'print'.
+  bool print_assembly = directive->PrintAssemblyOption;
+  set_print_assembly(print_opto_assembly || print_assembly);
+#else
+  set_print_assembly(false); // must initialize.
+#endif
+
+#ifndef PRODUCT
   set_parsed_irreducible_loop(false);
 
   if (directive->ReplayInlineOption) {
@@ -1027,6 +1030,8 @@ Compile::Compile( ciEnv* ci_env,
 #ifndef PRODUCT
   set_print_assembly(PrintFrameConverterAssembly);
   set_parsed_irreducible_loop(false);
+#else
+  set_print_assembly(false); // Must initialize.
 #endif
   set_has_irreducible_loop(false); // no loops
 
@@ -2552,12 +2557,25 @@ void Compile::Code_Gen() {
 
 //------------------------------dump_asm---------------------------------------
 // Dump formatted assembly
-#ifndef PRODUCT
-void Compile::dump_asm(int *pcs, uint pc_limit) {
+#if defined(SUPPORT_OPTO_ASSEMBLY)
+void Compile::dump_asm_on(outputStream* st, int* pcs, uint pc_limit) {
+
+  int pc_digits = 3; // #chars required for pc
+  int sb_chars  = 3; // #chars for "start bundle" indicator
+  int tab_size  = 8;
+  if (pcs != NULL) {
+    int max_pc = 0;
+    for (uint i = 0; i < pc_limit; i++) {
+      max_pc = (max_pc < pcs[i]) ? pcs[i] : max_pc;
+    }
+    pc_digits  = ((max_pc < 4096) ? 3 : ((max_pc < 65536) ? 4 : ((max_pc < 65536*256) ? 6 : 8))); // #chars required for pc
+  }
+  int prefix_len = ((pc_digits + sb_chars + tab_size - 1)/tab_size)*tab_size;
+
   bool cut_short = false;
-  tty->print_cr("#");
-  tty->print("#  ");  _tf->dump();  tty->cr();
-  tty->print_cr("#");
+  st->print_cr("#");
+  st->print("#  ");  _tf->dump_on(st);  st->cr();
+  st->print_cr("#");
 
   // For all blocks
   int pc = 0x0;                 // Program counter
@@ -2575,16 +2593,18 @@ void Compile::dump_asm(int *pcs, uint pc_limit) {
       continue;
     }
     n = block->head();
-    if (pcs && n->_idx < pc_limit) {
-      tty->print("%3.3x   ", pcs[n->_idx]);
-    } else {
-      tty->print("      ");
+    if ((pcs != NULL) && (n->_idx < pc_limit)) {
+      pc = pcs[n->_idx];
+      st->print("%*.*x", pc_digits, pc_digits, pc);
     }
-    block->dump_head(_cfg);
+    st->fill_to(prefix_len);
+    block->dump_head(_cfg, st);
     if (block->is_connector()) {
-      tty->print_cr("        # Empty connector block");
+      st->fill_to(prefix_len);
+      st->print_cr("# Empty connector block");
     } else if (block->num_preds() == 2 && block->pred(1)->is_CatchProj() && block->pred(1)->as_CatchProj()->_con == CatchProjNode::fall_through_index) {
-      tty->print_cr("        # Block is sole successor of call");
+      st->fill_to(prefix_len);
+      st->print_cr("# Block is sole successor of call");
     }
 
     // For all instructions
@@ -2620,34 +2640,39 @@ void Compile::dump_asm(int *pcs, uint pc_limit) {
           !n->is_top() &&       // Debug info table constants
           !(n->is_Con() && !n->is_Mach())// Debug info table constants
           ) {
-        if (pcs && n->_idx < pc_limit)
-          tty->print("%3.3x", pcs[n->_idx]);
-        else
-          tty->print("   ");
-        tty->print(" %c ", starts_bundle);
+        if ((pcs != NULL) && (n->_idx < pc_limit)) {
+          pc = pcs[n->_idx];
+          st->print("%*.*x", pc_digits, pc_digits, pc);
+        } else {
+          st->fill_to(pc_digits);
+        }
+        st->print(" %c ", starts_bundle);
         starts_bundle = ' ';
-        tty->print("\t");
-        n->format(_regalloc, tty);
-        tty->cr();
+        st->fill_to(prefix_len);
+        n->format(_regalloc, st);
+        st->cr();
       }
 
       // If we have an instruction with a delay slot, and have seen a delay,
       // then back up and print it
       if (valid_bundle_info(n) && node_bundling(n)->use_unconditional_delay()) {
-        assert(delay != NULL, "no unconditional delay instruction");
+        // Coverity finding - Explicit null dereferenced.
+        guarantee(delay != NULL, "no unconditional delay instruction");
         if (WizardMode) delay->dump();
 
         if (node_bundling(delay)->starts_bundle())
           starts_bundle = '+';
-        if (pcs && n->_idx < pc_limit)
-          tty->print("%3.3x", pcs[n->_idx]);
-        else
-          tty->print("   ");
-        tty->print(" %c ", starts_bundle);
+        if ((pcs != NULL) && (n->_idx < pc_limit)) {
+          pc = pcs[n->_idx];
+          st->print("%*.*x", pc_digits, pc_digits, pc);
+        } else {
+          st->fill_to(pc_digits);
+        }
+        st->print(" %c ", starts_bundle);
         starts_bundle = ' ';
-        tty->print("\t");
-        delay->format(_regalloc, tty);
-        tty->cr();
+        st->fill_to(prefix_len);
+        delay->format(_regalloc, st);
+        st->cr();
         delay = NULL;
       }
 
@@ -2656,19 +2681,13 @@ void Compile::dump_asm(int *pcs, uint pc_limit) {
         // Print the exception table for this offset
         _handler_table.print_subtable_for(pc);
       }
+      st->bol(); // Make sure we start on a new line
     }
-
-    if (pcs && n->_idx < pc_limit)
-      tty->print_cr("%3.3x", pcs[n->_idx]);
-    else
-      tty->cr();
-
+    st->cr(); // one empty line between blocks
     assert(cut_short || delay == NULL, "no unconditional delay branch");
-
   } // End of per-block dump
-  tty->cr();
 
-  if (cut_short)  tty->print_cr("*** disassembly is cut short ***");
+  if (cut_short)  st->print_cr("*** disassembly is cut short ***");
 }
 #endif
 

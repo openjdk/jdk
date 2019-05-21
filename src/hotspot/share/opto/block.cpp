@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -267,7 +267,7 @@ bool PhaseCFG::is_uncommon(const Block* block) {
 
 #ifndef PRODUCT
 void Block::dump_bidx(const Block* orig, outputStream* st) const {
-  if (_pre_order) st->print("B%d",_pre_order);
+  if (_pre_order) st->print("B%d", _pre_order);
   else st->print("N%d", head()->_idx);
 
   if (Verbose && orig != this) {
@@ -291,30 +291,36 @@ void Block::dump_pred(const PhaseCFG* cfg, Block* orig, outputStream* st) const 
 }
 
 void Block::dump_head(const PhaseCFG* cfg, outputStream* st) const {
-  // Print the basic block
+  // Print the basic block.
   dump_bidx(this, st);
-  st->print(": #\t");
+  st->print(": ");
 
-  // Print the incoming CFG edges and the outgoing CFG edges
+  // Print the outgoing CFG edges.
+  st->print("#\tout( ");
   for( uint i=0; i<_num_succs; i++ ) {
     non_connector_successor(i)->dump_bidx(_succs[i], st);
     st->print(" ");
   }
-  st->print("<- ");
+
+  // Print the incoming CFG edges.
+  st->print(") <- ");
   if( head()->is_block_start() ) {
+    st->print("in( ");
     for (uint i=1; i<num_preds(); i++) {
       Node *s = pred(i);
       if (cfg != NULL) {
         Block *p = cfg->get_block_for_node(s);
         p->dump_pred(cfg, p, st);
       } else {
-        while (!s->is_block_start())
+        while (!s->is_block_start()) {
           s = s->in(0);
+        }
         st->print("N%d ", s->_idx );
       }
     }
+    st->print(") ");
   } else {
-    st->print("BLOCK HEAD IS JUNK  ");
+    st->print("BLOCK HEAD IS JUNK ");
   }
 
   // Print loop, if any
@@ -327,12 +333,15 @@ void Block::dump_head(const PhaseCFG* cfg, outputStream* st) const {
     while (bx->is_connector()) {
       bx = cfg->get_block_for_node(bx->pred(1));
     }
-    st->print("\tLoop: B%d-B%d ", bhead->_pre_order, bx->_pre_order);
+    st->print("Loop( B%d-B%d ", bhead->_pre_order, bx->_pre_order);
     // Dump any loop-specific bits, especially for CountedLoops.
     loop->dump_spec(st);
+    st->print(")");
   } else if (has_loop_alignment()) {
-    st->print(" top-of-loop");
+    st->print("top-of-loop");
   }
+
+  // Print frequency and other optimization-relevant information
   st->print(" Freq: %g",_freq);
   if( Verbose || WizardMode ) {
     st->print(" IDom: %d/#%d", _idom ? _idom->_pre_order : 0, _dom_depth);

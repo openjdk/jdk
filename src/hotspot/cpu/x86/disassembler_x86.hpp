@@ -33,4 +33,25 @@
     return "";
   }
 
+  // Returns address of n-th instruction preceding addr,
+  // NULL if no preceding instruction can be found.
+  // On CISC architectures, it is difficult to impossible to step
+  // backwards in the instruction stream. Therefore just return NULL.
+  // It might be beneficial to check "is_readable" as we do on ppc and s390.
+  static address find_prev_instr(address addr, int n_instr) {
+    return NULL;
+  }
+
+  // special-case instruction decoding.
+  // There may be cases where the binutils disassembler doesn't do
+  // the perfect job. In those cases, decode_instruction0 may kick in
+  // and do it right.
+  // If nothing had to be done, just return "here", otherwise return "here + instr_len(here)"
+  static address decode_instruction0(address here, outputStream* st, address virtual_begin = NULL) {
+    return here;
+  }
+
+  // platform-specific instruction annotations (like value of loaded constants)
+  static void annotate(address pc, outputStream* st) { };
+
 #endif // CPU_X86_DISASSEMBLER_X86_HPP

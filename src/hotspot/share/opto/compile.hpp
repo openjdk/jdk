@@ -1348,7 +1348,13 @@ class Compile : public Phase {
   static void print_statistics() PRODUCT_RETURN;
 
   // Dump formatted assembly
-  void dump_asm(int *pcs = NULL, uint pc_limit = 0) PRODUCT_RETURN;
+#if defined(SUPPORT_OPTO_ASSEMBLY)
+  void dump_asm_on(outputStream* ost, int* pcs, uint pc_limit);
+  void dump_asm(int* pcs = NULL, uint pc_limit = 0) { dump_asm_on(tty, pcs, pc_limit); }
+#else
+  void dump_asm_on(outputStream* ost, int* pcs, uint pc_limit) { return; }
+  void dump_asm(int* pcs = NULL, uint pc_limit = 0) { return; }
+#endif
   void dump_pc(int *pcs, int pc_limit, Node *n);
 
   // Verify ADLC assumptions during startup

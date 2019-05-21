@@ -43,6 +43,26 @@
 #define ATTRIBUTE_ALIGNED(x)
 #endif
 
+// These are #defines to selectively turn on/off the Print(Opto)Assembly
+// capabilities. Choices should be led by a tradeoff between
+// code size and improved supportability.
+// if PRINT_ASSEMBLY then PRINT_ABSTRACT_ASSEMBLY must be true as well
+// to have a fallback in case hsdis is not available.
+#if defined(PRODUCT)
+  #define SUPPORT_ABSTRACT_ASSEMBLY
+  #define SUPPORT_ASSEMBLY
+  #undef  SUPPORT_OPTO_ASSEMBLY      // Can't activate. In PRODUCT, many dump methods are missing.
+  #undef  SUPPORT_DATA_STRUCTS       // Of limited use. In PRODUCT, many print methods are empty.
+#else
+  #define SUPPORT_ABSTRACT_ASSEMBLY
+  #define SUPPORT_ASSEMBLY
+  #define SUPPORT_OPTO_ASSEMBLY
+  #define SUPPORT_DATA_STRUCTS
+#endif
+#if defined(SUPPORT_ASSEMBLY) && !defined(SUPPORT_ABSTRACT_ASSEMBLY)
+  #define SUPPORT_ABSTRACT_ASSEMBLY
+#endif
+
 // This file holds all globally used constants & types, class (forward)
 // declarations and a few frequently used utility functions.
 

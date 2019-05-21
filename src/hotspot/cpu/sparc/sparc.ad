@@ -1,5 +1,5 @@
 //
-// Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -1295,7 +1295,8 @@ static enum RC rc_class( OptoReg::Name reg ) {
 #ifndef PRODUCT
 ATTRIBUTE_PRINTF(2, 3)
 static void print_helper(outputStream* st, const char* format, ...) {
-  if (st->position() > 0) {
+  const int tab_size = 8;
+  if (st->position() > tab_size) {
     st->cr();
     st->sp();
   }

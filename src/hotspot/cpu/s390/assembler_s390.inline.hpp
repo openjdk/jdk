@@ -1344,7 +1344,7 @@ inline void Assembler::z_brcl(branch_condition m, Label& L) { z_brcl(m, target(L
 
 // Instruction must start at passed address.
 // Extra check for illtraps with ID.
-inline int Assembler::instr_len(unsigned char *instr) {
+inline unsigned int Assembler::instr_len(unsigned char *instr) {
   switch ((*instr) >> 6) {
     case 0: return 2;
     case 1: // fallthru

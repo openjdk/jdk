@@ -929,11 +929,13 @@ class Assembler : public AbstractAssembler {
 
   enum Predict { pt = 1, pn = 0 }; // pt = predict taken
 
-  // Instruction must start at passed address.
-  static int instr_len(unsigned char *instr) { return BytesPerInstWord; }
+  //---<  calculate length of instruction  >---
+  // With PPC64 being a RISC architecture, this always is BytesPerInstWord
+  // instruction must start at passed address
+  static unsigned int instr_len(unsigned char *instr) { return BytesPerInstWord; }
 
-  // longest instructions
-  static int instr_maxlen() { return BytesPerInstWord; }
+  //---<  longest instructions  >---
+  static unsigned int instr_maxlen() { return BytesPerInstWord; }
 
   // Test if x is within signed immediate range for nbits.
   static bool is_simm(int x, unsigned int nbits) {

@@ -199,6 +199,14 @@ class Assembler : public AbstractAssembler  {
   static const int LogInstructionSize = 2;
   static const int InstructionSize    = 1 << LogInstructionSize;
 
+  //---<  calculate length of instruction  >---
+  // We just use the values set above.
+  // instruction must start at passed address
+  static unsigned int instr_len(unsigned char *instr) { return InstructionSize; }
+
+  //---<  longest instructions  >---
+  static unsigned int instr_maxlen() { return InstructionSize; }
+
   static inline AsmCondition inverse(AsmCondition cond) {
     assert ((cond != al) && (cond != nv), "AL and NV conditions cannot be inversed");
     return (AsmCondition)((int)cond ^ 1);

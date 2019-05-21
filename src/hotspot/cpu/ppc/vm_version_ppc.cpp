@@ -708,6 +708,8 @@ void VM_Version::determine_section_size() {
   uint32_t *code_end = (uint32_t *)a->pc();
   a->flush();
 
+  cb.insts()->set_end((u_char*)code_end);
+
   double loop1_seconds,loop2_seconds, rel_diff;
   uint64_t start1, stop1;
 
@@ -725,10 +727,11 @@ void VM_Version::determine_section_size() {
 
   rel_diff = (loop2_seconds - loop1_seconds) / loop1_seconds *100;
 
-  if (PrintAssembly) {
+  if (PrintAssembly || PrintStubCode) {
     ttyLocker ttyl;
     tty->print_cr("Decoding section size detection stub at " INTPTR_FORMAT " before execution:", p2i(code));
-    Disassembler::decode((u_char*)code, (u_char*)code_end, tty);
+    // Use existing decode function. This enables the [MachCode] format which is needed to DecodeErrorFile.
+    Disassembler::decode(&cb, (u_char*)code, (u_char*)code_end, tty);
     tty->print_cr("Time loop1 :%f", loop1_seconds);
     tty->print_cr("Time loop2 :%f", loop2_seconds);
     tty->print_cr("(time2 - time1) / time1 = %f %%", rel_diff);

@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "asm/assembler.inline.hpp"
 #include "code/codeCache.hpp"
 #include "code/compiledIC.hpp"
 #include "code/compiledMethod.inline.hpp"
@@ -456,14 +457,17 @@ nmethod* nmethod::new_native_nmethod(const methodHandle& method,
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     int native_nmethod_size = CodeBlob::allocation_size(code_buffer, sizeof(nmethod));
+
     CodeOffsets offsets;
     offsets.set_value(CodeOffsets::Verified_Entry, vep_offset);
     offsets.set_value(CodeOffsets::Frame_Complete, frame_complete);
-    nm = new (native_nmethod_size, CompLevel_none) nmethod(method(), compiler_none, native_nmethod_size,
-                                            compile_id, &offsets,
-                                            code_buffer, frame_size,
-                                            basic_lock_owner_sp_offset,
-                                            basic_lock_sp_offset, oop_maps);
+    nm = new (native_nmethod_size, CompLevel_none)
+    nmethod(method(), compiler_none, native_nmethod_size,
+            compile_id, &offsets,
+            code_buffer, frame_size,
+            basic_lock_owner_sp_offset,
+            basic_lock_sp_offset,
+            oop_maps);
     NOT_PRODUCT(if (nm != NULL)  native_nmethod_stats.note_native_nmethod(nm));
   }
 
@@ -593,9 +597,9 @@ nmethod::nmethod(
   _native_basic_lock_sp_offset(basic_lock_sp_offset)
 {
   {
-    int scopes_data_offset = 0;
-    int deoptimize_offset       = 0;
-    int deoptimize_mh_offset    = 0;
+    int scopes_data_offset   = 0;
+    int deoptimize_offset    = 0;
+    int deoptimize_mh_offset = 0;
 
     debug_only(NoSafepointVerifier nsv;)
     assert_locked_or_safepoint(CodeCache_lock);
@@ -658,18 +662,32 @@ nmethod::nmethod(
       xtty->stamp();
       xtty->end_head(" address='" INTPTR_FORMAT "'", (intptr_t) this);
     }
-    // print the header part first
-    print();
-    // then print the requested information
+    // Print the header part, then print the requested information.
+    // This is both handled in decode2(), called via print_code() -> decode()
     if (PrintNativeNMethods) {
+      tty->print_cr("-------------------------- Assembly (native nmethod) ---------------------------");
       print_code();
-      if (oop_maps != NULL) {
-        oop_maps->print();
+      tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
+#if defined(SUPPORT_DATA_STRUCTS)
+      if (AbstractDisassembler::show_structs()) {
+        if (oop_maps != NULL) {
+          tty->print("oop maps:"); // oop_maps->print_on(tty) outputs a cr() at the beginning
+          oop_maps->print_on(tty);
+          tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
+        }
+      }
+#endif
+    } else {
+      print(); // print the header part only.
+    }
+#if defined(SUPPORT_DATA_STRUCTS)
+    if (AbstractDisassembler::show_structs()) {
+      if (PrintRelocations) {
+        print_relocations();
+        tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
       }
     }
-    if (PrintRelocations) {
-      print_relocations();
-    }
+#endif
     if (xtty != NULL) {
       xtty->tail("print_native_nmethod");
     }
@@ -746,22 +764,21 @@ nmethod::nmethod(
       } else {
         _deopt_mh_handler_begin = NULL;
       }
-    } else {
+    } else
 #endif
-    // Exception handler and deopt handler are in the stub section
-    assert(offsets->value(CodeOffsets::Exceptions) != -1, "must be set");
-    assert(offsets->value(CodeOffsets::Deopt     ) != -1, "must be set");
+    {
+      // Exception handler and deopt handler are in the stub section
+      assert(offsets->value(CodeOffsets::Exceptions) != -1, "must be set");
+      assert(offsets->value(CodeOffsets::Deopt     ) != -1, "must be set");
 
-    _exception_offset       = _stub_offset          + offsets->value(CodeOffsets::Exceptions);
-    _deopt_handler_begin    = (address) this + _stub_offset          + offsets->value(CodeOffsets::Deopt);
-    if (offsets->value(CodeOffsets::DeoptMH) != -1) {
-      _deopt_mh_handler_begin  = (address) this + _stub_offset          + offsets->value(CodeOffsets::DeoptMH);
-    } else {
-      _deopt_mh_handler_begin  = NULL;
+      _exception_offset       = _stub_offset          + offsets->value(CodeOffsets::Exceptions);
+      _deopt_handler_begin    = (address) this + _stub_offset          + offsets->value(CodeOffsets::Deopt);
+      if (offsets->value(CodeOffsets::DeoptMH) != -1) {
+        _deopt_mh_handler_begin  = (address) this + _stub_offset          + offsets->value(CodeOffsets::DeoptMH);
+      } else {
+        _deopt_mh_handler_begin  = NULL;
+      }
     }
-#if INCLUDE_JVMCI
-    }
-#endif
     if (offsets->value(CodeOffsets::UnwindHandler) != -1) {
       _unwind_handler_offset = code_offset()         + offsets->value(CodeOffsets::UnwindHandler);
     } else {
@@ -787,8 +804,7 @@ nmethod::nmethod(
     _verified_entry_point    = code_begin()          + offsets->value(CodeOffsets::Verified_Entry);
     _osr_entry_point         = code_begin()          + offsets->value(CodeOffsets::OSR_Entry);
     _exception_cache         = NULL;
-
-    _scopes_data_begin = (address) this + scopes_data_offset;
+    _scopes_data_begin       = (address) this + scopes_data_offset;
 
     _pc_desc_container.reset_to(scopes_pcs_begin());
 
@@ -909,33 +925,72 @@ void nmethod::print_nmethod(bool printmethod) {
     xtty->stamp();
     xtty->end_head();
   }
-  // print the header part first
-  print();
-  // then print the requested information
+  // Print the header part, then print the requested information.
+  // This is both handled in decode2().
   if (printmethod) {
-    print_code();
-    print_pcs();
-    if (oop_maps()) {
-      oop_maps()->print();
+    HandleMark hm;
+    ResourceMark m;
+    if (is_compiled_by_c1()) {
+      tty->cr();
+      tty->print_cr("============================= C1-compiled nmethod ==============================");
+    }
+    if (is_compiled_by_jvmci()) {
+      tty->cr();
+      tty->print_cr("=========================== JVMCI-compiled nmethod =============================");
+    }
+    tty->print_cr("----------------------------------- Assembly -----------------------------------");
+    decode2(tty);
+#if defined(SUPPORT_DATA_STRUCTS)
+    if (AbstractDisassembler::show_structs()) {
+      // Print the oops from the underlying CodeBlob as well.
+      tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
+      print_oops(tty);
+      tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
+      print_metadata(tty);
+      tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
+      print_pcs();
+      tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
+      if (oop_maps() != NULL) {
+        tty->print("oop maps:"); // oop_maps()->print_on(tty) outputs a cr() at the beginning
+        oop_maps()->print_on(tty);
+        tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
+      }
+    }
+#endif
+  } else {
+    print(); // print the header part only.
+  }
+
+#if defined(SUPPORT_DATA_STRUCTS)
+  if (AbstractDisassembler::show_structs()) {
+    if (printmethod || PrintDebugInfo || CompilerOracle::has_option_string(_method, "PrintDebugInfo")) {
+      print_scopes();
+      tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
+    }
+    if (printmethod || PrintRelocations || CompilerOracle::has_option_string(_method, "PrintRelocations")) {
+      print_relocations();
+      tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
+    }
+    if (printmethod || PrintDependencies || CompilerOracle::has_option_string(_method, "PrintDependencies")) {
+      print_dependencies();
+      tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
+    }
+    if (printmethod || PrintExceptionHandlers) {
+      print_handler_table();
+      tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
+      print_nul_chk_table();
+      tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
+    }
+
+    if (printmethod) {
+      print_recorded_oops();
+      tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
+      print_recorded_metadata();
+      tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
     }
   }
-  if (printmethod || PrintDebugInfo || CompilerOracle::has_option_string(_method, "PrintDebugInfo")) {
-    print_scopes();
-  }
-  if (printmethod || PrintRelocations || CompilerOracle::has_option_string(_method, "PrintRelocations")) {
-    print_relocations();
-  }
-  if (printmethod || PrintDependencies || CompilerOracle::has_option_string(_method, "PrintDependencies")) {
-    print_dependencies();
-  }
-  if (printmethod || PrintExceptionHandlers) {
-    print_handler_table();
-    print_nul_chk_table();
-  }
-  if (printmethod) {
-    print_recorded_oops();
-    print_recorded_metadata();
-  }
+#endif
+
   if (xtty != NULL) {
     xtty->tail("print_nmethod");
   }
@@ -2062,10 +2117,9 @@ address nmethod::continuation_for_implicit_exception(address pc) {
     assert(cb != NULL && cb == this, "");
     ttyLocker ttyl;
     tty->print_cr("implicit exception happened at " INTPTR_FORMAT, p2i(pc));
-    print();
+    // Print all available nmethod info.
+    print_nmethod(true);
     method()->print_codes();
-    print_code();
-    print_pcs();
   }
 #endif
   if (cont_offset == 0) {
@@ -2074,7 +2128,6 @@ address nmethod::continuation_for_implicit_exception(address pc) {
   }
   return code_begin() + cont_offset;
 }
-
 
 
 void nmethod_init() {
@@ -2124,12 +2177,14 @@ public:
   bool ok() { return _ok; }
   virtual void do_oop(oop* p) {
     if (oopDesc::is_oop_or_null(*p)) return;
+    // Print diagnostic information before calling print_nmethod().
+    // Assertions therein might prevent call from returning.
+    tty->print_cr("*** non-oop " PTR_FORMAT " found at " PTR_FORMAT " (offset %d)",
+                  p2i(*p), p2i(p), (int)((intptr_t)p - (intptr_t)_nm));
     if (_ok) {
       _nm->print_nmethod(true);
       _ok = false;
     }
-    tty->print_cr("*** non-oop " PTR_FORMAT " found at " PTR_FORMAT " (offset %d)",
-                  p2i(*p), p2i(p), (int)((intptr_t)p - (intptr_t)_nm));
   }
   virtual void do_oop(narrowOop* p) { ShouldNotReachHere(); }
 };
@@ -2238,106 +2293,103 @@ void nmethod::verify_scopes() {
 // Printing operations
 
 void nmethod::print() const {
-  ResourceMark rm;
   ttyLocker ttyl;   // keep the following output all in one block
+  print(tty);
+}
 
-  tty->print("Compiled method ");
+void nmethod::print(outputStream* st) const {
+  ResourceMark rm;
+
+  st->print("Compiled method ");
 
   if (is_compiled_by_c1()) {
-    tty->print("(c1) ");
+    st->print("(c1) ");
   } else if (is_compiled_by_c2()) {
-    tty->print("(c2) ");
+    st->print("(c2) ");
   } else if (is_compiled_by_jvmci()) {
-    tty->print("(JVMCI) ");
+    st->print("(JVMCI) ");
   } else {
-    tty->print("(nm) ");
+    st->print("(n/a) ");
   }
 
   print_on(tty, NULL);
 
   if (WizardMode) {
-    tty->print("((nmethod*) " INTPTR_FORMAT ") ", p2i(this));
-    tty->print(" for method " INTPTR_FORMAT , p2i(method()));
-    tty->print(" { ");
-    tty->print_cr("%s ", state());
-    tty->print_cr("}:");
+    st->print("((nmethod*) " INTPTR_FORMAT ") ", p2i(this));
+    st->print(" for method " INTPTR_FORMAT , p2i(method()));
+    st->print(" { ");
+    st->print_cr("%s ", state());
+    st->print_cr("}:");
   }
-  if (size              () > 0) tty->print_cr(" total in heap  [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                              p2i(this),
-                                              p2i(this) + size(),
-                                              size());
-  if (relocation_size   () > 0) tty->print_cr(" relocation     [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                              p2i(relocation_begin()),
-                                              p2i(relocation_end()),
-                                              relocation_size());
-  if (consts_size       () > 0) tty->print_cr(" constants      [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                              p2i(consts_begin()),
-                                              p2i(consts_end()),
-                                              consts_size());
-  if (insts_size        () > 0) tty->print_cr(" main code      [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                              p2i(insts_begin()),
-                                              p2i(insts_end()),
-                                              insts_size());
-  if (stub_size         () > 0) tty->print_cr(" stub code      [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                              p2i(stub_begin()),
-                                              p2i(stub_end()),
-                                              stub_size());
-  if (oops_size         () > 0) tty->print_cr(" oops           [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                              p2i(oops_begin()),
-                                              p2i(oops_end()),
-                                              oops_size());
-  if (metadata_size      () > 0) tty->print_cr(" metadata       [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                              p2i(metadata_begin()),
-                                              p2i(metadata_end()),
-                                              metadata_size());
-  if (scopes_data_size  () > 0) tty->print_cr(" scopes data    [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                              p2i(scopes_data_begin()),
-                                              p2i(scopes_data_end()),
-                                              scopes_data_size());
-  if (scopes_pcs_size   () > 0) tty->print_cr(" scopes pcs     [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                              p2i(scopes_pcs_begin()),
-                                              p2i(scopes_pcs_end()),
-                                              scopes_pcs_size());
-  if (dependencies_size () > 0) tty->print_cr(" dependencies   [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                              p2i(dependencies_begin()),
-                                              p2i(dependencies_end()),
-                                              dependencies_size());
-  if (handler_table_size() > 0) tty->print_cr(" handler table  [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                              p2i(handler_table_begin()),
-                                              p2i(handler_table_end()),
-                                              handler_table_size());
-  if (nul_chk_table_size() > 0) tty->print_cr(" nul chk table  [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                              p2i(nul_chk_table_begin()),
-                                              p2i(nul_chk_table_end()),
-                                              nul_chk_table_size());
+  if (size              () > 0) st->print_cr(" total in heap  [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                             p2i(this),
+                                             p2i(this) + size(),
+                                             size());
+  if (relocation_size   () > 0) st->print_cr(" relocation     [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                             p2i(relocation_begin()),
+                                             p2i(relocation_end()),
+                                             relocation_size());
+  if (consts_size       () > 0) st->print_cr(" constants      [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                             p2i(consts_begin()),
+                                             p2i(consts_end()),
+                                             consts_size());
+  if (insts_size        () > 0) st->print_cr(" main code      [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                             p2i(insts_begin()),
+                                             p2i(insts_end()),
+                                             insts_size());
+  if (stub_size         () > 0) st->print_cr(" stub code      [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                             p2i(stub_begin()),
+                                             p2i(stub_end()),
+                                             stub_size());
+  if (oops_size         () > 0) st->print_cr(" oops           [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                             p2i(oops_begin()),
+                                             p2i(oops_end()),
+                                             oops_size());
+  if (metadata_size     () > 0) st->print_cr(" metadata       [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                             p2i(metadata_begin()),
+                                             p2i(metadata_end()),
+                                             metadata_size());
+  if (scopes_data_size  () > 0) st->print_cr(" scopes data    [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                             p2i(scopes_data_begin()),
+                                             p2i(scopes_data_end()),
+                                             scopes_data_size());
+  if (scopes_pcs_size   () > 0) st->print_cr(" scopes pcs     [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                             p2i(scopes_pcs_begin()),
+                                             p2i(scopes_pcs_end()),
+                                             scopes_pcs_size());
+  if (dependencies_size () > 0) st->print_cr(" dependencies   [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                             p2i(dependencies_begin()),
+                                             p2i(dependencies_end()),
+                                             dependencies_size());
+  if (handler_table_size() > 0) st->print_cr(" handler table  [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                             p2i(handler_table_begin()),
+                                             p2i(handler_table_end()),
+                                             handler_table_size());
+  if (nul_chk_table_size() > 0) st->print_cr(" nul chk table  [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                             p2i(nul_chk_table_begin()),
+                                             p2i(nul_chk_table_end()),
+                                             nul_chk_table_size());
 #if INCLUDE_JVMCI
-  if (speculations_size () > 0) tty->print_cr(" speculations   [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                              p2i(speculations_begin()),
-                                              p2i(speculations_end()),
-                                              speculations_size());
-  if (jvmci_data_size   () > 0) tty->print_cr(" JVMCI data     [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                              p2i(jvmci_data_begin()),
-                                              p2i(jvmci_data_end()),
-                                              jvmci_data_size());
+  if (speculations_size () > 0) st->print_cr(" speculations   [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                             p2i(speculations_begin()),
+                                             p2i(speculations_end()),
+                                             speculations_size());
+  if (jvmci_data_size   () > 0) st->print_cr(" JVMCI data     [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                             p2i(jvmci_data_begin()),
+                                             p2i(jvmci_data_end()),
+                                             jvmci_data_size());
 #endif
 }
 
-#ifndef PRODUCT
-
-void nmethod::print_scopes() {
-  // Find the first pc desc for all scopes in the code and print it.
-  ResourceMark rm;
-  for (PcDesc* p = scopes_pcs_begin(); p < scopes_pcs_end(); p++) {
-    if (p->scope_decode_offset() == DebugInformationRecorder::serialized_null)
-      continue;
-
-    ScopeDesc* sd = scope_desc_at(p->real_pc(this));
-    while (sd != NULL) {
-      sd->print_on(tty, p);
-      sd = sd->sender();
-    }
-  }
+void nmethod::print_code() {
+  HandleMark hm;
+  ResourceMark m;
+  ttyLocker ttyl;
+  // Call the specialized decode method of this class.
+  decode(tty);
 }
+
+#ifndef PRODUCT  // called InstanceKlass methods are available only then. Declared as PRODUCT_RETURN
 
 void nmethod::print_dependencies() {
   ResourceMark rm;
@@ -2354,57 +2406,379 @@ void nmethod::print_dependencies() {
     deps.log_dependency();  // put it into the xml log also
   }
 }
+#endif
 
+#if defined(SUPPORT_DATA_STRUCTS)
 
+// Print the oops from the underlying CodeBlob.
+void nmethod::print_oops(outputStream* st) {
+  HandleMark hm;
+  ResourceMark m;
+  st->print("Oops:");
+  if (oops_begin() < oops_end()) {
+    st->cr();
+    for (oop* p = oops_begin(); p < oops_end(); p++) {
+      Disassembler::print_location((unsigned char*)p, (unsigned char*)oops_begin(), (unsigned char*)oops_end(), st, true, false);
+      st->print(PTR_FORMAT " ", *((uintptr_t*)p));
+      if (*p == Universe::non_oop_word()) {
+        st->print_cr("NON_OOP");
+        continue;  // skip non-oops
+      }
+      if (*p == NULL) {
+        st->print_cr("NULL-oop");
+        continue;  // skip non-oops
+      }
+      (*p)->print_value_on(st);
+      st->cr();
+    }
+  } else {
+    st->print_cr(" <list empty>");
+  }
+}
+
+// Print metadata pool.
+void nmethod::print_metadata(outputStream* st) {
+  HandleMark hm;
+  ResourceMark m;
+  st->print("Metadata:");
+  if (metadata_begin() < metadata_end()) {
+    st->cr();
+    for (Metadata** p = metadata_begin(); p < metadata_end(); p++) {
+      Disassembler::print_location((unsigned char*)p, (unsigned char*)metadata_begin(), (unsigned char*)metadata_end(), st, true, false);
+      st->print(PTR_FORMAT " ", *((uintptr_t*)p));
+      if (*p && *p != Universe::non_oop_word()) {
+        (*p)->print_value_on(st);
+      }
+      st->cr();
+    }
+  } else {
+    st->print_cr(" <list empty>");
+  }
+}
+
+#ifndef PRODUCT  // ScopeDesc::print_on() is available only then. Declared as PRODUCT_RETURN
+void nmethod::print_scopes_on(outputStream* st) {
+  // Find the first pc desc for all scopes in the code and print it.
+  ResourceMark rm;
+  st->print("scopes:");
+  if (scopes_pcs_begin() < scopes_pcs_end()) {
+    st->cr();
+    for (PcDesc* p = scopes_pcs_begin(); p < scopes_pcs_end(); p++) {
+      if (p->scope_decode_offset() == DebugInformationRecorder::serialized_null)
+        continue;
+
+      ScopeDesc* sd = scope_desc_at(p->real_pc(this));
+      while (sd != NULL) {
+        sd->print_on(st, p);  // print output ends with a newline
+        sd = sd->sender();
+      }
+    }
+  } else {
+    st->print_cr(" <list empty>");
+  }
+}
+#endif
+
+#ifndef PRODUCT  // RelocIterator does support printing only then.
 void nmethod::print_relocations() {
   ResourceMark m;       // in case methods get printed via the debugger
   tty->print_cr("relocations:");
   RelocIterator iter(this);
   iter.print();
 }
+#endif
 
-
-void nmethod::print_pcs() {
+void nmethod::print_pcs_on(outputStream* st) {
   ResourceMark m;       // in case methods get printed via debugger
-  tty->print_cr("pc-bytecode offsets:");
-  for (PcDesc* p = scopes_pcs_begin(); p < scopes_pcs_end(); p++) {
-    p->print(this);
+  st->print("pc-bytecode offsets:");
+  if (scopes_pcs_begin() < scopes_pcs_end()) {
+    st->cr();
+    for (PcDesc* p = scopes_pcs_begin(); p < scopes_pcs_end(); p++) {
+      p->print_on(st, this);  // print output ends with a newline
+    }
+  } else {
+    st->print_cr(" <list empty>");
   }
 }
 
+void nmethod::print_handler_table() {
+  ExceptionHandlerTable(this).print();
+}
+
+void nmethod::print_nul_chk_table() {
+  ImplicitExceptionTable(this).print(code_begin());
+}
+
 void nmethod::print_recorded_oops() {
-  tty->print_cr("Recorded oops:");
-  for (int i = 0; i < oops_count(); i++) {
-    oop o = oop_at(i);
-    tty->print("#%3d: " INTPTR_FORMAT " ", i, p2i(o));
-    if (o == Universe::non_oop_word()) {
-      tty->print("non-oop word");
-    } else {
-      if (o != NULL) {
-        o->print_value();
-      } else {
-        tty->print_cr("NULL");
-      }
-    }
+  const int n = oops_count();
+  const int log_n = (n<10) ? 1 : (n<100) ? 2 : (n<1000) ? 3 : (n<10000) ? 4 : 6;
+  tty->print("Recorded oops:");
+  if (n > 0) {
     tty->cr();
+    for (int i = 0; i < n; i++) {
+      oop o = oop_at(i);
+      tty->print("#%*d: " INTPTR_FORMAT " ", log_n, i, p2i(o));
+      if (o == (oop)Universe::non_oop_word()) {
+        tty->print("non-oop word");
+      } else if (o == NULL) {
+        tty->print("NULL-oop");
+      } else {
+        o->print_value_on(tty);
+      }
+      tty->cr();
+    }
+  } else {
+    tty->print_cr(" <list empty>");
   }
 }
 
 void nmethod::print_recorded_metadata() {
-  tty->print_cr("Recorded metadata:");
-  for (int i = 0; i < metadata_count(); i++) {
-    Metadata* m = metadata_at(i);
-    tty->print("#%3d: " INTPTR_FORMAT " ", i, p2i(m));
-    if (m == (Metadata*)Universe::non_oop_word()) {
-      tty->print("non-metadata word");
-    } else {
-      Metadata::print_value_on_maybe_null(tty, m);
-    }
+  const int n = metadata_count();
+  const int log_n = (n<10) ? 1 : (n<100) ? 2 : (n<1000) ? 3 : (n<10000) ? 4 : 6;
+  tty->print("Recorded metadata:");
+  if (n > 0) {
     tty->cr();
+    for (int i = 0; i < n; i++) {
+      Metadata* m = metadata_at(i);
+      tty->print("#%*d: " INTPTR_FORMAT " ", log_n, i, p2i(m));
+      if (m == (Metadata*)Universe::non_oop_word()) {
+        tty->print("non-metadata word");
+      } else if (m == NULL) {
+        tty->print("NULL-oop");
+      } else {
+        Metadata::print_value_on_maybe_null(tty, m);
+      }
+      tty->cr();
+    }
+  } else {
+    tty->print_cr(" <list empty>");
   }
 }
+#endif
 
-#endif // PRODUCT
+#if defined(SUPPORT_ASSEMBLY) || defined(SUPPORT_ABSTRACT_ASSEMBLY)
+
+void nmethod::print_constant_pool(outputStream* st) {
+  //-----------------------------------
+  //---<  Print the constant pool  >---
+  //-----------------------------------
+  int consts_size = this->consts_size();
+  if ( consts_size > 0 ) {
+    unsigned char* cstart = this->consts_begin();
+    unsigned char* cp     = cstart;
+    unsigned char* cend   = cp + consts_size;
+    unsigned int   bytes_per_line = 4;
+    unsigned int   CP_alignment   = 8;
+    unsigned int   n;
+
+    st->cr();
+
+    //---<  print CP header to make clear what's printed  >---
+    if( ((uintptr_t)cp&(CP_alignment-1)) == 0 ) {
+      n = bytes_per_line;
+      st->print_cr("[Constant Pool]");
+      Disassembler::print_location(cp, cstart, cend, st, true, true);
+      Disassembler::print_hexdata(cp, n, st, true);
+      st->cr();
+    } else {
+      n = (uintptr_t)cp&(bytes_per_line-1);
+      st->print_cr("[Constant Pool (unaligned)]");
+    }
+
+    //---<  print CP contents, bytes_per_line at a time  >---
+    while (cp < cend) {
+      Disassembler::print_location(cp, cstart, cend, st, true, false);
+      Disassembler::print_hexdata(cp, n, st, false);
+      cp += n;
+      n   = bytes_per_line;
+      st->cr();
+    }
+
+    //---<  Show potential alignment gap between constant pool and code  >---
+    cend = code_begin();
+    if( cp < cend ) {
+      n = 4;
+      st->print_cr("[Code entry alignment]");
+      while (cp < cend) {
+        Disassembler::print_location(cp, cstart, cend, st, false, false);
+        cp += n;
+        st->cr();
+      }
+    }
+  } else {
+    st->print_cr("[Constant Pool (empty)]");
+  }
+  st->cr();
+}
+
+#endif
+
+// Disassemble this nmethod.
+// Print additional debug information, if requested. This could be code
+// comments, block comments, profiling counters, etc.
+// The undisassembled format is useful no disassembler library is available.
+// The resulting hex dump (with markers) can be disassembled later, or on
+// another system, when/where a disassembler library is available.
+void nmethod::decode2(outputStream* ost) const {
+
+  // Called from frame::back_trace_with_decode without ResourceMark.
+  ResourceMark rm;
+
+  // Make sure we have a valid stream to print on.
+  outputStream* st = ost ? ost : tty;
+
+#if defined(SUPPORT_ABSTRACT_ASSEMBLY) && ! defined(SUPPORT_ASSEMBLY)
+  const bool use_compressed_format    = true;
+  const bool compressed_with_comments = use_compressed_format && (AbstractDisassembler::show_comment() ||
+                                                                  AbstractDisassembler::show_block_comment());
+#else
+  const bool use_compressed_format    = Disassembler::is_abstract();
+  const bool compressed_with_comments = use_compressed_format && (AbstractDisassembler::show_comment() ||
+                                                                  AbstractDisassembler::show_block_comment());
+#endif
+
+  st->cr();
+  this->print(st);
+  st->cr();
+
+#if defined(SUPPORT_ASSEMBLY)
+  //----------------------------------
+  //---<  Print real disassembly  >---
+  //----------------------------------
+  if (! use_compressed_format) {
+    Disassembler::decode(const_cast<nmethod*>(this), st);
+    return;
+  }
+#endif
+
+#if defined(SUPPORT_ABSTRACT_ASSEMBLY)
+
+  // Compressed undisassembled disassembly format.
+  // The following stati are defined/supported:
+  //   = 0 - currently at bol() position, nothing printed yet on current line.
+  //   = 1 - currently at position after print_location().
+  //   > 1 - in the midst of printing instruction stream bytes.
+  int        compressed_format_idx    = 0;
+  int        code_comment_column      = 0;
+  const int  instr_maxlen             = Assembler::instr_maxlen();
+  const uint tabspacing               = 8;
+  unsigned char* start = this->code_begin();
+  unsigned char* p     = this->code_begin();
+  unsigned char* end   = this->code_end();
+  unsigned char* pss   = p; // start of a code section (used for offsets)
+
+  if ((start == NULL) || (end == NULL)) {
+    st->print_cr("PrintAssembly not possible due to uninitialized section pointers");
+    return;
+  }
+#endif
+
+#if defined(SUPPORT_ABSTRACT_ASSEMBLY)
+  //---<  plain abstract disassembly, no comments or anything, just section headers  >---
+  if (use_compressed_format && ! compressed_with_comments) {
+    const_cast<nmethod*>(this)->print_constant_pool(st);
+
+    //---<  Open the output (Marker for post-mortem disassembler)  >---
+    st->print_cr("[MachCode]");
+    const char* header = NULL;
+    address p0 = p;
+    while (p < end) {
+      address pp = p;
+      while ((p < end) && (header == NULL)) {
+        header = nmethod_section_label(p);
+        pp  = p;
+        p  += Assembler::instr_len(p);
+      }
+      if (pp > p0) {
+        AbstractDisassembler::decode_range_abstract(p0, pp, start, end, st, Assembler::instr_maxlen());
+        p0 = pp;
+        p  = pp;
+        header = NULL;
+      } else if (header != NULL) {
+        st->bol();
+        st->print_cr("%s", header);
+        header = NULL;
+      }
+    }
+    //---<  Close the output (Marker for post-mortem disassembler)  >---
+    st->bol();
+    st->print_cr("[/MachCode]");
+    return;
+  }
+#endif
+
+#if defined(SUPPORT_ABSTRACT_ASSEMBLY)
+  //---<  abstract disassembly with comments and section headers merged in  >---
+  if (compressed_with_comments) {
+    const_cast<nmethod*>(this)->print_constant_pool(st);
+
+    //---<  Open the output (Marker for post-mortem disassembler)  >---
+    st->print_cr("[MachCode]");
+    while ((p < end) && (p != NULL)) {
+      const int instruction_size_in_bytes = Assembler::instr_len(p);
+
+      //---<  Block comments for nmethod. Interrupts instruction stream, if any.  >---
+      // Outputs a bol() before and a cr() after, but only if a comment is printed.
+      // Prints nmethod_section_label as well.
+      if (AbstractDisassembler::show_block_comment()) {
+        print_block_comment(st, p);
+        if (st->position() == 0) {
+          compressed_format_idx = 0;
+        }
+      }
+
+      //---<  New location information after line break  >---
+      if (compressed_format_idx == 0) {
+        code_comment_column   = Disassembler::print_location(p, pss, end, st, false, false);
+        compressed_format_idx = 1;
+      }
+
+      //---<  Code comment for current instruction. Address range [p..(p+len))  >---
+      unsigned char* p_end = p + (ssize_t)instruction_size_in_bytes;
+      S390_ONLY(if (p_end > end) p_end = end;) // avoid getting past the end
+
+      if (AbstractDisassembler::show_comment() && const_cast<nmethod*>(this)->has_code_comment(p, p_end)) {
+        //---<  interrupt instruction byte stream for code comment  >---
+        if (compressed_format_idx > 1) {
+          st->cr();  // interrupt byte stream
+          st->cr();  // add an empty line
+          code_comment_column = Disassembler::print_location(p, pss, end, st, false, false);
+        }
+        const_cast<nmethod*>(this)->print_code_comment_on(st, code_comment_column, p, p_end );
+        st->bol();
+        compressed_format_idx = 0;
+      }
+
+      //---<  New location information after line break  >---
+      if (compressed_format_idx == 0) {
+        code_comment_column   = Disassembler::print_location(p, pss, end, st, false, false);
+        compressed_format_idx = 1;
+      }
+
+      //---<  Nicely align instructions for readability  >---
+      if (compressed_format_idx > 1) {
+        Disassembler::print_delimiter(st);
+      }
+
+      //---<  Now, finally, print the actual instruction bytes  >---
+      unsigned char* p0 = p;
+      p = Disassembler::decode_instruction_abstract(p, st, instruction_size_in_bytes, instr_maxlen);
+      compressed_format_idx += p - p0;
+
+      if (Disassembler::start_newline(compressed_format_idx-1)) {
+        st->cr();
+        compressed_format_idx = 0;
+      }
+    }
+    //---<  Close the output (Marker for post-mortem disassembler)  >---
+    st->bol();
+    st->print_cr("[/MachCode]");
+    return;
+  }
+#endif
+}
+
+#if defined(SUPPORT_ASSEMBLY) || defined(SUPPORT_ABSTRACT_ASSEMBLY)
 
 const char* nmethod::reloc_string_for(u_char* begin, u_char* end) {
   RelocIterator iter(this, begin, end);
@@ -2414,7 +2788,9 @@ const char* nmethod::reloc_string_for(u_char* begin, u_char* end) {
     switch (iter.type()) {
         case relocInfo::none:                  return "no_reloc";
         case relocInfo::oop_type: {
-          stringStream st;
+          // Get a non-resizable resource-allocated stringStream.
+          // Our callees make use of (nested) ResourceMarks.
+          stringStream st(NEW_RESOURCE_ARRAY(char, 1024), 1024);
           oop_Relocation* r = iter.oop_reloc();
           oop obj = r->oop_value();
           st.print("oop(");
@@ -2516,17 +2892,28 @@ ScopeDesc* nmethod::scope_desc_in(address begin, address end) {
   return NULL;
 }
 
-void nmethod::print_nmethod_labels(outputStream* stream, address block_begin) const {
-  if (block_begin == entry_point())             stream->print_cr("[Entry Point]");
-  if (block_begin == verified_entry_point())    stream->print_cr("[Verified Entry Point]");
-  if (JVMCI_ONLY(_exception_offset >= 0 &&) block_begin == exception_begin())         stream->print_cr("[Exception Handler]");
-  if (block_begin == stub_begin())              stream->print_cr("[Stub Code]");
-  if (JVMCI_ONLY(_deopt_handler_begin != NULL &&) block_begin == deopt_handler_begin())     stream->print_cr("[Deopt Handler Code]");
+const char* nmethod::nmethod_section_label(address pos) const {
+  const char* label = NULL;
+  if (pos == code_begin())                                              label = "[Instructions begin]";
+  if (pos == entry_point())                                             label = "[Entry Point]";
+  if (pos == verified_entry_point())                                    label = "[Verified Entry Point]";
+  if (has_method_handle_invokes() && (pos == deopt_mh_handler_begin())) label = "[Deopt MH Handler Code]";
+  if (pos == consts_begin() && pos != insts_begin())                    label = "[Constants]";
+  // Check stub_code before checking exception_handler or deopt_handler.
+  if (pos == this->stub_begin())                                        label = "[Stub Code]";
+  if (JVMCI_ONLY(_exception_offset >= 0 &&) pos == exception_begin())           label = "[Exception Handler]";
+  if (JVMCI_ONLY(_deopt_handler_begin != NULL &&) pos == deopt_handler_begin()) label = "[Deopt Handler Code]";
+  return label;
+}
 
-  if (has_method_handle_invokes())
-    if (block_begin == deopt_mh_handler_begin())  stream->print_cr("[Deopt MH Handler Code]");
-
-  if (block_begin == consts_begin())            stream->print_cr("[Constants]");
+void nmethod::print_nmethod_labels(outputStream* stream, address block_begin, bool print_section_labels) const {
+  if (print_section_labels) {
+    const char* label = nmethod_section_label(block_begin);
+    if (label != NULL) {
+      stream->bol();
+      stream->print_cr("%s", label);
+    }
+  }
 
   if (block_begin == entry_point()) {
     methodHandle m = method();
@@ -2623,7 +3010,24 @@ void nmethod::print_nmethod_labels(outputStream* stream, address block_begin) co
   }
 }
 
-void nmethod::print_code_comment_on(outputStream* st, int column, u_char* begin, u_char* end) {
+// Returns whether this nmethod has code comments.
+bool nmethod::has_code_comment(address begin, address end) {
+  // scopes?
+  ScopeDesc* sd  = scope_desc_in(begin, end);
+  if (sd != NULL) return true;
+
+  // relocations?
+  const char* str = reloc_string_for(begin, end);
+  if (str != NULL) return true;
+
+  // implicit exceptions?
+  int cont_offset = ImplicitExceptionTable(this).at(begin - code_begin());
+  if (cont_offset != 0) return true;
+
+  return false;
+}
+
+void nmethod::print_code_comment_on(outputStream* st, int column, address begin, address end) {
   // First, find an oopmap in (begin, end].
   // We use the odd half-closed interval so that oop maps and scope descs
   // which are tied to the byte after a call are printed with the call itself.
@@ -2636,7 +3040,7 @@ void nmethod::print_code_comment_on(outputStream* st, int column, u_char* begin,
       address pc = base + pair->pc_offset();
       if (pc > begin) {
         if (pc <= end) {
-          st->move_to(column);
+          st->move_to(column, 6, 0);
           st->print("; ");
           om->print_on(st);
         }
@@ -2648,7 +3052,7 @@ void nmethod::print_code_comment_on(outputStream* st, int column, u_char* begin,
   // Print any debug info present at this pc.
   ScopeDesc* sd  = scope_desc_in(begin, end);
   if (sd != NULL) {
-    st->move_to(column);
+    st->move_to(column, 6, 0);
     if (sd->bci() == SynchronizationEntryBCI) {
       st->print(";*synchronization entry");
     } else if (sd->bci() == AfterBci) {
@@ -2704,8 +3108,11 @@ void nmethod::print_code_comment_on(outputStream* st, int column, u_char* begin,
 
     // Print all scopes
     for (;sd != NULL; sd = sd->sender()) {
-      st->move_to(column);
+      st->move_to(column, 6, 0);
       st->print("; -");
+      if (sd->should_reexecute()) {
+        st->print(" (reexecute)");
+      }
       if (sd->method() == NULL) {
         st->print("method is NULL");
       } else {
@@ -2722,19 +3129,23 @@ void nmethod::print_code_comment_on(outputStream* st, int column, u_char* begin,
   }
 
   // Print relocation information
+  // Prevent memory leak: allocating without ResourceMark.
+  ResourceMark rm;
   const char* str = reloc_string_for(begin, end);
   if (str != NULL) {
     if (sd != NULL) st->cr();
-    st->move_to(column);
+    st->move_to(column, 6, 0);
     st->print(";   {%s}", str);
   }
   int cont_offset = ImplicitExceptionTable(this).at(begin - code_begin());
   if (cont_offset != 0) {
-    st->move_to(column);
+    st->move_to(column, 6, 0);
     st->print("; implicit exception: dispatches to " INTPTR_FORMAT, p2i(code_begin() + cont_offset));
   }
 
 }
+
+#endif
 
 class DirectNativeCallWrapper: public NativeCallWrapper {
 private:
@@ -2842,12 +3253,14 @@ CompiledStaticCall* nmethod::compiledStaticCall_before(address return_addr) cons
   return CompiledDirectStaticCall::before(return_addr);
 }
 
-#ifndef PRODUCT
-
+#if defined(SUPPORT_DATA_STRUCTS)
 void nmethod::print_value_on(outputStream* st) const {
   st->print("nmethod");
   print_on(st, NULL);
 }
+#endif
+
+#ifndef PRODUCT
 
 void nmethod::print_calls(outputStream* st) {
   RelocIterator iter(this);
@@ -2867,14 +3280,6 @@ void nmethod::print_calls(outputStream* st) {
       break;
     }
   }
-}
-
-void nmethod::print_handler_table() {
-  ExceptionHandlerTable(this).print();
-}
-
-void nmethod::print_nul_chk_table() {
-  ImplicitExceptionTable(this).print(code_begin());
 }
 
 void nmethod::print_statistics() {

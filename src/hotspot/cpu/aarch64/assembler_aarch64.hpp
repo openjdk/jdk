@@ -629,6 +629,14 @@ public:
 
   enum { instruction_size = 4 };
 
+  //---<  calculate length of instruction  >---
+  // We just use the values set above.
+  // instruction must start at passed address
+  static unsigned int instr_len(unsigned char *instr) { return instruction_size; }
+
+  //---<  longest instructions  >---
+  static unsigned int instr_maxlen() { return instruction_size; }
+
   Address adjust(Register base, int offset, bool preIncrement) {
     if (preIncrement)
       return Address(Pre(base, offset));
