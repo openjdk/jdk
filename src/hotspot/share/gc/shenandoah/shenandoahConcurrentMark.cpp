@@ -227,9 +227,12 @@ public:
       rp = NULL;
     }
 
-    // Degenerated cycle may bypass concurrent cycle, so code roots might not be scanned,
-    // let's check here.
-    _cm->concurrent_scan_code_roots(worker_id, rp);
+    if (heap->is_degenerated_gc_in_progress()) {
+      // Degenerated cycle may bypass concurrent cycle, so code roots might not be scanned,
+      // let's check here.
+      _cm->concurrent_scan_code_roots(worker_id, rp);
+    }
+
     _cm->mark_loop(worker_id, _terminator, rp,
                    false, // not cancellable
                    _dedup_string);
