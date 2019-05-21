@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,6 +136,14 @@ void JfrBuffer::clear_identity() {
   _identity = NULL;
 }
 
+bool JfrBuffer::acquired_by(const void* id) const {
+  return identity() == id;
+}
+
+bool JfrBuffer::acquired_by_self() const {
+  return acquired_by(Thread::current());
+}
+
 #ifdef ASSERT
 static bool validate_to(const JfrBuffer* const to, size_t size) {
   assert(to != NULL, "invariant");
@@ -152,10 +160,6 @@ static bool validate_concurrent_this(const JfrBuffer* const t, size_t size) {
 static bool validate_this(const JfrBuffer* const t, size_t size) {
   assert(t->top() + size <= t->pos(), "invariant");
   return true;
-}
-
-bool JfrBuffer::acquired_by_self() const {
-  return identity() == Thread::current();
 }
 #endif // ASSERT
 
@@ -183,7 +187,6 @@ void JfrBuffer::concurrent_move_and_reinitialize(JfrBuffer* const to, size_t siz
   set_concurrent_top(start());
 }
 
-// flags
 enum FLAG {
   RETIRED = 1,
   TRANSIENT = 2,

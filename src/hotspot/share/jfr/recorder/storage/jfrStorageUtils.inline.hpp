@@ -26,6 +26,7 @@
 #define SHARE_JFR_RECORDER_STORAGE_JFRSTORAGEUTILS_INLINE_HPP
 
 #include "jfr/recorder/storage/jfrStorageUtils.hpp"
+#include "runtime/thread.inline.hpp"
 
 template <typename T>
 inline bool UnBufferedWriteToChunk<T>::write(T* t, const u1* data, size_t size) {
@@ -73,6 +74,28 @@ inline bool MutexedWriteOp<Operation>::process(typename Operation::Type* t) {
   const bool result = _operation.write(t, current_top, unflushed_size);
   t->set_top(current_top + unflushed_size);
   return result;
+}
+
+template <typename Type>
+static void retired_sensitive_acquire(Type* t) {
+  assert(t != NULL, "invariant");
+  if (t->retired()) {
+    return;
+  }
+  Thread* const thread = Thread::current();
+  while (!t->try_acquire(thread)) {
+    if (t->retired()) {
+      return;
+    }
+  }
+}
+
+template <typename Operation>
+inline bool ExclusiveOp<Operation>::process(typename Operation::Type* t) {
+  retired_sensitive_acquire(t);
+  assert(t->acquired_by_self() || t->retired(), "invariant");
+  // User is required to ensure proper release of the acquisition
+  return MutexedWriteOp<Operation>::process(t);
 }
 
 template <typename Operation>
