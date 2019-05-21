@@ -524,11 +524,15 @@ public class SwingUtilities2 {
                 String trimmedText = trimTrailingSpaces(text);
                 if (!trimmedText.isEmpty()) {
                     float screenWidth = (float) g2d.getFont().getStringBounds
-                            (trimmedText, DEFAULT_FRC).getWidth();
+                            (trimmedText, getFontRenderContext(c)).getWidth();
                     TextLayout layout = createTextLayout(c, text, g2d.getFont(),
                                                        g2d.getFontRenderContext());
 
-                    layout = layout.getJustifiedLayout(screenWidth);
+                    // If text fits the screenWidth, then do not need to justify
+                    if (SwingUtilities2.stringWidth(c, g2d.getFontMetrics(),
+                                            trimmedText) > screenWidth) {
+                        layout = layout.getJustifiedLayout(screenWidth);
+                    }
                     /* Use alternate print color if specified */
                     Color col = g2d.getColor();
                     if (col instanceof PrintColorUIResource) {
@@ -677,8 +681,12 @@ public class SwingUtilities2 {
                                        g2d.getFontRenderContext());
                     if (isPrinting) {
                         float screenWidth = (float)g2d.getFont().
-                            getStringBounds(text, DEFAULT_FRC).getWidth();
-                        layout = layout.getJustifiedLayout(screenWidth);
+                            getStringBounds(text, getFontRenderContext(c)).getWidth();
+                        // If text fits the screenWidth, then do not need to justify
+                        if (SwingUtilities2.stringWidth(c, g2d.getFontMetrics(),
+                                                        text) > screenWidth) {
+                            layout = layout.getJustifiedLayout(screenWidth);
+                        }
                     }
                     TextHitInfo leading =
                         TextHitInfo.leading(underlinedIndex);
@@ -863,7 +871,11 @@ public class SwingUtilities2 {
                     if (!trimmedText.isEmpty()) {
                         float screenWidth = (float)g2d.getFont().
                             getStringBounds(trimmedText, frc).getWidth();
-                        layout = layout.getJustifiedLayout(screenWidth);
+                        // If text fits the screenWidth, then do not need to justify
+                        if (SwingUtilities2.stringWidth(c, g2d.getFontMetrics(),
+                                                trimmedText) > screenWidth) {
+                            layout = layout.getJustifiedLayout(screenWidth);
+                        }
 
                         /* Use alternate print color if specified */
                         Color col = g2d.getColor();
