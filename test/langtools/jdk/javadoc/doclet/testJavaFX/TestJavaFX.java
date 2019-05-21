@@ -213,7 +213,7 @@ public class TestJavaFX extends JavadocTester {
                 "pkg2");
         checkExit(Exit.OK);
         checkOutput("pkg2/Test.html", true,
-                "<h2>Property Detail</h2>\n"
+                "<h2>Property Details</h2>\n"
                 + "<a id=\"property.detail\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
