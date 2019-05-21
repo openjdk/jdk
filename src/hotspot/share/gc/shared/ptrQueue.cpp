@@ -62,7 +62,6 @@ void PtrQueue::flush_impl() {
   }
 }
 
-
 void PtrQueue::enqueue_known_active(void* ptr) {
   while (_index == 0) {
     handle_zero_index();
@@ -73,6 +72,35 @@ void PtrQueue::enqueue_known_active(void* ptr) {
   assert(index() <= capacity(), "invariant");
   _index -= _element_size;
   _buf[index()] = ptr;
+}
+
+void PtrQueue::handle_zero_index() {
+  assert(index() == 0, "precondition");
+
+  if (_buf != NULL) {
+    handle_completed_buffer();
+  } else {
+    // Bootstrapping kludge; lazily initialize capacity.  The initial
+    // thread's queues are constructed before the second phase of the
+    // two-phase initialization of the associated qsets.  As a result,
+    // we can't initialize _capacity_in_bytes in the queue constructor.
+    if (_capacity_in_bytes == 0) {
+      _capacity_in_bytes = index_to_byte_index(qset()->buffer_size());
+    }
+    allocate_buffer();
+  }
+}
+
+void PtrQueue::allocate_buffer() {
+  _buf = qset()->allocate_buffer();
+  reset();
+}
+
+void PtrQueue::enqueue_completed_buffer() {
+  assert(_buf != NULL, "precondition");
+  BufferNode* node = BufferNode::make_node_from_buffer(_buf, index());
+  qset()->enqueue_completed_buffer(node);
+  allocate_buffer();
 }
 
 BufferNode* BufferNode::allocate(size_t size) {
@@ -231,8 +259,6 @@ PtrQueueSet::PtrQueueSet(bool notify_when_complete) :
   _process_completed_buffers_threshold(ProcessCompletedBuffersThresholdNever),
   _process_completed_buffers(false),
   _notify_when_complete(notify_when_complete),
-  _max_completed_buffers(MaxCompletedBuffersUnlimited),
-  _completed_buffers_padding(0),
   _all_active(false)
 {}
 
@@ -256,52 +282,6 @@ void** PtrQueueSet::allocate_buffer() {
 
 void PtrQueueSet::deallocate_buffer(BufferNode* node) {
   _allocator->release(node);
-}
-
-void PtrQueue::handle_zero_index() {
-  assert(index() == 0, "precondition");
-
-  // This thread records the full buffer and allocates a new one (while
-  // holding the lock if there is one).
-  if (_buf != NULL) {
-    if (!should_enqueue_buffer()) {
-      assert(index() > 0, "the buffer can only be re-used if it's not full");
-      return;
-    }
-
-    BufferNode* node = BufferNode::make_node_from_buffer(_buf, index());
-    if (qset()->process_or_enqueue_completed_buffer(node)) {
-      // Recycle the buffer. No allocation.
-      assert(_buf == BufferNode::make_buffer_from_node(node), "invariant");
-      assert(capacity() == qset()->buffer_size(), "invariant");
-      reset();
-      return;
-    }
-  }
-  // Set capacity in case this is the first allocation.
-  set_capacity(qset()->buffer_size());
-  // Allocate a new buffer.
-  _buf = qset()->allocate_buffer();
-  reset();
-}
-
-bool PtrQueueSet::process_or_enqueue_completed_buffer(BufferNode* node) {
-  if (Thread::current()->is_Java_thread()) {
-    // If the number of buffers exceeds the limit, make this Java
-    // thread do the processing itself.  We don't lock to access
-    // buffer count or padding; it is fine to be imprecise here.  The
-    // add of padding could overflow, which is treated as unlimited.
-    size_t limit = _max_completed_buffers + _completed_buffers_padding;
-    if ((_n_completed_buffers > limit) && (limit >= _max_completed_buffers)) {
-      if (mut_process_buffer(node)) {
-        // Successfully processed; return true to allow buffer reuse.
-        return true;
-      }
-    }
-  }
-  // The buffer will be enqueued. The caller will have to get a new one.
-  enqueue_completed_buffer(node);
-  return false;
 }
 
 void PtrQueueSet::enqueue_completed_buffer(BufferNode* cbn) {

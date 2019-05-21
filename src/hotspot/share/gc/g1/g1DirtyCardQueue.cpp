@@ -66,8 +66,21 @@ G1DirtyCardQueue::~G1DirtyCardQueue() {
   flush();
 }
 
+void G1DirtyCardQueue::handle_completed_buffer() {
+  assert(_buf != NULL, "precondition");
+  BufferNode* node = BufferNode::make_node_from_buffer(_buf, index());
+  G1DirtyCardQueueSet* dcqs = dirty_card_qset();
+  if (dcqs->process_or_enqueue_completed_buffer(node)) {
+    reset();                    // Buffer fully processed, reset index.
+  } else {
+    allocate_buffer();          // Buffer enqueued, get a new one.
+  }
+}
+
 G1DirtyCardQueueSet::G1DirtyCardQueueSet(bool notify_when_complete) :
   PtrQueueSet(notify_when_complete),
+  _max_completed_buffers(MaxCompletedBuffersUnlimited),
+  _completed_buffers_padding(0),
   _free_ids(NULL),
   _processed_buffers_mut(0),
   _processed_buffers_rs_thread(0),
@@ -135,6 +148,24 @@ bool G1DirtyCardQueueSet::apply_closure_to_buffer(G1CardTableEntryClosure* cl,
             _afc_index, _afc_size);                             \
   } while (0)
 #endif // ASSERT
+
+bool G1DirtyCardQueueSet::process_or_enqueue_completed_buffer(BufferNode* node) {
+  if (Thread::current()->is_Java_thread()) {
+    // If the number of buffers exceeds the limit, make this Java
+    // thread do the processing itself.  We don't lock to access
+    // buffer count or padding; it is fine to be imprecise here.  The
+    // add of padding could overflow, which is treated as unlimited.
+    size_t max_buffers = max_completed_buffers();
+    size_t limit = max_buffers + completed_buffers_padding();
+    if ((completed_buffers_num() > limit) && (limit >= max_buffers)) {
+      if (mut_process_buffer(node)) {
+        return true;
+      }
+    }
+  }
+  enqueue_completed_buffer(node);
+  return false;
+}
 
 bool G1DirtyCardQueueSet::mut_process_buffer(BufferNode* node) {
   guarantee(_free_ids != NULL, "must be");
