@@ -70,6 +70,8 @@ public interface MethodHandleDesc
      *                         for a field or constructor
      * @return the {@linkplain MethodHandleDesc}
      * @throws NullPointerException if any of the non-ignored arguments are null
+     * @throws IllegalArgumentException if the descriptor string is not a valid
+     * method or field descriptor
      * @jvms 4.4.8 The CONSTANT_MethodHandle_info Structure
      * @jvms 4.2.2 Unqualified Names
      * @jvms 4.3.2 Field Descriptors
