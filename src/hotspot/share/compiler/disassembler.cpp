@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
+#include "asm/macroAssembler.hpp"
 #include "ci/ciUtilities.hpp"
 #include "classfile/javaClasses.hpp"
 #include "code/codeCache.hpp"

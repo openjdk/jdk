@@ -44,26 +44,10 @@ bool AbstractDisassembler::_show_offset        = false;
 bool AbstractDisassembler::_show_structs       = false;
 bool AbstractDisassembler::_show_comment       = false;
 bool AbstractDisassembler::_show_block_comment = false;
-#if defined(ARM) || defined(AARCH64)
-bool AbstractDisassembler::_show_bytes  = false; // set "true" to see what's in memory bit by bit
-                                                 // might prove cumbersome because instr_len is hard to find on arm
-#endif
-#if defined(PPC)
-bool AbstractDisassembler::_show_bytes  = false;  // set "true" to see what's in memory bit by bit
-#endif
-#if defined(S390)
-bool AbstractDisassembler::_show_bytes  = false;  // set "true" to see what's in memory bit by bit
-#endif
-#if defined(SPARC)
-bool AbstractDisassembler::_show_bytes  = false; // set "true" to see what's in memory bit by bit
-#endif
-#if defined(X86)
-bool AbstractDisassembler::_show_bytes  = false; // set "true" to see what's in memory bit by bit
-                                                 // might prove cumbersome because instr_len is hard to find on x86
-#endif
-#if defined(ZERO)
-bool AbstractDisassembler::_show_bytes  = false; // set "true" to see what's in memory bit by bit
-#endif
+
+// set "true" to see what's in memory bit by bit
+// might prove cumbersome on platforms where instr_len is hard to find out
+bool AbstractDisassembler::_show_bytes         = false;
 
 // Return #bytes printed. Callers may use that for output alignment.
 // Print instruction address, and offset from blob begin.
