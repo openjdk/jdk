@@ -43,6 +43,7 @@ requires.properties= \
     sun.arch.data.model \
     java.runtime.name \
     vm.gc.Z \
+    vm.gc.Shenandoah \
     vm.graal.enabled \
     vm.compiler1.enabled \
     vm.compiler2.enabled \
