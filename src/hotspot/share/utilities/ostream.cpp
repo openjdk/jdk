@@ -309,10 +309,9 @@ void outputStream::print_data(void* data, size_t len, bool with_ascii) {
 
 stringStream::stringStream(size_t initial_size) : outputStream() {
   buffer_length = initial_size;
-  buffer        = NEW_RESOURCE_ARRAY(char, buffer_length);
+  buffer        = NEW_C_HEAP_ARRAY(char, buffer_length, mtInternal);
   buffer_pos    = 0;
   buffer_fixed  = false;
-  DEBUG_ONLY(rm = Thread::current()->current_resource_mark();)
 }
 
 // useful for output to fixed chunks of memory, such as performance counters
@@ -337,15 +336,7 @@ void stringStream::write(const char* s, size_t len) {
       if (end < buffer_length * 2) {
         end = buffer_length * 2;
       }
-      char* oldbuf = buffer;
-      assert(rm == NULL || Thread::current()->current_resource_mark() == rm,
-             "StringStream is re-allocated with a different ResourceMark. Current: "
-             PTR_FORMAT " original: " PTR_FORMAT,
-             p2i(Thread::current()->current_resource_mark()), p2i(rm));
-      buffer = NEW_RESOURCE_ARRAY(char, end);
-      if (buffer_pos > 0) {
-        memcpy(buffer, oldbuf, buffer_pos);
-      }
+      buffer = REALLOC_C_HEAP_ARRAY(char, buffer, end, mtInternal);
       buffer_length = end;
     }
   }
@@ -370,7 +361,11 @@ char* stringStream::as_string() {
   return copy;
 }
 
-stringStream::~stringStream() {}
+stringStream::~stringStream() {
+  if (buffer_fixed == false && buffer != NULL) {
+    FREE_C_HEAP_ARRAY(char, buffer);
+  }
+}
 
 xmlStream*   xtty;
 outputStream* tty;
