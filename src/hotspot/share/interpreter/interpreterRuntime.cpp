@@ -543,7 +543,7 @@ JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
       tempst.print("interpreter method <%s>\n"
                    " at bci %d for thread " INTPTR_FORMAT " (%s)",
                    h_method->print_value_string(), current_bci, p2i(thread), thread->name());
-      Exceptions::log_exception(h_exception, tempst);
+      Exceptions::log_exception(h_exception, tempst.as_string());
     }
 // Don't go paging in something which won't be used.
 //     else if (extable->length() == 0) {

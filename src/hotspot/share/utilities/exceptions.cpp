@@ -526,17 +526,17 @@ void Exceptions::debug_check_abort_helper(Handle exception, const char* message)
 }
 
 // for logging exceptions
-void Exceptions::log_exception(Handle exception, stringStream tempst) {
+void Exceptions::log_exception(Handle exception, const char* message) {
   ResourceMark rm;
-  Symbol* message = java_lang_Throwable::detail_message(exception());
-  if (message != NULL) {
+  Symbol* detail_message = java_lang_Throwable::detail_message(exception());
+  if (detail_message != NULL) {
     log_info(exceptions)("Exception <%s: %s>\n thrown in %s",
                          exception->print_value_string(),
-                         message->as_C_string(),
-                         tempst.as_string());
+                         detail_message->as_C_string(),
+                         message);
   } else {
     log_info(exceptions)("Exception <%s>\n thrown in %s",
                          exception->print_value_string(),
-                         tempst.as_string());
+                         message);
   }
 }

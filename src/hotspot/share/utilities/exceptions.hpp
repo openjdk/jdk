@@ -186,7 +186,7 @@ class Exceptions {
   static void debug_check_abort(const char *value_string, const char* message = NULL);
 
   // for logging exceptions
-  static void log_exception(Handle exception, stringStream tempst);
+  static void log_exception(Handle exception, const char* message);
 };
 
 

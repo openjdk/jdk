@@ -2871,7 +2871,7 @@ run:
                      METHOD->print_value_string(),
                      (int)(istate->bcp() - METHOD->code_base()),
                      (int)continuation_bci, p2i(THREAD));
-        Exceptions::log_exception(except_oop, tempst);
+        Exceptions::log_exception(except_oop, tempst.as_string());
       }
       // for AbortVMOnException flag
       Exceptions::debug_check_abort(except_oop);
@@ -2888,7 +2888,7 @@ run:
              METHOD->print_value_string(),
              (int)(istate->bcp() - METHOD->code_base()),
              p2i(THREAD));
-      Exceptions::log_exception(except_oop, tempst);
+      Exceptions::log_exception(except_oop, tempst.as_string());
     }
     // for AbortVMOnException flag
     Exceptions::debug_check_abort(except_oop);

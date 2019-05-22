@@ -137,11 +137,6 @@ template <class T> class EventLogBase : public EventLog {
 // A simple wrapper class for fixed size text messages.
 template <size_t bufsz>
 class FormatStringLogMessage : public FormatBuffer<bufsz> {
- public:
-  // Wrap this buffer in a stringStream.
-  stringStream stream() {
-    return stringStream(this->_buf, this->size());
-  }
 };
 typedef FormatStringLogMessage<256> StringLogMessage;
 typedef FormatStringLogMessage<512> ExtendedStringLogMessage;

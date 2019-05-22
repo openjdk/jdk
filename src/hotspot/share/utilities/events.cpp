@@ -108,7 +108,8 @@ void UnloadingEventLog::log(Thread* thread, InstanceKlass* ik) {
   int index = compute_log_index();
   _records[index].thread = thread;
   _records[index].timestamp = timestamp;
-  stringStream st = _records[index].data.stream();
+  stringStream st(_records[index].data.buffer(),
+                  _records[index].data.size());
   st.print("Unloading class " INTPTR_FORMAT " ", p2i(ik));
   ik->name()->print_value_on(&st);
 }
@@ -121,7 +122,8 @@ void ExceptionsEventLog::log(Thread* thread, Handle h_exception, const char* mes
   int index = compute_log_index();
   _records[index].thread = thread;
   _records[index].timestamp = timestamp;
-  stringStream st = _records[index].data.stream();
+  stringStream st(_records[index].data.buffer(),
+                  _records[index].data.size());
   st.print("Exception <");
   h_exception->print_value_on(&st);
   st.print("%s%s> (" INTPTR_FORMAT ") \n"

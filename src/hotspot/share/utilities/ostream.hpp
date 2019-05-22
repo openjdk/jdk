@@ -42,6 +42,10 @@ DEBUG_ONLY(class ResourceMark;)
 // This allows for redirection via -XX:+DisplayVMOutputToStdout and
 // -XX:+DisplayVMOutputToStderr
 class outputStream : public ResourceObj {
+ private:
+   outputStream(const outputStream&);
+   outputStream& operator=(const outputStream&);
+
  protected:
    int _indentation; // current indentation
    int _width;       // width of the page
