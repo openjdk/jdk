@@ -4338,6 +4338,7 @@ class StubGenerator: public StubCodeGenerator {
     __ ldr(ch1, Address(str1));
     // Read whole register from str2. It is safe, because length >=8 here
     __ ldr(ch2, Address(str2));
+    __ sub(cnt2, cnt2, cnt1);
     __ andr(first, ch1, str1_isL ? 0xFF : 0xFFFF);
     if (str1_isL != str2_isL) {
       __ eor(v0, __ T16B, v0, v0);
