@@ -1093,7 +1093,7 @@ public class LambdaToMethod extends TreeTranslator {
         MethodSymbol samSym = (MethodSymbol) types.findDescriptorSymbol(tree.target.tsym);
         List<LoadableConstant> staticArgs = List.of(
                 typeToMethodType(samSym.type),
-                ((MethodSymbol)refSym).asHandle(),
+                refSym.asHandle(),
                 typeToMethodType(tree.getDescriptorType(types)));
 
         //computed indy arg types
