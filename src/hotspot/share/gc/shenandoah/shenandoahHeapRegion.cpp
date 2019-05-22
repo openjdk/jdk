@@ -684,7 +684,7 @@ void ShenandoahHeapRegion::do_uncommit() {
 void ShenandoahHeapRegion::set_state(RegionState to) {
   EventShenandoahHeapRegionStateChange evt;
   if (evt.should_commit()){
-    evt.set_index(region_number());
+    evt.set_index((unsigned)region_number());
     evt.set_start((uintptr_t)bottom());
     evt.set_used(used());
     evt.set_from(_state);
