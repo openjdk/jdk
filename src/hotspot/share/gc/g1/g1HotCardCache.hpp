@@ -26,7 +26,6 @@
 #define SHARE_GC_G1_G1HOTCARDCACHE_HPP
 
 #include "gc/g1/g1CardCounts.hpp"
-#include "gc/g1/g1_globals.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/thread.hpp"

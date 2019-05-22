@@ -25,7 +25,7 @@
 #ifndef SHARE_OPTO_C2_GLOBALS_HPP
 #define SHARE_OPTO_C2_GLOBALS_HPP
 
-#include "runtime/globals.hpp"
+#include "runtime/globals_shared.hpp"
 #include "utilities/macros.hpp"
 
 #include CPU_HEADER(c2_globals)
@@ -757,17 +757,5 @@
                                                                             \
   product(bool, UseProfiledLoopPredicate, true,                             \
           "move predicates out of loops based on profiling data")           \
-
-C2_FLAGS(DECLARE_DEVELOPER_FLAG, \
-         DECLARE_PD_DEVELOPER_FLAG, \
-         DECLARE_PRODUCT_FLAG, \
-         DECLARE_PD_PRODUCT_FLAG, \
-         DECLARE_DIAGNOSTIC_FLAG, \
-         DECLARE_PD_DIAGNOSTIC_FLAG, \
-         DECLARE_EXPERIMENTAL_FLAG, \
-         DECLARE_NOTPRODUCT_FLAG, \
-         IGNORE_RANGE, \
-         IGNORE_CONSTRAINT, \
-         IGNORE_WRITEABLE)
 
 #endif // SHARE_OPTO_C2_GLOBALS_HPP

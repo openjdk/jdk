@@ -30,7 +30,6 @@
 #include "gc/g1/g1EvacFailure.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
-#include "gc/g1/g1_globals.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"

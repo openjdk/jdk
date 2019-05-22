@@ -67,9 +67,6 @@
 #include "services/runtimeService.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
-#ifdef COMPILER1
-#include "c1/c1_globals.hpp"
-#endif
 
 static void post_safepoint_begin_event(EventSafepointBegin& event,
                                        uint64_t safepoint_id,

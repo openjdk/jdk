@@ -25,7 +25,8 @@
 #ifndef SHARE_GC_G1_G1_GLOBALS_HPP
 #define SHARE_GC_G1_G1_GLOBALS_HPP
 
-#include <float.h> // for DBL_MAX
+#include "runtime/globals_shared.hpp"
+
 //
 // Defines all globals flags used by the garbage-first compiler.
 //

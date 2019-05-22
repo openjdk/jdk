@@ -25,15 +25,6 @@
 #include "precompiled.hpp"
 #include "runtime/flags/jvmFlagWriteableList.hpp"
 #include "runtime/os.hpp"
-#ifdef COMPILER1
-#include "c1/c1_globals.hpp"
-#endif // COMPILER1
-#ifdef COMPILER2
-#include "opto/c2_globals.hpp"
-#endif // COMPILER2
-#if INCLUDE_JVMCI
-#include "jvmci/jvmci_globals.hpp"
-#endif
 
 bool JVMFlagWriteable::is_writeable(void) {
   return _writeable;
@@ -93,20 +84,23 @@ void emit_writeable_double(const char* name, JVMFlagWriteable::WriteableType typ
 }
 
 // Generate code to call emit_writeable_xxx function
-#define EMIT_WRITEABLE_PRODUCT_FLAG(type, name, value, doc)      ); emit_writeable_##type(#name
-#define EMIT_WRITEABLE_DIAGNOSTIC_FLAG(type, name, value, doc)   ); emit_writeable_##type(#name
-#define EMIT_WRITEABLE_EXPERIMENTAL_FLAG(type, name, value, doc) ); emit_writeable_##type(#name
-#define EMIT_WRITEABLE_MANAGEABLE_FLAG(type, name, value, doc)   ); emit_writeable_##type(#name
-#define EMIT_WRITEABLE_PRODUCT_RW_FLAG(type, name, value, doc)   ); emit_writeable_##type(#name
-#define EMIT_WRITEABLE_PD_PRODUCT_FLAG(type, name, doc)          ); emit_writeable_##type(#name
-#define EMIT_WRITEABLE_DEVELOPER_FLAG(type, name, value, doc)    ); emit_writeable_##type(#name
-#define EMIT_WRITEABLE_PD_DEVELOPER_FLAG(type, name, doc)        ); emit_writeable_##type(#name
-#define EMIT_WRITEABLE_PD_DIAGNOSTIC_FLAG(type, name, doc)       ); emit_writeable_##type(#name
-#define EMIT_WRITEABLE_NOTPRODUCT_FLAG(type, name, value, doc)   ); emit_writeable_##type(#name
-#define EMIT_WRITEABLE_LP64_PRODUCT_FLAG(type, name, value, doc) ); emit_writeable_##type(#name
+#define EMIT_WRITEABLE_START       (void)(0
+#define EMIT_WRITEABLE(type, name) ); emit_writeable_##type(#name
+#define EMIT_WRITEABLE_PRODUCT_FLAG(type, name, value, doc)      EMIT_WRITEABLE(type, name)
+#define EMIT_WRITEABLE_DIAGNOSTIC_FLAG(type, name, value, doc)   EMIT_WRITEABLE(type, name)
+#define EMIT_WRITEABLE_EXPERIMENTAL_FLAG(type, name, value, doc) EMIT_WRITEABLE(type, name)
+#define EMIT_WRITEABLE_MANAGEABLE_FLAG(type, name, value, doc)   EMIT_WRITEABLE(type, name)
+#define EMIT_WRITEABLE_PRODUCT_RW_FLAG(type, name, value, doc)   EMIT_WRITEABLE(type, name)
+#define EMIT_WRITEABLE_PD_PRODUCT_FLAG(type, name, doc)          EMIT_WRITEABLE(type, name)
+#define EMIT_WRITEABLE_DEVELOPER_FLAG(type, name, value, doc)    EMIT_WRITEABLE(type, name)
+#define EMIT_WRITEABLE_PD_DEVELOPER_FLAG(type, name, doc)        EMIT_WRITEABLE(type, name)
+#define EMIT_WRITEABLE_PD_DIAGNOSTIC_FLAG(type, name, doc)       EMIT_WRITEABLE(type, name)
+#define EMIT_WRITEABLE_NOTPRODUCT_FLAG(type, name, value, doc)   EMIT_WRITEABLE(type, name)
+#define EMIT_WRITEABLE_LP64_PRODUCT_FLAG(type, name, value, doc) EMIT_WRITEABLE(type, name)
+#define EMIT_WRITEABLE_END         );
 
 // Generate type argument to pass into emit_writeable_xxx functions
-#define EMIT_WRITEABLE(a)                                      , JVMFlagWriteable::a
+#define EMIT_WRITEABLE_CHECK(a)                                  , JVMFlagWriteable::a
 
 #define INITIAL_WRITEABLES_SIZE 2
 GrowableArray<JVMFlagWriteable*>* JVMFlagWriteableList::_controls = NULL;
@@ -115,72 +109,26 @@ void JVMFlagWriteableList::init(void) {
 
   _controls = new (ResourceObj::C_HEAP, mtArguments) GrowableArray<JVMFlagWriteable*>(INITIAL_WRITEABLES_SIZE, true);
 
-  emit_writeable_no(NULL VM_FLAGS(EMIT_WRITEABLE_DEVELOPER_FLAG,
-                                  EMIT_WRITEABLE_PD_DEVELOPER_FLAG,
-                                  EMIT_WRITEABLE_PRODUCT_FLAG,
-                                  EMIT_WRITEABLE_PD_PRODUCT_FLAG,
-                                  EMIT_WRITEABLE_DIAGNOSTIC_FLAG,
-                                  EMIT_WRITEABLE_PD_DIAGNOSTIC_FLAG,
-                                  EMIT_WRITEABLE_EXPERIMENTAL_FLAG,
-                                  EMIT_WRITEABLE_NOTPRODUCT_FLAG,
-                                  EMIT_WRITEABLE_MANAGEABLE_FLAG,
-                                  EMIT_WRITEABLE_PRODUCT_RW_FLAG,
-                                  EMIT_WRITEABLE_LP64_PRODUCT_FLAG,
-                                  IGNORE_RANGE,
-                                  IGNORE_CONSTRAINT,
-                                  EMIT_WRITEABLE));
+  EMIT_WRITEABLE_START
+
+  ALL_FLAGS(EMIT_WRITEABLE_DEVELOPER_FLAG,
+            EMIT_WRITEABLE_PD_DEVELOPER_FLAG,
+            EMIT_WRITEABLE_PRODUCT_FLAG,
+            EMIT_WRITEABLE_PD_PRODUCT_FLAG,
+            EMIT_WRITEABLE_DIAGNOSTIC_FLAG,
+            EMIT_WRITEABLE_PD_DIAGNOSTIC_FLAG,
+            EMIT_WRITEABLE_EXPERIMENTAL_FLAG,
+            EMIT_WRITEABLE_NOTPRODUCT_FLAG,
+            EMIT_WRITEABLE_MANAGEABLE_FLAG,
+            EMIT_WRITEABLE_PRODUCT_RW_FLAG,
+            EMIT_WRITEABLE_LP64_PRODUCT_FLAG,
+            IGNORE_RANGE,
+            IGNORE_CONSTRAINT,
+            EMIT_WRITEABLE_CHECK)
 
   EMIT_WRITEABLES_FOR_GLOBALS_EXT
 
-  emit_writeable_no(NULL ARCH_FLAGS(EMIT_WRITEABLE_DEVELOPER_FLAG,
-                                EMIT_WRITEABLE_PRODUCT_FLAG,
-                                EMIT_WRITEABLE_DIAGNOSTIC_FLAG,
-                                EMIT_WRITEABLE_EXPERIMENTAL_FLAG,
-                                EMIT_WRITEABLE_NOTPRODUCT_FLAG,
-                                IGNORE_RANGE,
-                                IGNORE_CONSTRAINT,
-                                EMIT_WRITEABLE));
-
-#if INCLUDE_JVMCI
-  emit_writeable_no(NULL JVMCI_FLAGS(EMIT_WRITEABLE_DEVELOPER_FLAG,
-                                 EMIT_WRITEABLE_PD_DEVELOPER_FLAG,
-                                 EMIT_WRITEABLE_PRODUCT_FLAG,
-                                 EMIT_WRITEABLE_PD_PRODUCT_FLAG,
-                                 EMIT_WRITEABLE_DIAGNOSTIC_FLAG,
-                                 EMIT_WRITEABLE_PD_DIAGNOSTIC_FLAG,
-                                 EMIT_WRITEABLE_EXPERIMENTAL_FLAG,
-                                 EMIT_WRITEABLE_NOTPRODUCT_FLAG,
-                                 IGNORE_RANGE,
-                                 IGNORE_CONSTRAINT,
-                                 EMIT_WRITEABLE));
-#endif // INCLUDE_JVMCI
-
-#ifdef COMPILER1
-  emit_writeable_no(NULL C1_FLAGS(EMIT_WRITEABLE_DEVELOPER_FLAG,
-                              EMIT_WRITEABLE_PD_DEVELOPER_FLAG,
-                              EMIT_WRITEABLE_PRODUCT_FLAG,
-                              EMIT_WRITEABLE_PD_PRODUCT_FLAG,
-                              EMIT_WRITEABLE_DIAGNOSTIC_FLAG,
-                              EMIT_WRITEABLE_PD_DIAGNOSTIC_FLAG,
-                              EMIT_WRITEABLE_NOTPRODUCT_FLAG,
-                              IGNORE_RANGE,
-                              IGNORE_CONSTRAINT,
-                              EMIT_WRITEABLE));
-#endif // COMPILER1
-
-#ifdef COMPILER2
-  emit_writeable_no(NULL C2_FLAGS(EMIT_WRITEABLE_DEVELOPER_FLAG,
-                              EMIT_WRITEABLE_PD_DEVELOPER_FLAG,
-                              EMIT_WRITEABLE_PRODUCT_FLAG,
-                              EMIT_WRITEABLE_PD_PRODUCT_FLAG,
-                              EMIT_WRITEABLE_DIAGNOSTIC_FLAG,
-                              EMIT_WRITEABLE_PD_DIAGNOSTIC_FLAG,
-                              EMIT_WRITEABLE_EXPERIMENTAL_FLAG,
-                              EMIT_WRITEABLE_NOTPRODUCT_FLAG,
-                              IGNORE_RANGE,
-                              IGNORE_CONSTRAINT,
-                              EMIT_WRITEABLE));
-#endif // COMPILER2
+  EMIT_WRITEABLE_END
 }
 
 JVMFlagWriteable* JVMFlagWriteableList::find(const char* name) {

@@ -29,11 +29,8 @@
 
 // globals_extension.hpp extension
 
-// Additional JVMFlags enum values
-#define JVMFLAGS_EXT
-
-// Additional JVMFlagsWithType enum values
-#define JVMFLAGSWITHTYPE_EXT
+// Additional JVMFlagsEnum values
+#define JVMFLAGSENUM_EXT
 
 
 // globals.cpp extension

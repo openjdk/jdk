@@ -25,7 +25,7 @@
 #ifndef SHARE_C1_C1_GLOBALS_HPP
 #define SHARE_C1_C1_GLOBALS_HPP
 
-#include "runtime/globals.hpp"
+#include "runtime/globals_shared.hpp"
 #include "utilities/macros.hpp"
 
 #include CPU_HEADER(c1_globals)
@@ -324,17 +324,5 @@
   develop(bool, PrintCFGToFile, false,                                      \
           "print control flow graph to a separate file during compilation") \
                                                                             \
-// Read default values for c1 globals
-
-C1_FLAGS(DECLARE_DEVELOPER_FLAG, \
-         DECLARE_PD_DEVELOPER_FLAG, \
-         DECLARE_PRODUCT_FLAG, \
-         DECLARE_PD_PRODUCT_FLAG, \
-         DECLARE_DIAGNOSTIC_FLAG, \
-         DECLARE_PD_DIAGNOSTIC_FLAG, \
-         DECLARE_NOTPRODUCT_FLAG, \
-         IGNORE_RANGE, \
-         IGNORE_CONSTRAINT, \
-         IGNORE_WRITEABLE)
 
 #endif // SHARE_C1_C1_GLOBALS_HPP
