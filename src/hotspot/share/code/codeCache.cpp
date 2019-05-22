@@ -283,9 +283,9 @@ void CodeCache::initialize_heaps() {
 
   // Verify sizes and update flag values
   assert(non_profiled_size + profiled_size + non_nmethod_size == cache_size, "Invalid code heap sizes");
-  FLAG_SET_ERGO(uintx, NonNMethodCodeHeapSize, non_nmethod_size);
-  FLAG_SET_ERGO(uintx, ProfiledCodeHeapSize, profiled_size);
-  FLAG_SET_ERGO(uintx, NonProfiledCodeHeapSize, non_profiled_size);
+  FLAG_SET_ERGO(NonNMethodCodeHeapSize, non_nmethod_size);
+  FLAG_SET_ERGO(ProfiledCodeHeapSize, profiled_size);
+  FLAG_SET_ERGO(NonProfiledCodeHeapSize, non_profiled_size);
 
   // If large page support is enabled, align code heaps according to large
   // page size to make sure that code cache is covered by large pages.
@@ -941,9 +941,9 @@ void CodeCache::initialize() {
     initialize_heaps();
   } else {
     // Use a single code heap
-    FLAG_SET_ERGO(uintx, NonNMethodCodeHeapSize, 0);
-    FLAG_SET_ERGO(uintx, ProfiledCodeHeapSize, 0);
-    FLAG_SET_ERGO(uintx, NonProfiledCodeHeapSize, 0);
+    FLAG_SET_ERGO(NonNMethodCodeHeapSize, 0);
+    FLAG_SET_ERGO(ProfiledCodeHeapSize, 0);
+    FLAG_SET_ERGO(NonProfiledCodeHeapSize, 0);
     ReservedCodeSpace rs = reserve_heap_memory(ReservedCodeCacheSize);
     add_heap(rs, "CodeCache", CodeBlobType::All);
   }

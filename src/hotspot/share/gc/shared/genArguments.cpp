@@ -86,20 +86,20 @@ void GenArguments::initialize_heap_flags_and_sizes() {
   size_t smallest_heap_size = align_up(smallest_new_size + old_gen_size_lower_bound(),
                                        HeapAlignment);
   if (MaxHeapSize < smallest_heap_size) {
-    FLAG_SET_ERGO(size_t, MaxHeapSize, smallest_heap_size);
+    FLAG_SET_ERGO(MaxHeapSize, smallest_heap_size);
   }
   // If needed, synchronize MinHeapSize size and InitialHeapSize
   if (MinHeapSize < smallest_heap_size) {
     MinHeapSize = smallest_heap_size;
     if (InitialHeapSize < MinHeapSize) {
-      FLAG_SET_ERGO(size_t, InitialHeapSize, smallest_heap_size);
+      FLAG_SET_ERGO(InitialHeapSize, smallest_heap_size);
     }
   }
 
   // Make sure NewSize allows an old generation to fit even if set on the command line
   if (FLAG_IS_CMDLINE(NewSize) && NewSize >= InitialHeapSize) {
     log_warning(gc, ergo)("NewSize was set larger than initial heap size, will use initial heap size.");
-    FLAG_SET_ERGO(size_t, NewSize, bound_minus_alignment(NewSize, InitialHeapSize, GenAlignment));
+    FLAG_SET_ERGO(NewSize, bound_minus_alignment(NewSize, InitialHeapSize, GenAlignment));
   }
 
   // Now take the actual NewSize into account. We will silently increase NewSize
@@ -107,7 +107,7 @@ void GenArguments::initialize_heap_flags_and_sizes() {
   size_t bounded_new_size = bound_minus_alignment(NewSize, MaxHeapSize, GenAlignment);
   bounded_new_size = MAX2(smallest_new_size, align_down(bounded_new_size, GenAlignment));
   if (bounded_new_size != NewSize) {
-    FLAG_SET_ERGO(size_t, NewSize, bounded_new_size);
+    FLAG_SET_ERGO(NewSize, bounded_new_size);
   }
   MinNewSize = smallest_new_size;
 
@@ -120,14 +120,14 @@ void GenArguments::initialize_heap_flags_and_sizes() {
                               "heap (" SIZE_FORMAT "k).  A new max generation size of " SIZE_FORMAT "k will be used.",
                               MaxNewSize/K, MaxHeapSize/K, smaller_max_new_size/K);
       }
-      FLAG_SET_ERGO(size_t, MaxNewSize, smaller_max_new_size);
+      FLAG_SET_ERGO(MaxNewSize, smaller_max_new_size);
       if (NewSize > MaxNewSize) {
-        FLAG_SET_ERGO(size_t, NewSize, MaxNewSize);
+        FLAG_SET_ERGO(NewSize, MaxNewSize);
       }
     } else if (MaxNewSize < NewSize) {
-      FLAG_SET_ERGO(size_t, MaxNewSize, NewSize);
+      FLAG_SET_ERGO(MaxNewSize, NewSize);
     } else if (!is_aligned(MaxNewSize, GenAlignment)) {
-      FLAG_SET_ERGO(size_t, MaxNewSize, align_down(MaxNewSize, GenAlignment));
+      FLAG_SET_ERGO(MaxNewSize, align_down(MaxNewSize, GenAlignment));
     }
   }
 
@@ -139,7 +139,7 @@ void GenArguments::initialize_heap_flags_and_sizes() {
                             "A new max generation size of " SIZE_FORMAT "k will be used.",
                             NewSize/K, MaxNewSize/K, NewSize/K);
     }
-    FLAG_SET_ERGO(size_t, MaxNewSize, NewSize);
+    FLAG_SET_ERGO(MaxNewSize, NewSize);
   }
 
   if (SurvivorRatio < 1 || NewRatio < 1) {
@@ -147,10 +147,10 @@ void GenArguments::initialize_heap_flags_and_sizes() {
   }
 
   if (OldSize < old_gen_size_lower_bound()) {
-    FLAG_SET_ERGO(size_t, OldSize, old_gen_size_lower_bound());
+    FLAG_SET_ERGO(OldSize, old_gen_size_lower_bound());
   }
   if (!is_aligned(OldSize, GenAlignment)) {
-    FLAG_SET_ERGO(size_t, OldSize, align_down(OldSize, GenAlignment));
+    FLAG_SET_ERGO(OldSize, align_down(OldSize, GenAlignment));
   }
 
   if (FLAG_IS_CMDLINE(OldSize) && FLAG_IS_DEFAULT(MaxHeapSize)) {
@@ -161,8 +161,8 @@ void GenArguments::initialize_heap_flags_and_sizes() {
     size_t calculated_heapsize = (OldSize / NewRatio) * (NewRatio + 1);
 
     calculated_heapsize = align_up(calculated_heapsize, HeapAlignment);
-    FLAG_SET_ERGO(size_t, MaxHeapSize, calculated_heapsize);
-    FLAG_SET_ERGO(size_t, InitialHeapSize, calculated_heapsize);
+    FLAG_SET_ERGO(MaxHeapSize, calculated_heapsize);
+    FLAG_SET_ERGO(InitialHeapSize, calculated_heapsize);
   }
 
   // Adjust NewSize and OldSize or MaxHeapSize to match each other
@@ -173,15 +173,15 @@ void GenArguments::initialize_heap_flags_and_sizes() {
       size_t calculated_size = NewSize + OldSize;
       double shrink_factor = (double) MaxHeapSize / calculated_size;
       size_t smaller_new_size = align_down((size_t)(NewSize * shrink_factor), GenAlignment);
-      FLAG_SET_ERGO(size_t, NewSize, MAX2(young_gen_size_lower_bound(), smaller_new_size));
+      FLAG_SET_ERGO(NewSize, MAX2(young_gen_size_lower_bound(), smaller_new_size));
 
       // OldSize is already aligned because above we aligned MaxHeapSize to
       // HeapAlignment, and we just made sure that NewSize is aligned to
       // GenAlignment. In initialize_flags() we verified that HeapAlignment
       // is a multiple of GenAlignment.
-      FLAG_SET_ERGO(size_t, OldSize, MaxHeapSize - NewSize);
+      FLAG_SET_ERGO(OldSize, MaxHeapSize - NewSize);
     } else {
-      FLAG_SET_ERGO(size_t, MaxHeapSize, align_up(NewSize + OldSize, HeapAlignment));
+      FLAG_SET_ERGO(MaxHeapSize, align_up(NewSize + OldSize, HeapAlignment));
     }
   }
 
@@ -191,7 +191,7 @@ void GenArguments::initialize_heap_flags_and_sizes() {
     if (OldSize < InitialHeapSize) {
       size_t new_size = InitialHeapSize - OldSize;
       if (new_size >= MinNewSize && new_size <= MaxNewSize) {
-        FLAG_SET_ERGO(size_t, NewSize, new_size);
+        FLAG_SET_ERGO(NewSize, new_size);
       }
     }
   }
@@ -341,15 +341,15 @@ void GenArguments::initialize_size_info() {
 
   // Write back to flags if necessary.
   if (NewSize != initial_young_size) {
-    FLAG_SET_ERGO(size_t, NewSize, initial_young_size);
+    FLAG_SET_ERGO(NewSize, initial_young_size);
   }
 
   if (MaxNewSize != max_young_size) {
-    FLAG_SET_ERGO(size_t, MaxNewSize, max_young_size);
+    FLAG_SET_ERGO(MaxNewSize, max_young_size);
   }
 
   if (OldSize != initial_old_size) {
-    FLAG_SET_ERGO(size_t, OldSize, initial_old_size);
+    FLAG_SET_ERGO(OldSize, initial_old_size);
   }
 
   log_trace(gc, heap)("Minimum old " SIZE_FORMAT "  Initial old " SIZE_FORMAT "  Maximum old " SIZE_FORMAT,

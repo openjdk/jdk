@@ -67,17 +67,17 @@ void VM_Version::initialize() {
   // If PowerArchitecturePPC64 hasn't been specified explicitly determine from features.
   if (FLAG_IS_DEFAULT(PowerArchitecturePPC64)) {
     if (VM_Version::has_darn()) {
-      FLAG_SET_ERGO(uintx, PowerArchitecturePPC64, 9);
+      FLAG_SET_ERGO(PowerArchitecturePPC64, 9);
     } else if (VM_Version::has_lqarx()) {
-      FLAG_SET_ERGO(uintx, PowerArchitecturePPC64, 8);
+      FLAG_SET_ERGO(PowerArchitecturePPC64, 8);
     } else if (VM_Version::has_popcntw()) {
-      FLAG_SET_ERGO(uintx, PowerArchitecturePPC64, 7);
+      FLAG_SET_ERGO(PowerArchitecturePPC64, 7);
     } else if (VM_Version::has_cmpb()) {
-      FLAG_SET_ERGO(uintx, PowerArchitecturePPC64, 6);
+      FLAG_SET_ERGO(PowerArchitecturePPC64, 6);
     } else if (VM_Version::has_popcntb()) {
-      FLAG_SET_ERGO(uintx, PowerArchitecturePPC64, 5);
+      FLAG_SET_ERGO(PowerArchitecturePPC64, 5);
     } else {
-      FLAG_SET_ERGO(uintx, PowerArchitecturePPC64, 0);
+      FLAG_SET_ERGO(PowerArchitecturePPC64, 0);
     }
   }
 
@@ -103,15 +103,15 @@ void VM_Version::initialize() {
     MSG(TrapBasedICMissChecks);
     MSG(TrapBasedNotEntrantChecks);
     MSG(TrapBasedNullChecks);
-    FLAG_SET_ERGO(bool, TrapBasedNotEntrantChecks, false);
-    FLAG_SET_ERGO(bool, TrapBasedNullChecks,       false);
-    FLAG_SET_ERGO(bool, TrapBasedICMissChecks,     false);
+    FLAG_SET_ERGO(TrapBasedNotEntrantChecks, false);
+    FLAG_SET_ERGO(TrapBasedNullChecks,       false);
+    FLAG_SET_ERGO(TrapBasedICMissChecks,     false);
   }
 
 #ifdef COMPILER2
   if (!UseSIGTRAP) {
     MSG(TrapBasedRangeChecks);
-    FLAG_SET_ERGO(bool, TrapBasedRangeChecks, false);
+    FLAG_SET_ERGO(TrapBasedRangeChecks, false);
   }
 
   // On Power6 test for section size.
@@ -123,7 +123,7 @@ void VM_Version::initialize() {
 
   if (PowerArchitecturePPC64 >= 8) {
     if (FLAG_IS_DEFAULT(SuperwordUseVSX)) {
-      FLAG_SET_ERGO(bool, SuperwordUseVSX, true);
+      FLAG_SET_ERGO(SuperwordUseVSX, true);
     }
   } else {
     if (SuperwordUseVSX) {
@@ -135,10 +135,10 @@ void VM_Version::initialize() {
 
   if (PowerArchitecturePPC64 >= 9) {
     if (FLAG_IS_DEFAULT(UseCountTrailingZerosInstructionsPPC64)) {
-      FLAG_SET_ERGO(bool, UseCountTrailingZerosInstructionsPPC64, true);
+      FLAG_SET_ERGO(UseCountTrailingZerosInstructionsPPC64, true);
     }
     if (FLAG_IS_DEFAULT(UseCharacterCompareIntrinsics)) {
-      FLAG_SET_ERGO(bool, UseCharacterCompareIntrinsics, true);
+      FLAG_SET_ERGO(UseCharacterCompareIntrinsics, true);
     }
   } else {
     if (UseCountTrailingZerosInstructionsPPC64) {

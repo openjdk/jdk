@@ -425,7 +425,7 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
     // Calculate the number of concurrent worker threads by scaling
     // the number of parallel GC threads.
     uint marking_thread_num = scale_concurrent_worker_threads(ParallelGCThreads);
-    FLAG_SET_ERGO(uint, ConcGCThreads, marking_thread_num);
+    FLAG_SET_ERGO(ConcGCThreads, marking_thread_num);
   }
 
   assert(ConcGCThreads > 0, "ConcGCThreads have been set.");
@@ -456,7 +456,7 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
                       mark_stack_size, MarkStackSizeMax);
       return;
     }
-    FLAG_SET_ERGO(size_t, MarkStackSize, mark_stack_size);
+    FLAG_SET_ERGO(MarkStackSize, mark_stack_size);
   } else {
     // Verify MarkStackSize is in range.
     if (FLAG_IS_CMDLINE(MarkStackSize)) {

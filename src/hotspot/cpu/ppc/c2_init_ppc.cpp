@@ -36,18 +36,18 @@ void Compile::pd_compiler2_init() {
   // Power7 and later.
   if (PowerArchitecturePPC64 > 6) {
     if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
-      FLAG_SET_ERGO(bool, UsePopCountInstruction, true);
+      FLAG_SET_ERGO(UsePopCountInstruction, true);
     }
   }
 
   if (PowerArchitecturePPC64 == 6) {
     if (FLAG_IS_DEFAULT(InsertEndGroupPPC64)) {
-      FLAG_SET_ERGO(bool, InsertEndGroupPPC64, true);
+      FLAG_SET_ERGO(InsertEndGroupPPC64, true);
     }
   }
 
   if (!VM_Version::has_isel() && FLAG_IS_DEFAULT(ConditionalMoveLimit)) {
-    FLAG_SET_ERGO(intx, ConditionalMoveLimit, 0);
+    FLAG_SET_ERGO(ConditionalMoveLimit, 0);
   }
 
   if (OptimizeFill) {
