@@ -43,15 +43,20 @@ public class SecurityProperties {
      * @return the value of the system or security property
      */
     public static String privilegedGetOverridable(String propName) {
-        return AccessController.doPrivileged((PrivilegedAction<String>)
-            () -> {
-                String val = System.getProperty(propName);
-                if (val == null) {
-                    return Security.getProperty(propName);
-                } else {
-                    return val;
-                }
-            });
+        if (System.getSecurityManager() == null) {
+            return getOverridableProperty(propName);
+        } else {
+            return AccessController.doPrivileged((PrivilegedAction<String>) () -> getOverridableProperty(propName));
+        }
+    }
+
+    private static String getOverridableProperty(String propName) {
+        String val = System.getProperty(propName);
+        if (val == null) {
+            return Security.getProperty(propName);
+        } else {
+            return val;
+        }
     }
 
     /**
