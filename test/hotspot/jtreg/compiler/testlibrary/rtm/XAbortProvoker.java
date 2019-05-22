@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,25 @@
 
 package compiler.testlibrary.rtm;
 
-import jdk.internal.misc.Unsafe;
-
 /**
  * Current RTM locking implementation force transaction abort
  * before native method call by explicit xabort(0) call.
  */
-class XAbortProvoker extends AbortProvoker {
+public class XAbortProvoker extends AbortProvoker {
+
+    static {
+        try {
+            System.loadLibrary("XAbortProvoker");
+        } catch (UnsatisfiedLinkError e) {
+            System.out.println("Could not load native library: " + e);
+        }
+    }
+
+    public native int doAbort();
+
     // Following field have to be static in order to avoid escape analysis.
     @SuppressWarnings("UnsuedDeclaration")
     private static int field = 0;
-    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     public XAbortProvoker() {
         this(new Object());
@@ -46,7 +54,7 @@ class XAbortProvoker extends AbortProvoker {
     @Override
     public void forceAbort() {
         synchronized(monitor) {
-            XAbortProvoker.field = UNSAFE.pageSize();
+            XAbortProvoker.field = doAbort();
         }
     }
 
@@ -54,7 +62,7 @@ class XAbortProvoker extends AbortProvoker {
     public String[] getMethodsToCompileNames() {
         return new String[] {
                 getMethodWithLockName(),
-                Unsafe.class.getName() + "::pageSize"
+                XAbortProvoker.class.getName() + "::doAbort"
         };
     }
 }

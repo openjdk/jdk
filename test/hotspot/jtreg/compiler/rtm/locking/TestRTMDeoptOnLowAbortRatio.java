@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,18 +32,18 @@
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI
- *                   compiler.rtm.locking.TestRTMDeoptOnLowAbortRatio
+ * @run main/othervm/native -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                          -XX:+WhiteBoxAPI
+ *                          compiler.rtm.locking.TestRTMDeoptOnLowAbortRatio
  */
 
 package compiler.rtm.locking;
 
 import compiler.testlibrary.rtm.AbortProvoker;
+import compiler.testlibrary.rtm.XAbortProvoker;
 import compiler.testlibrary.rtm.CompilableTest;
 import compiler.testlibrary.rtm.RTMLockingStatistics;
 import compiler.testlibrary.rtm.RTMTestBase;
-import jdk.internal.misc.Unsafe;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.cli.CommandLineOptionTest;
@@ -124,7 +124,7 @@ public class TestRTMDeoptOnLowAbortRatio {
     }
 
     public static class Test implements CompilableTest {
-        private static final Unsafe UNSAFE = Unsafe.getUnsafe();
+        private final XAbortProvoker xabort = new XAbortProvoker();
         private final Object monitor = new Object();
 
         @Override
@@ -134,13 +134,14 @@ public class TestRTMDeoptOnLowAbortRatio {
 
         @Override
         public String[] getMethodsToCompileNames() {
-            return new String[] { getMethodWithLockName() };
+            return new String[] { getMethodWithLockName(),
+                                  XAbortProvoker.class.getName() + "::doAbort" };
         }
 
         public void forceAbort(boolean abort) {
             synchronized(monitor) {
                 if (abort) {
-                    Test.UNSAFE.pageSize();
+                    xabort.doAbort();
                 }
             }
         }
