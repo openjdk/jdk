@@ -44,7 +44,7 @@
 address ShenandoahBarrierSetAssembler::_shenandoah_lrb = NULL;
 
 void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
-                                                       Register addr, Register count, RegSet saved_regs) {
+                                                       Register src, Register dst, Register count, RegSet saved_regs) {
   if (is_oop) {
     bool dest_uninitialized = (decorators & IS_DEST_UNINITIALIZED) != 0;
     if (ShenandoahSATBBarrier && !dest_uninitialized && !ShenandoahHeap::heap()->heuristics()->can_do_traversal_gc()) {
@@ -61,17 +61,17 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, Dec
 
       __ push(saved_regs, sp);
       if (count == c_rarg0) {
-        if (addr == c_rarg1) {
+        if (dst == c_rarg1) {
           // exactly backwards!!
           __ mov(rscratch1, c_rarg0);
           __ mov(c_rarg0, c_rarg1);
           __ mov(c_rarg1, rscratch1);
         } else {
           __ mov(c_rarg1, count);
-          __ mov(c_rarg0, addr);
+          __ mov(c_rarg0, dst);
         }
       } else {
-        __ mov(c_rarg0, addr);
+        __ mov(c_rarg0, dst);
         __ mov(c_rarg1, count);
       }
       if (UseCompressedOops) {
