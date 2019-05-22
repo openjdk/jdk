@@ -132,6 +132,7 @@ serviceability/sa/TestType.java 8193639 solaris-all
 serviceability/sa/TestUniverse.java#id0 8193639,8211767 solaris-all,linux-ppc64le,linux-ppc64
 
 serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorStatIntervalTest.java 8214032 generic-all
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorStatArrayCorrectnessTest.java 8224150 generic-all
 
 #############################################################################
 
