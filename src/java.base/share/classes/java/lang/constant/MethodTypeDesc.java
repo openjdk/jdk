@@ -65,7 +65,9 @@ public interface MethodTypeDesc
      * @param returnDesc a {@linkplain ClassDesc} describing the return type
      * @param paramDescs {@linkplain ClassDesc}s describing the argument types
      * @return a {@linkplain MethodTypeDesc} describing the desired method type
-     * @throws NullPointerException if any argument is {@code null}
+     * @throws NullPointerException if any argument or its contents are {@code null}
+     * @throws IllegalArgumentException if any element of {@code paramDescs} is a
+     * {@link ClassDesc} for {@code void}
      */
     static MethodTypeDesc of(ClassDesc returnDesc, ClassDesc... paramDescs) {
         return new MethodTypeDescImpl(returnDesc, paramDescs);
