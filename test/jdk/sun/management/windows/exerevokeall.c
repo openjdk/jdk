@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,7 @@
 #include <string.h>
 
 /*
- * Simple Windows utility to remove all non-owner access to a given
- * file - suitable for NT/2000/XP only.
+ * Simple Windows utility to remove all non-owner access to a given file.
  */
 
 
@@ -151,7 +150,7 @@ static char *getSIDString(SID* sid) {
     }
 
     if (LookupAccountSid(NULL, sid, name, &nameLen, domain, &domainLen, &use)) {
-        int len = strlen(name) + strlen(domain) + 3;
+        size_t len = strlen(name) + strlen(domain) + 3;
         char* s = (char*)malloc(len);
         if (s != NULL) {
             strcpy(s, domain);
@@ -352,6 +351,8 @@ static int revokeAll(const char* path) {
             return -1;
         }
         if (((ACCESS_ALLOWED_ACE *)ace)->Header.AceType != ACCESS_ALLOWED_ACE_TYPE) {
+            i++;
+            count--;
             continue;
         }
         access = (ACCESS_ALLOWED_ACE *)ace;
