@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,9 @@
 /* @test
  * @bug 4799427
  * @summary Https can not retry request
+ * @library /test/lib
  * @run main/othervm RetryHttps
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true RetryHttps
  *
  *     SunJSSE does not support dynamic system properties, no way to re-use
  *     system properties in samevm/agentvm mode.
@@ -35,6 +37,7 @@ import java.net.*;
 import java.util.*;
 import java.io.*;
 import javax.net.ssl.*;
+import jdk.test.lib.net.URIBuilder;
 
 public class RetryHttps {
     static Map cookies;
@@ -80,11 +83,16 @@ public class RetryHttps {
      * to avoid infinite hangs.
      */
     void doServerSide() throws Exception {
+        InetAddress loopback = InetAddress.getLoopbackAddress();
         SSLServerSocketFactory sslssf =
             (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
         sslServerSocket =
-            (SSLServerSocket) sslssf.createServerSocket(serverPort);
+            (SSLServerSocket) sslssf.createServerSocket(serverPort, 0, loopback);
         serverPort = sslServerSocket.getLocalPort();
+
+        System.out.println("Starting server at: "
+                            +  sslServerSocket.getInetAddress()
+                            + ":" + serverPort);
 
         /*
          * Signal Client, we're ready for his connect.
@@ -145,11 +153,16 @@ public class RetryHttps {
             try {
                 HttpsURLConnection http = null;
                 /* establish http connection to server */
-                URL url = new URL("https://localhost:" + serverPort+"/file1");
+               URL url = URIBuilder.newBuilder()
+                      .scheme("https")
+                      .loopback()
+                      .port(serverPort)
+                      .path("/file1")
+                      .toURL();
                 System.out.println("url is "+url.toString());
                 HttpsURLConnection.setDefaultHostnameVerifier(
                                                         new NameVerifier());
-                http = (HttpsURLConnection)url.openConnection();
+                http = (HttpsURLConnection)url.openConnection(Proxy.NO_PROXY);
                 int respCode = http.getResponseCode();
                 int cl = http.getContentLength();
                 InputStream is = http.getInputStream ();
@@ -157,8 +170,13 @@ public class RetryHttps {
                 while (is.read() != -1 && count++ < cl);
                 System.out.println("respCode1 = "+respCode);
                 Thread.sleep(2000);
-                url = new URL("https://localhost:" + serverPort+"/file2");
-                http = (HttpsURLConnection)url.openConnection();
+                url = URIBuilder.newBuilder()
+                      .scheme("https")
+                      .loopback()
+                      .port(serverPort)
+                      .path("/file2")
+                      .toURL();
+                http = (HttpsURLConnection)url.openConnection(Proxy.NO_PROXY);
                 respCode = http.getResponseCode();
                 System.out.println("respCode2 = "+respCode);
             } catch (IOException ioex) {

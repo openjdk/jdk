@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import javax.net.ssl.*;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.net.URIBuilder;
 
 /*
  * @test
@@ -47,6 +48,8 @@ import jdk.test.lib.process.ProcessTools;
  *        jdk.test.lib.process.*
  * @compile OriginServer.java ProxyTunnelServer.java
  * @run main/othervm -Djdk.http.auth.tunneling.disabledSchemes= PostThruProxyWithAuth
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true
+                     -Djdk.http.auth.tunneling.disabledSchemes= PostThruProxyWithAuth
  */
 public class PostThruProxyWithAuth {
 
@@ -62,6 +65,11 @@ public class PostThruProxyWithAuth {
     static String passwd = "passphrase";
 
     volatile private static int serverPort = 0;
+    private static ProxyTunnelServer pserver;
+    private static TestServer server;
+
+    static final String RESPONSE_MSG =
+        "Https POST thru proxy is successful with proxy authentication";
 
     /*
      * The TestServer implements a OriginServer that
@@ -79,9 +87,7 @@ public class PostThruProxyWithAuth {
          * @return bytes for the data in the response
          */
         public byte[] getBytes() {
-            return
-                "Https POST thru proxy is successful with proxy authentication".
-                getBytes();
+            return RESPONSE_MSG.getBytes();
         }
     }
 
@@ -103,11 +109,13 @@ public class PostThruProxyWithAuth {
          * setup the server
          */
         try {
+            InetAddress localhost = InetAddress.getLocalHost();
             ServerSocketFactory ssf = getServerSocketFactory(useSSL);
-            ServerSocket ss = ssf.createServerSocket(serverPort);
+            ServerSocket ss = ssf.createServerSocket(serverPort, 0, localhost);
             ss.setSoTimeout(TIMEOUT);  // 30 seconds
             serverPort = ss.getLocalPort();
-            new TestServer(ss);
+            server = new TestServer(ss);
+            System.out.println("Server started at: " + ss);
         } catch (Exception e) {
             System.out.println("Server side failed:" +
                                 e.getMessage());
@@ -120,7 +128,13 @@ public class PostThruProxyWithAuth {
             System.out.println("Client side failed: " +
                                 e.getMessage());
             throw e;
-          }
+        }
+        long connectCount = pserver.getConnectCount();
+        if (connectCount == 0) {
+            throw new AssertionError("Proxy was not used!");
+        } else {
+            System.out.println("Proxy CONNECT count: " + connectCount);
+        }
     }
 
     private static ServerSocketFactory getServerSocketFactory
@@ -160,9 +174,16 @@ public class PostThruProxyWithAuth {
          */
         HttpsURLConnection.setDefaultHostnameVerifier(
                                       new NameVerifier());
-        URL url = new URL("https://" + getHostname() + ":" + serverPort);
+
+        URL url = URIBuilder.newBuilder()
+                      .scheme("https")
+                      .host(getHostname())
+                      .port(serverPort)
+                      .toURL();
 
         Proxy p = new Proxy(Proxy.Type.HTTP, pAddr);
+        System.out.println("Client connecting to: " + url);
+        System.out.println("Through proxy: " + pAddr);
         HttpsURLConnection https = (HttpsURLConnection)url.openConnection(p);
         https.setConnectTimeout(TIMEOUT);
         https.setReadTimeout(TIMEOUT);
@@ -182,9 +203,15 @@ public class PostThruProxyWithAuth {
                                 new InputStreamReader(
                                 https.getInputStream()));
            String inputLine;
-           while ((inputLine = in.readLine()) != null)
-                 System.out.println("Client received: " + inputLine);
+           boolean msgFound = false;
+           while ((inputLine = in.readLine()) != null) {
+                System.out.println("Client received: " + inputLine);
+                if (inputLine.contains(RESPONSE_MSG)) msgFound = true;
+           }
            in.close();
+           if (!msgFound) {
+               throw new RuntimeException("POST message not found.");
+           }
         } catch (SSLException e) {
             if (ps != null)
                 ps.close();
@@ -202,7 +229,9 @@ public class PostThruProxyWithAuth {
     }
 
     static SocketAddress setupProxy() throws IOException {
-        ProxyTunnelServer pserver = new ProxyTunnelServer();
+
+        InetAddress localhost = InetAddress.getLocalHost();
+        pserver = new ProxyTunnelServer(localhost);
 
         /*
          * register a system wide authenticator and setup the proxy for
@@ -216,7 +245,7 @@ public class PostThruProxyWithAuth {
 
         pserver.start();
 
-        return new InetSocketAddress("localhost", pserver.getPort());
+        return new InetSocketAddress(localhost, pserver.getPort());
     }
 
     public static class TestAuthenticator extends Authenticator {
