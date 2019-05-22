@@ -1191,12 +1191,6 @@ static Node* create_phis_on_call_return(Node* ctrl, Node* c, Node* n, Node* n_cl
 void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
   ShenandoahBarrierSetC2State* state = ShenandoahBarrierSetC2::bsc2()->state();
 
-  // Collect raw memory state at CFG points in the entire graph and
-  // record it in memory_nodes. Optimize the raw memory graph in the
-  // process. Optimizing the memory graph also makes the memory graph
-  // simpler.
-  GrowableArray<MemoryGraphFixer*> memory_graph_fixers;
-
   Unique_Node_List uses;
   for (int i = 0; i < state->enqueue_barriers_count(); i++) {
     Node* barrier = state->enqueue_barrier(i);
@@ -1412,6 +1406,22 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
     }
   }
 
+  for (int i = 0; i < state->load_reference_barriers_count(); i++) {
+    ShenandoahLoadReferenceBarrierNode* lrb = state->load_reference_barrier(i);
+    if (lrb->get_barrier_strength() == ShenandoahLoadReferenceBarrierNode::NONE) {
+      continue;
+    }
+    Node* ctrl = phase->get_ctrl(lrb);
+    IdealLoopTree* loop = phase->get_loop(ctrl);
+    if (loop->_head->is_OuterStripMinedLoop()) {
+      // Expanding a barrier here will break loop strip mining
+      // verification. Transform the loop so the loop nest doesn't
+      // appear as strip mined.
+      OuterStripMinedLoopNode* outer = loop->_head->as_OuterStripMinedLoop();
+      hide_strip_mined_loop(outer, outer->unique_ctrl_out()->as_CountedLoop(), phase);
+    }
+  }
+
   // Expand load-reference-barriers
   MemoryGraphFixer fixer(Compile::AliasIdxRaw, true, phase);
   Unique_Node_List uses_to_ignore;
@@ -1431,7 +1441,6 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
     Node* raw_mem = fixer.find_mem(ctrl, lrb);
     Node* init_raw_mem = raw_mem;
     Node* raw_mem_for_ctrl = fixer.find_mem(ctrl, NULL);
-    // int alias = phase->C->get_alias_index(lrb->adr_type());
 
     IdealLoopTree *loop = phase->get_loop(ctrl);
     CallStaticJavaNode* unc = lrb->pin_and_expand_null_check(phase->igvn());
@@ -2607,7 +2616,11 @@ void MemoryGraphFixer::fix_mem(Node* ctrl, Node* new_ctrl, Node* mem, Node* mem_
                 IdealLoopTree* l = loop;
                 create_phi = false;
                 while (l != _phase->ltree_root()) {
-                  if (_phase->is_dominator(l->_head, u) && _phase->is_dominator(_phase->idom(u), l->_head)) {
+                  Node* head = l->_head;
+                  if (head->in(0) == NULL) {
+                    head = _phase->get_ctrl(head);
+                  }
+                  if (_phase->is_dominator(head, u) && _phase->is_dominator(_phase->idom(u), head)) {
                     create_phi = true;
                     do_check = false;
                     break;
