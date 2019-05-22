@@ -35,20 +35,13 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.util.ArraysSupport;
 
 import static java.lang.String.LATIN1;
 import static java.lang.String.UTF16;
 import static java.lang.String.checkOffset;
 
 final class StringLatin1 {
-
-    /**
-     * The maximum size of array to allocate (unless necessary).
-     * Some VMs reserve some header words in an array.
-     * Attempts to allocate larger arrays may result in
-     * OutOfMemoryError: Requested array size exceeds VM limit
-     */
-    private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
 
     public static char charAt(byte[] value, int index) {
         if (index < 0 || index >= value.length) {
@@ -353,15 +346,7 @@ final class StringLatin1 {
         i += targLen;
         while ((j = indexOf(value, valLen, targ, targLen, i)) > 0) {
             if (++p == pos.length) {
-                int cap = p + (p >> 1);
-                // overflow-conscious code
-                if (cap - MAX_ARRAY_SIZE > 0) {
-                    if (p == MAX_ARRAY_SIZE) {
-                        throw new OutOfMemoryError();
-                    }
-                    cap = MAX_ARRAY_SIZE;
-                }
-                pos = Arrays.copyOf(pos, cap);
+                pos = Arrays.copyOf(pos, ArraysSupport.newLength(p, 1, p >> 1));
             }
             pos[p] = j;
             i = j + targLen;
