@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,9 @@ import java.util.concurrent.TimeUnit;
  *   </thead>
  *   <tbody>
  *   <tr>
- *     <th scope="row"> {@code java.nio.channels.DefaultThreadPool.threadFactory} </th>
+ *     <th scope="row">
+ *       {@systemProperty java.nio.channels.DefaultThreadPool.threadFactory}
+ *     </th>
  *     <td> The value of this property is taken to be the fully-qualified name
  *     of a concrete {@link java.util.concurrent.ThreadFactory ThreadFactory}
  *     class. The class is loaded using the system class loader and instantiated.
@@ -81,7 +83,9 @@ import java.util.concurrent.TimeUnit;
  *     construction of the default group. </td>
  *   </tr>
  *   <tr>
- *     <th scope="row"> {@code java.nio.channels.DefaultThreadPool.initialSize} </th>
+ *     <th scope="row">
+ *       {@systemProperty java.nio.channels.DefaultThreadPool.initialSize}
+ *     </th>
  *     <td> The value of the {@code initialSize} parameter for the default
  *     group (see {@link #withCachedThreadPool withCachedThreadPool}).
  *     The value of the property is taken to be the {@code String}

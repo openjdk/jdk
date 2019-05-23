@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,10 +138,10 @@ public abstract class AsynchronousChannelProvider {
      * <ol>
      *
      *   <li><p> If the system property
-     *   {@code java.nio.channels.spi.AsynchronousChannelProvider} is defined
-     *   then it is taken to be the fully-qualified name of a concrete provider class.
-     *   The class is loaded and instantiated; if this process fails then an
-     *   unspecified error is thrown.  </p></li>
+     *   {@systemProperty java.nio.channels.spi.AsynchronousChannelProvider} is
+     *   defined then it is taken to be the fully-qualified name of a concrete
+     *   provider class. The class is loaded and instantiated; if this process
+     *   fails then an unspecified error is thrown.  </p></li>
      *
      *   <li><p> If a provider class has been installed in a jar file that is
      *   visible to the system class loader, and that jar file contains a
