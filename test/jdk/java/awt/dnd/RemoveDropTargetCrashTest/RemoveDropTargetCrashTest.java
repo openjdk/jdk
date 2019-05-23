@@ -60,10 +60,10 @@ import java.util.concurrent.TimeUnit;
 /**
  * @test
  * @key headful
- * @bug 4393148 8136999 8186263
+ * @bug 4393148 8136999 8186263 8224632
  * @summary tests that removal of the drop target or disposal of frame during
  *          drop processing doesn't cause crash
- * @run main RemoveDropTargetCrashTest RUN_PROCESS
+ * @run main/timeout=300 RemoveDropTargetCrashTest RUN_PROCESS
  */
 public class RemoveDropTargetCrashTest {
 
@@ -301,7 +301,7 @@ public class RemoveDropTargetCrashTest {
                 + " " + RemoveDropTargetCrashTest.class.getName() + " " + RUN_TEST;
 
         Process process = Runtime.getRuntime().exec(command);
-        boolean processExit = process.waitFor(100, TimeUnit.SECONDS);
+        boolean processExit = process.waitFor(200, TimeUnit.SECONDS);
 
         StringBuilder inStream = new StringBuilder();
         StringBuilder errStream = new StringBuilder();
