@@ -564,7 +564,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     TOOLCHAIN_CFLAGS="-errshort=tags"
 
     TOOLCHAIN_CFLAGS_JDK="-mt $TOOLCHAIN_FLAGS"
-    TOOLCHAIN_CFLAGS_JDK_CONLY="-xCC -Xa -W0,-noglobal $TOOLCHAIN_CFLAGS" # C only
+    TOOLCHAIN_CFLAGS_JDK_CONLY="-W0,-noglobal $TOOLCHAIN_CFLAGS" # C only
     TOOLCHAIN_CFLAGS_JDK_CXXONLY="-features=no%except -norunpath -xnolib" # CXX only
     TOOLCHAIN_CFLAGS_JVM="-template=no%extdef -features=no%split_init \
         -library=stlport4 -mt -features=no%except $TOOLCHAIN_FLAGS"
@@ -584,6 +584,30 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     TOOLCHAIN_CFLAGS_JVM="-nologo -MD -MP"
     TOOLCHAIN_CFLAGS_JDK="-nologo -MD -Zc:wchar_t-"
   fi
+
+  # CFLAGS C language level for JDK sources (hotspot only uses C++)
+  # Ideally we would have a common level across all toolchains so that all sources
+  # are sure to conform to the same standard. Unfortunately neither our sources nor
+  # our toolchains are in a condition to support that. But what we loosely aim for is
+  # C99 level.
+  if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang || test "x$TOOLCHAIN_TYPE" = xxlc; then
+    # This raises the language level for older 4.8 gcc, while lowering it for later
+    # versions. clang and xlclang support the same flag.
+    LANGSTD_CFLAGS="-std=c99"
+  elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
+    # We can't turn on -std=c99 without breaking compilation of the splashscreen/png
+    # utilities. But we can enable c99 as below (previously achieved by using -Xa).
+    # It is the no_lib that makes the difference.
+    LANGSTD_CFLAGS="-xc99=all,no_lib"
+  elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+    # MSVC doesn't support C99/C11 explicitly, unless you compile as C++:
+    # LANGSTD_CFLAGS="/TP"
+    # but that requires numerous changes to the sources files. So we are limited
+    # to C89/C90 plus whatever extensions Visual Studio has decided to implement.
+    # This is the lowest bar for shared code.
+    LANGSTD_CFLAGS=""
+  fi
+  TOOLCHAIN_CFLAGS_JDK_CONLY="$LANGSTD_CFLAGS $TOOLCHAIN_CFLAGS_JDK_CONLY"
 
   # CFLAGS WARNINGS STUFF
   # Set JVM_CFLAGS warning handling

@@ -328,6 +328,11 @@ issues.
  Solaris            Oracle Solaris Studio 12.6 (with compiler version 5.15)
  Windows            Microsoft Visual Studio 2017 update 15.9.6
 
+All compilers are expected to be able to compile to the C99 language standard,
+as some C99 features are used in the source code. Microsoft Visual Studio
+doesn't fully support C99 so in practice shared code is limited to using C99
+features that it does support.
+
 ### gcc
 
 The minimum accepted version of gcc is 4.8. Older versions will generate a warning
