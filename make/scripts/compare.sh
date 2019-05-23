@@ -820,6 +820,9 @@ compare_bin_file() {
             BIN_MSG="($BIN_MSG)"
             DIFF_BIN=
         fi
+    else
+        BIN_MSG=
+        DIFF_BIN=
     fi
 
     if [ -n "$STAT" ]; then
@@ -1571,15 +1574,12 @@ if [ "$CMP_LIBS" = "true" ]; then
     fi
     if [ -n "$THIS_TEST" ] && [ -n "$OTHER_TEST" ]; then
         echo -n "Test "
-        # Test native libs are never stripped so will not compare well.
-        SKIP_BIN_DIFF="true"
-        ACCEPTED_SMALL_SIZE_DIFF_bak="$ACCEPTED_SMALL_SIZE_DIFF"
-        if [ "$OPENJDK_TARGET_OS" = "solaris" ]; then
-            ACCEPTED_SMALL_SIZE_DIFF="true"
+        STRIP_ALL_bak="$STRIP_ALL"
+        if [ "$STRIP_TESTS_BEFORE_COMPARE" = "true" ]; then
+          STRIP_ALL="true"
         fi
         compare_all_libs $THIS_TEST $OTHER_TEST $COMPARE_ROOT/test
-        SKIP_BIN_DIFF="false"
-        ACCEPTED_SMALL_SIZE_DIFF="$ACCEPTED_SMALL_SIZE_DIFF_bak"
+        STRIP_ALL="$STRIP_ALL_bak"
     fi
     if [ -n "$THIS_BASE_DIR" ] && [ -n "$OTHER_BASE_DIR" ]; then
         compare_all_libs $THIS_BASE_DIR $OTHER_BASE_DIR $COMPARE_ROOT/base_dir
@@ -1593,10 +1593,12 @@ if [ "$CMP_EXECS" = "true" ]; then
     fi
     if [ -n "$THIS_TEST" ] && [ -n "$OTHER_TEST" ]; then
         echo -n "Test "
-        # Test native executables are never stripped so will not compare well.
-        SKIP_BIN_DIFF="true"
+        STRIP_ALL_bak="$STRIP_ALL"
+        if [ "$STRIP_TESTS_BEFORE_COMPARE" = "true" ]; then
+          STRIP_ALL="true"
+        fi
         compare_all_execs $THIS_TEST $OTHER_TEST $COMPARE_ROOT/test
-        SKIP_BIN_DIFF="false"
+        STRIP_ALL="$STRIP_ALL_bak"
     fi
     if [ -n "$THIS_BASE_DIR" ] && [ -n "$OTHER_BASE_DIR" ]; then
         compare_all_execs $THIS_BASE_DIR $OTHER_BASE_DIR $COMPARE_ROOT/base_dir
