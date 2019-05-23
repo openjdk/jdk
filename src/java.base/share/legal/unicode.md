@@ -1,25 +1,11 @@
-## The Unicode Standard, Unicode Character Database, Version 11.0.0
-
+## The Unicode Standard, Unicode Character Database, Version 12.1.0
+ 
 ### Unicode Character Database
 
-```
-
 UNICODE, INC. LICENSE AGREEMENT - DATA FILES AND SOFTWARE
-Unicode Data Files include all data files under the directories
-http://www.unicode.org/Public/, http://www.unicode.org/reports/,
-http://www.unicode.org/cldr/data/,
-http://source.icu-project.org/repos/icu/, and
-http://www.unicode.org/utility/trac/browser/.
 
-Unicode Data Files do not include PDF online code charts under the
-directory http://www.unicode.org/Public/.
-
-Software includes any source code published in the Unicode Standard
-or under the directories
-http://www.unicode.org/Public/, http://www.unicode.org/reports/,
-http://www.unicode.org/cldr/data/,
-http://source.icu-project.org/repos/icu/, and
-http://www.unicode.org/utility/trac/browser/.
+See Terms of Use for definitions of Unicode Inc.'s
+Data Files and Software.
 
 NOTICE TO USER: Carefully read the following legal agreement.
 BY DOWNLOADING, INSTALLING, COPYING OR OTHERWISE USING UNICODE INC.'S
@@ -31,8 +17,8 @@ THE DATA FILES OR SOFTWARE.
 
 COPYRIGHT AND PERMISSION NOTICE
 
-Copyright © 1991-2018 Unicode, Inc. All rights reserved.
-Distributed under the Terms of Use in http://www.unicode.org/copyright.html.
+Copyright © 1991-2019 Unicode, Inc. All rights reserved.
+Distributed under the Terms of Use in https://www.unicode.org/copyright.html.
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of the Unicode data files and any associated documentation
@@ -62,5 +48,3 @@ Except as contained in this notice, the name of a copyright holder
 shall not be used in advertising or otherwise to promote the sale,
 use or other dealings in these Data Files or Software without prior
 written authorization of the copyright holder.
-
-```

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,56 @@
 
 package java.util.regex;
 
+import java.util.Objects;
+
 final class Grapheme {
 
     /**
-     * Determines if there is an extended  grapheme cluster boundary between two
-     * continuing characters {@code cp1} and {@code cp2}.
+     * Look for the next extended grapheme cluster boundary in a CharSequence. It assumes
+     * the start of the char sequence is a boundary.
      * <p>
      * See Unicode Standard Annex #29 Unicode Text Segmentation for the specification
-     * for the extended grapheme cluster boundary rules
+     * for the extended grapheme cluster boundary rules. The following implementation
+     * is based on version 12.0 of the annex.
+     * (http://www.unicode.org/reports/tr29/tr29-35.html)
+     *
+     * @param src the {@code CharSequence} to be scanned
+     * @param off offset to start looking for the next boundary in the src
+     * @param limit limit offset in the src (exclusive)
+     * @return the next possible boundary
      */
-    static boolean isBoundary(int cp1, int cp2) {
-        return rules[getType(cp1)][getType(cp2)];
+    static int nextBoundary(CharSequence src, int off, int limit) {
+        Objects.checkFromToIndex(off, limit, src.length());
+
+        int ch0 = Character.codePointAt(src, 0);
+        int ret = Character.charCount(ch0);
+        int ch1;
+        // indicates whether gb11 or gb12 is underway
+        boolean gb11 = EmojiData.isExtendedPictographic(ch0);
+        int riCount = getType(ch0) == RI ? 1 : 0;
+        while (ret < limit) {
+            ch1 = Character.codePointAt(src, ret);
+            int t0 = getType(ch0);
+            int t1 = getType(ch1);
+
+            if (gb11 && t0 == ZWJ && t1 == EXTENDED_PICTOGRAPHIC) {
+                gb11 = false;
+            } else if (riCount % 2 == 1 && t0 == RI && t1 == RI) {
+                // continue for gb12
+            } else if (rules[t0][t1]) {
+                if (ret > off) {
+                    break;
+                } else {
+                    gb11 = EmojiData.isExtendedPictographic(ch1);
+                    riCount = 0;
+                }
+            }
+
+            riCount += getType(ch1) == RI ? 1 : 0;
+            ch0 = ch1;
+            ret += Character.charCount(ch1);
+        }
+        return ret;
     }
 
     // types
@@ -44,22 +83,24 @@ final class Grapheme {
     private static final int LF = 2;
     private static final int CONTROL = 3;
     private static final int EXTEND = 4;
-    private static final int RI = 5;
-    private static final int PREPEND = 6;
-    private static final int SPACINGMARK = 7;
-    private static final int L = 8;
-    private static final int V = 9;
-    private static final int T = 10;
-    private static final int LV = 11;
-    private static final int LVT = 12;
+    private static final int ZWJ = 5;
+    private static final int RI = 6;
+    private static final int PREPEND = 7;
+    private static final int SPACINGMARK = 8;
+    private static final int L = 9;
+    private static final int V = 10;
+    private static final int T = 11;
+    private static final int LV = 12;
+    private static final int LVT = 13;
+    private static final int EXTENDED_PICTOGRAPHIC = 14;
 
     private static final int FIRST_TYPE = 0;
-    private static final int LAST_TYPE = 12;
+    private static final int LAST_TYPE = 14;
 
     private static boolean[][] rules;
     static {
         rules = new boolean[LAST_TYPE + 1][LAST_TYPE + 1];
-        // default, any + any
+        // GB 999 Any + Any  -> default
         for (int i = FIRST_TYPE; i <= LAST_TYPE; i++)
             for (int j = FIRST_TYPE; j <= LAST_TYPE; j++)
                 rules[i][j] = true;
@@ -76,13 +117,12 @@ final class Grapheme {
         // GB 8 (LVT | T) x T
         rules[LVT][T] = false;
         rules[T][T] = false;
-        // GB 8a RI x RI
-        rules[RI][RI] = false;
-        // GB 9 x Extend
+        // GB 9 x (Extend|ZWJ)
         // GB 9a x Spacing Mark
         // GB 9b Prepend x
         for (int i = FIRST_TYPE; i <= LAST_TYPE; i++) {
             rules[i][EXTEND] = false;
+            rules[i][ZWJ] = false;
             rules[i][SPACINGMARK] = false;
             rules[PREPEND][i] = false;
         }
@@ -95,7 +135,9 @@ final class Grapheme {
             }
         // GB 3 CR x LF
         rules[CR][LF] = false;
-        // GB 10 Any + Any  -> default
+        // GB 11 Exended_Pictographic x (Extend|ZWJ)
+        rules[EXTENDED_PICTOGRAPHIC][EXTEND] = false;
+        rules[EXTENDED_PICTOGRAPHIC][ZWJ] = false;
     }
 
     // Hangul syllables
@@ -123,6 +165,10 @@ final class Grapheme {
 
     @SuppressWarnings("fallthrough")
     private static int getType(int cp) {
+        if (EmojiData.isExtendedPictographic(cp)) {
+            return EXTENDED_PICTOGRAPHIC;
+        }
+
         int type = Character.getType(cp);
         switch(type) {
         case Character.CONTROL:
@@ -131,29 +177,36 @@ final class Grapheme {
             if (cp == 0x000A)
                 return LF;
             return CONTROL;
-         case Character.UNASSIGNED:
+        case Character.UNASSIGNED:
             // NOTE: #tr29 lists "Unassigned and Default_Ignorable_Code_Point" as Control
             // but GraphemeBreakTest.txt lists u+0378/reserved-0378 as "Other"
             // so type it as "Other" to make the test happy
-             if (cp == 0x0378)
-                 return OTHER;
+            if (cp == 0x0378)
+                return OTHER;
 
         case Character.LINE_SEPARATOR:
         case Character.PARAGRAPH_SEPARATOR:
         case Character.SURROGATE:
             return CONTROL;
         case Character.FORMAT:
-            if (cp == 0x200C || cp == 0x200D)
+            if (cp == 0x200C ||
+                cp >= 0xE0020 && cp <= 0xE007F)
                 return EXTEND;
+            if (cp == 0x200D)
+                return ZWJ;
+            if (cp >= 0x0600 && cp <= 0x0605 ||
+                cp == 0x06DD || cp == 0x070F || cp == 0x08E2 ||
+                cp == 0x110BD || cp == 0x110CD)
+                return PREPEND;
             return CONTROL;
         case Character.NON_SPACING_MARK:
         case Character.ENCLOSING_MARK:
-             // NOTE:
-             // #tr29 "plus a few General_Category = Spacing_Mark needed for
-             // canonical equivalence."
-             // but for "extended grapheme clusters" support, there is no
-             // need actually to diff "extend" and "spackmark" given GB9, GB9a
-             return EXTEND;
+            // NOTE:
+            // #tr29 "plus a few General_Category = Spacing_Mark needed for
+            // canonical equivalence."
+            // but for "extended grapheme clusters" support, there is no
+            // need actually to diff "extend" and "spackmark" given GB9, GB9a
+            return EXTEND;
         case  Character.COMBINING_SPACING_MARK:
             if (isExcludedSpacingMark(cp))
                 return OTHER;
@@ -167,9 +220,11 @@ final class Grapheme {
                 return RI;
             return OTHER;
         case Character.MODIFIER_LETTER:
+        case Character.MODIFIER_SYMBOL:
             // WARNING:
             // not mentioned in #tr29 but listed in GraphemeBreakProperty.txt
-            if (cp == 0xFF9E || cp == 0xFF9F)
+            if (cp == 0xFF9E || cp == 0xFF9F ||
+                cp >= 0x1F3FB && cp <= 0x1F3FF)
                 return EXTEND;
             return OTHER;
         case Character.OTHER_LETTER:
@@ -199,6 +254,22 @@ final class Grapheme {
                 return V;
             if (cp >= 0xD7CB && cp <= 0xD7FB)
                 return T;
+
+            // Prepend
+            switch (cp) {
+                case 0x0D4E:
+                case 0x111C2:
+                case 0x111C3:
+                case 0x11A3A:
+                case 0x11A84:
+                case 0x11A85:
+                case 0x11A86:
+                case 0x11A87:
+                case 0x11A88:
+                case 0x11A89:
+                case 0x11D46:
+                    return PREPEND;
+            }
         }
         return OTHER;
     }

@@ -39,7 +39,7 @@ $(eval $(call IncludeCustomExtension, CompileJavaModules.gmk))
 # Module specific build settings
 
 java.base_ADD_JAVAC_FLAGS += -Xdoclint:all/protected,-reference,-accessibility '-Xdoclint/package:java.*,javax.*' -XDstringConcat=inline
-java.base_COPY += .icu .dat .spp content-types.properties hijrah-config-islamic-umalqura.properties
+java.base_COPY += .icu .dat .spp .nrm content-types.properties hijrah-config-islamic-umalqura.properties
 java.base_CLEAN += intrinsic.properties
 
 java.base_EXCLUDE_FILES += \

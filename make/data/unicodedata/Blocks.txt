@@ -1,6 +1,6 @@
-# Blocks-11.0.0.txt
-# Date: 2017-10-16, 24:39:00 GMT [KW]
-# Copyright (c) 2018 Unicode, Inc.
+# Blocks-12.1.0.txt
+# Date: 2019-03-08, 23:59:00 GMT [KW]
+# Copyright (c) 2019 Unicode, Inc.
 # For terms of use, see http://www.unicode.org/terms_of_use.html
 #
 # Unicode Character Database
@@ -239,6 +239,7 @@ FFF0..FFFF; Specials
 10E60..10E7F; Rumi Numeral Symbols
 10F00..10F2F; Old Sogdian
 10F30..10F6F; Sogdian
+10FE0..10FFF; Elymaic
 11000..1107F; Brahmi
 11080..110CF; Kaithi
 110D0..110FF; Sora Sompeng
@@ -259,6 +260,7 @@ FFF0..FFFF; Specials
 11700..1173F; Ahom
 11800..1184F; Dogra
 118A0..118FF; Warang Citi
+119A0..119FF; Nandinagari
 11A00..11A4F; Zanabazar Square
 11A50..11AAF; Soyombo
 11AC0..11AFF; Pau Cin Hau
@@ -267,10 +269,12 @@ FFF0..FFFF; Specials
 11D00..11D5F; Masaram Gondi
 11D60..11DAF; Gunjala Gondi
 11EE0..11EFF; Makasar
+11FC0..11FFF; Tamil Supplement
 12000..123FF; Cuneiform
 12400..1247F; Cuneiform Numbers and Punctuation
 12480..1254F; Early Dynastic Cuneiform
 13000..1342F; Egyptian Hieroglyphs
+13430..1343F; Egyptian Hieroglyph Format Controls
 14400..1467F; Anatolian Hieroglyphs
 16800..16A3F; Bamum Supplement
 16A40..16A6F; Mro
@@ -283,6 +287,7 @@ FFF0..FFFF; Specials
 18800..18AFF; Tangut Components
 1B000..1B0FF; Kana Supplement
 1B100..1B12F; Kana Extended-A
+1B130..1B16F; Small Kana Extension
 1B170..1B2FF; Nushu
 1BC00..1BC9F; Duployan
 1BCA0..1BCAF; Shorthand Format Controls
@@ -295,9 +300,12 @@ FFF0..FFFF; Specials
 1D400..1D7FF; Mathematical Alphanumeric Symbols
 1D800..1DAAF; Sutton SignWriting
 1E000..1E02F; Glagolitic Supplement
+1E100..1E14F; Nyiakeng Puachue Hmong
+1E2C0..1E2FF; Wancho
 1E800..1E8DF; Mende Kikakui
 1E900..1E95F; Adlam
 1EC70..1ECBF; Indic Siyaq Numbers
+1ED00..1ED4F; Ottoman Siyaq Numbers
 1EE00..1EEFF; Arabic Mathematical Alphabetic Symbols
 1F000..1F02F; Mahjong Tiles
 1F030..1F09F; Domino Tiles
@@ -313,6 +321,7 @@ FFF0..FFFF; Specials
 1F800..1F8FF; Supplemental Arrows-C
 1F900..1F9FF; Supplemental Symbols and Pictographs
 1FA00..1FA6F; Chess Symbols
+1FA70..1FAFF; Symbols and Pictographs Extended-A
 20000..2A6DF; CJK Unified Ideographs Extension B
 2A700..2B73F; CJK Unified Ideographs Extension C
 2B740..2B81F; CJK Unified Ideographs Extension D

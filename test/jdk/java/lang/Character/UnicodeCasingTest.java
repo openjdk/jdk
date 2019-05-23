@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,9 @@
 
 /*
  * @test
- * @bug 4397357 6565620 6959267 8032446 8072600
+ * @bug 4397357 6565620 6959267 8032446 8072600 8221431
  * @summary Confirm normal case mappings are handled correctly.
+ * @library /lib/testlibrary/java/lang
  * @run main/timeout=200 UnicodeCasingTest
  */
 
@@ -60,8 +61,7 @@ public class UnicodeCasingTest {
         BufferedReader in = null;
 
         try {
-            File file = new File(System.getProperty("test.src", "."),
-                                 "UnicodeData.txt");
+            File file = UCDFiles.UNICODE_DATA.toFile();
 
             int locale_num = locales.size();
             for (int l = 0; l < locale_num; l++) {
