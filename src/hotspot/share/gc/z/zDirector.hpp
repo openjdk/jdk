@@ -43,6 +43,7 @@ private:
   bool rule_warmup() const;
   bool rule_allocation_rate() const;
   bool rule_proactive() const;
+  bool rule_high_usage() const;
   GCCause::Cause make_gc_decision() const;
 
 protected:
