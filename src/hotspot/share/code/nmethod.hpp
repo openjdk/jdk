@@ -119,7 +119,7 @@ class nmethod : public CompiledMethod {
   // used by jvmti to track if an unload event has been posted for this nmethod.
   bool _unload_reported;
 
-  // Protected by Patching_lock
+  // Protected by CompiledMethod_lock
   volatile signed char _state;               // {not_installed, in_use, not_entrant, zombie, unloaded}
 
 #ifdef ASSERT
@@ -387,7 +387,7 @@ class nmethod : public CompiledMethod {
 
   int   comp_level() const                        { return _comp_level; }
 
-  void unlink_from_method(bool acquire_lock);
+  void unlink_from_method();
 
   // Support for oops in scopes and relocs:
   // Note: index 0 is reserved for null.

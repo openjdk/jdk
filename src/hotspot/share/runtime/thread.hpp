@@ -1918,7 +1918,7 @@ class JavaThread: public Thread {
   void deoptimize();
   void make_zombies();
 
-  void deoptimized_wrt_marked_nmethods();
+  void deoptimize_marked_methods(bool in_handshake);
 
  public:
   // Returns the running thread as a JavaThread
