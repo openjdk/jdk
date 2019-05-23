@@ -213,7 +213,7 @@ int AbstractDisassembler::print_hexdata(address here, int len, outputStream* st,
                 st->print("                   long");
               } else {
                 if (((uintptr_t)(here)&0x07) == 0) {
-                  st->print("%23.1ld", *((jlong*)here));
+                  st->print(JLONG_FORMAT_W(23), *((jlong*)here));
                 }
               }
               st->fill_to(align += 3*tsize);

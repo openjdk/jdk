@@ -97,6 +97,9 @@
 #ifndef JLONG_FORMAT
 #define JLONG_FORMAT           INT64_FORMAT
 #endif
+#ifndef JLONG_FORMAT_W
+#define JLONG_FORMAT_W(width)  INT64_FORMAT_W(width)
+#endif
 #ifndef JULONG_FORMAT
 #define JULONG_FORMAT          UINT64_FORMAT
 #endif
