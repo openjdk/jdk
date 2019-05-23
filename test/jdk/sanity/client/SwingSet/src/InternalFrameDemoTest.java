@@ -64,6 +64,7 @@ import com.sun.swingset3.demos.internalframe.InternalFrameDemo;
 
 /*
  * @test
+ * @bug 8211703
  * @key headful
  * @summary Verifies SwingSet3 InternalFrameDemo page by checking the different
  *  actions on the parent frame, internal frame and creating internal frame

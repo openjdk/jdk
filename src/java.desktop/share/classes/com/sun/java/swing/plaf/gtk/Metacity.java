@@ -1471,7 +1471,14 @@ class Metacity implements SynthConstants {
         JComponent comp = context.getComponent();
         JComponent titlePane = findChild(comp, "InternalFrame.northPane");
 
-        JInternalFrame jif = findInternalFrame(comp);
+        JInternalFrame jif;
+        if (comp instanceof JButton) {
+            JComponent bTitlePane = (JComponent)comp.getParent();
+            Container titlePaneParent = bTitlePane.getParent();
+            jif = findInternalFrame(titlePaneParent);
+        } else {
+            jif = findInternalFrame(comp);
+        }
         if (jif == null) {
             return;
         }
