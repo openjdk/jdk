@@ -80,6 +80,7 @@ gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java 8193639 solaris-all
 
 runtime/SharedArchiveFile/SASymbolTableTest.java 8193639 solaris-all
 runtime/jni/terminatedThread/TestTerminatedThread.java 8219652 aix-ppc64
+runtime/appcds/SharedArchiveConsistency.java 8223336 windows-all
 
 #############################################################################
 
