@@ -38,6 +38,7 @@
 
 #define ARG_INFO_ENVVAR "NOTE: Picked up %s: %s"
 #define ARG_WARN        "Warning: %s option is no longer supported."
+#define ARG_DEPRECATED  "Warning: %s option is deprecated and may be removed in a future release."
 
 #define ARG_ERROR1      "Error: %s requires class path specification"
 #define ARG_ERROR2      "Error: %s requires jar file specification"
