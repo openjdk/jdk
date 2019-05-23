@@ -3123,7 +3123,11 @@ ShenandoahLoadReferenceBarrierNode::Strength ShenandoahLoadReferenceBarrierNode:
         break;
       }
       case Op_CallStaticJava: {
-        strength = STRONG;
+        // If it's an deopt-call we don't need barriers because
+        // the LRB will be applied when unpacking the deopt frame.
+        if (n->as_CallStaticJava()->uncommon_trap_request() == 0) {
+          strength = STRONG;
+        }
         break;
       }
       case Op_CallDynamicJava:
