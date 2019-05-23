@@ -42,7 +42,7 @@
 class ShenandoahBarrierSetC1;
 class ShenandoahBarrierSetC2;
 
-template <bool STOREVAL_WRITE_BARRIER>
+template <bool STOREVAL_EVAC_BARRIER>
 class ShenandoahUpdateRefsForOopClosure: public BasicOopIterateClosure {
 private:
   ShenandoahHeap* _heap;
@@ -51,7 +51,7 @@ private:
   template <class T>
   inline void do_oop_work(T* p) {
     oop o;
-    if (STOREVAL_WRITE_BARRIER) {
+    if (STOREVAL_EVAC_BARRIER) {
       o = _heap->evac_update_with_forwarded(p);
       if (!CompressedOops::is_null(o)) {
         _bs->enqueue(o);
@@ -97,10 +97,10 @@ bool ShenandoahBarrierSet::is_aligned(HeapWord* hw) {
   return true;
 }
 
-template <class T, bool STOREVAL_WRITE_BARRIER>
+template <class T, bool STOREVAL_EVAC_BARRIER>
 void ShenandoahBarrierSet::write_ref_array_loop(HeapWord* start, size_t count) {
   assert(UseShenandoahGC && ShenandoahCloneBarrier, "should be enabled");
-  ShenandoahUpdateRefsForOopClosure<STOREVAL_WRITE_BARRIER> cl;
+  ShenandoahUpdateRefsForOopClosure<STOREVAL_EVAC_BARRIER> cl;
   T* dst = (T*) start;
   for (size_t i = 0; i < count; i++) {
     cl.do_oop(dst++);
@@ -114,15 +114,15 @@ void ShenandoahBarrierSet::write_ref_array(HeapWord* start, size_t count) {
   if (_heap->is_concurrent_traversal_in_progress()) {
     ShenandoahEvacOOMScope oom_evac_scope;
     if (UseCompressedOops) {
-      write_ref_array_loop<narrowOop, /* wb = */ true>(start, count);
+      write_ref_array_loop<narrowOop, /* evac = */ true>(start, count);
     } else {
-      write_ref_array_loop<oop,       /* wb = */ true>(start, count);
+      write_ref_array_loop<oop,       /* evac = */ true>(start, count);
     }
   } else {
     if (UseCompressedOops) {
-      write_ref_array_loop<narrowOop, /* wb = */ false>(start, count);
+      write_ref_array_loop<narrowOop, /* evac = */ false>(start, count);
     } else {
-      write_ref_array_loop<oop,       /* wb = */ false>(start, count);
+      write_ref_array_loop<oop,       /* evac = */ false>(start, count);
     }
   }
 }
@@ -207,10 +207,10 @@ void ShenandoahBarrierSet::write_region(MemRegion mr) {
   shenandoah_assert_correct(NULL, obj);
   if (_heap->is_concurrent_traversal_in_progress()) {
     ShenandoahEvacOOMScope oom_evac_scope;
-    ShenandoahUpdateRefsForOopClosure</* wb = */ true> cl;
+    ShenandoahUpdateRefsForOopClosure</* evac = */ true> cl;
     obj->oop_iterate(&cl);
   } else {
-    ShenandoahUpdateRefsForOopClosure</* wb = */ false> cl;
+    ShenandoahUpdateRefsForOopClosure</* evac = */ false> cl;
     obj->oop_iterate(&cl);
   }
 }

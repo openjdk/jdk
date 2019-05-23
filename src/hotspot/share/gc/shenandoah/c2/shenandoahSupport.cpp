@@ -1093,7 +1093,7 @@ void ShenandoahBarrierC2Support::call_lrb_stub(Node*& ctrl, Node*& val, Node*& r
   mm->set_memory_at(Compile::AliasIdxRaw, raw_mem);
   phase->register_new_node(mm, ctrl);
 
-  Node* call = new CallLeafNode(ShenandoahBarrierSetC2::shenandoah_write_barrier_Type(), CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_JRT), "shenandoah_write_barrier", TypeRawPtr::BOTTOM);
+  Node* call = new CallLeafNode(ShenandoahBarrierSetC2::shenandoah_load_reference_barrier_Type(), CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_JRT), "shenandoah_load_reference_barrier", TypeRawPtr::BOTTOM);
   call->init_req(TypeFunc::Control, ctrl);
   call->init_req(TypeFunc::I_O, phase->C->top());
   call->init_req(TypeFunc::Memory, mm);
@@ -1532,7 +1532,7 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
     val_phi->init_req(_not_equal, fwd);
     raw_mem_phi->init_req(_not_equal, raw_mem);
 
-    // Call wb-stub and wire up that path in slots 4
+    // Call lrb-stub and wire up that path in slots 4
     Node* result_mem = NULL;
     ctrl = if_eq;
     call_lrb_stub(ctrl, fwd, result_mem, raw_mem, phase);
@@ -1979,7 +1979,7 @@ void ShenandoahBarrierC2Support::verify_raw_mem(RootNode* root) {
   nodes.push(root);
   for (uint next = 0; next < nodes.size(); next++) {
     Node *n  = nodes.at(next);
-    if (ShenandoahBarrierSetC2::is_shenandoah_wb_call(n)) {
+    if (ShenandoahBarrierSetC2::is_shenandoah_lrb_call(n)) {
       controls.push(n);
       if (trace) { tty->print("XXXXXX verifying"); n->dump(); }
       for (uint next2 = 0; next2 < controls.size(); next2++) {
