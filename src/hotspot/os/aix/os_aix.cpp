@@ -2442,6 +2442,7 @@ static bool checked_mprotect(char* addr, size_t size, int prot) {
   //
   // See http://publib.boulder.ibm.com/infocenter/pseries/v5r3/index.jsp?topic=/com.ibm.aix.basetechref/doc/basetrf1/mprotect.htm
 
+  Events::log(NULL, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(addr), p2i(addr+size), prot);
   bool rc = ::mprotect(addr, size, prot) == 0 ? true : false;
 
   if (!rc) {
@@ -2482,6 +2483,7 @@ static bool checked_mprotect(char* addr, size_t size, int prot) {
           // A valid strategy is just to try again. This usually works. :-/
 
           ::usleep(1000);
+          Events::log(NULL, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(addr), p2i(addr+size), prot);
           if (::mprotect(addr, size, prot) == 0) {
             const bool read_protected_2 =
               (SafeFetch32((int*)addr, 0x12345678) == 0x12345678 &&

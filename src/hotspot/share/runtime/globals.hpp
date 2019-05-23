@@ -444,7 +444,7 @@ const size_t minimumSymbolTableSize = 1024;
   diagnostic(bool, LogEvents, true,                                         \
           "Enable the various ring buffer event logs")                      \
                                                                             \
-  diagnostic(uintx, LogEventsBufferEntries, 10,                             \
+  diagnostic(uintx, LogEventsBufferEntries, 20,                             \
           "Number of ring buffer event logs")                               \
           range(1, NOT_LP64(1*K) LP64_ONLY(1*M))                            \
                                                                             \

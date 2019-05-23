@@ -1933,6 +1933,7 @@ bool os::pd_commit_memory(char* addr, size_t size, bool exec) {
   int prot = exec ? PROT_READ|PROT_WRITE|PROT_EXEC : PROT_READ|PROT_WRITE;
 #ifdef __OpenBSD__
   // XXX: Work-around mmap/MAP_FIXED bug temporarily on OpenBSD
+  Events::log(NULL, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(addr), p2i(addr+size), prot);
   if (::mprotect(addr, size, prot) == 0) {
     return true;
   }
@@ -2017,6 +2018,7 @@ char *os::scan_pages(char *start, char* end, page_info* page_expected, page_info
 bool os::pd_uncommit_memory(char* addr, size_t size) {
 #ifdef __OpenBSD__
   // XXX: Work-around mmap/MAP_FIXED bug temporarily on OpenBSD
+  Events::log(NULL, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with PROT_NONE", p2i(addr), p2i(addr+size));
   return ::mprotect(addr, size, PROT_NONE) == 0;
 #else
   uintptr_t res = (uintptr_t) ::mmap(addr, size, PROT_NONE,
@@ -2085,6 +2087,7 @@ static bool bsd_mprotect(char* addr, size_t size, int prot) {
   assert(addr == bottom, "sanity check");
 
   size = align_up(pointer_delta(addr, bottom, 1) + size, os::Bsd::page_size());
+  Events::log(NULL, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(bottom), p2i(bottom+size), prot);
   return ::mprotect(bottom, size, prot) == 0;
 }
 
