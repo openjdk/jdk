@@ -31,7 +31,6 @@
 
 class ShenandoahHeap;
 class ShenandoahHeapRegion;
-class ShenandoahCodeRootsLock;
 
 class ShenandoahParallelCodeHeapIterator {
   friend class CodeCache;
@@ -124,7 +123,6 @@ public:
 
 class ShenandoahCodeRoots : public CHeapObj<mtGC> {
   friend class ShenandoahHeap;
-  friend class ShenandoahCodeRootsLock;
   friend class ShenandoahCodeRootsIterator;
 
 public:
@@ -133,61 +131,7 @@ public:
   static void remove_nmethod(nmethod* nm);
 
 private:
-  struct PaddedLock {
-    DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, sizeof(volatile int));
-    volatile int _lock;
-    DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, 0);
-  };
-
-  static PaddedLock _recorded_nms_lock;
   static GrowableArray<ShenandoahNMethod*>* _recorded_nms;
-
-  static void acquire_lock(bool write) {
-    volatile int* loc = &_recorded_nms_lock._lock;
-    if (write) {
-      while ((OrderAccess::load_acquire(loc) != 0) ||
-             Atomic::cmpxchg(-1, loc, 0) != 0) {
-        SpinPause();
-      }
-      assert (*loc == -1, "acquired for write");
-    } else {
-      while (true) {
-        int cur = OrderAccess::load_acquire(loc);
-        if (cur >= 0) {
-          if (Atomic::cmpxchg(cur + 1, loc, cur) == cur) {
-            // Success!
-            assert (*loc > 0, "acquired for read");
-            return;
-          }
-        }
-        SpinPause();
-      }
-    }
-  }
-
-  static void release_lock(bool write) {
-    volatile int* loc = &ShenandoahCodeRoots::_recorded_nms_lock._lock;
-    if (write) {
-      OrderAccess::release_store_fence(loc, 0);
-    } else {
-      Atomic::dec(loc);
-    }
-  }
-};
-
-// Very simple unranked read-write lock
-class ShenandoahCodeRootsLock : public StackObj {
-  friend class ShenandoahCodeRoots;
-private:
-  const bool _write;
-public:
-  ShenandoahCodeRootsLock(bool write) : _write(write) {
-    ShenandoahCodeRoots::acquire_lock(write);
-  }
-
-  ~ShenandoahCodeRootsLock() {
-    ShenandoahCodeRoots::release_lock(_write);
-  }
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHCODEROOTS_HPP
