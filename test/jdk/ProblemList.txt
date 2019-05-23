@@ -664,6 +664,7 @@ javax/net/ssl/DTLS/CipherSuite.java                             8202059 macosx-x
 sun/security/provider/KeyStore/DKSTest.sh                       8180266 windows-all
 
 sun/security/pkcs11/KeyStore/SecretKeysBasic.sh                 8209398 generic-all
+java/security/SecureClassLoader/DefineClass.java                8224635 generic-all
 
 ############################################################################
 
