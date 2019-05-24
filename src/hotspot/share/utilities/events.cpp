@@ -127,7 +127,7 @@ void ExceptionsEventLog::log(Thread* thread, Handle h_exception, const char* mes
   st.print("Exception <");
   h_exception->print_value_on(&st);
   st.print("%s%s> (" INTPTR_FORMAT ") \n"
-           "thrown [%s, line %d]\nfor thread " INTPTR_FORMAT,
+           "thrown [%s, line %d]",
            message ? ": " : "", message ? message : "",
-           p2i(h_exception()), file, line, p2i(thread));
+           p2i(h_exception()), file, line);
 }
