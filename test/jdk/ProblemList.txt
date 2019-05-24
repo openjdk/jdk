@@ -854,3 +854,11 @@ javax/rmi/ssl/SSLSocketParametersTest.sh                        8162906 generic-
 
 jdk/jfr/event/io/TestInstrumentation.java                       8202142    generic-all
 jdk/jfr/api/recording/event/TestPeriod.java                     8215890    generic-all
+
+
+############################################################################
+
+# jdk/internal/docker
+
+jdk/internal/platform/docker/TestDockerMemoryMetrics.java       8224506    generic-all
+jdk/internal/platform/docker/TestSystemMetrics.java             8224502    generic-all
