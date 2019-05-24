@@ -21,7 +21,19 @@
  * questions.
  */
 
-// key: compiler.warn.proc.malformed.supported.string
-// options: -processor AnnoProc -Xlint:processing
+import java.util.*;
+import javax.annotation.processing.*;
+import javax.lang.model.*;
+import javax.lang.model.element.*;
 
-class MalformedSupported { }
+@SupportedAnnotationTypes({"java.lang.SuppressWarnings", "*"})
+public class AnnoProc extends AbstractProcessor {
+    public boolean process(Set<? extends TypeElement> elems, RoundEnvironment renv) {
+        return true;
+    }
+
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+        return SourceVersion.latest();
+    }
+}

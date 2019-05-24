@@ -21,7 +21,7 @@
  * questions.
  */
 
-// key: compiler.warn.proc.malformed.supported.string
+// key: compiler.warn.proc.redundant.types.with.wildcard
 // options: -processor AnnoProc -Xlint:processing
 
-class MalformedSupported { }
+class RedundantTypesWithWildcardProc { }

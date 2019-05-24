@@ -21,7 +21,8 @@
  * questions.
  */
 
-// key: compiler.warn.proc.malformed.supported.string
+// key: compiler.warn.proc.duplicate.option.name
+// key: compiler.warn.proc.duplicate.supported.annotation
 // options: -processor AnnoProc -Xlint:processing
 
-class MalformedSupported { }
+class DuplicateSupportedInfoFromProc { }

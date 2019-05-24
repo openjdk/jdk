@@ -686,11 +686,12 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
     static class ProcessorState {
         public Processor processor;
         public boolean   contributed;
-        private ArrayList<Pattern> supportedAnnotationPatterns;
-        private ArrayList<String>  supportedOptionNames;
+        private Set<String> supportedAnnotationStrings; // Used for warning generation
+        private Set<Pattern> supportedAnnotationPatterns;
+        private Set<String> supportedOptionNames;
 
         ProcessorState(Processor p, Log log, Source source, DeferredCompletionFailureHandler dcfh,
-                       boolean allowModules, ProcessingEnvironment env) {
+                       boolean allowModules, ProcessingEnvironment env, boolean lint) {
             processor = p;
             contributed = false;
 
@@ -700,18 +701,46 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
                 checkSourceVersionCompatibility(source, log);
 
-                supportedAnnotationPatterns = new ArrayList<>();
-                for (String importString : processor.getSupportedAnnotationTypes()) {
-                    supportedAnnotationPatterns.add(importStringToPattern(allowModules,
-                                                                          importString,
-                                                                          processor,
-                                                                          log));
+
+                // Check for direct duplicates in the strings of
+                // supported annotation types. Do not check for
+                // duplicates that would result after stripping of
+                // module prefixes.
+                supportedAnnotationStrings = new LinkedHashSet<>();
+                supportedAnnotationPatterns = new LinkedHashSet<>();
+                for (String annotationPattern : processor.getSupportedAnnotationTypes()) {
+                    boolean patternAdded = supportedAnnotationStrings.add(annotationPattern);
+
+                    supportedAnnotationPatterns.
+                        add(importStringToPattern(allowModules, annotationPattern,
+                                                  processor, log, lint));
+                    if (lint && !patternAdded) {
+                        log.warning(Warnings.ProcDuplicateSupportedAnnotation(annotationPattern,
+                                                                              p.getClass().getName()));
+                    }
                 }
 
-                supportedOptionNames = new ArrayList<>();
+                // If a processor supports "*", that matches
+                // everything and other entries are redundant. With
+                // more work, it could be checked that the supported
+                // annotation types were otherwise non-overlapping
+                // with each other in other cases, for example "foo.*"
+                // and "foo.bar.*".
+                if (lint &&
+                    supportedAnnotationPatterns.contains(MatchingUtils.validImportStringToPattern("*")) &&
+                    supportedAnnotationPatterns.size() > 1) {
+                    log.warning(Warnings.ProcRedundantTypesWithWildcard(p.getClass().getName()));
+                }
+
+                supportedOptionNames = new LinkedHashSet<>();
                 for (String optionName : processor.getSupportedOptions() ) {
-                    if (checkOptionName(optionName, log))
-                        supportedOptionNames.add(optionName);
+                    if (checkOptionName(optionName, log)) {
+                        boolean optionAdded = supportedOptionNames.add(optionName);
+                        if (lint && !optionAdded) {
+                            log.warning(Warnings.ProcDuplicateOptionName(optionName,
+                                                                         p.getClass().getName()));
+                        }
+                    }
                 }
 
             } catch (ClientCodeException e) {
@@ -797,7 +826,8 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                     ProcessorState ps = new ProcessorState(psi.processorIterator.next(),
                                                            log, source, dcfh,
                                                            Feature.MODULES.allowedInSource(source),
-                                                           JavacProcessingEnvironment.this);
+                                                           JavacProcessingEnvironment.this,
+                                                           lint);
                     psi.procStateList.add(ps);
                     return ps;
                 } else
@@ -1705,7 +1735,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
      * regex matching that string.  If the string is not a valid
      * import-style string, return a regex that won't match anything.
      */
-    private static Pattern importStringToPattern(boolean allowModules, String s, Processor p, Log log) {
+    private static Pattern importStringToPattern(boolean allowModules, String s, Processor p, Log log, boolean lint) {
         String module;
         String pkg;
         int slash = s.indexOf('/');
@@ -1716,15 +1746,26 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             module = allowModules ? ".*/" : "";
             pkg = s;
         } else {
-            module = Pattern.quote(s.substring(0, slash + 1));
+            String moduleName = s.substring(0, slash);
+            if (!SourceVersion.isIdentifier(moduleName)) {
+                return warnAndNoMatches(s, p, log, lint);
+            }
+            module = Pattern.quote(moduleName + "/");
+            // And warn if module is specified if modules aren't supported, conditional on -Xlint:proc?
             pkg = s.substring(slash + 1);
         }
         if (MatchingUtils.isValidImportString(pkg)) {
             return Pattern.compile(module + MatchingUtils.validImportStringToPatternString(pkg));
         } else {
-            log.warning(Warnings.ProcMalformedSupportedString(s, p.getClass().getName()));
-            return noMatches; // won't match any valid identifier
+            return warnAndNoMatches(s, p, log, lint);
         }
+    }
+
+    private static Pattern warnAndNoMatches(String s, Processor p, Log log, boolean lint) {
+        if (lint) {
+            log.warning(Warnings.ProcMalformedSupportedString(s, p.getClass().getName()));
+        }
+        return noMatches; // won't match any valid identifier
     }
 
     /**
