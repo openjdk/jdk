@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.net.URLPermission;
  * @library /test/lib
  * @build jdk.test.lib.net.SimpleSSLContext
  * @run main/othervm URLTest
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true URLTest
  * @summary check URLPermission with Http(s)URLConnection
  */
 
@@ -77,14 +78,14 @@ public class URLTest {
         if (sm != null) {
             expectException = true;
             Policy.setPolicy(new CustomPolicy(
-                new URLPermission("http://127.0.0.1:"+httpPort+"/foo.html", "GET:X-Foo,Z-Bar"),
-                new URLPermission("https://127.0.0.1:"+httpsPort+"/foo.html", "POST:X-Fob,T-Bar")));
+                new URLPermission("http://" + httpAuth + "/foo.html", "GET:X-Foo,Z-Bar"),
+                new URLPermission("https://" + httpsAuth + "/foo.html", "POST:X-Fob,T-Bar")));
         }
 
-        String url1 = "http://127.0.0.1:"+httpPort+"/foo.html";
-        String url2 = "https://127.0.0.1:"+httpsPort+"/foo.html";
-        String url3 = "http://127.0.0.1:"+httpPort+"/bar.html";
-        String url4 = "https://127.0.0.1:"+httpsPort+"/bar.html";
+        String url1 = "http://" + httpAuth + "/foo.html";
+        String url2 = "https://" + httpsAuth + "/foo.html";
+        String url3 = "http://" + httpAuth + "/bar.html";
+        String url4 = "https://" + httpsAuth + "/bar.html";
 
         // simple positive test. Should succeed
         test(url1, "GET", "X-Foo");
@@ -108,14 +109,14 @@ public class URLTest {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             Policy.setPolicy(new CustomPolicy(
-                new URLPermission("http://127.0.0.1:"+httpPort+"/*", "GET:X-Foo"),
-                new URLPermission("https://127.0.0.1:"+httpsPort+"/*", "POST:X-Fob")));
+                new URLPermission("http://" + httpAuth + "/*", "GET:X-Foo"),
+                new URLPermission("https://" + httpsAuth + "/*", "POST:X-Fob")));
         }
 
-        String url1 = "http://127.0.0.1:"+httpPort+"/foo.html";
-        String url2 = "https://127.0.0.1:"+httpsPort+"/foo.html";
-        String url3 = "http://127.0.0.1:"+httpPort+"/bar.html";
-        String url4 = "https://127.0.0.1:"+httpsPort+"/bar.html";
+        String url1 = "http://" + httpAuth + "/foo.html";
+        String url2 = "https://" + httpsAuth + "/foo.html";
+        String url3 = "http://" + httpAuth + "/bar.html";
+        String url4 = "https://" + httpsAuth + "/bar.html";
 
         // simple positive test. Should succeed
         test(url1, "GET", "X-Foo");
@@ -132,19 +133,29 @@ public class URLTest {
         if (sm != null) {
             expectException = true;
             Policy.setPolicy(new CustomPolicy(
-                new URLPermission("http://127.0.0.1:"+httpPort+"/a/b/-", "DELETE,GET:X-Foo,Y-Foo"),
-                new URLPermission("https://127.0.0.1:"+httpsPort+"/a/c/-", "POST:*")));
+                new URLPermission("http://" + httpAuth + "/a/b/-", "DELETE,GET:X-Foo,Y-Foo"),
+                new URLPermission("https://" + httpsAuth + "/a/c/-", "POST:*")));
         }
 
-        String url1 = "http://127.0.0.1:"+httpPort+"/foo.html";
-        String url2 = "https://127.0.0.1:"+httpsPort+"/a/c/d/e/foo.html";
-        String url3 = "http://127.0.0.1:"+httpPort+"/a/b/c";
-        String url4 = "https://127.0.0.1:"+httpsPort+"/a/b/c";
+        String url1 = "http://" + httpAuth + "/foo.html";
+        String url2 = "https://" + httpsAuth + "/a/c/d/e/foo.html";
+        String url3 = "http://" + httpAuth + "/a/b/c";
+        String url4 = "https://" + httpsAuth + "/a/b/c";
 
         test(url1, "GET", "X-Foo", expectException);
         test(url2, "POST", "X-Zxc");
         test(url3, "DELETE", "Y-Foo");
         test(url4, "POST", "Y-Foo", expectException);
+    }
+
+    static String authority(InetSocketAddress address) {
+        String hostaddr = address.getAddress().getHostAddress();
+        int port = address.getPort();
+        if (hostaddr.indexOf(':') > -1) {
+            return "[" + hostaddr + "]:" + port;
+        } else {
+            return hostaddr + ":" + port;
+        }
     }
 
     // Convenience methods to simplify previous explicit test scenarios.
@@ -175,7 +186,7 @@ public class URLTest {
         System.out.println("url=" + u + " method=" + method +
                            " header1=" + header1 + " header2=" + header2 +
                            " expectException=" + expectException);
-        HttpURLConnection urlc = (HttpURLConnection)url.openConnection();
+        HttpURLConnection urlc = (HttpURLConnection)url.openConnection(Proxy.NO_PROXY);
         if (urlc instanceof HttpsURLConnection) {
             HttpsURLConnection ssl = (HttpsURLConnection)urlc;
             ssl.setHostnameVerifier((host, sess) -> true);
@@ -220,11 +231,14 @@ public class URLTest {
     static SSLContext ctx;
     static int httpPort;
     static int httpsPort;
+    static String httpAuth;
+    static String httpsAuth;
 
     static void createServers() throws Exception {
-        InetSocketAddress any = new InetSocketAddress(0);
-        httpServer = HttpServer.create(any, 0);
-        httpsServer = HttpsServer.create(any, 0);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        InetSocketAddress address = new InetSocketAddress(loopback, 0);
+        httpServer = HttpServer.create(address, 0);
+        httpsServer = HttpsServer.create(address, 0);
 
         OkHandler h = new OkHandler();
 
@@ -243,6 +257,8 @@ public class URLTest {
 
         httpPort = httpServer.getAddress().getPort();
         httpsPort = httpsServer.getAddress().getPort();
+        httpAuth = authority(httpServer.getAddress());
+        httpsAuth = authority(httpsServer.getAddress());
     }
 
     static void shutdown() {
@@ -265,7 +281,9 @@ public class URLTest {
             java.util.Arrays.stream(permissions).forEach(perms::add);
 
             // needed for the HTTP(S) server
-            perms.add(new SocketPermission("localhost:1024-", "listen,resolve,accept"));
+            InetAddress loopback = InetAddress.getLoopbackAddress();
+            InetSocketAddress serverBound = new InetSocketAddress(loopback,1024);
+            perms.add(new SocketPermission(authority(serverBound) + "-", "listen,resolve,accept"));
             // needed by the test to reset the policy, per testX method
             perms.add(new SecurityPermission("setPolicy"));
             // needed to shutdown the ThreadPoolExecutor ( used by the servers )
