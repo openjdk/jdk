@@ -35,6 +35,7 @@
 /*
  * @test
  * @summary Test drainTo failing due to c.add throwing
+ * @library /test/lib
  */
 
 import java.util.ArrayList;
@@ -50,9 +51,11 @@ import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.RunnableScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import jdk.test.lib.Utils;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class DrainToFails {
+    static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);
     final int CAPACITY = 10;
     final int SMALL = 2;
 
@@ -169,7 +172,7 @@ public class DrainToFails {
             fail("should throw");
         } catch (IllegalStateException success) {
             for (Thread putter : putters) {
-                putter.join(2000L);
+                putter.join(LONG_DELAY_MS);
                 check(! putter.isAlive());
             }
             assertContentsInOrder(q2, 2, 3);
@@ -183,11 +186,10 @@ public class DrainToFails {
         }
     }
 
-    Runnable putter(final BlockingQueue q, final int elt) {
-        return new Runnable() {
-            public void run() {
-                try { q.put(elt); }
-                catch (Throwable t) { unexpected(t); }}};
+    Runnable putter(BlockingQueue q, int elt) {
+        return () -> {
+            try { q.put(elt); }
+            catch (Throwable t) { unexpected(t); }};
     }
 
     void assertContentsInOrder(Iterable it, Object... contents) {
