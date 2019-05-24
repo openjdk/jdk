@@ -245,14 +245,6 @@ void ShenandoahCodeRootsIterator::dispatch_parallel_blobs_do(CodeBlobClosure *f)
   }
 }
 
-ShenandoahAllCodeRootsIterator ShenandoahCodeRoots::iterator() {
-  return ShenandoahAllCodeRootsIterator();
-}
-
-ShenandoahCsetCodeRootsIterator ShenandoahCodeRoots::cset_iterator() {
-  return ShenandoahCsetCodeRootsIterator();
-}
-
 void ShenandoahAllCodeRootsIterator::possibly_parallel_blobs_do(CodeBlobClosure *f) {
   ShenandoahCodeRootsIterator::dispatch_parallel_blobs_do<false>(f);
 }
