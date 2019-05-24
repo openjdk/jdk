@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @key headful
+ * @key headful printer
  * @bug 6543815 6601097 8160888
  * @summary Image should be sent to printer, no exceptions thrown.
  *    The 3 printouts should have a rectangle which is the minimum

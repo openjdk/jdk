@@ -22,7 +22,7 @@
  */
 /*
  * @test
- * @key headful
+ * @key headful printer
  * @bug 7161283 8158520
  * @summary  Toolkit.getPrintJob throws NPE if no printer available
  * @run main PrinterException
