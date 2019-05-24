@@ -355,7 +355,7 @@ public class Modules extends JCTree.Visitor {
     private void setCompilationUnitModules(List<JCCompilationUnit> trees, Set<ModuleSymbol> rootModules, ClassSymbol c) {
         // update the module for each compilation unit
         if (multiModuleMode) {
-            checkNoAllModulePath();
+            boolean patchesAutomaticModules = false;
             for (JCCompilationUnit tree: trees) {
                 if (tree.defs.isEmpty()) {
                     tree.modle = syms.unnamedModule;
@@ -375,6 +375,7 @@ public class Modules extends JCTree.Visitor {
                         ModuleSymbol msym = moduleFinder.findModule(name);
                         tree.modle = msym;
                         rootModules.add(msym);
+                        patchesAutomaticModules |= (msym.flags_field & Flags.AUTOMATIC_MODULE) != 0;
 
                         if (msplocn != null) {
                             Name mspname = names.fromString(fileManager.inferModuleName(msplocn));
@@ -438,6 +439,9 @@ public class Modules extends JCTree.Visitor {
                     log.useSource(prev);
                 }
             }
+            if (!patchesAutomaticModules) {
+                checkNoAllModulePath();
+            }
             if (syms.unnamedModule.sourceLocation == null) {
                 syms.unnamedModule.completer = getUnnamedModuleCompleter();
                 syms.unnamedModule.sourceLocation = StandardLocation.SOURCE_PATH;
@@ -458,9 +462,11 @@ public class Modules extends JCTree.Visitor {
                         }
                         if (defaultModule == syms.unnamedModule) {
                             if (moduleOverride != null) {
-                                checkNoAllModulePath();
                                 defaultModule = moduleFinder.findModule(names.fromString(moduleOverride));
                                 defaultModule.patchOutputLocation = StandardLocation.CLASS_OUTPUT;
+                                if ((defaultModule.flags_field & Flags.AUTOMATIC_MODULE) == 0) {
+                                    checkNoAllModulePath();
+                                }
                             } else {
                                 // Question: why not do findAllModules and initVisiblePackages here?
                                 // i.e. body of unnamedModuleCompleter
