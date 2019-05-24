@@ -25,7 +25,7 @@
  * @test
  * @bug 8224539
  * @summary Test arraycopy optimizations with bad src/dst array offsets.
- * @run main/othervm -Xbatch -XX:+AlwaysIncrementalInline
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xbatch -XX:+AlwaysIncrementalInline
  *                   compiler.arraycopy.TestArrayCopyWithBadOffset
  */
 
