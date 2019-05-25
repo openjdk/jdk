@@ -23,9 +23,11 @@
 
 /**
  * @test
+ * @bug 8163805 8224252
  * @summary Checks that the jshdb debugd utility sucessfully starts
  *          and tries to attach to a running process
  * @requires vm.hasSAandCanAttach
+ * @requires os.family != "windows"
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  *
@@ -40,7 +42,7 @@ import static jdk.test.lib.process.ProcessTools.startProcess;
 
 public class SADebugDTest {
 
-    private static final String GOLDEN = "Attaching to process";
+    private static final String GOLDEN = "Debugger attached";
 
     public static void main(String[] args) throws Exception {
         LingeredApp app = null;
@@ -62,10 +64,9 @@ public class SADebugDTest {
             // If we are here, this means we have received the golden line and the test has passed
             // The debugd remains running, we have to kill it
             debugd.destroy();
+            debugd.waitFor();
         } finally {
-            if (app != null) {
-                LingeredApp.stopApp(app);
-            }
+            LingeredApp.stopApp(app);
         }
 
     }
