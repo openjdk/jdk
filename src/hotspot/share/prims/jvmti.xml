@@ -7437,7 +7437,7 @@ class C2 extends C1 implements I2 {
       <capabilities>
         <capability id="can_redefine_any_class">
           If possessed then all classes (except primitive, array, and some implementation defined
-          classes) are modifiable (redefine or retransform).
+          classes) are modifiable with <functionlink id="RedefineClasses"/>.
         </capability>
         <capability id="can_retransform_any_class">
           If possessed then all classes (except primitive, array, and some implementation defined
@@ -10199,8 +10199,10 @@ myInit() {
       </capabilityfield>
       <capabilityfield id="can_redefine_any_class">
 	<description>
-          Can modify (retransform or redefine) any modifiable class.
+          <functionlink id="RedefineClasses"/> can be called on any modifiable class.
           See <functionlink id="IsModifiableClass"/>.
+          (<fieldlink id="can_redefine_classes" struct="jvmtiCapabilities"/>
+          must also be set)
 	</description>
       </capabilityfield>
       <capabilityfield id="can_get_current_thread_cpu_time">
@@ -14956,6 +14958,12 @@ typedef void (JNICALL *jvmtiEventVMInit)
           to change the class file NestHost and NestMembers attributes.
         - Add new error JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_ATTRIBUTE_CHANGED
           that can be returned by RedefineClasses and RetransformClasses.
+  </change>
+  <change date="20 May 2019" version="13.0.0">
+      Minor spec update for the capability "can_redefine_any_class".
+      It now says:
+       "RedefineClasses can be called on any modifiable class. See IsModifiableClass.
+       (can_redefine_classes must also be set)"
   </change>
 </changehistory>
 
