@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,8 +195,13 @@ final class DigestMD5Server extends DigestMD5Base implements SaslServer {
         switch (step) {
         case 1:
             if (response.length != 0) {
-                throw new SaslException(
-                    "DIGEST-MD5 must not have an initial response");
+                // We do not support "subsequent authentication" (client
+                // initial response). According to
+                // https://tools.ietf.org/html/rfc2831#section-2.2
+                // If the server does not support subsequent authentication,
+                // then it sends a "digest-challenge", and authentication
+                // proceeds as in initial authentication.
+                logger.log(Level.FINE, "Ignoring initial response");
             }
 
             /* Generate first challenge */
