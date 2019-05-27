@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,14 @@
  *          connection.
  *          Check that a content-length of 0 results in an
  *          empty input stream.
+ * @library /test/lib
+ * @run main ZeroContentLength
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true ZeroContentLength
  */
+
 import java.net.*;
 import java.io.*;
+import jdk.test.lib.net.URIBuilder;
 
 public class ZeroContentLength {
 
@@ -231,7 +236,7 @@ public class ZeroContentLength {
      */
     int doRequest(String uri) throws Exception {
         URL url = new URL(uri);
-        HttpURLConnection http = (HttpURLConnection)url.openConnection();
+        HttpURLConnection http = (HttpURLConnection)url.openConnection(Proxy.NO_PROXY);
 
         int cl = http.getContentLength();
 
@@ -264,13 +269,17 @@ public class ZeroContentLength {
     ZeroContentLength() throws Exception {
 
         /* start the server */
-        ServerSocket ss = new ServerSocket(0);
+        ServerSocket ss = new ServerSocket();
+        ss.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
         Server svr = new Server(ss);
         svr.start();
 
-        String uri = "http://localhost:" +
-                     Integer.toString(ss.getLocalPort()) +
-                     "/foo.html";
+        String uri = URIBuilder.newBuilder()
+                     .scheme("http")
+                     .host(ss.getInetAddress())
+                     .port(ss.getLocalPort())
+                     .path("/foo.html")
+                     .build().toString();
 
         int expectedTotal = 0;
         int actualTotal = 0;

@@ -37,6 +37,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 import static java.net.NetworkInterface.getNetworkInterfaces;
 import static java.util.Collections.list;
@@ -380,14 +382,17 @@ public class NetworkConfiguration {
 
     /** Prints all the system interface information to the give stream. */
     public static void printSystemConfiguration(PrintStream out) {
+        PrivilegedAction<Void> pa = () -> {
         try {
             out.println("*** all system network interface configuration ***");
             for (NetworkInterface nif : list(getNetworkInterfaces())) {
                 out.print(interfaceInformation(nif));
             }
             out.println("*** end ***");
+            return null;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
-        }
+        }};
+        AccessController.doPrivileged(pa);
     }
 }
