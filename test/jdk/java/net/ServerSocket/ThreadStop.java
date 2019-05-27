@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,8 @@ public class ThreadStop {
         ServerSocket ss;
 
         Server() throws IOException {
-            ss = new ServerSocket(0);
+            ss = new ServerSocket();
+            ss.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
         }
 
         public int localPort() {
@@ -81,7 +82,7 @@ public class ThreadStop {
         // still in accept() so we connect to server which causes
         // it to unblock and do JNI-stuff with a pending exception
 
-        try (Socket s = new Socket("localhost", svr.localPort())) {
+        try (Socket s = new Socket(svr.ss.getInetAddress(), svr.localPort())) {
         } catch (IOException ioe) {
         }
         thr.join();

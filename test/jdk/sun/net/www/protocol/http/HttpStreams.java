@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 8011719
+ * @library /test/lib
  * @modules jdk.httpserver
  * @summary Basic checks to verify behavior of returned input streams
  */
@@ -35,6 +36,8 @@ import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+
+import jdk.test.lib.net.URIBuilder;
 
 public class HttpStreams {
 
@@ -56,24 +59,33 @@ public class HttpStreams {
         expectThrow(() -> { is.read(ba, 0, 2); }, "read on closed stream should throw: " + u);
     }
 
+    String constructUrlString(int port, String path) throws Exception {
+        return URIBuilder.newBuilder()
+                .scheme("http")
+                .port(port)
+                .loopback()
+                .path(path)
+                .toURL().toString();
+    }
+
     void test() throws Exception {
         HttpServer server = null;
         try {
             server = startHttpServer();
-            String baseUrl = "http://localhost:" + server.getAddress().getPort() + "/";
-            client(baseUrl +  "chunked/");
-            client(baseUrl +  "fixed/");
-            client(baseUrl +  "error/");
-            client(baseUrl +  "chunkedError/");
+            int serverPort = server.getAddress().getPort();
+            client(constructUrlString(serverPort, "/chunked/"));
+            client(constructUrlString(serverPort, "/fixed/"));
+            client(constructUrlString(serverPort, "/error/"));
+            client(constructUrlString(serverPort, "/chunkedError/"));
 
             // Test with a response cache
             ResponseCache ch = ResponseCache.getDefault();
             ResponseCache.setDefault(new TrivialCacheHandler());
             try {
-                client(baseUrl +  "chunked/");
-                client(baseUrl +  "fixed/");
-                client(baseUrl +  "error/");
-                client(baseUrl +  "chunkedError/");
+                client(constructUrlString(serverPort, "/chunked/"));
+                client(constructUrlString(serverPort, "/fixed/"));
+                client(constructUrlString(serverPort, "/error/"));
+                client(constructUrlString(serverPort, "/chunkedError/"));
             } finally {
                 ResponseCache.setDefault(ch);
             }
@@ -93,7 +105,8 @@ public class HttpStreams {
 
     // HTTP Server
     HttpServer startHttpServer() throws IOException {
-        HttpServer httpServer = HttpServer.create(new InetSocketAddress(0), 0);
+        HttpServer httpServer = HttpServer.create();
+        httpServer.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0);
         httpServer.createContext("/chunked/", new ChunkedHandler());
         httpServer.createContext("/fixed/", new FixedHandler());
         httpServer.createContext("/error/", new ErrorHandler());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,15 @@
  */
 
 /* @test
-   @bug 4213164 8172253
-   @summary setIfModifiedSince mehtod in HttpURLConnection sometimes fails
-   */
+ * @bug 4213164 8172253
+ * @library /test/lib
+ * @summary setIfModifiedSince method in HttpURLConnection sometimes fails
+ */
 import java.util.*;
 import java.io.*;
 import java.net.*;
-import java.text.*;
+
+import jdk.test.lib.net.URIBuilder;
 
 public class SetIfModifiedSince implements Runnable {
 
@@ -75,7 +77,8 @@ public class SetIfModifiedSince implements Runnable {
 
   public SetIfModifiedSince() throws Exception {
 
-     serverSock = new ServerSocket(0);
+      serverSock = new ServerSocket();
+      serverSock.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
      int port = serverSock.getLocalPort();
 
      Thread thr = new Thread(this);
@@ -86,8 +89,12 @@ public class SetIfModifiedSince implements Runnable {
      HttpURLConnection con;
 
      //url = new URL(args[0]);
-     url = new URL("http://localhost:" + String.valueOf(port) +
-                   "/anything");
+      url = URIBuilder.newBuilder()
+              .scheme("http")
+              .loopback()
+              .port(port)
+              .path("/anything")
+              .toURL();
      con = (HttpURLConnection)url.openConnection(Proxy.NO_PROXY);
 
      con.setIfModifiedSince(date.getTime());
