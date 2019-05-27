@@ -6350,7 +6350,7 @@ void MacroAssembler::string_indexof_char(Register str1, Register cnt1, Register 
   movptr(result, str1);
   if (UseAVX >= 2) {
     cmpl(cnt1, stride);
-    jcc(Assembler::less, SCAN_TO_CHAR_LOOP);
+    jcc(Assembler::less, SCAN_TO_CHAR);
     cmpl(cnt1, 2*stride);
     jcc(Assembler::less, SCAN_TO_8_CHAR_INIT);
     movdl(vec1, ch);
@@ -6377,10 +6377,8 @@ void MacroAssembler::string_indexof_char(Register str1, Register cnt1, Register 
   }
   bind(SCAN_TO_8_CHAR);
   cmpl(cnt1, stride);
-  if (UseAVX >= 2) {
-    jcc(Assembler::less, SCAN_TO_CHAR);
-  } else {
-    jcc(Assembler::less, SCAN_TO_CHAR_LOOP);
+  jcc(Assembler::less, SCAN_TO_CHAR);
+  if (UseAVX < 2) {
     movdl(vec1, ch);
     pshuflw(vec1, vec1, 0x00);
     pshufd(vec1, vec1, 0);
