@@ -39,7 +39,7 @@ public class J2DdemoTest {
         DemoRun test;
 
         /* Run the J2Ddemo.jar with the -runs=1 option */
-        test = new DemoRun("demo/jfc/J2Ddemo/J2Ddemo.jar", "-runs=1");
+        test = new DemoRun("jfc/J2Ddemo/J2Ddemo.jar", "-runs=1");
         test.runit();
 
         /* Make sure patterns in output look ok */
@@ -158,7 +158,18 @@ public class J2DdemoTest {
             }
             cmdLine += (cmd[i++] = "-jar");
             cmdLine += " ";
-            cmdLine += (cmd[i++] = sdk_home + File.separator + demo_name);
+            String demo_path;
+            String test_dir = System.getenv("TEST_IMAGE_DIR");
+            System.out.println("TEST_IMAGE_DIR="+test_dir);
+            if (test_dir != null) {
+                demo_path = test_dir + File.separator + "jdk" + File.separator +
+                            "demos" + File.separator + demo_name;
+            } else {
+                demo_path = sdk_home + File.separator +
+                            "demo" + File.separator + demo_name;
+            }
+            System.out.println("demo_path="+demo_path);
+            cmdLine += cmd[i++] = demo_path;
             cmdLine += " ";
             cmdLine += (cmd[i++] = demo_options);
 
