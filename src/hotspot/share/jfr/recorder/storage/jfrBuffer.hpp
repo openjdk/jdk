@@ -145,8 +145,6 @@ class JfrBuffer {
     return _identity;
   }
 
-  void clear_identity();
-
   void acquire(const void* id);
   bool try_acquire(const void* id);
   bool acquired_by(const void* id) const;
