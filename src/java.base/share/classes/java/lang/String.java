@@ -2690,21 +2690,21 @@ public final class String
 
     /**
      * Returns a string whose value is this string, with all leading
-     * and trailing {@link Character#isWhitespace(int) white space}
+     * and trailing {@linkplain Character#isWhitespace(int) white space}
      * removed.
      * <p>
      * If this {@code String} object represents an empty string,
      * or if all code points in this string are
-     * {@link Character#isWhitespace(int) white space}, then an empty string
+     * {@linkplain Character#isWhitespace(int) white space}, then an empty string
      * is returned.
      * <p>
      * Otherwise, returns a substring of this string beginning with the first
-     * code point that is not a {@link Character#isWhitespace(int) white space}
+     * code point that is not a {@linkplain Character#isWhitespace(int) white space}
      * up to and including the last code point that is not a
-     * {@link Character#isWhitespace(int) white space}.
+     * {@linkplain Character#isWhitespace(int) white space}.
      * <p>
      * This method may be used to strip
-     * {@link Character#isWhitespace(int) white space} from
+     * {@linkplain Character#isWhitespace(int) white space} from
      * the beginning and end of a string.
      *
      * @return  a string whose value is this string, with all leading
@@ -2722,19 +2722,19 @@ public final class String
 
     /**
      * Returns a string whose value is this string, with all leading
-     * {@link Character#isWhitespace(int) white space} removed.
+     * {@linkplain Character#isWhitespace(int) white space} removed.
      * <p>
      * If this {@code String} object represents an empty string,
      * or if all code points in this string are
-     * {@link Character#isWhitespace(int) white space}, then an empty string
+     * {@linkplain Character#isWhitespace(int) white space}, then an empty string
      * is returned.
      * <p>
      * Otherwise, returns a substring of this string beginning with the first
-     * code point that is not a {@link Character#isWhitespace(int) white space}
+     * code point that is not a {@linkplain Character#isWhitespace(int) white space}
      * up to and including the last code point of this string.
      * <p>
      * This method may be used to trim
-     * {@link Character#isWhitespace(int) white space} from
+     * {@linkplain Character#isWhitespace(int) white space} from
      * the beginning of a string.
      *
      * @return  a string whose value is this string, with all leading white
@@ -2752,19 +2752,19 @@ public final class String
 
     /**
      * Returns a string whose value is this string, with all trailing
-     * {@link Character#isWhitespace(int) white space} removed.
+     * {@linkplain Character#isWhitespace(int) white space} removed.
      * <p>
      * If this {@code String} object represents an empty string,
      * or if all characters in this string are
-     * {@link Character#isWhitespace(int) white space}, then an empty string
+     * {@linkplain Character#isWhitespace(int) white space}, then an empty string
      * is returned.
      * <p>
      * Otherwise, returns a substring of this string beginning with the first
      * code point of this string up to and including the last code point
-     * that is not a {@link Character#isWhitespace(int) white space}.
+     * that is not a {@linkplain Character#isWhitespace(int) white space}.
      * <p>
      * This method may be used to trim
-     * {@link Character#isWhitespace(int) white space} from
+     * {@linkplain Character#isWhitespace(int) white space} from
      * the end of a string.
      *
      * @return  a string whose value is this string, with all trailing white
@@ -2782,11 +2782,11 @@ public final class String
 
     /**
      * Returns {@code true} if the string is empty or contains only
-     * {@link Character#isWhitespace(int) white space} codepoints,
+     * {@linkplain Character#isWhitespace(int) white space} codepoints,
      * otherwise {@code false}.
      *
      * @return {@code true} if the string is empty or contains only
-     *         {@link Character#isWhitespace(int) white space} codepoints,
+     *         {@linkplain Character#isWhitespace(int) white space} codepoints,
      *         otherwise {@code false}
      *
      * @see Character#isWhitespace(int)
@@ -2849,10 +2849,10 @@ public final class String
      * beginning of each line.
      * <p>
      * If {@code n < 0} then up to {@code n}
-     * {@link Character#isWhitespace(int) white space characters} are removed
+     * {@linkplain Character#isWhitespace(int) white space characters} are removed
      * from the beginning of each line. If a given line does not contain
      * sufficient white space then all leading
-     * {@link Character#isWhitespace(int) white space characters} are removed.
+     * {@linkplain Character#isWhitespace(int) white space characters} are removed.
      * Each white space character is treated as a single character. In
      * particular, the tab character {@code "\t"} (U+0009) is considered a
      * single character; it is not expanded.
@@ -2861,7 +2861,7 @@ public final class String
      * terminators are still normalized.
      *
      * @param n  number of leading
-     *           {@link Character#isWhitespace(int) white space characters}
+     *           {@linkplain Character#isWhitespace(int) white space characters}
      *           to add or remove
      *
      * @return string with indentation adjusted and line endings normalized

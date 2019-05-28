@@ -1050,7 +1050,7 @@ public final class KeychainStore extends KeyStoreSpi {
         if (random == null) {
             random = new SecureRandom();
         }
-        salt = random.generateSeed(SALT_LEN);
+        random.nextBytes(salt);
         return salt;
     }
 
