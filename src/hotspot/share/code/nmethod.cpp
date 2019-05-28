@@ -1261,7 +1261,7 @@ void nmethod::log_state_change() const {
 
 void nmethod::unlink_from_method() {
   if (method() != NULL) {
-    method()->unlink_code();
+    method()->unlink_code(this);
   }
 }
 
