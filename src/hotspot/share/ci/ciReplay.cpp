@@ -532,7 +532,11 @@ class CompileReplay : public StackObj {
     // old version w/o comp_level
     if (had_error() && (error_message() == comp_level_label)) {
       // use highest available tier
-      comp_level = TieredCompilation ? TieredStopAtLevel : CompLevel_highest_tier;
+      if (TieredCompilation) {
+        comp_level = TieredStopAtLevel;
+      } else {
+        comp_level = CompLevel_highest_tier;
+      }
     }
     if (!is_valid_comp_level(comp_level)) {
       return;

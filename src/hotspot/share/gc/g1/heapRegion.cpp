@@ -106,7 +106,7 @@ void HeapRegion::setup_heap_region_size(size_t initial_heap_size, size_t max_hea
   CardsPerRegion = GrainBytes >> G1CardTable::card_shift;
 
   if (G1HeapRegionSize != GrainBytes) {
-    FLAG_SET_ERGO(size_t, G1HeapRegionSize, GrainBytes);
+    FLAG_SET_ERGO(G1HeapRegionSize, GrainBytes);
   }
 }
 

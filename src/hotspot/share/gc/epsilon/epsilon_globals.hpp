@@ -25,7 +25,8 @@
 #ifndef SHARE_GC_EPSILON_EPSILON_GLOBALS_HPP
 #define SHARE_GC_EPSILON_EPSILON_GLOBALS_HPP
 
-#include "runtime/globals.hpp"
+#include "runtime/globals_shared.hpp"
+
 //
 // Defines all globals flags used by the Epsilon GC.
 //

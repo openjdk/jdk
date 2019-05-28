@@ -286,5 +286,23 @@ public class MethodTypeDescTest extends SymbolicDescTest {
         catch (IllegalArgumentException e) {
             // good
         }
+
+        try {
+            MethodTypeDesc r = MethodTypeDesc.of(CD_int, null);
+            fail("ClassDesc array should not be null");
+        }
+        catch (NullPointerException e) {
+            // good
+        }
+
+        try {
+            ClassDesc[] paramDescs = new ClassDesc[1];
+            paramDescs[0] = null;
+            MethodTypeDesc r = MethodTypeDesc.of(CD_int, paramDescs);
+            fail("ClassDesc should not be null");
+        }
+        catch (NullPointerException e) {
+            // good
+        }
     }
 }

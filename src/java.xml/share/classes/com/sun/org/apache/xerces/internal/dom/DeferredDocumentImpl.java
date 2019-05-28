@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -42,7 +42,7 @@ import org.w3c.dom.Node;
  * @xerces.internal
  *
  * @since  PR-DOM-Level-1-19980818.
- * @LastModified: Oct 2017
+ * @LastModified: May 2019
  */
 public class DeferredDocumentImpl
     extends DocumentImpl
@@ -69,7 +69,7 @@ public class DeferredDocumentImpl
     // protected
 
     /** Chunk shift. */
-    protected static final int CHUNK_SHIFT = 11;           // 2^11 = 2k
+    protected static final int CHUNK_SHIFT = 8;           // 2^8 = 256
 
     /** Chunk size. */
     protected static final int CHUNK_SIZE = (1 << CHUNK_SHIFT);
@@ -78,7 +78,7 @@ public class DeferredDocumentImpl
     protected static final int CHUNK_MASK = CHUNK_SIZE - 1;
 
     /** Initial chunk size. */
-    protected static final int INITIAL_CHUNK_COUNT = (1 << (16 - CHUNK_SHIFT));   // 2^16 = 64k
+    protected static final int INITIAL_CHUNK_COUNT = (1 << (13 - CHUNK_SHIFT));   // 32
 
     //
     // Data

@@ -59,7 +59,7 @@ void ShenandoahRootVerifier::oops_do(OopClosure* oops) {
   }
 
   if (verify(CLDGRoots)) {
-    CLDToOopClosure clds(oops, ClassLoaderData::_claim_strong);
+    CLDToOopClosure clds(oops, ClassLoaderData::_claim_none);
     ClassLoaderDataGraph::cld_do(&clds);
   }
 
@@ -87,4 +87,50 @@ void ShenandoahRootVerifier::oops_do(OopClosure* oops) {
     // dangling reference from the thread root.
     Threads::possibly_parallel_oops_do(false, oops, &blobs);
   }
+}
+
+void ShenandoahRootVerifier::roots_do(OopClosure* oops) {
+  CodeBlobToOopClosure blobs(oops, !CodeBlobToOopClosure::FixRelocations);
+  CodeCache::blobs_do(&blobs);
+
+  CLDToOopClosure clds(oops, ClassLoaderData::_claim_none);
+  ClassLoaderDataGraph::cld_do(&clds);
+
+  Universe::oops_do(oops);
+  Management::oops_do(oops);
+  JvmtiExport::oops_do(oops);
+  JNIHandles::oops_do(oops);
+  ObjectSynchronizer::oops_do(oops);
+  SystemDictionary::oops_do(oops);
+
+  AlwaysTrueClosure always_true;
+  WeakProcessor::weak_oops_do(&always_true, oops);
+
+  if (ShenandoahStringDedup::is_enabled()) {
+    ShenandoahStringDedup::oops_do_slow(oops);
+  }
+
+  // Do thread roots the last. This allows verification code to find
+  // any broken objects from those special roots first, not the accidental
+  // dangling reference from the thread root.
+  Threads::possibly_parallel_oops_do(false, oops, &blobs);
+}
+
+void ShenandoahRootVerifier::strong_roots_do(OopClosure* oops) {
+  CodeBlobToOopClosure blobs(oops, !CodeBlobToOopClosure::FixRelocations);
+
+  CLDToOopClosure clds(oops, ClassLoaderData::_claim_none);
+  ClassLoaderDataGraph::roots_cld_do(&clds, NULL);
+
+  Universe::oops_do(oops);
+  Management::oops_do(oops);
+  JvmtiExport::oops_do(oops);
+  JNIHandles::oops_do(oops);
+  ObjectSynchronizer::oops_do(oops);
+  SystemDictionary::oops_do(oops);
+
+  // Do thread roots the last. This allows verification code to find
+  // any broken objects from those special roots first, not the accidental
+  // dangling reference from the thread root.
+  Threads::possibly_parallel_oops_do(false, oops, &blobs);
 }

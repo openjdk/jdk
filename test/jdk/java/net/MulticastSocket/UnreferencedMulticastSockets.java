@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.DatagramSocketImpl;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
@@ -73,7 +74,9 @@ public class UnreferencedMulticastSockets {
         MulticastSocket ss;
 
         Server() throws IOException {
-            ss = new MulticastSocket(0);
+            InetSocketAddress serverAddress =
+                new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
+            ss = new MulticastSocket(serverAddress);
             System.out.printf("  DatagramServer addr: %s: %d%n",
                     this.getHost(), this.getPort());
             pendingSockets.add(new NamedWeak(ss, pendingQueue, "serverMulticastSocket"));
@@ -81,7 +84,7 @@ public class UnreferencedMulticastSockets {
         }
 
         InetAddress getHost() throws UnknownHostException {
-            InetAddress localhost = InetAddress.getByName("localhost"); //.getLocalHost();
+            InetAddress localhost = InetAddress.getLoopbackAddress();
             return localhost;
         }
 

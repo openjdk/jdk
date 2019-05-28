@@ -34,6 +34,7 @@ include GensrcBuffer.gmk
 include GensrcExceptions.gmk
 include GensrcVarHandles.gmk
 include GensrcModuleLoaderMap.gmk
+include GensrcEmojiData.gmk
 
 ################################################################################
 

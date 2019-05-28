@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /* @test
  * @bug 4937598
+ * @library /test/lib
  * @summary http://www.clipstream.com video does not play; read() problem
  */
 
@@ -30,9 +31,13 @@
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URL;
+
+import jdk.test.lib.net.URIBuilder;
 
 public class HttpInputStream {
 
@@ -45,7 +50,9 @@ public class HttpInputStream {
         static final int TIMEOUT = 10 * 1000;
 
         Server() throws IOException {
-            serverSocket = new ServerSocket(0);
+            serverSocket = new ServerSocket();
+            serverSocket.bind(new InetSocketAddress(
+                    InetAddress.getLoopbackAddress(), 0));
         }
 
         void readOneRequest(InputStream is) throws IOException {
@@ -106,7 +113,12 @@ public class HttpInputStream {
     public static void main(String args[]) throws IOException {
         try (Server server = new Server()) {
             (new Thread(server)).start();
-            URL url = new URL("http://localhost:" + server.getPort() + "/anything");
+            URL url = URIBuilder.newBuilder()
+                    .scheme("http")
+                    .loopback()
+                    .port(server.getPort())
+                    .path("/anything")
+                    .toURLUnchecked();
             try (InputStream is = url.openConnection().getInputStream()) {
                 if (read(is) != CONTENT_LENGTH) {
                     throw new RuntimeException("HttpInputStream.read() failed with 0xff");

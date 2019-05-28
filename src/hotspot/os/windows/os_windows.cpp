@@ -4072,7 +4072,7 @@ void os::init(void) {
   init_page_sizes((size_t) win32::vm_page_size());
 
   // This may be overridden later when argument processing is done.
-  FLAG_SET_ERGO(bool, UseLargePagesIndividualAllocation, false);
+  FLAG_SET_ERGO(UseLargePagesIndividualAllocation, false);
 
   // Initialize main_process and main_thread
   main_process = GetCurrentProcess();  // Remember main_process is a pseudo handle

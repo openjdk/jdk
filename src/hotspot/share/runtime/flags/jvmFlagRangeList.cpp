@@ -32,7 +32,7 @@
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/flags/jvmFlagConstraintList.hpp"
 #include "runtime/flags/jvmFlagRangeList.hpp"
-#include "runtime/globals_extension.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "runtime/task.hpp"
 #include "utilities/macros.hpp"
@@ -292,27 +292,31 @@ void emit_range_double(const char* name, const double* ptr, double min, double m
 }
 
 // Generate code to call emit_range_xxx function
-#define EMIT_RANGE_PRODUCT_FLAG(type, name, value, doc)      ); emit_range_##type(#name,&name
-#define EMIT_RANGE_DIAGNOSTIC_FLAG(type, name, value, doc)   ); emit_range_##type(#name,&name
-#define EMIT_RANGE_EXPERIMENTAL_FLAG(type, name, value, doc) ); emit_range_##type(#name,&name
-#define EMIT_RANGE_MANAGEABLE_FLAG(type, name, value, doc)   ); emit_range_##type(#name,&name
-#define EMIT_RANGE_PRODUCT_RW_FLAG(type, name, value, doc)   ); emit_range_##type(#name,&name
-#define EMIT_RANGE_PD_PRODUCT_FLAG(type, name, doc)          ); emit_range_##type(#name,&name
-#define EMIT_RANGE_PD_DIAGNOSTIC_FLAG(type, name, doc)       ); emit_range_##type(#name,&name
+#define EMIT_RANGE_START       (void)(0
+#define EMIT_RANGE(type, name) ); emit_range_##type(#name, &name
+#define EMIT_RANGE_NO          ); emit_range_no(0
+#define EMIT_RANGE_PRODUCT_FLAG(type, name, value, doc)      EMIT_RANGE(type, name)
+#define EMIT_RANGE_DIAGNOSTIC_FLAG(type, name, value, doc)   EMIT_RANGE(type, name)
+#define EMIT_RANGE_EXPERIMENTAL_FLAG(type, name, value, doc) EMIT_RANGE(type, name)
+#define EMIT_RANGE_MANAGEABLE_FLAG(type, name, value, doc)   EMIT_RANGE(type, name)
+#define EMIT_RANGE_PRODUCT_RW_FLAG(type, name, value, doc)   EMIT_RANGE(type, name)
+#define EMIT_RANGE_PD_PRODUCT_FLAG(type, name, doc)          EMIT_RANGE(type, name)
+#define EMIT_RANGE_PD_DIAGNOSTIC_FLAG(type, name, doc)       EMIT_RANGE(type, name)
 #ifndef PRODUCT
-#define EMIT_RANGE_DEVELOPER_FLAG(type, name, value, doc)    ); emit_range_##type(#name,&name
-#define EMIT_RANGE_PD_DEVELOPER_FLAG(type, name, doc)        ); emit_range_##type(#name,&name
-#define EMIT_RANGE_NOTPRODUCT_FLAG(type, name, value, doc)   ); emit_range_##type(#name,&name
+#define EMIT_RANGE_DEVELOPER_FLAG(type, name, value, doc)    EMIT_RANGE(type, name)
+#define EMIT_RANGE_PD_DEVELOPER_FLAG(type, name, doc)        EMIT_RANGE(type, name)
+#define EMIT_RANGE_NOTPRODUCT_FLAG(type, name, value, doc)   EMIT_RANGE(type, name)
 #else
-#define EMIT_RANGE_DEVELOPER_FLAG(type, name, value, doc)    ); emit_range_no(#name,&name
-#define EMIT_RANGE_PD_DEVELOPER_FLAG(type, name, doc)        ); emit_range_no(#name,&name
-#define EMIT_RANGE_NOTPRODUCT_FLAG(type, name, value, doc)   ); emit_range_no(#name,&name
+#define EMIT_RANGE_DEVELOPER_FLAG(type, name, value, doc)    EMIT_RANGE_NO
+#define EMIT_RANGE_PD_DEVELOPER_FLAG(type, name, doc)        EMIT_RANGE_NO
+#define EMIT_RANGE_NOTPRODUCT_FLAG(type, name, value, doc)   EMIT_RANGE_NO
 #endif
 #ifdef _LP64
-#define EMIT_RANGE_LP64_PRODUCT_FLAG(type, name, value, doc) ); emit_range_##type(#name,&name
+#define EMIT_RANGE_LP64_PRODUCT_FLAG(type, name, value, doc) EMIT_RANGE(type, name)
 #else
-#define EMIT_RANGE_LP64_PRODUCT_FLAG(type, name, value, doc) ); emit_range_no(#name,&name
+#define EMIT_RANGE_LP64_PRODUCT_FLAG(type, name, value, doc) EMIT_RANGE_NO
 #endif
+#define EMIT_RANGE_END         );
 
 // Generate func argument to pass into emit_range_xxx functions
 #define EMIT_RANGE_CHECK(a, b)                               , a, b
@@ -325,72 +329,26 @@ void JVMFlagRangeList::init(void) {
 
   _ranges = new (ResourceObj::C_HEAP, mtArguments) GrowableArray<JVMFlagRange*>(INITIAL_RANGES_SIZE, true);
 
-  emit_range_no(NULL VM_FLAGS(EMIT_RANGE_DEVELOPER_FLAG,
-                              EMIT_RANGE_PD_DEVELOPER_FLAG,
-                              EMIT_RANGE_PRODUCT_FLAG,
-                              EMIT_RANGE_PD_PRODUCT_FLAG,
-                              EMIT_RANGE_DIAGNOSTIC_FLAG,
-                              EMIT_RANGE_PD_DIAGNOSTIC_FLAG,
-                              EMIT_RANGE_EXPERIMENTAL_FLAG,
-                              EMIT_RANGE_NOTPRODUCT_FLAG,
-                              EMIT_RANGE_MANAGEABLE_FLAG,
-                              EMIT_RANGE_PRODUCT_RW_FLAG,
-                              EMIT_RANGE_LP64_PRODUCT_FLAG,
-                              EMIT_RANGE_CHECK,
-                              IGNORE_CONSTRAINT,
-                              IGNORE_WRITEABLE));
+  EMIT_RANGE_START
+
+  ALL_FLAGS(EMIT_RANGE_DEVELOPER_FLAG,
+            EMIT_RANGE_PD_DEVELOPER_FLAG,
+            EMIT_RANGE_PRODUCT_FLAG,
+            EMIT_RANGE_PD_PRODUCT_FLAG,
+            EMIT_RANGE_DIAGNOSTIC_FLAG,
+            EMIT_RANGE_PD_DIAGNOSTIC_FLAG,
+            EMIT_RANGE_EXPERIMENTAL_FLAG,
+            EMIT_RANGE_NOTPRODUCT_FLAG,
+            EMIT_RANGE_MANAGEABLE_FLAG,
+            EMIT_RANGE_PRODUCT_RW_FLAG,
+            EMIT_RANGE_LP64_PRODUCT_FLAG,
+            EMIT_RANGE_CHECK,
+            IGNORE_CONSTRAINT,
+            IGNORE_WRITEABLE)
 
   EMIT_RANGES_FOR_GLOBALS_EXT
 
-  emit_range_no(NULL ARCH_FLAGS(EMIT_RANGE_DEVELOPER_FLAG,
-                                EMIT_RANGE_PRODUCT_FLAG,
-                                EMIT_RANGE_DIAGNOSTIC_FLAG,
-                                EMIT_RANGE_EXPERIMENTAL_FLAG,
-                                EMIT_RANGE_NOTPRODUCT_FLAG,
-                                EMIT_RANGE_CHECK,
-                                IGNORE_CONSTRAINT,
-                                IGNORE_WRITEABLE));
-
-#if INCLUDE_JVMCI
-  emit_range_no(NULL JVMCI_FLAGS(EMIT_RANGE_DEVELOPER_FLAG,
-                                 EMIT_RANGE_PD_DEVELOPER_FLAG,
-                                 EMIT_RANGE_PRODUCT_FLAG,
-                                 EMIT_RANGE_PD_PRODUCT_FLAG,
-                                 EMIT_RANGE_DIAGNOSTIC_FLAG,
-                                 EMIT_RANGE_PD_DIAGNOSTIC_FLAG,
-                                 EMIT_RANGE_EXPERIMENTAL_FLAG,
-                                 EMIT_RANGE_NOTPRODUCT_FLAG,
-                                 EMIT_RANGE_CHECK,
-                                 IGNORE_CONSTRAINT,
-                                 IGNORE_WRITEABLE));
-#endif // INCLUDE_JVMCI
-
-#ifdef COMPILER1
-  emit_range_no(NULL C1_FLAGS(EMIT_RANGE_DEVELOPER_FLAG,
-                              EMIT_RANGE_PD_DEVELOPER_FLAG,
-                              EMIT_RANGE_PRODUCT_FLAG,
-                              EMIT_RANGE_PD_PRODUCT_FLAG,
-                              EMIT_RANGE_DIAGNOSTIC_FLAG,
-                              EMIT_RANGE_PD_DIAGNOSTIC_FLAG,
-                              EMIT_RANGE_NOTPRODUCT_FLAG,
-                              EMIT_RANGE_CHECK,
-                              IGNORE_CONSTRAINT,
-                              IGNORE_WRITEABLE));
-#endif // COMPILER1
-
-#ifdef COMPILER2
-  emit_range_no(NULL C2_FLAGS(EMIT_RANGE_DEVELOPER_FLAG,
-                              EMIT_RANGE_PD_DEVELOPER_FLAG,
-                              EMIT_RANGE_PRODUCT_FLAG,
-                              EMIT_RANGE_PD_PRODUCT_FLAG,
-                              EMIT_RANGE_DIAGNOSTIC_FLAG,
-                              EMIT_RANGE_PD_DIAGNOSTIC_FLAG,
-                              EMIT_RANGE_EXPERIMENTAL_FLAG,
-                              EMIT_RANGE_NOTPRODUCT_FLAG,
-                              EMIT_RANGE_CHECK,
-                              IGNORE_CONSTRAINT,
-                              IGNORE_WRITEABLE));
-#endif // COMPILER2
+  EMIT_RANGE_END
 }
 
 JVMFlagRange* JVMFlagRangeList::find(const char* name) {

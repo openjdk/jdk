@@ -54,7 +54,7 @@ public:
   static void add_heap(AOTCodeHeap *heap);
   static void add_library(AOTLib *lib);
 #endif
-  static void initialize() NOT_AOT({ FLAG_SET_ERGO(bool, UseAOT, false); });
+  static void initialize() NOT_AOT({ FLAG_SET_ERGO(UseAOT, false); });
 
   static void universe_init() NOT_AOT_RETURN;
   static void set_narrow_oop_shift() NOT_AOT_RETURN;

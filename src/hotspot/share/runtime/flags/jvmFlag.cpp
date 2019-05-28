@@ -957,24 +957,24 @@ JVMFlag* JVMFlag::fuzzy_match(const char* name, size_t length, bool allow_locked
 }
 
 // Returns the address of the index'th element
-static JVMFlag* address_of_flag(JVMFlagsWithType flag) {
+static JVMFlag* address_of_flag(JVMFlagsEnum flag) {
   assert((size_t)flag < JVMFlag::numFlags, "bad command line flag index");
   return &JVMFlag::flags[flag];
 }
 
-bool JVMFlagEx::is_default(JVMFlags flag) {
+bool JVMFlagEx::is_default(JVMFlagsEnum flag) {
   assert((size_t)flag < JVMFlag::numFlags, "bad command line flag index");
   JVMFlag* f = &JVMFlag::flags[flag];
   return f->is_default();
 }
 
-bool JVMFlagEx::is_ergo(JVMFlags flag) {
+bool JVMFlagEx::is_ergo(JVMFlagsEnum flag) {
   assert((size_t)flag < JVMFlag::numFlags, "bad command line flag index");
   JVMFlag* f = &JVMFlag::flags[flag];
   return f->is_ergonomic();
 }
 
-bool JVMFlagEx::is_cmdline(JVMFlags flag) {
+bool JVMFlagEx::is_cmdline(JVMFlagsEnum flag) {
   assert((size_t)flag < JVMFlag::numFlags, "bad command line flag index");
   JVMFlag* f = &JVMFlag::flags[flag];
   return f->is_command_line();
@@ -987,7 +987,7 @@ bool JVMFlag::wasSetOnCmdline(const char* name, bool* value) {
   return true;
 }
 
-void JVMFlagEx::setOnCmdLine(JVMFlagsWithType flag) {
+void JVMFlagEx::setOnCmdLine(JVMFlagsEnum flag) {
   JVMFlag* faddr = address_of_flag(flag);
   assert(faddr != NULL, "Unknown flag");
   faddr->set_command_line();
@@ -1040,7 +1040,7 @@ JVMFlag::Error JVMFlag::boolAtPut(const char* name, size_t len, bool* value, JVM
   return boolAtPut(result, value, origin);
 }
 
-JVMFlag::Error JVMFlagEx::boolAtPut(JVMFlagsWithType flag, bool value, JVMFlag::Flags origin) {
+JVMFlag::Error JVMFlagEx::boolAtPut(JVMFlagsEnum flag, bool value, JVMFlag::Flags origin) {
   JVMFlag* faddr = address_of_flag(flag);
   guarantee(faddr != NULL && faddr->is_bool(), "wrong flag type");
   return JVMFlag::boolAtPut(faddr, &value, origin);
@@ -1089,7 +1089,7 @@ JVMFlag::Error JVMFlag::intAtPut(const char* name, size_t len, int* value, JVMFl
   return intAtPut(result, value, origin);
 }
 
-JVMFlag::Error JVMFlagEx::intAtPut(JVMFlagsWithType flag, int value, JVMFlag::Flags origin) {
+JVMFlag::Error JVMFlagEx::intAtPut(JVMFlagsEnum flag, int value, JVMFlag::Flags origin) {
   JVMFlag* faddr = address_of_flag(flag);
   guarantee(faddr != NULL && faddr->is_int(), "wrong flag type");
   return JVMFlag::intAtPut(faddr, &value, origin);
@@ -1138,7 +1138,7 @@ JVMFlag::Error JVMFlag::uintAtPut(const char* name, size_t len, uint* value, JVM
   return uintAtPut(result, value, origin);
 }
 
-JVMFlag::Error JVMFlagEx::uintAtPut(JVMFlagsWithType flag, uint value, JVMFlag::Flags origin) {
+JVMFlag::Error JVMFlagEx::uintAtPut(JVMFlagsEnum flag, uint value, JVMFlag::Flags origin) {
   JVMFlag* faddr = address_of_flag(flag);
   guarantee(faddr != NULL && faddr->is_uint(), "wrong flag type");
   return JVMFlag::uintAtPut(faddr, &value, origin);
@@ -1187,7 +1187,7 @@ JVMFlag::Error JVMFlag::intxAtPut(const char* name, size_t len, intx* value, JVM
   return intxAtPut(result, value, origin);
 }
 
-JVMFlag::Error JVMFlagEx::intxAtPut(JVMFlagsWithType flag, intx value, JVMFlag::Flags origin) {
+JVMFlag::Error JVMFlagEx::intxAtPut(JVMFlagsEnum flag, intx value, JVMFlag::Flags origin) {
   JVMFlag* faddr = address_of_flag(flag);
   guarantee(faddr != NULL && faddr->is_intx(), "wrong flag type");
   return JVMFlag::intxAtPut(faddr, &value, origin);
@@ -1236,7 +1236,7 @@ JVMFlag::Error JVMFlag::uintxAtPut(const char* name, size_t len, uintx* value, J
   return uintxAtPut(result, value, origin);
 }
 
-JVMFlag::Error JVMFlagEx::uintxAtPut(JVMFlagsWithType flag, uintx value, JVMFlag::Flags origin) {
+JVMFlag::Error JVMFlagEx::uintxAtPut(JVMFlagsEnum flag, uintx value, JVMFlag::Flags origin) {
   JVMFlag* faddr = address_of_flag(flag);
   guarantee(faddr != NULL && faddr->is_uintx(), "wrong flag type");
   return JVMFlag::uintxAtPut(faddr, &value, origin);
@@ -1285,7 +1285,7 @@ JVMFlag::Error JVMFlag::uint64_tAtPut(const char* name, size_t len, uint64_t* va
   return uint64_tAtPut(result, value, origin);
 }
 
-JVMFlag::Error JVMFlagEx::uint64_tAtPut(JVMFlagsWithType flag, uint64_t value, JVMFlag::Flags origin) {
+JVMFlag::Error JVMFlagEx::uint64_tAtPut(JVMFlagsEnum flag, uint64_t value, JVMFlag::Flags origin) {
   JVMFlag* faddr = address_of_flag(flag);
   guarantee(faddr != NULL && faddr->is_uint64_t(), "wrong flag type");
   return JVMFlag::uint64_tAtPut(faddr, &value, origin);
@@ -1335,7 +1335,7 @@ JVMFlag::Error JVMFlag::size_tAtPut(const char* name, size_t len, size_t* value,
   return size_tAtPut(result, value, origin);
 }
 
-JVMFlag::Error JVMFlagEx::size_tAtPut(JVMFlagsWithType flag, size_t value, JVMFlag::Flags origin) {
+JVMFlag::Error JVMFlagEx::size_tAtPut(JVMFlagsEnum flag, size_t value, JVMFlag::Flags origin) {
   JVMFlag* faddr = address_of_flag(flag);
   guarantee(faddr != NULL && faddr->is_size_t(), "wrong flag type");
   return JVMFlag::size_tAtPut(faddr, &value, origin);
@@ -1384,7 +1384,7 @@ JVMFlag::Error JVMFlag::doubleAtPut(const char* name, size_t len, double* value,
   return doubleAtPut(result, value, origin);
 }
 
-JVMFlag::Error JVMFlagEx::doubleAtPut(JVMFlagsWithType flag, double value, JVMFlag::Flags origin) {
+JVMFlag::Error JVMFlagEx::doubleAtPut(JVMFlagsEnum flag, double value, JVMFlag::Flags origin) {
   JVMFlag* faddr = address_of_flag(flag);
   guarantee(faddr != NULL && faddr->is_double(), "wrong flag type");
   return JVMFlag::doubleAtPut(faddr, &value, origin);
@@ -1418,7 +1418,7 @@ JVMFlag::Error JVMFlag::ccstrAtPut(const char* name, size_t len, ccstr* value, J
   return check;
 }
 
-JVMFlag::Error JVMFlagEx::ccstrAtPut(JVMFlagsWithType flag, ccstr value, JVMFlag::Flags origin) {
+JVMFlag::Error JVMFlagEx::ccstrAtPut(JVMFlagsEnum flag, ccstr value, JVMFlag::Flags origin) {
   JVMFlag* faddr = address_of_flag(flag);
   guarantee(faddr != NULL && faddr->is_ccstr(), "wrong flag type");
   ccstr old_value = faddr->get_ccstr();
@@ -1511,4 +1511,3 @@ void JVMFlag::printError(bool verbose, const char* msg, ...) {
     va_end(listPointer);
   }
 }
-

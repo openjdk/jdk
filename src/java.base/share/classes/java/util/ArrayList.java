@@ -1696,6 +1696,7 @@ public class ArrayList<E> extends AbstractList<E>
     @Override
     public void replaceAll(UnaryOperator<E> operator) {
         replaceAllRange(operator, 0, size);
+        // TODO(8203662): remove increment of modCount from ...
         modCount++;
     }
 

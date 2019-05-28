@@ -3450,6 +3450,7 @@ static bool linux_mprotect(char* addr, size_t size, int prot) {
   assert(addr == bottom, "sanity check");
 
   size = align_up(pointer_delta(addr, bottom, 1) + size, os::Linux::page_size());
+  Events::log(NULL, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(bottom), p2i(bottom+size), prot);
   return ::mprotect(bottom, size, prot) == 0;
 }
 

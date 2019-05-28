@@ -35,8 +35,8 @@ class ShenandoahBarrierSet: public BarrierSet {
 public:
   enum ArrayCopyStoreValMode {
     NONE,
-    READ_BARRIER,
-    WRITE_BARRIER
+    RESOLVE_BARRIER,
+    EVAC_BARRIER
   };
 private:
 

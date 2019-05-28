@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,10 @@
 /**
  * @test
  * @bug 5054016
+ * @library /test/lib
  * @summary get the failure immediately when writing individual chunks over socket fail
+ * @run main CheckError
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true CheckError
  */
 
 import java.io.BufferedReader;
@@ -33,10 +36,15 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URL;
 import static java.lang.System.out;
+
+import jdk.test.lib.net.URIBuilder;
 
 public class CheckError {
 
@@ -51,8 +59,13 @@ public class CheckError {
         out.println("Server listening on " + port);
 
 
-        URL url = new URL("http://localhost:" + port);
-        HttpURLConnection conn = (HttpURLConnection)url.openConnection();
+        URL url = URIBuilder.newBuilder()
+                  .scheme("http")
+                  .host(server.getAddress())
+                  .port(port)
+                  .toURL();
+
+        HttpURLConnection conn = (HttpURLConnection)url.openConnection(Proxy.NO_PROXY);
         conn.setRequestMethod("POST");
         conn.setDoOutput(true);
         conn.setChunkedStreamingMode(1024);
@@ -98,11 +111,17 @@ public class CheckError {
         final ServerSocket serverSocket;
 
         HTTPServer() throws IOException {
-            serverSocket = new ServerSocket(0);
+            InetAddress loopback = InetAddress.getLoopbackAddress();
+            serverSocket = new ServerSocket();
+            serverSocket.bind(new InetSocketAddress(loopback, 0));
         }
 
         int getPort() {
             return serverSocket.getLocalPort();
+        }
+
+        InetAddress getAddress() {
+            return serverSocket.getInetAddress();
         }
 
         public void run() {

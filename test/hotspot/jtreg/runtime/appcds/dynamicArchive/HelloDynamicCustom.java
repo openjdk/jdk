@@ -37,49 +37,50 @@
 
 import java.io.File;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 
-public class HelloDynamicCustom {
+public class HelloDynamicCustom extends DynamicArchiveTestBase {
     private static final String ARCHIVE_NAME =
-        System.getProperty("test.classes") + File.separator + "HelloDynamicCustom.jsa";
+        System.getProperty("test.classes") + File.separator + "HelloDynamicCustom-top.jsa";
 
     public static void main(String[] args) throws Exception {
+        runTest(HelloDynamicCustom::testDefaultBase);
+    }
+
+    private static void testDefaultBase() throws Exception {
         String wbJar = ClassFileInstaller.getJarPath("WhiteBox.jar");
         String use_whitebox_jar = "-Xbootclasspath/a:" + wbJar;
         String appJar = ClassFileInstaller.getJarPath("hello.jar");
         String customJarPath = ClassFileInstaller.getJarPath("hello_custom.jar");
         String mainAppClass = "HelloUnload";
 
-        ProcessBuilder dumpPb = ProcessTools.createJavaProcessBuilder(true,
+        dump(ARCHIVE_NAME,
             use_whitebox_jar,
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+WhiteBoxAPI",
             "-Xlog:cds",
             "-Xlog:cds+dynamic=debug",
-            "-Xshare:auto",
-            "-XX:ArchiveClassesAtExit=" + ARCHIVE_NAME,
             "-cp", appJar,
-            mainAppClass, customJarPath, "false", "false");
-        TestCommon.executeAndLog(dumpPb, "dump")
-            .shouldContain("Buffer-space to target-space delta")
-            .shouldContain("Written dynamic archive 0x")
-            .shouldNotContain("klasses.*=.*CustomLoadee")   // Fixme -- use a better way to decide if a class has been archived
-            .shouldHaveExitValue(0);
+            mainAppClass, customJarPath, "false", "false")
+            .assertNormalExit(output -> {
+                output.shouldContain("Buffer-space to target-space delta")
+                      .shouldContain("Written dynamic archive 0x")
+                      .shouldNotContain("klasses.*=.*CustomLoadee")
+                      .shouldHaveExitValue(0);
+                });
 
-        ProcessBuilder execPb = ProcessTools.createJavaProcessBuilder(true,
+        run(ARCHIVE_NAME,
             use_whitebox_jar,
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+WhiteBoxAPI",
             "-Xlog:class+load",
             "-Xlog:cds=debug",
             "-Xlog:cds+dynamic=info",
-            "-Xshare:auto",
-            "-XX:SharedArchiveFile=" + ARCHIVE_NAME,
             "-cp", appJar,
-            mainAppClass, customJarPath, "false", "true");
-        TestCommon.executeAndLog(execPb, "exec")
-            .shouldContain("HelloUnload source: shared objects file")
-            .shouldContain("CustomLoadee source: shared objects file")
-            .shouldHaveExitValue(0);
+            mainAppClass, customJarPath, "false", "true")
+            .assertNormalExit(output -> {
+                output.shouldContain("HelloUnload source: shared objects file")
+                      .shouldContain("CustomLoadee source: shared objects file")
+                      .shouldHaveExitValue(0);
+                });
     }
 }

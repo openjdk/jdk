@@ -66,10 +66,10 @@ class TestGenCollectorPolicy {
       FLAG_GUARD(OldSize);
 
       MinHeapSize = 40 * M;
-      FLAG_SET_ERGO(size_t, InitialHeapSize, 100 * M);
-      FLAG_SET_ERGO(size_t, OldSize, 4 * M);
-      FLAG_SET_ERGO(size_t, NewSize, 1 * M);
-      FLAG_SET_ERGO(size_t, MaxNewSize, 80 * M);
+      FLAG_SET_ERGO(InitialHeapSize, 100 * M);
+      FLAG_SET_ERGO(OldSize, 4 * M);
+      FLAG_SET_ERGO(NewSize, 1 * M);
+      FLAG_SET_ERGO(MaxNewSize, 80 * M);
 
       ASSERT_NO_FATAL_FAILURE(setter1->execute());
 
@@ -88,7 +88,7 @@ class TestGenCollectorPolicy {
    public:
     SetNewSizeErgo(size_t param) : UnaryExecutor(param) { }
     void execute() {
-      FLAG_SET_ERGO(size_t, NewSize, param);
+      FLAG_SET_ERGO(NewSize, param);
     }
   };
 
@@ -129,7 +129,7 @@ class TestGenCollectorPolicy {
    public:
     SetNewSizeCmd(size_t param) : UnaryExecutor(param) { }
     void execute() {
-      FLAG_SET_CMDLINE(size_t, NewSize, param);
+      FLAG_SET_CMDLINE(NewSize, param);
     }
   };
 
@@ -148,7 +148,7 @@ class TestGenCollectorPolicy {
    public:
     SetOldSizeCmd(size_t param) : UnaryExecutor(param) { }
     void execute() {
-      FLAG_SET_CMDLINE(size_t, OldSize, param);
+      FLAG_SET_CMDLINE(OldSize, param);
     }
   };
 
@@ -159,7 +159,7 @@ class TestGenCollectorPolicy {
       size_t heap_alignment = GCArguments::compute_heap_alignment();
       size_t new_size_value = align_up(MaxHeapSize, heap_alignment)
               - param1 + param2;
-      FLAG_SET_CMDLINE(size_t, MaxNewSize, new_size_value);
+      FLAG_SET_CMDLINE(MaxNewSize, new_size_value);
     }
   };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,12 +51,13 @@ public class Restart {
     public static void main(String args[]) throws Exception {
         IPSupport.throwSkippedExceptionIfNonOperational();
 
-        ServerSocket ss = new ServerSocket(0);
+        InetAddress localHost = InetAddress.getLocalHost();
+        ServerSocket ss = new ServerSocket(0, 0, localHost);
         Socket s1 = null, s2 = null;
         try {
             int port = ss.getLocalPort();
 
-            s1 = new Socket(InetAddress.getLocalHost(), port);
+            s1 = new Socket(localHost, port);
             s2 = ss.accept();
 
             // close server socket and the accepted connection
@@ -64,7 +65,7 @@ public class Restart {
             s2.close();
 
             ss = new ServerSocket();
-            ss.bind( new InetSocketAddress(port) );
+            ss.bind( new InetSocketAddress(localHost, port) );
             ss.close();
 
             // close the client socket

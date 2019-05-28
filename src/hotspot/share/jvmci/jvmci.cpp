@@ -26,7 +26,6 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "jvmci/jvmci.hpp"
-#include "jvmci/jvmci_globals.hpp"
 #include "jvmci/jvmciJavaClasses.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 #include "jvmci/metadataHandleBlock.hpp"

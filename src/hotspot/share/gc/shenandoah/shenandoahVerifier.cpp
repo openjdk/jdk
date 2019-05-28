@@ -458,7 +458,11 @@ public:
         ShenandoahVerifyOopClosure cl(&stack, _bitmap, _ld,
                                       ShenandoahMessageBuffer("%s, Roots", _label),
                                       _options);
-        _verifier->oops_do(&cl);
+        if (_heap->unload_classes()) {
+          _verifier->strong_roots_do(&cl);
+        } else {
+          _verifier->roots_do(&cl);
+        }
     }
 
     size_t processed = 0;
@@ -604,6 +608,23 @@ public:
   }
 };
 
+class ShenandoahGCStateResetter : public StackObj {
+private:
+  ShenandoahHeap* const _heap;
+  char _gc_state;
+
+public:
+  ShenandoahGCStateResetter() : _heap(ShenandoahHeap::heap()) {
+    _gc_state = _heap->gc_state();
+    _heap->_gc_state.clear();
+  }
+
+  ~ShenandoahGCStateResetter() {
+    _heap->_gc_state.set(_gc_state);
+    assert(_heap->gc_state() == _gc_state, "Should be restored");
+  }
+};
+
 void ShenandoahVerifier::verify_at_safepoint(const char *label,
                                              VerifyForwarded forwarded, VerifyMarked marked,
                                              VerifyCollectionSet cset,
@@ -652,6 +673,9 @@ void ShenandoahVerifier::verify_at_safepoint(const char *label,
       Threads::java_threads_do(&vtgcs);
     }
   }
+
+  // Deactivate barriers temporarily: Verifier wants plain heap accesses
+  ShenandoahGCStateResetter resetter;
 
   // Heap size checks
   {

@@ -2442,6 +2442,7 @@ static bool checked_mprotect(char* addr, size_t size, int prot) {
   //
   // See http://publib.boulder.ibm.com/infocenter/pseries/v5r3/index.jsp?topic=/com.ibm.aix.basetechref/doc/basetrf1/mprotect.htm
 
+  Events::log(NULL, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(addr), p2i(addr+size), prot);
   bool rc = ::mprotect(addr, size, prot) == 0 ? true : false;
 
   if (!rc) {
@@ -2482,6 +2483,7 @@ static bool checked_mprotect(char* addr, size_t size, int prot) {
           // A valid strategy is just to try again. This usually works. :-/
 
           ::usleep(1000);
+          Events::log(NULL, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(addr), p2i(addr+size), prot);
           if (::mprotect(addr, size, prot) == 0) {
             const bool read_protected_2 =
               (SafeFetch32((int*)addr, 0x12345678) == 0x12345678 &&
@@ -3447,7 +3449,7 @@ void os::init(void) {
       // fall back to 4K paged mode and use mmap for everything.
       trcVerbose("4K page mode");
       Aix::_page_size = 4*K;
-      FLAG_SET_ERGO(bool, Use64KPages, false);
+      FLAG_SET_ERGO(Use64KPages, false);
     }
   } else {
     // datapsize = 64k. Data segment, thread stacks are 64k paged.
@@ -3457,11 +3459,11 @@ void os::init(void) {
     assert0(g_multipage_support.can_use_64K_pages);
     Aix::_page_size = 64*K;
     trcVerbose("64K page mode");
-    FLAG_SET_ERGO(bool, Use64KPages, true);
+    FLAG_SET_ERGO(Use64KPages, true);
   }
 
   // For now UseLargePages is just ignored.
-  FLAG_SET_ERGO(bool, UseLargePages, false);
+  FLAG_SET_ERGO(UseLargePages, false);
   _page_sizes[0] = 0;
 
   // debug trace

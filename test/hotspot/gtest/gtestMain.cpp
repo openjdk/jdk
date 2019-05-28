@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,7 +195,7 @@ static char** remove_test_runner_arguments(int* argcp, char **argv) {
 }
 
 static void runUnitTestsInner(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
+  ::testing::InitGoogleMock(&argc, argv);
   ::testing::GTEST_FLAG(death_test_style) = "threadsafe";
 
   bool is_vmassert_test = false;

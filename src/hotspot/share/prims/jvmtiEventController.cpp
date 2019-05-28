@@ -32,6 +32,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiImpl.hpp"
 #include "prims/jvmtiThreadState.inline.hpp"
+#include "runtime/deoptimization.hpp"
 #include "runtime/frame.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
@@ -239,8 +240,7 @@ void VM_EnterInterpOnlyMode::doit() {
       }
     }
     if (num_marked > 0) {
-      VM_Deoptimize op;
-      VMThread::execute(&op);
+      Deoptimization::deoptimize_all_marked();
     }
   }
 }

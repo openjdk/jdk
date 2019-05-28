@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,9 @@
  * @summary Fixed a potential NullPointerException when setting a ResponseCache that returns a null CacheRequest
  * @bug 4837267
  * @modules jdk.httpserver
+ * @library /test/lib
+ * @run main Test
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true Test
  * @author Michael McMahon
  */
 
@@ -32,6 +35,8 @@ import com.sun.net.httpserver.*;
 import java.net.*;
 import java.io.*;
 import java.util.*;
+
+import jdk.test.lib.net.URIBuilder;
 
 public class Test
 {
@@ -51,14 +56,15 @@ public class Test
     }
 
     public static void main(String args[])  throws Exception {
-        HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        HttpServer server = HttpServer.create(new InetSocketAddress(loopback, 0), 0);
         server.createContext("/", new MyHandler());
         server.start();
         ResponseCache bak = ResponseCache.getDefault();
 
         try {
-            ResponseCache.setDefault (new ResponseCache() {
-                public CacheResponse get (URI uri, String rqstMethod, Map<String,List<String>> rqstHeaders)
+            ResponseCache.setDefault(new ResponseCache() {
+                public CacheResponse get(URI uri, String rqstMethod, Map<String,List<String>> rqstHeaders)
                     throws IOException {
                     return null;
                 }
@@ -68,8 +74,13 @@ public class Test
                 }
             });
 
-            URL url = new URL ("http://localhost:" + server.getAddress().getPort() + "/");
-            URLConnection urlc = url.openConnection ();
+            URL url = URIBuilder.newBuilder()
+                      .scheme("http")
+                      .host(server.getAddress().getAddress())
+                      .port(server.getAddress().getPort())
+                      .path("/")
+                      .toURL();
+            URLConnection urlc = url.openConnection(Proxy.NO_PROXY);
             InputStream is = urlc.getInputStream();
             while (is.read() != -1) ;
             is.close();

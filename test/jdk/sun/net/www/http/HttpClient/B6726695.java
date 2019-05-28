@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,16 @@
 /*
  * @test
  * @bug 6726695 6993490
- * @summary HttpURLConnection shoul support 'Expect: 100-contimue' headers for PUT
+ * @summary HttpURLConnection should support 'Expect: 100-contimue' headers for PUT
+ * @library /test/lib
+ * @run main B6726695
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true B6726695
 */
 
 import java.net.*;
 import java.io.*;
+
+import jdk.test.lib.net.URIBuilder;
 
 public class B6726695 extends Thread {
     private ServerSocket server = null;
@@ -48,7 +53,8 @@ public class B6726695 extends Thread {
 
     public B6726695() {
         try {
-            server = new ServerSocket(0);
+            server = new ServerSocket();
+            server.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
             port = server.getLocalPort();
         } catch (IOException e) {
             e.printStackTrace();
@@ -64,10 +70,15 @@ public class B6726695 extends Thread {
          * the Expect: 100-Continue header. So the POST should proceed after
          * a timeout.
          */
-        URL url = new URL("http://localhost:" + port + "/foo");
+        URL url = URIBuilder.newBuilder()
+                  .scheme("http")
+                  .loopback()
+                  .port(port)
+                  .path("/foo")
+                  .toURL();
 
         // 1st Connection. Should be rejected. I.E. get a ProtocolException
-        URLConnection con = url.openConnection();
+        URLConnection con = url.openConnection(Proxy.NO_PROXY);
         HttpURLConnection http = (HttpURLConnection) con;
         http.setRequestMethod("POST");
         http.setRequestProperty("Expect", "100-Continue");
@@ -86,7 +97,7 @@ public class B6726695 extends Thread {
         }
 
         // 2nd connection. Should be accepted by server.
-        http = (HttpURLConnection) url.openConnection();
+        http = (HttpURLConnection) url.openConnection(Proxy.NO_PROXY);
         http.setRequestMethod("POST");
         http.setRequestProperty("Expect", "100-Continue");
         http.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
@@ -109,7 +120,7 @@ public class B6726695 extends Thread {
         out.close();
 
         // 3rd connection. Simulate a server that doesn't implement 100-continue
-        http = (HttpURLConnection) url.openConnection();
+        http = (HttpURLConnection) url.openConnection(Proxy.NO_PROXY);
         http.setRequestMethod("POST");
         http.setRequestProperty("Expect", "100-Continue");
         http.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);

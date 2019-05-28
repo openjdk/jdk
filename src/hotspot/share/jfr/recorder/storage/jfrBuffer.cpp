@@ -132,10 +132,6 @@ void JfrBuffer::release() {
   OrderAccess::release_store(&_identity, (const void*)NULL);
 }
 
-void JfrBuffer::clear_identity() {
-  _identity = NULL;
-}
-
 bool JfrBuffer::acquired_by(const void* id) const {
   return identity() == id;
 }

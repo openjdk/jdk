@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_SHARED_GC_GLOBALS_HPP
 #define SHARE_GC_SHARED_GC_GLOBALS_HPP
 
+#include "runtime/globals_shared.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_CMSGC
 #include "gc/cms/cms_globals.hpp"

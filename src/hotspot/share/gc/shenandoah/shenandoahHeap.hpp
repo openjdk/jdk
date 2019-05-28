@@ -40,6 +40,7 @@ class ShenandoahAllocTracker;
 class ShenandoahCollectorPolicy;
 class ShenandoahControlThread;
 class ShenandoahGCSession;
+class ShenandoahGCStateResetter;
 class ShenandoahHeuristics;
 class ShenandoahMarkingContext;
 class ShenandoahPhaseTimings;
@@ -111,6 +112,7 @@ class ShenandoahHeap : public CollectedHeap {
   friend class ShenandoahAsserts;
   friend class VMStructs;
   friend class ShenandoahGCSession;
+  friend class ShenandoahGCStateResetter;
 
 // ---------- Locks that guard important data structures in Heap
 //

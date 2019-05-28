@@ -1859,6 +1859,18 @@ void GraphKit::set_predefined_output_for_runtime_call(Node* call,
   }
 }
 
+// Keep track of MergeMems feeding into other MergeMems
+static void add_mergemem_users_to_worklist(Unique_Node_List& wl, Node* mem) {
+  if (!mem->is_MergeMem()) {
+    return;
+  }
+  for (SimpleDUIterator i(mem); i.has_next(); i.next()) {
+    Node* use = i.get();
+    if (use->is_MergeMem()) {
+      wl.push(use);
+    }
+  }
+}
 
 // Replace the call with the current state of the kit.
 void GraphKit::replace_call(CallNode* call, Node* result, bool do_replaced_nodes) {
@@ -1877,6 +1889,7 @@ void GraphKit::replace_call(CallNode* call, Node* result, bool do_replaced_nodes
   CallProjections callprojs;
   call->extract_projections(&callprojs, true);
 
+  Unique_Node_List wl;
   Node* init_mem = call->in(TypeFunc::Memory);
   Node* final_mem = final_state->in(TypeFunc::Memory);
   Node* final_ctl = final_state->in(TypeFunc::Control);
@@ -1892,6 +1905,7 @@ void GraphKit::replace_call(CallNode* call, Node* result, bool do_replaced_nodes
       final_mem = _gvn.transform(final_mem);
     }
     C->gvn_replace_by(callprojs.fallthrough_memproj,   final_mem);
+    add_mergemem_users_to_worklist(wl, final_mem);
   }
   if (callprojs.fallthrough_ioproj != NULL) {
     C->gvn_replace_by(callprojs.fallthrough_ioproj,    final_io);
@@ -1931,7 +1945,9 @@ void GraphKit::replace_call(CallNode* call, Node* result, bool do_replaced_nodes
       ex_ctl = ekit.control();
     }
     if (callprojs.catchall_memproj != NULL) {
-      C->gvn_replace_by(callprojs.catchall_memproj,   ekit.reset_memory());
+      Node* ex_mem = ekit.reset_memory();
+      C->gvn_replace_by(callprojs.catchall_memproj,   ex_mem);
+      add_mergemem_users_to_worklist(wl, ex_mem);
     }
     if (callprojs.catchall_ioproj != NULL) {
       C->gvn_replace_by(callprojs.catchall_ioproj,    ekit.i_o());
@@ -1949,17 +1965,8 @@ void GraphKit::replace_call(CallNode* call, Node* result, bool do_replaced_nodes
 
   // Clean up any MergeMems that feed other MergeMems since the
   // optimizer doesn't like that.
-  if (final_mem->is_MergeMem()) {
-    Node_List wl;
-    for (SimpleDUIterator i(final_mem); i.has_next(); i.next()) {
-      Node* m = i.get();
-      if (m->is_MergeMem() && !wl.contains(m)) {
-        wl.push(m);
-      }
-    }
-    while (wl.size()  > 0) {
-      _gvn.transform(wl.pop());
-    }
+  while (wl.size() > 0) {
+    _gvn.transform(wl.pop());
   }
 
   if (callprojs.fallthrough_catchproj != NULL && !final_ctl->is_top() && do_replaced_nodes) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,7 @@ import java.security.KeyStore;
 import javax.net.*;
 import javax.net.ssl.*;
 
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.net.URIBuilder;
 
 /*
  * @test
@@ -39,12 +38,6 @@ import jdk.test.lib.process.ProcessTools;
  *          that serves http POST method requests in secure channel, and a client
  *          that makes https POST request through a proxy.
  * @library /test/lib
- * @build jdk.test.lib.Utils
- *        jdk.test.lib.Asserts
- *        jdk.test.lib.JDKToolFinder
- *        jdk.test.lib.JDKToolLauncher
- *        jdk.test.lib.Platform
- *        jdk.test.lib.process.*
  * @compile OriginServer.java ProxyTunnelServer.java
  * @run main/othervm PostThruProxy
  */
@@ -62,6 +55,9 @@ public class PostThruProxy {
     static String passwd = "passphrase";
 
     private static int serverPort = 0;
+    private static ProxyTunnelServer pserver;
+    private static TestServer server;
+    static final String RESPONSE_MSG = "Https POST thru proxy is successful";
 
     /*
      * The TestServer implements a OriginServer that
@@ -79,8 +75,7 @@ public class PostThruProxy {
          * @return bytes for the data in the response
          */
         public byte[] getBytes() {
-            return "Https POST thru proxy is successful".
-                        getBytes();
+            return RESPONSE_MSG.getBytes();
         }
     }
 
@@ -88,6 +83,7 @@ public class PostThruProxy {
      * Main method to create the server and client
      */
     public static void main(String args[]) throws Exception {
+
         String keyFilename = TEST_SRC + "/" + pathToStores + "/" + keyStoreFile;
         String trustFilename = TEST_SRC + "/" + pathToStores + "/"
                 + trustStoreFile;
@@ -97,16 +93,18 @@ public class PostThruProxy {
         System.setProperty("javax.net.ssl.trustStore", trustFilename);
         System.setProperty("javax.net.ssl.trustStorePassword", passwd);
 
+        InetAddress loopback = InetAddress.getLoopbackAddress();
         boolean useSSL = true;
         /*
          * setup the server
          */
         try {
             ServerSocketFactory ssf = getServerSocketFactory(useSSL);
-            ServerSocket ss = ssf.createServerSocket(serverPort);
+            ServerSocket ss = ssf.createServerSocket(serverPort, 0, loopback);
             ss.setSoTimeout(TIMEOUT);  // 30 seconds
             serverPort = ss.getLocalPort();
-            new TestServer(ss);
+            server = new TestServer(ss);
+            System.out.println("Server started at: " + ss);
         } catch (Exception e) {
             System.out.println("Server side failed:" +
                                 e.getMessage());
@@ -119,6 +117,12 @@ public class PostThruProxy {
             System.out.println("Client side failed: " +
                                 e.getMessage());
             throw e;
+        }
+        long connectCount = pserver.getConnectCount();
+        if (connectCount == 0) {
+            throw new AssertionError("Proxy was not used!");
+        } else {
+            System.out.println("Proxy CONNECT count: " + connectCount);
         }
     }
 
@@ -162,9 +166,15 @@ public class PostThruProxy {
              */
             HttpsURLConnection.setDefaultHostnameVerifier(
                                           new NameVerifier());
-            URL url = new URL("https://" + getHostname() +":" + serverPort);
+            URL url = URIBuilder.newBuilder()
+                      .scheme("https")
+                      .loopback()
+                      .port(serverPort)
+                      .toURL();
 
             Proxy p = new Proxy(Proxy.Type.HTTP, pAddr);
+            System.out.println("Client connecting to: " + url);
+            System.out.println("Through proxy: " + pAddr);
             HttpsURLConnection https = (HttpsURLConnection)url.openConnection(p);
             https.setConnectTimeout(TIMEOUT);
             https.setReadTimeout(TIMEOUT);
@@ -185,9 +195,15 @@ public class PostThruProxy {
                                     new InputStreamReader(
                                     https.getInputStream()));
                String inputLine;
-               while ((inputLine = in.readLine()) != null)
+               boolean msgFound = false;
+               while ((inputLine = in.readLine()) != null) {
                     System.out.println("Client received: " + inputLine);
+                    if (inputLine.contains(RESPONSE_MSG)) msgFound = true;
+               }
                in.close();
+               if (!msgFound) {
+                   throw new RuntimeException("POST message not found.");
+               }
             } catch (SSLException e) {
                 if (ps != null)
                     ps.close();
@@ -208,20 +224,13 @@ public class PostThruProxy {
     }
 
     static SocketAddress setupProxy() throws IOException {
-        ProxyTunnelServer pserver = new ProxyTunnelServer();
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        pserver = new ProxyTunnelServer(loopback);
 
         // disable proxy authentication
         pserver.needUserAuth(false);
         pserver.start();
-        return new InetSocketAddress("localhost", pserver.getPort());
+        return new InetSocketAddress(loopback, pserver.getPort());
     }
 
-    private static String getHostname() {
-        try {
-            OutputAnalyzer oa = ProcessTools.executeCommand("hostname");
-            return oa.getOutput().trim();
-        } catch (Throwable e) {
-            throw new RuntimeException("Get hostname failed.", e);
-        }
-    }
 }

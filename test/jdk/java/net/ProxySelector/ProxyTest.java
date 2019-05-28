@@ -34,7 +34,7 @@
 
 import java.net.*;
 import java.io.*;
-import java.util.ArrayList;
+import java.util.List;
 import jdk.test.lib.net.URIBuilder;
 
 public class ProxyTest implements HttpCallback {
@@ -43,10 +43,10 @@ public class ProxyTest implements HttpCallback {
     public ProxyTest() {
     }
 
-    public void request (HttpTransaction req) {
-        req.setResponseEntityBody ("Hello .");
+    public void request(HttpTransaction req) {
+        req.setResponseEntityBody("Hello .");
         try {
-            req.sendResponse (200, "Ok");
+            req.sendResponse(200, "Ok");
             req.orderlyClose();
         } catch (IOException e) {
         }
@@ -54,17 +54,12 @@ public class ProxyTest implements HttpCallback {
 
     static public class MyProxySelector extends ProxySelector {
         private static volatile URI lastURI;
-        private final ArrayList<Proxy> noProxy;
-
-        public MyProxySelector() {
-            noProxy = new ArrayList<Proxy>(1);
-            noProxy.add(Proxy.NO_PROXY);
-        }
+        private final static List<Proxy> NO_PROXY = List.of(Proxy.NO_PROXY);
 
         public java.util.List<Proxy> select(URI uri) {
             System.out.println("Selecting no proxy for " + uri);
             lastURI = uri;
-            return noProxy;
+            return NO_PROXY;
         }
 
         public void connectFailed(URI uri, SocketAddress sa, IOException ioe) {
@@ -80,15 +75,15 @@ public class ProxyTest implements HttpCallback {
         ProxySelector.setDefault(new MyProxySelector());
         try {
             InetAddress loopback = InetAddress.getLoopbackAddress();
-            server = new TestHttpServer (new ProxyTest(), 1, 10, 0);
+            server = new TestHttpServer(new ProxyTest(), 1, 10, loopback, 0);
             URL url = URIBuilder.newBuilder()
                       .scheme("http")
                       .loopback()
                       .port(server.getLocalPort())
                       .toURL();
-            System.out.println ("client opening connection to: " + url);
-            HttpURLConnection urlc = (HttpURLConnection)url.openConnection ();
-            InputStream is = urlc.getInputStream ();
+            System.out.println("client opening connection to: " + url);
+            HttpURLConnection urlc = (HttpURLConnection)url.openConnection();
+            InputStream is = urlc.getInputStream();
             is.close();
             URI lastURI = MyProxySelector.lastURI();
             if (!String.valueOf(lastURI).equals(url + "/")) {

@@ -283,9 +283,9 @@ void CodeCache::initialize_heaps() {
 
   // Verify sizes and update flag values
   assert(non_profiled_size + profiled_size + non_nmethod_size == cache_size, "Invalid code heap sizes");
-  FLAG_SET_ERGO(uintx, NonNMethodCodeHeapSize, non_nmethod_size);
-  FLAG_SET_ERGO(uintx, ProfiledCodeHeapSize, profiled_size);
-  FLAG_SET_ERGO(uintx, NonProfiledCodeHeapSize, non_profiled_size);
+  FLAG_SET_ERGO(NonNMethodCodeHeapSize, non_nmethod_size);
+  FLAG_SET_ERGO(ProfiledCodeHeapSize, profiled_size);
+  FLAG_SET_ERGO(NonProfiledCodeHeapSize, non_profiled_size);
 
   // If large page support is enabled, align code heaps according to large
   // page size to make sure that code cache is covered by large pages.
@@ -941,9 +941,9 @@ void CodeCache::initialize() {
     initialize_heaps();
   } else {
     // Use a single code heap
-    FLAG_SET_ERGO(uintx, NonNMethodCodeHeapSize, 0);
-    FLAG_SET_ERGO(uintx, ProfiledCodeHeapSize, 0);
-    FLAG_SET_ERGO(uintx, NonProfiledCodeHeapSize, 0);
+    FLAG_SET_ERGO(NonNMethodCodeHeapSize, 0);
+    FLAG_SET_ERGO(ProfiledCodeHeapSize, 0);
+    FLAG_SET_ERGO(NonProfiledCodeHeapSize, 0);
     ReservedCodeSpace rs = reserve_heap_memory(ReservedCodeCacheSize);
     add_heap(rs, "CodeCache", CodeBlobType::All);
   }
@@ -1142,28 +1142,25 @@ void CodeCache::flush_evol_dependents() {
 
   // At least one nmethod has been marked for deoptimization
 
-  // All this already happens inside a VM_Operation, so we'll do all the work here.
-  // Stuff copied from VM_Deoptimize and modified slightly.
-
-  // We do not want any GCs to happen while we are in the middle of this VM operation
-  ResourceMark rm;
-  DeoptimizationMarker dm;
-
-  // Deoptimize all activations depending on marked nmethods
-  Deoptimization::deoptimize_dependents();
-
-  // Make the dependent methods not entrant
-  make_marked_nmethods_not_entrant();
+  Deoptimization::deoptimize_all_marked();
 }
 #endif // INCLUDE_JVMTI
 
-// Deoptimize all methods
+// Mark methods for deopt (if safe or possible).
 void CodeCache::mark_all_nmethods_for_deoptimization() {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
   CompiledMethodIterator iter(CompiledMethodIterator::only_alive_and_not_unloading);
   while(iter.next()) {
     CompiledMethod* nm = iter.method();
-    if (!nm->method()->is_method_handle_intrinsic()) {
+    if (!nm->method()->is_method_handle_intrinsic() &&
+        !nm->is_not_installed() &&
+        nm->is_in_use() &&
+        !nm->is_native_method()) {
+      // Intrinsics and native methods are never deopted. A method that is
+      // not installed yet or is not in use is not safe to deopt; the
+      // is_in_use() check covers the not_entrant and not zombie cases.
+      // Note: A not_entrant method can become a zombie at anytime if it was
+      // made not_entrant before the previous safepoint/handshake.
       nm->mark_for_deoptimization();
     }
   }
@@ -1191,7 +1188,12 @@ void CodeCache::make_marked_nmethods_not_entrant() {
   CompiledMethodIterator iter(CompiledMethodIterator::only_alive_and_not_unloading);
   while(iter.next()) {
     CompiledMethod* nm = iter.method();
-    if (nm->is_marked_for_deoptimization() && !nm->is_not_entrant()) {
+    if (nm->is_marked_for_deoptimization() && nm->is_in_use()) {
+      // only_alive_and_not_unloading() can return not_entrant nmethods.
+      // A not_entrant method can become a zombie at anytime if it was
+      // made not_entrant before the previous safepoint/handshake. The
+      // is_in_use() check covers the not_entrant and not zombie cases
+      // that have become true after the method was marked for deopt.
       nm->make_not_entrant();
     }
   }
@@ -1203,17 +1205,12 @@ void CodeCache::flush_dependents_on(InstanceKlass* dependee) {
 
   if (number_of_nmethods_with_dependencies() == 0) return;
 
-  // CodeCache can only be updated by a thread_in_VM and they will all be
-  // stopped during the safepoint so CodeCache will be safe to update without
-  // holding the CodeCache_lock.
-
   KlassDepChange changes(dependee);
 
   // Compute the dependent nmethods
   if (mark_for_deoptimization(changes) > 0) {
     // At least one nmethod has been marked for deoptimization
-    VM_Deoptimize op;
-    VMThread::execute(&op);
+    Deoptimization::deoptimize_all_marked();
   }
 }
 
@@ -1222,26 +1219,9 @@ void CodeCache::flush_dependents_on_method(const methodHandle& m_h) {
   // --- Compile_lock is not held. However we are at a safepoint.
   assert_locked_or_safepoint(Compile_lock);
 
-  // CodeCache can only be updated by a thread_in_VM and they will all be
-  // stopped dring the safepoint so CodeCache will be safe to update without
-  // holding the CodeCache_lock.
-
   // Compute the dependent nmethods
   if (mark_for_deoptimization(m_h()) > 0) {
-    // At least one nmethod has been marked for deoptimization
-
-    // All this already happens inside a VM_Operation, so we'll do all the work here.
-    // Stuff copied from VM_Deoptimize and modified slightly.
-
-    // We do not want any GCs to happen while we are in the middle of this VM operation
-    ResourceMark rm;
-    DeoptimizationMarker dm;
-
-    // Deoptimize all activations depending on marked nmethods
-    Deoptimization::deoptimize_dependents();
-
-    // Make the dependent methods not entrant
-    make_marked_nmethods_not_entrant();
+    Deoptimization::deoptimize_all_marked();
   }
 }
 

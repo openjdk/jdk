@@ -106,7 +106,7 @@ void CMSArguments::initialize() {
   }
 
   if (!ClassUnloading) {
-    FLAG_SET_CMDLINE(bool, CMSClassUnloadingEnabled, false);
+    FLAG_SET_CMDLINE(CMSClassUnloadingEnabled, false);
   }
 
   // Set CMS global values
@@ -142,9 +142,9 @@ void CMSArguments::initialize() {
     // NewSize was set on the command line and it is larger than
     // preferred_max_new_size.
     if (!FLAG_IS_DEFAULT(NewSize)) {   // NewSize explicitly set at command-line
-      FLAG_SET_ERGO(size_t, MaxNewSize, MAX2(NewSize, preferred_max_new_size));
+      FLAG_SET_ERGO(MaxNewSize, MAX2(NewSize, preferred_max_new_size));
     } else {
-      FLAG_SET_ERGO(size_t, MaxNewSize, preferred_max_new_size);
+      FLAG_SET_ERGO(MaxNewSize, preferred_max_new_size);
     }
     log_trace(gc, heap)("CMS ergo set MaxNewSize: " SIZE_FORMAT, MaxNewSize);
 
@@ -159,15 +159,15 @@ void CMSArguments::initialize() {
       // Unless explicitly requested otherwise, make young gen
       // at least min_new, and at most preferred_max_new_size.
       if (FLAG_IS_DEFAULT(NewSize)) {
-        FLAG_SET_ERGO(size_t, NewSize, MAX2(NewSize, min_new));
-        FLAG_SET_ERGO(size_t, NewSize, MIN2(preferred_max_new_size, NewSize));
+        FLAG_SET_ERGO(NewSize, MAX2(NewSize, min_new));
+        FLAG_SET_ERGO(NewSize, MIN2(preferred_max_new_size, NewSize));
         log_trace(gc, heap)("CMS ergo set NewSize: " SIZE_FORMAT, NewSize);
       }
       // Unless explicitly requested otherwise, size old gen
       // so it's NewRatio x of NewSize.
       if (FLAG_IS_DEFAULT(OldSize)) {
         if (max_heap > NewSize) {
-          FLAG_SET_ERGO(size_t, OldSize, MIN2(NewRatio*NewSize, max_heap - NewSize));
+          FLAG_SET_ERGO(OldSize, MIN2(NewRatio*NewSize, max_heap - NewSize));
           log_trace(gc, heap)("CMS ergo set OldSize: " SIZE_FORMAT, OldSize);
         }
       }
@@ -177,14 +177,14 @@ void CMSArguments::initialize() {
   // promote all objects surviving "tenuring_default" scavenges.
   if (FLAG_IS_DEFAULT(MaxTenuringThreshold) &&
       FLAG_IS_DEFAULT(SurvivorRatio)) {
-    FLAG_SET_ERGO(uintx, MaxTenuringThreshold, tenuring_default);
+    FLAG_SET_ERGO(MaxTenuringThreshold, tenuring_default);
   }
   // If we decided above (or user explicitly requested)
   // `promote all' (via MaxTenuringThreshold := 0),
   // prefer minuscule survivor spaces so as not to waste
   // space for (non-existent) survivors
   if (FLAG_IS_DEFAULT(SurvivorRatio) && MaxTenuringThreshold == 0) {
-    FLAG_SET_ERGO(uintx, SurvivorRatio, MAX2((uintx)1024, SurvivorRatio));
+    FLAG_SET_ERGO(SurvivorRatio, MAX2((uintx)1024, SurvivorRatio));
   }
 
   // OldPLABSize is interpreted in CMS as not the size of the PLAB in words,
@@ -195,7 +195,7 @@ void CMSArguments::initialize() {
       // OldPLAB sizing manually turned off: Use a larger default setting,
       // unless it was manually specified. This is because a too-low value
       // will slow down scavenges.
-      FLAG_SET_ERGO(size_t, OldPLABSize, CompactibleFreeListSpaceLAB::_default_static_old_plab_size); // default value before 6631166
+      FLAG_SET_ERGO(OldPLABSize, CompactibleFreeListSpaceLAB::_default_static_old_plab_size); // default value before 6631166
     } else {
       FLAG_SET_DEFAULT(OldPLABSize, CompactibleFreeListSpaceLAB::_default_dynamic_old_plab_size); // old CMSParPromoteBlocksToClaim default
     }

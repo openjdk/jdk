@@ -45,12 +45,6 @@
 #if INCLUDE_PARALLELGC
 #include "gc/parallel/jvmFlagConstraintsParallel.hpp"
 #endif
-#ifdef COMPILER1
-#include "c1/c1_globals.hpp"
-#endif // COMPILER1
-#ifdef COMPILER2
-#include "opto/c2_globals.hpp"
-#endif // COMPILER2
 
 // Some flags that have default values that indicate that the
 // JVM should automatically determine an appropriate value

@@ -110,11 +110,11 @@ void G1Arguments::initialize() {
   // triggering a full collection. To get as low fragmentation as
   // possible we only use one worker thread.
   if (DumpSharedSpaces) {
-    FLAG_SET_ERGO(uint, ParallelGCThreads, 1);
+    FLAG_SET_ERGO(ParallelGCThreads, 1);
   }
 
   if (FLAG_IS_DEFAULT(G1ConcRefinementThreads)) {
-    FLAG_SET_ERGO(uint, G1ConcRefinementThreads, ParallelGCThreads);
+    FLAG_SET_ERGO(G1ConcRefinementThreads, ParallelGCThreads);
   }
 
   // MarkStackSize will be set (if it hasn't been set by the user)
@@ -162,7 +162,7 @@ void G1Arguments::initialize() {
 
   // By default do not let the target stack size to be more than 1/4 of the entries
   if (FLAG_IS_DEFAULT(GCDrainStackTargetSize)) {
-    FLAG_SET_ERGO(uintx, GCDrainStackTargetSize, MIN2(GCDrainStackTargetSize, (uintx)TASKQUEUE_SIZE / 4));
+    FLAG_SET_ERGO(GCDrainStackTargetSize, MIN2(GCDrainStackTargetSize, (uintx)TASKQUEUE_SIZE / 4));
   }
 
 #ifdef COMPILER2

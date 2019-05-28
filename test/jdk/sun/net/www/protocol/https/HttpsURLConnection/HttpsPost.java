@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,9 @@
  * @bug 4423074
  * @summary Need to rebase all the duplicated classes from Merlin.
  *          This test will check out http POST
+ * @library /test/lib
  * @run main/othervm HttpsPost
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true HttpsPost
  *
  *     SunJSSE does not support dynamic system properties, no way to re-use
  *     system properties in samevm/agentvm mode.
@@ -35,6 +37,7 @@
 import java.io.*;
 import java.net.*;
 import javax.net.ssl.*;
+import jdk.test.lib.net.URIBuilder;
 
 public class HttpsPost {
 
@@ -95,12 +98,16 @@ public class HttpsPost {
      * to avoid infinite hangs.
      */
     void doServerSide() throws Exception {
+        InetAddress loopback = InetAddress.getLoopbackAddress();
         SSLServerSocketFactory sslssf =
             (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
         SSLServerSocket sslServerSocket =
-            (SSLServerSocket) sslssf.createServerSocket(serverPort);
+            (SSLServerSocket) sslssf.createServerSocket(serverPort, 0, loopback);
         serverPort = sslServerSocket.getLocalPort();
 
+        System.out.println("Starting server at: "
+                            +  sslServerSocket.getInetAddress()
+                            + ":" + serverPort);
         /*
          * Signal Client, we're ready for his connect.
          */
@@ -155,10 +162,15 @@ public class HttpsPost {
             }
 
             // Send HTTP POST request to server
-            URL url = new URL("https://localhost:"+serverPort);
+            URL url = URIBuilder.newBuilder()
+                      .scheme("https")
+                      .loopback()
+                      .port(serverPort)
+                      .toURL();
 
+            System.out.println("Client connecting to: " + url);
             HttpsURLConnection.setDefaultHostnameVerifier(new NameVerifier());
-            HttpsURLConnection http = (HttpsURLConnection)url.openConnection();
+            HttpsURLConnection http = (HttpsURLConnection)url.openConnection(Proxy.NO_PROXY);
             http.setDoOutput(true);
 
             http.setRequestMethod("POST");

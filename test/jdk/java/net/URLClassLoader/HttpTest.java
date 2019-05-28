@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,15 @@
 /**
  * @test
  * @bug 4636331
+ * @library /test/lib
  * @summary Check that URLClassLoader doesn't create excessive http
  *          connections
  */
 import java.net.*;
 import java.io.*;
 import java.util.*;
+
+import jdk.test.lib.net.URIBuilder;
 
 public class HttpTest {
 
@@ -119,7 +122,8 @@ public class HttpTest {
         }
 
         HttpServer() throws Exception {
-            ss = new ServerSocket(0);
+            ss = new ServerSocket();
+            ss.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
         }
 
         public void run() {
@@ -200,9 +204,12 @@ public class HttpTest {
         HttpServer svr = HttpServer.create();
 
         // create class loader
-        URL urls[] =
-            { new URL("http://localhost:" + svr.port() + "/dir1/"),
-              new URL("http://localhost:" + svr.port() + "/dir2/") };
+        URL urls[] = {
+                URIBuilder.newBuilder().scheme("http").loopback().port(svr.port())
+                        .path("/dir1/").toURL(),
+                URIBuilder.newBuilder().scheme("http").loopback().port(svr.port())
+                        .path("/dir2/").toURL(),
+        };
         URLClassLoader cl = new URLClassLoader(urls);
 
         // Test 1 - check that getResource does single HEAD request

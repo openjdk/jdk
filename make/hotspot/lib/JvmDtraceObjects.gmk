@@ -51,7 +51,9 @@ ifeq ($(call check-jvm-feature, dtrace), true)
         hs_private.d \
     )
 
-    $(JVM_OUTPUTDIR)/objs/dtrace.d: $(DTRACE_SOURCE_FILES)
+    # *.d in the objs dir is used for generated make dependency files, so use
+    # *.dt for dtrace files to avoid clashes.
+    $(JVM_OUTPUTDIR)/objs/dtrace.dt: $(DTRACE_SOURCE_FILES)
 	$(call LogInfo, Generating $(@F))
 	$(call MakeDir, $(@D))
 	$(CAT) $^ > $@
@@ -94,13 +96,13 @@ ifeq ($(call check-jvm-feature, dtrace), true)
 
     # Make sure we run our selected compiler for preprocessing instead of letting
     # the dtrace tool pick it on it's own.
-    $(DTRACE_OBJ): $(JVM_OUTPUTDIR)/objs/dtrace.d $(DTRACE_INSTRUMENTED_OBJS)
+    $(DTRACE_OBJ): $(JVM_OUTPUTDIR)/objs/dtrace.dt $(DTRACE_INSTRUMENTED_OBJS)
 	$(call LogInfo, Generating $(@F) from $(<F) and object files)
 	$(call MakeDir, $(DTRACE_SUPPORT_DIR))
-	$(call ExecuteWithLog, $(DTRACE_SUPPORT_DIR)/$(@F).d, \
-	    ($(CPP) $(DTRACE_CPP_FLAGS) $< > $(DTRACE_SUPPORT_DIR)/$(@F).d))
+	$(call ExecuteWithLog, $(DTRACE_SUPPORT_DIR)/$(@F).dt, \
+	    ($(CPP) $(DTRACE_CPP_FLAGS) $< > $(DTRACE_SUPPORT_DIR)/$(@F).dt))
 	$(call ExecuteWithLog, $@, $(DTRACE) $(DTRACE_FLAGS) -xlazyload -o $@ \
-	    -s $(DTRACE_SUPPORT_DIR)/$(@F).d $(sort $(DTRACE_INSTRUMENTED_OBJS)))
+	    -s $(DTRACE_SUPPORT_DIR)/$(@F).dt $(sort $(DTRACE_INSTRUMENTED_OBJS)))
 
     ############################################################################
     # Generate DTRACE_JHELPER_OBJ which is linked with libjvm.so.
@@ -126,11 +128,11 @@ ifeq ($(call check-jvm-feature, dtrace), true)
     $(DTRACE_JHELPER_OBJ): $(JHELPER_DTRACE_SRC) $(JVM_OFFSETS_INDEX_H)
 	$(call LogInfo, Running dtrace for $(<F))
 	$(call MakeDir, $(DTRACE_SUPPORT_DIR))
-	$(call ExecuteWithLog, $(DTRACE_SUPPORT_DIR)/$(@F).d, \
+	$(call ExecuteWithLog, $(DTRACE_SUPPORT_DIR)/$(@F).dt, \
 	    ($(CPP) $(DTRACE_CPP_FLAGS) -I$(DTRACE_GENSRC_DIR) $^ \
-	    > $(DTRACE_SUPPORT_DIR)/$(@F).d))
+	    > $(DTRACE_SUPPORT_DIR)/$(@F).dt))
 	$(call ExecuteWithLog, $@, $(DTRACE) $(DTRACE_FLAGS) -o $@ \
-	    -s $(DTRACE_SUPPORT_DIR)/$(@F).d)
+	    -s $(DTRACE_SUPPORT_DIR)/$(@F).dt)
         ifeq ($(call isTargetCpuArch, sparc), true)
 	  $(call ExecuteWithLog, $@.elfedit, $(ELFEDIT) $(call GetElfeditCommands) $@)
         endif

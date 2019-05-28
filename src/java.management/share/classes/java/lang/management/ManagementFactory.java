@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -872,12 +872,13 @@ public class ManagementFactory {
     public static Set<Class<? extends PlatformManagedObject>>
            getPlatformManagementInterfaces()
     {
-        return platformComponents()
+        // local variable required here; see JDK-8223553
+        Stream<Class<? extends PlatformManagedObject>> pmos = platformComponents()
                 .stream()
                 .flatMap(pc -> pc.mbeanInterfaces().stream())
                 .filter(clazz -> PlatformManagedObject.class.isAssignableFrom(clazz))
-                .map(clazz -> clazz.asSubclass(PlatformManagedObject.class))
-                .collect(Collectors.toSet());
+                .map(clazz -> clazz.asSubclass(PlatformManagedObject.class));
+        return pmos.collect(Collectors.toSet());
     }
 
     private static final String NOTIF_EMITTER =

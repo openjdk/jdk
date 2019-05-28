@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,12 @@
 
 /**
  * @test
- * @bug      4114080 6565620 6959267 7070436 7198195 8032446 8072600
+ * @bug      4114080 6565620 6959267 7070436 7198195 8032446 8072600 8221431
  * @summary  Make sure the attributes of Unicode characters, as
  * returned by the Character API, are as expected.  Do this by
  * comparing them to a baseline file together with a list of
  * known diffs.
+ * @library /lib/testlibrary/java/lang
  * @build UnicodeSpec CharCheck
  * @run main CheckUnicode
  * @author Alan Liu
@@ -41,40 +42,18 @@ import java.io.*;
 public class CheckUnicode {
     public static void main(String args[]) throws Exception {
 
-        // 1. Check that the dumped property files for planes 0, 1, 2, 3, 14, 15, and 16
-        //    are the  same as in the current Character properties.
-                int[] planes = {0, 1, 2, 3, 14, 15, 16};
-                String[] fileNames = {"charprop00.bin", "charprop01.bin", "charprop02.bin", "charprop03.bin",
-                                        "charprop0E.bin", "charprop0F.bin", "charprop10.bin" };
-
-        // Read in the Unicode 4.0 data
-
-                for (int x=0; x < planes.length && x < fileNames.length; ++x) {
-                File unicodeProp = new File(System.getProperty("test.src", "."), fileNames[x]);
-                ObjectInputStream ois = new ObjectInputStream(new FileInputStream(unicodeProp));
-                // Find differences -- should be none
-                int diffs = CharCheck.load(planes[x], ois);
-                if (diffs != 0) {
-                    throw new RuntimeException("Bug 4114080 - Unicode properties have changed " +
-                                       "in an unexpected way");
-            }
-                }
-
-
-
-
-        // 2. Check that the current 4.0 spec file is handled by the current
+        // 1. Check that the current 12.1 spec file is handled by the current
         // version of Character.
-        File unicodeSpec = new File(System.getProperty("test.src", "."), "UnicodeData.txt");
-                for (int x=0; x<planes.length; ++x) {
-                int diffs = CharCheck.check(planes[x], unicodeSpec);
-                if (diffs != 0) {
-                    throw new RuntimeException("Bug 4114080 - Unicode properties have changed " +
-                                               "in an unexpected way");
-                }
-                }
+        File unicodeSpec = UCDFiles.UNICODE_DATA.toFile();
+        for (int x = 0; x < 16; ++x) {
+            int diffs = CharCheck.check(x, unicodeSpec);
+            if (diffs != 0) {
+                throw new RuntimeException("Unicode properties have changed " +
+                                           "in an unexpected way");
+            }
+        }
 
-        // 3. Check that Java identifiers are recognized correctly.
+        // 2. Check that Java identifiers are recognized correctly.
         // test a few characters that are good id starts
         char[] idStartChar = {'$', '\u20AC', 'a', 'A', 'z', 'Z', '_', '\u0E3F',
             '\u1004', '\u10A0', '\u3400', '\u4E00', '\uAC00' };
@@ -104,8 +83,5 @@ public class CheckUnicode {
                     "should not be start characters.");
             }
         }
-
-
-
     }
 }

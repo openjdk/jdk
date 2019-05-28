@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -440,8 +440,8 @@ public final class FilePermission extends Permission implements Serializable {
      * <p>A pathname containing an empty string represents an empty path.
      *
      * @implNote In this implementation, the
-     * {@code jdk.io.permissionsUseCanonicalPath} system property dictates how
-     * the {@code path} argument is processed and stored.
+     * {@systemProperty jdk.io.permissionsUseCanonicalPath} system property
+     * dictates how the {@code path} argument is processed and stored.
      * <P>
      * If the value of the system property is set to {@code true}, {@code path}
      * is canonicalized and stored as a String object named {@code cpath}.

@@ -67,3 +67,51 @@ TEST_VM(ostream, stringStream_dynamic_realloc_1) {
 TEST_VM(ostream, stringStream_dynamic_realloc_2) {
   do_test_stringStream_dynamic_realloc(true);
 }
+
+TEST_VM(ostream, bufferedStream_static) {
+  char buf[100];
+  bufferedStream bs(buf, sizeof(buf));
+  size_t written = 0;
+  for (int i = 0; i < 100; i ++) {
+    written += print_lorem(&bs, true);
+    if (written < sizeof(buf)) {
+      ASSERT_EQ(bs.size(), written);
+    } else {
+      ASSERT_EQ(bs.size(), sizeof(buf) - 1);
+    }
+  }
+}
+
+TEST_VM(ostream, bufferedStream_dynamic_small) {
+  bufferedStream bs(1); // small to excercise realloc.
+  size_t written = 0;
+  // The max cap imposed is 100M, we should be safely below this in this test.
+  for (int i = 0; i < 10; i ++) {
+    written += print_lorem(&bs, true);
+    ASSERT_EQ(bs.size(), written);
+  }
+}
+
+/* Activate to manually test bufferedStream dynamic cap.
+
+TEST_VM(ostream, bufferedStream_dynamic_large) {
+  bufferedStream bs(1); // small to excercise realloc.
+  size_t written = 0;
+  // The max cap imposed is 100M. Writing this much should safely hit it.
+  // Note that this will assert in debug builds which is the expected behavior.
+  size_t expected_cap_at = 100 * M;
+  for (int i = 0; i < 10000000; i ++) {
+    written += print_lorem(&bs, false);
+    if (written < expected_cap_at) {
+      ASSERT_EQ(bs.size(), written);
+    } else {
+      ASSERT_EQ(bs.size(), expected_cap_at - 1);
+    }
+  }
+}
+
+*/
+
+
+
+

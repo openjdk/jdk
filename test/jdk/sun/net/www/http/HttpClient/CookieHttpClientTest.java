@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 7129083
+ * @library /test/lib
  * @summary Cookiemanager does not store cookies if url is read
  *          before setting cookiemanager
  */
@@ -31,11 +32,15 @@
 import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URL;
 import java.io.InputStream;
 import java.io.IOException;
+
+import jdk.test.lib.net.URIBuilder;
 
 public class CookieHttpClientTest implements Runnable {
     final ServerSocket ss;
@@ -85,10 +90,15 @@ public class CookieHttpClientTest implements Runnable {
 
     CookieHttpClientTest() throws Exception {
         /* start the server */
-        ss = new ServerSocket(0);
+        ss = new ServerSocket();
+        ss.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
         (new Thread(this)).start();
 
-        URL url = new URL("http://localhost:" + ss.getLocalPort() +"/");
+        URL url = URIBuilder.newBuilder()
+                .scheme("http")
+                .loopback()
+                .port(ss.getLocalPort())
+                .path("/").toURL();
 
         // Run without a CookieHandler first
         InputStream in = url.openConnection().getInputStream();

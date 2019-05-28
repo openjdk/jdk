@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -70,13 +70,11 @@ EOF
     if [ "$OS" = "Windows_NT" ]; then
         USER=`id -u -n`
         CACLS="$SystemRoot/system32/cacls.exe"
-        TEST_SRC=`cygpath ${TESTSRC}`
-        REVOKEALL="$TEST_SRC/../../windows/revokeall.exe"
-        if [ ! -f "$REVOKEALL" ] ; then
-            echo "$REVOKEALL missing"
+        REVOKEALL="$TESTNATIVEPATH/revokeall.exe"
+        if [ ! -x "$REVOKEALL" ] ; then
+            echo "$REVOKEALL doesn't exist or is not executable"
             exit 1
         fi
-        chmod ug+x $REVOKEALL
     fi
     ;;
 *)

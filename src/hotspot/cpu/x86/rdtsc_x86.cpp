@@ -145,7 +145,7 @@ static bool initialize_elapsed_counter() {
 static bool ergonomics() {
   const bool invtsc_support = Rdtsc::is_supported();
   if (FLAG_IS_DEFAULT(UseFastUnorderedTimeStamps) && invtsc_support) {
-    FLAG_SET_ERGO(bool, UseFastUnorderedTimeStamps, true);
+    FLAG_SET_ERGO(UseFastUnorderedTimeStamps, true);
   }
 
   bool ft_enabled = UseFastUnorderedTimeStamps && invtsc_support;

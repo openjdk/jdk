@@ -13,6 +13,7 @@
     -Xmx<size>        set maximum Java heap size
     -Xss<size>        set java thread stack size
     -Xfuture          enable strictest checks, anticipating future default
+                      (deprecated)
     -Xrs              reduce use of OS signals by Java/VM (see documentation)
     -Xcheck:jni       perform additional checks for JNI functions
     -Xshare:off	      do not attempt to use shared class data

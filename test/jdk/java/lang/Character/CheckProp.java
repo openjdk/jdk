@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,9 @@
 
 /**
  * @test
- * @bug 7037261 7070436 7198195 8032446 8072600
+ * @bug 7037261 7070436 7198195 8032446 8072600 8221431
  * @summary  Check j.l.Character.isLowerCase/isUppercase/isAlphabetic/isIdeographic
+ * @library /lib/testlibrary/java/lang
  */
 
 import java.util.regex.*;
@@ -36,7 +37,7 @@ import static java.lang.Character.*;
 public class CheckProp {
 
     public static void main(String[] args) throws IOException {
-        File fPropList = new File(System.getProperty("test.src", "."), "PropList.txt");
+        File fPropList = UCDFiles.PROP_LIST.toFile();
         int i, j;
         BufferedReader sbfr = new BufferedReader(new FileReader(fPropList));
         Matcher m = Pattern.compile("(\\p{XDigit}+)(?:\\.{2}(\\p{XDigit}+))?\\s*;\\s+(\\w+)\\s+#.*").matcher("");

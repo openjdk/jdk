@@ -38,6 +38,7 @@
 #include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"
 #include "oops/method.inline.hpp"
+#include "runtime/deoptimization.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepointVerifiers.hpp"
@@ -733,8 +734,7 @@ void AOTCodeHeap::sweep_dependent_methods(int* indexes, int methods_cnt) {
     }
   }
   if (marked > 0) {
-    VM_Deoptimize op;
-    VMThread::execute(&op);
+    Deoptimization::deoptimize_all_marked();
   }
 }
 

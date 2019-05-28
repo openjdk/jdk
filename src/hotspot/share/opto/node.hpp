@@ -998,7 +998,7 @@ public:
   // the node is guaranteed never to compare equal to any other node.
   // If we accidentally generate a hash with value NO_HASH the node
   // won't go into the table and we'll lose a little optimization.
-  enum { NO_HASH = 0 };
+  static const uint NO_HASH = 0;
   virtual uint hash() const;
   virtual bool cmp( const Node &n ) const;
 

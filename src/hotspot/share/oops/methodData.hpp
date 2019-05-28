@@ -31,9 +31,6 @@
 #include "oops/oop.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/align.hpp"
-#if INCLUDE_JVMCI
-#include "jvmci/jvmci_globals.hpp"
-#endif
 
 class BytecodeStream;
 class KlassSizeStats;

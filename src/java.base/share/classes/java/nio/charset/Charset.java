@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,8 +67,7 @@ import java.util.TreeMap;
  * concurrent threads.
  *
  *
- * <a id="names"></a><a id="charenc"></a>
- * <h2>Charset names</h2>
+ * <h2><a id="names">Charset names</a></h2>
  *
  * <p> Charsets are named by strings composed of the following characters:
  *
@@ -138,12 +137,11 @@ import java.util.TreeMap;
  * previous canonical name be made into an alias.
  *
  *
- * <h2>Standard charsets</h2>
+ * <h2><a id="standard">Standard charsets</a></h2>
  *
  *
- *
- * <p><a id="standard">Every implementation of the Java platform is required to support the
- * following standard charsets.</a>  Consult the release documentation for your
+ * <p> Every implementation of the Java platform is required to support the
+ * following standard charsets.  Consult the release documentation for your
  * implementation to see if any other charsets are supported.  The behavior
  * of such optional charsets may differ between implementations.
  *
@@ -217,7 +215,7 @@ import java.util.TreeMap;
  * determined during virtual-machine startup and typically depends upon the
  * locale and charset being used by the underlying operating system. </p>
  *
- * <p>The {@link StandardCharsets} class defines constants for each of the
+ * <p> The {@link StandardCharsets} class defines constants for each of the
  * standard charsets.
  *
  * <h2>Terminology</h2>

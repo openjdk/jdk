@@ -181,6 +181,25 @@ bool ZDirector::rule_proactive() const {
   return time_until_gc <= 0;
 }
 
+bool ZDirector::rule_high_usage() const {
+  // Perform GC if the amount of free memory is 5% or less. This is a preventive
+  // meassure in the case where the application has a very low allocation rate,
+  // such that the allocation rate rule doesn't trigger, but the amount of free
+  // memory is still slowly but surely heading towards zero. In this situation,
+  // we start a GC cycle to avoid a potential allocation stall later.
+
+  // Calculate amount of free memory available to Java threads. Note that
+  // the heap reserve is not available to Java threads and is therefore not
+  // considered part of the free memory.
+  const size_t max_capacity = ZHeap::heap()->current_max_capacity();
+  const size_t max_reserve = ZHeap::heap()->max_reserve();
+  const size_t used = ZHeap::heap()->used();
+  const size_t free_with_reserve = max_capacity - used;
+  const size_t free = free_with_reserve - MIN2(free_with_reserve, max_reserve);
+
+  return percent_of(free, max_capacity) <= 5.0;
+}
+
 GCCause::Cause ZDirector::make_gc_decision() const {
   // Rule 0: Timer
   if (rule_timer()) {
@@ -200,6 +219,11 @@ GCCause::Cause ZDirector::make_gc_decision() const {
   // Rule 3: Proactive
   if (rule_proactive()) {
     return GCCause::_z_proactive;
+  }
+
+  // Rule 4: High usage
+  if (rule_high_usage()) {
+    return GCCause::_z_high_usage;
   }
 
   // No GC

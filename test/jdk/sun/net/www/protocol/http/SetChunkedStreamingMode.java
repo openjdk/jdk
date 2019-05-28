@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,8 @@ public class SetChunkedStreamingMode implements HttpCallback {
 
     public static void main (String[] args) throws Exception {
         try {
-            server = new TestHttpServer (new SetChunkedStreamingMode(), 1, 10, 0);
+            server = new TestHttpServer(new SetChunkedStreamingMode(), 1, 10,
+                    InetAddress.getLoopbackAddress(), 0);
             System.out.println ("Server: listening on port: " + server.getLocalPort());
             URL url = URIBuilder.newBuilder()
                 .scheme("http")

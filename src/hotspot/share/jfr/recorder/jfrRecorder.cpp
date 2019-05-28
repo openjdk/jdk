@@ -57,7 +57,7 @@ static bool _enabled = false;
 
 static bool enable() {
   assert(!_enabled, "invariant");
-  FLAG_SET_MGMT(bool, FlightRecorder, true);
+  FLAG_SET_MGMT(FlightRecorder, true);
   _enabled = FlightRecorder;
   assert(_enabled, "invariant");
   return _enabled;
