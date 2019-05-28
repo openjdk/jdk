@@ -25,6 +25,7 @@
 package jdk.internal.jrtfs;
 
 import java.io.File;
+import java.io.IOError;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -170,7 +171,16 @@ final class JrtPath implements Path {
     @Override
     public final URI toUri() {
         try {
-            return new URI("jrt", toAbsolutePath().path, null);
+            String p = toAbsolutePath().path;
+            if (!p.startsWith("/modules") || p.contains("..")) {
+                throw new IOError(new RuntimeException(p + " cannot be represented as URI"));
+            }
+
+            p = p.substring("/modules".length());
+            if (p.isEmpty()) {
+                p = "/";
+            }
+            return new URI("jrt", p, null);
         } catch (URISyntaxException ex) {
             throw new AssertionError(ex);
         }
