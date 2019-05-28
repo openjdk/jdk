@@ -94,10 +94,26 @@ public class ClassFileLoadHook {
         Class c = Class.forName("java.sql.SQLException"); // defined by platform class loader.
 
         switch (testCase) {
-        case SHARING_ON_CFLH_OFF:
-        case SHARING_AUTO_CFLH_ON:
-        case SHARING_ON_CFLH_ON:
-            assertTrue(wb.isSharedClass(c), "must be shared");
+            case SHARING_ON_CFLH_OFF:
+            case SHARING_ON_CFLH_ON:
+                assertTrue(wb.isSharedClass(c), "must be shared");
+                break;
+            case SHARING_AUTO_CFLH_ON:
+                // With -Xshare:auto, the test continues to run with mapping failure.
+                // In case of mapping failure, java/lang/Object and the app class
+                // won't be loaded from the archive.
+                Class objClass = Class.forName("java.lang.Object");
+                if (wb.isSharedClass(objClass)) {
+                    assertTrue(wb.isSharedClass(c), "must be shared");
+                } else {
+                    assertFalse(wb.isSharedClass(c), "must not be shared");
+                }
+                break;
+            default:
+                // this test is not applicable to -Xshare:off
+                if (testCase != TestCaseId.SHARING_OFF_CFLH_ON) {
+                    throw new RuntimeException("Invalid testcase");
+                }
         }
     }
 
