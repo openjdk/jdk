@@ -3153,30 +3153,6 @@ instruct storeV64_qword(memory mem, vecZ src) %{
 
 // ====================LEGACY REPLICATE=======================================
 
-instruct Repl4B_mem(vecS dst, memory mem) %{
-  predicate(n->as_Vector()->length() == 4 && UseAVX > 0 && !VM_Version::supports_avx512vlbw());
-  match(Set dst (ReplicateB (LoadB mem)));
-  format %{ "punpcklbw $dst,$mem\n\t"
-            "pshuflw $dst,$dst,0x00\t! replicate4B" %}
-  ins_encode %{
-    __ punpcklbw($dst$$XMMRegister, $mem$$Address);
-    __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct Repl8B_mem(vecD dst, memory mem) %{
-  predicate(n->as_Vector()->length() == 8 && UseAVX > 0 && !VM_Version::supports_avx512vlbw());
-  match(Set dst (ReplicateB (LoadB mem)));
-  format %{ "punpcklbw $dst,$mem\n\t"
-            "pshuflw $dst,$dst,0x00\t! replicate8B" %}
-  ins_encode %{
-    __ punpcklbw($dst$$XMMRegister, $mem$$Address);
-    __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
 instruct Repl16B(vecX dst, rRegI src) %{
   predicate(n->as_Vector()->length() == 16 && !VM_Version::supports_avx512vlbw());
   match(Set dst (ReplicateB src));
@@ -3187,20 +3163,6 @@ instruct Repl16B(vecX dst, rRegI src) %{
   ins_encode %{
     __ movdl($dst$$XMMRegister, $src$$Register);
     __ punpcklbw($dst$$XMMRegister, $dst$$XMMRegister);
-    __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
-    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct Repl16B_mem(vecX dst, memory mem) %{
-  predicate(n->as_Vector()->length() == 16 && UseAVX > 0 && !VM_Version::supports_avx512vlbw());
-  match(Set dst (ReplicateB (LoadB mem)));
-  format %{ "punpcklbw $dst,$mem\n\t"
-            "pshuflw $dst,$dst,0x00\n\t"
-            "punpcklqdq $dst,$dst\t! replicate16B" %}
-  ins_encode %{
-    __ punpcklbw($dst$$XMMRegister, $mem$$Address);
     __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
     __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
   %}
@@ -3225,22 +3187,6 @@ instruct Repl32B(vecY dst, rRegI src) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct Repl32B_mem(vecY dst, memory mem) %{
-  predicate(n->as_Vector()->length() == 32 && !VM_Version::supports_avx512vlbw());
-  match(Set dst (ReplicateB (LoadB mem)));
-  format %{ "punpcklbw $dst,$mem\n\t"
-            "pshuflw $dst,$dst,0x00\n\t"
-            "punpcklqdq $dst,$dst\n\t"
-            "vinserti128_high $dst,$dst\t! replicate32B" %}
-  ins_encode %{
-    __ punpcklbw($dst$$XMMRegister, $mem$$Address);
-    __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
-    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti128_high($dst$$XMMRegister, $dst$$XMMRegister);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
 instruct Repl64B(legVecZ dst, rRegI src) %{
   predicate(n->as_Vector()->length() == 64 && !VM_Version::supports_avx512vlbw());
   match(Set dst (ReplicateB src));
@@ -3253,24 +3199,6 @@ instruct Repl64B(legVecZ dst, rRegI src) %{
   ins_encode %{
     __ movdl($dst$$XMMRegister, $src$$Register);
     __ punpcklbw($dst$$XMMRegister, $dst$$XMMRegister);
-    __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
-    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti128_high($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti64x4($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, 0x1);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct Repl64B_mem(legVecZ dst, memory mem) %{
-  predicate(n->as_Vector()->length() == 64 && !VM_Version::supports_avx512vlbw());
-  match(Set dst (ReplicateB (LoadB mem)));
-  format %{ "punpcklbw $dst,$mem\n\t"
-            "pshuflw $dst,$dst,0x00\n\t"
-            "punpcklqdq $dst,$dst\n\t"
-            "vinserti128_high $dst,$dst\t"
-            "vinserti64x4 $dst,$dst,$dst,0x1\t! replicate64B" %}
-  ins_encode %{
-    __ punpcklbw($dst$$XMMRegister, $mem$$Address);
     __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
     __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
     __ vinserti128_high($dst$$XMMRegister, $dst$$XMMRegister);
