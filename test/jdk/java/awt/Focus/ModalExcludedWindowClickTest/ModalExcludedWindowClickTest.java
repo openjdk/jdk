@@ -113,7 +113,9 @@ public class ModalExcludedWindowClickTest {
         } else {
             robot.mouseMove(p.x + (int)(d.getWidth()/2), p.y + (int)(d.getHeight()/2));
         }
+        waitForIdle();
         robot.mousePress(InputEvent.BUTTON1_MASK);
+        robot.delay(50);
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
         waitForIdle();
     }
@@ -121,8 +123,9 @@ public class ModalExcludedWindowClickTest {
         while (true) {
             try {
                 Thread.sleep(100);
-                c.getLocationOnScreen();
-                break;
+                Point p = c.getLocationOnScreen();
+                if (p != null)
+                    break;
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             } catch (IllegalComponentStateException e) {}
