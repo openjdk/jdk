@@ -129,8 +129,11 @@ void VM_Version::get_processor_features() {
 
   int dcache_line = VM_Version::dcache_line_size();
 
+  // Limit AllocatePrefetchDistance so that it does not exceed the
+  // constraint in AllocatePrefetchDistanceConstraintFunc.
   if (FLAG_IS_DEFAULT(AllocatePrefetchDistance))
-    FLAG_SET_DEFAULT(AllocatePrefetchDistance, 3*dcache_line);
+    FLAG_SET_DEFAULT(AllocatePrefetchDistance, MIN2(512, 3*dcache_line));
+
   if (FLAG_IS_DEFAULT(AllocatePrefetchStepSize))
     FLAG_SET_DEFAULT(AllocatePrefetchStepSize, dcache_line);
   if (FLAG_IS_DEFAULT(PrefetchScanIntervalInBytes))
