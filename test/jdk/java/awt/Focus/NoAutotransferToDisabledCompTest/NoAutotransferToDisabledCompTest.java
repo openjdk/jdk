@@ -79,6 +79,7 @@ public class NoAutotransferToDisabledCompTest {
         robot.delay(50);
         robot.keyRelease(KeyEvent.VK_SPACE);
         Util.waitForIdle(robot);
+        robot.delay(2000);
 
         // Check that focus has been transfered to b0.
         if (!b0.hasFocus()) {
