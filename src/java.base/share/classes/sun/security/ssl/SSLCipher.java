@@ -31,6 +31,7 @@ import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Key;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivilegedAction;
 import java.security.SecureRandom;
 import java.security.Security;
@@ -42,6 +43,7 @@ import java.util.Map;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.ShortBufferException;
 import javax.crypto.spec.GCMParameterSpec;
@@ -491,14 +493,29 @@ enum SSLCipher {
 
         // availability of this bulk cipher
         //
-        // We assume all supported ciphers are always available since they are
-        // shipped with the SunJCE  provider.  However, AES/256 is unavailable
-        // when the default JCE policy jurisdiction files are installed because
-        // of key length restrictions.
-        this.isAvailable = allowed && isUnlimited(keySize, transformation);
+        // AES/256 is unavailable when the default JCE policy jurisdiction files
+        // are installed because of key length restrictions.
+        this.isAvailable = allowed && isUnlimited(keySize, transformation) &&
+                isTransformationAvailable(transformation);
 
         this.readCipherGenerators = readCipherGenerators;
         this.writeCipherGenerators = writeCipherGenerators;
+    }
+
+    private static boolean isTransformationAvailable(String transformation) {
+        if (transformation.equals("NULL")) {
+            return true;
+        }
+        try {
+            Cipher.getInstance(transformation);
+            return true;
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                SSLLogger.fine("Transformation " + transformation + " is" +
+                        " not available.");
+            }
+        }
+        return false;
     }
 
     SSLReadCipher createReadCipher(Authenticator authenticator,

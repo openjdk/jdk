@@ -379,7 +379,8 @@ public abstract class SSLContextImpl extends SSLContextSpi {
 
                 boolean isSupported = false;
                 for (ProtocolVersion protocol : protocols) {
-                    if (!suite.supports(protocol)) {
+                    if (!suite.supports(protocol) ||
+                            !suite.bulkCipher.isAvailable()) {
                         continue;
                     }
 
