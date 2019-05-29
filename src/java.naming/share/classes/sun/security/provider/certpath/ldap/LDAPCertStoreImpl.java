@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,8 +62,6 @@ final class LDAPCertStoreImpl {
 
     private static final Debug debug = Debug.getInstance("certpath");
 
-    private final static boolean DEBUG = false;
-
     /**
      * LDAP attribute identifiers.
      */
@@ -72,7 +70,6 @@ final class LDAPCertStoreImpl {
     private static final String CROSS_CERT = "crossCertificatePair;binary";
     private static final String CRL = "certificateRevocationList;binary";
     private static final String ARL = "authorityRevocationList;binary";
-    private static final String DELTA_CRL = "deltaRevocationList;binary";
 
     // Constants for various empty values
     private final static String[] STRING0 = new String[0];
@@ -113,6 +110,7 @@ final class LDAPCertStoreImpl {
      * their binary stored form.
      */
     private CertificateFactory cf;
+
     /**
      * The JNDI directory context.
      */
@@ -241,10 +239,6 @@ final class LDAPCertStoreImpl {
             return name;
         }
 
-        String getName() {
-            return name;
-        }
-
         void addRequestedAttribute(String attrId) {
             if (valueMap != null) {
                 throw new IllegalStateException("Request already sent");
@@ -260,9 +254,9 @@ final class LDAPCertStoreImpl {
          * @throws NamingException      if a naming exception occurs
          */
         byte[][] getValues(String attrId) throws NamingException {
-            if (DEBUG && ((cacheHits + cacheMisses) % 50 == 0)) {
-                System.out.println("Cache hits: " + cacheHits + "; misses: "
-                        + cacheMisses);
+            if (debug != null && Debug.isVerbose() && ((cacheHits + cacheMisses) % 50 == 0)) {
+                debug.println("LDAPRequest Cache hits: " + cacheHits +
+                    "; misses: " + cacheMisses);
             }
             String cacheKey = name + "|" + attrId;
             byte[][] values = valueCache.get(cacheKey);
@@ -294,11 +288,11 @@ final class LDAPCertStoreImpl {
             if (valueMap != null) {
                 return valueMap;
             }
-            if (DEBUG) {
-                System.out.println("Request: " + name + ":" + requestedAttributes);
+            if (debug != null && Debug.isVerbose()) {
+                debug.println("LDAPRequest: " + name + ":" + requestedAttributes);
                 requests++;
                 if (requests % 5 == 0) {
-                    System.out.println("LDAP requests: " + requests);
+                    debug.println("LDAP requests: " + requests);
                 }
             }
             valueMap = new HashMap<>(8);
