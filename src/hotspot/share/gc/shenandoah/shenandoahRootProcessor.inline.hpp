@@ -27,6 +27,7 @@
 #include "gc/shenandoah/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.hpp"
 #include "gc/shenandoah/shenandoahTimingTracker.hpp"
+#include "gc/shenandoah/shenandoahUtils.hpp"
 #include "memory/resourceArea.hpp"
 
 template <typename IsAlive, typename KeepAlive>
@@ -90,9 +91,10 @@ void ShenandoahRootScanner<ITR>::strong_roots_do(uint worker_id, OopClosure* oop
 
 template <typename ITR>
 void ShenandoahRootScanner<ITR>::roots_do(uint worker_id, OopClosure* oops, CLDClosure* clds, CodeBlobClosure* code, ThreadClosure *tc) {
-  assert(!ShenandoahHeap::heap()->unload_classes() ||
+  assert(!ShenandoahSafepoint::is_at_shenandoah_safepoint() ||
+         !ShenandoahHeap::heap()->unload_classes() ||
           ShenandoahHeap::heap()->heuristics()->can_do_traversal_gc(),
-          "No class unloading or traversal GC");
+          "Expect class unloading or traversal when Shenandoah cycle is running");
   ShenandoahParallelOopsDoThreadClosure tc_cl(oops, code, tc);
   ResourceMark rm;
 
