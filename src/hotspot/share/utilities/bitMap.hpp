@@ -383,16 +383,16 @@ class CHeapBitMap : public BitMap {
   // Resize the backing bitmap memory.
   //
   // Old bits are transfered to the new memory
-  // and the extended memory is cleared.
+  // and the extended memory is (optionally) cleared.
   void resize(idx_t new_size_in_bits, bool clear = true);
 
-  // Set up and clear the bitmap memory.
+  // Set up and (optionally) clear the bitmap memory.
   //
   // Precondition: The bitmap was default constructed and has
   // not yet had memory allocated via resize or initialize.
   void initialize(idx_t size_in_bits, bool clear = true);
 
-  // Set up and clear the bitmap memory.
+  // Set up and (optionally) clear the bitmap memory.
   //
   // Can be called on previously initialized bitmaps.
   void reinitialize(idx_t size_in_bits, bool clear = true);
