@@ -337,6 +337,10 @@ SPEC := $(NEW_SPEC)
 default: all
 
 run-test-prebuilt:
+        # Need to make sure the failure logs output dir exists since
+        # ExecuteWithLog is called in RunTests.gmk. The PrepareFailureLogs macro
+        # is unfortunately not available at this point.
+	$(call MakeDir, $(MAKESUPPORT_OUTPUTDIR)/failure-logs)
 	@$(RM) -f $(MAKESUPPORT_OUTPUTDIR)/exit-with-error
         # The lazy initialization of the cache file in FindTests.gmk does not
         # always work with RunTests.gmk. To guarantee that the jtreg test groups
